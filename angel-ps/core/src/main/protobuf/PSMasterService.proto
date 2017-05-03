@@ -1,0 +1,141 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+option java_package = "com.tencent.angel.protobuf.generated";
+
+option java_outer_classname = "PSMasterServiceProtos";
+
+option java_generate_equals_and_hash = true;
+
+option java_generic_services = true;
+
+option optimize_for = SPEED;
+
+import "ML.proto";
+
+
+message PSReportRequest {
+  required PSAttemptIdProto psAttemptId = 1;
+  repeated MatrixReport matrixReports = 2;
+  optional string diagnostics = 3;
+  repeated Pair metrics = 4;
+}
+
+message MatrixReport{
+  required int32 matrixId = 1;
+  required string matrixName = 2;
+  required MatrixStatus status = 3;
+}
+
+enum PSCommandProto {
+	PSCOMMAND_OK = 1;
+    PSCOMMAND_RESYNC = 2;
+    PSCOMMAND_SHUTDOWN = 3;
+    PSCOMMAND_REGISTER = 4;
+    PSCOMMAND_COMMIT = 5;
+    PSCOMMAND_INVALID = 6;    
+}
+
+message PSReportResponse {
+  required PSCommandProto psCommand = 1 [default = PSCOMMAND_OK];
+  repeated MatrixPartition needCreateMatrixIds = 2;
+  repeated int32 needReleaseMatrixIds = 3;
+  repeated int32 needCommitMatrixIds = 4;
+  optional ExecuteUnitDesc executeUnitDesc = 5;
+}
+
+message ExecuteUnitDesc{
+  required int32 totalWorkerGroupNum = 1;
+  required int32 activeWorkerGroupNum = 2;
+  required int32 totalWorkerNum = 3;
+  required int32 activeWorkerNum = 4;
+  required int32 totalTaskNum = 5;
+  required int32 activeTaskNum = 6;
+}
+
+message GetMatrixPartitionRequest {
+  required PSAttemptIdProto psAttemptId = 1;
+}
+
+message MatrixPartition {
+  required int32 matrixId = 1;
+  required string matrixName = 2;
+  required int64 rowNum = 3;
+  required int64 colNum = 4;
+  required RowType rowType = 5;
+  repeated Partition partitions = 6;
+  repeated Pair configurations = 7;
+}
+
+message GetMatrixPartitionResponse {
+  required MatrixStatus matrixStatus = 1;
+  repeated MatrixPartition matrixPartitions = 2;
+}
+
+message PSRegisterRequest {
+  required PSAttemptIdProto psAttemptId = 1;
+  required LocationProto location = 2;
+}
+
+message PSRegisterResponse {
+  required PSCommandProto psCommand = 1;
+}
+
+message PSDoneRequest{
+  required PSAttemptIdProto psAttemptId = 1;
+}
+
+message PSDoneResponse{
+}
+
+message PSErrorRequest {
+  required PSAttemptIdProto psAttemptId = 1;
+  required string msg = 2;
+}
+
+message PSErrorResponse {
+}
+
+message GetExecuteUnitDescRequest{
+
+}
+
+message GetExecuteUnitDescResponse{
+  required ExecuteUnitDesc executeUnitDesc = 1;
+}
+
+message GetTaskMatrixClockRequest {
+  required PSAttemptIdProto psAttemptId = 1;
+}
+
+message TaskMatrixClock {
+  required TaskIdProto taskId = 1;
+  repeated MatrixClock matrixClocks = 2;
+}
+
+message GetTaskMatrixClockResponse {
+  repeated TaskMatrixClock taskMatrixClocks = 1;
+}
+
+service PSMasterService {
+  rpc psRegister(PSRegisterRequest) returns (PSRegisterResponse);
+  rpc psReport(PSReportRequest) returns (PSReportResponse);
+  rpc getMatrixPartition(GetMatrixPartitionRequest) returns (GetMatrixPartitionResponse);
+  rpc psDone(PSDoneRequest) returns (PSDoneResponse);
+  rpc psError(PSErrorRequest) returns (PSErrorResponse);
+  rpc getExecuteUnitDesc(GetExecuteUnitDescRequest) returns (GetExecuteUnitDescResponse);
+  rpc getTaskMatrixClocks(GetTaskMatrixClockRequest) returns (GetTaskMatrixClockResponse);
+}

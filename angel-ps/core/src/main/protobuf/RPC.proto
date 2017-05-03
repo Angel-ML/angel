@@ -1,0 +1,121 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * Specification of (unsecure) ml RPC:
+ *
+ * Client needs to set up a connection first to a server serving a certain
+ * Wasp protocol (like ClientProtocol). Once the connection is set up, the 
+ * client and server communicates on that channel for RPC requests/responses.
+ * The sections below describe the flow. 
+ * 
+ * As part of setting up a connection to a server, the client needs to send
+ * the ConnectionHeader header. At the data level, this looks like
+ * <"hrpc"-bytearray><'5'[byte]><length-of-serialized-ConnectionHeader-obj[int32]><ConnectionHeader-object serialized>
+ *
+ * For every RPC that the client makes it needs to send the following
+ * RpcRequestHeader and the RpcRequestBody. At the data level this looks like:
+ *  <length-of-serialized-RpcRequestHeader + length-of-varint32-of-serialized-RpcRequestHeader + 
+ *   length-of-serialized-RpcRequestBody + length-of-varint32-of-serialized-RpcRequestBody>
+ *  <RpcRequestHeader [serialized using Message.writeDelimitedTo]>
+ *  <RpcRequestBody [serialized using Message.writeDelimitedTo]>
+ *
+ * On a success, the server's protobuf response looks like
+ *  <RpcResponseHeader-object [serialized using Message.writeDelimitedTo]>
+ *  <RpcResponseBody-object [serialized using Message.writeDelimitedTo]>
+ * On a failure, the server's protobuf response looks like
+ *  <RpcResponseHeader-object [serialized using Message.writeDelimitedTo]>
+ *  <RpcException-object [serialized using Message.writeDelimitedTo]>
+ *
+ * There is one special message that's sent from client to server -
+ * the Ping message. At the data level, this is just the bytes corresponding
+ *   to integer -1.
+ */
+
+option java_package = "com.tencent.angel.protobuf.generated";
+option java_outer_classname = "RPCProtos";
+option java_generate_equals_and_hash = true;
+option optimize_for = SPEED;
+
+message RPCTInfo {
+  optional int64 traceId = 1;
+  optional int64 parentId = 2;
+}
+
+message ConnectionHeader {
+  /** Protocol name for next rpc layer
+   * the client created a proxy with this protocol name
+   */
+  optional string protocol = 1 [default = "com.tencent.angel.client.ClientProtocol"];
+}
+
+
+/**
+ * The RPC request header
+ */
+message RpcRequestHeader {
+  optional RPCTInfo tinfo = 1;
+}
+
+/**
+ * The RPC request body
+ */
+message RpcRequestBody {
+  /** Name of the RPC method */
+  required string methodName = 1;
+
+  /** protocol version of class declaring the called method */
+  optional uint64 clientProtocolVersion = 2;
+
+  /** Bytes corresponding to the client protobuf request. This is the actual
+   *  bytes corresponding to the RPC request argument.
+   */
+  optional bytes request = 3;
+
+  /** Some metainfo about the request. Helps us to treat RPCs with
+   *  different priorities. For now this is just the classname of the request
+   *  proto object. 
+   */
+  optional string requestClassName = 4;
+}
+
+/**
+ * The RPC response header
+ */
+message RpcResponseHeader {
+  /** Did the RPC execution encounter an error at the server */
+  enum Status {
+    SUCCESS = 0;
+    ERROR = 1;
+    FATAL = 2;
+  }
+  required Status status = 1;
+}
+
+/**
+ * At the RPC layer, this message is used to indicate
+ * the server side exception to the RPC client.
+ *
+ * Wasp RPC client throws an exception indicated
+ * by exceptionName with the stackTrace.
+ */
+message RpcException {
+  /** Class name of the exception thrown from the server */
+  required string exceptionName = 1;
+
+  /** Exception stack trace from the server side */
+  optional string stackTrace = 2;
+}

@@ -1,0 +1,15 @@
+<!DOCTYPE suppressions PUBLIC
+"-//Puppy Crawl//DTD Suppressions 1.1//EN"
+"http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
+
+<!--
+
+    This file contains suppression rules for Checkstyle checks.
+    Ideally only files that cannot be modified (e.g. third-party code)
+    should be added here. All other violations should be fixed.
+
+-->
+
+<suppressions>
+
+</suppressions>
