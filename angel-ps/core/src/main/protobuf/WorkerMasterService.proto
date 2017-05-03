@@ -1,0 +1,176 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+option java_package = "com.tencent.angel.protobuf.generated";
+
+option java_outer_classname = "WorkerMasterServiceProtos";
+
+option java_generate_equals_and_hash = true;
+
+option java_generic_services = true;
+
+option optimize_for = SPEED;
+
+import "ML.proto";
+
+message WorkerReportRequest {
+  required WorkerAttemptIdProto workerAttemptId = 1;
+  repeated TaskStateProto taskReports = 2;
+  repeated Pair pairs = 3; 
+}
+
+message TaskStateProto {
+  required TaskIdProto taskId = 1;
+  required string state = 2;
+  optional int32 iteration = 3;
+  repeated MatrixClock matrixClocks = 4;
+  required float progress = 5;
+  repeated Pair counters = 6;
+  optional string diagnosticInfo = 7;
+  optional int64 startTime = 8;
+  optional int64 finishTime = 9;
+}
+
+enum WorkerCommandProto {
+  W_SUCCESS = 0;
+  W_NEED_REGISTER = 1;
+  W_SHUTDOWN = 2;  
+  W_UNKNOWN = 3;
+}
+
+message WorkerReportResponse { 
+  required WorkerCommandProto command = 1 [default = W_SUCCESS];
+  optional int32 activeTaskNum = 2;
+}
+
+message WorkerRegisterRequest{
+  required WorkerAttemptIdProto workerAttemptId = 1;
+  required LocationProto location = 2;
+}
+
+message WorkerRegisterResponse{
+  required WorkerCommandProto command = 1;
+}
+
+
+message WorkerDoneRequest{
+  required WorkerAttemptIdProto workerAttemptId = 1;
+}
+
+message WorkerDoneResponse{
+  required WorkerCommandProto command = 1;
+}
+
+message WorkerErrorRequest{
+  required WorkerAttemptIdProto workerAttemptId = 1;
+  required string msg = 2;
+}
+
+message WorkerErrorResponse{
+  required WorkerCommandProto command = 1;
+}
+
+message TaskIterationCommitRequest {
+  required TaskIdProto taskId = 1;  
+  required int32 clock = 2;
+}
+
+message TaskIterationCommitResponse {
+  required CommitStatus commitStatus = 1;
+}
+
+message TaskIterationCompleteRequest {
+  required TaskIdProto taskId = 1;
+  required int32 clock = 2;
+  enum TaskStatus {
+    TaskSuccess = 1;    
+    TaskFailed = 2;    
+  }
+  required TaskStatus taskStatus = 3;
+}
+
+message TaskIterationCompleteResponse {
+  required WorkerCommandProto command = 1;
+}
+
+message WorkerCountRequest{
+  required int32 workerId = 1;
+  required int32 currentId = 2;
+  required string keyClass = 3;
+}
+
+message WorkerCountResponse{
+  required int32 id = 1;
+}
+
+message FetchMinClockRequest {
+  required WorkerAttemptIdProto workerAttemptId = 1;
+}
+
+message FetchMinClockResponse {
+  required WorkerCommandProto status = 1;
+  optional int32 minClock = 2;
+}
+
+message SplitInfoProto {
+  required string splitClass = 1;
+  required bytes split = 2;
+}
+
+message TaskMetaInfoProto{
+  required TaskIdProto taskId = 1;
+  required int32 iteration = 2;
+  repeated MatrixClock matrixClock = 3;
+}
+
+message WorkerLocationProto{
+  required WorkerAttemptIdProto workerAttemptId = 1;
+  optional LocationProto location = 2;
+}
+
+message WorkerMetaInfoProto{
+  required WorkerLocationProto workerLocation = 1;
+  repeated TaskMetaInfoProto tasks = 2;
+}
+
+message WorkerGroupMetaInfoProto{
+  required WorkerGroupIdProto workerGroupId = 1;
+  required WorkerIdProto leaderId = 2;
+  repeated WorkerMetaInfoProto workers = 3;
+  repeated SplitInfoProto splits = 4;
+}
+
+message GetWorkerGroupMetaInfoRequest {
+  required WorkerAttemptIdProto workerAttemptId = 1;
+}
+
+message GetWorkerGroupMetaInfoResponse {
+  enum WorkerGroupStatus {
+     WORKERGROUP_OK = 1;
+     WORKERGROUP_NOTREADY = 2;
+     WORKERGROUP_EXITED = 3;
+  }
+  required WorkerGroupStatus workerGroupStatus = 1;
+  optional WorkerGroupMetaInfoProto workerGroupMeta = 2;
+}
+
+service WorkerMasterService {
+	rpc workerReport(WorkerReportRequest) returns (WorkerReportResponse);	
+	rpc workerRegister(WorkerRegisterRequest) returns (WorkerRegisterResponse);
+	rpc getWorkerGroupMetaInfo(GetWorkerGroupMetaInfoRequest) returns (GetWorkerGroupMetaInfoResponse);	
+	rpc workerDone(WorkerDoneRequest) returns (WorkerDoneResponse);	
+	rpc workerError(WorkerErrorRequest) returns (WorkerErrorResponse);
+}

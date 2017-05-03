@@ -1,0 +1,128 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+option java_package = "com.tencent.angel.protobuf.generated";
+
+option java_outer_classname = "PSAgentMasterServiceProtos";
+
+option java_generate_equals_and_hash = true;
+
+option java_generic_services = true;
+
+option optimize_for = SPEED;
+
+import "ML.proto";
+
+message PSAgentReportRequest {
+  required PSAgentAttemptIdProto psAgentAttemptId = 1;
+  repeated Pair pairs = 3; 
+}
+
+enum PSAgentCommandProto {
+  PSAGENT_SUCCESS = 0;
+  PSAGENT_NEED_REGISTER = 1;
+  PSAGENT_SHUTDOWN = 2;  
+  PSAGENT_UNKNOWN = 3;
+}
+
+message PSAgentReportResponse { 
+  required PSAgentCommandProto command = 1 [default = PSAGENT_SUCCESS];
+}
+
+message PSAgentRegisterRequest{
+  required PSAgentAttemptIdProto psAgentAttemptId = 1;
+  required LocationProto location = 2; 
+}
+
+message PSAgentRegisterResponse{
+  required PSAgentCommandProto command = 1 [default = PSAGENT_SUCCESS];
+}
+
+message GetAllMatrixInfoRequest {
+}
+
+message GetAllMatrixInfoResponse {
+  required MatrixStatus matrixStatus = 1;
+  repeated MatrixProto matrixInfo = 2;  
+}
+
+message GetPSLocationRequest {
+  required PSIdProto psId = 1;
+}
+
+message GetPSLocationReponse {
+  required PSStatus psStatus = 1;
+  optional LocationProto location = 2;  
+}
+
+message FetchMinClockRequest {
+}
+
+message FetchMinClockResponse {
+  required int32 minClock = 1;
+}
+
+message PSAgentDoneRequest{
+  required PSAgentAttemptIdProto psAgentAttemptId = 1;
+}
+
+message PSAgentDoneResponse{
+  required PSAgentCommandProto command = 1;
+}
+
+message PSAgentErrorRequest{
+  required PSAgentAttemptIdProto psAgentAttemptId = 1;
+  required string msg = 2;
+}
+
+message PSAgentErrorResponse{
+  required PSAgentCommandProto command = 1;
+}
+
+message TaskClockRequest {
+  required TaskIdProto taskId = 1;
+  required MatrixClock matrixClock = 2;
+}
+
+message TaskClockResponse {
+
+}
+
+message TaskIterationRequest {
+  required TaskIdProto taskId = 1;
+  required int32 iteration = 2;
+}
+
+message TaskIterationResponse {
+
+}
+
+
+service PSAgentMasterService {
+  rpc psAgentReport(PSAgentReportRequest) returns (PSAgentReportResponse);	
+  rpc psAgentRegister(PSAgentRegisterRequest) returns (PSAgentRegisterResponse);
+  rpc getAllMatrixInfo(GetAllMatrixInfoRequest) returns (GetAllMatrixInfoResponse);
+  rpc getAllPSLocation(GetAllPSLocationRequest) returns (GetAllPSLocationResponse);
+  rpc getPSLocation(GetPSLocationRequest) returns (GetPSLocationReponse);
+  rpc fetchMinClock(FetchMinClockRequest) returns (FetchMinClockResponse);
+  rpc psAgentDone(PSAgentDoneRequest) returns (PSAgentDoneResponse);	
+  rpc psAgentError(PSAgentErrorRequest) returns (PSAgentErrorResponse);
+  rpc createMatrix(CreateMatrixRequest) returns (CreateMatrixResponse);
+  rpc getMatrixInfo(GetMatrixInfoRequest) returns (GetMatrixInfoResponse);
+  rpc releaseMatrix(ReleaseMatrixRequest) returns (ReleaseMatrixResponse);
+  rpc taskClock(TaskClockRequest) returns (TaskClockResponse);
+  rpc taskIteration(TaskIterationRequest) returns(TaskIterationResponse);
+}

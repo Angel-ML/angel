@@ -1,0 +1,201 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+option java_package = "com.tencent.angel.protobuf.generated";
+
+option java_outer_classname = "MLProtos";
+
+option java_generate_equals_and_hash = true;
+
+option java_generic_services = true;
+
+option optimize_for = SPEED;
+
+message Pair{
+  required string key = 1;
+  required string value = 2;
+}
+
+message Partition{
+  required int32 partitionId = 1;
+  required int32 matrixId = 2;
+  required int32 startRow = 3;
+  required int32 startCol = 4;
+  required int32 endRow = 5;
+  required int32 endCol = 6;
+}
+
+message Cell{
+  required int32 row = 1;
+  required int32 col = 2;
+  required bytes value = 3;
+}
+
+message Node{
+  required string id = 1;
+  required string ip = 2;
+  required int32 port = 3;
+}
+
+message WorkerGroupIdProto {
+  required int32 workerGroupIndex = 1;
+}
+
+message WorkerIdProto {
+  required WorkerGroupIdProto workerGroupId = 1;
+  required int32 workerIndex = 2;
+}
+
+message WorkerAttemptIdProto {
+  required WorkerIdProto workerId = 1;
+  required int32 attemptIndex = 2;
+}
+
+message TaskIdProto {
+  required int32 taskIndex = 1;
+}
+
+message PSIdProto {
+  required int32 psIndex = 1;
+}
+
+message PSAttemptIdProto {
+  required PSIdProto psId = 1;
+  required int32 attemptIndex = 2;
+}
+
+message PSAgentIdProto {
+  required int32 psAgentIndex = 1;
+}
+
+message PSAgentAttemptIdProto {
+  required PSAgentIdProto psAgentId = 1;
+  required int32 attemptIndex = 2;
+}
+
+message MatrixPartitionLocation{
+  required Partition part = 1;
+  required PSIdProto psId = 2;
+}
+
+enum RowType {
+	T_DOUBLE_SPARSE = 1;
+	T_DOUBLE_DENSE = 2;
+	T_INT_SPARSE = 3;
+	T_INT_DENSE = 4;
+	T_INT_ARBITRARY = 5;
+	T_FLOAT_DENSE = 6;
+	T_FLOAT_SPARSE = 7;
+	T_INVALID = 8;
+}
+
+message MatrixProto{
+  required int32 id = 1;
+  required string name = 2;
+  required int32 rowNum = 3;
+  required int32 colNum = 4;
+  required RowType rowType = 5;
+  repeated Pair attribute = 6;
+  repeated MatrixPartitionLocation matrixPartLocation = 7;
+}
+
+message MatrixClock{
+  required int32 matrixId = 1;
+  required int32 clock = 2;
+}
+
+enum MatrixStatus {
+  M_NOT_READY = 1;  // On am no MatrixInfo received from client 
+  M_OK = 2;  // 
+}
+
+enum PSStatus {
+  PS_OK = 1;
+  PS_NOTREADY = 2;
+}
+ 
+enum PSAgentStatus {
+  PSAGENT_OK = 1;
+  PSAGENT_NOTREADY = 2;
+}
+
+
+enum CommitStatus {
+  CommitReady = 1;     // 可以提交
+  CommitBusy = 2;      // 其他taskattemp正在提交
+  CommitExpired = 3;   // 该taskattempt执行缓慢，本地的clock已经落后于master侧的minClock
+  Invalid = 4;
+}
+
+message LocationProto {
+  required string ip = 1;
+  required int32 port = 2;
+}
+
+message PSLocation {
+  required PSIdProto psId = 1;
+  required PSStatus psStatus = 2;
+  optional LocationProto location = 3;  
+}
+
+message PSAgentLocation {
+  required PSAgentIdProto psAgentId = 1;
+  required PSAgentStatus psAgentStatus = 2;
+  optional LocationProto location = 3;  
+}
+
+message GetAllPSLocationRequest {
+
+}
+
+message GetAllPSLocationResponse {
+  repeated PSLocation psLocations = 1;
+}
+
+message GetAllPSAgentLocationRequest {
+
+}
+
+message GetAllPSAgentLocationResponse {
+  repeated PSAgentLocation psAgentLocations = 1;
+}
+
+message CreateMatrixRequest{
+  required MatrixProto matrixProto = 1;
+}
+
+message CreateMatrixResponse{
+  required MatrixStatus matrixStatus = 1;
+  optional int32 matrixId = 2;
+}
+
+message GetMatrixInfoRequest{
+  required int32 matrixId = 1; 
+}
+
+message GetMatrixInfoResponse{
+  required MatrixStatus matrixStatus = 1;
+  optional MatrixProto matrixInfo = 2; 
+}
+
+message ReleaseMatrixRequest{
+  required int32 matrixId = 1;
+  required string matrixName = 2;
+}
+
+message ReleaseMatrixResponse{
+}
+

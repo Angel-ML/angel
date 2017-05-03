@@ -1,0 +1,94 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.tencent.angel.utils;
+
+import java.lang.Thread.UncaughtExceptionHandler;
+
+/**
+ * Abstract class which contains a Thread and delegates the common Thread methods to that instance.
+ * 
+ * The purpose of this class is to workaround Sun JVM bug #6915621, in which something internal to
+ * the JDK uses Thread.currentThread() as a monitor lock. This can produce deadlocks like
+ * HBASE-4367, HBASE-4101, etc.
+ */
+public abstract class HasThread implements Runnable {
+  private final Thread thread;
+
+  public HasThread() {
+    this.thread = new Thread(this);
+  }
+
+  public HasThread(String name) {
+    this.thread = new Thread(this, name);
+  }
+
+  public Thread getThread() {
+    return thread;
+  }
+
+  public abstract void run();
+
+  // // Begin delegation to Thread
+
+  public final String getName() {
+    return thread.getName();
+  }
+
+  public void interrupt() {
+    thread.interrupt();
+  }
+
+  public final boolean isAlive() {
+    return thread.isAlive();
+  }
+
+  public boolean isInterrupted() {
+    return thread.isInterrupted();
+  }
+
+  public final void setDaemon(boolean on) {
+    thread.setDaemon(on);
+  }
+
+  public final void setName(String name) {
+    thread.setName(name);
+  }
+
+  public final void setPriority(int newPriority) {
+    thread.setPriority(newPriority);
+  }
+
+  public void setUncaughtExceptionHandler(UncaughtExceptionHandler eh) {
+    thread.setUncaughtExceptionHandler(eh);
+  }
+
+  public void start() {
+    thread.start();
+  }
+
+  public final void join() throws InterruptedException {
+    thread.join();
+  }
+
+  public final void join(long millis, int nanos) throws InterruptedException {
+    thread.join(millis, nanos);
+  }
+
+  public final void join(long millis) throws InterruptedException {
+    thread.join(millis);
+  }
+  // // End delegation to Thread
+}
