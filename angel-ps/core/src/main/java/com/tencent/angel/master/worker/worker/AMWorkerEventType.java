@@ -16,12 +16,24 @@
 
 package com.tencent.angel.master.worker.worker;
 
+/**
+ * Worker event types.
+ */
 public enum AMWorkerEventType {
-  INIT, 
+  INIT,
+  /**start to run*/
   SCHEDULE,
-  KILL, 
-  WORKER_ATTEMPT_FAILED, 
-  WORKER_ATTEMPT_KILLED, 
-  WORKER_ATTEMPT_SUCCESS, 
+  KILL,
+
+  /**worker attempt is failed*/
+  WORKER_ATTEMPT_FAILED,
+
+  /**worker attempt is killed*/
+  WORKER_ATTEMPT_KILLED,
+
+  /**worker attempt is success*/
+  WORKER_ATTEMPT_SUCCESS,
+
+  /**worker attempt is registered*/
   WORKER_ATTEMPT_REGISTED
 }

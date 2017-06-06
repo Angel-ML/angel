@@ -8,10 +8,10 @@
  *
  * https://opensource.org/licenses/BSD-3-Clause
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is
- * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package com.tencent.angel.webapp.page;
@@ -59,14 +59,15 @@ public class AngelAppBlock extends HtmlBlock {
       elaspedTs = System.currentTimeMillis() - app.getLaunchTime();
     }
 
-    info("Job Overview")
-        ._("Job Name:", amContext.getApplicationName())
+    info("Job Overview")._("Job Name:", amContext.getApplicationName())
         ._("State:", app.getExternAppState().toString())
         ._("Started:", new Date(app.getLaunchTime()))
         ._("Elapsed:", StringUtils.formatTime(elaspedTs))
         ._("Environment:", "nomeaning" == null ? "#" : "angel/EnvironmentPage",
             "Runtime Information And Properties")
+        ._("Task Progress:", "nomeaning" == null ? "#" : "angel/ProgressPage", "progress")
         ._("Master Threaddump:", "nomeaning" == null ? "#" : "angel/ExecutorsPage", "threaddump");
+
 
 
     DIV<Hamlet> div = html._(InfoBlock.class).div(_INFO_WRAP);

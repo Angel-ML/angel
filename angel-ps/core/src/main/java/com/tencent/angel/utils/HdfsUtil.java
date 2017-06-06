@@ -1,24 +1,30 @@
-/*
- * Tencent is pleased to support the open source community by making Angel available.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- *
- * https://opensource.org/licenses/BSD-3-Clause
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is
- * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
  * limitations under the License.
+ */
+
+/**
+ * Add writeStorage and copy methods for Angel.
  */
 
 package com.tencent.angel.utils;
 
 import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.worker.predict.PredictResult;
-import com.tencent.angel.worker.storage.Storage;
+import com.tencent.angel.worker.storage.DataBlock;
 import com.tencent.angel.worker.task.TaskContext;
 
 import org.apache.commons.logging.Log;
@@ -38,6 +44,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * HDFS operation(like list,copy etcs) utils.
+ */
 public class HdfsUtil {
   private static final Log LOG = LogFactory.getLog(HdfsUtil.class);
   public static final String INPUT_DIR = "mapreduce.input.fileinputformat.inputdir";
@@ -77,6 +86,7 @@ public class HdfsUtil {
 
   public static Path[] getInputPaths(JobContext context) {
     String dirs = context.getConfiguration().get(INPUT_DIR, "");
+    // LOG.info(System.getProperty("user.dir"));
     LOG.info("dirs=" + dirs);
     String[] list = StringUtils.split(dirs);
     Path[] result = new Path[list.length];
@@ -353,28 +363,26 @@ public class HdfsUtil {
     return new Path(path.getParent(), finalPrefix + path.getName());
   }
 
-  public static void rename(Path tmpCombinePath, Path outputPath, FileSystem fs) throws IOException {
+  public static void rename(Path tmpCombinePath, Path outputPath, FileSystem fs)
+      throws IOException {
     if (fs.exists(outputPath)) {
       fs.delete(outputPath, true);
     }
     fs.rename(tmpCombinePath, outputPath);
   }
 
-  public static Path generateTmpDirectory(Configuration conf, String appId,
-      Path outputPath) {
+  public static Path generateTmpDirectory(Configuration conf, String appId, Path outputPath) {
     URI uri = outputPath.toUri();
-    String path =
-        uri.getScheme() + "://" + (uri.getHost() != null ? uri.getHost() : "")
-            + (uri.getPort() > 0 ? (":" + uri.getPort()) : "");
+    String path = uri.getScheme() + "://" + (uri.getHost() != null ? uri.getHost() : "")
+        + (uri.getPort() > 0 ? (":" + uri.getPort()) : "");
     String user = conf.get(AngelConfiguration.USER_NAME, "");
     String tmpDir = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_DIRECTORY, "/tmp/" + user);
-    String finalTmpDirForApp =
-        path + tmpDir + "/" + appId + "_" + UUID.randomUUID().toString();
+    String finalTmpDirForApp = path + tmpDir + "/" + appId + "_" + UUID.randomUUID().toString();
     LOG.info("tmp output dir is " + finalTmpDirForApp);
     return new Path(finalTmpDirForApp);
   }
 
-  public static void writeStorage(Storage<PredictResult> storage, TaskContext taskContext)
+  public static void writeStorage(DataBlock<PredictResult> dataBlock, TaskContext taskContext)
       throws IOException {
     String outDir = taskContext.getConf().get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_DIRECTORY);
     Path outPath = new Path(outDir, "predict");
@@ -390,21 +398,21 @@ public class HdfsUtil {
 
     FSDataOutputStream output = fs.create(tmpOutFilePath);
     LOG.info("tmpOutFilePath=" + tmpOutFilePath);
-    storage.resetReadIndex();
+    dataBlock.resetReadIndex();
     PredictResult resultItem = null;
     boolean isFirstRow = true;
     while (true) {
-      resultItem = storage.read();
+      resultItem = dataBlock.read();
       if (resultItem == null) {
         break;
       }
 
-      if(isFirstRow) {
+      if (isFirstRow) {
         isFirstRow = false;
       } else {
         output.writeBytes("\n");
-      }     
-      resultItem.writeText(output);      
+      }
+      resultItem.writeText(output);
     }
 
     output.close();

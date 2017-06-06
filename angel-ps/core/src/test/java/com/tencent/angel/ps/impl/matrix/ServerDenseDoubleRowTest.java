@@ -42,7 +42,7 @@ public class ServerDenseDoubleRowTest {
   private byte[] buffer;
 
   static {
-    PropertyConfigurator.configure("../log4j.properties");
+    PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
   @Before

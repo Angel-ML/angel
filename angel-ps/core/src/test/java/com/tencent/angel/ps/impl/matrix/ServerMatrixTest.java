@@ -39,7 +39,7 @@ public class ServerMatrixTest {
   private ServerMatrix serverMatrix;
 
   static {
-    PropertyConfigurator.configure("../log4j.properties");
+    PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
   @Before

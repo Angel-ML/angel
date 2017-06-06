@@ -169,10 +169,13 @@ public class ServerArbitraryIntRow extends ServerRow {
   private void sparseToDense() {
     initDenseRep();
     ObjectIterator<Entry> iter = sparseRep.int2IntEntrySet().fastIterator();
+    nnz = 0;
     while (iter.hasNext()) {
       Entry itemEntry = iter.next();
       denseRep.put(itemEntry.getIntKey(), itemEntry.getIntValue());
-      nnz++;
+      if(itemEntry.getIntValue() != 0) {
+        nnz++;
+      }
     }
     sparseRep = null;
 
@@ -438,6 +441,11 @@ public class ServerArbitraryIntRow extends ServerRow {
       ov = denseRep.get(key);
       delta = valueBuf.readInt();
       value = ov + delta;
+      LOG.info("#######key=" + key);
+      LOG.info("#######ov=" + ov);
+      LOG.info("#######delta=" + delta);
+      LOG.info("#######value=" + value);
+      LOG.info("#######nnz=" + nnz);
 
       if (ov != 0 && value == 0)
         nnz--;
@@ -446,6 +454,7 @@ public class ServerArbitraryIntRow extends ServerRow {
 
     buf.readerIndex(buf.readerIndex() + size * 4);
 
+    LOG.info("#######nnz=" + nnz);
     if (nnz < threshold * (endCol - startCol))
       denseToSparse();
   }

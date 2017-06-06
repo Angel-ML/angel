@@ -20,13 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-/**
- * 构建配置
- * 
- * 
- */
 public class BuildProperties {
-  // 服务器版本
   public static String VERSION = "0.1";
 
   static {

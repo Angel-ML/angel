@@ -1,17 +1,17 @@
 /*
  * Tencent is pleased to support the open source community by making Angel available.
- *
+ * 
  * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
- *
+ * 
  * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- *
+ * 
  * https://opensource.org/licenses/BSD-3-Clause
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is
- * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package com.tencent.angel.ps.matrix.transport;
@@ -19,11 +19,9 @@ package com.tencent.angel.ps.matrix.transport;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.ml.matrix.transport.*;
-import com.tencent.angel.ml.matrix.udf.aggr.AggrFunc;
-import com.tencent.angel.ml.matrix.udf.aggr.PartitionAggrResult;
-import com.tencent.angel.ml.matrix.udf.getrow.GetRowFunc;
-import com.tencent.angel.ml.matrix.udf.getrow.PartitionGetRowResult;
-import com.tencent.angel.ml.matrix.udf.updater.UpdaterFunc;
+import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
+import com.tencent.angel.ml.matrix.psf.updater.base.UpdaterFunc;
 import com.tencent.angel.ps.impl.MatrixPartitionManager;
 import com.tencent.angel.ps.impl.PSContext;
 import com.tencent.angel.ps.impl.matrix.ServerPartition;
@@ -39,6 +37,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -67,9 +66,9 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
     int seqId = in.readInt();
     int methodId = in.readInt();
     TransportMethod method = TransportMethod.typeIdToTypeMap.get(methodId);
-    
+
     LOG.debug("receive a request method=" + method + ", seqId=" + seqId);
-    
+
     switch (method) {
       case GET_ROWSPLIT: {
         GetRowSplitRequest request = new GetRowSplitRequest();
@@ -108,58 +107,58 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
         getClocks(seqId, request, ctx);
         break;
       }
-      
-      case AGGR:{
-        AggrRequest request = new AggrRequest();
-        request.deserialize(in);
-        aggr(seqId, request, ctx);
-        break;
-      }
 
-      case UPDATER:{
+      case UPDATER: {
         UpdaterRequest request = new UpdaterRequest();
         request.deserialize(in);
         update(seqId, request, ctx);
         break;
       }
-      
-      case GETROW_UDF:{
-        GetRowUDFRequest request = new GetRowUDFRequest();
+
+      case GET_UDF: {
+        GetUDFRequest request = new GetUDFRequest();
         request.deserialize(in);
-        getRowSplit(seqId, request, ctx);
+        getSplit(seqId, request, ctx);
         break;
       }
-      
       default:
         break;
     }
     in.release();
   }
 
-  private void getRowSplit(int seqId, GetRowUDFRequest request, ChannelHandlerContext ctx) {
-    GetRowUDFResponse response = null;
+  @SuppressWarnings("unchecked")
+  private void getSplit(int seqId, GetUDFRequest request, ChannelHandlerContext ctx) {
+    GetUDFResponse response = null;
     try {
-      GetRowFunc func = (GetRowFunc) Class.forName(request.getGetRowFuncClass()).newInstance();
-      PartitionGetRowResult partResult = func.partitionGet(request.getPartParam());
-      response = new GetRowUDFResponse(partResult);
+      Class<? extends GetFunc> funcClass = (Class<? extends GetFunc>) Class.forName(request.getGetFuncClass());
+      Constructor<? extends GetFunc> constructor = funcClass.getConstructor();
+      constructor.setAccessible(true);
+      GetFunc func = constructor.newInstance();
+      PartitionGetResult partResult = func.partitionGet(request.getPartParam());
+      response = new GetUDFResponse(partResult);
       response.setResponseType(ResponseType.SUCCESS);
     } catch (Exception e) {
-      LOG.fatal("aggr request " + request + " failed ", e);
-      response = new GetRowUDFResponse();
-      response.setDetail("aggr request failed " + e.getMessage());
+      LOG.fatal("get udf request " + request + " failed ", e);
+      response = new GetUDFResponse();
+      response.setDetail("get udf request failed " + e.getMessage());
       response.setResponseType(ResponseType.FATAL);
     }
-    
+
     ByteBuf buf = ByteBufUtils.newByteBuf(4 + response.bufferLen(), useDirectorBuffer);
     buf.writeInt(seqId);
     response.serialize(buf);
     ctx.writeAndFlush(buf);
   }
 
+  @SuppressWarnings("unchecked")
   private void update(int seqId, UpdaterRequest request, ChannelHandlerContext ctx) {
     UpdaterResponse response = null;
     try {
-      UpdaterFunc func = (UpdaterFunc) Class.forName(request.getUpdaterFuncClass()).newInstance();
+      Class<? extends UpdaterFunc> funcClass = (Class<? extends UpdaterFunc>) Class.forName(request.getUpdaterFuncClass());
+      Constructor<? extends UpdaterFunc> constructor = funcClass.getConstructor();
+      constructor.setAccessible(true);
+      UpdaterFunc func = constructor.newInstance();
       func.partitionUpdate(request.getPartParam());
       response = new UpdaterResponse();
       response.setResponseType(ResponseType.SUCCESS);
@@ -169,27 +168,7 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
       response.setDetail("updater request failed " + e.getMessage());
       response.setResponseType(ResponseType.FATAL);
     }
-    
-    ByteBuf buf = ByteBufUtils.newByteBuf(4 + response.bufferLen(), useDirectorBuffer);
-    buf.writeInt(seqId);
-    response.serialize(buf);
-    ctx.writeAndFlush(buf);
-  }
 
-  private void aggr(int seqId, AggrRequest request, ChannelHandlerContext ctx) {
-    AggrResponse response = null;
-    try {
-      AggrFunc func = (AggrFunc) Class.forName(request.getAggrFuncClass()).newInstance();
-      PartitionAggrResult partResult = func.aggr(request.getPartParam());
-      response = new AggrResponse(partResult);
-      response.setResponseType(ResponseType.SUCCESS);
-    } catch (Exception e) {
-      LOG.fatal("aggr request " + request + " failed ", e);
-      response = new AggrResponse();
-      response.setDetail("aggr request failed " + e.getMessage());
-      response.setResponseType(ResponseType.FATAL);
-    }
-    
     ByteBuf buf = ByteBufUtils.newByteBuf(4 + response.bufferLen(), useDirectorBuffer);
     buf.writeInt(seqId);
     response.serialize(buf);
@@ -317,8 +296,9 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
     ByteBuf buf = ByteBufUtils.newByteBuf(8 + 4);
     buf.writeInt(seqId);
 
-    LOG.debug("seqId = " + seqId + " update split request matrixId = " + partKey.getMatrixId() + ", partId = "
-        + partKey.getPartitionId() + " clock = " + clock + ", updateClock = " + updateClock);
+    LOG.debug("seqId = " + seqId + " update split request matrixId = " + partKey.getMatrixId()
+        + ", partId = " + partKey.getPartitionId() + " clock = " + clock + ", updateClock = "
+        + updateClock);
 
     PutPartitionUpdateResponse resposne = null;
     try {

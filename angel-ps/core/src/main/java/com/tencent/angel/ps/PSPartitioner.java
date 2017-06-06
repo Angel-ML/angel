@@ -16,97 +16,39 @@
 
 package com.tencent.angel.ps;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.protobuf.generated.MLProtos.MatrixPartitionLocation;
-import com.tencent.angel.protobuf.generated.MLProtos.MatrixProto;
-import com.tencent.angel.protobuf.generated.MLProtos.PSIdProto;
-import com.tencent.angel.protobuf.generated.MLProtos.Pair;
-import com.tencent.angel.protobuf.generated.MLProtos.Partition;
-
+import com.tencent.angel.protobuf.generated.MLProtos.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * The parameter server partitioner, controls the partitioning of the matrix which assigned to parameter servers.
  * The matrix split by block {@link MatrixContext#maxRowNumInBlock} and {@link MatrixContext#maxColNumInBlock},
- * and partitions block of matrix to related parameter server by {@link #getServerIndex}.
+ * and partitions block of matrix to related parameter server by {@link #assignPartToServer}.
  */
-public class PSPartitioner {
+public class PSPartitioner implements Partitioner{
   private static final Log LOG = LogFactory.getLog(PSPartitioner.class);
-  private static int matrixGenerateIndex = 1;
   protected MatrixContext mContext;
   protected Configuration conf;
-  protected int matrixId;
 
-
-  /**
-   * Sets.
-   *
-   * @param mtx  the matrix context
-   * @param conf the conf
-   */
-  public void setup(MatrixContext mtx, Configuration conf) {
+  @Override
+  public void init(MatrixContext mtx, Configuration conf) {
     this.mContext = mtx;
     this.conf = conf;
   }
 
-  /**
-   * Gets server index by partition.
-   *
-   * @param partition the partition
-   * @param numServer the num server
-   * @return the server index
-   */
-  public int getServerIndex(Partition partition, int numServer) {
-    return partition.getPartitionId() % numServer;
-  }
-
-
-  /**
-   * Generate matrix proto.
-   *
-   * @return the matrix proto
-   */
-  public final MatrixProto generateMatrixProto() {
-    MatrixProto.Builder mProtoBuilder = MatrixProto.newBuilder();
-    mProtoBuilder.setName(mContext.getName());
-    matrixId = generateMatrixId();
-    mProtoBuilder.setId(matrixId);
-    mProtoBuilder.setRowNum(mContext.getRowNum());
-    mProtoBuilder.setColNum(mContext.getColNum());
-    mProtoBuilder.setRowType(mContext.getRowType());
-    // set MatrixPartitionLocation
-    MatrixPartitionLocation.Builder mpLocBuild = MatrixPartitionLocation.newBuilder();
-    for (Partition part : getPartitions()) {
-      mpLocBuild.setPart(part);
-      mpLocBuild.setPsId(PSIdProto.newBuilder().setPsIndex(getServerIndex(part, conf.getInt(AngelConfiguration.ANGEL_PS_NUMBER, 1))).build());
-      mProtoBuilder.addMatrixPartLocation(mpLocBuild.build());
-    }
-    LOG.info("partition num: " + mProtoBuilder.getMatrixPartLocationCount());
-    // set attribute
-    Pair.Builder attrBuilder = Pair.newBuilder();
-    for (Map.Entry<String, String> entry : mContext.getAttributes().entrySet()) {
-      attrBuilder.setKey(entry.getKey());
-      attrBuilder.setValue(entry.getValue());
-      mProtoBuilder.addAttribute(attrBuilder.build());
-    }
-    return mProtoBuilder.build();
-  }
-
-  /**
-   * Gets partitions of matrix
-   *
-   * @return the partitions
-   */
+  @Override
   public List<Partition> getPartitions() {
     List<Partition> array = new ArrayList<Partition>();
     int id = 0;
+    int matrixId = mContext.getId();
     int row = mContext.getRowNum();
     int col = mContext.getColNum();
 
@@ -147,22 +89,10 @@ public class PSPartitioner {
     return array;
   }
 
-  /**
-   * Gets matrix id.
-   *
-   * @return the matrix id
-   */
-  public int getMatrixId() {
-    return matrixId;
-  }
-
-  /**
-   * generate an unique id for matrix.
-   *
-   * @return the int
-   */
-  public static final int generateMatrixId() {
-    return matrixGenerateIndex++;
+  @Override
+  public int assignPartToServer(int partId) {
+    int serverNum = conf.getInt(AngelConfiguration.ANGEL_PS_NUMBER, AngelConfiguration.DEFAULT_ANGEL_PS_NUMBER);
+    return partId % serverNum;
   }
 
   protected MatrixContext getMatrixContext() {

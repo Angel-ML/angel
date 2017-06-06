@@ -23,11 +23,27 @@ import com.tencent.angel.master.deploy.ContainerLauncherEventType;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.Token;
 
+/**
+ * Base class of Yarn container launch event.
+ */
 public class YarnContainerLauncherEvent extends ContainerLauncherEvent {
+  /**container id*/
   private ContainerId containerId;
+  
+  /**Yarn nodemanager address*/
   private String containerMgrAddress;
+  
+  /**token between master and the Yarn nodemanager*/
   private Token containerToken;
 
+  /**
+   * Create a YarnContainerLauncherEvent
+   * @param id task which the container is allocated to
+   * @param containerId container id
+   * @param containerMgrAddress Yarn nodemanager address
+   * @param containerToken token between master and the Yarn nodemanager
+   * @param type event type
+   */
   public YarnContainerLauncherEvent(Id id, ContainerId containerId, String containerMgrAddress,
       Token containerToken, ContainerLauncherEventType type) {
     super(type, id);
@@ -36,14 +52,26 @@ public class YarnContainerLauncherEvent extends ContainerLauncherEvent {
     this.containerToken = containerToken;
   }
   
+  /**
+   * Get container id
+   * @return container id
+   */
   public ContainerId getContainerId() {
     return containerId;
   }
 
+  /**
+   * Get Yarn nodemanager address
+   * @return Yarn nodemanager address
+   */
   public String getContainerMgrAddress() {
     return containerMgrAddress;
   }
 
+  /**
+   * Get token between master and the Yarn nodemanager
+   * @return token between master and the Yarn nodemanager
+   */
   public Token getContainerToken() {
     return containerToken;
   }

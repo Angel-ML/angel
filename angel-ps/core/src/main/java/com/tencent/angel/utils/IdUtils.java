@@ -22,7 +22,9 @@ import com.tencent.angel.exception.UnvalidIdStrException;
 import com.tencent.angel.psagent.PSAgentAttemptId;
 import com.tencent.angel.psagent.PSAgentId;
 
-
+/**
+ * Angel PS/Worker Id transform utils.
+ */
 public class IdUtils {
 
   public static PSAgentAttemptId convertToPSAgentAttemptId(String idStr) throws UnvalidIdStrException {

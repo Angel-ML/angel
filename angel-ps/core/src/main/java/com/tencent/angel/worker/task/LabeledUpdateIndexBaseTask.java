@@ -16,13 +16,11 @@
 
 package com.tencent.angel.worker.task;
 
-import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.feature.LabeledData;
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.vector.SparseDummyVector;
 import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.worker.WorkerContext;
 import com.tencent.angel.worker.storage.Reader;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 
@@ -55,7 +53,7 @@ public abstract class LabeledUpdateIndexBaseTask<KEYIN, VALUEIN> extends
       while (reader.nextKeyValue()) {
         LabeledData out = parse(reader.getCurrentKey(), reader.getCurrentValue());
         if (out != null) {
-          trainDataStorage.put(out);
+          dataBlock.put(out);
           if (updateIndexEnable) {
             TAbstractVector vector = out.getX();
             if (vector instanceof SparseDummyVector) {
@@ -68,7 +66,7 @@ public abstract class LabeledUpdateIndexBaseTask<KEYIN, VALUEIN> extends
         }
       }
 
-      trainDataStorage.flush();
+      dataBlock.flush();
     } catch (Exception e) {
       throw new AngelException("Pre-Process Error.", e);
     }

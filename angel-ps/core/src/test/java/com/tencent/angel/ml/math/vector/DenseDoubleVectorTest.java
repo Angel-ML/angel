@@ -8,10 +8,10 @@
  *
  * https://opensource.org/licenses/BSD-3-Clause
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is
- * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package com.tencent.angel.ml.math.vector;
@@ -105,29 +105,29 @@ public class DenseDoubleVectorTest {
     assertEquals(sum, vec_1.dot(vec));
   }
 
-//  @Test
-//  public void dotDenseFloatVector() throws Exception {
-//    int dim = 1000;
-//    Random random = new Random(System.currentTimeMillis());
-//
-//    double[] values = new double[dim];
-//    float[] values_1 = new float[dim];
-//    for (int i = 0; i < dim; i++) {
-//      values[i] = random.nextDouble();
-//      values_1[i] = random.nextFloat();
-//    }
-//
-//    DenseDoubleVector vec = new DenseDoubleVector(dim, values);
-//    TDoubleVector vec_1 = new DenseFloatVector(dim, values_1);
-//
-//    double sum = 0.0;
-//    for (int i = 0; i < dim; i++) {
-//      sum += values[i] * values_1[i];
-//    }
-//
-//    assertEquals(sum, vec.dot(vec_1));
-//
-//  }
+  // @Test
+  // public void dotDenseFloatVector() throws Exception {
+  // int dim = 1000;
+  // Random random = new Random(System.currentTimeMillis());
+  //
+  // double[] values = new double[dim];
+  // float[] values_1 = new float[dim];
+  // for (int i = 0; i < dim; i++) {
+  // values[i] = random.nextDouble();
+  // values_1[i] = random.nextFloat();
+  // }
+  //
+  // DenseDoubleVector vec = new DenseDoubleVector(dim, values);
+  // TDoubleVector vec_1 = new DenseFloatVector(dim, values_1);
+  //
+  // double sum = 0.0;
+  // for (int i = 0; i < dim; i++) {
+  // sum += values[i] * values_1[i];
+  // }
+  //
+  // assertEquals(sum, vec.dot(vec_1));
+  //
+  // }
 
   @Test
   public void dotSparseDoubleVector() throws Exception {
@@ -168,8 +168,7 @@ public class DenseDoubleVectorTest {
     for (int i = 0; i < 5; i++)
       dVec.set(i, i);
 
-    TDoubleVector sVec = new SparseDoubleSortedVector(5, new int[]{1, 2},
-        new double[]{2, 4});
+    TDoubleVector sVec = new SparseDoubleSortedVector(5, new int[] {1, 2}, new double[] {2, 4});
 
     assertEquals(10.0, dVec.dot(sVec));
 
@@ -217,11 +216,11 @@ public class DenseDoubleVectorTest {
     TAbstractVector vec_1 = new SparseDummyVector(dim);
     int nnz = random.nextInt(dim);
     int[] indexs = genIndexes(dim, nnz);
-    for (int idx: indexs)
+    for (int idx : indexs)
       ((SparseDummyVector) vec_1).set(idx, 1);
 
     double sum = 0.0;
-    for (int idx: indexs)
+    for (int idx : indexs)
       sum += vec.get(idx);
 
     assertEquals(sum, vec.dot(vec_1));
@@ -266,7 +265,7 @@ public class DenseDoubleVectorTest {
 
   @Test
   public void getValues() throws Exception {
-    DenseDoubleVector vec = new DenseDoubleVector(5, new double[]{1.0, 0.0, 3.0, 0.0, 5.0});
+    DenseDoubleVector vec = new DenseDoubleVector(5, new double[] {1.0, 0.0, 3.0, 0.0, 5.0});
 
     double[] values = vec.getValues();
 
@@ -286,7 +285,7 @@ public class DenseDoubleVectorTest {
 
   @Test
   public void nonZeroNumber() throws Exception {
-    DenseDoubleVector vec = new DenseDoubleVector(5, new double[]{1.0, 0.0, 3.0, 0.0, 5.0});
+    DenseDoubleVector vec = new DenseDoubleVector(5, new double[] {1.0, 0.0, 3.0, 0.0, 5.0});
 
     assertEquals(3, vec.nonZeroNumber());
   }
@@ -333,43 +332,42 @@ public class DenseDoubleVectorTest {
     for (int i = 0; i < dim; i++)
       assertEquals(oldValues[i] + 2 * values_2[i], vec_1.get(i));
   }
-  //@Test
-//  public void plusDenseFlaotVector() throws Exception {
-//    double[] value_1 = new double[]{0.1, 0.2, 0.3, 0.4, 0.5};
-//    double[] value_2 = new double[]{0.1f, 0.2f, 0.3f, 0.4f, 0.5f};
-//    DenseDoubleVector vec = new DenseDoubleVector(5, value_1);
-//    TDoubleVector vec_1 = new DenseFloatVector(5, value_2);
-//
-//    TDoubleVector vec_2 = vec.plus(vec_1);
-//    for (int i = 0; i < vec.size(); i++)
-//      assertEquals(value_1[i] + value_2[i], vec_2.get(i));
-//
-//
-//    TDoubleVector vec_3 = vec.plus(vec_1, 2.0);
-//
-//    for (int i = 0; i < vec.size(); i++)
-//      assertEquals(vec_3.get(i), value_1[i] + 2 * value_2[i]);
-//
-//    double[] oldValues = vec.getValues().clone();
-//
-//    vec.plusBy(vec_1);
-//
-//    for (int i = 0; i < vec.size(); i++)
-//      assertEquals(vec.get(i), oldValues[i] + vec_1.get(i));
-//
-//    oldValues = vec.getValues().clone();
-//
-//    vec.plusBy(vec_1, 3);
-//
-//    for (int i = 0; i < vec.size(); i++)
-//      assertEquals(vec.get(i), oldValues[i] + 3 * vec_1.get(i));
-//  }
+  // @Test
+  // public void plusDenseFlaotVector() throws Exception {
+  // double[] value_1 = new double[]{0.1, 0.2, 0.3, 0.4, 0.5};
+  // double[] value_2 = new double[]{0.1f, 0.2f, 0.3f, 0.4f, 0.5f};
+  // DenseDoubleVector vec = new DenseDoubleVector(5, value_1);
+  // TDoubleVector vec_1 = new DenseFloatVector(5, value_2);
+  //
+  // TDoubleVector vec_2 = vec.plus(vec_1);
+  // for (int i = 0; i < vec.size(); i++)
+  // assertEquals(value_1[i] + value_2[i], vec_2.get(i));
+  //
+  //
+  // TDoubleVector vec_3 = vec.plus(vec_1, 2.0);
+  //
+  // for (int i = 0; i < vec.size(); i++)
+  // assertEquals(vec_3.get(i), value_1[i] + 2 * value_2[i]);
+  //
+  // double[] oldValues = vec.getValues().clone();
+  //
+  // vec.plusBy(vec_1);
+  //
+  // for (int i = 0; i < vec.size(); i++)
+  // assertEquals(vec.get(i), oldValues[i] + vec_1.get(i));
+  //
+  // oldValues = vec.getValues().clone();
+  //
+  // vec.plusBy(vec_1, 3);
+  //
+  // for (int i = 0; i < vec.size(); i++)
+  // assertEquals(vec.get(i), oldValues[i] + 3 * vec_1.get(i));
+  // }
 
   @Test
   public void plusSparDoubleVector() throws Exception {
-    DenseDoubleVector vec = new DenseDoubleVector(5, new double[]{1, 2, 3, 4, 5});
-    TDoubleVector vec_1 = new SparseDoubleVector(2, new int[]{2, 4}, new double[]{1.0,
-        2.0});
+    DenseDoubleVector vec = new DenseDoubleVector(5, new double[] {1, 2, 3, 4, 5});
+    TDoubleVector vec_1 = new SparseDoubleVector(2, new int[] {2, 4}, new double[] {1.0, 2.0});
 
     TDoubleVector vec_2 = vec.plus(vec_1);
 
@@ -414,9 +412,9 @@ public class DenseDoubleVectorTest {
 
   @Test
   public void plusSparseDoubleSortedVector() throws Exception {
-    DenseDoubleVector vec = new DenseDoubleVector(5, new double[]{1, 2, 3, 4, 5});
-    TDoubleVector vec_1 = new SparseDoubleSortedVector(2, new int[]{2, 4}, new double[]{1.0,
-        2.0});
+    DenseDoubleVector vec = new DenseDoubleVector(5, new double[] {1, 2, 3, 4, 5});
+    TDoubleVector vec_1 = new SparseDoubleSortedVector(5, new int[] {0, 1, 2, 3, 4},
+        new double[] {0.0, 0.0, 1.0, 0.0, 2.0});
 
     TDoubleVector vec_2 = vec.plus(vec_1);
 
@@ -453,7 +451,7 @@ public class DenseDoubleVectorTest {
 
   @Test
   public void plusSparseDummyVector() throws Exception {
-    DenseDoubleVector vec = new DenseDoubleVector(5, new double[]{1, 2, 3, 4, 5});
+    DenseDoubleVector vec = new DenseDoubleVector(5, new double[] {1, 2, 3, 4, 5});
     TAbstractVector vec_1 = new SparseDummyVector(5);
     ((SparseDummyVector) vec_1).set(2, 1);
     ((SparseDummyVector) vec_1).set(4, 1);
@@ -477,20 +475,20 @@ public class DenseDoubleVectorTest {
 
   @Test
   public void size() throws Exception {
-    DenseDoubleVector vec = new DenseDoubleVector(5, new double[]{1.0, 0.0, 3.0, 0.0, 5.0});
+    DenseDoubleVector vec = new DenseDoubleVector(5, new double[] {1.0, 0.0, 3.0, 0.0, 5.0});
 
     assertEquals(5, vec.size());
   }
 
   @Test
   public void sparsity() throws Exception {
-    DenseDoubleVector vec = new DenseDoubleVector(5, new double[]{1.0, 0.0, 3.0, 0.0, 5.0});
+    DenseDoubleVector vec = new DenseDoubleVector(5, new double[] {1.0, 0.0, 3.0, 0.0, 5.0});
     assertEquals(0.6, vec.sparsity(), 0.0);
   }
 
   @Test
   public void squaredNorm() throws Exception {
-    DenseDoubleVector vec = new DenseDoubleVector(5, new double[]{1.0, 0.0, 3.0, 0.0, 5.0});
+    DenseDoubleVector vec = new DenseDoubleVector(5, new double[] {1.0, 0.0, 3.0, 0.0, 5.0});
 
     assertEquals(35, vec.squaredNorm(), 0.0);
   }
@@ -498,7 +496,7 @@ public class DenseDoubleVectorTest {
 
   @Test
   public void times() throws Exception {
-    DenseDoubleVector vec = new DenseDoubleVector(5, new double[]{1.0, 0.0, 3.0, 0.0, 5.0});
+    DenseDoubleVector vec = new DenseDoubleVector(5, new double[] {1.0, 0.0, 3.0, 0.0, 5.0});
     TDoubleVector vec_1 = vec.times(2.0);
     assertEquals(2.0, vec_1.get(0));
     assertEquals(0.0, vec_1.get(1));
@@ -509,7 +507,7 @@ public class DenseDoubleVectorTest {
 
   @Test
   public void timesBy() throws Exception {
-    DenseDoubleVector vec = new DenseDoubleVector(5, new double[]{1.0, 0.0, 3.0, 0.0, 5.0});
+    DenseDoubleVector vec = new DenseDoubleVector(5, new double[] {1.0, 0.0, 3.0, 0.0, 5.0});
 
     vec.timesBy(2.0);
 

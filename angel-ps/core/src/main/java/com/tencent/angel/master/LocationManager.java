@@ -97,7 +97,7 @@ public class LocationManager {
 
   /**
    * set location for a psagent
-   * @param psId parameter server id
+   * @param psAgentId psagent id
    * @param location location(host and port)
    */
   public void setPSAgentLocation(PSAgentId psAgentId, Location location) {

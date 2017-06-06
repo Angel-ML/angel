@@ -18,9 +18,12 @@
       		<outputDirectory>conf</outputDirectory>
     	</fileSet>
     	<fileSet>
-      		<directory>${project.basedir}/../sbin</directory>
-      		<outputDirectory>sbin</outputDirectory>
-      		<fileMode>0755</fileMode>
+      		<directory>${project.basedir}/../data</directory>
+      		<outputDirectory>data</outputDirectory>
+    	</fileSet>
+    	<fileSet>
+      		<directory>${project.basedir}/../bin</directory>
+      		<outputDirectory>bin</outputDirectory>
     	</fileSet>
     </fileSets>
 </assembly>

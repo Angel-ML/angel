@@ -28,7 +28,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.log4j.PropertyConfigurator;
 import org.junit.After;
@@ -80,7 +79,7 @@ public class MasterRecoverTest {
   private PSAttemptId psAttempt0Id;
 
   static {
-    PropertyConfigurator.configure("../log4j.properties");
+    PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
   @Before
@@ -131,8 +130,8 @@ public class MasterRecoverTest {
     mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
     angelClient.addMatrix(mMatrix);
 
-    angelClient.submit();
-    angelClient.start();
+    angelClient.startPSServer();
+    angelClient.run();
     Thread.sleep(5000);
     group0Id = new WorkerGroupId(0);
     worker0Id = new WorkerId(group0Id, 0);
@@ -237,6 +236,9 @@ public class MasterRecoverTest {
 
     Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
     LOG.info("worker=" + worker);
+    LOG.info("worker.getTaskManager()=" + worker.getTaskManager());
+    LOG.info("worker.getTaskManager().getRunningTask()=" + worker.getTaskManager().getRunningTask().size());
+    
     com.tencent.angel.worker.task.TaskContext task0Context =
         worker.getTaskManager().getRunningTask().get(task0Id).getTaskContext();
     com.tencent.angel.worker.task.TaskContext task1Context =

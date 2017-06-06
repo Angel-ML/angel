@@ -17,7 +17,14 @@
 package com.tencent.angel.master.workerclient;
 
 import com.google.protobuf.ServiceException;
-
+/**
+ * Master to worker rpc interface.
+ */
 public interface WorkerClientInterface {
+  /**
+   * Get thread stack of worker attempt
+   * @return thread stack
+   * @throws ServiceException
+   */
   String getThreadStack() throws ServiceException;
 }

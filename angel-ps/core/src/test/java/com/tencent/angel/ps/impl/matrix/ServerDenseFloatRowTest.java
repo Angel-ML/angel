@@ -41,7 +41,7 @@ public class ServerDenseFloatRowTest {
   private byte[] buffer;
 
   static {
-    PropertyConfigurator.configure("../log4j.properties");
+    PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
   @Before
@@ -72,7 +72,6 @@ public class ServerDenseFloatRowTest {
 
   @Test
   public void testUpdate() throws Exception {
-    LOG.info("===========================test T_DOUBLE_DENSE===============================");
     serverDenseFloatRow = new ServerDenseFloatRow(rowId, startCol, endCol);
     ByteBuf buf = Unpooled.buffer(16);
     buf.writeFloat((float) 0.00);
@@ -87,7 +86,6 @@ public class ServerDenseFloatRowTest {
 
     serverDenseFloatRow = new ServerDenseFloatRow(rowId, startCol, endCol);
     buf = Unpooled.buffer(0);
-    LOG.info(buf);
     buf.writeInt(0);
     buf.writeInt(2);
     buf.writeFloat((float) 1.00);

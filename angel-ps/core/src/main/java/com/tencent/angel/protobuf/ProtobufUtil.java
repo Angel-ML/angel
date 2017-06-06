@@ -22,10 +22,12 @@ import com.google.protobuf.ServiceException;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.common.Location;
+import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.exception.StandbyException;
 import com.tencent.angel.master.worker.attempt.WorkerAttempt;
 import com.tencent.angel.master.worker.worker.AMWorker;
 import com.tencent.angel.master.worker.workergroup.AMWorkerGroup;
+import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.protobuf.generated.MLProtos.GetMatrixInfoResponse;
@@ -100,7 +102,7 @@ public final class ProtobufUtil {
   static Map<PSAgentAttemptIdProto, PSAgentAttemptId> protoToPSAgentAttemptIdMap =
       new ConcurrentHashMap<PSAgentAttemptIdProto, PSAgentAttemptId>();
   static Map<PSAgentAttemptId, PSAgentAttemptIdProto> psAgentAttemptIdToProtoMap =
-      new ConcurrentHashMap<PSAgentAttemptId, PSAgentAttemptIdProto>(); 
+      new ConcurrentHashMap<PSAgentAttemptId, PSAgentAttemptIdProto>();
   
   public static TaskId convertToId(TaskIdProto idProto) {
     TaskId id = protoToTaskIdMap.get(idProto);
@@ -332,7 +334,7 @@ public final class ProtobufUtil {
     builder.setWorkerGroupId(convertToIdProto(group.getId()));
     builder.setLeaderId(convertToIdProto(group.getLeader()));
 
-    for (AMWorker w : group.getWorkers()) {
+    for (AMWorker w : group.getWorkerSet()) {
       builder.addWorkers(buildWorkerMetaProto(w));
     }
 
@@ -384,5 +386,33 @@ public final class ProtobufUtil {
   public static SplitClassification getSplitClassification(List<SplitInfoProto> splitProtos,
       Configuration conf) throws ClassNotFoundException, IOException {
     return SerdeUtils.deSerilizeSplitProtos(splitProtos, conf);
+  }
+
+  public static MLProtos.MatrixProto generateMatrixProto(MatrixContext mContext, List<MLProtos.Partition> partitions) {
+    MLProtos.MatrixProto.Builder mProtoBuilder = MLProtos.MatrixProto.newBuilder();
+    mProtoBuilder.setName(mContext.getName());
+    mProtoBuilder.setId(mContext.getId());
+    mProtoBuilder.setRowNum(mContext.getRowNum());
+    mProtoBuilder.setColNum(mContext.getColNum());
+    mProtoBuilder.setRowType(mContext.getRowType());
+    // set MatrixPartitionLocation
+    MLProtos.MatrixPartitionLocation.Builder mpLocBuild = MLProtos.MatrixPartitionLocation.newBuilder();
+
+    for (Partition part : partitions) {
+      mpLocBuild.setPart(part);
+      mpLocBuild.setPsId(PSIdProto.newBuilder().setPsIndex(mContext.getPartitioner().assignPartToServer(part.getPartitionId())).build());
+      mProtoBuilder.addMatrixPartLocation(mpLocBuild.build());
+    }
+    LOG.info("Matrix " + mProtoBuilder.getName()+ " partition num: " + mProtoBuilder
+      .getMatrixPartLocationCount());
+
+    // set attribute
+    Pair.Builder attrBuilder = Pair.newBuilder();
+    for (Map.Entry<String, String> entry : mContext.getAttributes().entrySet()) {
+      attrBuilder.setKey(entry.getKey());
+      attrBuilder.setValue(entry.getValue());
+      mProtoBuilder.addAttribute(attrBuilder.build());
+    }
+    return mProtoBuilder.build();
   }
 }

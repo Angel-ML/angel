@@ -16,6 +16,19 @@
 
 package com.tencent.angel.master.ps;
 
+/**
+ * PS manager event type.
+ */
 public enum ParameterServerManagerEventType {
-  COMMIT, PARAMETERSERVER_DONE, PARAMETERSERVER_KILLED, PARAMETERSERVER_FAILED
+  /**notify all parameter servers to write matrices to files*/
+  COMMIT, 
+  
+  /**a ps run successfully*/
+  PARAMETERSERVER_DONE, 
+  
+  /**a ps is killed*/
+  PARAMETERSERVER_KILLED, 
+  
+  /**a ps is failed*/
+  PARAMETERSERVER_FAILED
 }

@@ -8,10 +8,10 @@
  *
  * https://opensource.org/licenses/BSD-3-Clause
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is
- * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package com.tencent.angel.psagent;
@@ -34,11 +34,11 @@ import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex;
  */
 public class MatrixPartitionRouter {
   private static final Log LOG = LogFactory.getLog(MatrixPartitionRouter.class);
-  
-  /**matrix partition key to server that holds the partition map*/
+
+  /** matrix partition key to server that holds the partition map */
   private final ConcurrentHashMap<PartitionKey, ParameterServerId> partitionPSIndex;
-  
-  /**matrix id to the partitions of the matrix map*/
+
+  /** matrix id to the partitions of the matrix map */
   private final ConcurrentHashMap<Integer, List<PartitionKey>> matrixToPartitionList;
 
   /**
@@ -134,9 +134,42 @@ public class MatrixPartitionRouter {
           List<Integer> indexList = partToRowIndexesMap.get(partitionKey);
           if (indexList == null) {
             indexList = new ArrayList<Integer>();
-            partToRowIndexesMap.put(partitionKey, indexList);
-            indexList.add(rowIndexes[i]);
+            partToRowIndexesMap.put(partitionKey, indexList);           
           }
+          indexList.add(rowIndexes[i]);
+        }
+      }
+    }
+
+    return partToRowIndexesMap;
+  }
+  
+  /**
+   * Get the partitions the rows in.
+   * 
+   * @param matrixId matrix id
+   * @param rowIndexes row indexes
+   * @return Map<PartitionKey, List<Integer>> partitions to the rows contained in the partition map
+   */
+  public Map<PartitionKey, List<Integer>> getPartitionKeyRowIndexesMap(int matrixId,
+      List<Integer> rowIndexes) {
+    Map<PartitionKey, List<Integer>> partToRowIndexesMap =
+        new HashMap<PartitionKey, List<Integer>>();
+    int size = rowIndexes.size();
+    for (int i = 0; i < size; i++) {
+      Iterator<PartitionKey> iter = partitionPSIndex.keySet().iterator();
+      while (iter.hasNext()) {
+        PartitionKey partitionKey = iter.next();
+        if (partitionKey.getMatrixId() == matrixId && partitionKey.getStartRow() <= rowIndexes.get(i)
+            && partitionKey.getEndRow() > rowIndexes.get(i)) {
+
+          List<Integer> indexList = partToRowIndexesMap.get(partitionKey);
+          if (indexList == null) {
+            indexList = new ArrayList<Integer>();
+            partToRowIndexesMap.put(partitionKey, indexList);            
+          }
+          
+          indexList.add(rowIndexes.get(i));
         }
       }
     }
@@ -152,7 +185,7 @@ public class MatrixPartitionRouter {
    * @return Map<PartitionKey, List<Integer>> partitions to the rows contained in the partition map
    */
   public Map<PartitionKey, List<RowIndex>> getPartitionKeyRowIndexMap(RowIndex rowIndex,
-                                                                      int batchNumber) {
+      int batchNumber) {
     Map<PartitionKey, List<RowIndex>> partToRowIndexMap =
         new TreeMap<PartitionKey, List<RowIndex>>();
     if (rowIndex.getRowIds() == null) {
@@ -213,7 +246,6 @@ public class MatrixPartitionRouter {
         ret++;
       }
     }
-
     return ret;
   }
 
@@ -235,7 +267,7 @@ public class MatrixPartitionRouter {
   public Map<Integer, List<PartitionKey>> getMatrixToPartMap() {
     return matrixToPartitionList;
   }
-  
+
   /**
    * Clear the router table.
    */

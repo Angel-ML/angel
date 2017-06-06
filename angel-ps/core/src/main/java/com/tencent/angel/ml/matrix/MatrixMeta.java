@@ -133,12 +133,22 @@ public class MatrixMeta {
    * Gets attribute.
    *
    * @param key   the key
-   * @param value the value
+   * @param value the default value
    * @return the attribute
    */
   public String getAttribute(String key, String value) {
     if (!attributes.containsKey(key))
       return value;
+    return attributes.get(key);
+  }
+  
+  /**
+   * Gets attribute.
+   *
+   * @param key   the key
+   * @return the attribute
+   */
+  public String getAttribute(String key) {
     return attributes.get(key);
   }
 

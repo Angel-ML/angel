@@ -115,7 +115,7 @@ public class DenseDoubleMatrixTest {
     assertEquals(1.0, vec.get(0));
     assertEquals(2.0, vec.get(1));
 
-    DenseDoubleMatrix mat_1 = new DenseDoubleMatrix(2, 2);
+    DenseDoubleMatrix mat_1 = new DenseDoubleMatrix(2, 2, new double[2][2]);
     TDoubleVector vec_1 = new DenseDoubleVector(2, new double[]{1.0, 2.0});
     vec_1.setRowId(0);
     mat_1.plusBy(vec_1);
@@ -124,8 +124,6 @@ public class DenseDoubleMatrixTest {
 
     assertEquals(1.0, vec_2.get(0));
     assertEquals(2.0, vec_2.get(1));
-    assertEquals(0.0, mat_1.getTDoubleVector(1).get(0));
-    assertEquals(0.0, mat_1.getTDoubleVector(1).get(1));
   }
 
   @Test

@@ -109,8 +109,8 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
     failedAttempts = new HashSet<WorkerAttemptId>();
     
     maxAttempts =
-        context.getConf().getInt(AngelConfiguration.ANGEL_PS_MAX_ATTEMPTS,
-            AngelConfiguration.DEFAULT_PS_MAX_ATTEMPTS);
+        context.getConf().getInt(AngelConfiguration.ANGEL_WORKER_MAX_ATTEMPTS,
+            AngelConfiguration.DEFAULT_WORKER_MAX_ATTEMPTS);
   }
 
   private static final KillNewWorkertTransition KILL_NEW_TRANSITION =

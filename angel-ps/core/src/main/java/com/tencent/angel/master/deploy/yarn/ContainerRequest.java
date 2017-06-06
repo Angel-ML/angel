@@ -20,15 +20,33 @@ import com.tencent.angel.common.Id;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
 
-
+/**
+ * Resource context for a Yarn container.
+ */
 class ContainerRequest {
+  /**the task that asks for the container*/
   final Id id;
+  
+  /**container resource quota*/
   final Resource capability;
+  
+  /**the expected host addresses, it used to local calculation*/
   final String[] hosts;
+  
+  /**the rack addresses for the expected hosts*/
   final String[] racks;
+  
+  /**resource priority*/
   final Priority priority;
 
-
+  /**
+   * Create a ContainerRequest
+   * @param id the task that asks for the container
+   * @param capability container resource quota
+   * @param hosts the expected host addresses
+   * @param racks the rack addresses for the expected hosts
+   * @param priority resource priority
+   */
   public ContainerRequest(Id id, Resource capability, String[] hosts, String[] racks,
       Priority priority) {
     this.id = id;
@@ -38,6 +56,12 @@ class ContainerRequest {
     this.priority = priority;
   }
 
+  /**
+   * Create a ContainerRequest
+   * @param id the task that asks for the container
+   * @param capability container resource quota
+   * @param priority resource priority
+   */
   public ContainerRequest(Id id, Resource capability, Priority priority) {
     this(id, capability, null, null, priority);
   }

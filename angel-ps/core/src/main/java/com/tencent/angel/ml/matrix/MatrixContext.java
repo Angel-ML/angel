@@ -18,10 +18,9 @@ package com.tencent.angel.ml.matrix;
 
 import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.conf.MatrixConfiguration;
+import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos;
-import com.tencent.angel.protobuf.generated.MLProtos.PSIdProto;
 import com.tencent.angel.protobuf.generated.MLProtos.RowType;
-import com.tencent.angel.ps.HashPSPartitioner;
 import com.tencent.angel.ps.PSPartitioner;
 
 import org.apache.commons.logging.Log;
@@ -30,15 +29,19 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * MatrixContext is used for user to set Matrix information.
  */
 public class MatrixContext {
   private final static Log LOG = LogFactory.getLog(MatrixContext.class);
+
+  private final static AtomicInteger idGenerator = new AtomicInteger(0);
 
   /** Matrix readable name */
   private String name;
@@ -67,6 +70,9 @@ public class MatrixContext {
   /** Others key value attributes for this matrix. */
   private Map<String, String> attributes;
 
+  /** Matrix id */
+  private int matrixId;
+
   /**
    * Creates a new Matrix context by default.
    */
@@ -87,7 +93,8 @@ public class MatrixContext {
     this.maxColNumInBlock = maxColNumInBlock;
     this.rowType = MLProtos.RowType.T_DOUBLE_DENSE;
     this.attributes = new HashMap<>();
-    this.partitioner = new HashPSPartitioner();
+    this.partitioner = new PSPartitioner();
+    this.matrixId = -1;
   }
 
   /**
@@ -245,14 +252,27 @@ public class MatrixContext {
    * @throws IOException the io exception
    */
   public MLProtos.MatrixProto buildMatProto(Configuration conf) throws IOException {
+    matrixId = idGenerator.incrementAndGet();
     String loadPath = attributes.get(MatrixConfiguration.MATRIX_LOAD_PATH);
-
+    partitioner.init(this, conf);
+    List<MLProtos.Partition> partitions;
     if (loadPath != null) {
-      return loadPartitionInfoFromHDFS(loadPath, conf);
+      partitions = loadPartitionInfoFromHDFS(loadPath, conf);
     } else {
-      partitioner.setup(this, conf);
-      return partitioner.generateMatrixProto();
+      partitions = partitioner.getPartitions();
     }
+
+    String errorInfo = checkMatrixParams();
+    if (!errorInfo.isEmpty()) {
+      LOG.error("build matrix failed:" + errorInfo);
+      throw new IOException("matrix parameters are not valid:" + errorInfo);
+    }
+
+    if(partitions == null || partitions.isEmpty()) {
+      throw new IOException("matrix partitions are not valid.");
+    }
+
+    return ProtobufUtil.generateMatrixProto(this, partitions);
   }
 
   /**
@@ -266,16 +286,40 @@ public class MatrixContext {
     return Integer.parseInt(parts[parts.length - 1]);
   }
 
+  private String checkMatrixParams() {
+    StringBuilder sb = new StringBuilder();
+    if(name == null || name.isEmpty()) {
+      sb.append("matrix name must not be empty");
+      sb.append("\n");
+    }
+    if(rowNum <= 0) {
+      sb.append("matrix row number must > 0, but is " + rowNum);
+      sb.append("\n");
+    }
+    if(colNum <= 0) {
+      sb.append("matrix column number must > 0, but is " + colNum);
+      sb.append("\n");
+    }
+    if(rowNum > 0 && maxRowNumInBlock > rowNum) {
+      sb.append("matrix block row number must > 0 and < " + rowNum + ", but is " + maxRowNumInBlock);
+      sb.append("\n");
+    }
+    if(colNum > 0 && maxColNumInBlock > colNum) {
+      sb.append("matrix block column number must > 0 and < " + colNum + ", but is " + maxColNumInBlock);
+    }
+    return sb.toString();
+  }
+
 
   /**
    * Load matrix proto from hdfs.
    *
    * @param path the path
    * @param conf the conf
-   * @return the ml protos . matrix proto
+   * @return matrix partitions
    * @throws IOException the io exception
    */
-  private MLProtos.MatrixProto loadPartitionInfoFromHDFS(String path, Configuration conf) throws IOException {
+  private List<MLProtos.Partition> loadPartitionInfoFromHDFS(String path, Configuration conf) throws IOException {
 
     Path inputPath = new Path(path, name);
     FileSystem fs  = inputPath.getFileSystem(conf);
@@ -293,16 +337,11 @@ public class MatrixContext {
       throw new IOException("there are no partition files in " + inputPath);
     }
 
-    MLProtos.MatrixProto.Builder builder = MLProtos.MatrixProto.newBuilder();
-    builder.setName(name);
-    int matId = PSPartitioner.generateMatrixId();
-    builder.setId(matId);
-    builder.setRowType(rowType);
-
+    List<MLProtos.Partition> matrixPartitions = new ArrayList<>();
     int hdfsRowNum = Integer.MIN_VALUE;
     int hdfsColNum = Integer.MIN_VALUE;
 
-    int psNum = conf.getInt(AngelConfiguration.ANGEL_PS_NUMBER, 1);
+    int psNum = conf.getInt(AngelConfiguration.ANGEL_PS_NUMBER, AngelConfiguration.DEFAULT_ANGEL_PS_NUMBER);
 
     for (int i = 0; i < statuses.length; i ++) {
       FSDataInputStream in = fs.open(statuses[i].getPath());
@@ -330,41 +369,32 @@ public class MatrixContext {
         hdfsColNum = endCol;
 
       MLProtos.Partition.Builder partBuilder = MLProtos.Partition.newBuilder();
-      partBuilder.setMatrixId(matId);
+      partBuilder.setMatrixId(matrixId);
       partBuilder.setPartitionId(pid);
       partBuilder.setStartRow(startRow);
       partBuilder.setStartCol(startCol);
       partBuilder.setEndRow(endRow);
       partBuilder.setEndCol(endCol);
-      MLProtos.Partition partition = partBuilder.build();
+      matrixPartitions.add(partBuilder.build());
 
       LOG.info(String.format("read partition pid=%d startRow=%d startCol=%d endRow=%d endCol=%d",
               pid, startRow, startCol, endRow, endCol));
-
-      MLProtos.MatrixPartitionLocation.Builder locBuilder = MLProtos.MatrixPartitionLocation.newBuilder();
-      locBuilder.setPart(partition);
-      locBuilder.setPsId(PSIdProto.newBuilder().setPsIndex(partitioner.getServerIndex(partition, psNum)).build());
-      builder.addMatrixPartLocation(locBuilder.build());
     }
 
     if (hdfsRowNum != rowNum) {
       LOG.warn(String.format("parsed row num %d while set row num %d", hdfsRowNum, rowNum));
+      rowNum = hdfsRowNum;
     }
 
     if (hdfsColNum != colNum) {
       LOG.warn(String.format("parsed col num %d while set col num %d", hdfsColNum, colNum));
+      colNum = hdfsColNum;
     }
 
-    builder.setRowNum(hdfsRowNum);
-    builder.setColNum(hdfsColNum);
+    return matrixPartitions;
+  }
 
-    MLProtos.Pair.Builder attrBuilder = MLProtos.Pair.newBuilder();
-    for (Map.Entry<String, String> entry : attributes.entrySet()) {
-      attrBuilder.setKey(entry.getKey());
-      attrBuilder.setValue(entry.getValue());
-      builder.addAttribute(attrBuilder.build());
-    }
-
-    return builder.build();
+  public int getId() {
+    return matrixId;
   }
 }

@@ -19,15 +19,27 @@ package com.tencent.angel.master.ps.attempt;
 import com.tencent.angel.common.Location;
 import com.tencent.angel.ps.PSAttemptId;
 
+/**
+ * A ps attempt register to master.
+ */
 public class PSAttemptRegisterEvent extends PSAttemptEvent {
   /**the ps attempt location(ip and listening port)*/
   private final Location location;
 
+  /**
+   * Create a PSAttemptRegisterEvent
+   * @param psAttemptId ps attempt id
+   * @param location location
+   */
   public PSAttemptRegisterEvent(PSAttemptId psAttemptId, Location location) {
     super(PSAttemptEventType.PA_REGISTER, psAttemptId);
     this.location = location;
   }
 
+  /**
+   * Get location
+   * @return location
+   */
   public Location getLocation() {
     return location;
   }

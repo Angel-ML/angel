@@ -41,20 +41,51 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Matrices committer in Master. After all parameter servers write the partitions of matrices to files in
+ * temporary output directory, it rename the temporary output directory to the final output
+ * directory.
+ *
+ */
 public class AMMatrixCommitter extends AbstractService {
-  private static final Log LOG = LogFactory.getLog(App.class);
+  private static final Log LOG = LogFactory.getLog(AMMatrixCommitter.class);
+  
+  /**master context*/
   private final AMContext context;
+  
+  /**final output path*/
   private final Path outputPath;
+  
+  /**temporary output path*/
   private final Path tmpOutputPath;
+  
+  /**temporary combine path*/
   private Path tmpCombinePath;
+  
+  /**the dispatcher of commit tasks*/
   private Thread commitDispatchThread;
+  
+  /**commit tasks pool*/
   private ExecutorService committerPool;
+  
+  /**Is stop the dispatcher and commit tasks*/
   private final AtomicBoolean stopped;
+  
+  /**commit task list*/
   private final List<CommitTask> committers;
+  
+  /**max wait time*/
   private int waitTimeMS;
+  
   private FileSystem fs;
   private static String resultDir = "result";
 
+  /**
+   * Create a AMMatrixCommitter
+   * @param context master context
+   * @param outputPath the final output directory
+   * @param tmpOutputPath temporary output directory
+   */
   public AMMatrixCommitter(AMContext context, Path outputPath, Path tmpOutputPath) {
     super(AMMatrixCommitter.class.getName());
     this.context = context;
@@ -169,7 +200,7 @@ public class AMMatrixCommitter extends AbstractService {
     context.getEventHandler().handle(new InternalErrorEvent(context.getApplicationId(), errorLog));
   }
 
-  public class CommitTask implements Runnable {
+  private class CommitTask implements Runnable {
 
     private final AMParameterServer ps;
     private boolean success = false;
@@ -198,16 +229,8 @@ public class AMMatrixCommitter extends AbstractService {
       return success;
     }
 
-    public void setSuccess(boolean success) {
-      this.success = success;
-    }
-
     public String getErrorLog() {
       return errorLog;
-    }
-
-    public AMParameterServer getPs() {
-      return ps;
     }
   }
 }

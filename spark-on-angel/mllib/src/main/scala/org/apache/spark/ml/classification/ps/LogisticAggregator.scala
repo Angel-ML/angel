@@ -1,3 +1,45 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
+/**
+ *
+ * This class is a copy of LogisticRegression.scala in org.apache.spark.ml.classification package
+ * of spark 2.1.0 MLlib.
+ *
+ * Based on the original version, we change the way of aggregating the metrics with Angel PS Vector
+ */
+
 package org.apache.spark.ml.classification.ps
 
 import org.apache.spark.internal.Logging
@@ -5,7 +47,7 @@ import org.apache.spark.ml.feature.Instance
 import org.apache.spark.ml.linalg.Vector
 import org.apache.spark.mllib.util.MLUtils
 
-import com.tencent.angel.spark.{PSClient, PSVectorProxy}
+import com.tencent.angel.spark.models.PSModelProxy
 
 /**
  * LogisticAggregator computes the gradient and loss for binary or multinomial logistic (softmax)
@@ -167,13 +209,13 @@ import com.tencent.angel.spark.{PSClient, PSVectorProxy}
  * since this form is optimal for the matrix operations used for prediction.
  */
 private class LogisticAggregator(
-    bcCoefficients: PSVectorProxy,
-    featureStd: PSVectorProxy,
-    numClasses: Int,
-    val numFeatures: Int,
-    weightSum: Double,
-    fitIntercept: Boolean,
-    multinomial: Boolean) extends Serializable with Logging {
+                                  bcCoefficients: PSModelProxy,
+                                  featureStd: PSModelProxy,
+                                  numClasses: Int,
+                                  val numFeatures: Int,
+                                  weightSum: Double,
+                                  fitIntercept: Boolean,
+                                  multinomial: Boolean) extends Serializable with Logging {
 
   private val numFeaturesPlusIntercept = if (fitIntercept) numFeatures + 1 else numFeatures
   private val coefficientSize = bcCoefficients.numDimensions
@@ -207,12 +249,12 @@ private class LogisticAggregator(
       weight: Double,
       label: Double): Unit = {
 
-    val localCoefficients = bcCoefficients.mkLocal().get()
+    val localCoefficients = bcCoefficients.mkRemote().pull()
     val deltaGradient = Array.ofDim[Double](coefficientSize)
     val margin = - {
       var sum = 0.0
       features.foreachActive { (index, value) =>
-        if (featureStd.mkLocal().get().apply(index * numCoefficientSets) != 0 && value != 0.0) {
+        if (featureStd.mkRemote().pull().apply(index * numCoefficientSets) != 0 && value != 0.0) {
           sum += localCoefficients(index) * value
         }
       }
@@ -232,7 +274,7 @@ private class LogisticAggregator(
       deltaGradient(numFeaturesPlusIntercept - 1) = multiplier
     }
 
-    PSClient.get.increment(gradientPSKey, deltaGradient.map(_ / weightSum))
+    gradientPSKey.mkRemote().increment(deltaGradient.map(_ / weightSum))
 
     if (label > 0) {
       // The following is equivalent to log(1 + exp(margin)) but more numerically stable.
@@ -252,7 +294,7 @@ private class LogisticAggregator(
       Note: this can still be used when numClasses = 2 for binary
       logistic regression without pivoting.
      */
-    val localCoefficients = bcCoefficients.mkLocal().get()
+    val localCoefficients = bcCoefficients.mkRemote().pull()
     val deltaGradient = Array.ofDim[Double](coefficientSize)
 
     // marginOfLabel is margins(label) in the formula
@@ -302,7 +344,7 @@ private class LogisticAggregator(
       multipliers(i) = multipliers(i) / sum - (if (label == i) 1.0 else 0.0)
     }
     features.foreachActive { (index, value) =>
-      if (featureStd.mkLocal().get().apply(index * numCoefficientSets) != 0.0 && value != 0.0) {
+      if (featureStd.mkRemote().pull().apply(index * numCoefficientSets) != 0.0 && value != 0.0) {
         var j = 0
         while (j < numClasses) {
           deltaGradient(index * numClasses + j) =
@@ -318,7 +360,7 @@ private class LogisticAggregator(
         i += 1
       }
     }
-    PSClient.get.increment(gradientPSKey, deltaGradient.map(_ / weightSum))
+    gradientPSKey.mkRemote().increment(deltaGradient.map(_ / weightSum))
 
     val loss = if (maxMargin > 0) {
       math.log(sum) - marginOfLabel + maxMargin
@@ -372,7 +414,7 @@ private class LogisticAggregator(
     lossSum / weightSum
   }
 
-  def gradient: PSVectorProxy = {
+  def gradient: PSModelProxy = {
     gradientPSKey
   }
 }

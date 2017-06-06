@@ -32,6 +32,7 @@ import com.tencent.angel.master.deploy.local.LocalContainerLauncherEvent;
 import com.tencent.angel.master.deploy.yarn.ContainerRemoteLaunchEvent;
 import com.tencent.angel.master.deploy.yarn.YarnContainerAllocatorEvent;
 import com.tencent.angel.master.deploy.yarn.YarnContainerLauncherEvent;
+import com.tencent.angel.master.deploy.yarn.YarnContainerRequestEvent;
 import com.tencent.angel.master.yarn.util.AngelApps;
 import com.tencent.angel.psagent.PSAgentAttemptId;
 
@@ -363,8 +364,7 @@ public class PSAgentAttempt implements EventHandler<PSAgentAttemptEvent> {
 
       } else {
         allocatorEvent =
-            new YarnContainerAllocatorEvent(attempt.getId(),
-                ContainerAllocatorEventType.CONTAINER_REQ, attempt.getContext().getPSAgentManager()
+            new YarnContainerRequestEvent(attempt.getId(), attempt.getContext().getPSAgentManager()
                     .getPsAgentResource(), attempt.getContext().getPSAgentManager()
                     .getPsAgentPriority(), new String[] {attempt.getContext().getPSAgentManager()
                     .getPsAgent(attempt.getId().getPsAgentId()).getLocation().getIp()});
@@ -488,7 +488,7 @@ public class PSAgentAttempt implements EventHandler<PSAgentAttemptEvent> {
       } else {
         allocatorEvent =
             new YarnContainerAllocatorEvent(attempt.getId(),
-                ContainerAllocatorEventType.CONTAINER_DEALLOCATE);
+                ContainerAllocatorEventType.CONTAINER_DEALLOCATE, attempt.context.getPSAgentManager().getPsAgentPriority());
       }
       attempt.getContext().getEventHandler().handle(allocatorEvent);
     }
@@ -687,8 +687,6 @@ public class PSAgentAttempt implements EventHandler<PSAgentAttemptEvent> {
         resourceModificationTime);
   }
 
-
-  @SuppressWarnings("deprecation")
   static ContainerLaunchContext createContainerLaunchContext(
       Map<ApplicationAccessType, String> applicationACLs, Configuration conf,
       PSAgentAttemptId attemptId, final ApplicationId appid, MasterService masterService,

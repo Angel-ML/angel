@@ -20,20 +20,18 @@ import com.tencent.angel.client.AngelClient;
 import com.tencent.angel.client.AngelClientFactory;
 import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.conf.MatrixConfiguration;
-import com.tencent.angel.example.ModelWriteTask;
 import com.tencent.angel.ml.feature.LabeledData;
 import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.ml.model.AlgorithmModel;
+import com.tencent.angel.ml.model.MLModel;
 import com.tencent.angel.ml.model.PSModel;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.worker.predict.PredictResult;
-import com.tencent.angel.worker.storage.Storage;
+import com.tencent.angel.worker.storage.DataBlock;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.log4j.PropertyConfigurator;
 import org.junit.After;
 import org.junit.Test;
@@ -50,11 +48,21 @@ public class ModelWriteTest {
 
 
 
-  public class WriteModel extends AlgorithmModel {
+  public class WriteModel extends MLModel {
 
     @Override
-    public Storage<PredictResult> predict(Storage<LabeledData> storage) {
+    public DataBlock<PredictResult> predict(DataBlock<LabeledData> dataBlock) {
       return null;
+    }
+
+    @Override
+    public void setSavePath(Configuration conf) {
+
+    }
+
+    @Override
+    public void setLoadPath(Configuration conf) {
+
     }
 
     public WriteModel(int psNumber, String path) {
@@ -86,6 +94,21 @@ public class ModelWriteTest {
       addPSModel("DoubleSparse", doubleSparseModel);
       // angelClient.addMatrix(doubleSparse);
 
+      MatrixContext floatSparse = new MatrixContext();
+      floatSparse.setName("FloatSparse");
+      floatSparse.setRowNum(1);
+      floatSparse.setColNum(100);
+      floatSparse.setMaxRowNumInBlock(1);
+      floatSparse.setMaxColNumInBlock(100 / psNumber);
+      floatSparse.setRowType(MLProtos.RowType.T_FLOAT_SPARSE);
+      floatSparse.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_FLOAT");
+      floatSparse.set(MatrixConfiguration.MATRIX_AVERAGE, "true");
+      PSModel floatSparseModel = new PSModel(floatSparse);
+      floatSparseModel.setSavePath(path);
+      addPSModel("FloatSparse", floatSparseModel);
+      // angelClient.addMatrix(floatSparse);
+
+
 
       MatrixContext floatDenseMatrix = new MatrixContext();
       floatDenseMatrix.setName("FloatDense");
@@ -101,19 +124,6 @@ public class ModelWriteTest {
       addPSModel("FloatDense", floatDenseModel);
       // angelClient.addMatrix(floatDenseMatrix);
 
-      MatrixContext floatSparse = new MatrixContext();
-      floatSparse.setName("FloatSparse");
-      floatSparse.setRowNum(1);
-      floatSparse.setColNum(100);
-      floatSparse.setMaxRowNumInBlock(1);
-      floatSparse.setMaxColNumInBlock(100 / psNumber);
-      floatSparse.setRowType(MLProtos.RowType.T_FLOAT_SPARSE);
-      floatSparse.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_FLOAT");
-      floatSparse.set(MatrixConfiguration.MATRIX_AVERAGE, "true");
-      PSModel floatSparseModel = new PSModel(floatSparse);
-      floatSparseModel.setSavePath(path);
-      addPSModel("FloatSparse", floatSparseModel);
-      // angelClient.addMatrix(floatSparse);
 
       MatrixContext intDenseMatrix = new MatrixContext();
       intDenseMatrix.setName("IntDense");
@@ -175,22 +185,21 @@ public class ModelWriteTest {
     // conf.setInt(AngelConfiguration.ANGEL_PREPROCESS_VECTOR_MAXDIM, 10000);
     conf.set(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
     conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/out");
-    conf.set(FileInputFormat.INPUT_DIR, "./src/test/data/itemMat");
+    conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, "../data/exampledata/LRLocalExampleData/a9a.train");
     conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS, ModelWriteTask.class.getName());
     angelClient = AngelClientFactory.get(conf);
     int psNumber =
             conf.getInt(AngelConfiguration.ANGEL_PS_NUMBER, AngelConfiguration.DEFAULT_ANGEL_PS_NUMBER);
 
-    AlgorithmModel writeModel =
+    MLModel writeModel =
             new WriteModel(psNumber, conf.get(AngelConfiguration.ANGEL_SAVE_MODEL_PATH));
 
     conf.setInt(AngelConfiguration.ANGEL_WORKERGROUP_NUMBER, 1);
     conf.setInt(AngelConfiguration.ANGEL_PS_NUMBER, 1);
     conf.setInt(AngelConfiguration.ANGEL_WORKER_TASK_NUMBER, 1);
-
-    angelClient.submit();
+    angelClient.startPSServer();
     angelClient.loadModel(writeModel);
-    angelClient.start();
+    angelClient.runTask(ModelWriteTask.class);
     angelClient.waitForCompletion();
     angelClient.saveModel(writeModel);
     angelClient.stop();

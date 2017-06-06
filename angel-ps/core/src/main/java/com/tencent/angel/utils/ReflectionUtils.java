@@ -1,19 +1,24 @@
-/*
- * Tencent is pleased to support the open source community by making Angel available.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- *
- * https://opensource.org/licenses/BSD-3-Clause
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is
- * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
+/**
+ * Remove some unused methods.
+ */
 package com.tencent.angel.utils;
 
 import org.apache.hadoop.conf.Configuration;
@@ -29,6 +34,9 @@ import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * General reflection utils
+ */
 public class ReflectionUtils {
   private static final Class<?>[] EMPTY_ARRAY = new Class[0];
 
@@ -161,45 +169,4 @@ public class ReflectionUtils {
   static int getCacheSize() {
     return CONSTRUCTOR_CACHE.size();
   }
-
-  // private static SerializationFactory getFactory(Configuration conf) {
-  // if (serialFactory == null) {
-  // serialFactory = new SerializationFactory(conf);
-  // }
-  // return serialFactory;
-  // }
-
-  // public static <T> T copy(Configuration conf, T src, T dst)
-  // throws IOException {
-  // CopyInCopyOutBuffer buffer = (CopyInCopyOutBuffer) cloneBuffers.get();
-  // buffer.outBuffer.reset();
-  // SerializationFactory factory = getFactory(conf);
-  // Class cls = src.getClass();
-  // Serializer serializer = factory.getSerializer(cls);
-  // serializer.open(buffer.outBuffer);
-  // serializer.serialize(src);
-  // buffer.moveData();
-  // Deserializer deserializer = factory.getDeserializer(cls);
-  // deserializer.open(buffer.inBuffer);
-  // dst = deserializer.deserialize(dst);
-  // return dst;
-  // }
-  //
-  // @Deprecated
-  // public static void cloneWritableInto(Writable dst, Writable src) throws IOException {
-  // CopyInCopyOutBuffer buffer = (CopyInCopyOutBuffer) cloneBuffers.get();
-  // buffer.outBuffer.reset();
-  // src.write(buffer.outBuffer);
-  // buffer.moveData();
-  // dst.readFields(buffer.inBuffer);
-  // }
-  //
-  // private static class CopyInCopyOutBuffer {
-  // DataOutputBuffer outBuffer = new DataOutputBuffer();
-  // DataInputBuffer inBuffer = new DataInputBuffer();
-  //
-  // void moveData() {
-  // this.inBuffer.reset(this.outBuffer.getData(), this.outBuffer.getLength());
-  // }
-  // }
 }

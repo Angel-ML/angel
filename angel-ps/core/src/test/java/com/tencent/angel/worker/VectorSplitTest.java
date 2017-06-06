@@ -41,7 +41,6 @@ import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplitUtils;
 import com.tencent.angel.psagent.matrix.oplog.cache.SparseDoubleRowUpdateSplit;
 import com.tencent.angel.psagent.matrix.oplog.cache.SparseIntRowUpdateSplit;
 
-import java.io.File;
 import java.util.*;
 
 import static org.mockito.Mockito.*;
@@ -53,7 +52,7 @@ public class VectorSplitTest {
   private final static Log LOG = LogFactory.getLog(VectorSplitTest.class);
   
   static {
-    PropertyConfigurator.configure("../log4j.properties");
+    PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
   @BeforeClass

@@ -16,6 +16,21 @@
 
 package com.tencent.angel.master.app;
 
+/**
+ * Application state.
+ */
 public enum AppState {
-  NEW, INITED, RUNNING, EXECUTE_SUCCESSED, COMMITTING, SUCCEEDED, FAILED, KILLED
+  NEW, 
+  INITED, 
+  
+  /**tasks are running*/
+  RUNNING, 
+  
+  /**tasks are run over successfully*/
+  EXECUTE_SUCCESSED, 
+  
+  /**writing models to files*/
+  COMMITTING, 
+  
+  SUCCEEDED, FAILED, KILLED
 }

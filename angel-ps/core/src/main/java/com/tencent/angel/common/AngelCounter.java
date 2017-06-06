@@ -16,6 +16,10 @@
 
 package com.tencent.angel.common;
 
+/**
+ * Angel counters.
+ *
+ */
 public class AngelCounter {
   public static final String GC_TIME_MILLIS = "GC_TIME_MILLIS";
   public static final String CPU_MILLISECONDS = "CPU_MILLISECONDS";

@@ -22,13 +22,27 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 
 import com.tencent.angel.common.Location;
+import com.tencent.angel.ps.impl.ParameterServer;
 import com.tencent.angel.worker.Worker;
 import com.tencent.angel.worker.WorkerAttemptId;
 
+/**
+ * Local Angel Worker. It startups the {@link Worker} using a thread.
+ */
 public class LocalWorker extends Thread {
   private static final Log LOG = LogFactory.getLog(LocalCluster.class);
   private final Worker worker;
 
+  /**
+   * Create a local worker
+   * @param conf cluster configuration
+   * @param appId application id
+   * @param user submit user name
+   * @param workerAttemptId worker attempt id
+   * @param masterLocation the location of master
+   * @param initMinClock the start clock value
+   * @param isLeader the worker is the leader of the workergroup or not
+   */
   public LocalWorker(Configuration conf, ApplicationId appId, String user,
       WorkerAttemptId workerAttemptId, Location masterLocation, int initMinClock, boolean isLeader) {
     worker = new Worker(conf, appId, user, workerAttemptId, masterLocation, 0, false);
@@ -44,10 +58,17 @@ public class LocalWorker extends Thread {
     }
   }
 
+  /**
+   * Get worker
+   * @return worker
+   */
   public Worker getWorker() {
     return worker;
   }
   
+  /**
+   * Exit
+   */
   public void exit(){
     worker.stop();
     interrupt();

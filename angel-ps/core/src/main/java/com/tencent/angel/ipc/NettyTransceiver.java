@@ -1,19 +1,24 @@
-/*
- * Tencent is pleased to support the open source community by making Angel available.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- *
- * https://opensource.org/licenses/BSD-3-Clause
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is
- * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
+/**
+ * Modify close method to fix Angel client exit problem.
+ */
 package com.tencent.angel.ipc;
 
 import com.google.protobuf.Message;
@@ -31,8 +36,6 @@ import com.tencent.angel.protobuf.generated.RPCProtos;
 import com.tencent.angel.protobuf.generated.RPCProtos.*;
 import com.tencent.angel.protobuf.generated.RPCProtos.RpcResponseHeader.Status;
 import org.apache.hadoop.conf.Configuration;
-import org.cloudera.htrace.Span;
-import org.cloudera.htrace.Trace;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
@@ -78,21 +81,6 @@ public class NettyTransceiver extends Transceiver {
   volatile boolean stopping;
   private final Object channelFutureLock = new Object();
 
-  // defaultChannelFactory, multiple connections share it,
-  // just use one Boss Thread and CPU*2 Worker I/O threads.
-  /*
-   * private static final ChannelFactory defaultChannelFactory = new NioClientSocketChannelFactory(
-   * Executors.newCachedThreadPool(new NettyTransceiverThreadFactory("ML " +
-   * NettyTransceiver.class.getSimpleName() + " Boss")), Executors.newCachedThreadPool(new
-   * NettyTransceiverThreadFactory("ML " + NettyTransceiver.class.getSimpleName() +
-   * " I/O Worker")));
-   */
-
-  // private ExecutionHandler executionHandler= new ExecutionHandler(new
-  // OrderedMemoryAwareThreadPoolExecutor(Runtime.getRuntime().availableProcessors()+1,1024
-  // * 1024, 1024 * 1024));
-  // private Map<String, Object> nettyClientBootstrapOptions;
-
   private int refCount = 1;
 
   private Configuration conf = new Configuration();
@@ -132,10 +120,6 @@ public class NettyTransceiver extends Transceiver {
    * @throws java.io.IOException if an error occurs connecting to the given address.
    */
   public NettyTransceiver(InetSocketAddress addr, Long connectTimeoutMillis) throws IOException {
-    // direct memory leak? http://javatar.iteye.com/blog/1138527
-    // http://netty.io/3.10/api/index.html
-
-
     this(addr, new NioClientSocketChannelFactory(
         Executors.newCachedThreadPool(new NettyTransceiverThreadFactory("ML "
             + NettyTransceiver.class.getSimpleName() + " Boss")),
@@ -200,12 +184,6 @@ public class NettyTransceiver extends Transceiver {
       @Override
       public ChannelPipeline getPipeline() throws Exception {
         ChannelPipeline p = Channels.pipeline();
-        // timer = new HashedWheelTimer();
-        /*
-         * p.addLast( "readTimeout", new ReadTimeoutHandler(timer,
-         * NettyTransceiver.this.conf.getInt( TConstants.CONNECTION_READ_TIMEOUT_SEC,
-         * TConstants.DEFAULT_CONNECTION_READ_TIMEOUT_SEC)));
-         */
         p.addLast("frameDecoder", new NettyFrameDecoder());
         p.addLast("frameEncoder", new NettyFrameEncoder());
 
@@ -423,6 +401,7 @@ public class NettyTransceiver extends Transceiver {
     if (stopping) {
       return;
     }
+
     if (LOG.isDebugEnabled()) {
       LOG.debug("Closing the netty transceiver...");
     }
@@ -437,6 +416,7 @@ public class NettyTransceiver extends Transceiver {
         LOG.debug("release channelFactory resource for " + remoteAddr);
       }
       channelFactory.releaseExternalResources();
+      bootstrap.shutdown();
     }
   }
 
@@ -464,14 +444,8 @@ public class NettyTransceiver extends Transceiver {
 
     RpcRequestHeader.Builder headerBuilder = RPCProtos.RpcRequestHeader.newBuilder();
 
-    //if (Trace.isTracing()) {
-    //  Span s = Trace.currentTrace();
-    //  headerBuilder.setTinfo(RPCTInfo.newBuilder().setParentId(s.getSpanId())
-    //      .setTraceId(s.getTraceId()));
-    //}
     RpcRequestHeader rpcHeader = headerBuilder.build();
 
-    long startSerilizeTs = System.currentTimeMillis();
     ByteBufferOutputStream bbo = new ByteBufferOutputStream();
     connectionHeader.writeDelimitedTo(bbo);
     rpcHeader.writeDelimitedTo(bbo);
@@ -480,9 +454,6 @@ public class NettyTransceiver extends Transceiver {
     if (LOG.isDebugEnabled()) {
       LOG.debug("send message, " + requestBody.getMethodName() + " , channel: " + channel);
     }
-
-    // LOG.info("method " + requestBody.getMethodName()
-    // + " write to buffer use time " + (System.currentTimeMillis() - startSerilizeTs));
 
     transceive(bbo.getBufferList(), new TransceiverCallback<Message>(requestBody, protocol, future));
 
@@ -659,22 +630,6 @@ public class NettyTransceiver extends Transceiver {
 
     @Override
     public void handleUpstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
-      /*
-       * if (e instanceof WriteCompletionEvent) { LOG.debug("received message in channel: " +
-       * e.getChannel() + ", message size: " + ((WriteCompletionEvent)e).getWrittenAmount()); } if
-       * (e instanceof MessageEvent) { LOG.debug("received message in channel: " + e.getChannel() +
-       * ", message : " + ((MessageEvent)e).getMessage().toString()); }
-       */
-      /*
-       * if (e instanceof ChannelStateEvent) { LOG.debug(e.toString()); ChannelStateEvent cse =
-       * (ChannelStateEvent)e; if ((cse.getState() == ChannelState.OPEN) &&
-       * (Boolean.FALSE.equals(cse.getValue()))) { // Server closed connection; disconnect client
-       * side LOG.debug("Remote peer " + remoteAddr + " closed connection.");
-       * disconnect(e.getChannel(), false, true, null); } }
-       */
-      /*
-       * if (e instanceof ExceptionEvent) { exceptionCaught(ctx, (ExceptionEvent) e); }
-       */
       super.handleUpstream(ctx, e);
     }
 

@@ -1,17 +1,24 @@
-/*
- * Tencent is pleased to support the open source community by making Angel available.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- *
- * https://opensource.org/licenses/BSD-3-Clause
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is
- * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
  * limitations under the License.
+ */
+
+/**
+ * The job submission process and related configuration have been modified according to the specific
+ * circumstances of Angel.
  */
 
 package com.tencent.angel.client.yarn;
@@ -24,8 +31,12 @@ import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.ipc.TConnectionManager;
 import com.tencent.angel.master.yarn.util.AngelApps;
+import com.tencent.angel.ml.matrix.MatrixContext;
+import com.tencent.angel.protobuf.ProtobufUtil;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.PingRequest;
 
+import com.tencent.angel.worker.WorkerId;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -62,7 +73,6 @@ import java.util.*;
 /**
  * Angel client used on YARN deploy mode.
  */
-@SuppressWarnings("deprecation")
 public class AngelYarnClient extends AngelClient {
   private static final Log LOG = LogFactory.getLog(AngelYarnClient.class);
   
@@ -74,6 +84,11 @@ public class AngelYarnClient extends AngelClient {
   
   /**rpc to YARN record factory*/
   private RecordFactory recordFactory;
+
+  @Override
+  public void addMatrix(MatrixContext mContext) throws AngelException {
+    super.addMatrix(mContext);
+  }
 
   /**rpc client to YARN resourcemanager*/
   private YarnClient yarnClient;
@@ -96,7 +111,7 @@ public class AngelYarnClient extends AngelClient {
   }
   
   @Override
-  public void submit() throws AngelException {
+  public void startPSServer() throws AngelException {
     try {
       setUser();
       setLocalAddr();
@@ -146,7 +161,10 @@ public class AngelYarnClient extends AngelClient {
       appId = yarnClient.submitApplication(appContext);
 
       // 8.get app master client
-      updateMaster(Integer.MAX_VALUE);
+      updateMaster(10 * 60);
+      
+      waitForAllPS(conf.getInt(AngelConfiguration.ANGEL_PS_NUMBER, AngelConfiguration.DEFAULT_ANGEL_PS_NUMBER));
+      LOG.info("start pss success");
     } catch (Exception x) {
       LOG.error("submit application to yarn failed.", x);
       throw new AngelException(x);
@@ -162,6 +180,18 @@ public class AngelYarnClient extends AngelClient {
         throw new AngelException(e);
       }
       yarnClient.stop();
+    }
+    close();
+  }
+
+  @Override
+  public void stop(int stateCode) throws AngelException{
+    if(master != null) {
+      try {
+        master.stop(null, ClientMasterServiceProtos.StopRequest.newBuilder().setExitStatus(stateCode).build());
+      } catch (ServiceException e) {
+        throw new AngelException(e);
+      }
     }
     close();
   }
@@ -350,8 +380,6 @@ public class AngelYarnClient extends AngelClient {
 
     FileContext defaultFileContext = FileContext.getFileContext(this.conf);
 
-    System.out.println("before localResources.put(AngelConfiguration.ANGEL_JOB_CONF_FILE)");
-
     localResources.put(AngelConfiguration.ANGEL_JOB_CONF_FILE,
         createApplicationResource(defaultFileContext, jobConfPath, LocalResourceType.FILE));
 
@@ -426,7 +454,7 @@ public class AngelYarnClient extends AngelClient {
 
     String queue = conf.get(AngelConfiguration.ANGEL_QUEUE, YarnConfiguration.DEFAULT_QUEUE_NAME);
     appContext.setQueue(queue); // Queue name
-    System.out.println("XXX ApplicationSubmissionContext Queuename :  " + queue);
+    LOG.info("ApplicationSubmissionContext Queuename :  " + queue);
     appContext.setApplicationName(conf.get(AngelConfiguration.ANGEL_JOB_NAME,
         AngelConfiguration.DEFAULT_ANGEL_JOB_NAME));
     appContext.setCancelTokensWhenComplete(conf.getBoolean(
@@ -466,6 +494,13 @@ public class AngelYarnClient extends AngelClient {
           || appMaster.getYarnApplicationState() == YarnApplicationState.KILLED) {
         throw new IOException("Failed to run job : " + diagnostics);
       }
+
+      if(appMaster.getYarnApplicationState() == YarnApplicationState.FINISHED) {
+        LOG.info("application is finished!!");
+        master = null;
+        return;
+      }
+
       host = appMaster.getHost();
       port = appMaster.getRpcPort();
       if (host == null || "".equals(host)) {
@@ -496,10 +531,32 @@ public class AngelYarnClient extends AngelClient {
         break;
       }
     }
+
+    if(tryTime >= maxWaitSeconds && masterLocation == null) {
+      throw new IOException("wait for master location timeout");
+    }
   }
 
   @Override
   protected String getAppId() {
     return appId.toString();
+  }
+
+  @Override protected void printWorkerLogUrl(WorkerId workerId)  {
+    try {
+      while(true){
+        ClientMasterServiceProtos.GetWorkerLogDirResponse response = master.getWorkerLogDir(null,
+          ClientMasterServiceProtos.GetWorkerLogDirRequest.newBuilder().setWorkerId(ProtobufUtil.convertToIdProto(workerId)).build());
+        if(response.getLogDir().isEmpty()){
+          Thread.sleep(1000);
+          continue;
+        }
+
+        LOG.info(workerId + " log file=" + response.getLogDir());
+        break;
+      }
+    } catch (Exception e) {
+      LOG.error("get " + workerId + " log file failed ", e);
+    }
   }
 }

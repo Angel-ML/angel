@@ -13,6 +13,10 @@
 
   <artifactId>spark-on-angel-mllib</artifactId>
 
+  <properties>
+    <main.basedir>${project.parent.parent.basedir}</main.basedir>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>com.tencent.angel</groupId>

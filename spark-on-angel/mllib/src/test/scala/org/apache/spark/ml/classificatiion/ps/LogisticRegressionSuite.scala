@@ -33,6 +33,7 @@ import org.apache.spark.sql.functions.{col, lit, rand}
 import org.apache.spark.sql.types.LongType
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.ml.util.TestingUtils._
+import org.scalatest._
 import org.scalatest.FunSuite
 
 import scala.collection.JavaConverters._
@@ -40,6 +41,7 @@ import scala.language.existentials
 import scala.util.Random
 import scala.util.control.Breaks._
 
+@Ignore
 class LogisticRegressionSuite extends FunSuite with MLlibTestSparkContext with DefaultReadWriteTest {
 
   import testImplicits._

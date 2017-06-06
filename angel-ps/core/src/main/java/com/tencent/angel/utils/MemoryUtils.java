@@ -18,6 +18,9 @@ package com.tencent.angel.utils;
 
 import org.ehcache.sizeof.SizeOf;
 
+/**
+ * Java object size estimation utils.
+ */
 public class MemoryUtils {
   private final static SizeOf sizeOf = SizeOf.newInstance();
   public static long estimateMemorySize(Object obj) {

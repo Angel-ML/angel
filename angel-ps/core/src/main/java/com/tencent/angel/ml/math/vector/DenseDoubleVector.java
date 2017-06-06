@@ -106,7 +106,7 @@ public class DenseDoubleVector extends TDoubleVector {
    * @return
    */
   @Override
-  public TDoubleVector clone() {
+  public DenseDoubleVector clone() {
     return new DenseDoubleVector(this);
   }
 
@@ -247,7 +247,10 @@ public class DenseDoubleVector extends TDoubleVector {
    */
   @Override
   public int[] getIndices() {
-    return null;
+    int [] indices=new int[values.length];
+    for(int i=0;i<indices.length;i++)
+      indices[i]=i;
+    return indices;
   }
 
   /**

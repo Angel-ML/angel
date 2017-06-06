@@ -23,16 +23,16 @@ import org.apache.commons.pool.impl.GenericObjectPool;
  * PS RPC request running context.
  */
 public class RequestContext {
-  /** request last fime time*/
+  /** request last fime time */
   private long failedTs;
-  
-  /**netty channel allocated to this request*/
+
+  /** netty channel allocated to this request */
   private volatile Channel channel;
-  
-  /**netty channel pool for this request*/
+
+  /** netty channel pool for this request */
   private volatile GenericObjectPool<Channel> channelPool;
-  
-  /**time ticks of waiting for request result, it used to check the request is timeout or not */
+
+  /** time ticks of waiting for request result, it used to check the request is timeout or not */
   private int waitTimeTicks;
 
   /**
@@ -121,7 +121,7 @@ public class RequestContext {
    * Increment wait time ticks.
    * 
    * @param int increment value
-   */     
+   */
   public void addWaitTimeTicks(int ticks) {
     waitTimeTicks += ticks;
   }

@@ -16,6 +16,7 @@
 
 package com.tencent.angel.client;
 
+import com.tencent.angel.RunningMode;
 import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.exception.InvalidParameterException;
@@ -27,6 +28,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -83,26 +85,59 @@ public class AngelPSClient {
     client = AngelClientFactory.get(conf);
   }
 
-  public AngelContext startPS(boolean waitAllPSStarted) throws IOException, InvalidParameterException  {
-    int psNum = conf.getInt(AngelConfiguration.ANGEL_PS_NUMBER, 0);
+  /**
+   * Start Angel ps
+   * @return Angel ps running context
+   * @throws AngelException
+   */
+  public AngelContext startPS() throws AngelException  {
+    int psNum = conf.getInt(AngelConfiguration.ANGEL_PS_NUMBER, AngelConfiguration.DEFAULT_ANGEL_PS_NUMBER);
     if (psNum <= 0) {
-      throw new InvalidParameterException("Wrong ps number!");
+      throw new AngelException("Invalid parameter:Wrong ps number!");
     }
+    conf.set(AngelConfiguration.ANGEL_RUNNING_MODE, RunningMode.ANGEL_PS.toString());
     client.addMatrix(new MatrixContext("init", 1, psNum, 1, 1));
-    client.submit();
-    client.start(); 
+    client.startPSServer();
+    client.run(); 
     return new AngelContext(client.getMasterLocation(), conf);
   }
-  
-  public void addMatrix(MatrixContext mContext) throws IOException {
+
+  /**
+   * Add a matrix
+   * @param mContext matrix context
+   */
+  public void addMatrix(MatrixContext mContext)  throws AngelException{
     client.addMatrix(mContext);
   }
 
+  /**
+   * Save given matrices
+   * @param matrixNames need to save matrix name list
+   * @throws AngelException
+   */
+  public void save(List<String> matrixNames) throws AngelException{
+    client.saveMatrices(matrixNames);
+  }
+
+  /**
+   * Stop Angel ps
+   */
   public void stopPS(){
+    try {
+      client.stop(0);
+    } catch (AngelException e) {
+      LOG.warn("stop ps failed.", e);
+    }
+  }
+
+  /**
+   * Kill Angel ps
+   */
+  public void killPS(){
     try {
       client.stop();
     } catch (AngelException e) {
-      LOG.warn("stop ps failed.", e);
+      LOG.warn("kill ps failed.", e);
     }
   }
 }

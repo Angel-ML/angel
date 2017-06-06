@@ -33,14 +33,30 @@ import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.worker.WorkerAttemptId;
 
+/**
+ * Local resource manager. It startups a event handler to handle allocation/deallocation events.
+ */
 public class LocalResourceManager {
   private static final Log LOG = LogFactory.getLog(LocalResourceManager.class);
+  
+  /**master attempt indexes*/
   private final Map<ApplicationId, Integer> appIdToAttemptIndexMap;
+  
+  /**event queue*/
   private final LinkedBlockingQueue<LocalRMEvent> eventQueue;
+  
+  /**Is stop the event handler*/
   private final AtomicBoolean stopped;
+  
+  /**master maximum attempt number*/
   private final int maxAttemptNum;
+  
+  /**event handler*/
   private Thread handler;
   
+  /**
+   * Create a local resource manager
+   */
   public LocalResourceManager(Configuration conf) {
     appIdToAttemptIndexMap = new HashMap<ApplicationId, Integer>();
     eventQueue = new LinkedBlockingQueue<LocalRMEvent>();
@@ -48,7 +64,10 @@ public class LocalResourceManager {
     maxAttemptNum = conf.getInt(YarnConfiguration.RM_AM_MAX_ATTEMPTS, YarnConfiguration.DEFAULT_RM_AM_MAX_ATTEMPTS);
   }
   
-  public class Handler extends Thread {
+  /**
+   * Event handler thread.
+   */
+  private class Handler extends Thread {
     @Override
     public void run() {
       while(!stopped.get() && !Thread.interrupted()) {
@@ -106,6 +125,10 @@ public class LocalResourceManager {
     }
   }
   
+  /**
+   * Allocate a master
+   * @param appId application id
+   */
   public void allocateMaster(ApplicationId appId) {
     try {
       eventQueue.put(new LocalRMEvent(appId, LocalRMEventType.ALLOCATE));
@@ -113,7 +136,11 @@ public class LocalResourceManager {
       LOG.warn("waiting for add element to queue interupted.");
     }
   }
-  
+ 
+  /**
+   * Master exit
+   * @param appId application id
+   */
   public void masterExited(ApplicationId appId) {
     try {
       eventQueue.put(new LocalRMEvent(appId, LocalRMEventType.FAILED));
@@ -122,12 +149,18 @@ public class LocalResourceManager {
     }
   }
   
+  /**
+   * Start event handler
+   */
   public void start() {
     handler = new Handler();
     handler.setName("local-rm-handler");
     handler.start();
   }
   
+  /**
+   * Stop event hanlder
+   */
   public void stop() {
     stopped.set(true);
     handler.interrupt();

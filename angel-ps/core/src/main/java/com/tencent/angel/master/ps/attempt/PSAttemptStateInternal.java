@@ -17,5 +17,22 @@
 package com.tencent.angel.master.ps.attempt;
 
 public enum PSAttemptStateInternal {
-  NEW, INITED, SCHEDULED, ASSIGNED, LAUNCHED, RUNNING, FAILED, SUCCESS, KILLED, COMMITTING
+  NEW, INITED, 
+
+  /**resource request is generated*/
+  SCHEDULED, 
+  
+  /**container is assigned*/
+  ASSIGNED, 
+  
+  /**container is launched*/
+  LAUNCHED, 
+  
+  /**registered*/
+  RUNNING, 
+  
+  FAILED, SUCCESS, KILLED, 
+  
+  /**saving matrices*/
+  COMMITTING
 }

@@ -17,15 +17,12 @@
 package com.tencent.angel.psagent.matrix.transport;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.matrix.udf.aggr.AggrFunc;
-import com.tencent.angel.ml.matrix.udf.aggr.PartitionAggrParam;
-import com.tencent.angel.ml.matrix.udf.aggr.PartitionAggrResult;
-import com.tencent.angel.ml.matrix.udf.getrow.GetRowFunc;
-import com.tencent.angel.ml.matrix.udf.getrow.PartitionGetRowParam;
-import com.tencent.angel.ml.matrix.udf.getrow.PartitionGetRowResult;
-import com.tencent.angel.ml.matrix.udf.updater.PartitionUpdaterParam;
-import com.tencent.angel.ml.matrix.udf.updater.UpdaterFunc;
-import com.tencent.angel.ml.matrix.udf.updater.VoidResult;
+import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
+import com.tencent.angel.ml.matrix.psf.updater.base.PartitionUpdaterParam;
+import com.tencent.angel.ml.matrix.psf.updater.base.UpdaterFunc;
+import com.tencent.angel.ml.matrix.psf.updater.base.VoidResult;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.impl.matrix.ServerPartition;
 import com.tencent.angel.ps.impl.matrix.ServerRow;
@@ -89,14 +86,6 @@ public interface MatrixTransportInterface {
   Future<VoidResult> putPart(PartitionKey partKey, List<RowUpdateSplit> rowsSplit, int taskIndex,
       int clock, boolean updateClock);
 
-  /**
-   * Get the aggregate value for the matrix partition.
-   * 
-   * @param aggrFunc aggregate udf used to calculate the aggregate value
-   * @param partitionAggrParam parameter of the aggregate udf
-   * @return the aggregate value
-   */
-  Future<PartitionAggrResult> aggr(AggrFunc aggrFunc, PartitionAggrParam partitionAggrParam);
 
   /**
    * Update matrix partition use the update udf.
@@ -108,11 +97,11 @@ public interface MatrixTransportInterface {
   Future<VoidResult> update(UpdaterFunc updaterFunc, PartitionUpdaterParam partitionUpdaterParam);
 
   /**
-   * Get a row split use the get row udf.
+   * Get a partition result use the get row udf.
    * 
-   * @param func the get row udf
+   * @param func the get udf
    * @param partitionGetRowParam parameter of the update udf
    * @return row split
    */
-  Future<PartitionGetRowResult> getRow(GetRowFunc func, PartitionGetRowParam partitionGetRowParam);
+  Future<PartitionGetResult> get(GetFunc func, PartitionGetParam partitionGetParam);
 }

@@ -26,8 +26,12 @@ import com.tencent.angel.utils.NetUtils;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -37,17 +41,8 @@ import java.net.UnknownHostException;
 public class ParameterServerService implements PSProtocol {
 
   private static final Log LOG = LogFactory.getLog(ParameterServerService.class);
-  private final ParameterServer psServer;
+  //private final ParameterServer psServer;
   private RpcServer rpcServer;
-
-  /**
-   * Craete a new Parameter server service.
-   *
-   * @param server the parameter server
-   */
-  public ParameterServerService(ParameterServer server) {
-    this.psServer = server;
-  }
 
   /**
    * Gets host address.
@@ -74,11 +69,12 @@ public class ParameterServerService implements PSProtocol {
    * @throws IOException the io exception
    */
   public void start() throws IOException {
-    int psServerPort = NetUtils.chooseAListenPort(psServer.getConf());
+    Configuration conf = PSContext.get().getConf();
+    int psServerPort = NetUtils.chooseAListenPort(conf);
     String psServerHost = InetAddress.getLocalHost().getHostAddress();
     rpcServer =
         MLRPC.getServer(ParameterServerService.class, this, new Class<?>[] {PSProtocol.class},
-            psServerHost, psServerPort, psServer.getConf());
+            psServerHost, psServerPort, conf);
     LOG.info("Starting parameter server service at " + psServerHost + ":" + psServerPort);
     rpcServer.openServer();
   }
@@ -91,15 +87,38 @@ public class ParameterServerService implements PSProtocol {
 
   @Override
   public long getProtocolVersion(String protocol, long clientVersion) throws IOException {
-    // TODO
     return 0;
   }
 
   @Override
   public GetThreadStackResponse psThreadStack(RpcController controller, GetThreadStackRequest request)
           throws ServiceException {
-    String stackTraceInfoString=psServer.getThreadStack();
+    String stackTraceInfoString = getThreadStack();
     GetThreadStackResponse getThreadStackResponse = GetThreadStackResponse.newBuilder().setStack(stackTraceInfoString).build();
     return getThreadStackResponse;
+  }
+  
+  /**
+   * Gets thread stack.
+   *
+   * @return the thread stack
+   */
+  private String getThreadStack()
+  {
+    ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+    ThreadInfo[] threadInfo =  threadMXBean.dumpAllThreads(true, true);
+    String stackTraceString="ParameterServer\n";
+    String infoBlock="\n";
+    for(ThreadInfo t :  threadInfo)
+    {
+      infoBlock="\n\n";
+      infoBlock+="threadid: "+t.getThreadId()+" threadname: "+t.getThreadName()+"       threadstate: "+t.getThreadState()+"\n";
+      for(StackTraceElement stackTraceElement : t.getStackTrace())
+      {
+        infoBlock+= "   "+stackTraceElement.toString()+"\n";
+      }
+      stackTraceString+=infoBlock+"\n\n";
+    }
+    return stackTraceString;
   }
 }

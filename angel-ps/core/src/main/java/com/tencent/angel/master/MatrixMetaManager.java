@@ -25,7 +25,6 @@ import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.MatrixPartitio
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.MatrixReport;
 import com.tencent.angel.ps.ParameterServerId;
 
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -54,16 +53,16 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class MatrixMetaManager {
   private static final Log LOG = LogFactory.getLog(MatrixMetaManager.class);
   /** matrix inited flag, worker/ps can get matrix info. only when matrix is initialized after am received matrixinfo from client */
-  private boolean matrixInited;
+  //private boolean matrixInited;
 
   /**matrix id to matrix meta proto map*/
   private final Int2ObjectOpenHashMap<MatrixProto> matrixProtoMap;
 
   /** inverted index, psId--->Map( matrixId---->List<PartitionKey>), used for PS */
   private final Object2ObjectOpenHashMap<ParameterServerId, Int2ObjectOpenHashMap<MatrixPartition>> matrixPartitionOnPS;
-
-  /**uninited matrix id to matrix meta proto map*/
-  private final Int2ObjectOpenHashMap<MatrixProto> uninitedMatrixProtoMap;
+  
+  /** ps id to matrices on this ps map */
+  private final Object2ObjectOpenHashMap<ParameterServerId, IntOpenHashSet> psIdToMatrixIdsMap;
   
   /**matrix id generator*/
   private int maxMatrixId = -1;
@@ -71,28 +70,23 @@ public class MatrixMetaManager {
   /**matrix name to id map*/
   private final Object2IntOpenHashMap<String> matrixNameToIdMap;
   
-  /**matrix id to psId which has build partitions of this matrix map, use to add matrix dynamic*/
-  private final Int2ObjectOpenHashMap<ObjectOpenHashSet<ParameterServerId>> matrixIdToInitedPSSetMap;
-  
-  /**matrix id to the number of ps which contains partitions of this matrix map*/
-  private final Int2IntOpenHashMap matrixIdToPSNumMap;
+  /**matrix id to psId which has build partitions of this matrix map, use to add matrix */
+  private final Int2ObjectOpenHashMap<ObjectOpenHashSet<ParameterServerId>> matrixIdToPSSetMap;
   
   private final Lock readLock;
   private final Lock writeLock;
 
   public MatrixMetaManager() {
     matrixPartitionOnPS = new Object2ObjectOpenHashMap<ParameterServerId, Int2ObjectOpenHashMap<MatrixPartition>>();
+    matrixIdToPSSetMap = new Int2ObjectOpenHashMap<ObjectOpenHashSet<ParameterServerId>>();
+    psIdToMatrixIdsMap = new Object2ObjectOpenHashMap<ParameterServerId, IntOpenHashSet>();
     matrixProtoMap = new Int2ObjectOpenHashMap<MatrixProto>();
-
-    uninitedMatrixProtoMap = new Int2ObjectOpenHashMap<MatrixProto>();
-    matrixIdToInitedPSSetMap = new Int2ObjectOpenHashMap<ObjectOpenHashSet<ParameterServerId>>();
-    matrixIdToPSNumMap = new Int2IntOpenHashMap();
+   
     matrixNameToIdMap = new Object2IntOpenHashMap<String>();
 
     ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     readLock = readWriteLock.readLock();
     writeLock = readWriteLock.writeLock();
-    matrixInited = false;
   }
 
   /**
@@ -102,11 +96,6 @@ public class MatrixMetaManager {
   public final List<MatrixProto> getMatrixProtos() {
     try {
       readLock.lock();
-      //if matrices meta are not received from client, just return null
-      if (!matrixInited) {
-        return null;
-      }
-      
       List<MatrixProto> matrixes = new ArrayList<MatrixProto>();
       for (Entry<Integer, MatrixProto> entry : matrixProtoMap.entrySet()) {
         matrixes.add(entry.getValue());
@@ -138,7 +127,7 @@ public class MatrixMetaManager {
 
   /**
    * get matrix meta proto use matrix id
-   * @param matrixName matrix name
+   * @param id matrix id
    * @return MatrixProto matrix meta proto of the matrix
    */
   public MatrixProto getMatrix(int id) {
@@ -159,9 +148,6 @@ public class MatrixMetaManager {
   public final List<MatrixPartition> getMatrixPartitions(ParameterServerId psId) {
     try {
       readLock.lock();
-      if (!matrixInited) {
-        return null;
-      }
 
       Map<Integer, MatrixPartition> mpMap = matrixPartitionOnPS.get(psId);
       if (mpMap == null) {
@@ -175,15 +161,6 @@ public class MatrixMetaManager {
         mpList.add(entry.getValue());
       }
       return mpList;
-    } finally {
-      readLock.unlock();
-    }
-  }
-
-  public boolean isMatrixInited() {
-    try {
-      readLock.lock();
-      return matrixInited;
     } finally {
       readLock.unlock();
     }
@@ -217,23 +194,171 @@ public class MatrixMetaManager {
         //update matrix id generator
         updateMaxMatrixId(matrixProtos.get(i).getId());
       }
-      matrixInited = true;
     } finally {
       writeLock.unlock();
     }
   }
   
+  @SuppressWarnings("unused")
+  private void waitForMatricesCreateOnPS(List<MatrixProto> matrixProtos) {
+    boolean inited = true;
+    while (true) {
+      try {
+        readLock.lock();
+        int size = matrixProtos.size();
+        inited = true;
+        for (int i = 0; i < size; i++) {
+          ObjectOpenHashSet<ParameterServerId> psIdSet =
+              matrixIdToPSSetMap.get(matrixProtos.get(i).getId());
+
+          if (psIdSet == null || psIdSet.isEmpty()) {
+            continue;
+          }
+
+          for (ParameterServerId psId : psIdSet) {
+            if (!psIdToMatrixIdsMap.containsKey(psId)
+                || !psIdToMatrixIdsMap.get(psId).contains(matrixProtos.get(i).getId())) {
+              inited = false;
+              break;
+            }
+          }
+        }
+      } finally {
+        readLock.unlock();
+      }
+
+      if (inited) {
+        return;
+      }
+
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+        LOG.warn("waitForMatrixOnPS is interruptted.");
+      }
+    }
+  }
+  
+  public boolean isCreated(String matrixName) {
+    boolean inited = true;
+
+    try {
+      readLock.lock();
+      if(!matrixNameToIdMap.containsKey(matrixName)) {
+        return true;
+      }
+      
+      int matrixId = matrixNameToIdMap.getInt(matrixName);
+      ObjectOpenHashSet<ParameterServerId> psIdSet = matrixIdToPSSetMap.get(matrixId);
+
+      if (psIdSet == null || psIdSet.isEmpty()) {
+        return true;
+      }
+
+      inited = true;
+      for (ParameterServerId psId : psIdSet) {
+        if (!psIdToMatrixIdsMap.containsKey(psId)
+            || !psIdToMatrixIdsMap.get(psId).contains(matrixId)) {
+          inited = false;
+          break;
+        }
+      }
+    } finally {
+      readLock.unlock();
+    }
+
+    return inited;
+  }
+
+  @SuppressWarnings("unused")
+  private void waitForMatrixCreateOnPS(MatrixProto matrixProto) {
+    boolean inited = true;
+    int matrixId = matrixProto.getId();
+    while (true) {
+      try {
+        readLock.lock();
+        ObjectOpenHashSet<ParameterServerId> psIdSet =
+            matrixIdToPSSetMap.get(matrixId);
+
+        if (psIdSet == null || psIdSet.isEmpty()) {
+          return;
+        }
+        
+        inited = true;
+        for (ParameterServerId psId : psIdSet) {
+          if (!psIdToMatrixIdsMap.containsKey(psId)
+              || !psIdToMatrixIdsMap.get(psId).contains(matrixId)) {
+            LOG.info("ps " + psId + " does not contain matrix " + matrixId);
+            inited = false;
+            break;
+          }
+        }
+      } finally {
+        readLock.unlock();
+      }
+
+      if (inited) {
+        LOG.info("all ps create matrix " + matrixId + " successfully.");
+        return;
+      }
+
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+        LOG.warn("waitForMatrixOnPS is interruptted.");
+      }
+    }
+  }
+
+  @SuppressWarnings("unused")
+  private void waitForMatrixReleaseOnPS(int matrixId) {
+    boolean released = true;
+    while (true) {
+      try {
+        readLock.lock();
+        ObjectOpenHashSet<ParameterServerId> psIdSet = matrixIdToPSSetMap.get(matrixId);
+
+        if (psIdSet == null || psIdSet.isEmpty()) {
+          return;
+        }
+
+        released = true;
+        for (ParameterServerId psId : psIdSet) {
+          if (psIdToMatrixIdsMap.containsKey(psId)
+              && psIdToMatrixIdsMap.get(psId).contains(matrixId)) {
+            released = false;
+            break;
+          }
+        }
+      } finally {
+        readLock.unlock();
+      }
+
+      if (released) {
+        return;
+      }
+
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+        LOG.warn("waitForMatrixOnPS is interruptted.");
+      }
+    }
+  }
+  
+  
   /**
-   * add matrix dynamic
+   * Create a new matrix
    * @param matrixProto matrix meta proto
    * @return int matrix id
    * @throws InvalidParameterException 
    */
   public int addMatrix(MatrixProto matrixProto) throws InvalidParameterException {
+    int matrixId = -1;
     try {
       writeLock.lock();
 
-      int matrixId = assignMatrixId();
+      matrixId = assignMatrixId();
       LOG.info("start building MatrixPartition info, matrix id " + matrixId);
 
       //check whether the matrix name conflicts with the existing matrix names, the matrix name must be only
@@ -245,15 +370,16 @@ public class MatrixMetaManager {
         matrixNameToIdMap.put(matrixProto.getName(), matrixId);
       }
       
-      //put matrix meta to uninitedMatrixProtoMap as we need to wait for all ps to initialize this matrix
-      uninitedMatrixProtoMap.put(matrixProto.getId(), matrixProto);
+      matrixProtoMap.put(matrixProto.getId(), matrixProto);
       
       //dispatch matrix partitions to parameter servers
       buildPSMatrixInvertInfo(matrixProto);
-      return matrixId;
+      
     } finally {
       writeLock.unlock();
     }
+
+    return matrixId;
   }
 
   /**
@@ -304,13 +430,17 @@ public class MatrixMetaManager {
       }
       
       matrixPartMap.put(builderEntry.getValue().getMatrixId(), builderEntry.getValue().build());
+      
+      ObjectOpenHashSet<ParameterServerId> psSet = matrixIdToPSSetMap.get(builderEntry.getValue().getMatrixId());
+      if(psSet == null) {
+        psSet = new ObjectOpenHashSet<ParameterServerId>();
+        matrixIdToPSSetMap.put(builderEntry.getValue().getMatrixId(), psSet);
+      }
+      psSet.add(new ParameterServerId(builderEntry.getKey()));
+      
       LOG.info("ps index: " + builderEntry.getKey() + ", matrixPartition info(matrixId: " + matrixId
           + ")");
     }
-
-    //use to record how many ps has completed the initialization of the matrix.
-    matrixIdToPSNumMap.put(matrixId, psIdSet.size());
-    matrixIdToInitedPSSetMap.put(matrixId, new ObjectOpenHashSet<ParameterServerId>());
   }
 
   private void updateMaxMatrixId(int id) {
@@ -339,34 +469,9 @@ public class MatrixMetaManager {
     for (int i = 0; i < size; i++) {
       matrixInPS.add(matrixReports.get(i).getMatrixId());
     }
-
-    //update matrixIdToInitedPSSetMap
-    updateInitedMatrix(psId, matrixInPS);
     
     //get the matrices parameter server need to create and delete
     getPSNeedUpdateMatrix(matrixInPS, needCreateMatrixes, needReleaseMatrixes, psId);
-  }
-
-  private void updateInitedMatrix(ParameterServerId psId, IntOpenHashSet initedMatrixIdSet) {
-    try {
-      writeLock.lock();
-      for (int matrixId : initedMatrixIdSet) {
-        if (uninitedMatrixProtoMap.containsKey(matrixId)) {
-          //update initialized parameter server set
-          matrixIdToInitedPSSetMap.get(matrixId).add(psId);
-          
-          // If all parameter servers have completed the initialization of a matrix, it means that
-          // the initialization of the matrix has been completed, we need to remove this matrix id
-          // from uninitedMatrixProtoMap
-          if (matrixIdToInitedPSSetMap.get(matrixId).size() == matrixIdToPSNumMap.get(matrixId)) {
-            LOG.info("matrix " + matrixId + ", inited");
-            matrixProtoMap.put(matrixId, uninitedMatrixProtoMap.remove(matrixId));
-          }
-        }
-      }
-    } finally {
-      writeLock.unlock();
-    }
   }
 
   private void getPSNeedUpdateMatrix(IntOpenHashSet matrixInPS,
@@ -401,6 +506,29 @@ public class MatrixMetaManager {
       readLock.unlock();
     }
   }
+  
+  /**
+   * Update the matrices on the PS
+   * @param psId
+   * @param matrixReports
+   */
+  public void psMatricesUpdate(ParameterServerId psId, List<MatrixReport> matrixReports) {
+    try {
+      writeLock.lock();
+      IntOpenHashSet matrixIdSet = psIdToMatrixIdsMap.get(psId);
+      if(matrixIdSet == null) {
+        matrixIdSet = new IntOpenHashSet();
+        psIdToMatrixIdsMap.put(psId, matrixIdSet);
+      }
+      
+      int size = matrixReports.size();
+      for(int i = 0; i < size; i++) {
+        matrixIdSet.add(matrixReports.get(i).getMatrixId());
+      }
+    } finally {
+      writeLock.unlock();
+    }
+  }
 
   /**
    * release a matrix. just release matrix meta on master
@@ -412,9 +540,7 @@ public class MatrixMetaManager {
       writeLock.lock();
       LOG.info("matrix id=" + matrixId);
       matrixProtoMap.remove(matrixId);
-      matrixIdToInitedPSSetMap.remove(matrixId);
-      uninitedMatrixProtoMap.remove(matrixId);
-      matrixIdToPSNumMap.remove(matrixId);
+      matrixIdToPSSetMap.remove(matrixId);
       
       for (Int2ObjectOpenHashMap<MatrixPartition> entry : matrixPartitionOnPS.values()) {
         entry.remove(matrixId);
@@ -430,6 +556,8 @@ public class MatrixMetaManager {
     } finally {
       writeLock.unlock();
     }
+    
+    //waitForMatrixReleaseOnPS(matrixId);
   }
 
   /**

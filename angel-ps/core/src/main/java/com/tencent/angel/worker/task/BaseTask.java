@@ -19,12 +19,13 @@ package com.tencent.angel.worker.task;
 import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.worker.storage.*;
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * Base for task.
  * <p>
  *   The realization define at implementation and will invoke by {@link Task}
- *   The train data was read fully to {@link Storage} at pre-process as default.
+ *   The train data was read fully to {@link DataBlock} at pre-process as default.
  *   <ol>
  *   <li>
  *     Normally communicate with {@link com.tencent.angel.ps.impl.ParameterServer}
@@ -41,11 +42,12 @@ import com.tencent.angel.worker.storage.*;
  * @see com.tencent.angel.psagent.PSAgentContext
  */
 public abstract class BaseTask<KEY_IN, VALUE_IN, VALUE_OUT> implements BaseTaskInterface<KEY_IN, VALUE_IN, VALUE_OUT> {
+  protected Configuration conf;
 
   /**
    * The Train data storage.
    */
-  protected final Storage<VALUE_OUT> trainDataStorage;
+  protected final DataBlock<VALUE_OUT> dataBlock;
 
   public BaseTask(TaskContext taskContext) {
     String storageLevel =
@@ -53,12 +55,15 @@ public abstract class BaseTask<KEY_IN, VALUE_IN, VALUE_OUT> implements BaseTaskI
                 AngelConfiguration.DEFAULT_ANGEL_TASK_DATA_STORAGE_LEVEL);
 
     if (storageLevel.equals("memory")) {
-      trainDataStorage = new MemoryStorage<VALUE_OUT>(-1);
+      dataBlock = new MemoryDataBlock<VALUE_OUT>(-1);
     } else if (storageLevel.equals("memory_disk")) {
-      trainDataStorage = new MemoryAndDiskStorage<VALUE_OUT>(taskContext.getTaskId().getIndex());
+      dataBlock = new MemoryAndDiskDataBlock<VALUE_OUT>(taskContext.getTaskId().getIndex());
     } else {
-      trainDataStorage = new DiskStorage<VALUE_OUT>(taskContext.getTaskId().getIndex());
+      dataBlock = new DiskDataBlock<VALUE_OUT>(taskContext.getTaskId().getIndex());
     }
+    conf = taskContext.getConf();
+
+
   }
 
 
@@ -80,16 +85,16 @@ public abstract class BaseTask<KEY_IN, VALUE_IN, VALUE_OUT> implements BaseTaskI
       while (reader.nextKeyValue()) {
         VALUE_OUT out = parse(reader.getCurrentKey(), reader.getCurrentValue());
         if (out != null) {
-          trainDataStorage.put(out);
+          dataBlock.put(out);
         }
       }
 
-      trainDataStorage.flush();
+      dataBlock.flush();
     } catch (Exception e){
       throw new AngelException("Pre-Process Error.", e);
     }
   }
 
   @Override
-  public abstract void run(TaskContext taskContext) throws Exception;
+  public abstract void run(TaskContext taskContext) throws AngelException;
 }

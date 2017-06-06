@@ -18,14 +18,21 @@ package com.tencent.angel.master.ps.attempt;
 
 import com.tencent.angel.ps.PSAttemptId;
 
+/**
+ * Launch the container for the ps failed.
+ */
 public class PSAttemptContainerLaunchFailedEvent extends PSAttemptEvent{
-  /**container launch failed message*/
+  /**detail failed message*/
   private final String message;
   public PSAttemptContainerLaunchFailedEvent(PSAttemptId id, String message) {
     super(PSAttemptEventType.PA_CONTAINER_LAUNCH_FAILED, id);
     this.message = message;
   }
 
+  /**
+   * Get detail failed message
+   * @return detail failed message
+   */ 
   public String getMessage() {
     return message;
   }

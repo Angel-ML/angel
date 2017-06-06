@@ -20,15 +20,33 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 
+/**
+ * Application failed event.
+ */
 public class InternalErrorEvent extends AppEvent {
   private static final Log LOG = LogFactory.getLog(InternalErrorEvent.class);
+  
+  /**details failed message*/
   private final String errorMsg;
+  
+  /**Is the application will retry?*/
   private final boolean shouldRetry;
 
+  /**
+   * Create a InternalErrorEvent
+   * @param id application id
+   * @param errorMsg detailed failed message
+   */
   public InternalErrorEvent(ApplicationId id, String errorMsg) {
     this(id, errorMsg, false);
   }
   
+  /**
+   * Create a InternalErrorEvent
+   * @param id application id
+   * @param errorMsg detailed failed message
+   * @param shouldRetry is the application will retry
+   */
   public InternalErrorEvent(ApplicationId id, String errorMsg, boolean shouldRetry) {
     super(id, AppEventType.INTERNAL_ERROR);
     this.errorMsg = errorMsg;
@@ -36,6 +54,10 @@ public class InternalErrorEvent extends AppEvent {
     LOG.fatal(errorMsg);
   }
 
+  /**
+   * Get failed message
+   * @return failed message
+   */
   public String getErrorMsg() {
     return errorMsg;
   }
@@ -45,6 +67,10 @@ public class InternalErrorEvent extends AppEvent {
     return "InternalErrorEvent [errorMsg=" + errorMsg + ", getType()=" + getType() + "]";
   }
 
+  /**
+   * Is the application will retry
+   * @return true means retry later
+   */
   public boolean isShouldRetry() {
     return shouldRetry;
   }

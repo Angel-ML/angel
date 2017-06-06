@@ -27,9 +27,9 @@
 
     <property name="fileExtensions" value="java, properties, xml"/>
 
-    <module name="SuppressionFilter">
+    <!--module name="SuppressionFilter">
       <property name="file" value="dev/checkstyle-suppressions.xml"/>
-    </module>
+    </module-->
 
     <!--
     If you wish to turn off checking for a section of code, you can put a comment in the source

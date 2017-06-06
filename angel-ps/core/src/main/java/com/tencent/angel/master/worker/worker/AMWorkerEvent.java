@@ -20,14 +20,27 @@ import org.apache.hadoop.yarn.event.AbstractEvent;
 
 import com.tencent.angel.worker.WorkerId;
 
+/**
+ * Base class of worker event.
+ */
 public class AMWorkerEvent extends AbstractEvent<AMWorkerEventType> {
+  /**worker id*/
   private final WorkerId workerId;
 
+  /**
+   * Create a AMWorkerEvent
+   * @param eventType event type
+   * @param workerId worker id
+   */
   public AMWorkerEvent(AMWorkerEventType eventType, WorkerId workerId) {
     super(eventType);
     this.workerId = workerId;
   }
 
+  /**
+   * Get worker id
+   * @return worker id
+   */
   public WorkerId getWorkerId() {
     return workerId;
   }

@@ -32,8 +32,6 @@ import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.app.AppEvent;
 import com.tencent.angel.master.app.AppEventType;
 import com.tencent.angel.master.app.InternalErrorEvent;
-import com.tencent.angel.master.ps.ParameterServerManagerEvent;
-import com.tencent.angel.master.ps.ParameterServerManagerEventType;
 import com.tencent.angel.master.worker.worker.AMWorker;
 import com.tencent.angel.master.worker.worker.AMWorkerEvent;
 import com.tencent.angel.master.worker.worker.AMWorkerEventType;
@@ -79,10 +77,10 @@ public class WorkerManager extends AbstractService implements EventHandler<Worke
   private final double tolerateFailedGroup;
   
   /**actual worker group number*/
-  private int workergroupNumber;
+  private volatile int workergroupNumber;
   
   /**actual total task number in application*/
-  private int totalTaskNumber;
+  private volatile int totalTaskNumber;
 
   /**worker group id to worker group map*/
   private final Map<WorkerGroupId, AMWorkerGroup> workerGroupMap;
@@ -212,14 +210,8 @@ public class WorkerManager extends AbstractService implements EventHandler<Worke
         
         //check if all worker group run over
         if (checkISAllGroupEnd()) {
-          LOG.info("now all WorkerGroups are finished!");
-          
+          LOG.info("now all WorkerGroups are finished!");         
           context.getEventHandler().handle(new AppEvent(AppEventType.EXECUTE_SUCESS));
-          
-          //start commit now
-          //context.getEventHandler().handle(
-          //    new ParameterServerManagerEvent(ParameterServerManagerEventType.COMMIT));
-          //context.getEventHandler().handle(new AppEvent(AppEventType.COMMIT));
         }
         break;
       }
@@ -303,11 +295,8 @@ public class WorkerManager extends AbstractService implements EventHandler<Worke
       writeLock.unlock();
     }
   }
-
-  private void initWorkers() {
-    //get data split number from data splitter
-    int splitNum = context.getDataSpliter().getSplitNum();
-    
+  
+  public void adjustTaskNumber(int splitNum) {
     //calculate the actual number of worker groups and the total number of tasks based on the number of data split
     int estimatedGroupNum = (splitNum + taskNumberInEachWorker - 1) / taskNumberInEachWorker;
     int estimatedTaskNum = splitNum * workersInGroup;
@@ -316,10 +305,12 @@ public class WorkerManager extends AbstractService implements EventHandler<Worke
     totalTaskNumber = estimatedTaskNum;
     context.getConf().setInt(AngelConfiguration.ANGEL_TASK_ACTUAL_NUM, totalTaskNumber);
     context.getConf().setInt(AngelConfiguration.ANGEL_WORKERGROUP_ACTUAL_NUM, workergroupNumber);
+  }
 
+  private void initWorkers() {
     int base = 0;
     //init all tasks , workers and worker groups and put them to the corresponding maps 
-    for (int i = 0; i < estimatedGroupNum; i++) {
+    for (int i = 0; i < workergroupNumber; i++) {
       Map<WorkerId, AMWorker> workers = new HashMap<WorkerId, AMWorker>();
       WorkerId leader = null;
       WorkerGroupId groupId = new WorkerGroupId(i);
@@ -327,7 +318,7 @@ public class WorkerManager extends AbstractService implements EventHandler<Worke
       for (int j = 0; j < workersInGroup; j++) {
         base = (i * workersInGroup + j) * taskNumberInEachWorker;
         List<TaskId> taskIds = new ArrayList<TaskId>(taskNumberInEachWorker);
-        for (int k = 0; k < taskNumberInEachWorker && (base < estimatedTaskNum); k++, base++) {
+        for (int k = 0; k < taskNumberInEachWorker && (base < totalTaskNumber); k++, base++) {
           taskIds.add(new TaskId(base));
         }
 

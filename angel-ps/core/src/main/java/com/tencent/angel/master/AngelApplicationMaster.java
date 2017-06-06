@@ -8,10 +8,10 @@
  *
  * https://opensource.org/licenses/BSD-3-Clause
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is
- * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package com.tencent.angel.master;
@@ -88,7 +88,7 @@ import org.apache.hadoop.yarn.webapp.WebApp;
 import org.apache.hadoop.yarn.webapp.WebApps;
 
 /**
- * Angel application master. It contains service modules: worker manager, parameter server manager, 
+ * Angel application master. It contains service modules: worker manager, parameter server manager,
  * container allocator, container launcher, task manager and event handler.
  * 
  */
@@ -96,92 +96,96 @@ public class AngelApplicationMaster extends CompositeService {
 
   private static final Log LOG = LogFactory.getLog(AngelApplicationMaster.class);
   public static final int SHUTDOWN_HOOK_PRIORITY = 30;
-  
-  /**application name*/
+
+  /** application name */
   private final String appName;
-  
-  /**application configuration*/
+
+  /** application configuration */
   private final Configuration conf;
-  
-  /**application attempt id*/
+
+  /** application attempt id */
   private final ApplicationAttemptId appAttemptId;
-  
-  /**app start time*/
+
+  /** app start time */
   private final long startTime;
-  
-  /**app submit time*/
+
+  /** app submit time */
   private final long appSubmitTime;
-  
-  /**container id for angel application master*/
+
+  /** container id for angel application master */
   private final ContainerId containerId;
-  
-  /**The host of the node manager where the angel applitaion master is located */
+
+  /** The host of the node manager where the angel applitaion master is located */
   private final String nmHost;
-  
-  /**The port of the node manager where the angel applitaion master is located */
+
+  /** The port of the node manager where the angel applitaion master is located */
   private final int nmPort;
-  
-  /**The web port of the node manager where the angel applitaion master is located */
+
+  /** The web port of the node manager where the angel applitaion master is located */
   private final int nmHttpPort;
-  
-  /**angel application master credentials*/
+
+  /** angel application master credentials */
   private final Credentials credentials = new Credentials();
-  
-  /**application running context, it is used to share information between all service module*/
+
+  /** application running context, it is used to share information between all service module */
   private final AMContext appContext;
-  
-  /**system clock*/
+
+  /** system clock */
   private final SystemClock clock;
-  
-  /**event dispatcher*/
+
+  /** event dispatcher */
   private Dispatcher dispatcher;
-  
-  /**container allocator, it used to apply running resource for workers and parameter servers*/
+
+  /** container allocator, it used to apply running resource for workers and parameter servers */
   private ContainerAllocator containerAllocator;
-  
-  /**container allocator, it used to launch workers and parameter servers*/
+
+  /** container allocator, it used to launch workers and parameter servers */
   private ContainerLauncher containerLauncher;
-  
-  /**parameter server manager*/
+
+  /** parameter server manager */
   private ParameterServerManager psManager;
-  
-  /**angel application master service, it is used to response RPC request from client, workers and parameter servers*/
+
+  /**
+   * angel application master service, it is used to response RPC request from client, workers and
+   * parameter servers
+   */
   private MasterService masterService;
-  
-  /**matrix meta manager*/
+
+  /** matrix meta manager */
   private MatrixMetaManager matrixMetaManager;
-  
-  /**parameter server location manager*/
+
+  /** parameter server location manager */
   private LocationManager locationManager;
 
-  /**worker manager*/
+  /** worker manager */
   private WorkerManager workerManager;
-  
-  /**it use to split train data*/
+
+  /** it use to split train data */
   private DataSpliter dataSpliter;
-  
-  /**angel application master state storage*/
+
+  /** angel application master state storage */
   private AppStateStorage appStateStorage;
 
-  /**angel application state*/
+  /** angel application state */
   private final App angelApp;
-  
-  /**a web service for http access*/
+
+  /** a web service for http access */
   private WebApp webApp;
-  
-  /**psagent manager*/
+
+  /** psagent manager */
   private PSAgentManager psAgentManager;
-  
-  /**identifies whether the temporary resource is cleared*/
+
+  /** identifies whether the temporary resource is cleared */
   private boolean isCleared;
-  
-  /**task manager*/
+
+  /** task manager */
   private AMTaskManager taskManager;
-  
+
   private final Lock lock;
-  
-  public AngelApplicationMaster(Configuration conf, String appName, ApplicationAttemptId applicationAttemptId, ContainerId containerId,
-      String nmHost, int nmPort, int nmHttpPort, long appSubmitTime) throws IllegalArgumentException, IOException {
+
+  public AngelApplicationMaster(Configuration conf, String appName,
+      ApplicationAttemptId applicationAttemptId, ContainerId containerId, String nmHost, int nmPort,
+      int nmHttpPort, long appSubmitTime) throws IllegalArgumentException, IOException {
     super(AngelApplicationMaster.class.getName());
     this.conf = conf;
     this.appName = appName;
@@ -191,11 +195,11 @@ public class AngelApplicationMaster extends CompositeService {
     this.nmHost = nmHost;
     this.nmPort = nmPort;
     this.nmHttpPort = nmHttpPort;
-    
+
     this.clock = new SystemClock();
     this.startTime = clock.getTime();
     this.isCleared = false;
-    
+
     appContext = new RunningAppContext(conf);
     angelApp = new App(appContext);
     lock = new ReentrantLock();
@@ -304,9 +308,8 @@ public class AngelApplicationMaster extends CompositeService {
 
     @Override
     public RunningMode getRunningMode() {
-      String mode =
-          conf.get(AngelConfiguration.ANGEL_RUNNING_MODE,
-              AngelConfiguration.DEFAULT_ANGEL_RUNNING_MODE);
+      String mode = conf.get(AngelConfiguration.ANGEL_RUNNING_MODE,
+          AngelConfiguration.DEFAULT_ANGEL_RUNNING_MODE);
       if (mode.equals(RunningMode.ANGEL_PS.toString())) {
         return RunningMode.ANGEL_PS;
       } else if (mode.equals(RunningMode.ANGEL_PS_PSAGENT.toString())) {
@@ -333,8 +336,7 @@ public class AngelApplicationMaster extends CompositeService {
 
     @Override
     public int getTotalIterationNum() {
-      return conf.getInt(AngelConfiguration.ANGEL_TASK_ITERATION_NUMBER,
-          AngelConfiguration.DEFAULT_ANGEL_TASK_ITERATION_NUMBER);
+      return conf.getInt("ml.epochnum", AngelConfiguration.DEFAULT_ANGEL_TASK_ITERATION_NUMBER);
     }
 
     @Override
@@ -344,7 +346,8 @@ public class AngelApplicationMaster extends CompositeService {
 
     @Override
     public int getAMAttemptTime() {
-      return conf.getInt(YarnConfiguration.RM_AM_MAX_ATTEMPTS, YarnConfiguration.DEFAULT_RM_AM_MAX_ATTEMPTS);
+      return conf.getInt(YarnConfiguration.RM_AM_MAX_ATTEMPTS,
+          YarnConfiguration.DEFAULT_RM_AM_MAX_ATTEMPTS);
     }
 
     @Override
@@ -354,18 +357,17 @@ public class AngelApplicationMaster extends CompositeService {
 
     @Override
     public boolean needClear() {
-      if(!getApp().isShouldRetry()) {
+      if (!getApp().isShouldRetry()) {
         return true;
       }
-      
+
       return appAttemptId.getAttemptId() >= getAMAttemptTime() || angelApp.isSuccess();
     }
 
     @Override
     public AngelDeployMode getDeployMode() {
-      String mode =
-          conf.get(AngelConfiguration.ANGEL_DEPLOY_MODE,
-              AngelConfiguration.DEFAULT_ANGEL_DEPLOY_MODE);
+      String mode = conf.get(AngelConfiguration.ANGEL_DEPLOY_MODE,
+          AngelConfiguration.DEFAULT_ANGEL_DEPLOY_MODE);
       if (mode.equals(AngelDeployMode.LOCAL.toString())) {
         return AngelDeployMode.LOCAL;
       } else {
@@ -381,17 +383,17 @@ public class AngelApplicationMaster extends CompositeService {
     if (deleteSubmitDir) {
       cleanupStagingDir();
     }
-    
+
     cleanTmpOutputDir();
   }
 
   private void cleanTmpOutputDir() {
     Configuration conf = appContext.getConf();
     String tmpOutDir = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_DIRECTORY);
-    if(tmpOutDir == null) {
+    if (tmpOutDir == null) {
       return;
     }
-         
+
     try {
       LOG.info("Deleting tmp output directory " + tmpOutDir);
       Path tmpOutPath = new Path(tmpOutDir);
@@ -409,7 +411,7 @@ public class AngelApplicationMaster extends CompositeService {
       LOG.warn("App Staging directory is null");
       return;
     }
-       
+
     try {
       Path stagingDirPath = new Path(stagingDir);
       FileSystem fs = stagingDirPath.getFileSystem(conf);
@@ -431,30 +433,31 @@ public class AngelApplicationMaster extends CompositeService {
   public void shutDownJob() {
     try {
       lock.lock();
-      if(isCleared) {
+      if (isCleared) {
         return;
       }
-      
-      //stop all services
-      LOG.info("Calling stop for all the services");    
+
+      // stop all services
+      LOG.info("Calling stop for all the services");
       AngelApplicationMaster.this.stop();
-           
-      //1.write application state to file so that the client can get the state of the application if master exit
-      //2.clear tmp and staging directory
-      if(appContext.needClear()) {
+
+      // 1.write application state to file so that the client can get the state of the application
+      // if master exit
+      // 2.clear tmp and staging directory
+      if (appContext.needClear()) {
         LOG.info("start to write app state to file and clear tmp directory");
         writeAppState();
         clear();
       }
 
-      //waiting for client to get application state
+      // waiting for client to get application state
       try {
         Thread.sleep(10000);
       } catch (InterruptedException e) {
         LOG.warn("ShutDownjob error ", e);
       }
 
-      //stop the RPC server
+      // stop the RPC server
       masterService.stop();
     } catch (Throwable t) {
       LOG.warn("Graceful stop failed ", t);
@@ -462,15 +465,15 @@ public class AngelApplicationMaster extends CompositeService {
       isCleared = true;
       lock.unlock();
     }
-    
+
     LOG.info("Exiting Angel AppMaster..GoodBye!");
-    
+
     exit(0);
   }
-  
-  private  void exit(int code) {
+
+  private void exit(int code) {
     AngelDeployMode deployMode = appContext.getDeployMode();
-    if(deployMode == AngelDeployMode.YARN) {
+    if (deployMode == AngelDeployMode.YARN) {
       System.exit(code);
     }
   }
@@ -488,10 +491,10 @@ public class AngelApplicationMaster extends CompositeService {
 
     Path stateFilePath = new Path(interalStatePath);
     FileSystem fs = stateFilePath.getFileSystem(appContext.getConf());
-    if(fs.exists(stateFilePath)) {
+    if (fs.exists(stateFilePath)) {
       fs.delete(stateFilePath, false);
     }
-    
+
     FSDataOutputStream out = fs.create(stateFilePath);
     appContext.getApp().serilize(out);
     out.flush();
@@ -502,9 +505,10 @@ public class AngelApplicationMaster extends CompositeService {
 
   @SuppressWarnings("resource")
   public static void main(String[] args) {
+    AngelAppMasterShutdownHook hook = null;
     try {
       Thread.setDefaultUncaughtExceptionHandler(new YarnUncaughtExceptionHandler());
-      
+
       String containerIdStr = System.getenv(Environment.CONTAINER_ID.name());
       String nodeHostString = System.getenv(Environment.NM_HOST.name());
       String nodePortString = System.getenv(Environment.NM_PORT.name());
@@ -529,20 +533,27 @@ public class AngelApplicationMaster extends CompositeService {
       String jobUserName = System.getenv(ApplicationConstants.Environment.USER.name());
       conf.set(AngelConfiguration.USER_NAME, jobUserName);
       conf.setBoolean("fs.automatic.close", false);
-      
+
       String appName = conf.get(AngelConfiguration.ANGEL_JOB_NAME);
-      
+
       LOG.info("app name=" + appName);
       LOG.info("app attempt id=" + applicationAttemptId);
-      
-      AngelApplicationMaster appMaster =
-          new AngelApplicationMaster(conf, appName, applicationAttemptId, containerId, nodeHostString,
-              Integer.parseInt(nodePortString), Integer.parseInt(nodeHttpPortString), appSubmitTime);
+
+      AngelApplicationMaster appMaster = new AngelApplicationMaster(conf, appName,
+          applicationAttemptId, containerId, nodeHostString, Integer.parseInt(nodePortString),
+          Integer.parseInt(nodeHttpPortString), appSubmitTime);
+
+      // add a shutdown hook
+      hook = new AngelAppMasterShutdownHook(appMaster);
+      ShutdownHookManager.get().addShutdownHook(hook, SHUTDOWN_HOOK_PRIORITY);
 
       appMaster.initAndStart();
     } catch (Throwable t) {
       LOG.fatal("Error starting AppMaster", t);
-      System.exit(100);
+      if(hook != null) {
+        ShutdownHookManager.get().removeShutdownHook(hook);
+      }
+      System.exit(1);
     }
   }
 
@@ -559,11 +570,8 @@ public class AngelApplicationMaster extends CompositeService {
    */
   public void initAndStart() throws IOException {
     addIfService(angelApp);
-    //add a shutdown hook
-    ShutdownHookManager.get().addShutdownHook(new AngelAppMasterShutdownHook(this),
-        SHUTDOWN_HOOK_PRIORITY);
-    
-    //init app state storage
+
+    // init app state storage
     String tmpOutPath = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_DIRECTORY);
     Path appStatePath = new Path(tmpOutPath, "app");
     LOG.info("app state output path = " + appStatePath.toUri().toString());
@@ -578,18 +586,18 @@ public class AngelApplicationMaster extends CompositeService {
     LOG.info("build event dispacher");
 
     // init location manager
-    locationManager = new LocationManager(appContext);    
+    locationManager = new LocationManager(appContext);
 
     // init container allocator
     AngelDeployMode deployMode = appContext.getDeployMode();
     LOG.info("deploy mode=" + deployMode);
-    if(deployMode == AngelDeployMode.LOCAL) {
+    if (deployMode == AngelDeployMode.LOCAL) {
       containerAllocator = new LocalContainerAllocator(appContext);
       containerLauncher = new LocalContainerLauncher(appContext);
     } else {
       containerAllocator = new YarnContainerAllocator(appContext);
       containerLauncher = new YarnContainerLauncher(appContext);
-    }    
+    }
     addIfService(containerAllocator);
     dispatcher.register(ContainerAllocatorEventType.class, containerAllocator);
     LOG.info("build containerAllocator success");
@@ -597,39 +605,39 @@ public class AngelApplicationMaster extends CompositeService {
     dispatcher.register(ContainerLauncherEventType.class, containerLauncher);
     LOG.info("build containerLauncher success");
 
-    //init a rpc service
+    // init a rpc service
     masterService = new MasterService(appContext);
     LOG.info("build master service success");
 
-    //recover matrix meta if needed
+    // recover matrix meta if needed
     recoverMatrixMeta();
-    
-    //recover ps attempt information if need
+
+    // recover ps attempt information if need
     Map<ParameterServerId, Integer> psIdToAttemptIndexMap = recoverPSAttemptIndex();
-    if(psIdToAttemptIndexMap == null) {
+    if (psIdToAttemptIndexMap == null) {
       LOG.info("recoverPSAttemptIndex return is null");
     } else {
-      for(Entry<ParameterServerId, Integer> entry:psIdToAttemptIndexMap.entrySet()) {
+      for (Entry<ParameterServerId, Integer> entry : psIdToAttemptIndexMap.entrySet()) {
         LOG.info("psId=" + entry.getKey() + ",attemptIndex=" + entry.getValue());
       }
     }
-    
-    //init parameter server manager
-    psManager = new ParameterServerManager(appContext, psIdToAttemptIndexMap);   
+
+    // init parameter server manager
+    psManager = new ParameterServerManager(appContext, psIdToAttemptIndexMap);
     addIfService(psManager);
     dispatcher.register(ParameterServerManagerEventType.class, psManager);
     dispatcher.register(AMParameterServerEventType.class, new ParameterServerEventHandler());
     dispatcher.register(PSAttemptEventType.class, new PSAttemptEventDispatcher());
     LOG.info("build PSManager success");
 
-    //recover task information if needed
+    // recover task information if needed
     recoverTaskState();
-    
+
     RunningMode mode = appContext.getRunningMode();
     LOG.info("running mode=" + mode);
     switch (mode) {
       case ANGEL_PS_PSAGENT: {
-        //init psagent manager and register psagent manager event 
+        // init psagent manager and register psagent manager event
         psAgentManager = new PSAgentManager(appContext);
         addIfService(psAgentManager);
         dispatcher.register(PSAgentManagerEventType.class, psAgentManager);
@@ -639,19 +647,21 @@ public class AngelApplicationMaster extends CompositeService {
         break;
       }
 
-      case ANGEL_PS_WORKER: {  
+      case ANGEL_PS_WORKER: {
         // a dummy data spliter is just for test now
-        boolean useDummyDataSpliter = conf.getBoolean(AngelConfiguration.ANGEL_AM_USE_DUMMY_DATASPLITER, 
-            AngelConfiguration.DEFAULT_ANGEL_AM_USE_DUMMY_DATASPLITER);
-        if(useDummyDataSpliter && deployMode == AngelDeployMode.LOCAL) {
+        boolean useDummyDataSpliter =
+            conf.getBoolean(AngelConfiguration.ANGEL_AM_USE_DUMMY_DATASPLITER,
+                AngelConfiguration.DEFAULT_ANGEL_AM_USE_DUMMY_DATASPLITER);
+        if (useDummyDataSpliter && deployMode == AngelDeployMode.LOCAL) {
           dataSpliter = new DummyDataSpliter(appContext);
         } else {
-          //recover data splits information if needed
+          // recover data splits information if needed
           recoveryDataSplits();
         }
-        
-        //init worker manager and register worker manager event
+
+        // init worker manager and register worker manager event
         workerManager = new WorkerManager(appContext);
+        workerManager.adjustTaskNumber(dataSpliter.getSplitNum());
         addIfService(workerManager);
         dispatcher.register(WorkerManagerEventType.class, workerManager);
         dispatcher.register(AMWorkerGroupEventType.class, new WorkerGroupEventHandler());
@@ -665,7 +675,7 @@ public class AngelApplicationMaster extends CompositeService {
         break;
     }
 
-    //register app manager event and finish event
+    // register app manager event and finish event
     dispatcher.register(AppEventType.class, angelApp);
     dispatcher.register(AppFinishEventType.class, new AppFinishEventHandler());
 
@@ -673,11 +683,11 @@ public class AngelApplicationMaster extends CompositeService {
       masterService.init(conf);
       super.init(conf);
 
-      //start a web service if use yarn deploy mode
-      if(deployMode == AngelDeployMode.YARN) {
+      // start a web service if use yarn deploy mode
+      if (deployMode == AngelDeployMode.YARN) {
         try {
-          webApp =
-              WebApps.$for("angel", AMContext.class, appContext).with(conf).start(new AngelWebApp());
+          webApp = WebApps.$for("angel", AMContext.class, appContext).with(conf)
+              .start(new AngelWebApp());
           LOG.info("start webapp server success");
           LOG.info("webApp.port()=" + webApp.port());
         } catch (Exception e) {
@@ -686,63 +696,72 @@ public class AngelApplicationMaster extends CompositeService {
       }
 
       masterService.start();
-      super.serviceStart();
-      //angelApp.start();
+      super.serviceStart();    
+      psManager.startAllPS();
+      
+      LOG.info("appAttemptId.getAttemptId()=" + appAttemptId.getAttemptId());
+      if (appAttemptId.getAttemptId() > 1) {
+        angelApp.startExecute();
+      }
     } catch (Exception e) {
       LOG.error("Failed startup APPMaster.", e);
     }
   }
-  
+
   private void recoverMatrixMeta() {
-    //load from app state storage first if attempt index great than 1(the master is not the first retry)
-    if(appAttemptId.getAttemptId() > 1) {
+    // load from app state storage first if attempt index great than 1(the master is not the first
+    // retry)
+    if (appAttemptId.getAttemptId() > 1) {
       try {
         matrixMetaManager = appStateStorage.loadMatrixMeta();
       } catch (Exception e) {
         LOG.error("load matrix meta from file failed.", e);
       }
     }
-    
-    //if load failed, just build a new MatrixMetaManager
-    if(matrixMetaManager == null) {
+
+    // if load failed, just build a new MatrixMetaManager
+    if (matrixMetaManager == null) {
       matrixMetaManager = new MatrixMetaManager();
     }
   }
 
   private Map<ParameterServerId, Integer> recoverPSAttemptIndex() {
-    //load ps attempt index from app state storage first if attempt index great than 1(the master is not the first retry)
+    // load ps attempt index from app state storage first if attempt index great than 1(the master
+    // is not the first retry)
     Map<ParameterServerId, Integer> psIdToAttemptIndexMap = null;
-    if(appAttemptId.getAttemptId() > 1) {
-      try {          
+    if (appAttemptId.getAttemptId() > 1) {
+      try {
         psIdToAttemptIndexMap = appStateStorage.loadPSMeta();
       } catch (Exception e) {
         LOG.error("load task meta from file failed.", e);
       }
-    } 
-    
+    }
+
     return psIdToAttemptIndexMap;
   }
 
   private void recoverTaskState() throws IOException {
-    //load task information from app state storage first if attempt index great than 1(the master is not the first retry)
-    if(appAttemptId.getAttemptId() > 1) {
+    // load task information from app state storage first if attempt index great than 1(the master
+    // is not the first retry)
+    if (appAttemptId.getAttemptId() > 1) {
       try {
         taskManager = appStateStorage.loadTaskMeta();
       } catch (Exception e) {
         LOG.error("load task meta from file failed.", e);
       }
     }
-    
-    //if load failed, just build a new AMTaskManager
-    if(taskManager == null) {
+
+    // if load failed, just build a new AMTaskManager
+    if (taskManager == null) {
       taskManager = new AMTaskManager();
     }
   }
 
 
   private void recoveryDataSplits() throws IOException {
-    //load data splits information from app state storage first if attempt index great than 1(the master is not the first retry)
-    if(appAttemptId.getAttemptId() > 1) { 
+    // load data splits information from app state storage first if attempt index great than 1(the
+    // master is not the first retry)
+    if (appAttemptId.getAttemptId() > 1) {
       try {
         dataSpliter = appStateStorage.loadDataSplits();
       } catch (Exception e) {
@@ -750,8 +769,8 @@ public class AngelApplicationMaster extends CompositeService {
       }
     }
 
-    //if load failed, we need to recalculate the data splits
-    if(dataSpliter == null) {
+    // if load failed, we need to recalculate the data splits
+    if (dataSpliter == null) {
       try {
         dataSpliter = new DataSpliter(appContext);
         dataSpliter.generateSplits();
@@ -760,6 +779,10 @@ public class AngelApplicationMaster extends CompositeService {
         LOG.error("Split failed, error: " + x);
         throw new IOException(x);
       }
+    }
+
+    if(dataSpliter.getSplitNum() == 0) {
+      throw new IOException("training data directory is empty");
     }
   }
 

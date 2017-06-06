@@ -55,6 +55,7 @@ public class AngelWebApp extends WebApp implements AngelParams {
 
     route("/angel/EnvironmentPage", AngelController.class, "environmentPage");
     route("/angel/ExecutorsPage", AngelController.class, "executorsPage");
+    route("/angel/ProgressPage", AngelController.class, "progressPage");
 
   }
 }

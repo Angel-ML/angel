@@ -48,7 +48,7 @@ public class CounterUpdater {
 
     public GcTimeUpdater() {
       this.gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
-      getElapsedGc(); // Initialize 'lastGcMillis' with the current time spent.
+      getElapsedGc();
     }
 
     /**

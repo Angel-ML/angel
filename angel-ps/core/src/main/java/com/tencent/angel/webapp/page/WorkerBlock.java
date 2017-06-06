@@ -8,10 +8,10 @@
  *
  * https://opensource.org/licenses/BSD-3-Clause
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is
- * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package com.tencent.angel.webapp.page;
@@ -69,35 +69,29 @@ public class WorkerBlock extends HtmlBlock {
     TABLE<DIV<Hamlet>> table = html.div(_INFO_WRAP).table("#job");
     TR<THEAD<TABLE<DIV<Hamlet>>>> headTr = table.thead().tr();
 
-    headTr.th(_TH, "taskid1").th(_TH, "state").th(_TH, "current clock")
-        .th(_TH, "current clock progressbar").th(_TH, "current iteration progress")
-        .th(_TH, "current iteration progressbar").th(_TH, "taskcounters");
+    headTr.th(_TH, "taskid").th(_TH, "state").th(_TH, "current iteration")
+        .th(_TH, "current iteration bar").th(_TH, "current progress")
+        .th(_TH, "current progress bar").th(_TH, "taskcounters");
     headTr._()._();
     float current_iteration_progress = (float) 0.0;
+    float current_clock_progress = (float) 0.0;
     TBODY<TABLE<DIV<Hamlet>>> tbody = table.tbody();
     for (AMTask task : workerAttempt.getTaskMap().values()) {
       if (task.getProgress() >= 0 && task.getProgress() <= 1)
         current_iteration_progress = task.getProgress();
+      current_clock_progress =
+          ((float) task.getIteration()) / ((float) amContext.getTotalIterationNum());
       TR<TBODY<TABLE<DIV<Hamlet>>>> tr = tbody.tr();
-      tr.td(task.getTaskId().toString())
-          .td(task.getState().toString())
-          .td(String.valueOf(task.getIteration()) + "/" + amContext.getTotalIterationNum())
-          .td()
-          .div(_PROGRESSBAR)
-          .$title(
-              join(String.valueOf(task.getIteration() / amContext.getTotalIterationNum() * 100),
-                  '%'))
-          . // tooltip
+      tr.td(task.getTaskId().toString()).td(task.getState().toString())
+          .td(String.valueOf(task.getIteration()) + "/" + amContext.getTotalIterationNum()).td()
+          .div(_PROGRESSBAR).$title(join(String.valueOf(current_clock_progress * 100), '%')). // tooltip
           div(_PROGRESSBAR_VALUE)
-          .$style(
-              join("width:",
-                  String.valueOf(task.getIteration() / amContext.getTotalIterationNum() * 100), '%'))
-          ._()._()._().td(String.valueOf(current_iteration_progress)).td().div(_PROGRESSBAR)
+          .$style(join("width:", String.valueOf(current_clock_progress * 100), '%'))._()._()._()
+          .td(String.valueOf(current_iteration_progress)).td().div(_PROGRESSBAR)
           .$title(join(String.valueOf(current_iteration_progress * 100), '%'))
           .div(_PROGRESSBAR_VALUE)
-          .$style(join("width:", String.valueOf(current_iteration_progress * 100), '%'))._()._()
-          ._().td().a(url("angel/taskCountersPage/", task.getTaskId().toString()), "taskcounters")
-          ._();
+          .$style(join("width:", String.valueOf(current_iteration_progress * 100), '%'))._()._()._()
+          .td().a(url("angel/taskCountersPage/", task.getTaskId().toString()), "taskcounters")._();
       tr._();
     }
 

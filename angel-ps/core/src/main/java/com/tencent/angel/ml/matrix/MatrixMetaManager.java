@@ -103,6 +103,21 @@ public class MatrixMetaManager {
       return matrixMetas.get(matrixId).getAttribute(key, value);
     }
   }
+  
+  /**
+   * Gets attribute.
+   *
+   * @param matrixId the matrix id
+   * @param key      the key
+   * @return the attribute
+   */
+  public String getAttribute(int matrixId, String key) {
+    if (!exist(matrixId)) {
+      return null;
+    } else {
+      return matrixMetas.get(matrixId).getAttribute(key);
+    }
+  }
 
   /**
    * Gets matrix meta.

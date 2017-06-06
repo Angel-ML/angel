@@ -26,10 +26,24 @@ import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.master.AngelApplicationMaster;
 
+/**
+ * Local Angel master. It startups the {@link AngelApplicationMaster} using a thread.
+ */
 public class LocalMaster extends Thread {
   private static final Log LOG = LogFactory.getLog(LocalMaster.class);
+  
+  /**Angel Application master*/
   private final AngelApplicationMaster appMaster;
+  
+  /**Master attempt id*/
   private final ApplicationAttemptId appAttemptId;
+  
+  /**
+   * Create a new LocalMaster
+   * @param appAttemptId
+   * @throws IllegalArgumentException
+   * @throws IOException
+   */
   public LocalMaster(ApplicationAttemptId appAttemptId) throws IllegalArgumentException, IOException {
     this.appAttemptId = appAttemptId;
     LocalClusterContext clusterContext = LocalClusterContext.get();
@@ -53,10 +67,17 @@ public class LocalMaster extends Thread {
     }
   }
 
+  /**
+   * Get Angel Application Master
+   * @return Angel Application Master
+   */
   public AngelApplicationMaster getAppMaster() {
     return appMaster;
   }
 
+  /**
+   * Exit
+   */
   public void exit() {
     appMaster.getAppContext().getApp().shouldRetry(false);
     appMaster.shutDownJob();

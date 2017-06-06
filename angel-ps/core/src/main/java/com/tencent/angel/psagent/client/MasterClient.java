@@ -36,6 +36,8 @@ import com.tencent.angel.worker.WorkerGroup;
 import com.tencent.angel.worker.WorkerRef;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.RequestConverter;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.CheckMatricesCreatedRequest;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.CheckMatricesCreatedResponse;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.protobuf.generated.MLProtos.*;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.*;
@@ -46,6 +48,7 @@ import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -185,7 +188,7 @@ public class MasterClient {
    * Create a new matrix
    * 
    * @param matrixContext matrix configuration
-   * @param timeOutMs maximun wait time in milliseconds
+   * @param timeOutMS maximun wait time in milliseconds
    * @return MatrixMeta matrix meta
    * @throws ServiceException rpc failed
    * @throws TimeOutException create matrix time out
@@ -210,16 +213,16 @@ public class MasterClient {
           .getMatrixPartitionRouter());
       return matrixManager.getMatrixMeta(createResponse.getMatrixId());
     } else {
-      GetMatrixInfoRequest getRequest =
-          GetMatrixInfoRequest.newBuilder().setMatrixId(createResponse.getMatrixId()).build();
-
+      CheckMatricesCreatedRequest request = CheckMatricesCreatedRequest.newBuilder().addMatrixNames(matrixContext.getName()).build();
+      CheckMatricesCreatedResponse response = null;
       while (true) {
         long startTs = Time.now();
-        if (matrixManager.getMatrixMeta(createResponse.getMatrixId()) != null) {
-          return matrixManager.getMatrixMeta(createResponse.getMatrixId());
-        }
+        //if (matrixManager.getMatrixMeta(createResponse.getMatrixId()) != null) {
+        //  return matrixManager.getMatrixMeta(createResponse.getMatrixId());
+        //}
 
-        if (master.getMatrixInfo(null, getRequest).getMatrixStatus() == MatrixStatus.M_OK) {
+        response = master.checkMatricesCreated(null, request);
+        if(response.getStatus(0) == MatrixStatus.M_OK) {
           LOG.debug("getMatrixInfo response is OK, add matrix to matrixManager now");
           matrixManager.addMatrix(new MatrixMeta(matrixContext, createResponse.getMatrixId()));
           updateMatrixPartitionRouter(createResponse.getMatrixId(), matrixProto, PSAgentContext

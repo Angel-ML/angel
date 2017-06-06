@@ -1,3 +1,20 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
 package com.tencent.angel.spark.ml.classification
 
 import scala.collection.mutable
@@ -7,11 +24,11 @@ import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.ml.evaluation.Evaluator
 import org.apache.spark.mllib.linalg.{DenseVector, Vectors}
 import org.apache.spark.mllib.optimization.L1Updater
-import org.apache.spark.sql.functions._
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
 
-import com.tencent.angel.spark.PSClient
+import com.tencent.angel.spark.PSContext
 import com.tencent.angel.spark.ml.common.{Learner, LogisticGradient, Model}
 import com.tencent.angel.spark.ml.optim.ADMM
 import com.tencent.angel.spark.ml.util._
@@ -199,10 +216,19 @@ object SparseLogisticRegression {
     val testSet = params.getOrElse(ParamKeys.TEST_SET, "")
     val output = params.getOrElse(ParamKeys.OUTPUT, null)
 
-    val conf = new SparkConf().setAppName(this.getClass.getSimpleName).setMaster(mode)
+    val psConf = new SparkConf()
+      .set("spark.ps.mode", "LOCAL")
+      .set("spark.ps.jars", "None")
+      .set("spark.ps.tmp.path", "file:///tmp/stage")
+      .set("spark.ps.out.path", "file:///tmp/output")
+      .set("spark.ps.model.path", "file:///tmp/model")
+      .set("spark.ps.instances", "1")
+      .set("spark.ps.cores", "1")
+
+    val conf = psConf.setAppName(this.getClass.getSimpleName).setMaster(mode)
     val spark = SparkSession.builder().config(conf).getOrCreate()
     if (mode.startsWith("local")) spark.sparkContext.setLogLevel("INFO")
-    PSClient.setup(spark.sparkContext)
+    PSContext.getOrCreate(spark.sparkContext)
 
     val lr = new SparseLogisticRegression()
         .setPartitionNum(partitionNum)

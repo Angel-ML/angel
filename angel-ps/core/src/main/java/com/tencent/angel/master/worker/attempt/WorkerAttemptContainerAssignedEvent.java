@@ -19,14 +19,28 @@ package com.tencent.angel.master.worker.attempt;
 import com.tencent.angel.worker.WorkerAttemptId;
 import org.apache.hadoop.yarn.api.records.Container;
 
+/**
+ * Assign container to worker attempt.
+ */
 public class WorkerAttemptContainerAssignedEvent extends WorkerAttemptEvent{
+  /**container*/
   private final Container container;
+
+  /**
+   * Create a WorkerAttemptContainerAssignedEvent
+   * @param workerAttemptId worker attempt id
+   * @param container container
+   */
   public WorkerAttemptContainerAssignedEvent(
       WorkerAttemptId workerAttemptId, Container container) {
     super(WorkerAttemptEventType.CONTAINER_ASSIGN, workerAttemptId);
     this.container = container;
   }
-  
+
+  /**
+   * Get container
+   * @return container
+   */
   public Container getContainer() {
     return container;
   }

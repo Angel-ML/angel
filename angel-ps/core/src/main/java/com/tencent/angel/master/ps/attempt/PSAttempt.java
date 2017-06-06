@@ -1,17 +1,17 @@
 /*
  * Tencent is pleased to support the open source community by making Angel available.
- *
+ * 
  * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
- *
+ * 
  * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- *
+ * 
  * https://opensource.org/licenses/BSD-3-Clause
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is
- * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package com.tencent.angel.master.ps.attempt;
@@ -38,6 +38,7 @@ import com.tencent.angel.master.deploy.local.LocalContainerLauncherEvent;
 import com.tencent.angel.master.deploy.yarn.ContainerRemoteLaunchEvent;
 import com.tencent.angel.master.deploy.yarn.YarnContainerAllocatorEvent;
 import com.tencent.angel.master.deploy.yarn.YarnContainerLauncherEvent;
+import com.tencent.angel.master.deploy.yarn.YarnContainerRequestEvent;
 import com.tencent.angel.master.ps.ps.AMParameterServerEventType;
 import com.tencent.angel.master.ps.ps.PSPAttemptEvent;
 import com.tencent.angel.master.yarn.util.ContainerContextUtils;
@@ -85,9 +86,9 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
   /** except machine to run this ps attempt */
   private final String expectedIp;
 
-  /**container allocated for this ps attempt*/
+  /** container allocated for this ps attempt */
   private Container container;
-  
+
   private static final DiagnosticUpdaterTransition DIAGNOSTIC_UPDATE_TRANSITION =
       new DiagnosticUpdaterTransition();
 
@@ -283,18 +284,17 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
                 psAttempt.getId());
 
       } else {
-        if(psAttempt.getExpectedIp() != null) {
+        if (psAttempt.getExpectedIp() != null) {
           allocatorEvent =
-              new YarnContainerAllocatorEvent(psAttempt.getId(),
-                  ContainerAllocatorEventType.CONTAINER_REQ, psAttempt.getContext()
-                      .getParameterServerManager().getPsResource(), psAttempt.getContext()
-                      .getParameterServerManager().getPriority(), new String[]{psAttempt.getExpectedIp()});
+              new YarnContainerRequestEvent(psAttempt.getId(), psAttempt.getContext()
+                  .getParameterServerManager().getPsResource(), psAttempt.getContext()
+                  .getParameterServerManager().getPriority(),
+                  new String[] {psAttempt.getExpectedIp()});
         } else {
           allocatorEvent =
-              new YarnContainerAllocatorEvent(psAttempt.getId(),
-                  ContainerAllocatorEventType.CONTAINER_REQ, psAttempt.getContext()
-                      .getParameterServerManager().getPsResource(), psAttempt.getContext()
-                      .getParameterServerManager().getPriority());
+              new YarnContainerRequestEvent(psAttempt.getId(), psAttempt.getContext()
+                  .getParameterServerManager().getPsResource(), psAttempt.getContext()
+                  .getParameterServerManager().getPriority());
         }
       }
 
@@ -352,7 +352,8 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
       } else {
         allocatorEvent =
             new YarnContainerAllocatorEvent(psAttempt.getId(),
-                ContainerAllocatorEventType.CONTAINER_DEALLOCATE);
+                ContainerAllocatorEventType.CONTAINER_DEALLOCATE, psAttempt.context
+                    .getParameterServerManager().getPriority());
       }
       psAttempt.getContext().getEventHandler().handle(allocatorEvent);
     }
@@ -488,9 +489,10 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
       diagnostics.add(diag);
     }
   }
-  
+
   /**
    * get ps attempt state
+   * 
    * @return PSAttemptStateInternal ps attempt state
    */
   public PSAttemptStateInternal getInternalState() {
@@ -504,6 +506,7 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
 
   /**
    * get the http address of the machine where the container is located
+   * 
    * @return String the http address of the machine where the container is located
    */
   public String getNodeHttpAddr() {
@@ -521,6 +524,7 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
 
   /**
    * get container id string
+   * 
    * @return String container id string
    */
   public String getContainerIdStr() {
@@ -538,6 +542,7 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
 
   /**
    * get the container allocated to this ps attempt
+   * 
    * @return Container the container allocated to this ps attempt
    */
   public Container getContainer() {
@@ -555,6 +560,7 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
 
   /**
    * get ps attempt location
+   * 
    * @return Location ps attempt location
    */
   public Location getLocation() {
@@ -563,11 +569,12 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
       return location;
     } finally {
       readLock.unlock();
-    }    
+    }
   }
 
   /**
    * get ps attempt metrices
+   * 
    * @return Map<String, String> ps attempt metrices
    */
   public Map<String, String> getMetrices() {
@@ -587,9 +594,10 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
 
   /**
    * get ps attempt launch time
+   * 
    * @return long ps attempt launch time
    */
-  public long getLaunchTime() {   
+  public long getLaunchTime() {
     try {
       readLock.lock();
       return launchTime;
@@ -600,9 +608,10 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
 
   /**
    * get ps attempt finish time
+   * 
    * @return long ps attempt finish time
    */
-  public long getFinishTime() {   
+  public long getFinishTime() {
     try {
       readLock.lock();
       return finishTime;
@@ -613,6 +622,7 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
 
   /**
    * get ps attempt id
+   * 
    * @return ps attempt id
    */
   public PSAttemptId getId() {
@@ -621,6 +631,7 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
 
   /**
    * check if the ps attempt finish or not
+   * 
    * @return boolean
    */
   public boolean isFinished() {
@@ -630,6 +641,7 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
 
   /**
    * get ps attempt diagnostices
+   * 
    * @return List<String> ps attempt diagnostices
    */
   public List<String> getDiagnostics() {

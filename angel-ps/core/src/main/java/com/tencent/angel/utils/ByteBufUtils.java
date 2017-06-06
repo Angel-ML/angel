@@ -19,6 +19,9 @@ package com.tencent.angel.utils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 
+/**
+ * Netty ByteBuf allocation utils.
+ */
 public class ByteBufUtils {
   // private static UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(false);
   private static PooledByteBufAllocator allocator = new PooledByteBufAllocator();

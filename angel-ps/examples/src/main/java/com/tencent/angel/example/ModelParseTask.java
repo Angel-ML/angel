@@ -18,8 +18,9 @@ package com.tencent.angel.example;
 
 
 import com.tencent.angel.conf.AngelConfiguration;
-import com.tencent.angel.ml.algorithm.utils.ModelParse;
+import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.feature.LabeledData;
+import com.tencent.angel.ml.utils.ModelParse;
 import com.tencent.angel.worker.task.TaskContext;
 import com.tencent.angel.worker.task.TrainTask;
 import org.apache.commons.logging.Log;
@@ -27,14 +28,14 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+
 import java.io.IOException;
 
 public class ModelParseTask extends TrainTask<LongWritable, Text> {
   private static final Log LOG = LogFactory.getLog(ModelParseTask.class);
 
 
-  public ModelParseTask(TaskContext taskContext) throws IOException {
+  public ModelParseTask(TaskContext taskContext){
     super(taskContext);
   }
 
@@ -45,15 +46,20 @@ public class ModelParseTask extends TrainTask<LongWritable, Text> {
   }
 
   @Override
-  public void run(TaskContext taskContext) throws Exception {
+  public void train(TaskContext taskContext) throws AngelException {
     Configuration conf = taskContext.getConf();
-    String inputStr = conf.get(FileInputFormat.INPUT_DIR);
+    String inputStr = conf.get(AngelConfiguration.ANGEL_TRAIN_DATA_PATH);
     String outputStr = conf.get(AngelConfiguration.ANGEL_PARSE_MODEL_PATH);
     String modelName = conf.get(AngelConfiguration.ANGEL_MODEL_PARSE_NAME);
     int convertThreadCount = conf.getInt(AngelConfiguration.ANGEL_MODEL_PARSE_THREAD_COUNT,
             AngelConfiguration.DEFAULT_ANGEL_MODEL_PARSE_THREAD_COUNT);
     ModelParse modelLoader = new ModelParse(inputStr, outputStr, modelName, convertThreadCount);
-    modelLoader.convertModel();
+
+    try{
+      modelLoader.convertModel();
+    } catch (Exception x) {
+      throw new AngelException(x);
+    }
   }
 
 }

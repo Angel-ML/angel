@@ -27,7 +27,6 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.log4j.PropertyConfigurator;
 import org.junit.After;
 import org.junit.Before;
@@ -62,7 +61,7 @@ public class AppTest {
   private TaskId task1Id;
 
   static {
-    PropertyConfigurator.configure("../log4j.properties");
+    PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
   @Before
@@ -71,7 +70,7 @@ public class AppTest {
     Configuration conf = new Configuration();
     conf.setBoolean("mapred.mapper.new-api", true);
     conf.setBoolean(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
-    conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS, DummyTask.class.getName());
+    //conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS, DummyTask.class.getName());
 
     // use local deploy mode and dummy dataspliter
     conf.set(AngelConfiguration.ANGEL_DEPLOY_MODE, "LOCAL");
@@ -101,8 +100,8 @@ public class AppTest {
     mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_INT");
     angelClient.addMatrix(mMatrix);
 
-    angelClient.submit();
-    angelClient.start();
+    angelClient.startPSServer();
+    angelClient.runTask(DummyTask.class);
     Thread.sleep(5000);
     task0Id = new TaskId(0);
     task1Id = new TaskId(1);
@@ -139,6 +138,9 @@ public class AppTest {
         .getAppContext()
         .getEventHandler()
         .handle(new InternalErrorEvent(angelAppMaster.getAppContext().getApplicationId(), "failed"));
+    
+    Thread.sleep(5000);
+    
     response = master.getJobReport(null, request);
     assertEquals(response.getJobReport().getJobState(), JobStateProto.J_FAILED);
     assertEquals(response.getJobReport().getCurIteration(), jobIteration);

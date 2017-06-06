@@ -19,14 +19,27 @@ package com.tencent.angel.master.worker.workergroup;
 import com.tencent.angel.worker.WorkerGroupId;
 import org.apache.hadoop.yarn.event.AbstractEvent;
 
+/**
+ * Base class of worker group event.
+ */
 public class AMWorkerGroupEvent extends AbstractEvent<AMWorkerGroupEventType> {
+  /**worker group id*/
   private final WorkerGroupId groupId;
 
+  /**
+   * Create a AMWorkerGroupEvent
+   * @param type event type
+   * @param groupId worker group id
+   */
   public AMWorkerGroupEvent(AMWorkerGroupEventType type, WorkerGroupId groupId) {
     super(type);
     this.groupId = groupId;
   }
 
+  /**
+   * Get worker group id
+   * @return worker group id
+   */
   public WorkerGroupId getGroupId() {
     return groupId;
   }

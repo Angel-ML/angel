@@ -1,3 +1,20 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
 package com.tencent.angel.spark.examples.ml
 
 import scala.collection.mutable.ArrayBuffer
@@ -7,9 +24,9 @@ import breeze.optimize.StochasticGradientDescent
 import org.apache.spark.ml.linalg.Vector
 import org.apache.spark.rdd.RDD
 
+import com.tencent.angel.spark.PSContext
 import com.tencent.angel.spark.examples.util.{Logistic, PSExamples}
-import com.tencent.angel.spark.PSClient
-import com.tencent.angel.spark.vector.BreezePSVector
+import com.tencent.angel.spark.models.vector.BreezePSVector
 
 /**
  * There is two ways to update PSVectors in RDD, RemotePSVector and RDDFunction.psAggregate.
@@ -22,8 +39,9 @@ object BreezeSGD {
   def main(args: Array[String]): Unit = {
     parseArgs(args)
     runWithSparkContext(this.getClass.getSimpleName) { sc =>
-      PSClient.setup(sc)
+      PSContext.getOrCreate(sc)
       execute(DIM, N, numSlices, ITERATIONS)
+      PSContext.stop()
     }
   }
 
@@ -75,7 +93,7 @@ object BreezeSGD {
   }
 
   def runPsSGD(trainData: RDD[(Vector, Double)], dim: Int, stepSize: Double, maxIter: Int): Unit = {
-    val pool = PSClient.get.createVectorPool(dim, 10)
+    val pool = PSContext.getOrCreate().createModelPool(dim, 10)
     val initWeightPS = pool.createZero().mkBreeze()
     val sgd = StochasticGradientDescent[BreezePSVector](stepSize, maxIter)
     val states = sgd.iterations(Logistic.PSCost(trainData), initWeightPS)
@@ -91,8 +109,8 @@ object BreezeSGD {
       }
     }
     println(s"loss history: ${lossHistory.toArray.mkString(" ")}")
-    println(s"weights: ${weight.toLocal.get().mkString(" ")}")
-    PSClient.get.destroyVectorPool(pool)
+    println(s"weights: ${weight.toRemote.pull().mkString(" ")}")
+    PSContext.getOrCreate().destroyVectorPool(pool)
   }
 
   def runPsAggregateSGD(
@@ -101,7 +119,7 @@ object BreezeSGD {
       stepSize: Double,
       maxIter: Int): Unit = {
 
-    val pool = PSClient.get.createVectorPool(dim, 10)
+    val pool = PSContext.getOrCreate().createModelPool(dim, 10)
     val initWeightPS = pool.createZero().mkBreeze()
     val sgd = StochasticGradientDescent[BreezePSVector](stepSize, maxIter)
     val states = sgd.iterations(Logistic.PSAggregateCost(trainData), initWeightPS)
@@ -117,8 +135,8 @@ object BreezeSGD {
       }
     }
     println(s"loss history: ${lossHistory.toArray.mkString(" ")}")
-    println(s"weights: ${weight.toLocal.get().mkString(" ")}")
-    PSClient.get.destroyVectorPool(pool)
+    println(s"weights: ${weight.toRemote.pull().mkString(" ")}")
+    PSContext.getOrCreate().destroyVectorPool(pool)
   }
 
 }

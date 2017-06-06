@@ -20,8 +20,16 @@ import com.tencent.angel.common.Id;
 import com.tencent.angel.master.deploy.ContainerAllocatorEvent;
 import com.tencent.angel.master.deploy.ContainerAllocatorEventType;
 
+/**
+ * Local container allocator event.
+ */
 public class LocalContainerAllocatorEvent extends ContainerAllocatorEvent {
 
+  /**
+   * Create a LocalContainerAllocatorEvent
+   * @param type event type
+   * @param taskId the task which the container is allocated/deallocated to
+   */
   public LocalContainerAllocatorEvent(ContainerAllocatorEventType type, Id taskId) {
     super(type, taskId);
   }

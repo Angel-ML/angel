@@ -15,15 +15,41 @@
  * limitations under the License.
  */
 
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
+/**
+ *
+ * This class is a copy of MultivariateOnlineSummarizer.scala in org.apache.spark.mllib.stat
+ * package of spark 2.1.0 MLlib.
+ *
+ * Based on the original version, we improve the algorithm with Angel PS-Service.
+ */
+
 package org.apache.spark.mllib.stat
 
 import org.apache.spark.annotation.{DeveloperApi, Since}
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 
-import com.tencent.angel.spark.vector.BreezePSVector
-import com.tencent.angel.spark.PSClient
-import com.tencent.angel.spark.PSVectorPool
-import com.tencent.angel.spark.PSVectorProxy
+import com.tencent.angel.spark.PSContext
+import com.tencent.angel.spark.models.vector.BreezePSVector
+import com.tencent.angel.spark.models.PSModelPool
+import com.tencent.angel.spark.models.PSModelProxy
+
 
 /**
  * :: DeveloperApi ::
@@ -47,21 +73,21 @@ import com.tencent.angel.spark.PSVectorProxy
  */
 @Since("1.1.0")
 @DeveloperApi
-class PSMultivariateOnlineSummarizer(@transient private val psPool: PSVectorPool)
+class PSMultivariateOnlineSummarizer(@transient private val psPool: PSModelPool)
   extends Serializable {
 
   private val n = psPool.numDimensions
-  private val currMean: PSVectorProxy = psPool.createZero()
-  private val currM2n: PSVectorProxy = psPool.createZero()
-  private val currM2: PSVectorProxy = psPool.createZero()
-  private val currL1: PSVectorProxy = psPool.createZero()
+  private val currMean: PSModelProxy = psPool.createZero()
+  private val currM2n: PSModelProxy = psPool.createZero()
+  private val currM2: PSModelProxy = psPool.createZero()
+  private val currL1: PSModelProxy = psPool.createZero()
   private var totalCnt: Long = 0
   private var totalWeightSum: Double = 0.0
   private var weightSquareSum: Double = 0.0
-  private val weightSum: PSVectorProxy = psPool.createZero()
-  private val nnz: PSVectorProxy = psPool.createZero()
-  private val currMax: PSVectorProxy = psPool.createZero()
-  private val currMin: PSVectorProxy = psPool.createZero()
+  private val weightSum: PSModelProxy = psPool.createZero()
+  private val nnz: PSModelProxy = psPool.createZero()
+  private val currMax: PSModelProxy = psPool.createZero()
+  private val currMin: PSModelProxy = psPool.createZero()
 
   /**
    * Add a new sample to this summarizer, and update the statistical summary.
@@ -75,13 +101,13 @@ class PSMultivariateOnlineSummarizer(@transient private val psPool: PSVectorPool
   private[spark] def add(instance: Vector, weight: Double): this.type = {
     require(weight >= 0.0, s"sample weight, ${weight} has to be >= 0.0")
     if (weight == 0.0) return this
-    val psClient = PSClient.get
+    val psContext = PSContext.getOrCreate()
 
     require(n == instance.size, s"Dimensions mismatch when adding new sample." +
       s" Expecting $n but got ${instance.size}.")
 
-    val prevMean = psClient.get(currMean)
-    val prevWeight = psClient.get(weightSum)
+    val prevMean = currMean.mkRemote().pull()
+    val prevWeight = weightSum.mkRemote().pull()
 
     val deltaMean = Array.ofDim[Double](n)
     val deltaM2n = Array.ofDim[Double](n)
@@ -104,14 +130,14 @@ class PSMultivariateOnlineSummarizer(@transient private val psPool: PSVectorPool
       }
     }
 
-    psClient.increment(currMean, deltaMean)
-    psClient.increment(currM2n, deltaM2n)
-    psClient.increment(currM2, deltaM2)
-    psClient.increment(currL1, deltaL1)
-    psClient.increment(weightSum, deltaWeightSum)
-    psClient.increment(nnz, deltaNumNonzeros)
-    psClient.mergeMax(currMax, instance.toArray)
-    psClient.mergeMin(currMin, instance.toArray)
+    currMean.mkRemote().increment(deltaMean)
+    currM2n.mkRemote().increment(deltaM2n)
+    currM2.mkRemote().increment(deltaM2)
+    currL1.mkRemote().increment(deltaL1)
+    weightSum.mkRemote().increment(deltaWeightSum)
+    nnz.mkRemote().increment(deltaNumNonzeros)
+    currMax.mkRemote().mergeMax(instance.toArray)
+    currMin.mkRemote().mergeMin(instance.toArray)
 
     totalWeightSum += weight
     weightSquareSum += weight * weight
@@ -149,7 +175,7 @@ class PSMultivariateOnlineSummarizer(@transient private val psPool: PSVectorPool
    *
    */
   @Since("1.1.0")
-  def mean: PSVectorProxy = {
+  def mean: PSModelProxy = {
     require(totalWeightSum > 0, s"Nothing has been added to this summarizer.")
     val brzMean = currMean.mkBreeze() :* (weightSum.mkBreeze() :/ totalWeightSum)
     brzMean.proxy
@@ -160,7 +186,7 @@ class PSMultivariateOnlineSummarizer(@transient private val psPool: PSVectorPool
    *
    */
   @Since("1.1.0")
-  def variance: PSVectorProxy = {
+  def variance: PSModelProxy = {
     require(totalWeightSum > 0, s"Nothing has been added to this summarizer.")
 
     var brzVariance: BreezePSVector = null
@@ -177,7 +203,7 @@ class PSMultivariateOnlineSummarizer(@transient private val psPool: PSVectorPool
     brzVariance.proxy
   }
 
-  def std: PSVectorProxy = {
+  def std: PSModelProxy = {
     BreezePSVector.math.sqrt(this.variance.mkBreeze()).proxy
   }
 
@@ -199,7 +225,7 @@ class PSMultivariateOnlineSummarizer(@transient private val psPool: PSVectorPool
    *
    */
   @Since("1.1.0")
-  def numNonzeros: PSVectorProxy = {
+  def numNonzeros: PSModelProxy = {
     require(totalCnt > 0, s"Nothing has been added to this summarizer.")
     nnz
   }
@@ -212,8 +238,8 @@ class PSMultivariateOnlineSummarizer(@transient private val psPool: PSVectorPool
   def max: Vector = {
     require(totalWeightSum > 0, s"Nothing has been added to this summarizer.")
 
-    val localNnz = nnz.mkLocal().get()
-    val localCurrMax = currMax.mkLocal().get()
+    val localNnz = nnz.mkRemote().pull()
+    val localCurrMax = currMax.mkRemote().pull()
 
     var i = 0
     while (i < n) {
@@ -231,8 +257,8 @@ class PSMultivariateOnlineSummarizer(@transient private val psPool: PSVectorPool
   def min: Vector = {
     require(totalWeightSum > 0, s"Nothing has been added to this summarizer.")
 
-    val localNnz = nnz.mkLocal().get()
-    val localCurrMin = currMin.mkLocal().get()
+    val localNnz = nnz.mkRemote().pull()
+    val localCurrMin = currMin.mkRemote().pull()
 
     var i = 0
     while (i < n) {
@@ -247,7 +273,7 @@ class PSMultivariateOnlineSummarizer(@transient private val psPool: PSVectorPool
    *
    */
   @Since("1.2.0")
-  def normL2: PSVectorProxy = {
+  def normL2: PSModelProxy = {
     require(totalWeightSum > 0, s"Nothing has been added to this summarizer.")
     BreezePSVector.math.sqrt(currM2.mkBreeze()).proxy
   }
@@ -257,7 +283,7 @@ class PSMultivariateOnlineSummarizer(@transient private val psPool: PSVectorPool
    *
    */
   @Since("1.2.0")
-  def normL1: PSVectorProxy = {
+  def normL1: PSModelProxy = {
     require(totalWeightSum > 0, s"Nothing has been added to this summarizer.")
     currL1
   }

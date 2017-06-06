@@ -19,8 +19,7 @@ package com.tencent.angel.utils;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 正数的原子递增器，主要用于实现轮询
- * 
+ * A simple atomic counter.
  */
 public class PositiveAtomicCounter {
   private final AtomicInteger atom;

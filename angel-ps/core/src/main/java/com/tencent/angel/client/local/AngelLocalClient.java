@@ -25,6 +25,7 @@ import org.apache.hadoop.yarn.api.records.ApplicationId;
 
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.client.AngelClient;
+import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.ipc.TConnectionManager;
@@ -115,7 +116,7 @@ public class AngelLocalClient extends AngelClient {
   }
   
   @Override
-  public void submit() throws AngelException {
+  public void startPSServer() throws AngelException {
     try{
       setUser();
       setLocalAddr();
@@ -129,7 +130,8 @@ public class AngelLocalClient extends AngelClient {
       cluster = new LocalCluster(conf, appId);
       cluster.start();
       updateMaster(Integer.MAX_VALUE);
-      LOG.info("create proxy success");
+      waitForAllPS(conf.getInt(AngelConfiguration.ANGEL_PS_NUMBER, AngelConfiguration.DEFAULT_ANGEL_PS_NUMBER));
+      LOG.info("start ps success");
     } catch (Exception x) {
       LOG.error("start application failed.", x);
       throw new AngelException(x);

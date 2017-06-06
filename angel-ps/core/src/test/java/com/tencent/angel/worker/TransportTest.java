@@ -44,7 +44,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapred.lib.CombineTextInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.log4j.PropertyConfigurator;
 import org.junit.After;
 import org.junit.Before;
@@ -88,7 +87,7 @@ public class TransportTest {
 
 
   static {
-    PropertyConfigurator.configure("../log4j.properties");
+    PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
   @Before
@@ -152,8 +151,9 @@ public class TransportTest {
     matrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_FLOAT");
     angelClient.addMatrix(matrix);
 
-    angelClient.start();
-    Thread.sleep(1000);
+    angelClient.startPSServer();
+    angelClient.run();
+    Thread.sleep(10000);
     group0Id = new WorkerGroupId(0);
     worker0Id = new WorkerId(group0Id, 0);
     worker0Attempt0Id = new WorkerAttemptId(worker0Id, 0);
@@ -203,7 +203,8 @@ public class TransportTest {
     Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
     MatrixClient mat = worker.getPSAgent().getMatrixClient("dense_double_mat", 0);
 
-    DenseDoubleMatrix expect = new DenseDoubleMatrix(ddRow, ddCol);
+    double [][] data = new double[ddRow][ddCol];
+    DenseDoubleMatrix expect = new DenseDoubleMatrix(ddRow, ddCol, data);
 
     RowIndex rowIndex = new RowIndex();
     for (int i = 0; i < ddRow; i ++)
@@ -300,7 +301,7 @@ public class TransportTest {
     MatrixClient mat = worker.getPSAgent().getMatrixClient("dense_int_mat", 0);
 
     Random rand = new Random(System.currentTimeMillis());
-    for (int rowId = 0; rowId < diRow; rowId += rand.nextInt(5)) {
+    for (int rowId = 0; rowId < diRow; rowId += rand.nextInt(5)+1) {
       DenseIntVector row = (DenseIntVector) mat.getRow(rowId);
       DenseIntVector expect = new DenseIntVector(diCol);
       assertArrayEquals(row.getValues(), expect.getValues());

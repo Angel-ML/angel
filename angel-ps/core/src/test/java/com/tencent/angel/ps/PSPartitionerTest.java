@@ -37,16 +37,18 @@ public class PSPartitionerTest {
   protected MatrixContext mContext;
   private Configuration conf = new YarnConfiguration();
   private PSPartitioner partitioner;
+  private int matrixId;
 
   static {
-    PropertyConfigurator.configure("../log4j.properties");
+    PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
   @Before
   public void setUp() throws Exception {
     mContext = new MatrixContext("m", 10, 10, 6, 6);
     partitioner = new PSPartitioner();
-    partitioner.setup(mContext, conf);
+    partitioner.init(mContext, conf);
+    matrixId = mContext.getId();
   }
 
   @After
@@ -69,7 +71,7 @@ public class PSPartitionerTest {
     MLProtos.Partition.Builder partition_3 = MLProtos.Partition.newBuilder();
     MLProtos.Partition.Builder partition_4 = MLProtos.Partition.newBuilder();
     // Note:[startRow,endRow)
-    partition_1.setMatrixId(0);
+    partition_1.setMatrixId(matrixId);
     partition_1.setPartitionId(0);
     partition_1.setStartRow(0);
     partition_1.setStartCol(0);
@@ -77,7 +79,7 @@ public class PSPartitionerTest {
     partition_1.setEndCol(6);
     array.add(partition_1.build());
 
-    partition_2.setMatrixId(0);
+    partition_2.setMatrixId(matrixId);
     partition_2.setPartitionId(1);
     partition_2.setStartRow(0);
     partition_2.setStartCol(6);
@@ -85,7 +87,7 @@ public class PSPartitionerTest {
     partition_2.setEndCol(10);
     array.add(partition_2.build());
 
-    partition_3.setMatrixId(0);
+    partition_3.setMatrixId(matrixId);
     partition_3.setPartitionId(2);
     partition_3.setStartRow(6);
     partition_3.setStartCol(0);
@@ -93,7 +95,7 @@ public class PSPartitionerTest {
     partition_3.setEndCol(6);
     array.add(partition_3.build());
 
-    partition_4.setMatrixId(0);
+    partition_4.setMatrixId(matrixId);
     partition_4.setPartitionId(3);
     partition_4.setStartRow(6);
     partition_4.setStartCol(6);

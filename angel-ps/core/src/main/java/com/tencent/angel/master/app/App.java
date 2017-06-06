@@ -31,7 +31,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * Angel Application state machine
+ * Angel Application state machine.
  */
 public class App extends AbstractService implements EventHandler<AppEvent> {
   private static final Log LOG = LogFactory.getLog(App.class);
@@ -114,13 +114,17 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
               APP_KILLED_TRANSITION)
           .addTransition(AppState.RUNNING, AppState.FAILED, AppEventType.INTERNAL_ERROR,
               APP_FAILED_TRANSITION)
-
+          .addTransition(AppState.RUNNING, AppState.SUCCEEDED, AppEventType.SUCCESS,
+              APP_SUCCESS_TRANSITION)
+          .addTransition(AppState.RUNNING, AppState.COMMITTING, AppEventType.COMMIT)
 
           .addTransition(AppState.EXECUTE_SUCCESSED, AppState.COMMITTING, AppEventType.COMMIT)
           .addTransition(AppState.EXECUTE_SUCCESSED, AppState.KILLED, AppEventType.KILL,
               APP_KILLED_TRANSITION)
           .addTransition(AppState.EXECUTE_SUCCESSED, AppState.FAILED, AppEventType.INTERNAL_ERROR,
               APP_FAILED_TRANSITION)
+          .addTransition(AppState.EXECUTE_SUCCESSED, AppState.SUCCEEDED, AppEventType.SUCCESS,
+              APP_SUCCESS_TRANSITION)
 
           .addTransition(AppState.COMMITTING, AppState.SUCCEEDED, AppEventType.SUCCESS,
               APP_SUCCESS_TRANSITION)
@@ -132,19 +136,19 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
           .addTransition(
               AppState.SUCCEEDED,
               AppState.SUCCEEDED,
-              EnumSet.of(AppEventType.INIT, AppEventType.START, AppEventType.COMMIT,
+              EnumSet.of(AppEventType.INIT, AppEventType.START, AppEventType.COMMIT, AppEventType.EXECUTE_SUCESS,
                   AppEventType.SUCCESS, AppEventType.KILL, AppEventType.INTERNAL_ERROR))
 
           .addTransition(
               AppState.KILLED,
               AppState.KILLED,
-              EnumSet.of(AppEventType.INIT, AppEventType.START, AppEventType.COMMIT,
+              EnumSet.of(AppEventType.INIT, AppEventType.START, AppEventType.COMMIT, AppEventType.EXECUTE_SUCESS,
                   AppEventType.SUCCESS, AppEventType.KILL, AppEventType.INTERNAL_ERROR))
 
           .addTransition(
               AppState.FAILED,
               AppState.FAILED,
-              EnumSet.of(AppEventType.INIT, AppEventType.START, AppEventType.COMMIT,
+              EnumSet.of(AppEventType.INIT, AppEventType.START, AppEventType.COMMIT, AppEventType.EXECUTE_SUCESS,
                   AppEventType.SUCCESS, AppEventType.KILL, AppEventType.INTERNAL_ERROR));
 
   @SuppressWarnings("unchecked")
@@ -152,7 +156,7 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
     context.getEventHandler().handle(new AppEvent(AppEventType.INIT));
     context.getEventHandler().handle(new AppEvent(AppEventType.START));
   }
-
+  
   /**
    * get state of application, only return RUNNING, EXECUTE_SUCCEEDED, COMMITING, SUCCEEDED, KILLED, FAILED
    * 
@@ -453,8 +457,6 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
       } else if (app.context.getRunningMode() == RunningMode.ANGEL_PS_WORKER) {
         app.context.getWorkerManager().startAllWorker();
       }
-
-      app.context.getParameterServerManager().startAllPS();
     }
   }
 

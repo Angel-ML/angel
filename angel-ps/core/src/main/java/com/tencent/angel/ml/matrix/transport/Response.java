@@ -1,17 +1,17 @@
 /*
  * Tencent is pleased to support the open source community by making Angel available.
- *
+ * 
  * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
- *
+ * 
  * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- *
+ * 
  * https://opensource.org/licenses/BSD-3-Clause
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is
- * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package com.tencent.angel.ml.matrix.transport;
@@ -23,20 +23,40 @@ import org.apache.commons.logging.LogFactory;
 
 import java.io.UnsupportedEncodingException;
 
+/**
+ * The result of the rpc from PSAgent to PS.
+ */
 public class Response implements Serialize {
   private static final Log LOG = LogFactory.getLog(Response.class);
+  /** response type */
   private ResponseType responseType;
+
+  /** detail error message */
   private String detail;
 
+  /**
+   * Create a new Response.
+   *
+   * @param responseType response type
+   * @param detail detail error message
+   */
   public Response(ResponseType responseType, String detail) {
     this.responseType = responseType;
     this.detail = detail;
   }
 
+  /**
+   * Create a new Response.
+   * 
+   * @param responseType response type
+   */
   public Response(ResponseType responseType) {
     this(responseType, null);
   }
 
+  /**
+   * Create a new Response.
+   */
   public Response() {
     this(ResponseType.SUCCESS, null);
   }
@@ -78,18 +98,38 @@ public class Response implements Serialize {
     return 4;
   }
 
+  /**
+   * Set response type.
+   * 
+   * @param responseType response type
+   */
   public void setResponseType(ResponseType responseType) {
     this.responseType = responseType;
   }
 
+  /**
+   * Get response type.
+   * 
+   * @return responseType response type
+   */
   public ResponseType getResponseType() {
     return responseType;
   }
 
+  /**
+   * Get detail error message.
+   * 
+   * @return detail error message
+   */
   public String getDetail() {
     return detail;
   }
 
+  /**
+   * Set detail error message.
+   * 
+   * @param detail detail error message
+   */
   public void setDetail(String detail) {
     this.detail = detail;
   }

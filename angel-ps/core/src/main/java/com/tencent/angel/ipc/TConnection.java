@@ -8,11 +8,12 @@
  *
  * https://opensource.org/licenses/BSD-3-Clause
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is
- * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
+
 package com.tencent.angel.ipc;
 
 import com.tencent.angel.master.MasterProtocol;
@@ -24,8 +25,6 @@ import java.io.Closeable;
 import java.io.IOException;
 
 /**
- * Cluster connection. Hosts a connection to the ZooKeeper ensemble and thereafter into the ml
- * cluster.Keeps a cache of partition locations and then knows how to recalibrate after they move.
  * {@link com.tencent.angel.ipc.TConnectionManager} manages instances of this class.
  * 
  * <p>
@@ -38,7 +37,7 @@ import java.io.IOException;
 public interface TConnection extends Closeable {
 
   /**
-   * @return Configuration instance being used by this HConnection instance.
+   * @return Configuration instance being used by this TConnection instance.
    */
   public Configuration getConfiguration();
 
@@ -47,11 +46,39 @@ public interface TConnection extends Closeable {
    */
   public boolean isClosed();
 
+  /**
+   * Get ps rpc client with sync mode.
+   * @param hostname ps host name
+   * @param port ps listening port
+   * @return ps rpc client
+   * @throws IOException
+   */
   public PSProtocol getPSService(String hostname, int port) throws IOException;
 
+  /**
+   * Get ps rpc client with async mode.
+   * @param hostname ps host name
+   * @param port ps listening port
+   * @return ps rpc client
+   * @throws IOException
+   */
   public PSProtocol.AsyncProtocol getAsyncPSService(String hostname, int port) throws IOException;
 
+  /**
+   * Get worker rpc client with sync mode.
+   * @param hostname worker host name
+   * @param port worker listening port
+   * @return worker rpc client
+   * @throws IOException
+   */
   public WorkerProtocol getWorkerService(String hostname, int port) throws IOException;
 
+  /**
+   * Get master rpc client with sync mode.
+   * @param hostname master host name
+   * @param port master listening port
+   * @return master rpc client
+   * @throws IOException
+   */
   public MasterProtocol getMasterService(String hostname, int port) throws IOException;
 }

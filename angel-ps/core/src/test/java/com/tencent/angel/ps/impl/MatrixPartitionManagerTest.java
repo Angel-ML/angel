@@ -41,7 +41,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.log4j.PropertyConfigurator;
 import org.junit.After;
 import org.junit.Before;
@@ -68,9 +67,10 @@ public class MatrixPartitionManagerTest {
   private WorkerGroupId group0Id;
   private WorkerId worker0Id;
   private WorkerAttemptId worker0Attempt0Id;
+  private int matrixw1Id;
 
   static {
-    PropertyConfigurator.configure("../log4j.properties");
+    PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
   @Before
@@ -109,10 +109,10 @@ public class MatrixPartitionManagerTest {
     mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_INT");
     angelClient.addMatrix(mMatrix);
 
-
-    angelClient.start();
+    angelClient.startPSServer();
+    angelClient.run();
     LOG.info("start angelClient");
-    Thread.sleep(5000);
+    Thread.sleep(10000);
     psId = new ParameterServerId(0);
     psAttempt0Id = new PSAttemptId(psId, 0);
     ps = LocalClusterContext.get().getPS(psAttempt0Id).getPS();
@@ -120,6 +120,8 @@ public class MatrixPartitionManagerTest {
     worker0Id = new WorkerId(group0Id, 0);
     worker0Attempt0Id = new WorkerAttemptId(worker0Id, 0);
     matrixPartitionManager = ps.getMatrixPartitionManager();
+    matrixw1Id = LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMatrixMetaManager().getMatrix("w1").getId();
+    LOG.info("matrixPartitionManager=" + matrixPartitionManager);
   }
 
   @After
@@ -132,13 +134,13 @@ public class MatrixPartitionManagerTest {
   @Test
   public void testGetMatrixIdMap() throws Exception {
     ConcurrentHashMap<Integer, ServerMatrix> matrixIdMap = matrixPartitionManager.getMatrixIdMap();
-    ServerMatrix serverMatrix = matrixIdMap.get(1);
+    ServerMatrix serverMatrix = matrixIdMap.get(matrixw1Id);
     assertEquals(serverMatrix.getName(), "w1");
   }
 
   @Test
   public void testWriteMatrix() throws Exception {
-    matrixPartitionManager.getMatrixIdMap().put(5, matrixPartitionManager.getMatrixIdMap().get(1));
+    matrixPartitionManager.getMatrixIdMap().put(5, matrixPartitionManager.getMatrixIdMap().get(matrixw1Id));
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
     matrixPartitionManager.writeMatrix(out);
     out.close();
@@ -156,25 +158,25 @@ public class MatrixPartitionManagerTest {
   @Test
   public void testRemoveMatrixes() throws Exception {
     assertEquals(matrixPartitionManager.getMatrixIdMap().size(), 1);
-    List<Integer> needReleaseMatrixesList = new ArrayList(Arrays.asList(1));
+    List<Integer> needReleaseMatrixesList = new ArrayList(Arrays.asList(matrixw1Id));
     matrixPartitionManager.removeMatrices(needReleaseMatrixesList);
     assertEquals(matrixPartitionManager.getMatrixIdMap().size(), 0);
   }
 
   @Test
   public void testGetRow() throws Exception {
-    ServerRow serverRow = matrixPartitionManager.getRow(1, 0, 0);
+    ServerRow serverRow = matrixPartitionManager.getRow(matrixw1Id, 0, 0);
     assertNotNull(serverRow);
   }
 
 
   @Test
   public void testClock() throws Exception {
-    matrixPartitionManager.clock(matrixPartitionManager.getPartition(1, 1).getPartitionKey(), 0, 3);
-    matrixPartitionManager.clock(matrixPartitionManager.getPartition(1, 1).getPartitionKey(), 2, 5);
+    matrixPartitionManager.clock(matrixPartitionManager.getPartition(matrixw1Id, 1).getPartitionKey(), 0, 3);
+    matrixPartitionManager.clock(matrixPartitionManager.getPartition(matrixw1Id, 1).getPartitionKey(), 2, 5);
     Object2IntOpenHashMap<PartitionKey> clocks = new Object2IntOpenHashMap();
     matrixPartitionManager.getClocks(clocks);
-    assertEquals(clocks.get(matrixPartitionManager.getPartition(1, 1).getPartitionKey()).intValue(),
+    assertEquals(clocks.get(matrixPartitionManager.getPartition(matrixw1Id, 1).getPartitionKey()).intValue(),
         3);
   }
 
@@ -182,7 +184,7 @@ public class MatrixPartitionManagerTest {
   @Test
   public void testGetRow1() throws Exception {
     ServerRow serverRow = matrixPartitionManager
-        .getRow(matrixPartitionManager.getPartition(1, 1).getPartitionKey(), 0);
+        .getRow(matrixPartitionManager.getPartition(matrixw1Id, 1).getPartitionKey(), 0);
     assertEquals(serverRow.getRowId(), 0);
 
   }
@@ -190,12 +192,12 @@ public class MatrixPartitionManagerTest {
   @Test
   public void testPartitionReady() throws Exception {
     assertTrue(matrixPartitionManager
-        .partitionReady(matrixPartitionManager.getPartition(1, 0).getPartitionKey(), 0));
+        .partitionReady(matrixPartitionManager.getPartition(matrixw1Id, 0).getPartitionKey(), 0));
   }
 
   @Test
   public void testGetPartition() throws Exception {
-    ServerPartition serverPartition = matrixPartitionManager.getPartition(1, 0);
+    ServerPartition serverPartition = matrixPartitionManager.getPartition(matrixw1Id, 0);
     assertNotNull(serverPartition);
   }
 
@@ -207,11 +209,11 @@ public class MatrixPartitionManagerTest {
 
   @Test
   public void testSetClock() throws Exception {
-    matrixPartitionManager.setClock(1, 1, 3);
-    matrixPartitionManager.setClock(1, 2, 5);
+    matrixPartitionManager.setClock(matrixw1Id, 1, 3);
+    matrixPartitionManager.setClock(matrixw1Id, 2, 5);
     Object2IntOpenHashMap<PartitionKey> clocks = new Object2IntOpenHashMap();
     matrixPartitionManager.getClocks(clocks);
-    assertEquals(clocks.get(matrixPartitionManager.getPartition(1, 1).getPartitionKey()).intValue(),
+    assertEquals(clocks.get(matrixPartitionManager.getPartition(matrixw1Id, 1).getPartitionKey()).intValue(),
         3);
   }
 

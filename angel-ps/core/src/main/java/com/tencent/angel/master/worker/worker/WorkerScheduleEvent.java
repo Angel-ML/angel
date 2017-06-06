@@ -18,19 +18,24 @@ package com.tencent.angel.master.worker.worker;
 
 import com.tencent.angel.worker.WorkerId;
 
+/**
+ * Start to run worker.
+ */
 public class WorkerScheduleEvent extends AMWorkerEvent {
-  private int splitIndex;
+  /**training data block index*/
+  private final int splitIndex;
 
+  /**
+   * Create a WorkerScheduleEvent
+   * @param id worker id
+   * @param splitIndex training data block index
+   */
   public WorkerScheduleEvent(WorkerId id, int splitIndex) {
     super(AMWorkerEventType.SCHEDULE, id);
-    this.setSplitIndex(splitIndex);
+    this.splitIndex = splitIndex;
   }
 
   public int getSplitIndex() {
     return splitIndex;
-  }
-
-  public void setSplitIndex(int splitIndex) {
-    this.splitIndex = splitIndex;
   }
 }

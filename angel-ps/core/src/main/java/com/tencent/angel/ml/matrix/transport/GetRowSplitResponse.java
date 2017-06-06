@@ -1,17 +1,17 @@
 /*
  * Tencent is pleased to support the open source community by making Angel available.
- *
+ * 
  * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
- *
+ * 
  * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- *
+ * 
  * https://opensource.org/licenses/BSD-3-Clause
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is
- * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package com.tencent.angel.ml.matrix.transport;
@@ -20,14 +20,28 @@ import com.tencent.angel.ps.impl.matrix.*;
 import com.tencent.angel.protobuf.generated.MLProtos.RowType;
 import io.netty.buffer.ByteBuf;
 
+/**
+ * The result of get row split rpc request.
+ */
 public class GetRowSplitResponse extends Response {
+  /** row split */
   private ServerRow rowSplit;
 
+  /**
+   * Create a new GetRowSplitResponse.
+   *
+   * @param responseType response type
+   * @param detail detail failed message if the response type is failed
+   * @param rowSplit row split
+   */
   public GetRowSplitResponse(ResponseType responseType, String detail, ServerRow rowSplit) {
     super(responseType, detail);
     this.rowSplit = rowSplit;
   }
 
+  /**
+   * Create a new GetRowSplitResponse.
+   */
   public GetRowSplitResponse() {
     this(ResponseType.SUCCESS, null, null);
   }
@@ -50,7 +64,7 @@ public class GetRowSplitResponse extends Response {
     }
 
     RowType type = RowType.valueOf(buf.readInt());
-    if(rowSplit == null){
+    if (rowSplit == null) {
       switch (type) {
         case T_DOUBLE_DENSE: {
           rowSplit = new ServerDenseDoubleRow();
@@ -89,10 +103,20 @@ public class GetRowSplitResponse extends Response {
     return super.bufferLen() + (rowSplit != null ? rowSplit.bufferLen() : 0);
   }
 
+  /**
+   * Get row split.
+   * 
+   * @return ServerRow row split.
+   */
   public ServerRow getRowSplit() {
     return rowSplit;
   }
 
+  /**
+   * Set row split.
+   * 
+   * @param rowSplit row split
+   */
   public void setRowSplit(ServerRow rowSplit) {
     this.rowSplit = rowSplit;
   }

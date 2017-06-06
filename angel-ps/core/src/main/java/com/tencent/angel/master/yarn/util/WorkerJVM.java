@@ -81,6 +81,11 @@ public class WorkerJVM {
     return ret;
   }
 
+  /**
+   * Set environment variables of worker attempt process
+   * @param environment environment variables of ps attempt process
+   * @param conf application configuration
+   */
   public static void setVMEnv(Map<String, String> environment, Configuration conf) {
     // Add the env variables passed by the user
     String workerChildEnv = getChildEnv(conf);
@@ -129,6 +134,13 @@ public class WorkerJVM {
     AngelApps.addLog4jSystemProperties(logLevel, logSize, vargs);
   }
 
+  /**
+   * Create worker attempt jvm command
+   * @param conf application configuration
+   * @param appid application id
+   * @param workerAttemptId worker attempt id
+   * @return
+   */
   public static List<String> getVMCommand(Configuration conf, ApplicationId appid, WorkerAttemptId workerAttemptId) {
     Vector<String> vargs = new Vector<String>(8);
 

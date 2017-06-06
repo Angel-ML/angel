@@ -41,6 +41,9 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Java class running tools for Angel.
+ */
 public class AngelRunJar {
   private static final Log LOG = LogFactory.getLog(AngelRunJar.class);
   private static final String angelSysConfFile = "angel-site.xml";
@@ -165,6 +168,11 @@ public class AngelRunJar {
       for (int i = 0; i < jars.length; i++) {
         if (new Path(jars[i]).isAbsoluteAndSchemeAuthorityNull()) {
           sb.append("file://").append(jars[i]);
+          if (i != jars.length - 1) {
+            sb.append(",");
+          }
+        } else {
+          sb.append(jars[i]);
           if (i != jars.length - 1) {
             sb.append(",");
           }

@@ -18,6 +18,7 @@ package com.tencent.angel.master;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 import com.tencent.angel.master.ps.ps.AMParameterServer;
 import com.tencent.angel.master.ps.ps.AMParameterServerState;
@@ -34,7 +36,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.log4j.PropertyConfigurator;
 import org.junit.After;
 import org.junit.Before;
@@ -47,13 +48,16 @@ import com.tencent.angel.common.Location;
 import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.conf.MatrixConfiguration;
 import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.ipc.TConnectionManager;
 import com.tencent.angel.localcluster.LocalClusterContext;
+import com.tencent.angel.master.app.AppEvent;
+import com.tencent.angel.master.app.AppEventType;
 import com.tencent.angel.master.app.AppState;
 import com.tencent.angel.master.ps.attempt.*;
-import com.tencent.angel.master.ps.attempt.*;
 import com.tencent.angel.master.ps.ParameterServerManager;
+import com.tencent.angel.ml.math.vector.DenseIntVector;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos;
@@ -79,6 +83,8 @@ import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.impl.MatrixPartitionManager;
 import com.tencent.angel.ps.impl.ParameterServer;
 import com.tencent.angel.ps.impl.matrix.ServerMatrix;
+import com.tencent.angel.psagent.matrix.MatrixClient;
+import com.tencent.angel.worker.Worker;
 import com.tencent.angel.worker.WorkerAttemptId;
 import com.tencent.angel.worker.WorkerGroupId;
 import com.tencent.angel.worker.WorkerId;
@@ -98,7 +104,7 @@ public class PSManagerTest {
   private PSAttemptId psAttempt0Id;
 
   static {
-    PropertyConfigurator.configure("../log4j.properties");
+    PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
   @Before
@@ -119,6 +125,7 @@ public class PSManagerTest {
     conf.setInt(AngelConfiguration.ANGEL_WORKERGROUP_NUMBER, 1);
     conf.setInt(AngelConfiguration.ANGEL_PS_NUMBER, 1);
     conf.setInt(AngelConfiguration.ANGEL_WORKER_TASK_NUMBER, 2);
+    conf.setInt(AngelConfiguration.ANGEL_PS_BACKUP_INTERVAL_MS, 5000);
 
     // get a angel client
     angelClient = AngelClientFactory.get(conf);
@@ -149,8 +156,8 @@ public class PSManagerTest {
     mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
     angelClient.addMatrix(mMatrix);
 
-    angelClient.submit();
-    angelClient.start();
+    angelClient.startPSServer();
+    angelClient.run();
     Thread.sleep(5000);
     group0Id = new WorkerGroupId(0);
     worker0Id = new WorkerId(group0Id, 0);
@@ -248,6 +255,7 @@ public class PSManagerTest {
     assertEquals(response.getPsCommand(), PSCommandProto.PSCOMMAND_SHUTDOWN);
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void testPSDone() throws IOException, ServiceException, InterruptedException {
     AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
@@ -261,7 +269,10 @@ public class PSManagerTest {
             .setWorkerAttemptId(ProtobufUtil.convertToIdProto(worker0Attempt0Id)).build();
     WorkerDoneResponse workerResponse = master.workerDone(null, workerRequest);
     assertEquals(workerResponse.getCommand(), WorkerCommandProto.W_SUCCESS);
-
+    Thread.sleep(5000);
+    
+    angelAppMaster.getAppContext().getEventHandler().handle(new AppEvent(AppEventType.COMMIT));
+    
     PSDoneRequest request =
         PSDoneRequest.newBuilder().setPsAttemptId(ProtobufUtil.convertToIdProto(psAttempt0Id))
             .build();
@@ -282,7 +293,9 @@ public class PSManagerTest {
   }
 
   @Test
-  public void testPSError() throws IOException, ServiceException, InterruptedException {
+  public void testPSError() throws IOException, ServiceException, InterruptedException, AngelException, ExecutionException, InvalidParameterException {
+    int heartbeatInterval = LocalClusterContext.get().getConf().getInt(AngelConfiguration.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 
+        AngelConfiguration.DEFAULT_ANGEL_PS_HEARTBEAT_INTERVAL_MS);
     AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
     ParameterServerManager psManager = angelAppMaster.getAppContext().getParameterServerManager();
     AMParameterServer amPs = psManager.getParameterServer(psId);
@@ -350,7 +363,7 @@ public class PSManagerTest {
         PSErrorRequest.newBuilder().setPsAttemptId(ProtobufUtil.convertToIdProto(psAttempt0Id))
             .setMsg("out of memory").build();
     master.psError(null, request);
-    Thread.sleep(5000);
+    Thread.sleep(heartbeatInterval * 2);
 
     PSAttempt psAttempt1 = amPs.getPSAttempt(psAttempt1Id);
     assertTrue(psAttempt1 != null);
@@ -368,6 +381,38 @@ public class PSManagerTest {
 
     ps = LocalClusterContext.get().getPS(psAttempt1Id).getPS();
     checkMatrixInfo(ps, w1Id, w2Id, w1Clock, w2Clock);
+    
+    Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
+    MatrixClient w1Task0Client = worker.getPSAgent().getMatrixClient("w1", 0);
+    MatrixClient w1Task1Client = worker.getPSAgent().getMatrixClient("w1", 1);
+    int matrixW1Id = w1Task0Client.getMatrixId();
+    
+    int [] delta = new int[100000];
+    for(int i = 0; i < 100000; i++) {
+      delta[i] = 2;
+    }
+    
+    DenseIntVector deltaVec = new DenseIntVector(100000, delta);
+    deltaVec.setMatrixId(matrixW1Id);
+    deltaVec.setRowId(0);   
+    w1Task0Client.increment(deltaVec);
+    
+    deltaVec = new DenseIntVector(100000, delta);
+    deltaVec.setMatrixId(matrixW1Id);
+    deltaVec.setRowId(0);
+    w1Task1Client.increment(deltaVec);
+    
+    w1Task0Client.clock().get();
+    w1Task1Client.clock().get();
+    
+    int snapshotInterval =
+        LocalClusterContext
+            .get()
+            .getConf()
+            .getInt(AngelConfiguration.ANGEL_PS_BACKUP_INTERVAL_MS,
+                AngelConfiguration.DEFAULT_ANGEL_PS_BACKUP_INTERVAL_MS);
+    
+    Thread.sleep(snapshotInterval * 2);
 
     // attempt1
     ps.stop(-1);
@@ -375,7 +420,7 @@ public class PSManagerTest {
         PSErrorRequest.newBuilder().setPsAttemptId(ProtobufUtil.convertToIdProto(psAttempt1Id))
             .setMsg("out of memory").build();
     master.psError(null, request);
-    Thread.sleep(5000);
+    Thread.sleep(heartbeatInterval * 2);
 
     PSAttempt psAttempt2 = amPs.getPSAttempt(psAttempt2Id);
     assertTrue(psAttempt2 != null);
@@ -394,6 +439,8 @@ public class PSManagerTest {
 
     ps = LocalClusterContext.get().getPS(psAttempt2Id).getPS();
     checkMatrixInfo(ps, w1Id, w2Id, w1Clock, w2Clock);
+    
+    assertEquals(sum((DenseIntVector) w1Task0Client.getRow(0)), 400000);
 
     // attempt1
     ps.stop(-1);
@@ -401,7 +448,7 @@ public class PSManagerTest {
         PSErrorRequest.newBuilder().setPsAttemptId(ProtobufUtil.convertToIdProto(psAttempt2Id))
             .setMsg("out of memory").build();
     master.psError(null, request);
-    Thread.sleep(5000);
+    Thread.sleep(heartbeatInterval * 2);
 
     PSAttempt psAttempt3 = amPs.getPSAttempt(psAttempt3Id);
     assertTrue(psAttempt3 != null);
@@ -427,7 +474,7 @@ public class PSManagerTest {
         PSErrorRequest.newBuilder().setPsAttemptId(ProtobufUtil.convertToIdProto(psAttempt3Id))
             .setMsg("out of memory").build();
     master.psError(null, request);
-    Thread.sleep(5000);
+    Thread.sleep(heartbeatInterval * 2);
 
     assertEquals(psAttempt3.getInternalState(), PSAttemptStateInternal.FAILED);
     assertEquals(amPs.getState(), AMParameterServerState.FAILED);
@@ -450,8 +497,8 @@ public class PSManagerTest {
     ConcurrentHashMap<Integer, ServerMatrix> matrixIdMap = matrixPartManager.getMatrixIdMap();
     ServerMatrix sw1 = matrixIdMap.get(w1Id);
     ServerMatrix sw2 = matrixIdMap.get(w2Id);
-    assertTrue(sw1 != null);
-    assertTrue(sw2 != null);
+    assertNotNull(sw1);
+    assertNotNull(sw2);
     assertEquals(sw1.getPartition(0).getPartitionKey().getStartRow(), 0);
     assertEquals(sw1.getPartition(0).getPartitionKey().getEndRow(), 1);
     assertEquals(sw1.getPartition(0).getPartitionKey().getStartCol(), 0);
@@ -483,6 +530,15 @@ public class PSManagerTest {
     assertEquals(sw2.getPartition(1).getPartitionKey().getMatrixId(), w2Id);
     assertEquals(sw2.getPartition(1).getPartitionKey().getPartitionId(), 1);
     assertEquals(sw2.getPartition(1).getClock(), w2Clock);
+  }
+  
+  private int sum(DenseIntVector vec){
+    int [] values = vec.getValues();
+    int sum = 0;
+    for(int i = 0; i < values.length; i++) {
+      sum += values[i];
+    }
+    return sum;
   }
 
   @After

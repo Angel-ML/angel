@@ -1,17 +1,23 @@
-/*
- * Tencent is pleased to support the open source community by making Angel available.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- *
- * https://opensource.org/licenses/BSD-3-Clause
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is
- * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
  * limitations under the License.
+ */
+
+/**
+ * Remove some unused methods which are not used in Angel.
  */
 
 package com.tencent.angel.client.yarn;
@@ -33,10 +39,7 @@ import java.net.URI;
 import java.util.Map;
 
 public class ClientDistributedCacheManager {
-  // private val distCacheFiles: Map[String, (String, String, String)] =
-  // LinkedHashMap[String, (String, String, String)]()
-  // private val distCacheArchives: Map[String, (String, String, String)] =
-  // LinkedHashMap[String, (String, String, String)]()
+
   public void addResource(FileSystem fs, Configuration conf, Path destPath,
       Map<String, LocalResource> localResources, LocalResourceType resourceType, String link,
       Map<URI, FileStatus> statCache, boolean appMasterOnly) throws IOException {
@@ -55,20 +58,6 @@ public class ClientDistributedCacheManager {
       throw new IOException("You must specify a valid link name");
 
     localResources.put(link, amJarRsrc);
-
-    // if (!appMasterOnly) {
-    // URI uri = destPath.toUri();
-    // URI pathURI = new URI(uri.getScheme(), uri.getAuthority(),
-    // uri.getPath(), null, link);
-    // if (resourceType == LocalResourceType.FILE) {
-    // distCacheFiles(pathURI.toString()) = (destStatus.getLen().toString(),
-    // destStatus.getModificationTime().toString(), visibility.name());
-    // } else {
-    // distCacheArchives(pathURI.toString()) =
-    // (destStatus.getLen().toString(),
-    // destStatus.getModificationTime().toString(), visibility.name());
-    // }
-    // }
   }
 
   public LocalResourceVisibility getVisibility(Configuration conf, URI uri,

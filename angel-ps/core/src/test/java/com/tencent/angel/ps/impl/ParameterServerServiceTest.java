@@ -42,7 +42,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.log4j.PropertyConfigurator;
 import org.junit.After;
 import org.junit.Before;
@@ -70,7 +69,7 @@ public class ParameterServerServiceTest {
   private static Configuration conf;
 
   static {
-    PropertyConfigurator.configure("../log4j.properties");
+    PropertyConfigurator.configure("../conf/log4j.propertiess");
   }
 
 
@@ -122,7 +121,8 @@ public class ParameterServerServiceTest {
     mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
     angelClient.addMatrix(mMatrix);
 
-    angelClient.start();
+    angelClient.startPSServer();
+    angelClient.run();
     Thread.sleep(5000);
 
     // group0Id = new WorkerGroupId(0);

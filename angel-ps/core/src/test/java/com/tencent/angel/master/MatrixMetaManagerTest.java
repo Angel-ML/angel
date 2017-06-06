@@ -17,10 +17,10 @@
 package com.tencent.angel.master;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -28,7 +28,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.log4j.PropertyConfigurator;
 import org.junit.After;
 import org.junit.Before;
@@ -80,7 +79,7 @@ public class MatrixMetaManagerTest {
   private PSAttemptId psAttempt0Id;
 
   static {
-    PropertyConfigurator.configure("../log4j.properties");
+    PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
   @Before
@@ -131,8 +130,8 @@ public class MatrixMetaManagerTest {
     mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
     angelClient.addMatrix(mMatrix);
 
-    angelClient.submit();
-    angelClient.start();
+    angelClient.startPSServer();
+    angelClient.run();
     Thread.sleep(5000);
     group0Id = new WorkerGroupId(0);
     worker0Id = new WorkerId(group0Id, 0);
@@ -237,8 +236,8 @@ public class MatrixMetaManagerTest {
         angelAppMaster.getAppContext().getMatrixMetaManager();
     MatrixProto matrixw3Proto = matrixMetaManager.getMatrix("w3");
     MatrixProto matrixw4Proto = matrixMetaManager.getMatrix("w4");
-    assertTrue(matrixw3Proto != null);
-    assertTrue(matrixw4Proto != null);
+    assertNotNull(matrixw3Proto);
+    assertNotNull(matrixw4Proto);
 
     assertEquals(matrixw3Proto.getRowNum(), 1);
     assertEquals(matrixw3Proto.getColNum(), 100000);

@@ -19,8 +19,8 @@ package com.tencent.angel.example;
 import com.tencent.angel.client.AngelClient;
 import com.tencent.angel.client.AngelClientFactory;
 import com.tencent.angel.conf.AngelConfiguration;
-import com.tencent.angel.ml.algorithm.GBDT.GBDTRunner;
-import com.tencent.angel.ml.algorithm.conf.MLConf;
+import com.tencent.angel.ml.GBDT.GBDTRunner;
+import com.tencent.angel.ml.conf.MLConf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -38,13 +38,11 @@ public class GBDTLocalExample {
   private Configuration conf = new Configuration();
 
   static {
-    PropertyConfigurator
-        .configure("/Users/mac/Documents/newdevelop-1.1.8/angel/angel-ps/log4j.properties");
+    PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
   public void setConf() {
-    String inputPath =
-        "/Users/mac/Documents/newdevelop-1.1.8/angel/angel-ps/mllib/src/test/data/gbdt/";
+    String inputPath = "../data/exampledata/GBDTLocalExampleData/agaricus.txt.train";
 
     // Feature number of train data
     int featureNum = 126;
@@ -92,12 +90,12 @@ public class GBDTLocalExample {
     conf.set(MLConf.ML_GBDT_TREE_DEPTH(), String.valueOf(treeDepth));
     conf.set(MLConf.ML_GBDT_SPLIT_NUM(), String.valueOf(splitNum));
     conf.set(MLConf.ML_GBDT_SAMPLE_RATIO(), String.valueOf(sampleRatio));
-    conf.set(MLConf.ML_LEAR_RATE(), String.valueOf(learnRate));
+    conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
   }
 
   public void train() throws Exception {
     setConf();
-    // Submit LR Train Task
+
     GBDTRunner runner = new GBDTRunner();
     runner.train(conf);
 

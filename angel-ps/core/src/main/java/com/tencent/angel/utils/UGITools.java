@@ -25,6 +25,9 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
+/**
+ * Hadoop ugi modify tool.
+ */
 public class UGITools {
   private static final Log LOG = LogFactory.getLog(UGITools.class);
   final static public String UGI_PROPERTY_NAME = "hadoop.job.ugi";

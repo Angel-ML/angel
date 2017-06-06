@@ -18,6 +18,7 @@ package com.tencent.angel.ps.impl;
 
 import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.master.MasterProtocol;
 
 import org.apache.hadoop.conf.Configuration;
 
@@ -60,5 +61,13 @@ public class PSContext {
     } else {
       return AngelDeployMode.YARN;
     }
+  }
+
+  public SnapshotManager getSnapshotManager() {
+    return ps.getSnapshotManager();
+  }
+  
+  public MasterProtocol getMaster() {
+    return ps.getMaster();
   }
 }

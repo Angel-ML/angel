@@ -16,31 +16,40 @@
 
 package com.tencent.angel.common;
 
+/**
+ * Location of Angel Master/PS/Worker.
+ */
 public class Location {
+  /**ip address*/
+  private final String ip;
+  
+  /**listening port*/
+  private final int port;
 
-  private String ip;
-
-  private int port;
-
+  /**
+   * Create a new location
+   * @param ip ip address
+   * @param port listening port
+   */
   public Location(String ip, int port) {
     this.ip = ip;
     this.port = port;
   }
 
+  /**
+   * Get ip
+   * @return ip
+   */
   public String getIp() {
     return ip;
   }
 
-  public void setIp(String ip) {
-    this.ip = ip;
-  }
-
+  /**
+   * Get listening port
+   * @return listening port
+   */
   public int getPort() {
     return port;
-  }
-
-  public void setPort(int port) {
-    this.port = port;
   }
 
   @Override

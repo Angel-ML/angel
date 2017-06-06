@@ -22,7 +22,6 @@ import com.tencent.angel.RunningMode;
 import com.tencent.angel.common.AngelEnvironment;
 import com.tencent.angel.common.Location;
 import com.tencent.angel.conf.AngelConfiguration;
-import com.tencent.angel.exception.InitMatrixException;
 import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.ipc.TConnectionManager;
 import com.tencent.angel.master.MasterProtocol;
@@ -31,7 +30,6 @@ import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.impl.matrix.ServerMatrix;
 import com.tencent.angel.ps.matrix.transport.MatrixTransportServer;
 import com.tencent.angel.protobuf.ProtobufUtil;
-import com.tencent.angel.protobuf.generated.MLProtos.MatrixClock;
 import com.tencent.angel.protobuf.generated.MLProtos.MatrixStatus;
 import com.tencent.angel.protobuf.generated.MLProtos.PSAttemptIdProto;
 import com.tencent.angel.protobuf.generated.MLProtos.Pair;
@@ -40,13 +38,8 @@ import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.*;
-import org.apache.hadoop.util.Time;
 
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadInfo;
-import java.lang.management.ThreadMXBean;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -68,29 +61,22 @@ public class ParameterServer {
   private static final Log LOG = LogFactory.getLog(ParameterServer.class);
   private final Location masterLocation;
   private final Configuration conf;
-  private MasterProtocol masterProxy;
+  private volatile MasterProtocol masterProxy;
   private ParameterServerService psServerService;
+  private MatrixTransportServer matrixTransportServer;
+  private SnapshotManager snapshotManager;
   //private final ParameterServerId serverId;
   private final PSAttemptId attemptId;
   //private final PSIdProto idProto;
   private final PSAttemptIdProto attemptIdProto;
-  private FileSystem fs;
-  private FileContext fileContext;
-  private AtomicBoolean stopped;
-  private int attemptIndex;
+  private final AtomicBoolean stopped;
+  private final int attemptIndex;
   private ParameterServerState state;
 
   private Thread heartbeatThread;
-  private Thread taskSnapshotsThread;
   private MatrixPartitionManager matrixPartitionManager;
-  private Path snapShotBasePath;
-  private MatrixCommitter commiter;
 
-  private static String snapshots = "snapshots";
-  private static String tmp = "_temporary";
-  private static String tempSnapshotFileName = "snapshots_";
-  private static String snapshotFileName = "snapshots";
-  private static int snapshotFileIndex = 0;
+  private MatrixCommitter commiter;
 
   private static final AtomicInteger runningWorkerGroupNum = new AtomicInteger(0);
   private static final AtomicInteger runningWorekrNum = new AtomicInteger(0);
@@ -148,116 +134,8 @@ public class ParameterServer {
     return matrixPartitionManager;
   }
 
-  private Path createSnapshotBaseDir(FileSystem fs, String outputPath) throws IOException {
-    String baseDirStr =
-        outputPath + Path.SEPARATOR + snapshots + Path.SEPARATOR
-            + String.valueOf(attemptId.getParameterServerId().getIndex()) + Path.SEPARATOR + String.valueOf(attemptIndex);
-
-    Path basePath = new Path(baseDirStr);
-    LOG.info("create snapshot base directory:" + baseDirStr);
-
-    if (!fs.exists(basePath)) {
-      fs.mkdirs(basePath);
-    }
-    return basePath;
-  }
-
-  /**
-   * Write snapshots of matrices for recovery.
-   *
-   * @throws IOException the io exception
-   */
-  public void writeSnapshots() throws IOException {
-    LOG.info("start to write matrix snapshot");
-    long startTime = Time.monotonicNow();
-    Path snapshotsTempDirPath = getPSSnapshotsTempDir();
-    Path snapshotsTempFilePath = new Path(snapshotsTempDirPath, tempSnapshotFileName);
-    // FSDataOutputStream output = fileContext.create(snapshotsTempFilePath,
-    // EnumSet.of(CreateFlag.CREATE));
-    FSDataOutputStream output = fs.create(snapshotsTempFilePath);
-    LOG.info("write matrix snapshot to " + snapshotsTempFilePath);
-    matrixPartitionManager.writeMatrix(output);
-    output.flush();
-    output.close();
-    LOG.info("write matrix snapshot over");
-
-    Path snapshotsDestFilePath = getPSSnapshotDestFile();
-    fs.rename(snapshotsTempFilePath, snapshotsDestFilePath);
-    LOG.info("rename " + snapshotsTempFilePath + " to " + snapshotsDestFilePath + " success");
-    Path oldSnapshotFile = getOldSnapshotDestFile();
-    if (oldSnapshotFile != null) {
-      LOG.info("deleting old snapshotFile: " + oldSnapshotFile);
-      fs.delete(oldSnapshotFile, false);
-    }
-    LOG.info("write snapshots cost " + (Time.monotonicNow() - startTime) + "ms!");
-  }
-
-
-  /*
-   * @brief get next filename for snapshot
-   */
-  private Path getPSSnapshotDestFile() throws IOException {
-    return new Path(snapShotBasePath, snapshotFileName + "_" + (snapshotFileIndex++));
-  }
-
-  // @brief get filename of the old snapshot written before
-  private Path getOldSnapshotDestFile() {
-    if (snapshotFileIndex <= 1) {
-      // no snapshotFile write before, maybe write snapshots the first time
-      return null;
-    }
-    return new Path(snapShotBasePath, snapshotFileName + "_" + (snapshotFileIndex - 2));
-  }
-
-  private Path getPSSnapshotsTempDir() throws IOException {
-    Path tempSnapshotDir = new Path(snapShotBasePath, tmp);
-    if (!fs.exists(tempSnapshotDir)) {
-      fs.mkdirs(tempSnapshotDir);
-    }
-    return tempSnapshotDir;
-  }
-
-  private Path getLastSnapshotsFile(Path lastAttemptSnapshotPath) throws IOException {
-    Path snapshotsFile = null;
-    FileStatus[] allFileStatus = fs.listStatus(lastAttemptSnapshotPath);
-    for (FileStatus fileStatus : allFileStatus) {
-      if (fileStatus.isFile()) {
-        if (snapshotsFile == null) {
-          snapshotsFile = fileStatus.getPath();
-        } else {
-          if (fileStatus.getPath().getName().compareTo(snapshotsFile.getName()) > 0) {
-            LOG.info("old snapshotsFile is: " + snapshotsFile + ", new snapshotsFile is: "
-                + fileStatus.getPath());
-            snapshotsFile = fileStatus.getPath();
-          }
-        }
-      }
-    }
-    return snapshotsFile;
-  }
-
-  private Path getPreviousPSSnapshotsPath() throws IOException {
-    Path lastAttemptSnapshotPath = null;
-    Path lastAttemptSnapshotDir = null;
-    int lastAttempt = attemptIndex;
-    while (lastAttempt >= 0) {
-      lastAttemptSnapshotDir = new Path(snapShotBasePath.getParent(), String.valueOf(lastAttempt));
-      if (fs.exists(lastAttemptSnapshotDir)) {
-        lastAttemptSnapshotPath = getLastSnapshotsFile(lastAttemptSnapshotDir);
-        if (lastAttemptSnapshotPath == null) {
-          lastAttempt--;
-          LOG.warn("no snapshotFile in " + lastAttemptSnapshotDir);
-          continue;
-        }
-        break;
-      } else {
-        LOG.warn("ps: " + attemptId.getParameterServerId() + ", attempt " + lastAttempt
-            + " failed without write snapshots!");
-        lastAttemptSnapshotPath = null;
-        lastAttempt--;
-      }
-    }
-    return lastAttemptSnapshotPath;
+  public SnapshotManager getSnapshotManager() {
+    return snapshotManager;
   }
 
   /**
@@ -281,15 +159,19 @@ public class ParameterServer {
         }
         heartbeatThread = null;
       }
-      if (taskSnapshotsThread != null) {
-        taskSnapshotsThread.interrupt();
+      
+      if(matrixTransportServer != null) {
         try {
-          taskSnapshotsThread.join();
-        } catch (InterruptedException ie) {
-          LOG.warn("InterruptedException while stopping taskSnapshotsThread.");
+          matrixTransportServer.stop();         
+        } catch (InterruptedException e) {
+          LOG.warn("stop matrixTransportServer interrupted.");
         }
+        matrixTransportServer = null;
       }
-      taskSnapshotsThread = null;
+      
+      if(snapshotManager != null) {
+        snapshotManager.stop();
+      }
       exit(exitCode);
     }
   }
@@ -300,7 +182,6 @@ public class ParameterServer {
       System.exit(code);
     }
   }
-
 
   public static void main(String[] argv) throws IOException, InstantiationException,
       IllegalAccessException {
@@ -399,17 +280,6 @@ public class ParameterServer {
 
     matrixPartitionManager = new MatrixPartitionManager();
     commiter = new MatrixCommitter(this);
-
-    String outputPath = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_DIRECTORY);
-    LOG.info("tmp output dir=" + outputPath);
-    if (outputPath == null) {
-      throw new IOException("can not find output path setting");
-    }
-
-    fs = new Path(outputPath).getFileSystem(conf);
-    snapShotBasePath = createSnapshotBaseDir(fs, outputPath);
-
-    fileContext = FileContext.getFileContext(conf);
     TConnection connection = TConnectionManager.getConnection(conf);
     try {
       masterProxy = connection.getMasterService(masterLocation.getIp(), masterLocation.getPort());
@@ -417,6 +287,12 @@ public class ParameterServer {
       LOG.error("Connect to master failed! PS is to exit now!", e);
       stop(-1);
     }
+    
+    psServerService = new ParameterServerService();
+    psServerService.start();
+    matrixTransportServer = new MatrixTransportServer(getPort() + 1); 
+    snapshotManager = new SnapshotManager(attemptId);
+    snapshotManager.init();
   }
 
   private void startHeartbeart() {
@@ -446,43 +322,6 @@ public class ParameterServer {
     });
     heartbeatThread.setName("heartbeatThread");
     heartbeatThread.start();
-  }
-
-  private void startTakeSnapshotsThread() {
-    // TODO
-    // when we should write snapshot to hdfs? clearly, we have two methods:
-    // 1. write snapshot at regular time, if there are updates, just write them.
-    // 2. write snapshot every N iterations, this method depends on notification of master
-    final int backupInterval =
-        conf.getInt(AngelConfiguration.ANGEL_PS_BACKUP_INTERVAL_MS,
-            AngelConfiguration.DEFAULT_ANGEL_PS_BACKUP_INTERVAL_MS);
-    LOG.info("Starting TakeSnapshotsThread, backup interval is " + backupInterval + " ms");
-    taskSnapshotsThread = new Thread(new Runnable() {
-      @Override
-      public void run() {
-        while (!stopped.get() && !Thread.currentThread().isInterrupted()) {
-          try {
-            if (LOG.isDebugEnabled()) {
-              LOG.debug("TakeSnapshotsThread is to sleep");
-            }
-            Thread.sleep(backupInterval);
-            try {
-              LOG.info("to writeSnapshots");
-              writeSnapshots();
-            } catch (Exception ioe) {
-              LOG.error("Taking snapshots error: ", ioe);
-              return;
-            }
-          } catch (InterruptedException e) {
-            if (!stopped.get()) {
-              LOG.warn("TakeSnapShotsThread interrupted. Returning.");
-            }
-          }
-        }
-      }
-    });
-    taskSnapshotsThread.setName("taskSnapshotsThread");
-    taskSnapshotsThread.start();
   }
 
   private void register() throws IOException {
@@ -540,27 +379,24 @@ public class ParameterServer {
             stop(-1);
           }
           break;
+          
         case PSCOMMAND_SHUTDOWN:
           LOG.error("shutdown command come from appmaster, exit now!!");
           stop(-1);
           break;
+          
         case PSCOMMAND_COMMIT:
           LOG.info("received ps commit command, ps is committing now!");
           LOG.info("to stop taskSnapshotsThread.");
-          taskSnapshotsThread.interrupt();
+          snapshotManager.stop();
           commiter.commit(ret.getNeedCommitMatrixIdsList());
           break;
+          
         default:
           break;
       }
 
       syncMatrixInfo(ret.getNeedCreateMatrixIdsList(), ret.getNeedReleaseMatrixIdsList());
-
-      // LOG.debug("heartbeat execute unit desc = " + ret.getExecuteUnitDesc());
-      // setRunningWorkerGroupNum(ret.getExecuteUnitDesc().getActiveWorkerGroupNum());
-      // setRunningWorkerNum(ret.getExecuteUnitDesc().getActiveWorkerNum());
-      // setRunningTaskNum(ret.getExecuteUnitDesc().getActiveTaskNum());
-
     } catch (ServiceException e) {
       LOG.error("send heartbeat to appmaster failed ", e);
       stop(-1);
@@ -575,7 +411,7 @@ public class ParameterServer {
       LOG.fatal("init matrix failed, exit now ", e);
       stop(-1);
     }
-
+    PSContext.get().getSnapshotManager().processRecovery();
     matrixPartitionManager.removeMatrices(needReleaseMatrixesList);
   }
 
@@ -584,110 +420,12 @@ public class ParameterServer {
    *
    * @throws IOException the io exception
    */
-  public void start() throws IOException {
-    // get matrix partitions from master before register, ensure all services in parameterserver
-    // are initialized before worker access, we should use matrix partition file next step
-    List<MatrixPartition> matrixPartitions = getMatrixInfo();
-    
-    // initialize matrix    
-    matrixPartitionManager.addMatrixPartitions(matrixPartitions);
-
-    // recover parameter matrix from last attempt if needed
-    processRecovery();
-    GetTaskMatrixClockResponse taskMatrixClocks = null;
-    try {
-       taskMatrixClocks = getTaskMatrixClocks();
-       LOG.debug("taskMatrixClocks=" + taskMatrixClocks);
-       adjustMatrixClocks(taskMatrixClocks);
-    } catch (ServiceException e) {
-      LOG.error("get task clocks from master failed.", e);
-    }
-    psServerService = new ParameterServerService(this);
-    psServerService.start();
-
-    MatrixTransportServer matrixTransportServer = new MatrixTransportServer(getPort() + 1);
+  public void start() throws IOException { 
     matrixTransportServer.start();
-
-    // getExecuteUnitNum();
 
     register();
     startHeartbeart();
-    startTakeSnapshotsThread();
-  }
-
-  private List<MatrixPartition> getMatrixInfo() throws IOException {
-    GetMatrixPartitionRequest.Builder builder = GetMatrixPartitionRequest.newBuilder();
-    builder.setPsAttemptId(attemptIdProto);
-    GetMatrixPartitionRequest request = builder.build();
-    GetMatrixPartitionResponse response = null;
-    while (true) {
-      try {
-        LOG.info("Sending getMatricesPartitionRequest to appMaster ");
-        response = masterProxy.getMatrixPartition(null, request);
-        if (response.getMatrixStatus() == MatrixStatus.M_NOT_READY) {
-          LOG.info("MatrixPartitions are not ready, fetch later!");
-          Thread.sleep(1000);
-          continue;
-        }
-        break;
-      } catch (ServiceException e) {
-        LOG.error("getMatrixPartitions from master failed: " + e);
-        // TODO how to exit gracefully
-        stop(-1);
-      } catch (InterruptedException interruptException) {
-        LOG.error("Thread is interrupted!");
-        stop(-1);
-      }
-    }
-    List<MatrixPartition> matrisPartitions =
-        new ArrayList<MatrixPartition>(response.getMatrixPartitionsCount());
-    for (MatrixPartition matrixPartition : response.getMatrixPartitionsList()) {
-      matrisPartitions.add(matrixPartition);
-      LOG.info("PS get matrixPartitions from master, Id[" + matrixPartition.getMatrixId()
-          + "] Name[" + matrixPartition.getMatrixName() + "]");
-    }
-    return matrisPartitions;
-  }
-  
-  public GetTaskMatrixClockResponse getTaskMatrixClocks() throws ServiceException {
-    return masterProxy.getTaskMatrixClocks(null, GetTaskMatrixClockRequest.newBuilder().setPsAttemptId(attemptIdProto).build());
-  }
-
-  private void processRecovery() {
-    try {
-      recoveryFromPreviousSnapshorts();
-    } catch (Exception e) {
-      LOG.info("Recovery failed, e", e);
-    }
-  }
-
-  private void recoveryFromPreviousSnapshorts() throws IOException {
-    Path snapshots = getPreviousPSSnapshotsPath();
-    if (snapshots != null) {
-      LOG.info("ps is recovering from hdfs Snapshot. filePath: " + snapshots);
-      FSDataInputStream input = fs.open(snapshots, 4096);
-      matrixPartitionManager.parseMatricesFromInput(input);
-    } else {
-      LOG.warn("snapshot file not found, no recovery happened!");
-    }
-
-  }
-  
-  private void adjustMatrixClocks(GetTaskMatrixClockResponse taskMatrixClocks) {
-    List<TaskMatrixClock> taskClocks = taskMatrixClocks.getTaskMatrixClocksList();
-    int taskNum = taskClocks.size();
-    TaskMatrixClock taskMatrixClock = null;
-    List<MatrixClock> matrixClocks = null;
-    int matrixNum = 0;
-    for(int i = 0; i < taskNum; i++){
-      taskMatrixClock = taskClocks.get(i);
-      matrixClocks = taskMatrixClock.getMatrixClocksList();
-      matrixNum = matrixClocks.size();
-      for(int j = 0; j < matrixNum; j++){
-        LOG.info("task " + taskMatrixClock.getTaskId().getTaskIndex() + "matrix " + matrixClocks.get(j).getMatrixId() + " clock is " + matrixClocks.get(j).getClock());
-        matrixPartitionManager.setClock(matrixClocks.get(j).getMatrixId(), taskMatrixClock.getTaskId().getTaskIndex(), matrixClocks.get(j).getClock());
-      }
-    }
+    snapshotManager.start();
   }
 
   /**
@@ -739,27 +477,14 @@ public class ParameterServer {
   }
 
   /**
-   * Gets thread stack.
-   *
-   * @return the thread stack
+   * Gets rpc client to master
+   * @return MasterProtocol rpc client to master
    */
-  public String getThreadStack()
-  {
-    ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
-    ThreadInfo[] threadInfo =  threadMXBean.dumpAllThreads(true, true);
-    String stackTraceString="ParameterServer\n";
-    String infoBlock="\n";
-    for(ThreadInfo t :  threadInfo)
-    {
-      infoBlock="\n\n";
-      infoBlock+="threadid: "+t.getThreadId()+"	threadname: "+t.getThreadName()+"		threadstate: "+t.getThreadState()+"\n";
-      for(StackTraceElement stackTraceElement : t.getStackTrace())
-      {
-        infoBlock+= "   "+stackTraceElement.toString()+"\n";
-      }
-      stackTraceString+=infoBlock+"\n\n";
-    }
-    return stackTraceString;
+  public MasterProtocol getMaster() {
+    return masterProxy;
   }
 
+  public int getAttemptIndex() {
+    return attemptIndex;
+  }
 }

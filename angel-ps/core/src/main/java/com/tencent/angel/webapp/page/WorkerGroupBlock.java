@@ -81,7 +81,7 @@ public class WorkerGroupBlock extends HtmlBlock {
     headTr._()._();
 
     TBODY<TABLE<DIV<Hamlet>>> tbody = table.tbody();
-    for (AMWorker worker : workerGroup.getWorkers()) {
+    for (AMWorker worker : workerGroup.getWorkerSet()) {
       Map<WorkerAttemptId, WorkerAttempt> workerAttempts = worker.getAttempts();
       for (WorkerAttempt workerAttempt : workerAttempts.values()) {
         TR<TBODY<TABLE<DIV<Hamlet>>>> tr = tbody.tr();

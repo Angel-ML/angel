@@ -24,11 +24,8 @@ import com.tencent.angel.conf.MatrixConfiguration;
 import com.tencent.angel.master.DummyTask;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.protobuf.generated.MLProtos;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
-import com.tencent.angel.ps.impl.PSContext;
-import com.tencent.angel.ps.impl.ParameterServerServiceTest;
 import com.tencent.angel.worker.WorkerAttemptId;
 import com.tencent.angel.worker.WorkerGroupId;
 import com.tencent.angel.worker.WorkerId;
@@ -40,7 +37,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.log4j.PropertyConfigurator;
 import org.junit.After;
 import org.junit.Before;
@@ -78,7 +74,7 @@ public class ServerPartitionTest {
   private static Configuration conf;
 
   static {
-    PropertyConfigurator.configure("../log4j.properties");
+    PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
   @Before
@@ -163,9 +159,8 @@ public class ServerPartitionTest {
     mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_INT");
     angelClient.addMatrix(mMatrix);
 
-    angelClient.addMatrix(mMatrix);
-
-    angelClient.start();
+    angelClient.startPSServer();
+    angelClient.runTask(DummyTask.class);
     Thread.sleep(5000);
 
     group0Id = new WorkerGroupId(0);

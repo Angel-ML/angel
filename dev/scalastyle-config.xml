@@ -205,9 +205,8 @@ This file is divided into 3 sections:
 
   <check level="error" class="org.scalastyle.scalariform.ImportOrderChecker" enabled="true">
     <parameters>
-      <parameter name="groups">java,scala,3rdParty,angel</parameter>
-      <parameter name="group.java">javax?\..*</parameter>
-      <parameter name="group.scala">scala\..*</parameter>
+      <parameter name="groups">javaScala,3rdParty,angel</parameter>
+      <parameter name="group.javaScala">(javax?|scala)\..*</parameter>
       <parameter name="group.3rdParty">(?!com\.tencent\.angel\.).*</parameter>
       <parameter name="group.angel">com\.tencent\.angel\..*</parameter>
     </parameters>

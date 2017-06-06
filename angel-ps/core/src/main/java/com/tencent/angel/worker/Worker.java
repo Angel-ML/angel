@@ -204,6 +204,9 @@ public class Worker implements Executor {
 
     conf.set(AngelConfiguration.ANGEL_TASK_ACTUAL_NUM,
         System.getenv(AngelEnvironment.TASK_NUMBER.name()));
+    
+    conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS,
+        System.getenv(AngelEnvironment.ANGEL_USER_TASK.name()));
 
     LOG.info(
         "actual workergroup number:" + conf.get(AngelConfiguration.ANGEL_WORKERGROUP_ACTUAL_NUM));
@@ -215,7 +218,7 @@ public class Worker implements Executor {
     Location masterLocation = new Location(masterAddr, Integer.valueOf(portStr));
 
     String startClock = System.getenv(AngelEnvironment.INIT_MIN_CLOCK.name());
-    Worker worker = new Worker(AngelConfiguration.create(conf), appId, user, workerAttemptId,
+    Worker worker = new Worker(AngelConfiguration.clone(conf), appId, user, workerAttemptId,
         masterLocation, Integer.valueOf(startClock), false);
 
     try {
@@ -233,10 +236,14 @@ public class Worker implements Executor {
    * @throws Exception the exception
    */
   public void initAndStart() throws Exception {
+    LOG.info("init and start worker");
     psAgent = new PSAgent(conf, masterLocation.getIp(), masterLocation.getPort(),
         workerAttemptId.getWorkerId().getIndex(), false, this);
 
+    LOG.info("after init psagent");
     dataBlockManager = new DataBlockManager();
+    
+    LOG.info("after init datablockmanager");
     taskManager = new TaskManager();
 
     psAgent.initAndStart();
@@ -317,9 +324,8 @@ public class Worker implements Executor {
       LOG.info("worker register finished!");
       // taskManager.assignTaskIds(response.getTaskidsList());
     } catch (Exception x) {
-      LOG.error("register to appmaster error, worker will exit", x);
-      x.printStackTrace();
-      // TODO :exit handler
+      LOG.fatal("register to appmaster error, worker will exit", x);
+      workerExit(-1);
     }
   }
 
@@ -349,10 +355,9 @@ public class Worker implements Executor {
       }
       // heartbeatFailedTime = 0;
     } catch (Exception netException) {
-      // (TODO)
-      // Worker just failed when workerReport failed. (am exit/net timeout[need
-      // retry])
-      LOG.fatal("report to appmaster failed, err: ", netException);
+      if(!stopped.get()) {
+        LOG.error("report to appmaster failed, err: ", netException);
+      }
     }
   }
 

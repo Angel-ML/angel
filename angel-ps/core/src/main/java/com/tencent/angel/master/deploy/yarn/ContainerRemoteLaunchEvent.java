@@ -23,13 +23,22 @@ import org.apache.hadoop.util.StringInterner;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
 
+/**
+ * Yarn container launch event which CONTAINER_REMOTE_LAUNCH type
+ */
 public class ContainerRemoteLaunchEvent extends YarnContainerLauncherEvent {
-
+  /**container need to launch*/
   private final Container allocatedContainer;
+  
+  /**container launch context, it contains remote process startup parameters*/
   private final ContainerLaunchContext containerLaunchContext;
 
-  // private final Task task;
-
+  /**
+   * Create a ContainerRemoteLaunchEvent
+   * @param taskId task which the container is allocated to
+   * @param containerLaunchContext container launch context
+   * @param allocatedContainer container need to launch
+   */
   public ContainerRemoteLaunchEvent(Id taskId, ContainerLaunchContext containerLaunchContext,
       Container allocatedContainer) {
     super(taskId, allocatedContainer.getId(), StringInterner.weakIntern(allocatedContainer
@@ -39,10 +48,18 @@ public class ContainerRemoteLaunchEvent extends YarnContainerLauncherEvent {
     this.containerLaunchContext = containerLaunchContext;
   }
 
+  /**
+   * Get container launch context
+   * @return container launch context
+   */
   public ContainerLaunchContext getContainerLaunchContext() {
     return this.containerLaunchContext;
   }
 
+  /**
+   * Get container that need to launch
+   * @return container that need to launch
+   */
   public Container getAllocatedContainer() {
     return this.allocatedContainer;
   }

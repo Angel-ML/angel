@@ -16,15 +16,14 @@
 
 package com.tencent.angel.example;
 
-import java.util.concurrent.CountDownLatch;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.tencent.angel.client.AngelClient;
 import com.tencent.angel.ml.math.vector.DenseDoubleVector;
 import com.tencent.angel.psagent.PSAgent;
 import com.tencent.angel.psagent.matrix.MatrixClient;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import java.util.concurrent.CountDownLatch;
 
 
 public class PSAgentClientTest {

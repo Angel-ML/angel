@@ -17,6 +17,7 @@
 package com.tencent.angel.client;
 
 import com.google.protobuf.ServiceException;
+import com.tencent.angel.RunningMode;
 import com.tencent.angel.common.Location;
 import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.conf.MatrixConfiguration;
@@ -25,13 +26,22 @@ import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.ipc.TConnectionManager;
 import com.tencent.angel.master.MasterProtocol;
 import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.ml.model.AlgorithmModel;
+import com.tencent.angel.ml.model.MLModel;
 import com.tencent.angel.ml.model.PSModel;
 import com.tencent.angel.protobuf.RequestConverter;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.*;
+import com.tencent.angel.protobuf.generated.MLProtos.GetAllPSLocationRequest;
+import com.tencent.angel.protobuf.generated.MLProtos.GetAllPSLocationResponse;
 import com.tencent.angel.protobuf.generated.MLProtos.MatrixProto;
+import com.tencent.angel.protobuf.generated.MLProtos.MatrixStatus;
+import com.tencent.angel.protobuf.generated.MLProtos.PSLocation;
+import com.tencent.angel.protobuf.generated.MLProtos.PSStatus;
+import com.tencent.angel.protobuf.generated.MLProtos.Pair;
 import com.tencent.angel.utils.HdfsUtil;
 import com.tencent.angel.utils.UGITools;
+import com.tencent.angel.worker.WorkerGroupId;
+import com.tencent.angel.worker.WorkerId;
+import com.tencent.angel.worker.task.BaseTask;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -90,11 +100,29 @@ public abstract class AngelClient implements AngelClientInterface {
     isExecuteFinished = false;
     isFinished = false;
   }
+  
+  @SuppressWarnings("rawtypes")
+  @Override
+  public void runTask(Class<? extends BaseTask> taskClass) throws AngelException {
+    try {
+      master.setParams(
+          null,
+          SetParamsRequest
+              .newBuilder()
+              .addKvs(
+                  Pair.newBuilder().setKey(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS)
+                      .setValue(taskClass.getName()).build()).build());
+      master.start(null, StartRequest.newBuilder().build());
+    } catch (ServiceException e) {
+      LOG.error("start application failed.", e);
+      throw new AngelException(e);
+    }
+  }
 
   @Override
-  public void start() throws AngelException {    
+  public void run() throws AngelException {    
     try {
-      sendMatrixPartitions();
+      createMatrices();
       master.start(null, StartRequest.newBuilder().build());
     } catch (ServiceException | InvalidParameterException e) {
       LOG.error("start application failed.", e);
@@ -113,21 +141,27 @@ public abstract class AngelClient implements AngelClientInterface {
 
   @SuppressWarnings("rawtypes")
   @Override
-  public void loadModel(AlgorithmModel model) throws AngelException {
-    Map<String, PSModel> psModels = model.getPsModels();
+  public void loadModel(MLModel model) throws AngelException {
+    Map<String, PSModel<?>> psModels = model.getPsModels();
 
-    for (Map.Entry<String, PSModel> entry: psModels.entrySet()) {
+    for (Map.Entry<String, PSModel<?>> entry: psModels.entrySet()) {
       addMatrix(entry.getValue().getContext());
+    }   
+    
+    try {
+      createMatrices();
+    } catch (InvalidParameterException | ServiceException e) {
+      throw new AngelException("create matrices failed.", e);
     }
   }
 
   @SuppressWarnings("rawtypes")
   @Override
-  public void saveModel(AlgorithmModel model) throws AngelException {
+  public void saveModel(MLModel model) throws AngelException {
     SaveRequest.Builder builder = SaveRequest.newBuilder();
-    Map<String, PSModel> psModels = model.getPsModels();
+    Map<String, PSModel<?>> psModels = model.getPsModels();
 
-    for (Map.Entry<String, PSModel> entry: psModels.entrySet()) {
+    for (Map.Entry<String, PSModel<?>> entry: psModels.entrySet()) {
       MatrixContext context = entry.getValue().getContext();
       String savePath = context.getAttributes().get(MatrixConfiguration.MATRIX_SAVE_PATH);
       if(savePath != null) {
@@ -155,9 +189,22 @@ public abstract class AngelClient implements AngelClientInterface {
     }
   }
 
-  @Override
-  public void waitForCompletion() throws AngelException{
-    while (!isExecuteCompleted()) {
+  /**
+   * Save matrices to files.
+   * @param matrixNames need save matrix name list
+   */
+  public void saveMatrices(List<String> matrixNames) {
+    SaveRequest.Builder builder = SaveRequest.newBuilder();
+    builder.addAllMatrixNames(matrixNames);
+
+    try {
+      master.save(null, builder.build());
+    } catch (ServiceException e) {
+      LOG.error("save model failed.", e);
+      throw new AngelException(e);
+    }
+
+    while (!isCompleted()) {
       try {
         Thread.sleep(1000);
       } catch (InterruptedException e) {
@@ -168,15 +215,59 @@ public abstract class AngelClient implements AngelClientInterface {
     if (appFailedMessage != null) {
       throw new AngelException("app run failed, " + appFailedMessage);
     }
-    
-    String actionType = conf.get(AngelConfiguration.ANGEL_ACTION_TYPE, AngelConfiguration.DEFAULT_ANGEL_ACTION_TYPE);
-    LOG.info("action type " + actionType);
-    if (actionType.matches("predict")) {
-      try {
-        movePredictResult();
-      } catch (IOException e) {
-        throw new AngelException("move predict result failed." + e.getMessage());
+  }
+
+  @Override
+  public void stop(int stateCode) throws AngelException {
+    stop();
+  }
+
+  @Override
+  public void waitForCompletion() throws AngelException{
+    RunningMode mode = RunningMode.valueOf(conf.get(AngelConfiguration.ANGEL_RUNNING_MODE, AngelConfiguration.DEFAULT_ANGEL_RUNNING_MODE));
+    switch (mode) {
+      case ANGEL_PS:{
+        while (!isCompleted()) {
+          try {
+            Thread.sleep(1000);
+          } catch (InterruptedException e) {
+            throw new AngelException("Interrupted as waiting app complete");
+          }
+        }
+
+        if (appFailedMessage != null) {
+          throw new AngelException("app run failed, " + appFailedMessage);
+        }
+        break;
       }
+      case ANGEL_PS_WORKER:{
+        printWorkerLogUrl(new WorkerId(new WorkerGroupId(0), 0));
+        while (!isExecuteCompleted()) {
+          try {
+            Thread.sleep(1000);
+          } catch (InterruptedException e) {
+            throw new AngelException("Interrupted as waiting app complete");
+          }
+        }
+
+        if (appFailedMessage != null) {
+          throw new AngelException("app run failed, " + appFailedMessage);
+        }
+
+        String actionType = conf.get(AngelConfiguration.ANGEL_ACTION_TYPE, AngelConfiguration.DEFAULT_ANGEL_ACTION_TYPE);
+        LOG.info("action type " + actionType);
+        if (actionType.matches("predict")) {
+          try {
+            movePredictResult();
+          } catch (IOException e) {
+            throw new AngelException("move predict result failed." + e.getMessage());
+          }
+        }
+        break;
+      }
+
+      default:
+        break;
     }
   }
    
@@ -307,24 +398,32 @@ public abstract class AngelClient implements AngelClientInterface {
       return false;
     }
   }
-  
+
+  protected void printWorkerLogUrl(WorkerId workerId) {}
+
   private void updateJobReport() {
     GetJobReportRequest getJobRequest = getGetJobReportRequest();
     GetJobReportResponse response = null;
     try {
       response = master.getJobReport(null, getJobRequest);
     } catch (Exception e) {
-      LOG.error("getJobReport from master failed. " + e);
+      LOG.error("getJobReport from master failed. " + e.getMessage());
       try {
         updateMaster(60);
-        response = master.getJobReport(null, getJobRequest);
+        if(master != null) {
+          response = master.getJobReport(null, getJobRequest);
+        }
       } catch (Exception e1) {
         LOG.error("update master failed.", e1);
-        isFinished = true;
-        lastReport = null;
-        return;
       }
     }
+
+    if(response == null) {
+      isFinished = true;
+      lastReport = null;
+      return;
+    }
+
     JobReportProto report = response.getJobReport();
     // JobStateProto jobState = report.getJobState();
     if (lastReport == null
@@ -367,13 +466,47 @@ public abstract class AngelClient implements AngelClientInterface {
     return response;
   }
   
-  protected void sendMatrixPartitions() throws InvalidParameterException, ServiceException {
-    SetMatrixPartitionRequest setMatricsRequest =
-        RequestConverter.buildSetMatrixPartitionRequest(matrixList);
-    LOG.debug(setMatricsRequest.toString());
-    master.setMatrixPartitions(null, setMatricsRequest);
+  protected void createMatrices() throws InvalidParameterException, ServiceException {
+    CreateMatricesRequest createMatricsRequest =
+        RequestConverter.buildCreateMatricesRequest(matrixList);
+    master.createMatrices(null, createMatricsRequest);
+    waitForMatricesCreated(matrixList);
   }
   
+  private void waitForMatricesCreated(List<MatrixProto> matrixList) throws ServiceException {
+    CheckMatricesCreatedRequest.Builder builder = CheckMatricesCreatedRequest.newBuilder();
+    int size = matrixList.size();
+    for(int i = 0; i < size; i++) {
+      builder.addMatrixNames(matrixList.get(i).getName());
+    }
+    CheckMatricesCreatedRequest request = builder.build();
+    
+    boolean isAllCreated = true;
+    while(true) {
+      CheckMatricesCreatedResponse response = master.checkMatricesCreated(null, request);
+      List<MatrixStatus> status = response.getStatusList();
+      assert(size == status.size());
+      
+      isAllCreated = true;
+      for(int i = 0; i < size; i++) {
+        if(status.get(i) != MatrixStatus.M_OK) {
+          isAllCreated = false;
+          break;
+        }
+      }
+      
+      if(isAllCreated) {
+        return;
+      }
+      
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+        LOG.warn("waitForMatricesCreated is interrupted.");
+      }
+    }
+  }
+
   protected void setOutputDirectory() throws IOException{
     String actionType = conf.get(AngelConfiguration.ANGEL_ACTION_TYPE, AngelConfiguration.DEFAULT_ANGEL_ACTION_TYPE);
     String path = null;
@@ -387,6 +520,12 @@ public abstract class AngelClient implements AngelClientInterface {
 
     // generate tmp output directory
     String outputPathStr = conf.get(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH);
+    if(outputPathStr == null) {
+      throw new IOException("output directory is null. you must set "
+        + AngelConfiguration.ANGEL_SAVE_MODEL_PATH + " at training mode or set "
+        + AngelConfiguration.ANGEL_PREDICT_PATH + " at predict mode");
+    }
+
     boolean deleteOnExist =
         conf.getBoolean(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
             AngelConfiguration.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST);
@@ -418,7 +557,9 @@ public abstract class AngelClient implements AngelClientInterface {
     userName = UGITools.getCurrentUser(conf).getShortUserName();
     conf.set(AngelConfiguration.USER_NAME, userName);
   }
-  
+
+  abstract public void startPSServer() throws AngelException;
+
   protected void setLocalAddr() throws UnknownHostException {
     InetAddress ip = InetAddress.getLocalHost();
     if (ip != null) {
@@ -486,9 +627,33 @@ public abstract class AngelClient implements AngelClientInterface {
       throw new InvalidParameterException(sb.toString());
     }
   }
+  
+  protected void waitForAllPS(int psNumber) throws ServiceException, InterruptedException {
+    boolean isAllPSReady = true;
+    while(true) {
+      GetAllPSLocationResponse response = master.getAllPSLocation(null, GetAllPSLocationRequest.newBuilder().build());
+      List<PSLocation> psLocs = response.getPsLocationsList();
+      int size = psLocs.size();
+      if(size == psNumber) {
+        isAllPSReady = true;
+        for(int i = 0; i < size; i++) {
+          if(psLocs.get(i).getPsStatus() == PSStatus.PS_NOTREADY) {
+            isAllPSReady = false;
+            break;
+          }
+        }
+        
+        if(isAllPSReady) {
+          return;
+        }
+      }       
+      Thread.sleep(100);
+    }
+  }
 
   protected void close() {
     TConnectionManager.deleteAllConnections(true);
+    TConnectionManager.shutDown();
   }
   
   protected abstract void updateMaster(int maxWaitTimeInSec) throws Exception;

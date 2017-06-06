@@ -28,9 +28,7 @@ import com.tencent.angel.conf.AngelConfiguration;
  */
 public class AngelClientFactory {
   public static AngelClient get(Configuration conf){
-    String mode =
-        conf.get(AngelConfiguration.ANGEL_DEPLOY_MODE,
-            AngelConfiguration.DEFAULT_ANGEL_DEPLOY_MODE);
+    String mode = conf.get(AngelConfiguration.ANGEL_DEPLOY_MODE, AngelConfiguration.DEFAULT_ANGEL_DEPLOY_MODE);
 
     if (mode.equals(AngelDeployMode.LOCAL.toString())) {
       return new AngelLocalClient(conf);

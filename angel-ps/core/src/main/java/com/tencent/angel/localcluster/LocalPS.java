@@ -25,10 +25,20 @@ import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.impl.PSContext;
 import com.tencent.angel.ps.impl.ParameterServer;
 
+/**
+ * Local Angel PS. It startups the {@link ParameterServer} using a thread.
+ */
 public class LocalPS extends Thread {
   private static final Log LOG = LogFactory.getLog(LocalPS.class);
+  /**ps*/
   private final ParameterServer ps;
   
+  /**
+   * Create a local ps
+   * @param psAttemptId ps attempt id
+   * @param masterLocation master location
+   * @param conf cluster configuration
+   */
   public LocalPS(PSAttemptId psAttemptId, Location masterLocation, Configuration conf) {
     ps = new ParameterServer(psAttemptId.getParameterServerId().getIndex(), psAttemptId.getIndex(), masterLocation.getIp(), masterLocation.getPort(), conf);
     PSContext.get().setPs(ps);
@@ -45,10 +55,17 @@ public class LocalPS extends Thread {
     }   
   }
 
+  /**
+   * Get ps
+   * @return ps
+   */
   public ParameterServer getPS() {
     return ps;
   }
   
+  /**
+   * Exit
+   */
   public void exit() {
     ps.stop(0);
     interrupt();

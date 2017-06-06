@@ -28,5 +28,6 @@ public interface AngelParams {
   static final String PARAMETERSERVER_STATE = "parameterserver.state";
   static final String PSATTEMPT_ID = "PSAttempt.id";
   static final String TASK_ID = "task.id";
+  static final String PROGRESS="progress";
 
 }

@@ -1,10 +1,26 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
 package com.tencent.angel.spark.examples.util
 
 import java.nio.file.Paths
 
+import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.SparkConf
-import org.apache.spark.SparkContext
 
 object PSExamples {
   var N = 2000  // Number of data points
@@ -26,6 +42,8 @@ object PSExamples {
     val sparkBuilder = SparkSession.builder().appName(name)
     if (isLocalTest) {
       var tmpDir = "/tmp"
+      val psOutDir = Paths.get(tmpDir, "ps-out").toString
+      val psModelDir = Paths.get(tmpDir, "ps-model").toString
       if (sys.props("os.name").startsWith("Windows")) {
         tmpDir = sys.env.getOrElse("SPARK_TMP", "D:\\tmp")
       }
@@ -33,20 +51,27 @@ object PSExamples {
       if (useLocalCluster) {
         sys.props("spark.testing") = "1"
         sys.props("spark.test.home") = tmpDir
-        val psOutDir = Paths.get(tmpDir, "ps-out").toString
-        val psTmpDir = Paths.get(tmpDir, "ps-tmp").toString
+
         sparkBuilder.master("local-cluster[2, 1, 128]")
           .config("spark.memory.useLegacyMode", "true")
           .config("spark.executor.memory", "128m")
+          .config("spark.ps.mode", "LOCAL")
           .config("spark.cores.max", 2)
           .config("spark.ps.instances", 2)
           .config("spark.ps.cores", 1)
           .config("spark.ps.memory", "128m")
+          .config("spark.ps.jars", "")
           .config("spark.ps.out.path", s"file:///$psOutDir")
-          .config("spark.ps.out.tmp.path", s"/$psTmpDir")
+          .config("spark.ps.model.path", s"file:///$psModelDir")
           .config("spark.ps.block.cols.min", DIM / 2)
       } else {
         sparkBuilder.master("local[2]")
+          .config("spark.ps.mode", "LOCAL")
+          .config("spark.ps.jars", "")
+          .config("spark.ps.out.path", s"file:///$psOutDir")
+          .config("spark.ps.model.path", s"file:///$psModelDir")
+          .config("spark.ps.instances", "1")
+          .config("spark.ps.cores", "1")
       }
     }
     val sc = sparkBuilder.getOrCreate().sparkContext
@@ -57,6 +82,5 @@ object PSExamples {
       Console.in.read()
     }
     sc.stop()
-    System.exit(0)
   }
 }

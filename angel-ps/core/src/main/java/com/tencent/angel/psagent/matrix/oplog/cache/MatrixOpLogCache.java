@@ -19,7 +19,7 @@ package com.tencent.angel.psagent.matrix.oplog.cache;
 import com.tencent.angel.conf.MatrixConfiguration;
 import com.tencent.angel.ml.math.TUpdate;
 import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ml.matrix.udf.updater.VoidResult;
+import com.tencent.angel.ml.matrix.psf.updater.base.VoidResult;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.ResponseType;
 import com.tencent.angel.psagent.matrix.transport.FutureResult;

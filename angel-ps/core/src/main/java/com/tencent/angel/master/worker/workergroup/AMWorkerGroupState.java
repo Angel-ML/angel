@@ -16,6 +16,16 @@
 
 package com.tencent.angel.master.worker.workergroup;
 
+/**
+ * Worker group states.
+ */
 public enum AMWorkerGroupState {
-  NEW, INITED, RUNNING, FAILED, SUCCESS, KILLED
+  NEW,
+  INITED,
+
+  /**all workers in worker group are running*/
+  RUNNING,
+  FAILED,
+  SUCCESS,
+  KILLED
 }

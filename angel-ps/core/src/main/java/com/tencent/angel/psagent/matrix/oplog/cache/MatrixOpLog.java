@@ -300,7 +300,7 @@ class DenseIntMatrixOpLog extends MatrixOpLog {
       }
 
       String errorMsg =
-          String.format("can not merge type %s to LILIntMatrix", update.getClass().getName());
+          String.format("can not merge type %s to DenseIntMatrixOpLog", update.getClass().getName());
       LOG.fatal(errorMsg);
       throw new InvalidParameterException(errorMsg);
     } finally {

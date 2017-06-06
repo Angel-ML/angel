@@ -16,6 +16,18 @@
 
 package com.tencent.angel.master.ps.ps;
 
+/**
+ * PS state.
+ */
 public enum AMParameterServerState {
-  NEW, SCHEDULED, ASSIGNED, LAUNCHED, RUNNING, FAILED, SUCCESS, KILLED, COMMITTING
+  NEW, 
+  /**starting a ps attempt*/
+  SCHEDULED, 
+  
+  /**ps attempt is running*/
+  RUNNING, 
+
+  FAILED, 
+  SUCCESS, 
+  KILLED
 }

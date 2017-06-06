@@ -32,9 +32,7 @@ import com.tencent.angel.ml.matrix.MatrixMetaManager;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.psagent.client.MasterClient;
 import com.tencent.angel.psagent.clock.ClockCache;
-import com.tencent.angel.psagent.consistency.AsyncConsistencyController;
 import com.tencent.angel.psagent.consistency.ConsistencyController;
-import com.tencent.angel.psagent.consistency.SSPConsistencyController;
 import com.tencent.angel.psagent.executor.Executor;
 import com.tencent.angel.psagent.matrix.MatrixClient;
 import com.tencent.angel.psagent.matrix.MatrixClientFactory;
@@ -295,7 +293,7 @@ public class PSAgent {
     // Initialize matrix info, this method will wait until master accepts the information from
     // client
     GetAllMatrixInfoResponse response = masterClient.getMatrices();
-    LOG.info("get matrix info=" + response);
+    LOG.debug("get matrix info=" + response);
 
     // Get ps locations from master and put them to the location cache.
     locationCache = new LocationCache(masterLocation, masterClient.getPSLocations());
@@ -320,12 +318,7 @@ public class PSAgent {
     matricesCache = new MatricesCache();
     int staleness =
         conf.getInt(AngelConfiguration.ANGEL_STALENESS, AngelConfiguration.DEFAULT_ANGEL_STALENESS);
-
-    if (staleness >= 0) {
-      consistencyController = new SSPConsistencyController(staleness);
-    } else {
-      consistencyController = new AsyncConsistencyController();
-    }
+    consistencyController = new ConsistencyController(staleness);
     consistencyController.init();
 
     psAgentInitFinishedFlag.set(true);

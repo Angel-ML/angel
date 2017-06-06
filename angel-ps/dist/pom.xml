@@ -33,6 +33,7 @@
   <url>http://maven.apache.org</url>
 
   <properties>
+    <main.basedir>${project.parent.parent.basedir}</main.basedir>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
@@ -67,7 +68,7 @@
         <configuration>
           <finalName>angel-ps-${project.version}</finalName>
           <descriptors>
-            <descriptor>angel-ps/assembly/dist-assembly.xml</descriptor>
+            <descriptor>${main.basedir}/angel-ps/assembly/dist-assembly.xml</descriptor>
           </descriptors>
           <descriptorRefs>
             <descriptorRef>jar-with-dependencies</descriptorRef>

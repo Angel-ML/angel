@@ -19,11 +19,19 @@ package com.tencent.angel.master.ps.ps;
 import com.tencent.angel.ps.ParameterServerId;
 import org.apache.hadoop.yarn.event.AbstractEvent;
 
+/**
+ * Base class for ps event.
+ */
 public class AMParameterServerEvent extends AbstractEvent<AMParameterServerEventType> {
 
   /**ps id*/
   private final ParameterServerId psId;
 
+  /**
+   * Create a AMParameterServerEvent
+   * @param type event type
+   * @param id ps id
+   */
   public AMParameterServerEvent(AMParameterServerEventType type, ParameterServerId id) {
     super(type);
     this.psId = id;

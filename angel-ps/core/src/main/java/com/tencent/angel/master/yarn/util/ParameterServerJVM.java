@@ -57,6 +57,11 @@ public class ParameterServerJVM {
         AngelConfiguration.DEFAULT_ANGEL_PS_LOG_LEVEL);
   }
 
+  /**
+   * Set environment variables of ps attempt process
+   * @param environment environment variables of ps attempt process
+   * @param conf application configuration
+   */
   public static void setVMEnv(Map<String, String> environment, Configuration conf) {
     // Add the env variables passed by the user
     String setEnv = getChildEnv(conf);
@@ -132,6 +137,13 @@ public class ParameterServerJVM {
     AngelApps.addLog4jSystemProperties(logLevel, logSize, vargs);
   }
 
+  /**
+   * Generate ps attempt jvm command
+   * @param conf application configuration
+   * @param appid application id
+   * @param psAttemptId ps attempt id
+   * @return ps attempt jvm command
+   */
   public static List<String> getVMCommand(Configuration conf, ApplicationId appid,
       PSAttemptId psAttemptId) {
 

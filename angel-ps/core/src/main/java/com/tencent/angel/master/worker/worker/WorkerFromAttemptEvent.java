@@ -18,12 +18,27 @@ package com.tencent.angel.master.worker.worker;
 
 import com.tencent.angel.worker.WorkerAttemptId;
 
+/**
+ * Worker events that come from the attempts of worker.
+ */
 public class WorkerFromAttemptEvent extends AMWorkerEvent{
+  /**worker attempt id*/
   private final WorkerAttemptId workerAttemptId;
+
+  /**
+   * Create a WorkerFromAttemptEvent
+   * @param eventType event type
+   * @param workerAttemptId worker attempt id
+   */
   public WorkerFromAttemptEvent(AMWorkerEventType eventType, WorkerAttemptId workerAttemptId) {
     super(eventType, workerAttemptId.getWorkerId());
     this.workerAttemptId = workerAttemptId;
   }
+
+  /**
+   * Get worker attempt id
+   * @return worker attempt id
+   */
   public WorkerAttemptId getWorkerAttemptId() {
     return workerAttemptId;
   }

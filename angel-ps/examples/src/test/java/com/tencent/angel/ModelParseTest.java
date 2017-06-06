@@ -21,20 +21,19 @@ import com.tencent.angel.client.AngelClientFactory;
 import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.conf.MatrixConfiguration;
 import com.tencent.angel.example.ModelParseTask;
-import com.tencent.angel.ml.algorithm.utils.ModelParse;
 import com.tencent.angel.ml.feature.LabeledData;
 import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.ml.model.AlgorithmModel;
+import com.tencent.angel.ml.model.MLModel;
 import com.tencent.angel.ml.model.PSModel;
+import com.tencent.angel.ml.utils.ModelParse;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.worker.predict.PredictResult;
-import com.tencent.angel.worker.storage.Storage;
+import com.tencent.angel.worker.storage.DataBlock;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.log4j.PropertyConfigurator;
 import org.junit.After;
 import org.junit.Test;
@@ -52,11 +51,21 @@ public class ModelParseTest {
     PropertyConfigurator.configure("../log4j.properties");
   }
 
-  public class ParseModel extends AlgorithmModel {
+  public class ParseModel extends MLModel {
 
     @Override
-    public Storage<PredictResult> predict(Storage<LabeledData> storage) {
+    public DataBlock<PredictResult> predict(DataBlock<LabeledData> dataBlock) {
       return null;
+    }
+
+    @Override
+    public void setSavePath(Configuration conf) {
+
+    }
+
+    @Override
+    public void setLoadPath(Configuration conf) {
+
     }
 
     public ParseModel(int psNumber, String path) {
@@ -83,7 +92,7 @@ public class ModelParseTest {
   @Test
   public void testLoadVector() throws Exception {
     String inputStr = "./src/test/data/itemMat";
-    String outputStr = "./src/test/data";
+    String outputStr = "../data/exampledata/ModelParseTest";
     String matrixName = "itemMat";
     int convertThreadCount = 4;
     ModelParse modelLoader = new ModelParse(inputStr, outputStr, matrixName, convertThreadCount);
@@ -94,7 +103,7 @@ public class ModelParseTest {
   @Test
   public void testModelParseTask() throws Exception {
     Configuration conf = new Configuration();
-    conf.set(AngelConfiguration.ANGEL_PARSE_MODEL_PATH, "./src/test/data");
+    conf.set(AngelConfiguration.ANGEL_PARSE_MODEL_PATH, "../data/exampledata/ModelParseTest");
     conf.set(AngelConfiguration.ANGEL_MODEL_PARSE_NAME, "itemMat");
     conf.set(AngelConfiguration.ANGEL_MODEL_PARSE_THREAD_COUNT, "3");
 
@@ -107,21 +116,21 @@ public class ModelParseTest {
     // conf.setInt(AngelConfiguration.ANGEL_PREPROCESS_VECTOR_MAXDIM, 10000);
     conf.set(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
     conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/out");
-    conf.set(FileInputFormat.INPUT_DIR, "./src/test/data/IntArbitrary");
+    conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, "../data/exampledata/ModelParseTest/IntArbitrary");
     conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS, ModelParseTask.class.getName());
     angelClient = AngelClientFactory.get(conf);
     int psNumber =
             conf.getInt(AngelConfiguration.ANGEL_PS_NUMBER, AngelConfiguration.DEFAULT_ANGEL_PS_NUMBER);
 
-    AlgorithmModel parseModel =
+    MLModel parseModel =
             new ParseModel(psNumber, conf.get(AngelConfiguration.ANGEL_SAVE_MODEL_PATH));
     conf.setInt(AngelConfiguration.ANGEL_WORKERGROUP_NUMBER, 1);
     conf.setInt(AngelConfiguration.ANGEL_PS_NUMBER, 1);
     conf.setInt(AngelConfiguration.ANGEL_WORKER_TASK_NUMBER, 1);
 
-    angelClient.submit();
+    angelClient.startPSServer();
     angelClient.loadModel(parseModel);
-    angelClient.start();
+    angelClient.runTask(ModelParseTask.class);
     angelClient.waitForCompletion();
     angelClient.saveModel(parseModel);
     angelClient.stop();

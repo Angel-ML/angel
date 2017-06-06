@@ -27,6 +27,7 @@
 	<name>angel-ps-core</name>
 	<url>http://maven.apache.org</url>
 	<properties>
+		<main.basedir>${project.parent.parent.basedir}</main.basedir>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 	<build>

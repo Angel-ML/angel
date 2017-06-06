@@ -18,7 +18,14 @@ package com.tencent.angel.master.worker;
 
 import org.apache.hadoop.yarn.event.AbstractEvent;
 
+/**
+ * Base class of worker/workergroup manager event.
+ */
 public class WorkerManagerEvent extends AbstractEvent<WorkerManagerEventType> {
+  /**
+   * Create a WorkerManagerEvent
+   * @param type event type
+   */
   public WorkerManagerEvent(WorkerManagerEventType type) {
     super(type);
   }

@@ -29,9 +29,17 @@ import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.psagent.PSAgentAttemptId;
 import com.tencent.angel.worker.WorkerAttemptId;
 
+/**
+ * Local container allocator.
+ */
 public class LocalContainerAllocator extends ContainerAllocator {
+  /**master context*/
   private final AMContext context;
   
+  /**
+   * Create a LocalContainerAllocator
+   * @param context master context
+   */
   public LocalContainerAllocator(AMContext context) {
     super(LocalContainerAllocator.class.getName());
     this.context = context;
@@ -46,9 +54,6 @@ public class LocalContainerAllocator extends ContainerAllocator {
 
       case CONTAINER_DEALLOCATE:
         deallocateContainer(event);
-        break;
-
-      case CONTAINER_FAILED:
         break;
         
       default:

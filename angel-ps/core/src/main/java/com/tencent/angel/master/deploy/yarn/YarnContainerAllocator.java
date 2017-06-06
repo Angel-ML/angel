@@ -1,17 +1,24 @@
-/*
- * Tencent is pleased to support the open source community by making Angel available.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- *
- * https://opensource.org/licenses/BSD-3-Clause
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is
- * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
  * limitations under the License.
+ */
+
+/**
+ * The container request and assign have been modified according to the specific
+ * circumstances of Angel.
  */
 
 package com.tencent.angel.master.deploy.yarn;
@@ -226,6 +233,7 @@ public class YarnContainerAllocator extends ContainerAllocator {
         //register to Yarn RM
         try {
           register();
+          LOG.info("register to rm success");
         } catch (Exception e) {
           LOG.fatal("register am to rm failed. " + e);
           context.getEventHandler().handle(
@@ -271,7 +279,6 @@ public class YarnContainerAllocator extends ContainerAllocator {
     allocatorThread.start();
   }
 
-  @SuppressWarnings("deprecation")
   private void heartbeat() throws IOException {
     try {
       writeLock.lock();
@@ -512,14 +519,11 @@ public class YarnContainerAllocator extends ContainerAllocator {
       writeLock.lock();
       switch (event.getType()) {
         case CONTAINER_REQ: 
-          requestContainer(event);
+          requestContainer((YarnContainerRequestEvent) event);
           break;
 
         case CONTAINER_DEALLOCATE:
           deallocateContainer(event);
-          break;
-
-        case CONTAINER_FAILED:
           break;
           
         default:
@@ -547,7 +551,7 @@ public class YarnContainerAllocator extends ContainerAllocator {
     }
   }
 
-  private void requestContainer(YarnContainerAllocatorEvent event) {
+  private void requestContainer(YarnContainerRequestEvent event) {
     String[] hosts = event.getHosts();
 
     Set<String> racks = null;

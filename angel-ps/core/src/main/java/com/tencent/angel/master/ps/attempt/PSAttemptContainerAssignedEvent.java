@@ -20,15 +20,27 @@ import org.apache.hadoop.yarn.api.records.Container;
 
 import com.tencent.angel.ps.PSAttemptId;
 
+/**
+ * Assign a container for a ps.
+ */
 public class PSAttemptContainerAssignedEvent extends PSAttemptEvent {
-  /**the resource allocated for the ps attempt*/
+  /**the container allocated for the ps attempt*/
   private final Container container;
 
+  /**
+   * Create a PSAttemptContainerAssignedEvent
+   * @param id ps attempt id
+   * @param container container
+   */
   public PSAttemptContainerAssignedEvent(PSAttemptId id, Container container) {
     super(PSAttemptEventType.PA_CONTAINER_ASSIGNED, id);
     this.container = container;
   }
 
+  /**
+   * Get container
+   * @return container
+   */
   public Container getContainer() {
     return container;
   }

@@ -1,17 +1,17 @@
 /*
  * Tencent is pleased to support the open source community by making Angel available.
- *
+ * 
  * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
- *
+ * 
  * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- *
+ * 
  * https://opensource.org/licenses/BSD-3-Clause
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is
- * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package com.tencent.angel.psagent.matrix.transport.adapter;
@@ -19,12 +19,15 @@ package com.tencent.angel.psagent.matrix.transport.adapter;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ml.matrix.udf.aggr.*;
-import com.tencent.angel.ml.matrix.udf.getrow.*;
-import com.tencent.angel.ml.matrix.udf.updater.PartitionUpdaterParam;
-import com.tencent.angel.ml.matrix.udf.updater.UpdaterFunc;
-import com.tencent.angel.ml.matrix.udf.updater.UpdaterParam;
-import com.tencent.angel.ml.matrix.udf.updater.VoidResult;
+import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
+import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
+import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
+import com.tencent.angel.ml.matrix.psf.updater.base.PartitionUpdaterParam;
+import com.tencent.angel.ml.matrix.psf.updater.base.UpdaterFunc;
+import com.tencent.angel.ml.matrix.psf.updater.base.UpdaterParam;
+import com.tencent.angel.ml.matrix.psf.updater.base.VoidResult;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.impl.matrix.ServerRow;
 import com.tencent.angel.psagent.PSAgentContext;
@@ -80,23 +83,22 @@ public class MatrixClientAdapter {
    */
   private final Map<Integer, Int2IntOpenHashMap> matrixToRowSplitSizeCache;
 
-  /**user request to the sub-request results cache map*/
+  /** user request to the sub-request results cache map */
   private final ConcurrentHashMap<UserRequest, PartitionResponseCache> requestToResponseMap;
 
   /**
-   * client worker pool: 
-   * 1.use to deserialize partition responses and merge them to final result
+   * client worker pool: 1.use to deserialize partition responses and merge them to final result
    * 2.use to generate partition request and serialize it
    */
   private final ExecutorService workerPool;
 
-  /**the sub-request results merge dispatcher*/
+  /** the sub-request results merge dispatcher */
   private Thread mergeDispatcher;
 
-  /**stop the merge dispatcher and all workers*/
+  /** stop the merge dispatcher and all workers */
   private final AtomicBoolean stopped;
 
-  /**update clock to master use sync mode*/
+  /** update clock to master use sync mode */
   private final boolean syncClockEnable;
 
   /**
@@ -142,31 +144,38 @@ public class MatrixClientAdapter {
    * @param rowIndex row index
    * @param clock clock value
    * @return TVector matrix row
-   * @throws ExecutionException exception thrown when attempting to retrieve the result of a task that aborted by throwing an exception
+   * @throws ExecutionException exception thrown when attempting to retrieve the result of a task
+   *         that aborted by throwing an exception
    * @throws InterruptedException interrupted while wait the result
    */
-  public TVector getRow(int matrixId, int rowIndex, int clock) throws InterruptedException, ExecutionException {
+  public TVector getRow(int matrixId, int rowIndex, int clock) throws InterruptedException,
+      ExecutionException {
     // Wait until the clock value of this row is greater than or equal to the value
     waitForClock(matrixId, rowIndex, clock);
-    
+
     // Get partitions for this row
     List<PartitionKey> partList =
         PSAgentContext.get().getMatrixPartitionRouter().getPartitionKeyList(matrixId, rowIndex);
     GetRowRequest request = new GetRowRequest(matrixId, rowIndex, clock);
     MatrixMeta meta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
-    if (!requestToResponseMap.containsKey(request)) {
-      requestToResponseMap.putIfAbsent(request,
-          new GetRowPipelineCache(partList.size(), meta.getRowType()));
+    
+    GetRowPipelineCache responseCache = (GetRowPipelineCache) requestToResponseMap.get(request);
+    if (responseCache == null) {
+      responseCache = new GetRowPipelineCache(partList.size(), meta.getRowType());
+      GetRowPipelineCache oldCache = (GetRowPipelineCache) requestToResponseMap.putIfAbsent(request, responseCache);
+      if(oldCache != null) {
+        responseCache = oldCache;
+      }
     }
 
     // First get this row from matrix storage
     MatrixStorage matrixStorage =
         PSAgentContext.get().getMatrixStorageManager().getMatrixStoage(matrixId);
-    GetRowPipelineCache responseCache = (GetRowPipelineCache) requestToResponseMap.get(request);
     try {
       responseCache.getDistinctLock().lock();
-      
-      // If the row exists in the matrix storage and the clock value meets the requirements, just return
+
+      // If the row exists in the matrix storage and the clock value meets the requirements, just
+      // return
       TVector row = matrixStorage.getRow(rowIndex);
       if (row != null && row.getClock() >= clock) {
         return row;
@@ -188,7 +197,7 @@ public class MatrixClientAdapter {
 
       // Wait the final result
       row = responseCache.getMergedResult().get();
-      
+
       // Put it to the matrix cache
       matrixStorage.addRow(rowIndex, row);
       return row;
@@ -199,40 +208,12 @@ public class MatrixClientAdapter {
   }
 
   /**
-   * Get a aggregate value for the matrix use a udf.
-   * 
-   * @param aggrFunc aggregate function
-   * @return AggrResult aggregate value
-   * @throws ExecutionException exception thrown when attempting to retrieve the result of a task that aborted by throwing an exception
-   * @throws InterruptedException interrupted while wait the result
-   */
-  public AggrResult aggr(AggrFunc aggrFunc) throws InterruptedException, ExecutionException  {
-    MatrixTransportClient matrixClient = PSAgentContext.get().getMatrixTransportClient();
-
-    AggrParam param = aggrFunc.getParam();
-    List<PartitionAggrParam> partParams = param.split();
-    int size = partParams.size();
-    List<Future<PartitionAggrResult>> futureList = new ArrayList<Future<PartitionAggrResult>>(size);
-    List<PartitionAggrResult> resultList = new ArrayList<PartitionAggrResult>(size);
-
-    for (int i = 0; i < size; i++) {
-      futureList.add(matrixClient.aggr(aggrFunc, partParams.get(i)));
-    }
-
-    for (int i = 0; i < size; i++) {
-      resultList.add(futureList.get(i).get());
-    }
-
-    return aggrFunc.merge(resultList);
-  }
-
-  /**
    * Update matrix use a udf.
    * 
    * @param updaterFunc update udf function
    * @return Future<VoidResult> update future result
    */
-  public Future<VoidResult> update(UpdaterFunc updaterFunc)  {
+  public Future<VoidResult> update(UpdaterFunc updaterFunc) {
     MatrixTransportClient matrixClient = PSAgentContext.get().getMatrixTransportClient();
     UpdaterParam param = updaterFunc.getParam();
 
@@ -259,7 +240,7 @@ public class MatrixClientAdapter {
    * @return Future<VoidResult> flush future result
    */
   public Future<VoidResult> flush(int matrixId, TaskContext taskContext, MatrixOpLog matrixOpLog,
-      boolean updateClock)  {
+      boolean updateClock) {
     if (!updateClock && (matrixOpLog == null)) {
       FutureResult<VoidResult> ret = new FutureResult<VoidResult>();
       ret.set(new VoidResult(ResponseType.SUCCESS));
@@ -329,7 +310,7 @@ public class MatrixClientAdapter {
 
   private void pushUpdates(int matrixId,
       Map<ParameterServerId, Map<PartitionKey, List<RowUpdateSplit>>> psUpdateData,
-      TaskContext taskContext, boolean updateClock, FlushResponseCache cache)   {
+      TaskContext taskContext, boolean updateClock, FlushResponseCache cache) {
     MatrixTransportClient matrixClient = PSAgentContext.get().getMatrixTransportClient();
 
     for (Map<PartitionKey, List<RowUpdateSplit>> partUpdateMap : psUpdateData.values()) {
@@ -350,7 +331,7 @@ public class MatrixClientAdapter {
    * @return result cache
    */
   public GetRowsResult getRowsFlow(GetRowsResult result, RowIndex rowIndex, int rpcBatchSize,
-      int clock)  {
+      int clock) {
     LOG.debug("get rows request, rowIndex=" + rowIndex);
     if (rpcBatchSize == -1) {
       rpcBatchSize = chooseRpcBatchSize(rowIndex);
@@ -382,32 +363,28 @@ public class MatrixClientAdapter {
     }
     return resultsMap.get(rowIndex);
   }
-  
+
   /**
-   * Get a row from ps use a udf
+   * Get a row from ps use a udf.
    * 
    * @param func get row udf
-   * @return GetRowResult the result of the udf
-   * @throws ExecutionException exception thrown when attempting to retrieve the result of a task that aborted by throwing an exception
+   * @return GetResult the result of the udf
+   * @throws ExecutionException exception thrown when attempting to retrieve the result of a task
+   *         that aborted by throwing an exception
    * @throws InterruptedException interrupted while wait the result
    */
-  public GetRowResult getRow(GetRowFunc func) throws InterruptedException, ExecutionException {
+  public GetResult get(GetFunc func) throws InterruptedException, ExecutionException {
     MatrixTransportClient matrixClient = PSAgentContext.get().getMatrixTransportClient();
-    GetRowParam param = func.getParam();
-    List<PartitionGetRowParam> partParams = param.split();
-
+    GetParam param = func.getParam();
+    List<PartitionGetParam> partParams = param.split();
     int size = partParams.size();
 
-    if (!param.isBypassMode()) {
-      waitForClock(param.getMatrixId(), param.getRowIndex(), param.getClock());
-    }
-
-    List<Future<PartitionGetRowResult>> futureResultList =
-        new ArrayList<Future<PartitionGetRowResult>>(size);
-    List<PartitionGetRowResult> resultList = new ArrayList<PartitionGetRowResult>(size);
+    List<Future<PartitionGetResult>> futureResultList =
+        new ArrayList<Future<PartitionGetResult>>(size);
+    List<PartitionGetResult> resultList = new ArrayList<PartitionGetResult>(size);
 
     for (int i = 0; i < size; i++) {
-      futureResultList.add(matrixClient.getRow(func, partParams.get(i)));
+      futureResultList.add(matrixClient.get(func, partParams.get(i)));
     }
 
     for (int i = 0; i < size; i++) {
@@ -486,8 +463,8 @@ public class MatrixClientAdapter {
                 FlushResponseCache cache = (FlushResponseCache) entry.getValue();
                 cache.checkFutures();
                 if (cache.isReceivedOver()) {
-                  if (syncClockEnable) {
-                    FlushRequest request = (FlushRequest) entry.getKey();
+                  FlushRequest request = (FlushRequest) entry.getKey();
+                  if (request.isUpdateClock() && syncClockEnable) {                   
                     PSAgentContext
                         .get()
                         .getMasterClient()
@@ -507,7 +484,7 @@ public class MatrixClientAdapter {
             }
           }
 
-          Thread.sleep(10);
+          Thread.sleep(1000);
         }
       } catch (InterruptedException ie) {
         LOG.info("interupted");
@@ -643,7 +620,7 @@ public class MatrixClientAdapter {
    * 
    * @param rowIndex rowIds needed to been requested from PS
    */
-  private void dispatchGetRows(RowIndex rowIndex, int rpcBatchSize, int clock)  {
+  private void dispatchGetRows(RowIndex rowIndex, int rpcBatchSize, int clock) {
     MatrixTransportClient matrixClient = PSAgentContext.get().getMatrixTransportClient();
 
     // Get the partition to sub-row splits map:use to storage the rows stored in a matrix partition
@@ -704,6 +681,8 @@ public class MatrixClientAdapter {
   }
 
   private int chooseRpcBatchSize(RowIndex rowIndex) {
-    return 10;
+    PartitionKey part = PSAgentContext.get().getMatrixPartitionRouter().getPartitionKeyList(rowIndex.getMatrixId()).get(0);
+    int rowNumInPart = part.getEndRow() - part.getStartRow();
+    return Math.max(rowNumInPart / 4, 10);
   }
 }

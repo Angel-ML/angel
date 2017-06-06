@@ -30,7 +30,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-
+/**
+ * Serialize/Deserialize tool for training data split.
+ */
 public class SerdeUtils {
   private static SerializationFactory factory;
 

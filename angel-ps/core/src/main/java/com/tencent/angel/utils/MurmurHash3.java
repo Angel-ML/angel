@@ -15,6 +15,9 @@
  */
 package com.tencent.angel.utils;
 
+/**
+ * Murmur hash utils.
+ */
 public class MurmurHash3 {
 
   /** Returns the MurmurHash3_x86_32 hash. */

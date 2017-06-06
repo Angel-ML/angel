@@ -20,14 +20,26 @@ import org.apache.hadoop.yarn.event.AbstractEvent;
 
 import com.tencent.angel.ps.ParameterServerId;
 
+/**
+ * PS manager event.
+ */
 public class ParameterServerManagerEvent extends AbstractEvent<ParameterServerManagerEventType> {
   /**ps id*/
   private final ParameterServerId psId;
 
+  /**
+   * Create a ParameterServerManagerEvent
+   * @param type event type
+   */
   public ParameterServerManagerEvent(ParameterServerManagerEventType type) {
     this(type, null);
   }
   
+  /**
+   * Create a ParameterServerManagerEvent
+   * @param type event type
+   * @param psId ps id
+   */
   public ParameterServerManagerEvent(ParameterServerManagerEventType type, ParameterServerId psId) {
     super(type);
     this.psId = psId;

@@ -16,6 +16,8 @@
 
 package com.tencent.angel.worker.task;
 
+import com.tencent.angel.exception.AngelException;
+
 /**
  * The interface base task.
  *
@@ -47,5 +49,5 @@ public interface BaseTaskInterface<KEYIN, VALUEIN, VALUEOUT> {
    * @param taskContext the task context
    * @throws Exception
    */
-  void run(TaskContext taskContext) throws Exception;
+  void run(TaskContext taskContext) throws AngelException;
 }

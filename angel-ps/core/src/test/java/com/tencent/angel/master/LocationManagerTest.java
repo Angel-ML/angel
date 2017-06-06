@@ -26,7 +26,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.log4j.PropertyConfigurator;
 import org.junit.After;
 import org.junit.Before;
@@ -65,7 +64,7 @@ public class LocationManagerTest {
   private PSAttemptId psAttempt0Id;
 
   static {
-    PropertyConfigurator.configure("../log4j.properties");
+    PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
   @Before
@@ -104,8 +103,8 @@ public class LocationManagerTest {
     mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_INT");
     angelClient.addMatrix(mMatrix);
 
-    angelClient.submit();
-    angelClient.start();
+    angelClient.startPSServer();
+    angelClient.run();
     Thread.sleep(5000);
     psId = new ParameterServerId(0);
     psAttempt0Id = new PSAttemptId(psId, 0);

@@ -1,3 +1,20 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
 package com.tencent.angel.spark.examples.ml
 
 import scala.collection.mutable.ArrayBuffer
@@ -7,10 +24,10 @@ import breeze.optimize.{OWLQN => BrzOWLQN}
 import org.apache.spark.ml.linalg.Vector
 import org.apache.spark.rdd.RDD
 
+import com.tencent.angel.spark.PSContext
 import com.tencent.angel.spark.examples.util.{Logistic, PSExamples}
-import com.tencent.angel.spark.PSClient
 import com.tencent.angel.spark.ml.optim.OWLQN
-import com.tencent.angel.spark.vector.BreezePSVector
+import com.tencent.angel.spark.models.vector.BreezePSVector
 
 /**
  * There is two ways to update PSVectors in RDD, RemotePSVector and RDDFunction.psAggregate.
@@ -22,7 +39,7 @@ object BreezeOWLQN {
   def main(args: Array[String]): Unit = {
     parseArgs(args)
     runWithSparkContext(this.getClass.getSimpleName) { sc =>
-      PSClient.setup(sc)
+      PSContext.getOrCreate(sc)
       execute(DIM, N, numSlices, ITERATIONS)
     }
   }
@@ -72,7 +89,7 @@ object BreezeOWLQN {
 
   def runPsOWLQN(trainData: RDD[(Vector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
     val tol = 1e-5
-    val pool = PSClient.get.createVectorPool(dim, 20)
+    val pool = PSContext.getOrCreate().createModelPool(dim, 20)
     val initWeightPS = pool.createZero().mkBreeze()
 
     val l1reg = pool.createZero().mkBreeze()
@@ -89,13 +106,13 @@ object BreezeOWLQN {
       }
     }
     println(s"loss history: ${lossHistory.toArray.mkString(" ")}")
-    println(s"weights: ${weight.toLocal.get().mkString(" ")}")
+    println(s"weights: ${weight.toRemote.pull().mkString(" ")}")
   }
 
   def runPsAggregateOWLQN(
       trainData: RDD[(Vector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
     val tol = 1e-5
-    val pool = PSClient.get.createVectorPool(dim, 20)
+    val pool = PSContext.getOrCreate().createModelPool(dim, 20)
     val initWeightPS = pool.createZero().mkBreeze()
 
     val l1reg = pool.createZero().mkBreeze()
@@ -112,6 +129,6 @@ object BreezeOWLQN {
       }
     }
     println(s"loss history: ${lossHistory.toArray.mkString(" ")}")
-    println(s"weights: ${weight.toLocal.get().mkString(" ")}")
+    println(s"weights: ${weight.toRemote.pull().mkString(" ")}")
   }
 }

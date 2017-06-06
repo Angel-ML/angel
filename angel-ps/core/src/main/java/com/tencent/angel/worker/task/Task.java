@@ -38,7 +38,6 @@ import java.util.List;
 public class Task extends Thread {
   private static final Log LOG = LogFactory.getLog(Task.class);
   private Class<?> userTaskClass;
-  private int maxIterationNum;
   private final TaskId taskId;
   private volatile TaskState state;
   private HashMap<String, String> metrics;
@@ -61,20 +60,17 @@ public class Task extends Thread {
   @Override
   public void run() {
     Configuration conf = WorkerContext.get().getConf();
-    maxIterationNum =
-        conf.getInt(AngelConfiguration.ANGEL_TASK_ITERATION_NUMBER,
-            AngelConfiguration.DEFAULT_ANGEL_TASK_ITERATION_NUMBER);
 
-    LOG.info("task " + taskId + " is running" + ", iteration number:" + maxIterationNum);
+    LOG.info("task " + taskId + " is running.");
     try {
       userTaskClass =
           conf.getClassByName(conf.get(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS,
-              AngelConfiguration.DEFAULT_ANGEL_TASK_USER_TASKCLASS));
+              AngelConfiguration.DEFAULT_ANGEL_TASK_USER_TASKCLASS));    
+      LOG.info("userTaskClass = " + userTaskClass);
 
       BaseTask userTask = newBaseTask(userTaskClass);
       this.userTask =  userTask;
       runUser(userTask);
-
     } catch (Exception e) {
       LOG.error("task runner error", e);
       diagnostics.add("task runner error" + e.getMessage());

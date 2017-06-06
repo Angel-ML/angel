@@ -47,6 +47,9 @@ import com.tencent.angel.master.task.AMTaskManager;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 
+/**
+ * Application state storage. It write the application state to files every fixed period of time
+ */
 public class AppStateStorage extends AbstractService {
   private static final Log LOG = LogFactory.getLog(AppStateStorage.class);
 
@@ -89,6 +92,12 @@ public class AppStateStorage extends AbstractService {
   private final Lock taskMetaLock;
   private final Lock psMetaLock;
 
+  /**
+   * Create a AppStateStorage
+   * @param context master context
+   * @param writeDir storage file directory
+   * @param fs 
+   */
   public AppStateStorage(AMContext context, String writeDir, FileSystem fs){
     super("app-state-writter");
     LOG.info("writeDir=" + writeDir);

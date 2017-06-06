@@ -1,17 +1,17 @@
 /*
  * Tencent is pleased to support the open source community by making Angel available.
- *
+ * 
  * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
- *
+ * 
  * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- *
+ * 
  * https://opensource.org/licenses/BSD-3-Clause
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is
- * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package com.tencent.angel.psagent.matrix;
@@ -26,10 +26,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * Matrix client factory.
  */
 public class MatrixClientFactory {
-  /**matrix client type class name, default is MatrixClientImpl*/
+  /** matrix client type class name, default is MatrixClientImpl */
   private static String type = MatrixClientImpl.class.getName();
-  
-  /**key to matrix client map*/
+
+  /** key to matrix client map */
   private static ConcurrentHashMap<Key, MatrixClient> cacheClients =
       new ConcurrentHashMap<Key, MatrixClient>();
 
@@ -41,7 +41,7 @@ public class MatrixClientFactory {
   public static void setType(String type) {
     MatrixClientFactory.type = type;
   }
-  
+
   /**
    * Get a matrix client.
    * 
@@ -68,25 +68,27 @@ public class MatrixClientFactory {
    * @throws InvalidParameterException matrix does not exist
    */
   public static MatrixClient get(int matrixId, int taskId) throws InvalidParameterException {
-    if(!PSAgentContext.get().getMatrixMetaManager().exist(matrixId)) {
+    if (!PSAgentContext.get().getMatrixMetaManager().exist(matrixId)) {
       throw new InvalidParameterException("matrix with id " + matrixId + " does not exist.");
     }
-    
+
     Key key = new Key(matrixId, taskId);
     MatrixClient client = cacheClients.get(key);
     if (client == null) {
       try {
         cacheClients.putIfAbsent(key, buildClient(matrixId, taskId, type));
       } catch (Exception x) {
-        throw new InvalidParameterException("Invalid matrix client type:" + type.getClass().getName() + ", " + x.getMessage());
-      }      
+        throw new InvalidParameterException("Invalid matrix client type:"
+            + type.getClass().getName() + ", " + x.getMessage());
+      }
       client = cacheClients.get(key);
     }
 
     return client;
   }
 
-  private static MatrixClient buildClient(int matrix, int taskIndex, String type) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+  private static MatrixClient buildClient(int matrix, int taskIndex, String type)
+      throws InstantiationException, IllegalAccessException, ClassNotFoundException {
     MatrixClient client = (MatrixClient) (Class.forName(type).newInstance());
     client.setMatrixId(matrix);
     client.setTaskContext(getTaskContext(taskIndex));

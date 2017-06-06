@@ -18,15 +18,17 @@ package com.tencent.angel.client;
 
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.ml.model.AlgorithmModel;
+import com.tencent.angel.ml.model.MLModel;
+import com.tencent.angel.worker.task.BaseTask;
 
 /**
  * Angel client interface. It defines application control operations from angel client.
  */
 public interface AngelClientInterface {
+
   /**
    * Add a new matrix.
-   * 
+   *
    * @param mContext matrix context
    * @throws AngelException
    */
@@ -37,7 +39,7 @@ public interface AngelClientInterface {
    * 
    * @throws AngelException
    */
-  void submit() throws AngelException;
+  void startPSServer() throws AngelException;
 
   /**
    * Load the model from files.
@@ -45,14 +47,25 @@ public interface AngelClientInterface {
    * @param model model
    * @throws AngelException
    */
-  void loadModel(AlgorithmModel model) throws AngelException;
+  void loadModel(MLModel model) throws AngelException;
+
+  /**
+   * Accept specified task and start
+   *
+   * @param taskClass
+   * @throws AngelException
+   */
+  void runTask(@SuppressWarnings("rawtypes") Class<? extends BaseTask> taskClass) throws AngelException;
 
   /**
    * Startup workers and start to execute tasks.
-   * 
+   *
+   * Use #runTask instead
+   *
    * @throws AngelException
    */
-  void start() throws AngelException;
+  @Deprecated
+  void run() throws AngelException;
 
   /**
    * Wait until all the tasks are done.
@@ -67,7 +80,7 @@ public interface AngelClientInterface {
    * @param model model need to write to files.
    * @throws AngelException
    */
-  void saveModel(AlgorithmModel model) throws AngelException;
+  void saveModel(MLModel model) throws AngelException;
 
   /**
    * Stop the whole application.
@@ -75,4 +88,12 @@ public interface AngelClientInterface {
    * @throws AngelException stop failed
    */
   void stop() throws AngelException;
+
+  /**
+   * Stop the whole application with given state.
+   *
+   * @param stateCode 0:succeed,1:killed,2:failed
+   * @throws AngelException stop failed
+   */
+  void stop(int stateCode) throws AngelException;
 }

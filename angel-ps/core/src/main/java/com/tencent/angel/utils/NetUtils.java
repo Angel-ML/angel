@@ -30,7 +30,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 
-
+/**
+ * Socket utils
+ */
 public class NetUtils {
   private static final Log LOG = LogFactory.getLog(NetUtils.class);
 

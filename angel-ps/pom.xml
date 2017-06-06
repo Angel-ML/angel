@@ -37,6 +37,10 @@
 		<module>dist</module>
 	</modules>
 
+  <properties>
+    <main.basedir>${project.parent.basedir}</main.basedir>
+  </properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>com.yahoo.datasketches</groupId>
@@ -55,7 +59,7 @@
 		</dependency>
 		<dependency>
 			<groupId>com.esotericsoftware</groupId>
-			<artifactId>kryo</artifactId>
+			<artifactId>kryo-shaded</artifactId>
 			<version>3.0.3</version>
 		</dependency>
 		<dependency>
@@ -241,7 +245,7 @@
 			<plugin>
 				<groupId>net.alchim31.maven</groupId>
 				<artifactId>scala-maven-plugin</artifactId>
-				<version>3.2.0</version>
+				<version>3.2.2</version>
 				<executions>
 					<execution>
 						<id>scala-compile-first</id>
@@ -266,7 +270,7 @@
 					</execution>
 				</executions>
 				<configuration>
-          <scalaCompatVersion>${scala.binary.version}</scalaCompatVersion>
+                    <scalaCompatVersion>${scala.binary.version}</scalaCompatVersion>
 					<scalaVersion>${scala.version}</scalaVersion>
 					<recompileMode>incremental</recompileMode>
 					<useZincServer>true</useZincServer>
@@ -336,7 +340,7 @@
 					</excludes>-->
 				</configuration>
 			</plugin>
-			<!--plugin>
+			<plugin>
 				<groupId>org.scalastyle</groupId>
 				<artifactId>scalastyle-maven-plugin</artifactId>
 				<version>0.8.0</version>
@@ -347,7 +351,7 @@
 					<includeTestSourceDirectory>false</includeTestSourceDirectory>
 					<failOnWarning>false</failOnWarning>
 					<sourceDirectory>${basedir}/*/src/main/scala</sourceDirectory>
-					<configLocation>${basedir}/../dev/scalastyle-config.xml</configLocation>
+					<configLocation>${main.basedir}/dev/scalastyle-config.xml</configLocation>
 					<outputEncoding>UTF-8</outputEncoding>
 				</configuration>
 				<executions>
@@ -357,7 +361,7 @@
 						</goals>
 					</execution>
 				</executions>
-			</plugin-->
+			</plugin>
 		</plugins>
 		<resources>
 			<resource>

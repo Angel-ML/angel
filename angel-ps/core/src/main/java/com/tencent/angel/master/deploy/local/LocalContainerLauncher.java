@@ -36,10 +36,18 @@ import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.psagent.PSAgentAttemptId;
 import com.tencent.angel.worker.WorkerAttemptId;
 
+/**
+ * Local container launcher.
+ */
 public class LocalContainerLauncher extends ContainerLauncher {
   static final Log LOG = LogFactory.getLog(LocalContainerLauncher.class);
+  /**master context*/
   private final AMContext context;
 
+  /**
+   * Create a LocalContainerLauncher
+   * @param context master context
+   */
   public LocalContainerLauncher(AMContext context) {
     super("local-container-launcher");
     this.context = context;

@@ -19,6 +19,7 @@ package com.tencent.angel.worker.task;
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.exception.TimeOutException;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.MatrixMeta;
@@ -188,7 +189,7 @@ public class TaskContext {
    * @return the matrix
    * @throws Exception
    */
-  public MatrixClient getMatrix(String matrixName) throws Exception {
+  public MatrixClient getMatrix(String matrixName) throws InvalidParameterException{
     return WorkerContext.get().getPSAgent().getMatrixClient(matrixName, taskId.getIndex());
   }
 
@@ -268,7 +269,7 @@ public class TaskContext {
    *
    * @throws ServiceException the service exception
    */
-  public void increaseIteration() throws ServiceException{
+  public void incIteration() throws ServiceException{
     context.increaseIteration();
   }
 

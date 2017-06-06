@@ -15,6 +15,14 @@
  * limitations under the License.
  */
 
+/**
+ *
+ * This class is a copy of LogisticRegression.scala in org.apache.spark.ml.classification package
+ * of spark 2.1.0 MLlib.
+ *
+ * Based on the original version, we improve the algorithm with Angel PS-Service.
+ */
+
 package org.apache.spark.ml.classification.ps
 
 import scala.collection.mutable
@@ -37,18 +45,16 @@ import org.apache.spark.mllib.linalg.VectorImplicits._
 import org.apache.spark.mllib.stat.PSMultivariateOnlineSummarizer
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.sql.functions.{col, lit}
 import org.apache.spark.sql.types.{DataType, DoubleType, StructType}
-import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.Dataset
-import org.apache.spark.sql.Row
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.VersionUtils
 
+import com.tencent.angel.spark.PSContext
 import com.tencent.angel.spark.ml.optim.OWLQN
-import com.tencent.angel.spark.vector.BreezePSVector
-import com.tencent.angel.spark.PSClient
-import com.tencent.angel.spark.PSVectorProxy
+import com.tencent.angel.spark.models.PSModelProxy
+import com.tencent.angel.spark.models.vector.BreezePSVector
 
 /**
  * Params for logistic regression.
@@ -341,7 +347,7 @@ class LogisticRegression @Since("1.2.0") (
       maxIter, tol, fitIntercept)
 
     val instanceSize = rawInstances.first().features.size
-    val psPool = PSClient.get.createVectorPool(instanceSize, 20)
+    val psPool = PSContext.getOrCreate.createModelPool(instanceSize, 20)
 
     val (summarizer, labelSummarizer) = {
       val seqOp = (c: (PSMultivariateOnlineSummarizer, MultiClassSummarizer),
@@ -358,9 +364,9 @@ class LogisticRegression @Since("1.2.0") (
     }
 
     val featureStdKey = summarizer.std
-    val featureStd = featureStdKey.mkLocal().get()
+    val featureStd = featureStdKey.mkRemote().pull()
     val instances = rawInstances.map { case Instance(label, weight, features) =>
-      val featStd = featureStdKey.mkLocal().get()
+      val featStd = featureStdKey.mkRemote().pull()
       val feat = (0 until features.size).map { i =>
         if (featStd(i) != 0) features(i) / featStd(i) else features(i)
       }
@@ -437,7 +443,7 @@ class LogisticRegression @Since("1.2.0") (
             s"dangerous ground, so the algorithm may not converge.")
         }
 
-        val featuresMean = summarizer.mean.mkLocal().get()
+        val featuresMean = summarizer.mean.mkRemote().pull()
         if (!$(fitIntercept) && (0 until numFeatures).exists { i =>
           featureStd(i) == 0.0 && featuresMean(i) != 0.0 }) {
           logWarning("Fitting LogisticRegressionModel without intercept on dataset with " +
@@ -449,7 +455,7 @@ class LogisticRegression @Since("1.2.0") (
         val regParamL2 = (1.0 - $(elasticNetParam)) * $(regParam)
 
         val coefficientSize = numCoefficientSets * numFeaturesPlusIntercept
-        val psPool = PSClient.get.createVectorPool(coefficientSize, 50)
+        val psPool = PSContext.getOrCreate().createModelPool(coefficientSize, 50)
 
         val flatFeatureStd = if ($(fitIntercept)) {
           val tempStd = new ArrayBuffer[Double]()
@@ -461,7 +467,7 @@ class LogisticRegression @Since("1.2.0") (
         }
 
         val flatFeatureStdKey = psPool.createZero()
-        PSClient.get.put(flatFeatureStdKey, flatFeatureStd)
+        flatFeatureStdKey.mkRemote().push(flatFeatureStd)
 
         val costFun = new LogisticCostFun(instances, numClasses, summarizer.totalWeight,
           flatFeatureStdKey, $(fitIntercept), $(standardization), regParamL2,
@@ -496,7 +502,7 @@ class LogisticRegression @Since("1.2.0") (
           }
 
           val regL1 = (0 until coefficientSize).toArray.map(regParamL1Fun)
-          val brzRegL1 = psPool.create(regL1).mkBreeze()
+          val brzRegL1 = psPool.createModel(regL1).mkBreeze()
 
           new OWLQN($(maxIter), 10, brzRegL1, $(tol))
         }
@@ -583,7 +589,7 @@ class LogisticRegression @Since("1.2.0") (
         }
 
         val initCoefPSKey = psPool.createZero()
-        PSClient.get.put(initCoefPSKey, initialCoefWithInterceptMatrix.toArray)
+        initCoefPSKey.mkRemote().push(initialCoefWithInterceptMatrix.toArray)
 
         val states = optimizer.iterations(new CachedDiffFunction(costFun), initCoefPSKey.mkBreeze())
 
@@ -616,7 +622,7 @@ class LogisticRegression @Since("1.2.0") (
            Note that the intercept in scaled space and original space is the same;
            as a result, no scaling is needed.
          */
-        val allCoefficients = state.x.toLocal.get()
+        val allCoefficients = state.x.toRemote.pull()
         val allCoefMatrix = new DenseMatrix(numCoefficientSets, numFeaturesPlusIntercept,
           allCoefficients)
         val denseCoefficientMatrix = new DenseMatrix(numCoefficientSets, numFeatures,
@@ -1288,14 +1294,14 @@ class BinaryLogisticRegressionSummary private[classification] (
  * It's used in Breeze's convex optimization routines.
  */
 private class LogisticCostFun(
-    instances: RDD[Instance],
-    numClasses: Int,
-    weightSum: Double,
-    featureStdKey: PSVectorProxy,
-    fitIntercept: Boolean,
-    standardization: Boolean,
-    regParamL2: Double,
-    multinomial: Boolean) extends DiffFunction[BreezePSVector] {
+                               instances: RDD[Instance],
+                               numClasses: Int,
+                               weightSum: Double,
+                               featureStdKey: PSModelProxy,
+                               fitIntercept: Boolean,
+                               standardization: Boolean,
+                               regParamL2: Double,
+                               multinomial: Boolean) extends DiffFunction[BreezePSVector] {
 
   override def calculate(coefficients: BreezePSVector): (Double, BreezePSVector) = {
 

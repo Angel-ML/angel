@@ -118,7 +118,7 @@ public class MatrixPartitionManager {
   public void addMatrixPartitions(List<MatrixPartition> matrixPartitions) throws IOException {
     int size = matrixPartitions.size();
     for (int i = 0; i < size; i++) {
-      LOG.debug("add matrix partition " + matrixPartitions.get(i));
+      LOG.info("add matrix partition " + matrixPartitions.get(i));
       addServerMatrix(matrixPartitions.get(i));
     }
   }

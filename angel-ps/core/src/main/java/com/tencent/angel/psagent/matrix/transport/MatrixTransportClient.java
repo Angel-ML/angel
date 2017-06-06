@@ -21,15 +21,12 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.common.Location;
 import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.ml.matrix.transport.*;
-import com.tencent.angel.ml.matrix.udf.aggr.AggrFunc;
-import com.tencent.angel.ml.matrix.udf.aggr.PartitionAggrParam;
-import com.tencent.angel.ml.matrix.udf.aggr.PartitionAggrResult;
-import com.tencent.angel.ml.matrix.udf.getrow.GetRowFunc;
-import com.tencent.angel.ml.matrix.udf.getrow.PartitionGetRowParam;
-import com.tencent.angel.ml.matrix.udf.getrow.PartitionGetRowResult;
-import com.tencent.angel.ml.matrix.udf.updater.PartitionUpdaterParam;
-import com.tencent.angel.ml.matrix.udf.updater.UpdaterFunc;
-import com.tencent.angel.ml.matrix.udf.updater.VoidResult;
+import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
+import com.tencent.angel.ml.matrix.psf.updater.base.PartitionUpdaterParam;
+import com.tencent.angel.ml.matrix.psf.updater.base.UpdaterFunc;
+import com.tencent.angel.ml.matrix.psf.updater.base.VoidResult;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.impl.matrix.ServerPartition;
 import com.tencent.angel.ps.impl.matrix.ServerRow;
@@ -318,30 +315,6 @@ public class MatrixTransportClient implements MatrixTransportInterface {
     addToGetQueueForServer(serverId, request);
     startGet();
     return future;
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public Future<PartitionAggrResult> aggr(AggrFunc aggrFunc, PartitionAggrParam partitionAggrParam) {
-    ParameterServerId serverId =
-        PSAgentContext.get().getMatrixPartitionRouter().getPSId(partitionAggrParam.getPartKey());
-
-    AggrRequest request =
-        new AggrRequest(serverId, partitionAggrParam.getPartKey(), aggrFunc.getClass().getName(),
-            partitionAggrParam);
-
-    LOG.debug("aggr request=" + request);
-
-    FutureResult<PartitionAggrResult> future = new FutureResult<PartitionAggrResult>();
-    FutureResult<PartitionAggrResult> oldFuture = requestToResultMap.putIfAbsent(request, future);
-    if (oldFuture != null) {
-      LOG.debug("same request exist, just return old future");
-      return oldFuture;
-    } else {
-      addToGetQueueForServer(serverId, request);
-      startGet();
-      return future;
-    }
   }
 
   private void addToGetQueueForServer(ParameterServerId serverId, Request request) {
@@ -1012,8 +985,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       case GET_ROWSPLIT:
       case GET_ROWSSPLIT:
       case GET_CLOCKS:
-      case AGGR:
-      case GETROW_UDF:
+      case GET_UDF:
         getRequestSuccess(request);
         break;
 
@@ -1037,8 +1009,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       case GET_ROWSPLIT:
       case GET_ROWSSPLIT:
       case GET_CLOCKS:
-      case AGGR:
-      case GETROW_UDF:
+      case GET_UDF:
         getRequestFailed(request);
         break;
 
@@ -1214,7 +1185,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
     /**
      * build the request and serialize it, then send it to server
      * 
-     * @param item request context
+     * @param request request context
      * @throws InterruptedException
      */
     private void sendRequest(Request request) throws InterruptedException {
@@ -1253,8 +1224,10 @@ public class MatrixTransportClient implements MatrixTransportInterface {
           return;
         }
       } catch (Exception x) {
-        LOG.error("get channel failed ", x);
-        requestFailed(seqId, request);
+        if(!stopped.get()) {
+          LOG.error("get channel failed ", x);
+          requestFailed(seqId, request);
+        }
         return;
       }
 
@@ -1334,26 +1307,18 @@ public class MatrixTransportClient implements MatrixTransportInterface {
               handleGetClocksResponse(msg, seqId, (GetClocksRequest) request);
               break;
 
-            case PUT_PART:
-              // TODO:
-              break;
-
             case PUT_PARTUPDATE:
               handlePutPartUpdateResponse(msg, seqId, (PutPartitionUpdateRequest) request);
-              break;
-
-            case AGGR:
-              handleAggrResponse(msg, seqId, (AggrRequest) request);
               break;
 
             case UPDATER:
               handleUpdaterResponse(msg, seqId, (UpdaterRequest) request);
               break;
 
-            case GETROW_UDF:
-              handleGetRowUDFResponse(msg, seqId, (GetRowUDFRequest) request);
+            case GET_UDF:
+              handleGetUDFResponse(msg, seqId, (GetUDFRequest) request);
               break;
-
+              
             default:
               break;
           }
@@ -1365,24 +1330,24 @@ public class MatrixTransportClient implements MatrixTransportInterface {
         PSAgentContext.get().getPsAgent().error("hanlder rpc response failed " + x.getMessage());
       }
     }
-
+    
     @SuppressWarnings("unchecked")
-    public void handleGetRowUDFResponse(ByteBuf buf, int seqId, GetRowUDFRequest request) {
-      GetRowUDFResponse response = new GetRowUDFResponse();
+    private void handleGetUDFResponse(ByteBuf buf, int seqId, GetUDFRequest request) {
+      GetUDFResponse response = new GetUDFResponse();
       response.deserialize(buf);
 
       if (response.getResponseType() == ResponseType.SUCCESS) {
-        FutureResult<PartitionGetRowResult> future = requestToResultMap.remove(request);
+        FutureResult<PartitionGetResult> future = requestToResultMap.remove(request);
         if (future != null) {
           future.set(response.getPartResult());
         }
         requestSuccess(seqId, request);
       } else if (response.getResponseType() == ResponseType.FATAL) {
-        String errorMsg = "get row udf fatal error happened " + response.getDetail();
+        String errorMsg = "get udf fatal error happened " + response.getDetail();
         LOG.fatal(errorMsg);
         PSAgentContext.get().getPsAgent().error(errorMsg);
       } else {
-        LOG.error("get row udf error happened " + response.getDetail() + ", retry later");
+        LOG.error("get udf error happened " + response.getDetail() + ", retry later");
         requestFailed(seqId, request);
       }
     }
@@ -1404,27 +1369,6 @@ public class MatrixTransportClient implements MatrixTransportInterface {
         PSAgentContext.get().getPsAgent().error(errorMsg);
       } else {
         LOG.error("updater error happened " + response.getDetail() + ", retry later");
-        requestFailed(seqId, request);
-      }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void handleAggrResponse(ByteBuf buf, int seqId, AggrRequest request) {
-      AggrResponse response = new AggrResponse();
-      response.deserialize(buf);
-
-      if (response.getResponseType() == ResponseType.SUCCESS) {
-        FutureResult<PartitionAggrResult> future = requestToResultMap.remove(request);
-        if (future != null) {
-          future.set(response.getPartResult());
-        }
-        requestSuccess(seqId, request);
-      } else if (response.getResponseType() == ResponseType.FATAL) {
-        String errorMsg = "aggr fatal error happened " + response.getDetail();
-        LOG.fatal(errorMsg);
-        PSAgentContext.get().getPsAgent().error(errorMsg);
-      } else {
-        LOG.error("aggr error happened " + response.getDetail() + ", retry later");
         requestFailed(seqId, request);
       }
     }
@@ -1586,22 +1530,21 @@ public class MatrixTransportClient implements MatrixTransportInterface {
     startPut();
     return future;
   }
-
+      
   @SuppressWarnings("unchecked")
   @Override
-  public Future<PartitionGetRowResult> getRow(GetRowFunc func,
-      PartitionGetRowParam partitionGetRowParam) {
+  public Future<PartitionGetResult> get(GetFunc func, PartitionGetParam partitionGetParam) {
     ParameterServerId serverId =
-        PSAgentContext.get().getMatrixPartitionRouter().getPSId(partitionGetRowParam.getPartKey());
+        PSAgentContext.get().getMatrixPartitionRouter().getPSId(partitionGetParam.getPartKey());
 
-    GetRowUDFRequest request =
-        new GetRowUDFRequest(serverId, partitionGetRowParam.getPartKey(),
-            func.getClass().getName(), partitionGetRowParam);
+    GetUDFRequest request =
+        new GetUDFRequest(serverId, partitionGetParam.getPartKey(),
+            func.getClass().getName(), partitionGetParam);
 
-    LOG.debug("get row request=" + request);
+    LOG.debug("get request=" + request);
 
-    FutureResult<PartitionGetRowResult> future = new FutureResult<PartitionGetRowResult>();
-    FutureResult<PartitionGetRowResult> oldFuture = requestToResultMap.putIfAbsent(request, future);
+    FutureResult<PartitionGetResult> future = new FutureResult<PartitionGetResult>();
+    FutureResult<PartitionGetResult> oldFuture = requestToResultMap.putIfAbsent(request, future);
     if (oldFuture != null) {
       LOG.debug("same request exist, just return old future");
       return oldFuture;

@@ -73,9 +73,7 @@ public class ServerDenseDoubleRow extends ServerRow {
   public ServerDenseDoubleRow() {
     this(0, 0, 0, null);
   }
-
-
-
+  
   @Override
   public MLProtos.RowType getRowType() {
     return MLProtos.RowType.T_DOUBLE_DENSE;
@@ -107,6 +105,10 @@ public class ServerDenseDoubleRow extends ServerRow {
     } finally {
       lock.writeLock().unlock();
     }
+  }
+  
+  public void set(int index, double value) {
+    data.put(index, value);
   }
 
   private void denseDoubleUpdate(ByteBuf buf, int size) {

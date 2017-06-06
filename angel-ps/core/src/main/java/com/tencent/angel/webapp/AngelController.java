@@ -62,7 +62,7 @@ public class AngelController extends Controller implements AngelParams {
   }
 
   public void workerPage() {
-    render(WorkerPage.class); //
+    render(WorkerPage.class);
   }
 
   public void environmentPage() {
@@ -71,6 +71,10 @@ public class AngelController extends Controller implements AngelParams {
 
   public void executorsPage() {
     render(ExecutorsPage.class);
+  }
+
+  public void progressPage() {
+    render(ProgressPage.class);
   }
 
   public void workerCounterPage() {

@@ -19,6 +19,9 @@ package com.tencent.angel.utils;
 import it.unimi.dsi.fastutil.doubles.DoubleComparator;
 import it.unimi.dsi.fastutil.ints.IntComparator;
 
+/**
+ * Quick sort utils
+ */
 public class Sort {
 
   public static void quickSort(int[] array, double[] values, int low, int high) {

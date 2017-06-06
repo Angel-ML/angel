@@ -8,10 +8,10 @@
  *
  * https://opensource.org/licenses/BSD-3-Clause
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is
- * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package com.tencent.angel.ps.impl.matrix;
@@ -39,7 +39,7 @@ public class ServerSparseDoubleRowTest {
   private int endCol;
 
   static {
-    PropertyConfigurator.configure("../log4j.properties");
+    PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
   @Before
@@ -212,9 +212,9 @@ public class ServerSparseDoubleRowTest {
     int[] index = new int[3];
     double[] value = new double[3];
     serverSparseDoubleRow.mergeTo(index, value, 0, 3);
-    LOG.info(index[0] + " " + value[0]);
-    LOG.info(index[1] + " " + value[1]);
-    LOG.info(index[2] + " " + value[2]);
+    // LOG.info(index[0] + " " + value[0]);
+    // LOG.info(index[1] + " " + value[1]);
+    // LOG.info(index[2] + " " + value[2]);
   }
 
   @Test

@@ -16,12 +16,11 @@
 package com.tencent.angel.protobuf;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.worker.Worker;
 import com.tencent.angel.worker.task.Task;
 import com.tencent.angel.worker.task.TaskId;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.SetMatrixPartitionRequest;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.CreateMatricesRequest;
 import com.tencent.angel.protobuf.generated.MLProtos.MatrixClock;
 import com.tencent.angel.protobuf.generated.MLProtos.MatrixProto;
 import com.tencent.angel.protobuf.generated.MLProtos.Pair;
@@ -118,16 +117,16 @@ public final class RequestConverter {
     return builder.build();
   }
 
-  public static SetMatrixPartitionRequest buildSetMatrixPartitionRequest(
+  public static CreateMatricesRequest buildCreateMatricesRequest(
       List<MatrixProto> matrixList)  {
-    SetMatrixPartitionRequest.Builder setMatrixPartReqBuilder =
-        SetMatrixPartitionRequest.newBuilder();
+    CreateMatricesRequest.Builder createMatricesReqBuilder =
+        CreateMatricesRequest.newBuilder();
     if (matrixList != null) {
       for (MatrixProto matrixProto : matrixList) {
-        setMatrixPartReqBuilder.addMatrics(matrixProto);
+        createMatricesReqBuilder.addMatrices(matrixProto);
       }
     }
 
-    return setMatrixPartReqBuilder.build();
+    return createMatricesReqBuilder.build();
   }
 }

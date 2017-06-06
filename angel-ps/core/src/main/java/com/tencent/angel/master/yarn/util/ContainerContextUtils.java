@@ -1,17 +1,23 @@
-/*
- * Tencent is pleased to support the open source community by making Angel available.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- *
- * https://opensource.org/licenses/BSD-3-Clause
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is
- * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
  * limitations under the License.
+ */
+
+/**
+ * Container environment variables are modified to satisfy Angel worker/ps.
  */
 
 package com.tencent.angel.master.yarn.util;
@@ -28,7 +34,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.tencent.angel.common.AngelEnvironment;
 import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.master.MasterService;
-import com.tencent.angel.master.worker.worker.AMWorker;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.utils.NetUtils;
 import com.tencent.angel.worker.WorkerAttemptId;
@@ -62,7 +67,6 @@ public class ContainerContextUtils {
   private static final Object commonContainerSpecLock = new Object();
   private static ContainerLaunchContext commonContainerSpec = null;
   
-  @SuppressWarnings("deprecation")
   public
   static ContainerLaunchContext createContainerLaunchContext(
       Map<ApplicationAccessType, String> applicationACLs, Configuration conf, WorkerAttemptId workerAttemptId,
@@ -88,6 +92,10 @@ public class ContainerContextUtils {
         Integer.toString(workerAttemptId.getWorkerId().getWorkerGroupId().getIndex()));
     Apps.addToEnvironment(myEnv, AngelEnvironment.INIT_MIN_CLOCK.name(),
         Integer.toString(initMinClock));
+    Apps.addToEnvironment(myEnv, AngelEnvironment.ANGEL_USER_TASK.name(), conf.get(
+        AngelConfiguration.ANGEL_TASK_USER_TASKCLASS,
+        AngelConfiguration.DEFAULT_ANGEL_TASK_USER_TASKCLASS));
+
     WorkerJVM.setVMEnv(myEnv, conf);
 
     // Set up the launch command
@@ -107,7 +115,6 @@ public class ContainerContextUtils {
     return container;
   }
 
-  @SuppressWarnings("deprecation")
   private static ContainerLaunchContext createCommonContainerLaunchContext(
       MasterService masterService, Map<ApplicationAccessType, String> applicationACLs,
       Configuration conf, final ApplicationId appid, Credentials credentials) {
