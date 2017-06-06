@@ -17,7 +17,7 @@
     		 
 	```
     	mvn clean package -Dmaven.test.skip=true
-    	 ```
+    	```
     
 	编译完成后，在源码根目录`angel-ps/dist/target`目录下会生成一个发布包：`angel-ps-bin-1.1.8.zip`
 
