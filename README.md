@@ -1,12 +1,19 @@
-# Angel（面向高维度的机器学习平台）
+![](assets/angel_logo.png)
 
----
 
-**Angel**是一个基于参数服务器（Parameter Server）理念的机器学习框架，支持高维度的分布式机器学习。它将高维度的大模型，合理切分到多个参数服务器节点，并提供高效的模型更新操作接口和运算符，从而在其之上直观而高效实现各种机器学习算法。
+[![license](http://img.shields.io/badge/license-BSD3-brightgreen.svg?style=flat)](https://github.com/tencent/angel/blob/master/LICENSE)
+[![Release Version](https://img.shields.io/badge/release-1.0.0-red.svg)](https://github.com/tencent/angel/releases) 
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/tencent/angel/pulls)
+
+
+**Angel**是一个基于参数服务器（Parameter Server）理念的机器学习框架，支持高维度的分布式机器学习。
+
+Angel的设计围绕机器学习模型，它将高维度的大模型，合理切分到多个参数服务器节点，并提供高效的模型更新操作接口和运算符，并在其之上高效实现各种机器学习算法。
 
 Angel由Java和Scala语言开发，基于Yarn进行调度。 它既可以独立运行，也可以作为PS服务，支持Spark，以及其它深度学习框架，具有较好的灵活性。
 
-Angel经过长达2年的开发，基于腾讯内部的海量数据进行了反复的实践和调优，并具有广泛的适用性和稳定性，可以用于多种机器学习框架的加速，应用于各种需要大模型的场合。
+Angel经过长达2年的开发，基于腾讯内部的海量数据进行了反复的实践和调优，并具有广泛的适用性和稳定性，可以用于多种机器学习框架的加速，应用于各种需要大模型的场合。它的性能在高维度模型下有很强的优势，无论是对Spark还是xgBoost。
+
 
 ## Angel的架构
 
