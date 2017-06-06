@@ -11,6 +11,8 @@
 - 执行以下脚本
 ```bash
 $SPARK_HOME/bin/spark-submit
+--master local
+--
 ```
 
 ## Yarn模式运行
@@ -22,10 +24,7 @@ $SPARK_HOME/bin/spark-submit \
     --master yarn-cluster \
     --conf spark.hadoop.hadoop.job.ugi=tesla,supergroup \
     --conf spark.submitter=kevinzwyou \
-    --conf spark.tdw.authentication=usp:usp@all2012 \
     --conf spark.ps.jars=$ANGEL_JARS,$ANGEL_UDF \
-    --conf spark.ps.out.path=$HDFS_DIR/output \
-    --conf spark.ps.model.path=$HDFS_DIR/model \
     --conf spark.ps.instances=10 \
     --conf spark.ps.cores=2 \
     --conf spark.ps.memory=6g \
@@ -38,8 +37,6 @@ $SPARK_HOME/bin/spark-submit \
     --executor-memory 4g \
     --class com.tencent.angel.spark.examples.ml.BreezeSGD \
     spark-on-angel-examples-1.1.8.jar
-
 ```
 - YARN将会出现两个Application，一个是Spark Application， 一个是Angel-PS Application。
 
-## 下一步

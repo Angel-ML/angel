@@ -1,22 +1,32 @@
 # Spark on Angel Programing Guide
 
----
-
 Spark on Angel的算法实现与纯Spark的实现非常接近，因此大部分的Spark ML算法仅需要修改一小部分代码就能将算法跑到Spark on Angel上。
 
-版本要求：
-
-* Spark 2.1.0
-* Scala 2.11.8
-
-因此建议大家在该环境下开发。
+该版本的Spark on Angel是基于Spark 2.1.0和Scala 2.11.8，因此建议大家在该环境下开发。
 
 开发者接触到的类主要有PSContext，PSModelPool，PSVectorProxy，BreezePSVector/RemotePSVector。
 目前我们的编程接口以Scala为主，下面我们都将已Scala的编程方式介绍Spark on Angel的编程接口。
 
+## 1. Spark on Angel的引入
+- Maven工程的pom依赖
+```xml
+<dependency>
+    <groupId>com.tencent.angel</groupId>
+    <artifactId>spark-on-angel-core</artifactId>
+    <version>${angel.version}</version>
+</dependency>
+<dependency>
+    <groupId>com.tencent.angel</groupId>
+    <artifactId>spark-on-angel-mllib</artifactId>
+    <version>${angel.version}</version>
+</dependency>
+```
+- import package
+```scala
+  import com.tencent.angel.spark.PSContext
+```
 
-
-## 1. 初始化Spark on Angel
+## 2. 初始化Spark on Angel
 首先必须启动Spark、初始化SparkSession，然后用SparkSession启动PSContext。
 所有Spark、Angel PS相关的配置参数都set到builder，Angel PS会从SparkConf中得到用户的配置信息。
 
@@ -33,7 +43,7 @@ val spark = builder.getOrCreate()
 val context = PSContext.getOrCreate(spark.sparkContext)
 ```
 
-### 2. PSContext
+### 3. PSContext
 系统将Angel PS的所有操作都封装到PSContext中，PSContext的操作主要包括以下几部分
 - 初始化、终止PS node
 如下的接口设计与Spark的SparkSession/sparkContext很接近。
@@ -227,26 +237,4 @@ println("feature sum:" + w.mkRemote.pull())
 
 gradient.delete()
 w.delete()
-```
-
-## 1. Spark on Angel的引入
-- Maven工程的pom依赖
-
-```xml
-	<dependency>
-	    <groupId>com.tencent.angel</groupId>
-	    <artifactId>spark-on-angel-core</artifactId>
-	    <version>${angel.version}</version>
-	</dependency>
-	<dependency>
-	    <groupId>com.tencent.angel</groupId>
-	    <artifactId>spark-on-angel-mllib</artifactId>
-	    <version>${angel.version}</version>
-	</dependency>
-```
-
-- import package
-
-```scala
-	import com.tencent.angel.spark.PSContext
 ```
