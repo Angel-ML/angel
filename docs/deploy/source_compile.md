@@ -25,7 +25,7 @@
 
 	发布包解压后，根目录下有四个子目录：
 	   
-	   * **bin：**Angel提交脚本和
-	   * **conf：**系统配置文件
-	   * **data：**简单测试数据
-	   * **lib：**angel jar包 & 依赖jar包
+	   * bin：Angel提交脚本和
+	   * conf：系统配置文件
+	   * data：简单测试数据
+	   * lib：angel jar包 & 依赖jar包
