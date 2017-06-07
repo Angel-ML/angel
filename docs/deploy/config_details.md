@@ -4,7 +4,7 @@
 ---------------- | --------------- | ---------------
 actionType | train | Angel task的运行方式，目前主要有两种“train”和“predict”，分别表示模型训练和使用模型进行预测
 angel.train.data.path | 无 | 训练数据所在路径，该选项只用于“train”运行方式下
-angel.inputformat | org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat | 训练数据文件格式，主要用于训练数据划分和读取，可支持自定义格式
+angel.inputformat | org.apache.hadoop.mapreduce.lib<br>.input.CombineTextInputFormat | 训练数据文件格式，主要用于训练数据划分和读取，可支持自定义格式
 angel.predict.out.path | 无 | 预测结果存储路径，该选项只用于“predict”运行方式
 angel.save.modelPath | 无 | 模型存储路径，该选项只用于“train”运行方式
 angel.load.modelPath | 无 | 模型加载路径，该选项可用于“train”和“predict”运行方式。用于“train”时表示增量学习，即加载旧模型，利用新的训练数据在此基础上得到新的模型；用于“predict”时表示加载该模型进行预测
@@ -91,7 +91,7 @@ angel.ps.log.level | INFO | PS日志输出级别，可配置的有DEBUG,INFO,WAR
 配置项名称 | 默认值 | 配置项含义
 ---------------- | --------------- | ---------------
 angel.psagent.cache.sync.timeinterval.ms | 50 | PSAgent侧缓存更新时间间隔，单位为毫秒。为了实现矩阵参数预取功能，在PSAgent侧维护了一个矩阵参数的缓存，该缓存每隔一段时间和PS侧数据进行同步。
-angel.psagent.sync.policy.class | com.tencent.angel.psagent.matrix.cache.DefalutPolicy | PSAgent侧缓存更新策略。
+angel.psagent.sync.policy.class | com.tencent.angel.psagent.matrix<br>.cache.DefalutPolicy | PSAgent侧缓存更新策略。
 angel.task.data.storage.level | memory_disk | Task预处理过的训练数据存储方式，可选的有memory,memory_disk和disk。memory表示将所有训练数据存储在内存中，如果内存足够大，建议使用这种方式；disk表示将所有训练数据存储在本地磁盘上；memory_disk则介于两者之间，可以支持一部分放在内存中，其余的放在本地磁盘。
 angel.task.memorystorage.max.mb | 1000 | 每一个task运行使用多大内存来存放训练数据，单位为MB。只有当storage level配置为memory_disk时该选项才起作用。
 
