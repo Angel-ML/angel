@@ -1,4 +1,4 @@
-#PSModel主要接口定义和功能介绍
+# PSModel
 PSModel是对矩阵参数和参数服务器客户端的封装，它提供了常见的矩阵元素获取和更新接口。
 
 ## 构造方法
@@ -11,7 +11,7 @@ PSModel是对矩阵参数和参数服务器客户端的封装，它提供了常�
 
 - 参数：ctx: TaskContext Angel Task context信息；name: String 矩阵名； row: Int矩阵行数； col: Int矩阵列数。当不指定blockRow和blockCol参数时，表示使用系统自行决定矩阵分区块大小
 
-##getRow
+## getRow
 - 定义：```def getRow(rowId: Int): K```
 
 
@@ -23,7 +23,7 @@ PSModel是对矩阵参数和参数服务器客户端的封装，它提供了常�
 
 - 返回值：指定行的行向量
 
-##getRows
+## getRows
 - 定义：```def getRows(rowIndexes:Array[Int]): List[K]```
 
 
@@ -35,7 +35,7 @@ PSModel是对矩阵参数和参数服务器客户端的封装，它提供了常�
 
 - 返回值：指定行的行向量列表；列表有序，与参数数组顺序一致
 
-##getRowsFlow
+## getRowsFlow
 - 定义：```def getRowsFlow(rowIndex: RowIndex, batchNum: Int): GetRowsResult```
 
 
@@ -47,7 +47,7 @@ PSModel是对矩阵参数和参数服务器客户端的封装，它提供了常�
 
 - 返回值：一个行向量队列，上层应用程序可以从该队列中得到已经获取到的行对应的行向量
 
-##increment
+## increment
 - 定义：```def increment(delta: TVector)```
 
 
