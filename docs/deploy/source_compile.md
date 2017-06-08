@@ -9,7 +9,7 @@
 
 2. **源码下载**
 
-	```git clone https://github.com/Tencent/angel```
+	```git clone https://github.com/tencent/angel```
 
 3. **编译**
     	
@@ -22,8 +22,7 @@
 4. **发布包**
 
 	发布包解压后，根目录下有四个子目录：
-	   
-	* bin：Angel任务提交脚本
-	* conf：系统配置文件
-	* data：简单测试数据
-	* lib：angel jar包 & 依赖jar包
+   * bin：Angel任务提交脚本
+   * conf：系统配置文件
+   * data：简单测试数据
+   * lib：angel jar包 & 依赖jar包
