@@ -1,7 +1,7 @@
 # Task 执行流程
 Task是Angel的最小计算单元，一个Task的执行流程如图所示：
 
-![enter description here][1]
+![][1]
 
 基本流程主要有两步：
 
@@ -87,4 +87,4 @@ KEYIN和VALUEIN含义可参考BaseTaskInterface
 - 返回值：无
 
 
-  [1]: ./images/Task%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B.png "Task执行流程"
+  [1]: ../img/Task%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B.png "Task执行流程"
