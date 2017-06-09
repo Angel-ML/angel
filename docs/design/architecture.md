@@ -1,5 +1,6 @@
 ![image.png](/tdw/angel/uploads/A41A5B2D10424BCEB7DB3D22C0FBD653/image.png)
 
+![][1]
 
 ## Client
 Angel的客户端，它给应用程序提供了控制任务运行的功能。目前它支持的控制接口主要有：启动和停止Angel任务，加载和存储模型，启动具体计算过程和获取任务运行状态等。
@@ -11,6 +12,4 @@ ParameterServer负责存储和更新参数，一个Angel计算任务可以包含
 Worker负责具体的模型训练或者结果预测，为了支持更大规模的训练数据，一个计算任务往往包含许多个Worker实例，每个Worker实例负责使用一部分训练数据进行训练。一个Worker包含一个或者多个Task，Task是Angel计算单元，这样设计的原因是可以让Task共享Worker的许多公共资源。
 
 
-![image.png](/tdw/angel/uploads/2DE6763E4B3848E4BB0E96ECEB66A076/image.png)
-
-![Angel架构.png](/tdw/angel/uploads/8E16A1D4B9CE4948BC46D8D90469E2B5/Angel架构.png)
+  [1]: ../img/Angel%E6%9E%B6%E6%9E%84.png

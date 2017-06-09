@@ -66,22 +66,22 @@
 
 	为了方便用户，Ange设置有许多参数可供调整，可以参考
 
-	* 系统参数： [主要系统配置](config_details)
-	* 算法参数： [Logistic Regression](lr_on_angel)
+	* 系统参数： [主要系统配置](config_details.md)
+	* 算法参数： [Logistic Regression](../lr_on_angel.md)
 
 3. **观察进度**
 
 
 	任务提交之后，会在控制台打印出任务运行信息，如URL和迭代进度等，如下图所示：
-		![log.png](/tdw/angel/uploads/F0988AB77A5C4E48AE3A8566EF95EADD/log.png)
+	
+	![][1]
 
 	打开URL信息就可以看到Angel任务每一个组件的详细运行信息和算法相关日志：
 
-	![lr_log.png](/tdw/angel/uploads/0C050C5A47BB44B5991B442D447A76D0/lr_log.png)
+	![][2]
 	
 	目前的监控页面有点简陋，后续会进一步优化，围绕PS的本质，提高美观程度和用户可用度
 
 
-
-
-
+  [1]: ../img/angel_client_log.png 
+  [2]: ../img/lr_worker_log.png 
