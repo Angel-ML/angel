@@ -27,7 +27,7 @@ get psf的执行流程分为两步，分别由接口partitionGet和merge方法�
 ### **get psf实现流程**
 get psf执行流程需要PS Client和PS共同完成。上述提到的get参数划分和最后的merge方法是在PS Client执行的；而partitionGet方法是在PS端执行的。具体的流程如下图所示，左子图表示PS Client端处理流程，右子图表示PS端处理流程：
 
-![getpof流程.png](/tdw/angel/uploads/40EF58258A32450C9AF5DA4A8A0F186D/getpof流程.png)
+![][1]
 
 ### **get psf编程示例**
 获取矩阵某一行的所有值的和
@@ -209,3 +209,6 @@ public class Sum extends GetFunc {
 Sum sumFunc = new Sum(new SumParam(matrixId, rowIndex));
 double result = ((SumResult)psModel.get(sumFunc)).getResult();
 ```
+
+
+  [1]: ../img/get%20psf%E6%B5%81%E7%A8%8B.png

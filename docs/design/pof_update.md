@@ -23,7 +23,7 @@ update psf参数类型为UpdaterParam。UpdateParam对象与GetParam对象类似
 ### **update psf实现流程**
 update psf执行流程需要PS Client和PS共同完成。上述提到的UpdaterParam划分和最后的merge方法是在PS Client执行的；而partitionUpdate方法是在PS端执行的。具体的流程如下图所示，左子图表示PS Client处理流程，右子图表示PS端处理流程：
 
-![updatepof流程.png](/tdw/angel/uploads/A42918096C3343CD85592B576FF57754/updatepof流程.png)
+![][1]
 
 ### **update psf编程示例**
 下面是一个简单的使用update psf实现将矩阵某一行设置为指定范围随机数的例子。
@@ -173,3 +173,6 @@ public class Random extends UpdaterFunc {
 Random randomFunc = new Random(new RandomParam(matrixId, rowIndex, 0.0, 1.0));
 psModel.update(randomFunc).get();
 ```
+
+
+  [1]: ../img/update%20psf%E6%B5%81%E7%A8%8B.png
