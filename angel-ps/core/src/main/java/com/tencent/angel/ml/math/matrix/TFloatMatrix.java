@@ -20,9 +20,6 @@ import com.tencent.angel.ml.math.vector.TFloatVector;
 import com.tencent.angel.ml.math.TMatrix;
 import com.tencent.angel.ml.math.TVector;
 
-/**
- * Created by leleyu on 2016/2/17.
- */
 public abstract class TFloatMatrix extends TMatrix {
 
   /**

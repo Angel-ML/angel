@@ -80,7 +80,7 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
   
   /**ps diagnostics*/
   private final List<String> diagnostics = new ArrayList<String>();
-  
+
   /**schedule timestamp of the ps*/
   //private long scheduledTime;
   
@@ -194,7 +194,7 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
       }
 
       // add diagnostic
-      StringBuffer psDiagnostic = new StringBuffer();
+      StringBuilder psDiagnostic = new StringBuilder();
       psDiagnostic.append(psAttemptId.toString()).append(" failed due to: ")
           .append(StringUtils.join("\n", parameterServer.attempts.get(psAttemptId).getDiagnostics()));
       if (LOG.isDebugEnabled()) {
@@ -270,7 +270,7 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
     @SuppressWarnings("unchecked")
     @Override
     public void transition(AMParameterServer parameterServer, AMParameterServerEvent event) {
-      StringBuffer psdiaggostic = new StringBuffer();
+      StringBuilder psdiaggostic = new StringBuilder();
       psdiaggostic.append("ps is killed by user, psId: ")
           .append(parameterServer.getId().toString());
       parameterServer.diagnostics.add(psdiaggostic.toString());
@@ -302,7 +302,7 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
       }
 
       // add diagnostic
-      StringBuffer psDiagnostic = new StringBuffer();
+      StringBuilder psDiagnostic = new StringBuilder();
       psDiagnostic.append(psAttemptId.toString()).append(" failed due to: ")
           .append(StringUtils.join("\n", parameterServer.attempts.get(psAttemptId).getDiagnostics()));
       if (LOG.isDebugEnabled()) {

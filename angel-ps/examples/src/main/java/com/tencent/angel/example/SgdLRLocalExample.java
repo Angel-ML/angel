@@ -96,7 +96,7 @@ public class SgdLRLocalExample {
     // Set log path
     conf.set(AngelConfiguration.ANGEL_LOG_PATH, logPath);
     // Set actionType train
-    conf.set(MLConf.ANGEL_ACTION_TYPE(), MLConf.ANGEL_ML_TRAIN());
+    conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
 
 
     LRRunner runner = new LRRunner();
@@ -123,7 +123,7 @@ public class SgdLRLocalExample {
     // Set log path
     conf.set(AngelConfiguration.ANGEL_LOG_PATH, logPath);
     // Set actionType incremental train
-    conf.set(MLConf.ANGEL_ACTION_TYPE(), MLConf.ANGEL_ML_INC_TRAIN());
+    conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_INC_TRAIN());
 
     LRRunner runner = new LRRunner();
     runner.incTrain(conf);
@@ -147,9 +147,8 @@ public class SgdLRLocalExample {
     // Set predict result path
     conf.set(AngelConfiguration.ANGEL_PREDICT_PATH, predictPath);
     // Set actionType prediction
-    conf.set(MLConf.ANGEL_ACTION_TYPE(), MLConf.ANGEL_ML_INC_TRAIN());
+    conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT());
 
-    conf.set(MLConf.ANGEL_ACTION_TYPE(), MLConf.ANGEL_ML_PREDICT());
     LRRunner runner = new LRRunner();
 
     runner.predict(conf);

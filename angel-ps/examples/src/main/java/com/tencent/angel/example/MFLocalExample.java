@@ -59,7 +59,7 @@ public class MFLocalExample {
     conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, inputPath);
     conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model");
     // Set actionType train
-    conf.set(MLConf.ANGEL_ACTION_TYPE(), MLConf.ANGEL_ML_TRAIN());
+    conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
 
     // Set MF algorithm parameters
     conf.set(MLConf.ML_MF_RANK(), "200");

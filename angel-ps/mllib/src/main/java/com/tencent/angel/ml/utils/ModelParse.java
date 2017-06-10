@@ -86,7 +86,7 @@ public class ModelParse {
     @Override
     public void run() {
       long startTime = Time.monotonicNow();
-      LOG.info(String.format("open file " + status.getPath()));
+      LOG.info("open file " + status.getPath());
       try {
         FSDataInputStream fin;
         fin = infs.open(status.getPath());
@@ -104,10 +104,10 @@ public class ModelParse {
         String patInfo = "rowType " + rowType + ", partition range is [" + startRow + ", "
             + startCol + "] to (" + endRow + ", " + endCol + ")";
         out.writeBytes(patInfo + "\n");
-        LOG.info(String.format(patInfo));
+        LOG.info(patInfo);
 
         int rowNum = fin.readInt();
-        LOG.info(String.format("rowNum=" + rowNum));
+        LOG.info("rowNum=" + rowNum);
         out.writeBytes("rowNum:" + rowNum + "\n");
         int rowIndex;
         int rowLen;
@@ -263,7 +263,7 @@ public class ModelParse {
                 }
                 out.writeBytes("\n");
               } else {
-                LOG.error(String.format(denseOrSparse + " type error,need T_INT_ARBITRARY"));
+                LOG.error(denseOrSparse + " type error,need T_INT_ARBITRARY");
               }
             }
             break;
@@ -279,8 +279,8 @@ public class ModelParse {
         LOG.error(errorLog, e);
         isSuccess.set(false);
       } finally {
-        LOG.info(String.format("convert partFile " + status.toString() + " cost time: "
-            + (Time.monotonicNow() - startTime) + "ms!"));
+        LOG.info("convert partFile " + status.toString() + " cost time: "
+            + (Time.monotonicNow() - startTime) + "ms!");
         finishFlag.set(true);
       }
     }
@@ -311,7 +311,7 @@ public class ModelParse {
    */
   public void convertInit() throws IOException {
     fileStatus = null;
-    LOG.info(String.format("read model from " + inputStr));
+    LOG.info("read model from " + inputStr);
     if (inputStr == null) {
       throw new IOException("inputStr is null");
     }
@@ -325,7 +325,7 @@ public class ModelParse {
     }
 
     outputPath = new Path(outputStr);
-    LOG.info(String.format("outputPath:" + outputPath.toString()));
+    LOG.info("outputPath:" + outputPath.toString());
     outfs=outputPath.getFileSystem(conf);
     outfs.mkdirs(outputPath);
   }
@@ -337,13 +337,13 @@ public class ModelParse {
    * @throws InterruptedException
    */
   public void convertModel() throws IOException, InterruptedException {
-    if (isConverting.get() == true) {
+    if (isConverting.get()) {
       if (LOG.isDebugEnabled()) {
-        LOG.debug(String.format("model is converting......"));
+        LOG.debug("model is converting......");
       }
       return;
     }
-    LOG.info(String.format("to start convert tasks!"));
+    LOG.info("to start convert tasks!");
     isConverting.set(true);
     long startTime = Time.monotonicNow();
 
@@ -366,23 +366,22 @@ public class ModelParse {
     boolean convertSuccess = true;
     String errorLog = null;
     for (ConvertTask task : allConvertTasks) {
-      while (task.finishFlag.get() != true) {
+      while (!task.finishFlag.get()) {
         try {
           Thread.sleep(1000);
         } catch (InterruptedException e) {
           e.printStackTrace();
         }
-        continue;
       }
-      if (task.isSuccess() == false) {
+      if (!task.isSuccess()) {
         convertSuccess = false;
         errorLog = task.getErrorLog();
       }
     }
-    LOG.info(String.format("model convert cost time: " + (Time.monotonicNow() - startTime) + "ms"));
+    LOG.info("model convert cost time: " + (Time.monotonicNow() - startTime) + "ms");
     convertTaskPool.shutdownNow();
     if (!convertSuccess) {
-      LOG.error(String.format("convert failed for " + errorLog));
+      LOG.error("convert failed for " + errorLog);
     }
   }
 

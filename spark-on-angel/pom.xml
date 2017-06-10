@@ -64,7 +64,7 @@
 		</dependency>
 		<dependency>
 			<groupId>com.tencent.angel</groupId>
-			<artifactId>angel-ps-udf</artifactId>
+			<artifactId>angel-ps-psf</artifactId>
 			<version>${project.version}</version>
 			<scope>${dist.deps.scope}</scope>
 		</dependency>

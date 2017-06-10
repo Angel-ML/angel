@@ -48,7 +48,6 @@ import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -146,7 +145,6 @@ public class MasterClient {
       } else {
         if (response.getMatrixStatus() == MLProtos.MatrixStatus.M_NOT_READY) {
           Thread.sleep(PSAgentContext.get().getRequestSleepTimeMS());
-          continue;
         }
       }
     }

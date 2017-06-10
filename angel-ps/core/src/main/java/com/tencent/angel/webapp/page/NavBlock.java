@@ -18,8 +18,6 @@ package com.tencent.angel.webapp.page;
 
 import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
 
-import static org.apache.hadoop.mapreduce.v2.app.webapp.AMParams.RM_WEB;
-
 public class NavBlock extends HtmlBlock {
   @Override
   protected void render(Block html) {

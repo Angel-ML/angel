@@ -41,7 +41,7 @@ class KMeansTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text
     *     */
   override
   def parse(key: LongWritable, value: Text): LabeledData = {
-    DataParser.parseVector(key, value, feaNum, "libsvm", true)
+    DataParser.parseVector(key, value, feaNum, "libsvm", false)
   }
 
   override

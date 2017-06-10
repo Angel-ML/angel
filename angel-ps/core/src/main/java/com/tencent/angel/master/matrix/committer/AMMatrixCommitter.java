@@ -127,15 +127,12 @@ public class AMMatrixCommitter extends AbstractService {
             }
             finalCommit();
             commitSuccess();
-            return;
           } else {
             commitFailed("commit timeout, time setting is " + waitTimeMS);
-            return;
           }
         } catch (Exception x) {
           LOG.error("commit error", x);
           commitFailed("commit error, " + x.getMessage());
-          return;
         }
       }
     });

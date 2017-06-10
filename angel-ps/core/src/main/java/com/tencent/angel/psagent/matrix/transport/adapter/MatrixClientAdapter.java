@@ -423,7 +423,6 @@ public class MatrixClientAdapter {
               requestToResponseMap.entrySet().iterator();
           while (iter.hasNext()) {
             Entry<UserRequest, PartitionResponseCache> entry = iter.next();
-            LOG.debug("UserRequest=" + entry.getKey() + ", cache=" + entry.getValue());
             switch (entry.getKey().type) {
               case GET_ROW: {
                 GetRowPipelineCache cache = (GetRowPipelineCache) entry.getValue();
@@ -484,7 +483,7 @@ public class MatrixClientAdapter {
             }
           }
 
-          Thread.sleep(1000);
+          Thread.sleep(10);
         }
       } catch (InterruptedException ie) {
         LOG.info("interupted");

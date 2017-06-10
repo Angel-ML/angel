@@ -107,18 +107,18 @@ public class ParameterServerService implements PSProtocol {
   {
     ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
     ThreadInfo[] threadInfo =  threadMXBean.dumpAllThreads(true, true);
-    String stackTraceString="ParameterServer\n";
-    String infoBlock="\n";
+    StringBuilder stackTraceString= new StringBuilder("ParameterServer\n");
+    StringBuilder infoBlock= new StringBuilder("\n");
     for(ThreadInfo t :  threadInfo)
     {
-      infoBlock="\n\n";
-      infoBlock+="threadid: "+t.getThreadId()+" threadname: "+t.getThreadName()+"       threadstate: "+t.getThreadState()+"\n";
+      infoBlock = new StringBuilder("\n\n");
+      infoBlock.append("threadid: ").append(t.getThreadId()).append(" threadname: ").append(t.getThreadName()).append("       threadstate: ").append(t.getThreadState()).append("\n");
       for(StackTraceElement stackTraceElement : t.getStackTrace())
       {
-        infoBlock+= "   "+stackTraceElement.toString()+"\n";
+        infoBlock.append("   ").append(stackTraceElement.toString()).append("\n");
       }
-      stackTraceString+=infoBlock+"\n\n";
+      stackTraceString.append(infoBlock).append("\n\n");
     }
-    return stackTraceString;
+    return stackTraceString.toString();
   }
 }

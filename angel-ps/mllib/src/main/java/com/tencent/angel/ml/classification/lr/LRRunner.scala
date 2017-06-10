@@ -46,26 +46,7 @@ class LRRunner extends MLRunner {
   def train(conf: Configuration): Unit = {
     conf.setInt("angel.worker.matrixtransfer.request.timeout.ms", 60000)
 
-    var maxdimPathStr = conf.get(MLConf.ML_MAXDIM_PATH);
-    var feaNum = 0;
-    if(maxdimPathStr != null && maxdimPathStr != ""){
-      val maxdimPath = new Path(maxdimPathStr)
-      val fs = maxdimPath.getFileSystem(conf)
-
-      if (!fs.exists(maxdimPath)) {
-        LOG.error(s"$maxdimPath doesn't exist.")
-      } else {
-        val fin = fs.open(maxdimPath)
-        val lr = new LineReader(fin)
-        val line = new Text()
-        lr.readLine(line)
-
-        feaNum = Integer.valueOf(line.toString())
-        lr.close()
-      }
-    } else{
-      feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, -1)
-    }
+    var feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
 
     LOG.info("feanNum=" + feaNum)
     conf.setInt(MLConf.ML_FEATURE_NUM, feaNum)

@@ -100,7 +100,7 @@ public class SVMTest {
     // Set save model path
     conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/SVMModel");
     // Set actionType train
-    conf.set(MLConf.ANGEL_ACTION_TYPE(), MLConf.ANGEL_ML_TRAIN());
+    conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
     // Set log path
     conf.set(AngelConfiguration.ANGEL_LOG_PATH, logPath);
 
@@ -122,7 +122,7 @@ public class SVMTest {
     // Set save model path
     conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/newSVMModel");
     // Set actionType incremental train
-    conf.set(MLConf.ANGEL_ACTION_TYPE(), MLConf.ANGEL_ML_INC_TRAIN());
+    conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_INC_TRAIN());
     // Set log path
     conf.set(AngelConfiguration.ANGEL_LOG_PATH, logPath);
     SVMRunner runner = new SVMRunner();

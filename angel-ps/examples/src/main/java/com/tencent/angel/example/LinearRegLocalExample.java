@@ -95,7 +95,7 @@ public class LinearRegLocalExample {
     // Set log path
     conf.set(AngelConfiguration.ANGEL_LOG_PATH, logPath);
     // Set actionType train
-    conf.set(MLConf.ANGEL_ACTION_TYPE(), MLConf.ANGEL_ML_TRAIN());
+    conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
 
 
     LinearRegRunner runner = new LinearRegRunner();
@@ -117,7 +117,7 @@ public class LinearRegLocalExample {
     // Set save model path
     conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/newmodel");
     // Set actionType incremental train
-    conf.set(MLConf.ANGEL_ACTION_TYPE(), MLConf.ANGEL_ML_INC_TRAIN());
+    conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_INC_TRAIN());
     // Set log path
     conf.set(AngelConfiguration.ANGEL_LOG_PATH, logPath);
 
@@ -138,9 +138,7 @@ public class LinearRegLocalExample {
     // Set predict result path
     conf.set(AngelConfiguration.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/predict");
     // Set actionType prediction
-    conf.set(MLConf.ANGEL_ACTION_TYPE(), MLConf.ANGEL_ML_INC_TRAIN());
-
-    conf.set(MLConf.ANGEL_ACTION_TYPE(), MLConf.ANGEL_ML_PREDICT());
+    conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT());
     LinearRegRunner runner = new LinearRegRunner();
 
     runner.predict(conf);

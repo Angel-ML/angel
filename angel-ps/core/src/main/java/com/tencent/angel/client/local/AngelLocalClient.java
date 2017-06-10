@@ -92,7 +92,6 @@ public class AngelLocalClient extends AngelClient {
       } catch (ServiceException e) {
         Thread.sleep(1000);
         tryTime++;
-        continue;
       }
     }
   }

@@ -47,7 +47,7 @@ object MFModel {
   * @param ctx  : context of running task
   * @param conf : configuration of algorithm
   */
-class MFModel(ctx: TaskContext, conf: Configuration) extends MLModel {
+class MFModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
 
   def this(conf: Configuration) = {
     this(null, conf)
@@ -62,7 +62,7 @@ class MFModel(ctx: TaskContext, conf: Configuration) extends MLModel {
 
   // Reference of Item model matrix sotred on PS.
   // Each row is a k-dim item feature vector, represents an item.
-  private val _itemMat = new PSModel[DenseFloatVector](MF_ITEM_MODEL, _itemNum, _K)
+  private val _itemMat = PSModel[DenseFloatVector](MF_ITEM_MODEL, _itemNum, _K)
   _itemMat.setAverage(true)
   _itemMat.setRowType(RowType.T_FLOAT_DENSE)
   _itemMat.setOplogType("DENSE_FLOAT")
@@ -86,12 +86,12 @@ class MFModel(ctx: TaskContext, conf: Configuration) extends MLModel {
 
   // Matrix Client for item model matrix
   def itemMat = {
-    ctx.getMatrix(_itemMat.getName)
+    ctx.getMatrix(_itemMat.modelName)
   }
 
   // Matrix Client for loss matrix on PS servers
   def lossMat = {
-    ctx.getMatrix(_lossMat.getName)
+    ctx.getMatrix(_lossMat.modelName)
   }
 
   def rank = _K

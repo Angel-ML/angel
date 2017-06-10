@@ -16,8 +16,6 @@
 
 package com.tencent.angel.master.worker.workergroup;
 
-import io.netty.buffer.ByteBuf;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -38,7 +36,6 @@ import org.apache.hadoop.yarn.state.SingleArcTransition;
 import org.apache.hadoop.yarn.state.StateMachine;
 import org.apache.hadoop.yarn.state.StateMachineFactory;
 
-import com.tencent.angel.common.Serialize;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.worker.WorkerGroupManagerEvent;
 import com.tencent.angel.master.worker.WorkerManagerEventType;

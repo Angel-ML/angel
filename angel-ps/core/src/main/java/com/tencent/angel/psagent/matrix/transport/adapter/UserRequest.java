@@ -75,9 +75,7 @@ public abstract class UserRequest {
     UserRequest other = (UserRequest) obj;
     if (clock != other.clock)
       return false;
-    if (type != other.type)
-      return false;
-    return true;
+    return type == other.type;
   }
 
   @Override

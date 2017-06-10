@@ -30,8 +30,6 @@ import java.io.*;
 
 import static org.junit.Assert.*;
 
-import static org.junit.Assert.assertEquals;
-
 
 public class ServerDenseDoubleRowTest {
   private final static Log LOG = LogFactory.getLog(ServerDenseDoubleRowTest.class);

@@ -47,6 +47,7 @@ import com.tencent.angel.master.ps.ps.AMParameterServer;
 import com.tencent.angel.master.ps.ps.AMParameterServerEvent;
 import com.tencent.angel.master.ps.ps.AMParameterServerEventType;
 import com.tencent.angel.master.psagent.*;
+import com.tencent.angel.master.slowcheck.SlowChecker;
 import com.tencent.angel.master.worker.WorkerManager;
 import com.tencent.angel.master.worker.WorkerManagerEventType;
 import com.tencent.angel.master.worker.attempt.WorkerAttemptEvent;
@@ -336,7 +337,7 @@ public class AngelApplicationMaster extends CompositeService {
 
     @Override
     public int getTotalIterationNum() {
-      return conf.getInt("ml.epochnum", AngelConfiguration.DEFAULT_ANGEL_TASK_ITERATION_NUMBER);
+      return conf.getInt("ml.epoch.num", AngelConfiguration.DEFAULT_ANGEL_TASK_ITERATION_NUMBER);
     }
 
     @Override
@@ -357,11 +358,8 @@ public class AngelApplicationMaster extends CompositeService {
 
     @Override
     public boolean needClear() {
-      if (!getApp().isShouldRetry()) {
-        return true;
-      }
+      return !getApp().isShouldRetry() || appAttemptId.getAttemptId() >= getAMAttemptTime() || angelApp.isSuccess();
 
-      return appAttemptId.getAttemptId() >= getAMAttemptTime() || angelApp.isSuccess();
     }
 
     @Override
@@ -674,6 +672,9 @@ public class AngelApplicationMaster extends CompositeService {
       case ANGEL_PS:
         break;
     }
+
+    // register slow worker/ps checker
+    addIfService(new SlowChecker(appContext));
 
     // register app manager event and finish event
     dispatcher.register(AppEventType.class, angelApp);

@@ -27,7 +27,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -40,7 +39,6 @@ public class Task extends Thread {
   private Class<?> userTaskClass;
   private final TaskId taskId;
   private volatile TaskState state;
-  private HashMap<String, String> metrics;
   final List<String> diagnostics;
 
   @SuppressWarnings("rawtypes")
@@ -51,7 +49,6 @@ public class Task extends Thread {
   public Task(TaskId taskId, TaskContext taskContext) {
     this.taskId = taskId;
     this.taskContext = taskContext;
-    this.metrics = new HashMap<String, String>();
     this.diagnostics = new ArrayList<String>();
     setState(TaskState.NEW);
   }
@@ -156,15 +153,6 @@ public class Task extends Thread {
    */
   public float getProgress() {
     return taskContext.getProgress();
-  }
-
-  /**
-   * Gets metrics.
-   *
-   * @return the metrics
-   */
-  public HashMap<String, String> getMetrics() {
-    return metrics;
   }
 
   /**

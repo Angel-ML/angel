@@ -353,7 +353,6 @@ public class MatrixOpLogCache {
         }
       }
 
-      return;
     }
 
     private void wakeupWaitMessages(int matrixId) {
@@ -480,11 +479,7 @@ public class MatrixOpLogCache {
 
       // If hogwild mode is enabled on the number of local task is more than 1 on SSP mode, we
       // should flush updates to local matrix storage
-      if (stalness > 0 && !matrixMeta.isHogwild() && localTaskNum > 1) {
-        return true;
-      } else {
-        return false;
-      }
+      return stalness > 0 && !matrixMeta.isHogwild() && localTaskNum > 1;
     }
 
     public OpLogMessage getMessage() {

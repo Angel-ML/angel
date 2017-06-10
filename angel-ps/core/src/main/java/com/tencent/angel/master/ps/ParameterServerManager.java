@@ -258,7 +258,7 @@ public class ParameterServerManager extends AbstractService implements
   private void psFailed(ParameterServerManagerEvent event) {
     List<String> diagnostics =
         context.getParameterServerManager().getParameterServer(event.getPsId()).getDiagnostics();
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     sb.append(StringUtils.join("\n", diagnostics));
     context.getEventHandler().handle(
         new InternalErrorEvent(context.getApplicationId(), sb.toString()));

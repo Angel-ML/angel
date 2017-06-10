@@ -35,7 +35,7 @@ public class matrixfactorizationTest {
   private Configuration conf = new Configuration();
 
   static {
-    PropertyConfigurator.configure("../conf/log4j.propertiess");
+    PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
 
@@ -64,7 +64,7 @@ public class matrixfactorizationTest {
     conf.set(AngelConfiguration.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/Log/log");
     conf.set(MLConf.ML_MF_USER_OUTPUT_PATH(), LOCAL_FS + TMP_PATH + "/usermodel");
     // Set actionType train
-    conf.set(MLConf.ANGEL_ACTION_TYPE(), MLConf.ANGEL_ML_TRAIN());
+    conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
 
     // Set MF algorithm parameters
     conf.set(MLConf.ML_MF_RANK(), "200");

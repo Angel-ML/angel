@@ -1241,7 +1241,6 @@ public class MatrixTransportClient implements MatrixTransportInterface {
           + (endTs - startTs));
 
       cf.addListener(new RequesterChannelFutureListener(seqId, request));
-      return;
     }
   }
 

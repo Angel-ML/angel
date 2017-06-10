@@ -29,8 +29,6 @@ import java.util.*;
 
 import static org.apache.hadoop.yarn.util.StringHelper.join;
 import static org.apache.hadoop.yarn.webapp.view.JQueryUI.*;
-import static org.apache.hadoop.yarn.webapp.view.JQueryUI._PROGRESSBAR;
-import static org.apache.hadoop.yarn.webapp.view.JQueryUI._PROGRESSBAR_VALUE;
 
 public class ProgressBlock extends HtmlBlock {
   final AMContext amContext;
@@ -48,8 +46,7 @@ public class ProgressBlock extends HtmlBlock {
     Hamlet.TR<Hamlet.THEAD<Hamlet.TABLE<Hamlet.DIV<Hamlet>>>> headTr = table.thead().tr();
 
     headTr.th(_TH, "taskid").th(_TH, "state").th(_TH, "current iteration")
-        .th(_TH, "current iteration bar").th(_TH, "current progress")
-        .th(_TH, "current progress bar").th(_TH, "workerlog");
+        .th(_TH, "workerlog");
     headTr._()._();
     float current_iteration_progress = (float) 0.0;
     float current_clock_progress = (float) 0.0;
@@ -88,14 +85,7 @@ public class ProgressBlock extends HtmlBlock {
           ((float) task.getIteration()) / ((float) amContext.getTotalIterationNum());
       Hamlet.TR<Hamlet.TBODY<Hamlet.TABLE<Hamlet.DIV<Hamlet>>>> tr = tbody.tr();
       tr.td(task.getTaskId().toString()).td(task.getState().toString())
-          .td(String.valueOf(task.getIteration()) + "/" + amContext.getTotalIterationNum()).td()
-          .div(_PROGRESSBAR).$title(join(String.valueOf(current_clock_progress * 100), '%')). // tooltip
-          div(_PROGRESSBAR_VALUE)
-          .$style(join("width:", String.valueOf(current_clock_progress * 100), '%'))._()._()._()
-          .td(String.valueOf(current_iteration_progress)).td().div(_PROGRESSBAR)
-          .$title(join(String.valueOf(current_iteration_progress * 100), '%'))
-          .div(_PROGRESSBAR_VALUE)
-          .$style(join("width:", String.valueOf(current_iteration_progress * 100), '%'))._()._()._()
+          .td(String.valueOf(task.getIteration()) + "/" + amContext.getTotalIterationNum())
           .td()
           .a(url(MRWebAppUtil.getYARNWebappScheme(), workerAttempt.getNodeHttpAddr(), "node",
               "containerlogs", workerAttempt.getContainerIdStr(), amContext.getUser().toString()),

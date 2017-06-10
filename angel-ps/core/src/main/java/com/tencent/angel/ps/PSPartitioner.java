@@ -25,8 +25,6 @@ import org.apache.hadoop.conf.Configuration;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * The parameter server partitioner, controls the partitioning of the matrix which assigned to parameter servers.
@@ -57,18 +55,16 @@ public class PSPartitioner implements Partitioner{
     if(blockRow == -1 || blockCol == -1) {
       int serverNum = conf.getInt(AngelConfiguration.ANGEL_PS_NUMBER, AngelConfiguration.DEFAULT_ANGEL_PS_NUMBER);
       if(row >= serverNum) {
-        blockRow = row / serverNum;
+        blockRow = Math.min(row / serverNum, Math.max(1, 5000000 / col));
+        blockCol = Math.min(5000000 / blockRow, col);
       } else {
         blockRow = row;
+        blockCol = Math.min(5000000 / blockRow, Math.max(100, col / serverNum));
       }
-      
-      if(col >= serverNum) {
-        blockCol = Math.min(5000000, col / serverNum);
-      } else {
-        blockCol = col;
-      }     
     }
-    
+
+    LOG.info("blockRow = " + blockRow + ", blockCol=" + blockCol);
+
     Partition.Builder partition = Partition.newBuilder();
     for (int i = 0; i < row; i += blockRow) {
       for (int j = 0; j < col; j += blockCol) {

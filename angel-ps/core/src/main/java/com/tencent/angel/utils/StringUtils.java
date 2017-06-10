@@ -91,7 +91,7 @@ public class StringUtils {
   public static String arrayToString(String[] strs) {
     if (strs.length == 0)
       return "";
-    StringBuffer sbuf = new StringBuffer();
+    StringBuilder sbuf = new StringBuilder();
     sbuf.append(strs[0]);
     for (int idx = 1; idx < strs.length; idx++) {
       sbuf.append(",");
@@ -106,7 +106,7 @@ public class StringUtils {
     }
     StringBuilder s = new StringBuilder();
     for (int i = start; i < end; i++) {
-      s.append(String.format("%02x", new Object[] {Byte.valueOf(bytes[i])}));
+      s.append(String.format("%02x", new Object[] {bytes[i]}));
     }
     return s.toString();
   }
@@ -127,7 +127,7 @@ public class StringUtils {
     if (uris == null) {
       return null;
     }
-    StringBuffer ret = new StringBuffer(uris[0].toString());
+    StringBuilder ret = new StringBuilder(uris[0].toString());
     for (int i = 1; i < uris.length; i++) {
       ret.append(",");
       ret.append(uris[i].toString());
@@ -143,8 +143,8 @@ public class StringUtils {
       try {
         uris[i] = new URI(str[i]);
       } catch (URISyntaxException ur) {
-        System.out.println(new StringBuilder().append("Exception in specified URI's ")
-            .append(stringifyException(ur)).toString());
+        System.out.println("Exception in specified URI's " +
+            stringifyException(ur));
 
         uris[i] = null;
       }
@@ -169,7 +169,7 @@ public class StringUtils {
   }
 
   public static String formatTime(long timeDiff) {
-    StringBuffer buf = new StringBuffer();
+    StringBuilder buf = new StringBuilder();
     long hours = timeDiff / 3600000L;
     long rem = timeDiff % 3600000L;
     long minutes = rem / 60000L;
@@ -192,12 +192,12 @@ public class StringUtils {
 
   public static String getFormattedTimeWithDiff(DateFormat dateFormat, long finishTime,
       long startTime) {
-    StringBuffer buf = new StringBuffer();
+    StringBuilder buf = new StringBuilder();
     if (0L != finishTime) {
       buf.append(dateFormat.format(new Date(finishTime)));
       if (0L != startTime) {
-        buf.append(new StringBuilder().append(" (").append(formatTimeDiff(finishTime, startTime))
-            .append(")").toString());
+        buf.append(" (" + formatTimeDiff(finishTime, startTime) +
+            ")");
       }
     }
     return buf.toString();
@@ -320,18 +320,16 @@ public class StringUtils {
       char curChar = str.charAt(i);
       if (hasPreEscape) {
         if ((curChar != escapeChar) && (!hasChar(charsToEscape, curChar))) {
-          throw new IllegalArgumentException(new StringBuilder().append("Illegal escaped string ")
-              .append(str).append(" unescaped ").append(escapeChar).append(" at ").append(i - 1)
-              .toString());
+          throw new IllegalArgumentException("Illegal escaped string " +
+              str + " unescaped " + escapeChar + " at " + (i - 1));
         }
 
         result.append(curChar);
         hasPreEscape = false;
       } else {
         if (hasChar(charsToEscape, curChar)) {
-          throw new IllegalArgumentException(new StringBuilder().append("Illegal escaped string ")
-              .append(str).append(" unescaped ").append(curChar).append(" at ").append(i)
-              .toString());
+          throw new IllegalArgumentException("Illegal escaped string " +
+              str + " unescaped " + curChar + " at " + i);
         }
         if (curChar == escapeChar)
           hasPreEscape = true;
@@ -341,9 +339,8 @@ public class StringUtils {
       }
     }
     if (hasPreEscape) {
-      throw new IllegalArgumentException(new StringBuilder().append("Illegal escaped string ")
-          .append(str).append(", not expecting ").append(escapeChar).append(" in the end.")
-          .toString());
+      throw new IllegalArgumentException("Illegal escaped string " +
+          str + ", not expecting " + escapeChar + " in the end.");
     }
 
     return result.toString();
@@ -358,10 +355,10 @@ public class StringUtils {
   // }
 
   private static String toStartupShutdownString(String prefix, String[] msg) {
-    StringBuffer b = new StringBuffer(prefix);
+    StringBuilder b = new StringBuilder(prefix);
     b.append("\n/************************************************************");
     for (String s : msg)
-      b.append(new StringBuilder().append("\n").append(prefix).append(s).toString());
+      b.append("\n" + prefix + s);
     b.append("\n************************************************************/");
     return b.toString();
   }
@@ -388,7 +385,7 @@ public class StringUtils {
     if (string == null) {
       return null;
     }
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     boolean lastCharacterWasSpace = false;
     char[] chars = string.toCharArray();
     for (char c : chars) {
@@ -443,7 +440,7 @@ public class StringUtils {
       val = 1.0D * len / 1125899906842624.0D;
       ending = " PB";
     }
-    return new StringBuilder().append(limitDecimalTo2(val)).append(ending).toString();
+    return limitDecimalTo2(val) + ending;
   }
 
   public static synchronized String limitDecimalTo2(double d) {
@@ -482,8 +479,7 @@ public class StringUtils {
     int len = s.length();
     if (len == 0)
       return s;
-    return new StringBuilder(len).append(Character.toTitleCase(s.charAt(0))).append(s.substring(1))
-        .toString();
+    return String.valueOf(Character.toTitleCase(s.charAt(0))) + s.substring(1);
   }
 
   public static String camelize(String s) {

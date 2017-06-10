@@ -188,8 +188,6 @@ public class PartitionKey implements Comparable<PartitionKey>, Serialize {
     PartitionKey other = (PartitionKey) obj;
     if (matrixId != other.matrixId)
       return false;
-    if (partitionId != other.partitionId)
-      return false;
-    return true;
+    return partitionId == other.partitionId;
   }
 }

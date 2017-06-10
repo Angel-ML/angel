@@ -203,7 +203,7 @@ public class DiskDataBlock<VALUE> extends DataBlock<VALUE> {
     try {
       currentWriteFileName = getNextFileName();
       File file = new File(currentWriteFileName);
-      assert (false == file.exists());
+      assert (!file.exists());
       file = null;
 
       curOutputStream = new FileOutputStream(currentWriteFileName, false);

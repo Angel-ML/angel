@@ -38,7 +38,7 @@ object SVMModel {
   val SVM_LOSS_MAT = "svm.loss.mat"
 }
 
-class SVMModel(ctx: TaskContext, conf: Configuration) extends MLModel {
+class SVMModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
   var LOG = LogFactory.getLog(classOf[SVMModel])
 
   def this(conf: Configuration) = {
@@ -48,14 +48,14 @@ class SVMModel(ctx: TaskContext, conf: Configuration) extends MLModel {
   // Feature number
   val feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
   // The feature weight vector, stored on PS
-  val weight = new PSModel[TDoubleVector](ctx, SVM_WEIGHT_MAT, 1, feaNum)
+  val weight = new PSModel[TDoubleVector](SVM_WEIGHT_MAT, 1, feaNum)
   weight.setAverage(true)
   addPSModel(SVM_WEIGHT_MAT, weight)
 
   // Iteration number
   val epochNum = conf.getInt(MLConf.ML_EPOCH_NUM, MLConf.DEFAULT_ML_EPOCH_NUM)
   // A vector stores total validation losses, sotred on PS
-  val loss = new PSModel[DenseDoubleVector](ctx, SVM_LOSS_MAT, 1, epochNum)
+  val loss = new PSModel[DenseDoubleVector](SVM_LOSS_MAT, 1, epochNum)
   addPSModel(SVM_LOSS_MAT, loss)
   setLoadPath(conf)
   setSavePath(conf)

@@ -185,7 +185,7 @@ public class AngelApps extends Apps {
   }
 
   private static String toString(org.apache.hadoop.yarn.api.records.URL url) {
-    StringBuffer b = new StringBuffer();
+    StringBuilder b = new StringBuilder();
     b.append(url.getScheme()).append("://").append(url.getHost());
     if (url.getPort() >= 0) {
       b.append(":").append(url.getPort());

@@ -22,7 +22,6 @@ import com.google.protobuf.ServiceException;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.common.Location;
-import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.exception.StandbyException;
 import com.tencent.angel.master.worker.attempt.WorkerAttempt;
 import com.tencent.angel.master.worker.worker.AMWorker;

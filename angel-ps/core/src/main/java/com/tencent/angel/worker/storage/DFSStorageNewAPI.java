@@ -61,7 +61,7 @@ public class DFSStorageNewAPI<KEY, VALUE> {
               .forName(inputFormatClassName);
 
       org.apache.hadoop.mapreduce.InputFormat inputFormat =
-          (org.apache.hadoop.mapreduce.InputFormat) ReflectionUtils.newInstance(inputFormatClass,
+          ReflectionUtils.newInstance(inputFormatClass,
               new JobConf(conf));
 
       MRTaskContext taskContext = new MRTaskContext(conf);

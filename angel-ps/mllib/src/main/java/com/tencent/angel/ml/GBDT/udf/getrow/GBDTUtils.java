@@ -57,7 +57,7 @@ public class GBDTUtils {
     int startFid = row.getStartCol() / (2 * splitNum);
     int endFid = (row.getEndCol() + 1) / (2 * splitNum) - 1;
     LOG.info(String
-        .format("The best split before looping the histogram: fid[%d], fvalue[%f]，"
+        .format("The best split before looping the histogram: fid[%d], fvalue[%f], "
             + "start feature[%d], end feature[%d]", splitEntry.fid, splitEntry.fvalue, startFid,
             endFid));
 

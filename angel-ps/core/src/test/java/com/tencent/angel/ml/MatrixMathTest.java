@@ -16,7 +16,6 @@
 
 package com.tencent.angel.ml;
 
-import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
 import junit.framework.Assert;
 
 import org.junit.Test;

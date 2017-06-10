@@ -48,6 +48,8 @@ public class TaskContext {
 
   private final boolean syncClockEnable;
 
+  private volatile float progress;
+
   public TaskContext(int index) {
     this.index = index;
     this.matrixIndexes = new ConcurrentHashMap<Integer, MatrixIndex>();
@@ -114,11 +116,6 @@ public class TaskContext {
     matrixIdToClockMap.get(matrixId).incrementAndGet();
   }
 
-  public float getProgress() {
-    //TODO
-    return 0;
-  }
-
   public MatrixStorageManager getMatrixStorage() {
     return matrixStorage;
   }
@@ -152,5 +149,13 @@ public class TaskContext {
 
   public Map<Integer, AtomicInteger> getMatrixClocks() {
     return matrixIdToClockMap;
+  }
+
+  public void setProgress(float progress) {
+    this.progress = progress;
+  }
+
+  public float getProgress() {
+    return progress;
   }
 }

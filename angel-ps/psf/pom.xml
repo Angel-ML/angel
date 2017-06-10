@@ -25,8 +25,8 @@
     <version>1.0.0</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>angel-ps-udf</artifactId>
-  <name>angel-ps-udf</name>
+  <artifactId>angel-ps-psf</artifactId>
+  <name>angel-ps-psf</name>
   <url>http://maven.apache.org</url>
   <properties>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>

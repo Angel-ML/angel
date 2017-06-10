@@ -70,7 +70,7 @@ public abstract class AngelClient implements AngelClientInterface {
   private final List<MatrixProto> matrixList;
 
   /** rpc client to master */
-  protected MasterProtocol master;
+  protected volatile MasterProtocol master;
 
   private GetJobReportRequest getJobReportReq;
   private GetJobReportRequest.Builder getJobReportReqBuilder;
@@ -104,6 +104,10 @@ public abstract class AngelClient implements AngelClientInterface {
   @SuppressWarnings("rawtypes")
   @Override
   public void runTask(Class<? extends BaseTask> taskClass) throws AngelException {
+    if(master == null) {
+      throw new AngelException("parameter servers are not started, you must execute startPSServer first!!");
+    }
+
     try {
       master.setParams(
           null,
@@ -120,7 +124,11 @@ public abstract class AngelClient implements AngelClientInterface {
   }
 
   @Override
-  public void run() throws AngelException {    
+  public void run() throws AngelException {
+    if(master == null) {
+      throw new AngelException("parameter servers are not started, you must execute startPSServer first!!");
+    }
+
     try {
       createMatrices();
       master.start(null, StartRequest.newBuilder().build());
@@ -142,11 +150,15 @@ public abstract class AngelClient implements AngelClientInterface {
   @SuppressWarnings("rawtypes")
   @Override
   public void loadModel(MLModel model) throws AngelException {
+    if(master == null) {
+      throw new AngelException("parameter servers are not started, you must execute startPSServer first!!");
+    }
+
     Map<String, PSModel<?>> psModels = model.getPsModels();
 
     for (Map.Entry<String, PSModel<?>> entry: psModels.entrySet()) {
       addMatrix(entry.getValue().getContext());
-    }   
+    }
     
     try {
       createMatrices();
@@ -158,6 +170,10 @@ public abstract class AngelClient implements AngelClientInterface {
   @SuppressWarnings("rawtypes")
   @Override
   public void saveModel(MLModel model) throws AngelException {
+    if(master == null) {
+      throw new AngelException("parameter servers are not started, you must execute startPSServer first!!");
+    }
+
     SaveRequest.Builder builder = SaveRequest.newBuilder();
     Map<String, PSModel<?>> psModels = model.getPsModels();
 
@@ -224,6 +240,10 @@ public abstract class AngelClient implements AngelClientInterface {
 
   @Override
   public void waitForCompletion() throws AngelException{
+    if(master == null) {
+      throw new AngelException("parameter servers are not started, you must execute startPSServer first!!");
+    }
+
     RunningMode mode = RunningMode.valueOf(conf.get(AngelConfiguration.ANGEL_RUNNING_MODE, AngelConfiguration.DEFAULT_ANGEL_RUNNING_MODE));
     switch (mode) {
       case ANGEL_PS:{

@@ -214,9 +214,7 @@ public class DenseFloatVector extends TFloatVector {
   @Override
   public float[] getValues() {
     float[] ret = new float[this.size()];
-    for (int i = 0; i < this.size(); i++) {
-      ret[i] = values[i];
-    }
+    System.arraycopy(values, 0, ret, 0, this.size());
     return ret;
   }
 

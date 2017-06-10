@@ -32,7 +32,7 @@
 	<modules>
 		<module>core</module>
 		<module>mllib</module>
-		<module>udf</module>
+		<module>psf</module>
 		<module>examples</module>
 		<module>dist</module>
 	</modules>

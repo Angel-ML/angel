@@ -18,7 +18,6 @@ package com.tencent.angel.ps.impl;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.conf.AngelConfiguration;
-import com.tencent.angel.exception.InitMatrixException;
 import com.tencent.angel.ps.impl.matrix.RowUpdater;
 import com.tencent.angel.ps.impl.matrix.ServerMatrix;
 import com.tencent.angel.ps.impl.matrix.ServerPartition;
@@ -256,10 +255,7 @@ public class MatrixPartitionManager {
    */
   public boolean partitionReady(PartitionKey partKey, int clock) {
     ServerPartition partition = getPartition(partKey.getMatrixId(), partKey.getPartitionId());
-    if (partition != null) {
-      return partition.getClock() >= clock;
-    }
-    return false;
+    return partition != null && partition.getClock() >= clock;
   }
 
   /**

@@ -29,8 +29,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 
-import java.io.IOException;
-
 public class ModelParseTask extends TrainTask<LongWritable, Text> {
   private static final Log LOG = LogFactory.getLog(ModelParseTask.class);
 

@@ -29,6 +29,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.master.app.AMContext;
+import com.tencent.angel.master.task.AMTask;
 import com.tencent.angel.master.worker.attempt.WorkerAttempt;
 import com.tencent.angel.master.worker.attempt.WorkerAttemptEvent;
 import com.tencent.angel.master.worker.attempt.WorkerAttemptEventType;
@@ -236,6 +237,13 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
     try {
       //init a worker attempt for the worker
       attempt = createWorkerAttempt();
+      for(TaskId taskId:taskIds) {
+        AMTask task = context.getTaskManager().getTask(taskId);
+        if(task != null) {
+          task.resetCounters();
+        }
+      }
+
       attempts.put(attempt.getId(), attempt);
       LOG.info("scheduling " + attempt.getId());
       runningAttemptId = attempt.getId();
@@ -277,7 +285,7 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
       }
 
       // add diagnostic
-      StringBuffer diagnostic = new StringBuffer();
+      StringBuilder diagnostic = new StringBuilder();
       diagnostic.append(workerAttemptId.toString()).append(" failed due to: ");
       diagnostic.append(StringUtils.join("\n", worker.attempts.get(workerAttemptId).getDiagnostics()));
           
@@ -311,7 +319,7 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
       }
 
       // add diagnostic
-      StringBuffer diagnostic = new StringBuffer();
+      StringBuilder diagnostic = new StringBuilder();
       diagnostic.append(workerAttemptId.toString()).append(" failed due to: ");
       diagnostic.append(StringUtils.join("\n", worker.attempts.get(workerAttemptId)
           .getDiagnostics()));
@@ -347,7 +355,7 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
     @SuppressWarnings("unchecked")
     @Override
     public void transition(AMWorker worker, AMWorkerEvent event) {     
-      StringBuffer diaggostic = new StringBuffer();
+      StringBuilder diaggostic = new StringBuilder();
       diaggostic.append("worker is killed by user, workerId: ")
           .append(worker.getId().toString());
       worker.diagnostics.add(diaggostic.toString());
@@ -390,7 +398,7 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
   @SuppressWarnings("unchecked")
   private void notifyWorkerFailed() {
     StringBuilder sb = new StringBuilder();
-    sb.append(id + " failed. ");
+    sb.append(id).append(" failed. ");
     int size = diagnostics.size();
     if (size == 0) {
       sb.append("No more detail message.");
@@ -410,7 +418,7 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
   @SuppressWarnings("unchecked")
   private void notifyWorkerKilled() {
     StringBuilder sb = new StringBuilder();
-    sb.append(id + " killed. ");
+    sb.append(id).append(" killed. ");
     int size = diagnostics.size();
     if (size == 0) {
       sb.append("No more detail message.");

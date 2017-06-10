@@ -315,17 +315,17 @@ public class DenseDoubleVector extends TDoubleVector {
   }
 
   public TDoubleVector plus(SparseDoubleVector other, double x) {
-    DenseDoubleVector vector = (DenseDoubleVector) this.clone();
+    DenseDoubleVector vector = this.clone();
 
     for (Entry<Integer, Double> entry : other.hashMap.entrySet()) {
-      vector.values[entry.getKey().intValue()] += entry.getValue().doubleValue() * x;
+      vector.values[entry.getKey().intValue()] += entry.getValue() * x;
     }
     return vector;
   }
 
   public TDoubleVector plus(SparseDoubleSortedVector other, double x) {
     assert dim == other.getDimension();
-    DenseDoubleVector vector = (DenseDoubleVector) this.clone();
+    DenseDoubleVector vector = this.clone();
     int length = other.indices.length;
     for (int i = 0; i < length; i++) {
       vector.values[other.indices[i]] += other.values[i] * x;
@@ -368,7 +368,7 @@ public class DenseDoubleVector extends TDoubleVector {
   }
 
   public TDoubleVector plus(SparseDoubleVector other) {
-    DenseDoubleVector vector = (DenseDoubleVector) this.clone();
+    DenseDoubleVector vector = this.clone();
     ObjectIterator<Int2DoubleMap.Entry> iter = other.hashMap.int2DoubleEntrySet().fastIterator();
     Int2DoubleMap.Entry entry = null;
     while (iter.hasNext()) {
@@ -380,7 +380,7 @@ public class DenseDoubleVector extends TDoubleVector {
 
   public TDoubleVector plus(SparseDoubleSortedVector other) {
     assert dim == other.getDimension();
-    DenseDoubleVector vector = (DenseDoubleVector) this.clone();
+    DenseDoubleVector vector = this.clone();
     int length = other.indices.length;
     for (int i = 0; i < length; i++) {
       vector.values[other.indices[i]] += other.values[i];

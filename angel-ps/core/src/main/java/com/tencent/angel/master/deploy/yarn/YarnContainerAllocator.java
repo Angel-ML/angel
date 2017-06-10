@@ -469,7 +469,7 @@ public class YarnContainerAllocator extends ContainerAllocator {
     }
     
     //build application diagnostics
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     for (String s : app.getDiagnostics()) {
       sb.append(s).append("\n");
     }

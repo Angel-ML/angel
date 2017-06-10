@@ -80,8 +80,6 @@ public class Location {
         return false;
     } else if (!ip.equals(other.ip))
       return false;
-    if (port != other.port)
-      return false;
-    return true;
+    return port == other.port;
   }
 }

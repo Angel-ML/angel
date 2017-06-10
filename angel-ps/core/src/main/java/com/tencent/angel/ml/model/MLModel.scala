@@ -5,19 +5,19 @@ import java.util.{HashMap, Map}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.worker.predict.PredictResult
 import com.tencent.angel.worker.storage.DataBlock
+import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
 
 
-abstract class MLModel {
-  private var psModels: Map[String, PSModel[_]] = new HashMap[String, PSModel[_]]
-
-  def this(psModels: Map[String, PSModel[_]]) {
-    this()
-    this.psModels = psModels
-  }
+abstract class MLModel(_ctx : TaskContext, psModels: Map[String, PSModel[_]] = new HashMap[String, PSModel[_]] ) {
+  implicit def ctx : TaskContext = _ctx
 
   def getPsModels: Map[String, PSModel[_]] = {
     return psModels
+  }
+
+  def getPsModel(name: String): PSModel[_] = {
+    return psModels.get(name)
   }
 
   def addPSModel(name: String, psModel: PSModel[_]) {
@@ -25,7 +25,7 @@ abstract class MLModel {
   }
 
   def addPSModel(psModel: PSModel[_]) {
-    psModels.put(psModel.getName, psModel)
+    psModels.put(psModel.modelName, psModel)
   }
 
   def predict(storage: DataBlock[LabeledData]): DataBlock[PredictResult]

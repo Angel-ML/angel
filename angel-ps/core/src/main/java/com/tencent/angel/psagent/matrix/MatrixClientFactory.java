@@ -136,9 +136,7 @@ public class MatrixClientFactory {
       Key other = (Key) obj;
       if (matrixId != other.matrixId)
         return false;
-      if (taskId != other.taskId)
-        return false;
-      return true;
+      return taskId == other.taskId;
     }
 
     @Override

@@ -71,7 +71,7 @@ public class DenseFloatMatrixTest {
     float[][] value = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     DenseFloatMatrix mat = new DenseFloatMatrix(2, 2, value);
     TVector vec = new DenseDoubleVector(2, new double[]{1.0, 1.0});
-    ((DenseDoubleVector) vec).setRowId(0);
+    vec.setRowId(0);
 
     mat.plusBy(vec);
 
@@ -86,7 +86,7 @@ public class DenseFloatMatrixTest {
     float[][] value = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     DenseFloatMatrix mat = new DenseFloatMatrix(2, 2, value);
     TVector vec = new DenseFloatVector(2, new float[]{1.0f, 1.0f});
-    ((DenseFloatVector) vec).setRowId(0);
+    vec.setRowId(0);
 
     mat.plusBy(vec);
 

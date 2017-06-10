@@ -17,6 +17,7 @@
 
 package com.tencent.angel.spark.ml.common
 
+import breeze.linalg.{DenseVector => BDV}
 import org.apache.spark.mllib.linalg.DenseVector
 
 import com.tencent.angel.spark.ml.common.OneHot.OneHotVector
@@ -37,6 +38,15 @@ object OneHot {
   }
 
   def dot(x: DenseVector, y: OneHotVector): Double = dot(y, x)
+
+  def dot(x: OneHotVector, y: BDV[Double]): Double = {
+    x.map(index => y(index)).sum
+  }
+
+  def dot(x: OneHotVector, y: Array[Double]): Double = {
+    x.map(index => y(index)).sum
+  }
+
 
 }
 

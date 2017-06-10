@@ -39,7 +39,7 @@ object KmeansModel {
   val KMEANS_OBJ = "kmeans_obj"
 }
 
-class KmeansModel(ctx: TaskContext, conf: Configuration) extends MLModel {
+class KmeansModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
 
   def this(conf: Configuration) = {
     this(null, conf)
@@ -53,12 +53,12 @@ class KmeansModel(ctx: TaskContext, conf: Configuration) extends MLModel {
   private val epoch: Int = conf.getInt(MLConf.ML_EPOCH_NUM, MLConf.DEFAULT_ML_EPOCH_NUM)
 
   // Reference for centers matrix on PS server
-  val centers = new PSModel[TDoubleVector](ctx, KMEANS_CENTERS_MAT, K, feaNum)
+  val centers = new PSModel[TDoubleVector](KMEANS_CENTERS_MAT, K, feaNum)
   centers.setAverage(true)
   addPSModel(KMEANS_CENTERS_MAT, centers)
 
   // Reference for objective value matrix on PS server
-  val objMat = new PSModel[DenseDoubleVector](ctx, KMEANS_OBJ, 1, epoch)
+  val objMat = new PSModel[DenseDoubleVector](KMEANS_OBJ, 1, epoch)
   addPSModel(KMEANS_OBJ, objMat)
 
   // Centers pulled to local worker

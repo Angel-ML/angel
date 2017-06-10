@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-export HADOOP_HOME="/data/tdwadmin/tdwenv/tdwgaia"
-
 if [ "$HADOOP_HOME" = "" ]; then
     echo "HADOOP_HOME is not set"
     exit 1
@@ -34,6 +32,4 @@ export CLASS="com.tencent.angel.utils.AngelRunJar"
 
 export CLASSPATH=$CLASSPATH
 echo "$ANGEL_HOME"
-echo $CLASSPATH
-echo $JAVA $JAVA_HEAP_MAX $HADOOP_OPTS $CLASS "$@"
 exec "$JAVA" $JAVA_HEAP_MAX $HADOOP_OPTS $CLASS "$@"

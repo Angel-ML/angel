@@ -41,6 +41,8 @@ import java.util.List;
  * The get row function of <code>Gradient Boosting Decision Tree</code> for gradient histogram
  */
 public class GBDTGradHistGetRowFunc extends GetRowFunc {
+
+  public GBDTGradHistGetRowFunc() {}
   /**
    * Creates a function.
    *
@@ -85,7 +87,8 @@ public class GBDTGradHistGetRowFunc extends GetRowFunc {
         splitIndex, lossGain, leftSumGrad, leftSumHess, rightSumGrad, rightSumHess));
 
     int startFid = row.getStartCol() / (2 * splitNum);
-    int sendStartCol = startFid * 7; // each split contains 7 doubles
+    //int sendStartCol = startFid * 7; // each split contains 7 doubles
+    int sendStartCol = row.getStartCol();
     int sendEndCol = sendStartCol + 7;
     ServerDenseDoubleRow sendRow =
         new ServerDenseDoubleRow(param.getRowIndex(), sendStartCol, sendEndCol);

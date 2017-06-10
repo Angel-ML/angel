@@ -78,9 +78,7 @@ public class GetRowRequest extends UserRequest {
     GetRowRequest other = (GetRowRequest) obj;
     if (matrixId != other.matrixId)
       return false;
-    if (rowIndex != other.rowIndex)
-      return false;
-    return true;
+    return rowIndex == other.rowIndex;
   }
 
   @Override

@@ -123,10 +123,16 @@ public class ConsistencyController {
    */
   public GetRowsResult getRowsFlow(TaskContext taskContext, RowIndex rowIndex, int rpcBatchSize)
       throws Exception {
+    GetRowsResult result = new GetRowsResult();
+    if(rowIndex.getRowsNumber() == 0) {
+      LOG.error("need get rowId set is empty, just return");
+      result.fetchOver();
+      return result;
+    }
+
     int staleness = getStaleness(rowIndex.getMatrixId());
     if (staleness >= 0) {
       // For BSP/SSP, get rows from storage/cache first
-      GetRowsResult result = new GetRowsResult();
       int stalnessClock = taskContext.getMatrixClock(rowIndex.getMatrixId()) - staleness;
       findRowsInStorage(result, rowIndex, stalnessClock);
       if (!result.isFetchOver()) {
@@ -138,7 +144,6 @@ public class ConsistencyController {
       return result;
     } else {
       //For ASYNC, just get rows from pss.
-      GetRowsResult result = new GetRowsResult();
       IntOpenHashSet rowIdSet = rowIndex.getRowIds();
       List<Integer> rowIndexes = new ArrayList<Integer>(rowIdSet.size());
       rowIndexes.addAll(rowIdSet);
@@ -253,10 +258,6 @@ public class ConsistencyController {
     MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
     int localTaskNum = PSAgentContext.get().getLocalTaskNum();
 
-    if (!matrixMeta.isHogwild() && localTaskNum > 1) {
-      return true;
-    } else {
-      return false;
-    }
+    return !matrixMeta.isHogwild() && localTaskNum > 1;
   }
 }

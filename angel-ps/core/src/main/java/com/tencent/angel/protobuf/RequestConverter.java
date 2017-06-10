@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Helper utility to build protocol buffer requests, or build components for protocol buffer
@@ -107,11 +108,10 @@ public final class RequestConverter {
     builder.setTaskId(ProtobufUtil.convertToIdProto(taskId));
 
     Pair.Builder kvBuilder = Pair.newBuilder();
-    Map<String, String> props = task.getMetrics();
-
-    for (Entry<String, String> kv : props.entrySet()) {
+    Map<String, AtomicLong> taskCounters = task.getTaskContext().getCounters();
+    for (Entry<String, AtomicLong> kv : taskCounters.entrySet()) {
       kvBuilder.setKey(kv.getKey());
-      kvBuilder.setValue(kv.getValue());
+      kvBuilder.setValue(String.valueOf(kv.getValue().longValue()));
       builder.addCounters(kvBuilder.build());
     }
     return builder.build();

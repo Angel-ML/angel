@@ -70,7 +70,7 @@ public class GradientDescentTest {
     // Set log path
     conf.set(AngelConfiguration.ANGEL_LOG_PATH, logPath);
     // Set actionType train
-    conf.set(MLConf.ANGEL_ACTION_TYPE(), MLConf.ANGEL_ML_TRAIN());
+    conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
 
     conf.setInt(AngelConfiguration.ANGEL_WORKERGROUP_NUMBER, 1);
     conf.setInt(AngelConfiguration.ANGEL_PS_NUMBER, 1);

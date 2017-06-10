@@ -229,7 +229,7 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
     GetJobReportResponse.Builder getJobReportResBuilder = GetJobReportResponse.newBuilder();
     JobReportProto.Builder report = JobReportProto.newBuilder();
     report.setJobState(convertToProtoFormat(getExternAppState()));
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     sb.append(StringUtils.join("\n", getDiagnostics()));
     report.setDiagnostics(sb.toString());
 

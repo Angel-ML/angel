@@ -18,7 +18,6 @@ package com.tencent.angel.ps.impl.matrix;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.conf.MatrixConfiguration;
-import com.tencent.angel.exception.InitMatrixException;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.protobuf.generated.MLProtos.Pair;
@@ -190,8 +189,8 @@ public class ServerMatrix {
           + partitionMaps.size());
     }
     for (Entry<Integer, ServerPartition> entry : partitionMaps.entrySet()) {
-      LOG.debug("write partitionId: " + entry.getKey().intValue());
-      output.writeInt(entry.getKey().intValue());
+      LOG.debug("write partitionId: " + entry.getKey());
+      output.writeInt(entry.getKey());
       ServerPartition serverPartition = entry.getValue();
       serverPartition.writeTo(output);
     }

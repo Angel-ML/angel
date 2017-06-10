@@ -501,7 +501,6 @@ public class MatrixMetaManager {
           needCreateMatrixes.add(matrixPartEntry.getValue());
         }
       }
-      return;
     } finally {
       readLock.unlock();
     }

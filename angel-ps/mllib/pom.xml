@@ -47,7 +47,7 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>angel-ps-udf</artifactId>
+            <artifactId>angel-ps-psf</artifactId>
             <version>${project.version}</version>
        </dependency>
   </dependencies>

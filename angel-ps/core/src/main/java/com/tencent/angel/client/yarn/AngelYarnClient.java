@@ -331,10 +331,7 @@ public class AngelYarnClient extends AngelClient {
       return false;
     }
     // check for ports
-    if (srcUri.getPort() != dstUri.getPort()) {
-      return false;
-    }
-    return true;
+    return srcUri.getPort() == dstUri.getPort();
   }
 
   private URI getPathURI(Path destPath, String fragment) throws URISyntaxException {
@@ -507,11 +504,9 @@ public class AngelYarnClient extends AngelClient {
         LOG.info("AM not assigned to Job. Waiting to get the AM ...");
         Thread.sleep(1000);
         tryTime++;
-        continue;
       } else if (UNAVAILABLE.equals(host)) {
         Thread.sleep(1000);
         tryTime++;
-        continue;
       } else {
         String httpHistory =
             "appMaster getTrackingUrl = "

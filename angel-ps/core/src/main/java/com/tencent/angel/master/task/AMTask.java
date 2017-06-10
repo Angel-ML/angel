@@ -384,4 +384,12 @@ public class AMTask {
       writeLock.unlock();
     }
   }
+
+  /**
+   * Reset some profiling counters
+   */
+  public void resetCounters() {
+    metrics.put(TaskCounter.TOTAL_CALCULATE_SAMPLES, "0");
+    metrics.put(TaskCounter.TOTAL_CALCULATE_TIME_MS, "0");
+  }
 }

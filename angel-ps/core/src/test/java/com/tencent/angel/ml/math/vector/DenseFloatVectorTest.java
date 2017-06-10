@@ -79,8 +79,8 @@ public class DenseFloatVectorTest {
 
   @Test
   public void dotDenseDoubleVectorTest() throws Exception {
-    DenseFloatVector vec_1 = (DenseFloatVector) genDenseFloatVector(dim);
-    TAbstractVector vec_2 = (TDoubleVector) genDenseDoubleVector(dim);
+    DenseFloatVector vec_1 = genDenseFloatVector(dim);
+    TAbstractVector vec_2 = genDenseDoubleVector(dim);
 
     double dot = 0.0;
     for (int i = 0; i < dim; i++)

@@ -101,7 +101,6 @@ public class MatrixStorageManager {
     }
 
     storage.addRow(rowIndex, row);
-    return;
   }
 
   /**
@@ -118,6 +117,5 @@ public class MatrixStorageManager {
     }
 
     storage.removeRow(rowIndex);
-    return;
   }
 }

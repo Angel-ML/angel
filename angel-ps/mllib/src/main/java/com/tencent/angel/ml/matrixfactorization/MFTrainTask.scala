@@ -32,6 +32,11 @@ class MFTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ct
     null
   }
 
+  override
+  def preProcess(ctx: TaskContext): Unit = {
+
+  }
+
   def train(ctx: TaskContext) {
     val learner = new MFLearner(ctx)
     learner.train(this.dataBlock, null)

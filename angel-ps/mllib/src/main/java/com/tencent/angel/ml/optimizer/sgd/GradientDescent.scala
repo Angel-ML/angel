@@ -36,7 +36,10 @@ object GradientDescent {
     val w = model.getRow(0)
     var totalLoss = 0.0
 
+    val taskContext = model.getTaskContext
+
     for (batch: Int <- 1 to batchNum) {
+      val batchStartTs = System.currentTimeMillis()
       val grad = new DenseDoubleVector(w.getDimension)
       grad.setRowId(0)
 
@@ -69,6 +72,7 @@ object GradientDescent {
 
       model.increment(grad.timesBy(-1.0 * lr).asInstanceOf[M])
       LOG.debug(s"Batch[$batch] loss = $batchLoss")
+      taskContext.updateProfileCounter(batchSize, (System.currentTimeMillis() - batchStartTs).toInt);
     }
 
     //Push model update to PS Server

@@ -172,18 +172,16 @@ public class HistUnit {
 
   @Override
   public String toString() {
-    String rec =
-        String.format("[-inf-%f]:[%f][%f], ", this.cut[0], this.data[0].sumGrad,
-            this.data[0].sumHess);
+    StringBuilder rec =
+        new StringBuilder(String.format("[-inf-%f]:[%f][%f], ", this.cut[0], this.data[0].sumGrad,
+            this.data[0].sumHess));
     int i = 1;
     for (; i < cut.length; i++) {
-      rec +=
-          String.format("[%f-%f]:[%f][%f], ", this.cut[i - 1], this.cut[i], this.data[i].sumGrad,
-              this.data[i].sumHess);
+      rec.append(String.format("[%f-%f]:[%f][%f], ", this.cut[i - 1], this.cut[i], this.data[i].sumGrad,
+          this.data[i].sumHess));
     }
-    rec +=
-        String.format("[%f-+inf]:[%f][%f]", this.cut[i - 1], this.data[i].sumGrad,
-            this.data[i].sumHess);
-    return rec;
+    rec.append(String.format("[%f-+inf]:[%f][%f]", this.cut[i - 1], this.data[i].sumGrad,
+        this.data[i].sumHess));
+    return rec.toString();
   }
 }

@@ -56,7 +56,7 @@ public class DFSStorageOldAPI<KEY, VALUE> {
               .forName(inputFormatClassName);
 
       org.apache.hadoop.mapred.InputFormat inputFormat =
-          (org.apache.hadoop.mapred.InputFormat) ReflectionUtils.newInstance(inputFormatClass,
+          ReflectionUtils.newInstance(inputFormatClass,
               new JobConf(conf));
 
       org.apache.hadoop.mapred.RecordReader<KEY, VALUE> recordReader =

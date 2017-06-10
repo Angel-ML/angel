@@ -86,7 +86,7 @@ public class MathUtils {
   }
 
   public static boolean isEven(int v) {
-    return v % 2 == 0 ? true : false;
+    return v % 2 == 0;
   }
 
   public static int pow(int a, int b) {

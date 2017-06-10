@@ -63,8 +63,9 @@ class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Te
     // Initializing LDA model
     val lDAModel = new LDAModel(ctx.getConf, ctx)
 
-    LOG.info(s"V=${lDAModel.V} K=${lDAModel.K} alpha=${lDAModel.alpha} beta=${lDAModel.beta} " +
-      s"M=${docs.size()} tokens=$N")
+    LOG.info(s"V=${lDAModel.V} K=${lDAModel.K} alpha=${lDAModel.alpha} "
+       + s"beta=${lDAModel.beta} M=${docs.size()} tokens=$N "
+       + s"threadNum=${lDAModel.threadNum}")
 
     // Building the LDA learner
     val lDALearner = new LDALearner(ctx, docs, lDAModel)

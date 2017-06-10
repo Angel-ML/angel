@@ -116,7 +116,6 @@ public class AngelRunJar {
             Class<?> submitClass = Class.forName(submitClassName);
             submmiter = (AppSubmitter) submitClass.newInstance();
           } catch (Exception x) {
-            x.printStackTrace();
             String message = "load submit class failed " + x.getMessage();
             LOG.fatal(message);
             throw new InvalidParameterException(message);
@@ -215,11 +214,18 @@ public class AngelRunJar {
         } else {
           throw new InvalidParameterException("unvalid parameter " + args[i]);
         }
+      } else if(args[i].startsWith("--")) {
+        String key = args[i].substring(2);
+        i++;
+        if(i < args.length) {
+          String value = args[i];
+          kvMap.put(key, value);
+        } else {
+          throw new InvalidParameterException("there is no value for parameter " + key);
+        }
       } else if ((seg = args[i].indexOf(":")) > 0) {
         kvMap.put(args[i].substring(0, seg), args[i].substring(seg + 1));
-      } else if (args[i].endsWith(".jar")) {
-
-      } else {
+      }  else {
         switch (args[i]) {
           case "jar": {
             if (i == args.length - 1) {
@@ -237,12 +243,6 @@ public class AngelRunJar {
       }
     }
     return kvMap;
-  }
-
-  @SuppressWarnings("unused")
-  private static boolean isValidJar(String string) {
-    // TODO Auto-generated method stub
-    return false;
   }
 
   private static void loadJar(String jarFile) throws IOException {

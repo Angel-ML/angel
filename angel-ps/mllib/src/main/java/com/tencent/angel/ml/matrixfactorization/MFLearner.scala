@@ -86,7 +86,8 @@ class MFLearner(override val ctx: TaskContext) extends MLLearner(ctx){
   val epochNum = conf.getInt(MLConf.ML_EPOCH_NUM, MLConf.DEFAULT_ML_EPOCH_NUM)
 
   val logger = DistributedLogger(ctx)
-  logger.setNames("validate.loss")
+  logger.setNames("localLoss", "globalLoss")
+
 
   /**
     * Train a matrix factorizaiton model
@@ -97,10 +98,12 @@ class MFLearner(override val ctx: TaskContext) extends MLLearner(ctx){
     */
   override
   def train(trainData: DataBlock[LabeledData], validataSet: DataBlock[LabeledData]): MLModel = {
+    LOG.info(s"Start to train Matrix Factorizaiton Model. #Item=$rRow, #rank=$rank, #rowBatch=$batchNum")
+
     init()
 
     while (ctx.getIteration <  epochNum) {
-
+      LOG.info(s"Start Epoch ${ctx.getIteration}")
       oneEpoch(ctx.getIteration)
 
       ctx.incIteration()
@@ -245,6 +248,7 @@ class MFLearner(override val ctx: TaskContext) extends MLLearner(ctx){
       s"global loss=$gLoss" + s" epoch cost $iterTime ms, train cost $trainTime ms, " +
       s"validate cost $validTime ms"
     LOG.info(infoMsg)
+    logger.addValues(loss, gLoss)
   }
 
   def getGlobalLoss(epoch: Int, loss: Double): Double = {
@@ -256,8 +260,6 @@ class MFLearner(override val ctx: TaskContext) extends MLLearner(ctx){
     mfModel.lossMat.clock().get()
 
     val globalLoss = mfModel.lossMat.getRow(0).asInstanceOf[DenseDoubleVector].get(epoch)
-
-    logger.add(("validate.loss", globalLoss))
 
     globalLoss
   }

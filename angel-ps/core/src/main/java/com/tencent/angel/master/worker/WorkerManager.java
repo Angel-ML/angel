@@ -249,7 +249,7 @@ public class WorkerManager extends AbstractService implements EventHandler<Worke
 
   private String getDetailWorkerExitMessage() {
     StringBuilder sb = new StringBuilder();
-    sb.append("killed and failed workergroup is over tolerate " + tolerateFailedGroup);
+    sb.append("killed and failed workergroup is over tolerate ").append(tolerateFailedGroup);
     sb.append("\n");
     if (!failedGroups.isEmpty()) {
       sb.append("failed workergroups:");

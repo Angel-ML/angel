@@ -110,9 +110,9 @@ public class WorkerJVM {
     Vector<String> logProps = new Vector<String>(4);
     setupLog4jProperties(conf, logProps, logSize);
     Iterator<String> it = logProps.iterator();
-    StringBuffer buffer = new StringBuffer();
+    StringBuilder buffer = new StringBuilder();
     while (it.hasNext()) {
-      buffer.append(" " + it.next());
+      buffer.append(" ").append(it.next());
     }
     hadoopClientOpts = hadoopClientOpts + buffer.toString();
     environment.put("HADOOP_CLIENT_OPTS", hadoopClientOpts);

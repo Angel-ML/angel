@@ -2,9 +2,6 @@ package com.tencent.angel.ml.math.vector;
 
 import com.tencent.angel.ml.math.TVector;
 
-/**
- * Created by leleyu on 2015/12/25.
- */
 public abstract class TIntVector extends TVector {
   public TIntVector() {
     super();

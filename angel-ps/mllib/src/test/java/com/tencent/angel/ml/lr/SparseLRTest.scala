@@ -85,7 +85,7 @@ class SparseLRTest {
     // Set log path
     conf.set(AngelConfiguration.ANGEL_LOG_PATH, logPath)
     // Set action type train
-    conf.set(ANGEL_ACTION_TYPE, ANGEL_ML_TRAIN)
+    conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, ANGEL_ML_TRAIN)
 
     conf.set(ML_DATAFORMAT, "libsvm")
 

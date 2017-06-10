@@ -153,7 +153,7 @@ public class PSAgentManager implements EventHandler<PSAgentManagerEvent> {
     failedPSAgentMap.put(event.getPsAgentId(), psAgentMap.get(event.getPsAgentId()));
     List<String> diagnostics =
         context.getPSAgentManager().getPsAgent(event.getPsAgentId()).getDiagnostics();
-    StringBuffer diagnostic = new StringBuffer("");
+    StringBuilder diagnostic = new StringBuilder("");
     for (String diagItem : diagnostics) {
       diagnostic.append(diagItem).append("\n");
     }

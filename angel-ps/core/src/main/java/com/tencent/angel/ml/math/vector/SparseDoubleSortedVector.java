@@ -348,7 +348,7 @@ public class SparseDoubleSortedVector extends TDoubleVector {
    */
   @Override
   public TDoubleVector times(double x) {
-    SparseDoubleSortedVector vector = (SparseDoubleSortedVector) this.clone();
+    SparseDoubleSortedVector vector = this.clone();
     for (int i = 0; i < vector.nnz; i++)
       vector.values[i] *= x;
     return vector;

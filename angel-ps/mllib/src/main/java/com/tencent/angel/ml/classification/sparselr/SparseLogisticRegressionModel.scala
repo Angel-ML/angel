@@ -31,7 +31,7 @@ import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
 
 
-class SparseLogisticRegressionModel(conf: Configuration, ctx: TaskContext) extends MLModel {
+class SparseLogisticRegressionModel(conf: Configuration, _ctx: TaskContext) extends MLModel(_ctx) {
 
   val W = "w"
   val T = "t"
@@ -50,12 +50,12 @@ class SparseLogisticRegressionModel(conf: Configuration, ctx: TaskContext) exten
   // Bucket number for calculation of AUC
   val bucketNum = conf.getInt(BUCKET_NUM, 10000)
 
-  val w = new PSModel[DenseDoubleVector](ctx, W, 1, feaNum)
-  val z = new PSModel[SparseDoubleVector](ctx, Z, 1, feaNum)
+  val w = PSModel[DenseDoubleVector](W, 1, feaNum)
+  val z = PSModel[SparseDoubleVector](Z, 1, feaNum)
   z.setRowType(MLProtos.RowType.T_DOUBLE_SPARSE)
-  val t = new PSModel[DenseDoubleVector](ctx, T, 1, 1)
-  val loss = new PSModel[DenseDoubleVector](ctx, LOSS, 1, 1)
-  val auc  = new PSModel[DenseIntVector](ctx, AUC, 1, bucketNum * 2)
+  val t = PSModel[DenseDoubleVector](T, 1, 1)
+  val loss = PSModel[DenseDoubleVector](LOSS, 1, 1)
+  val auc  = PSModel[DenseIntVector](AUC, 1, bucketNum * 2)
   auc.setRowType(RowType.T_INT_DENSE)
   auc.setOplogType("DENSE_INT")
 
@@ -64,7 +64,6 @@ class SparseLogisticRegressionModel(conf: Configuration, ctx: TaskContext) exten
   addPSModel(t)
   addPSModel(loss)
   addPSModel(auc)
-  setLoadPath(conf)
   setSavePath(conf)
 
   override
@@ -72,8 +71,8 @@ class SparseLogisticRegressionModel(conf: Configuration, ctx: TaskContext) exten
     val path = conf.get(AngelConfiguration.ANGEL_SAVE_MODEL_PATH)
 
     // save w matrix to HDFS
-    if(w!=null)
-      w.setSavePath(path)
+    if(z!=null)
+      z.setSavePath(path)
   }
 
   override

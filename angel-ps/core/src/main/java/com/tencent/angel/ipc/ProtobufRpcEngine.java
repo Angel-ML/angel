@@ -434,7 +434,7 @@ class ProtobufRpcEngine implements RpcEngine {
           buffer.append("(");
           buffer.append(param.getClass().getName());
           buffer.append(")");
-          buffer.append(", client version=" + clientVersion);
+          buffer.append(", client version=").append(clientVersion);
           logResponse(new Object[] {rpcRequest.getRequest()}, methodName, buffer.toString(),
               (tooLarge ? "TooLarge" : "TooSlow"), startTime, processingTime, qTime, responseSize);
           // provides a count of log-reported slow responses

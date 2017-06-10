@@ -118,7 +118,6 @@ public class ZeroUpdater extends UpdaterFunc {
       }
     }
 
-    return;
   }
 
   private void zero(ServerRow row) {

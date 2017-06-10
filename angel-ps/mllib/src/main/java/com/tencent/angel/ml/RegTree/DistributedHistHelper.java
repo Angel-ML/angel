@@ -56,7 +56,7 @@ public class DistributedHistHelper {
     // 2. get the span of this node
     int nodeStart = this.controller.nodePosStart[nid];
     int nodeEnd = this.controller.nodePosEnd[nid];
-    LOG.info(String.format("Build histogram of node[%d]: size[%d] instance span [%d - %d]",
+    LOG.debug(String.format("Build histogram of node[%d]: size[%d] instance span [%d - %d]",
         this.nid, histogram.getDimension(), nodeStart, nodeEnd));
     // ------ 3. using sparse-aware method to build histogram ---
     // first add grads of all instances to the first bin of all features, then loop the non-zero
@@ -134,7 +134,6 @@ public class DistributedHistHelper {
       histogram.set(gradZeroIdx, histogram.get(gradZeroIdx) + gradSum);
       histogram.set(hessZeroIdx, histogram.get(hessZeroIdx) + hessSum);
     }
-    LOG.info("End building histogram");
     // // 3. loop over all the features of all the instances on this node
     // for (int idx = nodeStart; idx <= nodeEnd; idx++) {
     // // 3.1. get the instance index
@@ -307,9 +306,9 @@ public class DistributedHistHelper {
   }
 
   public SplitEntry findBestFromServerSplit(TDoubleVector histogram) throws Exception {
-    LOG.info(String.format("------To find the best split of node[%d]------", this.nid));
+    LOG.debug(String.format("------To find the best split of node[%d]------", this.nid));
     SplitEntry splitEntry = new SplitEntry();
-    LOG.info(String.format("The best split before looping the histogram: fid[%d], fvalue[%f]",
+    LOG.debug(String.format("The best split before looping the histogram: fid[%d], fvalue[%f]",
         splitEntry.fid, splitEntry.fvalue));
 
     // partition number
@@ -334,11 +333,11 @@ public class DistributedHistHelper {
       float leftSumHess = (float) histogram.get(startIdx + 4);
       float rightSumGrad = (float) histogram.get(startIdx + 5);
       float rightSumHess = (float) histogram.get(startIdx + 6);
-      LOG.info(String.format("The best split of the %d-th partition: "
+      LOG.debug(String.format("The best split of the %d-th partition: "
           + "split feature[%d], split index[%d], split value[%f], loss gain[%f], "
-          + "left sumGrad[%f], left sumHess[%f], right sumGrad[%f], right sumHess[%f]", pid,
-          trueSplitFid, splitIdx, splitValue, lossChg, leftSumGrad, leftSumHess, rightSumGrad,
-          rightSumHess));
+          + "left sumGrad[%f], left sumHess[%f], right sumGrad[%f], right sumHess[%f]",
+              pid, trueSplitFid, splitIdx, splitValue, lossChg,
+              leftSumGrad, leftSumHess, rightSumGrad, rightSumHess));
       GradStats curLeftGradStat = new GradStats(leftSumGrad, leftSumHess);
       GradStats curRightGradStat = new GradStats(rightSumGrad, rightSumHess);
       SplitEntry curSplitEntry = new SplitEntry(trueSplitFid, splitValue, lossChg);
@@ -347,8 +346,8 @@ public class DistributedHistHelper {
       splitEntry.update(curSplitEntry);
     }
 
-    // LOG.info(String.format("The best split after looping the histogram: fid[%d], fvalue[%f], loss gain[%f]",
-    // splitEntry.fid, splitEntry.fvalue, splitEntry.lossChg));
+    LOG.debug(String.format("The best split after looping the histogram: fid[%d], fvalue[%f], loss gain[%f]",
+            splitEntry.fid, splitEntry.fvalue, splitEntry.lossChg));
 
     // update the grad stats of the root node on PS, only called once by leader worker
     if (this.nid == 0) {

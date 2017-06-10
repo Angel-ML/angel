@@ -56,9 +56,7 @@ public class FeatureMeta {
     }
     MathUtils.shuffle(findex);
     int[] rec = new int[size];
-    for (int i = 0; i < rec.length; i++) {
-      rec[i] = findex[i];
-    }
+    System.arraycopy(findex, 0, rec, 0, rec.length);
     Sort.quickSort(rec, new int[rec.length], 0, rec.length - 1);
     return rec;
   }

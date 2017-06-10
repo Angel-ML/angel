@@ -17,9 +17,6 @@
 package com.tencent.angel.ps.impl.matrix;
 
 import io.netty.buffer.ByteBuf;
-import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
-import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -27,8 +24,6 @@ import org.apache.commons.logging.LogFactory;
 import com.tencent.angel.protobuf.generated.MLProtos.RowType;
 
 import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 
 /**
  * Default row updater.

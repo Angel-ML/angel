@@ -16,8 +16,6 @@
 
 package com.tencent.angel.ml.math.matrix;
 
-import breeze.linalg.SparseVector;
-import com.tencent.angel.ml.math.vector.SparseDoubleVector;
 import com.tencent.angel.ml.math.vector.SparseIntVector;
 import com.tencent.angel.ml.math.vector.TIntVector;
 import com.tencent.angel.ml.math.vector.DenseIntVector;

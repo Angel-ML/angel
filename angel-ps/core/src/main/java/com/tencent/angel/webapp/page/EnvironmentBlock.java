@@ -70,7 +70,7 @@ public class EnvironmentBlock extends HtmlBlock {
     Iterator<Object> propertiesSortedKeys = set.iterator();
     Object key;
     while (propertiesSortedKeys.hasNext()) {
-      key = (String) propertiesSortedKeys.next();
+      key = propertiesSortedKeys.next();
       angel_properties_table.tr().td(String.valueOf(key))
           .td((String) propertiesConfiguration.get(key))._();
     }

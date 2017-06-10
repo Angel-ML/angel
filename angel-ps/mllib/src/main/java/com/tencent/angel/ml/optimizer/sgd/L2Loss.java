@@ -31,10 +31,7 @@ public abstract class L2Loss implements Loss {
 
   @Override
   public boolean isL2Reg() {
-    if (this.lamda > 1e-12)
-      return true;
-    else
-      return false;
+    return this.lamda > 1e-12;
   }
 
   @Override

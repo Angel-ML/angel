@@ -65,9 +65,7 @@ public class SoftmaxMultiClassObj implements ObjFunc {
     int labelError = -1;
     float[] tmp = new float[numClass];
     for (int insIdx = 0; insIdx < ndata; insIdx++) {
-      for (int k = 0; k < numClass; k++) {
-        tmp[k] = preds[insIdx * numClass + k];
-      }
+      System.arraycopy(preds, insIdx * numClass, tmp, 0, numClass);
       MathUtils.softmax(tmp);
       int label = (int) dataMeta.labels[insIdx];
       if (label < 0 || label >= numClass) {

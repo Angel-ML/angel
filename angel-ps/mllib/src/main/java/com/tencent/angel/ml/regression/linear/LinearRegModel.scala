@@ -36,7 +36,7 @@ object LinearRegModel {
   val LR_WEIGHT_MAT = "lr_weight"
 }
 
-class LinearRegModel(ctx: TaskContext, conf: Configuration) extends MLModel {
+class LinearRegModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
   private val LOG = LogFactory.getLog(classOf[LinearRegModel])
 
   def this(conf: Configuration) = {
@@ -44,7 +44,7 @@ class LinearRegModel(ctx: TaskContext, conf: Configuration) extends MLModel {
   }
 
   val feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, 10000)
-  val weight = new PSModel[TDoubleVector](ctx, LR_WEIGHT_MAT, 1, feaNum)
+  val weight = PSModel[TDoubleVector](LR_WEIGHT_MAT, 1, feaNum)
   weight.setAverage(true)
   addPSModel(LR_WEIGHT_MAT, weight)
   setLoadPath(conf)

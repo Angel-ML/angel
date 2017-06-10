@@ -47,15 +47,15 @@ public class ExecutorsBlock extends HtmlBlock {
 
     ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
     ThreadInfo[] threadInfo = threadMXBean.dumpAllThreads(true, true);
-    String stackTraceString;
+    StringBuilder stackTraceString;
     for (ThreadInfo t : threadInfo) {
-      stackTraceString = "";
+      stackTraceString = new StringBuilder();
       StackTraceElement[] stackTrace = t.getStackTrace();
       for (StackTraceElement s : stackTrace) {
-        stackTraceString += s.toString() + "\n";
+        stackTraceString.append(s.toString()).append("\n");
       }
       tbody.tr().td(String.valueOf(t.getThreadId())).td(String.valueOf(t.getThreadName()))
-          .td(String.valueOf(t.getThreadState())).td(String.valueOf(stackTraceString))._();
+          .td(String.valueOf(t.getThreadState())).td(String.valueOf(stackTraceString.toString()))._();
     }
     tbody._()._();
 

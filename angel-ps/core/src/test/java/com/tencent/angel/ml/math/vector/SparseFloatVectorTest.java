@@ -206,7 +206,7 @@ public class SparseFloatVectorTest {
     SparseFloatVector vec = genSparseFloatVector(nnz, dim);
     double sum = 0.0;
     for (int i = 0; i < dim; i++)
-      sum += (float) vec.get(i) * (float) vec.get(i);
+      sum += vec.get(i) * vec.get(i);
     double squar = vec.squaredNorm();
     assertEquals(sum, squar, 0.0000000001);
   }

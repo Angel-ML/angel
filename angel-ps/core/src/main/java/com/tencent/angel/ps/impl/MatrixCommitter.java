@@ -34,8 +34,6 @@ import org.apache.hadoop.util.Time;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -93,8 +91,7 @@ public class MatrixCommitter {
       long startTime = Time.monotonicNow();
       FSDataOutputStream out = null;
       try {
-        if (matrixName == null || matrixName.isEmpty()) {
-        }
+        assert matrixName != null;
         Path destMatrixPath = new Path(baseDir, matrixName);
 
         // mkdir does not throw exception if path exits
@@ -176,7 +173,7 @@ public class MatrixCommitter {
    * @param matrixIds 
    */
   public void commit(final List<Integer> matrixIds) {
-    if (isCommitting.get() == true) {
+    if (isCommitting.get()) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("ps is commiting......");
       }
@@ -214,7 +211,14 @@ public class MatrixCommitter {
           int size = matrixIds.size();
           for(int i = 0; i < size; i++) {
             ServerMatrix matrix = ps.getMatrixPartitionManager().getMatrix(matrixIds.get(i));
+            if(matrix == null) {
+              continue;
+            }
+
             List<PartitionKey> partitionKeys = matrix.getTotalPartitionKeys();
+            if(partitionKeys == null || partitionKeys.isEmpty()) {
+              continue;
+            }
 
             for (PartitionKey key : partitionKeys) {
               ServerPartition partition = matrix.getPartition(key);
@@ -227,11 +231,10 @@ public class MatrixCommitter {
           boolean commitSuccess = true;
           String errorLog = null;
           for (CommitTask task : allCommitTasks) {
-            while (task.finishFlag.get() != true) {
+            while (!task.finishFlag.get()) {
               Thread.sleep(1000);
-              continue;
             }
-            if (task.isSuccess() == false) {
+            if (!task.isSuccess()) {
               commitSuccess = false;
               errorLog = task.getErrorLog();
             }

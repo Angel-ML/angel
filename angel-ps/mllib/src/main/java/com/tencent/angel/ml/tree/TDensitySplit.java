@@ -104,9 +104,7 @@ public class TDensitySplit implements TSplitValueHelper {
         nzzCounts[i] = counts[nzzIdxes[i]];
       }
       Sort.quickSort(nzzCounts, nzzIdxes, 0, nzzCounts.length - 1);
-      for (int i = 0; i < nzzIdxes.length - 1; i++) {
-        minCandid[i] = nzzIdxes[i];
-      }
+      System.arraycopy(nzzIdxes, 0, minCandid, 0, nzzIdxes.length - 1);
       return minCandid;
     } else {
       int[] minCandid = new int[splitNum];
@@ -115,9 +113,7 @@ public class TDensitySplit implements TSplitValueHelper {
         idxes[i] = i + 1;
       }
       Sort.quickSort(counts, idxes, 0, counts.length - 1);
-      for (int i = 0; i < splitNum; i++) {
-        minCandid[i] = idxes[i];
-      }
+      System.arraycopy(idxes, 0, minCandid, 0, splitNum);
       return minCandid;
     }
   }

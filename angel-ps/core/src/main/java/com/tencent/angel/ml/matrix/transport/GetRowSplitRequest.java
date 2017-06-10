@@ -146,9 +146,7 @@ public class GetRowSplitRequest extends PartitionRequest {
     if (getClass() != obj.getClass())
       return false;
     GetRowSplitRequest other = (GetRowSplitRequest) obj;
-    if (rowIndex != other.rowIndex)
-      return false;
-    return true;
+    return rowIndex == other.rowIndex;
   }
 
   @Override

@@ -133,7 +133,7 @@ class KMeansLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     kmeansModel.centers.clock().get()
 
     // Wait for all workers finish push centers to PS
-    ctx.globalSync(ctx.getMatrix(kmeansModel.centers.getName).getMatrixId)
+    ctx.globalSync(ctx.getMatrix(kmeansModel.centers.modelName).getMatrixId)
 
     LOG.info(s"All tasks Init cluster centers success, cost ${System.currentTimeMillis() - start}" +
       s" ms")

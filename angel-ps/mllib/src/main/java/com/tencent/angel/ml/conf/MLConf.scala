@@ -27,7 +27,6 @@ object MLConf {
   // Data params
   val ML_DATAFORMAT = "ml.data.type"
   val DEFAULT_ML_DATAFORMAT = "dummy"
-  val ML_MAXDIM_PATH = "ml.maxdim.path"
   val ML_VALIDATE_RATIO = "ml.validate.ratio"
   val DEFAULT_ML_VALIDATE_RATIO = 0.05
   val ML_FEATURE_NUM = "ml.feature.num"
@@ -35,7 +34,8 @@ object MLConf {
   val ANGEL_FEATURE_CONFIG = "ml.feature.conf"
   val ML_FEATURE_NNZ = "ml.feature.nnz"
   val DEFAULT_ML_FEATURE_NNZ = 10000
-  val ML_MF_USER_OUTPUT_PATH="angel.ml.mf.usermodel.output"
+  val ML_MF_USER_OUTPUT_PATH="ml.mf.user.model.output"
+  val ANGEL_PREDICT_PATH = "angel.predict.path"
 
   // Model params
   val ML_PART_PER_SERVER = "ml.part.per.server"
@@ -52,7 +52,7 @@ object MLConf {
   val DEFAULT_ML_REG_L2 = 1.0
 
   // mini-batch sgd params
-  val ML_EPOCH_NUM = "ml.epochnum"
+  val ML_EPOCH_NUM = "ml.epoch.num"
   val DEFAULT_ML_EPOCH_NUM = 50
   val ML_SGD_BATCH_NUM = "ml.sgd.batch.num"
   val DEFAULT_ML_SGD_BATCH_NUM=10
@@ -72,8 +72,6 @@ object MLConf {
   val ML_LASSO_PARAM_NAME = "ml.lasso.param.name"
   val DEFAULT_ML_LASSO_PARAM_NAME = "ml.lasso.weight"
 
-  //Feature Hashing params
-
   // MF params
   val ML_MF_RANK = "ml.mf.rank"
   val DEFAULT_ML_MF_RANK = 10
@@ -86,17 +84,8 @@ object MLConf {
   val ML_MF_ROW_BATCH_NUM = "ml.mf.row.batch.num"
   val DEFAULT_ML_MF_ROW_BATCH_NUM = 1
 
-  // ALS params
-  val ML_ALS_USER_ROW = "ml.als.user.row"
-  val ML_ALS_ITEM_ROW = "ml.als.item.row"
-  val ML_ALS_USER_NAME = "ml.als.user.name"
-  val ML_ALS_ITEM_NAME = "ml.als.item.name"
-
-
   // Tesla Params
   val ANGEL_ACTION_TYPE = "actionType"
-  val ANGEL_MODEL_PATH  = "modelPath"
-  val ANGEL_PREDICT_PATH = "angel.predict.path"
 
   // GBDT Params
   val ML_GBDT_TREE_NUM = "ml.gbdt.tree.num"
@@ -109,5 +98,4 @@ object MLConf {
   val DEFAULT_ML_GBDT_SAMPLE_RATIO= 1
   val ML_GBDT_SERVER_SPLIT = "ml.gbdt.server.split"
   val DEFAULT_ML_GBDT_SERVER_SPLIT = false
-
 }

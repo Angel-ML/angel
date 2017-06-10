@@ -84,8 +84,7 @@ public class MatrixContext {
     this(name, rowNum, colNum, -1, -1);
   }
 
-  public MatrixContext(String name, int rowNum, int colNum, int maxRowNumInBlock,
-      int maxColNumInBlock) {
+  public MatrixContext(String name, int rowNum, int colNum, int maxRowNumInBlock, int maxColNumInBlock) {
     this.name = name;
     this.rowNum = rowNum;
     this.colNum = colNum;
@@ -293,19 +292,19 @@ public class MatrixContext {
       sb.append("\n");
     }
     if(rowNum <= 0) {
-      sb.append("matrix row number must > 0, but is " + rowNum);
+      sb.append("matrix row number must > 0, but is ").append(rowNum);
       sb.append("\n");
     }
     if(colNum <= 0) {
-      sb.append("matrix column number must > 0, but is " + colNum);
+      sb.append("matrix column number must > 0, but is ").append(colNum);
       sb.append("\n");
     }
     if(rowNum > 0 && maxRowNumInBlock > rowNum) {
-      sb.append("matrix block row number must > 0 and < " + rowNum + ", but is " + maxRowNumInBlock);
+      sb.append("matrix block row number must > 0 and < ").append(rowNum).append(", but is ").append(maxRowNumInBlock);
       sb.append("\n");
     }
     if(colNum > 0 && maxColNumInBlock > colNum) {
-      sb.append("matrix block column number must > 0 and < " + colNum + ", but is " + maxColNumInBlock);
+      sb.append("matrix block column number must > 0 and < ").append(colNum).append(", but is ").append(maxColNumInBlock);
     }
     return sb.toString();
   }

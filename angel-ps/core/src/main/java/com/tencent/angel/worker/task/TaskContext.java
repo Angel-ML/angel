@@ -21,6 +21,7 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.exception.TimeOutException;
+import com.tencent.angel.master.task.TaskCounter;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.psagent.PSAgent;
@@ -41,7 +42,9 @@ import org.apache.hadoop.conf.Configuration;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * The context for task of worker side.
@@ -49,6 +52,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TaskContext {
   private final TaskId taskId;
   private final TaskIdProto taskIdProto;
+  private final Map<String, AtomicLong> metrics;
 
   @SuppressWarnings("rawtypes")
   private Reader reader;
@@ -62,6 +66,7 @@ public class TaskContext {
   public TaskContext(TaskId taskId) {
     this.taskId = taskId;
     this.taskIdProto = ProtobufUtil.convertToIdProto(taskId);
+    this.metrics = new ConcurrentHashMap<>();
     context = PSAgentContext.get().getTaskContext(taskId.getIndex());
   }
 
@@ -75,6 +80,7 @@ public class TaskContext {
     taskId = ProtobufUtil.convertToId(taskIdProto);
     context = PSAgentContext.get().getTaskContext(taskId.getIndex());
     context.setIteration(taskMeta.getIteration());
+    this.metrics = new ConcurrentHashMap<>();
     List<MatrixClock> matrixClocks = taskMeta.getMatrixClockList();
     int size = matrixClocks.size();
     for(int i = 0; i < size; i++){
@@ -165,12 +171,20 @@ public class TaskContext {
     return context;
   }
 
+  /**
+   * Get Task progress
+   * @return Task progress
+   */
   public float getProgress() {
-    if(reader != null) {
-      return reader.getProgress();
-    } else {
-      return 0;
-    }
+    return context.getProgress();
+  }
+
+  /**
+   * Set Task progress
+   * @param progress  Task progress
+   */
+  public void setProgress(float progress) {
+    context.setProgress(progress);
   }
 
   /**
@@ -296,5 +310,51 @@ public class TaskContext {
   public String toString() {
     return "TaskContext [taskId=" + taskId + ", taskIdProto=" + taskIdProto + ", context="
         + context + "]";
+  }
+
+  /**
+   * Update calculate profiling counters
+   * @param sampleNum calculate sample number
+   * @param useTimeMs the time use to calculate the samples
+   */
+  public void updateProfileCounter(int sampleNum, int useTimeMs) {
+    updateCounter(TaskCounter.TOTAL_CALCULATE_SAMPLES, sampleNum);
+    updateCounter(TaskCounter.TOTAL_CALCULATE_TIME_MS, useTimeMs);
+  }
+
+  /**
+   * Increment the counter
+   * @param counterName counter name
+   * @param updateValue increment value
+   */
+  public void updateCounter(String counterName, int updateValue) {
+    AtomicLong counter = metrics.get(counterName);
+    if(counter == null) {
+      counter = metrics.putIfAbsent(counterName, new AtomicLong(0));
+      if(counter == null) {
+        counter = metrics.get(counterName);
+      }
+    }
+    counter.addAndGet(updateValue);
+  }
+
+  /**
+   * Update the counter
+   * @param counterName counter name
+   * @param updateValue new counter value
+   */
+  public void setCounter(String counterName, int updateValue) {
+    AtomicLong counter = metrics.get(counterName);
+    if(counter == null) {
+      counter = metrics.putIfAbsent(counterName, new AtomicLong(0));
+      if(counter == null) {
+        counter = metrics.get(counterName);
+      }
+    }
+    counter.set(updateValue);
+  }
+
+  public Map<String,AtomicLong> getCounters() {
+    return metrics;
   }
 }

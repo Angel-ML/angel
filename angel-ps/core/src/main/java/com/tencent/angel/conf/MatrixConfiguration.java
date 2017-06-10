@@ -28,9 +28,9 @@ public class MatrixConfiguration {
   public static final String DEFAULT_SERVER_PARTITION_CLASS = ServerPartition.class.getName();
 
   /**
-   * Matrix oplog storage type. There are four types oplog now:DENSE_DOUBE, DENSE_INT, LIL_INI, DENSE_FLOAT.
+   * Matrix oplog storage type. There are four types oplog now:DENSE_DOUBLE, DENSE_INT, LIL_INI, DENSE_FLOAT.
    * <p>
-   * DENSE_DOUBE means use a dense double matrix to store the oplog, if the oplog is a sparse/dense
+   * DENSE_DOUBLE means use a dense double matrix to store the oplog, if the oplog is a sparse/dense
    * double vector or matrix, we can use it.
    * <p>
    * DENSE_FLOAT means use a dense float matrix to store the oplog, if the oplog is a sparse/dense
@@ -39,11 +39,11 @@ public class MatrixConfiguration {
    * DENSE_INT means use a dense int matrix to store the oplog, if the oplog is a sparse/dense int
    * vector or matrix, we can use it.
    * <p>
-   * LIL_INI means use a sparse int matrix to store the oplog, if the oplog is a sparse/dense int
+   * LIL_INT means use a sparse int matrix to store the oplog, if the oplog is a sparse/dense int
    * vector or matrix, we can use it.
    */
   public static final String MATRIX_OPLOG_TYPE = "matrix.oplog.type";
-  public static final String DEFAULT_MATRIX_OPLOG_TYPE = "DENSE_DOUBE"; 
+  public static final String DEFAULT_MATRIX_OPLOG_TYPE = "DENSE_DOUBLE";
   
   /** check and filter zero values in oplog before transfer */
   public static final String MATRIX_OPLOG_ENABLEFILTER = "matrix.oplog.enablefilter"; // true, false

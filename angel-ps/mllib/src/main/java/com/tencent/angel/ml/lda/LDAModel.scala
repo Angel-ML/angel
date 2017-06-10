@@ -17,11 +17,12 @@
 
 package com.tencent.angel.ml.lda
 
-import com.tencent.angel.conf.AngelConfiguration
+import com.tencent.angel.conf.AngelConfiguration._
+import com.tencent.angel.ml.conf.MLConf._
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.lda.LDAModel._
-import com.tencent.angel.ml.math.vector.{DenseDoubleVector, DenseIntVector, SparseIntVector}
+import com.tencent.angel.ml.math.vector.{DenseDoubleVector, DenseIntVector}
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.protobuf.generated.MLProtos.RowType
 import com.tencent.angel.worker.predict.PredictResult
@@ -47,57 +48,59 @@ object LDAModel {
   val LLH_MAT = "llh"
 
   // Number of vocabulary
-  val WORD_NUM = "angel.lda.word.num";
+  val WORD_NUM = "ml.lda.word.num";
 
   // Number of topic
-  val TOPIC_NUM = "angel.lda.topic.num";
+  val TOPIC_NUM = "ml.lda.topic.num";
 
   // Number of documents
-  val DOC_NUM = "angel.lda.doc.num"
+  val DOC_NUM = "ml.lda.doc.num"
 
   // Alpha value
-  val ALPHA = "angel.lda.alpha";
+  val ALPHA = "ml.lda.alpha";
 
   // Beta value
-  val BETA = "angel.lda.beta";
+  val BETA = "ml.lda.beta";
 
-  val PARALLEL_NUM = "angel.lda.worker.parallel.num";
-  val SPLIT_NUM = "angel.lda.split.num"
+  val SPLIT_NUM = "ml.lda.split.num"
 
 }
 
-class LDAModel(conf: Configuration, ctx: TaskContext) extends MLModel {
+class LDAModel(conf: Configuration, _ctx: TaskContext) extends MLModel(_ctx) {
 
   def this(conf: Configuration) = {
     this(conf, null)
   }
 
   // Initializing parameters
-  val V = conf.getInt(WORD_NUM, -1)
-  val K = conf.getInt(TOPIC_NUM, -1)
-  val M = conf.getInt(DOC_NUM, -1)
+  val V = conf.getInt(WORD_NUM, 1)
+  val K = conf.getInt(TOPIC_NUM, 1)
+  val M = conf.getInt(DOC_NUM, 1)
   val epoch = conf.getInt(MLConf.ML_EPOCH_NUM, 10)
   val alpha = conf.getFloat(ALPHA, 50.0F / K)
   val beta = conf.getFloat(BETA, 0.01F)
   val vbeta = beta * V
-  val threadNum = conf.getInt(PARALLEL_NUM, 1)
+  val threadNum = conf.getInt(ML_WORKER_THREAD_NUM,
+    DEFAULT_ML_WORKER_THREAD_NUM)
   val splitNum = conf.getInt(SPLIT_NUM, 1)
 
 
+  val psNum = conf.getInt(ANGEL_PS_NUMBER, 1)
+  val parts = conf.getInt(ML_PART_PER_SERVER, DEFAULT_ML_PART_PER_SERVER)
   // Initializing model matrices
-  val wtMat = new PSModel[DenseIntVector](ctx, WORD_TOPIC_MAT, V, K)
+
+  val wtMat = PSModel[DenseIntVector](WORD_TOPIC_MAT, V, K,
+    Math.max(1, V / psNum), K)
   wtMat.setRowType(RowType.T_INT_DENSE)
   wtMat.setOplogType("LIL_INT")
 
-  val docTopic = new PSModel[SparseIntVector](ctx, DOC_NUM, M, K)
-  docTopic.setRowType(RowType.T_INT_SPARSE)
-
-  val tMat = new PSModel[DenseIntVector](ctx, TOPIC_MAT, 1, K)
+  val tMat = PSModel[DenseIntVector](TOPIC_MAT, 1, K, 1, K)
   tMat.setRowType(RowType.T_INT_DENSE)
   tMat.setOplogType("DENSE_INT")
 
   // llh matrix is used to store the values of log likelihood
-  val llh = new PSModel[DenseDoubleVector](ctx, LLH_MAT, 1, epoch + 1)
+
+  val llh = PSModel[DenseDoubleVector](LLH_MAT, 1, epoch + 1, 1, epoch + 1)
   llh.setRowType(RowType.T_DOUBLE_DENSE)
   llh.setOplogType("DENSE_DOUBLE")
 
@@ -109,7 +112,7 @@ class LDAModel(conf: Configuration, ctx: TaskContext) extends MLModel {
 
   override
   def setSavePath(conf: Configuration): Unit = {
-    val path = conf.get(AngelConfiguration.ANGEL_SAVE_MODEL_PATH)
+    val path = conf.get(ANGEL_SAVE_MODEL_PATH)
 
     // Save the word topic matrix to HDFS after Job is finished
     if (path != null)

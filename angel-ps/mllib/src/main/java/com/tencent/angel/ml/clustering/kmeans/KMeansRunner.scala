@@ -34,7 +34,7 @@ class KMeansRunner extends MLRunner {
     */
   override
   def train(conf: Configuration): Unit = {
-    conf.set("angel.task.user.task.class", "com.tencent.angel.ml.algorithm.clustering.kmeans.KMeansTrainTask")
+    conf.set("angel.task.user.task.class", "com.tencent.angel.ml.clustering.kmeans.KMeansTrainTask")
     conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS, classOf[KMeansTrainTask].getName)
 
     // Create an angel job client

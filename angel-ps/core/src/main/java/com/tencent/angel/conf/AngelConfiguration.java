@@ -18,6 +18,7 @@ package com.tencent.angel.conf;
 
 import com.tencent.angel.RunningMode;
 import com.tencent.angel.master.AngelApplicationMaster;
+import com.tencent.angel.master.slowcheck.TaskCalPerfChecker;
 import com.tencent.angel.ps.impl.ParameterServer;
 import com.tencent.angel.ps.impl.matrix.DefaultRowUpdater;
 import com.tencent.angel.psagent.PSAgent;
@@ -36,6 +37,7 @@ import java.util.Properties;
  * Angel system parameters.
  */
 public class AngelConfiguration extends Configuration {
+
   public AngelConfiguration(Configuration conf) {
     super(conf);
   }
@@ -61,14 +63,14 @@ public class AngelConfiguration extends Configuration {
    * <p>
    * "predict" action type means predict result use model.
    */
-  public static final String ANGEL_ACTION_TYPE = "actionType";
+  public static final String ANGEL_ACTION_TYPE = "action.type";
   public static final String DEFAULT_ANGEL_ACTION_TYPE = "train";
 
   /** Training data path. */
   public static final String ANGEL_TRAIN_DATA_PATH = "angel.train.data.path";
 
   /** Training data file format. */
-  public static final String ANGEL_INPUTFORMAT_CLASS = ANGEL_PREFIX + "inputformat";
+  public static final String ANGEL_INPUTFORMAT_CLASS = ANGEL_PREFIX + "input.format";
   public static final String DEFAULT_ANGEL_INPUTFORMAT_CLASS = CombineTextInputFormat.class
       .getName();
 
@@ -76,7 +78,7 @@ public class AngelConfiguration extends Configuration {
   public static final String ANGEL_PREDICT_PATH = "angel.predict.out.path";
 
   /** Model save path. This parameter is used in "train" action. */
-  public static final String ANGEL_SAVE_MODEL_PATH = "angel.save.modelPath";
+  public static final String ANGEL_SAVE_MODEL_PATH = "angel.save.model.path";
 
   /**
    * Log save path. This parameter is used in "train" action, each iteration outputs some algorithm
@@ -89,7 +91,7 @@ public class AngelConfiguration extends Configuration {
    * action, we can load old model from file to implement incremental training. In "predict" action,
    * we can load model from file to generate predict results.
    */
-  public static final String ANGEL_LOAD_MODEL_PATH = "angel.load.modelPath";
+  public static final String ANGEL_LOAD_MODEL_PATH = "angel.load.model.path";
 
   /** Application deploy mode, now support YARN and LOCAL mode */
   public static final String ANGEL_DEPLOY_MODE = "angel.deploy.mode";
@@ -280,6 +282,22 @@ public class AngelConfiguration extends Configuration {
   public static final String ANGEL_AM_COMMIT_TIMEOUT_MS = ANGEL_AM_PREFIX + "commit.timeout.ms";
   public static final int DEFAULT_ANGEL_AM_COMMIT_TIMEOUT_MS = 60000;
 
+  /** Slow ps/worker check polices */
+  public static final String ANGEL_AM_SLOW_CHECK_POLICES = ANGEL_AM_PREFIX + "slow.check.polices";
+  public static final String DEFAULT_ANGEL_AM_SLOW_CHECK_POLICES = TaskCalPerfChecker.class.getName();
+
+  /** Slow ps/worker check enable*/
+  public static final String ANGEL_AM_SLOW_CHECK_ENABLE = ANGEL_AM_PREFIX + "slow.check.enable";
+  public static final boolean DEFAULT_ANGEL_AM_SLOW_CHECK_ENABLE = false;
+
+  /** Slow ps/worker check interval in milliseconds */
+  public static final String ANGEL_AM_SLOW_CHECK_INTERVAL_MS = ANGEL_AM_PREFIX + "slow.check.interval.ms";
+  public static final int DEFAULT_ANGEL_AM_SLOW_CHECK_INTERVAL_MS = 60000;
+
+  /** Task slowest discount, if a task calculate rate is slow than average rate * discount, the worker
+   * the task is running on will be  considered to be a slow worker */
+  public static final String ANGEL_AM_TASK_SLOWEST_DISCOUNT = ANGEL_AM_PREFIX + "task.slowest.discount";
+  public static final double DEFAULT_ANGEL_AM_TASK_SLOWEST_DISCOUNT = 0.7;
 
   // //////////////////////////////
   // Worker Configs
@@ -412,7 +430,7 @@ public class AngelConfiguration extends Configuration {
 
   /** The maximum allowed memory in MB used in memory_disk level storage for every task. */
   public static final String ANGEL_TASK_MEMORYSTORAGE_USE_MAX_MEMORY_MB = ANGEL_TASK_PREFIX
-      + "memorystorage.max.mb";
+      + "memory.storage.max.mb";
   public static final int DEFAULT_ANGEL_TASK_MEMORYSTORAGE_USE_MAX_MEMORY_MB = 1000;
 
   /** The number of samples used to estimate average size. */

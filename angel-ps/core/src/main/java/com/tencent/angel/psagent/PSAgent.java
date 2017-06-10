@@ -391,7 +391,6 @@ public class PSAgent {
               }
             } catch (Exception e) {
               LOG.error("ERROR IN CONTACTING RM. ", e);
-              continue;
             }
           } catch (InterruptedException e) {
             if (!stopped.get()) {

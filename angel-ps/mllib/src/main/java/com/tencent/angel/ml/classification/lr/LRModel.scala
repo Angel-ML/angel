@@ -49,7 +49,7 @@ object LRModel{
   }
 }
 
-class LRModel(ctx: TaskContext, conf: Configuration) extends MLModel {
+class LRModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
   private val LOG = LogFactory.getLog(classOf[LRModel])
 
   val LR_WEIGHT_MAT = "lr_weight"
@@ -62,13 +62,13 @@ class LRModel(ctx: TaskContext, conf: Configuration) extends MLModel {
   // Feature number of data
   val feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
   // The feature weight vector, stored on PS
-  val weight = new PSModel[DenseDoubleVector](ctx, LR_WEIGHT_MAT, 1, feaNum)
+  val weight = PSModel[DenseDoubleVector](LR_WEIGHT_MAT, 1, feaNum)
   weight.setAverage(true)
 
   // Iteration number
   val epochNum = conf.getInt(MLConf.ML_EPOCH_NUM, MLConf.DEFAULT_ML_EPOCH_NUM)
   // A vector stores total validation losses, sotred on PS
-  val loss = new PSModel[DenseDoubleVector](ctx, LR_LOSS_MAT, 1, epochNum)
+  val loss = PSModel[DenseDoubleVector](LR_LOSS_MAT, 1, epochNum)
 
   setSavePath(conf)
   setLoadPath(conf)

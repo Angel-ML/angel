@@ -27,6 +27,7 @@ import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Get a batch row splits rpc request.
@@ -190,7 +191,7 @@ public class GetRowsSplitRequest extends PartitionRequest {
       Collections.sort(sortedList2);
 
       for (int i = 0; i < size; i++) {
-        if (sortedList1.get(i) != sortedList2.get(i)) {
+        if (!Objects.equals(sortedList1.get(i), sortedList2.get(i))) {
           return false;
         }
       }
