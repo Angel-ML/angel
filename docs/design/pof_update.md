@@ -175,4 +175,4 @@ psModel.update(randomFunc).get();
 ```
 
 
-  [1]: ../img/update%20psf%E6%B5%81%E7%A8%8B.png
+  [1]: ../img/psf_update.png

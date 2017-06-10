@@ -19,10 +19,7 @@ PSModel是Angel的核心抽象。它是一个远程模型的概念，对于Clien
 所以，实现一个算法的最小集，需要定义一个PSModel，例如：
 
 ```
-  val loss = PSModel[DenseDoubleVector](ctx, 
-  								      "lr_loss_martrix", 
-  								       1, 
-  								       epochNum)
+  val loss = PSModel[DenseDoubleVector]("lr_loss_martrix", 1, epochNum)
 ```
 
 
