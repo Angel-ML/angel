@@ -40,3 +40,36 @@ $SPARK_HOME/bin/spark-submit \
 ```
 - YARN将会出现两个Application，一个是Spark Application， 一个是Angel-PS Application。
 
+## Example Code: Gradient Descent的Angel PS实现
+
+下面是一个简单版本的Gradient Descent的PS实现
+```java
+val context = PSContext.getOrCreate()
+val pool = context.createModelPool(dim, poolCapacity)
+val w = pool.createModel(initWeights)
+val gradient = pool.zeros()
+
+for (i <- 1 to ITERATIONS) {
+  val totalG = gradient.mkRemote()
+
+  val nothing = points.mapPartitions { iter =>
+    val brzW = new DenseVector(w.mkRemote.pull())
+
+    val subG = iter.map { p =>
+      p.x * (1 / (1 + math.exp(-p.y * brzW.dot(p.x))) - 1) * p.y
+    }.reduce(_ + _)
+
+    totalG.incrementAndFlush(subG.toArray)
+    Iterator.empty
+  }
+  nothing.count()
+
+  w.mkBreeze += -1.0 * gradent.mkBreeze
+  gradient.mkRemote.fill(0.0)
+}
+
+println("feature sum:" + w.mkRemote.pull())
+
+gradient.delete()
+w.delete()
+```
