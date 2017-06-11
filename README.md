@@ -32,7 +32,7 @@
 ## Angel的接口
 
 * [Angel的接口说明](./docs/apis/interface_api.md)
-* [psFunc手册](./docs/design/pof_develop.md)
+* [psFunc手册](./docs/design/psf_develop.md)
 
 ## Angel的算法
 
