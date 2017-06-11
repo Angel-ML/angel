@@ -4,15 +4,15 @@
 
 ## PS Service
 
-Angel支持两种运行模式：`ANGEL_PS_Service` & `ANGEL_PS`
+Angel支持两种运行模式：`ANGEL_PS` & `ANGEL_PS_WORKER`
 
-* **ANGEL_PS_Service**: 启动Master和PS，具体的计算交给其他计算平台（如Spark，Tensorflow）负责，Angel只负责提供Parameter Server的功能。
+* **ANGEL_PS**: PS Service 模式，只启动Master和PS，具体的计算交给其他计算平台（如Spark，Tensorflow）负责，Angel只负责提供Parameter Server的功能。
 
-* **ANGEL_PS**：启动Master，PS和Worker，Angel独立完成模型的训练。
+* **ANGEL_PS_WORKER**：启动Master，PS和Worker，Angel独立完成模型的训练。
 
 ## 同步协议
 
-* 支持多种同步协议：除了通用的BSP外，为了解决task之间互相等待的问题，Angel还支持SSP和ASP
+* 支持多种同步协议：除了通用的BSP（Bulk Synchronous Parallel）外，为了解决task之间互相等待的问题，Angel还支持SSP（Stale Synchronous Parallel）和ASP（Asynchronous Parallel）
 
 ## 良好的可扩展性
 
