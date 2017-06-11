@@ -20,7 +20,7 @@
 * [Angel的设计理念](./docs/design/design.md)
 
 ## Angel入门
-* [Quick Start]()
+* [Quick Start](./docs/tutorials/angel_ps_quick_start.md/)
 * [Spark on Angel入门](./docs/tutorials/spark_on_angel_quick_start.md)
 
 
