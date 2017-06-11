@@ -44,20 +44,20 @@ PSModel是Angel的核心抽象。它是一个远程模型的概念，对于Clien
    
 ## **MLRunner（启动器）**
 
-所有的算法都需要一个启动类，在Angel中，启动类需要继承MLRunner，并实现Train和Predict两个方法
+所有的算法都需要一个启动类，在Angel中，启动类需要继承MLRunner，并实现train和predict两个方法
 
 最简单的Runner，使用标准流程的话，非常的简单：
 
 * train方法
 
 ```
- train(conf, LRModel(conf), classOf[LRTrainTask])
+ train(conf: Configuration)
 ```
 
 * predict方法
 	
 ```
-predict(conf, LRModel(conf), classOf[LRPredictTask])
+predict(predict(conf: Configuration))
 ```
 
 ## **TrainTask & PredictTask（任务类）**
@@ -66,15 +66,15 @@ predict(conf, LRModel(conf), classOf[LRPredictTask])
 
 Angel的这两个Task中，都是BaseTask的子类，Angel会负责透明的数据切分和读取，并Feed给这些Task类，用户需要定义的，其实主要是2个公共操作：
 
-2. **解析数据（Parse）**
-	* 将单行数据解析为LabeledData
+2. **解析数据（parse）**
+	* 将单行数据解析为算法所需的数据结构（例如用于LR/SVM等算法的LabeledData）
 	* 没有默认实现，必须实现
 
 3. **预处理（preProcess）**
-	* 调用Parse方法，将数据进行简单预处理，需要的话，切换训练集（Training Set）和 检验集（Validation Set）
+	* 读取原始数据集，按行调用parse方法，将数据进行简单预处理，需要的话，切换训练集（Training Set）和 检验集（Validation Set）
 	* 有默认实现，可以不实现
 
-当然了，TrainTask需要实现train方法，PredictTask需要实现Predict方法，这些都有默认的实现，具体Task需要做的，其实只是把MLModel创建好，传递给父类方法就好。
+当然了，TrainTask需要实现train方法，PredictTask需要实现predict方法，这些都有默认的实现，具体Task需要做的，其实只是把MLModel创建好，传递给父类方法就好。
 
 
 ## Spark on Angel

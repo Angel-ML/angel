@@ -89,15 +89,3 @@ DataBlock是Angel定义的数据块管理和存储的接口，它提供了基本
 
 
 - 返回值：无
-
-## shuffle
-- 定义：```void shuffle()```
-
-
-- 功能描述：随机打乱对象的顺序，目前仅MemoryDataBlock支持该操作
-
-
-- 参数：无
-
-
-- 返回值：无

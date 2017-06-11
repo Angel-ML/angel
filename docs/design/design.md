@@ -4,15 +4,15 @@
 
 ## PS Service
 
-Angel支持两种运行模式：`ANGEL_PS_Service` & `ANGEL_PS`
+Angel支持两种运行模式：`ANGEL_PS` & `ANGEL_PS_WORKER`
 
-* **ANGEL_PS_Service**: 启动Master和PS，具体的计算交给其他计算平台（如Spark，Tensorflow）负责，Angel只负责提供Parameter Server的功能。
+* **ANGEL_PS**: PS Service模式，在这种模式下，Angel只启动Master和PS，具体的计算交给其他计算平台（如Spark，Tensorflow）负责，Angel只负责提供Parameter Server的功能。
 
-* **ANGEL_PS**：启动Master，PS和Worker，Angel独立完成模型的训练。
+* **ANGEL_PS_WORKER**：启动Master，PS和Worker，Angel独立完成模型的训练。
 
 ## 同步协议
 
-* 支持多种同步协议：除了通用的BSP外，为了解决task之间互相等待的问题，Angel还支持SSP和ASP
+* 支持多种同步协议：除了通用的**BSP**（Bulk Synchronous Parallel）外，为了解决task之间互相等待的问题，Angel还支持**SSP**（Stale Synchronous Parallel）和**ASP**（Asynchronous Parallel）
 
 ## 良好的可扩展性
 
@@ -39,4 +39,7 @@ Angel支持两种运行模式：`ANGEL_PS_Service` & `ANGEL_PS`
 * **Master容错**
 
 	Master定期将任务状态写入hdfs，借助与Yarn提供的App Master重试机制，当Angel的Master挂掉后，Yarn会重新拉起一个Angel的Master，新的Master加载状态信息，然后重新启动Worker和PS，从断点出重新开始计算。
+	
+* **慢Worker检测**
+   Master会将收集一些Worker计算性能的一些指标，如果检测到有一些Worker计算明显慢于平均计算速度，Master会将这些Worker重新调度到其他的机器上，避免这些Worker拖慢整个任务的计算进度。
 

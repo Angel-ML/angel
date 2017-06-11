@@ -1,5 +1,5 @@
 # MLModel
-表示一个算法的模型。 一个模型一般由一个或者多个矩阵组成，矩阵对象由[PSModel](PSModel.md)表示。
+表示一个算法的模型。 一个算法模型一般由一个或者多个矩阵组成，Angel把矩阵对象封装成[PSModel](PSModel.md)。
 
 ## 构造方法
 
@@ -55,8 +55,8 @@
 
 - 返回值：无
 
-## getPsModel
-- 定义：```def getPsModel(name: String): PSModel[_]```
+## getPSModel
+- 定义：```def getPSModel(name: String): PSModel[_]```
 
 
 - 功能描述：根据矩阵名获取对应的PSModel对象
@@ -67,7 +67,7 @@
 
 - 返回值：PSModel对象
 
-## getPsModels
+## getPSModels
 - 定义：```def getPsModels: Map[String, PSModel[_]]```
 
 
