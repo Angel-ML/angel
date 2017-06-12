@@ -5,13 +5,13 @@
 ## 1. 算法介绍
 
 每个样本被划分到距离最近的簇。每个簇所有样本的几何中心为这个簇的簇心，样本到簇心的距离为样本到簇的距离。Kmeans算法一般以迭代的方式训练，如下所示：
-<div align=center>![KMEANS](../img/kmeans.png)</div>
+[1]: ../img/kmeans.png
 其中：![xi](../img/xi.png)代表第i个样本，![ci](../img/ci.png)代表与第i个样本距离最近的簇，![miu_i](../img/miui.png)代表第j个簇的簇心。
 
 
 ## Mini-batch KMeans
 "Web-Scale K-Means Clustering"提出一种在朴素KMeans算法基础上改进的KMeans算法，用mini-batch方法训练，每次迭代选择一个mini-batch的样本更新簇心，如下所示：
-<div align=center>![mini_batch_kmeans](../img/mini_batch_kmeans.png)</div>
+![mini_batch_kmeans](../img/mini_batch_kmeans.png)
 
 ## 2. 分布式实现 on Angel
 
@@ -23,7 +23,7 @@ KMeans on Angel以迭代的方式训练，每次训练以上文提到的mini-bat
 
 ### 算法逻辑
 KMeans on Angel的算法流程如下图所示：
-<div align=center>![KMeans_on_Angel](../img/KMeans_on_Angel.png)</div>
+![KMeans_on_Angel](../img/KMeans_on_Angel.png)
 
 
 ## 3. 运行 & 性能
