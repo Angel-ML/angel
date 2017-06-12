@@ -39,6 +39,8 @@
 
 ### 2. 整体流程
 
+![GBDT Procedure](../img/gbdt_procedure.png)
+
 GBDT的流程包括几大步骤
 
 1. **计算候选分裂点：**扫描训练数据，对每种特征计算候选分裂特征值，从而得到候选分裂点，常用的方法有Quantile sketch [5][6]。
@@ -49,11 +51,11 @@ GBDT的流程包括几大步骤
 
 反复调用这几个步骤，直到完成所有树的建立，如果训练完所有决策树，计算并输出性能指标（准确率、误差等），输出训练模型。
 
-![GBDT ](/tdw/angel/uploads/6FF322909B0141C0949A1509CDF4E1F2/fileUsersandyyehooDocumentsMy20Work201703Angel开源文档GBDT-on-Angelgbdt-on-angel-3.png)
-
 其中，第3个步骤，寻找最佳的分裂点和分裂树节点，是最难和最重要的缓解，所以我们单独讲。
 
 ### 3. 最佳分裂点 & 分裂
+
+![GBDT Split](../img/gbdt_split.png)
 
 如何寻找最佳分裂点，并进行分裂，是GBDT的精髓和难点，而且也是参数服务器对它的意义重点所在。整体流程为：
 
@@ -62,8 +64,6 @@ GBDT的流程包括几大步骤
 2. **同步&合并直方图：**Worker通过PS接口，将局部梯度直方图推送到参数服务器。在发送之前，每个局部梯度直方图被切分为P个分块，每个分块分别被发送到对应的参数服务器节点。PS节点在接收到Worker发送的局部梯度直方图后，确定处理的树节点，将其加到对应的全局梯度直方图上
 3. **寻找最佳分裂点：**计算节点使用参数服务器的获取最佳分裂点的接口，从参数服务器获取每个参数服务器节点的最佳分裂点，然后比较P个分裂点的目标函数增益，选取增益最大的分裂点作为全局最佳分裂点。
 4. **分裂树节点：**  PS并将分裂特征、分裂特征值和目标函数增益返回给Workder。Worker根据计算得到的最佳分裂点，创建叶子节点，将本节点的训练数据切分到两个叶子节点上。如果树的高度没有达到最大限制，则将两个叶子节点加入到待处理树节点的队列。
-
-![fileUsersandyyehooDocumentsMy20Work201703Angel开源文档GBDT-on-Angelgbdt-on-angel-4.png](/tdw/angel/uploads/F93D941F7E6C4779A7E3F69E215A3EEE/fileUsersandyyehooDocumentsMy20Work201703Angel开源文档GBDT-on-Angelgbdt-on-angel-4.png)
 
 
 从上面的算法逻辑剖析可以看出，GBDT这个算法，存在这大量的模型更新和同步操作，非常适合PS和Angel。具体来说，包括：
