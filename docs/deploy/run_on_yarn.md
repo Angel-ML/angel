@@ -47,7 +47,7 @@
 			--angel.model.save.path "hdfs://my-nn:54310/test/model" \
 			--action.type train \
 			--ml.data.type libsvm \
-			--ml.feature.init-num 1024 \
+			--ml.feature.num 1024 \
 			--angel.job.name LR_test
 		```
 	
