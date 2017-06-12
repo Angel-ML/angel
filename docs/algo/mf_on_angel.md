@@ -7,22 +7,37 @@
 
 MF的主要思想是把用户、商品的特征抽象为k维向量表示。  
 
-用户-商品评分矩阵（简称评分矩阵），是推荐系统中常用的数据表示方法，用一个矩阵表示用户对商品的打分。矩阵的每行代表一个用户，每列代表一个商品，每个元素代表对应用户对商品的评分，如图一所示。在大多数情况下商品数量巨大，每个用户只对极小部分商品有评分，所以评分矩阵一般非常稀疏，即评分矩阵中的绝大多数元素为0。MF算法把评分矩阵分解为用户-特征矩阵（简称用户矩阵）和特征-商品矩阵（简称商品矩阵）。  
-<div align=center>![1.png](/tdw/angel/uploads/41EFDBCC6F0548E1BA4240118A989355/1.png)</div>
-设数据集有M个用户，N个商品：评分矩阵用Y表示，Y的维度为：M×N，![yij.png](/tdw/angel/uploads/5303BCB37772422C965811336815E717/yij.png)表示第i个用户对第j个商品的评分；MF算法把评分矩阵Y分解为用户矩阵U和商品矩阵V的乘积，U的维度为M×k，每一行代表一个用户![ui.png](/tdw/angel/uploads/007ACE90A9AB4F3CA89D94F239953F17/ui.png)，![ui.png](/tdw/angel/uploads/007ACE90A9AB4F3CA89D94F239953F17/ui.png)是一个k维特征向量；V的维度为k×N，每一列代表一个商品![vj.png](/tdw/angel/uploads/49109016B0C943A38B99FF6D2DD730B7/vj.png),  ![vj.png](/tdw/angel/uploads/49109016B0C943A38B99FF6D2DD730B7/vj.png)是一个k维特征向量；k是MF算法指定的值，代表特征向量的维度。我们以用户向量![ui.png](/tdw/angel/uploads/007ACE90A9AB4F3CA89D94F239953F17/ui.png)和商品向量![vj.png](/tdw/angel/uploads/49109016B0C943A38B99FF6D2DD730B7/vj.png)的乘积作为用户i对商品j评分的预测值，记为![yij.png](/tdw/angel/uploads/5303BCB37772422C965811336815E717/yij.png)。
-如图二所示：
-<div align=center>![2.png](/tdw/angel/uploads/E56644C69AE44C79BDFC6194CB99E168/2.png)</div>
+用户-商品评分矩阵（简称评分矩阵），是推荐系统中常用的数据表示方法，用一个矩阵表示用户对商品的打分。矩阵的每行代表一个用户，每列代表一个商品，每个元素代表对应用户对商品的评分，如图一所示。在大多数情况下商品数量巨大，每个用户只对极小部分商品有评分，所以评分矩阵一般非常稀疏，即评分矩阵中的绝大多数元素为0。MF算法把评分矩阵分解为用户-特征矩阵（简称用户矩阵）和特征-商品矩阵（简称商品矩阵）。   
+ 
+![](../img/MF_item_user_mat.png)
+
+
+设数据集有M个用户，N个商品：评分矩阵用Y表示，Y的维度为：M×N，y_{ij}表示第i个用户对第j个商品的评分；MF算法把评分矩阵Y分解为用户矩阵U和商品矩阵V的乘积，U的维度为M×k，每一行代表一个用户u_i，u_i是一个k维特征向量；V的维度为k×N，每一列代表一个商品v_j, v_j是一个k维特征向量；k是MF算法指定的值，代表特征向量的维度。我们以用户向量u_i和商品向量v_j的乘积作为用户i对商品j评分的预测值，记为y_{ij}，如图二所示：  
+
+![](../img/MF_UV.png)
+
 
 ## Gradient Descent Matrix Factorizaion
-用户i对商品j的实际评分为![yij.png](/tdw/angel/uploads/34846CAC7D1749ABB1D08FF530D8F9D9/yij.png)，预测值与真实值之差记为![eij.png](/tdw/angel/uploads/7A106F894F844FF483DA9E86F7CD2235/eij.png)，即：![eij.png](/tdw/angel/uploads/9BEFB6F88C4E4ABCBA4C632CBE1CB26A/eij.png)。
+用户i对商品j的实际评分为y_{ij}预测值与真实值之差记为e_{ij}，即：e_{ij}=y{ij}-u_i \cdot v_j。
 MF算法的学习目标是最小化预测评分与真实评分之间的差距：
-<div align=center>![mineij.png](/tdw/angel/uploads/081B11721FC8469BB87C6FB3A0D5B145/mineij.png)</div>
+
+![](../img/MF_obj.png)
+
+
 为了防止模型过拟合，加入L2正则项：
-<div align=center>![L2.png](/tdw/angel/uploads/B180CFFB082D489AA764A273718584A2/L2.png)</div>
-其中：<div align=center>![uvdot.png](/tdw/angel/uploads/04CB17F831954AA782EB6D337713F1D7/uvdot.png)</div>
-用梯度下降法最小化目标函数，得到用户特征向量![ui.png](/tdw/angel/uploads/007ACE90A9AB4F3CA89D94F239953F17/ui.png)、商品特征向量![vj.png](/tdw/angel/uploads/49109016B0C943A38B99FF6D2DD730B7/vj.png)的更新公式为：
-<div align=center>![updateu.png](/tdw/angel/uploads/ED34DF3E8EDE443DA78EF8DAC1AD3177/updateu.png)</div>
-<div align=center>![update_v.png](/tdw/angel/uploads/C8ECE56829D641159476ECA86DF9791A/update_v.png)</div>
+
+![](../img/MF_l2obj.png)
+
+其中：![](../img/MF_uvdot.png)     
+
+用梯度下降法最小化目标函数，得到用户特征向量u_i、商品特征向量v_j的更新公式为：  
+
+![](../img/MF_update_u.png)    
+
+![](../img/MF_update_v.png)
+
+
+
 
 ## 2. 分布式实现 on Angel
 ---
@@ -37,12 +52,14 @@ Angel用梯度下降法学习MF模型，为了减少计算量和网络通信、�
 
 * 当商品数量很大且k是一个比较大的值时，V-sub矩阵仍然可能超过了单个Worker的内存，而商品向量之间的更新相互独立，所以我们设计分批更新V-sub矩阵。每次迭代分成多个批计算，每批只从PS获取V-sub的一部分，用这部分商品向量更新Worker的用户矩阵，计算这部分商品向量的更新值推送给PS。
 
-<div align=center>![计算.png](/tdw/angel/uploads/6B5AE537F6BA46FA9443EBDABCBA3A92/计算.png)</div>
+![](../img/MF_cal.png)
+
 
 ### 算法逻辑
 
 Matrix Factorization on Angel的算法逻辑如下所示：
-<div align=center>![code.png](/tdw/angel/uploads/A5D331880D334CD49174D563BE0FE020/code.png)</div>
+
+![](../img/MF_code.png)
 
 
 ## 3. 运行 & 性能
@@ -62,8 +79,9 @@ MF训练数据的格式：
 如下图所示：
 
 * ID为0的用户对ID为1、66、99、1001的商品评分分别为4、2、4、1
-* ID为1的用户对ID为77的商品评分为3
-<div align=center>![data.png](/tdw/angel/uploads/D9458B653F7D4F47AA506CC9F9EAFF6C/data.png)</div>
+* ID为1的用户对ID为77的商品评分为：
+
+![](../img/MF_data.png)
 
 ### 参数
 * IO参数
