@@ -4,7 +4,7 @@
 
 ## 1. 算法介绍
 
-![fileUsersandyyehooDocumentsMy20Work201703Angel开源文档GBDT-on-Angelgbdt-on-angel-1.png](/tdw/angel/uploads/A54C332C8CA44EF181B7B0E6854B9228/fileUsersandyyehooDocumentsMy20Work201703Angel开源文档GBDT-on-Angelgbdt-on-angel-1.png)
+![An GBDT Exmaple](../img/gbdt_example.png)
 
 
 如图1所示，这是是对一群消费者的消费力进行预测的例子。简单来说，处理流程为：
