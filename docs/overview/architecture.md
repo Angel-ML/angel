@@ -1,4 +1,6 @@
-![image.png](/tdw/angel/uploads/A41A5B2D10424BCEB7DB3D22C0FBD653/image.png)
+# Angel的架构设计
+
+---
 
 ![][1]
 
@@ -11,5 +13,7 @@ ParameterServer负责存储和更新参数，一个Angel计算任务可以包含
 ## Worker
 Worker负责具体的模型训练或者结果预测，为了支持更大规模的训练数据，一个计算任务往往包含许多个Worker实例，每个Worker实例负责使用一部分训练数据进行训练。一个Worker包含一个或者多个Task，Task是Angel计算单元，这样设计的原因是可以让Task共享Worker的许多公共资源。
 
+![][2]
 
-  [1]: ../img/Angel%E6%9E%B6%E6%9E%84.png
+[1]: ../img/angel_architecture_1.png
+[2]: ../img/angel_architecture_2.png

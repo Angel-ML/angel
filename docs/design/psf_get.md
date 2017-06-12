@@ -211,4 +211,4 @@ double result = ((SumResult)psModel.get(sumFunc)).getResult();
 ```
 
 
-  [1]: ../img/get%20psf%E6%B5%81%E7%A8%8B.png
+  [1]: ../img/psf_get.png

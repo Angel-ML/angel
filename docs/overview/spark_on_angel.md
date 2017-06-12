@@ -16,7 +16,7 @@ Angel在1.0版本开始，就加入了**PS-Service**的特性，不仅仅可以�
 1. Spark RDD是不可变区，Angel PS是可变区
 2. Angel和Spark之间，都是通过PSAgent进行协作和通讯
 
-![](./../img/sona_architecture.png)
+![](./../img/Spark-on-angel_architecture.png)
 
 ## 2. 核心实现
 
@@ -74,7 +74,7 @@ Spark中MLlib算法的核心是Breeze库，所有核心算法，最终都是通�
 
 因此，如果我们实现了一个混入相同特征的PSVector，支持了这些操作，我们就可以无缝的，将调用Breeze的LBFGS算法，将其在BreezeVector上的优化求解过程，透明化的迁移到Angel上，让这些计算发生在Angel之上，而无须对RDD进行任何侵入性修改。
 
-![](./../img/sona_vector.png)
+![](./../img/spark_on_angel_vector.png)
 
 
 下面是两个代码示例，展示了原生的Spark，和Spark on Angel的写法不同：

@@ -2,7 +2,7 @@
 
 
 [![license](http://img.shields.io/badge/license-BSD3-brightgreen.svg?style=flat)](https://github.com/tencent/angel/blob/master/LICENSE)
-[![Release Version](https://img.shields.io/badge/release-1.0.0-red.svg)](https://github.com/tencent/angel/releases) 
+[![Release Version](https://img.shields.io/badge/release-1.0.0-red.svg)](https://github.com/tencent/angel/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/tencent/angel/pulls)
 
 
@@ -14,27 +14,30 @@
 
 欢迎对机器学习有兴趣的同仁一起贡献代码，提交Issues或者Pull Requests。请先查阅: [Angel Contribution Guide]()
 
-## Angel的架构
+## Angel的介绍
 
-* [Angel的整体架构](./docs/design/architecture.md)
-* [Angel的设计理念](./docs/design/design.md)
+* [架构设计](./docs/overview/architecture.md)
+* [系统框架](./docs/overview/framework.md)
+* [设计理念](./docs/overview/design.md)
+* [Spark on Angel的设计](./docs/overview/spark_on_angel.md)
+
 
 ## Angel入门
 * [Quick Start](./docs/tutorials/angel_ps_quick_start.md/)
 * [Spark on Angel入门](./docs/tutorials/spark_on_angel_quick_start.md)
 
 
-## Angel的编程指南
+## Programming Guide
 
 * [Angel编程手册](./docs/programmers_guide/angel_programing_guide.md)
 * [Spark on Angel编程手册](./docs/programmers_guide/spark_on_angel_programing_guide.md)
 
-## Angel的接口
+## Design
 
-* [Angel的接口说明](./docs/apis/interface_api.md)
-* [psFunc手册](./docs/design/psf_develop.md)
+* [核心类的说明](./docs/apis/interface_api.md)
+* [psFunc手册](./docs/design/pof_develop.md)
 
-## Angel的算法
+## Algorithm
 
 * [Logistic Regression](./docs/algo/lr_on_angel.md)
 * [Matrix Factorization](./docs/algo/mf_on_angel.md)
@@ -43,14 +46,9 @@
 * [GBDT](./docs/algo/gbdt_on_angel.md)
 * [LDA](./docs/algo/lda_on_angel.md)
 
-## Angel的部署
+## Deployment
 
 * [源码下载和编译](./docs/deploy/source_compile.md)
 * [本地运行](./docs/deploy/local_run.md)
 * [Yarn运行](./docs/deploy/run_on_yarn.md)
-* [主要系统配置](./docs/deploy/config_details.md)
-
-
-## Spark on Angel
-
-* [Spark on Angel的设计](./docs/design/spark_on_angel.md)
+* [系统配置](./docs/deploy/config_details.md)

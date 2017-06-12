@@ -39,7 +39,7 @@ Angel支持两种运行模式：`ANGEL_PS` & `ANGEL_PS_WORKER`
 * **Master容错**
 
 	Master定期将任务状态写入hdfs，借助与Yarn提供的App Master重试机制，当Angel的Master挂掉后，Yarn会重新拉起一个Angel的Master，新的Master加载状态信息，然后重新启动Worker和PS，从断点出重新开始计算。
-	
-* **慢Worker检测**
-   Master会将收集一些Worker计算性能的一些指标，如果检测到有一些Worker计算明显慢于平均计算速度，Master会将这些Worker重新调度到其他的机器上，避免这些Worker拖慢整个任务的计算进度。
 
+* **慢Worker检测**
+
+	Master会将收集一些Worker计算性能的一些指标，如果检测到有一些Worker计算明显慢于平均计算速度，Master会将这些Worker重新调度到其他的机器上，避免这些Worker拖慢整个任务的计算进度。
