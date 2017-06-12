@@ -4,7 +4,7 @@
 
 ## 1. 算法介绍
 
-![fileUsersandyyehooDocumentsMy20Work201703Angel开源文档GBDT-on-Angelgbdt-on-angel-1.png](/tdw/angel/uploads/A54C332C8CA44EF181B7B0E6854B9228/fileUsersandyyehooDocumentsMy20Work201703Angel开源文档GBDT-on-Angelgbdt-on-angel-1.png)
+![An GBDT Exmaple](../img/gbdt_example.png)
 
 
 如图1所示，这是是对一群消费者的消费力进行预测的例子。简单来说，处理流程为：
@@ -23,6 +23,8 @@
 
 ---
 ### 1. 参数存储
+
+![GBDT Storage](../img/gbdt_storage.png)
 
 如图2所示，为了优化算法性能，在参数服务器上，需要存储如下几个参数矩阵，包括：
 
@@ -47,7 +49,7 @@ GBDT的流程包括几大步骤
 
 反复调用这几个步骤，直到完成所有树的建立，如果训练完所有决策树，计算并输出性能指标（准确率、误差等），输出训练模型。
 
-![fileUsersandyyehooDocumentsMy20Work201703Angel开源文档GBDT-on-Angelgbdt-on-angel-3.png](/tdw/angel/uploads/6FF322909B0141C0949A1509CDF4E1F2/fileUsersandyyehooDocumentsMy20Work201703Angel开源文档GBDT-on-Angelgbdt-on-angel-3.png)
+![GBDT ](/tdw/angel/uploads/6FF322909B0141C0949A1509CDF4E1F2/fileUsersandyyehooDocumentsMy20Work201703Angel开源文档GBDT-on-Angelgbdt-on-angel-3.png)
 
 其中，第3个步骤，寻找最佳的分裂点和分裂树节点，是最难和最重要的缓解，所以我们单独讲。
 
