@@ -5,25 +5,34 @@
 ## 1. 算法介绍
 
 逻辑回归模型（logistic regression model）是一种分类模型。样本x属于类别y的概率P(y|x)服从logistic分布：   
-<div align=center>![](http://i.imgur.com/5UZuenh.gif)</div>
-综合两种情况，有：  
-<div align=center>![obj.png](/tdw/angel/uploads/425FB44A41224865B8DA0B661AA6BD4D/obj.png)</div>   
-逻辑回归模型使用log损失函数，带L2惩罚项的目标函数如下所示：  
-<div align=center>![3.png](/tdw/angel/uploads/3A11081478244509AFB192FBC8C19283/3.png)</div>
-其中：![](http://i.imgur.com/c0AJnPE.gif) 为L2正则项。
+
+![](../img/LR_P.png)  
+
+综合两种情况，有：      
+
+![](../img/LR_P1.png)  
+
+
+逻辑回归模型使用log损失函数，带L2惩罚项的目标函数如下所示：    
+
+![](../img/LR_loss.png)  
+
+其中：![](../img/LR_reg.gif)为L2正则项。
 
 ## 2. 分布式实现 on Angel
 
-Angel MLLib提供了用mini-batch gradient descent优化方法求解的Logistic Regression算法，算法逻辑如下
-<div align=center>![sgdCode.png](/tdw/angel/uploads/9875CF7F229C478BBB5CEB366B33E83E/sgdCode.png)</div>
+* Angel MLLib提供了用mini-batch gradient descent优化方法求解的Logistic Regression算法，算法逻辑如下 
 
-学习速率在迭代过程中衰减，其中
+![](../img/LR_gd.png)  
 
-* N为迭代次数
-* α为衰减系数
-* T为迭代次数
 
-![6.gif](/tdw/angel/uploads/D31BABAED76C49C0B69D9C0C8FAB38FC/6.gif)
+* 学习速率在迭代过程中衰减:
+![](../img/LR_lr_ecay.gif) 其中:   
+  * α为衰减系数
+  * T为迭代次数
+
+
+
 
 ## 3. 运行 & 性能
 
@@ -67,9 +76,41 @@ LR on Angel支持“libsvm”、“dummy”两种数据格式，分别如下所�
   * angel.ps.number：PS个数
   * angel.ps.memory.mb：PS申请内存大小!
 
+* 提交命令
+你可以通过下面命令向Yarn集群提交LR算法训练任务:
+```java
+./bin/angel-submit \
+    -- action.type train \
+    -- angel.app.submit.class com.tencent.angel.ml.classification.lr.LRRunner  \
+    -- angel.train.data.path $input_path \
+    -- angel.save.model.path $model_path \
+    -- angel.log.path $logpath \
+    -- ml.epoch.num 10 \
+    -- ml.batch.num 10 \
+    -- ml.feature.num 10000 \
+    -- ml.validate.ratio 0.1 \
+    -- ml.data.type dummy \
+    -- ml.learn.rate 1 \
+    -- ml.learn.decay 0.1 \
+    -- ml.reg.l2 0 \
+    -- angel.workergroup.number 3 \
+    -- angel.worker.task.number 3 \
+    -- angel.ps.number 1 \
+    -- angel.ps.memory.mb 5000 \
+    -- angel.job.name=angel_lr_smalldata
+```
 
 ### 性能
-
+* 测试数据：
+  腾讯视频CTR数据，5×10^7特征，8×10^7样本
+* 资源
+  * worker 50个
+  * ps 50个
+* Angel vs SPark
+  迭代100次的训练时间
+  * Angel：少于20min
+  * Spark：180min
+  
 
 
 
