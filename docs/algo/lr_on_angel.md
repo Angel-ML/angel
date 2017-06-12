@@ -76,9 +76,41 @@ LR on Angel支持“libsvm”、“dummy”两种数据格式，分别如下所�
   * angel.ps.number：PS个数
   * angel.ps.memory.mb：PS申请内存大小!
 
+* 提交命令
+你可以通过下面命令向Yarn集群提交LR算法训练任务:
+```java
+./bin/angel-submit \
+    -- action.type train \
+    -- angel.app.submit.class com.tencent.angel.ml.classification.lr.LRRunner  \
+    -- angel.train.data.path $input_path \
+    -- angel.save.model.path $model_path \
+    -- angel.log.path $logpath \
+    -- ml.epoch.num 10 \
+    -- ml.batch.num 10 \
+    -- ml.feature.num 10000 \
+    -- ml.validate.ratio 0.1 \
+    -- ml.data.type dummy \
+    -- ml.learn.rate 1 \
+    -- ml.learn.decay 0.1 \
+    -- ml.reg.l2 0 \
+    -- angel.workergroup.number 3 \
+    -- angel.worker.task.number 3 \
+    -- angel.ps.number 1 \
+    -- angel.ps.memory.mb 5000 \
+    -- angel.job.name=angel_lr_smalldata
+```
 
 ### 性能
-
+* 测试数据：
+  腾讯视频CTR数据，5×10^7特征，8×10^7样本
+* 资源
+  * worker 50个
+  * ps 50个
+* Angel vs SPark
+  迭代100次的训练时间
+  * Angel：少于20min
+  * Spark：180min
+  
 
 
 
