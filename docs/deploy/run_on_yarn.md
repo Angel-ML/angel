@@ -56,11 +56,12 @@
   		
 	| 名称    | 含义  |
 	| --- | --- |
-	| actionType  | 计算类型，目前支持"train"和"predict"两种，分别表示模型训练和预测    | 
+	| action.type  | 计算类型，目前支持"train"和"predict"两种，分别表示模型训练和预测    | 
 	| angel.app.submit.class | 算法运行类，每个算法都对应一个运行类| 
 	| angel.train.data.path | 训练数据路径 | 
+	| angel.model.save.path | 模型保存路径 | 
 	| ml.data.type | 训练数据格式，默认支持两种格式libsvm和dummy | 
-	| ml.maxdim.path | 模型维度文件路径 |
+	| ml.feature.num | 模型维度 |
 	| angel.job.name | 任务名|
 
 
