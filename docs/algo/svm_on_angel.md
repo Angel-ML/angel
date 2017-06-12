@@ -8,12 +8,16 @@ SVM分类模型可以抽象为以下优化问题：
 
 ![](../img/SVM_obj.png)
 
-其中：![](../img/SVM_reg.png)为正则项；![](../img/SVM_lambda.png)为正则项系数；![](../img/SVM_hingeloss.png)为合页损失函数（hinge loss），如下图所示：  
+其中：
+![](../img/SVM_reg.png)
+为正则项；
+![](../img/SVM_lambda.png)
+为正则项系数；![](../img/SVM_hingeloss.png)为合页损失函数（hinge loss），如下图所示：  
 
 ![](../img/SVM_hingeloss_pic.png)
 
 
-##2. 分布式实现 on Angel
+## 2. 分布式实现 on Angel
 Angel MLLib提供了用mini-batch gradient descent优化方法求解的SVM二分类算法，算法逻辑如下：
 
 ![](../img/SVM_code.png)
