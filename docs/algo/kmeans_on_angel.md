@@ -11,7 +11,9 @@
 
 ## Mini-batch KMeans
 "Web-Scale K-Means Clustering"提出一种在朴素KMeans算法基础上改进的KMeans算法，用mini-batch方法训练，每次迭代选择一个mini-batch的样本更新簇心，如下所示：
-<div align=center>![mini_batch_kmeans](../img/mini_batch_kmeans.png)</div>
+<div align=center>
+![mini_batch_kmeans](../img/mini_batch_kmeans.png)
+</div>
 
 ## 2. 分布式实现 on Angel
 
