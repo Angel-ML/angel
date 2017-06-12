@@ -15,7 +15,7 @@ queue | 无 | Angel计算任务使用的资源池，用于Yarn模式下的资源
 angel.job.name | angel app | Angel计算任务的名字
 angel.app.config.file | 无 | Angel支持命令行参数设置和配置文件两种方式，当使用配置文件时，可以上传一个xml格式的参数配置文件 
 angel.app.submit.class | com.tencent.angel.utils.DefaultAppSubmitter | Angel任务提交类
-angel.task.user.task.cla | com.tencent.angel.worker.task.BaseTask | Angel worker运行的task类，用户可以根据需求自定义task类，但需要继承com.tencent.angel.worker.task.BaseTask
+angel.task.user.task.class | com.tencent.angel.worker.task.BaseTask | Angel worker运行的task类，用户可以根据需求自定义task类，但需要继承com.tencent.angel.worker.task.BaseTask
 angel.staleness | 0 | task之间允许的最大stale值。0表示BSP，大于0表示SSP，小于0表示ASYNC
     
 
@@ -26,7 +26,6 @@ angel.staleness | 0 | task之间允许的最大stale值。0表示BSP，大于0�
 angel.am.env | 无 | Angel Master环境变量设置，形式为K1=V1,K2=V2
 angel.worker.env | 无 | Angel Worker环境变量设置，形式为K1=V1,K2=V2
 angel.ps.env | 无 | Angel PS环境变量设置，形式为K1=V1,K2=V2
-angel.workergroup.number | 1 | 需要启动的workgroup数量，目前一个workergroup仅支持一个worker，因此worker和workergroup数量相等
 angel.workergroup.number | 1 | 需要启动的workgroup数量，目前一个workergroup仅支持一个worker，因此worker和workergroup数量相等
 angel.worker.task.number | 1 | 每个worker上运行的task数量
 angel.ps.number | 1 | 需要启动的ps数量
@@ -57,7 +56,6 @@ angel.netty.matrixtransfer.server.usedirectbuffer | true | Netty矩阵传输服�
 angel.netty.matrixtransfer.max.message.size | 104857600 | Netty矩阵传输支持的最大的单个消息的大小，单位为字节，默认为100M。
 angel.matrixtransfer.max.requestnum.perserver | 4 | PSAgent能够最多同时向一个PS发起多少个请求，该参数用于流量控制，避免同时向一个PS发起太多请求而导致出流量占满，进而导致发往其他PS的请求等待。
 angel.matrixtransfer.max.requestnum | 64 | PSAgent能够最多同时向所有PS发起多少个请求，该参数用于流量控制。
-angel.matrixtransfer.max.requestnum | 64 | PSAgent能够最多同时向所有PS发起多少个请求，该参数用于流量控制。
 
 ## 系统可用性相关配置
     
@@ -76,7 +74,7 @@ angel.ps.heartbeat.interval.ms | 5000 | PS向Master发送的心跳间隔时间�
 angel.ps.heartbeat.timeout.ms | 60000 | PS向Master发送的心跳超时时间，单位为毫秒。如果一个PS超过该时间没有向Master上报心跳，将会被Master判定为异常。
 angel.ps.backup.interval.ms | 60000 | PS将所承载的参数写入hdfs间隔时间，单位为毫秒。PS会每隔一段时间将存储在其上的矩阵参数写入hdfs，用在PS宕机恢复。
 angel.matrixtransfer.retry.interval.ms | 3000 | 失败的矩阵传输请求重试时间间隔，单位为毫秒。
-angel.mat>ixtransfer.request.timeout.ms | 30000 | 矩阵传输请求超时时间，单位为毫秒。 
+angel.matrixtransfer.request.timeout.ms | 30000 | 矩阵传输请求超时时间，单位为毫秒。 
 
 ## 日志相关配置
     
