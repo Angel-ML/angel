@@ -1,8 +1,12 @@
-# Latent Dirichlet Allocation
+# LDA（Latent Dirichlet Allocation）
+
+> LDA是一种常见的主题模型算法。简单来说它是一个贝叶斯概率生成模型，用于对文档集进行降维或者潜在语义分析。
 
 
-## LDA 模型
-LDA是一个贝叶斯概率生成模型，用于对文档集进行降维或者潜在语义分析。
+
+## 1. 算法介绍
+
+### 整体说明
 给定一个语料库``$ C $``，该语料库由一系列文档`` $ \{D_1, \cdots, D_{M}\} $``构成。
 每个文档``$ D_i $`` 则由一个序列的词构成，``$ D_i = (t_1, t_2, \cdots, t_{N_i}) $``。
 语料库中的词整体构成了一个词汇表``$ V $``。
@@ -18,7 +22,7 @@ LDA模型对每个文档的生成过程进行了建模。
 中采样出该词的话题``$ z_{dn} $``，
 然后再从多项分布``$ Mult(\phi_{z_{dn}}) $``中采样出单词``$ w_{dn} \in V $``。
 
-## Gibbs Sampling
+### Gibbs Sampling
 求解LDA模型的过程通常使用Gibbs Sampling方法，通过采样出大量符合后验分布的样本``$ z_{dn} $``，
 从而对每个文档的话题分布和话题的词分布进行估计估计。
 目前对LDA的Gibbs Sampling方法有大概6中，包括Collapsed Gibbs Sampling(CGS)，SparseLDA，
@@ -48,7 +52,8 @@ F+LDA通过将概率公式进行了分解成两部分``$ C_{dk} \frac{C_{wk} + \
 对于另一个部分，F+LDA采用F+树来进行查找，可以将复杂度降低到O(logK)。
 从而F+LDA的复杂度为``$ O(K_d) $``，``$ K_d $``是文档-话题矩阵中非零元素的个数。
 
-## 分布式训练
+## 2. 分布式训练 on Angel
+
 在Angel中进行LDA模型的训练，整体的框架如下图所示。
 对于LDA模型中的两个较大的矩阵``$ C_w $``和``$ C_d $``，
 我们将C_d矩阵划分到不同的worker上，将C_w矩阵划分到不同的server上。
@@ -57,7 +62,17 @@ F+LDA通过将概率公式进行了分解成两部分``$ C_{dk} \frac{C_{wk} + \
 
 ![Architecture for LDA on Angel](../img/lda_ps.png)
 
-## 参数和数据格式
+## 3. 运行 & 性能
+
+### 输入格式
+
+输入数据分为多行，每行是一个文档，每个文档由一系列的词id构成，词id之间由空格隔开
+
+```math
+	wid_0, wid_1, ..., wid_n 
+```
+
+### 参数
 
 * 数据参数
   * angel.train.data.path: 输入数据路径
@@ -68,7 +83,5 @@ F+LDA通过将概率公式进行了分解成两部分``$ C_{dk} \frac{C_{wk} + \
   * angel.lda.topic.num：话题个数
   * angel.lda.worker.parallel.num：worker内部并行度
 
-输入数据分为多行，每行是一个文档，每个文档由一系列的词id构成，词id之间由空格隔开
-```math
-wid_0, wid_1, ..., wid_n 
-```
+### 性能
+

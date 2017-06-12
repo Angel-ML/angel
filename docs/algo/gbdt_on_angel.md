@@ -1,27 +1,28 @@
 # GBDT on Angel
 
-**GBDT(Gradient Boosting Decision Tree)：梯度提升决策树 [1][2]**，是一种集成使用多个弱分类器（决策树）来提升分类效果的机器学习算法，在很多分类和回归的场景中，都有不错的效果。
+> **GBDT(Gradient Boosting Decision Tree)：梯度提升决策树 [1][2]**，是一种集成使用多个弱分类器（决策树）来提升分类效果的机器学习算法，在很多分类和回归的场景中，都有不错的效果。
 
-## 算法场景
+## 1. 算法介绍
 
 ![fileUsersandyyehooDocumentsMy20Work201703Angel开源文档GBDT-on-Angelgbdt-on-angel-1.png](/tdw/angel/uploads/A54C332C8CA44EF181B7B0E6854B9228/fileUsersandyyehooDocumentsMy20Work201703Angel开源文档GBDT-on-Angelgbdt-on-angel-1.png)
 
 
 如图1所示，这是是对一群消费者的消费力进行预测的例子。简单来说，处理流程为：
 
-	1. 在第一棵树中，根节点选取的特征是年龄，年龄小于30的被分为左子节点，年龄大于30的被分为右叶子节点，右叶子节点的预测值为1；
-	2. 第一棵树的左一节点继续分裂，分裂特征是月薪，小于10K划分为左叶子节点，预测值为5；工资大于10k的划分右叶子节点，预测值为10
-	2. 建立完第一棵树之后，C、D和E的预测值被更新为1，A为5，B为10
-	3. 根据新的预测值，开始建立第二棵树，第二棵树的根节点的性别，女性预测值为0.5，男性预测值为1.5
-	4. 建立完第二棵树之后，将第二棵树的预测值加到每个消费者已有的预测值上，比如A的预测值为两棵树的预测值之和：5+0.5=5.5
-	5. 通过这种方式，不断地优化预测准确率。
+1. 在第一棵树中，根节点选取的特征是年龄，年龄小于30的被分为左子节点，年龄大于30的被分为右叶子节点，右叶子节点的预测值为1；
+2. 第一棵树的左一节点继续分裂，分裂特征是月薪，小于10K划分为左叶子节点，预测值为5；工资大于10k的划分右叶子节点，预测值为10
+2. 建立完第一棵树之后，C、D和E的预测值被更新为1，A为5，B为10
+3. 根据新的预测值，开始建立第二棵树，第二棵树的根节点的性别，女性预测值为0.5，男性预测值为1.5
+4. 建立完第二棵树之后，将第二棵树的预测值加到每个消费者已有的预测值上，比如A的预测值为两棵树的预测值之和：5+0.5=5.5
+5. 通过这种方式，不断地优化预测准确率。
 
 
-## **实现逻辑**
 
+
+## 2. 分布式实现 on Angel
+
+---
 ### 1. 参数存储
-
-![fileUsersandyyehooDocumentsMy20Work201703Angel开源文档GBDT-on-Angelgbdt-on-angel-2.png](/tdw/angel/uploads/1F19EF3B9ABD49BBBAC2D8CF4D71EDC3/fileUsersandyyehooDocumentsMy20Work201703Angel开源文档GBDT-on-Angelgbdt-on-angel-2.png)
 
 如图2所示，为了优化算法性能，在参数服务器上，需要存储如下几个参数矩阵，包括：
 
@@ -63,9 +64,6 @@ GBDT的流程包括几大步骤
 ![fileUsersandyyehooDocumentsMy20Work201703Angel开源文档GBDT-on-Angelgbdt-on-angel-4.png](/tdw/angel/uploads/F93D941F7E6C4779A7E3F69E215A3EEE/fileUsersandyyehooDocumentsMy20Work201703Angel开源文档GBDT-on-Angelgbdt-on-angel-4.png)
 
 
-### 4. Angel的优势
-
-
 从上面的算法逻辑剖析可以看出，GBDT这个算法，存在这大量的模型更新和同步操作，非常适合PS和Angel。具体来说，包括：
 
 1. **超大模型：**决策树其实是非常大的，因为除了`样本数*特征`，还要`特征分裂`，所以是回非常大的。被切分到到多个PS节点上存储，可以解决了大维度模型的单点瓶颈问题
@@ -75,5 +73,11 @@ GBDT的流程包括几大步骤
 3. **分布式训练：**最佳决策分裂点的技术，可以在多个PS服务器节点上并行进行，然后再同步给Worker，互不干扰
 
 整体来看，Angel的PS优势，使得它在这个算法上，性能远远超越了Spark版本的GBDT实现，而和MPI版本的xgBoost也略胜一筹。
+
+## 3. 运行 & 性能
+
+### 输入格式
+### 参数
+### 性能
 
 
