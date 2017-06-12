@@ -5,25 +5,34 @@
 ## 1. 算法介绍
 
 逻辑回归模型（logistic regression model）是一种分类模型。样本x属于类别y的概率P(y|x)服从logistic分布：   
-<div align=center>![](http://i.imgur.com/5UZuenh.gif)</div>
-综合两种情况，有：  
-<div align=center>![obj.png](/tdw/angel/uploads/425FB44A41224865B8DA0B661AA6BD4D/obj.png)</div>   
-逻辑回归模型使用log损失函数，带L2惩罚项的目标函数如下所示：  
-<div align=center>![3.png](/tdw/angel/uploads/3A11081478244509AFB192FBC8C19283/3.png)</div>
-其中：![](http://i.imgur.com/c0AJnPE.gif) 为L2正则项。
+
+![](../img/LR_P.png)  
+
+综合两种情况，有：      
+
+![](../img/LR_P1.png)  
+
+
+逻辑回归模型使用log损失函数，带L2惩罚项的目标函数如下所示：    
+
+![](../img/LR_loss.png)  
+
+其中：![](../img/LR_reg.gif)为L2正则项。
 
 ## 2. 分布式实现 on Angel
 
-Angel MLLib提供了用mini-batch gradient descent优化方法求解的Logistic Regression算法，算法逻辑如下
-<div align=center>![sgdCode.png](/tdw/angel/uploads/9875CF7F229C478BBB5CEB366B33E83E/sgdCode.png)</div>
+* Angel MLLib提供了用mini-batch gradient descent优化方法求解的Logistic Regression算法，算法逻辑如下 
 
-学习速率在迭代过程中衰减，其中
+![](../img/LR_gradientDescent.png)  
 
-* N为迭代次数
-* α为衰减系数
-* T为迭代次数
 
-![6.gif](/tdw/angel/uploads/D31BABAED76C49C0B69D9C0C8FAB38FC/6.gif)
+* 学习速率在迭代过程中衰减:
+![](../img/LR_lr_ecay.png) 其中:   
+  * α为衰减系数
+  * T为迭代次数
+
+
+
 
 ## 3. 运行 & 性能
 
