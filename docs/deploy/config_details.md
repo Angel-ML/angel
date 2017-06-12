@@ -2,12 +2,12 @@
     
 配置项名称 | 默认值 | 配置项含义
 ---------------- | --------------- | ---------------
-actionType | train | Angel task的运行方式，目前主要有两种“train”和“predict”，分别表示模型训练和使用模型进行预测
+action.type | train | Angel task的运行方式，目前主要有两种“train”和“predict”，分别表示模型训练和使用模型进行预测
 angel.train.data.path | 无 | 训练数据所在路径，该选项只用于“train”运行方式下
 angel.inputformat | org.apache.hadoop.mapreduce.lib<br>.input.CombineTextInputFormat | 训练数据文件格式，主要用于训练数据划分和读取，可支持自定义格式
 angel.predict.out.path | 无 | 预测结果存储路径，该选项只用于“predict”运行方式
-angel.save.modelPath | 无 | 模型存储路径，该选项只用于“train”运行方式
-angel.load.modelPath | 无 | 模型加载路径，该选项可用于“train”和“predict”运行方式。用于“train”时表示增量学习，即加载旧模型，利用新的训练数据在此基础上得到新的模型；用于“predict”时表示加载该模型进行预测
+angel.save.model.path | 无 | 模型存储路径，该选项只用于“train”运行方式
+angel.load.model.path | 无 | 模型加载路径，该选项可用于“train”和“predict”运行方式。用于“train”时表示增量学习，即加载旧模型，利用新的训练数据在此基础上得到新的模型；用于“predict”时表示加载该模型进行预测
 angel.deploy.mode | YARN | 部署方式，目前支持“YARN”和“LOCAL”两种方式，“LOCAL”部署方式下目前只支持启动一个Worker和PS
 angel.running.mode | ANGEL_PS_WORKER | 运行模式，目前支持“ANGEL_PS_WORKER”和“ANGEL_PS”两种模式。“ANGEL_PS_WORKER”表示启动PS和Worker组件，即Angel自己就可以完成整个任务的计算；“ANGEL_PS”表示PS-Service，即只启动PS，向第三方计算平台（例如spark）提供PS服务
 angel.job.libjars | 无 | Angel计算任务需要依赖的jar包，多个jar包之间使用逗号分隔
