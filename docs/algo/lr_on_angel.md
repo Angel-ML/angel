@@ -23,11 +23,11 @@
 
 * Angel MLLib提供了用mini-batch gradient descent优化方法求解的Logistic Regression算法，算法逻辑如下 
 
-![](../img/LR_gradientDescent.png)  
+![](../img/LR_gradientDescent.gif)  
 
 
 * 学习速率在迭代过程中衰减:
-![](../img/LR_lr_ecay.png) 其中:   
+![](../img/LR_lr_ecay.gif) 其中:   
   * α为衰减系数
   * T为迭代次数
 
