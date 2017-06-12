@@ -6,7 +6,7 @@
 
 每个样本被划分到距离最近的簇。每个簇所有样本的几何中心为这个簇的簇心，样本到簇心的距离为样本到簇的距离。Kmeans算法一般以迭代的方式训练，如下所示：
 <div align=center>![KMEANS](../img/kmeans.png)</div>
-其中：x_i代表第i个样本，c_i代表与第i个样本距离最近的簇，![miu_i](../img/miui.png)代表第j个簇的簇心。
+其中：![xi](../img/xi.png)代表第i个样本，![ci](../img/ci.png)代表与第i个样本距离最近的簇，![miu_i](../img/miui.png)代表第j个簇的簇心。
 
 
 ## Mini-batch KMeans
