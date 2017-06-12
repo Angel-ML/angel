@@ -89,7 +89,7 @@ GBDT on Angel支持“libsvm”、“dummy”两种数据格式，分别如下�
 * **dummy格式**
 
 每行文本表示一个样本，每个样本的格式为"y index1 index2 index3 ..."。其中：index特征的ID；训练数据的y为样本的类别，可以取1、-1两个值；预测数据的y为样本的ID值。比如，属于正类的样本[2.0, 3.1, 0.0, 0.0, -1, 2.2]的文本表示为“1 0 1 4 5”，其中“1”为类别，“0 1 4 5”表示特征向量的第0、1、4、5个维度的值不为0。同理，属于负类的样本[2.0, 0.0, 0.1, 0.0, 0.0, 0.0]被表示为“-1 0 2”。
- 
+
  * **libsvm格式**
 
 每行文本表示一个样本，每个样本的格式为"y index1:value1 index2:value1 index3:value3 ..."。其中：index为特征的ID,value为对应的特征值；训练数据的y为样本的类别，可以取1、-1两个值；预测数据的y为样本的ID值。比如，属于正类的样本[2.0, 3.1, 0.0, 0.0, -1, 2.2]的文本表示为“1 0:2.0 1:3.1 4:-1 5:2.2”，其中“1”为类别，"0:2.0"表示第0个特征的值为2.0。同理，属于负类的样本[2.0, 0.0, 0.1, 0.0, 0.0, 0.0]被表示为“-1 0:2.0 2：0.1”。
@@ -101,15 +101,15 @@ GBDT on Angel支持“libsvm”、“dummy”两种数据格式，分别如下�
 	* ml.gbdt.tree.depth：树的最大高度
 	* ml.gbdt.split.num：每种特征的梯度直方图的大小
 	* ml.learn.rate：学习速率
-	* ml.validate.ratio：每次validation的样本比率，设为0时不做validation。 
+	* ml.validate.ratio：每次validation的样本比率，设为0时不做validation。
 
 * 输入输出参数
 	* angel.train.data.path：输入数据路径
 	* ml.feature.num：数据特征个数
-	* ml.data.type：数据格式，支持"dummy"、"libsvm" 
+	* ml.data.type：数据格式，支持"dummy"、"libsvm"
 	* angel.save.modelPath：训练完成后，模型的保存路径
 	* angel.log.path：log文件保存路径
- 
+
 * 资源参数
 	* angel.workergroup.number：Worker个数
 	* angel.worker.memory.mb：Worker申请内存大小
@@ -140,7 +140,7 @@ GBDT on Angel支持“libsvm”、“dummy”两种数据格式，分别如下�
 
 * **参数配置**
 
-	Angel和XGBoost使用同样的参数配置： 
+	Angel和XGBoost使用同样的参数配置：
 
 	  * 树的数量：20
 	  * 树的最大高度：7
@@ -154,5 +154,5 @@ GBDT on Angel支持“libsvm”、“dummy”两种数据格式，分别如下�
 
 	| 系统   | 训练总时间 |每棵树时间| 测试集误差 |
 	|:------:|:----------:|:--------:|:----------:|
-	| XGBoost|  
+    | XGBoost|1h 25min 55s|  258s    |  0.231669  |
 	| Angel  |  26min 42s |   80s    |  0.161362  |
