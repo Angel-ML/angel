@@ -97,54 +97,62 @@ GBDT on Angel支持“libsvm”、“dummy”两种数据格式，分别如下�
 ### 参数
 
 * 算法参数  
-  * ml.gbdt.tree.num：树的数量
-  * ml.gbdt.tree.depth：树的最大高度
-  * ml.gbdt.split.num：每种特征的梯度直方图的大小
-  * ml.learn.rate：学习速率
-  * ml.validate.ratio：每次validation的样本比率，设为0时不做validation。 
+	* ml.gbdt.tree.num：树的数量
+	* ml.gbdt.tree.depth：树的最大高度
+	* ml.gbdt.split.num：每种特征的梯度直方图的大小
+	* ml.learn.rate：学习速率
+	* ml.validate.ratio：每次validation的样本比率，设为0时不做validation。 
 
 * 输入输出参数
-  * angel.train.data.path：输入数据路径
-  * ml.feature.num：数据特征个数
-  * ml.data.type：数据格式，支持"dummy"、"libsvm" 
-  * angel.save.modelPath：训练完成后，模型的保存路径
-  * angel.log.path：log文件保存路径
+	* angel.train.data.path：输入数据路径
+	* ml.feature.num：数据特征个数
+	* ml.data.type：数据格式，支持"dummy"、"libsvm" 
+	* angel.save.modelPath：训练完成后，模型的保存路径
+	* angel.log.path：log文件保存路径
  
 * 资源参数
-  * angel.workergroup.number：Worker个数
-  * angel.worker.memory.mb：Worker申请内存大小
-  * angel.worker.task.number：每个Worker上的task的个数，默认为1
-  * angel.ps.number：PS个数
-  * angel.ps.memory.mb：PS申请内存大小
+	* angel.workergroup.number：Worker个数
+	* angel.worker.memory.mb：Worker申请内存大小
+	* angel.worker.task.number：每个Worker上的task的个数，默认为1
+	* angel.ps.number：PS个数
+	* angel.ps.memory.mb：PS申请内存大小
 
 ### 性能
 
-我们在腾讯的真实线上环境中，使用腾讯真实业务的数据集来比较Angel和XGBoost的性能。
+评测腾讯的内部的数据集来比较Angel和XGBoost的性能。
 
 * 训练数据
 
 | 数据集 | 数据集大小 | 数据数量 | 特征数量 |
 |:------:|:----------:|:--------:|:--------:|
-| WXGender  |    24GB    |   1250W  |   2570   |
+| UserGender  |    24GB    |   1250W  |   2570   |
 
-实验使用的数据集是腾讯的线上业务的真实数据集，用来预测用户的性别。训练数据集大小为24GB，包括1250W个训练数据，其中每个训练数据的特征纬度是2570，非零的特征大约为200。
+实验的目的，是预测用户的性别。训练数据集大小为24GB，包括1250W个训练数据，其中每个训练数据的特征纬度是2570，非零的特征大约为200。
 
-* 实验环境
+* **实验环境**
 
-实验所使用的集群是腾讯的线上Yarn集群，由50台通用服务器组成。每个机器的配置是：CPU（24个Intel(R) Xeon(R) CPU E5-2620 v3 @ 2.40GHz）、内存（64GB）、千兆网卡、磁盘（12块2T机械硬盘）。
+	实验所使用的集群是腾讯的线上Gaia集群(Yarn)，单台机器的配置是：
 
-* 参数配置。Angel和XGBoost使用同样的参数配置： 
-  * 树的数量：20
-  * 树的最大高度：7
-  * 梯度直方图大小：10
-  * 学习速度：0.1
-  * 工作节点数据：50
-  * 参数服务器数量：10
-  * 每个工作节点内存：2GB
+	* CPU: 2680 * 2
+	* 内存：256 GB
+	* 网络：10G * 2
+	* 磁盘：4T * 12 (SATA)
 
-* 实验结果
+* **参数配置**
 
-| 系统   | 训练总时间 |每棵树时间| 测试集误差 |
-|:------:|:----------:|:--------:|:----------:|
-| XGBoost|  
-| Angel  |  26min 42s |   80s    |  0.161362  |
+	Angel和XGBoost使用同样的参数配置： 
+
+	  * 树的数量：20
+	  * 树的最大高度：7
+	  * 梯度直方图大小：10
+	  * 学习速度：0.1
+	  * 工作节点数据：50
+	  * 参数服务器数量：10
+	  * 每个工作节点内存：2GB
+
+* **实验结果**
+
+	| 系统   | 训练总时间 |每棵树时间| 测试集误差 |
+	|:------:|:----------:|:--------:|:----------:|
+	| XGBoost|  
+	| Angel  |  26min 42s |   80s    |  0.161362  |
