@@ -76,12 +76,25 @@ F+LDA通过将概率公式进行了分解成两部分``$ C_{dk} \frac{C_{wk} + \
 
 * 数据参数
   * angel.train.data.path: 输入数据路径
-  * angel.save.modelPath: 模型保存路径
+  * angel.save.model.path: 模型保存路径
 * 算法参数
-  * ml.epochnum: 算法迭代次数
-  * angel.lda.word.num：词个数
-  * angel.lda.topic.num：话题个数
-  * angel.lda.worker.parallel.num：worker内部并行度
+  * ml.epoch.num: 算法迭代次数
+  * ml.lda.word.num：词个数
+  * ml.lda.topic.num：话题个数
+  * ml.worker.thread.num：worker内部并行度
+  * ml.lda.alpha: alpha
+  * ml.lda.beta: beta
 
 ### 性能
+
+* **测试数据**
+	 * PubMED 数据集
+
+* **资源**
+	* worker：20个
+	* ps：20个
+
+* **Angel vs Spark**: 迭代100次的训练时间
+	* Angel：15min
+	* Spark：>300min
 
