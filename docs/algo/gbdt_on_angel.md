@@ -157,5 +157,5 @@ GBDT on Angel支持“libsvm”、“dummy”两种数据格式，分别如下�
 	|:------:|:-----------:|:----------:|:--------:|:----------:|
     | XGBoost| UserGender1 | 36min 48s  |  110s    |  0.155008  |
 	| Angel  | UserGender1 | 25min 22s  |   76s    |  0.154160  |
-	| XGBoost| UserGender2 | 2h 25min   |  435s    |  0.233027  |
+	| XGBoost| UserGender2 | 2h 25min   |  435s    |  0.232039  |
 	| Angel  | UserGender2 | 58min 39s  |  175s    |  0.243316  |
