@@ -102,7 +102,7 @@ public class SgdLRTest {
     // Set save model path
     conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, savePath);
     // Set log path
-    //conf.set(AngelConfiguration.ANGEL_LOG_PATH, logPath);
+    conf.set(AngelConfiguration.ANGEL_LOG_PATH, logPath);
     // Set actionType train
     conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
 
@@ -150,6 +150,8 @@ public class SgdLRTest {
     conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, inputPath);
     // Set load model path
     conf.set(AngelConfiguration.ANGEL_LOAD_MODEL_PATH, loadPath);
+    // Set log sava path
+    conf.set(AngelConfiguration.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/LOG/log");
     // Set predict result path
     conf.set(AngelConfiguration.ANGEL_PREDICT_PATH, predictPath);
     // Set actionType prediction

@@ -101,6 +101,8 @@ public class KmeansTest {
     conf.set(AngelConfiguration.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/predict");
     // Set actionType prediction
     conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT());
+    // Set log sava path
+    conf.set(AngelConfiguration.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/LOG/log");
 
     KMeansRunner runner = new KMeansRunner();
     runner.predict(conf);

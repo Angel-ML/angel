@@ -55,6 +55,7 @@ class LDATest {
     // Set input and output path
     conf.set(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS, classOf[CombineTextInputFormat].getName)
     conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, inputPath)
+    conf.set(AngelConfiguration.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/LOG/ldalog")
     conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/out")
 
     // Set angel resource parameters #worker, #task, #PS
