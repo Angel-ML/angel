@@ -121,6 +121,7 @@ public class PSManagerTest {
     conf.set(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
     conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/out");
     conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, LOCAL_FS + TMP_PATH + "/in");
+    conf.set(AngelConfiguration.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
 
     conf.setInt(AngelConfiguration.ANGEL_WORKERGROUP_NUMBER, 1);
     conf.setInt(AngelConfiguration.ANGEL_PS_NUMBER, 1);
