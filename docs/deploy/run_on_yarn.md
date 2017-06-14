@@ -42,6 +42,7 @@
 		./angel-submit \
 			--angel.app.submit.class "com.tencent.angel.ml.classification.lr.LRRunner"\
 			--angel.train.data.path "hdfs://my-nn:54310/test/lr_data" \
+			--angel.log.path "hdfs://my-nn:54310/test/log" \
 			--angel.model.save.path "hdfs://my-nn:54310/test/model" \
 			--action.type train \
 			--ml.data.type libsvm \
@@ -57,6 +58,7 @@
 	| action.type  | 计算类型，目前支持"train"和"predict"两种，分别表示模型训练和预测    | 
 	| angel.app.submit.class | 算法运行类，每个算法都对应一个运行类| 
 	| angel.train.data.path | 训练数据路径 | 
+	| angel.log.path | 算法指标日志输出路径 | 
 	| angel.model.save.path | 模型保存路径 | 
 	| ml.data.type | 训练数据格式，默认支持两种格式libsvm和dummy | 
 	| ml.feature.num | 模型维度 |
