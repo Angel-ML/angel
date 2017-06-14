@@ -24,17 +24,15 @@
 1. **上传数据**（如果用户有自己的数据可以略过本步，但是要确认数据格式一致）
 
 	* 找到发布包的data目录下的LogisticRegression测试数据
-	* 在hdfs上新建lr训练数据目录和指定模型feature大小的配置文件存放目录
+	* 在hdfs上新建lr训练数据目录
 
 		```
 		hadoop fs -mkdir hdfs://my-nn:54310/test/lr_data
-		hadoop fs -mkdir hdfs://my-nn:54310/test/lr_feature
 		```
-	* 将数据和feature配置文件上传到指定目录下
+	* 将数据文件上传到指定目录下
 
 		```
 		hadoop fs -put data/exampledata/LRLocalExampleData/a9a.train hdfs://my-nn:54310/test/lr_data
-		hadoop fs -put data/exampledata/LRLocalExampleData/feature_count hdfs://my-nn:54310/test/lr_feature
 		```
 2. **提交任务**
 	
