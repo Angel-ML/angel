@@ -36,7 +36,7 @@ $SPARK_HOME/bin/spark-submit \
     --executor-cores 2 \
     --executor-memory 4g \
     --class com.tencent.angel.spark.examples.ml.BreezeSGD \
-    spark-on-angel-examples-1.1.8.jar
+    spark-on-angel-examples-1.0.0.jar
 ```
 - YARN将会出现两个Application，一个是Spark Application， 一个是Angel-PS Application。
 
