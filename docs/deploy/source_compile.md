@@ -17,7 +17,7 @@
     		 
 	```mvn clean package -Dmaven.test.skip=true```
     
-	编译完成后，在源码根目录`dist/target`目录下会生成一个发布包：`angel-bin-1.1.8.zip`
+	编译完成后，在源码根目录`dist/target`目录下会生成一个发布包：`angel-1.1.8-bin.zip`
 
 4. **发布包**
 
