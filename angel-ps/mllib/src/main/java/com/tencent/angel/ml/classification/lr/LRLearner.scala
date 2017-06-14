@@ -112,7 +112,8 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
 
       ctx.incIteration()
     }
-    
+
+    logger.close()
     lrModel
   }
 

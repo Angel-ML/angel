@@ -116,7 +116,7 @@ public class GBDTController {
     long startTime = System.currentTimeMillis();
 
     List<Future> clockFutures = new ArrayList<Future>();
-    for (Map.Entry<String, PSModel<?>> entry : model.getPsModels().entrySet()) {
+    for (Map.Entry<String, PSModel<?>> entry : model.getPSModels().entrySet()) {
       if (needFlushMatrices.contains(entry.getKey())) {
         clockFutures.add(entry.getValue().clock(true));
       } else {
@@ -146,7 +146,7 @@ public class GBDTController {
 
   // create data sketch, push candidate split value to PS
   public void createSketch() throws Exception {
-    PSModel sketch = model.getPsModels().get(this.param.sketchName);
+    PSModel sketch = model.getPSModel(this.param.sketchName);
     if (taskContext.getTaskIndex() == 0) {
       LOG.info("------Create sketch------");
       long startTime = System.currentTimeMillis();
@@ -183,7 +183,7 @@ public class GBDTController {
 
   // pull the global sketch from PS, only called once by each worker
   public void getSketch() throws Exception {
-    PSModel sketch = model.getPsModels().get(this.param.sketchName);
+    PSModel sketch = model.getPSModel(this.param.sketchName);
     LOG.info("------Get sketch from PS------");
     long startTime = System.currentTimeMillis();
     TDoubleVector sketchVector = (TDoubleVector) sketch.getRow(0);
@@ -199,7 +199,7 @@ public class GBDTController {
   // sample feature
   public void sampleFeature() throws Exception {
     LOG.info("------Sample feature------");
-    PSModel featSample = model.getPsModels().get(this.param.sampledFeaturesName);
+    PSModel featSample = model.getPSModel(this.param.sampledFeaturesName);
     Set<String> needFlushMatrixSet = new HashSet<String>(1);
 
     if (this.param.colSample < 1 && taskContext.getTaskIndex() == 0) {
@@ -232,7 +232,7 @@ public class GBDTController {
     // 2. initialize feature set, if sampled, get from PS, otherwise use all the features
     if (this.param.colSample < 1) {
       // 2.1. pull the sampled features of the current tree
-      PSModel featSample = model.getPsModels().get(this.param.sampledFeaturesName);
+      PSModel featSample = model.getPSModel(this.param.sampledFeaturesName);
       DenseIntVector sampleFeatureVector =
           (DenseIntVector) featSample.getRow(this.currentTree);
       this.fset = sampleFeatureVector.getValues();
@@ -281,7 +281,7 @@ public class GBDTController {
         String histParaName = this.param.gradHistNamePrefix + nid;
 
         // 1.1. start threads for active nodes to generate histogram
-        PSModel histMat = model.getPsModels().get(histParaName);
+        PSModel histMat = model.getPSModel(histParaName);
         ActiveTNodeRunner runner = new ActiveTNodeRunner(this, nid, histMat);
         this.threadPool.submit(runner);
         // 1.2. set thread status to running
@@ -359,7 +359,7 @@ public class GBDTController {
       String gradHistName = this.param.gradHistNamePrefix + nid;
       // 2.2. pull the histogram
       long pullStartTime = System.currentTimeMillis();
-      PSModel histMat = model.getPsModels().get(gradHistName);
+      PSModel histMat = model.getPSModel(gradHistName);
 
       TDoubleVector histogram = null;
       if (isServerSplit) {
@@ -368,8 +368,8 @@ public class GBDTController {
         histogram = (TDoubleVector) ((GetRowResult) histMat.get(func)).getRow();
         LOG.debug("Get grad histogram without server split mode, histogram size " + histogram.getDimension());
       } else {
-        LOG.debug("Get grad histogram without server split mode, histogram size" + histogram.getDimension());
         histogram = (TDoubleVector) histMat.getRow(0);
+        LOG.debug("Get grad histogram without server split mode, histogram size" + histogram.getDimension());
       }
 
       LOG.info(String.format("Pull histogram from PS cost %d ms", System.currentTimeMillis()
@@ -414,13 +414,13 @@ public class GBDTController {
       splitGainVector.set(updatedIndices[i], updatedSplitGain[i]);
     }
 
-    PSModel splitFeat = model.getPsModels().get(this.param.splitFeaturesName);
+    PSModel splitFeat = model.getPSModel(this.param.splitFeaturesName);
     splitFeat.increment(this.currentTree, splitFeatureVector);
 
-    PSModel splitValue = model.getPsModels().get(this.param.splitValuesName);
+    PSModel splitValue = model.getPSModel(this.param.splitValuesName);
     splitValue.increment(this.currentTree, splitValueVector);
 
-    PSModel splitGain = model.getPsModels().get(this.param.splitGainsName);
+    PSModel splitGain = model.getPSModel(this.param.splitGainsName);
     splitGain.increment(this.currentTree, splitGainVector);
 
     // 6. set phase to AFTER_SPLIT
@@ -440,23 +440,23 @@ public class GBDTController {
     LOG.info("------After split------");
     long startTime = System.currentTimeMillis();
     // 1. get split feature
-    PSModel splitFeatModel = model.getPsModels().get(this.param.splitFeaturesName);
+    PSModel splitFeatModel = model.getPSModel(this.param.splitFeaturesName);
     DenseIntVector splitFeatureVec = (DenseIntVector) splitFeatModel.getRow(currentTree);
 
     // 2. get split value
-    PSModel splitValueModel = model.getPsModels().get(this.param.splitValuesName);
+    PSModel splitValueModel = model.getPSModel(this.param.splitValuesName);
     DenseDoubleVector splitValueVec = (DenseDoubleVector) splitValueModel.getRow(currentTree);
 
     // 3. get split gain
-    PSModel splitGainModel = model.getPsModels().get(this.param.splitGainsName);
+    PSModel splitGainModel = model.getPSModel(this.param.splitGainsName);
     DenseDoubleVector splitGainVec = (DenseDoubleVector) splitGainModel.getRow(currentTree);
 
     // 4. get node weight
-    PSModel nodeGradStatsModel = model.getPsModels().get(this.param.nodeGradStatsName);
+    PSModel nodeGradStatsModel = model.getPSModel(this.param.nodeGradStatsName);
     DenseDoubleVector nodeGradStatsVec = (DenseDoubleVector) nodeGradStatsModel.getRow(currentTree);
 
-    // LOG.info(String.format("Node grad stats: %s",
-    // Arrays.toString(nodeGradStatsVec.getValues())));
+    // LOG.info(String.format("Node grad stats: %s", Arrays.toString(nodeGradStatsVec.getValues())));
+
     // 5. split node
     LOG.debug(String.format("Split active node: %s", Arrays.toString(this.activeNode)));
     int[] preActiveNode = this.activeNode.clone();
@@ -542,7 +542,7 @@ public class GBDTController {
 
   // split the span of one node, reset the instance position
   public void resetInsPos(int nid, int splitFeature, float splitValue) {
-    LOG.info(String.format(
+    LOG.debug(String.format(
         "------Reset instance position of node[%d] split feature[%d] split value[%f]------", nid,
         splitFeature, splitValue));
     int nodePosStart = this.nodePosStart[nid];
@@ -552,7 +552,7 @@ public class GBDTController {
     int right = nodePosEnd;
     // in case this worker has no instance on this node
     if (left > right) {
-      LOG.info("nodePosStart > nodePosEnd, maybe there is no instance on this node.");
+      LOG.debug("nodePosStart > nodePosEnd, maybe there is no instance on node:" + nid);
       // set the span of left child
       this.nodePosStart[2 * nid + 1] = left;
       this.nodePosEnd[2 * nid + 1] = right;
@@ -610,7 +610,7 @@ public class GBDTController {
 
   // set node to leaf
   private void setNodeToLeaf(int nid, float nodeWeight) {
-    LOG.info(String.format("Set node[%d] to leaf node, leaf weight[%f]", nid, nodeWeight));
+    LOG.debug(String.format("Set node[%d] to leaf node, leaf weight[%f]", nid, nodeWeight));
     this.forest[currentTree].nodes.get(nid).chgToLeaf();
     this.forest[currentTree].nodes.get(nid).setLeafValue(nodeWeight);
 
@@ -626,7 +626,7 @@ public class GBDTController {
   public void finishCurrentTree() {
     // calculate the error
     eval();
-    predict();
+    //predict();
     this.currentTree++;
     this.currentDepth = 1;
   }
@@ -643,7 +643,7 @@ public class GBDTController {
 
   // check if there is active node
   public boolean hasActiveTNode() {
-    LOG.info(String.format("Check active node: %s", Arrays.toString(activeNode)));
+    LOG.debug(String.format("Check active node: %s", Arrays.toString(activeNode)));
     boolean hasActive = false;
     for (int isActive : this.activeNode) {
       if (isActive == 1) {
@@ -680,7 +680,7 @@ public class GBDTController {
     // vec.set(nodeIndice[i], weightValue[i]);
     // }
     // 1.4. push the update to PS
-    PSModel nodeGradStats = this.model.getPsModels().get(this.param.nodeGradStatsName);
+    PSModel nodeGradStats = this.model.getPSModel(this.param.nodeGradStatsName);
     nodeGradStats.increment(this.currentTree, vec);
   }
 
@@ -720,7 +720,7 @@ public class GBDTController {
         vec.set(nid, weight);
       }
     }
-    PSModel nodePreds = this.model.getPsModels().get(this.param.nodePredsName);
+    PSModel nodePreds = this.model.getPSModel(this.param.nodePredsName);
     nodePreds.increment(this.currentTree, vec);
 
     Set<String> needFlushMatrixSet = new HashSet<String>(1);
@@ -745,9 +745,9 @@ public class GBDTController {
   public void predict() {
     LOG.info("------Predict------");
     long startTime = System.currentTimeMillis();
-    PSModel splitFeat = this.model.getPsModels().get(this.param.splitFeaturesName);
-    PSModel splitValue = this.model.getPsModels().get(this.param.splitValuesName);
-    PSModel nodePreds = this.model.getPsModels().get(this.param.nodePredsName);
+    PSModel splitFeat = this.model.getPSModel(this.param.splitFeaturesName);
+    PSModel splitValue = this.model.getPSModel(this.param.splitValuesName);
+    PSModel nodePreds = this.model.getPSModel(this.param.nodePredsName);
 
     TIntVector splitFeatVec = (TIntVector) splitFeat.getRow(this.currentTree);
     TDoubleVector splitValueVec = (TDoubleVector) splitValue.getRow(this.currentTree);

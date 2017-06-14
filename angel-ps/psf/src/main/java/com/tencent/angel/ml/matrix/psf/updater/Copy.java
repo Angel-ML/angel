@@ -17,7 +17,7 @@
 
 package com.tencent.angel.ml.matrix.psf.updater;
 
-import com.tencent.angel.ml.matrix.psf.updater.base.MUpdaterFunc;
+import com.tencent.angel.ml.matrix.psf.updater.base.MUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 
 import java.nio.DoubleBuffer;
@@ -25,7 +25,7 @@ import java.nio.DoubleBuffer;
 /**
  * `Copy` the content in `sourceId` to `targetId`
  */
-public class Copy extends MUpdaterFunc {
+public class Copy extends MUpdateFunc {
 
   public Copy(int matrixId, int sourceId, int targetId) {
     super(matrixId, new int[]{sourceId, targetId});

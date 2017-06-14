@@ -116,6 +116,7 @@ class SVMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       ctx.incIteration()
     }
 
+    logger.close()
     svmModel
   }
 

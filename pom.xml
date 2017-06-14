@@ -39,5 +39,6 @@
 	<modules>
 		<module>angel-ps</module>
 		<module>spark-on-angel</module>
-	</modules>
+        <module>dist</module>
+    </modules>
 </project>

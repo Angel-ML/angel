@@ -111,6 +111,7 @@ class MFLearner(override val ctx: TaskContext) extends MLLearner(ctx){
 
     writeUserVectors
 
+    logger.close()
     mfModel
   }
 

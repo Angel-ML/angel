@@ -72,7 +72,7 @@ class LDATest {
 
     conf.setInt(WORD_NUM, V)
     conf.setInt(TOPIC_NUM, K)
-    conf.setInt(PARALLEL_NUM, 1)
+    conf.setInt(MLConf.ML_WORKER_THREAD_NUM, 1)
     conf.setInt(MLConf.ML_EPOCH_NUM, 20)
   }
 

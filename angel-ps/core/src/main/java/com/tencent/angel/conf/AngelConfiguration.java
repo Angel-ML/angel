@@ -213,8 +213,15 @@ public class AngelConfiguration extends Configuration {
   // //////////////////////////////
 
   /** Memory quota for AppMaster in MB. */
-  public static final String ANGEL_AM_VMEM_MB = ANGEL_AM_PREFIX + "resource.mb";
-  public static final int DEFAULT_ANGEL_AM_VMEM_MB = 1280;
+  @Deprecated
+  public static final String ANGEL_AM_MEMORY_MB = ANGEL_AM_PREFIX + "memory.mb";
+  @Deprecated
+  public static final int DEFAULT_ANGEL_AM_MEMORY_MB = 1280;
+
+  /** Memory quota for AppMaster in GB. */
+  public static final String ANGEL_AM_MEMORY_GB = ANGEL_AM_PREFIX + "memory.gb";
+  public static final int DEFAULT_ANGEL_AM_MEMORY_GB = 2;
+
 
   /** JVM parameters for AppMaster. */
   public static final String ANGEL_AM_JAVA_OPTS = ANGEL_AM_PREFIX + "java.opts";
@@ -324,8 +331,14 @@ public class AngelConfiguration extends Configuration {
   public static final int DEFAULT_ANGEL_WORKER_TASK_NUMBER = 1;
 
   /** The memory quota for a single worker in MB. */
-  public static final String ANGEL_WORKER_MERMORY_MB = ANGEL_WORKER_PREFIX + "memory.mb";
-  public static final int DEFAULT_ANGEL_WORKER_MERMORY_MB = 1024;
+  @Deprecated
+  public static final String ANGEL_WORKER_MEMORY_MB = ANGEL_WORKER_PREFIX + "memory.mb";
+  @Deprecated
+  public static final int DEFAULT_ANGEL_WORKER_MEMORY_MB = 1024;
+
+  /** The memory quota for a single worker in GB. */
+  public static final String ANGEL_WORKER_MEMORY_GB = ANGEL_WORKER_PREFIX + "memory.gb";
+  public static final int DEFAULT_ANGEL_WORKER_MEMORY_GB = 5;
 
   /** The CPU vcore quota for a single worker in MB. */
   public static final String ANGEL_WORKER_CPU_VCORES = ANGEL_WORKER_PREFIX + "cpu.vcores";
@@ -460,8 +473,14 @@ public class AngelConfiguration extends Configuration {
   public static final int DEFAULT_ANGEL_PS_CPU_VCORES = 1;
 
   /** The memory quota for a single worker in MB. */
-  public static final String ANGEL_PS_MERMORY_MB = ANGEL_PS_PREFIX + "memory.mb";
-  public static final int DEFAULT_ANGEL_PS_MERMORY_MB = 4096;
+  @Deprecated
+  public static final String ANGEL_PS_MEMORY_MB = ANGEL_PS_PREFIX + "memory.mb";
+  @Deprecated
+  public static final int DEFAULT_ANGEL_PS_MEMORY_MB = 4096;
+
+  /** The memory quota for a single worker in GB. */
+  public static final String ANGEL_PS_MEMORY_GB = ANGEL_PS_PREFIX + "memory.gb";
+  public static final int DEFAULT_ANGEL_PS_MEMORY_GB = 4;
 
   /** The time interval in milliseconds of a ps writing the snapshot for matrices to hdfs. */
   public static final String ANGEL_PS_BACKUP_INTERVAL_MS = ANGEL_PS_PREFIX + "backup.interval.ms";

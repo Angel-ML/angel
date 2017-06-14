@@ -17,7 +17,7 @@
 
 package com.tencent.angel.ml.matrix.psf.updater;
 
-import com.tencent.angel.ml.matrix.psf.updater.base.MUpdaterFunc;
+import com.tencent.angel.ml.matrix.psf.updater.base.MUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 
 import java.nio.DoubleBuffer;
@@ -25,7 +25,7 @@ import java.nio.DoubleBuffer;
 /**
  * `Log10` is a implement of `math.log10` for row in matrix.
  */
-public class Log10 extends MUpdaterFunc {
+public class Log10 extends MUpdateFunc {
 
   public Log10(int matrixId, int fromId, int toId) {
     super(matrixId, new int[]{fromId, toId});

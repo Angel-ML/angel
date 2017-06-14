@@ -153,33 +153,32 @@ class GBDTModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
   def setSavePath(conf: Configuration): Unit = {
     val path = conf.get(AngelConfiguration.ANGEL_SAVE_MODEL_PATH)
     if (path == null) return
-    if (sketch == null) LOG.info(s"sketch is null")
-    sketch.setSavePath(path + "/" + sketch.modelName)
-    featSample.setSavePath(path + "/" + featSample.modelName)
-    for (nid <- 0 until maxTNodeNum) {
-      histMats(nid).setSavePath(path + "/" + GRAD_HIST_MAT_PREFIX + nid)
-    }
-    activeTNodes.setSavePath(path + "/" + activeTNodes.modelName)
+    //sketch.setSavePath(path + "/" + sketch.modelName)
+    //featSample.setSavePath(path + "/" + featSample.modelName)
+    //for (nid <- 0 until maxTNodeNum) {
+    //  histMats(nid).setSavePath(path + "/" + GRAD_HIST_MAT_PREFIX + nid)
+    //}
+    //activeTNodes.setSavePath(path + "/" + activeTNodes.modelName)
     splitFeat.setSavePath(path + "/" + splitFeat.modelName)
     splitValue.setSavePath(path + "/" + splitValue.modelName)
-    splitGain.setSavePath(path + "/" + splitGain.modelName)
-    nodeGradStats.setSavePath(path + "/" + nodeGradStats.modelName)
+    //splitGain.setSavePath(path + "/" + splitGain.modelName)
+    //nodeGradStats.setSavePath(path + "/" + nodeGradStats.modelName)
     nodePred.setSavePath(path + "/" + nodePred.modelName)
   }
 
   override def setLoadPath(conf: Configuration): Unit = {
     val path = conf.get(AngelConfiguration.ANGEL_LOAD_MODEL_PATH)
     if (path == null) return
-//    sketch.setLoadPath(path)
-//    featSample.setLoadPath(path)
-//    for (nid <- 0 until maxTNodeNum) {
-//      histMats(nid).setLoadPath(path)
-//    }
-//    activeTNodes.setLoadPath(path)
+    //sketch.setLoadPath(path)
+    //featSample.setLoadPath(path)
+    //for (nid <- 0 until maxTNodeNum) {
+    //  histMats(nid).setLoadPath(path)
+    //}
+    //activeTNodes.setLoadPath(path)
     splitFeat.setLoadPath(path)
     splitValue.setLoadPath(path)
-//    splitGain.setLoadPath(path)
-//    nodeGradStats.setLoadPath(path)
+    //splitGain.setLoadPath(path)
+    //nodeGradStats.setLoadPath(path)
     nodePred.setLoadPath(path)
   }
 

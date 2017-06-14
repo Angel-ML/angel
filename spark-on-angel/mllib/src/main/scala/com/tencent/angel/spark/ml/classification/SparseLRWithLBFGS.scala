@@ -19,7 +19,7 @@ package com.tencent.angel.spark.ml.classification
 import scala.collection.mutable.ArrayBuffer
 
 import breeze.linalg.DenseVector
-import breeze.optimize.{LBFGS, StochasticGradientDescent}
+import breeze.optimize.LBFGS
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 

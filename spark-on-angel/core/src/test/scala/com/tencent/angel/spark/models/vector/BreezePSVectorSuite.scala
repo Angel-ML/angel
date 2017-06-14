@@ -76,8 +76,9 @@ class BreezePSVectorSuite extends PSFunSuite with SharedPSContext {
   }
 
   test("canCopyBreezePSVector") {
-    val temp = _brzVector1
+    val temp = _brzVector1.copy
 
+    assert(temp.proxy.id != _brzVector1.proxy.id)
     assert(temp.toRemote.pull().sameElements(_localVector1))
   }
 
@@ -247,6 +248,13 @@ class BreezePSVectorSuite extends PSFunSuite with SharedPSContext {
   test("canDim") {
     val thisDim = breeze.linalg.dim(_brzVector1)
     assert(dim === thisDim)
+  }
+
+  test("equals") {
+    assert(_brzVector1 == _brzVector1)
+    assert(_brzVector1 != _brzVector2)
+    val copy = _brzVector2.copy
+    assert(copy == _brzVector2)
   }
 
   /**

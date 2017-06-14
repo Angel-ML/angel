@@ -17,7 +17,7 @@
 
 package com.tencent.angel.spark.pof;
 
-import com.tencent.angel.ml.matrix.psf.updater.map.MapWithIndexFunc;
+import com.tencent.angel.ml.matrix.psf.update.enhance.map.MapWithIndexFunc;
 import io.netty.buffer.ByteBuf;
 
 public class MapWithIndexFuncTest implements MapWithIndexFunc {

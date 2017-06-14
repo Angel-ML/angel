@@ -29,7 +29,7 @@ import breeze.math._
 import breeze.optimize.{BacktrackingLineSearch, DiffFunction, LBFGS}
 import breeze.util._
 
-import com.tencent.angel.spark.ml.pof._
+import com.tencent.angel.spark.ml.psf._
 import com.tencent.angel.spark.models.vector.BreezePSVector
 
 /**

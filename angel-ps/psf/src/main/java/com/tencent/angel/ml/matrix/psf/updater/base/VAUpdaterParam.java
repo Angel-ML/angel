@@ -28,7 +28,7 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.psagent.PSAgentContext;
 
 /**
- * `VAUpdaterParam` is Parameter class for `VAUpdaterFunc`
+ * `VAUpdaterParam` is Parameter class for `VAUpdateFunc`
  */
 public class VAUpdaterParam extends UpdaterParam {
 

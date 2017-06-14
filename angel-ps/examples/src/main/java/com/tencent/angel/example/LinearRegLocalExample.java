@@ -83,7 +83,7 @@ public class LinearRegLocalExample {
 
   public void trainOnLocalCluster() throws Exception {
     setConf();
-    String inputPath = "../data/exampledata/LinearRegression/LinearReg100.train";
+    String inputPath = "../data/exampledata/LinearRegression";
     String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
     String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
     String logPath = "./src/test/log";
@@ -162,6 +162,8 @@ public class LinearRegLocalExample {
         example.predict();
         break;
     }
+
+    System.exit(0);
   }
 
 

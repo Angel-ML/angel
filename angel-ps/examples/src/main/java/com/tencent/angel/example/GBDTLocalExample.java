@@ -45,7 +45,7 @@ public class GBDTLocalExample {
     String inputPath = "../data/exampledata/GBDTLocalExampleData/agaricus.txt.train";
 
     // Feature number of train data
-    int featureNum = 126;
+    int featureNum = 127;
     // Number of nonzero features
     int featureNzz = 25;
     // Tree number
@@ -77,6 +77,7 @@ public class GBDTLocalExample {
     conf.set(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
     conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, inputPath);
     conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/out");
+    conf.set(AngelConfiguration.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
 
     // set angel resource parameters #worker, #task, #PS
     conf.setInt(AngelConfiguration.ANGEL_WORKERGROUP_NUMBER, 1);
@@ -132,5 +133,7 @@ public class GBDTLocalExample {
         example.predict();
         break;
     }
+
+    System.exit(0);
   }
 }

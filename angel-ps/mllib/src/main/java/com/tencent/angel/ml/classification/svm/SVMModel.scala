@@ -21,7 +21,6 @@ import java.io.DataOutputStream
 import java.text.DecimalFormat
 
 import com.tencent.angel.conf.AngelConfiguration
-import com.tencent.angel.ml.classification.svm.SVMModel._
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.{DenseDoubleVector, TDoubleVector}
@@ -33,13 +32,21 @@ import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
 
-object SVMModel {
-  val SVM_WEIGHT_MAT = "svm.weight.mat"
-  val SVM_LOSS_MAT = "svm.loss.mat"
+object SVMModel{
+  def apply(conf: Configuration) = {
+    new SVMModel(conf)
+  }
+
+  def apply(ctx:TaskContext, conf: Configuration) = {
+    new SVMModel(ctx, conf)
+  }
 }
 
 class SVMModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
   var LOG = LogFactory.getLog(classOf[SVMModel])
+
+  val SVM_WEIGHT_MAT = "svm.weight.mat"
+  val SVM_LOSS_MAT = "svm.loss.mat"
 
   def this(conf: Configuration) = {
     this(null, conf)
@@ -82,21 +89,22 @@ class SVMModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
     for (idx: Int <- 0 until dataSet.getTotalElemNum) {
       val instance = dataSet.read
       val id = instance.getY
-      val dot = wVector.dot(instance.getX)
-      val sig = MathUtils.sigmoid(dot)
-      predict.put(new svmPredictResult(id, dot, sig))
+
+      var pre = 1.0
+      if (wVector.dot(instance.getX) < 0)
+        pre = -1.0
+      predict.put(new svmPredictResult(id, pre))
     }
     predict
   }
 }
 
-class svmPredictResult(id: Double, dot: Double, sig: Double) extends PredictResult {
+class svmPredictResult(id: Double, pre: Double) extends PredictResult {
   val format = new DecimalFormat("0.000000");
 
   override
   def writeText(output: DataOutputStream): Unit = {
 
-    output.writeBytes(id + PredictResult.separator + format.format(dot) +
-      PredictResult.separator + format.format(sig))
+    output.writeBytes(id + PredictResult.separator + PredictResult.separator + format.format(pre))
   }
 }

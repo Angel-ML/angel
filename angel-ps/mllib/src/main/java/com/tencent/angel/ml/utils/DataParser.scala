@@ -32,11 +32,30 @@ object DataParser {
     return null
   }
 
+
+  def parseVector(value: String, maxDim: Int, dataFormat: String, negY: Boolean):
+  LabeledData = {
+    dataFormat match {
+      case "dummy" =>
+        return parseDummyVector(value, maxDim, negY)
+      case "libsvm" =>
+        return parseLibsvmVector(value, maxDim, negY)
+    }
+    return null
+  }
+
   protected def parseDummyVector(text: Text, maxDim: Int, negY: Boolean): LabeledData = {
     if (null == text) {
       return null
     }
-    val splits = text.toString.split(",")
+    return parseDummyVector(text.toString, maxDim, negY)
+  }
+
+  protected def parseDummyVector(text: String, maxDim: Int, negY: Boolean): LabeledData = {
+    if (null == text) {
+      return null
+    }
+    val splits = text.split(",")
     if (splits.length < 1) {
       return null
     }
@@ -55,7 +74,14 @@ object DataParser {
     if (null == text) {
       return null
     }
-    val splits = text.toString.trim.split(" ")
+    return parseLibsvmVector(text.toString, maxDim, negY)
+  }
+
+  protected def parseLibsvmVector(text: String, maxDim: Int, negY: Boolean): LabeledData = {
+    if (null == text) {
+      return null
+    }
+    val splits = text.trim.split(" ")
 
     if (splits.length < 1)
       return null
@@ -86,5 +112,7 @@ object DataParser {
 
     new LabeledData(x, y)
   }
+
+
 }
 

@@ -94,7 +94,7 @@ object SparseLRWithOWLQN {
   }
 
   def runPSOWLQN(trainData: RDD[(OneHotVector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
-    val pool = PSContext.getOrCreate().createModelPool(dim, m * 10)
+    val pool = PSContext.getOrCreate().createModelPool(dim, m * 50)
     val initWeightPS = pool.createZero().mkBreeze()
     val regPS = pool.createZero().mkBreeze()
     val tol = 1e-6

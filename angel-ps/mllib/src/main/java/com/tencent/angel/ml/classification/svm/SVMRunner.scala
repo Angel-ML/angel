@@ -36,33 +36,8 @@ class SVMRunner extends MLRunner {
     */
   override def train(conf: Configuration): Unit = {
     conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
-    conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS, classOf[SVMTrainTask].getName)
 
-    // Create an angel job client
-    val client = AngelClientFactory.get(conf)
-
-    // Create a SVM model
-    val svmModel = new SVMModel(conf)
-
-    // Submit this application
-    client.startPSServer()
-
-    // Load model meta to client
-    client.loadModel(svmModel)
-
-    // Start
-    client.runTask(classOf[SVMTrainTask])
-
-    // Run user task and wait for completion,
-    // User task is set in AngelConfiguration.ANGEL_TASK_USER_TASKCLASS
-    client.waitForCompletion()
-
-    // Save the trained model to HDFS
-    client.saveModel(svmModel)
-
-    // Stop
-    client.stop()
-
+    train(conf, SVMModel(conf), classOf[SVMTrainTask])
   }
 
   /**
@@ -72,29 +47,7 @@ class SVMRunner extends MLRunner {
     */
   override def predict(conf: Configuration): Unit = {
     conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
-    conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS, classOf[SVMPredictTask].getName)
-
-    // Create an angel job client
-    val client = AngelClientFactory.get(conf)
-
-    // Submit this application
-    client.startPSServer()
-
-    // Create SVM model
-    val svmModel = new SVMModel(conf)
-
-    // Add the model meta to client
-    client.loadModel(svmModel)
-
-    // Start
-    client.runTask(classOf[SVMPredictTask])
-
-    // Run user task and wait for completion,
-    // User task is set in AngelConfiguration.ANGEL_TASK_USER_TASKCLASS
-    client.waitForCompletion()
-
-    // Stop
-    client.stop()
+    predict(conf, SVMModel(conf), classOf[SVMPredictTask])
   }
 
   /*

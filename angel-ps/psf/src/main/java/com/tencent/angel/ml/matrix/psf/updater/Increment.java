@@ -17,7 +17,7 @@
 
 package com.tencent.angel.ml.matrix.psf.updater;
 
-import com.tencent.angel.ml.matrix.psf.updater.base.VAUpdaterFunc;
+import com.tencent.angel.ml.matrix.psf.updater.base.VAUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 
 import java.nio.DoubleBuffer;
@@ -25,7 +25,7 @@ import java.nio.DoubleBuffer;
 /**
  * `Increment` will increase `delta` to `rowId` row in matrix.
  */
-public class Increment extends VAUpdaterFunc {
+public class Increment extends VAUpdateFunc {
 
   public Increment(int matrixId, int rowId, double[] delta) {
     super(matrixId, rowId, delta);

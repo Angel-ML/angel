@@ -21,7 +21,7 @@ import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.ml.matrix.transport.*;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
-import com.tencent.angel.ml.matrix.psf.updater.base.UpdaterFunc;
+import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateFunc;
 import com.tencent.angel.ps.impl.MatrixPartitionManager;
 import com.tencent.angel.ps.impl.PSContext;
 import com.tencent.angel.ps.impl.matrix.ServerPartition;
@@ -155,10 +155,10 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
   private void update(int seqId, UpdaterRequest request, ChannelHandlerContext ctx) {
     UpdaterResponse response = null;
     try {
-      Class<? extends UpdaterFunc> funcClass = (Class<? extends UpdaterFunc>) Class.forName(request.getUpdaterFuncClass());
-      Constructor<? extends UpdaterFunc> constructor = funcClass.getConstructor();
+      Class<? extends UpdateFunc> funcClass = (Class<? extends UpdateFunc>) Class.forName(request.getUpdaterFuncClass());
+      Constructor<? extends UpdateFunc> constructor = funcClass.getConstructor();
       constructor.setAccessible(true);
-      UpdaterFunc func = constructor.newInstance();
+      UpdateFunc func = constructor.newInstance();
       func.partitionUpdate(request.getPartParam());
       response = new UpdaterResponse();
       response.setResponseType(ResponseType.SUCCESS);

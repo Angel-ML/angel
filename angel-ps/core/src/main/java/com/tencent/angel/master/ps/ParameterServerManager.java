@@ -114,8 +114,8 @@ public class ParameterServerManager extends AbstractService implements
     }
 
     int psServerMemory =
-        conf.getInt(AngelConfiguration.ANGEL_PS_MERMORY_MB,
-            AngelConfiguration.DEFAULT_ANGEL_PS_MERMORY_MB);
+        conf.getInt(AngelConfiguration.ANGEL_PS_MEMORY_GB,
+            AngelConfiguration.DEFAULT_ANGEL_PS_MEMORY_GB) * 1024;
 
     int psServerVcores =
         conf.getInt(AngelConfiguration.ANGEL_PS_CPU_VCORES,

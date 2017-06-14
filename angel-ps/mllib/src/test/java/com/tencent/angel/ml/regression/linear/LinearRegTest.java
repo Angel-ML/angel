@@ -45,7 +45,7 @@ public class LinearRegTest {
         // Feature number of train data
         int featureNum = 101;
         // Total iteration number
-        int epochNum = 20;
+        int epochNum = 100;
         // Validation sample Ratio
         double vRatio = 0.5;
         // Data format, libsvm or dummy
@@ -54,9 +54,9 @@ public class LinearRegTest {
         double spRatio = 1;
 
         // Learning rate
-        double learnRate = 0.1;
+        double learnRate = 0.01;
         // Decay of learning rate
-        double decay = 0.01;
+        double decay = 0.1;
         // Regularization coefficient
         double reg = 0;
 

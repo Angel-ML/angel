@@ -107,8 +107,8 @@ public class ParameterServerJVM {
   private static String generateDefaultJVMParameters(Configuration conf, ApplicationId appid,
       PSAttemptId psAttemptId) {
     int workerMemSizeInMB =
-        conf.getInt(AngelConfiguration.ANGEL_PS_MERMORY_MB,
-            AngelConfiguration.DEFAULT_ANGEL_PS_MERMORY_MB);
+        conf.getInt(AngelConfiguration.ANGEL_PS_MEMORY_GB,
+            AngelConfiguration.DEFAULT_ANGEL_PS_MEMORY_GB) * 1024;
 
     int heapMax = workerMemSizeInMB - 200;
     int youngRegionSize = (int) (heapMax * 0.4);

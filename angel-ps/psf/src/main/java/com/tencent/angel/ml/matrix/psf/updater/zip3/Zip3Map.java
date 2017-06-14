@@ -18,7 +18,7 @@
 package com.tencent.angel.ml.matrix.psf.updater.zip3;
 
 import com.tencent.angel.common.Serialize;
-import com.tencent.angel.ml.matrix.psf.updater.base.MFUpdaterFunc;
+import com.tencent.angel.ml.matrix.psf.updater.base.MFUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 
 import java.nio.DoubleBuffer;
@@ -27,7 +27,7 @@ import java.nio.DoubleBuffer;
  * It is a Zip3Map function which applies `Zip3MapFunc` to `fromId1`, `fromId2` and `fromId3` row,
  * and saves the result to `toId` row.
  */
-public class Zip3Map extends MFUpdaterFunc {
+public class Zip3Map extends MFUpdateFunc {
 
   public Zip3Map(int matrixId, int fromId1, int fromId2, int fromId3, int toId, Zip3MapFunc func) {
     super(matrixId, new int[]{fromId1, fromId2, fromId3, toId}, func);

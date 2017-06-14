@@ -17,7 +17,6 @@
 
 package com.tencent.angel.ml.utils
 
-import java.io.DataOutputStream
 import java.util
 import java.util.function.ToIntFunction
 import java.util.{Comparator, Map}
@@ -25,7 +24,7 @@ import java.util.{Comparator, Map}
 import com.tencent.angel.conf.AngelConfiguration
 import com.tencent.angel.worker.task.TaskContext
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList
-import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.hadoop.fs.{FSDataOutputStream, FileSystem, Path}
 
 import scala.collection.JavaConversions._
 
@@ -61,7 +60,12 @@ class DistributedLogger(ctx: TaskContext) extends Logger {
     .toString)
 
   var fs: FileSystem = path.getFileSystem(conf)
-  var out: DataOutputStream = fs.create(path, true)
+
+  if (fs.exists(path)) {
+    fs.delete(path, true)
+  }
+
+  var out: FSDataOutputStream = fs.create(path, true)
   var closed = false
 
   override

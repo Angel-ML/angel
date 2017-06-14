@@ -17,18 +17,9 @@
 
 package com.tencent.angel.ml.classification.lr
 
-
-import com.tencent.angel.ml.MLRunner
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
-import com.tencent.angel.client.AngelClientFactory
-import com.tencent.angel.conf.AngelConfiguration
 import com.tencent.angel.ml.MLRunner
-import com.tencent.angel.ml.conf.MLConf
-import com.tencent.angel.ml.utils.HDFSUtils
-import org.apache.hadoop.fs.{FSDataInputStream, Path}
-import org.apache.hadoop.io.Text
-import org.apache.hadoop.util.LineReader
 
 /**
   * Run logistic regression task on angel
@@ -45,11 +36,6 @@ class LRRunner extends MLRunner {
   override
   def train(conf: Configuration): Unit = {
     conf.setInt("angel.worker.matrixtransfer.request.timeout.ms", 60000)
-
-    var feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
-
-    LOG.info("feanNum=" + feaNum)
-    conf.setInt(MLConf.ML_FEATURE_NUM, feaNum)
 
     train(conf, LRModel(conf), classOf[LRTrainTask])
   }

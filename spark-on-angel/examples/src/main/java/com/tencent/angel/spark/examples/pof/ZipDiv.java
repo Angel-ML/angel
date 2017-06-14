@@ -17,7 +17,7 @@
 
 package com.tencent.angel.spark.examples.pof;
 
-import com.tencent.angel.ml.matrix.psf.updater.zip2.Zip2MapFunc;
+import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.Zip2MapFunc;
 import io.netty.buffer.ByteBuf;
 
 public class ZipDiv implements Zip2MapFunc {

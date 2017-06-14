@@ -17,7 +17,7 @@
 
 package com.tencent.angel.ml.matrix.psf.updater;
 
-import com.tencent.angel.ml.matrix.psf.updater.base.MMUpdaterFunc;
+import com.tencent.angel.ml.matrix.psf.updater.base.MMUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 
 import java.nio.DoubleBuffer;
@@ -26,7 +26,7 @@ import java.nio.DoubleBuffer;
  * `DivS` function will divide `fromId` by `value` and save to `toId`.
  * That is `toId` = `fromId` / `value`
  */
-public class DivS extends MMUpdaterFunc {
+public class DivS extends MMUpdateFunc {
 
   public DivS(int matrixId, int fromId, int toId, double value) {
     super(matrixId, new int[]{fromId, toId}, new double[]{value});

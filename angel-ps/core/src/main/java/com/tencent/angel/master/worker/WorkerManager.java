@@ -131,8 +131,8 @@ public class WorkerManager extends AbstractService implements EventHandler<Worke
             AngelConfiguration.DEFAULT_ANGEL_TASK_ERROR_TOLERATE));
 
     int workerMemory =
-        conf.getInt(AngelConfiguration.ANGEL_WORKER_MERMORY_MB,
-            AngelConfiguration.DEFAULT_ANGEL_WORKER_MERMORY_MB);
+        conf.getInt(AngelConfiguration.ANGEL_WORKER_MEMORY_GB,
+            AngelConfiguration.DEFAULT_ANGEL_WORKER_MEMORY_GB) * 1024;
     int workerVcores =
         conf.getInt(AngelConfiguration.ANGEL_WORKER_CPU_VCORES,
             AngelConfiguration.DEFAULT_ANGEL_WORKER_CPU_VCORES);

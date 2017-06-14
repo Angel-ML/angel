@@ -58,8 +58,8 @@ public class WorkerJVM {
   private static String generateDefaultJVMParameters(Configuration conf, ApplicationId appid,
       WorkerAttemptId workerAttemptId) {
     int workerMemSizeInMB =
-        conf.getInt(AngelConfiguration.ANGEL_WORKER_MERMORY_MB,
-            AngelConfiguration.DEFAULT_ANGEL_WORKER_MERMORY_MB);
+        conf.getInt(AngelConfiguration.ANGEL_WORKER_MEMORY_GB,
+            AngelConfiguration.DEFAULT_ANGEL_WORKER_MEMORY_GB) * 1024;
 
     int heapMax = workerMemSizeInMB - 200;
     int youngRegionSize = (int) (heapMax * 0.4);

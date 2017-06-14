@@ -17,7 +17,7 @@
 
 package com.tencent.angel.spark.examples.pof;
 
-import com.tencent.angel.ml.matrix.psf.updater.zip3.Zip3MapFunc;
+import com.tencent.angel.ml.matrix.psf.update.enhance.zip3.Zip3MapFunc;
 import io.netty.buffer.ByteBuf;
 
 public class Zip3Add implements Zip3MapFunc {

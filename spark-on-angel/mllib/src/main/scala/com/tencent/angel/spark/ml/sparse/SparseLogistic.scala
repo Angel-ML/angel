@@ -38,12 +38,13 @@ object SparseLogistic {
   case class Cost(trainData: RDD[(OneHotVector, Double)]) extends DiffFunction[BDV[Double]] {
     def calculate(x: BDV[Double]): (Double, BDV[Double]) = {
       val sampleNum = trainData.count()
+      val bcX = trainData.sparkContext.broadcast(x)
 
       val (cumGradient, cumLoss) = {
         val seqOp = (c: (BDV[Double], Double), point: (OneHotVector, Double)) => {
           val (feat, label) = point
           val (combGrad, combLoss) = c
-          val margin: Double = -1.0 * OneHot.dot(feat, x)
+          val margin: Double = -1.0 * OneHot.dot(feat, bcX.value)
           val gradientMultiplier = (1.0 / (1.0 + math.exp(margin))) - label
           val loss =
             if (label > 0) {
@@ -63,6 +64,7 @@ object SparseLogistic {
         trainData.treeAggregate((new BDV[Double](x.length), 0.0)) (seqOp, combOp)
       }
       val resGradient = new BDV[Double](cumGradient.toArray.map(_ / sampleNum))
+      println(s"loss: ${cumLoss / sampleNum}")
       (cumLoss / sampleNum, resGradient)
     }
   }

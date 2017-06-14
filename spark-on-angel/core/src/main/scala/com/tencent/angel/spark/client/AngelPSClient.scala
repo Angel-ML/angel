@@ -21,14 +21,16 @@ import java.util.concurrent.ConcurrentHashMap
 
 import com.tencent.angel.ml.math.vector.DenseDoubleVector
 import com.tencent.angel.ml.matrix.psf.aggr._
-import com.tencent.angel.ml.matrix.psf.aggr.base.ScalarAggrResult
+import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult
+import com.tencent.angel.ml.matrix.psf.aggr.primitive.Pull
 import com.tencent.angel.ml.matrix.psf.get.base._
-import com.tencent.angel.ml.matrix.psf.get.single.{GetRowResult, GetRowFunc, GetRowParam}
-import com.tencent.angel.ml.matrix.psf.updater._
-import com.tencent.angel.ml.matrix.psf.updater.base.UpdaterFunc
-import com.tencent.angel.ml.matrix.psf.updater.map._
-import com.tencent.angel.ml.matrix.psf.updater.zip2._
-import com.tencent.angel.ml.matrix.psf.updater.zip3._
+import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult
+import com.tencent.angel.ml.matrix.psf.update._
+import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateFunc
+import com.tencent.angel.ml.matrix.psf.update.enhance.map.{Map, MapFunc, MapWithIndex, MapWithIndexFunc}
+import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.{Zip2Map, Zip2MapFunc, Zip2MapWithIndex, Zip2MapWithIndexFunc}
+import com.tencent.angel.ml.matrix.psf.update.enhance.zip3.{Zip3Map, Zip3MapFunc, Zip3MapWithIndex, Zip3MapWithIndexFunc}
+import com.tencent.angel.ml.matrix.psf.update.primitive.{Increment, Push}
 import com.tencent.angel.psagent.matrix.{MatrixClientFactory, ResponseType, Result}
 import com.tencent.angel.spark._
 import com.tencent.angel.spark.models.PSModelProxy
@@ -62,7 +64,7 @@ private[spark] class AngelPSClient(psContext: PSContext) extends PSClient {
   }
 
   protected def doPush(to: PSModelProxy, value: Array[Double]): Unit = {
-    update(to.poolId, new Put(to.poolId, to.id, value))
+    update(to.poolId, new Push(to.poolId, to.id, value))
   }
 
   protected def doFill(to: PSModelProxy, value: Double): Unit = {
@@ -86,6 +88,12 @@ private[spark] class AngelPSClient(psContext: PSContext) extends PSClient {
       mean: Double,
       stddev: Double): Unit = {
     update(to.poolId, new RandomNormal(to.poolId, to.id, mean, stddev))
+  }
+
+  protected def doEqual(vector1: PSModelProxy, vector2: PSModelProxy): Boolean = {
+    val res = aggregate(vector1.poolId, new Equal(vector1.poolId, vector1.id, vector2.id))
+      .asInstanceOf[ScalarAggrResult].getResult
+    res == 1.0
   }
 
   protected def doSum(vector: PSModelProxy): Double = {
@@ -324,7 +332,7 @@ private[spark] class AngelPSClient(psContext: PSContext) extends PSClient {
    * @param poolId The PSVectorPool id(matrix id in Angel)
    * @param func update PS Oriented Function(POF)
    */
-  private def update(poolId: Int, func: UpdaterFunc): Unit = {
+  private def update(poolId: Int, func: UpdateFunc): Unit = {
     val client = MatrixClientFactory.get(poolId, PSContext.getTaskId())
     val result = client.update(func).get
     assertSuccess(result)

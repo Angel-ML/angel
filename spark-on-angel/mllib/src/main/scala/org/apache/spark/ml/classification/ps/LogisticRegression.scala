@@ -38,7 +38,7 @@ import org.apache.spark.ml.feature.Instance
 import org.apache.spark.ml.linalg._
 import org.apache.spark.ml.param._
 import org.apache.spark.ml.param.shared._
-import org.apache.spark.ml.pof.{RegGradient, RegLoss}
+import org.apache.spark.ml.psf.{RegGradient, RegLoss}
 import org.apache.spark.ml.util._
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.mllib.linalg.VectorImplicits._

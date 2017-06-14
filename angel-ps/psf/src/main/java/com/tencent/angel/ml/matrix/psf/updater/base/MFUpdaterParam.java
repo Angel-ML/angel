@@ -29,7 +29,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * `MFUpdaterParam` is Parameter class for `MFUpdaterFunc`
+ * `MFUpdaterParam` is Parameter class for `MFUpdateFunc`
  */
 public class MFUpdaterParam extends UpdaterParam {
 

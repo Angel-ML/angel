@@ -16,7 +16,7 @@
 
 package com.tencent.angel.psagent.matrix.transport.adapter;
 
-import com.tencent.angel.ml.matrix.psf.updater.base.VoidResult;
+import com.tencent.angel.ml.matrix.psf.update.enhance.VoidResult;
 import com.tencent.angel.psagent.matrix.transport.FutureResult;
 
 import java.util.ArrayList;

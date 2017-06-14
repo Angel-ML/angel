@@ -17,6 +17,10 @@
 
 package com.tencent.angel.spark.models.vector
 
+import com.tencent.angel.ml.matrix.psf.update.enhance.map.{MapWithIndexFunc, MapFunc}
+import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.{Zip2MapWithIndexFunc, Zip2MapFunc}
+import com.tencent.angel.ml.matrix.psf.update.enhance.zip3.{Zip3MapWithIndexFunc, Zip3MapFunc}
+
 import scala.language.implicitConversions
 
 import breeze.linalg.operators._
@@ -25,9 +29,9 @@ import breeze.linalg.support.{CanCopy, CanCreateZerosLike}
 import breeze.math.MutableLPVectorField
 import org.apache.spark.SparkException
 
-import com.tencent.angel.ml.matrix.psf.updater.map.{MapFunc, MapWithIndexFunc}
-import com.tencent.angel.ml.matrix.psf.updater.zip2.{Zip2MapFunc, Zip2MapWithIndexFunc}
-import com.tencent.angel.ml.matrix.psf.updater.zip3.{Zip3MapFunc, Zip3MapWithIndexFunc}
+import com.tencent.angel.ml.matrix.psf.update.enhance.map.MapWithIndexFunc
+import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.Zip2MapWithIndexFunc
+import com.tencent.angel.ml.matrix.psf.update.enhance.zip3.Zip3MapWithIndexFunc
 import com.tencent.angel.spark.client.PSClient
 import com.tencent.angel.spark.models.PSModelProxy
 
@@ -248,6 +252,21 @@ class BreezePSVector (override val proxy: PSModelProxy)
       other2: BreezePSVector,
       func: Zip3MapWithIndexFunc): Unit = {
     PSClient().zip3MapWithIndex(proxy, other1.proxy, other2.proxy, func, proxy)
+  }
+
+  override def equals(obj: scala.Any): Boolean = {
+    if (obj == null) {
+      false
+    } else if (!obj.isInstanceOf[BreezePSVector]) {
+      false
+    } else {
+      val brzObj = obj.asInstanceOf[BreezePSVector]
+      if (brzObj.length != this.length) {
+        false
+      } else {
+        PSClient().equal(this.proxy, brzObj.proxy)
+      }
+    }
   }
 
 }

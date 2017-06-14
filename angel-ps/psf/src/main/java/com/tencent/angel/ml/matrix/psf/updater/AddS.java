@@ -17,7 +17,7 @@
 
 package com.tencent.angel.ml.matrix.psf.updater;
 
-import com.tencent.angel.ml.matrix.psf.updater.base.MMUpdaterFunc;
+import com.tencent.angel.ml.matrix.psf.updater.base.MMUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 
 import java.nio.DoubleBuffer;
@@ -26,7 +26,7 @@ import java.nio.DoubleBuffer;
  * `AddS` function will add a `value` to `fromId` and save result to `toId`.
  * That is `toId` = `fromId` + `value`
  */
-public class AddS extends MMUpdaterFunc {
+public class AddS extends MMUpdateFunc {
 
   public AddS(int matrixId, int fromId, int toId, double scalar) {
     super(matrixId, new int[] {fromId, toId}, new double[]{scalar});

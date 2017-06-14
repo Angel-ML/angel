@@ -154,7 +154,7 @@ public abstract class AngelClient implements AngelClientInterface {
       throw new AngelException("parameter servers are not started, you must execute startPSServer first!!");
     }
 
-    Map<String, PSModel<?>> psModels = model.getPsModels();
+    Map<String, PSModel<?>> psModels = model.getPSModels();
 
     for (Map.Entry<String, PSModel<?>> entry: psModels.entrySet()) {
       addMatrix(entry.getValue().getContext());
@@ -175,7 +175,7 @@ public abstract class AngelClient implements AngelClientInterface {
     }
 
     SaveRequest.Builder builder = SaveRequest.newBuilder();
-    Map<String, PSModel<?>> psModels = model.getPsModels();
+    Map<String, PSModel<?>> psModels = model.getPSModels();
 
     for (Map.Entry<String, PSModel<?>> entry: psModels.entrySet()) {
       MatrixContext context = entry.getValue().getContext();
@@ -529,6 +529,12 @@ public abstract class AngelClient implements AngelClientInterface {
 
   protected void setOutputDirectory() throws IOException{
     String actionType = conf.get(AngelConfiguration.ANGEL_ACTION_TYPE, AngelConfiguration.DEFAULT_ANGEL_ACTION_TYPE);
+    RunningMode runningMode = RunningMode.valueOf(conf.get(AngelConfiguration.ANGEL_RUNNING_MODE, AngelConfiguration.DEFAULT_ANGEL_RUNNING_MODE));
+    LOG.info("running mode = " + runningMode);
+    boolean deleteOnExist =
+      conf.getBoolean(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
+        AngelConfiguration.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST);
+
     String path = null;
     if (!actionType.matches("predict")) {
       path = conf.get(AngelConfiguration.ANGEL_SAVE_MODEL_PATH);
@@ -546,10 +552,6 @@ public abstract class AngelClient implements AngelClientInterface {
         + AngelConfiguration.ANGEL_PREDICT_PATH + " at predict mode");
     }
 
-    boolean deleteOnExist =
-        conf.getBoolean(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
-            AngelConfiguration.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST);
-
     Path outputPath = new Path(outputPathStr);
 
     FileSystem outFs = outputPath.getFileSystem(conf);
@@ -558,6 +560,24 @@ public abstract class AngelClient implements AngelClientInterface {
         outFs.delete(outputPath, true);
       } else {
         throw new IOException("output path " + outputPath + " already exist, please check");
+      }
+    }
+
+    if(runningMode == RunningMode.ANGEL_PS_WORKER) {
+      String logPathStr = conf.get(AngelConfiguration.ANGEL_LOG_PATH);
+      if(logPathStr == null) {
+        throw new IOException("log directory is null. you must set "
+          + AngelConfiguration.ANGEL_LOG_PATH);
+      }
+
+      Path logPath = new Path(logPathStr);
+      FileSystem logFs = logPath.getFileSystem(conf);
+      if (logFs.exists(logPath)) {
+        if (deleteOnExist) {
+          logFs.delete(logPath, true);
+        } else {
+          throw new IOException("log path " + logPath + " already exist, please check");
+        }
       }
     }
 
@@ -589,7 +609,54 @@ public abstract class AngelClient implements AngelClientInterface {
       conf.set(AngelConfiguration.JOB_SUBMITHOSTADDR, submitHostAddress);
     }
   }
-  
+
+  protected void handleDeprecatedParameters(Configuration conf) {
+    String memoryMBStr = conf.get(AngelConfiguration.ANGEL_AM_MEMORY_MB);
+    String memoryGBStr = conf.get(AngelConfiguration.ANGEL_AM_MEMORY_GB);
+
+    if(memoryGBStr == null && memoryMBStr != null) {
+      LOG.warn("use deprecated parameter " + AngelConfiguration.ANGEL_AM_MEMORY_MB
+        + ", you can use " + AngelConfiguration.ANGEL_AM_MEMORY_GB + " instead.");
+
+      try{
+        int memoryMB = Integer.valueOf(memoryMBStr);
+        conf.setInt(AngelConfiguration.ANGEL_AM_MEMORY_GB, (int)Math.ceil((float) memoryMB / 1024));
+      } catch (Exception x) {
+        LOG.error("invalid value for  " + AngelConfiguration.ANGEL_AM_MEMORY_MB + " " + memoryMBStr);
+      }
+    }
+
+    memoryMBStr = conf.get(AngelConfiguration.ANGEL_WORKER_MEMORY_MB);
+    memoryGBStr = conf.get(AngelConfiguration.ANGEL_WORKER_MEMORY_GB);
+
+    if(memoryGBStr == null && memoryMBStr != null) {
+      LOG.warn("use deprecated parameter " + AngelConfiguration.ANGEL_WORKER_MEMORY_MB
+        + ", you can use " + AngelConfiguration.ANGEL_WORKER_MEMORY_GB + " instead.");
+
+      try{
+        int memoryMB = Integer.valueOf(memoryMBStr);
+        conf.setInt(AngelConfiguration.ANGEL_WORKER_MEMORY_GB, (int)Math.ceil((float) memoryMB / 1024));
+      } catch (Exception x) {
+        LOG.error("invalid value for  " + AngelConfiguration.ANGEL_WORKER_MEMORY_MB + " " + memoryGBStr);
+      }
+    }
+
+    memoryMBStr = conf.get(AngelConfiguration.ANGEL_PS_MEMORY_MB);
+    memoryGBStr = conf.get(AngelConfiguration.ANGEL_PS_MEMORY_GB);
+
+    if(memoryGBStr == null && memoryMBStr != null) {
+      LOG.warn("use deprecated parameter " + AngelConfiguration.ANGEL_PS_MEMORY_MB
+        + ", you can use " + AngelConfiguration.ANGEL_PS_MEMORY_GB + " instead.");
+
+      try{
+        int memoryMB = Integer.valueOf(memoryMBStr);
+        conf.setInt(AngelConfiguration.ANGEL_PS_MEMORY_GB, (int)Math.ceil((float) memoryMB / 1024));
+      } catch (Exception x) {
+        LOG.error("invalid value for  " + AngelConfiguration.ANGEL_PS_MEMORY_MB + " " + memoryGBStr);
+      }
+    }
+  }
+
   protected void checkParameters(Configuration conf) throws InvalidParameterException {
     StringBuilder sb = new StringBuilder();
     int coreNum = conf.getInt(AngelConfiguration.ANGEL_AM_CPU_VCORES,
@@ -599,47 +666,38 @@ public abstract class AngelClient implements AngelClientInterface {
       sb.append("\n");
     }
 
-    int memNum = conf.getInt(AngelConfiguration.ANGEL_AM_VMEM_MB,
-        AngelConfiguration.DEFAULT_ANGEL_AM_VMEM_MB);
+    int memNum = conf.getInt(AngelConfiguration.ANGEL_AM_MEMORY_GB,
+        AngelConfiguration.DEFAULT_ANGEL_AM_MEMORY_GB);
     if (memNum <= 0) {
-      sb.append(AngelConfiguration.ANGEL_AM_VMEM_MB + " should > 0");
+      sb.append(AngelConfiguration.ANGEL_AM_MEMORY_GB + " should > 0");
       sb.append("\n");
     }
 
-    int heartbeatInterval = conf.getInt(
-        AngelConfiguration.ANGEL_AM_HEARTBEAT_INTERVAL_MS,
-        AngelConfiguration.DEFAULT_ANGEL_AM_HEARTBEAT_INTERVAL_MS);
-
-    if (heartbeatInterval <= 0) {
-      sb.append(AngelConfiguration.ANGEL_AM_HEARTBEAT_INTERVAL_MS
-          + " should > 0");
+    coreNum = conf.getInt(AngelConfiguration.ANGEL_WORKER_CPU_VCORES,
+      AngelConfiguration.DEFAULT_ANGEL_WORKER_CPU_VCORES);
+    if (coreNum <= 0) {
+      sb.append(AngelConfiguration.ANGEL_WORKER_CPU_VCORES + " should > 0");
       sb.append("\n");
     }
 
-    int commitTaskNum = conf.getInt(
-        AngelConfiguration.ANGEL_AM_COMMIT_TASK_NUM,
-        AngelConfiguration.DEFAULT_ANGEL_AM_COMMIT_TASK_NUM);
-    if (commitTaskNum <= 0 || commitTaskNum > 1024) {
-      sb.append(AngelConfiguration.ANGEL_AM_COMMIT_TASK_NUM
-          + " should > 0 and <= 1024");
+    memNum = conf.getInt(AngelConfiguration.ANGEL_WORKER_MEMORY_GB,
+      AngelConfiguration.DEFAULT_ANGEL_WORKER_MEMORY_GB);
+    if (memNum <= 0) {
+      sb.append(AngelConfiguration.ANGEL_WORKER_MEMORY_GB + " should > 0");
       sb.append("\n");
     }
 
-    int amCommitTimeOutMS = conf.getInt(
-        AngelConfiguration.ANGEL_AM_COMMIT_TIMEOUT_MS,
-        AngelConfiguration.DEFAULT_ANGEL_AM_COMMIT_TIMEOUT_MS);
-    if (amCommitTimeOutMS <= 0) {
-      sb.append(AngelConfiguration.ANGEL_AM_COMMIT_TIMEOUT_MS + " should > 0");
+    coreNum = conf.getInt(AngelConfiguration.ANGEL_PS_CPU_VCORES,
+      AngelConfiguration.DEFAULT_ANGEL_PS_CPU_VCORES);
+    if (coreNum <= 0) {
+      sb.append(AngelConfiguration.ANGEL_PS_CPU_VCORES + " should > 0");
       sb.append("\n");
     }
 
-    int containerLauncherLimit = conf
-        .getInt(
-            AngelConfiguration.ANGEL_AM_CONTAINERLAUNCHER_THREAD_COUNT_LIMIT,
-            AngelConfiguration.DEFAULT_ANGEL_AM_CONTAINERLAUNCHER_THREAD_COUNT_LIMIT);
-    if (containerLauncherLimit <= 0) {
-      sb.append(AngelConfiguration.ANGEL_AM_CONTAINERLAUNCHER_THREAD_COUNT_LIMIT
-          + " should > 0");
+    memNum = conf.getInt(AngelConfiguration.ANGEL_PS_MEMORY_GB,
+      AngelConfiguration.DEFAULT_ANGEL_PS_MEMORY_GB);
+    if (memNum <= 0) {
+      sb.append(AngelConfiguration.ANGEL_PS_MEMORY_GB + " should > 0");
       sb.append("\n");
     }
 

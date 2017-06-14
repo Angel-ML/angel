@@ -17,7 +17,7 @@
 
 package com.tencent.angel.spark.examples.pof;
 
-import com.tencent.angel.ml.matrix.psf.updater.map.MapFunc;
+import com.tencent.angel.ml.matrix.psf.update.enhance.map.MapFunc;
 import io.netty.buffer.ByteBuf;
 
 public class MulScalar implements MapFunc {

@@ -17,7 +17,7 @@
 
 package com.tencent.angel.ml.matrix.psf.updater;
 
-import com.tencent.angel.ml.matrix.psf.updater.base.MMUpdaterFunc;
+import com.tencent.angel.ml.matrix.psf.updater.base.MMUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 
 import java.nio.DoubleBuffer;
@@ -25,7 +25,7 @@ import java.nio.DoubleBuffer;
 /**
  * `Axpy` function is a implement of blas.axpy. That is `yId` += a * `xId`
  */
-public class Axpy extends MMUpdaterFunc {
+public class Axpy extends MMUpdateFunc {
 
   public Axpy(int matrixId, int xId, int yId, double a) {
     super(matrixId, new int[]{xId, yId}, new double[]{a});

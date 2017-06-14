@@ -17,7 +17,7 @@
 
 package com.tencent.angel.ml.matrix.psf.updater;
 
-import com.tencent.angel.ml.matrix.psf.updater.base.VAUpdaterFunc;
+import com.tencent.angel.ml.matrix.psf.updater.base.VAUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 
 import java.nio.DoubleBuffer;
@@ -25,7 +25,7 @@ import java.nio.DoubleBuffer;
 /**
  * `MaxA` is find the maximum value of each element in `rowId` row and `other`
  */
-public class MaxA extends VAUpdaterFunc {
+public class MaxA extends VAUpdateFunc {
 
   public MaxA(int matrixId, int rowId, double[] other) {
     super(matrixId, rowId, other);

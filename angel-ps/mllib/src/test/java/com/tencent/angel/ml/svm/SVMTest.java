@@ -58,11 +58,11 @@ public class SVMTest {
     double spRatio = 0.65;
 
     // Learning rate
-    double learnRate = 0.8;
+    double learnRate = 0.1;
     // Decay of learning rate
-    double decay = 0.2;
+    double decay = 0.01;
     // Regularization coefficient
-    double reg = 0.1;
+    double reg = 0.001;
 
     // Set basic configuration keys
     conf.setBoolean("mapred.mapper.new-api", true);

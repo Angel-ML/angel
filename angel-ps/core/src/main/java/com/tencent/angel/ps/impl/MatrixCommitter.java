@@ -52,7 +52,6 @@ public class MatrixCommitter {
   private static String resultDir = "result";
   private AtomicBoolean isCommitting = new AtomicBoolean(false);
 
-
   /**
    * The task commit matrix partition on according file.
    */
@@ -195,8 +194,8 @@ public class MatrixCommitter {
           baseDir = new Path(new Path(outputPath, resultDir), ps.getServerId().toString());
           fs = baseDir.getFileSystem(conf);
           if (fs.exists(baseDir)) {
-            throw new IOException("output dir for parameterserver " + ps.getServerId().toString()
-                + " already exist!");
+            LOG.warn("ps temp output directory is already existed " + baseDir.toString());
+            fs.delete(baseDir, true);
           }
           fs.mkdirs(baseDir);
 

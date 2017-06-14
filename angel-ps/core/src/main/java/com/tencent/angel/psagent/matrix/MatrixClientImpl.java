@@ -21,8 +21,8 @@ import com.tencent.angel.ml.math.TMatrix;
 import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
-import com.tencent.angel.ml.matrix.psf.updater.base.UpdaterFunc;
-import com.tencent.angel.ml.matrix.psf.updater.base.VoidResult;
+import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateFunc;
+import com.tencent.angel.ml.matrix.psf.update.enhance.VoidResult;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.transport.adapter.GetRowsResult;
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex;
@@ -89,7 +89,7 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
-  public Future<VoidResult> update(UpdaterFunc func) throws AngelException {
+  public Future<VoidResult> update(UpdateFunc func) throws AngelException {
     return PSAgentContext.get().getMatrixClientAdapter().update(func);
   }
 

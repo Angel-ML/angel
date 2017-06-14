@@ -39,7 +39,7 @@ public class ActiveTNodeRunner implements Runnable {
 
   @Override
   public void run() {
-    LOG.info(String.format("Run active node[%d]", this.nid));
+    LOG.debug(String.format("Run active node[%d]", this.nid));
     // 1. name of this node's grad histogram on PS
     String histParaName = this.controller.param.gradHistNamePrefix + nid;
     // 2. build the grad histogram of this node
@@ -55,7 +55,7 @@ public class ActiveTNodeRunner implements Runnable {
     // Arrays.toString(histogram.getValues())));
     // 4. reset thread stats to finished
     this.controller.activeNodeStat[this.nid] = 2;
-    LOG.info(String.format("Active node[%d] finish", this.nid));
+    LOG.debug(String.format("Active node[%d] finish", this.nid));
   }
 
 }

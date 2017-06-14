@@ -439,11 +439,6 @@ public class ServerArbitraryIntRow extends ServerRow {
       ov = denseRep.get(key);
       delta = valueBuf.readInt();
       value = ov + delta;
-      LOG.info("#######key=" + key);
-      LOG.info("#######ov=" + ov);
-      LOG.info("#######delta=" + delta);
-      LOG.info("#######value=" + value);
-      LOG.info("#######nnz=" + nnz);
 
       if (ov != 0 && value == 0)
         nnz--;

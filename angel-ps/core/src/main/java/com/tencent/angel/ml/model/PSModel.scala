@@ -8,7 +8,9 @@ import com.tencent.angel.exception.{AngelException, InvalidParameterException}
 import com.tencent.angel.ml.math.TVector
 import com.tencent.angel.ml.matrix.MatrixContext
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
-import com.tencent.angel.ml.matrix.psf.updater.base.{UpdaterFunc, VoidResult, ZeroUpdater}
+import com.tencent.angel.ml.matrix.psf.update.enhance.{UpdateFunc, VoidResult, ZeroUpdate}
+import ZeroUpdate.ZeroUpdateParam
+import com.tencent.angel.ml.matrix.psf.update.enhance.ZeroUpdate
 import com.tencent.angel.protobuf.generated.MLProtos
 import com.tencent.angel.psagent.matrix.transport.adapter.{GetRowsResult, RowIndex}
 import com.tencent.angel.worker.task.TaskContext
@@ -17,26 +19,38 @@ import org.apache.commons.logging.{Log, LogFactory}
 import scala.collection.mutable.Map
 
 /**
-  * Angel's Core Abstraction. PSModel is used on workers to manipulate distribute models on PSServer.
+  * Angel's Core Abstraction. PSModel is used on workers to manipulate distribute model(matrix) partitions on PSServer.
   *
-  * @param modelName
-  * @param row
-  * @param col
-  * @param blockRow
-  * @param blockCol
-  * @param ctx
-  * @tparam K
+  * @param modelName matrix name
+  * @param row matrix row number
+  * @param col matrix column number
+  * @param blockRow matrix partition row number
+  * @param blockCol matrix partition column number
+  * @param ctx Task context
+  * @tparam K matrix row type
   */
 class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow: Int = -1, blockCol: Int = -1)(implicit ctx:TaskContext)  {
 
   val LOG: Log = LogFactory.getLog(classOf[PSModel[K]])
 
+  /** Matrix configuration */
   val matrixCtx =  new MatrixContext(modelName, row, col, blockRow, blockCol)
 
+  /** Get task context */
   def getTaskContext = ctx
+
+  /** Get matrix context */
   def getContext = matrixCtx
+
+  /** Get ps matrix client */
   def getClient = ctx.getMatrix(modelName)
 
+  /**
+    * Flush the cached matrix oplogs to ps and update the clock for the matrix
+    *
+    * @throws com.tencent.angel.exception.AngelException
+    * @return a future result
+    */
   @throws(classOf[AngelException])
   def clock(): Future[VoidResult] = {
     try {
@@ -49,6 +63,13 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
     }
   }
 
+  /**
+    * Flush the cached matrix oplogs to ps if needed and update the clock for the matrix
+    *
+    * @param flush flush the cached oplog first or not
+    * @throws com.tencent.angel.exception.AngelException
+    * @return a future result
+    */
   @throws(classOf[AngelException])
   def clock(flush: Boolean): Future[VoidResult] = {
     try {
@@ -63,6 +84,12 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
 
   override def finalize(): Unit = super.finalize()
 
+  /**
+    * Flush the cached matrix oplogs to ps
+    *
+    * @throws com.tencent.angel.exception.AngelException
+    * @return a future result
+    */
   @throws(classOf[AngelException])
   def flush(): Future[VoidResult] = {
     try {
@@ -75,6 +102,13 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
     }
   }
 
+  /**
+    * Increment the matrix row vector use a same dimension vector. The update will be cache in local
+    * and send to ps until flush or clock is called
+    *
+    * @param delta update row vector
+    * @throws com.tencent.angel.exception.AngelException
+    */
   @throws(classOf[AngelException])
   def increment(delta: TVector) {
     try {
@@ -87,6 +121,14 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
     }
   }
 
+  /**
+    * Increment the matrix row vector use a same dimension vector. The update will be cache in local
+    * and send to ps until flush or clock is called
+    *
+    * @param rowIndex row index
+    * @param delta update row vector
+    * @throws com.tencent.angel.exception.AngelException
+    */
   @throws(classOf[AngelException])
   def increment(rowIndex: Int, delta: TVector) {
     try {
@@ -99,12 +141,26 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
     }
   }
 
+  /**
+    * Increment the matrix row vectors use same dimension vectors. The update will be cache in local
+    * and send to ps until flush or clock is called
+    *
+    * @param deltas update row vectors
+    * @throws com.tencent.angel.exception.AngelException
+    */
   @throws(classOf[AngelException])
   def increment(deltas: List[TVector]) {
     import scala.collection.JavaConversions._
     for (delta <- deltas) increment(delta)
   }
 
+  /**
+    * Get any result you want about the matrix use a psf get function
+    *
+    * @param func psf get function
+    * @throws com.tencent.angel.exception.AngelException
+    * @return psf get function result
+    */
   @throws(classOf[AngelException])
   def get(func: GetFunc): GetResult = {
     try {
@@ -117,8 +173,11 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
     }
   }
 
-
-
+  /**
+    * Get matrix id
+    *
+    * @return matrix id
+    */
   def getMatrixId(): Int = {
     try {
       return getClient.getMatrixId
@@ -130,12 +189,18 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
     }
   }
 
-
+  /**
+    * Get a matrix row use row index
+    *
+    * @param rowIndex row index
+    * @throws com.tencent.angel.exception.AngelException
+    * @return
+    */
   @SuppressWarnings(Array("unchecked"))
   @throws(classOf[AngelException])
-  def getRow(rowId: Int): K = {
+  def getRow(rowIndex: Int): K = {
     try {
-      return getClient.getRow(rowId).asInstanceOf[K]
+      return getClient.getRow(rowIndex).asInstanceOf[K]
     }
     catch {
       case e: InvalidParameterException => {
@@ -144,7 +209,14 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
     }
   }
 
-
+  /**
+    * Get a batch of matrix rows
+    *
+    * @param rowIndex row indexes
+    * @param batchNum the number of rows get in a rpc
+    * @throws com.tencent.angel.exception.AngelException
+    * @return row index to row map
+    */
   @throws(classOf[AngelException])
   def getRows(rowIndex: RowIndex, batchNum: Int): Map[Int, K] = {
     val indexToVectorMap = scala.collection.mutable.Map[Int, K]()
@@ -166,6 +238,13 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
     indexToVectorMap
   }
 
+  /**
+    * Get a batch of matrix rows
+    *
+    * @param rowIndexes row indexes
+    * @throws com.tencent.angel.exception.AngelException
+    * @return row list
+    */
   @throws(classOf[AngelException])
   def getRows(rowIndexes:Array[Int]): List[K] = {
     val rowIndex = new RowIndex()
@@ -183,6 +262,14 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
     rowList
   }
 
+  /**
+    * Get a batch of rows use pipeline mode
+    *
+    * @param rowIndex row indexes
+    * @param batchNum the number of rows get in a rpc
+    * @throws com.tencent.angel.exception.AngelException
+    * @return Get result which contains a blocked queue
+    */
   @throws(classOf[AngelException])
   def getRowsFlow(rowIndex: RowIndex, batchNum: Int): GetRowsResult = {
     try {
@@ -195,38 +282,81 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
     }
   }
 
+  /**
+    * Set matrix attribute
+    *
+    * @param key attribute name
+    * @param value attribute value
+    */
   def setAttribute(key: String, value: String) {
     matrixCtx.set(key, value)
   }
 
+  /**
+    * Set the average attribute.
+    *
+    * @param aver true means the matrix update should be divided by total task number before sent to ps
+    */
   def setAverage(aver: Boolean) {
     matrixCtx.set(MatrixConfiguration.MATRIX_AVERAGE, String.valueOf(aver))
   }
 
+  /**
+    * Set the hogwild attribute
+    *
+    * @param hogwild true means use the hogwild mode
+    */
   def setHogwild(hogwild: Boolean) {
     matrixCtx.set(MatrixConfiguration.MATRIX_HOGWILD, String.valueOf(hogwild))
   }
 
+  /**
+    * Set the matrix update storage type
+    *
+    * @param oplogType storage type
+    */
   def setOplogType(oplogType: String) {
     matrixCtx.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, oplogType)
   }
 
+  /**
+    * Set the matrix row type
+    *
+    * @param rowType row type
+    */
   def setRowType(rowType: MLProtos.RowType) {
     matrixCtx.setRowType(rowType)
   }
 
+  /**
+    * Set model load path
+    *
+    * @param path load path
+    */
   def setLoadPath(path: String) {
     matrixCtx.set(MatrixConfiguration.MATRIX_LOAD_PATH, path)
     LOG.info("Before training, matrix " + this.matrixCtx.getName + " will be loaded from " + path)
   }
 
+  /**
+    * Set model save path
+    *
+    * @param path
+    */
   def setSavePath(path: String) {
     matrixCtx.set(MatrixConfiguration.MATRIX_SAVE_PATH, path)
     LOG.info("After training matrix " + this.matrixCtx.getName + " will be saved to " + path)
   }
 
+  /**
+    * Update the matrix use a update psf
+    *
+    * @param func update psf
+    * @throws com.tencent.angel.exception.AngelException
+    * @return a future result
+    */
   @throws(classOf[AngelException])
-  def update(func: UpdaterFunc): Future[VoidResult] = {
+  def update(func: UpdateFunc): Future[VoidResult] = {
     try {
       return getClient.update(func)
     }
@@ -237,9 +367,14 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
     }
   }
 
+  /**
+    * Set all matrix elements to zero
+    *
+    * @throws com.tencent.angel.exception.AngelException
+    */
   @throws(classOf[AngelException])
   def zero() {
-    val updater: ZeroUpdater = new ZeroUpdater(new ZeroUpdater.ZeroUpdaterParam(getMatrixId, false))
+    val updater: ZeroUpdate = new ZeroUpdate(new ZeroUpdateParam(getMatrixId, false))
     try {
       update(updater).get
     }

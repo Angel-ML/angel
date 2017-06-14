@@ -18,10 +18,9 @@
 package com.tencent.angel.spark.client
 
 import com.github.fommil.netlib.F2jBLAS
-
-import com.tencent.angel.ml.matrix.psf.updater.map.{MapFunc, MapWithIndexFunc}
-import com.tencent.angel.ml.matrix.psf.updater.zip2.{Zip2MapFunc, Zip2MapWithIndexFunc}
-import com.tencent.angel.ml.matrix.psf.updater.zip3.{Zip3MapFunc, Zip3MapWithIndexFunc}
+import com.tencent.angel.ml.matrix.psf.update.enhance.map.{MapFunc, MapWithIndexFunc}
+import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.{Zip2MapFunc, Zip2MapWithIndexFunc}
+import com.tencent.angel.ml.matrix.psf.update.enhance.zip3.{Zip3MapFunc, Zip3MapWithIndexFunc}
 import com.tencent.angel.spark.PSContext
 import com.tencent.angel.spark.models.PSModelProxy
 import com.tencent.angel.spark.models.vector.PSVector
@@ -85,18 +84,23 @@ private[spark] abstract class PSClient {
    * @param stddev the `stddev` parameter of uniform distribution
    */
   def randomNormal(to: PSModelProxy, mean: Double, stddev: Double): Unit = {
-
     to.assertValid()
     doRandomNormal(to, mean, stddev)
   }
 
+  /**
+   * Judge if v1 is equal to v2 by element-wise.
+   */
+  def equal(v1: PSModelProxy, v2: PSModelProxy): Boolean = {
+    v1.assertCompatible(v2)
+    doEqual(v1, v2)
+  }
 
   /**
    * Sum all the dimension of `vector`
    * Notice: it can only be called in th driver.
    */
   def sum(vector: PSModelProxy): Double = {
-
     vector.assertValid()
     doSum(vector)
   }
@@ -511,6 +515,8 @@ private[spark] abstract class PSClient {
       to: PSModelProxy,
       mean: Double,
       stddev: Double): Unit
+
+  protected def doEqual(v1: PSModelProxy, v2: PSModelProxy): Boolean
 
   protected def doSum(vector: PSModelProxy): Double
 

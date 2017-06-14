@@ -20,9 +20,9 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
-import com.tencent.angel.ml.matrix.psf.updater.base.PartitionUpdaterParam;
-import com.tencent.angel.ml.matrix.psf.updater.base.UpdaterFunc;
-import com.tencent.angel.ml.matrix.psf.updater.base.VoidResult;
+import com.tencent.angel.ml.matrix.psf.update.enhance.PartitionUpdateParam;
+import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateFunc;
+import com.tencent.angel.ml.matrix.psf.update.enhance.VoidResult;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.impl.matrix.ServerPartition;
 import com.tencent.angel.ps.impl.matrix.ServerRow;
@@ -90,11 +90,11 @@ public interface MatrixTransportInterface {
   /**
    * Update matrix partition use the update udf.
    * 
-   * @param updaterFunc the update udf
+   * @param updateFunc the update udf
    * @param partitionUpdaterParam parameter of the update udf
    * @return update result
    */
-  Future<VoidResult> update(UpdaterFunc updaterFunc, PartitionUpdaterParam partitionUpdaterParam);
+  Future<VoidResult> update(UpdateFunc updateFunc, PartitionUpdateParam partitionUpdaterParam);
 
   /**
    * Get a partition result use the get row udf.

@@ -17,6 +17,7 @@
 
 package com.tencent.angel.spark.client
 
+import com.tencent.angel.ml.matrix.psf.update.enhance.zip3.Zip3MapWithIndexFunc
 import com.tencent.angel.spark._
 import com.tencent.angel.spark.context.AngelPSContext
 import com.tencent.angel.spark.pof._
@@ -24,8 +25,6 @@ import com.tencent.angel.spark.models.{PSModelPool, PSModelProxy}
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.scalatest.BeforeAndAfterEach
-
-import com.tencent.angel.ml.matrix.psf.updater.zip3.Zip3MapWithIndexFunc
 
 class AngelPSClientSuite extends PSFunSuite with BeforeAndAfterEach {
   private val dim = 14
@@ -44,7 +43,6 @@ class AngelPSClientSuite extends PSFunSuite with BeforeAndAfterEach {
     val psConf = new SparkConf()
       .set("spark.ps.mode", "LOCAL")
       .set("spark.ps.jars", "None")
-      .set("spark.ps.tmp.path", "file:///tmp/stage")
       .set("spark.ps.out.path", "file:///tmp/output")
       .set("spark.ps.model.path", "file:///tmp/model")
       .set("spark.ps.instances", "1")

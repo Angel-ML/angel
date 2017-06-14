@@ -35,7 +35,7 @@ import org.apache.spark.storage.StorageLevel
 import com.tencent.angel.spark.PSContext
 import com.tencent.angel.spark.ml.common.{BLAS, Gradient, OneHot}
 import com.tencent.angel.spark.ml.common.OneHot.OneHotVector
-import com.tencent.angel.spark.ml.pof.ADMMZUpdater
+import com.tencent.angel.spark.ml.psf.ADMMZUpdater
 import com.tencent.angel.spark.models.{PSModelPool, PSModelProxy}
 
 /**

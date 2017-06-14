@@ -28,7 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * `MMUpdaterParam` is Parameter class for `MMUpdaterFunc`
+ * `MMUpdaterParam` is Parameter class for `MMUpdateFunc`
  */
 public class MMUpdaterParam extends UpdaterParam {
 

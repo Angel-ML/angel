@@ -17,7 +17,7 @@
 
 package com.tencent.angel.ml.matrix.psf.updater;
 
-import com.tencent.angel.ml.matrix.psf.updater.base.MUpdaterFunc;
+import com.tencent.angel.ml.matrix.psf.updater.base.MUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 
 import java.nio.DoubleBuffer;
@@ -25,7 +25,7 @@ import java.nio.DoubleBuffer;
 /**
  * `Abs` applies math.abs to `fromId` row, and save the result to `toId` row.
  */
-public class Abs extends MUpdaterFunc {
+public class Abs extends MUpdateFunc {
 
   public Abs(int matrixId, int fromId, int toId) {
     super(matrixId, new int[]{fromId, toId});

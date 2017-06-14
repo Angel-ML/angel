@@ -17,7 +17,7 @@
 
 package com.tencent.angel.ml.matrix.psf.updater;
 
-import com.tencent.angel.ml.matrix.psf.updater.base.MUpdaterFunc;
+import com.tencent.angel.ml.matrix.psf.updater.base.MUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 
 import java.nio.DoubleBuffer;
@@ -26,7 +26,7 @@ import java.nio.DoubleBuffer;
  * `Mul` function will multiply `fromId1` and `fromId2` and saves to `toId`.
  * That is `toId` = `fromId1` * `fromId2`
  */
-public class Mul extends MUpdaterFunc {
+public class Mul extends MUpdateFunc {
 
   public Mul(int matrixId, int fromId1, int fromId2, int toId) {
     super(matrixId, new int[]{fromId1, fromId2, toId});

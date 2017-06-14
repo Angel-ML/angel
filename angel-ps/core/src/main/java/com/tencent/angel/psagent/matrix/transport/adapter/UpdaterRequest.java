@@ -16,16 +16,16 @@
 
 package com.tencent.angel.psagent.matrix.transport.adapter;
 
-import com.tencent.angel.ml.matrix.psf.updater.base.UpdaterParam;
+import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateParam;
 
 /**
  * Update matrix use udf request.
  */
 public class UpdaterRequest extends UserRequest {
   /** update udf parameter */
-  private final UpdaterParam param;
+  private final UpdateParam param;
 
-  public UpdaterRequest(UpdaterParam param) {
+  public UpdaterRequest(UpdateParam param) {
     super(UserRequestType.UPDATER, 0);
     this.param = param;
   }
@@ -38,9 +38,9 @@ public class UpdaterRequest extends UserRequest {
   /**
    * Get update udf parameter
    * 
-   * @return UpdaterParam update udf parameter
+   * @return UpdateParam update udf parameter
    */
-  public UpdaterParam getParam() {
+  public UpdateParam getParam() {
     return param;
   }
 }

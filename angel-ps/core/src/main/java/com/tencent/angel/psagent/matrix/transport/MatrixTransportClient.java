@@ -20,13 +20,13 @@ import com.google.protobuf.ServiceException;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.common.Location;
 import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.ml.matrix.psf.update.enhance.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.transport.*;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
-import com.tencent.angel.ml.matrix.psf.updater.base.PartitionUpdaterParam;
-import com.tencent.angel.ml.matrix.psf.updater.base.UpdaterFunc;
-import com.tencent.angel.ml.matrix.psf.updater.base.VoidResult;
+import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateFunc;
+import com.tencent.angel.ml.matrix.psf.update.enhance.VoidResult;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.impl.matrix.ServerPartition;
 import com.tencent.angel.ps.impl.matrix.ServerRow;
@@ -1511,13 +1511,13 @@ public class MatrixTransportClient implements MatrixTransportInterface {
   }
 
   @Override
-  public Future<VoidResult> update(UpdaterFunc updaterFunc,
-      PartitionUpdaterParam partitionUpdaterParam) {
+  public Future<VoidResult> update(UpdateFunc updateFunc,
+      PartitionUpdateParam partitionUpdaterParam) {
     ParameterServerId serverId =
         PSAgentContext.get().getMatrixPartitionRouter().getPSId(partitionUpdaterParam.getPartKey());
 
     UpdaterRequest request =
-        new UpdaterRequest(serverId, partitionUpdaterParam.getPartKey(), updaterFunc.getClass()
+        new UpdaterRequest(serverId, partitionUpdaterParam.getPartKey(), updateFunc.getClass()
             .getName(), partitionUpdaterParam);
 
     LOG.debug("update request=" + request);

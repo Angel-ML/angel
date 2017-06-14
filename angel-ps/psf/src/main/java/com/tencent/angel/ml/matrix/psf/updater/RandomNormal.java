@@ -17,7 +17,7 @@
 
 package com.tencent.angel.ml.matrix.psf.updater;
 
-import com.tencent.angel.ml.matrix.psf.updater.base.MMUpdaterFunc;
+import com.tencent.angel.ml.matrix.psf.updater.base.MMUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 
 import java.nio.DoubleBuffer;
@@ -26,7 +26,7 @@ import java.util.Random;
 /**
  * Generate a random array for `rowId`, each element belongs to normal distribution N(mean, stddev)
  */
-public class RandomNormal extends MMUpdaterFunc {
+public class RandomNormal extends MMUpdateFunc {
 
   public RandomNormal(int matrixId, int rowId, double mean, double stddev) {
     super(matrixId, new int[]{rowId}, new double[]{mean, stddev});

@@ -17,7 +17,7 @@
 
 package com.tencent.angel.ml.matrix.psf.updater;
 
-import com.tencent.angel.ml.matrix.psf.updater.base.VAUpdaterFunc;
+import com.tencent.angel.ml.matrix.psf.updater.base.VAUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 
 import java.nio.DoubleBuffer;
@@ -25,7 +25,7 @@ import java.nio.DoubleBuffer;
 /**
  * `MinA` is find the minimum value of each element in `rowId` row and `other`
  */
-public class MinA extends VAUpdaterFunc {
+public class MinA extends VAUpdateFunc {
 
   public MinA(int matrixId, int rowId, double[] other) {
     super(matrixId, rowId, other);

@@ -39,7 +39,7 @@ public class MFLocalExample {
 
 
   public void setConf() throws Exception {
-    String inputPath = "../data/example/data/MFLocalExampleData";
+    String inputPath = "../data/exampledata/MFLocalExampleData";
     // Set local deploy mode
     conf.set(AngelConfiguration.ANGEL_DEPLOY_MODE, "LOCAL");
     // Set basic configuration keys
@@ -58,6 +58,7 @@ public class MFLocalExample {
     // Set trainning data, and save model path
     conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, inputPath);
     conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model");
+    conf.set(AngelConfiguration.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
     // Set actionType train
     conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
 
@@ -91,6 +92,8 @@ public class MFLocalExample {
       case 2:
         break;
     }
+
+    System.exit(0);
   }
 
 }

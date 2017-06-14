@@ -77,16 +77,17 @@ public class KmeansTest {
     conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, inputPath);
     // Set data format
     conf.set(MLConf.ML_DATAFORMAT(), dataFmt);
+  }
+
+  @Test
+  public void trainOnLocalClusterTest() throws Exception {
     // Set save model path
     conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model");
     // Set log sava path
     conf.set(AngelConfiguration.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/LOG/log");
     // Set actionType train
     conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
-  }
 
-  @Test
-  public void trainOnLocalClusterTest() throws Exception {
     KMeansRunner runner = new KMeansRunner();
     runner.train(conf);
   }

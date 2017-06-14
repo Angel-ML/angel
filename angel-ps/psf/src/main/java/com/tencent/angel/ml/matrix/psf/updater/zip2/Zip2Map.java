@@ -18,7 +18,7 @@
 package com.tencent.angel.ml.matrix.psf.updater.zip2;
 
 import com.tencent.angel.common.Serialize;
-import com.tencent.angel.ml.matrix.psf.updater.base.MFUpdaterFunc;
+import com.tencent.angel.ml.matrix.psf.updater.base.MFUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 
 import java.nio.DoubleBuffer;
@@ -27,7 +27,7 @@ import java.nio.DoubleBuffer;
  * It is a Zip2Map function which applies `Zip2MapFunc` to `fromId1` and `fromId2` row and saves
  * the result to `toId` row.
  */
-public class Zip2Map extends MFUpdaterFunc {
+public class Zip2Map extends MFUpdateFunc {
 
   public Zip2Map(int matrixId, int fromId1, int fromId2, int toId, Zip2MapFunc func) {
     super(matrixId, new int[] {fromId1, fromId2, toId} , func);

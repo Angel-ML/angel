@@ -19,7 +19,7 @@ package com.tencent.angel.psagent.matrix;
 import java.util.concurrent.ExecutionException;
 
 import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.matrix.psf.updater.base.ZeroUpdater;
+import com.tencent.angel.ml.matrix.psf.update.enhance.ZeroUpdate;
 import com.tencent.angel.psagent.task.TaskContext;
 
 /**
@@ -70,7 +70,7 @@ public abstract class MatrixClient implements MatrixInterface {
   }
 
   public void zero() throws AngelException {
-    ZeroUpdater updater = new ZeroUpdater(new ZeroUpdater.ZeroUpdaterParam(getMatrixId(), false)); 
+    ZeroUpdate updater = new ZeroUpdate(new ZeroUpdate.ZeroUpdateParam(getMatrixId(), false));
     try{
       update(updater).get();
     } catch (InterruptedException | ExecutionException e) {

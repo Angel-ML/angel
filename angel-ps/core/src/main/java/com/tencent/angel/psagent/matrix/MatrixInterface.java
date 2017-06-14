@@ -21,8 +21,8 @@ import com.tencent.angel.ml.math.TMatrix;
 import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
-import com.tencent.angel.ml.matrix.psf.updater.base.UpdaterFunc;
-import com.tencent.angel.ml.matrix.psf.updater.base.VoidResult;
+import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateFunc;
+import com.tencent.angel.ml.matrix.psf.update.enhance.VoidResult;
 import com.tencent.angel.psagent.matrix.transport.adapter.GetRowsResult;
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex;
 
@@ -41,7 +41,7 @@ public interface MatrixInterface {
    *         result
    * @throws AngelException
    */
-  Future<VoidResult> update(UpdaterFunc func) throws AngelException;
+  Future<VoidResult> update(UpdateFunc func) throws AngelException;
 
   /**
    * Use the get function defined by user to get what we need about the matrix. This method use the

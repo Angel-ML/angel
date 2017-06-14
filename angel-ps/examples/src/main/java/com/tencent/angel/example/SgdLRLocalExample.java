@@ -146,6 +146,8 @@ public class SgdLRLocalExample {
     conf.set(AngelConfiguration.ANGEL_LOAD_MODEL_PATH, loadPath);
     // Set predict result path
     conf.set(AngelConfiguration.ANGEL_PREDICT_PATH, predictPath);
+    // Set log path
+    conf.set(AngelConfiguration.ANGEL_LOG_PATH, logPath);
     // Set actionType prediction
     conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT());
 
@@ -172,5 +174,7 @@ public class SgdLRLocalExample {
         example.predict();
         break;
     }
+
+    System.exit(0);
   }
 }

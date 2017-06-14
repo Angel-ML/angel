@@ -24,7 +24,7 @@
   <parent>
     <groupId>com.tencent.angel</groupId>
     <artifactId>spark-on-angel</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.8</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -33,30 +33,5 @@
   <properties>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
   </properties>
-
-  <build>
-    <plugins>
-      <plugin>
-        <artifactId>maven-jar-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>angel</id>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-            <phase>package</phase>
-            <configuration>
-              <classifier>ps</classifier>
-              <includes>
-                <include>**/aggr/**</include>
-                <include>**/updater/**</include>
-                <include>**/func/**</include>
-              </includes>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
 
 </project>

@@ -17,9 +17,9 @@
 
 package com.tencent.angel.ml.matrix.psf.aggr;
 
-import com.tencent.angel.ml.matrix.psf.aggr.base.ScalarAggrResult;
-import com.tencent.angel.ml.matrix.psf.aggr.base.ScalarPartitionAggrResult;
-import com.tencent.angel.ml.matrix.psf.aggr.base.UnaryAggrFunc;
+import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult;
+import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarPartitionAggrResult;
+import com.tencent.angel.ml.matrix.psf.aggr.enhance.UnaryAggrFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;

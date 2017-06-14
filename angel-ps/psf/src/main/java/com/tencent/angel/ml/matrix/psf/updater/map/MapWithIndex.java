@@ -18,7 +18,7 @@
 package com.tencent.angel.ml.matrix.psf.updater.map;
 
 import com.tencent.angel.common.Serialize;
-import com.tencent.angel.ml.matrix.psf.updater.base.MFUpdaterFunc;
+import com.tencent.angel.ml.matrix.psf.updater.base.MFUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 
 import java.nio.DoubleBuffer;
@@ -27,7 +27,7 @@ import java.nio.DoubleBuffer;
  * It is a MapWithIndex function which applies `MapWithIndexFunc` to `fromId` row and saves the
  * result to `toId` row.
  */
-public class MapWithIndex extends MFUpdaterFunc {
+public class MapWithIndex extends MFUpdateFunc {
 
   public MapWithIndex(int matrixId, int fromId, int toId, MapWithIndexFunc func) {
     super(matrixId, new int[]{fromId, toId}, func);

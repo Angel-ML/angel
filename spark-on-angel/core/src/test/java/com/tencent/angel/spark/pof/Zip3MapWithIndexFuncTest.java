@@ -17,7 +17,7 @@
 
 package com.tencent.angel.spark.pof;
 
-import com.tencent.angel.ml.matrix.psf.updater.zip3.Zip3MapWithIndexFunc;
+import com.tencent.angel.ml.matrix.psf.update.enhance.zip3.Zip3MapWithIndexFunc;
 import io.netty.buffer.ByteBuf;
 
 

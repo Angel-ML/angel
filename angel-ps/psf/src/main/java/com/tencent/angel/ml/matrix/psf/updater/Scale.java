@@ -17,7 +17,7 @@
 
 package com.tencent.angel.ml.matrix.psf.updater;
 
-import com.tencent.angel.ml.matrix.psf.updater.base.MMUpdaterFunc;
+import com.tencent.angel.ml.matrix.psf.updater.base.MMUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 
 import java.nio.DoubleBuffer;
@@ -26,7 +26,7 @@ import java.nio.DoubleBuffer;
  * `Scale` function do scale to `rowId` row.
  * That is `rowId` *= `scaleFactor`
  */
-public class Scale extends MMUpdaterFunc {
+public class Scale extends MMUpdateFunc {
 
   public Scale(int matrixId, int rowId, double scaleFactor) {
     super(matrixId, new int[]{rowId}, new double[]{scaleFactor});

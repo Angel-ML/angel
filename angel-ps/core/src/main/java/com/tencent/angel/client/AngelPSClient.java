@@ -67,7 +67,7 @@ public class AngelPSClient {
     loadSysConfig();
 
     conf.setInt(AngelConfiguration.ANGEL_PS_NUMBER, config.getPsNum());
-    conf.setInt(AngelConfiguration.ANGEL_PS_MERMORY_MB, config.getPsMemoryInMB());
+    conf.setInt(AngelConfiguration.ANGEL_PS_MEMORY_MB, config.getPsMemoryInMB());
     conf.setInt(AngelConfiguration.ANGEL_PS_CPU_VCORES, config.getPsVcoreNum());
 
     conf.setInt(AngelConfiguration.ANGEL_PSAGENT_NUMBER, config.getPsAgentNum());

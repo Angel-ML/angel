@@ -24,10 +24,10 @@ import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
-import com.tencent.angel.ml.matrix.psf.updater.base.PartitionUpdaterParam;
-import com.tencent.angel.ml.matrix.psf.updater.base.UpdaterFunc;
-import com.tencent.angel.ml.matrix.psf.updater.base.UpdaterParam;
-import com.tencent.angel.ml.matrix.psf.updater.base.VoidResult;
+import com.tencent.angel.ml.matrix.psf.update.enhance.PartitionUpdateParam;
+import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateFunc;
+import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateParam;
+import com.tencent.angel.ml.matrix.psf.update.enhance.VoidResult;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.impl.matrix.ServerRow;
 import com.tencent.angel.psagent.PSAgentContext;
@@ -210,20 +210,20 @@ public class MatrixClientAdapter {
   /**
    * Update matrix use a udf.
    * 
-   * @param updaterFunc update udf function
+   * @param updateFunc update udf function
    * @return Future<VoidResult> update future result
    */
-  public Future<VoidResult> update(UpdaterFunc updaterFunc) {
+  public Future<VoidResult> update(UpdateFunc updateFunc) {
     MatrixTransportClient matrixClient = PSAgentContext.get().getMatrixTransportClient();
-    UpdaterParam param = updaterFunc.getParam();
+    UpdateParam param = updateFunc.getParam();
 
-    List<PartitionUpdaterParam> partParams = param.split();
+    List<PartitionUpdateParam> partParams = param.split();
 
     int size = partParams.size();
     UpdaterRequest request = new UpdaterRequest(param);
     UpdaterResponseCache cache = new UpdaterResponseCache(size);
     for (int i = 0; i < size; i++) {
-      cache.addResult(matrixClient.update(updaterFunc, partParams.get(i)));
+      cache.addResult(matrixClient.update(updateFunc, partParams.get(i)));
     }
 
     requestToResponseMap.put(request, cache);

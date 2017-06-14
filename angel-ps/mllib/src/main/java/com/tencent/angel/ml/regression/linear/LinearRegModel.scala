@@ -72,22 +72,21 @@ class LinearRegModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ct
     for (idx: Int <- 0 until dataSet.getTotalElemNum) {
       val instance = dataSet.read
       val id = instance.getY
-      val dot = wVector.dot(instance.getX)
-      val sig = MathUtils.sigmoid(dot)
-      predict.put(new predictOne(id, dot, sig))
+      val pre = wVector.dot(instance.getX)
+
+      predict.put(new predictOne(id, pre))
     }
     predict
   }
 }
 
-class predictOne(id: Double, dot: Double, sig: Double) extends PredictResult {
+class predictOne(id: Double, dot: Double) extends PredictResult {
   val format = new DecimalFormat("0.000000");
 
   override
   def writeText(output: DataOutputStream): Unit = {
 
-    output.writeBytes(id + PredictResult.separator + format.format(dot) +
-      PredictResult.separator + format.format(sig))
+    output.writeBytes(id + PredictResult.separator + format.format(dot))
   }
 
 }

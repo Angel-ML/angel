@@ -142,6 +142,7 @@ public class AngelYarnClient extends AngelClient {
       // Credentials credentials = new Credentials();
       TokenCache.obtainTokensForNamenodes(credentials, new Path[] {submitJobDir}, conf);
       checkParameters(conf);
+      handleDeprecatedParameters(conf);
 
       // 4.copy resource files to hdfs
       copyAndConfigureFiles(conf, submitJobDir, (short) 10);
@@ -364,8 +365,8 @@ public class AngelYarnClient extends AngelClient {
     // Setup resource requirements
     recordFactory = RecordFactoryProvider.getRecordFactory(null);
     Resource capability = recordFactory.newRecordInstance(Resource.class);
-    capability.setMemory(conf.getInt(AngelConfiguration.ANGEL_AM_VMEM_MB,
-        AngelConfiguration.DEFAULT_ANGEL_AM_VMEM_MB));
+    capability.setMemory(conf.getInt(AngelConfiguration.ANGEL_AM_MEMORY_GB,
+        AngelConfiguration.DEFAULT_ANGEL_AM_MEMORY_GB) * 1024);
     capability.setVirtualCores(conf.getInt(AngelConfiguration.ANGEL_AM_CPU_VCORES,
         AngelConfiguration.DEFAULT_ANGEL_AM_CPU_VCORES));
     System.out.println("AppMaster capability = " + capability);

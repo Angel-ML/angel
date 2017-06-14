@@ -409,7 +409,7 @@ object ADMM {
 
     val loss = calcLocalLoss(data, localModel)
 
-    LOG.info(s"local loss = $loss")
+    LOG.info(s"local loss = $loss, average loss=${loss / data.getTotalElemNum}")
     val update = new DenseDoubleVector(1)
     update.set(0, loss)
     update.setRowId(0)

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+export PATH=$JAVA_HOME/bin:$PATH
+
 bin=`which $0`
 bin=`dirname ${bin}`
 bin=`cd "$bin"; pwd`

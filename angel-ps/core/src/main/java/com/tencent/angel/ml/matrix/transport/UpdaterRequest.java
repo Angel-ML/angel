@@ -17,7 +17,7 @@
 package com.tencent.angel.ml.matrix.transport;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.matrix.psf.updater.base.PartitionUpdaterParam;
+import com.tencent.angel.ml.matrix.psf.update.enhance.PartitionUpdateParam;
 import com.tencent.angel.ps.ParameterServerId;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
@@ -32,7 +32,7 @@ public class UpdaterRequest extends PartitionRequest {
   private String updaterFuncClass;
 
   /** the partition parameter of the update udf */
-  private PartitionUpdaterParam partParam;
+  private PartitionUpdateParam partParam;
 
   /**
    * Create a new UpdaterRequest.
@@ -43,7 +43,7 @@ public class UpdaterRequest extends PartitionRequest {
    * @param partParam the partition parameter of the update udf
    */
   public UpdaterRequest(ParameterServerId serverId, PartitionKey partKey, String updaterFuncClass,
-      PartitionUpdaterParam partParam) {
+      PartitionUpdateParam partParam) {
     super(serverId, 0, partKey);
     this.updaterFuncClass = updaterFuncClass;
     this.partParam = partParam;
@@ -101,7 +101,7 @@ public class UpdaterRequest extends PartitionRequest {
       buf.readBytes(data);
       String partParamClassName = new String(data);
       try {
-        partParam = (PartitionUpdaterParam) Class.forName(partParamClassName).newInstance();
+        partParam = (PartitionUpdateParam) Class.forName(partParamClassName).newInstance();
         partParam.deserialize(buf);
       } catch (Exception e) {
         LOG.fatal("deserialize PartitionAggrParam falied, ", e);
@@ -151,9 +151,9 @@ public class UpdaterRequest extends PartitionRequest {
   /**
    * Get the partition parameter of the update udf.
    * 
-   * @return PartitionUpdaterParam the partition parameter of the update udf
+   * @return PartitionUpdateParam the partition parameter of the update udf
    */
-  public PartitionUpdaterParam getPartParam() {
+  public PartitionUpdateParam getPartParam() {
     return partParam;
   }
 
@@ -171,7 +171,7 @@ public class UpdaterRequest extends PartitionRequest {
    * 
    * @param PartitionUpdaterParam the partition parameter of the update udf
    */
-  public void setPartParam(PartitionUpdaterParam partParam) {
+  public void setPartParam(PartitionUpdateParam partParam) {
     this.partParam = partParam;
   }
 

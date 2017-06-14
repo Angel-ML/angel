@@ -17,7 +17,7 @@
 
 package com.tencent.angel.ml.matrix.psf.updater;
 
-import com.tencent.angel.ml.matrix.psf.updater.base.MMUpdaterFunc;
+import com.tencent.angel.ml.matrix.psf.updater.base.MMUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 
 import java.nio.DoubleBuffer;
@@ -25,7 +25,7 @@ import java.nio.DoubleBuffer;
 /**
  * `Fill` the `rowId` row with `value`
  */
-public class Fill extends MMUpdaterFunc {
+public class Fill extends MMUpdateFunc {
 
   public Fill(int matrixId, int rowId, double value) {
     super(matrixId, new int[]{rowId}, new double[]{value});

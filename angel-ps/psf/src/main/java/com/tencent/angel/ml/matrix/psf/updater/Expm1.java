@@ -17,7 +17,7 @@
 
 package com.tencent.angel.ml.matrix.psf.updater;
 
-import com.tencent.angel.ml.matrix.psf.updater.base.MUpdaterFunc;
+import com.tencent.angel.ml.matrix.psf.updater.base.MUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 
 import java.nio.DoubleBuffer;
@@ -25,7 +25,7 @@ import java.nio.DoubleBuffer;
 /**
  * `Expm1` is a implement of `math.expm1` for row in matrix.
  */
-public class Expm1 extends MUpdaterFunc {
+public class Expm1 extends MUpdateFunc {
 
   public Expm1(int matrixId, int fromId, int toId) {
     super(matrixId, new int[]{fromId, toId});

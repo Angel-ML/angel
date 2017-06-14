@@ -57,16 +57,16 @@ public class L2HingeLoss extends L2Loss {
    */
   @Override
   public double loss(double pre, double y) {
-//    double z = pre * y;
-//    if (z < 1) {
-//      return 1 - z;
-//    }
-//    return 0.0;
-
-    double z=pre*y;
-    if(z<=0) return 0.5-z;
-    else if(z>0 && z<1) return 0.5*Math.pow(1-z,2);
+    double z = pre * y;
+    if (z < 1) {
+      return 1 - z;
+    }
     return 0.0;
+
+//    double z=pre*y;
+//    if(z<=0) return 0.5-z;
+//    else if(z>0 && z<1) return 0.5*Math.pow(1-z,2);
+//    return 0.0;
   }
 
   /**
@@ -89,16 +89,16 @@ public class L2HingeLoss extends L2Loss {
 
   @Override
   public double grad(double pre, double y) {
-    // if (pre * y <= 1) {
-    // return y;
-    // } else {
-    // return 0.0;
-    // }
-    if (pre * y <= 0)
-      return y;
-    else if (pre * y > 0 && pre * y < 1)
-      return (1 - pre * y) * y;
-    return 0.0;
+     if (pre * y <= 1) {
+     return y;
+     } else {
+     return 0.0;
+     }
+//    if (pre * y <= 0)
+//      return y;
+//    else if (pre * y > 0 && pre * y < 1)
+//      return (1 - pre * y) * y;
+//    return 0.0;
   }
 
   /**

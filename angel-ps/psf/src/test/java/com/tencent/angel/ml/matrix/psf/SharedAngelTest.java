@@ -31,8 +31,6 @@ import com.tencent.angel.worker.task.TaskId;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 
 public class SharedAngelTest {
   protected static final String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
@@ -46,7 +44,6 @@ public class SharedAngelTest {
   private static ParameterServerId psId;
   private static PSAttemptId psAttempt0Id;
 
-  @BeforeClass
   public static void setup() throws Exception {
     // set basic configuration keys
     Configuration conf = new Configuration();
@@ -106,7 +103,6 @@ public class SharedAngelTest {
     psAttempt0Id = new PSAttemptId(psId, 0);
   }
 
-  @AfterClass
   public static void cleanup() throws Exception {
     angelClient.stop();
   }

@@ -17,7 +17,7 @@
 
 package com.tencent.angel.ml.matrix.psf.updater;
 
-import com.tencent.angel.ml.matrix.psf.updater.base.MUpdaterFunc;
+import com.tencent.angel.ml.matrix.psf.updater.base.MUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 
 import java.nio.DoubleBuffer;
@@ -25,7 +25,7 @@ import java.nio.DoubleBuffer;
 /**
  * `MinV` is find the minimum value of each element in `fromId1` row and `fromId2`
  */
-public class MinV extends MUpdaterFunc {
+public class MinV extends MUpdateFunc {
 
   public MinV(int matrixId, int fromId1, int fromId2, int toId) {
     super(matrixId, new int[]{fromId1, fromId2, toId});

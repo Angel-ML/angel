@@ -17,7 +17,7 @@
 
 package com.tencent.angel.ml.matrix.psf.updater;
 
-import com.tencent.angel.ml.matrix.psf.updater.base.MMUpdaterFunc;
+import com.tencent.angel.ml.matrix.psf.updater.base.MMUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 
 import java.nio.DoubleBuffer;
@@ -26,7 +26,7 @@ import java.util.Random;
 /**
  * Generate a random array for `rowId`, each element belongs to uniform distribution U(min, max)
  */
-public class RandomUniform extends MMUpdaterFunc {
+public class RandomUniform extends MMUpdateFunc {
 
   public RandomUniform(int matrixId, int rowId, double min, double max) {
     super(matrixId, new int[]{rowId}, new double[]{min, max});

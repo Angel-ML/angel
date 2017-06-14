@@ -109,10 +109,9 @@ class KMeansLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       "samples.")
     val start = System.currentTimeMillis()
     val rand = new Random(System.currentTimeMillis())
-
     for (i <- 0 until K) {
       if (i % ctx.getTotalTaskNum == ctx.getTaskId.getIndex) {
-        val r = rand.nextInt(dataStorage.getTotalElemNum)
+        val r = rand.nextInt(dataStorage.getTotalElemNum - 1) + 1
 
         var data: LabeledData = null
         for (i <- 0 until r) {
@@ -252,11 +251,16 @@ class KMeansLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   def picInstances(trainData: DataBlock[LabeledData]): DataBlock[LabeledData] = {
     // Pick #spRatio ratio samples randomly
     val batch_sample_num = (spRatio * trainData.getTotalElemNum).asInstanceOf[Int]
-    val rand = new Random(System.currentTimeMillis())
     val batchSample = new MemoryDataBlock[LabeledData](-1)
 
+    var data: LabeledData = null
     for (i <- 0 until batch_sample_num) {
-      batchSample.put(trainData.get(rand.nextInt(trainData.getTotalElemNum)))
+      data = trainData.read()
+      if (data == null) {
+        trainData.resetReadIndex()
+        data = trainData.read()
+      }
+      batchSample.put(data)
     }
 
     batchSample

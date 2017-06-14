@@ -204,7 +204,7 @@ private[spark] object AngelPSContext {
     hadoopConf.set(ANGEL_DEPLOY_MODE, deployMode)
     hadoopConf.setInt(ANGEL_PS_NUMBER, psNum)
     hadoopConf.setInt(ANGEL_PS_CPU_VCORES, psCores)
-    hadoopConf.setInt(ANGEL_PS_MERMORY_MB, psMem)
+    hadoopConf.setInt(ANGEL_PS_MEMORY_MB, psMem)
     hadoopConf.set(ANGEL_PS_JAVA_OPTS, psOpts)
     hadoopConf.setInt(TOTAL_CORES, psNum * psCores)
 
