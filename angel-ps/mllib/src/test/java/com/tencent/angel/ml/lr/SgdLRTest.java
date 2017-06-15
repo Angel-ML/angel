@@ -95,7 +95,7 @@ public class SgdLRTest {
     String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
     String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
     String savePath = LOCAL_FS + TMP_PATH + "/model";
-    String logPath = LOCAL_FS + TMP_PATH + "/log";
+    String logPath = LOCAL_FS + TMP_PATH + "/LRlog";
 
     // Set trainning data path
     conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, inputPath);
@@ -119,7 +119,7 @@ public class SgdLRTest {
     String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
     String loadPath = LOCAL_FS + TMP_PATH + "model";
     String savePath = LOCAL_FS + TMP_PATH + "/newmodel";
-    String logPath = LOCAL_FS + TMP_PATH + "/log";
+    String logPath = LOCAL_FS + TMP_PATH + "/LRlog";
 
     // Set trainning data path
     conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, inputPath);
@@ -142,16 +142,12 @@ public class SgdLRTest {
     String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
     String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
     String loadPath = LOCAL_FS + TMP_PATH + "model";
-    String savePath = LOCAL_FS + TMP_PATH + "/model";
-    String logPath = LOCAL_FS + TMP_PATH + "/log";
     String predictPath = LOCAL_FS + TMP_PATH + "/predict";
 
     // Set trainning data path
     conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, inputPath);
     // Set load model path
     conf.set(AngelConfiguration.ANGEL_LOAD_MODEL_PATH, loadPath);
-    // Set log sava path
-    conf.set(AngelConfiguration.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/LOG/log");
     // Set predict result path
     conf.set(AngelConfiguration.ANGEL_PREDICT_PATH, predictPath);
     // Set actionType prediction

@@ -22,6 +22,7 @@ import java.util.function.ToIntFunction
 import java.util.{Comparator, Map}
 
 import com.tencent.angel.conf.AngelConfiguration
+import com.tencent.angel.exception.AngelException
 import com.tencent.angel.worker.task.TaskContext
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList
 import org.apache.hadoop.fs.{FSDataOutputStream, FileSystem, Path}
@@ -56,16 +57,21 @@ class DistributedLogger(ctx: TaskContext) extends Logger {
   var form = "%10.6e"
 
   val conf = ctx.getConf
-  val path = new Path(conf.get(AngelConfiguration.ANGEL_LOG_PATH) + "/log_" + ctx.getTaskIndex
-    .toString)
+  val pathStr = conf.get(AngelConfiguration.ANGEL_LOG_PATH)
 
+  if (pathStr == null) {
+    throw new AngelException("log directory is null. you must set " + AngelConfiguration
+      .ANGEL_SAVE_MODEL_PATH )
+  }
+
+  val path = new Path(pathStr + "/log_" + ctx.getTaskIndex.toString)
   var fs: FileSystem = path.getFileSystem(conf)
-
   if (fs.exists(path)) {
     fs.delete(path, true)
   }
 
   var out: FSDataOutputStream = fs.create(path, true)
+
   var closed = false
 
   override

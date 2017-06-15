@@ -76,14 +76,11 @@ class SparseLRTest {
   @Test
   def trainOnLocalClusterTest(): Unit = {
     val inputPath: String = "./src/test/data/lr/a9a.train_label";
-    val logPath: String = "./src/test/log"
 
     // Set training data path
     conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, inputPath)
     // Set save model path
     conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model")
-    // Set log path
-    conf.set(AngelConfiguration.ANGEL_LOG_PATH, logPath)
     // Set action type train
     conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, ANGEL_ML_TRAIN)
 
