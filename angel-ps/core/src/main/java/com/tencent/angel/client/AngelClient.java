@@ -565,20 +565,18 @@ public abstract class AngelClient implements AngelClientInterface {
 
     if(runningMode == RunningMode.ANGEL_PS_WORKER) {
       String logPathStr = conf.get(AngelConfiguration.ANGEL_LOG_PATH);
-      if(logPathStr == null) {
-        throw new IOException("log directory is null. you must set "
-          + AngelConfiguration.ANGEL_LOG_PATH);
-      }
-
-      Path logPath = new Path(logPathStr);
-      FileSystem logFs = logPath.getFileSystem(conf);
-      if (logFs.exists(logPath)) {
-        if (deleteOnExist) {
-          logFs.delete(logPath, true);
-        } else {
-          throw new IOException("log path " + logPath + " already exist, please check");
+      if (logPathStr != null) {
+        Path logPath = new Path(logPathStr);
+        FileSystem logFs = logPath.getFileSystem(conf);
+        if (logFs.exists(logPath)) {
+          if (deleteOnExist) {
+            logFs.delete(logPath, true);
+          } else {
+            throw new IOException("log path " + logPath + " already exist, please check");
+          }
         }
       }
+
     }
 
     Path tmpOutputPath = HdfsUtil.generateTmpDirectory(conf, getAppId(), outputPath);
