@@ -41,6 +41,10 @@ public class Sum extends GetFunc {
       this.rowIndex = rowIndex;
     }
     
+    public SumParam() {
+      this(-1, -1);
+    }
+    
     public int getRowIndex() {
       return rowIndex;
     }
