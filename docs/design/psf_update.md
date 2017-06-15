@@ -131,6 +131,10 @@ public class Random extends UpdaterFunc {
   public Random(UpdaterParam param) {
     super(param);
   }
+  
+  public Random() {
+    this(null);
+  }
 
   // 分区random操作
   @Override

@@ -36,8 +36,9 @@ public class CMSketch {
   public void insert(int key, int freq) {
     for (int i = 0; i < 3; i++) {
       int code = h[i].encode(key);
-      System.out.println(code);
-      t[i][code] += freq;
+      if (freq > t[i][code]) {
+        t[i][code] = freq;
+      }
     }
   }
 
