@@ -68,7 +68,7 @@
 	为了方便用户，Ange设置有许多参数可供调整，可以参考
 
 	* 系统参数： [主要系统配置](config_details.md)
-	* 算法参数： [Logistic Regression](../lr_on_angel.md)
+	* 算法参数： [Logistic Regression](../algo/lr_on_angel.md)
 
 3. **观察进度**
 
