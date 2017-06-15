@@ -41,10 +41,6 @@ public class Sum extends GetFunc {
       this.rowIndex = rowIndex;
     }
     
-    public SumParam() {
-      this(-1, -1);
-    }
-    
     public int getRowIndex() {
       return rowIndex;
     }
@@ -159,6 +155,10 @@ public class Sum extends GetFunc {
 
   public Sum(SumParam param) {
     super(param);
+  }
+  
+  public Sum() {
+    this(null);
   }
 
   // 获取落在该分区的行分片的元素的和，本方法会在PS端调用
