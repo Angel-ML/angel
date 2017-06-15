@@ -153,20 +153,20 @@
 
 ```
 ./bin/angel-submit \
--- action.type train \
--- angel.app.submit.class com.tencent.angel.example.quickStart.myLRRunner  \
--- angel.train.data.path $input_path \
--- angel.save.model.path $model_path \
--- ml.epoch.num 10 \
--- ml.feature.num 10000 \
--- ml.data.type dummy \
--- ml.learn.rate 0.001 \
--- angel.workergroup.number 3 \
--- angel.worker.memory.mb 8000  \
--- angel.worker.task.number 3 \
--- angel.ps.number 1 \
--- angel.ps.memory.mb 5000 \
--- angel.job.name myLR
+--action.type train \
+--angel.app.submit.class com.tencent.angel.example.quickStart.myLRRunner  \
+--angel.train.data.path $input_path \
+--angel.save.model.path $model_path \
+--ml.epoch.num 10 \
+--ml.feature.num 10000 \
+--ml.data.type dummy \
+--ml.learn.rate 0.001 \
+--angel.workergroup.number 3 \
+--angel.worker.memory.mb 8000  \
+--angel.worker.task.number 3 \
+--angel.ps.number 1 \
+--angel.ps.memory.mb 5000 \
+--angel.job.name myLR
 ```
 
 提交完毕后，可以按照这个指引，[《查看到Yarn上的作业》](../deploy/run_on_yarn.md)，如果你不熟悉Yarn的话。
