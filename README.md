@@ -6,7 +6,7 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/tencent/angel/pulls)
 
 
-**Angel**是一个基于参数服务器（Parameter Server）理念的机器学习框架，它能让机器学习算法轻松运行于高维度模型之上。
+**Angel**是一个基于参数服务器（Parameter Server）理念的机器学习框架，它能让机器学习算法轻松运行于高维度模型之上。 **Angel**由腾讯与北京大学共同开发完成。
 
 **Angel**的核心设计理念围绕**模型**。它将高维度的大模型，合理切分到多个参数服务器节点，并通过高效的`模型更新接口`和`运算函数`，以及多变的`同步协议`，轻松实现各种高效的机器学习算法。
 
