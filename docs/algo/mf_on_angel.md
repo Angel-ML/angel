@@ -94,6 +94,26 @@ MF训练数据的格式：
   * ml.mf.lambda：正则化系数
   * ml.mf.eta：学习速率
   * ml.mf.row.batch.num：每次迭代的batch数
-
+### 提交命令
+```
+./bin/angel-submit \
+--angel.app.submit.class com.tencent.angel.ml.matrixfactorization.MatrixFactorizationRunner \
+--action.type train \
+--angel.train.data.path $input_path \
+--angel.save.model.path $model_path \
+--angel.ml.mf.usermodel.output $usermodelpath \
+--angel.log.path $logpath \
+--angel.worker.memory.mb 10000 \
+--angel.ps.memory.mb 8000 \
+--angel.worker.task.number 1 \
+--angel.ps.number 2 \
+--angel.workergroup.number 5 \
+--ml.mf.item.num 17771 \
+--ml.mf.row.batch.num 3 \
+--ml.mf.rank 200 \
+--ml.epoch.num 5 \
+--ml.mf.lambda 0.01 \
+--ml.mf.eta 0.00005 \
+```
 
 ### 性能对比
