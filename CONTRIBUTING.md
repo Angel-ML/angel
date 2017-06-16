@@ -17,10 +17,15 @@ We strongly welcome your pull request to make Angel better.
 There are three main branches here:
 
 1. `master` branch.
+
 	(1). It is the latest (pre-)release branch. We use `master` for tags, with version number `1.0.0`, `1.1.0`, `1.2.0`...
+
 	(2). **Don't submit any PR on `master` branch.**
+	
 2. `specific version` branchs. 
-	(1).There is a `specific version` for each Angel version, such as `branch-1.0.0`, `branch-1.1.0`. It is our stable developing branch. After full testing, `specific version` branch will be merged to `master` branch for the next release.
+
+	(1).There is a `specific version` for each Angel version, such as `branch-1.0.0`, `branch-1.1.0`. It is our stable developing	 branch. After full testing, `specific version` branch will be merged to `master` branch for the next release.
+
 	(2). **You are recommended to submit bugfix or feature PR on `specific version` branch.**
 
 
