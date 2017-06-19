@@ -55,6 +55,12 @@
 * [系统配置](./docs/deploy/config_details.md)
 
 ## Papers
+  1. Jiawei Jiang, Bin Cui, Ce Zhang, Lele Yu
+  
+  	 [Heterogeneity-aware Distributed Parameter Servers](http://net.pku.edu.cn/~cuibin/Papers/2017%20sigmod.pdf).   SIGMOD, 2017
+  2. Jie Jiang, Lele Yu, Jiawei Jiang, Yuhong Liu and Bin Cui
+  
+     [Angel: a new large-scale machine learning system](http://net.pku.edu.cn/~cuibin/Papers/2017NSRangel.pdf). National Science Review (NSR), 2017
 
 
 
