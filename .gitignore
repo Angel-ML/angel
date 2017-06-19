@@ -1,0 +1,17 @@
+*#*#
+*.#*
+*.iml
+*.ipr
+*.iws
+*.swp
+*~
+.DS_Store
+.cache
+.classpath
+.idea/
+.idea_modules/
+.project
+.scala_dependencies
+.settings
+/lib/
+
