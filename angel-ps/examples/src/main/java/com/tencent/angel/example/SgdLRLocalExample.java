@@ -110,7 +110,7 @@ public class SgdLRLocalExample {
     String inputPath = "../data/exampledata/LRLocalExampleData/a9a.train";
     String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
     String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
-    String loadPath = LOCAL_FS + TMP_PATH + "model";
+    String loadPath = LOCAL_FS + TMP_PATH + "/model";
     String savePath = LOCAL_FS + TMP_PATH + "/newmodel";
     String logPath = LOCAL_FS + TMP_PATH + "/log";
 
@@ -135,7 +135,7 @@ public class SgdLRLocalExample {
     String inputPath = "../data/exampledata/LRLocalExampleData/a9a.test";
     String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
     String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
-    String loadPath = LOCAL_FS + TMP_PATH + "model";
+    String loadPath = LOCAL_FS + TMP_PATH + "/model";
     String savePath = LOCAL_FS + TMP_PATH + "/model";
     String logPath = LOCAL_FS + TMP_PATH + "/log";
     String predictPath = LOCAL_FS + TMP_PATH + "/predict";
