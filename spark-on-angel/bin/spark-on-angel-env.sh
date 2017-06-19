@@ -4,13 +4,12 @@
 # 1. confirm Hadoop and Spark have ready in your environment
 # 2. unzip angel-<version>-bin.zip to local directory
 # 3. upload angel-<version>-bin directory to HDFS
-# 4. set the following variables, SPARK_HOME, ANGEL_HOME, ANGEL_HDFS_HOME
+# 4. set the following variables, SPARK_HOME, ANGEL_HOME, ANGEL_HDFS_HOME, ANGEL_VERSION
 
 export SPARK_HOME=<SPARK_HOME>
 export ANGEL_HOME=<ANGEL_HOME>
 export ANGEL_HDFS_HOME=<ANGEL_HDFS_HOME>
-
-export ANGEL_VERSION=1.1.8
+export ANGEL_VERSION=<ANGEL_VERSON>
 
 scala_jar=scala-library-2.11.8.jar
 external_jar=fastutil-7.1.0.jar,htrace-core-2.05.jar,sizeof-0.3.0.jar,kryo-shaded-3.0.3.jar,minlog-1.3.0.jar
