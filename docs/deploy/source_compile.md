@@ -5,7 +5,7 @@
 1. **编译环境依赖**
     * Jdk >= 1.8
     * Maven >= 3.0.5
-    * Protobuf >= 2.5.0
+    * Protobuf >= 2.5.0 需要和hadoop环境自带的protobuf版本保持一致。目前hadoop官方发布包使用的是2.5.0版本，所以推荐使用2.5.0版本，除非你自己使用更新的protobuf版本编译了hadoop。
 
 2. **源码下载**
 
