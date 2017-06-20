@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 
 source ./spark-on-angel-env.sh
 
@@ -18,4 +18,4 @@ $SPARK_HOME/bin/spark-submit \
     --executor-cores 2 \
     --executor-memory 4g \
     --class com.tencent.angel.spark.examples.ml.BreezeSGD \
-    ./../lib/spark-on-angel-examples-1.1.8.jar
+    ./../lib/spark-on-angel-examples-${ANGEL_VERSION}.jar

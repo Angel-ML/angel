@@ -6,4 +6,4 @@ $SPARK_HOME/bin/spark-submit \
     --jars $SONA_SPARK_JARS \
     --name "BreezeSGD-spark-on-angel" \
     --class com.tencent.angel.spark.examples.ml.BreezeSGD \
-    ./../lib/spark-on-angel-examples-1.1.8.jar
+    ./../lib/spark-on-angel-examples-${ANGEL_VERSION}.jar
