@@ -16,6 +16,8 @@
         <fileSet>
       		<directory>${project.basedir}/../angel-ps/conf</directory>
       		<outputDirectory>conf</outputDirectory>
+          <fileMode>0644</fileMode>
+          <directoryMode>0755</directoryMode>
     	</fileSet>
         <fileSet>
             <directory>${project.basedir}/../spark-on-angel/mllib/target</directory>
@@ -45,10 +47,14 @@
     	<fileSet>
       		<directory>${project.basedir}/../angel-ps/bin</directory>
       		<outputDirectory>bin</outputDirectory>
+          <fileMode>0755</fileMode>
+          <directoryMode>0755</directoryMode>
     	</fileSet>
       <fileSet>
           <directory>${project.basedir}/../spark-on-angel/bin</directory>
           <outputDirectory>bin</outputDirectory>
+          <fileMode>0755</fileMode>
+          <directoryMode>0755</directoryMode>
       </fileSet>
     </fileSets>
 </assembly>

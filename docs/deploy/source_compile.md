@@ -9,7 +9,7 @@
 
 2. **源码下载**
 
-	```git clone https://github.com/Tencent/angel --branch branch-1.0.0```
+	```git clone https://github.com/Tencent/angel```
 
 3. **编译**
 

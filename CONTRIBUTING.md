@@ -48,5 +48,5 @@ Before submitting a pull request, please make sure the followings are done:
 Use [Code Style](https://github.com/Tencent/angel/blob/master/dev/checkstyle.xml) for Java and Scala .
 
 ## License
-By contributing to Tinker, you agree that your contributions will be licensed
+By contributing to Angel, you agree that your contributions will be licensed
 under its [BSD LICENSE](https://github.com/Tencent/angel/blob/master/LICENSE)
