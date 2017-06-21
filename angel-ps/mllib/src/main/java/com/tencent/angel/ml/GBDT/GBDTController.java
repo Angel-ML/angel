@@ -30,7 +30,7 @@ import com.tencent.angel.ml.objective.Loss;
 import com.tencent.angel.ml.objective.LossHelper;
 import com.tencent.angel.ml.objective.ObjFunc;
 import com.tencent.angel.ml.objective.RegLossObj;
-import com.tencent.angel.ml.param.GBDTTrainParam;
+import com.tencent.angel.ml.param.GBDTParam;
 import com.tencent.angel.ml.tree.SplitEntry;
 import com.tencent.angel.ml.tree.TNode;
 import com.tencent.angel.ml.tree.TYahooSketchSplit;
@@ -50,10 +50,10 @@ public class GBDTController {
 
   public TaskContext taskContext;
   public GBDTModel model;
-  public GBDTTrainParam param;
+  public GBDTParam param;
   public RegTDataStore trainDataStore;
   public RegTDataStore validDataStore;
-  public DistributedRegTree[] forest;
+  public RegTree[] forest;
   public int phase;
   public int clock;
   public int currentTree;
@@ -76,7 +76,7 @@ public class GBDTController {
 
   private ExecutorService threadPool;
 
-  public GBDTController(TaskContext taskContext, GBDTTrainParam param,
+  public GBDTController(TaskContext taskContext, GBDTParam param,
                         RegTDataStore trainDataStore, RegTDataStore validDataStore, GBDTModel model) {
     this.taskContext = taskContext;
     this.param = param;
@@ -86,7 +86,7 @@ public class GBDTController {
   }
 
   public void init() throws Exception {
-    this.forest = new DistributedRegTree[this.param.treeNum];
+    this.forest = new RegTree[this.param.treeNum];
     // initialize the phase
     this.phase = GBDTPhase.CREATE_SKETCH;
     this.clock = 0;
@@ -218,7 +218,7 @@ public class GBDTController {
     LOG.info("------Create new tree------");
     long startTime = System.currentTimeMillis();
     // 1. create new tree, initialize tree nodes and node stats
-    DistributedRegTree tree = new DistributedRegTree(this.param);
+    RegTree tree = new RegTree(this.param);
     tree.initTreeNodes();
     this.currentDepth = 1;
     this.forest[this.currentTree] = tree;
@@ -363,7 +363,7 @@ public class GBDTController {
       }
       LOG.info(String.format("Pull histogram from PS cost %d ms", System.currentTimeMillis()
           - pullStartTime));
-      DistributedHistHelper histHelper = new DistributedHistHelper(this, nid);
+      GradHistHelper histHelper = new GradHistHelper(this, nid);
 
       // 2.3. find best split result of this tree node
       if (this.param.isServerSplit) {
@@ -640,7 +640,7 @@ public class GBDTController {
   }
 
   // update node's grad stats on PS
-  // called during splitting in DistributedHistHelper, update the grad stats of children nodes after finding the best split
+  // called during splitting in GradHistHelper, update the grad stats of children nodes after finding the best split
   // the root node's stats is updated by leader worker
   public void updateNodeGradStats(int nid, GradStats gradStats) throws Exception {
     LOG.debug(String.format("Update gradStats of node[%d]: sumGrad[%f], sumHess[%f]", nid,

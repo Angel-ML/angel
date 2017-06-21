@@ -16,7 +16,7 @@
  */
 package com.tencent.angel.ml.RegTree;
 
-import com.tencent.angel.ml.param.RegTTrainParam;
+import com.tencent.angel.ml.param.RegTParam;
 
 import java.util.List;
 
@@ -136,7 +136,7 @@ public class GradStats {
    * @param param the param
    * @return the leaf weight
    */
-  public float calcWeight(RegTTrainParam param) {
+  public float calcWeight(RegTParam param) {
     return param.calcWeight(sumGrad, sumHess);
   }
 
@@ -147,7 +147,7 @@ public class GradStats {
    * @param param the param
    * @return the loss gain
    */
-  public float calcGain(RegTTrainParam param) {
+  public float calcGain(RegTParam param) {
     return param.calcGain(sumGrad, sumHess);
   }
 
@@ -167,6 +167,6 @@ public class GradStats {
    * @param param the reg tree param
    * @param vec the leaf vector
    */
-  public void setLeafVec(RegTTrainParam param, float[] vec) {}
+  public void setLeafVec(RegTParam param, float[] vec) {}
 
 }

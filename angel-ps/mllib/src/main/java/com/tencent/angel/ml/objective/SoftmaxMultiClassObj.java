@@ -18,7 +18,7 @@ package com.tencent.angel.ml.objective;
 
 import com.tencent.angel.ml.RegTree.RegTDataStore;
 import com.tencent.angel.ml.RegTree.GradPair;
-import com.tencent.angel.ml.param.RegTTrainParam;
+import com.tencent.angel.ml.param.RegTParam;
 import com.tencent.angel.ml.utils.MathUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -35,17 +35,17 @@ public class SoftmaxMultiClassObj implements ObjFunc {
 
   private static final Log LOG = LogFactory.getLog(SoftmaxMultiClassObj.class);
 
-  public RegTTrainParam param;
+  public RegTParam param;
   public int numClass;
   private boolean outputProb;
 
-  public SoftmaxMultiClassObj(RegTTrainParam param, boolean outputProb) {
+  public SoftmaxMultiClassObj(RegTParam param, boolean outputProb) {
     this.param = param;
     this.numClass = param.numClass;
     this.outputProb = outputProb;
   }
 
-  public SoftmaxMultiClassObj(RegTTrainParam param) {
+  public SoftmaxMultiClassObj(RegTParam param) {
     this(param, true);
   }
 

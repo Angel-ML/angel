@@ -18,17 +18,17 @@ package com.tencent.angel.ml.RegTree;
 
 import com.tencent.angel.ml.math.vector.SparseDoubleSortedVector;
 import com.tencent.angel.ml.param.FeatureMeta;
-import com.tencent.angel.ml.param.RegTTrainParam;
+import com.tencent.angel.ml.param.RegTParam;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Description: Meta information about dataset, always sit in memory.
+ * Description: data information, always sit in memory.
  */
 public class RegTDataStore {
 
-  public RegTTrainParam param;
+  public RegTParam param;
 
   public FeatureMeta featureMeta; // feature meta info
 
@@ -46,7 +46,7 @@ public class RegTDataStore {
 
   public float[] baseWeights; // initial prediction to boost from.
 
-  public RegTDataStore(RegTTrainParam param) {
+  public RegTDataStore(RegTParam param) {
     this.param = param;
     this.instances = new ArrayList<SparseDoubleSortedVector>();
   }

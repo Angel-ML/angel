@@ -17,7 +17,7 @@
 package com.tencent.angel.ml.RegTree;
 
 import com.tencent.angel.ml.math.TAbstractVector;
-import com.tencent.angel.ml.param.RegTTrainParam;
+import com.tencent.angel.ml.param.RegTParam;
 import com.tencent.angel.ml.tree.TNode;
 import com.tencent.angel.ml.utils.MathUtils;
 import org.apache.commons.logging.Log;
@@ -27,11 +27,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class DistributedRegTree {
+public class RegTree {
 
-  private static final Log LOG = LogFactory.getLog(DistributedRegTree.class);
+  private static final Log LOG = LogFactory.getLog(RegTree.class);
 
-  public RegTTrainParam param;
+  public RegTParam param;
   // features used in this tree, if equals null, means use all the features without sampling
   public int[] fset;
   // node in the tree
@@ -39,7 +39,7 @@ public class DistributedRegTree {
   // the gradient info of each instances
   public List<RegTNodeStat> stats = new ArrayList<RegTNodeStat>();
 
-  public DistributedRegTree(RegTTrainParam param) {
+  public RegTree(RegTParam param) {
     this.param = param;
   }
 

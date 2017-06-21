@@ -22,7 +22,7 @@ import com.tencent.angel.ml.conf.MLConf;
 import com.tencent.angel.ml.math.vector.DenseDoubleVector;
 import com.tencent.angel.ml.math.vector.SparseDoubleSortedVector;
 import com.tencent.angel.ml.math.vector.TDoubleVector;
-import com.tencent.angel.ml.param.GBDTTrainParam;
+import com.tencent.angel.ml.param.GBDTParam;
 import com.tencent.angel.ml.tree.SplitEntry;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.worker.WorkerContext;
@@ -33,14 +33,14 @@ import org.apache.commons.logging.LogFactory;
  * Description:
  */
 
-public class DistributedHistHelper {
+public class GradHistHelper {
 
-  private static final Log LOG = LogFactory.getLog(DistributedHistHelper.class);
+  private static final Log LOG = LogFactory.getLog(GradHistHelper.class);
 
   private GBDTController controller;
   private int nid;
 
-  public DistributedHistHelper(GBDTController model, int nid) {
+  public GradHistHelper(GBDTController model, int nid) {
     this.controller = model;
     this.nid = nid;
   }
@@ -406,7 +406,7 @@ public class DistributedHistHelper {
 
     GradStats rootStats = calGradStats(histogram, startIdx, splitNum);
 
-    GBDTTrainParam param = new GBDTTrainParam();
+    GBDTParam param = new GBDTParam();
 
     if (startIdx + 2 * splitNum <= histogram.getDimension()) {
       // 3. the gain of the root node
@@ -503,7 +503,7 @@ public class DistributedHistHelper {
     GradStats bestRightStat = new GradStats();
 
     GradStats rootStats = calGradStats(row, startIdx, splitNum);
-    GBDTTrainParam param = new GBDTTrainParam();
+    GBDTParam param = new GBDTParam();
 
     if (startIdx + 2 * splitNum <= row.size()) {
       // 3. the gain of the root node

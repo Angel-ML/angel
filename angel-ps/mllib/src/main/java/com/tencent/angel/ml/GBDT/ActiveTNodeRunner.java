@@ -16,7 +16,7 @@
  */
 package com.tencent.angel.ml.GBDT;
 
-import com.tencent.angel.ml.RegTree.DistributedHistHelper;
+import com.tencent.angel.ml.RegTree.GradHistHelper;
 import com.tencent.angel.ml.math.vector.DenseDoubleVector;
 import com.tencent.angel.ml.model.PSModel;
 import org.apache.commons.logging.Log;
@@ -43,7 +43,7 @@ public class ActiveTNodeRunner implements Runnable {
     // 1. name of this node's grad histogram on PS
     String histParaName = this.controller.param.gradHistNamePrefix + nid;
     // 2. build the grad histogram of this node
-    DistributedHistHelper histMaker = new DistributedHistHelper(this.controller, this.nid);
+    GradHistHelper histMaker = new GradHistHelper(this.controller, this.nid);
     DenseDoubleVector histogram = histMaker.buildHistogram();
     // 3. push the histograms to PS
     try {

@@ -25,7 +25,7 @@ import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.SparseDoubleSortedVector
 import com.tencent.angel.ml.model.MLModel
-import com.tencent.angel.ml.param.{FeatureMeta, GBDTTrainParam, RegTTrainParam}
+import com.tencent.angel.ml.param.{FeatureMeta, GBDTParam, RegTParam}
 import com.tencent.angel.ml.utils.MathUtils
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
@@ -35,7 +35,7 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
 
   val LOG = LogFactory.getLog(classOf[GBDTLearner])
 
-  val param = new GBDTTrainParam
+  val param = new GBDTParam
 
   // 1. set training param
   param.numFeature = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
@@ -65,7 +65,7 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     model.init(ctx)
   }
 
-  def initDataMetaInfo(trainDataStorage: DataBlock[LabeledData], param: RegTTrainParam):RegTDataStore = {
+  def initDataMetaInfo(trainDataStorage: DataBlock[LabeledData], param: RegTParam):RegTDataStore = {
     var totalSample: Int = 0
     val numFeature: Int = param.numFeature
     val numNonzero: Int = param.numNonzero
