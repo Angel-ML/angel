@@ -183,11 +183,11 @@ public class GBDTController {
     LOG.info("------Get sketch from PS------");
     long startTime = System.currentTimeMillis();
     TDoubleVector sketchVector = (TDoubleVector) sketch.getRow(0);
+    LOG.info(String.format("Get sketch cost: %d ms", System.currentTimeMillis() - startTime));
     for (int i = 0; i < sketchVector.getDimension(); i++) {
       this.sketches[i] = (float) sketchVector.get(i);
     }
     this.phase = GBDTPhase.NEW_TREE;
-    LOG.info(String.format("Get sketch cost: %d ms", System.currentTimeMillis() - startTime));
   }
 
   // sample feature

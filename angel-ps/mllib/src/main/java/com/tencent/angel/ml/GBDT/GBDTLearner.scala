@@ -20,7 +20,7 @@ package com.tencent.angel.ml.GBDT
 import java.util.{ArrayList, List}
 
 import com.tencent.angel.ml.MLLearner
-import com.tencent.angel.ml.RegTree.{DataMeta, RegTDataStore}
+import com.tencent.angel.ml.RegTree.RegTDataStore
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.SparseDoubleSortedVector
