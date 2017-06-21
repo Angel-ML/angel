@@ -18,18 +18,13 @@
 package com.tencent.angel.ml.tree;
 
 import com.tencent.angel.ml.RegTree.DataMeta;
-import com.tencent.angel.ml.RegTree.RegTMaker;
 import com.tencent.angel.ml.utils.MathUtils;
 import com.yahoo.sketches.quantiles.DoublesSketch;
 
 /**
  * Description: get candidate split value, using yahoo datasketches
  */
-public class TYahooSketchSplit implements TSplitValueHelper {
-  @Override
-  public float[][] getSplitValue(DataMeta dataMeta, RegTMaker treeMaker, int nid) {
-    return new float[0][];
-  }
+public class TYahooSketchSplit extends TSplitValueHelper {
 
   public static float[][] getSplitValue(DataMeta dataMeta, int splitNum) {
 

@@ -17,10 +17,10 @@
 package com.tencent.angel.ml.tree;
 
 import com.tencent.angel.ml.RegTree.DataMeta;
-import com.tencent.angel.ml.RegTree.RegTMaker;
 
 
-public interface TSplitValueHelper {
+public abstract class TSplitValueHelper {
 
-  float[][] getSplitValue(DataMeta dataMeta, RegTMaker treeMaker, int nid);
+  static float[][] getSplitValue(DataMeta dataMeta, int splitNum) { return new float[0][]; }
+
 }
