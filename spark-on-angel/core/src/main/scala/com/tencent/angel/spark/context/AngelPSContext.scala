@@ -90,9 +90,9 @@ private[spark] class AngelPSContext private (id: Int, angelCtx: AngelContext) ex
    * psAgent creates the matrix for AngelPSClient.
    */
   protected def doCreateModelPool(numDimensions: Int, capacity: Int): PSModelPool = {
-    val maxRowNumInBlock = if (capacity > 1000) capacity / totalPSCores + 1 else capacity
+    val maxRowNumInBlock = if (capacity > 1000) capacity / totalPSCores else capacity
     val maxColNumInBlock = if (numDimensions > 1000) {
-      numDimensions / totalPSCores + 1
+      numDimensions / totalPSCores
     } else {
       numDimensions
     }

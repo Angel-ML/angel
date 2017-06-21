@@ -19,7 +19,7 @@ package com.tencent.angel.spark.ml
 
 import breeze.linalg.norm
 import breeze.optimize.DiffFunction
-import com.tencent.angel.spark.{PSContext, SharedPSContext}
+import com.tencent.angel.spark.PSContext
 import com.tencent.angel.spark.ml.optim.OWLQN
 import com.tencent.angel.spark.models.vector.BreezePSVector
 
