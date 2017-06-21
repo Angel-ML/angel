@@ -23,8 +23,8 @@ import com.tencent.angel.ml.conf.MLConf;
 import com.tencent.angel.ml.math.vector.*;
 import com.tencent.angel.ml.matrix.psf.get.single.GetRowParam;
 import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult;
-import com.tencent.angel.ml.metric.LogisErrorMetric;
-import com.tencent.angel.ml.metric.Metric;
+import com.tencent.angel.ml.metric.LogErrorMetric;
+import com.tencent.angel.ml.metric.EvalMetric;
 import com.tencent.angel.ml.model.PSModel;
 import com.tencent.angel.ml.objective.Loss;
 import com.tencent.angel.ml.objective.LossHelper;
@@ -704,8 +704,8 @@ public class GBDTController {
   public void eval() {
     LOG.info("------Evaluation------");
     long startTime = System.currentTimeMillis();
-    Metric metric = new LogisErrorMetric();
-    float error = metric.eval(this.trainDataStore.preds, this.trainDataStore.labels);
+    EvalMetric evalMetric = new LogErrorMetric();
+    float error = evalMetric.eval(this.trainDataStore.preds, this.trainDataStore.labels);
     LOG.info(String.format("Error after tree[%d]: %f", this.currentTree, error));
     LOG.info(String.format("Evaluation cost: %d ms", System.currentTimeMillis() - startTime));
   }
@@ -732,8 +732,8 @@ public class GBDTController {
       this.validDataStore.preds[insIdx] += this.param.learningRate * curPred;
     }
 
-    Metric metric = new LogisErrorMetric();
-    float error = metric.eval(this.validDataStore.preds, this.validDataStore.labels);
+    EvalMetric evalMetric = new LogErrorMetric();
+    float error = evalMetric.eval(this.validDataStore.preds, this.validDataStore.labels);
     LOG.info(String.format("Error after tree[%d]: %f", this.currentTree, error));
     LOG.info(String.format("Evaluation cost: %d ms", System.currentTimeMillis() - startTime));
   }

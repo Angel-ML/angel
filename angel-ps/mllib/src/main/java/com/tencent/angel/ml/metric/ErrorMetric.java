@@ -20,7 +20,7 @@ package com.tencent.angel.ml.metric;
  * Description: the metric of error ratio
  */
 
-public class ErrorMetric implements Metric {
+public class ErrorMetric implements EvalMetric {
 
   private static float threshold = 0.5f;
 

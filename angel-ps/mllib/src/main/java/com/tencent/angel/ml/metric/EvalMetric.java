@@ -17,21 +17,17 @@
 package com.tencent.angel.ml.metric;
 
 /**
- * Description: the metric of logistic error
- *
+ * Description: interface of evaluation metric used to evaluate model performance. This has nothing
+ * to do with training, but merely act as evaluation purpose.
  */
-
-public class LogisErrorMetric implements Metric {
+public interface EvalMetric {
 
   /**
    * return name of metric
    *
    * @return the name
    */
-  @Override
-  public String getName() {
-    return "logerror";
-  }
+  String getName();
 
   /**
    * evaluate a specific metric for instances
@@ -40,14 +36,7 @@ public class LogisErrorMetric implements Metric {
    * @param labels the labels
    * @return the eval metric
    */
-  @Override
-  public float eval(float[] preds, float[] labels) {
-    float errSum = 0.0f;
-    for (int i = 0; i < preds.length; i++) {
-      errSum += evalOne(preds[i], labels[i]);
-    }
-    return errSum / preds.length;
-  }
+  float eval(float[] preds, float[] labels);
 
   /**
    * evaluate a specific metric for one instance
@@ -56,10 +45,5 @@ public class LogisErrorMetric implements Metric {
    * @param label the label
    * @return the eval metric
    */
-  @Override
-  public float evalOne(float pred, float label) {
-    return pred > 0f ? 1.0f - label : label;
-  }
-
-
+  float evalOne(float pred, float label);
 }

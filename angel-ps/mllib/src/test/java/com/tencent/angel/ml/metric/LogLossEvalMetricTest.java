@@ -24,7 +24,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class LogLossMetricTest {
+public class LogLossEvalMetricTest {
     private static final Log LOG = LogFactory.getLog(LogLossMetric.class);
     private LogLossMetric logLossMetric = new LogLossMetric();
     static {

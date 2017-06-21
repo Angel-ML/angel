@@ -22,7 +22,7 @@ import com.tencent.angel.ml.utils.MathUtils;
  * Description: the metric of multiclass error ratio
  */
 
-public class MultiErrorMetric implements Metric {
+public class MultiErrorMetric implements EvalMetric {
 
   /**
    * return name of metric

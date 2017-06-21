@@ -24,23 +24,24 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class LogisErrorMetricTest {
-  private static final Log LOG = LogFactory.getLog(LogisErrorMetricTest.class);
-  private LogisErrorMetric logisErrorMetric = new LogisErrorMetric();
+public class ErrorEvalMetricTest {
+  private static final Log LOG = LogFactory.getLog(ErrorEvalMetricTest.class);
+  private ErrorMetric errorMetric = new ErrorMetric();
   static {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
+
 
   @Test
   public void testEval() throws Exception {
     float pred[] = {0.6f, 0.3f, 0.7f};
     float label[] = {1f, 0f, 1f};
-    assertEquals(0.3333333, logisErrorMetric.eval(pred, label), 0.0001);
+    assertEquals(0, errorMetric.eval(pred, label), 0.000);
   }
 
   @Test
   public void testEvalOne() throws Exception {
     float pred = 0.6f, label = 1f;
-    assertEquals(0, logisErrorMetric.evalOne(pred, label), 0.000);
+    assertEquals(0, errorMetric.evalOne(pred, label), 0.000);
   }
 }
