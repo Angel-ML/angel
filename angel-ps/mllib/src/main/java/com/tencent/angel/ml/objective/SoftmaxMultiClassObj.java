@@ -16,7 +16,7 @@
  */
 package com.tencent.angel.ml.objective;
 
-import com.tencent.angel.ml.RegTree.DataMeta;
+import com.tencent.angel.ml.RegTree.RegTDataStore;
 import com.tencent.angel.ml.RegTree.GradPair;
 import com.tencent.angel.ml.param.RegTTrainParam;
 import com.tencent.angel.ml.utils.MathUtils;
@@ -58,7 +58,7 @@ public class SoftmaxMultiClassObj implements ObjFunc {
    *        and second order gradient in
    */
   @Override
-  public List<GradPair> getGradient(float[] preds, DataMeta dataMeta, int iteration) {
+  public List<GradPair> getGradient(float[] preds, RegTDataStore regTDataStore, int iteration) {
     assert preds.length == this.numClass * dataMeta.labels.length;
     List<GradPair> rec = new ArrayList<GradPair>();
     int ndata = preds.length / numClass;

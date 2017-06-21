@@ -17,7 +17,7 @@
 
 package com.tencent.angel.ml.tree;
 
-import com.tencent.angel.ml.RegTree.DataMeta;
+import com.tencent.angel.ml.RegTree.RegTDataStore;
 import com.tencent.angel.ml.utils.MathUtils;
 import com.yahoo.sketches.quantiles.DoublesSketch;
 
@@ -26,7 +26,7 @@ import com.yahoo.sketches.quantiles.DoublesSketch;
  */
 public class TYahooSketchSplit extends TSplitValueHelper {
 
-  public static float[][] getSplitValue(DataMeta dataMeta, int splitNum) {
+  public static float[][] getSplitValue(RegTDataStore regTDataStore, int splitNum) {
 
     double[] fracs = new double[splitNum];
     for (int i = 0; i < splitNum; i++) {

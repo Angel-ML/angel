@@ -16,7 +16,7 @@
  */
 package com.tencent.angel.ml.objective;
 
-import com.tencent.angel.ml.RegTree.DataMeta;
+import com.tencent.angel.ml.RegTree.RegTDataStore;
 import com.tencent.angel.ml.RegTree.GradPair;
 
 import java.util.List;
@@ -32,7 +32,7 @@ public interface ObjFunc {
    * round info information about labels, weights, groups in rank iteration current iteration
    * number. return:_gpair output of get gradient, saves gradient and second order gradient in
    */
-  List<GradPair> getGradient(float[] preds, DataMeta info, int iteration);
+  List<GradPair> getGradient(float[] preds, RegTDataStore info, int iteration);
 
   // return the default evaluation metric for the objective
   String defaultEvalMetric();

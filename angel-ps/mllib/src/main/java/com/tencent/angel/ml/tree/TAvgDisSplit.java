@@ -17,7 +17,7 @@
 
 package com.tencent.angel.ml.tree;
 
-import com.tencent.angel.ml.RegTree.DataMeta;
+import com.tencent.angel.ml.RegTree.RegTDataStore;
 
 /**
  * Description: get candidate split value, averaging the max value and min value
@@ -27,7 +27,7 @@ public class TAvgDisSplit extends TSplitValueHelper {
 
   // the minimal split value is the minimal value of feature
   // the splits do not include the maximal value of feature
-  public static float[][] getSplitValue(DataMeta dataMeta, int splitNum) {
+  public static float[][] getSplitValue(RegTDataStore regTDataStore, int splitNum) {
 
     int numFeature = dataMeta.featureMeta.numFeature;
     float[][] splitSet = new float[numFeature][splitNum];

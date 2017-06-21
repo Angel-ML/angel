@@ -66,7 +66,7 @@ public class GradStats {
   }
 
   // check if necessary information is ready
-  public void CheckInfo(DataMeta info) {}
+  public void CheckInfo(RegTDataStore info) {}
 
   public void update(float sumGrad, float sumHess) {
     this.sumGrad = sumGrad;
@@ -100,7 +100,7 @@ public class GradStats {
    * @param info the additional information
    * @param ridx instances index of this instances
    */
-  public void add(List<GradPair> gpairs, DataMeta info, int ridx) {
+  public void add(List<GradPair> gpairs, RegTDataStore info, int ridx) {
     GradPair b = gpairs.get(ridx);
     this.add(b.getGrad(), b.getHess());
   }

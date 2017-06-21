@@ -20,7 +20,7 @@ package com.tencent.angel.ml.GBDT
 import java.util.{ArrayList, List}
 
 import com.tencent.angel.ml.MLLearner
-import com.tencent.angel.ml.RegTree.DataMeta
+import com.tencent.angel.ml.RegTree.{DataMeta, RegTDataStore}
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.SparseDoubleSortedVector
@@ -65,13 +65,13 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     model.init(ctx)
   }
 
-  def initDataMetaInfo(trainDataStorage: DataBlock[LabeledData], param: RegTTrainParam):DataMeta = {
+  def initDataMetaInfo(trainDataStorage: DataBlock[LabeledData], param: RegTTrainParam):RegTDataStore = {
     var totalSample: Int = 0
     val numFeature: Int = param.numFeature
     val numNonzero: Int = param.numNonzero
     LOG.info(s"Create data meta, numFeature=$numFeature, nonzero=$numNonzero")
 
-    val dataMeta: DataMeta = new DataMeta(param)
+    val dataMeta: RegTDataStore = new RegTDataStore(param)
 
     val instances: List[SparseDoubleSortedVector] = new ArrayList[SparseDoubleSortedVector]
     val labels: List[java.lang.Float] = new ArrayList[java.lang.Float]
@@ -155,8 +155,8 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     LOG.info("1. initialize")
     val dataGenStartTs: Long = System.currentTimeMillis
     init()
-    val trainDataMeta: DataMeta = initDataMetaInfo(trainData, param)
-    val validDataMeta: DataMeta = initDataMetaInfo(validationData, param)
+    val trainDataMeta: RegTDataStore = initDataMetaInfo(trainData, param)
+    val validDataMeta: RegTDataStore = initDataMetaInfo(validationData, param)
 
     LOG.info(s"Build data info cost ${System.currentTimeMillis - dataGenStartTs} ms")
     assert(trainDataMeta.numRow == trainDataMeta.instances.size)
