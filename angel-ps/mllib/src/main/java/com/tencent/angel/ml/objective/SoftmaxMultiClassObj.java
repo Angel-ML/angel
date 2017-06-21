@@ -53,13 +53,13 @@ public class SoftmaxMultiClassObj implements ObjFunc {
    * get gradient over each of predictions, given existing information.
    * 
    * @param preds: prediction of current round
-   * @param dataMeta information about labels, weights, groups in rank
+   * @param dataStore information about labels, weights, groups in rank
    * @param iteration current iteration number. return:_gpair output of get gradient, saves gradient
    *        and second order gradient in
    */
   @Override
-  public List<GradPair> calGrad(float[] preds, RegTDataStore regTDataStore, int iteration) {
-    assert preds.length == this.numClass * regTDataStore.labels.length;
+  public List<GradPair> calGrad(float[] preds, RegTDataStore dataStore, int iteration) {
+    assert preds.length == this.numClass * dataStore.labels.length;
     List<GradPair> rec = new ArrayList<GradPair>();
     int ndata = preds.length / numClass;
     int labelError = -1;
@@ -67,12 +67,12 @@ public class SoftmaxMultiClassObj implements ObjFunc {
     for (int insIdx = 0; insIdx < ndata; insIdx++) {
       System.arraycopy(preds, insIdx * numClass, tmp, 0, numClass);
       MathUtils.softmax(tmp);
-      int label = (int) regTDataStore.labels[insIdx];
+      int label = (int) dataStore.labels[insIdx];
       if (label < 0 || label >= numClass) {
         labelError = label;
         label = 0;
       }
-      float wt = regTDataStore.getWeight(insIdx);
+      float wt = dataStore.getWeight(insIdx);
       for (int k = 0; k < numClass; ++k) {
         float p = tmp[k];
         float h = 2.0f * p * (1.0f - p) * wt;
@@ -110,10 +110,6 @@ public class SoftmaxMultiClassObj implements ObjFunc {
         }
       }
     }
-    // if (!prob) {
-    // preds.clear();
-    // preds.addAll(rec);
-    // }
     return rec;
   }
 

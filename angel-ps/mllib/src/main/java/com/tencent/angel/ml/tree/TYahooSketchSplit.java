@@ -26,14 +26,14 @@ import com.yahoo.sketches.quantiles.DoublesSketch;
  */
 public class TYahooSketchSplit extends TSplitValueHelper {
 
-  public static float[][] getSplitValue(RegTDataStore regTDataStore, int splitNum) {
+  public static float[][] getSplitValue(RegTDataStore dataStore, int splitNum) {
 
     double[] fracs = new double[splitNum];
     for (int i = 0; i < splitNum; i++) {
       fracs[i] = i / (double) splitNum;
     }
 
-    int numFeature = dataMeta.featureMeta.numFeature;
+    int numFeature = dataStore.featureMeta.numFeature;
 
     DoublesSketch[] sketches = new DoublesSketch[numFeature];
 
@@ -41,11 +41,11 @@ public class TYahooSketchSplit extends TSplitValueHelper {
       sketches[i] = DoublesSketch.builder().build(); // default k=128
     }
 
-    for (int nid = 0; nid < dataMeta.numRow; nid++) {
-      int[] indice = dataMeta.instances.get(nid).getIndices();
+    for (int nid = 0; nid < dataStore.numRow; nid++) {
+      int[] indice = dataStore.instances.get(nid).getIndices();
       for (int i = 0; i < indice.length; i++) {
         int fid = indice[i];
-        sketches[fid].update(dataMeta.instances.get(nid).get(fid));
+        sketches[fid].update(dataStore.instances.get(nid).get(fid));
       }
     }
 

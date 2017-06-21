@@ -27,23 +27,23 @@ public class TAvgDisSplit extends TSplitValueHelper {
 
   // the minimal split value is the minimal value of feature
   // the splits do not include the maximal value of feature
-  public static float[][] getSplitValue(RegTDataStore regTDataStore, int splitNum) {
+  public static float[][] getSplitValue(RegTDataStore dataStore, int splitNum) {
 
-    int numFeature = dataMeta.featureMeta.numFeature;
+    int numFeature = dataStore.featureMeta.numFeature;
     float[][] splitSet = new float[numFeature][splitNum];
 
     // 1. the average distance, (maxValue - minValue) / splitNum
     float[] binWidths = new float[numFeature];
     for (int fid = 0; fid < numFeature; fid++) {
       binWidths[fid] =
-          (dataMeta.featureMeta.maxFeatures[fid] - dataMeta.featureMeta.minFeatures[fid])
+          (dataStore.featureMeta.maxFeatures[fid] - dataStore.featureMeta.minFeatures[fid])
               / splitNum;
     }
 
     // 2. calculate the candidate split value
     for (int fid = 0; fid < numFeature; fid++) {
       for (int j = 0; j < splitNum; j++) {
-        splitSet[fid][j] = dataMeta.featureMeta.minFeatures[fid] + binWidths[fid] * j;
+        splitSet[fid][j] = dataStore.featureMeta.minFeatures[fid] + binWidths[fid] * j;
       }
     }
     return splitSet;
