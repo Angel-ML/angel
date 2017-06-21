@@ -20,7 +20,8 @@ package com.tencent.angel.ml.objective;
  * Description: interface of loss
  */
 public interface LossHelper {
-  float predTransform(float x);
+
+  float transPred(float x);
 
   boolean checkLabel(float x);
 
@@ -33,4 +34,5 @@ public interface LossHelper {
   String labelErrorMsg();
 
   String defaultEvalMetric();
+
 }

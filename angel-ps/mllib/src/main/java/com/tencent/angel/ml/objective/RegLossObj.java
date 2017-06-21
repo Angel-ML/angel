@@ -50,7 +50,7 @@ public class RegLossObj implements ObjFunc {
    * @param iteration: current interation
    */
   @Override
-  public List<GradPair> getGradient(float[] preds, RegTDataStore dataStore, int iteration) {
+  public List<GradPair> calGrad(float[] preds, RegTDataStore dataStore, int iteration) {
     assert preds.length > 0;
     assert preds.length == dataStore.labels.length;
     List<GradPair> rec = new ArrayList<GradPair>();
@@ -58,7 +58,7 @@ public class RegLossObj implements ObjFunc {
     // check if label in range
     boolean label_correct = true;
     for (int i = 0; i < ndata; i++) {
-      float p = loss.predTransform(preds[i]);
+      float p = loss.transPred(preds[i]);
       float w = dataStore.getWeight(i);
       if (dataStore.labels[i] == 1.0f)
         w *= scalePosWeight;
@@ -75,11 +75,6 @@ public class RegLossObj implements ObjFunc {
     return rec;
   }
 
-  @Override
-  public String defaultEvalMetric() {
-    return loss.defaultEvalMetric();
-  }
-
   /**
    * transform prediction values, this is only called when Prediction is called preds: prediction
    * values, saves to this vector as well
@@ -87,22 +82,22 @@ public class RegLossObj implements ObjFunc {
    * @param preds
    */
   @Override
-  public void predTransform(List<Float> preds) {
+  public void transPred(List<Float> preds) {
     int ndata = preds.size();
     for (int j = 0; j < ndata; ++j) {
-      preds.set(j, loss.predTransform(preds.get(j)));
+      preds.set(j, loss.transPred(preds.get(j)));
     }
   }
 
   /**
    * transform prediction values, this is only called when Eval is called usually it redirect to
-   * predTransform preds: prediction values, saves to this vector as well
+   * transPred preds: prediction values, saves to this vector as well
    *
    * @param preds
    */
   @Override
-  public void evalTransform(List<Float> preds) {
-    this.predTransform(preds);
+  public void transEval(List<Float> preds) {
+    this.transPred(preds);
   }
 
   /**
@@ -114,5 +109,10 @@ public class RegLossObj implements ObjFunc {
   @Override
   public float prob2Margin(float base_score) {
     return loss.prob2Margin(base_score);
+  }
+
+  @Override
+  public String defaultEvalMetric() {
+    return loss.defaultEvalMetric();
   }
 }

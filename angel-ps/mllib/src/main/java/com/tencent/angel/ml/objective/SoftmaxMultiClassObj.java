@@ -58,8 +58,8 @@ public class SoftmaxMultiClassObj implements ObjFunc {
    *        and second order gradient in
    */
   @Override
-  public List<GradPair> getGradient(float[] preds, RegTDataStore regTDataStore, int iteration) {
-    assert preds.length == this.numClass * dataMeta.labels.length;
+  public List<GradPair> calGrad(float[] preds, RegTDataStore regTDataStore, int iteration) {
+    assert preds.length == this.numClass * regTDataStore.labels.length;
     List<GradPair> rec = new ArrayList<GradPair>();
     int ndata = preds.length / numClass;
     int labelError = -1;
@@ -67,12 +67,12 @@ public class SoftmaxMultiClassObj implements ObjFunc {
     for (int insIdx = 0; insIdx < ndata; insIdx++) {
       System.arraycopy(preds, insIdx * numClass, tmp, 0, numClass);
       MathUtils.softmax(tmp);
-      int label = (int) dataMeta.labels[insIdx];
+      int label = (int) regTDataStore.labels[insIdx];
       if (label < 0 || label >= numClass) {
         labelError = label;
         label = 0;
       }
-      float wt = dataMeta.getWeight(insIdx);
+      float wt = regTDataStore.getWeight(insIdx);
       for (int k = 0; k < numClass; ++k) {
         float p = tmp[k];
         float h = 2.0f * p * (1.0f - p) * wt;
@@ -129,18 +129,18 @@ public class SoftmaxMultiClassObj implements ObjFunc {
    * @param preds
    */
   @Override
-  public void predTransform(List<Float> preds) {
+  public void transPred(List<Float> preds) {
     this.transform(preds, this.outputProb);
   }
 
   /**
    * transform prediction values, this is only called when Eval is called usually it redirect to
-   * predTransform preds: prediction values, saves to this vector as well
+   * transPred preds: prediction values, saves to this vector as well
    *
    * @param preds
    */
   @Override
-  public void evalTransform(List<Float> preds) {
+  public void transEval(List<Float> preds) {
     this.transform(preds, true);
   }
 

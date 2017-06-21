@@ -94,7 +94,7 @@ public class GBDTController {
     this.currentTree = 0; // tree starts from 0
     this.currentDepth = 1; // depth starts from 1
     // create loss function
-    LossHelper loss = new Loss.LogisticClassification();
+    LossHelper loss = new Loss.BinaryLogisticLoss();
     objfunc = new RegLossObj(loss);
     this.sketches = new float[this.param.numFeature * this.param.numSplit];
     this.maxNodeNum = MathUtils.pow(2, this.param.maxDepth) - 1;
@@ -139,7 +139,7 @@ public class GBDTController {
   private void calGradPairs() {
     LOG.info("------Calculate grad pairs------");
     gradPairs.clear();
-    gradPairs.addAll(objfunc.getGradient(this.trainDataStore.preds, this.trainDataStore, 0));
+    gradPairs.addAll(objfunc.calGrad(this.trainDataStore.preds, this.trainDataStore, 0));
     LOG.debug(String.format("Instance[%d]: label[%f], pred[%f], gradient[%f], hessien[%f]",
             0, this.trainDataStore.labels[0], this.trainDataStore.preds[0], gradPairs.get(0).getGrad(), gradPairs.get(0).getHess()));
   }
