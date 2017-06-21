@@ -21,7 +21,7 @@ package com.tencent.angel.ml.param;
  *
  */
 
-public class GBDTTrainParam extends RegTTrainParam {
+public class GBDTParam extends RegTParam {
 
   public int treeNum = 10;
   public int maxThreadNum = 10;
