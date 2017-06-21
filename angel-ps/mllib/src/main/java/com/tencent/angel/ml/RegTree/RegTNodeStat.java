@@ -16,7 +16,7 @@
  */
 package com.tencent.angel.ml.RegTree;
 
-import com.tencent.angel.ml.param.RegTTrainParam;
+import com.tencent.angel.ml.param.RegTParam;
 import com.tencent.angel.ml.tree.SplitEntry;
 
 import java.util.List;
@@ -24,7 +24,7 @@ import java.util.List;
 
 public class RegTNodeStat {
 
-  public RegTTrainParam param;
+  public RegTParam param;
   public float lossChg; // loss change caused by current split
   public float sumGrad; // sum of gradient
   public float sumHess; // sum of hessian values, used to measure coverage of data
@@ -33,7 +33,7 @@ public class RegTNodeStat {
 
   public RegTNodeStat() {}
 
-  public RegTNodeStat(RegTTrainParam param) {
+  public RegTNodeStat(RegTParam param) {
     this.param = param;
     this.lossChg = 0.0f;
     this.sumGrad = 0.0f;
@@ -42,7 +42,7 @@ public class RegTNodeStat {
     this.splitEntry = new SplitEntry();
   }
 
-  public RegTNodeStat(RegTTrainParam param, List<GradPair> gradPairs) {
+  public RegTNodeStat(RegTParam param, List<GradPair> gradPairs) {
     new RegTNodeStat(param);
     // calculate the sum of gradient and hess
     for (GradPair pair : gradPairs) {

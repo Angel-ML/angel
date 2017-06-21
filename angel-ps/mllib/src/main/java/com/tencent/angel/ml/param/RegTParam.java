@@ -24,8 +24,8 @@ import org.apache.commons.logging.LogFactory;
  * Description: hyper-parameter of regression tree model
  */
 
-public class RegTTrainParam {
-  private static final Log LOG = LogFactory.getLog(RegTTrainParam.class);
+public class RegTParam implements TrainParam{
+  private static final Log LOG = LogFactory.getLog(RegTParam.class);
 
   // step size for a tree
   public float learningRate = 0.1f;
@@ -73,6 +73,7 @@ public class RegTTrainParam {
   // whether to not print info during training.
   public boolean silent = false;
 
+  @Override
   public void printParam() {
     LOG.info(String.format("Tree hyper-parameters------"
         + "maxdepth: %d, minSplitLoss: %f, rowSample: %f, colSample: %f", this.maxDepth,
@@ -117,7 +118,6 @@ public class RegTTrainParam {
       return 0.0f;
     if (maxDeltaStep == 0.0f) {
       if (regAlpha == 0.0f) {
-        // return MathUtils.sqr(sumGrad) / (sumHess + regLambda);
         return (sumGrad / (sumHess + regLambda)) * sumGrad;
       } else {
         return MathUtils.sqr(MathUtils.thresholdL1(sumGrad, regAlpha)) / (sumHess + regLambda);

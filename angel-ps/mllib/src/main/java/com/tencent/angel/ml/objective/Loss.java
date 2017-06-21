@@ -33,7 +33,7 @@ public class Loss {
     public LinearSquareLoss() {}
 
     @Override
-    public float predTransform(float x) {
+    public float transPred(float x) {
       return x;
     }
 
@@ -72,12 +72,12 @@ public class Loss {
    * logistic loss for probability regression task. loss(y,y')=y*log(1+e^-y')+(1-y)*log(1+e^y'),
    * grad = y'-y, 2nd-grad = y'*(1-y')
    */
-  public static class LogisticRegression implements LossHelper {
+  public static class LogisticLoss implements LossHelper {
 
-    public LogisticRegression() {}
+    public LogisticLoss() {}
 
     @Override
-    public float predTransform(float x) {
+    public float transPred(float x) {
       return MathUtils.sigmoid(x);
     }
 
@@ -115,9 +115,9 @@ public class Loss {
   }
 
   // logistic loss for binary classification task.
-  public static class LogisticClassification extends LogisticRegression {
+  public static class BinaryLogisticLoss extends LogisticLoss {
 
-    public LogisticClassification() {}
+    public BinaryLogisticLoss() {}
 
     @Override
     public String defaultEvalMetric() {
@@ -126,12 +126,12 @@ public class Loss {
   }
 
   // logistic loss, but predict un-transformed margin
-  public static class LogisticRaw extends LogisticRegression {
+  public static class DirectLogisticLoss extends LogisticLoss {
 
-    public LogisticRaw() {}
+    public DirectLogisticLoss() {}
 
     @Override
-    public float predTransform(float x) {
+    public float transPred(float x) {
       return x;
     }
 

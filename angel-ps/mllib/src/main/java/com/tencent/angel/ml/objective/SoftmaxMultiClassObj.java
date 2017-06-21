@@ -16,9 +16,9 @@
  */
 package com.tencent.angel.ml.objective;
 
-import com.tencent.angel.ml.RegTree.DataMeta;
+import com.tencent.angel.ml.RegTree.RegTDataStore;
 import com.tencent.angel.ml.RegTree.GradPair;
-import com.tencent.angel.ml.param.RegTTrainParam;
+import com.tencent.angel.ml.param.RegTParam;
 import com.tencent.angel.ml.utils.MathUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -35,17 +35,17 @@ public class SoftmaxMultiClassObj implements ObjFunc {
 
   private static final Log LOG = LogFactory.getLog(SoftmaxMultiClassObj.class);
 
-  public RegTTrainParam param;
+  public RegTParam param;
   public int numClass;
   private boolean outputProb;
 
-  public SoftmaxMultiClassObj(RegTTrainParam param, boolean outputProb) {
+  public SoftmaxMultiClassObj(RegTParam param, boolean outputProb) {
     this.param = param;
     this.numClass = param.numClass;
     this.outputProb = outputProb;
   }
 
-  public SoftmaxMultiClassObj(RegTTrainParam param) {
+  public SoftmaxMultiClassObj(RegTParam param) {
     this(param, true);
   }
 
@@ -53,13 +53,13 @@ public class SoftmaxMultiClassObj implements ObjFunc {
    * get gradient over each of predictions, given existing information.
    * 
    * @param preds: prediction of current round
-   * @param dataMeta information about labels, weights, groups in rank
+   * @param dataStore information about labels, weights, groups in rank
    * @param iteration current iteration number. return:_gpair output of get gradient, saves gradient
    *        and second order gradient in
    */
   @Override
-  public List<GradPair> getGradient(float[] preds, DataMeta dataMeta, int iteration) {
-    assert preds.length == this.numClass * dataMeta.labels.length;
+  public List<GradPair> calGrad(float[] preds, RegTDataStore dataStore, int iteration) {
+    assert preds.length == this.numClass * dataStore.labels.length;
     List<GradPair> rec = new ArrayList<GradPair>();
     int ndata = preds.length / numClass;
     int labelError = -1;
@@ -67,12 +67,12 @@ public class SoftmaxMultiClassObj implements ObjFunc {
     for (int insIdx = 0; insIdx < ndata; insIdx++) {
       System.arraycopy(preds, insIdx * numClass, tmp, 0, numClass);
       MathUtils.softmax(tmp);
-      int label = (int) dataMeta.labels[insIdx];
+      int label = (int) dataStore.labels[insIdx];
       if (label < 0 || label >= numClass) {
         labelError = label;
         label = 0;
       }
-      float wt = dataMeta.getWeight(insIdx);
+      float wt = dataStore.getWeight(insIdx);
       for (int k = 0; k < numClass; ++k) {
         float p = tmp[k];
         float h = 2.0f * p * (1.0f - p) * wt;
@@ -110,10 +110,6 @@ public class SoftmaxMultiClassObj implements ObjFunc {
         }
       }
     }
-    // if (!prob) {
-    // preds.clear();
-    // preds.addAll(rec);
-    // }
     return rec;
   }
 
@@ -129,18 +125,18 @@ public class SoftmaxMultiClassObj implements ObjFunc {
    * @param preds
    */
   @Override
-  public void predTransform(List<Float> preds) {
+  public void transPred(List<Float> preds) {
     this.transform(preds, this.outputProb);
   }
 
   /**
    * transform prediction values, this is only called when Eval is called usually it redirect to
-   * predTransform preds: prediction values, saves to this vector as well
+   * transPred preds: prediction values, saves to this vector as well
    *
    * @param preds
    */
   @Override
-  public void evalTransform(List<Float> preds) {
+  public void transEval(List<Float> preds) {
     this.transform(preds, true);
   }
 

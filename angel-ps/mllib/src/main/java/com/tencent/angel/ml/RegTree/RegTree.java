@@ -17,7 +17,7 @@
 package com.tencent.angel.ml.RegTree;
 
 import com.tencent.angel.ml.math.TAbstractVector;
-import com.tencent.angel.ml.param.RegTTrainParam;
+import com.tencent.angel.ml.param.RegTParam;
 import com.tencent.angel.ml.tree.TNode;
 import com.tencent.angel.ml.utils.MathUtils;
 import org.apache.commons.logging.Log;
@@ -26,49 +26,38 @@ import org.apache.commons.logging.LogFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Description: A regression tree
- */
+
 public class RegTree {
 
   private static final Log LOG = LogFactory.getLog(RegTree.class);
 
-  public RegTTrainParam param;
-  // features used in this tree
+  public RegTParam param;
+  // features used in this tree, if equals null, means use all the features without sampling
   public int[] fset;
   // node in the tree
   public List<TNode> nodes = new ArrayList<TNode>();
   // the gradient info of each instances
   public List<RegTNodeStat> stats = new ArrayList<RegTNodeStat>();
 
-  public RegTree(RegTTrainParam param) {
+  public RegTree(RegTParam param) {
     this.param = param;
   }
 
-  public void init(DataMeta dataMeta, List<GradPair> gradPairs) {
-    // initialize feature id
-    if (param.colSample < 1) {
-      fset = dataMeta.featureMeta.sampleCol(param.colSample);
-    } else {
-      fset = new int[dataMeta.featureMeta.numFeature];
-      for (int fid = 0; fid < fset.length; fid++) {
-        fset[fid] = fid;
-      }
-    }
-    dataMeta.featureMeta.sampleCol(param.colSample);
+  public void initTreeNodes() {
     // initialize nodes
     int maxDepth = param.maxDepth;
     int maxNode = MathUtils.pow(2, maxDepth) - 1;
-    for (int nid = 0; nid < maxNode; nid++) {
+    TNode root = new TNode();
+    root.setNid(0);
+    root.setParent(-1);
+    nodes.add(root);
+    RegTNodeStat rootStat = new RegTNodeStat(this.param);
+    stats.add(rootStat);
+    for (int nid = 1; nid < maxNode; nid++) {
       nodes.add(null);
       stats.add(null);
     }
-    // add root node, creete split entry
-    TNode root = new TNode(0, -1, -1, -1);
-    // initialize statistic of the root, including gradient stats
-    RegTNodeStat rootStat = new RegTNodeStat(param, gradPairs);
-    nodes.set(0, root);
-    stats.set(0, rootStat);
+
   }
 
   public void clear() {}
@@ -95,4 +84,5 @@ public class RegTree {
   public float predict(TAbstractVector feat, int rootId) {
     return 0.0f;
   }
+
 }

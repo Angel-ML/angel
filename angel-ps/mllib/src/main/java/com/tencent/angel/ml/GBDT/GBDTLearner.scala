@@ -20,12 +20,12 @@ package com.tencent.angel.ml.GBDT
 import java.util.{ArrayList, List}
 
 import com.tencent.angel.ml.MLLearner
-import com.tencent.angel.ml.RegTree.DataMeta
+import com.tencent.angel.ml.RegTree.{DataMeta, RegTDataStore}
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.SparseDoubleSortedVector
 import com.tencent.angel.ml.model.MLModel
-import com.tencent.angel.ml.param.{FeatureMeta, GBDTTrainParam, RegTTrainParam}
+import com.tencent.angel.ml.param.{FeatureMeta, GBDTParam, RegTParam}
 import com.tencent.angel.ml.utils.MathUtils
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
@@ -35,7 +35,7 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
 
   val LOG = LogFactory.getLog(classOf[GBDTLearner])
 
-  val param = new GBDTTrainParam
+  val param = new GBDTParam
 
   // 1. set training param
   param.numFeature = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
@@ -65,13 +65,13 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     model.init(ctx)
   }
 
-  def initDataMetaInfo(trainDataStorage: DataBlock[LabeledData], param: RegTTrainParam):DataMeta = {
+  def initDataMetaInfo(trainDataStorage: DataBlock[LabeledData], param: RegTParam):RegTDataStore = {
     var totalSample: Int = 0
     val numFeature: Int = param.numFeature
     val numNonzero: Int = param.numNonzero
     LOG.info(s"Create data meta, numFeature=$numFeature, nonzero=$numNonzero")
 
-    val dataMeta: DataMeta = new DataMeta(param)
+    val dataStore: RegTDataStore = new RegTDataStore(param)
 
     val instances: List[SparseDoubleSortedVector] = new ArrayList[SparseDoubleSortedVector]
     val labels: List[java.lang.Float] = new ArrayList[java.lang.Float]
@@ -122,24 +122,21 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       }
     }
 
-    // LOG.info("max features: " + Arrays.toString(maxFeatures));
-    // LOG.info("min features: " + Arrays.toString(minFeatures));
-
     val featureMeta: FeatureMeta = new FeatureMeta(numFeature,
       MathUtils.floatList2Arr(minFeatures), MathUtils.floatList2Arr(maxFeatures))
-    dataMeta.setNumRow(totalSample)
-    dataMeta.setNumCol(numFeature)
-    dataMeta.setNumNonzero(numNonzero)
-    dataMeta.setInstances(instances)
-    dataMeta.setLabels(MathUtils.floatList2Arr(labels))
-    dataMeta.setPreds(MathUtils.floatList2Arr(preds))
-    dataMeta.setFeatureMeta(featureMeta)
-    dataMeta.setWeights(MathUtils.floatList2Arr(weights))
-    dataMeta.setBaseWeights(MathUtils.floatList2Arr(weights))
+    dataStore.setNumRow(totalSample)
+    dataStore.setNumCol(numFeature)
+    dataStore.setNumNonzero(numNonzero)
+    dataStore.setInstances(instances)
+    dataStore.setLabels(MathUtils.floatList2Arr(labels))
+    dataStore.setPreds(MathUtils.floatList2Arr(preds))
+    dataStore.setFeatureMeta(featureMeta)
+    dataStore.setWeights(MathUtils.floatList2Arr(weights))
+    dataStore.setBaseWeights(MathUtils.floatList2Arr(weights))
 
     LOG.info(s"Finish creating data meta, numRow=$totalSample, numCol=$numFeature, nonzero=$numNonzero")
 
-    dataMeta
+    dataStore
   }
 
   /**
@@ -155,17 +152,17 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     LOG.info("1. initialize")
     val dataGenStartTs: Long = System.currentTimeMillis
     init()
-    val trainDataMeta: DataMeta = initDataMetaInfo(trainData, param)
-    val validDataMeta: DataMeta = initDataMetaInfo(validationData, param)
+    val trainDataStore: RegTDataStore = initDataMetaInfo(trainData, param)
+    val validDataStore: RegTDataStore = initDataMetaInfo(validationData, param)
 
     LOG.info(s"Build data info cost ${System.currentTimeMillis - dataGenStartTs} ms")
-    assert(trainDataMeta.numRow == trainDataMeta.instances.size)
-    assert(validDataMeta.numRow == validDataMeta.instances.size)
+    assert(trainDataStore.numRow == trainDataStore.instances.size)
+    assert(validDataStore.numRow == validDataStore.instances.size)
 
     LOG.info("2.train")
     val trainStartTs: Long = System.currentTimeMillis
 
-    val controller: GBDTController = new GBDTController(ctx, param, trainDataMeta, validDataMeta, model)
+    val controller: GBDTController = new GBDTController(ctx, param, trainDataStore, validDataStore, model)
     controller.init
 
     while (controller.phase != GBDTPhase.FINISHED) {

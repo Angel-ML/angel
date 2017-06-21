@@ -16,7 +16,7 @@
  */
 package com.tencent.angel.ml.objective;
 
-import com.tencent.angel.ml.RegTree.DataMeta;
+import com.tencent.angel.ml.RegTree.RegTDataStore;
 import com.tencent.angel.ml.RegTree.GradPair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -46,38 +46,33 @@ public class RegLossObj implements ObjFunc {
    * number. return:_gpair output of get gradient, saves gradient and second order gradient in
    *
    * @param preds: predictive value
-   * @param dataMeta: data meta info
+   * @param dataStore: data meta info
    * @param iteration: current interation
    */
   @Override
-  public List<GradPair> getGradient(float[] preds, DataMeta dataMeta, int iteration) {
+  public List<GradPair> calGrad(float[] preds, RegTDataStore dataStore, int iteration) {
     assert preds.length > 0;
-    assert preds.length == dataMeta.labels.length;
+    assert preds.length == dataStore.labels.length;
     List<GradPair> rec = new ArrayList<GradPair>();
     int ndata = preds.length; // number of data instances
     // check if label in range
     boolean label_correct = true;
     for (int i = 0; i < ndata; i++) {
-      float p = loss.predTransform(preds[i]);
-      float w = dataMeta.getWeight(i);
-      if (dataMeta.labels[i] == 1.0f)
+      float p = loss.transPred(preds[i]);
+      float w = dataStore.getWeight(i);
+      if (dataStore.labels[i] == 1.0f)
         w *= scalePosWeight;
-      if (!loss.checkLabel(dataMeta.labels[i]))
+      if (!loss.checkLabel(dataStore.labels[i]))
         label_correct = false;
       GradPair pair =
-          new GradPair(loss.firOrderGrad(p, dataMeta.labels[i]) * w, loss.secOrderGrad(p,
-              dataMeta.labels[i]) * w);
+          new GradPair(loss.firOrderGrad(p, dataStore.labels[i]) * w, loss.secOrderGrad(p,
+                  dataStore.labels[i]) * w);
       rec.add(pair);
     }
     if (!label_correct) {
       LOG.error(loss.labelErrorMsg());
     }
     return rec;
-  }
-
-  @Override
-  public String defaultEvalMetric() {
-    return loss.defaultEvalMetric();
   }
 
   /**
@@ -87,22 +82,22 @@ public class RegLossObj implements ObjFunc {
    * @param preds
    */
   @Override
-  public void predTransform(List<Float> preds) {
+  public void transPred(List<Float> preds) {
     int ndata = preds.size();
     for (int j = 0; j < ndata; ++j) {
-      preds.set(j, loss.predTransform(preds.get(j)));
+      preds.set(j, loss.transPred(preds.get(j)));
     }
   }
 
   /**
    * transform prediction values, this is only called when Eval is called usually it redirect to
-   * predTransform preds: prediction values, saves to this vector as well
+   * transPred preds: prediction values, saves to this vector as well
    *
    * @param preds
    */
   @Override
-  public void evalTransform(List<Float> preds) {
-    this.predTransform(preds);
+  public void transEval(List<Float> preds) {
+    this.transPred(preds);
   }
 
   /**
@@ -114,5 +109,10 @@ public class RegLossObj implements ObjFunc {
   @Override
   public float prob2Margin(float base_score) {
     return loss.prob2Margin(base_score);
+  }
+
+  @Override
+  public String defaultEvalMetric() {
+    return loss.defaultEvalMetric();
   }
 }

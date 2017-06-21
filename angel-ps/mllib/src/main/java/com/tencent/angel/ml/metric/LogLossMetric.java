@@ -20,7 +20,7 @@ package com.tencent.angel.ml.metric;
  * Description: the metric of logistic loss
  */
 
-public class LogLossMetric implements Metric {
+public class LogLossMetric implements EvalMetric {
 
   /**
    * return name of metric

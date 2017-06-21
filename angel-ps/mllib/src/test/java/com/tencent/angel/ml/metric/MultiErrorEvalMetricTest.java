@@ -24,22 +24,26 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class MAEMetricTest {
-    private static final Log LOG = LogFactory.getLog(MAEMetricTest.class);
-    private MAEMetric maeMetric = new MAEMetric();
-    static {
-        PropertyConfigurator.configure("../conf/log4j.properties");
-    }
-    @Test
-    public void testEval() throws Exception {
-        float pred[] = {0.6f, 0.3f, 0.7f};
-        float label[] = {1f, 0f, 1f};
-        assertEquals(0.3333, maeMetric.eval(pred, label), 0.0001);
-    }
+public class MultiErrorEvalMetricTest {
+  private static final Log LOG = LogFactory.getLog(MultiErrorEvalMetricTest.class);
+  private MultiErrorMetric multiErrorMetric = new MultiErrorMetric();
+  static {
+    PropertyConfigurator.configure("../conf/log4j.properties");
+  }
 
-    @Test
-    public void testEvalOne() throws Exception {
-        float pred = 0.6f, label = 1f;
-        assertEquals(0.4, maeMetric.evalOne(pred, label), 0.1);
-    }
+  @Test
+  public void testEval() throws Exception {
+    float pred[] = {0f, 1f};
+    float label[] = {1f, 0f};
+    assertEquals(8388608, multiErrorMetric.eval(pred, label), 0.00);
+  }
+
+  @Test
+  public void testEvalOne() throws Exception {
+    float pred[] = {0.6f, 0.3f, 0.7f};
+    float label = 1f;
+    assertEquals(1, multiErrorMetric.evalOne(pred, label), 0.0001);
+    pred[1] = 1f;
+    assertEquals(0, multiErrorMetric.evalOne(pred, label), 0.0001);
+  }
 }

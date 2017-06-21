@@ -17,28 +17,23 @@
 
 package com.tencent.angel.ml.tree;
 
-import com.tencent.angel.ml.RegTree.DataMeta;
-import com.tencent.angel.ml.RegTree.RegTMaker;
+import com.tencent.angel.ml.RegTree.RegTDataStore;
 import com.tencent.angel.ml.utils.MathUtils;
 import com.yahoo.sketches.quantiles.DoublesSketch;
 
 /**
  * Description: get candidate split value, using yahoo datasketches
  */
-public class TYahooSketchSplit implements TSplitValueHelper {
-  @Override
-  public float[][] getSplitValue(DataMeta dataMeta, RegTMaker treeMaker, int nid) {
-    return new float[0][];
-  }
+public class TYahooSketchSplit extends TSplitValueHelper {
 
-  public static float[][] getSplitValue(DataMeta dataMeta, int splitNum) {
+  public static float[][] getSplitValue(RegTDataStore dataStore, int splitNum) {
 
     double[] fracs = new double[splitNum];
     for (int i = 0; i < splitNum; i++) {
       fracs[i] = i / (double) splitNum;
     }
 
-    int numFeature = dataMeta.featureMeta.numFeature;
+    int numFeature = dataStore.featureMeta.numFeature;
 
     DoublesSketch[] sketches = new DoublesSketch[numFeature];
 
@@ -46,11 +41,11 @@ public class TYahooSketchSplit implements TSplitValueHelper {
       sketches[i] = DoublesSketch.builder().build(); // default k=128
     }
 
-    for (int nid = 0; nid < dataMeta.numRow; nid++) {
-      int[] indice = dataMeta.instances.get(nid).getIndices();
+    for (int nid = 0; nid < dataStore.numRow; nid++) {
+      int[] indice = dataStore.instances.get(nid).getIndices();
       for (int i = 0; i < indice.length; i++) {
         int fid = indice[i];
-        sketches[fid].update(dataMeta.instances.get(nid).get(fid));
+        sketches[fid].update(dataStore.instances.get(nid).get(fid));
       }
     }
 
