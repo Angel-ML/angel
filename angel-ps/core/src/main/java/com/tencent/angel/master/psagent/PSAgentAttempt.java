@@ -747,9 +747,7 @@ public class PSAgentAttempt implements EventHandler<PSAgentAttemptEvent> {
       FileSystem remoteFS = FileSystem.get(conf);
 
       // Set up JobConf to be localized properly on the remote NM.
-      Path path =
-          AngelApps.getStagingDir(conf, UserGroupInformation.getCurrentUser().getShortUserName());
-      Path remoteJobSubmitDir = new Path(path, appid.toString());
+      Path remoteJobSubmitDir = new Path(conf.get(AngelConfiguration.ANGEL_JOB_DIR));
       Path remoteJobConfPath = new Path(remoteJobSubmitDir, AngelConfiguration.ANGEL_JOB_CONF_FILE);
       localResources.put(
           AngelConfiguration.ANGEL_JOB_CONF_FILE,
