@@ -52,7 +52,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class TaskContext {
   private final TaskId taskId;
   private final TaskIdProto taskIdProto;
-  private final Map<String, AtomicLong> metrics;
+  private final ConcurrentHashMap<String, AtomicLong> metrics;
 
   @SuppressWarnings("rawtypes")
   private Reader reader;

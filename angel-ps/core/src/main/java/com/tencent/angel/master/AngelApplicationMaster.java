@@ -17,6 +17,8 @@
 package com.tencent.angel.master;
 
 import java.io.IOException;
+import java.security.PrivilegedExceptionAction;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.locks.Lock;
@@ -69,6 +71,8 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.Credentials;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.service.CompositeService;
 import org.apache.hadoop.util.ShutdownHookManager;
 import org.apache.hadoop.yarn.YarnUncaughtExceptionHandler;
@@ -81,6 +85,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.event.AsyncDispatcher;
 import org.apache.hadoop.yarn.event.Dispatcher;
 import org.apache.hadoop.yarn.event.EventHandler;
+import org.apache.hadoop.yarn.security.AMRMTokenIdentifier;
 import org.apache.hadoop.yarn.security.client.ClientToAMTokenSecretManager;
 import org.apache.hadoop.yarn.util.Clock;
 import org.apache.hadoop.yarn.util.ConverterUtils;
@@ -126,7 +131,7 @@ public class AngelApplicationMaster extends CompositeService {
   private final int nmHttpPort;
 
   /** angel application master credentials */
-  private final Credentials credentials = new Credentials();
+  private final Credentials credentials;
 
   /** application running context, it is used to share information between all service module */
   private final AMContext appContext;
@@ -186,7 +191,7 @@ public class AngelApplicationMaster extends CompositeService {
 
   public AngelApplicationMaster(Configuration conf, String appName,
       ApplicationAttemptId applicationAttemptId, ContainerId containerId, String nmHost, int nmPort,
-      int nmHttpPort, long appSubmitTime) throws IllegalArgumentException, IOException {
+      int nmHttpPort, long appSubmitTime, Credentials credentials) throws IllegalArgumentException, IOException {
     super(AngelApplicationMaster.class.getName());
     this.conf = conf;
     this.appName = appName;
@@ -200,6 +205,7 @@ public class AngelApplicationMaster extends CompositeService {
     this.clock = new SystemClock();
     this.startTime = clock.getTime();
     this.isCleared = false;
+    this.credentials = credentials;
 
     appContext = new RunningAppContext(conf);
     angelApp = new App(appContext);
@@ -532,20 +538,50 @@ public class AngelApplicationMaster extends CompositeService {
       conf.set(AngelConfiguration.USER_NAME, jobUserName);
       conf.setBoolean("fs.automatic.close", false);
 
+      UserGroupInformation.setConfiguration(conf);
+
+      // Security framework already loaded the tokens into current UGI, just use
+      // them
+      Credentials credentials =
+        UserGroupInformation.getCurrentUser().getCredentials();
+      LOG.info("Executing with tokens:");
+      for (Token<?> token : credentials.getAllTokens()) {
+        LOG.info(token);
+      }
+
+      UserGroupInformation appMasterUgi = UserGroupInformation
+        .createRemoteUser(jobUserName);
+      appMasterUgi.addCredentials(credentials);
+
+      // Now remove the AM->RM token so tasks don't have it
+      Iterator<Token<?>> iter = credentials.getAllTokens().iterator();
+      while (iter.hasNext()) {
+        Token<?> token = iter.next();
+        if (token.getKind().equals(AMRMTokenIdentifier.KIND_NAME)) {
+          iter.remove();
+        }
+      }
+
       String appName = conf.get(AngelConfiguration.ANGEL_JOB_NAME);
 
       LOG.info("app name=" + appName);
       LOG.info("app attempt id=" + applicationAttemptId);
 
-      AngelApplicationMaster appMaster = new AngelApplicationMaster(conf, appName,
+      final AngelApplicationMaster appMaster = new AngelApplicationMaster(conf, appName,
           applicationAttemptId, containerId, nodeHostString, Integer.parseInt(nodePortString),
-          Integer.parseInt(nodeHttpPortString), appSubmitTime);
+          Integer.parseInt(nodeHttpPortString), appSubmitTime, credentials);
 
       // add a shutdown hook
       hook = new AngelAppMasterShutdownHook(appMaster);
       ShutdownHookManager.get().addShutdownHook(hook, SHUTDOWN_HOOK_PRIORITY);
 
-      appMaster.initAndStart();
+      appMasterUgi.doAs(new PrivilegedExceptionAction<Object>() {
+        @Override
+        public Object run() throws Exception {
+          appMaster.initAndStart();
+          return null;
+        }
+      });
     } catch (Throwable t) {
       LOG.fatal("Error starting AppMaster", t);
       if(hook != null) {

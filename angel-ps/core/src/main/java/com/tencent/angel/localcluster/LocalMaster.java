@@ -21,6 +21,7 @@ import java.io.IOException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 
 import com.tencent.angel.conf.AngelConfiguration;
@@ -54,7 +55,7 @@ public class LocalMaster extends Thread {
     appMaster =
         new AngelApplicationMaster(conf, appName, appAttemptId,
             clusterContext.getContainerId(), clusterContext.getLocalHost(),
-            clusterContext.getPort(), clusterContext.getHttpPort(), System.currentTimeMillis());
+            clusterContext.getPort(), clusterContext.getHttpPort(), System.currentTimeMillis(), new Credentials());
   }
   
   @Override

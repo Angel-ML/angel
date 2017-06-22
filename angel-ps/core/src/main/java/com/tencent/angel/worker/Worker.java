@@ -39,7 +39,11 @@ import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerRepo
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.security.Credentials;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.StringUtils;
+import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
@@ -48,6 +52,7 @@ import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 
 import java.io.IOException;
+import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -184,6 +189,7 @@ public class Worker implements Executor {
     ApplicationAttemptId applicationAttemptId = containerId.getApplicationAttemptId();
     ApplicationId appId = applicationAttemptId.getApplicationId();
     String user = System.getenv(Environment.USER.name());
+    UserGroupInformation.setConfiguration(conf);
 
     // set localDir with enviroment set by nm.
     String[] localSysDirs =
@@ -218,13 +224,26 @@ public class Worker implements Executor {
     Location masterLocation = new Location(masterAddr, Integer.valueOf(portStr));
 
     String startClock = System.getenv(AngelEnvironment.INIT_MIN_CLOCK.name());
-    Worker worker = new Worker(AngelConfiguration.clone(conf), appId, user, workerAttemptId,
+    final Worker worker = new Worker(AngelConfiguration.clone(conf), appId, user, workerAttemptId,
         masterLocation, Integer.valueOf(startClock), false);
 
     try {
-      worker.initAndStart();
-    } catch (Exception e) {
-      LOG.fatal("Failed to start worker.", e);
+      Credentials credentials =
+        UserGroupInformation.getCurrentUser().getCredentials();
+      UserGroupInformation workerUGI = UserGroupInformation.createRemoteUser(System
+        .getenv(ApplicationConstants.Environment.USER.toString()));
+      // Add tokens to new user so that it may execute its task correctly.
+      workerUGI.addCredentials(credentials);
+
+      workerUGI.doAs(new PrivilegedExceptionAction<Object>() {
+        @Override
+        public Object run() throws Exception {
+          worker.initAndStart();
+          return null;
+        }
+      });
+    } catch (Throwable e) {
+      LOG.fatal("init and start worker failed ", e);
       worker.error(e.getMessage());
     }
   }

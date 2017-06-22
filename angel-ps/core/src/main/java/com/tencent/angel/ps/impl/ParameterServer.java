@@ -38,10 +38,14 @@ import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.security.Credentials;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.yarn.api.ApplicationConstants;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -183,8 +187,7 @@ public class ParameterServer {
     }
   }
 
-  public static void main(String[] argv) throws IOException, InstantiationException,
-      IllegalAccessException {
+  public static void main(String[] argv)  {
     LOG.info("Starting Parameter Server");
     int serverIndex = Integer.valueOf(System.getenv(AngelEnvironment.PARAMETERSERVER_ID.name()));
     String appMasterHost = System.getenv(AngelEnvironment.LISTEN_ADDR.name());
@@ -194,6 +197,9 @@ public class ParameterServer {
 
     Configuration conf = new Configuration();
     conf.addResource(AngelConfiguration.ANGEL_JOB_CONF_FILE);
+
+    String user = System.getenv(ApplicationConstants.Environment.USER.name());
+    UserGroupInformation.setConfiguration(conf);
     
     String runningMode = conf.get(AngelConfiguration.ANGEL_RUNNING_MODE, 
         AngelConfiguration.DEFAULT_ANGEL_RUNNING_MODE);   
@@ -203,13 +209,31 @@ public class ParameterServer {
           System.getenv(AngelEnvironment.TASK_NUMBER.name()));
     }
 
-    ParameterServer psServer =
+    final ParameterServer psServer =
         new ParameterServer(serverIndex, attemptIndex, appMasterHost, appMasterPort, conf);
 
     PSContext.get().setPs(psServer);
 
-    psServer.initialize();
-    psServer.start();
+    try{
+      Credentials credentials =
+        UserGroupInformation.getCurrentUser().getCredentials();
+      UserGroupInformation psUGI = UserGroupInformation.createRemoteUser(System
+        .getenv(ApplicationConstants.Environment.USER.toString()));
+      // Add tokens to new user so that it may execute its task correctly.
+      psUGI.addCredentials(credentials);
+
+      psUGI.doAs(new PrivilegedExceptionAction<Object>() {
+        @Override
+        public Object run() throws Exception {
+          psServer.initialize();
+          psServer.start();
+          return null;
+        }
+      });
+    } catch (Throwable x) {
+      LOG.fatal("Start PS failed ", x);
+      psServer.failed(x.getMessage());
+    }
     LOG.info("Starting Parameter Server successfully.");
   }
 
