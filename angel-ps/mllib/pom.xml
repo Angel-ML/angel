@@ -17,38 +17,37 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>com.tencent.angel</groupId>
-        <artifactId>angel-ps</artifactId>
-        <version>1.0.0</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
-    <artifactId>angel-ps-mllib</artifactId>
-    <name>angel-ps-mllib</name>
-    <url>http://maven.apache.org</url>
-    <properties>
-        <main.basedir>${project.parent.parent.basedir}</main.basedir>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.tencent.angel</groupId>
+    <artifactId>angel-ps</artifactId>
+    <version>1.0.0</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+  <artifactId>angel-ps-mllib</artifactId>
+  <name>angel-ps-mllib</name>
 
+  <properties>
+    <main.basedir>${project.parent.parent.basedir}</main.basedir>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
 
-    <dependencies>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.4</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>angel-ps-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>angel-ps-psf</artifactId>
-            <version>${project.version}</version>
-       </dependency>
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.4</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>angel-ps-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>angel-ps-psf</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 </project>

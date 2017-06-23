@@ -27,11 +27,12 @@
   </parent>
   <artifactId>angel-ps-psf</artifactId>
   <name>angel-ps-psf</name>
-  <url>http://maven.apache.org</url>
+
   <properties>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
+
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
