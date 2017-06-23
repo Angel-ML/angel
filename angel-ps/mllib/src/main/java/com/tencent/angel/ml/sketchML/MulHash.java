@@ -17,14 +17,27 @@
 
 package com.tencent.angel.ml.sketchML;
 
-public abstract class Int2IntHash {
+public class MulHash extends Int2IntHash {
 
-  public int length;
+  private int seed;
 
-  public Int2IntHash(int length) {
-    this.length = length;
+  public MulHash(int length) {
+    super(length);
   }
 
-  public abstract int encode(int input);
+  public MulHash(int seed, int length) {
+    this(length);
+    this.seed = seed;
+  }
+
+  public int encode(int input) {
+    int ret = seed;
+    while (input / 10 != 0) {
+      ret = seed * ret + input % 10;
+      input /= 10;
+    }
+    ret = ret % length;
+    return ret >= 0 ? ret : ret + length;
+  }
 
 }
