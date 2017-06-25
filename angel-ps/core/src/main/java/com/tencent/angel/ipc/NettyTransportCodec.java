@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,13 +19,18 @@
 
 package com.tencent.angel.ipc;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.handler.codec.frame.FrameDecoder;
-import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
+import com.google.common.base.Objects;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
+import io.netty.handler.codec.MessageToMessageDecoder;
+import io.netty.handler.codec.MessageToMessageEncoder;
+import io.netty.channel.ChannelHandlerContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +39,7 @@ import java.util.List;
  * Data structure, encoder and decoder classes for the Netty transport.
  */
 public class NettyTransportCodec {
+  private static final Logger LOG = LoggerFactory.getLogger(NettyTransportCodec.class.getName());
   /**
    * Transport protocol data structure when using Netty.
    */
@@ -41,7 +47,8 @@ public class NettyTransportCodec {
     private int serial; // to track each call in client side
     private List<ByteBuffer> datas;
 
-    public NettyDataPack() {}
+    public NettyDataPack() {
+    }
 
     public NettyDataPack(int serial, List<ByteBuffer> datas) {
       this.serial = serial;
@@ -64,49 +71,65 @@ public class NettyTransportCodec {
       return datas;
     }
 
+    @Override
+    public String toString() {
+      return Objects
+          .toStringHelper(this)
+          .add("serial", serial)
+          .add("listSize", datas.size()).toString();
+    }
+
+    /**
+     * Writes a NettyDataPack, reconnecting to the remote peer if necessary.
+     * NOTE: The stateLock read lock *must* be acquired before calling this method.
+     *
+     * @param dataPack the data pack to write.
+     * @throws java.io.IOException if an error occurs connecting to the remote peer.
+     */
+    public static void writeDataPack(Channel channel, NettyDataPack dataPack) throws IOException {
+      channel.writeAndFlush(dataPack).addListener(future -> {
+        if (future.isSuccess()) {
+          LOG.trace("Sent result {} to client {}", dataPack, NettyUtils.getRemoteAddress(channel));
+        } else {
+          String msg = String.format("Error sending result %s to %s; closing connection",
+              dataPack, NettyUtils.getRemoteAddress(channel));
+          LOG.error(msg, future.cause());
+          throw new IOException(msg, future.cause());
+        }
+      });
+    }
   }
 
   /**
    * Protocol encoder which converts NettyDataPack which contains the Responder's output
    * List&lt;ByteBuffer&gt; to ChannelBuffer needed by Netty.
    */
-  public static class NettyFrameEncoder extends OneToOneEncoder {
-
+  @ChannelHandler.Sharable
+  public static class NettyFrameEncoder extends MessageToMessageEncoder<NettyDataPack> {
+    public static final NettyFrameEncoder INSTANCE = new NettyFrameEncoder();
     /**
      * encode msg to ChannelBuffer
-     * 
-     * @param msg NettyDataPack from NettyServerAvroHandler/NettyClientAvroHandler in the pipeline
+     *
+     * @param dataPack NettyDataPack from NettyServerAvroHandler/NettyClientAvroHandler in the pipeline
      * @return encoded ChannelBuffer
      */
     @Override
-    protected Object encode(ChannelHandlerContext ctx, Channel channel, Object msg)
-        throws Exception {
-      NettyDataPack dataPack = (NettyDataPack) msg;
+    public void encode(ChannelHandlerContext ctx, NettyDataPack dataPack, List<Object> out) throws Exception {
       List<ByteBuffer> origs = dataPack.getDatas();
-      List<ByteBuffer> bbs = new ArrayList<ByteBuffer>(origs.size() * 2 + 1);
-      bbs.add(getPackHeader(dataPack)); // prepend a pack header including
-                                        // serial number and list size
+      int sumLen = 8 + 4 + 4;
       for (ByteBuffer b : origs) {
-        bbs.add(getLengthHeader(b)); // for each buffer prepend length field
-        bbs.add(b);
+        sumLen += b.remaining() + 4;
       }
-
-      return ChannelBuffers.wrappedBuffer(bbs.toArray(new ByteBuffer[bbs.size()]));
-    }
-
-    private ByteBuffer getPackHeader(NettyDataPack dataPack) {
-      ByteBuffer header = ByteBuffer.allocate(8);
-      header.putInt(dataPack.getSerial());
-      header.putInt(dataPack.getDatas().size());
-      header.flip();
-      return header;
-    }
-
-    private ByteBuffer getLengthHeader(ByteBuffer buf) {
-      ByteBuffer header = ByteBuffer.allocate(4);
-      header.putInt(buf.limit());
-      header.flip();
-      return header;
+      ByteBuf buffer = ctx.alloc().heapBuffer(sumLen);
+      buffer.writeLong(sumLen);
+      buffer.writeInt(dataPack.getSerial());
+      buffer.writeInt(dataPack.getDatas().size());
+      for (ByteBuffer b : origs) {
+        buffer.writeInt(b.remaining());
+        buffer.writeBytes(b);
+      }
+      assert buffer.writableBytes() == 0;
+      out.add(buffer);
     }
   }
 
@@ -114,67 +137,26 @@ public class NettyTransportCodec {
    * Protocol decoder which converts Netty's ChannelBuffer to NettyDataPack which contains a
    * List&lt;ByteBuffer&gt; needed by Avro Responder.
    */
-  public static class NettyFrameDecoder extends FrameDecoder {
-    private boolean packHeaderRead = false;
-    private int listSize;
-    private NettyDataPack dataPack;
-
+  @ChannelHandler.Sharable
+  public static class NettyFrameDecoder extends MessageToMessageDecoder<ByteBuf> {
+    public static final NettyFrameDecoder INSTANCE = new NettyFrameDecoder();
     /**
      * decode buffer to NettyDataPack
      */
     @Override
-    protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer)
-        throws Exception {
+    public void decode(io.netty.channel.ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+      int serial = in.readInt();
+      int listSize = in.readInt();
+      List<ByteBuffer> datas = new ArrayList<ByteBuffer>(listSize);
 
-      if (!packHeaderRead) {
-        if (decodePackHeader(ctx, channel, buffer)) {
-          packHeaderRead = true;
-        }
-        return null;
-      } else {
-        if (decodePackBody(ctx, channel, buffer)) {
-          packHeaderRead = false; // reset state
-          return dataPack;
-        } else {
-          return null;
-        }
+      for (int i = 0; i < listSize; i++) {
+        int len = in.readInt();
+        ByteBuffer bb = ByteBuffer.allocate(len);
+        in.readBytes(bb);
+        bb.flip();
+        datas.add(bb);
       }
-
-    }
-
-    private boolean decodePackHeader(ChannelHandlerContext ctx, Channel channel,
-        ChannelBuffer buffer) throws Exception {
-      if (buffer.readableBytes() < 8) {
-        return false;
-      }
-
-      int serial = buffer.readInt();
-      listSize = buffer.readInt();
-      dataPack = new NettyDataPack(serial, new ArrayList<ByteBuffer>(listSize));
-      return true;
-    }
-
-    private boolean decodePackBody(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer)
-        throws Exception {
-      if (buffer.readableBytes() < 4) {
-        return false;
-      }
-
-      buffer.markReaderIndex();
-
-      int length = buffer.readInt();
-
-      if (buffer.readableBytes() < length) {
-        buffer.resetReaderIndex();
-        return false;
-      }
-
-      ByteBuffer bb = ByteBuffer.allocate(length);
-      buffer.readBytes(bb);
-      bb.flip();
-      dataPack.getDatas().add(bb);
-
-      return dataPack.getDatas().size() == listSize;
+      out.add(new NettyDataPack(serial, datas));
     }
   }
 }
