@@ -45,7 +45,7 @@
 * [KMeans](./docs/algo/kmeans_on_angel.md)
 * [GBDT](./docs/algo/gbdt_on_angel.md)
 * [LDA](./docs/algo/lda_on_angel.md)
-* [Spark on Angel Optimizer](./docs/algo/spark_on_angel_optimizer.md)
+* [LR (Spark on Angel)](./docs/algo/spark_on_angel_optimizer.md)
 
 ## Deployment
 
