@@ -104,7 +104,7 @@
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>2.5.0</version>
+      <version>${protobuf.version}</version>
     </dependency>
     <dependency>
       <groupId>org.cloudera.htrace</groupId>
