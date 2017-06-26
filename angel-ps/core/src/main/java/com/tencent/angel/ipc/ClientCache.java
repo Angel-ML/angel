@@ -23,6 +23,12 @@
 package com.tencent.angel.ipc;
 
 import com.tencent.angel.conf.TConstants;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.channel.Channel;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.util.concurrent.DefaultThreadFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +40,7 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * Cache a client using its socket factory as the hash key. Enables reuse/sharing of clients on a
@@ -46,8 +53,20 @@ import java.util.Map;
 class ClientCache {
   private static final Logger LOG = LoggerFactory.getLogger(ClientCache.class.getName());
   private Map<String, NettyTransceiver> clients = new HashMap<String, NettyTransceiver>();
+  private Configuration conf = new Configuration();
 
-  protected ClientCache() {}
+  private final Class<? extends Channel> socketChannelClass;
+  private EventLoopGroup workerGroup;
+  private PooledByteBufAllocator pooledAllocator;
+
+  protected ClientCache() {
+    int nThreads = conf.getInt(TConstants.CLIENT_IO_THREAD,
+        Runtime.getRuntime().availableProcessors() * 2);
+    IOMode ioMode = IOMode.valueOf(conf.get(TConstants.NETWORK_IO_MODE, "NIO"));
+    workerGroup = NettyUtils.createEventLoop(ioMode, nThreads, "ML-client");
+    pooledAllocator = NettyUtils.createPooledByteBufAllocator(true, true, nThreads);
+    socketChannelClass = NettyUtils.getClientChannelClass(ioMode);
+  }
 
   /**
    * Construct & cache an IPC client with the user-provided SocketFactory if no cached client
@@ -57,33 +76,17 @@ class ClientCache {
    * @param factory socket factory
    * @return an IPC client
    */
-  protected synchronized NettyTransceiver getClient(InetSocketAddress addr, SocketFactory factory,
+  protected synchronized NettyTransceiver getClient(
+      InetSocketAddress addr,
+      SocketFactory factory,
       Configuration conf) {
-
     NettyTransceiver client = clients.get(addr.toString());
     if (client == null) {
-      Class<? extends NettyTransceiver> mlClientClass = NettyTransceiver.class;
-
-      // Make an ml rpc client.
       try {
-        Constructor<? extends NettyTransceiver> cst =
-            mlClientClass.getConstructor(InetSocketAddress.class, Long.class);
-        client =
-            cst.newInstance(addr, conf.getLong(TConstants.ML_CONNECTION_TIMEOUT_MILLIS,
-                TConstants.DEFAULT_CONNECTION_TIMEOUT_MILLIS));
-        client.setConf(conf);
-      } catch (InvocationTargetException e) {
-        LOG.debug("create NettryTransceiver client error1: " + e);
-        throw new RuntimeException(e);
-      } catch (InstantiationException e) {
-        LOG.debug("create NettryTransceiver client error2: " + e);
-        throw new RuntimeException(e);
-      } catch (IllegalAccessException e) {
-        LOG.debug("create NettryTransceiver client error3: " + e);
-        throw new RuntimeException(e);
-      } catch (NoSuchMethodException e) {
-        LOG.debug("create NettryTransceiver client error4: " + e);
-        throw new RuntimeException("No matching constructor in " + mlClientClass.getName(), e);
+        int connectTimeoutMillis = (int) conf.getLong(TConstants.ML_CONNECTION_TIMEOUT_MILLIS,
+            TConstants.DEFAULT_CONNECTION_TIMEOUT_MILLIS);
+        client = new NettyTransceiver(conf, addr, workerGroup, pooledAllocator,
+            socketChannelClass, connectTimeoutMillis);
       } catch (Exception e) {
         LOG.debug("create NettryTransceiver client error: " + e);
         throw new RuntimeException("create NettryTransceiver client error: ", e);

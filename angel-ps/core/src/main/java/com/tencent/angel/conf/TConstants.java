@@ -40,7 +40,10 @@ public final class TConstants {
 
   public static final int DEFAULT_READ_TIMEOUT_SEC = 10;
 
-  public static final String SERVER_IO_THREAD = "netty.server.worker.threads";
+  public static final String SERVER_IO_THREAD = "netty.server.io.threads";
+  public static final String NETWORK_IO_MODE = "netty.io.mode";
+
+  public static final String CLIENT_IO_THREAD = "netty.client.io.threads";
 
   public static int RETRY_BACKOFF[] = {1, 1, 1, 2, 2, 4, 4, 8, 16, 32};
 
