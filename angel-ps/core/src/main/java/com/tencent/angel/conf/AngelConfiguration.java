@@ -228,7 +228,7 @@ public class AngelConfiguration extends Configuration {
   public static final String DEFAULT_ANGEL_AM_JAVA_OPTS = "-Xmx1024m";
 
   /** CPU vcore quota for AppMaster. */
-  public static final String ANGEL_AM_CPU_VCORES = ANGEL_AM_PREFIX + "resource.cpu-vcores";
+  public static final String ANGEL_AM_CPU_VCORES = ANGEL_AM_PREFIX + "cpu.vcores";
   public static final int DEFAULT_ANGEL_AM_CPU_VCORES = 1;
 
   /** If there is no training data, workers are also started, just for test. */
