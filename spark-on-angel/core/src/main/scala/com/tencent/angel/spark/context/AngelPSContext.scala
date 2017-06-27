@@ -128,6 +128,12 @@ private[spark] class AngelPSContext private (id: Int, angelCtx: AngelContext) ex
       tc.partitionId()
     }
   }
+
+  override def stop(): Unit = {
+    if (psAgent != null) {
+      psAgent.stop()
+    }
+  }
 }
 
 private[spark] object AngelPSContext {
