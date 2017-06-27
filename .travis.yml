@@ -1,0 +1,8 @@
+install:
+  - wget https://github.com/google/protobuf/releases/download/v2.5.0/protobuf-2.5.0.tar.gz
+  - tar -xzvf protobuf-2.5.0.tar.gz
+  - pushd protobuf-2.5.0 && ./configure --prefix=/usr && make && sudo make install && popd
+
+language: java
+jdk:
+  - oraclejdk8
