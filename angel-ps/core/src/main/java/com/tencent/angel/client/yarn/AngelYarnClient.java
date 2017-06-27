@@ -50,6 +50,7 @@ import org.apache.hadoop.mapreduce.filecache.ClientDistributedCacheManager;
 import org.apache.hadoop.mapreduce.filecache.DistributedCache;
 import org.apache.hadoop.mapreduce.security.TokenCache;
 import org.apache.hadoop.security.Credentials;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
 import org.apache.hadoop.yarn.api.protocolrecords.GetNewApplicationResponse;
@@ -139,6 +140,7 @@ public class AngelYarnClient extends AngelClient {
 
       setOutputDirectory();
 
+      credentials.addAll(UserGroupInformation.getCurrentUser().getCredentials());
       // Credentials credentials = new Credentials();
       TokenCache.obtainTokensForNamenodes(credentials, new Path[] {submitJobDir}, conf);
       checkParameters(conf);
