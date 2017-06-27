@@ -59,7 +59,7 @@ public class MatricesCache {
   class Syncer extends Thread {
     @Override
     public void run() {
-      while (stopped.get() && !Thread.interrupted()) {
+      while (!stopped.get() && !Thread.interrupted()) {
         syncPolicy.sync(PSAgentContext.get().getMatricesCache());
         try {
           Thread.sleep(syncTimeIntervalMS);

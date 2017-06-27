@@ -136,7 +136,7 @@ PSVectorProxy是PSVector（包括BreezePSVector和RemotePSVector）的代理，�
   BreezePSVector实现了Breeze内部的NumbericOps操作，因此BreezePSVector支持+，-，* 这样的操作
 
 ```scala
-  val brzVector1 = 2.0 * brzVector2 + brzVector3
+  val brzVector1 = (brzVector2 :* 2) + brzVector3
 ```
 也可以显式地调用Breeze.math和Breeze.blas里的操作。
 

@@ -35,13 +35,12 @@ import com.tencent.angel.utils.ByteBufferOutputStream;
 import com.tencent.angel.protobuf.generated.RPCProtos;
 import com.tencent.angel.protobuf.generated.RPCProtos.*;
 import com.tencent.angel.protobuf.generated.RPCProtos.RpcResponseHeader.Status;
+import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.channel.*;
+import io.netty.channel.socket.SocketChannel;
 import org.apache.hadoop.conf.Configuration;
-import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.channel.*;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.handler.timeout.ReadTimeoutHandler;
-import org.jboss.netty.util.HashedWheelTimer;
-import org.jboss.netty.util.Timer;
+import io.netty.handler.timeout.ReadTimeoutHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,251 +48,125 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * A Netty-based {@link Transceiver} implementation.
  */
 public class NettyTransceiver extends Transceiver {
-  public static final String NETTY_CONNECT_TIMEOUT_OPTION = "connectTimeoutMillis";
-  public static final String NETTY_TCP_NODELAY_OPTION = "tcpNoDelay";
-  public static final boolean DEFAULT_TCP_NODELAY_VALUE = true;
-  public static final String NETTY_KEEP_ALIVE_OPTION = "keepAlive";
-  public static final boolean NETTY_KEEP_ALIVE_VALUE = true;
-
   private static final Logger LOG = LoggerFactory.getLogger(NettyTransceiver.class.getName());
 
   private final AtomicInteger serialGenerator = new AtomicInteger(0);
   private final Map<Integer, Callback<List<ByteBuffer>>> requests =
       new ConcurrentHashMap<Integer, Callback<List<ByteBuffer>>>();
 
-  private final ChannelFactory channelFactory;
-  private final long connectTimeoutMillis;
-  private final ClientBootstrap bootstrap;
+  private final int connectTimeoutMillis;
+  private final Bootstrap bootstrap;
   private final InetSocketAddress remoteAddr;
 
-  volatile ChannelFuture channelFuture;
-  volatile boolean stopping;
+  private volatile ChannelFuture channelFuture;
+  private volatile boolean stopping;
+  private volatile Channel channel; // Synchronized on stateLock
   private final Object channelFutureLock = new Object();
 
-  private int refCount = 1;
+  private volatile int refCount = 1;
+  private Configuration conf;
 
-  private Configuration conf = new Configuration();
+  public NettyTransceiver(
+      Configuration conf,
+      InetSocketAddress addr,
+      EventLoopGroup workerGroup,
+      PooledByteBufAllocator pooledAllocator,
+      Class<? extends Channel> socketChannelClass,
+      int connectTimeoutMillis) throws IOException {
+    this.conf = conf;
+    this.connectTimeoutMillis = connectTimeoutMillis;
 
-  private Timer timer = new HashedWheelTimer();
-  /**
-   * Read lock must be acquired whenever using non-final state. Write lock must be acquired whenever
-   * modifying state.
-   */
-  private final ReentrantReadWriteLock stateLock = new ReentrantReadWriteLock();
-  private Channel channel; // Synchronized on stateLock
-
-  NettyTransceiver() {
-    channelFactory = null;
-    connectTimeoutMillis = 0L;
-    bootstrap = null;
-    remoteAddr = null;
-  }
-
-  /**
-   * Creates a NettyTransceiver, and attempts to connect to the given address.
-   * {@link TConstants#DEFAULT_CONNECTION_TIMEOUT_MILLIS} is used for the connection timeout.
-   * 
-   * @param addr the address to connect to.
-   * @throws java.io.IOException if an error occurs connecting to the given address.
-   */
-  public NettyTransceiver(InetSocketAddress addr) throws IOException {
-    this(addr, TConstants.DEFAULT_CONNECTION_TIMEOUT_MILLIS);
-  }
-
-  /**
-   * Creates a NettyTransceiver, and attempts to connect to the given address.
-   * 
-   * @param addr the address to connect to.
-   * @param connectTimeoutMillis maximum amount of time to wait for connection establishment in
-   *        milliseconds, or null to use {@link TConstants#DEFAULT_CONNECTION_TIMEOUT_MILLIS}.
-   * @throws java.io.IOException if an error occurs connecting to the given address.
-   */
-  public NettyTransceiver(InetSocketAddress addr, Long connectTimeoutMillis) throws IOException {
-    this(addr, new NioClientSocketChannelFactory(
-        Executors.newCachedThreadPool(new NettyTransceiverThreadFactory("ML "
-            + NettyTransceiver.class.getSimpleName() + " Boss")),
-        Executors.newCachedThreadPool(new NettyTransceiverThreadFactory("ML "
-            + NettyTransceiver.class.getSimpleName() + " I/O Worker")), 1), connectTimeoutMillis);
-  }
-
-  /**
-   * Creates a NettyTransceiver, and attempts to connect to the given address.
-   * {@link TConstants#DEFAULT_CONNECTION_TIMEOUT_MILLIS} is used for the connection timeout.
-   * 
-   * @param addr the address to connect to.
-   * @param channelFactory the factory to use to create a new Netty Channel.
-   * @throws java.io.IOException if an error occurs connecting to the given address.
-   */
-  public NettyTransceiver(InetSocketAddress addr, ChannelFactory channelFactory) throws IOException {
-    this(addr, channelFactory, buildDefaultBootstrapOptions(null));
-  }
-
-  /**
-   * Creates a NettyTransceiver, and attempts to connect to the given address.
-   * 
-   * @param addr the address to connect to.
-   * @param channelFactory the factory to use to create a new Netty Channel.
-   * @param connectTimeoutMillis maximum amount of time to wait for connection establishment in
-   *        milliseconds, or null to use {@link TConstants#DEFAULT_CONNECTION_TIMEOUT_MILLIS}.
-   * @throws java.io.IOException if an error occurs connecting to the given address.
-   */
-  public NettyTransceiver(InetSocketAddress addr, ChannelFactory channelFactory,
-      Long connectTimeoutMillis) throws IOException {
-    this(addr, channelFactory, buildDefaultBootstrapOptions(connectTimeoutMillis));
-  }
-
-  /**
-   * Creates a NettyTransceiver, and attempts to connect to the given address. It is strongly
-   * recommended that the {@link #NETTY_CONNECT_TIMEOUT_OPTION} option be set to a reasonable
-   * timeout value (a Long value in milliseconds) to prevent connect/disconnect attempts from
-   * hanging indefinitely. It is also recommended that the {@link #NETTY_TCP_NODELAY_OPTION} option
-   * be set to true to minimize RPC latency.
-   * 
-   * @param addr the address to connect to.
-   * @param channelFactory the factory to use to create a new Netty Channel.
-   * @param nettyClientBootstrapOptions map of Netty ClientBootstrap options to use.
-   * @throws java.io.IOException if an error occurs connecting to the given address.
-   */
-  public NettyTransceiver(InetSocketAddress addr, ChannelFactory channelFactory,
-      Map<String, Object> nettyClientBootstrapOptions) throws IOException {
-    // DefaultChannelFuture.setUseDeadLockChecker(false);
-    if (channelFactory == null) {
-      throw new NullPointerException("channelFactory is null");
-    }
-
-    // Set up.
-    this.channelFactory = channelFactory;
-    this.connectTimeoutMillis =
-        (Long) nettyClientBootstrapOptions.get(NETTY_CONNECT_TIMEOUT_OPTION);
-    bootstrap = new ClientBootstrap(channelFactory);
-    remoteAddr = addr;
+    bootstrap = new Bootstrap();
+    bootstrap
+        .group(workerGroup)
+        .channel(socketChannelClass)
+        // Disable Nagle's Algorithm since we don't want packets to wait
+        .option(ChannelOption.TCP_NODELAY, true)
+        .option(ChannelOption.SO_KEEPALIVE, true)
+        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeoutMillis)
+        .option(ChannelOption.ALLOCATOR, pooledAllocator);
 
     // Configure the event pipeline factory.
-    bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+    bootstrap.handler(new ChannelInitializer<SocketChannel>() {
       @Override
-      public ChannelPipeline getPipeline() throws Exception {
-        ChannelPipeline p = Channels.pipeline();
-        p.addLast("frameDecoder", new NettyFrameDecoder());
-        p.addLast("frameEncoder", new NettyFrameEncoder());
-
-        p.addLast(
-            "readTimeout",
-            new ReadTimeoutHandler(timer, NettyTransceiver.this.conf.getInt(
-                TConstants.CONNECTION_READ_TIMEOUT_SEC,
-                TConstants.DEFAULT_CONNECTION_READ_TIMEOUT_SEC)));
-
-        p.addLast("handler", new MLClientMLHandler());
-        return p;
+      protected void initChannel(SocketChannel ch) throws Exception {
+        ch.pipeline()
+            .addLast("encoder", NettyFrameEncoder.INSTANCE)
+            .addLast("frameDecoder", NettyUtils.createFrameDecoder())
+            .addLast("decoder", NettyFrameDecoder.INSTANCE)
+            .addLast(
+                "readTimeout",
+                new ReadTimeoutHandler(NettyTransceiver.this.conf.getInt(
+                    TConstants.CONNECTION_READ_TIMEOUT_SEC,
+                    TConstants.DEFAULT_CONNECTION_READ_TIMEOUT_SEC)))
+            .addLast("handler", new MLClientMLHandler());
       }
     });
-
-    if (nettyClientBootstrapOptions != null) {
-      LOG.debug("Using Netty bootstrap options: " + nettyClientBootstrapOptions);
-      bootstrap.setOptions(nettyClientBootstrapOptions);
-    }
-
+    remoteAddr = addr;
     // Make a new connection.
-    stateLock.readLock().lock();
     try {
       getChannel();
     } catch (IOException e) {
       LOG.debug("connect error, e: " + e);
       throw e;
-    } finally {
-      stateLock.readLock().unlock();
     }
   }
 
   /**
-   * Creates the default options map for the Netty ClientBootstrap.
-   * 
-   * @param connectTimeoutMillis connection timeout in milliseconds, or null if no timeout is
-   *        desired.
-   * @return the map of Netty bootstrap options.
-   */
-  private static Map<String, Object> buildDefaultBootstrapOptions(Long connectTimeoutMillis) {
-    Map<String, Object> options = new HashMap<String, Object>(2);
-    options.put(NETTY_TCP_NODELAY_OPTION, DEFAULT_TCP_NODELAY_VALUE);
-    options.put(NETTY_CONNECT_TIMEOUT_OPTION,
-        connectTimeoutMillis == null ? TConstants.DEFAULT_CONNECTION_TIMEOUT_MILLIS
-            : connectTimeoutMillis);
-    options.put(NETTY_KEEP_ALIVE_OPTION, NETTY_KEEP_ALIVE_VALUE);
-    options.put("child." + NETTY_KEEP_ALIVE_OPTION, NETTY_KEEP_ALIVE_VALUE);
-    return options;
-  }
-
-  /**
    * Tests whether the given channel is ready for writing.
-   * 
+   *
    * @return true if the channel is open and ready; false otherwise.
    */
   private static boolean isChannelReady(Channel channel) {
-    return (channel != null) && channel.isOpen() && channel.isBound() && channel.isConnected();
+    return (channel != null) && channel.isOpen() && channel.isRegistered() && channel.isActive();
   }
 
   /**
    * Gets the Netty channel. If the channel is not connected, first attempts to connect. NOTE: The
    * stateLock read lock *must* be acquired before calling this method.
-   * 
+   *
    * @return the Netty channel
    * @throws java.io.IOException if an error occurs connecting the channel.
    */
-  private Channel getChannel() throws IOException {
+  private synchronized Channel getChannel() throws IOException {
     if (!isChannelReady(channel)) {
-      // Need to reconnect
-      // Upgrade to write lock
-      stateLock.readLock().unlock();
-      stateLock.writeLock().lock();
-      try {
-        if (!isChannelReady(channel)) {
-          synchronized (channelFutureLock) {
-            if (!stopping) {
-              if (LOG.isDebugEnabled()) {
-                LOG.debug("Connecting to " + remoteAddr);
-              }
-              channelFuture = bootstrap.connect(remoteAddr);
-            }
+      synchronized (channelFutureLock) {
+        if (!stopping) {
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Connecting to " + remoteAddr);
           }
-
-
-          if (channelFuture != null) {
-            try {
-              channelFuture.await(connectTimeoutMillis);
-              LOG.debug("waiting connect timeout! connectTimeoutMillis: " + connectTimeoutMillis);
-            } catch (InterruptedException e) {
-              stopping = false;
-              throw new IOException("Request has been interrupted.", e);
-            }
-
-            synchronized (channelFutureLock) {
-
-              if (!channelFuture.isSuccess()) {
-                channelFuture.cancel();
-                throw new IOException("Error connecting to " + remoteAddr, channelFuture.getCause());
-              }
-              channel = channelFuture.getChannel();
-              if (LOG.isDebugEnabled()) {
-                LOG.debug("new channel is {} ", channel);
-              }
-              channelFuture = null;
-            }
-          }
+          channelFuture = bootstrap.connect(remoteAddr);
         }
-      } finally {
-        // Downgrade to read lock:
-        stateLock.readLock().lock();
-        stateLock.writeLock().unlock();
+      }
+      if (channelFuture != null) {
+        try {
+          channelFuture.await(connectTimeoutMillis);
+          LOG.debug("waiting connect timeout! connectTimeoutMillis: " + connectTimeoutMillis);
+        } catch (InterruptedException e) {
+          stopping = false;
+          throw new IOException("Request has been interrupted.", e);
+        }
+
+        synchronized (channelFutureLock) {
+          if (!channelFuture.isSuccess()) {
+            channelFuture.cancel(true);
+            throw new IOException("Error connecting to " + remoteAddr, channelFuture.cause());
+          }
+          channel = channelFuture.channel();
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("new channel is {} ", channel);
+          }
+          channelFuture = null;
+        }
       }
     }
     return channel;
@@ -301,21 +174,23 @@ public class NettyTransceiver extends Transceiver {
 
   /**
    * Closes the connection to the remote peer if connected.
-   * 
+   *
    * @param awaitCompletion if true, will block until the close has completed.
    * @param cancelPendingRequests if true, will drain the requests map and send an IOException to
    *        all Callbacks.
    * @param cause if non-null and cancelPendingRequests is true, this Throwable will be passed to
    *        all Callbacks.
    */
-  private void disconnect(Channel channel, boolean awaitCompletion, boolean cancelPendingRequests,
+  private synchronized void disconnect(
+      Channel channel,
+      boolean awaitCompletion,
+      boolean cancelPendingRequests,
       Throwable cause) {
     if (LOG.isDebugEnabled()) {
       LOG.debug("disconnecting channel: " + channel);
     }
     Channel channelToClose = null;
     Map<Integer, Callback<List<ByteBuffer>>> requestsToCancel = null;
-    boolean stateReadLockHeld = stateLock.getReadHoldCount() != 0;
 
     ChannelFuture channelFutureToCancel = null;
     synchronized (channelFutureLock) {
@@ -325,40 +200,26 @@ public class NettyTransceiver extends Transceiver {
       }
     }
     if (channelFutureToCancel != null) {
-      channelFutureToCancel.cancel();
+      channelFutureToCancel.cancel(true);
     }
-
-    if (stateReadLockHeld) {
-      stateLock.readLock().unlock();
-    }
-
-    // (TODO: why use writeLock? why not use this.channel instead of channel?
-    stateLock.writeLock().lock();
-    try {
-      if (channel != null) {
-        if (cause != null) {
-          LOG.debug("Disconnect {} due to {}", channel,
-              cause.getClass().getName() + cause.getMessage());
-        } else {
-          if (LOG.isDebugEnabled()) {
-            LOG.debug("Disconnect {}", this.channel);
-          }
-        }
-        channelToClose = channel;
-        channel = null;
-
-        if (cancelPendingRequests) {
-          // Remove all pending requests (will be canceled after relinquishing
-          // write lock).
-          requestsToCancel = new ConcurrentHashMap<Integer, Callback<List<ByteBuffer>>>(requests);
-          requests.clear();
+    if (channel != null) {
+      if (cause != null) {
+        LOG.debug("Disconnect {} due to {}", channel,
+            cause.getClass().getName() + cause.getMessage());
+      } else {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Disconnect {}", this.channel);
         }
       }
-    } finally {
-      if (stateReadLockHeld) {
-        stateLock.readLock().lock();
+      channelToClose = channel;
+      this.channel = null;
+
+      if (cancelPendingRequests) {
+        // Remove all pending requests (will be canceled after relinquishing
+        // write lock).
+        requestsToCancel = new ConcurrentHashMap<Integer, Callback<List<ByteBuffer>>>(requests);
+        requests.clear();
       }
-      stateLock.writeLock().unlock();
     }
 
     // Cancel any pending requests by sending errors to the callbacks:
@@ -409,25 +270,17 @@ public class NettyTransceiver extends Transceiver {
       // Close the connection:
       stopping = true;
       disconnect(this.channel, true, true, null);
-      timer.stop();
     } finally {
       // Shut down all thread pools to exit.
       if (LOG.isDebugEnabled()) {
         LOG.debug("release channelFactory resource for " + remoteAddr);
       }
-      channelFactory.releaseExternalResources();
-      bootstrap.shutdown();
     }
   }
 
   @Override
   public String getRemoteName() throws IOException {
-    stateLock.readLock().lock();
-    try {
-      return getChannel().getRemoteAddress().toString();
-    } finally {
-      stateLock.readLock().unlock();
-    }
+    return NettyUtils.getRemoteAddress(getChannel());
   }
 
   /**
@@ -493,7 +346,6 @@ public class NettyTransceiver extends Transceiver {
 
   @Override
   public void transceive(List<ByteBuffer> request, Callback<List<ByteBuffer>> callback) {
-    stateLock.readLock().lock();
     int serial = serialGenerator.incrementAndGet();
     try {
       NettyDataPack dataPack = new NettyDataPack(serial, request);
@@ -502,37 +354,20 @@ public class NettyTransceiver extends Transceiver {
         LOG.debug("send message, serial: " + serial + ", channel: " + channel);
       }
       // LOG.info("serial " + serial + "start time = " + System.currentTimeMillis());
-      writeDataPack(dataPack);
+      NettyDataPack.writeDataPack(getChannel(), dataPack);
     } catch (IOException e) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("write Data error, serial: " + serial + ", channel: " + channel + " due to:", e);
       }
       requests.remove(serial);
       callback.handleError(e);
-    } finally {
-      stateLock.readLock().unlock();
     }
   }
 
   @Override
   public void writeBuffers(List<ByteBuffer> buffers) throws IOException {
-    stateLock.readLock().lock();
-    try {
-      writeDataPack(new NettyDataPack(serialGenerator.incrementAndGet(), buffers));
-    } finally {
-      stateLock.readLock().unlock();
-    }
-  }
-
-  /**
-   * Writes a NettyDataPack, reconnecting to the remote peer if necessary. NOTE: The stateLock read
-   * lock *must* be acquired before calling this method.
-   * 
-   * @param dataPack the data pack to write.
-   * @throws java.io.IOException if an error occurs connecting to the remote peer.
-   */
-  private void writeDataPack(NettyDataPack dataPack) throws IOException {
-    getChannel().write(dataPack);
+    NettyDataPack dataPack = new NettyDataPack(serialGenerator.incrementAndGet(), buffers);
+    NettyDataPack.writeDataPack(getChannel(), dataPack);
   }
 
   @Override
@@ -547,7 +382,7 @@ public class NettyTransceiver extends Transceiver {
 
     /**
      * Creates a TransceiverCallback.
-     * 
+     *
      * @param callback the callback to set.
      */
     public TransceiverCallback(RpcRequestBody requestBody,
@@ -625,38 +460,27 @@ public class NettyTransceiver extends Transceiver {
   /**
    * ML client handler for the Netty transport
    */
-  class MLClientMLHandler extends SimpleChannelUpstreamHandler {
-
-
-    @Override
-    public void handleUpstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
-      super.handleUpstream(ctx, e);
-    }
-
+  class MLClientMLHandler extends ChannelInboundHandlerAdapter {
 
     @Override
-    public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-      // channel = e.getChannel();
-      super.channelOpen(ctx, e);
-    }
-
-    @Override
-    public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
       if (LOG.isDebugEnabled()) {
-        LOG.debug("Remote peer " + remoteAddr + " closed channel: " + e.getChannel());
-        disconnect(e.getChannel(), false, true, null);
+        LOG.debug("Remote peer " + remoteAddr + " closed channel: " + ctx.channel());
       }
-      // channel = e.getChannel();
-      super.channelClosed(ctx, e);
+      disconnect(ctx.channel(), false, true, null);
+      super.channelInactive(ctx);
     }
 
-
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, final MessageEvent e) {
-      NettyDataPack dataPack = (NettyDataPack) e.getMessage();
+    public void channelRead(ChannelHandlerContext ctx, Object request) throws Exception {
+      if (!(request instanceof NettyDataPack)) {
+        ctx.fireChannelRead(request);
+        return;
+      }
+      NettyDataPack dataPack = (NettyDataPack) request;
       if (LOG.isDebugEnabled()) {
         LOG.debug("messageReceived, serail: " + dataPack.getSerial() + ", channel: "
-            + ctx.getChannel());
+            + ctx.channel());
       }
 
       // LOG.info("method " + dataPack.getSerial() + " received ts = " +
@@ -665,7 +489,7 @@ public class NettyTransceiver extends Transceiver {
       Callback<List<ByteBuffer>> callback = requests.get(dataPack.getSerial());
       if (callback == null) {
         LOG.error("Missing previous call info, serail: " + dataPack.getSerial() + ", channel: "
-            + ctx.getChannel());
+            + ctx.channel());
         throw new RuntimeException("Missing previous call info");
       }
       try {
@@ -676,43 +500,16 @@ public class NettyTransceiver extends Transceiver {
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
       if (LOG.isDebugEnabled()) {
-        LOG.debug("Netty Transceiver error." + e.toString() + ", channel: " + ctx.getChannel(),
-            e.getCause());
+        LOG.debug("Netty Transceiver error." + "channel: " + ctx.channel(), cause);
       }
-      disconnect(e.getChannel(), false, true, e.getCause());
-    }
-  }
-
-  /**
-   * Creates threads with unique names based on a specified name prefix.
-   */
-  private static class NettyTransceiverThreadFactory implements ThreadFactory {
-    private final AtomicInteger threadId = new AtomicInteger(0);
-    private final String prefix;
-
-    /**
-     * Creates a NettyTransceiverThreadFactory that creates threads with the specified name.
-     * 
-     * @param prefix the name prefix to use for all threads created by this ThreadFactory. A unique
-     *        ID will be appended to this prefix to form the final thread name.
-     */
-    public NettyTransceiverThreadFactory(String prefix) {
-      this.prefix = prefix;
-    }
-
-    @Override
-    public Thread newThread(Runnable r) {
-      Thread thread = new Thread(r);
-      thread.setName(prefix + " " + threadId.incrementAndGet());
-      return thread;
+      disconnect(ctx.channel(), false, true, cause);
     }
   }
 
   /**
    * Increment this client's reference count
-   * 
    */
   synchronized void incCount() {
     refCount++;
@@ -720,7 +517,6 @@ public class NettyTransceiver extends Transceiver {
 
   /**
    * Decrement this client's reference count
-   * 
    */
   synchronized void decCount() {
     refCount--;
@@ -728,7 +524,7 @@ public class NettyTransceiver extends Transceiver {
 
   /**
    * Return if this client has no reference
-   * 
+   *
    * @return true if this client has no reference; false otherwise
    */
   synchronized boolean isZeroReference() {
@@ -742,15 +538,11 @@ public class NettyTransceiver extends Transceiver {
     return remoteAddr;
   }
 
-  /**
-   */
   @Override
   public Configuration getConf() {
     return this.conf;
   }
 
-  /**
-   */
   @Override
   public void setConf(Configuration conf) {
     this.conf = conf;

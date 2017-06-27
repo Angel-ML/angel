@@ -32,7 +32,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
 
-public class SharedAngelTest {
+public class LocalClusterHelper {
   protected static final String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
   protected static final String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
   private static AngelClient angelClient;

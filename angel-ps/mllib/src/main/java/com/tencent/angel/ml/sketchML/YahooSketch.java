@@ -18,59 +18,67 @@
 package com.tencent.angel.ml.sketchML;
 
 import com.tencent.angel.ml.math.vector.TDoubleVector;
+import com.yahoo.sketches.quantiles.DoublesSketch;
 
-public class AvgQSketch {
+public class YahooSketch {
 
   private int size;
-  private double[] indices;
+  private double[] splits;
   private int[] counts;
+  private int totalCount = 0;
 
-  public AvgQSketch(int size) {
+  public YahooSketch(int size) {
     this.size = size;
-    this.indices = new double[size];
+    this.splits = new double[size];
     this.counts = new int[size];
   }
 
   public void create(TDoubleVector vec) {
+    double[] fracs = new double[size];
     double min = Double.MAX_VALUE;
-    double max = Double.MIN_VALUE;
-    for (int indice = 0; indice < vec.getDimension(); indice++) {
-      if (vec.get(indice) < min) {
-        min = vec.get(indice);
+    for (int i = 0; i < size; i++) {
+      fracs[i] = i / (double) size;
+    }
+
+    int maxDim = vec.getDimension();
+
+    DoublesSketch sketches = DoublesSketch.builder().build();
+
+    for (int dim = 0; dim < maxDim; dim++) {
+      if (Math.abs(vec.get(dim)) > 10e-12) {
+        sketches.update(vec.get(dim));
+        min = Math.min(min, vec.get(dim));
       }
-      if (vec.get(indice) > max) {
-        max = vec.get(indice);
+    }
+
+    splits = sketches.getQuantiles(fracs);
+
+    for (int dim = 0; dim < maxDim; dim++) {
+      if (Math.abs(vec.get(dim)) > 10e-12) {
+        counts[indexOf(vec.get(dim))]++;
+        totalCount++;
       }
     }
-    double span = (max - min) / size;
-    for (int i = 0; i < size - 1; i++) {
-      indices[i] = min + (i + 1) * span;
-    }
-    indices[size - 1] = max;
-    for (int indice = 0; indice < vec.getDimension(); indice++) {
-      counts[indexOf(vec.get(indice))-1] ++;
-    }
-    //System.out.println("Indices: " + Arrays.toString(indices));
   }
 
   public int indexOf(double query) {
     int ret = 0;
     for (; ret < size - 1; ) {
-      if (this.indices[ret + 1] <= query) {
+      if (this.splits[ret + 1] <= query) {
         ret++;
       } else {
         break;
       }
     }
-    return ret + 1;
+    return ret;
   }
 
-  public double get(int index) {
-    return indices[index - 1];
+  public double getSplit(int index) {
+    return splits[index];
   }
 
-  public double[] getValues() {
-    return indices;
+  public double[] getSplits() {
+    return splits;
   }
 
   public int[] getCounts() {
@@ -85,16 +93,19 @@ public class AvgQSketch {
     return ret;
   }
 
-  public double min(){
-    return indices[0];
+  public int totalCount() {
+    return totalCount;
   }
 
-  public double max() {
-    return indices[indices.length - 1];
+  public double minSplit() {
+    return splits[0];
   }
 
-  public int getZeroIndex() {
-    return indexOf(0.0) + 1;
+  public double maxSplit() {
+    return splits[splits.length - 1];
   }
 
+  public int zeroIndex() {
+    return indexOf(0.0);
+  }
 }

@@ -17,10 +17,8 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
   <modelVersion>4.0.0</modelVersion>
 
-  <!-- parent coordinates -->
   <parent>
     <groupId>com.tencent.angel</groupId>
     <artifactId>angel-ps</artifactId>
@@ -30,15 +28,12 @@
   <artifactId>angel-ps-examples</artifactId>
   <name>angel-ps-examples</name>
 
-  <url>http://maven.apache.org</url>
-
   <properties>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
   <dependencies>
-
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>angel-ps-core</artifactId>
