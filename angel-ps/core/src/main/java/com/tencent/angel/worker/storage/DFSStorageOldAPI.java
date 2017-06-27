@@ -24,6 +24,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
+import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.ReflectionUtils;
 
 import java.io.IOException;
@@ -60,8 +61,7 @@ public class DFSStorageOldAPI<KEY, VALUE> {
               new JobConf(conf));
 
       org.apache.hadoop.mapred.RecordReader<KEY, VALUE> recordReader =
-          inputFormat.getRecordReader(split, new JobConf(conf), null);
-
+          inputFormat.getRecordReader(split, new JobConf(conf), Reporter.NULL);
       setReader(new DFSReaderOldAPI(recordReader));
     } catch (Exception x) {
       LOG.error("init reader error ", x);
