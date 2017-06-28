@@ -60,6 +60,9 @@ abstract class PSContext {
     doDestroyVectorPool(pool)
   }
 
+  def stop(): Unit = {
+  }
+
   protected def doCreateModelPool(numDimensions: Int, capacity: Int): PSModelPool
   protected def doDestroyVectorPool(pool: PSModelPool): Unit
 
@@ -103,6 +106,7 @@ object PSContext {
     if (PSContext.isAngelMode(env.conf)) {
       AngelPSContext.stop()
     }
+    PSContext.context.stop()
     PSContext.context = null
   }
 

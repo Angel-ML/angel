@@ -241,6 +241,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       if (channelManager != null) {
         channelManager.clear();
       }
+      eventGroup.shutdownGracefully();
     }
   }
 
