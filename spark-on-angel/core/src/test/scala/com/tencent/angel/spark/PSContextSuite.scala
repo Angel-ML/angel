@@ -68,14 +68,14 @@ class PSContextSuite extends PSFunSuite {
     assert(proxy.mkRemote().size == dim)
     assert(proxy.mkRemote().pull().sameElements(Array.ofDim[Double](dim)))
 
-    psContext.destroyVectorPool(pool)
+    psContext.destroyModelPool(pool)
   }
 
   test("destroy vector pool") {
     val psContext = PSContext.getOrCreate()
     val pool = psContext.createModelPool(dim, capacity)
 
-    psContext.destroyVectorPool(pool)
+    psContext.destroyModelPool(pool)
     assert(psContext.getPool(pool.id) == null)
   }
 

@@ -86,7 +86,7 @@ object VectorAggregation {
     println("min" + result.pull().mkString(", "))
     vecKey.delete()
 
-    psContext.destroyVectorPool(pool)
+    psContext.destroyModelPool(pool)
   }
 
 }

@@ -109,7 +109,7 @@ private[spark] class AngelPSContext private (id: Int, angelCtx: AngelContext) ex
    *
    * @param pool The poll to be destroyed
    */
-  protected def doDestroyVectorPool(pool: PSModelPool): Unit = {
+  protected def doDestroyModelPool(pool: PSModelPool): Unit = {
     matrixMetaMap.remove(pool.id).foreach { x =>
       psAgent.releaseMatrix(x)
     }

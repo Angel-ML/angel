@@ -66,7 +66,7 @@ class RemotePSVectorSuite extends PSFunSuite with Matchers with SharedPSContext 
   override def afterAll(): Unit = {
     _rdd.unpersist()
     _rdd = null
-    _psContext.destroyVectorPool(_pool)
+    _psContext.destroyModelPool(_pool)
     _pool = null
     _psContext = null
     super.afterAll()

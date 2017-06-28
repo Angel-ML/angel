@@ -64,7 +64,7 @@ class AngelPSContextSuite extends PSFunSuite {
 
     // create pool
     val pool = angel.createModelPool(dim, capacity)
-    angel.destroyVectorPool(pool)
+    angel.destroyModelPool(pool)
 
     PSContext.stop()
     assert(!AngelPSContext.isAlive)
@@ -83,7 +83,7 @@ class AngelPSContextSuite extends PSFunSuite {
     assert(zeroVector.getPool().id == thisPool.id)
     assert(zeroVector.mkRemote().pull().sameElements(Array.ofDim[Double](dim)))
 
-    angel.destroyVectorPool(thisPool)
+    angel.destroyModelPool(thisPool)
     assert(angel.getPool(thisPool.id) == null)
 
     PSContext.stop()
