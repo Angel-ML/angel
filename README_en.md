@@ -22,7 +22,7 @@ We welcome everyone interested in machine learning to contribute code, create is
 
 
 ## Quick Start
-* [Quick Start](./docs/tutorials/angel_ps_quick_start.md/)
+* [Quick Start](./docs/tutorials/angel_ps_quick_start.md)
 * [Spark on Angel Quick Start](./docs/tutorials/spark_on_angel_quick_start.md)
 
 
