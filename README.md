@@ -23,7 +23,7 @@
 
 
 ## Angel入门
-* [Quick Start](./docs/tutorials/angel_ps_quick_start.md/)
+* [Quick Start](./docs/tutorials/angel_ps_quick_start.md)
 * [Spark on Angel入门](./docs/tutorials/spark_on_angel_quick_start.md)
 
 
