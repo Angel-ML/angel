@@ -28,7 +28,7 @@ import com.tencent.angel.worker.Worker;
 import com.tencent.angel.worker.task.BaseTask;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.mapred.lib.CombineTextInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat
 
 import java.util.Map;
 import java.util.Properties;
