@@ -179,7 +179,7 @@ public class Worker implements Executor {
     }
   }
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws IOException {
     // get configuration from config file
     Configuration conf = new Configuration();
     conf.addResource(AngelConfiguration.ANGEL_JOB_CONF_FILE);
@@ -188,8 +188,8 @@ public class Worker implements Executor {
     ContainerId containerId = ConverterUtils.toContainerId(containerIdStr);
     ApplicationAttemptId applicationAttemptId = containerId.getApplicationAttemptId();
     ApplicationId appId = applicationAttemptId.getApplicationId();
-    String user = System.getenv(Environment.USER.name());
     UserGroupInformation.setConfiguration(conf);
+    String user = UserGroupInformation.getCurrentUser().getUserName();
 
     // set localDir with enviroment set by nm.
     String[] localSysDirs =
@@ -228,12 +228,7 @@ public class Worker implements Executor {
         masterLocation, Integer.valueOf(startClock), false);
 
     try {
-      Credentials credentials =
-        UserGroupInformation.getCurrentUser().getCredentials();
-      UserGroupInformation workerUGI = UserGroupInformation.createRemoteUser(System
-        .getenv(ApplicationConstants.Environment.USER.toString()));
-      // Add tokens to new user so that it may execute its task correctly.
-      workerUGI.addCredentials(credentials);
+      UserGroupInformation workerUGI = UserGroupInformation.getCurrentUser();
 
       workerUGI.doAs(new PrivilegedExceptionAction<Object>() {
         @Override

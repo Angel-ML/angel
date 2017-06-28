@@ -534,11 +534,14 @@ public class AngelApplicationMaster extends CompositeService {
       Configuration conf = new Configuration();
       conf.addResource(AngelConfiguration.ANGEL_JOB_CONF_FILE);
 
-      String jobUserName = System.getenv(ApplicationConstants.Environment.USER.name());
-      conf.set(AngelConfiguration.USER_NAME, jobUserName);
-      conf.setBoolean("fs.automatic.close", false);
 
+      conf.setBoolean("fs.automatic.close", false);
       UserGroupInformation.setConfiguration(conf);
+
+      UserGroupInformation appMasterUgi = UserGroupInformation.getCurrentUser();
+
+      String jobUserName = appMasterUgi.getUserName();
+      conf.set(AngelConfiguration.USER_NAME, jobUserName);
 
       // Security framework already loaded the tokens into current UGI, just use
       // them
@@ -548,11 +551,6 @@ public class AngelApplicationMaster extends CompositeService {
       for (Token<?> token : credentials.getAllTokens()) {
         LOG.info(token);
       }
-
-      UserGroupInformation appMasterUgi = UserGroupInformation
-        .createRemoteUser(jobUserName);
-      appMasterUgi.addCredentials(credentials);
-
       // Now remove the AM->RM token so tasks don't have it
       Iterator<Token<?>> iter = credentials.getAllTokens().iterator();
       while (iter.hasNext()) {
