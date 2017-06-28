@@ -238,7 +238,7 @@ public class DataSpliter {
 
       SplitClassification splitClassification =
           new SplitClassification(splitList, null, locationList.toArray(new String[locationList
-              .size()]), true);
+              .size()]), useNewAPI);
       splitClassifications.put(i, splitClassification);
     }
   }
