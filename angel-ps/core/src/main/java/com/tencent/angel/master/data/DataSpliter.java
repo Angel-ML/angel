@@ -27,6 +27,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.mapred.*;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.ReflectionUtils;
 
 import java.io.IOException;
@@ -129,6 +130,7 @@ public class DataSpliter {
     JobID jobID = JobID.forName(jobIDStr);
     JobContext jobConf = new JobContextImpl(new JobConf(conf), jobID);
 
+    jobConf.getCredentials().addAll(UserGroupInformation.getCurrentUser().getCredentials());
     // Set split minsize and maxsize to expected split size. We need to get the total size of data
     // first, then divided by expected split number
     long totalInputFileSize = HdfsUtil.getInputFileTotalSize(jobConf);
