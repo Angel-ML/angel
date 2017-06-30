@@ -36,13 +36,7 @@ This example guides you through the implementation of a simple Logistic Regressi
 
 Let w denote the 1-by-N parameter matrix (an N-dimensional vector), where N is the number of weights in the LR model. 
 
-We train the LR model with gradient descent algorithm. In each iteration:
-
-        * task pulls the latest model w from the PS
-        * calculates the change in gradient △w
-        * pushes △w to the PS
-
-We need the following three steps to realize the procedure:
+We train the LR model with gradient descent algorithm. In each iteration, task pulls the latest model w from the PS, calculates the change in gradient △w, and pushes △w to the PS. We need the following three steps to realize the procedure:
 
 1. **Define the model([MLModel](../apis/MLModel.md))**
 
@@ -94,11 +88,12 @@ We need the following three steps to realize the procedure:
 	In this simple LR example:
 
         * We create an instance of the `myLRModel` class, and then start the iterations. 
-        * In each iteration, 
+        * In each iteration: 
 
 		* Task pulls the weight parameters from the PS
 		* Workers calculate gradient `grad` and push it to the PS; PS then automatically updates the weight parameters 
 		* Call `clock()`, `incIteration()` after pushing `grad` 
+
 
 		```Scala
 		override
