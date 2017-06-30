@@ -27,6 +27,7 @@ A simple representation of the Angel-PS architecture is shown below:
 
 Training algorithms in machine learning are usually implemented in an iterative fashion; in each iteration, the worker pulls the latest parameters from the PS, updates their values, and pushes to the PS
 
+
 ![](../img/brief_structure.png)
 
 
@@ -86,10 +87,8 @@ We train the LR model with gradient descent algorithm. In each iteration, task p
 	Angel will automatically run the `train` method in any `TrainTask` subclass. We need to implement the `train` method for `myLRTrainTask`.
 
 	In this simple LR example:
-
-        * We create an instance of the `myLRModel` class, and then start the iterations. 
-        * In each iteration: 
-
+	* We create an instance of the `myLRModel` class, and then start the iterations. 
+	* In each iteration: 
 		* Task pulls the weight parameters from the PS
 		* Workers calculate gradient `grad` and push it to the PS; PS then automatically updates the weight parameters 
 		* Call `clock()`, `incIteration()` after pushing `grad` 
