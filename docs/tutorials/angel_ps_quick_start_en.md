@@ -36,18 +36,19 @@ This example guides you through the implementation of a simple Logistic Regressi
 
 Let w denote the 1-by-N parameter matrix (an N-dimensional vector), where N is the number of weights in the LR model. 
 
-We train the LR model with gradient descent algorithm. In each iteration
+We train the LR model with gradient descent algorithm. In each iteration:
+
         * task pulls the latest model w from the PS
         * calculates the change in gradient △w
         * pushes △w to the PS
 
 We need the following three steps to realize the procedure:
 
-1. **Define the model([LRModel](../apis/MLModel.md))**
+1. **Define the model([MLModel](../apis/MLModel.md))**
 
 	Define a `myLRModel` class that inherits the `MLModel` class, add an N-dimensional `PSModel` to  `myLRModel` using the `addPSModel` method, and set the save path for the LR model using the `setSavePath` method.
 	
-	The value of N, save path, etc. can be configured through conf.
+	The value of N, save path, etc. can be configured through `conf`.
 	 
 	
 
@@ -69,7 +70,7 @@ We need the following three steps to realize the procedure:
 	```
 2. **Define the Task([TrainTask](../apis/Task.md))**
 
-	Angel's model training is done through tasks. We need to define a `myLRTrainTask` to train the LR model.
+	Angel's model training is done through tasks. We need to define `myLRTrainTask` to train the LR model.
 
 	`myLRTrainTask` needs to inherit the `TrainTask` class and implement the following two methods:
 
@@ -91,11 +92,13 @@ We need the following three steps to realize the procedure:
 	Angel will automatically run the `train` method in any `TrainTask` subclass. We need to implement the `train` method for `myLRTrainTask`.
 
 	In this simple LR example:
+
         * We create an instance of the `myLRModel` class, and then start the iterations. 
         * In each iteration, 
+
 		* Task pulls the weight parameters from the PS
 		* Workers calculate gradient `grad` and push it to the PS; PS then automatically updates the weight parameters 
-		* Call clock(), incIteration() after pushing `grad` 
+		* Call `clock()`, `incIteration()` after pushing `grad` 
 
 		```Scala
 		override
@@ -145,7 +148,7 @@ We need the following three steps to realize the procedure:
 
 ### Run on Yarn
 
-You can submit the application to Yarn by using the following command:
+You can submit the application to Yarn using the sample command below:
 
 ```
 ./bin/angel-submit \
@@ -169,7 +172,7 @@ After submission, follow [Running on Yarn](../deploy/run_on_yarn.md) if you are 
 
 
 ----
-OK. You have just completed a simple Angel job. Want to write more complex machine learning algorithm? Read the complete [Angel Programming Guide](../programmers_guide/angel_programing_guide.md). 
+OK. You have just completed a simple Angel job. Want to write more complex machine learning algorithms? Read the complete [Angel Programming Guide](../programmers_guide/angel_programing_guide.md). 
 
 Welcome to Angel's world. 
 
