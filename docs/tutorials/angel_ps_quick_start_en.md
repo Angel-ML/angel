@@ -6,7 +6,7 @@
 
 This document helps you start writing programs to run on the Angel-PS architecture. The following know-hows are expected before you start:
   
-* Basics Scala or Java programming
+* Basic Scala or Java programming
 * Basics of vector, matrix, and tensor: definitions and operations
 * Good understanding of machine learning algorithms -- however, if you don't have it yet, use this document as a start
 
