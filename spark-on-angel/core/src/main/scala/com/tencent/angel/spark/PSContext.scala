@@ -18,12 +18,15 @@
 package com.tencent.angel.spark
 
 import java.util.concurrent.ConcurrentHashMap
+
 import scala.collection.JavaConverters._
 import scala.collection.Map
 
 import org.apache.spark._
 
 import com.tencent.angel.AngelDeployMode
+import com.tencent.angel.protobuf.generated.MLProtos
+import com.tencent.angel.psagent.matrix.MatrixClient
 import com.tencent.angel.spark.context.AngelPSContext
 import com.tencent.angel.spark.models.PSModelPool
 
@@ -59,6 +62,12 @@ abstract class PSContext {
     psModelPools.remove(pool.id)
     doDestroyModelPool(pool)
   }
+
+  def createMatrix(rowNum: Int, colNum: Int, rowType: MLProtos.RowType): Int = 1
+
+  def destroyMatrix(matrix: Int): Unit = {}
+
+  def getMatrixClient(poolId: Int): MatrixClient = null
 
   def stop(): Unit = {
   }
