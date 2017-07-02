@@ -29,16 +29,16 @@ $SPARK_HOME/bin/spark-submit \
     ./../lib/spark-on-angel-examples-1.1.8.jar
 ```
 
-## Submit Spark on Angel Job
+## How to submit a Spark on Angel Job
 Spark on Angel job is essentially a Spark application. After a Spark on Angel application is bundled, it can be launched by the spark-submit script; however, there are a few differences：
 - source ./spark-on-angel-env.sh
 - set spark.ps.jars=$SONA_ANGEL_JARS and --jars $SONA_SPARK_JARS
 - spark.ps.instance，spark.ps.cores，spark.ps.memory are the resource-allocation variables for Angel PS
 
-Once you have successfully submitted your job，YARN will show two Applications: Spark Application and Angel-PS Application
+Once you have successfully submitted your job，YARN will show two applications: the Spark application and the Angel-PS application
 
-## Modes Support for Running 
-Support YARN and Local modes
+## Supported Modes
+Support both YARN mode and Local mode
 
 ## Example Code: Implementing Gradient Descent with Angel PS
 
