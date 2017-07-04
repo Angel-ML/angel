@@ -187,7 +187,7 @@ public class ParameterServer {
     }
   }
 
-  public static void main(String[] argv)  {
+  public static void main(String[] argv) throws IOException {
     LOG.info("Starting Parameter Server");
     int serverIndex = Integer.valueOf(System.getenv(AngelEnvironment.PARAMETERSERVER_ID.name()));
     String appMasterHost = System.getenv(AngelEnvironment.LISTEN_ADDR.name());
@@ -198,9 +198,9 @@ public class ParameterServer {
     Configuration conf = new Configuration();
     conf.addResource(AngelConfiguration.ANGEL_JOB_CONF_FILE);
 
-    String user = System.getenv(ApplicationConstants.Environment.USER.name());
     UserGroupInformation.setConfiguration(conf);
-    
+    UserGroupInformation psUGI = UserGroupInformation.getCurrentUser();
+
     String runningMode = conf.get(AngelConfiguration.ANGEL_RUNNING_MODE, 
         AngelConfiguration.DEFAULT_ANGEL_RUNNING_MODE);   
     if(runningMode.equals(RunningMode.ANGEL_PS_WORKER.toString())){
@@ -215,13 +215,6 @@ public class ParameterServer {
     PSContext.get().setPs(psServer);
 
     try{
-      Credentials credentials =
-        UserGroupInformation.getCurrentUser().getCredentials();
-      UserGroupInformation psUGI = UserGroupInformation.createRemoteUser(System
-        .getenv(ApplicationConstants.Environment.USER.toString()));
-      // Add tokens to new user so that it may execute its task correctly.
-      psUGI.addCredentials(credentials);
-
       psUGI.doAs(new PrivilegedExceptionAction<Object>() {
         @Override
         public Object run() throws Exception {

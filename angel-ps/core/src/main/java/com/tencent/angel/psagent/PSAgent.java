@@ -52,6 +52,7 @@ import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.PSAgentRe
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
@@ -695,7 +696,7 @@ public class PSAgent {
     return matrixTransClient;
   }
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws IOException {
     // get configuration from config file
     Configuration conf = new Configuration();
     conf.addResource(AngelConfiguration.ANGEL_JOB_CONF_FILE);
@@ -704,7 +705,9 @@ public class PSAgent {
     ContainerId containerId = ConverterUtils.toContainerId(containerIdStr);
     ApplicationAttemptId applicationAttemptId = containerId.getApplicationAttemptId();
     ApplicationId appId = applicationAttemptId.getApplicationId();
-    String user = System.getenv(Environment.USER.name());
+
+    UserGroupInformation.setConfiguration(conf);
+    String user = UserGroupInformation.getCurrentUser().getUserName();
 
     // set localDir with enviroment set by nm.
     String[] localSysDirs =
