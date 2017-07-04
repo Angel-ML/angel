@@ -3,7 +3,7 @@
 配置项名称 | 默认值 | 配置项含义
 ---------------- | --------------- | ---------------
 action.type | train | Angel task的运行方式，目前主要有两种“train”和“predict”，分别表示模型训练和使用模型进行预测
-angel.train.data.path | 无 | 训练数据所在路径，该选项只用于“train”运行方式下
+angel.train.data.path | 无 | 	在“train”下表示训练数据路径；在“predict”下表示预测数据路径
 angel.inputformat | org.apache.hadoop.mapreduce.lib<br>.input.CombineTextInputFormat | 训练数据文件格式，主要用于训练数据划分和读取，可支持自定义格式
 angel.predict.out.path | 无 | 预测结果存储路径，该选项只用于“predict”运行方式
 angel.save.model.path | 无 | 模型存储路径，该选项只用于“train”运行方式
@@ -29,13 +29,13 @@ angel.ps.env | 无 | Angel PS环境变量设置，形式为K1=V1,K2=V2
 angel.workergroup.number | 1 | 需要启动的workgroup数量，目前一个workergroup仅支持一个worker，因此worker和workergroup数量相等
 angel.worker.task.number | 1 | 每个worker上运行的task数量
 angel.ps.number | 1 | 需要启动的ps数量
-angel.am.memory.gb | 1 | Angel master使用内存大小，以GB为单位
+angel.am.memory.gb | 2 | Angel master使用内存大小，以GB为单位
 angel.am.java.opts | 无 | Angel master进程JVM参数
 angel.am.cpu.vcores | 1 | Angel master使用的CPU vcore数量
-angel.worker.memory.gb | 1 | 一个worker使用的内存大小，以GB为单位
+angel.worker.memory.gb | 5 | 一个worker使用的内存大小，以GB为单位
 angel.worker.java.opts | 无 | worker进程JVM参数
 angel.worker.cpu.vcores | 1 | 一个worker使用的vcore数量
-angel.ps.memory.gb | 1 | 一个PS使用的内存大小，以GB为单位
+angel.ps.memory.gb | 4 | 一个PS使用的内存大小，以GB为单位
 angel.ps.java.opts | 无 | PS进程JVM参数
 angel.ps.cpu.vcores | 1 | 一个PS使用的vcore数量
 
