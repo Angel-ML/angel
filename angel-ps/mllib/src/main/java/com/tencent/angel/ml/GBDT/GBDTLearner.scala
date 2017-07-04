@@ -113,7 +113,7 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       }
       instances.add(x)
       labels.add(y)
-      preds.add(0.5f)
+      preds.add(0.0f)
       weights.add(1.0f)
       totalSample += 1
       data = trainDataStorage.read
