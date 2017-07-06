@@ -98,6 +98,22 @@ LR on Angel支持“libsvm”、“dummy”两种数据格式，分别如下所�
     --angel.ps.memory.mb 5000 \
     --angel.job.name=angel_lr_smalldata
 ```
+LR预测任务提交命令：
+```java
+./bin/angel-submit \
+	--action.type predict \
+        --angel.app.submit.class com.tencent.angel.ml.classification.lr.LRRunner  \
+        --angel.load.model.path $model_path \
+        --angel.predict.out.path $predict_path \
+        --angel.train.data.path $input_path \
+        --angel.workergroup.number 3 \
+        --ml.data.type dummy \
+        --angel.worker.memory.mb 8000  \
+        --angel.worker.task.number 3 \
+        --angel.ps.number 1 \
+        --angel.ps.memory.mb 5000 \
+        --angel.job.name angel_lr_predict
+```
 
 ### 性能
 * 数据：视频推荐数据，5×10^7特征，8×10^7样本
