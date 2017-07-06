@@ -62,21 +62,19 @@ PSContext.stop()
 
 
 
-PSModelPool在Angel PS上其实是一个矩阵，矩阵列数是`dim`，行数是`capacity`。同一个Application中，可以申请多个不同大小的PSModelPool。它的概念，其实对标于Angel里面的
-
-`PSModel`。
+PSModelPool在Angel PS上其实是一个矩阵，矩阵列数是`dim`，行数是`capacity`。同一个Application中，可以申请多个不同大小的PSModelPool。它的概念，其实对标于Angel里面的`PSModel`。
 
 * 创建ModelPool
 
 ```scala
 val pool = context.createModelPool(dim, capacity)
-	```
+```
 
 * 销毁ModelPool
 
 ```scala
 context.destroyModelPool(pool)
-	```
+```
 
 
 ### PSVectorProxy
