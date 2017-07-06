@@ -33,6 +33,7 @@
 		<module>core</module>
 		<module>mllib</module>
 		<module>examples</module>
+		<module>graphx</module>
 	</modules>
 
 	<properties>

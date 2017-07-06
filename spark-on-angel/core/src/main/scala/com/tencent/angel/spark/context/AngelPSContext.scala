@@ -116,7 +116,7 @@ private[spark] class AngelPSContext private (id: Int, angelCtx: AngelContext) ex
     pool.destroy()
   }
 
-  def getMatrixClient(poolId: Int): MatrixClient = {
+  override def getMatrixClient(poolId: Int): MatrixClient = {
     MatrixClientFactory.get(poolId, getTaskId())
   }
 
