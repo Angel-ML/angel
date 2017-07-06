@@ -75,7 +75,7 @@ LR on Angel支持“libsvm”、“dummy”两种数据格式，分别如下所�
   * angel.ps.memory.mb：PS申请内存大小   
  
 
-* 提交命令
+* 提交命令    
 你可以通过下面命令向Yarn集群提交LR算法训练任务:
 ```java
 ./bin/angel-submit \
