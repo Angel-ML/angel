@@ -22,7 +22,7 @@ HADOOP_LIBEXEC_DIR=${HADOOP_LIBEXEC_DIR:-$DEFAULT_LIBEXEC_DIR}
 for f in "$lib"/*.jar; do
     echo $f
     if [ "$CLASSPATH" ]; then
-        export CLASSPATH=$CLASSPATH:$f
+        export CLASSPATH=$f:$CLASSPATH
     else
         export CLASSPATH=$f
     fi
