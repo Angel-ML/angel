@@ -373,7 +373,8 @@ public class HdfsUtil {
 
   public static Path generateTmpDirectory(Configuration conf, String appId, Path outputPath) {
     URI uri = outputPath.toUri();
-    String path = uri.getScheme() + "://" + (uri.getHost() != null ? uri.getHost() : "")
+    String path = (uri.getScheme() != null ? uri.getScheme() : "hdfs") + "://"
+        + (uri.getHost() != null ? uri.getHost() : "")
         + (uri.getPort() > 0 ? (":" + uri.getPort()) : "");
     String user = conf.get(AngelConfiguration.USER_NAME, "");
     String tmpDir = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_DIRECTORY, "/tmp/" + user);
