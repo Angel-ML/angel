@@ -137,7 +137,6 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
     msgQueue = new LinkedBlockingQueue<ByteBuf>();
     stopped = new AtomicBoolean(false);
-
     clientThreadPool = Executors.newCachedThreadPool();
 
     Configuration conf = PSAgentContext.get().getConf();
@@ -221,12 +220,9 @@ public class MatrixTransportClient implements MatrixTransportInterface {
    */
   public void stop() {
     if (!stopped.getAndSet(true)) {
-
       if (timer != null) {
         timer.cancel();
       }
-
-      clientThreadPool.shutdown();
 
       if (requestDispacher != null) {
         requestDispacher.interrupt();
@@ -242,6 +238,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
         channelManager.clear();
       }
       eventGroup.shutdownGracefully();
+      clientThreadPool.shutdownNow();
     }
   }
 
@@ -1177,7 +1174,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
     @Override
     public void run() {
       try {
-        sendRequest(request);
+        sendRequest(seqId, request);
       } catch (InterruptedException e) {
         LOG.error("send request " + request + " is interrupted");
       }
@@ -1185,11 +1182,11 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
     /**
      * build the request and serialize it, then send it to server
-     * 
+     * @param seqId request id
      * @param request request context
      * @throws InterruptedException
      */
-    private void sendRequest(Request request) throws InterruptedException {
+    private void sendRequest(int seqId, Request request) throws InterruptedException {
       long startTs = System.currentTimeMillis();
 
       // allocate the bytebuf
@@ -1239,7 +1236,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       long endTs = System.currentTimeMillis();
 
       LOG.debug("request " + request + " with seqId=" + seqId + " build request use time "
-          + (endTs - startTs));
+        + (endTs - startTs));
 
       cf.addListener(new RequesterChannelFutureListener(seqId, request));
     }
@@ -1272,7 +1269,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
     @Override
     public void run() {
       try {
-        while (!stopped.get()) {
+        while (!stopped.get() && !Thread.interrupted()) {
           ByteBuf msg = msgQueue.take();
           int seqId = msg.readInt();
 

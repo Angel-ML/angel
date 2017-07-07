@@ -18,6 +18,7 @@ package com.tencent.angel.ml.matrix.transport;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.psagent.PSAgentContext;
+import com.tencent.angel.psagent.clock.ClockCache;
 import io.netty.buffer.ByteBuf;
 
 import java.util.HashMap;
@@ -64,7 +65,7 @@ public class GetClocksResponse extends Response {
   /**
    * Set the clocks of matrix partitions.
    * 
-   * @param the clocks of matrix partitions
+   * @param clocks the clocks of matrix partitions
    */
   public void setClocks(Map<PartitionKey, Integer> clocks) {
     this.clocks = clocks;
@@ -91,7 +92,10 @@ public class GetClocksResponse extends Response {
       for (int i = 0; i < size; i++) {
         PartitionKey partKey = new PartitionKey();
         partKey.deserialize(buf);
-        PSAgentContext.get().getClockCache().update(partKey.getMatrixId(), partKey, buf.readInt());
+        ClockCache cache = PSAgentContext.get().getClockCache();
+        if(cache != null) {
+          cache.update(partKey.getMatrixId(), partKey, buf.readInt());
+        }
       }
     }
   }
