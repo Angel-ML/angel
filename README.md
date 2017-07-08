@@ -35,7 +35,7 @@
 ## Design
 
 * [核心类的说明](./docs/apis/interface_api.md)
-* [psFunc手册](./docs/design/psfFunc.md)
+* [psFunc](./docs/design/psfFunc.md)
 
 ## Algorithm
 
