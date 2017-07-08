@@ -17,7 +17,7 @@
 ## Angel的介绍
 
 * [架构设计](./docs/overview/architecture.md)
-* [系统框架](./docs/overview/framework.md)
+* [代码结构](./docs/overview/framework.md)
 * [设计理念](./docs/overview/design.md)
 * [Spark on Angel的设计](./docs/overview/spark_on_angel.md)
 
@@ -35,7 +35,7 @@
 ## Design
 
 * [核心类的说明](./docs/apis/interface_api.md)
-* [psFunc手册](./docs/design/psf_develop.md)
+* [psFunc手册](./docs/design/psfFunc.md)
 
 ## Algorithm
 
