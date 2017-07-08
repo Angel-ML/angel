@@ -110,7 +110,7 @@ object BreezeSGD {
     }
     println(s"loss history: ${lossHistory.toArray.mkString(" ")}")
     println(s"weights: ${weight.toRemote.pull().mkString(" ")}")
-    PSContext.getOrCreate().destroyVectorPool(pool)
+    PSContext.getOrCreate().destroyModelPool(pool)
   }
 
   def runPsAggregateSGD(
@@ -136,7 +136,7 @@ object BreezeSGD {
     }
     println(s"loss history: ${lossHistory.toArray.mkString(" ")}")
     println(s"weights: ${weight.toRemote.pull().mkString(" ")}")
-    PSContext.getOrCreate().destroyVectorPool(pool)
+    PSContext.getOrCreate().destroyModelPool(pool)
   }
 
 }

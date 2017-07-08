@@ -541,19 +541,15 @@ public abstract class AngelClient implements AngelClientInterface {
     } else {
       path = conf.get(AngelConfiguration.ANGEL_PREDICT_PATH);
     }
-    
-    conf.set(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH, path);
 
-    // generate tmp output directory
-    String outputPathStr = conf.get(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH);
-    if(outputPathStr == null) {
+    if(path == null) {
       throw new IOException("output directory is null. you must set "
         + AngelConfiguration.ANGEL_SAVE_MODEL_PATH + " at training mode or set "
         + AngelConfiguration.ANGEL_PREDICT_PATH + " at predict mode");
     }
+    conf.set(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH, path);
 
-    Path outputPath = new Path(outputPathStr);
-
+    Path outputPath = new Path(path);
     FileSystem outFs = outputPath.getFileSystem(conf);
     if (outFs.exists(outputPath)) {
       if (deleteOnExist) {
@@ -576,7 +572,6 @@ public abstract class AngelClient implements AngelClientInterface {
           }
         }
       }
-
     }
 
     Path tmpOutputPath = HdfsUtil.generateTmpDirectory(conf, getAppId(), outputPath);

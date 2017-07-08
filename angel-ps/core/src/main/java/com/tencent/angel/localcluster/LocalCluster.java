@@ -86,6 +86,12 @@ public class LocalCluster {
     }
     
     localRM.stop();
+
+    try {
+      Thread.sleep(10000);
+    } catch (InterruptedException e) {
+    }
+    LOG.info("=============================================stop cluster over=======================================");
   }
 
   /**

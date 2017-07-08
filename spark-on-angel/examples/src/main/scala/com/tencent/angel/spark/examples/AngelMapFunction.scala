@@ -67,7 +67,7 @@ object AngelMapFunction {
     println("f: " + f.toRemote.pull().mkString("Array(", ", ", ")"))
     val g = b.zipMap(c, d, new Zip3Add)
     println("g: " + g.toRemote.pull().mkString("Array(", ", ", ")"))
-    context.destroyVectorPool(pool)
+    context.destroyModelPool(pool)
   }
 
 }

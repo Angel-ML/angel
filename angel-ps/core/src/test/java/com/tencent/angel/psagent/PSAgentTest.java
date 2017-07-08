@@ -301,8 +301,6 @@ public class PSAgentTest {
     PSAgent psAgent = worker.getPSAgent();
     assertTrue(psAgent != null);
 
-    psAgent.initAndStart();
-
     LocationCache locationCache = psAgent.getLocationCache();
     assertTrue(locationCache != null);
 
@@ -345,8 +343,6 @@ public class PSAgentTest {
 
     PSAgent psAgent = worker.getPSAgent();
     assertTrue(psAgent != null);
-
-    psAgent.initAndStart();
 
     MatrixMetaManager matrixMetaManager = psAgent.getMatrixMetaManager();
     assertTrue(matrixMetaManager != null);
@@ -404,8 +400,6 @@ public class PSAgentTest {
 
     PSAgent psAgent = worker.getPSAgent();
     assertTrue(psAgent != null);
-
-    psAgent.initAndStart();
 
     MatrixPartitionRouter matrixPartitionRouter = psAgent.getMatrixPartitionRouter();
     LocationCache locationCache = psAgent.getLocationCache();
@@ -470,8 +464,6 @@ public class PSAgentTest {
     PSAgent psAgent = worker.getPSAgent();
     assertTrue(psAgent != null);
 
-    psAgent.initAndStart();
-
     PSAgentContext psAgentContext = PSAgentContext.get();
     assertTrue(psAgentContext.getPsAgent() != null);
     assertTrue(psAgentContext.getConf() != null);
@@ -528,8 +520,6 @@ public class PSAgentTest {
     PSAgent psAgent = worker.getPSAgent();
     assertTrue(psAgent != null);
 
-    psAgent.initAndStart();
-
     PSAgentContext psAgentContext = PSAgentContext.get();
     assertTrue(psAgentContext.getPsAgent() != null);
 
@@ -571,8 +561,6 @@ public class PSAgentTest {
 
     PSAgent psAgent = worker.getPSAgent();
     assertTrue(psAgent != null);
-
-    psAgent.initAndStart();
 
     ConsistencyController consistControl = psAgent.getConsistencyController();
     assertTrue(consistControl != null);
@@ -622,8 +610,6 @@ public class PSAgentTest {
 
     PSAgent psAgent = worker.getPSAgent();
     assertTrue(psAgent != null);
-
-    psAgent.initAndStart();
 
     ClockCache clockCache = psAgent.getClockCache();
     assertTrue(clockCache != null);

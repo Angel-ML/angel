@@ -52,6 +52,14 @@ public class AngelRunJar {
     try {
       final Configuration conf = new Configuration();
 
+      String hadoopHomePath = System.getenv("HADOOP_HOME");
+      if(hadoopHomePath == null) {
+        LOG.warn("HADOOP_HOME is empty.");
+      } else {
+        conf.addResource(new Path(hadoopHomePath + "/etc/hadoop/yarn-site.xml"));
+        conf.addResource(new Path(hadoopHomePath + "/etc/hadoop/hdfs-site.xml"));
+      }
+
       // load angel system configuration
       String angelHomePath = System.getenv("ANGEL_HOME");
       if (angelHomePath == null) {
@@ -61,14 +69,6 @@ public class AngelRunJar {
       LOG.info("angelHomePath conf path=" + angelHomePath + "/conf/" + angelSysConfFile);
       conf.addResource(new Path(angelHomePath + "/conf/" + angelSysConfFile));
       LOG.info("load system config file success");
-      
-      String hadoopHomePath = System.getenv("HADOOP_HOME");
-      if(hadoopHomePath == null) {
-        LOG.warn("HADOOP_HOME is empty.");
-      } else {
-        conf.addResource(new Path(hadoopHomePath + "/etc/hadoop/yarn-site.xml"));
-        conf.addResource(new Path(hadoopHomePath + "/etc/hadoop/hdfs-site.xml"));
-      }
 
       // load user configuration:
       // 1. user config file

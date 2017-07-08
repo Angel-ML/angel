@@ -77,10 +77,12 @@ public class ClockCache {
   public void stop() {
     if(!stopped.getAndSet(true)){
       if (syncer != null) {
-        syncer.interrupt();
-        syncer = null;
-      }
+        try {
+          syncer.join(syncTimeIntervalMS * 2);
+        } catch (InterruptedException e) {
 
+        }
+      }
       matrixClockCacheMap.clear();
     }
   }

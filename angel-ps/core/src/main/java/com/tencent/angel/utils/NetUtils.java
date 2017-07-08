@@ -135,7 +135,7 @@ public class NetUtils {
       endPort = Integer.valueOf(portRangeArray[1]);
     }
 
-    int maxTryTime = 10;
+    int maxTryTime = 100;
     Random r = new Random();
     int port = -1;
 

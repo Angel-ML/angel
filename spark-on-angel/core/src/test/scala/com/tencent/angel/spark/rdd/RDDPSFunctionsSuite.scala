@@ -47,7 +47,7 @@ class RDDPSFunctionsSuite extends PSFunSuite with SharedPSContext {
     assert(remoteVector.pull().map(_.toInt).sameElements(result))
 
     pool.delete(remoteVector.proxy)
-    psContext.destroyVectorPool(pool)
+    psContext.destroyModelPool(pool)
   }
 
   test("psFoldLeft") {
@@ -73,6 +73,6 @@ class RDDPSFunctionsSuite extends PSFunSuite with SharedPSContext {
     assert(max.pull().map(_.toInt).sameElements(Array.fill(dim)(99)))
 
     pool.delete(remoteVector.proxy)
-    psContext.destroyVectorPool(pool)
+    psContext.destroyModelPool(pool)
   }
 }

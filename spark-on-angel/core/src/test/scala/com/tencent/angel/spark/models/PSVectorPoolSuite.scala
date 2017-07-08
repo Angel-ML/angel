@@ -37,7 +37,7 @@ class PSVectorPoolSuite extends PSFunSuite with SharedPSContext {
   }
 
   override def afterAll(): Unit = {
-    _psContext.destroyVectorPool(_pool)
+    _psContext.destroyModelPool(_pool)
     super.afterAll()
   }
 

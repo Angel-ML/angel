@@ -53,6 +53,7 @@ class LDATest {
     conf.set(AngelConfiguration.ANGEL_DEPLOY_MODE, "LOCAL")
 
     // Set input and output path
+    conf.setBoolean(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true)
     conf.set(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS, classOf[CombineTextInputFormat].getName)
     conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, inputPath)
     conf.set(AngelConfiguration.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/LOG/ldalog")

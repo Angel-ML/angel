@@ -86,7 +86,7 @@ public class LocalClusterContext {
   /**
    * Add a local ps
    * @param id ps attempt id
-   * @param worker local ps
+   * @param ps local ps
    */
   public void addPS(PSAttemptId id, LocalPS ps){
     idToPSMap.put(id, ps);

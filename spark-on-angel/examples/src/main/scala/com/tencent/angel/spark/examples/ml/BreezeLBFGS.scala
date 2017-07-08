@@ -105,7 +105,7 @@ object BreezeLBFGS {
     }
     println(s"loss history: ${lossHistory.toArray.mkString(" ")}")
     println(s"weights: ${weight.toRemote.pull().mkString(" ")}")
-    psContext.destroyVectorPool(pool)
+    psContext.destroyModelPool(pool)
   }
 
   def runPsAggregateLBFGS(
@@ -128,6 +128,6 @@ object BreezeLBFGS {
     }
     println(s"loss history: ${lossHistory.toArray.mkString(" ")}")
     println(s"weights: ${weight.toRemote.pull().mkString(" ")}")
-    PSContext.getOrCreate().destroyVectorPool(pool)
+    PSContext.getOrCreate().destroyModelPool(pool)
   }
 }

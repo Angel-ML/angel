@@ -394,6 +394,9 @@ public class RowSplitCombineUtils {
     int clock = Integer.MAX_VALUE;
     int size = rowSplits.size();
     for (int i = 0; i < size; i++) {
+      if(rowSplits.get(i) == null) {
+        continue;
+      }
       if (rowSplits.get(i).getClock() < clock) {
         clock = rowSplits.get(i).getClock();
       }

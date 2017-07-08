@@ -67,7 +67,7 @@ class AngelPSClientSuite extends PSFunSuite with BeforeAndAfterEach {
   }
 
   override def afterAll(): Unit = {
-    PSContext.getOrCreate().destroyVectorPool(_pool)
+    PSContext.getOrCreate().destroyModelPool(_pool)
     _pool = null
     AngelPSContext.stop()
     _angel = null

@@ -71,7 +71,7 @@ public class AngelLocalClient extends AngelClient {
     TConnection connection = TConnectionManager.getConnection(conf);
     while (tryTime < maxWaitSeconds) {
       LocalMaster localMaster = LocalClusterContext.get().getMaster();
-      if(localMaster == null) {
+      if(localMaster == null || localMaster.getAppMaster().getAppContext().getMasterService() == null) {
         Thread.sleep(1000);
         tryTime++;
         continue;

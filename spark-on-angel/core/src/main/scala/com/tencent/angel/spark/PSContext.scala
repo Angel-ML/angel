@@ -55,16 +55,16 @@ abstract class PSContext {
    *
    * @param pool the pool to destroy
    */
-  def destroyVectorPool(pool: PSModelPool): Unit = {
+  def destroyModelPool(pool: PSModelPool): Unit = {
     psModelPools.remove(pool.id)
-    doDestroyVectorPool(pool)
+    doDestroyModelPool(pool)
   }
 
   def stop(): Unit = {
   }
 
   protected def doCreateModelPool(numDimensions: Int, capacity: Int): PSModelPool
-  protected def doDestroyVectorPool(pool: PSModelPool): Unit
+  protected def doDestroyModelPool(pool: PSModelPool): Unit
 
   private[spark] def getPool(id: Int): PSModelPool = {
     psModelPools.get(id)
@@ -99,7 +99,7 @@ object PSContext {
    */
   def stop(): Unit = {
     for (entry <- context.psModelPools.entrySet().asScala) {
-      context.destroyVectorPool(entry.getValue)
+      context.destroyModelPool(entry.getValue)
     }
 
     val env = SparkEnv.get
