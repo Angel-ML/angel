@@ -45,10 +45,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapred.lib.CombineTextInputFormat;
 import org.apache.log4j.PropertyConfigurator;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -74,24 +71,24 @@ public class TransportTest {
   private static PSAttemptId psAttempt0Id;
 
   // Matrix parameters
-  private int ddRow = 10;
-  private int ddCol = 20;
-  private int diRow = 10;
-  private int diCol = 20;
-  private int dfRow = 10;
-  private int dfCol = 20;
-  private int sdRow = 10;
-  private int sdCol = 20;
-  private int siRow = 10;
-  private int siCol = 20;
+  private static int ddRow = 10;
+  private static int ddCol = 20;
+  private static int diRow = 10;
+  private static int diCol = 20;
+  private static int dfRow = 10;
+  private static int dfCol = 20;
+  private static int sdRow = 10;
+  private static int sdCol = 20;
+  private static int siRow = 10;
+  private static int siCol = 20;
 
 
   static {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
-  @Before
-  public void setup() throws Exception {
+  @BeforeClass
+  public static void setup() throws Exception {
     // Set basic configuration keys
     Configuration conf = new Configuration();
     conf.setBoolean("mapred.mapper.new-api", true);
@@ -128,7 +125,33 @@ public class TransportTest {
     angelClient.addMatrix(matrix);
 
     matrix = new MatrixContext();
+    matrix.setName("dense_double_mat_1");
+    matrix.setRowNum(ddRow);
+    matrix.setColNum(ddCol);
+    matrix.setMaxRowNumInBlock(ddRow / 2);
+    matrix.setMaxColNumInBlock(ddCol / 2);
+    matrix.setRowType(MLProtos.RowType.T_DOUBLE_DENSE);
+    matrix.set(MatrixConfiguration.MATRIX_OPLOG_ENABLEFILTER, "false");
+    matrix.set(MatrixConfiguration.MATRIX_HOGWILD, "false");
+    matrix.set(MatrixConfiguration.MATRIX_AVERAGE, "false");
+    matrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
+    angelClient.addMatrix(matrix);
+
+    matrix = new MatrixContext();
     matrix.setName("dense_int_mat");
+    matrix.setRowNum(diRow);
+    matrix.setColNum(diCol);
+    matrix.setMaxRowNumInBlock(diRow / 2);
+    matrix.setMaxColNumInBlock(diCol / 2);
+    matrix.setRowType(MLProtos.RowType.T_INT_DENSE);
+    matrix.set(MatrixConfiguration.MATRIX_OPLOG_ENABLEFILTER, "false");
+    matrix.set(MatrixConfiguration.MATRIX_HOGWILD, "false");
+    matrix.set(MatrixConfiguration.MATRIX_AVERAGE, "false");
+    matrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_INT");
+    angelClient.addMatrix(matrix);
+
+    matrix = new MatrixContext();
+    matrix.setName("dense_int_mat_1");
     matrix.setRowNum(diRow);
     matrix.setColNum(diCol);
     matrix.setMaxRowNumInBlock(diRow / 2);
@@ -203,7 +226,7 @@ public class TransportTest {
   @Test
   public void testGetFlowDenseDoubleMatrix() throws Exception {
     Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
-    MatrixClient mat = worker.getPSAgent().getMatrixClient("dense_double_mat", 0);
+    MatrixClient mat = worker.getPSAgent().getMatrixClient("dense_double_mat_1", 0);
 
     double [][] data = new double[ddRow][ddCol];
     DenseDoubleMatrix expect = new DenseDoubleMatrix(ddRow, ddCol, data);
@@ -218,7 +241,6 @@ public class TransportTest {
     while ((row = result.take()) != null) {
       assertArrayEquals(expect.getTDoubleVector(row.getRowId()).getValues(), ((DenseDoubleVector) row).getValues(), 0.0);
     }
-
 
     Random rand = new Random(System.currentTimeMillis());
     for (int rowId = 0; rowId < ddRow; rowId ++) {
@@ -241,7 +263,6 @@ public class TransportTest {
     while ((row = result.take()) != null) {
       assertArrayEquals(expect.getTDoubleVector(row.getRowId()).getValues(), ((DenseDoubleVector) row).getValues(), 0.0);
     }
-
 
     rowIndex = new RowIndex();
     for (int i = 0; i < ddRow; i ++)
@@ -335,7 +356,7 @@ public class TransportTest {
   @Test
   public void testGetFlowDenseIntMatrix() throws Exception {
     Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
-    MatrixClient mat = worker.getPSAgent().getMatrixClient("dense_int_mat", 0);
+    MatrixClient mat = worker.getPSAgent().getMatrixClient("dense_int_mat_1", 0);
 
     DenseIntMatrix expect = new DenseIntMatrix(diRow, diCol);
 
@@ -349,7 +370,6 @@ public class TransportTest {
     while ((row = result.take()) != null) {
       assertArrayEquals(expect.getTIntVector(row.getRowId()).getValues(), ((DenseIntVector) row).getValues());
     }
-
 
     Random rand = new Random(System.currentTimeMillis());
     for (int rowId = 0; rowId < diRow; rowId ++) {
@@ -392,10 +412,8 @@ public class TransportTest {
   }
 
 
-  @After
-  public void stop() throws IOException{
+  @AfterClass
+  public static void stop() throws IOException{
     angelClient.stop();
   }
-
-
 }

@@ -223,7 +223,7 @@ public class MasterRecoverTest {
             new InternalErrorEvent(angelAppMaster.getAppContext().getApplicationId(), "failed",
                 true));
 
-    Thread.sleep(20000);
+    Thread.sleep(15000);
     angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
     assertEquals(angelAppMaster.getAppContext().getApp().getExternAppState(), AppState.RUNNING);
     LOG.info("angelAppMaster.getAppContext().getApplicationAttemptId()="
@@ -268,7 +268,7 @@ public class MasterRecoverTest {
         .handle(
             new InternalErrorEvent(angelAppMaster.getAppContext().getApplicationId(), "failed",
                 true));
-    Thread.sleep(20000);
+    Thread.sleep(15000);
     angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
     assertEquals(angelAppMaster.getAppContext().getApplicationAttemptId(), appAttempt2Id);
     assertEquals(angelAppMaster.getAppContext().getApp().getExternAppState(), AppState.FAILED);

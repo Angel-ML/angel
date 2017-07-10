@@ -86,8 +86,8 @@ public class PSAgentTest {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
-  @Before
-  public void setup() throws Exception {
+  @BeforeClass
+  public static void setup() throws Exception {
     // set basic configuration keys
     Configuration conf = new Configuration();
     conf.setBoolean("mapred.mapper.new-api", true);
@@ -179,39 +179,6 @@ public class PSAgentTest {
 
     Map<ParameterServerId, Location> psLocations = masterClient.getPSLocations();
     assertEquals(psLocations.size(), 1);
-
-    // test create matrix
-    MatrixContext newMatrix = new MatrixContext();
-    newMatrix.setName("new");
-    newMatrix.setRowNum(1);
-    newMatrix.setColNum(100000);
-    newMatrix.setMaxRowNumInBlock(1);
-    newMatrix.setMaxColNumInBlock(50000);
-    newMatrix.setRowType(MLProtos.RowType.T_DOUBLE_DENSE);
-    newMatrix.set(MatrixConfiguration.MATRIX_OPLOG_ENABLEFILTER, "false");
-    newMatrix.set(MatrixConfiguration.MATRIX_HOGWILD, "true");
-    newMatrix.set(MatrixConfiguration.MATRIX_AVERAGE, "false");
-    newMatrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
-
-    MatrixMeta newMatrixMeta = masterClient.createMatrix(newMatrix, 10000);
-    assertEquals(newMatrixMeta.getName(), "new");
-    assertEquals(newMatrixMeta.getRowNum(), 1);
-    assertEquals(newMatrixMeta.getColNum(), 100000);
-
-    AMTask task0 = taskManager.getTask(task0Id);
-    AMTask task1 = taskManager.getTask(task1Id);
-    masterClient.updateClock(task0Id.getIndex(), w1Id, 1);
-    masterClient.updateClock(task0Id.getIndex(), w2Id, 1);
-
-    Int2IntOpenHashMap matrix0Clocks = task0.getMatrixClocks();
-    assertEquals(matrix0Clocks.size(), 2);
-    assertEquals(matrix0Clocks.get(w1Id), 1);
-    assertEquals(matrix0Clocks.get(w2Id), 1);
-
-    // Int2IntOpenHashMap matrix1Clocks = task1.getMatrixClocks();
-    // assertEquals(matrix1Clocks.size(), 2);
-    // assertEquals(matrix1Clocks.get(w1Id), 1);
-    // assertEquals(matrix1Clocks.get(w2Id), 1);
   }
 
   @Test
@@ -301,8 +268,6 @@ public class PSAgentTest {
     PSAgent psAgent = worker.getPSAgent();
     assertTrue(psAgent != null);
 
-    psAgent.initAndStart();
-
     LocationCache locationCache = psAgent.getLocationCache();
     assertTrue(locationCache != null);
 
@@ -345,8 +310,6 @@ public class PSAgentTest {
 
     PSAgent psAgent = worker.getPSAgent();
     assertTrue(psAgent != null);
-
-    psAgent.initAndStart();
 
     MatrixMetaManager matrixMetaManager = psAgent.getMatrixMetaManager();
     assertTrue(matrixMetaManager != null);
@@ -405,8 +368,6 @@ public class PSAgentTest {
     PSAgent psAgent = worker.getPSAgent();
     assertTrue(psAgent != null);
 
-    psAgent.initAndStart();
-
     MatrixPartitionRouter matrixPartitionRouter = psAgent.getMatrixPartitionRouter();
     LocationCache locationCache = psAgent.getLocationCache();
     assertTrue(matrixPartitionRouter != null);
@@ -436,13 +397,6 @@ public class PSAgentTest {
     partition2Keys = matrixPartitionRouter.getPartitionKeyList(matrix1Id, 0);
     assertEquals(partition2Keys.size(), 2);
 
-    // PartitionKey part1 = matrixPartitionRouter.getPartitionKey(1, 0);
-    // assertTrue(part1 != null);
-    // assertEquals(part1, partition1Keys.get(0));
-    // PartitionKey part2 = matrixPartitionRouter.getPartitionKey(2, 0);
-    // assertTrue(part2 != null);
-    // assertEquals(part2, partition2Keys.get(1));
-
     int rowPartSize = matrixPartitionRouter.getRowPartitionSize(matrix1Id, 0);
     assertEquals(rowPartSize, 2);
     rowPartSize = matrixPartitionRouter.getRowPartitionSize(matrix1Id, 0);
@@ -469,8 +423,6 @@ public class PSAgentTest {
 
     PSAgent psAgent = worker.getPSAgent();
     assertTrue(psAgent != null);
-
-    psAgent.initAndStart();
 
     PSAgentContext psAgentContext = PSAgentContext.get();
     assertTrue(psAgentContext.getPsAgent() != null);
@@ -528,8 +480,6 @@ public class PSAgentTest {
     PSAgent psAgent = worker.getPSAgent();
     assertTrue(psAgent != null);
 
-    psAgent.initAndStart();
-
     PSAgentContext psAgentContext = PSAgentContext.get();
     assertTrue(psAgentContext.getPsAgent() != null);
 
@@ -572,8 +522,6 @@ public class PSAgentTest {
     PSAgent psAgent = worker.getPSAgent();
     assertTrue(psAgent != null);
 
-    psAgent.initAndStart();
-
     ConsistencyController consistControl = psAgent.getConsistencyController();
     assertTrue(consistControl != null);
 
@@ -602,7 +550,6 @@ public class PSAgentTest {
     int staleness =
         psAgent.getConf().getInt(AngelConfiguration.ANGEL_STALENESS,
             AngelConfiguration.DEFAULT_ANGEL_STALENESS);
-    //assertEquals(((SSPConsistencyController) consistControl).getStaleness(), staleness);
   }
 
   @Test
@@ -623,27 +570,16 @@ public class PSAgentTest {
     PSAgent psAgent = worker.getPSAgent();
     assertTrue(psAgent != null);
 
-    psAgent.initAndStart();
-
     ClockCache clockCache = psAgent.getClockCache();
     assertTrue(clockCache != null);
 
     int rowClock = clockCache.getClock(1, 0);
     assertEquals(rowClock, 0);
-
-    // PartitionKey part1 = psAgent.getMatrixPartitionRouter().getPartitionKey(1, 0);
-    // int part1Clock = clockCache.getClock(1, part1);
-    // assertEquals(part1Clock, 0);
-    //
-    // PartitionKey part2 = psAgent.getMatrixPartitionRouter().getPartitionKey(2, 0);
-    // int part2Clock = clockCache.getClock(2, part2);
-    // assertEquals(part2Clock, 0);
   }
 
-  @After
-  public void stop() throws IOException, InterruptedException {
+  @AfterClass
+  public static void stop() throws IOException, InterruptedException {
     LOG.info("stop local cluster");
     angelClient.stop();
-    Thread.sleep(10000);
   }
 }

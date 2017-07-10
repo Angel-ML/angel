@@ -155,7 +155,7 @@ public class AngelApplicationMaster extends CompositeService {
    * angel application master service, it is used to response RPC request from client, workers and
    * parameter servers
    */
-  private MasterService masterService;
+  private volatile MasterService masterService;
 
   /** matrix meta manager */
   private MatrixMetaManager matrixMetaManager;

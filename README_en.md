@@ -16,7 +16,7 @@ We welcome everyone interested in machine learning to contribute code, create is
 ## Introduction to Angel
 
 * [Architecture](./docs/overview/architecture.md)
-* [Framework](./docs/overview/framework.md)
+* [Code Framework](./docs/overview/framework.md)
 * [Design](./docs/overview/design.md)
 * [Spark on Angel](./docs/overview/spark_on_angel.md)
 
@@ -34,7 +34,7 @@ We welcome everyone interested in machine learning to contribute code, create is
 ## Design
 
 * [Interface API](./docs/apis/interface_api.md)
-* [psFunc](./docs/design/psf_develop.md)
+* [psFunc](./docs/design/psfFunc.md)
 
 ## Algorithm
 

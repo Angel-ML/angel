@@ -119,11 +119,12 @@ public abstract class NettyServer implements RpcServer {
       channelFuture.channel().close().awaitUninterruptibly(10, TimeUnit.SECONDS);
       channelFuture = null;
     }
-    if (bootstrap != null && bootstrap.config().group() != null) {
-      bootstrap.config().group().shutdownGracefully();
+
+    if (bootstrap != null && bootstrap.group() != null) {
+      bootstrap.group().shutdownGracefully();
     }
-    if (bootstrap != null && bootstrap.config().childGroup() != null) {
-      bootstrap.config().childGroup().shutdownGracefully();
+    if (bootstrap != null && bootstrap.childGroup() != null) {
+      bootstrap.childGroup().shutdownGracefully();
     }
     bootstrap = null;
     closed.countDown();

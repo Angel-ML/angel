@@ -147,11 +147,11 @@ public class AppTest {
     assertEquals(response.getJobReport().getCurIteration(), jobIteration);
     assertEquals(response.getJobReport().getDiagnostics(), "failed");
 
-    Thread.sleep(5000);
-    response = master.getJobReport(null, request);
-    assertEquals(response.getJobReport().getJobState(), JobStateProto.J_FAILED);
-    assertEquals(response.getJobReport().getCurIteration(), jobIteration);
-    assertEquals(response.getJobReport().getDiagnostics(), "failed");
+    //Thread.sleep(5000);
+    //response = master.getJobReport(null, request);
+    //assertEquals(response.getJobReport().getJobState(), JobStateProto.J_FAILED);
+    //assertEquals(response.getJobReport().getCurIteration(), jobIteration);
+    //assertEquals(response.getJobReport().getDiagnostics(), "failed");
 
     Thread.sleep(10000);
     try {
