@@ -4,7 +4,7 @@ The PS-Service feature was introduced in Angel 1.0. It can not only run as a com
 
 As a popular in-memory computing framework, **Spark** revolves around the concept of `RDD`, which is *immutable* to avoid a range of potential problems due to updates from multiple threads at once. The RDD abstraction works just fine for data analytics because it solves the distributed problem with maximum capacity, reduces the complexity of various operators, and provides high-performance, distributed data processing capabilities. 
 
-In machine learning domain, however, **iteration and parameter updating** is the core demand. `RDD` is a lightweight solution for iterative algorithms since it keeps data in memory without I/O; however, `RDD`'s immutability is a barrier for repetative parameter updates. We believe this tradeoff in RDD's capability is one of the causes of the slow development of Spark MLLib, which lacks substantive innovations and seems to suffer from unsatisfying performance in recent years. 
+In machine learning domain, however, **iteration and parameter updating** is the core demand. `RDD` is a lightweight solution for iterative algorithms since it keeps data in memory without I/O; however, `RDD`'s immutability is a barrier for repetitive parameter updates. We believe this tradeoff in RDD's capability is one of the causes of the slow development of Spark MLLib, which lacks substantive innovations and seems to suffer from unsatisfying performance in recent years. 
 
 Now, based on its platform design, Angel provides PS-Service to Spark for the latter to take full advantage of parameter updating capabilities --- with elegant code, complex models are trained efficiently while incurring minimal cost of change.     
 
