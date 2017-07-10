@@ -23,7 +23,7 @@ import com.tencent.angel.ml.conf.MLConf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.LocalFileSystem;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
 import org.apache.log4j.PropertyConfigurator;
 import org.junit.After;
@@ -36,7 +36,8 @@ import org.junit.Test;
 public class SgdLRTest {
   private Configuration conf = new Configuration();
   private static final Log LOG = LogFactory.getLog(SgdLRTest.class);
-
+  private static String LOCAL_FS = FileSystem.DEFAULT_FS;
+  private static String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
   static {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
@@ -95,8 +96,6 @@ public class SgdLRTest {
   @Test
   public void trainOnLocalClusterTest() throws Exception {
     String inputPath = "./src/test/data/lr/a9a.train";
-    String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
-    String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
     String savePath = LOCAL_FS + TMP_PATH + "/model";
     String logPath = LOCAL_FS + TMP_PATH + "/LRlog";
 
@@ -119,9 +118,7 @@ public class SgdLRTest {
   public void incTrainTest() {
     try{
       String inputPath = "./src/test/data/lr/a9a.train";
-      String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
-      String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
-      String loadPath = LOCAL_FS + TMP_PATH + "model";
+      String loadPath = LOCAL_FS + TMP_PATH + "/model";
       String savePath = LOCAL_FS + TMP_PATH + "/newmodel";
       String logPath = LOCAL_FS + TMP_PATH + "/LRlog";
 
@@ -147,9 +144,7 @@ public class SgdLRTest {
   public void predictTest() {
     try {
       String inputPath = "./src/test/data/lr/a9a.test";
-      String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
-      String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
-      String loadPath = LOCAL_FS + TMP_PATH + "model";
+      String loadPath = LOCAL_FS + TMP_PATH + "/model";
       String predictPath = LOCAL_FS + TMP_PATH + "/predict";
 
       // Set trainning data path
