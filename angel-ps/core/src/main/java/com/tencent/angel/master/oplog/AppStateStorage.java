@@ -312,9 +312,10 @@ public class AppStateStorage extends AbstractService {
         //write task meta
         try {
           writeTaskMeta(context.getTaskManager());
-        } catch (IOException e) {
+        } catch (Exception e) {
           if(Thread.interrupted()) {
             LOG.warn("write task meta is interupted");
+            return;
           } else {
             LOG.error("write task meta file failed.", e);
           }
@@ -323,9 +324,10 @@ public class AppStateStorage extends AbstractService {
         //write ps meta
         try {
           writePSMeta(context.getParameterServerManager());
-        } catch (IOException e) {
+        } catch (Exception e) {
           if(Thread.interrupted()) {
             LOG.warn("write ps meta is interupted");
+            return;
           } else {
             LOG.error("write ps meta file failed.", e);
           }
