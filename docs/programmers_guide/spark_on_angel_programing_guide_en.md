@@ -107,7 +107,8 @@ pool.delete(vectorProxy)
 BreezePSVector and RemotePSVector are both subclasses of PSVector that encapsulate PSVector operations for different scenarios.
 
 - **RemotePSVector**
-  RemotePSVector encapsulates operations between PSVector and local Array
+  
+RemotePSVector encapsulates operations between PSVector and local Array
 
 ```scala
   // Pull PSVector to local
