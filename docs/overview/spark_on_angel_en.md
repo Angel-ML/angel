@@ -2,11 +2,9 @@
 
 The PS-Service feature was introduced in Angel 1.0. It can not only run as a complete PS framework, but also a **PS-Service** that adds the PS capability to distributed frameworks to make them run faster with more powerful features. Spark is the first beneficiary of the PS-Service design. 
 
+As a popular in-memory computing framework, **Spark** revolves around the concept of `RDD`, which is *immutable* to avoid a range of potential problems due to updates from multiple threads at once. The RDD abstraction works just fine for data analytics because it solves the distributed problem with maximum capacity, reduces the complexity of various operators, and provides high-performance, distributed data processing capabilities. 
 
-AS a popular in-memory computing framework, **Spark** revolves around the concept of `RDD`, which is *immutable* to avoid a range of all kinds of complex concurrent problems under distributed enviroment. The RDD abstraction works fine in data analytics domain because it solves the distributed problem, reduces the complexity of various operators, and provides high-performance, distributed data processing capabilities. 
-
-
-However, in machine learning domain, **iteration and parameter updating** is the core demand. `RDD` is a lightweight solution for iterative algorithms since it keeps data in memory. But  `RDD`'s immutability is a barrier for repetitive parameter updates. We believe this tradeoff in RDD's capability is one of the causes of the slow development of Spark MLLib, which lacks substantive innovations and seems to suffer from unsatisfying performance in recent years. 
+In machine learning domain, however, **iteration and parameter updating** is the core demand. `RDD` is a lightweight solution for iterative algorithms since it keeps data in memory without I/O; however, `RDD`'s immutability is a barrier for repetitive parameter updates. We believe this tradeoff in RDD's capability is one of the causes of the slow development of Spark MLLib, which lacks substantive innovations and seems to suffer from unsatisfying performance in recent years. 
 
 Now, based on its platform design, Angel provides PS-Service to Spark. Spark can  take full advantage of parameter updating capabilities. Complex models can be trained efficiently in elegant code with minimal cost of rewriting.     
 
@@ -59,7 +57,7 @@ println("feature sum size:" + psVector.mkRemote.size())
 
 Spark on Angel is essentially a Spark application. When Spark is started, the driver starts up Angel PS using Angel PS interface, and when necessary, encapsulates part of the data into PSVector to be managed by PS node. Therefore, the execution process of Spark on Angel is similar to that of Spark. 
 
-**Spark Driver's new execution process: **
+**Spark Driver's new execution process:**
 
 Driver has an added action of starting up and managing PS node:
 
@@ -70,7 +68,7 @@ Driver has an added action of starting up and managing PS node:
 - executing the logic 
 - stopping PSContext and SparkSession
 
-**Spark executor's new execution process: **
+**Spark executor's new execution process:**
 
 Spark executor sends request of operations of PSVector to PS Server, when needed, by calling the transformation method 
 
