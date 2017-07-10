@@ -190,31 +190,6 @@ public class PSManagerTest {
   }
 
   @Test
-  public void testPSRegister() throws IOException, ServiceException {
-    ParameterServer ps = LocalClusterContext.get().getPS(psAttempt0Id).getPS();
-    Location masterLoc = ps.getMasterLocation();
-    TConnection connection = TConnectionManager.getConnection(ps.getConf());
-    MasterProtocol master = connection.getMasterService(masterLoc.getIp(), masterLoc.getPort());
-    PSRegisterRequest.Builder builder = PSRegisterRequest.newBuilder();
-    builder.setPsAttemptId(ProtobufUtil.convertToIdProto(psAttempt0Id));
-    builder.setLocation(LocationProto.newBuilder().setIp("10.10.10.10").setPort(10000).build());
-    PSRegisterResponse response = master.psRegister(null, builder.build());
-    assertEquals(response.getPsCommand(), PSCommandProto.PSCOMMAND_OK);
-    AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
-    ParameterServerManager psManager = angelAppMaster.getAppContext().getParameterServerManager();
-    AMParameterServer amPs = psManager.getParameterServer(psId);
-    PSAttempt psAttempt = amPs.getPSAttempt(psAttempt0Id);
-    assertEquals(psAttempt.getLocation().getIp(), "10.10.10.10");
-    assertEquals(psAttempt.getLocation().getPort(), 10000);
-
-    PSAttemptId psAttempt1Id = new PSAttemptId(psId, 1);
-    builder.setPsAttemptId(ProtobufUtil.convertToIdProto(psAttempt1Id));
-    builder.setLocation(LocationProto.newBuilder().setIp("10.10.10.10").setPort(10000).build());
-    response = master.psRegister(null, builder.build());
-    assertEquals(response.getPsCommand(), PSCommandProto.PSCOMMAND_SHUTDOWN);
-  }
-
-  @Test
   public void testPSReport() throws IOException, ServiceException {
     ParameterServer ps = LocalClusterContext.get().getPS(psAttempt0Id).getPS();
     Location masterLoc = ps.getMasterLocation();

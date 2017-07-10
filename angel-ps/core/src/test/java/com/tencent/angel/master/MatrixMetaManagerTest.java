@@ -29,9 +29,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
 import org.apache.log4j.PropertyConfigurator;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import com.tencent.angel.client.AngelClient;
 import com.tencent.angel.client.AngelClientFactory;
@@ -69,21 +67,21 @@ public class MatrixMetaManagerTest {
   private static final Log LOG = LogFactory.getLog(MatrixMetaManagerTest.class);
   private static final String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
   private static final String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
-  private AngelClient angelClient;
-  private WorkerGroupId group0Id;
-  private WorkerId worker0Id;
-  private WorkerAttemptId worker0Attempt0Id;
-  private TaskId task0Id;
-  private TaskId task1Id;
-  private ParameterServerId psId;
-  private PSAttemptId psAttempt0Id;
+  private static AngelClient angelClient;
+  private static WorkerGroupId group0Id;
+  private static WorkerId worker0Id;
+  private static WorkerAttemptId worker0Attempt0Id;
+  private static TaskId task0Id;
+  private static TaskId task1Id;
+  private static ParameterServerId psId;
+  private static PSAttemptId psAttempt0Id;
 
   static {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
-  @Before
-  public void setup() throws Exception {
+  @BeforeClass
+  public static void setup() throws Exception {
     // set basic configuration keys
     Configuration conf = new Configuration();
     conf.setBoolean("mapred.mapper.new-api", true);
@@ -377,8 +375,8 @@ public class MatrixMetaManagerTest {
     return sum;
   }
 
-  @After
-  public void stop() throws AngelException {
+  @AfterClass
+  public static void stop() throws AngelException {
     LOG.info("stop local cluster");
     angelClient.stop();
   }

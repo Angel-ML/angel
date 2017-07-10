@@ -52,10 +52,7 @@ import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.log4j.PropertyConfigurator;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -90,7 +87,6 @@ public class WorkerTest {
   static {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
-
 
   @BeforeClass
   public static void setup() throws Exception {
@@ -157,8 +153,6 @@ public class WorkerTest {
     LOG.info("===========================testWorkerInitAndStart===============================");
     localWorker = LocalClusterContext.get().getWorker(worker0Attempt0Id);
     worker = localWorker.getWorker();
-
-
 
     //test worker getActiveTaskNum
     assertEquals(2, worker.getActiveTaskNum());
@@ -290,7 +284,6 @@ public class WorkerTest {
     WorkerGroupId gid = new WorkerGroupId("WorkerGroup_0");
     assertEquals(gid, workerGroup.getWorkerGroupId());
 
-
     Map<WorkerId, WorkerRef> workerMap = workerGroup.getWorkerMap();
     assertTrue(workerMap != null);
     assertEquals(1, workerMap.size());
@@ -346,12 +339,7 @@ public class WorkerTest {
     assertEquals(worker.getTaskManager(), context.getTaskManager());
   }
 
-  @Test
-  public void testWorkerError() {
-
-  }
-
-
+  @AfterClass
   public static void stop() throws IOException{
     angelClient.stop();
   }

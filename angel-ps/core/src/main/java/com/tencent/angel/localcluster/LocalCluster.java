@@ -88,7 +88,7 @@ public class LocalCluster {
     localRM.stop();
 
     try {
-      Thread.sleep(10000);
+      Thread.sleep(2000);
     } catch (InterruptedException e) {
     }
     LOG.info("=============================================stop cluster over=======================================");
