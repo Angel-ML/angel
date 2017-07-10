@@ -28,6 +28,7 @@ import com.tencent.angel.ml.matrix.psf.update.RandomNormal;
 import com.tencent.angel.ml.matrix.psf.update.RandomUniform;
 import com.tencent.angel.psagent.matrix.MatrixClient;
 import com.tencent.angel.psagent.matrix.MatrixClientFactory;
+import org.apache.log4j.PropertyConfigurator;
 import org.junit.*;
 
 import java.util.Arrays;
@@ -39,6 +40,10 @@ public class AggrFuncTest {
   private static double[] localArray1 = null;
   private static double delta = 1e-6;
   private static int dim = -1;
+
+  static {
+    PropertyConfigurator.configure("../conf/log4j.properties");
+  }
 
   @BeforeClass
   public static  void setup() throws Exception {
