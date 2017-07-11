@@ -45,77 +45,89 @@ public class SgdLRTest {
    * set parameter values of conf
    */
   @Before
-  public void setConf() {
+  public void setConf() throws Exception {
+    try {
+      // Feature number of train data
+      int featureNum = 124;
+      // Total iteration number
+      int epochNum = 20;
+      // Validation sample Ratio
+      double vRatio = 0.1;
+      // Data format, libsvm or dummy
+      String dataFmt = "libsvm";
+      // Train batch number per epoch.
+      double spRatio = 1.0;
+      // Batch number
+      int batchNum = 10;
 
-    // Feature number of train data
-    int featureNum = 124;
-    // Total iteration number
-    int epochNum = 20;
-    // Validation sample Ratio
-    double vRatio = 0.1;
-    // Data format, libsvm or dummy
-    String dataFmt = "libsvm";
-    // Train batch number per epoch.
-    double spRatio = 1.0;
-    // Batch number
-    int batchNum = 10;
+      // Learning rate
+      double learnRate = 1.0;
+      // Decay of learning rate
+      double decay = 0.1;
+      // Regularization coefficient
+      double reg = 0.2;
 
-    // Learning rate
-    double learnRate = 1.0;
-    // Decay of learning rate
-    double decay = 0.1;
-    // Regularization coefficient
-    double reg = 0.2;
+      // Set local deploy mode
+      conf.set(AngelConfiguration.ANGEL_DEPLOY_MODE, "LOCAL");
 
-    // Set local deploy mode
-    conf.set(AngelConfiguration.ANGEL_DEPLOY_MODE, "LOCAL");
+      // Set basic configuration keys
+      conf.setBoolean("mapred.mapper.new-api", true);
+      conf.set(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
+      conf.setBoolean(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
 
-    // Set basic configuration keys
-    conf.setBoolean("mapred.mapper.new-api", true);
-    conf.set(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
-    conf.setBoolean(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
+      // Set data format
+      conf.set(MLConf.ML_DATAFORMAT(), dataFmt);
 
-    // Set data format
-    conf.set(MLConf.ML_DATAFORMAT(), dataFmt);
+      //set angel resource parameters #worker, #task, #PS
+      conf.setInt(AngelConfiguration.ANGEL_WORKERGROUP_NUMBER, 1);
+      conf.setInt(AngelConfiguration.ANGEL_WORKER_TASK_NUMBER, 1);
+      conf.setInt(AngelConfiguration.ANGEL_PS_NUMBER, 1);
 
-    //set angel resource parameters #worker, #task, #PS
-    conf.setInt(AngelConfiguration.ANGEL_WORKERGROUP_NUMBER, 1);
-    conf.setInt(AngelConfiguration.ANGEL_WORKER_TASK_NUMBER, 1);
-    conf.setInt(AngelConfiguration.ANGEL_PS_NUMBER, 1);
-
-    //set sgd LR algorithm parameters #feature #epoch
-    conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(featureNum));
-    conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
-    conf.set(MLConf.ML_BATCH_SAMPLE_Ratio(), String.valueOf(spRatio));
-    conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
-    conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
-    conf.set(MLConf.ML_LEARN_DECAY(), String.valueOf(decay));
-    conf.set(MLConf.ML_REG_L2(), String.valueOf(reg));
+      //set sgd LR algorithm parameters #feature #epoch
+      conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(featureNum));
+      conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
+      conf.set(MLConf.ML_BATCH_SAMPLE_Ratio(), String.valueOf(spRatio));
+      conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
+      conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
+      conf.set(MLConf.ML_LEARN_DECAY(), String.valueOf(decay));
+      conf.set(MLConf.ML_REG_L2(), String.valueOf(reg));
+    } catch (Exception x) {
+      LOG.error("setup failed ", x);
+      throw x;
+    }
   }
 
   @Test
-  public void trainOnLocalClusterTest() throws Exception {
-    String inputPath = "./src/test/data/lr/a9a.train";
-    String savePath = LOCAL_FS + TMP_PATH + "/model";
-    String logPath = LOCAL_FS + TMP_PATH + "/LRlog";
+  public void testSGDLR() throws Exception {
+    trainOnLocalClusterTest();
+    incTrainTest();
+    predictTest();
+  }
 
-    // Set trainning data path
-    conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, inputPath);
-    // Set save model path
-    conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, savePath);
-    // Set log path
-    conf.set(AngelConfiguration.ANGEL_LOG_PATH, logPath);
-    // Set actionType train
-    conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
+  private void trainOnLocalClusterTest() throws Exception {
+    try {
+      String inputPath = "./src/test/data/lr/a9a.train";
+      String savePath = LOCAL_FS + TMP_PATH + "/model";
+      String logPath = LOCAL_FS + TMP_PATH + "/LRlog";
 
+      // Set trainning data path
+      conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, inputPath);
+      // Set save model path
+      conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, savePath);
+      // Set log path
+      conf.set(AngelConfiguration.ANGEL_LOG_PATH, logPath);
+      // Set actionType train
+      conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
 
-    LRRunner runner = new LRRunner();
-    runner.train(conf);
- }
+      LRRunner runner = new LRRunner();
+      runner.train(conf);
+    } catch (Exception x) {
+      LOG.error("run trainOnLocalClusterTest failed ", x);
+      throw x;
+    }
+  }
 
-
-  @Test
-  public void incTrainTest() {
+  private void incTrainTest() throws Exception {
     try{
       String inputPath = "./src/test/data/lr/a9a.train";
       String loadPath = LOCAL_FS + TMP_PATH + "/model";
@@ -135,13 +147,13 @@ public class SgdLRTest {
 
       LRRunner runner = new LRRunner();
       runner.incTrain(conf);
-    } catch (Throwable x) {
+    } catch (Exception x) {
       LOG.error("run incTrainTest failed ", x);
+      throw x;
     }
   }
 
-  @Test
-  public void predictTest() {
+  private void predictTest() throws Exception {
     try {
       String inputPath = "./src/test/data/lr/a9a.test";
       String loadPath = LOCAL_FS + TMP_PATH + "/model";
@@ -160,8 +172,9 @@ public class SgdLRTest {
       LRRunner runner = new LRRunner();
 
       runner.predict(conf);
-    } catch (Throwable x) {
+    } catch (Exception x) {
       LOG.error("run predictTest failed ", x);
+      throw x;
     }
   }
 }

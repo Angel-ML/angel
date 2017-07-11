@@ -293,7 +293,7 @@ public abstract class AngelClient implements AngelClientInterface {
    
   private void movePredictResult() throws IOException {
     String outPathStr = conf.get(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH);
-    String tmpPathStr = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_DIRECTORY);
+    String tmpPathStr = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_PATH);
     Path outPath = new Path(outPathStr);
     Path tmpOutPath = new Path(tmpPathStr, "predict");
     
@@ -578,8 +578,8 @@ public abstract class AngelClient implements AngelClientInterface {
 
     internalStateFile = new Path(HdfsUtil.generateTmpDirectory(conf, getAppId(), outputPath), "state");
 
-    conf.set(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_DIRECTORY, tmpOutputPath.toString());
-    LOG.info(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_DIRECTORY + "=" + tmpOutputPath.toString());
+    conf.set(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_PATH, tmpOutputPath.toString());
+    LOG.info(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_PATH + "=" + tmpOutputPath.toString());
 
     LOG.info("internal state file is " + internalStateFile);
     conf.set(AngelConfiguration.ANGEL_APP_SERILIZE_STATE_FILE, internalStateFile.toString());

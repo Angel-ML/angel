@@ -393,7 +393,7 @@ public class AngelApplicationMaster extends CompositeService {
 
   private void cleanTmpOutputDir() {
     Configuration conf = appContext.getConf();
-    String tmpOutDir = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_DIRECTORY);
+    String tmpOutDir = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_PATH);
     if (tmpOutDir == null) {
       return;
     }
@@ -606,7 +606,7 @@ public class AngelApplicationMaster extends CompositeService {
     addIfService(angelApp);
 
     // init app state storage
-    String tmpOutPath = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_DIRECTORY);
+    String tmpOutPath = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_PATH);
     Path appStatePath = new Path(tmpOutPath, "app");
     LOG.info("app state output path = " + appStatePath.toUri().toString());
     FileSystem fs = appStatePath.getFileSystem(conf);

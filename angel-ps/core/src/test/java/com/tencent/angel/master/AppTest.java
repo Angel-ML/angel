@@ -66,103 +66,113 @@ public class AppTest {
 
   @Before
   public void setup() throws Exception {
-    // set basic configuration keys
-    Configuration conf = new Configuration();
-    conf.setBoolean("mapred.mapper.new-api", true);
-    conf.setBoolean(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
-    //conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS, DummyTask.class.getName());
+    try{
+      // set basic configuration keys
+      Configuration conf = new Configuration();
+      conf.setBoolean("mapred.mapper.new-api", true);
+      conf.setBoolean(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
+      //conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS, DummyTask.class.getName());
 
-    // use local deploy mode and dummy dataspliter
-    conf.set(AngelConfiguration.ANGEL_DEPLOY_MODE, "LOCAL");
-    conf.setBoolean(AngelConfiguration.ANGEL_AM_USE_DUMMY_DATASPLITER, true);
-    conf.set(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
-    conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/out");
-    conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, LOCAL_FS + TMP_PATH + "/in");
-    conf.set(AngelConfiguration.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
+      // use local deploy mode and dummy dataspliter
+      conf.set(AngelConfiguration.ANGEL_DEPLOY_MODE, "LOCAL");
+      conf.setBoolean(AngelConfiguration.ANGEL_AM_USE_DUMMY_DATASPLITER, true);
+      conf.set(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
+      conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/out");
+      conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, LOCAL_FS + TMP_PATH + "/in");
+      conf.set(AngelConfiguration.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
 
-    conf.setInt(AngelConfiguration.ANGEL_WORKERGROUP_NUMBER, 1);
-    conf.setInt(AngelConfiguration.ANGEL_PS_NUMBER, 1);
-    conf.setInt(AngelConfiguration.ANGEL_WORKER_TASK_NUMBER, 2);
+      conf.setInt(AngelConfiguration.ANGEL_WORKERGROUP_NUMBER, 1);
+      conf.setInt(AngelConfiguration.ANGEL_PS_NUMBER, 1);
+      conf.setInt(AngelConfiguration.ANGEL_WORKER_TASK_NUMBER, 2);
 
-    // get a angel client
-    angelClient = AngelClientFactory.get(conf);
+      // get a angel client
+      angelClient = AngelClientFactory.get(conf);
 
-    // add matrix
-    MatrixContext mMatrix = new MatrixContext();
-    mMatrix.setName("w1");
-    mMatrix.setRowNum(1);
-    mMatrix.setColNum(100000);
-    mMatrix.setMaxRowNumInBlock(1);
-    mMatrix.setMaxColNumInBlock(50000);
-    mMatrix.setRowType(MLProtos.RowType.T_INT_DENSE);
-    mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_ENABLEFILTER, "false");
-    mMatrix.set(MatrixConfiguration.MATRIX_HOGWILD, "true");
-    mMatrix.set(MatrixConfiguration.MATRIX_AVERAGE, "false");
-    mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_INT");
-    angelClient.addMatrix(mMatrix);
+      // add matrix
+      MatrixContext mMatrix = new MatrixContext();
+      mMatrix.setName("w1");
+      mMatrix.setRowNum(1);
+      mMatrix.setColNum(100000);
+      mMatrix.setMaxRowNumInBlock(1);
+      mMatrix.setMaxColNumInBlock(50000);
+      mMatrix.setRowType(MLProtos.RowType.T_INT_DENSE);
+      mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_ENABLEFILTER, "false");
+      mMatrix.set(MatrixConfiguration.MATRIX_HOGWILD, "true");
+      mMatrix.set(MatrixConfiguration.MATRIX_AVERAGE, "false");
+      mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_INT");
+      angelClient.addMatrix(mMatrix);
 
-    angelClient.startPSServer();
-    angelClient.runTask(DummyTask.class);
-    Thread.sleep(5000);
-    task0Id = new TaskId(0);
-    task1Id = new TaskId(1);
+      angelClient.startPSServer();
+      angelClient.runTask(DummyTask.class);
+      Thread.sleep(5000);
+      task0Id = new TaskId(0);
+      task1Id = new TaskId(1);
+    } catch (Exception x) {
+      LOG.error("setup failed ", x);
+      throw x;
+    }
   }
 
   @SuppressWarnings("unchecked")
   @Test
-  public void testGetJobReport() throws IOException, ServiceException, InterruptedException {
-    AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
-    Location masterLoc =
+  public void testGetJobReport() throws Exception {
+    try{
+      AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
+      Location masterLoc =
         LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMasterService()
-            .getLocation();
-    TConnection connection = TConnectionManager.getConnection(angelAppMaster.getConfig());
-    MasterProtocol master = connection.getMasterService(masterLoc.getIp(), masterLoc.getPort());
-    int task0Iteration = 2;
-    int task1Iteration = 1;
+          .getLocation();
+      TConnection connection = TConnectionManager.getConnection(angelAppMaster.getConfig());
+      MasterProtocol master = connection.getMasterService(masterLoc.getIp(), masterLoc.getPort());
+      int task0Iteration = 2;
+      int task1Iteration = 1;
 
-    int jobIteration = (task0Iteration < task1Iteration) ? task0Iteration : task1Iteration;
+      int jobIteration = (task0Iteration < task1Iteration) ? task0Iteration : task1Iteration;
 
-    master.taskIteration(null, TaskIterationRequest.newBuilder().setIteration(task0Iteration)
+      master.taskIteration(null, TaskIterationRequest.newBuilder().setIteration(task0Iteration)
         .setTaskId(ProtobufUtil.convertToIdProto(task0Id)).build());
-    master.taskIteration(null, TaskIterationRequest.newBuilder().setIteration(task1Iteration)
+      master.taskIteration(null, TaskIterationRequest.newBuilder().setIteration(task1Iteration)
         .setTaskId(ProtobufUtil.convertToIdProto(task1Id)).build());
 
-    GetJobReportRequest request =
+      GetJobReportRequest request =
         GetJobReportRequest.newBuilder().setAppId(LocalClusterContext.get().getAppId().toString())
-            .build();
+          .build();
 
-    GetJobReportResponse response = master.getJobReport(null, request);
-    assertEquals(response.getJobReport().getJobState(), JobStateProto.J_RUNNING);
-    assertEquals(response.getJobReport().getCurIteration(), jobIteration);
+      GetJobReportResponse response = master.getJobReport(null, request);
+      assertEquals(response.getJobReport().getJobState(), JobStateProto.J_RUNNING);
+      assertEquals(response.getJobReport().getCurIteration(), jobIteration);
 
-    angelAppMaster
+      angelAppMaster
         .getAppContext()
         .getEventHandler()
         .handle(new InternalErrorEvent(angelAppMaster.getAppContext().getApplicationId(), "failed"));
-    
-    Thread.sleep(5000);
-    
-    response = master.getJobReport(null, request);
-    assertEquals(response.getJobReport().getJobState(), JobStateProto.J_FAILED);
-    assertEquals(response.getJobReport().getCurIteration(), jobIteration);
-    assertEquals(response.getJobReport().getDiagnostics(), "failed");
 
-    //Thread.sleep(5000);
-    //response = master.getJobReport(null, request);
-    //assertEquals(response.getJobReport().getJobState(), JobStateProto.J_FAILED);
-    //assertEquals(response.getJobReport().getCurIteration(), jobIteration);
-    //assertEquals(response.getJobReport().getDiagnostics(), "failed");
+      Thread.sleep(5000);
 
-    Thread.sleep(10000);
-    try {
       response = master.getJobReport(null, request);
-    } catch (Exception x) {
-      response = tryGetResponseFromFile(true);
-    }
+      assertEquals(response.getJobReport().getJobState(), JobStateProto.J_FAILED);
+      assertEquals(response.getJobReport().getCurIteration(), jobIteration);
+      assertEquals(response.getJobReport().getDiagnostics(), "failed");
 
-    assertEquals(response.getJobReport().getJobState(), JobStateProto.J_FAILED);
-    assertEquals(response.getJobReport().getCurIteration(), jobIteration);
-    assertEquals(response.getJobReport().getDiagnostics(), "failed");
+      //Thread.sleep(5000);
+      //response = master.getJobReport(null, request);
+      //assertEquals(response.getJobReport().getJobState(), JobStateProto.J_FAILED);
+      //assertEquals(response.getJobReport().getCurIteration(), jobIteration);
+      //assertEquals(response.getJobReport().getDiagnostics(), "failed");
+
+      Thread.sleep(10000);
+      try {
+        response = master.getJobReport(null, request);
+      } catch (Exception x) {
+        response = tryGetResponseFromFile(true);
+      }
+
+      assertEquals(response.getJobReport().getJobState(), JobStateProto.J_FAILED);
+      assertEquals(response.getJobReport().getCurIteration(), jobIteration);
+      assertEquals(response.getJobReport().getDiagnostics(), "failed");
+    } catch (Exception x) {
+      LOG.error("run testGetJobReport failed ", x);
+      throw x;
+    }
   }
 
   private GetJobReportResponse tryGetResponseFromFile(boolean deleteOnExist) throws IOException {
@@ -183,8 +193,13 @@ public class AppTest {
   }
 
   @After
-  public void stop() throws AngelException {
-    LOG.info("stop local cluster");
-    angelClient.stop();
+  public void stop() throws Exception {
+    try{
+      LOG.info("stop local cluster");
+      angelClient.stop();
+    } catch (Exception x) {
+      LOG.error("stop failed ", x);
+      throw x;
+    }
   }
 }

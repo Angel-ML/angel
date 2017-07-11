@@ -46,7 +46,7 @@ public class SnapshotManager {
 
   public void init() throws IOException {
     Configuration conf = PSContext.get().getConf();
-    String outputPath = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_DIRECTORY);
+    String outputPath = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_PATH);
     LOG.info("tmp output dir=" + outputPath);
     if (outputPath == null) {
       throw new IOException("can not find output path setting");

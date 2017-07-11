@@ -69,132 +69,152 @@ public class TaskManagerTest {
 
   @BeforeClass
   public static void setup() throws Exception {
-    // set basic configuration keys
-    Configuration conf = new Configuration();
-    conf.setBoolean("mapred.mapper.new-api", true);
-    conf.setBoolean(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
-    conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS, DummyTask.class.getName());
+    try {
+      // set basic configuration keys
+      Configuration conf = new Configuration();
+      conf.setBoolean("mapred.mapper.new-api", true);
+      conf.setBoolean(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
+      conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS, DummyTask.class.getName());
 
-    // use local deploy mode and dummy dataspliter
-    conf.set(AngelConfiguration.ANGEL_DEPLOY_MODE, "LOCAL");
-    conf.setBoolean(AngelConfiguration.ANGEL_AM_USE_DUMMY_DATASPLITER, true);
-    conf.set(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
-    conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/out");
-    conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, LOCAL_FS + TMP_PATH + "/in");
-    conf.set(AngelConfiguration.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
+      // use local deploy mode and dummy dataspliter
+      conf.set(AngelConfiguration.ANGEL_DEPLOY_MODE, "LOCAL");
+      conf.setBoolean(AngelConfiguration.ANGEL_AM_USE_DUMMY_DATASPLITER, true);
+      conf.set(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
+      conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/out");
+      conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, LOCAL_FS + TMP_PATH + "/in");
+      conf.set(AngelConfiguration.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
 
-    conf.setInt(AngelConfiguration.ANGEL_WORKERGROUP_NUMBER, 1);
-    conf.setInt(AngelConfiguration.ANGEL_PS_NUMBER, 1);
-    conf.setInt(AngelConfiguration.ANGEL_WORKER_TASK_NUMBER, 2);
+      conf.setInt(AngelConfiguration.ANGEL_WORKERGROUP_NUMBER, 1);
+      conf.setInt(AngelConfiguration.ANGEL_PS_NUMBER, 1);
+      conf.setInt(AngelConfiguration.ANGEL_WORKER_TASK_NUMBER, 2);
 
-    // get a angel client
-    angelClient = AngelClientFactory.get(conf);
+      // get a angel client
+      angelClient = AngelClientFactory.get(conf);
 
-    // add matrix
-    MatrixContext mMatrix = new MatrixContext();
-    mMatrix.setName("w1");
-    mMatrix.setRowNum(1);
-    mMatrix.setColNum(100000);
-    mMatrix.setMaxRowNumInBlock(1);
-    mMatrix.setMaxColNumInBlock(50000);
-    mMatrix.setRowType(MLProtos.RowType.T_INT_DENSE);
-    mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_ENABLEFILTER, "false");
-    mMatrix.set(MatrixConfiguration.MATRIX_HOGWILD, "true");
-    mMatrix.set(MatrixConfiguration.MATRIX_AVERAGE, "false");
-    mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_INT");
-    angelClient.addMatrix(mMatrix);
+      // add matrix
+      MatrixContext mMatrix = new MatrixContext();
+      mMatrix.setName("w1");
+      mMatrix.setRowNum(1);
+      mMatrix.setColNum(100000);
+      mMatrix.setMaxRowNumInBlock(1);
+      mMatrix.setMaxColNumInBlock(50000);
+      mMatrix.setRowType(MLProtos.RowType.T_INT_DENSE);
+      mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_ENABLEFILTER, "false");
+      mMatrix.set(MatrixConfiguration.MATRIX_HOGWILD, "true");
+      mMatrix.set(MatrixConfiguration.MATRIX_AVERAGE, "false");
+      mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_INT");
+      angelClient.addMatrix(mMatrix);
 
-    mMatrix.setName("w2");
-    mMatrix.setRowNum(1);
-    mMatrix.setColNum(100000);
-    mMatrix.setMaxRowNumInBlock(1);
-    mMatrix.setMaxColNumInBlock(50000);
-    mMatrix.setRowType(MLProtos.RowType.T_DOUBLE_DENSE);
-    mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_ENABLEFILTER, "false");
-    mMatrix.set(MatrixConfiguration.MATRIX_HOGWILD, "false");
-    mMatrix.set(MatrixConfiguration.MATRIX_AVERAGE, "false");
-    mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
-    angelClient.addMatrix(mMatrix);
+      mMatrix.setName("w2");
+      mMatrix.setRowNum(1);
+      mMatrix.setColNum(100000);
+      mMatrix.setMaxRowNumInBlock(1);
+      mMatrix.setMaxColNumInBlock(50000);
+      mMatrix.setRowType(MLProtos.RowType.T_DOUBLE_DENSE);
+      mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_ENABLEFILTER, "false");
+      mMatrix.set(MatrixConfiguration.MATRIX_HOGWILD, "false");
+      mMatrix.set(MatrixConfiguration.MATRIX_AVERAGE, "false");
+      mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
+      angelClient.addMatrix(mMatrix);
 
-    angelClient.startPSServer();
-    angelClient.run();
-    Thread.sleep(5000);
-    group0Id = new WorkerGroupId(0);
-    worker0Id = new WorkerId(group0Id, 0);
-    worker0Attempt0Id = new WorkerAttemptId(worker0Id, 0);
-    task0Id = new TaskId(0);
-    task1Id = new TaskId(1);
+      angelClient.startPSServer();
+      angelClient.run();
+      Thread.sleep(5000);
+      group0Id = new WorkerGroupId(0);
+      worker0Id = new WorkerId(group0Id, 0);
+      worker0Attempt0Id = new WorkerAttemptId(worker0Id, 0);
+      task0Id = new TaskId(0);
+      task1Id = new TaskId(1);
+    } catch (Exception x) {
+      LOG.error("setup failed ", x);
+      throw x;
+    }
   }
 
   @Test
-  public void testTaskIteration() throws ServiceException {
-    LOG.info("===========================testTaskIteration===============================");
-    AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
-    assertTrue(angelAppMaster != null);
-    AMTaskManager taskManager = angelAppMaster.getAppContext().getTaskManager();
+  public void testTaskIteration() throws Exception {
+    try {
+      LOG.info("===========================testTaskIteration===============================");
+      AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
+      assertTrue(angelAppMaster != null);
+      AMTaskManager taskManager = angelAppMaster.getAppContext().getTaskManager();
 
-    WorkerManager workerManager = angelAppMaster.getAppContext().getWorkerManager();
-    assertTrue(workerManager != null);
-    AMWorkerGroup workerGroup0 = workerManager.getWorkGroup(worker0Id);
-    AMWorker worker0 = workerGroup0.getWorker(worker0Id);
-    WorkerAttempt worker0Attempt0 = worker0.getWorkerAttempt(worker0Attempt0Id);
+      WorkerManager workerManager = angelAppMaster.getAppContext().getWorkerManager();
+      assertTrue(workerManager != null);
+      AMWorkerGroup workerGroup0 = workerManager.getWorkGroup(worker0Id);
+      AMWorker worker0 = workerGroup0.getWorker(worker0Id);
+      WorkerAttempt worker0Attempt0 = worker0.getWorkerAttempt(worker0Attempt0Id);
 
-    Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
-    MasterClient masterClient = worker.getPSAgent().getMasterClient();
-    masterClient.taskIteration(task0Id.getIndex(), 1);
-    AMTask task0 = taskManager.getTask(task0Id);
-    AMTask task1 = taskManager.getTask(task1Id);
-    assertEquals(task0.getIteration(), 1);
-    assertEquals(task1.getIteration(), 0);
-    assertEquals(worker0Attempt0.getMinIteration(), 0);
-    assertEquals(worker0.getMinIteration(), 0);
-    assertEquals(workerGroup0.getMinIteration(), 0);
-    masterClient.taskIteration(task1Id.getIndex(), 1);
-    assertEquals(task0.getIteration(), 1);
-    assertEquals(task1.getIteration(), 1);
-    assertEquals(worker0Attempt0.getMinIteration(), 1);
-    assertEquals(worker0.getMinIteration(), 1);
-    assertEquals(workerGroup0.getMinIteration(), 1);
+      Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
+      MasterClient masterClient = worker.getPSAgent().getMasterClient();
+      masterClient.taskIteration(task0Id.getIndex(), 1);
+      AMTask task0 = taskManager.getTask(task0Id);
+      AMTask task1 = taskManager.getTask(task1Id);
+      assertEquals(task0.getIteration(), 1);
+      assertEquals(task1.getIteration(), 0);
+      assertEquals(worker0Attempt0.getMinIteration(), 0);
+      assertEquals(worker0.getMinIteration(), 0);
+      assertEquals(workerGroup0.getMinIteration(), 0);
+      masterClient.taskIteration(task1Id.getIndex(), 1);
+      assertEquals(task0.getIteration(), 1);
+      assertEquals(task1.getIteration(), 1);
+      assertEquals(worker0Attempt0.getMinIteration(), 1);
+      assertEquals(worker0.getMinIteration(), 1);
+      assertEquals(workerGroup0.getMinIteration(), 1);
+    } catch (Exception x){
+      LOG.error("run testTaskIteration failed ", x);
+      throw x;
+    }
   }
 
   @Test
   public void testTaskMatrixClock() throws ServiceException {
-    LOG.info("===========================testTaskMatrixClock===============================");
-    AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
-    assertTrue(angelAppMaster != null);
-    AMTaskManager taskManager = angelAppMaster.getAppContext().getTaskManager();
+    try {
+      LOG.info("===========================testTaskMatrixClock===============================");
+      AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
+      assertTrue(angelAppMaster != null);
+      AMTaskManager taskManager = angelAppMaster.getAppContext().getTaskManager();
 
-    Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
-    MatrixMetaManager matrixMetaManager = worker.getPSAgent().getMatrixMetaManager();
-    int w1Id = matrixMetaManager.getMatrixId("w1");
-    int w2Id = matrixMetaManager.getMatrixId("w2");
-    MasterClient masterClient = worker.getPSAgent().getMasterClient();
-    AMTask task0 = taskManager.getTask(task0Id);
-    AMTask task1 = taskManager.getTask(task1Id);
-    masterClient.updateClock(task0Id.getIndex(), w1Id, 1);
-    masterClient.updateClock(task0Id.getIndex(), w2Id, 1);
-    Int2IntOpenHashMap matrixClocks = task0.getMatrixClocks();
-    assertEquals(matrixClocks.size(), 2);
-    assertEquals(matrixClocks.get(w1Id), 1);
-    assertEquals(matrixClocks.get(w2Id), 1);
-    masterClient.updateClock(task0Id.getIndex(), w1Id, 2);
-    assertEquals(task0.getMatrixClock(w1Id), 2);
-    assertEquals(task0.getMatrixClock(w2Id), 1);
+      Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
+      MatrixMetaManager matrixMetaManager = worker.getPSAgent().getMatrixMetaManager();
+      int w1Id = matrixMetaManager.getMatrixId("w1");
+      int w2Id = matrixMetaManager.getMatrixId("w2");
+      MasterClient masterClient = worker.getPSAgent().getMasterClient();
+      AMTask task0 = taskManager.getTask(task0Id);
+      AMTask task1 = taskManager.getTask(task1Id);
+      masterClient.updateClock(task0Id.getIndex(), w1Id, 1);
+      masterClient.updateClock(task0Id.getIndex(), w2Id, 1);
+      Int2IntOpenHashMap matrixClocks = task0.getMatrixClocks();
+      assertEquals(matrixClocks.size(), 2);
+      assertEquals(matrixClocks.get(w1Id), 1);
+      assertEquals(matrixClocks.get(w2Id), 1);
+      masterClient.updateClock(task0Id.getIndex(), w1Id, 2);
+      assertEquals(task0.getMatrixClock(w1Id), 2);
+      assertEquals(task0.getMatrixClock(w2Id), 1);
 
-    masterClient.updateClock(task1Id.getIndex(), w1Id, 1);
-    masterClient.updateClock(task1Id.getIndex(), w2Id, 1);
-    matrixClocks = task1.getMatrixClocks();
-    assertEquals(matrixClocks.size(), 2);
-    assertEquals(matrixClocks.get(w1Id), 1);
-    assertEquals(matrixClocks.get(w2Id), 1);
-    masterClient.updateClock(task1Id.getIndex(), w1Id, 2);
-    assertEquals(task1.getMatrixClock(w1Id), 2);
-    assertEquals(task1.getMatrixClock(w2Id), 1);
+      masterClient.updateClock(task1Id.getIndex(), w1Id, 1);
+      masterClient.updateClock(task1Id.getIndex(), w2Id, 1);
+      matrixClocks = task1.getMatrixClocks();
+      assertEquals(matrixClocks.size(), 2);
+      assertEquals(matrixClocks.get(w1Id), 1);
+      assertEquals(matrixClocks.get(w2Id), 1);
+      masterClient.updateClock(task1Id.getIndex(), w1Id, 2);
+      assertEquals(task1.getMatrixClock(w1Id), 2);
+      assertEquals(task1.getMatrixClock(w2Id), 1);
+    } catch (Exception x) {
+      LOG.error("run testTaskMatrixClock failed ", x);
+      throw x;
+    }
   }
 
   @AfterClass
   public static void stop() throws AngelException {
-    LOG.info("stop local cluster");
-    angelClient.stop();
+    try {
+      LOG.info("stop local cluster");
+      angelClient.stop();
+    } catch (Exception x) {
+      LOG.error("stop failed ", x);
+      throw x;
+    }
   }
 }

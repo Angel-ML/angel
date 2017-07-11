@@ -133,7 +133,7 @@ public class ParameterServerManager extends AbstractService implements
     committedPs = new HashSet<ParameterServerId>();
 
     String outputPathStr = conf.get(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH);
-    String tmpOutputPathStr = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_DIRECTORY);
+    String tmpOutputPathStr = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_PATH);
     outputPath = new Path(outputPathStr);
     tmpOutputPath = new Path(tmpOutputPathStr);
 

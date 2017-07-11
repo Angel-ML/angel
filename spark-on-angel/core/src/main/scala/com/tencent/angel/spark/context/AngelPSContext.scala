@@ -228,10 +228,10 @@ private[spark] object AngelPSContext {
       hadoopConf.set(ANGEL_PREDICT_PATH, psOut)
     }
 
-    hadoopConf.set(ANGEL_JOB_TMP_OUTPUT_DIRECTORY, jobTempPath)
+    hadoopConf.set(ANGEL_JOB_TMP_OUTPUT_PATH, jobTempPath)
     hadoopConf.setBoolean(ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, psOutOverwrite)
     psOutTmpOption.foreach {
-      hadoopConf.set(ANGEL_JOB_TMP_OUTPUT_DIRECTORY, _)
+      hadoopConf.set(ANGEL_JOB_TMP_OUTPUT_PATH, _)
     }
 
     hadoopConf

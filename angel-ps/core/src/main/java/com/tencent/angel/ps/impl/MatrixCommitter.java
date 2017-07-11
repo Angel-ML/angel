@@ -185,7 +185,7 @@ public class MatrixCommitter {
       public void run() {
         long startTime = Time.monotonicNow();
         try {
-          String outputPath = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_DIRECTORY);
+          String outputPath = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_PATH);
           LOG.info("outputPath=" + outputPath);
           if (outputPath == null) {
             throw new IOException("can not find output path setting");

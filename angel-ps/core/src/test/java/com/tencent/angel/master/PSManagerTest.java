@@ -109,363 +109,388 @@ public class PSManagerTest {
 
   @Before
   public void setup() throws Exception {
-    // set basic configuration keys
-    Configuration conf = new Configuration();
-    conf.setBoolean("mapred.mapper.new-api", true);
-    conf.setBoolean(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
-    conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS, DummyTask.class.getName());
+    try {
+      // set basic configuration keys
+      Configuration conf = new Configuration();
+      conf.setBoolean("mapred.mapper.new-api", true);
+      conf.setBoolean(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
+      conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS, DummyTask.class.getName());
 
-    // use local deploy mode and dummy dataspliter
-    conf.set(AngelConfiguration.ANGEL_DEPLOY_MODE, "LOCAL");
-    conf.setBoolean(AngelConfiguration.ANGEL_AM_USE_DUMMY_DATASPLITER, true);
-    conf.set(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
-    conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/out");
-    conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, LOCAL_FS + TMP_PATH + "/in");
-    conf.set(AngelConfiguration.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
+      // use local deploy mode and dummy dataspliter
+      conf.set(AngelConfiguration.ANGEL_DEPLOY_MODE, "LOCAL");
+      conf.setBoolean(AngelConfiguration.ANGEL_AM_USE_DUMMY_DATASPLITER, true);
+      conf.set(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
+      conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/out");
+      conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, LOCAL_FS + TMP_PATH + "/in");
+      conf.set(AngelConfiguration.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
 
-    conf.setInt(AngelConfiguration.ANGEL_WORKERGROUP_NUMBER, 1);
-    conf.setInt(AngelConfiguration.ANGEL_PS_NUMBER, 1);
-    conf.setInt(AngelConfiguration.ANGEL_WORKER_TASK_NUMBER, 2);
-    conf.setInt(AngelConfiguration.ANGEL_PS_BACKUP_INTERVAL_MS, 5000);
+      conf.setInt(AngelConfiguration.ANGEL_WORKERGROUP_NUMBER, 1);
+      conf.setInt(AngelConfiguration.ANGEL_PS_NUMBER, 1);
+      conf.setInt(AngelConfiguration.ANGEL_WORKER_TASK_NUMBER, 2);
+      conf.setInt(AngelConfiguration.ANGEL_PS_BACKUP_INTERVAL_MS, 5000);
 
-    // get a angel client
-    angelClient = AngelClientFactory.get(conf);
+      // get a angel client
+      angelClient = AngelClientFactory.get(conf);
 
-    // add matrix
-    MatrixContext mMatrix = new MatrixContext();
-    mMatrix.setName("w1");
-    mMatrix.setRowNum(1);
-    mMatrix.setColNum(100000);
-    mMatrix.setMaxRowNumInBlock(1);
-    mMatrix.setMaxColNumInBlock(50000);
-    mMatrix.setRowType(MLProtos.RowType.T_INT_DENSE);
-    mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_ENABLEFILTER, "false");
-    mMatrix.set(MatrixConfiguration.MATRIX_HOGWILD, "true");
-    mMatrix.set(MatrixConfiguration.MATRIX_AVERAGE, "false");
-    mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_INT");
-    angelClient.addMatrix(mMatrix);
+      // add matrix
+      MatrixContext mMatrix = new MatrixContext();
+      mMatrix.setName("w1");
+      mMatrix.setRowNum(1);
+      mMatrix.setColNum(100000);
+      mMatrix.setMaxRowNumInBlock(1);
+      mMatrix.setMaxColNumInBlock(50000);
+      mMatrix.setRowType(MLProtos.RowType.T_INT_DENSE);
+      mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_ENABLEFILTER, "false");
+      mMatrix.set(MatrixConfiguration.MATRIX_HOGWILD, "true");
+      mMatrix.set(MatrixConfiguration.MATRIX_AVERAGE, "false");
+      mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_INT");
+      angelClient.addMatrix(mMatrix);
 
-    mMatrix.setName("w2");
-    mMatrix.setRowNum(1);
-    mMatrix.setColNum(100000);
-    mMatrix.setMaxRowNumInBlock(1);
-    mMatrix.setMaxColNumInBlock(50000);
-    mMatrix.setRowType(MLProtos.RowType.T_DOUBLE_DENSE);
-    mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_ENABLEFILTER, "false");
-    mMatrix.set(MatrixConfiguration.MATRIX_HOGWILD, "false");
-    mMatrix.set(MatrixConfiguration.MATRIX_AVERAGE, "false");
-    mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
-    angelClient.addMatrix(mMatrix);
+      mMatrix.setName("w2");
+      mMatrix.setRowNum(1);
+      mMatrix.setColNum(100000);
+      mMatrix.setMaxRowNumInBlock(1);
+      mMatrix.setMaxColNumInBlock(50000);
+      mMatrix.setRowType(MLProtos.RowType.T_DOUBLE_DENSE);
+      mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_ENABLEFILTER, "false");
+      mMatrix.set(MatrixConfiguration.MATRIX_HOGWILD, "false");
+      mMatrix.set(MatrixConfiguration.MATRIX_AVERAGE, "false");
+      mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
+      angelClient.addMatrix(mMatrix);
 
-    angelClient.startPSServer();
-    angelClient.run();
-    Thread.sleep(5000);
-    group0Id = new WorkerGroupId(0);
-    worker0Id = new WorkerId(group0Id, 0);
-    worker0Attempt0Id = new WorkerAttemptId(worker0Id, 0);
-    task0Id = new TaskId(0);
-    task1Id = new TaskId(1);
-    psId = new ParameterServerId(0);
-    psAttempt0Id = new PSAttemptId(psId, 0);
-  }
-
-  @Test
-  public void testPSManager() {
-    LOG.info("===========================testPSManager===============================");
-    AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
-    assertTrue(angelAppMaster != null);
-    ParameterServerManager psManager = angelAppMaster.getAppContext().getParameterServerManager();
-    Map<ParameterServerId, AMParameterServer> psMap = psManager.getParameterServerMap();
-    assertEquals(psMap.size(), 1);
-
-    AMParameterServer ps = psMap.get(psId);
-    assertTrue(ps != null);
-    assertEquals(ps.getId(), psId);
-    assertEquals(ps.getState(), AMParameterServerState.RUNNING);
-
-    Map<PSAttemptId, PSAttempt> psAttempts = ps.getPSAttempts();
-    assertEquals(psAttempts.size(), 1);
-    PSAttempt psAttempt = psAttempts.get(psAttempt0Id);
-    assertEquals(psAttempt.getInternalState(), PSAttemptStateInternal.RUNNING);
-  }
-
-  @Test
-  public void testPSReport() throws IOException, ServiceException {
-    ParameterServer ps = LocalClusterContext.get().getPS(psAttempt0Id).getPS();
-    Location masterLoc = ps.getMasterLocation();
-    TConnection connection = TConnectionManager.getConnection(ps.getConf());
-    MasterProtocol master = connection.getMasterService(masterLoc.getIp(), masterLoc.getPort());
-    PSReportRequest.Builder builder = PSReportRequest.newBuilder();
-    builder.setPsAttemptId(ProtobufUtil.convertToIdProto(psAttempt0Id));
-    Pair.Builder pairBuilder = Pair.newBuilder();
-    pairBuilder.setKey("ps_key1");
-    pairBuilder.setValue("100");
-    builder.addMetrics(pairBuilder.build());
-    pairBuilder.setKey("ps_key2");
-    pairBuilder.setValue("200");
-    builder.addMetrics(pairBuilder.build());
-
-    MatrixReport.Builder matrixBuilder = MatrixReport.newBuilder();
-    ConcurrentHashMap<Integer, ServerMatrix> matrixIdMap =
-        ps.getMatrixPartitionManager().getMatrixIdMap();
-    for (Entry<Integer, ServerMatrix> matrixEntry : matrixIdMap.entrySet()) {
-      builder.addMatrixReports((matrixBuilder.setMatrixId(matrixEntry.getKey())
-          .setMatrixName(matrixEntry.getValue().getName()).setStatus(MatrixStatus.M_OK).build()));
+      angelClient.startPSServer();
+      angelClient.run();
+      Thread.sleep(5000);
+      group0Id = new WorkerGroupId(0);
+      worker0Id = new WorkerId(group0Id, 0);
+      worker0Attempt0Id = new WorkerAttemptId(worker0Id, 0);
+      task0Id = new TaskId(0);
+      task1Id = new TaskId(1);
+      psId = new ParameterServerId(0);
+      psAttempt0Id = new PSAttemptId(psId, 0);
+    } catch (Exception x) {
+      LOG.error("setup failed ", x);
+      throw x;
     }
+  }
 
-    PSReportResponse response = master.psReport(null, builder.build());
-    assertEquals(response.getPsCommand(), PSCommandProto.PSCOMMAND_OK);
-    assertEquals(response.getNeedCreateMatrixIdsCount(), 0);
-    assertEquals(response.getNeedReleaseMatrixIdsCount(), 0);
-    AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
-    ParameterServerManager psManager = angelAppMaster.getAppContext().getParameterServerManager();
-    AMParameterServer amPs = psManager.getParameterServer(psId);
-    PSAttempt psAttempt = amPs.getPSAttempt(psAttempt0Id);
-    Map<String, String> metrices = psAttempt.getMetrices();
-    assertTrue(metrices.get("ps_key1").equals("100"));
-    assertTrue(metrices.get("ps_key2").equals("200"));
+  @Test
+  public void testPSManager() throws  Exception {
+    try {
+      LOG.info("===========================testPSManager===============================");
+      AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
+      assertTrue(angelAppMaster != null);
+      ParameterServerManager psManager = angelAppMaster.getAppContext().getParameterServerManager();
+      Map<ParameterServerId, AMParameterServer> psMap = psManager.getParameterServerMap();
+      assertEquals(psMap.size(), 1);
 
-    PSAttemptId psAttempt1Id = new PSAttemptId(psId, 1);
-    builder.setPsAttemptId(ProtobufUtil.convertToIdProto(psAttempt1Id));
-    response = master.psReport(null, builder.build());
-    assertEquals(response.getPsCommand(), PSCommandProto.PSCOMMAND_SHUTDOWN);
+      AMParameterServer ps = psMap.get(psId);
+      assertTrue(ps != null);
+      assertEquals(ps.getId(), psId);
+      assertEquals(ps.getState(), AMParameterServerState.RUNNING);
+
+      Map<PSAttemptId, PSAttempt> psAttempts = ps.getPSAttempts();
+      assertEquals(psAttempts.size(), 1);
+      PSAttempt psAttempt = psAttempts.get(psAttempt0Id);
+      assertEquals(psAttempt.getInternalState(), PSAttemptStateInternal.RUNNING);
+    } catch (Exception x) {
+      LOG.error("run testPSManager failed ", x);
+      throw x;
+    }
+  }
+
+  @Test
+  public void testPSReport() throws Exception {
+    try {
+      ParameterServer ps = LocalClusterContext.get().getPS(psAttempt0Id).getPS();
+      Location masterLoc = ps.getMasterLocation();
+      TConnection connection = TConnectionManager.getConnection(ps.getConf());
+      MasterProtocol master = connection.getMasterService(masterLoc.getIp(), masterLoc.getPort());
+      PSReportRequest.Builder builder = PSReportRequest.newBuilder();
+      builder.setPsAttemptId(ProtobufUtil.convertToIdProto(psAttempt0Id));
+      Pair.Builder pairBuilder = Pair.newBuilder();
+      pairBuilder.setKey("ps_key1");
+      pairBuilder.setValue("100");
+      builder.addMetrics(pairBuilder.build());
+      pairBuilder.setKey("ps_key2");
+      pairBuilder.setValue("200");
+      builder.addMetrics(pairBuilder.build());
+
+      MatrixReport.Builder matrixBuilder = MatrixReport.newBuilder();
+      ConcurrentHashMap<Integer, ServerMatrix> matrixIdMap =
+        ps.getMatrixPartitionManager().getMatrixIdMap();
+      for (Entry<Integer, ServerMatrix> matrixEntry : matrixIdMap.entrySet()) {
+        builder.addMatrixReports((matrixBuilder.setMatrixId(matrixEntry.getKey())
+          .setMatrixName(matrixEntry.getValue().getName()).setStatus(MatrixStatus.M_OK).build()));
+      }
+
+      PSReportResponse response = master.psReport(null, builder.build());
+      assertEquals(response.getPsCommand(), PSCommandProto.PSCOMMAND_OK);
+      assertEquals(response.getNeedCreateMatrixIdsCount(), 0);
+      assertEquals(response.getNeedReleaseMatrixIdsCount(), 0);
+      AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
+      ParameterServerManager psManager = angelAppMaster.getAppContext().getParameterServerManager();
+      AMParameterServer amPs = psManager.getParameterServer(psId);
+      PSAttempt psAttempt = amPs.getPSAttempt(psAttempt0Id);
+      Map<String, String> metrices = psAttempt.getMetrices();
+      assertTrue(metrices.get("ps_key1").equals("100"));
+      assertTrue(metrices.get("ps_key2").equals("200"));
+
+      PSAttemptId psAttempt1Id = new PSAttemptId(psId, 1);
+      builder.setPsAttemptId(ProtobufUtil.convertToIdProto(psAttempt1Id));
+      response = master.psReport(null, builder.build());
+      assertEquals(response.getPsCommand(), PSCommandProto.PSCOMMAND_SHUTDOWN);
+    } catch (Exception x) {
+      LOG.error("run testPSReport failed ", x);
+      throw x;
+    }
   }
 
   @SuppressWarnings("unchecked")
   @Test
-  public void testPSDone() throws IOException, ServiceException, InterruptedException {
-    AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
-    ParameterServer ps = LocalClusterContext.get().getPS(psAttempt0Id).getPS();
-    Location masterLoc = ps.getMasterLocation();
-    TConnection connection = TConnectionManager.getConnection(ps.getConf());
-    MasterProtocol master = connection.getMasterService(masterLoc.getIp(), masterLoc.getPort());
+  public void testPSDone() throws Exception {
+    try {
+      AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
+      ParameterServer ps = LocalClusterContext.get().getPS(psAttempt0Id).getPS();
+      Location masterLoc = ps.getMasterLocation();
+      TConnection connection = TConnectionManager.getConnection(ps.getConf());
+      MasterProtocol master = connection.getMasterService(masterLoc.getIp(), masterLoc.getPort());
 
-    WorkerDoneRequest workerRequest =
+      WorkerDoneRequest workerRequest =
         WorkerDoneRequest.newBuilder()
-            .setWorkerAttemptId(ProtobufUtil.convertToIdProto(worker0Attempt0Id)).build();
-    WorkerDoneResponse workerResponse = master.workerDone(null, workerRequest);
-    assertEquals(workerResponse.getCommand(), WorkerCommandProto.W_SUCCESS);
-    Thread.sleep(5000);
-    
-    angelAppMaster.getAppContext().getEventHandler().handle(new AppEvent(AppEventType.COMMIT));
-    
-    PSDoneRequest request =
+          .setWorkerAttemptId(ProtobufUtil.convertToIdProto(worker0Attempt0Id)).build();
+      WorkerDoneResponse workerResponse = master.workerDone(null, workerRequest);
+      assertEquals(workerResponse.getCommand(), WorkerCommandProto.W_SUCCESS);
+      Thread.sleep(5000);
+
+      angelAppMaster.getAppContext().getEventHandler().handle(new AppEvent(AppEventType.COMMIT));
+
+      PSDoneRequest request =
         PSDoneRequest.newBuilder().setPsAttemptId(ProtobufUtil.convertToIdProto(psAttempt0Id))
-            .build();
-    master.psDone(null, request);
+          .build();
+      master.psDone(null, request);
 
-    Thread.sleep(5000);
+      Thread.sleep(5000);
 
-    ParameterServerManager psManager = angelAppMaster.getAppContext().getParameterServerManager();
-    AMParameterServer amPs = psManager.getParameterServer(psId);
-    PSAttempt psAttempt = amPs.getPSAttempt(psAttempt0Id);
-    assertEquals(psAttempt.getInternalState(), PSAttemptStateInternal.SUCCESS);
+      ParameterServerManager psManager = angelAppMaster.getAppContext().getParameterServerManager();
+      AMParameterServer amPs = psManager.getParameterServer(psId);
+      PSAttempt psAttempt = amPs.getPSAttempt(psAttempt0Id);
+      assertEquals(psAttempt.getInternalState(), PSAttemptStateInternal.SUCCESS);
 
-    assertTrue(amPs.getState() == AMParameterServerState.SUCCESS);
-    assertEquals(amPs.getNextAttemptNumber(), 1);
-    assertNull(amPs.getRunningAttemptId());
-    assertEquals(amPs.getSuccessAttemptId(), psAttempt0Id);
-    assertEquals(amPs.getPSAttempts().size(), 1);
+      assertTrue(amPs.getState() == AMParameterServerState.SUCCESS);
+      assertEquals(amPs.getNextAttemptNumber(), 1);
+      assertNull(amPs.getRunningAttemptId());
+      assertEquals(amPs.getSuccessAttemptId(), psAttempt0Id);
+      assertEquals(amPs.getPSAttempts().size(), 1);
+    } catch (Exception x) {
+      LOG.error("run testPSDone failed ", x);
+      throw x;
+    }
   }
 
   @Test
-  public void testPSError() throws IOException, ServiceException, InterruptedException, AngelException, ExecutionException, InvalidParameterException {
-    int heartbeatInterval = LocalClusterContext.get().getConf().getInt(AngelConfiguration.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 
+  public void testPSError() throws Exception {
+    try {
+      int heartbeatInterval = LocalClusterContext.get().getConf().getInt(AngelConfiguration.ANGEL_PS_HEARTBEAT_INTERVAL_MS,
         AngelConfiguration.DEFAULT_ANGEL_PS_HEARTBEAT_INTERVAL_MS);
-    AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
-    ParameterServerManager psManager = angelAppMaster.getAppContext().getParameterServerManager();
-    AMParameterServer amPs = psManager.getParameterServer(psId);
-    PSAttempt psAttempt0 = amPs.getPSAttempt(psAttempt0Id);
-    ParameterServer ps = LocalClusterContext.get().getPS(psAttempt0Id).getPS();
-    int w1Id = angelAppMaster.getAppContext().getMatrixMetaManager().getMatrix("w1").getId();
-    int w2Id = angelAppMaster.getAppContext().getMatrixMetaManager().getMatrix("w2").getId();
+      AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
+      ParameterServerManager psManager = angelAppMaster.getAppContext().getParameterServerManager();
+      AMParameterServer amPs = psManager.getParameterServer(psId);
+      PSAttempt psAttempt0 = amPs.getPSAttempt(psAttempt0Id);
+      ParameterServer ps = LocalClusterContext.get().getPS(psAttempt0Id).getPS();
+      int w1Id = angelAppMaster.getAppContext().getMatrixMetaManager().getMatrix("w1").getId();
+      int w2Id = angelAppMaster.getAppContext().getMatrixMetaManager().getMatrix("w2").getId();
 
-    Location masterLoc =
+      Location masterLoc =
         LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMasterService()
-            .getLocation();
-    TConnection connection = TConnectionManager.getConnection(ps.getConf());
-    MasterProtocol master = connection.getMasterService(masterLoc.getIp(), masterLoc.getPort());
+          .getLocation();
+      TConnection connection = TConnectionManager.getConnection(ps.getConf());
+      MasterProtocol master = connection.getMasterService(masterLoc.getIp(), masterLoc.getPort());
 
-    int task0Iteration = 2;
-    int task1Iteration = 1;
-    int task0w1Clock = 10;
-    int task0w2Clock = 20;
-    int task1w1Clock = 9;
-    int task1w2Clock = 19;
-    int w1Clock = (task0w1Clock < task1w1Clock) ? task0w1Clock : task1w1Clock;
-    int w2Clock = (task0w2Clock < task1w2Clock) ? task0w2Clock : task1w2Clock;
+      int task0Iteration = 2;
+      int task1Iteration = 1;
+      int task0w1Clock = 10;
+      int task0w2Clock = 20;
+      int task1w1Clock = 9;
+      int task1w2Clock = 19;
+      int w1Clock = (task0w1Clock < task1w1Clock) ? task0w1Clock : task1w1Clock;
+      int w2Clock = (task0w2Clock < task1w2Clock) ? task0w2Clock : task1w2Clock;
 
-    master.taskIteration(null, TaskIterationRequest.newBuilder().setIteration(task0Iteration)
+      master.taskIteration(null, TaskIterationRequest.newBuilder().setIteration(task0Iteration)
         .setTaskId(ProtobufUtil.convertToIdProto(task0Id)).build());
-    master.taskIteration(null, TaskIterationRequest.newBuilder().setIteration(task1Iteration)
+      master.taskIteration(null, TaskIterationRequest.newBuilder().setIteration(task1Iteration)
         .setTaskId(ProtobufUtil.convertToIdProto(task1Id)).build());
-    master.taskClock(
+      master.taskClock(
         null,
         TaskClockRequest
-            .newBuilder()
-            .setTaskId(ProtobufUtil.convertToIdProto(task0Id))
-            .setMatrixClock(
-                MatrixClock.newBuilder().setMatrixId(w1Id).setClock(task0w1Clock).build()).build());
-    master.taskClock(
+          .newBuilder()
+          .setTaskId(ProtobufUtil.convertToIdProto(task0Id))
+          .setMatrixClock(
+            MatrixClock.newBuilder().setMatrixId(w1Id).setClock(task0w1Clock).build()).build());
+      master.taskClock(
         null,
         TaskClockRequest
-            .newBuilder()
-            .setTaskId(ProtobufUtil.convertToIdProto(task0Id))
-            .setMatrixClock(
-                MatrixClock.newBuilder().setMatrixId(w2Id).setClock(task0w2Clock).build()).build());
-    master.taskClock(
+          .newBuilder()
+          .setTaskId(ProtobufUtil.convertToIdProto(task0Id))
+          .setMatrixClock(
+            MatrixClock.newBuilder().setMatrixId(w2Id).setClock(task0w2Clock).build()).build());
+      master.taskClock(
         null,
         TaskClockRequest
-            .newBuilder()
-            .setTaskId(ProtobufUtil.convertToIdProto(task1Id))
-            .setMatrixClock(
-                MatrixClock.newBuilder().setMatrixId(w1Id).setClock(task1w1Clock).build()).build());
-    master.taskClock(
+          .newBuilder()
+          .setTaskId(ProtobufUtil.convertToIdProto(task1Id))
+          .setMatrixClock(
+            MatrixClock.newBuilder().setMatrixId(w1Id).setClock(task1w1Clock).build()).build());
+      master.taskClock(
         null,
         TaskClockRequest
-            .newBuilder()
-            .setTaskId(ProtobufUtil.convertToIdProto(task1Id))
-            .setMatrixClock(
-                MatrixClock.newBuilder().setMatrixId(w2Id).setClock(task1w2Clock).build()).build());
+          .newBuilder()
+          .setTaskId(ProtobufUtil.convertToIdProto(task1Id))
+          .setMatrixClock(
+            MatrixClock.newBuilder().setMatrixId(w2Id).setClock(task1w2Clock).build()).build());
 
-    assertEquals(amPs.getMaxAttempts(), 4);
-    PSAttemptId psAttempt1Id = new PSAttemptId(psId, 1);
-    PSAttemptId psAttempt2Id = new PSAttemptId(psId, 2);
-    PSAttemptId psAttempt3Id = new PSAttemptId(psId, 3);
+      assertEquals(amPs.getMaxAttempts(), 4);
+      PSAttemptId psAttempt1Id = new PSAttemptId(psId, 1);
+      PSAttemptId psAttempt2Id = new PSAttemptId(psId, 2);
+      PSAttemptId psAttempt3Id = new PSAttemptId(psId, 3);
 
-    // attempt 0
-    ps.stop(-1);
-    PSErrorRequest request =
+      // attempt 0
+      ps.stop(-1);
+      PSErrorRequest request =
         PSErrorRequest.newBuilder().setPsAttemptId(ProtobufUtil.convertToIdProto(psAttempt0Id))
-            .setMsg("out of memory").build();
-    master.psError(null, request);
-    Thread.sleep(heartbeatInterval * 2);
+          .setMsg("out of memory").build();
+      master.psError(null, request);
+      Thread.sleep(heartbeatInterval * 2);
 
-    PSAttempt psAttempt1 = amPs.getPSAttempt(psAttempt1Id);
-    assertTrue(psAttempt1 != null);
-    assertEquals(psAttempt0.getInternalState(), PSAttemptStateInternal.FAILED);
-    assertEquals(psAttempt1.getInternalState(), PSAttemptStateInternal.RUNNING);
-    assertEquals(amPs.getState(), AMParameterServerState.RUNNING);
-    assertEquals(amPs.getNextAttemptNumber(), 2);
-    assertEquals(amPs.getRunningAttemptId(), psAttempt1Id);
-    assertNull(amPs.getSuccessAttemptId());
-    assertEquals(amPs.getPSAttempts().size(), 2);
+      PSAttempt psAttempt1 = amPs.getPSAttempt(psAttempt1Id);
+      assertTrue(psAttempt1 != null);
+      assertEquals(psAttempt0.getInternalState(), PSAttemptStateInternal.FAILED);
+      assertEquals(psAttempt1.getInternalState(), PSAttemptStateInternal.RUNNING);
+      assertEquals(amPs.getState(), AMParameterServerState.RUNNING);
+      assertEquals(amPs.getNextAttemptNumber(), 2);
+      assertEquals(amPs.getRunningAttemptId(), psAttempt1Id);
+      assertNull(amPs.getSuccessAttemptId());
+      assertEquals(amPs.getPSAttempts().size(), 2);
 
-    List<String> diagnostics = amPs.getDiagnostics();
-    assertEquals(diagnostics.size(), 1);
-    assertEquals(diagnostics.get(0), psAttempt0Id + " failed due to: out of memory");
+      List<String> diagnostics = amPs.getDiagnostics();
+      assertEquals(diagnostics.size(), 1);
+      assertEquals(diagnostics.get(0), psAttempt0Id + " failed due to: out of memory");
 
-    ps = LocalClusterContext.get().getPS(psAttempt1Id).getPS();
-    checkMatrixInfo(ps, w1Id, w2Id, w1Clock, w2Clock);
-    
-    Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
-    MatrixClient w1Task0Client = worker.getPSAgent().getMatrixClient("w1", 0);
-    MatrixClient w1Task1Client = worker.getPSAgent().getMatrixClient("w1", 1);
-    int matrixW1Id = w1Task0Client.getMatrixId();
-    
-    int [] delta = new int[100000];
-    for(int i = 0; i < 100000; i++) {
-      delta[i] = 2;
-    }
-    
-    DenseIntVector deltaVec = new DenseIntVector(100000, delta);
-    deltaVec.setMatrixId(matrixW1Id);
-    deltaVec.setRowId(0);   
-    w1Task0Client.increment(deltaVec);
-    
-    deltaVec = new DenseIntVector(100000, delta);
-    deltaVec.setMatrixId(matrixW1Id);
-    deltaVec.setRowId(0);
-    w1Task1Client.increment(deltaVec);
-    
-    w1Task0Client.clock().get();
-    w1Task1Client.clock().get();
-    
-    int snapshotInterval =
+      ps = LocalClusterContext.get().getPS(psAttempt1Id).getPS();
+      checkMatrixInfo(ps, w1Id, w2Id, w1Clock, w2Clock);
+
+      Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
+      MatrixClient w1Task0Client = worker.getPSAgent().getMatrixClient("w1", 0);
+      MatrixClient w1Task1Client = worker.getPSAgent().getMatrixClient("w1", 1);
+      int matrixW1Id = w1Task0Client.getMatrixId();
+
+      int [] delta = new int[100000];
+      for(int i = 0; i < 100000; i++) {
+        delta[i] = 2;
+      }
+
+      DenseIntVector deltaVec = new DenseIntVector(100000, delta);
+      deltaVec.setMatrixId(matrixW1Id);
+      deltaVec.setRowId(0);
+      w1Task0Client.increment(deltaVec);
+
+      deltaVec = new DenseIntVector(100000, delta);
+      deltaVec.setMatrixId(matrixW1Id);
+      deltaVec.setRowId(0);
+      w1Task1Client.increment(deltaVec);
+
+      w1Task0Client.clock().get();
+      w1Task1Client.clock().get();
+
+      int snapshotInterval =
         LocalClusterContext
-            .get()
-            .getConf()
-            .getInt(AngelConfiguration.ANGEL_PS_BACKUP_INTERVAL_MS,
-                AngelConfiguration.DEFAULT_ANGEL_PS_BACKUP_INTERVAL_MS);
-    
-    Thread.sleep(snapshotInterval * 2);
+          .get()
+          .getConf()
+          .getInt(AngelConfiguration.ANGEL_PS_BACKUP_INTERVAL_MS,
+            AngelConfiguration.DEFAULT_ANGEL_PS_BACKUP_INTERVAL_MS);
 
-    // attempt1
-    ps.stop(-1);
-    request =
+      Thread.sleep(snapshotInterval * 2);
+
+      // attempt1
+      ps.stop(-1);
+      request =
         PSErrorRequest.newBuilder().setPsAttemptId(ProtobufUtil.convertToIdProto(psAttempt1Id))
-            .setMsg("out of memory").build();
-    master.psError(null, request);
-    Thread.sleep(heartbeatInterval * 2);
+          .setMsg("out of memory").build();
+      master.psError(null, request);
+      Thread.sleep(heartbeatInterval * 2);
 
-    PSAttempt psAttempt2 = amPs.getPSAttempt(psAttempt2Id);
-    assertTrue(psAttempt2 != null);
-    assertEquals(psAttempt1.getInternalState(), PSAttemptStateInternal.FAILED);
-    assertEquals(psAttempt2.getInternalState(), PSAttemptStateInternal.RUNNING);
-    assertEquals(amPs.getState(), AMParameterServerState.RUNNING);
-    assertEquals(amPs.getNextAttemptNumber(), 3);
-    assertEquals(amPs.getRunningAttemptId(), psAttempt2Id);
-    assertNull(amPs.getSuccessAttemptId());
-    assertEquals(amPs.getPSAttempts().size(), 3);
+      PSAttempt psAttempt2 = amPs.getPSAttempt(psAttempt2Id);
+      assertTrue(psAttempt2 != null);
+      assertEquals(psAttempt1.getInternalState(), PSAttemptStateInternal.FAILED);
+      assertEquals(psAttempt2.getInternalState(), PSAttemptStateInternal.RUNNING);
+      assertEquals(amPs.getState(), AMParameterServerState.RUNNING);
+      assertEquals(amPs.getNextAttemptNumber(), 3);
+      assertEquals(amPs.getRunningAttemptId(), psAttempt2Id);
+      assertNull(amPs.getSuccessAttemptId());
+      assertEquals(amPs.getPSAttempts().size(), 3);
 
-    diagnostics = amPs.getDiagnostics();
-    assertEquals(diagnostics.size(), 2);
-    assertEquals(diagnostics.get(0), psAttempt0Id + " failed due to: out of memory");
-    assertEquals(diagnostics.get(1), psAttempt1Id + " failed due to: out of memory");
+      diagnostics = amPs.getDiagnostics();
+      assertEquals(diagnostics.size(), 2);
+      assertEquals(diagnostics.get(0), psAttempt0Id + " failed due to: out of memory");
+      assertEquals(diagnostics.get(1), psAttempt1Id + " failed due to: out of memory");
 
-    ps = LocalClusterContext.get().getPS(psAttempt2Id).getPS();
-    checkMatrixInfo(ps, w1Id, w2Id, w1Clock, w2Clock);
-    
-    assertEquals(sum((DenseIntVector) w1Task0Client.getRow(0)), 400000);
+      ps = LocalClusterContext.get().getPS(psAttempt2Id).getPS();
+      checkMatrixInfo(ps, w1Id, w2Id, w1Clock, w2Clock);
 
-    // attempt1
-    ps.stop(-1);
-    request =
+      assertEquals(sum((DenseIntVector) w1Task0Client.getRow(0)), 400000);
+
+      // attempt1
+      ps.stop(-1);
+      request =
         PSErrorRequest.newBuilder().setPsAttemptId(ProtobufUtil.convertToIdProto(psAttempt2Id))
-            .setMsg("out of memory").build();
-    master.psError(null, request);
-    Thread.sleep(heartbeatInterval * 2);
+          .setMsg("out of memory").build();
+      master.psError(null, request);
+      Thread.sleep(heartbeatInterval * 2);
 
-    PSAttempt psAttempt3 = amPs.getPSAttempt(psAttempt3Id);
-    assertTrue(psAttempt3 != null);
-    assertEquals(psAttempt2.getInternalState(), PSAttemptStateInternal.FAILED);
-    assertEquals(psAttempt3.getInternalState(), PSAttemptStateInternal.RUNNING);
-    assertEquals(amPs.getState(), AMParameterServerState.RUNNING);
-    assertEquals(amPs.getNextAttemptNumber(), 4);
-    assertEquals(amPs.getRunningAttemptId(), psAttempt3Id);
-    assertNull(amPs.getSuccessAttemptId());
-    assertEquals(amPs.getPSAttempts().size(), 4);
+      PSAttempt psAttempt3 = amPs.getPSAttempt(psAttempt3Id);
+      assertTrue(psAttempt3 != null);
+      assertEquals(psAttempt2.getInternalState(), PSAttemptStateInternal.FAILED);
+      assertEquals(psAttempt3.getInternalState(), PSAttemptStateInternal.RUNNING);
+      assertEquals(amPs.getState(), AMParameterServerState.RUNNING);
+      assertEquals(amPs.getNextAttemptNumber(), 4);
+      assertEquals(amPs.getRunningAttemptId(), psAttempt3Id);
+      assertNull(amPs.getSuccessAttemptId());
+      assertEquals(amPs.getPSAttempts().size(), 4);
 
-    diagnostics = amPs.getDiagnostics();
-    assertEquals(diagnostics.size(), 3);
-    assertEquals(diagnostics.get(0), psAttempt0Id + " failed due to: out of memory");
-    assertEquals(diagnostics.get(1), psAttempt1Id + " failed due to: out of memory");
-    assertEquals(diagnostics.get(2), psAttempt2Id + " failed due to: out of memory");
+      diagnostics = amPs.getDiagnostics();
+      assertEquals(diagnostics.size(), 3);
+      assertEquals(diagnostics.get(0), psAttempt0Id + " failed due to: out of memory");
+      assertEquals(diagnostics.get(1), psAttempt1Id + " failed due to: out of memory");
+      assertEquals(diagnostics.get(2), psAttempt2Id + " failed due to: out of memory");
 
-    ps = LocalClusterContext.get().getPS(psAttempt1Id).getPS();
-    checkMatrixInfo(ps, w1Id, w2Id, w1Clock, w2Clock);
+      ps = LocalClusterContext.get().getPS(psAttempt1Id).getPS();
+      checkMatrixInfo(ps, w1Id, w2Id, w1Clock, w2Clock);
 
-    ps.stop(-1);
-    request =
+      ps.stop(-1);
+      request =
         PSErrorRequest.newBuilder().setPsAttemptId(ProtobufUtil.convertToIdProto(psAttempt3Id))
-            .setMsg("out of memory").build();
-    master.psError(null, request);
-    Thread.sleep(heartbeatInterval * 2);
+          .setMsg("out of memory").build();
+      master.psError(null, request);
+      Thread.sleep(heartbeatInterval * 2);
 
-    assertEquals(psAttempt3.getInternalState(), PSAttemptStateInternal.FAILED);
-    assertEquals(amPs.getState(), AMParameterServerState.FAILED);
-    assertEquals(angelAppMaster.getAppContext().getApp().getExternAppState(), AppState.FAILED);
-    assertEquals(amPs.getNextAttemptNumber(), 4);
-    assertNull(amPs.getRunningAttemptId());
-    assertNull(amPs.getSuccessAttemptId());
-    assertEquals(amPs.getPSAttempts().size(), 4);
+      assertEquals(psAttempt3.getInternalState(), PSAttemptStateInternal.FAILED);
+      assertEquals(amPs.getState(), AMParameterServerState.FAILED);
+      assertEquals(angelAppMaster.getAppContext().getApp().getExternAppState(), AppState.FAILED);
+      assertEquals(amPs.getNextAttemptNumber(), 4);
+      assertNull(amPs.getRunningAttemptId());
+      assertNull(amPs.getSuccessAttemptId());
+      assertEquals(amPs.getPSAttempts().size(), 4);
 
-    diagnostics = amPs.getDiagnostics();
-    assertEquals(diagnostics.size(), 4);
-    assertEquals(diagnostics.get(0), psAttempt0Id + " failed due to: out of memory");
-    assertEquals(diagnostics.get(1), psAttempt1Id + " failed due to: out of memory");
-    assertEquals(diagnostics.get(2), psAttempt2Id + " failed due to: out of memory");
-    assertEquals(diagnostics.get(3), psAttempt3Id + " failed due to: out of memory");
+      diagnostics = amPs.getDiagnostics();
+      assertEquals(diagnostics.size(), 4);
+      assertEquals(diagnostics.get(0), psAttempt0Id + " failed due to: out of memory");
+      assertEquals(diagnostics.get(1), psAttempt1Id + " failed due to: out of memory");
+      assertEquals(diagnostics.get(2), psAttempt2Id + " failed due to: out of memory");
+      assertEquals(diagnostics.get(3), psAttempt3Id + " failed due to: out of memory");
+    } catch (Exception x) {
+      LOG.error("run testPSError failed ", x);
+      throw x;
+    }
   }
 
   private void checkMatrixInfo(ParameterServer ps, int w1Id, int w2Id, int w1Clock, int w2Clock) {
@@ -519,7 +544,12 @@ public class PSManagerTest {
 
   @After
   public void stop() throws AngelException {
-    LOG.info("stop local cluster");
-    angelClient.stop();
+    try {
+      LOG.info("stop local cluster");
+      angelClient.stop();
+    } catch (Exception x) {
+      LOG.error("stop failed ", x);
+      throw x;
+    }
   }
 }

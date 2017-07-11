@@ -377,7 +377,7 @@ public class HdfsUtil {
         + (uri.getHost() != null ? uri.getHost() : "")
         + (uri.getPort() > 0 ? (":" + uri.getPort()) : "");
     String user = conf.get(AngelConfiguration.USER_NAME, "");
-    String tmpDir = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_DIRECTORY, "/tmp/" + user);
+    String tmpDir = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_PATH_PREFIX, "/tmp/" + user);
     String finalTmpDirForApp = path + tmpDir + "/" + appId + "_" + UUID.randomUUID().toString();
     LOG.info("tmp output dir is " + finalTmpDirForApp);
     return new Path(finalTmpDirForApp);
@@ -385,7 +385,7 @@ public class HdfsUtil {
 
   public static void writeStorage(DataBlock<PredictResult> dataBlock, TaskContext taskContext)
       throws IOException {
-    String outDir = taskContext.getConf().get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_DIRECTORY);
+    String outDir = taskContext.getConf().get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_PATH);
     Path outPath = new Path(outDir, "predict");
     FileSystem fs = outPath.getFileSystem(taskContext.getConf());
     String outFileName = "task_" + taskContext.getTaskIndex();
