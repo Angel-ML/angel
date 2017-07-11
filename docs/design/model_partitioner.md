@@ -16,18 +16,20 @@ Angel底层的部分RPC接口是以矩阵分区为单位来操作的，为了避
  - 当矩阵行数大于PS个数时：
 
 	分区块行数 `blockRow = Math.min(row / serverNum, Math.max(1, 5000000 / col))`
+	
 	分区块列数 `blockCol = Math.min(5000000 / blockRow, col)`
 
  - 当矩阵行数小于PS个数时：
 
 	分区块行数 `blockRow = row`
+	
 	分区块列数 `blockCol = Math.min(5000000 / blockRow, Math.max(100, col / serverNum))`
 	
 	举几个例子，假设serverNum = 4，下图是几个典型的矩阵分区大小：
 	![][1]
 	
 # 自定义模型分区
-首先，Angel允许用户自定义矩阵分区的大小，方法是在定义矩阵时使用带有矩阵分区参数的构造函数：`MatrixContext(String name, int rowNum, int colNum, int maxRowNumInBlock, int maxColNumInBlock)` 具体可参考[MatrixContext]()。
+首先，Angel允许用户自定义矩阵分区的大小，方法是在定义矩阵时使用带有矩阵分区参数的构造函数：`MatrixContext(String name, int rowNum, int colNum, int maxRowNumInBlock, int maxColNumInBlock)` 。
 
 这种方式可以控制矩阵分区的大小，但仍然不够灵活。例如当我们的矩阵各个部分访问频率并不一样时，可能需要不同的分区有不同的大小，或者说我们需要将某些存在关联的分区放到同一个PS上。为了满足一些特殊算法和模型的需求，我们抽象了一个分区接口Partitioner，用户可以通过实现Partitioner接口来实现自定义的模型分区方式。
 
@@ -60,6 +62,7 @@ interface Partitioner {
 主要需要实现的接口有两个`getPartitions`和`assignPartToServer`。`getPartitions`表示获取该矩阵的分区列表；`assignPartToServer`表示将一个分区分配给某一个PS。
 
 下面通过一个简单的例子来说明如何通过实现Partitioner接口来自定义矩阵划分方式。假设有这样的使用场景：模型是一个`3 * 10000000`维的矩阵，PS个数为8，第一行访问的更为频繁，我希望分区的小一些，划分成4个分区，其他行的划分成2个分区，如下图所示：
+
 ![][2]
 
 由于分区的大小并不相同，所以默认的分区方式没有办法实现这样的需求，这个时候可以定制一个分区类MyPartitioner：
