@@ -13,7 +13,7 @@ Angel底层的部分RPC接口是以矩阵分区为单位来操作的，为了避
 默认分区算法如下：
 假定row为整个矩阵的行数，col为整个矩阵的列数，serverNum为PS个数。
 
- - 当矩阵行数大于PS个数时：
+ - 当矩阵行数大于等于PS个数时：
 
 	分区块行数 `blockRow = Math.min(row / serverNum, Math.max(1, 5000000 / col))`
 	
@@ -31,7 +31,7 @@ Angel底层的部分RPC接口是以矩阵分区为单位来操作的，为了避
 # 自定义模型分区
 首先，Angel允许用户自定义矩阵分区的大小，方法是在定义矩阵时使用带有矩阵分区参数的构造函数：`MatrixContext(String name, int rowNum, int colNum, int maxRowNumInBlock, int maxColNumInBlock)` 。
 
-这种方式可以控制矩阵分区的大小，但仍然不够灵活。例如当我们的矩阵各个部分访问频率并不一样时，可能需要不同的分区有不同的大小，或者说我们需要将某些存在关联的分区放到同一个PS上。为了满足一些特殊算法和模型的需求，我们抽象了一个分区接口Partitioner，用户可以通过实现Partitioner接口来实现自定义的模型分区方式。
+这种方式可以控制矩阵分区的大小，但仍然不够灵活。例如当我们的矩阵各个部分访问频率并不一样时，可能需要不同的分区有不同的大小，或者需要将某些存在关联的分区放到同一个PS上。为了满足一些特殊算法和模型的需求，我们抽象了一个分区接口Partitioner，用户可以通过实现Partitioner接口来实现自定义的模型分区方式。
 
 Partitioner接口的定义如下：
 ``` java
