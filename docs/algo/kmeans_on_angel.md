@@ -34,6 +34,8 @@ KMeans on Angel的算法流程如下图所示：
 
 ### 输入格式
 
+* 数据的格式通过“ml.data.type”参数设置。支持“libsvm”、“dummy”两种数据格式，具体参考:[Angel数据格式](data_format.md)
+
 ### 参数
 * IO参数
   * angel.train.data.path：输入数据路径

@@ -14,15 +14,7 @@ SparseLogisticRegression与LogisticRegression的区别在于SparseLogisticRegres
 
 数据的格式通过“ml.data.type”参数设置；数据特征的个数，即特征向量的维度通过参数“ml.feature.num”设置。
 
-SparseLR on Angel支持“libsvm”、“dummy”两种数据格式，分别如下所示：
-
-* **dummy格式**
-
-每行文本表示一个样本，每个样本的格式为"y index1 index2 index3 ..."。其中：index特征的ID；训练数据的y为样本的类别，可以取0、1两个值；
- 
- * **libsvm格式**
-
-每行文本表示一个样本，每个样本的格式为"y index1:value1 index2:value1 index3:value3 ..."。其中：index为特征的ID,value为对应的特征值；训练数据的y为样本的类别，可以取0、1两个值
+SparseLR on Angel支持“libsvm”、“dummy”两种数据格式，具体参考:[Angel数据格式](data_format.md)
 
 ###  参数
 * 算法参数  
