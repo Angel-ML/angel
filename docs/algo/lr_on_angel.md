@@ -37,7 +37,7 @@
 
 ### 输入格式
 
-* 数据的格式通过“ml.data.type”参数设置，支持“libsvm”、“dummy”两种数据格式
+* 数据的格式通过“ml.data.type”参数设置。支持“libsvm”、“dummy”两种数据格式，具体参考:[Angel数据格式](data_format.md)
 * 特征向量的维度通过参数“ml.feature.num”设置
 
 
