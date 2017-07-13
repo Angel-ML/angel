@@ -137,7 +137,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
     msgQueue = new LinkedBlockingQueue<ByteBuf>();
     stopped = new AtomicBoolean(false);
-    clientThreadPool = Executors.newCachedThreadPool();
+    clientThreadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2);
 
     Configuration conf = PSAgentContext.get().getConf();
     timer = new Timer();
