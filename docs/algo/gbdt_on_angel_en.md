@@ -79,17 +79,11 @@ Overall, Angel PS's advantage as stated above is demonstrated by GBDT's performa
 
 ### Input Format
 
-You should use `ml.data.type` to set the data format and `ml.feature.num` to set the number of features (dimension of the feature vector).
+* Data format is set in "ml.data.type". GBDT on Angel supports "libsvm" and "dummy" formats. For details, see [Angel Data Format](data_format.md)
 
-GBDT on Angel supports "libsvm" and "dummy" formats，as follows:
+* Feature vector's dimension is set in "ml.feature.num". 
 
-* **dummy**
 
-Each line indicates one sample which contains a label and feature values. Under the dummy format, the sample is "y index1 index2 index3 ...", where the index is ID for non-zero features. For training data, y is the sample label (for binary case, 1 and -1), whereas for test data, y is the sample ID. Under this format, a sample with positive label and features [2.0, 3.1, 0.0, 0.0, -1, 2.2], for example, will be represented as "1 0 1 4 5", where the first "1" indicates label (positive), and "0 1 4 5" are the indices of non-zero features. Similarly, a sample with negative label and features [2.0, 0.0, 0.1, 0.0, 0.0, 0.0] will be "-1 0 2".
-
- * **libsvm**
-
-Each line indicates one sample under the format "y index1:value1 index2:value1 index3:value3 ...", where, index is feature ID and value is the corresponding feature value. For training data, y is the sample label (for binary case, 1 and -1), whereas for test data, y is the sample ID. For example, a sample with positive label, [2.0, 3.1, 0.0, 0.0, -1, 2.2], will be represented as "1 0:2.0 1:3.1 4:-1 5:2.2"，where the first "1" is label, and "0:2.0" means the value of feature 0 is 2.0. Similarly, a negative sample [2.0, 0.0, 0.1, 0.0, 0.0, 0.0] becomes "-1 0:2.0 2：0.1" under the libsvm format. 
 
 ### Parameters
 
