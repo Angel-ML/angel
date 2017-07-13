@@ -37,12 +37,17 @@ public class Axpy extends MMUpdateFunc {
 
   @Override
   protected void doUpdate(ServerDenseDoubleRow[] rows, double[] scalars) {
-    DoubleBuffer xData = rows[0].getData();
-    DoubleBuffer yData = rows[1].getData();
-    double a = scalars[0];
-    int size = rows[0].size();
-    for (int i = 0; i < size; i++) {
-      yData.put(i, a * xData.get(i) + yData.get(i));
+    try {
+      rows[1].getLock().writeLock().lock();
+      DoubleBuffer xData = rows[0].getData();
+      DoubleBuffer yData = rows[1].getData();
+      double a = scalars[0];
+      int size = rows[0].size();
+      for (int i = 0; i < size; i++) {
+        yData.put(i, a * xData.get(i) + yData.get(i));
+      }
+    } finally {
+      rows[1].getLock().writeLock().unlock();
     }
   }
 

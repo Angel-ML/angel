@@ -38,11 +38,16 @@ public class AddS extends MMUpdateFunc {
 
   @Override
   protected void doUpdate(ServerDenseDoubleRow[] rows, double[] scalars) {
-    DoubleBuffer from = rows[0].getData();
-    DoubleBuffer to = rows[1].getData();
-    int size = rows[0].size();
-    for (int i = 0; i < size; i++) {
-      to.put(i, from.get(i) + scalars[0]);
+    try {
+      rows[1].getLock().writeLock().lock();
+      DoubleBuffer from = rows[0].getData();
+      DoubleBuffer to = rows[1].getData();
+      int size = rows[0].size();
+      for (int i = 0; i < size; i++) {
+        to.put(i, from.get(i) + scalars[0]);
+      }
+    } finally {
+      rows[1].getLock().writeLock().unlock();
     }
   }
 

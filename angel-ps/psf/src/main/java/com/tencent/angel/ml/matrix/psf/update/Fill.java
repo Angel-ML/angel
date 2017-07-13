@@ -37,11 +37,16 @@ public class Fill extends MMUpdateFunc {
 
   @Override
   protected void doUpdate(ServerDenseDoubleRow[] rows, double[] values) {
-    DoubleBuffer data = rows[0].getData();
-    double value = values[0];
-    int size = rows[0].size();
-    for (int i = 0; i < size; i++) {
-      data.put(i, value);
+    try {
+      rows[0].getLock().writeLock().lock();
+      DoubleBuffer data = rows[0].getData();
+      double value = values[0];
+      int size = rows[0].size();
+      for (int i = 0; i < size; i++) {
+        data.put(i, value);
+      }
+    } finally {
+      rows[0].getLock().writeLock().unlock();
     }
   }
 
