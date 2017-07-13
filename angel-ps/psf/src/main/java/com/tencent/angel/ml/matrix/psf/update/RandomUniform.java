@@ -39,14 +39,20 @@ public class RandomUniform extends MMUpdateFunc {
   @Override
   protected void doUpdate(ServerDenseDoubleRow[] rows, double[] scalars) {
     Random rand = new Random(System.currentTimeMillis());
-    double min = scalars[0];
-    double max = scalars[1];
-    double factor = max - min;
 
-    DoubleBuffer data = rows[0].getData();
-    int size = rows[0].size();
-    for (int i = 0; i < size; i++) {
-      data.put(i, factor * rand.nextDouble() + min);
+    try {
+      rows[0].getLock().writeLock().lock();
+      double min = scalars[0];
+      double max = scalars[1];
+      double factor = max - min;
+
+      DoubleBuffer data = rows[0].getData();
+      int size = rows[0].size();
+      for (int i = 0; i < size; i++) {
+        data.put(i, factor * rand.nextDouble() + min);
+      }
+    } finally {
+      rows[0].getLock().writeLock().unlock();
     }
   }
 

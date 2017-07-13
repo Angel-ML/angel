@@ -38,11 +38,16 @@ public class Scale extends MMUpdateFunc {
 
   @Override
   protected void doUpdate(ServerDenseDoubleRow[] rows, double[] values) {
-    DoubleBuffer data = rows[0].getData();
-    double scaleFactor = values[0];
-    int size = rows[0].size();
-    for (int i = 0; i < size; i++) {
-      data.put(i, data.get(i) * scaleFactor);
+    try {
+      rows[0].getLock().writeLock().lock();
+      DoubleBuffer data = rows[0].getData();
+      double scaleFactor = values[0];
+      int size = rows[0].size();
+      for (int i = 0; i < size; i++) {
+        data.put(i, data.get(i) * scaleFactor);
+      }
+    } finally {
+      rows[0].getLock().writeLock().unlock();
     }
   }
 

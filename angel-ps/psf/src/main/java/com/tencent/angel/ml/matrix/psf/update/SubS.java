@@ -23,8 +23,8 @@ import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import java.nio.DoubleBuffer;
 
 /**
- * `AddS` function will add a `value` to `fromId` and save result to `toId`.
- * That is `toId` = `fromId` + `value`
+ * `SubS` function will subtract a `value` from `fromId` and save result to `toId`.
+ * That is `toId` = `fromId` - `value`
  */
 public class SubS extends MMUpdateFunc {
 
@@ -38,12 +38,17 @@ public class SubS extends MMUpdateFunc {
 
   @Override
   protected void doUpdate(ServerDenseDoubleRow[] rows, double[] values) {
-    DoubleBuffer from = rows[0].getData();
-    DoubleBuffer to = rows[1].getData();
-    double value = values[0];
-    int size = rows[0].size();
-    for (int i = 0; i < size; i++) {
-      to.put(i, from.get(i) - value);
+    try {
+      rows[1].getLock().writeLock().lock();
+      DoubleBuffer from = rows[0].getData();
+      DoubleBuffer to = rows[1].getData();
+      double value = values[0];
+      int size = rows[0].size();
+      for (int i = 0; i < size; i++) {
+        to.put(i, from.get(i) - value);
+      }
+    } finally {
+      rows[1].getLock().writeLock().unlock();
     }
   }
 

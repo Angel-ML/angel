@@ -40,12 +40,17 @@ public class RandomNormal extends MMUpdateFunc {
   protected void doUpdate(ServerDenseDoubleRow[] rows, double[] scalars) {
     Random rand = new Random(System.currentTimeMillis());
 
-    double mean = scalars[0];
-    double stdDev = scalars[1];
-    DoubleBuffer data = rows[0].getData();
-    int size = rows[0].size();
-    for (int i = 0; i < size; i++) {
-      data.put(i, stdDev * rand.nextGaussian() + mean);
+    try {
+      rows[0].getLock().writeLock().lock();
+      double mean = scalars[0];
+      double stdDev = scalars[1];
+      DoubleBuffer data = rows[0].getData();
+      int size = rows[0].size();
+      for (int i = 0; i < size; i++) {
+        data.put(i, stdDev * rand.nextGaussian() + mean);
+      }
+    } finally {
+      rows[0].getLock().writeLock().unlock();
     }
   }
 

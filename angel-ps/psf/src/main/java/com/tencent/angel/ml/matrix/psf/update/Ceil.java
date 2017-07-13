@@ -37,11 +37,16 @@ public class Ceil extends MUpdateFunc {
 
   @Override
   protected void doUpdate(ServerDenseDoubleRow[] rows) {
-    DoubleBuffer from = rows[0].getData();
-    DoubleBuffer to = rows[1].getData();
-    int size = rows[0].size();
-    for (int i = 0; i < size; i++) {
-      to.put(i, Math.ceil(from.get(i)));
+    try {
+      rows[1].getLock().writeLock().lock();
+      DoubleBuffer from = rows[0].getData();
+      DoubleBuffer to = rows[1].getData();
+      int size = rows[0].size();
+      for (int i = 0; i < size; i++) {
+        to.put(i, Math.ceil(from.get(i)));
+      }
+    } finally {
+      rows[1].getLock().writeLock().unlock();
     }
   }
 
