@@ -29,9 +29,9 @@ Angel MLLib提供了用mini-batch gradient descent优化方法求解的Logistic 
 每次迭代，worker从PS拉取最新的w，用mini-batch gradient descent方法计算模型的更新值△w，将更新值△w推送给PS。
 * PS：    
 每次迭代，PS接收到所有worker推送的更新值△w，取平均后叠加到w，得到新的模型。   
-算法流程如下所示：
+  * 算法流程如下所示：     
 ![](../img/lr_gradient.png)  
-算法逻辑如下所示：
+  * 算法逻辑如下所示：   
 ![](../img/LR_gd.png)  
 
 
