@@ -17,19 +17,19 @@ We welcome everyone interested in machine learning to contribute code, create is
 
 * [Architecture](./docs/overview/architecture.md)
 * [Code Framework](./docs/overview/framework.md)
-* [Design](./docs/overview/design.md)
-* [Spark on Angel](./docs/overview/spark_on_angel.md)
+* [Design](./docs/overview/design_en.md)
+* [Spark on Angel](./docs/overview/spark_on_angel_en.md)
 
 
 ## Quick Start
-* [Quick Start](./docs/tutorials/angel_ps_quick_start.md)
-* [Spark on Angel Quick Start](./docs/tutorials/spark_on_angel_quick_start.md)
+* [Quick Start](./docs/tutorials/angel_ps_quick_start_en.md)
+* [Spark on Angel Quick Start](./docs/tutorials/spark_on_angel_quick_start_en.md)
 
 
 ## Programming Guide
 
-* [Angel Programming Guide](./docs/programmers_guide/angel_programing_guide.md)
-* [Spark on Angel Programming Guide](./docs/programmers_guide/spark_on_angel_programing_guide.md)
+* [Angel Programming Guide](./docs/programmers_guide/angel_programing_guide_en.md)
+* [Spark on Angel Programming Guide](./docs/programmers_guide/spark_on_angel_programing_guide_en.md)
 
 ## Design
 
@@ -42,7 +42,7 @@ We welcome everyone interested in machine learning to contribute code, create is
 * [Matrix Factorization](./docs/algo/mf_on_angel.md)
 * [SVM](./docs/algo/svm_on_angel.md)
 * [KMeans](./docs/algo/kmeans_on_angel.md)
-* [GBDT](./docs/algo/gbdt_on_angel.md)
+* [GBDT](./docs/algo/gbdt_on_angel_en.md)
 * [LDA](./docs/algo/lda_on_angel.md)
 * [LR (Spark on Angel)](./docs/algo/spark_on_angel_optimizer.md)
 
