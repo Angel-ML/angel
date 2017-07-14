@@ -46,7 +46,7 @@ public class Abs extends MUpdateFunc {
         to.put(i, Math.abs(from.get(i)));
       }
     } finally {
-      rows[1].getLock().writeLock().lock();
+      rows[1].getLock().writeLock().unlock();
     }
   }
 
