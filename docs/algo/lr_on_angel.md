@@ -20,10 +20,10 @@
 其中：![](../img/LR_reg.gif)为L2正则项。
 
 ## 2. 分布式实现 on Angel
-1. 模型存储
+### 1. 模型存储
 LR算法的模型可以抽象为一个1×N维的PSModel，记为w，如下图所示：
 ![](../img/lr_model.png)
-2. 算法逻辑
+### 2. 算法逻辑
 Angel MLLib提供了用mini-batch gradient descent优化方法求解的Logistic Regression算法。
 * worker：
 每次迭代，worker从PS拉取最新的w，用mini-batch gradient descent方法计算模型的更新值△w，将更新值△w推送给PS。
