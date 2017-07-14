@@ -20,13 +20,20 @@
 其中：![](../img/LR_reg.gif)为L2正则项。
 
 ## 2. 分布式实现 on Angel
-
-* Angel MLLib提供了用mini-batch gradient descent优化方法求解的Logistic Regression算法，算法逻辑如下 
-
+1. 模型存储
+LR算法的模型可以抽象为一个1×N维的PSModel，记为w，PS接收到模型的更新值△w，更新w：![](../img/lr_update.png)，如下图所示：
+![](../img/lr_model.png)
+2. 算法逻辑
+Angel MLLib提供了用mini-batch gradient descent优化方法求解的Logistic Regression算法。
+* worker：
+每次迭代，worker从PS拉取最新的w，用mini-batch gradient descent方法计算模型的更新值△w，将更新值△w推送给PS。
+* PS：
+每次迭代，PS接收到所有worker推送的更新值△w，取平均后叠加到w，得到新的模型。
 ![](../img/LR_gd.png)  
 
 
-* 学习速率在迭代过程中衰减:![](../img/LR_lr_ecay.gif) 其中:   
+* 衰减的学习速率
+学习速率在迭代过程中衰减:![](../img/LR_lr_ecay.gif) 其中:   
 	* α为衰减系数
 	* T为迭代次数
 
