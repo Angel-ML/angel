@@ -29,11 +29,17 @@ object GradientDescent {
   private val LOG: Log = LogFactory.getLog(GradientDescent.getClass)
 
 
-  def miniBatchGD[M <: TDoubleVector](trainData: DataBlock[LabeledData], model: PSModel[M], lr:
-  Double, loss: Loss, batchSize: Int, batchNum: Int): (Double, TDoubleVector) = {
+  def miniBatchGD[M <: TDoubleVector](trainData: DataBlock[LabeledData],
+                                      model: PSModel[M],
+                                      intercept: Option[PSModel[DenseDoubleVector]],
+                                      lr: Double,
+                                      loss: Loss,
+                                      batchSize: Int,
+                                      batchNum: Int): (Double, TDoubleVector) = {
 
     //Pull model from PS Server
     val w = model.getRow(0)
+    var b: Option[Double] = intercept.map(_.getRow(0).get(0))
     var totalLoss = 0.0
 
     val taskContext = model.getTaskContext
@@ -44,16 +50,19 @@ object GradientDescent {
       grad.setRowId(0)
 
       var batchLoss: Double = 0.0
+      var gradScalarSum: Double = 0.0
 
       for (i <- 0 until batchSize) {
         val (x: TAbstractVector, y: Double) = loopingData(trainData)
-        val pre = w.dot(x)
-        val gradScalar = loss.grad(pre, y)
-        grad.plusBy(x, -1.0 * gradScalar)
+        val pre = w.dot(x) + b.getOrElse(0.0)
+        val gradScalar = -loss.grad(pre, y)    // not negative gradient
+        grad.plusBy(x, gradScalar)
         batchLoss += loss.loss(pre, y)
+        gradScalarSum += gradScalar
       }
 
       grad.timesBy(1.toDouble / batchSize.asInstanceOf[Double])
+      gradScalarSum /= batchSize
 
       if (loss.isL2Reg) {
         for (index <- 0 until grad.size) {
@@ -69,10 +78,15 @@ object GradientDescent {
 
       totalLoss += batchLoss
       w.plusBy(grad, -1.0 * lr)
+      b = b.map(bv => bv - lr * gradScalarSum)
 
       model.increment(grad.timesBy(-1.0 * lr).asInstanceOf[M])
+      intercept.map { bv =>
+        bv.increment(new DenseDoubleVector(1, Array(gradScalarSum)).timesBy(-lr))
+        bv
+      }
       LOG.debug(s"Batch[$batch] loss = $batchLoss")
-      taskContext.updateProfileCounter(batchSize, (System.currentTimeMillis() - batchStartTs).toInt);
+      taskContext.updateProfileCounter(batchSize, (System.currentTimeMillis() - batchStartTs).toInt)
     }
 
     //Push model update to PS Server
