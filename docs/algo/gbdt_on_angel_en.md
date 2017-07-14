@@ -97,7 +97,7 @@ Overall, Angel PS's advantage as stated above is demonstrated by GBDT's performa
 * I/O Parameters
 	* angel.train.data.path：input path
 	* ml.feature.num：number of features
-	* ml.data.type：Angel Data Format(data_format.md), can be "dummy" or "libsvm"
+	* ml.data.type：[Angel Data Format](data_format.md), can be "dummy" or "libsvm"
 	* angel.save.modelPath：save path for trained model 
 	* angel.log.path：save path for the log
 
