@@ -98,16 +98,16 @@ GBDT的流程包括几大步骤
 * 输入输出参数
 	* angel.train.data.path：输入数据路径
 	* ml.feature.num：数据特征个数
-	* ml.data.type：数据格式，支持"dummy"、"libsvm"
+	* ml.data.type：[Angel数据格式](data_format.md)，支持"dummy"、"libsvm"
 	* angel.save.modelPath：训练完成后，模型的保存路径
 	* angel.log.path：log文件保存路径
 
 * 资源参数
 	* angel.workergroup.number：Worker个数
-	* angel.worker.memory.mb：Worker申请内存大小
+	* angel.worker.memory.gb：Worker申请的内存大小（G）
 	* angel.worker.task.number：每个Worker上的task的个数，默认为1
 	* angel.ps.number：PS个数
-	* angel.ps.memory.mb：PS申请内存大小
+	* angel.ps.memory.gb：PS申请的内存大小（G）
 
 ### 性能
 
