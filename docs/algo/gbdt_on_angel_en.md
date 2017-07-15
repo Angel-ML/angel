@@ -79,7 +79,7 @@ Overall, Angel PS's advantage as stated above is demonstrated by GBDT's performa
 
 ### Input Format
 
-* Data format is set in "ml.data.type". GBDT on Angel supports "libsvm" and "dummy" formats. For details, see [Angel Data Format](data_format.md)
+* Data format is set in "ml.data.type". GBDT on Angel supports "libsvm" and "dummy" formats. For details, see [Angel Data Format](data_format_en.md)
 
 * Feature vector's dimension is set in "ml.feature.num". 
 
@@ -97,7 +97,7 @@ Overall, Angel PS's advantage as stated above is demonstrated by GBDT's performa
 * I/O Parameters
 	* angel.train.data.path：input path
 	* ml.feature.num：number of features
-	* ml.data.type：[Angel Data Format](data_format.md), can be "dummy" or "libsvm"
+	* ml.data.type：[Angel Data Format](data_format_en.md), can be "dummy" or "libsvm"
 	* angel.save.modelPath：save path for trained model 
 	* angel.log.path：save path for the log
 
