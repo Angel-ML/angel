@@ -42,12 +42,12 @@ All the above parameter matrices will be repetitively updated and passed around 
 GBDT's implementation procedure takes the following steps:
 
 1. **Compute candidate split point:** Scan the training data, enumerate splits on all features to propose candidate split; common methods include Quantile Sketch.
-2. **Build decision tree:** Worker creates a new decision tree, initializes tree structure, calculates the gradient matrix and the hessian matrix, initializes a waiting queue of tree nodes and adds the root node in the waiting queue.
+2. **Build decision tree:** Worker creates a new decision tree, initializes tree structure, calculates the gradient matrix and the hessian matrix, initializes a queue of tree nodes and adds the root node in the queue.
 3. **Find the best split (split point and split node):** This is elaborated in the next section.
 4. **Calculate and combine leaf-node predictions:** Worker calculates leaf-node outputs and pushes to PS.
 5. **Complete the deicision tree and go to Step 2**. 
 
-The above steps are interated until all trees are built. Once training is done, we compute the performance metrics (such as accuracy/error) and output the trained model.
+The above steps are iterated until all trees are built. Once training is done, we compute the performance metrics (such as accuracy/error) and output the trained model.
 
 The next section is dedicated to details for Step 3, finding the best split (split point and split node) -- a challenging key step.
 
@@ -57,13 +57,13 @@ The next section is dedicated to details for Step 3, finding the best split (spl
 
 Finding the best split is the most challenging and important step in GBDT, and is exactly where PS is to the point. The procedure takes the following steps: 
 
-1. **Compute the histograms:** Retrieve a tree node from the waiting queue; worker computes a local gradient histogram and hessian histogram, and send to PS through the interface of updating histograms. 
+1. **Compute the histograms:** Retrieve a tree node from the queue; worker computes a local gradient histogram and hessian histogram, and sends to PS through the interface of updating histograms. 
 
 2. **Synchronize and merge histograms:** Worker pushes local histograms to PS through the right interface; but before this, each local histogram is partitioned to P parts, and each part is sent to its corresponding PS node. A PS node, upon receiving local histograms from the workers, determines which tree node to process, and adds it to the corresponding overall histograms. 
 
 3. **Find the best split point:** Worker requests best split points from all PS nodes through the right interface for requesting best split point from PS, compares the gain in objective function for each of the P candidates, and chooses the best split point that maximizes the gain.
 
-4. **Split node:**  PS returns the split feature, split point, and objective function gain to workder; worker creates leaf nodes based on the best split and devides training data to the leaf nodes. If the tree depth is yet smaller than the maximum depth, the two leaf nodes are then added to the waiting queue. 
+4. **Split node:**  PS returns the split feature, split point, and objective function gain to worker; worker creates leaf nodes based on the best split and devides training data to the leaf nodes. If the tree depth is yet smaller than the maximum depth, the two leaf nodes are then added to the queue. 
 
 From the above logic, we can see how PS and Angel are well-suited to model updating and synchronization at scale for GBDT. More specifically, the perks are:
 
@@ -79,7 +79,7 @@ Overall, Angel PS's advantage as stated above is demonstrated by GBDT's performa
 
 ### Input Format
 
-* Data format is set in "ml.data.type". GBDT on Angel supports "libsvm" and "dummy" formats. For details, see [Angel Data Format](data_format.md)
+* Data format is set in "ml.data.type". GBDT on Angel supports "libsvm" and "dummy" formats. For details, see [Angel Data Format](data_format_en.md)
 
 * Feature vector's dimension is set in "ml.feature.num". 
 
@@ -97,7 +97,7 @@ Overall, Angel PS's advantage as stated above is demonstrated by GBDT's performa
 * I/O Parameters
 	* angel.train.data.path：input path
 	* ml.feature.num：number of features
-	* ml.data.type：[Angel Data Format](data_format.md), can be "dummy" or "libsvm"
+	* ml.data.type：[Angel Data Format](data_format_en.md), can be "dummy" or "libsvm"
 	* angel.save.modelPath：save path for trained model 
 	* angel.log.path：save path for the log
 
