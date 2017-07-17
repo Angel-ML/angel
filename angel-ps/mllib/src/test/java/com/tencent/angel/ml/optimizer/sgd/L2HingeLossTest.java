@@ -75,9 +75,4 @@ public class L2HingeLossTest {
     y = 0.00001;
     assertEquals(0.00001, l2HingeLoss.grad(pre, y), 0.0);
   }
-
-  @Test
-  public void testPredict() throws Exception {
-
-  }
 }

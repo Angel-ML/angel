@@ -41,6 +41,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
+import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -151,6 +152,7 @@ public class ParameterServer {
     LOG.info("stop ps rpcServer!");
     if (psServerService != null) {
       psServerService.stop();
+      psServerService = null;
     }
     LOG.info("stop heartbeat thread!");
     if (!stopped.getAndSet(true)) {
@@ -330,16 +332,22 @@ public class ParameterServer {
         while (!stopped.get() && !Thread.currentThread().isInterrupted()) {
           try {
             Thread.sleep(heartbeatInterval);
-            try {
-              heartbeat();
-            } catch (Exception netException) {
-              LOG.error("Error communicating with AM: ", netException);
-              return;
-            }
           } catch (InterruptedException e) {
             if (!stopped.get()) {
-              LOG.warn("Heartbeat thread interrupted. Returning.");
+              LOG.warn("Allocated thread interrupted. Returning.");
             }
+            return;
+          }
+
+          try {
+            if(!stopped.get()) {
+              heartbeat();
+            }
+          } catch (YarnRuntimeException e) {
+            LOG.error("Error communicating with AM: " + e.getMessage(), e);
+            return;
+          } catch (Exception e) {
+            LOG.error("ERROR IN CONTACTING RM. ", e);
           }
         }
       }
