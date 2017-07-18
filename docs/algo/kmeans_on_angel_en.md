@@ -26,7 +26,8 @@ KMeans on Angel stores the K centroids on ParameterServer，using a K×N matrix 
 KMeans on Angel is trained in an iterative fashion; during each iteration, the centroids are updated by mini-batch. 
 
 ### Algorithm
-KMeans on Angel algorithm: 
+KMeans on Angel algorithm:
+ 
 ![KMeans_on_Angel](../img/KMeans_on_Angel.png)  
 
 
