@@ -379,6 +379,7 @@ public class MatrixClientAdapter {
     List<PartitionGetParam> partParams = param.split();
     int size = partParams.size();
 
+    LOG.debug("get psf request " + func + " start, rpc request number=" + size);
     List<Future<PartitionGetResult>> futureResultList =
         new ArrayList<Future<PartitionGetResult>>(size);
     List<PartitionGetResult> resultList = new ArrayList<PartitionGetResult>(size);
