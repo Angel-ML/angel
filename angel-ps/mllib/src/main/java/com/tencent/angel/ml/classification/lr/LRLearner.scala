@@ -69,7 +69,7 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
 
     // Apply mini-batch gradient descent
     val startBatch = System.currentTimeMillis()
-    val batchGD = GradientDescent.miniBatchGD(trainData, lrModel.weight, None,
+    val batchGD = GradientDescent.miniBatchGD(trainData, lrModel.weight, lrModel.intercept,
                                               lr, logLoss, batchSize, batchNum)
     val loss = batchGD._1
     val localWeight = batchGD._2

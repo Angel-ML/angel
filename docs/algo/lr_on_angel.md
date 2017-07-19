@@ -50,6 +50,7 @@
   * ml.learn.rate：初始学习速率   
   * ml.learn.decay：学习速率衰减系数   
   * ml.reg.l2：L2惩罚项系数   
+  * ml.lr.use.intercept：使用截距
 
 * 输入输出参数
   * angel.train.data.path：输入数据路径   

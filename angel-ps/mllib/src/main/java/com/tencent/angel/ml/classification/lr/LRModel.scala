@@ -53,6 +53,7 @@ class LRModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
   private val LOG = LogFactory.getLog(classOf[LRModel])
 
   val LR_WEIGHT_MAT = "lr_weight"
+  val LR_INTERCEPT = "lr_intercept"
   val LR_LOSS_MAT = "lr_loss"
 
   def this(conf: Configuration) = {
@@ -64,6 +65,12 @@ class LRModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
   // The feature weight vector, stored on PS
   val weight = PSModel[DenseDoubleVector](LR_WEIGHT_MAT, 1, feaNum)
   weight.setAverage(true)
+  val intercept =
+    if (conf.getBoolean(MLConf.LR_USE_INTERCEPT, MLConf.DEFAULT_LR_USE_INTERCEPT)) {
+      Some(PSModel[DenseDoubleVector](LR_INTERCEPT, 1, 1))
+    } else {
+      None
+    }
 
   // Iteration number
   val epochNum = conf.getInt(MLConf.ML_EPOCH_NUM, MLConf.DEFAULT_ML_EPOCH_NUM)
