@@ -65,9 +65,11 @@ class LRModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
   // The feature weight vector, stored on PS
   val weight = PSModel[DenseDoubleVector](LR_WEIGHT_MAT, 1, feaNum)
   weight.setAverage(true)
+
+  private val intercept_ = PSModel[DenseDoubleVector](LR_INTERCEPT, 1, 1)
   val intercept =
     if (conf.getBoolean(MLConf.LR_USE_INTERCEPT, MLConf.DEFAULT_LR_USE_INTERCEPT)) {
-      Some(PSModel[DenseDoubleVector](LR_INTERCEPT, 1, 1))
+      Some(intercept_)
     } else {
       None
     }
@@ -81,6 +83,7 @@ class LRModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
   setLoadPath(conf)
 
   addPSModel(LR_WEIGHT_MAT, weight)
+  addPSModel(LR_INTERCEPT, intercept_)
   addPSModel(LR_LOSS_MAT, loss)
 
   override
