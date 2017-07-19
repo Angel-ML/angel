@@ -12,7 +12,7 @@ where, ![xi](../img/xi.png) is the ith sample and ![ci](../img/ci.png) is its ne
 
 
 ## Mini-batch KMeans
-"Web-Scale K-Means Clustering" proposes a modified KMeans algorithm to address the latency, scalability and sparsity requirements in user-facing web applications, using mini-batch optimization for learning, as shown below:
+"Web-Scale K-Means Clustering" proposes a improved KMeans algorithm to address the latency, scalability and sparsity requirements in user-facing web applications, using mini-batch optimization for training. As shown below:
 
 ![mini_batch_kmeans](../img/mini_batch_kmeans.png)
 
