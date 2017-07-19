@@ -108,6 +108,7 @@ class LRModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
   def predict(dataSet: DataBlock[LabeledData]): DataBlock[PredictResult] = {
     val start = System.currentTimeMillis()
     val wVector = weight.getRow(0)
+    val b = intercept.map(_.getRow(0).get(0)).getOrElse(0.0)
     val cost = System.currentTimeMillis() - start
     LOG.info(s"pull LR Model from PS cost $cost ms." )
 
@@ -117,7 +118,7 @@ class LRModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
     for (idx: Int <- 0 until dataSet.getTotalElemNum) {
       val instance = dataSet.read
       val id = instance.getY
-      val dot = wVector.dot(instance.getX)
+      val dot = wVector.dot(instance.getX) + b
       val sig = MathUtils.sigmoid(dot)
       predict.put(new lrPredictResult(id, dot, sig))
     }
