@@ -8,7 +8,7 @@ The KMeans algorithm assigns each data point to its *nearest* cluster, where the
 
 ![kmeans](../img/kmeans.png)   
 
-where, ![xi](../img/xi.png) is the ith sample and ![ci](../img/ci.png) is its nearest cluster; ![miu_i](../img/miu_i.png) is the centroid of the ith cluster. 
+where, ![xi](../img/xi.png) is the ith sample and ![ci](../img/ci.png) is its nearest cluster; ![miu_j](../img/miu_j.png) is the centroid of the ith cluster. 
 
 
 ## Mini-batch KMeans

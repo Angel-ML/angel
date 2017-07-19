@@ -8,7 +8,7 @@
 
 ![kmeans](../img/kmeans.png)   
 
-其中：![xi](../img/xi.png)代表第i个样本，![ci](../img/ci.png)代表与第i个样本距离最近的簇，![miu_i](../img/miu_i.png)代表第j个簇的簇心。
+其中：![xi](../img/xi.png)代表第i个样本，![ci](../img/ci.png)代表与第i个样本距离最近的簇，![miu_j](../img/miu_j.png)代表第j个簇的簇心。
 
 
 ## Mini-batch KMeans
