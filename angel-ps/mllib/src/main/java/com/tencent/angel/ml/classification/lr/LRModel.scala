@@ -67,6 +67,7 @@ class LRModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
   weight.setAverage(true)
 
   private val intercept_ = PSModel[DenseDoubleVector](LR_INTERCEPT, 1, 1)
+  intercept_.setAverage(true)
   val intercept =
     if (conf.getBoolean(MLConf.LR_USE_INTERCEPT, MLConf.DEFAULT_LR_USE_INTERCEPT)) {
       Some(intercept_)
