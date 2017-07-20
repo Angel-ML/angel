@@ -92,6 +92,7 @@ object GradientDescent {
     //Push model update to PS Server
     totalLoss += loss.getReg(w)
     model.clock.get
+    intercept.map(_.clock.get)
 
     (totalLoss, w)
   }
