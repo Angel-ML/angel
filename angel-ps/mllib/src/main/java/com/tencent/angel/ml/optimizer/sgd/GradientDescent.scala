@@ -49,8 +49,8 @@ object GradientDescent {
       val grad = new DenseDoubleVector(w.getDimension)
       grad.setRowId(0)
 
-      val update = new DenseDoubleVector(1)
-      update.setRowId(0)
+      val bUpdate = new DenseDoubleVector(1)
+      bUpdate.setRowId(0)
 
       var batchLoss: Double = 0.0
       var gradScalarSum: Double = 0.0
@@ -85,8 +85,8 @@ object GradientDescent {
 
       model.increment(grad.timesBy(-1.0 * lr).asInstanceOf[M])
       intercept.map { bv =>
-        update.set(0, -lr * gradScalarSum)
-        bv.increment(update)
+        bUpdate.set(0, -lr * gradScalarSum)
+        bv.increment(bUpdate)
         bv
       }
       LOG.debug(s"Batch[$batch] loss = $batchLoss")
