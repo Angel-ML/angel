@@ -52,6 +52,9 @@ object SparseLRWithSGD {
     val instances = DataLoader.loadOneHotInstance(input, partitionNum, sampleRate, -1).rdd
       .map { row =>
         Tuple2(row.getAs[scala.collection.mutable.WrappedArray[Int]](1).toArray, row.getString(0).toDouble)
+      }.mapPartitions { iter =>
+        Thread.sleep(20 * 1000)
+        iter
       }
 
     instances.cache()

@@ -52,8 +52,8 @@ class RemotePSVectorSuite extends PSFunSuite with Matchers with SharedPSContext 
     _rdd.count()
 
     _localSum = new Array[Double](dim)
-    _localMax = new Array[Double](dim)
-    _localMin = new Array[Double](dim)
+    _localMax = Array.fill[Double](dim)(Double.MinValue)
+    _localMin = Array.fill[Double](dim)(Double.MaxValue)
     _rdd.collect().foreach { arr =>
       arr.indices.foreach { i =>
         _localSum(i) += arr(i)
@@ -72,7 +72,6 @@ class RemotePSVectorSuite extends PSFunSuite with Matchers with SharedPSContext 
     super.afterAll()
   }
 
-
   test("increment dense vector") {
     val remoteVector = _pool.createZero().mkRemote()
     val rdd2 = _rdd.mapPartitions { iter =>
@@ -83,6 +82,21 @@ class RemotePSVectorSuite extends PSFunSuite with Matchers with SharedPSContext 
       Iterator.empty
     }
     rdd2.count()
+
+    val psArray = remoteVector.pull()
+    _localSum.indices.foreach { i => assert(_localSum(i) === psArray(i) +- doubleEps) }
+  }
+
+  test("increment dense vector and flush") {
+    val remoteVector = _pool.createZero().mkRemote()
+    val rdd2 = _rdd.mapPartitions { iter =>
+      iter.foreach { arr =>
+        remoteVector.increment(arr)
+      }
+      Iterator.empty
+    }
+    rdd2.count()
+    remoteVector.flush()
 
     val psArray = remoteVector.pull()
     _localSum.indices.foreach { i => assert(_localSum(i) === psArray(i) +- doubleEps) }
@@ -104,7 +118,7 @@ class RemotePSVectorSuite extends PSFunSuite with Matchers with SharedPSContext 
   }
 
   test("mergeMax dense Vector") {
-    val remoteVector = _pool.createZero().mkRemote()
+    val remoteVector = _pool.createModel(Double.MinValue).mkRemote()
 
     val rdd2 = _rdd.mapPartitions { iter =>
       iter.foreach( arr => remoteVector.mergeMax(arr) )
@@ -112,13 +126,12 @@ class RemotePSVectorSuite extends PSFunSuite with Matchers with SharedPSContext 
       Iterator.empty
     }
     rdd2.count()
-
     assert(remoteVector.pull().sameElements(_localMax))
   }
 
 
   test("mergeMaxAndFlush") {
-    val remoteVector = _pool.createZero().mkRemote()
+    val remoteVector = _pool.createModel(Double.MinValue).mkRemote()
 
     val thisDim = dim
     val rdd2 = _rdd.mapPartitions { iter =>
@@ -135,7 +148,7 @@ class RemotePSVectorSuite extends PSFunSuite with Matchers with SharedPSContext 
   }
 
   test("mergeMin dense vector") {
-    val remoteVector = _pool.createZero().mkRemote()
+    val remoteVector = _pool.createModel(Double.MaxValue).mkRemote()
 
     val rdd2 = _rdd.mapPartitions { iter =>
       iter.foreach( arr => remoteVector.mergeMin(arr) )
@@ -148,7 +161,7 @@ class RemotePSVectorSuite extends PSFunSuite with Matchers with SharedPSContext 
   }
 
   test("mergeMinAndFlush") {
-    val remoteVector = _pool.createZero().mkRemote()
+    val remoteVector = _pool.createModel(Double.MaxValue).mkRemote()
 
     val thisDim = dim
     val rdd2 = _rdd.mapPartitions { iter =>
