@@ -15,12 +15,13 @@ Angel的模型分区，整体设计如下：
 
 ![](../img/model_partitioner_1.png)
 
-其中有几点需要注意的：
+需要注意的是：
 
-1. 对于用户来说，入口类始终是PSModel
-2. 默认的分区类为PSPartitioner，可以被替换
+1. 对于用户来说，入口类是PSModel，尽量通过它操作
+2. 默认的分区类为PSPartitioner，但是它可以被替换
 3. 分区（Partition）是最小的单位，每个分区对应着PSServer上具体的Model Shard
 
+PSServer会在Load Model阶段，根据传入的Partitioner进行Model Shard的初始化。因此Model Partitioner的设计，和运行时的真实模型数据，会影响PS Server上的模型分布和行为。
 ## 默认的模型分区（PSPartitioner）
 
 在Angel中，模型使用Martrix来表示。当应用程序没有指定Martrix划分参数或者方法时，Angel将使用默认的划分算法。默认的划分算法遵循以下几个原则：
@@ -139,7 +140,7 @@ blockCol = Math.min(5000000 / blockRow, Math.max(100, col / serverNum))`
 
 	```java
 	public class CustomizedPartitioner implements Partitioner {
-	  ……
+	   ……
 	  @Override public List<MLProtos.Partition> getPartitions() {
 	    List<MLProtos.Partition> partitions = new ArrayList<MLProtos.Partition>(6);
 	    int row = mContext.getRowNum();
@@ -176,18 +177,16 @@ blockCol = Math.min(5000000 / blockRow, Math.max(100, col / serverNum))`
 
 	    return partitions;
 	  }
-	  ……
+	……
 	}
-	```
+```
 	实现了该CustomizedPartitioner后，将其注入到PSModel的MatrixContext之中，就能实现自定义的模型分区了
 
 	```java
 		psModel.matrixCtx.setPartitioner(new CustomizedPartitioner());
 	```
 
-
-
-通过默认的模型分区策略和自定义的模型分区策略结合，Angel的模型分区上，在方便性和灵活性，取得了不错的平衡，为用户实现高效的复杂算法，打下了良好的基础。
+通过默认的模型分区策略，和自定义的模型分区策略，Angel的模型分区上，在方便性和灵活性，做出了很好的平衡，为用户实现高效的复杂算法，打下了良好的基础。
 
 
 [1]: ../img/matrix_partition.png
