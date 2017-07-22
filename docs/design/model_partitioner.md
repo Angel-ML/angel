@@ -135,26 +135,11 @@ blockCol = Math.min(5000000 / blockRow, Math.max(100, col / serverNum))`
 
 	![][2]
 
-	由于分区的大小并不相同，所以默认的分区方式没有办法实现这样的需求，这时可以实现一个定制的分区类CustomizedPartitioner：
+	由于分区的大小并不相同，所以默认的分区方式没有办法实现这样的需求，这个时候可以定制一个分区类CustomizedPartitioner：
 
 	```java
 	public class CustomizedPartitioner implements Partitioner {
-	  /* Matrix context: matrix dimension, matrix element type etc*/
-	  private MatrixContext mContext;
-
-	  /* Application configuration */
-	  private Configuration conf;
-
-	  /* PS number */
-	  private int psNum;
-
-	  @Override public void init(MatrixContext mContext, Configuration conf) {
-	    this.mContext = mContext;
-	    this.conf = conf;
-	    psNum =
-	      conf.getInt(AngelConfiguration.ANGEL_PS_NUMBER, AngelConfiguration.DEFAULT_ANGEL_PS_NUMBER);
-	  }
-
+	   ……
 	  @Override public List<MLProtos.Partition> getPartitions() {
 	    List<MLProtos.Partition> partitions = new ArrayList<MLProtos.Partition>(6);
 	    int row = mContext.getRowNum();
@@ -191,12 +176,9 @@ blockCol = Math.min(5000000 / blockRow, Math.max(100, col / serverNum))`
 
 	    return partitions;
 	  }
-
-	  @Override public int assignPartToServer(int partId) {
-	    return partId % psNum;
-	  }
+	……
 	}
-	```
+```
 	实现了该CustomizedPartitioner后，将其注入到PSModel的MatrixContext之中，就能实现自定义的模型分区了
 
 	```java
