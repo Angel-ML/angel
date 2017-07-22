@@ -179,7 +179,8 @@ blockCol = Math.min(5000000 / blockRow, Math.max(100, col / serverNum))`
 	  }
 	……
 	}
-```
+	```
+	
 	实现了该CustomizedPartitioner后，将其注入到PSModel的MatrixContext之中，就能实现自定义的模型分区了
 
 	```java
