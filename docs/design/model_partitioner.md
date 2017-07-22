@@ -139,7 +139,7 @@ blockCol = Math.min(5000000 / blockRow, Math.max(100, col / serverNum))`
 
 	```java
 	public class CustomizedPartitioner implements Partitioner {
-	   ……
+	  ……
 	  @Override public List<MLProtos.Partition> getPartitions() {
 	    List<MLProtos.Partition> partitions = new ArrayList<MLProtos.Partition>(6);
 	    int row = mContext.getRowNum();
@@ -176,16 +176,18 @@ blockCol = Math.min(5000000 / blockRow, Math.max(100, col / serverNum))`
 
 	    return partitions;
 	  }
-	……
+	  ……
 	}
-```
+	```
 	实现了该CustomizedPartitioner后，将其注入到PSModel的MatrixContext之中，就能实现自定义的模型分区了
 
 	```java
 		psModel.matrixCtx.setPartitioner(new CustomizedPartitioner());
 	```
 
-通过默认的模型分区策略，和自定义的模型分区策略，Angel的模型分区上，在方便性和灵活性，做出了很好的平衡，为用户实现高效的复杂算法，打下了良好的基础。
+
+
+通过默认的模型分区策略和自定义的模型分区策略结合，Angel的模型分区上，在方便性和灵活性，取得了不错的平衡，为用户实现高效的复杂算法，打下了良好的基础。
 
 
 [1]: ../img/matrix_partition.png
