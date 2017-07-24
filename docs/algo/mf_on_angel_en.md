@@ -45,14 +45,16 @@ The algorithm of Matrix Factorization on Angel is shown below:
 
 ### Model Storage
 * The item matrix is stored on PS and the user matrix is stored on worker; PS and worker just need to send the item matrix, not the user matrix. 
-* As can be seen from the updating equation, calculating user vector only requires this particular user's ratings, thus is independent from other users' data. We partition the user matrix, U, by users, to be stored on multiple workers, where each worker only calculates the feature vectors for stored users. We denote the partition received by a worker as U-part, whose dimension is the number of stored users × k.
+
+* As can be seen from the user vector's updating equation, calculating user vector only requires this particular user's ratings, which is independent from other users. So we partition the user matrix(U) by users to be stored on multiple workers. Each worker only calculates the feature vectors for users loaded by this one, as U-part, whose dimension is the number of loaded users × k.
 
 ### Model Computation
-Angel uses gradient descent to train the MF model, and incoporates the following algorithm design to reduce the amount of computation and network communication, as well as improve the efficiency. 
+Angel uses gradient descent to train the MF model, and incorporates the following algorithm design to reduce the amount of computation and network communication, as well as improve the efficiency. 
 
-* Calculating the item vector requires only ratings for the particular item, and any worker can only compute the gradient for items that have ratings in the stored training data, and output 0 for all other items (no ratings on this specific worker). Therefore, the worker just needs to pull a subset of items with ratings by its stored users. We denote the subset of items pulled by worker as V-sub, a sub-matrix of the item matrix.    
+* Item vector's calculating only requires ratings for itself. A worker can only compute the gradient for items that have ratings with its training data, and output 0 for no rating items. Therefore, in each iteration, the worker just needs to pull a subset of items with ratings by its stored users. We denote the subset of items pulled by worker as V-sub, a sub-matrix of the item matrix.    
 
-* When both the number of items and k are large, V-sub can still be too large for a single worker's memory. Since the item vectors are updated independently, we may update V-sub in batches. Each iteration consists of multiple batches, where each batch pulls a sub-matrix of V-sub and updates the user matrix on the worker, and pushes the updated item vectors back to the PS.  
+* When items number and k are both large, V-sub can still be too large for a single worker's memory. As the item vectors are updated independently, we may update V-sub in batches. Each iteration consists of multiple batches, where each batch pulls a sub-matrix of V-sub, updates the user matrix on the worker, and pushes the delta of item vectors back to the PS.  
+
 ![](../img/MF_cal.png)
 
 
@@ -66,7 +68,7 @@ MF training data format
 ```
 	User ID, Item ID:Rating, …, Item ID:Rating
 ```
-
+	
 A row contains all ratings from a user, as shown below:
 
 
