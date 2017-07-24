@@ -63,6 +63,10 @@ object MLConf {
   val ML_LEARN_DECAY = "ml.learn.decay"
   val DEFAULT_ML_LEARN_DECAY = 0.5
 
+  // Logistic Regression param
+  val LR_USE_INTERCEPT = "ml.lr.use.intercept"
+  val DEFAULT_LR_USE_INTERCEPT = false
+
   // Kmeans params
   val KMEANS_CENTER_NUM = "ml.kmeans.center.num"
   val KMEANS_SAMPLE_RATIO_PERBATCH = "ml.kmeans.sample.ratio.perbath"

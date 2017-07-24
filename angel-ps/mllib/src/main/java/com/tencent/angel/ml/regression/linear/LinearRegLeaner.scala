@@ -63,8 +63,8 @@ class LinearRegLeaner(override val ctx: TaskContext) extends MLLearner(ctx) {
     val learnRate = initLearnRate / Math.sqrt(1.0 + decay * epoch)
 
     // Run mini-batch gradient descent.
-    val ret = GradientDescent.miniBatchGD(trainData, model.weight, learnRate, squareLoss,
-      batchSize, batchNum)
+    val ret = GradientDescent.miniBatchGD(trainData, model.weight, None,
+                                          learnRate, squareLoss, batchSize, batchNum)
 
     val loss = ret._1
     val localW = ret._2

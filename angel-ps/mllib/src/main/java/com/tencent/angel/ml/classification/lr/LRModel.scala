@@ -53,6 +53,7 @@ class LRModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
   private val LOG = LogFactory.getLog(classOf[LRModel])
 
   val LR_WEIGHT_MAT = "lr_weight"
+  val LR_INTERCEPT = "lr_intercept"
   val LR_LOSS_MAT = "lr_loss"
 
   def this(conf: Configuration) = {
@@ -65,6 +66,15 @@ class LRModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
   val weight = PSModel[DenseDoubleVector](LR_WEIGHT_MAT, 1, feaNum)
   weight.setAverage(true)
 
+  private val intercept_ = PSModel[DenseDoubleVector](LR_INTERCEPT, 1, 1)
+  intercept_.setAverage(true)
+  val intercept =
+    if (conf.getBoolean(MLConf.LR_USE_INTERCEPT, MLConf.DEFAULT_LR_USE_INTERCEPT)) {
+      Some(intercept_)
+    } else {
+      None
+    }
+
   // Iteration number
   val epochNum = conf.getInt(MLConf.ML_EPOCH_NUM, MLConf.DEFAULT_ML_EPOCH_NUM)
   // A vector stores total validation losses, sotred on PS
@@ -74,6 +84,7 @@ class LRModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
   setLoadPath(conf)
 
   addPSModel(LR_WEIGHT_MAT, weight)
+  addPSModel(LR_INTERCEPT, intercept_)
   addPSModel(LR_LOSS_MAT, loss)
 
   override
@@ -98,6 +109,7 @@ class LRModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
   def predict(dataSet: DataBlock[LabeledData]): DataBlock[PredictResult] = {
     val start = System.currentTimeMillis()
     val wVector = weight.getRow(0)
+    val b = intercept.map(_.getRow(0).get(0)).getOrElse(0.0)
     val cost = System.currentTimeMillis() - start
     LOG.info(s"pull LR Model from PS cost $cost ms." )
 
@@ -107,7 +119,7 @@ class LRModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
     for (idx: Int <- 0 until dataSet.getTotalElemNum) {
       val instance = dataSet.read
       val id = instance.getY
-      val dot = wVector.dot(instance.getX)
+      val dot = wVector.dot(instance.getX) + b
       val sig = MathUtils.sigmoid(dot)
       predict.put(new lrPredictResult(id, dot, sig))
     }
