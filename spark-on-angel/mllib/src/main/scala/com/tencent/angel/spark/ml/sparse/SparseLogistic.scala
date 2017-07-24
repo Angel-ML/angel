@@ -19,7 +19,7 @@ package com.tencent.angel.spark.ml.sparse
 import breeze.linalg.{DenseVector => BDV}
 import breeze.optimize.DiffFunction
 import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.ml.linalg.{DenseVector, Vector}
+import org.apache.spark.ml.linalg.Vector
 import org.apache.spark.rdd.RDD
 
 import com.tencent.angel.spark.ml.common.OneHot
@@ -75,7 +75,6 @@ object SparseLogistic {
     override def calculate(x: BreezePSVector) : (Double, BreezePSVector) = {
       val cumGradient = x.proxy.getPool().createZero().mkBreeze()
 
-      val sampleNum = trainData.count()
       val cumLoss = trainData.mapPartitions { iter =>
         val localX = x.toRemote.pull()
         val gradientSum = new Array[Double](localX.length)
@@ -90,15 +89,18 @@ object SparseLogistic {
             } else {
               math.log1p(math.exp(margin)) - margin
             }
-          feat.foreach { index => gradientSum(index) += gradientMultiplier}
+          feat.foreach { index => gradientSum(index) += gradientMultiplier }
           loss
         }.sum
-        cumGradient.toRemote.incrementAndFlush(gradientSum)
+
+        cumGradient.toRemote.increment(gradientSum)
         Iterator.single(lossSum)
       }.sum()
+      cumGradient.toRemote.flush()
 
+      val sampleNum = trainData.count()
       BreezePSVector.blas.scal(1.0 / sampleNum, cumGradient)
-      println(s"loss: ${cumLoss / sampleNum}")
+      println(s"sampleNum: $sampleNum cumLoss: $cumLoss loss: ${cumLoss / sampleNum}")
       (cumLoss / sampleNum, cumGradient)
     }
   }

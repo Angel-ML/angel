@@ -851,7 +851,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       }
 
       for (Entry<Integer, Request> entry : seqIdToRequestMap.entrySet()) {
-        LOG.debug("infight request id=" + entry.getKey() + ", request context=" + entry.getValue()
+        LOG.debug("infight request seqId=" + entry.getKey() + ", request context=" + entry.getValue()
             + ", request channel=" + entry.getValue().getContext().getChannel());
       }
     }
@@ -914,12 +914,12 @@ public class MatrixTransportClient implements MatrixTransportInterface {
         for (Entry<Integer, Request> entry : seqIdToRequestMap.entrySet()) {
           Request item = entry.getValue();
           item.getContext().addWaitTimeTicks(checkPeriodMS * 10);
-          LOG.debug("request " + entry.getKey() + " wait time="
+          LOG.debug("request seqId=" + entry.getKey() + " wait time="
               + item.getContext().getWaitTimeTicks());
           if (item.getContext().getWaitTimeTicks() > requestTimeOut) {
             item = seqIdToRequestMap.get(entry.getKey());
             if (item != null) {
-              LOG.info("remove timeout request " + item);
+              LOG.info("remove timeout request seqId=" + entry.getKey());
               removeNum++;
               requestFailed(entry.getKey(), item);
             }
@@ -1253,7 +1253,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
     @Override
     public void operationComplete(ChannelFuture future) throws Exception {
-      LOG.debug("send request " + request + " with seqId " + seqId + "complete");
+      LOG.debug("send request " + request + " with seqId=" + seqId + " complete");
       if (!future.isSuccess()) {
         LOG.error("send " + seqId + " failed ", future.cause());
         future.cause().printStackTrace();
@@ -1281,7 +1281,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
           TransportMethod method = request.getType();
 
-          LOG.debug("response handler, seqid = " + seqId + ", method = " + method + ", ts = "
+          LOG.debug("response handler, seqId=" + seqId + ", method=" + method + ", ts="
               + System.currentTimeMillis());
 
           switch (method) {

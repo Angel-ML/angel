@@ -482,6 +482,21 @@ class BreezePSVectorSuite extends PSFunSuite with SharedPSContext {
     assert(psDot === localDot)
   }
 
+  test("blas.scale") {
+    val scale = _brzVector2.copy
+    blas.scal(0.15, scale)
+
+    val localScale = _localVector2.map(0.15 * _)
+    assert(scale.toRemote.pull().sameElements(localScale))
+
+    val bigScale = _pool.createModel(Array(-17269.5, -10081.0,-9128.0,-6902.5, -4771.5,
+      -4250.0, -9693.0, -19569.0, -2089.5, -30461.0)).mkBreeze()
+
+    println(s"${bigScale.toRemote.pull().mkString(" ")}")
+    BreezePSVector.blas.scal(1.0 / 788503, bigScale)
+    println(s"${bigScale.toRemote.pull(false).mkString(" ")}")
+  }
+
   test("blas.copy") {
     val dist: BreezePSVector = _pool.allocate().mkBreeze()
     blas.copy(_brzVector2, dist)

@@ -655,7 +655,7 @@ public class AngelConfiguration extends Configuration {
    */
   public static final String ANGEL_MATRIXTRANSFER_CHECK_INTERVAL_MS = ANGEL_PREFIX
       + "matrixtransfer.check.interval.ms";
-  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_CHECK_INTERVAL_MS = 1000;
+  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_CHECK_INTERVAL_MS = 100;
 
   // //////////////////////////////
   // Matrix transfer Configs.

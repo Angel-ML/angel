@@ -129,6 +129,7 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
 
   @SuppressWarnings("unchecked")
   private void getSplit(int seqId, GetUDFRequest request, ChannelHandlerContext ctx) {
+    long startTs = System.currentTimeMillis();
     GetUDFResponse response = null;
     try {
       Class<? extends GetFunc> funcClass = (Class<? extends GetFunc>) Class.forName(request.getGetFuncClass());
@@ -145,10 +146,14 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
       response.setResponseType(ResponseType.FATAL);
     }
 
+    long endTs = System.currentTimeMillis();
+    LOG.debug("get psf seqId=" + seqId + " process time=" + (endTs - startTs));
+
     ByteBuf buf = ByteBufUtils.newByteBuf(4 + response.bufferLen(), useDirectorBuffer);
     buf.writeInt(seqId);
     response.serialize(buf);
     ctx.writeAndFlush(buf);
+    LOG.debug("get psf seqId=" + seqId + " serialize and send time=" + (System.currentTimeMillis() - endTs));
   }
 
   @SuppressWarnings("unchecked")

@@ -8,11 +8,11 @@
 
 ![kmeans](../img/kmeans.png)   
 
-其中：![xi](../img/xi.png)代表第i个样本，![ci](../img/ci.png)代表与第i个样本距离最近的簇，![miu_i](../img/miu_i.png)代表第j个簇的簇心。
+其中：![xi](../img/xi.png)代表第i个样本，![ci](../img/ci.png)代表与第i个样本距离最近的簇，![miu_j](../img/miu_j.png)代表第j个簇的簇心。
 
 
 ## Mini-batch KMeans
-"Web-Scale K-Means Clustering"提出一种在朴素KMeans算法基础上改进的KMeans算法，用mini-batch方法训练，每次迭代选择一个mini-batch的样本更新簇心，如下所示：
+"Web-Scale K-Means Clustering"提出一种在朴素KMeans算法基础上改进的KMeans算法，用mini-batch方法训练，每次迭代选择一个mini-batch的样本集来更新簇心，如下所示：
 
 ![mini_batch_kmeans](../img/mini_batch_kmeans.png)
 
