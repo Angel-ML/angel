@@ -135,7 +135,7 @@ class RemotePSVectorSuite extends PSFunSuite with Matchers with SharedPSContext 
 
     val thisDim = dim
     val rdd2 = _rdd.mapPartitions { iter =>
-      val max = Array.ofDim[Double](thisDim)
+      val max = Array.fill[Double](thisDim)(Double.MinValue)
       iter.foreach { arr =>
         arr.indices.foreach { i => if (arr(i) >  max(i)) max(i) = arr(i) }
       }
@@ -165,7 +165,7 @@ class RemotePSVectorSuite extends PSFunSuite with Matchers with SharedPSContext 
 
     val thisDim = dim
     val rdd2 = _rdd.mapPartitions { iter =>
-      val min = Array.ofDim[Double](thisDim)
+      val min = Array.fill[Double](thisDim)(Double.MaxValue)
       iter.foreach { arr =>
         arr.indices.foreach { i => if (arr(i) <  min(i)) min(i) = arr(i) }
       }

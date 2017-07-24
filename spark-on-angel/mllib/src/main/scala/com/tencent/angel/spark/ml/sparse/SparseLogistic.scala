@@ -76,7 +76,7 @@ object SparseLogistic {
       val cumGradient = x.proxy.getPool().createZero().mkBreeze()
 
       val cumLoss = trainData.mapPartitions { iter =>
-        val localX = x.toRemote.pull()
+        val localX = x.toRemote.pull(fromCache = true)
         val gradientSum = new Array[Double](localX.length)
 
         val lossSum = iter.map { case (feat, label) =>

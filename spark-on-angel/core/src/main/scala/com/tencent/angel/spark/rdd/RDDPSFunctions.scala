@@ -22,7 +22,7 @@ import scala.reflect.ClassTag
 
 import org.apache.spark.rdd.RDD
 
-import com.tencent.angel.spark.client.PSClient
+import com.tencent.angel.spark.models.vector.RemotePSVector
 
 class RDDPSFunctions[T: ClassTag](self: RDD[T]) extends Serializable {
 
@@ -37,19 +37,21 @@ class RDDPSFunctions[T: ClassTag](self: RDD[T]) extends Serializable {
   def psAggregate[U: ClassTag](zeroValue: U)(
       seqOp: (U, T) => U,
       combOp: (U, U) => U): U = {
-    self.mapPartitions { iter =>
+    val res = self.mapPartitions { iter =>
       val result = iter.foldLeft(zeroValue)(seqOp)
-      PSClient().flush()
       Iterator(result)
     }.reduce(combOp)
+    RemotePSVector.flush()
+    res
   }
 
   def psFoldLeft[U: ClassTag](zeroValue: U)(seqOp: (U, T) => U): U = {
-    self.mapPartitions { iter =>
+    val res = self.mapPartitions { iter =>
       val result = iter.foldLeft(zeroValue)(seqOp)
-      PSClient().flush()
       Iterator(result)
     }.collect().head
+    RemotePSVector.flush()
+    res
   }
 
 }

@@ -18,6 +18,7 @@
 package com.tencent.angel.spark.models.vector
 
 import java.util.concurrent.ConcurrentHashMap
+import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkEnv, TaskContext}
@@ -37,10 +38,10 @@ private[spark] class RemotePSVector (override val proxy: PSModelProxy) extends P
   /**
    * Pull PSVector from PS nodes to local.
    * @param fromCache if false, it will pull the value from PS,
-   *                  otherwise, if true, it will get the value from `localArrayCache`   firstly.
+   *                  otherwise, if true, it will get the value from `localArrayCache` firstly.
    * @return
    */
-  def pull(fromCache: Boolean = true): Array[Double] = {
+  def pull(fromCache: Boolean = false): Array[Double] = {
     if (fromCache) {
       if (!localArrayCache.contains(proxy)) {
         localArrayCache.synchronized {
@@ -74,9 +75,9 @@ private[spark] class RemotePSVector (override val proxy: PSModelProxy) extends P
    */
   def increment(delta: Array[Double]): Unit = {
     require(delta.length == proxy.numDimensions)
-    init(INCREMENT, proxy)
 
     mergeCache.synchronized {
+      init(INCREMENT, proxy)
       val mergedArray = mergeCache.get(proxy)._2
       PSClient().BLAS.daxpy(proxy.numDimensions, 1.0, delta, 1, mergedArray, 1)
     }
@@ -88,9 +89,9 @@ private[spark] class RemotePSVector (override val proxy: PSModelProxy) extends P
    */
   def increment(indices: Array[Int], values: Array[Double]): Unit = {
     require(indices.length == values.length && indices.length <= proxy.numDimensions)
-    init(INCREMENT, proxy)
 
     mergeCache.synchronized {
+      init(INCREMENT, proxy)
       val mergedArray = mergeCache.get(proxy)._2
       var i = 0
       while (i < indices.length) {
@@ -114,13 +115,14 @@ private[spark] class RemotePSVector (override val proxy: PSModelProxy) extends P
   def mergeMax(other: Array[Double]): Unit = {
     val dim = proxy.numDimensions
     require(other.length == dim)
-    init(MAX, proxy)
-    val mergedArray = mergeCache.get(proxy)._2
-
-    var i = 0
-    while (i < dim) {
-      mergedArray(i) = math.max(mergedArray(i), other(i))
-      i += 1
+    mergeCache.synchronized {
+      init(MAX, proxy)
+      val mergedArray = mergeCache.get(proxy)._2
+      var i = 0
+      while (i < dim) {
+        mergedArray(i) = math.max(mergedArray(i), other(i))
+        i += 1
+      }
     }
   }
 
@@ -131,14 +133,17 @@ private[spark] class RemotePSVector (override val proxy: PSModelProxy) extends P
   def mergeMax(indices: Array[Int], values: Array[Double]): Unit = {
     val dim = proxy.numDimensions
     require(indices.length == values.length && indices.length <= dim)
-    init(MAX, proxy)
 
-    val mergedArray = mergeCache.get(proxy)._2
-    var i = 0
-    while (i < indices.length) {
-      val index = indices(i)
-      mergedArray(index) = math.max(mergedArray(index), values(i))
-      i += 1
+    mergeCache.synchronized {
+      init(MAX, proxy)
+
+      val mergedArray = mergeCache.get(proxy)._2
+      var i = 0
+      while (i < indices.length) {
+        val index = indices(i)
+        mergedArray(index) = math.max(mergedArray(index), values(i))
+        i += 1
+      }
     }
   }
 
@@ -156,12 +161,14 @@ private[spark] class RemotePSVector (override val proxy: PSModelProxy) extends P
    */
   def mergeMin(other: Array[Double]): Unit = {
     require(other.length == proxy.numDimensions)
-    init(MIN, proxy)
-    val mergedArray = mergeCache.get(proxy)._2
-    var i = 0
-    while (i < mergedArray.length) {
-      mergedArray(i) = math.min(mergedArray(i), other(i))
-      i += 1
+    mergeCache.synchronized {
+      init(MIN, proxy)
+      val mergedArray = mergeCache.get(proxy)._2
+      var i = 0
+      while (i < mergedArray.length) {
+        mergedArray(i) = math.min(mergedArray(i), other(i))
+        i += 1
+      }
     }
   }
 
@@ -172,13 +179,15 @@ private[spark] class RemotePSVector (override val proxy: PSModelProxy) extends P
   def mergeMin(indices: Array[Int], values: Array[Double]): Unit = {
     val dim = proxy.numDimensions
     require(indices.length == values.length && indices.length <= dim)
-    init(MIN, proxy)
-    val mergedArray = mergeCache.get(proxy)._2
-    var i = 0
-    while (i < indices.length) {
-      val index = indices(i)
-      mergedArray(index) = math.min(mergedArray(index), values(i))
-      i += 1
+    mergeCache.synchronized {
+      init(MIN, proxy)
+      val mergedArray = mergeCache.get(proxy)._2
+      var i = 0
+      while (i < indices.length) {
+        val index = indices(i)
+        mergedArray(index) = math.min(mergedArray(index), values(i))
+        i += 1
+      }
     }
   }
 
@@ -240,7 +249,21 @@ object RemotePSVector {
     mergeCache.synchronized {
       if (mergeCache.containsKey(proxy)) {
         val (mergeType, mergedArray) = mergeCache.get(proxy)
-        println(s"mergeArray:  ${mergedArray.slice(0, 10).mkString(" ")}")
+        mergeType match {
+          case INCREMENT => PSClient().increment(proxy, mergedArray)
+          case MAX => PSClient().mergeMax(proxy, mergedArray)
+          case MIN => PSClient().mergeMin(proxy, mergedArray)
+        }
+        mergeCache.remove(proxy)
+      }
+    }
+  }
+
+  def flush(): Unit = {
+    mergeCache.synchronized {
+      for (entry <- mergeCache.entrySet().asScala) {
+        val proxy = entry.getKey
+        val (mergeType, mergedArray) = entry.getValue
         mergeType match {
           case INCREMENT => PSClient().increment(proxy, mergedArray)
           case MAX => PSClient().mergeMax(proxy, mergedArray)
