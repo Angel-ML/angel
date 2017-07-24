@@ -31,7 +31,7 @@ object GradientDescent {
 
   def miniBatchGD[M <: TDoubleVector](trainData: DataBlock[LabeledData],
                                       model: PSModel[M],
-                                      intercept: Option[PSModel[DenseDoubleVector]],
+                                      intercept: Option[PSModel[M]],
                                       lr: Double,
                                       loss: Loss,
                                       batchSize: Int,
