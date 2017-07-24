@@ -14,15 +14,24 @@ Assuming there are M users and N items in the data. We denote the M×N rating ma
 ![](../img/MF_UV.png)
 
 
-* **Gradient Descent Matrix Factorizaion**
+### **Gradient Descent Matrix Factorizaion**
+
 The error between the predicted value of user i's explicit rating for item j (y_{ij}) and the true value is denoted by e_{ij}, i.e. e_{ij}=y{ij}-u_i \cdot v_j. The goal of MF algorithm is to minimize the discrepancy of the predicted ratings from the true ratings:
+
 ![](../img/MF_obj.png)
+
 We add the L2 penalty to help prevent over-fitting:
+
 ![](../img/MF_l2obj.png)
+
 where 
+
 ![](../img/MF_uvdot.png)
+
 We use gradient descent to minimize the objective, and update u_i and v_j by: 
+
 ![](../img/MF_update_u.png)
+
 ![](../img/MF_update_v.png)
 
 
