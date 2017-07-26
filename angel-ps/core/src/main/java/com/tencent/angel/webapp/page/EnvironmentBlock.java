@@ -17,7 +17,7 @@
 package com.tencent.angel.webapp.page;
 
 import com.google.inject.Inject;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.AMContext;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.TABLE;
@@ -63,7 +63,7 @@ public class EnvironmentBlock extends HtmlBlock {
     html.h1("Angel Properties");
     TABLE<Hamlet> angel_properties_table = html.table();
     angel_properties_table.tr().th(_TH, "NAME").th(_TH, "VALUE")._();
-    AngelConfiguration angelConfiguration = new AngelConfiguration(this.amContext.getConf());
+    AngelConf angelConfiguration = new AngelConf(this.amContext.getConf());
     Properties propertiesConfiguration = angelConfiguration.getAngelProps();
     SortedMap sortedMap = new TreeMap(propertiesConfiguration);
     Set<Object> set = sortedMap.keySet();

@@ -16,23 +16,24 @@
 
 package com.tencent.angel.master;
 
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.InternalErrorEvent;
+import com.tencent.angel.master.metrics.MetricsEvent;
+import com.tencent.angel.master.metrics.MetricsEventType;
+import com.tencent.angel.master.metrics.MetricsUpdateEvent;
 import com.tencent.angel.master.worker.attempt.*;
 import com.tencent.angel.master.worker.worker.AMWorker;
+import com.tencent.angel.ml.metrics.Metric;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.GetWorkerLogDirRequest;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.GetWorkerLogDirResponse;
+import com.tencent.angel.utils.KryoUtils;
 import com.tencent.angel.worker.WorkerId;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -45,7 +46,6 @@ import org.apache.hadoop.service.AbstractService;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.common.Location;
-import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.ipc.MLRPC;
 import com.tencent.angel.ipc.RpcServer;
@@ -206,15 +206,15 @@ public class MasterService extends AbstractService implements MasterProtocol {
 
     Configuration conf = context.getConf();
     psAgentTimeOutMS =
-        conf.getLong(AngelConfiguration.ANGEL_PSAGENT_HEARTBEAT_TIMEOUT_MS,
-            AngelConfiguration.DEFAULT_ANGEL_PSAGENT_HEARTBEAT_TIMEOUT_MS);
+        conf.getLong(AngelConf.ANGEL_PSAGENT_HEARTBEAT_TIMEOUT_MS,
+            AngelConf.DEFAULT_ANGEL_PSAGENT_HEARTBEAT_TIMEOUT_MS);
 
     psTimeOutMS =
-        conf.getLong(AngelConfiguration.ANGEL_PS_HEARTBEAT_TIMEOUT_MS,
-            AngelConfiguration.DEFAULT_ANGEL_PS_HEARTBEAT_TIMEOUT_MS);
+        conf.getLong(AngelConf.ANGEL_PS_HEARTBEAT_TIMEOUT_MS,
+            AngelConf.DEFAULT_ANGEL_PS_HEARTBEAT_TIMEOUT_MS);
     workerTimeOutMS =
-        conf.getLong(AngelConfiguration.ANGEL_WORKER_HEARTBEAT_TIMEOUT_MS,
-            AngelConfiguration.DEFAULT_ANGEL_WORKER_HEARTBEAT_TIMEOUT_MS);
+        conf.getLong(AngelConf.ANGEL_WORKER_HEARTBEAT_TIMEOUT_MS,
+            AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_TIMEOUT_MS);
 
     LOG.debug("psAgentTimeOutMS:" + psAgentTimeOutMS);
     LOG.debug("psTimeOutMS:" + psTimeOutMS);
@@ -1142,7 +1142,38 @@ public class MasterService extends AbstractService implements MasterProtocol {
 
     //update task iteration
     task.iteration(request.getIteration());
+    context.getEventHandler().handle(new MetricsEvent(MetricsEventType.TASK_ITERATION_UPDATE));
     return TaskIterationResponse.newBuilder().build();
+  }
+
+  @Override public PSAgentMasterServiceProtos.TaskCountersUpdateResponse taskCountersUpdate(
+    RpcController controller, PSAgentMasterServiceProtos.TaskCounterUpdateRequest request)
+    throws ServiceException {
+    AMTask task = context.getTaskManager().getTask(ProtobufUtil.convertToId(request.getTaskId()));
+    if(task != null) {
+      task.updateCounters(request.getCountersList());
+    }
+    return PSAgentMasterServiceProtos.TaskCountersUpdateResponse.newBuilder().build();
+  }
+
+  /**
+   * Set algorithm metrics
+   * @param controller rpc controller of protobuf
+   * @param request request contains algorithm metrics of a task
+   * @return
+   * @throws ServiceException
+   */
+  @Override
+  public PSAgentMasterServiceProtos.SetAlgoMetricsResponse setAlgoMetrics(RpcController controller,
+    PSAgentMasterServiceProtos.SetAlgoMetricsRequest request) throws ServiceException {
+    List<PSAgentMasterServiceProtos.AlgoMetric> metrics = request.getAlgoMetricsList();
+    int size = metrics.size();
+    Map<String, Metric> nameToMetricMap = new LinkedHashMap<>(size);
+    for(int i = 0; i < size; i++) {
+      nameToMetricMap.put(metrics.get(i).getName(), KryoUtils.deserializeAlgoMetric(metrics.get(i).getSerializedMetric().toByteArray()));
+    }
+    context.getEventHandler().handle(new MetricsUpdateEvent(nameToMetricMap));
+    return PSAgentMasterServiceProtos.SetAlgoMetricsResponse.newBuilder().build();
   }
 
   /**

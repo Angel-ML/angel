@@ -17,7 +17,7 @@
 package com.tencent.angel.worker.task;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.worker.WorkerContext;
 import it.unimi.dsi.fastutil.ints.IntIterator;
@@ -49,8 +49,8 @@ public class TaskManager {
   public void init() {
     Configuration conf = WorkerContext.get().getConf();
     int taskNumInWork =
-        conf.getInt(AngelConfiguration.ANGEL_WORKER_TASK_NUMBER,
-            AngelConfiguration.DEFAULT_ANGEL_WORKER_TASK_NUMBER);
+        conf.getInt(AngelConf.ANGEL_WORKER_TASK_NUMBER,
+            AngelConf.DEFAULT_ANGEL_WORKER_TASK_NUMBER);
     taskPool = Executors.newFixedThreadPool(taskNumInWork);
   }
 

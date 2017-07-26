@@ -17,7 +17,7 @@
 package com.tencent.angel.psagent;
 
 import com.tencent.angel.RunningMode;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.matrix.MatrixMetaManager;
 import com.tencent.angel.psagent.client.MasterClient;
 import com.tencent.angel.psagent.clock.ClockCache;
@@ -157,7 +157,7 @@ public class PSAgentContext {
    * @return int the total task number in the application
    */
   public int getTotalTaskNum() {
-    return getConf().getInt(AngelConfiguration.ANGEL_TASK_ACTUAL_NUM, 1);
+    return getConf().getInt(AngelConf.ANGEL_TASK_ACTUAL_NUM, 1);
   }
 
   /**
@@ -175,8 +175,8 @@ public class PSAgentContext {
    * @return long rpc try interval in milliseconds
    */
   public long getRequestSleepTimeMS() {
-    return getConf().getInt(AngelConfiguration.ANGEL_REQUEST_SLEEP_TIME_MS,
-        AngelConfiguration.DEFAULT_ANGEL_REQUEST_SLEEP_TIME_MS);
+    return getConf().getInt(AngelConf.ANGEL_REQUEST_SLEEP_TIME_MS,
+        AngelConf.DEFAULT_ANGEL_REQUEST_SLEEP_TIME_MS);
   }
 
   /**
@@ -185,8 +185,8 @@ public class PSAgentContext {
    * @return long maximum network bytes being transmitted
    */
   public long getMaxBytesInFlight() {
-    return getConf().getLong(AngelConfiguration.ANGEL_NETWORK_MAX_BYTES_FLIGHT,
-        AngelConfiguration.DEFAULT_ANGEL_NETWORK_MAX_BYTES_FLIGHT);
+    return getConf().getLong(AngelConf.ANGEL_NETWORK_MAX_BYTES_FLIGHT,
+        AngelConf.DEFAULT_ANGEL_NETWORK_MAX_BYTES_FLIGHT);
   }
   
   /**
@@ -196,8 +196,8 @@ public class PSAgentContext {
    */
   public boolean syncClockEnable(){
     return getConf()
-            .getBoolean(AngelConfiguration.ANGEL_PSAGENT_SYNC_CLOCK_ENABLE,
-                AngelConfiguration.DEFAULT_ANGEL_PSAGENT_SYNC_CLOCK_ENABLE);
+            .getBoolean(AngelConf.ANGEL_PSAGENT_SYNC_CLOCK_ENABLE,
+                AngelConf.DEFAULT_ANGEL_PSAGENT_SYNC_CLOCK_ENABLE);
   }
 
   /**
@@ -224,8 +224,8 @@ public class PSAgentContext {
    * @return int SSP staleness value
    */
   public int getStaleness() {
-    return getConf().getInt(AngelConfiguration.ANGEL_STALENESS,
-        AngelConfiguration.DEFAULT_ANGEL_STALENESS);
+    return getConf().getInt(AngelConf.ANGEL_STALENESS,
+        AngelConf.DEFAULT_ANGEL_STALENESS);
   }
 
   /**

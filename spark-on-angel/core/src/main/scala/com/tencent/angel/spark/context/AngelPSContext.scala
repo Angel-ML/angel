@@ -30,7 +30,7 @@ import org.apache.spark.{SparkConf, TaskContext}
 
 import com.tencent.angel.client.AngelContext
 import com.tencent.angel.common.Location
-import com.tencent.angel.conf.AngelConfiguration
+import com.tencent.angel.conf.AngelConf._
 import com.tencent.angel.ml.matrix.{MatrixContext, MatrixMeta}
 import com.tencent.angel.psagent.PSAgent
 import com.tencent.angel.psagent.matrix.{MatrixClient, MatrixClientFactory}
@@ -175,7 +175,7 @@ private[spark] object AngelPSContext {
     val queue = conf.get("spark.yarn.queue", "root.default")
 
     /** mode: YARN or LOCAL */
-    val deployMode = conf.get("spark.ps.mode", AngelConfiguration.DEFAULT_ANGEL_DEPLOY_MODE)
+    val deployMode = conf.get("spark.ps.mode", DEFAULT_ANGEL_DEPLOY_MODE)
     val psNum = conf.getInt("spark.ps.instances", 2)
     val psCores = conf.getInt("spark.ps.cores", 2)
     val psMem = conf.getSizeAsMb("spark.ps.memory", "4g").toInt
@@ -199,7 +199,7 @@ private[spark] object AngelPSContext {
     val psOutOverwrite = conf.getBoolean("spark.ps.out.overwrite", true)
     val psOutTmpOption = conf.getOption("spark.ps.out.tmp.path")
 
-    import com.tencent.angel.conf.AngelConfiguration._
+    import com.tencent.angel.conf.AngelConf._
 
     val hadoopConf = SparkHadoopUtil.get.newConfiguration(conf)
     hadoopConf.set(ANGEL_RUNNING_MODE, "ANGEL_PS")

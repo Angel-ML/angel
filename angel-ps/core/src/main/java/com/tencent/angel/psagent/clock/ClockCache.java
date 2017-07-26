@@ -17,7 +17,7 @@
 package com.tencent.angel.psagent.clock;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.transport.MatrixTransportInterface;
@@ -63,8 +63,8 @@ public class ClockCache {
         PSAgentContext
             .get()
             .getConf()
-            .getInt(AngelConfiguration.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS,
-                AngelConfiguration.DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS);
+            .getInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS,
+                AngelConf.DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS);
 
     syncer = new Syncer();
     syncer.setName("clock-syncer");
@@ -199,5 +199,14 @@ public class ClockCache {
       return 0;
     }
     return matrixClockCache.getClock(rowIndex);
+  }
+
+  /**
+   * Get a matrix clock cache
+   * @param matrixId
+   * @return MatrixClockCache
+   */
+  public MatrixClockCache getMatrixClockCache(int matrixId) {
+    return matrixClockCacheMap.get(matrixId);
   }
 }

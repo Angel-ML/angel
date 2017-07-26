@@ -19,7 +19,7 @@ package com.tencent.angel.worker.storage;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.worker.WorkerContext;
 
@@ -75,7 +75,7 @@ public class DiskDataBlock<VALUE> extends DataBlock<VALUE> {
 
     filelist = new ArrayList<String>();
 
-    lDirAlloc = new LocalDirAllocator(AngelConfiguration.LOCAL_DIR);
+    lDirAlloc = new LocalDirAllocator(AngelConf.LOCAL_DIR);
 
     uuid = UUID.randomUUID();
     base =
@@ -87,16 +87,16 @@ public class DiskDataBlock<VALUE> extends DataBlock<VALUE> {
     Configuration conf = WorkerContext.get().getConf();
 
     readBufferSize =
-        conf.getInt(AngelConfiguration.ANGEL_TASK_DISK_READ_BUFFER_SIZE,
-            AngelConfiguration.DEFAULT_ANGEL_TASK_DISK_READ_BUFFER_SIZE);
+        conf.getInt(AngelConf.ANGEL_TASK_DISK_READ_BUFFER_SIZE,
+            AngelConf.DEFAULT_ANGEL_TASK_DISK_READ_BUFFER_SIZE);
 
     writeBufferSize =
-        conf.getInt(AngelConfiguration.ANGEL_TASK_DISK_WRITE_BUFFER_SIZE,
-            AngelConfiguration.DEFAULT_ANGEL_TASK_DISK_WRITE_BUFFER_SIZE);
+        conf.getInt(AngelConf.ANGEL_TASK_DISK_WRITE_BUFFER_SIZE,
+            AngelConf.DEFAULT_ANGEL_TASK_DISK_WRITE_BUFFER_SIZE);
 
     maxSizePerFile =
-        conf.getInt(AngelConfiguration.ANGEL_TASK_RECORD_FILE_MAXSIZE_MB,
-            AngelConfiguration.DEFAULT_ANGEL_TASK_RECORD_FILE_MAXSIZE_MB) << 20;
+        conf.getInt(AngelConf.ANGEL_TASK_RECORD_FILE_MAXSIZE_MB,
+            AngelConf.DEFAULT_ANGEL_TASK_RECORD_FILE_MAXSIZE_MB) << 20;
     kryo = new Kryo();
     init();
     LOG.info("create diskstorage, base=" + base);

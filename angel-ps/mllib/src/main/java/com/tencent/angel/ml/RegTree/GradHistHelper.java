@@ -16,7 +16,7 @@
  */
 package com.tencent.angel.ml.RegTree;
 
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.GBDT.GBDTController;
 import com.tencent.angel.ml.conf.MLConf;
 import com.tencent.angel.ml.math.vector.DenseDoubleVector;
@@ -45,7 +45,7 @@ public class GradHistHelper {
     this.nid = nid;
   }
 
-  public DenseDoubleVector buildHistogram() {
+  public DenseDoubleVector buildHistogram(int insStart, int insEnd) {
     // 1. new feature's histogram (grad + hess)
     // size: sampled_featureNum * (2 * splitNum)
     // in other words, concatenate each feature's histogram
@@ -54,8 +54,10 @@ public class GradHistHelper {
     DenseDoubleVector histogram = new DenseDoubleVector(featureNum * 2 * splitNum);
 
     // 2. get the span of this node
-    int nodeStart = this.controller.nodePosStart[nid];
-    int nodeEnd = this.controller.nodePosEnd[nid];
+    //int nodeStart = this.controller.nodePosStart[nid];
+    //int nodeEnd = this.controller.nodePosEnd[nid];
+    int nodeStart = insStart;
+    int nodeEnd = insEnd;
     LOG.debug(String.format("Build histogram of node[%d]: size[%d] instance span [%d - %d]",
         this.nid, histogram.getDimension(), nodeStart, nodeEnd));
     // ------ 3. using sparse-aware method to build histogram ---
@@ -231,7 +233,7 @@ public class GradHistHelper {
     // partition number
     int partitionNum =
         WorkerContext.get().getConf()
-            .getInt(AngelConfiguration.ANGEL_PS_NUMBER, AngelConfiguration.DEFAULT_ANGEL_PS_NUMBER);
+            .getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER);
     // cols of each partition
     int colPerPartition = histogram.getDimension() / partitionNum;
     assert histogram.getDimension() == partitionNum * colPerPartition;

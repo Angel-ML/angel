@@ -27,7 +27,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.app.AppEvent;
 import com.tencent.angel.master.app.AppEventType;
@@ -118,28 +118,28 @@ public class WorkerManager extends AbstractService implements EventHandler<Worke
 
     Configuration conf = context.getConf();
     workersInGroup =
-        conf.getInt(AngelConfiguration.ANGEL_WORKERGROUP_WORKER_NUMBER,
-            AngelConfiguration.DEFAULT_ANGEL_WORKERGROUP_WORKER_NUMBER);
+        conf.getInt(AngelConf.ANGEL_WORKERGROUP_WORKER_NUMBER,
+            AngelConf.DEFAULT_ANGEL_WORKERGROUP_WORKER_NUMBER);
 
     taskNumberInEachWorker =
-        conf.getInt(AngelConfiguration.ANGEL_WORKER_TASK_NUMBER,
-            AngelConfiguration.DEFAULT_ANGEL_WORKER_TASK_NUMBER);
+        conf.getInt(AngelConf.ANGEL_WORKER_TASK_NUMBER,
+            AngelConf.DEFAULT_ANGEL_WORKER_TASK_NUMBER);
 
     tolerateFailedGroup =
-        conf.getDouble(AngelConfiguration.ANGEL_WORKERGROUP_FAILED_TOLERATE, conf.getDouble(
-            AngelConfiguration.ANGEL_TASK_ERROR_TOLERATE,
-            AngelConfiguration.DEFAULT_ANGEL_TASK_ERROR_TOLERATE));
+        conf.getDouble(AngelConf.ANGEL_WORKERGROUP_FAILED_TOLERATE, conf.getDouble(
+            AngelConf.ANGEL_TASK_ERROR_TOLERATE,
+            AngelConf.DEFAULT_ANGEL_TASK_ERROR_TOLERATE));
 
     int workerMemory =
-        conf.getInt(AngelConfiguration.ANGEL_WORKER_MEMORY_GB,
-            AngelConfiguration.DEFAULT_ANGEL_WORKER_MEMORY_GB) * 1024;
+        conf.getInt(AngelConf.ANGEL_WORKER_MEMORY_GB,
+            AngelConf.DEFAULT_ANGEL_WORKER_MEMORY_GB) * 1024;
     int workerVcores =
-        conf.getInt(AngelConfiguration.ANGEL_WORKER_CPU_VCORES,
-            AngelConfiguration.DEFAULT_ANGEL_WORKER_CPU_VCORES);
+        conf.getInt(AngelConf.ANGEL_WORKER_CPU_VCORES,
+            AngelConf.DEFAULT_ANGEL_WORKER_CPU_VCORES);
 
     int workerPriority =
-        conf.getInt(AngelConfiguration.ANGEL_WORKER_PRIORITY,
-            AngelConfiguration.DEFAULT_ANGEL_WORKER_PRIORITY);
+        conf.getInt(AngelConf.ANGEL_WORKER_PRIORITY,
+            AngelConf.DEFAULT_ANGEL_WORKER_PRIORITY);
 
     workerResource = Resource.newInstance(workerMemory, workerVcores);
     PRIORITY_WORKER =
@@ -303,8 +303,8 @@ public class WorkerManager extends AbstractService implements EventHandler<Worke
 
     workergroupNumber = estimatedGroupNum;
     totalTaskNumber = estimatedTaskNum;
-    context.getConf().setInt(AngelConfiguration.ANGEL_TASK_ACTUAL_NUM, totalTaskNumber);
-    context.getConf().setInt(AngelConfiguration.ANGEL_WORKERGROUP_ACTUAL_NUM, workergroupNumber);
+    context.getConf().setInt(AngelConf.ANGEL_TASK_ACTUAL_NUM, totalTaskNumber);
+    context.getConf().setInt(AngelConf.ANGEL_WORKERGROUP_ACTUAL_NUM, workergroupNumber);
   }
 
   private void initWorkers() {

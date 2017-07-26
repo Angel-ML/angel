@@ -160,7 +160,7 @@ public abstract class DataBlock<VALUE> {
    *
    * @return the total elem num
    */
-  public int getTotalElemNum() {
+  public int size() {
     return writeIndex;
   }
 

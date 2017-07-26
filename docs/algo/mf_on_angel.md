@@ -1,55 +1,45 @@
-# MF（Matrix Factorization）
+# Matrix Factorization
 
-> 矩阵分解（Matrix Factorizaiton）是推荐系统中常用的算法，将用户、商品抽象为K维向量，将用户-商品矩阵分解为用户矩阵和商品矩阵的乘积。
+> Matrix Factorizaiton是推荐系统中常用的矩阵分解算法，将用户、商品抽象为K维向量，将用户-商品矩阵分解为用户矩阵和商品矩阵的乘积。
 
 
 ## 1. 算法介绍
-MF的主要思想是：把用户、商品的特征抽象为k维向量表示。  
+MF的主要思想是把用户、商品的特征抽象为k维向量表示。  
 
 用户-商品评分矩阵（简称评分矩阵），是推荐系统中常用的数据表示方法，用一个矩阵表示用户对商品的打分。矩阵的每行代表一个用户，每列代表一个商品，每个元素代表对应用户对商品的评分，如图一所示。在大多数情况下商品数量巨大，每个用户只对极小部分商品有评分，所以评分矩阵一般非常稀疏，即评分矩阵中的绝大多数元素为0。MF算法把评分矩阵分解为用户-特征矩阵（简称用户矩阵）和特征-商品矩阵（简称商品矩阵）。   
  
 ![](../img/MF_item_user_mat.png)
 
 
-设数据集有M个用户，N个商品：
-
-评分矩阵用Y表示，Y的维度为：M×N，y_{ij} 表示第i个用户对第j个商品的评分；MF算法把评分矩阵Y分解为用户矩阵U和商品矩阵V的乘积，U的维度为M×k，每一行代表一个用户u_i，u_i是一个k维特征向量；V的维度为k×N，每一列代表一个商品v_j, v_j是一个k维特征向量；k是MF算法指定的值，代表特征向量的维度。我们以用户向量u_i和商品向量v_j的乘积作为用户i对商品j评分的预测值，记为y_{ij}，如图二所示：  
+设数据集有M个用户，N个商品：评分矩阵用Y表示，Y的维度为：M×N，y_{ij} 表示第i个用户对第j个商品的评分；MF算法把评分矩阵Y分解为用户矩阵U和商品矩阵V的乘积，U的维度为M×k，每一行代表一个用户u_i，u_i是一个k维特征向量；V的维度为k×N，每一列代表一个商品v_j, v_j是一个k维特征向量；k是MF算法指定的值，代表特征向量的维度。我们以用户向量u_i和商品向量v_j的乘积作为用户i对商品j评分的预测值，记为y_{ij}，如图二所示：  
 
 ![](../img/MF_UV.png)
 
 
-* **Gradient Descent Matrix Factorizaion**
+## Gradient Descent Matrix Factorizaion
+用户i对商品j的实际评分为y_{ij}预测值与真实值之差记为e_{ij}，即：e_{ij}=y{ij}-u_i \cdot v_j。
+MF算法的学习目标是最小化预测评分与真实评分之间的差距：
 
-	用户i对商品j的实际评分为y_{ij}预测值与真实值之差记为e_{ij}，即：e_{ij}=y{ij}-u_i \cdot v_j。
-	MF算法的学习目标是最小化预测评分与真实评分之间的差距：
-
-	![](../img/MF_obj.png)
+![](../img/MF_obj.png)
 
 
-	为了防止模型过拟合，加入L2正则项：
+为了防止模型过拟合，加入L2正则项：
 
-	![](../img/MF_l2obj.png)
+![](../img/MF_l2obj.png)
 
-	其中：![](../img/MF_uvdot.png)     
+其中：![](../img/MF_uvdot.png)     
 
-	用梯度下降法最小化目标函数，得到用户特征向量u_i、商品特征向量v_j的更新公式为：  
+用梯度下降法最小化目标函数，得到用户特征向量u_i、商品特征向量v_j的更新公式为：  
 
-	![](../img/MF_update_u.png)    
+![](../img/MF_update_u.png)    
 
-	![](../img/MF_update_v.png)
+![](../img/MF_update_v.png)
 
 
 
 
 ## 2. 分布式实现 on Angel
-
-
-### 算法逻辑
-
-Matrix Factorization on Angel的算法逻辑如下所示：
-
-![](../img/MF_code.png)
-
+---
 ### 模型存储
 * 商品矩阵存放在PS，用户矩阵存放在Worker，PS和Worker间传输商品矩阵V即可，不需要传输用户矩阵U。
 * 由用户向量的更新公式可知，用户向量的计算只和这个用户的评分数据有关，用户间相互独立，因此我们把用户矩阵U按照用户切分成多个子块存储在多个Worker，每个Worker只计算自己训练数据相关的用户的向量，记为：U-part，维度是：这个Worker分配到的用户数×k。
@@ -64,10 +54,16 @@ Angel用梯度下降法学习MF模型，为了减少计算量和网络通信、�
 ![](../img/MF_cal.png)
 
 
+### 算法逻辑
+
+Matrix Factorization on Angel的算法逻辑如下所示：
+
+![](../img/MF_code.png)
 
 
 ## 3. 运行 & 性能
 
+---
 
 ### 输入格式
 
@@ -98,9 +94,7 @@ MF训练数据的格式：
   * ml.mf.lambda：正则化系数
   * ml.mf.eta：学习速率
   * ml.mf.row.batch.num：每次迭代的batch数
-
 ### 提交命令
-
 ```
 ./bin/angel-submit \
 --angel.app.submit.class com.tencent.angel.ml.matrixfactorization.MatrixFactorizationRunner \

@@ -17,7 +17,7 @@
 package com.tencent.angel.ps.matrix.transport;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.matrix.transport.*;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
@@ -51,8 +51,8 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
   public MatrixTransportServerHandler() {
     Configuration conf = PSContext.get().getConf();
     useDirectorBuffer =
-        conf.getBoolean(AngelConfiguration.ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER,
-            AngelConfiguration.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER);
+        conf.getBoolean(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER,
+            AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER);
   }
 
   @Override
@@ -129,7 +129,6 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
 
   @SuppressWarnings("unchecked")
   private void getSplit(int seqId, GetUDFRequest request, ChannelHandlerContext ctx) {
-    long startTs = System.currentTimeMillis();
     GetUDFResponse response = null;
     try {
       Class<? extends GetFunc> funcClass = (Class<? extends GetFunc>) Class.forName(request.getGetFuncClass());
@@ -146,14 +145,10 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
       response.setResponseType(ResponseType.FATAL);
     }
 
-    long endTs = System.currentTimeMillis();
-    LOG.debug("get psf seqId=" + seqId + " process time=" + (endTs - startTs));
-
     ByteBuf buf = ByteBufUtils.newByteBuf(4 + response.bufferLen(), useDirectorBuffer);
     buf.writeInt(seqId);
     response.serialize(buf);
     ctx.writeAndFlush(buf);
-    LOG.debug("get psf seqId=" + seqId + " serialize and send time=" + (System.currentTimeMillis() - endTs));
   }
 
   @SuppressWarnings("unchecked")

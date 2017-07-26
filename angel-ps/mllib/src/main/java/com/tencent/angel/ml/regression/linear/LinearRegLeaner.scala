@@ -46,7 +46,7 @@ class LinearRegLeaner(override val ctx: TaskContext) extends MLLearner(ctx) {
     .DEFAULT_ML_BATCH_SAMPLE_Ratio)
   val batchNum: Int = conf.getInt(MLConf.ML_SGD_BATCH_NUM, MLConf.DEFAULT_ML_SGD_BATCH_NUM)
 
-  val model = new LinearRegModel(ctx, conf)
+  val model = new LinearRegModel(conf, ctx)
 
   val squareLoss = new SquareL2Loss(reg)
 
@@ -80,11 +80,11 @@ class LinearRegLeaner(override val ctx: TaskContext) extends MLLearner(ctx) {
     */
   override def train(trainData: DataBlock[LabeledData], validationData: DataBlock[LabeledData]):
   MLModel = {
-    val trainSampNum = (trainData.getTotalElemNum * spRatio).toInt
+    val trainSampNum = (trainData.size * spRatio).toInt
     val batchSize = trainSampNum / batchNum
 
     LOG.info(s"Task[${ctx.getTaskIndex}] start to train a linear regression model. " +
-      s"#feature=$feaNum, #trainSample=${trainData.getTotalElemNum}, #validateSample=${validationData.getTotalElemNum}, "
+      s"#feature=$feaNum, #trainSample=${trainData.size}, #validateSample=${validationData.size}, "
       + s"sampleRaitoPerBatch=$spRatio, #samplePerBatch=$batchSize")
 
     LOG.info(s"Task[${ctx.getTaskIndex}] #epoch=$epochNum, initLearnRate=$initLearnRate, " +
@@ -111,7 +111,7 @@ class LinearRegLeaner(override val ctx: TaskContext) extends MLLearner(ctx) {
     * @param validationData : validata data storage
     */
   def validate(epoch: Int, weight:TDoubleVector, validationData: DataBlock[LabeledData]): Unit = {
-    if (validationData.getTotalElemNum > 0) {
+    if (validationData.size > 0) {
       ValidationUtils.calMSER2(validationData, weight, squareLoss)
     }
   }

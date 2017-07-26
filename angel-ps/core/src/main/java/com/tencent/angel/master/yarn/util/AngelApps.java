@@ -18,7 +18,7 @@
 
 package com.tencent.angel.master.yarn.util;
 
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -209,8 +209,8 @@ public class AngelApps extends Apps {
   private static String STAGING_CONSTANT = ".staging";
 
   public static Path getStagingDir(Configuration conf, String user) {
-    return new Path(conf.get(AngelConfiguration.ANGEL_STAGING_DIR,
-        AngelConfiguration.DEFAULT_ANGEL_STAGING_DIR)
+    return new Path(conf.get(AngelConf.ANGEL_STAGING_DIR,
+        AngelConf.DEFAULT_ANGEL_STAGING_DIR)
         + Path.SEPARATOR
         + user
         + Path.SEPARATOR

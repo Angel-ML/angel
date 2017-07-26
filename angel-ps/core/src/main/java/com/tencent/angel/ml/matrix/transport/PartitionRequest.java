@@ -139,8 +139,8 @@ public abstract class PartitionRequest extends Request {
     return true;
   }
 
-  @Override public String toString() {
-    return "PartitionRequest{" + "clock=" + clock + ", partKey=" + partKey + "} " + super
-      .toString();
+  @Override
+  public String toString() {
+    return "PartitionRequest [clock=" + clock + ", partKey=" + partKey + "]";
   }
 }

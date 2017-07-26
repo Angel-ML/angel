@@ -19,7 +19,7 @@ package com.tencent.angel.ml.clustering.kmeans
 
 
 import com.tencent.angel.client.AngelClientFactory
-import com.tencent.angel.conf.AngelConfiguration
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.MLRunner
 import org.apache.hadoop.conf.Configuration
 
@@ -35,7 +35,7 @@ class KMeansRunner extends MLRunner {
   override
   def train(conf: Configuration): Unit = {
     conf.set("angel.task.user.task.class", "com.tencent.angel.ml.clustering.kmeans.KMeansTrainTask")
-    conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS, classOf[KMeansTrainTask].getName)
+    conf.set(AngelConf.ANGEL_TASK_USER_TASKCLASS, classOf[KMeansTrainTask].getName)
 
     // Create an angel job client
     val client = AngelClientFactory.get(conf)
@@ -44,7 +44,7 @@ class KMeansRunner extends MLRunner {
     client.startPSServer()
 
     // Create a KMeans model
-    val kmeansModel = new KmeansModel(conf)
+    val kmeansModel = new KMeansModel(conf)
 
     // Load model meta to client
     client.loadModel(kmeansModel)
@@ -53,7 +53,7 @@ class KMeansRunner extends MLRunner {
     client.runTask(classOf[KMeansTrainTask])
 
     // Run user task and wait for completion,
-    // User task is set in AngelConfiguration.ANGEL_TASK_USER_TASKCLASS
+    // User task is set in AngelConf.ANGEL_TASK_USER_TASKCLASS
     client.waitForCompletion()
 
     // Save the trained model to HDFS
@@ -69,7 +69,7 @@ class KMeansRunner extends MLRunner {
   override
   def predict(conf: Configuration): Unit = {
     conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
-    conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS, classOf[KMeansPredictTask].getName)
+    conf.set(AngelConf.ANGEL_TASK_USER_TASKCLASS, classOf[KMeansPredictTask].getName)
 
     // Create an angel job client
     val client = AngelClientFactory.get(conf)
@@ -78,7 +78,7 @@ class KMeansRunner extends MLRunner {
     client.startPSServer()
 
     // Create KMeans model
-    val model = new KmeansModel(conf)
+    val model = new KMeansModel(conf)
 
     // Add the model meta to client
     client.loadModel(model)
@@ -87,7 +87,7 @@ class KMeansRunner extends MLRunner {
     client.runTask(classOf[KMeansPredictTask])
 
     // Run user task and wait for completion,
-    // User task is set in AngelConfiguration.ANGEL_TASK_USER_TASKCLASS
+    // User task is set in AngelConf.ANGEL_TASK_USER_TASKCLASS
     client.waitForCompletion()
 
     // Stop

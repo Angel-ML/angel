@@ -29,6 +29,8 @@ import com.tencent.angel.ml.lda.structures.S2STraverseMap
 import com.tencent.angel.ml.math.vector.{DenseDoubleVector, DenseIntVector, SparseIntSortedVector}
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.ml.utils.MathUtils
+import com.tencent.angel.ml.conf.MLConf._
+import com.tencent.angel.ml.metric.log.ObjMetric
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
@@ -48,6 +50,8 @@ class LDALearner(ctx: TaskContext,
 
   val words = buildWords()
   val rowIds = new Array[Int](words.size())
+
+  globalMetrics.addMetrics(LOG_LIKELIHOOD, ObjMetric())
 
   def buildWords(): util.Map[Integer, TokensOneWord] = {
     val builder = new util.HashMap[Int, IntArrayList]()
@@ -208,18 +212,10 @@ class LDALearner(ctx: TaskContext,
     val indexList = buildRowIndex(lDAModel.splitNum)
     Collections.shuffle(indexList)
 
+    globalMetrics.metrics(LOG_LIKELIHOOD, loglikelihood())
+
     for (idx <- 0 until indexList.size())
       trainOneBatch(idx, indexList.get(idx))
-
-    if (epoch % 5 == 0) {
-      val llh = loglikelihood()
-      val update = new DenseDoubleVector(lDAModel.epoch + 1);
-      update.set(epoch, llh)
-      lDAModel.llh.increment(0, update)
-      lDAModel.llh.clock().get()
-      val globalLLh = lDAModel.llh.getRow(0).get(epoch)
-      LOG.info(s"epoch=$epoch localllh=$llh globalllh=$globalLLh")
-    }
   }
 
   @throws[Exception]

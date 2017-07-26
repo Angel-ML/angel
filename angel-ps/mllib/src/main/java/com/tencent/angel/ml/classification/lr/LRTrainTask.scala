@@ -39,20 +39,20 @@ import org.apache.hadoop.io.{LongWritable, Text}
 class LRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
   val LOG: Log = LogFactory.getLog(classOf[LRTrainTask])
 
-  // feature number of trainning data
+  // feature number of training data
   private val feaNum: Int = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
-  // data format of trainning data, libsvm or dummy
+  // data format of training data, libsvm or dummy
   private val dataFormat = conf.get(MLConf.ML_DATAFORMAT, "dummy")
   // validate sample ratio
   private val valiRat = conf.getDouble(MLConf.ML_VALIDATE_RATIO, 0.05)
 
   // validation data storage
-  var validDataStorage = new MemoryDataBlock[LabeledData](-1)
+  var validDataBlock = new MemoryDataBlock[LabeledData](-1)
 
   override
   def train(ctx: TaskContext) {
     val trainer = new LRLearner(ctx)
-    trainer.train(dataBlock, validDataStorage)
+    trainer.train(trainDataBlock, validDataBlock)
   }
 
   /**
@@ -83,19 +83,19 @@ class LRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ct
       val out = parse(reader.getCurrentKey, reader.getCurrentValue)
       if (out != null) {
         if (count % vali == 0)
-          validDataStorage.put(out)
+          validDataBlock.put(out)
         else
-          dataBlock.put(out)
+          trainDataBlock.put(out)
         count += 1
       }
     }
-    dataBlock.flush()
-    validDataStorage.flush()
+    trainDataBlock.flush()
+    validDataBlock.flush()
 
     val cost = System.currentTimeMillis() - start
-    LOG.info(s"Task[${ctx.getTaskIndex}] preprocessed ${dataBlock.getTotalElemNum +
-      validDataStorage.getTotalElemNum} samples, ${dataBlock.getTotalElemNum} for train, " +
-      s"${validDataStorage.getTotalElemNum} for validation. feanum=$feaNum")
+    LOG.info(s"Task[${ctx.getTaskIndex}] preprocessed ${trainDataBlock.size +
+      validDataBlock.size} samples, ${trainDataBlock.size} for train, " +
+      s"${validDataBlock.size} for validation. feanum=$feaNum")
   }
 
 }

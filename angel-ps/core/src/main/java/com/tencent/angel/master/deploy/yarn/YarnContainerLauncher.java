@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.tencent.angel.common.Id;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.app.InternalErrorEvent;
 import com.tencent.angel.master.deploy.ContainerLauncher;
@@ -264,8 +264,8 @@ public class YarnContainerLauncher extends ContainerLauncher {
   protected void serviceInit(Configuration conf) throws Exception {
     super.serviceInit(conf);
     this.limitOnPoolSize =
-        conf.getInt(AngelConfiguration.ANGEL_AM_CONTAINERLAUNCHER_THREAD_COUNT_LIMIT,
-            AngelConfiguration.DEFAULT_ANGEL_AM_CONTAINERLAUNCHER_THREAD_COUNT_LIMIT);
+        conf.getInt(AngelConf.ANGEL_AM_CONTAINERLAUNCHER_THREAD_COUNT_LIMIT,
+            AngelConf.DEFAULT_ANGEL_AM_CONTAINERLAUNCHER_THREAD_COUNT_LIMIT);
     LOG.info("Upper limit on the thread pool size is " + this.limitOnPoolSize);
     cmProxy = new ContainerManagementProtocolProxy(conf);
   }

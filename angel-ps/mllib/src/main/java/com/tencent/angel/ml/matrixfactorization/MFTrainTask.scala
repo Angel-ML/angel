@@ -39,6 +39,6 @@ class MFTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ct
 
   def train(ctx: TaskContext) {
     val learner = new MFLearner(ctx)
-    learner.train(this.dataBlock, null)
+    learner.train(this.trainDataBlock, null)
   }
 }

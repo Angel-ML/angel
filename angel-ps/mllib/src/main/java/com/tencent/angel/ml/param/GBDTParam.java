@@ -24,7 +24,8 @@ package com.tencent.angel.ml.param;
 public class GBDTParam extends RegTParam {
 
   public int treeNum = 10;
-  public int maxThreadNum = 10;
+  public int maxThreadNum = 20;
+  public int batchNum = 10000;
 
   // quantile sketch, size = featureNum * splitNum
   public String sketchName;

@@ -103,8 +103,4 @@ public abstract class Request implements Serialize {
   }
 
   public abstract TransportMethod getType();
-
-  @Override public String toString() {
-    return "Request{" + "serverId=" + serverId + '}';
-  }
 }

@@ -20,7 +20,7 @@ import com.google.protobuf.ServiceException;
 import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.common.AngelEnvironment;
 import com.tencent.angel.common.Location;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.ipc.TConnectionManager;
 import com.tencent.angel.psagent.CounterUpdater;
@@ -39,11 +39,7 @@ import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerRepo
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.security.Credentials;
-import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
@@ -52,7 +48,6 @@ import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 
 import java.io.IOException;
-import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -146,7 +141,7 @@ public class Worker implements Executor {
     readLockForTaskNum = readWriteLock.readLock();
     writeLockForTaskNum = readWriteLock.writeLock();
 
-    activeTaskNum = conf.getInt(AngelConfiguration.ANGEL_TASK_ACTUAL_NUM, 1);
+    activeTaskNum = conf.getInt(AngelConf.ANGEL_TASK_ACTUAL_NUM, 1);
 
     this.appId = appId;
     this.user = user;
@@ -182,21 +177,20 @@ public class Worker implements Executor {
   public static void main(String[] args) {
     // get configuration from config file
     Configuration conf = new Configuration();
-    conf.addResource(AngelConfiguration.ANGEL_JOB_CONF_FILE);
+    conf.addResource(AngelConf.ANGEL_JOB_CONF_FILE);
 
     String containerIdStr = System.getenv(Environment.CONTAINER_ID.name());
     ContainerId containerId = ConverterUtils.toContainerId(containerIdStr);
     ApplicationAttemptId applicationAttemptId = containerId.getApplicationAttemptId();
     ApplicationId appId = applicationAttemptId.getApplicationId();
     String user = System.getenv(Environment.USER.name());
-    UserGroupInformation.setConfiguration(conf);
 
     // set localDir with enviroment set by nm.
     String[] localSysDirs =
         StringUtils.getTrimmedStrings(System.getenv(Environment.LOCAL_DIRS.name()));
-    conf.setStrings(AngelConfiguration.LOCAL_DIR, localSysDirs);
+    conf.setStrings(AngelConf.LOCAL_DIR, localSysDirs);
     LOG.info(
-        AngelConfiguration.LOCAL_DIR + " for child: " + conf.get(AngelConfiguration.LOCAL_DIR));
+        AngelConf.LOCAL_DIR + " for child: " + conf.get(AngelConf.LOCAL_DIR));
     int workerGroupIndex = Integer.parseInt(System.getenv(AngelEnvironment.WORKER_GROUP_ID.name()));
     int workerIndex = Integer.parseInt(System.getenv(AngelEnvironment.WORKER_ID.name()));
     int attemptIndex = Integer.parseInt(System.getenv(AngelEnvironment.WORKER_ATTEMPT_ID.name()));
@@ -205,18 +199,18 @@ public class Worker implements Executor {
     WorkerId workerId = new WorkerId(workerGroupId, workerIndex);
     WorkerAttemptId workerAttemptId = new WorkerAttemptId(workerId, attemptIndex);
 
-    conf.set(AngelConfiguration.ANGEL_WORKERGROUP_ACTUAL_NUM,
+    conf.set(AngelConf.ANGEL_WORKERGROUP_ACTUAL_NUM,
         System.getenv(AngelEnvironment.WORKERGROUP_NUMBER.name()));
 
-    conf.set(AngelConfiguration.ANGEL_TASK_ACTUAL_NUM,
+    conf.set(AngelConf.ANGEL_TASK_ACTUAL_NUM,
         System.getenv(AngelEnvironment.TASK_NUMBER.name()));
     
-    conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS,
+    conf.set(AngelConf.ANGEL_TASK_USER_TASKCLASS,
         System.getenv(AngelEnvironment.ANGEL_USER_TASK.name()));
 
     LOG.info(
-        "actual workergroup number:" + conf.get(AngelConfiguration.ANGEL_WORKERGROUP_ACTUAL_NUM));
-    LOG.info("actual task number:" + conf.get(AngelConfiguration.ANGEL_TASK_ACTUAL_NUM));
+        "actual workergroup number:" + conf.get(AngelConf.ANGEL_WORKERGROUP_ACTUAL_NUM));
+    LOG.info("actual task number:" + conf.get(AngelConf.ANGEL_TASK_ACTUAL_NUM));
 
     // get master location
     String masterAddr = System.getenv(AngelEnvironment.LISTEN_ADDR.name());
@@ -224,26 +218,13 @@ public class Worker implements Executor {
     Location masterLocation = new Location(masterAddr, Integer.valueOf(portStr));
 
     String startClock = System.getenv(AngelEnvironment.INIT_MIN_CLOCK.name());
-    final Worker worker = new Worker(AngelConfiguration.clone(conf), appId, user, workerAttemptId,
+    Worker worker = new Worker(AngelConf.clone(conf), appId, user, workerAttemptId,
         masterLocation, Integer.valueOf(startClock), false);
 
     try {
-      Credentials credentials =
-        UserGroupInformation.getCurrentUser().getCredentials();
-      UserGroupInformation workerUGI = UserGroupInformation.createRemoteUser(System
-        .getenv(ApplicationConstants.Environment.USER.toString()));
-      // Add tokens to new user so that it may execute its task correctly.
-      workerUGI.addCredentials(credentials);
-
-      workerUGI.doAs(new PrivilegedExceptionAction<Object>() {
-        @Override
-        public Object run() throws Exception {
-          worker.initAndStart();
-          return null;
-        }
-      });
-    } catch (Throwable e) {
-      LOG.fatal("init and start worker failed ", e);
+      worker.initAndStart();
+    } catch (Exception e) {
+      LOG.fatal("Failed to start worker.", e);
       worker.error(e.getMessage());
     }
   }
@@ -290,8 +271,8 @@ public class Worker implements Executor {
   }
 
   private void startHeartbeatThread() {
-    final int heartbeatInterval = conf.getInt(AngelConfiguration.ANGEL_WORKER_HEARTBEAT_INTERVAL,
-        AngelConfiguration.DEFAULT_ANGEL_WORKER_HEARTBEAT_INTERVAL);
+    final int heartbeatInterval = conf.getInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL,
+        AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_INTERVAL);
 
     heartbeatThread = new Thread(new Runnable() {
       @Override
@@ -360,7 +341,6 @@ public class Worker implements Executor {
           // todo
           register();
           break;
-
         case W_SHUTDOWN:
           // if worker timeout, it may be knocked off.
           LOG.fatal("received SHUTDOWN command from am! to exit......");
@@ -368,7 +348,6 @@ public class Worker implements Executor {
             System.exit(-1);
           }
           break;
-
         default:
           int activeTaskNum = response.getActiveTaskNum();
           if (activeTaskNum < getActiveTaskNum()) {
@@ -460,6 +439,7 @@ public class Worker implements Executor {
         psAgent.stop();
         psAgent = null;
       }
+
 
       LOG.info("stop heartbeat thread");
       if (heartbeatThread != null) {

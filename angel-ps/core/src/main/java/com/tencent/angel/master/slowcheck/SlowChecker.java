@@ -1,7 +1,7 @@
 package com.tencent.angel.master.slowcheck;
 
 import com.tencent.angel.common.Id;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.worker.attempt.WorkerAttempt;
 import com.tencent.angel.master.worker.attempt.WorkerAttemptEvent;
@@ -43,10 +43,10 @@ public class SlowChecker extends AbstractService {
     super("slow-checker");
     this.context = context;
     checkPolices = new ArrayList<>();
-    slowCheckEnable = context.getConf().getBoolean(AngelConfiguration.ANGEL_AM_SLOW_CHECK_ENABLE,
-      AngelConfiguration.DEFAULT_ANGEL_AM_SLOW_CHECK_ENABLE);
-    checkIntervalMs = context.getConf().getInt(AngelConfiguration.ANGEL_AM_SLOW_CHECK_INTERVAL_MS,
-      AngelConfiguration.DEFAULT_ANGEL_AM_SLOW_CHECK_INTERVAL_MS);
+    slowCheckEnable = context.getConf().getBoolean(AngelConf.ANGEL_AM_SLOW_CHECK_ENABLE,
+      AngelConf.DEFAULT_ANGEL_AM_SLOW_CHECK_ENABLE);
+    checkIntervalMs = context.getConf().getInt(AngelConf.ANGEL_AM_SLOW_CHECK_INTERVAL_MS,
+      AngelConf.DEFAULT_ANGEL_AM_SLOW_CHECK_INTERVAL_MS);
     stopped = new AtomicBoolean(false);
   }
 
@@ -105,8 +105,8 @@ public class SlowChecker extends AbstractService {
   @Override
   protected void serviceInit(Configuration conf) throws Exception {
     if(slowCheckEnable) {
-      String polices = conf.get(AngelConfiguration.ANGEL_AM_SLOW_CHECK_POLICES,
-        AngelConfiguration.DEFAULT_ANGEL_AM_SLOW_CHECK_POLICES);
+      String polices = conf.get(AngelConf.ANGEL_AM_SLOW_CHECK_POLICES,
+        AngelConf.DEFAULT_ANGEL_AM_SLOW_CHECK_POLICES);
 
       LOG.info("slow check policy list = " + polices);
       String [] policyNames = polices.split(",");

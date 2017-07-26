@@ -69,7 +69,6 @@ public class NettyTransportCodec {
     public List<ByteBuffer> getDatas() {
       return datas;
     }
-
     @Override
     public String toString() {
       return Objects

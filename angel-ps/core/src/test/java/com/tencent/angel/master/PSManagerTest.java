@@ -45,8 +45,8 @@ import com.google.protobuf.ServiceException;
 import com.tencent.angel.client.AngelClient;
 import com.tencent.angel.client.AngelClientFactory;
 import com.tencent.angel.common.Location;
-import com.tencent.angel.conf.AngelConfiguration;
-import com.tencent.angel.conf.MatrixConfiguration;
+import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.ipc.TConnection;
@@ -113,21 +113,21 @@ public class PSManagerTest {
       // set basic configuration keys
       Configuration conf = new Configuration();
       conf.setBoolean("mapred.mapper.new-api", true);
-      conf.setBoolean(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
-      conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS, DummyTask.class.getName());
+      conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
+      conf.set(AngelConf.ANGEL_TASK_USER_TASKCLASS, DummyTask.class.getName());
 
       // use local deploy mode and dummy dataspliter
-      conf.set(AngelConfiguration.ANGEL_DEPLOY_MODE, "LOCAL");
-      conf.setBoolean(AngelConfiguration.ANGEL_AM_USE_DUMMY_DATASPLITER, true);
-      conf.set(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
-      conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/out");
-      conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, LOCAL_FS + TMP_PATH + "/in");
-      conf.set(AngelConfiguration.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
+      conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
+      conf.setBoolean(AngelConf.ANGEL_AM_USE_DUMMY_DATASPLITER, true);
+      conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
+      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/out");
+      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, LOCAL_FS + TMP_PATH + "/in");
+      conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
 
-      conf.setInt(AngelConfiguration.ANGEL_WORKERGROUP_NUMBER, 1);
-      conf.setInt(AngelConfiguration.ANGEL_PS_NUMBER, 1);
-      conf.setInt(AngelConfiguration.ANGEL_WORKER_TASK_NUMBER, 2);
-      conf.setInt(AngelConfiguration.ANGEL_PS_BACKUP_INTERVAL_MS, 5000);
+      conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
+      conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
+      conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 2);
+      conf.setInt(AngelConf.ANGEL_PS_BACKUP_INTERVAL_MS, 5000);
 
       // get a angel client
       angelClient = AngelClientFactory.get(conf);
@@ -140,10 +140,10 @@ public class PSManagerTest {
       mMatrix.setMaxRowNumInBlock(1);
       mMatrix.setMaxColNumInBlock(50000);
       mMatrix.setRowType(MLProtos.RowType.T_INT_DENSE);
-      mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_ENABLEFILTER, "false");
-      mMatrix.set(MatrixConfiguration.MATRIX_HOGWILD, "true");
-      mMatrix.set(MatrixConfiguration.MATRIX_AVERAGE, "false");
-      mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_INT");
+      mMatrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
+      mMatrix.set(MatrixConf.MATRIX_HOGWILD, "true");
+      mMatrix.set(MatrixConf.MATRIX_AVERAGE, "false");
+      mMatrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_INT");
       angelClient.addMatrix(mMatrix);
 
       mMatrix.setName("w2");
@@ -152,10 +152,10 @@ public class PSManagerTest {
       mMatrix.setMaxRowNumInBlock(1);
       mMatrix.setMaxColNumInBlock(50000);
       mMatrix.setRowType(MLProtos.RowType.T_DOUBLE_DENSE);
-      mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_ENABLEFILTER, "false");
-      mMatrix.set(MatrixConfiguration.MATRIX_HOGWILD, "false");
-      mMatrix.set(MatrixConfiguration.MATRIX_AVERAGE, "false");
-      mMatrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
+      mMatrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
+      mMatrix.set(MatrixConf.MATRIX_HOGWILD, "false");
+      mMatrix.set(MatrixConf.MATRIX_AVERAGE, "false");
+      mMatrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
       angelClient.addMatrix(mMatrix);
 
       angelClient.startPSServer();
@@ -291,8 +291,8 @@ public class PSManagerTest {
   @Test
   public void testPSError() throws Exception {
     try {
-      int heartbeatInterval = LocalClusterContext.get().getConf().getInt(AngelConfiguration.ANGEL_PS_HEARTBEAT_INTERVAL_MS,
-        AngelConfiguration.DEFAULT_ANGEL_PS_HEARTBEAT_INTERVAL_MS);
+      int heartbeatInterval = LocalClusterContext.get().getConf().getInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS,
+        AngelConf.DEFAULT_ANGEL_PS_HEARTBEAT_INTERVAL_MS);
       AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
       ParameterServerManager psManager = angelAppMaster.getAppContext().getParameterServerManager();
       AMParameterServer amPs = psManager.getParameterServer(psId);
@@ -406,8 +406,8 @@ public class PSManagerTest {
         LocalClusterContext
           .get()
           .getConf()
-          .getInt(AngelConfiguration.ANGEL_PS_BACKUP_INTERVAL_MS,
-            AngelConfiguration.DEFAULT_ANGEL_PS_BACKUP_INTERVAL_MS);
+          .getInt(AngelConf.ANGEL_PS_BACKUP_INTERVAL_MS,
+            AngelConf.DEFAULT_ANGEL_PS_BACKUP_INTERVAL_MS);
 
       Thread.sleep(snapshotInterval * 2);
 

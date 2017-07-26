@@ -53,7 +53,7 @@ public abstract class LabeledUpdateIndexBaseTask<KEYIN, VALUEIN> extends
       while (reader.nextKeyValue()) {
         LabeledData out = parse(reader.getCurrentKey(), reader.getCurrentValue());
         if (out != null) {
-          dataBlock.put(out);
+          trainDataBlock.put(out);
           if (updateIndexEnable) {
             TAbstractVector vector = out.getX();
             if (vector instanceof SparseDummyVector) {
@@ -66,7 +66,7 @@ public abstract class LabeledUpdateIndexBaseTask<KEYIN, VALUEIN> extends
         }
       }
 
-      dataBlock.flush();
+      trainDataBlock.flush();
     } catch (Exception e) {
       throw new AngelException("Pre-Process Error.", e);
     }

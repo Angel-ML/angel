@@ -20,7 +20,7 @@ package com.tencent.angel.ml.metric;
  * Description: the metric of MAE (mean absolute error)
  */
 
-public class MaeMetric implements EvalMetric {
+public class MAEMetric implements EvalMetric {
 
 
   /**

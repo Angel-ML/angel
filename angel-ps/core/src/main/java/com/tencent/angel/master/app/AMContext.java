@@ -23,6 +23,7 @@ import com.tencent.angel.master.MasterService;
 import com.tencent.angel.master.MatrixMetaManager;
 import com.tencent.angel.master.data.DataSpliter;
 import com.tencent.angel.master.deploy.ContainerAllocator;
+import com.tencent.angel.master.metrics.MetricsService;
 import com.tencent.angel.master.oplog.AppStateStorage;
 import com.tencent.angel.master.ps.ParameterServerManager;
 import com.tencent.angel.master.psagent.PSAgentManager;
@@ -214,4 +215,10 @@ public interface AMContext {
    * @return AngelDeployMode application deploy mode
    */
   AngelDeployMode getDeployMode();
+
+  /**
+   * Get algorithm log collector
+   * @return AlgoLogService
+   */
+  public MetricsService getAlgoMetricsService();
 }

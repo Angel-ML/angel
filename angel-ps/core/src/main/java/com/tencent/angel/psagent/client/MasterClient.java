@@ -16,6 +16,7 @@
 
 package com.tencent.angel.psagent.client;
 
+import com.google.protobuf.ByteString;
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.common.Location;
@@ -26,10 +27,12 @@ import com.tencent.angel.master.MasterProtocol;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.MatrixMetaManager;
+import com.tencent.angel.ml.metrics.Metric;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.psagent.MatrixPartitionRouter;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.split.SplitClassification;
+import com.tencent.angel.utils.KryoUtils;
 import com.tencent.angel.utils.Time;
 import com.tencent.angel.worker.WorkerContext;
 import com.tencent.angel.worker.WorkerGroup;
@@ -417,5 +420,39 @@ public class MasterClient {
             .setTaskId(TaskIdProto.newBuilder().setTaskIndex(taskIndex).build())
             .setIteration(iteration).build();
     master.taskIteration(null, request);
+  }
+
+  /**
+   * Task update iteration number
+   *
+   * @param taskIndex task index
+   * @param counters task counters
+   * @throws ServiceException rpc failed
+   */
+  public void taskCountersUpdate(Map<String, String> counters, int taskIndex) throws ServiceException {
+    TaskCounterUpdateRequest.Builder builder = TaskCounterUpdateRequest.newBuilder();
+    builder.setTaskId(TaskIdProto.newBuilder().setTaskIndex(taskIndex).build());
+    Pair.Builder kvBuilder = Pair.newBuilder();
+    for(Map.Entry<String, String> kv:counters.entrySet()) {
+      builder.addCounters(kvBuilder.setKey(kv.getKey()).setValue(kv.getValue()).build());
+    }
+    master.taskCountersUpdate(null, builder.build());
+  }
+
+  /**
+   * Set Task algorithm metrics
+   * @param taskIndex task index
+   * @param algoMetrics algorithm metrics
+   */
+  public void setAlgoMetrics(int taskIndex, Map<String, Metric> algoMetrics)
+    throws ServiceException {
+    SetAlgoMetricsRequest.Builder builder = SetAlgoMetricsRequest.newBuilder();
+    AlgoMetric.Builder metricBuilder = AlgoMetric.newBuilder();
+    builder.setTaskId(TaskIdProto.newBuilder().setTaskIndex(taskIndex).build());
+    for(Map.Entry<String, Metric> metricEntry:algoMetrics.entrySet()) {
+      builder.addAlgoMetrics(metricBuilder.setName(metricEntry.getKey()).setSerializedMetric(
+        ByteString.copyFrom(KryoUtils.serializeAlgoMetric(metricEntry.getValue()))).build());
+    }
+    master.setAlgoMetrics(null, builder.build());
   }
 }

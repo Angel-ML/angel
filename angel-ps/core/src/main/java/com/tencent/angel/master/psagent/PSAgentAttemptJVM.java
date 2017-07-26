@@ -16,7 +16,7 @@
 
 package com.tencent.angel.master.psagent;
 
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.yarn.util.AngelApps;
 import com.tencent.angel.psagent.PSAgentAttemptId;
 import org.apache.hadoop.conf.Configuration;
@@ -42,13 +42,13 @@ public class PSAgentAttemptJVM {
 
   private static String getChildEnv(Configuration jobConf) {
 
-    return jobConf.get(AngelConfiguration.ANGEL_PSAGENT_ENV,
-        AngelConfiguration.DEFAULT_ANGEL_PSAGENT_ENV);
+    return jobConf.get(AngelConf.ANGEL_PSAGENT_ENV,
+        AngelConf.DEFAULT_ANGEL_PSAGENT_ENV);
   }
 
   private static String getChildLogLevel(Configuration conf) {
-    return conf.get(AngelConfiguration.ANGEL_PSAGNET_LOG_LEVEL,
-        AngelConfiguration.DEFAULT_ANGEL_PSAGNET_LOG_LEVEL);
+    return conf.get(AngelConf.ANGEL_PSAGNET_LOG_LEVEL,
+        AngelConf.DEFAULT_ANGEL_PSAGNET_LOG_LEVEL);
   }
 
   @SuppressWarnings("deprecation")
@@ -84,7 +84,7 @@ public class PSAgentAttemptJVM {
   private static String getChildJavaOpts(Configuration jobConf, ApplicationId appid,
       PSAgentAttemptId attemptId) {
     String userOpts = null;
-    userOpts = jobConf.get(AngelConfiguration.ANGEL_PSAGENT_JAVA_OPTS);
+    userOpts = jobConf.get(AngelConf.ANGEL_PSAGENT_JAVA_OPTS);
     if (userOpts == null) {
       userOpts = generateDefaultJVMParameters(jobConf, appid, attemptId);
     }
@@ -95,8 +95,8 @@ public class PSAgentAttemptJVM {
   private static String generateDefaultJVMParameters(Configuration conf, ApplicationId appid,
       PSAgentAttemptId attemptId) {
     int workerMemSizeInMB =
-        conf.getInt(AngelConfiguration.ANGEL_PSAGENT_MERMORY_MB,
-            AngelConfiguration.DEFAULT_ANGEL_PSAGENT_MERMORY_MB);
+        conf.getInt(AngelConf.ANGEL_PSAGENT_MERMORY_MB,
+            AngelConf.DEFAULT_ANGEL_PSAGENT_MERMORY_MB);
 
     int heapMax = workerMemSizeInMB - 200;
     int youngRegionSize = (int) (heapMax * 0.4);
@@ -150,8 +150,8 @@ public class PSAgentAttemptJVM {
 
     // Add main class and its arguments
     String className =
-        conf.get(AngelConfiguration.ANGEL_PSAGENT_CLASS,
-            AngelConfiguration.DEFAULT_ANGEL_PSAGENT_CLASS);
+        conf.get(AngelConf.ANGEL_PSAGENT_CLASS,
+            AngelConf.DEFAULT_ANGEL_PSAGENT_CLASS);
     vargs.add(className); // main of Child
 
     // Finally add the jvmID

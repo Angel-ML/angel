@@ -17,7 +17,7 @@
 package com.tencent.angel.psagent.matrix.transport;
 
 import com.tencent.angel.common.Location;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.psagent.PSAgentContext;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -77,8 +77,8 @@ public class ChannelManager {
         PSAgentContext
             .get()
             .getConf()
-            .getInt(AngelConfiguration.ANGEL_WORKER_TASK_NUMBER,
-                AngelConfiguration.DEFAULT_ANGEL_WORKER_TASK_NUMBER);
+            .getInt(AngelConf.ANGEL_WORKER_TASK_NUMBER,
+                AngelConf.DEFAULT_ANGEL_WORKER_TASK_NUMBER);
 
     GenericObjectPool.Config poolconfig = new GenericObjectPool.Config();
     poolconfig.maxActive = taskNumber * 5;

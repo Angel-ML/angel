@@ -21,7 +21,7 @@ import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.RunningMode;
 import com.tencent.angel.common.AngelEnvironment;
 import com.tencent.angel.common.Location;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.ipc.TConnectionManager;
 import com.tencent.angel.master.MasterProtocol;
@@ -70,9 +70,7 @@ public class ParameterServer {
   private ParameterServerService psServerService;
   private MatrixTransportServer matrixTransportServer;
   private SnapshotManager snapshotManager;
-  //private final ParameterServerId serverId;
   private final PSAttemptId attemptId;
-  //private final PSIdProto idProto;
   private final PSAttemptIdProto attemptIdProto;
   private final AtomicBoolean stopped;
   private final int attemptIndex;
@@ -81,10 +79,10 @@ public class ParameterServer {
   private Thread heartbeatThread;
   private MatrixPartitionManager matrixPartitionManager;
 
-  private MatrixCommitter commiter;
+  private MatrixCommitter committer;
 
   private static final AtomicInteger runningWorkerGroupNum = new AtomicInteger(0);
-  private static final AtomicInteger runningWorekrNum = new AtomicInteger(0);
+  private static final AtomicInteger runningWorkerNum = new AtomicInteger(0);
   private static final AtomicInteger runningTaskNum = new AtomicInteger(0);
 
   public static int getRunningWorkerGroupNum() {
@@ -92,7 +90,7 @@ public class ParameterServer {
   }
 
   public static int getRunningWorkerNum() {
-    return runningWorekrNum.get();
+    return runningWorkerNum.get();
   }
 
   public static int getRunningTaskNum() {
@@ -104,7 +102,7 @@ public class ParameterServer {
   }
 
   public static void setRunningWorkerNum(int num) {
-    runningWorekrNum.set(num);
+    runningWorkerNum.set(num);
   }
 
   public static void setRunningTaskNum(int num) {
@@ -198,16 +196,16 @@ public class ParameterServer {
     int attemptIndex = Integer.valueOf(System.getenv(AngelEnvironment.PS_ATTEMPT_ID.name()));
 
     Configuration conf = new Configuration();
-    conf.addResource(AngelConfiguration.ANGEL_JOB_CONF_FILE);
+    conf.addResource(AngelConf.ANGEL_JOB_CONF_FILE);
 
     String user = System.getenv(ApplicationConstants.Environment.USER.name());
     UserGroupInformation.setConfiguration(conf);
     
-    String runningMode = conf.get(AngelConfiguration.ANGEL_RUNNING_MODE, 
-        AngelConfiguration.DEFAULT_ANGEL_RUNNING_MODE);   
+    String runningMode = conf.get(AngelConf.ANGEL_RUNNING_MODE,
+        AngelConf.DEFAULT_ANGEL_RUNNING_MODE);
     if(runningMode.equals(RunningMode.ANGEL_PS_WORKER.toString())){
       LOG.debug("AngelEnvironment.TASK_NUMBER.name()=" + AngelEnvironment.TASK_NUMBER.name());
-      conf.set(AngelConfiguration.ANGEL_TASK_ACTUAL_NUM,
+      conf.set(AngelConf.ANGEL_TASK_ACTUAL_NUM,
           System.getenv(AngelEnvironment.TASK_NUMBER.name()));
     }
 
@@ -305,7 +303,7 @@ public class ParameterServer {
     LOG.info("Initialize a parameter server");
 
     matrixPartitionManager = new MatrixPartitionManager();
-    commiter = new MatrixCommitter(this);
+    committer = new MatrixCommitter(this);
     TConnection connection = TConnectionManager.getConnection(conf);
     try {
       masterProxy = connection.getMasterService(masterLocation.getIp(), masterLocation.getPort());
@@ -321,10 +319,10 @@ public class ParameterServer {
     snapshotManager.init();
   }
 
-  private void startHeartbeart() {
+  private void startHeartbeat() {
     final int heartbeatInterval =
-        conf.getInt(AngelConfiguration.ANGEL_PS_HEARTBEAT_INTERVAL_MS,
-            AngelConfiguration.DEFAULT_ANGEL_PS_HEARTBEAT_INTERVAL_MS);
+        conf.getInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS,
+            AngelConf.DEFAULT_ANGEL_PS_HEARTBEAT_INTERVAL_MS);
     LOG.info("Starting HeartbeatThread, interval is " + heartbeatInterval + " ms");
     heartbeatThread = new Thread(new Runnable() {
       @Override
@@ -357,7 +355,7 @@ public class ParameterServer {
   }
 
   private void register() throws IOException {
-    LOG.info("Registing to AppMaster " + masterLocation);
+    LOG.info("Registering to AppMaster " + masterLocation);
     PSRegisterRequest.Builder regBuilder = PSRegisterRequest.newBuilder();
     regBuilder.setPsAttemptId(attemptIdProto);
     try {    
@@ -373,7 +371,7 @@ public class ParameterServer {
       LOG.info("Register to AppMaster successfully");
     } catch (ServiceException e) {
       // to exit
-      LOG.error("ps register to appmaster failed: ", e);
+      LOG.error("ps register to AppMaster failed: ", e);
       stop(-1);
     }
   }
@@ -421,7 +419,7 @@ public class ParameterServer {
           LOG.info("received ps commit command, ps is committing now!");
           LOG.info("to stop taskSnapshotsThread.");
           snapshotManager.stop();
-          commiter.commit(ret.getNeedCommitMatrixIdsList());
+          committer.commit(ret.getNeedCommitMatrixIdsList());
           break;
           
         default:
@@ -456,7 +454,7 @@ public class ParameterServer {
     matrixTransportServer.start();
 
     register();
-    startHeartbeart();
+    startHeartbeat();
     snapshotManager.start();
   }
 

@@ -24,6 +24,7 @@ import com.tencent.angel.worker.storage.DataBlock;
 import it.unimi.dsi.fastutil.doubles.DoubleComparator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import scala.Tuple4;
 import scala.Tuple5;
 
 import java.io.IOException;
@@ -38,7 +39,7 @@ public class ValidationUtils {
   /**
    * validate loss and precision
    *
-   * @param dataBlock:  validation data dataBlock
+   * @param dataBlock:  validation data trainDataBlock
    * @param weight:   the weight vector of features
    * @param lossFunc: the lossFunc used for prediction
    */
@@ -48,7 +49,7 @@ public class ValidationUtils {
 
     long startTime = System.currentTimeMillis();
 
-    int totalNum = dataBlock.getTotalElemNum();
+    int totalNum = dataBlock.size();
     double loss = 0.0;
     int truePos = 0; // ground truth: positive, precision: positive
     int falsePos = 0; // ground truth: negative, precision: positive
@@ -93,17 +94,17 @@ public class ValidationUtils {
   /**
    * validate loss, AUC and precision
    *
-   * @param dataBlock:  validation data dataBlock
+   * @param dataBlock:  validation data trainDataBlock
    * @param weight:   the weight vector of features
    * @param lossFunc: the lossFunc used for prediction
    */
-  public static Tuple5<Double, Double, Double, Double, Double> calMetrics(DataBlock<LabeledData>
-                                                                                  dataBlock, TDoubleVector
-                                                                              weight, Loss lossFunc) throws IOException, InterruptedException {
+  public static Tuple5<Double, Double, Double, Double, Double> calMetrics(DataBlock<LabeledData> dataBlock,
+                                                                          TDoubleVector weight,
+                                                                          Loss lossFunc) throws IOException, InterruptedException {
 
     dataBlock.resetReadIndex();
 
-    int totalNum = dataBlock.getTotalElemNum();
+    int totalNum = dataBlock.size();
     LOG.debug("Start calculate loss and auc, sample number: " + totalNum);
 
     long startTime = System.currentTimeMillis();
@@ -217,13 +218,14 @@ public class ValidationUtils {
    * @throws IOException
    * @throws InterruptedException
    */
-  public static void calMSER2(DataBlock<LabeledData> dataBlock, TDoubleVector weight, Loss lossFunc)
+  public static Tuple4<Double, Double, Double, Double> calMSER2(DataBlock<LabeledData>
+                                                                            dataBlock, TDoubleVector weight, Loss lossFunc)
       throws IOException, InterruptedException {
     dataBlock.resetReadIndex();
 
     long startTime = System.currentTimeMillis();
 
-    int totalNum = dataBlock.getTotalElemNum();
+    int totalNum = dataBlock.size();
     double uLoss = 0.0;// the regression sum of squares
     double vLoss = 0.0; // the residual sum of squares
     double trueSum = 0.0;// the sum of true y
@@ -235,16 +237,21 @@ public class ValidationUtils {
       trueSum += data.getY();
       maeLossSum += Math.abs(data.getY() - pre);
     }
-    double uLossPerSp = uLoss / totalNum;
+
     double trueAvg = trueSum / totalNum;
     for (int i = 0; i < totalNum; i++) {
       LabeledData data = dataBlock.get(i);
       vLoss += Math.pow(lossFunc.loss(trueAvg, data.getY()), 2);
     }
 
-    LOG.info(
-        String.format("validate %d samples cost %d ms, MSE= %.5f ,RMSE= %.5f ,MAE=%.5f ,R2= %.5f",
-            totalNum, System.currentTimeMillis() - startTime, uLossPerSp, Math.sqrt(uLossPerSp),
-            maeLossSum / totalNum, 1 - uLoss / vLoss));
+    double MSE = uLoss / totalNum;
+    double RMSE = Math.sqrt(MSE);
+    double MAE = maeLossSum / totalNum;
+    double R2 = 1 - uLoss / vLoss;
+
+    LOG.info(String.format("validate %d samples cost %d ms, MSE= %.5f ,RMSE= %.5f ,MAE=%.5f ," +
+        "R2= %.5f", totalNum, System.currentTimeMillis() - startTime, MSE, RMSE, MAE, R2));
+
+    return new Tuple4<>(MSE, RMSE, MAE, R2);
   }
 }

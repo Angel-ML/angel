@@ -19,7 +19,7 @@ package com.tencent.angel.ml.svm;
 
 import com.tencent.angel.client.AngelClient;
 import com.tencent.angel.client.AngelClientFactory;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.classification.svm.SVMRunner;
 import com.tencent.angel.ml.conf.MLConf;
 import org.apache.commons.logging.Log;
@@ -67,18 +67,18 @@ public class SVMTest {
 
       // Set basic configuration keys
       conf.setBoolean("mapred.mapper.new-api", true);
-      conf.setBoolean(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
+      conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
 
       // Set data format
       conf.set(MLConf.ML_DATAFORMAT(), dataFmt);
 
       // Use local deploy mode
-      conf.set(AngelConfiguration.ANGEL_DEPLOY_MODE, "LOCAL");
+      conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
 
       //set angel resource parameters #worker, #task, #PS
-      conf.setInt(AngelConfiguration.ANGEL_WORKERGROUP_NUMBER, 1);
-      conf.setInt(AngelConfiguration.ANGEL_WORKER_TASK_NUMBER, 1);
-      conf.setInt(AngelConfiguration.ANGEL_PS_NUMBER, 1);
+      conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
+      conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
+      conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
       //set sgd SVM algorithm parameters
       conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(featureNum));
@@ -106,13 +106,13 @@ public class SVMTest {
       String inputPath = "./src/test/data/lr/a9a.train";
       String logPath = "./src/test/log";
 
-      conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, inputPath);
+      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
       // Set save model path
-      conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/SVMModel");
+      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/SVMModel");
       // Set actionType train
-      conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
       // Set log path
-      conf.set(AngelConfiguration.ANGEL_LOG_PATH, logPath);
+      conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
 
       // Submit LR Train Task
       SVMRunner runner = new SVMRunner();
@@ -129,15 +129,15 @@ public class SVMTest {
       String logPath = "./src/test/log";
 
       // Set trainning data path
-      conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, inputPath);
+      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
       // Set load model path
-      conf.set(AngelConfiguration.ANGEL_LOAD_MODEL_PATH, LOCAL_FS+TMP_PATH+"/SVMModel");
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS+TMP_PATH+"/SVMModel");
       // Set save model path
-      conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/newSVMModel");
+      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/newSVMModel");
       // Set actionType incremental train
-      conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_INC_TRAIN());
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_INC_TRAIN());
       // Set log path
-      conf.set(AngelConfiguration.ANGEL_LOG_PATH, logPath);
+      conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
       SVMRunner runner = new SVMRunner();
 
       runner.train(conf);

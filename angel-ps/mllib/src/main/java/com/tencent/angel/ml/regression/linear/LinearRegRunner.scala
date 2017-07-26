@@ -17,7 +17,7 @@
 package com.tencent.angel.ml.regression.linear
 
 import com.tencent.angel.client.AngelClientFactory
-import com.tencent.angel.conf.AngelConfiguration
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.MLRunner
 import org.apache.hadoop.conf.Configuration
 
@@ -35,7 +35,7 @@ class LinearRegRunner extends MLRunner {
   override
   def train(conf: Configuration): Unit = {
     conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
-    conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS, classOf[LinearRegTrainTask].getName)
+    conf.set(AngelConf.ANGEL_TASK_USER_TASKCLASS, classOf[LinearRegTrainTask].getName)
 
     // Create an angel job client
     val client = AngelClientFactory.get(conf)
@@ -53,7 +53,7 @@ class LinearRegRunner extends MLRunner {
     client.runTask(classOf[LinearRegTrainTask])
 
     // Wait for completion,
-    // User task is set in AngelConfiguration.ANGEL_TASK_USER_TASKCLASS
+    // User task is set in AngelConf.ANGEL_TASK_USER_TASKCLASS
     client.waitForCompletion()
 
     // Save the trained model to HDFS
@@ -71,7 +71,7 @@ class LinearRegRunner extends MLRunner {
   override
   def predict(conf: Configuration): Unit = {
     conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
-    conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS, classOf[LinearRegPredictTask].getName)
+    conf.set(AngelConf.ANGEL_TASK_USER_TASKCLASS, classOf[LinearRegPredictTask].getName)
 
     // Create an angel job client
     val client = AngelClientFactory.get(conf)
@@ -89,7 +89,7 @@ class LinearRegRunner extends MLRunner {
     client.runTask(classOf[LinearRegPredictTask])
 
     // Wait for completion,
-    // User task is set in AngelConfiguration.ANGEL_TASK_USER_TASKCLASS
+    // User task is set in AngelConf.ANGEL_TASK_USER_TASKCLASS
     client.waitForCompletion()
 
     // Stop
@@ -102,7 +102,7 @@ class LinearRegRunner extends MLRunner {
    */
   def incTrain(conf: Configuration): Unit = {
     conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
-    conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS, classOf[LinearRegTrainTask].getName)
+    conf.set(AngelConf.ANGEL_TASK_USER_TASKCLASS, classOf[LinearRegTrainTask].getName)
 
     // Create an angel job client
     val client = AngelClientFactory.get(conf)
@@ -120,7 +120,7 @@ class LinearRegRunner extends MLRunner {
     client.runTask(classOf[LinearRegTrainTask])
 
     // Wait for completion,
-    // User task is set in AngelConfiguration.ANGEL_TASK_USER_TASKCLASS
+    // User task is set in AngelConf.ANGEL_TASK_USER_TASKCLASS
     client.waitForCompletion()
 
     // Save the incremental trained model to HDFS

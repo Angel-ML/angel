@@ -28,14 +28,11 @@ import com.tencent.angel.master.worker.attempt.WorkerAttemptContainerAssignedEve
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.psagent.PSAgentAttemptId;
 import com.tencent.angel.worker.WorkerAttemptId;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 /**
  * Local container allocator.
  */
 public class LocalContainerAllocator extends ContainerAllocator {
-  private static final Log LOG = LogFactory.getLog(LocalContainerAllocator.class);
   /**master context*/
   private final AMContext context;
   
@@ -50,7 +47,6 @@ public class LocalContainerAllocator extends ContainerAllocator {
 
   @Override
   public void handle(ContainerAllocatorEvent event) {
-    LOG.info("local allocator event=" + event);
     switch (event.getType()) {
       case CONTAINER_REQ:
         requestContainer(event);

@@ -36,7 +36,7 @@ class LRPredictTask(ctx: TaskContext) extends PredictTask[LongWritable, Text](ct
   val dataFormat = conf.get(MLConf.ML_DATAFORMAT)
 
   def predict(ctx: TaskContext) {
-    predict(ctx, LRModel(ctx, conf), dataBlock);
+    predict(ctx, LRModel(ctx, conf), trainDataBlock);
   }
 
   def parse(key: LongWritable, value: Text): LabeledData = {

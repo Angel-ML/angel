@@ -17,7 +17,7 @@
 package com.tencent.angel.psagent.matrix.cache;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ps.impl.matrix.ServerPartition;
 import com.tencent.angel.ps.impl.matrix.ServerRow;
 import com.tencent.angel.psagent.PSAgentContext;
@@ -82,14 +82,14 @@ public class MatricesCache {
         PSAgentContext
             .get()
             .getConf()
-            .getInt(AngelConfiguration.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS,
-                AngelConfiguration.DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS);
+            .getInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS,
+                AngelConf.DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS);
     String syncPolicyClass =
         PSAgentContext
             .get()
             .getConf()
-            .get(AngelConfiguration.ANGEL_PSAGENT_CACHE_SYNC_POLICY_CLASS,
-                AngelConfiguration.DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_POLICY_CLASS);
+            .get(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_POLICY_CLASS,
+                AngelConf.DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_POLICY_CLASS);
     syncPolicy = (SyncPolicy) Class.forName(syncPolicyClass).newInstance();
 
     syncer = new Syncer();

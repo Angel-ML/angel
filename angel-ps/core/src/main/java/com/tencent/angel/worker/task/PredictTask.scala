@@ -23,14 +23,7 @@ import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.utils.HdfsUtil
 import com.tencent.angel.worker.storage.DataBlock
 
-
-/**
-  * The type labeled base task.
-  * <p>
-  * the train data is {@link LabeledData}
-  */
 abstract class PredictTask[KEYIN, VALUEIN](ctx: TaskContext) extends BaseTask[KEYIN, VALUEIN, LabeledData](ctx) {
-
 
   @throws(classOf[AngelException])
   final def run(taskContext: TaskContext) {

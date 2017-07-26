@@ -17,7 +17,7 @@
 
 package com.tencent.angel.ml.matrixfactorization;
 
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.conf.MLConf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -25,7 +25,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
 import org.apache.log4j.PropertyConfigurator;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -46,27 +45,27 @@ public class matrixfactorizationTest {
       String inputPath = "./src/test/data/recommendation/MovieLensDataSet";
 
       // Set local deploy mode
-      conf.set(AngelConfiguration.ANGEL_DEPLOY_MODE, "LOCAL");
+      conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
       // Set basic configuration keys
       conf.setBoolean("mapred.mapper.new-api", true);
-      conf.set(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
-      conf.setBoolean(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
+      conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
+      conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
 
       //set angel resource parameters #worker, #task, #PS
-      conf.setInt(AngelConfiguration.ANGEL_WORKERGROUP_NUMBER, 1);
-      conf.setInt(AngelConfiguration.ANGEL_WORKER_TASK_NUMBER, 1);
-      conf.setInt(AngelConfiguration.ANGEL_PS_NUMBER, 1);
+      conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
+      conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
+      conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
       String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
       String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
 
       // Set trainning data, save model, log path
-      conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, inputPath);
-      conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model");
-      conf.set(AngelConfiguration.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/Log/log");
+      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
+      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model");
+      conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/Log/log");
       conf.set(MLConf.ML_MF_USER_OUTPUT_PATH(), LOCAL_FS + TMP_PATH + "/usermodel");
       // Set actionType train
-      conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
 
       // Set MF algorithm parameters
       conf.set(MLConf.ML_MF_RANK(), "200");

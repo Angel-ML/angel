@@ -21,7 +21,7 @@ import breeze.linalg.DenseVector
 import breeze.math.MutableEnumeratedCoordinateField
 
 import com.tencent.angel.spark.PSContext
-import com.tencent.angel.spark.examples.pof._
+import com.tencent.angel.spark.examples.psf._
 import com.tencent.angel.spark.examples.util.PSExamples._
 
 /**

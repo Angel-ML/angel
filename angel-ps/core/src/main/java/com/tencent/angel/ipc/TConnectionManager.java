@@ -24,7 +24,7 @@ package com.tencent.angel.ipc;
 
 import com.tencent.angel.Chore;
 import com.tencent.angel.Stoppable;
-import com.tencent.angel.conf.TConstants;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.RemoteException;
 import com.tencent.angel.io.Addressing;
 import com.tencent.angel.master.MasterProtocol;
@@ -157,10 +157,10 @@ public class TConnectionManager {
       }
 
       this.rpcTimeout =
-          conf.getInt(TConstants.ML_RPC_TIMEOUT_KEY, TConstants.DEFAULT_ML_RPC_TIMEOUT);
+          conf.getInt(AngelConf.ML_RPC_TIMEOUT_KEY, AngelConf.DEFAULT_ML_RPC_TIMEOUT);
       this.maxRPCAttempts =
-          conf.getInt(TConstants.ML_CLIENT_RPC_MAXATTEMPTS,
-              TConstants.DEFAULT_ML_CLIENT_RPC_MAXATTEMPTS);
+          conf.getInt(AngelConf.ML_CLIENT_RPC_MAXATTEMPTS,
+              AngelConf.DEFAULT_ML_CLIENT_RPC_MAXATTEMPTS);
     }
 
     @Override

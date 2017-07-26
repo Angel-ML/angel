@@ -20,7 +20,7 @@ import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.RunningMode;
 import com.tencent.angel.common.AngelEnvironment;
 import com.tencent.angel.common.Location;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.MasterService;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.deploy.ContainerAllocatorEvent;
@@ -747,10 +747,10 @@ public class PSAgentAttempt implements EventHandler<PSAgentAttemptEvent> {
       FileSystem remoteFS = FileSystem.get(conf);
 
       // Set up JobConf to be localized properly on the remote NM.
-      Path remoteJobSubmitDir = new Path(conf.get(AngelConfiguration.ANGEL_JOB_DIR));
-      Path remoteJobConfPath = new Path(remoteJobSubmitDir, AngelConfiguration.ANGEL_JOB_CONF_FILE);
+      Path remoteJobSubmitDir = new Path(conf.get(AngelConf.ANGEL_JOB_DIR));
+      Path remoteJobConfPath = new Path(remoteJobSubmitDir, AngelConf.ANGEL_JOB_CONF_FILE);
       localResources.put(
-          AngelConfiguration.ANGEL_JOB_CONF_FILE,
+          AngelConf.ANGEL_JOB_CONF_FILE,
           createLocalResource(remoteFS, remoteJobConfPath, LocalResourceType.FILE,
               LocalResourceVisibility.APPLICATION));
       LOG.info("The job-conf file on the remote FS is " + remoteJobConfPath.toUri().toASCIIString());

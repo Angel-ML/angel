@@ -17,18 +17,15 @@
 
 package com.tencent.angel.ml.GBDT
 
-import java.io.DataOutputStream
-import java.text.DecimalFormat
-
-import com.tencent.angel.conf.AngelConfiguration
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.GBDT.GBDTModel._
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.{TDoubleVector, TIntVector}
 import com.tencent.angel.ml.model.{MLModel, PSModel}
+import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.ml.utils.MathUtils
 import com.tencent.angel.protobuf.generated.MLProtos
-import com.tencent.angel.worker.predict.PredictResult
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
@@ -45,23 +42,17 @@ object GBDTModel {
   val NODE_GRAD_MAT: String = "gbdt.node.grad.stats"
   val NODE_PRED_MAT: String = "gbdt.node.predict"
 
-  val METRIC_MAT: String = "gbdt.metric"
 
   def apply(conf: Configuration) = {
     new GBDTModel(conf)
   }
 
   def apply(ctx:TaskContext, conf: Configuration) = {
-    new GBDTModel(ctx, conf)
+    new GBDTModel(conf, ctx)
   }
 }
 
-class GBDTModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
-
-  def this(conf: Configuration) = {
-    this(null, conf)
-  }
-
+class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
   var LOG = LogFactory.getLog(classOf[GBDTModel])
 
   var featNum = conf.getInt(MLConf.ML_FEATURE_NUM, 10000)
@@ -74,7 +65,7 @@ class GBDTModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
   val maxTNodeNum: Int = MathUtils.pow(2, maxTreeDepth) - 1
 
   // # parameter server
-  val psNumber = conf.getInt(AngelConfiguration.ANGEL_PS_NUMBER, 1)
+  val psNumber = conf.getInt(AngelConf.ANGEL_PS_NUMBER, 1)
 
   // adjust feature number to ensure the parameter partition
   if (featNum % psNumber != 0) {
@@ -83,104 +74,74 @@ class GBDTModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
     LOG.info(s"PS num: ${psNumber}, true feat num: ${featNum}")
   }
 
-  val sampFeatNum: Int = (featNum * featSampleRatio).toInt
+  val sampleFeatNum: Int = (featNum * featSampleRatio).toInt
 
   // Matrix 1: quantile sketch
-  val sketch = new PSModel[TDoubleVector](SKETCH_MAT, 1, featNum * splitNum, 1, featNum * splitNum / psNumber)
-  sketch.setRowType(MLProtos.RowType.T_DOUBLE_DENSE)
-  sketch.setOplogType("DENSE_DOUBLE")
+  val sketch = PSModel[TDoubleVector](SKETCH_MAT, 1, featNum * splitNum, 1, featNum * splitNum / psNumber)
+    .setRowType(MLProtos.RowType.T_DOUBLE_DENSE)
+    .setOplogType("DENSE_DOUBLE")
+    .setNeedSave(false)
   addPSModel(SKETCH_MAT, sketch)
 
   // Matrix 2: sampled feature
-  val featSample = new PSModel[TIntVector](FEAT_SAMPLE_MAT, maxTreeNum, sampFeatNum, 1, sampFeatNum / psNumber)
-  featSample.setRowType(MLProtos.RowType.T_INT_DENSE)
-  featSample.setOplogType("DENSE_INT")
+  val featSample = PSModel[TIntVector](FEAT_SAMPLE_MAT, maxTreeNum, sampleFeatNum, 1, sampleFeatNum / psNumber)
+    .setRowType(MLProtos.RowType.T_INT_DENSE)
+    .setOplogType("DENSE_INT")
+    .setNeedSave(false)
   addPSModel(FEAT_SAMPLE_MAT, featSample)
 
   val histMats: Array[PSModel[TDoubleVector]] = new Array[PSModel[TDoubleVector]](maxTNodeNum)
   // Matrix 3: gradient and hess histogram, one for each node
   for (nid <- 0 until maxTNodeNum) {
-    val histMat = new PSModel[TDoubleVector](GRAD_HIST_MAT_PREFIX + nid, 1, 2 * this.splitNum * sampFeatNum, 1, 2 * this.splitNum * sampFeatNum / psNumber)
-    histMat.setRowType(MLProtos.RowType.T_DOUBLE_DENSE)
-    histMat.setOplogType("DENSE_DOUBLE")
+    val histMat = PSModel[TDoubleVector](GRAD_HIST_MAT_PREFIX + nid, 1, 2 * this.splitNum * sampleFeatNum, 1, 2 * this.splitNum * sampleFeatNum / psNumber)
+      .setRowType(MLProtos.RowType.T_DOUBLE_DENSE)
+      .setOplogType("DENSE_DOUBLE")
+      .setNeedSave(false)
     addPSModel(GRAD_HIST_MAT_PREFIX + nid, histMat)
     histMats(nid) = histMat
   }
 
   // Matrix 4: active tree nodes
-  val activeTNodes = new PSModel[TIntVector](ACTIVE_NODE_MAT, 1, maxTNodeNum, 1, maxTNodeNum / psNumber)
-  activeTNodes.setRowType(MLProtos.RowType.T_INT_DENSE)
-  activeTNodes.setOplogType("DENSE_INT")
+  val activeTNodes = PSModel[TIntVector](ACTIVE_NODE_MAT, 1, maxTNodeNum, 1, maxTNodeNum / psNumber)
+    .setRowType(MLProtos.RowType.T_INT_DENSE)
+    .setOplogType("DENSE_INT")
+    .setNeedSave(false)
   addPSModel(ACTIVE_NODE_MAT, activeTNodes)
 
   // Matrix 5: split feature
   val splitFeat = new PSModel[TIntVector](SPLIT_FEAT_MAT, maxTreeNum, maxTNodeNum, 1, maxTNodeNum / psNumber)
-  splitFeat.setRowType(MLProtos.RowType.T_INT_DENSE)
-  splitFeat.setOplogType("DENSE_INT")
+    .setRowType(MLProtos.RowType.T_INT_DENSE)
+    .setOplogType("DENSE_INT")
   addPSModel(SPLIT_FEAT_MAT, splitFeat)
 
   // Matrix 6: split value
-  val splitValue = new PSModel[TDoubleVector](SPLIT_VALUE_MAT, maxTreeNum, maxTNodeNum, 1, maxTNodeNum / psNumber)
-  splitValue.setRowType(MLProtos.RowType.T_DOUBLE_DENSE)
-  splitValue.setOplogType("DENSE_DOUBLE")
+  val splitValue = PSModel[TDoubleVector](SPLIT_VALUE_MAT, maxTreeNum, maxTNodeNum, 1, maxTNodeNum / psNumber)
+    .setRowType(MLProtos.RowType.T_DOUBLE_DENSE)
+    .setOplogType("DENSE_DOUBLE")
   addPSModel(SPLIT_VALUE_MAT, splitValue)
 
   // Matrix 7: split loss gain
-  val splitGain = new PSModel[TDoubleVector](SPLIT_GAIN_MAT, maxTreeNum, maxTNodeNum, 1, maxTNodeNum / psNumber)
-  splitGain.setRowType(MLProtos.RowType.T_DOUBLE_DENSE)
-  splitGain.setOplogType("DENSE_DOUBLE")
+  val splitGain = PSModel[TDoubleVector](SPLIT_GAIN_MAT, maxTreeNum, maxTNodeNum, 1, maxTNodeNum / psNumber)
+    .setRowType(MLProtos.RowType.T_DOUBLE_DENSE)
+    .setOplogType("DENSE_DOUBLE")
+    .setNeedSave(false)
   addPSModel(SPLIT_GAIN_MAT, splitGain)
 
   // Matrix 8: node's grad stats
-  val nodeGradStats = new PSModel[TDoubleVector](NODE_GRAD_MAT, maxTreeNum, 2 * maxTNodeNum, 1, 2 * maxTNodeNum / psNumber)
-  nodeGradStats.setRowType(MLProtos.RowType.T_DOUBLE_DENSE)
-  nodeGradStats.setOplogType("DENSE_DOUBLE")
+  val nodeGradStats = PSModel[TDoubleVector](NODE_GRAD_MAT, maxTreeNum, 2 * maxTNodeNum, 1, 2 * maxTNodeNum / psNumber)
+    .setRowType(MLProtos.RowType.T_DOUBLE_DENSE)
+    .setOplogType("DENSE_DOUBLE")
+    .setNeedSave(false)
   addPSModel(NODE_GRAD_MAT, nodeGradStats)
 
   // Matrix 9: node's predict value
-  val nodePred = new PSModel[TDoubleVector](NODE_PRED_MAT, maxTreeNum, maxTNodeNum, 1, maxTNodeNum / psNumber)
-  nodePred.setRowType(MLProtos.RowType.T_DOUBLE_DENSE)
-  nodePred.setOplogType("DENSE_DOUBLE")
+  val nodePred = PSModel[TDoubleVector](NODE_PRED_MAT, maxTreeNum, maxTNodeNum, 1, maxTNodeNum / psNumber)
+    .setRowType(MLProtos.RowType.T_DOUBLE_DENSE)
+    .setOplogType("DENSE_DOUBLE")
   addPSModel(NODE_PRED_MAT, nodePred)
 
-  setLoadPath(conf)
-  setSavePath(conf)
-
-  def init(ctx: TaskContext) = {
-  }
-
-  override
-  def setSavePath(conf: Configuration): Unit = {
-    val path = conf.get(AngelConfiguration.ANGEL_SAVE_MODEL_PATH)
-    if (path == null) return
-    //sketch.setSavePath(path + "/" + sketch.modelName)
-    //featSample.setSavePath(path + "/" + featSample.modelName)
-    //for (nid <- 0 until maxTNodeNum) {
-    //  histMats(nid).setSavePath(path + "/" + GRAD_HIST_MAT_PREFIX + nid)
-    //}
-    //activeTNodes.setSavePath(path + "/" + activeTNodes.modelName)
-    splitFeat.setSavePath(path + "/" + splitFeat.modelName)
-    splitValue.setSavePath(path + "/" + splitValue.modelName)
-    //splitGain.setSavePath(path + "/" + splitGain.modelName)
-    //nodeGradStats.setSavePath(path + "/" + nodeGradStats.modelName)
-    nodePred.setSavePath(path + "/" + nodePred.modelName)
-  }
-
-  override def setLoadPath(conf: Configuration): Unit = {
-    val path = conf.get(AngelConfiguration.ANGEL_LOAD_MODEL_PATH)
-    if (path == null) return
-    //sketch.setLoadPath(path)
-    //featSample.setLoadPath(path)
-    //for (nid <- 0 until maxTNodeNum) {
-    //  histMats(nid).setLoadPath(path)
-    //}
-    //activeTNodes.setLoadPath(path)
-    splitFeat.setLoadPath(path)
-    splitValue.setLoadPath(path)
-    //splitGain.setLoadPath(path)
-    //nodeGradStats.setLoadPath(path)
-    nodePred.setLoadPath(path)
-  }
+  super.setSavePath(conf)
+  super.setLoadPath(conf)
 
   override def predict(dataSet: DataBlock[LabeledData]): DataBlock[PredictResult] = {
     val predict = new MemoryDataBlock[PredictResult](-1)
@@ -205,7 +166,7 @@ class GBDTModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
     var negTrue: Int = 0
     var negNum: Int = 0
 
-    for (idx: Int <- 0 until dataSet.getTotalElemNum) {
+    for (idx: Int <- 0 until dataSet.size) {
       val instance = dataSet.read
       val x: TDoubleVector = instance.getX.asInstanceOf[TDoubleVector]
       val y: Double = instance.getY
@@ -251,10 +212,7 @@ class GBDTModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
 }
 
 class GBDTPredictResult(label: Double, pred: Double) extends PredictResult {
-  val format = new DecimalFormat("0.000000")
-
-  override
-  def writeText(output: DataOutputStream): Unit = {
-    output.writeBytes(label + PredictResult.separator + format.format(pred))
+  override def getText():String = {
+    (label + separator + format.format(pred))
   }
 }

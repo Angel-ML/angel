@@ -27,7 +27,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.task.AMTask;
 import com.tencent.angel.master.worker.attempt.WorkerAttempt;
@@ -110,8 +110,8 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
     failedAttempts = new HashSet<WorkerAttemptId>();
     
     maxAttempts =
-        context.getConf().getInt(AngelConfiguration.ANGEL_WORKER_MAX_ATTEMPTS,
-            AngelConfiguration.DEFAULT_WORKER_MAX_ATTEMPTS);
+        context.getConf().getInt(AngelConf.ANGEL_WORKER_MAX_ATTEMPTS,
+            AngelConf.DEFAULT_WORKER_MAX_ATTEMPTS);
   }
 
   private static final KillNewWorkertTransition KILL_NEW_TRANSITION =

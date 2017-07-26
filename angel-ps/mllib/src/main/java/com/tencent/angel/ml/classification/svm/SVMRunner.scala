@@ -20,7 +20,7 @@ package com.tencent.angel.ml.classification.svm
 
 
 import com.tencent.angel.client.AngelClientFactory
-import com.tencent.angel.conf.AngelConfiguration
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.MLRunner
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
@@ -56,7 +56,7 @@ class SVMRunner extends MLRunner {
    */
   def incTrain(conf: Configuration): Unit = {
     conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
-    conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS, classOf[SVMTrainTask].getName)
+    conf.set(AngelConf.ANGEL_TASK_USER_TASKCLASS, classOf[SVMTrainTask].getName)
 
     // Create an angel job client
     val client = AngelClientFactory.get(conf)
@@ -74,7 +74,7 @@ class SVMRunner extends MLRunner {
     client.runTask(classOf[SVMTrainTask])
 
     // Run user task and wait for completion,
-    // User task is set in AngelConfiguration.ANGEL_TASK_USER_TASKCLASS
+    // User task is set in AngelConf.ANGEL_TASK_USER_TASKCLASS
     client.waitForCompletion()
 
     // Save the incremental trained model to HDFS

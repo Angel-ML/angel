@@ -18,7 +18,7 @@ package com.tencent.angel.worker;
 
 import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.common.Location;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.protobuf.generated.MLProtos.WorkerAttemptIdProto;
 import com.tencent.angel.protobuf.generated.MLProtos.WorkerIdProto;
 import com.tencent.angel.psagent.PSAgent;
@@ -219,8 +219,8 @@ public class WorkerContext {
    */
   public AngelDeployMode getDeployMode() {
     String mode =
-        worker.getConf().get(AngelConfiguration.ANGEL_DEPLOY_MODE,
-            AngelConfiguration.DEFAULT_ANGEL_DEPLOY_MODE);
+        worker.getConf().get(AngelConf.ANGEL_DEPLOY_MODE,
+            AngelConf.DEFAULT_ANGEL_DEPLOY_MODE);
 
     if (mode.equals(AngelDeployMode.LOCAL.toString())) {
       return AngelDeployMode.LOCAL;

@@ -18,7 +18,7 @@ package com.tencent.angel.master.psagent;
 
 import com.tencent.angel.RunningMode;
 import com.tencent.angel.common.Location;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.app.AppEvent;
@@ -57,18 +57,18 @@ public class PSAgentManager implements EventHandler<PSAgentManagerEvent> {
     Configuration conf = context.getConf();
 
     int psAgentMemory =
-        conf.getInt(AngelConfiguration.ANGEL_PSAGENT_MERMORY_MB,
-            AngelConfiguration.DEFAULT_ANGEL_PSAGENT_MERMORY_MB);
+        conf.getInt(AngelConf.ANGEL_PSAGENT_MERMORY_MB,
+            AngelConf.DEFAULT_ANGEL_PSAGENT_MERMORY_MB);
     int psAgentVcores =
-        conf.getInt(AngelConfiguration.ANGEL_PSAGENT_CPU_VCORES,
-            AngelConfiguration.DEFAULT_ANGEL_PSAGENT_CPU_VCORES);
+        conf.getInt(AngelConf.ANGEL_PSAGENT_CPU_VCORES,
+            AngelConf.DEFAULT_ANGEL_PSAGENT_CPU_VCORES);
     int priority =
-        conf.getInt(AngelConfiguration.ANGEL_PSAGENT_PRIORITY,
-            AngelConfiguration.DEFAULT_ANGEL_PSAGENT_PRIORITY);
+        conf.getInt(AngelConf.ANGEL_PSAGENT_PRIORITY,
+            AngelConf.DEFAULT_ANGEL_PSAGENT_PRIORITY);
 
     maxAttemptNum =
-        conf.getInt(AngelConfiguration.ANGEL_PSAGENT_MAX_ATTEMPTS,
-            AngelConfiguration.DEFAULT_ANGEL_PSAGENT_MAX_ATTEMPTS);
+        conf.getInt(AngelConf.ANGEL_PSAGENT_MAX_ATTEMPTS,
+            AngelConf.DEFAULT_ANGEL_PSAGENT_MAX_ATTEMPTS);
 
     LOG.info("psagent priority = " + priority);
     psAgentResource = Resource.newInstance(psAgentMemory, psAgentVcores);
@@ -83,13 +83,13 @@ public class PSAgentManager implements EventHandler<PSAgentManagerEvent> {
   public void init() throws InvalidParameterException {
     Configuration conf = context.getConf();
     if (context.getRunningMode() == RunningMode.ANGEL_PS_PSAGENT) {
-      String ipStr = conf.get(AngelConfiguration.ANGEL_PSAGENT_IPLIST);
+      String ipStr = conf.get(AngelConf.ANGEL_PSAGENT_IPLIST);
       if (ipStr != null) {
         ips = ipStr.split(",");
         psAgentNumber = ips.length;
       } else {
         throw new InvalidParameterException("ip list is null, property "
-            + AngelConfiguration.ANGEL_PSAGENT_IPLIST + " must be set");
+            + AngelConf.ANGEL_PSAGENT_IPLIST + " must be set");
       }
 
       initPSAgents();

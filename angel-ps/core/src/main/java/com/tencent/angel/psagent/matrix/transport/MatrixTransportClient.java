@@ -19,7 +19,7 @@ package com.tencent.angel.psagent.matrix.transport;
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.common.Location;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.matrix.psf.update.enhance.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.transport.*;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
@@ -137,21 +137,22 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
     msgQueue = new LinkedBlockingQueue<ByteBuf>();
     stopped = new AtomicBoolean(false);
-    clientThreadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2);
+
+    clientThreadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     Configuration conf = PSAgentContext.get().getConf();
     timer = new Timer();
     checkPeriodMS =
-        conf.getInt(AngelConfiguration.ANGEL_MATRIXTRANSFER_CHECK_INTERVAL_MS,
-            AngelConfiguration.DEFAULT_ANGEL_MATRIXTRANSFER_CHECK_INTERVAL_MS);
+        conf.getInt(AngelConf.ANGEL_MATRIXTRANSFER_CHECK_INTERVAL_MS,
+            AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_CHECK_INTERVAL_MS);
 
     retryIntervalMs =
-        conf.getInt(AngelConfiguration.ANGEL_MATRIXTRANSFER_RETRY_INTERVAL_MS,
-            AngelConfiguration.DEFAULT_ANGEL_MATRIXTRANSFER_RETRY_INTERVAL_MS);
+        conf.getInt(AngelConf.ANGEL_MATRIXTRANSFER_RETRY_INTERVAL_MS,
+            AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_RETRY_INTERVAL_MS);
 
     useDirectBuffer =
-        conf.getBoolean(AngelConfiguration.ANGEL_NETTY_MATRIXTRANSFER_CLIENT_USEDIRECTBUFFER,
-            AngelConfiguration.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_USEDIRECTBUFFER);
+        conf.getBoolean(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_CLIENT_USEDIRECTBUFFER,
+            AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_USEDIRECTBUFFER);
 
     channelManager = null;
   }
@@ -159,20 +160,20 @@ public class MatrixTransportClient implements MatrixTransportInterface {
   private void init() {
     Configuration conf = PSAgentContext.get().getConf();
     int workerNum =
-        conf.getInt(AngelConfiguration.ANGEL_NETTY_MATRIXTRANSFER_CLIENT_EVENTGROUP_THREADNUM,
-            AngelConfiguration.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_EVENTGROUP_THREADNUM);
+        conf.getInt(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_CLIENT_EVENTGROUP_THREADNUM,
+            AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_EVENTGROUP_THREADNUM);
 
     int sendBuffSize =
-        conf.getInt(AngelConfiguration.ANGEL_NETTY_MATRIXTRANSFER_CLIENT_SNDBUF,
-            AngelConfiguration.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_SNDBUF);
+        conf.getInt(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_CLIENT_SNDBUF,
+            AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_SNDBUF);
 
     int recvBuffSize =
-        conf.getInt(AngelConfiguration.ANGEL_NETTY_MATRIXTRANSFER_CLIENT_RCVBUF,
-            AngelConfiguration.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_RCVBUF);
+        conf.getInt(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_CLIENT_RCVBUF,
+            AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_RCVBUF);
     
     final int maxMessageSize = 
-        conf.getInt(AngelConfiguration.ANGEL_NETTY_MATRIXTRANSFER_MAX_MESSAGE_SIZE,
-            AngelConfiguration.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_MAX_MESSAGE_SIZE);
+        conf.getInt(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_MAX_MESSAGE_SIZE,
+            AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_MAX_MESSAGE_SIZE);
 
     bootstrap = new Bootstrap();
     channelManager = new ChannelManager(bootstrap);
@@ -418,12 +419,12 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       totalRequestNumInFlightAtomic = new AtomicInteger(0);
       maxBytesInFlight = PSAgentContext.get().getMaxBytesInFlight();
       int serverNum =
-          conf.getInt(AngelConfiguration.ANGEL_PS_NUMBER,
-              AngelConfiguration.DEFAULT_ANGEL_PS_NUMBER);
+          conf.getInt(AngelConf.ANGEL_PS_NUMBER,
+              AngelConf.DEFAULT_ANGEL_PS_NUMBER);
 
       maxReqNumInFlightPerServer =
-          conf.getInt(AngelConfiguration.ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM_PERSERVER,
-              AngelConfiguration.DEFAULT_ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM_PERSERVER);
+          conf.getInt(AngelConf.ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM_PERSERVER,
+              AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM_PERSERVER);
 
       reqNumInFlightCounters = new HashMap<ParameterServerId, Integer>();
       for (int i = 0; i < psIds.length; i++) {
@@ -431,8 +432,8 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       }
 
       int maxReqNumInFlight =
-          conf.getInt(AngelConfiguration.ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM,
-              AngelConfiguration.DEFAULT_ANGEL_MATRIXTRANSFER_MAX);
+          conf.getInt(AngelConf.ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM,
+              AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_MAX);
 
       if (maxReqNumInFlight > serverNum * maxReqNumInFlightPerServer) {
         maxReqNumInFlight = serverNum * maxReqNumInFlightPerServer;
@@ -449,14 +450,14 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       serverFailedStatics = new HashMap<ParameterServerId, Integer>();
 
       refreshThreshold =
-          conf.getInt(AngelConfiguration.ANGEL_REFRESH_SERVERLOCATION_THRESHOLD,
-              AngelConfiguration.DEFAULT_ANGEL_REFRESH_SERVERLOCATION_THRESHOLD);
+          conf.getInt(AngelConf.ANGEL_REFRESH_SERVERLOCATION_THRESHOLD,
+              AngelConf.DEFAULT_ANGEL_REFRESH_SERVERLOCATION_THRESHOLD);
 
       refreshingServerSet = new HashSet<ParameterServerId>();
 
       requestTimeOut =
-          conf.getInt(AngelConfiguration.ANGEL_MATRIXTRANSFER_REQUEST_TIMEOUT_MS,
-              AngelConfiguration.DEFAULT_ANGEL_MATRIXTRANSFER_REQUEST_TIMEOUT_MS);
+          conf.getInt(AngelConf.ANGEL_MATRIXTRANSFER_REQUEST_TIMEOUT_MS,
+              AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_REQUEST_TIMEOUT_MS);
 
       tickClock = 0;
       LOG.info("ByteOrder.nativeOrder()=" + ByteOrder.nativeOrder());

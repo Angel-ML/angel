@@ -95,10 +95,12 @@ object GradientDescent {
 
     //Push model update to PS Server
     totalLoss += loss.getReg(w)
+    totalLoss /= trainData.size()
     model.clock.get
     intercept.map(_.clock.get)
+    
 
-    (totalLoss, w)
+    (totalLoss , w)
   }
 
   /**

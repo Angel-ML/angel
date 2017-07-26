@@ -32,7 +32,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.tencent.angel.common.AngelEnvironment;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.MasterService;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.utils.NetUtils;
@@ -93,8 +93,8 @@ public class ContainerContextUtils {
     Apps.addToEnvironment(myEnv, AngelEnvironment.INIT_MIN_CLOCK.name(),
         Integer.toString(initMinClock));
     Apps.addToEnvironment(myEnv, AngelEnvironment.ANGEL_USER_TASK.name(), conf.get(
-        AngelConfiguration.ANGEL_TASK_USER_TASKCLASS,
-        AngelConfiguration.DEFAULT_ANGEL_TASK_USER_TASKCLASS));
+        AngelConf.ANGEL_TASK_USER_TASKCLASS,
+        AngelConf.DEFAULT_ANGEL_TASK_USER_TASKCLASS));
 
     WorkerJVM.setVMEnv(myEnv, conf);
 
@@ -134,17 +134,17 @@ public class ContainerContextUtils {
       FileSystem remoteFS = FileSystem.get(conf);
 
       // Set up JobConf to be localized properly on the remote NM.
-      Path remoteJobSubmitDir = new Path(conf.get(AngelConfiguration.ANGEL_JOB_DIR));
-      Path remoteJobConfPath = new Path(remoteJobSubmitDir, AngelConfiguration.ANGEL_JOB_CONF_FILE);
+      Path remoteJobSubmitDir = new Path(conf.get(AngelConf.ANGEL_JOB_DIR));
+      Path remoteJobConfPath = new Path(remoteJobSubmitDir, AngelConf.ANGEL_JOB_CONF_FILE);
       localResources.put(
-          AngelConfiguration.ANGEL_JOB_CONF_FILE,
+          AngelConf.ANGEL_JOB_CONF_FILE,
           createLocalResource(remoteFS, remoteJobConfPath, LocalResourceType.FILE,
               LocalResourceVisibility.APPLICATION));
       LOG.info("The job-conf file on the remote FS is " + remoteJobConfPath.toUri().toASCIIString());
 
       LOG.info("actual workergroup number:"
-          + conf.get(AngelConfiguration.ANGEL_WORKERGROUP_ACTUAL_NUM));
-      LOG.info("actual task number:" + conf.get(AngelConfiguration.ANGEL_TASK_ACTUAL_NUM));
+          + conf.get(AngelConf.ANGEL_WORKERGROUP_ACTUAL_NUM));
+      LOG.info("actual task number:" + conf.get(AngelConf.ANGEL_TASK_ACTUAL_NUM));
 
       // Setup DistributedCache
       AngelApps.setupDistributedCache(conf, localResources);
@@ -172,16 +172,16 @@ public class ContainerContextUtils {
       Apps.addToEnvironment(environment, AngelEnvironment.LISTEN_PORT.name(),
           String.valueOf(listenAddr.getPort()));
 
-      String workerGroupNumStr = conf.get(AngelConfiguration.ANGEL_WORKERGROUP_ACTUAL_NUM);
+      String workerGroupNumStr = conf.get(AngelConf.ANGEL_WORKERGROUP_ACTUAL_NUM);
       if(workerGroupNumStr != null) {
         Apps.addToEnvironment(environment, AngelEnvironment.WORKERGROUP_NUMBER.name(),
-            conf.get(AngelConfiguration.ANGEL_WORKERGROUP_ACTUAL_NUM));
+            conf.get(AngelConf.ANGEL_WORKERGROUP_ACTUAL_NUM));
       }
 
-      String taskNumStr = conf.get(AngelConfiguration.ANGEL_TASK_ACTUAL_NUM);
+      String taskNumStr = conf.get(AngelConf.ANGEL_TASK_ACTUAL_NUM);
       if(taskNumStr != null){
         Apps.addToEnvironment(environment, AngelEnvironment.TASK_NUMBER.name(),
-            conf.get(AngelConfiguration.ANGEL_TASK_ACTUAL_NUM));
+            conf.get(AngelConf.ANGEL_TASK_ACTUAL_NUM));
       }
 
       Apps.addToEnvironment(environment, Environment.CLASSPATH.name(), getInitialClasspath(conf));

@@ -83,7 +83,7 @@ class RemotePSVectorSuite extends PSFunSuite with Matchers with SharedPSContext 
     }
     rdd2.count()
 
-    val psArray = remoteVector.pull()
+    val psArray = remoteVector.pull(false)
     _localSum.indices.foreach { i => assert(_localSum(i) === psArray(i) +- doubleEps) }
   }
 

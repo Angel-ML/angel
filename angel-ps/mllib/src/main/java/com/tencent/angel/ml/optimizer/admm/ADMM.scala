@@ -22,11 +22,13 @@ import java.util.concurrent.{LinkedBlockingQueue, ThreadPoolExecutor, TimeUnit}
 import breeze.linalg.{DenseVector, Vector}
 import breeze.optimize.{CachedDiffFunction, DiffFunction}
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.classification.sparselr.SparseLogisticRegressionModel
+import com.tencent.angel.ml.classification.sparselr.SparseLRModel
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.TAbstractVector
 import com.tencent.angel.ml.math.vector.{DenseDoubleVector, SparseDoubleSortedVector, SparseDoubleVector, SparseDummyVector}
+import com.tencent.angel.ml.metric.log.GlobalMetrics
 import com.tencent.angel.ml.utils.MathUtils
+import com.tencent.angel.ml.conf.MLConf._
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap
@@ -156,17 +158,17 @@ object ADMM {
 
   private val LOG = LogFactory.getLog(classOf[ADMM])
 
-  def runADMM(
-               data: DataBlock[LabeledData],
-               model: SparseLogisticRegressionModel,
-               regParam: Double,
-               rho: Double,
-               N: Int,
-               threadNum: Int,
-               ctx: TaskContext,
-               maxNumIterations: Int = 20,
-               primalTol: Double = 1e-5,
-               dualTol: Double = 1e-5): (Array[Double], SparseDoubleVector) = {
+  def runADMM(data: DataBlock[LabeledData],
+              model: SparseLRModel,
+              regParam: Double,
+              rho: Double,
+              N: Int,
+              threadNum: Int,
+              ctx: TaskContext,
+              globalMetrics: GlobalMetrics,
+              maxNumIterations: Int = 20,
+              primalTol: Double = 1e-5,
+              dualTol: Double = 1e-5): (Array[Double], SparseDoubleVector) = {
 
     val (localModel, localIndex) = initialize(data)
     val history = new ArrayBuffer[Double]()
@@ -183,8 +185,10 @@ object ADMM {
       val trainZCost = System.currentTimeMillis() - startTrainZ
       LOG.info(s"epoch=$iter trainXCost=$trainXCost trainZCost=$trainZCost")
 
-      val loss = getGlobalLoss(data, model, localModel, z, regParam)
-      history.append(loss)
+      val loss = calcLocalLoss(data, localModel)
+      globalMetrics.metrics(TRAIN_LOSS, loss)
+//      history.append(loss)
+
       val precision = validate(data, z, localIndex, localModel)
       LOG.info(s"epoch=$iter global_loss=${loss} precision=$precision")
 
@@ -275,7 +279,7 @@ object ADMM {
     data.resetReadIndex()
     data.shuffle()
 
-    val total = data.getTotalElemNum
+    val total = data.size
     val numPerSplit = total / splitNum + 1
     val ret = new ArrayBuffer[DataBlock[LabeledData]]()
     var start = 0
@@ -324,7 +328,7 @@ object ADMM {
   }
 
 
-  def updateW(model: SparseLogisticRegressionModel,
+  def updateW(model: SparseLRModel,
               localModel: LocalModel,
               localIndex: LocalIndex): Unit = {
     val update = new DenseDoubleVector(model.feaNum)
@@ -339,9 +343,9 @@ object ADMM {
 
 
   def getT(z: SparseDoubleVector,
-              model: SparseLogisticRegressionModel,
-              localModel: LocalModel,
-              localIndex: LocalIndex): Double = {
+           model: SparseLRModel,
+           localModel: LocalModel,
+           localIndex: LocalIndex): Double = {
     val update = new DenseDoubleVector(1)
 
     var value = 0.0
@@ -358,7 +362,7 @@ object ADMM {
   }
 
   def computeZ(z: SparseDoubleVector,
-               model: SparseLogisticRegressionModel,
+               model: SparseLRModel,
                regParam: Double,
                rho: Double,
                N: Int): Unit = {
@@ -402,14 +406,16 @@ object ADMM {
   }
 
   def getGlobalLoss(data: DataBlock[LabeledData],
-                    model: SparseLogisticRegressionModel,
+                    model: SparseLRModel,
                     localModel: LocalModel,
                     z: SparseDoubleVector,
                     regParam: Double): Double = {
 
     val loss = calcLocalLoss(data, localModel)
 
-    LOG.info(s"local loss = $loss, average loss=${loss / data.getTotalElemNum}")
+    return loss
+
+    LOG.info(s"local loss = $loss, average loss=${loss / data.size}")
     val update = new DenseDoubleVector(1)
     update.set(0, loss)
     update.setRowId(0)
@@ -524,7 +530,7 @@ object ADMM {
     data.resetReadIndex()
     var finish = false
     var acn: Int = 0
-    val total = data.getTotalElemNum
+    val total = data.size
     while (!finish) {
       data.read() match {
         case null => finish = true

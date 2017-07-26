@@ -9,10 +9,10 @@
 export SPARK_HOME=<SPARK_HOME>
 export ANGEL_HOME=<ANGEL_HOME>
 export ANGEL_HDFS_HOME=<ANGEL_HDFS_HOME>
-export ANGEL_VERSION=<ANGEL_VERSON>
+export ANGEL_VERSION=<ANGEL_VERSION>
 
 scala_jar=scala-library-2.11.8.jar
-external_jar=fastutil-7.1.0.jar,htrace-core-2.05.jar,sizeof-0.3.0.jar,kryo-shaded-3.0.3.jar,minlog-1.3.0.jar
+external_jar=fastutil-7.1.0.jar,htrace-core-2.05.jar,sizeof-0.3.0.jar,kryo-shaded-4.0.0.jar,minlog-1.3.0.jar
 angel_ps_jar=angel-ps-core-${ANGEL_VERSION}.jar,angel-ps-mllib-${ANGEL_VERSION}.jar,angel-ps-examples-${ANGEL_VERSION}.jar,angel-ps-psf-${ANGEL_VERSION}.jar
 
 sona_jar=spark-on-angel-core-${ANGEL_VERSION}.jar,spark-on-angel-mllib-${ANGEL_VERSION}.jar

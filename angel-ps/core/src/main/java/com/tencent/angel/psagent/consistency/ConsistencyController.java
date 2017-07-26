@@ -16,7 +16,7 @@
 
 package com.tencent.angel.psagent.consistency;
 
-import com.tencent.angel.conf.MatrixConfiguration;
+import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.psf.get.multi.GetRowsFunc;
@@ -195,7 +195,7 @@ public class ConsistencyController {
    * @return int staleness value
    */
   public int getStaleness(int matrixId) {
-    String staleStr = PSAgentContext.get().getMatrixMetaManager().getAttribute(matrixId, MatrixConfiguration.MATRIX_STALENESS);
+    String staleStr = PSAgentContext.get().getMatrixMetaManager().getAttribute(matrixId, MatrixConf.MATRIX_STALENESS);
     if(staleStr == null) {
       return globalStaleness;
     } else {

@@ -16,7 +16,6 @@
 
 package com.tencent.angel.ml.math.vector;
 
-import com.tencent.angel.ml.math.vector.TDoubleVector;
 import com.tencent.angel.ml.math.VectorType;
 import org.junit.Test;
 

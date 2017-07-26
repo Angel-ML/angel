@@ -18,8 +18,7 @@
 
 package com.tencent.angel.ml.GBDT
 
-
-import com.tencent.angel.conf.AngelConfiguration
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.MLRunner
 import com.tencent.angel.ml.conf.MLConf
 import org.apache.commons.logging.LogFactory
@@ -42,7 +41,7 @@ class GBDTRunner extends MLRunner {
 
     var featNum = conf.getInt(MLConf.ML_FEATURE_NUM, 10000)
 
-    val psNumber = conf.getInt(AngelConfiguration.ANGEL_PS_NUMBER, 1)
+    val psNumber = conf.getInt(AngelConf.ANGEL_PS_NUMBER, 1)
 
     if (featNum % psNumber != 0) {
       featNum = (featNum / psNumber + 1) * psNumber

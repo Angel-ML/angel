@@ -158,7 +158,6 @@ public class GetUDFRequest extends PartitionRequest {
 
   @Override
   public String toString() {
-    return "GetUDFRequest{" + "getFuncClass='" + getFuncClass + '\'' + ", partParam=" + partParam
-      + "} " + super.toString();
+    return "GetUDFRequest [getFuncClass=" + getFuncClass + ", partParam=" + partParam + "]";
   }
 }

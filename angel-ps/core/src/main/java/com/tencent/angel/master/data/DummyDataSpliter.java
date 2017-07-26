@@ -16,9 +16,9 @@
 
 package com.tencent.angel.master.data;
 
+import com.tencent.angel.conf.AngelConf;
 import org.apache.hadoop.conf.Configuration;
 
-import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.master.app.AMContext;
 
 /**
@@ -34,11 +34,11 @@ public class DummyDataSpliter extends DataSpliter {
   public int getSplitNum() {
     Configuration conf = context.getConf();
     int workergroupNumber =
-        conf.getInt(AngelConfiguration.ANGEL_WORKERGROUP_NUMBER,
-            AngelConfiguration.DEFAULT_ANGEL_WORKERGROUP_NUMBER);
+        conf.getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER,
+            AngelConf.DEFAULT_ANGEL_WORKERGROUP_NUMBER);
     int taskNumInWorker =
-        conf.getInt(AngelConfiguration.ANGEL_WORKER_TASK_NUMBER,
-            AngelConfiguration.DEFAULT_ANGEL_WORKER_TASK_NUMBER);
+        conf.getInt(AngelConf.ANGEL_WORKER_TASK_NUMBER,
+            AngelConf.DEFAULT_ANGEL_WORKER_TASK_NUMBER);
     return workergroupNumber * taskNumInWorker;
   }
 

@@ -17,9 +17,9 @@
 
 package com.tencent.angel.ml.classification.lr
 
+import com.tencent.angel.ml.MLRunner
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
-import com.tencent.angel.ml.MLRunner
 
 /**
   * Run logistic regression task on angel

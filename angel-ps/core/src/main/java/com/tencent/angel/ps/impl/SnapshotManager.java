@@ -15,7 +15,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.util.Time;
 
 import com.google.protobuf.ServiceException;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos.MatrixClock;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.GetTaskMatrixClockRequest;
@@ -46,7 +46,7 @@ public class SnapshotManager {
 
   public void init() throws IOException {
     Configuration conf = PSContext.get().getConf();
-    String outputPath = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_PATH);
+    String outputPath = conf.get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH);
     LOG.info("tmp output dir=" + outputPath);
     if (outputPath == null) {
       throw new IOException("can not find output path setting");
@@ -63,8 +63,8 @@ public class SnapshotManager {
     // 2. write snapshot every N iterations, this method depends on notification of master
     Configuration conf = PSContext.get().getConf();
     final int backupInterval =
-        conf.getInt(AngelConfiguration.ANGEL_PS_BACKUP_INTERVAL_MS,
-            AngelConfiguration.DEFAULT_ANGEL_PS_BACKUP_INTERVAL_MS);
+        conf.getInt(AngelConf.ANGEL_PS_BACKUP_INTERVAL_MS,
+            AngelConf.DEFAULT_ANGEL_PS_BACKUP_INTERVAL_MS);
     LOG.info("Starting TakeSnapshotsThread, backup interval is " + backupInterval + " ms");
     taskSnapshotsThread = new Thread(new Runnable() {
       @Override

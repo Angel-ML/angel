@@ -34,10 +34,10 @@ class SVMPredictTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text]
   def train(ctx: TaskContext) {
     val svmModel = new SVMModel(conf)
 
-    val predictResult = svmModel.predict(dataBlock)
+    val predictResult = svmModel.predict(trainDataBlock)
 
     // TODO delet
-    System.out.println("predictstorage.len=" + predictResult.getTotalElemNum)
+    System.out.println("predictstorage.len=" + predictResult.size)
     HdfsUtil.writeStorage(predictResult, ctx)
   }
 

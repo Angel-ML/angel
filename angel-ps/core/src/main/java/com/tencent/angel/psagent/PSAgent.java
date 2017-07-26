@@ -21,7 +21,7 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.RunningMode;
 import com.tencent.angel.common.AngelEnvironment;
 import com.tencent.angel.common.Location;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.exception.TimeOutException;
 import com.tencent.angel.ipc.TConnection;
@@ -215,8 +215,8 @@ public class PSAgent {
     this.executor = executor;
 
     this.heartbeatIntervalMs =
-        conf.getInt(AngelConfiguration.ANGEL_WORKER_HEARTBEAT_INTERVAL,
-            AngelConfiguration.DEFAULT_ANGEL_WORKER_HEARTBEAT_INTERVAL);
+        conf.getInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL,
+            AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_INTERVAL);
     this.runningMode = initRunningMode(conf);
     this.appId = appId;
     this.user = user;
@@ -248,8 +248,8 @@ public class PSAgent {
     this.conf = conf;
     this.executor = executor;
     this.heartbeatIntervalMs =
-        conf.getInt(AngelConfiguration.ANGEL_WORKER_HEARTBEAT_INTERVAL,
-            AngelConfiguration.DEFAULT_ANGEL_WORKER_HEARTBEAT_INTERVAL);
+        conf.getInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL,
+            AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_INTERVAL);
     this.runningMode = initRunningMode(conf);
 
     this.appId = null;
@@ -268,8 +268,8 @@ public class PSAgent {
 
   private RunningMode initRunningMode(Configuration conf) {
     String mode =
-        conf.get(AngelConfiguration.ANGEL_RUNNING_MODE,
-            AngelConfiguration.DEFAULT_ANGEL_RUNNING_MODE);
+        conf.get(AngelConf.ANGEL_RUNNING_MODE,
+            AngelConf.DEFAULT_ANGEL_RUNNING_MODE);
 
     if (mode.equals(RunningMode.ANGEL_PS.toString())) {
       return RunningMode.ANGEL_PS;
@@ -317,7 +317,7 @@ public class PSAgent {
 
     matricesCache = new MatricesCache();
     int staleness =
-        conf.getInt(AngelConfiguration.ANGEL_STALENESS, AngelConfiguration.DEFAULT_ANGEL_STALENESS);
+        conf.getInt(AngelConf.ANGEL_STALENESS, AngelConf.DEFAULT_ANGEL_STALENESS);
     consistencyController = new ConsistencyController(staleness);
     consistencyController.init();
 
@@ -698,7 +698,7 @@ public class PSAgent {
   public static void main(String[] args) {
     // get configuration from config file
     Configuration conf = new Configuration();
-    conf.addResource(AngelConfiguration.ANGEL_JOB_CONF_FILE);
+    conf.addResource(AngelConf.ANGEL_JOB_CONF_FILE);
 
     String containerIdStr = System.getenv(Environment.CONTAINER_ID.name());
     ContainerId containerId = ConverterUtils.toContainerId(containerIdStr);
@@ -709,8 +709,8 @@ public class PSAgent {
     // set localDir with enviroment set by nm.
     String[] localSysDirs =
         StringUtils.getTrimmedStrings(System.getenv(Environment.LOCAL_DIRS.name()));
-    conf.setStrings(AngelConfiguration.LOCAL_DIR, localSysDirs);
-    LOG.info(AngelConfiguration.LOCAL_DIR + " for child: " + conf.get(AngelConfiguration.LOCAL_DIR));
+    conf.setStrings(AngelConf.LOCAL_DIR, localSysDirs);
+    LOG.info(AngelConf.LOCAL_DIR + " for child: " + conf.get(AngelConf.LOCAL_DIR));
 
     String psAgentindex = System.getenv(AngelEnvironment.PSAGENT_ID.name());
     String psAgentAttemptIndex = System.getenv(AngelEnvironment.PSAGENT_ATTEMPT_ID.name());

@@ -25,10 +25,10 @@ import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.{DenseDoubleVector, DenseFloatVector}
+import com.tencent.angel.ml.math.vector.DenseFloatVector
 import com.tencent.angel.ml.matrixfactorization.utils._
+import com.tencent.angel.ml.metric.log.ObjMetric
 import com.tencent.angel.ml.model.MLModel
-import com.tencent.angel.ml.utils.DistributedLogger
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex
 import com.tencent.angel.worker.storage.{DataBlock, Reader}
 import com.tencent.angel.worker.task.TaskContext
@@ -47,7 +47,7 @@ class MFLearner(override val ctx: TaskContext) extends MLLearner(ctx){
   val LOG = LogFactory.getLog(classOf[MFLearner])
 
   // Matrix factorization model
-  var mfModel = new MFModel(ctx, conf)
+  var mfModel = new MFModel(conf, ctx)
 
   // Number of threads that computes updation and validation
   val parallelism = 8
@@ -85,8 +85,8 @@ class MFLearner(override val ctx: TaskContext) extends MLLearner(ctx){
   // Iteration number
   val epochNum = conf.getInt(MLConf.ML_EPOCH_NUM, MLConf.DEFAULT_ML_EPOCH_NUM)
 
-  val logger = DistributedLogger(ctx)
-  logger.setNames("localLoss", "globalLoss")
+  //val logger = DistributedLogger(ctx)
+  //logger.setNames("localLoss", "globalLoss")
 
 
   /**
@@ -101,6 +101,8 @@ class MFLearner(override val ctx: TaskContext) extends MLLearner(ctx){
     LOG.info(s"Start to train Matrix Factorizaiton Model. #Item=$rRow, #rank=$rank, #rowBatch=$batchNum")
 
     init()
+    LOG.info("mfModel.userNum=" + mfModel.userNum)
+    globalMetrics.addMetrics(MFModel.MF_METRIC, ObjMetric())
 
     while (ctx.getIteration <  epochNum) {
       LOG.info(s"Start Epoch ${ctx.getIteration}")
@@ -111,7 +113,7 @@ class MFLearner(override val ctx: TaskContext) extends MLLearner(ctx){
 
     writeUserVectors
 
-    logger.close()
+    //logger.close()
     mfModel
   }
 
@@ -240,29 +242,13 @@ class MFLearner(override val ctx: TaskContext) extends MLLearner(ctx){
 
     val loss = validateOneEpoch(epoch)
 
-    val gLoss = getGlobalLoss(epoch, loss)
-
     val validTime = System.currentTimeMillis - startVali
     val iterTime = System.currentTimeMillis - startIter
 
+    globalMetrics.metrics(MFModel.MF_METRIC, loss)
     val infoMsg = s"Task[${ctx.getTaskId.getIndex}] Epoch=$epoch success. local loss=$loss, " +
-      s"global loss=$gLoss" + s" epoch cost $iterTime ms, train cost $trainTime ms, " +
-      s"validate cost $validTime ms"
+      s" epoch cost $iterTime ms, train cost $trainTime ms, validate cost $validTime ms"
     LOG.info(infoMsg)
-    logger.addValues(loss, gLoss)
-  }
-
-  def getGlobalLoss(epoch: Int, loss: Double): Double = {
-    val update = new DenseDoubleVector(epochNum)
-    update.setRowId(0)
-    update.set(epoch, loss)
-
-    mfModel.lossMat.increment(update)
-    mfModel.lossMat.clock().get()
-
-    val globalLoss = mfModel.lossMat.getRow(0).asInstanceOf[DenseDoubleVector].get(epoch)
-
-    globalLoss
   }
 
   /**

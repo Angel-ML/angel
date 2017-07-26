@@ -379,7 +379,6 @@ public class MatrixClientAdapter {
     List<PartitionGetParam> partParams = param.split();
     int size = partParams.size();
 
-    LOG.debug("get psf request " + func + " start, rpc request number=" + size);
     List<Future<PartitionGetResult>> futureResultList =
         new ArrayList<Future<PartitionGetResult>>(size);
     List<PartitionGetResult> resultList = new ArrayList<PartitionGetResult>(size);
@@ -418,12 +417,20 @@ public class MatrixClientAdapter {
   class MergeDispatcher extends Thread {
     @Override
     public void run() {
+      int checkTime = 0;
       try {
         while (!stopped.get() && !Thread.interrupted()) {
           Iterator<Entry<UserRequest, PartitionResponseCache>> iter =
               requestToResponseMap.entrySet().iterator();
           while (iter.hasNext()) {
             Entry<UserRequest, PartitionResponseCache> entry = iter.next();
+
+            if(LOG.isDebugEnabled()) {
+              if(checkTime % 100 == 0) {
+                LOG.debug("waiting user request=" + entry.getKey() + ", result cache=" + entry.getValue());
+              }
+            }
+
             switch (entry.getKey().type) {
               case GET_ROW: {
                 GetRowPipelineCache cache = (GetRowPipelineCache) entry.getValue();
@@ -485,6 +492,7 @@ public class MatrixClientAdapter {
           }
 
           Thread.sleep(10);
+          checkTime++;
         }
       } catch (InterruptedException ie) {
         LOG.info("interupted");

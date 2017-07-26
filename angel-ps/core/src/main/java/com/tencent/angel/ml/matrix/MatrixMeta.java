@@ -16,7 +16,7 @@
 
 package com.tencent.angel.ml.matrix;
 
-import com.tencent.angel.conf.MatrixConfiguration;
+import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.protobuf.generated.MLProtos.MatrixProto;
 
@@ -159,7 +159,7 @@ public class MatrixMeta {
    */
   public boolean isAverage() {
     String average =
-        getAttribute(MatrixConfiguration.MATRIX_AVERAGE, MatrixConfiguration.DEFAULT_MATRIX_AVERAGE);
+        getAttribute(MatrixConf.MATRIX_AVERAGE, MatrixConf.DEFAULT_MATRIX_AVERAGE);
     return Boolean.parseBoolean(average);
   }
 
@@ -170,7 +170,7 @@ public class MatrixMeta {
    */
   public boolean isHogwild() {
     String hogwild =
-        getAttribute(MatrixConfiguration.MATRIX_HOGWILD, MatrixConfiguration.DEFAULT_MATRIX_HOGWILD);
+        getAttribute(MatrixConf.MATRIX_HOGWILD, MatrixConf.DEFAULT_MATRIX_HOGWILD);
     return Boolean.parseBoolean(hogwild);
   }
 
@@ -181,8 +181,8 @@ public class MatrixMeta {
    */
   public int getStaleness() {
     int staleness = 0;// MLContext.get().getStaleness();
-    if (attributes.containsKey(MatrixConfiguration.MATRIX_STALENESS)) {
-      staleness = Integer.parseInt(attributes.get(MatrixConfiguration.MATRIX_STALENESS));
+    if (attributes.containsKey(MatrixConf.MATRIX_STALENESS)) {
+      staleness = Integer.parseInt(attributes.get(MatrixConf.MATRIX_STALENESS));
     }
     return staleness;
   }

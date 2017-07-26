@@ -17,7 +17,6 @@
 package com.tencent.angel.ml.math.vector;
 
 import com.tencent.angel.ml.math.TAbstractVector;
-import com.tencent.angel.ml.math.vector.TDoubleVector;
 import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.math.VectorType;
 import org.apache.commons.logging.Log;
@@ -99,6 +98,11 @@ public class SparseDoubleSortedVector extends TDoubleVector {
     System.arraycopy(other.values, 0, this.values, 0, nnz);
   }
 
+  @Override
+  public TDoubleVector add(int index, double delt) {
+    set(index, get(index) + delt);
+    return this;
+  }
 
   /**
    * clone the vector
@@ -109,6 +113,7 @@ public class SparseDoubleSortedVector extends TDoubleVector {
   public SparseDoubleSortedVector clone() {
     return new SparseDoubleSortedVector(this);
   }
+
 
   /**
    * clone vector by another one
@@ -366,6 +371,13 @@ public class SparseDoubleSortedVector extends TDoubleVector {
       values[i] *= x;
     this.norm *= x * x;
     return this;
+  }
+
+  public void calNorm() {
+    this.norm = 0.0;
+    for (int i = 0; i < this.nnz; i++) {
+      this.norm += values[i] * values[i];
+    }
   }
 
 }

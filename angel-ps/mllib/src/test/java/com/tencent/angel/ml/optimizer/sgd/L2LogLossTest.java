@@ -91,4 +91,9 @@ public class L2LogLossTest {
     double test = l2LogLoss.grad(pre, y);
     assertEquals((5 / (1.0 + Math.exp(10))), test, 0.00001);
   }
+
+  @Test
+  public void testPredict() throws Exception {
+
+  }
 }

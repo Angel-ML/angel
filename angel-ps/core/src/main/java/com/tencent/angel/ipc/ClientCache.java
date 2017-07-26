@@ -22,7 +22,7 @@
 
 package com.tencent.angel.ipc;
 
-import com.tencent.angel.conf.TConstants;
+import com.tencent.angel.conf.AngelConf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
@@ -51,82 +51,82 @@ import java.util.concurrent.ThreadFactory;
  * drops to zero, the cache mapping is cleared.
  */
 class ClientCache {
-  private static final Logger LOG = LoggerFactory.getLogger(ClientCache.class.getName());
-  private Map<String, NettyTransceiver> clients = new HashMap<String, NettyTransceiver>();
-  private Configuration conf = new Configuration();
+    private static final Logger LOG = LoggerFactory.getLogger(ClientCache.class.getName());
+    private Map<String, NettyTransceiver> clients = new HashMap<String, NettyTransceiver>();
+    private Configuration conf = new Configuration();
 
-  private final Class<? extends Channel> socketChannelClass;
-  private EventLoopGroup workerGroup;
-  private PooledByteBufAllocator pooledAllocator;
+    private final Class<? extends Channel> socketChannelClass;
+    private EventLoopGroup workerGroup;
+    private PooledByteBufAllocator pooledAllocator;
 
-  protected ClientCache() {
-    int nThreads = conf.getInt(TConstants.CLIENT_IO_THREAD,
-        Runtime.getRuntime().availableProcessors() * 2);
-    IOMode ioMode = IOMode.valueOf(conf.get(TConstants.NETWORK_IO_MODE, "NIO"));
-    workerGroup = NettyUtils.createEventLoop(ioMode, nThreads, "ML-client");
-    pooledAllocator = NettyUtils.createPooledByteBufAllocator(true, true, nThreads);
-    socketChannelClass = NettyUtils.getClientChannelClass(ioMode);
-  }
-
-  /**
-   * Construct & cache an IPC client with the user-provided SocketFactory if no cached client
-   * exists.
-   * 
-   * @param conf Configuration
-   * @param factory socket factory
-   * @return an IPC client
-   */
-  protected synchronized NettyTransceiver getClient(
-      InetSocketAddress addr,
-      SocketFactory factory,
-      Configuration conf) {
-    NettyTransceiver client = clients.get(addr.toString());
-    if (client == null) {
-      try {
-        int connectTimeoutMillis = (int) conf.getLong(TConstants.ML_CONNECTION_TIMEOUT_MILLIS,
-            TConstants.DEFAULT_CONNECTION_TIMEOUT_MILLIS);
-        client = new NettyTransceiver(conf, addr, workerGroup, pooledAllocator,
-            socketChannelClass, connectTimeoutMillis);
-      } catch (Exception e) {
-        LOG.debug("create NettryTransceiver client error: " + e);
-        throw new RuntimeException("create NettryTransceiver client error: ", e);
-      }
-
-      clients.put(addr.toString(), client);
-    } else {
-      client.incCount();
+    protected ClientCache() {
+        int nThreads = conf.getInt(AngelConf.CLIENT_IO_THREAD,
+                Runtime.getRuntime().availableProcessors() * 2);
+        IOMode ioMode = IOMode.valueOf(conf.get(AngelConf.NETWORK_IO_MODE, "NIO"));
+        workerGroup = NettyUtils.createEventLoop(ioMode, nThreads, "ML-client");
+        pooledAllocator = NettyUtils.createPooledByteBufAllocator(true, true, nThreads);
+        socketChannelClass = NettyUtils.getClientChannelClass(ioMode);
     }
-    return client;
-  }
 
-  /**
-   * Stop a RPC client connection A RPC client is closed only when its reference count becomes zero.
-   * 
-   * @param client client to stop
-   */
-  protected void stopClient(NettyTransceiver client) {
-    synchronized (this) {
-      client.decCount();
-      if (client.isZeroReference()) {
-        clients.remove(client.getRemoteAddr().toString());
-      }
-    }
-    if (client.isZeroReference()) {
-      client.close();
-    }
-  }
+    /**
+     * Construct & cache an IPC client with the user-provided SocketFactory if no cached client
+     * exists.
+     *
+     * @param conf Configuration
+     * @param factory socket factory
+     * @return an IPC client
+     */
+    protected synchronized NettyTransceiver getClient(
+            InetSocketAddress addr,
+            SocketFactory factory,
+            Configuration conf) {
+        NettyTransceiver client = clients.get(addr.toString());
+        if (client == null) {
+            try {
+                int connectTimeoutMillis = (int) conf.getLong(AngelConf.ML_CONNECTION_TIMEOUT_MILLIS,
+                        AngelConf.DEFAULT_CONNECTION_TIMEOUT_MILLIS);
+                client = new NettyTransceiver(conf, addr, workerGroup, pooledAllocator,
+                        socketChannelClass, connectTimeoutMillis);
+            } catch (Exception e) {
+                LOG.debug("create NettryTransceiver client error: " + e);
+                throw new RuntimeException("create NettryTransceiver client error: ", e);
+            }
 
-  /**
-   * Clear all netty client in cache.
-   */
-  public void clear() {
-    synchronized (this) {
-      Iterator<Map.Entry<String, NettyTransceiver>> iter = clients.entrySet().iterator();
-      while (iter.hasNext()) {
-        NettyTransceiver client = iter.next().getValue();
-        client.close();
-        iter.remove();
-      }
+            clients.put(addr.toString(), client);
+        } else {
+            client.incCount();
+        }
+        return client;
     }
-  }
+
+    /**
+     * Stop a RPC client connection A RPC client is closed only when its reference count becomes zero.
+     *
+     * @param client client to stop
+     */
+    protected void stopClient(NettyTransceiver client) {
+        synchronized (this) {
+            client.decCount();
+            if (client.isZeroReference()) {
+                clients.remove(client.getRemoteAddr().toString());
+            }
+        }
+        if (client.isZeroReference()) {
+            client.close();
+        }
+    }
+
+    /**
+     * Clear all netty client in cache.
+     */
+    public void clear() {
+        synchronized (this) {
+            Iterator<Map.Entry<String, NettyTransceiver>> iter = clients.entrySet().iterator();
+            while (iter.hasNext()) {
+                NettyTransceiver client = iter.next().getValue();
+                client.close();
+                iter.remove();
+            }
+        }
+    }
 }

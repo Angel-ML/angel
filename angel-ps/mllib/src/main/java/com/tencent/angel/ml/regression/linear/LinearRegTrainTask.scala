@@ -52,7 +52,7 @@ class LinearRegTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, T
   @throws[Exception]
   def train(ctx: TaskContext) {
     val trainer = new LinearRegLeaner(ctx)
-    trainer.train(dataBlock, validDataStorage)
+    trainer.train(trainDataBlock, validDataStorage)
   }
 
   /**
@@ -84,11 +84,11 @@ class LinearRegTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, T
         if (count % vali == 0)
           validDataStorage.put(out)
         else
-          dataBlock.put(out)
+          trainDataBlock.put(out)
         count += 1
       }
     }
-    dataBlock.flush()
+    trainDataBlock.flush()
     validDataStorage.flush()
   }
 

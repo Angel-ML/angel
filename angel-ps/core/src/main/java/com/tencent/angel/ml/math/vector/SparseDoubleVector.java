@@ -17,7 +17,6 @@
 package com.tencent.angel.ml.math.vector;
 
 import com.tencent.angel.ml.math.TAbstractVector;
-import com.tencent.angel.ml.math.vector.TDoubleVector;
 import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.math.VectorType;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
@@ -106,6 +105,11 @@ public class SparseDoubleVector extends TDoubleVector {
     this.hashMap = new Int2DoubleOpenHashMap(other.hashMap);
 
   }
+
+  @Override
+  public TDoubleVector add(int index, double delt ) {
+    set(index, get(index) + delt);
+    return this;  }
 
   /**
    * clone the vector
@@ -608,5 +612,4 @@ public class SparseDoubleVector extends TDoubleVector {
     }
     return sum;
   }
-
 }

@@ -26,7 +26,7 @@ import static org.junit.Assert.assertEquals;
 
 public class MAEEvalMetricTest {
     private static final Log LOG = LogFactory.getLog(MAEEvalMetricTest.class);
-    private MaeMetric maeMetric = new MaeMetric();
+    private MAEMetric maeMetric = new MAEMetric();
     static {
         PropertyConfigurator.configure("../conf/log4j.properties");
     }

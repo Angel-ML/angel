@@ -17,16 +17,15 @@
 
 package com.tencent.angel.ml.matrixfactorization
 
-import com.tencent.angel.conf.AngelConfiguration
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.{DenseDoubleVector, DenseFloatVector}
+import com.tencent.angel.ml.math.vector.DenseFloatVector
 import com.tencent.angel.ml.matrixfactorization.MFModel._
 import com.tencent.angel.ml.matrixfactorization.utils.{ItemVec, UserVec}
 import com.tencent.angel.ml.model.{MLModel, PSModel}
+import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.protobuf.generated.MLProtos.RowType
-import com.tencent.angel.worker.predict.PredictResult
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
@@ -36,6 +35,7 @@ import scala.collection.mutable
 object MFModel {
   val MF_ITEM_MODEL = "mf_item_model"
   val MF_LOSS_MODEL = "mf_loss_mat"
+  val MF_METRIC = "aver.obj"
 }
 
 /**
@@ -44,14 +44,11 @@ object MFModel {
   * User model a UserVecs storage, each UserVec represents a user by a rank-dim vector.
   * To save storage, we only cached items that appears in the local worker trainning data.
   *
-  * @param ctx  : context of running task
+  * @param _ctx  : context of running task
   * @param conf : configuration of algorithm
   */
-class MFModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
+class MFModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
 
-  def this(conf: Configuration) = {
-    this(null, conf)
-  }
 
   // Number of all items.
   private val _itemNum = conf.getInt(MLConf.ML_MF_ITEM_NUM, MLConf.DEFAULT_ML_MF_ITEM_NUM)
@@ -63,15 +60,13 @@ class MFModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
   // Reference of Item model matrix sotred on PS.
   // Each row is a k-dim item feature vector, represents an item.
   private val _itemMat = PSModel[DenseFloatVector](MF_ITEM_MODEL, _itemNum, _K)
-  _itemMat.setAverage(true)
-  _itemMat.setRowType(RowType.T_FLOAT_DENSE)
-  _itemMat.setOplogType("DENSE_FLOAT")
+    .setAverage(true)
+    .setRowType(RowType.T_FLOAT_DENSE)
+    .setOplogType("DENSE_FLOAT")
   addPSModel(_itemMat)
 
-  // Reference of loss value matrix stored on PS.
-  val epoch: Int = conf.getInt(MLConf.ML_EPOCH_NUM, MLConf.DEFAULT_ML_EPOCH_NUM)
-  private val _lossMat = new PSModel[DenseDoubleVector](MF_LOSS_MODEL, 1, epoch)
-  addPSModel(_lossMat)
+  setSavePath(conf)
+  setLoadPath(conf)
 
   // Users that appeared in local trainning dataset.
   private var _users = new mutable.HashMap[Int, UserVec]
@@ -81,18 +76,9 @@ class MFModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
 
   // Item Ids of items appeared locally
   private var _usedItemIds = new Array[Byte](totalItemNum)
-  setSavePath(conf)
-  setLoadPath(conf)
 
   // Matrix Client for item model matrix
-  def itemMat = {
-    ctx.getMatrix(_itemMat.modelName)
-  }
-
-  // Matrix Client for loss matrix on PS servers
-  def lossMat = {
-    ctx.getMatrix(_lossMat.modelName)
-  }
+  def itemMat = ctx.getMatrix(_itemMat.modelName)
 
   def rank = _K
 
@@ -141,26 +127,5 @@ class MFModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
 
   override
   def predict(storage: DataBlock[LabeledData]): DataBlock[PredictResult] = ???
-
-  /**
-    * Item vectors and user vectors will be saved to hdfs path after train, set the save path.
-    *
-    * @param conf
-    */
-  override
-  def setSavePath(conf: Configuration): Unit = {
-    val path = conf.get(AngelConfiguration.ANGEL_SAVE_MODEL_PATH)
-    if (path == null) return
-    _itemMat.setSavePath(path)
-    _lossMat.setSavePath(path)
-  }
-
-  override
-  def setLoadPath(conf: Configuration): Unit = {
-    val path = conf.get(AngelConfiguration.ANGEL_LOAD_MODEL_PATH)
-    if (path == null) return
-    _itemMat.setLoadPath(path)
-    _lossMat.setLoadPath(path)
-  }
 }
 

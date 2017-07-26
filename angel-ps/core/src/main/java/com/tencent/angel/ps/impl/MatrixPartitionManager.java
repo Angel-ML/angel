@@ -17,7 +17,7 @@
 package com.tencent.angel.ps.impl;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ps.impl.matrix.RowUpdater;
 import com.tencent.angel.ps.impl.matrix.ServerMatrix;
 import com.tencent.angel.ps.impl.matrix.ServerPartition;
@@ -60,8 +60,8 @@ public class MatrixPartitionManager {
     matrixIdMap = new ConcurrentHashMap<Integer, ServerMatrix>();
     Configuration conf = PSContext.get().getConf();
     Class<?> rowUpdaterClass =
-        conf.getClass(AngelConfiguration.ANGEL_PS_ROW_UPDATER_CLASS,
-            AngelConfiguration.DEFAULT_ANGEL_PS_ROW_UPDATER);
+        conf.getClass(AngelConf.ANGEL_PS_ROW_UPDATER_CLASS,
+            AngelConf.DEFAULT_ANGEL_PS_ROW_UPDATER);
     rowUpdater = (RowUpdater) rowUpdaterClass.newInstance();
   }
 

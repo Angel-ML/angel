@@ -71,7 +71,8 @@ message JobReportProto {
   optional string jobName = 10;
   optional string trackingUrl = 11;
   optional string diagnostics = 12;
-  optional int64 submitTime = 13; 
+  optional int64 submitTime = 13;
+  repeated Pair metrics = 14;
 }
 
 message GetJobReportResponse{

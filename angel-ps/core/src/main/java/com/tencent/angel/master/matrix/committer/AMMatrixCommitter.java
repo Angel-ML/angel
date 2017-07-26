@@ -17,7 +17,7 @@
 package com.tencent.angel.master.matrix.committer;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.*;
 import com.tencent.angel.master.ps.ps.AMParameterServer;
 import com.tencent.angel.ps.ParameterServerId;
@@ -148,11 +148,11 @@ public class AMMatrixCommitter extends AbstractService {
   @Override
   protected void serviceInit(Configuration conf) throws Exception {
     int committerNum =
-        conf.getInt(AngelConfiguration.ANGEL_AM_COMMIT_TASK_NUM,
-            AngelConfiguration.DEFAULT_ANGEL_AM_COMMIT_TASK_NUM);
+        conf.getInt(AngelConf.ANGEL_AM_COMMIT_TASK_NUM,
+            AngelConf.DEFAULT_ANGEL_AM_COMMIT_TASK_NUM);
     waitTimeMS =
-        conf.getInt(AngelConfiguration.ANGEL_AM_COMMIT_TIMEOUT_MS,
-            AngelConfiguration.DEFAULT_ANGEL_AM_COMMIT_TIMEOUT_MS);
+        conf.getInt(AngelConf.ANGEL_AM_COMMIT_TIMEOUT_MS,
+            AngelConf.DEFAULT_ANGEL_AM_COMMIT_TIMEOUT_MS);
     ThreadFactory commitThreadFacotry =
         new ThreadFactoryBuilder().setNameFormat("CommitTask").build();
     if (committerNum < 0 || committerNum > context.getParameterServerManager().getPsNumber()) {

@@ -26,7 +26,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.RunningMode;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.LocationManager;
 import com.tencent.angel.master.MasterService;
 import com.tencent.angel.master.MatrixMetaManager;
@@ -41,6 +41,8 @@ import com.tencent.angel.master.deploy.local.LocalContainerAllocator;
 import com.tencent.angel.master.deploy.local.LocalContainerLauncher;
 import com.tencent.angel.master.deploy.yarn.YarnContainerAllocator;
 import com.tencent.angel.master.deploy.yarn.YarnContainerLauncher;
+import com.tencent.angel.master.metrics.MetricsEventType;
+import com.tencent.angel.master.metrics.MetricsService;
 import com.tencent.angel.master.oplog.AppStateStorage;
 import com.tencent.angel.master.ps.*;
 import com.tencent.angel.master.ps.attempt.PSAttemptEvent;
@@ -187,11 +189,14 @@ public class AngelApplicationMaster extends CompositeService {
   /** task manager */
   private AMTaskManager taskManager;
 
+  /** Algorithm indexes collector */
+  private MetricsService algoMetricsService;
+
   private final Lock lock;
 
   public AngelApplicationMaster(Configuration conf, String appName,
       ApplicationAttemptId applicationAttemptId, ContainerId containerId, String nmHost, int nmPort,
-      int nmHttpPort, long appSubmitTime, Credentials credentials) throws IllegalArgumentException, IOException {
+      int nmHttpPort, long appSubmitTime, Credentials credentials)  {
     super(AngelApplicationMaster.class.getName());
     this.conf = conf;
     this.appName = appName;
@@ -255,7 +260,7 @@ public class AngelApplicationMaster extends CompositeService {
 
     @Override
     public String getUser() {
-      return conf.get(AngelConfiguration.USER_NAME);
+      return conf.get(AngelConf.USER_NAME);
     }
 
     @Override
@@ -315,8 +320,8 @@ public class AngelApplicationMaster extends CompositeService {
 
     @Override
     public RunningMode getRunningMode() {
-      String mode = conf.get(AngelConfiguration.ANGEL_RUNNING_MODE,
-          AngelConfiguration.DEFAULT_ANGEL_RUNNING_MODE);
+      String mode = conf.get(AngelConf.ANGEL_RUNNING_MODE,
+          AngelConf.DEFAULT_ANGEL_RUNNING_MODE);
       if (mode.equals(RunningMode.ANGEL_PS.toString())) {
         return RunningMode.ANGEL_PS;
       } else if (mode.equals(RunningMode.ANGEL_PS_PSAGENT.toString())) {
@@ -343,13 +348,16 @@ public class AngelApplicationMaster extends CompositeService {
 
     @Override
     public int getTotalIterationNum() {
-      return conf.getInt("ml.epoch.num", AngelConfiguration.DEFAULT_ANGEL_TASK_ITERATION_NUMBER);
+      return conf.getInt("ml.epoch.num", AngelConf.DEFAULT_ANGEL_TASK_ITERATION_NUMBER);
     }
 
     @Override
     public AMTaskManager getTaskManager() {
       return taskManager;
     }
+
+    @Override
+    public MetricsService getAlgoMetricsService() {return algoMetricsService; }
 
     @Override
     public int getAMAttemptTime() {
@@ -370,8 +378,8 @@ public class AngelApplicationMaster extends CompositeService {
 
     @Override
     public AngelDeployMode getDeployMode() {
-      String mode = conf.get(AngelConfiguration.ANGEL_DEPLOY_MODE,
-          AngelConfiguration.DEFAULT_ANGEL_DEPLOY_MODE);
+      String mode = conf.get(AngelConf.ANGEL_DEPLOY_MODE,
+          AngelConf.DEFAULT_ANGEL_DEPLOY_MODE);
       if (mode.equals(AngelDeployMode.LOCAL.toString())) {
         return AngelDeployMode.LOCAL;
       } else {
@@ -382,8 +390,8 @@ public class AngelApplicationMaster extends CompositeService {
 
   public void clear() throws IOException {
     boolean deleteSubmitDir =
-        appContext.getConf().getBoolean(AngelConfiguration.ANGEL_JOB_REMOVE_STAGING_DIR_ENABLE,
-            AngelConfiguration.DEFAULT_ANGEL_JOB_REMOVE_STAGING_DIR_ENABLE);
+        appContext.getConf().getBoolean(AngelConf.ANGEL_JOB_REMOVE_STAGING_DIR_ENABLE,
+            AngelConf.DEFAULT_ANGEL_JOB_REMOVE_STAGING_DIR_ENABLE);
     if (deleteSubmitDir) {
       cleanupStagingDir();
     }
@@ -393,7 +401,7 @@ public class AngelApplicationMaster extends CompositeService {
 
   private void cleanTmpOutputDir() {
     Configuration conf = appContext.getConf();
-    String tmpOutDir = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_PATH);
+    String tmpOutDir = conf.get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH);
     if (tmpOutDir == null) {
       return;
     }
@@ -410,7 +418,7 @@ public class AngelApplicationMaster extends CompositeService {
 
   private void cleanupStagingDir() throws IOException {
     Configuration conf = appContext.getConf();
-    String stagingDir = conf.get(AngelConfiguration.ANGEL_JOB_DIR);
+    String stagingDir = conf.get(AngelConf.ANGEL_JOB_DIR);
     if (stagingDir == null) {
       LOG.warn("App Staging directory is null");
       return;
@@ -484,7 +492,7 @@ public class AngelApplicationMaster extends CompositeService {
 
   private void writeAppState() throws IllegalArgumentException, IOException {
     String interalStatePath =
-        appContext.getConf().get(AngelConfiguration.ANGEL_APP_SERILIZE_STATE_FILE);
+        appContext.getConf().get(AngelConf.ANGEL_APP_SERILIZE_STATE_FILE);
 
     LOG.info("start to write app state to file " + interalStatePath);
 
@@ -532,10 +540,10 @@ public class AngelApplicationMaster extends CompositeService {
       long appSubmitTime = Long.parseLong(appSubmitTimeStr);
 
       Configuration conf = new Configuration();
-      conf.addResource(AngelConfiguration.ANGEL_JOB_CONF_FILE);
+      conf.addResource(AngelConf.ANGEL_JOB_CONF_FILE);
 
       String jobUserName = System.getenv(ApplicationConstants.Environment.USER.name());
-      conf.set(AngelConfiguration.USER_NAME, jobUserName);
+      conf.set(AngelConf.USER_NAME, jobUserName);
       conf.setBoolean("fs.automatic.close", false);
 
       UserGroupInformation.setConfiguration(conf);
@@ -562,7 +570,7 @@ public class AngelApplicationMaster extends CompositeService {
         }
       }
 
-      String appName = conf.get(AngelConfiguration.ANGEL_JOB_NAME);
+      String appName = conf.get(AngelConf.ANGEL_JOB_NAME);
 
       LOG.info("app name=" + appName);
       LOG.info("app attempt id=" + applicationAttemptId);
@@ -606,7 +614,7 @@ public class AngelApplicationMaster extends CompositeService {
     addIfService(angelApp);
 
     // init app state storage
-    String tmpOutPath = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_PATH);
+    String tmpOutPath = conf.get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH);
     Path appStatePath = new Path(tmpOutPath, "app");
     LOG.info("app state output path = " + appStatePath.toUri().toString());
     FileSystem fs = appStatePath.getFileSystem(conf);
@@ -684,9 +692,9 @@ public class AngelApplicationMaster extends CompositeService {
       case ANGEL_PS_WORKER: {
         // a dummy data spliter is just for test now
         boolean useDummyDataSpliter =
-            conf.getBoolean(AngelConfiguration.ANGEL_AM_USE_DUMMY_DATASPLITER,
-                AngelConfiguration.DEFAULT_ANGEL_AM_USE_DUMMY_DATASPLITER);
-        if (useDummyDataSpliter && deployMode == AngelDeployMode.LOCAL) {
+            conf.getBoolean(AngelConf.ANGEL_AM_USE_DUMMY_DATASPLITER,
+                AngelConf.DEFAULT_ANGEL_AM_USE_DUMMY_DATASPLITER);
+        if (useDummyDataSpliter) {
           dataSpliter = new DummyDataSpliter(appContext);
         } else {
           // recover data splits information if needed
@@ -711,6 +719,10 @@ public class AngelApplicationMaster extends CompositeService {
 
     // register slow worker/ps checker
     addIfService(new SlowChecker(appContext));
+
+    algoMetricsService = new MetricsService(appContext);
+    addIfService(algoMetricsService);
+    dispatcher.register(MetricsEventType.class, algoMetricsService);
 
     // register app manager event and finish event
     dispatcher.register(AppEventType.class, angelApp);

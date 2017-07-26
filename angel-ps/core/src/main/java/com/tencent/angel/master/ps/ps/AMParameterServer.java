@@ -28,7 +28,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.ps.ParameterServerManagerEvent;
 import com.tencent.angel.master.ps.ParameterServerManagerEventType;
@@ -168,8 +168,8 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
     attempts = new HashMap<PSAttemptId, PSAttempt>(2);
     this.failedAttempts = new HashSet<PSAttemptId>(2);
     maxAttempts =
-        context.getConf().getInt(AngelConfiguration.ANGEL_PS_MAX_ATTEMPTS,
-            AngelConfiguration.DEFAULT_PS_MAX_ATTEMPTS);
+        context.getConf().getInt(AngelConf.ANGEL_PS_MAX_ATTEMPTS,
+            AngelConf.DEFAULT_PS_MAX_ATTEMPTS);
   }
 
   private static class ScheduleTransition implements

@@ -16,7 +16,7 @@
 
 package com.tencent.angel.worker.task;
 
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.worker.storage.*;
 import org.apache.hadoop.conf.Configuration;
@@ -47,19 +47,19 @@ public abstract class BaseTask<KEY_IN, VALUE_IN, VALUE_OUT> implements BaseTaskI
   /**
    * The Train data storage.
    */
-  protected final DataBlock<VALUE_OUT> dataBlock;
+  protected final DataBlock<VALUE_OUT> trainDataBlock;
 
   public BaseTask(TaskContext taskContext) {
     String storageLevel =
-        taskContext.getConf().get(AngelConfiguration.ANGEL_TASK_DATA_STORAGE_LEVEL,
-                AngelConfiguration.DEFAULT_ANGEL_TASK_DATA_STORAGE_LEVEL);
+        taskContext.getConf().get(AngelConf.ANGEL_TASK_DATA_STORAGE_LEVEL,
+                AngelConf.DEFAULT_ANGEL_TASK_DATA_STORAGE_LEVEL);
 
     if (storageLevel.equals("memory")) {
-      dataBlock = new MemoryDataBlock<VALUE_OUT>(-1);
+      trainDataBlock = new MemoryDataBlock<VALUE_OUT>(-1);
     } else if (storageLevel.equals("memory_disk")) {
-      dataBlock = new MemoryAndDiskDataBlock<VALUE_OUT>(taskContext.getTaskId().getIndex());
+      trainDataBlock = new MemoryAndDiskDataBlock<VALUE_OUT>(taskContext.getTaskId().getIndex());
     } else {
-      dataBlock = new DiskDataBlock<VALUE_OUT>(taskContext.getTaskId().getIndex());
+      trainDataBlock = new DiskDataBlock<VALUE_OUT>(taskContext.getTaskId().getIndex());
     }
     conf = taskContext.getConf();
 
@@ -85,11 +85,11 @@ public abstract class BaseTask<KEY_IN, VALUE_IN, VALUE_OUT> implements BaseTaskI
       while (reader.nextKeyValue()) {
         VALUE_OUT out = parse(reader.getCurrentKey(), reader.getCurrentValue());
         if (out != null) {
-          dataBlock.put(out);
+          trainDataBlock.put(out);
         }
       }
 
-      dataBlock.flush();
+      trainDataBlock.flush();
     } catch (Exception e){
       throw new AngelException("Pre-Process Error.", e);
     }

@@ -1,12 +1,13 @@
 package com.tencent.angel.master.app;
 
 import com.tencent.angel.RunningMode;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.psagent.PSAgentManagerEvent;
 import com.tencent.angel.master.psagent.PSAgentManagerEventType;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.GetJobReportResponse;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.JobReportProto;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.JobStateProto;
+import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.utils.StringUtils;
 
 import org.apache.commons.logging.Log;
@@ -85,8 +86,8 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
     diagnostics = new ArrayList<String>();
     
     stateTimeOutMs = 
-        context.getConf().getLong(AngelConfiguration.ANGEL_AM_APPSTATE_TIMEOUT_MS, 
-            AngelConfiguration.DEFAULT_ANGEL_AM_APPSTATE_TIMEOUT_MS);
+        context.getConf().getLong(AngelConf.ANGEL_AM_APPSTATE_TIMEOUT_MS,
+            AngelConf.DEFAULT_ANGEL_AM_APPSTATE_TIMEOUT_MS);
     stateToTsMap = new HashMap<AppState, Long>();
     stateToTsMap.put(AppState.NEW, context.getClock().getTime());
     stopped = new AtomicBoolean(false);
@@ -234,18 +235,37 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
     report.setDiagnostics(sb.toString());
 
     int totalIteration =
-        context.getConf().getInt(AngelConfiguration.ANGEL_TASK_ITERATION_NUMBER,
-            AngelConfiguration.DEFAULT_ANGEL_TASK_ITERATION_NUMBER);
+        context.getConf().getInt(AngelConf.ANGEL_TASK_ITERATION_NUMBER,
+            AngelConf.DEFAULT_ANGEL_TASK_ITERATION_NUMBER);
     report.setTotalIteration(totalIteration);
     int curIteration = 0;
-    if(context.getWorkerManager() != null) {
-      curIteration = context.getWorkerManager().getMinIteration();
-    } 
+    if(context.getAlgoMetricsService() != null) {
+      curIteration = context.getAlgoMetricsService().getCurrentIter();
+      Map<String, Double> metrics = context.getAlgoMetricsService().getAlgoMetrics(curIteration);
+      MLProtos.Pair.Builder pairBuilder = MLProtos.Pair.newBuilder();
+
+      if(metrics != null) {
+        for(Map.Entry<String, Double> entry:metrics.entrySet()) {
+          report.addMetrics(pairBuilder.setKey(entry.getKey()).setValue(String.valueOf(entry.getValue())).build());
+        }
+      }
+    }
     report.setCurIteration(curIteration);
 
     getJobReportResBuilder.setJobReport(report);
     return getJobReportResBuilder.build();
   }
+
+  private String toString(Map<String, Double> metrics){
+    StringBuilder sb = new StringBuilder();
+
+    for(Map.Entry<String, Double> entry:metrics.entrySet()) {
+      sb.append("index name=").append(entry.getKey()).append(",").append("value=").append(entry.getValue());
+    }
+
+    return sb.toString();
+  }
+
 
   /**
    * write application state to output stream

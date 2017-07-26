@@ -1,7 +1,7 @@
 package com.tencent.angel.master.slowcheck;
 
 import com.tencent.angel.common.Id;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.task.AMTask;
 import com.tencent.angel.master.task.AMTaskManager;
@@ -30,8 +30,8 @@ public class TaskCalPerfChecker extends CheckPolicy {
 
   @Override
   public List<Id> check(AMContext context) {
-    double slowestDiscount = context.getConf().getDouble(AngelConfiguration.ANGEL_AM_TASK_SLOWEST_DISCOUNT,
-      AngelConfiguration.DEFAULT_ANGEL_AM_TASK_SLOWEST_DISCOUNT);
+    double slowestDiscount = context.getConf().getDouble(AngelConf.ANGEL_AM_TASK_SLOWEST_DISCOUNT,
+      AngelConf.DEFAULT_ANGEL_AM_TASK_SLOWEST_DISCOUNT);
 
     LOG.info("start to check slow workers use TaskCalPerfChecker policy, slowestDiscount = " + slowestDiscount);
     Set<Id> slowWorkers = new HashSet<Id>();

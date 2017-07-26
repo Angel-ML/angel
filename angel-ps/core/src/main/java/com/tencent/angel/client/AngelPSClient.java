@@ -17,7 +17,7 @@
 package com.tencent.angel.client;
 
 import com.tencent.angel.RunningMode;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.ml.matrix.MatrixContext;
@@ -66,13 +66,13 @@ public class AngelPSClient {
     conf = new Configuration();
     loadSysConfig();
 
-    conf.setInt(AngelConfiguration.ANGEL_PS_NUMBER, config.getPsNum());
-    conf.setInt(AngelConfiguration.ANGEL_PS_MEMORY_MB, config.getPsMemoryInMB());
-    conf.setInt(AngelConfiguration.ANGEL_PS_CPU_VCORES, config.getPsVcoreNum());
+    conf.setInt(AngelConf.ANGEL_PS_NUMBER, config.getPsNum());
+    conf.setInt(AngelConf.ANGEL_PS_MEMORY_MB, config.getPsMemoryInMB());
+    conf.setInt(AngelConf.ANGEL_PS_CPU_VCORES, config.getPsVcoreNum());
 
-    conf.setInt(AngelConfiguration.ANGEL_PSAGENT_NUMBER, config.getPsAgentNum());
-    conf.setInt(AngelConfiguration.ANGEL_PSAGENT_MERMORY_MB, config.getPsAgentMemoryInMB());
-    conf.setInt(AngelConfiguration.ANGEL_PSAGENT_CPU_VCORES, config.getPsAgentVcoreNum());
+    conf.setInt(AngelConf.ANGEL_PSAGENT_NUMBER, config.getPsAgentNum());
+    conf.setInt(AngelConf.ANGEL_PSAGENT_MERMORY_MB, config.getPsAgentMemoryInMB());
+    conf.setInt(AngelConf.ANGEL_PSAGENT_CPU_VCORES, config.getPsAgentVcoreNum());
 
     Map<String, String> paramsMap = config.getConfig();
     if (paramsMap != null && !paramsMap.isEmpty()) {
@@ -90,11 +90,11 @@ public class AngelPSClient {
    * @throws AngelException
    */
   public AngelContext startPS() throws AngelException  {
-    int psNum = conf.getInt(AngelConfiguration.ANGEL_PS_NUMBER, AngelConfiguration.DEFAULT_ANGEL_PS_NUMBER);
+    int psNum = conf.getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER);
     if (psNum <= 0) {
       throw new AngelException("Invalid parameter:Wrong ps number!");
     }
-    conf.set(AngelConfiguration.ANGEL_RUNNING_MODE, RunningMode.ANGEL_PS.toString());
+    conf.set(AngelConf.ANGEL_RUNNING_MODE, RunningMode.ANGEL_PS.toString());
     client.addMatrix(new MatrixContext("init", 1, psNum, 1, 1));
     client.startPSServer();
     client.run(); 

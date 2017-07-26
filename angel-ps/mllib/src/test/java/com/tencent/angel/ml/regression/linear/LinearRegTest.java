@@ -16,7 +16,7 @@
  */
 package com.tencent.angel.ml.regression.linear;
 
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.conf.MLConf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -62,20 +62,20 @@ public class LinearRegTest {
       double reg = 0;
 
       // Set local deploy mode
-      conf.set(AngelConfiguration.ANGEL_DEPLOY_MODE, "LOCAL");
+      conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
 
       // Set basic configuration keys
       conf.setBoolean("mapred.mapper.new-api", true);
-      conf.set(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
-      conf.setBoolean(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
+      conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
+      conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
 
       // Set data format
       conf.set(MLConf.ML_DATAFORMAT(), dataFmt);
 
       //set angel resource parameters #worker, #task, #PS
-      conf.setInt(AngelConfiguration.ANGEL_WORKERGROUP_NUMBER, 1);
-      conf.setInt(AngelConfiguration.ANGEL_WORKER_TASK_NUMBER, 1);
-      conf.setInt(AngelConfiguration.ANGEL_PS_NUMBER, 1);
+      conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
+      conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
+      conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
       //set sgd LR algorithm parameters #feature #epoch
       conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(featureNum));
@@ -106,13 +106,13 @@ public class LinearRegTest {
       String logPath = "./src/test/log";
 
       // Set trainning data path
-      conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, inputPath);
+      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
       // Set save model path
-      conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model");
+      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model");
       // Set log path
-      conf.set(AngelConfiguration.ANGEL_LOG_PATH, logPath);
+      conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
       // Set actionType train
-      conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
 
       LinearRegRunner runner = new LinearRegRunner();
       runner.train(conf);
@@ -131,15 +131,15 @@ public class LinearRegTest {
       String logPath = "./src/test/log";
 
       // Set trainning data path
-      conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, inputPath);
+      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
       // Set load model path
-      conf.set(AngelConfiguration.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model");
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model");
       // Set save model path
-      conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/newmodel");
+      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/newmodel");
       // Set actionType incremental train
-      conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_INC_TRAIN());
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_INC_TRAIN());
       // Set log path
-      conf.set(AngelConfiguration.ANGEL_LOG_PATH, logPath);
+      conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
 
       LinearRegRunner runner = new LinearRegRunner();
       runner.incTrain(conf);
@@ -156,15 +156,15 @@ public class LinearRegTest {
       String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
 
       // Set trainning data path
-      conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, inputPath);
+      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
       // Set load model path
-      conf.set(AngelConfiguration.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model");
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model");
       // Set predict result path
-      conf.set(AngelConfiguration.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/predict");
+      conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/predict");
       // Set log sava path
-      conf.set(AngelConfiguration.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/LOG/log");
+      conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/LOG/log");
       // Set actionType prediction
-      conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT());
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT());
 
       LinearRegRunner runner = new LinearRegRunner();
 

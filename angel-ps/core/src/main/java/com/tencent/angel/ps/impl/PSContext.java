@@ -17,7 +17,7 @@
 package com.tencent.angel.ps.impl;
 
 import com.tencent.angel.AngelDeployMode;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.MasterProtocol;
 
 import org.apache.hadoop.conf.Configuration;
@@ -40,7 +40,7 @@ public class PSContext {
   }
 
   public int getTaskNum() {
-    return ps.getConf().getInt(AngelConfiguration.ANGEL_TASK_ACTUAL_NUM, 1);
+    return ps.getConf().getInt(AngelConf.ANGEL_TASK_ACTUAL_NUM, 1);
   }
 
   public MatrixPartitionManager getMatrixPartitionManager() {
@@ -53,8 +53,8 @@ public class PSContext {
   
   public AngelDeployMode getDeployMode() {
     String mode =
-        ps.getConf().get(AngelConfiguration.ANGEL_DEPLOY_MODE,
-            AngelConfiguration.DEFAULT_ANGEL_DEPLOY_MODE);
+        ps.getConf().get(AngelConf.ANGEL_DEPLOY_MODE,
+            AngelConf.DEFAULT_ANGEL_DEPLOY_MODE);
 
     if (mode.equals(AngelDeployMode.LOCAL.toString())) {
       return AngelDeployMode.LOCAL;

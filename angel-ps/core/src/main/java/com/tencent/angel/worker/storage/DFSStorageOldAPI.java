@@ -16,7 +16,7 @@
 
 package com.tencent.angel.worker.storage;
 
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.worker.WorkerContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -49,8 +49,8 @@ public class DFSStorageOldAPI<KEY, VALUE> {
     try {
       Configuration conf = WorkerContext.get().getConf();
       String inputFormatClassName =
-          conf.get(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS,
-              AngelConfiguration.DEFAULT_ANGEL_INPUTFORMAT_CLASS);
+          conf.get(AngelConf.ANGEL_INPUTFORMAT_CLASS,
+              AngelConf.DEFAULT_ANGEL_INPUTFORMAT_CLASS);
 
       Class<? extends org.apache.hadoop.mapred.InputFormat> inputFormatClass =
           (Class<? extends org.apache.hadoop.mapred.InputFormat>) Class
@@ -62,6 +62,7 @@ public class DFSStorageOldAPI<KEY, VALUE> {
 
       org.apache.hadoop.mapred.RecordReader<KEY, VALUE> recordReader =
           inputFormat.getRecordReader(split, new JobConf(conf), Reporter.NULL);
+
       setReader(new DFSReaderOldAPI(recordReader));
     } catch (Exception x) {
       LOG.error("init reader error ", x);

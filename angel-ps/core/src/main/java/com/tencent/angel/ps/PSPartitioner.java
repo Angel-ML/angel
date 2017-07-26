@@ -16,7 +16,7 @@
 
 package com.tencent.angel.ps;
 
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.protobuf.generated.MLProtos.*;
 import org.apache.commons.logging.Log;
@@ -33,6 +33,7 @@ import java.util.List;
  */
 public class PSPartitioner implements Partitioner{
   private static final Log LOG = LogFactory.getLog(PSPartitioner.class);
+  public static final int DEFAULT_PARTITION_SIZE = 5000000;
   protected MatrixContext mContext;
   protected Configuration conf;
 
@@ -53,13 +54,13 @@ public class PSPartitioner implements Partitioner{
     int blockRow = mContext.getMaxRowNumInBlock();
     int blockCol = mContext.getMaxColNumInBlock();
     if(blockRow == -1 || blockCol == -1) {
-      int serverNum = conf.getInt(AngelConfiguration.ANGEL_PS_NUMBER, AngelConfiguration.DEFAULT_ANGEL_PS_NUMBER);
+      int serverNum = conf.getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER);
       if(row >= serverNum) {
-        blockRow = Math.min(row / serverNum, Math.max(1, 5000000 / col));
-        blockCol = Math.min(5000000 / blockRow, col);
+        blockRow = Math.min(row / serverNum, Math.max(1, DEFAULT_PARTITION_SIZE / col));
+        blockCol = Math.min(DEFAULT_PARTITION_SIZE / blockRow, col);
       } else {
         blockRow = row;
-        blockCol = Math.min(5000000 / blockRow, Math.max(100, col / serverNum));
+        blockCol = Math.min(DEFAULT_PARTITION_SIZE / blockRow, Math.max(100, col / serverNum));
       }
     }
 
@@ -87,7 +88,7 @@ public class PSPartitioner implements Partitioner{
 
   @Override
   public int assignPartToServer(int partId) {
-    int serverNum = conf.getInt(AngelConfiguration.ANGEL_PS_NUMBER, AngelConfiguration.DEFAULT_ANGEL_PS_NUMBER);
+    int serverNum = conf.getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER);
     return partId % serverNum;
   }
 

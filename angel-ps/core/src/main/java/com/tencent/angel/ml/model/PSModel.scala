@@ -2,15 +2,13 @@ package com.tencent.angel.ml.model
 
 import java.util.concurrent.Future
 import java.util.{ArrayList, List}
-
-import com.tencent.angel.conf.MatrixConfiguration
+import com.tencent.angel.conf.MatrixConf
 import com.tencent.angel.exception.{AngelException, InvalidParameterException}
 import com.tencent.angel.ml.math.TVector
 import com.tencent.angel.ml.matrix.MatrixContext
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
+import com.tencent.angel.ml.matrix.psf.update.enhance.ZeroUpdate.ZeroUpdateParam
 import com.tencent.angel.ml.matrix.psf.update.enhance.{UpdateFunc, VoidResult, ZeroUpdate}
-import ZeroUpdate.ZeroUpdateParam
-import com.tencent.angel.ml.matrix.psf.update.enhance.ZeroUpdate
 import com.tencent.angel.protobuf.generated.MLProtos
 import com.tencent.angel.psagent.matrix.transport.adapter.{GetRowsResult, RowIndex}
 import com.tencent.angel.worker.task.TaskContext
@@ -29,7 +27,7 @@ import scala.collection.mutable.Map
   * @param ctx Task context
   * @tparam K matrix row type
   */
-class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow: Int = -1, blockCol: Int = -1)(implicit ctx:TaskContext)  {
+class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow: Int = -1, blockCol: Int = -1, var needSave: Boolean = true)(implicit ctx:TaskContext)  {
 
   val LOG: Log = LogFactory.getLog(classOf[PSModel[K]])
 
@@ -44,6 +42,108 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
 
   /** Get ps matrix client */
   def getClient = ctx.getMatrix(modelName)
+
+  // =======================================================================
+  // Get and Set Area
+  // =======================================================================
+
+
+  /**
+    * Get matrix id
+    *
+    * @return matrix id
+    */
+  def getMatrixId(): Int = {
+      return getClient.getMatrixId
+  }
+
+  /**
+    * Set model need to be saved
+    *
+    * @param _needSave
+    * @return
+    */
+  def setNeedSave(_needSave: Boolean):this.type = {
+    this.needSave = _needSave
+    this
+  }
+  /**
+    * Set matrix attribute
+    *
+    * @param key attribute name
+    * @param value attribute value
+    */
+  def setAttribute(key: String, value: String):this.type={
+    matrixCtx.set(key, value)
+    this
+  }
+
+  /**
+    * Set the average attribute.
+    *
+    * @param aver true means the matrix update should be divided by total task number before sent to ps
+    */
+  def setAverage(aver: Boolean):this.type = {
+    matrixCtx.set(MatrixConf.MATRIX_AVERAGE, String.valueOf(aver))
+    this
+  }
+
+  /**
+    * Set the hogwild attribute
+    *
+    * @param hogwild true means use the hogwild mode
+    */
+  def setHogwild(hogwild: Boolean):this.type = {
+    matrixCtx.set(MatrixConf.MATRIX_HOGWILD, String.valueOf(hogwild))
+    this
+  }
+
+  /**
+    * Set the matrix update storage type
+    *
+    * @param oplogType storage type
+    */
+  def setOplogType(oplogType: String):this.type = {
+    matrixCtx.set(MatrixConf.MATRIX_OPLOG_TYPE, oplogType)
+    this
+  }
+
+  /**
+    * Set the matrix row type
+    *
+    * @param rowType row type
+    */
+  def setRowType(rowType: MLProtos.RowType):this.type = {
+    matrixCtx.setRowType(rowType)
+    this
+  }
+
+  /**
+    * Set model load path
+    *
+    * @param path load path
+    */
+  def setLoadPath(path: String):this.type = {
+    matrixCtx.set(MatrixConf.MATRIX_LOAD_PATH, path)
+    LOG.info("Before training, matrix " + this.matrixCtx.getName + " will be loaded from " + path)
+    this
+  }
+
+  /**
+    * Set model save path
+    *
+    * @param path
+    */
+  def setSavePath(path: String):this.type = {
+    matrixCtx.set(MatrixConf.MATRIX_SAVE_PATH, path)
+    LOG.info("After training matrix " + this.matrixCtx.getName + " will be saved to " + path)
+    this
+  }
+
+  // =======================================================================
+  // Sync Area
+  // =======================================================================
+
 
   /**
     * Flush the cached matrix oplogs to ps and update the clock for the matrix
@@ -173,21 +273,6 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
     }
   }
 
-  /**
-    * Get matrix id
-    *
-    * @return matrix id
-    */
-  def getMatrixId(): Int = {
-    try {
-      return getClient.getMatrixId
-    }
-    catch {
-      case e: InvalidParameterException => {
-        return -1
-      }
-    }
-  }
 
   /**
     * Get a matrix row use row index
@@ -280,72 +365,6 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
         throw new AngelException(e)
       }
     }
-  }
-
-  /**
-    * Set matrix attribute
-    *
-    * @param key attribute name
-    * @param value attribute value
-    */
-  def setAttribute(key: String, value: String) {
-    matrixCtx.set(key, value)
-  }
-
-  /**
-    * Set the average attribute.
-    *
-    * @param aver true means the matrix update should be divided by total task number before sent to ps
-    */
-  def setAverage(aver: Boolean) {
-    matrixCtx.set(MatrixConfiguration.MATRIX_AVERAGE, String.valueOf(aver))
-  }
-
-  /**
-    * Set the hogwild attribute
-    *
-    * @param hogwild true means use the hogwild mode
-    */
-  def setHogwild(hogwild: Boolean) {
-    matrixCtx.set(MatrixConfiguration.MATRIX_HOGWILD, String.valueOf(hogwild))
-  }
-
-  /**
-    * Set the matrix update storage type
-    *
-    * @param oplogType storage type
-    */
-  def setOplogType(oplogType: String) {
-    matrixCtx.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, oplogType)
-  }
-
-  /**
-    * Set the matrix row type
-    *
-    * @param rowType row type
-    */
-  def setRowType(rowType: MLProtos.RowType) {
-    matrixCtx.setRowType(rowType)
-  }
-
-  /**
-    * Set model load path
-    *
-    * @param path load path
-    */
-  def setLoadPath(path: String) {
-    matrixCtx.set(MatrixConfiguration.MATRIX_LOAD_PATH, path)
-    LOG.info("Before training, matrix " + this.matrixCtx.getName + " will be loaded from " + path)
-  }
-
-  /**
-    * Set model save path
-    *
-    * @param path
-    */
-  def setSavePath(path: String) {
-    matrixCtx.set(MatrixConfiguration.MATRIX_SAVE_PATH, path)
-    LOG.info("After training matrix " + this.matrixCtx.getName + " will be saved to " + path)
   }
 
   /**

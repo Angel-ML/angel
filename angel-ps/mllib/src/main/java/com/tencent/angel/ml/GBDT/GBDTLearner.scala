@@ -24,6 +24,7 @@ import com.tencent.angel.ml.RegTree.RegTDataStore
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.SparseDoubleSortedVector
+import com.tencent.angel.ml.metric.log.ErrorMetric
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.ml.param.{FeatureMeta, GBDTParam, RegTParam}
 import com.tencent.angel.ml.utils.MathUtils
@@ -45,6 +46,8 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   param.maxDepth = conf.getInt(MLConf.ML_GBDT_TREE_DEPTH, MLConf.DEFAULT_ML_GBDT_TREE_DEPTH)
   param.colSample = conf.getFloat(MLConf.ML_GBDT_SAMPLE_RATIO, MLConf.DEFAULT_ML_GBDT_SAMPLE_RATIO)
   param.learningRate = conf.getFloat(MLConf.ML_LEARN_RATE, MLConf.DEFAULT_ML_LEAR_RATE.asInstanceOf[Float])
+  param.maxThreadNum = conf.getInt(MLConf.ML_GBDT_THREAD_NUM, MLConf.DEFAULT_ML_GBDT_THREAD_NUM)
+  param.batchNum = conf.getInt(MLConf.ML_GBDT_BATCH_NUM, MLConf.DEFAULT_ML_GBDT_BATCH_NUM)
   param.isServerSplit = conf.getBoolean(MLConf.ML_GBDT_SERVER_SPLIT, MLConf.DEFAULT_ML_GBDT_SERVER_SPLIT)
 
   // 2. set parameter name on PS
@@ -59,11 +62,8 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   param.nodePredsName = GBDTModel.NODE_PRED_MAT
 
   // 3. create and init GBDT model
-  val model = new GBDTModel(ctx, conf)
+  val model = new GBDTModel(conf, ctx)
 
-  def init() : Unit = {
-    model.init(ctx)
-  }
 
   def initDataMetaInfo(trainDataStorage: DataBlock[LabeledData], param: RegTParam):RegTDataStore = {
     var totalSample: Int = 0
@@ -151,7 +151,7 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
 
     LOG.info("1. initialize")
     val dataGenStartTs: Long = System.currentTimeMillis
-    init()
+
     val trainDataStore: RegTDataStore = initDataMetaInfo(trainData, param)
     val validDataStore: RegTDataStore = initDataMetaInfo(validationData, param)
 
@@ -164,6 +164,9 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
 
     val controller: GBDTController = new GBDTController(ctx, param, trainDataStore, validDataStore, model)
     controller.init
+
+    globalMetrics.addMetrics(MLConf.TRAIN_ERROR, ErrorMetric(trainData.size))
+    globalMetrics.addMetrics(MLConf.VALID_ERROR, ErrorMetric(validationData.size))
 
     while (controller.phase != GBDTPhase.FINISHED) {
 
@@ -211,7 +214,11 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
         else {
           controller.updateInsPreds
           controller.updateLeafPreds
-          controller.finishCurrentTree
+          val trainMetrics = controller.eval
+          val validMetrics = controller.predict
+          globalMetrics.metrics(MLConf.TRAIN_ERROR, trainMetrics._1)
+          globalMetrics.metrics(MLConf.VALID_ERROR, validMetrics._1)
+          controller.finishCurrentTree()
           controller.setPhase(GBDTPhase.NEW_TREE)
           controller.sampleFeature
           if (controller.isFinished) {

@@ -161,6 +161,10 @@ object Logistic {
       }
 
       def loss: Double = lossSum / count
+
+      def gradient: BreezePSVector = {
+        remoteGradient.toBreeze :* (1.0 / count)
+      }
     }
 
     override def calculate(x: BreezePSVector): (Double, BreezePSVector) = {
@@ -176,7 +180,7 @@ object Logistic {
         val combOp = (c1: Aggregator, c2: Aggregator) => c1.merge(c2)
         trainData.psAggregate(Aggregator(bcX, cumGradient))(seqOp, combOp)
       }
-      (aggregator.loss, cumGradient.toBreeze)
+      (aggregator.loss, aggregator.gradient)
     }
   }
 }

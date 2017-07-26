@@ -19,8 +19,8 @@ package com.tencent.angel.worker;
 
 import com.tencent.angel.client.AngelClient;
 import com.tencent.angel.client.AngelClientFactory;
-import com.tencent.angel.conf.AngelConfiguration;
-import com.tencent.angel.conf.MatrixConfiguration;
+import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.localcluster.LocalClusterContext;
 import com.tencent.angel.master.DummyTask;
 import com.tencent.angel.master.MasterServiceTest;
@@ -93,20 +93,20 @@ public class TransportTest {
       // Set basic configuration keys
       Configuration conf = new Configuration();
       conf.setBoolean("mapred.mapper.new-api", true);
-      conf.setBoolean(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
-      conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS, DummyTask.class.getName());
+      conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
+      conf.set(AngelConf.ANGEL_TASK_USER_TASKCLASS, DummyTask.class.getName());
 
       // Use local deploy mode and dummy data spliter
-      conf.set(AngelConfiguration.ANGEL_DEPLOY_MODE, "LOCAL");
-      conf.setBoolean(AngelConfiguration.ANGEL_AM_USE_DUMMY_DATASPLITER, true);
-      conf.set(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
-      conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/out");
-      conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, LOCAL_FS + TMP_PATH + "/in");
-      conf.set(AngelConfiguration.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
+      conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
+      conf.setBoolean(AngelConf.ANGEL_AM_USE_DUMMY_DATASPLITER, true);
+      conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
+      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/out");
+      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, LOCAL_FS + TMP_PATH + "/in");
+      conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
 
-      conf.setInt(AngelConfiguration.ANGEL_WORKERGROUP_NUMBER, 1);
-      conf.setInt(AngelConfiguration.ANGEL_PS_NUMBER, 1);
-      conf.setInt(AngelConfiguration.ANGEL_WORKER_TASK_NUMBER, 1);
+      conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
+      conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
+      conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
 
       // Create an Angel client
       angelClient = AngelClientFactory.get(conf);
@@ -119,10 +119,10 @@ public class TransportTest {
       matrix.setMaxRowNumInBlock(ddRow / 2);
       matrix.setMaxColNumInBlock(ddCol / 2);
       matrix.setRowType(MLProtos.RowType.T_DOUBLE_DENSE);
-      matrix.set(MatrixConfiguration.MATRIX_OPLOG_ENABLEFILTER, "false");
-      matrix.set(MatrixConfiguration.MATRIX_HOGWILD, "false");
-      matrix.set(MatrixConfiguration.MATRIX_AVERAGE, "false");
-      matrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
+      matrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
+      matrix.set(MatrixConf.MATRIX_HOGWILD, "false");
+      matrix.set(MatrixConf.MATRIX_AVERAGE, "false");
+      matrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
       angelClient.addMatrix(matrix);
 
       matrix = new MatrixContext();
@@ -132,10 +132,10 @@ public class TransportTest {
       matrix.setMaxRowNumInBlock(ddRow / 2);
       matrix.setMaxColNumInBlock(ddCol / 2);
       matrix.setRowType(MLProtos.RowType.T_DOUBLE_DENSE);
-      matrix.set(MatrixConfiguration.MATRIX_OPLOG_ENABLEFILTER, "false");
-      matrix.set(MatrixConfiguration.MATRIX_HOGWILD, "false");
-      matrix.set(MatrixConfiguration.MATRIX_AVERAGE, "false");
-      matrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
+      matrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
+      matrix.set(MatrixConf.MATRIX_HOGWILD, "false");
+      matrix.set(MatrixConf.MATRIX_AVERAGE, "false");
+      matrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
       angelClient.addMatrix(matrix);
 
       matrix = new MatrixContext();
@@ -145,10 +145,10 @@ public class TransportTest {
       matrix.setMaxRowNumInBlock(diRow / 2);
       matrix.setMaxColNumInBlock(diCol / 2);
       matrix.setRowType(MLProtos.RowType.T_INT_DENSE);
-      matrix.set(MatrixConfiguration.MATRIX_OPLOG_ENABLEFILTER, "false");
-      matrix.set(MatrixConfiguration.MATRIX_HOGWILD, "false");
-      matrix.set(MatrixConfiguration.MATRIX_AVERAGE, "false");
-      matrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_INT");
+      matrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
+      matrix.set(MatrixConf.MATRIX_HOGWILD, "false");
+      matrix.set(MatrixConf.MATRIX_AVERAGE, "false");
+      matrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_INT");
       angelClient.addMatrix(matrix);
 
       matrix = new MatrixContext();
@@ -158,10 +158,10 @@ public class TransportTest {
       matrix.setMaxRowNumInBlock(diRow / 2);
       matrix.setMaxColNumInBlock(diCol / 2);
       matrix.setRowType(MLProtos.RowType.T_INT_DENSE);
-      matrix.set(MatrixConfiguration.MATRIX_OPLOG_ENABLEFILTER, "false");
-      matrix.set(MatrixConfiguration.MATRIX_HOGWILD, "false");
-      matrix.set(MatrixConfiguration.MATRIX_AVERAGE, "false");
-      matrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_INT");
+      matrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
+      matrix.set(MatrixConf.MATRIX_HOGWILD, "false");
+      matrix.set(MatrixConf.MATRIX_AVERAGE, "false");
+      matrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_INT");
       angelClient.addMatrix(matrix);
 
       matrix = new MatrixContext();
@@ -171,10 +171,10 @@ public class TransportTest {
       matrix.setMaxRowNumInBlock(dfRow / 2);
       matrix.setMaxColNumInBlock(dfCol / 2);
       matrix.setRowType(MLProtos.RowType.T_FLOAT_DENSE);
-      matrix.set(MatrixConfiguration.MATRIX_OPLOG_ENABLEFILTER, "false");
-      matrix.set(MatrixConfiguration.MATRIX_HOGWILD, "false");
-      matrix.set(MatrixConfiguration.MATRIX_AVERAGE, "false");
-      matrix.set(MatrixConfiguration.MATRIX_OPLOG_TYPE, "DENSE_FLOAT");
+      matrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
+      matrix.set(MatrixConf.MATRIX_HOGWILD, "false");
+      matrix.set(MatrixConf.MATRIX_AVERAGE, "false");
+      matrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_FLOAT");
       angelClient.addMatrix(matrix);
 
       angelClient.startPSServer();

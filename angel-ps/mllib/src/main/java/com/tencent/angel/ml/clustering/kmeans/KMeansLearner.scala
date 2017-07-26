@@ -24,8 +24,8 @@ import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.{DenseDoubleVector, TDoubleVector}
+import com.tencent.angel.ml.metric.log.LossMetric
 import com.tencent.angel.ml.model.MLModel
-import com.tencent.angel.ml.utils.DistributedLogger
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
 import it.unimi.dsi.fastutil.ints.IntArrayList
@@ -54,14 +54,11 @@ class KMeansLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   // Number of samples per batch
   val spRatio: Double = conf.getDouble(MLConf.KMEANS_SAMPLE_RATIO_PERBATCH, 0.5)
 
-  val logger = DistributedLogger(ctx)
-  logger.setNames("globalloss")
-
   LOG.info(s"Task[${ctx.getTaskIndex}] Start KMeans learner, K=$K, C=$C, #Feature=$feaNum, " +
     s"#Iteration=$epochNum, #SampleRaioPerMiniBatch=$spRatio")
 
   // Create a Kmeans Model according to the conf
-  val kmeansModel = new KmeansModel(ctx, conf)
+  val kmeansModel = new KMeansModel(conf, ctx)
 
   /**
     * Train a KMeans Model
@@ -77,6 +74,7 @@ class KMeansLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     // Init cluster centers randomly
     initKCentersRandomly(trainData)
 
+    globalMetrics.addMetrics("global.obj", LossMetric(trainData.size))
     // Learn KMeans Model iteratively, apply a mini-batch updation in each iteration
     while (ctx.getIteration < epochNum) {
 
@@ -88,11 +86,11 @@ class KMeansLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       val localObj = computeObjValue(trainData, ctx.getIteration)
       val objTime = System.currentTimeMillis() - startObj
 
-      val globObj = globalObj(ctx.getIteration, localObj)
-
       LOG.info(s"Task[${ctx.getContext.getIndex}] Iter=${ctx.getIteration} success. "
-        + s"localObj=$localObj, globalObj=$globObj. mini-batch cost $epochTime ms, compute " +
+        + s"localObj=$localObj. mini-batch cost $epochTime ms, compute " +
         s"obj cost $objTime ms")
+
+      globalMetrics.metrics("global.obj", localObj)
       ctx.incIteration()
     }
 
@@ -111,7 +109,7 @@ class KMeansLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     val rand = new Random(System.currentTimeMillis())
     for (i <- 0 until K) {
       if (i % ctx.getTotalTaskNum == ctx.getTaskId.getIndex) {
-        val r = rand.nextInt(dataStorage.getTotalElemNum - 1) + 1
+        val r = rand.nextInt(dataStorage.size - 1) + 1
 
         var data: LabeledData = null
         for (i <- 0 until r) {
@@ -173,7 +171,7 @@ class KMeansLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       oldCenters.add(kmeansModel.lcCenters.get(i).asInstanceOf[DenseDoubleVector].clone())
     }
 
-    val batchSize = (trainData.getTotalElemNum * spRatio).asInstanceOf[Int]
+    val batchSize = (trainData.size * spRatio).asInstanceOf[Int]
     
     val sampleBatch = picInstances(trainData)
 
@@ -211,7 +209,7 @@ class KMeansLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
 
     var data: LabeledData = null
     samples.resetReadIndex()
-    for (i <- 0 until samples.getTotalElemNum) {
+    for (i <- 0 until samples.size) {
       data = samples.read
 
       val cId_minDis = kmeansModel.findClosestCenter(samples.get(i).getX
@@ -250,7 +248,7 @@ class KMeansLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     */
   def picInstances(trainData: DataBlock[LabeledData]): DataBlock[LabeledData] = {
     // Pick #spRatio ratio samples randomly
-    val batch_sample_num = (spRatio * trainData.getTotalElemNum).asInstanceOf[Int]
+    val batch_sample_num = (spRatio * trainData.size).asInstanceOf[Int]
     val batchSample = new MemoryDataBlock[LabeledData](-1)
 
     var data: LabeledData = null
@@ -280,22 +278,6 @@ class KMeansLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       obj += clstCenters.get(i)._2
 
     obj
-  }
-
-  def globalObj(epoch: Int, obj: Double): Double = {
-    val objVec = new DenseDoubleVector(epochNum)
-    objVec.set(epoch, obj)
-    objVec.setRowId(0)
-
-    kmeansModel.objMat.increment(objVec)
-    kmeansModel.objMat.clock().get()
-
-    val averObj = kmeansModel.objMat.getRow(0).get(epoch)
-
-
-    //logger.add(averObj)
-
-    averObj
   }
 
 }

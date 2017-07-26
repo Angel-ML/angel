@@ -16,7 +16,7 @@ Angel的设计理念，从一开始就围绕`机器学习和模型`。整体上�
 
 PSModel是Angel的核心抽象。它是一个远程模型的概念，对于Client来说，它是一个类似`模型代理`的类。通过它，你可以在每个Worker上，像操作本地对象一样的，去操作一个模型，而实际上，你在操作的是，一个均匀切分在远程多个PSServer上的**分布式模型切片**，而且所有的操作都是透明并发的。
 
-所以，实现一个Angel的最简单算法，需要定义一个PSModel，例如：
+所以，实现一个算法的最小集，需要定义一个PSModel，例如：
 
 ```
   val loss = PSModel[DenseDoubleVector]("lr_loss_martrix", 1, epochNum)
@@ -68,7 +68,7 @@ Angel的这两个Task中，都是BaseTask的子类，Angel会负责透明的数�
 	* 没有默认实现，必须实现
 
 3. **预处理（preProcess）**
-	* 读取原始数据集，按行调用parse方法，将数据进行简单预处理。并在需要的情况下，进行训练集（Training Set）和 检验集（Validation Set）的切分
+	* 读取原始数据集，按行调用parse方法，将数据进行简单预处理，需要的话，切换训练集（Training Set）和 检验集（Validation Set）
 	* 有默认实现，可以不实现
 
 当然了，TrainTask需要实现train方法，PredictTask需要实现predict方法，这些都有默认的实现，具体Task需要做的，其实只是把MLModel创建好，传递给父类方法就好。
@@ -78,7 +78,7 @@ Angel的这两个Task中，都是BaseTask的子类，Angel会负责透明的数�
 
 Angel本身的算法编写，接口略微简朴。但是这种方式，可以让Angel更加Focus在并提升机器学习算法性能，而无需过多关注其它事情。
 
-但是有些用户希望更加灵活的写法，或者他们希望Spark也能基于Angel获得高维度模型的训练能力。这些功能在Spark on Angel上都有体现和支持。具体可以查看：[《Spark on Angel 编程指南》]()
+但是有些用户希望更加灵活的写法，或者他们希望Spark也能基于Angel获得高维度模型的训练能力。为此在Spark on Angel上，也可以有体现和支持。具体可以查看：[《Spark on Angel 编程指南》]()
 
 
 

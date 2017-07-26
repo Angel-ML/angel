@@ -16,7 +16,7 @@
 
 package com.tencent.angel.worker.storage;
 
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.utils.MemoryUtils;
 import com.tencent.angel.worker.WorkerContext;
 import org.apache.commons.logging.Log;
@@ -51,12 +51,12 @@ public class MemoryDataBlock<VALUE> extends DataBlock<VALUE> {
 
     Configuration conf = WorkerContext.get().getConf();
     maxUseMemroy =
-        conf.getLong(AngelConfiguration.ANGEL_TASK_MEMORYSTORAGE_USE_MAX_MEMORY_MB,
-            AngelConfiguration.DEFAULT_ANGEL_TASK_MEMORYSTORAGE_USE_MAX_MEMORY_MB) * 1024 * 1024;
+        conf.getLong(AngelConf.ANGEL_TASK_MEMORYSTORAGE_USE_MAX_MEMORY_MB,
+            AngelConf.DEFAULT_ANGEL_TASK_MEMORYSTORAGE_USE_MAX_MEMORY_MB) * 1024 * 1024;
 
     estimateSampleNumber =
-        conf.getInt(AngelConfiguration.ANGEL_TASK_ESTIMIZE_SAMPLE_NUMBER,
-            AngelConfiguration.DEFAULT_ANGEL_TASK_ESTIMIZE_SAMPLE_NUMBER);
+        conf.getInt(AngelConf.ANGEL_TASK_ESTIMIZE_SAMPLE_NUMBER,
+            AngelConf.DEFAULT_ANGEL_TASK_ESTIMIZE_SAMPLE_NUMBER);
 
     int size = (initSize > 0) ? initSize : estimateSampleNumber;
 

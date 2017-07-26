@@ -16,7 +16,7 @@
 
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
-import com.tencent.angel.conf.MatrixConfiguration;
+import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.ml.math.TUpdate;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.psf.update.enhance.VoidResult;
@@ -490,12 +490,12 @@ public class MatrixOpLogCache {
   private void addMatrixOpLog(int matrixId) {
     MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
     String type =
-        matrixMeta.getAttribute(MatrixConfiguration.MATRIX_OPLOG_TYPE,
-            MatrixConfiguration.DEFAULT_MATRIX_OPLOG_TYPE);
+        matrixMeta.getAttribute(MatrixConf.MATRIX_OPLOG_TYPE,
+            MatrixConf.DEFAULT_MATRIX_OPLOG_TYPE);
 
     String enableFilter =
-        matrixMeta.getAttribute(MatrixConfiguration.MATRIX_OPLOG_ENABLEFILTER,
-            MatrixConfiguration.DEFAULT_MATRIX_OPLOG_ENABLEFILTER);
+        matrixMeta.getAttribute(MatrixConf.MATRIX_OPLOG_ENABLEFILTER,
+            MatrixConf.DEFAULT_MATRIX_OPLOG_ENABLEFILTER);
 
     opLogs.put(matrixId, createMatrixOpLog(matrixId, type, enableFilter.equalsIgnoreCase("true")));
   }

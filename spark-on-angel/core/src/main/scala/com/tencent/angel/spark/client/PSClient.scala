@@ -23,7 +23,6 @@ import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.{Zip2MapFunc, Zip2Map
 import com.tencent.angel.ml.matrix.psf.update.enhance.zip3.{Zip3MapFunc, Zip3MapWithIndexFunc}
 import com.tencent.angel.spark.PSContext
 import com.tencent.angel.spark.models.PSModelProxy
-import com.tencent.angel.spark.models.vector.PSVector
 
 /**
  * PSClient is a client which contains operations for PSVector on the PS nodes.
@@ -797,29 +796,12 @@ private[spark] abstract class PSClient {
     doMergeMin(vector, other)
   }
 
-  /**
-   * Flush the mergeCache to PS nodes.
-   * It usually be called after the whole RDD partition elements processed.
-   *
-   * Notice: only be called in executor
-   */
-  def flush(): Unit = {
-    doFlush()
-  }
-
   protected def doIncrement(vector: PSModelProxy, delta: Array[Double]): Unit
 
   protected def doMergeMax(vector: PSModelProxy, other: Array[Double]): Unit
 
   protected def doMergeMin(vector: PSModelProxy, other: Array[Double]): Unit
 
-  protected def doFlush(): Unit
-
-  /* =========================================== */
-  /*              private methods                */
-  /* =========================================== */
-
-  private[spark] def register(vector: PSVector): Unit = {}
 }
 
 object PSClient {

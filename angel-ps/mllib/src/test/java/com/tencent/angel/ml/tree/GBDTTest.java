@@ -19,7 +19,7 @@ package com.tencent.angel.ml.tree;
 
 import com.tencent.angel.client.AngelClient;
 import com.tencent.angel.client.AngelClientFactory;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.GBDT.GBDTRunner;
 import com.tencent.angel.ml.conf.MLConf;
 import org.apache.commons.logging.Log;
@@ -69,20 +69,20 @@ public class GBDTTest {
 
       // Set basic configuration keys
       conf.setBoolean("mapred.mapper.new-api", true);
-      conf.setBoolean(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
+      conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
 
       // Use local deploy mode and dummy data spliter
-      conf.set(AngelConfiguration.ANGEL_DEPLOY_MODE, "LOCAL");
+      conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
 
       // set input, output path
-      conf.set(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
-      conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, inputPath);
-      conf.set(AngelConfiguration.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/LOG/log");
+      conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
+      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
+      conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/LOG/log");
 
       //set angel resource parameters #worker, #task, #PS
-      conf.setInt(AngelConfiguration.ANGEL_WORKERGROUP_NUMBER, 1);
-      conf.setInt(AngelConfiguration.ANGEL_WORKER_TASK_NUMBER, 1);
-      conf.setInt(AngelConfiguration.ANGEL_PS_NUMBER, 1);
+      conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
+      conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
+      conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
       // Set GBDT algorithm parameters
       conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(featureNum));
@@ -107,7 +107,7 @@ public class GBDTTest {
   private void train() throws Exception {
     try {
       // Submit GBDT Train Task
-      conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model");
+      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model");
       GBDTRunner runner = new GBDTRunner();
       runner.train(conf);
 
@@ -122,9 +122,9 @@ public class GBDTTest {
   private void predict() throws Exception {
     try {
       // Load Model from HDFS.
-      conf.set(AngelConfiguration.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model");
-      conf.set(AngelConfiguration.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/predict");
-      conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT());
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model");
+      conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/predict");
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT());
 
       conf.set("gbdt.split.feature", TMP_PATH + "/out/xxx");
       conf.set("gbdt.split.value", TMP_PATH + "/out/xxx");

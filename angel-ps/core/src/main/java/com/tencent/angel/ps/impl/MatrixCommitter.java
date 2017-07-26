@@ -18,7 +18,7 @@ package com.tencent.angel.ps.impl;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ps.impl.matrix.ServerMatrix;
 import com.tencent.angel.ps.impl.matrix.ServerPartition;
 import com.tencent.angel.utils.HdfsUtil;
@@ -185,7 +185,7 @@ public class MatrixCommitter {
       public void run() {
         long startTime = Time.monotonicNow();
         try {
-          String outputPath = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_PATH);
+          String outputPath = conf.get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH);
           LOG.info("outputPath=" + outputPath);
           if (outputPath == null) {
             throw new IOException("can not find output path setting");
@@ -200,8 +200,8 @@ public class MatrixCommitter {
           fs.mkdirs(baseDir);
 
           int commitThreadCount =
-              conf.getInt(AngelConfiguration.ANGEL_PS_COMMIT_TASK_NUM,
-                  AngelConfiguration.DEFAULT_ANGEL_PS_COMMIT_TASK_NUM);
+              conf.getInt(AngelConf.ANGEL_PS_COMMIT_TASK_NUM,
+                  AngelConf.DEFAULT_ANGEL_PS_COMMIT_TASK_NUM);
           ThreadFactory commitThreadFacotry =
               new ThreadFactoryBuilder().setNameFormat("CommitTask").build();
           commitTaskPool = Executors.newFixedThreadPool(commitThreadCount, commitThreadFacotry);

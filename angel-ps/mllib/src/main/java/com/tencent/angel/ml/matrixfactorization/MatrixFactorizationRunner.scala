@@ -18,7 +18,7 @@
 package com.tencent.angel.ml.matrixfactorization
 
 import com.tencent.angel.client.AngelClientFactory
-import com.tencent.angel.conf.AngelConfiguration
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.MLRunner
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
@@ -30,7 +30,7 @@ class MatrixFactorizationRunner extends MLRunner {
     * Training job to obtain a model
     */
   override def train(conf: Configuration): Unit = {
-    conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS, classOf[MFTrainTask].getName)
+    conf.set(AngelConf.ANGEL_TASK_USER_TASKCLASS, classOf[MFTrainTask].getName)
 
     // Create an angel job client
     val client = AngelClientFactory.get(conf)
@@ -48,7 +48,7 @@ class MatrixFactorizationRunner extends MLRunner {
     client.runTask(classOf[MFTrainTask])
 
     // Run user task and wait for completion
-    // User task is set in AngelConfiguration.ANGEL_TASK_USER_TASKCLASS
+    // User task is set in AngelConf.ANGEL_TASK_USER_TASKCLASS
     client.waitForCompletion()
 
     // Save the trained model to HDFS

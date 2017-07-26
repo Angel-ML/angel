@@ -16,7 +16,7 @@
 
 package com.tencent.angel.worker.storage;
 
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.worker.WorkerContext;
 import com.tencent.angel.worker.task.MRTaskContext;
 import org.apache.commons.logging.Log;
@@ -53,8 +53,8 @@ public class DFSStorageNewAPI<KEY, VALUE> {
     try {
       Configuration conf = WorkerContext.get().getConf();
       String inputFormatClassName =
-          conf.get(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS,
-              AngelConfiguration.DEFAULT_ANGEL_INPUTFORMAT_CLASS);
+          conf.get(AngelConf.ANGEL_INPUTFORMAT_CLASS,
+              AngelConf.DEFAULT_ANGEL_INPUTFORMAT_CLASS);
 
       Class<? extends org.apache.hadoop.mapreduce.InputFormat> inputFormatClass =
           (Class<? extends org.apache.hadoop.mapreduce.InputFormat>) Class

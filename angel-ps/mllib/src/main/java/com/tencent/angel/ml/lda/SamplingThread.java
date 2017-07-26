@@ -93,7 +93,7 @@ public class SamplingThread implements Callable<Boolean> {
         }
         int rowId = row.getRowId();
         DenseIntVector wtrow = format(row);
-        buildFTree(wtrow, ldaModel.K(), ldaModel.beta(), ldaModel.vbeta(), tree, n_k);
+        buildFTree(wtrow, ldaModel.K(), ldaModel.beta(), ldaModel.vBeta(), tree, n_k);
         TokensOneWord list = words.get(rowId);
         DenseIntVector wordUpdate = sample(list, wtrow, docs, topicUpdate, topicIndex,
                 p, tree, n_k, n_dk, ldaModel);
@@ -197,7 +197,7 @@ public class SamplingThread implements Callable<Boolean> {
 
       synchronized (doc) {
         removeTopic(topicAssign, topic, n_k, n_dk[docId]);
-        tree.update(topic, (topicAssign.get(topic) + ldaModel.beta()) / (n_k.get(topic) + ldaModel.vbeta()));
+        tree.update(topic, (topicAssign.get(topic) + ldaModel.beta()) / (n_k.get(topic) + ldaModel.vBeta()));
         int size = n_dk[docId].size;
         float psum = buildProArr(n_dk[docId], p, topicIndex, tree);
         double u = random.nextFloat() * (psum + ldaModel.alpha() * tree.first());
@@ -211,7 +211,7 @@ public class SamplingThread implements Callable<Boolean> {
 
         assignTopic(topicAssign, newTopic, n_k, n_dk[docId]);
         list.setTopic(i, newTopic);
-        tree.update(newTopic, (topicAssign.get(newTopic) + ldaModel.beta()) / (n_k.get(newTopic) + ldaModel.vbeta()));
+        tree.update(newTopic, (topicAssign.get(newTopic) + ldaModel.beta()) / (n_k.get(newTopic) + ldaModel.vBeta()));
       }
 
       // Inc update to local buffers

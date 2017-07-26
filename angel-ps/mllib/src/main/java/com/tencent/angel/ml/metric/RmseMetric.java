@@ -21,7 +21,7 @@ package com.tencent.angel.ml.metric;
  *
  */
 
-public class RmseMetric implements EvalMetric {
+public class RMSEMetric implements EvalMetric {
 
   /**
    * return the name of metric

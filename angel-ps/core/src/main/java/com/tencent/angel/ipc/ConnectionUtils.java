@@ -17,7 +17,7 @@
  */
 package com.tencent.angel.ipc;
 
-import com.tencent.angel.conf.TConstants;
+import com.tencent.angel.conf.AngelConf;
 
 /**
  * Utility used by client connections such as {@link ServerCallable}
@@ -32,9 +32,9 @@ public class ConnectionUtils {
    */
   public static long getPauseTime(final long pause, final int tries) {
     int ntries = tries;
-    if (ntries >= TConstants.RETRY_BACKOFF.length) {
-      ntries = TConstants.RETRY_BACKOFF.length - 1;
+    if (ntries >= AngelConf.RETRY_BACKOFF.length) {
+      ntries = AngelConf.RETRY_BACKOFF.length - 1;
     }
-    return pause * TConstants.RETRY_BACKOFF[ntries];
+    return pause * AngelConf.RETRY_BACKOFF[ntries];
   }
 }

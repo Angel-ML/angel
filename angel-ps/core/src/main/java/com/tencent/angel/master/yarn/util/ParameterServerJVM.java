@@ -21,8 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
-import com.tencent.angel.conf.AngelConfiguration;
-import com.tencent.angel.master.yarn.util.AngelApps;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ps.PSAttemptId;
 
 import org.apache.commons.logging.Log;
@@ -49,12 +48,12 @@ public class ParameterServerJVM {
 
   private static String getChildEnv(Configuration jobConf) {
 
-    return jobConf.get(AngelConfiguration.ANGEL_PS_ENV, AngelConfiguration.DEFAULT_ANGEL_PS_ENV);
+    return jobConf.get(AngelConf.ANGEL_PS_ENV, AngelConf.DEFAULT_ANGEL_PS_ENV);
   }
 
   private static String getChildLogLevel(Configuration conf) {
-    return conf.get(AngelConfiguration.ANGEL_PS_LOG_LEVEL,
-        AngelConfiguration.DEFAULT_ANGEL_PS_LOG_LEVEL);
+    return conf.get(AngelConf.ANGEL_PS_LOG_LEVEL,
+        AngelConf.DEFAULT_ANGEL_PS_LOG_LEVEL);
   }
 
   /**
@@ -96,7 +95,7 @@ public class ParameterServerJVM {
   private static String getChildJavaOpts(Configuration jobConf, ApplicationId appid,
       PSAttemptId psAttemptId) {
     String userOpts = null;
-    userOpts = jobConf.get(AngelConfiguration.ANGEL_PS_JAVA_OPTS);
+    userOpts = jobConf.get(AngelConf.ANGEL_PS_JAVA_OPTS);
     if (userOpts == null) {
       userOpts = generateDefaultJVMParameters(jobConf, appid, psAttemptId);
     }
@@ -107,8 +106,8 @@ public class ParameterServerJVM {
   private static String generateDefaultJVMParameters(Configuration conf, ApplicationId appid,
       PSAttemptId psAttemptId) {
     int workerMemSizeInMB =
-        conf.getInt(AngelConfiguration.ANGEL_PS_MEMORY_GB,
-            AngelConfiguration.DEFAULT_ANGEL_PS_MEMORY_GB) * 1024;
+        conf.getInt(AngelConf.ANGEL_PS_MEMORY_GB,
+            AngelConf.DEFAULT_ANGEL_PS_MEMORY_GB) * 1024;
 
     int heapMax = workerMemSizeInMB - 200;
     int youngRegionSize = (int) (heapMax * 0.4);
@@ -165,7 +164,7 @@ public class ParameterServerJVM {
 
     // Add main class and its arguments
     String psClassName =
-        conf.get(AngelConfiguration.ANGEL_PS_CLASS, AngelConfiguration.DEFAULT_ANGEL_PS_CLASS);
+        conf.get(AngelConf.ANGEL_PS_CLASS, AngelConf.DEFAULT_ANGEL_PS_CLASS);
     vargs.add(psClassName); // main of Child
 
     // Finally add the jvmID

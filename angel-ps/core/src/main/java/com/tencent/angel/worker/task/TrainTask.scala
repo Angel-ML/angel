@@ -19,8 +19,6 @@ import com.tencent.angel.ml.feature.LabeledData
 
 /**
   * The type labeled base task.
-  * <p>
-  * the train data is {@link LabeledData}
   */
 abstract class TrainTask[KEYIN, VALUEIN](taskContext: TaskContext) extends BaseTask[KEYIN, VALUEIN, LabeledData](taskContext) {
 

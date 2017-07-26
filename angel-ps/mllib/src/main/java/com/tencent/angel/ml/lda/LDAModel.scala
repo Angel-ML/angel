@@ -17,15 +17,16 @@
 
 package com.tencent.angel.ml.lda
 
-import com.tencent.angel.conf.AngelConfiguration._
-import com.tencent.angel.ml.conf.MLConf._
+import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.conf.AngelConf._
 import com.tencent.angel.ml.conf.MLConf
+import com.tencent.angel.ml.conf.MLConf._
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.lda.LDAModel._
 import com.tencent.angel.ml.math.vector.{DenseDoubleVector, DenseIntVector}
 import com.tencent.angel.ml.model.{MLModel, PSModel}
+import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.protobuf.generated.MLProtos.RowType
-import com.tencent.angel.worker.predict.PredictResult
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
@@ -66,11 +67,7 @@ object LDAModel {
 
 }
 
-class LDAModel(conf: Configuration, _ctx: TaskContext) extends MLModel(_ctx) {
-
-  def this(conf: Configuration) = {
-    this(conf, null)
-  }
+class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
 
   // Initializing parameters
   val V = conf.getInt(WORD_NUM, 1)
@@ -79,51 +76,35 @@ class LDAModel(conf: Configuration, _ctx: TaskContext) extends MLModel(_ctx) {
   val epoch = conf.getInt(MLConf.ML_EPOCH_NUM, 10)
   val alpha = conf.getFloat(ALPHA, 50.0F / K)
   val beta = conf.getFloat(BETA, 0.01F)
-  val vbeta = beta * V
-  val threadNum = conf.getInt(ML_WORKER_THREAD_NUM,
-    DEFAULT_ML_WORKER_THREAD_NUM)
+  val vBeta = beta * V
+
+  val threadNum = conf.getInt(ML_WORKER_THREAD_NUM, DEFAULT_ML_WORKER_THREAD_NUM)
   val splitNum = conf.getInt(SPLIT_NUM, 1)
-
-
   val psNum = conf.getInt(ANGEL_PS_NUMBER, 1)
   val parts = conf.getInt(ML_PART_PER_SERVER, DEFAULT_ML_PART_PER_SERVER)
+
   // Initializing model matrices
 
-  val wtMat = PSModel[DenseIntVector](WORD_TOPIC_MAT, V, K,
-    Math.max(1, V / psNum), K)
-  wtMat.setRowType(RowType.T_INT_DENSE)
-  wtMat.setOplogType("LIL_INT")
+  val wtMat = PSModel[DenseIntVector](WORD_TOPIC_MAT, V, K, Math.max(1, V / psNum), K)
+    .setRowType(RowType.T_INT_DENSE)
+    .setOplogType("LIL_INT")
 
   val tMat = PSModel[DenseIntVector](TOPIC_MAT, 1, K, 1, K)
-  tMat.setRowType(RowType.T_INT_DENSE)
-  tMat.setOplogType("DENSE_INT")
+    .setRowType(RowType.T_INT_DENSE)
+    .setOplogType("DENSE_INT")
 
-  // llh matrix is used to store the values of log likelihood
-
-  val llh = PSModel[DenseDoubleVector](LLH_MAT, 1, epoch + 1, 1, epoch + 1)
-  llh.setRowType(RowType.T_DOUBLE_DENSE)
-  llh.setOplogType("DENSE_DOUBLE")
 
   addPSModel(wtMat)
   addPSModel(tMat)
-  addPSModel(llh)
-  //setLoadPath(conf);
+
   setSavePath(conf)
+  setLoadPath(conf)
 
-  override
-  def setSavePath(conf: Configuration): Unit = {
-    val path = conf.get(ANGEL_SAVE_MODEL_PATH)
 
-    // Save the word topic matrix to HDFS after Job is finished
-    if (path != null)
-      wtMat.setSavePath(path)
-  }
 
   override
   def predict(dataSet: DataBlock[LabeledData]): DataBlock[PredictResult] = {
     null
   }
-
-  override def setLoadPath(conf: Configuration): Unit = ???
 
 }

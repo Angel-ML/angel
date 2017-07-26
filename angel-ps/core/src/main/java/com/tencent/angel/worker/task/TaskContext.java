@@ -18,12 +18,12 @@ package com.tencent.angel.worker.task;
 
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.exception.TimeOutException;
-import com.tencent.angel.master.task.TaskCounter;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.MatrixMeta;
+import com.tencent.angel.ml.metrics.Metric;
 import com.tencent.angel.psagent.PSAgent;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.client.MasterClient;
@@ -42,7 +42,6 @@ import org.apache.hadoop.conf.Configuration;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -52,7 +51,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class TaskContext {
   private final TaskId taskId;
   private final TaskIdProto taskIdProto;
-  private final ConcurrentHashMap<String, AtomicLong> metrics;
+
 
   @SuppressWarnings("rawtypes")
   private Reader reader;
@@ -66,7 +65,6 @@ public class TaskContext {
   public TaskContext(TaskId taskId) {
     this.taskId = taskId;
     this.taskIdProto = ProtobufUtil.convertToIdProto(taskId);
-    this.metrics = new ConcurrentHashMap<>();
     context = PSAgentContext.get().getTaskContext(taskId.getIndex());
   }
 
@@ -80,7 +78,6 @@ public class TaskContext {
     taskId = ProtobufUtil.convertToId(taskIdProto);
     context = PSAgentContext.get().getTaskContext(taskId.getIndex());
     context.setIteration(taskMeta.getIteration());
-    this.metrics = new ConcurrentHashMap<>();
     List<MatrixClock> matrixClocks = taskMeta.getMatrixClockList();
     int size = matrixClocks.size();
     for(int i = 0; i < size; i++){
@@ -239,8 +236,8 @@ public class TaskContext {
       PSAgentContext
         .get()
         .getConf()
-        .getInt(AngelConfiguration.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS,
-          AngelConfiguration.DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS);
+        .getInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS,
+          AngelConf.DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS);
 
     while (true) {
       boolean sync = true;
@@ -318,8 +315,7 @@ public class TaskContext {
    * @param useTimeMs the time use to calculate the samples
    */
   public void updateProfileCounter(int sampleNum, int useTimeMs) {
-    updateCounter(TaskCounter.TOTAL_CALCULATE_SAMPLES, sampleNum);
-    updateCounter(TaskCounter.TOTAL_CALCULATE_TIME_MS, useTimeMs);
+    context.updateProfileCounter(sampleNum, useTimeMs);
   }
 
   /**
@@ -328,14 +324,7 @@ public class TaskContext {
    * @param updateValue increment value
    */
   public void updateCounter(String counterName, int updateValue) {
-    AtomicLong counter = metrics.get(counterName);
-    if(counter == null) {
-      counter = metrics.putIfAbsent(counterName, new AtomicLong(0));
-      if(counter == null) {
-        counter = metrics.get(counterName);
-      }
-    }
-    counter.addAndGet(updateValue);
+    context.updateCounter(counterName,updateValue);
   }
 
   /**
@@ -344,17 +333,19 @@ public class TaskContext {
    * @param updateValue new counter value
    */
   public void setCounter(String counterName, int updateValue) {
-    AtomicLong counter = metrics.get(counterName);
-    if(counter == null) {
-      counter = metrics.putIfAbsent(counterName, new AtomicLong(0));
-      if(counter == null) {
-        counter = metrics.get(counterName);
-      }
-    }
-    counter.set(updateValue);
+    context.setCounter(counterName, updateValue);
   }
 
   public Map<String,AtomicLong> getCounters() {
-    return metrics;
+    return context.getMetrics();
+  }
+
+  /**
+   * Add a algorithm metric
+   * @param name metric name
+   * @param metric metric dependency values
+   */
+  public void addAlgoMetric(String name, Metric metric) {
+    context.addAlgoMetric(name, metric);
   }
 }

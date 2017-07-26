@@ -18,13 +18,13 @@ package com.tencent.angel.localcluster;
 
 import java.io.IOException;
 
+import com.tencent.angel.conf.AngelConf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 
-import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.master.AngelApplicationMaster;
 
 /**
@@ -50,7 +50,7 @@ public class LocalMaster extends Thread {
     LocalClusterContext clusterContext = LocalClusterContext.get();
     Configuration conf = clusterContext.getConf();
     conf.setBoolean("fs.automatic.close", false);
-    String appName = conf.get(AngelConfiguration.ANGEL_JOB_NAME, "local-test");
+    String appName = conf.get(AngelConf.ANGEL_JOB_NAME, "local-test");
 
     appMaster =
         new AngelApplicationMaster(conf, appName, appAttemptId,

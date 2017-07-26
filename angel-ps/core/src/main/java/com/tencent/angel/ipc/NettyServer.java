@@ -19,7 +19,7 @@
 package com.tencent.angel.ipc;
 
 import com.google.protobuf.Message;
-import com.tencent.angel.conf.TConstants;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.StandbyException;
 import com.tencent.angel.ipc.NettyTransportCodec.NettyDataPack;
 import com.tencent.angel.ipc.NettyTransportCodec.NettyFrameDecoder;
@@ -72,9 +72,9 @@ public abstract class NettyServer implements RpcServer {
   final InetSocketAddress addr;
 
   public NettyServer(InetSocketAddress addr, Configuration conf) {
-    int nThreads = conf.getInt(TConstants.SERVER_IO_THREAD, Runtime
+    int nThreads = conf.getInt(AngelConf.SERVER_IO_THREAD, Runtime
         .getRuntime().availableProcessors() * 2);
-    IOMode ioMode = IOMode.valueOf(conf.get(TConstants.NETWORK_IO_MODE, "NIO"));
+    IOMode ioMode = IOMode.valueOf(conf.get(AngelConf.NETWORK_IO_MODE, "NIO"));
     EventLoopGroup bossGroup =
         NettyUtils.createEventLoop(ioMode, nThreads,   "ML-server");
     EventLoopGroup workerGroup = bossGroup;

@@ -1,6 +1,6 @@
-# GBDT(Gradient Boosting Decision Tree)
+# GBDT on Angel
 
-> **梯度提升决策树（Gradient Boosting Decision Tree）** 是一种集成使用多个弱分类器（决策树）来提升分类效果的机器学习算法，在很多分类和回归的场景中，都有不错的效果。
+> **GBDT(Gradient Boosting Decision Tree)：梯度提升决策树** 是一种集成使用多个弱分类器（决策树）来提升分类效果的机器学习算法，在很多分类和回归的场景中，都有不错的效果。
 
 ## 1. 算法介绍
 
@@ -77,14 +77,21 @@ GBDT的流程包括几大步骤
 整体来看，Angel的PS优势，使得它在这个算法上，性能远远超越了Spark版本的GBDT实现，而和MPI版本的xgBoost也略胜一筹。
 
 
-## 3. 运行 & 性能
+## 4. 运行 & 性能
 
 ### 输入格式
 
-* 数据的格式通过“ml.data.type”参数设置。GBDT on Angel支持“libsvm”、“dummy”两种数据格式，具体参考:[Angel数据格式](data_format.md)
+数据的格式通过“ml.data.type”参数设置；数据特征的个数，即特征向量的维度通过参数“ml.feature.num”设置。
 
-* 特征向量的维度通过参数“ml.feature.num”设置。
+GBDT on Angel支持“libsvm”、“dummy”两种数据格式，分别如下所示：
 
+* **dummy格式**
+
+每行文本表示一个样本，每个样本的格式为"y index1 index2 index3 ..."。其中：index特征的ID；训练数据的y为样本的类别，可以取1、-1两个值；预测数据的y为样本的ID值。比如，属于正类的样本[2.0, 3.1, 0.0, 0.0, -1, 2.2]的文本表示为“1 0 1 4 5”，其中“1”为类别，“0 1 4 5”表示特征向量的第0、1、4、5个维度的值不为0。同理，属于负类的样本[2.0, 0.0, 0.1, 0.0, 0.0, 0.0]被表示为“-1 0 2”。
+
+ * **libsvm格式**
+
+每行文本表示一个样本，每个样本的格式为"y index1:value1 index2:value1 index3:value3 ..."。其中：index为特征的ID,value为对应的特征值；训练数据的y为样本的类别，可以取1、-1两个值；预测数据的y为样本的ID值。比如，属于正类的样本[2.0, 3.1, 0.0, 0.0, -1, 2.2]的文本表示为“1 0:2.0 1:3.1 4:-1 5:2.2”，其中“1”为类别，"0:2.0"表示第0个特征的值为2.0。同理，属于负类的样本[2.0, 0.0, 0.1, 0.0, 0.0, 0.0]被表示为“-1 0:2.0 2：0.1”。
 
 ### 参数
 
@@ -98,38 +105,35 @@ GBDT的流程包括几大步骤
 * 输入输出参数
 	* angel.train.data.path：输入数据路径
 	* ml.feature.num：数据特征个数
-	* ml.data.type：[Angel数据格式](data_format.md)，支持"dummy"、"libsvm"
+	* ml.data.type：数据格式，支持"dummy"、"libsvm"
 	* angel.save.modelPath：训练完成后，模型的保存路径
 	* angel.log.path：log文件保存路径
 
 * 资源参数
 	* angel.workergroup.number：Worker个数
-	* angel.worker.memory.gb：Worker申请的内存大小（G）
+	* angel.worker.memory.mb：Worker申请内存大小
 	* angel.worker.task.number：每个Worker上的task的个数，默认为1
 	* angel.ps.number：PS个数
-	* angel.ps.memory.gb：PS申请的内存大小（G）
+	* angel.ps.memory.mb：PS申请内存大小
 
 ### 性能
 
-评测腾讯的内部的数据集来比较Angel和XGBoost的性能，训练数据如下：
+评测腾讯的内部的数据集来比较Angel和XGBoost的性能。
+
+* 训练数据
 
 | 数据集 | 数据集大小 | 数据数量 | 特征数量 | 任务 |
 |:------:|:----------:|:--------:|:--------:|:-------:|
 | UserGender1  |    24GB    |   1250万  |   2570   | 二分类 |
 | UserGender2  |    145GB    |   1.2亿  |   33万   | 二分类 |
 
-实验的目的，是预测用户的性别
-
-* 数据集 **UserGender1** 大小为24GB，包括1250万个训练数据，其中每个训练数据的特征纬度是2570；
-* 数据集 **UserGender2** 大小为145GB，包括1.2亿个训练数据，其中每个训练数据的特征纬度是33万。
-
-两个数据集都是高维稀疏数据集。
+实验的目的，是预测用户的性别。数据集 **UserGender1** 大小为24GB，包括1250万个训练数据，其中每个训练数据的特征纬度是2570；数据集 **UserGender2** 大小为145GB，包括1.2亿个训练数据，其中每个训练数据的特征纬度是33万。两个数据集都是高维稀疏数据集。
 
 * **实验环境**
 
 	实验所使用的集群是腾讯的线上Gaia集群(Yarn)，单台机器的配置是：
 
-	* CPU:  2680 * 2
+	* CPU: 2680 * 2
 	* 内存：256 GB
 	* 网络：10G * 2
 	* 磁盘：4T * 12 (SATA)

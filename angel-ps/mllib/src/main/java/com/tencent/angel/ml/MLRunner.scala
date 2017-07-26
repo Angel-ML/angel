@@ -19,7 +19,7 @@ package com.tencent.angel.ml
 
 import com.tencent.angel.AppSubmitter
 import com.tencent.angel.client.AngelClientFactory
-import com.tencent.angel.conf.AngelConfiguration
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.worker.task.BaseTask
@@ -84,7 +84,7 @@ trait MLRunner extends AppSubmitter{
   @throws[Exception]
   override
   def submit(conf: Configuration): Unit = {
-    val actType = conf.get(AngelConfiguration.ANGEL_ACTION_TYPE);
+    val actType = conf.get(AngelConf.ANGEL_ACTION_TYPE);
     actType match {
       case MLConf.ANGEL_ML_TRAIN =>
         train(conf)

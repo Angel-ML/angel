@@ -19,8 +19,8 @@ package com.tencent.angel.client;
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.RunningMode;
 import com.tencent.angel.common.Location;
-import com.tencent.angel.conf.AngelConfiguration;
-import com.tencent.angel.conf.MatrixConfiguration;
+import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.ipc.TConnectionManager;
@@ -87,6 +87,8 @@ public abstract class AngelClient implements AngelClientInterface {
 
   /** master location */
   protected Location masterLocation;
+
+  private static final String LOG_FORMAT = "%10.6e";
   
   /**
    * 
@@ -114,7 +116,7 @@ public abstract class AngelClient implements AngelClientInterface {
           SetParamsRequest
               .newBuilder()
               .addKvs(
-                  Pair.newBuilder().setKey(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS)
+                  Pair.newBuilder().setKey(AngelConf.ANGEL_TASK_USER_TASKCLASS)
                       .setValue(taskClass.getName()).build()).build());
       master.start(null, StartRequest.newBuilder().build());
     } catch (ServiceException e) {
@@ -179,7 +181,7 @@ public abstract class AngelClient implements AngelClientInterface {
 
     for (Map.Entry<String, PSModel<?>> entry: psModels.entrySet()) {
       MatrixContext context = entry.getValue().getContext();
-      String savePath = context.getAttributes().get(MatrixConfiguration.MATRIX_SAVE_PATH);
+      String savePath = context.getAttributes().get(MatrixConf.MATRIX_SAVE_PATH);
       if(savePath != null) {
         builder.addMatrixNames(context.getName());
       }
@@ -244,7 +246,7 @@ public abstract class AngelClient implements AngelClientInterface {
       throw new AngelException("parameter servers are not started, you must execute startPSServer first!!");
     }
 
-    RunningMode mode = RunningMode.valueOf(conf.get(AngelConfiguration.ANGEL_RUNNING_MODE, AngelConfiguration.DEFAULT_ANGEL_RUNNING_MODE));
+    RunningMode mode = RunningMode.valueOf(conf.get(AngelConf.ANGEL_RUNNING_MODE, AngelConf.DEFAULT_ANGEL_RUNNING_MODE));
     switch (mode) {
       case ANGEL_PS:{
         while (!isCompleted()) {
@@ -274,7 +276,7 @@ public abstract class AngelClient implements AngelClientInterface {
           throw new AngelException("app run failed, " + appFailedMessage);
         }
 
-        String actionType = conf.get(AngelConfiguration.ANGEL_ACTION_TYPE, AngelConfiguration.DEFAULT_ANGEL_ACTION_TYPE);
+        String actionType = conf.get(AngelConf.ANGEL_ACTION_TYPE, AngelConf.DEFAULT_ANGEL_ACTION_TYPE);
         LOG.info("action type " + actionType);
         if (actionType.matches("predict")) {
           try {
@@ -292,8 +294,8 @@ public abstract class AngelClient implements AngelClientInterface {
   }
    
   private void movePredictResult() throws IOException {
-    String outPathStr = conf.get(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH);
-    String tmpPathStr = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_PATH);
+    String outPathStr = conf.get(AngelConf.ANGEL_JOB_OUTPUT_PATH);
+    String tmpPathStr = conf.get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH);
     Path outPath = new Path(outPathStr);
     Path tmpOutPath = new Path(tmpPathStr, "predict");
     
@@ -449,12 +451,25 @@ public abstract class AngelClient implements AngelClientInterface {
     if (lastReport == null
         || (report.hasCurIteration() && report.getCurIteration() != lastReport.getJobReport()
             .getCurIteration())) {
-      LOG.info("curIteration: " + report.getCurIteration());
+      LOG.info("curIteration: " + report.getCurIteration() + ". Metrics: " + toString(report.getMetricsList()));
       if (report.hasLoss()) {
         LOG.info("loss/success: " + report.getLoss() + "/" + report.getSuccess());
       }
     }
     lastReport = response;
+  }
+
+  private String toString(List<Pair> metrics){
+    StringBuilder sb = new StringBuilder();
+    int size = metrics.size();
+    for(int i = 0; i < size; i++) {
+      sb.append(metrics.get(i).getKey() + "=" + String.format(LOG_FORMAT, Double.valueOf(metrics.get(i).getValue())));
+      if(i < size - 1) {
+        sb.append("\t");
+      }
+    }
+
+    return sb.toString();
   }
   
   private GetJobReportRequest getGetJobReportRequest() {
@@ -528,26 +543,26 @@ public abstract class AngelClient implements AngelClientInterface {
   }
 
   protected void setOutputDirectory() throws IOException{
-    String actionType = conf.get(AngelConfiguration.ANGEL_ACTION_TYPE, AngelConfiguration.DEFAULT_ANGEL_ACTION_TYPE);
-    RunningMode runningMode = RunningMode.valueOf(conf.get(AngelConfiguration.ANGEL_RUNNING_MODE, AngelConfiguration.DEFAULT_ANGEL_RUNNING_MODE));
+    String actionType = conf.get(AngelConf.ANGEL_ACTION_TYPE, AngelConf.DEFAULT_ANGEL_ACTION_TYPE);
+    RunningMode runningMode = RunningMode.valueOf(conf.get(AngelConf.ANGEL_RUNNING_MODE, AngelConf.DEFAULT_ANGEL_RUNNING_MODE));
     LOG.info("running mode = " + runningMode);
     boolean deleteOnExist =
-      conf.getBoolean(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
-        AngelConfiguration.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST);
+      conf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
+        AngelConf.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST);
 
     String path = null;
     if (!actionType.matches("predict")) {
-      path = conf.get(AngelConfiguration.ANGEL_SAVE_MODEL_PATH);
+      path = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH);
     } else {
-      path = conf.get(AngelConfiguration.ANGEL_PREDICT_PATH);
+      path = conf.get(AngelConf.ANGEL_PREDICT_PATH);
     }
 
     if(path == null) {
       throw new IOException("output directory is null. you must set "
-        + AngelConfiguration.ANGEL_SAVE_MODEL_PATH + " at training mode or set "
-        + AngelConfiguration.ANGEL_PREDICT_PATH + " at predict mode");
+        + AngelConf.ANGEL_SAVE_MODEL_PATH + " at training mode or set "
+        + AngelConf.ANGEL_PREDICT_PATH + " at predict mode");
     }
-    conf.set(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH, path);
+    conf.set(AngelConf.ANGEL_JOB_OUTPUT_PATH, path);
 
     Path outputPath = new Path(path);
     FileSystem outFs = outputPath.getFileSystem(conf);
@@ -560,7 +575,7 @@ public abstract class AngelClient implements AngelClientInterface {
     }
 
     if(runningMode == RunningMode.ANGEL_PS_WORKER) {
-      String logPathStr = conf.get(AngelConfiguration.ANGEL_LOG_PATH);
+      String logPathStr = conf.get(AngelConf.ANGEL_LOG_PATH);
       if (logPathStr != null) {
         Path logPath = new Path(logPathStr);
         FileSystem logFs = logPath.getFileSystem(conf);
@@ -578,17 +593,17 @@ public abstract class AngelClient implements AngelClientInterface {
 
     internalStateFile = new Path(HdfsUtil.generateTmpDirectory(conf, getAppId(), outputPath), "state");
 
-    conf.set(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_PATH, tmpOutputPath.toString());
-    LOG.info(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_PATH + "=" + tmpOutputPath.toString());
+    conf.set(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH, tmpOutputPath.toString());
+    LOG.info(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH + "=" + tmpOutputPath.toString());
 
     LOG.info("internal state file is " + internalStateFile);
-    conf.set(AngelConfiguration.ANGEL_APP_SERILIZE_STATE_FILE, internalStateFile.toString());
+    conf.set(AngelConf.ANGEL_APP_SERILIZE_STATE_FILE, internalStateFile.toString());
     
   }
   
   protected void setUser() throws ClassNotFoundException, NoSuchFieldException, SecurityException, InstantiationException, IllegalAccessException, IOException{
     userName = UGITools.getCurrentUser(conf).getShortUserName();
-    conf.set(AngelConfiguration.USER_NAME, userName);
+    conf.set(AngelConf.USER_NAME, userName);
   }
 
   abstract public void startPSServer() throws AngelException;
@@ -598,99 +613,99 @@ public abstract class AngelClient implements AngelClientInterface {
     if (ip != null) {
       String submitHostAddress = ip.getHostAddress();
       String submitHostName = ip.getHostName();
-      conf.set(AngelConfiguration.JOB_SUBMITHOST, submitHostName);
-      conf.set(AngelConfiguration.JOB_SUBMITHOSTADDR, submitHostAddress);
+      conf.set(AngelConf.JOB_SUBMITHOST, submitHostName);
+      conf.set(AngelConf.JOB_SUBMITHOSTADDR, submitHostAddress);
     }
   }
 
   protected void handleDeprecatedParameters(Configuration conf) {
-    String memoryMBStr = conf.get(AngelConfiguration.ANGEL_AM_MEMORY_MB);
-    String memoryGBStr = conf.get(AngelConfiguration.ANGEL_AM_MEMORY_GB);
+    String memoryMBStr = conf.get(AngelConf.ANGEL_AM_MEMORY_MB);
+    String memoryGBStr = conf.get(AngelConf.ANGEL_AM_MEMORY_GB);
 
     if(memoryGBStr == null && memoryMBStr != null) {
-      LOG.warn("use deprecated parameter " + AngelConfiguration.ANGEL_AM_MEMORY_MB
-        + ", you can use " + AngelConfiguration.ANGEL_AM_MEMORY_GB + " instead.");
+      LOG.warn("use deprecated parameter " + AngelConf.ANGEL_AM_MEMORY_MB
+        + ", you can use " + AngelConf.ANGEL_AM_MEMORY_GB + " instead.");
 
       try{
         int memoryMB = Integer.valueOf(memoryMBStr);
-        conf.setInt(AngelConfiguration.ANGEL_AM_MEMORY_GB, (int)Math.ceil((float) memoryMB / 1024));
+        conf.setInt(AngelConf.ANGEL_AM_MEMORY_GB, (int)Math.ceil((float) memoryMB / 1024));
       } catch (Exception x) {
-        LOG.error("invalid value for  " + AngelConfiguration.ANGEL_AM_MEMORY_MB + " " + memoryMBStr);
+        LOG.error("invalid value for  " + AngelConf.ANGEL_AM_MEMORY_MB + " " + memoryMBStr);
       }
     }
 
-    memoryMBStr = conf.get(AngelConfiguration.ANGEL_WORKER_MEMORY_MB);
-    memoryGBStr = conf.get(AngelConfiguration.ANGEL_WORKER_MEMORY_GB);
+    memoryMBStr = conf.get(AngelConf.ANGEL_WORKER_MEMORY_MB);
+    memoryGBStr = conf.get(AngelConf.ANGEL_WORKER_MEMORY_GB);
 
     if(memoryGBStr == null && memoryMBStr != null) {
-      LOG.warn("use deprecated parameter " + AngelConfiguration.ANGEL_WORKER_MEMORY_MB
-        + ", you can use " + AngelConfiguration.ANGEL_WORKER_MEMORY_GB + " instead.");
+      LOG.warn("use deprecated parameter " + AngelConf.ANGEL_WORKER_MEMORY_MB
+        + ", you can use " + AngelConf.ANGEL_WORKER_MEMORY_GB + " instead.");
 
       try{
         int memoryMB = Integer.valueOf(memoryMBStr);
-        conf.setInt(AngelConfiguration.ANGEL_WORKER_MEMORY_GB, (int)Math.ceil((float) memoryMB / 1024));
+        conf.setInt(AngelConf.ANGEL_WORKER_MEMORY_GB, (int)Math.ceil((float) memoryMB / 1024));
       } catch (Exception x) {
-        LOG.error("invalid value for  " + AngelConfiguration.ANGEL_WORKER_MEMORY_MB + " " + memoryGBStr);
+        LOG.error("invalid value for  " + AngelConf.ANGEL_WORKER_MEMORY_MB + " " + memoryGBStr);
       }
     }
 
-    memoryMBStr = conf.get(AngelConfiguration.ANGEL_PS_MEMORY_MB);
-    memoryGBStr = conf.get(AngelConfiguration.ANGEL_PS_MEMORY_GB);
+    memoryMBStr = conf.get(AngelConf.ANGEL_PS_MEMORY_MB);
+    memoryGBStr = conf.get(AngelConf.ANGEL_PS_MEMORY_GB);
 
     if(memoryGBStr == null && memoryMBStr != null) {
-      LOG.warn("use deprecated parameter " + AngelConfiguration.ANGEL_PS_MEMORY_MB
-        + ", you can use " + AngelConfiguration.ANGEL_PS_MEMORY_GB + " instead.");
+      LOG.warn("use deprecated parameter " + AngelConf.ANGEL_PS_MEMORY_MB
+        + ", you can use " + AngelConf.ANGEL_PS_MEMORY_GB + " instead.");
 
       try{
         int memoryMB = Integer.valueOf(memoryMBStr);
-        conf.setInt(AngelConfiguration.ANGEL_PS_MEMORY_GB, (int)Math.ceil((float) memoryMB / 1024));
+        conf.setInt(AngelConf.ANGEL_PS_MEMORY_GB, (int)Math.ceil((float) memoryMB / 1024));
       } catch (Exception x) {
-        LOG.error("invalid value for  " + AngelConfiguration.ANGEL_PS_MEMORY_MB + " " + memoryGBStr);
+        LOG.error("invalid value for  " + AngelConf.ANGEL_PS_MEMORY_MB + " " + memoryGBStr);
       }
     }
   }
 
   protected void checkParameters(Configuration conf) throws InvalidParameterException {
     StringBuilder sb = new StringBuilder();
-    int coreNum = conf.getInt(AngelConfiguration.ANGEL_AM_CPU_VCORES,
-        AngelConfiguration.DEFAULT_ANGEL_AM_CPU_VCORES);
+    int coreNum = conf.getInt(AngelConf.ANGEL_AM_CPU_VCORES,
+        AngelConf.DEFAULT_ANGEL_AM_CPU_VCORES);
     if (coreNum <= 0) {
-      sb.append(AngelConfiguration.ANGEL_AM_CPU_VCORES + " should > 0");
+      sb.append(AngelConf.ANGEL_AM_CPU_VCORES + " should > 0");
       sb.append("\n");
     }
 
-    int memNum = conf.getInt(AngelConfiguration.ANGEL_AM_MEMORY_GB,
-        AngelConfiguration.DEFAULT_ANGEL_AM_MEMORY_GB);
+    int memNum = conf.getInt(AngelConf.ANGEL_AM_MEMORY_GB,
+        AngelConf.DEFAULT_ANGEL_AM_MEMORY_GB);
     if (memNum <= 0) {
-      sb.append(AngelConfiguration.ANGEL_AM_MEMORY_GB + " should > 0");
+      sb.append(AngelConf.ANGEL_AM_MEMORY_GB + " should > 0");
       sb.append("\n");
     }
 
-    coreNum = conf.getInt(AngelConfiguration.ANGEL_WORKER_CPU_VCORES,
-      AngelConfiguration.DEFAULT_ANGEL_WORKER_CPU_VCORES);
+    coreNum = conf.getInt(AngelConf.ANGEL_WORKER_CPU_VCORES,
+      AngelConf.DEFAULT_ANGEL_WORKER_CPU_VCORES);
     if (coreNum <= 0) {
-      sb.append(AngelConfiguration.ANGEL_WORKER_CPU_VCORES + " should > 0");
+      sb.append(AngelConf.ANGEL_WORKER_CPU_VCORES + " should > 0");
       sb.append("\n");
     }
 
-    memNum = conf.getInt(AngelConfiguration.ANGEL_WORKER_MEMORY_GB,
-      AngelConfiguration.DEFAULT_ANGEL_WORKER_MEMORY_GB);
+    memNum = conf.getInt(AngelConf.ANGEL_WORKER_MEMORY_GB,
+      AngelConf.DEFAULT_ANGEL_WORKER_MEMORY_GB);
     if (memNum <= 0) {
-      sb.append(AngelConfiguration.ANGEL_WORKER_MEMORY_GB + " should > 0");
+      sb.append(AngelConf.ANGEL_WORKER_MEMORY_GB + " should > 0");
       sb.append("\n");
     }
 
-    coreNum = conf.getInt(AngelConfiguration.ANGEL_PS_CPU_VCORES,
-      AngelConfiguration.DEFAULT_ANGEL_PS_CPU_VCORES);
+    coreNum = conf.getInt(AngelConf.ANGEL_PS_CPU_VCORES,
+      AngelConf.DEFAULT_ANGEL_PS_CPU_VCORES);
     if (coreNum <= 0) {
-      sb.append(AngelConfiguration.ANGEL_PS_CPU_VCORES + " should > 0");
+      sb.append(AngelConf.ANGEL_PS_CPU_VCORES + " should > 0");
       sb.append("\n");
     }
 
-    memNum = conf.getInt(AngelConfiguration.ANGEL_PS_MEMORY_GB,
-      AngelConfiguration.DEFAULT_ANGEL_PS_MEMORY_GB);
+    memNum = conf.getInt(AngelConf.ANGEL_PS_MEMORY_GB,
+      AngelConf.DEFAULT_ANGEL_PS_MEMORY_GB);
     if (memNum <= 0) {
-      sb.append(AngelConfiguration.ANGEL_PS_MEMORY_GB + " should > 0");
+      sb.append(AngelConf.ANGEL_PS_MEMORY_GB + " should > 0");
       sb.append("\n");
     }
 

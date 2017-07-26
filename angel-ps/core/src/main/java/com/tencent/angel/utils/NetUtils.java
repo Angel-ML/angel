@@ -16,7 +16,7 @@
 
 package com.tencent.angel.utils;
 
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.InvalidParameterException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -111,8 +111,8 @@ public class NetUtils {
 
   public static int chooseAListenPort(Configuration conf) throws IOException {
     String portRangeStr =
-        conf.get(AngelConfiguration.ANGEL_LISTEN_PORT_RANGE,
-            AngelConfiguration.DEFAULT_ANGEL_LISTEN_PORT_RANGE);
+        conf.get(AngelConf.ANGEL_LISTEN_PORT_RANGE,
+            AngelConf.DEFAULT_ANGEL_LISTEN_PORT_RANGE);
 
     String[] portRangeArray = null;
     int startPort = -1;
@@ -124,13 +124,13 @@ public class NetUtils {
 
       if (startPort <= 1024 || startPort > 65535 || endPort <= 1024 || endPort > 65535
           || startPort > endPort) {
-        throw new InvalidParameterException(AngelConfiguration.ANGEL_LISTEN_PORT_RANGE,
+        throw new InvalidParameterException(AngelConf.ANGEL_LISTEN_PORT_RANGE,
             portRangeStr, "port should in range 1024~63335");
       }
     } catch (Exception x) {
-      LOG.error("use port set for " + AngelConfiguration.ANGEL_LISTEN_PORT_RANGE
+      LOG.error("use port set for " + AngelConf.ANGEL_LISTEN_PORT_RANGE
           + " is unvalid, we use default value now. error msg = " + x.getMessage());
-      portRangeArray = AngelConfiguration.DEFAULT_ANGEL_LISTEN_PORT_RANGE.split(",");
+      portRangeArray = AngelConf.DEFAULT_ANGEL_LISTEN_PORT_RANGE.split(",");
       startPort = Integer.valueOf(portRangeArray[0]);
       endPort = Integer.valueOf(portRangeArray[1]);
     }

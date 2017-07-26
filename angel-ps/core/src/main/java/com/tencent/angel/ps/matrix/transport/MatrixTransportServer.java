@@ -18,6 +18,7 @@ package com.tencent.angel.ps.matrix.transport;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.tencent.angel.conf.AngelConf;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -30,7 +31,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 
-import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.ps.impl.PSContext;
 
 /**
@@ -56,20 +56,20 @@ public class MatrixTransportServer {
   public void start() {
     Configuration conf = PSContext.get().getConf();
     int workerNum =
-        conf.getInt(AngelConfiguration.ANGEL_NETTY_MATRIXTRANSFER_SERVER_EVENTGROUP_THREADNUM,
-            AngelConfiguration.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_EVENTGROUP_THREADNUM);
+        conf.getInt(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_SERVER_EVENTGROUP_THREADNUM,
+            AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_EVENTGROUP_THREADNUM);
 
     int sendBuffSize =
-        conf.getInt(AngelConfiguration.ANGEL_NETTY_MATRIXTRANSFER_SERVER_SNDBUF,
-            AngelConfiguration.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_SNDBUF);
+        conf.getInt(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_SERVER_SNDBUF,
+            AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_SNDBUF);
 
     int recvBuffSize =
-        conf.getInt(AngelConfiguration.ANGEL_NETTY_MATRIXTRANSFER_SERVER_RCVBUF,
-            AngelConfiguration.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_RCVBUF);
+        conf.getInt(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_SERVER_RCVBUF,
+            AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_RCVBUF);
 
     final int maxMessageSize =
-        conf.getInt(AngelConfiguration.ANGEL_NETTY_MATRIXTRANSFER_MAX_MESSAGE_SIZE,
-            AngelConfiguration.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_MAX_MESSAGE_SIZE);
+        conf.getInt(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_MAX_MESSAGE_SIZE,
+            AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_MAX_MESSAGE_SIZE);
 
     bossGroup = new NioEventLoopGroup(1);
     workerGroup = new NioEventLoopGroup(workerNum);

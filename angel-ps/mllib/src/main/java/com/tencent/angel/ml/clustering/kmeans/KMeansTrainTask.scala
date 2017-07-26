@@ -46,11 +46,11 @@ class KMeansTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text
 
   override
   def train(ctx: TaskContext) = {
-    LOG.info("#TrainSample=" + dataBlock.getTotalElemNum)
+    LOG.info("#TrainSample=" + trainDataBlock.size)
 
     val learner = new KMeansLearner(ctx)
-    dataBlock.shuffle()
-    learner.train(dataBlock, null)
+    trainDataBlock.shuffle()
+    learner.train(trainDataBlock, null)
 
   }
 }

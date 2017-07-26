@@ -88,6 +88,12 @@ public class DenseDoubleVector extends TDoubleVector {
       norm += values[i] * values[i];
   }
 
+  @Override
+  public TDoubleVector add(int index, double delt) {
+    values[index] += delt;
+    return this;
+  }
+
   /**
    * clear the vector
    */

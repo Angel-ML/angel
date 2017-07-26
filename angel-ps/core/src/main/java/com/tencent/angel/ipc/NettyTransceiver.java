@@ -23,8 +23,7 @@ package com.tencent.angel.ipc;
 
 import com.google.protobuf.Message;
 import com.google.protobuf.Message.Builder;
-import com.tencent.angel.conf.AngelConfiguration;
-import com.tencent.angel.conf.TConstants;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.RemoteException;
 import com.tencent.angel.exception.StandbyException;
 import com.tencent.angel.ipc.NettyTransportCodec.NettyDataPack;
@@ -61,7 +60,7 @@ public class NettyTransceiver extends Transceiver {
 
   private final AtomicInteger serialGenerator = new AtomicInteger(0);
   private final Map<Integer, Callback<List<ByteBuffer>>> requests =
-      new ConcurrentHashMap<Integer, Callback<List<ByteBuffer>>>();
+          new ConcurrentHashMap<Integer, Callback<List<ByteBuffer>>>();
 
   private final int connectTimeoutMillis;
   private final Bootstrap bootstrap;
@@ -76,39 +75,39 @@ public class NettyTransceiver extends Transceiver {
   private Configuration conf;
 
   public NettyTransceiver(
-      Configuration conf,
-      InetSocketAddress addr,
-      EventLoopGroup workerGroup,
-      PooledByteBufAllocator pooledAllocator,
-      Class<? extends Channel> socketChannelClass,
-      int connectTimeoutMillis) throws IOException {
+          Configuration conf,
+          InetSocketAddress addr,
+          EventLoopGroup workerGroup,
+          PooledByteBufAllocator pooledAllocator,
+          Class<? extends Channel> socketChannelClass,
+          int connectTimeoutMillis) throws IOException {
     this.conf = conf;
     this.connectTimeoutMillis = connectTimeoutMillis;
 
     bootstrap = new Bootstrap();
     bootstrap
-        .group(workerGroup)
-        .channel(socketChannelClass)
-        // Disable Nagle's Algorithm since we don't want packets to wait
-        .option(ChannelOption.TCP_NODELAY, true)
-        .option(ChannelOption.SO_KEEPALIVE, true)
-        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeoutMillis)
-        .option(ChannelOption.ALLOCATOR, pooledAllocator);
+            .group(workerGroup)
+            .channel(socketChannelClass)
+            // Disable Nagle's Algorithm since we don't want packets to wait
+            .option(ChannelOption.TCP_NODELAY, true)
+            .option(ChannelOption.SO_KEEPALIVE, true)
+            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeoutMillis)
+            .option(ChannelOption.ALLOCATOR, pooledAllocator);
 
     // Configure the event pipeline factory.
     bootstrap.handler(new ChannelInitializer<SocketChannel>() {
       @Override
       protected void initChannel(SocketChannel ch) throws Exception {
         ch.pipeline()
-            .addLast("encoder", NettyFrameEncoder.INSTANCE)
-            .addLast("frameDecoder", NettyUtils.createFrameDecoder())
-            .addLast("decoder", NettyFrameDecoder.INSTANCE)
-            .addLast(
-                "readTimeout",
-                new ReadTimeoutHandler(NettyTransceiver.this.conf.getInt(
-                    TConstants.CONNECTION_READ_TIMEOUT_SEC,
-                    TConstants.DEFAULT_CONNECTION_READ_TIMEOUT_SEC)))
-            .addLast("handler", new MLClientMLHandler());
+                .addLast("encoder", NettyFrameEncoder.INSTANCE)
+                .addLast("frameDecoder", NettyUtils.createFrameDecoder())
+                .addLast("decoder", NettyFrameDecoder.INSTANCE)
+                .addLast(
+                        "readTimeout",
+                        new ReadTimeoutHandler(NettyTransceiver.this.conf.getInt(
+                                AngelConf.CONNECTION_READ_TIMEOUT_SEC,
+                                AngelConf.DEFAULT_CONNECTION_READ_TIMEOUT_SEC)))
+                .addLast("handler", new MLClientMLHandler());
       }
     });
     remoteAddr = addr;
@@ -182,10 +181,10 @@ public class NettyTransceiver extends Transceiver {
    *        all Callbacks.
    */
   private synchronized void disconnect(
-      Channel channel,
-      boolean awaitCompletion,
-      boolean cancelPendingRequests,
-      Throwable cause) {
+          Channel channel,
+          boolean awaitCompletion,
+          boolean cancelPendingRequests,
+          Throwable cause) {
     if (LOG.isDebugEnabled()) {
       LOG.debug("disconnecting channel: " + channel);
     }
@@ -205,7 +204,7 @@ public class NettyTransceiver extends Transceiver {
     if (channel != null) {
       if (cause != null) {
         LOG.debug("Disconnect {} due to {}", channel,
-            cause.getClass().getName() + cause.getMessage());
+                cause.getClass().getName() + cause.getMessage());
       } else {
         if (LOG.isDebugEnabled()) {
           LOG.debug("Disconnect {}", this.channel);
@@ -229,7 +228,7 @@ public class NettyTransceiver extends Transceiver {
       }
       for (Callback<List<ByteBuffer>> request : requestsToCancel.values()) {
         request.handleError(cause != null ? cause : new IOException(getClass().getSimpleName()
-            + " closed"));
+                + " closed"));
       }
     }
 
@@ -290,7 +289,7 @@ public class NettyTransceiver extends Transceiver {
    * remote code threw an exception.
    */
   public Message call(RpcRequestBody requestBody, Class<? extends VersionedProtocol> protocol,
-      int rpcTimeout, Callback<Message> callback) throws Exception {
+                      int rpcTimeout, Callback<Message> callback) throws Exception {
     ConnectionHeader.Builder builder = ConnectionHeader.newBuilder();
     builder.setProtocol(protocol == null ? "" : protocol.getName());
     ConnectionHeader connectionHeader = builder.build();
@@ -312,12 +311,12 @@ public class NettyTransceiver extends Transceiver {
 
     if (callback == null) {
       try {
-        return future.get(conf.getLong(AngelConfiguration.ANGEL_READ_TIMEOUT_SEC,
-            AngelConfiguration.DEFAULT_ANGEL_READ_TIMEOUT_SEC), TimeUnit.SECONDS);
+        return future.get(conf.getLong(AngelConf.ANGEL_READ_TIMEOUT_SEC,
+                AngelConf.DEFAULT_ANGEL_READ_TIMEOUT_SEC), TimeUnit.SECONDS);
       } catch (java.util.concurrent.TimeoutException e) {
         if (LOG.isDebugEnabled()) {
           LOG.debug("timeout for: send message, " + requestBody.getMethodName() + " , channel: "
-              + channel);
+                  + channel);
         }
         disconnect(this.channel, true, true, e);
         throw e;
@@ -386,7 +385,7 @@ public class NettyTransceiver extends Transceiver {
      * @param callback the callback to set.
      */
     public TransceiverCallback(RpcRequestBody requestBody,
-        Class<? extends VersionedProtocol> protocol, Callback<T> callback) {
+                               Class<? extends VersionedProtocol> protocol, Callback<T> callback) {
       this.requestBody = requestBody;
       this.protocol = protocol;
       this.callback = callback;
@@ -415,8 +414,8 @@ public class NettyTransceiver extends Transceiver {
           Message rpcResponseType;
           try {
             rpcResponseType =
-                ProtobufRpcEngine.Invoker.getReturnProtoType(ProtobufRpcEngine.Server.getMethod(
-                    protocol, requestBody.getMethodName()));
+                    ProtobufRpcEngine.Invoker.getReturnProtoType(ProtobufRpcEngine.Server.getMethod(
+                            protocol, requestBody.getMethodName()));
           } catch (Exception e) {
             throw new RuntimeException(e); // local exception
           }
@@ -480,7 +479,7 @@ public class NettyTransceiver extends Transceiver {
       NettyDataPack dataPack = (NettyDataPack) request;
       if (LOG.isDebugEnabled()) {
         LOG.debug("messageReceived, serail: " + dataPack.getSerial() + ", channel: "
-            + ctx.channel());
+                + ctx.channel());
       }
 
       // LOG.info("method " + dataPack.getSerial() + " received ts = " +
@@ -489,7 +488,7 @@ public class NettyTransceiver extends Transceiver {
       Callback<List<ByteBuffer>> callback = requests.get(dataPack.getSerial());
       if (callback == null) {
         LOG.error("Missing previous call info, serail: " + dataPack.getSerial() + ", channel: "
-            + ctx.channel());
+                + ctx.channel());
         throw new RuntimeException("Missing previous call info");
       }
       try {

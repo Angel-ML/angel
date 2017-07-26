@@ -39,14 +39,14 @@ class LinearRegPredictTask(val ctx: TaskContext) extends TrainTask[LongWritable,
   @throws[Exception]
   def train(ctx: TaskContext) {
     // LinearReg model, parameters set by conf, PS load weight vector form hdfs before this task runs.
-    val lrmodel = new LinearRegModel(ctx,conf)
+    val lrmodel = new LinearRegModel(conf, ctx)
 
     // Pull LinearReg weight vector from PS which is save in lrmodel.localWeight
     lrmodel.weight.getRow(0);
 
     // Predict the input dataset and save the result
-    val predictResult = lrmodel.predict(dataBlock)
-    System.out.println("predict storage.len=" + predictResult.getTotalElemNum)
+    val predictResult = lrmodel.predict(trainDataBlock)
+    System.out.println("predict storage.len=" + predictResult.size)
 
     HdfsUtil.writeStorage(predictResult, ctx)
   }

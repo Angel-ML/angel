@@ -21,9 +21,10 @@ import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.TDoubleVector
+import com.tencent.angel.ml.metric.log.LossMetric
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.optimizer.sgd.{GradientDescent, L2HingeLoss}
-import com.tencent.angel.ml.utils.{DistributedLogger, ValidationUtils}
+import com.tencent.angel.ml.utils.ValidationUtils
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
@@ -45,15 +46,11 @@ class SVMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   val spRatio: Double = conf.getDouble(MLConf.ML_BATCH_SAMPLE_Ratio, MLConf.DEFAULT_ML_BATCH_SAMPLE_Ratio)
   val batchNum: Int = conf.getInt(MLConf.ML_SGD_BATCH_NUM, MLConf.DEFAULT_ML_SGD_BATCH_NUM)
 
-  val svmModel = new SVMModel(ctx, conf)
+  val svmModel = new SVMModel(conf, ctx)
   val weight:PSModel[TDoubleVector] = svmModel.weight
 
   // SVM used hing loss
   val hingeLoss = new L2HingeLoss(reg)
-
-  // Logger to save logs on HDFS
-  val logger = DistributedLogger(ctx)
-  logger.setNames("train.loss", "validate.loss", "global.validate.loss")
 
 
   /**
@@ -75,8 +72,7 @@ class SVMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     val localW = ret._2
 
     val GDcost = System.currentTimeMillis() - startGD
-    LOG.info(s"Task[${ctx.getTaskIndex}] epoch=$epoch mini-batch update cost$GDcost ms. batch " +
-      s"loss=$loss")
+    LOG.info(s"Task[${ctx.getTaskIndex}] epoch=$epoch mini-batch update cost$GDcost ms. loss=$loss")
 
     localW
   }
@@ -89,15 +85,18 @@ class SVMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     */
   override def train(trainData: DataBlock[LabeledData], validationData: DataBlock[LabeledData]):
   MLModel = {
-    val trainSampNum = (trainData.getTotalElemNum * spRatio).toInt
+    val trainSampNum = (trainData.size * spRatio).toInt
     val batchSize = trainSampNum / batchNum
 
     LOG.info(s"Task[${ctx.getTaskIndex}] start SVM learner. #feature=$feaNum, "
-      + s"#trainSample=${trainData.getTotalElemNum}, #validateSample=${validationData.getTotalElemNum}, "
+      + s"#trainSample=${trainData.size}, #validateSample=${validationData.size}, "
       + s"sampleRaitoPerBatch=$spRatio, #samplePerBatch=$trainSampNum")
 
     LOG.info(s"Task[${ctx.getTaskIndex}] #epoch=$epochNum, initLearnRate=$initLearnRate, " +
       s"learnRateDecay=$decay, L2Reg=$reg")
+
+    globalMetrics.addMetrics(MLConf.TRAIN_LOSS, LossMetric(trainData.size))
+    globalMetrics.addMetrics(MLConf.VALID_LOSS, LossMetric(validationData.size))
 
     while (ctx.getIteration < epochNum) {
       val epoch = ctx.getIteration
@@ -117,7 +116,6 @@ class SVMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       ctx.incIteration()
     }
 
-    logger.close()
     svmModel
   }
 
@@ -125,20 +123,22 @@ class SVMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     * validate loss, Auc, Precision or other
     *
     * @param epoch          : epoch id
-    * @param validationData : validata data storage
+    * @param valiData : validata data storage
     */
-  def validate(epoch: Int, weight:TDoubleVector, trainData:DataBlock[LabeledData], validationData:
+  def validate(epoch: Int, weight:TDoubleVector, trainData:DataBlock[LabeledData], valiData:
     DataBlock[LabeledData]) = {
-    val trainMerics = ValidationUtils.calMetrics(trainData, weight, hingeLoss)
-    LOG.info(s"Task[${ctx.getTaskIndex}] epoch=$epoch trainData loss=${trainMerics._1} " +
-      s"precision=${trainMerics._2} auc=${trainMerics._3} trueRecall=${trainMerics._4} " +
-      s"falseRecall=${trainMerics._5}")
+    val trainMetrics = ValidationUtils.calMetrics(trainData, weight, hingeLoss)
+    LOG.info(s"Task[${ctx.getTaskIndex}] epoch=$epoch trainData loss=${trainMetrics._1 / trainData.size()} " +
+      s"precision=${trainMetrics._2} auc=${trainMetrics._3} trueRecall=${trainMetrics._4} " +
+      s"falseRecall=${trainMetrics._5}")
+    globalMetrics.metrics(MLConf.TRAIN_LOSS, trainMetrics._1)
 
-    if (validationData.getTotalElemNum > 0) {
-      val valiMetric = ValidationUtils.calMetrics(validationData, weight, hingeLoss);
-      LOG.info(s"Task[${ctx.getTaskIndex}] epoch=$epoch validationData loss=${valiMetric._1} " +
-        s"precision=${valiMetric._2} auc=${valiMetric._3} trueRecall=${valiMetric._4} " +
+    if (valiData.size > 0) {
+      val valiMetric = ValidationUtils.calMetrics(valiData, weight, hingeLoss);
+      LOG.info(s"Task[${ctx.getTaskIndex}] epoch=$epoch validationData loss=${valiMetric._1 /
+        valiData.size()}" + s"precision=${valiMetric._2} auc=${valiMetric._3} trueRecall=${valiMetric._4} " +
         s"falseRecall=${valiMetric._5}")
+      globalMetrics.metrics(MLConf.VALID_LOSS, valiMetric._1)
     }
   }
 }

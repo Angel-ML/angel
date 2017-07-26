@@ -16,7 +16,7 @@
 
 package com.tencent.angel.master.yarn.util;
 
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.worker.WorkerAttemptId;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -46,20 +46,20 @@ public class WorkerJVM {
 
   private static String getChildEnv(Configuration jobConf) {
 
-    return jobConf.get(AngelConfiguration.ANGEL_WORKER_ENV,
-        AngelConfiguration.DEFAULT_ANGEL_WORK_ENV);
+    return jobConf.get(AngelConf.ANGEL_WORKER_ENV,
+        AngelConf.DEFAULT_ANGEL_WORK_ENV);
   }
 
   private static String getChildLogLevel(Configuration conf) {
-    return conf.get(AngelConfiguration.ANGEL_WORKER_LOG_LEVEL,
-        AngelConfiguration.DEFAULT_ANGEL_WORKER_LOG_LEVEL);
+    return conf.get(AngelConf.ANGEL_WORKER_LOG_LEVEL,
+        AngelConf.DEFAULT_ANGEL_WORKER_LOG_LEVEL);
   }
 
   private static String generateDefaultJVMParameters(Configuration conf, ApplicationId appid,
       WorkerAttemptId workerAttemptId) {
     int workerMemSizeInMB =
-        conf.getInt(AngelConfiguration.ANGEL_WORKER_MEMORY_GB,
-            AngelConfiguration.DEFAULT_ANGEL_WORKER_MEMORY_GB) * 1024;
+        conf.getInt(AngelConf.ANGEL_WORKER_MEMORY_GB,
+            AngelConf.DEFAULT_ANGEL_WORKER_MEMORY_GB) * 1024;
 
     int heapMax = workerMemSizeInMB - 200;
     int youngRegionSize = (int) (heapMax * 0.4);
@@ -121,7 +121,7 @@ public class WorkerJVM {
   private static String getChildJavaOpts(Configuration jobConf, ApplicationId appid,
       WorkerAttemptId workerAttemptId) {
     String userOpts = null;
-    userOpts = jobConf.get(AngelConfiguration.ANGEL_WORKER_JAVA_OPTS);
+    userOpts = jobConf.get(AngelConf.ANGEL_WORKER_JAVA_OPTS);
     if (userOpts == null) {
       userOpts = generateDefaultJVMParameters(jobConf, appid, workerAttemptId);
     }
@@ -163,8 +163,8 @@ public class WorkerJVM {
 
     // Add main class and its arguments
     String workerClassName =
-        conf.get(AngelConfiguration.ANGEL_WORKER_CLASS,
-            AngelConfiguration.DEFAULT_ANGEL_WORKER_CLASS);
+        conf.get(AngelConf.ANGEL_WORKER_CLASS,
+            AngelConf.DEFAULT_ANGEL_WORKER_CLASS);
     vargs.add(workerClassName);
 
     vargs.add("1>" + getTaskLogFile(TaskLog.LogName.STDOUT));

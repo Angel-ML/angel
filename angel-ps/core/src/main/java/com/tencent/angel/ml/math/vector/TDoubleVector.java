@@ -24,4 +24,6 @@ public abstract class TDoubleVector extends TVector {
 
   public abstract TDoubleVector clone();
 
+  public abstract TDoubleVector add(int index, double delt );
+
 }

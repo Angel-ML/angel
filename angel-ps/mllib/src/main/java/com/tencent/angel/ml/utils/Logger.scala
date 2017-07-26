@@ -17,17 +17,18 @@
 
 package com.tencent.angel.ml.utils
 
+import java.io.IOException
 import java.util
-import java.util.function.ToIntFunction
-import java.util.{Comparator, Map}
 
-import com.tencent.angel.conf.AngelConfiguration
-import com.tencent.angel.exception.AngelException
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.worker.task.TaskContext
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList
+import org.apache.commons.logging.{Log, LogFactory}
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FSDataOutputStream, FileSystem, Path}
+import org.apache.hadoop.hdfs.DFSConfigKeys
 
-import scala.collection.JavaConversions._
+import scala.collection.mutable
 
 /**
   * A Algorithm friendly log to print Metrics, such as Loss, Auc... turing training process
@@ -38,6 +39,8 @@ import scala.collection.JavaConversions._
   */
 
 trait Logger {
+  def LOG_FORMAT = "%10.6e"
+
   val _names = new util.ArrayList[String]()
   val _values = new util.HashMap[String, DoubleArrayList]()
 
@@ -49,101 +52,103 @@ trait Logger {
 
 }
 
-class ConsoleLogger extends Logger {
+class DistributeLog(conf: Configuration) extends Logger{
+  val LOG: Log = LogFactory.getLog(classOf[DistributeLog])
+  /** Index name list */
+  private var names: util.List[String] = null
+  /** File output stream */
+  private var outputStream: FSDataOutputStream = null
 
-}
 
-class DistributedLogger(ctx: TaskContext) extends Logger {
-  var form = "%10.6e"
-
-  val conf = ctx.getConf
-  val pathStr = conf.get(AngelConfiguration.ANGEL_LOG_PATH)
-
-  if (pathStr == null) {
-    throw new AngelException("log directory is null. you must set " + AngelConfiguration
-      .ANGEL_SAVE_MODEL_PATH )
-  }
-
-  val path = new Path(pathStr + "/log_" + ctx.getTaskIndex.toString)
-  var fs: FileSystem = path.getFileSystem(conf)
-  if (fs.exists(path)) {
-    fs.delete(path, true)
-  }
-
-  var out: FSDataOutputStream = fs.create(path, true)
-
-  var closed = false
-
-  override
-  def setNames(names: String*): Unit = {
-    for (name <- names.toArray) {
-      _names.add(name)
-      _values.put(name, new DoubleArrayList)
-      out.writeBytes(name + "\t")
+  /**
+    * Init
+    *
+    * @throws IOException
+    */
+  @throws(classOf[IOException])
+  def init {
+    val flushLen: Int = conf.getInt(AngelConf.ANGEL_LOG_FLUSH_MIN_SIZE, AngelConf.DEFAULT_ANGEL_LOG_FLUSH_MIN_SIZE)
+    conf.setInt(DFSConfigKeys.DFS_CLIENT_WRITE_PACKET_SIZE_KEY, flushLen)
+    conf.setInt(DFSConfigKeys.DFS_BYTES_PER_CHECKSUM_KEY, flushLen)
+    val pathStr: String = conf.get(AngelConf.ANGEL_LOG_PATH)
+    if (pathStr == null) {
+      throw new IOException("log directory is null. you must set " + AngelConf.ANGEL_LOG_PATH)
     }
-    out.writeBytes("\n")
+    LOG.info("algorithm log output directory=" + pathStr)
+    val path: Path = new Path(pathStr + "/log")
+    val fs: FileSystem = path.getFileSystem(conf)
+    if (fs.exists(path)) {
+      fs.delete(path, true)
+    }
+    outputStream = fs.create(path, true)
   }
 
-  override
-  def addValues(values: Double*): Unit = {
-    assert(values.size == _names.size())
-    for (v <- values) {
-      out.writeBytes(form.format(v) + "\t")
+  /**
+    * Write the index names to file
+    *
+    * @param names index name list
+    * @throws IOException
+    */
+  @throws(classOf[IOException])
+  def setNames(names: util.List[String]) {
+    this.names = names
+    import scala.collection.JavaConversions._
+    for (name <- names) {
+      outputStream.write((name + "\t").getBytes)
     }
-    out.writeBytes("\n")
+    outputStream.writeBytes("\n")
+    outputStream.hflush
   }
 
-  override
-  def add(nameValues: (String, Double)*): Unit = {
-    for ((n, v) <- nameValues) {
-      _values.get(n).add(v)
+  /**
+    * Write index values to file
+    *
+    * @param values index name to value map
+    * @throws IOException
+    */
+  @throws(classOf[IOException])
+  def writeLog(values: mutable.Map[String, Double]) {
+    for (v <- values.values) {
+      outputStream.write((v + "\t").getBytes())
     }
-    val longest = _values.entrySet().stream().sorted(Comparator.comparingInt(
-      new ToIntFunction[Map.Entry[String, DoubleArrayList]]() {
-        override def applyAsInt(value: Map.Entry[String, DoubleArrayList]): Int = {
-          value.getValue.size()
-        }
-      }).reversed()).findFirst().get().getKey
-
-    for (i <- 0 until _values.get(longest).size()) {
-      for (name <- _names.toArray()) {
-        val _value = _values.get(name);
-        val v = if (!_value.isEmpty && _value.size() > i) _value.getDouble(i) else 0.0d
-        out.writeBytes(form.format(v) + "\t")
-      }
-      out.writeBytes("\n")
-    }
-    _values.clear()
+    outputStream.writeBytes("\n")
+    outputStream.hflush
   }
 
-
-  def close(): Unit = {
-    if (!closed) {
-      out.close()
-      fs = null
-      out = null
-      closed = true
+  /**
+    * Close file writter
+    *
+    * @throws IOException
+    */
+  @throws(classOf[IOException])
+  def close {
+    if (outputStream != null) {
+      outputStream.close
     }
   }
 }
 
+object DistributedLog {
+  val loggers = mutable.MutableList.empty[DistributeLog]
+  def apply(ctx: TaskContext) = {
+    val logger = new DistributeLog(ctx.getConf)
+    loggers += logger
+    logger
+  }
 
-object DistributedLogger {
-  val loggers = new util.ArrayList[DistributedLogger]()
+  def shutdownLogger = {
+    for (logger: DistributeLog <- loggers) {
+      logger.close
+    }
+  }
 
   {
     sys.addShutdownHook(shutdownLogger)
   }
 
-  def shutdownLogger = {
-    for (logger: DistributedLogger <- loggers) {
-      logger.close
-    }
-  }
-
-  def apply(ctx: TaskContext) = {
-    val logger = new DistributedLogger(ctx)
-    loggers.add(logger)
-    logger
-  }
 }
+
+class ConsoleLogger extends Logger {
+
+}
+

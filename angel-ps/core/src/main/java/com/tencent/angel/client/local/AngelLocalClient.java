@@ -18,6 +18,7 @@ package com.tencent.angel.client.local;
 
 import java.util.Random;
 
+import com.tencent.angel.conf.AngelConf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -25,7 +26,6 @@ import org.apache.hadoop.yarn.api.records.ApplicationId;
 
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.client.AngelClient;
-import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.ipc.TConnectionManager;
@@ -129,7 +129,7 @@ public class AngelLocalClient extends AngelClient {
       cluster = new LocalCluster(conf, appId);
       cluster.start();
       updateMaster(Integer.MAX_VALUE);
-      waitForAllPS(conf.getInt(AngelConfiguration.ANGEL_PS_NUMBER, AngelConfiguration.DEFAULT_ANGEL_PS_NUMBER));
+      waitForAllPS(conf.getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER));
       LOG.info("start ps success");
     } catch (Exception x) {
       LOG.error("start application failed.", x);

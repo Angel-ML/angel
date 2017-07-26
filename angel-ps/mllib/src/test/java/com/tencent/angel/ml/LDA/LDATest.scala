@@ -18,7 +18,7 @@
 package com.tencent.angel.ml.LDA
 
 import com.tencent.angel.client.{AngelClient, AngelClientFactory}
-import com.tencent.angel.conf.AngelConfiguration
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.lda.LDAModel._
 import com.tencent.angel.ml.lda.{LDAModel, LDATrainTask}
@@ -47,22 +47,22 @@ class LDATest {
 
     // Set basic configuration keys
     conf.setBoolean("mapred.mapper.new-api", true)
-    conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS, classOf[LDATrainTask].getName)
+    conf.set(AngelConf.ANGEL_TASK_USER_TASKCLASS, classOf[LDATrainTask].getName)
 
     // Use local deploy mode
-    conf.set(AngelConfiguration.ANGEL_DEPLOY_MODE, "LOCAL")
+    conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL")
 
     // Set input and output path
-    conf.setBoolean(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true)
-    conf.set(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS, classOf[CombineTextInputFormat].getName)
-    conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, inputPath)
-    conf.set(AngelConfiguration.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/LOG/ldalog")
-    conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/out")
+    conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true)
+    conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, classOf[CombineTextInputFormat].getName)
+    conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath)
+    conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/LOG/ldalog")
+    conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/out")
 
     // Set angel resource parameters #worker, #task, #PS
-    conf.setInt(AngelConfiguration.ANGEL_WORKERGROUP_NUMBER, 1)
-    conf.setInt(AngelConfiguration.ANGEL_WORKER_TASK_NUMBER, 1)
-    conf.setInt(AngelConfiguration.ANGEL_PS_NUMBER, 1)
+    conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1)
+    conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1)
+    conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1)
 
     conf.set("angel.task.user.task.class", classOf[LDATrainTask].getName)
 

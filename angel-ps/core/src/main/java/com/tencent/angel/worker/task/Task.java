@@ -16,7 +16,7 @@
 
 package com.tencent.angel.worker.task;
 
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.worker.WorkerContext;
 
 import org.apache.commons.logging.Log;
@@ -31,7 +31,7 @@ import java.util.List;
 
 /**
  * Task is the calculation unit of Angel Application, run on {@link com.tencent.angel.worker.Worker} at background as Thread.
- * And will reflect to invoke user special task which inherited by {@link BaseTask}({@link AngelConfiguration#ANGEL_TASK_USER_TASKCLASS})
+ * And will reflect to invoke user special task which inherited by {@link BaseTask}({@link AngelConf#ANGEL_TASK_USER_TASKCLASS})
  *
  */
 public class Task extends Thread {
@@ -61,8 +61,8 @@ public class Task extends Thread {
     LOG.info("task " + taskId + " is running.");
     try {
       userTaskClass =
-          conf.getClassByName(conf.get(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS,
-              AngelConfiguration.DEFAULT_ANGEL_TASK_USER_TASKCLASS));    
+          conf.getClassByName(conf.get(AngelConf.ANGEL_TASK_USER_TASKCLASS,
+              AngelConf.DEFAULT_ANGEL_TASK_USER_TASKCLASS));
       LOG.info("userTaskClass = " + userTaskClass);
 
       BaseTask userTask = newBaseTask(userTaskClass);

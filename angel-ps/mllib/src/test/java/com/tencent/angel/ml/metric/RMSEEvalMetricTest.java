@@ -25,8 +25,8 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public class RMSEEvalMetricTest {
-  private static final Log LOG = LogFactory.getLog(RmseMetric.class);
-  private RmseMetric rmseMetric = new RmseMetric();
+  private static final Log LOG = LogFactory.getLog(RMSEEvalMetricTest.class);
+  private RMSEMetric rmseMetric = new RMSEMetric();
   static {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }

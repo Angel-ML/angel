@@ -76,14 +76,6 @@ class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Te
     ctx.globalSync(lDAModel.tMat.getMatrixId)
     ctx.globalSync(lDAModel.wtMat.getMatrixId)
 
-    val llh = lDALearner.loglikelihood()
-    val update = new DenseDoubleVector(lDAModel.epoch + 1)
-    update.set(0, llh)
-    lDAModel.llh.increment(0, update)
-    lDAModel.llh.clock().get()
-    val globalLLh = lDAModel.llh.getRow(0).get(0)
-    LOG.info(s"epoch=0 localllh=$llh globalllh=$globalLLh")
-
     ctx.incIteration()
 
     // Training

@@ -110,6 +110,25 @@ message TaskIterationResponse {
 
 }
 
+message TaskCounterUpdateRequest {
+  required TaskIdProto taskId = 1;
+  repeated Pair counters = 2;
+}
+
+message TaskCountersUpdateResponse {
+}
+
+message AlgoMetric {
+  required string name = 1;
+  required bytes serializedMetric = 2;
+}
+message SetAlgoMetricsRequest {
+  required TaskIdProto taskId = 1;
+  repeated AlgoMetric algoMetrics = 2;
+}
+
+message SetAlgoMetricsResponse {
+}
 
 service PSAgentMasterService {
   rpc psAgentReport(PSAgentReportRequest) returns (PSAgentReportResponse);	
@@ -125,4 +144,6 @@ service PSAgentMasterService {
   rpc releaseMatrix(ReleaseMatrixRequest) returns (ReleaseMatrixResponse);
   rpc taskClock(TaskClockRequest) returns (TaskClockResponse);
   rpc taskIteration(TaskIterationRequest) returns(TaskIterationResponse);
+  rpc taskCountersUpdate(TaskCounterUpdateRequest) returns (TaskCountersUpdateResponse);
+  rpc setAlgoMetrics(SetAlgoMetricsRequest) returns (SetAlgoMetricsResponse);
 }

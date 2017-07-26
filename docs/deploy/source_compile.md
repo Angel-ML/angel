@@ -18,10 +18,6 @@
 	```mvn clean package -Dmaven.test.skip=true```
 
 	编译完成后，在源码根目录`dist/target`目录下会生成一个发布包：`angel-1.0.0-bin.zip`
-	
-	也可以指定Hadoop和Protobuf的版本，比如：
-	
-	```mvn clean package -Dmaven.test.skip=true -Dhadoop-version=2.7.2 -Dprotobuf.version=2.5.0```
 
 4. **发布包**
 

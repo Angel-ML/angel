@@ -44,7 +44,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.tencent.angel.common.Id;
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.*;
 import com.tencent.angel.master.deploy.ContainerAllocator;
 import com.tencent.angel.master.deploy.ContainerAllocatorEvent;
@@ -187,8 +187,8 @@ public class YarnContainerAllocator extends ContainerAllocator {
   protected void serviceInit(Configuration conf) throws Exception {
     this.amRmProtocol = ClientRMProxy.createRMProxy(getConfig(), ApplicationMasterProtocol.class);
     this.rmPollInterval =
-        conf.getInt(AngelConfiguration.ANGEL_AM_HEARTBEAT_INTERVAL_MS,
-            AngelConfiguration.DEFAULT_ANGEL_AM_HEARTBEAT_INTERVAL_MS);
+        conf.getInt(AngelConf.ANGEL_AM_HEARTBEAT_INTERVAL_MS,
+            AngelConf.DEFAULT_ANGEL_AM_HEARTBEAT_INTERVAL_MS);
     RackResolver.init(conf);
     super.serviceInit(conf);
   }

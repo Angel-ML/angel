@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import com.tencent.angel.conf.AngelConf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -36,7 +37,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.service.AbstractService;
 
-import com.tencent.angel.conf.AngelConfiguration;
 import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.master.MatrixMetaManager;
 import com.tencent.angel.master.app.AMContext;
@@ -112,8 +112,8 @@ public class AppStateStorage extends AbstractService {
     psMetaLock = new ReentrantLock();
     
     writeIntervalMS = context.getConf().getInt(
-        AngelConfiguration.ANGEL_AM_WRITE_STATE_INTERVAL_MS, 
-        AngelConfiguration.DEFAULT_ANGEL_AM_WRITE_STATE_INTERVAL_MS);
+        AngelConf.ANGEL_AM_WRITE_STATE_INTERVAL_MS,
+        AngelConf.DEFAULT_ANGEL_AM_WRITE_STATE_INTERVAL_MS);
     this.stopped = new AtomicBoolean(false);
   }
 
@@ -312,10 +312,9 @@ public class AppStateStorage extends AbstractService {
         //write task meta
         try {
           writeTaskMeta(context.getTaskManager());
-        } catch (Exception e) {
+        } catch (IOException e) {
           if(Thread.interrupted()) {
             LOG.warn("write task meta is interupted");
-            return;
           } else {
             LOG.error("write task meta file failed.", e);
           }
@@ -324,10 +323,9 @@ public class AppStateStorage extends AbstractService {
         //write ps meta
         try {
           writePSMeta(context.getParameterServerManager());
-        } catch (Exception e) {
+        } catch (IOException e) {
           if(Thread.interrupted()) {
             LOG.warn("write ps meta is interupted");
-            return;
           } else {
             LOG.error("write ps meta file failed.", e);
           }

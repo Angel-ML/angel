@@ -40,9 +40,10 @@ class SVMTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](c
   /**
     * @param ctx: task context
     */
+  override
   def train(ctx: TaskContext) {
     val trainer = new SVMLearner(ctx)
-    trainer.train(dataBlock, validDataStorage)
+    trainer.train(trainDataBlock, validDataStorage)
   }
 
   /**
@@ -74,11 +75,11 @@ class SVMTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](c
         if (count % valid == 0)
           validDataStorage.put(out)
         else
-          dataBlock.put(out)
+          trainDataBlock.put(out)
         count += 1
       }
     }
-    dataBlock.flush()
+    trainDataBlock.flush()
     validDataStorage.flush()
   }
 

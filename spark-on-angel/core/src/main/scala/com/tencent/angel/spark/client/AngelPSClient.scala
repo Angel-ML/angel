@@ -17,8 +17,6 @@
 
 package com.tencent.angel.spark.client
 
-import java.util.concurrent.ConcurrentHashMap
-
 import com.tencent.angel.ml.math.vector.DenseDoubleVector
 import com.tencent.angel.ml.matrix.psf.aggr._
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult
@@ -34,10 +32,7 @@ import com.tencent.angel.ml.matrix.psf.update.primitive.{Increment, Push}
 import com.tencent.angel.psagent.matrix.{MatrixClientFactory, ResponseType, Result}
 import com.tencent.angel.spark._
 import com.tencent.angel.spark.models.PSModelProxy
-import com.tencent.angel.spark.models.vector.{PSVector, RemotePSVector}
 import org.apache.spark.SparkException
-
-import scala.collection.mutable.ArrayBuffer
 
 /**
  * AngelPSClient is a Angel PS implement of PSClient. AngelPSClient builds a bridge between
@@ -45,23 +40,6 @@ import scala.collection.mutable.ArrayBuffer
  * Angel's operations.
  */
 private[spark] class AngelPSClient(psContext: PSContext) extends PSClient {
-
-  /**
-   * The mergeCache is used for increment/mergeMax/mergeMin of [[RemotePSVector]].
-   * Increment/mergeMax/mergeMin is called on the Spark Executors. In order to reduce the times of
-   * updating PS nodes, executors merge the update Vectors in local and flush the merged result to
-   * PS nodes after processing all data in one executor.
-   */
-  private val mergeCache = new ConcurrentHashMap[Int, ArrayBuffer[RemotePSVector]]()
-
-  private[spark] override def register(vector: PSVector): Unit = {
-    require(vector.isInstanceOf[RemotePSVector], "vector can only be RemotePSVector")
-    val taskId = PSContext.getTaskId()
-    if (!mergeCache.contains(taskId)) {
-      mergeCache.put(taskId, ArrayBuffer.empty)
-    }
-    mergeCache.get(taskId) += vector.asInstanceOf[RemotePSVector]
-  }
 
   protected def doPush(to: PSModelProxy, value: Array[Double]): Unit = {
     update(to.poolId, new Push(to.poolId, to.id, value))
@@ -315,15 +293,6 @@ private[spark] class AngelPSClient(psContext: PSContext) extends PSClient {
 
   protected def doMergeMin(vector: PSModelProxy, other: Array[Double]): Unit = {
     update(vector.poolId, new MinA(vector.poolId, vector.id, other))
-  }
-
-  override protected def doFlush(): Unit = {
-    val taskId = PSContext.getTaskId()
-    if (mergeCache.containsKey(taskId)) {
-      val buffer = mergeCache.get(taskId)
-      buffer.foreach(_.flush())
-      buffer.clear()
-    }
   }
 
   /**

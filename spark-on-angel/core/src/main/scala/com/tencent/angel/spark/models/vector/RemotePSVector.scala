@@ -259,17 +259,22 @@ object RemotePSVector {
     }
   }
 
-  def flush(): Unit = {
-    mergeCache.synchronized {
-      for (entry <- mergeCache.entrySet().asScala) {
-        val proxy = entry.getKey
-        val (mergeType, mergedArray) = entry.getValue
-        mergeType match {
-          case INCREMENT => PSClient().increment(proxy, mergedArray)
-          case MAX => PSClient().mergeMax(proxy, mergedArray)
-          case MIN => PSClient().mergeMin(proxy, mergedArray)
+  private[spark] def flush(): Unit = {
+    if (TaskContext.get() == null) { // run flush on driver
+      val sparkConf = SparkEnv.get.conf
+      val executorNum = sparkConf.getInt("spark.executor.instances", 1)
+      val core = sparkConf.getInt("spark.executor.cores", 1)
+      val totalTask = core * executorNum
+      val spark = SparkSession.builder().getOrCreate()
+      spark.sparkContext.range(0, totalTask, 1, totalTask)
+        .foreach { taskId =>
+          for (entry <- mergeCache.entrySet().asScala) {
+            RemotePSVector.flush(entry.getKey)
+          }
         }
-        mergeCache.remove(proxy)
+    } else { // run flush on executor
+      for (entry <- mergeCache.entrySet().asScala) {
+        RemotePSVector.flush(entry.getKey)
       }
     }
   }

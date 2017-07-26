@@ -17,8 +17,9 @@
 
 package com.tencent.angel.ml.lr
 
-import com.tencent.angel.conf.AngelConfiguration
-import com.tencent.angel.ml.classification.sparselr.{SparseLogisticRegressionRunner, SparseLogisticRegressionTask}
+import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.ml.classification.sparselr.{SparseLRRunner, SparseLRTask}
+import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.conf.MLConf._
 import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.hadoop.conf.Configuration
@@ -44,24 +45,24 @@ class SparseLRTest {
   def setup(): Unit = {
     // Set basic configuration keys
     conf.setBoolean("mapred.mapper.new-api", true)
-    conf.set(AngelConfiguration.ANGEL_TASK_USER_TASKCLASS, classOf[SparseLogisticRegressionTask].getName)
+    conf.set(AngelConf.ANGEL_TASK_USER_TASKCLASS, classOf[SparseLRTask].getName)
 
     // Use local deploy mode
-    conf.set(AngelConfiguration.ANGEL_DEPLOY_MODE, "LOCAL")
+    conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL")
 
     // Set input data format
-    conf.set(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS, classOf[CombineTextInputFormat].getName)
+    conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, classOf[CombineTextInputFormat].getName)
 
     // Set angel resource parameters #worker, #task, #PS
-    conf.setInt(AngelConfiguration.ANGEL_WORKERGROUP_NUMBER, 1)
-    conf.setInt(AngelConfiguration.ANGEL_WORKER_TASK_NUMBER, 1)
-    conf.setInt(AngelConfiguration.ANGEL_PS_NUMBER, 1)
+    conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1)
+    conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1)
+    conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1)
 
     // Set memory storage
-    conf.set(AngelConfiguration.ANGEL_TASK_DATA_STORAGE_LEVEL, "memory")
+    conf.set(AngelConf.ANGEL_TASK_DATA_STORAGE_LEVEL, "memory")
 
-    conf.set("angel.task.user.task.class", classOf[SparseLogisticRegressionTask].getName)
-    conf.setBoolean(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true)
+    conf.set("angel.task.user.task.class", classOf[SparseLRTask].getName)
+    conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true)
 
     // Feature number of train data
     val featureNum: Int = 124
@@ -71,23 +72,46 @@ class SparseLRTest {
     conf.setInt(ML_FEATURE_NUM, featureNum)
     conf.setInt(ML_EPOCH_NUM, epochNum)
     conf.setInt(ML_WORKER_THREAD_NUM, 4)
+    conf.set(ML_DATAFORMAT, "libsvm")
+
   }
 
   @Test
+  def testOnLocalCluster(): Unit= {
+    trainOnLocalClusterTest()
+    predictTest()
+  }
+
   def trainOnLocalClusterTest(): Unit = {
     val inputPath: String = "./src/test/data/lr/a9a.train_label";
 
     // Set training data path
-    conf.set(AngelConfiguration.ANGEL_TRAIN_DATA_PATH, inputPath)
+    conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath)
     // Set save model path
-    conf.set(AngelConfiguration.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model")
+    conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/admmlrmodel")
     // Set action type train
-    conf.set(AngelConfiguration.ANGEL_ACTION_TYPE, ANGEL_ML_TRAIN)
+    conf.set(AngelConf.ANGEL_ACTION_TYPE, ANGEL_ML_TRAIN)
 
-    conf.set(ML_DATAFORMAT, "libsvm")
-
-    val runner = new SparseLogisticRegressionRunner
+    val runner = new SparseLRRunner
     runner.train(conf)
+  }
+
+  def predictTest() {
+    val inputPath: String = "./src/test/data/lr/a9a.train_label"
+    val loadPath: String = LOCAL_FS + TMP_PATH + "admmlrmodel"
+    val predictPath: String = LOCAL_FS + TMP_PATH + "/ADMMLRpredict"
+
+    // Set trainning data path
+    conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath)
+    // Set load model path
+    conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, loadPath)
+    // Set predict result path
+    conf.set(AngelConf.ANGEL_PREDICT_PATH, predictPath)
+    // Set actionType prediction
+    conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT)
+
+    val runner= new SparseLRRunner
+    runner.predict(conf)
   }
 
 }

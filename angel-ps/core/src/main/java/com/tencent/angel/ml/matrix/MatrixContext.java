@@ -16,8 +16,8 @@
 
 package com.tencent.angel.ml.matrix;
 
-import com.tencent.angel.conf.AngelConfiguration;
-import com.tencent.angel.conf.MatrixConfiguration;
+import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.protobuf.generated.MLProtos.RowType;
@@ -252,7 +252,7 @@ public class MatrixContext {
    */
   public MLProtos.MatrixProto buildMatProto(Configuration conf) throws IOException {
     matrixId = idGenerator.incrementAndGet();
-    String loadPath = attributes.get(MatrixConfiguration.MATRIX_LOAD_PATH);
+    String loadPath = attributes.get(MatrixConf.MATRIX_LOAD_PATH);
     partitioner.init(this, conf);
     List<MLProtos.Partition> partitions;
     if (loadPath != null) {
@@ -340,7 +340,7 @@ public class MatrixContext {
     int hdfsRowNum = Integer.MIN_VALUE;
     int hdfsColNum = Integer.MIN_VALUE;
 
-    int psNum = conf.getInt(AngelConfiguration.ANGEL_PS_NUMBER, AngelConfiguration.DEFAULT_ANGEL_PS_NUMBER);
+    int psNum = conf.getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER);
 
     for (int i = 0; i < statuses.length; i ++) {
       FSDataInputStream in = fs.open(statuses[i].getPath());

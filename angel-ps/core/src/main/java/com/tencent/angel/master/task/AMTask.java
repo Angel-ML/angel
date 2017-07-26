@@ -178,7 +178,7 @@ public class AMTask {
         this.iteration = taskStateProto.getIteration();
       }
       updateMatrixClocks(taskStateProto.getMatrixClocksList());
-      updateCounters(taskStateProto.getCountersList());
+      updateMetrics(taskStateProto.getCountersList());
 
       if (taskStateProto.hasFinishTime()) {
         this.finishTime = taskStateProto.getFinishTime();
@@ -191,7 +191,16 @@ public class AMTask {
     }
   }
 
-  private void updateCounters(List<Pair> counters) {
+  public void updateCounters(List<Pair> counters) {
+    try {
+      writeLock.lock();
+      updateMetrics(counters);
+    } finally {
+      writeLock.unlock();
+    }
+  }
+
+  private void updateMetrics(List<Pair> counters) {
     int size = counters.size();
     for (int i = 0; i < size; i++) {
       metrics.put(counters.get(i).getKey(), counters.get(i).getValue());

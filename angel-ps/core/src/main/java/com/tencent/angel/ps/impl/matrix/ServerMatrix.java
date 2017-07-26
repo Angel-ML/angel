@@ -17,7 +17,7 @@
 package com.tencent.angel.ps.impl.matrix;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.conf.MatrixConfiguration;
+import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.protobuf.generated.MLProtos.Pair;
@@ -97,7 +97,7 @@ public class ServerMatrix {
    * @throws IOException read files error
    */
   public void loadPartitions() throws IOException {
-    String path = attribute.get(MatrixConfiguration.MATRIX_LOAD_PATH);
+    String path = attribute.get(MatrixConf.MATRIX_LOAD_PATH);
     if(path == null) {
       return;
     }

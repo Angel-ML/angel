@@ -47,13 +47,13 @@ class KMeansPredictTask (val ctx: TaskContext) extends TrainTask[LongWritable, T
   }
 
   override def train(taskContext: TaskContext): Unit = {
-    LOG.info("#PredictSample=" + dataBlock.getTotalElemNum)
+    LOG.info("#PredictSample=" + trainDataBlock.size)
 
-    val model = new KmeansModel(ctx, conf)
+    val model = new KMeansModel(conf, ctx)
 
     // Predict the input dataset and save the result
-    val predictResult = model.predict(dataBlock)
-    LOG.info("predict storage.len=" + predictResult.getTotalElemNum)
+    val predictResult = model.predict(trainDataBlock)
+    LOG.info("predict storage.len=" + predictResult.size)
 
     HdfsUtil.writeStorage(predictResult, ctx)
   }

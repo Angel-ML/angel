@@ -16,7 +16,7 @@
 
 package com.tencent.angel.master.data;
 
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.split.SplitClassification;
 import com.tencent.angel.utils.HdfsUtil;
@@ -73,7 +73,7 @@ public class DataSpliter {
   public Map<Integer, SplitClassification> generateSplits() throws IOException,
       InterruptedException, ClassNotFoundException {
     Configuration conf = context.getConf();
-    String trainDataPath = conf.get(AngelConfiguration.ANGEL_TRAIN_DATA_PATH);
+    String trainDataPath = conf.get(AngelConf.ANGEL_TRAIN_DATA_PATH);
     if (trainDataPath != null) {
       conf.set("mapreduce.input.fileinputformat.inputdir", trainDataPath);
     }
@@ -81,11 +81,11 @@ public class DataSpliter {
     // Calculate how many splits we need. As each task handles a separate split of data, so we want
     // the number of splits equal to the number of tasks
     int workergroupNumber =
-        conf.getInt(AngelConfiguration.ANGEL_WORKERGROUP_NUMBER,
-            AngelConfiguration.DEFAULT_ANGEL_WORKERGROUP_NUMBER);
+        conf.getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER,
+            AngelConf.DEFAULT_ANGEL_WORKERGROUP_NUMBER);
     int taskNumInWorker =
-        conf.getInt(AngelConfiguration.ANGEL_WORKER_TASK_NUMBER,
-            AngelConfiguration.DEFAULT_ANGEL_WORKER_TASK_NUMBER);
+        conf.getInt(AngelConf.ANGEL_WORKER_TASK_NUMBER,
+            AngelConf.DEFAULT_ANGEL_WORKER_TASK_NUMBER);
     int splitNum = workergroupNumber * taskNumInWorker;
     LOG.info("expected split number=" + splitNum);
 
@@ -126,7 +126,7 @@ public class DataSpliter {
 
   private List<org.apache.hadoop.mapreduce.InputSplit> generateSplitsUseNewAPI(Configuration conf,
       int expectedSplitNum) throws IOException, ClassNotFoundException, InterruptedException {
-    String jobIDStr = conf.get(AngelConfiguration.ANGEL_JOB_ID);
+    String jobIDStr = conf.get(AngelConf.ANGEL_JOB_ID);
     JobID jobID = JobID.forName(jobIDStr);
     JobContext jobConf = new JobContextImpl(new JobConf(conf), jobID);
 
@@ -145,8 +145,8 @@ public class DataSpliter {
 
     // get input format class from configuration and then instantiation a input format object
     String inputFormatClassName =
-        jobConf.getConfiguration().get(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS,
-            AngelConfiguration.DEFAULT_ANGEL_INPUTFORMAT_CLASS);
+        jobConf.getConfiguration().get(AngelConf.ANGEL_INPUTFORMAT_CLASS,
+            AngelConf.DEFAULT_ANGEL_INPUTFORMAT_CLASS);
     org.apache.hadoop.mapreduce.InputFormat<?, ?> input =
         (org.apache.hadoop.mapreduce.InputFormat<?, ?>) ReflectionUtils.newInstance(
             Class.forName(inputFormatClassName), conf);
@@ -171,8 +171,8 @@ public class DataSpliter {
 
     // get input format class from configuration and then instantiation a input format object
     String inputFormatClassName =
-        jobConf.get(AngelConfiguration.ANGEL_INPUTFORMAT_CLASS,
-            AngelConfiguration.DEFAULT_ANGEL_INPUTFORMAT_CLASS);
+        jobConf.get(AngelConf.ANGEL_INPUTFORMAT_CLASS,
+            AngelConf.DEFAULT_ANGEL_INPUTFORMAT_CLASS);
     InputFormat<?, ?> input =
         (InputFormat<?, ?>) ReflectionUtils.newInstance(Class.forName(inputFormatClassName), conf);
     LOG.debug("inputFormatClassName=" + inputFormatClassName);

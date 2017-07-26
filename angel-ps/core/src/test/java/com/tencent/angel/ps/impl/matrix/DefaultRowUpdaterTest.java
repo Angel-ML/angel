@@ -16,7 +16,7 @@
 
 package com.tencent.angel.ps.impl.matrix;
 
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
@@ -47,8 +47,8 @@ public class DefaultRowUpdaterTest {
     startCol = 0;
     endCol = 3;
     Configuration conf = new Configuration();
-    Class<?> rowUpdaterClass = conf.getClass(AngelConfiguration.ANGEL_PS_ROW_UPDATER_CLASS,
-        AngelConfiguration.DEFAULT_ANGEL_PS_ROW_UPDATER);
+    Class<?> rowUpdaterClass = conf.getClass(AngelConf.ANGEL_PS_ROW_UPDATER_CLASS,
+        AngelConf.DEFAULT_ANGEL_PS_ROW_UPDATER);
     rowUpdater = (RowUpdater) rowUpdaterClass.newInstance();
   }
 

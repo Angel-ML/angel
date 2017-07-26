@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.tencent.angel.conf.AngelConfiguration;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.app.AppEvent;
 import com.tencent.angel.master.app.AppEventType;
@@ -102,28 +102,28 @@ public class ParameterServerManager extends AbstractService implements
     this.context = context;
     this.psIdToAttemptIndexMap = psIdToAttemptIndexMap;
     Configuration conf = context.getConf();
-    String ipListStr = conf.get(AngelConfiguration.ANGEL_PS_IP_LIST);
+    String ipListStr = conf.get(AngelConf.ANGEL_PS_IP_LIST);
     if (ipListStr != null) {
       ips = ipListStr.split(",");
       psNumber = ips.length;
     } else {
       ips = null;
       psNumber =
-          conf.getInt(AngelConfiguration.ANGEL_PS_NUMBER,
-              AngelConfiguration.DEFAULT_ANGEL_PS_NUMBER);
+          conf.getInt(AngelConf.ANGEL_PS_NUMBER,
+              AngelConf.DEFAULT_ANGEL_PS_NUMBER);
     }
 
     int psServerMemory =
-        conf.getInt(AngelConfiguration.ANGEL_PS_MEMORY_GB,
-            AngelConfiguration.DEFAULT_ANGEL_PS_MEMORY_GB) * 1024;
+        conf.getInt(AngelConf.ANGEL_PS_MEMORY_GB,
+            AngelConf.DEFAULT_ANGEL_PS_MEMORY_GB) * 1024;
 
     int psServerVcores =
-        conf.getInt(AngelConfiguration.ANGEL_PS_CPU_VCORES,
-            AngelConfiguration.DEFAULT_ANGEL_PS_CPU_VCORES);
+        conf.getInt(AngelConf.ANGEL_PS_CPU_VCORES,
+            AngelConf.DEFAULT_ANGEL_PS_CPU_VCORES);
 
     int psPriority =
-        conf.getInt(AngelConfiguration.ANGEL_PS_PRIORITY,
-            AngelConfiguration.DEFAULT_ANGEL_PS_PRIORITY);
+        conf.getInt(AngelConf.ANGEL_PS_PRIORITY,
+            AngelConf.DEFAULT_ANGEL_PS_PRIORITY);
 
     psResource = Resource.newInstance(psServerMemory, psServerVcores);
     priority = RecordFactoryProvider.getRecordFactory(null).newRecordInstance(Priority.class);
@@ -132,8 +132,8 @@ public class ParameterServerManager extends AbstractService implements
     psMap = new HashMap<ParameterServerId, AMParameterServer>();
     committedPs = new HashSet<ParameterServerId>();
 
-    String outputPathStr = conf.get(AngelConfiguration.ANGEL_JOB_OUTPUT_PATH);
-    String tmpOutputPathStr = conf.get(AngelConfiguration.ANGEL_JOB_TMP_OUTPUT_PATH);
+    String outputPathStr = conf.get(AngelConf.ANGEL_JOB_OUTPUT_PATH);
+    String tmpOutputPathStr = conf.get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH);
     outputPath = new Path(outputPathStr);
     tmpOutputPath = new Path(tmpOutputPathStr);
 

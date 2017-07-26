@@ -17,26 +17,20 @@
 
 package com.tencent.angel.ml.classification.lr
 
-import java.io.DataOutputStream
-import java.text.DecimalFormat
-
-import com.tencent.angel.conf.AngelConfiguration
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.DenseDoubleVector
 import com.tencent.angel.ml.model.{MLModel, PSModel}
+import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.ml.utils.MathUtils
-import com.tencent.angel.worker.predict.PredictResult
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
 
 /**
-  * A simple LR model
- *
-  * @param ctx taskContext of running task
-  * @param conf configurations of algorithm
+  * LR model
+  *
   */
 
 object LRModel{
@@ -45,60 +39,32 @@ object LRModel{
   }
 
   def apply(ctx:TaskContext, conf: Configuration) = {
-    new LRModel(ctx, conf)
+    new LRModel(conf, ctx)
   }
 }
 
-class LRModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
+class LRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
   private val LOG = LogFactory.getLog(classOf[LRModel])
 
   val LR_WEIGHT_MAT = "lr_weight"
   val LR_INTERCEPT = "lr_intercept"
-  val LR_LOSS_MAT = "lr_loss"
 
-  def this(conf: Configuration) = {
-    this(null, conf)
-  }
-
-  // Feature number of data
   val feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
   // The feature weight vector, stored on PS
-  val weight = PSModel[DenseDoubleVector](LR_WEIGHT_MAT, 1, feaNum)
-  weight.setAverage(true)
-
-  private val intercept_ = PSModel[DenseDoubleVector](LR_INTERCEPT, 1, 1)
-  intercept_.setAverage(true)
+  val weight = PSModel[DenseDoubleVector](LR_WEIGHT_MAT, 1, feaNum).setAverage(true)
+  val intercept_ = PSModel[DenseDoubleVector](LR_INTERCEPT, 1, 1).setAverage(true)
   val intercept =
-    if (conf.getBoolean(MLConf.LR_USE_INTERCEPT, MLConf.DEFAULT_LR_USE_INTERCEPT)) {
-      Some(intercept_)
-    } else {
-      None
-    }
+      if (conf.getBoolean(MLConf.LR_USE_INTERCEPT, MLConf.DEFAULT_LR_USE_INTERCEPT)) {
+        Some(intercept_)
+       } else {
+         None
+   }
+   addPSModel(LR_WEIGHT_MAT, weight)
+   addPSModel(LR_INTERCEPT, intercept_)
+   
+   setSavePath(conf)
+   setLoadPath(conf)
 
-  // Iteration number
-  val epochNum = conf.getInt(MLConf.ML_EPOCH_NUM, MLConf.DEFAULT_ML_EPOCH_NUM)
-  // A vector stores total validation losses, sotred on PS
-  val loss = PSModel[DenseDoubleVector](LR_LOSS_MAT, 1, epochNum)
-
-  setSavePath(conf)
-  setLoadPath(conf)
-
-  addPSModel(LR_WEIGHT_MAT, weight)
-  addPSModel(LR_INTERCEPT, intercept_)
-  addPSModel(LR_LOSS_MAT, loss)
-
-  override
-  def setSavePath(conf: Configuration): Unit = {
-    val path = conf.get(AngelConfiguration.ANGEL_SAVE_MODEL_PATH)
-    if (path != null)
-      weight.setSavePath(path)
-  }
-
-  override def setLoadPath(conf: Configuration): Unit = {
-    val path = conf.get(AngelConfiguration.ANGEL_LOAD_MODEL_PATH)
-    if (path != null)
-      weight.setLoadPath(path)
-  }
 
   /**
     *
@@ -116,25 +82,20 @@ class LRModel(_ctx: TaskContext, conf: Configuration) extends MLModel(_ctx) {
     val predict = new MemoryDataBlock[PredictResult](-1)
 
     dataSet.resetReadIndex()
-    for (idx: Int <- 0 until dataSet.getTotalElemNum) {
+    for (idx: Int <- 0 until dataSet.size) {
       val instance = dataSet.read
       val id = instance.getY
-      val dot = wVector.dot(instance.getX) + b
+      val dot = wVector.dot(instance.getX)
       val sig = MathUtils.sigmoid(dot)
-      predict.put(new lrPredictResult(id, dot, sig))
+      predict.put(new SparseLRPredictResult(id, dot, sig))
     }
     predict
   }
 }
 
-class lrPredictResult(id: Double, dot: Double, sig: Double) extends PredictResult {
-  val format = new DecimalFormat("0.000000");
-
-  override
-  def writeText(output: DataOutputStream): Unit = {
-
-    output.writeBytes(id + PredictResult.separator + format.format(dot) +
-      PredictResult.separator + format.format(sig))
+class SparseLRPredictResult(id: Double, dot: Double, sig: Double) extends PredictResult {
+  override def getText():String = {
+    (id + separator + format.format(dot) + separator + format.format(sig))
   }
 
 }

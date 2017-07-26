@@ -30,7 +30,7 @@ class GBDTPredictTask (ctx: TaskContext) extends PredictTask[LongWritable, Text]
   private val dataFormat = conf.get(MLConf.ML_DATAFORMAT, "libsvm")
 
   def predict(ctx: TaskContext) {
-    predict(ctx, GBDTModel(ctx, conf), dataBlock);
+    predict(ctx, GBDTModel(ctx, conf), trainDataBlock);
   }
 
   def parse(key: LongWritable, value: Text): LabeledData = {

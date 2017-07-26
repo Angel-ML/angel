@@ -99,7 +99,48 @@ object MLConf {
   val ML_GBDT_SPLIT_NUM = "ml.gbdt.split.num"
   val DEFAULT_ML_GBDT_SPLIT_NUM = 5
   val ML_GBDT_SAMPLE_RATIO = "ml.gbdt.sample.ratio"
-  val DEFAULT_ML_GBDT_SAMPLE_RATIO= 1
+  val DEFAULT_ML_GBDT_SAMPLE_RATIO = 1
+  val ML_GBDT_THREAD_NUM = "ml.gbdt.thread.num"
+  val DEFAULT_ML_GBDT_THREAD_NUM = 20
+  val ML_GBDT_BATCH_NUM = "ml.gbdt.batch.num"
+  val DEFAULT_ML_GBDT_BATCH_NUM = 10000
   val ML_GBDT_SERVER_SPLIT = "ml.gbdt.server.split"
   val DEFAULT_ML_GBDT_SERVER_SPLIT = false
+
+  // FM params
+  val ML_FM_LEARN_TYPE = "ml.fm.learn.type"
+  val DEFAULT_ML_FM_LEARN_TYPE = "r"
+  val ML_FM_RANK = "ml.fm.rank"
+  val DEFAULT_ML_FM_RANK = 10
+  val ML_FM_REG0 = "ml.fm.reg0"
+  val DEFAULT_ML_FM_REG0 = 0.0
+  val ML_FM_REG1 = "ml.fm.reg1"
+  val DEFAULT_ML_FM_REG1 = 0.0
+  val ML_FM_REG2 = "ml.fm.reg2"
+  val DEFAULT_ML_FM_REG2 = 0.0
+  val ML_FM_V_INIT = "ml.fm.v.init"
+  val DEFAULT_ML_FM_V_INIT = 0.1
+
+
+  // ModelParser params
+  val ML_MODEL_IN_PATH = "ml.model.in.path"
+  val ML_MODEL_OUT_PATH = "ml.model.out.path"
+  val ML_MODEL_CONVERT_THREAD_COUNT = "ml.model.convert.thread.count"
+  val DEFAULT_ML_MODEL_CONVERT_THREAD_COUNT = 1
+  val ML_MODEL_NAME = "ml.model.name"
+
+
+  /** The number of samples used to calculate the indexes */
+  val TRAIN_SAMPLE_NUMBER = "train.sample.number"
+  val VALIDATE_SAMPLE_NUMBER = "validate.sample.number"
+
+  /** The loss sum of all samples */
+  val TRAIN_LOSS = "train.loss"
+  val VALID_LOSS = "validate.loss"
+  val LOG_LIKELIHOOD = "log.likelihood"
+
+  /** The predict error of all samples */
+  val TRAIN_ERROR = "train.error"
+  val VALID_ERROR = "validate.error"
+
 }
