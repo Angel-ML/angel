@@ -1,7 +1,7 @@
 ![](assets/angel_logo.png)
 
 
-[![license](http://img.shields.io/badge/license-BSD3-brightgreen.svg?style=flat)](https://github.com/tencent/angel/blob/master/LICENSE)
+[![license](http://img.shields.io/badge/license-BSD3-blue.svg?style=flat)](https://github.com/tencent/angel/blob/master/LICENSE)
 [![Release Version](https://img.shields.io/badge/release-1.1.0-red.svg)](https://github.com/tencent/angel/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/tencent/angel/pulls)
 
@@ -17,13 +17,13 @@
 ## Angel的介绍
 
 * [架构设计](./docs/overview/architecture.md)
-* [系统框架](./docs/overview/framework.md)
+* [代码结构](./docs/overview/framework.md)
 * [设计理念](./docs/overview/design.md)
 * [Spark on Angel的设计](./docs/overview/spark_on_angel.md)
 
 
 ## Angel入门
-* [Quick Start](./docs/tutorials/angel_ps_quick_start.md/)
+* [Quick Start](./docs/tutorials/angel_ps_quick_start.md)
 * [Spark on Angel入门](./docs/tutorials/spark_on_angel_quick_start.md)
 
 
@@ -34,8 +34,11 @@
 
 ## Design
 
+* [模型切分（modelPartitioner）](./docs/design/model_partitioner.md)
+* [异步控制（syncController）](./docs/design/sync_controller.md)
+* [定制函数（psFunc）](./docs/design/psfFunc.md)
 * [核心类的说明](./docs/apis/interface_api.md)
-* [psFunc手册](./docs/design/psf_develop.md)
+
 
 ## Algorithm
 
@@ -58,9 +61,9 @@
 * [Angel常见问题](https://github.com/Tencent/angel/wiki/Angel%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
 
 ## Papers
-  1. Jiawei Jiang, Bin Cui, Ce Zhang, Lele Yu. [Heterogeneity-aware Distributed Parameter Servers](http://net.pku.edu.cn/~cuibin/Papers/2017%20sigmod.pdf). SIGMOD, 2017
-  2. Jie Jiang, Lele Yu, Jiawei Jiang, Yuhong Liu and Bin Cui. [Angel: a new large-scale machine learning system](http://net.pku.edu.cn/~cuibin/Papers/2017NSRangel.pdf). National Science Review (NSR), 2017
-  3. Jie Jiang, Jiawei Jiang,  Bin Cui and Ce Zhang. [TencentBoost: A Gradient Boosting Tree System with Parameter Server](http://net.pku.edu.cn/~cuibin/Papers/2017%20ICDE%20boost.pdf).	ICDE, 2017
+  1. Jiawei Jiang, Bin Cui, Ce Zhang, Lele Yu. [Heterogeneity-aware Distributed Parameter Servers](http://dl.acm.org/citation.cfm?id=3035933). SIGMOD, 2017
+  2. Jie Jiang, Lele Yu, Jiawei Jiang, Yuhong Liu and Bin Cui. [Angel: a new large-scale machine learning system](https://academic.oup.com/nsr/article/3052720). National Science Review (NSR), 2017
+  3. Jie Jiang, Jiawei Jiang,  Bin Cui and Ce Zhang. [TencentBoost: A Gradient Boosting Tree System with Parameter Server](http://ieeexplore.ieee.org/abstract/document/7929984/).	ICDE, 2017
 
 ## Presentation
 
