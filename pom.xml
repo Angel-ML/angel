@@ -33,7 +33,7 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<dist.deps.scope>provided</dist.deps.scope>
 		<scalatest.version>2.2.6</scalatest.version>
-    <main.basedir>${project.basedir}</main.basedir>
+		<main.basedir>${project.basedir}</main.basedir>
 	</properties>
 
 	<modules>
