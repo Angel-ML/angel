@@ -67,12 +67,12 @@ public class PSPartitioner implements Partitioner{
     LOG.info("blockRow = " + blockRow + ", blockCol=" + blockCol);
 
     Partition.Builder partition = Partition.newBuilder();
-    for (int i = 0; i < row; i += blockRow) {
-      for (int j = 0; j < col; j += blockCol) {
+    for (int i = 0; i < row; ) {
+      for (int j = 0; j < col; ) {
         int startRow = i;
         int startCol = j;
-        int endRow = Math.min(i + blockRow, row);
-        int endCol = Math.min(j + blockCol, col);
+        int endRow = (i <= (row - blockRow)) ? (i + blockRow) : row;
+        int endCol = (j <= (col - blockCol)) ? (j + blockCol) : col;
         partition.setMatrixId(matrixId);
         partition.setPartitionId(id++);
         partition.setStartRow(startRow);
@@ -80,7 +80,10 @@ public class PSPartitioner implements Partitioner{
         partition.setEndRow(endRow);
         partition.setEndCol(endCol);
         array.add(partition.build());
+
+        j = (j <= (col - blockCol)) ? (j + blockCol) : col;
       }
+      i = (i <= (row - blockRow)) ? (i + blockRow) : row;
     }
     LOG.debug("partition count: " + array.size());
     return array;

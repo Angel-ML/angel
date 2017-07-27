@@ -129,7 +129,7 @@ public class ServerSparseIntRow extends ServerRow {
       buf.writeInt(hashMap.size());
       for (Int2IntMap.Entry entry : hashMap.int2IntEntrySet()) {
         buf.writeInt(entry.getIntKey());
-        buf.writeInt(entry.getIntKey());
+        buf.writeInt(entry.getIntValue());
       }
     } finally {
       lock.readLock().unlock();
