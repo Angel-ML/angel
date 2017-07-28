@@ -64,8 +64,8 @@ public class ModelParserTest {
 
     String modelInPath  = "./src/test/data/model/";
     String modelName = "DenseDouble";
-    String modelOutPath = LOCAL_FS + TMP_PATH + "\\modelParser\\" + modelName;
-    String psOutPath = LOCAL_FS + TMP_PATH + "\\parsedModel";
+    String modelOutPath = LOCAL_FS + TMP_PATH + "/modelParser/" + modelName;
+    String psOutPath = LOCAL_FS + TMP_PATH + "/parsedModel";
 
     // Set model path
     conf.set(MLConf.ML_MODEL_IN_PATH(), modelInPath);
@@ -83,8 +83,8 @@ public class ModelParserTest {
 
     String modelInPath  = "./src/test/data/model/";
     String modelName = "SparseDouble";
-    String modelOutPath = LOCAL_FS + TMP_PATH + "\\modelParser\\" + modelName;
-    String psOutPath = LOCAL_FS + TMP_PATH + "\\parsedModel";
+    String modelOutPath = LOCAL_FS + TMP_PATH + "/modelParser/" + modelName;
+    String psOutPath = LOCAL_FS + TMP_PATH + "/parsedModel";
 
     // Set model path
     conf.set(MLConf.ML_MODEL_IN_PATH(), modelInPath);
@@ -102,8 +102,8 @@ public class ModelParserTest {
 
     String modelInPath  = "./src/test/data/model/";
     String modelName = "DenseFloat";
-    String modelOutPath = LOCAL_FS + TMP_PATH + "\\modelParser\\" + modelName;
-    String psOutPath = LOCAL_FS + TMP_PATH + "\\parsedModel";
+    String modelOutPath = LOCAL_FS + TMP_PATH + "/modelParser/" + modelName;
+    String psOutPath = LOCAL_FS + TMP_PATH + "/parsedModel";
 
     // Set model path
     conf.set(MLConf.ML_MODEL_IN_PATH(), modelInPath);
@@ -121,8 +121,8 @@ public class ModelParserTest {
 
     String modelInPath  = "./src/test/data/model/";
     String modelName = "DenseInt";
-    String modelOutPath = LOCAL_FS + TMP_PATH + "\\modelParser\\" + modelName;
-    String psOutPath = LOCAL_FS + TMP_PATH + "\\parsedModel";
+    String modelOutPath = LOCAL_FS + TMP_PATH + "/modelParser/" + modelName;
+    String psOutPath = LOCAL_FS + TMP_PATH + "/parsedModel";
 
     // Set model path
     conf.set(MLConf.ML_MODEL_IN_PATH(), modelInPath);
@@ -140,8 +140,8 @@ public class ModelParserTest {
 
     String modelInPath  = "./src/test/data/model/";
     String modelName = "SparseInt";
-    String modelOutPath = LOCAL_FS + TMP_PATH + "\\modelParser\\" + modelName;
-    String psOutPath = LOCAL_FS + TMP_PATH + "\\parsedModel";
+    String modelOutPath = LOCAL_FS + TMP_PATH + "/modelParser/" + modelName;
+    String psOutPath = LOCAL_FS + TMP_PATH + "/parsedModel";
 
     // Set model path
     conf.set(MLConf.ML_MODEL_IN_PATH(), modelInPath);

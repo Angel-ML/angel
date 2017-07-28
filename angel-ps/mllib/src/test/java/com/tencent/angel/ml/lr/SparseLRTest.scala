@@ -98,7 +98,7 @@ class SparseLRTest {
 
   def predictTest() {
     val inputPath: String = "./src/test/data/lr/a9a.train_label"
-    val loadPath: String = LOCAL_FS + TMP_PATH + "admmlrmodel"
+    val loadPath: String = LOCAL_FS + TMP_PATH + "/admmlrmodel"
     val predictPath: String = LOCAL_FS + TMP_PATH + "/ADMMLRpredict"
 
     // Set trainning data path
