@@ -514,6 +514,9 @@ public class MatrixOpLogCache {
       case "DENSE_FLOAT":
         return new DenseFloatMatrixOplog(matrixId);
 
+      case "SPARSE_DOUBLE":
+        return new SparseDoubleMatrixOplog(matrixId, enableFilter);
+
       default:
         return new DenseDoubleMatrixOpLog(matrixId, enableFilter);
     }
