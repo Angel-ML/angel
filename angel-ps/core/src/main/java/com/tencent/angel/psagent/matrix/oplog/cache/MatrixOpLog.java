@@ -358,47 +358,47 @@ class DenseFloatMatrixOplog extends MatrixOpLog {
   public TVector getTVector(int rowIndex) {
     return matrix.getTVector(rowIndex);
   }
+}
 
-  /**
-   * Sparse double matrix cache, it use a sparse float matrix {@link DenseIntMatrix} as the storage.
-   * We can use this type cache if the update is a double matrix or vector
-   */
-  class SparseDoubleMatrixOplog extends MatrixOpLog {
-    private Log LOG = LogFactory.getLog(MatrixOpLog.class);
-    private SparseDoubleMatrix matrix;
+/**
+ * Sparse double matrix cache, it use a sparse float matrix {@link DenseIntMatrix} as the storage.
+ * We can use this type cache if the update is a double matrix or vector
+ */
+class SparseDoubleMatrixOplog extends MatrixOpLog {
+  private Log LOG = LogFactory.getLog(MatrixOpLog.class);
+  private SparseDoubleMatrix matrix;
 
-    public SparseDoubleMatrixOplog(int matrixId, boolean enableFilter) {
-      super(matrixId, enableFilter);
-      LOG.debug("Init SparseDoubleMatrixOplog for " + matrixId);
+  public SparseDoubleMatrixOplog(int matrixId, boolean enableFilter) {
+    super(matrixId, enableFilter);
+    LOG.debug("Init SparseDoubleMatrixOplog for " + matrixId);
 
-      MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
-      matrix = new SparseDoubleMatrix(matrixMeta.getRowNum(), matrixMeta.getColNum());
-    }
+    MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
+    matrix = new SparseDoubleMatrix(matrixMeta.getRowNum(), matrixMeta.getColNum());
+  }
 
-    @Override
-    public void merge(TUpdate update) throws InvalidParameterException {
-      try {
-        lock.writeLock().lock();
-        if (update instanceof TDoubleVector) {
-          matrix.plusBy((TDoubleVector) update);
-          return;
-        } else if (update instanceof TDoubleMatrix) {
-          matrix.plusBy((TDoubleMatrix) update);
-          return;
-        }
-
-        String errMsg = String.format("can not merge type %s to SparseDoubleMatrix.", update
-            .getClass().getName());
-        LOG.fatal(errMsg);
-        throw new InvalidParameterException(errMsg);
-      } finally {
-        lock.writeLock().unlock();
+  @Override
+  public void merge(TUpdate update) throws InvalidParameterException {
+    try {
+      lock.writeLock().lock();
+      if (update instanceof TDoubleVector) {
+        matrix.plusBy((TDoubleVector) update);
+        return;
+      } else if (update instanceof TDoubleMatrix) {
+        matrix.plusBy((TDoubleMatrix) update);
+        return;
       }
-    }
 
-    @Override
-    public TVector getTVector(int rowIndex) {
-      return matrix.getTVector(rowIndex);
+      String errMsg = String.format("can not merge type %s to SparseDoubleMatrix.", update
+          .getClass().getName());
+      LOG.fatal(errMsg);
+      throw new InvalidParameterException(errMsg);
+    } finally {
+      lock.writeLock().unlock();
     }
+  }
+
+  @Override
+  public TVector getTVector(int rowIndex) {
+    return matrix.getTVector(rowIndex);
   }
 }
