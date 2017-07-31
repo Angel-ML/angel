@@ -2,9 +2,9 @@
 
 ## 部署流程
 - 安装Spark运行环境
-- 解压angel-<version>-bin.zip
-- 将解压后的angel-<version>-bin目录上传到HDFS路径
-- 配置angel-<version>-bin/bin/spark-on-angl-env.sh下的SPARK_HOME, ANGEL_HOME, ANGEL_HDFS_HOME三个环境变量
+- 解压angel-\<version\>-bin.zip
+- 将解压后的angel-\<version\>-bin目录上传到HDFS路径
+- 配置angel-\<version\>-bin/bin/spark-on-angl-env.sh下的SPARK_HOME, ANGEL_HOME, ANGEL_HDFS_HOME三个环境变量
 
 ## 运行example
 - cd angel-<version>-bin/bin; ./SONA-example
@@ -26,7 +26,7 @@ $SPARK_HOME/bin/spark-submit \
     --executor-cores 2 \
     --executor-memory 4g \
     --class com.tencent.angel.spark.examples.ml.BreezeSGD \
-    ./../lib/spark-on-angel-examples-1.1.8.jar
+    ./../lib/spark-on-angel-examples-<version>.jar
 ```
 
 ## 提交Spark on Angel任务
