@@ -17,7 +17,7 @@
 
 	```mvn clean package -Dmaven.test.skip=true```
 
-    After compiling, a distribution package named 'angel-<version>-bin.zip'  will be generated under `dist/target` under the root directory. 
+    After compiling, a distribution package named 'angel-&lt;version&gt;-bin.zip'  will be generated under `dist/target` under the root directory. 
 
 
 
