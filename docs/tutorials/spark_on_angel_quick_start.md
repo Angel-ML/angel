@@ -26,7 +26,7 @@ $SPARK_HOME/bin/spark-submit \
     --executor-cores 2 \
     --executor-memory 4g \
     --class com.tencent.angel.spark.examples.ml.BreezeSGD \
-    ./../lib/spark-on-angel-examples-<version>.jar
+    ./../lib/spark-on-angel-examples-${ANGEL_VERSION}.jar
 ```
 
 ## 提交Spark on Angel任务
