@@ -62,7 +62,7 @@
             <configuration>
               <classifier>ps</classifier>
               <includes>
-                <include>**/pof/**</include>
+                <include>**/psf/**</include>
               </includes>
             </configuration>
           </execution>

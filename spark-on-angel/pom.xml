@@ -84,16 +84,11 @@
 				<version>3.2.2</version>
 				<executions>
 					<execution>
-						<id>eclipse-add-source</id>
-						<goals>
-							<goal>add-source</goal>
-						</goals>
-					</execution>
-					<execution>
 						<id>scala-compile-first</id>
 						<phase>process-resources</phase>
 						<goals>
 							<goal>compile</goal>
+              <goal>add-source</goal>
 						</goals>
 					</execution>
 					<execution>
