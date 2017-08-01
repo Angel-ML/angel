@@ -36,7 +36,7 @@
 		```
 2. **提交任务**
 
-	* 在发布包的bin目录下有Angel的提交脚本angel-submit，使用它将任务提交到Hadoop集群
+	* 在发布包的bin目录下有Angel的提交脚本angel-submit，使用它将任务提交到Hadoop集群，**请务必注意集群中是否有充足的资源，如果按照下面的参数配置，启动任务至少需要6GB内存和3个vcore**
 
 		```
 		./angel-submit \
@@ -47,7 +47,10 @@
 			--action.type train \
 			--ml.data.type libsvm \
 			--ml.feature.num 1024 \
-			--angel.job.name LR_test
+			--angel.job.name LR_test \
+			--angel.am.memory.gb 2 \
+			--angel.worker.memory.gb 2 \
+			--angel.ps.memory.gb 2
 		```
 
 	**参数含义如下**
@@ -63,6 +66,9 @@
 	| ml.data.type | 训练数据格式，默认支持两种格式libsvm和dummy |
 	| ml.feature.num | 模型维度 |
 	| angel.job.name | 任务名|
+	| angel.am.memory.gb | Master所需内存大小|
+	| angel.worker.memory.gb | 一个Worker所需内存大小|
+	| angel.ps.memory.gb | 一个PS所需内存大小|
 
 
 	为了方便用户，Ange设置有许多参数可供调整，可以参考
