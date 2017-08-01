@@ -14,11 +14,13 @@ Spark on Angel的算法实现与纯Spark的实现非常接近，因此大部分�
     <groupId>com.tencent.angel</groupId>
     <artifactId>spark-on-angel-core</artifactId>
     <version>${angel.version}</version>
+    <scope>provided</scope>
 </dependency>
 <dependency>
     <groupId>com.tencent.angel</groupId>
     <artifactId>spark-on-angel-mllib</artifactId>
     <version>${angel.version}</version>
+    <scope>provided</scope>
 </dependency>
 ```
 - import package

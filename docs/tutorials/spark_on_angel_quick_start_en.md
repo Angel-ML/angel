@@ -2,12 +2,12 @@
 
 ## Deployment Steps
 - Install Spark 
-- Unzip angel-<version>-bin.zip
-- Upload angel-<version>-bin dir to the HDFS path
+- Unzip angel-\<version\>-bin.zip
+- Upload angel-\<version\>-bin dir to the HDFS path
 - Set SPARK_HOME, ANGEL_HOME, ANGEL_HDFS_HOME variables in angel-<version>-bin/bin/spark-on-angel-env.sh
 
 ## Running Examples
-- cd angel-<version>-bin/bin; ./SONA-example
+- cd angel-\<version\>-bin/bin; ./SONA-example
 
 ```bash
 #! /bin/bash
@@ -26,7 +26,7 @@ $SPARK_HOME/bin/spark-submit \
     --executor-cores 2 \
     --executor-memory 4g \
     --class com.tencent.angel.spark.examples.ml.BreezeSGD \
-    ./../lib/spark-on-angel-examples-1.1.8.jar
+    ./../lib/spark-on-angel-examples-${ANGEL_VERSION}.jar
 ```
 
 ## How to submit a Spark on Angel Job

@@ -14,11 +14,13 @@ To write a Spark on Angel application, in addition to the Spark dependency, you 
     <groupId>com.tencent.angel</groupId>
     <artifactId>spark-on-angel-core</artifactId>
     <version>${angel.version}</version>
+    <scope>provided</scope>
 </dependency>
 <dependency>
     <groupId>com.tencent.angel</groupId>
     <artifactId>spark-on-angel-mllib</artifactId>
     <version>${angel.version}</version>
+    <scope>provided</scope>
 </dependency>
 ```
 
