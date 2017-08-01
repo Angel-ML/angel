@@ -14,7 +14,7 @@
 	2. 一个用于提交Angel任务的客户端Gateway
 		* Java >= 1.8
 		* 可以提交MR作业
-		* Angel发布包：angel-1.0.0-bin.zip
+		* Angel发布包：angel-1.1.0-bin.zip
 
 
 ### 2. **Angel任务运行示例**
