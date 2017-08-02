@@ -61,13 +61,27 @@ public class WorkerJVM {
         conf.getInt(AngelConf.ANGEL_WORKER_MEMORY_GB,
             AngelConf.DEFAULT_ANGEL_WORKER_MEMORY_GB) * 1024;
 
-    int heapMax = workerMemSizeInMB - 200;
+    if(workerMemSizeInMB < 2048) {
+      workerMemSizeInMB = 2048;
+    }
+
+    boolean isUseDirect = conf.getBoolean(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_CLIENT_USEDIRECTBUFFER,
+      AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_USEDIRECTBUFFER);
+    int maxUse = workerMemSizeInMB - 512;
+    int directRegionSize = 0;
+    if(isUseDirect) {
+      directRegionSize = (int) (maxUse * 0.3);
+    } else {
+      directRegionSize = (int) (maxUse * 0.2);
+    }
+    int heapMax = maxUse - directRegionSize;
     int youngRegionSize = (int) (heapMax * 0.4);
     int suvivorRatio = 4;
 
     String ret =
         new StringBuilder().append(" -Xmx").append(heapMax).append("M").append(" -Xmn")
-            .append(youngRegionSize).append("M").append(" -XX:SurvivorRatio=").append(suvivorRatio)
+            .append(youngRegionSize).append("M").append(" -XX:MaxDirectMemorySize=")
+            .append(directRegionSize).append("M").append(" -XX:SurvivorRatio=").append(suvivorRatio)
             .append(" -XX:PermSize=100M -XX:MaxPermSize=200M").append(" -XX:+AggressiveOpts")
             .append(" -XX:+UseLargePages").append(" -XX:+UseParallelGC")
             .append(" -XX:+UseAdaptiveSizePolicy").append(" -XX:CMSInitiatingOccupancyFraction=70")

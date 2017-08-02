@@ -361,7 +361,7 @@ public class AngelYarnClient extends AngelClient {
     }
   }
 
-  public ApplicationSubmissionContext createApplicationSubmissionContext(Configuration jobConf,
+  private ApplicationSubmissionContext createApplicationSubmissionContext(Configuration conf,
       Path jobSubmitPath, Credentials ts, ApplicationId appId) throws IOException {
     ApplicationId applicationId = appId;
 
@@ -395,14 +395,16 @@ public class AngelYarnClient extends AngelClient {
 
     long logSize = 0;
     String logLevel =
-        jobConf.get(AngelConf.ANGEL_AM_LOG_LEVEL,
+      conf.get(AngelConf.ANGEL_AM_LOG_LEVEL,
             AngelConf.DEFAULT_ANGEL_AM_LOG_LEVEL);
     AngelApps.addLog4jSystemProperties(logLevel, logSize, vargs);
 
     // Add AM user command opts
-    String angelAppMasterUserOptions =
-        conf.get(AngelConf.ANGEL_AM_JAVA_OPTS,
-            AngelConf.DEFAULT_ANGEL_AM_JAVA_OPTS);
+    String angelAppMasterUserOptions = conf.get(AngelConf.ANGEL_AM_JAVA_OPTS);
+    if(angelAppMasterUserOptions == null) {
+      angelAppMasterUserOptions = masterJVMOptions(conf);
+    }
+
     vargs.add(angelAppMasterUserOptions);
     vargs.add(conf.get(AngelConf.ANGEL_AM_CLASS, AngelConf.DEFAULT_ANGEL_AM_CLASS));
     vargs.add("1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + Path.SEPARATOR
@@ -435,12 +437,12 @@ public class AngelYarnClient extends AngelClient {
         conf.get(AngelConf.ANGEL_AM_ENV, AngelConf.DEFAULT_ANGEL_AM_ENV));
 
     // Parse distributed cache
-    AngelApps.setupDistributedCache(jobConf, localResources);
+    AngelApps.setupDistributedCache(conf, localResources);
 
     Map<ApplicationAccessType, String> acls = new HashMap<ApplicationAccessType, String>(2);
-    acls.put(ApplicationAccessType.VIEW_APP, jobConf.get(AngelConf.JOB_ACL_VIEW_JOB,
+    acls.put(ApplicationAccessType.VIEW_APP, conf.get(AngelConf.JOB_ACL_VIEW_JOB,
         AngelConf.DEFAULT_JOB_ACL_VIEW_JOB));
-    acls.put(ApplicationAccessType.MODIFY_APP, jobConf.get(AngelConf.JOB_ACL_MODIFY_JOB,
+    acls.put(ApplicationAccessType.MODIFY_APP, conf.get(AngelConf.JOB_ACL_MODIFY_JOB,
         AngelConf.DEFAULT_JOB_ACL_MODIFY_JOB));
 
     // Setup ContainerLaunchContext for AM container
@@ -466,6 +468,17 @@ public class AngelYarnClient extends AngelClient {
     appContext.setResource(capability);
     appContext.setApplicationType(AngelConf.ANGEL_APPLICATION_TYPE);
     return appContext;
+  }
+
+  private String masterJVMOptions(Configuration conf) {
+    int masterMemoryMB = conf.getInt(AngelConf.ANGEL_AM_MEMORY_GB, AngelConf.DEFAULT_ANGEL_AM_MEMORY_GB) * 1024;
+    if(masterMemoryMB < 1024) {
+      masterMemoryMB = 1024;
+    }
+
+    int heapMax = masterMemoryMB - 512;
+    return new StringBuilder().append(" -Xmx").append(heapMax).append("M").append(" -Xms")
+      .append(heapMax).append("M").append(" -XX:PermSize=100M -XX:MaxPermSize=200M").toString();
   }
 
   private LocalResource createApplicationResource(FileContext fs, Path p, LocalResourceType type)
