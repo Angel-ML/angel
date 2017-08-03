@@ -105,18 +105,33 @@ public class ParameterServerJVM {
 
   private static String generateDefaultJVMParameters(Configuration conf, ApplicationId appid,
       PSAttemptId psAttemptId) {
-    int workerMemSizeInMB =
+    int psMemSizeInMB =
         conf.getInt(AngelConf.ANGEL_PS_MEMORY_GB,
             AngelConf.DEFAULT_ANGEL_PS_MEMORY_GB) * 1024;
 
-    int heapMax = workerMemSizeInMB - 200;
+    if(psMemSizeInMB < 2048) {
+      psMemSizeInMB = 2048;
+    }
+
+    boolean isUseDirect = conf.getBoolean(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER,
+      AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER);
+
+    int useMax = psMemSizeInMB - 512;
+    int directRegionSize = 0;
+    if(isUseDirect) {
+      directRegionSize = (int) (useMax * 0.45);
+    } else {
+      directRegionSize = (int) (useMax * 0.25);
+    }
+
+    int heapMax = useMax - directRegionSize;
     int youngRegionSize = (int) (heapMax * 0.4);
     int suvivorRatio = 4;
 
     String ret =
         new StringBuilder().append(" -Xmx").append(heapMax).append("M").append(" -Xmn")
             .append(youngRegionSize).append("M").append(" -XX:MaxDirectMemorySize=")
-            .append(workerMemSizeInMB / 4).append("M").append(" -XX:SurvivorRatio=")
+            .append(directRegionSize).append("M").append(" -XX:SurvivorRatio=")
             .append(suvivorRatio).append(" -XX:PermSize=100M -XX:MaxPermSize=200M")
             .append(" -XX:+AggressiveOpts").append(" -XX:+UseLargePages")
             .append(" -XX:+UseParallelGC").append(" -XX:+UseAdaptiveSizePolicy")

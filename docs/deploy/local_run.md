@@ -4,9 +4,9 @@
 
 ## 1. 运行环境准备
 
-* Hadoop >= 2.2.0
-* Java 1.8版本
-* Angel发布包 angel-1.0.0-bin.zip
+* Hadoop >=  2.2.0
+* Java >= 1.8
+* Angel发布包 angel-\<version\>-bin.zip
 
 配置好HADOOP_HOME和JAVA_HOME环境变量，解压Angel发布包，就可以以LOCAL模式运行Angel任务了。
 

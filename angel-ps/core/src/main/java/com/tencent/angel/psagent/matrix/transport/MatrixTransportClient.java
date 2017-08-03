@@ -1320,6 +1320,8 @@ public class MatrixTransportClient implements MatrixTransportInterface {
             default:
               break;
           }
+
+          msg.release();
         }
       } catch (InterruptedException ie) {
         LOG.warn(Thread.currentThread().getName() + " is interruptted");
