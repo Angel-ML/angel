@@ -16,4 +16,3 @@ Worker负责具体的模型训练或者结果预测，为了支持更大规模�
 ![][2]
 
 [1]: ../img/angel_architecture_1.png
-[2]: ../img/angel_architecture_2.png
