@@ -56,7 +56,7 @@
 * [本地运行](./docs/deploy/local_run.md)
 * [Yarn运行](./docs/deploy/run_on_yarn.md)
 * [系统配置](./docs/deploy/config_details.md)
-* [资源配置指南](./docs/deploy/resouce_config_guide.md)
+* [资源配置指南](./docs/deploy/resource_config_guide.md)
 
 ## FAQ
 * [Angel常见问题](https://github.com/Tencent/angel/wiki/Angel%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
