@@ -147,7 +147,7 @@ You can submit the application to Yarn using the sample command below:
 ```
 ./bin/angel-submit \
 --action.type train \
---angel.app.submit.class com.tencent.angel.example.quickStart.myLRRunner  \
+--angel.app.submit.class com.tencent.angel.example.quickstart.QSLRRunner \
 --angel.train.data.path $input_path \
 --angel.save.model.path $model_path \
 --ml.epoch.num 10 \
