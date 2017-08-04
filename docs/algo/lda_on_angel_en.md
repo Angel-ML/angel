@@ -41,7 +41,7 @@ The overall framework for training LDA on Angel is shown in the figure below. Th
 * Each line is a document, and each document consists of a set of word ids; word ids are separated by `,`. 
 
 ```math
-        wid_0, wid_1, ..., wid_n
+        wid_0 wid_1 ... wid_n
 ```
 
 ### Parameters
