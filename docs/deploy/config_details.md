@@ -26,7 +26,7 @@ angel.staleness | 0 | task之间允许的最大stale值。0表示BSP，大于0�
 angel.am.env | 无 | Angel Master环境变量设置，形式为K1=V1,K2=V2
 angel.worker.env | 无 | Angel Worker环境变量设置，形式为K1=V1,K2=V2
 angel.ps.env | 无 | Angel PS环境变量设置，形式为K1=V1,K2=V2
-angel.workergroup.number | 1 | 需要启动的workgroup数量，目前一个workergroup仅支持一个worker，因此worker和workergroup数量相等
+angel.workergroup.number | 1 | 需要启动的workergroup数量，目前一个workergroup仅支持一个worker，因此worker和workergroup数量相等
 angel.worker.task.number | 1 | 每个worker上运行的task数量
 angel.ps.number | 1 | 需要启动的ps数量
 angel.am.java.opts | 无 | Angel master进程JVM参数
