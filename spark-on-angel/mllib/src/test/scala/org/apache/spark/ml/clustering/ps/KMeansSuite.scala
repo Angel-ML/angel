@@ -19,14 +19,14 @@ package org.apache.spark.ml.clustering.ps
 
 import com.tencent.angel.spark.ml.{PSFunSuite, SharedPSContext}
 
-
 import scala.util.Random
-
 import org.apache.spark.ml.linalg.{Vector, Vectors}
 import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.ml.util.DefaultReadWriteTest
 import org.apache.spark.mllib.clustering.{KMeans => MLlibKMeans}
 import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
+
+import org.scalatest.Ignore
 
 private[clustering] case class TestRow(features: Vector)
 

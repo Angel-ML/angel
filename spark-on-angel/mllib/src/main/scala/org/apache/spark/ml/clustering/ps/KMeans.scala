@@ -63,6 +63,8 @@ private[clustering] trait KMeansParams extends Params with HasMaxIter with HasFe
   @Since("1.5.0")
   def getK: Int = $(k)
 
+  setDefault(k->5)
+
   /**
     * Param for the initialization algorithm. This can be either "random" to choose random points as
     * initial cluster centers, or "k-means||" to use a parallel variant of k-means++
@@ -188,61 +190,66 @@ class KMeans @Since("1.5.0")(@Since("1.5.0") override val uid: String)
     var costs = data.map(_ => Double.PositiveInfinity)
 
     // Initialize the first center to a random point.
-    val seed = new XORShiftRandom($(seed)).nextInt()
-    val sample = data.takeSample(false, 1, seed)
+    val seedTemp = new XORShiftRandom($(seed)).nextInt()
+    val sample = data.takeSample(false, 1, seedTemp)
     // Could be empty if data is empty; fail with a better message early:
     require(sample.nonEmpty, s"No samples available from $data")
 
-    val centers = ArrayBuffer[PSVectorWithNorm]()
-    var newCenters = Seq(sample.head.toDense)
-    centers ++= psPool.createModel(newCenters)
+    val centers = ArrayBuffer[PsVectorWithNorm]()
+    var newCenters = Seq(new PsVectorWithNorm(psPool.createModel(sample.head.vector.toArray).mkBreeze()
+      ,sample.head.norm))
+    centers ++= newCenters
 
     // On each step, sample 2 * k points on average with probability proportional
     // to their squared distance from the centers. Note that only distances between points
     // and new centers are computed in each iteration.
     var step = 0
-    val bcNewCentersList = ArrayBuffer[Broadcast[_]]()
+    //var newCentersList = ArrayBuffer[Seq[PsVectorWithNorm]]()
     while (step < $(initSteps)) {
-      val bcNewCenters = data.context.broadcast(newCenters)
-      bcNewCentersList += bcNewCenters
+      //newCentersList += newCenters
       val preCosts = costs
       costs = data.zip(preCosts).map { case (point, cost) =>
-        math.min(KMeans.pointCost(bcNewCenters.value, point), cost)
+        math.min(KMeans.pointCost(newCenters, point), cost)
       }.persist(StorageLevel.MEMORY_AND_DISK)
       val sumCosts = costs.sum()
 
-      bcNewCenters.unpersist(blocking = false)
       preCosts.unpersist(blocking = false)
 
       val chosen = data.zip(costs).mapPartitionsWithIndex { (index, pointCosts) =>
-        val rand = new XORShiftRandom(seed ^ (step << 16) ^ index)
-        pointCosts.filter { case (_, c) => rand.nextDouble() < 2.0 * c * k / sumCosts }.map(_._1)
+        val rand = new XORShiftRandom(seedTemp ^ (step << 16) ^ index)
+        pointCosts.filter { case (_, c) => rand.nextDouble() < 2.0 * c * $(k) / sumCosts }.map(_._1)
       }.collect()
-      newCenters = chosen.map(_.toDense)
+      //newCenters.foreach(center=>center.vector.proxy.delete())
+      newCenters = chosen.map(center=>new PsVectorWithNorm(psPool.createModel(center.vector.toArray).mkBreeze()
+        ,center.norm))
       centers ++= newCenters
       step += 1
     }
 
     costs.unpersist(blocking = false)
-    bcNewCentersList.foreach(_.destroy(false))
 
-    val distinctCenters = centers.map(_.vector).distinct.map(new VectorWithNorm(_))
+    val distinctCenters = centers.distinct
 
-    if (distinctCenters.size <= k) {
+    if (distinctCenters.size <= $(k)) {
       distinctCenters.toArray
     } else {
       // Finally, we might have a set of more than k distinct candidate centers; weight each
       // candidate by the number of points in the dataset mapping to it and run a local k-means++
       // on the weighted centers to pick k of them
-      val bcCenters = data.context.broadcast(distinctCenters)
-      val countMap = data.map(KMeans.findClosest(bcCenters.value, _)._1).countByValue()
+      val countMap = data.map(KMeans.findClosest(distinctCenters, _)._1).countByValue()
 
-      bcCenters.destroy(blocking = false)
 
       val myWeights = distinctCenters.indices.map(countMap.getOrElse(_, 0L).toDouble).toArray
-      LocalKMeans.kMeansPlusPlus(0, distinctCenters.toArray, myWeights, k, 30)
+      val ans=LocalKMeans.kMeansPlusPlus(0,
+        distinctCenters.toArray.map(center=>
+          new VectorWithNorm(Vectors.dense(center.vector.toRemote.pull()),center.norm)),
+        myWeights, $(k), 30).map(localCenter=>
+        new PsVectorWithNorm(psPool.createModel(localCenter.vector.toArray).mkBreeze(),localCenter.norm))
+      centers.foreach(_.vector.proxy.delete())
+      ans
     }
   }
+
 
 
   @Since("2.0.0")
@@ -265,7 +272,7 @@ class KMeans @Since("1.5.0")(@Since("1.5.0") override val uid: String)
 
 
     val sc = data.sparkContext
-    val psPool = PSContext.getOrCreate.createModelPool(featureNum, $(k))
+    val psPool = PSContext.getOrCreate.createModelPool(featureNum, 5*$(initSteps)*$(k))
 
 
     val initStartTime = System.nanoTime()
@@ -350,7 +357,9 @@ class KMeans @Since("1.5.0")(@Since("1.5.0") override val uid: String)
         + " parent RDDs are also uncached.")
     }
 
-    val model = new KMeansModel(uid, centers.map(center => Vectors.dense(center.vector.toRemote.pull())))
+    val model = copyValues(new KMeansModel(uid, centers.map(center => Vectors.dense(center.vector.toRemote.pull()))).setParent(this))
+
+    centers.foreach(_.vector.proxy.delete())
     val summary = new KMeansSummary(
       model.transform(dataset), $(predictionCol), $(featuresCol), $(k))
     model.setSummary(Some(summary))
@@ -374,6 +383,8 @@ object KMeans extends DefaultParamsReadable[KMeans] {
   val RANDOM = "random"
   @Since("0.8.0")
   val K_MEANS_PARALLEL = "k-means||"
+
+  val precision=1e-6
 
   private[spark] def validateInitMode(initMode: String): Boolean = {
     initMode match {
@@ -409,6 +420,33 @@ object KMeans extends DefaultParamsReadable[KMeans] {
     (bestIndex, bestDistance)
   }
 
+
+  /**
+    * Returns the index of the closest center to the given point, as well as the squared distance.
+    */
+  private[ml] def findClosestLocal(centers: TraversableOnce[VectorWithNorm],
+                              point: VectorWithNorm): (Int, Double) = {
+    var bestDistance = Double.PositiveInfinity
+    var bestIndex = 0
+    var i = 0
+    centers.foreach { center =>
+      // Since `\|a - b\| \geq |\|a\| - \|b\||`, we can use this lower bound to avoid unnecessary
+      // distance computation.
+      var lowerBoundOfSqDist = center.norm - point.norm
+      lowerBoundOfSqDist = lowerBoundOfSqDist * lowerBoundOfSqDist
+      if (lowerBoundOfSqDist < bestDistance) {
+        val distance: Double = fastSquaredDistance(center, point)
+        if (distance < bestDistance) {
+          bestDistance = distance
+          bestIndex = i
+        }
+      }
+      i += 1
+    }
+    (bestIndex, bestDistance)
+  }
+
+
   /**
     * Returns the K-means cost of a given point against the given cluster centers.
     */
@@ -424,8 +462,7 @@ object KMeans extends DefaultParamsReadable[KMeans] {
                                                v1: Vector,
                                                norm1: Double,
                                                v2: Vector,
-                                               norm2: Double,
-                                               precision: Double): Double = {
+                                               norm2: Double): Double = {
     val n = v1.size
     require(v2.size == n)
     require(norm1 >= 0.0 && norm2 >= 0.0)
@@ -469,9 +506,20 @@ object KMeans extends DefaultParamsReadable[KMeans] {
   }
 
   private[clustering] def fastSquaredDistance(center: PsVectorWithNorm,
-                                              point: VectorWithNorm,
-                                              precision: Double = 1e-6): Double = {
-    fastSquaredDistance(Vectors.dense(center.vector.toRemote.pull()), center.norm, point.vector, point.norm, precision)
+                                              point: VectorWithNorm): Double = {
+    fastSquaredDistance(Vectors.dense(center.vector.toRemote.pull()), center.norm, point.vector, point.norm)
+  }
+
+
+  private[clustering] def fastSquaredDistance(center: VectorWithNorm,
+                                              point: VectorWithNorm): Double = {
+    fastSquaredDistance(center.vector, center.norm, point.vector, point.norm)
+  }
+
+
+  private[clustering] def fastSquaredDistance(center1: PsVectorWithNorm,
+                                              center2: PsVectorWithNorm): Double = {
+    fastSquaredDistance(center1,new VectorWithNorm(Vectors.dense(center2.vector.toRemote.pull()),center2.norm))
   }
 
 
