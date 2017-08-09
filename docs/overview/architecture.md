@@ -1,18 +1,32 @@
 # Angel的架构设计
 
----
-
 ![][1]
 
-## Client
-Angel的客户端，它给应用程序提供了控制任务运行的功能。目前它支持的控制接口主要有：启动和停止Angel任务，加载和存储模型，启动具体计算过程和获取任务运行状态等。
-## Master
-Master的职责主要包括：原始计算数据以及参数矩阵的分片和分发；向Gaia（一个基于Yarn二次开发的资源调度系统）申请Worker和ParameterServer所需的计算资源； 协调，管理和监控Worker以及ParameterServer。
-## Parameter Server
-ParameterServer负责存储和更新参数，一个Angel计算任务可以包含多个ParameterServer实例，而整个模型分布式存储于这些ParameterServer实例中，这样可以支撑比单机更大的模型。
-## Worker
-Worker负责具体的模型训练或者结果预测，为了支持更大规模的训练数据，一个计算任务往往包含许多个Worker实例，每个Worker实例负责使用一部分训练数据进行训练。一个Worker包含一个或者多个Task，Task是Angel计算单元，这样设计的原因是可以让Task共享Worker的许多公共资源。
+Angel的架构设计，从整体可以分为3大层：
+1. **Parameter Server层：**提供通用的`参数服务器`服务，负责模型的**分布存储，通讯同步和协调计算**，并通过PSAgent提供`PS Service`2. **Worker层：** 基于Angel自身模型设计的分布式运行节点，自动读取并划分数据，局部训练出模型增量，通过`PS Client`和`PS Server`通信，完成模型训练和预测。一个Worker包含一个或者多个Task，Task是Angel计算单元，这样设计的原因是可以让Task共享Worker的许多公共资源。
+3. **Model层：** 这是一层虚拟抽象层，并非真实存在的物理层。关于Model的Push和Pull，各种异步控制，模型分区中转，自定义函数……是连通Worker和PSServer的桥梁。
+ 
+除了这3层，还有2个很重要的类，在图上没有显示，但是值得关注，它们是：
 
-![][2]
+1. **Client**：Angel任务运行的发起者
+
+	* 启动和停止PSServer
+	* 启动和停止Angel的Worker
+	* 加载和存储模型
+	* 启动具体计算过程
+	* 获取任务运行状态
+	* ……
+
+
+2. **Master**：Angel任务运行的守护者
+
+	* 原始计算数据以及参数矩阵的分片和分发
+	* 向Gaia申请Worker和ParameterServer所需的计算资源
+	* 协调，管理和监控Worker以及PSServer
+	* ……
+
+
+Angel的整体设计比较简约，层次鲜明，容易上手，没有过多复杂的设计，关注模型和机器学习相关特性，追求高维度模型下的最佳性能。
+
 
 [1]: ../img/angel_architecture_1.png
