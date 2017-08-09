@@ -17,28 +17,29 @@
 
 package org.apache.spark.ml.clustering.ps
 
+import com.tencent.angel.spark.PSContext
+import com.tencent.angel.spark.models.PSModelPool
+import com.tencent.angel.spark.models.vector.BreezePSVector
 import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkException
 import org.apache.spark.annotation.{Experimental, Since}
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.ml.clustering.ClusteringSummary
-import org.apache.spark.ml.{Estimator, Model}
 import org.apache.spark.ml.linalg.{Vector, VectorUDT, Vectors}
 import org.apache.spark.ml.param._
 import org.apache.spark.ml.param.shared._
 import org.apache.spark.ml.util._
-import org.apache.spark.mllib.linalg.{SparseVector, Vector => OldVector, Vectors => OldVectors}
+import org.apache.spark.ml.{Estimator, Model}
+import org.apache.spark.mllib.linalg.BLAS.{axpy, dot, scal}
 import org.apache.spark.mllib.linalg.VectorImplicits._
+import org.apache.spark.mllib.linalg.{SparseVector, Vector => OldVector, Vectors => OldVectors}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.sql.functions.{col, udf}
 import org.apache.spark.sql.types.{IntegerType, StructType}
+import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.VersionUtils.majorVersion
 import org.apache.spark.util.random.XORShiftRandom
-import com.tencent.angel.spark.PSContext
-import com.tencent.angel.spark.models.PSModelPool
-import com.tencent.angel.spark.models.vector.BreezePSVector
-import org.apache.spark.mllib.linalg.BLAS.{axpy, dot, scal}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -185,50 +186,50 @@ class KMeans @Since("1.5.0")(@Since("1.5.0") override val uid: String)
     *
     * The original paper can be found at http://theory.stanford.edu/~sergei/papers/vldb12-kmpar.pdf.
     */
-  private[clustering] def initKMeansParallel(data: RDD[VectorWithNorm], psPool: PSModelPool): Array[PsVectorWithNorm] = {
+  private[clustering] def initKMeansParallel(data: RDD[VectorWithNorm]): Array[VectorWithNorm] = {
     // Initialize empty centers and point costs.
     var costs = data.map(_ => Double.PositiveInfinity)
 
     // Initialize the first center to a random point.
-    val seedTemp = new XORShiftRandom($(seed)).nextInt()
-    val sample = data.takeSample(false, 1, seedTemp)
+    val seed1 = new XORShiftRandom($(seed)).nextInt()
+    val sample = data.takeSample(false, 1, seed1)
     // Could be empty if data is empty; fail with a better message early:
     require(sample.nonEmpty, s"No samples available from $data")
 
-    val centers = ArrayBuffer[PsVectorWithNorm]()
-    var newCenters = Seq(new PsVectorWithNorm(psPool.createModel(sample.head.vector.toArray).mkBreeze()
-      ,sample.head.norm))
+    val centers = ArrayBuffer[VectorWithNorm]()
+    var newCenters = Seq(sample.head.toDense)
     centers ++= newCenters
 
     // On each step, sample 2 * k points on average with probability proportional
     // to their squared distance from the centers. Note that only distances between points
     // and new centers are computed in each iteration.
     var step = 0
-    //var newCentersList = ArrayBuffer[Seq[PsVectorWithNorm]]()
+    var bcNewCentersList = ArrayBuffer[Broadcast[_]]()
     while (step < $(initSteps)) {
-      //newCentersList += newCenters
+      val bcNewCenters = data.context.broadcast(newCenters)
+      bcNewCentersList += bcNewCenters
       val preCosts = costs
       costs = data.zip(preCosts).map { case (point, cost) =>
-        math.min(KMeans.pointCost(newCenters, point), cost)
+        math.min(KMeans.pointCost(bcNewCenters.value, point), cost)
       }.persist(StorageLevel.MEMORY_AND_DISK)
       val sumCosts = costs.sum()
 
+      bcNewCenters.unpersist(blocking = false)
       preCosts.unpersist(blocking = false)
 
       val chosen = data.zip(costs).mapPartitionsWithIndex { (index, pointCosts) =>
-        val rand = new XORShiftRandom(seedTemp ^ (step << 16) ^ index)
+        val rand = new XORShiftRandom(seed1 ^ (step << 16) ^ index)
         pointCosts.filter { case (_, c) => rand.nextDouble() < 2.0 * c * $(k) / sumCosts }.map(_._1)
       }.collect()
-      //newCenters.foreach(center=>center.vector.proxy.delete())
-      newCenters = chosen.map(center=>new PsVectorWithNorm(psPool.createModel(center.vector.toArray).mkBreeze()
-        ,center.norm))
+      newCenters = chosen.map(_.toDense)
       centers ++= newCenters
       step += 1
     }
 
     costs.unpersist(blocking = false)
+    bcNewCentersList.foreach(_.destroy(false))
 
-    val distinctCenters = centers.distinct
+    val distinctCenters = centers.map(_.vector).distinct.map(new VectorWithNorm(_))
 
     if (distinctCenters.size <= $(k)) {
       distinctCenters.toArray
@@ -236,20 +237,15 @@ class KMeans @Since("1.5.0")(@Since("1.5.0") override val uid: String)
       // Finally, we might have a set of more than k distinct candidate centers; weight each
       // candidate by the number of points in the dataset mapping to it and run a local k-means++
       // on the weighted centers to pick k of them
-      val countMap = data.map(KMeans.findClosest(distinctCenters, _)._1).countByValue()
+      val bcCenters = data.context.broadcast(distinctCenters)
+      val countMap = data.map(KMeans.findClosest(bcCenters.value, _)._1).countByValue()
 
+      bcCenters.destroy(blocking = false)
 
       val myWeights = distinctCenters.indices.map(countMap.getOrElse(_, 0L).toDouble).toArray
-      val ans=LocalKMeans.kMeansPlusPlus(0,
-        distinctCenters.toArray.map(center=>
-          new VectorWithNorm(Vectors.dense(center.vector.toRemote.pull()),center.norm)),
-        myWeights, $(k), 30).map(localCenter=>
-        new PsVectorWithNorm(psPool.createModel(localCenter.vector.toArray).mkBreeze(),localCenter.norm))
-      centers.foreach(_.vector.proxy.delete())
-      ans
+      LocalKMeans.kMeansPlusPlus(0, distinctCenters.toArray, myWeights, $(k), 30)
     }
   }
-
 
 
   @Since("2.0.0")
@@ -270,22 +266,24 @@ class KMeans @Since("1.5.0")(@Since("1.5.0") override val uid: String)
       new VectorWithNorm(v, norm)
     }
 
-
+    val initContextTime = System.nanoTime()
     val sc = data.sparkContext
-    val psPool = PSContext.getOrCreate.createModelPool(featureNum, 5*$(initSteps)*$(k))
+    val psPool = PSContext.getOrCreate.createModelPool(featureNum, $(k))
 
+    val initContextTimeInSeconds = (System.nanoTime() - initContextTime) / 1e9
+    logInfo(f"Initialization context with $initMode took $initContextTimeInSeconds%.3f seconds.")
 
     val initStartTime = System.nanoTime()
 
     val centers =if ($(initMode) == KMeans.RANDOM) {
       initRandom(data,psPool)
     } else {
-      initKMeansParallel(data,psPool)
+      initKMeansParallel(data).map(center=>new PsVectorWithNorm(psPool.createModel(center.vector.toArray).mkBreeze()))
     }
 
 
     val initTimeInSeconds = (System.nanoTime() - initStartTime) / 1e9
-    logInfo(f"Initialization with $initMode took $initTimeInSeconds%.3f seconds.")
+    logInfo(f"Initialization with ${$(initMode)} took $initTimeInSeconds%.3f seconds.")
 
     var converged = false
     var cost = 0.0
@@ -298,11 +296,11 @@ class KMeans @Since("1.5.0")(@Since("1.5.0") override val uid: String)
     // Execute iterations of Lloyd's algorithm until converged
     while (iteration < $(maxIter) && !converged) {
       val costAccum = sc.doubleAccumulator
-
+      val thisCenters = centers.map(center=>new VectorWithNorm(Vectors.dense(center.vector.toRemote.pull()),center.norm))
 
       // Find the sum and count of points mapping to each center
       val totalContribs = data.mapPartitions { points =>
-        val thisCenters = centers
+
         val dims = featureNum
 
         val sums = Array.fill(thisCenters.length)(Vectors.zeros(dims))
@@ -343,7 +341,7 @@ class KMeans @Since("1.5.0")(@Since("1.5.0") override val uid: String)
     logInfo(f"Iterations took $iterationTimeInSeconds%.3f seconds.")
 
     if (iteration == $(maxIter)) {
-      logInfo(s"KMeans reached the max number of iterations: $maxIter.")
+      logInfo(s"KMeans reached the max number of iterations: $iteration.")
     } else {
       logInfo(s"KMeans converged in $iteration iterations.")
     }
@@ -395,10 +393,11 @@ object KMeans extends DefaultParamsReadable[KMeans] {
   }
 
 
+
   /**
     * Returns the index of the closest center to the given point, as well as the squared distance.
     */
-  private[ml] def findClosest(centers: TraversableOnce[PsVectorWithNorm],
+  private[ml] def findClosest(centers: TraversableOnce[VectorWithNorm],
                               point: VectorWithNorm): (Int, Double) = {
     var bestDistance = Double.PositiveInfinity
     var bestIndex = 0
@@ -447,13 +446,14 @@ object KMeans extends DefaultParamsReadable[KMeans] {
   }
 
 
+
+
   /**
     * Returns the K-means cost of a given point against the given cluster centers.
     */
-  private[ml] def pointCost(centers: TraversableOnce[PsVectorWithNorm],
+  private[ml] def pointCost(centers: TraversableOnce[VectorWithNorm],
                             point: VectorWithNorm): Double =
     findClosest(centers, point)._2
-
 
   /**
     * Returns the squared Euclidean distance between two vectors
@@ -600,8 +600,7 @@ class KMeansModel private[ml](
     if (clusterCenters == null || clusterCenters.length == 0) null
     else {
       val featureNum = clusterCenters(0).size
-      val psPool = PSContext.getOrCreate.createModelPool(featureNum, $(k))
-      clusterCenters.map(v => new PsVectorWithNorm(psPool.createModel(v.toArray).mkBreeze()))
+      clusterCenters.map(v => new VectorWithNorm(v))
     }
   }
 

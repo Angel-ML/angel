@@ -1,10 +1,10 @@
 package org.apache.spark.ml.clustering.ps
 
-import scala.util.Random
-
 import org.apache.spark.internal.Logging
 import org.apache.spark.ml.linalg.BLAS.{axpy, scal}
 import org.apache.spark.ml.linalg.Vectors
+
+import scala.util.Random
 
 /**
   * Created by hanyuhuang on 2017/8/8.
@@ -65,7 +65,7 @@ private[ml] object LocalKMeans extends Logging  {
       var i = 0
       while (i < points.length) {
         val p = points(i)
-        val index = KMeans.findClosestLocal(centers, p)._1
+        val index = KMeans.findClosest(centers, p)._1
         axpy(weights(i), p.vector, sums(index))
         counts(index) += weights(i)
         if (index != oldClosest(i)) {
