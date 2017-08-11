@@ -16,6 +16,7 @@
 
 package com.tencent.angel.utils;
 
+import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.AppSubmitter;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.InvalidParameterException;
@@ -48,10 +49,9 @@ public class AngelRunJar {
   private static final Log LOG = LogFactory.getLog(AngelRunJar.class);
   private static final String angelSysConfFile = "angel-site.xml";
 
-  public static void main(String[] args) throws Exception {
+  public static void main(String[] args) {
+    final Configuration conf = new Configuration();
     try {
-      final Configuration conf = new Configuration();
-
       // load hadoop configuration
       String hadoopHomePath = System.getenv("HADOOP_HOME");
       if(hadoopHomePath == null) {
@@ -116,20 +116,24 @@ public class AngelRunJar {
           try {
             Class<?> submitClass = Class.forName(submitClassName);
             submmiter = (AppSubmitter) submitClass.newInstance();
-          } catch (Exception x) {
-            String message = "load submit class failed " + x.getMessage();
-            LOG.fatal(message);
-            throw new InvalidParameterException(message);
+            submmiter.submit(conf);
+          } catch (Throwable x) {
+            LOG.fatal("submit application failed " + x.getMessage());
+            exit(-1, conf);
           }
-
-          submmiter.submit(conf);
           return "OK";
         }
       });
+    } catch (Throwable x) {
+      LOG.fatal("submit application failed " + x.getMessage());
+      exit(-1, conf);
+    }
+  }
 
-    } catch (Exception x) {
-      x.printStackTrace();
-      System.exit(-1);
+  private static void exit(int exitCode, Configuration conf) {
+    String modeStr = conf.get(AngelConf.ANGEL_DEPLOY_MODE, AngelDeployMode.YARN.name());
+    if(modeStr.equals(AngelDeployMode.YARN.name())) {
+      System.exit(exitCode);
     }
   }
 

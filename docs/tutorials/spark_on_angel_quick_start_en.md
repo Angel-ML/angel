@@ -42,8 +42,9 @@ Support both YARN mode and Local mode
 
 ## Example Code: Implementing Gradient Descent with Angel PS
 
-A simple version is shown below
-```java
+A simple example is shown below
+
+```scala
 val context = PSContext.getOrCreate()
 val pool = context.createModelPool(dim, poolCapacity)
 val w = pool.createModel(initWeights)

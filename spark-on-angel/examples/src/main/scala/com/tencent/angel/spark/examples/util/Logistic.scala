@@ -148,7 +148,7 @@ object Logistic {
           math.log1p(math.exp(margin)) - margin
         }
 
-        remoteGradient.increment(gradient.toArray)
+        remoteGradient.incrementAndFlush(gradient.toArray)
         lossSum += loss
         count += 1
         this

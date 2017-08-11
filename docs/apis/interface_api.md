@@ -5,4 +5,6 @@
 * [DataBlock](DataBlock.md)
 * [PSModel](PSModel.md)
 * [MLModel](MLModel.md)
+* [GlobalMetrics](GlobalMetrics.md)
+* [ModelParser](ModelParser.md)
 
