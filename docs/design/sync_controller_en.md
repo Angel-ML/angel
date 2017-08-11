@@ -24,7 +24,7 @@ BSP is the default sync protocol in Angel and widely used in other distributed c
  - Use BSP in Angel: default setting
  
 ### 2. SSP
-SSP allows the tasks to drift apart up to an upper limit, know as **staleness**, which is the number of iterations that the fastest task is allowed to be ahead of the slowest task. 
+SSP allows the tasks to drift apart up to an upper limit, known as **staleness**, which is the number of iterations that the fastest task is allowed to be ahead of the slowest task. 
 
  - Advantages: reducing waiting time among tasks to some extent, resulting in better speed
  - Disadvantages: compared to BSP, SSP needs more iterations to reach the same level of convergence, also lacks applicability for some algorithms
