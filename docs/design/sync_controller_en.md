@@ -7,9 +7,9 @@
 
 As is well-known, in a distributed system, nodes usually vary in progress. So when aggregation for  result is needed, Slow nodes will block the entire computing task. And this will greatly waste computation resource.
 
-Considering machine learning's specific characteristic, ML system can actually loosen the synchronization restrictions. It is not a must to wait for all nodes to finish in every iteration. Faster workers can push their computed model delta ahead and proceed with next iteration。 thus reducing waiting time, making the entire process faster.
+Considering machine learning's specific characteristic, ML system can actually loosen the synchronization restrictions. It is not a must to wait for all nodes to finish in every iteration. Faster workers can push their computed model delta ahead and proceed with next iteration。In this way, waiting time for each other can be reduced, which make the entire process faster.
 
-So, in distributed computing system, **Sync Controller** is one of the most important function. Angel provides three levels of sync control: **BSP (Bulk Synchronous Parallel)**，**SSP (Stalness Synchronous Parallel)** and **ASP (Asynchronous Parallel)**. Among these three protocols, BSP is the most restricted synchronization protocol, whereas ASP is the least restricted. In general, looser synchronization protocol results in better speed.
+Thus in distributed computing system **Sync Controller** is one of the most important function. Angel provides three levels of sync control: **BSP (Bulk Synchronous Parallel)**，**SSP (Stalness Synchronous Parallel)** and **ASP (Asynchronous Parallel)**. Among these three protocols, BSP is the most restricted synchronization protocol, whereas ASP is the least restricted. In general, looser synchronization protocol results in better speed.
 
 
 ![](../img/sync_controller.png)
