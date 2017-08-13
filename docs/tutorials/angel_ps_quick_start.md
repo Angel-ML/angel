@@ -52,21 +52,16 @@
 	 N的值、保存路径都可以通过conf配置。
 	 
 	
-
 	```Scala
 	class QSLRModel(ctx: TaskContext, conf: Configuration) extends MLModel(ctx){
 		
-		val N = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
+		  val N = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
 
-		val weight = PSModel[DenseDoubleVector]("mylr.weight", 1, N)
-		weight.setAverage(true)
-		addPSModel(weight)
+		  val weight = PSModel[DenseDoubleVector]("qs.lr.weight", 1, N).setAverage(true)
+		  addPSModel(weight)
 
-		 override 
-		 def setSavePath(conf: Configuration): Unit = {
-			val path = conf.get(AngelConfiguration.ANGEL_SAVE_MODEL_PATH)
-			if (path != null) weight.setSavePath(path)
-		  ｝
+		  setSavePath(conf)
+		  setLoadPath(conf)
 	}
 	```
 2. **定义一个Task([TrainTask](../apis/Task.md))**
@@ -101,29 +96,23 @@
 		* 推送grad后，需要clock()、incIteration()。
 
 		```Scala
-		override
 		def train(ctx: TaskContext): Unit = {
-			
-			// A simple logistic regression model
-			val model = new LRModel(ctx, conf)
-			
-			// Apply batch gradient descent LR iteratively
-			while (ctx.getIteration < epochNum) {
-			  // Pull model from PS Server
-			  val weight = model.weight.getRow(0)
-			
-			  // Calculate gradient vector
-			  val grad = bathGradientDescent(weight)
-			
-			  // Push gradient vector to PS Server
-			  model.weight.increment(grad.timesBy(-1.0 * lr))
-			
-			  // LR model matrix clock
-			  model.weight.clock.get
-			
-			  // Increase iteration number
-			  ctx.incIteration()
-			}
+		    // A simple logistic regression model
+		    val lrModel = new QSLRModel(conf, ctx)
+		    val weightOnPS = lrModel.weight
+		    // Apply batch gradient descent LR iteratively
+		    while (ctx.getIteration < epochNum) {
+		      // Get model and calculate gradient
+		      val weight = weightOnPS.getRow(0)
+		      val grad = batchGradientDescent(weight)
+
+		      // Push gradient vector to PS Server and clock
+		      weightOnPS.increment(grad.timesBy(-1.0 * lr))
+		      weightOnPS.clock.get
+
+		      // Increase iteration number
+		      ctx.incIteration()
+		    }
 		}
 		```
   
@@ -140,7 +129,7 @@
 	  ……
 	  override
 	  def train(conf: Configuration): Unit = {
-	    train(conf, myLRModel(conf), classOf[QSLRTrainTask])
+	    train(conf, QSLRModel(conf), classOf[QSLRTrainTask])
 	   }
 	}
 	
