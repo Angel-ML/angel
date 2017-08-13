@@ -1,6 +1,5 @@
-# Angel快速入门指南
+# Angel 快速入门
 
----
 
 ## 准备知识
 
@@ -55,7 +54,7 @@
 	
 
 	```Scala
-	class myLRModel(ctx: TaskContext, conf: Configuration) extends MLModel(ctx){
+	class QSLRModel(ctx: TaskContext, conf: Configuration) extends MLModel(ctx){
 		
 		val N = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
 
@@ -95,7 +94,7 @@
 
 	在这个简易的LR算法例子中，我们
 
-	* 先实例化myLRModel模型对象model，然后开始迭代计算。
+	* 先实例化QSLRModel模型对象model，然后开始迭代计算。
 	* 每次迭代
 		* task从PS拉取模型的参数weight
 		* 训练数据计算得到梯度grad，把grad推送给PS，PS上weight的更新会自动完成。
@@ -141,7 +140,7 @@
 	  ……
 	  override
 	  def train(conf: Configuration): Unit = {
-	    train(conf, myLRModel(conf), classOf[myLRTrainTask])
+	    train(conf, myLRModel(conf), classOf[QSLRTrainTask])
 	   }
 	}
 	
@@ -154,7 +153,7 @@
 ```
 ./bin/angel-submit \
 --action.type train \
---angel.app.submit.class com.tencent.angel.example.quickStart.myLRRunner  \
+--angel.app.submit.class com.tencent.angel.example.quickStart.QSLRRunner  \
 --angel.train.data.path $input_path \
 --angel.save.model.path $model_path \
 --ml.epoch.num 10 \
@@ -166,7 +165,7 @@
 --angel.worker.task.number 3 \
 --angel.ps.number 1 \
 --angel.ps.memory.mb 5000 \
---angel.job.name myLR
+--angel.job.name QSLR
 ```
 
 提交完毕后，可以按照这个指引，[《查看到Yarn上的作业》](../deploy/run_on_yarn.md)，如果你不熟悉Yarn的话。
