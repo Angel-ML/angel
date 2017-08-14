@@ -1,6 +1,5 @@
-# Angel快速入门指南
+# Angel 快速入门
 
----
 
 ## 准备知识
 
@@ -53,21 +52,16 @@
 	 N的值、保存路径都可以通过conf配置。
 	 
 	
-
 	```Scala
-	class myLRModel(ctx: TaskContext, conf: Configuration) extends MLModel(ctx){
+	class QSLRModel(ctx: TaskContext, conf: Configuration) extends MLModel(ctx){
 		
-		val N = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
+		  val N = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
 
-		val weight = PSModel[DenseDoubleVector]("mylr.weight", 1, N)
-		weight.setAverage(true)
-		addPSModel(weight)
+		  val weight = PSModel[DenseDoubleVector]("qs.lr.weight", 1, N).setAverage(true)
+		  addPSModel(weight)
 
-		 override 
-		 def setSavePath(conf: Configuration): Unit = {
-			val path = conf.get(AngelConfiguration.ANGEL_SAVE_MODEL_PATH)
-			if (path != null) weight.setSavePath(path)
-		  ｝
+		  setSavePath(conf)
+		  setLoadPath(conf)
 	}
 	```
 2. **定义一个Task([TrainTask](../apis/Task.md))**
@@ -95,36 +89,30 @@
 
 	在这个简易的LR算法例子中，我们
 
-	* 先实例化myLRModel模型对象model，然后开始迭代计算。
+	* 先实例化QSLRModel模型对象model，然后开始迭代计算。
 	* 每次迭代
 		* task从PS拉取模型的参数weight
 		* 训练数据计算得到梯度grad，把grad推送给PS，PS上weight的更新会自动完成。
 		* 推送grad后，需要clock()、incIteration()。
 
 		```Scala
-		override
 		def train(ctx: TaskContext): Unit = {
-			
-			// A simple logistic regression model
-			val model = new LRModel(ctx, conf)
-			
-			// Apply batch gradient descent LR iteratively
-			while (ctx.getIteration < epochNum) {
-			  // Pull model from PS Server
-			  val weight = model.weight.getRow(0)
-			
-			  // Calculate gradient vector
-			  val grad = bathGradientDescent(weight)
-			
-			  // Push gradient vector to PS Server
-			  model.weight.increment(grad.timesBy(-1.0 * lr))
-			
-			  // LR model matrix clock
-			  model.weight.clock.get
-			
-			  // Increase iteration number
-			  ctx.incIteration()
-			}
+		    // A simple logistic regression model
+		    val lrModel = new QSLRModel(conf, ctx)
+		    val weightOnPS = lrModel.weight
+		    // Apply batch gradient descent LR iteratively
+		    while (ctx.getIteration < epochNum) {
+		      // Get model and calculate gradient
+		      val weight = weightOnPS.getRow(0)
+		      val grad = batchGradientDescent(weight)
+
+		      // Push gradient vector to PS Server and clock
+		      weightOnPS.increment(grad.timesBy(-1.0 * lr))
+		      weightOnPS.clock.get
+
+		      // Increase iteration number
+		      ctx.incIteration()
+		    }
 		}
 		```
   
@@ -141,7 +129,7 @@
 	  ……
 	  override
 	  def train(conf: Configuration): Unit = {
-	    train(conf, myLRModel(conf), classOf[myLRTrainTask])
+	    train(conf, QSLRModel(conf), classOf[QSLRTrainTask])
 	   }
 	}
 	
@@ -154,7 +142,7 @@
 ```
 ./bin/angel-submit \
 --action.type train \
---angel.app.submit.class com.tencent.angel.example.quickStart.myLRRunner  \
+--angel.app.submit.class com.tencent.angel.example.quickStart.QSLRRunner  \
 --angel.train.data.path $input_path \
 --angel.save.model.path $model_path \
 --ml.epoch.num 10 \
@@ -166,7 +154,7 @@
 --angel.worker.task.number 3 \
 --angel.ps.number 1 \
 --angel.ps.memory.mb 5000 \
---angel.job.name myLR
+--angel.job.name QSLR
 ```
 
 提交完毕后，可以按照这个指引，[《查看到Yarn上的作业》](../deploy/run_on_yarn.md)，如果你不熟悉Yarn的话。
