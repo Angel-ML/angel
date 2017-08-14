@@ -50,13 +50,13 @@ We train the LR model with gradient descent algorithm. In each iteration, task p
 	```Scala
 	class QSLRModel(ctx: TaskContext, conf: Configuration) extends MLModel(ctx){
 
-                  val N = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
+	          val N = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
 
-                  val weight = PSModel[DenseDoubleVector]("qs.lr.weight", 1, N).setAverage(true)
-                  addPSModel(weight)
+	          val weight = PSModel[DenseDoubleVector]("qs.lr.weight", 1, N).setAverage(true)
+	          addPSModel(weight)
 
-                  setSavePath(conf)
-                  setLoadPath(conf)
+	          setSavePath(conf)
+	          setLoadPath(conf)
 	}
 	```
 2. **Define the Task([TrainTask](../apis/Task.md))**
@@ -92,22 +92,22 @@ We train the LR model with gradient descent algorithm. In each iteration, task p
 
 		```Scala
 		def train(ctx: TaskContext): Unit = {
-                    // A simple logistic regression model
-                    val lrModel = new QSLRModel(conf, ctx)
-                    val weightOnPS = lrModel.weight
-                    // Apply batch gradient descent LR iteratively
-                    while (ctx.getIteration < epochNum) {
-                      // Get model and calculate gradient
-                      val weight = weightOnPS.getRow(0)
-                      val grad = batchGradientDescent(weight)
-                  
-                      // Push gradient vector to PS Server and clock
-                      weightOnPS.increment(grad.timesBy(-1.0 * lr))
-                      weightOnPS.clock.get
+		    // A simple logistic regression model
+		    val lrModel = new QSLRModel(conf, ctx)
+		    val weightOnPS = lrModel.weight
+		    // Apply batch gradient descent LR iteratively
+		    while (ctx.getIteration < epochNum) {
+		      // Get model and calculate gradient
+		      val weight = weightOnPS.getRow(0)
+		      val grad = batchGradientDescent(weight)
 
-                      // Increase iteration number
-                      ctx.incIteration()
-                    }
+		      // Push gradient vector to PS Server and clock
+		      weightOnPS.increment(grad.timesBy(-1.0 * lr))
+		      weightOnPS.clock.get
+
+		      // Increase iteration number
+		      ctx.incIteration()
+		    }
 		}
 		```
   
