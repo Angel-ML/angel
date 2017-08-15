@@ -120,8 +120,6 @@
 
 	前面，我们定义了LR模型，实现了它的训练过程。现在，还需要实现Runner类将训练这个模型的任务提交到集群。  
 
-	定义myLRRunner类继承MLRunner，在train方法中提交我们的myLRModel的模型类、和myLRTrainTak训练类就可以了。
-
 	
 ```Scala
 
