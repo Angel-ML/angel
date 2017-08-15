@@ -17,7 +17,7 @@
 ## Angel的介绍
 
 * [架构设计](./docs/overview/architecture.md)
-* [代码结构](./docs/overview/framework.md)
+* [代码结构](./docs/overview/code_framework.md)
 * [设计理念](./docs/overview/design_philosophy.md)
 * [Spark on Angel的设计](./docs/overview/spark_on_angel.md)
 
