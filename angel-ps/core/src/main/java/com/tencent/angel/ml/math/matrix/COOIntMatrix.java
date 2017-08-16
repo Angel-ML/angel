@@ -16,12 +16,13 @@
 
 package com.tencent.angel.ml.math.matrix;
 
+import com.tencent.angel.ml.math.TMatrix;
 import com.tencent.angel.ml.math.vector.TIntVector;
 
 /**
  * The coordinate int matrix
  */
-public class COOIntMatrix extends TIntMatrix {
+public class COOIntMatrix extends TMatrix {
 
   private static final int INIT_SIZE = 256;
 
@@ -84,32 +85,11 @@ public class COOIntMatrix extends TIntMatrix {
    * @param colId the col id
    * @param value the value
    */
-  @Override
-  public void inc(int rowId, int colId, int value) {
+  public void plusBy(int rowId, int colId, int value) {
     rowIds[size] = rowId;
     colIds[size] = colId;
     values[size] = value;
     size++;
-  }
-
-  @Override
-  public void plusBy(TIntMatrix other) {
-
-  }
-
-  @Override
-  public void plusBy(TIntVector other) {
-
-  }
-
-  @Override
-  public int get(int rowId, int colId) {
-    return 0;
-  }
-
-  @Override
-  public TIntVector getTIntVector(int rowId) {
-    return null;
   }
 
   @Override
@@ -118,13 +98,17 @@ public class COOIntMatrix extends TIntMatrix {
   }
 
   @Override
-  public int size() {
+  public long size() {
     return size;
   }
 
   @Override
   public void clear() {
     size = 0;
+  }
+
+  @Override public void clear(int rowIndex) {
+    throw new UnsupportedOperationException("Unsupport operation");
   }
 
   /**
@@ -137,8 +121,12 @@ public class COOIntMatrix extends TIntMatrix {
   }
 
   @Override
-  public int nonZeroNum() {
+  public long nonZeroNum() {
     return 0;
+  }
+
+  @Override public TMatrix plusBy(TMatrix other) {
+    throw new UnsupportedOperationException("Unsupport operation");
   }
 
   /**

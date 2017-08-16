@@ -89,7 +89,7 @@ public class DenseIntVectorTest {
       int delt = random.nextInt();
       int old = vec.get(idx);
 
-      vec.inc(idx, delt);
+      vec.plusBy(idx, delt);
 
       assertEquals(old + delt, vec.get(idx));
     }
@@ -207,7 +207,7 @@ public class DenseIntVectorTest {
       int old = vec.get(idx);
       int delt = random.nextInt();
 
-      vec.add(idx, delt);
+      vec.plusBy(idx, delt);
 
       assertEquals(old + delt, vec.get(idx));
     }

@@ -21,6 +21,8 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
 
+import com.tencent.angel.spark.context.PSContext
+
 /**
  * Shares a local `SparkSession and PSClient`
  * between all tests in a suite and closes it at the end
@@ -50,6 +52,7 @@ trait SharedPSContext extends BeforeAndAfterAll with BeforeAndAfterEach {
       .set("spark.ps.model.path", "file:///tmp/model")
       .set("spark.ps.instances", "1")
       .set("spark.ps.cores", "1")
+      .set("spark.ps.log.level", "DEBUG")
 
     // Spark setup
     val builder = SparkSession.builder()

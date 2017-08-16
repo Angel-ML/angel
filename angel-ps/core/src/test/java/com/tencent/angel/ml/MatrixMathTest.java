@@ -16,11 +16,11 @@
 
 package com.tencent.angel.ml;
 
+import com.tencent.angel.ml.math.matrix.SparseIntMatrix;
 import junit.framework.Assert;
 
 import org.junit.Test;
 
-import com.tencent.angel.ml.math.matrix.LILIntMatrix;
 import com.tencent.angel.utils.Time;
 
 import java.util.Random;
@@ -28,12 +28,12 @@ import java.util.Random;
 public class MatrixMathTest {
 
   @Test
-  public void LILIntMatrixTest() {
+  public void SparseIntMatrixTest() {
 
     int row, col;
     row = 10000;
     col = 10000;
-    LILIntMatrix matrix = new LILIntMatrix(row, col);
+    SparseIntMatrix matrix = new SparseIntMatrix(row, col);
 
     int[] rowIds = new int[col];
     int[] colIds = new int[col];
@@ -53,7 +53,7 @@ public class MatrixMathTest {
       }
 
       long start = Time.monotonicNow();
-      matrix.inc(rowIds, colIds, values);
+      matrix.plusBy(rowIds, colIds, values);
       long end   = Time.monotonicNow();
 
       for (int i = 0; i < col; i ++) {

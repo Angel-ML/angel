@@ -33,7 +33,7 @@ import java.util.List;
  */
 public class PSPartitioner implements Partitioner{
   private static final Log LOG = LogFactory.getLog(PSPartitioner.class);
-  public static final int DEFAULT_PARTITION_SIZE = 5000000;
+  public static final int DEFAULT_PARTITION_SIZE = 500000;
   protected MatrixContext mContext;
   protected Configuration conf;
 

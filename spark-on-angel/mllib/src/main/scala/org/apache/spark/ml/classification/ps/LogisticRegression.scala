@@ -51,10 +51,10 @@ import org.apache.spark.sql.types.{DataType, DoubleType, StructType}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.VersionUtils
 
-import com.tencent.angel.spark.PSContext
+import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.optim.OWLQN
-import com.tencent.angel.spark.models.PSModelProxy
-import com.tencent.angel.spark.models.vector.BreezePSVector
+import com.tencent.angel.spark.model.PSModelProxy
+import com.tencent.angel.spark.model.vector.BreezePSVector
 
 /**
  * Params for logistic regression.
@@ -347,7 +347,7 @@ class LogisticRegression @Since("1.2.0") (
       maxIter, tol, fitIntercept)
 
     val instanceSize = rawInstances.first().features.size
-    val psPool = PSContext.getOrCreate.createModelPool(instanceSize, 20)
+    val psPool = PSContext.getOrCreate().createModelPool(instanceSize, 20)
 
     val (summarizer, labelSummarizer) = {
       val seqOp = (c: (PSMultivariateOnlineSummarizer, MultiClassSummarizer),

@@ -108,7 +108,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
    * client worker pool: 1.use to deserialize partition responses and merge them to final result
    * 2.use to generate partition request and serialize it
    * */
-  private final ExecutorService clientThreadPool;
+  private ExecutorService clientThreadPool;
 
   /** response message handler */
   private Responser responser;
@@ -138,8 +138,6 @@ public class MatrixTransportClient implements MatrixTransportInterface {
     msgQueue = new LinkedBlockingQueue<ByteBuf>();
     stopped = new AtomicBoolean(false);
 
-    clientThreadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-
     Configuration conf = PSAgentContext.get().getConf();
     timer = new Timer();
     checkPeriodMS =
@@ -159,7 +157,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
   private void init() {
     Configuration conf = PSAgentContext.get().getConf();
-    int workerNum =
+    int nettyWorkerNum =
         conf.getInt(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_CLIENT_EVENTGROUP_THREADNUM,
             AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_EVENTGROUP_THREADNUM);
 
@@ -175,9 +173,25 @@ public class MatrixTransportClient implements MatrixTransportInterface {
         conf.getInt(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_MAX_MESSAGE_SIZE,
             AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_MAX_MESSAGE_SIZE);
 
+    clientThreadPool = Executors.newFixedThreadPool(
+        conf.getInt(AngelConf.ANGEL_PSAGENT_WORKERPOOL_SIZE,
+            AngelConf.DEFAULT_ANGEL_PSAGENT_WORKERPOOL_SIZE));
+
     bootstrap = new Bootstrap();
     channelManager = new ChannelManager(bootstrap);
-    eventGroup = new NioEventLoopGroup(workerNum);
+
+    Class channelClass = null;
+    String os = System.getProperty("os.name");
+    if(os.toLowerCase().startsWith("win")) {
+      LOG.info("os is windows, we use NioEventLoopGroup");
+      channelClass = NioSocketChannel.class;
+      eventGroup = new NioEventLoopGroup(nettyWorkerNum);
+      ((NioEventLoopGroup)eventGroup).setIoRatio(70);
+    } else
+
+    eventGroup = new NioEventLoopGroup(nettyWorkerNum);
+    ((NioEventLoopGroup)eventGroup).setIoRatio(70);
+
     bootstrap.group(eventGroup).channel(NioSocketChannel.class)
         .option(ChannelOption.SO_SNDBUF, sendBuffSize)
         .option(ChannelOption.SO_RCVBUF, recvBuffSize)
@@ -1241,6 +1255,16 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
       cf.addListener(new RequesterChannelFutureListener(seqId, request));
     }
+  }
+
+  private String poolInfo(GenericObjectPool<Channel> pool) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("active connects=");
+    sb.append(pool.getNumActive());
+    sb.append("\t");
+    sb.append("active connects=");
+    sb.append(pool.getNumIdle());
+    return sb.toString();
   }
 
   class RequesterChannelFutureListener implements ChannelFutureListener {

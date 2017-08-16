@@ -47,6 +47,15 @@ public abstract class TVector extends TAbstractVector {
   public abstract TVector plusBy(TAbstractVector other);
 
   /**
+   * Plus a element of vector.
+   *
+   * @param index the element index
+   * @param x     the double update value
+   * @return the reference of object
+   */
+  public abstract TVector plusBy(int index, double x);
+
+  /**
    * Multiply plus this vector with other vector element by element.
    *
    * @param other the other
@@ -55,14 +64,6 @@ public abstract class TVector extends TAbstractVector {
    */
   public abstract TVector plusBy(TAbstractVector other, double x);
 
-  /**
-   * Plus this vector with other vector element by element.
-   *
-   * @param other the other
-   * @param x     the int multiply factor
-   * @return the reference of object
-   */
-  public abstract TVector plusBy(TAbstractVector other, int x);
 
   /**
    * Plus this vector with other vector to generate a new vector element by element.
@@ -80,15 +81,6 @@ public abstract class TVector extends TAbstractVector {
    * @return the new vector
    */
   public abstract TVector plus(TAbstractVector other, double x);
-
-  /**
-   * Multiply plus this vector with other vector to a generate new vector element by element.
-   *
-   * @param other the other
-   * @param x     the int multiply factor
-   * @return the new vector
-   */
-  public abstract TVector plus(TAbstractVector other, int x);
 
   /**
    * Dot this vector with other.
@@ -123,13 +115,6 @@ public abstract class TVector extends TAbstractVector {
   public abstract TVector filter(double x);
 
   /**
-   * Clone a vector.
-   *
-   * @return  cloned vector
-   */
-  public abstract TVector clone();
-
-  /**
    * Clear.
    */
   public abstract void clear();
@@ -141,11 +126,31 @@ public abstract class TVector extends TAbstractVector {
    */
   public abstract long nonZeroNumber();
 
+
+  /**
+   * Calculate square norm value of vector
+   * @return square norm value
+   */
+  public abstract double squaredNorm();
+
   /**
    * Clone.
    *
    * @param vector for cloning the vector
    */
-  public abstract void clone(TVector vector);
+  public void clone(TVector vector) {
+    assert this.getClass() == vector.getClass();
+    assert this.dim == vector.dim;
+    this.matrixId = vector.matrixId;
+    this.rowId = vector.rowId;
+    this.clock = vector.clock;
+    this.dim = vector.dim;
+  }
 
+  /**
+   * Clone a vector.
+   *
+   * @return  cloned vector
+   */
+  public abstract TVector clone();
 }

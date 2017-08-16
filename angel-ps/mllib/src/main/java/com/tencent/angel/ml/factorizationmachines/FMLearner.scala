@@ -1,20 +1,45 @@
-package com.tencent.angel.ml.factorizationmachines
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import java.util
+package com.tencent.angel.ml.factorizationmachines
 
 import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.{DenseDoubleVector, SparseDoubleSortedVector, SparseDoubleVector, TDoubleVector}
+import com.tencent.angel.ml.math.vector.{DenseDoubleVector, SparseDoubleSortedVector}
+import com.tencent.angel.ml.matrix.psf.update.RandomNormal
 import com.tencent.angel.ml.metric.log.LossMetric
 import com.tencent.angel.ml.model.MLModel
+import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.{Log, LogFactory}
 
-import scala.util.Random
+import scala.collection.mutable
 
-class FMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
+/**
+  * Learner of Factorization machines
+  * @param ctx: context of this task
+  * @param minP: min value of y
+  * @param maxP: max value of y
+  * @param feaUsed: array of used feature of the input data
+  */
+class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Double, val feaUsed:
+Array[Int]) extends MLLearner(ctx) {
   val LOG: Log = LogFactory.getLog(classOf[FMLearner])
   val fmmodel = new FMModel(conf, ctx)
 
@@ -27,36 +52,32 @@ class FMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   val reg1: Double = conf.getDouble(MLConf.ML_FM_REG1, MLConf.DEFAULT_ML_FM_REG1)
   val reg2: Double = conf.getDouble(MLConf.ML_FM_REG2, MLConf.DEFAULT_ML_FM_REG2)
   val lr: Double = conf.getDouble(MLConf.ML_LEARN_RATE, MLConf.DEFAULT_ML_LEAR_RATE)
-  val vInit: Double = conf.getDouble(MLConf.ML_FM_V_INIT, MLConf.DEFAULT_ML_FM_V_INIT)
-
-  var maxP = 0.0
-  var minP = 0.0
-
-  val vIndexs = new Array[Int](feaNum)
-  for (i <- 0 until feaNum)
-    vIndexs(i) = i
+  val vStddev: Double = conf.getDouble(MLConf.ML_FM_V_STDDEV, MLConf.DEFAULT_ML_FM_V_INIT)
+  // Put used feature indexes to vIndexs
+  //val vIndexs = feaUsed.zipWithIndex.filter((p:(Int,Int))=>p._1!=0).map((p:(Int,Int))=>p._2).array
+  val vIndexs = new RowIndex()
+  feaUsed.zipWithIndex.filter((p:(Int, Int))=>p._1!=0).map((p:(Int, Int))=>vIndexs.addRowId(p._2))
+  val feaUsedN = vIndexs.getRowsNumber
+  LOG.info("vIndexs's row's number = " + vIndexs)
 
   /**
-    * Train a ML Model
+    * Train a Factorization machines Model
     *
     * @param trainData : input train data storage
     * @param vali      : validate data storage
     * @return : a learned model
     */
   override
-  def train(trainData: DataBlock[LabeledData], vali: DataBlock[LabeledData]): MLModel = {
+  def train(trainData: DataBlock[LabeledData], vali: DataBlock[LabeledData]):
+  MLModel = {
     val start = System.currentTimeMillis()
     LOG.info(s"learnType=$learnType, feaNum=$feaNum, rank=$rank, #trainData=${trainData.size}")
-    LOG.info(s"reg0=$reg0, reg1=$reg1, reg2=$reg2, lr=$lr, initV=$vInit")
+    LOG.info(s"reg0=$reg0, reg1=$reg1, reg2=$reg2, lr=$lr, vStev=$vStddev")
 
     val beforeInit = System.currentTimeMillis()
     initModels()
     val initCost = System.currentTimeMillis() - beforeInit
     LOG.info(s"Init matrixes cost $initCost ms.")
-
-    val ran = rangeOfPredict(trainData)
-    minP = ran._1
-    maxP = ran._2
 
     globalMetrics.addMetrics(fmmodel.FM_OBJ, LossMetric(trainData.size()))
 
@@ -83,30 +104,26 @@ class FMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     fmmodel
   }
 
+  /**
+    * Initialize with random values
+    */
   def initModels(): Unit = {
-    val totalTask = ctx.getTotalTaskNum
-    val taskId = ctx.getTaskId.getIndex
-    val random = new Random()
-
-    for (row <- 0 until feaNum) {
-      if (row % totalTask == taskId) {
-        val randV = new DenseDoubleVector(rank);
-        randV.setRowId(row)
-
-        for (col <- 0 until rank) {
-          val rand = math.random
-          randV.set(col, vInit * random.nextGaussian())
-        }
-
-        fmmodel.v.increment(randV)
+    if(ctx.getTaskId.getIndex == 0) {
+      for (row <- 0 until feaNum) {
+        fmmodel.v.update(new RandomNormal(fmmodel.v.getMatrixId(), row, 0.0, vStddev)).get()
       }
     }
 
     fmmodel.v.clock().get()
   }
 
+  /**
+    * One iteration to train Factorization Machines
+    * @param dataBlock
+    * @return
+    */
   def oneIteration(dataBlock: DataBlock[LabeledData]): (DenseDoubleVector,
-    DenseDoubleVector, util.List[DenseDoubleVector]) = {
+    DenseDoubleVector, mutable.HashMap[Int, DenseDoubleVector]) = {
     val startGet = System.currentTimeMillis()
     val (w0, w, v) = fmmodel.pullFromPS(vIndexs)
     val getCost = System.currentTimeMillis() - startGet
@@ -114,10 +131,11 @@ class FMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
 
     val _w0 = w0.clone()
     val _w = w.clone()
-    val _v = new util.ArrayList[DenseDoubleVector]
-    for (i <- 0 until feaNum) {
-      _v.add(v.get(i).clone())
+    val _v = new mutable.HashMap[Int, DenseDoubleVector]()
+    for (vec <- v) {
+      _v.put(vec._1, vec._2.clone())
     }
+    LOG.info(s"v has ${_v.size} rows.")
 
     dataBlock.resetReadIndex()
     for (_ <- 0 until dataBlock.size) {
@@ -127,13 +145,13 @@ class FMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       val pre = predict(x, y, _w0.get(0), _w, _v)
       val dm = derviationMultipler(y, pre)
 
-      _w0.add(0, -lr * (dm + reg0 * _w0.get(0)))
+      _w0.plusBy(0, -lr * (dm + reg0 * _w0.get(0)))
       _w.timesBy(1 - lr * reg1).plusBy(x, -lr * dm)
       updateV(x, dm, _v)
     }
 
-    for (i <- 0 until feaNum) {
-      v.get(i).plusBy(_v.get(i), -1.0).timesBy(-1.0)
+    for (update <- _v) {
+      v(update._1).plusBy(update._2, -1.0).timesBy(-1.0)
     }
 
     fmmodel.pushToPS(w0.plusBy(_w0, -1.0).timesBy(-1.0).asInstanceOf[DenseDoubleVector],
@@ -143,9 +161,16 @@ class FMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     (_w0, _w, _v)
   }
 
-
+  /**
+    * Evaluate the objective value
+    * @param dataBlock
+    * @param w0
+    * @param w
+    * @param v
+    * @return
+    */
   def evaluate(dataBlock: DataBlock[LabeledData], w0: Double, w: DenseDoubleVector,
-               v: util.List[DenseDoubleVector]):
+               v: mutable.HashMap[Int, DenseDoubleVector]):
   Double = {
     var loss = 0.0
 
@@ -161,8 +186,17 @@ class FMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     loss
   }
 
+  /**
+    * Predict an instance
+    * @param x：feature vector of instance
+    * @param y: label value of instance
+    * @param w0: w0 mat of FM
+    * @param w: w mat of FM
+    * @param v: v mat of FM
+    * @return
+    */
   def predict(x: SparseDoubleSortedVector, y: Double, w0: Double, w: DenseDoubleVector, v:
-  util.List[DenseDoubleVector]): Double = {
+  mutable.HashMap[Int, DenseDoubleVector]): Double = {
     var ret: Double = 0.0
     ret += w0
     ret += x.dot(w)
@@ -171,7 +205,7 @@ class FMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       var ret1 = 0.0
       var ret2 = 0.0
       for (i <- 0 until x.size()) {
-        val tmp = x.getValues()(i) * v.get(x.getIndices()(i)).get(f)
+        val tmp = x.getValues()(i) * v(x.getIndices()(i)).get(f)
         ret1 += tmp
         ret2 += tmp * tmp
       }
@@ -184,7 +218,12 @@ class FMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     ret
   }
 
-  // \frac{\partial loss}{\partial x} = dm * \frac{\partial y}{\partial x}
+  /**
+    * \frac{\partial loss}{\partial x} = dm * \frac{\partial y}{\partial x}
+    * @param y: label of the instance
+    * @param pre: predict value of the instance
+    * @return : dm value
+    */
   def derviationMultipler(y: Double, pre: Double): Double = {
     learnType match {
       // For classification:
@@ -199,34 +238,28 @@ class FMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     }
   }
 
-  def updateV(x: SparseDoubleSortedVector, dm: Double, v: util.List[DenseDoubleVector]): Unit = {
+  /**
+    * Update v mat
+    * @param x: a train instance
+    * @param dm: dm value of the instance
+    * @param v: v mat
+    */
+  def updateV(x: SparseDoubleSortedVector, dm: Double, v: mutable.HashMap[Int, DenseDoubleVector]):
+  Unit = {
 
     for (f <- 0 until rank) {
       // calculate dot(vf, x)
       var dot = 0.0
       for (i <- 0 until x.size()) {
-        dot += x.getValues()(i) * v.get(x.getIndices()(i)).get(f)
+        dot += x.getValues()(i) * v(x.getIndices()(i)).get(f)
       }
 
       for (i <- 0 until x.size()) {
         val j = x.getIndices()(i)
-        val grad = dot * x.getValues()(i) - v.get(j).get(f) * x.getValues()(i) * x.getValues()(i)
-        v.get(j).add(f, -lr * (dm * grad + reg2 * v.get(j).get(f)))
+        val grad = dot * x.getValues()(i) - v(j).get(f) * x.getValues()(i) * x.getValues()(i)
+        v(j).plusBy(f, -lr * (dm * grad + reg2 * v(j).get(f)))
       }
     }
   }
 
-  def rangeOfPredict(trainData: DataBlock[LabeledData]): (Double, Double) = {
-    var maxP = -Double.MaxValue
-    var minP = Double.MaxValue
-
-    trainData.resetReadIndex()
-    for (i <- 0 until trainData.size()) {
-      val y = trainData.read().getY
-      maxP = if (maxP > y) maxP else y
-      minP = if (minP < y) minP else y
-    }
-
-    (minP, maxP)
-  }
 }

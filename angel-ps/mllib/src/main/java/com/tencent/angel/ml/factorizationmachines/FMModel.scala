@@ -17,19 +17,23 @@
 
 package com.tencent.angel.ml.factorizationmachines
 
-import java.util
 
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.TVector
 import com.tencent.angel.ml.math.vector.DenseDoubleVector
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
+import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
 
+import scala.collection.mutable
+
+/*
+ * Factorization machines model
+ */
 object FMModel {
   def apply(conf: Configuration) =  {
     new FMModel(conf)
@@ -47,10 +51,11 @@ class FMModel (conf: Configuration = null, _ctx: TaskContext = null) extends MLM
   val FM_W0 = "fm_w0"
   val FM_W = "fm_w"
   val FM_V = "fm_v"
-  val FM_OBJ = "fm.obj"
+  val FM_OBJ = "fm_obj"
 
   // Feature number of data
   val feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
+  // Rank of each feature vector
   val rank = conf.getInt(MLConf.ML_FM_RANK, MLConf.DEFAULT_ML_FM_RANK)
 
   // The w0 weight vector, stored on PS
@@ -58,7 +63,7 @@ class FMModel (conf: Configuration = null, _ctx: TaskContext = null) extends MLM
   // The w weight vector, stored on PS
   val w = PSModel[DenseDoubleVector](FM_W, 1, feaNum).setAverage(true)
   // The v weight vector, stored on PS
-  val v = PSModel[DenseDoubleVector](FM_V, feaNum, rank).setAverage(true)
+  val v = PSModel[DenseDoubleVector](FM_V, feaNum, rank).setAverage(true).setOplogType("SPARSE_DOUBLE")
 
   addPSModel(w0)
   addPSModel(w)
@@ -66,8 +71,6 @@ class FMModel (conf: Configuration = null, _ctx: TaskContext = null) extends MLM
 
   super.setSavePath(conf)
   super.setLoadPath(conf)
-
-
 
   /**
     *
@@ -77,14 +80,26 @@ class FMModel (conf: Configuration = null, _ctx: TaskContext = null) extends MLM
   override
   def predict(dataSet: DataBlock[LabeledData]): DataBlock[PredictResult] = ???
 
-  def pullFromPS(vIndexs: Array[Int]) = (w0.getRow(0), w.getRow(0), v.getRows(vIndexs))
+  /** Pull w0, w, v from PS
+    *
+    * @param vIndexs
+    * @return
+    */
+  def pullFromPS(vIndexs: RowIndex) = (w0.getRow(0), w.getRow(0), v.getRows(vIndexs, -1))
 
-  def pushToPS(update0: DenseDoubleVector, update1: DenseDoubleVector, update2: util
-  .List[DenseDoubleVector]) = {
+  /** Push update values of w0, w, v
+    *
+    * @param update0: update values of w0
+    * @param update1: update values of w
+    * @param update2: update values of v
+    * @return
+    */
+  def pushToPS(update0: DenseDoubleVector, update1: DenseDoubleVector, update2:
+  mutable.Map[Int, DenseDoubleVector]) = {
     w0.increment(0, update0)
     w.increment(0, update1)
-    for (i <- 0 until feaNum) {
-      v.increment(i, update2.get(i))
+    for (vec <- update2) {
+      v.increment(vec._1, vec._2)
     }
 
     w0.clock().get()

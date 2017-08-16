@@ -23,7 +23,7 @@ import org.apache.commons.logging.LogFactory;
  * Description: hyper-parameter of tree model
  */
 
-public class TreeParam {
+public class TreeParam implements TrainParam {
 
   private static final Log LOG = LogFactory.getLog(TreeParam.class);
 

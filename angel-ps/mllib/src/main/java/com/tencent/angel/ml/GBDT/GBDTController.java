@@ -18,11 +18,11 @@ package com.tencent.angel.ml.GBDT;
 
 
 import com.tencent.angel.ml.GBDT.udf.GBDTGradHistGetRowFunc;
+import com.tencent.angel.ml.GBDT.udf.GBDTGradHistGetRowResult;
 import com.tencent.angel.ml.RegTree.*;
 import com.tencent.angel.ml.conf.MLConf;
 import com.tencent.angel.ml.math.vector.*;
 import com.tencent.angel.ml.matrix.psf.get.single.GetRowParam;
-import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult;
 import com.tencent.angel.ml.metric.EvalMetric;
 import com.tencent.angel.ml.metric.LogErrorMetric;
 import com.tencent.angel.ml.model.PSModel;
@@ -369,11 +369,12 @@ public class GBDTController {
       long pullStartTime = System.currentTimeMillis();
       PSModel histMat = model.getPSModel(gradHistName);
       TDoubleVector histogram = null;
+      SplitEntry splitEntry = null;
       if (isServerSplit) {
         int matrixId = histMat.getMatrixId();
         GBDTGradHistGetRowFunc func = new GBDTGradHistGetRowFunc(new GetRowParam(matrixId, 0));
-        histogram = (TDoubleVector) ((GetRowResult) histMat.get(func)).getRow();
-        LOG.debug("Get grad histogram without server split mode, histogram size " + histogram.getDimension());
+        //histogram = (TDoubleVector) ((GetRowResult) histMat.get(func)).getRow();
+        splitEntry = ((GBDTGradHistGetRowResult) histMat.get(func)).getSplitEntry();
       } else {
         histogram = (TDoubleVector) histMat.getRow(0);
         LOG.debug("Get grad histogram without server split mode, histogram size" + histogram.getDimension());
@@ -384,11 +385,34 @@ public class GBDTController {
 
       // 2.3. find best split result of this tree node
       if (this.param.isServerSplit) {
-        // 2.3.1 using server split, each partition of the histogram contains its best split result
-        // find the best split from all partitions
-        SplitEntry splitEntry = histHelper.findBestFromServerSplit(histogram);
-        LOG.info(String.format("Best split of node[%d]: feature[%d], value[%f], losschg[%f]", nid,
-            splitEntry.getFid(), splitEntry.getFvalue(), splitEntry.getLossChg()));
+        // 2.3.1 using server split
+
+        if (splitEntry.getFid() != -1) {
+          int trueSplitFid = this.fset[splitEntry.getFid()];
+          int splitIdx = (int) splitEntry.getFvalue();
+          float trueSplitValue = this.sketches[trueSplitFid * this.param.numSplit + splitIdx];
+          LOG.info(String.format("Best split of node[%d]: feature[%d], value[%f], "
+              + "true feature[%d], true value[%f], losschg[%f]",
+              nid, splitEntry.getFid(), splitEntry.getFvalue(), trueSplitFid, trueSplitValue,
+              splitEntry.getLossChg()));
+          splitEntry.setFid(trueSplitFid);
+          splitEntry.setFvalue(trueSplitValue);
+        }
+
+        // update the grad stats of the root node on PS, only called once by leader worker
+        if (nid == 0) {
+          GradStats rootStats = new GradStats(splitEntry.leftGradStat);
+          rootStats.add(splitEntry.rightGradStat);
+          this.updateNodeGradStats(nid, rootStats);
+        }
+        // update the grad stats of children node
+        if (splitEntry.fid != -1) {
+          // update the left child
+          this.updateNodeGradStats(2 * nid + 1, splitEntry.leftGradStat);
+          // update the right child
+          this.updateNodeGradStats(2 * nid + 2, splitEntry.rightGradStat);
+        }
+
         // 2.3.2 the updated split result (tree node/feature/value/gain) on PS,
         updatedIndices[i] = nid;
         updatedSplitFid[i] = splitEntry.fid;
@@ -396,7 +420,7 @@ public class GBDTController {
         updatedSplitGain[i] = splitEntry.lossChg;
       } else {
         // 2.3.3 otherwise, the returned histogram contains the gradient info
-        SplitEntry splitEntry = histHelper.findBestSplit(histogram);
+        splitEntry = histHelper.findBestSplit(histogram);
         LOG.info(String.format("Best split of node[%d]: feature[%d], value[%f], losschg[%f]", nid,
             splitEntry.getFid(), splitEntry.getFvalue(), splitEntry.getLossChg()));
         // 2.3.4 the updated split result (tree node/feature/value/gain) on PS,
@@ -473,60 +497,6 @@ public class GBDTController {
         AfterSplitRunner runner = new AfterSplitRunner(this, nid, splitFeatureVec, splitValueVec,
             splitGainVec, nodeGradStatsVec);
         this.threadPool.submit(runner);
-//        int splitFeature = splitFeatureVec.get(nid);
-//        float splitValue = (float) splitValueVec.get(nid);
-//        float splitGain = (float) splitGainVec.get(nid);
-//        float nodeSumGrad = (float) nodeGradStatsVec.get(nid);
-//        float nodeSumHess = (float) nodeGradStatsVec.get(nid + this.maxNodeNum);
-//        LOG.debug(String.format(
-//            "Active node[%d]: split feature[%d] value[%f], lossChg[%f], sumGrad[%f], sumHess[%f]",
-//            nid, splitFeature, splitValue, splitGain, nodeSumGrad, nodeSumHess));
-//        if (splitFeature != -1) {
-//          // 5.1. set the children nodes of this node
-//          this.forest[this.currentTree].nodes.get(nid).setLeftChild(2 * nid + 1);
-//          this.forest[this.currentTree].nodes.get(nid).setRightChild(2 * nid + 2);
-//          // 5.2. set split info and grad stats to this node
-//          SplitEntry splitEntry = new SplitEntry(splitFeature, splitValue, splitGain);
-//          this.forest[this.currentTree].stats.get(nid).setSplitEntry(splitEntry);
-//          this.forest[this.currentTree].stats.get(nid).lossChg = splitGain;
-//          this.forest[this.currentTree].stats.get(nid).setStats(nodeSumGrad, nodeSumHess);
-//          // 5.2. create children nodes
-//          TNode leftChild = new TNode(2 * nid + 1, nid, -1, -1);
-//          TNode rightChild = new TNode(2 * nid + 2, nid, -1, -1);
-//          this.forest[this.currentTree].nodes.set(2 * nid + 1, leftChild);
-//          this.forest[this.currentTree].nodes.set(2 * nid + 2, rightChild);
-//          // 5.3. create node stats for children nodes, and add them to the tree
-//          RegTNodeStat leftChildStat = new RegTNodeStat(param);
-//          RegTNodeStat rightChildStat = new RegTNodeStat(param);
-//          float leftChildSumGrad = (float) nodeGradStatsVec.get(2 * nid + 1);
-//          float rightChildSumGrad = (float) nodeGradStatsVec.get(2 * nid + 2);
-//          float leftChildSumHess = (float) nodeGradStatsVec.get(2 * nid + 1 + this.maxNodeNum);
-//          float rightChildSumHess = (float) nodeGradStatsVec.get(2 * nid + 2 + this.maxNodeNum);
-//          leftChildStat.setStats(leftChildSumGrad, leftChildSumHess);
-//          rightChildStat.setStats(rightChildSumGrad, rightChildSumHess);
-//          this.forest[this.currentTree].stats.set(2 * nid + 1, leftChildStat);
-//          this.forest[this.currentTree].stats.set(2 * nid + 2, rightChildStat);
-//          // 5.4. reset instance position
-//          resetInsPos(nid, splitFeature, splitValue);
-//          // 5.5. add new active nodes if possible, inc depth, otherwise finish this tree
-//          if (this.currentDepth < this.param.maxDepth - 1) {
-//            LOG.debug(String.format("Add children nodes of node[%d]:[%d][%d] to active nodes",
-//                    nid, 2 * nid + 1, 2 * nid + 2));
-//            addActiveNode(2 * nid + 1);
-//            addActiveNode(2 * nid + 2);
-//          } else {
-//            // 5.6. set children nodes to leaf nodes
-//            LOG.debug(String.format("Set children nodes of node[%d]:[%d][%d] to leaf nodes",
-//                    nid, 2 * nid + 1, 2 * nid + 2));
-//            setNodeToLeaf(2 * nid + 1, leftChildStat.baseWeight);
-//            setNodeToLeaf(2 * nid + 2, rightChildStat.baseWeight);
-//          }
-//        } else {
-//          // 5.7. set nid to leaf node
-//          setNodeToLeaf(nid, this.param.calcWeight(nodeSumGrad, nodeSumHess));
-//        }
-//        // 5.8. deactivate active node
-//        resetActiveTNodes(nid);
       }
     }
 

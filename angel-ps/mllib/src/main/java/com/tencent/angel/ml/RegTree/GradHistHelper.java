@@ -24,6 +24,7 @@ import com.tencent.angel.ml.math.vector.SparseDoubleSortedVector;
 import com.tencent.angel.ml.math.vector.TDoubleVector;
 import com.tencent.angel.ml.param.GBDTParam;
 import com.tencent.angel.ml.tree.SplitEntry;
+import com.tencent.angel.ps.impl.PSContext;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.worker.WorkerContext;
 import org.apache.commons.logging.Log;
@@ -231,8 +232,7 @@ public class GradHistHelper {
         splitEntry.fid, splitEntry.fvalue));
 
     // partition number
-    int partitionNum =
-        WorkerContext.get().getConf()
+    int partitionNum = WorkerContext.get().getConf()
             .getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER);
     // cols of each partition
     int colPerPartition = histogram.getDimension() / partitionNum;
@@ -246,7 +246,7 @@ public class GradHistHelper {
       }
       int trueSplitFid = this.controller.fset[splitFid];
       int splitIdx = (int) histogram.get(startIdx + 1);
-      float splitValue = this.controller.sketches[splitFid * this.controller.param.numSplit + splitIdx];
+      float splitValue = this.controller.sketches[trueSplitFid * this.controller.param.numSplit + splitIdx];
       float lossChg = (float) histogram.get(startIdx + 2);
       float leftSumGrad = (float) histogram.get(startIdx + 3);
       float leftSumHess = (float) histogram.get(startIdx + 4);
@@ -268,20 +268,20 @@ public class GradHistHelper {
     LOG.debug(String.format("The best split after looping the histogram: fid[%d], fvalue[%f], loss gain[%f]",
             splitEntry.fid, splitEntry.fvalue, splitEntry.lossChg));
 
-    // update the grad stats of the root node on PS, only called once by leader worker
-    if (this.nid == 0) {
-      GradStats rootStats = new GradStats(splitEntry.leftGradStat);
-      rootStats.add(splitEntry.rightGradStat);
-      this.controller.updateNodeGradStats(this.nid, rootStats);
-    }
-
-    // 3. update the grad stats of children node
-    if (splitEntry.fid != -1) {
-      // 3.1. update the left child
-      this.controller.updateNodeGradStats(2 * this.nid + 1, splitEntry.leftGradStat);
-      // 3.2. update the right child
-      this.controller.updateNodeGradStats(2 * this.nid + 2, splitEntry.rightGradStat);
-    }
+//    // update the grad stats of the root node on PS, only called once by leader worker
+//    if (this.nid == 0) {
+//      GradStats rootStats = new GradStats(splitEntry.leftGradStat);
+//      rootStats.add(splitEntry.rightGradStat);
+//      this.controller.updateNodeGradStats(this.nid, rootStats);
+//    }
+//
+//    // 3. update the grad stats of children node
+//    if (splitEntry.fid != -1) {
+//      // 3.1. update the left child
+//      this.controller.updateNodeGradStats(2 * this.nid + 1, splitEntry.leftGradStat);
+//      // 3.2. update the right child
+//      this.controller.updateNodeGradStats(2 * this.nid + 2, splitEntry.rightGradStat);
+//    }
 
     return splitEntry;
   }
@@ -395,9 +395,8 @@ public class GradHistHelper {
     LOG.info(String.format("Find best split for fid[%d] in histogram size[%d], startIdx[%d]", fid,
         histogram.getDimension(), startIdx));
 
-    int splitNum =
-            WorkerContext.get().getConf().getInt(MLConf.ML_GBDT_SPLIT_NUM(),
-                    MLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
+    int splitNum = WorkerContext.get().getConf().getInt(MLConf.ML_GBDT_SPLIT_NUM(),
+        MLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
 
     SplitEntry splitEntry = new SplitEntry();
     // 1. set the feature id
@@ -459,12 +458,13 @@ public class GradHistHelper {
     LOG.info(String.format("------To find the best split from server row[%d], cols[%d-%d]------",
         row.getRowId(), row.getStartCol(), row.getEndCol()));
     SplitEntry splitEntry = new SplitEntry();
+    splitEntry.leftGradStat = new GradStats();
+    splitEntry.rightGradStat = new GradStats();
     LOG.info(String.format("The best split before looping the histogram: fid[%d], fvalue[%f]",
         splitEntry.fid, splitEntry.fvalue));
     
-    int splitNum =
-            WorkerContext.get().getConf().getInt(MLConf.ML_GBDT_SPLIT_NUM(),
-                    MLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
+    int splitNum = PSContext.get().getConf().getInt(MLConf.ML_GBDT_SPLIT_NUM(),
+        MLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
 
     int startFid = row.getStartCol() / (2 * splitNum);
     int endFid = (row.getEndCol() + 1) / (2 * splitNum) - 1;
@@ -476,7 +476,7 @@ public class GradHistHelper {
       // 2.2. get the start index in histogram of this feature
       int startIdx = 2 * splitNum * i;
       // 2.3. find the best split of current feature
-      SplitEntry curSplit = findSplitOfFeature(i, row, startIdx);
+      SplitEntry curSplit = findSplitOfFeature(startFid + i, row, startIdx);
       // 2.4. update the best split result if possible
       splitEntry.update(curSplit);
     }
@@ -490,12 +490,11 @@ public class GradHistHelper {
   // find the best split result of one feature from a server row, used by the PS
   public static SplitEntry findSplitOfFeature(int fid, ServerDenseDoubleRow row, int startIdx) {
 
-    LOG.info(String.format("Find best split for fid[%d] in histogram size[%d], startIdx[%d]", fid,
+    LOG.debug(String.format("Find best split for fid[%d] in histogram size[%d], startIdx[%d]", fid,
         row.size(), startIdx));
 
-    int splitNum =
-            WorkerContext.get().getConf().getInt(MLConf.ML_GBDT_SPLIT_NUM(),
-                    MLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
+    int splitNum = PSContext.get().getConf().getInt(MLConf.ML_GBDT_SPLIT_NUM(),
+        MLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
 
     SplitEntry splitEntry = new SplitEntry();
     // 1. set the feature id
@@ -528,9 +527,9 @@ public class GradHistHelper {
             // 5.4. calculate the current loss gain
             float lossChg = leftStats.calcGain(param) + rightStats.calcGain(param) - rootGain;
             // 5.5. check whether we should update the split result with current loss gain
-            int splitIdx = fid * splitNum + histIdx - startIdx + 1;
-            // here we set the fvalue=splitIndex, split value = sketches[splitIdx+1], the task use
-            // index to find fvalue
+            int splitIdx = histIdx - startIdx + 1;
+            // here we set the fvalue=splitIndex, true split value = sketches[splitIdx+1]
+            // the task use index to find fvalue
             if (splitEntry.update(lossChg, fid, splitIdx)) {
               // 5.6. if should update, also update the best left and right grad stats
               bestLeftStat.update(leftStats.sumGrad, leftStats.sumHess);

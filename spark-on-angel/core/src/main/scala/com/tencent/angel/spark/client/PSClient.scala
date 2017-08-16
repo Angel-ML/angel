@@ -18,11 +18,13 @@
 package com.tencent.angel.spark.client
 
 import com.github.fommil.netlib.F2jBLAS
+
 import com.tencent.angel.ml.matrix.psf.update.enhance.map.{MapFunc, MapWithIndexFunc}
 import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.{Zip2MapFunc, Zip2MapWithIndexFunc}
 import com.tencent.angel.ml.matrix.psf.update.enhance.zip3.{Zip3MapFunc, Zip3MapWithIndexFunc}
-import com.tencent.angel.spark.PSContext
-import com.tencent.angel.spark.models.PSModelProxy
+import com.tencent.angel.spark.context.PSContext
+import com.tencent.angel.spark.model.PSModelProxy
+import com.tencent.angel.spark.model.matrix.PSMatrix
 
 /**
  * PSClient is a client which contains operations for PSVector on the PS nodes.
@@ -394,11 +396,15 @@ private[spark] abstract class PSClient {
    * Notice: it can only be called in th driver.
    */
   def map(from: PSModelProxy, func: MapFunc, to: PSModelProxy): Unit = {
-
     from.assertValid()
     to.assertValid()
     from.assertCompatible(to)
     doMap(from, func, to)
+  }
+
+  def mapInPlace(proxy: PSModelProxy, func: MapFunc): Unit = {
+    proxy.assertValid()
+    doMapInPlace(proxy, func)
   }
 
   /**
@@ -499,7 +505,6 @@ private[spark] abstract class PSClient {
   protected def doPull(vector: PSModelProxy): Array[Double]
 
   protected def doPush(vector: PSModelProxy, array: Array[Double]): Unit
-
 
   protected def doFill(
       to: PSModelProxy,
@@ -623,6 +628,8 @@ private[spark] abstract class PSClient {
       from: PSModelProxy,
       func: MapFunc,
       to: PSModelProxy): Unit
+
+  protected def doMapInPlace(proxy: PSModelProxy, func: MapFunc): Unit
 
   protected def doZip2Map(
       from1: PSModelProxy,
@@ -802,6 +809,67 @@ private[spark] abstract class PSClient {
 
   protected def doMergeMin(vector: PSModelProxy, other: Array[Double]): Unit
 
+
+  /**
+   * ===================================================
+   * The following methods are matrix oriented.
+   * ===================================================
+   */
+
+  /**
+   * Pull matrix to local
+   */
+  def pull(mat: PSMatrix): Array[Array[Double]] = {
+    mat.assertValid()
+    doPull(mat)
+  }
+
+  /**
+   * Initialize a random matrix, whose value is a random(0.0, 1.0)
+   */
+  def random(mat: PSMatrix): Unit = {
+    mat.assertValid()
+    doRandom(mat)
+  }
+
+  /**
+   * Assign matrix diagonal with `value`
+   */
+  def diag(mat: PSMatrix, value: Array[Double]): Unit = {
+    mat.assertValid()
+    mat.assertCompatible(value)
+    assert(mat.meta.getColNum == mat.meta.getRowNum, s"when init diag matrix, " +
+      s"matrix columnNum(${mat.meta.getColNum}) must equal to rowNum(${mat.meta.getRowNum})")
+    doDiag(mat, value)
+  }
+
+  /**
+   * Assign matrix diagonal with 1.0
+   */
+  def eye(mat: PSMatrix): Unit = {
+    mat.assertValid()
+    assert(mat.meta.getColNum == mat.meta.getRowNum, s"when init eye matrix, " +
+      s"matrix columnNum(${mat.meta.getColNum}) must equal to rowNum(${mat.meta.getRowNum})")
+    doEye(mat)
+  }
+
+  /**
+   * Fill matrix with `value`
+   */
+  def fill(mat: PSMatrix, value: Double): Unit = {
+    mat.assertValid()
+    doFill(mat, value)
+  }
+
+  protected def doPull(matrix: PSMatrix): Array[Array[Double]]
+
+  protected def doRandom(mat: PSMatrix): Unit
+
+  protected def doDiag(mat: PSMatrix, value: Array[Double]): Unit
+
+  protected def doEye(mat: PSMatrix): Unit
+
+  protected def doFill(mat: PSMatrix, value: Double): Unit
 }
 
 object PSClient {

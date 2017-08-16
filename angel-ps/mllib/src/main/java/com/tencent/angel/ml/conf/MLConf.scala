@@ -118,7 +118,7 @@ object MLConf {
   val DEFAULT_ML_FM_REG1 = 0.0
   val ML_FM_REG2 = "ml.fm.reg2"
   val DEFAULT_ML_FM_REG2 = 0.0
-  val ML_FM_V_INIT = "ml.fm.v.init"
+  val ML_FM_V_STDDEV = "ml.fm.v.stddev"
   val DEFAULT_ML_FM_V_INIT = 0.1
 
 

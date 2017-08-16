@@ -23,11 +23,11 @@ import breeze.optimize.StochasticGradientDescent
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
-import com.tencent.angel.spark.PSContext
+import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.sparse.SparseLogistic
 import com.tencent.angel.spark.ml.common.OneHot.OneHotVector
 import com.tencent.angel.spark.ml.util.{ArgsUtil, DataLoader}
-import com.tencent.angel.spark.models.vector.BreezePSVector
+import com.tencent.angel.spark.model.vector.BreezePSVector
 
 
 object SparseLRWithSGD {

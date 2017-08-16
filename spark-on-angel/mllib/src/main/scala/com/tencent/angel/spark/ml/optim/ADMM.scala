@@ -32,11 +32,11 @@ import org.apache.spark.rdd.user.{CoalescedRDD => PartitionGroupRDD}
 import org.apache.spark.sql.{DataFrame, Row}
 import org.apache.spark.storage.StorageLevel
 
-import com.tencent.angel.spark.PSContext
+import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.common.{BLAS, Gradient, OneHot}
 import com.tencent.angel.spark.ml.common.OneHot.OneHotVector
 import com.tencent.angel.spark.ml.psf.ADMMZUpdater
-import com.tencent.angel.spark.models.{PSModelPool, PSModelProxy}
+import com.tencent.angel.spark.model.{PSModelPool, PSModelProxy}
 
 /**
  * :: DeveloperApi ::

@@ -41,33 +41,29 @@ We train the LR model with gradient descent algorithm. In each iteration, task p
 
 1. **Define the model([MLModel](../apis/MLModel.md))**
 
-	Define a `myLRModel` class that inherits the `MLModel` class, add an N-dimensional `PSModel` to  `myLRModel` using the `addPSModel` method, and set the save path for the LR model using the `setSavePath` method.
+	Define a `LRModel` class that inherits the `MLModel` class, add an N-dimensional `PSModel` to  `LRModel` using the `addPSModel` method, and set the save path for the LR model using the `setSavePath` method.
 	
 	The value of N, save path, etc. can be configured through `conf`.
 	 
 	
 
 	```Scala
-	class myLRModel(ctx: TaskContext, conf: Configuration) extends MLModel(ctx){
-		
-		val N = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
+	class QSLRModel(ctx: TaskContext, conf: Configuration) extends MLModel(ctx){
 
-		val weight = PSModel[DenseDoubleVector]("mylr.weight", 1, N)
-		weight.setAverage(true)
-		addPSModel(weight)
+	          val N = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
 
-		 override 
-		 def setSavePath(conf: Configuration): Unit = {
-			val path = conf.get(AngelConfiguration.ANGEL_SAVE_MODEL_PATH)
-			if (path != null) weight.setSavePath(path)
-		  ｝
+	          val weight = PSModel[DenseDoubleVector]("qs.lr.weight", 1, N).setAverage(true)
+	          addPSModel(weight)
+
+	          setSavePath(conf)
+	          setLoadPath(conf)
 	}
 	```
 2. **Define the Task([TrainTask](../apis/Task.md))**
 
-	Angel's model training is done through tasks. We need to define `myLRTrainTask` to train the LR model.
+	Angel's model training is done through tasks. We need to define `LRTrainTask` to train the LR model.
 
-	`myLRTrainTask` needs to inherit the `TrainTask` class and implement the following two methods:
+	`LRTrainTask` needs to inherit the `TrainTask` class and implement the following two methods:
 
 	* **Data Parsing**    
 
@@ -84,10 +80,10 @@ We train the LR model with gradient descent algorithm. In each iteration, task p
 
 	* **Training**
 
-	Angel will automatically run the `train` method in any `TrainTask` subclass. We need to implement the `train` method for `myLRTrainTask`.
+	Angel will automatically run the `train` method in any `TrainTask` subclass. We need to implement the `train` method for `LRTrainTask`.
 
 	In this simple LR example:
-	* We create an instance of the `myLRModel` class, and then start the iterations. 
+	* We create an instance of the `QSLRModel` class, and then start the iterations. 
 	* In each iteration: 
 		* Task pulls the weight parameters from the PS
 		* Workers calculate gradient `grad` and push it to the PS; PS then automatically updates the weight parameters 
@@ -95,29 +91,23 @@ We train the LR model with gradient descent algorithm. In each iteration, task p
 
 
 		```Scala
-		override
 		def train(ctx: TaskContext): Unit = {
-			
-			// A simple logistic regression model
-			val model = new myLRModel(ctx, conf)
-			
-			// Apply batch gradient descent LR iteratively
-			while (ctx.getIteration < epochNum) {
-			  // Pull model from PS Server
-			  val weight = model.weight.getRow(0)
-			
-			  // Calculate gradient vector
-			  val grad = bathGradientDescent(weight)
-			
-			  // Push gradient vector to PS Server
-			  model.weight.increment(grad.timesBy(-1.0 * lr))
-			
-			  // LR model matrix clock
-			  model.weight.clock.get
-			
-			  // Increase iteration number
-			  ctx.incIteration()
-			}
+		    // A simple logistic regression model
+		    val lrModel = new QSLRModel(conf, ctx)
+		    val weightOnPS = lrModel.weight
+		    // Apply batch gradient descent LR iteratively
+		    while (ctx.getIteration < epochNum) {
+		      // Get model and calculate gradient
+		      val weight = weightOnPS.getRow(0)
+		      val grad = batchGradientDescent(weight)
+
+		      // Push gradient vector to PS Server and clock
+		      weightOnPS.increment(grad.timesBy(-1.0 * lr))
+		      weightOnPS.clock.get
+
+		      // Increase iteration number
+		      ctx.incIteration()
+		    }
 		}
 		```
   
@@ -134,7 +124,7 @@ We train the LR model with gradient descent algorithm. In each iteration, task p
 	  ……
 	  override
 	  def train(conf: Configuration): Unit = {
-	    train(conf, myLRModel(conf), classOf[myLRTrainTask])
+	    train(conf, QSLRModel(conf), classOf[QSLRTrainTask])
 	   }
 	}
 	

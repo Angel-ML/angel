@@ -24,7 +24,7 @@ import org.apache.spark.rdd.RDD
 
 import com.tencent.angel.spark.ml.common.OneHot
 import com.tencent.angel.spark.ml.common.OneHot.OneHotVector
-import com.tencent.angel.spark.models.vector.{BreezePSVector, RemotePSVector}
+import com.tencent.angel.spark.model.vector.{BreezePSVector, RemotePSVector}
 
 /**
  * This is LogisticRegression data generator and its DiffFunction.
@@ -73,11 +73,19 @@ object SparseLogistic {
   case class PSCost(trainData: RDD[(OneHotVector, Double)]) extends DiffFunction[BreezePSVector] {
 
     override def calculate(x: BreezePSVector) : (Double, BreezePSVector) = {
+      var begin = System.currentTimeMillis()
       val cumGradient = x.proxy.getPool().createZero().mkBreeze()
 
       val cumLoss = trainData.mapPartitions { iter =>
+        var begin = System.currentTimeMillis()
         val localX = x.toRemote.pull(fromCache = true)
+        var end = System.currentTimeMillis()
+        println(s"pull time(ms): ${end - begin}")
+        begin = end
         val gradientSum = new Array[Double](localX.length)
+        end = System.currentTimeMillis()
+        println(s"new array time(ms): ${end - begin}")
+        begin = end
 
         val lossSum = iter.map { case (feat, label) =>
           val margin: Double = -1.0 * OneHot.dot(feat, localX)
@@ -92,14 +100,27 @@ object SparseLogistic {
           feat.foreach { index => gradientSum(index) += gradientMultiplier }
           loss
         }.sum
+        end = System.currentTimeMillis()
+        println(s"calculate loss time(ms): ${end - begin}")
+        begin = end
 
         cumGradient.toRemote.increment(gradientSum)
+        end = System.currentTimeMillis()
+        println(s"increment grad loss time(ms): ${end - begin}")
         Iterator.single(lossSum)
       }.sum()
+      var end = System.currentTimeMillis()
+      println(s"map partition time(ms): ${end - begin}")
+      begin = end
       cumGradient.toRemote.flush()
+      end = System.currentTimeMillis()
+      println(s"flush time(ms): ${end - begin}")
+      begin = end
 
       val sampleNum = trainData.count()
       BreezePSVector.blas.scal(1.0 / sampleNum, cumGradient)
+      end = System.currentTimeMillis()
+      println(s"breeze ps vector scale time(ms): ${end - begin}")
       println(s"sampleNum: $sampleNum cumLoss: $cumLoss loss: ${cumLoss / sampleNum}")
       (cumLoss / sampleNum, cumGradient)
     }

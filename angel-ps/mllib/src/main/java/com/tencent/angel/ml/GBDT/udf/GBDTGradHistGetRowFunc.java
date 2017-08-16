@@ -17,19 +17,21 @@
 
 package com.tencent.angel.ml.GBDT.udf;
 
-import com.tencent.angel.ml.GBDT.udf.getrow.GBDTUtils;
-import com.tencent.angel.ml.GBDT.udf.getrow.GradStats;
-import com.tencent.angel.ml.GBDT.udf.getrow.SplitEntry;
+import com.tencent.angel.ml.RegTree.GradHistHelper;
+import com.tencent.angel.ml.RegTree.GradStats;
 import com.tencent.angel.ml.conf.MLConf;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
-import com.tencent.angel.ml.matrix.psf.get.single.*;
+import com.tencent.angel.ml.matrix.psf.get.single.GetRowFunc;
+import com.tencent.angel.ml.matrix.psf.get.single.GetRowParam;
+import com.tencent.angel.ml.matrix.psf.get.single.PartitionGetRowParam;
+import com.tencent.angel.ml.matrix.psf.get.single.PartitionGetRowResult;
+import com.tencent.angel.ml.tree.SplitEntry;
 import com.tencent.angel.ps.impl.PSContext;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerRow;
 import com.tencent.angel.psagent.matrix.ResponseType;
-import com.tencent.angel.psagent.matrix.transport.adapter.RowSplitCombineUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -64,11 +66,10 @@ public class GBDTGradHistGetRowFunc extends GetRowFunc {
     int splitNum = conf.getInt(MLConf.ML_GBDT_SPLIT_NUM(),
             MLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
 
-    ServerDenseDoubleRow row =
-        (ServerDenseDoubleRow) PSContext.get().getMatrixPartitionManager()
+    ServerDenseDoubleRow row = (ServerDenseDoubleRow) PSContext.get().getMatrixPartitionManager()
             .getRow(param.getMatrixId(), param.getRowIndex(), param.getPartKey().getPartitionId());
 
-    SplitEntry splitEntry = GBDTUtils.findSplitOfServerRow(row);
+    SplitEntry splitEntry = GradHistHelper.findSplitOfServerRow(row);
 
     int fid = splitEntry.getFid();
     int splitIndex = (int) splitEntry.getFvalue();
@@ -114,7 +115,30 @@ public class GBDTGradHistGetRowFunc extends GetRowFunc {
       rowSplits.add(((PartitionGetRowResult)partResults.get(i)).getRowSplit());
     }
 
-    return new GetRowResult(ResponseType.SUCCESS, RowSplitCombineUtils.combineServerRowSplits(
-        rowSplits, getParam().getMatrixId(), ((GetRowParam)getParam()).getRowIndex()));
+    SplitEntry splitEntry = new SplitEntry();
+
+    for (int i = 0; i < size; i++) {
+      ServerDenseDoubleRow row =
+          (ServerDenseDoubleRow) ((PartitionGetRowResult)partResults.get(i)).getRowSplit();
+      int fid = (int) row.getData().get(0);
+      int splitIndex = (int) row.getData().get(1);
+      float lossGain = (float) row.getData().get(2);
+      float leftSumGrad = (float) row.getData().get(3);
+      float leftSumHess = (float) row.getData().get(4);
+      float rightSumGrad = (float) row.getData().get(5);
+      float rightSumHess = (float) row.getData().get(6);
+      GradStats curLeftGradStat = new GradStats(leftSumGrad, leftSumHess);
+      GradStats curRightGradStat = new GradStats(rightSumGrad, rightSumHess);
+      SplitEntry curSplitEntry = new SplitEntry(fid, splitIndex, lossGain);
+      curSplitEntry.leftGradStat = curLeftGradStat;
+      curSplitEntry.rightGradStat = curRightGradStat;
+      splitEntry.update(curSplitEntry);
+    }
+
+    LOG.info(String.format(
+        "psFunc: the best split after looping the histogram: fid[%d], fvalue[%f], loss gain[%f]",
+        splitEntry.fid, splitEntry.fvalue, splitEntry.lossChg));
+
+    return new GBDTGradHistGetRowResult(ResponseType.SUCCESS, splitEntry);
   }
 }

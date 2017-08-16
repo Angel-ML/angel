@@ -77,11 +77,7 @@ public class ClockCache {
   public void stop() {
     if(!stopped.getAndSet(true)){
       if (syncer != null) {
-        try {
-          syncer.join(syncTimeIntervalMS * 2);
-        } catch (InterruptedException e) {
-
-        }
+        syncer.interrupt();
       }
       matrixClockCacheMap.clear();
     }
@@ -103,6 +99,7 @@ public class ClockCache {
       List<Future> getResults = new ArrayList<Future>(serverIds.length);
       long startTsMs = 0;
       long useTimeMs = 0;
+      int syncNum = 0;
       while (!stopped.get() && !Thread.interrupted()) {
         startTsMs = System.currentTimeMillis();
         // Send request to every ps
@@ -126,6 +123,14 @@ public class ClockCache {
               // Update clock cache
               cache.update(entry.getKey().getMatrixId(), entry.getKey(), entry.getValue());
             }
+
+            if(LOG.isDebugEnabled()) {
+              if(syncNum % 1024 == 0) {
+                for(Entry<PartitionKey, Integer> entry:clocks.entrySet()) {
+                  LOG.debug("partition " + entry.getKey() + " update clock to " + entry.getValue());
+                }
+              }
+            }
           }
           getResults.clear();
 
@@ -133,8 +138,10 @@ public class ClockCache {
           if (useTimeMs < syncTimeIntervalMS) {
             Thread.sleep(syncTimeIntervalMS - useTimeMs);
           }
+
+          syncNum++;
         } catch(InterruptedException ie) {
-          LOG.info("sync thread is interupted");
+          LOG.info("sync thread is interrupted");
         } catch (Exception e) {
           LOG.error("get clocks failed, ", e);
         }

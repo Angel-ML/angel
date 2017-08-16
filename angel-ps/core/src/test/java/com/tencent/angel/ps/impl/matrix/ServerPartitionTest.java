@@ -228,6 +228,11 @@ public class ServerPartitionTest {
     serverPartition.serialize(buf);
     assertEquals(partitionKey.getMatrixId(), buf.readInt());
     assertEquals(partitionKey.getPartitionId(), buf.readInt());
+    assertEquals(partitionKey.getStartRow(), buf.readInt());
+    assertEquals(partitionKey.getEndRow(), buf.readInt());
+    assertEquals(partitionKey.getStartCol(), buf.readInt());
+    assertEquals(partitionKey.getEndCol(), buf.readInt());
+
     assertEquals(rowType.getNumber(), buf.readInt());
     assertEquals(serverPartition.getClock(), buf.readInt());
     assertEquals(partitionKey.getEndRow() - partitionKey.getStartRow(), buf.readInt());

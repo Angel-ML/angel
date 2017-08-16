@@ -104,11 +104,15 @@ public class PartitionGetParam implements Serialize {
   }
 
   /**
-   * Sets matrix id.
+   * Sets partition key.
    *
-   * @param matrixId the matrix id
+   * @param partKey the partition key
    */
   public void setPartKey(PartitionKey partKey) {
     this.partKey = partKey;
+  }
+
+  @Override public String toString() {
+    return "PartitionGetParam{" + "matrixId=" + matrixId + ", partKey=" + partKey + '}';
   }
 }

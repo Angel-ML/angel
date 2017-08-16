@@ -30,6 +30,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -221,6 +222,10 @@ public class ServerPartition implements Serialize {
         LOG.warn("invalid rowtype " + rowType + ", default is " + RowType.T_DOUBLE_DENSE);
         return new ServerDenseDoubleRow();
     }
+  }
+
+  public RowType getRowType() {
+    return rowType;
   }
 
   /**
@@ -416,6 +421,15 @@ public class ServerPartition implements Serialize {
     }
 
     return rows;
+  }
+
+  public List<Integer> getRowIds() {
+    Enumeration<Integer> iter = this.rows.keys();
+    List<Integer> rowIds = new ArrayList<Integer>();
+    while(iter.hasMoreElements()) {
+      rowIds.add(iter.nextElement());
+    }
+    return rowIds;
   }
 
   public void update(ServerRow rowSplit) {

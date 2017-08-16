@@ -48,7 +48,7 @@ public class AfterSplitRunner implements Runnable{
     float splitGain = (float) splitGainVec.get(nid);
     float nodeSumGrad = (float) nodeGradStatsVec.get(nid);
     float nodeSumHess = (float) nodeGradStatsVec.get(nid + this.controller.maxNodeNum);
-    LOG.debug(String.format(
+    LOG.info(String.format(
         "Active node[%d]: split feature[%d] value[%f], lossChg[%f], sumGrad[%f], sumHess[%f]",
         nid, splitFeature, splitValue, splitGain, nodeSumGrad, nodeSumHess));
     if (splitFeature != -1) {

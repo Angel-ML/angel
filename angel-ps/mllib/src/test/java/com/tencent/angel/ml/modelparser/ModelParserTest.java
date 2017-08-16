@@ -3,6 +3,7 @@ package com.tencent.angel.ml.modelparser;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.conf.MLConf;
 import com.tencent.angel.ml.lr.SgdLRTest;
+import com.tencent.angel.ml.toolkits.modelconverter.ModelConverterRunner;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -64,8 +65,8 @@ public class ModelParserTest {
 
     String modelInPath  = "./src/test/data/model/";
     String modelName = "DenseDouble";
-    String modelOutPath = LOCAL_FS + TMP_PATH + "/modelParser/" + modelName;
-    String psOutPath = LOCAL_FS + TMP_PATH + "/parsedModel";
+    String modelOutPath = LOCAL_FS + TMP_PATH + "\\modelParser\\" + modelName;
+    String psOutPath = LOCAL_FS + TMP_PATH + "\\parsedModel";
 
     // Set model path
     conf.set(MLConf.ML_MODEL_IN_PATH(), modelInPath);
@@ -74,7 +75,7 @@ public class ModelParserTest {
     conf.setInt(MLConf.ML_MODEL_CONVERT_THREAD_COUNT(), threadNumber);
     conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, psOutPath);
 
-    ModelParserRunner runner = new ModelParserRunner();
+    ModelConverterRunner runner = new ModelConverterRunner();
     runner.submit(conf);
   }
 
@@ -83,8 +84,8 @@ public class ModelParserTest {
 
     String modelInPath  = "./src/test/data/model/";
     String modelName = "SparseDouble";
-    String modelOutPath = LOCAL_FS + TMP_PATH + "/modelParser/" + modelName;
-    String psOutPath = LOCAL_FS + TMP_PATH + "/parsedModel";
+    String modelOutPath = LOCAL_FS + TMP_PATH + "\\modelParser\\" + modelName;
+    String psOutPath = LOCAL_FS + TMP_PATH + "\\parsedModel";
 
     // Set model path
     conf.set(MLConf.ML_MODEL_IN_PATH(), modelInPath);
@@ -93,7 +94,7 @@ public class ModelParserTest {
     conf.setInt(MLConf.ML_MODEL_CONVERT_THREAD_COUNT(), threadNumber);
     conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, psOutPath);
 
-    ModelParserRunner runner = new ModelParserRunner();
+    ModelConverterRunner runner = new ModelConverterRunner();
     runner.submit(conf);
   }
 
@@ -102,8 +103,8 @@ public class ModelParserTest {
 
     String modelInPath  = "./src/test/data/model/";
     String modelName = "DenseFloat";
-    String modelOutPath = LOCAL_FS + TMP_PATH + "/modelParser/" + modelName;
-    String psOutPath = LOCAL_FS + TMP_PATH + "/parsedModel";
+    String modelOutPath = LOCAL_FS + TMP_PATH + "\\modelParser\\" + modelName;
+    String psOutPath = LOCAL_FS + TMP_PATH + "\\parsedModel";
 
     // Set model path
     conf.set(MLConf.ML_MODEL_IN_PATH(), modelInPath);
@@ -112,7 +113,7 @@ public class ModelParserTest {
     conf.setInt(MLConf.ML_MODEL_CONVERT_THREAD_COUNT(), threadNumber);
     conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, psOutPath);
 
-    ModelParserRunner runner = new ModelParserRunner();
+    ModelConverterRunner runner = new ModelConverterRunner();
     runner.submit(conf);
   }
 
@@ -121,8 +122,8 @@ public class ModelParserTest {
 
     String modelInPath  = "./src/test/data/model/";
     String modelName = "DenseInt";
-    String modelOutPath = LOCAL_FS + TMP_PATH + "/modelParser/" + modelName;
-    String psOutPath = LOCAL_FS + TMP_PATH + "/parsedModel";
+    String modelOutPath = LOCAL_FS + TMP_PATH + "\\modelParser\\" + modelName;
+    String psOutPath = LOCAL_FS + TMP_PATH + "\\parsedModel";
 
     // Set model path
     conf.set(MLConf.ML_MODEL_IN_PATH(), modelInPath);
@@ -131,7 +132,7 @@ public class ModelParserTest {
     conf.setInt(MLConf.ML_MODEL_CONVERT_THREAD_COUNT(), threadNumber);
     conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, psOutPath);
 
-    ModelParserRunner runner = new ModelParserRunner();
+    ModelConverterRunner runner = new ModelConverterRunner();
     runner.submit(conf);
   }
 
@@ -140,8 +141,8 @@ public class ModelParserTest {
 
     String modelInPath  = "./src/test/data/model/";
     String modelName = "SparseInt";
-    String modelOutPath = LOCAL_FS + TMP_PATH + "/modelParser/" + modelName;
-    String psOutPath = LOCAL_FS + TMP_PATH + "/parsedModel";
+    String modelOutPath = LOCAL_FS + TMP_PATH + "\\modelParser\\" + modelName;
+    String psOutPath = LOCAL_FS + TMP_PATH + "\\parsedModel";
 
     // Set model path
     conf.set(MLConf.ML_MODEL_IN_PATH(), modelInPath);
@@ -150,7 +151,7 @@ public class ModelParserTest {
     conf.setInt(MLConf.ML_MODEL_CONVERT_THREAD_COUNT(), threadNumber);
     conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, psOutPath);
 
-    ModelParserRunner runner = new ModelParserRunner();
+    ModelConverterRunner runner = new ModelConverterRunner();
     runner.submit(conf);
   }
 }

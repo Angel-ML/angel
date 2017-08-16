@@ -16,7 +16,6 @@
 
 package com.tencent.angel.ml.math;
 
-
 /**
  * The base matrix,represented a multidimensional values.
  */
@@ -96,7 +95,7 @@ public abstract class TMatrix extends TUpdate {
    *
    * @return the size
    */
-  public abstract int size();
+  public abstract long size();
 
   /**
    * Clear.
@@ -104,17 +103,25 @@ public abstract class TMatrix extends TUpdate {
   public abstract void clear();
 
   /**
+   * Clear.
+   */
+  public abstract void clear(int rowIndex);
+
+  /**
    * Gets non zero num of matrix
    *
    * @return the result
    */
-  public abstract int nonZeroNum();
+  public abstract long nonZeroNum();
+
+
 
   /**
-   * Gets specified vector.
+   * Plus by other matrix.
    *
-   * @param rowId the row id
-   * @return the vector if exists
+   * @param other the other matrix
+   * @return this
    */
-  public abstract TVector getTVector(int rowId);
+  public abstract TMatrix plusBy(TMatrix other);
+
 }

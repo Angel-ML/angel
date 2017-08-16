@@ -47,7 +47,7 @@ import org.apache.spark.ml.feature.Instance
 import org.apache.spark.ml.linalg.Vector
 import org.apache.spark.mllib.util.MLUtils
 
-import com.tencent.angel.spark.models.PSModelProxy
+import com.tencent.angel.spark.model.PSModelProxy
 
 /**
  * LogisticAggregator computes the gradient and loss for binary or multinomial logistic (softmax)

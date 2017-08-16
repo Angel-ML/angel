@@ -28,14 +28,13 @@ public class DenseIntMatrixTest {
     int[][] value = {{1, 2}, {3, 4}};
     DenseIntMatrix mat = new DenseIntMatrix(2, 2, value);
 
-    mat.inc(0, 0, 1);
-    mat.inc(1, 0, 2);
+    mat.plusBy(0, 0, 1);
+    mat.plusBy(1, 0, 2);
 
     assertEquals(2, mat.get(0, 0));
     assertEquals(2, mat.get(0, 1));
     assertEquals(5, mat.get(1, 0));
     assertEquals(4, mat.get(1, 1));
-
   }
 
   @Test
@@ -147,12 +146,13 @@ public class DenseIntMatrixTest {
     int[][] value = {{1, 2}, {3, 4}};
     DenseIntMatrix mat = new DenseIntMatrix(2, 2, value);
 
-    int[][] value_1 = mat.getValues();
+    DenseIntVector row0 = (DenseIntVector)mat.getTVector(0);
+    DenseIntVector row1 = (DenseIntVector)mat.getTVector(1);
 
-    assertEquals(1, value_1[0][0]);
-    assertEquals(2, value_1[0][1]);
-    assertEquals(3, value_1[1][0]);
-    assertEquals(4, value_1[1][1]);
+    assertEquals(1, row0.get(0));
+    assertEquals(2, row0.get(1));
+    assertEquals(3, row1.get(0));
+    assertEquals(4, row1.get(1));
 
   }
 
@@ -172,14 +172,14 @@ public class DenseIntMatrixTest {
   public void getTIntVector() throws Exception {
     int[][] value = {{1, 2}, {3, 4}};
     DenseIntMatrix mat = new DenseIntMatrix(2, 2, value);
-    TIntVector vec = mat.getTIntVector(0);
+    TIntVector vec = (TIntVector)mat.getTVector(0);
 
     assertEquals(1, vec.get(0));
     assertEquals(2, vec.get(1));
 
     DenseIntMatrix mat_1 = new DenseIntMatrix(2, 2);
     mat_1.plusBy(vec);
-    TIntVector vec_1 = mat_1.getTIntVector(1);
+    TIntVector vec_1 = (TIntVector)mat_1.getTVector(1);
 
     assertEquals(0, vec_1.get(0));
     assertEquals(0, vec_1.get(1));

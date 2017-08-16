@@ -69,13 +69,6 @@ public abstract class TAbstractVector extends TUpdate {
   public abstract double sparsity();
 
   /**
-   * Clone this vector.
-   *
-   * @return Return the clone
-   */
-  public abstract TAbstractVector clone();
-
-  /**
    * Gets type of Vector.
    *
    * @return the type

@@ -138,6 +138,7 @@ public class AngelYarnClient extends AngelClient {
       conf.set(AngelConf.ANGEL_JOB_DIR, submitJobDir.toString());
       conf.set(AngelConf.ANGEL_JOB_ID, jobId.toString());
 
+      setInputDirectory();
       setOutputDirectory();
 
       // Credentials credentials = new Credentials();
@@ -189,14 +190,19 @@ public class AngelYarnClient extends AngelClient {
 
   @Override
   public void stop(int stateCode) throws AngelException{
+    LOG.info("stop the application");
     if(master != null) {
       try {
+        LOG.info("master is not null, send stop command to Master, stateCode=" + stateCode);
         master.stop(null, ClientMasterServiceProtos.StopRequest.newBuilder().setExitStatus(stateCode).build());
       } catch (ServiceException e) {
+        LOG.error("send stop command to Master failed ", e);
+        stop();
         throw new AngelException(e);
       }
       close();
     } else {
+      LOG.info("master is null, just kill the application");
       stop();
     }
   }

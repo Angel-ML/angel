@@ -22,7 +22,7 @@ import scala.reflect.ClassTag
 
 import org.apache.spark.rdd.RDD
 
-import com.tencent.angel.spark.models.vector.RemotePSVector
+import com.tencent.angel.spark.model.vector.RemotePSVector
 
 class RDDPSFunctions[T: ClassTag](self: RDD[T]) extends Serializable {
 

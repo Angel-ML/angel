@@ -60,11 +60,17 @@ Worker的内存使用分布状况如下：
 	* 训练数据占用的内存大小为`St`
 	* 系统部分占用内存大小为`Sb`
 
-	Worker内存估算公式为：```Me = N * Sm + 2 * N * Smd + Smmd + St + Sb```
+	Worker内存估算公式为：
+    
+    ![][3]
 
-	系统使用的内存可以通过下面的方法简单估算：```Sb = Sm + Smmd + 1```
+	系统使用的内存可以通过下面的方法简单估算：
+    
+    ![][4]
 
-	估算公式可以简化为：```Me = (N + 1) * Sm + 2 * N * Smd + 2 * Smmd + St + 1```
+	估算公式可以简化为：
+    
+    ![][5]
 
 ### 3. Worker CPU VCore数预估
 与内存参数不一样的是CPU vcore只会影响任务执行效率，而不会影响任务的正确性。建议CPU vcore数和和内存参数按物理机器资源比例来调整。举一个简单的例子：
@@ -99,7 +105,9 @@ PS的内存使用分布如下：
 	* Task每轮迭代需要获取的模型部分大小为`Sw`
 	* Worker个数为`N`
 
-	可以通过下面方式简单估算PS所需内存：```Smp + 2 * N * Sw```
+	可以通过下面方式简单估算PS所需内存：
+    
+    ![][6]
 
 ### 3. PS CPU VCore个数预估
 
@@ -115,18 +123,11 @@ PS CPU VCore个数估算方法与Worker一致，但是具体需要根据算法�
 
 配置100个Worker，每个Worker执行的Task数量为1，每个Worker需要的内存估算如下：
 
-```
-Sm = Smd = Smmd = 8 * 10 ^ 8 / 10 ^ 9 = 0.8GB
-St = 300 / 100 / 1.5 = 2GB
-N = 1
-Me = (N + 1) * Sm + 2 * N * Smd + 2 * Smmd + St + 1 = 2 * 0.8 + 2 * 0.8 + 2 * 0.8 + 2 + 1 = 7.8GB
-```
+![][7]
+
 Worker内存向上取整为8GB。PS个数为Worker个数的1/5， 即20个，一个PS上承载的模型分区大小为500万， 每个PS需要的内存为：
 
-```
-Smp = Sw = 8 * 5 * 10 ^ 6 / 10 ^ 9 = 0.04GB
-Me = 0.04 + 2 * 100 * 0.04 = 8.04GB
-```
+![][8]
 
 * **PS端**
 
@@ -134,15 +135,19 @@ PS内存取整为8GB
 
 假设每一台物理机器内存为128GB, CPU vcore总数为48个， 则Worker的CPU vcore数为：
 
-```
-Vw = 48 / 128 * 8 = 3
-```
+![][9]
 
 PS 的CPU vcore数为：
-```
-Vp = 48 / 128 * 8 = 3
-```
+
+![][10]
 
  [1]: ../img/worker_memory.png
  [2]: ../img/ps_memory.png
-
+ [3]: ../img/rcg_formula1.png
+ [4]: ../img/rcg_formula2.png
+ [5]: ../img/rcg_formula3.png
+ [6]: ../img/rcg_formula4.png
+ [7]: ../img/rcg_formula5.png
+ [8]: ../img/rcg_formula6.png
+ [9]: ../img/rcg_formula7.png
+ [10]: ../img/rcg_formula8.png
