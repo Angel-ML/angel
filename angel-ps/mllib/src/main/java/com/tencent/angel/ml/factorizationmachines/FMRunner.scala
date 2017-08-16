@@ -20,9 +20,12 @@ package com.tencent.angel.ml.factorizationmachines
 import com.tencent.angel.ml.MLRunner
 import org.apache.hadoop.conf.Configuration
 
+/**
+  * Run Factorization Machines train task on Angel
+  */
 class FMRunner extends MLRunner{
   /**
-    * Training job to obtain a model
+    * Training job to obtain a FM model
     */
   override
   def train(conf: Configuration): Unit = {
@@ -30,12 +33,12 @@ class FMRunner extends MLRunner{
   }
 
   /**
-    * Incremental training job to obtain a model based on a trained model
+    * Incremental training job to obtain FM model based on a trained model
     */
   override def incTrain(conf: Configuration): Unit = ???
 
   /**
-    * Using a model to predict with unobserved samples
+    * Using a FM model to predict with unobserved samples
     */
   override def predict(conf: Configuration): Unit = ???
 }

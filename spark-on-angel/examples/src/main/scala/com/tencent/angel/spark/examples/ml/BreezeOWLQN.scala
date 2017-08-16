@@ -24,10 +24,10 @@ import breeze.optimize.{OWLQN => BrzOWLQN}
 import org.apache.spark.ml.linalg.Vector
 import org.apache.spark.rdd.RDD
 
-import com.tencent.angel.spark.PSContext
+import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.examples.util.{Logistic, PSExamples}
 import com.tencent.angel.spark.ml.optim.OWLQN
-import com.tencent.angel.spark.models.vector.BreezePSVector
+import com.tencent.angel.spark.model.vector.BreezePSVector
 
 /**
  * There is two ways to update PSVectors in RDD, RemotePSVector and RDDFunction.psAggregate.

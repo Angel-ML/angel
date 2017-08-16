@@ -20,7 +20,7 @@ package com.tencent.angel.spark.examples
 import breeze.linalg.DenseVector
 import breeze.math.MutableEnumeratedCoordinateField
 
-import com.tencent.angel.spark.PSContext
+import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.examples.psf._
 import com.tencent.angel.spark.examples.util.PSExamples._
 

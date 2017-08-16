@@ -28,7 +28,7 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
-import com.tencent.angel.spark.PSContext
+import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.common.{Learner, LogisticGradient, Model}
 import com.tencent.angel.spark.ml.optim.ADMM
 import com.tencent.angel.spark.ml.util._

@@ -20,11 +20,11 @@ package com.tencent.angel.spark.examples
 import breeze.linalg.DenseVector
 import org.apache.spark.rdd.RDD
 
-import com.tencent.angel.spark.PSContext
+import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.examples.util.Logistic
 import com.tencent.angel.spark.examples.util.PSExamples._
-import com.tencent.angel.spark.models.PSModelProxy
-import com.tencent.angel.spark.models.vector.RemotePSVector
+import com.tencent.angel.spark.model.PSModelProxy
+import com.tencent.angel.spark.model.vector.RemotePSVector
 import com.tencent.angel.spark.rdd.RDDPSFunctions._
 
 /**

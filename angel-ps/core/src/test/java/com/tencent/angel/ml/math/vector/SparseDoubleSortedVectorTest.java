@@ -33,7 +33,7 @@ public class SparseDoubleSortedVectorTest {
 
     SparseDoubleSortedVector vec_1 = vec.clone();
 
-    assertEquals(vec.getNorm(), vec_1.getNorm());
+    assertEquals(vec.squaredNorm(), vec_1.squaredNorm());
     assertArrayEquals(vec.getIndices(), vec_1.getIndices());
     assertArrayEquals(vec.getValues(), vec_1.getValues(), 0.0);
 
@@ -41,7 +41,7 @@ public class SparseDoubleSortedVectorTest {
 
     vec_2.clone(vec);
 
-    assertEquals(vec.getNorm(), vec_2.getNorm());
+    assertEquals(vec.squaredNorm(), vec_2.squaredNorm());
     assertArrayEquals(vec.getIndices(), vec_2.getIndices());
     assertArrayEquals(vec.getValues(), vec_2.getValues(), 0.0);
 
@@ -49,7 +49,7 @@ public class SparseDoubleSortedVectorTest {
 
     vec_3.clone(vec);
 
-    assertEquals(vec.getNorm(), vec_3.getNorm());
+    assertEquals(vec.squaredNorm(), vec_3.squaredNorm());
     assertArrayEquals(vec.getIndices(), vec_3.getIndices());
     assertArrayEquals(vec.getValues(), vec_3.getValues(), 0.0);
 
@@ -61,7 +61,7 @@ public class SparseDoubleSortedVectorTest {
 
     vec.clear();
 
-    assertEquals(0.0, vec.getNorm());
+    assertEquals(0.0, vec.squaredNorm());
     assertEquals(0, vec.nonZeroNumber());
     assertEquals(null, vec.getIndices());
     assertEquals(null, vec.getValues());
@@ -148,7 +148,7 @@ public class SparseDoubleSortedVectorTest {
 
     SparseDoubleSortedVector vec = new SparseDoubleSortedVector(10000, indexs, values);
 
-    assertEquals(sum, vec.getNorm());
+    assertEquals(sum, vec.squaredNorm());
   }
 
   @Test
@@ -230,5 +230,4 @@ public class SparseDoubleSortedVectorTest {
     for (int i = 0; i < 300; i++)
       assertEquals(value[i] * 3.0, value_1[i]);
   }
-
 }

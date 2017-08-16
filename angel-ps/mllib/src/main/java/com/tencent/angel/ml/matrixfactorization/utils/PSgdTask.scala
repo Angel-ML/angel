@@ -43,7 +43,7 @@ class PSgdTask(var users: Map[Int, UserVec], var items: Map[Int, ItemVec],
 
   @throws[Exception]
   def call: Boolean = {
-    var row = new DenseFloatVector
+    var row:DenseFloatVector = null
     var loop = true
     while (loop) {
       row = taskQueue.poll.asInstanceOf[DenseFloatVector]

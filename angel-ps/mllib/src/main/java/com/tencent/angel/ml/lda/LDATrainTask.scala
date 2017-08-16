@@ -17,11 +17,17 @@
 
 package com.tencent.angel.ml.lda
 
+import java.io.BufferedOutputStream
 import java.util
 
-import com.tencent.angel.ml.math.vector.DenseDoubleVector
+import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.ml.math.vector.{DenseDoubleVector, DenseIntVector}
+import com.tencent.angel.ml.utils.HDFSUtils
+import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex
+import com.tencent.angel.utils.HdfsUtil
 import com.tencent.angel.worker.task.{BaseTask, TaskContext}
 import org.apache.commons.logging.LogFactory
+import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{LongWritable, Text}
 
 /**
@@ -51,9 +57,8 @@ class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Te
     var N = 0
     while (reader.nextKeyValue()) {
       val text = reader.getCurrentValue
-      val doc  = parseDoc(text)
+      val doc  = new Document(text.toString)
       if (doc != null) {
-        doc.docId = did
         docs.add(doc)
         did += 1
         N += doc.len()
@@ -61,46 +66,25 @@ class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Te
     }
 
     // Initializing LDA model
-    val lDAModel = new LDAModel(ctx.getConf, ctx)
+    val model = new LDAModel(ctx.getConf, ctx)
 
-    LOG.info(s"V=${lDAModel.V} K=${lDAModel.K} alpha=${lDAModel.alpha} "
-       + s"beta=${lDAModel.beta} M=${docs.size()} tokens=$N "
-       + s"threadNum=${lDAModel.threadNum}")
+    LOG.info(s"V=${model.V} K=${model.K} alpha=${model.alpha} "
+       + s"beta=${model.beta} M=${docs.size()} tokens=$N "
+       + s"threadNum=${model.threadNum}")
 
-    // Building the LDA learner
-    val lDALearner = new LDALearner(ctx, docs, lDAModel)
+    // build topic structures
+    val data = new CSRTokens(model.V, docs.size())
+    data.build(docs, model.K)
+    docs.clear()
 
-    // Initilize topic assignment
-    lDALearner.init()
+    // training
+    val learner = new Trainer(ctx, model, data)
+    learner.initialize()
+    learner.train(model.epoch)
 
-    ctx.globalSync(lDAModel.tMat.getMatrixId)
-    ctx.globalSync(lDAModel.wtMat.getMatrixId)
-
-    ctx.incIteration()
-
-    // Training
-    for (i <- 1 to lDAModel.epoch)
-      lDALearner.trainOneEpoch(i)
-
+    // save values
+    if (model.saveWordTopic) learner.saveWordTopic(model)
+    if (model.saveDocTopic) learner.saveDocTopic(data, model)
   }
-
-  def parseDoc(text: Text): Document = {
-    val str = text.toString.trim()
-
-    if (str.length == 0)
-      return null
-
-    val splits = str.split(" ")
-    if (splits.length < 1)
-      return null
-
-    val wids = new Array[Int](splits.length)
-    for (i <- 0 until splits.length)
-      wids(i) = splits(i).toInt
-
-    new Document(-1, wids)
-  }
-
-
 
 }

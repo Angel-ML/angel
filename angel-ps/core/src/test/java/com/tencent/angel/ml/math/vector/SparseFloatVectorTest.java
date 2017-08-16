@@ -48,7 +48,7 @@ public class SparseFloatVectorTest {
     for (int i = 0; i < index.length; i++)
       assertEquals(vec.get(i), vec_1.get(i));
 
-    TFloatVector vec_2 = new SparseFloatVector(10000, 500);
+    TFloatVector vec_2 = new SparseFloatVector(300, 500);
     vec_2.clone(vec);
     int[] index2 = vec_2.getIndices();
     Arrays.sort(index2);

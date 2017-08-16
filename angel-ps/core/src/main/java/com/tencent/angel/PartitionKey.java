@@ -155,12 +155,20 @@ public class PartitionKey implements Comparable<PartitionKey>, Serialize {
   public void serialize(ByteBuf buf) {
     buf.writeInt(matrixId);
     buf.writeInt(partitionId);
+    buf.writeInt(startRow);
+    buf.writeInt(endRow);
+    buf.writeInt(startCol);
+    buf.writeInt(endCol);
   }
 
   @Override
   public void deserialize(ByteBuf buf) {
     matrixId = buf.readInt();
     partitionId = buf.readInt();
+    startRow = buf.readInt();
+    endRow = buf.readInt();
+    startCol = buf.readInt();
+    endCol = buf.readInt();
   }
 
   @Override

@@ -1275,6 +1275,7 @@ public class MasterService extends AbstractService implements MasterProtocol {
   @Override
   public ClientMasterServiceProtos.StopResponse stop(RpcController controller,
     ClientMasterServiceProtos.StopRequest request) throws ServiceException {
+    LOG.info("receive stop command from client, request=" + request);
     int exitStatus = request.getExitStatus();
     switch(exitStatus) {
       case 1:{

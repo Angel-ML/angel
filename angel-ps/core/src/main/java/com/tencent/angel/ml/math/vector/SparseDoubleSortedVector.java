@@ -41,9 +41,6 @@ public class SparseDoubleSortedVector extends TDoubleVector {
   // @brief Array to store values.
   public double[] values;
 
-  // @brief sum of the square of all of element
-  double norm;
-
   /**
    * init the empty vector
    */
@@ -77,10 +74,6 @@ public class SparseDoubleSortedVector extends TDoubleVector {
     this.dim = dim;
     this.indices = indices;
     this.values = values;
-
-    norm = 0.0;
-    for (int i = 0; i < values.length; i++)
-      norm += values[i] * values[i];
   }
 
   /**
@@ -93,14 +86,13 @@ public class SparseDoubleSortedVector extends TDoubleVector {
     this.nnz = other.nnz;
     this.indices = new int[nnz];
     this.values = new double[nnz];
-    this.norm = other.getNorm();
     System.arraycopy(other.indices, 0, this.indices, 0, this.nnz);
     System.arraycopy(other.values, 0, this.values, 0, nnz);
   }
 
   @Override
-  public TDoubleVector add(int index, double delt) {
-    set(index, get(index) + delt);
+  public TDoubleVector plusBy(int index, double delta) {
+    set(index, get(index) + delta);
     return this;
   }
 
@@ -124,14 +116,12 @@ public class SparseDoubleSortedVector extends TDoubleVector {
   public void clone(TVector row) {
     SparseDoubleSortedVector sortedRow = (SparseDoubleSortedVector) row;
     if (nnz == sortedRow.nnz) {
-      this.norm = ((SparseDoubleSortedVector) row).norm;
       System.arraycopy(sortedRow.indices, 0, this.indices, 0, this.nnz);
       System.arraycopy(sortedRow.values, 0, this.values, 0, nnz);
     } else {
       this.nnz = sortedRow.nnz;
       this.indices = new int[nnz];
       this.values = new double[nnz];
-      this.norm = ((SparseDoubleSortedVector) row).norm;
       System.arraycopy(sortedRow.indices, 0, this.indices, 0, this.nnz);
       System.arraycopy(sortedRow.values, 0, this.values, 0, nnz);
     }
@@ -144,7 +134,6 @@ public class SparseDoubleSortedVector extends TDoubleVector {
   @Override
   public void clear() {
     this.nnz = 0;
-    this.norm = 0;
     if (this.indices != null)
       this.indices = null;
     if (this.values != null)
@@ -162,11 +151,11 @@ public class SparseDoubleSortedVector extends TDoubleVector {
     if (other instanceof DenseDoubleVector)
       return dot((DenseDoubleVector) other);
 
-    LOG.error("Cannot perform dot operation on SparseDoubleSortedVector");
-    return 0.0;
+    throw new UnsupportedOperationException("Unsupportted operation: "
+      + this.getClass().getName() + " dot " + other.getClass().getName());
   }
 
-  public double dot(DenseDoubleVector other) {
+  private double dot(DenseDoubleVector other) {
     double ret = 0.0;
     int[] indexs = this.indices;
     double[] values = this.values;
@@ -178,15 +167,9 @@ public class SparseDoubleSortedVector extends TDoubleVector {
 
   @Override
   public TDoubleVector filter(double x) {
-    return null;
+    throw new UnsupportedOperationException("Unsupportted operation");
   }
 
-  /**
-   * get the element by index
-   *
-   * @param index the index
-   * @return
-   */
   @Override
   public double get(int index) {
     int position = Arrays.binarySearch(indices, 0, nnz, index);
@@ -197,60 +180,21 @@ public class SparseDoubleSortedVector extends TDoubleVector {
     return 0.0;
   }
 
-  /**
-   * get the dimension of vector
-   *
-   * @return
-   */
-  public int getDimension() {
-    return this.dim;
-  }
-
-  /**
-   * get all of the index
-   *
-   * @return
-   */
   @Override
   public int[] getIndices() {
     return indices;
   }
 
-  /**
-   * get the type
-   *
-   * @return
-   */
   @Override
   public VectorType getType() {
     return VectorType.T_DOUBLE_SPARSE;
   }
 
-
-  /**
-   * get values of all of the elements
-   *
-   * @return
-   */
   @Override
   public double[] getValues() {
     return values;
   }
 
-  /**
-   * get the norm
-   * 
-   * @return
-   */
-  public double getNorm() {
-    return this.norm;
-  }
-
-  /**
-   * count the nonzero element
-   *
-   * @return
-   */
   @Override
   public long nonZeroNumber() {
     long ret = 0;
@@ -266,91 +210,53 @@ public class SparseDoubleSortedVector extends TDoubleVector {
 
   @Override
   public TDoubleVector plus(TAbstractVector other) {
-    LOG.error("Cannot perform plus operation on SparseDoubleSortedVector");
-    return null;
+    throw new UnsupportedOperationException("Unsupportted operation");
   }
-
 
   @Override
   public TDoubleVector plus(TAbstractVector other, double x) {
-    LOG.error("Cannot perform plus operation on SparseDoubleSortedVector");
-    return null;
-  }
-
-  @Override
-  public TDoubleVector plus(TAbstractVector other, int x) {
-    LOG.error("Cannot perform plus operation on SparseDoubleSortedVector");
-    return null;
+    throw new UnsupportedOperationException("Unsupportted operation");
   }
 
   @Override
   public TDoubleVector plusBy(TAbstractVector other) {
-    LOG.error("Cannot perform plus operation on SparseDoubleSortedVector");
-    return null;
+    throw new UnsupportedOperationException("Unsupportted operation");
   }
 
   @Override
   public TDoubleVector plusBy(TAbstractVector other, double x) {
-    LOG.error("Cannot perform plus operation on SparseDoubleSortedVector");
-    return null;
+    throw new UnsupportedOperationException("Unsupportted operation");
   }
 
-  @Override
-  public TDoubleVector plusBy(TAbstractVector other, int x) {
-    LOG.error("Cannot perform plus operation on SparseDoubleSortedVector");
-    return null;
-  }
-
-  /**
-   * set the value by index
-   *
-   * @param index the index
-   * @param value the value
-   */
   @Override
   public void set(int index, double value) {
-    // LOG.error("Cannot perform plus operation on SparseDoubleSortedVector");
     this.indices[nnz] = index;
     this.values[nnz] = value;
     nnz++;
   }
 
-  /**
-   * get the size
-   *
-   * @return
-   */
   @Override
   public int size() {
     return nnz;
   }
 
-  /**
-   * get the sparsity
-   *
-   * @return
-   */
   @Override
   public double sparsity() {
     return ((double) nnz) / dim;
   }
 
-  /**
-   * get the norm of vector
-   *
-   * @return
-   */
   @Override
   public double squaredNorm() {
+    if(values == null) {
+      return 0.0;
+    }
+
+    double norm = 0.0;
+    for (int i = 0; i < values.length; i++)
+      norm += values[i] * values[i];
     return norm;
   }
 
-  /**
-   * get the multiplication of vector and element and do not change the vector
-   *
-   * @param x the double multiply factor
-   * @return
-   */
   @Override
   public TDoubleVector times(double x) {
     SparseDoubleSortedVector vector = this.clone();
@@ -359,25 +265,10 @@ public class SparseDoubleSortedVector extends TDoubleVector {
     return vector;
   }
 
-  /**
-   * get the multiplication of vector and element and change the vector
-   *
-   * @param x the double multiply factor
-   * @return
-   */
   @Override
   public TDoubleVector timesBy(double x) {
     for (int i = 0; i < nnz; i++)
       values[i] *= x;
-    this.norm *= x * x;
     return this;
   }
-
-  public void calNorm() {
-    this.norm = 0.0;
-    for (int i = 0; i < this.nnz; i++) {
-      this.norm += values[i] * values[i];
-    }
-  }
-
 }

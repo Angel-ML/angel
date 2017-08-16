@@ -17,11 +17,10 @@
 
 package com.tencent.angel.spark.client
 
-import com.tencent.angel.ml.matrix.psf.update.enhance.zip3.Zip3MapWithIndexFunc
 import com.tencent.angel.spark._
-import com.tencent.angel.spark.context.AngelPSContext
+import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
 import com.tencent.angel.spark.pof._
-import com.tencent.angel.spark.models.{PSModelPool, PSModelProxy}
+import com.tencent.angel.spark.model.{PSModelPool, PSModelProxy}
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.scalatest.BeforeAndAfterEach
@@ -69,7 +68,7 @@ class AngelPSClientSuite extends PSFunSuite with BeforeAndAfterEach {
   override def afterAll(): Unit = {
     PSContext.getOrCreate().destroyModelPool(_pool)
     _pool = null
-    AngelPSContext.stop()
+    PSContext.stop()
     _angel = null
     SparkSession.builder().getOrCreate().stop()
     super.afterAll()

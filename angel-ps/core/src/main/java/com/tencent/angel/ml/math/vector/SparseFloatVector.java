@@ -17,15 +17,18 @@
 package com.tencent.angel.ml.math.vector;
 
 import com.tencent.angel.ml.math.TAbstractVector;
-import com.tencent.angel.ml.math.vector.TFloatVector;
 import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.math.VectorType;
+import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+/**
+ * Sparse float vector, it use a (int, float) map to store elements.
+ */
 public class SparseFloatVector extends TFloatVector {
   private final static Log LOG = LogFactory.getLog(SparseFloatVector.class);
 
@@ -48,9 +51,9 @@ public class SparseFloatVector extends TFloatVector {
   }
 
   /**
-   * init the vector by setting the dim
+   * init the vector by setting the dimension
    *
-   * @param dim
+   * @param dim vector dimension
    */
   public SparseFloatVector(int dim) {
     this(dim, INIT_SIZE);
@@ -59,8 +62,8 @@ public class SparseFloatVector extends TFloatVector {
   /**
    * init the vector by setting the dim and capacity
    *
-   * @param dim
-   * @param capacity
+   * @param dim vector dimension
+   * @param capacity map capacity
    */
   public SparseFloatVector(int dim, int capacity) {
     super();
@@ -71,12 +74,13 @@ public class SparseFloatVector extends TFloatVector {
   /**
    * init the vector by setting the dim , index and value
    *
-   * @param dim
-   * @param indices
-   * @param values
+   * @param dim vector dimension
+   * @param indices index array
+   * @param values value array which same dimension with index array
    */
   public SparseFloatVector(int dim, int[] indices, float[] values) {
     super();
+    assert indices.length == values.length;
     this.dim = dim;
     this.hashMap = new Int2FloatOpenHashMap(indices, values);
   }
@@ -84,8 +88,8 @@ public class SparseFloatVector extends TFloatVector {
   /**
    * init the vector by setting the dim map
    * 
-   * @param dim
-   * @param map
+   * @param dim vector dimension
+   * @param map a (int, float) map
    */
   public SparseFloatVector(int dim, Int2FloatOpenHashMap map) {
     super();
@@ -96,66 +100,57 @@ public class SparseFloatVector extends TFloatVector {
   /**
    * init the vector by another vector
    * 
-   * @param other
+   * @param other other vector which has same dimension
    */
   public SparseFloatVector(SparseFloatVector other) {
     super(other);
     this.hashMap = new Int2FloatOpenHashMap(other.hashMap);
   }
 
-  /**
-   * clone the vector
-   *
-   * @return
-   */
   @Override
   public TFloatVector clone() {
     return new SparseFloatVector(this);
   }
 
-  /**
-   * clone vector by another one
-   *
-   * @return
-   */
-  @Override
-  public void clone(TVector row) {
-    SparseFloatVector sparseFloatVector = (SparseFloatVector) row;
-    hashMap.clear();
-    hashMap.putAll(sparseFloatVector.hashMap);
+  @Override public TFloatVector plusBy(int index, float delta) {
+    hashMap.addTo(index, delta);
+    return this;
   }
 
-  /**
-   * clear the vector
-   */
+  @Override
+  public void clone(TVector row) {
+    super.clone(row);
+    hashMap.clear();
+    hashMap.putAll(((SparseFloatVector) row).hashMap);
+  }
+
   @Override
   public void clear() {
     if (hashMap != null)
       hashMap.clear();;
   }
 
-  /**
-   * get the inner product of two vector
-   * 
-   * @param other the other
-   * @return
-   */
   @Override
   public double dot(TAbstractVector other) {
+    assert dim == other.getDimension();
     if (other instanceof DenseFloatVector)
       return dot((DenseFloatVector) other);
     if (other instanceof SparseFloatVector)
       return dot((SparseFloatVector) other);
-    return 0;
+    if (other instanceof DenseDoubleVector)
+      return dot((DenseDoubleVector) other);
+    if (other instanceof SparseDoubleVector)
+      return dot((SparseDoubleVector) other);
+    if (other instanceof SparseDoubleSortedVector)
+      return dot((SparseDoubleSortedVector) other);
+
+    throw new UnsupportedOperationException("Unsupport operation: " + this.getClass().getName() + " dot " + other.getClass().getName());
   }
 
-  public double dot(DenseFloatVector other) {
+  private double dot(DenseFloatVector other) {
     double dot = 0.0;
-
     ObjectIterator<Int2FloatMap.Entry> iter = this.hashMap.int2FloatEntrySet().fastIterator();
-
     Int2FloatMap.Entry entry = null;
-
     while (iter.hasNext()) {
       entry = iter.next();
       dot += entry.getFloatValue() * other.values[entry.getIntKey()];
@@ -163,7 +158,7 @@ public class SparseFloatVector extends TFloatVector {
     return dot;
   }
 
-  public double dot(SparseFloatVector other) {
+  private double dot(SparseFloatVector other) {
     double dot = 0.0;
 
     Int2FloatOpenHashMap smallMap = this.hashMap;
@@ -188,79 +183,91 @@ public class SparseFloatVector extends TFloatVector {
     return dot;
   }
 
+  private double dot(DenseDoubleVector other) {
+    double dot = 0.0;
+    ObjectIterator<Int2FloatMap.Entry> iter = this.hashMap.int2FloatEntrySet().fastIterator();
+    Int2FloatMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      dot += entry.getFloatValue() * other.values[entry.getIntKey()];
+    }
+    return dot;
+  }
 
-  /**
-   * filter the vector and covert to the appropriate type
-   *
-   * @param x the comparison value
-   * @return
-   */
+  private double dot(SparseDoubleVector other) {
+    double dot = 0.0;
+    if(this.size() < other.size()) {
+      ObjectIterator<Int2FloatMap.Entry> iter = hashMap.int2FloatEntrySet().fastIterator();
+      Int2FloatMap.Entry entry = null;
+      while (iter.hasNext()) {
+        entry = iter.next();
+        if (other.hashMap.containsKey(entry.getIntKey())) {
+          dot += entry.getFloatValue() * other.hashMap.get(entry.getIntKey());
+        }
+      }
+    } else {
+      ObjectIterator<Int2DoubleMap.Entry> iter = other.hashMap.int2DoubleEntrySet().fastIterator();
+      Int2DoubleMap.Entry entry = null;
+      while (iter.hasNext()) {
+        entry = iter.next();
+        if (this.hashMap.containsKey(entry.getIntKey())) {
+          dot += entry.getDoubleValue() * this.hashMap.get(entry.getIntKey());
+        }
+      }
+    }
+    return dot;
+  }
+
+  private double dot(SparseDoubleSortedVector other) {
+    double dot = 0.0;
+    int [] indexes = other.getIndices();
+    double [] values = other.getValues();
+
+    for(int i = 0; i < indexes.length; i++) {
+      if(hashMap.containsKey(indexes[i])) {
+        dot += hashMap.get(indexes[i]) * values[i];
+      }
+    }
+    return dot;
+  }
+
   @Override
-  public TVector filter(double x) {
-    Int2FloatOpenHashMap newMap = new Int2FloatOpenHashMap();
+  public TFloatVector filter(float x) {
+    SparseFloatVector  vector = new SparseFloatVector(dim);
+    vector.setMatrixId(matrixId).setRowId(rowId).setClock(clock);
 
     ObjectIterator<Int2FloatMap.Entry> iter = hashMap.int2FloatEntrySet().fastIterator();
-
     Int2FloatMap.Entry entry = null;
-
     while (iter.hasNext()) {
       entry = iter.next();
       float value = entry.getFloatValue();
       if (Math.abs(value) > x) {
-        newMap.put(entry.getIntKey(), value);
+        vector.set(entry.getIntKey(), value);
       }
     }
-    SparseFloatVector vector = new SparseFloatVector(dim, newMap);
-
-    return null;
+    return vector;
   }
 
-  /**
-   * get the element by index
-   *
-   * @param index the index
-   * @return
-   */
   @Override
   public float get(int index) {
     return this.hashMap.get(index);
   }
 
-  /**
-   * get index of all of the elements
-   *
-   * @return
-   */
   @Override
   public int[] getIndices() {
     return hashMap.keySet().toIntArray();
   }
 
-  /**
-   * get typr of vector
-   *
-   * @return
-   */
   @Override
   public VectorType getType() {
     return VectorType.T_FLOAT_SPARSE;
   }
 
-  /**
-   * get values of vector
-   *
-   * @return
-   */
   @Override
   public float[] getValues() {
     return hashMap.values().toFloatArray();
   }
 
-  /**
-   * count the nonzero element
-   *
-   * @return
-   */
   @Override
   public long nonZeroNumber() {
     long ret = 0;
@@ -272,38 +279,35 @@ public class SparseFloatVector extends TFloatVector {
           ret++;
       }
     }
-
     return ret;
   }
 
   @Override
   public TVector plus(TAbstractVector other) {
+    assert dim == other.getDimension();
     if (other instanceof DenseFloatVector)
       return plus((DenseFloatVector) other);
     if (other instanceof SparseFloatVector)
       return plus((SparseFloatVector) other);
 
-    return null;
+    throw new UnsupportedOperationException("Unsupport operation: " + this.getClass().getName() + " plus " + other.getClass().getName());
   }
 
-  public TVector plus(DenseFloatVector other) {
+  private TVector plus(DenseFloatVector other) {
     DenseFloatVector vec = new DenseFloatVector(other);
-
     ObjectIterator<Int2FloatMap.Entry> iter = this.hashMap.int2FloatEntrySet().fastIterator();
 
     Int2FloatMap.Entry entry = null;
     while (iter.hasNext()) {
       entry = iter.next();
-      float oldvalue = vec.get(entry.getIntKey());
-      vec.set(entry.getIntKey(), oldvalue + entry.getFloatValue());
+      vec.plusBy(entry.getIntKey(), entry.getFloatValue());
     }
 
     return vec;
   }
 
-  public TVector plus(SparseFloatVector other) {
+  private TVector plus(SparseFloatVector other) {
     SparseFloatVector newVector = (SparseFloatVector) this.clone();
-
     ObjectIterator<Int2FloatMap.Entry> iter = other.hashMap.int2FloatEntrySet().fastIterator();
 
     Int2FloatMap.Entry entry = null;
@@ -323,43 +327,31 @@ public class SparseFloatVector extends TFloatVector {
    * @return
    */
   @Override
-  public TVector plus(TAbstractVector other, double x) {
+  public TVector plus(TAbstractVector other, float x) {
+    assert dim == other.getDimension();
     if (other instanceof DenseFloatVector)
       return plus((DenseFloatVector) other, x);
     if (other instanceof SparseFloatVector)
       return plus((SparseFloatVector) other, x);
 
-    return null;
+    throw new UnsupportedOperationException("Unsupport operation: " + this.getClass().getName() + " plus " + other.getClass().getName());
   }
 
-  @Override
-  public TVector plus(TAbstractVector other, int x) {
-    return plus(other, (double) x);
-  }
-
-  public TVector plus(TAbstractVector other, float x) {
-    return plus(other, (double) x);
-  }
-
-  public TVector plus(DenseFloatVector other, double x) {
-    DenseFloatVector vec = new DenseFloatVector(dim, other.getValues());
+  private TVector plus(DenseFloatVector other, float x) {
+    DenseFloatVector vec = new DenseFloatVector(other);
     vec.timesBy(x);
-    ObjectIterator<Int2FloatMap.Entry> iter = this.hashMap.int2FloatEntrySet().fastIterator();
 
+    ObjectIterator<Int2FloatMap.Entry> iter = this.hashMap.int2FloatEntrySet().fastIterator();
     Int2FloatMap.Entry entry = null;
     while (iter.hasNext()) {
-      LOG.info("iterate.");
       entry = iter.next();
-      double delt = vec.get(entry.getIntKey());
-      vec.set(entry.getIntKey(), entry.getFloatValue() + delt);
+      vec.plusBy(entry.getIntKey(), entry.getFloatValue());
     }
-
     return vec;
   }
 
-  public TVector plus(SparseFloatVector other, double x) {
+  private TVector plus(SparseFloatVector other, float x) {
     SparseFloatVector newVector = (SparseFloatVector) this.clone();
-
     ObjectIterator<Int2FloatMap.Entry> iter = other.hashMap.int2FloatEntrySet().fastIterator();
 
     float fx = (float) x;
@@ -374,23 +366,24 @@ public class SparseFloatVector extends TFloatVector {
 
   @Override
   public TVector plusBy(TAbstractVector other) {
+    assert dim == other.getDimension();
     if (other instanceof DenseFloatVector)
       return plusBy((DenseFloatVector) other);
     if (other instanceof SparseFloatVector)
       return plusBy((SparseFloatVector) other);
 
-    return null;
+    throw new UnsupportedOperationException("Unsupport operation: " + this.getClass().getName() + " plusBy " + other.getClass().getName());
   }
 
-  public TVector plusBy(DenseFloatVector other) {
-    float[] delt = other.getValues();
-    for (int i = 0; i < delt.length; i++)
-      hashMap.addTo(i, delt[i]);
+  private TVector plusBy(DenseFloatVector other) {
+    float[] delta = other.getValues();
+    for (int i = 0; i < delta.length; i++)
+      hashMap.addTo(i, delta[i]);
 
     return this;
   }
 
-  public TVector plusBy(SparseFloatVector other) {
+  private TVector plusBy(SparseFloatVector other) {
     ObjectIterator<Int2FloatMap.Entry> iter = other.hashMap.int2FloatEntrySet().fastIterator();
     Int2FloatMap.Entry entry = null;
     while (iter.hasNext()) {
@@ -401,33 +394,26 @@ public class SparseFloatVector extends TFloatVector {
   }
 
   @Override
-  public TVector plusBy(TAbstractVector other, double x) {
+  public TFloatVector plusBy(TAbstractVector other, float x) {
+    assert dim == other.getDimension();
     if (other instanceof DenseFloatVector)
       return plusBy((DenseFloatVector) other, x);
     if (other instanceof SparseFloatVector)
       return plusBy((SparseFloatVector) other, x);
-    return null;
+
+    throw new UnsupportedOperationException("Unsupport operation: " + this.getClass().getName() + " plusBy " + other.getClass().getName());
   }
 
-  @Override
-  public TVector plusBy(TAbstractVector other, int x) {
-    return plusBy(other, (double) x);
-  }
-
-  public TVector plusBy(TAbstractVector other, float x) {
-    return plusBy(other, (double) x);
-  }
-
-  public TVector plusBy(DenseFloatVector other, double x) {
-    float[] delt = other.getValues();
+  public TFloatVector plusBy(DenseFloatVector other, float x) {
+    float[] delta = other.getValues();
     float fx = (float) x;
-    for (int i = 0; i < delt.length; i++)
-      hashMap.addTo(i, fx * delt[i]);
+    for (int i = 0; i < delta.length; i++)
+      hashMap.addTo(i, fx * delta[i]);
 
     return this;
   }
 
-  public TVector plusBy(SparseFloatVector other, double x) {
+  public TFloatVector plusBy(SparseFloatVector other, float x) {
     ObjectIterator<Int2FloatMap.Entry> iter = other.hashMap.int2FloatEntrySet().fastIterator();
     float fx = (float) x;
     Int2FloatMap.Entry entry = null;
@@ -439,32 +425,12 @@ public class SparseFloatVector extends TFloatVector {
     return this;
   }
 
-  /**
-   * set the double value by index
-   *
-   * @param index the index
-   * @param value the value
-   */
   @Override
-  public void set(int index, double value) {
-    this.hashMap.put(index, (float) value);
-  }
-
-  /**
-   * set the float value by index
-   *
-   * @param index the index
-   * @param value the value
-   */
-  public void set(int index, float value) {
+  public TFloatVector set(int index, float value) {
     this.hashMap.put(index, value);
+    return this;
   }
 
-  /**
-   * get the norm of vector
-   *
-   * @return
-   */
   @Override
   public double squaredNorm() {
     ObjectIterator<Int2FloatMap.Entry> iter = hashMap.int2FloatEntrySet().iterator();
@@ -476,63 +442,37 @@ public class SparseFloatVector extends TFloatVector {
     return sum;
   }
 
-  /**
-   * get the sparsity
-   *
-   * @return
-   */
   @Override
   public double sparsity() {
-    return ((double) hashMap.size() / dim);
+    return ((double) nonZeroNumber() / dim);
   }
 
-  /**
-   * get the size
-   *
-   * @return
-   */
   @Override
   public int size() {
     return hashMap.size();
   }
 
-  /**
-   * the multiplication of vector and element and do not change the vector
-   *
-   * @param x the double multiply factor
-   * @return
-   */
   @Override
-  public TVector times(double x) {
+  public TFloatVector times(float x) {
     SparseFloatVector vector = new SparseFloatVector(this.dim);
 
     ObjectIterator<Int2FloatMap.Entry> iter = this.hashMap.int2FloatEntrySet().fastIterator();
-
     Int2FloatMap.Entry entry = null;
-    float fx = (float) x;
     while (iter.hasNext()) {
       entry = iter.next();
-      vector.hashMap.put(entry.getIntKey(), fx * entry.getFloatValue());
+      vector.hashMap.put(entry.getIntKey(), x * entry.getFloatValue());
     }
 
     return vector;
   }
 
-  /**
-   * the multiplication of vector and element and change the vector
-   *
-   * @param x the double multiply factor
-   * @return
-   */
   @Override
-  public TVector timesBy(double x) {
+  public TFloatVector timesBy(float x) {
     ObjectIterator<Int2FloatMap.Entry> iter = this.hashMap.int2FloatEntrySet().fastIterator();
-
     Int2FloatMap.Entry entry = null;
-    float fx = (float) x;
     while (iter.hasNext()) {
       entry = iter.next();
-      this.hashMap.put(entry.getIntKey(), fx * entry.getFloatValue());
+      this.hashMap.put(entry.getIntKey(), x * entry.getFloatValue());
     }
 
     return this;

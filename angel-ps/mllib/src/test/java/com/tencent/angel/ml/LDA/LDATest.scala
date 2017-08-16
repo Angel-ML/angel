@@ -43,7 +43,7 @@ class LDATest {
 
   @Before
   def setup(): Unit = {
-    val inputPath: String = "./src/test/data/LDA/nips.train"
+    val inputPath: String = "./src/test/data/LDA/nips.doc"
 
     // Set basic configuration keys
     conf.setBoolean("mapred.mapper.new-api", true)
@@ -58,24 +58,25 @@ class LDATest {
     conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath)
     conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/LOG/ldalog")
     conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/out")
+    conf.setInt(AngelConf.ANGEL_WORKER_MAX_ATTEMPTS, 1)
 
     // Set angel resource parameters #worker, #task, #PS
     conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1)
     conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1)
     conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1)
 
-    conf.set("angel.task.user.task.class", classOf[LDATrainTask].getName)
-
     client = AngelClientFactory.get(conf)
 
     // Set LDA parameters #V, #K
     val V = 12420
-    val K = 100
+    val K = 1024
 
     conf.setInt(WORD_NUM, V)
     conf.setInt(TOPIC_NUM, K)
     conf.setInt(MLConf.ML_WORKER_THREAD_NUM, 1)
-    conf.setInt(MLConf.ML_EPOCH_NUM, 20)
+    conf.setInt(MLConf.ML_EPOCH_NUM, 100)
+    conf.setBoolean(SAVE_DOC_TOPIC, false)
+    conf.setBoolean(SAVE_WORD_TOPIC, false)
   }
 
   @Test
@@ -84,10 +85,10 @@ class LDATest {
     client.startPSServer()
 
     //init model
-    val lDAModel = new LDAModel(conf)
+    val model = new LDAModel(conf)
 
     // Load model meta to client
-    client.loadModel(lDAModel)
+    client.loadModel(model)
 
     // Start
     client.runTask(classOf[LDATrainTask])
@@ -100,5 +101,5 @@ class LDATest {
 
     client.stop()
   }
-
 }
+

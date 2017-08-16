@@ -17,7 +17,7 @@
 
 package com.tencent.angel.spark.context
 
-import com.tencent.angel.spark.{PSContext, PSFunSuite}
+import com.tencent.angel.spark.PSFunSuite
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.SparkConf
 

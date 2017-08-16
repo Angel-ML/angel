@@ -34,6 +34,7 @@ public class FMTest {
     double reg2 = 0.001;
     // Learn rage
     double lr = 0.001;
+    double stev = 0.1;
 
     // Set local deploy mode
     conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
@@ -48,15 +49,15 @@ public class FMTest {
     conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
     conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
-    //set sgd LR algorithm parameters #feature #epoch
+    //set FM algorithm parameters #feature #epoch
     conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(featureNum));
     conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
     conf.set(MLConf.ML_FM_RANK(), String.valueOf(rank));
     conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(lr));
-    conf.set(MLConf.ML_FM_REG0(),String.valueOf(reg0));
-    conf.set(MLConf.ML_FM_REG1(),String.valueOf(reg1));
-    conf.set(MLConf.ML_FM_REG2(),String.valueOf(reg2));
-
+    conf.set(MLConf.ML_FM_REG0(), String.valueOf(reg0));
+    conf.set(MLConf.ML_FM_REG1(), String.valueOf(reg1));
+    conf.set(MLConf.ML_FM_REG2(), String.valueOf(reg2));
+    conf.set(MLConf.ML_FM_V_STDDEV(), String.valueOf(stev));
   }
 
   @Test

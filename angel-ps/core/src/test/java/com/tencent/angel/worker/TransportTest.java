@@ -250,7 +250,7 @@ public class TransportTest {
 
       TVector row;
       while ((row = result.take()) != null) {
-        assertArrayEquals(expect.getTDoubleVector(row.getRowId()).getValues(), ((DenseDoubleVector) row).getValues(), 0.0);
+        assertArrayEquals(((DenseDoubleVector)expect.getTVector(row.getRowId())).getValues(), ((DenseDoubleVector) row).getValues(), 0.0);
       }
 
       Random rand = new Random(System.currentTimeMillis());
@@ -261,7 +261,7 @@ public class TransportTest {
           update.set(j, rand.nextDouble());
 
         mat.increment(rowId, update);
-        expect.getTDoubleVector(rowId).plusBy(update);
+        expect.getTVector(rowId).plusBy(update);
       }
 
       mat.clock().get();
@@ -272,7 +272,7 @@ public class TransportTest {
       result = mat.getRowsFlow(rowIndex, 2);
 
       while ((row = result.take()) != null) {
-        assertArrayEquals(expect.getTDoubleVector(row.getRowId()).getValues(), ((DenseDoubleVector) row).getValues(), 0.0);
+        assertArrayEquals(((DenseDoubleVector)expect.getTVector(row.getRowId())).getValues(), ((DenseDoubleVector) row).getValues(), 0.0);
       }
 
       rowIndex = new RowIndex();
@@ -288,7 +288,7 @@ public class TransportTest {
         if (row == null)
           continue;
 
-        assertArrayEquals(expect.getTDoubleVector(row.getRowId()).getValues(), ((DenseDoubleVector) row).getValues(), 0.0);
+        assertArrayEquals(((DenseDoubleVector)expect.getTVector(row.getRowId())).getValues(), ((DenseDoubleVector) row).getValues(), 0.0);
       }
     } catch (Exception x) {
       LOG.error("run testGetFlowDenseDoubleMatrix failed ", x);
@@ -394,7 +394,7 @@ public class TransportTest {
 
       TVector row;
       while ((row = result.take()) != null) {
-        assertArrayEquals(expect.getTIntVector(row.getRowId()).getValues(), ((DenseIntVector) row).getValues());
+        assertArrayEquals(((DenseIntVector)expect.getTVector(row.getRowId())).getValues(), ((DenseIntVector) row).getValues());
       }
 
       Random rand = new Random(System.currentTimeMillis());
@@ -405,7 +405,7 @@ public class TransportTest {
           update.set(j, rand.nextInt());
 
         mat.increment(rowId, update);
-        expect.getTIntVector(rowId).plusBy(update);
+        expect.getTVector(rowId).plusBy(update);
       }
 
       mat.clock().get();
@@ -416,7 +416,7 @@ public class TransportTest {
       result = mat.getRowsFlow(rowIndex, 2);
 
       while ((row = result.take()) != null) {
-        assertArrayEquals(expect.getTIntVector(row.getRowId()).getValues(), ((DenseIntVector) row).getValues());
+        assertArrayEquals(((DenseIntVector)expect.getTVector(row.getRowId())).getValues(), ((DenseIntVector) row).getValues());
       }
 
 
@@ -433,7 +433,7 @@ public class TransportTest {
         if (row == null)
           continue;
 
-        assertArrayEquals(expect.getTIntVector(row.getRowId()).getValues(), ((DenseIntVector) row).getValues());
+        assertArrayEquals(((DenseIntVector)expect.getTVector(row.getRowId())).getValues(), ((DenseIntVector) row).getValues());
       }
     } catch (Exception x) {
       LOG.error("run testGetFlowDenseIntMatrix failed ", x);

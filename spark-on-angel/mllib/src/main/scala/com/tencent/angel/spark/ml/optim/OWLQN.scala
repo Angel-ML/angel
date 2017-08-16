@@ -30,7 +30,7 @@ import breeze.optimize.{BacktrackingLineSearch, DiffFunction, LBFGS}
 import breeze.util._
 
 import com.tencent.angel.spark.ml.psf._
-import com.tencent.angel.spark.models.vector.BreezePSVector
+import com.tencent.angel.spark.model.vector.BreezePSVector
 
 /**
  * Implements the Orthant-wise Limited Memory QuasiNewton method,

@@ -45,10 +45,10 @@ package org.apache.spark.mllib.stat
 import org.apache.spark.annotation.{DeveloperApi, Since}
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 
-import com.tencent.angel.spark.PSContext
-import com.tencent.angel.spark.models.vector.BreezePSVector
-import com.tencent.angel.spark.models.PSModelPool
-import com.tencent.angel.spark.models.PSModelProxy
+import com.tencent.angel.spark.context.PSContext
+import com.tencent.angel.spark.model.vector.BreezePSVector
+import com.tencent.angel.spark.model.PSModelPool
+import com.tencent.angel.spark.model.PSModelProxy
 
 
 /**

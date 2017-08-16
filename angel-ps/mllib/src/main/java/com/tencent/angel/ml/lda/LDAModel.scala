@@ -45,9 +45,6 @@ object LDAModel {
   // Topic count matrix
   val TOPIC_MAT = "topic"
 
-  // Matrix storing the values of Log Likelihood
-  val LLH_MAT = "llh"
-
   // Number of vocabulary
   val WORD_NUM = "ml.lda.word.num";
 
@@ -65,6 +62,8 @@ object LDAModel {
 
   val SPLIT_NUM = "ml.lda.split.num"
 
+  val SAVE_DOC_TOPIC = "save.doc.topic"
+  val SAVE_WORD_TOPIC = "save.word.topic"
 }
 
 class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
@@ -83,6 +82,9 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
   val psNum = conf.getInt(ANGEL_PS_NUMBER, 1)
   val parts = conf.getInt(ML_PART_PER_SERVER, DEFAULT_ML_PART_PER_SERVER)
 
+  val saveDocTopic = conf.getBoolean(SAVE_DOC_TOPIC, false)
+  val saveWordTopic = conf.getBoolean(SAVE_WORD_TOPIC, true)
+
   // Initializing model matrices
 
   val wtMat = PSModel[DenseIntVector](WORD_TOPIC_MAT, V, K, Math.max(1, V / psNum), K)
@@ -92,13 +94,14 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
   val tMat = PSModel[DenseIntVector](TOPIC_MAT, 1, K, 1, K)
     .setRowType(RowType.T_INT_DENSE)
     .setOplogType("DENSE_INT")
+    .setNeedSave(false)
 
 
   addPSModel(wtMat)
   addPSModel(tMat)
 
-  setSavePath(conf)
-  setLoadPath(conf)
+//  setSavePath(conf)
+//  setLoadPath(conf)
 
 
 

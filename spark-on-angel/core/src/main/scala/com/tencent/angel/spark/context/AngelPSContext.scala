@@ -32,10 +32,12 @@ import com.tencent.angel.client.AngelContext
 import com.tencent.angel.common.Location
 import com.tencent.angel.conf.AngelConf._
 import com.tencent.angel.ml.matrix.{MatrixContext, MatrixMeta}
+import com.tencent.angel.protobuf.generated.MLProtos
 import com.tencent.angel.psagent.PSAgent
 import com.tencent.angel.psagent.matrix.{MatrixClient, MatrixClientFactory}
-import com.tencent.angel.spark.PSContext
-import com.tencent.angel.spark.models.{BitSetPSModelPool, PSModelPool}
+import com.tencent.angel.spark.model.matrix.MatrixType
+import com.tencent.angel.spark.model.matrix.MatrixType.MatrixType
+import com.tencent.angel.spark.model.{BitSetPSModelPool, PSModelPool}
 
 /**
  * AngelPSContext for driver and executor, it is an implement of `PSContext`
@@ -84,24 +86,41 @@ private[spark] class AngelPSContext private (id: Int, angelCtx: AngelContext) ex
 
   override private[spark] def conf: Map[String, String] = angelConf
 
+
+  def createMatrix(rows: Int, cols: Int, t: MatrixType = MatrixType.DENSE): MatrixMeta = {
+
+    val maxRowNumInBlock = if (rows > 1000) rows / totalPSCores else rows
+    val maxColNumInBlock = if (cols > 1000) cols / totalPSCores else cols
+
+    val mt = t match {
+      case MatrixType.DENSE => MLProtos.RowType.T_DOUBLE_DENSE
+      case MatrixType.SPARSE => MLProtos.RowType.T_DOUBLE_SPARSE
+    }
+    val matrix = new MatrixContext(s"spark-$matrixCounter", rows, cols,
+      maxRowNumInBlock, maxColNumInBlock)
+    matrix.setRowType(mt)
+
+    val meta = psAgent.createMatrix(matrix, 5000L)
+    matrixCounter += 1
+    matrixMetaMap(meta.getId) = meta
+
+    meta
+  }
+
+  def destroyMatrix(meta: MatrixMeta): Unit = {
+    matrixMetaMap.remove(meta.getId).foreach { x =>
+      psAgent.releaseMatrix(x)
+    }
+  }
+
   /**
    * Create PSVectorPool in Angel PS nodes.
    * PSVectorPool is a matrix in Angel PS nodes,
    * psAgent creates the matrix for AngelPSClient.
    */
   protected def doCreateModelPool(numDimensions: Int, capacity: Int): PSModelPool = {
-    val maxRowNumInBlock = if (capacity > 1000) capacity / totalPSCores else capacity
-    val maxColNumInBlock = if (numDimensions > 1000) {
-      numDimensions / totalPSCores
-    } else {
-      numDimensions
-    }
-    val matrix = new MatrixContext(s"spark-$matrixCounter", capacity, numDimensions,
-      maxRowNumInBlock, maxColNumInBlock)
-    val meta = psAgent.createMatrix(matrix, 5000L)
-    matrixCounter += 1
-    matrixMetaMap(meta.getId) = meta
-    new BitSetPSModelPool(meta.getId, numDimensions, capacity)
+    val matrixMeta = createMatrix(capacity, numDimensions)
+    new BitSetPSModelPool(matrixMeta.getId, numDimensions, capacity)
   }
 
   /**
@@ -234,6 +253,7 @@ private[spark] object AngelPSContext {
       hadoopConf.set(ANGEL_JOB_TMP_OUTPUT_PATH, _)
     }
 
+    hadoopConf.setInt(ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 10000000)
     hadoopConf
   }
 

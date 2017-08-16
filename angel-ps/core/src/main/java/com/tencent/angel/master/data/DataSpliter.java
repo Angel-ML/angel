@@ -73,9 +73,11 @@ public class DataSpliter {
   public Map<Integer, SplitClassification> generateSplits() throws IOException,
       InterruptedException, ClassNotFoundException {
     Configuration conf = context.getConf();
-    String trainDataPath = conf.get(AngelConf.ANGEL_TRAIN_DATA_PATH);
+    String trainDataPath = conf.get(AngelConf.ANGEL_JOB_INPUT_PATH);
     if (trainDataPath != null) {
       conf.set("mapreduce.input.fileinputformat.inputdir", trainDataPath);
+    } else {
+      throw new IOException("Angel input data directory is null");
     }
 
     // Calculate how many splits we need. As each task handles a separate split of data, so we want

@@ -20,9 +20,7 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.ml.math.*;
 import com.tencent.angel.ml.math.matrix.*;
-import com.tencent.angel.ml.math.vector.TDoubleVector;
-import com.tencent.angel.ml.math.vector.TFloatVector;
-import com.tencent.angel.ml.math.vector.TIntVector;
+import com.tencent.angel.ml.math.vector.*;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.psagent.MatrixPartitionRouter;
@@ -88,7 +86,7 @@ public abstract class MatrixOpLog {
     try {
       globalStorageLock.writeLock().lock();
       for (int rowIndex = 0; rowIndex < row; rowIndex++) {
-        deltaVector = getTVector(rowIndex);
+        deltaVector = getRow(rowIndex);
         vector = storage.getRow(rowIndex);
         if (deltaVector == null || vector == null)
           continue;
@@ -119,12 +117,12 @@ public abstract class MatrixOpLog {
     }
     
     for (int rowId = 0; rowId < row; rowId++) {
-      TVector vector = getTVector(rowId);
+      TVector vector = getRow(rowId);
       if (vector == null)
         continue;
 
       // Filter it, removing zero values
-      if(enableFilter){
+      if(enableFilter && isNeedFilter(vector)){
         vector = vector.filter(0.0);
       }    
 
@@ -135,6 +133,7 @@ public abstract class MatrixOpLog {
 
       // Split this row according the matrix partitions
       Map<PartitionKey, RowUpdateSplit> splits = RowUpdateSplitUtils.split(vector, partitionInfos);
+      removeRow(rowId);
 
       // Add the splits to the result container
       for (Map.Entry<PartitionKey, RowUpdateSplit> entry : splits.entrySet()) {
@@ -153,6 +152,12 @@ public abstract class MatrixOpLog {
     LOG.debug( "taking " + (System.currentTimeMillis() - startTime) + " ms to split logs for matrix=" + matrixId);
   }
 
+  private boolean isNeedFilter(TVector vector) {
+    return (vector instanceof DenseIntVector)
+      || (vector instanceof DenseDoubleVector)
+      || (vector instanceof DenseFloatVector);
+  }
+
   /**
    * Merge the update with exist update in cache
    * 
@@ -167,7 +172,12 @@ public abstract class MatrixOpLog {
    * @param rowIndex row index
    * @return  TVector vector
    */
-  abstract TVector getTVector(int rowIndex);
+  abstract TVector getRow(int rowIndex);
+
+  /**
+   * Remove vector from update cache
+   */
+  abstract void removeRow(int rowIndex);
 }
 
 
@@ -215,25 +225,28 @@ class DenseDoubleMatrixOpLog extends MatrixOpLog {
   }
 
   @Override
-  public TVector getTVector(int rowIndex) {
+  public TVector getRow(int rowIndex) {
     return matrix.getTVector(rowIndex);
   }
+
+  @Override
+  public void removeRow(int rowIndex) {  matrix.clear(rowIndex); }
 }
 
 /**
- * Sparse int matrix cache, it use a sparse int matrix {@link LILIntMatrix} as the storage.
+ * Sparse int matrix cache, it use a sparse int matrix {@link SparseIntMatrix} as the storage.
  * We can use this type cache if the update is a int matrix or vector
  */
 class LILIntMatrixOpLog extends MatrixOpLog {
   private final static Log LOG = LogFactory.getLog(DenseDoubleMatrixOpLog.class);
-  private final LILIntMatrix matrix;
+  private final SparseIntMatrix matrix;
 
   public LILIntMatrixOpLog(int matrixId, boolean enableFilter) {
     super(matrixId, enableFilter);
     LOG.debug("init LILIntMatrixOpLog for matrix " + matrixId);
 
     MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
-    matrix = new LILIntMatrix(matrixMeta.getRowNum(), matrixMeta.getColNum());
+    matrix = new SparseIntMatrix(matrixMeta.getRowNum(), matrixMeta.getColNum());
   }
   
   public LILIntMatrixOpLog(int matrixId) {
@@ -262,9 +275,12 @@ class LILIntMatrixOpLog extends MatrixOpLog {
   }
 
   @Override
-  public TVector getTVector(int rowIndex) {
+  public TVector getRow(int rowIndex) {
     return matrix.getTVector(rowIndex);
   }
+
+  @Override
+  public void removeRow(int rowIndex) {  matrix.clear(rowIndex); }
 }
 
 /**
@@ -309,9 +325,12 @@ class DenseIntMatrixOpLog extends MatrixOpLog {
   }
 
   @Override
-  public TVector getTVector(int rowIndex) {
+  public TVector getRow(int rowIndex) {
     return matrix.getTVector(rowIndex);
   }
+
+  @Override
+  public void removeRow(int rowIndex) {  matrix.clear(rowIndex); }
 }
 
 /**
@@ -355,9 +374,12 @@ class DenseFloatMatrixOplog extends MatrixOpLog {
   }
 
   @Override
-  public TVector getTVector(int rowIndex) {
+  public TVector getRow(int rowIndex) {
     return matrix.getTVector(rowIndex);
   }
+
+  @Override
+  public void removeRow(int rowIndex) { matrix.clear(rowIndex);}
 }
 
 /**
@@ -398,7 +420,10 @@ class SparseDoubleMatrixOplog extends MatrixOpLog {
   }
 
   @Override
-  public TVector getTVector(int rowIndex) {
+  public TVector getRow(int rowIndex) {
     return matrix.getTVector(rowIndex);
   }
+
+  @Override
+  public void removeRow(int rowIndex) { matrix.clear(rowIndex); }
 }

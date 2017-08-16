@@ -27,7 +27,7 @@ import org.apache.spark.ml.linalg.{DenseVector, Vector}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
-import com.tencent.angel.spark.models.vector.{BreezePSVector, RemotePSVector}
+import com.tencent.angel.spark.model.vector.{BreezePSVector, RemotePSVector}
 
 /**
  * This is LogisticRegression data generator and its DiffFunction.
@@ -148,7 +148,7 @@ object Logistic {
           math.log1p(math.exp(margin)) - margin
         }
 
-        remoteGradient.incrementAndFlush(gradient.toArray)
+        remoteGradient.increment(gradient.toArray)
         lossSum += loss
         count += 1
         this

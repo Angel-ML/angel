@@ -17,22 +17,24 @@
 
 package com.tencent.angel.spark.client
 
+import org.apache.spark.SparkException
+
 import com.tencent.angel.ml.math.vector.DenseDoubleVector
 import com.tencent.angel.ml.matrix.psf.aggr._
-import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult
+import com.tencent.angel.ml.matrix.psf.aggr.enhance.{FullAggrResult, ScalarAggrResult}
 import com.tencent.angel.ml.matrix.psf.aggr.primitive.Pull
 import com.tencent.angel.ml.matrix.psf.get.base._
 import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult
 import com.tencent.angel.ml.matrix.psf.update._
 import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateFunc
-import com.tencent.angel.ml.matrix.psf.update.enhance.map.{Map, MapFunc, MapWithIndex, MapWithIndexFunc}
+import com.tencent.angel.ml.matrix.psf.update.enhance.map.{Map, MapFunc, MapInPlace, MapWithIndex, MapWithIndexFunc}
 import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.{Zip2Map, Zip2MapFunc, Zip2MapWithIndex, Zip2MapWithIndexFunc}
 import com.tencent.angel.ml.matrix.psf.update.enhance.zip3.{Zip3Map, Zip3MapFunc, Zip3MapWithIndex, Zip3MapWithIndexFunc}
 import com.tencent.angel.ml.matrix.psf.update.primitive.{Increment, Push}
 import com.tencent.angel.psagent.matrix.{MatrixClientFactory, ResponseType, Result}
-import com.tencent.angel.spark._
-import com.tencent.angel.spark.models.PSModelProxy
-import org.apache.spark.SparkException
+import com.tencent.angel.spark.context.PSContext
+import com.tencent.angel.spark.model.PSModelProxy
+import com.tencent.angel.spark.model.matrix.PSMatrix
 
 /**
  * AngelPSClient is a Angel PS implement of PSClient. AngelPSClient builds a bridge between
@@ -202,6 +204,10 @@ private[spark] class AngelPSClient(psContext: PSContext) extends PSClient {
     update(from.poolId, new Map(from.poolId, from.id, to.id, func))
   }
 
+  protected def doMapInPlace(proxy: PSModelProxy, func: MapFunc): Unit = {
+    update(proxy.poolId, new MapInPlace(proxy.poolId, proxy.id, func))
+  }
+
   protected def doZip2Map(
       from1: PSModelProxy,
       from2: PSModelProxy,
@@ -326,4 +332,46 @@ private[spark] class AngelPSClient(psContext: PSContext) extends PSClient {
       throw new SparkException("PS computation failed!")
     }
   }
+
+
+  /**
+   * ===================================================
+   * The following methods are matrix oriented.
+   * ===================================================
+   */
+
+  protected def doPull(mat: PSMatrix): Array[Array[Double]] = {
+    aggregate(mat, new FullPull(mat.meta.getId))
+      .asInstanceOf[FullAggrResult].getResult
+  }
+
+  protected def doRandom(mat: PSMatrix): Unit = {
+    update(mat, new Random(mat.meta.getId))
+  }
+
+  protected def doDiag(mat: PSMatrix, values: Array[Double]): Unit = {
+    update(mat, new Diag(mat.meta.getId, values))
+  }
+
+  protected def doEye(mat: PSMatrix): Unit = {
+    update(mat, new Eye(mat.meta.getId))
+  }
+
+  protected def doFill(mat: PSMatrix, value: Double): Unit = {
+    update(mat, new FullFill(mat.meta.getId, value))
+  }
+
+  private def update(matrix: PSMatrix, func: UpdateFunc): Unit = {
+    val client = MatrixClientFactory.get(matrix.meta.getId, PSContext.getTaskId())
+    val result = client.update(func).get()
+    assertSuccess(result)
+  }
+
+  private def aggregate(matrix: PSMatrix, func: GetFunc): GetResult = {
+    val client = MatrixClientFactory.get(matrix.meta.getId, PSContext.getTaskId())
+    val result = client.get(func)
+    assertSuccess(result)
+    result
+  }
+
 }

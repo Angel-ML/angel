@@ -17,7 +17,8 @@
 
 package com.tencent.angel.spark.rdd
 
-import com.tencent.angel.spark.{PSContext, PSFunSuite, SharedPSContext}
+import com.tencent.angel.spark.context.PSContext
+import com.tencent.angel.spark.{PSFunSuite, SharedPSContext}
 
 
 class RDDPSFunctionsSuite extends PSFunSuite with SharedPSContext {

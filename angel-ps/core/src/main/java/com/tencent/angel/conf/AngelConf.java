@@ -68,6 +68,12 @@ public class AngelConf extends Configuration {
   /** Training data path. */
   public static final String ANGEL_TRAIN_DATA_PATH = "angel.train.data.path";
 
+  /** Training data path. */
+  public static final String ANGEL_PREDICT_DATA_PATH = "angel.predict.data.path";
+
+  /** Input data path use by Angel */
+  public static final String ANGEL_JOB_INPUT_PATH = "angel.job.input.path";
+
   /** Training data file format. */
   public static final String ANGEL_INPUTFORMAT_CLASS = ANGEL_PREFIX + "input.format";
   public static final String DEFAULT_ANGEL_INPUTFORMAT_CLASS = CombineTextInputFormat.class
@@ -540,6 +546,13 @@ public class AngelConf extends Configuration {
   public static final String ANGEL_PS_ROW_UPDATER_CLASS = ANGEL_PS_PREFIX + "row.updater.class";
   public static final Class<?> DEFAULT_ANGEL_PS_ROW_UPDATER = DefaultRowUpdater.class;
 
+  /** PS executors thread pool size */
+  public static final String ANGEL_PS_WORKERPOOL_SIZE = ANGEL_PS_PREFIX +
+    "workerpool.size";
+
+  /** Default PS executors thread pool size */
+  public static final int DEFAULT_ANGEL_PS_WORKERPOOL_SIZE = Runtime.getRuntime().availableProcessors();
+
 
   // ////////////////// IPC //////////////////////////
   /** The read buffer size for rpc message encoded by protobuf. */
@@ -570,7 +583,7 @@ public class AngelConf extends Configuration {
   /** The eventgroup thread number for netty client for matrix transfer. */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_CLIENT_EVENTGROUP_THREADNUM =
       "angel.netty.matrixtransfer.client.eventgroup.threadnum";
-  public static final int DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_EVENTGROUP_THREADNUM = 24;
+  public static final int DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_EVENTGROUP_THREADNUM = Runtime.getRuntime().availableProcessors() * 2;
 
   /** The send buffer size for netty client for matrix transfer. */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_CLIENT_SNDBUF =
@@ -585,7 +598,7 @@ public class AngelConf extends Configuration {
   /** The eventgroup thread number for netty server for matrix transfer. */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_SERVER_EVENTGROUP_THREADNUM =
       "angel.netty.matrixtransfer.server.eventgroup.threadnum";
-  public static final int DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_EVENTGROUP_THREADNUM = 24;
+  public static final int DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_EVENTGROUP_THREADNUM = Runtime.getRuntime().availableProcessors() * 2;
 
   /** The send buffer size for netty server for matrix transfer. */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_SERVER_SNDBUF =
@@ -671,7 +684,7 @@ public class AngelConf extends Configuration {
    * */
   public static final String ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS = ANGEL_PSAGENT_PREFIX
       + "cache.sync.timeinterval.ms";
-  public static final int DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS = 50;
+  public static final int DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS = 200;
 
   /** The matrix caches synchronization policy */
   public static final String ANGEL_PSAGENT_CACHE_SYNC_POLICY_CLASS = ANGEL_PSAGENT_PREFIX
@@ -689,6 +702,14 @@ public class AngelConf extends Configuration {
   public static final String ANGEL_PSAGENT_SYNC_CLOCK_ENABLE = ANGEL_PSAGENT_PREFIX
       + "sync.clock.enable";
   public static final boolean DEFAULT_ANGEL_PSAGENT_SYNC_CLOCK_ENABLE = true;
+
+  /** PSAgent executors thread pool size */
+  public static final String ANGEL_PSAGENT_WORKERPOOL_SIZE = ANGEL_PSAGENT_PREFIX +
+    "workerpool.size";
+
+  /** Default PSAgent executors thread pool size */
+  public static final int DEFAULT_ANGEL_PSAGENT_WORKERPOOL_SIZE = Runtime.getRuntime().availableProcessors();
+
 
   // Configs used to ANGEL_PS_PSAGENT running mode future.
   public static final String ANGEL_PSAGENT_NUMBER = ANGEL_PSAGENT_PREFIX + "number";

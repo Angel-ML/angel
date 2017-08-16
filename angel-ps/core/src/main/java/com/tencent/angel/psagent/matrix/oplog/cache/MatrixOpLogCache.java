@@ -469,6 +469,9 @@ public class MatrixOpLogCache {
         LOG.error("flush op " + message + " failed, ", e);
         ((FutureResult<VoidResult>) messageToFutureMap.remove(message)).set(new VoidResult(
             ResponseType.FAILED));
+      } catch (Throwable e) {
+        LOG.fatal("flush op " + message + " failed, ", e);
+        PSAgentContext.get().getPsAgent().error("flush op " + message + " falied, " + e.getMessage());
       }
     }
 
@@ -512,7 +515,7 @@ public class MatrixOpLogCache {
         return new DenseIntMatrixOpLog(matrixId, enableFilter);
 
       case "DENSE_FLOAT":
-        return new DenseFloatMatrixOplog(matrixId);
+        return new DenseFloatMatrixOplog(matrixId, enableFilter);
 
       case "SPARSE_DOUBLE":
         return new SparseDoubleMatrixOplog(matrixId, enableFilter);

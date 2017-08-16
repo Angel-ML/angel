@@ -2,6 +2,9 @@ package com.tencent.angel.ml.math.vector;
 
 import com.tencent.angel.ml.math.TVector;
 
+/**
+ * Base class of double vector
+ */
 public abstract class TDoubleVector extends TVector {
 
   public TDoubleVector() {
@@ -12,18 +15,50 @@ public abstract class TDoubleVector extends TVector {
     super(other);
   }
 
-  public abstract double [] getValues();
-
-  public abstract double get(int index);
-
-  public abstract void set(int index, double value);
-
+  /**
+   * Get all indexes of vector
+   * @return all indexes of vector
+   */
   public abstract int[] getIndices();
 
+  /**
+   * Get all values of vector
+   * @return all values of vector
+   */
+  public abstract double [] getValues();
+
+  /**
+   * Get a element value
+   * @param index element index
+   * @return element value
+   */
+  public abstract double get(int index);
+
+  /**
+   * Set a element value
+   * @param index element index
+   * @param value element value
+   */
+  public abstract void set(int index, double value);
+
+  /**
+   * Get square norm value
+   * @return square norm value
+   */
   public abstract double squaredNorm();
 
+  /**
+   * Clone vector
+   * @return cloned vector
+   */
   public abstract TDoubleVector clone();
 
-  public abstract TDoubleVector add(int index, double delt );
+  /**
+   * Plus a element by a update value
+   * @param index element value
+   * @param delta update value
+   * @return this
+   */
+  public abstract TDoubleVector plusBy(int index, double delta);
 
 }
