@@ -61,12 +61,15 @@ The comparative usage of worker memory is shown below:
 	* `Sb`: memory used by the system
 
 	Then, the worker memory can be estimated by 
+    
     ![][3]
 
 	The system memory can be roughly estimated by 
+    
     ![][4]
 
 	Summing the two up, the overall estimation is
+    
     ![][5]
 
 ### 3. **Estimating the Number of Worker CPU VCores**
@@ -103,6 +106,7 @@ The comparative usage of PS memory is shown below:
 	* `N`: number of workers
 
 	PS memory is roughly estimated by:
+    
     ![][6]
 
 ### 3. Estimating the Number of PS CPU VCores
@@ -118,17 +122,21 @@ Assuming 300GB training data and 100M features:
 * **Worker Side**
 
 If we configure 100 workers, each of which running one task, then the estimated memory for each single worker is:
+
 ![][7]
 
 * **PS Side**
 
 We round up the worker memory to 8GB, set the number of PS to 20 (1/5 of the number of workers). Now, each PS loads 5M model partitions, thus the estimated memory requirement for each PS is: 
+
 ![][8]
 
 We round the PS memory to 8GB. Assuming each machine has 128G memory and 48 CPU vcores, each worker needs the following CPU vcores:
+
 ![][9]
 
 Number of CPU vcores for the PS is:
+
 ![][10]
 
  [1]: ../img/worker_memory.png

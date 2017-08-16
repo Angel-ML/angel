@@ -61,12 +61,15 @@ Worker的内存使用分布状况如下：
 	* 系统部分占用内存大小为`Sb`
 
 	Worker内存估算公式为：
+    
     ![][3]
 
 	系统使用的内存可以通过下面的方法简单估算：
+    
     ![][4]
 
 	估算公式可以简化为：
+    
     ![][5]
 
 ### 3. Worker CPU VCore数预估
@@ -103,6 +106,7 @@ PS的内存使用分布如下：
 	* Worker个数为`N`
 
 	可以通过下面方式简单估算PS所需内存：
+    
     ![][6]
 
 ### 3. PS CPU VCore个数预估
@@ -118,9 +122,11 @@ PS CPU VCore个数估算方法与Worker一致，但是具体需要根据算法�
 * **Worker端**
 
 配置100个Worker，每个Worker执行的Task数量为1，每个Worker需要的内存估算如下：
+
 ![][7]
 
 Worker内存向上取整为8GB。PS个数为Worker个数的1/5， 即20个，一个PS上承载的模型分区大小为500万， 每个PS需要的内存为：
+
 ![][8]
 
 * **PS端**
@@ -128,9 +134,11 @@ Worker内存向上取整为8GB。PS个数为Worker个数的1/5， 即20个，一
 PS内存取整为8GB
 
 假设每一台物理机器内存为128GB, CPU vcore总数为48个， 则Worker的CPU vcore数为：
+
 ![][9]
 
 PS 的CPU vcore数为：
+
 ![][10]
 
  [1]: ../img/worker_memory.png
