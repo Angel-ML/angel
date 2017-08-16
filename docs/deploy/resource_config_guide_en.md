@@ -60,11 +60,17 @@ The comparative usage of worker memory is shown below:
 	* `St`: memory used for training data
 	* `Sb`: memory used by the system
 
-	Then, the worker memory can be estimated by ```Me = N * Sm + 2 * N * Smd + Smmd + St + Sb```
+	Then, the worker memory can be estimated by 
+    
+    ![][3]
 
-	The system memory can be roughly estimated by ```Sb = Sm + Smmd + 1```
+	The system memory can be roughly estimated by 
+    
+    ![][4]
 
-	Summing the two up, the overall estimation is ```Me = (N + 1) * Sm + 2 * N * Smd + 2 * Smmd + St + 1```
+	Summing the two up, the overall estimation is
+    
+    ![][5]
 
 ### 3. **Estimating the Number of Worker CPU VCores**
 In contrast to the memory parameters, number of CPU vcores only affects the job's operational efficiency, but not its accuracy.  We suggest adjusting the number of CPU vcores and memory based on the resources on the actual machine, for example: 
@@ -99,7 +105,9 @@ The comparative usage of PS memory is shown below:
 	* `Sw`: size of model being pulled per iteration, per task
 	* `N`: number of workers
 
-	PS memory is roughly estimated by: ```Smp + 2 * N * Sw```
+	PS memory is roughly estimated by:
+    
+    ![][6]
 
 ### 3. Estimating the Number of PS CPU VCores
 
@@ -115,33 +123,29 @@ Assuming 300GB training data and 100M features:
 
 If we configure 100 workers, each of which running one task, then the estimated memory for each single worker is:
 
-```
-Sm = Smd = Smmd = 8 * 10 ^ 8 / 10 ^ 9 = 0.8GB
-St = 300 / 100 / 1.5 = 2GB
-N = 1
-Me = (N + 1) * Sm + 2 * N * Smd + 2 * Smmd + St + 1 = 2 * 0.8 + 2 * 0.8 + 2 * 0.8 + 2 + 1 = 7.8GB
-```
+![][7]
 
 * **PS Side**
 
 We round up the worker memory to 8GB, set the number of PS to 20 (1/5 of the number of workers). Now, each PS loads 5M model partitions, thus the estimated memory requirement for each PS is: 
 
-```
-Smp = Sw = 8 * 5 * 10 ^ 6 / 10 ^ 9 = 0.04GB
-Me = 0.04 + 2 * 100 * 0.04 = 8.04GB
-```
+![][8]
 
 We round the PS memory to 8GB. Assuming each machine has 128G memory and 48 CPU vcores, each worker needs the following CPU vcores:
 
-```
-Vw = 48 / 128 * 8 = 3
-```
+![][9]
 
 Number of CPU vcores for the PS is:
-```
-Vp = 48 / 128 * 8 = 3
-```
+
+![][10]
 
  [1]: ../img/worker_memory.png
  [2]: ../img/ps_memory.png
-
+ [3]: ../img/rcg_formula1.png
+ [4]: ../img/rcg_formula2.png
+ [5]: ../img/rcg_formula3.png
+ [6]: ../img/rcg_formula4.png
+ [7]: ../img/rcg_formula5.png
+ [8]: ../img/rcg_formula6.png
+ [9]: ../img/rcg_formula7.png
+ [10]: ../img/rcg_formula8.png

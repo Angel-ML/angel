@@ -1,6 +1,6 @@
 # Spark on Angel
 
-The PS-Service feature was introduced in Angel 1.0. It can not only run as a complete PS framework, but also a **PS-Service** that adds the PS capability to distributed frameworks to make them run faster with more powerful features. Spark is the first beneficiary of the PS-Service design. 
+The PS-Service feature was introduced in Angel 1.0.0. It can not only run as a complete PS framework, but also a **PS-Service** that adds the PS capability to distributed frameworks to make them run faster with more powerful features. Spark is the first beneficiary of the PS-Service design. 
 
 As a popular in-memory computing framework, **Spark** revolves around the concept of `RDD`, which is *immutable* to avoid a range of potential problems due to updates from multiple threads at once. The RDD abstraction works just fine for data analytics because it solves the distributed problem with maximum capacity, reduces the complexity of various operators, and provides high-performance, distributed data processing capabilities. 
 
