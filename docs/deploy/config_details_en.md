@@ -3,7 +3,7 @@
 Property Name | Default | Meaning
 ---------------- | --------------- | ---------------
 action.type | train | Angel task type; supports "train" for model training and "predict" for generating predictions from model
-angel.train.data.path | (none) | Path of input data, only used when action.type is "train"
+angel.train.data.path | (none) | Path of data for training and testing, used when action.type is either "train" or "predict"
 angel.inputformat | org.apache.hadoop.mapreduce.lib<br>.input.CombineTextInputFormat | Format of the training data, mainly used for data partitioning and reading, supporting customized formats
 angel.predict.out.path | (none) | Save path for "predict" result, only used when action.type is "predict"
 angel.save.model.path | (none) | Save path for the model, only used when action.type is "train"
