@@ -5,7 +5,7 @@
 Angel的设计理念，从一开始就围绕`机器学习和模型`。整体上的接口崇尚简约，利用Parameter Server的本质来支持高维度的模型。Angel的主要核心抽象是`PSModel`，它将对分布于多台PS Server上的`远程模型`操作透明化。通过PSModel，用户可以方便的进行**模型的更新，自定义函数计算，以及同步控制**，从而实现各种高效的机器学习算法。
 
 
-## **PSModel**和**MLModel**  
+## PSModel和MLModel  
 
 在Angel中，`模型`是一等公民，在Angel中实现一个算法，可以很直白的，从Model Base的思路，来考虑要怎么样设计。
 
