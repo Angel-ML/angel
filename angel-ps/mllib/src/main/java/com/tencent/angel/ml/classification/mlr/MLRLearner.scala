@@ -100,7 +100,12 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
         val (x: TAbstractVector, y: Double) = loopingData(trainData)
         val softmax = (0 until rank).map(i => softmax_wVecot(i).dot(x) + softmax_b(i)).toArray
         MathUtils.softmax(softmax)
-        val sigmoid = (0 until rank).map(i => MathUtils.sigmoid(sigmoid_wVecot(i).dot(x) + sigmoid_b(i))).toArray
+        val sigmoid = (0 until rank).map(i => MathUtils.sigmoid({
+          var temp=sigmoid_wVecot(i).dot(x) + sigmoid_b(i)
+          temp=math.max(temp,-18)
+          temp=math.min(temp,18)
+          temp
+        })).toArray
         val pre = (0 until rank).map(i => softmax(i) * sigmoid(i)).reduce(_ + _)
 
         val loss = {
@@ -279,7 +284,12 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
 
       val softmax = (0 until rank).map(i => softmax_wVecot(i).dot(x) + softmax_b(i)).toArray
       MathUtils.softmax(softmax)
-      val sigmoid = (0 until rank).map(i => MathUtils.sigmoid(sigmoid_wVecot(i).dot(x) + sigmoid_b(i))).toArray
+      val sigmoid = (0 until rank).map(i => MathUtils.sigmoid({
+        var temp=sigmoid_wVecot(i).dot(x) + sigmoid_b(i)
+        temp=math.max(temp,-18)
+        temp=math.min(temp,18)
+        temp
+      })).toArray
       val pre = (0 until rank).map(i => softmax(i) * sigmoid(i)).reduce(_ + _)
 
       loss += {

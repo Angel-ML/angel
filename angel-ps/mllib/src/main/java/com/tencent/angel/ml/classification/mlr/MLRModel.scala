@@ -79,7 +79,12 @@ class MLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
       val id = instance.getY
       val softmax = (0 until rank).map(i => softmax_wVecot(i).dot(instance.getX) + softmax_b(i)).toArray
       MathUtils.softmax(softmax)
-      val sigmoid = (0 until rank).map(i => MathUtils.sigmoid(sigmoid_wVecot(i).dot(instance.getX) + sigmoid_b(i))).toArray
+      val sigmoid = (0 until rank).map(i => MathUtils.sigmoid({
+        var temp=sigmoid_wVecot(i).dot(instance.getX) + sigmoid_b(i)
+        temp=math.max(temp,-18)
+        temp=math.min(temp,18)
+        temp
+      })).toArray
       val pre = (0 until rank).map(i => softmax(i) * sigmoid(i)).reduce(_ + _)
 
       predict.put(new MLRPredictResult(id, pre))
