@@ -125,8 +125,6 @@ object MLConf {
   // MLR params
   val ML_MLR_RANK = "ml.mlr.rank"
   val DEFAULT_ML_MLR_RANK = 5
-  val MLR_USE_INTERCEPT = "ml.mlr.use.intercept"
-  val DEFAULT_MLR_USE_INTERCEPT = false
   val ML_MLR_V_INIT = "ml.mlr.v.init"
   val DEFAULT_ML_MLR_V_INIT = 0.1
 

@@ -161,7 +161,7 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
         bUpdater.set(0, -lr * grad_softmax_b(i))
         mlrModel.softmax_intercept.increment(i, bUpdater)
       })
-
+      totalLoss += batchLoss
       LOG.debug(s"Batch[$batch] loss = $batchLoss")
       taskContext.updateProfileCounter(batchSize, (System.currentTimeMillis() - batchStartTs).toInt)
     }
@@ -218,8 +218,8 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     LOG.info(s"Task[${ctx.getTaskIndex}]: Sample Ratio per Batch=$spRatio, Sample Size Per " + s"$samplePerBatch")
     LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epochNum, initLearnRate=$lr_0, " + s"learnRateDecay=$decay, L2Reg=$reg")
 
-    globalMetrics.addMetrics(MLConf.TRAIN_LOSS, LossMetric(trainData.size))
-    globalMetrics.addMetrics(MLConf.VALID_LOSS, LossMetric(validationData.size))
+    globalMetrics.addMetrics(MLConf.TRAIN_LOSS, LossMetric(1))
+    globalMetrics.addMetrics(MLConf.VALID_LOSS, LossMetric(1))
 
     val beforeInit = System.currentTimeMillis()
     initModels()
@@ -258,13 +258,13 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   def validate(epoch: Int, weight: mlrWeight, trainData: DataBlock[LabeledData], valiData: DataBlock[LabeledData]) = {
     val trainLoss = evaluate(trainData,weight)
     LOG.info(s"Task[${ctx.getTaskIndex}]: epoch = $epoch " +
-      s"trainData loss = ${trainLoss / trainData.size()} ")
+      s"trainData loss = ${trainLoss} ")
     globalMetrics.metrics(MLConf.TRAIN_LOSS, trainLoss)
 
     if (valiData.size > 0) {
       val validLoss = evaluate(valiData,weight)
       LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epoch " +
-        s"validationData loss=${validLoss / valiData.size()} " )
+        s"validationData loss=${validLoss} " )
       globalMetrics.metrics(MLConf.VALID_LOSS, validLoss)
     }
   }
@@ -297,6 +297,7 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
         else -Math.log(1 - pre)
       }
     }
+    loss/=dataBlock.size()
     loss+={
       (0 until rank).map(i => {
         sigmoid_wVecot(i).dot(sigmoid_wVecot(i))+softmax_wVecot(i).dot(softmax_wVecot(i))
