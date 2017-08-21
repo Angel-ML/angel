@@ -31,8 +31,8 @@
 
 	* **定义**：```incTrain(conf: Configuration)```
 	- **功能描述**：使用增量训练的方式更新一个已有模型
-	- **参数：**conf: Configuration Angel任务相关配置和算法配置信息
-	- **返回值：**无
+	- **参数**： conf: Configuration Angel任务相关配置和算法配置信息
+	- **返回值**：无
 
 4. **predict**
 
@@ -44,6 +44,6 @@
 5. **predict（default implementation）**
 
 	- **定义：** ```predict(conf: Configuration, model: MLModel, taskClass: Class[_ <: PredictTask[_, _, _]]): Unit```
-	- **功能描述：**启动Angel app 并使用增量训练的方式更新一个旧模型。该方法封装了具体的Angel ps/worker启动以及模型加载/存储过程，子类可直接引用
-	- **参数：**conf: Configuration Angel任务相关配置
-	- **返回值：**无
+	- **功能描述：** 启动Angel app 并使用增量训练的方式更新一个旧模型。该方法封装了具体的Angel ps/worker启动以及模型加载/存储过程，子类可直接引用
+	- **参数**： conf: Configuration Angel任务相关配置
+	- **返回值**：无
