@@ -37,7 +37,7 @@
 * [模型切分（modelPartitioner）](./docs/design/model_partitioner.md)
 * [异步控制（syncController）](./docs/design/sync_controller.md)
 * [定制函数（psFunc）](./docs/design/psfFunc.md)
-* [核心类的说明](./docs/apis/interface_api.md)
+* [核心接口类](./docs/apis/core_api.md)
 
 
 ## Algorithm

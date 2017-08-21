@@ -33,8 +33,11 @@ We welcome everyone interested in machine learning to contribute code, create is
 
 ## Design
 
-* [Interface API](./docs/apis/interface_api.md)
+* [Model Partitioner](./docs/design/model_partitioner.md)
+* [SyncController](./docs/design/sync_controller.md)
 * [psFunc](./docs/design/psfFunc.md)
+* [Core API](./docs/apis/core_api.md)
+
 
 ## Algorithm
 
