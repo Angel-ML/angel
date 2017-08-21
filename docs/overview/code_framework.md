@@ -30,8 +30,9 @@ Angel是面向机器学习的，所以关于机器学习的相关元素，也是
 
 包括了
 
-* Martrix
+* Matrix
 * Vector
+* Feature
 * Optimizer
 * Objective
 * Metric
