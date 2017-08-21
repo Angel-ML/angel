@@ -11,7 +11,7 @@
 * [TrainTask](Task.md)
 * [DataBlock](DataBlock.md)
 * [MLLearner](MLLearner.md)
-* [PSModel](PSModel.md)
 * [MLModel](MLModel.md)
+* [PSModel](PSModel.md)
 
-了解这些接口类的定义和功能，对于基于Angel实现高性能的机器学习算法，会有不错的帮助。
+了解这些核心类，对基于Angel实现高性能的机器学习算法，将会有不错的帮助。
