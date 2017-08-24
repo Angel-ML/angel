@@ -38,10 +38,11 @@ import scala.collection.mutable
   * @param maxP: max value of y
   * @param feaUsed: array of used feature of the input data
   */
-class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Double, val feaUsed:
-Array[Int]) extends MLLearner(ctx) {
+class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Double, val feaUsed: Array[Int])
+  extends MLLearner(ctx) {
+
   val LOG: Log = LogFactory.getLog(classOf[FMLearner])
-  val fmmodel = new FMModel(conf, ctx)
+  val fmModel = new FMModel(conf, ctx)
 
   val learnType = conf.get(MLConf.ML_FM_LEARN_TYPE, MLConf.DEFAULT_ML_FM_LEARN_TYPE)
   val feaNum: Int = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
@@ -53,12 +54,11 @@ Array[Int]) extends MLLearner(ctx) {
   val reg2: Double = conf.getDouble(MLConf.ML_FM_REG2, MLConf.DEFAULT_ML_FM_REG2)
   val lr: Double = conf.getDouble(MLConf.ML_LEARN_RATE, MLConf.DEFAULT_ML_LEAR_RATE)
   val vStddev: Double = conf.getDouble(MLConf.ML_FM_V_STDDEV, MLConf.DEFAULT_ML_FM_V_INIT)
-  // Put used feature indexes to vIndexs
-  //val vIndexs = feaUsed.zipWithIndex.filter((p:(Int,Int))=>p._1!=0).map((p:(Int,Int))=>p._2).array
-  val vIndexs = new RowIndex()
-  feaUsed.zipWithIndex.filter((p:(Int, Int))=>p._1!=0).map((p:(Int, Int))=>vIndexs.addRowId(p._2))
-  val feaUsedN = vIndexs.getRowsNumber
-  LOG.info("vIndexs's row's number = " + vIndexs)
+
+  val vIndexes = new RowIndex()
+  feaUsed.zipWithIndex.filter((p:(Int, Int))=>p._1!=0).map((p:(Int, Int))=>vIndexes.addRowId(p._2))
+  val feaUsedN = vIndexes.getRowsNumber
+  LOG.info("vIndexs's row's number = " + vIndexes)
 
   /**
     * Train a Factorization machines Model
@@ -68,8 +68,7 @@ Array[Int]) extends MLLearner(ctx) {
     * @return : a learned model
     */
   override
-  def train(trainData: DataBlock[LabeledData], vali: DataBlock[LabeledData]):
-  MLModel = {
+  def train(trainData: DataBlock[LabeledData], vali: DataBlock[LabeledData]): MLModel = {
     val start = System.currentTimeMillis()
     LOG.info(s"learnType=$learnType, feaNum=$feaNum, rank=$rank, #trainData=${trainData.size}")
     LOG.info(s"reg0=$reg0, reg1=$reg1, reg2=$reg2, lr=$lr, vStev=$vStddev")
@@ -79,7 +78,7 @@ Array[Int]) extends MLLearner(ctx) {
     val initCost = System.currentTimeMillis() - beforeInit
     LOG.info(s"Init matrixes cost $initCost ms.")
 
-    globalMetrics.addMetrics(fmmodel.FM_OBJ, LossMetric(trainData.size()))
+    globalMetrics.addMetrics(fmModel.FM_OBJ, LossMetric(trainData.size()))
 
     while (ctx.getIteration < epochNum) {
       val startIter = System.currentTimeMillis()
@@ -90,7 +89,7 @@ Array[Int]) extends MLLearner(ctx) {
       val loss = evaluate(trainData, w0.get(0), w, v)
       val valiCost = System.currentTimeMillis() - startVali
 
-      globalMetrics.metrics(fmmodel.FM_OBJ, loss)
+      globalMetrics.metrics(fmModel.FM_OBJ, loss)
       LOG.info(s"Epoch=${ctx.getIteration}, evaluate loss=${loss/trainData.size()}. " +
         s"trainCost=$iterCost, " +
         s"valiCost=$valiCost")
@@ -101,7 +100,7 @@ Array[Int]) extends MLLearner(ctx) {
     val end = System.currentTimeMillis()
     val cost = end - start
     LOG.info(s"FM Learner train cost $cost ms.")
-    fmmodel
+    fmModel
   }
 
   /**
@@ -110,22 +109,24 @@ Array[Int]) extends MLLearner(ctx) {
   def initModels(): Unit = {
     if(ctx.getTaskId.getIndex == 0) {
       for (row <- 0 until feaNum) {
-        fmmodel.v.update(new RandomNormal(fmmodel.v.getMatrixId(), row, 0.0, vStddev)).get()
+        fmModel.v.update(new RandomNormal(fmModel.v.getMatrixId(), row, 0.0, vStddev)).get()
       }
     }
 
-    fmmodel.v.clock().get()
+    fmModel.v.clock().get()
   }
 
   /**
     * One iteration to train Factorization Machines
+ *
     * @param dataBlock
     * @return
     */
-  def oneIteration(dataBlock: DataBlock[LabeledData]): (DenseDoubleVector,
-    DenseDoubleVector, mutable.HashMap[Int, DenseDoubleVector]) = {
+  def oneIteration(dataBlock: DataBlock[LabeledData]):
+    (DenseDoubleVector, DenseDoubleVector, mutable.HashMap[Int, DenseDoubleVector]) = {
+
     val startGet = System.currentTimeMillis()
-    val (w0, w, v) = fmmodel.pullFromPS(vIndexs)
+    val (w0, w, v) = fmModel.pullFromPS(vIndexes)
     val getCost = System.currentTimeMillis() - startGet
     LOG.info(s"Get matrixes cost $getCost ms.")
 
@@ -154,7 +155,7 @@ Array[Int]) extends MLLearner(ctx) {
       v(update._1).plusBy(update._2, -1.0).timesBy(-1.0)
     }
 
-    fmmodel.pushToPS(w0.plusBy(_w0, -1.0).timesBy(-1.0).asInstanceOf[DenseDoubleVector],
+    fmModel.pushToPS(w0.plusBy(_w0, -1.0).timesBy(-1.0).asInstanceOf[DenseDoubleVector],
       w.plusBy(_w, -1.0).timesBy(-1.0).asInstanceOf[DenseDoubleVector],
       v)
 
@@ -163,6 +164,7 @@ Array[Int]) extends MLLearner(ctx) {
 
   /**
     * Evaluate the objective value
+ *
     * @param dataBlock
     * @param w0
     * @param w
@@ -188,6 +190,7 @@ Array[Int]) extends MLLearner(ctx) {
 
   /**
     * Predict an instance
+ *
     * @param x：feature vector of instance
     * @param y: label value of instance
     * @param w0: w0 mat of FM
@@ -220,6 +223,7 @@ Array[Int]) extends MLLearner(ctx) {
 
   /**
     * \frac{\partial loss}{\partial x} = dm * \frac{\partial y}{\partial x}
+ *
     * @param y: label of the instance
     * @param pre: predict value of the instance
     * @return : dm value
@@ -240,6 +244,7 @@ Array[Int]) extends MLLearner(ctx) {
 
   /**
     * Update v mat
+ *
     * @param x: a train instance
     * @param dm: dm value of the instance
     * @param v: v mat
