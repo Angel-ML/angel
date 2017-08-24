@@ -111,7 +111,7 @@ We train the LR model with gradient descent algorithm. In each iteration, task p
 		}
 		```
   
-3. **Define the Runner([MLRunner](../apis/MLRunner.md))**
+3. **Define the Runner([MLRunner](../apis/MLRunner_en.md))**
 
 	We have already defined the LR model and implemented its training method. The next step is to implement the `Runner` class to submit the training task to the cluster.
 
@@ -152,11 +152,11 @@ You can submit the application to Yarn using the sample command below:
 --angel.job.name myLR
 ```
 
-After submission, follow [Running on Yarn](../deploy/run_on_yarn.md) if you are not yet familiar with Yarn.
+After submission, follow [Running on Yarn](../deploy/run_on_yarn_en.md) if you are not yet familiar with Yarn.
 
 
 ----
-OK. You have just completed a simple Angel job. Want to write more complex machine learning algorithms? Read the complete [Angel Programming Guide](../programmers_guide/angel_programing_guide.md). 
+OK. You have just completed a simple Angel job. Want to write more complex machine learning algorithms? Read the complete [Angel Programming Guide](../programmers_guide/angel_programing_guide_en.md). 
 
 Welcome to Angel's world. 
 
