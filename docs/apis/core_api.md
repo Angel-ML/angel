@@ -18,7 +18,7 @@
 	* 在被AngelClient调用后，开始Train过程
 
 * [DataBlock](DataBlock.md)
-	* TrainTask调用parse和preProcess方法，将数据从HDFS中读取，并组装成为多个LabelData组成的DataBlock
+	* TrainTask调用parse和preProcess方法，将数据从HDFS中读取，并组装成为多个LabeledData组成的DataBlock
 	* TrainTask调用Train方法，创建MLLearner对象，并将DataBlock传给MLLearner
 	
 * [MLLearner](MLLearner.md)
