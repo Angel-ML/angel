@@ -15,9 +15,9 @@ We welcome everyone interested in machine learning to contribute code, create is
 
 ## Introduction to Angel
 
-* [Architecture](./docs/overview/architecture.md)
-* [Code Framework](./docs/overview/framework.md)
-* [Design](./docs/overview/design_en.md)
+* [Architecture](./docs/overview/architecture_en.md)
+* [Code Framework](./docs/overview/code_framework.md)
+* [Design](./docs/overview/design_philosophy_en.md)
 * [Spark on Angel](./docs/overview/spark_on_angel_en.md)
 
 
@@ -33,28 +33,29 @@ We welcome everyone interested in machine learning to contribute code, create is
 
 ## Design
 
-* [Model Partitioner](./docs/design/model_partitioner.md)
-* [SyncController](./docs/design/sync_controller.md)
+* [Model Partitioner](./docs/design/model_partitioner_en.md)
+* [SyncController](./docs/design/sync_controller_en.md)
 * [psFunc](./docs/design/psfFunc.md)
-* [Core API](./docs/apis/core_api.md)
+* [Core API](./docs/apis/core_api_en.md)
 
 
 ## Algorithm
 
-* [Logistic Regression](./docs/algo/lr_on_angel.md)
-* [Matrix Factorization](./docs/algo/mf_on_angel.md)
-* [SVM](./docs/algo/svm_on_angel.md)
-* [KMeans](./docs/algo/kmeans_on_angel.md)
+* [Logistic Regression](./docs/algo/lr_on_angel_en.md)
+* [Matrix Factorization](./docs/algo/mf_on_angel_en.md)
+* [SVM](./docs/algo/svm_on_angel_en.md)
+* [KMeans](./docs/algo/kmeans_on_angel_en.md)
 * [GBDT](./docs/algo/gbdt_on_angel_en.md)
-* [LDA](./docs/algo/lda_on_angel.md)
-* [LR (Spark on Angel)](./docs/algo/spark_on_angel_optimizer.md)
+* [LDA](./docs/algo/lda_on_angel_en.md)
+* [LR (Spark on Angel)](./docs/algo/spark_on_angel_optimizer_en.md)
 
 ## Deployment
 
-* [Source Code](./docs/deploy/source_compile.md)
-* [Running on Local](./docs/deploy/local_run.md)
-* [Running on Yarn](./docs/deploy/run_on_yarn.md)
-* [Configuration Details](./docs/deploy/config_details.md)
+* [Compilation Guide](./docs/deploy/source_compile_en.md)
+* [Running on Local](./docs/deploy/local_run_en.md)
+* [Running on Yarn](./docs/deploy/run_on_yarn_en.md)
+* [Configuration Details](./docs/deploy/config_details_en.md)
+* [Resource Configuration Guide](./docs/deploy/resource_config_guide_en.md)
 
 ## FAQ
 * [Angel FAQ](https://github.com/Tencent/angel/wiki/Angel%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
