@@ -64,10 +64,12 @@ The learning rate decays along iterations as ![](../img/LR_lr_ecay.gif), where:
   * ml.reg.l2: coefficient of the L2 penalty
 
 * I/O Parameters
-  * angel.train.data.path: input path  
+  * angel.train.data.path: input path for train
+  * angel.predict.data.path: input path for predict
   * ml.feature.num: number of features
   * ml.data.type: [Angel Data Format](data_format_en.md), supporting "dummy" and "libsvm"    
-  * angel.save.modelPath: save path for trained model   
+  * angel.save.model.path: save path for trained model
+  * angel.predict.out.path: output path for predict
   * angel.log.path: save path for the log   
    
 * Resource Parameters

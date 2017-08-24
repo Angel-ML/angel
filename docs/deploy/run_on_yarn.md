@@ -63,7 +63,7 @@ Angel的分布式Yarn运行模式需要的环境，其实也非常简单：
 	| --- | --- |
 	| action.type  | 计算类型，目前支持"train"和"predict"两种，分别表示模型训练和预测    |
 	| angel.app.submit.class | 算法运行类，每个算法都对应一个运行类|
-	| angel.train.data.path | 训练数据路径 |
+	| angel.train.data.path | 训练数据输入路径 |
 	| angel.log.path | 算法指标日志输出路径 |
 	| angel.save.model.path | 模型保存路径 |
 	| ml.data.type | 训练数据格式，默认支持两种格式libsvm和dummy |
