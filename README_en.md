@@ -35,7 +35,7 @@ We welcome everyone interested in machine learning to contribute code, create is
 
 * [Model Partitioner](./docs/design/model_partitioner_en.md)
 * [SyncController](./docs/design/sync_controller_en.md)
-* [psFunc](./docs/design/psfFunc.md)
+* [psFunc](./docs/design/psfFunc_en.md)
 * [Core API](./docs/apis/core_api_en.md)
 
 
