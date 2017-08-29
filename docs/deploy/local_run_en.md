@@ -1,6 +1,6 @@
 # Local Mode
 
-Local mode is mainly used for testing and debugging. Currently, local mode support only one worker (allowing multiple tasks) and one PS. Configure `angel.deploy.mode` to run local mode; detailed parameter configurations can be found in [Angel System Parameters](./config_details.md)
+Local mode is mainly used for testing and debugging. Currently, local mode support only one worker (allowing multiple tasks) and one PS. Configure `angel.deploy.mode` to run local mode; detailed parameter configurations can be found in [Angel System Parameters](./config_details_en.md)
 
 ## 1. Execution Environment Requirements
 
