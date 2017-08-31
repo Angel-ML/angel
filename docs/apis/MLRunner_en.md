@@ -12,11 +12,10 @@
 1. **train**
 	- **Definition**: ``` train(conf: Configuration)```
 	- **Purpose**: starts up Angel app's model training process
-	- **Parameters*: conf: configures Angel job and algorithm settings
+	- **Parameters**: conf: configures Angel job and algorithm settings
 	- **Return value**: none
 
-2. **train (default implementation) **
-
+2. **train (default implementation)**
 	- **Definition**: ```train(conf: Configuration, model: MLModel, taskClass: Class[_ <: BaseTask[_, _, _]]): Unit```
 
 	- **Purpose**: starts Angel app's model training process. This method encapsulates specific Angel PS/worker starting-up and model-loading/saving processes; can be referenced by subclasses directly
