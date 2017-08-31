@@ -245,6 +245,10 @@ private[spark] object AngelPSContext {
     hadoopConf.set(ANGEL_JOB_LIBJARS, psJars)
 
     hadoopConf.set(ANGEL_ACTION_TYPE, actionType)
+    
+    hadoopConf.setInt(ANGEL_AM_CPU_VCORES, amCores)
+    hadoopConf.setInt(ANGEL_AM_MEMORY_MB, amMem)
+    
     if (actionType == "train") {
       hadoopConf.set(ANGEL_SAVE_MODEL_PATH, modelPath)
     } else {
