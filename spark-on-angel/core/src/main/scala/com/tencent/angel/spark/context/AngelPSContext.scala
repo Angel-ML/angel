@@ -218,6 +218,10 @@ private[spark] object AngelPSContext {
     val psOutOverwrite = conf.getBoolean("spark.ps.out.overwrite", true)
     val psOutTmpOption = conf.getOption("spark.ps.out.tmp.path")
 
+    val amMem = conf.getSizeAsMb("spark.am.memory","4g").toInt
+    val amCores = conf.getInt("spark.am.cores", 2)
+
+
     import com.tencent.angel.conf.AngelConf._
 
     val hadoopConf = SparkHadoopUtil.get.newConfiguration(conf)
