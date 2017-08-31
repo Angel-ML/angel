@@ -36,10 +36,12 @@ KMeans on Angel的算法流程如下图所示：
 
 ### 参数
 * IO参数
-  * angel.train.data.path：输入数据路径
+  * angel.train.data.path：训练数据的输入路径
+  * angel.predict.data.path：预测数据的输入路径
   * ml.feature.num：数据特征个数
   * ml.data.type：数据格式，支持"dummy"、"libsvm"
-  * angel.save.modelPath：训练完成后，模型的保存路径
+  * angel.save.model.path：训练完成后，模型的保存路径
+  *	angel.predict.out.path：预测结果存储路径
   * angel.log.path：log文件保存路径
 * 算法参数
   * ml.kmeans.center.num：K值，即簇的个数
