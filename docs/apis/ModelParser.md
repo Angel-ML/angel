@@ -5,9 +5,9 @@ Angel的PSModel在任务结束后会以二进制文件格式存储，每个parti
 ```
 ./bin/angel-submit \
 -- action.type train \
--- angel.app.submit.class com.tencent.angel.ml.modelparser.ModelParserRunner \
+-- angel.app.submit.class com.tencent.angel.ml.toolkits.modelconverter.ModelConverterRunner \
 -- ml.model.in.path ${modelInPath}
--- ml.model.name ${modelName}
+-- ml.model.name ${PSModelName}
 -- ml.model.out.path ${modelOutPath} \
 -- ml.model.convert.thread.count ${threadCount} \
 -- angel.save.model.path ${anywhere} \
@@ -16,7 +16,7 @@ Angel的PSModel在任务结束后会以二进制文件格式存储，每个parti
 -- angel.worker.task.number 1 \
 -- angel.ps.number 1 \
 -- angel.ps.memory.mb 500 \
--- angel.job.name angel_lr_smalldata
+-- angel.job.name ${jobname}
 ```
 
 * 参数说明：
