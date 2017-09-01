@@ -74,7 +74,7 @@ class LDATest {
     conf.setInt(WORD_NUM, V)
     conf.setInt(TOPIC_NUM, K)
     conf.setInt(MLConf.ML_WORKER_THREAD_NUM, 1)
-    conf.setInt(MLConf.ML_EPOCH_NUM, 100)
+    conf.setInt(MLConf.ML_EPOCH_NUM, 20)
     conf.setBoolean(SAVE_DOC_TOPIC, false)
     conf.setBoolean(SAVE_WORD_TOPIC, false)
   }

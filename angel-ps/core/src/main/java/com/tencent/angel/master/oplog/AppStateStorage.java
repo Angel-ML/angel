@@ -46,6 +46,7 @@ import com.tencent.angel.master.ps.ParameterServerManager;
 import com.tencent.angel.master.task.AMTaskManager;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
+import com.tencent.angel.utils.HdfsUtil;
 
 /**
  * Application state storage. It write the application state to files every fixed period of time
@@ -165,12 +166,7 @@ public class AppStateStorage extends AbstractService {
     outputStream.close();
     
     //rename the temporary file to final file
-    if(fs.exists(splitFilePath)){
-      fs.delete(splitFilePath, false);
-      fs.rename(tmpPath, splitFilePath);
-    } else {
-      fs.rename(tmpPath, splitFilePath);
-    }
+    HdfsUtil.rename(tmpPath, splitFilePath, fs);
   }
   
   private String getTmpDataSplitsFile(){
@@ -216,16 +212,12 @@ public class AppStateStorage extends AbstractService {
       FSDataOutputStream outputStream = fs.create(tmpPath);
       matrixMetaManager.serialize(outputStream);
       outputStream.close();
-      
+
+
       Path matrixFilePath = new Path(writeDir, matrixMetaFile);
-      if(fs.exists(matrixFilePath)){
-        fs.delete(matrixFilePath, false);
-        fs.rename(tmpPath, matrixFilePath);
-      } else {
-        fs.rename(tmpPath, matrixFilePath);
-        if(lastMatrixMetaFilePath != null) {
-          fs.delete(lastMatrixMetaFilePath, false);
-        }        
+      HdfsUtil.rename(tmpPath, matrixFilePath, fs);
+      if (lastMatrixMetaFilePath != null) {
+        fs.delete(lastMatrixMetaFilePath, false);
       }
       lastMatrixMetaFilePath = matrixFilePath;
       
@@ -379,18 +371,12 @@ public class AppStateStorage extends AbstractService {
       
       //rename the temporary file to the final file
       Path taskMetaFilePath = new Path(writeDir, taskMetaFile);
-      if(fs.exists(taskMetaFilePath)) {        
-        fs.delete(taskMetaFilePath, false);
-        fs.rename(tmpPath, taskMetaFilePath);
-      } else {
-        fs.rename(tmpPath, taskMetaFilePath);
-        
-        //if last final task file exist, remove it
-        if(lasttaskMetaFilePath != null) {
-          fs.delete(lasttaskMetaFilePath, false);
-        }
+      HdfsUtil.rename(tmpPath, taskMetaFilePath, fs);
+      //if last final task file exist, remove it
+      if (lasttaskMetaFilePath != null) {
+        fs.delete(lasttaskMetaFilePath, false);
       }
-      
+
       lasttaskMetaFilePath = taskMetaFilePath;
     } finally {
       taskMetaLock.unlock();
@@ -463,17 +449,12 @@ public class AppStateStorage extends AbstractService {
       
       //rename the temporary file to the final file
       Path psMetaFilePath = new Path(writeDir, psMetaFile);
-      if(fs.exists(psMetaFilePath)) {
-        fs.delete(psMetaFilePath, false);
-        fs.rename(tmpPath, psMetaFilePath);
-      } else {
-        fs.rename(tmpPath, psMetaFilePath);
-        //if the old final file exist, just remove it
-        if(lastPsMetaFilePath != null) {
-          fs.delete(lastPsMetaFilePath, false);
-        }
+      HdfsUtil.rename(tmpPath, psMetaFilePath, fs);
+      //if the old final file exist, just remove it
+      if (lastPsMetaFilePath != null) {
+        fs.delete(lastPsMetaFilePath, false);
       }
-      
+
       lastPsMetaFilePath = psMetaFilePath;
     } finally {
       psMetaLock.unlock();

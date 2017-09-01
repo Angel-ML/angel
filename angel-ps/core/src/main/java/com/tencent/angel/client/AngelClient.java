@@ -593,6 +593,14 @@ public abstract class AngelClient implements AngelClientInterface {
       }
     }
 
+    Path outputParentPath = outputPath.getParent();
+    if (!outFs.exists(outputParentPath)) {
+      LOG.info("Make dir for model output parent path: " + outputParentPath);
+      if (!outFs.mkdirs(outputParentPath)) {
+        throw new IOException("Failed to make dir for model output parent path: " + outputParentPath);
+      }
+    }
+
     if(runningMode == RunningMode.ANGEL_PS_WORKER) {
       String logPathStr = conf.get(AngelConf.ANGEL_LOG_PATH);
       if (logPathStr != null) {
