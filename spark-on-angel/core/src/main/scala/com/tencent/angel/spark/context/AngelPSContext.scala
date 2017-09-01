@@ -218,6 +218,10 @@ private[spark] object AngelPSContext {
     val psOutOverwrite = conf.getBoolean("spark.ps.out.overwrite", true)
     val psOutTmpOption = conf.getOption("spark.ps.out.tmp.path")
 
+    val amMem = conf.getSizeAsMb("spark.am.memory","4g").toInt
+    val amCores = conf.getInt("spark.am.cores", 2)
+
+
     import com.tencent.angel.conf.AngelConf._
 
     val hadoopConf = SparkHadoopUtil.get.newConfiguration(conf)
@@ -241,6 +245,10 @@ private[spark] object AngelPSContext {
     hadoopConf.set(ANGEL_JOB_LIBJARS, psJars)
 
     hadoopConf.set(ANGEL_ACTION_TYPE, actionType)
+    
+    hadoopConf.setInt(ANGEL_AM_CPU_VCORES, amCores)
+    hadoopConf.setInt(ANGEL_AM_MEMORY_MB, amMem)
+    
     if (actionType == "train") {
       hadoopConf.set(ANGEL_SAVE_MODEL_PATH, modelPath)
     } else {
