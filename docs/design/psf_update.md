@@ -30,7 +30,7 @@ Future<VoidResult> update(UpdaterFunc update) throws AngelException;
 			public UpdaterParam getParam() {return param;}
 			public abstract void partitionUpdate(PartitionUpdaterParam partParam);
 		}
-		``` 
+		```
 
 	* GetFunc对象的参数类型为GetParam
 	   * UpdateParam对象与GetParam对象类似，它除了包含update的具体参数外，也有一个split方法，该方法的作用是将全局的update参数按照矩阵分区进行划分，得到的结果是一个分区update参数列表，即PartitionUpdateParam对象列表。
@@ -45,7 +45,7 @@ update psf没有具体的返回值，只返回给应用程序一个Future，应�
 
 update型psFunc执行流程需要PS Client和PS共同完成。上述提到的
 
-* UpdaterParam划分和最后的merge方法是在Worker执行
+* UpdaterParam划分是在Worker执行
 * partitionUpdate方法是在PSServer端执行
 
 具体的流程如下图所示，左子图表示Worker处理流程，右子图表示PS Server处理流程：
@@ -54,48 +54,41 @@ update型psFunc执行流程需要PS Client和PS共同完成。上述提到的
 
 ## 编程样例
 
-* [com.tencent.angel.ml.matrix.psf.update.Random](https://github.com/Tencent/angel/blob/master/angel-ps/psf/src/main/java/com/tencent/angel/ml/matrix/psf/update/Random.java): 将矩阵某一行设置为指定范围随机数的例子
+* [com.tencent.angel.ml.matrix.psf.update.RandomUniform](https://github.com/Tencent/angel/blob/master/angel-ps/psf/src/main/java/com/tencent/angel/ml/matrix/psf/update/RandomUniform.java): 将矩阵某一行设置为指定范围随机数的例子
 
 
 	```Java
-	public class Random extends FullUpdateFunc {
-	 ....
-	  @Override
-	  protected void doUpdate(ServerDenseDoubleRow[] rows, double[] value) {
-	    for (ServerDenseDoubleRow row: rows) {
-	      try {
-	        row.getLock().writeLock().lock();
-	        DoubleBuffer rowData = row.getData();
-	        java.util.Random rand = new java.util.Random(row.getRowId());
-	        for (int j = 0; j < row.size(); j++) {
-	          rowData.put(j, rand.nextDouble());
-			        }
+		public class RandomUniform extends MMUpdateFunc {
+			...
+		  @Override
+		  protected void doUpdate(ServerDenseDoubleRow[] rows, double[] scalars) {
+		    Random rand = new Random(System.currentTimeMillis());
+		    try {
+		      rows[0].getLock().writeLock().lock();
+		      double min = scalars[0];
+		      double max = scalars[1];
+		      double factor = max - min;
 
-	      } finally {
-	      	  row.getLock().writeLock().unlock();
-	      }
-	   }
-	}
-
+		      DoubleBuffer data = rows[0].getData();
+		      int size = rows[0].size();
+		      for (int i = 0; i < size; i++) {
+		        data.put(i, factor * rand.nextDouble() + min);
+		      }
+		    } finally {
+		      rows[0].getLock().writeLock().unlock();
+		    }
+		  }
+		}
 	```
 
 将代码编译后打成jar包，在提交任务时通过参数angel.lib.jars上传该jar包，然后就可以在应用程序中调用了。调用方式如下：
 
 ```Java
-	Random randomFunc = new Random(new 	RandomParam(matrixId, rowIndex, 0.0, 1.0));
+	Random randomFunc = new RandomUniform(new RandomParam(matrixId, rowIndex, 0.0, 1.0));
 	psModel.update(randomFunc).get();
 ```
 
 ## Update函数库
-
-PSF整体可以分为两大类： **Client 2 PSServer** & **PSServer 2 PSServer**
-
-它们的区别在于：
-	
-* 第一类的运算，是客户端触发Server
-* 第二类的运算，发生于PSServer之间
-
-1. Client 2 PSServer
 
 	* **Abs**
 
@@ -127,10 +120,7 @@ PSF整体可以分为两大类： **Client 2 PSServer** & **PSServer 2 PSServer*
 		* 功能：将矩阵中的某一行的个元素的值赋值给另外一行的相应元素
 		* 参数：矩阵id，from行号，to行号
 		* 返回值：无
-
-
-2. PSServer 2 PSServer
-
+		
 	* **Div**
 
 		* 功能：将矩阵中的某两行的对应元素相除得到的值赋值给另外一行的相应元素
@@ -186,7 +176,6 @@ PSF整体可以分为两大类： **Client 2 PSServer** & **PSServer 2 PSServer*
 	    * 功能：将矩阵中的某一行的每个元素进行某种计算，将得到的值赋值给另外一行的相应元素
 	    * 参数：矩阵id，from行号，to行号，计算函数（该计算函数拥有一个    * 参数，即    * 参数为元素的值）
 	    * 返回值：无
-
 
 	* **MapWithIndex**
 	    * 功能：将矩阵中的某一行的每个元素进行某种计算，将得到的值赋值给另外一行的相应元素
@@ -288,4 +277,3 @@ PSF整体可以分为两大类： **Client 2 PSServer** & **PSServer 2 PSServer*
 	    * 功能：将矩阵中的某三行的对应元素指定运算（由一个函数表示），然后将值赋值给另外一行的相应元素
 	    * 参数：矩阵id，from行号1，from行号2，to行号，运算函数（该函数有四个    * 参数，分别是元素下标索引，三行对应位置上的元素值）
 	    * 返回值：无
-
