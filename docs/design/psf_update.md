@@ -1,4 +1,4 @@
-# update型PSFunc
+# UpdateFunc(更新型函数)
 
 
 ## 原理

@@ -1,4 +1,4 @@
-# get型PSFunc
+# GetFunc(获取型函数)
 
 ## 原理
 
