@@ -326,7 +326,7 @@ public class MatrixMetaManagerTest {
         deltaRow1.setRowId(0);
         w4ClientForTask0.increment(deltaRow1);
         w4ClientForTask0.clock().get();
-        task0Context.increaseIteration();
+        task0Context.increaseEpoch();
 
         TDoubleVector row2 = (TDoubleVector) w4ClientForTask1.getRow(0);
         double sum2 = sum(row2.getValues());
@@ -337,7 +337,7 @@ public class MatrixMetaManagerTest {
         deltaRow2.setRowId(0);
         w4ClientForTask1.increment(deltaRow2);
         w4ClientForTask1.clock().get();
-        task1Context.increaseIteration();
+        task1Context.increaseEpoch();
         iterIndex++;
       }
 

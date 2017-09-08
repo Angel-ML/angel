@@ -86,8 +86,8 @@ public class ServerDenseFloatRowTest {
     serverDenseFloatRow = new ServerDenseFloatRow(rowId, startCol, endCol);
     buf = Unpooled.buffer(0);
     buf.writeInt(0);
-    buf.writeInt(2);
     buf.writeFloat((float) 1.00);
+    buf.writeInt(2);
     buf.writeFloat((float) -2.00);
     serverDenseFloatRow.update(MLProtos.RowType.T_FLOAT_SPARSE, buf, 2);
     assertEquals(serverDenseFloatRow.getData().get(0), 1, 0.000);
@@ -148,8 +148,8 @@ public class ServerDenseFloatRowTest {
     serverDenseFloatRow.serialize(buf);
     assertEquals(serverDenseFloatRow.getRowId(), buf.readInt());
     assertEquals(serverDenseFloatRow.getClock(), buf.readInt());
-    assertEquals(serverDenseFloatRow.getStartCol(), buf.readInt());
-    assertEquals(serverDenseFloatRow.getEndCol(), buf.readInt());
+    assertEquals(serverDenseFloatRow.getStartCol(), buf.readLong());
+    assertEquals(serverDenseFloatRow.getEndCol(), buf.readLong());
     assertEquals(serverDenseFloatRow.getRowVersion(), buf.readInt());
     assertEquals(serverDenseFloatRow.getEndCol() - serverDenseFloatRow.getStartCol(),
         buf.readInt());
@@ -160,8 +160,8 @@ public class ServerDenseFloatRowTest {
     ByteBuf buf = Unpooled.buffer(16);
     buf.writeInt(0);
     buf.writeInt(1);
-    buf.writeInt(2);
-    buf.writeInt(3);
+    buf.writeLong(2);
+    buf.writeLong(3);
     buf.writeInt(4);
     buf.writeInt(3);
     buf.writeFloat((float) -1.0);

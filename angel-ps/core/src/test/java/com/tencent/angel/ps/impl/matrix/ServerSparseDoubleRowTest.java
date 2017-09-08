@@ -127,8 +127,8 @@ public class ServerSparseDoubleRowTest {
     buf = Unpooled.buffer(0);
     LOG.info(buf);
     buf.writeInt(0);
-    buf.writeInt(2);
     buf.writeDouble(1.00);
+    buf.writeInt(2);
     buf.writeDouble(-2.00);
     serverSparseDoubleRow.update(MLProtos.RowType.T_DOUBLE_SPARSE, buf, 2);
     assertEquals(serverSparseDoubleRow.getData().get(0), 1, 0.000);
@@ -147,8 +147,8 @@ public class ServerSparseDoubleRowTest {
     serverSparseDoubleRow.serialize(buf);
     assertEquals(serverSparseDoubleRow.getRowId(), buf.readInt());
     assertEquals(serverSparseDoubleRow.getClock(), buf.readInt());
-    assertEquals(serverSparseDoubleRow.getStartCol(), buf.readInt());
-    assertEquals(serverSparseDoubleRow.getEndCol(), buf.readInt());
+    assertEquals(serverSparseDoubleRow.getStartCol(), buf.readLong());
+    assertEquals(serverSparseDoubleRow.getEndCol(), buf.readLong());
     assertEquals(serverSparseDoubleRow.getRowVersion(), buf.readInt());
     assertEquals(3, buf.readInt());
   }
@@ -158,8 +158,8 @@ public class ServerSparseDoubleRowTest {
     ByteBuf buf = Unpooled.buffer(16);
     buf.writeInt(0);
     buf.writeInt(1);
-    buf.writeInt(2);
-    buf.writeInt(3);
+    buf.writeLong(2);
+    buf.writeLong(3);
     buf.writeInt(4);
     buf.writeInt(3);
     buf.writeInt(0);

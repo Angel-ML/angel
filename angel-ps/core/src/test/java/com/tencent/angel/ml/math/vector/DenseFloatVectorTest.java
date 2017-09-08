@@ -20,6 +20,7 @@ import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.vector.TDoubleVector;
 import com.tencent.angel.ml.math.vector.TFloatVector;
 import com.tencent.angel.ml.math.VectorType;
+import com.tencent.angel.protobuf.generated.MLProtos;
 import org.junit.Test;
 
 import java.util.Random;
@@ -96,7 +97,7 @@ public class DenseFloatVectorTest {
   @Test
   public void getTypeTest() {
     DenseFloatVector vec = genDenseFloatVector(dim);
-    assertEquals(VectorType.T_FLOAT_DENSE, vec.getType());
+    assertEquals(MLProtos.RowType.T_FLOAT_DENSE, vec.getType());
   }
 
   @Test
