@@ -17,6 +17,7 @@
 
 package com.tencent.angel.ml.matrix.psf.update.enhance;
 
+import com.tencent.angel.ml.matrix.psf.common.Utils;
 import com.tencent.angel.ps.impl.PSContext;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerPartition;
@@ -47,11 +48,13 @@ public abstract class MUpdateFunc extends UpdateFunc {
     if (part != null) {
       MUpdateParam.MPartitionUpdateParam m = (MUpdateParam.MPartitionUpdateParam) partParam;
       int[] rowIds = m.getRowIds();
-      ServerRow[] rows = new ServerRow[rowIds.length];
-      for (int i = 0; i < rowIds.length; i++) {
-        rows[i] = part.getRow(rowIds[i]);
+      if (Utils.withinPart(partParam.getPartKey(), rowIds)) {
+        ServerRow[] rows = new ServerRow[rowIds.length];
+        for (int i = 0; i < rowIds.length; i++) {
+          rows[i] = part.getRow(rowIds[i]);
+        }
+        update(rows);
       }
-      update(rows);
     }
   }
 

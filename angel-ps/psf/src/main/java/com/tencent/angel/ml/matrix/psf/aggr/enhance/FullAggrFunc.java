@@ -50,7 +50,7 @@ public abstract class FullAggrFunc extends GetFunc {
     }
     PartitionKey key = partKey.getPartKey();
     int[] partInfo = new int[] {key.getStartRow(), key.getEndRow()
-        , key.getStartCol(), key.getEndCol()};
+        , (int)key.getStartCol(), (int)key.getEndCol()};
     return new FullPartitionAggrResult(result, partInfo);
   }
 

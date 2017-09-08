@@ -49,11 +49,6 @@ public class MFUpdateParam extends UpdateParam {
     int size = partList.size();
     List<PartitionUpdateParam> partParams = new ArrayList<PartitionUpdateParam>(size);
     for (PartitionKey part : partList) {
-      for (int rowId : rowIds) {
-        if (rowId < part.getStartRow() || rowId >= part.getEndRow()) {
-          throw new RuntimeException("Wrong rowId!");
-        }
-      }
       partParams.add(new MFPartitionUpdateParam(matrixId, part, rowIds, func));
     }
 

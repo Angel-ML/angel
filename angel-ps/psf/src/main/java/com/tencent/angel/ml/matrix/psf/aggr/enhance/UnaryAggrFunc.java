@@ -17,6 +17,7 @@
 
 package com.tencent.angel.ml.matrix.psf.aggr.enhance;
 
+import com.tencent.angel.ml.matrix.psf.common.Utils;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
@@ -52,14 +53,15 @@ public abstract class UnaryAggrFunc extends GetFunc {
         PSContext.get().getMatrixPartitionManager()
             .getPartition(partKey.getMatrixId(), partKey.getPartKey().getPartitionId());
 
-    double result = 0.0;
     if (part != null) {
       int rowId = ((UnaryAggrParam.UnaryPartitionAggrParam) partKey).getRowId();
-      ServerRow row = part.getRow(rowId);
-      if (row != null) result = processRow(row);
+      if (Utils.withinPart(part.getPartitionKey(), new int[]{rowId})) {
+        ServerRow row = part.getRow(rowId);
+        double result = processRow(row);
+        return new ScalarPartitionAggrResult(result);
+      }
     }
-
-    return new ScalarPartitionAggrResult(result);
+    return null;
   }
 
   private double processRow(ServerRow row) {

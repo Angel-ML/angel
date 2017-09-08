@@ -45,7 +45,7 @@ public class Zip3MapWithIndex extends MFUpdateFunc {
     DoubleBuffer from2 = rows[1].getData();
     DoubleBuffer from3 = rows[2].getData();
     DoubleBuffer to = rows[3].getData();
-    int startCol = rows[0].getStartCol();
+    int startCol = (int)rows[0].getStartCol();
     int size = rows[0].size();
     for (int i = 0; i < size; i++) {
       to.put(i, mapper.call(startCol + i, from1.get(i), from2.get(i), from3.get(i)));

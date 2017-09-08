@@ -83,7 +83,7 @@ public class LocalClusterHelper {
     mMatrix.setName("w2");
     mMatrix.setRowNum(10);
     mMatrix.setColNum(100);
-    mMatrix.setMaxRowNumInBlock(10);
+    mMatrix.setMaxRowNumInBlock(5);
     mMatrix.setMaxColNumInBlock(50);
     mMatrix.setRowType(MLProtos.RowType.T_DOUBLE_DENSE);
     mMatrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");

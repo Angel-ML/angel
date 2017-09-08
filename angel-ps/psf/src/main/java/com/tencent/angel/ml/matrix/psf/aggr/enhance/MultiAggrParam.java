@@ -90,11 +90,6 @@ public class MultiAggrParam extends GetParam {
     List<PartitionGetParam> partParams = new ArrayList<PartitionGetParam>(size);
 
     for (PartitionKey part : parts) {
-      for (int i = 0; i < rowIds.length; i++) {
-        if (rowIds[i] < part.getStartRow() || rowIds[i] >= part.getEndRow()) {
-          throw new RuntimeException("Wrong rowId");
-        }
-      }
       partParams.add(new MultiPartitionAggrParam(matrixId, part, rowIds));
     }
 

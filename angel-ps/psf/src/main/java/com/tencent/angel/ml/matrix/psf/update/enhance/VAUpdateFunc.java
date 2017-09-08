@@ -17,6 +17,7 @@
 
 package com.tencent.angel.ml.matrix.psf.update.enhance;
 
+import com.tencent.angel.ml.matrix.psf.common.Utils;
 import com.tencent.angel.ps.impl.PSContext;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerPartition;
@@ -46,9 +47,12 @@ public abstract class VAUpdateFunc extends UpdateFunc {
     if (part != null) {
       VAUpdateParam.VAPartitionUpdateParam va =
           (VAUpdateParam.VAPartitionUpdateParam) partParam;
-      ServerRow row = part.getRow(va.getRowId());
-      if (row != null) {
-        update(row, va.getArraySlice());
+      int rowId = va.getRowId();
+      if (Utils.withinPart(partParam.getPartKey(), new int[]{rowId})){
+        ServerRow row = part.getRow(rowId);
+        if (row != null) {
+          update(row, va.getArraySlice());
+        }
       }
     }
   }

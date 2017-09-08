@@ -21,18 +21,26 @@ import com.tencent.angel.ml.math.vector.DenseDoubleVector;
 import com.tencent.angel.ml.matrix.psf.aggr.primitive.Pull;
 import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult;
 import com.tencent.angel.ml.matrix.psf.update.*;
+import com.tencent.angel.ml.matrix.psf.update.enhance.CompressUpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.primitive.Increment;
 import com.tencent.angel.ml.matrix.psf.update.primitive.Push;
 import com.tencent.angel.psagent.matrix.MatrixClient;
 import com.tencent.angel.psagent.matrix.MatrixClientFactory;
+import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.PropertyConfigurator;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
-public class UpdateFuncTest{
+public class UpdateFuncTest {
+
+  private static final org.apache.commons.logging.Log LOG = LogFactory.getLog(UpdateFuncTest.class);
+
   private static MatrixClient w2Client = null;
   private static double[] localArray0 = null;
   private static double[] localArray1 = null;
@@ -213,6 +221,25 @@ public class UpdateFuncTest{
     assert(result.length == dim);
     for (int i = 0; i < result.length; i++) {
       Assert.assertEquals(result[i], 0.0 + localArray1[i], delta);
+    }
+  }
+
+  @Test
+  public void testCompress() throws Exception {
+
+    UpdateFunc func = new CompressUpdateFunc(w2Client.getMatrixId(), 5, localArray1, 8);
+    w2Client.update(func).get();
+
+    int maxPoint = (int) Math.pow(2, 8 - 1) - 1;
+    double maxMaxAbs = 0.0;
+    for (int i = 0; i < localArray1.length; i++) {
+      maxMaxAbs = Math.abs(localArray1[i]) > maxMaxAbs ? Math.abs(localArray1[i]): maxMaxAbs;
+    }
+
+    double[] result = pull(w2Client, 5);
+    assert(result.length == dim);
+    for (int i = 0; i < result.length; i++) {
+      Assert.assertEquals(localArray1[i], 0.0 + result[i], 2 * maxMaxAbs / maxPoint);
     }
   }
 
@@ -420,6 +447,16 @@ public class UpdateFuncTest{
     assert(result.length == dim);
     for (int i = 0; i < result.length; i++) {
       Assert.assertEquals(result[i], localArray0[i] - (-1.1), delta);
+    }
+  }
+
+  public void testBeyondPart() throws Exception {
+    // in different part
+    UpdateFunc func = new AddS(w2Client.getMatrixId(), 0, 9, 2.0);
+    try {
+      w2Client.update(func).get();
+    } catch (Exception e) {
+      System.out.println("test exception" + e.getMessage());
     }
   }
 
