@@ -20,6 +20,8 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ps.ParameterServerId;
 import io.netty.buffer.ByteBuf;
 
+import java.util.UUID;
+
 /**
  * The base class of rpc request. The operation object of general rpcs between PSAgent and PS in
  * Angel is a matrix partition.
@@ -30,6 +32,8 @@ public abstract class PartitionRequest extends Request {
 
   /** matrix partition key */
   protected PartitionKey partKey;
+
+  private String uuid = UUID.randomUUID().toString();
 
   /**
    * Create a new PartitionRequest.
@@ -92,6 +96,11 @@ public abstract class PartitionRequest extends Request {
     super.serialize(buf);
     buf.writeInt(clock);
     partKey.serialize(buf);
+    if (uuid != null) {
+      byte[] data = uuid.getBytes();
+      buf.writeInt(data.length);
+      buf.writeBytes(data);
+    }
   }
 
   @Override
@@ -100,6 +109,12 @@ public abstract class PartitionRequest extends Request {
     clock = buf.readInt();
     partKey = new PartitionKey();
     partKey.deserialize(buf);
+    if (buf.isReadable()) {
+      int size = buf.readInt();
+      byte[] data = new byte[size];
+      buf.readBytes(data);
+      uuid = new String(data);
+    }
   }
 
   @Override
@@ -141,6 +156,6 @@ public abstract class PartitionRequest extends Request {
 
   @Override
   public String toString() {
-    return "PartitionRequest [clock=" + clock + ", partKey=" + partKey + "]";
+    return "PartitionRequest [id=" + uuid + ", clock=" + clock + ", partKey=" + partKey + "]";
   }
 }

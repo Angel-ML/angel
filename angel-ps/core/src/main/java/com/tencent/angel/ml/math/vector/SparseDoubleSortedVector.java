@@ -19,6 +19,7 @@ package com.tencent.angel.ml.math.vector;
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.math.VectorType;
+import com.tencent.angel.protobuf.generated.MLProtos;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -94,6 +95,14 @@ public class SparseDoubleSortedVector extends TDoubleVector {
   public TDoubleVector plusBy(int index, double delta) {
     set(index, get(index) + delta);
     return this;
+  }
+
+  @Override public double sum() {
+    double ret = 0.0;
+    for(int i = 0; i < values.length; i++) {
+      ret += values[i];
+    }
+    return ret;
   }
 
   /**
@@ -186,8 +195,8 @@ public class SparseDoubleSortedVector extends TDoubleVector {
   }
 
   @Override
-  public VectorType getType() {
-    return VectorType.T_DOUBLE_SPARSE;
+  public MLProtos.RowType getType() {
+    return MLProtos.RowType.T_DOUBLE_SPARSE;
   }
 
   @Override

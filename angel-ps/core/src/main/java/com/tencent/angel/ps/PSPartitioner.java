@@ -33,7 +33,7 @@ import java.util.List;
  */
 public class PSPartitioner implements Partitioner{
   private static final Log LOG = LogFactory.getLog(PSPartitioner.class);
-  public static final int DEFAULT_PARTITION_SIZE = 500000;
+  public static final long DEFAULT_PARTITION_SIZE = 500000;
   protected MatrixContext mContext;
   protected Configuration conf;
 
@@ -49,14 +49,14 @@ public class PSPartitioner implements Partitioner{
     int id = 0;
     int matrixId = mContext.getId();
     int row = mContext.getRowNum();
-    int col = mContext.getColNum();
+    long col = mContext.getColNum();
 
     int blockRow = mContext.getMaxRowNumInBlock();
-    int blockCol = mContext.getMaxColNumInBlock();
+    long blockCol = mContext.getMaxColNumInBlock();
     if(blockRow == -1 || blockCol == -1) {
       int serverNum = conf.getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER);
       if(row >= serverNum) {
-        blockRow = Math.min(row / serverNum, Math.max(1, DEFAULT_PARTITION_SIZE / col));
+        blockRow = (int) Math.min(row / serverNum, Math.max(1, DEFAULT_PARTITION_SIZE / col));
         blockCol = Math.min(DEFAULT_PARTITION_SIZE / blockRow, col);
       } else {
         blockRow = row;
@@ -68,11 +68,11 @@ public class PSPartitioner implements Partitioner{
 
     Partition.Builder partition = Partition.newBuilder();
     for (int i = 0; i < row; ) {
-      for (int j = 0; j < col; ) {
+      for (long j = 0; j < col; ) {
         int startRow = i;
-        int startCol = j;
+        long startCol = j;
         int endRow = (i <= (row - blockRow)) ? (i + blockRow) : row;
-        int endCol = (j <= (col - blockCol)) ? (j + blockCol) : col;
+        long endCol = (j <= (col - blockCol)) ? (j + blockCol) : col;
         partition.setMatrixId(matrixId);
         partition.setPartitionId(id++);
         partition.setStartRow(startRow);

@@ -19,7 +19,9 @@ package com.tencent.angel.psagent.matrix.oplog.cache;
 import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.ml.math.TUpdate;
 import com.tencent.angel.ml.matrix.MatrixMeta;
+import com.tencent.angel.ml.matrix.MatrixOpLogType;
 import com.tencent.angel.ml.matrix.psf.update.enhance.VoidResult;
+import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.ResponseType;
 import com.tencent.angel.psagent.matrix.transport.FutureResult;
@@ -45,7 +47,7 @@ public class MatrixOpLogCache {
   private static final Log LOG = LogFactory.getLog(MatrixOpLogCache.class);
 
   /** matrix id to cache map */
-  private final Int2ObjectOpenHashMap<MatrixOpLog> opLogs;
+  private final ConcurrentHashMap<Integer, MatrixOpLog> opLogs;
 
   /** thread pool for workers that merge updates and flush updates to ps */
   private ExecutorService workerPool;
@@ -78,7 +80,7 @@ public class MatrixOpLogCache {
   private Thread dispatcher;
 
   public MatrixOpLogCache() {
-    opLogs = new Int2ObjectOpenHashMap<MatrixOpLog>();
+    opLogs = new ConcurrentHashMap<>();
 
     messageQueue = new PriorityBlockingQueue<OpLogMessage>(100, new PriorityComparator());
     seqIdToMessageMaps = new Int2ObjectOpenHashMap<Int2ObjectAVLTreeMap<OpLogMessage>>();
@@ -163,6 +165,7 @@ public class MatrixOpLogCache {
     FutureResult<VoidResult> futureResult = new FutureResult<VoidResult>();
     try {
       // Generate a clock request and put it to request queue
+      LOG.debug("clock matrix " + matrixId);
       ClockMessage clockMessage =
           new ClockMessage(seqIdGenerator.incrementAndGet(), matrixId, context, flushFirst);
       messageToFutureMap.put(clockMessage, futureResult);
@@ -433,7 +436,7 @@ public class MatrixOpLogCache {
         merged(message);
       } catch (InterruptedException e) {
         LOG.warn("merge " + message + " is interruped");
-      } catch (Exception e) {
+      } catch (Throwable e) {
         LOG.fatal("merge " + message + " falied, ", e);
         PSAgentContext.get().getPsAgent().error("merge " + message + " falied, " + e.getMessage());
       }
@@ -491,38 +494,70 @@ public class MatrixOpLogCache {
   }
 
   private void addMatrixOpLog(int matrixId) {
-    MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
-    String type =
-        matrixMeta.getAttribute(MatrixConf.MATRIX_OPLOG_TYPE,
-            MatrixConf.DEFAULT_MATRIX_OPLOG_TYPE);
-
-    String enableFilter =
-        matrixMeta.getAttribute(MatrixConf.MATRIX_OPLOG_ENABLEFILTER,
-            MatrixConf.DEFAULT_MATRIX_OPLOG_ENABLEFILTER);
-
-    opLogs.put(matrixId, createMatrixOpLog(matrixId, type, enableFilter.equalsIgnoreCase("true")));
+    opLogs.put(matrixId, createMatrixOpLog(PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId)));
   }
 
-  private MatrixOpLog createMatrixOpLog(int matrixId, String type, boolean enableFilter) {
-    switch (type) {
-      case "DENSE_DOUBLE":
-        return new DenseDoubleMatrixOpLog(matrixId, enableFilter);
+  private MatrixOpLog createMatrixOpLog(MatrixMeta matrixMeta) {
+    int matrixId = matrixMeta.getId();
+    String type =
+      matrixMeta.getAttribute(MatrixConf.MATRIX_OPLOG_TYPE);
+    boolean enableFilter =
+      matrixMeta.getAttribute(MatrixConf.MATRIX_OPLOG_ENABLEFILTER,
+        MatrixConf.DEFAULT_MATRIX_OPLOG_ENABLEFILTER).equalsIgnoreCase("true");
 
-      case "LIL_INT":
-        return new LILIntMatrixOpLog(matrixId, enableFilter);
-
-      case "DENSE_INT":
-        return new DenseIntMatrixOpLog(matrixId, enableFilter);
-
-      case "DENSE_FLOAT":
-        return new DenseFloatMatrixOplog(matrixId, enableFilter);
-
-      case "SPARSE_DOUBLE":
-        return new SparseDoubleMatrixOplog(matrixId, enableFilter);
-
-      default:
-        return new DenseDoubleMatrixOpLog(matrixId, enableFilter);
+    if(type == null) {
+      MLProtos.RowType rowType = matrixMeta.getRowType();
+      switch(rowType) {
+        case T_DOUBLE_DENSE:
+          return new DenseDoubleMatrixOpLog(matrixId, enableFilter);
+        case T_DOUBLE_SPARSE:
+          return new SparseDoubleMatrixOplog(matrixId, enableFilter);
+        case T_INT_DENSE:
+          return new DenseIntMatrixOpLog(matrixId, enableFilter);
+        case T_INT_SPARSE:
+          return new SparseIntMatrixOpLog(matrixId, enableFilter);
+        case T_FLOAT_DENSE:
+          return new DenseFloatMatrixOplog(matrixId, enableFilter);
+        case T_FLOAT_SPARSE:
+          return new SparseFloatMatrixOpLog(matrixId, enableFilter);
+        case T_DOUBLE_SPARSE_LONGKEY:
+          return new CompSparseDoubleLongKeyMatrixOpLog(matrixId, enableFilter);
+        case T_DOUBLE_SPARSE_COMPONENT:
+          return new CompSparseDoubleMatrixOpLog(matrixId, enableFilter);
+        case T_FLOAT_SPARSE_COMPONENT:
+          return new CompSparseFloatMatrixOpLog(matrixId, enableFilter);
+        case T_INT_SPARSE_COMPONENT:
+          return new CompSparseIntMatrixOpLog(matrixId, enableFilter);
+      }
+    } else {
+      MatrixOpLogType opLogType = MatrixOpLogType.valueOf(type);
+      switch (opLogType) {
+        case DENSE_DOUBLE:
+          return new DenseDoubleMatrixOpLog(matrixId, enableFilter);
+        case SPARSE_DOUBLE:
+          return new SparseDoubleMatrixOplog(matrixId, enableFilter);
+        case DENSE_INT:
+          return new DenseIntMatrixOpLog(matrixId, enableFilter);
+        case SPARSE_INT:
+          return new SparseIntMatrixOpLog(matrixId, enableFilter);
+        case DENSE_FLOAT:
+          return new DenseFloatMatrixOplog(matrixId, enableFilter);
+        case SPARSE_FLOAT:
+          return new SparseFloatMatrixOpLog(matrixId, enableFilter);
+        case SPARSE_DOUBLE_LONGKEY:
+          return new CompSparseDoubleLongKeyMatrixOpLog(matrixId, enableFilter);
+        case COMPONENT_SPARSE_DOUBLE:
+          return new CompSparseDoubleMatrixOpLog(matrixId, enableFilter);
+        case COMPONENT_SPARSE_FLOAT:
+          return new CompSparseFloatMatrixOpLog(matrixId, enableFilter);
+        case COMPONENT_SPARSE_INT:
+          return new CompSparseIntMatrixOpLog(matrixId, enableFilter);
+        case COMPONENT_SPARSE_DOUBLE_LONGKEY:
+          return new CompSparseDoubleLongKeyMatrixOpLog(matrixId, enableFilter);
+      }
     }
+
+    return new DenseDoubleMatrixOpLog(matrixId, enableFilter);
   }
 
   private void merged(OpLogMergeMessage message) throws InterruptedException {

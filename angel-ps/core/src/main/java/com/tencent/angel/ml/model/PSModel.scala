@@ -2,10 +2,11 @@ package com.tencent.angel.ml.model
 
 import java.util.concurrent.Future
 import java.util.{ArrayList, List}
+
 import com.tencent.angel.conf.MatrixConf
 import com.tencent.angel.exception.{AngelException, InvalidParameterException}
 import com.tencent.angel.ml.math.TVector
-import com.tencent.angel.ml.matrix.MatrixContext
+import com.tencent.angel.ml.matrix.{MatrixContext, MatrixOpLogType}
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
 import com.tencent.angel.ml.matrix.psf.update.enhance.ZeroUpdate.ZeroUpdateParam
 import com.tencent.angel.ml.matrix.psf.update.enhance.{UpdateFunc, VoidResult, ZeroUpdate}
@@ -109,6 +110,16 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
   }
 
   /**
+    * Set the matrix update storage type
+    *
+    * @param oplogType storage type
+    */
+  def setOplogType(oplogType: MatrixOpLogType):this.type = {
+    matrixCtx.set(MatrixConf.MATRIX_OPLOG_TYPE, oplogType.name())
+    this
+  }
+
+  /**
     * Set the matrix row type
     *
     * @param rowType row type
@@ -144,23 +155,11 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
   // Sync Area
   // =======================================================================
 
-
   /**
-    * Flush the cached matrix oplogs to ps and update the clock for the matrix
-    *
-    * @throws com.tencent.angel.exception.AngelException
-    * @return a future result
+    * Default Simple Sync Clock Method
     */
-  @throws(classOf[AngelException])
-  def clock(): Future[VoidResult] = {
-    try {
-      return getClient.clock
-    }
-    catch {
-      case e: InvalidParameterException => {
-        throw new AngelException(e)
-      }
-    }
+  def syncClock(flush: Boolean = true) = {
+    this.clock(flush).get()
   }
 
   /**
@@ -171,7 +170,7 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
     * @return a future result
     */
   @throws(classOf[AngelException])
-  def clock(flush: Boolean): Future[VoidResult] = {
+  def clock(flush: Boolean = true): Future[VoidResult] = {
     try {
       return getClient.clock(flush)
     }
@@ -182,7 +181,6 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
     }
   }
 
-  override def finalize(): Unit = super.finalize()
 
   /**
     * Flush the cached matrix oplogs to ps
@@ -202,6 +200,11 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
     }
   }
 
+  // =======================================================================
+  // Remote Model Area
+  // =======================================================================
+
+
   /**
     * Increment the matrix row vector use a same dimension vector. The update will be cache in local
     * and send to ps until flush or clock is called
@@ -220,6 +223,8 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
       }
     }
   }
+
+
 
   /**
     * Increment the matrix row vector use a same dimension vector. The update will be cache in local
@@ -403,6 +408,8 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
       }
     }
   }
+
+  override def finalize(): Unit = super.finalize()
 
 }
 

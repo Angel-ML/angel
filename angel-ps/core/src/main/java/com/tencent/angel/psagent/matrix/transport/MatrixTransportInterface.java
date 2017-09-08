@@ -100,7 +100,7 @@ public interface MatrixTransportInterface {
    * Get a partition result use the get row udf.
    * 
    * @param func the get udf
-   * @param partitionGetRowParam parameter of the update udf
+   * @param partitionGetParam parameter of the update udf
    * @return row split
    */
   Future<PartitionGetResult> get(GetFunc func, PartitionGetParam partitionGetParam);

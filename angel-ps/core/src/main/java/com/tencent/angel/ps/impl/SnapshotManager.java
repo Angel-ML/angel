@@ -22,7 +22,6 @@ import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.GetTaskMatrixC
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.GetTaskMatrixClockResponse;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.TaskMatrixClock;
 import com.tencent.angel.ps.PSAttemptId;
-import com.tencent.angel.utils.HdfsUtil;
 
 public class SnapshotManager {
   private static final Log LOG = LogFactory.getLog(SnapshotManager.class);
@@ -144,7 +143,7 @@ public class SnapshotManager {
     LOG.info("write matrix snapshot over");
 
     Path snapshotsDestFilePath = getPSSnapshotDestFile();
-    HdfsUtil.rename(snapshotsTempFilePath, snapshotsDestFilePath, fs);
+    fs.rename(snapshotsTempFilePath, snapshotsDestFilePath);
     LOG.info("rename " + snapshotsTempFilePath + " to " + snapshotsDestFilePath + " success");
     Path oldSnapshotFile = getOldSnapshotDestFile();
     if (oldSnapshotFile != null) {

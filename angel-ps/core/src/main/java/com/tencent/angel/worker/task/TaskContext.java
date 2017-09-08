@@ -77,7 +77,7 @@ public class TaskContext {
     taskIdProto = taskMeta.getTaskId();
     taskId = ProtobufUtil.convertToId(taskIdProto);
     context = PSAgentContext.get().getTaskContext(taskId.getIndex());
-    context.setIteration(taskMeta.getIteration());
+    context.setEpoch(taskMeta.getIteration());
     List<MatrixClock> matrixClocks = taskMeta.getMatrixClockList();
     int size = matrixClocks.size();
     for(int i = 0; i < size; i++){
@@ -229,31 +229,7 @@ public class TaskContext {
    * @throws InterruptedException
    */
   public void globalSync(int matrixId) throws InterruptedException {
-    ClockCache clockCache = PSAgentContext.get().getClockCache();
-    List<PartitionKey> pkeys = PSAgentContext.get().getMatrixPartitionRouter().getPartitionKeyList(matrixId);
-
-    int syncTimeIntervalMS =
-      PSAgentContext
-        .get()
-        .getConf()
-        .getInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS,
-          AngelConf.DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS);
-
-    while (true) {
-      boolean sync = true;
-      for (PartitionKey pkey : pkeys) {
-        if (clockCache.getClock(matrixId, pkey) < context.getMatrixClock(matrixId)) {
-          sync = false;
-          break;
-        }
-      }
-
-      if (!sync) {
-        Thread.sleep(syncTimeIntervalMS);
-      } else {
-        break;
-      }
-    }
+    context.globalSync(matrixId);
   }
 
   /**
@@ -262,8 +238,7 @@ public class TaskContext {
    * @throws InterruptedException
    */
   public void globalSync() throws InterruptedException {
-    for (Integer matId: getMatrixClocks().keySet())
-      globalSync(matId);
+    context.globalSync();
   }
 
   /**
@@ -271,8 +246,8 @@ public class TaskContext {
    *
    * @return the iteration
    */
-  public int getIteration() {
-    return context.getIteration();
+  public int getEpoch() {
+    return context.getEpoch();
   }
 
   /**
@@ -280,8 +255,8 @@ public class TaskContext {
    *
    * @throws ServiceException the service exception
    */
-  public void incIteration() throws ServiceException{
-    context.increaseIteration();
+  public void incEpoch() throws ServiceException{
+    context.increaseEpoch();
   }
 
   /**

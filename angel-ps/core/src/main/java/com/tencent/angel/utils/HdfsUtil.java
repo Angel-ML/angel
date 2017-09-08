@@ -410,12 +410,7 @@ public class HdfsUtil {
         break;
       }
 
-      if (isFirstRow) {
-        isFirstRow = false;
-      } else {
-        output.writeBytes("\n");
-      }
-      output.writeBytes(resultItem.getText());
+      output.writeBytes(resultItem.getText() + "\n");
     }
 
     output.close();

@@ -196,8 +196,8 @@ public class MatrixPartitionManager {
         if (size == 0)
           continue;
 
-        LOG.debug("rowId = " + rowId + " rowType = " + rowType + " size = " + size + " request " +
-            "update");
+//        LOG.info("rowId = " + rowId + " rowType = " + rowType + " size = " + size + " request " +
+//            "update");
 
         ServerRow row = matrix.getPartition(partitionKey).getRow(rowId);
         rowUpdater.update(rowType, size, buf, row);
@@ -304,7 +304,7 @@ public class MatrixPartitionManager {
   /**
    * Get matrix use matrix id
    * 
-   * @param integer matrix id
+   * @param matrixId matrix id
    * @return ServerMatrix matrix
   */      
   public ServerMatrix getMatrix(int matrixId) {

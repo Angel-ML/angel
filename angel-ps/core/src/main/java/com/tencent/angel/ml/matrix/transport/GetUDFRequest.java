@@ -56,21 +56,23 @@ public class GetUDFRequest extends PartitionRequest {
       RowType rowType = meta.getRowType();
       switch (rowType) {
         case T_DOUBLE_DENSE:
-          return 8 * (partKey.getEndCol() - partKey.getStartCol());
+          return 8 * ((int)partKey.getEndCol() - (int)partKey.getStartCol());
 
         case T_INT_DENSE:
-          return 4 * (partKey.getEndCol() - partKey.getStartCol());
+          return 4 * ((int)partKey.getEndCol() - (int)partKey.getStartCol());
 
         case T_FLOAT_DENSE:
-          return 4 * (partKey.getEndCol() - partKey.getStartCol());
+          return 4 * ((int)partKey.getEndCol() - (int)partKey.getStartCol());
 
         case T_DOUBLE_SPARSE:
-        case T_INT_SPARSE: {
+        case T_INT_SPARSE:
+        case T_FLOAT_SPARSE:
+        case T_DOUBLE_SPARSE_LONGKEY: {
           return 0;
         }
 
         default:
-          return 8 * (partKey.getEndCol() - partKey.getStartCol());
+          return 8 * ((int)partKey.getEndCol() - (int)partKey.getStartCol());
       }
     }
   }

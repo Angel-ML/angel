@@ -80,7 +80,7 @@ public class MatrixClockCache {
   /**
    * Get a partition clock
    * 
-   * @param part partition key
+   * @param partKey partition key
    * @return int clock
    */
   public int getClock(PartitionKey partKey) {

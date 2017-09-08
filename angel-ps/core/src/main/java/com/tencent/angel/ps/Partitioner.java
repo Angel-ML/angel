@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * Matrix partitioner interface.
  */
-interface Partitioner {
+public interface Partitioner {
   /**
    * Init matrix partitioner
    * @param mContext matrix context

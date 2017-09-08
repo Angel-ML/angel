@@ -105,4 +105,5 @@ public abstract class TFloatVector extends TVector {
   @Override
   public TVector plusBy(TAbstractVector other, double x) { return  plusBy(other, (float) x); }
 
+  public abstract double sum();
 }

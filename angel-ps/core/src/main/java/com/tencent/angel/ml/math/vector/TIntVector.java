@@ -84,6 +84,8 @@ public abstract class TIntVector extends TVector {
    */
   public abstract TIntVector plusBy(TAbstractVector other, int x);
 
+
+
   @Override
   public TVector plusBy(int index, double delta) { return  plusBy(index, (int) delta);}
 
@@ -101,4 +103,6 @@ public abstract class TIntVector extends TVector {
 
   @Override
   public TVector plusBy(TAbstractVector other, double x) { return  plusBy(other, (int) x); }
+
+  public abstract long sum();
 }

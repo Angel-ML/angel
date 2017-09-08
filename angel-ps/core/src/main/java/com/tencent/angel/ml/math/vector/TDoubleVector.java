@@ -61,4 +61,5 @@ public abstract class TDoubleVector extends TVector {
    */
   public abstract TDoubleVector plusBy(int index, double delta);
 
+  public abstract double sum();
 }

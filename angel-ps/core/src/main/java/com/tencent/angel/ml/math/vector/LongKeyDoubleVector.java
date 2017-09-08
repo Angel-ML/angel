@@ -44,6 +44,9 @@ public abstract class LongKeyDoubleVector extends TVector {
    */
   public abstract double get(long index);
 
+  public abstract long[] getIndexes();
+
+  public abstract double[] getValues();
 
   @Override
   public int getDimension() {

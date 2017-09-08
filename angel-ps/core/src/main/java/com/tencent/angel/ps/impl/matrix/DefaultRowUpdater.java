@@ -81,6 +81,11 @@ public class DefaultRowUpdater extends RowUpdater {
     row.update(RowType.T_DOUBLE_SPARSE, buf, size);
   }
 
+  @Override public void updateDoubleSparseToDoubleSparseLongKey(int size, ByteBuf buf,
+    ServerSparseDoubleLongKeyRow row) {
+    row.update(RowType.T_DOUBLE_SPARSE_LONGKEY, buf, size);
+  }
+
   @Override
   public void updateFloatDenseToFloatDense(int size, ByteBuf buf, ServerDenseFloatRow row) {
     row.update(RowType.T_FLOAT_DENSE, buf, size);

@@ -16,6 +16,7 @@
 
 package com.tencent.angel.ml.math.vector;
 
+import com.tencent.angel.protobuf.generated.MLProtos;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
@@ -215,6 +216,16 @@ public class SparseIntVector extends TIntVector {
       + this.getClass().getName() + " plusBy " + other.getClass().getName());
   }
 
+  @Override public long sum() {
+    ObjectIterator<Int2IntMap.Entry> iter = hashMap.int2IntEntrySet().iterator();
+    long sum = 0;
+    while (iter.hasNext()) {
+      double v = iter.next().getIntValue();
+      sum += v;
+    }
+    return sum;
+  }
+
   private SparseIntVector plusBy(SparseIntVector other, int x) {
     ObjectIterator<Int2IntMap.Entry> iter = other.hashMap.int2IntEntrySet().fastIterator();
     Int2IntMap.Entry entry = null;
@@ -376,12 +387,16 @@ public class SparseIntVector extends TIntVector {
   }
 
   @Override
-  public VectorType getType() {
-    return VectorType.T_INT_SPARSE;
+  public MLProtos.RowType getType() {
+    return MLProtos.RowType.T_INT_SPARSE;
   }
 
   @Override
   public int size() {
     return hashMap.size();
+  }
+
+  public Int2IntOpenHashMap getIndexToValueMap() {
+    return hashMap;
   }
 }

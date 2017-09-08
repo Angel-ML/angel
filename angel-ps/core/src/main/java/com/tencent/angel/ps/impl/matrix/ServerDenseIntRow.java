@@ -30,14 +30,22 @@ import java.nio.IntBuffer;
 /**
  * The class represent dense int row on parameter server.
  */
-
 public class ServerDenseIntRow extends ServerRow {
-
   private final static Log LOG = LogFactory.getLog(ServerDenseIntRow.class);
 
+  /** Byte array */
   private byte[] dataBuffer;
+
+  /** The double array view of the byte array */
   private IntBuffer data;
 
+  /**
+   * Create a ServerDenseIntRow
+   * @param rowId row index
+   * @param startCol partition start column index
+   * @param endCol partition end column index
+   * @param buffer byte buffer
+   */
   public ServerDenseIntRow(int rowId, int startCol, int endCol, byte[] buffer) {
     super(rowId, startCol, endCol);
     int elemNum = endCol - startCol;
@@ -49,10 +57,19 @@ public class ServerDenseIntRow extends ServerRow {
     }
   }
 
+  /**
+   * Create a ServerDenseIntRow
+   * @param rowId row index
+   * @param startCol partition start column index
+   * @param endCol partition end column index
+   */
   public ServerDenseIntRow(int rowId, int startCol, int endCol) {
     this(rowId, startCol, endCol, new byte[(endCol - startCol) * 4]);
   }
 
+  /**
+   * Create a ServerDenseFloatRow
+   */
   public ServerDenseIntRow() {
     this(0, 0, 0, null);
   }
@@ -78,7 +95,7 @@ public class ServerDenseIntRow extends ServerRow {
     try {
       lock.writeLock().lock();
       super.readFrom(input);
-      int totalSize = (endCol - startCol) * 4;
+      int totalSize = (int)(endCol - startCol) * 4;
       int readLen = 0;
       int size = 0;
       while (size < totalSize) {
@@ -103,11 +120,14 @@ public class ServerDenseIntRow extends ServerRow {
         case T_INT_DENSE:
           updateIntDense(buf, size);
           break;
+
         case T_INT_SPARSE:
+        case T_INT_SPARSE_COMPONENT:
           updateIntSparse(buf, size);
           break;
+
         default:
-          LOG.error("Invalid rowType to update ServerDenseIntRow!");
+          throw new UnsupportedOperationException("Unsupport operation: update " + rowType + " to " + this.getClass().getName());
       }
       updateRowVersion();
     } finally {
@@ -122,15 +142,14 @@ public class ServerDenseIntRow extends ServerRow {
   }
 
   private void updateIntSparse(ByteBuf buf, int size) {
-    ByteBuf valueBuf = buf.slice(buf.readerIndex() + size * 4, size * 4);
     int columnId = 0;
     int value = 0;
+    int startColInt = (int) startCol;
     for (int i = 0; i < size; i++) {
-      columnId = buf.readInt();
-      value = data.get(columnId) + valueBuf.readInt();
+      columnId = buf.readInt()- startColInt;
+      value = data.get(columnId) + buf.readInt();
       data.put(columnId, value);
     }
-    buf.readerIndex(buf.readerIndex() + size * 4);
   }
 
   public IntBuffer getData() {
@@ -142,7 +161,7 @@ public class ServerDenseIntRow extends ServerRow {
     try {
       lock.readLock().lock();
       super.serialize(buf);
-      buf.writeInt(endCol - startCol);
+      buf.writeInt((int)(endCol - startCol));
       buf.writeBytes(dataBuffer);
     } finally {
       lock.readLock().unlock();
@@ -171,13 +190,18 @@ public class ServerDenseIntRow extends ServerRow {
     return super.bufferLen() + 4 + dataBuffer.length;
   }
 
+  /**
+   * Merge this dense int vector to a float array
+   * @param dataArray float array
+   */
   public void mergeTo(int[] dataArray) {
     try {
       lock.readLock().lock();
       //data.rewind();
-      int size = endCol - startCol;
+      int size = (int)(endCol - startCol);
+      int startPos = (int) startCol;
       for (int i = 0; i < size; i++) {
-        dataArray[startCol + i] = data.get(i);
+        dataArray[startPos + i] = data.get(i);
       }
     } finally {
       lock.readLock().unlock();

@@ -50,15 +50,15 @@ public class DenseIntRowUpdateSplit extends RowUpdateSplit {
   @Override
   public void serialize(ByteBuf buf) {
     super.serialize(buf);
-    buf.writeInt(end - start);
+    buf.writeInt((int)(end - start));
     LOG.debug("int size = " + (end - start));
-    for (int i = start; i < end; i++) {
+    for (int i = (int)start; i < end; i++) {
       buf.writeInt(values[i]);
     }
   }
 
   @Override
   public int bufferLen() {
-    return super.bufferLen() + size() * 4;
+    return super.bufferLen() + (int)size() * 4;
   }
 }

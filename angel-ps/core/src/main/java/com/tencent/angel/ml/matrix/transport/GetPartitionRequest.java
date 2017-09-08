@@ -61,19 +61,21 @@ public class GetPartitionRequest extends PartitionRequest {
       RowType rowType = meta.getRowType();
       switch (rowType) {
         case T_DOUBLE_DENSE:
-          return 8 * (partKey.getEndCol() - partKey.getStartCol()
+          return 8 * ((int)partKey.getEndCol() - (int)partKey.getStartCol()
               * (partKey.getEndRow() - partKey.getStartRow()));
 
         case T_INT_DENSE:
-          return 4 * (partKey.getEndCol() - partKey.getStartCol()
+          return 4 * ((int)partKey.getEndCol() - (int)partKey.getStartCol()
               * (partKey.getEndRow() - partKey.getStartRow()));
 
         case T_FLOAT_DENSE:
-          return 4 * (partKey.getEndCol() - partKey.getStartCol()
+          return 4 * ((int)partKey.getEndCol() - (int)partKey.getStartCol()
               * (partKey.getEndRow() - partKey.getStartRow()));
 
         case T_DOUBLE_SPARSE:
-        case T_INT_SPARSE: {
+        case T_INT_SPARSE:
+        case T_FLOAT_SPARSE:
+        case T_DOUBLE_SPARSE_LONGKEY: {
           ServerPartition part =
               PSAgentContext.get().getMatricesCache().getPartition(partKey.getMatrixId(), partKey);
           if (part != null) {
@@ -84,7 +86,7 @@ public class GetPartitionRequest extends PartitionRequest {
         }
 
         default:
-          return 8 * (partKey.getEndCol() - partKey.getStartCol());
+          return 8 * ((int)partKey.getEndCol() - (int)partKey.getStartCol());
       }
     }
   }
