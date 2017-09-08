@@ -80,7 +80,7 @@ abstract class PSMatrix extends Serializable {
    * Create a Proxy with `rowId`
    */
   private[spark] def toProxy(rowId: Int): PSModelProxy = {
-    new PSModelProxy(meta.getId, rowId, meta.getColNum)
+    new PSModelProxy(meta.getId, rowId, meta.getColNum.toInt)
   }
 
   private[spark] def assertValid(): Unit = {
