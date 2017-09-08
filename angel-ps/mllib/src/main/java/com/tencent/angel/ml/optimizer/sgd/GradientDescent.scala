@@ -17,9 +17,7 @@
 
 package com.tencent.angel.ml.optimizer.sgd
 
-import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.TAbstractVector
 import com.tencent.angel.ml.math.vector._
 import com.tencent.angel.ml.model.PSModel
 import com.tencent.angel.worker.storage.DataBlock
@@ -30,7 +28,7 @@ object GradientDescent {
 
 
   def miniBatchGD[M <: TDoubleVector](trainData: DataBlock[LabeledData],
-                                      model: PSModel[M],
+                                      wM: PSModel[M],
                                       intercept: Option[PSModel[M]],
                                       lr: Double,
                                       loss: Loss,
@@ -38,13 +36,13 @@ object GradientDescent {
                                       batchNum: Int): (Double, TDoubleVector) = {
 
     //Pull model from PS Server
-    val w = model.getRow(0)
+    val w = wM.getRow(0)
     var b: Option[Double] = intercept.map(_.getRow(0).get(0))
     var totalLoss = 0.0
 
-    val taskContext = model.getTaskContext
+    val taskContext = wM.getTaskContext
 
-    for (batch: Int <- 1 to batchNum) {
+    for (batch <- 1 to batchNum) {
       val batchStartTs = System.currentTimeMillis()
       val grad = new DenseDoubleVector(w.getDimension)
       grad.setRowId(0)
@@ -56,7 +54,9 @@ object GradientDescent {
       var gradScalarSum: Double = 0.0
 
       for (i <- 0 until batchSize) {
-        val (x: TAbstractVector, y: Double) = loopingData(trainData)
+        val data = trainData.loopingRead()
+        val x = data.getX
+        val y = data.getY
         val pre = w.dot(x) + b.getOrElse(0.0)
         val gradScalar = -loss.grad(pre, y)    // not negative gradient
         grad.plusBy(x, gradScalar)
@@ -83,7 +83,7 @@ object GradientDescent {
       w.plusBy(grad, -1.0 * lr)
       b = b.map(bv => bv - lr * gradScalarSum)
 
-      model.increment(grad.timesBy(-1.0 * lr).asInstanceOf[M])
+      wM.increment(grad.timesBy(-1.0 * lr).asInstanceOf[M])
       intercept.map { bv =>
         bUpdate.set(0, -lr * gradScalarSum)
         bv.increment(bUpdate)
@@ -94,39 +94,13 @@ object GradientDescent {
     }
 
     //Push model update to PS Server
-    totalLoss /= (batchNum*batchSize)
     totalLoss += loss.getReg(w)
-
-    model.clock.get
-    intercept.map(_.clock.get)
+    totalLoss /= trainData.size()
+    wM.syncClock()
+    intercept.map(_.syncClock())
     
 
     (totalLoss , w)
-  }
-
-  /**
-    * Read LabeledData from DataBlock Looping. If it reach the end, start from the beginning again.
-    *
-    * @param trainData
-    * @return
-    */
-  def loopingData(trainData: DataBlock[LabeledData]): (TAbstractVector, Double) = {
-    var data = trainData.read()
-    if (data == null) {
-      trainData.resetReadIndex()
-      data = trainData.read()
-    }
-
-    if (data != null)
-      (data.getX, data.getY)
-    else
-      throw new AngelException("Train data storage is empty or corrupted.")
-  }
-
-  def miniBatchGD[M <: TDoubleVector](trainData: DataBlock[LabeledData], model: PSModel[M], lr:
-  Double, loss: Loss, batchSize: Int): Double = {
-
-    0.0
   }
 
 

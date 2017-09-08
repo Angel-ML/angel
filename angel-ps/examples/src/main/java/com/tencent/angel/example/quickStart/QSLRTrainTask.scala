@@ -33,17 +33,17 @@ class QSLRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](
     // A simple logistic regression model
     val model = new QSLRModel(conf, ctx)
     // Apply batch gradient descent LR iteratively
-    while (ctx.getIteration < epochNum) {
+    while (ctx.getEpoch < epochNum) {
       // Get model and calculate gradient
       val weight = model.weight.getRow(0)
       val grad = batchGradientDescent(weight)
 
       // Push gradient vector to PS Server and clock
       model.weight.increment(grad.timesBy(-1.0 * lr))
-      model.weight.clock.get
+      model.weight.syncClock()
 
       // Increase iteration number
-      ctx.incIteration()
+      ctx.incEpoch()
     }
   }
 
@@ -60,7 +60,7 @@ class QSLRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](
     }
     grad.timesBy((1 + reg) * 1.0 / trainDataBlock.size)
 
-    LOG.info(s"Gradient descent batch ${ctx.getIteration}, batch loss=$batchLoss")
+    LOG.info(s"Gradient descent batch ${ctx.getEpoch}, batch loss=$batchLoss")
     grad.setRowId(0)
     grad
   }

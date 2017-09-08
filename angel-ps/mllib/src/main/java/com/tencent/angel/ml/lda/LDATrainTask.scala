@@ -17,17 +17,11 @@
 
 package com.tencent.angel.ml.lda
 
-import java.io.BufferedOutputStream
 import java.util
 
-import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.math.vector.{DenseDoubleVector, DenseIntVector}
-import com.tencent.angel.ml.utils.HDFSUtils
-import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex
-import com.tencent.angel.utils.HdfsUtil
+import com.tencent.angel.ml.lda.algo.{CSRTokens, Document}
 import com.tencent.angel.worker.task.{BaseTask, TaskContext}
 import org.apache.commons.logging.LogFactory
-import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{LongWritable, Text}
 
 /**
@@ -52,6 +46,8 @@ class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Te
   def run(ctx: TaskContext): Unit = {
     // Read documents
     val reader = ctx.getReader[LongWritable, Text]
+
+
     val docs   = new util.ArrayList[Document]()
     var did = 0
     var N = 0

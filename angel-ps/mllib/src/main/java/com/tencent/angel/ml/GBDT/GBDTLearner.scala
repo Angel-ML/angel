@@ -19,14 +19,15 @@ package com.tencent.angel.ml.GBDT
 
 import java.util.{ArrayList, List}
 
+import com.tencent.angel.ml.GBDT.algo.{FeatureMeta, GBDTController, GBDTPhase}
 import com.tencent.angel.ml.MLLearner
-import com.tencent.angel.ml.RegTree.RegTDataStore
+import com.tencent.angel.ml.GBDT.algo.RegTree.RegTDataStore
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.SparseDoubleSortedVector
 import com.tencent.angel.ml.metric.log.ErrorMetric
 import com.tencent.angel.ml.model.MLModel
-import com.tencent.angel.ml.param.{FeatureMeta, GBDTParam, RegTParam}
+import com.tencent.angel.ml.param.{GBDTParam, RegTParam}
 import com.tencent.angel.ml.utils.MathUtils
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
@@ -228,7 +229,7 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
         nextClock = true
       }
       controller.clock += 1
-      ctx.incIteration
+      ctx.incEpoch
     }
 
     LOG.info(s"Task[${ctx.getTaskIndex}] finishes training, " +

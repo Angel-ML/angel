@@ -91,8 +91,8 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     globalMetrics.addMetrics(MLConf.TRAIN_LOSS, LossMetric(trainData.size))
     globalMetrics.addMetrics(MLConf.VALID_LOSS, LossMetric(validationData.size))
 
-    while (ctx.getIteration < epochNum) {
-      val epoch = ctx.getIteration
+    while (ctx.getEpoch < epochNum) {
+      val epoch = ctx.getEpoch
       LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epoch start.")
 
       val startTrain = System.currentTimeMillis()
@@ -108,7 +108,7 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
         s"train cost $trainCost ms. " +
         s"validation cost $validCost ms.")
 
-      ctx.incIteration()
+      ctx.incEpoch()
     }
 
     lrModel

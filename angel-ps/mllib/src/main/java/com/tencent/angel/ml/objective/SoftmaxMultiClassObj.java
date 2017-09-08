@@ -16,8 +16,8 @@
  */
 package com.tencent.angel.ml.objective;
 
-import com.tencent.angel.ml.RegTree.GradPair;
-import com.tencent.angel.ml.RegTree.RegTDataStore;
+import com.tencent.angel.ml.GBDT.algo.RegTree.GradPair;
+import com.tencent.angel.ml.GBDT.algo.RegTree.RegTDataStore;
 import com.tencent.angel.ml.param.RegTParam;
 import com.tencent.angel.ml.utils.MathUtils;
 import org.apache.commons.logging.Log;

@@ -200,7 +200,7 @@ object ADMM {
       model.t.clock(false)
       model.t.getRow(0)
 
-      ctx.incIteration()
+      ctx.incEpoch()
     }
 
     (history.toArray, z)

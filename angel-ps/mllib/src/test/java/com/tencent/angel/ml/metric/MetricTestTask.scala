@@ -13,7 +13,7 @@ class MetricTestTask(val ctx: TaskContext) extends BaseTask[Long, Long, Long](ct
     try {
       val globalMetrics: GlobalMetrics = GlobalMetrics(taskContext)
       globalMetrics.addMetrics("loss", new LossMetric(10000000))
-      while (taskContext.getIteration < 10) {
+      while (taskContext.getEpoch < 10) {
         try {
           Thread.sleep(5000)
         }
@@ -21,8 +21,8 @@ class MetricTestTask(val ctx: TaskContext) extends BaseTask[Long, Long, Long](ct
           case e: InterruptedException => {
           }
         }
-        globalMetrics.metrics("loss", 10000.0 / (1 + taskContext.getIteration))
-        taskContext.incIteration()
+        globalMetrics.metrics("loss", 10000.0 / (1 + taskContext.getEpoch))
+        taskContext.incEpoch()
       }
     }
     catch {

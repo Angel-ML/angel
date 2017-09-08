@@ -71,8 +71,8 @@ class SVMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     val loss = ret._1
     val localW = ret._2
 
-    val GDcost = System.currentTimeMillis() - startGD
-    LOG.info(s"Task[${ctx.getTaskIndex}] epoch=$epoch mini-batch update cost$GDcost ms. loss=$loss")
+    val GDCost = System.currentTimeMillis() - startGD
+    LOG.info(s"Task[${ctx.getTaskIndex}] epoch=$epoch mini-batch update cost$GDCost ms. loss=$loss")
 
     localW
   }
@@ -98,8 +98,8 @@ class SVMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     globalMetrics.addMetrics(MLConf.TRAIN_LOSS, LossMetric(trainData.size))
     globalMetrics.addMetrics(MLConf.VALID_LOSS, LossMetric(validationData.size))
 
-    while (ctx.getIteration < epochNum) {
-      val epoch = ctx.getIteration
+    while (ctx.getEpoch < epochNum) {
+      val epoch = ctx.getEpoch
       LOG.info(s"Task[${ctx.getTaskIndex}] epoch=$epoch start")
 
       val startTrain = System.currentTimeMillis()
@@ -113,7 +113,7 @@ class SVMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       LOG.info(s"Task[${ctx.getTaskIndex}]epoch=$epoch success. train cost $trainCost ms, " +
         s"validate cost $valiCost ms")
 
-      ctx.incIteration()
+      ctx.incEpoch()
     }
 
     svmModel

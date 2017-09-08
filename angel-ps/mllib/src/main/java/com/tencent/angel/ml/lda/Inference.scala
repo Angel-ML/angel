@@ -10,15 +10,16 @@ import com.tencent.angel.PartitionKey
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.MLLearner
+import com.tencent.angel.ml.conf.MLConf._
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.lda.get.{GetPartFunc, LikelihoodFunc, PartCSRResult}
-import com.tencent.angel.ml.lda.structures.TraverseHashMap
+import com.tencent.angel.ml.lda.algo.{CSRTokens, Sampler}
+import com.tencent.angel.ml.lda.psf.{GetPartFunc, LikelihoodFunc, PartCSRResult}
 import com.tencent.angel.ml.math.vector.DenseIntVector
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult
 import com.tencent.angel.ml.matrix.psf.get.base.{PartitionGetParam, PartitionGetResult}
-import com.tencent.angel.ml.model.MLModel
-import com.tencent.angel.ml.conf.MLConf._
+import com.tencent.angel.ml.matrix.psf.get.multi.PartitionGetRowsParam
 import com.tencent.angel.ml.metric.log.ObjMetric
+import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex
 import com.tencent.angel.utils.HdfsUtil
@@ -37,6 +38,17 @@ class Trainer(ctx: TaskContext, model: LDAModel,
 
   val pkeys = PSAgentContext.get().getMatrixPartitionRouter.
     getPartitionKeyList(model.wtMat.getMatrixId())
+
+  val reqRows = new util.HashMap[Int, util.List[Integer]]()
+
+  for (i <- 0 until pkeys.size()) {
+    val pkey = pkeys.get(i)
+    val rows = new util.ArrayList[Integer]()
+    for (w <- pkey.getStartRow until pkey.getEndRow) {
+      if (data.ws(w + 1) - data.ws(w) > 0) rows.add(w)
+    }
+    reqRows.put(pkey.getPartitionId, rows)
+  }
 
   Collections.shuffle(pkeys)
 
@@ -66,20 +78,25 @@ class Trainer(ctx: TaskContext, model: LDAModel,
   def initialize(): Unit = {
     scheduleInit()
 
+    ctx.incEpoch()
+
     val ll = likelihood
     LOG.info(s"ll=${ll}")
     globalMetrics.metrics(LOG_LIKELIHOOD, ll)
-    ctx.incIteration()
+    ctx.incEpoch()
   }
 
   def fetchNk: Unit = {
     val row = model.tMat.getRow(0)
-    var sum = 0
+    var sum = 0L
+    val sb = new mutable.StringBuilder()
     for (i <- 0 until model.K) {
       nk(i) = row.get(i)
       sum += nk(i)
+      sb.append(nk(i) + " ")
     }
 
+    LOG.info(sb.toString())
     LOG.info(s"nk_sum=$sum")
   }
 
@@ -96,7 +113,7 @@ class Trainer(ctx: TaskContext, model: LDAModel,
 
       // submit to client
       globalMetrics.metrics(LOG_LIKELIHOOD, ll)
-      ctx.incIteration()
+      ctx.incEpoch()
 
 //      if (epoch % 10 == 0) reset(epoch)
     }
@@ -150,9 +167,12 @@ class Trainer(ctx: TaskContext, model: LDAModel,
   def likelihood: Double = {
     var ll = 0.0
     fetchNk
-    if (ctx.getTaskIndex == 0)
-      ll += computeWordLLHSummary + computeWordLLH
-    ll += scheduleDocllh(data.n_docs)
+    val ll_word_summary = if (ctx.getTaskIndex == 0) computeWordLLHSummary else 0
+    val ll_word = if (ctx.getTaskIndex == 0) computeWordLLH else 0
+
+    val ll_doc = scheduleDocllh(data.n_docs)
+    LOG.info(s"ll_word_summary=${ll_word_summary} ll_word=${ll_word} ll_doc=${ll_doc}")
+    ll = ll_word_summary + ll_word + ll_doc
     ll
   }
 
@@ -174,7 +194,8 @@ class Trainer(ctx: TaskContext, model: LDAModel,
     val futures = new mutable.HashMap[PartitionKey, Future[PartitionGetResult]]()
     while (iter.hasNext) {
       val pkey = iter.next()
-      val param = new PartitionGetParam(model.wtMat.getMatrixId, pkey)
+//      val param = new PartitionGetParam(model.wtMat.getMatrixId, pkey)
+      val param = new PartitionGetRowsParam(model.wtMat.getMatrixId(), pkey, reqRows.get(pkey.getPartitionId))
       val future = client.get(func, param)
       futures.put(pkey, future)
     }
@@ -313,7 +334,7 @@ class Trainer(ctx: TaskContext, model: LDAModel,
   def inference(n_iters: Int): Unit = {
     for (i <- 1 to n_iters) {
       sampleForInference()
-      ctx.incIteration()
+      ctx.incEpoch()
     }
   }
 
@@ -336,7 +357,7 @@ class Trainer(ctx: TaskContext, model: LDAModel,
     for (i <- 0 until model.threadNum) queue.take()
 
     model.tMat.clock(false).get()
-    ctx.incIteration()
+    ctx.incEpoch()
   }
 
   def sampleForInference(): Unit = {
@@ -380,6 +401,15 @@ class Trainer(ctx: TaskContext, model: LDAModel,
     for (i <- 0 until model.threadNum) queue.take()
 
     model.tMat.clock(false).get()
+  }
+
+
+  def initForIncr(): Unit = {
+
+  }
+
+  def sampleForIncr(): Unit = {
+
   }
 
   def saveWordTopic(model: LDAModel): Unit = {

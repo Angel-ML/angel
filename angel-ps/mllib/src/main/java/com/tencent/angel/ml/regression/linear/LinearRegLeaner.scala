@@ -91,14 +91,14 @@ class LinearRegLeaner(override val ctx: TaskContext) extends MLLearner(ctx) {
       s"learnRateDecay=$decay, L2Reg=$reg")
 
 
-    while (ctx.getIteration < epochNum) {
-      val epoch = ctx.getIteration
+    while (ctx.getEpoch < epochNum) {
+      val epoch = ctx.getEpoch
 
       val localW = trainOneEpoch(epoch, trainData, batchSize)
 
       validate(epoch, localW,validationData)
 
-      ctx.incIteration()
+      ctx.incEpoch()
     }
 
     model

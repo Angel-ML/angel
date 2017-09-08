@@ -1,10 +1,10 @@
 package com.tencent.angel.ml.lda
 
 import java.io.{BufferedReader, InputStreamReader}
-import java.util
 
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
+import com.tencent.angel.ml.lda.algo.{CSRTokens, Document}
 import com.tencent.angel.ml.math.vector.DenseIntVector
 import com.tencent.angel.worker.task.{BaseTask, TaskContext}
 import org.apache.commons.logging.LogFactory
@@ -31,17 +31,17 @@ class LDAInferTask(val ctx: TaskContext) extends
   def run(ctx: TaskContext): Unit = {
     // load model
     val model = new LDAModel(conf, ctx)
-    loadModel(model)
+    // load model for inference
+    model.loadModel()
 
     // load data
-    val data = read(model.V, model.K)
+    val data = CSRTokens.read(ctx, model.V, model.K)
 
     val infer = new Trainer(ctx, model, data)
     infer.initForInference()
     infer.inference(model.epoch)
 
     // save doc_topic
-
     if (model.saveDocTopic) infer.saveDocTopic(data, model)
   }
 
@@ -76,8 +76,8 @@ class LDAInferTask(val ctx: TaskContext) extends
     }
 
     model.tMat.increment(0, update)
-    model.wtMat.clock().get()
-    model.tMat.clock().get()
+    model.wtMat.syncClock()
+    model.tMat.syncClock()
   }
 
   def getPaths(): Array[Path] = {
@@ -108,7 +108,7 @@ class LDAInferTask(val ctx: TaskContext) extends
   def read(V: Int, K: Int): CSRTokens = {
     // Read documents
     val reader = ctx.getReader[LongWritable, Text]
-    val docs   = new util.ArrayList[Document]()
+    val docs   = new java.util.ArrayList[Document]()
     var did = 0
     var N = 0
     while (reader.nextKeyValue()) {
