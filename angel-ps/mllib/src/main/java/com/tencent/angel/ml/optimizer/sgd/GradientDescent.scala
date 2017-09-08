@@ -94,7 +94,7 @@ object GradientDescent {
     }
 
     //Push model update to PS Server
-    totalLoss /= trainData.size()
+    totalLoss /= (batchNum*batchSize)
     totalLoss += loss.getReg(w)
 
     wM.syncClock()
