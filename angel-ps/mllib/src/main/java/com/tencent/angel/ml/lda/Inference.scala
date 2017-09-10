@@ -374,7 +374,8 @@ class Trainer(ctx: TaskContext, model: LDAModel,
     val futures = new mutable.HashMap[PartitionKey, Future[PartitionGetResult]]()
     while (iter.hasNext) {
       val pkey = iter.next()
-      val param = new PartitionGetParam(model.wtMat.getMatrixId, pkey)
+      // val param = new PartitionGetParam(model.wtMat.getMatrixId, pkey)
+      val param = new PartitionGetRowsParam(model.wtMat.getMatrixId(), pkey, reqRows.get(pkey.getPartitionId))
       val future = client.get(func, param)
       futures.put(pkey, future)
     }
