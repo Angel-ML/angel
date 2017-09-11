@@ -135,6 +135,6 @@ public final class Sum extends UnaryAggrFunc {
 	* 返回值:非零值的总数
 
 * **Nrm2**
-	* 功能:获取矩阵某一行的元素算术平方根
+	* 功能:获取矩阵某一行的元素的算术平方根
 	* 参数:矩阵id，行号
 	* 返回值:算术平方根
