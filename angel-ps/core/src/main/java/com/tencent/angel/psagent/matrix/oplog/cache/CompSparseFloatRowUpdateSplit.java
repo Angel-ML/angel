@@ -10,7 +10,7 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
  * Row split of component sparse float row update.
  */
 public class CompSparseFloatRowUpdateSplit extends RowUpdateSplit {
-  private SparseFloatVector split;
+  private final SparseFloatVector split;
 
   /**
    * Create a new CompSparseFloatRowUpdateSplit.
@@ -37,6 +37,10 @@ public class CompSparseFloatRowUpdateSplit extends RowUpdateSplit {
       buf.writeInt(entry.getIntKey());
       buf.writeFloat(entry.getFloatValue());
     }
+  }
+
+  @Override public long size() {
+    return split.size();
   }
 
   @Override public int bufferLen() {

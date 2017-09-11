@@ -64,7 +64,7 @@ public class SparseDoubleRowUpdateSplit extends RowUpdateSplit {
   @Override
   public void serialize(ByteBuf buf) {
     super.serialize(buf);
-    buf.writeInt((int)(end - start));
+    buf.writeInt(end - start);
     LOG.debug("double size = " + (end - start));
     for (int i = start; i < end; i++) {
       buf.writeInt(offsets[i]);

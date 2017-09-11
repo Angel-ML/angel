@@ -11,7 +11,7 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
  * Row split of component sparse double row update.
  */
 public class CompSparseDoubleRowUpdateSplit extends RowUpdateSplit {
-  private SparseDoubleVector split;
+  private final SparseDoubleVector split;
 
   /**
    * Create a new CompSparseDoubleRowUpdateSplit.
@@ -28,7 +28,6 @@ public class CompSparseDoubleRowUpdateSplit extends RowUpdateSplit {
   @Override public void serialize(ByteBuf buf) {
     super.serialize(buf);
     buf.writeInt(split.size());
-    LOG.debug("double size = " + split.size());
 
     ObjectIterator<Int2DoubleMap.Entry> iter =
       split.getIndexToValueMap().int2DoubleEntrySet().fastIterator();
@@ -38,6 +37,10 @@ public class CompSparseDoubleRowUpdateSplit extends RowUpdateSplit {
       buf.writeInt(entry.getIntKey());
       buf.writeDouble(entry.getDoubleValue());
     }
+  }
+
+  @Override public long size() {
+    return split.size();
   }
 
   @Override public int bufferLen() {

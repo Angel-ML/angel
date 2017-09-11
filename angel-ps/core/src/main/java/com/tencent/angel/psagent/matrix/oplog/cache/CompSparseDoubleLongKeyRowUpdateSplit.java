@@ -11,7 +11,7 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
  */
 public class CompSparseDoubleLongKeyRowUpdateSplit extends RowUpdateSplit {
 
-  private SparseDoubleLongKeyVector split;
+  private final SparseDoubleLongKeyVector split;
 
   /**
    * Create a new CompSparseDoubleLongKeyRowUpdateSplit
@@ -28,7 +28,6 @@ public class CompSparseDoubleLongKeyRowUpdateSplit extends RowUpdateSplit {
   @Override public void serialize(ByteBuf buf) {
     super.serialize(buf);
     buf.writeInt(split.size());
-    LOG.debug("double size = " + split.size());
 
     ObjectIterator<Long2DoubleMap.Entry> iter =
       split.getIndexToValueMap().long2DoubleEntrySet().fastIterator();
@@ -38,6 +37,10 @@ public class CompSparseDoubleLongKeyRowUpdateSplit extends RowUpdateSplit {
       buf.writeLong(entry.getLongKey());
       buf.writeDouble(entry.getDoubleValue());
     }
+  }
+
+  @Override public long size() {
+    return split.size();
   }
 
   @Override public int bufferLen() {

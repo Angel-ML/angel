@@ -129,7 +129,7 @@ public class PutPartitionUpdateRequest extends PartitionRequest {
 
   @Override
   public int bufferLen() {
-    int len = 4;
+    int len = super.bufferLen();
     if(rowsSplit != null)  {
       int size = rowsSplit.size();
       for(int i = 0; i < size; i++) {
