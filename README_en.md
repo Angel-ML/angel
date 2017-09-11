@@ -16,7 +16,7 @@ We welcome everyone interested in machine learning to contribute code, create is
 ## Introduction to Angel
 
 * [Architecture](./docs/overview/architecture_en.md)
-* [Code Framework](./docs/overview/code_framework.md)
+* [Code Framework](./docs/overview/code_framework_en.md)
 * [Design](./docs/overview/design_philosophy_en.md)
 * [Spark on Angel](./docs/overview/spark_on_angel_en.md)
 

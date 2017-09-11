@@ -65,7 +65,7 @@ get型psFunc的执行流程分为两步，分别由接口partitionGet和merge方
 
 由于getFunc的接口太底层，建议普通用户，从AggrFunc开始继承编写psFunc，这样需要Cover的细节较少
 
-* [com.tencent.angel.ml.matrix.psf.aggr.Sum](https://github.com/Tencent/angel/blob/master/angel-ps/psf/src/main/java/com/tencent/angel/ml/matrix/psf/aggr/Sum.java): 获取矩阵某一行的所有值的和
+* [com.tencent.angel.ml.matrix.psf.aggr.Sum](https：//github.com/Tencent/angel/blob/master/angel-ps/psf/src/main/java/com/tencent/angel/ml/matrix/psf/aggr/Sum.java)： 获取矩阵某一行的所有值的和
 
 
 
@@ -75,7 +75,7 @@ public final class Sum extends UnaryAggrFunc {
   @Override
   public GetResult merge(List<PartitionGetResult> partResults) {
     double sum = 0.0;
-    for (PartitionGetResult partResult : partResults) {
+    for (PartitionGetResult partResult ： partResults) {
       sum += ((ScalarPartitionAggrResult) partResult).result;
     }
 
@@ -94,47 +94,47 @@ public final class Sum extends UnaryAggrFunc {
 ## 内置库
 
 * **Amax**
-	* 功能:获取矩阵某一行的元素的最大绝对值
-	* 参数:矩阵id，行号
-	* 返回值:最大绝对值
+	* **功能**：获取矩阵某一行的元素的最大绝对值
+	* **参数**：矩阵id，行号
+	* **返回值**：最大绝对值
 
 * **Amin**
 
-	* 功能:获取矩阵某一行的元素的最小绝对值
-	* 参数:矩阵id，行号
-	* 返回值:最小绝对值
+	* **功能**：获取矩阵某一行的元素的最小绝对值
+	* **参数**：矩阵id，行号
+	* **返回值**：最小绝对值
 
 * **Asum**
-	* 功能:获取矩阵某一行的元素的绝对值之和
-	* 参数:矩阵id，行号
-	* 返回值:指定行的元素绝对值之和
+	* **功能**：获取矩阵某一行的元素的绝对值之和
+	* **参数**：矩阵id，行号
+	* **返回值**：指定行的元素绝对值之和
 
 * **Max**
-	* 功能:获取矩阵某一行的元素的最大值
-	* 参数:矩阵id，行号
-	* 返回值:最大值
+	* **功能**：获取矩阵某一行的元素的最大值
+	* **参数**：矩阵id，行号
+	* **返回值**：最大值
 
 * **Min**
-	* 功能:获取矩阵某一行的元素的最小值
-	* 参数:矩阵id，行号
-	* 返回值:最小值
+	* **功能**：获取矩阵某一行的元素的最小值
+	* **参数**：矩阵id，行号
+	* **返回值**：最小值
 
 * **Sum**
-	* 功能:获取矩阵某一行的元素之和
-	* 参数:矩阵id，行号
-	* 返回值:指定行的元素之和
+	* **功能**：获取矩阵某一行的元素之和
+	* **参数**：矩阵id，行号
+	* **返回值**：指定行的元素之和
 
 * **Dot**
-	* 功能:获取矩阵某两个行向量的内积
-	* 参数:矩阵id，行号1， 行号2
-	* 返回值:指定某两个行向量的内积
+	* **功能**：获取矩阵某两个行向量的内积
+	* **参数**：矩阵id，行号1， 行号2
+	* **返回值**：指定某两个行向量的内积
 
 * **Nnz**
-	* 功能:获取矩阵某一行的元素中非零值的总数
-	* 参数:矩阵id，行号
-	* 返回值:非零值的总数
+	* **功能**：获取矩阵某一行的元素中非零值的总数
+	* **参数**：矩阵id，行号
+	* **返回值**：非零值的总数
 
 * **Nrm2**
-	* 功能:获取矩阵某一行的元素的算术平方根
-	* 参数:矩阵id，行号
-	* 返回值:算术平方根
+	* **功能**：获取矩阵某一行的元素的L2范数
+	* **参数**：矩阵id，行号
+	* **返回值**：L2范数

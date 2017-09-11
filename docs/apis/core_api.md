@@ -15,7 +15,7 @@
 	* 训练完成后，将模型从多个PSServer，保存到HDFS
 
 * [TrainTask](Task.md)
-	* 在被AngelClient调用后，开始Train过程
+	* 被AngelClient调用后，开始Train过程
 
 * [DataBlock](DataBlock.md)
 	* TrainTask调用parse和preProcess方法，将数据从HDFS中读取，并组装成为多个LabeledData组成的DataBlock
