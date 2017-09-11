@@ -23,7 +23,10 @@ import com.tencent.angel.protobuf.generated.MasterPSServiceProtos.MasterPSServic
  * The interface parameter server protocol.
  */
 public interface PSProtocol extends VersionedProtocol ,MasterPSService.BlockingInterface{
-
+  /**
+   * The VERSION.
+   */
+  static long VERSION = 0L;
 
   /**
    * The interface Async protocol.
