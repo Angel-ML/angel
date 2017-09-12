@@ -14,17 +14,17 @@
  * the License.
  */
 
-package com.tencent.angel.spark.model.matrix
-
-import org.apache.spark.SparkException
+package com.tencent.angel.spark.math.matrix
 
 import com.tencent.angel.ml.matrix.MatrixMeta
 import com.tencent.angel.ml.matrix.psf.update.enhance.map.MapFunc
-import com.tencent.angel.spark.client.PSClient
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.model.PSModelProxy
+import com.tencent.angel.spark.math.vector.{DensePSVector, PSVector}
+import org.apache.spark.SparkException
 
-abstract class PSMatrix extends Serializable {
+import com.tencent.angel.spark.client.PSClient
+
+abstract class PSMatrix {
   val rows: Int
   val columns: Int
   val meta: MatrixMeta
@@ -40,29 +40,29 @@ abstract class PSMatrix extends Serializable {
   /**
    * Push a array to `rowId` in matrix
    */
-  def push(rowId: Int, array: Array[Double]): Unit = {
-    PSClient().push(toProxy(rowId), array)
+  def push(rowId: Int, array: Array[Double]) = {
+    PSClient.instance().push(getRow(rowId), array)
   }
 
   /**
    * Pull a row to local from PS
    */
   def pull(rowId: Int): Array[Double] = {
-    PSClient().pull(toProxy(rowId))
+    PSClient.instance().pull(getRow(rowId))
   }
 
   /**
    * Increment a row of matrix with `array`
    */
-  def increment(rowId: Int, array: Array[Double]): Unit = {
-    PSClient().increment(toProxy(rowId), array)
+  def increment(rowId: Int, array: Array[Double]) = {
+    PSClient.instance().increment(getRow(rowId), array)
   }
 
   /**
    * Update a row of matrix with `func`
    */
-  def update(rowId: Int, func: MapFunc): Unit = {
-    PSClient().mapInPlace(toProxy(rowId), func)
+  def update(rowId: Int, func: MapFunc) = {
+    PSClient.instance().mapInPlace(getRow(rowId), func)
   }
 
   /**
@@ -70,26 +70,22 @@ abstract class PSMatrix extends Serializable {
    * Notice: developers must call `destroy` function to release deserted Matrix in PS, otherwise
    * this matrix will occupy the PS resource all the time.
    */
-  def destroy(): Unit = {
-    val psContext = PSContext.getOrCreate()
-    psContext.destroyMatrix(this.meta)
+  def destroy() = {
+    PSContext.instance().destroyMatrix(this.meta)
     this.deleted = true
   }
 
-  /**
-   * Create a Proxy with `rowId`
-   */
-  private[spark] def toProxy(rowId: Int): PSModelProxy = {
-    new PSModelProxy(meta.getId, rowId, meta.getColNum.toInt)
+  private[spark] def getRow(rowId: Int): PSVector = {
+    new DensePSVector(meta.getId, rowId, meta.getRowNum())
   }
 
-  private[spark] def assertValid(): Unit = {
+  private[spark] def assertValid() = {
     if (deleted) {
       throw new SparkException(s"This Matrix has been destroyed!")
     }
   }
 
-  private[spark] def assertCompatible(array: Array[Double]): Unit = {
+  private[spark] def assertCompatible(array: Array[Double]) = {
     if (meta.getColNum != array.length) {
       throw new SparkException(s"The target array's dimension does not" +
         s" match matrix dimension")
@@ -98,8 +94,8 @@ abstract class PSMatrix extends Serializable {
 }
 
 object PSMatrix {
-  def dense(rows: Int, cols: Int): DenseMatrix = DenseMatrix(rows, cols)
-  def sparse(rows: Int, cols: Int): SparseMatrix = SparseMatrix(rows, cols)
+  def dense(rows: Int, cols: Int): DensePSMatrix = DensePSMatrix(rows, cols)
+  def sparse(rows: Int, cols: Int): SparsePSMatrix = SparsePSMatrix(rows, cols)
 }
 
 object MatrixType extends Enumeration {

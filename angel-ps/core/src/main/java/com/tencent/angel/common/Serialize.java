@@ -18,6 +18,8 @@ package com.tencent.angel.common;
 
 import io.netty.buffer.ByteBuf;
 
+import java.util.Queue;
+
 /**
  * Serialize interface. It used by Netty to transfer data.
  */

@@ -34,7 +34,7 @@ object PSExamples {
     }
   }
 
-  def runWithSparkContext(name: String)(body: SparkContext => Unit): Unit = {
+  def runSpark(name: String)(body: SparkContext => Unit): Unit = {
     val conf = new SparkConf
     val master = conf.getOption("spark.master")
     val isLocalTest = if (master.isEmpty || master.get.toLowerCase.startsWith("local")) true else false

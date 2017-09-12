@@ -17,6 +17,7 @@
 
 package com.tencent.angel.spark.examples.util
 
+import com.tencent.angel.spark.math.vector.decorator.{BreezePSVector, RemotePSVector}
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
@@ -27,7 +28,7 @@ import org.apache.spark.ml.linalg.{DenseVector, Vector}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
-import com.tencent.angel.spark.model.vector.{BreezePSVector, RemotePSVector}
+import com.tencent.angel.spark.math.vector.PSVector
 
 /**
  * This is LogisticRegression data generator and its DiffFunction.
@@ -100,7 +101,7 @@ object Logistic {
     override def calculate(x: BreezePSVector) : (Double, BreezePSVector) = {
       val localX = new BDV[Double](x.toRemote.pull())
       val bcX = trainData.sparkContext.broadcast(localX)
-      val cumGradient = x.proxy.getPool().createZero().mkBreeze()
+      val cumGradient = PSVector.duplicate(x).toBreeze
 
       val sampleNum = trainData.count()
       val cumLoss = trainData.mapPartitions { iter =>
@@ -170,10 +171,9 @@ object Logistic {
     override def calculate(x: BreezePSVector): (Double, BreezePSVector) = {
       import com.tencent.angel.spark.rdd.RDDPSFunctions._
 
-      val pool = x.proxy.getPool()
       val localX = new BDV(x.toRemote.pull())
       val bcX = trainData.sparkContext.broadcast(localX)
-      val cumGradient = pool.createZero().mkRemote()
+      val cumGradient = PSVector.duplicate(x).toRemote
 
       val aggregator = {
         val seqOp = (c: Aggregator, point: (Vector, Double)) => c.add(point)

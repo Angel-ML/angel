@@ -14,12 +14,12 @@
  * the License.
  */
 
-package com.tencent.angel.spark.model.matrix
+package com.tencent.angel.spark.math.matrix
 
 import com.tencent.angel.ml.matrix.MatrixMeta
 import com.tencent.angel.spark.context.PSContext
 
-class SparseMatrix(
+class SparsePSMatrix(
     override val rows: Int,
     override val columns: Int,
     override val meta: MatrixMeta) extends PSMatrix {
@@ -38,38 +38,38 @@ class SparseMatrix(
   def increment(pairs: Array[(Int, Int, Double)]): Unit = ???
 }
 
-object SparseMatrix {
+object SparsePSMatrix {
+  val psContext = PSContext.instance()
 
-  def apply(rows: Int, cols: Int): SparseMatrix = {
-    val psContext = PSContext.getOrCreate()
+  def apply(rows: Int, cols: Int): SparsePSMatrix = {
     val matrixMeta = psContext.createMatrix(rows, cols, MatrixType.SPARSE)
-    new SparseMatrix(rows, cols, matrixMeta)
+    new SparsePSMatrix(rows, cols, matrixMeta)
   }
 
   /**
    * Create Matrix full of zero.
    */
-  def zero(rows: Int, cols: Int): SparseMatrix = ???
+  def zero(rows: Int, cols: Int): SparsePSMatrix = ???
 
   /**
    * Matrix of random elements from 0 to 1
    */
-  def rand(rows: Int, cols: Int): SparseMatrix = ???
+  def rand(rows: Int, cols: Int): SparsePSMatrix = ???
 
   /**
    * Create identity matrix
    */
-  def eye(dim: Int): SparseMatrix = ???
+  def eye(dim: Int): SparsePSMatrix = ???
 
   /**
    * Create diagonal matrix
    */
-  def diag(array: Array[Double]): SparseMatrix = ???
+  def diag(array: Array[Double]): SparsePSMatrix = ???
 
   /**
    * Create a matrix filled with `x`
    */
-  def fill(row: Int, cols: Int, x: Double): SparseMatrix = ???
+  def fill(row: Int, cols: Int, x: Double): SparsePSMatrix = ???
 
 
 }

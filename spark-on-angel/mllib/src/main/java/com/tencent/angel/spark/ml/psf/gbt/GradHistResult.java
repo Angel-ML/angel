@@ -12,27 +12,26 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
  */
 
-package com.tencent.angel.spark.model.vector
+package com.tencent.angel.spark.ml.psf.gbt;
 
-import com.tencent.angel.spark.model.PSModelProxy
+import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
+import com.tencent.angel.psagent.matrix.ResponseType;
+import com.tencent.angel.spark.ml.gbt.SplitEntry;
 
-/**
- * PSVector is a vector store on the PS nodes, and PSVectorProxy is the proxy of PSVector.
- * PSVector has three forms: LocalPSVector, RemotePSVector and BreezePSVector,
- * these three forms of PSVector have implement a set of operations for different situation.
- * LocalPSVector implements the operations for PSVector local form.
- * RemotePSVector implements the operations between PSVector and local data.
- * BreezePSVector implements the operations among PSVectors on PS nodes.
- */
-abstract class PSVector extends Serializable {
 
-  def proxy: PSModelProxy
+public class GradHistResult extends GetResult {
 
-  def length: Int = proxy.numDimensions
+  private final SplitEntry splitEntry;
 
-  def size: Int = length
+  public GradHistResult(ResponseType type, SplitEntry splitEntry) {
+    super(type);
+    this.splitEntry = splitEntry;
+  }
+
+  public SplitEntry getSplitEntry() {
+    return splitEntry;
+  }
 
 }

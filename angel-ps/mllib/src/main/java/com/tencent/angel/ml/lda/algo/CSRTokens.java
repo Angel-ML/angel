@@ -5,11 +5,13 @@ import com.tencent.angel.ml.lda.algo.structures.S2BTraverseMap;
 import com.tencent.angel.ml.lda.algo.structures.S2ITraverseMap;
 import com.tencent.angel.ml.lda.algo.structures.S2STraverseMap;
 import com.tencent.angel.ml.lda.algo.structures.TraverseHashMap;
+import com.tencent.angel.worker.storage.DataBlock;
 import com.tencent.angel.worker.storage.Reader;
 import com.tencent.angel.worker.task.TaskContext;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,7 +36,7 @@ public class CSRTokens {
     this.n_docs = n_docs;
   }
 
-  public void build(List<Document> docs, int K) {
+  public CSRTokens build(DataBlock<Document> docs, int K) throws IOException {
     int[] wcnt = new int[n_words];
     this.ws = new int[n_words + 1];
     docLens = new int[n_docs];
@@ -75,27 +77,14 @@ public class CSRTokens {
       if (docs.get(d).len < Byte.MAX_VALUE)
         dks[d] = new S2BTraverseMap(docs.get(d).len);
       if (docs.get(d).len < Short.MAX_VALUE)
-        dks[d] = new S2STraverseMap(Math.min(K,
-                docs.get(d).len));
+        dks[d] = new S2STraverseMap(Math.min(K, docs.get(d).len));
       else
-        dks[d] = new S2ITraverseMap(Math.min(K,
-                docs.get(d).len));
+        dks[d] = new S2ITraverseMap(Math.min(K, docs.get(d).len));
     }
+
+    return this;
   }
 
-  public static CSRTokens read(TaskContext ctx, int V, int K) throws Exception {
-    // Read documents
-    Reader<LongWritable, Text> reader = ctx.getReader();
 
-    List<Document> docs = new ArrayList();
-
-    while (reader.nextKeyValue())
-      docs.add(new Document(reader.getCurrentValue().toString()));
-
-    CSRTokens data = new CSRTokens(V, docs.size());
-    data.build(docs, K);
-    docs.clear();
-    return data;
-  }
 
 }

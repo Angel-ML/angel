@@ -14,13 +14,13 @@
  * the License.
  */
 
-package com.tencent.angel.spark.model.matrix
+package com.tencent.angel.spark.math.matrix
 
 import com.tencent.angel.ml.matrix.MatrixMeta
 import com.tencent.angel.spark.client.PSClient
 import com.tencent.angel.spark.context.PSContext
 
-class DenseMatrix(
+class DensePSMatrix(
     override val rows: Int,
     override val columns: Int,
     override val meta: MatrixMeta) extends PSMatrix {
@@ -45,7 +45,7 @@ class DenseMatrix(
    * @return local matrix
    */
   def pull(): Array[Array[Double]] = {
-    PSClient().pull(this)
+    PSClient.instance().pull(this)
   }
 
   /**
@@ -61,54 +61,56 @@ class DenseMatrix(
   }
 }
 
-object DenseMatrix {
-  def apply(rows: Int, cols: Int): DenseMatrix = {
-    val psContext = PSContext.getOrCreate()
+object DensePSMatrix {
+  val psContext = PSContext.instance()
+  val psClient = PSClient.instance()
+
+  def apply(rows: Int, cols: Int): DensePSMatrix = {
     val matrixMeta = psContext.createMatrix(rows, cols, MatrixType.DENSE)
-    new DenseMatrix(rows, cols, matrixMeta)
+    new DensePSMatrix(rows, cols, matrixMeta)
   }
 
   /**
    * Create Matrix full of zero.
    */
-  def zero(rows: Int, cols: Int): DenseMatrix = {
-    DenseMatrix(rows, cols)
+  def zero(rows: Int, cols: Int): DensePSMatrix = {
+    DensePSMatrix(rows, cols)
   }
 
   /**
    * Matrix of random elements from 0 to 1
    */
-  def rand(rows: Int, cols: Int): DenseMatrix = {
-    val mat = DenseMatrix(rows, cols)
-    PSClient().random(mat)
+  def rand(rows: Int, cols: Int): DensePSMatrix = {
+    val mat = DensePSMatrix(rows, cols)
+    psClient.random(mat)
     mat
   }
 
   /**
    * Create identity matrix
    */
-  def eye(dim: Int): DenseMatrix = {
-    val mat = DenseMatrix(dim, dim)
-    PSClient().eye(mat)
+  def eye(dim: Int): DensePSMatrix = {
+    val mat = DensePSMatrix(dim, dim)
+    psClient.eye(mat)
     mat
   }
 
   /**
    * Create diagonal matrix
    */
-  def diag(array: Array[Double]): DenseMatrix = {
+  def diag(array: Array[Double]): DensePSMatrix = {
     val dim = array.length
-    val mat = DenseMatrix(dim, dim)
-    PSClient().diag(mat, array)
+    val mat = DensePSMatrix(dim, dim)
+    psClient.diag(mat, array)
     mat
   }
 
   /**
    * Create a matrix filled with `x`
    */
-  def fill(rows: Int, cols: Int, x: Double): DenseMatrix = {
-    val mat = DenseMatrix(rows, cols)
-    PSClient().fill(mat, x)
+  def fill(rows: Int, cols: Int, x: Double): DensePSMatrix = {
+    val mat = DensePSMatrix(rows, cols)
+    psClient.fill(mat, x)
     mat
   }
 

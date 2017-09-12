@@ -63,7 +63,6 @@ class DistributeLog(conf: Configuration) extends Logger{
   /**
     * Init
     *
-    * @throws IOException
     */
   @throws(classOf[IOException])
   def init {
@@ -87,7 +86,6 @@ class DistributeLog(conf: Configuration) extends Logger{
     * Write the index names to file
     *
     * @param names index name list
-    * @throws IOException
     */
   @throws(classOf[IOException])
   def setNames(names: util.List[String]) {
@@ -104,7 +102,6 @@ class DistributeLog(conf: Configuration) extends Logger{
     * Write index values to file
     *
     * @param values index name to value map
-    * @throws IOException
     */
   @throws(classOf[IOException])
   def writeLog(values: mutable.Map[String, Double]) {
@@ -117,9 +114,7 @@ class DistributeLog(conf: Configuration) extends Logger{
 
   /**
     * Close file writter
-    *
-    * @throws IOException
-    */
+    **/
   @throws(classOf[IOException])
   def close {
     if (outputStream != null) {

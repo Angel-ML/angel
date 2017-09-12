@@ -59,7 +59,7 @@ class LDARunner extends MLRunner {
 
     client.startPSServer()
     client.loadModel(new LDAModel(conf))
-    client.runTask(classOf[LDAInferTask])
+    client.runTask(classOf[LDAPredictTask])
     client.waitForCompletion()
     //    client.saveModel(model)
 

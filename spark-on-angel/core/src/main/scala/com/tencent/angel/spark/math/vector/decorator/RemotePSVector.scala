@@ -15,85 +15,75 @@
  *
  */
 
-package com.tencent.angel.spark.model.vector
+package com.tencent.angel.spark.math.vector.decorator
 
-import java.util.concurrent.ConcurrentHashMap
-import scala.collection.JavaConverters._
-
+import com.tencent.angel.spark.client.PSClient
+import com.tencent.angel.spark.math.vector.PSVector
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkEnv, TaskContext}
 
-import com.tencent.angel.spark.client.PSClient
-import com.tencent.angel.spark.model.PSModelProxy
+import scala.collection.concurrent.TrieMap
+import scala.collection.mutable
 
 /**
  * RemotePSVector implements a set of operations between PSVector and local double array.
  */
-private[spark] class RemotePSVector (override val proxy: PSModelProxy) extends PSVector {
-  import MergeType._
+private[spark] class RemotePSVector(component:PSVector) extends PSVectorDecorator(component) {
+
   import RemotePSVector._
+  import MergeType._
 
-  def toBreeze: BreezePSVector = new BreezePSVector(proxy)
 
-  /**
-   * Pull PSVector from PS nodes to local.
- *
-   * @param fromCache if false, it will pull the value from PS,
-   *                  otherwise, if true, it will get the value from `localArrayCache` firstly.
-   * @return
-   */
   def pull(fromCache: Boolean = false): Array[Double] = {
     if (fromCache) {
-      if (!localArrayCache.contains(proxy)) {
-        localArrayCache.synchronized {
-          if (!localArrayCache.contains(proxy)) {
-            val localArray = PSClient().pull(proxy)
-            localArrayCache.put(proxy, localArray)
+      if (!localCache.contains(this)) {
+        localCache.synchronized {
+          if (!localCache.contains(this)) {
+            val localArray = PSClient.instance().pull(this)
+            localCache.put(this, localArray)
           }
         }
       }
     } else {
-      val localArray = PSClient().pull(proxy)
-      if (localArrayCache.contains(proxy)) {
-        localArrayCache(proxy) = localArray
+      val localArray = PSClient.instance().pull(this)
+      if (localCache.contains(this)) {
+        localCache(this) = localArray
       } else {
-        localArrayCache.put(proxy, localArray)
+        localCache.put(this, localArray)
       }
     }
-    localArrayCache(proxy)
+    localCache(this)
   }
 
   /**
    * Push local array to PSVector in PS nodes
    */
   def push(value: Array[Double]): Unit = {
-    PSClient().push(proxy, value)
+    PSClient.instance().push(this, value)
   }
 
   /**
    * Increment a local dense Double array to PSVector
-   * Notice: You should call `flush` to flush `mergedArray` result to PS nodes.
+   * Notice: You should call `flushOne` to flushOne `mergedArray` result to PS nodes.
    */
   def increment(delta: Array[Double]): Unit = {
-    require(delta.length == proxy.numDimensions)
-
     mergeCache.synchronized {
-      init(INCREMENT, proxy)
-      val mergedArray = mergeCache.get(proxy)._2
-      PSClient().BLAS.daxpy(proxy.numDimensions, 1.0, delta, 1, mergedArray, 1)
+      init(INCREMENT, this)
+      val mergedArray = mergeCache.get(this).get._2
+      PSClient.instance().BLAS.daxpy(this.dimension, 1.0, delta, 1, mergedArray, 1)
     }
   }
 
   /**
    * Increment a local sparse Double array to PSVector
-   * Notice: You should call `flush` to flush `mergedArray` result to PS nodes.
+   * Notice: You should call `flushOne` to flushOne `mergedArray` result to PS nodes.
    */
   def increment(indices: Array[Int], values: Array[Double]): Unit = {
-    require(indices.length == values.length && indices.length <= proxy.numDimensions)
+    require(indices.length == values.length && indices.length <= this.dimension)
 
     mergeCache.synchronized {
-      init(INCREMENT, proxy)
-      val mergedArray = mergeCache.get(proxy)._2
+      init(INCREMENT, this)
+      val mergedArray = mergeCache.get(this).get._2
       var i = 0
       while (i < indices.length) {
         mergedArray(indices(i)) += values(i)
@@ -103,22 +93,26 @@ private[spark] class RemotePSVector (override val proxy: PSModelProxy) extends P
   }
 
   /**
-   * Increment a local dense Double array to PSVector, and flush to PS nodes immediately
+   * Increment a local dense Double array to PSVector, and flushOne to PS nodes immediately
    */
   def incrementAndFlush(delta: Array[Double]): Unit = {
-    PSClient().increment(proxy, delta)
+    PSClient.instance().increment(this, delta)
   }
+
+  // =======================================================================
+  // Merge Operator
+  // =======================================================================
 
   /**
    * Find the maximum number of each dimension for PSVector and local dense array.
-   * Notice: You should call `flush` to flush `mergedArray` result to PS nodes.
+   * Notice: You should call `flushOne` to flushOne `mergedArray` result to PS nodes.
    */
   def mergeMax(other: Array[Double]): Unit = {
-    val dim = proxy.numDimensions
+    val dim = this.dimension
     require(other.length == dim)
     mergeCache.synchronized {
-      init(MAX, proxy)
-      val mergedArray = mergeCache.get(proxy)._2
+      init(MAX, this)
+      val mergedArray = mergeCache.get(this).get._2
       var i = 0
       while (i < dim) {
         mergedArray(i) = math.max(mergedArray(i), other(i))
@@ -129,16 +123,16 @@ private[spark] class RemotePSVector (override val proxy: PSModelProxy) extends P
 
   /**
    * Find the maximum number of each dimension for PSVector and local sparse array.
-   * Notice: You should call `flush` to flush `mergedArray` result to PS nodes.
+   * Notice: You should call `flushOne` to flushOne `mergedArray` result to PS nodes.
    */
   def mergeMax(indices: Array[Int], values: Array[Double]): Unit = {
-    val dim = proxy.numDimensions
+    val dim = this.dimension
     require(indices.length == values.length && indices.length <= dim)
 
     mergeCache.synchronized {
-      init(MAX, proxy)
+      init(MAX, this)
 
-      val mergedArray = mergeCache.get(proxy)._2
+      val mergedArray = mergeCache.get(this).get._2
       var i = 0
       while (i < indices.length) {
         val index = indices(i)
@@ -149,22 +143,22 @@ private[spark] class RemotePSVector (override val proxy: PSModelProxy) extends P
   }
 
   /**
-   * Find the maximum number of each dimension for PSVector and local sparse array, and flush to
+   * Find the maximum number of each dimension for PSVector and local sparse array, and flushOne to
    * PS nodes immediately
    */
   def mergeMaxAndFlush(other: Array[Double]): Unit = {
-    PSClient().mergeMax(proxy, other)
+    PSClient.instance().mergeMax(this, other)
   }
 
   /**
    * Find the maximum number of each dimension for PSVector and local dense array.
-   * Notice: You should call `flush` to flush `mergedArray` result to PS nodes.
+   * Notice: You should call `flushOne` to flushOne `mergedArray` result to PS nodes.
    */
   def mergeMin(other: Array[Double]): Unit = {
-    require(other.length == proxy.numDimensions)
+    require(other.length == this.dimension)
     mergeCache.synchronized {
-      init(MIN, proxy)
-      val mergedArray = mergeCache.get(proxy)._2
+      init(MIN, this)
+      val mergedArray = mergeCache.get(this).get._2
       var i = 0
       while (i < mergedArray.length) {
         mergedArray(i) = math.min(mergedArray(i), other(i))
@@ -175,14 +169,14 @@ private[spark] class RemotePSVector (override val proxy: PSModelProxy) extends P
 
   /**
    * Find the minimum number of each dimension for PSVector and local sparse array.
-   * Notice: You should call `flush` to flush `mergedArray` result to PS nodes.
+   * Notice: You should call `flushOne` to flushOne `mergedArray` result to PS nodes.
    */
   def mergeMin(indices: Array[Int], values: Array[Double]): Unit = {
-    val dim = proxy.numDimensions
+    val dim = this.dimension
     require(indices.length == values.length && indices.length <= dim)
     mergeCache.synchronized {
-      init(MIN, proxy)
-      val mergedArray = mergeCache.get(proxy)._2
+      init(MIN, this)
+      val mergedArray = mergeCache.get(this).get._2
       var i = 0
       while (i < indices.length) {
         val index = indices(i)
@@ -194,14 +188,14 @@ private[spark] class RemotePSVector (override val proxy: PSModelProxy) extends P
 
   /**
    * Find the minimum number of each dimension for PSVector and local dense array.
-   * Notice: You should call `flush` to flush `mergedArray` result to PS nodes.
+   * Notice: You should call `flushOne` to flushOne `mergedArray` result to PS nodes.
    */
   def mergeMinAndFlush(other: Array[Double]): Unit = {
-    PSClient().mergeMin(proxy, other)
+    PSClient.instance().mergeMin(this, other)
   }
 
   def flush(): Unit = {
-    if (TaskContext.get() == null) { // run flush on driver
+    if (TaskContext.get() == null) { // run flushOne on driver
       val sparkConf = SparkEnv.get.conf
       val executorNum = sparkConf.getInt("spark.executor.instances", 1)
       val core = sparkConf.getInt("spark.executor.cores", 1)
@@ -209,58 +203,54 @@ private[spark] class RemotePSVector (override val proxy: PSModelProxy) extends P
       val spark = SparkSession.builder().getOrCreate()
       spark.sparkContext.range(0, totalTask, 1, totalTask)
         .foreach { taskId =>
-          RemotePSVector.flush(proxy)
+          RemotePSVector.flushOne(this)
         }
-    } else { // run flush on executor
-      RemotePSVector.flush(proxy)
+    } else { // run flushOne on executor
+      RemotePSVector.flushOne(this)
     }
   }
+
 }
 
 object RemotePSVector {
-  val localArrayCache = new scala.collection.mutable.WeakHashMap[PSModelProxy, Array[Double]]
-  def keyString = {
-    localArrayCache.keys
-      .map(key => key.poolId + "_" + key.id)
-      .mkString(",")
-  }
-
   import MergeType._
 
-  val mergeCache = new ConcurrentHashMap[PSModelProxy, (MergeType, Array[Double])]()
+  val localCache = new mutable.WeakHashMap[RemotePSVector, Array[Double]]
+  val mergeCache = new TrieMap[RemotePSVector, (MergeType, Array[Double])]()
 
-  private def init(mergeType: MergeType, proxy: PSModelProxy): Unit = {
-    if (mergeCache.containsKey(proxy)) {
-      require(mergeCache.get(proxy)._1 == mergeType,
-        "Do not use different merge methods on the same RemotePSVector!")
+  val keyString = localCache.keys.map(key => key.poolId + "_" + key.id).mkString(",")
+
+  private def init(mergeType: MergeType, vector: RemotePSVector) = {
+    if (mergeCache.contains(vector)) {
+      require(mergeCache.get(vector).get._1 == mergeType, "Do not use different merge methods on the same RemotePSVector!")
     }
 
-    mergeCache.putIfAbsent(proxy, {
+    mergeCache.putIfAbsent(vector, {
       val initArray = mergeType match {
-        case INCREMENT => Array.fill(proxy.numDimensions)(0.0)
-        case MAX => Array.fill(proxy.numDimensions)(Double.MinValue)
-        case MIN => Array.fill(proxy.numDimensions)(Double.MaxValue)
+        case INCREMENT => Array.fill(vector.dimension)(0.0)
+        case MAX => Array.fill(vector.dimension)(Double.MinValue)
+        case MIN => Array.fill(vector.dimension)(Double.MaxValue)
         case UNDEFINED => throw new Exception("undefined merge type")
       }
       (mergeType, initArray)
     })
   }
 
-  private def flush(proxy: PSModelProxy) : Unit = {
+  private def flushOne(proxy: RemotePSVector)  = {
     mergeCache.synchronized {
-      if (mergeCache.containsKey(proxy)) {
-        val (mergeType, mergedArray) = mergeCache.get(proxy)
+      if (mergeCache.contains(proxy)) {
+        val (mergeType, mergedArray) = mergeCache.get(proxy).get
         mergeType match {
-          case INCREMENT => PSClient().increment(proxy, mergedArray)
-          case MAX => PSClient().mergeMax(proxy, mergedArray)
-          case MIN => PSClient().mergeMin(proxy, mergedArray)
+          case INCREMENT => PSClient.instance().increment(proxy, mergedArray)
+          case MAX => PSClient.instance().mergeMax(proxy, mergedArray)
+          case MIN => PSClient.instance().mergeMin(proxy, mergedArray)
         }
         mergeCache.remove(proxy)
       }
     }
   }
 
-  private[spark] def flush(): Unit = {
+  private[spark] def flushAll() = {
     if (TaskContext.get() == null) { // run flush on driver
       val sparkConf = SparkEnv.get.conf
       val executorNum = sparkConf.getInt("spark.executor.instances", 1)
@@ -269,13 +259,13 @@ object RemotePSVector {
       val spark = SparkSession.builder().getOrCreate()
       spark.sparkContext.range(0, totalTask, 1, totalTask)
         .foreach { taskId =>
-          for (entry <- mergeCache.entrySet().asScala) {
-            RemotePSVector.flush(entry.getKey)
+          for (key <- mergeCache.keys) {
+            RemotePSVector.flushOne(key)
           }
         }
-    } else { // run flush on executor
-      for (entry <- mergeCache.entrySet().asScala) {
-        RemotePSVector.flush(entry.getKey)
+    } else { // run flushOne on executor
+      for (key <- mergeCache.keys) {
+        RemotePSVector.flushOne(key)
       }
     }
   }

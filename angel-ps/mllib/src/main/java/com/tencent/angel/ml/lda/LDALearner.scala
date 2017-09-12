@@ -31,10 +31,9 @@ import org.apache.hadoop.fs.Path
 
 import scala.collection.mutable
 
-class Trainer(ctx: TaskContext, model: LDAModel,
-              data: CSRTokens) extends MLLearner(ctx) {
+class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLLearner(ctx) {
 
-  val LOG = LogFactory.getLog(classOf[Trainer])
+  val LOG = LogFactory.getLog(classOf[LDALearner])
 
   val pkeys = PSAgentContext.get().getMatrixPartitionRouter.
     getPartitionKeyList(model.wtMat.getMatrixId())
@@ -334,6 +333,9 @@ class Trainer(ctx: TaskContext, model: LDAModel,
   def inference(n_iters: Int): Unit = {
     for (i <- 1 to n_iters) {
       sampleForInference()
+      val ll = scheduleDocllh(data.n_docs)
+      LOG.info(s"doc ll = ${ll}")
+      globalMetrics.metrics(LOG_LIKELIHOOD, ll)
       ctx.incEpoch()
     }
   }
@@ -374,7 +376,7 @@ class Trainer(ctx: TaskContext, model: LDAModel,
     val futures = new mutable.HashMap[PartitionKey, Future[PartitionGetResult]]()
     while (iter.hasNext) {
       val pkey = iter.next()
-      // val param = new PartitionGetParam(model.wtMat.getMatrixId, pkey)
+//      val param = new PartitionGetParam(model.wtMat.getMatrixId, pkey)
       val param = new PartitionGetRowsParam(model.wtMat.getMatrixId(), pkey, reqRows.get(pkey.getPartitionId))
       val future = client.get(func, param)
       futures.put(pkey, future)

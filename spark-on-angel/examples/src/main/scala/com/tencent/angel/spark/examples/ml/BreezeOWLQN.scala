@@ -17,6 +17,7 @@
 
 package com.tencent.angel.spark.examples.ml
 
+import com.tencent.angel.spark.math.vector.decorator.BreezePSVector
 import scala.collection.mutable.ArrayBuffer
 
 import breeze.linalg.DenseVector
@@ -27,7 +28,7 @@ import org.apache.spark.rdd.RDD
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.examples.util.{Logistic, PSExamples}
 import com.tencent.angel.spark.ml.optim.OWLQN
-import com.tencent.angel.spark.model.vector.BreezePSVector
+import com.tencent.angel.spark.math.vector.PSVector
 
 /**
  * There is two ways to update PSVectors in RDD, RemotePSVector and RDDFunction.psAggregate.
@@ -38,7 +39,7 @@ object BreezeOWLQN {
   import PSExamples._
   def main(args: Array[String]): Unit = {
     parseArgs(args)
-    runWithSparkContext(this.getClass.getSimpleName) { sc =>
+    runSpark(this.getClass.getSimpleName) { sc =>
       PSContext.getOrCreate(sc)
       execute(DIM, N, numSlices, ITERATIONS)
     }
@@ -89,10 +90,10 @@ object BreezeOWLQN {
 
   def runPsOWLQN(trainData: RDD[(Vector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
     val tol = 1e-5
-    val pool = PSContext.getOrCreate().createModelPool(dim, 20)
-    val initWeightPS = pool.createZero().mkBreeze()
 
-    val l1reg = pool.createZero().mkBreeze()
+    val initWeightPS = PSVector.dense(dim).toBreeze
+    val l1reg = PSVector.duplicate(initWeightPS).toBreeze
+
     val owlqn = new OWLQN(maxIter, m, l1reg, tol)
     val states = owlqn.iterations(Logistic.PSCost(trainData), initWeightPS)
 
@@ -112,10 +113,9 @@ object BreezeOWLQN {
   def runPsAggregateOWLQN(
       trainData: RDD[(Vector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
     val tol = 1e-5
-    val pool = PSContext.getOrCreate().createModelPool(dim, 20)
-    val initWeightPS = pool.createZero().mkBreeze()
+    val initWeightPS = PSVector.dense(dim).toBreeze
 
-    val l1reg = pool.createZero().mkBreeze()
+    val l1reg = PSVector.duplicate(initWeightPS).toBreeze
     val owlqn = new OWLQN(maxIter, m, l1reg, tol)
     val states = owlqn.iterations(Logistic.PSAggregateCost(trainData), initWeightPS)
 

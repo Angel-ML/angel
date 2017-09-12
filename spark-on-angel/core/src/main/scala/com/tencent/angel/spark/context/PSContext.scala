@@ -17,148 +17,90 @@
 
 package com.tencent.angel.spark.context
 
-import java.util.concurrent.ConcurrentHashMap
-
 import com.tencent.angel.AngelDeployMode
 import com.tencent.angel.ml.matrix.MatrixMeta
-import com.tencent.angel.spark.model.PSModelPool
-import com.tencent.angel.spark.model.matrix.MatrixType.MatrixType
+import com.tencent.angel.spark.math.matrix.MatrixType.MatrixType
+import com.tencent.angel.spark.math.vector.VectorType.VectorType
+import com.tencent.angel.spark.math.vector.PSVector
 import org.apache.spark._
 
-import scala.collection.JavaConverters._
 import scala.collection.Map
 
 abstract class PSContext {
 
   private[spark] def conf: Map[String, String]
-
-  /**
-   * PSContext can create more than one PSVectorPool.
-   */
-  private val psModelPools = new ConcurrentHashMap[Int, PSModelPool]()
-
-  /**
-   * Create a vector pool in PS nodes.
-   * Notice: it can only be called on driver.
-   *
-   * @param numDimensions dimension of vectors
-   * @param capacity capacity of pool
-   */
-  def createModelPool(numDimensions: Int, capacity: Int): PSModelPool = {
-    val pool = doCreateModelPool(numDimensions, capacity)
-    psModelPools.put(pool.id, pool)
-    pool
-  }
+  protected def stop()
 
   def createMatrix(rows: Int, cols: Int, t: MatrixType): MatrixMeta
+  def destroyMatrix(meta: MatrixMeta)
 
-  def destroyMatrix(meta: MatrixMeta): Unit
+  def createVector(dim: Int, t: VectorType, poolCapacity: Int): PSVector
+  def duplicateVector(originVector: PSVector): PSVector
+  def destroyVector(vector: PSVector)
 
-  /**
-   * Destroy a vector pool in PS nodes.
-   * Notice: it can only be called in th driver.
-   *
-   * @param pool the pool to destroy
-   */
-  def destroyModelPool(pool: PSModelPool): Unit = {
-    doDestroyModelPool(pool)
-    psModelPools.remove(pool.id)
-  }
-
-  def stop(): Unit = {
-  }
-
-  protected def doCreateModelPool(numDimensions: Int, capacity: Int): PSModelPool
-  protected def doDestroyModelPool(pool: PSModelPool): Unit
-
-  private[spark] def getPool(id: Int): PSModelPool = {
-    psModelPools.get(id)
-  }
+  def destroyVectorPool(vector: PSVector): Unit
 }
 
 object PSContext {
-  private var context: PSContext = _
+  private var _instance: PSContext = _
   private var failCause: Exception = _
 
   def getOrCreate(sc: SparkContext): PSContext = {
-    val context = getOrCreate()
-    context.conf.foreach {
+    _instance = instance()
+    _instance.conf.foreach {
       case (key, value) => sc.setLocalProperty(key, value)
     }
-    context
+    _instance
   }
 
-  /**
-   * Get the PSContext instance
-   * new `context` instance if it not exists
-   */
-  def getOrCreate(): PSContext = {
-    if (instance == null) {
-      throw new SparkException("PSContext init failed!", failCause)
+  def instance() : PSContext = {
+    if (_instance == null) {
+      PSContext.getClass.synchronized {
+        if (_instance == null) {
+          try {
+            val env = SparkEnv.get
+            _instance = AngelPSContext(env.executorId, env.conf)
+          } catch {
+            case e: Exception =>
+              _instance = null
+              failCause = e
+          }
+        }
+      }
     }
-    instance
+    _instance
   }
 
   /**
    * Clean up PSContext.
    */
   def stop(): Unit = {
-    for (entry <- context.psModelPools.entrySet().asScala) {
-      context.destroyModelPool(entry.getValue)
-    }
 
     val env = SparkEnv.get
-    if (PSContext.isAngelMode(env.conf)) {
-      AngelPSContext.stop()
+    if (isAngelMode(env.conf)) {
+      AngelPSContext.stopAngel()
     }
-    PSContext.context.stop()
-    PSContext.context = null
+
+    PSContext._instance.stop()
+    PSContext._instance = null
   }
 
-  /**
-   * new `context` singleton instance if it not exists
-   *
-   * @return
-   */
-  private def instance: PSContext = {
-    if (context == null) {
-      classOf[PSContext].synchronized {
-        if (context == null) {
-          try {
-            val env = SparkEnv.get
-            context = AngelPSContext(env.executorId, env.conf)
-          } catch {
-            case e: Exception =>
-              context = null
-              failCause = e
-          }
-        }
-      }
-    }
-    context
-  }
-
-  private def isLocalMaster(conf: SparkConf): Boolean = {
+  private def isLocalMode(conf: SparkConf): Boolean = {
     val master = conf.get("spark.master", "")
     master.toLowerCase.startsWith("local")
   }
 
-  /**
-   * For AngelPSContext, figure out PS Mode is LOCAL or YARN
-   */
   private def isAngelMode(conf: SparkConf): Boolean = {
-    val psMode = conf.getOption("spark.ps.mode")
-    var isAngelContext = false
-    if (!isLocalMaster(conf)) {
-      isAngelContext = true
-    } else {
-      if (psMode.isDefined && psMode.get == AngelDeployMode.LOCAL.toString) {
-        isAngelContext = true
-      }
-    }
-    isAngelContext
-  }
+    if (isLocalMode(conf))
+      return false
 
+    val psMode = conf.getOption("spark.ps.mode")
+    if (psMode.isDefined && psMode.get == AngelDeployMode.YARN.toString) {
+      true
+    } else {
+      false
+    }
+  }
 
   private[spark] def getTaskId(): Int = {
     val tc = TaskContext.get()
