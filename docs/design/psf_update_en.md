@@ -1,25 +1,25 @@
-# UpdateFunc(更新型函数)
+# UpdateFunc
 
 
-## 原理
+## Principles
 
-1. PS Client（参数服务器客户端）进行请求划分，生成一个请求列表，这个请求列表中的每一个请求都和一个模型参数分区对应。
+1. PS Client divides the requests to generate a request list, where each request corresponds to a model parameter partition.
 
-2. 将请求列表中的所有请求发送给模型参数分区所在的PS实例。PS实例以模型参数分区为单位执行参数获取和更新操作，并返回相应的结果。
+2. PS Client sends every request in the list to the PS instance that has the corresponding partition. The PS instance gets and updates the parameters in units of model parameter partitions, and returns the result.
 
-3. 等待所有请求完成后返回
+3. Wait for all requests to be returned
 
 
-## **定义**
+## Definitions
 
-* **接口**
+* **Interface**
 
 ```Java
 Future<VoidResult> update(UpdaterFunc update) throws AngelException;
 ```
 
-* **参数**
-	* 参数类型是一个UpdaterFunc对象，该对象封装了update psf方法的参数和执行流程：
+* **Parameters**
+	* The parameter type is an UpdaterFunc object, which encapsulates the parameters and process of the `update psf` method:
 
 		```Java
 		public abstract class UpdaterFunc {
@@ -32,29 +32,30 @@ Future<VoidResult> update(UpdaterFunc update) throws AngelException;
 		}
 		```
 
-	* UpdateFunc对象的参数类型为UpdateParam
-	   * UpdateParam对象与GetParam对象类似，它除了包含update的具体参数外，也有一个split方法，该方法的作用是将全局的update参数按照矩阵分区进行划分，得到的结果是一个分区update参数列表，即PartitionUpdateParam对象列表。
+	* The parameter type of an UpdateFunc object is UpdateParam
+	   * Similar to the GetParam object, UpdateParam defines a `split` method, which divides the overall `update` parameters to a list of `update` parameters for their corresponding model partitions (list of PartitionUpdateParam objects). 
 
-## 执行流程
 
-与get psf不同，update psf的执行流程只有一步：
+## Execution Process
 
-* 即以矩阵分区为单位分别进行update操作，这个过程partitionUpdate方法表示。
+Different from `get psf`, `update psf`'s process consists of only one step:
 
-update psf没有具体的返回值，只返回给应用程序一个Future，应用程序可以选择是否等待操作完成。
+* `update` in units of model partitions (partitionUpdate)
 
-update型psFunc执行流程需要PS Client和PS共同完成。上述提到的
+`update psf` has no specific return value, but returns a Future to the application; the application then decides whether to wait for the operations to complete.
 
-* UpdaterParam划分是在Worker执行
-* partitionUpdate方法是在PSServer端执行
+The execution process of update type psFunc requires the PS Client and PS to work together:
 
-具体的流程如下图所示，左子图表示Worker处理流程，右子图表示PS Server处理流程：
+* UpdaterParam division execute on the worker
+* partitionUpdate method execute on the PSServer
 
-![](../img/psf_update.png)
+The specific process is shown below, with the chart on the left showing the process on the worker, the chart on the right showing the process on the server:
 
-## 编程样例
+![](../img/psf_update_en.png)
 
-* [com.tencent.angel.ml.matrix.psf.update.RandomUniform](https://github.com/Tencent/angel/blob/master/angel-ps/psf/src/main/java/com/tencent/angel/ml/matrix/psf/update/RandomUniform.java): 将矩阵某一行设置为指定范围随机数的例子
+## Sample Code
+
+* [com.tencent.angel.ml.matrix.psf.update.RandomUniform](https://github.com/Tencent/angel/blob/master/angel-ps/psf/src/main/java/com/tencent/angel/ml/matrix/psf/update/RandomUniform.java): an example that assigns a specified range of random numbers to a row:
 
 
 	```Java
@@ -81,14 +82,14 @@ update型psFunc执行流程需要PS Client和PS共同完成。上述提到的
 		}
 	```
 
-将代码编译后打成jar包，在提交任务时通过参数angel.lib.jars上传该jar包，然后就可以在应用程序中调用了。调用方式如下：
+Compile the code and create the jar to be uploaded through `angel.lib.jars` when submitting the application; the new UpdateFunc can then be called in the program, for instance: 
 
 ```Java
 	Random randomFunc = new RandomUniform(new RandomParam(matrixId, rowIndex, 0.0, 1.0));
 	psModel.update(randomFunc).get();
 ```
 
-## Update函数库
+## Update Library
 
 	* **Abs**
 
