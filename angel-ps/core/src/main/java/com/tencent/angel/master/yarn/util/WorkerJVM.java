@@ -83,7 +83,7 @@ public class WorkerJVM {
             .append(youngRegionSize).append("M").append(" -XX:MaxDirectMemorySize=")
             .append(directRegionSize).append("M").append(" -XX:SurvivorRatio=").append(suvivorRatio)
             .append(" -XX:PermSize=100M -XX:MaxPermSize=200M").append(" -XX:+AggressiveOpts")
-            .append(" -XX:+UseLargePages").append(" -XX:+UseParallelGC")
+            .append(" -XX:+UseLargePages").append(" -XX:+UseConcMarkSweepGC")
             .append(" -XX:+UseAdaptiveSizePolicy").append(" -XX:CMSInitiatingOccupancyFraction=70")
             .append(" -XX:+UseCMSInitiatingOccupancyOnly").append(" -XX:+CMSScavengeBeforeRemark")
             .append(" -XX:+UseCMSCompactAtFullCollection").append(" -verbose:gc")
