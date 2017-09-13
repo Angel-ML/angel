@@ -67,4 +67,12 @@ public class MatrixConf {
   /** matrix data files save path */
   public static final String MATRIX_SAVE_PATH = "matrix.save.path";
   public static final String DEFAULT_MATRIX_SAVE_PATH = "";
+
+  /** the number of thread to load matrix partition */
+  public static final String MATRIX_LOAD_THREAD = "matrix.load.thread";
+  public static final String DEFAULT_MATRIX_LOAD_THREAD = "20";
+
+  /** the number of thread to write matrix partition */
+  public static final String MATRIX_WRITE_THREAD = "matrix.load.thread";
+  public static final String DEFAULT_MATRIX_WRITE_THREAD = "20";
 }
