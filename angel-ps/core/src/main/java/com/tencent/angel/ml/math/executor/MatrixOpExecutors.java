@@ -15,9 +15,16 @@ public class MatrixOpExecutors {
   /**
    * Worker pool for forkjoin
    */
-  private static final ForkJoinPool pool = new ForkJoinPool(PSAgentContext.get().getConf()
-    .getInt(AngelConf.ANGEL_WORKER_MATRIX_EXECUTORS_NUM,
-      AngelConf.DEFAULT_ANGEL_WORKER_MATRIX_EXECUTORS_NUM));
+  private static final ForkJoinPool pool;
+  static {
+    if(PSAgentContext.get() != null && PSAgentContext.get().getPsAgent() != null) {
+      pool = new ForkJoinPool(PSAgentContext.get().getConf()
+        .getInt(AngelConf.ANGEL_WORKER_MATRIX_EXECUTORS_NUM,
+          AngelConf.DEFAULT_ANGEL_WORKER_MATRIX_EXECUTORS_NUM));
+    } else {
+      pool = new ForkJoinPool(AngelConf.DEFAULT_ANGEL_WORKER_MATRIX_EXECUTORS_NUM);
+    }
+  }
 
   /**
    * Execute a task use ForkJoin
