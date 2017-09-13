@@ -5,9 +5,9 @@ import java.util
 /**
   * Sample Multinomial Distribution in O(1) with O(K) Build Time
   * Created by chris on 8/2/17.
-  * @param  Array[count]
+  * @param  count
   */
-class AliasTable(val count:Array[Int]) extends IntSampling{
+class AliasTable(val count:Array[Int]){
   private final val wordTopicCount = count.zipWithIndex.filter(_._1 > 0)
   private final val length:Int = wordTopicCount.length
   private final val alias = Array.ofDim[Int](length)
