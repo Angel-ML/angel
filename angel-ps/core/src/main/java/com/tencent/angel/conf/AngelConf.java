@@ -640,6 +640,11 @@ public class AngelConf extends Configuration {
     + "matrixtransfer.server.user.sender";
   public static final boolean DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_USER_SENDER = false;
 
+  public static final String ANGEL_MATRIX_OPLOG_MERGER_POOL_SIZE = ANGEL_PREFIX
+    + "matrix.oplog.merger.pool.size";
+
+  public static final int DEFAULT_ANGEL_MATRIX_OPLOG_MERGER_POOL_SIZE = Math.max(8, (int)(Runtime.getRuntime().availableProcessors() * 0.25));
+
   /**
    * The maximum allowed number of matrix transfer requests which are sending to the servers(ps). It
    * used to flow-control between psagent and ps.
