@@ -479,15 +479,14 @@ class Trainer(ctx:TaskContext, model:LDAModel,
 
     for (d <- 0 until data.n_docs) {
       val sb = new StringBuilder
-      val dk = Array.ofDim[Int](model.K)
+      val dk = mutable.Map[Int, Int]()
       (data.accDoc(d) until data.accDoc(d + 1)) foreach{ i=>
-        dk(data.topics(data.inverseMatrix(i)))  += 1
+        val k = data.topics(data.inverseMatrix(i))
+        dk += k -> (dk.getOrElse(k, 0) + 1)
       }
       sb.append(data.docIds(d))
-      val sparseDk = dk.zipWithIndex.filter(_._1 != 0)
-      val len = sparseDk.length
-      sparseDk.foreach{s =>
-        sb.append(s" ${s._2}:${s._1}")
+      dk.foreach{case(k ,v) =>
+        sb.append(s" $k:$v")
       }
       sb.append("\n")
       out.write(sb.toString().getBytes("UTF-8"))
