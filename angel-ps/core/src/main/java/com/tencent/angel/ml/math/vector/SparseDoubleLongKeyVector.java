@@ -13,7 +13,7 @@ import org.apache.commons.logging.LogFactory;
 /**
  * Sparse double vector with long key.
  */
-public class SparseDoubleLongKeyVector extends LongKeyDoubleVector {
+public class SparseDoubleLongKeyVector extends DoubleLongKeyVector {
   private static final Log LOG = LogFactory.getLog(SparseDoubleLongKeyVector.class);
   /** A (long->double) map */
   private volatile Long2DoubleOpenHashMap indexToValueMap;
@@ -99,8 +99,6 @@ public class SparseDoubleLongKeyVector extends LongKeyDoubleVector {
 
   private SparseDoubleLongKeyVector plusBy(SparseDoubleLongKeyVector other) {
     assert dim == other.dim;
-    LOG.debug("other vector size=" + other.size() + ", this vector size=" + this.size());
-    long startTs = System.currentTimeMillis();
 
     if(indexToValueMap.size() == 0) {
       indexToValueMap.putAll(other.indexToValueMap);
@@ -125,7 +123,6 @@ public class SparseDoubleLongKeyVector extends LongKeyDoubleVector {
       }
     }
 
-    LOG.debug("plusBy use time=" + (System.currentTimeMillis() - startTs));
     return this;
   }
 
@@ -248,7 +245,7 @@ public class SparseDoubleLongKeyVector extends LongKeyDoubleVector {
   private double dot(SparseDoubleLongKeyVector other) {
     assert dim == other.dim;
     double ret = 0.0;
-    if (size() < other.size()) {
+    if (size() <= other.size()) {
       ObjectIterator<Long2DoubleMap.Entry> iter =
         indexToValueMap.long2DoubleEntrySet().fastIterator();
       Long2DoubleMap.Entry entry = null;

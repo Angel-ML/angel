@@ -163,6 +163,7 @@ public class SparseIntVector extends TIntVector {
     ObjectIterator<Int2IntMap.Entry> iter = hashMap.int2IntEntrySet().fastIterator();
     Int2IntMap.Entry entry = null;
     while(iter.hasNext()) {
+      entry = iter.next();
       entry.setValue(entry.getIntValue() * x);
     }
     return this;

@@ -18,6 +18,6 @@ public class CompSparseFloatMatrix extends TFloatMatrix {
   }
 
   @Override public TVector initVector(int rowIndex) {
-    return new CompSparseFloatVector(matrixId, rowIndex, col);
+    return new CompSparseFloatVector(matrixId, rowIndex, (int)col);
   }
 }

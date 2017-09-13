@@ -5,7 +5,7 @@ import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.math.executor.MatrixOpExecutors;
 import com.tencent.angel.psagent.PSAgentContext;
-import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -13,119 +13,41 @@ import org.apache.commons.logging.LogFactory;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.RecursiveAction;
-import java.util.concurrent.RecursiveTask;
+import java.util.concurrent.*;
 
 /**
- * Base class of component double vector.
+ * Base class of component double vector with long key.
  */
-abstract class CompTDoubleVector extends TDoubleVector {
-  private static final Log LOG = LogFactory.getLog(CompTDoubleVector.class);
+public abstract class CompDoubleLongKeyVector extends DoubleLongKeyVector {
+  private static final Log LOG = LogFactory.getLog(SparseDoubleLongKeyVector.class);
 
-  /**
-   * The splits of the row, they are sorted by the start column index
-   */
-  protected final TDoubleVector[] vectors;
+  /** The splits of the row, they are sorted by the start column index*/
+  protected final DoubleLongKeyVector[] vectors;
 
-  /**
-   * The Partitions that contain this row, they are sorted by the start column index
-   */
+  /** The Partitions that contain this row, they are sorted by the start column index */
   protected final PartitionKey[] partKeys;
 
-  /**
-   * The number of splits
-   */
+  /** The number of splits */
   protected final int splitNum;
 
-  /**
-   * The column number in a split
-   */
-  protected final int splitLen;
+  /** The column number in a split */
+  protected final long splitLen;
 
-  /**
-   * The estimate capacity of a split
-   */
+  /** The estimate capacity of a split */
   protected final int initCapacity;
 
-  /**
-   * Create a CompTDoubleVector
-   *
-   * @param matrixId matrix id
-   * @param rowIndex row index
-   * @param dim      vector dimension
-   * @param nnz      element number of the vector
-   */
-  public CompTDoubleVector(int matrixId, int rowIndex, int dim, int nnz) {
-    super();
-    setMatrixId(matrixId);
-    setRowId(rowIndex);
-    this.dim = dim;
-
-    List<PartitionKey> partKeyList =
-      PSAgentContext.get().getMatrixPartitionRouter().getPartitionKeyList(matrixId, rowIndex);
-
-    if (partKeyList.size() >= 1) {
-      Collections.sort(partKeyList, new Comparator<PartitionKey>() {
-        @Override public int compare(PartitionKey key1, PartitionKey key2) {
-          return key1.getStartCol() < key2.getStartCol() ? -1 : 1;
-        }
-      });
-    }
-
-    partKeys = partKeyList.toArray(new PartitionKey[0]);
-    splitNum = partKeys.length;
-    vectors = new TDoubleVector[splitNum];
-    if (splitNum > 0) {
-      splitLen = (int) (partKeys[0].getEndCol() - partKeys[0].getStartCol());
-      if (nnz > 0) {
-        initCapacity = (int) (nnz / splitNum);
-      } else {
-        initCapacity = -1;
-      }
-    } else {
-      splitLen = 0;
-      initCapacity = -1;
-    }
-  }
-
-  /**
-   * Create a CompTDoubleVector
-   *
-   * @param matrixId matrix id
-   * @param rowIndex row index
-   * @param dim      vector dimension
-   * @param partKeys the partitions that contains this vector
-   * @param splits   vector splits
-   */
-  public CompTDoubleVector(int matrixId, int rowIndex, int dim, PartitionKey[] partKeys,
-    TDoubleVector[] splits) {
-    super();
-    setMatrixId(matrixId);
-    setRowId(rowIndex);
-    this.dim = dim;
-
-    assert partKeys.length == splits.length;
-    this.vectors = splits;
-    this.partKeys = partKeys;
-    splitNum = splits.length;
-
-    if (splitNum > 0) {
-      splitLen = (int) (partKeys[0].getEndCol() - partKeys[0].getStartCol());
-      initCapacity = splits[0].size();
-    } else {
-      splitLen = 0;
-      initCapacity = -1;
-    }
-  }
+  /** Make up position is need if dim <= 0(vector range is [Long.MIN_VALUE, Long.MAX_VALUE]) */
+  private final long makeup;
+  private final int makeupPos;
 
   class TimesByOp extends RecursiveAction {
-    private final TDoubleVector[] rowSplits;
+    private final DoubleLongKeyVector[] rowSplits;
     private final double factor;
     private final int startPos;
     private final int endPos;
 
-    public TimesByOp(TDoubleVector[] rowSplits, int startPos, int endPos, double factor) {
+    public TimesByOp(DoubleLongKeyVector[] rowSplits, int startPos, int endPos,
+      double factor) {
       this.rowSplits = rowSplits;
       this.startPos = startPos;
       this.endPos = endPos;
@@ -152,15 +74,14 @@ abstract class CompTDoubleVector extends TDoubleVector {
     }
   }
 
-
   class PlusByOp extends RecursiveAction {
-    private final TDoubleVector[] leftSplits;
-    private final TDoubleVector[] rightSplits;
+    private final DoubleLongKeyVector[] leftSplits;
+    private final DoubleLongKeyVector[] rightSplits;
     private final int startPos;
     private final int endPos;
 
-    public PlusByOp(TDoubleVector[] leftSplits, TDoubleVector[] rightSplits, int startPos,
-      int endPos) {
+    public PlusByOp(DoubleLongKeyVector[] leftSplits, DoubleLongKeyVector[] rightSplits,
+      int startPos, int endPos) {
       this.leftSplits = leftSplits;
       this.rightSplits = rightSplits;
       this.startPos = startPos;
@@ -187,16 +108,15 @@ abstract class CompTDoubleVector extends TDoubleVector {
     }
   }
 
-
   class PlusByWithFactorOp extends RecursiveAction {
-    private final TDoubleVector[] leftSplits;
-    private final TDoubleVector[] rightSplits;
+    private final DoubleLongKeyVector[] leftSplits;
+    private final DoubleLongKeyVector[] rightSplits;
     private final int startPos;
     private final int endPos;
     private final double factor;
 
-    public PlusByWithFactorOp(TDoubleVector[] leftSplits, TDoubleVector[] rightSplits, int startPos,
-      int endPos, double factor) {
+    public PlusByWithFactorOp(DoubleLongKeyVector[] leftSplits,
+      DoubleLongKeyVector[] rightSplits, int startPos, int endPos, double factor) {
       this.leftSplits = leftSplits;
       this.rightSplits = rightSplits;
       this.startPos = startPos;
@@ -227,15 +147,14 @@ abstract class CompTDoubleVector extends TDoubleVector {
     }
   }
 
-
   class DotOp extends RecursiveTask<Double> {
-    private final TDoubleVector[] leftSplits;
-    private final TDoubleVector[] rightSplits;
+    private final DoubleLongKeyVector[] leftSplits;
+    private final DoubleLongKeyVector[] rightSplits;
     private final int startPos;
     private final int endPos;
 
-    public DotOp(TDoubleVector[] leftSplits, TDoubleVector[] rightSplits, int startPos,
-      int endPos) {
+    public DotOp(DoubleLongKeyVector[] leftSplits, DoubleLongKeyVector[] rightSplits,
+      int startPos, int endPos) {
       this.leftSplits = leftSplits;
       this.rightSplits = rightSplits;
       this.startPos = startPos;
@@ -262,20 +181,19 @@ abstract class CompTDoubleVector extends TDoubleVector {
         try {
           return opLeft.get() + opRight.get();
         } catch (InterruptedException | ExecutionException e) {
-          LOG.error("DotOp failed " + e.getMessage());
+          LOG.error("DosOp failed " + e.getMessage());
           return 0.0;
         }
       }
     }
   }
 
-
   class NNZCounterOp extends RecursiveTask<Long> {
-    private final TDoubleVector[] splits;
+    private final DoubleLongKeyVector[] splits;
     private final int startPos;
     private final int endPos;
 
-    public NNZCounterOp(TDoubleVector[] splits, int startPos, int endPos) {
+    public NNZCounterOp(DoubleLongKeyVector[] splits, int startPos, int endPos) {
       this.splits = splits;
       this.startPos = startPos;
       this.endPos = endPos;
@@ -308,13 +226,12 @@ abstract class CompTDoubleVector extends TDoubleVector {
     }
   }
 
-
   class SquaredNormOp extends RecursiveTask<Double> {
-    private final TDoubleVector[] splits;
+    private final DoubleLongKeyVector[] splits;
     private final int startPos;
     private final int endPos;
 
-    public SquaredNormOp(TDoubleVector[] splits, int startPos, int endPos) {
+    public SquaredNormOp(DoubleLongKeyVector[] splits, int startPos, int endPos) {
       this.splits = splits;
       this.startPos = startPos;
       this.endPos = endPos;
@@ -346,13 +263,12 @@ abstract class CompTDoubleVector extends TDoubleVector {
     }
   }
 
-
   class SumOp extends RecursiveTask<Double> {
-    private final TDoubleVector[] splits;
+    private final DoubleLongKeyVector[] splits;
     private final int startPos;
     private final int endPos;
 
-    public SumOp(TDoubleVector[] splits, int startPos, int endPos) {
+    public SumOp(DoubleLongKeyVector[] splits, int startPos, int endPos) {
       this.splits = splits;
       this.startPos = startPos;
       this.endPos = endPos;
@@ -390,7 +306,7 @@ abstract class CompTDoubleVector extends TDoubleVector {
    *
    * @return split vector
    */
-  protected abstract TDoubleVector initComponentVector();
+  protected abstract DoubleLongKeyVector initComponentVector();
 
   /**
    * Init a split vector
@@ -398,7 +314,7 @@ abstract class CompTDoubleVector extends TDoubleVector {
    * @param initCapacity the initCapacity for split vector
    * @return split vector
    */
-  protected abstract TDoubleVector initComponentVector(int initCapacity);
+  protected abstract DoubleLongKeyVector initComponentVector(int initCapacity);
 
   /**
    * Init a split vector from other vector
@@ -406,18 +322,132 @@ abstract class CompTDoubleVector extends TDoubleVector {
    * @param vector a vector that belongs the same partition
    * @return split vector
    */
-  protected abstract TDoubleVector initComponentVector(TDoubleVector vector);
+  protected abstract DoubleLongKeyVector initComponentVector(DoubleLongKeyVector vector);
 
-  @Override public int[] getIndices() {
-    throw new UnsupportedOperationException("Unsupport operation");
+  /**
+   * Create a CompSparseDoubleLongKeyVector
+   * @param matrixId matrix id
+   * @param rowIndex row index
+   * @param dim vector dimension
+   * @param partKeys the partitions that contains this vector
+   * @param splits vector splits
+   */
+  public CompDoubleLongKeyVector(int matrixId, int rowIndex, long dim,
+    PartitionKey[] partKeys, DoubleLongKeyVector[] splits) {
+    super(dim);
+    setMatrixId(matrixId);
+    setRowId(rowIndex);
+
+    assert partKeys.length == splits.length;
+    this.vectors = splits;
+    this.partKeys = partKeys;
+    splitNum = splits.length;
+
+    if (splitNum > 0) {
+      splitLen = partKeys[0].getEndCol() - partKeys[0].getStartCol();
+      initCapacity = splits[0].size();
+    } else {
+      splitLen = 0;
+      initCapacity = -1;
+    }
+
+    if(dim <= 0) {
+      makeupPos = (int) (Long.MAX_VALUE / splitLen);
+      makeup = Long.MAX_VALUE - makeupPos * splitLen;
+    } else {
+      makeupPos = 0;
+      makeup = 0;
+    }
   }
 
-  @Override public double[] getValues() {
-    throw new UnsupportedOperationException("Unsupport operation");
+  /**
+   * Create a CompSparseDoubleLongKeyVector
+   * @param matrixId matrix id
+   * @param rowIndex row index
+   */
+  public CompDoubleLongKeyVector(int matrixId, int rowIndex) {
+    this(matrixId, rowIndex, -1, -1);
   }
 
-  @Override public double get(int index) {
-    int partIndex = (int) (index / splitLen);
+  /**
+   * Create a CompSparseDoubleLongKeyVector
+   * @param matrixId matrix id
+   * @param rowIndex row index
+   * @param dim vector dimension
+   */
+  public CompDoubleLongKeyVector(int matrixId, int rowIndex, long dim) {
+    this(matrixId, rowIndex, dim, -1);
+  }
+
+  /**
+   *
+   * Create a CompSparseDoubleLongKeyVector
+   * @param matrixId matrix id
+   * @param rowIndex row index
+   * @param dim vector dimension
+   * @param nnz element number of the vector
+   */
+  public CompDoubleLongKeyVector(int matrixId, int rowIndex, long dim, long nnz) {
+    super(dim);
+    setMatrixId(matrixId);
+    setRowId(rowIndex);
+
+    List<PartitionKey> partKeyList =
+      PSAgentContext.get().getMatrixPartitionRouter().getPartitionKeyList(matrixId, rowIndex);
+    LOG.info("matrixId=" + matrixId + ", rowIndex=" + rowIndex + ", partNum=" + partKeyList.size());
+
+    if (partKeyList.size() >= 1) {
+      Collections.sort(partKeyList, new Comparator<PartitionKey>() {
+        @Override public int compare(PartitionKey key1, PartitionKey key2) {
+          return key1.getStartCol() < key2.getStartCol() ? -1 : 1;
+        }
+      });
+    }
+
+    partKeys = partKeyList.toArray(new PartitionKey[0]);
+    splitNum = partKeys.length;
+    vectors = new DoubleLongKeyVector[splitNum];
+    if (splitNum > 0) {
+      splitLen = partKeys[0].getEndCol() - partKeys[0].getStartCol();
+      if (nnz > 0) {
+        initCapacity = (int) (nnz / splitNum);
+      } else {
+        initCapacity = -1;
+      }
+    } else {
+      splitLen = 0;
+      initCapacity = -1;
+    }
+
+    if(dim <= 0) {
+      makeupPos = (int) (Long.MAX_VALUE / splitLen);
+      makeup = Long.MAX_VALUE - makeupPos * splitLen;
+    } else {
+      makeupPos = 0;
+      makeup = 0;
+    }
+  }
+
+  @Override public TVector plusBy(long index, double x) {
+    int partIndex = (int)((index + makeup) / splitLen) + makeupPos;
+    if (vectors[partIndex] == null) {
+      vectors[partIndex] = initComponentVector(initCapacity);
+    }
+    vectors[partIndex].plusBy(index, x);
+    return this;
+  }
+
+  @Override public TVector set(long index, double x) {
+    int partIndex = (int)((index + makeup) / splitLen) + makeupPos;
+    if (vectors[partIndex] == null) {
+      vectors[partIndex] = initComponentVector(initCapacity);
+    }
+    vectors[partIndex].set(index, x);
+    return this;
+  }
+
+  @Override public double get(long index) {
+    int partIndex = (int)((index + makeup) / splitLen) + makeupPos;
     if (vectors[partIndex] == null) {
       return 0.0;
     } else {
@@ -425,35 +455,23 @@ abstract class CompTDoubleVector extends TDoubleVector {
     }
   }
 
-  @Override public void set(int index, double value) {
-    int partIndex = (int) (index / splitLen);
-    if (vectors[partIndex] == null) {
-      vectors[partIndex] = initComponentVector();
-    }
-    vectors[partIndex].set(index, value);
+  @Override public long[] getIndexes() {
+    throw new UnsupportedOperationException("Unsupport operation");
   }
 
-  @Override public double squaredNorm() {
-    SquaredNormOp op = new SquaredNormOp(vectors, 0, splitNum);
-    MatrixOpExecutors.execute(op);
-    return op.join();
-  }
-
-  @Override public double sum() {
-    SumOp op = new SumOp(vectors, 0, splitNum);
-    MatrixOpExecutors.execute(op);
-    return op.join();
+  @Override public double[] getValues() {
+    throw new UnsupportedOperationException("Unsupport operation");
   }
 
   @Override public TVector plusBy(TAbstractVector other) {
-    if (other instanceof CompTDoubleVector) {
-      return plusBy((CompTDoubleVector) other);
-    } else if(other instanceof SparseDoubleVector) {
-      return plusBy((SparseDoubleVector) other);
-    } else if (other instanceof  SparseDummyVector) {
-      return plusBy((SparseDummyVector) other);
-    } else if (other instanceof SparseDoubleSortedVector) {
-      return plusBy((SparseDoubleSortedVector) other);
+    if (other instanceof CompDoubleLongKeyVector) {
+      return plusBy((CompDoubleLongKeyVector) other);
+    } else if(other instanceof SparseDoubleLongKeyVector) {
+      return plusBy((SparseDoubleLongKeyVector) other);
+    } else if (other instanceof  SparseDummyLongKeyVector) {
+      return plusBy((SparseDummyLongKeyVector) other);
+    } else if (other instanceof SparseDoubleLongKeySortedVector ) {
+      return plusBy((SparseDoubleLongKeySortedVector) other);
     }
 
     throw new UnsupportedOperationException(
@@ -461,34 +479,26 @@ abstract class CompTDoubleVector extends TDoubleVector {
         .getName());
   }
 
-  private TVector plusBy(CompTDoubleVector other) {
+  private TVector plusBy(CompDoubleLongKeyVector other) {
     PlusByOp op = new PlusByOp(vectors, other.vectors, 0, splitNum);
     MatrixOpExecutors.execute(op);
     op.join();
     return this;
   }
 
-  private TVector plusBy(SparseDoubleVector other) {
-    ObjectIterator<Int2DoubleMap.Entry>
-      iter = other.hashMap.int2DoubleEntrySet().fastIterator();
-    Int2DoubleMap.Entry entry = null;
+  private TVector plusBy(SparseDoubleLongKeyVector other) {
+    ObjectIterator<Long2DoubleMap.Entry>
+      iter = other.getIndexToValueMap().long2DoubleEntrySet().fastIterator();
+    Long2DoubleMap.Entry entry = null;
     while(iter.hasNext()) {
       entry = iter.next();
-      plusBy(entry.getIntKey(), entry.getDoubleValue());
+      plusBy(entry.getLongKey(), entry.getDoubleValue());
     }
     return this;
   }
 
-  private TVector plusBy(SparseDummyVector other) {
-    int [] indexes = other.getIndices();
-    for(int i = 0; i < indexes.length; i++) {
-      plusBy(indexes[i], 1);
-    }
-    return this;
-  }
-
-  private TVector plusBy(SparseDoubleSortedVector other) {
-    int [] indexes = other.getIndices();
+  private TVector plusBy(SparseDoubleLongKeySortedVector other) {
+    long [] indexes = other.getIndexes();
     double [] values = other.getValues();
     for(int i = 0; i < indexes.length; i++) {
       plusBy(indexes[i], values[i]);
@@ -496,24 +506,23 @@ abstract class CompTDoubleVector extends TDoubleVector {
     return this;
   }
 
-  @Override public TDoubleVector plusBy(int index, double delta) {
-    int partIndex = (int) (index / splitLen);
-    if (vectors[partIndex] == null) {
-      vectors[partIndex] = initComponentVector(initCapacity);
+  private TVector plusBy(SparseDummyLongKeyVector other) {
+    long [] indexes = other.getIndices();
+    for(int i = 0; i < indexes.length; i++) {
+      plusBy(indexes[i], 1);
     }
-    vectors[partIndex].plusBy(index, delta);
     return this;
   }
 
   @Override public TVector plusBy(TAbstractVector other, double x) {
-    if (other instanceof CompTDoubleVector) {
-      return plusBy((CompTDoubleVector) other, x);
-    } else if (other instanceof SparseDoubleSortedVector) {
-      return plusBy((SparseDoubleSortedVector) other, x);
-    } else if (other instanceof  SparseDummyVector) {
-      return plusBy((SparseDummyVector) other, x);
-    } else if (other instanceof SparseDoubleSortedVector) {
-      return plusBy((SparseDoubleVector) other, x);
+    if (other instanceof CompDoubleLongKeyVector) {
+      return plusBy((CompDoubleLongKeyVector) other, x);
+    } else if(other instanceof SparseDoubleLongKeyVector) {
+      return plusBy((SparseDoubleLongKeyVector) other, x);
+    } else if (other instanceof  SparseDummyLongKeyVector) {
+      return plusBy((SparseDummyLongKeyVector) other, x);
+    } else if (other instanceof SparseDoubleLongKeySortedVector ) {
+      return plusBy((SparseDoubleLongKeySortedVector) other, x);
     }
 
     throw new UnsupportedOperationException(
@@ -521,15 +530,26 @@ abstract class CompTDoubleVector extends TDoubleVector {
         .getName());
   }
 
-  private TVector plusBy(CompTDoubleVector other, double x) {
+  private TVector plusBy(CompDoubleLongKeyVector other, double x) {
     PlusByWithFactorOp op = new PlusByWithFactorOp(vectors, other.vectors, 0, splitNum, x);
     MatrixOpExecutors.execute(op);
     op.join();
     return this;
   }
 
-  private TVector plusBy(SparseDoubleSortedVector other, double x) {
-    int [] indexes = other.getIndices();
+  private TVector plusBy(SparseDoubleLongKeyVector other, double x) {
+    ObjectIterator<Long2DoubleMap.Entry>
+      iter = other.getIndexToValueMap().long2DoubleEntrySet().fastIterator();
+    Long2DoubleMap.Entry entry = null;
+    while(iter.hasNext()) {
+      entry = iter.next();
+      plusBy(entry.getLongKey(), entry.getDoubleValue() * x);
+    }
+    return this;
+  }
+
+  private TVector plusBy(SparseDoubleLongKeySortedVector other, double x) {
+    long [] indexes = other.getIndexes();
     double [] values = other.getValues();
     for(int i = 0; i < indexes.length; i++) {
       plusBy(indexes[i], values[i] * x);
@@ -537,24 +557,14 @@ abstract class CompTDoubleVector extends TDoubleVector {
     return this;
   }
 
-  private TVector plusBy(SparseDummyVector other, double x) {
-    int [] indexes = other.getIndices();
+  private TVector plusBy(SparseDummyLongKeyVector other, double x) {
+    long [] indexes = other.getIndices();
     for(int i = 0; i < indexes.length; i++) {
       plusBy(indexes[i], x);
     }
     return this;
   }
 
-  private TVector plusBy(SparseDoubleVector other, double x) {
-    ObjectIterator<Int2DoubleMap.Entry>
-      iter = other.hashMap.int2DoubleEntrySet().fastIterator();
-    Int2DoubleMap.Entry entry = null;
-    while(iter.hasNext()) {
-      entry = iter.next();
-      plusBy(entry.getIntKey(), entry.getDoubleValue() * x);
-    }
-    return this;
-  }
 
   @Override public TVector plus(TAbstractVector other) {
     throw new UnsupportedOperationException("Unsupport operation");
@@ -565,53 +575,53 @@ abstract class CompTDoubleVector extends TDoubleVector {
   }
 
   @Override public double dot(TAbstractVector other) {
-    if (other instanceof CompTDoubleVector) {
-      return dot((CompTDoubleVector) other);
-    } else if (other instanceof SparseDoubleSortedVector) {
-      return dot((SparseDoubleSortedVector) other);
-    } else if (other instanceof SparseDummyVector) {
-      return dot((SparseDummyVector) other);
-    } else if (other instanceof SparseDoubleVector) {
-      return dot((SparseDoubleVector) other);
+    if (other instanceof CompDoubleLongKeyVector) {
+      return dot((CompDoubleLongKeyVector) other);
+    } else if(other instanceof SparseDoubleLongKeyVector) {
+      return dot((SparseDoubleLongKeyVector) other);
+    } else if (other instanceof  SparseDummyLongKeyVector) {
+      return dot((SparseDummyLongKeyVector) other);
+    } else if (other instanceof SparseDoubleLongKeySortedVector ) {
+      return dot((SparseDoubleLongKeySortedVector) other);
     }
 
     throw new UnsupportedOperationException(
       "Unsupport operation: " + this.getClass().getName() + " dot " + other.getClass().getName());
   }
 
-  private double dot(CompTDoubleVector other) {
+  private double dot(CompDoubleLongKeyVector other) {
     DotOp op = new DotOp(vectors, other.vectors, 0, splitNum);
     MatrixOpExecutors.execute(op);
     return op.join();
   }
 
-  private double dot(SparseDoubleSortedVector other) {
-    int [] indexes = other.getIndices();
-    double [] values = other.getValues();
+  private double dot(SparseDoubleLongKeyVector other) {
     double dotValue = 0.0;
-    for(int i = 0; i < indexes.length; i++) {
-      dotValue += values[i] * get(indexes[i]);
-    }
-    return dotValue;
-  }
-
-  private double dot(SparseDummyVector other) {
-    int [] indexes = other.getIndices();
-    double dotValue = 0.0;
-    for(int i = 0; i < indexes.length; i++) {
-      dotValue += get(indexes[i]);
-    }
-    return dotValue;
-  }
-
-  private double dot(SparseDoubleVector other) {
-    double dotValue = 0.0;
-    ObjectIterator<Int2DoubleMap.Entry>
-      iter = other.hashMap.int2DoubleEntrySet().fastIterator();
-    Int2DoubleMap.Entry entry = null;
+    ObjectIterator<Long2DoubleMap.Entry>
+      iter = other.getIndexToValueMap().long2DoubleEntrySet().fastIterator();
+    Long2DoubleMap.Entry entry = null;
     while(iter.hasNext()) {
       entry = iter.next();
-      dotValue += entry.getDoubleValue() * get(entry.getIntKey());
+      dotValue += get(entry.getLongKey()) * entry.getDoubleValue();
+    }
+    return dotValue;
+  }
+
+  private double dot(SparseDoubleLongKeySortedVector other) {
+    double dotValue = 0.0;
+    long [] indexes = other.getIndexes();
+    double [] values = other.getValues();
+    for(int i = 0; i < indexes.length; i++) {
+      dotValue += get(indexes[i]) * values[i];
+    }
+    return dotValue;
+  }
+
+  private double dot(SparseDummyLongKeyVector other) {
+    double dotValue = 0.0;
+    long [] indexes = other.getIndices();
+    for(int i = 0; i < indexes.length; i++) {
+      dotValue += get(indexes[i]);
     }
     return dotValue;
   }
@@ -643,35 +653,49 @@ abstract class CompTDoubleVector extends TDoubleVector {
     return op.join();
   }
 
+  @Override public double squaredNorm() {
+    SquaredNormOp op = new SquaredNormOp(vectors, 0, splitNum);
+    MatrixOpExecutors.execute(op);
+    return op.join();
+  }
+
   @Override public double sparsity() {
-    return nonZeroNumber() / getDimension();
+    if (getDimension() == -1) {
+      return nonZeroNumber() / Long.MAX_VALUE / 2;
+    } else {
+      return nonZeroNumber() / getLongDim();
+    }
   }
 
   @Override public int size() {
-    int size = 0;
+    int ret = 0;
     for (int i = 0; i < splitNum; i++) {
       if (vectors[i] != null) {
-        size += vectors[i].size();
+        ret += vectors[i].size();
       }
     }
-    return size;
+    return ret;
+  }
+
+  public double sum() {
+    SumOp op = new SumOp(vectors, 0, splitNum);
+    MatrixOpExecutors.execute(op);
+    return op.join();
   }
 
   /**
    * Get the splits
-   *
    * @return the splits
    */
-  public PartitionKey[] getPartKeys() {
-    return partKeys;
+  public DoubleLongKeyVector[] getSplits() {
+    return vectors;
   }
 
   /**
    * Get the partitions
-   *
    * @return the partitions
    */
-  public TDoubleVector[] getVectors() {
-    return vectors;
+  public PartitionKey[] getPartKeys() {
+    return partKeys;
   }
 }

@@ -28,6 +28,6 @@ public class CompSparseIntMatrix extends TIntMatrix {
    * @return
    */
   @Override public TVector initVector(int rowIndex) {
-    return new CompSparseIntVector(matrixId, rowIndex, col);
+    return new CompSparseIntVector(matrixId, rowIndex, (int)col);
   }
 }

@@ -16,6 +16,7 @@ public class LongKeyPartitioner implements Partitioner {
   protected Configuration conf;
   private final int partNumPerPS;
   private final static int defaultPartNumPerPS = 10;
+  private final static long DEFAULT_PARTITION_SIZE = 500000;
 
   public LongKeyPartitioner() {
     this(defaultPartNumPerPS);
@@ -39,54 +40,54 @@ public class LongKeyPartitioner implements Partitioner {
 
     int blockRow = mContext.getMaxRowNumInBlock();
     long blockCol = mContext.getMaxColNumInBlock();
-    if(blockRow == -1 || blockCol == -1) {
+
+    if(col == -1) {
       blockRow = 1;
       int serverNum = conf.getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER);
-      blockCol = Long.MAX_VALUE / serverNum / partNumPerPS;
+      blockCol = Long.MAX_VALUE / serverNum / partNumPerPS * 2;
+    } else {
+      if(blockRow == -1 || blockCol == -1) {
+        int serverNum = conf.getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER);
+        if(row >= serverNum) {
+          blockRow = (int) Math.min(row / serverNum, Math.max(1, DEFAULT_PARTITION_SIZE / col));
+          blockCol = Math.min(DEFAULT_PARTITION_SIZE / blockRow, col);
+        } else {
+          blockRow = row;
+          blockCol = Math.min(DEFAULT_PARTITION_SIZE / blockRow, Math.max(100, col / serverNum));
+        }
+      }
     }
 
     LOG.info("blockRow = " + blockRow + ", blockCol=" + blockCol);
 
-    MLProtos.Partition.Builder partition = MLProtos.Partition.newBuilder();
+    long minValue = 0;
+    long maxValue = 0;
     if(col == -1) {
-      col = Long.MAX_VALUE;
-      for (int i = 0; i < row; ) {
-        for (long j = Long.MIN_VALUE; j < col; ) {
-          int startRow = i;
-          long startCol = j;
-          int endRow = (i <= (row - blockRow)) ? (i + blockRow) : row;
-          long endCol = (j <= (col - blockCol)) ? (j + blockCol) : col;
-          partition.setMatrixId(matrixId);
-          partition.setPartitionId(id++);
-          partition.setStartRow(startRow);
-          partition.setStartCol(startCol);
-          partition.setEndRow(endRow);
-          partition.setEndCol(endCol);
-          array.add(partition.build());
-
-          j = (j <= (col - blockCol)) ? (j + blockCol) : col;
-        }
-        i = (i <= (row - blockRow)) ? (i + blockRow) : row;
-      }
+      minValue = Long.MIN_VALUE;
+      maxValue = Long.MAX_VALUE;
     } else {
-      for (int i = 0; i < row; ) {
-        for (long j = 0; j < col; ) {
-          int startRow = i;
-          long startCol = j;
-          int endRow = (i <= (row - blockRow)) ? (i + blockRow) : row;
-          long endCol = (j <= (col - blockCol)) ? (j + blockCol) : col;
-          partition.setMatrixId(matrixId);
-          partition.setPartitionId(id++);
-          partition.setStartRow(startRow);
-          partition.setStartCol(startCol);
-          partition.setEndRow(endRow);
-          partition.setEndCol(endCol);
-          array.add(partition.build());
+      minValue = 0;
+      maxValue = col;
+    }
 
-          j = (j <= (col - blockCol)) ? (j + blockCol) : col;
-        }
-        i = (i <= (row - blockRow)) ? (i + blockRow) : row;
+    MLProtos.Partition.Builder partition = MLProtos.Partition.newBuilder();
+    for (int i = 0; i < row; ) {
+      for (long j = minValue; j < maxValue; ) {
+        int startRow = i;
+        long startCol = j;
+        int endRow = (i <= (row - blockRow)) ? (i + blockRow) : row;
+        long endCol = (j <= (col - blockCol)) ? (j + blockCol) : col;
+        partition.setMatrixId(matrixId);
+        partition.setPartitionId(id++);
+        partition.setStartRow(startRow);
+        partition.setStartCol(startCol);
+        partition.setEndRow(endRow);
+        partition.setEndCol(endCol);
+        array.add(partition.build());
+
+        j = (j <= (col - blockCol)) ? (j + blockCol) : col;
       }
+      i = (i <= (row - blockRow)) ? (i + blockRow) : row;
     }
 
     LOG.debug("partition count: " + array.size());

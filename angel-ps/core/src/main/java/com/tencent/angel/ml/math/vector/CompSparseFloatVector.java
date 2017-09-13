@@ -62,11 +62,16 @@ public class CompSparseFloatVector extends CompTFloatVector {
   }
 
   @Override public TVector clone() {
+    TFloatVector [] clonedVectors = new TFloatVector[splitNum];
+    for(int i = 0; i < splitNum; i++) {
+      if(vectors[i] != null) {
+        clonedVectors[i] = (TFloatVector)vectors[i].clone();
+      } else {
+        clonedVectors[i] = (TFloatVector)initComponentVector();
+      }
+    }
     CompSparseFloatVector clonedVector =
-      new CompSparseFloatVector(matrixId, rowId, dim, partKeys, new TFloatVector[splitNum]);
-    PlusByOp op = new PlusByOp(clonedVector.vectors, vectors, 0, splitNum);
-    MatrixOpExecutors.execute(op);
-    op.join();
+      new CompSparseFloatVector(matrixId, rowId, dim, partKeys, clonedVectors);
     return clonedVector;
   }
 

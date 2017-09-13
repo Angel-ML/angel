@@ -96,7 +96,7 @@ public class CSRIntMat extends TMatrix {
       }
     }
 
-    return new COOIntMatrix(row, col, rr, cc, vv);
+    return new COOIntMatrix(row, (int)col, rr, cc, vv);
   }
 
   /**

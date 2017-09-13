@@ -46,7 +46,7 @@ public class SparseIntMatrix extends TIntMatrix {
    * @return
    */
   public SparseIntVector initVector(int rowIndex) {
-    SparseIntVector ret = new SparseIntVector(col);
+    SparseIntVector ret = new SparseIntVector((int)col);
     ret.setMatrixId(matrixId);
     ret.setRowId(rowIndex);
     return ret;

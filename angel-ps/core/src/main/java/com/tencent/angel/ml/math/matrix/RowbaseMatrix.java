@@ -17,7 +17,7 @@ public abstract class RowbaseMatrix extends TMatrix {
    * @param row row number
    * @param col column number
    */
-  public RowbaseMatrix(int row, int col) {
+  public RowbaseMatrix(int row, long col) {
     super(row, col);
     vectors = new TVector[row];
   }
@@ -32,7 +32,11 @@ public abstract class RowbaseMatrix extends TMatrix {
 
   @Override
   public double sparsity() {
-    return ((double) nonZeroNum()) / (row * col);
+    if(col <= 0) {
+      return ((double) nonZeroNum()) / row / Long.MAX_VALUE / 2;
+    } else {
+      return ((double) nonZeroNum()) / (row * col);
+    }
   }
 
   @Override

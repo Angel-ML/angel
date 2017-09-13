@@ -316,11 +316,11 @@ public class RowUpdateSplitUtils {
   private static HashMap<PartitionKey, RowUpdateSplit> split(CompSparseDoubleLongKeyVector vector,
     List<PartitionKey> partitionInfos) {
     HashMap<PartitionKey, RowUpdateSplit> updateSplitMap = new HashMap<>(partitionInfos.size());
-    SparseDoubleLongKeyVector[] splits = vector.getSplits();
+    DoubleLongKeyVector[] splits = vector.getSplits();
     PartitionKey[] partKeys = vector.getPartKeys();
     for(int i = 0; i < partKeys.length; i++) {
       if(partKeys[i] != null && splits[i] != null) {
-        updateSplitMap.put(partKeys[i], new CompSparseDoubleLongKeyRowUpdateSplit(splits[i],
+        updateSplitMap.put(partKeys[i], new CompSparseDoubleLongKeyRowUpdateSplit((SparseDoubleLongKeyVector)splits[i],
           vector.getRowId(), MLProtos.RowType.T_DOUBLE_SPARSE_LONGKEY));
       }
     }

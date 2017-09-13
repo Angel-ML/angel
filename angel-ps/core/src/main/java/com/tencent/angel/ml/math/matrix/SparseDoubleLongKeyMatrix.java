@@ -6,7 +6,7 @@ import com.tencent.angel.ml.math.vector.SparseDoubleLongKeyVector;
 /**
  * Sparse double matrix that is represented by a group of sparse double vector {@link SparseDoubleLongKeyVector}
  */
-public class SparseDoubleLongKeyMatrix extends LongKeyDoubleMatrix {
+public class SparseDoubleLongKeyMatrix extends DoubleLongKeyMatrix {
 
   /**
    * Create a SparseDoubleLongKeyMatrix
@@ -18,7 +18,7 @@ public class SparseDoubleLongKeyMatrix extends LongKeyDoubleMatrix {
   }
 
   @Override public TVector initVector(int rowIndex) {
-    SparseDoubleLongKeyVector ret = new SparseDoubleLongKeyVector(columnNum);
+    SparseDoubleLongKeyVector ret = new SparseDoubleLongKeyVector(col);
     ret.setMatrixId(matrixId);
     ret.setRowId(rowIndex);
     return ret;

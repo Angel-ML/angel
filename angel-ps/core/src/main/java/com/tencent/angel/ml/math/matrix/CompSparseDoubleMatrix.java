@@ -18,6 +18,6 @@ public class CompSparseDoubleMatrix extends TDoubleMatrix {
   }
 
   @Override public TVector initVector(int rowIndex) {
-    return  new CompSparseDoubleVector(matrixId, rowIndex, col);
+    return  new CompSparseDoubleVector(matrixId, rowIndex, (int)col);
   }
 }

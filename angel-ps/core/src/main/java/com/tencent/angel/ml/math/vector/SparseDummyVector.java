@@ -20,6 +20,9 @@ import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.VectorType;
 import com.tencent.angel.protobuf.generated.MLProtos;
 
+/**
+ * Sparse double vector, it only contains the element indexes as the values are always 1.
+ */
 public class SparseDummyVector extends TAbstractVector {
 
   /**

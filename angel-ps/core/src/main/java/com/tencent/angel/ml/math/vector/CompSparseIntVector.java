@@ -63,11 +63,16 @@ public class CompSparseIntVector extends CompTIntVector {
   }
 
   @Override public TVector clone() {
+    TIntVector [] clonedVectors = new TIntVector[splitNum];
+    for(int i = 0; i < splitNum; i++) {
+      if(vectors[i] != null) {
+        clonedVectors[i] = (TIntVector)vectors[i].clone();
+      } else {
+        clonedVectors[i] = (TIntVector)initComponentVector();
+      }
+    }
     CompSparseIntVector clonedVector =
-      new CompSparseIntVector(matrixId, rowId, dim, partKeys, new TIntVector[splitNum]);
-    PlusByOp op = new PlusByOp(clonedVector.vectors, vectors, 0, splitNum);
-    MatrixOpExecutors.execute(op);
-    op.join();
+      new CompSparseIntVector(matrixId, rowId, dim, partKeys, clonedVectors);
     return clonedVector;
   }
 

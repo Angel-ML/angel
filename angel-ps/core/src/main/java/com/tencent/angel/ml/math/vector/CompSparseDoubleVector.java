@@ -55,11 +55,16 @@ public class CompSparseDoubleVector extends CompTDoubleVector{
   }
 
   @Override public TDoubleVector clone() {
-    CompSparseDoubleVector clonedVector = new CompSparseDoubleVector(matrixId, rowId, dim, partKeys, new TDoubleVector[splitNum]);
-    PlusByOp
-      op = new PlusByOp(clonedVector.vectors, vectors, 0, splitNum);
-    MatrixOpExecutors.execute(op);
-    op.join();
+    TDoubleVector [] clonedVectors = new SparseDoubleVector[splitNum];
+    for(int i = 0; i < splitNum; i++) {
+      if(vectors[i] != null) {
+        clonedVectors[i] = (SparseDoubleVector)vectors[i].clone();
+      } else {
+        clonedVectors[i] = (SparseDoubleVector)initComponentVector();
+      }
+    }
+
+    CompSparseDoubleVector clonedVector = new CompSparseDoubleVector(matrixId, rowId, dim, partKeys, clonedVectors);
     return clonedVector;
   }
 

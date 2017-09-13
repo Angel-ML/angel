@@ -19,7 +19,7 @@ public class SparseFloatMatrix extends TFloatMatrix{
   }
 
   @Override public TVector initVector(int rowIndex) {
-    SparseFloatVector ret = new SparseFloatVector(col);
+    SparseFloatVector ret = new SparseFloatVector((int)col);
     ret.setMatrixId(matrixId);
     ret.setRowId(rowIndex);
     return ret;

@@ -46,7 +46,7 @@ public class SparseDoubleMatrix extends TDoubleMatrix {
    */
   @Override
   public SparseDoubleVector initVector(int rowIndex) {
-    SparseDoubleVector ret = new SparseDoubleVector(col);
+    SparseDoubleVector ret = new SparseDoubleVector((int)col);
     ret.setMatrixId(matrixId);
     ret.setRowId(rowIndex);
     return ret;
