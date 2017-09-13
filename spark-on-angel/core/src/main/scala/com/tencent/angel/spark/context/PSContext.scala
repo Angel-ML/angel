@@ -47,6 +47,11 @@ object PSContext {
 
   def getOrCreate(sc: SparkContext): PSContext = {
     _instance = instance()
+
+    if (_instance == null) {
+      throw new Exception(s"init PSContext failed, $failCause")
+    }
+
     _instance.conf.foreach {
       case (key, value) => sc.setLocalProperty(key, value)
     }
@@ -55,7 +60,7 @@ object PSContext {
 
   def instance() : PSContext = {
     if (_instance == null) {
-      PSContext.getClass.synchronized {
+      classOf[PSContext].synchronized {
         if (_instance == null) {
           try {
             val env = SparkEnv.get
@@ -75,14 +80,10 @@ object PSContext {
    * Clean up PSContext.
    */
   def stop(): Unit = {
-
-    val env = SparkEnv.get
-    if (isAngelMode(env.conf)) {
-      AngelPSContext.stopAngel()
-    }
-
     PSContext._instance.stop()
     PSContext._instance = null
+
+    AngelPSContext.stopAngel()
   }
 
   private def isLocalMode(conf: SparkConf): Boolean = {

@@ -95,11 +95,10 @@ object SparseLRWithOWLQN {
   }
 
   def runPSOWLQN(trainData: RDD[(OneHotVector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
-    val pSContext = PSContext.instance()
 
     val initWeightPS = PSVector.dense(dim, 10 * m).toBreeze
 
-    val regPS = PSVector.duplicate(initWeightPS).toBreeze
+    val regPS = PSVector.duplicate(initWeightPS.component).toBreeze
 
     val tol = 1e-6
 

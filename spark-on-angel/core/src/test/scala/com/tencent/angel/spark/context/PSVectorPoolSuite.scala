@@ -15,20 +15,19 @@
  *
  */
 
-package com.tencent.angel.spark.model
+package com.tencent.angel.spark.context
 
-import com.tencent.angel.spark.context.PSContext
+import com.tencent.angel.spark.math.vector.{PSVector, VectorType}
 import com.tencent.angel.spark.{PSFunSuite, SharedPSContext}
 
-class BitSetPSVectorPoolSuite extends PSFunSuite with SharedPSContext {
+class PSVectorPoolSuite extends PSFunSuite with SharedPSContext {
 
   test("allocate") {
     val dim = 10
     val capacity = 10
-    val psContext = PSContext.getOrCreate()
-    val pool = psContext.createModelPool(dim, capacity).asInstanceOf[BitSetPSModelPool]
+    val pool = new PSVectorPool(0, dim, capacity, VectorType.DENSE)
 
-    var proxys: Array[PSModelProxy] = null
+    var proxys: Array[PSVector] = null
 
     try {
       proxys = (0 until capacity).toArray.map { _ =>

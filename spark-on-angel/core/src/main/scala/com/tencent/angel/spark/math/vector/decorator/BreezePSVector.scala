@@ -21,13 +21,13 @@ import breeze.linalg.operators._
 import breeze.linalg.support.{CanCopy, CanCreateZerosLike}
 import breeze.linalg.{NumericOps, dim, norm, scaleAdd}
 import breeze.math.MutableLPVectorField
+
 import com.tencent.angel.ml.matrix.psf.update.enhance.map.{MapFunc, MapWithIndexFunc}
 import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.{Zip2MapFunc, Zip2MapWithIndexFunc}
 import com.tencent.angel.ml.matrix.psf.update.enhance.zip3.{Zip3MapFunc, Zip3MapWithIndexFunc}
 import com.tencent.angel.spark.client.PSClient
 import com.tencent.angel.spark.math.vector.PSVector
 import org.apache.spark.SparkException
-
 import scala.language.implicitConversions
 
 /**
@@ -44,6 +44,17 @@ import scala.language.implicitConversions
  * val c = a + b  // "+" is an operation in `breeze.linalg.NumericOps`
  */
 class BreezePSVector(component: PSVector) extends PSVectorDecorator(component) with NumericOps[BreezePSVector] {
+
+  override val dimension: Int = component.dimension
+  override val id: Int = component.id
+  override val poolId: Int = component.poolId
+
+  override def delete(): Unit = component.delete()
+
+  override def toRemote: RemotePSVector = {
+    assertValid()
+    new RemotePSVector(this.component)
+  }
 
   // Ensure that operators are all loaded.
   BreezePSVector.init()
@@ -90,7 +101,7 @@ class BreezePSVector(component: PSVector) extends PSVectorDecorator(component) w
    * Apply `MapFunc` to each element of BreezePSVector
    */
   def map(func: MapFunc): BreezePSVector = {
-    val to = PSVector.duplicate(this)
+    val to = PSVector.duplicate(this.component)
     psClient.map(this, func, to)
     to.toBreeze
   }
@@ -99,7 +110,7 @@ class BreezePSVector(component: PSVector) extends PSVectorDecorator(component) w
    * Apply `Zip2MapFunc` to this and `other` BreezePSVector
    */
   def zipMap(other: BreezePSVector, func: Zip2MapFunc): BreezePSVector = {
-    val to = PSVector.duplicate(this)
+    val to = PSVector.duplicate(this.component)
     psClient.zip2Map(this, other, func, to)
     to.toBreeze
   }
@@ -111,7 +122,7 @@ class BreezePSVector(component: PSVector) extends PSVectorDecorator(component) w
       other1: BreezePSVector,
       other2: BreezePSVector,
       func: Zip3MapFunc): BreezePSVector = {
-    val to = PSVector.duplicate(this)
+    val to = PSVector.duplicate(this.component)
     psClient.zip3Map(this, other1, other2, func, to)
     to.toBreeze
   }
@@ -120,7 +131,7 @@ class BreezePSVector(component: PSVector) extends PSVectorDecorator(component) w
    * Apply `MapWithIndexFunc` to each element of BreezePSVector
    */
   def mapWithIndex(func: MapWithIndexFunc): BreezePSVector = {
-    val to = PSVector.duplicate(this)
+    val to = PSVector.duplicate(this.component)
     psClient.mapWithIndex(this, func, to)
     to.toBreeze
   }
@@ -131,7 +142,7 @@ class BreezePSVector(component: PSVector) extends PSVectorDecorator(component) w
   def zipMapWithIndex(
       other: BreezePSVector,
       func: Zip2MapWithIndexFunc): BreezePSVector = {
-    val to = PSVector.duplicate(this)
+    val to = PSVector.duplicate(this.component)
     psClient.zip2MapWithIndex(this, other, func, to)
     to.toBreeze
   }
@@ -143,7 +154,7 @@ class BreezePSVector(component: PSVector) extends PSVectorDecorator(component) w
       other1: BreezePSVector,
       other2: BreezePSVector,
       func: Zip3MapWithIndexFunc): BreezePSVector = {
-    val to = PSVector.duplicate(other1)
+    val to = PSVector.duplicate(other1.component)
     psClient.zip3MapWithIndex(this, other1, other2, func, to)
     to.toBreeze
   }
@@ -227,85 +238,85 @@ object BreezePSVector {
 
   object math {
     def max(x: BreezePSVector, y: BreezePSVector): BreezePSVector = {
-      val to = PSVector.duplicate(x)
+      val to = PSVector.duplicate(x.component)
       psClient.max(x, y, to)
       to.toBreeze
     }
 
     def min(x: BreezePSVector, y: BreezePSVector): BreezePSVector = {
-      val to = PSVector.duplicate(x)
+      val to = PSVector.duplicate(x.component)
       psClient.min(x, y, to)
       to.toBreeze
     }
 
     def pow(x: BreezePSVector, a: Double): BreezePSVector = {
-      val to = PSVector.duplicate(x)
+      val to = PSVector.duplicate(x.component)
       psClient.pow(x, a, to)
       to.toBreeze
     }
 
     def sqrt(x: BreezePSVector): BreezePSVector = {
-      val to = PSVector.duplicate(x)
+      val to = PSVector.duplicate(x.component)
       psClient.sqrt(x, to)
       to.toBreeze
     }
 
     def exp(x: BreezePSVector): BreezePSVector = {
-      val to = PSVector.duplicate(x)
+      val to = PSVector.duplicate(x.component)
       psClient.exp(x, to)
       to.toBreeze
     }
 
     def expm1(x: BreezePSVector): BreezePSVector = {
-      val to = PSVector.duplicate(x)
+      val to = PSVector.duplicate(x.component)
       psClient.expm1(x, to)
       to.toBreeze
     }
 
     def log(x: BreezePSVector): BreezePSVector = {
-      val to = PSVector.duplicate(x)
+      val to = PSVector.duplicate(x.component)
       psClient.log(x, to)
       to.toBreeze
     }
 
     def log1p(x: BreezePSVector): BreezePSVector = {
-      val to = PSVector.duplicate(x)
+      val to = PSVector.duplicate(x.component)
       psClient.log1p(x, to)
       to.toBreeze
     }
 
     def log10(x: BreezePSVector): BreezePSVector = {
-      val to = PSVector.duplicate(x)
+      val to = PSVector.duplicate(x.component)
       psClient.log10(x, to)
       to.toBreeze
     }
 
     def ceil(x: BreezePSVector): BreezePSVector = {
-      val to = PSVector.duplicate(x)
+      val to = PSVector.duplicate(x.component)
       psClient.ceil(x, to)
       to.toBreeze
     }
 
     def floor(x: BreezePSVector): BreezePSVector = {
-      val to = PSVector.duplicate(x)
+      val to = PSVector.duplicate(x.component)
       psClient.floor(x, to)
       to.toBreeze
     }
 
     def round(x: BreezePSVector): BreezePSVector = {
-      val to = PSVector.duplicate(x)
+      val to = PSVector.duplicate(x.component)
       psClient.round(x, to)
       to.toBreeze
     }
 
     def abs(x: BreezePSVector): BreezePSVector = {
-      val to = PSVector.duplicate(x)
+      val to = PSVector.duplicate(x.component)
       psClient.abs(x, to)
       to.toBreeze
     }
 
     def signum(x: BreezePSVector): BreezePSVector = {
-      val to = PSVector.duplicate(x)
+      val to = PSVector.duplicate(x.component)
       psClient.signum(x, to)
       to.toBreeze
     }
@@ -412,14 +423,14 @@ object BreezePSVector {
   implicit val canCreateZerosLike: CanCreateZerosLike[BreezePSVector, BreezePSVector] =
     new CanCreateZerosLike[BreezePSVector, BreezePSVector] {
       def apply(v: BreezePSVector): BreezePSVector = {
-        PSVector.duplicate(v).toBreeze
+        PSVector.duplicate(v.component).toBreeze
       }
     }
 
   implicit val canCopyBreezePSVector: CanCopy[BreezePSVector] = {
     new CanCopy[BreezePSVector] {
       def apply(v: BreezePSVector): BreezePSVector = {
-        val r = PSVector.duplicate(v)
+        val r = PSVector.duplicate(v.component)
         psClient.copy(v, r)
         r.toBreeze
       }
@@ -461,7 +472,7 @@ object BreezePSVector {
   implicit val canAdd: OpAdd.Impl2[BreezePSVector, BreezePSVector, BreezePSVector] = {
     new OpAdd.Impl2[BreezePSVector, BreezePSVector, BreezePSVector] {
       def apply(a: BreezePSVector, b: BreezePSVector): BreezePSVector = {
-        val to = PSVector.duplicate(a)
+        val to = PSVector.duplicate(a.component)
         psClient.add(a, b, to)
         to.toBreeze
       }
@@ -479,7 +490,7 @@ object BreezePSVector {
   implicit val canAddS: OpAdd.Impl2[BreezePSVector, Double, BreezePSVector] = {
     new OpAdd.Impl2[BreezePSVector, Double, BreezePSVector] {
       def apply(a: BreezePSVector, b: Double): BreezePSVector = {
-        val to = PSVector.duplicate(a)
+        val to = PSVector.duplicate(a.component)
         psClient.add(a, b, to)
         to.toBreeze
       }
@@ -497,7 +508,7 @@ object BreezePSVector {
   implicit val canSub: OpSub.Impl2[BreezePSVector, BreezePSVector, BreezePSVector] = {
     new OpSub.Impl2[BreezePSVector, BreezePSVector, BreezePSVector] {
       def apply(a: BreezePSVector, b: BreezePSVector): BreezePSVector = {
-        val to = PSVector.duplicate(a)
+        val to = PSVector.duplicate(a.component)
         psClient.sub(a, b, to)
         to.toBreeze
       }
@@ -515,7 +526,7 @@ object BreezePSVector {
   implicit val canSubS: OpSub.Impl2[BreezePSVector, Double, BreezePSVector] = {
     new OpSub.Impl2[BreezePSVector, Double, BreezePSVector] {
       def apply(a: BreezePSVector, b: Double): BreezePSVector = {
-        val to = PSVector.duplicate(a)
+        val to = PSVector.duplicate(a.component)
         psClient.sub(a, b, to)
         to.toBreeze
       }
@@ -533,7 +544,7 @@ object BreezePSVector {
   implicit val canMul: OpMulScalar.Impl2[BreezePSVector, BreezePSVector, BreezePSVector] = {
     new OpMulScalar.Impl2[BreezePSVector, BreezePSVector, BreezePSVector] {
       def apply(a: BreezePSVector, b: BreezePSVector): BreezePSVector = {
-        val to = PSVector.duplicate(a)
+        val to = PSVector.duplicate(a.component)
         psClient.mul(a, b, to)
         to.toBreeze
       }
@@ -551,7 +562,7 @@ object BreezePSVector {
   implicit val canMulS: OpMulScalar.Impl2[BreezePSVector, Double, BreezePSVector] = {
     new OpMulScalar.Impl2[BreezePSVector, Double, BreezePSVector] {
       def apply(a: BreezePSVector, b: Double): BreezePSVector = {
-        val to = PSVector.duplicate(a)
+        val to = PSVector.duplicate(a.component)
         psClient.mul(a, b, to)
         to.toBreeze
       }
@@ -578,7 +589,7 @@ object BreezePSVector {
   implicit val canDiv: OpDiv.Impl2[BreezePSVector, BreezePSVector, BreezePSVector] = {
     new OpDiv.Impl2[BreezePSVector, BreezePSVector, BreezePSVector] {
       def apply(a: BreezePSVector, b: BreezePSVector): BreezePSVector = {
-        val to = PSVector.duplicate(a)
+        val to = PSVector.duplicate(a.component)
         psClient.div(a, b, to)
         to.toBreeze
       }
@@ -596,7 +607,7 @@ object BreezePSVector {
   implicit val canDivS: OpDiv.Impl2[BreezePSVector, Double, BreezePSVector] = {
     new OpDiv.Impl2[BreezePSVector, Double, BreezePSVector] {
       def apply(a: BreezePSVector, b: Double): BreezePSVector = {
-        val to = PSVector.duplicate(a)
+        val to = PSVector.duplicate(a.component)
         psClient.div(a, b, to)
         to.toBreeze
       }
@@ -606,7 +617,7 @@ object BreezePSVector {
   implicit val canPow: OpPow.Impl2[BreezePSVector, Double, BreezePSVector] = {
     new OpPow.Impl2[BreezePSVector, Double, BreezePSVector] {
       def apply(a: BreezePSVector, b: Double): BreezePSVector = {
-        val to = PSVector.duplicate(a)
+        val to = PSVector.duplicate(a.component)
         psClient.pow(a, b, to)
         to.toBreeze
       }

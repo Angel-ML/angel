@@ -18,21 +18,31 @@
 package com.tencent.angel.spark.math.vector.decorator
 
 import com.tencent.angel.spark.client.PSClient
-import com.tencent.angel.spark.math.vector.PSVector
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkEnv, TaskContext}
-
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
+
+import com.tencent.angel.spark.math.vector.PSVector
 
 /**
  * RemotePSVector implements a set of operations between PSVector and local double array.
  */
-private[spark] class RemotePSVector(component:PSVector) extends PSVectorDecorator(component) {
+private[spark] class RemotePSVector(component: PSVector) extends PSVectorDecorator(component) {
+
+  override val dimension: Int = component.dimension
+  override val id: Int = component.id
+  override val poolId: Int = component.poolId
+
+  override def delete(): Unit = component.delete()
+
+  override def toBreeze: BreezePSVector = {
+    assertValid()
+    new BreezePSVector(this.component)
+  }
 
   import RemotePSVector._
   import MergeType._
-
 
   def pull(fromCache: Boolean = false): Array[Double] = {
     if (fromCache) {

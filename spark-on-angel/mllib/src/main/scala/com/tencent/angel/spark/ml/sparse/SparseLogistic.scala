@@ -168,7 +168,7 @@ object SparseLogistic {
 
       val localX = new BDV(x.toRemote.pull())
       val bcX = trainData.sparkContext.broadcast(localX)
-      val cumGradient = PSVector.duplicate(x).toRemote
+      val cumGradient = PSVector.duplicate(x.component).toRemote
 
       val aggregator = {
         val seqOp = (c: Aggregator, point: (Vector, Double)) => c.add(point)

@@ -47,7 +47,7 @@ class OWLQNSuite extends PSFunSuite with SharedPSContext {
       result
     }
 
-    val initWeightPS = PSVector.duplicate(l1reg)
+    val initWeightPS = PSVector.duplicate(l1reg.component)
       .asInstanceOf[DensePSVector].fill(Array(-1.1053, 0.0, 0.0))
       .toBreeze
 
@@ -73,7 +73,7 @@ class OWLQNSuite extends PSFunSuite with SharedPSContext {
       lbfgs.minimize(f, init)
     }
 
-    val initWeightPS = PSVector.duplicate(l1reg)
+    val initWeightPS = PSVector.duplicate(l1reg.component)
       .asInstanceOf[DensePSVector].fill(Array(0.0, 0.0, 0.0))
       .toBreeze
 

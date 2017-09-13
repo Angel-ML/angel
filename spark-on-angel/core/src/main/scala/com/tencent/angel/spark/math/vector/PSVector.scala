@@ -30,14 +30,13 @@ import org.apache.spark.SparkException
  * BreezePSVector implements the operations among PSVectors on PS nodes.
  */
 
-trait PSVector {
+trait PSVector extends Serializable {
 
   @transient private var deleted = false
 
-  val poolId: Int = 0
-  val id: Int = 0
-  val dimension: Int = 0
-
+  val poolId: Int
+  val id: Int
+  val dimension: Int
 
   /**
     * Generate a RemotePSVector for this PSVectorKey
@@ -56,10 +55,10 @@ trait PSVector {
   }
 
   def delete(): Unit = {
-    deleted = true
     PSContext.instance() match {
       case angel: AngelPSContext => angel.getPool(poolId).delete(this)
     }
+    deleted = true
   }
 
   private[spark] def assertCompatible(other: PSVector): Unit = {
@@ -105,11 +104,13 @@ object PSVector {
   }
 
   def dense(dim: Int, capacity: Int = -1): DensePSVector = {
-    PSContext.instance().createVector(dim, VectorType.DENSE, capacity).asInstanceOf
+    PSContext.instance()
+      .createVector(dim, VectorType.DENSE, capacity).asInstanceOf[DensePSVector]
   }
 
   def sparse(dim: Int, capacity: Int = -1): SparsePSVector = {
-     PSContext.instance().createVector(dim, VectorType.SPARSE, capacity).asInstanceOf
+     PSContext.instance()
+       .createVector(dim, VectorType.SPARSE, capacity).asInstanceOf[SparsePSVector]
   }
 }
 

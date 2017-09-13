@@ -46,7 +46,7 @@ private[spark] class PSVectorPool(
   var destroyed = false
   var size = 0
 
-  private def createOne(): PSVector = {
+  private[spark] def allocate(): PSVector = {
     if (destroyed) {
       throw new SparkException("This vector pool has been destroyed!")
     }
@@ -102,8 +102,6 @@ private[spark] class PSVectorPool(
       }
     }
   }
-
-  private[spark] def allocate(): PSVector = createOne()
 
   private[spark] def delete(key: PSVector): Unit = {
     cleaners.remove(key).clean()

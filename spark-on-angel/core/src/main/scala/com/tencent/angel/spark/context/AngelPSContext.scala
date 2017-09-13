@@ -50,12 +50,11 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
 
   import AngelPSContext._
 
-  override private[spark] def conf: Map[String, String] = angelConf
+  private[spark] def conf: Map[String, String] = angelConf
 
-
-  def stop() = {
-    for (entry <- psVectorPools.entrySet().asScala) {
-      destroyVectorPool(entry.getKey)
+  protected def stop() = {
+    matrixMetaMap.foreach { entry =>
+      destroyMatrix(entry._1)
     }
 
     if (psAgent != null) {
@@ -93,7 +92,6 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
     }
   }
 
-
   def createVector(
       dimension: Int,
       t: VectorType = VectorType.DENSE,
@@ -126,6 +124,7 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
     val thisCapacity = if (capacity > 0) capacity else PSVectorPool.DEFAULT_POOL_CAPACITY
 
     val matrixMeta = createMatrix(thisCapacity, dimension, matrixType)
+
     val pool = new PSVectorPool(matrixMeta.getId, dimension, thisCapacity, t: VectorType)
     psVectorPools.put(pool.id, pool)
     pool
@@ -134,6 +133,8 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
   def destroyVectorPool(poolId: Int): Unit = {
     val pool = psVectorPools.remove(poolId)
     pool.destroy()
+    // destroy matrix
+    destroyMatrix(poolId)
   }
 
   def destroyVectorPool(vector: PSVector): Unit = {
