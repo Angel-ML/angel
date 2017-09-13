@@ -249,8 +249,8 @@ class Trainer(ctx:TaskContext, model:LDAModel,
               val k = data.topics(data.inverseMatrix(j))
               dk += k ->(dk.getOrElse(k, 0) + 1)
             }
-            dk.foreach{case(k, value) =>
-              ll += Gamma.logGamma(alpha + dk(value))
+            dk.foreach{case(_, value) =>
+              ll += Gamma.logGamma(alpha + value)
               ll -= Gamma.logGamma(data.docLens(d) + alpha * model.K)
             }
             nnz += dk.size
