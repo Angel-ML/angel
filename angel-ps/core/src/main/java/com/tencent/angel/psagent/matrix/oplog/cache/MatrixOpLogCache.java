@@ -16,6 +16,7 @@
 
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.ml.math.TUpdate;
 import com.tencent.angel.ml.matrix.MatrixMeta;
@@ -97,7 +98,10 @@ public class MatrixOpLogCache {
    * merge/flush tasks
    */
   public void start() {
-    workerPool = Executors.newCachedThreadPool();
+    workerPool = Executors.newFixedThreadPool(PSAgentContext.get().getConf().getInt(
+      AngelConf.ANGEL_MATRIX_OPLOG_MERGER_POOL_SIZE,
+      AngelConf.DEFAULT_ANGEL_MATRIX_OPLOG_MERGER_POOL_SIZE));
+
     dispatcher = new MergeDispacher();
     dispatcher.setName("oplog-merge-dispatcher");
     dispatcher.start();
