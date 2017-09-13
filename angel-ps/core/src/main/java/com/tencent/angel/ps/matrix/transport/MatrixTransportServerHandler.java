@@ -49,12 +49,46 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
   private static final Log LOG = LogFactory.getLog(MatrixTransportServerHandler.class);
-  private final ExecutorService workerPool;
-  private final boolean useDirectorBuffer;
-  private final ConcurrentHashMap<ChannelHandlerContext, AtomicBoolean> channelStates;
-  private final boolean isUseSender;
-  private final ExecutorService senderPool;
+  private final static boolean useDirectorBuffer;
+  private final static ConcurrentHashMap<ChannelHandlerContext, AtomicBoolean> channelStates;
+  private final static ExecutorService workerPool;
+  private final static boolean isUseSender;
+  private final static ExecutorService senderPool;
 
+  static {
+    channelStates = new ConcurrentHashMap<ChannelHandlerContext, AtomicBoolean>();
+    if (PSContext.get() != null && PSContext.get().getPs() != null) {
+      Configuration conf = PSContext.get().getConf();
+      useDirectorBuffer = conf
+        .getBoolean(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER,
+          AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER);
+
+      ByteBufUtils.useDirect = useDirectorBuffer;
+
+      workerPool = Executors.newFixedThreadPool(PSContext.get().getConf()
+        .getInt(AngelConf.ANGEL_MATRIXTRANSFER_SERVER_WORKER_POOL_SIZE,
+          AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_WORKER_POOL_SIZE));
+
+      isUseSender = PSContext.get().getConf()
+        .getBoolean(AngelConf.ANGEL_MATRIXTRANSFER_SERVER_USER_SENDER,
+          AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_USER_SENDER);
+
+      senderPool = isUseSender ?
+        Executors.newFixedThreadPool(PSContext.get().getConf()
+          .getInt(AngelConf.ANGEL_MATRIXTRANSFER_SERVER_SENDER_POOL_SIZE,
+            AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_SENDER_POOL_SIZE)) :
+        null;
+    } else {
+      useDirectorBuffer = AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER;
+      workerPool = Executors
+        .newFixedThreadPool(AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_WORKER_POOL_SIZE);
+      isUseSender = AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_USER_SENDER;
+      senderPool = isUseSender ?
+        Executors
+          .newFixedThreadPool(AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_SENDER_POOL_SIZE) :
+        null;
+    }
+  }
 
   class Processor extends Thread {
     private ByteBuf message;
@@ -90,23 +124,7 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
   }
 
   public MatrixTransportServerHandler() {
-    Configuration conf = PSContext.get().getConf();
-    useDirectorBuffer = conf.getBoolean(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER,
-      AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER);
-    ByteBufUtils.useDirect = useDirectorBuffer;
-    channelStates = new ConcurrentHashMap<ChannelHandlerContext, AtomicBoolean>();
 
-    workerPool = Executors.newFixedThreadPool(
-      PSContext.get().getConf().getInt(AngelConf.ANGEL_MATRIXTRANSFER_SERVER_WORKER_POOL_SIZE,
-        AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_WORKER_POOL_SIZE));
-
-    isUseSender = PSContext.get().getConf()
-      .getBoolean(AngelConf.ANGEL_MATRIXTRANSFER_SERVER_USER_SENDER,
-        AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_USER_SENDER);
-
-    senderPool = isUseSender ? Executors.newFixedThreadPool(
-      PSContext.get().getConf().getInt(AngelConf.ANGEL_MATRIXTRANSFER_SERVER_SENDER_POOL_SIZE,
-        AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_SENDER_POOL_SIZE)) : null;
   }
 
   @Override public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
