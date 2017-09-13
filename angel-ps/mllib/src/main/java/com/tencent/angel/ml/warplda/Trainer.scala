@@ -467,8 +467,9 @@ class Trainer(ctx:TaskContext, model:LDAModel,
       // One epoch
       fetchNk
       var error = scheduleWordSample(pkeys)
-      error = scheduleDocSample(dKeys)
       error = scheduleAliasSample(pkeys)
+      error = scheduleDocSample(dKeys)
+
 
       // calculate likelihood
       val ll = likelihood
