@@ -1,6 +1,7 @@
 package com.tencent.angel.ml.warplda
 
 import java.util
+import java.util.Random
 
 /**
   * Sample Multinomial Distribution in O(1) with O(K) Build Time
@@ -13,7 +14,7 @@ class AliasTable(val count:Array[Int]){
   private final val alias = Array.ofDim[Int](length)
   private final val sum:Float = wordTopicCount.map(_._1).sum.toFloat
   private final val probability:Array[Float] = wordTopicCount.map(f => f._1/sum*length)
-
+  private final val r:Random = new Random(System.currentTimeMillis())
   def build():Unit = {
     val small = new util.ArrayDeque[Int]()
     val large = new util.ArrayDeque[Int]()
