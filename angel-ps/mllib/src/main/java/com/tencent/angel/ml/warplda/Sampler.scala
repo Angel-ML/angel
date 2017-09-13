@@ -4,9 +4,10 @@ import java.util.Random
 
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.exception.AngelException
+import com.tencent.angel.ml.lda.get.PartCSRResult
 import com.tencent.angel.ml.math.vector.DenseIntVector
 import org.apache.commons.logging.LogFactory
-import com.tencent.angel.ml.warplda.get.PartCSRResult
+
 import scala.collection.mutable
 import scala.util.control.Breaks._
 
@@ -34,13 +35,13 @@ class Sampler(var data: WTokens, var model: LDAModel) {
     val we: Int = pkey.getEndRow
     val rand: Random = new Random(System.currentTimeMillis)
     var w: Int = ws
-    while (w < we){
-      if (!csr.read(wk,false)) {
+    while (w < we) {
+      if (!csr.read(wk)) {
         throw new AngelException("some error happens")
       }
       val update: DenseIntVector = new DenseIntVector(K)
       var wi: Int = data.ws(w)
-      while ( wi < data.ws(w + 1) ) {
+      while (wi < data.ws(w + 1)) {
         breakable {
           var tt: Int = data.topics(wi)
           if (wk(tt) <= 0) {
@@ -57,9 +58,9 @@ class Sampler(var data: WTokens, var model: LDAModel) {
           var t: Int = 0
           var pai: Float = 1f
           (0 until mh) foreach { i =>
-            breakable{
+            breakable {
               t = data.mhProp(i)(wi)
-              if(wk(s) < 0 || wk(t) < 0) {
+              if (wk(s) < 0 || wk(t) < 0) {
                 break
               }
               pai = math.min(1f, (wk(t) + beta) * (nk(s) + vbeta) / ((wk(s) + beta) * (nk(t) + vbeta)))
@@ -77,11 +78,17 @@ class Sampler(var data: WTokens, var model: LDAModel) {
       }
       model.wtMat.increment(w, update)
       w += 1
-      }
-    csr.reset()
+    }
+  }
+
+  def aliasSample(pkey: PartitionKey, csr: PartCSRResult): Unit ={
+    val ws: Int = pkey.getStartRow
+    val we: Int = pkey.getEndRow
+    val rand: Random = new Random(System.currentTimeMillis)
+    var w: Int = ws
     w = ws
     while(w < we) {
-      if (!csr.read(wk,true)) {
+      if (!csr.read(wk)) {
         throw new AngelException("some error happens")
       }
       var aliasTable = new AliasTable(wk)
@@ -92,10 +99,12 @@ class Sampler(var data: WTokens, var model: LDAModel) {
         }
         wi += 1
       }
-      aliasTable = null
       w += 1
     }
   }
+
+
+
 
   def docSample(d: Int):Unit = {
     val rand: Random = new Random(System.currentTimeMillis)
@@ -220,7 +229,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
     val rand: Random = new Random(System.currentTimeMillis)
     var w: Int = ws
     while (w < we){
-      if (!csr.read(wk,true)) {
+      if (!csr.read(wk)) {
         throw new AngelException("some error happens")
       }
       val aliasTable = new AliasTable(wk)

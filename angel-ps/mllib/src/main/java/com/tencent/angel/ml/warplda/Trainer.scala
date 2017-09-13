@@ -12,6 +12,7 @@ import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.conf.MLConf.LOG_LIKELIHOOD
 import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.lda.get.{GetPartFunc, LikelihoodFunc, PartCSRResult}
 import com.tencent.angel.ml.math.vector.DenseIntVector
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult
 import com.tencent.angel.ml.matrix.psf.get.base.{PartitionGetParam, PartitionGetResult}
@@ -25,7 +26,6 @@ import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.commons.math.special.Gamma
 import org.apache.hadoop.fs.Path
-import com.tencent.angel.ml.warplda.get._;
 
 import scala.collection.mutable
 
@@ -378,6 +378,55 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     error
   }
 
+  def scheduleAliasSample(pkeys: util.List[PartitionKey]): Boolean = {
+    class Task(sampler: Sampler, pkey: PartitionKey, csr: PartCSRResult) extends Thread {
+      override def run(): Unit = {
+        sampler.aliasSample(pkey, csr)
+        queue.add(sampler)
+      }
+    }
+
+    val client = PSAgentContext.get().getMatrixTransportClient
+    val iter = pkeys.iterator()
+    val func = new GetPartFunc(null)
+    val futures = new mutable.HashMap[PartitionKey, Future[PartitionGetResult]]()
+    while (iter.hasNext) {
+      val pkey = iter.next()
+      val param = new PartitionGetParam(model.wtMat.getMatrixId, pkey)
+      val future = client.get(func, param)
+      futures.put(pkey, future)
+    }
+
+    // copy nk to each sampler
+    for (i <- 0 until model.threadNum) queue.add(new Sampler(data, model).set(nk))
+
+    while (futures.nonEmpty) {
+      val keys = futures.keySet.iterator
+      while (keys.hasNext) {
+        val pkey = keys.next()
+        val future = futures(pkey)
+        if (future.isDone) {
+          val sampler = queue.take()
+          future.get() match {
+            case csr: PartCSRResult => executor.execute(new Task(sampler, pkey, csr))
+            case _ => throw new AngelException("should by PartCSRResult")
+          }
+          futures.remove(pkey)
+        }
+      }
+    }
+
+    var error = false
+    // calculate the delta value of nk
+    // the take means that all tasks have been finished
+    for (i <- 0 until model.threadNum) {
+      val sampler = queue.take()
+      error = sampler.error
+    }
+    error
+  }
+
+
 
   def scheduleDocSample(dKeys:Int): Boolean = {
     class Task(sampler: Sampler, pkey: Int) extends Thread {
@@ -419,6 +468,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
       fetchNk
       var error = scheduleWordSample(pkeys)
       error = scheduleDocSample(dKeys)
+      error = scheduleAliasSample(pkeys)
 
       // calculate likelihood
       val ll = likelihood
