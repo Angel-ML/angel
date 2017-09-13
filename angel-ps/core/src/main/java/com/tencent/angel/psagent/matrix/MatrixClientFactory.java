@@ -63,7 +63,7 @@ public class MatrixClientFactory {
    * Get a matrix client.
    * 
    * @param matrixId matrix id
-   * @param taskIndex task index
+   * @param taskId task id
    * @return MatrixClient matrix client
    * @throws InvalidParameterException matrix does not exist
    */
