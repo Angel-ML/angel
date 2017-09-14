@@ -1,6 +1,6 @@
 ### ModelParser
-Angel的PSModel在任务结束后会以二进制文件格式存储，每个partition存为一个文件，文件名为partitionID。一个PSModel的所有partition保存在同一个文件夹，文件夹的名字为PSModel的modelName字段。ModelParser类将一个PSModel的二进制文件解析成明文格式，可以通过下面命令提交Angel的ModelParser任务：
 
+Angel的PSModel在任务结束后会以二进制文件格式存储，每个partition存为一个文件，文件名为partitionID。一个PSModel的所有partition保存在同一个文件夹，文件夹的名字为PSModel的modelName字段。ModelParser类将一个PSModel的二进制模型文件解析成明文格式，可以通过下面命令提交Angel的ModelParser任务：
 
 ```
 ./bin/angel-submit \

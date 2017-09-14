@@ -42,6 +42,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 /**
  * The Server matrix on parameter server,assigned by {@link com.tencent.angel.master.AngelApplicationMaster},which represents a set of partitions of matrix
@@ -106,16 +111,65 @@ public class ServerMatrix {
     Path matrixPath = new Path(path, matrixName);
     FileSystem fs = matrixPath.getFileSystem(conf);
     
-    for(Entry<Integer, ServerPartition> partEntry : partitionMaps.entrySet()) {
-      LOG.info("Load partition " + partEntry.getKey() + " from path " + matrixPath);
-      Path partitionFilePath = new Path(matrixPath, String.valueOf(partEntry.getKey()));
-      FSDataInputStream input = fs.open(partitionFilePath);
-      
-      // Pass the matrix and partition number field
-      input.readInt();
-      input.readInt();
-      partEntry.getValue().load(input);
-      input.close();
+        final List<Map.Entry<Integer, ServerPartition>> entrys = new ArrayList<>(partitionMaps.entrySet());
+    
+    String matrixLoadThread =
+        attribute.containsKey(MatrixConf.MATRIX_LOAD_THREAD)?
+            attribute.get(MatrixConf.MATRIX_LOAD_THREAD).trim():
+              MatrixConf.DEFAULT_MATRIX_LOAD_THREAD;
+    int numThread = Integer.parseInt(matrixLoadThread);
+    ThreadFactory matrixLoadThreadFacotry =
+            new ThreadFactoryBuilder().setNameFormat("MatrixLoadTask").build();
+    ExecutorService matrixLoadTaskPool = Executors.newFixedThreadPool(numThread, matrixLoadThreadFacotry);
+    final CountDownLatch taskCount = new CountDownLatch(entrys.size());
+    
+    for (int i = 0; i < numThread; ++i) {
+      matrixLoadTaskPool.execute(new Runnable() {
+        int start;
+        
+        public Runnable setStart(int start) {
+          this.start = start;
+          return this;
+        }
+        
+        @Override
+        public void run() {
+          
+          int workIter = start;
+          while (workIter < entrys.size()) {
+            try {
+              Entry<Integer, ServerPartition> partEntry = entrys.get(workIter);
+              LOG.info("Load partition " + partEntry.getKey()
+                  + " from path " + matrixPath);
+              Path partitionFilePath = new Path(matrixPath,
+                  String.valueOf(partEntry.getKey()));
+              FSDataInputStream input = fs
+                  .open(partitionFilePath);
+
+              // Pass the matrix and partition number field
+              input.readInt();
+              input.readInt();
+              partEntry.getValue().load(input);
+              input.close();
+
+              // load the part done.
+              taskCount.countDown();
+              workIter += numThread;
+            } catch (Exception e) {
+              LOG.fatal("Load partition from path " + matrixPath
+                  + " error:" + e.getMessage());
+            }
+          }
+        }
+
+      }.setStart(i));
+
+    }
+    try{
+      matrixLoadTaskPool.shutdown();
+      taskCount.await();
+    }catch (InterruptedException e) {
+      LOG.fatal("Load partition failed.");
     }
   }
 
@@ -188,11 +242,56 @@ public class ServerMatrix {
       LOG.debug("writeTo output, matrixId: " + matrixId + ", martitionSize: "
           + partitionMaps.size());
     }
-    for (Entry<Integer, ServerPartition> entry : partitionMaps.entrySet()) {
-      LOG.debug("write partitionId: " + entry.getKey());
-      output.writeInt(entry.getKey());
-      ServerPartition serverPartition = entry.getValue();
-      serverPartition.writeTo(output);
+    final List<Map.Entry<Integer, ServerPartition>> entrys = new ArrayList<>(partitionMaps.entrySet());
+    
+    String matrixWriteThread =
+        attribute.containsKey(MatrixConf.MATRIX_WRITE_THREAD)?
+            attribute.get(MatrixConf.MATRIX_WRITE_THREAD).trim():
+              MatrixConf.DEFAULT_MATRIX_WRITE_THREAD;
+    int numThread = Integer.parseInt(matrixWriteThread);
+    ThreadFactory matrixWriteThreadFacotry =
+            new ThreadFactoryBuilder().setNameFormat("MatrixWriteTask").build();
+    ExecutorService matrixWriteTaskPool = Executors.newFixedThreadPool(numThread, matrixWriteThreadFacotry);
+    final CountDownLatch taskCount = new CountDownLatch(entrys.size());
+    
+    for (int i = 0; i < numThread; ++i) {
+      matrixWriteTaskPool.execute(new Runnable() {
+        int start;
+        
+        public Runnable setStart(int start) {
+          this.start = start;
+          return this;
+        }
+        
+        @Override
+        public void run() {
+          
+          int workIter = start;
+          while (workIter < entrys.size()) {
+            try {
+              Entry<Integer, ServerPartition> partEntry = entrys.get(workIter);
+              LOG.debug("write partitionId: " + partEntry.getKey());
+                  output.writeInt(partEntry.getKey());
+                  ServerPartition serverPartition = partEntry.getValue();
+                  serverPartition.writeTo(output);
+
+              // write the part done.
+              taskCount.countDown();
+              workIter += numThread;
+            } catch (Exception e) {
+              LOG.fatal("write partition error:" + e.getMessage());
+            }
+          }
+        }
+
+      }.setStart(i));
+
+    }
+    try{
+      matrixWriteTaskPool.shutdown();
+      taskCount.await();
+    }catch (InterruptedException e) {
+      LOG.fatal("Write partition failed.");
     }
   }
 
