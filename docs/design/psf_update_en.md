@@ -7,7 +7,7 @@
 
 2. PS Client sends every request in the list to the PS instance that has the corresponding partition. The PS instance gets and updates the parameters in units of model parameter partitions, and returns the result.
 
-3. Wait for all requests to be returned
+3. Wait for all requests to be returned.
 
 
 ## Definitions
@@ -33,7 +33,7 @@ Future<VoidResult> update(UpdaterFunc update) throws AngelException;
 		```
 
 	* The parameter type of an UpdateFunc object is UpdateParam
-	   * Similar to the GetParam object, UpdateParam defines a `split` method, which divides the overall `update` parameters to a list of `update` parameters for their corresponding model partitions (list of PartitionUpdateParam objects). 
+	   * Similar to the GetParam object, UpdateParam defines a `split` method, which divides the overall `update` parameters to a list of `update` parameters for their corresponding model partitions (list of PartitionUpdateParam objects).
 
 
 ## Execution Process
@@ -82,76 +82,74 @@ The specific process is shown below, with the chart on the left showing the proc
 		}
 	```
 
-Compile the code and create the jar to be uploaded through `angel.lib.jars` when submitting the application; the new UpdateFunc can then be called in the program, for instance: 
+Compile the code and create the jar to be uploaded through `angel.lib.jars` when submitting the application; the new UpdateFunc can then be called in the program, for instance:
 
 ```Java
 	Random randomFunc = new RandomUniform(new RandomParam(matrixId, rowIndex, 0.0, 1.0));
 	psModel.update(randomFunc).get();
 ```
 
-## Update Library
+## Built-in Library
 
 	* **Abs**
-
-		* 功能：将矩阵某一行每一个元素的绝对值赋值给另外一行的相应元素
-		* 参数：矩阵id，from 行号， to行号
-		* 返回值：无
+		* Purpose: assign the absolute value of a row, element-wise, to another row
+		* Parameters: matrix id, `from` row id, `to` row id
+		* Return value: none
 
 	* **Add**
-		* 功能：将矩阵某两行之和赋值给另外一行
-		* 参数：矩阵id，from 行号1，from行号2，to行号
-		* 返回值：无
+		* Purpose: assign the element-wise sum of two rows to another row
+		* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id
+		* Return value: none
 
 	* **AddS**
-		* 功能：将矩阵某一行元素都加上一个标量后赋值给另外一行的相应元素
-		* 参数：矩阵id，from 行号1，to行号，标量值
-		* 返回值：无
+		* Purpose: add a scalar to a row and assign to another row
+		* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id, scalar value
+		* Return value: none
 
 	* **Axpy**
-		* 功能：y=Ax+y, x,y为向量，A为标量
-		* 参数：矩阵id，代表x向量的行的行号，代表y向量的行的行号，标量值A
-		* 返回值：无
+		* Purpose: y=Ax+y, where x and y are vectors (rows), A is a scalar
+		* Parameters: matrix id, x row id, y row id, A
+		* Return value: none
 
 	* **Ceil**
-		* 功能：将矩阵中的某一行的个元素向上取整得到的值赋值给另外一行的相应元素
-		* 参数：矩阵id，from行号，to行号
-		*返回值：无
+		* Purpose: get the ceiling (least integer that is greater than or equal to the element) of each element in a row and assign to the corresponding element in another row
+		* Parameters: matrix id, `from` row id, `to` row id
+		* Return value: none
 
 	* **Copy**
-		* 功能：将矩阵中的某一行的个元素的值赋值给另外一行的相应元素
-		* 参数：矩阵id，from行号，to行号
-		* 返回值：无
+		* Purpose: copy a row to another row 
+		* Parameters: matrix id, `from` row id, `to` row id
+		* Return value: none
 		
 	* **Div**
-
-		* 功能：将矩阵中的某两行的对应元素相除得到的值赋值给另外一行的相应元素
-		* 参数：矩阵id，from行号1，from行号2，to行号
-		* 返回值：无
+		* Purpose: assign the element-wise quotient between two rows to another row
+		* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id
+		* Return value: none
 
 	* **DivS**
-	    * 功能：将矩阵中的某一行的每一个元素除以一个标量得到的值赋值给另外一行的相应元素
-	    * 参数：矩阵id，from行号，to行号，标量值
-	    * 返回值：无
+		* Purpose: assign the quotient between a row and a scalar to another row
+		* Parameters: matrix id, `from` row id, `to` row id, scalar
+		* Return value: none
 
 	* **Exp**
-	    * 功能：将矩阵中的某一行的每一个元素计算指数（以e为底，元素值为幂）运算，将值赋值给另外一行的相应元素
-	    * 参数：矩阵id，from行号，to行号
-	    * 返回值：无
+		* Purpose: calculate exp(x), where exp() is the natural exponential function, for each row element, x, and assign to the corresponding element of another row
+		* Parameters: matrix id, `from` row id, `to` row id
+		* Return value: none
 
 	* **Expm1**
-	    * 功能：将矩阵中的某一行的每一个元素以e为底计算指数然后减去1，将得到的值赋值给另外一行的相应元素
-	    * 参数：矩阵id，from行号，to行号
-	    * 返回值：无
+		* Purpose: assign exp(x) - 1 for each element x of a row to the corresponding element of another row 
+		* Parameters: matrix id, `from` row id, `to` row id
+		* Return value: none
 
 	* **Fill**
-	    * 功能：将矩阵中的某一行的每一个元素都置为一个标量值
-	    * 参数：矩阵id，行号，标量值
-	    * 返回值：无
+		* Purpose: assign a scalar value to every element in a row
+		* Parameters: matrix id, row id, scalar value
+		* Returan value: none
 
 	* **Floor**
-	    * 功能：将矩阵中的某一行的每一个元素向下取整，将得到的值赋值给另外一行的相应元素
-	    * 参数：矩阵id，from行号，to行号
-	    * 返回值：无
+		* Purpose: get the floor (greatest integer that is less than or equal to the element) value of each element in a row and assign to the corresponding element in another row
+		* Parameters: matrix id, `from` row id, `to` row id
+		* Return value: none
 
 	* **Increment**
 	    * 功能：将矩阵中的某一行的每个元素加上一个标量值
@@ -277,4 +275,4 @@ Compile the code and create the jar to be uploaded through `angel.lib.jars` when
 	* **Zip3MapWithIndex**
 	    * 功能：将矩阵中的某三行的对应元素指定运算（由一个函数表示），然后将值赋值给另外一行的相应元素
 	    * 参数：矩阵id，from行号1，from行号2，to行号，运算函数（该函数有四个    * 参数，分别是元素下标索引，三行对应位置上的元素值）
-	    * 返回值：无
+	    * 返t回值：无
