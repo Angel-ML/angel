@@ -84,4 +84,5 @@ class PSVectorSuite extends PSFunSuite with SharedPSContext {
     assert(sVector.isInstanceOf[SparsePSVector])
   }
    */
+
 }

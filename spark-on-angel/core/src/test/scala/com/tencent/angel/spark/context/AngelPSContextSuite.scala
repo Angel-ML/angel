@@ -52,6 +52,7 @@ class AngelPSContextSuite extends PSFunSuite {
     // start Spark
     val spark = builder.getOrCreate()
     spark.sparkContext.setLogLevel("OFF")
+    angel = PSContext.getOrCreate(spark.sparkContext).asInstanceOf[AngelPSContext]
   }
 
   override def afterAll(): Unit = {
@@ -61,26 +62,16 @@ class AngelPSContextSuite extends PSFunSuite {
   }
 
   test("start & stop Angel") {
-    // start Angel
-    val spark = SparkSession.builder().getOrCreate()
-    PSContext.getOrCreate(spark.sparkContext)
-    val angel = PSContext.instance().asInstanceOf[AngelPSContext]
-
     assert(AngelPSContext.isAlive)
-
-    // create pool
-    val pool = angel.createVectorPool(dim, capacity, VectorType.DENSE)
-    angel.destroyVectorPool(pool.id)
-
     PSContext.stop()
     assert(!AngelPSContext.isAlive)
 
-    PSContext.getOrCreate(spark.sparkContext)
+    val spark = SparkSession.builder().getOrCreate()
+    angel = PSContext.getOrCreate(spark.sparkContext).asInstanceOf[AngelPSContext]
     assert(AngelPSContext.isAlive)
   }
 
   test("create matrix and destroy matrix") {
-    angel = PSContext.instance().asInstanceOf[AngelPSContext]
     val meta = angel.createMatrix(rows, cols)
 
     assert(meta.getColNum == cols)
@@ -88,7 +79,6 @@ class AngelPSContextSuite extends PSFunSuite {
     assert(meta.getRowType == RowType.T_DOUBLE_DENSE)
 
     angel.destroyMatrix(meta.getId)
-
   }
 
   test("doCreateVectorPool && doDestroyVectorPool") {
