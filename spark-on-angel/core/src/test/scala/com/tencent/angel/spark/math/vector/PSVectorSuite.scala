@@ -78,10 +78,11 @@ class PSVectorSuite extends PSFunSuite with SharedPSContext {
     assert(dVector.poolId != _psVector.poolId)
   }
 
+  /**
   test("new sparse vector") {
     val sVector = PSVector.sparse(dim, capacity)
     assert(sVector.isInstanceOf[SparsePSVector])
   }
-
+   */
 
 }

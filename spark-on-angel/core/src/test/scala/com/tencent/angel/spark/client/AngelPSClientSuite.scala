@@ -20,19 +20,16 @@ package com.tencent.angel.spark.client
 import scala.{math => SMath}
 
 import com.tencent.angel.spark._
-import com.tencent.angel.spark.context.{PSContext, PSVectorPool}
+import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.pof._
-import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
-import org.scalatest.BeforeAndAfterEach
 
 import com.tencent.angel.spark.math.vector.{DensePSVector, PSVector}
 
-class AngelPSClientSuite extends PSFunSuite with BeforeAndAfterEach {
+class AngelPSClientSuite extends PSFunSuite with SharedPSContext {
   private val dim = 14
   private val capacity = 12
   private var _angel: AngelPSClient = _
-  private var _pool: PSVectorPool = _
   var psVector: DensePSVector = _
   var zeroVector: DensePSVector = _
   var uniformVector: DensePSVector = _
@@ -41,27 +38,7 @@ class AngelPSClientSuite extends PSFunSuite with BeforeAndAfterEach {
   override def beforeAll(): Unit = {
     super.beforeAll()
 
-    // Angel config
-    val psConf = new SparkConf()
-      .set("spark.ps.mode", "LOCAL")
-      .set("spark.ps.jars", "None")
-      .set("spark.ps.out.path", "file:///tmp/output")
-      .set("spark.ps.model.path", "file:///tmp/model")
-      .set("spark.ps.instances", "1")
-      .set("spark.ps.cores", "1")
-
-    // Spark config
-    val builder = SparkSession.builder()
-      .master("local[2]")
-      .appName(this.getClass.getSimpleName)
-      .config(psConf)
-
-    // start Spark
-    val spark = builder.getOrCreate()
-    spark.sparkContext.setLogLevel("OFF")
-
     // start Angel
-    PSContext.getOrCreate(spark.sparkContext)
     _angel = PSClient.instance().asInstanceOf[AngelPSClient]
 
     // create pool
@@ -69,11 +46,7 @@ class AngelPSClientSuite extends PSFunSuite with BeforeAndAfterEach {
   }
 
   override def afterAll(): Unit = {
-    PSContext.instance().destroyVectorPool(psVector)
-    _pool = null
-    PSContext.stop()
     _angel = null
-    SparkSession.builder().getOrCreate().stop()
     super.afterAll()
   }
 
@@ -85,10 +58,9 @@ class AngelPSClientSuite extends PSFunSuite with BeforeAndAfterEach {
   }
 
   override def afterEach(): Unit = {
-    _pool.delete(normalVector)
-    _pool.delete(uniformVector)
-    _pool.delete(zeroVector)
-    _pool.delete(psVector)
+    normalVector.delete()
+    uniformVector.delete()
+    zeroVector.delete()
     super.afterEach()
   }
 
