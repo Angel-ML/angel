@@ -38,10 +38,11 @@ import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.util.ShutdownHookManager
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.{SparkConf, TaskContext}
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{Map, mutable}
+
+import com.tencent.angel.spark.client.PSClient
 
 /**
  * AngelPSContext for driver and executor, it is an implement of `PSContext`
@@ -97,13 +98,17 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
       t: VectorType = VectorType.DENSE,
       poolCapacity: Int = PSVectorPool.DEFAULT_POOL_CAPACITY): PSVector = {
 
-    createVectorPool(dimension, poolCapacity, t).allocate()
+    val vector = createVectorPool(dimension, poolCapacity, t).allocate()
+    PSClient.instance().fill(vector, 0.0)
+    vector
   }
 
   def duplicateVector(original: PSVector): PSVector = {
     if (original.isInstanceOf[PSVectorDecorator])
       throw new AngelException("Don't try to clone a Decorated PSVector")
-    getPool(original.poolId).allocate()
+    val vector = getPool(original.poolId).allocate()
+    PSClient.instance().fill(vector, 0.0)
+    vector
   }
 
   def destroyVector(vector: PSVector): Unit ={
