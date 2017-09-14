@@ -548,11 +548,11 @@ public class AngelConf extends Configuration {
   public static final Class<?> DEFAULT_ANGEL_PS_ROW_UPDATER = DefaultRowUpdater.class;
 
   /** PS executors thread pool size */
-  public static final String ANGEL_PS_WORKERPOOL_SIZE = ANGEL_PS_PREFIX +
-    "workerpool.size";
+  public static final String ANGEL_PS_MATRIX_DISKIO_WORKER_POOL_SIZE = ANGEL_PS_PREFIX +
+    "matrix.diskio.worker.pool.size";
 
   /** Default PS executors thread pool size */
-  public static final int DEFAULT_ANGEL_PS_WORKERPOOL_SIZE = Runtime.getRuntime().availableProcessors();
+  public static final int DEFAULT_ANGEL_PS_MATRIX_DISKIO_WORKER_POOL_SIZE = Math.max(16, (int)(Runtime.getRuntime().availableProcessors() * 0.25));
 
 
   // ////////////////// IPC //////////////////////////
