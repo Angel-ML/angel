@@ -17,6 +17,8 @@
 package com.tencent.angel.ml.math;
 
 
+import com.tencent.angel.protobuf.generated.MLProtos;
+
 /**
  * Vector is the Class operated by users.
  */
@@ -69,18 +71,11 @@ public abstract class TAbstractVector extends TUpdate {
   public abstract double sparsity();
 
   /**
-   * Clone this vector.
-   *
-   * @return Return the clone
-   */
-  public abstract TAbstractVector clone();
-
-  /**
    * Gets type of Vector.
    *
    * @return the type
    */
-  public abstract VectorType getType();
+  public abstract MLProtos.RowType getType();
 
   /**
    * Gets dimension,the represented length of vector

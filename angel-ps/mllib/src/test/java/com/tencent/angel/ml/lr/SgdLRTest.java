@@ -73,7 +73,7 @@ public class SgdLRTest {
       conf.setBoolean("mapred.mapper.new-api", true);
       conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
       conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
-
+      conf.set(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, "true");
       // Set data format
       conf.set(MLConf.ML_DATAFORMAT(), dataFmt);
 
@@ -159,7 +159,7 @@ public class SgdLRTest {
       String predictPath = LOCAL_FS + TMP_PATH + "/predict";
 
       // Set trainning data path
-      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
+      conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, inputPath);
       // Set load model path
       conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, loadPath);
       // Set predict result path

@@ -19,14 +19,17 @@ package com.tencent.angel.ml.math.vector;
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.math.VectorType;
+import com.tencent.angel.protobuf.generated.MLProtos;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import it.unimi.dsi.fastutil.ints.Int2FloatMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.util.Map.Entry;
-
+/**
+ * Dense double vector
+ */
 public class DenseDoubleVector extends TDoubleVector {
 
   private final static Log LOG = LogFactory.getLog(DenseDoubleVector.class);
@@ -36,19 +39,6 @@ public class DenseDoubleVector extends TDoubleVector {
   double[] values;
 
   /**
-   * the sum of element square
-   */
-  double norm;
-
-  /**
-   * init the empty vector
-   */
-  public DenseDoubleVector() {
-    super();
-    norm = 0;
-  }
-
-  /**
    * init the vector by another vector
    * 
    * @param other
@@ -56,7 +46,6 @@ public class DenseDoubleVector extends TDoubleVector {
   public DenseDoubleVector(DenseDoubleVector other) {
     super(other);
     this.values = new double[this.dim];
-    this.norm = other.norm;
     System.arraycopy(other.values, 0, this.values, 0, dim);
   }
 
@@ -69,7 +58,6 @@ public class DenseDoubleVector extends TDoubleVector {
     super();
     this.values = new double[dim];
     this.dim = dim;
-    this.norm = 0;
   }
 
   /**
@@ -80,23 +68,25 @@ public class DenseDoubleVector extends TDoubleVector {
    */
   public DenseDoubleVector(int dim, double[] values) {
     super();
+    assert dim == values.length;
     this.dim = dim;
     this.values = values;
-    this.norm = 0;
-
-    for (int i = 0; i < values.length; i++)
-      norm += values[i] * values[i];
   }
 
   @Override
-  public TDoubleVector add(int index, double delt) {
+  public TDoubleVector plusBy(int index, double delt) {
     values[index] += delt;
     return this;
   }
 
-  /**
-   * clear the vector
-   */
+  @Override public double sum() {
+    double ret = 0.0;
+    for (int i = 0; i < dim; i++) {
+      ret += this.values[i];
+    }
+    return ret;
+  }
+
   @Override
   public void clear() {
     if (values != null) {
@@ -106,11 +96,6 @@ public class DenseDoubleVector extends TDoubleVector {
     }
   }
 
-  /**
-   * clone the vector
-   * 
-   * @return
-   */
   @Override
   public DenseDoubleVector clone() {
     return new DenseDoubleVector(this);
@@ -118,50 +103,8 @@ public class DenseDoubleVector extends TDoubleVector {
 
   @Override
   public void clone(TVector row) {
+    super.clone(row);
     System.arraycopy(((DenseDoubleVector) row).values, 0, this.values, 0, dim);
-    this.norm = ((DenseDoubleVector) row).norm;
-    this.rowId = ((DenseDoubleVector) row).rowId;
-  }
-
-  /**
-   * calculate the inner product
-   * 
-   * @param other
-   * @return
-   */
-  public double dot(DenseDoubleVector other) {
-    double ret = 0.0;
-    for (int i = 0; i < dim; i++) {
-      ret += this.values[i] * other.values[i];
-    }
-    return ret;
-  }
-
-  public double dot(DenseFloatVector other) {
-    double ret = 0.0;
-    for (int i = 0; i < dim; i++) {
-      ret += this.values[i] * other.values[i];
-    }
-    return ret;
-  }
-
-  public double dot(SparseDummyVector other) {
-    double _ret = 0.0;
-    for (int i = 0; i < other.nonzero; i++) {
-      _ret += this.values[other.indices[i]];
-    }
-    return _ret;
-  }
-
-  public double dot(SparseDoubleVector other) {
-    return other.dot(this);
-  }
-
-  /**
-   * Dot Functions
-   */
-  public double dot(SparseDoubleSortedVector other) {
-    return other.dot(this);
   }
 
   @Override
@@ -176,17 +119,47 @@ public class DenseDoubleVector extends TDoubleVector {
       return dot((SparseDummyVector) other);
     if (other instanceof DenseFloatVector)
       return dot((DenseFloatVector) other);
+    if (other instanceof SparseFloatVector)
+      return dot((SparseFloatVector) other);
 
-    LOG.error(String.format("unregisterd vector type %s", other.getClass().getName()));
-    return 0.0;
+    throw new UnsupportedOperationException("Unsupportted operation: "
+      + this.getClass().getName() + " dot " + other.getClass().getName());
   }
 
-  /**
-   * filter the vector and covert to the appropriate type
-   * 
-   * @param x the comparison value
-   * @return
-   */
+  private double dot(DenseDoubleVector other) {
+    double ret = 0.0;
+    for (int i = 0; i < dim; i++) {
+      ret += this.values[i] * other.values[i];
+    }
+    return ret;
+  }
+
+  private double dot(DenseFloatVector other) {
+    double ret = 0.0;
+    for (int i = 0; i < dim; i++) {
+      ret += this.values[i] * other.values[i];
+    }
+    return ret;
+  }
+
+  private double dot(SparseDummyVector other) {
+    double ret = 0.0;
+    for (int i = 0; i < other.nonzero; i++) {
+      ret += this.values[other.indices[i]];
+    }
+    return ret;
+  }
+
+  private double dot(SparseDoubleVector other) {
+    return other.dot(this);
+  }
+
+  private double dot(SparseDoubleSortedVector other) {
+    return other.dot(this);
+  }
+
+  private double dot(SparseFloatVector other) { return other.dot(this); }
+
   @Override
   public TDoubleVector filter(double x) {
     IntArrayList nonzeroIndex = new IntArrayList();
@@ -215,42 +188,21 @@ public class DenseDoubleVector extends TDoubleVector {
     }
   }
 
-  /**
-   * get the element by index
-   * 
-   * @param index the index
-   * @return
-   */
   @Override
   public double get(int index) {
     return values[index];
   }
 
-  /**
-   * get values of all of the elements
-   * 
-   * @return
-   */
   @Override
   public double[] getValues() {
     return values;
   }
 
-  /**
-   * get the type
-   * 
-   * @return
-   */
   @Override
-  public VectorType getType() {
-    return VectorType.T_DOUBLE_DENSE;
+  public MLProtos.RowType getType() {
+    return MLProtos.RowType.T_DOUBLE_DENSE;
   }
 
-  /**
-   * get all of the index
-   * 
-   * @return
-   */
   @Override
   public int[] getIndices() {
     int [] indices=new int[values.length];
@@ -259,11 +211,6 @@ public class DenseDoubleVector extends TDoubleVector {
     return indices;
   }
 
-  /**
-   * count the nonzero element
-   * 
-   * @return
-   */
   @Override
   public long nonZeroNumber() {
     long ret = 0;
@@ -274,19 +221,12 @@ public class DenseDoubleVector extends TDoubleVector {
         }
       }
     }
-
     return ret;
   }
 
-  /**
-   * plus the vector by another vector
-   * 
-   * @param other the other
-   * @param x the double multiply factor
-   * @return
-   */
   @Override
   public TDoubleVector plus(TAbstractVector other, double x) {
+    assert dim == other.getDimension();
     if (other instanceof DenseDoubleVector)
       return plus((DenseDoubleVector) other, x);
     if (other instanceof DenseFloatVector)
@@ -295,42 +235,41 @@ public class DenseDoubleVector extends TDoubleVector {
       return plus((SparseDoubleVector) other, x);
     if (other instanceof SparseDoubleSortedVector)
       return plus((SparseDoubleSortedVector) other, x);
-    return null;
+    if(other instanceof SparseFloatVector)
+      return plus((SparseFloatVector) other, x);
+    if (other instanceof SparseDummyVector)
+      return plus((SparseDummyVector) other, x);
+
+    throw new UnsupportedOperationException("Unsupportted operation: "
+      + this.getClass().getName() + " plus " + other.getClass().getName());
   }
 
-
-  @Override
-  public TDoubleVector plus(TAbstractVector other, int x) {
-    return plus(other, (double) x);
-  }
-
-  public TDoubleVector plus(DenseDoubleVector other, double x) {
-    assert dim == other.dim;
+  private TDoubleVector plus(DenseDoubleVector other, double x) {
     DenseDoubleVector vector = new DenseDoubleVector(dim);
     for (int i = 0; i < dim; i++)
       vector.values[i] = values[i] + other.values[i] * x;
     return vector;
   }
 
-  public TDoubleVector plus(DenseFloatVector other, double x) {
-    assert dim == other.size();
+  private TDoubleVector plus(DenseFloatVector other, double x) {
     DenseDoubleVector vector = new DenseDoubleVector(dim);
     for (int i = 0; i < dim; i++)
       vector.values[i] = values[i] + other.values[i] * x;
     return vector;
   }
 
-  public TDoubleVector plus(SparseDoubleVector other, double x) {
+  private TDoubleVector plus(SparseDoubleVector other, double x) {
     DenseDoubleVector vector = this.clone();
-
-    for (Entry<Integer, Double> entry : other.hashMap.entrySet()) {
-      vector.values[entry.getKey().intValue()] += entry.getValue() * x;
+    ObjectIterator<Int2DoubleMap.Entry> iter = other.hashMap.int2DoubleEntrySet().iterator();
+    Int2DoubleMap.Entry entry = null;
+    while(iter.hasNext()) {
+      entry = iter.next();
+      vector.values[entry.getIntKey()] += entry.getDoubleValue() * x;
     }
     return vector;
   }
 
-  public TDoubleVector plus(SparseDoubleSortedVector other, double x) {
-    assert dim == other.getDimension();
+  private TDoubleVector plus(SparseDoubleSortedVector other, double x) {
     DenseDoubleVector vector = this.clone();
     int length = other.indices.length;
     for (int i = 0; i < length; i++) {
@@ -339,8 +278,28 @@ public class DenseDoubleVector extends TDoubleVector {
     return vector;
   }
 
+  private TDoubleVector plus(SparseFloatVector other, double x) {
+    DenseDoubleVector vector = this.clone();
+    ObjectIterator<Int2FloatMap.Entry> iter = other.hashMap.int2FloatEntrySet().iterator();
+    Int2FloatMap.Entry entry = null;
+    while(iter.hasNext()) {
+      entry = iter.next();
+      vector.values[entry.getIntKey()] += entry.getFloatValue() * x;
+    }
+    return vector;
+  }
+
+  private TDoubleVector plus(SparseDummyVector other, double x) {
+    DenseDoubleVector vector = this.clone();
+    for (int i = 0; i < other.nonzero; i++) {
+      vector.values[other.indices[i]] += x;
+    }
+    return vector;
+  }
+
   @Override
   public TDoubleVector plus(TAbstractVector other) {
+    assert dim == other.getDimension();
     if (other instanceof DenseDoubleVector)
       return plus((DenseDoubleVector) other);
     if (other instanceof DenseFloatVector)
@@ -349,31 +308,30 @@ public class DenseDoubleVector extends TDoubleVector {
       return plus((SparseDoubleVector) other);
     if (other instanceof SparseDoubleSortedVector)
       return plus((SparseDoubleSortedVector) other);
+    if(other instanceof SparseFloatVector)
+      return plus((SparseFloatVector) other);
+    if (other instanceof SparseDummyVector)
+      return plus((SparseDummyVector) other);
 
-    LOG.error(
-        String.format("Unregistered vector type %s for plus(other)", other.getClass().getName()));
-    return null;
+    throw new UnsupportedOperationException("Unsupportted operation: "
+      + this.getClass().getName() + " plus " + other.getClass().getName());
   }
 
-
-
-  public TDoubleVector plus(DenseDoubleVector other) {
-    assert dim == other.dim;
+  private TDoubleVector plus(DenseDoubleVector other) {
     DenseDoubleVector vector = new DenseDoubleVector(dim);
     for (int i = 0; i < dim; i++)
       vector.values[i] = values[i] + other.values[i];
     return vector;
   }
 
-  public TDoubleVector plus(DenseFloatVector other) {
-    assert dim == other.size();
+  private TDoubleVector plus(DenseFloatVector other) {
     DenseDoubleVector vector = new DenseDoubleVector(dim);
     for (int i = 0; i < dim; i++)
       vector.values[i] = values[i] + (double) other.values[i];
     return vector;
   }
 
-  public TDoubleVector plus(SparseDoubleVector other) {
+  private TDoubleVector plus(SparseDoubleVector other) {
     DenseDoubleVector vector = this.clone();
     ObjectIterator<Int2DoubleMap.Entry> iter = other.hashMap.int2DoubleEntrySet().fastIterator();
     Int2DoubleMap.Entry entry = null;
@@ -384,8 +342,7 @@ public class DenseDoubleVector extends TDoubleVector {
     return vector;
   }
 
-  public TDoubleVector plus(SparseDoubleSortedVector other) {
-    assert dim == other.getDimension();
+  private TDoubleVector plus(SparseDoubleSortedVector other) {
     DenseDoubleVector vector = this.clone();
     int length = other.indices.length;
     for (int i = 0; i < length; i++) {
@@ -394,8 +351,23 @@ public class DenseDoubleVector extends TDoubleVector {
     return vector;
   }
 
-  public void inc(int index, double value) {
-    values[index] += value;
+  private TDoubleVector plus(SparseFloatVector other) {
+    DenseDoubleVector vector = this.clone();
+    ObjectIterator<Int2FloatMap.Entry> iter = other.hashMap.int2FloatEntrySet().fastIterator();
+    Int2FloatMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      vector.values[entry.getIntKey()] += entry.getFloatValue();
+    }
+    return vector;
+  }
+
+  private TDoubleVector plus(SparseDummyVector other) {
+    DenseDoubleVector vector = this.clone();
+    for (int i = 0; i < other.nonzero; i++) {
+      vector.values[other.indices[i]] += 1;
+    }
+    return vector;
   }
 
   @Override
@@ -410,14 +382,11 @@ public class DenseDoubleVector extends TDoubleVector {
       return plusBy((SparseDoubleSortedVector) other, x);
     if (other instanceof SparseDummyVector)
       return plusBy((SparseDummyVector) other, x);
+    if (other instanceof SparseFloatVector)
+      return plusBy((SparseFloatVector) other, x);
 
-    LOG.error(String.format("Unregistered vector type %s", other.getClass().getName()));
-    return null;
-  }
-
-  @Override
-  public TDoubleVector plusBy(TAbstractVector other, int x) {
-    return plusBy(other, (double) x);
+    throw new UnsupportedOperationException("Unsupportted operation: "
+      + this.getClass().getName() + " plusBy " + other.getClass().getName());
   }
 
   private TDoubleVector plusBy(DenseDoubleVector other, double x) {
@@ -437,7 +406,6 @@ public class DenseDoubleVector extends TDoubleVector {
   }
 
   private TDoubleVector plusBy(SparseDoubleVector other, double x) {
-
     ObjectIterator<Int2DoubleMap.Entry> iter = other.hashMap.int2DoubleEntrySet().fastIterator();
     while (iter.hasNext()) {
       Int2DoubleMap.Entry entry = iter.next();
@@ -448,21 +416,26 @@ public class DenseDoubleVector extends TDoubleVector {
   }
 
   private TDoubleVector plusBy(SparseDoubleSortedVector other, double x) {
-    double inner_product = 0.0;
     int[] keys = other.getIndices();
     double[] vals = other.getValues();
     for (int i = 0; i < keys.length; i++) {
-      inner_product += values[keys[i]] * vals[i] * x;
       values[keys[i]] += vals[i] * x;
     }
-
-    norm += other.squaredNorm() * x * x + (2.0 * inner_product);
     return this;
   }
 
   private TDoubleVector plusBy(SparseDummyVector other, double x) {
     for (int i = 0; i < other.nonzero; i++) {
       this.values[other.indices[i]] += x;
+    }
+    return this;
+  }
+
+  private TDoubleVector plusBy(SparseFloatVector other, double x) {
+    ObjectIterator<Int2FloatMap.Entry> iter = other.hashMap.int2FloatEntrySet().fastIterator();
+    while (iter.hasNext()) {
+      Int2FloatMap.Entry entry = iter.next();
+      values[entry.getIntKey()] += entry.getFloatValue() * x;
     }
     return this;
   }
@@ -495,19 +468,29 @@ public class DenseDoubleVector extends TDoubleVector {
       return plusBy((SparseDoubleSortedVector) other);
     if (other instanceof SparseDummyVector)
       return plusBy((SparseDummyVector) other);
+    if (other instanceof SparseFloatVector)
+      return plusBy((SparseFloatVector) other);
 
-    LOG.error(
-        String.format("Unregistered vector type %s for plus(other)", other.getClass().getName()));
-    return null;
+    throw new UnsupportedOperationException("Unsupportted operation: "
+      + this.getClass().getName() + " plusBy " + other.getClass().getName());
   }
 
   private TDoubleVector plusBy(SparseDoubleVector other) {
     ObjectIterator<Int2DoubleMap.Entry> iter = other.hashMap.int2DoubleEntrySet().fastIterator();
-
     Int2DoubleMap.Entry entry = null;
     while (iter.hasNext()) {
       entry = iter.next();
       values[entry.getIntKey()] += entry.getDoubleValue();
+    }
+    return this;
+  }
+
+  private TDoubleVector plusBy(SparseFloatVector other) {
+    ObjectIterator<Int2FloatMap.Entry> iter = other.hashMap.int2FloatEntrySet().fastIterator();
+    Int2FloatMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      values[entry.getIntKey()] += entry.getFloatValue();
     }
     return this;
   }
@@ -531,32 +514,16 @@ public class DenseDoubleVector extends TDoubleVector {
     return this;
   }
 
-  /**
-   * set the value by index
-   * 
-   * @param index the index
-   * @param value the value
-   */
   @Override
   public void set(int index, double value) {
     values[index] = value;
   }
 
-  /**
-   * get the size
-   * 
-   * @return
-   */
   @Override
   public int size() {
     return values.length;
   }
 
-  /**
-   * get the sparsity
-   * 
-   * @return
-   */
   @Override
   public double sparsity() {
     int nonzero = 0;
@@ -568,22 +535,14 @@ public class DenseDoubleVector extends TDoubleVector {
     return ((double) nonzero) / values.length;
   }
 
-  /**
-   * get the norm of vector
-   *
-   * @return
-   */
   @Override
   public double squaredNorm() {
+    double norm = 0.0;
+    for (int i = 0; i < dim; i++)
+      norm += values[i] * values[i];
     return norm;
   }
 
-  /**
-   * the multiplication of vector and element
-   *
-   * @param x the double multiply factor
-   * @return
-   */
   @Override
   public TDoubleVector times(double x) {
     DenseDoubleVector vector = new DenseDoubleVector(this.dim);
@@ -596,55 +555,6 @@ public class DenseDoubleVector extends TDoubleVector {
   public TDoubleVector timesBy(double x) {
     for (int i = 0; i < dim; i++)
       values[i] *= x;
-
-    norm *= (x * x);
     return this;
   }
-
-  /**
-   * get the square of the vector
-   * 
-   * @return
-   */
-  public TDoubleVector getSquaredVector() {
-    DenseDoubleVector vector = new DenseDoubleVector(this.dim);
-    for (int i = 0; i < dim; i++)
-      vector.values[i] = values[i] * values[i];
-
-    vector.norm = 0;
-    for (int i = 0; i < values.length; i++)
-      vector.norm += vector.values[i] * vector.values[i];
-    return vector;
-  }
-
-  /**
-   * get the sum of vector
-   * 
-   * @return
-   */
-  public double getSum() {
-    double sum = 0;
-    for (int i = 0; i < dim; i++) {
-      sum = sum + values[i];
-    }
-    return sum;
-  }
-
-  /**
-   * get index of the max value
-   * 
-   * @return
-   */
-  public int getMaxValueIndex() {
-    int index = 0;
-    double max_value = values[0];
-    for (int i = 1; i < dim; i++) {
-      if (max_value < values[i]) {
-        max_value = values[i];
-        index = i;
-      }
-    }
-    return index;
-  }
-
 }

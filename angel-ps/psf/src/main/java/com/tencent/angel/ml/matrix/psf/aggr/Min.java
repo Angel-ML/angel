@@ -57,7 +57,9 @@ public final class Min extends UnaryAggrFunc {
   public GetResult merge(List<PartitionGetResult> partResults) {
     double min = Double.POSITIVE_INFINITY;
     for (PartitionGetResult partResult : partResults) {
-      min = Math.min(min, ((ScalarPartitionAggrResult) partResult).result);
+      if (partResult != null) {
+        min = Math.min(min, ((ScalarPartitionAggrResult) partResult).result);
+      }
     }
 
     return new ScalarAggrResult(min);

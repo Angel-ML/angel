@@ -19,6 +19,7 @@ package com.tencent.angel.ml.math.vector;
 import com.tencent.angel.ml.math.vector.TFloatVector;
 import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.math.VectorType;
+import com.tencent.angel.protobuf.generated.MLProtos;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -48,7 +49,7 @@ public class SparseFloatVectorTest {
     for (int i = 0; i < index.length; i++)
       assertEquals(vec.get(i), vec_1.get(i));
 
-    TFloatVector vec_2 = new SparseFloatVector(10000, 500);
+    TFloatVector vec_2 = new SparseFloatVector(300, 500);
     vec_2.clone(vec);
     int[] index2 = vec_2.getIndices();
     Arrays.sort(index2);
@@ -147,7 +148,7 @@ public class SparseFloatVectorTest {
   @Test
   public void getType() throws Exception {
     SparseFloatVector vec = genSparseFloatVector(nnz, dim);
-    assertEquals(VectorType.T_FLOAT_SPARSE, vec.getType());
+    assertEquals(MLProtos.RowType.T_FLOAT_SPARSE, vec.getType());
   }
 
   @Test

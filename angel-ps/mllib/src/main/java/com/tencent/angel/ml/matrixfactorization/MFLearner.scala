@@ -26,7 +26,7 @@ import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.DenseFloatVector
-import com.tencent.angel.ml.matrixfactorization.utils._
+import com.tencent.angel.ml.matrixfactorization.threads._
 import com.tencent.angel.ml.metric.log.ObjMetric
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex
@@ -104,11 +104,11 @@ class MFLearner(override val ctx: TaskContext) extends MLLearner(ctx){
     LOG.info("mfModel.userNum=" + mfModel.userNum)
     globalMetrics.addMetrics(MFModel.MF_METRIC, ObjMetric())
 
-    while (ctx.getIteration <  epochNum) {
-      LOG.info(s"Start Epoch ${ctx.getIteration}")
-      oneEpoch(ctx.getIteration)
+    while (ctx.getEpoch <  epochNum) {
+      LOG.info(s"Start Epoch ${ctx.getEpoch}")
+      oneEpoch(ctx.getEpoch)
 
-      ctx.incIteration()
+      ctx.incEpoch()
     }
 
     writeUserVectors

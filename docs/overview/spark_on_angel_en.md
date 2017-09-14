@@ -128,6 +128,6 @@ There is only a small, non-invasive modification to the original RDD, friendly t
 
 ## Performance
 
-Transferring algorithms from Spark to Spark on Angel results in a noticeable gain in performance, and details can be found in [LR(Spark on Angel)](../algo/spark_on_angel_optimizer.md). 
+Transferring algorithms from Spark to Spark on Angel results in a noticeable gain in performance, and details can be found in [LR(Spark on Angel)](../algo/spark_on_angel_optimizer_en.md). 
 
 It is worth noting that even though the transparent replacement trick is versatile and incurs only a small workload, the best performance is still only achievable by implementing the algorithm on top of PS that is specific to Angel (at least, you get rid of the PSAgent layer). 

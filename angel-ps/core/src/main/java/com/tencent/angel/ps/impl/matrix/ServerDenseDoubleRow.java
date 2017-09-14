@@ -31,10 +31,12 @@ import java.nio.DoubleBuffer;
  * The class represent dense double row on parameter server.
  */
 public class ServerDenseDoubleRow extends ServerRow {
-
   private final static Log LOG = LogFactory.getLog(ServerDenseDoubleRow.class);
 
+  /** Byte array */
   private byte[] dataBuffer;
+
+  /** The double array view of the byte array */
   private DoubleBuffer data;
 
   /**
@@ -90,6 +92,7 @@ public class ServerDenseDoubleRow extends ServerRow {
       lock.writeLock().lock();
       switch (rowType) {
         case T_DOUBLE_SPARSE:
+        case T_DOUBLE_SPARSE_COMPONENT:
           sparseDoubleUpdate(buf, size);
           break;
 
@@ -98,17 +101,13 @@ public class ServerDenseDoubleRow extends ServerRow {
           break;
 
         default:
-          break;
+          throw new UnsupportedOperationException("Unsupport operation: update " + rowType + " to " + this.getClass().getName());
       }
 
       updateRowVersion();
     } finally {
       lock.writeLock().unlock();
     }
-  }
-  
-  public void set(int index, double value) {
-    data.put(index, value);
   }
 
   private void denseDoubleUpdate(ByteBuf buf, int size) {
@@ -119,21 +118,28 @@ public class ServerDenseDoubleRow extends ServerRow {
   }
 
   private void sparseDoubleUpdate(ByteBuf buf, int size) {
-    ByteBuf valueBuf = buf.slice(buf.readerIndex() + size * 4, size * 8);
     int columnId = 0;
     double value = 0;
+    int startColInt = (int) startCol;
     for (int i = 0; i < size; i++) {
-      columnId = buf.readInt();
-      value = data.get(columnId) + valueBuf.readDouble();
+      columnId = buf.readInt() - startColInt;
+      value = data.get(columnId) + buf.readDouble();
       data.put(columnId, value);
     }
-    buf.readerIndex(buf.readerIndex() + size * 8);
   }
 
+  /**
+   * Get double array view
+   * @return double array view
+   */
   public DoubleBuffer getData() {
     return data;
   }
 
+  /**
+   * Get byte array
+   * @return byte array
+   */
   public byte[] getDataArray() {
     return dataBuffer;
   }
@@ -142,14 +148,6 @@ public class ServerDenseDoubleRow extends ServerRow {
   public void writeTo(DataOutputStream output) throws IOException {
     try {
       lock.readLock().lock();
-      if (LOG.isDebugEnabled()) {
-        int size = data.capacity();
-        if (size > 0) {
-          LOG.debug("server row " + this.toString() + " first element is " + data.get(0));
-        } else {
-          LOG.debug("server row " + this.toString() + " is empty");
-        }
-      }
       super.writeTo(output);
       output.write(dataBuffer, 0, dataBuffer.length);
     } finally {
@@ -162,7 +160,7 @@ public class ServerDenseDoubleRow extends ServerRow {
     try {
       lock.writeLock().lock();
       super.readFrom(input);
-      int totalSize = (endCol - startCol) * 8;
+      int totalSize = (int)(endCol - startCol) * 8;
       int size = 0;
       while (size < totalSize) {
         int tempSize = input.read(dataBuffer, size, (totalSize - size));
@@ -179,12 +177,11 @@ public class ServerDenseDoubleRow extends ServerRow {
     try {
       lock.readLock().lock();
       super.serialize(buf);
-      buf.writeInt(endCol - startCol);
+      buf.writeInt((int)(endCol - startCol));
       buf.writeBytes(dataBuffer);
     } finally {
       lock.readLock().unlock();
     }
-
   }
 
   @Override
@@ -209,13 +206,18 @@ public class ServerDenseDoubleRow extends ServerRow {
     return super.bufferLen() + 4 + dataBuffer.length;
   }
 
+  /**
+   * Merge this dense double vector split to a double array
+   * @param dataArray  double array for merge
+   */
   public void mergeTo(double[] dataArray) {
     try {
       lock.readLock().lock();
       // data.rewind();
-      int size = endCol - startCol;
+      int size = (int)(endCol - startCol);
+      int startPos = (int) startCol;
       for (int i = 0; i < size; i++) {
-        dataArray[startCol + i] = data.get(i);
+        dataArray[startPos + i] = data.get(i);
       }
     } finally {
       lock.readLock().unlock();

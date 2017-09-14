@@ -24,7 +24,6 @@ import com.tencent.angel.ml.math.vector.{DenseDoubleVector, DenseIntVector, Spar
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.ml.utils.MathUtils
-import com.tencent.angel.protobuf.generated.MLProtos
 import com.tencent.angel.protobuf.generated.MLProtos.RowType
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
@@ -47,7 +46,7 @@ class SparseLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLMod
   val bucketNum = conf.getInt(BUCKET_NUM, 10000)
 
   val w = PSModel[DenseDoubleVector](W, 1, feaNum).setNeedSave(false)
-  val z = PSModel[SparseDoubleVector](Z, 1, feaNum).setRowType(MLProtos.RowType.T_DOUBLE_SPARSE)
+  val z = PSModel[SparseDoubleVector](Z, 1, feaNum).setRowType(RowType.T_DOUBLE_SPARSE)
   val t = PSModel[DenseDoubleVector](T, 1, 1).setNeedSave(false)
   val loss = PSModel[DenseDoubleVector](LOSS, 1, 1).setNeedSave(false)
   val auc  = PSModel[DenseIntVector](AUC, 1, bucketNum * 2)

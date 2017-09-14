@@ -16,11 +16,8 @@
 
 package com.tencent.angel.ml.math.matrix;
 
-import com.tencent.angel.ml.math.vector.TFloatVector;
+import com.tencent.angel.ml.math.vector.*;
 import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.ml.math.vector.DenseDoubleVector;
-import com.tencent.angel.ml.math.vector.DenseFloatVector;
-import com.tencent.angel.ml.math.vector.SparseDoubleVector;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertEquals;
@@ -31,22 +28,20 @@ public class DenseFloatMatrixTest {
     float[][] value = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     DenseFloatMatrix mat = new DenseFloatMatrix(2, 2, value);
 
-    mat.inc(0, 0, 1.0f);
-    mat.inc(1, 1, 2.0f);
+    mat.plusBy(0, 0, 1.0f);
+    mat.plusBy(1, 1, 2.0f);
 
     assertEquals(2.0f, mat.get(0, 0));
     assertEquals(2.0f, mat.get(0, 1));
     assertEquals(3.0f, mat.get(1, 0));
     assertEquals(6.0f, mat.get(1, 1));
 
-
-
     DenseFloatMatrix mat_2 = new DenseFloatMatrix(2, 2);
 
-    mat_2.inc(0, 0, 1.0);
-    mat_2.inc(0, 1, 2.0);
-    mat_2.inc(1, 0, 3.0);
-    mat_2.inc(1, 1, 4.0);
+    mat_2.plusBy(0, 0, 1.0f);
+    mat_2.plusBy(0, 1, 2.0f);
+    mat_2.plusBy(1, 0, 3.0f);
+    mat_2.plusBy(1, 1, 4.0f);
 
     assertEquals(1.0f, mat_2.get(0, 0));
     assertEquals(2.0f, mat_2.get(0, 1));
@@ -55,30 +50,15 @@ public class DenseFloatMatrixTest {
 
     DenseFloatMatrix mat_3 = new DenseFloatMatrix(2, 2);
 
-    mat_3.inc(0, 0, 1);
-    mat_3.inc(0, 1, 3);
-    mat_3.inc(1, 0, 5);
-    mat_3.inc(1, 1, 7);
+    mat_3.plusBy(0, 0, 1);
+    mat_3.plusBy(0, 1, 3);
+    mat_3.plusBy(1, 0, 5);
+    mat_3.plusBy(1, 1, 7);
 
     assertEquals(1.0f, mat_3.get(0, 0));
     assertEquals(3.0f, mat_3.get(0, 1));
     assertEquals(5.0f, mat_3.get(1, 0));
     assertEquals(7.0f, mat_3.get(1, 1));
-  }
-
-  @Test
-  public void plusByDenseDoubleVectorTest() throws Exception {
-    float[][] value = {{1.0f, 2.0f}, {3.0f, 4.0f}};
-    DenseFloatMatrix mat = new DenseFloatMatrix(2, 2, value);
-    TVector vec = new DenseDoubleVector(2, new double[]{1.0, 1.0});
-    vec.setRowId(0);
-
-    mat.plusBy(vec);
-
-    assertEquals(2.0f, mat.get(0, 0));
-    assertEquals(3.0f, mat.get(0, 1));
-    assertEquals(3.0f, mat.get(1, 0));
-    assertEquals(4.0f, mat.get(1, 1));
   }
 
   @Test
@@ -108,11 +88,11 @@ public class DenseFloatMatrixTest {
   }
 
   @Test
-  public void plusBySparseDoubleVectorTest() throws Exception {
+  public void plusBySparseFloatVectorTest() throws Exception {
     float[][] value = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     DenseFloatMatrix mat = new DenseFloatMatrix(2, 2,value);
-    TVector vec = new SparseDoubleVector(2);
-    ((SparseDoubleVector) vec).set(1, 1.0);
+    TVector vec = new SparseFloatVector(2);
+    ((SparseFloatVector) vec).set(1, 1.0f);
     vec.setRowId(0);
 
     mat.plusBy(vec);
@@ -157,7 +137,7 @@ public class DenseFloatMatrixTest {
     assertEquals(4.0f, mat.get(1, 1));
 
     DenseFloatMatrix mat_1 = new DenseFloatMatrix(2, 2);
-    DenseDoubleVector vec = new DenseDoubleVector(2, new double[]{1.0, 2.0});
+    DenseFloatVector vec = new DenseFloatVector(2, new float[]{1.0f, 2.0f});
     vec.setRowId(0);
 
     mat_1.plusBy(vec);
@@ -169,7 +149,7 @@ public class DenseFloatMatrixTest {
   }
 
   @Test
-  public void getTDoubleVector() throws Exception {
+  public void getTVector() throws Exception {
     float[][] value = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     DenseFloatMatrix mat = new DenseFloatMatrix(2, 2, value);
 

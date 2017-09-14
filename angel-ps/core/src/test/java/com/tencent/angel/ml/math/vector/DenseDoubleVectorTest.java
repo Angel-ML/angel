@@ -19,6 +19,7 @@ package com.tencent.angel.ml.math.vector;
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.vector.TDoubleVector;
 import com.tencent.angel.ml.math.VectorType;
+import com.tencent.angel.protobuf.generated.MLProtos;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -42,12 +43,12 @@ public class DenseDoubleVectorTest {
     DenseDoubleVector vec_1 = new DenseDoubleVector(dim);
     vec_1.clone(vec);
 
-    assertEquals(vec.norm, vec_1.norm, 0.0);
+    assertEquals(vec.squaredNorm(), vec_1.squaredNorm(), 0.0);
     assertArrayEquals(vec_1.getValues(), vec.getValues(), 0.0);
 
     TDoubleVector vec_2 = vec.clone();
 
-    assertEquals(vec.norm, ((DenseDoubleVector) vec_2).norm);
+    assertEquals(vec.squaredNorm(), ((DenseDoubleVector) vec_2).squaredNorm());
     assertArrayEquals(vec_2.getValues(), vec.getValues(), 0.0);
 
   }
@@ -149,7 +150,7 @@ public class DenseDoubleVectorTest {
       values_1[i] = random.nextDouble();
     }
 
-    TDoubleVector vec_1 = new SparseDoubleVector(nnz, indices_1, values_1);
+    TDoubleVector vec_1 = new SparseDoubleVector(dim, indices_1, values_1);
 
     double sum = 0.0;
     for (int i = 0; i < nnz; i++) {
@@ -278,9 +279,8 @@ public class DenseDoubleVectorTest {
 
   @Test
   public void getType() throws Exception {
-    DenseDoubleVector vec = new DenseDoubleVector();
-
-    assertEquals(VectorType.T_DOUBLE_DENSE, vec.getType());
+    DenseDoubleVector vec = new DenseDoubleVector(10);
+    assertEquals(MLProtos.RowType.T_DOUBLE_DENSE, vec.getType());
   }
 
   @Test
@@ -367,7 +367,7 @@ public class DenseDoubleVectorTest {
   @Test
   public void plusSparDoubleVector() throws Exception {
     DenseDoubleVector vec = new DenseDoubleVector(5, new double[] {1, 2, 3, 4, 5});
-    TDoubleVector vec_1 = new SparseDoubleVector(2, new int[] {2, 4}, new double[] {1.0, 2.0});
+    TDoubleVector vec_1 = new SparseDoubleVector(5, new int[] {2, 4}, new double[] {1.0, 2.0});
 
     TDoubleVector vec_2 = vec.plus(vec_1);
 

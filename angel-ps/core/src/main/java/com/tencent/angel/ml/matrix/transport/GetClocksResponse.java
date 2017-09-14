@@ -92,10 +92,7 @@ public class GetClocksResponse extends Response {
       for (int i = 0; i < size; i++) {
         PartitionKey partKey = new PartitionKey();
         partKey.deserialize(buf);
-        ClockCache cache = PSAgentContext.get().getClockCache();
-        if(cache != null) {
-          cache.update(partKey.getMatrixId(), partKey, buf.readInt());
-        }
+        clocks.put(partKey, buf.readInt());
       }
     }
   }

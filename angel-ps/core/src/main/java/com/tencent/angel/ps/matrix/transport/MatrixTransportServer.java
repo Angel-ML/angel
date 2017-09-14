@@ -73,6 +73,7 @@ public class MatrixTransportServer {
 
     bossGroup = new NioEventLoopGroup(1);
     workerGroup = new NioEventLoopGroup(workerNum);
+    ((NioEventLoopGroup) workerGroup).setIoRatio(70);
 
     ServerBootstrap b = new ServerBootstrap();
     b.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)

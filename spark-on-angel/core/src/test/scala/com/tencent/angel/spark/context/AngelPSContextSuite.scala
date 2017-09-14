@@ -17,14 +17,20 @@
 
 package com.tencent.angel.spark.context
 
-import com.tencent.angel.spark.{PSContext, PSFunSuite}
+import com.tencent.angel.spark.PSFunSuite
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.SparkConf
+
+import com.tencent.angel.protobuf.generated.MLProtos.RowType
+import com.tencent.angel.spark.math.vector.VectorType
 
 class AngelPSContextSuite extends PSFunSuite {
 
   private val dim = 10
   private val capacity = 10
+  private val rows = 10
+  private val cols = 10
+  private var angel: AngelPSContext = _
 
   override def beforeAll(): Unit = {
     super.beforeAll()
@@ -58,35 +64,49 @@ class AngelPSContextSuite extends PSFunSuite {
     // start Angel
     val spark = SparkSession.builder().getOrCreate()
     PSContext.getOrCreate(spark.sparkContext)
-    val angel = PSContext.getOrCreate().asInstanceOf[AngelPSContext]
+    val angel = PSContext.instance().asInstanceOf[AngelPSContext]
 
     assert(AngelPSContext.isAlive)
 
     // create pool
-    val pool = angel.createModelPool(dim, capacity)
-    angel.destroyModelPool(pool)
+    val pool = angel.createVectorPool(dim, capacity, VectorType.DENSE)
+    angel.destroyVectorPool(pool.id)
 
     PSContext.stop()
     assert(!AngelPSContext.isAlive)
+
+    PSContext.getOrCreate(spark.sparkContext)
+    assert(AngelPSContext.isAlive)
+  }
+
+  test("create matrix and destroy matrix") {
+    angel = PSContext.instance().asInstanceOf[AngelPSContext]
+    val meta = angel.createMatrix(rows, cols)
+
+    assert(meta.getColNum == cols)
+    assert(meta.getRowNum == rows)
+    assert(meta.getRowType == RowType.T_DOUBLE_DENSE)
+
+    angel.destroyMatrix(meta.getId)
+
   }
 
   test("doCreateVectorPool && doDestroyVectorPool") {
-    val spark = SparkSession.builder().getOrCreate()
-    PSContext.getOrCreate(spark.sparkContext)
-    val angel = PSContext.getOrCreate().asInstanceOf[AngelPSContext]
 
-    val thisPool = angel.createModelPool(dim, capacity)
-    val zeroVector = thisPool.createZero()
+    val thisPool = angel.createVectorPool(dim, capacity, VectorType.DENSE)
+    val firstVector = thisPool.allocate()
 
-    assert(thisPool.numDimensions == dim)
-    assert(thisPool.capacity == capacity)
-    assert(zeroVector.getPool().id == thisPool.id)
-    assert(zeroVector.mkRemote().pull().sameElements(Array.ofDim[Double](dim)))
+    assert(thisPool.vType == VectorType.DENSE)
+    assert(thisPool.size == 1)
+    assert(thisPool.id == firstVector.poolId)
+    assert(thisPool.dimension == firstVector.dimension)
+    assert(firstVector.id == 0)
+    assert(!thisPool.destroyed)
 
-    angel.destroyModelPool(thisPool)
+    angel.destroyVectorPool(thisPool.id)
+
+    assert(thisPool.destroyed)
     assert(angel.getPool(thisPool.id) == null)
-
-    PSContext.stop()
   }
 
 }

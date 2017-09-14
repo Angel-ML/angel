@@ -20,6 +20,7 @@ import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.vector.TDoubleVector;
 import com.tencent.angel.ml.math.vector.TFloatVector;
 import com.tencent.angel.ml.math.VectorType;
+import com.tencent.angel.protobuf.generated.MLProtos;
 import org.junit.Test;
 
 import java.util.Random;
@@ -41,28 +42,6 @@ public class DenseFloatVectorTest {
     for (float v: vec.getValues())
       assertEquals(0.0f, v);
 
-  }
-
-  @Test
-  public void cloneTest() throws Exception {
-    DenseFloatVector vec = genDenseFloatVector(dim);
-    vec.setMatrixId(1);
-    vec.setRowId(2);
-
-    DenseFloatVector vec_1 = (DenseFloatVector) vec.clone();
-
-    assertEquals(vec_1.getMatrixId(), vec.getMatrixId());
-    assertEquals(vec_1.getRowId(), vec.getRowId());
-    for (int i = 0; i < vec.size(); i++)
-      assertEquals(vec_1.get(i), vec.get(i));
-
-    TFloatVector vec_2 = new DenseFloatVector();
-    vec_2.clone(vec);
-
-    assertEquals(vec_2.getMatrixId(), vec.getMatrixId());
-    assertEquals(vec_2.getRowId(), vec.getRowId());
-    for (int i = 0; i < vec.size(); i++)
-      assertEquals(vec_2.get(i), vec.get(i));
   }
 
   @Test
@@ -118,34 +97,34 @@ public class DenseFloatVectorTest {
   @Test
   public void getTypeTest() {
     DenseFloatVector vec = genDenseFloatVector(dim);
-    assertEquals(VectorType.T_FLOAT_DENSE, vec.getType());
+    assertEquals(MLProtos.RowType.T_FLOAT_DENSE, vec.getType());
   }
 
   @Test
   public void plusTest() throws Exception {
     DenseFloatVector vec_1 = genDenseFloatVector(dim);
     TAbstractVector vec_2 = genDenseFloatVector(dim);
-    TAbstractVector vec_3 = genDenseDoubleVector(dim);
+    TAbstractVector vec_3 = genDenseFloatVector(dim);
 
-    TFloatVector vec_4 = vec_1.plus(vec_2);
+    TFloatVector vec_4 = (TFloatVector)vec_1.plus(vec_2);
     for (int i = 0; i < dim; i++)
       assertEquals(vec_1.get(i) + ((DenseFloatVector)vec_2).get(i), vec_4.get(i));
 
-    TFloatVector vec_5 = vec_1.plus(vec_3);
+    TFloatVector vec_5 = (TFloatVector)vec_1.plus(vec_3);
     for (int i = 0; i < dim; i++)
-      assertEquals(vec_1.get(i) + (float)((DenseDoubleVector)vec_3).get(i), vec_5.get(i));
+      assertEquals(vec_1.get(i) + (float)((DenseFloatVector)vec_3).get(i), vec_5.get(i));
 
-    TFloatVector vec_6 = vec_1.plus(vec_2, 2.0f);
+    TFloatVector vec_6 = (TFloatVector)vec_1.plus(vec_2, 2.0f);
     for (int i = 0; i < dim; i++)
       assertEquals(vec_1.get(i) + 2.0f * ((DenseFloatVector)vec_2).get(i), vec_6.get(i));
 
-    TFloatVector vec_7 = vec_1.plus(vec_3, 2.0);
+    TFloatVector vec_7 = (TFloatVector)vec_1.plus(vec_3, 2.0);
     for (int i = 0; i < dim; i++)
-      assertEquals(vec_1.get(i) + 2.0f * (float) ((DenseDoubleVector)vec_3).get(i), vec_7.get(i));
+      assertEquals(vec_1.get(i) + 2.0f * (float) ((DenseFloatVector)vec_3).get(i), vec_7.get(i));
 
-    TFloatVector vec_8 = vec_1.plus(vec_3, 2);
+    TFloatVector vec_8 = (TFloatVector)vec_1.plus(vec_3, 2);
     for (int i = 0; i < dim; i++)
-      assertEquals(vec_1.get(i) + 2 * (float) ((DenseDoubleVector)vec_3).get(i), vec_8.get(i));
+      assertEquals(vec_1.get(i) + 2 * (float) ((DenseFloatVector)vec_3).get(i), vec_8.get(i));
 
   }
 
@@ -153,7 +132,7 @@ public class DenseFloatVectorTest {
   public void plusByDenseVectTest() throws Exception {
     DenseFloatVector vec_1 = genDenseFloatVector(dim);
     TAbstractVector vec_2 = genDenseFloatVector(dim);
-    TAbstractVector vec_3 = genDenseDoubleVector(dim);
+    TAbstractVector vec_3 = genDenseFloatVector(dim);
 
     float[] oldValues = vec_1.getValues().clone();
     vec_1.plusBy(vec_2);
@@ -163,7 +142,7 @@ public class DenseFloatVectorTest {
     oldValues = vec_1.getValues().clone();
     vec_1.plusBy(vec_3);
     for (int i = 0; i < dim; i++)
-      assertEquals(oldValues[i] + (float) ((DenseDoubleVector) vec_3).get(i), vec_1.get(i));
+      assertEquals(oldValues[i] + (float) ((DenseFloatVector) vec_3).get(i), vec_1.get(i));
 
     oldValues = vec_1.getValues().clone();
     vec_1.plusBy(vec_2, 3.0);
@@ -173,63 +152,8 @@ public class DenseFloatVectorTest {
     oldValues = vec_1.getValues().clone();
     vec_1.plusBy(vec_3, 4);
     for (int i = 0; i < dim; i++)
-      assertEquals(oldValues[i] + 4.0f * (float) ((DenseDoubleVector) vec_3).get(i), vec_1.get(i));
+      assertEquals(oldValues[i] + 4.0f * (float) ((DenseFloatVector) vec_3).get(i), vec_1.get(i));
   }
-
-  @Test
-  public void plusBySparseVectTest() throws Exception {
-    DenseFloatVector vec_1 = genDenseFloatVector(dim);
-    TAbstractVector vec_2 = genSparseDoubleVector(nnz, dim);
-    TAbstractVector vec_3 = genSparseDoubleSortedVector(nnz, dim);
-
-    float[] oldValues = vec_1.getValues().clone();
-
-    oldValues = vec_1.getValues().clone();
-    vec_1.plusBy(vec_2, 3.0);
-    for (int i = 0; i < dim; i++)
-      assertEquals( oldValues[i] + 3.0f * (float) ((SparseDoubleVector)vec_2).get(i), vec_1.get(i));
-
-    oldValues = vec_1.getValues().clone();
-    vec_1.plusBy(vec_3, 4.0);
-    for (int i = 0; i < 10; i++)
-      assertEquals(oldValues[i] + 4.0f * (float) ((SparseDoubleSortedVector) vec_3).get(i), vec_1.get(i));
-  }
-
-//  @Test
-//  public void plusByArrayTest() {
-//    DenseFloatVector vec = new DenseFloatVector(dim);
-//    int[] index = genSortedIndexs(nnz, dim);
-//    float[] deltF = genFloatArray(nnz);
-//    double[] deltD = genDoubleArray(nnz);
-//
-//    float[] oldVal = vec.getValues().clone();
-//    vec.plusBy(index, deltF);
-//    for (int i = 0; i < nnz; i++) {
-//      int idx = index[i];
-//      assertEquals(oldVal[idx] + deltF[i], vec.get(idx));
-//    }
-//
-//    oldVal = vec.getValues().clone();
-//    vec.plusBy(index, deltD);
-//    for (int i = 0; i < nnz; i++) {
-//      int idx = index[i];
-//      assertEquals(oldVal[idx] + (float) deltD[i], vec.get(idx));
-//    }
-//
-//    oldVal = vec.getValues().clone();
-//    vec.plusBy(index, deltF);
-//    for (int i = 0; i < nnz; i++) {
-//      int idx = index[i];
-//      assertEquals(oldVal[idx] + deltF[i], vec.get(idx));
-//    }
-//
-//    oldVal = vec.getValues().clone();
-//    vec.plusBy(index, deltD);
-//    for (int i = 0; i < nnz; i++) {
-//      int idx = index[i];
-//      assertEquals(oldVal[idx] + (float) deltD[i], vec.get(idx));
-//    }
-//  }
 
   @Test
   public void plusSparseFloatTest() {
@@ -260,7 +184,7 @@ public class DenseFloatVectorTest {
     indexs = genSortedIndexs(nnz, dim);
     double[] valsD = genDoubleArray(nnz);
     for (int i = 0; i < nnz; i++)
-      vec.set(indexs[i], valsD[i]);
+      vec.set(indexs[i], (float) valsD[i]);
 
     for (int i = 0; i < nnz; i++)
       assertEquals((float) valsD[i], vec.get(indexs[i]));

@@ -57,7 +57,9 @@ public final class Max extends UnaryAggrFunc {
   public GetResult merge(List<PartitionGetResult> partResults) {
     double max = Double.NEGATIVE_INFINITY;
     for (PartitionGetResult partResult : partResults) {
-      max = Math.max(max, ((ScalarPartitionAggrResult) partResult).result);
+      if (partResult != null) {
+        max = Math.max(max, ((ScalarPartitionAggrResult) partResult).result);
+      }
     }
 
     return new ScalarAggrResult(max);

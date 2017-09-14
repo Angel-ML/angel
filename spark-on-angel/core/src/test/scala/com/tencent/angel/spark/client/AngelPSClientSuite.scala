@@ -17,24 +17,26 @@
 
 package com.tencent.angel.spark.client
 
-import com.tencent.angel.ml.matrix.psf.update.enhance.zip3.Zip3MapWithIndexFunc
+import scala.{math => SMath}
+
 import com.tencent.angel.spark._
-import com.tencent.angel.spark.context.AngelPSContext
+import com.tencent.angel.spark.context.{PSContext, PSVectorPool}
 import com.tencent.angel.spark.pof._
-import com.tencent.angel.spark.models.{PSModelPool, PSModelProxy}
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.scalatest.BeforeAndAfterEach
+
+import com.tencent.angel.spark.math.vector.{DensePSVector, PSVector}
 
 class AngelPSClientSuite extends PSFunSuite with BeforeAndAfterEach {
   private val dim = 14
   private val capacity = 12
   private var _angel: AngelPSClient = _
-  private var _pool: PSModelPool = _
-  var psProxy: PSModelProxy = _
-  var zeroProxy: PSModelProxy = _
-  var uniformProxy: PSModelProxy = _
-  var normalProxy: PSModelProxy = _
+  private var _pool: PSVectorPool = _
+  var psVector: DensePSVector = _
+  var zeroVector: DensePSVector = _
+  var uniformVector: DensePSVector = _
+  var normalVector: DensePSVector = _
 
   override def beforeAll(): Unit = {
     super.beforeAll()
@@ -59,17 +61,17 @@ class AngelPSClientSuite extends PSFunSuite with BeforeAndAfterEach {
     spark.sparkContext.setLogLevel("OFF")
 
     // start Angel
-    val context = PSContext.getOrCreate(spark.sparkContext)
-    _angel = PSClient().asInstanceOf[AngelPSClient]
+    PSContext.getOrCreate(spark.sparkContext)
+    _angel = PSClient.instance().asInstanceOf[AngelPSClient]
 
     // create pool
-    _pool = context.createModelPool(dim, capacity)
+    psVector = PSVector.dense(dim, capacity)
   }
 
   override def afterAll(): Unit = {
-    PSContext.getOrCreate().destroyModelPool(_pool)
+    PSContext.instance().destroyVectorPool(psVector)
     _pool = null
-    AngelPSContext.stop()
+    PSContext.stop()
     _angel = null
     SparkSession.builder().getOrCreate().stop()
     super.afterAll()
@@ -77,79 +79,78 @@ class AngelPSClientSuite extends PSFunSuite with BeforeAndAfterEach {
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    psProxy = _pool.createZero()
-    zeroProxy = _pool.createZero()
-    uniformProxy = _pool.createRandomUniform(0.0, 1.0)
-    normalProxy = _pool.createRandomNormal(0.0, 1.0)
+    zeroVector = PSVector.duplicate(psVector)
+    uniformVector = PSVector.duplicate(psVector).randomUniform(0.0, 1.0)
+    normalVector = PSVector.duplicate(psVector).randomNormal(0.0, 1.0)
   }
 
   override def afterEach(): Unit = {
-    _pool.delete(normalProxy)
-    _pool.delete(uniformProxy)
-    _pool.delete(zeroProxy)
-    _pool.delete(psProxy)
+    _pool.delete(normalVector)
+    _pool.delete(uniformVector)
+    _pool.delete(zeroVector)
+    _pool.delete(psVector)
     super.afterEach()
   }
 
   test("doPull") {
-    assert(_angel.pull(normalProxy).sameElements(normalProxy.mkRemote().pull()))
+    assert(_angel.pull(normalVector).sameElements(normalVector.toRemote.pull()))
   }
 
   test("doIncrement") {
     val localArray = Array.fill[Double](dim)(0.1)
 
-    val oldPSArray = normalProxy.mkRemote().pull()
+    val oldPSArray = normalVector.toRemote.pull()
     val result = localArray.indices.map(i => oldPSArray(i) + localArray(i))
 
-    _angel.increment(normalProxy, localArray)
+    _angel.increment(normalVector, localArray)
 
-    assert(normalProxy.mkRemote().pull().sameElements(result))
+    assert(normalVector.toRemote.pull().sameElements(result))
   }
 
   test("doMergeMax") {
-    val localPSVector = normalProxy.mkRemote().pull()
+    val localPSVector = normalVector.toRemote.pull()
 
     val localArray = Array.fill[Double](dim)(0.1)
-    _angel.mergeMax(normalProxy, localArray)
+    _angel.mergeMax(normalVector, localArray)
 
     val max = localArray.indices.map { i =>
       if (localArray(i) > localPSVector(i)) localArray(i) else localPSVector(i)
     }
 
-    assert(normalProxy.mkRemote().pull().sameElements(max))
+    assert(normalVector.toRemote.pull().sameElements(max))
   }
 
   test("doMergeMin") {
-    val localPSVector = normalProxy.mkRemote().pull()
+    val localPSVector = normalVector.toRemote.pull()
 
     val localArray = Array.fill[Double](dim)(0.1)
-    _angel.mergeMin(normalProxy, localArray)
+    _angel.mergeMin(normalVector, localArray)
 
     val min = localArray.indices.map { i =>
       if (localArray(i) < localPSVector(i)) localArray(i) else localPSVector(i)
     }
 
-    assert(normalProxy.mkRemote().pull().sameElements(min))
+    assert(normalVector.toRemote.pull().sameElements(min))
   }
 
   test("doPush") {
-    val psProxy = _pool.createZero()
+    val psProxy = PSVector.duplicate(psVector)
     val localArray = Array.fill[Double](dim)(3.14)
     _angel.push(psProxy, localArray)
-    assert(psProxy.mkRemote().pull().sameElements(localArray))
+    assert(psProxy.toRemote.pull().sameElements(localArray))
   }
 
   test("doFill") {
-    val psProxy = _pool.createRandomUniform(0.0, 1.0)
+    val psProxy = PSVector.duplicate(psVector).randomUniform(0.0, 1.0)
 
     _angel.fill(psProxy, 3.14)
-    assert(psProxy.mkRemote().pull().sameElements(Array.fill[Double](dim)(3.14)))
+    assert(psProxy.toRemote.pull().sameElements(Array.fill[Double](dim)(3.14)))
   }
 
   test("doRandomUniform") {
-    val psProxy = _pool.createZero()
+    val psProxy = PSVector.duplicate(psVector).randomUniform(0.0, 1.0)
     _angel.randomUniform(psProxy, -1.0, 1.0)
-    psProxy.mkRemote().pull().foreach { x =>
+    psProxy.toRemote.pull().foreach { x =>
       assert(x < 1.0 && x > -1.0)
     }
   }
@@ -163,243 +164,243 @@ class AngelPSClientSuite extends PSFunSuite with BeforeAndAfterEach {
     * val localArray = psKey.toLocal().get()
 
     * val mean = localArray.sum / localArray.length
-    * val variety = localArray.map(x => math.pow(x - mean, 2.0)).sum / (localArray.length - 1)
+    * val variety = localArray.map(x => SMath.pow(x - mean, 2.0)).sum / (localArray.length - 1)
 
     * val tol = 0.1
-    * assert(math.abs(mean - 0.0) < tol)
-    * assert(math.abs(math.sqrt(variety) - 1.0) < tol)
+    * assert(SMath.abs(mean - 0.0) < tol)
+    * assert(SMath.abs(SMath.sqrt(variety) - 1.0) < tol)
 
     * _angel.destroyVectorPool(pool)
     * }
    **/
 
   test("doSum") {
-    assert(uniformProxy.mkRemote().pull().sum === _angel.sum(uniformProxy))
+    assert(uniformVector.toRemote.pull().sum === _angel.sum(uniformVector))
   }
 
   test("doMax") {
-    assert(normalProxy.mkRemote().pull().max === _angel.max(normalProxy))
+    assert(normalVector.toRemote.pull().max === _angel.max(normalVector))
   }
 
   test("doMin") {
-    assert(normalProxy.mkRemote().pull().min === _angel.min(normalProxy))
+    assert(normalVector.toRemote.pull().min === _angel.min(normalVector))
   }
 
   test("doNnz") {
     val array = Array.fill[Double](dim)(0.0)
     array.update(3, 1.0)
     array.update(0, 1.0)
-    _angel.push(psProxy, array)
+    _angel.push(psVector, array)
 
-    assert(_angel.nnz(psProxy) == 2)
+    assert(_angel.nnz(psVector) == 2)
   }
 
   test("doAdd") {
     val constNum = 3.14
-    _angel.add(uniformProxy, constNum, psProxy)
+    _angel.add(uniformVector, constNum, psVector)
 
-    val result = uniformProxy.mkRemote().pull().map(_ + constNum)
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    val result = uniformVector.toRemote.pull().map(_ + constNum)
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doMul") {
     val constNum = 3.14
-    _angel.mul(uniformProxy, constNum, psProxy)
+    _angel.mul(uniformVector, constNum, psVector)
 
-    val result = uniformProxy.mkRemote().pull().map(_ * constNum)
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    val result = uniformVector.toRemote.pull().map(_ * constNum)
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doDiv") {
     val constNum = 3.14
-    _angel.div(uniformProxy, constNum, psProxy)
+    _angel.div(uniformVector, constNum, psVector)
 
-    val result = uniformProxy.mkRemote().pull().map(_ / constNum)
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    val result = uniformVector.toRemote.pull().map(_ / constNum)
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doPow") {
     val constNum = 3.14
-    _angel.pow(uniformProxy, constNum, psProxy)
+    _angel.pow(uniformVector, constNum, psVector)
 
-    val result = uniformProxy.mkRemote().pull().map(math.pow(_, constNum))
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    val result = uniformVector.toRemote.pull().map(SMath.pow(_, constNum))
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doSqrt") {
-    _angel.sqrt(uniformProxy, psProxy)
+    _angel.sqrt(uniformVector, psVector)
 
-    val result = uniformProxy.mkRemote().pull().map(x => math.sqrt(x))
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    val result = uniformVector.toRemote.pull().map(x => SMath.sqrt(x))
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doExp") {
-    _angel.exp(uniformProxy, psProxy)
+    _angel.exp(uniformVector, psVector)
 
-    val result = uniformProxy.mkRemote().pull().map(x => math.exp(x))
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    val result = uniformVector.toRemote.pull().map(x => SMath.exp(x))
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doExpm1") {
-    _angel.expm1(uniformProxy, psProxy)
+    _angel.expm1(uniformVector, psVector)
 
-    val result = uniformProxy.mkRemote().pull().map(x => math.expm1(x))
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    val result = uniformVector.toRemote.pull().map(x => SMath.expm1(x))
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doLog") {
-    _angel.log(uniformProxy, psProxy)
+    _angel.log(uniformVector, psVector)
 
-    val result = uniformProxy.mkRemote().pull().map(x => math.log(x))
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    val result = uniformVector.toRemote.pull().map(x => SMath.log(x))
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doLog1p") {
-    _angel.log1p(uniformProxy, psProxy)
+    _angel.log1p(uniformVector, psVector)
 
-    val result = uniformProxy.mkRemote().pull().map(x => math.log1p(x))
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    val result = uniformVector.toRemote.pull().map(x => SMath.log1p(x))
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doLog10") {
-    _angel.log10(uniformProxy, psProxy)
+    _angel.log10(uniformVector, psVector)
 
-    val result = uniformProxy.mkRemote().pull().map(x => math.log10(x))
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    val result = uniformVector.toRemote.pull().map(x => SMath.log10(x))
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doCeil") {
-    _angel.ceil(uniformProxy, psProxy)
+    _angel.ceil(uniformVector, psVector)
 
-    val result = uniformProxy.mkRemote().pull().map(x => math.ceil(x))
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    val result = uniformVector.toRemote.pull().map(x => SMath.ceil(x))
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doFloor") {
-    _angel.floor(uniformProxy, psProxy)
+    _angel.floor(uniformVector, psVector)
 
-    val result = uniformProxy.mkRemote().pull().map(x => math.floor(x))
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    val result = uniformVector.toRemote.pull().map(x => SMath.floor(x))
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doRound") {
-    _angel.round(uniformProxy, psProxy)
+    _angel.round(uniformVector, psVector)
 
-    val result = uniformProxy.mkRemote().pull().map(x => math.round(x))
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    val result = uniformVector.toRemote.pull().map(x => SMath.round(x))
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doAbs") {
-    _angel.abs(uniformProxy, psProxy)
+    _angel.abs(uniformVector, psVector)
 
-    val result = uniformProxy.mkRemote().pull().map(x => math.abs(x))
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    val result = uniformVector.toRemote.pull().map(x => SMath.abs(x))
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doSignum") {
-    _angel.signum(uniformProxy, psProxy)
+    _angel.signum(uniformVector, psVector)
 
-    val result = uniformProxy.mkRemote().pull().map(x => math.signum(x))
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    val result = uniformVector.toRemote.pull().map(x => SMath.signum(x))
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doAdd two PSVectors") {
-    _angel.add(uniformProxy, normalProxy, psProxy)
+    _angel.add(uniformVector, normalVector, psVector)
 
-    val uniArray = uniformProxy.mkRemote().pull()
-    val normalArray = normalProxy.mkRemote().pull()
+    val uniArray = uniformVector.toRemote.pull()
+    val normalArray = normalVector.toRemote.pull()
     val result = (0 until dim).toArray.map(i => uniArray(i) + normalArray(i))
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doSub two PSVectors") {
-    _angel.sub(uniformProxy, normalProxy, psProxy)
+    _angel.sub(uniformVector, normalVector, psVector)
 
-    val uniArray = uniformProxy.mkRemote().pull()
-    val normalArray = normalProxy.mkRemote().pull()
+    val uniArray = uniformVector.toRemote.pull()
+    val normalArray = normalVector.toRemote.pull()
     val result = (0 until dim).toArray.map(i => uniArray(i) - normalArray(i))
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doMul two PSVectors") {
-    _angel.mul(uniformProxy, normalProxy, psProxy)
+    _angel.mul(uniformVector, normalVector, psVector)
 
-    val uniArray = uniformProxy.mkRemote().pull()
-    val normalArray = normalProxy.mkRemote().pull()
+    val uniArray = uniformVector.toRemote.pull()
+    val normalArray = normalVector.toRemote.pull()
     val result = (0 until dim).toArray.map(i => uniArray(i) * normalArray(i))
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doDiv two PSVectors") {
-    _angel.div(normalProxy, uniformProxy, psProxy)
+    _angel.div(normalVector, uniformVector, psVector)
 
-    val normalArray = normalProxy.mkRemote().pull()
-    val uniArray = uniformProxy.mkRemote().pull()
+    val normalArray = normalVector.toRemote.pull()
+    val uniArray = uniformVector.toRemote.pull()
     val result = (0 until dim).toArray.map(i => normalArray(i) / uniArray(i))
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doMax two PSVectors") {
-    _angel.max(uniformProxy, normalProxy, psProxy)
+    _angel.max(uniformVector, normalVector, psVector)
 
-    val uniArray = uniformProxy.mkRemote().pull()
-    val normalArray = normalProxy.mkRemote().pull()
+    val uniArray = uniformVector.toRemote.pull()
+    val normalArray = normalVector.toRemote.pull()
     val result = (0 until dim).toArray.map (i =>
       if (uniArray(i) > normalArray(i)) uniArray(i) else normalArray(i)
     )
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doMin two PSVectors") {
-    _angel.min(uniformProxy, normalProxy, psProxy)
+    _angel.min(uniformVector, normalVector, psVector)
 
-    val uniArray = uniformProxy.mkRemote().pull()
-    val normalArray = normalProxy.mkRemote().pull()
+    val uniArray = uniformVector.toRemote.pull()
+    val normalArray = normalVector.toRemote.pull()
     val result = (0 until dim).toArray.map (i =>
       if (uniArray(i) < normalArray(i)) uniArray(i) else normalArray(i)
     )
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doMap") {
     val multiplier = 2.0
-    _angel.map(normalProxy, new MapFuncTest(multiplier), psProxy)
+    _angel.map(normalVector, new MapFuncTest(multiplier), psVector)
 
-    val result = normalProxy.mkRemote().pull().map(x => multiplier * x * x)
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    val result = normalVector.toRemote.pull().map(x => multiplier * x * x)
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doZip2Map") {
     val multiplier = 2.0
-    _angel.zip2Map(uniformProxy, normalProxy, new Zip2MapFuncTest(multiplier), psProxy)
+    _angel.zip2Map(uniformVector, normalVector, new Zip2MapFuncTest(multiplier), psVector)
 
-    val uniformArray = uniformProxy.mkRemote().pull()
-    val normalArray = normalProxy.mkRemote().pull()
+    val uniformArray = uniformVector.toRemote.pull()
+    val normalArray = normalVector.toRemote.pull()
     val result = (0 until dim).toArray.map { i =>
       multiplier * uniformArray(i) + normalArray(i) * normalArray(i)
     }
 
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doZip3Map") {
     val multiplier = 2.0
-    _angel.zip3Map(uniformProxy, normalProxy, normalProxy, new Zip3MapFuncTest(multiplier), psProxy)
+    _angel.zip3Map(uniformVector, normalVector, normalVector, new Zip3MapFuncTest(multiplier), psVector)
 
-    val uniformArray = uniformProxy.mkRemote().pull()
-    val normalArray = normalProxy.mkRemote().pull()
+    val uniformArray = uniformVector.toRemote.pull()
+    val normalArray = normalVector.toRemote.pull()
     val result = (0 until dim).toArray.map { i =>
       multiplier * uniformArray(i) * (1 - normalArray(i)) + normalArray(i) * normalArray(i)
     }
 
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doMapWithIndex") {
     val multiplier = 2.0
-    _angel.mapWithIndex(normalProxy, new MapWithIndexFuncTest(multiplier), psProxy)
+    _angel.mapWithIndex(normalVector, new MapWithIndexFuncTest(multiplier), psVector)
 
-    val normalArray = normalProxy.mkRemote().pull()
+    val normalArray = normalVector.toRemote.pull()
     val result = (0 until dim).toArray.map { i =>
       if (i == 0) {
         normalArray(i) * normalArray(i)
@@ -408,15 +409,15 @@ class AngelPSClientSuite extends PSFunSuite with BeforeAndAfterEach {
       }
     }
 
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doZip2MapWithIndex") {
     val multiplier = 2.0
-    _angel.zip2MapWithIndex(uniformProxy, normalProxy, new Zip2MapWithIndexFuncTest(multiplier), psProxy)
+    _angel.zip2MapWithIndex(uniformVector, normalVector, new Zip2MapWithIndexFuncTest(multiplier), psVector)
 
-    val uniformArray = uniformProxy.mkRemote().pull()
-    val normalArray = normalProxy.mkRemote().pull()
+    val uniformArray = uniformVector.toRemote.pull()
+    val normalArray = normalVector.toRemote.pull()
     val result = (0 until dim).toArray.map {i =>
       if (i == 0) {
         uniformArray(i) + normalArray(i) * normalArray(i)
@@ -425,15 +426,15 @@ class AngelPSClientSuite extends PSFunSuite with BeforeAndAfterEach {
       }
     }
 
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doZip3MapWithIndex") {
     val multiplier = 2.0
-    _angel.zip3MapWithIndex(uniformProxy, normalProxy, normalProxy, new Zip3MapWithIndexFuncTest(multiplier), psProxy)
+    _angel.zip3MapWithIndex(uniformVector, normalVector, normalVector, new Zip3MapWithIndexFuncTest(multiplier), psVector)
 
-    val uniformArray = uniformProxy.mkRemote().pull()
-    val normalArray = normalProxy.mkRemote().pull()
+    val uniformArray = uniformVector.toRemote.pull()
+    val normalArray = normalVector.toRemote.pull()
     val result = (0 until dim).toArray.map { i =>
       if (i == 0) {
         uniformArray(i) * (1 - normalArray(i)) + normalArray(i) * normalArray(i)
@@ -443,27 +444,27 @@ class AngelPSClientSuite extends PSFunSuite with BeforeAndAfterEach {
       }
     }
 
-    assert(psProxy.mkRemote().pull().sameElements(result))
+    assert(psVector.toRemote.pull().sameElements(result))
   }
 
   test("doAxpy") {
-    val uniformArray = uniformProxy.mkRemote().pull()
-    val normalArray = normalProxy.mkRemote().pull()
+    val uniformArray = uniformVector.toRemote.pull()
+    val normalArray = normalVector.toRemote.pull()
     val result = (0 until dim).toArray.map { i =>
       normalArray(i) + 2.0 * uniformArray(i)
     }
 
-    _angel.axpy(2.0, uniformProxy, normalProxy)
+    _angel.axpy(2.0, uniformVector, normalVector)
 
     (0 until dim).foreach { i =>
-      assert(normalProxy.mkRemote().pull()(i) === result(i))
+      assert(normalVector.toRemote.pull()(i) === result(i))
     }
   }
 
   test("doDot") {
-    val dot = _angel.dot(uniformProxy, normalProxy)
-    val uniformArray = uniformProxy.mkRemote().pull()
-    val normalArray = normalProxy.mkRemote().pull()
+    val dot = _angel.dot(uniformVector, normalVector)
+    val uniformArray = uniformVector.toRemote.pull()
+    val normalArray = normalVector.toRemote.pull()
     val result = (0 until dim).toArray.map { i =>
       normalArray(i) * uniformArray(i)
     }.sum
@@ -471,15 +472,15 @@ class AngelPSClientSuite extends PSFunSuite with BeforeAndAfterEach {
   }
 
   test("doCopy") {
-    _angel.copy(normalProxy, psProxy)
+    _angel.copy(normalVector, psVector)
 
-    assert(psProxy.mkRemote().pull().sameElements(normalProxy.mkRemote().pull()))
+    assert(psVector.toRemote.pull().sameElements(normalVector.toRemote.pull()))
   }
 
   test("doScal") {
-    val result = normalProxy.mkRemote().pull().map(_ * -0.1)
-    _angel.scal(-0.1, normalProxy)
-    val scale = normalProxy.mkRemote().pull()
+    val result = normalVector.toRemote.pull().map(_ * -0.1)
+    _angel.scal(-0.1, normalVector)
+    val scale = normalVector.toRemote.pull()
 
     (0 until dim).foreach { i =>
       assert(scale(i) === result(i))
@@ -487,26 +488,26 @@ class AngelPSClientSuite extends PSFunSuite with BeforeAndAfterEach {
   }
 
   test("doNrm2") {
-    val norm = _angel.nrm2(normalProxy)
-    val result = math.sqrt(normalProxy.mkRemote().pull().map(x => x * x).sum)
+    val norm = _angel.nrm2(normalVector)
+    val result = SMath.sqrt(normalVector.toRemote.pull().map(x => x * x).sum)
     assert(result === norm)
   }
 
   test("doAsum") {
-    val asum = _angel.asum(normalProxy)
-    val result = normalProxy.mkRemote().pull().map(math.abs).sum
+    val asum = _angel.asum(normalVector)
+    val result = normalVector.toRemote.pull().map(SMath.abs).sum
     assert(result === asum)
   }
 
   test("doAmax") {
-    val amax = _angel.amax(normalProxy)
-    val result = normalProxy.mkRemote().pull().map(math.abs).max
+    val amax = _angel.amax(normalVector)
+    val result = normalVector.toRemote.pull().map(SMath.abs).max
     assert(result === amax)
   }
 
   test("doAmin") {
-    val result = normalProxy.mkRemote().pull().map(math.abs).min
-    val amin = _angel.amin(normalProxy)
+    val result = normalVector.toRemote.pull().map(SMath.abs).min
+    val amin = _angel.amin(normalVector)
 
     assert(result === amin)
   }

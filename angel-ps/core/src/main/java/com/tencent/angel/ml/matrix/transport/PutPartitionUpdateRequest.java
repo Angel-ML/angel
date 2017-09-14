@@ -21,6 +21,7 @@ import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplit;
 import io.netty.buffer.ByteBuf;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -54,17 +55,13 @@ public class PutPartitionUpdateRequest extends PartitionRequest {
     this.setUpdateClock(updateClock);
   }
 
+  public PutPartitionUpdateRequest() {
+
+  }
+
   @Override
   public int getEstimizeDataSize() {
-    int estimizeSize = 0;
-    if (rowsSplit != null) {
-      int size = rowsSplit.size();
-      for (int i = 0; i < size; i++) {
-        estimizeSize += rowsSplit.get(i).size();
-      }
-    }
-
-    return estimizeSize;
+    return bufferLen();
   }
 
   @Override
@@ -102,7 +99,7 @@ public class PutPartitionUpdateRequest extends PartitionRequest {
   /**
    * Set update row splits.
    * 
-   * @param List<RowUpdateSplit> update row splits.
+   * @param rowsSplit update row splits.
    */
   public void setRowsSplit(List<RowUpdateSplit> rowsSplit) {
     this.rowsSplit = rowsSplit;
@@ -124,16 +121,22 @@ public class PutPartitionUpdateRequest extends PartitionRequest {
 
   @Override
   public void deserialize(ByteBuf buf) {
-    // TODO:
+    super.deserialize(buf);
+    taskIndex = buf.readInt();
+    updateClock = buf.readBoolean();
+    rowsSplit = new ArrayList<>();
   }
 
   @Override
   public int bufferLen() {
-    if (partKey != null) {
-      return super.bufferLen() + 4 + partKey.bufferLen();
-    } else {
-      return super.bufferLen() + 4;
+    int len = super.bufferLen();
+    if(rowsSplit != null)  {
+      int size = rowsSplit.size();
+      for(int i = 0; i < size; i++) {
+        len += rowsSplit.get(i).bufferLen();
+      }
     }
+    return len;
   }
 
   public int getTaskIndex() {

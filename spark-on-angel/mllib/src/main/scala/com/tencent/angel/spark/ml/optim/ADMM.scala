@@ -18,25 +18,24 @@
 package com.tencent.angel.spark.ml.optim
 
 import java.util.concurrent._
-import scala.collection.mutable.ArrayBuffer
 
 import breeze.linalg.{DenseVector => BDV, Vector => BV}
 import breeze.optimize.{CachedDiffFunction, DiffFunction, LBFGS => BreezeLBFGS}
+import com.tencent.angel.spark.math.vector.PSVector
+import com.tencent.angel.spark.ml.common.OneHot.OneHotVector
+import com.tencent.angel.spark.ml.common.{BLAS, Gradient, OneHot}
+import com.tencent.angel.spark.ml.psf.ADMMZUpdater
 import org.apache.spark.HashPartitioner
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.mllib.linalg.{DenseVector, Vector, Vectors}
 import org.apache.spark.mllib.optimization.{L1Updater, Updater}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.rdd.user.{CoalescedRDD => PartitionGroupRDD}
+import org.apache.spark.rdd.user.CoalescedRDD
 import org.apache.spark.sql.{DataFrame, Row}
 import org.apache.spark.storage.StorageLevel
 
-import com.tencent.angel.spark.PSContext
-import com.tencent.angel.spark.ml.common.{BLAS, Gradient, OneHot}
-import com.tencent.angel.spark.ml.common.OneHot.OneHotVector
-import com.tencent.angel.spark.ml.psf.ADMMZUpdater
-import com.tencent.angel.spark.models.{PSModelPool, PSModelProxy}
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * :: DeveloperApi ::
@@ -199,7 +198,6 @@ object ADMM {
   private val numCorrection = 7
   private val lbfgsConvergenceTol = 1e-9
 
-  //scalastyle:off
   /**
    * Run Alternating Direction Method of Multipliers(ADMM) in parallel.
     *
@@ -232,14 +230,10 @@ object ADMM {
       primalTol: Double = 1e-5,
       dualTol: Double = 1e-5): (DenseVector, Array[Double]) = {
 
-  // scalastyle:on
-
     var (states, subModels) = initialize(data, initModel, numSubModel)
 
-    var lastZ: PSModelProxy = null
-    val poolCapacity = 50
-    val psPool = PSContext.getOrCreate().createModelPool(initModel.size, poolCapacity)
-    var zPS = psPool.createModel(initModel.toArray)
+    var lastZ: PSVector = null
+    var zPS:PSVector = PSVector.dense(initModel.size)
 
     val history = new ArrayBuffer[Double]()
     history += getGlobalLoss(states, zPS, gradient, updater, regParam)
@@ -249,13 +243,13 @@ object ADMM {
     do {
       println(s"iteration: $numIter begin...")
 
-      val newSubModels = new PartitionGroupRDD[OneHotInstance, Model, Model](states,
+      val newSubModels = new CoalescedRDD[OneHotInstance, Model, Model](states,
         subModels, numSubModel) ({
         case (iterParts, iterModel) =>
           val (id, subModel) = iterModel.next()
           require(!iterModel.hasNext,
             s"zipPartitions failed, 1 partition has ${iterModel.length + 1} model")
-          val localZ = new DenseVector(zPS.mkRemote().pull())
+          val localZ = new DenseVector(zPS.toRemote.pull())
 
           // update u_i (u_i = u_i + x_i - z)
           BLAS.axpy(1, subModel.x, subModel.u)
@@ -276,11 +270,13 @@ object ADMM {
 
       // all reduce x + u
       println(s"iteration: $numIter update w")
-      val w = wUpdate(psPool, subModels, numSubModel)
+
+      val wSum = PSVector.duplicate(zPS)
+      val w = wUpdate(wSum, subModels, numSubModel)
 
       // update z
       println(s"iteration: $numIter update z")
-      lastZ = zPS.mkBreeze().copy.proxy
+      lastZ = zPS.toBreeze.copy.component
       zPS = zUpdate(numIter, numSubModel, w, updater, regParam, rho)
 
       // evaluate and loss
@@ -298,7 +294,7 @@ object ADMM {
       !isConverged(subModels, lastZ, zPS, rho, primalTol, dualTol))
     println(s"global loss history: ${history.mkString(" ")}")
 
-    val finalModel = new DenseVector(zPS.mkRemote().pull())
+    val finalModel = new DenseVector(zPS.toRemote.pull())
     (finalModel, history.toArray)
   }
 
@@ -366,9 +362,9 @@ object ADMM {
     weight
   }
 
-  private def wUpdate(psPool: PSModelPool,
+  private def wUpdate(wSum: PSVector,
                       subModels: RDD[(Int, Model)],
-                      subModelNum: Int): PSModelProxy = {
+                      subModelNum: Int): PSVector = {
     subModels.foreach { case (id, model) =>
       println(s"id: $id x nnz: ${model.x.numNonzeros} u nnz: ${model.u.numNonzeros}")}
 
@@ -377,17 +373,16 @@ object ADMM {
       x.indices.toArray.map(index => x(index) + y(index))
     }
 
-    val wSum = psPool.createZero()
     subModels.mapPartitions { iter =>
       val sum = iter.map { case (index, model) =>
         sumArray(model.x.toArray, model.u.toArray)
       }.reduce((x1, x2) => sumArray(x1, x2))
-      wSum.mkRemote().incrementAndFlush(sum)
+      wSum.toRemote.incrementAndFlush(sum)
       Iterator.empty
     }.count()
 
-    val wAver = wSum.mkBreeze() :* (1.0 / subModelNum)
-    wAver.proxy
+    val wAver = wSum.toBreeze :* (1.0 / subModelNum)
+    wAver.component
   }
 
   /**
@@ -399,30 +394,19 @@ object ADMM {
    * then z = (N * rho) / (2 * lambda + N * rho) * w
    */
   private def zUpdate(
-                       numIter: Int,
-                       modelNum: Int,
-                       w: PSModelProxy,
-                       updater: Updater,
-                       regParam: Double,
-                       rho: Double): PSModelProxy = {
-    // z update
+      numIter: Int,
+      modelNum: Int,
+      w: PSVector,
+      updater: Updater,
+      regParam: Double,
+      rho: Double): PSVector = {
+
     val newZ = updater match {
       case u: L1Updater =>
         val kappa = regParam / (rho * modelNum)
-        w.mkBreeze().map(new ADMMZUpdater(kappa))
-//      case _ =>
-//        new SparkException("only support L1Updater now")
-//      case u: SquaredL2Updater =>
-//        val factor = (modelNum * rho) / (2 * regParam + modelNum * rho)
-//        val z = Vectors.zeros(featNum)
-//        BLAS.axpy(factor / modelNum, w, z)
-//        z
-//      case u: SimpleUpdater =>
-//        val z = Vectors.zeros(featNum)
-//        BLAS.axpy(1.0 / modelNum, w, z)
-//        z
+        w.toBreeze.map(new ADMMZUpdater(kappa))
     }
-    newZ.proxy
+    newZ.component
   }
 
   /**
@@ -439,11 +423,11 @@ object ADMM {
 
   private def getGlobalLoss(
                              states: RDD[(Int, OneHotInstance)],
-                             zPS: PSModelProxy,
+                             zPS: PSVector,
                              gradient: Gradient,
                              updater: Updater,
                              regParam: Double): Double = {
-    val localZ = new DenseVector(zPS.mkRemote().pull())
+    val localZ = new DenseVector(zPS.toRemote.pull())
     val featNum = localZ.size
 
     // only for logistic regression, without using gradient.
@@ -465,14 +449,14 @@ object ADMM {
    */
   private def isConverged(
                            models: RDD[(Int, Model)],
-                           lastZ: PSModelProxy,
-                           zPS: PSModelProxy,
+                           lastZ: PSVector,
+                           zPS: PSVector,
                            rho: Double,
                            primalTol: Double,
                            dualTol: Double): Boolean = {
 
-    val localLastZ = lastZ.mkRemote().pull()
-    val localZ = zPS.mkRemote().pull()
+    val localLastZ = lastZ.toRemote.pull()
+    val localZ = zPS.toRemote.pull()
 
     val featNum = localLastZ.length
     val t = models.map { case (_, subModel) =>
@@ -566,9 +550,9 @@ object ADMM {
     }
   }
 
-  private def evaluate(dataSet: RDD[(Double, OneHotVector)], modelPS: PSModelProxy): Double = {
+  private def evaluate(dataSet: RDD[(Double, OneHotVector)], modelPS: PSVector): Double = {
     val scoreAndLabel = dataSet.map { case (label, feature) =>
-      val raw = OneHot.dot(feature, new DenseVector(modelPS.mkRemote().pull()))
+      val raw = OneHot.dot(feature, new DenseVector(modelPS.toRemote.pull()))
       val prob = 1.0 / (1.0 + math.exp(-1 * raw))
       (prob, label)
     }
@@ -577,9 +561,9 @@ object ADMM {
     bcMetric.areaUnderROC()
   }
 
-  private def evaluateState(states: RDD[(Int, OneHotInstance)], model: PSModelProxy): Double = {
+  private def evaluateState(states: RDD[(Int, OneHotInstance)], model: PSVector): Double = {
     val scoreAndLabel = states.mapPartitions { iter =>
-      val thisModel = new DenseVector(model.mkRemote().pull())
+      val thisModel = new DenseVector(model.toRemote.pull())
       iter.map { case (id, instance) =>
         val raw = OneHot.dot(instance.features, thisModel)
         val prob = 1.0 / (1.0 + math.exp(-1 * raw))

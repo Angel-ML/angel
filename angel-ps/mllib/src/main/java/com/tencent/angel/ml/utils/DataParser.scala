@@ -81,7 +81,7 @@ object DataParser {
     if (null == text) {
       return null
     }
-    val splits = text.trim.split(" ")
+    val splits = text.trim.split("\\s+")
 
     if (splits.length < 1)
       return null
@@ -100,7 +100,7 @@ object DataParser {
     var value: Double = -1.0
     var i: Int = 0
     while (i < len) {
-      kv = splits(i + 1).split(":")
+      kv = splits(i + 1).trim.split(":")
       key = kv(0).toInt
       value = kv(1).toDouble
       keys(i) = key

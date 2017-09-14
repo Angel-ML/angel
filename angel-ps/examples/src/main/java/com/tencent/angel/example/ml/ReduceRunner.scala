@@ -61,7 +61,7 @@ class ReduceTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
     dstat()
 
     model.model.clock(false)
-    ctx.incIteration()
+    ctx.incEpoch()
 
 
     val data = new Array[Double](feaNum)
@@ -85,7 +85,7 @@ class ReduceTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
 
     val startUpdate = System.currentTimeMillis
 
-    model.model.clock()
+    model.model.syncClock()
 
     val startGet = System.currentTimeMillis
 

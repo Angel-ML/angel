@@ -118,9 +118,13 @@ object MLConf {
   val DEFAULT_ML_FM_REG1 = 0.0
   val ML_FM_REG2 = "ml.fm.reg2"
   val DEFAULT_ML_FM_REG2 = 0.0
-  val ML_FM_V_INIT = "ml.fm.v.init"
+  val ML_FM_V_STDDEV = "ml.fm.v.stddev"
   val DEFAULT_ML_FM_V_INIT = 0.1
 
+  val ML_MLR_RANK = "ml.mlr.rank"
+  val DEFAULT_ML_MLR_RANK = 5
+  val ML_MLR_V_INIT = "ml.mlr.v.init"
+  val DEFAULT_ML_MLR_V_INIT = 0.1
 
   // ModelParser params
   val ML_MODEL_IN_PATH = "ml.model.in.path"

@@ -17,12 +17,13 @@
 
 package com.tencent.angel.spark.rdd
 
+
+import com.tencent.angel.spark.math.vector.decorator.RemotePSVector
+
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 import org.apache.spark.rdd.RDD
-
-import com.tencent.angel.spark.models.vector.RemotePSVector
 
 class RDDPSFunctions[T: ClassTag](self: RDD[T]) extends Serializable {
 
@@ -41,7 +42,7 @@ class RDDPSFunctions[T: ClassTag](self: RDD[T]) extends Serializable {
       val result = iter.foldLeft(zeroValue)(seqOp)
       Iterator(result)
     }.reduce(combOp)
-    RemotePSVector.flush()
+    RemotePSVector.flushAll()
     res
   }
 
@@ -50,7 +51,7 @@ class RDDPSFunctions[T: ClassTag](self: RDD[T]) extends Serializable {
       val result = iter.foldLeft(zeroValue)(seqOp)
       Iterator(result)
     }.collect().head
-    RemotePSVector.flush()
+    RemotePSVector.flushAll()
     res
   }
 

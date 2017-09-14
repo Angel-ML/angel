@@ -110,11 +110,8 @@ public class VAUpdateParam extends UpdateParam {
     int size = partList.size();
     List<PartitionUpdateParam> partParams = new ArrayList<PartitionUpdateParam>(size);
     for (PartitionKey part : partList) {
-      if (rowId < part.getStartRow() || rowId >= part.getEndRow()) {
-        throw new RuntimeException("Wrong rowId!");
-      }
       partParams.add(new VAPartitionUpdateParam(matrixId, part, rowId,
-          part.getStartCol(), part.getEndCol(), array));
+        (int)part.getStartCol(), (int)part.getEndCol(), array));
     }
 
     return partParams;

@@ -32,8 +32,8 @@ public class GetPartitionRequest extends PartitionRequest {
    * Create a new GetPartitionRequest.
    *
    * @param serverId parameter server id
-   * @param partKey matrix partition key
-   * @param clock clock value
+   * @param partKey  matrix partition key
+   * @param clock    clock value
    */
   public GetPartitionRequest(ParameterServerId serverId, PartitionKey partKey, int clock) {
     super(serverId, clock, partKey);
@@ -46,45 +46,39 @@ public class GetPartitionRequest extends PartitionRequest {
     super();
   }
 
-  @Override
-  public TransportMethod getType() {
+  @Override public TransportMethod getType() {
     return TransportMethod.GET_PART;
   }
 
-  @Override
-  public int getEstimizeDataSize() {
+  @Override public int getEstimizeDataSize() {
     MatrixMeta meta =
-        PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(partKey.getMatrixId());
+      PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(partKey.getMatrixId());
     if (meta == null) {
       return 0;
     } else {
       RowType rowType = meta.getRowType();
       switch (rowType) {
         case T_DOUBLE_DENSE:
-          return 8 * (partKey.getEndCol() - partKey.getStartCol()
-              * (partKey.getEndRow() - partKey.getStartRow()));
+          return 8 * ((int) partKey.getEndCol() - (int) partKey.getStartCol() * (partKey.getEndRow()
+            - partKey.getStartRow()));
 
         case T_INT_DENSE:
-          return 4 * (partKey.getEndCol() - partKey.getStartCol()
-              * (partKey.getEndRow() - partKey.getStartRow()));
+          return 4 * ((int) partKey.getEndCol() - (int) partKey.getStartCol() * (partKey.getEndRow()
+            - partKey.getStartRow()));
 
         case T_FLOAT_DENSE:
-          return 4 * (partKey.getEndCol() - partKey.getStartCol()
-              * (partKey.getEndRow() - partKey.getStartRow()));
+          return 4 * ((int) partKey.getEndCol() - (int) partKey.getStartCol() * (partKey.getEndRow()
+            - partKey.getStartRow()));
 
-        case T_DOUBLE_SPARSE:
-        case T_INT_SPARSE: {
+        default: {
           ServerPartition part =
-              PSAgentContext.get().getMatricesCache().getPartition(partKey.getMatrixId(), partKey);
+            PSAgentContext.get().getMatricesCache().getPartition(partKey.getMatrixId(), partKey);
           if (part != null) {
             return part.bufferLen();
           } else {
             return 0;
           }
         }
-
-        default:
-          return 8 * (partKey.getEndCol() - partKey.getStartCol());
       }
     }
   }

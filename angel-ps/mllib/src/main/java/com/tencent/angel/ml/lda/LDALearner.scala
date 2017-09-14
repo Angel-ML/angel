@@ -17,350 +17,68 @@
 
 package com.tencent.angel.ml.lda
 
+import java.io.BufferedOutputStream
 import java.util
+import java.util.Collections
 import java.util.concurrent._
-import java.util.concurrent.atomic.AtomicIntegerArray
-import java.util.{Collections, Random}
+import java.util.concurrent.atomic.AtomicInteger
 
+import com.tencent.angel.PartitionKey
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.MLLearner
-import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.lda.structures.S2STraverseMap
-import com.tencent.angel.ml.math.vector.{DenseDoubleVector, DenseIntVector, SparseIntSortedVector}
-import com.tencent.angel.ml.model.MLModel
-import com.tencent.angel.ml.utils.MathUtils
 import com.tencent.angel.ml.conf.MLConf._
+import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.lda.algo.{CSRTokens, Sampler}
+import com.tencent.angel.ml.lda.psf.{GetPartFunc, LikelihoodFunc, PartCSRResult}
+import com.tencent.angel.ml.math.vector.DenseIntVector
+import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult
+import com.tencent.angel.ml.matrix.psf.get.base.{PartitionGetParam, PartitionGetResult}
+import com.tencent.angel.ml.matrix.psf.get.multi.PartitionGetRowsParam
 import com.tencent.angel.ml.metric.log.ObjMetric
+import com.tencent.angel.ml.model.MLModel
+import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex
+import com.tencent.angel.utils.HdfsUtil
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
-import it.unimi.dsi.fastutil.ints.IntArrayList
 import org.apache.commons.logging.LogFactory
 import org.apache.commons.math.special.Gamma
+import org.apache.hadoop.fs.Path
 
+import scala.collection.mutable
 
-class LDALearner(ctx: TaskContext,
-                 docs: util.List[Document],
-                 lDAModel: LDAModel) extends MLLearner(ctx) {
+class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLLearner(ctx) {
 
   val LOG = LogFactory.getLog(classOf[LDALearner])
 
-  val ck  = new AtomicIntegerArray(lDAModel.K)
-  val cdk = new Array[S2STraverseMap](docs.size())
+  val pkeys = PSAgentContext.get().getMatrixPartitionRouter.
+    getPartitionKeyList(model.wtMat.getMatrixId())
 
-  val words = buildWords()
-  val rowIds = new Array[Int](words.size())
+  val reqRows = new util.HashMap[Int, util.List[Integer]]()
 
-  globalMetrics.addMetrics(LOG_LIKELIHOOD, ObjMetric())
-
-  def buildWords(): util.Map[Integer, TokensOneWord] = {
-    val builder = new util.HashMap[Int, IntArrayList]()
-    val M = docs.size()
-    for (idx <- 0 until M) {
-      val doc = docs.get(idx)
-      val size = doc.len()
-      for (i <- 0 until size) {
-        val wid = doc.wids(i)
-        if (!builder.containsKey(wid))
-          builder.put(wid, new IntArrayList())
-        builder.get(wid).add(doc.docId)
-      }
+  for (i <- 0 until pkeys.size()) {
+    val pkey = pkeys.get(i)
+    val rows = new util.ArrayList[Integer]()
+    for (w <- pkey.getStartRow until pkey.getEndRow) {
+      if (data.ws(w + 1) - data.ws(w) > 0) rows.add(w)
     }
-
-    val words = new util.HashMap[Integer, TokensOneWord]()
-    val iter = builder.entrySet().iterator()
-    while (iter.hasNext) {
-      val entry = iter.next()
-      words.put(entry.getKey, new TokensOneWord(entry.getKey, entry.getValue))
-    }
-
-    words
+    reqRows.put(pkey.getPartitionId, rows)
   }
 
-  val localWords = new Array[Boolean](lDAModel.V)
+  Collections.shuffle(pkeys)
 
-  val executor = new ThreadPoolExecutor(lDAModel.threadNum, lDAModel.threadNum * 2,
-    1, TimeUnit.HOURS, new LinkedBlockingQueue[Runnable]())
-  val threads = new Array[SamplingThread](lDAModel.threadNum)
-  for (i <- 0 until lDAModel.threadNum)
-    threads(i) = new SamplingThread(lDAModel, ck, words, cdk, docs)
+  // Hyper parameters
+  val alpha = model.alpha
+  val beta  = model.beta
+  val lgammaBeta = Gamma.logGamma(beta)
+  val lgammaAlpha = Gamma.logGamma(alpha)
+  val lgammaAlphaSum = Gamma.logGamma(alpha * model.K)
 
+  val nk = new Array[Int](model.K)
 
-  @throws[Exception]
-  def initOneBatch(queue: ConcurrentLinkedQueue[TokensOneWord], batchNum: Int): Unit = {
-    LOG.info(s"start init batch $batchNum")
+  globalMetrics.addMetrics(LOG_LIKELIHOOD, new ObjMetric())
 
-    for (i <- 0 until lDAModel.K)
-      ck.set(i, 0)
-
-    val initThreads = new Array[InitThread](lDAModel.threadNum)
-    val futures = new Array[Future[java.lang.Boolean]](lDAModel.threadNum)
-
-    for (i <- 0 until lDAModel.threadNum) {
-      initThreads(i) = new InitThread(queue)
-      futures(i) = executor.submit(initThreads(i))
-    }
-
-    waitForFutures(futures)
-
-    val update = new DenseIntVector(lDAModel.K)
-    update.setRowId(0)
-
-    for (i <- 0 until ck.length())
-      update.set(i, ck.get(i))
-
-
-    lDAModel.tMat.increment(update)
-    val f1 = lDAModel.tMat.clock()
-    val f2 = lDAModel.wtMat.clock()
-    f1.get()
-    f2.get()
-  }
-
-  def buildInitQueue(splitNum: Int): util.List[ConcurrentLinkedQueue[TokensOneWord]] = {
-    val len = rowIds.length
-    val splitRowNum = len / splitNum + 1
-    val result = new util.ArrayList[ConcurrentLinkedQueue[TokensOneWord]]()
-    var i = 0
-    while (i < len) {
-      val queue = new ConcurrentLinkedQueue[TokensOneWord]()
-      for (j <- i until Math.min(i + splitRowNum, len))
-        queue.add(words.get(rowIds(j)))
-      i += splitRowNum
-      result.add(queue)
-    }
-    result
-  }
-
-  @throws[Exception]
-  def init(): Unit = {
-    LOG.info("Start init")
-    val iter = words.entrySet().iterator()
-
-    var idx = 0
-    while (iter.hasNext) {
-      val list = iter.next().getValue
-      rowIds(idx) = list.getWordId
-      localWords(list.getWordId) = true
-      idx += 1
-    }
-
-    MathUtils.shuffle(rowIds)
-
-    val queues = buildInitQueue(lDAModel.splitNum)
-    for (split <- 0 until queues.size())
-      initOneBatch(queues.get(split), split)
-  }
-
-  def buildRowIndex(splitNum: Int): util.List[RowIndex] = {
-    val len = rowIds.length
-    val splitRowNum = len / splitNum + 1
-    val indexList = new util.ArrayList[RowIndex]()
-    var i = 0
-    while (i < len) {
-      val index = new RowIndex()
-      for (j <- i until Math.min(i + splitRowNum, len))
-        index.addRowId(rowIds(j))
-      indexList.add(index)
-      i += splitRowNum
-    }
-    indexList
-  }
-
-  def getCk(): Unit = {
-    var ckSum = 0
-    // Get topic mat
-    lDAModel.tMat.getRow(0) match {
-      case x: DenseIntVector =>
-        for (i <- 0 until x.size()) {
-          ck.set(i, x.get(i))
-          ckSum += x.get(i)
-        }
-
-      case y => throw new AngelException("Should be DenseIntVector while it is " + y.getClass.getName)
-    }
-
-    LOG.info(s"ck_sum=$ckSum")
-  }
-
-  @throws[Exception]
-  def trainOneBatch(batchNum: Int, rowIndex: RowIndex): Unit = {
-    LOG.info("Start batch " + batchNum + " #rows = " + rowIndex.getRowsNumber)
-
-    getCk()
-
-    val rows = lDAModel.wtMat.getRowsFlow(rowIndex, 1000)
-    val futures = new Array[Future[java.lang.Boolean]](lDAModel.threadNum)
-    for (i <- 0 until lDAModel.threadNum) {
-      threads(i).setTaskQueue(rows)
-      futures(i) = executor.submit(threads(i))
-    }
-
-    waitForFutures(futures)
-
-    val f1 = lDAModel.tMat.clock()
-    val f2 = lDAModel.wtMat.clock()
-    f1.get()
-    f2.get()
-
-    ctx.incIteration()
-  }
-
-  @throws[Exception]
-  def trainOneEpoch(epoch: Int): Unit = {
-    LOG.info(s"start epoch $epoch")
-    val indexList = buildRowIndex(lDAModel.splitNum)
-    Collections.shuffle(indexList)
-
-    globalMetrics.metrics(LOG_LIKELIHOOD, loglikelihood())
-
-    for (idx <- 0 until indexList.size())
-      trainOneBatch(idx, indexList.get(idx))
-  }
-
-  @throws[Exception]
-  def loglikelihood(): Double = {
-    val result = computeDocllh()
-    val taskId = ctx.getTaskId.getIndex
-    val taskNum = ctx.getTotalTaskNum
-
-    val numPerTask = Math.ceil(lDAModel.V * 1.0 / taskNum).toInt + 1
-    val start = numPerTask * taskId
-    val end   = Math.min(lDAModel.V, numPerTask * (taskId + 1))
-    result.llh += computeWordllh(start, end)
-    if (taskId == 0)
-      result.llh += computeWordSummaryllh
-
-    result.llh
-  }
-
-  def computeDocllh(): LLhwResult = {
-    val result = new LLhwResult
-
-    var tokenNum = 0
-    var dkNum = 0
-    val iter = docs.iterator()
-    var ll = 0.0
-    while (iter.hasNext) {
-      val doc = iter.next()
-      val dk = cdk(doc.docId)
-      if (dk != null) {
-        tokenNum += doc.len()
-        dkNum += dk.size
-        for (j <- 0 until dk.size)
-          ll += Gamma.logGamma(lDAModel.alpha + dk.value(dk.idx(j)))
-        ll -= Gamma.logGamma(doc.len + lDAModel.alpha * lDAModel.K)
-      }
-    }
-
-    ll -= dkNum * Gamma.logGamma(lDAModel.alpha)
-    ll += docs.size() * Gamma.logGamma(lDAModel.alpha * lDAModel.K)
-    result.llh = ll;
-    result.tokenNum = tokenNum
-    result
-  }
-
-  @throws[Exception]
-  def computeWordllh(start: Int, end: Int): Double = {
-    LOG.info(s"compute word llh start=$start end=$end")
-    val rowIndex = new RowIndex()
-
-    for (w <- start until end) {
-      rowIndex.addRowId(w)
-    }
-
-    val rows = lDAModel.wtMat.getRowsFlow(rowIndex, 1000)
-
-    var ll = 0.0
-    val lgammaBeta = Gamma.logGamma(lDAModel.beta)
-
-    var finish = false;
-    while (!finish) {
-      rows.take() match {
-        case row: DenseIntVector => ll += computeWordllh(row, lgammaBeta)
-        case row: SparseIntSortedVector => ll += computeWordllh(row, lgammaBeta)
-        case null => finish = true
-      }
-    }
-
-    ll
-  }
-
-  def computeWordllh(vector: DenseIntVector, lgammaBeta: Double): Double = {
-    var ll = 0.0
-    val vals = vector.getValues
-    for (k <- 0 until vals.length)
-      if (vals(k) > 0)
-        ll += Gamma.logGamma(vals(k) + lDAModel.beta) - lgammaBeta
-    ll
-  }
-
-  def computeWordllh(vector: SparseIntSortedVector, lgammaBeta: Double): Double = {
-    var ll = 0.0
-    val vals = vector.getValues
-    for (i <- 0 until vals.length)
-      if (vals(i) > 0)
-        ll += Gamma.logGamma(vals(i) + lDAModel.beta) - lgammaBeta
-    ll
-  }
-
-  def computeWordSummaryllh(): Double = {
-    getCk()
-    LOG.info("compute summary llh")
-    var ll = 0.0
-    ll += lDAModel.K * Gamma.logGamma(lDAModel.beta * lDAModel.V)
-    for (k <- 0 until lDAModel.K)
-      ll -= Gamma.logGamma(ck.get(k) + lDAModel.beta * lDAModel.V)
-    ll
-  }
-
-  @throws[Exception]
-  def waitForFutures(futures: Array[Future[java.lang.Boolean]]): Unit = {
-    futures.foreach(f => f.get())
-  }
-
-
-  class InitThread(queue: ConcurrentLinkedQueue[TokensOneWord]) extends Callable[java.lang.Boolean] {
-
-    @throws[Exception]
-    override
-    def call(): java.lang.Boolean = {
-      val rand = new Random(System.currentTimeMillis())
-
-      var finish = false
-      while (!finish) {
-        queue.poll() match {
-          case list: TokensOneWord =>
-            val wid = list.getWordId
-            val update = new DenseIntVector(lDAModel.K)
-            update.setRowId(wid)
-
-            val len = list.size()
-
-            for (j <- 0 until len) {
-              val did = list.getDocId(j)
-              val topic = rand.nextInt(lDAModel.K)
-              val doc = docs.get(did)
-              list.setTopic(j, topic)
-              update.inc(topic, 1)
-              ck.addAndGet(topic, 1)
-
-              doc.synchronized {
-                if (cdk(did) == null)
-                  cdk(did) = new S2STraverseMap(Math.min(doc.len(), lDAModel.K))
-                cdk(did).inc(topic)
-              }
-            }
-
-            lDAModel.wtMat.increment(update)
-
-          case null => finish = true
-        }
-      }
-
-      return true
-    }
-  }
 
   /**
     * Train a ML Model
@@ -369,5 +87,411 @@ class LDALearner(ctx: TaskContext,
     * @param vali  : validate data storage
     * @return : a learned model
     */
-  override def train(train: DataBlock[LabeledData], vali: DataBlock[LabeledData]): MLModel = ???
+  override
+  def train(train: DataBlock[LabeledData], vali: DataBlock[LabeledData]): MLModel = ???
+
+
+  def initialize(): Unit = {
+    scheduleInit()
+
+    ctx.incEpoch()
+
+    val ll = likelihood
+    LOG.info(s"ll=${ll}")
+    globalMetrics.metrics(LOG_LIKELIHOOD, ll)
+    ctx.incEpoch()
+  }
+
+  def fetchNk: Unit = {
+    val row = model.tMat.getRow(0)
+    var sum = 0L
+    val sb = new mutable.StringBuilder()
+    for (i <- 0 until model.K) {
+      nk(i) = row.get(i)
+      sum += nk(i)
+      sb.append(nk(i) + " ")
+    }
+
+    LOG.info(sb.toString())
+    LOG.info(s"nk_sum=$sum")
+  }
+
+  def train(n_iters: Int): Unit = {
+    for (epoch <- 1 to n_iters) {
+      // One epoch
+      fetchNk
+
+      val error = scheduleSample(pkeys)
+
+      // calculate likelihood
+      val ll = likelihood
+      LOG.info(s"epoch=$epoch local likelihood=$ll")
+
+      // submit to client
+      globalMetrics.metrics(LOG_LIKELIHOOD, ll)
+      ctx.incEpoch()
+
+//      if (epoch % 10 == 0) reset(epoch)
+    }
+  }
+
+  def reset(epoch: Int) = {
+    LOG.info(s"start reset")
+    model.tMat.getRow(0)
+    if (ctx.getTaskIndex == 0) {
+      model.tMat.zero()
+      model.wtMat.zero()
+    }
+    model.tMat.clock(false)
+    model.tMat.getRow(0)
+    scheduleReset()
+    LOG.info(s"finish reset")
+  }
+
+  def computeDocllh(): Double = {
+    var dkNum = 0
+    var ll = 0.0
+    for (d <- 0 until data.n_docs) {
+      val dk = data.dks(d)
+      if (dk != null) {
+        dkNum += dk.size
+        for (j <- 0 until dk.size)
+          ll += Gamma.logGamma(alpha + dk.getVal(j))
+        ll -= Gamma.logGamma(data.docLens(d) + alpha * model.K)
+      }
+    }
+
+    ll -= dkNum * Gamma.logGamma(alpha)
+    ll += data.n_docs * Gamma.logGamma(alpha * model.K)
+    ll
+  }
+
+  def computeWordLLHSummary: Double = {
+    var ll = model.K * Gamma.logGamma(beta * model.V)
+    for (k <- 0 until model.K)
+      ll -= Gamma.logGamma(nk(k) + beta * model.V)
+    ll
+  }
+
+  def computeWordLLH: Double = {
+    model.wtMat.get(new LikelihoodFunc(model.wtMat.getMatrixId(), beta)) match {
+      case r : ScalarAggrResult => r.getResult
+      case _ => throw new AngelException("should be ScalarAggrResult")
+    }
+  }
+
+  def likelihood: Double = {
+    var ll = 0.0
+    fetchNk
+    val ll_word_summary = if (ctx.getTaskIndex == 0) computeWordLLHSummary else 0
+    val ll_word = if (ctx.getTaskIndex == 0) computeWordLLH else 0
+
+    val ll_doc = scheduleDocllh(data.n_docs)
+    LOG.info(s"ll_word_summary=${ll_word_summary} ll_word=${ll_word} ll_doc=${ll_doc}")
+    ll = ll_word_summary + ll_word + ll_doc
+    ll
+  }
+
+  val queue = new LinkedBlockingQueue[Sampler]()
+  val executor = Executors.newFixedThreadPool(model.threadNum)
+
+  def scheduleSample(pkeys: java.util.List[PartitionKey]): Boolean = {
+
+    class Task(sampler: Sampler, pkey: PartitionKey, csr: PartCSRResult) extends Thread {
+      override def run(): Unit = {
+        sampler.sample(pkey, csr)
+        queue.add(sampler)
+      }
+    }
+
+    val client = PSAgentContext.get().getMatrixTransportClient
+    val iter = pkeys.iterator()
+    val func = new GetPartFunc(null)
+    val futures = new mutable.HashMap[PartitionKey, Future[PartitionGetResult]]()
+    while (iter.hasNext) {
+      val pkey = iter.next()
+//      val param = new PartitionGetParam(model.wtMat.getMatrixId, pkey)
+      val param = new PartitionGetRowsParam(model.wtMat.getMatrixId(), pkey, reqRows.get(pkey.getPartitionId))
+      val future = client.get(func, param)
+      futures.put(pkey, future)
+    }
+
+    // copy nk to each sampler
+    for (i <- 0 until model.threadNum) queue.add(new Sampler(data, model).set(nk))
+
+    while (futures.size > 0) {
+      val keys = futures.keySet.iterator
+      while (keys.hasNext) {
+        val pkey = keys.next()
+        val future = futures.get(pkey).get
+        if (future.isDone) {
+          val sampler = queue.take()
+          future.get() match {
+            case csr: PartCSRResult => executor.execute(new Task(sampler, pkey, csr))
+            case _ => throw new AngelException("should by PartCSRResult")
+          }
+          futures.remove(pkey)
+        }
+      }
+    }
+
+    var error = false
+    // calculate the delta value of nk
+    // the take means that all tasks have been finished
+    val update = new DenseIntVector(model.K)
+    for (i <- 0 until model.threadNum) {
+      val sampler = queue.take()
+      error = sampler.error
+      for (i <- 0 until model.K)
+        update.plusBy(i, sampler.nk(i) - nk(i))
+    }
+
+    model.tMat.increment(0, update)
+    // update for wt
+    model.wtMat.clock().get()
+    // update for nk
+    model.tMat.clock().get()
+
+    return error
+  }
+
+  def scheduleDocllh(n_docs: Int) = {
+    val results = new LinkedBlockingQueue[Double]()
+    class Task(index: AtomicInteger) extends Thread {
+      private var ll = 0.0
+      override def run(): Unit = {
+        while (index.get() < n_docs) {
+          val d = index.incrementAndGet()
+          if (d < n_docs) {
+            val dk = data.dks(d)
+            for (j <- 0 until dk.size)
+              ll += Gamma.logGamma(alpha + dk.getVal(j))
+            ll -= Gamma.logGamma(data.docLens(d) + alpha * model.K)
+          }
+        }
+        results.add(ll)
+      }
+    }
+
+    val index = new AtomicInteger(0)
+    var ll = 0.0; var nnz = 0
+    for (i <- 0 until model.threadNum) executor.execute(new Task(index))
+    for (i <- 0 until model.threadNum) ll += results.take()
+    for (d <- 0 until n_docs) nnz += data.dks(d).size
+    ll -= nnz * Gamma.logGamma(alpha)
+    ll += data.n_docs * Gamma.logGamma(alpha * model.K)
+    ll
+  }
+
+  def scheduleInit(): Unit = {
+    class Task(sampler: Sampler, pkey: PartitionKey) extends Thread {
+      override def run(): Unit = {
+        sampler.initialize(pkey)
+        queue.add(sampler)
+      }
+    }
+
+    for (i <- 0 until model.threadNum) queue.add(new Sampler(data, model))
+
+    val iter = pkeys.iterator()
+    while (iter.hasNext) {
+      val sampler = queue.take()
+      executor.execute(new Task(sampler, iter.next()))
+    }
+
+    // calculate the delta value of nk
+    // the take means that all tasks have been finished
+    val update = new DenseIntVector(model.K)
+    for (i <- 0 until model.threadNum) {
+      val sampler = queue.take()
+      for (i <- 0 until model.K)
+        update.plusBy(i, sampler.nk(i) - nk(i))
+    }
+
+    model.tMat.increment(0, update)
+    // update for wt
+    model.wtMat.clock().get()
+    // update for nk
+    model.tMat.clock().get()
+  }
+
+  def scheduleReset(): Unit = {
+    class Task(sampler: Sampler, pkey: PartitionKey) extends Thread {
+      override def run(): Unit = {
+        sampler.reset(pkey)
+        queue.add(sampler)
+      }
+    }
+
+    util.Arrays.fill(nk, 0)
+    for (i <- 0 until model.threadNum) queue.add(new Sampler(data, model).set(nk))
+    val iter = pkeys.iterator()
+    while (iter.hasNext) {
+      val sampler = queue.take()
+      executor.execute(new Task(sampler, iter.next()))
+    }
+
+    // calculate the delta value of nk
+    // the take means that all tasks have been finished
+    val update = new DenseIntVector(model.K)
+    for (i <- 0 until model.threadNum) {
+      val sampler = queue.take()
+      for (i <- 0 until model.K)
+        update.plusBy(i, sampler.nk(i) - nk(i))
+    }
+
+    model.tMat.increment(0, update)
+    // update for wt
+    model.wtMat.clock().get()
+    // update for nk
+    model.tMat.clock().get()
+  }
+
+  def inference(n_iters: Int): Unit = {
+    for (i <- 1 to n_iters) {
+      sampleForInference()
+      val ll = scheduleDocllh(data.n_docs)
+      LOG.info(s"doc ll = ${ll}")
+      globalMetrics.metrics(LOG_LIKELIHOOD, ll)
+      ctx.incEpoch()
+    }
+  }
+
+  def initForInference(): Unit = {
+    class Task(sampler: Sampler, pkey: PartitionKey) extends Thread {
+      override def run(): Unit = {
+        sampler.initForInference(pkey)
+        queue.add(sampler)
+      }
+    }
+
+    for (i <- 0 until model.threadNum) queue.add(new Sampler(data, model))
+
+    val iter = pkeys.iterator()
+    while (iter.hasNext) {
+      val sampler = queue.take()
+      executor.execute(new Task(sampler, iter.next()))
+    }
+
+    for (i <- 0 until model.threadNum) queue.take()
+
+    model.tMat.clock(false).get()
+    ctx.incEpoch()
+  }
+
+  def sampleForInference(): Unit = {
+    class Task(sampler: Sampler, pkey: PartitionKey, csr: PartCSRResult) extends Thread {
+      override def run(): Unit = {
+        sampler.inference(pkey, csr)
+        queue.add(sampler)
+      }
+    }
+
+    val client = PSAgentContext.get().getMatrixTransportClient
+    val iter = pkeys.iterator()
+    val func = new GetPartFunc(null)
+    val futures = new mutable.HashMap[PartitionKey, Future[PartitionGetResult]]()
+    while (iter.hasNext) {
+      val pkey = iter.next()
+//      val param = new PartitionGetParam(model.wtMat.getMatrixId, pkey)
+      val param = new PartitionGetRowsParam(model.wtMat.getMatrixId(), pkey, reqRows.get(pkey.getPartitionId))
+      val future = client.get(func, param)
+      futures.put(pkey, future)
+    }
+
+    // copy nk to each sampler
+    for (i <- 0 until model.threadNum) queue.add(new Sampler(data, model).set(nk))
+
+    while (futures.size > 0) {
+      val keys = futures.keySet.iterator
+      while (keys.hasNext) {
+        val pkey = keys.next()
+        val future = futures.get(pkey).get
+        if (future.isDone) {
+          val sampler = queue.take()
+          future.get() match {
+            case csr: PartCSRResult => executor.execute(new Task(sampler, pkey, csr))
+            case _ => throw new AngelException("should by PartCSRResult")
+          }
+          futures.remove(pkey)
+        }
+      }
+    }
+
+    for (i <- 0 until model.threadNum) queue.take()
+
+    model.tMat.clock(false).get()
+  }
+
+
+  def initForIncr(): Unit = {
+
+  }
+
+  def sampleForIncr(): Unit = {
+
+  }
+
+  def saveWordTopic(model: LDAModel): Unit = {
+    LOG.info("save word topic")
+    val dir  = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH)
+    val base = dir + "/" + "word_topic"
+    val taskId = ctx.getTaskIndex
+    val dest = new Path(base, taskId.toString)
+
+    val fs  = dest.getFileSystem(conf)
+    val tmp = HdfsUtil.toTmpPath(dest)
+    val out = new BufferedOutputStream(fs.create(tmp, 1.toShort))
+
+
+    val num = model.V / ctx.getTotalTaskNum + 1
+    val start = taskId * num
+    val end   = Math.min(model.V, start + num)
+
+    val index = new RowIndex()
+    for (i <- start until end) index.addRowId(i)
+    val rr = model.wtMat.getRows(index, 1000)
+
+    for (row <- start until end) {
+      val x = rr.get(row).get
+      val len = x.size()
+      val sb = new StringBuilder
+      sb.append(x.getRowId + ":")
+      for (i <- 0 until len)
+        sb.append(s" ${x.get(i)}")
+      sb.append("\n")
+      out.write(sb.toString().getBytes("UTF-8"))
+    }
+
+    out.flush()
+    out.close()
+    fs.rename(tmp, dest)
+  }
+
+  def saveDocTopic(data: CSRTokens, model: LDAModel): Unit = {
+    LOG.info("save doc topic ")
+    val dir  = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH)
+    val base = dir + "/" + "doc_topic"
+    val part = ctx.getTaskIndex
+
+    val dest = new Path(base, part.toString)
+    val fs   = dest.getFileSystem(conf)
+    val tmp  = HdfsUtil.toTmpPath(dest)
+    val out  = new BufferedOutputStream(fs.create(tmp, 1.toShort))
+
+    for (d <- 0 until data.dks.size) {
+      val sb = new StringBuilder
+      val dk = data.dks(d)
+      sb.append(data.docIds(d))
+      val len = dk.size
+      for (i <- 0 until len)
+        sb.append(s" ${dk.getKey(i)}:${dk.getVal(i)}")
+      sb.append("\n")
+      out.write(sb.toString().getBytes("UTF-8"))
+    }
+
+    out.flush()
+    out.close()
+    fs.rename(tmp, dest)
+  }
 }

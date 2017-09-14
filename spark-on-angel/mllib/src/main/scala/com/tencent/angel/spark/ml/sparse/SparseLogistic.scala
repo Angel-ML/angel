@@ -18,13 +18,16 @@ package com.tencent.angel.spark.ml.sparse
 
 import breeze.linalg.{DenseVector => BDV}
 import breeze.optimize.DiffFunction
+import com.tencent.angel.spark.context.PSContext
+
+import com.tencent.angel.spark.math.vector.decorator.{BreezePSVector, RemotePSVector}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.ml.linalg.Vector
 import org.apache.spark.rdd.RDD
 
 import com.tencent.angel.spark.ml.common.OneHot
 import com.tencent.angel.spark.ml.common.OneHot.OneHotVector
-import com.tencent.angel.spark.models.vector.{BreezePSVector, RemotePSVector}
+import com.tencent.angel.spark.math.vector.{VectorType, PSVector}
 
 /**
  * This is LogisticRegression data generator and its DiffFunction.
@@ -73,11 +76,19 @@ object SparseLogistic {
   case class PSCost(trainData: RDD[(OneHotVector, Double)]) extends DiffFunction[BreezePSVector] {
 
     override def calculate(x: BreezePSVector) : (Double, BreezePSVector) = {
-      val cumGradient = x.proxy.getPool().createZero().mkBreeze()
+      var begin = System.currentTimeMillis()
+      val cumGradient = PSContext.instance().duplicateVector(x.component).toBreeze
 
       val cumLoss = trainData.mapPartitions { iter =>
+        var begin = System.currentTimeMillis()
         val localX = x.toRemote.pull(fromCache = true)
+        var end = System.currentTimeMillis()
+        println(s"pull time(ms): ${end - begin}")
+        begin = end
         val gradientSum = new Array[Double](localX.length)
+        end = System.currentTimeMillis()
+        println(s"new array time(ms): ${end - begin}")
+        begin = end
 
         val lossSum = iter.map { case (feat, label) =>
           val margin: Double = -1.0 * OneHot.dot(feat, localX)
@@ -92,14 +103,27 @@ object SparseLogistic {
           feat.foreach { index => gradientSum(index) += gradientMultiplier }
           loss
         }.sum
+        end = System.currentTimeMillis()
+        println(s"calculate loss time(ms): ${end - begin}")
+        begin = end
 
         cumGradient.toRemote.increment(gradientSum)
+        end = System.currentTimeMillis()
+        println(s"increment grad loss time(ms): ${end - begin}")
         Iterator.single(lossSum)
       }.sum()
+      var end = System.currentTimeMillis()
+      println(s"map partition time(ms): ${end - begin}")
+      begin = end
       cumGradient.toRemote.flush()
+      end = System.currentTimeMillis()
+      println(s"flush time(ms): ${end - begin}")
+      begin = end
 
       val sampleNum = trainData.count()
       BreezePSVector.blas.scal(1.0 / sampleNum, cumGradient)
+      end = System.currentTimeMillis()
+      println(s"breeze ps vector scale time(ms): ${end - begin}")
       println(s"sampleNum: $sampleNum cumLoss: $cumLoss loss: ${cumLoss / sampleNum}")
       (cumLoss / sampleNum, cumGradient)
     }
@@ -123,8 +147,8 @@ object SparseLogistic {
         } else {
           math.log1p(math.exp(margin)) - margin
         }
+        remoteGradient.toRemote.increment(gradient.toArray)
 
-        remoteGradient.increment(gradient.toArray)
         lossSum += loss
         count += 1
         this
@@ -142,10 +166,9 @@ object SparseLogistic {
     override def calculate(x: BreezePSVector): (Double, BreezePSVector) = {
       import com.tencent.angel.spark.rdd.RDDPSFunctions._
 
-      val pool = x.proxy.getPool()
       val localX = new BDV(x.toRemote.pull())
       val bcX = trainData.sparkContext.broadcast(localX)
-      val cumGradient = pool.createZero().mkRemote()
+      val cumGradient = PSVector.duplicate(x.component).toRemote
 
       val aggregator = {
         val seqOp = (c: Aggregator, point: (Vector, Double)) => c.add(point)

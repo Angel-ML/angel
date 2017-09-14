@@ -17,10 +17,8 @@
 package com.tencent.angel.ml.math.matrix;
 
 import com.tencent.angel.ml.math.vector.TFloatVector;
-import com.tencent.angel.ml.math.TMatrix;
-import com.tencent.angel.ml.math.TVector;
 
-public abstract class TFloatMatrix extends TMatrix {
+public abstract class TFloatMatrix extends RowbaseMatrix {
 
   /**
    * Create a new float matrix.
@@ -33,48 +31,71 @@ public abstract class TFloatMatrix extends TMatrix {
   }
 
   /**
-   * Increases specified element by value.
+   * Plus specified element by value.
    *
-   * @param rowId the row id
-   * @param colId the col id
+   * @param rowIndex the row index
+   * @param colIndex the col index
    * @param value the value
+   * @return this
    */
-  public abstract void inc(int rowId, int colId, float value);
+  public TFloatMatrix plusBy(int rowIndex, int colIndex, float value) {
+    if(vectors[rowIndex] == null) {
+      vectors[rowIndex] = initVector(rowIndex);
+    }
+
+    ((TFloatVector)vectors[rowIndex]).plusBy(colIndex, value);
+    return this;
+  }
 
   /**
-   * Plus by other matrix.
+   * Increases specified elements by values.
    *
-   * @param other the other
+   * @param rowIndexes the row ids
+   * @param colIndexes the col ids
+   * @param values the values
+   * @return this
    */
-  public abstract void plusBy(TMatrix other);
+  public TFloatMatrix plusBy(int[] rowIndexes, int[] colIndexes, float[] values) {
+    assert ((rowIndexes.length == colIndexes.length) && (rowIndexes.length == values.length));
+    for(int i = 0; i < rowIndexes.length; i++) {
+      if(vectors[rowIndexes[i]] == null) {
+        vectors[rowIndexes[i]] = initVector(rowIndexes[i]);
+      }
+      ((TFloatVector)vectors[rowIndexes[i]]).plusBy(colIndexes[i], values[i]);
+    }
+    return this;
+  }
 
   /**
-   * Plus by other vector
+   * Increases specified row by values.
    *
-   * @param other the other
+   * @param rowIndex the row id
+   * @param colIndexes the col ids
+   * @param values the values
+   * @return this
    */
-  public abstract void plusBy(TVector other);
+  public TFloatMatrix plusBy(int rowIndex, int[] colIndexes, float[] values) {
+    assert (colIndexes.length == values.length);
+    if(vectors[rowIndex] == null) {
+      vectors[rowIndex] = initVector(rowIndex);
+    }
+
+    for(int i = 0; i < colIndexes.length; i++) {
+      ((TFloatVector)vectors[rowIndex]).plusBy(colIndexes[i], values[i]);
+    }
+    return this;
+  }
 
   /**
    * Get specified value.
    *
-   * @param rowId the row id
-   * @param colId the col id
+   * @param rowIndex the row index
+   * @param colIndex the col index
    * @return the value
    */
-  public abstract float get(int rowId, int colId);
-
-  /**
-   * Gets specified vector.
-   *
-   * @param rowId the row id
-   * @return the vector
-   */
-  public abstract TFloatVector getTFloatVector(int rowId);
-
-  @Override
-  public TVector getTVector(int rowId) {
-    return getTFloatVector(rowId);
+  public float get(int rowIndex, int colIndex) {
+    if (vectors[rowIndex] == null)
+      return 0.0f;
+    return ((TFloatVector)vectors[rowIndex]).get(colIndex);
   }
-
 }

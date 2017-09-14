@@ -21,8 +21,10 @@ import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.protobuf.generated.MLProtos.RowType;
+import com.tencent.angel.ps.LongKeyPartitioner;
 import com.tencent.angel.ps.PSPartitioner;
 
+import com.tencent.angel.ps.Partitioner;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -50,16 +52,16 @@ public class MatrixContext {
   private int rowNum;
 
   /** Number of cols for this matrix */
-  private int colNum;
+  private long colNum;
 
   /** Number of rows for one block */
   private int maxRowNumInBlock;
 
   /** Number of cols for one block */
-  private int maxColNumInBlock;
+  private long maxColNumInBlock;
 
   /** Partitioner for this matrix  */
-  private PSPartitioner partitioner;
+  private Partitioner partitioner;
 
   /** Row type */
   private MLProtos.RowType rowType;
@@ -80,11 +82,11 @@ public class MatrixContext {
     this("", -1, -1, -1, -1);
   }
 
-  public MatrixContext(String name, int rowNum, int colNum) {
+  public MatrixContext(String name, int rowNum, long colNum) {
     this(name, rowNum, colNum, -1, -1);
   }
 
-  public MatrixContext(String name, int rowNum, int colNum, int maxRowNumInBlock, int maxColNumInBlock) {
+  public MatrixContext(String name, int rowNum, long colNum, int maxRowNumInBlock, long maxColNumInBlock) {
     this.name = name;
     this.rowNum = rowNum;
     this.colNum = colNum;
@@ -92,7 +94,6 @@ public class MatrixContext {
     this.maxColNumInBlock = maxColNumInBlock;
     this.rowType = MLProtos.RowType.T_DOUBLE_DENSE;
     this.attributes = new HashMap<>();
-    this.partitioner = new PSPartitioner();
     this.matrixId = -1;
   }
 
@@ -119,7 +120,7 @@ public class MatrixContext {
    *
    * @return the col num
    */
-  public int getColNum() {
+  public long getColNum() {
     return colNum;
   }
 
@@ -137,7 +138,7 @@ public class MatrixContext {
    *
    * @return the max col num in block
    */
-  public int getMaxColNumInBlock() {
+  public long getMaxColNumInBlock() {
     return maxColNumInBlock;
   }
 
@@ -146,7 +147,7 @@ public class MatrixContext {
    *
    * @return the partitioner
    */
-  public PSPartitioner getPartitioner() {
+  public Partitioner getPartitioner() {
     return partitioner;
   }
 
@@ -218,7 +219,7 @@ public class MatrixContext {
    *
    * @param partitioner the partitioner
    */
-  public void setPartitioner(PSPartitioner partitioner) {
+  public void setPartitioner(Partitioner partitioner) {
     this.partitioner = partitioner;
   }
 
@@ -229,6 +230,14 @@ public class MatrixContext {
    */
   public void setRowType(MLProtos.RowType rowType) {
     this.rowType = rowType;
+  }
+
+  /**
+   * Set matrix op log type
+   * @param type op log type
+   */
+  public void setMatrixOpLogType(MatrixOpLogType type) {
+    attributes.put(MatrixConf.MATRIX_OPLOG_TYPE, type.name());
   }
 
   /**
@@ -253,6 +262,9 @@ public class MatrixContext {
   public MLProtos.MatrixProto buildMatProto(Configuration conf) throws IOException {
     matrixId = idGenerator.incrementAndGet();
     String loadPath = attributes.get(MatrixConf.MATRIX_LOAD_PATH);
+    if(partitioner == null) {
+      initPartitioner();
+    }
     partitioner.init(this, conf);
     List<MLProtos.Partition> partitions;
     if (loadPath != null) {
@@ -274,6 +286,14 @@ public class MatrixContext {
     return ProtobufUtil.generateMatrixProto(this, partitions);
   }
 
+  private void initPartitioner() {
+    if(rowType == RowType.T_DOUBLE_SPARSE_LONGKEY) {
+      partitioner = new LongKeyPartitioner();
+    } else {
+      partitioner = new PSPartitioner();
+    }
+  }
+
   /**
    * Gets part id from path.
    *
@@ -291,18 +311,22 @@ public class MatrixContext {
       sb.append("matrix name must not be empty");
       sb.append("\n");
     }
-    if(rowNum <= 0) {
-      sb.append("matrix row number must > 0, but is ").append(rowNum);
-      sb.append("\n");
-    }
-    if(colNum <= 0) {
-      sb.append("matrix column number must > 0, but is ").append(colNum);
+    if(rowNum <= 0 || rowNum > Integer.MAX_VALUE) {
+      sb.append("matrix row number must > 0 and <= " + Integer.MAX_VALUE + ", but is ").append(rowNum);
       sb.append("\n");
     }
     if(rowNum > 0 && maxRowNumInBlock > rowNum) {
       sb.append("matrix block row number must > 0 and < ").append(rowNum).append(", but is ").append(maxRowNumInBlock);
       sb.append("\n");
     }
+
+    if(rowType != RowType.T_DOUBLE_SPARSE_LONGKEY)  {
+      if(colNum <= 0 || colNum > Integer.MAX_VALUE) {
+        sb.append("matrix column number must > 0 and <= " + Integer.MAX_VALUE + ", but is ").append(colNum);
+        sb.append("\n");
+      }
+    }
+
     if(colNum > 0 && maxColNumInBlock > colNum) {
       sb.append("matrix block column number must > 0 and < ").append(colNum).append(", but is ").append(maxColNumInBlock);
     }
@@ -338,7 +362,7 @@ public class MatrixContext {
 
     List<MLProtos.Partition> matrixPartitions = new ArrayList<>();
     int hdfsRowNum = Integer.MIN_VALUE;
-    int hdfsColNum = Integer.MIN_VALUE;
+    long hdfsColNum = Long.MIN_VALUE;
 
     int psNum = conf.getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER);
 
@@ -350,9 +374,9 @@ public class MatrixContext {
       int pid = getPartIdFromPath(statuses[i].getPath().getName());
 
       int startRow = in.readInt();
-      int startCol = in.readInt();
+      long startCol = in.readLong();
       int endRow   = in.readInt();
-      int endCol   = in.readInt();
+      long endCol   = in.readLong();
       
       if(i == 0) {
         RowType type = RowType.valueOf(in.readUTF());

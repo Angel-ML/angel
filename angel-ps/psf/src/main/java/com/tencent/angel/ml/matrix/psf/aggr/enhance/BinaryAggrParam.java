@@ -92,10 +92,6 @@ public class BinaryAggrParam extends GetParam {
     List<PartitionGetParam> partParams = new ArrayList<PartitionGetParam>(size);
 
     for (PartitionKey part : parts) {
-      if (rowId1 < part.getStartRow() || rowId1 >= part.getEndRow() ||
-          rowId2 < part.getStartRow() || rowId2 >= part.getEndRow()) {
-        throw new RuntimeException("Wrong rowId!");
-      }
       partParams.add(new BinaryPartitionAggrParam(matrixId, part, rowId1, rowId2));
     }
 

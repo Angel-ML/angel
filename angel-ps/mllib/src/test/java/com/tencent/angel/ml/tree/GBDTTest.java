@@ -38,6 +38,7 @@ public class GBDTTest {
   private static final Log LOG = LogFactory.getLog(GBDTTest.class);
   private static final String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
   private static final String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
+  private static final String inputPath = "./src/test/data/gbdt/agaricus.txt.train";
   private Configuration conf = new Configuration();
 
   static {
@@ -46,8 +47,6 @@ public class GBDTTest {
 
   @Before public void setup() throws Exception {
     try {
-      String inputPath = "./src/test/data/gbdt/agaricus.txt.train";
-
       // Feature number of train data
       int featureNum = 127;
       // Number of nonzero features
@@ -76,7 +75,6 @@ public class GBDTTest {
 
       // set input, output path
       conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
-      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
       conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/LOG/log");
 
       //set angel resource parameters #worker, #task, #PS
@@ -107,6 +105,7 @@ public class GBDTTest {
   private void train() throws Exception {
     try {
       // Submit GBDT Train Task
+      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
       conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model");
       GBDTRunner runner = new GBDTRunner();
       runner.train(conf);
@@ -122,6 +121,7 @@ public class GBDTTest {
   private void predict() throws Exception {
     try {
       // Load Model from HDFS.
+      conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, inputPath);
       conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model");
       conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/predict");
       conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT());

@@ -17,67 +17,82 @@
 package com.tencent.angel.ml.math.matrix;
 
 import com.tencent.angel.ml.math.vector.TIntVector;
-import com.tencent.angel.ml.math.TMatrix;
-import com.tencent.angel.ml.math.TVector;
-
 
 /**
  * The int base matrix.
  */
-public abstract class TIntMatrix extends TMatrix {
-
+public abstract class TIntMatrix extends RowbaseMatrix {
   /**
    * Create a new int matrix.
    *
-   * @param row the row
-   * @param col the col
+   * @param row the row number
+   * @param col the column number
    */
   public TIntMatrix(int row, int col) {
     super(row, col);
   }
 
   /**
-   * Increases specified element by value.
+   * Plus specified element by value.
    *
-   * @param rowId the row id
-   * @param colId the col id
-   * @param value the value
+   * @param rowIndex the row index
+   * @param colIndex the column index
+   * @param value the value increment value
    */
-  public abstract void inc(int rowId, int colId, int value);
+  public TIntMatrix plusBy(int rowIndex, int colIndex, int value){
+    if (vectors[rowIndex] == null) {
+      vectors[rowIndex] = initVector(rowIndex);
+    }
+    ((TIntVector)vectors[rowIndex]).plusBy(colIndex, value);
+    return this;
+  }
 
   /**
-   * Plus by other matrix.
-   *
-   * @param other the other
+   * Plus specified elements by a value list.
+   * @param rowIndexes row indexes
+   * @param colIndexes column indexes
+   * @param values values
    */
-  public abstract void plusBy(TIntMatrix other);
+  public TIntMatrix plusBy(int[] rowIndexes, int[] colIndexes, int[] values){
+    assert (rowIndexes.length == colIndexes.length && rowIndexes.length == values.length);
+    for(int i = 0; i < rowIndexes.length; i++) {
+      if(vectors[rowIndexes[i]] == null) {
+        vectors[rowIndexes[i]] = initVector(rowIndexes[i]);
+      }
+
+      ((TIntVector)vectors[rowIndexes[i]]).plusBy(colIndexes[i], values[i]);
+    }
+    return this;
+  }
 
   /**
-   * Plus by other int vector
-   *
-   * @param other the other
+   * Plus specified elements in a row by a value list.
+   * @param rowIndex row index
+   * @param colIndexes column indexes
+   * @param values values
    */
-  public abstract void plusBy(TIntVector other);
+  public TIntMatrix plusBy(int rowIndex, int[] colIndexes, int[] values) {
+    assert (colIndexes.length == values.length);
+    if(vectors[rowIndex] == null) {
+      vectors[rowIndex] = initVector(rowIndex);
+    }
+
+    for(int i = 0; i < colIndexes.length; i++) {
+      ((TIntVector)vectors[rowIndex]).plusBy(colIndexes[i], values[i]);
+    }
+    return this;
+  }
 
   /**
    * Get value.
    *
-   * @param rowId the row id
-   * @param colId the col id
+   * @param rowIndex the row index
+   * @param colIndex the column index
    * @return the value
    */
-  public abstract int get(int rowId, int colId);
-
-  /**
-   * Gets specified vector.
-   *
-   * @param rowId the row id
-   * @return the vector
-   */
-  public abstract TIntVector getTIntVector(int rowId);
-
-  @Override
-  public TVector getTVector(int rowId) {
-    return getTIntVector(rowId);
+  public int get(int rowIndex, int colIndex) {
+    if (vectors[rowIndex] == null)
+      return 0;
+    return ((TIntVector)vectors[rowIndex]).get(colIndex);
   }
 }

@@ -95,10 +95,12 @@ Overall, Angel PS's advantage as stated above is demonstrated by GBDT's performa
 	* ml.validate.ratio：proportion of data used for validation (no validation when set to 0)
 
 * I/O Parameters
-	* angel.train.data.path：input path
+	* angel.train.data.path：input path for train
+	* angel.predict.data.path：input path for predict
 	* ml.feature.num：number of features
 	* ml.data.type：[Angel Data Format](data_format_en.md), can be "dummy" or "libsvm"
-	* angel.save.modelPath：save path for trained model 
+	* angel.save.model.path：save path for trained model
+    * angel.predict.out.path：output path for predict
 	* angel.log.path：save path for the log
 
 * Resource Parameters

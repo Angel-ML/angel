@@ -85,7 +85,7 @@ class LRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(con
     for (idx: Int <- 0 until dataSet.size) {
       val instance = dataSet.read
       val id = instance.getY
-      val dot = wVector.dot(instance.getX)+b
+      val dot = wVector.dot(instance.getX)
       val sig = MathUtils.sigmoid(dot)
       predict.put(new SparseLRPredictResult(id, dot, sig))
     }

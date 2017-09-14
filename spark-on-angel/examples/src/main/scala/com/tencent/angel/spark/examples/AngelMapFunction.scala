@@ -20,9 +20,10 @@ package com.tencent.angel.spark.examples
 import breeze.linalg.DenseVector
 import breeze.math.MutableEnumeratedCoordinateField
 
-import com.tencent.angel.spark.PSContext
+import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.examples.psf._
 import com.tencent.angel.spark.examples.util.PSExamples._
+import com.tencent.angel.spark.math.vector.PSVector
 
 /**
  * These are the examples of PS Oriented Functions(POF) in machine learning cases.
@@ -31,7 +32,7 @@ object AngelMapFunction {
 
   def main(args: Array[String]): Unit = {
     parseArgs(args)
-    runWithSparkContext(this.getClass.getSimpleName) { sc =>
+    runSpark(this.getClass.getSimpleName) { sc =>
       PSContext.getOrCreate(sc)
       run()
       runWithPSBreeze()
@@ -53,21 +54,26 @@ object AngelMapFunction {
   }
 
   def runWithPSBreeze(): Unit = {
-    val context = PSContext.getOrCreate()
-    val pool = context.createModelPool(DIM, 10)
-    val a = pool.createModel(1.0).mkBreeze()
-    val b = pool.createModel(2.0).mkBreeze()
-    val c = a.map(new MulScalar(4.2))
-    val d = a.zipMap(b, new ZipDiv)
-    val e = a.mapWithIndex(new Filter(2))
-    val f = a.zipMapWithIndex(b, new FilterZipAdd(2))
+    val poolCapacity = 20
+
+    val a = PSVector.dense(DIM).fill(1.0)
+    val b = PSVector.duplicate(a).fill(2.0).toBreeze
+
+    val aa = a.toBreeze
+
+    val c = aa.map(new MulScalar(4.2))
+    val d = aa.zipMap(b, new ZipDiv)
+    val e = aa.mapWithIndex(new Filter(2))
+    val f = aa.zipMapWithIndex(b, new FilterZipAdd(2))
+
     println("c: " + c.toRemote.pull().mkString("Array(", ", ", ")"))
     println("d: " + d.toRemote.pull().mkString("Array(", ", ", ")"))
     println("e: " + e.toRemote.pull().mkString("Array(", ", ", ")"))
     println("f: " + f.toRemote.pull().mkString("Array(", ", ", ")"))
+
     val g = b.zipMap(c, d, new Zip3Add)
     println("g: " + g.toRemote.pull().mkString("Array(", ", ", ")"))
-    context.destroyModelPool(pool)
+
   }
 
 }

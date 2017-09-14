@@ -16,6 +16,8 @@
 
 package com.tencent.angel.worker.storage;
 
+import com.tencent.angel.exception.AngelException;
+
 import java.io.IOException;
 
 /**
@@ -177,6 +179,26 @@ public abstract class DataBlock<VALUE> {
       return 0.0f;
     }
     return (float) readIndex / writeIndex;
+  }
+
+
+
+  /**
+   * Read LabeledData from DataBlock Looping. If it reach the end, start from the beginning again.
+   *
+   * @return
+   */
+  public VALUE loopingRead() throws IOException{
+    VALUE data = this.read();
+    if (data == null) {
+      resetReadIndex();
+      data = read();
+    }
+
+    if (data != null)
+      return data;
+    else
+      throw new AngelException("Train data storage is empty or corrupted.");
   }
 
   @Override

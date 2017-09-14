@@ -16,16 +16,22 @@
 
 package com.tencent.angel.ml.math.vector;
 
+import com.tencent.angel.protobuf.generated.MLProtos;
+import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 
 import com.tencent.angel.ml.math.TAbstractVector;
-import com.tencent.angel.ml.math.vector.TIntVector;
 import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.math.VectorType;
 
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+/**
+ * Sparse int vector.
+ */
 public class SparseIntVector extends TIntVector {
 
   private final static Log LOG = LogFactory.getLog(SparseIntVector.class);
@@ -79,6 +85,7 @@ public class SparseIntVector extends TIntVector {
    */
   public SparseIntVector(int dim, int[] indices, int[] values) {
     super();
+    assert indices.length == values.length;
     this.dim = dim;
     this.hashMap = new Int2IntOpenHashMap(indices, values);
   }
@@ -105,111 +112,230 @@ public class SparseIntVector extends TIntVector {
     this.hashMap = new Int2IntOpenHashMap(other.hashMap);
   }
 
-  /**
-   * get the value by index
-   * 
-   * @param index the index
-   * @return
-   */
   @Override
   public int get(int index) {
     return hashMap.get(index);
   }
 
-  /**
-   * set the value by index
-   * 
-   * @param index the index
-   * @param value the value
-   */
   @Override
-  public void set(int index, int value) {
+  public TIntVector set(int index, int value) {
     hashMap.put(index, value);
+    return this;
   }
 
-  /**
-   * inc the element by index
-   * 
-   * @param index the index
-   * @param value the increased value
-   */
   @Override
-  public void inc(int index, int value) {
-    hashMap.put(index, hashMap.get(index) + value);
+  public TIntVector plusBy(int index, int value) {
+    hashMap.addTo(index, value);
+    return this;
   }
 
-  /**
-   * get the index array
-   * 
-   * @return
-   */
   @Override
   public int[] getIndices() {
     return hashMap.keySet().toIntArray();
   }
 
-  /**
-   * get the value array
-   * 
-   * @return
-   */
+  @Override public TIntVector filter(int x) {
+    SparseIntVector vector = new SparseIntVector(dim);
+    vector.setMatrixId(matrixId).setRowId(rowId).setClock(clock);
+    ObjectIterator<Int2IntMap.Entry> iter = hashMap.int2IntEntrySet().fastIterator();
+    Int2IntMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      int value = entry.getIntValue();
+      if (Math.abs(value) > x) {
+        vector.set(entry.getIntKey(), value);
+      }
+    }
+    return vector;
+  }
+
+  @Override public TIntVector times(int x) {
+    SparseIntVector vector = new SparseIntVector(this);
+    ObjectIterator<Int2IntMap.Entry> iter = vector.hashMap.int2IntEntrySet().fastIterator();
+    Int2IntMap.Entry entry = null;
+    while(iter.hasNext()) {
+      entry.setValue(entry.getIntValue() * x);
+    }
+    return vector;
+  }
+
+  @Override public TIntVector timesBy(int x) {
+    ObjectIterator<Int2IntMap.Entry> iter = hashMap.int2IntEntrySet().fastIterator();
+    Int2IntMap.Entry entry = null;
+    while(iter.hasNext()) {
+      entry = iter.next();
+      entry.setValue(entry.getIntValue() * x);
+    }
+    return this;
+  }
+
   @Override
   public int[] getValues() {
     return hashMap.values().toIntArray();
   }
 
-  public Int2IntOpenHashMap getHashMap() {
-    return hashMap;
-  }
-
   @Override
   public TVector plusBy(TAbstractVector other) {
-    return null;
+    assert dim == other.getDimension();
+    if(other instanceof SparseIntVector)
+      return plusBy((SparseIntVector) other);
+    if(other instanceof DenseIntVector)
+      return plusBy((DenseIntVector) other);
+
+    throw new UnsupportedOperationException("Unsupportted operation: "
+      + this.getClass().getName() + " plusBy " + other.getClass().getName());
+  }
+
+  private SparseIntVector plusBy(SparseIntVector other) {
+    ObjectIterator<Int2IntMap.Entry> iter = other.hashMap.int2IntEntrySet().fastIterator();
+    Int2IntMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      this.hashMap.addTo(entry.getIntKey(), entry.getIntValue());
+    }
+    return this;
+  }
+
+  private SparseIntVector plusBy(DenseIntVector other) {
+    for(int i = 0; i < dim; i++) {
+      if(other.values[i] != 0) {
+        this.hashMap.addTo(i, other.values[i]);
+      }
+    }
+    return this;
   }
 
   @Override
-  public TVector plusBy(TAbstractVector other, double x) {
-    return null;
+  public TIntVector plusBy(TAbstractVector other, int x) {
+    assert dim == other.getDimension();
+    if(other instanceof SparseIntVector)
+      return plusBy((SparseIntVector) other, x);
+    if(other instanceof DenseIntVector)
+      return plusBy((DenseIntVector) other, x);
+
+    throw new UnsupportedOperationException("Unsupportted operation: "
+      + this.getClass().getName() + " plusBy " + other.getClass().getName());
   }
 
-  @Override
-  public TVector plusBy(TAbstractVector other, int x) {
-    return null;
+  @Override public long sum() {
+    ObjectIterator<Int2IntMap.Entry> iter = hashMap.int2IntEntrySet().iterator();
+    long sum = 0;
+    while (iter.hasNext()) {
+      double v = iter.next().getIntValue();
+      sum += v;
+    }
+    return sum;
+  }
+
+  private SparseIntVector plusBy(SparseIntVector other, int x) {
+    ObjectIterator<Int2IntMap.Entry> iter = other.hashMap.int2IntEntrySet().fastIterator();
+    Int2IntMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      this.hashMap.addTo(entry.getIntKey(), entry.getIntValue() * x);
+    }
+    return this;
+  }
+
+  private SparseIntVector plusBy(DenseIntVector other, int x) {
+    for(int i = 0; i < dim; i++) {
+      if(other.values[i] != 0) {
+        this.hashMap.addTo(i, other.values[i] * x);
+      }
+    }
+    return this;
   }
 
   @Override
   public TVector plus(TAbstractVector other) {
-    return null;
+    assert dim == other.getDimension();
+    if(other instanceof SparseIntVector) {
+      return plus((SparseIntVector) other);
+    }
+
+    throw new UnsupportedOperationException("Unsupportted operation: "
+      + this.getClass().getName() + " plus " + other.getClass().getName());
+  }
+
+  private SparseIntVector plus(SparseIntVector other) {
+    SparseIntVector baseVector = null;
+    SparseIntVector streamVector = null;
+    if(this.size() >= other.size()) {
+      baseVector = new SparseIntVector(this);
+      streamVector = other;
+    } else {
+      baseVector = new SparseIntVector(other);
+      streamVector = this;
+    }
+
+    return baseVector.plusBy(streamVector);
   }
 
   @Override
-  public TVector plus(TAbstractVector other, double x) {
-    return null;
+  public TIntVector plus(TAbstractVector other, int x) {
+    assert dim == other.getDimension();
+    if(other instanceof SparseIntVector) {
+      return plus((SparseIntVector) other, x);
+    }
+
+    throw new UnsupportedOperationException("Unsupportted operation: "
+      + this.getClass().getName() + " plus " + other.getClass().getName());
   }
 
-  @Override
-  public TVector plus(TAbstractVector other, int x) {
-    return null;
+  private SparseIntVector plus(SparseIntVector other, int x) {
+    SparseIntVector baseVector = null;
+    SparseIntVector streamVector = null;
+    if(this.size() >= other.size()) {
+      baseVector = new SparseIntVector(this);
+      streamVector = other;
+      streamVector.timesBy(x);
+    } else {
+      baseVector = new SparseIntVector(other);
+      baseVector.timesBy(x);
+      streamVector = this;
+    }
+
+    return baseVector.plusBy(streamVector);
   }
 
   @Override
   public double dot(TAbstractVector other) {
-    return 0;
+    assert dim == other.getDimension();
+    if(other instanceof SparseIntVector)
+      return dot((SparseIntVector) other);
+    if(other instanceof DenseIntVector)
+      return dot((DenseIntVector) other);
+
+    throw new UnsupportedOperationException("Unsupportted operation: "
+      + this.getClass().getName() + " dot " + other.getClass().getName());
   }
 
-  @Override
-  public TVector times(double x) {
-    return null;
+  private double dot(SparseIntVector other) {
+    double ret = 0;
+    SparseIntVector baseVector = null;
+    SparseIntVector streamVector = null;
+    if(this.size() >= other.size()) {
+      baseVector = new SparseIntVector(this);
+      streamVector = other;
+    } else {
+      baseVector = new SparseIntVector(other);
+      streamVector = this;
+    }
+
+    ObjectIterator<Int2IntMap.Entry> iter = streamVector.hashMap.int2IntEntrySet().fastIterator();
+    Int2IntMap.Entry entry = null;
+    while(iter.hasNext()) {
+      entry = iter.next();
+      if(baseVector.hashMap.containsKey(entry.getIntKey())) {
+        ret += baseVector.hashMap.get(entry.getIntKey()) * entry.getIntValue();
+      }
+    }
+
+    return ret;
   }
 
-  @Override
-  public TVector timesBy(double x) {
-    return null;
-  }
-
-  @Override
-  public TIntVector filter(double x) {
-    return this;
+  private double dot(DenseIntVector other) {
+    return other.dot(this);
   }
 
   @Override
@@ -226,38 +352,52 @@ public class SparseIntVector extends TIntVector {
 
   @Override
   public long nonZeroNumber() {
-    return 0;
+    long ret = 0;
+    if (hashMap != null) {
+      ObjectIterator<Int2IntMap.Entry> iter = this.hashMap.int2IntEntrySet().fastIterator();
+      while (iter.hasNext()) {
+        if (iter.next().getIntValue() != 0) {
+          ret++;
+        }
+      }
+    }
+
+    return ret;
   }
 
-  /**
-   * clone the vector by another one
-   * 
-   * @param row
-   */
   @Override
   public void clone(TVector row) {
-    SparseIntVector sparseRow = (SparseIntVector) row;
+    super.clone(row);
     hashMap.clear();
-    hashMap.putAll(sparseRow.hashMap);
+    hashMap.putAll(((SparseIntVector) row).hashMap);
+  }
+
+  @Override public double squaredNorm() {
+    ObjectIterator<Int2IntMap.Entry> iter = hashMap.int2IntEntrySet().iterator();
+    double sum = 0;
+    while (iter.hasNext()) {
+      double v = iter.next().getIntValue();
+      sum += v * v;
+    }
+    return sum;
   }
 
   @Override
   public double sparsity() {
-    return 0;
+    return (double)nonZeroNumber() / dim;
   }
 
   @Override
-  public VectorType getType() {
-    return null;
+  public MLProtos.RowType getType() {
+    return MLProtos.RowType.T_INT_SPARSE;
   }
 
-  /**
-   * get the type
-   * 
-   * @return
-   */
   @Override
   public int size() {
     return hashMap.size();
+  }
+
+  public Int2IntOpenHashMap getIndexToValueMap() {
+    return hashMap;
   }
 }

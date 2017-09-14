@@ -123,6 +123,7 @@ public class AngelLocalClient extends AngelClient {
       conf.set("hadoop.http.filter.initializers",
           "org.apache.hadoop.yarn.server.webproxy.amfilter.AmFilterInitializer");
 
+      setInputDirectory();
       setOutputDirectory();
       initLocalClusterContext();
       

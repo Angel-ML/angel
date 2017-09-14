@@ -1,13 +1,13 @@
 ### ModelParser
-Angel的PSModel在任务结束后会以二进制文件格式存储，每个partition存为一个文件，文件名为partitionID。一个PSModel的所有partition保存在同一个文件夹，文件夹的名字为PSModel的modelName字段。ModelParser类将一个PSModel的二进制模型文件解析成明文格式，可以通过下面命令提交Angel的ModelParser任务：
 
+Angel的PSModel在任务结束后会以二进制文件格式存储，每个partition存为一个文件，文件名为partitionID。一个PSModel的所有partition保存在同一个文件夹，文件夹的名字为PSModel的modelName字段。ModelParser类将一个PSModel的二进制模型文件解析成明文格式，可以通过下面命令提交Angel的ModelParser任务：
 
 ```
 ./bin/angel-submit \
 -- action.type train \
--- angel.app.submit.class com.tencent.angel.ml.modelparser.ModelParserRunner \
+-- angel.app.submit.class com.tencent.angel.ml.toolkits.modelconverter.ModelConverterRunner \
 -- ml.model.in.path ${modelInPath}
--- ml.model.name lr_weight ${modelName}
+-- ml.model.name ${PSModelName}
 -- ml.model.out.path ${modelOutPath} \
 -- ml.model.convert.thread.count ${threadCount} \
 -- angel.save.model.path ${anywhere} \
@@ -16,7 +16,7 @@ Angel的PSModel在任务结束后会以二进制文件格式存储，每个parti
 -- angel.worker.task.number 1 \
 -- angel.ps.number 1 \
 -- angel.ps.memory.mb 500 \
--- angel.job.name angel_lr_smalldata
+-- angel.job.name ${jobname}
 ```
 
 * 参数说明：

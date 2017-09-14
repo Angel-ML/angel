@@ -542,6 +542,25 @@ public abstract class AngelClient implements AngelClientInterface {
     }
   }
 
+  protected void setInputDirectory() throws IOException {
+    String actionType = conf.get(AngelConf.ANGEL_ACTION_TYPE, AngelConf.DEFAULT_ANGEL_ACTION_TYPE);
+    RunningMode runningMode = RunningMode.valueOf(conf.get(AngelConf.ANGEL_RUNNING_MODE, AngelConf.DEFAULT_ANGEL_RUNNING_MODE));
+    String path = null;
+    if (!actionType.matches("predict")) {
+      path = conf.get(AngelConf.ANGEL_TRAIN_DATA_PATH);
+    } else {
+      path = conf.get(AngelConf.ANGEL_PREDICT_DATA_PATH);
+    }
+
+    if(runningMode == RunningMode.ANGEL_PS_WORKER) {
+      if(path == null) {
+        throw new IOException("input data directory is empty, you should set it");
+      } else {
+        conf.set(AngelConf.ANGEL_JOB_INPUT_PATH, path);
+      }
+    }
+  }
+
   protected void setOutputDirectory() throws IOException{
     String actionType = conf.get(AngelConf.ANGEL_ACTION_TYPE, AngelConf.DEFAULT_ANGEL_ACTION_TYPE);
     RunningMode runningMode = RunningMode.valueOf(conf.get(AngelConf.ANGEL_RUNNING_MODE, AngelConf.DEFAULT_ANGEL_RUNNING_MODE));
@@ -571,6 +590,14 @@ public abstract class AngelClient implements AngelClientInterface {
         outFs.delete(outputPath, true);
       } else {
         throw new IOException("output path " + outputPath + " already exist, please check");
+      }
+    }
+
+    Path outputParentPath = outputPath.getParent();
+    if (!outFs.exists(outputParentPath)) {
+      LOG.info("Make dir for model output parent path: " + outputParentPath);
+      if (!outFs.mkdirs(outputParentPath)) {
+        throw new IOException("Failed to make dir for model output parent path: " + outputParentPath);
       }
     }
 

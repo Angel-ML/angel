@@ -59,7 +59,7 @@ public class UpdaterRequest extends PartitionRequest {
 
   @Override
   public int getEstimizeDataSize() {
-    return 4;
+    return bufferLen();
   }
 
   @Override
@@ -104,7 +104,8 @@ public class UpdaterRequest extends PartitionRequest {
         partParam = (PartitionUpdateParam) Class.forName(partParamClassName).newInstance();
         partParam.deserialize(buf);
       } catch (Exception e) {
-        LOG.fatal("deserialize PartitionAggrParam falied, ", e);
+        LOG.error("deserialize PartitionAggrParam falied, ", e);
+        throw new RuntimeException("deserialize update psf parameter failed:" + e.getMessage());
       }
     }
   }
@@ -169,7 +170,7 @@ public class UpdaterRequest extends PartitionRequest {
   /**
    * Set the partition parameter of the update udf.
    * 
-   * @param PartitionUpdaterParam the partition parameter of the update udf
+   * @param partParam the partition parameter of the update udf
    */
   public void setPartParam(PartitionUpdateParam partParam) {
     this.partParam = partParam;

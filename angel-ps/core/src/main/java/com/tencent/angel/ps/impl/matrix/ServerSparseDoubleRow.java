@@ -20,6 +20,7 @@ import com.tencent.angel.protobuf.generated.MLProtos.RowType;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -33,24 +34,37 @@ import java.io.IOException;
 public class ServerSparseDoubleRow extends ServerRow {
   private final static Log LOG = LogFactory.getLog(ServerSparseDoubleRow.class);
 
+  /** Index->Value map */
   private Int2DoubleOpenHashMap hashMap;
 
+  /**
+   * Create a ServerSparseDoubleRow
+   * @param rowId row index
+   * @param startCol partition start column index
+   * @param endCol partition end column index
+   */
   public ServerSparseDoubleRow(int rowId, int startCol, int endCol) {
     super(rowId, startCol, endCol);
     hashMap = new Int2DoubleOpenHashMap();
   }
 
+  /**
+   * Create a ServerSparseDoubleRow
+   */
   public ServerSparseDoubleRow() {
     this(0, 0, 0);
   }
 
-  @Override
-  public void writeTo(DataOutputStream output) throws IOException {
+  @Override public void writeTo(DataOutputStream output) throws IOException {
     try {
       lock.readLock().lock();
       super.writeTo(output);
       output.writeInt(hashMap.size());
-      for (Int2DoubleMap.Entry entry : hashMap.int2DoubleEntrySet()) {
+
+      ObjectIterator<Int2DoubleMap.Entry> iter = hashMap.int2DoubleEntrySet().fastIterator();
+      Int2DoubleMap.Entry entry = null;
+      while (iter.hasNext()) {
+        entry = iter.next();
         output.writeInt(entry.getIntKey());
         output.writeDouble(entry.getDoubleValue());
       }
@@ -59,8 +73,7 @@ public class ServerSparseDoubleRow extends ServerRow {
     }
   }
 
-  @Override
-  public void readFrom(DataInputStream input) throws IOException {
+  @Override public void readFrom(DataInputStream input) throws IOException {
     try {
       lock.writeLock().lock();
       super.readFrom(input);
@@ -73,13 +86,11 @@ public class ServerSparseDoubleRow extends ServerRow {
     }
   }
 
-  @Override
-  public RowType getRowType() {
+  @Override public RowType getRowType() {
     return RowType.T_DOUBLE_SPARSE;
   }
 
-  @Override
-  public int size() {
+  @Override public int size() {
     try {
       lock.readLock().lock();
       return hashMap.size();
@@ -88,21 +99,24 @@ public class ServerSparseDoubleRow extends ServerRow {
     }
   }
 
-  @Override
-  public void update(RowType rowType, ByteBuf buf, int size) {
+  @Override public void update(RowType rowType, ByteBuf buf, int size) {
     try {
       lock.writeLock().lock();
       switch (rowType) {
         case T_DOUBLE_SPARSE:
+        case T_DOUBLE_SPARSE_COMPONENT:
           updateDoubleSparse(buf, size);
           break;
+
         case T_DOUBLE_DENSE:
           updateDoubleDense(buf, size);
           break;
-        default:
-          LOG.error("invalid rowType: " + rowType.name() + " for ServerSparseDoubleRow!");
+
+        default:{
+          throw new UnsupportedOperationException("Unsupport operation: update " + rowType + " to " + this.getClass().getName());
+        }
       }
-      
+
       updateRowVersion();
     } finally {
       lock.writeLock().unlock();
@@ -110,30 +124,42 @@ public class ServerSparseDoubleRow extends ServerRow {
   }
 
   private void updateDoubleDense(ByteBuf buf, int size) {
+    int startColInt = (int) startCol;
+    resizeHashMap(size);
     for (int i = 0; i < size; i++) {
-      hashMap.addTo(i, buf.readDouble());
+      hashMap.addTo(i + startColInt, buf.readDouble());
     }
   }
 
   private void updateDoubleSparse(ByteBuf buf, int size) {
-    ByteBuf valueBuf = buf.slice(buf.readerIndex() + size * 4, size * 8);
+    resizeHashMap(size);
     for (int i = 0; i < size; i++) {
-      hashMap.addTo(buf.readInt(), valueBuf.readDouble());
+      hashMap.addTo(buf.readInt(), buf.readDouble());
     }
-    buf.readerIndex(buf.readerIndex() + size * 8);
+  }
+
+  private void resizeHashMap(int size) {
+    if(hashMap.size() < size) {
+      Int2DoubleOpenHashMap oldMap = hashMap;
+      hashMap = new Int2DoubleOpenHashMap(size);
+      hashMap.putAll(oldMap);
+    }
   }
 
   public Int2DoubleOpenHashMap getData() {
     return hashMap;
   }
 
-  @Override
-  public void serialize(ByteBuf buf) {
+  @Override public void serialize(ByteBuf buf) {
     try {
       lock.readLock().lock();
       super.serialize(buf);
       buf.writeInt(hashMap.size());
-      for (Int2DoubleMap.Entry entry : hashMap.int2DoubleEntrySet()) {
+      ObjectIterator<Int2DoubleMap.Entry> iter = hashMap.int2DoubleEntrySet().fastIterator();
+
+      Int2DoubleMap.Entry entry = null;
+      while (iter.hasNext()) {
+        entry = iter.next();
         buf.writeInt(entry.getIntKey());
         buf.writeDouble(entry.getDoubleValue());
       }
@@ -142,15 +168,14 @@ public class ServerSparseDoubleRow extends ServerRow {
     }
   }
 
-  @Override
-  public void deserialize(ByteBuf buf) {
+  @Override public void deserialize(ByteBuf buf) {
     try {
       lock.writeLock().lock();
       super.deserialize(buf);
       int elemNum = buf.readInt();
-      if(hashMap == null){
+      if (hashMap == null) {
         hashMap = new Int2DoubleOpenHashMap(elemNum);
-      }  
+      }
       for (int i = 0; i < elemNum; i++) {
         hashMap.put(buf.readInt(), buf.readDouble());
       }
@@ -159,8 +184,7 @@ public class ServerSparseDoubleRow extends ServerRow {
     }
   }
 
-  @Override
-  public int bufferLen() {
+  @Override public int bufferLen() {
     try {
       lock.readLock().lock();
       return super.bufferLen() + 4 + hashMap.size() * 12;
@@ -169,30 +193,45 @@ public class ServerSparseDoubleRow extends ServerRow {
     }
   }
 
+  /**
+   * Merge a serialized dense double vector split to this sparse double vector split
+   * @param size dense double vector split length
+   * @param buf serialized dense double vector split
+   */
   public void mergeDoubleDense(int size, ByteBuf buf) {
     try {
       lock.writeLock().lock();
+      resizeHashMap(size);
+      int startColInt = (int) startCol;
       for (int i = 0; i < size; i++) {
-        hashMap.addTo(i, buf.readDouble());
+        hashMap.addTo(i + startColInt, buf.readDouble());
       }
     } finally {
       lock.writeLock().unlock();
     }
   }
 
+  /**
+   * Merge a serialized sparse double vector split to this sparse double vector split
+   * @param size sparse double vector split length
+   * @param buf serialized dense double vector split
+   */
   public void mergeDoubleSparse(int size, ByteBuf buf) {
     try {
       lock.writeLock().lock();
-      ByteBuf valueBuf = buf.slice(buf.readerIndex() + size * 4, size * 8);
+      resizeHashMap(size);
       for (int i = 0; i < size; i++) {
-        hashMap.addTo(buf.readInt(), valueBuf.readDouble());
+        hashMap.addTo(buf.readInt(), buf.readDouble());
       }
-      buf.readerIndex(buf.readerIndex() + size * 8);
     } finally {
       lock.writeLock().unlock();
     }
   }
 
+  /**
+   * Merge this sparse double vector split to a map
+   * @param indexToValueMap a index->value map
+   */
   public void mergeTo(Int2DoubleOpenHashMap indexToValueMap) {
     try {
       lock.readLock().lock();
@@ -202,6 +241,13 @@ public class ServerSparseDoubleRow extends ServerRow {
     }
   }
 
+  /**
+   * Merge this sparse double vector split to a index/value array
+   * @param indexes index array
+   * @param values value array
+   * @param startPos write start position of the index/value array
+   * @param len write length
+   */
   public void mergeTo(int[] indexes, double[] values, int startPos, int len) {
     try {
       lock.readLock().lock();
@@ -211,7 +257,11 @@ public class ServerSparseDoubleRow extends ServerRow {
       }
 
       int index = 0;
-      for (Int2DoubleMap.Entry entry : hashMap.int2DoubleEntrySet()) {
+      ObjectIterator<Int2DoubleMap.Entry> iter = hashMap.int2DoubleEntrySet().fastIterator();
+
+      Int2DoubleMap.Entry entry = null;
+      while (iter.hasNext()) {
+        entry = iter.next();
         indexes[startPos + index] = entry.getIntKey();
         values[startPos + index] = entry.getDoubleValue();
         index++;

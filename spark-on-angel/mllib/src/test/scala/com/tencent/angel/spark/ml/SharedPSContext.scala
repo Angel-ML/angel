@@ -21,7 +21,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
 
-import com.tencent.angel.spark.PSContext
+import com.tencent.angel.spark.context.PSContext
 
 /**
  * Shares a local `SparkSession and PSClient`

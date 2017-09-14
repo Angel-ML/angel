@@ -34,6 +34,7 @@ public class KmeansTest {
   private Configuration conf = new Configuration();
   private static final String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
   private static final String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
+  private static final String inputPath = "./src/test/data/clustering/iris";
 
   static {
     PropertyConfigurator.configure("../conf/log4j.properties");
@@ -42,7 +43,6 @@ public class KmeansTest {
   @Before
   public void setup() throws Exception {
     try {
-      String inputPath = "./src/test/data/clustering/iris";
       String dataFmt = "libsvm";
 
       // Cluster center number
@@ -76,8 +76,6 @@ public class KmeansTest {
       conf.set(MLConf.KMEANS_SAMPLE_RATIO_PERBATCH(), String.valueOf(spratio));
       conf.set(MLConf.kMEANS_C(), String.valueOf(c));
 
-      // Set trainning data path
-      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
       // Set data format
       conf.set(MLConf.ML_DATAFORMAT(), dataFmt);
     } catch (Exception x) {
@@ -94,6 +92,8 @@ public class KmeansTest {
 
   private void trainOnLocalClusterTest() throws Exception{
     try{
+      // Set trainning data path
+      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
       // Set save model path
       conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model");
       // Set log sava path
@@ -111,6 +111,8 @@ public class KmeansTest {
 
   private void predictOnLocalClusterTest() throws Exception {
     try {
+      // Set trainning data path
+      conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, inputPath);
       // Set load model path
       conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model");
       // Set predict result path

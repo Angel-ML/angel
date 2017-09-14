@@ -50,6 +50,10 @@ public class PSContext {
   public Configuration getConf() {
     return ps.getConf();
   }
+
+  public ParameterServer getPs() {
+    return ps;
+  }
   
   public AngelDeployMode getDeployMode() {
     String mode =

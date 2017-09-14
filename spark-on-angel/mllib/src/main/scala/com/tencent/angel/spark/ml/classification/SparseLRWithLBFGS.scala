@@ -16,21 +16,22 @@
 
 package com.tencent.angel.spark.ml.classification
 
-import scala.collection.mutable.ArrayBuffer
-
 import breeze.linalg.DenseVector
 import breeze.optimize.LBFGS
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.SparkSession
 
-import com.tencent.angel.spark.PSContext
+import com.tencent.angel.spark.context.PSContext
+import com.tencent.angel.spark.math.vector.{PSVector, VectorType}
+import com.tencent.angel.spark.math.vector.decorator.BreezePSVector
 import com.tencent.angel.spark.ml.common.OneHot.OneHotVector
 import com.tencent.angel.spark.ml.sparse.SparseLogistic
 import com.tencent.angel.spark.ml.util.{ArgsUtil, DataLoader}
-import com.tencent.angel.spark.models.vector.BreezePSVector
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.SparkSession
+import scala.collection.mutable.ArrayBuffer
 
 
 object SparseLRWithLBFGS {
+
 
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
@@ -63,16 +64,16 @@ object SparseLRWithLBFGS {
     updateType match {
       case "spark" =>
         println(s"run spark lbfgs")
-        runLBFGS(instances, featLength, stepSize, maxIter)
+        runLBFGSSpark(instances, featLength, stepSize, maxIter)
       case "ps" =>
         println(s"run angel ps lbfgs")
-        runPSLBFGS(instances, featLength, stepSize, maxIter)
+        runLBFGSAngel(instances, featLength, stepSize, maxIter)
       case _ => println(s"wrong update type: $updateType (spark or ps)")
     }
   }
 
 
-  def runLBFGS(trainData: RDD[(OneHotVector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
+  def runLBFGSSpark(trainData: RDD[(OneHotVector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
     val initWeight = new DenseVector[Double](dim)
     val tol = 1e-6
     val lbfgs = new LBFGS[DenseVector[Double]](maxIter, m, tol)
@@ -92,9 +93,8 @@ object SparseLRWithLBFGS {
     println(s"weights: ${weight.toArray.take(10).mkString(" ")}")
   }
 
-  def runPSLBFGS(trainData: RDD[(OneHotVector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
-    val pool = PSContext.getOrCreate().createModelPool(dim, 5 * m)
-    val initWeightPS = pool.createZero().mkBreeze()
+  def runLBFGSAngel(trainData: RDD[(OneHotVector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
+    val initWeightPS = PSVector.dense(dim, 5 * m).toBreeze
     val tol = 1e-6
     val lbfgs = new LBFGS[BreezePSVector](maxIter, m, tol)
     val states = lbfgs.iterations(SparseLogistic.PSCost(trainData), initWeightPS)
