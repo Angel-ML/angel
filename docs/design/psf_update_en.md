@@ -92,7 +92,7 @@ Compile the code and create the jar to be uploaded through `angel.lib.jars` when
 ## Built-in Library
 
 	* **Abs**
-		* Purpose: assign the absolute value of a row, element-wise, to another row
+		* Purpose: assign the absolute value of each element of a row to the corresponding element of another row
 		* Parameters: matrix id, `from` row id, `to` row id
 		* Return value: none
 
@@ -112,7 +112,7 @@ Compile the code and create the jar to be uploaded through `angel.lib.jars` when
 		* Return value: none
 
 	* **Ceil**
-		* Purpose: get the ceiling (least integer that is greater than or equal to the element) of each element in a row and assign to the corresponding element in another row
+		* Purpose: get the ceiling (least integer that is greater than or equal to the element) of each element of a row and assign to the corresponding element of another row
 		* Parameters: matrix id, `from` row id, `to` row id
 		* Return value: none
 
@@ -137,142 +137,141 @@ Compile the code and create the jar to be uploaded through `angel.lib.jars` when
 		* Return value: none
 
 	* **Expm1**
-		* Purpose: assign exp(x) - 1 for each element x of a row to the corresponding element of another row 
+		* Purpose: assign exp(x) - 1 for each element x of a row to the corresponding element of another row
 		* Parameters: matrix id, `from` row id, `to` row id
 		* Return value: none
 
 	* **Fill**
-		* Purpose: assign a scalar value to every element in a row
+		* Purpose: assign a scalar value to every element of a row
 		* Parameters: matrix id, row id, scalar value
 		* Returan value: none
 
 	* **Floor**
-		* Purpose: get the floor (greatest integer that is less than or equal to the element) value of each element in a row and assign to the corresponding element in another row
+		* Purpose: get the floor (greatest integer that is less than or equal to the element) value of each element of a row and assign to the corresponding element of another row
 		* Parameters: matrix id, `from` row id, `to` row id
 		* Return value: none
 
 	* **Increment**
-	    * 功能：将矩阵中的某一行的每个元素加上一个标量值
-	    * 参数：矩阵id，from行号，标量值数组，该数组长度必须与向量大小相等
-	    * 返回值：无
+		* Purpose: add an array of scalars to a row
+		* Parameters: matrix id, `from` row id, array (must have same size as the row)
+		* Return value: none
 
 	* **Log**
-	    * 功能：将矩阵中的某一行的每个元素求取自然对数， 将得到的值赋值给另外一行的相应元素
-	    * 参数：矩阵id，from行号，to行号
-	    * 返回值：无
+		* Purpose: assign the natrual logrithm of each element of a row to the corresponding element of another row
+		* Parameters: matrix id, `from` row id, `to` row id
+		* Return value: none
 
 	* **Log10**
-	    * 功能：将矩阵中的某一行的每个元素求取以10为底对数，将得到的值赋值给另外一行的相应元素
-	    * 参数：矩阵id，from行号，to行号
-	    * 返回值：无
+		* Purpose: assign the base 10 logarithm of each element of a row to the corresponding element of another row
+		* Parameters: matrix id, `from` row id, `to` row id
+		* Return value: none
 
 	* **Log1p**
-	    * 功能：将矩阵中的某一行的每个元素加上1后求取为底对数，将得到的值赋值给另外一行的相应元素
-	    * 参数：矩阵id，from行号，to行号
-	    * 返回值：无
+		* Purpose: assign log(1+x), where x is each element of a row, to the corresponding element of another row
+		* Parameters: matrix id, `from` row id, `to` row id
+		* Return value: none
 
 	* **Map**
-	    * 功能：将矩阵中的某一行的每个元素进行某种计算，将得到的值赋值给另外一行的相应元素
-	    * 参数：矩阵id，from行号，to行号，计算函数（该计算函数拥有一个    * 参数，即    * 参数为元素的值）
-	    * 返回值：无
+		* Purpose: apply an function f(x) to each element x of a row and assign the value to the corresponding element of another row
+		* Parameters: matrix id, `from` row id, `to` row id, function f(x)
+		* Return value: none
 
 	* **MapWithIndex**
-	    * 功能：将矩阵中的某一行的每个元素进行某种计算，将得到的值赋值给另外一行的相应元素
-	    * 参数：矩阵id，from行号，to行号，计算函数（该计算函数拥有二个    * 参数，即元素的下标和值）
-	    * 返回值：无
+		* Purpose: apply an function f(i,x) to each element x of a row, where i is the index of x, and assign the value to the corresponding element of another row
+		* Parameters: matrix id, `from` row id, `to` row id, function f(i,x)
+	    	* Return value: none
 
 	* **MaxA**
-	    * 功能：将矩阵中的某一行的每个元素与一个标量值进行比较，然后将较大的值赋值给该行的相应元素
-	    * 参数：矩阵id，行号，标量值数组（该数组必须与行大小相等）
-	    * 返回值：无
+		* Purpose: in an element-by-element fashion, compare a row to a scalar array, and assign the greater value to the row 
+		* Parameters: matrix id, row id, array of scalars (must have same size as the row)
+		* Return value: none
 
 	* **MaxV**
-	    * 功能：将矩阵中的某两行的对应元素进行比较，然后将较大的值赋值给另外一行的相应元素
-	    * 参数：矩阵id，from行号1，from行号2，to行号
-	    * 返回值：无
+		* Purpose: in an element-by-element fashion, compare two rows and assign the greater value to another row 
+		* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id
+		* Return value: none
 
 	* **MinA**
-	    * 功能：将矩阵中的某一行的每个元素与一个标量值进行比较，然后将较小的值赋值给该行的相应元素
-	    * 参数：矩阵id，行号，标量值数组（该数组必须与行大小相等）
-	    * 返回值：无
+		* Purpose: in an element-by-element fashion, compare a row to a scalar array, and assign the smaller value to the row
+		* Parameters: matrix id, row it, array of scalars (must have same size as the row) 
+		* Return value: none
 
 	* **MinV**
-	    * 功能：将矩阵中的某两行的对应元素进行比较，然后将较小的值赋值给另外一行的相应元素
-	    * 参数：矩阵id，from行号1，from行号2，to行号
-	    * 返回值：无
+		* Purpose: in an element-by-element fashion, compare two rows and assign the smaller value to another row
+		* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id
+		* Return value: none
 
 	* **Mul**
-	    * 功能：将矩阵中的某两行的对应元素相乘，然后将值赋值给另外一行的相应元素
-	    * 参数：矩阵id，from行号1，from行号2，to行号
-	    * 返回值：无
+		* Purpose: assign the inner product of two rows to another row
+		* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id
+		* Return value: none
 
 	* **MulS**
-
-	    * 功能：将矩阵中的某一行的每个元素乘以一个标量，然后将值赋值给另外一行的相应元素
-	    * 参数：矩阵id，from行号，to行号，标量值
-	    * 返回值：无
+		* Purpose: multiply a scalar to each element of a row and assign to the corresponding element of another row
+		* Parameters: matrix id, `from` row id, `to` row id, scalar
+		* Return value: none
 
 	* **Pow**
-	    * 功能：将矩阵中的某一行的每个元素做指数运算（指数的底为元素值，幂为一个指定的标量），然后将值赋值给另外一行的相应元素
-	    * 参数：矩阵id，from行号，to行号，标量值
-	    * 返回值：无
+		* Purpose: calculate x raised to the power of a scalar value, where x is each element of a row, and assign to the corresponding element of another row
+		* Parameters: matrix id, `from` row id, `to` row id, scalar
+		* Return value: none
 
 	* **Put**
-	    * 功能：给矩阵的某一行的每一个元素赋值
-	    * 参数：矩阵id，行号，标量值数组（该数组大小必须与行大小相等）
-	    * 返回值：无
+		* Purpose: assign each element of a scalar array to an element of a row
+		* Parameters: matrix id, row id, scalar array (must have the same size as the row)
+	    	* Return value: none
 
 	* **RandomNormal**
-	    * 功能：给矩阵的某一行的每一个元素赋一个随机值，值符合高斯分布
-	    * 参数：矩阵id，行号，高斯分布平均数，高斯分布标准差
-	    * 返回值：无
+		* Purpose: to each element of a row, assign a random number from a normal distribution
+		* Parameters: matrix id, row id, mean and standard deviation of the normal distribution
+		* Return value: none
 
 	* **RandomUniform**
-	    * 功能：给矩阵的某一行的每一个元素赋一个随机值，值符合均匀分布
-	    * 参数：矩阵id，行号，均匀分布范围下限，均匀分布范围上限
-	    * 返回值：无
+		* Purpose: to each element of a row, assign a random number from a uniform distribution
+		* Parameters: matrix id, row id, minimum and maximum of the uniform distribution
+		* Return value: none
 
 	* **Round**
-	    * 功能：将矩阵中的某一行的每个元素做round计算（求取最接近的整数），然后将值赋值给另外一行的相应元素
-	    * 参数：矩阵id，from行号，to行号
-	    * 返回值：无
+		* Purpose: round each element of a row to its nearest integer and assign to the corresponding element of another row
+		* Parameters: matrix id, `from` row id, `to` row id
+		* Return value: none
 
 	* **Scale**
-	    * 功能：将矩阵中的某一行的每个元素乘以一个标量
-	    * 参数：矩阵id，行号，标量值
-	    * 返回值：无
+		* Purpose: scale a row by multiplying a scalar
+		* Parameters: matrix id, row id, scalar
+		* Return value: none
 
 	* **Signum**
-	    * 功能：将矩阵中的某一行的每个元素做signum运算（值大于0，返回1.0；小于0，返回-1.0；等于0，返回0），然后将值赋值给另外一行的相应元素
-	    * 参数：矩阵id，from行号，to行号
-	    * 返回值：无
+		* Purpose: apply signum(x) to each element x of a row and assign to the corresponding element of another row, where signum(x) returns 1.0 if x>0, -1.0 if x<0, and 0 if x equals 0
+		* Parameters: matrix id, `from` row id, `to` row id
+		* Return value: none
 
 	* **Sqrt**
-	    * 功能：将矩阵中的某一行的每个元素做平方根运算，然后将值赋值给另外一行的相应元素
-	    * 参数：矩阵id，from行号，to行号
-	    * 返回值：无
+		* Purpose: assign the square root of each element of a row to the corresponding element of another row
+		* Parameters: matrix id, `from` row id, `to` row id
+		* Return value: none
 
 	* **Sub**
-	    * 功能：将矩阵中的某两行的对应元素做减法，然后将值赋值给另外一行的相应元素
-	    * 参数：矩阵id，from行号1，from行号2，to行号
-	    * 返回值：无
+		* Purpose: assign the difference between two rows to another row 
+		* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id
+		* Return value: none
 
 	* **Zip2Map**
-	    * 功能：将矩阵中的某两行的对应元素指定运算（由一个函数表示），然后将值赋值给另外一行的相应元素
-	    * 参数：矩阵id，from行号1，from行号2，to行号，运算函数（该函数有两个    * 参数，分别是两行对应位置上的元素值）
-	    * 返回值：无
+		* Purpose: apply a function f(x,y) to each pair of corresponding element x and element y of two rows and assign to the corresponding element of another row
+		* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id, function f(x,y) where x and y are the corresponding pair of elements from the two rows
+		* Return value: none
 
 	* **Zip2MapWithIndex**
-	    * 功能：将矩阵中的某两行的对应元素指定运算（由一个函数表示），然后将值赋值给另外一行的相应元素
-	    * 参数：矩阵id，from行号1，from行号2，to行号，运算函数（该函数有三个    * 参数，分别是元素下标索引，两行对应位置上的元素值）
-	    * 返回值：无
+		* Purpose: apply a function to each pair of element x and element y from two rows, zip with their index, and assign to the corresponding element of another row
+		* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id, function(i,x,y) where i is the index of x and y
+		* Return value: none
 
 	* **Zip3Map**
-	    * 功能：将矩阵中的某三行的对应元素指定运算（由一个函数表示），然后将值赋值给另外一行的相应元素
-	    * 参数：矩阵id，from行号1，from行号2，to行号，运算函数（该函数有三个    * 参数，分别是三行对应位置上的元素值）
-	    * 返回值：无
+		* Purpose: apply a function f(x,y,z) to each tuple of corresponding elements x, y and z of three rows and assign to the corresponding element of another row 
+		* Parameters: matrix id, first `from` row id, second `from` row id, third `from` row id, `to` row id, function f(x,y,z)
+		* Return value: none
 
 	* **Zip3MapWithIndex**
-	    * 功能：将矩阵中的某三行的对应元素指定运算（由一个函数表示），然后将值赋值给另外一行的相应元素
-	    * 参数：矩阵id，from行号1，from行号2，to行号，运算函数（该函数有四个    * 参数，分别是元素下标索引，三行对应位置上的元素值）
-	    * 返t回值：无
+		* Purpose: apply a function to each tuple of corresponding elements x, y, z from three rows, zip with their index, and assign to the corresponding element of another row
+		* Parameters: matrix id, first `from` row id, second `from` row id, third `from` row id, `to` row id, function f(i,x,y,z) where i is the index of x, y and z
+		* Return value: none
