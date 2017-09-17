@@ -251,8 +251,8 @@ class Trainer(ctx:TaskContext, model:LDAModel,
             }
             dk.foreach{case(_, value) =>
               ll += Gamma.logGamma(alpha + value)
-              ll -= Gamma.logGamma(data.docLens(d) + alpha * model.K)
             }
+            ll -= Gamma.logGamma(data.docLens(d) + alpha * model.K)
             nnz += dk.size
           }
         }
