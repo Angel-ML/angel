@@ -91,187 +91,187 @@ Compile the code and create the jar to be uploaded through `angel.lib.jars` when
 
 ## Built-in Library
 
-	* **Abs**
-		* Purpose: assign the absolute value of each element of a row to the corresponding element of another row
-		* Parameters: matrix id, `from` row id, `to` row id
-		* Return value: none
+* **Abs**
+	* Purpose: assign the absolute value of each element of a row to the corresponding element of another row
+	* Parameters: matrix id, `from` row id, `to` row id
+	* Return value: none
 
-	* **Add**
-		* Purpose: assign the element-wise sum of two rows to another row
-		* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id
-		* Return value: none
+* **Add**
+	* Purpose: assign the element-wise sum of two rows to another row
+	* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id
+	* Return value: none
 
-	* **AddS**
-		* Purpose: add a scalar to a row and assign to another row
-		* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id, scalar value
-		* Return value: none
+* **AddS**
+	* Purpose: add a scalar to a row and assign to another row
+	* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id, scalar value
+	* Return value: none
 
-	* **Axpy**
-		* Purpose: y=Ax+y, where x and y are vectors (rows), A is a scalar
-		* Parameters: matrix id, x row id, y row id, A
-		* Return value: none
+* **Axpy**
+	* Purpose: y=Ax+y, where x and y are vectors (rows), A is a scalar
+	* Parameters: matrix id, x row id, y row id, A
+	* Return value: none
 
-	* **Ceil**
-		* Purpose: get the ceiling (least integer that is greater than or equal to the element) of each element of a row and assign to the corresponding element of another row
-		* Parameters: matrix id, `from` row id, `to` row id
-		* Return value: none
+* **Ceil**
+	* Purpose: get the ceiling (least integer that is greater than or equal to the element) of each element of a row and assign to the corresponding element of another row
+	* Parameters: matrix id, `from` row id, `to` row id
+	* Return value: none
 
-	* **Copy**
-		* Purpose: copy a row to another row 
-		* Parameters: matrix id, `from` row id, `to` row id
-		* Return value: none
+* **Copy**
+	* Purpose: copy a row to another row 
+	* Parameters: matrix id, `from` row id, `to` row id
+	* Return value: none
 		
-	* **Div**
-		* Purpose: assign the element-wise quotient between two rows to another row
-		* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id
-		* Return value: none
+* **Div**
+	* Purpose: assign the element-wise quotient between two rows to another row
+	* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id
+	* Return value: none
 
-	* **DivS**
-		* Purpose: assign the quotient between a row and a scalar to another row
-		* Parameters: matrix id, `from` row id, `to` row id, scalar
-		* Return value: none
+* **DivS**
+	* Purpose: assign the quotient between a row and a scalar to another row
+	* Parameters: matrix id, `from` row id, `to` row id, scalar
+	* Return value: none
 
-	* **Exp**
-		* Purpose: calculate exp(x), where exp() is the natural exponential function, for each row element, x, and assign to the corresponding element of another row
-		* Parameters: matrix id, `from` row id, `to` row id
-		* Return value: none
+* **Exp**
+	* Purpose: calculate exp(x), where exp() is the natural exponential function, for each row element, x, and assign to the corresponding element of another row
+	* Parameters: matrix id, `from` row id, `to` row id
+	* Return value: none
 
-	* **Expm1**
-		* Purpose: assign exp(x) - 1 for each element x of a row to the corresponding element of another row
-		* Parameters: matrix id, `from` row id, `to` row id
-		* Return value: none
+* **Expm1**
+	* Purpose: assign exp(x) - 1 for each element x of a row to the corresponding element of another row
+	* Parameters: matrix id, `from` row id, `to` row id
+	* Return value: none
 
-	* **Fill**
-		* Purpose: assign a scalar value to every element of a row
-		* Parameters: matrix id, row id, scalar value
-		* Returan value: none
+* **Fill**
+	* Purpose: assign a scalar value to every element of a row
+	* Parameters: matrix id, row id, scalar value
+	* Returan value: none
 
-	* **Floor**
-		* Purpose: get the floor (greatest integer that is less than or equal to the element) value of each element of a row and assign to the corresponding element of another row
-		* Parameters: matrix id, `from` row id, `to` row id
-		* Return value: none
+* **Floor**
+	* Purpose: get the floor (greatest integer that is less than or equal to the element) value of each element of a row and assign to the corresponding element of another row
+	* Parameters: matrix id, `from` row id, `to` row id
+	* Return value: none
 
-	* **Increment**
-		* Purpose: add an array of scalars to a row
-		* Parameters: matrix id, `from` row id, array (must have same size as the row)
-		* Return value: none
+* **Increment**
+	* Purpose: add an array of scalars to a row
+	* Parameters: matrix id, `from` row id, array (must have same size as the row)
+	* Return value: none
 
-	* **Log**
-		* Purpose: assign the natrual logrithm of each element of a row to the corresponding element of another row
-		* Parameters: matrix id, `from` row id, `to` row id
-		* Return value: none
+* **Log**
+	* Purpose: assign the natrual logrithm of each element of a row to the corresponding element of another row
+	* Parameters: matrix id, `from` row id, `to` row id
+	* Return value: none
 
-	* **Log10**
-		* Purpose: assign the base 10 logarithm of each element of a row to the corresponding element of another row
-		* Parameters: matrix id, `from` row id, `to` row id
-		* Return value: none
+* **Log10**
+	* Purpose: assign the base 10 logarithm of each element of a row to the corresponding element of another row
+	* Parameters: matrix id, `from` row id, `to` row id
+	* Return value: none
 
-	* **Log1p**
-		* Purpose: assign log(1+x), where x is each element of a row, to the corresponding element of another row
-		* Parameters: matrix id, `from` row id, `to` row id
-		* Return value: none
+* **Log1p**
+	* Purpose: assign log(1+x), where x is each element of a row, to the corresponding element of another row
+	* Parameters: matrix id, `from` row id, `to` row id
+	* Return value: none
 
-	* **Map**
-		* Purpose: apply an function f(x) to each element x of a row and assign the value to the corresponding element of another row
-		* Parameters: matrix id, `from` row id, `to` row id, function f(x)
-		* Return value: none
+* **Map**
+	* Purpose: apply an function f(x) to each element x of a row and assign the value to the corresponding element of another row
+	* Parameters: matrix id, `from` row id, `to` row id, function f(x)
+	* Return value: none
 
-	* **MapWithIndex**
-		* Purpose: apply an function f(i,x) to each element x of a row, where i is the index of x, and assign the value to the corresponding element of another row
-		* Parameters: matrix id, `from` row id, `to` row id, function f(i,x)
-	    	* Return value: none
+* **MapWithIndex**
+	* Purpose: apply an function f(i,x) to each element x of a row, where i is the index of x, and assign the value to the corresponding element of another row
+	* Parameters: matrix id, `from` row id, `to` row id, function f(i,x)
+    	* Return value: none
 
-	* **MaxA**
-		* Purpose: in an element-by-element fashion, compare a row to a scalar array, and assign the greater value to the row 
-		* Parameters: matrix id, row id, array of scalars (must have same size as the row)
-		* Return value: none
+* **MaxA**
+	* Purpose: in an element-by-element fashion, compare a row to a scalar array, and assign the greater value to the row 
+	* Parameters: matrix id, row id, array of scalars (must have same size as the row)
+	* Return value: none
 
-	* **MaxV**
-		* Purpose: in an element-by-element fashion, compare two rows and assign the greater value to another row 
-		* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id
-		* Return value: none
+* **MaxV**
+	* Purpose: in an element-by-element fashion, compare two rows and assign the greater value to another row 
+	* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id
+	* Return value: none
 
-	* **MinA**
-		* Purpose: in an element-by-element fashion, compare a row to a scalar array, and assign the smaller value to the row
-		* Parameters: matrix id, row it, array of scalars (must have same size as the row) 
-		* Return value: none
+* **MinA**
+	* Purpose: in an element-by-element fashion, compare a row to a scalar array, and assign the smaller value to the row
+	* Parameters: matrix id, row it, array of scalars (must have same size as the row) 
+	* Return value: none
 
-	* **MinV**
-		* Purpose: in an element-by-element fashion, compare two rows and assign the smaller value to another row
-		* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id
-		* Return value: none
+* **MinV**
+	* Purpose: in an element-by-element fashion, compare two rows and assign the smaller value to another row
+	* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id
+	* Return value: none
 
-	* **Mul**
-		* Purpose: assign the inner product of two rows to another row
-		* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id
-		* Return value: none
+* **Mul**
+	* Purpose: assign the inner product of two rows to another row
+	* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id
+	* Return value: none
 
-	* **MulS**
-		* Purpose: multiply a scalar to each element of a row and assign to the corresponding element of another row
-		* Parameters: matrix id, `from` row id, `to` row id, scalar
-		* Return value: none
+* **MulS**
+	* Purpose: multiply a scalar to each element of a row and assign to the corresponding element of another row
+	* Parameters: matrix id, `from` row id, `to` row id, scalar
+	* Return value: none
 
-	* **Pow**
-		* Purpose: calculate x raised to the power of a scalar value, where x is each element of a row, and assign to the corresponding element of another row
-		* Parameters: matrix id, `from` row id, `to` row id, scalar
-		* Return value: none
+* **Pow**
+	* Purpose: calculate x raised to the power of a scalar value, where x is each element of a row, and assign to the corresponding element of another row
+	* Parameters: matrix id, `from` row id, `to` row id, scalar
+	* Return value: none
 
-	* **Put**
-		* Purpose: assign each element of a scalar array to an element of a row
-		* Parameters: matrix id, row id, scalar array (must have the same size as the row)
-	    	* Return value: none
+* **Put**
+	* Purpose: assign each element of a scalar array to an element of a row
+	* Parameters: matrix id, row id, scalar array (must have the same size as the row)
+    	* Return value: none
 
-	* **RandomNormal**
-		* Purpose: to each element of a row, assign a random number from a normal distribution
-		* Parameters: matrix id, row id, mean and standard deviation of the normal distribution
-		* Return value: none
+* **RandomNormal**
+	* Purpose: to each element of a row, assign a random number from a normal distribution
+	* Parameters: matrix id, row id, mean and standard deviation of the normal distribution
+	* Return value: none
 
-	* **RandomUniform**
-		* Purpose: to each element of a row, assign a random number from a uniform distribution
-		* Parameters: matrix id, row id, minimum and maximum of the uniform distribution
-		* Return value: none
+* **RandomUniform**
+	* Purpose: to each element of a row, assign a random number from a uniform distribution
+	* Parameters: matrix id, row id, minimum and maximum of the uniform distribution
+	* Return value: none
 
-	* **Round**
-		* Purpose: round each element of a row to its nearest integer and assign to the corresponding element of another row
-		* Parameters: matrix id, `from` row id, `to` row id
-		* Return value: none
+* **Round**
+	* Purpose: round each element of a row to its nearest integer and assign to the corresponding element of another row
+	* Parameters: matrix id, `from` row id, `to` row id
+	* Return value: none
 
-	* **Scale**
-		* Purpose: scale a row by multiplying a scalar
-		* Parameters: matrix id, row id, scalar
-		* Return value: none
+* **Scale**
+	* Purpose: scale a row by multiplying a scalar
+	* Parameters: matrix id, row id, scalar
+	* Return value: none
 
-	* **Signum**
-		* Purpose: apply signum(x) to each element x of a row and assign to the corresponding element of another row, where signum(x) returns 1.0 if x>0, -1.0 if x<0, and 0 if x equals 0
-		* Parameters: matrix id, `from` row id, `to` row id
-		* Return value: none
+* **Signum**
+	* Purpose: apply signum(x) to each element x of a row and assign to the corresponding element of another row, where signum(x) returns 1.0 if x>0, -1.0 if x<0, and 0 if x equals 0
+	* Parameters: matrix id, `from` row id, `to` row id
+	* Return value: none
 
-	* **Sqrt**
-		* Purpose: assign the square root of each element of a row to the corresponding element of another row
-		* Parameters: matrix id, `from` row id, `to` row id
-		* Return value: none
+* **Sqrt**
+	* Purpose: assign the square root of each element of a row to the corresponding element of another row
+	* Parameters: matrix id, `from` row id, `to` row id
+	* Return value: none
 
-	* **Sub**
-		* Purpose: assign the difference between two rows to another row 
-		* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id
-		* Return value: none
+* **Sub**
+	* Purpose: assign the difference between two rows to another row 
+	* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id
+	* Return value: none
 
-	* **Zip2Map**
-		* Purpose: apply a function f(x,y) to each pair of corresponding element x and element y of two rows and assign to the corresponding element of another row
-		* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id, function f(x,y) where x and y are the corresponding pair of elements from the two rows
-		* Return value: none
+* **Zip2Map**
+	* Purpose: apply a function f(x,y) to each pair of corresponding element x and element y of two rows and assign to the corresponding element of another row
+	* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id, function f(x,y) where x and y are the corresponding pair of elements from the two rows
+	* Return value: none
 
-	* **Zip2MapWithIndex**
-		* Purpose: apply a function to each pair of element x and element y from two rows, zip with their index, and assign to the corresponding element of another row
-		* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id, function(i,x,y) where i is the index of x and y
-		* Return value: none
+* **Zip2MapWithIndex**
+	* Purpose: apply a function to each pair of element x and element y from two rows, zip with their index, and assign to the corresponding element of another row
+	* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id, function(i,x,y) where i is the index of x and y
+	* Return value: none
 
-	* **Zip3Map**
-		* Purpose: apply a function f(x,y,z) to each tuple of corresponding elements x, y and z of three rows and assign to the corresponding element of another row 
-		* Parameters: matrix id, first `from` row id, second `from` row id, third `from` row id, `to` row id, function f(x,y,z)
-		* Return value: none
+* **Zip3Map**
+	* Purpose: apply a function f(x,y,z) to each tuple of corresponding elements x, y and z of three rows and assign to the corresponding element of another row 
+	* Parameters: matrix id, first `from` row id, second `from` row id, third `from` row id, `to` row id, function f(x,y,z)
+	* Return value: none
 
-	* **Zip3MapWithIndex**
-		* Purpose: apply a function to each tuple of corresponding elements x, y, z from three rows, zip with their index, and assign to the corresponding element of another row
-		* Parameters: matrix id, first `from` row id, second `from` row id, third `from` row id, `to` row id, function f(i,x,y,z) where i is the index of x, y and z
-		* Return value: none
+* **Zip3MapWithIndex**
+	* Purpose: apply a function to each tuple of corresponding elements x, y, z from three rows, zip with their index, and assign to the corresponding element of another row
+	* Parameters: matrix id, first `from` row id, second `from` row id, third `from` row id, `to` row id, function f(i,x,y,z) where i is the index of x, y and z
+	* Return value: none
