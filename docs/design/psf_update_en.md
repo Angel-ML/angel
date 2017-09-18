@@ -3,11 +3,11 @@
 
 ## Principles
 
-1. PS Client divides the requests to generate a request list, where each request corresponds to a model parameter partition.
+1. PS Client divides the requests to generate a request list, where each request in the list corresponds to a model parameter partition.
 
 2. PS Client sends every request in the list to the PS instance that has the corresponding partition. The PS instance gets and updates the parameters in units of model parameter partitions, and returns the result.
 
-3. Wait for all requests to be returned.
+3. UpdateFunc waits for all requests to finish and return.
 
 
 ## Definitions
@@ -42,14 +42,14 @@ Different from `get psf`, `update psf`'s process consists of only one step:
 
 * `update` in units of model partitions (partitionUpdate)
 
-`update psf` has no specific return value, but returns a Future to the application; the application then decides whether to wait for the operations to complete.
+`update psf` has no specific return value, but returns **Future** to the application; the application then decides whether to wait for the operations to complete.
 
 The execution process of update type psFunc requires the PS Client and PS to work together:
 
-* UpdaterParam division execute on the worker
-* partitionUpdate method execute on the PSServer
+* UpdaterParam division executed on the worker
+* partitionUpdate method executed on the PSServer
 
-The specific process is shown below, with the chart on the left showing the process on the worker, the chart on the right showing the process on the server:
+The specific process is shown below, with the chart on the left showing the process on the worker, and the chart on the right showing the process on the PS server:
 
 ![](../img/psf_update_en.png)
 
@@ -82,7 +82,7 @@ The specific process is shown below, with the chart on the left showing the proc
 		}
 	```
 
-Compile the code and create the jar to be uploaded through `angel.lib.jars` when submitting the application; the new UpdateFunc can then be called in the program, for instance:
+Compile the code and create the jar to be uploaded through `angel.lib.jars` when submitting the application; the new UpdateFunc can then be called, for instance:
 
 ```Java
 	Random randomFunc = new RandomUniform(new RandomParam(matrixId, rowIndex, 0.0, 1.0));
@@ -103,7 +103,7 @@ Compile the code and create the jar to be uploaded through `angel.lib.jars` when
 
 * **AddS**
 	* Purpose: add a scalar to a row and assign to another row
-	* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id, scalar value
+	* Parameters: matrix id, `from` row id, `to` row id, scalar value
 	* Return value: none
 
 * **Axpy**
@@ -117,10 +117,10 @@ Compile the code and create the jar to be uploaded through `angel.lib.jars` when
 	* Return value: none
 
 * **Copy**
-	* Purpose: copy a row to another row 
+	* Purpose: copy each element of a row to the corresponding element of another row
 	* Parameters: matrix id, `from` row id, `to` row id
 	* Return value: none
-		
+
 * **Div**
 	* Purpose: assign the element-wise quotient between two rows to another row
 	* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id
@@ -137,7 +137,7 @@ Compile the code and create the jar to be uploaded through `angel.lib.jars` when
 	* Return value: none
 
 * **Expm1**
-	* Purpose: assign exp(x) - 1 for each element x of a row to the corresponding element of another row
+	* Purpose: assign exp(x)-1 for each element x of a row to the corresponding element of another row
 	* Parameters: matrix id, `from` row id, `to` row id
 	* Return value: none
 
@@ -187,17 +187,17 @@ Compile the code and create the jar to be uploaded through `angel.lib.jars` when
 	* Return value: none
 
 * **MaxV**
-	* Purpose: in an element-by-element fashion, compare two rows and assign the greater value to another row 
+	* Purpose: in an element-by-element fashion, compare two rows and assign the greater value to the corresponding element of another row
 	* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id
 	* Return value: none
 
 * **MinA**
 	* Purpose: in an element-by-element fashion, compare a row to a scalar array, and assign the smaller value to the row
-	* Parameters: matrix id, row it, array of scalars (must have same size as the row) 
+	* Parameters: matrix id, row it, array of scalars (must have same size as the row)
 	* Return value: none
 
 * **MinV**
-	* Purpose: in an element-by-element fashion, compare two rows and assign the smaller value to another row
+	* Purpose: in an element-by-element fashion, compare two rows and assign the smaller value to the corresponding element of another row
 	* Parameters: matrix id, first `from` row id, second `from` row id, `to` row id
 	* Return value: none
 
