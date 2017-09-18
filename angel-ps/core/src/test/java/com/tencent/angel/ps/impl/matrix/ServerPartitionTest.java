@@ -214,9 +214,9 @@ public class ServerPartitionTest {
     out.close();
     DataInputStream in = new DataInputStream(new FileInputStream("data"));
     assertEquals(partitionKey.getStartRow(), in.readInt());
-    assertEquals(partitionKey.getStartCol(), in.readInt());
+    assertEquals(partitionKey.getStartCol(), in.readLong());
     assertEquals(partitionKey.getEndRow(), in.readInt());
-    assertEquals(partitionKey.getEndCol(), in.readInt());
+    assertEquals(partitionKey.getEndCol(), in.readLong());
     assertEquals(rowType.toString(), in.readUTF());
     assertEquals(partitionKey.getEndRow() - partitionKey.getStartRow(), in.readInt());
     in.close();
@@ -230,8 +230,8 @@ public class ServerPartitionTest {
     assertEquals(partitionKey.getPartitionId(), buf.readInt());
     assertEquals(partitionKey.getStartRow(), buf.readInt());
     assertEquals(partitionKey.getEndRow(), buf.readInt());
-    assertEquals(partitionKey.getStartCol(), buf.readInt());
-    assertEquals(partitionKey.getEndCol(), buf.readInt());
+    assertEquals(partitionKey.getStartCol(), buf.readLong());
+    assertEquals(partitionKey.getEndCol(), buf.readLong());
 
     assertEquals(rowType.getNumber(), buf.readInt());
     assertEquals(serverPartition.getClock(), buf.readInt());

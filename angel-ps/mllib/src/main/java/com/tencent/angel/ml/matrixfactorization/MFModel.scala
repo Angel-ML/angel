@@ -22,7 +22,7 @@ import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.DenseFloatVector
 import com.tencent.angel.ml.matrixfactorization.MFModel._
-import com.tencent.angel.ml.matrixfactorization.utils.{ItemVec, UserVec}
+import com.tencent.angel.ml.matrixfactorization.threads.{ItemVec, UserVec}
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.protobuf.generated.MLProtos.RowType

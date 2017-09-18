@@ -73,7 +73,7 @@ public class SgdLRTest {
       conf.setBoolean("mapred.mapper.new-api", true);
       conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
       conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
-
+      conf.set(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, "true");
       // Set data format
       conf.set(MLConf.ML_DATAFORMAT(), dataFmt);
 

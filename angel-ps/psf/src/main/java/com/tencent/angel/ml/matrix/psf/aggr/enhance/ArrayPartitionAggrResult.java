@@ -22,7 +22,7 @@ import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import io.netty.buffer.ByteBuf;
 
 /**
- * `ArrayPartitionAggrResult` is a result Class for all Aggregate function whose result is double
+ * `ArrayPartitionAggrResult` is a result Class for all Aggregate function whose result is double[]
  */
 public class ArrayPartitionAggrResult extends PartitionGetResult {
   public double[] result;

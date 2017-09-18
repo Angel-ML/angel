@@ -18,7 +18,7 @@ package com.tencent.angel.ml.math;
 
 
 /**
- * The class represented a update.
+ * The class represented a update element in PS.
  */
 public abstract class TUpdate {
 

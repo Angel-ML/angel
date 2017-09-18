@@ -16,6 +16,8 @@
 
 package com.tencent.angel.psagent.matrix.transport.adapter;
 
+import java.util.UUID;
+
 /**
  * Get row request.
  */
@@ -25,6 +27,8 @@ public class GetRowRequest extends UserRequest {
 
   /** row index */
   private final int rowIndex;
+
+  private final UUID uuid = UUID.randomUUID();
 
   /**
    * 
@@ -83,7 +87,7 @@ public class GetRowRequest extends UserRequest {
 
   @Override
   public String toString() {
-    return "GetRowRequest [matrixId=" + matrixId + ", rowIndex=" + rowIndex + ", toString()="
+    return "GetRowRequest [id = " + uuid + ", matrixId=" + matrixId + ", rowIndex=" + rowIndex + ", toString()="
         + super.toString() + "]";
   }
 }

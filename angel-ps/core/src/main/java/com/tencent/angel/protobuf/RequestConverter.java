@@ -94,7 +94,7 @@ public final class RequestConverter {
   private static TaskStateProto buildTaskReport(TaskId taskId, Task task) {
     TaskStateProto.Builder builder = TaskStateProto.newBuilder();
     if(!PSAgentContext.get().syncClockEnable()) {
-      builder.setIteration(task.getTaskContext().getIteration());
+      builder.setIteration(task.getTaskContext().getEpoch());
       Map<Integer, AtomicInteger> matrixClocks = task.getTaskContext().getMatrixClocks();
       MatrixClock.Builder clockBuilder = MatrixClock.newBuilder();
       for (Entry<Integer, AtomicInteger> clockEntry : matrixClocks.entrySet()) {

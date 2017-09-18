@@ -29,7 +29,7 @@ object LogisticRegression {
 
   def main(args: Array[String]): Unit = {
     parseArgs(args)
-    runWithSparkContext(this.getClass.getSimpleName) { sc =>
+    runSpark(this.getClass.getSimpleName) { sc =>
       PSContext.getOrCreate(sc)
 
       run(N, DIM, numSlices, ITERATIONS)

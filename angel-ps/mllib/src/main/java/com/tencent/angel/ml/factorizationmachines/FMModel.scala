@@ -51,7 +51,7 @@ class FMModel (conf: Configuration = null, _ctx: TaskContext = null) extends MLM
   val FM_W0 = "fm_w0"
   val FM_W = "fm_w"
   val FM_V = "fm_v"
-  val FM_OBJ = "fm_obj"
+  val FM_OBJ = "fm_evaluate"
 
   // Feature number of data
   val feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
@@ -102,8 +102,8 @@ class FMModel (conf: Configuration = null, _ctx: TaskContext = null) extends MLM
       v.increment(vec._1, vec._2)
     }
 
-    w0.clock().get()
-    w.clock().get()
-    v.clock().get()
+    w0.syncClock()
+    w.syncClock()
+    v.syncClock()
   }
 }

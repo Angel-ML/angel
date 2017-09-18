@@ -34,6 +34,8 @@ public abstract class RowUpdater implements RowUpdaterInterface {
         updateDoubleSparse(updateRowType, size, dataBuf, (ServerSparseDoubleRow) row);
       } else if (row instanceof ServerDenseDoubleRow) {
         updateDoubleDense(updateRowType, size, dataBuf, (ServerDenseDoubleRow) row);
+      } else if (row instanceof ServerSparseDoubleLongKeyRow) {
+        updateDoubleSparseLongKey(updateRowType, size, dataBuf, (ServerSparseDoubleLongKeyRow) row);
       } else if (row instanceof ServerSparseIntRow) {
         updateIntSparse(updateRowType, size, dataBuf, (ServerSparseIntRow) row);
       } else if (row instanceof ServerDenseIntRow) {
@@ -142,6 +144,15 @@ public abstract class RowUpdater implements RowUpdaterInterface {
    * @param row     the row
    */
   public abstract void updateDoubleSparseToDoubleSparse(int size, ByteBuf dataBuf, ServerSparseDoubleRow row);
+
+  /**
+   * Update double sparse data with long key to double sparse  row with long key.
+   *
+   * @param size    the size
+   * @param dataBuf the data buf
+   * @param row     the row
+   */
+  public abstract void updateDoubleSparseToDoubleSparseLongKey(int size, ByteBuf dataBuf, ServerSparseDoubleLongKeyRow row);
 
   /**
    * Update float dense data to float dense row.
@@ -255,6 +266,18 @@ public abstract class RowUpdater implements RowUpdaterInterface {
     }
   }
 
+  private void updateDoubleSparseLongKey(RowType updateRowType, int size, ByteBuf dataBuf,
+    ServerSparseDoubleLongKeyRow row) {
+    switch (updateRowType) {
+      case T_DOUBLE_SPARSE_LONGKEY:
+        updateDoubleSparseToDoubleSparseLongKey(size, dataBuf, row);
+        break;
+
+      default:
+        break;
+    }
+  }
+
   private void updateFloatDense(RowType updateRowType, int size, ByteBuf dataBuf,
       ServerDenseFloatRow row) {
     switch (updateRowType) {
@@ -277,7 +300,7 @@ public abstract class RowUpdater implements RowUpdaterInterface {
         updateFloatDenseToFloatSparse(size, dataBuf, row);
         break;
       case T_FLOAT_SPARSE:
-        updateFloatDenseToFloatSparse(size, dataBuf, row);
+        updateFloatSparseToFloatSparse(size, dataBuf, row);
         break;
 
       default:

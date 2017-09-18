@@ -27,7 +27,7 @@ import java.nio.DoubleBuffer;
 import java.util.List;
 
 /**
- * `Eqal` judges if two rows is equal.
+ * `Equal` judges if two rows is equal.
  */
 public final class Equal extends BinaryAggrFunc {
 
@@ -58,10 +58,12 @@ public final class Equal extends BinaryAggrFunc {
   public GetResult merge(List<PartitionGetResult> partResults) {
     double isEqual = 1.0;
     for (PartitionGetResult partResult : partResults) {
-      double res = ((ScalarPartitionAggrResult) partResult).result;
-      if (res != 1.0) {
-        isEqual = res;
-        break;
+      if (partResult != null) {
+        double res = ((ScalarPartitionAggrResult) partResult).result;
+        if (res != 1.0) {
+          isEqual = res;
+          break;
+        }
       }
     }
 

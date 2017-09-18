@@ -572,7 +572,6 @@ public class MatrixMetaManager {
       }
       
       for(it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry<MatrixProto> entry:matrixProtoMap.int2ObjectEntrySet()) {
-        LOG.info("write meta for matrix " + entry.getValue());
         entry.getValue().writeDelimitedTo(output);
       }
     } finally {

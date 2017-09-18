@@ -19,9 +19,11 @@ package com.tencent.angel.ml.math.vector;
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.math.VectorType;
+import com.tencent.angel.protobuf.generated.MLProtos;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
+import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -68,7 +70,11 @@ public class SparseDoubleVector extends TDoubleVector {
    */
   public SparseDoubleVector(int dim, int capacity) {
     super();
-    this.hashMap = new Int2DoubleOpenHashMap(capacity);
+    if(capacity > 0) {
+      this.hashMap = new Int2DoubleOpenHashMap(capacity);
+    } else {
+      this.hashMap = new Int2DoubleOpenHashMap(INIT_SIZE);
+    }
     this.dim = dim;
   }
 
@@ -112,6 +118,17 @@ public class SparseDoubleVector extends TDoubleVector {
   public TDoubleVector plusBy(int index, double delta) {
     hashMap.addTo(index, delta);
     return this;
+  }
+
+  @Override public double sum() {
+    double ret = 0.0;
+    ObjectIterator<Int2DoubleMap.Entry> iter = this.hashMap.int2DoubleEntrySet().fastIterator();
+    Int2DoubleMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      ret += entry.getDoubleValue();
+    }
+    return ret;
   }
 
   @Override public TDoubleVector clone() {
@@ -252,8 +269,8 @@ public class SparseDoubleVector extends TDoubleVector {
     return hashMap.keySet().toIntArray();
   }
 
-  @Override public VectorType getType() {
-    return VectorType.T_DOUBLE_SPARSE;
+  @Override public MLProtos.RowType getType() {
+    return MLProtos.RowType.T_DOUBLE_SPARSE;
   }
 
   @Override public long nonZeroNumber() {
@@ -615,5 +632,9 @@ public class SparseDoubleVector extends TDoubleVector {
       sum += v * v;
     }
     return sum;
+  }
+
+  public Int2DoubleOpenHashMap getIndexToValueMap() {
+    return hashMap;
   }
 }

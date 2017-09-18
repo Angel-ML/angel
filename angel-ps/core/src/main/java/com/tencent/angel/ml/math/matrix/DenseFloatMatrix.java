@@ -60,7 +60,7 @@ public class DenseFloatMatrix extends TFloatMatrix {
    * @return
    */
   public DenseFloatVector initVector(int rowIndex) {
-    DenseFloatVector ret = new DenseFloatVector(col);
+    DenseFloatVector ret = new DenseFloatVector((int)col);
     ret.setMatrixId(matrixId);
     ret.setRowId(rowIndex);
     return ret;
@@ -74,7 +74,7 @@ public class DenseFloatMatrix extends TFloatMatrix {
    * @return
    */
   private DenseFloatVector initVector(int rowIndex, float[] values) {
-    DenseFloatVector ret = new DenseFloatVector(col, values);
+    DenseFloatVector ret = new DenseFloatVector((int)col, values);
     ret.setMatrixId(matrixId);
     ret.setRowId(rowIndex);
     return ret;

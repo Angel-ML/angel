@@ -195,7 +195,7 @@ class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
       }
 
       predict.put(new GBDTPredictResult(y, pred))
-      LOG.info(s"instance[${idx}]: label[${y}], pred[${pred}]")
+      LOG.debug(s"instance[${idx}]: label[${y}], pred[${pred}]")
       if (y > 0) {
         posNum += 1
         if (y * pred > 0) posTrue += 1

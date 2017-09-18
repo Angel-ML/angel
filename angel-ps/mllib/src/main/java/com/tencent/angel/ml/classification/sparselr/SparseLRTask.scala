@@ -44,7 +44,7 @@ class SparseLRTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) 
 
     LOG.info(s"Start training for SparseLR model with epochNum=$epochNum L1=$regParam rho=$rho")
 
-    val learner = new SparseLR(ctx)
+    val learner = new SparseLRLearner(ctx)
     learner.setMaxIter(epochNum)
            .setRegParam(regParam)
            .setThreadNum(threadNum)

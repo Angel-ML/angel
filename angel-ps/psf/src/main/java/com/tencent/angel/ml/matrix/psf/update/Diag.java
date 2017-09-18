@@ -42,7 +42,7 @@ public class Diag extends FullUpdateFunc {
         try {
           row.getLock().writeLock().lock();
           DoubleBuffer rowData = row.getData();
-          rowData.put(rowId - row.getStartCol(), values[rowId]);
+          rowData.put(rowId - (int)row.getStartCol(), values[rowId]);
         } finally {
           row.getLock().writeLock().unlock();
         }

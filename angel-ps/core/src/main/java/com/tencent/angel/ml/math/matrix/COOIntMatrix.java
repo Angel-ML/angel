@@ -161,7 +161,7 @@ public class COOIntMatrix extends TMatrix {
       vals[idx] = v;
     }
 
-    return new CSRIntMat(row, col, rs, cols, vals);
+    return new CSRIntMat(row, (int)col, rs, cols, vals);
   }
 
   /**

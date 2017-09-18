@@ -20,7 +20,7 @@ package com.tencent.angel.ml.matrix.psf.aggr.enhance;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 
 /**
- * `ArrayAggrResult` is a result Class for all Aggregate function whose result is double.
+ * `ArrayAggrResult` is a result Class for all Aggregate function whose result is double[].
  */
 public class ArrayAggrResult extends GetResult {
   private final double[] result;

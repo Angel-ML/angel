@@ -106,7 +106,7 @@ public class MatrixCommitter {
         out.close();
         out = null;
 
-        HdfsUtil.rename(tmpDestFile, destFile, fs);
+        fs.rename(tmpDestFile, destFile);
         isSuccess.set(true);
         finishFlag.set(true);
       } catch (Exception x) {

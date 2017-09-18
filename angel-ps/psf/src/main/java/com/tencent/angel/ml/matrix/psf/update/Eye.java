@@ -42,7 +42,7 @@ public class Eye extends FullUpdateFunc {
         try {
           row.getLock().writeLock().lock();
           DoubleBuffer rowData = row.getData();
-          rowData.put(rowId - row.getStartCol(), 1);
+          rowData.put(rowId - (int)row.getStartCol(), 1);
         } finally {
           row.getLock().writeLock().unlock();
         }

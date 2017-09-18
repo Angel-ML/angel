@@ -19,7 +19,6 @@ package com.tencent.angel.master;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -34,14 +33,12 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.google.protobuf.ServiceException;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.client.AngelClient;
 import com.tencent.angel.client.AngelClientFactory;
 import com.tencent.angel.common.Location;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.conf.MatrixConf;
-import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.ipc.TConnectionManager;
 import com.tencent.angel.localcluster.LocalClusterContext;
@@ -250,8 +247,8 @@ public class MasterRecoverTest {
         worker.getTaskManager().getRunningTask().get(task0Id).getTaskContext();
       com.tencent.angel.worker.task.TaskContext task1Context =
         worker.getTaskManager().getRunningTask().get(task1Id).getTaskContext();
-      assertEquals(task0Context.getIteration(), task0Iteration);
-      assertEquals(task1Context.getIteration(), task1Iteration);
+      assertEquals(task0Context.getEpoch(), task0Iteration);
+      assertEquals(task1Context.getEpoch(), task1Iteration);
       assertEquals(task0Context.getMatrixClock(w1Id), task0w1Clock);
       assertEquals(task0Context.getMatrixClock(w2Id), task0w2Clock);
       assertEquals(task1Context.getMatrixClock(w1Id), task1w1Clock);
