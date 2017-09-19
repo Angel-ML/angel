@@ -10,7 +10,8 @@ import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
-
+import com.tencent.angel.ml.warplda.LDAModel._
+import com.tencent.angel.protobuf.generated.MLProtos.RowType
 /**
   * The parameters of LDA model.
   */
