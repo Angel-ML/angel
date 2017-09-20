@@ -70,7 +70,7 @@ public class ServerArbitraryIntRow extends ServerRow {
 
   private void initDenseRep() {
     if (denseRep == null) {
-      int length = endCol - startCol;
+      int length = (int)(endCol - startCol);
       buf = new byte[length * 4];
       denseRep = wrapIntBuffer(buf);
     }
@@ -120,7 +120,7 @@ public class ServerArbitraryIntRow extends ServerRow {
 
   private void denseToSparse() {
     initSparseRep();
-    int length = endCol - startCol;
+    int length = (int)(endCol - startCol);
     for (int i = 0; i < length; i++) {
       int v = denseRep.get(i);
       if (v != 0)
@@ -159,7 +159,7 @@ public class ServerArbitraryIntRow extends ServerRow {
       denseRep.put(key, value);
     }
 
-    int size = endCol - startCol;
+    int size = (int)(endCol - startCol);
     if (nnz < threshold * size)
       denseToSparse();
   }
@@ -219,7 +219,7 @@ public class ServerArbitraryIntRow extends ServerRow {
     }
 
     nnz = sparseRep.size();
-    int size = endCol - startCol;
+    int size = (int)(endCol - startCol);
     if (nnz > threshold * size)
       sparseToDense();
   }

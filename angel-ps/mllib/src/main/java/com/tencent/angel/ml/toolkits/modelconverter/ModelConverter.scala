@@ -114,11 +114,11 @@ class ModelConverter(val conf: Configuration) {
         val partSize = fin.readInt
         val startRow = fin.readInt
         val startCol = fin.readInt
-        val endRow = fin.readInt
-        val endCol = fin.readInt
+        val endRow = fin.readLong
+        val endCol = fin.readLong
         val rowType = fin.readUTF
 
-        val patInfo = "Partition info: matrixID=" + matId + " partSize=" + partSize + "rowType+" +
+        val patInfo = "Partition info: matrixID=" + matId + " partSize=" + partSize + " rowType=" +
           rowType + ", " + "partition " + "range from[" + startRow +
           ", " + startCol + "] to [" + endRow + ", " + endCol + "]"
         LOG.info(patInfo)
@@ -182,9 +182,9 @@ class ModelConverter(val conf: Configuration) {
     /**
       * Convert T_DOUBLE_DENSE type files
       */
-    def parseDoubleDense(fin: FSDataInputStream, startCol: Int, endCol: Int) {
-      val rowLen = endCol - startCol
-      val data = new Array[Byte](8 * (endCol - startCol))
+    def parseDoubleDense(fin: FSDataInputStream, startCol: Int, endCol: Long) {
+      val rowLen = endCol.toInt - startCol
+      val data = new Array[Byte](8 * (endCol.toInt - startCol))
 
       val rowNum = fin.readInt
       for (j <- 0 until rowNum) {
@@ -206,9 +206,9 @@ class ModelConverter(val conf: Configuration) {
     /**
       * Convert T_FLOAT_DENSE type files
       */
-    def parseFloatDense(fin: FSDataInputStream, startCol: Int, endCol: Int) {
-      val rowLen = endCol - startCol
-      val data = new Array[Byte](4 * (endCol - startCol))
+    def parseFloatDense(fin: FSDataInputStream, startCol: Int, endCol: Long) {
+      val rowLen = endCol.toInt - startCol
+      val data = new Array[Byte](4 * (endCol.toInt - startCol))
 
       val rowNum = fin.readInt
       for (j <- 0 until rowNum) {
@@ -252,10 +252,10 @@ class ModelConverter(val conf: Configuration) {
     /**
       * Convert T_INT_DENSE type files
       */
-    def parseIntDense(fin: FSDataInputStream, startCol: Int, endCol: Int): Unit = {
+    def parseIntDense(fin: FSDataInputStream, startCol: Int, endCol: Long): Unit = {
       val rowNum = fin.readInt
-      val data = new Array[Byte](4 * (endCol - startCol))
-      val rowLen = endCol - startCol
+      val data = new Array[Byte](4 * (endCol.toInt - startCol))
+      val rowLen = endCol.toInt - startCol
 
       for (j <- 0 until rowNum) {
         val rowIndex = fin.readInt
@@ -276,9 +276,9 @@ class ModelConverter(val conf: Configuration) {
     /**
       * Convert Arbitrary type files
       */
-    def parseArbitrary(fin: FSDataInputStream, startCol: Int, endCol: Int): Unit = {
+    def parseArbitrary(fin: FSDataInputStream, startCol: Int, endCol: Long): Unit = {
       val rowNum = fin.readInt()
-      val data = new Array[Byte](4 * (endCol - startCol))
+      val data = new Array[Byte](4 * (endCol.toInt - startCol))
       for (j <- 0 until rowNum) {
         val rowIndex = fin.readInt
         val clock = fin.readInt
@@ -295,9 +295,9 @@ class ModelConverter(val conf: Configuration) {
       }
     }
 
-    def parseArbitratyIntDense(fin: FSDataInputStream, startCol: Int, endCol: Int): Unit= {
-      val rowLen = endCol - startCol
-      val data = new Array[Byte](4 * (endCol - startCol))
+    def parseArbitratyIntDense(fin: FSDataInputStream, startCol: Int, endCol: Long): Unit= {
+      val rowLen = endCol.toInt - startCol
+      val data = new Array[Byte](4 * (endCol.toInt - startCol))
 
       fin.readFully(data, 0, data.length)
       val iBuffer = ByteBuffer.wrap(data, 0, data.length).asIntBuffer

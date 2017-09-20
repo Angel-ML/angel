@@ -68,15 +68,12 @@ public class SparseDoubleRowUpdateSplit extends RowUpdateSplit {
     LOG.debug("double size = " + (end - start));
     for (int i = start; i < end; i++) {
       buf.writeInt(offsets[i]);
-    }
-
-    for (int i = start; i < end; i++) {
       buf.writeDouble(values[i]);
     }
   }
 
   @Override
   public int bufferLen() {
-    return super.bufferLen() + size() * 12;
+    return super.bufferLen() + (end - start) * 12;
   }
 }

@@ -83,9 +83,6 @@ public class UnaryAggrParam extends GetParam {
     List<PartitionGetParam> partParams = new ArrayList<PartitionGetParam>(size);
 
     for (PartitionKey part : parts) {
-      if (rowId < part.getStartRow() || rowId >= part.getEndRow()) {
-        throw new RuntimeException("Wrong rowId!");
-      }
       partParams.add(new UnaryPartitionAggrParam(matrixId, part, rowId));
     }
 

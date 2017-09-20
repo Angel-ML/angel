@@ -18,7 +18,10 @@ package com.tencent.angel.ml.matrix.transport;
 
 import com.tencent.angel.ps.impl.matrix.*;
 import com.tencent.angel.protobuf.generated.MLProtos.RowType;
+import com.tencent.angel.utils.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
+
+import java.util.Queue;
 
 /**
  * The result of get row split rpc request.
@@ -76,8 +79,14 @@ public class GetRowSplitResponse extends Response {
           break;
         }
 
-        case T_DOUBLE_SPARSE: {
+        case T_DOUBLE_SPARSE:
+        case T_DOUBLE_SPARSE_COMPONENT:{
           rowSplit = new ServerSparseDoubleRow();
+          break;
+        }
+
+        case T_DOUBLE_SPARSE_LONGKEY: {
+          rowSplit = new ServerSparseDoubleLongKeyRow();
           break;
         }
 
@@ -86,7 +95,14 @@ public class GetRowSplitResponse extends Response {
           break;
         }
 
-        case T_INT_SPARSE: {
+        case T_FLOAT_SPARSE:
+        case T_FLOAT_SPARSE_COMPONENT: {
+          rowSplit = new ServerSparseFloatRow();
+          break;
+        }
+
+        case T_INT_SPARSE:
+        case T_INT_SPARSE_COMPONENT:{
           rowSplit = new ServerSparseIntRow();
           break;
         }

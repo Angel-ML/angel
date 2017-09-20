@@ -18,35 +18,139 @@
 package com.tencent.angel.spark.context
 
 import java.util.UUID
-import scala.collection.JavaConverters._
-import scala.collection.{Map, mutable}
-import scala.collection.mutable.ArrayBuffer
+import java.util.concurrent.ConcurrentHashMap
 
+import com.tencent.angel.client.AngelContext
+import com.tencent.angel.common.Location
+import com.tencent.angel.conf.AngelConf._
+import com.tencent.angel.exception.AngelException
+import com.tencent.angel.ml.matrix.{MatrixContext, MatrixMeta}
+import com.tencent.angel.protobuf.generated.MLProtos.RowType
+import com.tencent.angel.psagent.PSAgent
+import com.tencent.angel.psagent.matrix.{MatrixClient, MatrixClientFactory}
+import com.tencent.angel.spark.math.matrix.MatrixType
+import com.tencent.angel.spark.math.matrix.MatrixType.MatrixType
+import com.tencent.angel.spark.math.vector.VectorType.VectorType
+import com.tencent.angel.spark.math.vector.decorator.PSVectorDecorator
+import com.tencent.angel.spark.math.vector.{PSVector, VectorType}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.util.ShutdownHookManager
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.{SparkConf, TaskContext}
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
+import scala.collection.{Map, mutable}
 
-import com.tencent.angel.client.AngelContext
-import com.tencent.angel.common.Location
-import com.tencent.angel.conf.AngelConf._
-import com.tencent.angel.ml.matrix.{MatrixContext, MatrixMeta}
-import com.tencent.angel.protobuf.generated.MLProtos
-import com.tencent.angel.psagent.PSAgent
-import com.tencent.angel.psagent.matrix.{MatrixClient, MatrixClientFactory}
-import com.tencent.angel.spark.model.matrix.MatrixType
-import com.tencent.angel.spark.model.matrix.MatrixType.MatrixType
-import com.tencent.angel.spark.model.{BitSetPSModelPool, PSModelPool}
+import com.tencent.angel.spark.client.PSClient
 
 /**
  * AngelPSContext for driver and executor, it is an implement of `PSContext`
  */
-private[spark] class AngelPSContext private (id: Int, angelCtx: AngelContext) extends PSContext {
+private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) extends PSContext {
 
   import AngelPSContext._
 
-  private val totalPSCores = angelCtx.getConf.getInt(TOTAL_CORES, 2)
+  private[spark] def conf: Map[String, String] = angelConf
+
+  protected def stop() = {
+    matrixMetaMap.foreach { entry =>
+      destroyMatrix(entry._1)
+    }
+
+    if (psAgent != null) {
+      psAgent.stop()
+    }
+  }
+
+  def createMatrix(rows: Int, cols: Int, t: MatrixType = MatrixType.DENSE): MatrixMeta = {
+
+    val maxRowNumInBlock = if (rows > 1000) rows / TOTAL_PS_CORES else rows
+    val maxColNumInBlock = if (cols > 1000) cols / TOTAL_PS_CORES else cols
+
+    val mt = t match {
+      case MatrixType.DENSE => RowType.T_DOUBLE_DENSE
+      case MatrixType.SPARSE => RowType.T_DOUBLE_SPARSE
+    }
+    val matrix = new MatrixContext(s"spark-$matrixCounter", rows, cols,
+      maxRowNumInBlock, maxColNumInBlock)
+    matrix.setRowType(mt)
+
+    val meta = psAgent.createMatrix(matrix, 5000L)
+    matrixCounter += 1
+    matrixMetaMap(meta.getId) = meta
+
+    meta
+  }
+
+  def destroyMatrix(meta: MatrixMeta): Unit = {
+    destroyMatrix(meta.getId())
+  }
+
+  def destroyMatrix(matrixId: Int): Unit = {
+    matrixMetaMap.remove(matrixId).foreach { x =>
+      psAgent.releaseMatrix(x)
+    }
+  }
+
+  def createVector(
+      dimension: Int,
+      t: VectorType = VectorType.DENSE,
+      poolCapacity: Int = PSVectorPool.DEFAULT_POOL_CAPACITY): PSVector = {
+
+    val vector = createVectorPool(dimension, poolCapacity, t).allocate()
+    PSClient.instance().fill(vector, 0.0)
+    vector
+  }
+
+  def duplicateVector(original: PSVector): PSVector = {
+    if (original.isInstanceOf[PSVectorDecorator])
+      throw new AngelException("Don't try to clone a Decorated PSVector")
+    val vector = getPool(original.poolId).allocate()
+    PSClient.instance().fill(vector, 0.0)
+    vector
+  }
+
+  def destroyVector(vector: PSVector): Unit ={
+    getPool(vector.poolId).delete(vector)
+  }
+
+  private[spark] def createVectorPool(
+      dimension: Int,
+      capacity: Int,
+      t: VectorType): PSVectorPool = {
+
+    val matrixType = if (t == VectorType.SPARSE) {
+      MatrixType.SPARSE
+    } else {
+      MatrixType.DENSE
+    }
+
+    val thisCapacity = if (capacity > 0) capacity else PSVectorPool.DEFAULT_POOL_CAPACITY
+
+    val matrixMeta = createMatrix(thisCapacity, dimension, matrixType)
+
+    val pool = new PSVectorPool(matrixMeta.getId, dimension, thisCapacity, t: VectorType)
+    psVectorPools.put(pool.id, pool)
+    pool
+  }
+
+  def destroyVectorPool(poolId: Int): Unit = {
+    val pool = psVectorPools.remove(poolId)
+    pool.destroy()
+    // destroy matrix
+    destroyMatrix(poolId)
+  }
+
+  def destroyVectorPool(vector: PSVector): Unit = {
+    destroyVectorPool(vector.poolId)
+  }
+
+
+  def TOTAL_PS_CORES = angelCtx.getConf.getInt(TOTAL_CORES, 2)
+  private val matrixMetaMap = mutable.HashMap.empty[Int, MatrixMeta]
+  private var matrixCounter = 0
+  private val psVectorPools = new ConcurrentHashMap[Int, PSVectorPool]()
 
   // Angel configuration that is delivered to executors by spark driver
   private val angelConf = {
@@ -65,78 +169,28 @@ private[spark] class AngelPSContext private (id: Int, angelCtx: AngelContext) ex
     map
   }
 
-  private val matrixMetaMap = mutable.HashMap.empty[Int, MatrixMeta]
-
-  private var matrixCounter = 0
-
   private val psAgent = {
     val masterIp = angelCtx.getMasterLocation.getIp
     val masterPort = angelCtx.getMasterLocation.getPort
-    new PSAgent(angelCtx.getConf, masterIp, masterPort, id, false, null)
+    new PSAgent(angelCtx.getConf, masterIp, masterPort, contextId, false, null)
   }
-
   psAgent.initAndStart()
 
   ShutdownHookManager.get().addShutdownHook(
     new Runnable {
-      def run(): Unit = psAgent.stop()
+      def run() = psAgent.stop()
     },
-    FileSystem.SHUTDOWN_HOOK_PRIORITY + 20)
+    FileSystem.SHUTDOWN_HOOK_PRIORITY + 20
+  )
 
+  //========Init Part Finish======//
 
-  override private[spark] def conf: Map[String, String] = angelConf
-
-
-  def createMatrix(rows: Int, cols: Int, t: MatrixType = MatrixType.DENSE): MatrixMeta = {
-
-    val maxRowNumInBlock = if (rows > 1000) rows / totalPSCores else rows
-    val maxColNumInBlock = if (cols > 1000) cols / totalPSCores else cols
-
-    val mt = t match {
-      case MatrixType.DENSE => MLProtos.RowType.T_DOUBLE_DENSE
-      case MatrixType.SPARSE => MLProtos.RowType.T_DOUBLE_SPARSE
-    }
-    val matrix = new MatrixContext(s"spark-$matrixCounter", rows, cols,
-      maxRowNumInBlock, maxColNumInBlock)
-    matrix.setRowType(mt)
-
-    val meta = psAgent.createMatrix(matrix, 5000L)
-    matrixCounter += 1
-    matrixMetaMap(meta.getId) = meta
-
-    meta
+  def getMatrixClient(matrixId: Int): MatrixClient = {
+    MatrixClientFactory.get(matrixId, getTaskId())
   }
 
-  def destroyMatrix(meta: MatrixMeta): Unit = {
-    matrixMetaMap.remove(meta.getId).foreach { x =>
-      psAgent.releaseMatrix(x)
-    }
-  }
-
-  /**
-   * Create PSVectorPool in Angel PS nodes.
-   * PSVectorPool is a matrix in Angel PS nodes,
-   * psAgent creates the matrix for AngelPSClient.
-   */
-  protected def doCreateModelPool(numDimensions: Int, capacity: Int): PSModelPool = {
-    val matrixMeta = createMatrix(capacity, numDimensions)
-    new BitSetPSModelPool(matrixMeta.getId, numDimensions, capacity)
-  }
-
-  /**
-   * Call `psAgent` to release matrix which is PSVectorPool in AngelPSClient
-   *
-   * @param pool The poll to be destroyed
-   */
-  protected def doDestroyModelPool(pool: PSModelPool): Unit = {
-    matrixMetaMap.remove(pool.id).foreach { x =>
-      psAgent.releaseMatrix(x)
-    }
-    pool.destroy()
-  }
-
-  def getMatrixClient(poolId: Int): MatrixClient = {
-    MatrixClientFactory.get(poolId, getTaskId())
+  private[spark] def getPool(id: Int): PSVectorPool = {
+    psVectorPools.get(id)
   }
 
   private def getTaskId(): Int = {
@@ -145,12 +199,6 @@ private[spark] class AngelPSContext private (id: Int, angelCtx: AngelContext) ex
       -1
     } else {
       tc.partitionId()
-    }
-  }
-
-  override def stop(): Unit = {
-    if (psAgent != null) {
-      psAgent.stop()
     }
   }
 }
@@ -167,21 +215,21 @@ private[spark] object AngelPSContext {
 
   def apply(executorId: String, sparkConf: SparkConf): AngelPSContext = {
     if (executorId == "driver") {
-      new AngelPSContext(-1, submit(sparkConf))
+      val angelContext = launchAngel(sparkConf)
+      new AngelPSContext(-1, angelContext)
     } else {
-      val taskContext = TaskContext.get()
+      val taskConf = SparkHadoopUtil.get.newConfiguration(sparkConf)
 
+      val taskContext = TaskContext.get()
       val ip = taskContext.getLocalProperty(MASTER_IP)
       val port = taskContext.getLocalProperty(MASTER_PORT).toInt
       val masterAddr = new Location(ip, port)
-
-      val hadoopConf = SparkHadoopUtil.get.newConfiguration(sparkConf)
       val keys = taskContext.getLocalProperty(CONF_KEYS).split(";")
       for (key <- keys) {
-        hadoopConf.set(key, taskContext.getLocalProperty(key))
+        taskConf.set(key, taskContext.getLocalProperty(key))
       }
 
-      val angelContext = new AngelContext(masterAddr, hadoopConf)
+      val angelContext = new AngelContext(masterAddr, taskConf)
       new AngelPSContext(executorId.toInt - 1, angelContext)
     }
   }
@@ -257,7 +305,9 @@ private[spark] object AngelPSContext {
     hadoopConf
   }
 
-  private def submit(conf: SparkConf): AngelContext = {
+
+  //Start Angel
+  private def launchAngel(conf: SparkConf): AngelContext = {
     angelClient = new com.tencent.angel.client.AngelPSClient(convertToHadoop(conf))
     hookTask = new Runnable {
       def run(): Unit = doStop()
@@ -268,14 +318,12 @@ private[spark] object AngelPSContext {
     angelClient.startPS()
   }
 
-  /**
-   * Stop AngelPSClient
-   */
-  def stop(): Unit = {
+  def stopAngel() = {
     if (hookTask != null) {
       ShutdownHookManager.get().removeShutdownHook(hookTask)
       hookTask = null
     }
+
     doStop()
   }
 
@@ -286,7 +334,7 @@ private[spark] object AngelPSContext {
     if (angelClient != null && hookTask != null) true else false
   }
 
-  private def doStop(): Unit = {
+  def doStop(): Unit = {
     if (angelClient != null) {
       angelClient.stopPS()
       angelClient = null

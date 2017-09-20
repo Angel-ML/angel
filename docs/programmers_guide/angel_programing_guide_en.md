@@ -78,7 +78,7 @@ Of course, TrainTask needs the train method and PredictTask needs the predict me
 
 The algorithm implementation and interface in Angel is a bit simple, but it is the reason why Angel can focus on improving the performance of machine learning algorithms, rather than other things. 
 
-That said, we understood that some users may want more flexible implementations or training high-dimensional model in Spark on the Angel platform. Spark on Angel reflects these needs and provides corresponding support.  Please read the [Spark on Angel Programming Guide](spark_on_angel_programing_guide.md) for more details. 
+That said, we understood that some users may want more flexible implementations or training high-dimensional model in Spark on the Angel platform. Spark on Angel reflects these needs and provides corresponding support.  Please read the [Spark on Angel Programming Guide](spark_on_angel_programing_guide_en.md) for more details. 
 
 
 

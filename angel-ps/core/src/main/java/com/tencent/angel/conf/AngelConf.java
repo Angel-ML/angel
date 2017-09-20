@@ -397,7 +397,7 @@ public class AngelConf extends Configuration {
    */
   public static final String ANGEL_WORKER_HEARTBEAT_TIMEOUT_MS = ANGEL_WORKER_PREFIX
       + "heartbeat.timeout.ms";
-  public static final long DEFAULT_ANGEL_WORKER_HEARTBEAT_TIMEOUT_MS = 60000;
+  public static final long DEFAULT_ANGEL_WORKER_HEARTBEAT_TIMEOUT_MS = 600000;
 
   public static final String ANGEL_WORKERGROUP_FAILED_TOLERATE = ANGEL_WORKERGROUP_PREFIX
       + "failed.tolerate";
@@ -405,14 +405,15 @@ public class AngelConf extends Configuration {
 
   public static final String ANGEL_TASK_ERROR_TOLERATE = ANGEL_PREFIX + "task.error.tolerate";
   public static final double DEFAULT_ANGEL_TASK_ERROR_TOLERATE = 0.01;
-
-  public static final String ANGEL_WORKER_TVECTOR_POOL_ENABLE = ANGEL_WORKER_PREFIX
-      + "tvector.pool.enable";
-  public static final boolean DEFAULT_ANGEL_WORKER_TVECTOR_POOL_ENABLE = false;
   
   /** The maximum number of times AppMaster can try. */
   public static final String ANGEL_WORKER_MAX_ATTEMPTS = ANGEL_WORKER_PREFIX + "max-attempts";
   public static final int DEFAULT_WORKER_MAX_ATTEMPTS = 4;
+
+  /** The workers number for matrix operations */
+  public static final String ANGEL_WORKER_MATRIX_EXECUTORS_NUM = ANGEL_WORKER_PREFIX + "matrix.executors.num";
+  public static final int DEFAULT_ANGEL_WORKER_MATRIX_EXECUTORS_NUM = 16;
+
 
   // //////////////////////////////
   // Task Configs
@@ -536,7 +537,7 @@ public class AngelConf extends Configuration {
    */
   public static final String ANGEL_PS_HEARTBEAT_TIMEOUT_MS = ANGEL_PS_PREFIX
       + "heartbeat.timeout.ms";
-  public static final long DEFAULT_ANGEL_PS_HEARTBEAT_TIMEOUT_MS = 60000;
+  public static final long DEFAULT_ANGEL_PS_HEARTBEAT_TIMEOUT_MS = 600000;
 
   /** The number of worker threads for commiting matrices in ps. */
   public static final String ANGEL_PS_COMMIT_TASK_NUM = ANGEL_PS_PREFIX + "commit.task.number";
@@ -547,11 +548,11 @@ public class AngelConf extends Configuration {
   public static final Class<?> DEFAULT_ANGEL_PS_ROW_UPDATER = DefaultRowUpdater.class;
 
   /** PS executors thread pool size */
-  public static final String ANGEL_PS_WORKERPOOL_SIZE = ANGEL_PS_PREFIX +
-    "workerpool.size";
+  public static final String ANGEL_PS_MATRIX_DISKIO_WORKER_POOL_SIZE = ANGEL_PS_PREFIX +
+    "matrix.diskio.worker.pool.size";
 
   /** Default PS executors thread pool size */
-  public static final int DEFAULT_ANGEL_PS_WORKERPOOL_SIZE = Runtime.getRuntime().availableProcessors();
+  public static final int DEFAULT_ANGEL_PS_MATRIX_DISKIO_WORKER_POOL_SIZE = Math.max(16, (int)(Runtime.getRuntime().availableProcessors() * 0.25));
 
 
   // ////////////////// IPC //////////////////////////
@@ -616,7 +617,33 @@ public class AngelConf extends Configuration {
    */
   public static final String ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM_PERSERVER = ANGEL_PREFIX
       + "matrixtransfer.max.requestnum.perserver";
-  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM_PERSERVER = 4;
+  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM_PERSERVER = 16;
+
+  public static final String ANGEL_MATRIXTRANSFER_CLIENT_REQUESTER_POOL_SIZE = ANGEL_PREFIX
+    + "matrixtransfer.client.requester.pool.size";
+  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_CLIENT_REQUESTER_POOL_SIZE = Math.max(16, (int)(Runtime.getRuntime().availableProcessors() * 0.5));
+
+  public static final String ANGEL_MATRIXTRANSFER_CLIENT_RESPONSER_POOL_SIZE = ANGEL_PREFIX
+    + "matrixtransfer.client.responser.pool.size";
+  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_CLIENT_RESPONSER_POOL_SIZE = Math.max(16, (int)(Runtime.getRuntime().availableProcessors() * 0.5));
+
+
+  public static final String ANGEL_MATRIXTRANSFER_SERVER_WORKER_POOL_SIZE = ANGEL_PREFIX
+    + "matrixtransfer.server.worker.pool.size";
+  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_WORKER_POOL_SIZE = Runtime.getRuntime().availableProcessors();
+
+  public static final String ANGEL_MATRIXTRANSFER_SERVER_SENDER_POOL_SIZE = ANGEL_PREFIX
+    + "matrixtransfer.server.sender.pool.size";
+  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_SENDER_POOL_SIZE = Math.max(8, (int)(Runtime.getRuntime().availableProcessors() * 0.25));
+
+  public static final String ANGEL_MATRIXTRANSFER_SERVER_USER_SENDER = ANGEL_PREFIX
+    + "matrixtransfer.server.user.sender";
+  public static final boolean DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_USER_SENDER = false;
+
+  public static final String ANGEL_MATRIX_OPLOG_MERGER_POOL_SIZE = ANGEL_PREFIX
+    + "matrix.oplog.merger.pool.size";
+
+  public static final int DEFAULT_ANGEL_MATRIX_OPLOG_MERGER_POOL_SIZE = Math.max(8, (int)(Runtime.getRuntime().availableProcessors() * 0.25));
 
   /**
    * The maximum allowed number of matrix transfer requests which are sending to the servers(ps). It
@@ -624,7 +651,7 @@ public class AngelConf extends Configuration {
    */
   public static final String ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM = ANGEL_PREFIX
       + "matrixtransfer.max.requestnum";
-  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_MAX = 64;
+  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_MAX = 1024;
 
   /**
    * The maximum allowed size of requests/responses which are in flight. It used to flow-control
@@ -644,7 +671,7 @@ public class AngelConf extends Configuration {
   /** The time interval in milliseconds for failed matrix transfer requests. */
   public static final String ANGEL_MATRIXTRANSFER_RETRY_INTERVAL_MS = ANGEL_PREFIX
       + "matrixtransfer.retry.interval.ms";
-  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_RETRY_INTERVAL_MS = 3000;
+  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_RETRY_INTERVAL_MS = 2000;
 
   /** Weather we need use direct buffer in netty client. */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_CLIENT_USEDIRECTBUFFER =
@@ -671,7 +698,7 @@ public class AngelConf extends Configuration {
    */
   public static final String ANGEL_MATRIXTRANSFER_CHECK_INTERVAL_MS = ANGEL_PREFIX
       + "matrixtransfer.check.interval.ms";
-  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_CHECK_INTERVAL_MS = 1000;
+  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_CHECK_INTERVAL_MS = 100;
 
   // //////////////////////////////
   // Matrix transfer Configs.
@@ -702,14 +729,6 @@ public class AngelConf extends Configuration {
   public static final String ANGEL_PSAGENT_SYNC_CLOCK_ENABLE = ANGEL_PSAGENT_PREFIX
       + "sync.clock.enable";
   public static final boolean DEFAULT_ANGEL_PSAGENT_SYNC_CLOCK_ENABLE = true;
-
-  /** PSAgent executors thread pool size */
-  public static final String ANGEL_PSAGENT_WORKERPOOL_SIZE = ANGEL_PSAGENT_PREFIX +
-    "workerpool.size";
-
-  /** Default PSAgent executors thread pool size */
-  public static final int DEFAULT_ANGEL_PSAGENT_WORKERPOOL_SIZE = Runtime.getRuntime().availableProcessors();
-
 
   // Configs used to ANGEL_PS_PSAGENT running mode future.
   public static final String ANGEL_PSAGENT_NUMBER = ANGEL_PSAGENT_PREFIX + "number";

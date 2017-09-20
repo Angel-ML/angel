@@ -31,8 +31,7 @@ class LDARunner extends MLRunner {
   /**
     * Training job to obtain a model
     */
-  override
-  def train(conf: Configuration): Unit = {
+  override def train(conf: Configuration): Unit = {
     conf.setInt(AngelConf.ANGEL_WORKER_MAX_ATTEMPTS, 1)
     conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1)
     conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, classOf[BalanceInputFormat].getName)
@@ -60,7 +59,7 @@ class LDARunner extends MLRunner {
 
     client.startPSServer()
     client.loadModel(new LDAModel(conf))
-    client.runTask(classOf[LDAInferTask])
+    client.runTask(classOf[LDAPredictTask])
     client.waitForCompletion()
     //    client.saveModel(model)
 

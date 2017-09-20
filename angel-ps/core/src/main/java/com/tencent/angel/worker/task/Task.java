@@ -68,7 +68,7 @@ public class Task extends Thread {
       BaseTask userTask = newBaseTask(userTaskClass);
       this.userTask =  userTask;
       runUser(userTask);
-    } catch (Exception e) {
+    } catch (Throwable e) {
       LOG.error("task runner error", e);
       diagnostics.add("task runner error" + e.getMessage());
       setState(TaskState.FAILED);

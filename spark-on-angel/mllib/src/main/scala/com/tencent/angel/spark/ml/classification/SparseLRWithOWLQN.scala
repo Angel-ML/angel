@@ -16,19 +16,19 @@
 
 package com.tencent.angel.spark.ml.classification
 
-import scala.collection.mutable.ArrayBuffer
-
 import breeze.linalg.DenseVector
 import breeze.optimize.{OWLQN => BrzOWLQN}
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.SparkSession
 
 import com.tencent.angel.spark.context.PSContext
+import com.tencent.angel.spark.math.vector.{PSVector, VectorType}
+import com.tencent.angel.spark.math.vector.decorator.BreezePSVector
 import com.tencent.angel.spark.ml.common.OneHot.OneHotVector
 import com.tencent.angel.spark.ml.optim.OWLQN
 import com.tencent.angel.spark.ml.sparse.SparseLogistic
 import com.tencent.angel.spark.ml.util.{ArgsUtil, DataLoader}
-import com.tencent.angel.spark.model.vector.BreezePSVector
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.SparkSession
+import scala.collection.mutable.ArrayBuffer
 
 
 object SparseLRWithOWLQN {
@@ -48,7 +48,8 @@ object SparseLRWithOWLQN {
       .master(mode)
       .getOrCreate()
 
-    if (updateType == "ps") PSContext.getOrCreate(spark.sparkContext)
+    if (updateType == "ps")
+      PSContext.getOrCreate(spark.sparkContext)
 
     val instances = DataLoader.loadOneHotInstance(input, partitionNum, sampleRate, -1).rdd
       .map { row =>
@@ -94,10 +95,13 @@ object SparseLRWithOWLQN {
   }
 
   def runPSOWLQN(trainData: RDD[(OneHotVector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
-    val pool = PSContext.getOrCreate().createModelPool(dim, m * 50)
-    val initWeightPS = pool.createZero().mkBreeze()
-    val regPS = pool.createZero().mkBreeze()
+
+    val initWeightPS = PSVector.dense(dim, 10 * m).toBreeze
+
+    val regPS = PSVector.duplicate(initWeightPS.component).toBreeze
+
     val tol = 1e-6
+
     val owlqn = new OWLQN(maxIter, m, regPS, tol)
     val states = owlqn.iterations(SparseLogistic.PSCost(trainData), initWeightPS)
 

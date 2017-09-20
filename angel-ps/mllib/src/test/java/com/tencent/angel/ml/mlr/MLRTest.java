@@ -1,6 +1,5 @@
 package com.tencent.angel.ml.mlr;
 
-
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.classification.mlr.MLRRunner;
 import com.tencent.angel.ml.conf.MLConf;
@@ -14,9 +13,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 
-/**
- * Created by hbghh on 2017/8/17.
- */
 public class MLRTest {
   private Configuration conf = new Configuration();
   private static final Log LOG = LogFactory.getLog(MLRTest.class);

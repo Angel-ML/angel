@@ -114,7 +114,7 @@ public class AngelRunJar {
     if (jobJar != null) {
       loadJar(jobJar);
       addResourceFiles(conf, jobJar);
-    }
+  }
 
     // Expand the environment variable
     try {
@@ -135,7 +135,7 @@ public class AngelRunJar {
           submmiter = (AppSubmitter) submitClass.newInstance();
         } catch (Exception x) {
           String message = "load submit class failed " + x.getMessage();
-          LOG.fatal(message);
+          LOG.fatal(message, x);
           throw new InvalidParameterException(message);
         }
 

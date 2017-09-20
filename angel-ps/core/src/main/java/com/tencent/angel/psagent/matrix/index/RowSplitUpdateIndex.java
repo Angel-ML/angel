@@ -85,8 +85,8 @@ public class RowSplitUpdateIndex {
     double[] values = dataUpdateSplit.getValues();
     try {
       writeLock.lock();
-      int start = dataUpdateSplit.getStart();
-      int len = dataUpdateSplit.getEnd() - start;
+      int start = (int)dataUpdateSplit.getStart();
+      int len = (int)dataUpdateSplit.getEnd() - start;
       for (int i = 0; i < len && i < values.length; i++) {
         if (values[i + start] != 0.0) {
           indexSet.add(i);
@@ -103,8 +103,8 @@ public class RowSplitUpdateIndex {
     float[] values = dataUpdateSplit.getValues();
     try {
       writeLock.lock();
-      int start = dataUpdateSplit.getStart();
-      int len = dataUpdateSplit.getEnd() - start;
+      int start = (int)dataUpdateSplit.getStart();
+      int len = (int)dataUpdateSplit.getEnd() - start;
       for (int i = 0; i < len && i < values.length; i++) {
         if (values[i + start] != 0.0) {
           indexSet.add(i);
@@ -121,8 +121,8 @@ public class RowSplitUpdateIndex {
     int[] values = dataUpdateSplit.getValues();
     try {
       writeLock.lock();
-      int start = dataUpdateSplit.getStart();
-      int len = dataUpdateSplit.getEnd() - start;
+      int start = (int)dataUpdateSplit.getStart();
+      int len = (int)dataUpdateSplit.getEnd() - start;
       for (int i = 0; i < len && i < values.length; i++) {
         if (values[i + start] != 0) {
           indexSet.add(i);
@@ -137,8 +137,8 @@ public class RowSplitUpdateIndex {
 
   private void addUpdateIndexes(SparseDoubleRowUpdateSplit dataUpdateSplit) {
     int[] indexes = dataUpdateSplit.getOffsets();
-    int startPos = dataUpdateSplit.getStart();
-    int endPos = dataUpdateSplit.getEnd();
+    int startPos = (int)dataUpdateSplit.getStart();
+    int endPos = (int)dataUpdateSplit.getEnd();
     if (startPos < 0) {
       LOG.info("there are no updates for range(" + dataUpdateSplit.getStart() + ","
           + dataUpdateSplit.getEnd());
@@ -159,8 +159,8 @@ public class RowSplitUpdateIndex {
 
   private void addUpdateIndexes(SparseFloatRowUpdateSplit dataUpdateSplit) {
     int[] indexes = dataUpdateSplit.getOffsets();
-    int startPos = dataUpdateSplit.getStart();
-    int endPos = dataUpdateSplit.getEnd();
+    int startPos = (int)dataUpdateSplit.getStart();
+    int endPos = (int)dataUpdateSplit.getEnd();
     if (startPos < 0) {
       LOG.info("there are no updates for range(" + dataUpdateSplit.getStart() + ","
           + dataUpdateSplit.getEnd());

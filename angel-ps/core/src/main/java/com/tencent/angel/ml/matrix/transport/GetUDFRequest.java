@@ -18,22 +18,26 @@ import com.tencent.angel.psagent.PSAgentContext;
 public class GetUDFRequest extends PartitionRequest {
   private static final Log LOG = LogFactory.getLog(GetUDFRequest.class);
 
-  /** the udf class name */
+  /**
+   * the udf class name
+   */
   private String getFuncClass;
 
-  /** partition parameter of the udf */
+  /**
+   * partition parameter of the udf
+   */
   private PartitionGetParam partParam;
 
   /**
    * Create a new GetUDFRequest.
    *
-   * @param serverId parameter server id
-   * @param partKey matrix partition key
+   * @param serverId     parameter server id
+   * @param partKey      matrix partition key
    * @param getFuncClass udf class name
-   * @param partParam partition parameter of the udf
+   * @param partParam    partition parameter of the udf
    */
   public GetUDFRequest(ParameterServerId serverId, PartitionKey partKey, String getFuncClass,
-      PartitionGetParam partParam) {
+    PartitionGetParam partParam) {
     super(serverId, 0, partKey);
     this.getFuncClass = getFuncClass;
     this.partParam = partParam;
@@ -46,42 +50,34 @@ public class GetUDFRequest extends PartitionRequest {
     this(null, null, null, null);
   }
 
-  @Override
-  public int getEstimizeDataSize() {
+  @Override public int getEstimizeDataSize() {
     MatrixMeta meta =
-        PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(partKey.getMatrixId());
+      PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(partKey.getMatrixId());
     if (meta == null) {
       return 0;
     } else {
       RowType rowType = meta.getRowType();
       switch (rowType) {
         case T_DOUBLE_DENSE:
-          return 8 * (partKey.getEndCol() - partKey.getStartCol());
+          return 8 * ((int) partKey.getEndCol() - (int) partKey.getStartCol());
 
         case T_INT_DENSE:
-          return 4 * (partKey.getEndCol() - partKey.getStartCol());
+          return 4 * ((int) partKey.getEndCol() - (int) partKey.getStartCol());
 
         case T_FLOAT_DENSE:
-          return 4 * (partKey.getEndCol() - partKey.getStartCol());
-
-        case T_DOUBLE_SPARSE:
-        case T_INT_SPARSE: {
-          return 0;
-        }
+          return 4 * ((int) partKey.getEndCol() - (int) partKey.getStartCol());
 
         default:
-          return 8 * (partKey.getEndCol() - partKey.getStartCol());
+          return 0;
       }
     }
   }
 
-  @Override
-  public TransportMethod getType() {
+  @Override public TransportMethod getType() {
     return TransportMethod.GET_UDF;
   }
 
-  @Override
-  public void serialize(ByteBuf buf) {
+  @Override public void serialize(ByteBuf buf) {
     super.serialize(buf);
     if (getFuncClass != null) {
       byte[] data = getFuncClass.getBytes();
@@ -98,8 +94,7 @@ public class GetUDFRequest extends PartitionRequest {
     }
   }
 
-  @Override
-  public void deserialize(ByteBuf buf) {
+  @Override public void deserialize(ByteBuf buf) {
     super.deserialize(buf);
     if (buf.isReadable()) {
       int size = buf.readInt();
@@ -122,8 +117,7 @@ public class GetUDFRequest extends PartitionRequest {
     }
   }
 
-  @Override
-  public int bufferLen() {
+  @Override public int bufferLen() {
     int size = super.bufferLen();
     if (getFuncClass != null) {
       size += 4;
@@ -140,7 +134,7 @@ public class GetUDFRequest extends PartitionRequest {
 
   /**
    * Get udf class name.
-   * 
+   *
    * @return String udf class name
    */
   public String getGetFuncClass() {
@@ -149,15 +143,14 @@ public class GetUDFRequest extends PartitionRequest {
 
   /**
    * Get the partition parameter of the udf.
-   * 
+   *
    * @return PartitionGetParam the partition parameter of the udf
    */
   public PartitionGetParam getPartParam() {
     return partParam;
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "GetUDFRequest [getFuncClass=" + getFuncClass + ", partParam=" + partParam + "]";
   }
 }

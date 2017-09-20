@@ -167,34 +167,41 @@ public class ServerPartition implements Serialize {
   private ServerRow initRow(PartitionKey partitionKey, int rowIndex, RowType rowType) {
     switch (rowType) {
       case T_DOUBLE_DENSE:
-        return new ServerDenseDoubleRow(rowIndex, partitionKey.getStartCol(),
-            partitionKey.getEndCol());
+        return new ServerDenseDoubleRow(rowIndex, (int)partitionKey.getStartCol(),
+          (int)partitionKey.getEndCol());
+
       case T_FLOAT_DENSE:
-        return new ServerDenseFloatRow(rowIndex, partitionKey.getStartCol(),
-            partitionKey.getEndCol());
+        return new ServerDenseFloatRow(rowIndex, (int)partitionKey.getStartCol(),
+          (int)partitionKey.getEndCol());
 
       case T_DOUBLE_SPARSE:
-        return new ServerSparseDoubleRow(rowIndex, partitionKey.getStartCol(),
-            partitionKey.getEndCol());
+      case T_DOUBLE_SPARSE_COMPONENT:
+        return new ServerSparseDoubleRow(rowIndex, (int)partitionKey.getStartCol(),
+          (int)partitionKey.getEndCol());
+
+      case T_DOUBLE_SPARSE_LONGKEY:
+        return new ServerSparseDoubleLongKeyRow(rowIndex, partitionKey.getStartCol(), partitionKey.getEndCol());
 
       case T_INT_DENSE:
-        return new ServerDenseIntRow(rowIndex, partitionKey.getStartCol(), partitionKey.getEndCol());
+        return new ServerDenseIntRow(rowIndex, (int)partitionKey.getStartCol(), (int)partitionKey.getEndCol());
 
       case T_INT_SPARSE:
-        return new ServerSparseIntRow(rowIndex, partitionKey.getStartCol(),
-            partitionKey.getEndCol());
+      case T_INT_SPARSE_COMPONENT:
+        return new ServerSparseIntRow(rowIndex, (int)partitionKey.getStartCol(),
+          (int)partitionKey.getEndCol());
 
       case T_INT_ARBITRARY:
-        return new ServerArbitraryIntRow(rowIndex, partitionKey.getStartCol(),
-            partitionKey.getEndCol());
+        return new ServerArbitraryIntRow(rowIndex, (int)partitionKey.getStartCol(),
+          (int)partitionKey.getEndCol());
 
       case T_FLOAT_SPARSE:
-        return  new ServerSparseFloatRow(rowIndex, partitionKey.getStartCol(), partitionKey.getStartCol());
+      case T_FLOAT_SPARSE_COMPONENT:
+        return  new ServerSparseFloatRow(rowIndex, (int)partitionKey.getStartCol(), (int)partitionKey.getStartCol());
 
       default:
         LOG.warn("invalid rowtype " + rowType + ", default is " + RowType.T_DOUBLE_DENSE);
-        return new ServerDenseDoubleRow(rowIndex, partitionKey.getStartCol(),
-            partitionKey.getEndCol());
+        return new ServerDenseDoubleRow(rowIndex, (int)partitionKey.getStartCol(),
+          (int)partitionKey.getEndCol());
     }
   }
 
@@ -204,6 +211,7 @@ public class ServerPartition implements Serialize {
         return new ServerDenseDoubleRow();
 
       case T_DOUBLE_SPARSE:
+      case T_DOUBLE_SPARSE_COMPONENT:
         return new ServerSparseDoubleRow();
 
       case T_INT_DENSE:
@@ -212,7 +220,12 @@ public class ServerPartition implements Serialize {
       case T_FLOAT_DENSE:
         return new ServerDenseFloatRow();
 
+      case T_FLOAT_SPARSE:
+      case T_FLOAT_SPARSE_COMPONENT:
+        return new ServerSparseFloatRow();
+
       case T_INT_SPARSE:
+      case T_INT_SPARSE_COMPONENT:
         return new ServerSparseIntRow();
 
       case T_INT_ARBITRARY:
@@ -244,7 +257,7 @@ public class ServerPartition implements Serialize {
     for (int i = 0; i < size; i++) {
       int rowId = input.readInt();
       if (LOG.isDebugEnabled()) {
-        LOG.info("rowId: " + rowId);
+        LOG.debug("rowId: " + rowId);
       }
       rows.get(rowId).readFrom(input);
     }

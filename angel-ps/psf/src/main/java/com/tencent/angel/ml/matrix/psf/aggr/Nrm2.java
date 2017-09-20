@@ -56,7 +56,9 @@ public final class Nrm2 extends UnaryAggrFunc {
   public GetResult merge(List<PartitionGetResult> partResults) {
     double sum = 0;
     for (PartitionGetResult partResult : partResults) {
-      sum += ((ScalarPartitionAggrResult) partResult).result;
+      if (partResult != null) {
+        sum += ((ScalarPartitionAggrResult) partResult).result;
+      }
     }
 
     return new ScalarAggrResult(Math.sqrt(sum));

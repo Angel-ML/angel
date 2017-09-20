@@ -36,15 +36,7 @@ public class PutPartitionRequest extends PartitionRequest {
 
   @Override
   public int getEstimizeDataSize() {
-    int estimizeSize = 0;
-    if (rowsSplit != null) {
-      int size = rowsSplit.size();
-      for (int i = 0; i < size; i++) {
-        estimizeSize += rowsSplit.get(i).size();
-      }
-    }
-
-    return estimizeSize;
+    return bufferLen();
   }
 
   @Override
@@ -89,11 +81,14 @@ public class PutPartitionRequest extends PartitionRequest {
 
   @Override
   public int bufferLen() {
-    if (partKey != null) {
-      return super.bufferLen() + 4 + partKey.bufferLen();
-    } else {
-      return super.bufferLen() + 4;
+    int len = super.bufferLen();
+    if(rowsSplit != null)  {
+      int size = rowsSplit.size();
+      for(int i = 0; i < size; i++) {
+        len += rowsSplit.get(i).bufferLen();
+      }
     }
+    return len;
   }
 
   @Override

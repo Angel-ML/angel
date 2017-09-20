@@ -44,7 +44,7 @@ public class MapWithIndex extends MFUpdateFunc {
     DoubleBuffer from = rows[0].getData();
     DoubleBuffer to = rows[1].getData();
     int size = rows[0].size();
-    int startCol = rows[0].getStartCol();
+    int startCol = (int)rows[0].getStartCol();
     for (int i = 0; i < size; i++) {
       to.put(i, mapper.call(startCol + i, from.get(i)));
     }

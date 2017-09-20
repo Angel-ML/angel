@@ -31,7 +31,7 @@ public abstract class TMatrix extends TUpdate {
   /**
    * The Col.
    */
-  protected int col;
+  protected long col;
 
   /**
    * Instantiates a new matrix.
@@ -48,7 +48,7 @@ public abstract class TMatrix extends TUpdate {
    * @param row the row
    * @param col the col
    */
-  public TMatrix(int row, int col) {
+  public TMatrix(int row, long col) {
     this.matrixId = -1;
     this.row = row;
     this.col = col;
@@ -74,7 +74,7 @@ public abstract class TMatrix extends TUpdate {
    *
    * @return the col num
    */
-  public int getColNum() {
+  public long getColNum() {
     return col;
   }
 

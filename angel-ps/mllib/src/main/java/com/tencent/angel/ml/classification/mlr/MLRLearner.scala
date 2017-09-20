@@ -226,8 +226,8 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     val initCost = System.currentTimeMillis() - beforeInit
     LOG.info(s"Init matrixes cost $initCost ms.")
 
-    while (ctx.getIteration < epochNum) {
-      val epoch = ctx.getIteration
+    while (ctx.getEpoch < epochNum) {
+      val epoch = ctx.getEpoch
       LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epoch start.")
 
       val startTrain = System.currentTimeMillis()
@@ -243,7 +243,7 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
         s"train cost $trainCost ms. " +
         s"validation cost $validCost ms.")
 
-      ctx.incIteration()
+      ctx.incEpoch()
     }
 
     mlrModel

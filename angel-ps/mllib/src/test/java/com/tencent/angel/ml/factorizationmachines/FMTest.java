@@ -25,7 +25,7 @@ public class FMTest {
     // Feature number of train data
     int featureNum = 236;
     // Total iteration number
-    int epochNum = 50;
+    int epochNum = 20;
     // Rank
     int rank = 5;
     // Regularization parameters
@@ -76,6 +76,31 @@ public class FMTest {
     conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
     // Set actionType train
     conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
+
+    FMRunner runner = new FMRunner();
+    runner.train(conf);
+  }
+
+  @Test
+  public void FMClassificationTest() throws Exception {
+    String inputPath = "./src/test/data/fm/a9a.train";
+    String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
+    String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
+    String savePath = LOCAL_FS + TMP_PATH + "/model";
+    String logPath = LOCAL_FS + TMP_PATH + "/LRlog";
+
+    // Set trainning data path
+    conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
+    // Set save model path
+    conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, savePath);
+    // Set log path
+    conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
+    // Set actionType train
+    conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
+    // Set learnType
+    conf.set(MLConf.ML_FM_LEARN_TYPE(), "c");
+    // Set feature number
+    conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(124));
 
     FMRunner runner = new FMRunner();
     runner.train(conf);

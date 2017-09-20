@@ -55,7 +55,9 @@ public final class Sum extends UnaryAggrFunc {
   public GetResult merge(List<PartitionGetResult> partResults) {
     double sum = 0.0;
     for (PartitionGetResult partResult : partResults) {
-      sum += ((ScalarPartitionAggrResult) partResult).result;
+      if (partResult != null) {
+        sum += ((ScalarPartitionAggrResult) partResult).result;
+      }
     }
 
     return new ScalarAggrResult(sum);

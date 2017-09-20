@@ -23,11 +23,11 @@ import com.tencent.angel.ml.matrix.psf.update.enhance.map.{MapFunc, MapWithIndex
 import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.{Zip2MapFunc, Zip2MapWithIndexFunc}
 import com.tencent.angel.ml.matrix.psf.update.enhance.zip3.{Zip3MapFunc, Zip3MapWithIndexFunc}
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.model.PSModelProxy
-import com.tencent.angel.spark.model.matrix.PSMatrix
+import com.tencent.angel.spark.math.matrix.PSMatrix
+import com.tencent.angel.spark.math.vector.PSVector
 
 /**
- * PSClient is a client which contains operations for PSVector on the PS nodes.
+ * PSClient is a _instance which contains operations for PSVector on the PS nodes.
  * These operations can be called on the Spark driver or executor.
  */
 private[spark] abstract class PSClient {
@@ -42,16 +42,16 @@ private[spark] abstract class PSClient {
    * Put `value` to PSVectorKey
    * Notice: it can only be called in th driver.
    */
-  def push(to: PSModelProxy, value: Array[Double]): Unit = {
+  def push(to: PSVector, value: Array[Double]): Unit = {
     to.assertValid()
     to.assertCompatible(value)
     doPush(to, value)
   }
 
   /**
-   * Get the array value of [[PSModelProxy]]
+   * Get the array value of [[PSVector]]
    */
-  def pull(vector: PSModelProxy): Array[Double] = {
+  def pull(vector: PSVector): Array[Double] = {
     vector.assertValid()
     doPull(vector)
   }
@@ -60,9 +60,14 @@ private[spark] abstract class PSClient {
    * Fill PSVectorKey with `value`
    * Notice: it can only be called in th driver.
    */
-  def fill(to: PSModelProxy, value: Double): Unit = {
+  def fill(to: PSVector, value: Double): Unit = {
     to.assertValid()
     doFill(to, value)
+  }
+
+  def fill(to: PSVector, values: Array[Double]): Unit = {
+    to.assertValid()
+    doPush(to, values)
   }
 
   /**
@@ -72,7 +77,7 @@ private[spark] abstract class PSClient {
    * @param min the minimum of uniform distribution
    * @param max the maximum of uniform distribution
    */
-  def randomUniform(to: PSModelProxy, min: Double, max: Double): Unit = {
+  def randomUniform(to: PSVector, min: Double, max: Double): Unit = {
     to.assertValid()
     doRandomUniform(to, min, max)
   }
@@ -84,7 +89,7 @@ private[spark] abstract class PSClient {
    * @param mean the `mean` parameter of uniform distribution
    * @param stddev the `stddev` parameter of uniform distribution
    */
-  def randomNormal(to: PSModelProxy, mean: Double, stddev: Double): Unit = {
+  def randomNormal(to: PSVector, mean: Double, stddev: Double): Unit = {
     to.assertValid()
     doRandomNormal(to, mean, stddev)
   }
@@ -92,7 +97,7 @@ private[spark] abstract class PSClient {
   /**
    * Judge if v1 is equal to v2 by element-wise.
    */
-  def equal(v1: PSModelProxy, v2: PSModelProxy): Boolean = {
+  def equal(v1: PSVector, v2: PSVector): Boolean = {
     v1.assertCompatible(v2)
     doEqual(v1, v2)
   }
@@ -101,7 +106,7 @@ private[spark] abstract class PSClient {
    * Sum all the dimension of `vector`
    * Notice: it can only be called in th driver.
    */
-  def sum(vector: PSModelProxy): Double = {
+  def sum(vector: PSVector): Double = {
     vector.assertValid()
     doSum(vector)
   }
@@ -110,7 +115,7 @@ private[spark] abstract class PSClient {
    * Find the maximum element of `vector`
    * Notice: it can only be called in th driver.
    */
-  def max(vector: PSModelProxy): Double = {
+  def max(vector: PSVector): Double = {
     vector.assertValid()
     doMax(vector)
   }
@@ -119,7 +124,7 @@ private[spark] abstract class PSClient {
    * Find the minimum element of `vector`
    * Notice: it can only be called in th driver.
    */
-  def min(vector: PSModelProxy): Double = {
+  def min(vector: PSVector): Double = {
     vector.assertValid()
     doMin(vector)
   }
@@ -128,7 +133,7 @@ private[spark] abstract class PSClient {
    * Count the number of non-zero element in `vector`
    * Notice: it can only be called in th driver.
    */
-  def nnz(vector: PSModelProxy): Int = {
+  def nnz(vector: PSVector): Int = {
     vector.assertValid()
     doNnz(vector)
   }
@@ -137,7 +142,7 @@ private[spark] abstract class PSClient {
    * Add a `value` to `from` PSVector and save the result to `to` PSVector
    * Notice: it can only be called in th driver.
    */
-  def add(from: PSModelProxy, value: Double, to: PSModelProxy): Unit = {
+  def add(from: PSVector, value: Double, to: PSVector): Unit = {
     from.assertValid()
     to.assertValid()
     doAdd(from, value, to)
@@ -147,7 +152,7 @@ private[spark] abstract class PSClient {
    * Subtract a `value` to `from` PSVector and save the result to `to` PSVector
    * Notice: it can only be called in th driver.
    */
-  def sub(from: PSModelProxy, value: Double, to: PSModelProxy): Unit = {
+  def sub(from: PSVector, value: Double, to: PSVector): Unit = {
     add(from, -value, to)
   }
 
@@ -155,7 +160,7 @@ private[spark] abstract class PSClient {
    * Multiply a `value` to `from` PSVector and save the result to `to` PSVector
    * Notice: it can only be called in th driver.
    */
-  def mul(from: PSModelProxy, value: Double, to: PSModelProxy): Unit = {
+  def mul(from: PSVector, value: Double, to: PSVector): Unit = {
 
     from.assertValid()
     to.assertValid()
@@ -166,7 +171,7 @@ private[spark] abstract class PSClient {
    * Divide a `value` to `from` PSVector and save the result to `to` PSVector
    * Notice: it can only be called in th driver.
    */
-  def div(from: PSModelProxy, value: Double, to: PSModelProxy): Unit = {
+  def div(from: PSVector, value: Double, to: PSVector): Unit = {
 
     from.assertValid()
     to.assertValid()
@@ -177,7 +182,7 @@ private[spark] abstract class PSClient {
    * Corresponding to `scala.math.pow`
    * Notice: it can only be called in th driver.
    */
-  def pow(from: PSModelProxy, value: Double, to: PSModelProxy): Unit = {
+  def pow(from: PSVector, value: Double, to: PSVector): Unit = {
 
     from.assertValid()
     to.assertValid()
@@ -188,7 +193,7 @@ private[spark] abstract class PSClient {
    * Corresponding to `scala.math.sqrt`
    * Notice: it can only be called in th driver.
    */
-  def sqrt(from: PSModelProxy, to: PSModelProxy): Unit = {
+  def sqrt(from: PSVector, to: PSVector): Unit = {
 
     from.assertValid()
     to.assertValid()
@@ -199,7 +204,7 @@ private[spark] abstract class PSClient {
    * Corresponding to `scala.math.exp`
    * Notice: it can only be called in th driver.
    */
-  def exp(from: PSModelProxy, to: PSModelProxy): Unit = {
+  def exp(from: PSVector, to: PSVector): Unit = {
 
     from.assertValid()
     to.assertValid()
@@ -210,7 +215,7 @@ private[spark] abstract class PSClient {
    * Corresponding to `scala.math.expm1`
    * Notice: it can only be called in th driver.
    */
-  def expm1(from: PSModelProxy, to: PSModelProxy): Unit = {
+  def expm1(from: PSVector, to: PSVector): Unit = {
 
     from.assertValid()
     to.assertValid()
@@ -221,7 +226,7 @@ private[spark] abstract class PSClient {
    * Corresponding to `scala.math.log`
    * Notice: it can only be called in th driver.
    */
-  def log(from: PSModelProxy, to: PSModelProxy): Unit = {
+  def log(from: PSVector, to: PSVector): Unit = {
 
     from.assertValid()
     to.assertValid()
@@ -232,7 +237,7 @@ private[spark] abstract class PSClient {
    * Corresponding to `scala.math.log1p`
    * Notice: it can only be called in th driver.
    */
-  def log1p(from: PSModelProxy, to: PSModelProxy): Unit = {
+  def log1p(from: PSVector, to: PSVector): Unit = {
 
     from.assertValid()
     to.assertValid()
@@ -243,7 +248,7 @@ private[spark] abstract class PSClient {
    * Corresponding to `scala.math.log10`
    * Notice: it can only be called in th driver.
    */
-  def log10(from: PSModelProxy, to: PSModelProxy): Unit = {
+  def log10(from: PSVector, to: PSVector): Unit = {
 
     from.assertValid()
     to.assertValid()
@@ -254,7 +259,7 @@ private[spark] abstract class PSClient {
    * Corresponding to `scala.math.ceil`
    * Notice: it can only be called in th driver.
    */
-  def ceil(from: PSModelProxy, to: PSModelProxy): Unit = {
+  def ceil(from: PSVector, to: PSVector): Unit = {
 
     from.assertValid()
     to.assertValid()
@@ -265,7 +270,7 @@ private[spark] abstract class PSClient {
    * Corresponding to `scala.math.floor`
    * Notice: it can only be called in th driver.
    */
-  def floor(from: PSModelProxy, to: PSModelProxy): Unit = {
+  def floor(from: PSVector, to: PSVector): Unit = {
 
     from.assertValid()
     to.assertValid()
@@ -276,7 +281,7 @@ private[spark] abstract class PSClient {
    * Corresponding to `scala.math.round`
    * Notice: it can only be called in th driver.
    */
-  def round(from: PSModelProxy, to: PSModelProxy): Unit = {
+  def round(from: PSVector, to: PSVector): Unit = {
 
     from.assertValid()
     to.assertValid()
@@ -287,7 +292,7 @@ private[spark] abstract class PSClient {
    * Corresponding to `scala.math.abs`
    * Notice: it can only be called in th driver.
    */
-  def abs(from: PSModelProxy, to: PSModelProxy): Unit = {
+  def abs(from: PSVector, to: PSVector): Unit = {
 
     from.assertValid()
     to.assertValid()
@@ -298,7 +303,7 @@ private[spark] abstract class PSClient {
    * Corresponding to `scala.math.signum`
    * Notice: it can only be called in th driver.
    */
-  def signum(from: PSModelProxy, to: PSModelProxy): Unit = {
+  def signum(from: PSVector, to: PSVector): Unit = {
 
     from.assertValid()
     to.assertValid()
@@ -309,7 +314,7 @@ private[spark] abstract class PSClient {
    * Add `from1` PSVector and `from2` PSVector to `to` PSVector
    * Notice: it can only be called in th driver.
    */
-  def add(from1: PSModelProxy, from2: PSModelProxy, to: PSModelProxy): Unit = {
+  def add(from1: PSVector, from2: PSVector, to: PSVector): Unit = {
 
     from1.assertValid()
     from2.assertValid()
@@ -323,7 +328,7 @@ private[spark] abstract class PSClient {
    * Subtract `from2` PSVector from `from1` PSVector and save result to `to` PSVector
    * Notice: it can only be called in th driver.
    */
-  def sub(from1: PSModelProxy, from2: PSModelProxy, to: PSModelProxy): Unit = {
+  def sub(from1: PSVector, from2: PSVector, to: PSVector): Unit = {
 
     from1.assertValid()
     from2.assertValid()
@@ -337,7 +342,7 @@ private[spark] abstract class PSClient {
    * Multiply `from1` PSVector and `from2` PSVector and save result to `to` PSVector
    * Notice: it can only be called in th driver.
    */
-  def mul(from1: PSModelProxy, from2: PSModelProxy, to: PSModelProxy): Unit = {
+  def mul(from1: PSVector, from2: PSVector, to: PSVector): Unit = {
 
     from1.assertValid()
     from2.assertValid()
@@ -351,7 +356,7 @@ private[spark] abstract class PSClient {
    * Divide `from1` PSVector to `from2` PSVector and save result to `to` PSVector
    * Notice: it can only be called in th driver.
    */
-  def div(from1: PSModelProxy, from2: PSModelProxy, to: PSModelProxy): Unit = {
+  def div(from1: PSVector, from2: PSVector, to: PSVector): Unit = {
 
     from1.assertValid()
     from2.assertValid()
@@ -366,7 +371,7 @@ private[spark] abstract class PSClient {
    * and save result to `to` PSVector
    * Notice: it can only be called in th driver.
    */
-  def max(from1: PSModelProxy, from2: PSModelProxy, to: PSModelProxy): Unit = {
+  def max(from1: PSVector, from2: PSVector, to: PSVector): Unit = {
 
     from1.assertValid()
     from2.assertValid()
@@ -381,7 +386,7 @@ private[spark] abstract class PSClient {
    * and save result to `to` PSVector
    * Notice: it can only be called in th driver.
    */
-  def min(from1: PSModelProxy, from2: PSModelProxy, to: PSModelProxy): Unit = {
+  def min(from1: PSVector, from2: PSVector, to: PSVector): Unit = {
 
     from1.assertValid()
     from2.assertValid()
@@ -395,14 +400,14 @@ private[spark] abstract class PSClient {
    * Process `MapFunc` for each element of `from` PSVector
    * Notice: it can only be called in th driver.
    */
-  def map(from: PSModelProxy, func: MapFunc, to: PSModelProxy): Unit = {
+  def map(from: PSVector, func: MapFunc, to: PSVector): Unit = {
     from.assertValid()
     to.assertValid()
     from.assertCompatible(to)
     doMap(from, func, to)
   }
 
-  def mapInPlace(proxy: PSModelProxy, func: MapFunc): Unit = {
+  def mapInPlace(proxy: PSVector, func: MapFunc): Unit = {
     proxy.assertValid()
     doMapInPlace(proxy, func)
   }
@@ -412,10 +417,10 @@ private[spark] abstract class PSClient {
    * Notice: it can only be called in th driver.
    */
   def zip2Map(
-      from1: PSModelProxy,
-      from2: PSModelProxy,
-      func: Zip2MapFunc,
-      to: PSModelProxy): Unit = {
+               from1: PSVector,
+               from2: PSVector,
+               func: Zip2MapFunc,
+               to: PSVector): Unit = {
 
     from1.assertValid()
     from2.assertValid()
@@ -431,11 +436,11 @@ private[spark] abstract class PSClient {
    * Notice: it can only be called in th driver.
    */
   def zip3Map(
-      from1: PSModelProxy,
-      from2: PSModelProxy,
-      from3: PSModelProxy,
-      func: Zip3MapFunc,
-      to: PSModelProxy): Unit = {
+               from1: PSVector,
+               from2: PSVector,
+               from3: PSVector,
+               func: Zip3MapFunc,
+               to: PSVector): Unit = {
 
     from1.assertValid()
     from2.assertValid()
@@ -452,9 +457,9 @@ private[spark] abstract class PSClient {
    * Notice: it can only be called in th driver.
    */
   def mapWithIndex(
-      from: PSModelProxy,
-      func: MapWithIndexFunc,
-      to: PSModelProxy): Unit = {
+                    from: PSVector,
+                    func: MapWithIndexFunc,
+                    to: PSVector): Unit = {
 
     from.assertValid()
     to.assertValid()
@@ -467,10 +472,10 @@ private[spark] abstract class PSClient {
    * Notice: it can only be called in th driver.
    */
   def zip2MapWithIndex(
-      from1: PSModelProxy,
-      from2: PSModelProxy,
-      func: Zip2MapWithIndexFunc,
-      to: PSModelProxy): Unit = {
+                        from1: PSVector,
+                        from2: PSVector,
+                        func: Zip2MapWithIndexFunc,
+                        to: PSVector): Unit = {
 
     from1.assertValid()
     from2.assertValid()
@@ -486,11 +491,11 @@ private[spark] abstract class PSClient {
    * Notice: it can only be called in th driver.
    */
   def zip3MapWithIndex(
-      from1: PSModelProxy,
-      from2: PSModelProxy,
-      from3: PSModelProxy,
-      func: Zip3MapWithIndexFunc,
-      to: PSModelProxy): Unit = {
+                        from1: PSVector,
+                        from2: PSVector,
+                        from3: PSVector,
+                        func: Zip3MapWithIndexFunc,
+                        to: PSVector): Unit = {
 
     from1.assertValid()
     from2.assertValid()
@@ -502,165 +507,165 @@ private[spark] abstract class PSClient {
     doZip3MapWithIndex(from1, from2, from3, func, to)
   }
 
-  protected def doPull(vector: PSModelProxy): Array[Double]
+  protected def doPull(vector: PSVector): Array[Double]
 
-  protected def doPush(vector: PSModelProxy, array: Array[Double]): Unit
+  protected def doPush(vector: PSVector, array: Array[Double]): Unit
 
   protected def doFill(
-      to: PSModelProxy,
-      value: Double): Unit
+                        to: PSVector,
+                        value: Double): Unit
 
   protected def doRandomUniform(
-      to: PSModelProxy,
-      min: Double,
-      max: Double): Unit
+                                 to: PSVector,
+                                 min: Double,
+                                 max: Double): Unit
 
   protected def doRandomNormal(
-      to: PSModelProxy,
-      mean: Double,
-      stddev: Double): Unit
+                                to: PSVector,
+                                mean: Double,
+                                stddev: Double): Unit
 
-  protected def doEqual(v1: PSModelProxy, v2: PSModelProxy): Boolean
+  protected def doEqual(v1: PSVector, v2: PSVector): Boolean
 
-  protected def doSum(vector: PSModelProxy): Double
+  protected def doSum(vector: PSVector): Double
 
-  protected def doMax(vector: PSModelProxy): Double
+  protected def doMax(vector: PSVector): Double
 
-  protected def doMin(vector: PSModelProxy): Double
+  protected def doMin(vector: PSVector): Double
 
-  protected def doNnz(vector: PSModelProxy): Int
+  protected def doNnz(vector: PSVector): Int
 
   protected def doAdd(
-      from: PSModelProxy,
-      value: Double,
-      to: PSModelProxy): Unit
+                       from: PSVector,
+                       value: Double,
+                       to: PSVector): Unit
 
   protected def doMul(
-      from: PSModelProxy,
-      value: Double,
-      to: PSModelProxy): Unit
+                       from: PSVector,
+                       value: Double,
+                       to: PSVector): Unit
 
   protected def doDiv(
-      from: PSModelProxy,
-      value: Double,
-      to: PSModelProxy): Unit
+                       from: PSVector,
+                       value: Double,
+                       to: PSVector): Unit
 
   protected def doPow(
-      from: PSModelProxy,
-      value: Double,
-      to: PSModelProxy): Unit
+                       from: PSVector,
+                       value: Double,
+                       to: PSVector): Unit
 
   protected def doSqrt(
-      from: PSModelProxy,
-      to: PSModelProxy): Unit
+                        from: PSVector,
+                        to: PSVector): Unit
 
   protected def doExp(
-      from: PSModelProxy,
-      to: PSModelProxy): Unit
+                       from: PSVector,
+                       to: PSVector): Unit
 
   protected def doExpm1(
-      from: PSModelProxy,
-      to: PSModelProxy): Unit
+                         from: PSVector,
+                         to: PSVector): Unit
 
   protected def doLog(
-      from: PSModelProxy,
-      to: PSModelProxy): Unit
+                       from: PSVector,
+                       to: PSVector): Unit
 
   protected def doLog1p(
-      from: PSModelProxy,
-      to: PSModelProxy): Unit
+                         from: PSVector,
+                         to: PSVector): Unit
 
   protected def doLog10(
-      from: PSModelProxy,
-      to: PSModelProxy): Unit
+                         from: PSVector,
+                         to: PSVector): Unit
 
   protected def doCeil(
-      from: PSModelProxy,
-      to: PSModelProxy): Unit
+                        from: PSVector,
+                        to: PSVector): Unit
 
   protected def doFloor(
-      from: PSModelProxy,
-      to: PSModelProxy): Unit
+                         from: PSVector,
+                         to: PSVector): Unit
 
   protected def doRound(
-      from: PSModelProxy,
-      to: PSModelProxy): Unit
+                         from: PSVector,
+                         to: PSVector): Unit
 
   protected def doAbs(
-      from: PSModelProxy,
-      to: PSModelProxy): Unit
+                       from: PSVector,
+                       to: PSVector): Unit
 
   protected def doSignum(
-      from: PSModelProxy,
-      to: PSModelProxy): Unit
+                          from: PSVector,
+                          to: PSVector): Unit
 
   protected def doAdd(
-      from1: PSModelProxy,
-      from2: PSModelProxy,
-      to: PSModelProxy): Unit
+                       from1: PSVector,
+                       from2: PSVector,
+                       to: PSVector): Unit
 
   protected def doSub(
-      from1: PSModelProxy,
-      from2: PSModelProxy,
-      to: PSModelProxy): Unit
+                       from1: PSVector,
+                       from2: PSVector,
+                       to: PSVector): Unit
 
   protected def doMul(
-      from1: PSModelProxy,
-      from2: PSModelProxy,
-      to: PSModelProxy): Unit
+                       from1: PSVector,
+                       from2: PSVector,
+                       to: PSVector): Unit
 
   protected def doDiv(
-      from1: PSModelProxy,
-      from2: PSModelProxy,
-      to: PSModelProxy): Unit
+                       from1: PSVector,
+                       from2: PSVector,
+                       to: PSVector): Unit
 
   protected def doMax(
-      from1: PSModelProxy,
-      from2: PSModelProxy,
-      to: PSModelProxy): Unit
+                       from1: PSVector,
+                       from2: PSVector,
+                       to: PSVector): Unit
 
   protected def doMin(
-      from1: PSModelProxy,
-      from2: PSModelProxy,
-      to: PSModelProxy): Unit
+                       from1: PSVector,
+                       from2: PSVector,
+                       to: PSVector): Unit
 
   protected def doMap(
-      from: PSModelProxy,
-      func: MapFunc,
-      to: PSModelProxy): Unit
+                       from: PSVector,
+                       func: MapFunc,
+                       to: PSVector): Unit
 
-  protected def doMapInPlace(proxy: PSModelProxy, func: MapFunc): Unit
+  protected def doMapInPlace(proxy: PSVector, func: MapFunc): Unit
 
   protected def doZip2Map(
-      from1: PSModelProxy,
-      from2: PSModelProxy,
-      func: Zip2MapFunc,
-      to: PSModelProxy): Unit
+                           from1: PSVector,
+                           from2: PSVector,
+                           func: Zip2MapFunc,
+                           to: PSVector): Unit
 
   protected def doZip3Map(
-      from1: PSModelProxy,
-      from2: PSModelProxy,
-      from3: PSModelProxy,
-      func: Zip3MapFunc,
-      to: PSModelProxy): Unit
+                           from1: PSVector,
+                           from2: PSVector,
+                           from3: PSVector,
+                           func: Zip3MapFunc,
+                           to: PSVector): Unit
 
   protected def doMapWithIndex(
-      from: PSModelProxy,
-      func: MapWithIndexFunc,
-      to: PSModelProxy): Unit
+                                from: PSVector,
+                                func: MapWithIndexFunc,
+                                to: PSVector): Unit
 
   protected def doZip2MapWithIndex(
-      from1: PSModelProxy,
-      from2: PSModelProxy,
-      func: Zip2MapWithIndexFunc,
-      to: PSModelProxy): Unit
+                                    from1: PSVector,
+                                    from2: PSVector,
+                                    func: Zip2MapWithIndexFunc,
+                                    to: PSVector): Unit
 
   protected def doZip3MapWithIndex(
-      from1: PSModelProxy,
-      from2: PSModelProxy,
-      from3: PSModelProxy,
-      func: Zip3MapWithIndexFunc,
-      to: PSModelProxy): Unit
+                                    from1: PSVector,
+                                    from2: PSVector,
+                                    from3: PSVector,
+                                    func: Zip3MapWithIndexFunc,
+                                    to: PSVector): Unit
 
 
   /* (driver only) BLAS operators */
@@ -669,7 +674,7 @@ private[spark] abstract class PSClient {
    * Corresponding to `BLAS.axpy`
    * Notice: it can only be called in th driver.
    */
-  def axpy(a: Double, x: PSModelProxy, y: PSModelProxy): Unit = {
+  def axpy(a: Double, x: PSVector, y: PSVector): Unit = {
 
     x.assertValid()
     y.assertValid()
@@ -681,7 +686,7 @@ private[spark] abstract class PSClient {
    * Corresponding to `BLAS.dot`
    * Notice: it can only be called in th driver.
    */
-  def dot(x: PSModelProxy, y: PSModelProxy): Double = {
+  def dot(x: PSVector, y: PSVector): Double = {
 
     x.assertValid()
     y.assertValid()
@@ -693,7 +698,7 @@ private[spark] abstract class PSClient {
    * Copy `x` to `y`
    * Notice: it can only be called in th driver.
    */
-  def copy(x: PSModelProxy, y: PSModelProxy): Unit = {
+  def copy(x: PSVector, y: PSVector): Unit = {
     x.assertValid()
     y.assertValid()
     x.assertCompatible(y)
@@ -704,7 +709,7 @@ private[spark] abstract class PSClient {
    * Corresponding to `BLAS.scal`
    * Notice: it can only be called in th driver.
    */
-  def scal(a: Double, x: PSModelProxy): Unit = {
+  def scal(a: Double, x: PSVector): Unit = {
     x.assertValid()
     doScal(a, x)
   }
@@ -713,7 +718,7 @@ private[spark] abstract class PSClient {
    * math.sqrt(x.map(x => x * x).sum)
    * Notice: it can only be called in th driver.
    */
-  def nrm2(x: PSModelProxy): Double = {
+  def nrm2(x: PSVector): Double = {
 
     x.assertValid()
     doNrm2(x)
@@ -723,7 +728,7 @@ private[spark] abstract class PSClient {
    * Calculate the sum of each element absolute value
    * Notice: it can only be called in th driver.
    */
-  def asum(x: PSModelProxy): Double = {
+  def asum(x: PSVector): Double = {
 
     x.assertValid()
     doAsum(x)
@@ -733,7 +738,7 @@ private[spark] abstract class PSClient {
    * Find the maximum of each element absolute value
    * Notice: it can only be called in th driver.
    */
-  def amax(x: PSModelProxy): Double = {
+  def amax(x: PSVector): Double = {
 
     x.assertValid()
     doAmax(x)
@@ -743,27 +748,27 @@ private[spark] abstract class PSClient {
    * Find the maximum of each element absolute value
    * Notice: it can only be called in th driver.
    */
-  def amin(x: PSModelProxy): Double = {
+  def amin(x: PSVector): Double = {
 
     x.assertValid()
     doAmin(x)
   }
 
-  protected def doAxpy(a: Double, x: PSModelProxy, y: PSModelProxy): Unit
+  protected def doAxpy(a: Double, x: PSVector, y: PSVector): Unit
 
-  protected def doDot(x: PSModelProxy, y: PSModelProxy): Double
+  protected def doDot(x: PSVector, y: PSVector): Double
 
-  protected def doCopy(x: PSModelProxy, y: PSModelProxy): Unit
+  protected def doCopy(x: PSVector, y: PSVector): Unit
 
-  protected def doScal(a: Double, x: PSModelProxy): Unit
+  protected def doScal(a: Double, x: PSVector): Unit
 
-  protected def doNrm2(x: PSModelProxy): Double
+  protected def doNrm2(x: PSVector): Double
 
-  protected def doAsum(x: PSModelProxy): Double
+  protected def doAsum(x: PSVector): Double
 
-  protected def doAmax(x: PSModelProxy): Double
+  protected def doAmax(x: PSVector): Double
 
-  protected def doAmin(x: PSModelProxy): Double
+  protected def doAmin(x: PSVector): Double
 
 
   /* =========================================== */
@@ -774,7 +779,7 @@ private[spark] abstract class PSClient {
    * Increment `delta` to `vector`.
    * Notice: only be called in executor
    */
-  def increment(vector: PSModelProxy, delta: Array[Double]): Unit = {
+  def increment(vector: PSVector, delta: Array[Double]): Unit = {
 
     vector.assertValid()
     vector.assertCompatible(delta)
@@ -785,7 +790,7 @@ private[spark] abstract class PSClient {
    * Find the maximum number of each dimension.
    * Notice: only be called in executor
    */
-  def mergeMax(vector: PSModelProxy, other: Array[Double]): Unit = {
+  def mergeMax(vector: PSVector, other: Array[Double]): Unit = {
 
     vector.assertValid()
     vector.assertCompatible(other)
@@ -796,18 +801,18 @@ private[spark] abstract class PSClient {
    * Find the minimum number of each dimension.
    * Notice: only be called in executor
    */
-  def mergeMin(vector: PSModelProxy, other: Array[Double]): Unit = {
+  def mergeMin(vector: PSVector, other: Array[Double]): Unit = {
 
     vector.assertValid()
     vector.assertCompatible(other)
     doMergeMin(vector, other)
   }
 
-  protected def doIncrement(vector: PSModelProxy, delta: Array[Double]): Unit
+  protected def doIncrement(vector: PSVector, delta: Array[Double]): Unit
 
-  protected def doMergeMax(vector: PSModelProxy, other: Array[Double]): Unit
+  protected def doMergeMax(vector: PSVector, other: Array[Double]): Unit
 
-  protected def doMergeMin(vector: PSModelProxy, other: Array[Double]): Unit
+  protected def doMergeMin(vector: PSVector, other: Array[Double]): Unit
 
 
   /**
@@ -873,16 +878,16 @@ private[spark] abstract class PSClient {
 }
 
 object PSClient {
-  private var client: PSClient = _
+  private var _instance: PSClient = _
 
-  def apply(): PSClient = {
-    if (client == null) {
+  def instance(): PSClient = {
+    if (_instance == null) {
       classOf[PSClient].synchronized {
-        if (client == null) {
-          client = new AngelPSClient(PSContext.getOrCreate())
+        if (_instance == null) {
+          _instance = new AngelPSClient(PSContext.instance())
         }
       }
     }
-    client
+    _instance
   }
 }

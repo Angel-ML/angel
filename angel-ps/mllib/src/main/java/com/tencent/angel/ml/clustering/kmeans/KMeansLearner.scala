@@ -76,22 +76,22 @@ class KMeansLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
 
     globalMetrics.addMetrics("global.obj", LossMetric(trainData.size))
     // Learn KMeans Model iteratively, apply a mini-batch updation in each iteration
-    while (ctx.getIteration < epochNum) {
+    while (ctx.getEpoch < epochNum) {
 
       val startEpoch = System.currentTimeMillis()
-      trainOneEpoch(ctx.getIteration, trainData, spCountPerCenter)
+      trainOneEpoch(ctx.getEpoch, trainData, spCountPerCenter)
       val epochTime = System.currentTimeMillis() - startEpoch
 
       val startObj = System.currentTimeMillis()
-      val localObj = computeObjValue(trainData, ctx.getIteration)
+      val localObj = computeObjValue(trainData, ctx.getEpoch)
       val objTime = System.currentTimeMillis() - startObj
 
-      LOG.info(s"Task[${ctx.getContext.getIndex}] Iter=${ctx.getIteration} success. "
+      LOG.info(s"Task[${ctx.getContext.getIndex}] Iter=${ctx.getEpoch} success. "
         + s"localObj=$localObj. mini-batch cost $epochTime ms, compute " +
         s"obj cost $objTime ms")
 
       globalMetrics.metrics("global.obj", localObj)
-      ctx.incIteration()
+      ctx.incEpoch()
     }
 
     kmeansModel
@@ -127,7 +127,7 @@ class KMeansLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       }
     }
 
-    kmeansModel.centers.clock().get()
+    kmeansModel.centers.syncClock()
 
     // Wait for all workers finish push centers to PS
     ctx.globalSync(ctx.getMatrix(kmeansModel.centers.modelName).getMatrixId)
@@ -145,7 +145,7 @@ class KMeansLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       kmeansModel.centers.increment(oldCenter)
     }
 
-    kmeansModel.centers.clock().get()
+    kmeansModel.centers.syncClock()
   }
 
 

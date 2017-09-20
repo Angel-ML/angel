@@ -87,12 +87,12 @@ public class VectorSplitTest {
 
 
     Assert.assertArrayEquals(offset1,
-        Arrays.copyOfRange(split1.getOffsets(), split1.getStart(), split1.getEnd()));
+        Arrays.copyOfRange(split1.getOffsets(), (int)split1.getStart(), (int)split1.getEnd()));
     for (int i = 0; i < split1.size(); i++) {
-      Assert.assertEquals(values1[i], split1.getValues()[split1.getStart() + i], 0.0);
+      Assert.assertEquals(values1[i], split1.getValues()[(int)split1.getStart() + i], 0.0);
     }
 
-    int[] offset2 = {1, 3};
+    int[] offset2 = {6, 8};
     double[] values2 = {6.0, 8.0};
     SparseDoubleRowUpdateSplit split2 = (SparseDoubleRowUpdateSplit) splits.get(key2);
     Assert.assertNotNull(split2);
@@ -102,9 +102,9 @@ public class VectorSplitTest {
 
 
     Assert.assertArrayEquals(offset2,
-        Arrays.copyOfRange(split2.getOffsets(), split2.getStart(), split2.getEnd()));
+        Arrays.copyOfRange(split2.getOffsets(), (int)split2.getStart(), (int)split2.getEnd()));
     for (int i = 0; i < split2.size(); i++) {
-      Assert.assertEquals(values2[i], split2.getValues()[split2.getStart() + i], 0.0);
+      Assert.assertEquals(values2[i], split2.getValues()[(int)split2.getStart() + i], 0.0);
     }
 
     LOG.info("Pass sparseSortedVectorSplit Test");
@@ -134,7 +134,7 @@ public class VectorSplitTest {
     Assert.assertEquals(5, split1.getEnd());
 
     for (int i = 0; i < split1.size(); i++) {
-      Assert.assertEquals(values1[i], split1.getValues()[split1.getStart() + i], 0.0);
+      Assert.assertEquals(values1[i], split1.getValues()[(int)split1.getStart() + i], 0.0);
     }
 
     double[] values2 = {5.0, 6.0, 7.0, 8.0, 9.0};
@@ -146,7 +146,7 @@ public class VectorSplitTest {
 
 
     for (int i = 0; i < split2.size(); i++) {
-      Assert.assertEquals(values2[i], split2.getValues()[split2.getStart() + i], 0.0);
+      Assert.assertEquals(values2[i], split2.getValues()[(int)split2.getStart() + i], 0.0);
     }
 
     LOG.info("Pass denseVectorSplit Test");
@@ -176,7 +176,7 @@ public class VectorSplitTest {
     Assert.assertEquals(5, split1.getEnd());
 
     for (int i = 0; i < split1.size(); i++) {
-      Assert.assertEquals(values1[i], split1.getValues()[split1.getStart() + i]);
+      Assert.assertEquals(values1[i], split1.getValues()[(int)split1.getStart() + i]);
     }
 
     int[] values2 = {5, 6, 7, 8, 9};
@@ -188,7 +188,7 @@ public class VectorSplitTest {
 
 
     for (int i = 0; i < split2.size(); i++) {
-      Assert.assertEquals(values2[i], split2.getValues()[split2.getStart() + i]);
+      Assert.assertEquals(values2[i], split2.getValues()[(int)split2.getStart() + i]);
     }
 
     LOG.info("Pass denseIntVectorSplit Test");
@@ -222,12 +222,12 @@ public class VectorSplitTest {
 
 
     Assert.assertArrayEquals(offset1,
-        Arrays.copyOfRange(split1.getOffsets(), split1.getStart(), split1.getEnd()));
+        Arrays.copyOfRange(split1.getOffsets(), (int)split1.getStart(), (int)split1.getEnd()));
     for (int i = 0; i < split1.size(); i++) {
-      Assert.assertEquals(values1[i], split1.getValues()[split1.getStart() + i], 0.0);
+      Assert.assertEquals(values1[i], split1.getValues()[(int)split1.getStart() + i], 0.0);
     }
 
-    int[] offset2 = {1, 3};
+    int[] offset2 = {6, 8};
     double[] values2 = {6.0, 8.0};
     SparseDoubleRowUpdateSplit split2 = (SparseDoubleRowUpdateSplit) splits.get(key2);
     Assert.assertNotNull(split2);
@@ -237,9 +237,9 @@ public class VectorSplitTest {
 
 
     Assert.assertArrayEquals(offset2,
-        Arrays.copyOfRange(split2.getOffsets(), split2.getStart(), split2.getEnd()));
+        Arrays.copyOfRange(split2.getOffsets(), (int)split2.getStart(), (int)split2.getEnd()));
     for (int i = 0; i < split2.size(); i++) {
-      Assert.assertEquals(values2[i], split2.getValues()[split2.getStart() + i], 0.0);
+      Assert.assertEquals(values2[i], split2.getValues()[(int)split2.getStart() + i], 0.0);
     }
 
     LOG.info("Pass sparseHashMapVector split Test");
@@ -272,12 +272,12 @@ public class VectorSplitTest {
 
 
     Assert.assertArrayEquals(offset1,
-        Arrays.copyOfRange(split1.getOffsets(), split1.getStart(), split1.getEnd()));
+        Arrays.copyOfRange(split1.getOffsets(), (int)split1.getStart(), (int)split1.getEnd()));
     for (int i = 0; i < split1.size(); i++) {
-      Assert.assertEquals(values1[i], split1.getValues()[split1.getStart() + i], 0.0);
+      Assert.assertEquals(values1[i], split1.getValues()[(int)split1.getStart() + i], 0.0);
     }
 
-    int[] offset2 = {1, 3};
+    int[] offset2 = {6, 8};
     int[] values2 = {6, 8};
     SparseIntRowUpdateSplit split2 = (SparseIntRowUpdateSplit)splits.get(key2);
     Assert.assertNotNull(split2);
@@ -287,9 +287,9 @@ public class VectorSplitTest {
 
 
     Assert.assertArrayEquals(offset2,
-        Arrays.copyOfRange(split2.getOffsets(), split2.getStart(), split2.getEnd()));
+        Arrays.copyOfRange(split2.getOffsets(), (int)split2.getStart(), (int)split2.getEnd()));
     for (int i = 0; i < split2.size(); i++) {
-      Assert.assertEquals(values2[i], split2.getValues()[split2.getStart() + i], 0.0);
+      Assert.assertEquals(values2[i], split2.getValues()[(int)split2.getStart() + i], 0.0);
     }
 
     LOG.info("Pass sparseIntVector split Test");

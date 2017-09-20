@@ -18,7 +18,11 @@ package com.tencent.angel.ml.math.vector;
 
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.VectorType;
+import com.tencent.angel.protobuf.generated.MLProtos;
 
+/**
+ * Sparse double vector, it only contains the element indexes as the values are always 1.
+ */
 public class SparseDummyVector extends TAbstractVector {
 
   /**
@@ -119,8 +123,8 @@ public class SparseDummyVector extends TAbstractVector {
    * @return
      */
   @Override
-  public VectorType getType() {
-    return null;
+  public MLProtos.RowType getType() {
+    return MLProtos.RowType.T_DOUBLE_SPARSE;
   }
 
   /**
@@ -155,6 +159,4 @@ public class SparseDummyVector extends TAbstractVector {
     }
     indices[nonzero++] = index;
   }
-
-
 }

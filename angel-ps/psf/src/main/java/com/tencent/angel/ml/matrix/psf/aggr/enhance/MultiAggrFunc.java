@@ -17,6 +17,7 @@
 
 package com.tencent.angel.ml.matrix.psf.aggr.enhance;
 
+import com.tencent.angel.ml.matrix.psf.common.Utils;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
@@ -47,14 +48,15 @@ public abstract class MultiAggrFunc extends GetFunc {
     int[] rowIds = ((MultiAggrParam.MultiPartitionAggrParam) partKey).getRowIds();
 
     double[] result = null;
-    if (part != null) {
-      ServerRow[] rows = new ServerRow[rowIds.length];
-      for (int i = 0; i < rowIds.length; i++) {
-        rows[i] = part.getRow(rowIds[i]);
+    if (Utils.withinPart(partKey.getPartKey(), rowIds)) {
+      if (part != null) {
+        ServerRow[] rows = new ServerRow[rowIds.length];
+        for (int i = 0; i < rowIds.length; i++) {
+          rows[i] = part.getRow(rowIds[i]);
+        }
+        result = processRows(rows);
       }
-      result = processRows(rows);
     }
-
     return new ArrayPartitionAggrResult(result);
   }
 
