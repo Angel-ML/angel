@@ -256,6 +256,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
             var tt: Int = data.topics(wi)
             if (wk(tt) <= 0) {
               //            Sampler.LOG.error(s"Error wk[$tt] = ${wk(tt)} for word $w")
+              wi += 1
               error = true
               break
             }
