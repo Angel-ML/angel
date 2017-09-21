@@ -1,6 +1,6 @@
 package com.tencent.angel.example.quickStart;
 
-import jdk.nashorn.internal.runtime.regexp.joni.Config;
+//import jdk.nashorn.internal.runtime.regexp.joni.Config;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;

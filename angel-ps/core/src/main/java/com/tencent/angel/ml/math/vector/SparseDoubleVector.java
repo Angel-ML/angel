@@ -213,15 +213,14 @@ public class SparseDoubleVector extends TDoubleVector {
   }
 
   private double dot(SparseDoubleSortedVector other) {
-    ObjectIterator<Int2DoubleMap.Entry> iter = hashMap.int2DoubleEntrySet().fastIterator();
-
-    double ret = 0.0;
-    Int2DoubleMap.Entry entry = null;
-    while (iter.hasNext()) {
-      entry = iter.next();
-      ret += entry.getDoubleValue() * other.get(entry.getIntKey());
+    int [] indices = other.getIndices();
+    double [] values = other.getValues();
+    int len = indices.length;
+    double dotValue = 0.0;
+    for(int i = 0; i < len; i++) {
+      dotValue += values[i] * get(indices[i]);
     }
-    return ret;
+    return dotValue;
   }
 
   private double dot(SparseFloatVector other) {
