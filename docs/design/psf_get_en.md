@@ -39,7 +39,7 @@
 		```
 
 	* The parameter type of a GetFunc object is GetParam
-		* GetParam implements ParamSplit interface. ParamSplit interface defines a split method, which divides the overall parameter that corresponds to the entire matrix to a parameter list of matrix partitions
+		* GetParam implements ParamSplit interface. ParamSplit interface defines a split method, which divides the overall parameters that correspond to the entire matrix to a list of parameters corresponding to the matrix partitions
 		* GetParam type provides a default split interface implementation: create a parameter for every matrix partition
 		* The matrix partition parameter for `get psf` is PartitionGetParam type
 

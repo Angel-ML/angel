@@ -32,7 +32,7 @@ Future<VoidResult> update(UpdaterFunc update) throws AngelException;
 		}
 		```
 
-	* GetFunc对象的参数类型为GetParam
+	* UpdateFunc对象的参数类型为UpdateParam
 	   * UpdateParam对象与GetParam对象类似，它除了包含update的具体参数外，也有一个split方法，该方法的作用是将全局的update参数按照矩阵分区进行划分，得到的结果是一个分区update参数列表，即PartitionUpdateParam对象列表。
 
 ## 执行流程
