@@ -1,54 +1,91 @@
-### GlobalMetrics
-1.1.0 版本的MLLearner类增加了一个重要的成员globalMetrics：GlobalMetrics，它用于收集所有task的局部算法指标，在master汇总，得到全局指标。全局指标会打印在client的日志里、并实时写入"angel.log.path"参数指定的HDFS路径。
+# GlobalMetrics
 
-* GlobalMetrics类    
-  这个类用于收集各个task的指标，首先定义要收集的指标，然后在迭代中添加指标值到对应的指标。其主要成员、方法如下：
-    * **metricsTable：Map[String, Metric]**    
-      metricsTable存储要收集的指标，key=指标名，value=指标，是Metric类的实例。
-    * **addMetrics(metricName: String, metric: Metric)**    
-      addMetrics 方法向 metricsTable 添加指标，metricName和metric对应。如下所示，添加指标"train.loss"、"validation.loss"，两个指标都是LossMetric。
-        ```java
-        // Add "train.loss" and "validation.loss" metric to globalMetrics
-        // Both of them are LossMetric
-        globalMetrics.addMetrics("train.loss", LossMetric(trainData.size))
-        globalMetrics.addMetrics("validation.loss", LossMetric(validationData.size))
-        ```
+----
 
-    * **metrics(metricName: String, metricValues: Double\*)**    
-      metrics方法向 metricsTable 中 metricName 对应的指标添加值。如下所示：
-        ```java
-        // Add train loss value to "train.loss"
-        globalMetrics.metrics("train.loss", trainLossValue)
-        // Add validation loss value to "validation.loss"
-        globalMetrics.metrics(MLConf.TRAIN_LOSS, validationLossValue)
-        ```
+> 在一个算法的运行训练过程中，会有各种各样的指标，而这些指标，在单独的一个Worker上的变化，是没有太大意义的，往往需要全局汇总，从整体上来观察这些值的变化。例如Loss，AUC…… 这些是分布式机器学习框架需要提供的必备功能，Angel也不例外，GlobalMetrics就是为此目的而设计的。
+
+## 说明
+
+GlobalMetrics，用于收集所有task的局部算法指标，在Master汇总，得到全局指标。全局指标有两个输出点：
+
+1. Client日志的Info
+2. "angel.log.path"参数指定的HDFS路径。
+
+## 用法
+
+全局指标的使用非常简单，只有一个类，那就是GlobalMetrics，分成**收集**和**透出**两个阶段
+
+1. **收集**
+
+	收集发生于各个Task内，一般写于Learner类。首先定义要收集的指标，然后在迭代中添加指标值到对应的指标。其主要成员、方法如下：
+	    
+	* **addMetrics(metricName: String, metric: Metric)**    
+	
+		添加指标，指定metricName和metric类型。这个方法只需要在迭代前调用一次，写到循环外面。
+	 	   	
+	 	如下所示，添加指标"train.loss"、"validation.loss"，两个指标都是LossMetric	        
+	 
+	 	```Java
+	      	// Add "train.loss" and "validation.loss" metric to globalMetrics
+	        // Both of them are LossMetric
+	        globalMetrics.addMetrics("train.loss", LossMetric(trainData.size))
+	        globalMetrics.addMetrics("validation.loss", LossMetric(validationData.size))
+		```
+
+	* **metrics(metricName: String, metricValues: Double\*)**    
+	     	记录指标值。往metricName对应的指标中，添加值。如下所示：
+	      
+	       ```java
+	       // Add train loss value to "train.loss"
+	       globalMetrics.metrics("train.loss", trainLossValue)
+	       globalMetrics.metrics("validation.loss", validLossValue)
+	        ```
+	        
+2. **透出**
+
+	Metrics的**透出**发生于Client端，但是这个过程是不需要手工触发的，只要你在Task中的Learner进行了收集，Client就能自动感知，并进行输出，格式如下：
+	
+
+	同时，在指定的HDFS目录，将会有日志输出，指定参数为：
+	
+
+### 扩展
+
+目前系统只提供了标准的几种Metric，包括：
+
+* Loss
+* ...
+
+用户可以方便的自定义**Metric**类进行扩展。Metric类是指标类，自定义一个Metric类，需要留意如下两个方法：
     
-* Metric类   
-    Metric类是指标类，包含指标数值汇总方法merge和指标计算方法calculate。
-    * **merge(other:Metric)**    
-        每次迭代完成后，master 调用 merge 方法汇总所有task的指标。    
-    * **calculate**  
-        每次迭代完成后，master 调用 calculate 方法，计算全局指标
+* **merge(other:Metric)**    
+	每次迭代完成后，master 调用 merge 方法汇总所有task的指标。    
+* **calculate**  
+	每次迭代完成后，master 调用 calculate 方法，计算全局指标
 
-    要实现一个具体的指标类需要继承Metric类并实现merge、calculate等方法。以计算单个样本平均loss值的LossMetric为例：
-    * **LossMetric**
-        * var sampleNum:Int  
-          每个task上的样本数量
-        * var globalLoss: Double
-          每个task上的loss值
-        * merge(other: Metric)  
-          master 汇总所有task的sampleNum、globalLoss值，汇总方式为累加。
-          ```java
+
+以计算单个样本平均loss值的LossMetric为例：
+
+ * **LossMetric**
+
+ 
+ * **merge(other: Metric)**
+
+ master 汇总所有task的sampleNum、globalLoss值，汇总方式为累加。
+ 
+       ```java
           override def merge(other: Metric): Metric = {
             this.sampleNum += other.asInstanceOf[LossMetric].sampleNum
             this.globalLoss += other.asInstanceOf[LossMetric].globalLoss
             this
           }
           ```
-        * calculate   
-          master 汇总数值后，计算全局指标，计算方法为全局globalLoss值除样本数：
-          ```java
-          override def calculate: Double = {
-          this.globalLoss / this.sampleNum
-          }
-          ```
+       
+* **calculate**   
+ 	master 汇总数值后，计算全局指标，计算方法为全局globalLoss值除样本数：
+          
+      ```java
+      override def calculate: Double = {
+      	this.globalLoss / this.sampleNum
+      }
+      ```
