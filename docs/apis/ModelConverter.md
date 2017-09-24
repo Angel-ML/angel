@@ -1,8 +1,13 @@
-### ModelParser
+### ModelConverter（模型转换器）
 
-Angel的PSModel在任务结束后会以二进制文件格式存储，每个partition存为一个文件，文件名为partitionID。一个PSModel的所有partition保存在同一个文件夹，文件夹的名字为PSModel的modelName字段。ModelParser类将一个PSModel的二进制模型文件解析成明文格式，可以通过下面命令提交Angel的ModelParser任务：
+---
 
-```
+>  Angel的PSModel在任务结束后会以二进制文件格式存储，ModelConverter类将一个PSModel的二进制模型文件解析成明文格式，
+
+
+每个partition存为一个文件，文件名为partitionID。一个PSModel的所有partition保存在同一个文件夹，文件夹的名字为PSModel的modelName字段。可以通过下面命令提交Angel的ModelConverter任务：
+
+```bsh
 ./bin/angel-submit \
 -- action.type train \
 -- angel.app.submit.class com.tencent.angel.ml.toolkits.modelconverter.ModelConverterRunner \
@@ -38,7 +43,8 @@ Angel的PSModel在任务结束后会以二进制文件格式存储，每个parti
 * 转换后文件格式说明：
     * Angel 的模型按照 partition 单位存储，每个 partition 存储为一个文件，名字为这个 partition 的 ID。转换任务输出的模型与 partition 文件一一对应。
     * 格式如下，其中第一行的两个值为：rowID、clock值，第二行及后面为模型的 key ：value。
-        ```
+
+          ```
         0, 10
         0:-0.004235138405748639
         1:-0.003367253227582031
