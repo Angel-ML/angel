@@ -26,7 +26,7 @@
 	<properties>
 		<hadoop-version>2.2.0</hadoop-version>
 		<protobuf.version>2.5.0</protobuf.version>
-		<java.version>1.7</java.version>
+		<java.version>1.8</java.version>
 		<scala.binary.version>2.11</scala.binary.version>
 		<scala.version>2.11.8</scala.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
