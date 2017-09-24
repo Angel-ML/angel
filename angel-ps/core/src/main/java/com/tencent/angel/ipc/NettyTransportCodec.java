@@ -26,8 +26,6 @@ import io.netty.channel.ChannelHandler;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import io.netty.handler.codec.MessageToMessageEncoder;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,21 +84,8 @@ public class NettyTransportCodec {
      * @param dataPack the data pack to write.
      * @throws java.io.IOException if an error occurs connecting to the remote peer.
      */
-    public static void writeDataPack(final Channel channel, final NettyDataPack dataPack) throws IOException {
-      channel.writeAndFlush(dataPack).addListener(new GenericFutureListener(){
-        @Override
-        public void operationComplete(Future future) throws Exception {
-          if (future.isSuccess()) {
-            LOG.trace("Sent result {} to client {}", dataPack, NettyUtils.getRemoteAddress(channel));
-          } else {
-            String msg = String.format("Error sending result %s to %s; closing connection",
-                    dataPack, NettyUtils.getRemoteAddress(channel));
-            LOG.error(msg, future.cause());
-            throw new IOException(msg, future.cause());
-          }
-        }
-      }) ;
-      /*channel.writeAndFlush(dataPack).addListener(future -> {
+    public static void writeDataPack(Channel channel, NettyDataPack dataPack) throws IOException {
+      channel.writeAndFlush(dataPack).addListener(future -> {
         if (future.isSuccess()) {
           LOG.trace("Sent result {} to client {}", dataPack, NettyUtils.getRemoteAddress(channel));
         } else {
@@ -109,7 +94,7 @@ public class NettyTransportCodec {
           LOG.error(msg, future.cause());
           throw new IOException(msg, future.cause());
         }
-      });*/
+      });
     }
   }
 

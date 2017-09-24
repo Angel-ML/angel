@@ -300,8 +300,7 @@ public class TaskContext {
   public void updateCounter(String counterName, int updateValue) {
     AtomicLong counter = metrics.get(counterName);
     if(counter == null) {
-      counter = metrics.put(counterName, new AtomicLong(0));
-//      counter = metrics.putIfAbsent(counterName, new AtomicLong(0));
+      counter = metrics.putIfAbsent(counterName, new AtomicLong(0));
       if(counter == null) {
         counter = metrics.get(counterName);
       }
@@ -317,8 +316,7 @@ public class TaskContext {
   public void setCounter(String counterName, int updateValue) {
     AtomicLong counter = metrics.get(counterName);
     if(counter == null) {
-      counter = metrics.put(counterName, new AtomicLong(0));
-//      counter = metrics.putIfAbsent(counterName, new AtomicLong(0));
+      counter = metrics.putIfAbsent(counterName, new AtomicLong(0));
       if(counter == null) {
         counter = metrics.get(counterName);
       }
