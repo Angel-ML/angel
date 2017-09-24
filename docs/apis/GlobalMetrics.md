@@ -32,7 +32,7 @@ GlobalMetrics，用于收集所有task的局部算法指标，在Master汇总，
     ```
 
 	* **metric(metricName: String, metricValue: Double)**
-	     	记录指标值。往metricName对应的指标中，添加值。如下所示：
+	     记录指标值。往metricName对应的指标中，添加值。如下所示：
 
     ```java
 	// Add train loss value to "train.loss"
@@ -51,9 +51,9 @@ GlobalMetrics，用于收集所有task的局部算法指标，在Master汇总，
 
 	同时，在指定的HDFS目录，将会有日志输出，指定参数为：
 
-       ```java
+    ```java
       public static final String ANGEL_LOG_PATH = "angel.log.path";
-       ```
+    ```
 
 ### 扩展
 
