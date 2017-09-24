@@ -25,19 +25,19 @@ GlobalMetrics，用于收集所有task的局部算法指标，在Master汇总，
 	 	如下所示，添加指标"train.loss"、"validation.loss"，两个指标都是LossMetric
 
     ```java
-        // Add "train.loss" and "validation.loss" metric to globalMetrics
-        // Both of them are LossMetric
-        globalMetrics.addMetrics("train.loss", LossMetric(trainData.size))
-        globalMetrics.addMetrics("validation.loss", LossMetric(validationData.size))
+	// Add "train.loss" and "validation.loss" metric to globalMetrics
+	// Both of them are LossMetric
+	globalMetrics.addMetrics("train.loss", LossMetric(trainData.size))
+	globalMetrics.addMetrics("validation.loss", LossMetric(validationData.size))
     ```
 
 	* **metric(metricName: String, metricValue: Double)**
 	     	记录指标值。往metricName对应的指标中，添加值。如下所示：
 
     ```java
-       // Add train loss value to "train.loss"
-       globalMetrics.metrics("train.loss", trainLossValue)
-       globalMetrics.metrics("validation.loss", validLossValue)
+	// Add train loss value to "train.loss"
+	globalMetrics.metrics("train.loss", trainLossValue)
+	globalMetrics.metrics("validation.loss", validLossValue)
     ```
 
 2. **透出**
@@ -52,7 +52,7 @@ GlobalMetrics，用于收集所有task的局部算法指标，在Master汇总，
 	同时，在指定的HDFS目录，将会有日志输出，指定参数为：
 
        ```java
-          public static final String ANGEL_LOG_PATH = "angel.log.path";
+      public static final String ANGEL_LOG_PATH = "angel.log.path";
        ```
 
 ### 扩展
@@ -73,7 +73,7 @@ GlobalMetrics，用于收集所有task的局部算法指标，在Master汇总，
 以计算单个样本平均loss值的LossMetric为例：
 
   ```java
-  class LossMetric(var sampleNum:Int) extends Metric {
+	class LossMetric(var sampleNum:Int) extends Metric {
 		……
 	// 汇总各个Task的sampleNum、globalLoss值，汇总方式为累加。
 	override def merge(other: Metric): Metric = {
