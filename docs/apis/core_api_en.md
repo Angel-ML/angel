@@ -9,7 +9,7 @@ As shown above, Angel's core API classes, ordered by when (in general) they are 
 1. [MLRunner](MLRunner_en.md)
 	* MLRunner creates AngelClient with factory class based on conf, and calls AngelClient's interfaces in order according to the standard `train` process
 
-* [AngelClient](AngelClient.md)
+* [AngelClient](AngelClient_en.md)
 	* Starts PSServer
 	* Initializes PSServer and loads empty model
 	* After training, saves the model to HDFS from multiple PSServers
@@ -17,7 +17,7 @@ As shown above, Angel's core API classes, ordered by when (in general) they are 
 * [TrainTask](Task.md)
 	* Starts `train` process when called by AngelClient
 
-* [DataBlock](DataBlock.md)
+* [DataBlock](DataBlock_en.md)
 	* TrainTask calls `parse` and `preProcess` methods to read data from HDFS, and assemble data into DataBlock that contains multiple LabeledData
 	* TrainTask calls `train` method to create, and pass DataBlock to, the MLLearner object
 

@@ -17,7 +17,7 @@ It is worth mentioning that in many complex algorithm implementations, the intro
 Overall, there are two types of Angel psFunc:一the `get` type一and the `update` type. 
 
 * [GetFunc](psf_get_en.md)
-* [UpdateFunc](psf_update.md)
+* [UpdateFunc](psf_update_en.md)
 
 PSF can be either the **Worker-to-PSServer** type or the **PSServer-to-PSServer** type, depending on the interactive parties in data exchanging. 
 
