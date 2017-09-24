@@ -8,14 +8,14 @@
 
 PSModel中包含了**MatrixContext，MatrixClient，TaskContext**这3个核心类，可以对远程的参数服务器进行任意的操作。
 
-编写机器学习算法，建议都通过MLModel，获得PSModel进行开发。它包括了如下5大类接口：
+编写机器学习算法，建议都通过MLModel获得PSModel后，对它进行编程开发。PSModel包括了如下5大类接口：
 
-1. **pull型**
+1. **[pull型](#1-pull型)**
 	* getRow
 	* getRows
 	* get(func: GetFunc)
 	
-2. **push型**
+2. **[push型](2-push型)**
 	* increment
 	* update(func: UpdateFunc)
 
