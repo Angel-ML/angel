@@ -15,21 +15,21 @@ PSModel中包含了**MatrixContext，MatrixClient，TaskContext**这3个核心�
 	* getRows
 	* get(func: GetFunc)
 	
-2. **[push型](2-push型)**
+2. **[push型](#2-push型)**
 	* increment
 	* update(func: UpdateFunc)
 
-3. **sync型**
+3. **[sync型](#3-sync型)**
 	* syncClock
 	* clock
 	* flush
 
-4. **io型**
+4. **[io型](#4-io型)**
 	* setLoadPath
 	* setNeedSave
 	* setSavePath
 
-5. **行为型**
+5. **[行为型](#5-行为型)**
 	* setAverage
 	* setHogwild
 	* setOplogType
@@ -119,7 +119,7 @@ PSModel中包含了**MatrixContext，MatrixClient，TaskContext**这3个核心�
 	- 参数：func: GetFunc psf update函数。关于psf函数的详细介绍可参考 [psFunc开发手册](../design/psf_develop.md)。用户可以根据需求自定义psf update函数，当然，Angel提供了一个包含常用函数的函数库 [update函数库](../design/psf_update.md)。与increment函数不同，本方法会立即将更新作用于参数服务器
 	- 返回值：Future[VoidResult] psf update函数返回结果，应用程序可以选择是否等待更新结果
 
-### 3.clock型
+### 3.sync型
 
 *  **syncClock**
 	- 定义：```def syncClock():```
@@ -138,7 +138,7 @@ PSModel中包含了**MatrixContext，MatrixClient，TaskContext**这3个核心�
 	- 参数：无
 	- 返回值：Future[VoidResult] flush操作结果，应用程序可以选择是否等待flush操作完成
 
-### 4. IO型 
+### 4. io型 
 
 * **setLoadPath**
 	- 定义：```def setLoadPath(path: String)```
