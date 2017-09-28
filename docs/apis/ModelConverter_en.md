@@ -25,19 +25,25 @@ Each partition is saved as a file under the name partitionID. All the partitions
 
 * Parameters:
 	* ml.model.in.path 
-	 Model input path, corresponding to the specified `ml.model.out.path`
+	Model input path, corresponding to the specified `ml.model.out.path`
+	
 	* ml.model.name lr_weight 
-	 Name of the model to be parsed (PSModel.modelName)
+	Name of the model to be parsed (PSModel.modelName)
+
 	* ml.model.out.path 
-	 Output path of the model after being parsed into plaintext
+	Output path of the model after being parsed into plaintext
+	
 	* angel.save.model.path 
-	 A save path must be set for this parameter when submitting an Angel application, but the value will be emptied, and there will be no output when the application is completed.
+	A save path must be set for this parameter when submitting an Angel application, but the value will be emptied, and there will be no output when the application is completed.
+	
 	* angel.workergroup.number 
-	 Recommended value is 1 for this parameter; model parsing is done by one worker by default
+	Recommended value is 1 for this parameter; model parsing is done by one worker by default
+	
 	* angel.worker.task.number 1 
-	 Recommended value is 1; model parsing is done with one task by default
+	Recommended value is 1; model parsing is done with one task by default
+
 	* ml.model.convert.thread.count 
-	 Number of threads for model converting
+	Number of threads for model converting
 
 * Format of the converted file
     * Angel model is saved in units of partitions, where each partition is saved as one file under the name partitionID. Each converted model file correpsonds to a model partition.
