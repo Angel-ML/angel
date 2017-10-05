@@ -94,7 +94,7 @@ PSModel中包含了**MatrixContext，MatrixClient，TaskContext**这3个核心�
 	- 功能：使用psf get函数获取矩阵的元素或元素统计信息。与getRow/getRows/getRowsFlow方法不同，本方法只支持异步模型
 	- 参数：
 		- func: GetFunc get类型的psf函数。psf函数是Angel提供的一种参数服务器功能扩展接口
-		- 返回值：GetResult：psf get函数返回结果
+	- 返回值：GetResult：psf get函数返回结果
 
 
 ### 2. push型
