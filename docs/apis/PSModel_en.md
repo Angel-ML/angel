@@ -2,11 +2,11 @@
 
 ---
 
-> PSModel is Angel's core abstract class. It encapsulates the Context and Client details of the remote parameter server and provides the commonly-used interfaces for accessing and updating remote matrices and vectors, allowing the algorithm engineers to operate the distributed matrices and vectors on the parameter server as if operating local objects. PSModel is a mutable model object that can be updated iteratively.
+> PSModel is Angel's core abstract class. It encapsulates details of context and client of the remote parameter server (PS) and provides the commonly-used interfaces for accessing and updating remote matrices and vectors, allowing the algorithm engineers to operate the distributed matrices and vectors on the PS as if operating local objects. PSModel is a mutable model object that can be updated iteratively.
 
 ## Functionality
 
-PSModel has three core classes: **MatrixContext，MatrixClient，TaskContext**, capable of any operations to the remote parameter server.
+PSModel has three core classes: **MatrixContext，MatrixClient，TaskContext**, making any operation on the remote PS possible.
 
 For developing machine-learning algorithms on Angel, we recommend creating PSModel through MLModel and working on top of it. PSModel has the following five major interfaces:
 
@@ -35,7 +35,7 @@ For developing machine-learning algorithms on Angel, we recommend creating PSMod
 	* setOplogType
 	* setRowType
 
-With reasonable ways of initializing PSModel, setting PSModel's behavioral properties and calling PSModel methods, algorithm engineers can operate the remote distributed model (Martrix or Vector) and programming distributed machine-learning algorithms without worrying about low-level details.
+With reasonable ways of initializing PSModel, setting PSModel's behavioral properties and calling PSModel methods, algorithm engineers can operate on the remote distributed model (martrix or vector). As the core abstract class, PSModel allows one to program machine-learning algorithms in distributed fashion without worrying about low-level details.
 
 
 ## Core Interfaces
@@ -50,11 +50,11 @@ With reasonable ways of initializing PSModel, setting PSModel's behavioral prope
 		- modelName: String, model name
 		- row: Int, number of rows of matrix
 		- col: Int, number of columns of matrix
-		- blockRow: Int, number of rows of one block
+		- blockRow: Int, number of rows of one block (matrix slice)
 		- blockCol: Int, number of columns of one block
 		-  **ctx: TaskContext**, context of the PSModel Task
-			* a PSModel object needs to be bound to a Task since PSModel runs on Worker, as well as supporting the BSP and SSP sync models
-			* implicit conversion is used: as long as a ctx object exists in the container of PSModel, it will be automatically injected into the PSModel, with no need of explicit calls)
+			* a PSModel object needs to be bound to a task since PSModel runs on the worker; also to support the BSP and SSP protocols
+			* implicit conversion is used: as long as a ctx object exists in the container of PSModel, the ctx object will be automatically injected into the PSModel without explicit calls)
 
 ### 1. pull-type
 
@@ -63,33 +63,33 @@ With reasonable ways of initializing PSModel, setting PSModel's behavioral prope
 
 	- **Definition**: ```def getRow(rowId: Int): K```
 	- **Functionality**: retrieve a specified row from the matrix. Under different sync protocols, this method has different procedures. Angel supports three sync protocols, namely, **BSP**，**SSP** and **ASP**
-		* under **BSP** and **SSP**, this method first checks whether the specified row is in local cache **and** whether its clock is current under the sync protocol in use, if false, the method requests the specified row from the PS; if the row's clock on the PS side is not current under the sync protocol (with its specific staleness criterion), this method waits until it becomes current
+		* under **BSP** and **SSP**, this method first checks whether the specified row is in local cache **and** whether its clock is current under the sync protocol in use, if false, the method requests the specified row from the PS; on the PS side, if the row's clock is not current under the sync protocol (with its specific staleness criterion), the method waits until it becomes current
 		* under **ASP**, the method directly requests the specified row from the PS without checking clock
 	- **Parameters**:
 		- rowId: Int
-	- **Return value**: the specified row vector
+	- **Return value**: the specified row (vector)
 
 * **getRows**
 
 	- **Definition**: ```def getRows(rowIndexes:Array[Int]): List[K]```
-	- **Functionality**: retrieve specified rows from the matrix. This method works in a similar fashion under different sync protocols as the `getRow` method
+	- **Functionality**: retrieve specified rows from the matrix. This method works in similar fashion under different sync protocols as the `getRow` method
 	- **Parameters**:
 		- rowIndexes: Array[Int]
-	- **Return value**: list of the specified row vectors; the list is sorted, consistent with the rowIndexes array
+	- **Return value**: list of the specified row vectors; the list is ordered, consistent with the rowIndexes array
 
 * **getRowsFlow**
 
 	- **Definition**: ```def getRowsFlow(rowIndex: RowIndex, batchNum: Int): GetRowsResult```
-	- **Functionality**: retrieve specified rows from the matrix in pipelined fashion (flow); the method returns immediately, allowing simultaneous computing and row retrieving; the method has similar procedures as in `getRow` under the BSP/SSP/ASP protocols
+	- **Functionality**: retrieve specified rows from the matrix in a flow; the method returns immediately, allowing simultaneous computing and row retrieving; the method has similar procedures as in `getRow` under the BSP/SSP/ASP protocols
 	- **Parameters**:
-		- rowIndex: RowIndex
-		- batchNum: Int, number of rows that RPC requests every time, defining the granularity of the flow; if set to -1, the system will decide the exact number
-	- **Return value**:一a row vector queue; higher-level applications can get the row vectors that are already retrieved from the queue
+		- rowIndex: RowIndex, set of the row indices
+		- batchNum: Int, number of rows that RPC requests every time, defining the granularity of the flow; if set to -1, system will decide the value
+	- **Return value**:一a row vector queue; top-layer applications can get the row vectors that are already retrieved from the queue
 
 * **get**
 
 	- **Definition**: ```def get(func: GetFunc): GetResult```
-	- **Functionality**: use `psf get` function to get matrix elements or their statistics. Different from getRow/getRows/getRowsFlow, this method only supports ASP protocol
+	- **Functionality**: use `psf get` function to get matrix elements or their statistics. Different from getRow/getRows/getRowsFlow, this method only supports ASP
 	- **Parameters**:
 		- func: GetFunc, get-type psf, where psf is an extension interface for Angel PS
 	- **Return value**: GetResult returned by `psf get`
@@ -122,19 +122,19 @@ With reasonable ways of initializing PSModel, setting PSModel's behavioral prope
 
 *  **syncClock**
 	- **Definition**: ```def syncClock():```
-	- **Functionality**: simplified version of clock; encapsulates clock().get(). We recommend calling this method unless waiting is necessary
+	- **Functionality**: simplified version of clock; encapsulates clock().get(). We recommend calling this method unless there is a specific requrement for waiting
 	- **Parameters**: none
 
 *  **clock**
 	- **Definition**: ```def clock(): Future[VoidResult]```
-	- **Functionality**: update and merge all matrices in local cache (calling `increment` will create local cache for model delta) and send to the PS, then update the matrix clock
+	- **Functionality**: merge all delta vectors in local cache (created by `increment`) and send to the PS, then update the matrix clock
 	- **Parameters**: none
-	- **Return value**: Future[VoidResult], `clock` operation result; the application can choose whether to wait for `clock` to complete
+	- **Return value**: Future[VoidResult], `clock` operation result; the application can choose whether to wait for `clock` operation to complete
 
 * **flush**
 
 	- **Definition**: ```def flush(): Future[VoidResult]```
-	- **Functionality**: update and merge all matrices in local cache (calling `increment` will create local cache for model delta) and send to the PS
+	- **Functionality**: merge all delta vectors in local cache (created by `increment`) and send to the PS
 	- **Parameters**: none
 	- **Return value**: Future[VoidResult], `flush` operation result; the application can choose whether to wait for `flush` to complete
 
@@ -142,14 +142,14 @@ With reasonable ways of initializing PSModel, setting PSModel's behavioral prope
 
 * **setLoadPath**
 	- **Definition**: ```def setLoadPath(path: String)```
-	- **Functionality**: set path for loading matrix; this method is used for incremental learning or under the `predict` mode --- PS loads the matrix of parameters from file for initializing
-	- **Parameters**: path: String, existing save path
+	- **Functionality**: set path for loading matrix; this method is used for incremental learning or under the `predict` mode --- PS loads the matrix of parameters from file for initialization
+	- **Parameters**: path: String, existing save path of the matrix parameters
 	- **Return value**: none
 
 * **setSavePath**
 
 	- **Definition**: ```def setSavePath(path: String)```
-	- **Functionality**: set path for saving matrix; under the `train` mode, when training is done, the matrix on PS needs to be saved in file
+	- **Functionality**: set path for saving matrix; under the `train` mode, when training is done, the matrix on PS needs to be saved in the file system
 	- **Parameters**: path: String, existing save path
 	- **Return value**: none
 
@@ -157,14 +157,14 @@ With reasonable ways of initializing PSModel, setting PSModel's behavioral prope
 
 * **setAverage**
 	- **Definition**: ```def setAverage(aver: Boolean)```
-	- **Functionality**: set whether to divide the `update` parameters by the total number of tasks; this method is used in `increment`, but not in `update`
+	- **Functionality**: set whether to divide the update parameters by the total number of tasks; this method is used in the `increment` method, but not affecting the update functions
 	- **Parameters**: aver: Boolean, if set to true, divide the parameters by the total number of tasks
 	- **Return value**: none
 
 *  **setHogwild**
 	- **Definition**: ```def setHogwild(hogwild: Boolean)```
-	- **Functionality**: set whether to use the **hogwild** mechanism in storing and updating local matrix; when there are more than 1 worker tasks, **hogwild** can save memory usage; default is true
-	- **Parameters**: aver: Boolean, if set to true, use hogwild
+	- **Functionality**: set whether to use the **hogwild** mechanism to store and update the local matrix; when there are more than 1 worker tasks, **hogwild** can save memory; default is true
+	- **Parameters**: aver: Boolean, if set to true, use the hogwild mechanism
 	- **Return value**: none
 
 * **setRowType**
@@ -187,7 +187,7 @@ With reasonable ways of initializing PSModel, setting PSModel's behavioral prope
 *  **setOplogType**
 
 	- **Definition**: ```def setOplogType(oplogType: String)```
-	- **Functionality**: set storage method for model delta; when using `increment`, Angel first caches the delta vector in local, by creating a local matrix of the same size as the matrix to be updated
+	- **Functionality**: set storage method for model delta; when using `increment`, Angel caches delta in local by creating a local matrix of the same size as the matrix to be updated
 	- **Parameters**:
 		- oplogType: String, currently suppoart
 			* **DENSE\_DOUBE**: use a dense, double-type matrix for storing the model delta, used when the model matrix to be updated is double-type
