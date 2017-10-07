@@ -54,7 +54,7 @@ With reasonable ways of initializing PSModel, setting PSModel's behavioral prope
 		- blockCol: Int, number of columns of one block
 		-  **ctx: TaskContext**, context of the PSModel Task
 			* a PSModel object needs to be bound to a task since PSModel runs on the worker; also to support the BSP and SSP protocols
-			* implicit conversion is used: as long as a ctx object exists in the container of PSModel, the ctx object will be automatically injected into the PSModel without explicit calls)
+			* implicit conversion is used: as long as a ctx object exists in the container of PSModel, the ctx object will be automatically injected into the PSModel without explicit calls
 
 ### 1. pull-type
 
@@ -107,7 +107,7 @@ With reasonable ways of initializing PSModel, setting PSModel's behavioral prope
 *  **increment**
 
 	- **Definition**: ```def increment(deltas: List[TVector])```
-	- **Functionality**: incrementally update some rows of the matrix. This method works under ASP; it caches the delta vector to local, and only directly pushes to the PS when executing `flush` or `clock`
+	- **Functionality**: incrementally update some rows of the matrix. This method works under ASP; it caches the delta vectors to local, and only directly pushes to the PS when executing `flush` or `clock`
 	- **Parameters**: deltas: List[TVector], list of delta vectors, where each delta vector has the same size as a row vector
 	- **Return value**: none
 
@@ -189,7 +189,7 @@ With reasonable ways of initializing PSModel, setting PSModel's behavioral prope
 	- **Definition**: ```def setOplogType(oplogType: String)```
 	- **Functionality**: set storage method for model delta; when using `increment`, Angel caches delta in local by creating a local matrix of the same size as the matrix to be updated
 	- **Parameters**:
-		- oplogType: String, currently suppoart
+		- oplogType: String, currently support
 			* **DENSE\_DOUBE**: use a dense, double-type matrix for storing the model delta, used when the model matrix to be updated is double-type
 			* **DENSE\_INT**: use a dense, int-type matrix for storing the model delta, used when the model matrix is int-type
 			* **LIL\_INT**: use a sparse, int-type matrix for storing the model delta, used when the model matrix is int-type, and delta is sparse
