@@ -2,19 +2,19 @@
 
 ---
 
-> PSModel is Angel's core abstract class. It encapsulates details of context and client of the remote parameter server (PS) and provides the commonly-used interfaces for accessing and updating remote matrices and vectors, allowing the algorithm engineers to operate the distributed matrices and vectors on the PS as if operating local objects. PSModel is a mutable model object that can be updated iteratively.
+> PSModel is Angel's core abstract class. It encapsulates details of context and client of remote parameter server (PS) and provides frequently-use interfaces for accessing and updating remote matrices and vectors, allows algorithm engineers to operate on distributed matrices and vectors on the PS as if operating on local objects. PSModel is a mutable model object that can be updated iteratively in essence.
 
 ## Functionality
 
-PSModel has three core classes: **MatrixContext，MatrixClient，TaskContext**, making any operation on the remote PS possible.
+PSModel has three core classes: **MatrixContext，MatrixClient，TaskContext**, with which you can make any operation on remote PS possible.
 
-For developing machine-learning algorithms on Angel, we recommend creating PSModel through MLModel and working on top of it. PSModel has the following five major interfaces:
+For developing machine-learning algorithms on Angel, we recommend creating PSModel inside MLModel and working on top of it. PSModel has the following five major interfaces:
 
 1. **[pull-type](#1-pull-type)**
 	* getRow
 	* getRows
 	* get(func: GetFunc)
-	
+
 2. **[push-type](#2-push-type)**
 	* increment
 	* update(func: UpdateFunc)
@@ -35,11 +35,9 @@ For developing machine-learning algorithms on Angel, we recommend creating PSMod
 	* setOplogType
 	* setRowType
 
-With reasonable ways of initializing PSModel, setting PSModel's behavioral properties and calling PSModel methods, algorithm engineers can operate on the remote distributed model (martrix or vector). As the core abstract class, PSModel allows one to program machine-learning algorithms in distributed fashion without worrying about low-level details.
-
+With decent ways of initializing PSModel, setting PSModel's behavioral properties and calling PSModel methods, algorithm engineers can operate on remote distributed model (martrix or vector). As the core abstract class, PSModel allows one to program machine-learning algorithms in distributed fashion without caring about low-level details.
 
 ## Core Interfaces
-
 
 ### 0. constructor
 
