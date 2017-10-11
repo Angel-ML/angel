@@ -109,33 +109,33 @@ class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
   addPSModel(ACTIVE_NODE_MAT, activeTNodes)
 
   // Matrix 5: split feature
-  val splitFeat = new PSModel[TIntVector](SPLIT_FEAT_MAT, maxTreeNum, maxTNodeNum, 1, maxTNodeNum / psNumber)
+  val splitFeat = new PSModel[TIntVector](SPLIT_FEAT_MAT, maxTreeNum, maxTNodeNum, maxTreeNum, maxTNodeNum / psNumber)
     .setRowType(MLProtos.RowType.T_INT_DENSE)
     .setOplogType("DENSE_INT")
   addPSModel(SPLIT_FEAT_MAT, splitFeat)
 
   // Matrix 6: split value
-  val splitValue = PSModel[TDoubleVector](SPLIT_VALUE_MAT, maxTreeNum, maxTNodeNum, 1, maxTNodeNum / psNumber)
+  val splitValue = PSModel[TDoubleVector](SPLIT_VALUE_MAT, maxTreeNum, maxTNodeNum, maxTreeNum, maxTNodeNum / psNumber)
     .setRowType(MLProtos.RowType.T_DOUBLE_DENSE)
     .setOplogType("DENSE_DOUBLE")
   addPSModel(SPLIT_VALUE_MAT, splitValue)
 
   // Matrix 7: split loss gain
-  val splitGain = PSModel[TDoubleVector](SPLIT_GAIN_MAT, maxTreeNum, maxTNodeNum, 1, maxTNodeNum / psNumber)
+  val splitGain = PSModel[TDoubleVector](SPLIT_GAIN_MAT, maxTreeNum, maxTNodeNum, maxTreeNum, maxTNodeNum / psNumber)
     .setRowType(MLProtos.RowType.T_DOUBLE_DENSE)
     .setOplogType("DENSE_DOUBLE")
     .setNeedSave(false)
   addPSModel(SPLIT_GAIN_MAT, splitGain)
 
   // Matrix 8: node's grad stats
-  val nodeGradStats = PSModel[TDoubleVector](NODE_GRAD_MAT, maxTreeNum, 2 * maxTNodeNum, 1, 2 * maxTNodeNum / psNumber)
+  val nodeGradStats = PSModel[TDoubleVector](NODE_GRAD_MAT, maxTreeNum, 2 * maxTNodeNum, maxTreeNum, 2 * maxTNodeNum / psNumber)
     .setRowType(MLProtos.RowType.T_DOUBLE_DENSE)
     .setOplogType("DENSE_DOUBLE")
     .setNeedSave(false)
   addPSModel(NODE_GRAD_MAT, nodeGradStats)
 
   // Matrix 9: node's predict value
-  val nodePred = PSModel[TDoubleVector](NODE_PRED_MAT, maxTreeNum, maxTNodeNum, 1, maxTNodeNum / psNumber)
+  val nodePred = PSModel[TDoubleVector](NODE_PRED_MAT, maxTreeNum, maxTNodeNum, maxTreeNum, maxTNodeNum / psNumber)
     .setRowType(MLProtos.RowType.T_DOUBLE_DENSE)
     .setOplogType("DENSE_DOUBLE")
   addPSModel(NODE_PRED_MAT, nodePred)

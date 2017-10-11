@@ -61,7 +61,7 @@ public class GBDTGradHistGetRowFunc extends GetRowFunc {
     Configuration conf = PSContext.get().getConf();
     PartitionGetRowParam param = (PartitionGetRowParam) partParam;
     
-    LOG.info("For the gradient histogram of GBT, we use PS to find the optimal split");
+    LOG.debug("For the gradient histogram of GBT, we use PS to find the optimal split");
 
     int splitNum = conf.getInt(MLConf.ML_GBDT_SPLIT_NUM(),
             MLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
@@ -81,7 +81,7 @@ public class GBDTGradHistGetRowFunc extends GetRowFunc {
     double rightSumGrad = rightGradStat.sumGrad;
     double rightSumHess = rightGradStat.sumHess;
 
-    LOG.info(String.format(
+    LOG.debug(String.format(
         "split of matrix[%d] part[%d] row[%d]: fid[%d], split index[%d], loss gain[%f], "
             + "left sumGrad[%f], left sum hess[%f], right sumGrad[%f], right sum hess[%f]",
         param.getMatrixId(), param.getPartKey().getPartitionId(), param.getRowIndex(), fid,
@@ -93,7 +93,7 @@ public class GBDTGradHistGetRowFunc extends GetRowFunc {
     int sendEndCol = sendStartCol + 7;
     ServerDenseDoubleRow sendRow =
         new ServerDenseDoubleRow(param.getRowIndex(), sendStartCol, sendEndCol);
-    LOG.info(String.format(
+    LOG.debug(String.format(
         "Create server row of split result: row id[%d], start col[%d], end col[%d]",
         param.getRowIndex(), sendStartCol, sendEndCol));
     sendRow.getData().put(0, fid);
@@ -135,7 +135,7 @@ public class GBDTGradHistGetRowFunc extends GetRowFunc {
       splitEntry.update(curSplitEntry);
     }
 
-    LOG.info(String.format(
+    LOG.debug(String.format(
         "psFunc: the best split after looping the histogram: fid[%d], fvalue[%f], loss gain[%f]",
         splitEntry.fid, splitEntry.fvalue, splitEntry.lossChg));
 
