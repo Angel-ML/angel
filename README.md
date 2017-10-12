@@ -15,30 +15,31 @@
 
 欢迎对机器学习有兴趣的同仁一起贡献代码，提交Issues或者Pull Requests。请先查阅: [Angel Contribution Guide](https://github.com/Tencent/angel/blob/master/CONTRIBUTING.md)
 
-## Angel的介绍
+## Overview
 
 * [架构设计](./docs/overview/architecture.md)
 * [代码结构](./docs/overview/code_framework.md)
 * [设计理念](./docs/overview/design_philosophy.md)
-* [Spark on Angel的设计](./docs/overview/spark_on_angel.md)
+* [Spark on Angel](./docs/overview/spark_on_angel.md)
 
-
-## Quick Start
-* [Angel入门](./docs/tutorials/angel_ps_quick_start.md)
-* [Spark on Angel入门](./docs/tutorials/spark_on_angel_quick_start.md)
-
-
-## Programming Guide
-
-* [Angel编程手册](./docs/programmers_guide/angel_programing_guide.md)
-* [Spark on Angel编程手册](./docs/programmers_guide/spark_on_angel_programing_guide.md)
 
 ## Design
 
 * [模型切分（modelPartitioner）](./docs/design/model_partitioner.md)
 * [异步控制（syncController）](./docs/design/sync_controller.md)
 * [定制函数（psFunc）](./docs/design/psfFunc.md)
-* [核心接口类](./docs/apis/core_api.md)
+* [核心接口](./docs/apis/core_api.md)
+* [周边辅助](./docs/assistant/hobby_api.md)
+
+## Programming Guide
+
+* [Angel编程手册](./docs/programmers_guide/angel_programing_guide.md)
+* [Spark on Angel编程手册](./docs/programmers_guide/spark_on_angel_programing_guide.md)
+
+
+## Quick Start
+* [Angel入门](./docs/tutorials/angel_ps_quick_start.md)
+* [Spark on Angel入门](./docs/tutorials/spark_on_angel_quick_start.md)
 
 
 ## Algorithm

@@ -52,7 +52,7 @@ Each partition is saved as a file under the name partitionID. All the partitions
 * In the following: the two values in the first row are `rowID` and `clock`, respectively; each row from the second line shows a key:value pair of the model 
 
  ```
-0, 10 
+0, 10 	
 0:-0.004235138405748639
 1:-0.003367253227582031
 3:-0.003988846053264014
