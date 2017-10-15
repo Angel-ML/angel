@@ -2,11 +2,11 @@
 
 ---
 
-> MLModel is an abstract class that serves as the parent class for all models on Angel. It contains all the required methods for implementing a machine-learning algorithm on Angel. A complex machine-learning algorithm usually needs multiple [PSModel](PSModel_en.md) to work together, and MLModel provides a unified model that is convenient to handle in this process.  
+> MLModel represents the complete model of a machine-learning algorithm. It serves as the base class for all machine learning models on Angel. A complex machine-learning algorithm usually needs multiple [PSModel](PSModel_en.md) to work together, and MLModel provides unified handling of these PSModels.
 
 ## Functionality
 
-MLModel is an abstract class that needs to be inherited to implement a specific machine-learning algorithm. It is a container class that manages all the PSModels in the algorithm, allowing them to be loaded, trained and saved as a unified model. In the meantime, MLModel contains the logic of `predict`. 
+MLModel is an abstract class and needs to be inherited in implementing a specific machine-learning algorithm. It is a container class that handles all the PSModels in the algorithm; all the PSModels in it will be loaded, trained and saved as an overall model. In addition, MLModel contains the logic of the `predict` method.
 
 
 ## Core Methods
@@ -14,14 +14,14 @@ MLModel is an abstract class that needs to be inherited to implement a specific 
 
 *  **predict**
 	- Definition: ```def predict(storage: DataBlock[predictType]): DataBlock[PredictResult]```
-	- Functionality: get predictions based on the machine-learning model and test data; procedurs are implemented in specific PSModels
-	- Parameters: storage: DataBlock[predictType], test data
-	- Return value: DataBlock[PredictResult], prediction result
+	- Functionality: get model predictions (given a trained model); procedures of this method need to be implemented in specific PSModel
+	- Parameters: storage: DataBlock[predictType], data
+	- Return value: DataBlock[PredictResult], prediction result on provided data
 
 *  **setSavePath**
 
 	- Definition: ```def setSavePath(conf: Configuration)```
-	- Functionality: set save path for the model
+	- Functionality: set save path for model
 	- Parameters: conf: Configuration, job configuration
 	- Return value: none
 
@@ -36,14 +36,14 @@ MLModel is an abstract class that needs to be inherited to implement a specific 
 	- Definition: ```def addPSModel(name: String, psModel: PSModel[_])```
 	- Functionality: add a new PSModel to MLModel 
 	- Parameters:
-		- name: String, name of the model
-		- psModel: PSModel[_], the corresponding PSModel object
+		- name: String, PSModel name
+		- psModel: PSModel[_], PSModel object
 	- Return value: none
 
 * **getPSModel**
 
 	- Definition: ```def getPSModel(name: String): PSModel[_]```
-	- Functionality: get the corresponding PSModel object given a model (matrix) name 
-	- Parameters: name: String, name of the model (matrix)
+	- Functionality: retrieve PSModel object with its name
+	- Parameters: name: String, PSModel name
 	- Return value: a PSModel object
 
