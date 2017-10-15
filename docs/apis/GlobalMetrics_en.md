@@ -1,29 +1,26 @@
 # GlobalMetrics
 
 
-> There are many metrics used for model training (such as training loss, AUC, etc.). A metric is only sensible when calculated using data across all partitions. A fundamental functionality of any distributed machine-learning framework is to assemble metrics from individual workers to generate a global result, and GlobalMetrics is designed to achieve this for Angel.
+>  For model training purpose, we want to track various metrics for evaluating the performance of the model, (such as the training loss, AUC, etc.). A metric is only sensible when calculated using data across all partitions. A fundamental functionality of any distributed machine-learning framework is to assemble metrics from individual workers to generate a global result, and GlobalMetrics is designed to achieve this goal for Angel.
 
+In calculating a metric, GlobalMetrics assembles results from all individual tasks to the master, generates a global result and output to two places:
 
-## Introduction
-
-In calculating a metric, GlobalMetrics assembles results from all individual tasks to the master, generates a global result and outputs to two places:
-
-1. Info of the client's log
+1. Info section of log on the client side
 2. The HDFS path as specified in "angel.log.path"
 
 ## Usage
 
-There is only one single GlobalMetrics class with two methods to **assemble** and **output**.
+There is only one single GlobalMetrics class, and it addresses two things in monitoring the metrics: **collecting metrics** and **instrumentation**.
 
-1. **Merge**
+1. **Metric Collecting**
 
-	This process is defined for a task, usually implemented in the Learner class. Define the metric, and simply add value to the corresponding metric during the iterations, done with the following methods:
+	This process occurs within a task, usually implemented in the Learner class. It defines and registers the metrics, and adds and updates their values during the training iterations. There are two methods defined for this purpose:
 
 	* **addMetrics(metricName: String, metric: Metric)**
 
-		To add metrics, specify metricName and metric type. This method is called only once before iterations (outside the loop).
+		To add metrics, specify metricName and metric type. This method needs to be called only once, before the iterations (i.e. outside the loop).
 
-	 	We show an example below of how to add two LossMetric type metrics, "train.loss" and "validation.loss" to GlobalMetrics:
+	 	We show an example below of how to register two metrics of the LossMetric type, "train.loss" and "validation.loss":
 
     ```java
 	// Add "train.loss" and "validation.loss" metric to globalMetrics
@@ -33,7 +30,7 @@ There is only one single GlobalMetrics class with two methods to **assemble** an
     ```
 
 	* **metric(metricName: String, metricValue: Double)**
-	     Now we add a value to the metric with the metricName:
+	     This method adds a value to the metric registered under metricName, as follows:
 
     ```java
 	// Add train loss value to "train.loss"
@@ -41,9 +38,9 @@ There is only one single GlobalMetrics class with two methods to **assemble** an
 	globalMetrics.metrics("validation.loss", validLossValue)
     ```
 
-2. **Output**
+2. **Metric Instrumentation**
 
-	**Output** of a metric is at the client side. This process does not need to be triggered manually. As long as metrics are added to task by Learner, AngelClient automatically knows this and outputs metrics in the following format:
+	This process is on the client side. It does not need to be triggered manually: as long as metrics are registered by `Learner` for a task, AngelClient automatically knows it and logs metrics in the following format:
 
     	Epoch=1 Metrics={"train.loss":0.613, "validation.loss": 0.513}
     	Epoch=2 Metrics={"train.loss":0.622, "validation.loss": 0.521}
@@ -64,7 +61,7 @@ Currently, Angel pre-defined only a couple of standard metric types, including:
 * ObjMetric
 * ErrorMetric
 
-Users can customize their only **Metric** class by implementing the following two methods: 
+Users can define and implement their only **Metric** class with the following two methods: 
 
 * **merge(other:Metric)**
 	The master calls this method to merge results from all tasks after each iteration. 
