@@ -101,7 +101,7 @@ object Logistic {
     override def calculate(x: BreezePSVector) : (Double, BreezePSVector) = {
       val localX = new BDV[Double](x.toRemote.pull())
       val bcX = trainData.sparkContext.broadcast(localX)
-      val cumGradient = PSVector.duplicate(x).toBreeze
+      val cumGradient = PSVector.duplicate(x.component).toBreeze
 
       val sampleNum = trainData.count()
       val cumLoss = trainData.mapPartitions { iter =>
@@ -173,7 +173,7 @@ object Logistic {
 
       val localX = new BDV(x.toRemote.pull())
       val bcX = trainData.sparkContext.broadcast(localX)
-      val cumGradient = PSVector.duplicate(x).toRemote
+      val cumGradient = PSVector.duplicate(x.component).toRemote
 
       val aggregator = {
         val seqOp = (c: Aggregator, point: (Vector, Double)) => c.add(point)
