@@ -17,7 +17,7 @@ A common inference technique for LDA is Gibbs Sampling, which is a MCMC method f
 AliasLDA, F+LDA, LightLDA and WarpLDA, to name a few, and our experiment results suggest F+LDA as most suitable for training LDA on Angel. 
 
 ### Collapsed Gibbs Sampling (CGS)
-We use ``$ Z=\{z_d\}_{d=1}^D $`` to represent the set of topics for all words, ``$ \Phi = [\phi_1 \cdots \phi_{V}] $`` to represent the ``$ V \times K $`` topic-word matrix, and ``$ \Theta = [\theta_1 \cdots \theta_D] $`` to represent the matrix whose columns are the topic distributions for all documents, then, training LDA requires inferring the posterior of the latent variable ``$ (\Theta, \Phi, Z) $``, given the observed variable ``$ Z $`` and the hyperparameters. Useing conjugate prior, CGS gives a closed-form expression for the posterior of ``$ Z $``, resulting in simple iterations for sampling ``$ z_{dn} $`` following the conditional probability below:
+We use ``$ Z=\{z_d\}_{d=1}^D $`` to represent the set of topics for all words, ``$ \Phi = [\phi_1 \cdots \phi_{V}] $`` to represent the ``$ V \times K $`` topic-word matrix, and ``$ \Theta = [\theta_1 \cdots \theta_D] $`` to represent the matrix whose columns are the topic distributions for all documents, then, training LDA requires inferring the posterior of the latent variable ``$ (\Theta, \Phi, Z) $``, given the observed variable ``$ Z $`` and the hyperparameters. Using conjugate prior, CGS gives a closed-form expression for the posterior of ``$ Z $``, resulting in simple iterations for sampling ``$ z_{dn} $`` following the conditional probability below:
 
 ```math
 p(z_{dn} = k| t_{dn} = w, Z_{\neg dn}, C_{\neg dn}) \propto \\
