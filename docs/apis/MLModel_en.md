@@ -2,7 +2,7 @@
 
 ---
 
-> MLModel represents the complete model of a machine-learning algorithm. It serves as the base class for all machine learning models on Angel. A complex machine-learning algorithm usually needs multiple [PSModel](PSModel_en.md) to work together, and MLModel provides unified handling of these PSModels.
+> MLModel is the complete model of a machine-learning algorithm. It serves as the base class for all machine learning models on Angel. A complex machine-learning algorithm usually needs multiple [PSModel](PSModel_en.md) to work together, and MLModel provides unified handling of these PSModels.
 
 ## Functionality
 
