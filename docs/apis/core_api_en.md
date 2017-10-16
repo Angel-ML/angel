@@ -14,7 +14,7 @@ As shown above, Angel's core API classes, ordered by when (in general) they are 
 	* Initializes PSServer and loads empty model
 	* After training, saves the model to HDFS from multiple PSServers
 
-* [TrainTask](Task.md)
+* [TrainTask](Task_en.md)
 	* Starts `train` process when called by AngelClient
 
 * [DataBlock](DataBlock_en.md)
@@ -24,10 +24,10 @@ As shown above, Angel's core API classes, ordered by when (in general) they are 
 * [MLLearner](MLLearner_en.md)
 	* MLLearner calls its own `learn` method, reads DataBlock, computes the model delta, and pushes to / pull from PSServer through PSModel inside MLModel, eventually obtaining a complete MLModel
 
-* [MLModel](MLModel.md)
+* [MLModel](MLModel_en.md)
 	* According to the algorithm's need, creates and holds multiple PSModels
 
-* [PSModel](PSModel.md)
+* [PSModel](PSModel_en.md)
 	* Encapsulates all the interfaces in AngelClient that communicate with PSServer, facilitating MLLearner calls
 
  Understanding these core classes and processes will be quite helpful for implementing high performance machine-learning algorithms that can run on Angel.
