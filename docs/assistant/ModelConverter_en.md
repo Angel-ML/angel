@@ -2,9 +2,19 @@
 
 ---
 
->  Angel saves PSModel in binary format after the application is completed. The ModelConverter class parses the PSModel binary file to plaintext format.
+> Before Angel application finishes, any PSModel will be saved in binary format for enhancing speed and saving space. Understanding that some users may need to have the PSModels saved in plaintext format, we created ModelConverter class to parse the PSModel binary file to plaintext.
 
-Each partition is saved as a file under the name partitionID. All the partitions of a PSModel are saved to the same directory; the name of the directory is the same as the modelName field of PSModel. The ModelConverter job can be submitted using the following command:
+## Format of the Model File Before Convertion
+
+Angel's model files have the following default designs:
+
+* Each partition is saved as a file under the name partitionID
+* All the partitions of a PSModel are saved to the same directory; the name of the directory is the same as the modelName field of PSModel
+
+
+## Convertion Command
+
+The ModelConverter job can be submitted using the following command:
 
 ```bsh
 ./bin/angel-submit \
@@ -23,7 +33,7 @@ Each partition is saved as a file under the name partitionID. All the partitions
 -- angel.job.name ${jobname}
 ```
 
-### **Parameters**
+* **Parameters**
 
 * **ml.model.in.path** 
 	* Model input path, corresponding to the specified `ml.model.out.path`
@@ -46,7 +56,7 @@ Each partition is saved as a file under the name partitionID. All the partitions
 * **ml.model.convert.thread.count** 
 	* Number of threads for model converting
 
-## **Format of the converted file**
+### **Format of the converted file**
 
 * Angel model is saved in units of partitions, where each partition is saved as one file under the name partitionID. Each converted model file correpsonds to a model partition.
 * In the following: the two values in the first row are `rowID` and `clock`, respectively; each row from the second line shows a key:value pair of the model 
