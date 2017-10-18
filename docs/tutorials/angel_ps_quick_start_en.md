@@ -39,7 +39,7 @@ Let w denote the 1-by-N parameter matrix (an N-dimensional vector), where N is t
 
 We train the LR model with gradient descent algorithm. In each iteration, task pulls the latest model w from the PS, calculates the change in gradient △w, and pushes △w to the PS. We need the following three steps to realize the procedure:
 
-1. **Define the model([MLModel](../apis/MLModel.md))**
+1. **Define the model([MLModel](../apis/MLModel_en.md))**
 
 	Define a `LRModel` class that inherits the `MLModel` class, add an N-dimensional `PSModel` to  `LRModel` using the `addPSModel` method, and set the save path for the LR model using the `setSavePath` method.
 	
@@ -59,7 +59,7 @@ We train the LR model with gradient descent algorithm. In each iteration, task p
 	          setLoadPath(conf)
 	}
 	```
-2. **Define the Task([TrainTask](../apis/Task.md))**
+2. **Define the Task([TrainTask](../apis/Task_en.md))**
 
 	Angel's model training is done through tasks. We need to define `LRTrainTask` to train the LR model.
 
