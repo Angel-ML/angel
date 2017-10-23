@@ -44,33 +44,35 @@ Support both YARN mode and Local mode
 
 A simple example is shown below
 
-```scala
-val context = PSContext.getOrCreate()
-val pool = context.createModelPool(dim, poolCapacity)
-val w = pool.createModel(initWeights)
-val gradient = pool.zeros()
+```Scala
 
-for (i <- 1 to ITERATIONS) {
-  val totalG = gradient.mkRemote()
+   val points:RDD[Point] = _
 
-  val nothing = points.mapPartitions { iter =>
-    val brzW = new DenseVector(w.mkRemote.pull())
+   val wPS = PSVector.dense(DIM).fill(0.0)
+   val gradientPS = PSVector.dense(DIM).fill(0.0)
 
-    val subG = iter.map { p =>
-      p.x * (1 / (1 + math.exp(-p.y * brzW.dot(p.x))) - 1) * p.y
-    }.reduce(_ + _)
+   for (i <- 1 to ITERATIONS) {
+     val totalG = gradientPS.toCache
 
-    totalG.incrementAndFlush(subG.toArray)
-    Iterator.empty
+   val trigger = points.mapPartitions { iter =>
+     val brzW = new DenseVector(wPS.pull())
+
+     val subG = iter.map { p =>
+       p.x * (1 / (1 + math.exp(-p.y * brzW.dot(p.x))) - 1) * p.y
+     }.reduce(_ + _)
+
+     totalG.push(subG.toArray())
+     Iterator.empty
+      }
+     trigger.count()
+
+     wPS.toBreeze += -1.0 * gradientPS.toBreeze
+     gradientPS.fill(0.0)
+   }
+
+   println("feature sum:" + wPS.pull())
+
+   gradientPS.delete()
+   wPS.delete()
   }
-  nothing.count()
-
-  w.mkBreeze += -1.0 * gradent.mkBreeze
-  gradient.mkRemote.fill(0.0)
-}
-
-println("feature sum:" + w.mkRemote.pull())
-
-gradient.delete()
-w.delete()
 ```
