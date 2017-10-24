@@ -19,7 +19,7 @@ package com.tencent.angel.ml.factorizationmachines
 
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.SparseIntDoubleSortedVector
+import com.tencent.angel.ml.math.vector.SparseDoubleSortedVector
 import com.tencent.angel.ml.task.TrainTask
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
@@ -58,7 +58,7 @@ class FMTrainTask (val ctx: TaskContext) extends TrainTask[LongWritable, Text](c
       return null
     }
     val nonzero = splits.length - 1
-    val x = new SparseIntDoubleSortedVector(nonzero, feaNum)
+    val x = new SparseDoubleSortedVector(nonzero, feaNum)
     val y = splits(0).toDouble
 
     //TODO edit y according to task type
@@ -83,7 +83,7 @@ class FMTrainTask (val ctx: TaskContext) extends TrainTask[LongWritable, Text](c
       val data = parse(reader.getCurrentKey, reader.getCurrentValue)
       if (data != null) {
         taskDataBlock.put(data)
-        val indexs = data.getX.asInstanceOf[SparseIntDoubleSortedVector].getIndices
+        val indexs = data.getX.asInstanceOf[SparseDoubleSortedVector].getIndices
         for (i <- indexs)
           feaUsed(i) += 1
         minP = if (data.getY < minP) data.getY else minP

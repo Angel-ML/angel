@@ -19,9 +19,9 @@ package com.tencent.angel.example.quickStart
 
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.DenseIntDoubleVector
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
+import com.tencent.angel.protobuf.generated.MLProtos.RowType
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
@@ -29,8 +29,7 @@ import org.apache.hadoop.conf.Configuration
 class QSLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx){
   val N: Int = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
 
-  val weight: PSModel[DenseIntDoubleVector] = PSModel[DenseIntDoubleVector]("qs.lr.weight", 1, N)
-               .setAverage(true)
+  val weight = PSModel("qs.lr.weight", 1, N).setRowType(RowType.T_DOUBLE_DENSE).setAverage(true)
   addPSModel(weight)
 
   setSavePath(conf)

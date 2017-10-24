@@ -18,7 +18,7 @@
 package com.tencent.angel.ml.matrix.psf.update.enhance;
 
 
-import com.tencent.angel.ml.math.vector.DenseIntDoubleVector;
+import com.tencent.angel.ml.math.vector.DenseDoubleVector;
 import com.tencent.angel.ps.impl.PSContext;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerPartition;
@@ -36,7 +36,7 @@ public class CompressUpdateFunc extends UpdateFunc {
     super(new CompressUpdateParam(matrixId, rowId, array, bitPerItem));
   }
 
-  public CompressUpdateFunc(int matrixId, int rowId, DenseIntDoubleVector vector, int bitPerItem) {
+  public CompressUpdateFunc(int matrixId, int rowId, DenseDoubleVector vector, int bitPerItem) {
     this(matrixId, rowId, vector.getValues(), bitPerItem);
   }
 

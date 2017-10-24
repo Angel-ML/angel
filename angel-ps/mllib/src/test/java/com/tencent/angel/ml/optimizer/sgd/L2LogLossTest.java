@@ -18,7 +18,7 @@
 package com.tencent.angel.ml.optimizer.sgd;
 
 import com.tencent.angel.ml.math.TAbstractVector;
-import com.tencent.angel.ml.math.vector.DenseIntDoubleVector;
+import com.tencent.angel.ml.math.vector.DenseDoubleVector;
 import com.tencent.angel.ml.optimizer.sgd.loss.L2LogLoss;
 import com.tencent.angel.ml.utils.MathsTest;
 import org.apache.commons.logging.Log;
@@ -50,9 +50,9 @@ public class L2LogLossTest {
   @Test
   public void testLoss() throws Exception {
     double data1[] = {1.0, 2.0};
-    DenseIntDoubleVector denseDoubleVector1 = new DenseIntDoubleVector(2, data1);
+    DenseDoubleVector denseDoubleVector1 = new DenseDoubleVector(2, data1);
     double data2[] = {1.0, 2.0};
-    DenseIntDoubleVector denseDoubleVector2 = new DenseIntDoubleVector(2, data2);
+    DenseDoubleVector denseDoubleVector2 = new DenseDoubleVector(2, data2);
     double test = l2LogLoss.loss(denseDoubleVector1, 2, denseDoubleVector2);
     assertEquals(Math.log(1 + Math.exp(-5 * 2)), test, 0.00);
   }
@@ -73,9 +73,9 @@ public class L2LogLossTest {
   public void testLoss2() throws Exception {
     double data1[] = {1.0, 2.0};
     double data2[] = {2.0, 1.0};
-    DenseIntDoubleVector denseDoubleVector1 = new DenseIntDoubleVector(2, data1);
-    DenseIntDoubleVector denseDoubleVector2 = new DenseIntDoubleVector(2, data1);
-    DenseIntDoubleVector w = new DenseIntDoubleVector(2, data2);
+    DenseDoubleVector denseDoubleVector1 = new DenseDoubleVector(2, data1);
+    DenseDoubleVector denseDoubleVector2 = new DenseDoubleVector(2, data1);
+    DenseDoubleVector w = new DenseDoubleVector(2, data2);
     TAbstractVector[] xList = new TAbstractVector[2];
     xList[0] = denseDoubleVector1;
     xList[1] = denseDoubleVector2;

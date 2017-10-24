@@ -28,7 +28,7 @@ import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.math.matrix.DenseDoubleMatrix;
 import com.tencent.angel.ml.math.matrix.DenseIntMatrix;
 import com.tencent.angel.ml.math.vector.DenseFloatVector;
-import com.tencent.angel.ml.math.vector.DenseIntDoubleVector;
+import com.tencent.angel.ml.math.vector.DenseDoubleVector;
 import com.tencent.angel.ml.math.vector.DenseIntVector;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.protobuf.generated.MLProtos;
@@ -201,11 +201,11 @@ public class TransportTest {
       MatrixClient mat = worker.getPSAgent().getMatrixClient("dense_double_mat", 0);
 
       for (int rowId = 0; rowId < ddRow; rowId += 5) {
-        DenseIntDoubleVector row = (DenseIntDoubleVector) mat.getRow(rowId);
-        DenseIntDoubleVector expect = new DenseIntDoubleVector(ddCol);
+        DenseDoubleVector row = (DenseDoubleVector) mat.getRow(rowId);
+        DenseDoubleVector expect = new DenseDoubleVector(ddCol);
         assertArrayEquals(row.getValues(), expect.getValues(), 0.0);
 
-        DenseIntDoubleVector update = new DenseIntDoubleVector(ddCol);
+        DenseDoubleVector update = new DenseDoubleVector(ddCol);
         update.setMatrixId(mat.getMatrixId());
         update.setRowId(rowId);
         Random rand = new Random(System.currentTimeMillis());
@@ -214,18 +214,18 @@ public class TransportTest {
         mat.increment(update);
         mat.clock().get();
 
-        row = (DenseIntDoubleVector) mat.getRow(rowId);
+        row = (DenseDoubleVector) mat.getRow(rowId);
         expect.plusBy(update);
         assertArrayEquals(expect.getValues(), row.getValues(), 0.0);
 
-        update = new DenseIntDoubleVector(ddCol);
+        update = new DenseDoubleVector(ddCol);
         update.setMatrixId(mat.getMatrixId());
         update.setRowId(rowId);
         for (int i = 0; i < ddCol; i += 3)
           update.set(i, rand.nextDouble());
         mat.increment(update);
         mat.clock().get();
-        row = (DenseIntDoubleVector) mat.getRow(rowId);
+        row = (DenseDoubleVector) mat.getRow(rowId);
         expect.plusBy(update);
         assertArrayEquals(expect.getValues(), row.getValues(), 0.0);
       }
@@ -252,12 +252,12 @@ public class TransportTest {
 
       TVector row;
       while ((row = result.take()) != null) {
-        assertArrayEquals(((DenseIntDoubleVector)expect.getTVector(row.getRowId())).getValues(), ((DenseIntDoubleVector) row).getValues(), 0.0);
+        assertArrayEquals(((DenseDoubleVector)expect.getTVector(row.getRowId())).getValues(), ((DenseDoubleVector) row).getValues(), 0.0);
       }
 
       Random rand = new Random(System.currentTimeMillis());
       for (int rowId = 0; rowId < ddRow; rowId ++) {
-        DenseIntDoubleVector update = new DenseIntDoubleVector(ddCol);
+        DenseDoubleVector update = new DenseDoubleVector(ddCol);
 
         for (int j = 0; j < ddCol; j += 3)
           update.set(j, rand.nextDouble());
@@ -274,7 +274,7 @@ public class TransportTest {
       result = mat.getRowsFlow(rowIndex, 2);
 
       while ((row = result.take()) != null) {
-        assertArrayEquals(((DenseIntDoubleVector)expect.getTVector(row.getRowId())).getValues(), ((DenseIntDoubleVector) row).getValues(), 0.0);
+        assertArrayEquals(((DenseDoubleVector)expect.getTVector(row.getRowId())).getValues(), ((DenseDoubleVector) row).getValues(), 0.0);
       }
 
       rowIndex = new RowIndex();
@@ -290,7 +290,7 @@ public class TransportTest {
         if (row == null)
           continue;
 
-        assertArrayEquals(((DenseIntDoubleVector)expect.getTVector(row.getRowId())).getValues(), ((DenseIntDoubleVector) row).getValues(), 0.0);
+        assertArrayEquals(((DenseDoubleVector)expect.getTVector(row.getRowId())).getValues(), ((DenseDoubleVector) row).getValues(), 0.0);
       }
     } catch (Exception x) {
       LOG.error("run testGetFlowDenseDoubleMatrix failed ", x);

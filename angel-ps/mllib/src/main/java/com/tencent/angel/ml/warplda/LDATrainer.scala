@@ -1,3 +1,4 @@
+
 package com.tencent.angel.ml.warplda
 
 import java.io.BufferedOutputStream
@@ -13,7 +14,7 @@ import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.conf.MLConf.LOG_LIKELIHOOD
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.lda.psf.{GetPartFunc, LikelihoodFunc, PartCSRResult}
-import com.tencent.angel.ml.math.vector.DenseIntVector
+import com.tencent.angel.ml.math.vector.{DenseIntVector, TIntVector}
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult
 import com.tencent.angel.ml.matrix.psf.get.multi.PartitionGetRowsParam
@@ -30,12 +31,10 @@ import org.apache.hadoop.fs.Path
 
 import scala.collection.mutable
 
-/**
-  * Created by chris on 8/24/17.
-  */
-class Trainer(ctx:TaskContext, model:LDAModel,
-              data:WTokens) extends MLLearner(ctx){
-  val LOG:Log = LogFactory.getLog(classOf[Trainer])
+
+class LDATrainer(ctx:TaskContext, model:LDAModel,
+                 data:WTokens) extends MLLearner(ctx){
+  val LOG:Log = LogFactory.getLog(classOf[LDATrainer])
   val pkeys: util.List[PartitionKey]= PSAgentContext.get().getMatrixPartitionRouter.
     getPartitionKeyList(model.wtMat.getMatrixId())
   val dKeys:Int = data.n_docs
@@ -288,7 +287,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     val row = model.tMat.getRow(0)
     var sum = 0
     for (i <- 0 until model.K) {
-      nk(i) = row.get(i)
+      nk(i) = row.asInstanceOf[TIntVector].get(i)
       sum += nk(i)
     }
 
@@ -513,7 +512,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     val rr = model.wtMat.getRows(index, 1000)
 
     for (row <- start until end) {
-      val x = rr(row)
+      val x = rr(row).asInstanceOf[TIntVector]
       val len = x.size()
       val sb = new StringBuilder
       sb.append(x.getRowId + ":")

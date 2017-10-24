@@ -22,7 +22,7 @@ import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.TAbstractVector
-import com.tencent.angel.ml.math.vector.{DenseIntDoubleVector, SparseIntDoubleSortedVector, TIntDoubleVector}
+import com.tencent.angel.ml.math.vector.{DenseDoubleVector, SparseDoubleSortedVector, TIntDoubleVector}
 import com.tencent.angel.ml.metric.LossMetric
 import com.tencent.angel.ml.utils.Maths
 import com.tencent.angel.worker.storage.DataBlock
@@ -31,8 +31,8 @@ import org.apache.commons.logging.{Log, LogFactory}
 
 import scala.util.Random
 
-case class mlrWeight(sigmoid_wVecot:Array[DenseIntDoubleVector], sigmoid_b:Array[Double],
-                     softmax_wVecot:Array[DenseIntDoubleVector], softmax_b:Array[Double]){
+case class mlrWeight(sigmoid_wVecot:Array[DenseDoubleVector], sigmoid_b:Array[Double],
+                     softmax_wVecot:Array[DenseDoubleVector], softmax_b:Array[Double]){
 
 }
 
@@ -92,13 +92,13 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
 
     for (batch: Int <- 1 to batchNum) {
       val batchStartTs = System.currentTimeMillis()
-      val grad_sigmoid_wVecot = new Array[DenseIntDoubleVector](rank)
+      val grad_sigmoid_wVecot = new Array[DenseDoubleVector](rank)
       val grad_sigmoid_b = new Array[Double](rank)
-      val grad_softmax_wVecot = new Array[DenseIntDoubleVector](rank)
+      val grad_softmax_wVecot = new Array[DenseDoubleVector](rank)
       val grad_softmax_b = new Array[Double](rank)
       (0 until rank).map(i => {
-        grad_sigmoid_wVecot(i)=new DenseIntDoubleVector(feaNum)
-        grad_softmax_wVecot(i)=new DenseIntDoubleVector(feaNum)
+        grad_sigmoid_wVecot(i)=new DenseDoubleVector(feaNum)
+        grad_softmax_wVecot(i)=new DenseDoubleVector(feaNum)
       })
 
 
@@ -154,7 +154,7 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
         grad_sigmoid_wVecot(i).plusBy(sigmoid_wVecot(i), reg)
         grad_softmax_wVecot(i).plusBy(softmax_wVecot(i), reg)
       })
-      val bUpdater = new DenseIntDoubleVector(1)
+      val bUpdater = new DenseDoubleVector(1)
       bUpdater.setRowId(0)
 
       (0 until rank).map(i => {
@@ -288,7 +288,7 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     dataBlock.resetReadIndex()
     for (_ <- 0 until dataBlock.size) {
       val data = dataBlock.read()
-      val x = data.getX.asInstanceOf[SparseIntDoubleSortedVector]
+      val x = data.getX.asInstanceOf[SparseDoubleSortedVector]
       val y = data.getY
 
       val softmax = (0 until rank).map(i => softmax_wVecot(i).dot(x) + softmax_b(i)).toArray
@@ -322,7 +322,7 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
 
     for (row <- 0 until rank) {
       if (row % totalTask == taskId) {
-        val randV = new DenseIntDoubleVector(feaNum);
+        val randV = new DenseDoubleVector(feaNum);
         randV.setRowId(row)
 
         for (col <- 0 until feaNum) {

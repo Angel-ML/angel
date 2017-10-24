@@ -19,7 +19,7 @@ package com.tencent.angel.example.psf;
 
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.ml.math.vector.SparseIntDoubleVector;
+import com.tencent.angel.ml.math.vector.SparseDoubleVector;
 import com.tencent.angel.psagent.matrix.MatrixClient;
 import com.tencent.angel.worker.task.BaseTask;
 import com.tencent.angel.worker.task.TaskContext;
@@ -46,10 +46,10 @@ public class SparseDoubleTask extends BaseTask<Long, Long, Long> {
         long startTs = System.currentTimeMillis();
         TVector row = client.getRow(0);
         LOG.info("Task " + taskContext.getTaskId() + " in iteration " + taskContext.getEpoch()
-          + " pull use time=" + (System.currentTimeMillis() - startTs) + ", sum=" + sum((SparseIntDoubleVector)row));
+          + " pull use time=" + (System.currentTimeMillis() - startTs) + ", sum=" + sum((SparseDoubleVector)row));
 
         startTs = System.currentTimeMillis();
-        SparseIntDoubleVector deltaV = new SparseIntDoubleVector(2100000000, 150000000);
+        SparseDoubleVector deltaV = new SparseDoubleVector(2100000000, 150000000);
         for(int i = 0; i < 2100000000; i+=20) {
           deltaV.set(i, 1.0);
         }
@@ -72,7 +72,7 @@ public class SparseDoubleTask extends BaseTask<Long, Long, Long> {
     }
   }
 
-  private double sum(SparseIntDoubleVector row) {
+  private double sum(SparseDoubleVector row) {
     double [] data = row.getValues();
     double ret = 0.0;
     for(int i = 0; i < data.length; i++) {

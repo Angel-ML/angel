@@ -54,7 +54,7 @@ public class VectorSplitTest {
   public void sparseSortedVectorSplit() {
     int[] offsets = {0, 2, 4, 6, 8};
     double[] values = {0.0, 2.0, 4.0, 6.0, 8.0};
-    SparseIntDoubleSortedVector vector = new SparseIntDoubleSortedVector(10, offsets, values);
+    SparseDoubleSortedVector vector = new SparseDoubleSortedVector(10, offsets, values);
     vector.setRowId(0);
 
     PartitionKey key1 = new PartitionKey(0, 0, 0, 0, 1, 5);
@@ -103,7 +103,7 @@ public class VectorSplitTest {
   @Test
   public void denseVectorSplit() {
     double[] values = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
-    DenseIntDoubleVector vector = new DenseIntDoubleVector(10, values);
+    DenseDoubleVector vector = new DenseDoubleVector(10, values);
     vector.setRowId(0);
 
     PartitionKey key1 = new PartitionKey(0, 0, 0, 0, 1, 5);
@@ -188,7 +188,7 @@ public class VectorSplitTest {
   public void sparseHashMapVectorSplit() {
     int[] offsets = {0, 2, 4, 6, 8};
     double[] values = {0.0, 2.0, 4.0, 6.0, 8.0};
-    SparseIntDoubleVector vector = new SparseIntDoubleVector(10, offsets, values);
+    SparseDoubleVector vector = new SparseDoubleVector(10, offsets, values);
     vector.setRowId(0);
 
     PartitionKey key1 = new PartitionKey(0, 0, 0, 0, 1, 5);

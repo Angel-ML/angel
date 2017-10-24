@@ -19,30 +19,28 @@ package com.tencent.angel.ml.optimizer.sgd
 
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector._
-import com.tencent.angel.ml.math.{TVector, VectorType}
 import com.tencent.angel.ml.model.PSModel
-import com.tencent.angel.ml.optimizer.sgd.loss.{L1LogLoss, Loss}
+import com.tencent.angel.ml.optimizer.sgd.loss.Loss
 import com.tencent.angel.worker.storage.DataBlock
 import org.apache.commons.logging.{Log, LogFactory}
-
-import scala.reflect.runtime.universe._
 
 
 object GradientDescent {
   private val LOG: Log = LogFactory.getLog(GradientDescent.getClass)
 
+  type baseT = TDoubleVector
 
-  def miniBatchGD[M <: TDoubleVector](trainData: DataBlock[LabeledData],
-                                      wM: PSModel[M],
-                                      intercept: Option[PSModel[M]],
+  def miniBatchGD(trainData: DataBlock[LabeledData],
+                                      wM: PSModel,
+                                      intercept: Option[PSModel],
                                       lr: Double,
                                       loss: Loss,
                                       batchSize: Int,
-                                      batchNum: Int): (Double, TDoubleVector) = {
+                                      batchNum: Int): (Double, baseT) = {
 
     //Pull model from PS Server
-    val w = wM.getRow(0)
-    var b: Option[Double] = intercept.map(_.getRow(0).get(0))
+    val w = wM.getRow(0).asInstanceOf[baseT]
+    var b: Option[Double] = intercept.map(_.getRow(0).asInstanceOf[baseT].get(0))
     var totalLoss = 0.0
 
     val taskContext = wM.getTaskContext
@@ -52,15 +50,15 @@ object GradientDescent {
 
       val grad =
         w match {
-          case _: DenseIntDoubleVector => new DenseIntDoubleVector(w.getDimension)
-          case _: SparseIntDoubleVector => new SparseIntDoubleVector(w.getDimension)
+          case _: DenseDoubleVector => new DenseDoubleVector(w.getDimension)
+          case _: SparseDoubleVector => new SparseDoubleVector(w.getDimension)
           case _: SparseLongKeyDoubleVector => new SparseLongKeyDoubleVector(w.asInstanceOf[SparseLongKeyDoubleVector].getLongDim)
-          case _ => new DenseIntDoubleVector(w.getDimension)
+          case _ => new DenseDoubleVector(w.getDimension)
         }
 
       grad.setRowId(0)
 
-      val bUpdate = new DenseIntDoubleVector(1)
+      val bUpdate = new DenseDoubleVector(1)
       bUpdate.setRowId(0)
 
       var batchLoss: Double = 0.0
@@ -92,7 +90,7 @@ object GradientDescent {
       w.plusBy(grad, -1.0 * lr)
       b = b.map(bv => bv - lr * gradScalarSum)
 
-      wM.increment(grad.timesBy(-1.0 * lr).asInstanceOf[M])
+      wM.increment(grad.timesBy(-1.0 * lr).asInstanceOf[TDoubleVector])
       intercept.map { bv =>
         bUpdate.set(0, -lr * gradScalarSum)
         bv.increment(bUpdate)
@@ -105,7 +103,7 @@ object GradientDescent {
 
     //Push model update to PS Server
     totalLoss /= (batchNum*batchSize)
-    totalLoss += loss.getReg(w)
+    totalLoss += loss.getReg(w.asInstanceOf[TDoubleVector])
 
     wM.syncClock()
     intercept.map(_.syncClock())
@@ -114,18 +112,18 @@ object GradientDescent {
     (totalLoss , w)
   }
 
-  def L2Loss[M <: TDoubleVector](loss: Loss, w: M, grad: TDoubleVector): Unit = {
+  def L2Loss(loss: Loss, w: baseT, grad: baseT): Unit = {
     grad match {
 
-      case dense: DenseIntDoubleVector =>
+      case dense: DenseDoubleVector =>
         for (i <- 0 until grad.size) {
           if (Math.abs(dense.get(i)) > 10e-7) {
             grad.set(i, grad.get(i) + w.get(i) * loss.getRegParam)
           }
         }
 
-      case sparse: SparseIntDoubleVector =>
-        val map = sparse.asInstanceOf[SparseIntDoubleVector].getIndexToValueMap
+      case sparse: SparseDoubleVector =>
+        val map = sparse.asInstanceOf[SparseDoubleVector].getIndexToValueMap
         val iter = map.int2DoubleEntrySet().fastIterator()
 
         while (iter.hasNext) {
@@ -162,8 +160,8 @@ object GradientDescent {
      *
      *  this function returns the update to the vector
    */
-  def truncGradient(vec: TDoubleVector, alpha: Double, theta: Double): TDoubleVector = {
-    val update = new SparseIntDoubleVector(vec.getDimension)
+  def truncGradient(vec: baseT, alpha: Double, theta: Double): baseT = {
+    val update = new SparseDoubleVector(vec.getDimension)
     for (dim <- 0 until update.getDimension) {
       val value = vec.get(dim)
       if (value >= 0 && value <= theta) {

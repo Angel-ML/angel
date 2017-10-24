@@ -28,7 +28,7 @@ import AngelConf._
 import com.tencent.angel.ml.MLRunner
 import com.tencent.angel.ml.conf.MLConf._
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.{DenseIntDoubleVector, DenseIntVector}
+import com.tencent.angel.ml.math.vector.{TDoubleVector, DenseDoubleVector, DenseIntVector}
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.task.TrainTask
 import com.tencent.angel.ml.utils.DataParser
@@ -86,7 +86,7 @@ class ReduceTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
     for (i <- 0 until feaNum)
       data(i) = i
 
-    val update = new DenseIntDoubleVector(feaNum, data)
+    val update = new DenseDoubleVector(feaNum, data)
 
     //    val startUpdate = System.currentTimeMillis
 
@@ -126,8 +126,8 @@ class ReduceTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
     model.time.clock().get()
 
     if (taskId == 0) {
-      val updateCost = model.time.getRow(0)
-      val getCost = model.time.getRow(1)
+      val updateCost = model.time.getRow(0).asInstanceOf[TDoubleVector]
+      val getCost = model.time.getRow(1).asInstanceOf[TDoubleVector]
       for (i <- 0 until model.workerNum) {
         LOG.info(s"task[$i] update=${updateCost.get(i)} get=${getCost.get(i)} " +
           s"total=${updateCost.get(i) + getCost.get(i)}")
@@ -266,10 +266,8 @@ class ReduceModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
   val ps = conf.getInt(ANGEL_PS_NUMBER, 1)
   val part = conf.getInt(ML_PART_PER_SERVER, 1)
 
-  val model = PSModel[DenseIntDoubleVector](name, 1, feaNum, 1, feaNum / ps / part )
-  val time  = PSModel[DenseIntVector]("time", 2, workerNum)
-  time.setRowType(MLProtos.RowType.T_INT_DENSE)
-  time.setOplogType("DENSE_INT")
+  val model = PSModel(name, 1, feaNum, 1, feaNum / ps / part).setRowType(RowType.T_DOUBLE_DENSE)
+  val time  = PSModel("time", 2, workerNum).setRowType(MLProtos.RowType.T_INT_DENSE).setOplogType("DENSE_INT")
 
   addPSModel(name, model)
   addPSModel("time", time)

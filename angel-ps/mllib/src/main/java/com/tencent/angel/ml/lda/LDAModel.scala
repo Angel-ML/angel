@@ -108,11 +108,11 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
 
   // Initializing model matrices
 
-  val wtMat = PSModel[DenseIntVector](WORD_TOPIC_MAT, V, K, blockNum(V, K), K)
+  val wtMat = PSModel(WORD_TOPIC_MAT, V, K, blockNum(V, K), K)
     .setRowType(RowType.T_INT_DENSE)
     .setOplogType("SPARSE_INT")
 
-  val tMat = PSModel[DenseIntVector](TOPIC_MAT, 1, K, 1, K)
+  val tMat = PSModel(TOPIC_MAT, 1, K, 1, K)
     .setRowType(RowType.T_INT_DENSE)
     .setOplogType("DENSE_INT")
     .setNeedSave(false)

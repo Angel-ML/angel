@@ -107,8 +107,8 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector {
   @Override public TVector plusBy(TAbstractVector other) {
     if (other instanceof SparseLongKeyDoubleVector)
       return plusBy((SparseLongKeyDoubleVector) other);
-    else if (other instanceof SparseIntDoubleSortedVector)
-      return plusBy((SparseIntDoubleSortedVector) other);
+    else if (other instanceof SparseDoubleSortedVector)
+      return plusBy((SparseDoubleSortedVector) other);
     else if (other instanceof SparseLongKeySortedDoubleVector)
       return plusBy((SparseLongKeySortedDoubleVector) other);
     throw new UnsupportedOperationException(
@@ -145,7 +145,7 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector {
     return this;
   }
 
-  private SparseLongKeyDoubleVector plusBy(SparseIntDoubleSortedVector other) {
+  private SparseLongKeyDoubleVector plusBy(SparseDoubleSortedVector other) {
     assert dim == other.getDimension();
     int [] indexes = other.getIndices();
     double [] values = other.getValues();
@@ -185,8 +185,8 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector {
   @Override public TVector plusBy(TAbstractVector other, double x) {
     if (other instanceof SparseLongKeyDoubleVector)
       return plusBy((SparseLongKeyDoubleVector) other, x);
-    else if (other instanceof SparseIntDoubleSortedVector)
-      return plusBy((SparseIntDoubleSortedVector) other, x);
+    else if (other instanceof SparseDoubleSortedVector)
+      return plusBy((SparseDoubleSortedVector) other, x);
     else if (other instanceof SparseLongKeySortedDoubleVector)
       return plusBy((SparseLongKeySortedDoubleVector) other, x);
 
@@ -214,7 +214,7 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector {
     return this;
   }
 
-  private SparseLongKeyDoubleVector plusBy(SparseIntDoubleSortedVector other, double x) {
+  private SparseLongKeyDoubleVector plusBy(SparseDoubleSortedVector other, double x) {
     assert dim == other.getDimension();
     int [] indexes = other.getIndices();
     double [] values = other.getValues();
@@ -302,8 +302,8 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector {
   @Override public double dot(TAbstractVector other) {
     if (other instanceof SparseLongKeyDoubleVector)
       return dot((SparseLongKeyDoubleVector) other);
-    else if (other instanceof SparseIntDoubleSortedVector)
-      return dot((SparseIntDoubleSortedVector) other);
+    else if (other instanceof SparseDoubleSortedVector)
+      return dot((SparseDoubleSortedVector) other);
     else if (other instanceof SparseLongKeySortedDoubleVector)
       return dot((SparseLongKeySortedDoubleVector) other);
 
@@ -329,7 +329,7 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector {
     }
   }
 
-  private double dot(SparseIntDoubleSortedVector other) {
+  private double dot(SparseDoubleSortedVector other) {
     assert dim == other.getDimension();
     int [] indexes = other.getIndices();
     double [] values = other.getValues();

@@ -22,7 +22,7 @@ import com.tencent.angel.ml.math.TUpdate;
 import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.math.matrix.*;
 import com.tencent.angel.ml.math.vector.DenseFloatVector;
-import com.tencent.angel.ml.math.vector.DenseIntDoubleVector;
+import com.tencent.angel.ml.math.vector.DenseDoubleVector;
 import com.tencent.angel.ml.math.vector.DenseIntVector;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ps.ParameterServerId;
@@ -158,7 +158,7 @@ public abstract class MatrixOpLog {
 
   private boolean isNeedFilter(TVector vector) {
     return (vector instanceof DenseIntVector)
-      || (vector instanceof DenseIntDoubleVector)
+      || (vector instanceof DenseDoubleVector)
       || (vector instanceof DenseFloatVector);
   }
 

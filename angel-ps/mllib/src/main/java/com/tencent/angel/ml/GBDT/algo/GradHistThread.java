@@ -18,7 +18,7 @@ package com.tencent.angel.ml.GBDT.algo;
 
 import com.tencent.angel.ml.GBDT.algo.RegTree.GradHistHelper;
 import com.tencent.angel.ml.conf.MLConf;
-import com.tencent.angel.ml.math.vector.DenseIntDoubleVector;
+import com.tencent.angel.ml.math.vector.DenseDoubleVector;
 import com.tencent.angel.ml.matrix.psf.update.enhance.CompressUpdateFunc;
 import com.tencent.angel.ml.model.PSModel;
 import org.apache.commons.logging.Log;
@@ -50,7 +50,7 @@ public class GradHistThread implements Runnable {
     String histParaName = this.controller.param.gradHistNamePrefix + nid;
     // 2. build the grad histogram of this node
     GradHistHelper histMaker = new GradHistHelper(this.controller, this.nid);
-    DenseIntDoubleVector histogram = histMaker.buildHistogram(insStart, insEnd);
+    DenseDoubleVector histogram = histMaker.buildHistogram(insStart, insEnd);
     int bytesPerItem = this.controller.taskContext.getConf().
         getInt(MLConf.ML_COMPRESS_BYTES(), MLConf.DEFAULT_ML_COMPRESS_BYTES());
     if (bytesPerItem < 1 || bytesPerItem > 8 ) {

@@ -147,8 +147,8 @@ object TVector{
   import VectorType._
   def apply(dims: Int, vtype:VectorType):TVector ={
     vtype match {
-      case T_DOUBLE_DENSE => new DenseIntDoubleVector(dims)
-      case T_DOUBLE_SPARSE => new SparseIntDoubleVector(dims)
+      case T_DOUBLE_DENSE => new DenseDoubleVector(dims)
+      case T_DOUBLE_SPARSE => new SparseDoubleVector(dims)
       case T_INT_DENSE => new DenseIntVector(dims)
       case T_INT_SPARSE =>new SparseIntVector(dims)
     }

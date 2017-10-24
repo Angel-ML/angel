@@ -121,7 +121,7 @@ public class GBDTController {
     long startTime = System.currentTimeMillis();
 
     List<Future> clockFutures = new ArrayList<Future>();
-    for (Map.Entry<String, PSModel<?>> entry : model.getPSModels().entrySet()) {
+    for (Map.Entry<String, PSModel> entry : model.getPSModels().entrySet()) {
       if (needFlushMatrices.contains(entry.getKey())) {
         clockFutures.add(entry.getValue().clock(true));
       } else {
@@ -155,8 +155,8 @@ public class GBDTController {
     if (taskContext.getTaskIndex() == 0) {
       LOG.info("------Create sketch------");
       long startTime = System.currentTimeMillis();
-      DenseIntDoubleVector sketchVec =
-          new DenseIntDoubleVector(this.param.numFeature * this.param.numSplit);
+      DenseDoubleVector sketchVec =
+          new DenseDoubleVector(this.param.numFeature * this.param.numSplit);
       // 1. calculate candidate split value
       float[][] splits = TYahooSketchSplit.getSplitValue(this.trainDataStore, this.param.numSplit);
       if (splits.length == this.param.numFeature && splits[0].length == this.param.numSplit) {
@@ -187,7 +187,7 @@ public class GBDTController {
     PSModel sketch = model.getPSModel(this.param.sketchName);
     LOG.info("------Get sketch from PS------");
     long startTime = System.currentTimeMillis();
-    DenseIntDoubleVector sketchVector = (DenseIntDoubleVector) sketch.getRow(0);
+    DenseDoubleVector sketchVector = (DenseDoubleVector) sketch.getRow(0);
     LOG.info(String.format("Get sketch cost: %d ms", System.currentTimeMillis() - startTime));
     for (int i = 0; i < sketchVector.getDimension(); i++) {
       this.sketches[i] = (float) sketchVector.get(i);
@@ -443,9 +443,9 @@ public class GBDTController {
     // 3. push split feature to PS
     DenseIntVector splitFeatureVector = new DenseIntVector(this.activeNode.length);
     // 4. push split value to PS
-    DenseIntDoubleVector splitValueVector = new DenseIntDoubleVector(this.activeNode.length);
+    DenseDoubleVector splitValueVector = new DenseDoubleVector(this.activeNode.length);
     // 5. push split gain to PS
-    DenseIntDoubleVector splitGainVector = new DenseIntDoubleVector(this.activeNode.length);
+    DenseDoubleVector splitGainVector = new DenseDoubleVector(this.activeNode.length);
 
     for (int i = 0; i < updatedIndices.length; i++) {
       splitFeatureVector.set(updatedIndices[i], updatedSplitFid[i]);
@@ -484,15 +484,15 @@ public class GBDTController {
 
     // 2. get split value
     PSModel splitValueModel = model.getPSModel(this.param.splitValuesName);
-    DenseIntDoubleVector splitValueVec = (DenseIntDoubleVector) splitValueModel.getRow(currentTree);
+    DenseDoubleVector splitValueVec = (DenseDoubleVector) splitValueModel.getRow(currentTree);
 
     // 3. get split gain
     PSModel splitGainModel = model.getPSModel(this.param.splitGainsName);
-    DenseIntDoubleVector splitGainVec = (DenseIntDoubleVector) splitGainModel.getRow(currentTree);
+    DenseDoubleVector splitGainVec = (DenseDoubleVector) splitGainModel.getRow(currentTree);
 
     // 4. get node weight
     PSModel nodeGradStatsModel = model.getPSModel(this.param.nodeGradStatsName);
-    DenseIntDoubleVector nodeGradStatsVec = (DenseIntDoubleVector) nodeGradStatsModel.getRow(currentTree);
+    DenseDoubleVector nodeGradStatsVec = (DenseDoubleVector) nodeGradStatsModel.getRow(currentTree);
 
     LOG.info(String.format("Get split result from PS cost %d ms", System.currentTimeMillis() - startTime));
 
@@ -660,7 +660,7 @@ public class GBDTController {
     LOG.debug(String.format("Update gradStats of node[%d]: sumGrad[%f], sumHess[%f]", nid,
         gradStats.sumGrad, gradStats.sumHess));
     // 1. create the update
-    DenseIntDoubleVector vec = new DenseIntDoubleVector(2 * this.activeNode.length);
+    DenseDoubleVector vec = new DenseDoubleVector(2 * this.activeNode.length);
     vec.set(nid, gradStats.sumGrad);
     vec.set(nid + this.activeNode.length, gradStats.sumHess);
     // 2. push the update to PS
@@ -693,7 +693,7 @@ public class GBDTController {
     LOG.info("------Update leaf node predictions------");
     long startTime = System.currentTimeMillis();
     int nodeNum = this.forest[currentTree].nodes.size();
-    DenseIntDoubleVector vec = new DenseIntDoubleVector(this.maxNodeNum);
+    DenseDoubleVector vec = new DenseDoubleVector(this.maxNodeNum);
     for (int nid = 0; nid < nodeNum; nid++) {
       if (null != this.forest[currentTree].nodes.get(nid)
               && this.forest[currentTree].nodes.get(nid).isLeaf()) {
@@ -751,7 +751,7 @@ public class GBDTController {
   }
 
   public double treePred(TIntVector splitFeatVec, TIntDoubleVector splitValueVec,
-                         TIntDoubleVector nodePredVec, SparseIntDoubleSortedVector ins) {
+                         TIntDoubleVector nodePredVec, SparseDoubleSortedVector ins) {
     assert splitFeatVec.getDimension() == splitValueVec.getDimension()
             && splitValueVec.getDimension() == nodePredVec.getDimension();
     int nid = 0;

@@ -43,11 +43,10 @@ import scala.collection.mutable.Map
   * @param blockRow matrix partition row number
   * @param blockCol matrix partition column number
   * @param ctx Task context
-  * @tparam K matrix row type
   */
-class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow: Int = -1, blockCol: Int = -1, var needSave: Boolean = true)(implicit ctx:TaskContext)  {
+class PSModel(val modelName: String, row: Int, col: Int, blockRow: Int = -1, blockCol: Int = -1, var needSave: Boolean = true)(implicit ctx:TaskContext)  {
 
-  val LOG: Log = LogFactory.getLog(classOf[PSModel[K]])
+  val LOG: Log = LogFactory.getLog(classOf[PSModel])
 
   /** Matrix configuration */
   val matrixCtx =  new MatrixContext(modelName, row, col, blockRow, blockCol)
@@ -305,9 +304,9 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
     */
   @SuppressWarnings(Array("unchecked"))
   @throws(classOf[AngelException])
-  def getRow(rowIndex: Int): K = {
+  def getRow(rowIndex: Int): TVector = {
     try {
-      return getClient.getRow(rowIndex).asInstanceOf[K]
+      return getClient.getRow(rowIndex)
     }
     catch {
       case e: InvalidParameterException => {
@@ -325,15 +324,15 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
     * @return row index to row map
     */
   @throws(classOf[AngelException])
-  def getRows(rowIndex: RowIndex, batchNum: Int): Map[Int, K] = {
-    val indexToVectorMap = scala.collection.mutable.Map[Int, K]()
+  def getRows(rowIndex: RowIndex, batchNum: Int): Map[Int, TVector] = {
+    val indexToVectorMap = scala.collection.mutable.Map[Int, TVector]()
     val rows  = getRowsFlow(rowIndex, batchNum)
     try {
       var finish = false
       while (!finish) {
         rows.take() match {
           case null => finish = true
-          case row => indexToVectorMap += (row.getRowId -> row.asInstanceOf[K])
+          case row => indexToVectorMap += (row.getRowId -> row)
         }
       }
     }
@@ -353,7 +352,7 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
     * @return row list
     */
   @throws(classOf[AngelException])
-  def getRows(rowIndexes:Array[Int]): List[K] = {
+  def getRows(rowIndexes:Array[Int]): List[TVector] = {
     val rowIndex = new RowIndex()
     for(index <- rowIndexes) {
       rowIndex.addRowId(index)
@@ -361,7 +360,7 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
 
     val indexToVectorMap = getRows(rowIndex, -1)
 
-    val rowList = new ArrayList[K](rowIndexes.length)
+    val rowList = new ArrayList[TVector](rowIndexes.length)
 
     for (i <- 0 until rowIndexes.length)
       rowList.add(indexToVectorMap.get(rowIndexes(i)).get)
@@ -431,7 +430,7 @@ class PSModel[K <: TVector](val modelName: String, row: Int, col: Int, blockRow:
 }
 
 object PSModel {
-  def apply[K <: TVector](modelName: String, row: Int, col: Int, blockRow: Int = -1, blockCol: Int = -1)(implicit ctx:TaskContext) = {
-    new PSModel[K](modelName, row, col, blockRow, blockCol)(ctx)
+  def apply(modelName: String, row: Int, col: Int, blockRow: Int = -1, blockCol: Int = -1)(implicit ctx:TaskContext) = {
+    new PSModel(modelName, row, col, blockRow, blockCol)(ctx)
   }
 }

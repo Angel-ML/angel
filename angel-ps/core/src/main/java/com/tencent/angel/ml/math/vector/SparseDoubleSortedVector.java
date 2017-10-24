@@ -27,9 +27,9 @@ import java.util.Arrays;
 /**
  * Sparse Double Vector using one array as its backend storage. The vector indexes are sorted in ascending order.
  */
-public class SparseIntDoubleSortedVector extends TIntDoubleVector {
+public class SparseDoubleSortedVector extends TIntDoubleVector {
 
-  private final static Log LOG = LogFactory.getLog(SparseIntDoubleSortedVector.class);
+  private final static Log LOG = LogFactory.getLog(SparseDoubleSortedVector.class);
 
   /**
    * Sorted index for non-zero items
@@ -49,7 +49,7 @@ public class SparseIntDoubleSortedVector extends TIntDoubleVector {
   /**
    * init the empty vector
    */
-  public SparseIntDoubleSortedVector() {
+  public SparseDoubleSortedVector() {
     super();
   }
 
@@ -59,7 +59,7 @@ public class SparseIntDoubleSortedVector extends TIntDoubleVector {
    * @param dim      vector dimension
    * @param capacity index array capacity
    */
-  public SparseIntDoubleSortedVector(int capacity, int dim) {
+  public SparseDoubleSortedVector(int capacity, int dim) {
     super();
     this.nnz = 0;
     this.dim = dim;
@@ -74,7 +74,7 @@ public class SparseIntDoubleSortedVector extends TIntDoubleVector {
    * @param indices sorted non-zero indexes
    * @param values  non-zero values
    */
-  public SparseIntDoubleSortedVector(int dim, int[] indices, double[] values) {
+  public SparseDoubleSortedVector(int dim, int[] indices, double[] values) {
     super();
     this.nnz = indices.length;
     this.dim = dim;
@@ -87,7 +87,7 @@ public class SparseIntDoubleSortedVector extends TIntDoubleVector {
    *
    * @param other a SparseDoubleSortedVector with same dimension with this vector
    */
-  public SparseIntDoubleSortedVector(SparseIntDoubleSortedVector other) {
+  public SparseDoubleSortedVector(SparseDoubleSortedVector other) {
     super(other);
     this.nnz = other.nnz;
     this.indices = new int[nnz];
@@ -109,12 +109,12 @@ public class SparseIntDoubleSortedVector extends TIntDoubleVector {
     return ret;
   }
 
-  @Override public SparseIntDoubleSortedVector clone() {
-    return new SparseIntDoubleSortedVector(this);
+  @Override public SparseDoubleSortedVector clone() {
+    return new SparseDoubleSortedVector(this);
   }
 
   @Override public void clone(TVector row) {
-    SparseIntDoubleSortedVector sortedRow = (SparseIntDoubleSortedVector) row;
+    SparseDoubleSortedVector sortedRow = (SparseDoubleSortedVector) row;
     if (nnz == sortedRow.nnz) {
       System.arraycopy(sortedRow.indices, 0, this.indices, 0, this.nnz);
       System.arraycopy(sortedRow.values, 0, this.values, 0, nnz);
@@ -136,15 +136,15 @@ public class SparseIntDoubleSortedVector extends TIntDoubleVector {
   }
 
   @Override public double dot(TAbstractVector other) {
-    if (other instanceof DenseIntDoubleVector)
-      return dot((DenseIntDoubleVector) other);
+    if (other instanceof DenseDoubleVector)
+      return dot((DenseDoubleVector) other);
 
     throw new UnsupportedOperationException(
       "Unsupportted operation: " + this.getClass().getName() + " dot " + other.getClass()
         .getName());
   }
 
-  private double dot(DenseIntDoubleVector other) {
+  private double dot(DenseDoubleVector other) {
     double ret = 0.0;
     int[] indexs = this.indices;
     double[] values = this.values;
@@ -233,7 +233,7 @@ public class SparseIntDoubleSortedVector extends TIntDoubleVector {
   }
 
   @Override public TIntDoubleVector times(double x) {
-    SparseIntDoubleSortedVector vector = this.clone();
+    SparseDoubleSortedVector vector = this.clone();
     for (int i = 0; i < vector.nnz; i++)
       vector.values[i] *= x;
     return vector;

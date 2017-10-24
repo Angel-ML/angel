@@ -99,7 +99,7 @@ class ADMM {
 }
 
 class LogisticGradient(numClasses: Int = 2) {
-  type V = DenseIntDoubleVector
+  type V = DenseDoubleVector
 
   def this() = this(2)
 
@@ -160,7 +160,7 @@ object ADMM {
 
   private val LOG = LogFactory.getLog(classOf[ADMM])
 
-  type T = SparseIntDoubleVector
+  type T = SparseDoubleVector
   
   def runADMM(data: DataBlock[LabeledData], model: SparseLRModel)
              (regParam: Double, rho: Double, N: Int, threadNum: Int,
@@ -231,7 +231,7 @@ object ADMM {
 
                 indices(i) = globalToLocal.get(fid)
               }
-            case x: SparseIntDoubleSortedVector =>
+            case x: SparseDoubleSortedVector =>
               val len = x.size()
               val indices = x.getIndices
 
@@ -300,7 +300,7 @@ object ADMM {
     val costFun = new CostFun(
       split(data, threadNum),
       new LogisticGradient(),
-      new DenseIntDoubleVector(localIndex.localFeaNum, localModel.u),
+      new DenseDoubleVector(localIndex.localFeaNum, localModel.u),
       z,
       localIndex,
       rho)
@@ -324,7 +324,7 @@ object ADMM {
   def updateW(model: SparseLRModel,
               localModel: LocalModel,
               localIndex: LocalIndex): Unit = {
-    val update = new DenseIntDoubleVector(model.feaNum)
+    val update = new DenseDoubleVector(model.feaNum)
     update.setRowId(0)
     for (i <- 0 until localIndex.localFeaNum) {
       update.set(localIndex.localToGloabl(i), localModel.u(i) + localModel.x(i))
@@ -339,7 +339,7 @@ object ADMM {
            model: SparseLRModel,
            localModel: LocalModel,
            localIndex: LocalIndex): Double = {
-    val update = new DenseIntDoubleVector(1)
+    val update = new DenseDoubleVector(1)
 
     var value = 0.0
     for (i <- 0 until localIndex.localFeaNum) {
@@ -351,7 +351,7 @@ object ADMM {
 
     model.t.increment(update)
     model.t.clock().get()
-    return model.t.getRow(0).get(0)
+    return model.t.getRow(0).asInstanceOf[TDoubleVector].get(0)
   }
 
   def computeZ(z: T,
@@ -359,7 +359,7 @@ object ADMM {
                regParam: Double,
                rho: Double,
                N: Int): Unit = {
-    val w = model.w.getRow(0)
+    val w = model.w.getRow(0).asInstanceOf[TDoubleVector]
     val kappa = regParam / (rho * N)
 
     z.clear()
@@ -379,7 +379,7 @@ object ADMM {
     val gradient = new LogisticGradient(2)
     var loss = 0.0
     data.resetReadIndex()
-    val weights = new DenseIntDoubleVector(localModel.x.length, localModel.x)
+    val weights = new DenseDoubleVector(localModel.x.length, localModel.x)
     var finish = false
     while (!finish) {
       data.read() match {
@@ -388,7 +388,7 @@ object ADMM {
           sample.getX match {
             case x: SparseDummyVector =>
               loss += gradient.compute(x, sample.getY, weights)
-            case x: SparseIntDoubleSortedVector =>
+            case x: SparseDoubleSortedVector =>
               loss += gradient.compute(x, sample.getY, weights)
             case _ =>
               throw new AngelException("data should be SparseDummyVector or SparseDoubleSortedVector")
@@ -413,14 +413,14 @@ object ADMM {
   private class CostFun(
                          val data: Array[DataBlock[LabeledData]],
                          gradient: LogisticGradient,
-                         u: DenseIntDoubleVector,
+                         u: DenseDoubleVector,
                          z: T,
                          localIndex: LocalIndex,
                          rho: Double,
                          var repeatTime: Int = 0) extends DiffFunction[breeze.linalg.Vector[Double]] {
 
-    case class GradientAndLoss(var gradSum: DenseIntDoubleVector, var lossSum: Double, var countSum: Int) {
-      def add(grad: DenseIntDoubleVector, loss: Double, count: Int): Unit = {
+    case class GradientAndLoss(var gradSum: DenseDoubleVector, var lossSum: Double, var countSum: Int) {
+      def add(grad: DenseDoubleVector, loss: Double, count: Int): Unit = {
         this.synchronized {
           gradSum.plusBy(grad)
           lossSum += loss
@@ -431,11 +431,11 @@ object ADMM {
 
     var gradientAndLoss: GradientAndLoss = _
     class CalThread(iter: DataBlock[LabeledData],
-                    weight: DenseIntDoubleVector,
+                    weight: DenseDoubleVector,
                     featNum: Int) extends Runnable {
       def run(): Unit = {
         iter.resetReadIndex()
-        val grad = new DenseIntDoubleVector(featNum)
+        val grad = new DenseDoubleVector(featNum)
         var (loss, count) = (0.0, 0)
         var finish = false
         while (!finish) {
@@ -446,7 +446,7 @@ object ADMM {
                   val l = gradient.compute(point, sample.getY, weight, grad)
                   loss += l
                   count += 1
-                case point: SparseIntDoubleSortedVector =>
+                case point: SparseDoubleSortedVector =>
                   val l = gradient.compute(point, sample.getY, weight, grad)
                   loss += l
                   count += 1
@@ -462,9 +462,9 @@ object ADMM {
     override def calculate(weights: breeze.linalg.Vector[Double]): (Double, breeze.linalg.Vector[Double]) = {
       repeatTime += 1
       val featNum   = weights.length
-      val mlWeights = new DenseIntDoubleVector(weights.length, weights.toArray)
+      val mlWeights = new DenseDoubleVector(weights.length, weights.toArray)
 
-      gradientAndLoss = GradientAndLoss(new DenseIntDoubleVector(featNum), 0.0, 0)
+      gradientAndLoss = GradientAndLoss(new DenseDoubleVector(featNum), 0.0, 0)
       val threadPool  = new ThreadPoolExecutor(4, 8, 1, TimeUnit.HOURS,
         new LinkedBlockingQueue[Runnable])
       data.foreach( iter => threadPool.execute(new CalThread(iter, mlWeights, featNum)))
@@ -519,7 +519,7 @@ object ADMM {
                 acn += 1
               if (score < 0.5  && sample.getY <= 0)
                 acn += 1
-            case x: SparseIntDoubleSortedVector =>
+            case x: SparseDoubleSortedVector =>
               val indices = x.getIndices
               val values  = x.getValues
               var dot = 0.0

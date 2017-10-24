@@ -20,7 +20,7 @@ package com.tencent.angel.example.psf;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.math.vector.CompSparseLongKeyDoubleVector;
-import com.tencent.angel.ml.math.vector.DenseIntDoubleVector;
+import com.tencent.angel.ml.math.vector.DenseDoubleVector;
 import com.tencent.angel.ml.math.vector.SparseLongKeyDoubleVector;
 import com.tencent.angel.psagent.matrix.MatrixClient;
 import com.tencent.angel.worker.task.BaseTask;
@@ -54,7 +54,7 @@ public class LongKeyTestTask extends BaseTask<Long, Long, Long> {
         CompSparseLongKeyDoubleVector
           deltaV = new CompSparseLongKeyDoubleVector(client.getMatrixId(), 0,2100000000, 110000000);
         SparseLongKeyDoubleVector deltaV1 = new SparseLongKeyDoubleVector(2100000000, 150000000);
-        DenseIntDoubleVector deltaV2 = new DenseIntDoubleVector(110000000);
+        DenseDoubleVector deltaV2 = new DenseDoubleVector(110000000);
         for(int i = 0; i < 2100000000; i+=20) {
           deltaV.set(i, 1.0);
           deltaV1.set(i, 1.0);

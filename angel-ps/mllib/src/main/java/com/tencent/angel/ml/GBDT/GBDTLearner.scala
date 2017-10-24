@@ -24,7 +24,7 @@ import com.tencent.angel.ml.GBDT.algo.{FeatureMeta, GBDTController, GBDTPhase}
 import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.SparseIntDoubleSortedVector
+import com.tencent.angel.ml.math.vector.SparseDoubleSortedVector
 import com.tencent.angel.ml.metric.ErrorMetric
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.ml.param.{GBDTParam, RegTParam}
@@ -74,7 +74,7 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
 
     val dataStore: RegTDataStore = new RegTDataStore(param)
 
-    val instances: List[SparseIntDoubleSortedVector] = new ArrayList[SparseIntDoubleSortedVector]
+    val instances: List[SparseDoubleSortedVector] = new ArrayList[SparseDoubleSortedVector]
     val labels: List[java.lang.Float] = new ArrayList[java.lang.Float]
     val preds: List[java.lang.Float] = new ArrayList[java.lang.Float]
     // max and min of each feature
@@ -96,7 +96,7 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     }
 
     while (!isFinish) {
-      val x: SparseIntDoubleSortedVector = data.getX.asInstanceOf[SparseIntDoubleSortedVector]
+      val x: SparseDoubleSortedVector = data.getX.asInstanceOf[SparseDoubleSortedVector]
       var y: Float = data.getY.toFloat
       if (y != 1) {
         y = 0

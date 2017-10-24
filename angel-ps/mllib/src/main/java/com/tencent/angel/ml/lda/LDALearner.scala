@@ -31,9 +31,9 @@ import com.tencent.angel.ml.conf.MLConf._
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.lda.algo.{CSRTokens, Sampler}
 import com.tencent.angel.ml.lda.psf.{GetPartFunc, LikelihoodFunc, PartCSRResult}
-import com.tencent.angel.ml.math.vector.DenseIntVector
+import com.tencent.angel.ml.math.vector.{DenseIntVector, TIntVector}
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult
-import com.tencent.angel.ml.matrix.psf.get.base.{PartitionGetParam, PartitionGetResult}
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult
 import com.tencent.angel.ml.matrix.psf.get.multi.PartitionGetRowsParam
 import com.tencent.angel.ml.matrix.psf.update.enhance.VoidResult
 import com.tencent.angel.ml.metric.ObjMetric
@@ -105,7 +105,7 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
   }
 
   def fetchNk: Unit = {
-    val row = model.tMat.getRow(0)
+    val row = model.tMat.getRow(0).asInstanceOf[TIntVector]
     var sum = 0L
     val sb = new mutable.StringBuilder()
     for (i <- 0 until model.K) {
@@ -466,7 +466,7 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
     val rr = model.wtMat.getRows(index, 1000)
 
     for (row <- start until end) {
-      val x = rr.get(row).get
+      val x = rr.get(row).get.asInstanceOf[TIntVector]
       val len = x.size()
       val sb = new StringBuilder
       sb.append(x.getRowId + ":")

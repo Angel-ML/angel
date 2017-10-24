@@ -16,9 +16,9 @@
 
 package com.tencent.angel.ml;
 
-import com.tencent.angel.ml.math.vector.DenseIntDoubleVector;
+import com.tencent.angel.ml.math.vector.DenseDoubleVector;
 import com.tencent.angel.ml.math.vector.SparseDummyVector;
-import com.tencent.angel.ml.math.vector.SparseIntDoubleVector;
+import com.tencent.angel.ml.math.vector.SparseDoubleVector;
 import com.tencent.angel.ml.math.vector.SparseIntVector;
 import com.tencent.angel.utils.Time;
 import junit.framework.Assert;
@@ -31,7 +31,7 @@ public class DoubleVectorTest {
 
   @Test
   public void timesBySparseTest() {
-    SparseIntDoubleVector vector = new SparseIntDoubleVector(10);
+    SparseDoubleVector vector = new SparseDoubleVector(10);
     vector.set(1, 1.0);
     vector.set(3, 3.0);
     vector.set(5, 5.0);
@@ -45,7 +45,7 @@ public class DoubleVectorTest {
 
   @Test
   public void plusBySparseTest() {
-    SparseIntDoubleVector vector = new SparseIntDoubleVector(10);
+    SparseDoubleVector vector = new SparseDoubleVector(10);
     vector.set(1, 1.0);
     vector.set(3, 3.0);
     vector.set(5, 5.0);
@@ -63,12 +63,12 @@ public class DoubleVectorTest {
 
   @Test
   public void densePlusBySparseTest() {
-    DenseIntDoubleVector vector = new DenseIntDoubleVector(10);
+    DenseDoubleVector vector = new DenseDoubleVector(10);
     vector.set(1, 1.0);
     vector.set(3, 3.0);
     vector.set(5, 5.0);
 
-    SparseIntDoubleVector sparseDoubleVector = new SparseIntDoubleVector(10);
+    SparseDoubleVector sparseDoubleVector = new SparseDoubleVector(10);
     sparseDoubleVector.set(1, 1.0);
     sparseDoubleVector.set(3, 3.0);
     sparseDoubleVector.set(7, 7.0);
@@ -83,7 +83,7 @@ public class DoubleVectorTest {
 
   @Test
   public void densePlusByDummyTest() {
-    DenseIntDoubleVector vector = new DenseIntDoubleVector(10);
+    DenseDoubleVector vector = new DenseDoubleVector(10);
     vector.set(1, 1.0);
     vector.set(3, 3.0);
     vector.set(5, 5.0);
@@ -136,7 +136,7 @@ public class DoubleVectorTest {
       values[i]  = random.nextInt(dim);
     }
 
-    SparseIntDoubleVector vector = new SparseIntDoubleVector(dim, indices, values);
+    SparseDoubleVector vector = new SparseDoubleVector(dim, indices, values);
 
     int[] indices2 = vector.getIndices();
     double[] values2  = vector.getValues();

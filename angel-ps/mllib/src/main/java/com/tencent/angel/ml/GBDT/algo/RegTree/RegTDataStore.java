@@ -16,7 +16,7 @@
  */
 package com.tencent.angel.ml.GBDT.algo.RegTree;
 
-import com.tencent.angel.ml.math.vector.SparseIntDoubleSortedVector;
+import com.tencent.angel.ml.math.vector.SparseDoubleSortedVector;
 import com.tencent.angel.ml.GBDT.algo.FeatureMeta;
 import com.tencent.angel.ml.param.RegTParam;
 
@@ -37,7 +37,7 @@ public class RegTDataStore {
   public int numNonzero; // number of nonzero entries in the data
   public final static int kVersion = 1; // version flag, used to check version of this info
 
-  public List<SparseIntDoubleSortedVector> instances; // training instances
+  public List<SparseDoubleSortedVector> instances; // training instances
   public float[] labels; // label of each instances
   public float[] preds; // pred of each instance
   public int[] rootIndex; // specified root index of each instances, can be used for multi task setting
@@ -48,7 +48,7 @@ public class RegTDataStore {
 
   public RegTDataStore(RegTParam param) {
     this.param = param;
-    this.instances = new ArrayList<SparseIntDoubleSortedVector>();
+    this.instances = new ArrayList<SparseDoubleSortedVector>();
   }
 
   public void setFeatureMeta(FeatureMeta featureMeta) {
@@ -88,7 +88,7 @@ public class RegTDataStore {
     this.numNonzero = numNonzero;
   }
 
-  public void setInstances(List<SparseIntDoubleSortedVector> instances) {
+  public void setInstances(List<SparseDoubleSortedVector> instances) {
     this.instances.clear();
     this.instances.addAll(instances);
   }
