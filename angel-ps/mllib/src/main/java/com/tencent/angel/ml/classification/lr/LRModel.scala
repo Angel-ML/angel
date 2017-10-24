@@ -48,11 +48,12 @@ object LRModel{
 class LRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
   private val LOG = LogFactory.getLog(classOf[LRModel])
 
+
   val LR_WEIGHT_MAT = "lr_weight"
   val LR_INTERCEPT = "lr_intercept"
 
   val feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
-  val modelType = RowType.valueOf(conf.get(MLConf.LR_MODEL_TYPE, RowType.T_DOUBLE_DENSE.toString))
+  val modelType = RowType.valueOf(conf.get(MLConf.LR_MODEL_TYPE, RowType.T_DOUBLE_SPARSE.toString))
 
   val weight = PSModel(LR_WEIGHT_MAT, 1, feaNum).setAverage(true).setRowType(modelType)
   val intercept_ = PSModel(LR_INTERCEPT, 1, 1).setAverage(true).setRowType(modelType)
