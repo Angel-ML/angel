@@ -23,29 +23,13 @@
 
 package com.tencent.angel.master.deploy.yarn;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.tencent.angel.common.Id;
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.master.app.*;
+import com.tencent.angel.master.app.AMContext;
+import com.tencent.angel.master.app.App;
+import com.tencent.angel.master.app.AppState;
+import com.tencent.angel.master.app.InternalErrorEvent;
 import com.tencent.angel.master.deploy.ContainerAllocator;
 import com.tencent.angel.master.deploy.ContainerAllocatorEvent;
 import com.tencent.angel.master.ps.attempt.PSAttemptContainerAssignedEvent;
@@ -63,7 +47,6 @@ import com.tencent.angel.master.worker.attempt.WorkerAttemptEventType;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.psagent.PSAgentAttemptId;
 import com.tencent.angel.worker.WorkerAttemptId;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -78,6 +61,16 @@ import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 import org.apache.hadoop.yarn.factories.RecordFactory;
 import org.apache.hadoop.yarn.factory.providers.RecordFactoryProvider;
 import org.apache.hadoop.yarn.util.RackResolver;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Container allocator on Yarn deploy mode. It is responsible for communicating with Yarn's RM,

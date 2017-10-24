@@ -16,9 +16,8 @@
 
 package com.tencent.angel.master.worker.worker;
 
-import org.apache.hadoop.yarn.event.AbstractEvent;
-
 import com.tencent.angel.worker.WorkerId;
+import org.apache.hadoop.yarn.event.AbstractEvent;
 
 /**
  * Base class of worker event.

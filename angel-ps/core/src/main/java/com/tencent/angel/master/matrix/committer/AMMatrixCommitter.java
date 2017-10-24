@@ -16,29 +16,30 @@
 
 package com.tencent.angel.master.matrix.committer;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.master.app.*;
-import com.tencent.angel.master.ps.ps.AMParameterServer;
+import com.tencent.angel.master.app.AMContext;
+import com.tencent.angel.master.app.AppEvent;
+import com.tencent.angel.master.app.AppEventType;
+import com.tencent.angel.master.app.InternalErrorEvent;
+import com.tencent.angel.model.output.format.ModelFilesConstent;
+import com.tencent.angel.model.output.format.PSModelFilesMeta;
+import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.utils.HdfsUtil;
+import com.tencent.angel.model.output.format.ModelFilesMeta;
 
+import com.tencent.angel.utils.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.service.AbstractService;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -61,24 +62,22 @@ public class AMMatrixCommitter extends AbstractService {
   
   /**temporary combine path*/
   private Path tmpCombinePath;
-  
+
   /**the dispatcher of commit tasks*/
   private Thread commitDispatchThread;
   
-  /**commit tasks pool*/
-  private ExecutorService committerPool;
-  
   /**Is stop the dispatcher and commit tasks*/
   private final AtomicBoolean stopped;
-  
-  /**commit task list*/
-  private final List<CommitTask> committers;
-  
-  /**max wait time*/
-  private int waitTimeMS;
+
+  /** HDFS operation executor */
+  private volatile MatrixDiskIOExecutors fileOpExecutor;
   
   private FileSystem fs;
-  private static String resultDir = "result";
+
+  /**
+   * Need save matrix ids
+   */
+  private final List<Integer> needSaveMatrixIds;
 
   /**
    * Create a AMMatrixCommitter
@@ -86,13 +85,170 @@ public class AMMatrixCommitter extends AbstractService {
    * @param outputPath the final output directory
    * @param tmpOutputPath temporary output directory
    */
-  public AMMatrixCommitter(AMContext context, Path outputPath, Path tmpOutputPath) {
+  public AMMatrixCommitter(AMContext context, Path outputPath, Path tmpOutputPath, List<Integer> needSaveMatrixIds) {
     super(AMMatrixCommitter.class.getName());
     this.context = context;
     this.outputPath = outputPath;
     this.tmpOutputPath = tmpOutputPath;
     this.stopped = new AtomicBoolean(false);
-    this.committers = new ArrayList<CommitTask>();
+    this.needSaveMatrixIds = needSaveMatrixIds;
+  }
+
+  /**
+   * Matrices commit operator
+   */
+  class MatrixCommitOp extends RecursiveAction {
+    private final List<Integer> matrixIds;
+    private final Vector<String> errorLogs;
+    private final int startPos;
+    private final int endPos;
+
+    public MatrixCommitOp(List<Integer> matrixIds, Vector<String> errorLogs, int startPos, int endPos) {
+      this.matrixIds = matrixIds;
+      this.errorLogs = errorLogs;
+      this.startPos = startPos;
+      this.endPos = endPos;
+    }
+
+    @Override protected void compute() {
+      if (endPos <= startPos) {
+        return;
+      }
+
+      if (endPos - startPos == 1) {
+        try {
+          commitMatrix(matrixIds.get(startPos), errorLogs);
+        } catch (Throwable e) {
+          String matrixName = context.getMatrixMetaManager().getMatrix(matrixIds.get(startPos)).getName();
+          errorLogs.add("merge output files for matrix " + matrixName + " failed, error log is " + e.getMessage());
+          LOG.error("merge output files for matrix " + matrixName + " failed. ", e);
+        }
+      } else {
+        int middle = (startPos + endPos) / 2;
+        MatrixCommitOp
+          opLeft = new MatrixCommitOp(matrixIds, errorLogs, startPos, middle);
+        MatrixCommitOp
+          opRight = new MatrixCommitOp(matrixIds, errorLogs, middle, endPos);
+        invokeAll(opLeft, opRight);
+      }
+    }
+  }
+
+  /**
+   * Combine all output files of a model to a combine directory
+   * @param matrixId matrix id
+   * @param errorLogs error logs
+   */
+  private void commitMatrix(int matrixId, Vector<String> errorLogs) {
+    LOG.info("start commit matrix " + matrixId);
+
+    // Init matrix files meta
+    List<ParameterServerId> psIds = new ArrayList<>(context.getMatrixMetaManager().getPsIds(matrixId));
+    MLProtos.MatrixProto meta = context.getMatrixMetaManager().getMatrix(matrixId);
+    List<MLProtos.Pair> attrs = meta.getAttributeList();
+    int size = attrs.size();
+    Map<String, String> kvMap = new HashMap<>(size);
+    for(int i = 0; i < size; i++) {
+      kvMap.put(attrs.get(i).getKey(), attrs.get(i).getValue());
+    }
+
+    ModelFilesMeta filesMeta = new ModelFilesMeta(matrixId, meta.getName(), meta.getRowType().getNumber(),
+      meta.getRowNum(), meta.getColNum(), meta.getBlockRowNum(), meta.getBlockColNum(), kvMap);
+
+    try {
+      // Move output files
+      Path srcPath = new Path(tmpOutputPath, ModelFilesConstent.resultDirName);
+      Path destPath = new Path(tmpCombinePath, meta.getName());
+      PartitionCommitOp partCommitOp = new PartitionCommitOp(srcPath, destPath, psIds, errorLogs, filesMeta, 0, psIds.size());
+      fileOpExecutor.execute(partCommitOp);
+      partCommitOp.join();
+
+      // Write the meta file
+      long startTs = System.currentTimeMillis();
+      Path metaFile = new Path(destPath, ModelFilesConstent.modelMetaFileName);
+      Path tmpMetaFile = HdfsUtil.toTmpPath(metaFile);
+      FSDataOutputStream metaOut = fs.create(tmpMetaFile, (short) 1);
+      filesMeta.write(metaOut);
+      metaOut.flush();
+      metaOut.close();
+      HdfsUtil.rename(tmpMetaFile, metaFile, fs);
+      LOG.info("commit meta file use time=" + (System.currentTimeMillis() - startTs));
+    } catch (Throwable x) {
+      errorLogs.add("move output files for matrix " + meta.getName() + " failed, error msg = " + x.getMessage());
+      LOG.error("move output files for matrix " + meta.getName() + " failed.", x);
+    }
+  }
+
+  /**
+   * Model partitions committer
+   */
+  class PartitionCommitOp extends RecursiveAction {
+    private final Path moveSrcPath;
+    private final Path moveDestPath;
+    private final List<ParameterServerId> psList;
+    private final Vector<String> errorLogs;
+    private final ModelFilesMeta matrixMeta;
+    private final int startPos;
+    private final int endPos;
+
+    public PartitionCommitOp(Path moveSrcPath, Path moveDestPath, List<ParameterServerId> psList,
+      Vector<String> errorLogs, ModelFilesMeta matrixMeta, int startPos, int endPos) {
+      this.moveSrcPath = moveSrcPath;
+      this.moveDestPath = moveDestPath;
+      this.psList = psList;
+      this.errorLogs = errorLogs;
+      this.matrixMeta = matrixMeta;
+      this.startPos = startPos;
+      this.endPos = endPos;
+    }
+
+    @Override protected void compute() {
+      if (endPos <= startPos) {
+        return;
+      }
+
+      if (endPos - startPos == 1) {
+        commitPartitions(moveSrcPath, moveDestPath, psList.get(startPos), errorLogs, matrixMeta);
+      } else {
+        int middle = (startPos + endPos) / 2;
+        PartitionCommitOp
+          opLeft = new PartitionCommitOp(moveSrcPath, moveDestPath, psList, errorLogs, matrixMeta,  startPos, middle);
+        PartitionCommitOp
+          opRight = new PartitionCommitOp(moveSrcPath, moveDestPath, psList, errorLogs, matrixMeta, middle, endPos);
+        invokeAll(opLeft, opRight);
+      }
+    }
+  }
+
+
+  /**
+   *  Move all model output files generated by a PS to the combine directory
+   * @param moveSrcPath source path
+   * @param moveDestPath dest path
+   * @param psId parameter server id
+   * @param errorLogs error logs
+   * @param matrixMeta model files meta
+   */
+  private void commitPartitions(Path moveSrcPath, Path moveDestPath, ParameterServerId psId, Vector<String> errorLogs, ModelFilesMeta matrixMeta) {
+    Path psPath = new Path(moveSrcPath, String.valueOf(psId));
+    Path serverMatrixPath = new Path(psPath, matrixMeta.getMatrixName());
+
+    Path psMetaFilePath = new Path(serverMatrixPath, ModelFilesConstent.psModelMetaFileName);
+
+    try {
+      FSDataInputStream input = fs.open(psMetaFilePath);
+      PSModelFilesMeta serverMatrixMeta = new PSModelFilesMeta();
+      serverMatrixMeta.read(input);
+      input.close();
+      fs.delete(psMetaFilePath, false);
+
+      matrixMeta.merge(serverMatrixMeta);
+      HdfsUtil.copyFilesInSameHdfs(serverMatrixPath, moveDestPath, fs);
+      LOG.info("copy files of matrix " + matrixMeta.getMatrixName() + " from " + serverMatrixPath + " to " + moveDestPath + " success.");
+    } catch (Throwable x) {
+      errorLogs.add("copy files of matrix " + matrixMeta.getMatrixName() + " from " + serverMatrixPath + " to " + moveDestPath + " failed, error log is " + x.getMessage());
+      LOG.error("copy files of matrix " + matrixMeta.getMatrixName() + " from " + serverMatrixPath + " to " + moveDestPath + " failed. ", x);
+    }
   }
 
   @Override
@@ -102,37 +258,32 @@ public class AMMatrixCommitter extends AbstractService {
   }
 
   private void startCommitDispacherThread() {
+    if(needSaveMatrixIds == null || needSaveMatrixIds.isEmpty()) {
+      LOG.info("there are no matrices need save");
+      return;
+    }
+
     commitDispatchThread = new Thread(new Runnable() {
       @Override
       public void run() {
-        Map<ParameterServerId, AMParameterServer> psMap =
-            context.getParameterServerManager().getParameterServerMap();
+        Vector<String> errorLogs = new Vector<>();
+        MatrixCommitOp op = new MatrixCommitOp(needSaveMatrixIds, errorLogs, 0, needSaveMatrixIds.size());
+        fileOpExecutor = new MatrixDiskIOExecutors(context);
 
         try {
-          for (Entry<ParameterServerId, AMParameterServer> entry : psMap.entrySet()) {
-            CommitTask task = new CommitTask(entry.getValue());
-            committers.add(task);
-            committerPool.execute(task);
-          }
-
-          committerPool.shutdown();
-          boolean ret = committerPool.awaitTermination(waitTimeMS, TimeUnit.MILLISECONDS);
-          if (ret) {
-            int size = committers.size();
-            for (int i = 0; i < size; i++) {
-              if (!committers.get(i).isSuccess()) {
-                commitFailed(committers.get(i).getErrorLog());
-                return;
-              }
-            }
+          fileOpExecutor.execute(op);
+          op.join();
+          if(!errorLogs.isEmpty()) {
+            String errorLog = "move output files for matrice failed, error msg = " + StringUtils.join(";", errorLogs);
+            LOG.error(errorLog);
+            commitFailed(errorLog);
+          } else {
             finalCommit();
             commitSuccess();
-          } else {
-            commitFailed("commit timeout, time setting is " + waitTimeMS);
           }
-        } catch (Exception x) {
-          LOG.error("commit error", x);
-          commitFailed("commit error, " + x.getMessage());
+        } catch (Throwable x) {
+          LOG.error("move output files for matrice failed. ", x);
+          commitFailed("move output files for matrice failed, error msg = " + x.getMessage());
         }
       }
     });
@@ -147,23 +298,8 @@ public class AMMatrixCommitter extends AbstractService {
 
   @Override
   protected void serviceInit(Configuration conf) throws Exception {
-    int committerNum =
-        conf.getInt(AngelConf.ANGEL_AM_COMMIT_TASK_NUM,
-            AngelConf.DEFAULT_ANGEL_AM_COMMIT_TASK_NUM);
-    waitTimeMS =
-        conf.getInt(AngelConf.ANGEL_AM_COMMIT_TIMEOUT_MS,
-            AngelConf.DEFAULT_ANGEL_AM_COMMIT_TIMEOUT_MS);
-    ThreadFactory commitThreadFacotry =
-        new ThreadFactoryBuilder().setNameFormat("CommitTask").build();
-    if (committerNum < 0 || committerNum > context.getParameterServerManager().getPsNumber()) {
-      committerPool = Executors.newCachedThreadPool(commitThreadFacotry);
-    } else {
-      committerPool = Executors.newFixedThreadPool(committerNum, commitThreadFacotry);
-    }
-
     fs = outputPath.getFileSystem(conf);
     tmpCombinePath = HdfsUtil.toFinalPath(tmpOutputPath);
-
     super.serviceInit(conf);
   }
 
@@ -173,7 +309,9 @@ public class AMMatrixCommitter extends AbstractService {
       return;
     }
 
-    committerPool.shutdownNow();
+    if(fileOpExecutor != null) {
+      fileOpExecutor.shutdown();
+    }
 
     if (commitDispatchThread != null) {
       commitDispatchThread.interrupt();
@@ -195,39 +333,5 @@ public class AMMatrixCommitter extends AbstractService {
   @SuppressWarnings("unchecked")
   private void commitFailed(String errorLog) {
     context.getEventHandler().handle(new InternalErrorEvent(context.getApplicationId(), errorLog));
-  }
-
-  private class CommitTask implements Runnable {
-
-    private final AMParameterServer ps;
-    private boolean success = false;
-    private String errorLog;
-
-    public CommitTask(AMParameterServer ps) {
-      this.ps = ps;
-    }
-
-    @Override
-    public void run() {
-      try {
-        Path psPath = new Path(new Path(tmpOutputPath, resultDir), String.valueOf(ps.getId()));
-        HdfsUtil.copyFilesInSameHdfs(psPath, tmpCombinePath, fs);
-        success = true;
-        LOG.info("copy files from " + psPath + " to " + tmpCombinePath + " success ");
-      } catch (Exception x) {
-        errorLog =
-            "copy files from " + tmpOutputPath + "/" + String.valueOf(ps.getId())
-                + " failed, error log is " + x.getMessage();
-        LOG.error(errorLog);
-      }
-    }
-
-    public boolean isSuccess() {
-      return success;
-    }
-
-    public String getErrorLog() {
-      return errorLog;
-    }
   }
 }

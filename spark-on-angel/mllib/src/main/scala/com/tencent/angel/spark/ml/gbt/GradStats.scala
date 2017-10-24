@@ -18,11 +18,13 @@ package com.tencent.angel.spark.ml.gbt
 /**
  * Description: gradient info of reg tree
  */
-class GradStats(var sumGrad: Double, var sumHess: Double) {
+class GradStats(
+    var sumGrad: Double = 0.0,
+    var sumHess: Double = 0.0) extends Serializable {
 
-  private def clear: Unit = {
-    this.sumGrad = 0.0
-    this.sumHess = 0.0
+  def clear() {
+    this.sumGrad = 0.0f
+    this.sumHess = 0.0f
   }
 
 
@@ -42,23 +44,70 @@ class GradStats(var sumGrad: Double, var sumHess: Double) {
     this.sumHess += hess
   }
 
-  /**
-   * add statistics to the data.
-   *
-   * @param b Grad statistic to add
-   */
   def add(b: GradStats) {
     this.add(b.sumGrad, b.sumHess)
   }
 
-  /**
-   * set current value to a - b.
-   *
-   * @param a the grad being substracted
-   * @param b the grad to substract
-   */
-  def setSubstract(a: GradStats, b: GradStats) {
+  def substract(a: GradStats, b: GradStats) {
     sumGrad = a.sumGrad - b.sumGrad
     sumHess = a.sumHess - b.sumHess
   }
+
+  def calcWeight(param: GBTreeParam): Double = {
+    if (sumHess < param.minChildWeight) return 0.0f
+    var dw: Double = 0.0
+    if (param.regAlpha == 0.0f) {
+      dw = -sumGrad / (sumHess + param.regLambda)
+    } else {
+      dw = -1 * shrinkage(sumGrad, param.regAlpha) / (sumHess + param.regLambda)
+    }
+    if (param.maxDeltaStep != 0.0f) {
+      if (dw > param.maxDeltaStep) dw = param.maxDeltaStep
+      if (dw < -param.maxDeltaStep) dw = -param.maxDeltaStep
+    }
+    dw
+  }
+
+
+  def calcLoss(param: GBTreeParam): Double = {
+    if (sumHess < param.minChildWeight) return 0.0
+
+    var loss = 0.0
+    if (param.maxDeltaStep == 0.0f) {
+      if (param.regAlpha == 0.0f) {
+        loss = (sumGrad / (sumHess + param.regLambda)) * sumGrad
+      } else {
+        val temp = shrinkage(sumGrad, param.regAlpha)
+        loss = temp * temp / (sumHess + param.regLambda)
+      }
+    } else {
+      val w = calcWeight(param)
+      val ret = sumGrad * w + 0.5f * (sumHess + param.regLambda) * w * w
+      if (param.regAlpha == 0.0f) {
+        loss = -2.0 * ret
+      } else {
+        loss = -2.0 * (ret + param.regAlpha * Math.abs(w))
+      }
+    }
+    loss
+  }
+
+
+
+  /**
+   * The corresponding proximal operator for the L1 norm is the soft-threshold
+   * function. That is, each value is shrunk towards 0 by kappa value.
+   *
+   * if x < kappa or x > -kappa, return 0
+   * if x > kappa, return x - kappa
+   * if x < -kappa, return x + kappa
+   */
+  private def shrinkage(x: Double, kappa: Double): Double = {
+    math.max(0, x - kappa) - math.max(0, -x - kappa)
+  }
+
+  override def toString: String = {
+    s"GradStats(sumGrad: $sumGrad sumHess: $sumHess)"
+  }
+
 }

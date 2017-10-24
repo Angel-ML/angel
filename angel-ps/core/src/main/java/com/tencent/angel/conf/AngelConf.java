@@ -89,6 +89,7 @@ public class AngelConf extends Configuration {
    * Log save path. This parameter is used in "train" action, each iteration outputs some algorithm
    * indicators to this file
    */
+  public static final String DEFAULT_METRIC_FORMAT = "%10.6e";
   public static final String ANGEL_LOG_PATH = "angel.log.path";
   public static final String ANGEL_LOG_FAST_WRITE = "angel.log.fast.write.enable";
   public static final Boolean DEFAULT_ANGEL_LOG_FAST_WRITE = true;
@@ -317,6 +318,12 @@ public class AngelConf extends Configuration {
    * the task is running on will be  considered to be a slow worker */
   public static final String ANGEL_AM_TASK_SLOWEST_DISCOUNT = ANGEL_AM_PREFIX + "task.slowest.discount";
   public static final double DEFAULT_ANGEL_AM_TASK_SLOWEST_DISCOUNT = 0.7;
+
+  /**
+   * The worker pool size for HDFS operation in Master
+   */
+  public static final String ANGEL_AM_MATRIX_DISKIO_WORKER_POOL_SIZE = ANGEL_AM_PREFIX + "matrix.diskio.worker.pool.size";
+  public static final int DEFAULT_ANGEL_AM_MATRIX_DISKIO_WORKER_POOL_SIZE = Math.max(8, (int)(Runtime.getRuntime().availableProcessors() * 0.25));
 
   // //////////////////////////////
   // Worker Configs
@@ -553,6 +560,10 @@ public class AngelConf extends Configuration {
 
   /** Default PS executors thread pool size */
   public static final int DEFAULT_ANGEL_PS_MATRIX_DISKIO_WORKER_POOL_SIZE = Math.max(16, (int)(Runtime.getRuntime().availableProcessors() * 0.25));
+
+  public static final String ANGEL_PS_MAX_PARTITION_NUM_SINGLE_FILE = ANGEL_PS_PREFIX +
+    "max.partition.number.single.file";
+  public static final int DEFAULT_ANGEL_PS_MAX_PARTITION_NUM_SINGLE_FILE = 100;
 
 
   // ////////////////// IPC //////////////////////////

@@ -21,9 +21,9 @@ import breeze.linalg.norm
 import breeze.optimize.DiffFunction
 
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.math.vector.{DensePSVector, PSVector}
-import com.tencent.angel.spark.ml.optim.OWLQN
-import com.tencent.angel.spark.math.vector.decorator.BreezePSVector
+import com.tencent.angel.spark.models.vector.{DensePSVector, PSVector}
+import com.tencent.angel.spark.ml.optimize.OWLQN
+import com.tencent.angel.spark.models.vector.enhanced.BreezePSVector
 
 class OWLQNSuite extends PSFunSuite with SharedPSContext {
 
@@ -52,7 +52,7 @@ class OWLQNSuite extends PSFunSuite with SharedPSContext {
       .toBreeze
 
     val result = optimizeThis(initWeightPS)
-    assert((result.toRemote.pull()(0) - 2.5) < 1E-4, result)
+    assert((result.pull()(0) - 2.5) < 1E-4, result)
   }
 
 

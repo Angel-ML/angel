@@ -16,6 +16,7 @@
 package com.tencent.angel.ml.feature;
 
 import com.tencent.angel.ml.math.TAbstractVector;
+import com.tencent.angel.ml.math.TVector;
 
 /**
  * training data with label
@@ -23,7 +24,7 @@ import com.tencent.angel.ml.math.TAbstractVector;
  */
 public class LabeledData {
 
-  private TAbstractVector x;
+  private TVector x;
   private double y;
   private double y1;
 
@@ -33,7 +34,7 @@ public class LabeledData {
    * @param x
    * @param y
    */
-  public LabeledData(TAbstractVector x, double y) {
+  public LabeledData(TVector x, double y) {
     super();
     this.x = x;
     this.y = y;
@@ -45,11 +46,11 @@ public class LabeledData {
     y = 0;
   }
 
-  public TAbstractVector getX() {
+  public TVector getX() {
     return x;
   }
 
-  public void setX(TAbstractVector x) {
+  public void setX(TVector x) {
     this.x = x;
   }
 

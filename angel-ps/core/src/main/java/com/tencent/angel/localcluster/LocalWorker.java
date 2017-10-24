@@ -16,14 +16,13 @@
 
 package com.tencent.angel.localcluster;
 
+import com.tencent.angel.common.Location;
+import com.tencent.angel.worker.Worker;
+import com.tencent.angel.worker.WorkerAttemptId;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
-
-import com.tencent.angel.common.Location;
-import com.tencent.angel.worker.Worker;
-import com.tencent.angel.worker.WorkerAttemptId;
 
 /**
  * Local Angel Worker. It startups the {@link Worker} using a thread.

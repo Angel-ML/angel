@@ -23,7 +23,7 @@ import breeze.math.MutableEnumeratedCoordinateField
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.examples.psf._
 import com.tencent.angel.spark.examples.util.PSExamples._
-import com.tencent.angel.spark.math.vector.PSVector
+import com.tencent.angel.spark.models.vector.PSVector
 
 /**
  * These are the examples of PS Oriented Functions(POF) in machine learning cases.
@@ -66,13 +66,13 @@ object AngelMapFunction {
     val e = aa.mapWithIndex(new Filter(2))
     val f = aa.zipMapWithIndex(b, new FilterZipAdd(2))
 
-    println("c: " + c.toRemote.pull().mkString("Array(", ", ", ")"))
-    println("d: " + d.toRemote.pull().mkString("Array(", ", ", ")"))
-    println("e: " + e.toRemote.pull().mkString("Array(", ", ", ")"))
-    println("f: " + f.toRemote.pull().mkString("Array(", ", ", ")"))
+    println("c: " + c.pull().mkString("Array(", ", ", ")"))
+    println("d: " + d.pull().mkString("Array(", ", ", ")"))
+    println("e: " + e.pull().mkString("Array(", ", ", ")"))
+    println("f: " + f.pull().mkString("Array(", ", ", ")"))
 
     val g = b.zipMap(c, d, new Zip3Add)
-    println("g: " + g.toRemote.pull().mkString("Array(", ", ", ")"))
+    println("g: " + g.pull().mkString("Array(", ", ", ")"))
 
   }
 

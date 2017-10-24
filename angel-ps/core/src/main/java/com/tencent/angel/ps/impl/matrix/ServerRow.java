@@ -85,7 +85,7 @@ public abstract class ServerRow implements Serialize {
    * @throws IOException
    */
   protected void writeTo(DataOutputStream output) throws IOException{
-    output.writeInt(clock);
+    //output.writeInt(clock);
   }
 
   /**
@@ -95,7 +95,7 @@ public abstract class ServerRow implements Serialize {
    * @throws IOException
    */
   protected void readFrom(DataInputStream input) throws IOException{
-    clock = input.readInt();
+    //clock = input.readInt();
   }
 
   @Override

@@ -16,9 +16,8 @@
 
 package com.tencent.angel.master.ps.attempt;
 
-import org.apache.hadoop.yarn.api.records.Container;
-
 import com.tencent.angel.ps.PSAttemptId;
+import org.apache.hadoop.yarn.api.records.Container;
 
 /**
  * Assign a container for a ps.

@@ -43,13 +43,15 @@ trait MLRunner extends AppSubmitter{
   final protected def train(conf: Configuration, model: MLModel, taskClass: Class[_ <: BaseTask[_, _, _]]): Unit ={
     val client = AngelClientFactory.get(conf)
 
-    client.startPSServer()
-    client.loadModel(model)
-    client.runTask(taskClass)
-    client.waitForCompletion()
-    client.saveModel(model)
-
-    client.stop()
+    try {
+      client.startPSServer()
+      client.loadModel(model)
+      client.runTask(taskClass)
+      client.waitForCompletion()
+      client.saveModel(model)
+    } finally {
+      client.stop()
+    }
   }
 
   /**
@@ -71,11 +73,14 @@ trait MLRunner extends AppSubmitter{
     */
   final protected def predict(conf: Configuration, model: MLModel, taskClass: Class[_ <: BaseTask[_, _, _]]): Unit ={
     val client = AngelClientFactory.get(conf)
-    client.startPSServer()
-    client.loadModel(model)
-    client.runTask(taskClass)
-    client.waitForCompletion()
-    client.stop()
+    try {
+      client.startPSServer()
+      client.loadModel(model)
+      client.runTask(taskClass)
+      client.waitForCompletion()
+    } finally {
+      client.stop()
+    }
   }
 
 
@@ -84,7 +89,7 @@ trait MLRunner extends AppSubmitter{
   @throws[Exception]
   override
   def submit(conf: Configuration): Unit = {
-    val actType = conf.get(AngelConf.ANGEL_ACTION_TYPE);
+    val actType = conf.get(AngelConf.ANGEL_ACTION_TYPE)
     actType match {
       case MLConf.ANGEL_ML_TRAIN =>
         train(conf)

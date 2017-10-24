@@ -17,7 +17,7 @@
 
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
-import com.tencent.angel.ml.math.vector.SparseDoubleVector;
+import com.tencent.angel.ml.math.vector.SparseIntDoubleVector;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
@@ -28,7 +28,7 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
  * Row split of component sparse double row update.
  */
 public class CompSparseDoubleRowUpdateSplit extends RowUpdateSplit {
-  private final SparseDoubleVector split;
+  private final SparseIntDoubleVector split;
 
   /**
    * Create a new CompSparseDoubleRowUpdateSplit.
@@ -36,8 +36,8 @@ public class CompSparseDoubleRowUpdateSplit extends RowUpdateSplit {
    * @param rowIndex row index
    * @param rowType  row type
    */
-  public CompSparseDoubleRowUpdateSplit(SparseDoubleVector split, int rowIndex,
-    MLProtos.RowType rowType) {
+  public CompSparseDoubleRowUpdateSplit(SparseIntDoubleVector split, int rowIndex,
+                                        MLProtos.RowType rowType) {
     super(rowIndex, rowType, -1, -1);
     this.split = split;
   }

@@ -54,19 +54,21 @@ object LDAModel {
   val TOPIC_MAT = "topic"
 
   // Number of vocabulary
-  val WORD_NUM = "ml.lda.word.num";
+  val WORD_NUM = "ml.lda.word.num"
 
   // Number of topic
-  val TOPIC_NUM = "ml.lda.topic.num";
+  val TOPIC_NUM = "ml.lda.topic.num"
 
   // Number of documents
   val DOC_NUM = "ml.lda.doc.num"
 
+  val TOKEN_NUM = "ml.lda.token.num"
+
   // Alpha value
-  val ALPHA = "ml.lda.alpha";
+  val ALPHA = "ml.lda.alpha"
 
   // Beta value
-  val BETA = "ml.lda.beta";
+  val BETA = "ml.lda.beta"
 
   val SPLIT_NUM = "ml.lda.split.num"
 
@@ -106,7 +108,7 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
 
   // Initializing model matrices
 
-  val wtMat = PSModel[DenseIntVector](WORD_TOPIC_MAT, V, K, Math.max(1, V / psNum / 2), K)
+  val wtMat = PSModel[DenseIntVector](WORD_TOPIC_MAT, V, K, blockNum(V, K), K)
     .setRowType(RowType.T_INT_DENSE)
     .setOplogType("SPARSE_INT")
 
@@ -125,6 +127,11 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
   override
   def predict(dataSet: DataBlock[LabeledData]): DataBlock[PredictResult] = {
     null
+  }
+
+  def blockNum(V: Int, K: Int): Int = {
+    val blockNum = 20 * 1024 * 1024 / (K * 4)
+    return Math.max(V / 10000, Math.min(V / psNum, blockNum))
   }
 
 

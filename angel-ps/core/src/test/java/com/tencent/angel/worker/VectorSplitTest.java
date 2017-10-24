@@ -16,10 +16,13 @@
 
 package com.tencent.angel.worker;
 
-import org.junit.Assert;
+import com.tencent.angel.PartitionKey;
+import com.tencent.angel.ml.math.vector.*;
+import com.tencent.angel.psagent.matrix.oplog.cache.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.PropertyConfigurator;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,19 +30,6 @@ import org.mockito.InOrder;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-
-import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.math.vector.DenseDoubleVector;
-import com.tencent.angel.ml.math.vector.DenseIntVector;
-import com.tencent.angel.ml.math.vector.SparseDoubleSortedVector;
-import com.tencent.angel.ml.math.vector.SparseDoubleVector;
-import com.tencent.angel.ml.math.vector.SparseIntVector;
-import com.tencent.angel.psagent.matrix.oplog.cache.DenseDoubleRowUpdateSplit;
-import com.tencent.angel.psagent.matrix.oplog.cache.DenseIntRowUpdateSplit;
-import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplit;
-import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplitUtils;
-import com.tencent.angel.psagent.matrix.oplog.cache.SparseDoubleRowUpdateSplit;
-import com.tencent.angel.psagent.matrix.oplog.cache.SparseIntRowUpdateSplit;
 
 import java.util.*;
 
@@ -64,7 +54,7 @@ public class VectorSplitTest {
   public void sparseSortedVectorSplit() {
     int[] offsets = {0, 2, 4, 6, 8};
     double[] values = {0.0, 2.0, 4.0, 6.0, 8.0};
-    SparseDoubleSortedVector vector = new SparseDoubleSortedVector(10, offsets, values);
+    SparseIntDoubleSortedVector vector = new SparseIntDoubleSortedVector(10, offsets, values);
     vector.setRowId(0);
 
     PartitionKey key1 = new PartitionKey(0, 0, 0, 0, 1, 5);
@@ -113,7 +103,7 @@ public class VectorSplitTest {
   @Test
   public void denseVectorSplit() {
     double[] values = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
-    DenseDoubleVector vector = new DenseDoubleVector(10, values);
+    DenseIntDoubleVector vector = new DenseIntDoubleVector(10, values);
     vector.setRowId(0);
 
     PartitionKey key1 = new PartitionKey(0, 0, 0, 0, 1, 5);
@@ -198,7 +188,7 @@ public class VectorSplitTest {
   public void sparseHashMapVectorSplit() {
     int[] offsets = {0, 2, 4, 6, 8};
     double[] values = {0.0, 2.0, 4.0, 6.0, 8.0};
-    SparseDoubleVector vector = new SparseDoubleVector(10, offsets, values);
+    SparseIntDoubleVector vector = new SparseIntDoubleVector(10, offsets, values);
     vector.setRowId(0);
 
     PartitionKey key1 = new PartitionKey(0, 0, 0, 0, 1, 5);

@@ -16,6 +16,23 @@
 
 package com.tencent.angel.master.oplog;
 
+import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.exception.InvalidParameterException;
+import com.tencent.angel.master.MatrixMetaManager;
+import com.tencent.angel.master.app.AMContext;
+import com.tencent.angel.master.data.DataSpliter;
+import com.tencent.angel.master.ps.ParameterServerManager;
+import com.tencent.angel.master.ps.ps.AMParameterServer;
+import com.tencent.angel.master.task.AMTaskManager;
+import com.tencent.angel.ps.PSAttemptId;
+import com.tencent.angel.ps.ParameterServerId;
+import com.tencent.angel.utils.HdfsUtil;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.*;
+import org.apache.hadoop.service.AbstractService;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
@@ -24,29 +41,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-import com.tencent.angel.conf.AngelConf;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.PathFilter;
-import org.apache.hadoop.service.AbstractService;
-
-import com.tencent.angel.exception.InvalidParameterException;
-import com.tencent.angel.master.MatrixMetaManager;
-import com.tencent.angel.master.app.AMContext;
-import com.tencent.angel.master.data.DataSpliter;
-import com.tencent.angel.master.ps.ps.AMParameterServer;
-import com.tencent.angel.master.ps.ParameterServerManager;
-import com.tencent.angel.master.task.AMTaskManager;
-import com.tencent.angel.ps.PSAttemptId;
-import com.tencent.angel.ps.ParameterServerId;
-import com.tencent.angel.utils.HdfsUtil;
 
 /**
  * Application state storage. It write the application state to files every fixed period of time

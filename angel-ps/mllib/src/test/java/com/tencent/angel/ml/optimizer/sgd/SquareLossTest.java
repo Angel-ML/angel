@@ -17,7 +17,8 @@
 
 package com.tencent.angel.ml.optimizer.sgd;
 
-import com.tencent.angel.ml.math.vector.DenseDoubleVector;
+import com.tencent.angel.ml.math.vector.DenseIntDoubleVector;
+import com.tencent.angel.ml.optimizer.sgd.loss.SquareL2Loss;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.PropertyConfigurator;
@@ -57,9 +58,9 @@ public class SquareLossTest {
   @Test
   public void testPredict() throws Exception {
     double data1[] = {1.0, 2.0, 3.0, 4.0};
-    DenseDoubleVector denseDoubleVector1 = new DenseDoubleVector(4, data1);
+    DenseIntDoubleVector denseDoubleVector1 = new DenseIntDoubleVector(4, data1);
     double data2[] = {1.0, 2.0, 3.0, 4.0};
-    DenseDoubleVector denseDoubleVector2 = new DenseDoubleVector(4, data2);
+    DenseIntDoubleVector denseDoubleVector2 = new DenseIntDoubleVector(4, data2);
     SquareL2Loss squareLoss = new SquareL2Loss();
     double test = squareLoss.predict(denseDoubleVector1, denseDoubleVector2);
     double dot = 0.0;

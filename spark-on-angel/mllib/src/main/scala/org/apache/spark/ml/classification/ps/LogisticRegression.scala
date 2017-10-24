@@ -26,9 +26,9 @@
 package org.apache.spark.ml.classification.ps
 
 import breeze.optimize.{CachedDiffFunction, DiffFunction, LBFGS => BreezeLBFGS}
-import com.tencent.angel.spark.math.vector.PSVector
-import com.tencent.angel.spark.math.vector.decorator.BreezePSVector
-import com.tencent.angel.spark.ml.optim.OWLQN
+import com.tencent.angel.spark.models.vector.PSVector
+import com.tencent.angel.spark.models.vector.enhanced.BreezePSVector
+import com.tencent.angel.spark.ml.optimize.OWLQN
 import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkException
 import org.apache.spark.annotation.{Experimental, Since}
@@ -362,9 +362,9 @@ class LogisticRegression @Since("1.2.0") (
     }
 
     val featureStdKey = summarizer.std
-    val featureStd = featureStdKey.toRemote.pull()
+    val featureStd = featureStdKey.pull()
     val instances = rawInstances.map { case Instance(label, weight, features) =>
-      val featStd = featureStdKey.toRemote.pull()
+      val featStd = featureStdKey.pull()
       val feat = (0 until features.size).map { i =>
         if (featStd(i) != 0) features(i) / featStd(i) else features(i)
       }
@@ -441,7 +441,7 @@ class LogisticRegression @Since("1.2.0") (
             s"dangerous ground, so the algorithm may not converge.")
         }
 
-        val featuresMean = summarizer.mean.toRemote.pull()
+        val featuresMean = summarizer.mean.pull()
         if (!$(fitIntercept) && (0 until numFeatures).exists { i =>
           featureStd(i) == 0.0 && featuresMean(i) != 0.0 }) {
           logWarning("Fitting LogisticRegressionModel without intercept on dataset with " +
@@ -464,7 +464,7 @@ class LogisticRegression @Since("1.2.0") (
         }
 
         val flatFeatureStdKey = PSVector.dense(coefficientSize)
-        flatFeatureStdKey.toRemote.push(flatFeatureStd)
+        flatFeatureStdKey.toCache.push(flatFeatureStd)
 
         val costFun = new LogisticCostFun(instances, numClasses, summarizer.totalWeight,
           flatFeatureStdKey, $(fitIntercept), $(standardization), regParamL2,
@@ -586,7 +586,7 @@ class LogisticRegression @Since("1.2.0") (
         }
 
         val initCoefPSKey = PSVector.duplicate(flatFeatureStdKey)
-        initCoefPSKey.toRemote.push(initialCoefWithInterceptMatrix.toArray)
+        initCoefPSKey.toCache.push(initialCoefWithInterceptMatrix.toArray)
 
         val states = optimizer.iterations(new CachedDiffFunction(costFun), initCoefPSKey.toBreeze)
 
@@ -619,7 +619,7 @@ class LogisticRegression @Since("1.2.0") (
            Note that the intercept in scaled space and original space is the same;
            as a result, no scaling is needed.
          */
-        val allCoefficients = state.x.toRemote.pull()
+        val allCoefficients = state.x.pull()
         val allCoefMatrix = new DenseMatrix(numCoefficientSets, numFeaturesPlusIntercept,
           allCoefficients)
         val denseCoefficientMatrix = new DenseMatrix(numCoefficientSets, numFeatures,

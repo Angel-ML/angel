@@ -18,7 +18,7 @@ package com.tencent.angel.ml.utils;
 
 import com.tencent.angel.ml.feature.LabeledData;
 import com.tencent.angel.ml.math.vector.TDoubleVector;
-import com.tencent.angel.ml.optimizer.sgd.Loss;
+import com.tencent.angel.ml.optimizer.sgd.loss.Loss;
 import com.tencent.angel.utils.Sort;
 import com.tencent.angel.worker.storage.DataBlock;
 import it.unimi.dsi.fastutil.doubles.DoubleComparator;
@@ -60,7 +60,7 @@ public class ValidationUtils {
   /**
    * validate loss and precision
    *
-   * @param dataBlock:  validation data trainDataBlock
+   * @param dataBlock:  validation data taskDataBlock
    * @param weight:   the weight vector of features
    * @param lossFunc: the lossFunc used for prediction
    */
@@ -115,7 +115,7 @@ public class ValidationUtils {
   /**
    * validate loss, AUC and precision
    *
-   * @param dataBlock:  validation data trainDataBlock
+   * @param dataBlock:  validation data taskDataBlock
    * @param weight:   the weight vector of features
    * @param lossFunc: the lossFunc used for prediction
    */

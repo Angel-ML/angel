@@ -16,17 +16,17 @@
 package com.tencent.angel.protobuf;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.psagent.PSAgentContext;
-import com.tencent.angel.worker.Worker;
-import com.tencent.angel.worker.task.Task;
-import com.tencent.angel.worker.task.TaskId;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.CreateMatricesRequest;
 import com.tencent.angel.protobuf.generated.MLProtos.MatrixClock;
 import com.tencent.angel.protobuf.generated.MLProtos.MatrixProto;
 import com.tencent.angel.protobuf.generated.MLProtos.Pair;
 import com.tencent.angel.protobuf.generated.MLProtos.Partition;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.*;
-
+import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.TaskStateProto;
+import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerReportRequest;
+import com.tencent.angel.psagent.PSAgentContext;
+import com.tencent.angel.worker.Worker;
+import com.tencent.angel.worker.task.Task;
+import com.tencent.angel.worker.task.TaskId;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 

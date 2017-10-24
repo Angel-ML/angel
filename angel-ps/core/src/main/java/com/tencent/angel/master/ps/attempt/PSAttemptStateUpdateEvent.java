@@ -16,9 +16,9 @@
 
 package com.tencent.angel.master.ps.attempt;
 
-import java.util.Map;
-
 import com.tencent.angel.ps.PSAttemptId;
+
+import java.util.Map;
 
 /**
  * Update the counters for ps attempt.

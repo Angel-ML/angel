@@ -22,7 +22,6 @@ import com.tencent.angel.master.ps.attempt.PSAttempt;
 import com.tencent.angel.master.ps.attempt.PSAttemptStateInternal;
 import com.tencent.angel.master.ps.ps.AMParameterServer;
 import com.tencent.angel.ps.PSAttemptId;
-
 import org.apache.hadoop.mapreduce.v2.util.MRWebAppUtil;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;

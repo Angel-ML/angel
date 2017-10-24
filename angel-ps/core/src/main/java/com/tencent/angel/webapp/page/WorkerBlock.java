@@ -19,18 +19,17 @@ package com.tencent.angel.webapp.page;
 import com.google.inject.Inject;
 import com.tencent.angel.exception.UnvalidIdStrException;
 import com.tencent.angel.master.app.AMContext;
+import com.tencent.angel.master.task.AMTask;
 import com.tencent.angel.master.worker.attempt.WorkerAttempt;
 import com.tencent.angel.master.worker.worker.AMWorker;
 import com.tencent.angel.worker.WorkerAttemptId;
-import com.tencent.angel.master.task.AMTask;
-
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.*;
 import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
 
-import static org.apache.hadoop.yarn.webapp.view.JQueryUI.*;
 import static com.tencent.angel.webapp.AngelParams.WORKER_ATTEMPT_ID;
 import static org.apache.hadoop.yarn.util.StringHelper.join;
+import static org.apache.hadoop.yarn.webapp.view.JQueryUI.*;
 
 public class WorkerBlock extends HtmlBlock {
   final AMContext amContext;

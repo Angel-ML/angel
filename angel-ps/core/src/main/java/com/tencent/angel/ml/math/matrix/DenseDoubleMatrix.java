@@ -16,12 +16,11 @@
 
 package com.tencent.angel.ml.math.matrix;
 
-import com.tencent.angel.ml.math.TMatrix;
 import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.ml.math.vector.DenseDoubleVector;
+import com.tencent.angel.ml.math.vector.DenseIntDoubleVector;
 
 /**
- * Dense double matrix that is represented by a group of dense double vector {@link DenseDoubleVector}
+ * Dense double matrix that is represented by a group of dense double vector {@link DenseIntDoubleVector}
  */
 public class DenseDoubleMatrix extends TDoubleMatrix {
   public DenseDoubleMatrix(int row, int col) {
@@ -46,8 +45,8 @@ public class DenseDoubleMatrix extends TDoubleMatrix {
   }
 
   @Override
-  public DenseDoubleVector initVector(int rowIndex) {
-    DenseDoubleVector ret = new DenseDoubleVector((int)col);
+  public DenseIntDoubleVector initVector(int rowIndex) {
+    DenseIntDoubleVector ret = new DenseIntDoubleVector((int)col);
     ret.setMatrixId(matrixId);
     ret.setRowId(rowIndex);
     return ret;
@@ -60,8 +59,8 @@ public class DenseDoubleMatrix extends TDoubleMatrix {
    * @param values
    * @return
    */
-  private DenseDoubleVector initVector(int rowIndex, double[] values) {
-    DenseDoubleVector ret = new DenseDoubleVector((int)col, values);
+  private DenseIntDoubleVector initVector(int rowIndex, double[] values) {
+    DenseIntDoubleVector ret = new DenseIntDoubleVector((int)col, values);
     ret.setMatrixId(matrixId);
     ret.setRowId(rowIndex);
     return ret;

@@ -22,7 +22,6 @@ import com.tencent.angel.exception.UnvalidIdStrException;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.workerclient.WorkerClient;
 import com.tencent.angel.worker.WorkerAttemptId;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.yarn.webapp.view.HtmlBlock;

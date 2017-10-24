@@ -17,11 +17,11 @@
 
 package com.tencent.angel.ml.matrix.psf.get.base;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.psagent.PSAgentContext;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The Get parameter. The class that extends this interface must have a constructor without

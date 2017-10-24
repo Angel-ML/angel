@@ -18,12 +18,15 @@
 package com.tencent.angel.ml.model
 
 import java.util.{HashMap, Map}
+
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.math.TVector
 import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
+
 import scala.collection.JavaConversions._
 
 /**
@@ -35,6 +38,7 @@ import scala.collection.JavaConversions._
   */
 
 abstract class MLModel(conf: Configuration, _ctx: TaskContext = null) {
+
   implicit def ctx : TaskContext = _ctx
   private val psModels: Map[String, PSModel[_]] = new HashMap[String, PSModel[_]]
 

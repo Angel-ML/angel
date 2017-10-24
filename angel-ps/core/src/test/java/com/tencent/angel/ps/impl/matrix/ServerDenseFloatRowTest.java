@@ -28,7 +28,7 @@ import org.junit.Test;
 
 import java.io.*;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 
 public class ServerDenseFloatRowTest {
@@ -103,12 +103,10 @@ public class ServerDenseFloatRowTest {
     buf.writeFloat((float) 1.00);
     buf.writeFloat((float) 2.00);
     serverDenseFloatRow.update(MLProtos.RowType.T_FLOAT_DENSE, buf, 3);
-    serverDenseFloatRow.setClock(10);
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
     serverDenseFloatRow.writeTo(out);
     out.close();
     DataInputStream in = new DataInputStream(new FileInputStream("data"));
-    assertEquals(in.readInt(), 10);
     assertEquals(in.readFloat(), 0, 0.00);
     assertEquals(in.readFloat(), 1, 0.00);
     assertEquals(in.readFloat(), 2, 0.00);
@@ -121,14 +119,13 @@ public class ServerDenseFloatRowTest {
     buf.writeFloat((float) 11.00);
     buf.writeFloat((float) 12.00);
     serverDenseFloatRow.update(MLProtos.RowType.T_FLOAT_DENSE, buf, 3);
-    serverDenseFloatRow.setClock(9);
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
     serverDenseFloatRow.writeTo(out);
     out.close();
     DataInputStream in = new DataInputStream(new FileInputStream("data"));
     ServerDenseFloatRow newServerDenseFloatRow = new ServerDenseFloatRow(rowId, startCol, endCol);
     newServerDenseFloatRow.readFrom(in);
-    assertEquals(newServerDenseFloatRow.getClock(), 9);
+
     assertEquals(newServerDenseFloatRow.getData().get(0), serverDenseFloatRow.getData().get(0),
         0.00);
     assertEquals(newServerDenseFloatRow.getData().get(1), serverDenseFloatRow.getData().get(1),

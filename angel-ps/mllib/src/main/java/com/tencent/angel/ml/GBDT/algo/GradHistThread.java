@@ -17,7 +17,9 @@
 package com.tencent.angel.ml.GBDT.algo;
 
 import com.tencent.angel.ml.GBDT.algo.RegTree.GradHistHelper;
-import com.tencent.angel.ml.math.vector.DenseDoubleVector;
+import com.tencent.angel.ml.conf.MLConf;
+import com.tencent.angel.ml.math.vector.DenseIntDoubleVector;
+import com.tencent.angel.ml.matrix.psf.update.enhance.CompressUpdateFunc;
 import com.tencent.angel.ml.model.PSModel;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -48,10 +50,21 @@ public class GradHistThread implements Runnable {
     String histParaName = this.controller.param.gradHistNamePrefix + nid;
     // 2. build the grad histogram of this node
     GradHistHelper histMaker = new GradHistHelper(this.controller, this.nid);
-    DenseDoubleVector histogram = histMaker.buildHistogram(insStart, insEnd);
+    DenseIntDoubleVector histogram = histMaker.buildHistogram(insStart, insEnd);
+    int bytesPerItem = this.controller.taskContext.getConf().
+        getInt(MLConf.ML_COMPRESS_BYTES(), MLConf.DEFAULT_ML_COMPRESS_BYTES());
+    if (bytesPerItem < 1 || bytesPerItem > 8 ) {
+      LOG.info("Invalid compress configuration: " + bytesPerItem + ", it should be [1,8].");
+      bytesPerItem = MLConf.DEFAULT_ML_COMPRESS_BYTES();
+    }
     // 3. push the histograms to PS
     try {
-      this.model.increment(0, histogram);
+      if (bytesPerItem == 8) {
+        this.model.increment(0, histogram);
+      } else {
+        CompressUpdateFunc func = new CompressUpdateFunc(this.model.getMatrixId(), 0, histogram, bytesPerItem * 8);
+        this.model.update(func);
+      }
     } catch (Exception e) {
       LOG.error(histParaName + " increment failed, ", e);
     }

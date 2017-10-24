@@ -18,7 +18,6 @@
 package com.tencent.angel.ml.matrixfactorization.threads
 
 import java.util.concurrent.Callable
-
 import com.tencent.angel.ml.math.vector.DenseFloatVector
 import com.tencent.angel.ml.matrixfactorization.MFModel
 import com.tencent.angel.psagent.matrix.transport.adapter.GetRowsResult

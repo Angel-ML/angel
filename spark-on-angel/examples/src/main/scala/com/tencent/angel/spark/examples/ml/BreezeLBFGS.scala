@@ -17,7 +17,7 @@
 
 package com.tencent.angel.spark.examples.ml
 
-import com.tencent.angel.spark.math.vector.decorator.BreezePSVector
+import com.tencent.angel.spark.models.vector.enhanced.BreezePSVector
 import scala.collection.mutable.ArrayBuffer
 
 import breeze.linalg.DenseVector
@@ -27,7 +27,7 @@ import org.apache.spark.rdd.RDD
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.examples.util.{Logistic, PSExamples}
-import com.tencent.angel.spark.math.vector.PSVector
+import com.tencent.angel.spark.models.vector.PSVector
 
 /**
  * There is two ways to update PSVectors in RDD, RemotePSVector and RDDFunction.psAggregate.
@@ -88,7 +88,7 @@ object BreezeLBFGS {
 
   def runPsLBFGS(trainData: RDD[(Vector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
     val tol = 1e-5
-    val initWeightPSModel = PSVector.dense(dim).toBreeze
+    val initWeightPSModel = PSVector.dense(dim, 5 * m).toBreeze
     val lbfgs = new LBFGS[BreezePSVector](maxIter, m, tol)
     val states = lbfgs.iterations(Logistic.PSCost(trainData), initWeightPSModel)
 
@@ -103,13 +103,13 @@ object BreezeLBFGS {
       }
     }
     println(s"loss history: ${lossHistory.toArray.mkString(" ")}")
-    println(s"weights: ${weight.toRemote.pull().mkString(" ")}")
+    println(s"weights: ${weight.pull().mkString(" ")}")
   }
 
   def runPsAggregateLBFGS(
       trainData: RDD[(Vector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
     val tol = 1e-5
-    val initWeightPS = PSVector.dense(dim).toBreeze
+    val initWeightPS = PSVector.dense(dim, 5 * m).toBreeze
     val lbfgs = new LBFGS[BreezePSVector](maxIter, m, tol)
     val states = lbfgs.iterations(Logistic.PSAggregateCost(trainData), initWeightPS)
 
@@ -124,6 +124,6 @@ object BreezeLBFGS {
       }
     }
     println(s"loss history: ${lossHistory.toArray.mkString(" ")}")
-    println(s"weights: ${weight.toRemote.pull().mkString(" ")}")
+    println(s"weights: ${weight.pull().mkString(" ")}")
   }
 }

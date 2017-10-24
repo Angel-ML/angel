@@ -18,7 +18,6 @@ package com.tencent.angel.ml.math.vector;
 
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.ml.math.VectorType;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
@@ -152,14 +151,14 @@ public class DenseFloatVector extends TFloatVector {
     assert dim == other.getDimension();
     if (other instanceof DenseFloatVector)
       return dot((DenseFloatVector) other);
-    if (other instanceof DenseDoubleVector)
-      return dot((DenseDoubleVector) other);
+    if (other instanceof DenseIntDoubleVector)
+      return dot((DenseIntDoubleVector) other);
     if (other instanceof SparseFloatVector)
       return dot((SparseFloatVector) other);
-    if (other instanceof SparseDoubleVector)
-      return dot((SparseDoubleVector) other);
-    if (other instanceof SparseDoubleSortedVector)
-      return dot((SparseDoubleSortedVector) other);
+    if (other instanceof SparseIntDoubleVector)
+      return dot((SparseIntDoubleVector) other);
+    if (other instanceof SparseIntDoubleSortedVector)
+      return dot((SparseIntDoubleSortedVector) other);
 
     throw new UnsupportedOperationException(
       "Unsupportted operation: dot " + this.getClass().getName() + " with " + other.getClass()
@@ -174,7 +173,7 @@ public class DenseFloatVector extends TFloatVector {
     return ret;
   }
 
-  private double dot(DenseDoubleVector other) {
+  private double dot(DenseIntDoubleVector other) {
     return other.dot(this);
   }
 
@@ -188,7 +187,7 @@ public class DenseFloatVector extends TFloatVector {
     return ret;
   }
 
-  private double dot(SparseDoubleSortedVector other) {
+  private double dot(SparseIntDoubleSortedVector other) {
     double ret = 0.0;
 
     int[] keys = other.getIndices();
@@ -199,7 +198,7 @@ public class DenseFloatVector extends TFloatVector {
     return ret;
   }
 
-  private double dot(SparseDoubleVector other) {
+  private double dot(SparseIntDoubleVector other) {
     double ret = 0.0;
     ObjectIterator<Int2DoubleMap.Entry> iter = other.hashMap.int2DoubleEntrySet().fastIterator();
     while (iter.hasNext()) {
@@ -253,7 +252,7 @@ public class DenseFloatVector extends TFloatVector {
         .getName());
   }
 
-  private TVector plus(DenseDoubleVector other) {
+  private TVector plus(DenseIntDoubleVector other) {
     return other.plus(this);
   }
 
@@ -275,7 +274,7 @@ public class DenseFloatVector extends TFloatVector {
     return vector;
   }
 
-  private TVector plus(SparseDoubleVector other) {
+  private TVector plus(SparseIntDoubleVector other) {
     DenseFloatVector vector = new DenseFloatVector(dim);
     System.arraycopy(values, 0, vector.values, 0, dim);
 
@@ -287,7 +286,7 @@ public class DenseFloatVector extends TFloatVector {
     return vector;
   }
 
-  private TFloatVector plus(SparseDoubleSortedVector other) {
+  private TFloatVector plus(SparseIntDoubleSortedVector other) {
     assert dim == other.getDimension();
     DenseFloatVector vector = new DenseFloatVector(dim);
     System.arraycopy(values, 0, vector.values, 0, dim);
@@ -312,7 +311,7 @@ public class DenseFloatVector extends TFloatVector {
         .getName());
   }
 
-  private TFloatVector plus(DenseDoubleVector other, float x) {
+  private TFloatVector plus(DenseIntDoubleVector other, float x) {
     assert dim == other.size();
     DenseFloatVector vector = new DenseFloatVector(dim);
     for (int i = 0; i < dim; i++)
@@ -341,7 +340,7 @@ public class DenseFloatVector extends TFloatVector {
     return vector;
   }
 
-  private TFloatVector plus(SparseDoubleVector other, float x) {
+  private TFloatVector plus(SparseIntDoubleVector other, float x) {
     assert dim == other.getDimension();
     DenseFloatVector vector = new DenseFloatVector(dim);
     System.arraycopy(values, 0, vector.values, 0, dim);
@@ -354,7 +353,7 @@ public class DenseFloatVector extends TFloatVector {
     return vector;
   }
 
-  private TFloatVector plus(SparseDoubleSortedVector other, float x) {
+  private TFloatVector plus(SparseIntDoubleSortedVector other, float x) {
     assert dim == other.getDimension();
     DenseFloatVector vector = new DenseFloatVector(dim);
     System.arraycopy(values, 0, vector.values, 0, dim);
@@ -378,7 +377,7 @@ public class DenseFloatVector extends TFloatVector {
         .getName());
   }
 
-  private TFloatVector plusBy(DenseDoubleVector other) {
+  private TFloatVector plusBy(DenseIntDoubleVector other) {
     double[] delta = other.values;
     for (int i = 0; i < delta.length; i++) {
       values[i] += (float) delta[i];
@@ -404,7 +403,7 @@ public class DenseFloatVector extends TFloatVector {
     return this;
   }
 
-  private TFloatVector plusBy(SparseDoubleSortedVector other) {
+  private TFloatVector plusBy(SparseIntDoubleSortedVector other) {
     int[] keys = other.getIndices();
     double[] vals = other.getValues();
     for (int i = 0; i < keys.length; i++) {
@@ -414,7 +413,7 @@ public class DenseFloatVector extends TFloatVector {
     return this;
   }
 
-  private TFloatVector plusBy(SparseDoubleVector other) {
+  private TFloatVector plusBy(SparseIntDoubleVector other) {
     ObjectIterator<Int2DoubleMap.Entry> iter = other.hashMap.int2DoubleEntrySet().fastIterator();
     while (iter.hasNext()) {
       Int2DoubleMap.Entry entry = iter.next();
@@ -444,7 +443,7 @@ public class DenseFloatVector extends TFloatVector {
   }
 
 
-  private TFloatVector plusBy(DenseDoubleVector other, float x) {
+  private TFloatVector plusBy(DenseIntDoubleVector other, float x) {
     double[] delts = other.getValues();
     for (int i = 0; i < delts.length; i++) {
       this.values[i] += (float) (delts[i] * x);
@@ -461,7 +460,7 @@ public class DenseFloatVector extends TFloatVector {
     return this;
   }
 
-  private TFloatVector plusBy(SparseDoubleVector other, float x) {
+  private TFloatVector plusBy(SparseIntDoubleVector other, float x) {
     float fx = (float) x;
     ObjectIterator<Int2DoubleMap.Entry> iter = other.hashMap.int2DoubleEntrySet().fastIterator();
     while (iter.hasNext()) {
@@ -472,7 +471,7 @@ public class DenseFloatVector extends TFloatVector {
     return this;
   }
 
-  private TFloatVector plusBy(SparseDoubleSortedVector other, float x) {
+  private TFloatVector plusBy(SparseIntDoubleSortedVector other, float x) {
     float fx = (float) x;
     int[] keys = other.getIndices();
     double[] vals = other.getValues();

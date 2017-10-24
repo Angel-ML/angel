@@ -16,8 +16,10 @@
 
 package com.tencent.angel.ml.math.matrix;
 
-import com.tencent.angel.ml.math.vector.*;
 import com.tencent.angel.ml.math.TVector;
+import com.tencent.angel.ml.math.vector.DenseFloatVector;
+import com.tencent.angel.ml.math.vector.SparseFloatVector;
+import com.tencent.angel.ml.math.vector.TFloatVector;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertEquals;

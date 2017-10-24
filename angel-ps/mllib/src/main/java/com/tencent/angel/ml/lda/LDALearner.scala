@@ -35,7 +35,8 @@ import com.tencent.angel.ml.math.vector.DenseIntVector
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult
 import com.tencent.angel.ml.matrix.psf.get.base.{PartitionGetParam, PartitionGetResult}
 import com.tencent.angel.ml.matrix.psf.get.multi.PartitionGetRowsParam
-import com.tencent.angel.ml.metric.log.ObjMetric
+import com.tencent.angel.ml.matrix.psf.update.enhance.VoidResult
+import com.tencent.angel.ml.metric.ObjMetric
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex
@@ -77,7 +78,7 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
 
   val nk = new Array[Int](model.K)
 
-  globalMetrics.addMetrics(LOG_LIKELIHOOD, new ObjMetric())
+  globalMetrics.addMetric(LOG_LIKELIHOOD, new ObjMetric())
 
 
   /**
@@ -93,12 +94,13 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
 
   def initialize(): Unit = {
     scheduleInit()
+    LOG.info("init finish")
 
     ctx.incEpoch()
 
     val ll = likelihood
     LOG.info(s"ll=${ll}")
-    globalMetrics.metrics(LOG_LIKELIHOOD, ll)
+    globalMetrics.metric(LOG_LIKELIHOOD, ll)
     ctx.incEpoch()
   }
 
@@ -121,28 +123,30 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
       // One epoch
       fetchNk
 
-      val error = scheduleSample(pkeys)
+      scheduleSample(pkeys)
+      ctx.incEpoch()
 
       // calculate likelihood
       val ll = likelihood
       LOG.info(s"epoch=$epoch local likelihood=$ll")
 
       // submit to client
-      globalMetrics.metrics(LOG_LIKELIHOOD, ll)
+      globalMetrics.metric(LOG_LIKELIHOOD, ll)
       ctx.incEpoch()
 
-//      if (epoch % 10 == 0) reset(epoch)
+      if (epoch % 4 == 0) reset(epoch)
     }
   }
 
   def reset(epoch: Int) = {
     LOG.info(s"start reset")
+    model.tMat.clock(false).get()
     model.tMat.getRow(0)
     if (ctx.getTaskIndex == 0) {
       model.tMat.zero()
       model.wtMat.zero()
     }
-    model.tMat.clock(false)
+    model.tMat.clock(false).get()
     model.tMat.getRow(0)
     scheduleReset()
     LOG.info(s"finish reset")
@@ -196,10 +200,11 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
   val executor = Executors.newFixedThreadPool(model.threadNum)
 
   def scheduleSample(pkeys: java.util.List[PartitionKey]): Boolean = {
+    val results = new LinkedBlockingQueue[Future[VoidResult]]()
 
     class Task(sampler: Sampler, pkey: PartitionKey, csr: PartCSRResult) extends Thread {
       override def run(): Unit = {
-        sampler.sample(pkey, csr)
+        results.add(sampler.sample(pkey, csr))
         queue.add(sampler)
       }
     }
@@ -210,7 +215,6 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
     val futures = new mutable.HashMap[PartitionKey, Future[PartitionGetResult]]()
     while (iter.hasNext) {
       val pkey = iter.next()
-//      val param = new PartitionGetParam(model.wtMat.getMatrixId, pkey)
       val param = new PartitionGetRowsParam(model.wtMat.getMatrixId(), pkey, reqRows.get(pkey.getPartitionId))
       val future = client.get(func, param)
       futures.put(pkey, future)
@@ -247,8 +251,10 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
     }
 
     model.tMat.increment(0, update)
+
+    for (i <- 0 until pkeys.size()) results.take().get()
     // update for wt
-    model.wtMat.clock().get()
+    model.wtMat.clock(false).get()
     // update for nk
     model.tMat.clock().get()
 
@@ -284,16 +290,17 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
   }
 
   def scheduleInit(): Unit = {
+    val results = new LinkedBlockingQueue[Future[VoidResult]]()
     class Task(sampler: Sampler, pkey: PartitionKey) extends Thread {
       override def run(): Unit = {
-        sampler.initialize(pkey)
+        results.add(sampler.initialize(pkey))
         queue.add(sampler)
       }
     }
 
     for (i <- 0 until model.threadNum) queue.add(new Sampler(data, model))
 
-    val iter = pkeys.iterator()
+    var iter = pkeys.iterator()
     while (iter.hasNext) {
       val sampler = queue.take()
       executor.execute(new Task(sampler, iter.next()))
@@ -309,6 +316,9 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
     }
 
     model.tMat.increment(0, update)
+    // wait for futures
+    for (i <- 0 until pkeys.size()) results.take().get()
+
     // update for wt
     model.wtMat.clock().get()
     // update for nk
@@ -316,9 +326,10 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
   }
 
   def scheduleReset(): Unit = {
+    val results = new LinkedBlockingQueue[Future[VoidResult]]()
     class Task(sampler: Sampler, pkey: PartitionKey) extends Thread {
       override def run(): Unit = {
-        sampler.reset(pkey)
+        results.add(sampler.reset(pkey))
         queue.add(sampler)
       }
     }
@@ -341,8 +352,10 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
     }
 
     model.tMat.increment(0, update)
+
+    for (i <- 0 until pkeys.size()) results.take().get()
     // update for wt
-    model.wtMat.clock().get()
+    model.wtMat.clock(false).get()
     // update for nk
     model.tMat.clock().get()
   }
@@ -352,7 +365,7 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
       sampleForInference()
       val ll = scheduleDocllh(data.n_docs)
       LOG.info(s"doc ll = ${ll}")
-      globalMetrics.metrics(LOG_LIKELIHOOD, ll)
+      globalMetrics.metric(LOG_LIKELIHOOD, ll)
       ctx.incEpoch()
     }
   }

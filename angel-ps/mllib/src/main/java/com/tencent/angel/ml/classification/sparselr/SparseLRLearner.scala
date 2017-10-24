@@ -19,9 +19,9 @@ package com.tencent.angel.ml.classification.sparselr
 
 import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.metric.LossMetric
 import com.tencent.angel.ml.optimizer.admm.ADMM
 import com.tencent.angel.ml.conf.MLConf._
-import com.tencent.angel.ml.metric.log.LossMetric
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
@@ -65,17 +65,11 @@ class SparseLRLearner(ctx: TaskContext) extends MLLearner(ctx) {
 
     LOG.info(s"threadNum=$threadNum maxIter=$maxIter")
 
-    globalMetrics.addMetrics(TRAIN_LOSS, LossMetric(train.size()))
+    globalMetrics.addMetric(TRAIN_LOSS, LossMetric(train.size()))
 
-    val (history, z) = ADMM.runADMM(train,
-      model,
-      regParam,
-      rho,
-      ctx.getTotalTaskNum,
-      threadNum,
-      ctx,
-      globalMetrics,
-      maxIter)
+    val (history, z) = ADMM.runADMM(train, model)(
+      regParam, rho, ctx.getTotalTaskNum, threadNum, maxIter)(
+      ctx, globalMetrics)
 
     if (ctx.getTaskIndex == 0) {
       model.z.increment(0, z)

@@ -18,7 +18,7 @@ package com.tencent.angel.ml.regression.linear
 
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.TDoubleVector
+import com.tencent.angel.ml.math.vector.TIntDoubleVector
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.ml.regression.linear.LinearRegModel._
@@ -36,7 +36,7 @@ class LinearRegModel(conf: Configuration, _ctx: TaskContext = null) extends MLMo
 
 
   val feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, 10000)
-  val weight = PSModel[TDoubleVector](LR_WEIGHT_MAT, 1, feaNum).setAverage(true)
+  val weight = PSModel[TIntDoubleVector](LR_WEIGHT_MAT, 1, feaNum).setAverage(true)
   addPSModel(LR_WEIGHT_MAT, weight)
 
   super.setSavePath(conf)

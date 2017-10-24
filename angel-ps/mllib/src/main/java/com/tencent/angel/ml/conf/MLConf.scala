@@ -25,7 +25,7 @@ object MLConf {
   val ANGEL_ML_INC_TRAIN = "inctrain"
 
   // Data params
-  val ML_DATAFORMAT = "ml.data.type"
+  val ML_DATA_FORMAT = "ml.data.type"
   val DEFAULT_ML_DATAFORMAT = "dummy"
   val ML_VALIDATE_RATIO = "ml.validate.ratio"
   val DEFAULT_ML_VALIDATE_RATIO = 0.05
@@ -44,6 +44,10 @@ object MLConf {
   // Worker params
   val ML_WORKER_THREAD_NUM = "ml.worker.thread.num"
   val DEFAULT_ML_WORKER_THREAD_NUM = 1
+
+  // network param
+  val ML_COMPRESS_BYTES = "ml.compress.bytes"
+  val DEFAULT_ML_COMPRESS_BYTES = 8;
 
   // Regularization params
   val ML_REG_L1 = "ml.reg.l1"
@@ -66,6 +70,7 @@ object MLConf {
   // Logistic Regression param
   val LR_USE_INTERCEPT = "ml.lr.use.intercept"
   val DEFAULT_LR_USE_INTERCEPT = false
+  val LR_MODEL_TYPE = "ml.lr.model.type"
 
   // Kmeans params
   val KMEANS_CENTER_NUM = "ml.kmeans.center.num"
@@ -100,6 +105,12 @@ object MLConf {
   val DEFAULT_ML_GBDT_SPLIT_NUM = 5
   val ML_GBDT_SAMPLE_RATIO = "ml.gbdt.sample.ratio"
   val DEFAULT_ML_GBDT_SAMPLE_RATIO = 1
+  val ML_GBDT_MIN_CHILD_WEIGHT = "ml.gbdt.min.child.weight"
+  val DEFAULT_ML_GBDT_MIN_CHILD_WEIGHT = 0.01
+  val ML_GBDT_REG_ALPHA = "ml.gbdt.reg.alpha"
+  val DEFAULT_ML_GBDT_REG_ALPHA = 0
+  val ML_GBDT_REG_LAMBDA = "ml.gbdt.reg.lambda"
+  val DEFAULT_ML_GBDT_REG_LAMBDA = 1.0
   val ML_GBDT_THREAD_NUM = "ml.gbdt.thread.num"
   val DEFAULT_ML_GBDT_THREAD_NUM = 20
   val ML_GBDT_BATCH_NUM = "ml.gbdt.batch.num"
@@ -133,6 +144,18 @@ object MLConf {
   val DEFAULT_ML_MODEL_CONVERT_THREAD_COUNT = 1
   val ML_MODEL_NAME = "ml.model.name"
 
+
+  // FTRL param
+  val ML_FTRL_ALPHA = "ml.ftrl.alpha"
+  val DEFAULT_ML_FTRL_ALPHA = 1
+  val ML_FTRL_BETA = "ml.ftrl.beta"
+  val DEFAULT_ML_FTRL_BETA = 1
+  val ML_FTRL_LAMBDA1 = "ml.ftrl.lambda1"
+  val DEFAULT_ML_FTRL_LAMBDA1 = 0.1
+  val ML_FTRL_LAMBDA2 = "ml.ftrl.lambda2"
+  val DEFAULT_ML_FTRL_LAMBDA2 = 0.1
+  val ML_FTRL_BATCH_SIZE = "ml.ftrl.batch.size"
+  val DEFAULT_ML_FTRL_BATCH_SIZE = 1
 
   /** The number of samples used to calculate the indexes */
   val TRAIN_SAMPLE_NUMBER = "train.sample.number"

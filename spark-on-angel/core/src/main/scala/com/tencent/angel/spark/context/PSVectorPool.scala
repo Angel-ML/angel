@@ -17,11 +17,11 @@
 
 package com.tencent.angel.spark.context
 
-import com.tencent.angel.spark.math.vector.{DensePSVector, PSVector, SparsePSVector, VectorType}
+import com.tencent.angel.spark.models.vector.{DensePSVector, PSVector, SparsePSVector, VectorType}
 import org.apache.spark.SparkException
 import sun.misc.Cleaner
 
-import com.tencent.angel.spark.math.vector.VectorType.VectorType
+import com.tencent.angel.spark.models.vector.VectorType.VectorType
 
 /**
  * PSVectorPool delegate a memory space on PS servers,

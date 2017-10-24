@@ -28,7 +28,7 @@ import java.util.List;
 import static org.junit.Assert.*;
 
 public class MathUtilsTest {
-  private static final Log LOG = LogFactory.getLog(MathUtilsTest.class);
+  private static final Log LOG = LogFactory.getLog(MathsTest.class);
 
   static {
     PropertyConfigurator.configure("../conf/log4j.properties");
@@ -40,7 +40,7 @@ public class MathUtilsTest {
     for (int i = 0; i < data.length; i++) {
       // LOG.info(sigmoid(data[i]));
       // LOG.info(Math.exp(-data[i]));
-      assertTrue((MathUtils.sigmoid(data[i]) > 0.00f) && (MathUtils.sigmoid(data[i]) <= 1.00f));
+      assertTrue((Maths.sigmoid(data[i]) > 0.00f) && (Maths.sigmoid(data[i]) <= 1.00f));
     }
   }
 
@@ -48,16 +48,16 @@ public class MathUtilsTest {
   public void testSigmoid1() throws Exception {
     double data[] = {0.000001, 1, 100, 1000};
     for (int i = 0; i < data.length; i++) {
-      assertTrue((MathUtils.sigmoid(data[i]) > 0.00) && (MathUtils.sigmoid(data[i]) <= 1.00));
+      assertTrue((Maths.sigmoid(data[i]) > 0.00) && (Maths.sigmoid(data[i]) <= 1.00));
     }
   }
 
   @Test
   public void testSoftmax() throws Exception {
     double data[] = {0.2, 3, 4, 900, 1};
-    MathUtils.softmax(data);
+    Maths.softmax(data);
     for (int i = 0; i < data.length; i++) {
-      assertTrue((MathUtils.sigmoid(data[i]) > 0.00) && (MathUtils.sigmoid(data[i]) <= 1.00));
+      assertTrue((Maths.sigmoid(data[i]) > 0.00) && (Maths.sigmoid(data[i]) <= 1.00));
     }
 
   }
@@ -65,56 +65,56 @@ public class MathUtilsTest {
   @Test
   public void testSoftmax1() throws Exception {
     float data[] = {0.2f, 3f, 4f, 900f, 1f};
-    MathUtils.softmax(data);
+    Maths.softmax(data);
     for (int i = 0; i < data.length; i++) {
-      assertTrue((MathUtils.sigmoid(data[i]) > 0.00f) && (MathUtils.sigmoid(data[i]) <= 1.00f));
+      assertTrue((Maths.sigmoid(data[i]) > 0.00f) && (Maths.sigmoid(data[i]) <= 1.00f));
     }
   }
 
   @Test
   public void testThresholdL1() throws Exception {
     double data[] = {0.2, 3, -4, 900, -200};
-    assertTrue(MathUtils.thresholdL1(data[0], 20) == 0);
-    assertTrue(MathUtils.thresholdL1(data[1], 20) == 0);
-    assertTrue(MathUtils.thresholdL1(data[2], 20) == 0);
-    assertTrue(MathUtils.thresholdL1(data[3], 20) == 880.0);
-    assertTrue(MathUtils.thresholdL1(data[4], 20) == -180.0);
+    assertTrue(Maths.thresholdL1(data[0], 20) == 0);
+    assertTrue(Maths.thresholdL1(data[1], 20) == 0);
+    assertTrue(Maths.thresholdL1(data[2], 20) == 0);
+    assertTrue(Maths.thresholdL1(data[3], 20) == 880.0);
+    assertTrue(Maths.thresholdL1(data[4], 20) == -180.0);
   }
 
   @Test
   public void testThresholdL11() throws Exception {
     float data[] = {0.2f, 3f, -4f, 900f, -200f};
-    assertTrue(MathUtils.thresholdL1(data[0], 20) == 0f);
-    assertTrue(MathUtils.thresholdL1(data[1], 20) == 0f);
-    assertTrue(MathUtils.thresholdL1(data[2], 20) == 0f);
-    assertTrue(MathUtils.thresholdL1(data[3], 20) == 880.0f);
-    assertTrue(MathUtils.thresholdL1(data[4], 20) == -180.0f);
+    assertTrue(Maths.thresholdL1(data[0], 20) == 0f);
+    assertTrue(Maths.thresholdL1(data[1], 20) == 0f);
+    assertTrue(Maths.thresholdL1(data[2], 20) == 0f);
+    assertTrue(Maths.thresholdL1(data[3], 20) == 880.0f);
+    assertTrue(Maths.thresholdL1(data[4], 20) == -180.0f);
   }
 
   @Test
   public void testIsEven() throws Exception {
     int data1[] = {2, 4, 6, 8, 10};
     for (int i = 0; i < data1.length; i++)
-      assertTrue(MathUtils.isEven(data1[i]));
+      assertTrue(Maths.isEven(data1[i]));
     int data2[] = {1, 3, 5, 7, 9};
     for (int i = 0; i < data2.length; i++)
-      assertFalse(MathUtils.isEven(data2[i]));
+      assertFalse(Maths.isEven(data2[i]));
   }
 
   @Test
   public void testPow() throws Exception {
     int a[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
     for (int i = 0; i < a.length; i++)
-      assertTrue(MathUtils.pow(a[i], 0) == 1);
+      assertTrue(Maths.pow(a[i], 0) == 1);
     for (int i = 0; i < a.length; i++)
-      assertTrue(MathUtils.pow(a[i], 1) == a[i]);
+      assertTrue(Maths.pow(a[i], 1) == a[i]);
     for (int i = 0; i < a.length; i++)
-      assertTrue(MathUtils.pow(a[i], 2) == a[i] * a[i]);
+      assertTrue(Maths.pow(a[i], 2) == a[i] * a[i]);
     for (int i = 0; i < a.length; i++)
-      assertTrue(MathUtils.pow(a[i], 3) == a[i] * a[i] * a[i]);
+      assertTrue(Maths.pow(a[i], 3) == a[i] * a[i] * a[i]);
     // when b is a negative number
     for (int i = 0; i < a.length; i++)
-      assertTrue(MathUtils.pow(a[i], -2) == a[i] * a[i]);
+      assertTrue(Maths.pow(a[i], -2) == a[i] * a[i]);
   }
 
   @Test
@@ -128,7 +128,7 @@ public class MathUtilsTest {
     List<Integer> integers = new ArrayList();
     for (int i = 0; i < data.length; i++)
       integers.add(i, data[i]);
-    int test[] = MathUtils.intList2Arr(integers);
+    int test[] = Maths.intList2Arr(integers);
     assertArrayEquals(data, test);
   }
 
@@ -138,7 +138,7 @@ public class MathUtilsTest {
     List<Float> floats = new ArrayList();
     for (int i = 0; i < data.length; i++)
       floats.add(i, data[i]);
-    float test[] = MathUtils.floatList2Arr(floats);
+    float test[] = Maths.floatList2Arr(floats);
     for (int i = 0; i < data.length; i++)
       assertEquals(data[i], test[i], 0.0f);
   }
@@ -151,7 +151,7 @@ public class MathUtilsTest {
   @Test
   public void testFindMaxIndex() throws Exception {
     float data[] = {-1f, 2f, 3f, 900f};
-    int index = MathUtils.findMaxIndex(data);
+    int index = Maths.findMaxIndex(data);
     assertEquals(index, 3);
   }
 
@@ -159,7 +159,7 @@ public class MathUtilsTest {
   public void testDouble2Float() throws Exception {
     float data[] = {-1.00f, 2.00f, 3.00f, 900.00f};
     double test[] = {-1, 2, 3, 900};
-    float dataTest[] = MathUtils.double2Float(test);
+    float dataTest[] = Maths.double2Float(test);
     for (int i = 0; i < data.length; i++)
       assertEquals(data[i], dataTest[i], 0.0f);
   }

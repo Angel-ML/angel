@@ -17,12 +17,10 @@
 
 package com.tencent.angel.ml.matrix.transport;
 
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import io.netty.buffer.ByteBuf;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 
 /**
  * The result of get udf request.

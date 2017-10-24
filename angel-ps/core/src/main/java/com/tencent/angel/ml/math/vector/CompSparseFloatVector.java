@@ -18,8 +18,6 @@
 package com.tencent.angel.ml.math.vector;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.ml.math.executor.MatrixOpExecutors;
 import com.tencent.angel.protobuf.generated.MLProtos;
 
 /**
@@ -78,7 +76,7 @@ public class CompSparseFloatVector extends CompTFloatVector {
     return MLProtos.RowType.T_FLOAT_SPARSE_COMPONENT;
   }
 
-  @Override public TVector clone() {
+  @Override public CompSparseFloatVector clone() {
     TFloatVector [] clonedVectors = new TFloatVector[splitNum];
     for(int i = 0; i < splitNum; i++) {
       if(vectors[i] != null) {

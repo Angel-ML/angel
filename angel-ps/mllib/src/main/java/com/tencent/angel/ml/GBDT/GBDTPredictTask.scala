@@ -17,23 +17,19 @@
 
 package com.tencent.angel.ml.GBDT
 
-import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.utils.DataParser
-import com.tencent.angel.worker.task.{PredictTask, TaskContext}
+import com.tencent.angel.ml.task.PredictTask
+import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.io.{LongWritable, Text}
 
 
 class GBDTPredictTask (ctx: TaskContext) extends PredictTask[LongWritable, Text](ctx) {
 
-  private val feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
-  private val dataFormat = conf.get(MLConf.ML_DATAFORMAT, "libsvm")
-
   def predict(ctx: TaskContext) {
-    predict(ctx, GBDTModel(ctx, conf), trainDataBlock);
+    predict(ctx, GBDTModel(ctx, conf), taskDataBlock);
   }
 
   def parse(key: LongWritable, value: Text): LabeledData = {
-    DataParser.parseVector(key, value, feaNum, dataFormat, false)
+    dataParser.parse(value.toString)
   }
 }

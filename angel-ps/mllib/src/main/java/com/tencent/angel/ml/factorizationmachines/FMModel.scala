@@ -17,10 +17,9 @@
 
 package com.tencent.angel.ml.factorizationmachines
 
-
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.DenseDoubleVector
+import com.tencent.angel.ml.math.vector.DenseIntDoubleVector
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex
@@ -59,11 +58,11 @@ class FMModel (conf: Configuration = null, _ctx: TaskContext = null) extends MLM
   val rank = conf.getInt(MLConf.ML_FM_RANK, MLConf.DEFAULT_ML_FM_RANK)
 
   // The w0 weight vector, stored on PS
-  val w0 = PSModel[DenseDoubleVector](FM_W0, 1, 1).setAverage(true)
+  val w0 = PSModel[DenseIntDoubleVector](FM_W0, 1, 1).setAverage(true)
   // The w weight vector, stored on PS
-  val w = PSModel[DenseDoubleVector](FM_W, 1, feaNum).setAverage(true)
+  val w = PSModel[DenseIntDoubleVector](FM_W, 1, feaNum).setAverage(true)
   // The v weight vector, stored on PS
-  val v = PSModel[DenseDoubleVector](FM_V, feaNum, rank).setAverage(true).setOplogType("SPARSE_DOUBLE")
+  val v = PSModel[DenseIntDoubleVector](FM_V, feaNum, rank).setAverage(true).setOplogType("SPARSE_DOUBLE")
 
   addPSModel(w0)
   addPSModel(w)
@@ -94,10 +93,10 @@ class FMModel (conf: Configuration = null, _ctx: TaskContext = null) extends MLM
     * @param update2: update values of v
     * @return
     */
-  def pushToPS(update0: DenseDoubleVector, update1: DenseDoubleVector, update2:
-  mutable.Map[Int, DenseDoubleVector]) = {
+  def pushToPS(update0: DenseIntDoubleVector, update1: DenseIntDoubleVector, update2: mutable.Map[Int, DenseIntDoubleVector]) = {
     w0.increment(0, update0)
     w.increment(0, update1)
+
     for (vec <- update2) {
       v.increment(vec._1, vec._2)
     }

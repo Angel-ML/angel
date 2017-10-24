@@ -28,7 +28,7 @@ import static junit.framework.Assert.assertEquals;
 public class CompSparseDoubleLongKeyVectorTest {
   @Test
   public void testBaseOp(){
-    CompSparseDoubleLongKeyVector vector = initVector();
+    CompSparseLongKeyDoubleVector vector = initVector();
     HashSet<Long> indexSet = new HashSet<Long>();
     Random r = new Random();
     int sampleNum = 100;
@@ -57,7 +57,7 @@ public class CompSparseDoubleLongKeyVectorTest {
     vector.timesBy(2.0);
     assertEquals(vector.sum(), Double.valueOf(sampleNum) * 2);
 
-    CompSparseDoubleLongKeyVector addVector = initVector();
+    CompSparseLongKeyDoubleVector addVector = initVector();
     for(int i = 0; i < indexes.length; i++) {
       addVector.plusBy(indexes[i], 1.0);
     }
@@ -83,13 +83,13 @@ public class CompSparseDoubleLongKeyVectorTest {
       values[i] = 1.0;
     }
     Sort.quickSort(indexes, values, 0, sampleNum -  1);
-    SparseDoubleLongKeySortedVector addVector2 = new SparseDoubleLongKeySortedVector(-1, indexes, values);
+    SparseLongKeySortedDoubleVector addVector2 = new SparseLongKeySortedDoubleVector(-1, indexes, values);
     vector.plusBy(addVector2);
     for(int i = 0; i < indexes.length; i++) {
       assertEquals(vector.get(indexes[i]), 5.0);
     }
 
-    SparseDoubleLongKeyVector addVector3 = new SparseDoubleLongKeyVector(-1);
+    SparseLongKeyDoubleVector addVector3 = new SparseLongKeyDoubleVector(-1);
     for(int i = 0; i < indexes.length; i++) {
       addVector3.set(indexes[i], 1.0);
     }
@@ -98,26 +98,26 @@ public class CompSparseDoubleLongKeyVectorTest {
       assertEquals(vector.get(indexes[i]), 6.0);
     }
 
-    CompSparseDoubleLongKeyVector clonedVector = (CompSparseDoubleLongKeyVector)vector.clone();
+    CompSparseLongKeyDoubleVector clonedVector = (CompSparseLongKeyDoubleVector)vector.clone();
     for(int i = 0; i < indexes.length; i++) {
       assertEquals(clonedVector.get(indexes[i]), 6.0);
     }
   }
 
-  private CompSparseDoubleLongKeyVector initVector(){
+  private CompSparseLongKeyDoubleVector initVector(){
     PartitionKey [] partKeys = new PartitionKey[4];
-    DoubleLongKeyVector [] vectors = new DoubleLongKeyVector[4];
+    TLongDoubleVector[] vectors = new TLongDoubleVector[4];
     long blockCol = Long.MAX_VALUE / 2;
     partKeys[0] = new PartitionKey(0, 0, 0, Long.MIN_VALUE , 0, Long.MIN_VALUE + blockCol);
     partKeys[1] = new PartitionKey(0, 0, 0, Long.MIN_VALUE + blockCol , 0, Long.MIN_VALUE + blockCol * 2);
     partKeys[2] = new PartitionKey(0, 0, 0, Long.MIN_VALUE + blockCol * 2 , 0, Long.MIN_VALUE + blockCol * 3);
     partKeys[3] = new PartitionKey(0, 0, 0, Long.MIN_VALUE + blockCol * 3 , 0, Long.MAX_VALUE);
 
-    vectors[0] = new SparseDoubleLongKeyVector(-1);
-    vectors[1] = new SparseDoubleLongKeyVector(-1);
-    vectors[2] = new SparseDoubleLongKeyVector(-1);
-    vectors[3] = new SparseDoubleLongKeyVector(-1);
+    vectors[0] = new SparseLongKeyDoubleVector(-1);
+    vectors[1] = new SparseLongKeyDoubleVector(-1);
+    vectors[2] = new SparseLongKeyDoubleVector(-1);
+    vectors[3] = new SparseLongKeyDoubleVector(-1);
 
-    return new CompSparseDoubleLongKeyVector(0, 0, -1, partKeys, vectors);
+    return new CompSparseLongKeyDoubleVector(0, 0, -1, partKeys, vectors);
   }
 }

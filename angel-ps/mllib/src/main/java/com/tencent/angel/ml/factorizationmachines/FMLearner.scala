@@ -20,9 +20,9 @@ package com.tencent.angel.ml.factorizationmachines
 import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.{DenseDoubleVector, SparseDoubleSortedVector}
+import com.tencent.angel.ml.math.vector.{DenseIntDoubleVector, SparseIntDoubleSortedVector}
 import com.tencent.angel.ml.matrix.psf.update.RandomNormal
-import com.tencent.angel.ml.metric.log.LossMetric
+import com.tencent.angel.ml.metric.LossMetric
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.ml.utils.ValidationUtils
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex
@@ -34,13 +34,13 @@ import scala.collection.mutable
 
 /**
   * Learner of Factorization machines
+ *
   * @param ctx: context of this task
   * @param minP: min value of y
   * @param maxP: max value of y
   * @param feaUsed: array of used feature of the input data
   */
-class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Double, val feaUsed:
-Array[Int]) extends MLLearner(ctx) {
+class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Double, val feaUsed: Array[Int]) extends MLLearner(ctx) {
   val LOG: Log = LogFactory.getLog(classOf[FMLearner])
   val fmmodel = new FMModel(conf, ctx)
 
@@ -79,7 +79,7 @@ Array[Int]) extends MLLearner(ctx) {
     val initCost = System.currentTimeMillis() - beforeInit
     LOG.info(s"Init matrixes cost $initCost ms.")
 
-    globalMetrics.addMetrics(fmmodel.FM_OBJ, LossMetric(trainData.size()))
+    globalMetrics.addMetric(fmmodel.FM_OBJ, LossMetric(trainData.size()))
 
     while (ctx.getEpoch < epochNum) {
       val startIter = System.currentTimeMillis()
@@ -90,7 +90,7 @@ Array[Int]) extends MLLearner(ctx) {
       val loss = evaluate(trainData, w0.get(0), w, v)
       val valiCost = System.currentTimeMillis() - startVali
 
-      globalMetrics.metrics(fmmodel.FM_OBJ, loss)
+      globalMetrics.metric(fmmodel.FM_OBJ, loss)
 
       LOG.info(s"Epoch=${ctx.getEpoch}, evaluate loss=${loss/trainData.size()}. " +
         s"trainCost=$iterCost, " +
@@ -120,11 +120,12 @@ Array[Int]) extends MLLearner(ctx) {
 
   /**
     * One iteration to train Factorization Machines
+ *
     * @param dataBlock
     * @return
     */
-  def oneIteration(dataBlock: DataBlock[LabeledData]): (DenseDoubleVector,
-    DenseDoubleVector, mutable.HashMap[Int, DenseDoubleVector]) = {
+  def oneIteration(dataBlock: DataBlock[LabeledData]): (DenseIntDoubleVector,
+    DenseIntDoubleVector, mutable.HashMap[Int, DenseIntDoubleVector]) = {
     val startGet = System.currentTimeMillis()
     val (w0, w, v) = fmmodel.pullFromPS(vIndexs)
     val getCost = System.currentTimeMillis() - startGet
@@ -132,7 +133,7 @@ Array[Int]) extends MLLearner(ctx) {
 
     val _w0 = w0.clone()
     val _w = w.clone()
-    val _v = new mutable.HashMap[Int, DenseDoubleVector]()
+    val _v = new mutable.HashMap[Int, DenseIntDoubleVector]()
     for (vec <- v) {
       _v.put(vec._1, vec._2.clone())
     }
@@ -140,7 +141,7 @@ Array[Int]) extends MLLearner(ctx) {
     dataBlock.resetReadIndex()
     for (_ <- 0 until dataBlock.size) {
       val data = dataBlock.read()
-      val x = data.getX.asInstanceOf[SparseDoubleSortedVector]
+      val x = data.getX.asInstanceOf[SparseIntDoubleSortedVector]
       val y = data.getY
       val pre = predict(x, y, _w0.get(0), _w, _v)
       val dm = derviationMultipler(y, pre)
@@ -154,8 +155,8 @@ Array[Int]) extends MLLearner(ctx) {
       v(update._1).plusBy(update._2, -1.0).timesBy(-1.0)
     }
 
-    fmmodel.pushToPS(w0.plusBy(_w0, -1.0).timesBy(-1.0).asInstanceOf[DenseDoubleVector],
-      w.plusBy(_w, -1.0).timesBy(-1.0).asInstanceOf[DenseDoubleVector],
+    fmmodel.pushToPS(w0.plusBy(_w0, -1.0).timesBy(-1.0).asInstanceOf[DenseIntDoubleVector],
+      w.plusBy(_w, -1.0).timesBy(-1.0).asInstanceOf[DenseIntDoubleVector],
       v)
 
     (_w0, _w, _v)
@@ -166,14 +167,15 @@ Array[Int]) extends MLLearner(ctx) {
     * For regression: loss(y,\hat y) = (y - \hat y)^2
     * For classification: loss(y,\hat y) = -\ln (\delta(y, \hat y))),
     *                     in which \delta(x) = \frac{1}{1+e^{-x}}
+ *
     * @param dataBlock
     * @param w0
     * @param w
     * @param v
     * @return
     */
-  def evaluate(dataBlock: DataBlock[LabeledData], w0: Double, w: DenseDoubleVector,
-               v: mutable.HashMap[Int, DenseDoubleVector]):
+  def evaluate(dataBlock: DataBlock[LabeledData], w0: Double, w: DenseIntDoubleVector,
+               v: mutable.HashMap[Int, DenseIntDoubleVector]):
   Double = {
     dataBlock.resetReadIndex()
 
@@ -182,7 +184,7 @@ Array[Int]) extends MLLearner(ctx) {
         var eval = 0.0
         for (_ <- 0 until dataBlock.size) {
           val data = dataBlock.read()
-          val x = data.getX.asInstanceOf[SparseDoubleSortedVector]
+          val x = data.getX.asInstanceOf[SparseIntDoubleSortedVector]
           val y = data.getY
           val pre = predict(x, y, w0, w, v)
           eval += (pre - y) * (pre - y)
@@ -204,7 +206,7 @@ Array[Int]) extends MLLearner(ctx) {
 
         for (i <- 0 until dataBlock.size()) {
           val data = dataBlock.read()
-          val x = data.getX.asInstanceOf[SparseDoubleSortedVector]
+          val x = data.getX.asInstanceOf[SparseIntDoubleSortedVector]
           val y = data.getY
           val pre = predict(x, y, w0, w, v)
 
@@ -244,6 +246,7 @@ Array[Int]) extends MLLearner(ctx) {
 
   /**
     * Predict an instance
+ *
     * @param x：feature vector of instance
     * @param y: label value of instance
     * @param w0: w0 mat of FM
@@ -251,8 +254,8 @@ Array[Int]) extends MLLearner(ctx) {
     * @param v: v mat of FM
     * @return
     */
-  def predict(x: SparseDoubleSortedVector, y: Double, w0: Double, w: DenseDoubleVector, v:
-  mutable.HashMap[Int, DenseDoubleVector]): Double = {
+  def predict(x: SparseIntDoubleSortedVector, y: Double, w0: Double, w: DenseIntDoubleVector, v:
+  mutable.HashMap[Int, DenseIntDoubleVector]): Double = {
     var ret: Double = 0.0
     ret += w0
     ret += x.dot(w)
@@ -281,6 +284,7 @@ Array[Int]) extends MLLearner(ctx) {
 
   /**
     * \frac{\partial loss}{\partial x} = dm * \frac{\partial y}{\partial x}
+ *
     * @param y: label of the instance
     * @param pre: predict value of the instance
     * @return : dm value
@@ -301,11 +305,12 @@ Array[Int]) extends MLLearner(ctx) {
 
   /**
     * Update v mat
+ *
     * @param x: a train instance
     * @param dm: dm value of the instance
     * @param v: v mat
     */
-  def updateV(x: SparseDoubleSortedVector, dm: Double, v: mutable.HashMap[Int, DenseDoubleVector]):
+  def updateV(x: SparseIntDoubleSortedVector, dm: Double, v: mutable.HashMap[Int, DenseIntDoubleVector]):
   Unit = {
 
     for (f <- 0 until rank) {

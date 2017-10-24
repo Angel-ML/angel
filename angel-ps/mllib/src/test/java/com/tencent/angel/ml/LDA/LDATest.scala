@@ -21,7 +21,7 @@ import com.tencent.angel.client.{AngelClient, AngelClientFactory}
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.lda.LDAModel._
-import com.tencent.angel.ml.lda.{LDAPredictTask, LDAModel, LDATrainTask}
+import com.tencent.angel.ml.lda.{LDAModel, LDAPredictTask, LDATrainTask}
 import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
@@ -124,4 +124,3 @@ class LDATest {
 
   }
 }
-

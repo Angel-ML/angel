@@ -1,4 +1,4 @@
-package com.tencent.angel.example.quickstart;
+package com.tencent.angel.example.quickStart;
 
 /*
  * Tencent is pleased to support the open source community by making Angel available.
@@ -77,16 +77,13 @@ public class QSLRLocalExample {
     conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, savePath);
     // Set actionType train
     conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
-    conf.set(MLConf.ML_DATAFORMAT(), "libsvm");
+    conf.set(MLConf.ML_DATA_FORMAT(), "libsvm");
     return conf;
   }
 
   public static void main(String[] args) {
     Configuration conf = setConf();
-
-
     QSLRRunner runner = new QSLRRunner();
-
     runner.train(conf);
   }
 

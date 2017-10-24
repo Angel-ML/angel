@@ -17,7 +17,7 @@
 package com.tencent.angel.ml.matrix.psf;
 
 import com.tencent.angel.exception.InvalidParameterException;
-import com.tencent.angel.ml.math.vector.DenseDoubleVector;
+import com.tencent.angel.ml.math.vector.DenseIntDoubleVector;
 import com.tencent.angel.ml.matrix.psf.aggr.*;
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult;
 import com.tencent.angel.ml.matrix.psf.aggr.primitive.Pull;
@@ -161,7 +161,7 @@ public class AggrFuncTest {
   @Test
   public void testPull() throws InvalidParameterException, InterruptedException, ExecutionException {
     GetFunc func = new Pull(w2Client.getMatrixId(), 1);
-    double[] result = ((DenseDoubleVector)(((GetRowResult) w2Client.get(func)).getRow())).getValues();
+    double[] result = ((DenseIntDoubleVector)(((GetRowResult) w2Client.get(func)).getRow())).getValues();
 
     for (int i = 0; i < dim; i ++ ) {
       Assert.assertEquals(result[i], localArray1[i], delta);
@@ -187,7 +187,7 @@ public class AggrFuncTest {
 
   private static double[] pull(MatrixClient client, int rowId) {
     GetRowResult rowResult = (GetRowResult) client.get(new Pull(client.getMatrixId(), rowId));
-    return ((DenseDoubleVector)rowResult.getRow()).getValues();
+    return ((DenseIntDoubleVector)rowResult.getRow()).getValues();
   }
 
   @AfterClass

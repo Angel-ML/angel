@@ -17,15 +17,18 @@
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.math.*;
+import com.tencent.angel.ml.math.TMatrix;
+import com.tencent.angel.ml.math.TUpdate;
+import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.math.matrix.*;
-import com.tencent.angel.ml.math.vector.*;
+import com.tencent.angel.ml.math.vector.DenseFloatVector;
+import com.tencent.angel.ml.math.vector.DenseIntDoubleVector;
+import com.tencent.angel.ml.math.vector.DenseIntVector;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.psagent.MatrixPartitionRouter;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.storage.MatrixStorage;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -155,7 +158,7 @@ public abstract class MatrixOpLog {
 
   private boolean isNeedFilter(TVector vector) {
     return (vector instanceof DenseIntVector)
-      || (vector instanceof DenseDoubleVector)
+      || (vector instanceof DenseIntDoubleVector)
       || (vector instanceof DenseFloatVector);
   }
 

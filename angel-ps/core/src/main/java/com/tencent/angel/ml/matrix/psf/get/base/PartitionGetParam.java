@@ -16,10 +16,9 @@
 
 package com.tencent.angel.ml.matrix.psf.get.base;
 
-import io.netty.buffer.ByteBuf;
-
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.common.Serialize;
+import io.netty.buffer.ByteBuf;
 
 /**
  * The parameter of partition get. The class that extends this class must have a constructor without

@@ -12,19 +12,17 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
  */
 package com.tencent.angel.ml.GBDT.algo.RegTree;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.GBDT.algo.GBDTController;
+import com.tencent.angel.ml.GBDT.algo.tree.SplitEntry;
 import com.tencent.angel.ml.conf.MLConf;
-import com.tencent.angel.ml.math.vector.DenseDoubleVector;
-import com.tencent.angel.ml.math.vector.SparseDoubleSortedVector;
+import com.tencent.angel.ml.math.vector.DenseIntDoubleVector;
+import com.tencent.angel.ml.math.vector.SparseIntDoubleSortedVector;
 import com.tencent.angel.ml.math.vector.TDoubleVector;
 import com.tencent.angel.ml.param.GBDTParam;
-import com.tencent.angel.ml.GBDT.algo.tree.SplitEntry;
-import com.tencent.angel.ps.impl.PSContext;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.worker.WorkerContext;
 import org.apache.commons.logging.Log;
@@ -41,18 +39,18 @@ public class GradHistHelper {
   private GBDTController controller;
   private int nid;
 
-  public GradHistHelper(GBDTController model, int nid) {
-    this.controller = model;
+  public GradHistHelper(GBDTController controller, int nid) {
+    this.controller = controller;
     this.nid = nid;
   }
 
-  public DenseDoubleVector buildHistogram(int insStart, int insEnd) {
+  public DenseIntDoubleVector buildHistogram(int insStart, int insEnd) {
     // 1. new feature's histogram (grad + hess)
     // size: sampled_featureNum * (2 * splitNum)
     // in other words, concatenate each feature's histogram
     int featureNum = this.controller.fset.length;
     int splitNum = this.controller.param.numSplit;
-    DenseDoubleVector histogram = new DenseDoubleVector(featureNum * 2 * splitNum);
+    DenseIntDoubleVector histogram = new DenseIntDoubleVector(featureNum * 2 * splitNum);
 
     // 2. get the span of this node
     //int nodeStart = this.controller.nodePosStart[nid];
@@ -73,7 +71,7 @@ public class GradHistHelper {
       // 3.3. add to the sum
       gradSum += gradPair.getGrad();
       hessSum += gradPair.getHess();
-      SparseDoubleSortedVector instance = this.controller.trainDataStore.instances.get(insIdx);
+      SparseIntDoubleSortedVector instance = this.controller.trainDataStore.instances.get(insIdx);
       // 3.4. loop the non-zero entries
       for (int i = 0; i < instance.getIndices().length; i++) {
         int fid = instance.getIndices()[i];
@@ -390,7 +388,7 @@ public class GradHistHelper {
 
   // find the best split result of one feature
   public static SplitEntry findBestSplitOfOneFeatureHelper(int fid, TDoubleVector histogram,
-      int startIdx) {
+                                                           int startIdx) {
 
     LOG.info(String.format("Find best split for fid[%d] in histogram size[%d], startIdx[%d]", fid,
         histogram.getDimension(), startIdx));
@@ -454,7 +452,7 @@ public class GradHistHelper {
   }
 
   // find the best split result of a serve row on the PS
-  public static SplitEntry findSplitOfServerRow(ServerDenseDoubleRow row) {
+  public static SplitEntry findSplitOfServerRow(ServerDenseDoubleRow row, GBDTParam param) {
     LOG.info(String.format("------To find the best split from server row[%d], cols[%d-%d]------",
         row.getRowId(), row.getStartCol(), row.getEndCol()));
     SplitEntry splitEntry = new SplitEntry();
@@ -462,21 +460,18 @@ public class GradHistHelper {
     splitEntry.rightGradStat = new GradStats();
     LOG.info(String.format("The best split before looping the histogram: fid[%d], fvalue[%f]",
         splitEntry.fid, splitEntry.fvalue));
-    
-    int splitNum = PSContext.get().getConf().getInt(MLConf.ML_GBDT_SPLIT_NUM(),
-        MLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
 
-    int startFid = (int)row.getStartCol() / (2 * splitNum);
-    int endFid = ((int)row.getEndCol() + 1) / (2 * splitNum) - 1;
-    LOG.info(String.format("Row split col[%d-%d], start feature[%d], end feature[%d]",
+    int startFid = (int)row.getStartCol() / (2 * param.numSplit);
+    int endFid = ((int)row.getEndCol()) / (2 * param.numSplit) - 1;
+    LOG.info(String.format("Row split col[%d-%d), start feature[%d], end feature[%d]",
         row.getStartCol(), row.getEndCol(), startFid, endFid));
 
     // 2. the fid here is the index in the sampled feature set, rather than the true feature id
     for (int i = 0; startFid + i <= endFid; i++) {
       // 2.2. get the start index in histogram of this feature
-      int startIdx = 2 * splitNum * i;
+      int startIdx = 2 * param.numSplit * i;
       // 2.3. find the best split of current feature
-      SplitEntry curSplit = findSplitOfFeature(startFid + i, row, startIdx);
+      SplitEntry curSplit = findSplitOfFeature(startFid + i, row, startIdx, param);
       // 2.4. update the best split result if possible
       splitEntry.update(curSplit);
     }
@@ -488,13 +483,10 @@ public class GradHistHelper {
   }
 
   // find the best split result of one feature from a server row, used by the PS
-  public static SplitEntry findSplitOfFeature(int fid, ServerDenseDoubleRow row, int startIdx) {
+  public static SplitEntry findSplitOfFeature(int fid, ServerDenseDoubleRow row, int startIdx, GBDTParam param) {
 
     LOG.debug(String.format("Find best split for fid[%d] in histogram size[%d], startIdx[%d]", fid,
         row.size(), startIdx));
-
-    int splitNum = PSContext.get().getConf().getInt(MLConf.ML_GBDT_SPLIT_NUM(),
-        MLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
 
     SplitEntry splitEntry = new SplitEntry();
     // 1. set the feature id
@@ -503,20 +495,19 @@ public class GradHistHelper {
     GradStats bestLeftStat = new GradStats();
     GradStats bestRightStat = new GradStats();
 
-    GradStats rootStats = calGradStats(row, startIdx, splitNum);
-    GBDTParam param = new GBDTParam();
+    GradStats rootStats = calGradStats(row, startIdx, param.numSplit);
 
-    if (startIdx + 2 * splitNum <= row.size()) {
+    if (startIdx + 2 * param.numSplit <= row.getEndCol()) {
       // 3. the gain of the root node
       float rootGain = rootStats.calcGain(param);
       // 4. create the temp left and right grad stats
       GradStats leftStats = new GradStats();
       GradStats rightStats = new GradStats();
       // 5. loop over all the data in histogram
-      for (int histIdx = startIdx; histIdx < startIdx + splitNum - 1; histIdx++) {
+      for (int histIdx = startIdx; histIdx < startIdx + param.numSplit; histIdx++) {
         // 5.1. get the grad and hess of current hist bin
         float grad = (float) row.getData().get(histIdx);
-        float hess = (float) row.getData().get(splitNum + histIdx);
+        float hess = (float) row.getData().get(param.numSplit + histIdx);
         leftStats.add(grad, hess);
         // 5.2. check whether we can split with current left hessian
         if (leftStats.sumHess >= param.minChildWeight) {

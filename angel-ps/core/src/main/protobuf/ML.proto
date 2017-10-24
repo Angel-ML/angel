@@ -103,7 +103,8 @@ enum RowType {
 	T_DOUBLE_SPARSE_COMPONENT = 9;
 	T_FLOAT_SPARSE_COMPONENT = 10;
 	T_INT_SPARSE_COMPONENT = 11;
-	T_INVALID = 12;
+	T_DOUBLE_SPARSE_LONGKEY_COMPONENT = 12;
+	T_INVALID = 13;
 }
 
 message MatrixProto{
@@ -111,9 +112,11 @@ message MatrixProto{
   required string name = 2;
   required int32 rowNum = 3;
   required int64 colNum = 4;
-  required RowType rowType = 5;
-  repeated Pair attribute = 6;
-  repeated MatrixPartitionLocation matrixPartLocation = 7;
+  required int32 blockRowNum = 5;
+  required int64 blockColNum = 6;
+  required RowType rowType = 7;
+  repeated Pair attribute = 8;
+  repeated MatrixPartitionLocation matrixPartLocation = 9;
 }
 
 message MatrixClock{

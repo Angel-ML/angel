@@ -20,16 +20,16 @@ package com.tencent.angel.ml
 /**
   * Base class for all machine learning algorithm learner.
   */
+
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.metric.log.GlobalMetrics
+import com.tencent.angel.ml.metric.GlobalMetrics
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 
 abstract class MLLearner(val ctx:TaskContext) {
   val globalMetrics = new GlobalMetrics(ctx)
-
-  def conf = ctx.getConf();
+  val conf = ctx.getConf();
 
   /**
     * Train a ML Model

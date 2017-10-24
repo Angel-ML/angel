@@ -19,7 +19,6 @@ package com.tencent.angel.ml.matrixfactorization.threads
 
 import java.util.concurrent.Callable
 import java.util.concurrent.atomic.AtomicInteger
-
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.fs.Path

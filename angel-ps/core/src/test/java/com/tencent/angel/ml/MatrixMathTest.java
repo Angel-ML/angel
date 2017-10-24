@@ -17,11 +17,9 @@
 package com.tencent.angel.ml;
 
 import com.tencent.angel.ml.math.matrix.SparseIntMatrix;
-import junit.framework.Assert;
-
-import org.junit.Test;
-
 import com.tencent.angel.utils.Time;
+import junit.framework.Assert;
+import org.junit.Test;
 
 import java.util.Random;
 

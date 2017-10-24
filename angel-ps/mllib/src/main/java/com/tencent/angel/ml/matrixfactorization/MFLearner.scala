@@ -27,7 +27,7 @@ import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.DenseFloatVector
 import com.tencent.angel.ml.matrixfactorization.threads._
-import com.tencent.angel.ml.metric.log.ObjMetric
+import com.tencent.angel.ml.metric.ObjMetric
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex
 import com.tencent.angel.worker.storage.{DataBlock, Reader}
@@ -102,7 +102,7 @@ class MFLearner(override val ctx: TaskContext) extends MLLearner(ctx){
 
     init()
     LOG.info("mfModel.userNum=" + mfModel.userNum)
-    globalMetrics.addMetrics(MFModel.MF_METRIC, ObjMetric())
+    globalMetrics.addMetric(MFModel.MF_METRIC, ObjMetric())
 
     while (ctx.getEpoch <  epochNum) {
       LOG.info(s"Start Epoch ${ctx.getEpoch}")
@@ -245,7 +245,7 @@ class MFLearner(override val ctx: TaskContext) extends MLLearner(ctx){
     val validTime = System.currentTimeMillis - startVali
     val iterTime = System.currentTimeMillis - startIter
 
-    globalMetrics.metrics(MFModel.MF_METRIC, loss)
+    globalMetrics.metric(MFModel.MF_METRIC, loss)
     val infoMsg = s"Task[${ctx.getTaskId.getIndex}] Epoch=$epoch success. local loss=$loss, " +
       s" epoch cost $iterTime ms, train cost $trainTime ms, validate cost $validTime ms"
     LOG.info(infoMsg)

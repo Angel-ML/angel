@@ -18,7 +18,6 @@ package com.tencent.angel.ml.math.matrix;
 
 import com.tencent.angel.ml.math.TMatrix;
 import com.tencent.angel.ml.math.vector.SparseIntVector;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 

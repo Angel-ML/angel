@@ -18,7 +18,7 @@
 package com.tencent.angel.ml.GBDT.algo.tree;
 
 import com.tencent.angel.ml.GBDT.algo.RegTree.RegTDataStore;
-import com.tencent.angel.ml.utils.MathUtils;
+import com.tencent.angel.ml.utils.Maths;
 import com.yahoo.sketches.quantiles.DoublesSketch;
 
 /**
@@ -52,7 +52,7 @@ public class TYahooSketchSplit{
     float[][] splitSet = new float[numFeature][splitNum];
 
     for (int fid = 0; fid < numFeature; fid++) {
-      splitSet[fid] = MathUtils.double2Float(sketches[fid].getQuantiles(fracs));
+      splitSet[fid] = Maths.double2Float(sketches[fid].getQuantiles(fracs));
     }
 
     return splitSet;

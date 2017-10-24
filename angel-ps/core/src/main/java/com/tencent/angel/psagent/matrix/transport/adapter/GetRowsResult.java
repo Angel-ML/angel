@@ -17,7 +17,7 @@
 package com.tencent.angel.psagent.matrix.transport.adapter;
 
 import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.ml.math.vector.DenseDoubleVector;
+import com.tencent.angel.ml.math.vector.DenseIntDoubleVector;
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * The result of get rows flow request.
  */
 public class GetRowsResult {
-  private static TVector wakeUpVector = new DenseDoubleVector(0);
+  private static TVector wakeUpVector = new DenseIntDoubleVector(0);
 
   /** If all rows are fetched */
   private final AtomicBoolean isFetchOver;

@@ -18,7 +18,7 @@ package com.tencent.angel.ps;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.protobuf.generated.MLProtos.*;
+import com.tencent.angel.protobuf.generated.MLProtos.Partition;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;

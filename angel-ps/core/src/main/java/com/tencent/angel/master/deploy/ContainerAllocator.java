@@ -16,11 +16,11 @@
 
 package com.tencent.angel.master.deploy;
 
-import java.util.Map;
-
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.yarn.api.records.ApplicationAccessType;
 import org.apache.hadoop.yarn.event.EventHandler;
+
+import java.util.Map;
 
 /**
  * Base class for container allocator.

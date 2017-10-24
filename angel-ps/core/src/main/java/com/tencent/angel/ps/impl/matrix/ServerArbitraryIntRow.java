@@ -18,13 +18,11 @@ package com.tencent.angel.ps.impl.matrix;
 
 import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.protobuf.generated.MLProtos.RowType;
-
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2IntMap.Entry;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -34,7 +32,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
-import static com.tencent.angel.protobuf.generated.MLProtos.RowType.*;
+import static com.tencent.angel.protobuf.generated.MLProtos.RowType.T_INT_DENSE;
+import static com.tencent.angel.protobuf.generated.MLProtos.RowType.T_INT_SPARSE;
 
 /**
  * The class represent arbitrary int row on parameter server. The row can convert between dense and

@@ -16,8 +16,8 @@
 
 package com.tencent.angel.master.psagent;
 
-import com.tencent.angel.psagent.PSAgentAttemptId;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.PSAgentReportRequest;
+import com.tencent.angel.psagent.PSAgentAttemptId;
 
 public class PSAgentAttemptStateUpdateEvent extends PSAgentAttemptEvent {
   private final PSAgentReportRequest report;

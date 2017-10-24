@@ -65,6 +65,8 @@ class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Do
     val tokens = new CSRTokens(model.V, docs.size())
     tokens.build(docs, model.K)
     docs.clean()
+    LOG.info(s"build data")
+
 
     // training
     val learner = new LDALearner(ctx, model, tokens)

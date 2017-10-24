@@ -27,9 +27,8 @@ import com.tencent.angel.master.metrics.MetricsService;
 import com.tencent.angel.master.oplog.AppStateStorage;
 import com.tencent.angel.master.ps.ParameterServerManager;
 import com.tencent.angel.master.psagent.PSAgentManager;
-import com.tencent.angel.master.worker.WorkerManager;
 import com.tencent.angel.master.task.AMTaskManager;
-
+import com.tencent.angel.master.worker.WorkerManager;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.Credentials;

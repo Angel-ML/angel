@@ -26,7 +26,7 @@ import org.apache.commons.logging.LogFactory;
  * Base class for long key double vector.
  */
 public abstract class DoubleLongKeyVector extends TVector {
-  private static final Log LOG = LogFactory.getLog(SparseDoubleLongKeyVector.class);
+  private static final Log LOG = LogFactory.getLog(DoubleLongKeyVector.class);
 
   /** Vector dimension */
   protected long dim;

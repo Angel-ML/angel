@@ -20,9 +20,10 @@ package com.tencent.angel.ml.GBDT
 
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.task.TrainTask
 import com.tencent.angel.ml.utils.DataParser
 import com.tencent.angel.worker.storage.MemoryDataBlock
-import com.tencent.angel.worker.task.{TaskContext, TrainTask}
+import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.io.{LongWritable, Text}
 
@@ -31,11 +32,13 @@ class GBDTTrainTask (val ctx: TaskContext) extends TrainTask[LongWritable, Text]
   private val LOG = LogFactory.getLog(classOf[GBDTTrainTask])
 
   private val feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
-  private val dataFormat = conf.get(MLConf.ML_DATAFORMAT, "libsvm")
+  private val dataFormat = conf.get(MLConf.ML_DATA_FORMAT, "libsvm")
   private val validRatio = conf.getDouble(MLConf.ML_VALIDATE_RATIO, 0.05)
 
   // validation data storage
   var validDataStorage = new MemoryDataBlock[LabeledData](-1)
+
+  private val dataParser = DataParser(dataFormat, feaNum, true)
 
   /**
     * @param ctx: task context
@@ -43,7 +46,7 @@ class GBDTTrainTask (val ctx: TaskContext) extends TrainTask[LongWritable, Text]
   @throws[Exception]
   def train(ctx: TaskContext) {
     val trainer = new GBDTLearner(ctx)
-    trainer.train(trainDataBlock, validDataStorage)
+    trainer.train(taskDataBlock, validDataStorage)
   }
 
   /**
@@ -53,8 +56,7 @@ class GBDTTrainTask (val ctx: TaskContext) extends TrainTask[LongWritable, Text]
     * @param value the text
     */
   def parse(key: LongWritable, value: Text): LabeledData = {
-    val sample = DataParser.parseVector(key, value, feaNum, dataFormat, true)
-    sample
+    dataParser.parse(value.toString)
   }
 
   /**
@@ -74,11 +76,11 @@ class GBDTTrainTask (val ctx: TaskContext) extends TrainTask[LongWritable, Text]
         if (count % valid == 0)
           validDataStorage.put(out)
         else
-          trainDataBlock.put(out)
+          taskDataBlock.put(out)
         count += 1
       }
     }
-    trainDataBlock.flush()
+    taskDataBlock.flush()
     validDataStorage.flush()
   }
 

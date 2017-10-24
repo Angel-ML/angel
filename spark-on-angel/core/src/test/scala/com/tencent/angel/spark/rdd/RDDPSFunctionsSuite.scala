@@ -18,7 +18,7 @@
 package com.tencent.angel.spark.rdd
 
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.math.vector.PSVector
+import com.tencent.angel.spark.models.vector.PSVector
 import com.tencent.angel.spark.{PSFunSuite, SharedPSContext}
 
 
@@ -33,10 +33,10 @@ class RDDPSFunctionsSuite extends PSFunSuite with SharedPSContext {
       Array.fill[Int](dim)(i)
     }
 
-    val remoteVector = PSVector.dense(dim, capacity).toRemote
+    val remoteVector = PSVector.dense(dim, capacity).toCache
 
     def seqOp: (Int, Array[Int]) => Int = { (c: Int, x: Array[Int]) =>
-      remoteVector.increment(x.map(_.toDouble))
+      remoteVector.incrementWithCache(x.map(_.toDouble))
       c + 1
     }
     def combOp: (Int, Int) => Int = (c1: Int, c2: Int) => c1 + c2
@@ -44,7 +44,7 @@ class RDDPSFunctionsSuite extends PSFunSuite with SharedPSContext {
 
     val result = Array.fill[Int](dim)(seed.sum)
     assert(count === seed.length)
-    assert(remoteVector.pull().map(_.toInt).sameElements(result))
+    assert(remoteVector.pullFromCache().map(_.toInt).sameElements(result))
 
     PSContext.instance().destroyVectorPool(remoteVector)
   }
@@ -59,14 +59,14 @@ class RDDPSFunctionsSuite extends PSFunSuite with SharedPSContext {
       Array.fill[Int](dim)(i)
     }
 
-    val remoteVector = PSVector.dense(dim, capacity).fill(Double.NegativeInfinity).toRemote
+    val remoteVector = PSVector.dense(dim, capacity).fill(Double.NegativeInfinity).toCache
 
     val max = rdd.psFoldLeft(remoteVector) { (pv, bv) =>
-      pv.mergeMax(bv.map(_.toDouble))
+      pv.mergeMaxWithCache(bv.map(_.toDouble))
       pv
     }
 
-    assert(max.pull().map(_.toInt).sameElements(Array.fill(dim)(99)))
+    assert(max.pullFromCache().map(_.toInt).sameElements(Array.fill(dim)(99)))
 
     PSContext.instance().destroyVectorPool(remoteVector)
   }

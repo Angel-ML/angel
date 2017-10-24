@@ -17,9 +17,6 @@
 package com.tencent.angel.ml.math.vector;
 
 import com.tencent.angel.ml.math.TAbstractVector;
-import com.tencent.angel.ml.math.vector.TDoubleVector;
-import com.tencent.angel.ml.math.vector.TFloatVector;
-import com.tencent.angel.ml.math.VectorType;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import org.junit.Test;
 
@@ -63,7 +60,7 @@ public class DenseFloatVectorTest {
 
     double dot = 0.0;
     for (int i = 0; i < dim; i++)
-      dot += vec_1.getValues()[i] * ((DenseDoubleVector)vec_2).getValues()[i];
+      dot += vec_1.getValues()[i] * ((DenseIntDoubleVector)vec_2).getValues()[i];
 
     assertEquals(dot, vec_1.dot(vec_2));
   }

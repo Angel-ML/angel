@@ -16,12 +16,9 @@
 
 package com.tencent.angel.localcluster;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
-
+import com.tencent.angel.exception.InvalidParameterException;
+import com.tencent.angel.ps.PSAttemptId;
+import com.tencent.angel.worker.WorkerAttemptId;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -29,9 +26,11 @@ import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 
-import com.tencent.angel.exception.InvalidParameterException;
-import com.tencent.angel.ps.PSAttemptId;
-import com.tencent.angel.worker.WorkerAttemptId;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Local resource manager. It startups a event handler to handle allocation/deallocation events.

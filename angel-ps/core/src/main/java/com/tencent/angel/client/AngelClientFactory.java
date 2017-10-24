@@ -16,12 +16,11 @@
 
 package com.tencent.angel.client;
 
-import org.apache.hadoop.conf.Configuration;
-
 import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.client.local.AngelLocalClient;
 import com.tencent.angel.client.yarn.AngelYarnClient;
 import com.tencent.angel.conf.AngelConf;
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * Angel client factory, it support two types client now: LOCAL and YARN

@@ -16,17 +16,16 @@
 
 package com.tencent.angel.ml.math.matrix;
 
-import com.tencent.angel.ml.math.vector.SparseDoubleVector;
-
+import com.tencent.angel.ml.math.vector.SparseIntDoubleVector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * Sparse double matrix that is represented by a group of sparse double vector {@link SparseDoubleVector}
+ * Sparse double matrix that is represented by a group of sparse double vector {@link SparseIntDoubleVector}
  */
 public class SparseDoubleMatrix extends TDoubleMatrix {
   private static final Log LOG = LogFactory.getLog(SparseDoubleMatrix.class);
-  private final SparseDoubleVector[] vectors;
+  private final SparseIntDoubleVector[] vectors;
 
   /**
    * Build a SparseDoubleMatrix
@@ -35,7 +34,7 @@ public class SparseDoubleMatrix extends TDoubleMatrix {
    */
   public SparseDoubleMatrix(int row, int col) {
     super(row, col);
-    vectors = new SparseDoubleVector[row];
+    vectors = new SparseIntDoubleVector[row];
   }
 
   /**
@@ -45,8 +44,8 @@ public class SparseDoubleMatrix extends TDoubleMatrix {
    * @return
    */
   @Override
-  public SparseDoubleVector initVector(int rowIndex) {
-    SparseDoubleVector ret = new SparseDoubleVector((int)col);
+  public SparseIntDoubleVector initVector(int rowIndex) {
+    SparseIntDoubleVector ret = new SparseIntDoubleVector((int)col);
     ret.setMatrixId(matrixId);
     ret.setRowId(rowIndex);
     return ret;

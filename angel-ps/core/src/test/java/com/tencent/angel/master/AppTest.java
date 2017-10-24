@@ -16,10 +16,23 @@
 
 package com.tencent.angel.master;
 
-import static org.junit.Assert.assertEquals;
-
-import java.io.IOException;
-
+import com.tencent.angel.client.AngelClient;
+import com.tencent.angel.client.AngelClientFactory;
+import com.tencent.angel.common.Location;
+import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.conf.MatrixConf;
+import com.tencent.angel.ipc.TConnection;
+import com.tencent.angel.ipc.TConnectionManager;
+import com.tencent.angel.localcluster.LocalClusterContext;
+import com.tencent.angel.master.app.InternalErrorEvent;
+import com.tencent.angel.ml.matrix.MatrixContext;
+import com.tencent.angel.protobuf.ProtobufUtil;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.GetJobReportRequest;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.GetJobReportResponse;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.JobStateProto;
+import com.tencent.angel.protobuf.generated.MLProtos;
+import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskIterationRequest;
+import com.tencent.angel.worker.task.TaskId;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -32,25 +45,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.google.protobuf.ServiceException;
-import com.tencent.angel.client.AngelClient;
-import com.tencent.angel.client.AngelClientFactory;
-import com.tencent.angel.common.Location;
-import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.conf.MatrixConf;
-import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ipc.TConnection;
-import com.tencent.angel.ipc.TConnectionManager;
-import com.tencent.angel.localcluster.LocalClusterContext;
-import com.tencent.angel.master.app.InternalErrorEvent;
-import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.protobuf.ProtobufUtil;
-import com.tencent.angel.protobuf.generated.MLProtos;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.GetJobReportRequest;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.GetJobReportResponse;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.JobStateProto;
-import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskIterationRequest;
-import com.tencent.angel.worker.task.TaskId;
+import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
 
 public class AppTest {
   private static final Log LOG = LogFactory.getLog(AppTest.class);
@@ -132,6 +129,8 @@ public class AppTest {
         .setTaskId(ProtobufUtil.convertToIdProto(task0Id)).build());
       master.taskIteration(null, TaskIterationRequest.newBuilder().setIteration(task1Iteration)
         .setTaskId(ProtobufUtil.convertToIdProto(task1Id)).build());
+
+      Thread.sleep(1000);
 
       GetJobReportRequest request =
         GetJobReportRequest.newBuilder().setAppId(LocalClusterContext.get().getAppId().toString())

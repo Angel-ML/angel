@@ -17,7 +17,7 @@ import com.tencent.angel.ml.math.vector.DenseIntVector
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult
 import com.tencent.angel.ml.matrix.psf.get.multi.PartitionGetRowsParam
-import com.tencent.angel.ml.metric.log.ObjMetric
+import com.tencent.angel.ml.metric.ObjMetric
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex
@@ -59,7 +59,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
 
   val nk = new Array[Int](model.K)
 
-  globalMetrics.addMetrics(LOG_LIKELIHOOD, new ObjMetric())
+  globalMetrics.addMetric(LOG_LIKELIHOOD, new ObjMetric())
 
   /**
     * Train a ML Model
@@ -75,7 +75,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     ctx.incEpoch()
     val ll = likelihood
     LOG.info(s"ll=$ll")
-    globalMetrics.metrics(LOG_LIKELIHOOD, ll)
+    globalMetrics.metric(LOG_LIKELIHOOD, ll)
     ctx.incEpoch()
   }
 
@@ -487,7 +487,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
       LOG.info(s"epoch=$epoch local likelihood=$ll")
 
       // submit to client
-      globalMetrics.metrics(LOG_LIKELIHOOD, ll)
+      globalMetrics.metric(LOG_LIKELIHOOD, ll)
       ctx.incEpoch()
     }
   }

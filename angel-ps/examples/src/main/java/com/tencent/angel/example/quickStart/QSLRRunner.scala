@@ -15,7 +15,7 @@
  *
  */
 
-package com.tencent.angel.example.quickstart
+package com.tencent.angel.example.quickStart
 
 import com.tencent.angel.ml.MLRunner
 import org.apache.hadoop.conf.Configuration
@@ -24,12 +24,17 @@ class QSLRRunner extends MLRunner{
   /**
     * Training job to obtain a model
     */
-  override
-  def train(conf: Configuration): Unit = {
+  override def train(conf: Configuration): Unit = {
     train(conf, new QSLRModel(conf), classOf[QSLRTrainTask])
   }
 
+  /**
+    * Incremental training job to obtain a model based on a trained model
+    */
   override def incTrain(conf: Configuration): Unit = ???
 
+  /**
+    * Using a model to predict with unobserved samples
+    */
   override def predict(conf: Configuration): Unit = ???
 }

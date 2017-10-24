@@ -101,6 +101,7 @@ public abstract class TIntVector extends TVector {
    */
   public abstract TIntVector plusBy(TAbstractVector other, int x);
 
+  public abstract TIntVector clone();
 
 
   @Override

@@ -17,26 +17,22 @@
 package com.tencent.angel.worker.task;
 
 import com.google.protobuf.ServiceException;
-import com.tencent.angel.PartitionKey;
-import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.exception.TimeOutException;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ml.metrics.Metric;
-import com.tencent.angel.psagent.PSAgent;
-import com.tencent.angel.psagent.PSAgentContext;
-import com.tencent.angel.psagent.client.MasterClient;
-import com.tencent.angel.psagent.clock.ClockCache;
-import com.tencent.angel.psagent.matrix.MatrixClient;
-import com.tencent.angel.worker.WorkerContext;
-import com.tencent.angel.worker.storage.DataBlockManager;
-import com.tencent.angel.worker.storage.Reader;
+import com.tencent.angel.ml.metric.Metric;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos.MatrixClock;
 import com.tencent.angel.protobuf.generated.MLProtos.TaskIdProto;
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.TaskMetaInfoProto;
-
+import com.tencent.angel.psagent.PSAgent;
+import com.tencent.angel.psagent.PSAgentContext;
+import com.tencent.angel.psagent.client.MasterClient;
+import com.tencent.angel.psagent.matrix.MatrixClient;
+import com.tencent.angel.worker.WorkerContext;
+import com.tencent.angel.worker.storage.DataBlockManager;
+import com.tencent.angel.worker.storage.Reader;
 import org.apache.hadoop.conf.Configuration;
 
 import java.io.IOException;

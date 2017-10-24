@@ -28,7 +28,7 @@ import org.apache.log4j.PropertyConfigurator;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class DefaultRowUpdaterTest {
   private final static Log LOG = LogFactory.getLog(ServerSparseDoubleRowTest.class);

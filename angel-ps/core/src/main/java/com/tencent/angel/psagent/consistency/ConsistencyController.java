@@ -20,10 +20,10 @@ import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.psf.get.multi.GetRowsFunc;
-import com.tencent.angel.ml.matrix.psf.get.single.GetRowFunc;
-import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult;
-import com.tencent.angel.ml.matrix.psf.get.single.GetRowParam;
 import com.tencent.angel.ml.matrix.psf.get.multi.GetRowsParam;
+import com.tencent.angel.ml.matrix.psf.get.single.GetRowFunc;
+import com.tencent.angel.ml.matrix.psf.get.single.GetRowParam;
+import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult;
 import com.tencent.angel.ml.matrix.psf.update.enhance.VoidResult;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.ResponseType;
@@ -31,11 +31,9 @@ import com.tencent.angel.psagent.matrix.storage.MatrixStorage;
 import com.tencent.angel.psagent.matrix.transport.adapter.GetRowsResult;
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex;
 import com.tencent.angel.psagent.task.TaskContext;
-
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 
 import java.io.IOException;
 import java.util.ArrayList;

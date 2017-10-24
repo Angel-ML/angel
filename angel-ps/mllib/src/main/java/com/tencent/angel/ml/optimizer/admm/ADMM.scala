@@ -24,11 +24,11 @@ import breeze.optimize.{CachedDiffFunction, DiffFunction}
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.classification.sparselr.SparseLRModel
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.TAbstractVector
-import com.tencent.angel.ml.math.vector.{DenseDoubleVector, SparseDoubleSortedVector, SparseDoubleVector, SparseDummyVector}
-import com.tencent.angel.ml.metric.log.GlobalMetrics
-import com.tencent.angel.ml.utils.MathUtils
+import com.tencent.angel.ml.math.{VectorType, TVector, TAbstractVector}
+import com.tencent.angel.ml.math.vector._
+import com.tencent.angel.ml.metric.GlobalMetrics
 import com.tencent.angel.ml.conf.MLConf._
+import com.tencent.angel.ml.utils.Maths
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap
@@ -99,9 +99,11 @@ class ADMM {
 }
 
 class LogisticGradient(numClasses: Int = 2) {
+  type V = DenseIntDoubleVector
+
   def this() = this(2)
 
-  def compute(data: TAbstractVector, label: Double, weights: DenseDoubleVector): Double = {
+  def compute(data: TAbstractVector, label: Double, weights: V): Double = {
     numClasses match {
       case 2 =>
         val margin = -1.0 * weights.dot(data)
@@ -118,8 +120,8 @@ class LogisticGradient(numClasses: Int = 2) {
 
   def compute(data: TAbstractVector,
               label: Double,
-              weights: DenseDoubleVector,
-              cumGradient: DenseDoubleVector): Double = {
+              weights: V,
+              cumGradient: V): Double = {
     require(weights.size == cumGradient.size)
     numClasses match {
       case 2 =>
@@ -158,21 +160,16 @@ object ADMM {
 
   private val LOG = LogFactory.getLog(classOf[ADMM])
 
-  def runADMM(data: DataBlock[LabeledData],
-              model: SparseLRModel,
-              regParam: Double,
-              rho: Double,
-              N: Int,
-              threadNum: Int,
-              ctx: TaskContext,
-              globalMetrics: GlobalMetrics,
-              maxNumIterations: Int = 20,
-              primalTol: Double = 1e-5,
-              dualTol: Double = 1e-5): (Array[Double], SparseDoubleVector) = {
+  type T = SparseIntDoubleVector
+  
+  def runADMM(data: DataBlock[LabeledData], model: SparseLRModel)
+             (regParam: Double, rho: Double, N: Int, threadNum: Int,
+              maxNumIterations: Int = 20, primalTol: Double = 1e-5, dualTol: Double = 1e-5)
+             (implicit ctx: TaskContext, globalMetrics: GlobalMetrics): (Array[Double], T) = {
 
     val (localModel, localIndex) = initialize(data)
     val history = new ArrayBuffer[Double]()
-    val z = new SparseDoubleVector(model.feaNum)
+    val z = TVector(model.feaNum, VectorType.T_DOUBLE_SPARSE).asInstanceOf[T]
 
     for (iter <- 1 until maxNumIterations) {
       val startTrainX = System.currentTimeMillis()
@@ -186,17 +183,14 @@ object ADMM {
       LOG.info(s"epoch=$iter trainXCost=$trainXCost trainZCost=$trainZCost")
 
       val loss = calcLocalLoss(data, localModel)
-      globalMetrics.metrics(TRAIN_LOSS, loss)
-//      history.append(loss)
+      globalMetrics.metric(TRAIN_LOSS, loss)
 
       val precision = validate(data, z, localIndex, localModel)
       LOG.info(s"epoch=$iter global_loss=${loss} precision=$precision")
 
       model.t.clock(false)
       model.t.getRow(0)
-      if (ctx.getTaskIndex == 0)
-        model.clean()
-
+      if (ctx.getTaskIndex == 0) model.clean()
       model.t.clock(false)
       model.t.getRow(0)
 
@@ -206,10 +200,9 @@ object ADMM {
     (history.toArray, z)
   }
 
-  private
-  def initialize(data: DataBlock[LabeledData]): (LocalModel, LocalIndex) = {
+  private def initialize(data: DataBlock[LabeledData]): (LocalModel, LocalIndex) = {
     val globalToLocal = new Int2IntOpenHashMap()
-    val localToGloabl = new Int2IntOpenHashMap()
+    val localToGlobal = new Int2IntOpenHashMap()
     var localFeatNum  = 0
 
     // Reset the reader index for data samples
@@ -231,21 +224,21 @@ object ADMM {
               for (i <- 0 until len) {
                 val fid = indices(i)
                 if (!globalToLocal.containsKey(fid)) {
-                  localToGloabl.put(localFeatNum, fid)
+                  localToGlobal.put(localFeatNum, fid)
                   globalToLocal.put(fid, localFeatNum)
                   localFeatNum += 1
                 }
 
                 indices(i) = globalToLocal.get(fid)
               }
-            case x: SparseDoubleSortedVector =>
+            case x: SparseIntDoubleSortedVector =>
               val len = x.size()
               val indices = x.getIndices
 
               for (i <- 0 until len) {
                 val fid = indices(i)
                 if (!globalToLocal.containsKey(fid)) {
-                  localToGloabl.put(localFeatNum, fid)
+                  localToGlobal.put(localFeatNum, fid)
                   globalToLocal.put(fid, localFeatNum)
                   localFeatNum += 1
                 }
@@ -259,11 +252,11 @@ object ADMM {
     }
 
     // Convert a hashmap to an array for fast random access
-    val localToGloablArray = new Array[Int](localFeatNum)
-    val iter = localToGloabl.int2IntEntrySet().fastIterator()
+    val localToGlobalArray = new Array[Int](localFeatNum)
+    val iter = localToGlobal.int2IntEntrySet().fastIterator()
     while (iter.hasNext) {
       val entry = iter.next()
-      localToGloablArray(entry.getIntKey) = entry.getIntValue
+      localToGlobalArray(entry.getIntKey) = entry.getIntValue
     }
 
     // Local model stored on workers
@@ -271,7 +264,7 @@ object ADMM {
       new Array[Double](localFeatNum))
 
     // Index for convert local model to global model.
-    val localIndex = new LocalIndex(localFeatNum, localToGloablArray, globalToLocal)
+    val localIndex = new LocalIndex(localFeatNum, localToGlobalArray, globalToLocal)
     return (localModel, localIndex)
   }
 
@@ -292,7 +285,7 @@ object ADMM {
     ret.toArray
   }
 
-  def updateUandX(z: SparseDoubleVector,
+  def updateUandX(z: T,
                   data: DataBlock[LabeledData],
                   localModel: LocalModel,
                   localIndex: LocalIndex,
@@ -307,7 +300,7 @@ object ADMM {
     val costFun = new CostFun(
       split(data, threadNum),
       new LogisticGradient(),
-      new DenseDoubleVector(localIndex.localFeaNum, localModel.u),
+      new DenseIntDoubleVector(localIndex.localFeaNum, localModel.u),
       z,
       localIndex,
       rho)
@@ -331,7 +324,7 @@ object ADMM {
   def updateW(model: SparseLRModel,
               localModel: LocalModel,
               localIndex: LocalIndex): Unit = {
-    val update = new DenseDoubleVector(model.feaNum)
+    val update = new DenseIntDoubleVector(model.feaNum)
     update.setRowId(0)
     for (i <- 0 until localIndex.localFeaNum) {
       update.set(localIndex.localToGloabl(i), localModel.u(i) + localModel.x(i))
@@ -342,11 +335,11 @@ object ADMM {
   }
 
 
-  def getT(z: SparseDoubleVector,
+  def getT(z: T,
            model: SparseLRModel,
            localModel: LocalModel,
            localIndex: LocalIndex): Double = {
-    val update = new DenseDoubleVector(1)
+    val update = new DenseIntDoubleVector(1)
 
     var value = 0.0
     for (i <- 0 until localIndex.localFeaNum) {
@@ -361,7 +354,7 @@ object ADMM {
     return model.t.getRow(0).get(0)
   }
 
-  def computeZ(z: SparseDoubleVector,
+  def computeZ(z: T,
                model: SparseLRModel,
                regParam: Double,
                rho: Double,
@@ -386,7 +379,7 @@ object ADMM {
     val gradient = new LogisticGradient(2)
     var loss = 0.0
     data.resetReadIndex()
-    val weights = new DenseDoubleVector(localModel.x.length, localModel.x)
+    val weights = new DenseIntDoubleVector(localModel.x.length, localModel.x)
     var finish = false
     while (!finish) {
       data.read() match {
@@ -395,7 +388,7 @@ object ADMM {
           sample.getX match {
             case x: SparseDummyVector =>
               loss += gradient.compute(x, sample.getY, weights)
-            case x: SparseDoubleSortedVector =>
+            case x: SparseIntDoubleSortedVector =>
               loss += gradient.compute(x, sample.getY, weights)
             case _ =>
               throw new AngelException("data should be SparseDummyVector or SparseDoubleSortedVector")
@@ -408,46 +401,26 @@ object ADMM {
   def getGlobalLoss(data: DataBlock[LabeledData],
                     model: SparseLRModel,
                     localModel: LocalModel,
-                    z: SparseDoubleVector,
+                    z: T,
                     regParam: Double): Double = {
 
     val loss = calcLocalLoss(data, localModel)
 
     return loss
-
-    LOG.info(s"local loss = $loss, average loss=${loss / data.size}")
-    val update = new DenseDoubleVector(1)
-    update.set(0, loss)
-    update.setRowId(0)
-
-    model.loss.increment(update)
-    model.loss.clock().get()
-    val lxLoss = model.loss.getRow(0).get(0)
-
-    val zVals = z.getValues
-
-    var rzLoss = 0.0
-    for (i <- 0 until zVals.length)
-      rzLoss += Math.abs(zVals(i))
-
-    rzLoss = regParam * rzLoss
-
-    LOG.info(s"rzLoss=$rzLoss")
-    return rzLoss + lxLoss
   }
 
 
   private class CostFun(
                          val data: Array[DataBlock[LabeledData]],
                          gradient: LogisticGradient,
-                         u: DenseDoubleVector,
-                         z: SparseDoubleVector,
+                         u: DenseIntDoubleVector,
+                         z: T,
                          localIndex: LocalIndex,
                          rho: Double,
                          var repeatTime: Int = 0) extends DiffFunction[breeze.linalg.Vector[Double]] {
 
-    case class GradientAndLoss(var gradSum: DenseDoubleVector, var lossSum: Double, var countSum: Int) {
-      def add(grad: DenseDoubleVector, loss: Double, count: Int): Unit = {
+    case class GradientAndLoss(var gradSum: DenseIntDoubleVector, var lossSum: Double, var countSum: Int) {
+      def add(grad: DenseIntDoubleVector, loss: Double, count: Int): Unit = {
         this.synchronized {
           gradSum.plusBy(grad)
           lossSum += loss
@@ -458,11 +431,11 @@ object ADMM {
 
     var gradientAndLoss: GradientAndLoss = _
     class CalThread(iter: DataBlock[LabeledData],
-                    weight: DenseDoubleVector,
+                    weight: DenseIntDoubleVector,
                     featNum: Int) extends Runnable {
       def run(): Unit = {
         iter.resetReadIndex()
-        val grad = new DenseDoubleVector(featNum)
+        val grad = new DenseIntDoubleVector(featNum)
         var (loss, count) = (0.0, 0)
         var finish = false
         while (!finish) {
@@ -473,7 +446,7 @@ object ADMM {
                   val l = gradient.compute(point, sample.getY, weight, grad)
                   loss += l
                   count += 1
-                case point: SparseDoubleSortedVector =>
+                case point: SparseIntDoubleSortedVector =>
                   val l = gradient.compute(point, sample.getY, weight, grad)
                   loss += l
                   count += 1
@@ -489,9 +462,9 @@ object ADMM {
     override def calculate(weights: breeze.linalg.Vector[Double]): (Double, breeze.linalg.Vector[Double]) = {
       repeatTime += 1
       val featNum   = weights.length
-      val mlWeights = new DenseDoubleVector(weights.length, weights.toArray)
+      val mlWeights = new DenseIntDoubleVector(weights.length, weights.toArray)
 
-      gradientAndLoss = GradientAndLoss(new DenseDoubleVector(featNum), 0.0, 0)
+      gradientAndLoss = GradientAndLoss(new DenseIntDoubleVector(featNum), 0.0, 0)
       val threadPool  = new ThreadPoolExecutor(4, 8, 1, TimeUnit.HOURS,
         new LinkedBlockingQueue[Runnable])
       data.foreach( iter => threadPool.execute(new CalThread(iter, mlWeights, featNum)))
@@ -524,7 +497,7 @@ object ADMM {
 
   private
   def validate(data: DataBlock[LabeledData],
-               z: SparseDoubleVector,
+               z: T,
                localIndex: LocalIndex,
                localModel: LocalModel): Double = {
     data.resetReadIndex()
@@ -541,18 +514,18 @@ object ADMM {
               var dot = 0.0
               for (i <- 0 until indices.length)
                 dot += z.get(localIndex.localToGloabl(indices(i)))
-              val score = MathUtils.sigmoid(dot)
+              val score = Maths.sigmoid(dot)
               if (score >= 0.5 && sample.getY > 0)
                 acn += 1
               if (score < 0.5  && sample.getY <= 0)
                 acn += 1
-            case x: SparseDoubleSortedVector =>
+            case x: SparseIntDoubleSortedVector =>
               val indices = x.getIndices
               val values  = x.getValues
               var dot = 0.0
               for (i <- 0 until indices.length)
                 dot += z.get(localIndex.localToGloabl(indices(i))) * values(i)
-              val score = MathUtils.sigmoid(dot)
+              val score = Maths.sigmoid(dot)
               if (score >= 0.5 && sample.getY > 0)
                 acn += 1
               if (score < 0.5  && sample.getY <= 0)

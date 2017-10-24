@@ -17,7 +17,7 @@
 
 package com.tencent.angel.master.metrics;
 
-import com.tencent.angel.ml.metrics.Metric;
+import com.tencent.angel.ml.metric.Metric;
 
 import java.util.Map;
 

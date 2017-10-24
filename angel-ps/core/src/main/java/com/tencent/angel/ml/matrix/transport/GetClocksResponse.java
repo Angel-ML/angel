@@ -17,8 +17,6 @@
 package com.tencent.angel.ml.matrix.transport;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.psagent.PSAgentContext;
-import com.tencent.angel.psagent.clock.ClockCache;
 import io.netty.buffer.ByteBuf;
 
 import java.util.HashMap;

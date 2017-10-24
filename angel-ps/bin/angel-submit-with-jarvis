@@ -16,7 +16,6 @@ bin=`cd "$bin"; pwd`
 conf="$bin"/../conf
 lib="$bin"/../lib
 
-echo $lib
 export ANGEL_HOME="$bin/../"
 
 DEFAULT_LIBEXEC_DIR="$HADOOP_HOME"/libexec
@@ -32,14 +31,20 @@ for f in "$lib"/*.jar; do
     fi
 done
 
+for f in `pwd`/*.jar; do
+    echo $f
+    export CLASSPATH=$CLASSPATH:$f
+done
 
-export CLASS="com.tencent.jarvis.angel.middleware.submit4Angel"
+export CLASS="com.tencent.angel.jarvis.Submitter"
 export JAVA=/data/tesla/jdk1.8.0_101/bin/java
 
 echo "$ANGEL_HOME"
-echo $CLASSPATH
-echo "class is:" $CLASS
 
-echo $JAVA $JAVA_HEAP_MAX $HADOOP_OPTS $CLASS "$@" "-Dfs.defaultFS=hdfs://tl-nn-tdw.tencent-distribute.com:54310"
-exec "$JAVA" $JAVA_HEAP_MAX $HADOOP_OPTS $CLASS "$@" 
+echo $JAVA_HOME
+export JAVA_HOME="/data/tesla/jdk1.8.0_101"
+export JAVA=$JAVA_HOME/bin/java
+echo $JAVA $JAVA_HEAP_MAX $HADOOP_OPTS $CLASS "$@"
+exec "$JAVA" $JAVA_HEAP_MAX $HADOOP_OPTS $CLASS "$@"
+
 

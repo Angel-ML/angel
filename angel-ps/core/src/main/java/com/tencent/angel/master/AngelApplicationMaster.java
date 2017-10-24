@@ -16,20 +16,9 @@
 
 package com.tencent.angel.master;
 
-import java.io.IOException;
-import java.security.PrivilegedExceptionAction;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
 import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.RunningMode;
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.master.LocationManager;
-import com.tencent.angel.master.MasterService;
-import com.tencent.angel.master.MatrixMetaManager;
 import com.tencent.angel.master.app.*;
 import com.tencent.angel.master.data.DataSpliter;
 import com.tencent.angel.master.data.DummyDataSpliter;
@@ -44,7 +33,8 @@ import com.tencent.angel.master.deploy.yarn.YarnContainerLauncher;
 import com.tencent.angel.master.metrics.MetricsEventType;
 import com.tencent.angel.master.metrics.MetricsService;
 import com.tencent.angel.master.oplog.AppStateStorage;
-import com.tencent.angel.master.ps.*;
+import com.tencent.angel.master.ps.ParameterServerManager;
+import com.tencent.angel.master.ps.ParameterServerManagerEventType;
 import com.tencent.angel.master.ps.attempt.PSAttemptEvent;
 import com.tencent.angel.master.ps.attempt.PSAttemptEventType;
 import com.tencent.angel.master.ps.ps.AMParameterServer;
@@ -52,6 +42,7 @@ import com.tencent.angel.master.ps.ps.AMParameterServerEvent;
 import com.tencent.angel.master.ps.ps.AMParameterServerEventType;
 import com.tencent.angel.master.psagent.*;
 import com.tencent.angel.master.slowcheck.SlowChecker;
+import com.tencent.angel.master.task.AMTaskManager;
 import com.tencent.angel.master.worker.WorkerManager;
 import com.tencent.angel.master.worker.WorkerManagerEventType;
 import com.tencent.angel.master.worker.attempt.WorkerAttemptEvent;
@@ -64,8 +55,6 @@ import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.webapp.AngelWebApp;
 import com.tencent.angel.worker.WorkerAttemptId;
-import com.tencent.angel.master.task.AMTaskManager;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -94,6 +83,14 @@ import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.SystemClock;
 import org.apache.hadoop.yarn.webapp.WebApp;
 import org.apache.hadoop.yarn.webapp.WebApps;
+
+import java.io.IOException;
+import java.security.PrivilegedExceptionAction;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Angel application master. It contains service modules: worker manager, parameter server manager,

@@ -44,6 +44,8 @@ public class SplitEntry {
     this.fid = fid;
     this.fvalue = fvalue;
     this.lossChg = lossChg;
+    this.leftGradStat = new GradStats();
+    this.rightGradStat = new GradStats();
   }
 
   // fid = -1: no split currently

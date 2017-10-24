@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+if [ "$HADOOP_HOME" = "" ]; then
+    echo "HADOOP_HOME is not set"
+    exit 1
+fi
+
+bin=`which $0`
+bin=`dirname ${bin}`
+bin=`cd "$bin"; pwd`
+
+conf="$bin"/../conf
+lib="$bin"/../lib
+
+echo $lib
+export ANGEL_HOME="$bin/../"
+
+DEFAULT_LIBEXEC_DIR="$HADOOP_HOME"/libexec
+HADOOP_LIBEXEC_DIR=${HADOOP_LIBEXEC_DIR:-$DEFAULT_LIBEXEC_DIR}
+. $HADOOP_LIBEXEC_DIR/hadoop-config.sh
+
+for f in "$lib"/*.jar; do
+    echo $f
+    if [ "$CLASSPATH" ]; then
+        export CLASSPATH=$CLASSPATH:$f
+    else
+        export CLASSPATH=$f
+    fi
+done
+
+export CLASS="com.tencent.angel.tools.ModelConverter"
+
+export CLASSPATH=$CLASSPATH
+echo "$ANGEL_HOME"
+export PYTHONHASHSEED=0
+exec "$JAVA" $JAVA_HEAP_MAX $HADOOP_OPTS $CLASS "$@"

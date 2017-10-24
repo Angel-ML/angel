@@ -16,8 +16,8 @@
 
 package com.tencent.angel.ml.math.matrix;
 
-import com.tencent.angel.ml.math.vector.TIntVector;
 import com.tencent.angel.ml.math.vector.DenseIntVector;
+import com.tencent.angel.ml.math.vector.TIntVector;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertEquals;

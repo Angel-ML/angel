@@ -18,7 +18,6 @@ package com.tencent.angel.ps;
 
 import com.tencent.angel.common.Id;
 import com.tencent.angel.exception.UnvalidIdStrException;
-import com.tencent.angel.ps.ParameterServerId;
 
 /**
  * The id represents parameter server attempt.

@@ -17,7 +17,7 @@
 
 package com.tencent.angel.ml.math.matrix;
 
-import com.tencent.angel.ml.math.vector.DoubleLongKeyVector;
+import com.tencent.angel.ml.math.vector.TLongDoubleVector;
 
 /**
  * Base class of double matrix with long key row vector.
@@ -44,7 +44,7 @@ public abstract class DoubleLongKeyMatrix extends RowbaseMatrix {
     if (vectors[rowIndex] == null) {
       vectors[rowIndex] = initVector(rowIndex);
     }
-    ((DoubleLongKeyVector)vectors[rowIndex]).plusBy(colIndex, value);
+    ((TLongDoubleVector)vectors[rowIndex]).plusBy(colIndex, value);
     return this;
   }
 
@@ -62,7 +62,7 @@ public abstract class DoubleLongKeyMatrix extends RowbaseMatrix {
       if(vectors[rowIndexes[i]] == null) {
         vectors[rowIndexes[i]] = initVector(rowIndexes[i]);
       }
-      ((DoubleLongKeyVector)vectors[rowIndexes[i]]).plusBy(colIndexes[i], values[i]);
+      ((TLongDoubleVector)vectors[rowIndexes[i]]).plusBy(colIndexes[i], values[i]);
     }
     return this;
   }
@@ -82,7 +82,7 @@ public abstract class DoubleLongKeyMatrix extends RowbaseMatrix {
     }
 
     for(int i = 0; i < colIndexes.length; i++) {
-      ((DoubleLongKeyVector)vectors[rowIndex]).plusBy(colIndexes[i], values[i]);
+      ((TLongDoubleVector)vectors[rowIndex]).plusBy(colIndexes[i], values[i]);
     }
     return this;
   }
@@ -98,6 +98,6 @@ public abstract class DoubleLongKeyMatrix extends RowbaseMatrix {
     if(vectors[rowIndex] == null) {
       return 0.0;
     }
-    return ((DoubleLongKeyVector)vectors[rowIndex]).get(colIndex);
+    return ((TLongDoubleVector)vectors[rowIndex]).get(colIndex);
   }
 }

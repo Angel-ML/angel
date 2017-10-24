@@ -21,7 +21,6 @@ import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.transport.MatrixTransportInterface;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 

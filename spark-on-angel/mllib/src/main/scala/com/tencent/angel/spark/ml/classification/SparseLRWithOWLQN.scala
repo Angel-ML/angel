@@ -18,16 +18,16 @@ package com.tencent.angel.spark.ml.classification
 
 import breeze.linalg.DenseVector
 import breeze.optimize.{OWLQN => BrzOWLQN}
-
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.math.vector.{PSVector, VectorType}
-import com.tencent.angel.spark.math.vector.decorator.BreezePSVector
 import com.tencent.angel.spark.ml.common.OneHot.OneHotVector
-import com.tencent.angel.spark.ml.optim.OWLQN
+import com.tencent.angel.spark.ml.optimize.OWLQN
 import com.tencent.angel.spark.ml.sparse.SparseLogistic
 import com.tencent.angel.spark.ml.util.{ArgsUtil, DataLoader}
+import com.tencent.angel.spark.models.vector.PSVector
+import com.tencent.angel.spark.models.vector.enhanced.BreezePSVector
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
+
 import scala.collection.mutable.ArrayBuffer
 
 
@@ -116,7 +116,7 @@ object SparseLRWithOWLQN {
       }
     }
     println(s"loss history: ${lossHistory.toArray.mkString(" ")}")
-    println(s"weights: ${weight.toRemote.pull().take(10).mkString(" ")}")
+    println(s"weights: ${weight.pull().take(10).mkString(" ")}")
   }
 
 }

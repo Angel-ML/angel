@@ -16,9 +16,8 @@
 
 package com.tencent.angel.master.ps;
 
-import org.apache.hadoop.yarn.event.AbstractEvent;
-
 import com.tencent.angel.ps.ParameterServerId;
+import org.apache.hadoop.yarn.event.AbstractEvent;
 
 /**
  * PS manager event.

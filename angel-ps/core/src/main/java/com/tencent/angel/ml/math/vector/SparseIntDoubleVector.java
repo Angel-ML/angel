@@ -1,0 +1,636 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
+package com.tencent.angel.ml.math.vector;
+
+import com.tencent.angel.ml.math.TAbstractVector;
+import com.tencent.angel.ml.math.TVector;
+import com.tencent.angel.protobuf.generated.MLProtos;
+import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2FloatMap;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+/**
+ * SparseLong2DoubleVector using HashMap<Long, Double> as its backend storage
+ */
+public class SparseIntDoubleVector extends TIntDoubleVector {
+
+  private final static Log LOG = LogFactory.getLog(SparseIntDoubleVector.class);
+
+  /**
+   * the init size
+   */
+  private final static int INIT_SIZE = 64;
+
+  /**
+   * store the value
+   */
+  final Int2DoubleOpenHashMap hashMap;
+
+  /**
+   * init the empty vector
+   */
+  public SparseIntDoubleVector() {
+    super();
+    this.hashMap = new Int2DoubleOpenHashMap(INIT_SIZE);
+  }
+
+  /**
+   * init the vector by setting the dim
+   *
+   * @param dim
+   */
+  public SparseIntDoubleVector(int dim) {
+    this(dim, INIT_SIZE);
+  }
+
+  /**
+   * init the dim and capacity for vector
+   *
+   * @param dim
+   * @param capacity
+   */
+  public SparseIntDoubleVector(int dim, int capacity) {
+    super();
+    if(capacity > 0) {
+      this.hashMap = new Int2DoubleOpenHashMap(capacity);
+    } else {
+      this.hashMap = new Int2DoubleOpenHashMap(INIT_SIZE);
+    }
+    this.dim = dim;
+  }
+
+  /**
+   * init the vector by setting the dim , index and value
+   *
+   * @param dim
+   * @param indices
+   * @param values
+   */
+  public SparseIntDoubleVector(int dim, int[] indices, double[] values) {
+    super();
+    assert indices.length == values.length;
+    this.dim = dim;
+    this.hashMap = new Int2DoubleOpenHashMap(indices, values);
+  }
+
+  /**
+   * init the vector by setting the dim
+   *
+   * @param dim
+   */
+  public SparseIntDoubleVector(int dim, Int2DoubleOpenHashMap map) {
+    super();
+    this.dim = dim;
+    this.hashMap = map;
+  }
+
+  /**
+   * init the vector by another vector
+   *
+   * @param other
+   */
+  public SparseIntDoubleVector(SparseIntDoubleVector other) {
+    super(other);
+    this.hashMap = new Int2DoubleOpenHashMap(other.hashMap);
+  }
+
+  @Override
+  public TIntDoubleVector plusBy(int index, double delta) {
+    hashMap.addTo(index, delta);
+    return this;
+  }
+
+  @Override public double sum() {
+    double ret = 0.0;
+    ObjectIterator<Int2DoubleMap.Entry> iter = this.hashMap.int2DoubleEntrySet().fastIterator();
+    Int2DoubleMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      ret += entry.getDoubleValue();
+    }
+    return ret;
+  }
+
+  @Override public TIntDoubleVector clone() {
+    return new SparseIntDoubleVector(this);
+  }
+
+  @Override
+  public void clone(TVector row) {
+    super.clone(row);
+    hashMap.clear();
+    hashMap.putAll(((SparseIntDoubleVector) row).hashMap);
+  }
+
+  @Override
+  public void clear() {
+    if (hashMap != null) {
+      hashMap.clear();
+    }
+  }
+
+  @Override
+  public double dot(TAbstractVector other) {
+    assert (dim == other.getDimension());
+    if (other instanceof SparseIntDoubleSortedVector)
+      return dot((SparseIntDoubleSortedVector) other);
+    if (other instanceof SparseIntDoubleVector)
+      return dot((SparseIntDoubleVector) other);
+    if (other instanceof DenseIntDoubleVector)
+      return dot((DenseIntDoubleVector) other);
+    if (other instanceof SparseDummyVector)
+      return dot((SparseDummyVector) other);
+    if (other instanceof DenseFloatVector)
+      return dot((DenseFloatVector) other);
+    if (other instanceof SparseFloatVector)
+      return dot((SparseFloatVector) other);
+
+    throw new UnsupportedOperationException("Unsupportted operation: "
+      + this.getClass().getName() + " dot " + other.getClass().getName());
+  }
+
+  private double dot(DenseIntDoubleVector other) {
+    double ret = 0.0;
+    ObjectIterator<Int2DoubleMap.Entry> iter = this.hashMap.int2DoubleEntrySet().fastIterator();
+    Int2DoubleMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      ret += entry.getDoubleValue() * other.values[entry.getIntKey()];
+    }
+    return ret;
+  }
+
+  private double dot(SparseDummyVector other) {
+    double ret = 0.0;
+    int[] indexes = other.indices;
+    for (int i = 0; i < other.nonzero; i++) {
+      ret += hashMap.get(indexes[i]);
+    }
+    return ret;
+  }
+
+  private double dot(SparseIntDoubleVector other) {
+    double ret = 0.0;
+
+    Int2DoubleOpenHashMap smallMap = this.hashMap;
+    Int2DoubleOpenHashMap largeMap = other.hashMap;
+
+    if (smallMap.size() > largeMap.size()) {
+      smallMap = other.hashMap;
+      largeMap = this.hashMap;
+    }
+
+    ObjectIterator<Int2DoubleMap.Entry> iter = smallMap.int2DoubleEntrySet().fastIterator();
+
+    Int2DoubleMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      if (largeMap.containsKey(entry.getIntKey())) {
+        ret += entry.getDoubleValue() * largeMap.get(entry.getIntKey());
+      }
+    }
+    return ret;
+  }
+
+  private double dot(SparseIntDoubleSortedVector other) {
+    int [] indices = other.getIndices();
+    double [] values = other.getValues();
+    int len = indices.length;
+    double dotValue = 0.0;
+    for(int i = 0; i < len; i++) {
+      dotValue += values[i] * get(indices[i]);
+    }
+    return dotValue;
+  }
+
+  private double dot(SparseFloatVector other) {
+    return other.dot(this);
+  }
+
+  private double dot(DenseFloatVector other) {
+    double ret = 0.0;
+    ObjectIterator<Int2DoubleMap.Entry> iter = this.hashMap.int2DoubleEntrySet().fastIterator();
+    Int2DoubleMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      ret += entry.getDoubleValue() * other.values[entry.getIntKey()];
+    }
+    return ret;
+  }
+
+  @Override
+  public TIntDoubleVector filter(double x) {
+    Int2DoubleOpenHashMap newMap = new Int2DoubleOpenHashMap();
+
+    ObjectIterator<Int2DoubleMap.Entry> iter = hashMap.int2DoubleEntrySet().fastIterator();
+    Int2DoubleMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      double value = entry.getDoubleValue();
+      if (Math.abs(value) > x) {
+        newMap.put(entry.getIntKey(), value);
+      }
+    }
+    SparseIntDoubleVector vector = new SparseIntDoubleVector(dim, newMap);
+    vector.setRowId(rowId).setMatrixId(matrixId).setClock(clock);
+    return vector;
+  }
+
+  @Override public double get(int index) {
+    return hashMap.get(index);
+  }
+
+  @Override public double[] getValues() {
+    return hashMap.values().toDoubleArray();
+  }
+
+  @Override public int[] getIndices() {
+    return hashMap.keySet().toIntArray();
+  }
+
+  @Override public MLProtos.RowType getType() {
+    return MLProtos.RowType.T_DOUBLE_SPARSE;
+  }
+
+  @Override public long nonZeroNumber() {
+    long ret = 0;
+    if (hashMap != null) {
+      ObjectIterator<Int2DoubleMap.Entry> iter = this.hashMap.int2DoubleEntrySet().fastIterator();
+      while (iter.hasNext()) {
+        if (iter.next().getDoubleValue() != 0) {
+          ret++;
+        }
+      }
+    }
+
+    return ret;
+  }
+
+  @Override
+  public TIntDoubleVector plus(TAbstractVector other, double x) {
+    assert (dim == other.getDimension());
+    if (other instanceof SparseIntDoubleSortedVector)
+      return plus((SparseIntDoubleSortedVector) other, x);
+    if (other instanceof SparseIntDoubleVector)
+      return plus((SparseIntDoubleVector) other, x);
+    if (other instanceof DenseIntDoubleVector)
+      return plus((DenseIntDoubleVector) other, x);
+    if (other instanceof SparseFloatVector)
+      return plus((SparseFloatVector) other, x);
+    if(other instanceof DenseFloatVector)
+      return plus((DenseFloatVector) other, x);
+
+    throw new UnsupportedOperationException("Unsupportted operation: "
+      + this.getClass().getName() + " plus " + other.getClass().getName());
+  }
+
+  private DenseIntDoubleVector plus(DenseIntDoubleVector other, double x) {
+    DenseIntDoubleVector vec = new DenseIntDoubleVector(other);
+    vec.timesBy(x);
+
+    ObjectIterator<Int2DoubleMap.Entry> iter = this.hashMap.int2DoubleEntrySet().fastIterator();
+    Int2DoubleMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      vec.plusBy(entry.getIntKey(), entry.getDoubleValue());
+    }
+    return vec;
+  }
+
+  private SparseIntDoubleVector plus(SparseIntDoubleVector other, double x) {
+    SparseIntDoubleVector vector = (SparseIntDoubleVector) this.clone();
+
+    ObjectIterator<Int2DoubleMap.Entry> iter = other.hashMap.int2DoubleEntrySet().fastIterator();
+    Int2DoubleMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      vector.hashMap.addTo(entry.getIntKey(), entry.getDoubleValue() * x);
+    }
+    return vector;
+  }
+
+  private SparseIntDoubleVector plus(SparseIntDoubleSortedVector other, double x) {
+    SparseIntDoubleVector vector = (SparseIntDoubleVector) this.clone();
+    int[] otherIndexs = other.indices;
+    double[] otherValues = other.values;
+    for (int i = 0; i < other.nnz; i++) {
+      vector.hashMap.addTo(otherIndexs[i], otherValues[i] * x);
+    }
+    return vector;
+  }
+
+  private SparseIntDoubleVector plus(SparseFloatVector other, double x) {
+    SparseIntDoubleVector vector = (SparseIntDoubleVector) this.clone();
+
+    ObjectIterator<Int2FloatMap.Entry> iter = other.hashMap.int2FloatEntrySet().fastIterator();
+    Int2FloatMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      vector.hashMap.addTo(entry.getIntKey(), entry.getFloatValue() * x);
+    }
+    return vector;
+  }
+
+  private DenseIntDoubleVector plus(DenseFloatVector other, double x) {
+    DenseIntDoubleVector vector = new DenseIntDoubleVector(dim);
+    vector.plusBy(other);
+    ObjectIterator<Int2DoubleMap.Entry> iter = this.hashMap.int2DoubleEntrySet().fastIterator();
+    Int2DoubleMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      vector.values[entry.getIntKey()] += entry.getDoubleValue() * x;
+    }
+    return vector;
+  }
+
+  @Override public TIntDoubleVector plus(TAbstractVector other) {
+    assert (dim == other.getDimension());
+    if (other instanceof SparseIntDoubleSortedVector)
+      return plus((SparseIntDoubleSortedVector) other);
+    if (other instanceof SparseIntDoubleVector)
+      return plus((SparseIntDoubleVector) other);
+    if (other instanceof DenseIntDoubleVector)
+      return plus((DenseIntDoubleVector) other);
+    if (other instanceof SparseFloatVector)
+      return plus((SparseFloatVector) other);
+    if(other instanceof DenseFloatVector)
+      return plus((DenseFloatVector) other);
+
+    throw new UnsupportedOperationException("Unsupportted operation: "
+      + this.getClass().getName() + " plus " + other.getClass().getName());
+  }
+
+  public TIntDoubleVector plus(DenseIntDoubleVector other) {
+    DenseIntDoubleVector vec = new DenseIntDoubleVector(other);
+
+    ObjectIterator<Int2DoubleMap.Entry> iter = this.hashMap.int2DoubleEntrySet().fastIterator();
+    Int2DoubleMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      vec.plusBy(entry.getIntKey(), entry.getDoubleValue());
+    }
+    return vec;
+  }
+
+  private SparseIntDoubleVector plus(SparseIntDoubleVector other) {
+    SparseIntDoubleVector vector = (SparseIntDoubleVector) this.clone();
+
+    ObjectIterator<Int2DoubleMap.Entry> iter = other.hashMap.int2DoubleEntrySet().fastIterator();
+    Int2DoubleMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      vector.hashMap.addTo(entry.getIntKey(), entry.getDoubleValue());
+    }
+    return vector;
+  }
+
+  private SparseIntDoubleVector plus(SparseIntDoubleSortedVector other) {
+    SparseIntDoubleVector vector = (SparseIntDoubleVector) this.clone();
+    int[] otherIndexs = other.indices;
+    double[] otherValues = other.values;
+    for (int i = 0; i < other.nnz; i++) {
+      vector.hashMap.addTo(otherIndexs[i], otherValues[i]);
+    }
+    return vector;
+  }
+
+  private SparseIntDoubleVector plus(SparseFloatVector other) {
+    SparseIntDoubleVector vector = (SparseIntDoubleVector) this.clone();
+
+    ObjectIterator<Int2FloatMap.Entry> iter = other.hashMap.int2FloatEntrySet().fastIterator();
+    Int2FloatMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      vector.hashMap.addTo(entry.getIntKey(), entry.getFloatValue());
+    }
+    return vector;
+  }
+
+  private DenseIntDoubleVector plus(DenseFloatVector other) {
+    DenseIntDoubleVector vector = new DenseIntDoubleVector(dim);
+    vector.plusBy(other);
+    ObjectIterator<Int2DoubleMap.Entry> iter = this.hashMap.int2DoubleEntrySet().fastIterator();
+    Int2DoubleMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      vector.values[entry.getIntKey()] += entry.getDoubleValue();
+    }
+    return vector;
+  }
+
+  @Override public SparseIntDoubleVector plusBy(TAbstractVector other, double x) {
+    assert (dim == other.getDimension());
+    if (other instanceof SparseDummyVector)
+      return plusBy((SparseDummyVector) other, x);
+    if (other instanceof SparseIntDoubleVector)
+      return plusBy((SparseIntDoubleVector) other, x);
+    if (other instanceof SparseFloatVector)
+      return plusBy((SparseFloatVector) other, x);
+    if (other instanceof SparseIntDoubleSortedVector)
+      return plusBy((SparseIntDoubleSortedVector) other, x);
+    if (other instanceof DenseIntDoubleVector)
+      return plusBy((DenseIntDoubleVector) other, x);
+    if (other instanceof DenseFloatVector)
+      return plusBy((DenseFloatVector) other, x);
+
+    throw new UnsupportedOperationException("Unsupportted operation: "
+      + this.getClass().getName() + " plusBy " + other.getClass().getName());
+  }
+
+  private SparseIntDoubleVector plusBy(int[] index, double[] delta, double x) {
+    for (int i = 0; i < index.length; i++) {
+      hashMap.addTo(index[i], delta[i] * x);
+    }
+    return this;
+  }
+
+  private SparseIntDoubleVector plusBy(SparseDummyVector other, double x) {
+    int[] indexes = other.indices;
+    for (int i = 0; i < other.nonzero; i++) {
+      hashMap.addTo(indexes[i], x);
+    }
+    return this;
+  }
+
+  private SparseIntDoubleVector plusBy(SparseIntDoubleVector other, double x) {
+    ObjectIterator<Int2DoubleMap.Entry> iter = other.hashMap.int2DoubleEntrySet().fastIterator();
+    Int2DoubleMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      this.hashMap.addTo(entry.getIntKey(), entry.getDoubleValue() * x);
+    }
+    return this;
+  }
+
+  private SparseIntDoubleVector plusBy(SparseFloatVector other, double x) {
+    ObjectIterator<Int2FloatMap.Entry> iter = other.hashMap.int2FloatEntrySet().fastIterator();
+    Int2FloatMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      this.hashMap.addTo(entry.getIntKey(), entry.getFloatValue() * x);
+    }
+    return this;
+  }
+
+  private SparseIntDoubleVector plusBy(SparseIntDoubleSortedVector other, double x) {
+    return plusBy(other.getIndices(), other.getValues(), x);
+  }
+
+  private SparseIntDoubleVector plusBy(DenseIntDoubleVector other, double x) {
+    double[] delta = other.getValues();
+    for (int i = 0; i < delta.length; i++) {
+      hashMap.addTo(i, delta[i] * x);
+    }
+    return this;
+  }
+
+  private SparseIntDoubleVector plusBy(DenseFloatVector other, double x) {
+    float[] delta = other.getValues();
+    for (int i = 0; i < delta.length; i++) {
+      hashMap.addTo(i, delta[i] * x);
+    }
+    return this;
+  }
+
+  @Override public TIntDoubleVector plusBy(TAbstractVector other) {
+    assert (dim == other.getDimension());
+    if (other instanceof SparseDummyVector)
+      return plusBy((SparseDummyVector) other);
+    if (other instanceof SparseIntDoubleVector)
+      return plusBy((SparseIntDoubleVector) other);
+    if (other instanceof SparseFloatVector)
+      return plusBy((SparseFloatVector) other);
+    if (other instanceof SparseIntDoubleSortedVector)
+      return plusBy((SparseIntDoubleSortedVector) other);
+    if (other instanceof DenseIntDoubleVector)
+      return plusBy((DenseIntDoubleVector) other);
+    if (other instanceof DenseFloatVector)
+      return plusBy((DenseFloatVector) other);
+
+    throw new UnsupportedOperationException("Unsupportted operation: "
+      + this.getClass().getName() + " plusBy " + other.getClass().getName());
+  }
+
+  private SparseIntDoubleVector plusBy(DenseIntDoubleVector other) {
+    double[] delta = other.getValues();
+    for (int i = 0; i < delta.length; i++) {
+      hashMap.addTo(i, delta[i]);
+    }
+    return this;
+  }
+
+  private SparseIntDoubleVector plusBy(DenseFloatVector other) {
+    float[] delta = other.getValues();
+    for (int i = 0; i < delta.length; i++) {
+      hashMap.addTo(i, delta[i]);
+    }
+    return this;
+  }
+
+  private SparseIntDoubleVector plusBy(int[] index, double[] delta) {
+    for (int i = 0; i < index.length; i++) {
+      hashMap.addTo(index[i], delta[i]);
+    }
+    return this;
+  }
+
+  public SparseIntDoubleVector plusBy(SparseDummyVector other) {
+    int[] indexes = other.indices;
+    for (int i = 0; i < other.nonzero; i++) {
+      hashMap.addTo(indexes[i], 1.0);
+    }
+    return this;
+  }
+
+  private SparseIntDoubleVector plusBy(SparseIntDoubleVector other) {
+    ObjectIterator<Int2DoubleMap.Entry> iter = other.hashMap.int2DoubleEntrySet().fastIterator();
+    Int2DoubleMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      this.hashMap.addTo(entry.getIntKey(), entry.getDoubleValue());
+    }
+    return this;
+  }
+
+  private SparseIntDoubleVector plusBy(SparseFloatVector other) {
+    ObjectIterator<Int2FloatMap.Entry> iter = other.hashMap.int2FloatEntrySet().fastIterator();
+    Int2FloatMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      this.hashMap.addTo(entry.getIntKey(), entry.getFloatValue());
+    }
+    return this;
+  }
+
+  private SparseIntDoubleVector plusBy(SparseIntDoubleSortedVector other) {
+    return plusBy(other.getIndices(), other.getValues());
+  }
+
+  @Override public void set(int index, double value) {
+    hashMap.put(index, value);
+  }
+
+  @Override public int size() {
+    return hashMap.size();
+  }
+
+  @Override public double sparsity() {
+    return ((double) nonZeroNumber()) / dim;
+  }
+
+  @Override
+  public TIntDoubleVector times(double x) {
+    SparseIntDoubleVector vector = (SparseIntDoubleVector) this.clone();
+
+    ObjectIterator<Int2DoubleMap.Entry> iter = vector.hashMap.int2DoubleEntrySet().fastIterator();
+    Int2DoubleMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      vector.hashMap.put(entry.getIntKey(), entry.getDoubleValue() * x);
+    }
+    return vector;
+  }
+
+  @Override
+  public TIntDoubleVector timesBy(double x) {
+    ObjectIterator<Int2DoubleMap.Entry> iter = this.hashMap.int2DoubleEntrySet().fastIterator();
+    Int2DoubleMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      this.hashMap.put(entry.getIntKey(), entry.getDoubleValue() * x);
+    }
+    return this;
+  }
+
+  @Override
+  public double squaredNorm() {
+    ObjectIterator<Int2DoubleMap.Entry> iter = hashMap.int2DoubleEntrySet().iterator();
+    double sum = 0;
+    while (iter.hasNext()) {
+      double v = iter.next().getDoubleValue();
+      sum += v * v;
+    }
+    return sum;
+  }
+
+  public Int2DoubleOpenHashMap getIndexToValueMap() {
+    return hashMap;
+  }
+}

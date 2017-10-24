@@ -23,14 +23,8 @@ import com.tencent.angel.ml.lda.algo.structures.S2ITraverseMap;
 import com.tencent.angel.ml.lda.algo.structures.S2STraverseMap;
 import com.tencent.angel.ml.lda.algo.structures.TraverseHashMap;
 import com.tencent.angel.worker.storage.DataBlock;
-import com.tencent.angel.worker.storage.Reader;
-import com.tencent.angel.worker.task.TaskContext;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class CSRTokens {
   public int n_words;

@@ -16,23 +16,6 @@
 
 package com.tencent.angel.master;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.LocalFileSystem;
-import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
-import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
-import org.apache.log4j.PropertyConfigurator;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.client.AngelClient;
 import com.tencent.angel.client.AngelClientFactory;
@@ -46,6 +29,7 @@ import com.tencent.angel.master.app.AppState;
 import com.tencent.angel.master.app.InternalErrorEvent;
 import com.tencent.angel.master.ps.ParameterServerManager;
 import com.tencent.angel.ml.matrix.MatrixContext;
+import com.tencent.angel.worker.task.TaskContext;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.protobuf.generated.MLProtos.MatrixClock;
@@ -61,6 +45,22 @@ import com.tencent.angel.worker.WorkerAttemptId;
 import com.tencent.angel.worker.WorkerGroupId;
 import com.tencent.angel.worker.WorkerId;
 import com.tencent.angel.worker.task.TaskId;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.LocalFileSystem;
+import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
+import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
+import org.apache.log4j.PropertyConfigurator;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class MasterRecoverTest {
   private static final Log LOG = LogFactory.getLog(MasterRecoverTest.class);
@@ -243,9 +243,9 @@ public class MasterRecoverTest {
       LOG.info("worker.getTaskManager()=" + worker.getTaskManager());
       LOG.info("worker.getTaskManager().getRunningTask()=" + worker.getTaskManager().getRunningTask().size());
 
-      com.tencent.angel.worker.task.TaskContext task0Context =
+      TaskContext task0Context =
         worker.getTaskManager().getRunningTask().get(task0Id).getTaskContext();
-      com.tencent.angel.worker.task.TaskContext task1Context =
+      TaskContext task1Context =
         worker.getTaskManager().getRunningTask().get(task1Id).getTaskContext();
       assertEquals(task0Context.getEpoch(), task0Iteration);
       assertEquals(task1Context.getEpoch(), task1Iteration);

@@ -16,12 +16,9 @@
 
 package com.tencent.angel.ml.matrix.transport;
 
-import com.tencent.angel.ps.impl.matrix.*;
 import com.tencent.angel.protobuf.generated.MLProtos.RowType;
-import com.tencent.angel.utils.ByteBufUtils;
+import com.tencent.angel.ps.impl.matrix.*;
 import io.netty.buffer.ByteBuf;
-
-import java.util.Queue;
 
 /**
  * The result of get row split rpc request.

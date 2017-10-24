@@ -17,7 +17,7 @@
 
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
-import com.tencent.angel.ml.math.vector.SparseDoubleLongKeyVector;
+import com.tencent.angel.ml.math.vector.SparseLongKeyDoubleVector;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
@@ -28,7 +28,7 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
  */
 public class CompSparseDoubleLongKeyRowUpdateSplit extends RowUpdateSplit {
 
-  private final SparseDoubleLongKeyVector split;
+  private final SparseLongKeyDoubleVector split;
 
   /**
    * Create a new CompSparseDoubleLongKeyRowUpdateSplit
@@ -36,8 +36,8 @@ public class CompSparseDoubleLongKeyRowUpdateSplit extends RowUpdateSplit {
    * @param rowIndex row index
    * @param rowType  row type
    */
-  public CompSparseDoubleLongKeyRowUpdateSplit(SparseDoubleLongKeyVector split, int rowIndex,
-    MLProtos.RowType rowType) {
+  public CompSparseDoubleLongKeyRowUpdateSplit(SparseLongKeyDoubleVector split, int rowIndex,
+                                               MLProtos.RowType rowType) {
     super(rowIndex, rowType, -1, -1);
     this.split = split;
   }

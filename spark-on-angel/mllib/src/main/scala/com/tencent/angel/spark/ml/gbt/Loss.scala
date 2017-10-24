@@ -16,7 +16,7 @@
 
 package com.tencent.angel.spark.ml.gbt
 
-trait Loss {
+trait Loss extends Serializable {
 
   def firstGradient(label: Float, pred: Float): Float
 

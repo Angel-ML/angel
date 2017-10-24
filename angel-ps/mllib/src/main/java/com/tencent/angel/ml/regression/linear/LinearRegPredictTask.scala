@@ -17,41 +17,32 @@
 
 package com.tencent.angel.ml.regression.linear
 
-import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.utils.DataParser
+import com.tencent.angel.ml.task.PredictTask
 import com.tencent.angel.utils.HdfsUtil
-import com.tencent.angel.worker.task.{TaskContext, TrainTask}
+import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.io.{LongWritable, Text}
 
 /**
   * Predict task of linear regression, first pull LinearReg weight vector from PS, second predict the
   * value of local dataset
+  *
   * @param ctx : context of current task
   */
 
-class LinearRegPredictTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
-  // Number of features of model and dataset
-  val feaNum: Int = conf.getInt(MLConf.ML_FEATURE_NUM, 1)
-  // Data format, we support libsvm and dummy
-  val dataFormat: String = conf.get(MLConf.ML_DATAFORMAT)
+class LinearRegPredictTask(val ctx: TaskContext) extends PredictTask[LongWritable, Text](ctx) {
 
   @throws[Exception]
-  def train(ctx: TaskContext) {
-    // LinearReg model, parameters set by conf, PS load weight vector form hdfs before this task runs.
-    val lrmodel = new LinearRegModel(conf, ctx)
-
-    // Pull LinearReg weight vector from PS which is save in lrmodel.localWeight
-    lrmodel.weight.getRow(0);
-
-    // Predict the input dataset and save the result
-    val predictResult = lrmodel.predict(trainDataBlock)
+  def predict(ctx: TaskContext) {
+    val lrModel = new LinearRegModel(conf, ctx)
+    lrModel.weight.getRow(0);
+    val predictResult = lrModel.predict(taskDataBlock)
     System.out.println("predict storage.len=" + predictResult.size)
 
     HdfsUtil.writeStorage(predictResult, ctx)
   }
 
   def parse(key: LongWritable, value: Text): LabeledData = {
-    DataParser.parseVector(key, value, feaNum, dataFormat, false)
+    dataParser.parse(value.toString)
   }
 }

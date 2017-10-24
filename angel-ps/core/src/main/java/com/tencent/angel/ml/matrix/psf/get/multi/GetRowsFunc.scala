@@ -29,7 +29,6 @@ import com.tencent.angel.psagent.matrix.transport.adapter.RowSplitCombineUtils
 import org.apache.commons.logging.{Log, LogFactory}
 
 import scala.collection.JavaConversions._
-import scala.collection.mutable
 
 /**
   * Get a batch of rows function implements by the get udf.

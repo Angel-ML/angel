@@ -21,14 +21,23 @@ package com.tencent.angel.ml.lda.algo;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.lda.LDAModel;
+import com.tencent.angel.ml.lda.psf.CSRPartUpdateParam;
 import com.tencent.angel.ml.lda.psf.PartCSRResult;
+import com.tencent.angel.ml.lda.psf.UpdatePartFunc;
 import com.tencent.angel.ml.math.vector.DenseIntVector;
+import com.tencent.angel.ml.math.vector.SparseIntVector;
+import com.tencent.angel.ml.matrix.psf.update.enhance.VoidResult;
+import com.tencent.angel.psagent.PSAgentContext;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import it.unimi.dsi.fastutil.shorts.Short2IntMap;
+import it.unimi.dsi.fastutil.shorts.Short2IntOpenHashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math.special.Gamma;
 
 import com.tencent.angel.ml.lda.algo.structures.*;
 import java.util.Random;
+import java.util.concurrent.Future;
 
 public class Sampler {
 
@@ -72,11 +81,13 @@ public class Sampler {
     tree = new FTree(K);
   }
 
-  public void sample(PartitionKey pkey, PartCSRResult csr) {
+  public Future<VoidResult> sample(PartitionKey pkey, PartCSRResult csr) {
     int ws = pkey.getStartRow();
     int we = pkey.getEndRow();
 
     Random rand = new Random(System.currentTimeMillis());
+
+    Short2IntOpenHashMap[] updates = new Short2IntOpenHashMap[we - ws];
 
     for (int w = ws; w < we; w ++) {
 
@@ -86,8 +97,7 @@ public class Sampler {
       if (!csr.read(wk)) throw new AngelException("some error happens");
 
       buildFTree();
-      DenseIntVector update = new DenseIntVector(K);
-
+      updates[w - ws] = new Short2IntOpenHashMap();
       for (int wi = data.ws[w]; wi < data.ws[w + 1]; wi ++) {
         int d = data.docs[wi];
         TraverseHashMap dk = data.dks[d];
@@ -95,7 +105,6 @@ public class Sampler {
 
         if (wk[tt] <= 0) {
           LOG.error(String.format("Error wk[%d] = %d for word %d", tt, wk[tt], w));
-          error = true;
           continue;
         }
 
@@ -103,7 +112,7 @@ public class Sampler {
         nk[tt] --;
         float value = (wk[tt] + beta) / (nk[tt] + vbeta);
         tree.update(tt, value);
-        update.plusBy(tt, -1);
+        updates[w - ws].addTo((short) tt, -1);
 
         synchronized (dk) {
           dk.dec(tt);
@@ -124,11 +133,16 @@ public class Sampler {
         value = (wk[tt] + beta) / (nk[tt] + vbeta);
         tree.update(tt, value);
         data.topics[wi] = tt;
-        update.plusBy(tt, 1);
+        updates[w - ws].addTo((short) tt, 1);
       }
 
-      model.wtMat().increment(w, update);
+//      model.wtMat().increment(w, update);
     }
+    CSRPartUpdateParam param = new CSRPartUpdateParam(model.wtMat().getMatrixId(),
+        pkey, updates);
+    Future<VoidResult> future = PSAgentContext.get().getMatrixTransportClient()
+        .update(new UpdatePartFunc(null), param);
+    return future;
   }
 
   private void buildFTree() {
@@ -183,14 +197,19 @@ public class Sampler {
     return 0.0F;
   }
 
-  public void initialize(PartitionKey pkey) {
+  public Future<VoidResult> initialize(PartitionKey pkey) {
     int ws = pkey.getStartRow();
     int es = pkey.getEndRow();
 
     Random rand = new Random(System.currentTimeMillis());
 
+    Short2IntOpenHashMap[] updates = new Short2IntOpenHashMap[es - ws];
+
     for (int w = ws; w < es; w ++) {
-      DenseIntVector update = new DenseIntVector(K);
+      if (data.ws[w + 1] == data.ws[w])
+        continue;
+
+      updates[w - ws] = new Short2IntOpenHashMap();
 
       for (int wi = data.ws[w]; wi < data.ws[w + 1]; wi ++) {
         int d = data.docs[wi];
@@ -200,11 +219,18 @@ public class Sampler {
         synchronized (data.dks[d]) {
           data.dks[d].inc(t);
         }
-        update.plusBy(t, 1);
+//        update.plusBy(t, 1);
+        updates[w - ws].addTo((short) t, 1);
       }
 
-      model.wtMat().increment(w, update);
+//      model.wtMat().increment(w, update);
     }
+
+    CSRPartUpdateParam param = new CSRPartUpdateParam(model.wtMat().getMatrixId(),
+        pkey, updates);
+    Future<VoidResult> future = PSAgentContext.get().getMatrixTransportClient()
+        .update(new UpdatePartFunc(null), param);
+    return future;
   }
 
   public Sampler set(int[] nk) {
@@ -212,19 +238,28 @@ public class Sampler {
     return this;
   }
 
-  public void reset(PartitionKey pkey) {
+  public Future<VoidResult> reset(PartitionKey pkey) {
     int ws = pkey.getStartRow();
     int es = pkey.getEndRow();
+    Short2IntOpenHashMap[] updates = new Short2IntOpenHashMap[es - ws];
 
     for (int w = ws; w < es; w ++) {
-      DenseIntVector update = new DenseIntVector(K);
+      if (data.ws[w + 1] == data.ws[w])
+        continue;
+
+      updates[w - ws] = new Short2IntOpenHashMap();
       for (int wi = data.ws[w]; wi < data.ws[w + 1]; wi ++) {
         int tt = data.topics[wi];
-        update.plusBy(tt, 1);
+        updates[w - ws].addTo((short) tt, 1);
         nk[tt] ++;
       }
-      model.wtMat().increment(w, update);
     }
+
+    CSRPartUpdateParam param = new CSRPartUpdateParam(model.wtMat().getMatrixId(),
+        pkey, updates);
+    Future<VoidResult> future = PSAgentContext.get().getMatrixTransportClient()
+        .update(new UpdatePartFunc(null), param);
+    return future;
   }
 
   public void initForInference(PartitionKey pkey) {

@@ -18,11 +18,10 @@ package com.tencent.angel.master;
 
 import com.tencent.angel.common.Location;
 import com.tencent.angel.master.app.AMContext;
-import com.tencent.angel.ps.ParameterServerId;
-import com.tencent.angel.psagent.PSAgentId;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos.*;
-
+import com.tencent.angel.ps.ParameterServerId;
+import com.tencent.angel.psagent.PSAgentId;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 

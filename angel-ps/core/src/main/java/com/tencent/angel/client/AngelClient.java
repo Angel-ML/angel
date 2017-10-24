@@ -30,19 +30,12 @@ import com.tencent.angel.ml.model.MLModel;
 import com.tencent.angel.ml.model.PSModel;
 import com.tencent.angel.protobuf.RequestConverter;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.*;
-import com.tencent.angel.protobuf.generated.MLProtos.GetAllPSLocationRequest;
-import com.tencent.angel.protobuf.generated.MLProtos.GetAllPSLocationResponse;
-import com.tencent.angel.protobuf.generated.MLProtos.MatrixProto;
-import com.tencent.angel.protobuf.generated.MLProtos.MatrixStatus;
-import com.tencent.angel.protobuf.generated.MLProtos.PSLocation;
-import com.tencent.angel.protobuf.generated.MLProtos.PSStatus;
-import com.tencent.angel.protobuf.generated.MLProtos.Pair;
+import com.tencent.angel.protobuf.generated.MLProtos.*;
 import com.tencent.angel.utils.HdfsUtil;
 import com.tencent.angel.utils.UGITools;
 import com.tencent.angel.worker.WorkerGroupId;
 import com.tencent.angel.worker.WorkerId;
 import com.tencent.angel.worker.task.BaseTask;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -118,6 +111,26 @@ public abstract class AngelClient implements AngelClientInterface {
               .addKvs(
                   Pair.newBuilder().setKey(AngelConf.ANGEL_TASK_USER_TASKCLASS)
                       .setValue(taskClass.getName()).build()).build());
+      master.start(null, StartRequest.newBuilder().build());
+    } catch (ServiceException e) {
+      LOG.error("start application failed.", e);
+      throw new AngelException(e);
+    }
+  }
+  
+  public void runTask(String taskClassName) throws AngelException {
+    if(master == null) {
+      throw new AngelException("parameter servers are not started, you must execute startPSServer first!!");
+    }
+    
+    try {
+      master.setParams(
+              null,
+              SetParamsRequest
+                      .newBuilder()
+                      .addKvs(
+                              Pair.newBuilder().setKey(AngelConf.ANGEL_TASK_USER_TASKCLASS)
+                                      .setValue(taskClassName).build()).build());
       master.start(null, StartRequest.newBuilder().build());
     } catch (ServiceException e) {
       LOG.error("start application failed.", e);
@@ -448,10 +461,8 @@ public abstract class AngelClient implements AngelClientInterface {
 
     JobReportProto report = response.getJobReport();
     // JobStateProto jobState = report.getJobState();
-    if (lastReport == null
-        || (report.hasCurIteration() && report.getCurIteration() != lastReport.getJobReport()
-            .getCurIteration())) {
-      LOG.info("curIteration: " + report.getCurIteration() + ". Metrics: " + toString(report.getMetricsList()));
+    if (lastReport == null || (report.hasCurIteration() && report.getCurIteration() != lastReport.getJobReport().getCurIteration())) {
+      LOG.info("Epoch: " + report.getCurIteration() + ". Metrics=" + toString(report.getMetricsList()));
       if (report.hasLoss()) {
         LOG.info("loss/success: " + report.getLoss() + "/" + report.getSuccess());
       }
@@ -460,15 +471,15 @@ public abstract class AngelClient implements AngelClientInterface {
   }
 
   private String toString(List<Pair> metrics){
-    StringBuilder sb = new StringBuilder();
+    StringBuilder sb = new StringBuilder("{");
     int size = metrics.size();
     for(int i = 0; i < size; i++) {
-      sb.append(metrics.get(i).getKey() + "=" + String.format(LOG_FORMAT, Double.valueOf(metrics.get(i).getValue())));
+      sb.append("\""+ metrics.get(i).getKey() + "\":" + String.format(LOG_FORMAT, Double.valueOf(metrics.get(i).getValue())));
       if(i < size - 1) {
-        sb.append("\t");
+        sb.append(",");
       }
-    }
-
+    }    
+    sb.append("}");
     return sb.toString();
   }
   

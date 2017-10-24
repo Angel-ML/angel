@@ -21,9 +21,9 @@ import com.tencent.angel.ml.GBDT.GBDTModel;
 import com.tencent.angel.ml.GBDT.psf.GBDTGradHistGetRowFunc;
 import com.tencent.angel.ml.GBDT.psf.GBDTGradHistGetRowResult;
 import com.tencent.angel.ml.GBDT.algo.RegTree.*;
+import com.tencent.angel.ml.GBDT.psf.HistAggrParam;
 import com.tencent.angel.ml.conf.MLConf;
 import com.tencent.angel.ml.math.vector.*;
-import com.tencent.angel.ml.matrix.psf.get.single.GetRowParam;
 import com.tencent.angel.ml.metric.EvalMetric;
 import com.tencent.angel.ml.metric.LogErrorMetric;
 import com.tencent.angel.ml.model.PSModel;
@@ -34,7 +34,7 @@ import com.tencent.angel.ml.objective.RegLossObj;
 import com.tencent.angel.ml.param.GBDTParam;
 import com.tencent.angel.ml.GBDT.algo.tree.SplitEntry;
 import com.tencent.angel.ml.GBDT.algo.tree.TYahooSketchSplit;
-import com.tencent.angel.ml.utils.MathUtils;
+import com.tencent.angel.ml.utils.Maths;
 import com.tencent.angel.worker.task.TaskContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -101,7 +101,7 @@ public class GBDTController {
     LossHelper loss = new Loss.BinaryLogisticLoss();
     objfunc = new RegLossObj(loss);
     this.sketches = new float[this.param.numFeature * this.param.numSplit];
-    this.maxNodeNum = MathUtils.pow(2, this.param.maxDepth) - 1;
+    this.maxNodeNum = Maths.pow(2, this.param.maxDepth) - 1;
     this.activeNode = new int[maxNodeNum];
     this.activeNodeStat = new int[maxNodeNum];
     this.instancePos = new int[trainDataStore.numRow];
@@ -155,8 +155,8 @@ public class GBDTController {
     if (taskContext.getTaskIndex() == 0) {
       LOG.info("------Create sketch------");
       long startTime = System.currentTimeMillis();
-      DenseDoubleVector sketchVec =
-          new DenseDoubleVector(this.param.numFeature * this.param.numSplit);
+      DenseIntDoubleVector sketchVec =
+          new DenseIntDoubleVector(this.param.numFeature * this.param.numSplit);
       // 1. calculate candidate split value
       float[][] splits = TYahooSketchSplit.getSplitValue(this.trainDataStore, this.param.numSplit);
       if (splits.length == this.param.numFeature && splits[0].length == this.param.numSplit) {
@@ -187,7 +187,7 @@ public class GBDTController {
     PSModel sketch = model.getPSModel(this.param.sketchName);
     LOG.info("------Get sketch from PS------");
     long startTime = System.currentTimeMillis();
-    DenseDoubleVector sketchVector = (DenseDoubleVector) sketch.getRow(0);
+    DenseIntDoubleVector sketchVector = (DenseIntDoubleVector) sketch.getRow(0);
     LOG.info(String.format("Get sketch cost: %d ms", System.currentTimeMillis() - startTime));
     for (int i = 0; i < sketchVector.getDimension(); i++) {
       this.sketches[i] = (float) sketchVector.get(i);
@@ -301,7 +301,11 @@ public class GBDTController {
         }
 
         // 1.3. set the oplog to active
-        needFlushMatrixSet.add(histParaName);
+        int bytesPerItem = this.taskContext.getConf().
+            getInt(MLConf.ML_COMPRESS_BYTES(), MLConf.DEFAULT_ML_COMPRESS_BYTES());
+        if (! ( bytesPerItem >= 1 && bytesPerItem <= 7) ) {
+          needFlushMatrixSet.add(histParaName);
+        }
       }
     }
     // 2. check thread stats, if all threads finish, return
@@ -346,7 +350,7 @@ public class GBDTController {
         }
       }
     }
-    int[] tNodeId = MathUtils.intList2Arr(responsibleTNode);
+    int[] tNodeId = Maths.intList2Arr(responsibleTNode);
     LOG.info(String.format("Task[%d] responsible tree node: %s", this.taskContext.getTaskId().getIndex(),
         responsibleTNode.toString()));
 
@@ -359,6 +363,8 @@ public class GBDTController {
     boolean isServerSplit =
         taskContext.getConf().getBoolean(MLConf.ML_GBDT_SERVER_SPLIT(),
                 MLConf.DEFAULT_ML_GBDT_SERVER_SPLIT());
+    int splitNum = taskContext.getConf()
+        .getInt(MLConf.ML_GBDT_SPLIT_NUM(), MLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
 
     for (int i = 0; i < tNodeId.length; i++) {
       int nid = tNodeId[i];
@@ -369,15 +375,16 @@ public class GBDTController {
       // 2.2. pull the histogram
       long pullStartTime = System.currentTimeMillis();
       PSModel histMat = model.getPSModel(gradHistName);
-      TDoubleVector histogram = null;
+      TIntDoubleVector histogram = null;
       SplitEntry splitEntry = null;
       if (isServerSplit) {
         int matrixId = histMat.getMatrixId();
-        GBDTGradHistGetRowFunc func = new GBDTGradHistGetRowFunc(new GetRowParam(matrixId, 0));
+        GBDTGradHistGetRowFunc func = new GBDTGradHistGetRowFunc(new HistAggrParam(matrixId, 0,
+            param.numSplit, param.minChildWeight, param.regAlpha, param.regLambda));
         //histogram = (TDoubleVector) ((GetRowResult) histMat.get(func)).getRow();
         splitEntry = ((GBDTGradHistGetRowResult) histMat.get(func)).getSplitEntry();
       } else {
-        histogram = (TDoubleVector) histMat.getRow(0);
+        histogram = (TIntDoubleVector) histMat.getRow(0);
         LOG.debug("Get grad histogram without server split mode, histogram size" + histogram.getDimension());
       }
       LOG.info(String.format("Pull histogram from PS cost %d ms", System.currentTimeMillis()
@@ -436,9 +443,9 @@ public class GBDTController {
     // 3. push split feature to PS
     DenseIntVector splitFeatureVector = new DenseIntVector(this.activeNode.length);
     // 4. push split value to PS
-    DenseDoubleVector splitValueVector = new DenseDoubleVector(this.activeNode.length);
+    DenseIntDoubleVector splitValueVector = new DenseIntDoubleVector(this.activeNode.length);
     // 5. push split gain to PS
-    DenseDoubleVector splitGainVector = new DenseDoubleVector(this.activeNode.length);
+    DenseIntDoubleVector splitGainVector = new DenseIntDoubleVector(this.activeNode.length);
 
     for (int i = 0; i < updatedIndices.length; i++) {
       splitFeatureVector.set(updatedIndices[i], updatedSplitFid[i]);
@@ -477,15 +484,15 @@ public class GBDTController {
 
     // 2. get split value
     PSModel splitValueModel = model.getPSModel(this.param.splitValuesName);
-    DenseDoubleVector splitValueVec = (DenseDoubleVector) splitValueModel.getRow(currentTree);
+    DenseIntDoubleVector splitValueVec = (DenseIntDoubleVector) splitValueModel.getRow(currentTree);
 
     // 3. get split gain
     PSModel splitGainModel = model.getPSModel(this.param.splitGainsName);
-    DenseDoubleVector splitGainVec = (DenseDoubleVector) splitGainModel.getRow(currentTree);
+    DenseIntDoubleVector splitGainVec = (DenseIntDoubleVector) splitGainModel.getRow(currentTree);
 
     // 4. get node weight
     PSModel nodeGradStatsModel = model.getPSModel(this.param.nodeGradStatsName);
-    DenseDoubleVector nodeGradStatsVec = (DenseDoubleVector) nodeGradStatsModel.getRow(currentTree);
+    DenseIntDoubleVector nodeGradStatsVec = (DenseIntDoubleVector) nodeGradStatsModel.getRow(currentTree);
 
     LOG.info(String.format("Get split result from PS cost %d ms", System.currentTimeMillis() - startTime));
 
@@ -653,7 +660,7 @@ public class GBDTController {
     LOG.debug(String.format("Update gradStats of node[%d]: sumGrad[%f], sumHess[%f]", nid,
         gradStats.sumGrad, gradStats.sumHess));
     // 1. create the update
-    DenseDoubleVector vec = new DenseDoubleVector(2 * this.activeNode.length);
+    DenseIntDoubleVector vec = new DenseIntDoubleVector(2 * this.activeNode.length);
     vec.set(nid, gradStats.sumGrad);
     vec.set(nid + this.activeNode.length, gradStats.sumHess);
     // 2. push the update to PS
@@ -686,7 +693,7 @@ public class GBDTController {
     LOG.info("------Update leaf node predictions------");
     long startTime = System.currentTimeMillis();
     int nodeNum = this.forest[currentTree].nodes.size();
-    DenseDoubleVector vec = new DenseDoubleVector(this.maxNodeNum);
+    DenseIntDoubleVector vec = new DenseIntDoubleVector(this.maxNodeNum);
     for (int nid = 0; nid < nodeNum; nid++) {
       if (null != this.forest[currentTree].nodes.get(nid)
               && this.forest[currentTree].nodes.get(nid).isLeaf()) {
@@ -726,8 +733,8 @@ public class GBDTController {
     PSModel nodePreds = this.model.getPSModel(this.param.nodePredsName);
 
     TIntVector splitFeatVec = (TIntVector) splitFeat.getRow(this.currentTree);
-    TDoubleVector splitValueVec = (TDoubleVector) splitValue.getRow(this.currentTree);
-    TDoubleVector nodePredVec = (TDoubleVector) nodePreds.getRow(this.currentTree);
+    TIntDoubleVector splitValueVec = (TIntDoubleVector) splitValue.getRow(this.currentTree);
+    TIntDoubleVector nodePredVec = (TIntDoubleVector) nodePreds.getRow(this.currentTree);
     LOG.info(String.format("Prediction of tree[%d]: %s",
             this.currentTree, Arrays.toString(nodePredVec.getValues())));
     for (int insIdx = 0; insIdx < this.validDataStore.numRow; insIdx++) {
@@ -743,8 +750,8 @@ public class GBDTController {
     return new Tuple1<>((double) error);
   }
 
-  public double treePred(TIntVector splitFeatVec, TDoubleVector splitValueVec,
-                        TDoubleVector nodePredVec, SparseDoubleSortedVector ins) {
+  public double treePred(TIntVector splitFeatVec, TIntDoubleVector splitValueVec,
+                         TIntDoubleVector nodePredVec, SparseIntDoubleSortedVector ins) {
     assert splitFeatVec.getDimension() == splitValueVec.getDimension()
             && splitValueVec.getDimension() == nodePredVec.getDimension();
     int nid = 0;

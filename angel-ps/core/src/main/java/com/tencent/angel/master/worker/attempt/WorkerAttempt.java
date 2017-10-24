@@ -16,16 +16,6 @@
 
 package com.tencent.angel.master.worker.attempt;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.common.Location;
 import com.tencent.angel.master.app.AMContext;
@@ -39,19 +29,18 @@ import com.tencent.angel.master.deploy.yarn.ContainerRemoteLaunchEvent;
 import com.tencent.angel.master.deploy.yarn.YarnContainerAllocatorEvent;
 import com.tencent.angel.master.deploy.yarn.YarnContainerLauncherEvent;
 import com.tencent.angel.master.deploy.yarn.YarnContainerRequestEvent;
+import com.tencent.angel.master.task.AMTask;
 import com.tencent.angel.master.worker.worker.AMWorkerEventType;
 import com.tencent.angel.master.worker.worker.WorkerFromAttemptEvent;
 import com.tencent.angel.master.worker.workergroup.AMWorkerGroup;
 import com.tencent.angel.master.yarn.util.ContainerContextUtils;
-import com.tencent.angel.worker.WorkerAttemptId;
-import com.tencent.angel.worker.WorkerId;
-import com.tencent.angel.worker.task.TaskId;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos.Pair;
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.TaskStateProto;
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerReportRequest;
-import com.tencent.angel.master.task.AMTask;
-
+import com.tencent.angel.worker.WorkerAttemptId;
+import com.tencent.angel.worker.WorkerId;
+import com.tencent.angel.worker.task.TaskId;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.util.StringInterner;
@@ -63,6 +52,12 @@ import org.apache.hadoop.yarn.state.InvalidStateTransitonException;
 import org.apache.hadoop.yarn.state.SingleArcTransition;
 import org.apache.hadoop.yarn.state.StateMachine;
 import org.apache.hadoop.yarn.state.StateMachineFactory;
+
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * A running attempt for a worker.

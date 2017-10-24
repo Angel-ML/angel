@@ -16,15 +16,11 @@
 
 package com.tencent.angel.ml.math.vector;
 
-import com.tencent.angel.protobuf.generated.MLProtos;
-import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.ml.math.VectorType;
-
+import com.tencent.angel.protobuf.generated.MLProtos;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -339,7 +335,7 @@ public class SparseIntVector extends TIntVector {
   }
 
   @Override
-  public TVector clone() {
+  public SparseIntVector clone() {
     return new SparseIntVector(this);
   }
 

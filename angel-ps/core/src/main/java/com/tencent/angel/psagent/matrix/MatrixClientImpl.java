@@ -49,8 +49,7 @@ public class MatrixClientImpl extends MatrixClient {
   @Override
   public TVector getRow(int rowIndex) throws AngelException {
     try {
-      return PSAgentContext.get().getConsistencyController()
-          .getRow(taskContext, matrixId, rowIndex);
+      return PSAgentContext.get().getConsistencyController().getRow(taskContext, matrixId, rowIndex);
     } catch (Exception e) {
       throw new AngelException(e);
     }

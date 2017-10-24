@@ -18,7 +18,6 @@ package com.tencent.angel.ml.math.vector;
 
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.ml.math.VectorType;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
@@ -142,12 +141,12 @@ public class SparseFloatVector extends TFloatVector {
       return dot((DenseFloatVector) other);
     if (other instanceof SparseFloatVector)
       return dot((SparseFloatVector) other);
-    if (other instanceof DenseDoubleVector)
-      return dot((DenseDoubleVector) other);
-    if (other instanceof SparseDoubleVector)
-      return dot((SparseDoubleVector) other);
-    if (other instanceof SparseDoubleSortedVector)
-      return dot((SparseDoubleSortedVector) other);
+    if (other instanceof DenseIntDoubleVector)
+      return dot((DenseIntDoubleVector) other);
+    if (other instanceof SparseIntDoubleVector)
+      return dot((SparseIntDoubleVector) other);
+    if (other instanceof SparseIntDoubleSortedVector)
+      return dot((SparseIntDoubleSortedVector) other);
 
     throw new UnsupportedOperationException("Unsupport operation: " + this.getClass().getName() + " dot " + other.getClass().getName());
   }
@@ -188,7 +187,7 @@ public class SparseFloatVector extends TFloatVector {
     return dot;
   }
 
-  private double dot(DenseDoubleVector other) {
+  private double dot(DenseIntDoubleVector other) {
     double dot = 0.0;
     ObjectIterator<Int2FloatMap.Entry> iter = this.hashMap.int2FloatEntrySet().fastIterator();
     Int2FloatMap.Entry entry = null;
@@ -199,7 +198,7 @@ public class SparseFloatVector extends TFloatVector {
     return dot;
   }
 
-  private double dot(SparseDoubleVector other) {
+  private double dot(SparseIntDoubleVector other) {
     double dot = 0.0;
     if(this.size() < other.size()) {
       ObjectIterator<Int2FloatMap.Entry> iter = hashMap.int2FloatEntrySet().fastIterator();
@@ -223,7 +222,7 @@ public class SparseFloatVector extends TFloatVector {
     return dot;
   }
 
-  private double dot(SparseDoubleSortedVector other) {
+  private double dot(SparseIntDoubleSortedVector other) {
     double dot = 0.0;
     int [] indexes = other.getIndices();
     double [] values = other.getValues();

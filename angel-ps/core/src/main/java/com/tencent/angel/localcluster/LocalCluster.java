@@ -16,17 +16,16 @@
 
 package com.tencent.angel.localcluster;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.UUID;
-
+import com.tencent.angel.ps.PSAttemptId;
+import com.tencent.angel.worker.WorkerAttemptId;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 
-import com.tencent.angel.ps.PSAttemptId;
-import com.tencent.angel.worker.WorkerAttemptId;
+import java.io.IOException;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Local Angel cluster. It use a {@link LocalResourceManager} to allocate the resources of Angel

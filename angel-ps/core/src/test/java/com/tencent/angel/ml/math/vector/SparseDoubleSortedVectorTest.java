@@ -16,8 +16,6 @@
 
 package com.tencent.angel.ml.math.vector;
 
-import com.tencent.angel.ml.math.vector.TDoubleVector;
-import com.tencent.angel.ml.math.VectorType;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import org.junit.Test;
 
@@ -30,15 +28,15 @@ import static org.junit.Assert.assertArrayEquals;
 public class SparseDoubleSortedVectorTest {
   @Test
   public void cloneTest() throws Exception {
-    SparseDoubleSortedVector vec = genSparseDoubleSortedVector(300, 10000);
+    SparseIntDoubleSortedVector vec = genSparseDoubleSortedVector(300, 10000);
 
-    SparseDoubleSortedVector vec_1 = vec.clone();
+    SparseIntDoubleSortedVector vec_1 = vec.clone();
 
     assertEquals(vec.squaredNorm(), vec_1.squaredNorm());
     assertArrayEquals(vec.getIndices(), vec_1.getIndices());
     assertArrayEquals(vec.getValues(), vec_1.getValues(), 0.0);
 
-    SparseDoubleSortedVector vec_2 = new SparseDoubleSortedVector(300, 10000);
+    SparseIntDoubleSortedVector vec_2 = new SparseIntDoubleSortedVector(300, 10000);
 
     vec_2.clone(vec);
 
@@ -46,7 +44,7 @@ public class SparseDoubleSortedVectorTest {
     assertArrayEquals(vec.getIndices(), vec_2.getIndices());
     assertArrayEquals(vec.getValues(), vec_2.getValues(), 0.0);
 
-    SparseDoubleSortedVector vec_3 = genSparseDoubleSortedVector(300, 10000);
+    SparseIntDoubleSortedVector vec_3 = genSparseDoubleSortedVector(300, 10000);
 
     vec_3.clone(vec);
 
@@ -58,7 +56,7 @@ public class SparseDoubleSortedVectorTest {
 
   @Test
   public void clear() throws Exception {
-    SparseDoubleSortedVector vec = genSparseDoubleSortedVector(300, 10000);
+    SparseIntDoubleSortedVector vec = genSparseDoubleSortedVector(300, 10000);
 
     vec.clear();
 
@@ -70,8 +68,8 @@ public class SparseDoubleSortedVectorTest {
 
   @Test
   public void dot() throws Exception {
-    SparseDoubleSortedVector vec = genSparseDoubleSortedVector(300, 10000);
-    TDoubleVector vec_1 = genDenseDoubleVector(10000);
+    SparseIntDoubleSortedVector vec = genSparseDoubleSortedVector(300, 10000);
+    TIntDoubleVector vec_1 = genDenseDoubleVector(10000);
 
     int[] indexs = vec.getIndices();
     double[] values_1 = vec.getValues();
@@ -89,7 +87,7 @@ public class SparseDoubleSortedVectorTest {
     int[] index = genSortedIndexs(300, 10000);
     double[] values = genDoubleArray(300);
 
-    SparseDoubleSortedVector vec = new SparseDoubleSortedVector(10000, index, values);
+    SparseIntDoubleSortedVector vec = new SparseIntDoubleSortedVector(10000, index, values);
 
     for (int i = 0; i < 300; i++) {
       int idx = index[i];
@@ -105,7 +103,7 @@ public class SparseDoubleSortedVectorTest {
     for (int i = 0; i < 100; i++) {
       int nnz = random.nextInt(dim);
 
-      SparseDoubleSortedVector vec = genSparseDoubleSortedVector(nnz, dim);
+      SparseIntDoubleSortedVector vec = genSparseDoubleSortedVector(nnz, dim);
 
       assertEquals(dim, vec.getDimension());
       assertEquals(nnz, vec.nonZeroNumber());
@@ -117,14 +115,14 @@ public class SparseDoubleSortedVectorTest {
     int[] indexs = genSortedIndexs(300, 10000);
     double[] values = genDoubleArray(300);
 
-    SparseDoubleSortedVector vec = new SparseDoubleSortedVector(10000, indexs, values);
+    SparseIntDoubleSortedVector vec = new SparseIntDoubleSortedVector(10000, indexs, values);
 
     assertArrayEquals(indexs, vec.getIndices());
   }
 
   @Test
   public void getType() throws Exception {
-    SparseDoubleSortedVector vec = new SparseDoubleSortedVector(10000, 300);
+    SparseIntDoubleSortedVector vec = new SparseIntDoubleSortedVector(10000, 300);
     assertEquals(MLProtos.RowType.T_DOUBLE_SPARSE, vec.getType());
   }
 
@@ -133,7 +131,7 @@ public class SparseDoubleSortedVectorTest {
     int[] indexs = genSortedIndexs(300, 10000);
     double[] values = genDoubleArray(300);
 
-    SparseDoubleSortedVector vec = new SparseDoubleSortedVector(10000, indexs, values);
+    SparseIntDoubleSortedVector vec = new SparseIntDoubleSortedVector(10000, indexs, values);
 
     assertArrayEquals(values, vec.getValues(), 0.0);
   }
@@ -147,7 +145,7 @@ public class SparseDoubleSortedVectorTest {
     for (double v: values)
       sum += v * v;
 
-    SparseDoubleSortedVector vec = new SparseDoubleSortedVector(10000, indexs, values);
+    SparseIntDoubleSortedVector vec = new SparseIntDoubleSortedVector(10000, indexs, values);
 
     assertEquals(sum, vec.squaredNorm());
   }
@@ -163,7 +161,7 @@ public class SparseDoubleSortedVectorTest {
         nnz +=1;
     }
 
-    SparseDoubleSortedVector vec = new SparseDoubleSortedVector(10000, indexs, values);
+    SparseIntDoubleSortedVector vec = new SparseIntDoubleSortedVector(10000, indexs, values);
 
     assertEquals(nnz, vec.nonZeroNumber());
   }
@@ -171,7 +169,7 @@ public class SparseDoubleSortedVectorTest {
 
   @Test
   public void set() throws Exception {
-    SparseDoubleSortedVector vec = new SparseDoubleSortedVector(300, 10000);
+    SparseIntDoubleSortedVector vec = new SparseIntDoubleSortedVector(300, 10000);
     int[] indexs = genSortedIndexs(300, 10000);
     double[] value = genDoubleArray(300);
 
@@ -185,7 +183,7 @@ public class SparseDoubleSortedVectorTest {
 
   @Test
   public void size() throws Exception {
-    SparseDoubleSortedVector vec = genSparseDoubleSortedVector(10000);
+    SparseIntDoubleSortedVector vec = genSparseDoubleSortedVector(10000);
     int nnz = vec.getValues().length;
 
     assertEquals(nnz, vec.size());
@@ -193,14 +191,14 @@ public class SparseDoubleSortedVectorTest {
 
   @Test
   public void sparsity() throws Exception {
-    SparseDoubleSortedVector vec = genSparseDoubleSortedVector(300, 10000);
+    SparseIntDoubleSortedVector vec = genSparseDoubleSortedVector(300, 10000);
 
     assertEquals(0.03, vec.sparsity());
   }
 
   @Test
   public void squaredNorm() throws Exception {
-    SparseDoubleSortedVector vec = genSparseDoubleSortedVector(300, 10000);
+    SparseIntDoubleSortedVector vec = genSparseDoubleSortedVector(300, 10000);
     double[] value = vec.getValues();
     double sum = 0;
     for (double v : value)
@@ -211,8 +209,8 @@ public class SparseDoubleSortedVectorTest {
 
   @Test
   public void times() throws Exception {
-    SparseDoubleSortedVector vec = genSparseDoubleSortedVector(300, 10000);
-    SparseDoubleSortedVector vec_1 = (SparseDoubleSortedVector) vec.times(3.0);
+    SparseIntDoubleSortedVector vec = genSparseDoubleSortedVector(300, 10000);
+    SparseIntDoubleSortedVector vec_1 = (SparseIntDoubleSortedVector) vec.times(3.0);
 
     assertArrayEquals(vec.getIndices(), vec_1.getIndices());
     for (int i = 0; i < vec.getDimension(); i++)
@@ -221,7 +219,7 @@ public class SparseDoubleSortedVectorTest {
 
   @Test
   public void timesBy() throws Exception {
-    SparseDoubleSortedVector vec = genSparseDoubleSortedVector(300,10000);
+    SparseIntDoubleSortedVector vec = genSparseDoubleSortedVector(300,10000);
     double[] value = vec.getValues().clone();
 
     vec.timesBy(3.0);

@@ -18,7 +18,7 @@ package com.tencent.angel.spark.examples
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.examples.util.PSExamples._
-import com.tencent.angel.spark.math.matrix.DensePSMatrix
+import com.tencent.angel.spark.models.matrix.DensePSMatrix
 import scala.util.Random
 
 object Matrix {

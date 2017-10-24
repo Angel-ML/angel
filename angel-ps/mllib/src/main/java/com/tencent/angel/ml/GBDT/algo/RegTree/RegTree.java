@@ -19,7 +19,7 @@ package com.tencent.angel.ml.GBDT.algo.RegTree;
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.param.RegTParam;
 import com.tencent.angel.ml.GBDT.algo.tree.TNode;
-import com.tencent.angel.ml.utils.MathUtils;
+import com.tencent.angel.ml.utils.Maths;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -46,7 +46,7 @@ public class RegTree {
   public void initTreeNodes() {
     // initialize nodes
     int maxDepth = param.maxDepth;
-    int maxNode = MathUtils.pow(2, maxDepth) - 1;
+    int maxNode = Maths.pow(2, maxDepth) - 1;
     TNode root = new TNode();
     root.setNid(0);
     root.setParent(-1);

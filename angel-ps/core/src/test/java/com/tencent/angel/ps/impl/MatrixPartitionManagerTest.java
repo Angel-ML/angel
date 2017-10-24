@@ -33,9 +33,7 @@ import com.tencent.angel.ps.impl.matrix.ServerRow;
 import com.tencent.angel.worker.WorkerAttemptId;
 import com.tencent.angel.worker.WorkerGroupId;
 import com.tencent.angel.worker.WorkerId;
-
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -47,9 +45,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.Assert.*;
@@ -135,10 +130,10 @@ public class MatrixPartitionManagerTest {
     try {
       matrixPartitionManager.getMatrixIdMap().put(5, matrixPartitionManager.getMatrixIdMap().get(matrixw1Id));
       DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
-      matrixPartitionManager.writeMatrix(out);
+      matrixPartitionManager.writeSnapshot(out);
       out.close();
       DataInputStream in = new DataInputStream(new FileInputStream("data"));
-      matrixPartitionManager.parseMatricesFromInput(in);
+      matrixPartitionManager.readSnapshot(in);
       assertNotNull(matrixPartitionManager);
 
       File file = new File("data");

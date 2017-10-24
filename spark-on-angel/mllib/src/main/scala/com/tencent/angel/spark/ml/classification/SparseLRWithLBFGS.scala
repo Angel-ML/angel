@@ -20,8 +20,8 @@ import breeze.linalg.DenseVector
 import breeze.optimize.LBFGS
 
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.math.vector.{PSVector, VectorType}
-import com.tencent.angel.spark.math.vector.decorator.BreezePSVector
+import com.tencent.angel.spark.models.vector.{PSVector, VectorType}
+import com.tencent.angel.spark.models.vector.enhanced.BreezePSVector
 import com.tencent.angel.spark.ml.common.OneHot.OneHotVector
 import com.tencent.angel.spark.ml.sparse.SparseLogistic
 import com.tencent.angel.spark.ml.util.{ArgsUtil, DataLoader}
@@ -110,7 +110,7 @@ object SparseLRWithLBFGS {
       }
     }
     println(s"loss history: ${lossHistory.toArray.mkString(" ")}")
-    println(s"weights: ${weight.toRemote.pull().take(10).mkString(" ")}")
+    println(s"weights: ${weight.pull().take(10).mkString(" ")}")
   }
 
 }

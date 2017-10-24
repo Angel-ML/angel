@@ -43,8 +43,8 @@
 package org.apache.spark.mllib.stat
 
 import com.tencent.angel.spark.context.{PSContext, PSVectorPool}
-import com.tencent.angel.spark.math.vector.PSVector
-import com.tencent.angel.spark.math.vector.decorator.BreezePSVector
+import com.tencent.angel.spark.models.vector.PSVector
+import com.tencent.angel.spark.models.vector.enhanced.BreezePSVector
 import org.apache.spark.annotation.{DeveloperApi, Since}
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 
@@ -103,8 +103,8 @@ class PSMultivariateOnlineSummarizer(@transient private val psVector: PSVector)
     require(n == instance.size, s"Dimensions mismatch when adding new sample." +
       s" Expecting $n but got ${instance.size}.")
 
-    val prevMean = currMean.toRemote.pull()
-    val prevWeight = weightSum.toRemote.pull()
+    val prevMean = currMean.pull()
+    val prevWeight = weightSum.pull()
 
     val deltaMean = Array.ofDim[Double](n)
     val deltaM2n = Array.ofDim[Double](n)
@@ -127,14 +127,14 @@ class PSMultivariateOnlineSummarizer(@transient private val psVector: PSVector)
       }
     }
 
-    currMean.toRemote.increment(deltaMean)
-    currM2n.toRemote.increment(deltaM2n)
-    currM2.toRemote.increment(deltaM2)
-    currL1.toRemote.increment(deltaL1)
-    weightSum.toRemote.increment(deltaWeightSum)
-    nnz.toRemote.increment(deltaNumNonzeros)
-    currMax.toRemote.mergeMax(instance.toArray)
-    currMin.toRemote.mergeMin(instance.toArray)
+    currMean.toCache.incrementWithCache(deltaMean)
+    currM2n.toCache.incrementWithCache(deltaM2n)
+    currM2.toCache.incrementWithCache(deltaM2)
+    currL1.toCache.incrementWithCache(deltaL1)
+    weightSum.toCache.incrementWithCache(deltaWeightSum)
+    nnz.toCache.incrementWithCache(deltaNumNonzeros)
+    currMax.toCache.mergeMax(instance.toArray)
+    currMin.toCache.mergeMin(instance.toArray)
 
     totalWeightSum += weight
     weightSquareSum += weight * weight
@@ -235,8 +235,8 @@ class PSMultivariateOnlineSummarizer(@transient private val psVector: PSVector)
   def max: Vector = {
     require(totalWeightSum > 0, s"Nothing has been added to this summarizer.")
 
-    val localNnz = nnz.toRemote.pull()
-    val localCurrMax = currMax.toRemote.pull()
+    val localNnz = nnz.pull()
+    val localCurrMax = currMax.pull()
 
     var i = 0
     while (i < n) {
@@ -254,8 +254,8 @@ class PSMultivariateOnlineSummarizer(@transient private val psVector: PSVector)
   def min: Vector = {
     require(totalWeightSum > 0, s"Nothing has been added to this summarizer.")
 
-    val localNnz = nnz.toRemote.pull()
-    val localCurrMin = currMin.toRemote.pull()
+    val localNnz = nnz.pull()
+    val localCurrMin = currMin.pull()
 
     var i = 0
     while (i < n) {

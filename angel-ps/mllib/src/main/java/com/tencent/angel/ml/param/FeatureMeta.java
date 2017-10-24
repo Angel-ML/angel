@@ -16,7 +16,7 @@
  */
 package com.tencent.angel.ml.param;
 
-import com.tencent.angel.ml.utils.MathUtils;
+import com.tencent.angel.ml.utils.Maths;
 import com.tencent.angel.utils.Sort;
 
 
@@ -54,7 +54,7 @@ public class FeatureMeta {
     for (int fid = 0; fid < numFeature; fid++) {
       findex[fid] = fid;
     }
-    MathUtils.shuffle(findex);
+    Maths.shuffle(findex);
     int[] rec = new int[size];
     System.arraycopy(findex, 0, rec, 0, rec.length);
     Sort.quickSort(rec, new int[rec.length], 0, rec.length - 1);

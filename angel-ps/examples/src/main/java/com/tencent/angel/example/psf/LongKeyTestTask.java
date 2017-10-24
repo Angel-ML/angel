@@ -1,10 +1,27 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
 package com.tencent.angel.example.psf;
 
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.ml.math.vector.CompSparseDoubleLongKeyVector;
-import com.tencent.angel.ml.math.vector.DenseDoubleVector;
-import com.tencent.angel.ml.math.vector.SparseDoubleLongKeyVector;
+import com.tencent.angel.ml.math.vector.CompSparseLongKeyDoubleVector;
+import com.tencent.angel.ml.math.vector.DenseIntDoubleVector;
+import com.tencent.angel.ml.math.vector.SparseLongKeyDoubleVector;
 import com.tencent.angel.psagent.matrix.MatrixClient;
 import com.tencent.angel.worker.task.BaseTask;
 import com.tencent.angel.worker.task.TaskContext;
@@ -31,13 +48,13 @@ public class LongKeyTestTask extends BaseTask<Long, Long, Long> {
         long startTs = System.currentTimeMillis();
         TVector row = client.getRow(0);
         LOG.info("Task " + taskContext.getTaskId() + " in iteration " + taskContext.getEpoch()
-          + " pull use time=" + (System.currentTimeMillis() - startTs) + ", sum=" + ((CompSparseDoubleLongKeyVector)row).sum());
+          + " pull use time=" + (System.currentTimeMillis() - startTs) + ", sum=" + ((CompSparseLongKeyDoubleVector)row).sum());
 
         startTs = System.currentTimeMillis();
-        CompSparseDoubleLongKeyVector
-          deltaV = new CompSparseDoubleLongKeyVector(client.getMatrixId(), 0,2100000000, 110000000);
-        SparseDoubleLongKeyVector deltaV1 = new SparseDoubleLongKeyVector(2100000000, 150000000);
-        DenseDoubleVector deltaV2 = new DenseDoubleVector(110000000);
+        CompSparseLongKeyDoubleVector
+          deltaV = new CompSparseLongKeyDoubleVector(client.getMatrixId(), 0,2100000000, 110000000);
+        SparseLongKeyDoubleVector deltaV1 = new SparseLongKeyDoubleVector(2100000000, 150000000);
+        DenseIntDoubleVector deltaV2 = new DenseIntDoubleVector(110000000);
         for(int i = 0; i < 2100000000; i+=20) {
           deltaV.set(i, 1.0);
           deltaV1.set(i, 1.0);
@@ -89,7 +106,7 @@ public class LongKeyTestTask extends BaseTask<Long, Long, Long> {
     }
   }
 
-  private double sum(SparseDoubleLongKeyVector row) {
+  private double sum(SparseLongKeyDoubleVector row) {
     double [] data = row.getValues();
     double ret = 0.0;
     for(int i = 0; i < data.length; i++) {

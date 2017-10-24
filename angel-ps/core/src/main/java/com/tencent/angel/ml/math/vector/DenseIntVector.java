@@ -18,7 +18,6 @@ package com.tencent.angel.ml.math.vector;
 
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.ml.math.VectorType;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -121,7 +120,7 @@ public class DenseIntVector extends TIntVector {
   }
 
   @Override
-  public TVector clone() {
+  public DenseIntVector clone() {
     return new DenseIntVector(this);
   }
 

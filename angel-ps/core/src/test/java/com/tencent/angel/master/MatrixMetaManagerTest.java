@@ -16,21 +16,6 @@
 
 package com.tencent.angel.master;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-
-import java.util.List;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.LocalFileSystem;
-import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
-import org.apache.log4j.PropertyConfigurator;
-import org.junit.*;
-
 import com.tencent.angel.client.AngelClient;
 import com.tencent.angel.client.AngelClientFactory;
 import com.tencent.angel.conf.AngelConf;
@@ -39,7 +24,7 @@ import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.localcluster.LocalClusterContext;
 import com.tencent.angel.master.task.AMTask;
 import com.tencent.angel.master.task.AMTaskManager;
-import com.tencent.angel.ml.math.vector.DenseDoubleVector;
+import com.tencent.angel.ml.math.vector.DenseIntDoubleVector;
 import com.tencent.angel.ml.math.vector.TDoubleVector;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.MatrixMeta;
@@ -62,6 +47,20 @@ import com.tencent.angel.worker.WorkerAttemptId;
 import com.tencent.angel.worker.WorkerGroupId;
 import com.tencent.angel.worker.WorkerId;
 import com.tencent.angel.worker.task.TaskId;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.LocalFileSystem;
+import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
+import org.apache.log4j.PropertyConfigurator;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 public class MatrixMetaManagerTest {
   private static final Log LOG = LogFactory.getLog(MatrixMetaManagerTest.class);
@@ -317,22 +316,22 @@ public class MatrixMetaManagerTest {
 
       int iterIndex = 0;
       while (iterIndex < 5) {
-        TDoubleVector row1 = (TDoubleVector) w4ClientForTask0.getRow(0);
+        DenseIntDoubleVector row1 = (DenseIntDoubleVector) w4ClientForTask0.getRow(0);
         double sum1 = sum(row1.getValues());
         LOG.info("taskid=" + task0Context.getIndex() + ", matrixId=" + w4ClientForTask0.getMatrixId()
           + ", rowIndex=0, local row sum=" + sum1);
-        DenseDoubleVector deltaRow1 = new DenseDoubleVector(delta.length, delta);
+        DenseIntDoubleVector deltaRow1 = new DenseIntDoubleVector(delta.length, delta);
         deltaRow1.setMatrixId(w4ClientForTask0.getMatrixId());
         deltaRow1.setRowId(0);
         w4ClientForTask0.increment(deltaRow1);
         w4ClientForTask0.clock().get();
         task0Context.increaseEpoch();
 
-        TDoubleVector row2 = (TDoubleVector) w4ClientForTask1.getRow(0);
+        DenseIntDoubleVector row2 = (DenseIntDoubleVector) w4ClientForTask1.getRow(0);
         double sum2 = sum(row2.getValues());
         LOG.info("taskid=" + task0Context.getIndex() + ", matrixId=" + w4ClientForTask1.getMatrixId()
           + ", rowIndex=0, local row sum=" + sum2);
-        DenseDoubleVector deltaRow2 = new DenseDoubleVector(delta.length, delta);
+        DenseIntDoubleVector deltaRow2 = new DenseIntDoubleVector(delta.length, delta);
         deltaRow2.setMatrixId(w4ClientForTask1.getMatrixId());
         deltaRow2.setRowId(0);
         w4ClientForTask1.increment(deltaRow2);
@@ -353,10 +352,10 @@ public class MatrixMetaManagerTest {
       assertEquals(task1MatrixClocks.size(), 1);
       assertEquals(task1MatrixClocks.get(w4Id), 5);
 
-      TDoubleVector row1 = (TDoubleVector) w4ClientForTask0.getRow(0);
+      DenseIntDoubleVector row1 = (DenseIntDoubleVector) w4ClientForTask0.getRow(0);
       double sum1 = sum(row1.getValues());
       assertEquals(sum1, 1000000.0, 0.000001);
-      TDoubleVector row2 = (TDoubleVector) w4ClientForTask1.getRow(0);
+      DenseIntDoubleVector row2 = (DenseIntDoubleVector) w4ClientForTask1.getRow(0);
       double sum2 = sum(row2.getValues());
       assertEquals(sum2, 1000000.0, 0.000001);
 
@@ -370,10 +369,10 @@ public class MatrixMetaManagerTest {
 
       w4ClientForTask0.clock().get();
       w4ClientForTask1.clock().get();
-      row1 = (TDoubleVector) w4ClientForTask0.getRow(0);
+      row1 = (DenseIntDoubleVector) w4ClientForTask0.getRow(0);
       sum1 = sum(row1.getValues());
       assertEquals(sum1, 1000000.0, 0.000001);
-      row2 = (TDoubleVector) w4ClientForTask1.getRow(0);
+      row2 = (DenseIntDoubleVector) w4ClientForTask1.getRow(0);
       sum2 = sum(row2.getValues());
       assertEquals(sum2, 1000000.0, 0.000001);
     } catch (Exception x) {

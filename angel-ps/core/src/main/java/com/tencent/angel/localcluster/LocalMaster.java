@@ -16,16 +16,15 @@
 
 package com.tencent.angel.localcluster;
 
-import java.io.IOException;
-
 import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.master.AngelApplicationMaster;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 
-import com.tencent.angel.master.AngelApplicationMaster;
+import java.io.IOException;
 
 /**
  * Local Angel master. It startups the {@link AngelApplicationMaster} using a thread.

@@ -16,7 +16,7 @@
 
 package com.tencent.angel.ml.math.matrix;
 
-import com.tencent.angel.ml.math.vector.SparseDoubleVector;
+import com.tencent.angel.ml.math.vector.SparseIntDoubleVector;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertEquals;
@@ -33,7 +33,7 @@ public class SparseDoubleMatrixTest {
     assertEquals(matrix.get(1, 1), 1.0);
 
     matrix.clear();
-    SparseDoubleVector incVec = new SparseDoubleVector(2);
+    SparseIntDoubleVector incVec = new SparseIntDoubleVector(2);
     incVec.set(0, 1);
     incVec.set(1, 1);
     incVec.setRowId(0);
@@ -75,10 +75,10 @@ public class SparseDoubleMatrixTest {
     assertEquals(matrix.get(0, 1), 0.0);
     assertEquals(matrix.get(1, 0), 0.0);
     assertEquals(matrix.get(1, 1), 2.0);
-    assertEquals(((SparseDoubleVector)matrix.getTVector(0)).get(0), 2.0);
-    assertEquals(((SparseDoubleVector)matrix.getTVector(0)).get(1), 0.0);
-    assertEquals(((SparseDoubleVector)matrix.getTVector(1)).get(0), 0.0);
-    assertEquals(((SparseDoubleVector)matrix.getTVector(1)).get(1), 2.0);
+    assertEquals(((SparseIntDoubleVector)matrix.getTVector(0)).get(0), 2.0);
+    assertEquals(((SparseIntDoubleVector)matrix.getTVector(0)).get(1), 0.0);
+    assertEquals(((SparseIntDoubleVector)matrix.getTVector(1)).get(0), 0.0);
+    assertEquals(((SparseIntDoubleVector)matrix.getTVector(1)).get(1), 2.0);
   }
 
   @Test

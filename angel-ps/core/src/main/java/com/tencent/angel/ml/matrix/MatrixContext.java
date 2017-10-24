@@ -16,19 +16,23 @@
 
 package com.tencent.angel.ml.matrix;
 
-import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.conf.MatrixConf;
+import com.tencent.angel.model.output.format.ModelFilesConstent;
+import com.tencent.angel.model.output.format.ModelFilesMeta;
+import com.tencent.angel.model.output.format.ModelPartitionMeta;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.protobuf.generated.MLProtos.RowType;
 import com.tencent.angel.ps.LongKeyPartitioner;
 import com.tencent.angel.ps.PSPartitioner;
-
 import com.tencent.angel.ps.Partitioner;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.*;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -343,77 +347,44 @@ public class MatrixContext {
    * @throws IOException the io exception
    */
   private List<MLProtos.Partition> loadPartitionInfoFromHDFS(String path, Configuration conf) throws IOException {
+    Path meteFilePath = new Path(new Path(path, name), ModelFilesConstent.modelMetaFileName);
+    ModelFilesMeta meta = new ModelFilesMeta();
 
-    Path inputPath = new Path(path, name);
-    FileSystem fs  = inputPath.getFileSystem(conf);
+    FileSystem fs  = meteFilePath.getFileSystem(conf);
+    LOG.info("Load matrix meta for matrix " + name);
 
-    LOG.info("Load matrix " + name + " from path " + inputPath);
-
-    if(!fs.exists(inputPath)) {
-      throw new IOException("matrix path " + inputPath + " does not exist ");
+    if(!fs.exists(meteFilePath)) {
+      throw new IOException("matrix meta file does not exist ");
     }
-    
-    FileStatus[] statuses;
-    statuses = fs.listStatus(inputPath);
 
-    if (statuses.length == 0) {
-      throw new IOException("there are no partition files in " + inputPath);
+    FSDataInputStream input = fs.open(meteFilePath);
+    meta.read(input);
+
+    LOG.info("matrix " + name + " meta=" + meta);
+    rowNum = meta.getRow();
+    colNum = meta.getCol();
+    maxRowNumInBlock = meta.getBlockRow();
+    maxColNumInBlock = meta.getBlockCol();
+    rowType = RowType.valueOf(meta.getRowType());
+    Map<String, String> oldAttributes = meta.getOptions();
+    if(oldAttributes != null && !oldAttributes.isEmpty()) {
+      for(Map.Entry<String, String> kv : oldAttributes.entrySet()) {
+        attributes.putIfAbsent(kv.getKey(), kv.getValue());
+      }
     }
 
     List<MLProtos.Partition> matrixPartitions = new ArrayList<>();
-    int hdfsRowNum = Integer.MIN_VALUE;
-    long hdfsColNum = Long.MIN_VALUE;
-
-    int psNum = conf.getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER);
-
-    for (int i = 0; i < statuses.length; i ++) {
-      FSDataInputStream in = fs.open(statuses[i].getPath());
-      in.readInt();
-      in.readInt();
-
-      int pid = getPartIdFromPath(statuses[i].getPath().getName());
-
-      int startRow = in.readInt();
-      long startCol = in.readLong();
-      int endRow   = in.readInt();
-      long endCol   = in.readLong();
-      
-      if(i == 0) {
-        RowType type = RowType.valueOf(in.readUTF());
-        if(rowType != type) {
-          LOG.warn("matrix " + name + " rowtype load from file is " + type);
-          rowType = type;
-        }
-      }
-
-      if (hdfsRowNum < endRow)
-        hdfsRowNum = endRow;
-      if (hdfsColNum < endCol)
-        hdfsColNum = endCol;
-
+    Map<Integer, ModelPartitionMeta> partMetas = meta.getPartMetas();
+    for(Map.Entry<Integer, ModelPartitionMeta> partMetaEntry:partMetas.entrySet()) {
       MLProtos.Partition.Builder partBuilder = MLProtos.Partition.newBuilder();
       partBuilder.setMatrixId(matrixId);
-      partBuilder.setPartitionId(pid);
-      partBuilder.setStartRow(startRow);
-      partBuilder.setStartCol(startCol);
-      partBuilder.setEndRow(endRow);
-      partBuilder.setEndCol(endCol);
+      partBuilder.setPartitionId(partMetaEntry.getKey());
+      partBuilder.setStartRow(partMetaEntry.getValue().getStartRow());
+      partBuilder.setStartCol(partMetaEntry.getValue().getStartCol());
+      partBuilder.setEndRow(partMetaEntry.getValue().getEndRow());
+      partBuilder.setEndCol(partMetaEntry.getValue().getEndCol());
       matrixPartitions.add(partBuilder.build());
-
-      LOG.info(String.format("read partition pid=%d startRow=%d startCol=%d endRow=%d endCol=%d",
-              pid, startRow, startCol, endRow, endCol));
     }
-
-    if (hdfsRowNum != rowNum) {
-      LOG.warn(String.format("parsed row num %d while set row num %d", hdfsRowNum, rowNum));
-      rowNum = hdfsRowNum;
-    }
-
-    if (hdfsColNum != colNum) {
-      LOG.warn(String.format("parsed col num %d while set col num %d", hdfsColNum, colNum));
-      colNum = hdfsColNum;
-    }
-
     return matrixPartitions;
   }
 

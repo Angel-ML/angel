@@ -16,13 +16,6 @@
 
 package com.tencent.angel.master.ps;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.app.AppEvent;
@@ -34,7 +27,6 @@ import com.tencent.angel.master.ps.ps.AMParameterServerEvent;
 import com.tencent.angel.master.ps.ps.AMParameterServerEventType;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.utils.StringUtils;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -44,6 +36,9 @@ import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.event.EventHandler;
 import org.apache.hadoop.yarn.factory.providers.RecordFactoryProvider;
+
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Parameter server manager, it managers a group of
@@ -274,7 +269,7 @@ public class ParameterServerManager extends AbstractService implements
 
   private void commit() {
     //init and start master committer
-    committer = new AMMatrixCommitter(context, outputPath, tmpOutputPath);
+    committer = new AMMatrixCommitter(context, outputPath, tmpOutputPath, needCommitMatrixIds);
     committer.init(context.getConf());
     committer.start();
   }

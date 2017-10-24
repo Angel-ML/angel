@@ -23,7 +23,6 @@ import com.tencent.angel.ipc.RpcServer;
 import com.tencent.angel.protobuf.generated.MasterPSServiceProtos.GetThreadStackRequest;
 import com.tencent.angel.protobuf.generated.MasterPSServiceProtos.GetThreadStackResponse;
 import com.tencent.angel.utils.NetUtils;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;

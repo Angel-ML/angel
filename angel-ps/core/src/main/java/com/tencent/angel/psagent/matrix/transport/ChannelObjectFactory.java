@@ -19,9 +19,13 @@ package com.tencent.angel.psagent.matrix.transport;
 import com.tencent.angel.common.Location;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.pool.PoolableObjectFactory;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Netty channel pool factory.
@@ -57,9 +61,21 @@ public class ChannelObjectFactory implements PoolableObjectFactory<Channel> {
 
   @Override
   public Channel makeObject() throws Exception {
-    Channel ch = bootstrap.connect(loc.getIp(), loc.getPort() + 1).sync().channel();
-    LOG.debug("connect success for " + loc.getIp() + ":" + (loc.getPort() + 1));
-    return ch;
+    ChannelFuture connectFuture =
+      bootstrap.connect(loc.getIp(), loc.getPort() + 1);
+    int ticks = 10000;
+    while(ticks-- > 0) {
+      if(connectFuture.isDone()) {
+        return connectFuture.channel();
+      }
+      Thread.sleep(10);
+    }
+
+    if(!connectFuture.isDone()) {
+      throw new TimeoutException("connect " + loc + " timeout");
+    } else {
+      return connectFuture.channel();
+    }
   }
 
   @Override

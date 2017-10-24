@@ -19,9 +19,14 @@ package com.tencent.angel.ml.optimizer.sgd
 
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector._
+import com.tencent.angel.ml.math.{TVector, VectorType}
 import com.tencent.angel.ml.model.PSModel
+import com.tencent.angel.ml.optimizer.sgd.loss.{L1LogLoss, Loss}
 import com.tencent.angel.worker.storage.DataBlock
 import org.apache.commons.logging.{Log, LogFactory}
+
+import scala.reflect.runtime.universe._
+
 
 object GradientDescent {
   private val LOG: Log = LogFactory.getLog(GradientDescent.getClass)
@@ -44,10 +49,18 @@ object GradientDescent {
 
     for (batch <- 1 to batchNum) {
       val batchStartTs = System.currentTimeMillis()
-      val grad = new DenseDoubleVector(w.getDimension)
+
+      val grad =
+        w match {
+          case _: DenseIntDoubleVector => new DenseIntDoubleVector(w.getDimension)
+          case _: SparseIntDoubleVector => new SparseIntDoubleVector(w.getDimension)
+          case _: SparseLongKeyDoubleVector => new SparseLongKeyDoubleVector(w.asInstanceOf[SparseLongKeyDoubleVector].getLongDim)
+          case _ => new DenseIntDoubleVector(w.getDimension)
+        }
+
       grad.setRowId(0)
 
-      val bUpdate = new DenseDoubleVector(1)
+      val bUpdate = new DenseIntDoubleVector(1)
       bUpdate.setRowId(0)
 
       var batchLoss: Double = 0.0
@@ -68,11 +81,7 @@ object GradientDescent {
       gradScalarSum /= batchSize
 
       if (loss.isL2Reg) {
-        for (index <- 0 until grad.size) {
-          if (grad.get(index) > 10e-7) {
-            grad.set(index, grad.get(index) + w.get(index) * (loss.getRegParam))
-          }
-        }
+        L2Loss(loss, w, grad)
       }
 
       if (loss.isL1Reg) {
@@ -89,6 +98,7 @@ object GradientDescent {
         bv.increment(bUpdate)
         bv
       }
+
       LOG.debug(s"Batch[$batch] loss = $batchLoss")
       taskContext.updateProfileCounter(batchSize, (System.currentTimeMillis() - batchStartTs).toInt)
     }
@@ -99,23 +109,61 @@ object GradientDescent {
 
     wM.syncClock()
     intercept.map(_.syncClock())
-    
+
 
     (totalLoss , w)
   }
 
+  def L2Loss[M <: TDoubleVector](loss: Loss, w: M, grad: TDoubleVector): Unit = {
+    grad match {
+
+      case dense: DenseIntDoubleVector =>
+        for (i <- 0 until grad.size) {
+          if (Math.abs(dense.get(i)) > 10e-7) {
+            grad.set(i, grad.get(i) + w.get(i) * loss.getRegParam)
+          }
+        }
+
+      case sparse: SparseIntDoubleVector =>
+        val map = sparse.asInstanceOf[SparseIntDoubleVector].getIndexToValueMap
+        val iter = map.int2DoubleEntrySet().fastIterator()
+
+        while (iter.hasNext) {
+          val entry = iter.next()
+          val k = entry.getIntKey
+          val v = entry.getDoubleValue
+
+          if (Math.abs(v) > 10e-7) {
+            entry.setValue(v + w.get(k) * loss.getRegParam)
+          }
+        }
+
+      case long: SparseLongKeyDoubleVector =>
+        val map = long.asInstanceOf[SparseLongKeyDoubleVector].getIndexToValueMap
+        val iter = map.long2DoubleEntrySet().fastIterator()
+
+        while (iter.hasNext) {
+          val entry = iter.next()
+          val k = entry.getLongKey
+          val v = entry.getDoubleValue
+
+          if (Math.abs(v) > 10e-7) {
+            entry.setValue(v + w.get(k) * loss.getRegParam)
+          }
+        }
+    }
+  }
 
   /*
-   *  T(v, alpha, theta) =
-   *  max(0, v-alpha), if v in [0,theta]
-   *  min(0, v-alpha), if v in [-theta,0)
-   *  v, otherwise
-   *
-   *  this function returns the update to the vector
- */
+     *  T(v, alpha, theta) =
+     *  max(0, v-alpha), if v in [0,theta]
+     *  min(0, v-alpha), if v in [-theta,0)
+     *  v, otherwise
+     *
+     *  this function returns the update to the vector
+   */
   def truncGradient(vec: TDoubleVector, alpha: Double, theta: Double): TDoubleVector = {
-    val update = new SparseDoubleVector(vec.getDimension)
-
+    val update = new SparseIntDoubleVector(vec.getDimension)
     for (dim <- 0 until update.getDimension) {
       val value = vec.get(dim)
       if (value >= 0 && value <= theta) {
@@ -131,4 +179,5 @@ object GradientDescent {
 
     update
   }
+
 }

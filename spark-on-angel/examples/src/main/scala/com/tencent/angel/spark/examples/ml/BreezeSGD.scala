@@ -17,7 +17,7 @@
 
 package com.tencent.angel.spark.examples.ml
 
-import com.tencent.angel.spark.math.vector.decorator.BreezePSVector
+import com.tencent.angel.spark.models.vector.enhanced.BreezePSVector
 import scala.collection.mutable.ArrayBuffer
 
 import breeze.linalg.DenseVector
@@ -27,7 +27,7 @@ import org.apache.spark.rdd.RDD
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.examples.util.{Logistic, PSExamples}
-import com.tencent.angel.spark.math.vector.PSVector
+import com.tencent.angel.spark.models.vector.PSVector
 
 /**
  * There is two ways to update PSVectors in RDD, RemotePSVector and RDDFunction.psAggregate.
@@ -50,8 +50,8 @@ object BreezeSGD {
       dim: Int,
       sampleNum: Int,
       partitionNum: Int,
-      maxIter: Int, stepSize:
-      Double = 0.1): Unit = {
+      maxIter: Int,
+      stepSize: Double = 0.1): Unit = {
 
     val trainData = Logistic.generateLRData(sampleNum, dim, partitionNum)
 
@@ -110,7 +110,7 @@ object BreezeSGD {
       }
     }
     println(s"loss history: ${lossHistory.toArray.mkString(" ")}")
-    println(s"weights: ${weight.toRemote.pull().mkString(" ")}")
+    println(s"weights: ${weight.pull().mkString(" ")}")
   }
 
   def runPsAggregateSGD(
@@ -135,7 +135,7 @@ object BreezeSGD {
       }
     }
     println(s"loss history: ${lossHistory.toArray.mkString(" ")}")
-    println(s"weights: ${weight.toRemote.pull().mkString(" ")}")
+    println(s"weights: ${weight.pull().mkString(" ")}")
   }
 
 }

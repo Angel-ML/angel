@@ -47,7 +47,7 @@ import org.apache.spark.ml.feature.Instance
 import org.apache.spark.ml.linalg.Vector
 import org.apache.spark.mllib.util.MLUtils
 
-import com.tencent.angel.spark.math.vector.PSVector
+import com.tencent.angel.spark.models.vector.PSVector
 
 /**
  * LogisticAggregator computes the gradient and loss for binary or multinomial logistic (softmax)
@@ -249,12 +249,12 @@ private class LogisticAggregator(
       weight: Double,
       label: Double): Unit = {
 
-    val localCoefficients = bcCoefficients.toRemote.pull()
+    val localCoefficients = bcCoefficients.pull()
     val deltaGradient = Array.ofDim[Double](coefficientSize)
     val margin = - {
       var sum = 0.0
       features.foreachActive { (index, value) =>
-        if (featureStd.toRemote.pull().apply(index * numCoefficientSets) != 0 && value != 0.0) {
+        if (featureStd.pull().apply(index * numCoefficientSets) != 0 && value != 0.0) {
           sum += localCoefficients(index) * value
         }
       }
@@ -274,7 +274,7 @@ private class LogisticAggregator(
       deltaGradient(numFeaturesPlusIntercept - 1) = multiplier
     }
 
-    gradientPSKey.toRemote.increment(deltaGradient.map(_ / weightSum))
+    gradientPSKey.toCache.incrementWithCache(deltaGradient.map(_ / weightSum))
 
     if (label > 0) {
       // The following is equivalent to log(1 + exp(margin)) but more numerically stable.
@@ -294,7 +294,7 @@ private class LogisticAggregator(
       Note: this can still be used when numClasses = 2 for binary
       logistic regression without pivoting.
      */
-    val localCoefficients = bcCoefficients.toRemote.pull()
+    val localCoefficients = bcCoefficients.pull()
     val deltaGradient = Array.ofDim[Double](coefficientSize)
 
     // marginOfLabel is margins(label) in the formula
@@ -344,7 +344,7 @@ private class LogisticAggregator(
       multipliers(i) = multipliers(i) / sum - (if (label == i) 1.0 else 0.0)
     }
     features.foreachActive { (index, value) =>
-      if (featureStd.toRemote.pull().apply(index * numCoefficientSets) != 0.0 && value != 0.0) {
+      if (featureStd.pull().apply(index * numCoefficientSets) != 0.0 && value != 0.0) {
         var j = 0
         while (j < numClasses) {
           deltaGradient(index * numClasses + j) =
@@ -360,7 +360,7 @@ private class LogisticAggregator(
         i += 1
       }
     }
-    gradientPSKey.toRemote.increment(deltaGradient.map(_ / weightSum))
+    gradientPSKey.toCache.incrementWithCache(deltaGradient.map(_ / weightSum))
 
     val loss = if (maxMargin > 0) {
       math.log(sum) - marginOfLabel + maxMargin

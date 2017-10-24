@@ -18,7 +18,7 @@
 package com.tencent.angel.ml.lr
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.classification.sparselr.{SparseLRRunner, SparseLRTask}
+import com.tencent.angel.ml.classification.sparselr.{SparseLRRunner, SparseLRTrainTask}
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.conf.MLConf._
 import org.apache.commons.logging.{Log, LogFactory}
@@ -45,7 +45,7 @@ class SparseLRTest {
   def setup(): Unit = {
     // Set basic configuration keys
     conf.setBoolean("mapred.mapper.new-api", true)
-    conf.set(AngelConf.ANGEL_TASK_USER_TASKCLASS, classOf[SparseLRTask].getName)
+    conf.set(AngelConf.ANGEL_TASK_USER_TASKCLASS, classOf[SparseLRTrainTask].getName)
 
     // Use local deploy mode
     conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL")
@@ -61,7 +61,7 @@ class SparseLRTest {
     // Set memory storage
     conf.set(AngelConf.ANGEL_TASK_DATA_STORAGE_LEVEL, "memory")
 
-    conf.set("angel.task.user.task.class", classOf[SparseLRTask].getName)
+    conf.set("angel.task.user.task.class", classOf[SparseLRTrainTask].getName)
     conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true)
 
     // Feature number of train data
@@ -72,7 +72,7 @@ class SparseLRTest {
     conf.setInt(ML_FEATURE_NUM, featureNum)
     conf.setInt(ML_EPOCH_NUM, epochNum)
     conf.setInt(ML_WORKER_THREAD_NUM, 4)
-    conf.set(ML_DATAFORMAT, "libsvm")
+    conf.set(ML_DATA_FORMAT, "libsvm")
 
   }
 

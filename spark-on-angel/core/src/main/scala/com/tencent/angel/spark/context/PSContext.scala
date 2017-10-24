@@ -19,9 +19,9 @@ package com.tencent.angel.spark.context
 
 import com.tencent.angel.AngelDeployMode
 import com.tencent.angel.ml.matrix.MatrixMeta
-import com.tencent.angel.spark.math.matrix.MatrixType.MatrixType
-import com.tencent.angel.spark.math.vector.VectorType.VectorType
-import com.tencent.angel.spark.math.vector.PSVector
+import com.tencent.angel.spark.models.matrix.MatrixType.MatrixType
+import com.tencent.angel.spark.models.vector.VectorType.VectorType
+import com.tencent.angel.spark.models.vector.PSVector
 import org.apache.spark._
 
 import scala.collection.Map
@@ -31,7 +31,7 @@ abstract class PSContext {
   private[spark] def conf: Map[String, String]
   protected def stop()
 
-  def createMatrix(rows: Int, cols: Int, t: MatrixType): MatrixMeta
+  def createMatrix(rows: Int, cols: Int, t: MatrixType, rowInBlock: Int, colInBlock: Int): MatrixMeta
   def destroyMatrix(meta: MatrixMeta)
 
   def createVector(dim: Int, t: VectorType, poolCapacity: Int): PSVector

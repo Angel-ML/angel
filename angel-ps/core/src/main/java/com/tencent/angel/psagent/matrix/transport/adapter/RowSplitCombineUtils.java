@@ -20,9 +20,9 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.math.vector.*;
 import com.tencent.angel.ml.matrix.MatrixMeta;
+import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.ps.impl.matrix.*;
 import com.tencent.angel.psagent.PSAgentContext;
-import com.tencent.angel.protobuf.generated.MLProtos;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -83,7 +83,7 @@ public class RowSplitCombineUtils {
    * @throws InterruptedException interrupted while waiting for row splits
    */
   public static TVector combineRowSplitsPipeline(GetRowPipelineCache cache, int matrixId,
-      int rowIndex) throws InterruptedException {
+                                                 int rowIndex) throws InterruptedException {
     MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
     MLProtos.RowType rowType = matrixMeta.getRowType();
 
@@ -94,12 +94,8 @@ public class RowSplitCombineUtils {
       case T_DOUBLE_SPARSE:
         return combineServerSparseDoubleRowSplits(getAllRowSplitsFromCache(cache), matrixMeta, rowIndex);
 
-      case T_DOUBLE_SPARSE_LONGKEY: {
-        long startTs = System.currentTimeMillis();
-        TVector ret = combineServerSparseDoubleLongKeyRowSplits(getAllRowSplitsFromCache(cache), matrixMeta, rowIndex);
-        LOG.info("combine row splits use time=" + (System.currentTimeMillis() - startTs));
-        return ret;
-      }
+      case T_DOUBLE_SPARSE_LONGKEY:
+        return combineServerSparseDoubleLongKeyRowSplits(getAllRowSplitsFromCache(cache), matrixMeta, rowIndex);
 
       case T_FLOAT_SPARSE:
         return combineServerSparseFloatRowSplits(getAllRowSplitsFromCache(cache), matrixMeta, rowIndex);
@@ -121,6 +117,9 @@ public class RowSplitCombineUtils {
 
       case T_INT_SPARSE_COMPONENT:
         return combineComponentServerSparseIntRowSplits(getAllRowSplitsFromCache(cache), matrixMeta, rowIndex);
+
+      case T_DOUBLE_SPARSE_LONGKEY_COMPONENT:
+        return combineCompServerSparseDoubleLongKeyRowSplits(getAllRowSplitsFromCache(cache), matrixMeta, rowIndex);
 
       default:
         return null;
@@ -175,7 +174,6 @@ public class RowSplitCombineUtils {
     while (true) {
       ServerRow split = pipelineCache.poll();
       if (split == null) {
-        LOG.info("split is null.");
         TVector row = new DenseFloatVector(colNum, dataArray);
         row.setMatrixId(matrixMeta.getId());
         row.setRowId(rowIndex);
@@ -199,7 +197,7 @@ public class RowSplitCombineUtils {
     while (true) {
       ServerRow split = pipelineCache.poll();
       if (split == null) {
-        TVector row = new DenseDoubleVector(colNum, dataArray);
+        TVector row = new DenseIntDoubleVector(colNum, dataArray);
         row.setClock(clock);
         row.setMatrixId(matrixMeta.getId());
         row.setRowId(rowIndex);
@@ -255,6 +253,9 @@ public class RowSplitCombineUtils {
 
       case T_INT_SPARSE_COMPONENT:
         return combineComponentServerSparseIntRowSplits(rowSplits, matrixMeta, rowIndex);
+
+      case T_DOUBLE_SPARSE_LONGKEY_COMPONENT:
+        return combineCompServerSparseDoubleLongKeyRowSplits(rowSplits, matrixMeta, rowIndex);
 
       case T_INT_ARBITRARY:
         return combineServerArbitaryIntRowSplits(rowSplits, matrixMeta, rowIndex);
@@ -359,7 +360,7 @@ public class RowSplitCombineUtils {
       startPos += lens[i];
     }
 
-    TVector row = new SparseDoubleVector(colNum, indexes, values);
+    TVector row = new SparseIntDoubleVector(colNum, indexes, values);
     row.setMatrixId(matrixMeta.getId());
     row.setRowId(rowIndex);
     row.setClock(clock);
@@ -369,21 +370,58 @@ public class RowSplitCombineUtils {
 
   private static TVector combineServerSparseDoubleLongKeyRowSplits(List<ServerRow> rowSplits,
     MatrixMeta matrixMeta, int rowIndex) {
+    int colNum = (int)matrixMeta.getColNum();
+    int splitNum = rowSplits.size();
+    int totalElemNum = 0;
+    int[] lens = new int[splitNum];
+
+    Collections.sort(rowSplits, serverRowComp);
+
+    int elemNum = 0;
+    for (int i = 0; i < splitNum; i++) {
+      elemNum = rowSplits.get(i).size();
+      totalElemNum += elemNum;
+      lens[i] = elemNum;
+    }
+
+    long[] indexes = new long[totalElemNum];
+    double[] values = new double[totalElemNum];
+
+    int clock = Integer.MAX_VALUE;
+    int startPos = 0;
+    for (int i = 0; i < splitNum; i++) {
+      if (rowSplits.get(i).getClock() < clock) {
+        clock = rowSplits.get(i).getClock();
+      }
+      ((ServerSparseDoubleLongKeyRow) rowSplits.get(i)).mergeTo(indexes, values, startPos, lens[i]);
+      startPos += lens[i];
+    }
+
+    TVector row = new SparseLongKeyDoubleVector(colNum, indexes, values);
+    row.setMatrixId(matrixMeta.getId());
+    row.setRowId(rowIndex);
+    row.setClock(clock);
+    return row;
+
+  }
+
+  private static TVector combineCompServerSparseDoubleLongKeyRowSplits(List<ServerRow> rowSplits,
+    MatrixMeta matrixMeta, int rowIndex) {
     List<PartitionKey> partitionKeys = PSAgentContext.get().getMatrixPartitionRouter().getPartitionKeyList(matrixMeta.getId(), rowIndex);
     assert rowSplits.size() == partitionKeys.size();
     Collections.sort(rowSplits, serverRowComp);
     Collections.sort(partitionKeys, partKeyComp);
-    SparseDoubleLongKeyVector [] splits = new SparseDoubleLongKeyVector[rowSplits.size()];
+    SparseLongKeyDoubleVector[] splits = new SparseLongKeyDoubleVector[rowSplits.size()];
 
     int size = rowSplits.size();
     int clock = Integer.MAX_VALUE;
     for(int i = 0; i < size; i++) {
-      splits[i] = new SparseDoubleLongKeyVector(matrixMeta.getColNum(), ((ServerSparseDoubleLongKeyRow)(rowSplits.get(i))).getIndex2ValueMap());
+      splits[i] = new SparseLongKeyDoubleVector(matrixMeta.getColNum(), ((ServerSparseDoubleLongKeyRow)(rowSplits.get(i))).getIndex2ValueMap());
       if (rowSplits.get(i).getClock() < clock) {
         clock = rowSplits.get(i).getClock();
       }
     }
-    CompSparseDoubleLongKeyVector row = new CompSparseDoubleLongKeyVector(matrixMeta.getId(),
+    CompSparseLongKeyDoubleVector row = new CompSparseLongKeyDoubleVector(matrixMeta.getId(),
       rowIndex, matrixMeta.getColNum(), partitionKeys.toArray(new PartitionKey[0]), splits);
     row.setClock(clock);
     return row;
@@ -417,17 +455,17 @@ public class RowSplitCombineUtils {
     assert rowSplits.size() == partitionKeys.size();
     Collections.sort(rowSplits, serverRowComp);
     Collections.sort(partitionKeys, partKeyComp);
-    TDoubleVector [] splits = new TDoubleVector[rowSplits.size()];
+    TIntDoubleVector[] splits = new TIntDoubleVector[rowSplits.size()];
 
     int size = rowSplits.size();
     int clock = Integer.MAX_VALUE;
     for(int i = 0; i < size; i++) {
-      splits[i] = new SparseDoubleVector((int)matrixMeta.getColNum(), ((ServerSparseDoubleRow)(rowSplits.get(i))).getData());
+      splits[i] = new SparseIntDoubleVector((int)matrixMeta.getColNum(), ((ServerSparseDoubleRow)(rowSplits.get(i))).getData());
       if (rowSplits.get(i).getClock() < clock) {
         clock = rowSplits.get(i).getClock();
       }
     }
-    CompSparseDoubleVector row = new CompSparseDoubleVector(matrixMeta.getId(),
+    CompSparseIntDoubleVector row = new CompSparseIntDoubleVector(matrixMeta.getId(),
       rowIndex, (int)matrixMeta.getColNum(), partitionKeys.toArray(new PartitionKey[0]), splits);
     row.setClock(clock);
     return row;
@@ -515,7 +553,7 @@ public class RowSplitCombineUtils {
       ((ServerDenseDoubleRow) rowSplits.get(i)).mergeTo(dataArray);
     }
 
-    TVector row = new DenseDoubleVector(colNum, dataArray);
+    TVector row = new DenseIntDoubleVector(colNum, dataArray);
     row.setMatrixId(matrixMeta.getId());
     row.setRowId(rowIndex);
     row.setClock(clock);

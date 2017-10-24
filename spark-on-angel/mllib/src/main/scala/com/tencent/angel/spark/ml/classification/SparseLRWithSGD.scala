@@ -16,7 +16,7 @@
 
 package com.tencent.angel.spark.ml.classification
 
-import com.tencent.angel.spark.math.vector.decorator.BreezePSVector
+import com.tencent.angel.spark.models.vector.enhanced.BreezePSVector
 import scala.collection.mutable.ArrayBuffer
 
 import breeze.linalg.DenseVector
@@ -28,7 +28,7 @@ import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.sparse.SparseLogistic
 import com.tencent.angel.spark.ml.common.OneHot.OneHotVector
 import com.tencent.angel.spark.ml.util.{ArgsUtil, DataLoader}
-import com.tencent.angel.spark.math.vector.PSVector
+import com.tencent.angel.spark.models.vector.PSVector
 
 
 object SparseLRWithSGD {
@@ -107,7 +107,7 @@ object SparseLRWithSGD {
       }
     }
     println(s"loss history: ${lossHistory.toArray.mkString(" ")}")
-    println(s"weights: ${weight.toRemote.pull().take(100).mkString(" ")}")
+    println(s"weights: ${weight.pull().take(100).mkString(" ")}")
   }
 
 }

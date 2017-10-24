@@ -67,4 +67,8 @@ public class GetRowParam extends GetParam {
 
     return partParams;
   }
+
+  @Override public String toString() {
+    return "GetRowParam{" + "rowIndex=" + rowIndex + "} " + super.toString();
+  }
 }

@@ -17,7 +17,7 @@
 package com.tencent.angel.ml.matrix.psf;
 
 import com.tencent.angel.exception.InvalidParameterException;
-import com.tencent.angel.ml.math.vector.DenseDoubleVector;
+import com.tencent.angel.ml.math.vector.DenseIntDoubleVector;
 import com.tencent.angel.ml.matrix.psf.aggr.primitive.Pull;
 import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult;
 import com.tencent.angel.ml.matrix.psf.update.*;
@@ -468,7 +468,7 @@ public class UpdateFuncTest {
 
   private static double[] pull(MatrixClient client, int rowId) {
     GetRowResult rowResult = (GetRowResult) client.get(new Pull(client.getMatrixId(), rowId));
-    return ((DenseDoubleVector)rowResult.getRow()).getValues();
+    return ((DenseIntDoubleVector)rowResult.getRow()).getValues();
   }
 
   @AfterClass

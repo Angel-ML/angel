@@ -26,7 +26,7 @@ import java.util.Map;
 /**
  * The meta of matrix.
  */
-public class MatrixMeta {
+public class MatrixMeta implements java.io.Serializable {
   private final int id;
   private final String name;
   private final long colNum;

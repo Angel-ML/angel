@@ -17,13 +17,13 @@
 package com.tencent.angel.ml.math.vector;
 
 import com.tencent.angel.ml.math.TAbstractVector;
-import com.tencent.angel.ml.math.VectorType;
+import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.protobuf.generated.MLProtos;
 
 /**
  * Sparse double vector, it only contains the element indexes as the values are always 1.
  */
-public class SparseDummyVector extends TAbstractVector {
+public class SparseDummyVector extends TVector {
 
   /**
    * the size of alloc more
@@ -87,6 +87,66 @@ public class SparseDummyVector extends TAbstractVector {
     System.arraycopy(indices, 0, allocIndexes, 0, nonzero);
     capacity = allocSize;
     indices = allocIndexes;
+  }
+
+  @Override
+  public TVector plusBy(TAbstractVector other) {
+    return null;
+  }
+
+  @Override
+  public TVector plusBy(int index, double x) {
+    return null;
+  }
+
+  @Override
+  public TVector plusBy(TAbstractVector other, double x) {
+    return null;
+  }
+
+  @Override
+  public TVector plus(TAbstractVector other) {
+    return null;
+  }
+
+  @Override
+  public TVector plus(TAbstractVector other, double x) {
+    return null;
+  }
+
+  @Override
+  public double dot(TAbstractVector other) {
+    return 0;
+  }
+
+  @Override
+  public TVector times(double x) {
+    return null;
+  }
+
+  @Override
+  public TVector timesBy(double x) {
+    return null;
+  }
+
+  @Override
+  public TVector filter(double x) {
+    return null;
+  }
+
+  @Override
+  public void clear() {
+
+  }
+
+  @Override
+  public long nonZeroNumber() {
+    return 0;
+  }
+
+  @Override
+  public double squaredNorm() {
+    return 0;
   }
 
   /**

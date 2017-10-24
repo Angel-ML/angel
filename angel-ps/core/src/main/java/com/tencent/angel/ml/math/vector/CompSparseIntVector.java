@@ -18,8 +18,6 @@
 package com.tencent.angel.ml.math.vector;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.ml.math.executor.MatrixOpExecutors;
 import com.tencent.angel.protobuf.generated.MLProtos;
 
 /**
@@ -79,7 +77,7 @@ public class CompSparseIntVector extends CompTIntVector {
     return MLProtos.RowType.T_INT_SPARSE_COMPONENT;
   }
 
-  @Override public TVector clone() {
+  @Override public CompSparseIntVector clone() {
     TIntVector [] clonedVectors = new TIntVector[splitNum];
     for(int i = 0; i < splitNum; i++) {
       if(vectors[i] != null) {

@@ -72,4 +72,8 @@ public class PartitionGetRowParam extends PartitionGetParam {
   public int bufferLen() {
     return 4 + super.bufferLen();
   }
+
+  @Override public String toString() {
+    return "PartitionGetRowParam{" + "rowIndex=" + rowIndex + "} " + super.toString();
+  }
 }

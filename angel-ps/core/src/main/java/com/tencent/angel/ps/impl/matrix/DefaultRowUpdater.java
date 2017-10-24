@@ -16,12 +16,10 @@
 
 package com.tencent.angel.ps.impl.matrix;
 
+import com.tencent.angel.protobuf.generated.MLProtos.RowType;
 import io.netty.buffer.ByteBuf;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import com.tencent.angel.protobuf.generated.MLProtos.RowType;
 
 import java.nio.DoubleBuffer;
 

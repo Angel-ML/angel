@@ -70,7 +70,7 @@ public class LinearRegTest {
       conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
 
       // Set data format
-      conf.set(MLConf.ML_DATAFORMAT(), dataFmt);
+      conf.set(MLConf.ML_DATA_FORMAT(), dataFmt);
 
       //set angel resource parameters #worker, #task, #PS
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);

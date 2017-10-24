@@ -38,7 +38,6 @@ import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.psagent.client.MasterClient;
 import com.tencent.angel.psagent.clock.ClockCache;
 import com.tencent.angel.psagent.consistency.ConsistencyController;
-//import com.tencent.angel.psagent.consistency.SSPConsistencyController;
 import com.tencent.angel.psagent.task.TaskContext;
 import com.tencent.angel.worker.Worker;
 import com.tencent.angel.worker.WorkerAttemptId;
@@ -52,14 +51,20 @@ import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.log4j.PropertyConfigurator;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
+//import com.tencent.angel.psagent.consistency.SSPConsistencyController;
 
 // @RunWith(MockitoJUnitRunner.class)
 public class PSAgentTest {

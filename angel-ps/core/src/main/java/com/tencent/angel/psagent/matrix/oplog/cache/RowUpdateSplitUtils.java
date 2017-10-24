@@ -21,7 +21,6 @@ import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.math.vector.*;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.utils.Sort;
-import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -30,7 +29,7 @@ import java.util.*;
 public class RowUpdateSplitUtils {
   protected final static Log LOG = LogFactory.getLog(RowUpdateSplitUtils.class);
 
-  public static HashMap<PartitionKey, RowUpdateSplit> split(DenseDoubleVector vector,
+  public static HashMap<PartitionKey, RowUpdateSplit> split(DenseIntDoubleVector vector,
     List<PartitionKey> partitionInfos) {
     LOG.debug("Split a dense vector into multiple splits according to partition information");
     return split(vector.getRowId(), vector.getValues(), partitionInfos);
@@ -245,7 +244,6 @@ public class RowUpdateSplitUtils {
     if (!sorted) {
       Sort.quickSort(indices, values, 0, indices.length - 1);
     }
-    LOG.info("sort use time=" + (System.currentTimeMillis() - startTs));
 
     HashMap<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
 
@@ -284,16 +282,15 @@ public class RowUpdateSplitUtils {
 
       keyIndex++;
     }
-    LOG.info("split use time=" + (System.currentTimeMillis() - startTs));
     return ret;
   }
 
-  private static HashMap<PartitionKey, RowUpdateSplit> split(SparseDoubleSortedVector vector,
+  private static HashMap<PartitionKey, RowUpdateSplit> split(SparseIntDoubleSortedVector vector,
     List<PartitionKey> partitionInfos) {
     return split(vector.getRowId(), vector.getIndices(), vector.getValues(), partitionInfos, true);
   }
 
-  private static HashMap<PartitionKey, RowUpdateSplit> split(SparseDoubleVector vector,
+  private static HashMap<PartitionKey, RowUpdateSplit> split(SparseIntDoubleVector vector,
     List<PartitionKey> partitionInfos) {
     return split(vector.getRowId(), vector.getIndices(), vector.getValues(), partitionInfos);
   }
@@ -308,19 +305,19 @@ public class RowUpdateSplitUtils {
     return split(vector.getRowId(), vector.getIndices(), vector.getValues(), partitionInfos);
   }
 
-  private static HashMap<PartitionKey, RowUpdateSplit> split(SparseDoubleLongKeyVector vector,
+  private static HashMap<PartitionKey, RowUpdateSplit> split(SparseLongKeyDoubleVector vector,
     List<PartitionKey> partitionInfos) {
     return split(vector.getRowId(), vector.getIndexes(), vector.getValues(), partitionInfos);
   }
 
-  private static HashMap<PartitionKey, RowUpdateSplit> split(CompSparseDoubleLongKeyVector vector,
+  private static HashMap<PartitionKey, RowUpdateSplit> split(CompSparseLongKeyDoubleVector vector,
     List<PartitionKey> partitionInfos) {
     HashMap<PartitionKey, RowUpdateSplit> updateSplitMap = new HashMap<>(partitionInfos.size());
-    DoubleLongKeyVector[] splits = vector.getSplits();
+    TLongDoubleVector[] splits = vector.getSplits();
     PartitionKey[] partKeys = vector.getPartKeys();
     for(int i = 0; i < partKeys.length; i++) {
       if(partKeys[i] != null && splits[i] != null) {
-        updateSplitMap.put(partKeys[i], new CompSparseDoubleLongKeyRowUpdateSplit((SparseDoubleLongKeyVector)splits[i],
+        updateSplitMap.put(partKeys[i], new CompSparseDoubleLongKeyRowUpdateSplit((SparseLongKeyDoubleVector)splits[i],
           vector.getRowId(), MLProtos.RowType.T_DOUBLE_SPARSE_LONGKEY));
       }
     }
@@ -328,14 +325,14 @@ public class RowUpdateSplitUtils {
     return updateSplitMap;
   }
 
-  private static HashMap<PartitionKey, RowUpdateSplit> split(CompSparseDoubleVector vector,
+  private static HashMap<PartitionKey, RowUpdateSplit> split(CompSparseIntDoubleVector vector,
     List<PartitionKey> partitionInfos) {
     HashMap<PartitionKey, RowUpdateSplit> updateSplitMap = new HashMap<>(partitionInfos.size());
-    TDoubleVector[] splits = vector.getVectors();
+    TIntDoubleVector[] splits = vector.getVectors();
     PartitionKey[] partKeys = vector.getPartKeys();
     for(int i = 0; i < partKeys.length; i++) {
       if(partKeys[i] != null && splits[i] != null) {
-        updateSplitMap.put(partKeys[i], new CompSparseDoubleRowUpdateSplit((SparseDoubleVector)splits[i],
+        updateSplitMap.put(partKeys[i], new CompSparseDoubleRowUpdateSplit((SparseIntDoubleVector)splits[i],
           vector.getRowId(), MLProtos.RowType.T_DOUBLE_SPARSE));
       }
     }
@@ -375,14 +372,14 @@ public class RowUpdateSplitUtils {
 
   public static HashMap<PartitionKey, RowUpdateSplit> split(TVector vector,
     List<PartitionKey> partitionInfos) {
-    if (vector instanceof DenseDoubleVector)
-      return split((DenseDoubleVector) vector, partitionInfos);
+    if (vector instanceof DenseIntDoubleVector)
+      return split((DenseIntDoubleVector) vector, partitionInfos);
 
-    if (vector instanceof SparseDoubleVector)
-      return split((SparseDoubleVector) vector, partitionInfos);
+    if (vector instanceof SparseIntDoubleVector)
+      return split((SparseIntDoubleVector) vector, partitionInfos);
 
-    if (vector instanceof SparseDoubleSortedVector)
-      return split((SparseDoubleSortedVector) vector, partitionInfos);
+    if (vector instanceof SparseIntDoubleSortedVector)
+      return split((SparseIntDoubleSortedVector) vector, partitionInfos);
 
     if (vector instanceof DenseIntVector)
       return split((DenseIntVector) vector, partitionInfos);
@@ -396,14 +393,14 @@ public class RowUpdateSplitUtils {
     if (vector instanceof SparseFloatVector)
       return split((SparseFloatVector) vector, partitionInfos);
 
-    if (vector instanceof SparseDoubleLongKeyVector)
-      return split((SparseDoubleLongKeyVector) vector, partitionInfos);
+    if (vector instanceof SparseLongKeyDoubleVector)
+      return split((SparseLongKeyDoubleVector) vector, partitionInfos);
 
-    if (vector instanceof CompSparseDoubleLongKeyVector)
-      return split((CompSparseDoubleLongKeyVector) vector, partitionInfos);
+    if (vector instanceof CompSparseLongKeyDoubleVector)
+      return split((CompSparseLongKeyDoubleVector) vector, partitionInfos);
 
-    if (vector instanceof CompSparseDoubleVector)
-      return split((CompSparseDoubleVector) vector, partitionInfos);
+    if (vector instanceof CompSparseIntDoubleVector)
+      return split((CompSparseIntDoubleVector) vector, partitionInfos);
 
     if (vector instanceof CompSparseFloatVector)
       return split((CompSparseFloatVector) vector, partitionInfos);
