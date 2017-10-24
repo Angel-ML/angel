@@ -32,13 +32,13 @@
 	- 参数：String modelDir 模型保存路径；Configuration conf hdfs相关配置
 	- 返回值：使用一个<int, float>映射的数组表示的稀疏float类型的模型
 
-6. loadToIntArrays
+6. **loadToIntArrays**
     - 定义：```int[][] loadToIntArrays(String modelDir, Configuration conf) throws IOException```
 	- 功能描述：将稠密int类型的模型加载到一个int二维数组中，模型的一行对应一个一维数组
 	- 参数：String modelDir 模型保存路径；Configuration conf hdfs相关配置
 	- 返回值：使用二维int数组表示的稠密int类型的模型
 
-7. loadToIntMaps
+7. **loadToIntMaps**
     - 定义：```Int2IntOpenHashMap[] loadToIntMaps(String modelDir, Configuration conf) throws IOException```
 	- 功能描述：将稀疏int类型的模型加载到一个<int, int>映射的数组中，模型的一行对应一个map
 	- 参数：String modelDir 模型保存路径；Configuration conf hdfs相关配置
