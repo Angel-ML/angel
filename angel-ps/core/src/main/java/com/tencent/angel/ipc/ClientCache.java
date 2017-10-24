@@ -82,8 +82,8 @@ class ClientCache {
                 client = new NettyTransceiver(conf, addr, workerGroup, pooledAllocator,
                         socketChannelClass, connectTimeoutMillis);
             } catch (Exception e) {
-                LOG.debug("create NettryTransceiver client error: " + e);
-                throw new RuntimeException("create NettryTransceiver client error: ", e);
+                LOG.debug("create NettyTransceiver client error: " + e);
+                throw new RuntimeException("create NettyTransceiver client error: ", e);
             }
 
             clients.put(addr.toString(), client);

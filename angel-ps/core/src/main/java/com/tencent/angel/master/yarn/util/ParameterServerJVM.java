@@ -125,13 +125,13 @@ public class ParameterServerJVM {
 
     int heapMax = useMax - directRegionSize;
     int youngRegionSize = (int) (heapMax * 0.4);
-    int suvivorRatio = 4;
+    int survivorRatio = 4;
 
     String ret =
         new StringBuilder().append(" -Xmx").append(heapMax).append("M").append(" -Xmn")
             .append(youngRegionSize).append("M").append(" -XX:MaxDirectMemorySize=")
             .append(directRegionSize).append("M").append(" -XX:SurvivorRatio=")
-            .append(suvivorRatio).append(" -XX:PermSize=100M -XX:MaxPermSize=200M")
+            .append(survivorRatio).append(" -XX:PermSize=100M -XX:MaxPermSize=200M")
             .append(" -XX:+AggressiveOpts").append(" -XX:+UseLargePages")
             .append(" -XX:+UseConcMarkSweepGC")
             .append(" -XX:CMSInitiatingOccupancyFraction=70")
