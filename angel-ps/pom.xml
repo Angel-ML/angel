@@ -34,7 +34,6 @@
     <module>core</module>
     <module>psf</module>
     <module>mllib</module>
-    <module>jarvis</module>
     <module>examples</module>
     <module>tools</module>
   </modules>
