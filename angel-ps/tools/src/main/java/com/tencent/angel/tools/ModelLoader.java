@@ -965,7 +965,7 @@ public class ModelLoader {
    * @return model data
    * @throws IOException
    */
-  public static double[][] loadToDoubleArray(String modelDir, Configuration conf) throws IOException {
+  public static double[][] loadToDoubleArrays(String modelDir, Configuration conf) throws IOException {
     // Load model meta
     ModelFilesMeta meta = getMeta(modelDir, conf);
 
@@ -988,7 +988,7 @@ public class ModelLoader {
    * @return model data
    * @throws IOException
    */
-  public static Int2DoubleOpenHashMap[] loadToDoubleMap(String modelDir, Configuration conf) throws IOException {
+  public static Int2DoubleOpenHashMap[] loadToDoubleMaps(String modelDir, Configuration conf) throws IOException {
     // Load model meta
     ModelFilesMeta meta = getMeta(modelDir, conf);
 
@@ -1011,7 +1011,7 @@ public class ModelLoader {
    * @return model data
    * @throws IOException
    */
-  public static float[][] loadToFloatArray(String modelDir, Configuration conf) throws IOException {
+  public static float[][] loadToFloatArrays(String modelDir, Configuration conf) throws IOException {
     // Load model meta
     ModelFilesMeta meta = getMeta(modelDir, conf);
 
@@ -1034,7 +1034,7 @@ public class ModelLoader {
    * @return model data
    * @throws IOException
    */
-  public static Int2FloatOpenHashMap[] loadToFloatMap(String modelDir, Configuration conf) throws IOException {
+  public static Int2FloatOpenHashMap[] loadToFloatMaps(String modelDir, Configuration conf) throws IOException {
     // Load model meta
     ModelFilesMeta meta = getMeta(modelDir, conf);
 
@@ -1057,7 +1057,7 @@ public class ModelLoader {
    * @return model data
    * @throws IOException
    */
-  public static int[][] loadToIntArray(String modelDir, Configuration conf) throws IOException {
+  public static int[][] loadToIntArrays(String modelDir, Configuration conf) throws IOException {
     // Load model meta
     ModelFilesMeta meta = getMeta(modelDir, conf);
 
@@ -1080,7 +1080,7 @@ public class ModelLoader {
    * @return model data
    * @throws IOException
    */
-  public static Int2IntOpenHashMap[] loadToIntMap(String modelDir, Configuration conf) throws IOException {
+  public static Int2IntOpenHashMap[] loadToIntMaps(String modelDir, Configuration conf) throws IOException {
     // Load model meta
     ModelFilesMeta meta = getMeta(modelDir, conf);
 
@@ -1103,7 +1103,7 @@ public class ModelLoader {
    * @return model data
    * @throws IOException
    */
-  public static Long2DoubleOpenHashMap[] loadToDoubleLongKeyMap(String modelDir, Configuration conf)
+  public static Long2DoubleOpenHashMap[] loadToDoubleLongKeyMaps(String modelDir, Configuration conf)
     throws IOException {
     // Load model meta
     ModelFilesMeta meta = getMeta(modelDir, conf);
@@ -1172,49 +1172,49 @@ public class ModelLoader {
     String sparseIntModelPath = baseDir + "/sparse_int";
     String sparseDoubleLongKeyModelPath = baseDir + "/sparse_double_longkey";
 
-    double [][] denseDoubleModel = loadToDoubleArray(denseDoubleModelPath, conf);
+    double [][] denseDoubleModel = loadToDoubleArrays(denseDoubleModelPath, conf);
     int size = denseDoubleModel.length;
     for(int i = 0; i < size; i++) {
       LOG.info("model dense_double row " + i + " sum is " + sum(denseDoubleModel[i]));
     }
     denseDoubleModel = null;
 
-    Int2DoubleOpenHashMap[] sparseDoubleModel = loadToDoubleMap(sparseDoubleModelPath, conf);
+    Int2DoubleOpenHashMap[] sparseDoubleModel = loadToDoubleMaps(sparseDoubleModelPath, conf);
     size = sparseDoubleModel.length;
     for(int i = 0; i < size; i++) {
       LOG.info("model sparse_double row " + i + " sum is " + sum(sparseDoubleModel[i]));
     }
     sparseDoubleModel = null;
 
-    float [][] denseFloatModel = loadToFloatArray(denseFloatModelPath, conf);
+    float [][] denseFloatModel = loadToFloatArrays(denseFloatModelPath, conf);
     size = denseFloatModel.length;
     for(int i = 0; i < size; i++) {
       LOG.info("model dense_float row " + i + " sum is " + sum(denseFloatModel[i]));
     }
     denseFloatModel = null;
 
-    Int2FloatOpenHashMap[] sparseFloatModel = loadToFloatMap(sparseFloatModelPath, conf);
+    Int2FloatOpenHashMap[] sparseFloatModel = loadToFloatMaps(sparseFloatModelPath, conf);
     size = sparseFloatModel.length;
     for(int i = 0; i < size; i++) {
       LOG.info("model sparse_float row " + i + " sum is " + sum(sparseFloatModel[i]));
     }
     sparseFloatModel = null;
 
-    int [][] denseIntModel = loadToIntArray(denseIntModelPath, conf);
+    int [][] denseIntModel = loadToIntArrays(denseIntModelPath, conf);
     size = denseIntModel.length;
     for(int i = 0; i < size; i++) {
       LOG.info("model dense_int row " + i + " sum is " + sum(denseIntModel[i]));
     }
     denseIntModel = null;
 
-    Int2IntOpenHashMap[] sparseIntModel = loadToIntMap(sparseIntModelPath, conf);
+    Int2IntOpenHashMap[] sparseIntModel = loadToIntMaps(sparseIntModelPath, conf);
     size = sparseIntModel.length;
     for(int i = 0; i < size; i++) {
       LOG.info("model sparse_int row " + i + " sum is " + sum(sparseIntModel[i]));
     }
     sparseIntModel = null;
 
-    Long2DoubleOpenHashMap[] sparseDoubleLongKeyModel = loadToDoubleLongKeyMap(sparseDoubleLongKeyModelPath, conf);
+    Long2DoubleOpenHashMap[] sparseDoubleLongKeyModel = loadToDoubleLongKeyMaps(sparseDoubleLongKeyModelPath, conf);
     size = sparseDoubleLongKeyModel.length;
     for(int i = 0; i < size; i++) {
       LOG.info("model sparse_double_longkey row " + i + " sum is " + sum(sparseDoubleLongKeyModel[i]));
