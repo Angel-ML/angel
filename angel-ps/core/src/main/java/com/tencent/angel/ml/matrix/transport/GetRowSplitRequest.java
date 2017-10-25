@@ -109,13 +109,7 @@ public class GetRowSplitRequest extends PartitionRequest {
           return 4 * ((int) partKey.getEndCol() - (int) partKey.getStartCol());
 
         default: {
-          ServerRow row = PSAgentContext.get().getMatricesCache()
-            .getRowSplit(partKey.getMatrixId(), partKey, rowIndex);
-          if (row != null) {
-            return row.bufferLen();
-          } else {
-            return 0;
-          }
+          return 0;
         }
       }
     }
