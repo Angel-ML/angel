@@ -19,8 +19,8 @@ import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.GBDT.algo.GBDTController;
 import com.tencent.angel.ml.GBDT.algo.tree.SplitEntry;
 import com.tencent.angel.ml.conf.MLConf;
-import com.tencent.angel.ml.math.vector.DenseIntDoubleVector;
-import com.tencent.angel.ml.math.vector.SparseIntDoubleSortedVector;
+import com.tencent.angel.ml.math.vector.DenseDoubleVector;
+import com.tencent.angel.ml.math.vector.SparseDoubleSortedVector;
 import com.tencent.angel.ml.math.vector.TDoubleVector;
 import com.tencent.angel.ml.param.GBDTParam;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
@@ -44,13 +44,13 @@ public class GradHistHelper {
     this.nid = nid;
   }
 
-  public DenseIntDoubleVector buildHistogram(int insStart, int insEnd) {
+  public DenseDoubleVector buildHistogram(int insStart, int insEnd) {
     // 1. new feature's histogram (grad + hess)
     // size: sampled_featureNum * (2 * splitNum)
     // in other words, concatenate each feature's histogram
     int featureNum = this.controller.fset.length;
     int splitNum = this.controller.param.numSplit;
-    DenseIntDoubleVector histogram = new DenseIntDoubleVector(featureNum * 2 * splitNum);
+    DenseDoubleVector histogram = new DenseDoubleVector(featureNum * 2 * splitNum);
 
     // 2. get the span of this node
     //int nodeStart = this.controller.nodePosStart[nid];
@@ -71,7 +71,7 @@ public class GradHistHelper {
       // 3.3. add to the sum
       gradSum += gradPair.getGrad();
       hessSum += gradPair.getHess();
-      SparseIntDoubleSortedVector instance = this.controller.trainDataStore.instances.get(insIdx);
+      SparseDoubleSortedVector instance = this.controller.trainDataStore.instances.get(insIdx);
       // 3.4. loop the non-zero entries
       for (int i = 0; i < instance.getIndices().length; i++) {
         int fid = instance.getIndices()[i];

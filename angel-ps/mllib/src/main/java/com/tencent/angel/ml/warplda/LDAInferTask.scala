@@ -37,7 +37,7 @@ class LDAInferTask(val ctx: TaskContext) extends
     // load data
     val data = read(model.V, model.K,model.mh)
 
-    val infer = new Trainer(ctx, model, data)
+    val infer = new LDATrainer(ctx, model, data)
     infer.initForInference()
     infer.inference(model.epoch)
 

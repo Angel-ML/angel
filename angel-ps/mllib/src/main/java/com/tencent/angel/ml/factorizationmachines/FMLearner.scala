@@ -20,7 +20,7 @@ package com.tencent.angel.ml.factorizationmachines
 import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.{DenseIntDoubleVector, SparseIntDoubleSortedVector}
+import com.tencent.angel.ml.math.vector.{DenseDoubleVector, SparseDoubleSortedVector}
 import com.tencent.angel.ml.matrix.psf.update.RandomNormal
 import com.tencent.angel.ml.metric.LossMetric
 import com.tencent.angel.ml.model.MLModel
@@ -124,24 +124,23 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
     * @param dataBlock
     * @return
     */
-  def oneIteration(dataBlock: DataBlock[LabeledData]): (DenseIntDoubleVector,
-    DenseIntDoubleVector, mutable.HashMap[Int, DenseIntDoubleVector]) = {
+  def oneIteration(dataBlock: DataBlock[LabeledData]): (DenseDoubleVector, DenseDoubleVector, mutable.HashMap[Int, DenseDoubleVector]) = {
     val startGet = System.currentTimeMillis()
     val (w0, w, v) = fmmodel.pullFromPS(vIndexs)
     val getCost = System.currentTimeMillis() - startGet
     LOG.info(s"Get matrixes cost $getCost ms.")
 
-    val _w0 = w0.clone()
-    val _w = w.clone()
-    val _v = new mutable.HashMap[Int, DenseIntDoubleVector]()
+    val _w0 = w0.clone().asInstanceOf[DenseDoubleVector]
+    val _w = w.clone().asInstanceOf[DenseDoubleVector]
+    val _v = new mutable.HashMap[Int, DenseDoubleVector]()
     for (vec <- v) {
-      _v.put(vec._1, vec._2.clone())
+      _v.put(vec._1, vec._2.clone().asInstanceOf[DenseDoubleVector])
     }
 
     dataBlock.resetReadIndex()
     for (_ <- 0 until dataBlock.size) {
       val data = dataBlock.read()
-      val x = data.getX.asInstanceOf[SparseIntDoubleSortedVector]
+      val x = data.getX.asInstanceOf[SparseDoubleSortedVector]
       val y = data.getY
       val pre = predict(x, y, _w0.get(0), _w, _v)
       val dm = derviationMultipler(y, pre)
@@ -155,8 +154,8 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
       v(update._1).plusBy(update._2, -1.0).timesBy(-1.0)
     }
 
-    fmmodel.pushToPS(w0.plusBy(_w0, -1.0).timesBy(-1.0).asInstanceOf[DenseIntDoubleVector],
-      w.plusBy(_w, -1.0).timesBy(-1.0).asInstanceOf[DenseIntDoubleVector],
+    fmmodel.pushToPS(w0.plusBy(_w0, -1.0).timesBy(-1.0).asInstanceOf[DenseDoubleVector],
+      w.plusBy(_w, -1.0).timesBy(-1.0).asInstanceOf[DenseDoubleVector],
       v)
 
     (_w0, _w, _v)
@@ -174,8 +173,8 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
     * @param v
     * @return
     */
-  def evaluate(dataBlock: DataBlock[LabeledData], w0: Double, w: DenseIntDoubleVector,
-               v: mutable.HashMap[Int, DenseIntDoubleVector]):
+  def evaluate(dataBlock: DataBlock[LabeledData], w0: Double, w: DenseDoubleVector,
+               v: mutable.HashMap[Int, DenseDoubleVector]):
   Double = {
     dataBlock.resetReadIndex()
 
@@ -184,7 +183,7 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
         var eval = 0.0
         for (_ <- 0 until dataBlock.size) {
           val data = dataBlock.read()
-          val x = data.getX.asInstanceOf[SparseIntDoubleSortedVector]
+          val x = data.getX.asInstanceOf[SparseDoubleSortedVector]
           val y = data.getY
           val pre = predict(x, y, w0, w, v)
           eval += (pre - y) * (pre - y)
@@ -206,7 +205,7 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
 
         for (i <- 0 until dataBlock.size()) {
           val data = dataBlock.read()
-          val x = data.getX.asInstanceOf[SparseIntDoubleSortedVector]
+          val x = data.getX.asInstanceOf[SparseDoubleSortedVector]
           val y = data.getY
           val pre = predict(x, y, w0, w, v)
 
@@ -254,8 +253,11 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
     * @param v: v mat of FM
     * @return
     */
-  def predict(x: SparseIntDoubleSortedVector, y: Double, w0: Double, w: DenseIntDoubleVector, v:
-  mutable.HashMap[Int, DenseIntDoubleVector]): Double = {
+  def predict(x: SparseDoubleSortedVector,
+              y: Double, w0: Double,
+              w: DenseDoubleVector,
+              v: mutable.HashMap[Int, DenseDoubleVector]): Double = {
+
     var ret: Double = 0.0
     ret += w0
     ret += x.dot(w)
@@ -310,7 +312,7 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
     * @param dm: dm value of the instance
     * @param v: v mat
     */
-  def updateV(x: SparseIntDoubleSortedVector, dm: Double, v: mutable.HashMap[Int, DenseIntDoubleVector]):
+  def updateV(x: SparseDoubleSortedVector, dm: Double, v: mutable.HashMap[Int, DenseDoubleVector]):
   Unit = {
 
     for (f <- 0 until rank) {

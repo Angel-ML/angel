@@ -16,7 +16,7 @@
 package com.tencent.angel.ml.utils
 
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.{SparseDummyVector, SparseIntDoubleSortedVector}
+import com.tencent.angel.ml.math.vector.{SparseDummyVector, SparseDoubleSortedVector}
 
 
 abstract class DataParser{
@@ -45,7 +45,7 @@ case class DummyDataParser(val maxDim: Int, val negY: Boolean) extends DataParse
 }
 
 case class LibSVMDataParser(val maxDim: Int, val negY: Boolean) extends DataParser {
-  type V = SparseIntDoubleSortedVector
+  type V = SparseDoubleSortedVector
 
   override def parse(text: String): LabeledData = {
     if (null == text) {
@@ -78,7 +78,7 @@ case class LibSVMDataParser(val maxDim: Int, val negY: Boolean) extends DataPars
       i += 1
     }
 
-    val x = new SparseIntDoubleSortedVector(maxDim, keys, vals)
+    val x = new SparseDoubleSortedVector(maxDim, keys, vals)
 
     new LabeledData(x, y)
   }

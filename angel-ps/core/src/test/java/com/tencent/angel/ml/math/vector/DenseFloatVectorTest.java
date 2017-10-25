@@ -60,7 +60,7 @@ public class DenseFloatVectorTest {
 
     double dot = 0.0;
     for (int i = 0; i < dim; i++)
-      dot += vec_1.getValues()[i] * ((DenseIntDoubleVector)vec_2).getValues()[i];
+      dot += vec_1.getValues()[i] * ((DenseDoubleVector)vec_2).getValues()[i];
 
     assertEquals(dot, vec_1.dot(vec_2));
   }

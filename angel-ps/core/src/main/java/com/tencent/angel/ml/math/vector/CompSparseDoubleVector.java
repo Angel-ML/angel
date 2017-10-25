@@ -21,10 +21,10 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.protobuf.generated.MLProtos;
 
 /**
- * Component sparse double vector. It contains a group of {@link SparseIntDoubleVector},
+ * Component sparse double vector. It contains a group of {@link SparseDoubleVector},
  * which correspond to the partitions of the corresponding rows stored on the PS.
  */
-public class CompSparseIntDoubleVector extends CompTIntDoubleVector {
+public class CompSparseDoubleVector extends CompDoubleVector {
   /**
    *
    * Create a CompSparseDoubleVector
@@ -33,7 +33,7 @@ public class CompSparseIntDoubleVector extends CompTIntDoubleVector {
    * @param dim vector dimension
    * @param nnz element number of the vector
    */
-  public CompSparseIntDoubleVector(int matrixId, int rowIndex, int dim, int nnz) {
+  public CompSparseDoubleVector(int matrixId, int rowIndex, int dim, int nnz) {
     super(matrixId, rowIndex, dim, nnz);
   }
 
@@ -45,7 +45,7 @@ public class CompSparseIntDoubleVector extends CompTIntDoubleVector {
    * @param partKeys the partitions that contains this vector
    * @param vectors vector splits
    */
-  public CompSparseIntDoubleVector(int matrixId, int rowIndex, int dim, PartitionKey[] partKeys, TIntDoubleVector[] vectors) {
+  public CompSparseDoubleVector(int matrixId, int rowIndex, int dim, PartitionKey[] partKeys, TIntDoubleVector[] vectors) {
     super(matrixId, rowIndex, dim, partKeys, vectors);
   }
 
@@ -55,7 +55,7 @@ public class CompSparseIntDoubleVector extends CompTIntDoubleVector {
    * @param matrixId matrix id
    * @param rowIndex row index
    */
-  public CompSparseIntDoubleVector(int matrixId, int rowIndex) {
+  public CompSparseDoubleVector(int matrixId, int rowIndex) {
     this(matrixId, rowIndex, -1, -1);
   }
 
@@ -66,21 +66,21 @@ public class CompSparseIntDoubleVector extends CompTIntDoubleVector {
    * @param rowIndex row index
    * @param dim vector dimension
    */
-  public CompSparseIntDoubleVector(int matrixId, int rowIndex, int dim) {
+  public CompSparseDoubleVector(int matrixId, int rowIndex, int dim) {
     this(matrixId, rowIndex, dim, -1);
   }
 
-  @Override public CompSparseIntDoubleVector clone() {
-    TIntDoubleVector[] clonedVectors = new SparseIntDoubleVector[splitNum];
+  @Override public CompSparseDoubleVector clone() {
+    TIntDoubleVector[] clonedVectors = new SparseDoubleVector[splitNum];
     for(int i = 0; i < splitNum; i++) {
       if(vectors[i] != null) {
-        clonedVectors[i] = (SparseIntDoubleVector)vectors[i].clone();
+        clonedVectors[i] = (SparseDoubleVector)vectors[i].clone();
       } else {
-        clonedVectors[i] = (SparseIntDoubleVector)initComponentVector();
+        clonedVectors[i] = (SparseDoubleVector)initComponentVector();
       }
     }
 
-    CompSparseIntDoubleVector clonedVector = new CompSparseIntDoubleVector(matrixId, rowId, dim, partKeys, clonedVectors);
+    CompSparseDoubleVector clonedVector = new CompSparseDoubleVector(matrixId, rowId, dim, partKeys, clonedVectors);
     return clonedVector;
   }
 
@@ -93,7 +93,7 @@ public class CompSparseIntDoubleVector extends CompTIntDoubleVector {
   }
 
   @Override protected TIntDoubleVector initComponentVector(int initCapacity) {
-    SparseIntDoubleVector vector = new SparseIntDoubleVector(dim, initCapacity);
+    SparseDoubleVector vector = new SparseDoubleVector(dim, initCapacity);
     vector.setMatrixId(matrixId);
     vector.setRowId(rowId);
     vector.setClock(clock);
@@ -101,7 +101,7 @@ public class CompSparseIntDoubleVector extends CompTIntDoubleVector {
   }
 
   @Override protected TIntDoubleVector initComponentVector(TIntDoubleVector vector) {
-    if(vector instanceof SparseIntDoubleVector) {
+    if(vector instanceof SparseDoubleVector) {
       return vector.clone();
     }
 

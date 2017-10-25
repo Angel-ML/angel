@@ -19,7 +19,7 @@ package com.tencent.angel.example.quickStart
 
 import com.tencent.angel.ml.conf.MLConf._
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.{DenseIntDoubleVector, TIntDoubleVector}
+import com.tencent.angel.ml.math.vector.{DenseDoubleVector, TDoubleVector}
 import com.tencent.angel.ml.optimizer.sgd.loss.L2LogLoss
 import com.tencent.angel.ml.task.TrainTask
 import com.tencent.angel.ml.utils.DataParser
@@ -66,7 +66,7 @@ class QSLRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](
     // Apply batch gradient descent LR iteratively
     while (ctx.getEpoch < epochNum) {
       // Pull model from PS
-      val weight = model.weight.getRow(0)
+      val weight = model.weight.getRow(0).asInstanceOf[TDoubleVector]
 
       // Calculate gradient vector
       val grad = batchGradientDescent(weight)
@@ -86,8 +86,8 @@ class QSLRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](
     * @param weight LR model vector
     * @return gradient vector
     */
-  def batchGradientDescent(weight: TIntDoubleVector): TIntDoubleVector = {
-    var (grad, batchLoss) = (new DenseIntDoubleVector(feaNum), 0.0)
+  def batchGradientDescent(weight: TDoubleVector): TDoubleVector = {
+    var (grad, batchLoss) = (new DenseDoubleVector(feaNum), 0.0)
 
     taskDataBlock.resetReadIndex()
     for (i <- 0 until taskDataBlock.size) {

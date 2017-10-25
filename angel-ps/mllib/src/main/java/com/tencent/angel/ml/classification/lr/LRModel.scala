@@ -21,7 +21,6 @@ import java.text.DecimalFormat
 
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector._
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.ml.utils.Maths
@@ -49,26 +48,15 @@ object LRModel{
 class LRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
   private val LOG = LogFactory.getLog(classOf[LRModel])
 
+
   val LR_WEIGHT_MAT = "lr_weight"
   val LR_INTERCEPT = "lr_intercept"
 
   val feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
-  val modelType = RowType.valueOf(conf.get(MLConf.LR_MODEL_TYPE, RowType.T_DOUBLE_DENSE.toString))
-  import scala.language.existentials
-  val (weight, intercept_) = modelType match {
-    case RowType.T_DOUBLE_SPARSE => {
-      (PSModel[SparseIntDoubleVector](LR_WEIGHT_MAT, 1, feaNum).setAverage(true).setRowType(RowType.T_DOUBLE_SPARSE),
-        PSModel[SparseIntDoubleVector](LR_INTERCEPT, 1, 1).setAverage(true).setRowType(RowType.T_DOUBLE_SPARSE))
-    }
-    case RowType.T_DOUBLE_SPARSE_LONGKEY => {
-      (PSModel[SparseLongKeyDoubleVector](LR_WEIGHT_MAT, 1, feaNum).setAverage(true).setRowType(RowType.T_DOUBLE_SPARSE_LONGKEY),
-        PSModel[SparseLongKeyDoubleVector](LR_INTERCEPT, 1, 1).setAverage(true).setRowType(RowType.T_DOUBLE_SPARSE_LONGKEY))
-    }
-    case _ => {
-      (PSModel[DenseIntDoubleVector](LR_WEIGHT_MAT, 1, feaNum).setAverage(true).setRowType(RowType.T_DOUBLE_DENSE),
-        PSModel[DenseIntDoubleVector](LR_INTERCEPT, 1, 1).setAverage(true).setRowType(RowType.T_DOUBLE_DENSE))
-    }
-  }
+  val modelType = RowType.valueOf(conf.get(MLConf.LR_MODEL_TYPE, RowType.T_DOUBLE_SPARSE.toString))
+
+  val weight = PSModel(LR_WEIGHT_MAT, 1, feaNum).setAverage(true).setRowType(modelType)
+  val intercept_ = PSModel(LR_INTERCEPT, 1, 1).setAverage(true).setRowType(modelType)
 
   val intercept =
   if (conf.getBoolean(MLConf.LR_USE_INTERCEPT, MLConf.DEFAULT_LR_USE_INTERCEPT)) {

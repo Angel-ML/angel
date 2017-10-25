@@ -1,7 +1,7 @@
 package com.tencent.angel.spark.ops
 
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.math.vector.DenseIntDoubleVector
+import com.tencent.angel.ml.math.vector.DenseDoubleVector
 import com.tencent.angel.ml.matrix.psf.aggr._
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult
 import com.tencent.angel.ml.matrix.psf.aggr.primitive.Pull
@@ -835,7 +835,7 @@ class VectorOps {
 
 
   def doPull(vector: PSVector): Array[Double] = {
-    aggregate(vector.poolId, new Pull(vector.poolId, vector.id)).asInstanceOf[GetRowResult].getRow.asInstanceOf[DenseIntDoubleVector].getValues
+    aggregate(vector.poolId, new Pull(vector.poolId, vector.id)).asInstanceOf[GetRowResult].getRow.asInstanceOf[DenseDoubleVector].getValues
   }
 
   def doEqual(vector1: PSVector, vector2: PSVector): Boolean = {

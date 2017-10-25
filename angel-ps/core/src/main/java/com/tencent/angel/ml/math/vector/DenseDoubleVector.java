@@ -29,9 +29,9 @@ import org.apache.commons.logging.LogFactory;
 /**
  * Dense double vector
  */
-public class DenseIntDoubleVector extends TIntDoubleVector {
+public class DenseDoubleVector extends TIntDoubleVector {
 
-  private final static Log LOG = LogFactory.getLog(DenseIntDoubleVector.class);
+  private final static Log LOG = LogFactory.getLog(DenseDoubleVector.class);
   /**
    * the value of vector
    */
@@ -42,7 +42,7 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
    * 
    * @param other
    */
-  public DenseIntDoubleVector(DenseIntDoubleVector other) {
+  public DenseDoubleVector(DenseDoubleVector other) {
     super(other);
     this.values = new double[this.dim];
     System.arraycopy(other.values, 0, this.values, 0, dim);
@@ -53,7 +53,7 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
    * 
    * @param dim
    */
-  public DenseIntDoubleVector(int dim) {
+  public DenseDoubleVector(int dim) {
     super();
     this.values = new double[dim];
     this.dim = dim;
@@ -65,7 +65,7 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
    * @param dim
    * @param values
    */
-  public DenseIntDoubleVector(int dim, double[] values) {
+  public DenseDoubleVector(int dim, double[] values) {
     super();
     assert dim == values.length;
     this.dim = dim;
@@ -96,24 +96,24 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
   }
 
   @Override
-  public DenseIntDoubleVector clone() {
-    return new DenseIntDoubleVector(this);
+  public DenseDoubleVector clone() {
+    return new DenseDoubleVector(this);
   }
 
   @Override
   public void clone(TVector row) {
     super.clone(row);
-    System.arraycopy(((DenseIntDoubleVector) row).values, 0, this.values, 0, dim);
+    System.arraycopy(((DenseDoubleVector) row).values, 0, this.values, 0, dim);
   }
 
   @Override
   public double dot(TAbstractVector other) {
-    if (other instanceof SparseIntDoubleSortedVector)
-      return dot((SparseIntDoubleSortedVector) other);
-    if (other instanceof SparseIntDoubleVector)
-      return dot((SparseIntDoubleVector) other);
-    if (other instanceof DenseIntDoubleVector)
-      return dot((DenseIntDoubleVector) other);
+    if (other instanceof SparseDoubleSortedVector)
+      return dot((SparseDoubleSortedVector) other);
+    if (other instanceof SparseDoubleVector)
+      return dot((SparseDoubleVector) other);
+    if (other instanceof DenseDoubleVector)
+      return dot((DenseDoubleVector) other);
     if (other instanceof SparseDummyVector)
       return dot((SparseDummyVector) other);
     if (other instanceof DenseFloatVector)
@@ -125,7 +125,7 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
       + this.getClass().getName() + " dot " + other.getClass().getName());
   }
 
-  private double dot(DenseIntDoubleVector other) {
+  private double dot(DenseDoubleVector other) {
     double ret = 0.0;
     for (int i = 0; i < dim; i++) {
       ret += this.values[i] * other.values[i];
@@ -149,11 +149,11 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
     return ret;
   }
 
-  private double dot(SparseIntDoubleVector other) {
+  private double dot(SparseDoubleVector other) {
     return other.dot(this);
   }
 
-  private double dot(SparseIntDoubleSortedVector other) {
+  private double dot(SparseDoubleSortedVector other) {
     return other.dot(this);
   }
 
@@ -179,7 +179,7 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
         newValue[i] = values[newIndex[i]];
       }
 
-      SparseIntDoubleSortedVector ret = new SparseIntDoubleSortedVector(dim, newIndex, newValue);
+      SparseDoubleSortedVector ret = new SparseDoubleSortedVector(dim, newIndex, newValue);
       ret.setRowId(rowId).setMatrixId(matrixId).setClock(clock);
       return ret;
     } else {
@@ -226,14 +226,14 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
   @Override
   public TIntDoubleVector plus(TAbstractVector other, double x) {
     assert dim == other.getDimension();
-    if (other instanceof DenseIntDoubleVector)
-      return plus((DenseIntDoubleVector) other, x);
+    if (other instanceof DenseDoubleVector)
+      return plus((DenseDoubleVector) other, x);
     if (other instanceof DenseFloatVector)
       return plus((DenseFloatVector) other, x);
-    if (other instanceof SparseIntDoubleVector)
-      return plus((SparseIntDoubleVector) other, x);
-    if (other instanceof SparseIntDoubleSortedVector)
-      return plus((SparseIntDoubleSortedVector) other, x);
+    if (other instanceof SparseDoubleVector)
+      return plus((SparseDoubleVector) other, x);
+    if (other instanceof SparseDoubleSortedVector)
+      return plus((SparseDoubleSortedVector) other, x);
     if(other instanceof SparseFloatVector)
       return plus((SparseFloatVector) other, x);
     if (other instanceof SparseDummyVector)
@@ -243,22 +243,22 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
       + this.getClass().getName() + " plus " + other.getClass().getName());
   }
 
-  private TIntDoubleVector plus(DenseIntDoubleVector other, double x) {
-    DenseIntDoubleVector vector = new DenseIntDoubleVector(dim);
+  private TIntDoubleVector plus(DenseDoubleVector other, double x) {
+    DenseDoubleVector vector = new DenseDoubleVector(dim);
     for (int i = 0; i < dim; i++)
       vector.values[i] = values[i] + other.values[i] * x;
     return vector;
   }
 
   private TIntDoubleVector plus(DenseFloatVector other, double x) {
-    DenseIntDoubleVector vector = new DenseIntDoubleVector(dim);
+    DenseDoubleVector vector = new DenseDoubleVector(dim);
     for (int i = 0; i < dim; i++)
       vector.values[i] = values[i] + other.values[i] * x;
     return vector;
   }
 
-  private TIntDoubleVector plus(SparseIntDoubleVector other, double x) {
-    DenseIntDoubleVector vector = this.clone();
+  private TIntDoubleVector plus(SparseDoubleVector other, double x) {
+    DenseDoubleVector vector = this.clone();
     ObjectIterator<Int2DoubleMap.Entry> iter = other.hashMap.int2DoubleEntrySet().iterator();
     Int2DoubleMap.Entry entry = null;
     while(iter.hasNext()) {
@@ -268,8 +268,8 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
     return vector;
   }
 
-  private TIntDoubleVector plus(SparseIntDoubleSortedVector other, double x) {
-    DenseIntDoubleVector vector = this.clone();
+  private TIntDoubleVector plus(SparseDoubleSortedVector other, double x) {
+    DenseDoubleVector vector = this.clone();
     int length = other.indices.length;
     for (int i = 0; i < length; i++) {
       vector.values[other.indices[i]] += other.values[i] * x;
@@ -278,7 +278,7 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
   }
 
   private TIntDoubleVector plus(SparseFloatVector other, double x) {
-    DenseIntDoubleVector vector = this.clone();
+    DenseDoubleVector vector = this.clone();
     ObjectIterator<Int2FloatMap.Entry> iter = other.hashMap.int2FloatEntrySet().iterator();
     Int2FloatMap.Entry entry = null;
     while(iter.hasNext()) {
@@ -289,7 +289,7 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
   }
 
   private TIntDoubleVector plus(SparseDummyVector other, double x) {
-    DenseIntDoubleVector vector = this.clone();
+    DenseDoubleVector vector = this.clone();
     for (int i = 0; i < other.nonzero; i++) {
       vector.values[other.indices[i]] += x;
     }
@@ -299,14 +299,14 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
   @Override
   public TIntDoubleVector plus(TAbstractVector other) {
     assert dim == other.getDimension();
-    if (other instanceof DenseIntDoubleVector)
-      return plus((DenseIntDoubleVector) other);
+    if (other instanceof DenseDoubleVector)
+      return plus((DenseDoubleVector) other);
     if (other instanceof DenseFloatVector)
       return plus((DenseFloatVector) other);
-    if (other instanceof SparseIntDoubleVector)
-      return plus((SparseIntDoubleVector) other);
-    if (other instanceof SparseIntDoubleSortedVector)
-      return plus((SparseIntDoubleSortedVector) other);
+    if (other instanceof SparseDoubleVector)
+      return plus((SparseDoubleVector) other);
+    if (other instanceof SparseDoubleSortedVector)
+      return plus((SparseDoubleSortedVector) other);
     if(other instanceof SparseFloatVector)
       return plus((SparseFloatVector) other);
     if (other instanceof SparseDummyVector)
@@ -316,22 +316,22 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
       + this.getClass().getName() + " plus " + other.getClass().getName());
   }
 
-  private TIntDoubleVector plus(DenseIntDoubleVector other) {
-    DenseIntDoubleVector vector = new DenseIntDoubleVector(dim);
+  private TIntDoubleVector plus(DenseDoubleVector other) {
+    DenseDoubleVector vector = new DenseDoubleVector(dim);
     for (int i = 0; i < dim; i++)
       vector.values[i] = values[i] + other.values[i];
     return vector;
   }
 
   private TIntDoubleVector plus(DenseFloatVector other) {
-    DenseIntDoubleVector vector = new DenseIntDoubleVector(dim);
+    DenseDoubleVector vector = new DenseDoubleVector(dim);
     for (int i = 0; i < dim; i++)
       vector.values[i] = values[i] + (double) other.values[i];
     return vector;
   }
 
-  private TIntDoubleVector plus(SparseIntDoubleVector other) {
-    DenseIntDoubleVector vector = this.clone();
+  private TIntDoubleVector plus(SparseDoubleVector other) {
+    DenseDoubleVector vector = this.clone();
     ObjectIterator<Int2DoubleMap.Entry> iter = other.hashMap.int2DoubleEntrySet().fastIterator();
     Int2DoubleMap.Entry entry = null;
     while (iter.hasNext()) {
@@ -341,8 +341,8 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
     return vector;
   }
 
-  private TIntDoubleVector plus(SparseIntDoubleSortedVector other) {
-    DenseIntDoubleVector vector = this.clone();
+  private TIntDoubleVector plus(SparseDoubleSortedVector other) {
+    DenseDoubleVector vector = this.clone();
     int length = other.indices.length;
     for (int i = 0; i < length; i++) {
       vector.values[other.indices[i]] += other.values[i];
@@ -351,7 +351,7 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
   }
 
   private TIntDoubleVector plus(SparseFloatVector other) {
-    DenseIntDoubleVector vector = this.clone();
+    DenseDoubleVector vector = this.clone();
     ObjectIterator<Int2FloatMap.Entry> iter = other.hashMap.int2FloatEntrySet().fastIterator();
     Int2FloatMap.Entry entry = null;
     while (iter.hasNext()) {
@@ -362,7 +362,7 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
   }
 
   private TIntDoubleVector plus(SparseDummyVector other) {
-    DenseIntDoubleVector vector = this.clone();
+    DenseDoubleVector vector = this.clone();
     for (int i = 0; i < other.nonzero; i++) {
       vector.values[other.indices[i]] += 1;
     }
@@ -371,14 +371,14 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
 
   @Override
   public TIntDoubleVector plusBy(TAbstractVector other, double x) {
-    if (other instanceof DenseIntDoubleVector)
-      return plusBy((DenseIntDoubleVector) other, x);
+    if (other instanceof DenseDoubleVector)
+      return plusBy((DenseDoubleVector) other, x);
     if (other instanceof DenseFloatVector)
       return plusBy((DenseFloatVector) other, x);
-    if (other instanceof SparseIntDoubleVector)
-      return plusBy((SparseIntDoubleVector) other, x);
-    if (other instanceof SparseIntDoubleSortedVector)
-      return plusBy((SparseIntDoubleSortedVector) other, x);
+    if (other instanceof SparseDoubleVector)
+      return plusBy((SparseDoubleVector) other, x);
+    if (other instanceof SparseDoubleSortedVector)
+      return plusBy((SparseDoubleSortedVector) other, x);
     if (other instanceof SparseDummyVector)
       return plusBy((SparseDummyVector) other, x);
     if (other instanceof SparseFloatVector)
@@ -388,7 +388,7 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
       + this.getClass().getName() + " plusBy " + other.getClass().getName());
   }
 
-  private TIntDoubleVector plusBy(DenseIntDoubleVector other, double x) {
+  private TIntDoubleVector plusBy(DenseDoubleVector other, double x) {
     double[] delta = other.values;
     for (int i = 0; i < delta.length; i++) {
       values[i] += delta[i] * x;
@@ -404,7 +404,7 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
     return this;
   }
 
-  private TIntDoubleVector plusBy(SparseIntDoubleVector other, double x) {
+  private TIntDoubleVector plusBy(SparseDoubleVector other, double x) {
     ObjectIterator<Int2DoubleMap.Entry> iter = other.hashMap.int2DoubleEntrySet().fastIterator();
     while (iter.hasNext()) {
       Int2DoubleMap.Entry entry = iter.next();
@@ -414,7 +414,7 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
     return this;
   }
 
-  private TIntDoubleVector plusBy(SparseIntDoubleSortedVector other, double x) {
+  private TIntDoubleVector plusBy(SparseDoubleSortedVector other, double x) {
     int[] keys = other.getIndices();
     double[] vals = other.getValues();
     for (int i = 0; i < keys.length; i++) {
@@ -439,7 +439,7 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
     return this;
   }
 
-  private TIntDoubleVector plusBy(DenseIntDoubleVector other) {
+  private TIntDoubleVector plusBy(DenseDoubleVector other) {
     double[] delta = other.values;
     for (int i = 0; i < delta.length; i++) {
       values[i] += delta[i];
@@ -457,14 +457,14 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
 
   @Override
   public TIntDoubleVector plusBy(TAbstractVector other) {
-    if (other instanceof DenseIntDoubleVector)
-      return plusBy((DenseIntDoubleVector) other);
+    if (other instanceof DenseDoubleVector)
+      return plusBy((DenseDoubleVector) other);
     if (other instanceof DenseFloatVector)
       return plusBy((DenseFloatVector) other);
-    if (other instanceof SparseIntDoubleVector)
-      return plusBy((SparseIntDoubleVector) other);
-    if (other instanceof SparseIntDoubleSortedVector)
-      return plusBy((SparseIntDoubleSortedVector) other);
+    if (other instanceof SparseDoubleVector)
+      return plusBy((SparseDoubleVector) other);
+    if (other instanceof SparseDoubleSortedVector)
+      return plusBy((SparseDoubleSortedVector) other);
     if (other instanceof SparseDummyVector)
       return plusBy((SparseDummyVector) other);
     if (other instanceof SparseFloatVector)
@@ -474,7 +474,7 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
       + this.getClass().getName() + " plusBy " + other.getClass().getName());
   }
 
-  private TIntDoubleVector plusBy(SparseIntDoubleVector other) {
+  private TIntDoubleVector plusBy(SparseDoubleVector other) {
     ObjectIterator<Int2DoubleMap.Entry> iter = other.hashMap.int2DoubleEntrySet().fastIterator();
     Int2DoubleMap.Entry entry = null;
     while (iter.hasNext()) {
@@ -494,7 +494,7 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
     return this;
   }
 
-  private TIntDoubleVector plusBy(SparseIntDoubleSortedVector other) {
+  private TIntDoubleVector plusBy(SparseDoubleSortedVector other) {
     return plusBy(other.indices, other.getValues());
   }
 
@@ -544,7 +544,7 @@ public class DenseIntDoubleVector extends TIntDoubleVector {
 
   @Override
   public TIntDoubleVector times(double x) {
-    DenseIntDoubleVector vector = new DenseIntDoubleVector(this.dim);
+    DenseDoubleVector vector = new DenseDoubleVector(this.dim);
     for (int i = 0; i < dim; i++)
       vector.values[i] = values[i] * x;
     return vector;

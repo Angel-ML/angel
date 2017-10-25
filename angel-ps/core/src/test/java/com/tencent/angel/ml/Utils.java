@@ -23,11 +23,11 @@ import java.util.Arrays;
 import java.util.Random;
 
 public class Utils {
-  public static DenseIntDoubleVector genDenseDoubleVector(int dim) {
+  public static DenseDoubleVector genDenseDoubleVector(int dim) {
     Random random = new Random(System.currentTimeMillis());
     double[] value = new double[dim];
 
-    DenseIntDoubleVector vec = new DenseIntDoubleVector(dim, value);
+    DenseDoubleVector vec = new DenseDoubleVector(dim, value);
 
     return vec;
   }
@@ -38,7 +38,7 @@ public class Utils {
     return vec;
   }
 
-  public static SparseIntDoubleSortedVector genSparseDoubleSortedVector(int dim) {
+  public static SparseDoubleSortedVector genSparseDoubleSortedVector(int dim) {
     Random random = new Random(System.currentTimeMillis());
     int nnz = random.nextInt(dim);
     int[] indexs = genSortedIndexs(nnz, dim);
@@ -46,29 +46,29 @@ public class Utils {
     for (int i = 0; i < nnz; i++)
       values[i] = random.nextDouble();
 
-    SparseIntDoubleSortedVector vec = new SparseIntDoubleSortedVector(dim, indexs, values);
+    SparseDoubleSortedVector vec = new SparseDoubleSortedVector(dim, indexs, values);
 
     return  vec;
   }
 
 
-  public static SparseIntDoubleSortedVector genSparseDoubleSortedVector(int nnz, int dim) {
+  public static SparseDoubleSortedVector genSparseDoubleSortedVector(int nnz, int dim) {
     Random random = new Random(System.currentTimeMillis());
     int[] indexs = genSortedIndexs(nnz, dim);
     double[] values = new double[nnz];
     for (int i = 0; i < nnz; i++)
       values[i] = random.nextDouble();
 
-    SparseIntDoubleSortedVector vec = new SparseIntDoubleSortedVector(dim, indexs, values);
+    SparseDoubleSortedVector vec = new SparseDoubleSortedVector(dim, indexs, values);
 
     return  vec;
   }
 
-  public static SparseIntDoubleVector genSparseDoubleVector(int nnz, int dim) {
+  public static SparseDoubleVector genSparseDoubleVector(int nnz, int dim) {
     int[] index = genSortedIndexs(nnz, dim);
     double[] values = genDoubleArray(nnz);
 
-    SparseIntDoubleVector vec = new SparseIntDoubleVector(dim, index, values);
+    SparseDoubleVector vec = new SparseDoubleVector(dim, index, values);
     return  vec;
   }
 

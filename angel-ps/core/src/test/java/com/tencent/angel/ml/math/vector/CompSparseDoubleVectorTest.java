@@ -32,7 +32,7 @@ public class CompSparseDoubleVectorTest {
   private final int dim = 10000;
   @Test
   public void testBaseOp(){
-    CompSparseIntDoubleVector vector = initVector();
+    CompSparseDoubleVector vector = initVector();
     HashSet<Integer> indexSet = new HashSet<Integer>();
     Random r = new Random();
     int sampleNum = 100;
@@ -61,7 +61,7 @@ public class CompSparseDoubleVectorTest {
     vector.timesBy(2.0);
     assertEquals(vector.sum(), Double.valueOf(sampleNum) * 2);
 
-    CompSparseIntDoubleVector addVector = initVector();
+    CompSparseDoubleVector addVector = initVector();
     for(int i = 0; i < indexes.length; i++) {
       addVector.plusBy(indexes[i], 1.0);
     }
@@ -87,13 +87,13 @@ public class CompSparseDoubleVectorTest {
       values[i] = 1.0;
     }
     Sort.quickSort(indexes, values, 0, sampleNum -  1);
-    SparseIntDoubleSortedVector addVector2 = new SparseIntDoubleSortedVector(dim, indexes, values);
+    SparseDoubleSortedVector addVector2 = new SparseDoubleSortedVector(dim, indexes, values);
     vector.plusBy(addVector2);
     for(int i = 0; i < indexes.length; i++) {
       assertEquals(vector.get(indexes[i]), 5.0);
     }
 
-    SparseIntDoubleVector addVector3 = new SparseIntDoubleVector(-1);
+    SparseDoubleVector addVector3 = new SparseDoubleVector(-1);
     for(int i = 0; i < indexes.length; i++) {
       addVector3.set(indexes[i], 1.0);
     }
@@ -102,13 +102,13 @@ public class CompSparseDoubleVectorTest {
       assertEquals(vector.get(indexes[i]), 6.0);
     }
 
-    CompSparseIntDoubleVector clonedVector = (CompSparseIntDoubleVector)vector.clone();
+    CompSparseDoubleVector clonedVector = (CompSparseDoubleVector)vector.clone();
     for(int i = 0; i < indexes.length; i++) {
       assertEquals(clonedVector.get(indexes[i]), 6.0);
     }
   }
 
-  private CompSparseIntDoubleVector initVector(){
+  private CompSparseDoubleVector initVector(){
     PartitionKey[] partKeys = new PartitionKey[4];
     TIntDoubleVector[] vectors = new TIntDoubleVector[4];
     long blockCol = dim / 4;
@@ -117,11 +117,11 @@ public class CompSparseDoubleVectorTest {
     partKeys[2] = new PartitionKey(0, 0, 0, blockCol * 2 , 0, blockCol * 3);
     partKeys[3] = new PartitionKey(0, 0, 0, blockCol * 3 , 0, dim);
 
-    vectors[0] = new SparseIntDoubleVector(dim);
-    vectors[1] = new SparseIntDoubleVector(dim);
-    vectors[2] = new SparseIntDoubleVector(dim);
-    vectors[3] = new SparseIntDoubleVector(dim);
+    vectors[0] = new SparseDoubleVector(dim);
+    vectors[1] = new SparseDoubleVector(dim);
+    vectors[2] = new SparseDoubleVector(dim);
+    vectors[3] = new SparseDoubleVector(dim);
 
-    return new CompSparseIntDoubleVector(0, 0, dim, partKeys, vectors);
+    return new CompSparseDoubleVector(0, 0, dim, partKeys, vectors);
   }
 }

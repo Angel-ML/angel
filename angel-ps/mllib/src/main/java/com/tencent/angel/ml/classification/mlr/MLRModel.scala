@@ -20,10 +20,11 @@ package com.tencent.angel.ml.classification.mlr
 import java.util
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.DenseIntDoubleVector
+import com.tencent.angel.ml.math.vector.DenseDoubleVector
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.ml.utils.Maths
+import com.tencent.angel.protobuf.generated.MLProtos.RowType
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
@@ -60,11 +61,11 @@ class MLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
   val feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
   val rank = conf.getInt(MLConf.ML_MLR_RANK, MLConf.DEFAULT_ML_MLR_RANK)
 
-  val sigmoid_weight = PSModel[DenseIntDoubleVector](MLR_SIGMOID_WEIGHT_MAT, rank, feaNum).setAverage(true)
-  val sigmoid_intercept = PSModel[DenseIntDoubleVector](MLR_SIGMOID_INTERCEPT, rank, 1).setAverage(true)
+  val sigmoid_weight = PSModel(MLR_SIGMOID_WEIGHT_MAT, rank, feaNum).setRowType(RowType.T_DOUBLE_DENSE).setAverage(true)
+  val sigmoid_intercept = PSModel(MLR_SIGMOID_INTERCEPT, rank, 1).setRowType(RowType.T_DOUBLE_DENSE).setAverage(true)
 
-  val softmax_weight = PSModel[DenseIntDoubleVector](MLR_SOFTMAX_WEIGHT_MAT, rank, feaNum).setAverage(true)
-  val softmax_intercept = PSModel[DenseIntDoubleVector](MLR_SOFTMAX_INTERCEPT, rank, 1).setAverage(true)
+  val softmax_weight = PSModel(MLR_SOFTMAX_WEIGHT_MAT, rank, feaNum).setRowType(RowType.T_DOUBLE_DENSE).setAverage(true)
+  val softmax_intercept = PSModel(MLR_SOFTMAX_INTERCEPT, rank, 1).setRowType(RowType.T_DOUBLE_DENSE).setAverage(true)
 
   addPSModel(MLR_SIGMOID_WEIGHT_MAT, sigmoid_weight)
   addPSModel(MLR_SIGMOID_INTERCEPT, sigmoid_intercept)
@@ -109,18 +110,18 @@ class MLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
 
   def pullFromPs() = {
     val start = System.currentTimeMillis()
-    val sigmoid_wVecot = new Array[DenseIntDoubleVector](rank)
+    val sigmoid_wVecot = new Array[DenseDoubleVector](rank)
     val sigmoid_b = new Array[Double](rank)
 
-    val softmax_wVecot = new Array[DenseIntDoubleVector](rank)
+    val softmax_wVecot = new Array[DenseDoubleVector](rank)
     val softmax_b = new Array[Double](rank)
 
     for (i <- 0 until rank) {
-      sigmoid_wVecot(i) = sigmoid_weight.getRow(i)
-      sigmoid_b(i) = sigmoid_intercept.getRow(i).get(0)
+      sigmoid_wVecot(i) = sigmoid_weight.getRow(i).asInstanceOf[DenseDoubleVector]
+      sigmoid_b(i) = sigmoid_intercept.getRow(i).asInstanceOf[DenseDoubleVector].get(0)
 
-      softmax_wVecot(i) = softmax_weight.getRow(i)
-      softmax_b(i) = softmax_intercept.getRow(i).get(0)
+      softmax_wVecot(i) = softmax_weight.getRow(i).asInstanceOf[DenseDoubleVector]
+      softmax_b(i) = softmax_intercept.getRow(i).asInstanceOf[DenseDoubleVector].get(0)
     }
 
     val cost = System.currentTimeMillis() - start
@@ -128,10 +129,10 @@ class MLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
     (sigmoid_wVecot, sigmoid_b, softmax_wVecot, softmax_b)
   }
 
-  def pushToPS(update_sigmoid_wVecot: util.List[DenseIntDoubleVector],
-               update_sigmoid_b: util.List[DenseIntDoubleVector],
-               update_softmax_wVecot: util.List[DenseIntDoubleVector],
-               update_softmax_b: util.List[DenseIntDoubleVector]
+  def pushToPS(update_sigmoid_wVecot: util.List[DenseDoubleVector],
+               update_sigmoid_b: util.List[DenseDoubleVector],
+               update_softmax_wVecot: util.List[DenseDoubleVector],
+               update_softmax_b: util.List[DenseDoubleVector]
               ) = {
     for (i <- 0 until rank) {
       sigmoid_weight.increment(i, update_sigmoid_wVecot.get(i))

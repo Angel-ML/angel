@@ -22,7 +22,7 @@ import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.TDoubleVector
 import com.tencent.angel.ml.metric.LossMetric
-import com.tencent.angel.ml.model.{MLModel, PSModel}
+import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.ml.optimizer.sgd.GradientDescent
 import com.tencent.angel.ml.optimizer.sgd.loss.L2LogLoss
 import com.tencent.angel.ml.utils.ValidationUtils
@@ -33,7 +33,6 @@ import org.apache.commons.logging.{Log, LogFactory}
 /**
   * Learner of logistic regression model using mini-batch gradient descent.
   *
-  * @param ctx : context for each task
   */
 class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   val LOG: Log = LogFactory.getLog(classOf[LRLearner])
@@ -65,9 +64,10 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     // Apply mini-batch gradient descent
     val startBatch = System.currentTimeMillis()
     val batchGD = GradientDescent.miniBatchGD(trainData,
-      lrModel.weight.asInstanceOf[PSModel[TDoubleVector]],
-      lrModel.intercept.asInstanceOf[Option[PSModel[TDoubleVector]]],
-      lr, l2LL,
+      lrModel.weight,
+      lrModel.intercept,
+      lr,
+      l2LL,
       batchSize,
       batchNum)
     val loss = batchGD._1

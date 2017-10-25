@@ -141,12 +141,12 @@ public class SparseFloatVector extends TFloatVector {
       return dot((DenseFloatVector) other);
     if (other instanceof SparseFloatVector)
       return dot((SparseFloatVector) other);
-    if (other instanceof DenseIntDoubleVector)
-      return dot((DenseIntDoubleVector) other);
-    if (other instanceof SparseIntDoubleVector)
-      return dot((SparseIntDoubleVector) other);
-    if (other instanceof SparseIntDoubleSortedVector)
-      return dot((SparseIntDoubleSortedVector) other);
+    if (other instanceof DenseDoubleVector)
+      return dot((DenseDoubleVector) other);
+    if (other instanceof SparseDoubleVector)
+      return dot((SparseDoubleVector) other);
+    if (other instanceof SparseDoubleSortedVector)
+      return dot((SparseDoubleSortedVector) other);
 
     throw new UnsupportedOperationException("Unsupport operation: " + this.getClass().getName() + " dot " + other.getClass().getName());
   }
@@ -187,7 +187,7 @@ public class SparseFloatVector extends TFloatVector {
     return dot;
   }
 
-  private double dot(DenseIntDoubleVector other) {
+  private double dot(DenseDoubleVector other) {
     double dot = 0.0;
     ObjectIterator<Int2FloatMap.Entry> iter = this.hashMap.int2FloatEntrySet().fastIterator();
     Int2FloatMap.Entry entry = null;
@@ -198,7 +198,7 @@ public class SparseFloatVector extends TFloatVector {
     return dot;
   }
 
-  private double dot(SparseIntDoubleVector other) {
+  private double dot(SparseDoubleVector other) {
     double dot = 0.0;
     if(this.size() < other.size()) {
       ObjectIterator<Int2FloatMap.Entry> iter = hashMap.int2FloatEntrySet().fastIterator();
@@ -222,7 +222,7 @@ public class SparseFloatVector extends TFloatVector {
     return dot;
   }
 
-  private double dot(SparseIntDoubleSortedVector other) {
+  private double dot(SparseDoubleSortedVector other) {
     double dot = 0.0;
     int [] indexes = other.getIndices();
     double [] values = other.getValues();

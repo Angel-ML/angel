@@ -197,7 +197,7 @@ public class RowSplitCombineUtils {
     while (true) {
       ServerRow split = pipelineCache.poll();
       if (split == null) {
-        TVector row = new DenseIntDoubleVector(colNum, dataArray);
+        TVector row = new DenseDoubleVector(colNum, dataArray);
         row.setClock(clock);
         row.setMatrixId(matrixMeta.getId());
         row.setRowId(rowIndex);
@@ -360,7 +360,7 @@ public class RowSplitCombineUtils {
       startPos += lens[i];
     }
 
-    TVector row = new SparseIntDoubleVector(colNum, indexes, values);
+    TVector row = new SparseDoubleVector(colNum, indexes, values);
     row.setMatrixId(matrixMeta.getId());
     row.setRowId(rowIndex);
     row.setClock(clock);
@@ -460,12 +460,12 @@ public class RowSplitCombineUtils {
     int size = rowSplits.size();
     int clock = Integer.MAX_VALUE;
     for(int i = 0; i < size; i++) {
-      splits[i] = new SparseIntDoubleVector((int)matrixMeta.getColNum(), ((ServerSparseDoubleRow)(rowSplits.get(i))).getData());
+      splits[i] = new SparseDoubleVector((int)matrixMeta.getColNum(), ((ServerSparseDoubleRow)(rowSplits.get(i))).getData());
       if (rowSplits.get(i).getClock() < clock) {
         clock = rowSplits.get(i).getClock();
       }
     }
-    CompSparseIntDoubleVector row = new CompSparseIntDoubleVector(matrixMeta.getId(),
+    CompSparseDoubleVector row = new CompSparseDoubleVector(matrixMeta.getId(),
       rowIndex, (int)matrixMeta.getColNum(), partitionKeys.toArray(new PartitionKey[0]), splits);
     row.setClock(clock);
     return row;
@@ -553,7 +553,7 @@ public class RowSplitCombineUtils {
       ((ServerDenseDoubleRow) rowSplits.get(i)).mergeTo(dataArray);
     }
 
-    TVector row = new DenseIntDoubleVector(colNum, dataArray);
+    TVector row = new DenseDoubleVector(colNum, dataArray);
     row.setMatrixId(matrixMeta.getId());
     row.setRowId(rowIndex);
     row.setClock(clock);

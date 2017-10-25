@@ -23,7 +23,7 @@ import java.util.{Random, _}
 import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.{DenseIntDoubleVector, TIntDoubleVector}
+import com.tencent.angel.ml.math.vector.{DenseDoubleVector, TIntDoubleVector}
 import com.tencent.angel.ml.metric.LossMetric
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
@@ -168,7 +168,7 @@ class KMeansLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     // Back up centers for delta computation
     val oldCenters = new util.ArrayList[TIntDoubleVector](K)
     for (i <- 0 until K) {
-      oldCenters.add(kmeansModel.lcCenters.get(i).asInstanceOf[DenseIntDoubleVector].clone())
+      oldCenters.add(kmeansModel.lcCenters.get(i).asInstanceOf[DenseDoubleVector].clone())
     }
 
     val batchSize = (trainData.size * spRatio).asInstanceOf[Int]

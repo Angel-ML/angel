@@ -16,8 +16,8 @@
 
 package com.tencent.angel.ml.math.matrix;
 
-import com.tencent.angel.ml.math.vector.DenseIntDoubleVector;
-import com.tencent.angel.ml.math.vector.SparseIntDoubleVector;
+import com.tencent.angel.ml.math.vector.DenseDoubleVector;
+import com.tencent.angel.ml.math.vector.SparseDoubleVector;
 import com.tencent.angel.ml.math.vector.TDoubleVector;
 import org.junit.Test;
 
@@ -43,9 +43,9 @@ public class DenseDoubleMatrixTest {
   public void plusBy1() throws Exception {
     double[][] value = {{1.0, 2.0},{3.0, 4.0}};
     DenseDoubleMatrix mat = new DenseDoubleMatrix(2, 2, value);
-    TDoubleVector vec = new DenseIntDoubleVector(2, new double[]{1.0, 1.0});
+    TDoubleVector vec = new DenseDoubleVector(2, new double[]{1.0, 1.0});
     vec.setRowId(0);
-    TDoubleVector vec_1 = new SparseIntDoubleVector(2, new int[]{1}, new double[]{1.0});
+    TDoubleVector vec_1 = new SparseDoubleVector(2, new int[]{1}, new double[]{1.0});
     vec_1.setRowId(1);
 
     mat.plusBy(vec);
@@ -61,7 +61,7 @@ public class DenseDoubleMatrixTest {
   public void plusBy2() throws Exception {
     double[][] value = {{1.0, 2.0},{3.0, 4.0}};
     DenseDoubleMatrix mat = new DenseDoubleMatrix(2, 2, value);
-    DenseIntDoubleVector vec = new DenseIntDoubleVector(2, new double[]{1.0, 1.0});
+    DenseDoubleVector vec = new DenseDoubleVector(2, new double[]{1.0, 1.0});
     vec.setRowId(0);
 
     mat.plusBy(vec);
@@ -76,10 +76,10 @@ public class DenseDoubleMatrixTest {
   public void plusBy3() throws Exception {
     double[][] value = {{1.0, 2.0},{3.0, 4.0}};
     DenseDoubleMatrix mat = new DenseDoubleMatrix(2, 2, value);
-    SparseIntDoubleVector vec = new SparseIntDoubleVector(2);
+    SparseDoubleVector vec = new SparseDoubleVector(2);
     vec.setRowId(0);
     vec.set(0, 1.0);
-    SparseIntDoubleVector vec_1 = new SparseIntDoubleVector(2);
+    SparseDoubleVector vec_1 = new SparseDoubleVector(2);
     vec_1.setRowId(1);
     vec_1.set(1, 1.0);
 
@@ -116,7 +116,7 @@ public class DenseDoubleMatrixTest {
     assertEquals(2.0, vec.get(1));
 
     DenseDoubleMatrix mat_1 = new DenseDoubleMatrix(2, 2, new double[2][2]);
-    TDoubleVector vec_1 = new DenseIntDoubleVector(2, new double[]{1.0, 2.0});
+    TDoubleVector vec_1 = new DenseDoubleVector(2, new double[]{1.0, 2.0});
     vec_1.setRowId(0);
     mat_1.plusBy(vec_1);
 

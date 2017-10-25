@@ -37,8 +37,8 @@ import java.util.concurrent.RecursiveTask;
 /**
  * Base class of component double vector.
  */
-abstract class CompTIntDoubleVector extends TIntDoubleVector {
-  private static final Log LOG = LogFactory.getLog(CompTIntDoubleVector.class);
+abstract class CompDoubleVector extends TIntDoubleVector {
+  private static final Log LOG = LogFactory.getLog(CompDoubleVector.class);
 
   /**
    * The splits of the row, they are sorted by the start column index
@@ -73,7 +73,7 @@ abstract class CompTIntDoubleVector extends TIntDoubleVector {
    * @param dim      vector dimension
    * @param nnz      element number of the vector
    */
-  public CompTIntDoubleVector(int matrixId, int rowIndex, int dim, int nnz) {
+  public CompDoubleVector(int matrixId, int rowIndex, int dim, int nnz) {
     super();
     LOG.info("create a CompTDoubleVector, matrixId=" + matrixId + ", rowIndex=" + rowIndex);
     setMatrixId(matrixId);
@@ -117,8 +117,8 @@ abstract class CompTIntDoubleVector extends TIntDoubleVector {
    * @param partKeys the partitions that contains this vector
    * @param splits   vector splits
    */
-  public CompTIntDoubleVector(int matrixId, int rowIndex, int dim, PartitionKey[] partKeys,
-                              TIntDoubleVector[] splits) {
+  public CompDoubleVector(int matrixId, int rowIndex, int dim, PartitionKey[] partKeys,
+                          TIntDoubleVector[] splits) {
     super();
     setMatrixId(matrixId);
     setRowId(rowIndex);
@@ -465,14 +465,14 @@ abstract class CompTIntDoubleVector extends TIntDoubleVector {
   }
 
   @Override public TVector plusBy(TAbstractVector other) {
-    if (other instanceof CompTIntDoubleVector) {
-      return plusBy((CompTIntDoubleVector) other);
-    } else if(other instanceof SparseIntDoubleVector) {
-      return plusBy((SparseIntDoubleVector) other);
+    if (other instanceof CompDoubleVector) {
+      return plusBy((CompDoubleVector) other);
+    } else if(other instanceof SparseDoubleVector) {
+      return plusBy((SparseDoubleVector) other);
     } else if (other instanceof  SparseDummyVector) {
       return plusBy((SparseDummyVector) other);
-    } else if (other instanceof SparseIntDoubleSortedVector) {
-      return plusBy((SparseIntDoubleSortedVector) other);
+    } else if (other instanceof SparseDoubleSortedVector) {
+      return plusBy((SparseDoubleSortedVector) other);
     }
 
     throw new UnsupportedOperationException(
@@ -480,14 +480,14 @@ abstract class CompTIntDoubleVector extends TIntDoubleVector {
         .getName());
   }
 
-  private TVector plusBy(CompTIntDoubleVector other) {
+  private TVector plusBy(CompDoubleVector other) {
     PlusByOp op = new PlusByOp(vectors, other.vectors, 0, splitNum);
     MatrixOpExecutors.execute(op);
     op.join();
     return this;
   }
 
-  private TVector plusBy(SparseIntDoubleVector other) {
+  private TVector plusBy(SparseDoubleVector other) {
     ObjectIterator<Int2DoubleMap.Entry>
       iter = other.hashMap.int2DoubleEntrySet().fastIterator();
     Int2DoubleMap.Entry entry = null;
@@ -506,7 +506,7 @@ abstract class CompTIntDoubleVector extends TIntDoubleVector {
     return this;
   }
 
-  private TVector plusBy(SparseIntDoubleSortedVector other) {
+  private TVector plusBy(SparseDoubleSortedVector other) {
     int [] indexes = other.getIndices();
     double [] values = other.getValues();
     for(int i = 0; i < indexes.length; i++) {
@@ -525,14 +525,14 @@ abstract class CompTIntDoubleVector extends TIntDoubleVector {
   }
 
   @Override public TVector plusBy(TAbstractVector other, double x) {
-    if (other instanceof CompTIntDoubleVector) {
-      return plusBy((CompTIntDoubleVector) other, x);
-    } else if (other instanceof SparseIntDoubleSortedVector) {
-      return plusBy((SparseIntDoubleSortedVector) other, x);
+    if (other instanceof CompDoubleVector) {
+      return plusBy((CompDoubleVector) other, x);
+    } else if (other instanceof SparseDoubleSortedVector) {
+      return plusBy((SparseDoubleSortedVector) other, x);
     } else if (other instanceof  SparseDummyVector) {
       return plusBy((SparseDummyVector) other, x);
-    } else if (other instanceof SparseIntDoubleSortedVector) {
-      return plusBy((SparseIntDoubleVector) other, x);
+    } else if (other instanceof SparseDoubleSortedVector) {
+      return plusBy((SparseDoubleVector) other, x);
     }
 
     throw new UnsupportedOperationException(
@@ -540,14 +540,14 @@ abstract class CompTIntDoubleVector extends TIntDoubleVector {
         .getName());
   }
 
-  private TVector plusBy(CompTIntDoubleVector other, double x) {
+  private TVector plusBy(CompDoubleVector other, double x) {
     PlusByWithFactorOp op = new PlusByWithFactorOp(vectors, other.vectors, 0, splitNum, x);
     MatrixOpExecutors.execute(op);
     op.join();
     return this;
   }
 
-  private TVector plusBy(SparseIntDoubleSortedVector other, double x) {
+  private TVector plusBy(SparseDoubleSortedVector other, double x) {
     int [] indexes = other.getIndices();
     double [] values = other.getValues();
     for(int i = 0; i < indexes.length; i++) {
@@ -564,7 +564,7 @@ abstract class CompTIntDoubleVector extends TIntDoubleVector {
     return this;
   }
 
-  private TVector plusBy(SparseIntDoubleVector other, double x) {
+  private TVector plusBy(SparseDoubleVector other, double x) {
     ObjectIterator<Int2DoubleMap.Entry>
       iter = other.hashMap.int2DoubleEntrySet().fastIterator();
     Int2DoubleMap.Entry entry = null;
@@ -584,27 +584,27 @@ abstract class CompTIntDoubleVector extends TIntDoubleVector {
   }
 
   @Override public double dot(TAbstractVector other) {
-    if (other instanceof CompTIntDoubleVector) {
-      return dot((CompTIntDoubleVector) other);
-    } else if (other instanceof SparseIntDoubleSortedVector) {
-      return dot((SparseIntDoubleSortedVector) other);
+    if (other instanceof CompDoubleVector) {
+      return dot((CompDoubleVector) other);
+    } else if (other instanceof SparseDoubleSortedVector) {
+      return dot((SparseDoubleSortedVector) other);
     } else if (other instanceof SparseDummyVector) {
       return dot((SparseDummyVector) other);
-    } else if (other instanceof SparseIntDoubleVector) {
-      return dot((SparseIntDoubleVector) other);
+    } else if (other instanceof SparseDoubleVector) {
+      return dot((SparseDoubleVector) other);
     }
 
     throw new UnsupportedOperationException(
       "Unsupport operation: " + this.getClass().getName() + " dot " + other.getClass().getName());
   }
 
-  private double dot(CompTIntDoubleVector other) {
+  private double dot(CompDoubleVector other) {
     DotOp op = new DotOp(vectors, other.vectors, 0, splitNum);
     MatrixOpExecutors.execute(op);
     return op.join();
   }
 
-  private double dot(SparseIntDoubleSortedVector other) {
+  private double dot(SparseDoubleSortedVector other) {
     int [] indexes = other.getIndices();
     double [] values = other.getValues();
     double dotValue = 0.0;
@@ -623,7 +623,7 @@ abstract class CompTIntDoubleVector extends TIntDoubleVector {
     return dotValue;
   }
 
-  private double dot(SparseIntDoubleVector other) {
+  private double dot(SparseDoubleVector other) {
     double dotValue = 0.0;
     ObjectIterator<Int2DoubleMap.Entry>
       iter = other.hashMap.int2DoubleEntrySet().fastIterator();
@@ -695,5 +695,5 @@ abstract class CompTIntDoubleVector extends TIntDoubleVector {
   }
 
   @Override
-  abstract public CompTIntDoubleVector clone();
+  abstract public CompDoubleVector clone();
 }

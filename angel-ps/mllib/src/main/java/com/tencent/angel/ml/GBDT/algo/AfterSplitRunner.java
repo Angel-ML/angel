@@ -23,7 +23,7 @@
 package com.tencent.angel.ml.GBDT.algo;
 
 import com.tencent.angel.ml.GBDT.algo.RegTree.RegTNodeStat;
-import com.tencent.angel.ml.math.vector.DenseIntDoubleVector;
+import com.tencent.angel.ml.math.vector.DenseDoubleVector;
 import com.tencent.angel.ml.math.vector.DenseIntVector;
 import com.tencent.angel.ml.GBDT.algo.tree.SplitEntry;
 import com.tencent.angel.ml.GBDT.algo.tree.TNode;
@@ -44,13 +44,13 @@ public class AfterSplitRunner implements Runnable{
   private final GBDTController controller;
   private final int nid; // tree node id
   private final DenseIntVector splitFeatureVec;
-  private final DenseIntDoubleVector splitValueVec;
-  private final DenseIntDoubleVector splitGainVec;
-  private final DenseIntDoubleVector nodeGradStatsVec;
+  private final DenseDoubleVector splitValueVec;
+  private final DenseDoubleVector splitGainVec;
+  private final DenseDoubleVector nodeGradStatsVec;
 
   public AfterSplitRunner(GBDTController controller, int nid,
-                          DenseIntVector splitFeatureVec, DenseIntDoubleVector splitValueVec,
-                          DenseIntDoubleVector splitGainVec, DenseIntDoubleVector nodeGradStatsVec) {
+                          DenseIntVector splitFeatureVec, DenseDoubleVector splitValueVec,
+                          DenseDoubleVector splitGainVec, DenseDoubleVector nodeGradStatsVec) {
     this.controller = controller;
     this.nid = nid;
     this.splitFeatureVec = splitFeatureVec;

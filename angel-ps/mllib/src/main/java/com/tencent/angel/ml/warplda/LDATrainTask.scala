@@ -55,7 +55,7 @@ class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Te
     docs.clear()
 
     // training
-    val learner = new Trainer(ctx, model, data)
+    val learner = new LDATrainer(ctx, model, data)
     learner.initialize()
     learner.train(model.epoch)
 

@@ -35,9 +35,9 @@ public class SparseDoubleVectorTest {
 
   @Test
   public void cloneTest() throws Exception {
-    SparseIntDoubleVector vec = genSparseDoubleVector(300, 10000);
+    SparseDoubleVector vec = genSparseDoubleVector(300, 10000);
 
-    SparseIntDoubleVector vec_1 = (SparseIntDoubleVector) vec.clone();
+    SparseDoubleVector vec_1 = (SparseDoubleVector) vec.clone();
 
     int[] index = vec.getIndices();
     int[] index1 = vec.getIndices();
@@ -47,7 +47,7 @@ public class SparseDoubleVectorTest {
     for (int i = 0; i < index.length; i++)
       assertEquals(vec.get(i), vec_1.get(i));
 
-    TIntDoubleVector vec_2 = new SparseIntDoubleVector(10000, 500);
+    TIntDoubleVector vec_2 = new SparseDoubleVector(10000, 500);
     vec_2.clone(vec);
     int[] index2 = vec_2.getIndices();
     Arrays.sort(index2);
@@ -59,7 +59,7 @@ public class SparseDoubleVectorTest {
 
   @Test
   public void clear() throws Exception {
-    SparseIntDoubleVector vec = genSparseDoubleVector(nnz, dim);
+    SparseDoubleVector vec = genSparseDoubleVector(nnz, dim);
 
     vec.clear();
 
@@ -70,7 +70,7 @@ public class SparseDoubleVectorTest {
 
   @Test
   public void denseDoubleComputeTest() throws Exception {
-    SparseIntDoubleVector vec = genSparseDoubleVector(nnz, dim);
+    SparseDoubleVector vec = genSparseDoubleVector(nnz, dim);
 
     TIntDoubleVector vec_1 = genDenseDoubleVector(dim);
 
@@ -103,7 +103,7 @@ public class SparseDoubleVectorTest {
 
   @Test
   public void sparseDoubleComputeTest() {
-    SparseIntDoubleVector vec = genSparseDoubleVector(nnz, dim);
+    SparseDoubleVector vec = genSparseDoubleVector(nnz, dim);
     TIntDoubleVector vec_1 = genSparseDoubleVector(nnz, dim);
 
     //dot
@@ -135,7 +135,7 @@ public class SparseDoubleVectorTest {
 
   @Test
   public void sparseDoubleSortedComputeTest() {
-    SparseIntDoubleVector vec = genSparseDoubleVector(nnz, dim);
+    SparseDoubleVector vec = genSparseDoubleVector(nnz, dim);
     TIntDoubleVector vec_1 = genSparseDoubleSortedVector((int) 1.5 * nnz, dim);
 
     //dot
@@ -166,7 +166,7 @@ public class SparseDoubleVectorTest {
 
   @Test
   public void sparseDummyComputeTest() {
-    SparseIntDoubleVector vec = genSparseDoubleVector(nnz, dim);
+    SparseDoubleVector vec = genSparseDoubleVector(nnz, dim);
     SparseDummyVector vec_1 = genSparseDummyVector(nnz, dim);
     int[] indices = vec_1.getIndices();
 
@@ -181,7 +181,7 @@ public class SparseDoubleVectorTest {
     assertEquals(sum, dot);
 
     //plusBy
-    SparseIntDoubleVector vec_2 = (SparseIntDoubleVector) vec.clone();
+    SparseDoubleVector vec_2 = (SparseDoubleVector) vec.clone();
     vec_2.plusBy(vec_1);
 
     for (int i = 0; i < dim; i++) {
@@ -192,7 +192,7 @@ public class SparseDoubleVectorTest {
         assertEquals(vec.get(i), vec_2.get(i));
     }
 
-    SparseIntDoubleVector vec_3 = (SparseIntDoubleVector) vec.clone();
+    SparseDoubleVector vec_3 = (SparseDoubleVector) vec.clone();
     vec_3.plusBy(vec_1, 5);
     for (int i = 0; i < dim; i++) {
       int pos = Arrays.binarySearch(indices, i);
@@ -206,7 +206,7 @@ public class SparseDoubleVectorTest {
 
   @Test
   public void filter() throws Exception {
-    SparseIntDoubleVector vec = genSparseDoubleVector(nnz, dim);
+    SparseDoubleVector vec = genSparseDoubleVector(nnz, dim);
     Random random = new Random();
 
     int oldSize = vec.size();
@@ -223,13 +223,13 @@ public class SparseDoubleVectorTest {
 
   @Test
   public void getType() throws Exception {
-    SparseIntDoubleVector vec = genSparseDoubleVector(nnz, dim);
+    SparseDoubleVector vec = genSparseDoubleVector(nnz, dim);
     assertEquals(MLProtos.RowType.T_DOUBLE_SPARSE, vec.getType());
   }
 
   @Test
   public void nonZeroNumber() throws Exception {
-    SparseIntDoubleVector vec = genSparseDoubleVector(nnz, dim);
+    SparseDoubleVector vec = genSparseDoubleVector(nnz, dim);
     int sum = 0;
     for (int i = 0; i < dim; i++) {
       if (vec.get(i) != 0)
@@ -242,7 +242,7 @@ public class SparseDoubleVectorTest {
 
   @Test
   public void size() throws Exception {
-    SparseIntDoubleVector vec = genSparseDoubleVector(nnz, dim);
+    SparseDoubleVector vec = genSparseDoubleVector(nnz, dim);
     int[] indexs = vec.getIndices();
     double[] values = vec.getValues();
     assertEquals(indexs.length, vec.size());
@@ -251,7 +251,7 @@ public class SparseDoubleVectorTest {
 
   @Test
   public void sparsity() throws Exception {
-    SparseIntDoubleVector vec = genSparseDoubleVector(nnz, dim);
+    SparseDoubleVector vec = genSparseDoubleVector(nnz, dim);
     int[] indexs = vec.getIndices();
     double[] values = vec.getValues();
 
@@ -261,7 +261,7 @@ public class SparseDoubleVectorTest {
 
   @Test
   public void times() throws Exception {
-    SparseIntDoubleVector vec = genSparseDoubleVector(nnz, dim);
+    SparseDoubleVector vec = genSparseDoubleVector(nnz, dim);
     TIntDoubleVector vec_1 = vec.times(5.5);
 
     for (int i = 0; i < dim; i++)
@@ -270,7 +270,7 @@ public class SparseDoubleVectorTest {
 
   @Test
   public void timesBy() throws Exception {
-    SparseIntDoubleVector vec = genSparseDoubleVector(nnz, dim);
+    SparseDoubleVector vec = genSparseDoubleVector(nnz, dim);
     TIntDoubleVector vec_1 = vec.clone();
 
     vec.timesBy(5.5);
@@ -280,7 +280,7 @@ public class SparseDoubleVectorTest {
 
   @Test
   public void squaredNorm() throws Exception {
-    SparseIntDoubleVector vec = genSparseDoubleVector(nnz, dim);
+    SparseDoubleVector vec = genSparseDoubleVector(nnz, dim);
     double sum = 0.0;
     for (int i = 0; i < dim; i++)
       sum += vec.get(i) * vec.get(i);

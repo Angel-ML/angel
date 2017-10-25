@@ -19,7 +19,7 @@ package com.tencent.angel.example.psf;
 
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.ml.math.vector.DenseIntDoubleVector;
+import com.tencent.angel.ml.math.vector.DenseDoubleVector;
 import com.tencent.angel.ml.matrix.psf.aggr.primitive.Pull;
 import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult;
 import com.tencent.angel.psagent.matrix.MatrixClient;
@@ -56,14 +56,14 @@ public class PSFTestTask extends BaseTask<Long, Long, Long> {
         TVector row = ((GetRowResult) client.get(func)).getRow();
         TVector row1 = ((GetRowResult) client.get(func1)).getRow();
         LOG.info("Task " + taskContext.getTaskId() + " in iteration " + taskContext.getEpoch()
-          + " pull use time=" + (System.currentTimeMillis() - startTs) + ", sum of row 0=" + sum((DenseIntDoubleVector)row)
-          + " sum of row 1=" + sum((DenseIntDoubleVector)row1));
+          + " pull use time=" + (System.currentTimeMillis() - startTs) + ", sum of row 0=" + sum((DenseDoubleVector)row)
+          + " sum of row 1=" + sum((DenseDoubleVector)row1));
 
         double [] delta = new double[10000000];
         for(int i = 0; i < 10000000; i++) {
           delta[i] = 1.0;
         }
-        DenseIntDoubleVector deltaV = new DenseIntDoubleVector(10000000, delta);
+        DenseDoubleVector deltaV = new DenseDoubleVector(10000000, delta);
         deltaV.setMatrixId(client.getMatrixId());
         deltaV.setRowId(0);
 
@@ -71,7 +71,7 @@ public class PSFTestTask extends BaseTask<Long, Long, Long> {
         for(int i = 0; i < 10000000; i++) {
           delta1[i] = 2.0;
         }
-        DenseIntDoubleVector deltaV1 = new DenseIntDoubleVector(10000000, delta1);
+        DenseDoubleVector deltaV1 = new DenseDoubleVector(10000000, delta1);
         deltaV1.setMatrixId(client.getMatrixId());
         deltaV1.setRowId(1);
 
@@ -85,7 +85,7 @@ public class PSFTestTask extends BaseTask<Long, Long, Long> {
     }
   }
 
-  private double sum(DenseIntDoubleVector row) {
+  private double sum(DenseDoubleVector row) {
     double [] data = row.getValues();
     double ret = 0.0;
     for(int i = 0; i < data.length; i++) {

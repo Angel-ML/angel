@@ -21,7 +21,6 @@ import java.util.{HashMap, Map}
 
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.TVector
 import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
@@ -40,14 +39,14 @@ import scala.collection.JavaConversions._
 abstract class MLModel(conf: Configuration, _ctx: TaskContext = null) {
 
   implicit def ctx : TaskContext = _ctx
-  private val psModels: Map[String, PSModel[_]] = new HashMap[String, PSModel[_]]
+  private val psModels: Map[String, PSModel] = new HashMap[String, PSModel]
 
   /**
     * Get all PSModels
     *
     * @return a name to PSModel map
     */
-  def getPSModels: Map[String, PSModel[_]] = {
+  def getPSModels: Map[String, PSModel] = {
     return psModels
   }
 
@@ -57,7 +56,7 @@ abstract class MLModel(conf: Configuration, _ctx: TaskContext = null) {
     * @param name PSModel name
     * @return
     */
-  def getPSModel(name: String): PSModel[_] = {
+  def getPSModel(name: String): PSModel = {
     return psModels.get(name)
   }
 
@@ -67,7 +66,7 @@ abstract class MLModel(conf: Configuration, _ctx: TaskContext = null) {
     * @param name PSModel name
     * @param psModel PSModel
     */
-  def addPSModel(name: String, psModel: PSModel[_]):this.type={
+  def addPSModel(name: String, psModel: PSModel):this.type={
     psModels.put(name, psModel)
     this
   }
@@ -77,7 +76,7 @@ abstract class MLModel(conf: Configuration, _ctx: TaskContext = null) {
     *
     * @param psModel PSModel
     */
-  def addPSModel(psModel: PSModel[_]):this.type = {
+  def addPSModel(psModel: PSModel):this.type = {
     psModels.put(psModel.modelName, psModel)
     this
   }
@@ -98,7 +97,7 @@ abstract class MLModel(conf: Configuration, _ctx: TaskContext = null) {
   def setSavePath(conf: Configuration): this.type ={
     val path = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH)
     if (path != null)
-      psModels.values().foreach {case model: PSModel[_] =>
+      psModels.values().foreach {case model: PSModel =>
         if (model.needSave) model.setSavePath(path)
       }
     this
@@ -112,7 +111,7 @@ abstract class MLModel(conf: Configuration, _ctx: TaskContext = null) {
   def setLoadPath(conf: Configuration): this.type ={
     val path = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH)
     if (path != null)
-      psModels.values().foreach {case model: PSModel[_] =>
+      psModels.values().foreach {case model: PSModel =>
         if (model.needSave) model.setLoadPath(path)
       }
     this

@@ -21,9 +21,11 @@ import java.util
 import com.tencent.angel.ml.clustering.kmeans.KMeansModel._
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.math.TVector
 import com.tencent.angel.ml.math.vector.TIntDoubleVector
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
+import com.tencent.angel.protobuf.generated.MLProtos.RowType
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
@@ -46,10 +48,11 @@ class KMeansModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
   // Number of epoch
   private val epoch: Int = conf.getInt(MLConf.ML_EPOCH_NUM, MLConf.DEFAULT_ML_EPOCH_NUM)
   // Centers pulled to local worker
-  var lcCenters : util.List[TIntDoubleVector] = new util.ArrayList[TIntDoubleVector]()
+  var lcCenters:util.List[TVector]  = new util.ArrayList[TVector]()
 
   // Reference for centers matrix on PS server
-  val centers = new PSModel[TIntDoubleVector](KMEANS_CENTERS_MAT, K, feaNum).setAverage(true)
+  val centers = new PSModel(KMEANS_CENTERS_MAT, K, feaNum).setAverage(true).setRowType(RowType.T_DOUBLE_SPARSE)
+
   addPSModel(KMEANS_CENTERS_MAT, centers)
   setSavePath(conf)
   setLoadPath(conf)

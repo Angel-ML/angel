@@ -169,9 +169,9 @@ public abstract class AngelClient implements AngelClientInterface {
       throw new AngelException("parameter servers are not started, you must execute startPSServer first!!");
     }
 
-    Map<String, PSModel<?>> psModels = model.getPSModels();
+    Map<String, PSModel> psModels = model.getPSModels();
 
-    for (Map.Entry<String, PSModel<?>> entry: psModels.entrySet()) {
+    for (Map.Entry<String, PSModel> entry: psModels.entrySet()) {
       addMatrix(entry.getValue().getContext());
     }
     
@@ -190,9 +190,9 @@ public abstract class AngelClient implements AngelClientInterface {
     }
 
     SaveRequest.Builder builder = SaveRequest.newBuilder();
-    Map<String, PSModel<?>> psModels = model.getPSModels();
+    Map<String, PSModel> psModels = model.getPSModels();
 
-    for (Map.Entry<String, PSModel<?>> entry: psModels.entrySet()) {
+    for (Map.Entry<String, PSModel> entry: psModels.entrySet()) {
       MatrixContext context = entry.getValue().getContext();
       String savePath = context.getAttributes().get(MatrixConf.MATRIX_SAVE_PATH);
       if(savePath != null) {

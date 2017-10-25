@@ -4,14 +4,13 @@ import com.tencent.angel.conf.AngelConf._
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.conf.MLConf._
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.DenseIntVector
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
+import com.tencent.angel.ml.warplda.LDAModel._
+import com.tencent.angel.protobuf.generated.MLProtos.RowType
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
-import com.tencent.angel.ml.warplda.LDAModel._
-import com.tencent.angel.protobuf.generated.MLProtos.RowType
 /**
   * The parameters of LDA model.
   */
@@ -72,11 +71,11 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
 
   // Initializing model matrices
 
-  val wtMat = PSModel[DenseIntVector](WORD_TOPIC_MAT, V, K, Math.max(1, V / psNum), K)
+  val wtMat = PSModel(WORD_TOPIC_MAT, V, K, Math.max(1, V / psNum), K)
     .setRowType(RowType.T_INT_DENSE)
     .setOplogType("SPARSE_INT")
 
-  val tMat = PSModel[DenseIntVector](TOPIC_MAT, 1, K, 1, K)
+  val tMat = PSModel(TOPIC_MAT, 1, K, 1, K)
     .setRowType(RowType.T_INT_DENSE)
     .setOplogType("DENSE_INT")
     .setNeedSave(false)
