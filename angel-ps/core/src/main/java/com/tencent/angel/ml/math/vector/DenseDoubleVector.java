@@ -542,6 +542,13 @@ public class DenseDoubleVector extends TIntDoubleVector {
     return norm;
   }
 
+  @Override public double norm() {
+    double norm = 0.0;
+    for (int i = 0; i < dim; i++)
+      norm += Math.abs(values[i]);
+    return norm;
+  }
+
   @Override
   public TIntDoubleVector times(double x) {
     DenseDoubleVector vector = new DenseDoubleVector(this.dim);

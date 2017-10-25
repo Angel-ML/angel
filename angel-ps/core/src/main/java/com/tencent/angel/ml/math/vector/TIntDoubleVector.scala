@@ -58,12 +58,6 @@ abstract class TIntDoubleVector() extends TDoubleVector {
     */
   def set(index: Int, value: Double)
 
-  /**
-    * Get square norm value
-    *
-    * @return square norm value
-    */
-  def squaredNorm: Double
 
   /**
     * Clone vector

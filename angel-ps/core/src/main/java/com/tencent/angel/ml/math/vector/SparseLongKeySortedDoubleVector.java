@@ -245,6 +245,17 @@ public class SparseLongKeySortedDoubleVector extends TLongDoubleVector {
     return norm;
   }
 
+  @Override public double norm() {
+    if(values == null) {
+      return 0.0;
+    }
+
+    double norm = 0.0;
+    for (int i = 0; i < values.length; i++)
+      norm += Math.abs(values[i]);
+    return norm;
+  }
+
   @Override
   public TLongDoubleVector times(double x) {
     throw new UnsupportedOperationException("Unsupportted operation");

@@ -232,6 +232,17 @@ public class SparseDoubleSortedVector extends TIntDoubleVector {
     return norm;
   }
 
+  @Override public double norm() {
+    if (values == null) {
+      return 0.0;
+    }
+
+    double norm = 0.0;
+    for (int i = 0; i < values.length; i++)
+      norm += Math.abs(values[i]);
+    return norm;
+  }
+
   @Override public TIntDoubleVector times(double x) {
     SparseDoubleSortedVector vector = this.clone();
     for (int i = 0; i < vector.nnz; i++)

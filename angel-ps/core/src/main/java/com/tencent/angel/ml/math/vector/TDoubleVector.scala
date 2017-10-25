@@ -19,4 +19,8 @@ abstract class TDoubleVector extends TVector{
   def set(index: Int, value: Double):Unit = ???
 
   def set(index: Long, value: Double):Unit = ???
+
+  def squaredNorm: Double
+
+  def norm(): Double
 }

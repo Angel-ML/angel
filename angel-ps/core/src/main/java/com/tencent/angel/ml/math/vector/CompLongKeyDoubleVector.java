@@ -282,6 +282,43 @@ public abstract class CompLongKeyDoubleVector extends TLongDoubleVector {
     }
   }
 
+  class NormOp extends RecursiveTask<Double> {
+    private final TLongDoubleVector[] splits;
+    private final int startPos;
+    private final int endPos;
+
+    public NormOp(TLongDoubleVector[] splits, int startPos, int endPos) {
+      this.splits = splits;
+      this.startPos = startPos;
+      this.endPos = endPos;
+    }
+
+    @Override protected Double compute() {
+      if (endPos <= startPos) {
+        return 0.0;
+      }
+      if (endPos - startPos == 1) {
+        if (splits[startPos] != null) {
+          return splits[startPos].norm();
+        } else {
+          return 0.0;
+        }
+      } else {
+        int middle = (startPos + endPos) / 2;
+        NormOp opLeft = new NormOp(splits, startPos, middle);
+        NormOp opRight = new NormOp(splits, middle, endPos);
+        invokeAll(opLeft, opRight);
+
+        try {
+          return opLeft.get() + opRight.get();
+        } catch (InterruptedException | ExecutionException e) {
+          LOG.error("NNZCounterOp failed " + e.getMessage());
+          return 0.0;
+        }
+      }
+    }
+  }
+
   class SumOp extends RecursiveTask<Double> {
     private final TLongDoubleVector[] splits;
     private final int startPos;
@@ -741,6 +778,12 @@ public abstract class CompLongKeyDoubleVector extends TLongDoubleVector {
 
   @Override public double squaredNorm() {
     SquaredNormOp op = new SquaredNormOp(vectors, 0, splitNum);
+    MatrixOpExecutors.execute(op);
+    return op.join();
+  }
+
+  @Override public double norm() {
+    NormOp op = new NormOp(vectors, 0, splitNum);
     MatrixOpExecutors.execute(op);
     return op.join();
   }

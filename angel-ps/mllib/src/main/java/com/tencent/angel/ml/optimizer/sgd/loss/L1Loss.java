@@ -42,9 +42,7 @@ public abstract class L1Loss implements Loss {
   public double getReg(TDoubleVector w) {
     double reg = 0.0;
     if (isL1Reg()) {
-      for (int i = 0; i < w.getDimension(); i++) {
-        reg += Math.abs(w.get(i));
-      }
+      reg = w.norm();
     }
     return getRegParam() * reg;
   }
