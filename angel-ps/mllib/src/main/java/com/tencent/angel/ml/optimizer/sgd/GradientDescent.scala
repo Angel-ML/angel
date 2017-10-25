@@ -39,7 +39,7 @@ object GradientDescent {
                                       batchNum: Int): (Double, baseT) = {
 
     //Pull model from PS Server
-    val w = wM.getRow(0)
+    val w = wM.getRow(0).asInstanceOf[baseT]
     var b: Option[Double] = intercept.map(_.getRow(0).asInstanceOf[baseT].get(0))
     var totalLoss = 0.0
 
@@ -109,7 +109,7 @@ object GradientDescent {
     intercept.map(_.syncClock())
 
 
-    (totalLoss , w.asInstanceOf[baseT])
+    (totalLoss , w)
   }
 
   def L2Loss(loss: Loss, w: baseT, grad: baseT): Unit = {
