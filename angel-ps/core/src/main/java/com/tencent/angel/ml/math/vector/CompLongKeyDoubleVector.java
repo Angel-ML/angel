@@ -494,8 +494,11 @@ public abstract class CompLongKeyDoubleVector extends TLongDoubleVector {
       return plusBy((SparseDummyLongKeyVector) other);
     } else if (other instanceof SparseLongKeySortedDoubleVector) {
       return plusBy((SparseLongKeySortedDoubleVector) other);
+    } else if (other instanceof  SparseDummyVector) {
+      return plusBy((SparseDummyVector) other);
+    } else if (other instanceof SparseDoubleSortedVector) {
+      return plusBy((SparseDoubleSortedVector) other);
     }
-
     throw new UnsupportedOperationException(
       "Unsupport operation: " + this.getClass().getName() + " plusBy " + other.getClass()
         .getName());
@@ -519,6 +522,15 @@ public abstract class CompLongKeyDoubleVector extends TLongDoubleVector {
     return this;
   }
 
+  private TVector plusBy(SparseDoubleSortedVector other) {
+    int [] indexes = other.getIndices();
+    double [] values = other.getValues();
+    for(int i = 0; i < indexes.length; i++) {
+      plusBy(indexes[i], values[i]);
+    }
+    return this;
+  }
+
   private TVector plusBy(SparseLongKeySortedDoubleVector other) {
     long [] indexes = other.getIndexes();
     double [] values = other.getValues();
@@ -536,6 +548,15 @@ public abstract class CompLongKeyDoubleVector extends TLongDoubleVector {
     return this;
   }
 
+  private TVector plusBy(SparseDummyVector other) {
+    int [] indexes = other.getIndices();
+    for(int i = 0; i < indexes.length; i++) {
+      plusBy(indexes[i], 1);
+    }
+    return this;
+  }
+
+
   @Override public TVector plusBy(TAbstractVector other, double x) {
     if (other instanceof CompLongKeyDoubleVector) {
       return plusBy((CompLongKeyDoubleVector) other, x);
@@ -545,6 +566,10 @@ public abstract class CompLongKeyDoubleVector extends TLongDoubleVector {
       return plusBy((SparseDummyLongKeyVector) other, x);
     } else if (other instanceof SparseLongKeySortedDoubleVector) {
       return plusBy((SparseLongKeySortedDoubleVector) other, x);
+    } else if (other instanceof  SparseDummyVector) {
+      return plusBy((SparseDummyVector) other, x);
+    } else if (other instanceof SparseDoubleSortedVector) {
+      return plusBy((SparseDoubleSortedVector) other, x);
     }
 
     throw new UnsupportedOperationException(
@@ -579,6 +604,15 @@ public abstract class CompLongKeyDoubleVector extends TLongDoubleVector {
     return this;
   }
 
+  private TVector plusBy(SparseDoubleSortedVector other, double x) {
+    int [] indexes = other.getIndices();
+    double [] values = other.getValues();
+    for(int i = 0; i < indexes.length; i++) {
+      plusBy(indexes[i], values[i] * x);
+    }
+    return this;
+  }
+
   private TVector plusBy(SparseDummyLongKeyVector other, double x) {
     long [] indexes = other.getIndices();
     for(int i = 0; i < indexes.length; i++) {
@@ -587,6 +621,13 @@ public abstract class CompLongKeyDoubleVector extends TLongDoubleVector {
     return this;
   }
 
+  private TVector plusBy(SparseDummyVector other, double x) {
+    int [] indexes = other.getIndices();
+    for(int i = 0; i < indexes.length; i++) {
+      plusBy(indexes[i], x);
+    }
+    return this;
+  }
 
   @Override public TVector plus(TAbstractVector other) {
     throw new UnsupportedOperationException("Unsupport operation");
@@ -605,6 +646,10 @@ public abstract class CompLongKeyDoubleVector extends TLongDoubleVector {
       return dot((SparseDummyLongKeyVector) other);
     } else if (other instanceof SparseLongKeySortedDoubleVector) {
       return dot((SparseLongKeySortedDoubleVector) other);
+    } else if (other instanceof  SparseDummyVector) {
+      return dot((SparseDummyVector) other);
+    } else if (other instanceof SparseDoubleSortedVector) {
+      return dot((SparseDoubleSortedVector) other);
     }
 
     throw new UnsupportedOperationException(
@@ -642,6 +687,25 @@ public abstract class CompLongKeyDoubleVector extends TLongDoubleVector {
   private double dot(SparseDummyLongKeyVector other) {
     double dotValue = 0.0;
     long [] indexes = other.getIndices();
+    for(int i = 0; i < indexes.length; i++) {
+      dotValue += get(indexes[i]);
+    }
+    return dotValue;
+  }
+
+  private double dot(SparseDoubleSortedVector other) {
+    double dotValue = 0.0;
+    int [] indexes = other.getIndices();
+    double [] values = other.getValues();
+    for(int i = 0; i < indexes.length; i++) {
+      dotValue += get(indexes[i]) * values[i];
+    }
+    return dotValue;
+  }
+
+  private double dot(SparseDummyVector other) {
+    double dotValue = 0.0;
+    int [] indexes = other.getIndices();
     for(int i = 0; i < indexes.length; i++) {
       dotValue += get(indexes[i]);
     }

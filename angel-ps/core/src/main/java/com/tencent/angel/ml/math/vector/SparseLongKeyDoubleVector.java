@@ -111,6 +111,10 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector {
       return plusBy((SparseDoubleSortedVector) other);
     else if (other instanceof SparseLongKeySortedDoubleVector)
       return plusBy((SparseLongKeySortedDoubleVector) other);
+    else if (other instanceof SparseDummyVector)
+      return plusBy((SparseDummyVector) other);
+    else if (other instanceof SparseDummyLongKeyVector)
+      return plusBy((SparseDummyLongKeyVector) other);
     throw new UnsupportedOperationException(
       "Unsupportted operation: " + this.getClass().getName() + " plusBy " + other.getClass()
         .getName());
@@ -167,6 +171,26 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector {
     return this;
   }
 
+  private SparseLongKeyDoubleVector plusBy(SparseDummyVector other) {
+    assert dim == other.getDimension();
+    int [] indexes = other.getIndices();
+    for(int i = 0; i < indexes.length; i++) {
+      indexToValueMap.addTo(indexes[i], 1);
+    }
+
+    return this;
+  }
+
+  private SparseLongKeyDoubleVector plusBy(SparseDummyLongKeyVector other) {
+    assert dim == other.getDimension();
+    long [] indexes = other.getIndices();
+    for(int i = 0; i < indexes.length; i++) {
+      indexToValueMap.addTo(indexes[i], 1);
+    }
+
+    return this;
+  }
+
   private double sum(SparseLongKeyDoubleVector row) {
     double [] data = row.getValues();
     double ret = 0.0;
@@ -189,7 +213,10 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector {
       return plusBy((SparseDoubleSortedVector) other, x);
     else if (other instanceof SparseLongKeySortedDoubleVector)
       return plusBy((SparseLongKeySortedDoubleVector) other, x);
-
+    else if (other instanceof SparseDummyVector)
+      return plusBy((SparseDummyVector) other, x);
+    else if (other instanceof SparseDummyLongKeyVector)
+      return plusBy((SparseDummyLongKeyVector) other, x);
     throw new UnsupportedOperationException(
       "Unsupportted operation: " + this.getClass().getName() + " plusBy " + other.getClass()
         .getName());
@@ -231,6 +258,26 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector {
     double [] values = other.getValues();
     for(int i = 0; i < indexes.length; i++) {
       indexToValueMap.addTo(indexes[i], values[i] * x);
+    }
+
+    return this;
+  }
+
+  private SparseLongKeyDoubleVector plusBy(SparseDummyVector other, double x) {
+    assert dim == other.getDimension();
+    int [] indexes = other.getIndices();
+    for(int i = 0; i < indexes.length; i++) {
+      indexToValueMap.addTo(indexes[i], x);
+    }
+
+    return this;
+  }
+
+  private SparseLongKeyDoubleVector plusBy(SparseDummyLongKeyVector other, double x) {
+    assert dim == other.getDimension();
+    long [] indexes = other.getIndices();
+    for(int i = 0; i < indexes.length; i++) {
+      indexToValueMap.addTo(indexes[i], x);
     }
 
     return this;
@@ -306,7 +353,10 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector {
       return dot((SparseDoubleSortedVector) other);
     else if (other instanceof SparseLongKeySortedDoubleVector)
       return dot((SparseLongKeySortedDoubleVector) other);
-
+    else if (other instanceof SparseDummyVector)
+      return dot((SparseDummyVector) other);
+    else if (other instanceof SparseDummyLongKeyVector)
+      return dot((SparseDummyLongKeyVector) other);
     throw new UnsupportedOperationException(
       "Unsupportted operation: " + this.getClass().getName() + " dot " + other.getClass()
         .getName());
@@ -348,6 +398,28 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector {
     double ret = 0.0;
     for(int i = 0; i < indexes.length; i++) {
       ret += values[i] * get(indexes[i]);
+    }
+
+    return ret;
+  }
+
+  private double dot(SparseDummyVector other) {
+    assert dim == other.getDimension();
+    int [] indexes = other.getIndices();
+    double ret = 0.0;
+    for(int i = 0; i < indexes.length; i++) {
+      ret += get(indexes[i]);
+    }
+
+    return ret;
+  }
+
+  private double dot(SparseDummyLongKeyVector other) {
+    assert dim == other.getDimension();
+    long [] indexes = other.getIndices();
+    double ret = 0.0;
+    for(int i = 0; i < indexes.length; i++) {
+      ret += get(indexes[i]);
     }
 
     return ret;
