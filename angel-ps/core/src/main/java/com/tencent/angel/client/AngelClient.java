@@ -554,6 +554,11 @@ public abstract class AngelClient implements AngelClientInterface {
   }
 
   protected void setInputDirectory() throws IOException {
+    boolean isUseDummy = conf.getBoolean(AngelConf.ANGEL_AM_USE_DUMMY_DATASPLITER, AngelConf.DEFAULT_ANGEL_AM_USE_DUMMY_DATASPLITER);
+    if(isUseDummy) {
+      return;
+    }
+
     String actionType = conf.get(AngelConf.ANGEL_ACTION_TYPE, AngelConf.DEFAULT_ANGEL_ACTION_TYPE);
     RunningMode runningMode = RunningMode.valueOf(conf.get(AngelConf.ANGEL_RUNNING_MODE, AngelConf.DEFAULT_ANGEL_RUNNING_MODE));
     String path = null;

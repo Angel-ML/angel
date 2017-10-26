@@ -46,6 +46,11 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>angel-ps-tools</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>angel-ps-psf</artifactId>
       <version>${project.version}</version>
     </dependency>
