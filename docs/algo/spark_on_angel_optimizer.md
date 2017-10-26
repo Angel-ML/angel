@@ -50,9 +50,9 @@ Spark mllib中Logistic Regression算法做了很多数据预处理的逻辑，�
 
 | item   |  Spark  |  Spark on Angel  |   加速比例   |
 |---|---|---|---|
-|SGD LR (step_size=0.05,maxIter=100) | 2.9 hour   | 2.1 hour   | 27.6%  |
-|L-BFGS LR (m=10, maxIter=50)        | 2 hour     | 1.3 hour   | 35.0%  |
-|OWL-QN LR (m=10, maxIter=50)        | 3.3 hour   | 1.9 hour   | 42.4%  |
+|SGD LR (step_size=0.05,maxIter=100) | 2.9 hour   | 1.5 hour   | 48.3%  |
+|L-BFGS LR (m=10, maxIter=50)        | 2 hour     | 1.0 hour   | 50.0%  |
+|OWL-QN LR (m=10, maxIter=50)        | 3.3 hour   | 1.4 hour   | 57.6%  |
 
 如上数据所示，Spark on Angel相较于Spark在训练LR模型时有不同程度的加速；对于越复杂的模型，其加速的比例越大。
 同时值得强调的是，Spark on Angel的算法逻辑实现与纯Spark的实现没有太多的差别，大大方便了广大Spark用户。
