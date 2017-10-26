@@ -51,7 +51,7 @@ class KMeansModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
   var lcCenters:util.List[TVector]  = new util.ArrayList[TVector]()
 
   // Reference for centers matrix on PS server
-  val centers = new PSModel(KMEANS_CENTERS_MAT, K, feaNum).setAverage(true).setRowType(RowType.T_DOUBLE_SPARSE)
+  val centers = new PSModel(KMEANS_CENTERS_MAT, K, feaNum).setAverage(true).setRowType(RowType.T_DOUBLE_DENSE)
 
   addPSModel(KMEANS_CENTERS_MAT, centers)
   setSavePath(conf)
