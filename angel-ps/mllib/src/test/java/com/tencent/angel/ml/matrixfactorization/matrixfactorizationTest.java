@@ -69,7 +69,7 @@ public class matrixfactorizationTest {
 
       // Set MF algorithm parameters
       conf.set(MLConf.ML_MF_RANK(), "200");
-      conf.set(MLConf.ML_EPOCH_NUM(), "20");
+      conf.set(MLConf.ML_EPOCH_NUM(), "10");
       conf.set(MLConf.ML_MF_ROW_BATCH_NUM(), "2");
       conf.set(MLConf.ML_MF_ITEM_NUM(), "1683");
       conf.set(MLConf.ML_MF_LAMBDA(), "0.01");
