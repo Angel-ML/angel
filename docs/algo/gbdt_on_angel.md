@@ -100,7 +100,10 @@ GBDT on Angel支持“libsvm”、“dummy”两种数据格式，分别如下�
 	* ml.gbdt.tree.depth：树的最大高度
 	* ml.gbdt.split.num：每种特征的梯度直方图的大小
 	* ml.learn.rate：学习速率
-	* ml.validate.ratio：每次validation的样本比率，设为0时不做validation。
+	* ml.validate.ratio：每次validation的样本比率，设为0时不做validation
+	* ml.gbdt.sample.ratio：特征下采样的比率，默认为1
+	* ml.gbdt.server.split：两阶段分裂算法开关，默认为true
+	* ml.compress.bytes：低精度压缩，每个浮点数的大小，可设为[1,8]
 
 * 输入输出参数
 	* angel.train.data.path：训练数据的输入路径
