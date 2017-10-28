@@ -52,7 +52,7 @@ The LR algorithm supports three types of models: DoubleDense, DoubleSparse, Doub
 		* Description: DoubleSparse type model is suitable for sparse data; model saved as map, where K is feature ID and V is feature value; range of K same as range of Int
 	* DoubleSparseLongKey
 		* Parameters: -- ml.lr.model.type：T_DOUBLE_SPARSE_LONGKEY
-		* DoubleSparseLongKey type model is suitable for highly sparse data; model save as map, where K is feature ID and V is feature value; range of K same as range of Long
+		* DoubleSparseLongKey type model is suitable for highly sparse data; model saved as map, where K is feature ID and V is feature value; range of K same as range of Long
 
 ## 3. Execution & Performance
 
