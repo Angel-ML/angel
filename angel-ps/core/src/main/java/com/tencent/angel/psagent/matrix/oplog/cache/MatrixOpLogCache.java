@@ -526,6 +526,8 @@ public class MatrixOpLogCache {
         case T_FLOAT_SPARSE:
           return new SparseFloatMatrixOpLog(matrixId, enableFilter);
         case T_DOUBLE_SPARSE_LONGKEY:
+          return new SparseDoubleLongKeyMatrixOpLog(matrixId, enableFilter);
+        case T_DOUBLE_SPARSE_LONGKEY_COMPONENT:
           return new CompSparseDoubleLongKeyMatrixOpLog(matrixId, enableFilter);
         case T_DOUBLE_SPARSE_COMPONENT:
           return new CompSparseDoubleMatrixOpLog(matrixId, enableFilter);
@@ -550,7 +552,7 @@ public class MatrixOpLogCache {
         case SPARSE_FLOAT:
           return new SparseFloatMatrixOpLog(matrixId, enableFilter);
         case SPARSE_DOUBLE_LONGKEY:
-          return new CompSparseDoubleLongKeyMatrixOpLog(matrixId, enableFilter);
+          return new SparseDoubleLongKeyMatrixOpLog(matrixId, enableFilter);
         case COMPONENT_SPARSE_DOUBLE:
           return new CompSparseDoubleMatrixOpLog(matrixId, enableFilter);
         case COMPONENT_SPARSE_FLOAT:
