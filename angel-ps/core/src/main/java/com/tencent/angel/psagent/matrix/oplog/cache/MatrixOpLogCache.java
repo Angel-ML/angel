@@ -473,10 +473,6 @@ public class MatrixOpLogCache {
                 message.getType() == OpLogMessageType.CLOCK);
         VoidResult result = flushFuture.get();
         ((FutureResult<VoidResult>) messageToFutureMap.remove(message)).set(result);
-      } catch (Exception e) {
-        LOG.error("flush op " + message + " failed, ", e);
-        ((FutureResult<VoidResult>) messageToFutureMap.remove(message)).set(new VoidResult(
-            ResponseType.FAILED));
       } catch (Throwable e) {
         LOG.fatal("flush op " + message + " failed, ", e);
         PSAgentContext.get().getPsAgent().error("flush op " + message + " falied, " + e.getMessage());
