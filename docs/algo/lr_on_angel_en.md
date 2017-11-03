@@ -38,12 +38,21 @@ In each iteration, PS receives △w from all workers, add their average to w，o
 
 
 * Decaying learning rate    
-The learning rate decays along iterations as ![](../img/LR_lr_ecay.gif), where:   
+The learning rate decays along iterations as ![](../img/LR_lr_ecay.gif), where:
 	* α is the decay rate 
 	* T is the iteration/epoch
 
-
-
+* Model Type
+The LR algorithm supports three types of models: DoubleDense, DoubleSparse, DoubleSparseLongKey. Use `ml.lr.model.type` to configure. 
+	* DoubleDense
+		* Parameters: -- ml.lr.model.type: T_DOUBLE_DENSE
+		* Description: DoubleDense type model is suitable for dense data; model saved as array to save space; quick access and high performance
+	* DoubleSparse
+		* Parameters: -- ml.lr.model.type：T_DOUBLE_SPARSE
+		* Description: DoubleSparse type model is suitable for sparse data; model saved as map, where K is feature ID and V is feature value; range of K same as range of Int
+	* DoubleSparseLongKey
+		* Parameters: -- ml.lr.model.type：T_DOUBLE_SPARSE_LONGKEY
+		* DoubleSparseLongKey type model is suitable for highly sparse data; model saved as map, where K is feature ID and V is feature value; range of K same as range of Long
 
 ## 3. Execution & Performance
 
