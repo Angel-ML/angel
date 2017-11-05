@@ -44,35 +44,31 @@ Support both YARN mode and Local mode
 
 A simple example is shown below
 
-```Scala
+```java
+val w = PSVector.dense(dim)
+val sc = SparkSession.builder().getOrCreate().sparkContext
 
-   val points:RDD[Point] = _
+for (i <- 1 to ITERATIONS) {
+ val bcW = sc.broadcast(w.pull())
+ val totalG = PSVector.duplicate(w)
 
-   val wPS = PSVector.dense(DIM).fill(0.0)
-   val gradientPS = PSVector.dense(DIM).fill(0.0)
+ val tempRDD = trainData.mapPartitions { iter =>
+   val breezeW = new DenseVector(bcW.value)
 
-   for (i <- 1 to ITERATIONS) {
-     val totalG = gradientPS.toCache
+   val subG = iter.map { case (feat, label) =>
+     val brzData = new DenseVector[Double](feat.toArray)
+     val margin: Double = -1.0 * breezeW.dot(brzData)
+     val gradientMultiplier = (1.0 / (1.0 + math.exp(margin))) - label
+     val gradient = brzData * gradientMultiplier
+     gradient
+   }.reduce(_ + _)
+   totalG.increment(subG.toArray)
+   Iterator.empty
+ }
+ tempRDD.count()
+ w.toBreeze -= (totalG.toBreeze :* (1.0 / sampleNum))
+}
 
-   val trigger = points.mapPartitions { iter =>
-     val brzW = new DenseVector(wPS.pull())
-
-     val subG = iter.map { p =>
-       p.x * (1 / (1 + math.exp(-p.y * brzW.dot(p.x))) - 1) * p.y
-     }.reduce(_ + _)
-
-     totalG.push(subG.toArray())
-     Iterator.empty
-      }
-     trigger.count()
-
-     wPS.toBreeze += -1.0 * gradientPS.toBreeze
-     gradientPS.fill(0.0)
-   }
-
-   println("feature sum:" + wPS.pull())
-
-   gradientPS.delete()
-   wPS.delete()
-  }
+println(s"w: ${w.pull().mkString(" ")}")
 ```
+
