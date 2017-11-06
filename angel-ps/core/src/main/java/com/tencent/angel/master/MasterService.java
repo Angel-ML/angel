@@ -64,6 +64,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.hadoop.yarn.conf.YarnConfiguration;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -110,6 +111,9 @@ public class MasterService extends AbstractService implements MasterProtocol {
   /**host and port of the RPC server*/
   private volatile Location location;
 
+  /** Yarn web port */
+  private final int yarnNMWebPort;
+
   public MasterService(AMContext context) {
     super(MasterService.class.getName());
     this.context = context;
@@ -131,9 +135,26 @@ public class MasterService extends AbstractService implements MasterProtocol {
         conf.getLong(AngelConf.ANGEL_WORKER_HEARTBEAT_TIMEOUT_MS,
             AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_TIMEOUT_MS);
 
+    yarnNMWebPort = getYarnNMWebPort(conf);
+
     LOG.debug("psAgentTimeOutMS:" + psAgentTimeOutMS);
     LOG.debug("psTimeOutMS:" + psTimeOutMS);
     LOG.debug("workerTimeOutMS:" + workerTimeOutMS);
+  }
+
+  private int getYarnNMWebPort(Configuration conf) {
+    String nmWebAddr = conf.get(YarnConfiguration.NM_WEBAPP_ADDRESS, YarnConfiguration.DEFAULT_NM_WEBAPP_ADDRESS);
+    String [] addrItems = nmWebAddr.split(":");
+    if(addrItems.length == 2) {
+      try {
+        return Integer.valueOf(addrItems[1]);
+      } catch (Throwable x) {
+        LOG.error("can not get nm web port from " + nmWebAddr + ", just return default 8080");
+        return 8080;
+      }
+    } else {
+      return 8080;
+    }
   }
 
   @Override
@@ -427,7 +448,7 @@ public class MasterService extends AbstractService implements MasterProtocol {
     }
 
     return GetWorkerLogDirResponse.newBuilder().setLogDir(
-            "http://" + loc.getIp() + ":8080/node/containerlogs/"
+            "http://" + loc.getIp() + ":" + yarnNMWebPort + "/node/containerlogs/"
                     + container.getId() + "/angel/syslog/?start=0").build();
   }
 
