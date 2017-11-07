@@ -26,6 +26,7 @@ Once a Spark on Angel application has been packaged, it can be launched by the s
 
 The script is:
 
+```bash
 #! /bin/bash
 source ./spark-on-angel-env.sh
 $SPARK_HOME/bin/spark-submit \
@@ -43,7 +44,7 @@ $SPARK_HOME/bin/spark-submit \
     --executor-memory 4g \
     --class com.tencent.angel.spark.examples.ml.BreezeSGD \
     ./../lib/spark-on-angel-examples-${ANGEL_VERSION}.jar
-
+```
 
 ## Minimal Example of LR in Spark on Angel Verion
 
