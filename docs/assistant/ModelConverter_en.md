@@ -8,7 +8,7 @@
 
 Before conversion, Angel's binary model file has the following default design:
 
-* Each model has a source file "meta" that holds information of the model parameters and partitions, as well as the indexing information for each partition
+* Each model has a source file "meta" that holds information of the model parameters and partitions, as well as indexing information for each partition
 * There are multiple model files where each file holds data of one or more model partitions
 
 ## Format After Conversion (Plaintext)
@@ -27,13 +27,13 @@ rowIndex=0
 8:1.9413353447408782E-4
 ```
 
-## Convertor
+## Converter
 
-Currently, Angel supports two convertor modes: **stand-alone mode** and **distributed mode**. 
+Currently, Angel supports two converter modes: **stand-alone mode** and **distributed mode**. 
 
 ### 1. Stand-alone Mode
 
-Conversion is done on the machine that runs the script (typically, the machine that is used to submit the Angel job). In general, this mode is easy to use thus recommended. The submit command is shown below:
+Conversion is done on the machine that runs the script (typically, the gateway machine that is used to submit the Angel job). In general, this mode is easy to use thus is recommended. The submit command is shown below:
 
 ```bsh
 ./bin/angel-model-convert \
@@ -47,7 +47,7 @@ Conversion is done on the machine that runs the script (typically, the machine t
 
 Even though the stand-alone mode is easy to use, it is subject to the gateway machine's resource and can have poor performance due to the consumption of CPU and network IO, especially when the model is large. The distributed mode is provided to address this issue.
 
-The distributed mode starts an Angel job under the Yarn mode, where conversion is done within the worker, making use of Angel's distributed processing advantage. This mode puts only small pressure on the gateway machine and enhances speed. The submit command is shown below: 
+The distributed mode starts an Angel job under the Yarn mode, where conversion is done within the worker, taking advantage of Angel's distributed processing capability. This mode puts only small pressure on the gateway machine and improves speed. The submit command is shown below: 
 
 ```bsh
 ./bin/angel-submit \
@@ -70,7 +70,4 @@ The distributed mode starts an Angel job under the Yarn mode, where conversion i
 * angel.modelconverts.serde.class
 	* Serialization format of the model output lines
 	* **Note**: this parameter is not required; when unspecified, the default line format is "index:value"
-    * angel.app.submit.class 
-      Starting entry of Angel jobs, configured as com.tencent.angel.ml.toolkits.modelconverter.ModelConverterRunner
-
 
