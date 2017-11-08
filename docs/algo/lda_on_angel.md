@@ -66,10 +66,11 @@ F+LDA通过将概率公式进行了分解成两部分``$ C_{dk} \frac{C_{wk} + \
 
 ### 输入格式
 
-输入数据分为多行，每行是一个文档，每个文档由一系列的词id构成，词id之间由空格隔开
+输入数据分为多行，每行是一个文档，每个文档由文档id和一系列的词id构成，文档id和词id之间由'\t'符合
+相隔，词id之间由空格隔开
 
 ```math
-	wid_0 wid_1 ... wid_n 
+	doc_id '\t' wid_0 wid_1 ... wid_n 
 ```
 
 ### 参数
@@ -84,6 +85,8 @@ F+LDA通过将概率公式进行了分解成两部分``$ C_{dk} \frac{C_{wk} + \
   * ml.worker.thread.num：worker内部并行度
   * ml.lda.alpha: alpha
   * ml.lda.beta: beta
+  * save.doc.topic: 是否存储文档-话题矩阵
+  * save.word.topic: 是否存储词-话题矩阵
 
 ### 性能
 
