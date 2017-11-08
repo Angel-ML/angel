@@ -1,13 +1,30 @@
 # Spark on Angel Quick Start
 
-## Deployment Steps
-- Install Spark 
-- Unzip angel-\<version\>-bin.zip
-- Upload angel-\<version\>-bin dir to the HDFS path
-- Set SPARK_HOME, ANGEL_HOME, ANGEL_HDFS_HOME variables in angel-<version>-bin/bin/spark-on-angel-env.sh
+Spark on Angel supports Yarn and Local modes, allowing users to debug the applications on local. A Spark on Angel application is essentially a Spark application with one auxiliary application. Once an application has been successfully submitted, there will be two applications shown on Yarn: the Spark application and the Angel-PS application.
 
-## Running Examples
-- cd angel-\<version\>-bin/bin; ./SONA-example
+## Deployment Steps
+1. Install Spark
+2. Unzip angel-\<version\>-bin.zip
+3. Set `SPARK_HOME`, `ANGEL_HOME`, `ANGEL_HDFS_HOME` variables in angel-<version>-bin/bin/spark-on-angel-env.sh
+4. Upload angel-\<version\>-bin dir to the HDFS path
+
+## Submit a Spark on Angel Job
+Once a Spark on Angel application has been packaged, it can be launched by the spark-submit script; make sure to do the following:
+
+- source ./spark-on-angel-env.sh
+- set location for the jar: spark.ps.jars=$SONA_ANGEL_JARS and --jars $SONA_SPARK_JARS
+- set the Angel PS resource parameters: spark.ps.instance, spark.ps.cores, spark.ps.memory
+
+
+## Running Example (BreezeSGD)
+
+```bash
+#! /bin/bash
+- cd angel-<version>-bin/bin; 
+- ./SONA-example
+```
+
+The script is:
 
 ```bash
 #! /bin/bash
@@ -18,7 +35,7 @@ $SPARK_HOME/bin/spark-submit \
     --conf spark.ps.instances=10 \
     --conf spark.ps.cores=2 \
     --conf spark.ps.memory=6g \
-    --queue g_teg_angel.g_teg_angel-offline \
+    --queue g_teg_angel-offline \
     --jars $SONA_SPARK_JARS \
     --name "BreezeSGD-spark-on-angel" \
     --driver-memory 10g \
@@ -29,46 +46,31 @@ $SPARK_HOME/bin/spark-submit \
     ./../lib/spark-on-angel-examples-${ANGEL_VERSION}.jar
 ```
 
-## How to submit a Spark on Angel Job
-Spark on Angel job is essentially a Spark application. After a Spark on Angel application is bundled, it can be launched by the spark-submit script; however, there are a few differences：
-- source ./spark-on-angel-env.sh
-- set spark.ps.jars=$SONA_ANGEL_JARS and --jars $SONA_SPARK_JARS
-- spark.ps.instance，spark.ps.cores，spark.ps.memory are the resource-allocation variables for Angel PS
+## Minimal Example of LR in Spark on Angel Verion
 
-Once you have successfully submitted your job，YARN will show two applications: the Spark application and the Angel-PS application
+[Complete Code]()
 
-## Supported Modes
-Support both YARN mode and Local mode
+```scala
+   PSContext.getOrCreate(sc)
 
-## Example Code: Implementing Gradient Descent with Angel PS
+   val psW = PSVector.dense(dim)
+   val psG = PSVector.duplicate(psW)
 
-A simple example is shown below
+   println("Initial psW: " + psW.dimension)
 
-```java
-val w = PSVector.dense(dim)
-val sc = SparkSession.builder().getOrCreate().sparkContext
+   for (i <- 1 to ITERATIONS) {
+     println("On iteration " + i)
 
-for (i <- 1 to ITERATIONS) {
- val bcW = sc.broadcast(w.pull())
- val totalG = PSVector.duplicate(w)
+     val localW = new DenseVector(psW.pull())
 
- val tempRDD = trainData.mapPartitions { iter =>
-   val breezeW = new DenseVector(bcW.value)
+     trainData.map { case (x, label) =>
+       val g = -label * (1 - 1.0 / (1.0 + math.exp(-label * localW.dot(x)))) * x
+       psG.increment(g.toArray)
+     }.count()
 
-   val subG = iter.map { case (feat, label) =>
-     val brzData = new DenseVector[Double](feat.toArray)
-     val margin: Double = -1.0 * breezeW.dot(brzData)
-     val gradientMultiplier = (1.0 / (1.0 + math.exp(margin))) - label
-     val gradient = brzData * gradientMultiplier
-     gradient
-   }.reduce(_ + _)
-   totalG.increment(subG.toArray)
-   Iterator.empty
- }
- tempRDD.count()
- w.toBreeze -= (totalG.toBreeze :* (1.0 / sampleNum))
-}
+     psW.toBreeze -= (psG.toBreeze :* (1.0 / sampleNum))
+     psG.zero()
+    }
 
-println(s"w: ${w.pull().mkString(" ")}")
+   println(s"Final psW: ${psW.pull().mkString(" ")}")
 ```
-
