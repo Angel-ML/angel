@@ -49,7 +49,7 @@ $SPARK_HOME/bin/spark-submit \
 
 ##  Spark on Angel版本的最简LR
 
-[完整代码]()
+[完整代码](https://github.com/Tencent/angel/blob/branch-1.3.0/spark-on-angel/examples/src/main/scala/com/tencent/angel/spark/examples/ml/AngelLR.scala)
 
 ```scala
    PSContext.getOrCreate(sc)
