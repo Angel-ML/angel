@@ -51,7 +51,7 @@ public abstract class VAUpdateFunc extends UpdateFunc {
       if (Utils.withinPart(partParam.getPartKey(), new int[]{rowId})){
         ServerRow row = part.getRow(rowId);
         if (row != null) {
-          update(row, va.getArraySlice());
+          update(row, va.getArray());
         }
       }
     }

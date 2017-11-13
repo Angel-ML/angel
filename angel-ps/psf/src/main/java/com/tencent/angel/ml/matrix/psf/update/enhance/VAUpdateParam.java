@@ -31,17 +31,12 @@ public class VAUpdateParam extends UpdateParam {
 
   public static class VAPartitionUpdateParam extends PartitionUpdateParam {
     private int rowId;
-    private int start;
-    private int end;
     private double[] array;
-    private double[] arraySlice;
 
     public VAPartitionUpdateParam(
-        int matrixId, PartitionKey partKey, int rowId, int start, int end, double[] array) {
+        int matrixId, PartitionKey partKey, int rowId, double[] array) {
       super(matrixId, partKey, false);
       this.rowId = rowId;
-      this.start = start;
-      this.end = end;
       this.array = array;
     }
 
@@ -53,8 +48,8 @@ public class VAUpdateParam extends UpdateParam {
     public void serialize(ByteBuf buf) {
       super.serialize(buf);
       buf.writeInt(rowId);
-      buf.writeInt(end - start);
-      for (int i = start; i < end; i++) {
+      buf.writeInt(array.length);
+      for (int i = 0; i < array.length; i++) {
         buf.writeDouble(array[i]);
       }
     }
@@ -64,23 +59,23 @@ public class VAUpdateParam extends UpdateParam {
       super.deserialize(buf);
       rowId = buf.readInt();
       int length = buf.readInt();
-      arraySlice = new double[length];
+      array = new double[length];
       for (int i = 0; i < length; i++) {
-        arraySlice[i] = buf.readDouble();
+        array[i] = buf.readDouble();
       }
     }
 
     @Override
     public int bufferLen() {
-      return super.bufferLen() + 8 + (end - start) * 8;
+      return super.bufferLen() + 8 + array.length * 8;
     }
 
     public int getRowId() {
       return rowId;
     }
 
-    public double[] getArraySlice() {
-      return arraySlice;
+    public double[] getArray() {
+      return array;
     }
 
     @Override
@@ -93,12 +88,10 @@ public class VAUpdateParam extends UpdateParam {
   private final int rowId;
   private final double[] array;
 
-
   public VAUpdateParam(int matrixId, int rowId, double[] array) {
     super(matrixId, false);
     this.rowId = rowId;
     this.array = array;
-
   }
 
   @Override
@@ -110,8 +103,14 @@ public class VAUpdateParam extends UpdateParam {
     int size = partList.size();
     List<PartitionUpdateParam> partParams = new ArrayList<PartitionUpdateParam>(size);
     for (PartitionKey part : partList) {
-      partParams.add(new VAPartitionUpdateParam(matrixId, part, rowId,
-        (int)part.getStartCol(), (int)part.getEndCol(), array));
+      long colNum = part.getEndCol() - part.getStartCol();
+
+      double[] sliceArray = new double[(int)colNum];
+      for (int i = 0; i < colNum; i++) {
+        sliceArray[i] = array[(int)(part.getStartCol() + i)];
+      }
+
+      partParams.add(new VAPartitionUpdateParam(matrixId, part, rowId, sliceArray));
     }
 
     return partParams;
