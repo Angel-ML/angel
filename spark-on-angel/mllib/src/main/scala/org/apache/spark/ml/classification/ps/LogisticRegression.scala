@@ -26,8 +26,9 @@
 package org.apache.spark.ml.classification.ps
 
 import breeze.optimize.{CachedDiffFunction, DiffFunction, LBFGS => BreezeLBFGS}
+
 import com.tencent.angel.spark.models.vector.PSVector
-import com.tencent.angel.spark.models.vector.enhanced.BreezePSVector
+import com.tencent.angel.spark.models.vector.enhanced.{BreezePSVector, PullMan, PushMan}
 import com.tencent.angel.spark.ml.optimize.OWLQN
 import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkException
@@ -50,7 +51,6 @@ import org.apache.spark.sql.types.{DataType, DoubleType, StructType}
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.VersionUtils
-
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -344,31 +344,47 @@ class LogisticRegression @Since("1.2.0") (
     instr.logParams(regParam, elasticNetParam, standardization, threshold,
       maxIter, tol, fitIntercept)
 
-    val instanceSize = rawInstances.first().features.size
-    val psVector = PSVector.dense(instanceSize)
+    val dim = rawInstances.first().features.size
 
-    val (summarizer, labelSummarizer) = {
-      val seqOp = (c: (PSMultivariateOnlineSummarizer, MultiClassSummarizer),
-        instance: Instance) =>
-          (c._1.add(instance.features, instance.weight), c._2.add(instance.label, instance.weight))
-
-      val combOp = (c1: (PSMultivariateOnlineSummarizer, MultiClassSummarizer),
-        c2: (PSMultivariateOnlineSummarizer, MultiClassSummarizer)) =>
-          (c1._1.merge(c2._1), c1._2.merge(c2._2))
-
-      rawInstances.treeAggregate(
-        new PSMultivariateOnlineSummarizer(psVector), new MultiClassSummarizer
-      )(seqOp, combOp)
+    val summarizer = {
+      val seqOp = (c: PSMultivariateOnlineSummarizer, instance: Instance) =>
+        c.add(instance.features, instance.weight)
+      val combOp = (c1: PSMultivariateOnlineSummarizer, c2: PSMultivariateOnlineSummarizer) =>
+        c1.merge(c2)
+      val numSlice = math.ceil(dim / 10000).toInt + 1
+      import org.apache.spark.ml.rdd.RDDFunctions._
+      rawInstances.sliceAggregate(new PSMultivariateOnlineSummarizer)(seqOp, combOp, numSlice)
     }
 
-    val featureStdKey = summarizer.std
-    val featureStd = featureStdKey.pull()
+    val labelSummarizer = {
+      val seqOp = (summary: MultiClassSummarizer, instance: Instance) =>
+        summary.add(instance.label, instance.weight)
+      val combOp = (c1: MultiClassSummarizer, c2: MultiClassSummarizer) => c1.merge(c2)
+      rawInstances.treeAggregate(new MultiClassSummarizer)(seqOp, combOp)
+    }
+
+    val featureStd = summarizer.std.toArray
+    val featureStdBC = dataset.sparkSession.sparkContext.broadcast(featureStd)
+
     val instances = rawInstances.map { case Instance(label, weight, features) =>
-      val featStd = featureStdKey.pull()
-      val feat = (0 until features.size).map { i =>
-        if (featStd(i) != 0) features(i) / featStd(i) else features(i)
+      val featStd = featureStdBC.value
+      features match {
+        case sparse: SparseVector =>
+          (0 until sparse.numActives).foreach { i =>
+            val index = sparse.indices(i)
+            val value = sparse.values(i)
+            if (featStd(index) > 1e-6) {
+              sparse.values(i) = value / featStd(index)
+            }
+          }
+        case dense: DenseVector =>
+          (0 until dense.size).foreach { i =>
+            if (featStd(i) > 1e-6) {
+              dense.values(i) = dense.values(i) / featStd(i)
+            }
+          }
       }
-      Instance(label, weight, Vectors.dense(feat.toArray))
+      Instance(label, weight, features)
     }
     instances.cache()
     instances.count()
@@ -376,7 +392,7 @@ class LogisticRegression @Since("1.2.0") (
 
     val histogram = labelSummarizer.histogram
     val numInvalid = labelSummarizer.countInvalid
-    val numFeatures = summarizer.dimension
+    val numFeatures = dim
     val numFeaturesPlusIntercept = if (getFitIntercept) numFeatures + 1 else numFeatures
 
     val numClasses = MetadataUtils.getNumClasses(dataset.schema($(labelCol))) match {
@@ -441,7 +457,7 @@ class LogisticRegression @Since("1.2.0") (
             s"dangerous ground, so the algorithm may not converge.")
         }
 
-        val featuresMean = summarizer.mean.pull()
+        val featuresMean = summarizer.mean.toArray
         if (!$(fitIntercept) && (0 until numFeatures).exists { i =>
           featureStd(i) == 0.0 && featuresMean(i) != 0.0 }) {
           logWarning("Fitting LogisticRegressionModel without intercept on dataset with " +
@@ -463,10 +479,10 @@ class LogisticRegression @Since("1.2.0") (
           featureStd.flatMap(x => Array.fill[Double](numCoefficientSets)(x))
         }
 
-        val flatFeatureStdKey = PSVector.dense(coefficientSize)
-        flatFeatureStdKey.toCache.push(flatFeatureStd)
+        val flatFeatureStdKey = PSVector.dense(coefficientSize, 100)
+        flatFeatureStdKey.push(flatFeatureStd)
 
-        val costFun = new LogisticCostFun(instances, numClasses, summarizer.totalWeight,
+        val costFun = new LogisticCostFun(instances, numClasses, summarizer.totalWeightSum,
           flatFeatureStdKey, $(fitIntercept), $(standardization), regParamL2,
           multinomial = isMultinomial)
 
@@ -586,7 +602,7 @@ class LogisticRegression @Since("1.2.0") (
         }
 
         val initCoefPSKey = PSVector.duplicate(flatFeatureStdKey)
-        initCoefPSKey.toCache.push(initialCoefWithInterceptMatrix.toArray)
+        initCoefPSKey.push(initialCoefWithInterceptMatrix.toArray)
 
         val states = optimizer.iterations(new CachedDiffFunction(costFun), initCoefPSKey.toBreeze)
 
@@ -601,6 +617,7 @@ class LogisticRegression @Since("1.2.0") (
           state = states.next()
           arrayBuilder += state.adjustedValue
         }
+        println(s"${${maxIter}} loss: ${arrayBuilder.result().mkString(" ")}")
 
         if (state == null) {
           val msg = s"${optimizer.getClass.getName} failed."
@@ -1291,36 +1308,39 @@ class BinaryLogisticRegressionSummary private[classification] (
  * It's used in Breeze's convex optimization routines.
  */
 private class LogisticCostFun(
-                               instances: RDD[Instance],
-                               numClasses: Int,
-                               weightSum: Double,
-                               featureStdKey: PSVector,
-                               fitIntercept: Boolean,
-                               standardization: Boolean,
-                               regParamL2: Double,
-                               multinomial: Boolean) extends DiffFunction[BreezePSVector] {
+    @transient instances: RDD[Instance],
+    numClasses: Int,
+    weightSum: Double,
+    featureStdKey: PSVector,
+    fitIntercept: Boolean,
+    standardization: Boolean,
+    regParamL2: Double,
+    multinomial: Boolean) extends DiffFunction[BreezePSVector] with Serializable {
 
   override def calculate(coefficients: BreezePSVector): (Double, BreezePSVector) = {
-
     val numCoefficientSets = if (multinomial) numClasses else 1
     val numFeaturesPlusIntercept = coefficients.dimension / numCoefficientSets
     val numFeatures = if (fitIntercept) numFeaturesPlusIntercept - 1 else numFeaturesPlusIntercept
 
-    val logisticAggregator = {
-      val seqOp = (c: LogisticAggregator, instance: Instance) => c.add(instance)
-      val combOp = (c1: LogisticAggregator, c2: LogisticAggregator) => c1.merge(c2)
+    val gradientPS = PSVector.duplicate(featureStdKey)
 
-      instances.treeAggregate(
-        new LogisticAggregator(coefficients.component, featureStdKey, numClasses, numFeatures,
-          weightSum, fitIntercept, multinomial)
-      )(seqOp, combOp)
-    }
+    val lossSum = instances.mapPartitions { iter =>
+      val aggregator = new LogisticAggregator(coefficients.component, featureStdKey,
+        numClasses, numFeatures, weightSum, fitIntercept, multinomial)
+      val (gradient, loss) = aggregator.calculate(iter)
+
+      gradientPS.increment(gradient)
+      Iterator.single(loss)
+    }.sum()
+
+    PullMan.delete(coefficients)
+
     val regVal = if (regParamL2 != 0.0) {
       val interceptIndex = numCoefficientSets * numFeaturesPlusIntercept - numCoefficientSets - 1
       val deltaGradient = coefficients.zipMapWithIndex(featureStdKey.toBreeze,
         new RegGradient(regParamL2, interceptIndex, fitIntercept, standardization))
 
-      logisticAggregator.gradient.toBreeze += deltaGradient
+      gradientPS.toBreeze += deltaGradient
 
       val sum = coefficients.zipMapWithIndex(featureStdKey.toBreeze,
         new RegLoss(interceptIndex, fitIntercept, standardization)).sum
@@ -1329,6 +1349,6 @@ private class LogisticCostFun(
     } else {
       0.0
     }
-    (logisticAggregator.loss + regVal, logisticAggregator.gradient.toBreeze)
+    (lossSum + regVal, gradientPS.toBreeze)
   }
 }

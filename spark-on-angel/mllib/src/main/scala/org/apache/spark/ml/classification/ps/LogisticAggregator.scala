@@ -209,13 +209,13 @@ import com.tencent.angel.spark.models.vector.PSVector
  * since this form is optimal for the matrix operations used for prediction.
  */
 private class LogisticAggregator(
-                                  bcCoefficients: PSVector,
-                                  featureStd: PSVector,
-                                  numClasses: Int,
-                                  val numFeatures: Int,
-                                  weightSum: Double,
-                                  fitIntercept: Boolean,
-                                  multinomial: Boolean) extends Serializable with Logging {
+    bcCoefficients: PSVector,
+    featureStd: PSVector,
+    numClasses: Int,
+    val numFeatures: Int,
+    weightSum: Double,
+    fitIntercept: Boolean,
+    multinomial: Boolean) extends Serializable with Logging {
 
   private val numFeaturesPlusIntercept = if (fitIntercept) numFeatures + 1 else numFeatures
   private val coefficientSize = bcCoefficients.dimension
@@ -234,8 +234,6 @@ private class LogisticAggregator(
 
   private var lossSum = 0.0
 
-  val gradientPSKey = PSVector.duplicate(bcCoefficients)
-
   if (multinomial && numClasses <= 2) {
     logInfo(s"Multinomial logistic regression for binary classification yields separate " +
       s"coefficients for positive and negative classes. When no regularization is applied, the" +
@@ -247,14 +245,16 @@ private class LogisticAggregator(
   private def binaryUpdateInPlace(
       features: Vector,
       weight: Double,
-      label: Double): Unit = {
+      label: Double,
+      gradient: Array[Double]): Double = {
 
-    val localCoefficients = bcCoefficients.pull()
-    val deltaGradient = Array.ofDim[Double](coefficientSize)
+    val localCoefficients = bcCoefficients.toCache.pullFromCache()
+    val localFeatureStd = featureStd.toCache.pullFromCache()
+
     val margin = - {
       var sum = 0.0
       features.foreachActive { (index, value) =>
-        if (featureStd.pull().apply(index * numCoefficientSets) != 0 && value != 0.0) {
+        if (localFeatureStd.apply(index * numCoefficientSets) != 0 && value != 0.0) {
           sum += localCoefficients(index) * value
         }
       }
@@ -266,36 +266,36 @@ private class LogisticAggregator(
 
     features.foreachActive { (index, value) =>
       if (value != 0.0) {
-        deltaGradient(index) = multiplier * value
+        gradient(index) += multiplier * value / weightSum
       }
     }
 
     if (fitIntercept) {
-      deltaGradient(numFeaturesPlusIntercept - 1) = multiplier
+      gradient(numFeaturesPlusIntercept - 1) += multiplier / weightSum
     }
 
-    gradientPSKey.toCache.incrementWithCache(deltaGradient.map(_ / weightSum))
 
-    if (label > 0) {
+    val loss = if (label > 0) {
       // The following is equivalent to log(1 + exp(margin)) but more numerically stable.
-      lossSum += weight * MLUtils.log1pExp(margin)
+      weight * MLUtils.log1pExp(margin)
     } else {
-      lossSum += weight * (MLUtils.log1pExp(margin) - margin)
+      weight * (MLUtils.log1pExp(margin) - margin)
     }
+    loss / weightSum
   }
 
   /** Update gradient and loss using multinomial (softmax) loss function. */
   private def multinomialUpdateInPlace(
       features: Vector,
       weight: Double,
-      label: Double): Unit = {
+      label: Double,
+      gradient: Array[Double]): Double = {
     // TODO: use level 2 BLAS operations
     /*
       Note: this can still be used when numClasses = 2 for binary
       logistic regression without pivoting.
      */
-    val localCoefficients = bcCoefficients.pull()
-    val deltaGradient = Array.ofDim[Double](coefficientSize)
+    val localCoefficients = bcCoefficients.toCache.pullFromCache()
 
     // marginOfLabel is margins(label) in the formula
     var marginOfLabel = 0.0
@@ -343,12 +343,13 @@ private class LogisticAggregator(
     margins.indices.foreach { i =>
       multipliers(i) = multipliers(i) / sum - (if (label == i) 1.0 else 0.0)
     }
+    val localFeatureStd = featureStd.toCache.pullFromCache()
     features.foreachActive { (index, value) =>
-      if (featureStd.pull().apply(index * numCoefficientSets) != 0.0 && value != 0.0) {
+      if (localFeatureStd.apply(index * numCoefficientSets) != 0.0 && value != 0.0) {
         var j = 0
         while (j < numClasses) {
-          deltaGradient(index * numClasses + j) =
-            weight * multipliers(j) * value
+          gradient(index * numClasses + j) +=
+            weight * multipliers(j) * value / weightSum
           j += 1
         }
       }
@@ -356,18 +357,18 @@ private class LogisticAggregator(
     if (fitIntercept) {
       var i = 0
       while (i < numClasses) {
-        deltaGradient(numFeatures * numClasses + i) = weight * multipliers(i)
+        gradient(numFeatures * numClasses + i) += weight * multipliers(i) / weightSum
         i += 1
       }
     }
-    gradientPSKey.toCache.incrementWithCache(deltaGradient.map(_ / weightSum))
 
     val loss = if (maxMargin > 0) {
       math.log(sum) - marginOfLabel + maxMargin
     } else {
       math.log(sum) - marginOfLabel
     }
-    lossSum += weight * loss
+
+    weight * loss
   }
 
   /**
@@ -377,21 +378,27 @@ private class LogisticAggregator(
    * @param instance The instance of data point to be added.
    * @return This LogisticAggregator object.
    */
-  def add(instance: Instance): this.type = {
+  def add(instance: Instance, gradient: Array[Double]): Double = {
     instance match { case Instance(label, weight, features) =>
       require(numFeatures == features.size, s"Dimensions mismatch when adding new instance." +
         s" Expecting $numFeatures but got ${features.size}.")
       require(weight >= 0.0, s"instance weight, $weight has to be >= 0.0")
 
-      if (weight == 0.0) return this
-
       if (multinomial) {
-        multinomialUpdateInPlace(features, weight, label)
+        multinomialUpdateInPlace(features, weight, label, gradient)
       } else {
-        binaryUpdateInPlace(features, weight, label)
+        binaryUpdateInPlace(features, weight, label, gradient)
       }
-      this
     }
+  }
+
+  def calculate(instances: Iterator[Instance]): (Array[Double], Double) = {
+    val gradient = new Array[Double](coefficientSize)
+    val loss = instances.filter(x => x.weight > 0)
+      .map { instance =>
+        add(instance, gradient)
+      }.sum
+    (gradient, loss)
   }
 
   /**
@@ -412,9 +419,5 @@ private class LogisticAggregator(
 
   def loss: Double = {
     lossSum / weightSum
-  }
-
-  def gradient: PSVector = {
-    gradientPSKey
   }
 }
