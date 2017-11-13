@@ -2,7 +2,7 @@
 
 
 [![license](http://img.shields.io/badge/license-BSD3-blue.svg?style=flat)](https://github.com/tencent/angel/blob/master/LICENSE)
-[![Release Version](https://img.shields.io/badge/release-1.2.0-red.svg)](https://github.com/tencent/angel/releases)
+[![Release Version](https://img.shields.io/badge/release-1.2.1-red.svg)](https://github.com/tencent/angel/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/tencent/angel/pulls)
 
 [(English Documents Available)](./README_en.md)
@@ -44,13 +44,18 @@
 
 ## Algorithm
 
-* [Logistic Regression](./docs/algo/lr_on_angel.md)
-* [Matrix Factorization](./docs/algo/mf_on_angel.md)
-* [SVM](./docs/algo/svm_on_angel.md)
-* [KMeans](./docs/algo/kmeans_on_angel.md)
-* [GBDT](./docs/algo/gbdt_on_angel.md)
-* [LDA](./docs/algo/lda_on_angel.md)
-* [LR (Spark on Angel)](./docs/algo/spark_on_angel_optimizer.md)
+* **Angel**
+	* [Logistic Regression](./docs/algo/lr_on_angel.md) ([MLR](./docs/algo/mlr_on_angel.md) | [ADMM](./docs/algo/admm_lr_on_angel.md)) 
+	* [Matrix Factorization](./docs/algo/mf_on_angel.md)
+	* [SVM](./docs/algo/svm_on_angel.md)
+	* [KMeans](./docs/algo/kmeans_on_angel.md)
+	* [GBDT](./docs/algo/gbdt_on_angel.md)
+	* [LDA\*](./docs/algo/lda_on_angel.md) ([WrapLDA](./docs/algo/wrap_lda_on_angel.md))
+
+* **Spark on Angel**
+	* [Logistic Regression](./docs/algo/lr_sona.md)
+	* [GBDT](./docs/algo/gbdt_sona.md)
+	* [KMeans](.docs/algo/kmeans_sona.md)
 
 ## Deployment
 
