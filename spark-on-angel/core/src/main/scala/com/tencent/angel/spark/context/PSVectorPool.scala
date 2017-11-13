@@ -22,6 +22,7 @@ import org.apache.spark.SparkException
 import sun.misc.Cleaner
 
 import com.tencent.angel.spark.models.vector.VectorType.VectorType
+import com.tencent.angel.spark.models.vector.enhanced.PullMan
 
 /**
  * PSVectorPool delegate a memory space on PS servers,
@@ -84,22 +85,23 @@ private[spark] class PSVectorPool(
   }
 
   private def doCreateOne(index: Int): PSVector = {
-    val task = new CleanTask(index)
     val vector = if (vType == VectorType.SPARSE) {
       new SparsePSVector(id, index, dimension)
     } else {
       new DensePSVector(id, index, dimension)
     }
+    val task = new CleanTask(this.id, index)
     cleaners.put(vector, Cleaner.create(vector, task))
     vector
   }
 
-  private class CleanTask(index: Int) extends Runnable {
+  private class CleanTask(poolId: Int, index: Int) extends Runnable {
     def run(): Unit = {
       bitSet.synchronized {
         bitSet.clear(index)
         size -= 1
       }
+      PullMan.delete(poolId, index)
     }
   }
 

@@ -82,7 +82,11 @@ abstract class PSVector extends PSModel {
   }
 
   override def hashCode(): Int = {
-    poolId * 31 + id
+    (poolId + "_" + id).hashCode
+  }
+
+  override def toString: String = {
+    s"poolId: $poolId vectorId: $id"
   }
 
 

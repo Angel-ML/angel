@@ -79,12 +79,13 @@ class CachedPSVectorSuite extends PSFunSuite with Matchers with SharedPSContext 
       iter.foreach { arr =>
         remoteVector.incrementWithCache(arr)
       }
-      remoteVector.flushIncrement()
       Iterator.empty
     }
     rdd2.count()
+    remoteVector.flushIncrement()
 
     val psArray = remoteVector.pull()
+    println(s"ps array: ${psArray.mkString(" ")}")
     _localSum.indices.foreach { i => assert(_localSum(i) === psArray(i) +- doubleEps) }
   }
 
@@ -97,7 +98,7 @@ class CachedPSVectorSuite extends PSFunSuite with Matchers with SharedPSContext 
       Iterator.empty
     }
     rdd2.count()
-    remoteVector.flushIncrement()
+    PushMan.flushAll()
 
     val psArray = remoteVector.pull()
     _localSum.indices.foreach { i => assert(_localSum(i) === psArray(i) +- doubleEps) }
@@ -177,4 +178,25 @@ class CachedPSVectorSuite extends PSFunSuite with Matchers with SharedPSContext 
 
     assert(remoteVector.pullFromCache().sameElements(_localMin))
   }
+
+  test("PullFromCache") {
+
+    val remoteVector = PSVector.duplicate(_psVector).toCache
+    val rand = new Random()
+    val localArray = (0 until dim).toArray.map(x => rand.nextDouble())
+    remoteVector.push(localArray)
+
+    val temp = _rdd.mapPartitions { iter =>
+      val list = iter.toArray.map(x => remoteVector.pullFromCache())
+      val hashCode = list.head.hashCode()
+
+      list.foreach { x =>
+        require(x.hashCode() == hashCode)
+      }
+      Iterator.empty
+    }
+    temp.count()
+
+  }
+
 }

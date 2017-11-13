@@ -70,13 +70,13 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
       colInBlock: Int = -1): MatrixMeta = {
 
     val maxRowNumInBlock = if (rowInBlock == -1) {
-      if (rows > 1000) rows / TOTAL_PS_CORES else rows
+      if (rows > 20000) rows / TOTAL_PS_CORES else rows
     } else {
       rowInBlock
     }
 
     val maxColNumInBlock = if (colInBlock == -1) {
-      if (cols > 1000) cols / TOTAL_PS_CORES else cols
+      if (cols > 20000) cols / TOTAL_PS_CORES else cols
     } else {
       colInBlock
     }
@@ -258,8 +258,8 @@ private[spark] object AngelPSContext {
 
     /** mode: YARN or LOCAL */
     val deployMode = conf.get("spark.ps.mode", DEFAULT_ANGEL_DEPLOY_MODE)
-    val psNum = conf.getInt("spark.ps.instances", 2)
-    val psCores = conf.getInt("spark.ps.cores", 2)
+    val psNum = conf.getInt("spark.ps.instances", 1)
+    val psCores = conf.getInt("spark.ps.cores", 1)
     val psMem = conf.getSizeAsMb("spark.ps.memory", "4g").toInt
     val psHeap = psMem - 200
     val psOpts = s" -Xms${psHeap}M -Xmx${psHeap}M " +
@@ -291,7 +291,7 @@ private[spark] object AngelPSContext {
 
     hadoopConf.set(ANGEL_DEPLOY_MODE, deployMode)
     if (deployMode == "LOCAL") {
-      hadoopConf.set(ANGEL_PS_HEARTBEAT_INTERVAL_MS, "100")
+      hadoopConf.set(ANGEL_PS_HEARTBEAT_INTERVAL_MS, "1000")
     }
     hadoopConf.setInt(ANGEL_PS_NUMBER, psNum)
     hadoopConf.setInt(ANGEL_PS_CPU_VCORES, psCores)
