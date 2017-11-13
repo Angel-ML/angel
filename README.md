@@ -53,9 +53,9 @@
 	* [LDA\*](./docs/algo/lda_on_angel.md) ([WrapLDA](./docs/algo/wrap_lda_on_angel.md))
 
 * **Spark on Angel**
-	* [Logistic Regression](./docs/algo/lr_sona.md)
-	* [GBDT](./docs/algo/gbdt_sona.md)
-	* [KMeans](.docs/algo/kmeans_sona.md)
+	* [Logistic Regression](./docs/algo/sona/lr_sona.md)
+	* [GBDT](./docs/algo/sona/gbdt_sona.md)
+	* [KMeans](.docs/algo/sona/kmeans_sona.md)
 
 ## Deployment
 
