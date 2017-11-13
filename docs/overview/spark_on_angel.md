@@ -41,7 +41,7 @@ Angel从v1.0.0版本开始，就加入了**PS-Service**的特性，不仅仅可�
 
 * **PSMatrix**
 	* 包括DensePSMatrix和SparsePSMatrix
-	* PSMatrix的创建和销毁：通过`PSMatrix.dense(rows: Int, cols: Int)`创建，当PSMatrix不再使用后，需要手动调用`destory`销毁该Matrix
+	* PSMatrix的创建和销毁：通过`PSMatrix.dense(rows: Int, cols: Int)`创建，当PSMatrix不再使用后，需要手动调用`destroy`销毁该Matrix
 
 使用Spark on Angel的简单代码如下：
 
