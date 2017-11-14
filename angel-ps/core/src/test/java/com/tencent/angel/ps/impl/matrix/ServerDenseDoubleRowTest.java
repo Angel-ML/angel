@@ -28,7 +28,7 @@ import org.junit.Test;
 
 import java.io.*;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 
 public class ServerDenseDoubleRowTest {
@@ -88,8 +88,8 @@ public class ServerDenseDoubleRowTest {
     buf = Unpooled.buffer(0);
     LOG.info(buf);
     buf.writeInt(0);
-    buf.writeInt(2);
     buf.writeDouble(1.00);
+    buf.writeInt(2);
     buf.writeDouble(-2.00);
     serverDenseDoubleRow.update(MLProtos.RowType.T_DOUBLE_SPARSE, buf, 2);
     assertEquals(serverDenseDoubleRow.getData().get(0), 1, 0.000);
@@ -106,12 +106,10 @@ public class ServerDenseDoubleRowTest {
     buf.writeDouble(1.00);
     buf.writeDouble(2.00);
     serverDenseDoubleRow.update(MLProtos.RowType.T_DOUBLE_DENSE, buf, 3);
-    serverDenseDoubleRow.setClock(10);
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
     serverDenseDoubleRow.writeTo(out);
     out.close();
     DataInputStream in = new DataInputStream(new FileInputStream("data"));
-    assertEquals(in.readInt(), 10);
     assertEquals(in.readDouble(), 0, 0.00);
     assertEquals(in.readDouble(), 1, 0.00);
     assertEquals(in.readDouble(), 2, 0.00);
@@ -125,7 +123,6 @@ public class ServerDenseDoubleRowTest {
     buf.writeDouble(11.00);
     buf.writeDouble(12.00);
     serverDenseDoubleRow.update(MLProtos.RowType.T_DOUBLE_DENSE, buf, 3);
-    serverDenseDoubleRow.setClock(9);
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
     serverDenseDoubleRow.writeTo(out);
     out.close();
@@ -134,7 +131,6 @@ public class ServerDenseDoubleRowTest {
         new ServerDenseDoubleRow(rowId, startCol, endCol);
     newServerDenseDoubleRow.readFrom(in);
     in.close();
-    assertEquals(newServerDenseDoubleRow.getClock(), 9);
     assertEquals(newServerDenseDoubleRow.getData().get(0), serverDenseDoubleRow.getData().get(0),
         0.00);
     assertEquals(newServerDenseDoubleRow.getData().get(1), serverDenseDoubleRow.getData().get(1),
@@ -154,8 +150,8 @@ public class ServerDenseDoubleRowTest {
     serverDenseDoubleRow.serialize(buf);
     assertEquals(serverDenseDoubleRow.getRowId(), buf.readInt());
     assertEquals(serverDenseDoubleRow.getClock(), buf.readInt());
-    assertEquals(serverDenseDoubleRow.getStartCol(), buf.readInt());
-    assertEquals(serverDenseDoubleRow.getEndCol(), buf.readInt());
+    assertEquals(serverDenseDoubleRow.getStartCol(), buf.readLong());
+    assertEquals(serverDenseDoubleRow.getEndCol(), buf.readLong());
     assertEquals(serverDenseDoubleRow.getRowVersion(), buf.readInt());
     assertEquals(serverDenseDoubleRow.getEndCol() - serverDenseDoubleRow.getStartCol(),
         buf.readInt());
@@ -166,8 +162,8 @@ public class ServerDenseDoubleRowTest {
     ByteBuf buf = Unpooled.buffer(16);
     buf.writeInt(0);
     buf.writeInt(1);
-    buf.writeInt(2);
-    buf.writeInt(3);
+    buf.writeLong(2);
+    buf.writeLong(3);
     buf.writeInt(4);
     buf.writeInt(3);
     buf.writeDouble(-1.0);

@@ -17,8 +17,6 @@
 package com.tencent.angel.ml.math.matrix;
 
 import com.tencent.angel.ml.math.vector.TDoubleVector;
-import com.tencent.angel.ml.math.TMatrix;
-import com.tencent.angel.ml.math.TVector;
 
 /**
  * The double matrix.

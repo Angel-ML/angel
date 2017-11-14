@@ -21,7 +21,7 @@ import com.tencent.angel.client.{AngelClient, AngelClientFactory}
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.lda.LDAModel._
-import com.tencent.angel.ml.lda.{LDAModel, LDATrainTask}
+import com.tencent.angel.ml.lda.{LDAModel, LDAPredictTask, LDATrainTask}
 import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
@@ -56,8 +56,9 @@ class LDATest {
     conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true)
     conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, classOf[CombineTextInputFormat].getName)
     conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath)
+    conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, inputPath)
     conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/LOG/ldalog")
-    conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/out")
+
     conf.setInt(AngelConf.ANGEL_WORKER_MAX_ATTEMPTS, 1)
 
     // Set angel resource parameters #worker, #task, #PS
@@ -69,18 +70,21 @@ class LDATest {
 
     // Set LDA parameters #V, #K
     val V = 12420
-    val K = 1024
+    val K = 1000
 
     conf.setInt(WORD_NUM, V)
     conf.setInt(TOPIC_NUM, K)
     conf.setInt(MLConf.ML_WORKER_THREAD_NUM, 1)
-    conf.setInt(MLConf.ML_EPOCH_NUM, 100)
+    conf.setInt(MLConf.ML_EPOCH_NUM, 20)
     conf.setBoolean(SAVE_DOC_TOPIC, false)
-    conf.setBoolean(SAVE_WORD_TOPIC, false)
+    conf.setBoolean(SAVE_WORD_TOPIC, true)
   }
 
   @Test
-  def run(): Unit = {
+  def train(): Unit = {
+
+    conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/out")
+    LOG.info(conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
     //start PS
     client.startPSServer()
 
@@ -101,5 +105,22 @@ class LDATest {
 
     client.stop()
   }
-}
 
+
+  @Test
+  def inference(): Unit = {
+    conf.set(AngelConf.ANGEL_ACTION_TYPE, "predict")
+
+    conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/out_1")
+    conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/out")
+
+
+    client.startPSServer()
+    val model = new LDAModel(conf)
+    client.loadModel(model)
+    client.runTask(classOf[LDAPredictTask])
+    client.waitForCompletion()
+    client.stop()
+
+  }
+}

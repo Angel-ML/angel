@@ -19,9 +19,11 @@ package com.tencent.angel.spark.ml
 
 import breeze.linalg.norm
 import breeze.optimize.DiffFunction
+
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.ml.optim.OWLQN
-import com.tencent.angel.spark.model.vector.BreezePSVector
+import com.tencent.angel.spark.models.vector.{DensePSVector, PSVector}
+import com.tencent.angel.spark.ml.optimize.OWLQN
+import com.tencent.angel.spark.models.vector.enhanced.BreezePSVector
 
 class OWLQNSuite extends PSFunSuite with SharedPSContext {
 
@@ -29,9 +31,8 @@ class OWLQNSuite extends PSFunSuite with SharedPSContext {
     val dim = 3
     val capacity = 20
 
-    val pool = PSContext.getOrCreate().createModelPool(dim, capacity)
 
-    val l1reg = pool.createModel(1.0).mkBreeze()
+    val l1reg = PSVector.dense(dim, capacity).fill(1.0).toBreeze
 
     val owlqn = new OWLQN(100, 4, l1reg)
 
@@ -46,9 +47,12 @@ class OWLQNSuite extends PSFunSuite with SharedPSContext {
       result
     }
 
-    val initWeightPS = pool.createModel(Array(-1.1053, 0.0, 0.0)).mkBreeze()
+    val initWeightPS = PSVector.duplicate(l1reg.component)
+      .asInstanceOf[DensePSVector].fill(Array(-1.1053, 0.0, 0.0))
+      .toBreeze
+
     val result = optimizeThis(initWeightPS)
-    assert((result.toRemote.pull()(0) - 2.5) < 1E-4, result)
+    assert((result.pull()(0) - 2.5) < 1E-4, result)
   }
 
 
@@ -56,8 +60,7 @@ class OWLQNSuite extends PSFunSuite with SharedPSContext {
     val dim = 3
     val capacity = 20
 
-    val pool = PSContext.getOrCreate().createModelPool(dim, capacity)
-    val l1reg = pool.createModel(1.0).mkBreeze()
+    val l1reg = PSVector.dense(dim, capacity).fill(1.0).toBreeze
     val lbfgs = new OWLQN(100, 4, l1reg)
 
     def optimizeThis(init: BreezePSVector) = {
@@ -70,7 +73,10 @@ class OWLQNSuite extends PSFunSuite with SharedPSContext {
       lbfgs.minimize(f, init)
     }
 
-    val initWeightPS = pool.createModel(Array(0.0, 0.0, 0.0)).mkBreeze()
+    val initWeightPS = PSVector.duplicate(l1reg.component)
+      .asInstanceOf[DensePSVector].fill(Array(0.0, 0.0, 0.0))
+      .toBreeze
+
     val result = optimizeThis(initWeightPS)
 
     assert(norm(result - 2.5, 2) < 1E-4)

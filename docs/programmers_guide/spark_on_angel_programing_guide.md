@@ -1,14 +1,15 @@
-# Spark on Angel Programing Guide
+# Spark on Angel编程指南
+
 
 Spark on Angel的算法实现与纯Spark的实现非常接近，因此大部分的Spark ML算法仅需要修改一小部分代码就能将算法跑到Spark on Angel上。
 
 该版本的Spark on Angel是基于Spark 2.1.0和Scala 2.11.8，因此建议大家在该环境下开发。
 
-开发者接触到的类主要有PSContext，PSModelPool，PSVectorProxy，BreezePSVector/RemotePSVector。
-目前我们的编程接口以Scala为主，下面我们都将已Scala的编程方式介绍Spark on Angel的编程接口。
+开发者接触到的类主要有PSContext，PSModelPool，PSVectorProxy，BreezePSVector/RemotePSVector。目前我们的编程接口以Scala为主，下面我们都将已Scala的编程方式介绍Spark on Angel的编程接口。
 
 ## 1. Spark on Angel的引入
 - Maven工程的pom依赖
+
 ```xml
 <dependency>
     <groupId>com.tencent.angel</groupId>
@@ -24,6 +25,7 @@ Spark on Angel的算法实现与纯Spark的实现非常接近，因此大部分�
 </dependency>
 ```
 - import package
+
 ```scala
   import com.tencent.angel.spark.PSContext
 ```
@@ -54,93 +56,93 @@ val context = PSContext.getOrCreate(spark.sparkContext)
 // 第一次启动时，需要传入SparkContext
 val context = PSContext.getOrCreate(spark.sparkContext)
 
-// 此后，就无需传入SparkContext，直接的PSContext
-val context = PSContext.getOrCreate()
+// 此后，直接通过PSContext.instance()获取context
+val context = PSContext.instance()
 
 // 终止PSContext
 PSContext.stop()
 ```
 
-- 申请/销毁PSModelPoool
-PSModelPool在Angel PS上其实是一个矩阵，矩阵列数是dim，行数是capacity。
-可以申请多个不同大小的PSModelPool。
+### 4. PSVector
+PSVector是PSModel的子类，同时PSVector有DensePSVector/SparsePSVector和BreezePSVector/CachedPSVector四种不同的实现。DensePSVector/SparsePSVector是两种不同数据格式的PSVector，而BreezePSVector/CachedPSVector是两种不同功能的PSVector。
+
+在介绍PSVector之前，需要先了解一下PSVectorPool的概念；PSVectorPool在Spark on Angel的编程接口中不会显式地接触到，但需要了解其概念。
+
+- PSVectorPool  
+  PSVectorPool本质上是Angel PS上的一个矩阵，矩阵列数是`dim`，行数是`capacity`。
+  PSVectorPool负责PSVector的申请、自动回收。自动回收类似于Java的GC功能，PSVector对象使用后不用手动delete。
+  同一个PSVectorPool里的PSVector的维度都是`dim`，同一个Pool里的PSVector才能做运算。
+
+- PSVector的申请和初始化  
+  PSVector第一次申请的时候，必须通过PSVector的伴生对象中dense/sparse方法申请。
+  dense/sparse方法会创建PSVectorPool，因此需要传入dimension和capacity参数。
+
+  通过duplicate方法可以申请一个与已有psVector对象同Pool的PSVector。
+
+  ```scala
+    // 第一次申请DensePSVector和SparsePSVector
+    // capacity提供了默认参数
+    val dVector = PSVector.dense(dim, capacity)
+    val sVector = PSVector.sparse(dim, capacity)
+
+    // 从现有的psVector duplicate出新的PSVector
+    val samePoolVector = PSVector.duplicate(dVector)
+
+    // 初始化
+    // fill with 1.0
+    dVector.fill(1.0)
+    // 初始化dVector，使dVector的元素服从[-1.0, 1.0]的均匀分布
+    dVector.randomUniform(-1.0, 1.0)
+    // 初始化dVector，使dVector的元素服从N(0.0, 1.0)的正态分布
+    dVector.randomNormal(0.0, 1.0)
+  ```
+- DensePSVector VS. SparsePSVector  
+  顾名思义，DensePSVector和SparsePSVector是针对稠密和稀疏两种不同的数据形式设计的PSVector
+
+- BreezePSVector VS. CachedPSVector   
+  BreezePSVector和CachedPSVector是封装了不同运算功能的PSVector装饰类。
+
+  BreezePSVector面向于Breeze算法库，封装了同一个PSVectorPool里PSVector之间的运算。包括常用的math运算和blas运算，BreezePSVector实现了Breeze内部的NumbericOps操作，因此BreezePSVector支持+，-，* 这样的操作
+
+  ```scala
+    val brzVector1 = brzVector2 :* 2.0 + brzVector3
+  ```
+  也可以显式地调用Breeze.math和Breeze.blas里的操作。
+
+  CachedPSVector为Pull、increment/mergeMax/mergeMin提供了Cache的功能，减少这些操作和PS交互的次数。
+  如，pullWithCache会加Pull下来的Vector缓存到本地，下次Pull同一个Vector时，直接读取缓存的Vector；
+  incrementWithCache会将多次的increment操作在本地聚合，最后通过flush操作，将本地聚合的结果increment到PSVector。
+
+  ```scala
+  val cacheVector = PSVector.dense(dim).toCache
+  rdd.map { case (label , feature) =>
+      // 并没有立即更新psVector
+    	cacheVector.incrementWithCache(feature)
+  }
+  // flushIncrement会将所有executor上的缓存的cacheVector的increment结果，累加到cacheVector
+  cacheVector.flushIncrement
+  ```
+
+### 5. PSMatrix
+PSMatrix是Angel PS上的矩阵，其有DensePSMatrix和SparsePSMatrix两种实现。
+
+- PSMatrix的创建和销毁   
+PSMatrix通过伴生对象中的dense/sparse方法申请对应的matrix。
+PSVector会有PSVectorPool自动回收、销毁无用的PSVector，而PSMatrix需要手动调用destroy方法销毁PS上的matrix
+
+如果需要对指定PSMatrix的分区参数，通过rowsInBlock/colsInBlock指定每个分区block的大小。
 
 ```scala
-val pool = context.createModelPool(dim, capacity)
-context.destroyModelPool(pool)
+  // 创建、初始化
+  val dMatrix = DensePSMatrix.dense(rows, cols, rowsInBlock, colsInBlock)
+  val sMatrix = SparsePSMatrix.sparse(rows, cols)
+
+  dMatrix.destroy()
+
+  // Pull/Push操作
+  val array = dMatrix.pull(rowId)
+  dMatrix.push(rowId, array)
 ```
-
-### 4. PSModelPool
-PSModelPool在Angel PS上其实是一个矩阵，矩阵列数是`dim`，行数是`capacity`。
-同一个Application中，可以申请多个不同大小的PSModelPool。
-可以从PSModelPool申请PSVector，存放在PSModle上PSVector的维度都是`dim`；
-PSModelPool只能存放、管理维度为`dim`的PSVector。
-
-注意：同一个Pool内的PSVector才能做运算。
-
-```scala
-// 用Array数据初始化一个PSVector，array的维度必须与pool维度保持一致
-val arrayProxy = pool.createModel(array)
-// PSVector的每个维度都是value
-val valueProxy = pool.createModel(value)
-
-// 全0的PSVector
-val zeroProxy = pool.createZero()
-// 随机的PSVector, 随机数服从均匀分布
-val uniformProxy = pool.createRandomUniform(0.0, 1.0)
-// 随机的PSVector, 随机数服从正态分布
-val normalProxy = pool.createRandomNormal(0.0, 1.0)
-```
-
-使用之后的PSVector，可以手动delete、也可以放之不管系统会自动回收；delete后的PSVector就不能再使用。
-```scala
-pool.delete(vectorPorxy)
-```
-
-### 5. PSVectorProxy/PSVector
-PSVectorProxy是PSVector（包括BreezePSVector和RemotePSVector）的代理，指向Angel PS上的某个PSVector。
-而PSVector的BreezePSVector和RemotePSVector封装了在不同场景下的PSVector的运算。
-
-- PSVectorProxy和PSVector（BreezePSVector和RemotePSVector）之间的转换
-
-```scala
-   // PSVectorProxy to BreezePSVector、RemotePSVector
-  val brzVector = vectorProxy.mkBreeze()
-  val remoteVector = vectorProxy.mkRemote()
-
-  // BreezePSVector、RemotePSVector to PSVectorProxy
-  val vectorProxy = brzVector.proxy
-  val vectorProxy = remoteVector.proxy
-
-  // BreezePSVector, RemotePSVector之间的转换
-  val remoteVector = brzVector.toRemote()
-  val brzVector = remoteVector.toBreeze()
-```
-
-- RemotePSVector
-  RemotePSVector封装了PSVector和本地Array之间的操作
-
-```scala
-  // pull PSVector到本地
-  val localArray = remoteVector.pull()
-  // push 本地的Array到Angel PS
-  remoteVector.push(localArray)
-  // 将本地的Array累加到Angel PS上的PSVector
-  remoteVector.increment(localArray)
-
-  // 本地的Array和PSVector取最大值、最小值
-  remoteVector.mergeMax(localArray)
-  remoteVector.mergeMin(localArray)
-```
-
-- BreezePSVector
-  BreezePSVector封装了同一个PSModelPool里PSVector之间的运算。包括常用的math运算和blas运算
-  BreezePSVector实现了Breeze内部的NumbericOps操作，因此BreezePSVector支持+，-，* 这样的操作
-
-```scala
-  val brzVector1 = 2.0 * brzVector2 + brzVector3
-```
-也可以显式地调用Breeze.math和Breeze.blas里的操作。
 
 ### 6. 支持自定义的PS function
 
@@ -192,51 +194,46 @@ public class MulScalar implements MapFunc {
 
 下面是将RDD[(label, feature)]中的所有feature都累加到PSVector中。
 
-```java
+```scala
 val dim = 10
-val poolCapacity = 40
+val capacity = 40
 
-val context = PSContext.getOrCreate()
-val pool = context.createModelPool(dim, poolCapacity)
-val psProxy = pool.zero()
+val psVector = PSVector.dense(dim, capacity).toCache
 
 rdd.foreach { case (label , feature) =>
-  psProxy.mkRemote.increment(feature)
+  psProxy.incrementWithCache(feature)
 }
+psVector.flushIncrement
 
-println("feature sum:" + psProxy.pull())
+println("feature sum:" + psVector.pull().mkString(" "))
 ```
 
 - Example 2： Gradient Descent实现
 
-下面是一个简单版本的Gradient Descent的PS实现
-```java
-val context = PSContext.getOrCreate()
-val pool = context.createModelPool(dim, poolCapacity)
-val w = pool.createModel(initWeights)
-val gradient = pool.zeros()
+下面是一个简单版本的Gradient Descent的PS实现，
+注：这个例子里的instance的label是-1和1。
+
+```scala
+
+val w = PSVector.dense(dim).fill(initWeights)
 
 for (i <- 1 to ITERATIONS) {
-  val totalG = gradient.mkRemote()
+  val gradient = PSVector.duplicate(w)
 
-  val nothing = points.mapPartitions { iter =>
-    val brzW = new DenseVector(w.mkRemote.pull())
+  val nothing = instance.mapPartitions { iter =>
+    val brzW = new DenseVector(w.pull())
 
-    val subG = iter.map { p =>
-      p.x * (1 / (1 + math.exp(-p.y * brzW.dot(p.x))) - 1) * p.y
+    val subG = iter.map { case (label, feature) =>
+      feature * (1 / (1 + math.exp(-label * brzW.dot(feature))) - 1) * label
     }.reduce(_ + _)
 
-    totalG.incrementAndFlush(subG.toArray)
+    gradient.increment(subG.toArray)
     Iterator.empty
   }
   nothing.count()
 
-  w.mkBreeze += -1.0 * gradent.mkBreeze
-  gradient.mkRemote.fill(0.0)
+  w.toBreeze :+= gradent.toBreeze :* -1.0
 }
 
-println("feature sum:" + w.mkRemote.pull())
-
-gradient.delete()
-w.delete()
+println("w:" + w.pull().mkString(" "))
 ```

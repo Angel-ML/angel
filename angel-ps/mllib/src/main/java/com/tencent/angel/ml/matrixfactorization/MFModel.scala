@@ -20,9 +20,8 @@ package com.tencent.angel.ml.matrixfactorization
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.DenseFloatVector
 import com.tencent.angel.ml.matrixfactorization.MFModel._
-import com.tencent.angel.ml.matrixfactorization.utils.{ItemVec, UserVec}
+import com.tencent.angel.ml.matrixfactorization.threads.{ItemVec, UserVec}
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.protobuf.generated.MLProtos.RowType
@@ -59,7 +58,7 @@ class MFModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(con
 
   // Reference of Item model matrix sotred on PS.
   // Each row is a k-dim item feature vector, represents an item.
-  private val _itemMat = PSModel[DenseFloatVector](MF_ITEM_MODEL, _itemNum, _K)
+  private val _itemMat = PSModel(MF_ITEM_MODEL, _itemNum, _K)
     .setAverage(true)
     .setRowType(RowType.T_FLOAT_DENSE)
     .setOplogType("DENSE_FLOAT")

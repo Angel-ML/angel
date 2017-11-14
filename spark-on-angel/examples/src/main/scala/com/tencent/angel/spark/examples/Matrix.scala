@@ -16,15 +16,14 @@
 
 package com.tencent.angel.spark.examples
 
-import scala.util.Random
-
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.examples.util.PSExamples._
-import com.tencent.angel.spark.model.matrix.{DenseMatrix, PSMatrix}
+import com.tencent.angel.spark.models.matrix.DensePSMatrix
+import scala.util.Random
 
 object Matrix {
   def main(args: Array[String]): Unit = {
-    runWithSparkContext(this.getClass.getSimpleName) { sc =>
+    runSpark(this.getClass.getSimpleName) { sc =>
       PSContext.getOrCreate(sc)
       run(args)
     }
@@ -37,7 +36,7 @@ object Matrix {
     val diagArray = (0 until dim).toArray.map (i => rand.nextDouble())
     println(s"diag array: ${diagArray.slice(0, 10).mkString(" ")}")
 
-    val mat = DenseMatrix.diag(diagArray)
+    val mat = DensePSMatrix.diag(diagArray)
 
     val localMat = mat.pull()
     val localDiag = (0 until dim).toArray.map(id => localMat(id)(id))

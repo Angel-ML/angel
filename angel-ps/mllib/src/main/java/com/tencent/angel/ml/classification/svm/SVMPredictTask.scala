@@ -18,30 +18,18 @@
 package com.tencent.angel.ml.classification.svm
 
 
-import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.utils.DataParser
-import com.tencent.angel.utils.HdfsUtil
-import com.tencent.angel.worker.task.{TaskContext, TrainTask}
+import com.tencent.angel.ml.task.PredictTask
+import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.io.{LongWritable, Text}
 
-class SVMPredictTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
+class SVMPredictTask(val ctx: TaskContext) extends PredictTask[LongWritable, Text](ctx) {
 
-  val feaNum: Int = conf.getInt(MLConf.ML_FEATURE_NUM, 1)
-  val dataFormat: String = conf.get(MLConf.ML_DATAFORMAT)
-
-  @throws[Exception]
-  def train(ctx: TaskContext) {
-    val svmModel = new SVMModel(conf)
-
-    val predictResult = svmModel.predict(trainDataBlock)
-
-    // TODO delet
-    System.out.println("predictstorage.len=" + predictResult.size)
-    HdfsUtil.writeStorage(predictResult, ctx)
+  def predict(ctx: TaskContext) {
+    predict(ctx, SVMModel(conf), taskDataBlock);
   }
 
   def parse(key: LongWritable, value: Text): LabeledData = {
-    DataParser.parseVector(key, value, feaNum, dataFormat, false)
+    dataParser.parse(value.toString)
   }
 }

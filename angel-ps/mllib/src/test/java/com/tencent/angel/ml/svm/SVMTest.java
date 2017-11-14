@@ -30,8 +30,6 @@ import org.apache.log4j.PropertyConfigurator;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-
 public class SVMTest {
 
   private static final Log LOG = LogFactory.getLog(SVMTest.class);
@@ -50,7 +48,7 @@ public class SVMTest {
       // Feature number of train data
       int featureNum = 124;
       // Total iteration number
-      int epochNum = 20;
+      int epochNum = 10;
       // Validation Ratio
       double vRatio = 0.1;
       // Data format
@@ -70,7 +68,7 @@ public class SVMTest {
       conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
 
       // Set data format
-      conf.set(MLConf.ML_DATAFORMAT(), dataFmt);
+      conf.set(MLConf.ML_DATA_FORMAT(), dataFmt);
 
       // Use local deploy mode
       conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");

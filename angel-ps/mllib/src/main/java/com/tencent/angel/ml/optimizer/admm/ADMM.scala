@@ -24,11 +24,11 @@ import breeze.optimize.{CachedDiffFunction, DiffFunction}
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.classification.sparselr.SparseLRModel
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.TAbstractVector
-import com.tencent.angel.ml.math.vector.{DenseDoubleVector, SparseDoubleSortedVector, SparseDoubleVector, SparseDummyVector}
-import com.tencent.angel.ml.metric.log.GlobalMetrics
-import com.tencent.angel.ml.utils.MathUtils
+import com.tencent.angel.ml.math.{VectorType, TVector, TAbstractVector}
+import com.tencent.angel.ml.math.vector._
+import com.tencent.angel.ml.metric.GlobalMetrics
 import com.tencent.angel.ml.conf.MLConf._
+import com.tencent.angel.ml.utils.Maths
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap
@@ -99,9 +99,11 @@ class ADMM {
 }
 
 class LogisticGradient(numClasses: Int = 2) {
+  type V = DenseDoubleVector
+
   def this() = this(2)
 
-  def compute(data: TAbstractVector, label: Double, weights: DenseDoubleVector): Double = {
+  def compute(data: TAbstractVector, label: Double, weights: V): Double = {
     numClasses match {
       case 2 =>
         val margin = -1.0 * weights.dot(data)
@@ -118,8 +120,8 @@ class LogisticGradient(numClasses: Int = 2) {
 
   def compute(data: TAbstractVector,
               label: Double,
-              weights: DenseDoubleVector,
-              cumGradient: DenseDoubleVector): Double = {
+              weights: V,
+              cumGradient: V): Double = {
     require(weights.size == cumGradient.size)
     numClasses match {
       case 2 =>
@@ -158,21 +160,16 @@ object ADMM {
 
   private val LOG = LogFactory.getLog(classOf[ADMM])
 
-  def runADMM(data: DataBlock[LabeledData],
-              model: SparseLRModel,
-              regParam: Double,
-              rho: Double,
-              N: Int,
-              threadNum: Int,
-              ctx: TaskContext,
-              globalMetrics: GlobalMetrics,
-              maxNumIterations: Int = 20,
-              primalTol: Double = 1e-5,
-              dualTol: Double = 1e-5): (Array[Double], SparseDoubleVector) = {
+  type T = SparseDoubleVector
+  
+  def runADMM(data: DataBlock[LabeledData], model: SparseLRModel)
+             (regParam: Double, rho: Double, N: Int, threadNum: Int,
+              maxNumIterations: Int = 20, primalTol: Double = 1e-5, dualTol: Double = 1e-5)
+             (implicit ctx: TaskContext, globalMetrics: GlobalMetrics): (Array[Double], T) = {
 
     val (localModel, localIndex) = initialize(data)
     val history = new ArrayBuffer[Double]()
-    val z = new SparseDoubleVector(model.feaNum)
+    val z = TVector(model.feaNum, VectorType.T_DOUBLE_SPARSE).asInstanceOf[T]
 
     for (iter <- 1 until maxNumIterations) {
       val startTrainX = System.currentTimeMillis()
@@ -186,30 +183,26 @@ object ADMM {
       LOG.info(s"epoch=$iter trainXCost=$trainXCost trainZCost=$trainZCost")
 
       val loss = calcLocalLoss(data, localModel)
-      globalMetrics.metrics(TRAIN_LOSS, loss)
-//      history.append(loss)
+      globalMetrics.metric(TRAIN_LOSS, loss)
 
       val precision = validate(data, z, localIndex, localModel)
       LOG.info(s"epoch=$iter global_loss=${loss} precision=$precision")
 
       model.t.clock(false)
       model.t.getRow(0)
-      if (ctx.getTaskIndex == 0)
-        model.clean()
-
+      if (ctx.getTaskIndex == 0) model.clean()
       model.t.clock(false)
       model.t.getRow(0)
 
-      ctx.incIteration()
+      ctx.incEpoch()
     }
 
     (history.toArray, z)
   }
 
-  private
-  def initialize(data: DataBlock[LabeledData]): (LocalModel, LocalIndex) = {
+  private def initialize(data: DataBlock[LabeledData]): (LocalModel, LocalIndex) = {
     val globalToLocal = new Int2IntOpenHashMap()
-    val localToGloabl = new Int2IntOpenHashMap()
+    val localToGlobal = new Int2IntOpenHashMap()
     var localFeatNum  = 0
 
     // Reset the reader index for data samples
@@ -231,7 +224,7 @@ object ADMM {
               for (i <- 0 until len) {
                 val fid = indices(i)
                 if (!globalToLocal.containsKey(fid)) {
-                  localToGloabl.put(localFeatNum, fid)
+                  localToGlobal.put(localFeatNum, fid)
                   globalToLocal.put(fid, localFeatNum)
                   localFeatNum += 1
                 }
@@ -245,7 +238,7 @@ object ADMM {
               for (i <- 0 until len) {
                 val fid = indices(i)
                 if (!globalToLocal.containsKey(fid)) {
-                  localToGloabl.put(localFeatNum, fid)
+                  localToGlobal.put(localFeatNum, fid)
                   globalToLocal.put(fid, localFeatNum)
                   localFeatNum += 1
                 }
@@ -259,11 +252,11 @@ object ADMM {
     }
 
     // Convert a hashmap to an array for fast random access
-    val localToGloablArray = new Array[Int](localFeatNum)
-    val iter = localToGloabl.int2IntEntrySet().fastIterator()
+    val localToGlobalArray = new Array[Int](localFeatNum)
+    val iter = localToGlobal.int2IntEntrySet().fastIterator()
     while (iter.hasNext) {
       val entry = iter.next()
-      localToGloablArray(entry.getIntKey) = entry.getIntValue
+      localToGlobalArray(entry.getIntKey) = entry.getIntValue
     }
 
     // Local model stored on workers
@@ -271,7 +264,7 @@ object ADMM {
       new Array[Double](localFeatNum))
 
     // Index for convert local model to global model.
-    val localIndex = new LocalIndex(localFeatNum, localToGloablArray, globalToLocal)
+    val localIndex = new LocalIndex(localFeatNum, localToGlobalArray, globalToLocal)
     return (localModel, localIndex)
   }
 
@@ -292,7 +285,7 @@ object ADMM {
     ret.toArray
   }
 
-  def updateUandX(z: SparseDoubleVector,
+  def updateUandX(z: T,
                   data: DataBlock[LabeledData],
                   localModel: LocalModel,
                   localIndex: LocalIndex,
@@ -342,7 +335,7 @@ object ADMM {
   }
 
 
-  def getT(z: SparseDoubleVector,
+  def getT(z: T,
            model: SparseLRModel,
            localModel: LocalModel,
            localIndex: LocalIndex): Double = {
@@ -358,15 +351,15 @@ object ADMM {
 
     model.t.increment(update)
     model.t.clock().get()
-    return model.t.getRow(0).get(0)
+    return model.t.getRow(0).asInstanceOf[TDoubleVector].get(0)
   }
 
-  def computeZ(z: SparseDoubleVector,
+  def computeZ(z: T,
                model: SparseLRModel,
                regParam: Double,
                rho: Double,
                N: Int): Unit = {
-    val w = model.w.getRow(0)
+    val w = model.w.getRow(0).asInstanceOf[TDoubleVector]
     val kappa = regParam / (rho * N)
 
     z.clear()
@@ -408,32 +401,12 @@ object ADMM {
   def getGlobalLoss(data: DataBlock[LabeledData],
                     model: SparseLRModel,
                     localModel: LocalModel,
-                    z: SparseDoubleVector,
+                    z: T,
                     regParam: Double): Double = {
 
     val loss = calcLocalLoss(data, localModel)
 
     return loss
-
-    LOG.info(s"local loss = $loss, average loss=${loss / data.size}")
-    val update = new DenseDoubleVector(1)
-    update.set(0, loss)
-    update.setRowId(0)
-
-    model.loss.increment(update)
-    model.loss.clock().get()
-    val lxLoss = model.loss.getRow(0).get(0)
-
-    val zVals = z.getValues
-
-    var rzLoss = 0.0
-    for (i <- 0 until zVals.length)
-      rzLoss += Math.abs(zVals(i))
-
-    rzLoss = regParam * rzLoss
-
-    LOG.info(s"rzLoss=$rzLoss")
-    return rzLoss + lxLoss
   }
 
 
@@ -441,7 +414,7 @@ object ADMM {
                          val data: Array[DataBlock[LabeledData]],
                          gradient: LogisticGradient,
                          u: DenseDoubleVector,
-                         z: SparseDoubleVector,
+                         z: T,
                          localIndex: LocalIndex,
                          rho: Double,
                          var repeatTime: Int = 0) extends DiffFunction[breeze.linalg.Vector[Double]] {
@@ -524,7 +497,7 @@ object ADMM {
 
   private
   def validate(data: DataBlock[LabeledData],
-               z: SparseDoubleVector,
+               z: T,
                localIndex: LocalIndex,
                localModel: LocalModel): Double = {
     data.resetReadIndex()
@@ -541,7 +514,7 @@ object ADMM {
               var dot = 0.0
               for (i <- 0 until indices.length)
                 dot += z.get(localIndex.localToGloabl(indices(i)))
-              val score = MathUtils.sigmoid(dot)
+              val score = Maths.sigmoid(dot)
               if (score >= 0.5 && sample.getY > 0)
                 acn += 1
               if (score < 0.5  && sample.getY <= 0)
@@ -552,7 +525,7 @@ object ADMM {
               var dot = 0.0
               for (i <- 0 until indices.length)
                 dot += z.get(localIndex.localToGloabl(indices(i))) * values(i)
-              val score = MathUtils.sigmoid(dot)
+              val score = Maths.sigmoid(dot)
               if (score >= 0.5 && sample.getY > 0)
                 acn += 1
               if (score < 0.5  && sample.getY <= 0)

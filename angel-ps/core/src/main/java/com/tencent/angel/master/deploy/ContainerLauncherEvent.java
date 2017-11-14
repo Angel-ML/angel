@@ -16,9 +16,8 @@
 
 package com.tencent.angel.master.deploy;
 
-import org.apache.hadoop.yarn.event.AbstractEvent;
-
 import com.tencent.angel.common.Id;
+import org.apache.hadoop.yarn.event.AbstractEvent;
 
 /**
  * Base class of container launcher event.

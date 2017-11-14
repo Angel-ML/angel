@@ -22,7 +22,6 @@ import com.tencent.angel.master.app.App;
 import com.tencent.angel.master.ps.attempt.PSAttempt;
 import com.tencent.angel.master.ps.ps.AMParameterServer;
 import com.tencent.angel.master.worker.workergroup.AMWorkerGroup;
-
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.DIV;

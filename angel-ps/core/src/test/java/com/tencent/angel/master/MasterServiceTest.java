@@ -16,11 +16,30 @@
 
 package com.tencent.angel.master;
 
-import static org.junit.Assert.*;
-
-import java.io.IOException;
-import java.util.Map;
-
+import com.tencent.angel.client.AngelClient;
+import com.tencent.angel.client.AngelClientFactory;
+import com.tencent.angel.common.Location;
+import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.conf.MatrixConf;
+import com.tencent.angel.ipc.TConnection;
+import com.tencent.angel.ipc.TConnectionManager;
+import com.tencent.angel.localcluster.LocalClusterContext;
+import com.tencent.angel.master.task.AMTask;
+import com.tencent.angel.master.task.AMTaskManager;
+import com.tencent.angel.master.worker.attempt.WorkerAttempt;
+import com.tencent.angel.ml.matrix.MatrixContext;
+import com.tencent.angel.protobuf.ProtobufUtil;
+import com.tencent.angel.protobuf.generated.MLProtos;
+import com.tencent.angel.protobuf.generated.MLProtos.LocationProto;
+import com.tencent.angel.protobuf.generated.MLProtos.Pair;
+import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.*;
+import com.tencent.angel.ps.PSAttemptId;
+import com.tencent.angel.ps.ParameterServerId;
+import com.tencent.angel.worker.Worker;
+import com.tencent.angel.worker.WorkerAttemptId;
+import com.tencent.angel.worker.WorkerGroupId;
+import com.tencent.angel.worker.WorkerId;
+import com.tencent.angel.worker.task.TaskId;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -33,37 +52,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.google.protobuf.ServiceException;
-import com.tencent.angel.client.AngelClient;
-import com.tencent.angel.client.AngelClientFactory;
-import com.tencent.angel.common.Location;
-import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.conf.MatrixConf;
-import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ipc.TConnection;
-import com.tencent.angel.ipc.TConnectionManager;
-import com.tencent.angel.localcluster.LocalClusterContext;
-import com.tencent.angel.master.task.AMTask;
-import com.tencent.angel.master.task.AMTaskManager;
-import com.tencent.angel.master.worker.attempt.WorkerAttempt;
-import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.protobuf.ProtobufUtil;
-import com.tencent.angel.protobuf.generated.MLProtos;
-import com.tencent.angel.protobuf.generated.MLProtos.LocationProto;
-import com.tencent.angel.protobuf.generated.MLProtos.Pair;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.TaskStateProto;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerCommandProto;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerRegisterRequest;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerRegisterResponse;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerReportRequest;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerReportResponse;
-import com.tencent.angel.ps.PSAttemptId;
-import com.tencent.angel.ps.ParameterServerId;
-import com.tencent.angel.worker.Worker;
-import com.tencent.angel.worker.WorkerAttemptId;
-import com.tencent.angel.worker.WorkerGroupId;
-import com.tencent.angel.worker.WorkerId;
-import com.tencent.angel.worker.task.TaskId;
+import java.util.Map;
+
+import static org.junit.Assert.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class MasterServiceTest {

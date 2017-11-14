@@ -1,182 +1,279 @@
-### **update psf接口定义**
-update方法的定义如下：
+# UpdateFunc(更新型函数)
+
+
+## 原理
+
+1. PS Client（参数服务器客户端）进行请求划分，生成一个请求列表，这个请求列表中的每一个请求都和一个模型参数分区对应。
+
+2. 将请求列表中的所有请求发送给模型参数分区所在的PS实例。PS实例以模型参数分区为单位执行参数获取和更新操作，并返回相应的结果。
+
+3. 等待所有请求完成后返回
+
+
+## **定义**
+
+* **接口**
+
 ```Java
 Future<VoidResult> update(UpdaterFunc update) throws AngelException;
 ```
-其中参数类型是一个UpdaterFunc对象，该对象封装了update psf方法的参数和执行流程：
-```Java
-public abstract class UpdaterFunc {
-  private final UpdaterParam param;
-  public UpdaterFunc(UpdaterParam param) {
-    this.param = param;
-  }
-  public UpdaterParam getParam() {return param;}
-  public abstract void partitionUpdate(PartitionUpdaterParam partParam);
-}
-``` 
-update psf参数类型为UpdaterParam。UpdateParam对象与GetParam对象类似，它除了包含update的具体参数外，也有一个split方法，该方法的作用是将全局的update参数按照矩阵分区进行划分，得到的结果是一个分区update参数列表，即PartitionUpdateParam对象列表。
 
-与get psf不同，update pof的执行流程只有一步：即以矩阵分区为单位分别进行update操作，这个过程由partitionUpdate方法表示。update psf没有具体的返回值，只返回给应用程序一个Future，应用程序可以选择是否等待操作完成。
+* **参数**
+	* 参数类型是一个UpdaterFunc对象，该对象封装了update psf方法的参数和执行流程：
 
-上述提到的UpdaterParam, PartitionUpdaterParam类以及partitionUpdater方法都可以由用户自由扩展。这样可以定制自己所需的任何参数更新方式。
+		```Java
+		public abstract class UpdaterFunc {
+			private final UpdaterParam param;
+			public UpdaterFunc(UpdaterParam param) {
+		  		this.param = param;
+			  }
+			public UpdaterParam getParam() {return param;}
+			public abstract void partitionUpdate(PartitionUpdaterParam partParam);
+		}
+		```
 
-### **update psf实现流程**
-update psf执行流程需要PS Client和PS共同完成。上述提到的UpdaterParam划分和最后的merge方法是在PS Client执行的；而partitionUpdate方法是在PS端执行的。具体的流程如下图所示，左子图表示PS Client处理流程，右子图表示PS端处理流程：
+	* UpdateFunc对象的参数类型为UpdateParam
+	   * UpdateParam对象与GetParam对象类似，它除了包含update的具体参数外，也有一个split方法，该方法的作用是将全局的update参数按照矩阵分区进行划分，得到的结果是一个分区update参数列表，即PartitionUpdateParam对象列表。
 
-![][1]
+## 执行流程
 
-### **update psf编程示例**
-下面是一个简单的使用update psf实现将矩阵某一行设置为指定范围随机数的例子。
-```Java
-public class Random extends UpdaterFunc {
-  // Random函数的参数
-  public static class RandomUpdaterParam extends UpdaterParam {
-    // 行号
-    private final int rowIndex;
-    // 随机数下界
-    private final double min;
-    // 随机数上界
-    private final double max;
+与get psf不同，update psf的执行流程只有一步：
 
-    public RandomUpdaterParam(int matrixId, int rowIndex, double min, double max) {
-      super(matrixId);
-      this.rowIndex = rowIndex;
-      this.min = min;
-      this.max = max;
-    }
+* 即以矩阵分区为单位分别进行update操作，这个过程partitionUpdate方法表示。
 
-    // 生成分区random参数列表
-    @Override
-    public List<PartitionUpdaterParam> split() {
-      // 获取矩阵包含的分区列表
-      List<PartitionKey> parts =
-          PSAgentContext.get().getMatrixPartitionRouter().getPartitionKeyList(matrixId);
-      int size = parts.size();
+update psf没有具体的返回值，只返回给应用程序一个Future，应用程序可以选择是否等待操作完成。
 
-      List<PartitionUpdaterParam> partParams = new ArrayList<PartitionUpdaterParam>(size);
+update型psFunc执行流程需要PS Client和PS共同完成。上述提到的
 
-      // 如果一个分区包含指定行号，则为他生成一个分区random参数
-      for (int i = 0; i < size; i++) {
-        if(rowIndex >= parts.get(i).getStartRow() && rowIndex < parts.get(i).getEndRow()) {
-          partParams.add(new PartitionRandomParam(matrixId, parts.get(i), rowIndex, min, max));
-        }   
-      }
+* UpdaterParam划分是在Worker执行
+* partitionUpdate方法是在PSServer端执行
 
-      return partParams;
-    }
-    
-    public int getRowIndex() {
-      return rowIndex;
-    }
-  }
-  
-  // 分区Random参数
-  public static class PartitionRandomParam extends PartitionUpdaterParam {
-    // 行号
-    private int rowIndex;
-    // 随机数下界
-    private double min;
-    // 随机数上界
-    private double max;
-    
-    public PartitionRandomParam(int matrixId, PartitionKey partKey, int rowIndex, double min, double max) {
-      super(matrixId, partKey);
-      this.rowIndex = rowIndex;
-      this.min = min;
-      this.max = max;
-    }
-    
-    // 定义一个无参构造函数，序列化/反序列化用
-    public PartitionRandomParam() {
-      this(-1, null, -1, -1.0, -1.0);
-    }
-  
-    // 将分区random参数序列化到一个buffer中
-    @Override
-    public void serialize(ByteBuf buf) {
-      super.serialize(buf);
-      buf.writeInt(rowIndex);
-      buf.writeDouble(min);
-      buf.writeDouble(max);
-    }
+具体的流程如下图所示，左子图表示Worker处理流程，右子图表示PS Server处理流程：
 
-    // 从buffer中反序列化出分区random参数
-    @Override
-    public void deserialize(ByteBuf buf) {
-      super.deserialize(buf);
-      rowIndex = buf.readInt();
-      min = buf.readDouble();
-      max = buf.readDouble();
-    }
+![](../img/psf_update.png)
 
-    // 估算所需buffer大小
-    @Override
-    public int bufferLen() {
-      return 20 + super.bufferLen();
-    }
+## 编程样例
 
-    public int getRowIndex() {
-      return rowIndex;
-    }
+* [com.tencent.angel.ml.matrix.psf.update.RandomUniform](https://github.com/Tencent/angel/blob/master/angel-ps/psf/src/main/java/com/tencent/angel/ml/matrix/psf/update/RandomUniform.java): 将矩阵某一行设置为指定范围随机数的例子
 
-    public double getMin() {
-      return min;
-    }
 
-    public double getMax() {
-      return max;
-    }
-  }
-  
-  public Random(UpdaterParam param) {
-    super(param);
-  }
-  
-  public Random() {
-    this(null);
-  }
+	```Java
+		public class RandomUniform extends MMUpdateFunc {
+			...
+		  @Override
+		  protected void doUpdate(ServerDenseDoubleRow[] rows, double[] scalars) {
+		    Random rand = new Random(System.currentTimeMillis());
+		    try {
+		      rows[0].getLock().writeLock().lock();
+		      double min = scalars[0];
+		      double max = scalars[1];
+		      double factor = max - min;
 
-  // 分区random操作
-  @Override
-  public void partitionUpdate(PartitionUpdaterParam partParam) {    
-    PartitionRandomParam randomParam = (PartitionRandomParam) partParam;
-
-    // 获取矩阵分区
-    ServerPartition part =
-        PSContext.get().getMatrixPartitionManager()
-            .getPartition(randomParam.getMatrixId(), randomParam.getPartKey().getPartitionId());
-
-    if (part != null) {
-      // 获取参数
-      int rowIndex = randomParam.getRowIndex();
-      double min = randomParam.getMin();
-      double max = randomParam.getMax();
-      java.util.Random r = new java.util.Random();
-      // 获取指定行分片
-      ServerDenseDoubleRow row = (ServerDenseDoubleRow) part.getRow(rowIndex);
-      if (row != null) {
-        int size = row.size();
-        try {
-          row.getLock().writeLock().lock();
-          // 将该行分片的每一个成员设置为指定范围的随机数
-          for(int i= 0; i < size; i++) {
-            row.set(i, r.nextDouble() * (max - min) + min);
-          }
-        } finally {
-          row.getLock().writeLock().unlock();
-        }
-      }
-    }
-  }
-}
-
-```
+		      DoubleBuffer data = rows[0].getData();
+		      int size = rows[0].size();
+		      for (int i = 0; i < size; i++) {
+		        data.put(i, factor * rand.nextDouble() + min);
+		      }
+		    } finally {
+		      rows[0].getLock().writeLock().unlock();
+		    }
+		  }
+		}
+	```
 
 将代码编译后打成jar包，在提交任务时通过参数angel.lib.jars上传该jar包，然后就可以在应用程序中调用了。调用方式如下：
+
 ```Java
-Random randomFunc = new Random(new RandomParam(matrixId, rowIndex, 0.0, 1.0));
-psModel.update(randomFunc).get();
+	Random randomFunc = new RandomUniform(new RandomParam(matrixId, rowIndex, 0.0, 1.0));
+	psModel.update(randomFunc).get();
 ```
 
+## Update函数库
 
-  [1]: ../img/psf_update.png
+* **Abs**
+
+	* 功能：将矩阵某一行每一个元素的绝对值赋值给另外一行的相应元素
+	* 参数：矩阵id，from 行号， to行号
+	* 返回值：无
+
+* **Add**
+	* 功能：将矩阵某两行之和赋值给另外一行
+	* 参数：矩阵id，from 行号1，from行号2，to行号
+	* 返回值：无
+
+* **AddS**
+	* 功能：将矩阵某一行元素都加上一个标量后赋值给另外一行的相应元素
+	* 参数：矩阵id，from 行号1，to行号，标量值
+	* 返回值：无
+
+* **Axpy**
+	* 功能：y=Ax+y, x,y为向量，A为标量
+	* 参数：矩阵id，代表x向量的行的行号，代表y向量的行的行号，标量值A
+	* 返回值：无
+
+* **Ceil**
+	* 功能：将矩阵中的某一行的个元素向上取整得到的值赋值给另外一行的相应元素
+	* 参数：矩阵id，from行号，to行号
+	*返回值：无
+
+* **Copy**
+	* 功能：将矩阵中的某一行的个元素的值赋值给另外一行的相应元素
+	* 参数：矩阵id，from行号，to行号
+	* 返回值：无
+		
+* **Div**
+	* 功能：将矩阵中的某两行的对应元素相除得到的值赋值给另外一行的相应元素
+	* 参数：矩阵id，from行号1，from行号2，to行号
+	* 返回值：无
+
+* **DivS**
+    * 功能：将矩阵中的某一行的每一个元素除以一个标量得到的值赋值给另外一行的相应元素
+    * 参数：矩阵id，from行号，to行号，标量值
+    * 返回值：无
+
+* **Exp**
+    * 功能：将矩阵中的某一行的每一个元素计算指数（以e为底，元素值为幂）运算，将值赋值给另外一行的相应元素
+    * 参数：矩阵id，from行号，to行号
+    * 返回值：无
+
+* **Expm1**
+    * 功能：将矩阵中的某一行的每一个元素以e为底计算指数然后减去1，将得到的值赋值给另外一行的相应元素
+    * 参数：矩阵id，from行号，to行号
+    * 返回值：无
+
+* **Fill**
+    * 功能：将矩阵中的某一行的每一个元素都置为一个标量值
+    * 参数：矩阵id，行号，标量值
+    * 返回值：无
+
+* **Floor**
+    * 功能：将矩阵中的某一行的每一个元素向下取整，将得到的值赋值给另外一行的相应元素
+    * 参数：矩阵id，from行号，to行号
+    * 返回值：无
+
+* **Increment**
+    * 功能：将矩阵中的某一行的每个元素加上一个标量值
+    * 参数：矩阵id，from行号，标量值数组，该数组长度必须与向量大小相等
+    * 返回值：无
+
+* **Log**
+    * 功能：将矩阵中的某一行的每个元素求取自然对数， 将得到的值赋值给另外一行的相应元素
+    * 参数：矩阵id，from行号，to行号
+    * 返回值：无
+
+* **Log10**
+    * 功能：将矩阵中的某一行的每个元素求取以10为底对数，将得到的值赋值给另外一行的相应元素
+    * 参数：矩阵id，from行号，to行号
+    * 返回值：无
+
+* **Log1p**
+    * 功能：将矩阵中的某一行的每个元素加上1后求取为底对数，将得到的值赋值给另外一行的相应元素
+    * 参数：矩阵id，from行号，to行号
+    * 返回值：无
+
+* **Map**
+    * 功能：将矩阵中的某一行的每个元素进行某种计算，将得到的值赋值给另外一行的相应元素
+    * 参数：矩阵id，from行号，to行号，计算函数（该计算函数拥有一个    * 参数，即    * 参数为元素的值）
+    * 返回值：无
+
+* **MapWithIndex**
+    * 功能：将矩阵中的某一行的每个元素进行某种计算，将得到的值赋值给另外一行的相应元素
+    * 参数：矩阵id，from行号，to行号，计算函数（该计算函数拥有二个    * 参数，即元素的下标和值）
+    * 返回值：无
+
+* **MaxA**
+    * 功能：将矩阵中的某一行的每个元素与一个标量值进行比较，然后将较大的值赋值给该行的相应元素
+    * 参数：矩阵id，行号，标量值数组（该数组必须与行大小相等）
+    * 返回值：无
+
+* **MaxV**
+    * 功能：将矩阵中的某两行的对应元素进行比较，然后将较大的值赋值给另外一行的相应元素
+    * 参数：矩阵id，from行号1，from行号2，to行号
+    * 返回值：无
+
+* **MinA**
+    * 功能：将矩阵中的某一行的每个元素与一个标量值进行比较，然后将较小的值赋值给该行的相应元素
+    * 参数：矩阵id，行号，标量值数组（该数组必须与行大小相等）
+    * 返回值：无
+
+* **MinV**
+    * 功能：将矩阵中的某两行的对应元素进行比较，然后将较小的值赋值给另外一行的相应元素
+    * 参数：矩阵id，from行号1，from行号2，to行号
+    * 返回值：无
+
+* **Mul**
+    * 功能：将矩阵中的某两行的对应元素相乘，然后将值赋值给另外一行的相应元素
+    * 参数：矩阵id，from行号1，from行号2，to行号
+    * 返回值：无
+
+* **MulS**
+
+    * 功能：将矩阵中的某一行的每个元素乘以一个标量，然后将值赋值给另外一行的相应元素
+    * 参数：矩阵id，from行号，to行号，标量值
+    * 返回值：无
+
+* **Pow**
+    * 功能：将矩阵中的某一行的每个元素做指数运算（指数的底为元素值，幂为一个指定的标量），然后将值赋值给另外一行的相应元素
+    * 参数：矩阵id，from行号，to行号，标量值
+    * 返回值：无
+
+* **Put**
+    * 功能：给矩阵的某一行的每一个元素赋值
+    * 参数：矩阵id，行号，标量值数组（该数组大小必须与行大小相等）
+    * 返回值：无
+
+* **RandomNormal**
+    * 功能：给矩阵的某一行的每一个元素赋一个随机值，值符合高斯分布
+    * 参数：矩阵id，行号，高斯分布平均数，高斯分布标准差
+    * 返回值：无
+
+* **RandomUniform**
+    * 功能：给矩阵的某一行的每一个元素赋一个随机值，值符合均匀分布
+    * 参数：矩阵id，行号，均匀分布范围下限，均匀分布范围上限
+    * 返回值：无
+
+* **Round**
+    * 功能：将矩阵中的某一行的每个元素做round计算（求取最接近的整数），然后将值赋值给另外一行的相应元素
+    * 参数：矩阵id，from行号，to行号
+    * 返回值：无
+
+* **Scale**
+    * 功能：将矩阵中的某一行的每个元素乘以一个标量
+    * 参数：矩阵id，行号，标量值
+    * 返回值：无
+
+* **Signum**
+    * 功能：将矩阵中的某一行的每个元素做signum运算（值大于0，返回1.0；小于0，返回-1.0；等于0，返回0），然后将值赋值给另外一行的相应元素
+    * 参数：矩阵id，from行号，to行号
+    * 返回值：无
+
+* **Sqrt**
+    * 功能：将矩阵中的某一行的每个元素做平方根运算，然后将值赋值给另外一行的相应元素
+    * 参数：矩阵id，from行号，to行号
+    * 返回值：无
+
+* **Sub**
+    * 功能：将矩阵中的某两行的对应元素做减法，然后将值赋值给另外一行的相应元素
+    * 参数：矩阵id，from行号1，from行号2，to行号
+    * 返回值：无
+
+* **Zip2Map**
+    * 功能：将矩阵中的某两行的对应元素指定运算（由一个函数表示），然后将值赋值给另外一行的相应元素
+    * 参数：矩阵id，from行号1，from行号2，to行号，运算函数（该函数有两个    * 参数，分别是两行对应位置上的元素值）
+    * 返回值：无
+
+* **Zip2MapWithIndex**
+    * 功能：将矩阵中的某两行的对应元素指定运算（由一个函数表示），然后将值赋值给另外一行的相应元素
+    * 参数：矩阵id，from行号1，from行号2，to行号，运算函数（该函数有三个    * 参数，分别是元素下标索引，两行对应位置上的元素值）
+    * 返回值：无
+
+* **Zip3Map**
+    * 功能：将矩阵中的某三行的对应元素指定运算（由一个函数表示），然后将值赋值给另外一行的相应元素
+    * 参数：矩阵id，from行号1，from行号2，to行号，运算函数（该函数有三个    * 参数，分别是三行对应位置上的元素值）
+    * 返回值：无
+
+* **Zip3MapWithIndex**
+    * 功能：将矩阵中的某三行的对应元素指定运算（由一个函数表示），然后将值赋值给另外一行的相应元素
+    * 参数：矩阵id，from行号1，from行号2，to行号，运算函数（该函数有四个    * 参数，分别是元素下标索引，三行对应位置上的元素值）
+    * 返回值：无
+

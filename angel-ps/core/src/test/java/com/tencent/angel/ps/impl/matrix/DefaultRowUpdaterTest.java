@@ -28,7 +28,7 @@ import org.apache.log4j.PropertyConfigurator;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class DefaultRowUpdaterTest {
   private final static Log LOG = LogFactory.getLog(ServerSparseDoubleRowTest.class);
@@ -80,10 +80,10 @@ public class DefaultRowUpdaterTest {
     ServerDenseIntRow serverDenseIntRow = new ServerDenseIntRow(rowId, startCol, endCol);
     ByteBuf buf = Unpooled.buffer(16);
     buf.writeInt(0);
-    buf.writeInt(1);
-    buf.writeInt(2);
     buf.writeInt(0);
     buf.writeInt(1);
+    buf.writeInt(1);
+    buf.writeInt(2);
     buf.writeInt(-1);
     rowUpdater.updateIntSparseToIntDense(3, buf, serverDenseIntRow);
     assertEquals(serverDenseIntRow.getData().get(0), 0, 0.00);
@@ -111,10 +111,10 @@ public class DefaultRowUpdaterTest {
     ServerSparseIntRow serverSparseIntRow = new ServerSparseIntRow(rowId, startCol, endCol);
     ByteBuf buf = Unpooled.buffer(16);
     buf.writeInt(0);
-    buf.writeInt(1);
-    buf.writeInt(2);
     buf.writeInt(0);
     buf.writeInt(1);
+    buf.writeInt(1);
+    buf.writeInt(2);
     buf.writeInt(2);
     rowUpdater.updateIntSparseToIntSparse(3, buf, serverSparseIntRow);
     Int2IntOpenHashMap hashMap = new Int2IntOpenHashMap();
@@ -142,10 +142,10 @@ public class DefaultRowUpdaterTest {
     ServerDenseDoubleRow serverDenseDoubleRow = new ServerDenseDoubleRow(rowId, startCol, endCol);
     ByteBuf buf = Unpooled.buffer(16);
     buf.writeInt(0);
-    buf.writeInt(1);
-    buf.writeInt(2);
     buf.writeDouble(0.00);
+    buf.writeInt(1);
     buf.writeDouble(1.00);
+    buf.writeInt(2);
     buf.writeDouble(-1.00);
     rowUpdater.updateDoubleSparseToDoubleDense(3, buf, serverDenseDoubleRow);
     assertEquals(serverDenseDoubleRow.getData().get(0), 0, 0.00);
@@ -175,10 +175,10 @@ public class DefaultRowUpdaterTest {
         new ServerSparseDoubleRow(rowId, startCol, endCol);
     ByteBuf buf = Unpooled.buffer(16);
     buf.writeInt(0);
-    buf.writeInt(1);
-    buf.writeInt(2);
     buf.writeDouble(0.00);
+    buf.writeInt(1);
     buf.writeDouble(1.00);
+    buf.writeInt(2);
     buf.writeDouble(2.00);
     rowUpdater.updateDoubleSparseToDoubleSparse(3, buf, serverSparseDoubleRow);
     Int2DoubleOpenHashMap hashMap = new Int2DoubleOpenHashMap();

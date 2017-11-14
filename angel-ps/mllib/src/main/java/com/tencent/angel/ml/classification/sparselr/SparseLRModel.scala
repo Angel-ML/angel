@@ -18,13 +18,13 @@
 package com.tencent.angel.ml.classification.sparselr
 
 
+import java.text.DecimalFormat
+
 import com.tencent.angel.ml.conf.MLConf._
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.{DenseDoubleVector, DenseIntVector, SparseDoubleVector}
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
-import com.tencent.angel.ml.utils.MathUtils
-import com.tencent.angel.protobuf.generated.MLProtos
+import com.tencent.angel.ml.utils.Maths
 import com.tencent.angel.protobuf.generated.MLProtos.RowType
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
@@ -46,14 +46,11 @@ class SparseLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLMod
   // Bucket number for calculation of AUC
   val bucketNum = conf.getInt(BUCKET_NUM, 10000)
 
-  val w = PSModel[DenseDoubleVector](W, 1, feaNum).setNeedSave(false)
-  val z = PSModel[SparseDoubleVector](Z, 1, feaNum).setRowType(MLProtos.RowType.T_DOUBLE_SPARSE)
-  val t = PSModel[DenseDoubleVector](T, 1, 1).setNeedSave(false)
-  val loss = PSModel[DenseDoubleVector](LOSS, 1, 1).setNeedSave(false)
-  val auc  = PSModel[DenseIntVector](AUC, 1, bucketNum * 2)
-    .setNeedSave(false)
-    .setRowType(RowType.T_INT_DENSE)
-    .setOplogType("DENSE_INT")
+  val w = PSModel(W, 1, feaNum).setRowType(RowType.T_DOUBLE_DENSE).setNeedSave(false)
+  val z = PSModel(Z, 1, feaNum).setRowType(RowType.T_DOUBLE_SPARSE)
+  val t = PSModel(T, 1, 1).setRowType(RowType.T_DOUBLE_DENSE).setNeedSave(false)
+  val loss = PSModel(LOSS, 1, 1).setRowType(RowType.T_DOUBLE_DENSE).setNeedSave(false)
+  val auc  = PSModel(AUC, 1, bucketNum * 2).setRowType(RowType.T_INT_DENSE).setNeedSave(false).setOplogType("DENSE_INT")
 
   addPSModel(w)
   addPSModel(z)
@@ -76,8 +73,8 @@ class SparseLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLMod
       val instance = dataSet.read
       val id = instance.getY
       val dot = weight.dot(instance.getX)
-      val sig = MathUtils.sigmoid(dot)
-      predict.put(new LRPredictResult(id, dot, sig))
+      val sig = Maths.sigmoid(dot)
+      predict.put(new SparseLRPredictResult(id, dot, sig))
     }
     predict
   }
@@ -91,8 +88,9 @@ class SparseLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLMod
 }
 
 
-class LRPredictResult(id: Double, dot: Double, sig: Double) extends PredictResult {
+class SparseLRPredictResult(id: Double, dot: Double, sig: Double) extends PredictResult {
+  val df = new DecimalFormat("0")
   override def getText(): String = {
-    (id + separator + format.format(dot) + separator + format.format(sig))
+    df.format(id) + separator + format.format(dot) + separator + format.format(sig)
   }
 }

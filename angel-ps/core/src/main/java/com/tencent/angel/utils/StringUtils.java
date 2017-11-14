@@ -551,4 +551,22 @@ public class StringUtils {
     }
     return sb.toString();
   }
+
+  public static String join(CharSequence separator, Map<String, String> kvMap) {
+    if(kvMap == null || kvMap.isEmpty()) {
+      return "";
+    }
+
+    StringBuilder sb = new StringBuilder();
+    boolean first = true;
+    for (Map.Entry<String, String> entry : kvMap.entrySet()) {
+      if (first)
+        first = false;
+      else {
+        sb.append(separator);
+      }
+      sb.append(entry.getKey() + ":" + entry.getValue());
+    }
+    return sb.toString();
+  }
 }

@@ -58,7 +58,9 @@ public final class Nnz extends UnaryAggrFunc {
   public GetResult merge(List<PartitionGetResult> partResults) {
     int nnz = 0;
     for (PartitionGetResult partResult : partResults) {
-      nnz += ((ScalarPartitionAggrResult) partResult).result;
+      if (partResult != null) {
+        nnz += ((ScalarPartitionAggrResult) partResult).result;
+      }
     }
 
     return new ScalarAggrResult(nnz);

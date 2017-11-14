@@ -1,14 +1,30 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
 package com.tencent.angel.ml.classification.mlr
 
 import java.util
-
-import com.tencent.angel.ml.classification.lr.SparseLRPredictResult
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.DenseDoubleVector
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
-import com.tencent.angel.ml.utils.MathUtils
+import com.tencent.angel.ml.utils.Maths
+import com.tencent.angel.protobuf.generated.MLProtos.RowType
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
@@ -45,11 +61,11 @@ class MLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
   val feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
   val rank = conf.getInt(MLConf.ML_MLR_RANK, MLConf.DEFAULT_ML_MLR_RANK)
 
-  val sigmoid_weight = PSModel[DenseDoubleVector](MLR_SIGMOID_WEIGHT_MAT, rank, feaNum).setAverage(true)
-  val sigmoid_intercept = PSModel[DenseDoubleVector](MLR_SIGMOID_INTERCEPT, rank, 1).setAverage(true)
+  val sigmoid_weight = PSModel(MLR_SIGMOID_WEIGHT_MAT, rank, feaNum).setRowType(RowType.T_DOUBLE_DENSE).setAverage(true)
+  val sigmoid_intercept = PSModel(MLR_SIGMOID_INTERCEPT, rank, 1).setRowType(RowType.T_DOUBLE_DENSE).setAverage(true)
 
-  val softmax_weight = PSModel[DenseDoubleVector](MLR_SOFTMAX_WEIGHT_MAT, rank, feaNum).setAverage(true)
-  val softmax_intercept = PSModel[DenseDoubleVector](MLR_SOFTMAX_INTERCEPT, rank, 1).setAverage(true)
+  val softmax_weight = PSModel(MLR_SOFTMAX_WEIGHT_MAT, rank, feaNum).setRowType(RowType.T_DOUBLE_DENSE).setAverage(true)
+  val softmax_intercept = PSModel(MLR_SOFTMAX_INTERCEPT, rank, 1).setRowType(RowType.T_DOUBLE_DENSE).setAverage(true)
 
   addPSModel(MLR_SIGMOID_WEIGHT_MAT, sigmoid_weight)
   addPSModel(MLR_SIGMOID_INTERCEPT, sigmoid_intercept)
@@ -78,8 +94,8 @@ class MLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
       val instance = dataSet.read
       val id = instance.getY
       val softmax = (0 until rank).map(i => softmax_wVecot(i).dot(instance.getX) + softmax_b(i)).toArray
-      MathUtils.softmax(softmax)
-      val sigmoid = (0 until rank).map(i => MathUtils.sigmoid({
+      Maths.softmax(softmax)
+      val sigmoid = (0 until rank).map(i => Maths.sigmoid({
         var temp=sigmoid_wVecot(i).dot(instance.getX) + sigmoid_b(i)
         temp=math.max(temp,-18)
         temp=math.min(temp,18)
@@ -101,11 +117,11 @@ class MLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
     val softmax_b = new Array[Double](rank)
 
     for (i <- 0 until rank) {
-      sigmoid_wVecot(i) = sigmoid_weight.getRow(i)
-      sigmoid_b(i) = sigmoid_intercept.getRow(i).get(0)
+      sigmoid_wVecot(i) = sigmoid_weight.getRow(i).asInstanceOf[DenseDoubleVector]
+      sigmoid_b(i) = sigmoid_intercept.getRow(i).asInstanceOf[DenseDoubleVector].get(0)
 
-      softmax_wVecot(i) = softmax_weight.getRow(i)
-      softmax_b(i) = softmax_intercept.getRow(i).get(0)
+      softmax_wVecot(i) = softmax_weight.getRow(i).asInstanceOf[DenseDoubleVector]
+      softmax_b(i) = softmax_intercept.getRow(i).asInstanceOf[DenseDoubleVector].get(0)
     }
 
     val cost = System.currentTimeMillis() - start

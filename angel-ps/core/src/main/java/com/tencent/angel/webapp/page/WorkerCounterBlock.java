@@ -20,17 +20,15 @@ import com.google.inject.Inject;
 import com.tencent.angel.exception.UnvalidIdStrException;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.worker.WorkerAttemptId;
-
-import static com.tencent.angel.webapp.AngelParams.WORKER_ATTEMPT_ID;
-
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.TABLE;
 import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
 
+import java.util.Map;
+
+import static com.tencent.angel.webapp.AngelParams.WORKER_ATTEMPT_ID;
 import static org.apache.hadoop.yarn.util.StringHelper.join;
 import static org.apache.hadoop.yarn.webapp.view.JQueryUI._TH;
-
-import java.util.Map;
 
 public class WorkerCounterBlock extends HtmlBlock {
   final AMContext amContext;

@@ -22,7 +22,7 @@
   <parent>
     <groupId>com.tencent.angel</groupId>
     <artifactId>angel</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.1</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -32,9 +32,10 @@
 
   <modules>
     <module>core</module>
-    <module>mllib</module>
     <module>psf</module>
+    <module>mllib</module>
     <module>examples</module>
+    <module>tools</module>
   </modules>
 
   <properties>
@@ -242,6 +243,11 @@
       <groupId>org.scalanlp</groupId>
       <artifactId>breeze_2.11</artifactId>
       <version>0.12</version>
+    </dependency>
+    <dependency>
+      <groupId>net.sf.py4j</groupId>
+      <artifactId>py4j</artifactId>
+      <version>0.10.4</version>
     </dependency>
   </dependencies>
 

@@ -18,7 +18,6 @@ package com.tencent.angel.ml.math.matrix;
 
 import com.tencent.angel.ml.math.TMatrix;
 import com.tencent.angel.ml.math.vector.SparseIntVector;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -46,7 +45,7 @@ public class SparseIntMatrix extends TIntMatrix {
    * @return
    */
   public SparseIntVector initVector(int rowIndex) {
-    SparseIntVector ret = new SparseIntVector(col);
+    SparseIntVector ret = new SparseIntVector((int)col);
     ret.setMatrixId(matrixId);
     ret.setRowId(rowIndex);
     return ret;

@@ -18,8 +18,8 @@ package com.tencent.angel.ps.impl.matrix;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.common.Serialize;
-import com.tencent.angel.ps.impl.PSContext;
 import com.tencent.angel.protobuf.generated.MLProtos.RowType;
+import com.tencent.angel.ps.impl.PSContext;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2IntMap.Entry;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
@@ -167,34 +167,41 @@ public class ServerPartition implements Serialize {
   private ServerRow initRow(PartitionKey partitionKey, int rowIndex, RowType rowType) {
     switch (rowType) {
       case T_DOUBLE_DENSE:
-        return new ServerDenseDoubleRow(rowIndex, partitionKey.getStartCol(),
-            partitionKey.getEndCol());
+        return new ServerDenseDoubleRow(rowIndex, (int)partitionKey.getStartCol(),
+          (int)partitionKey.getEndCol());
+
       case T_FLOAT_DENSE:
-        return new ServerDenseFloatRow(rowIndex, partitionKey.getStartCol(),
-            partitionKey.getEndCol());
+        return new ServerDenseFloatRow(rowIndex, (int)partitionKey.getStartCol(),
+          (int)partitionKey.getEndCol());
 
       case T_DOUBLE_SPARSE:
-        return new ServerSparseDoubleRow(rowIndex, partitionKey.getStartCol(),
-            partitionKey.getEndCol());
+      case T_DOUBLE_SPARSE_COMPONENT:
+        return new ServerSparseDoubleRow(rowIndex, (int)partitionKey.getStartCol(),
+          (int)partitionKey.getEndCol());
+
+      case T_DOUBLE_SPARSE_LONGKEY:
+        return new ServerSparseDoubleLongKeyRow(rowIndex, partitionKey.getStartCol(), partitionKey.getEndCol());
 
       case T_INT_DENSE:
-        return new ServerDenseIntRow(rowIndex, partitionKey.getStartCol(), partitionKey.getEndCol());
+        return new ServerDenseIntRow(rowIndex, (int)partitionKey.getStartCol(), (int)partitionKey.getEndCol());
 
       case T_INT_SPARSE:
-        return new ServerSparseIntRow(rowIndex, partitionKey.getStartCol(),
-            partitionKey.getEndCol());
+      case T_INT_SPARSE_COMPONENT:
+        return new ServerSparseIntRow(rowIndex, (int)partitionKey.getStartCol(),
+          (int)partitionKey.getEndCol());
 
       case T_INT_ARBITRARY:
-        return new ServerArbitraryIntRow(rowIndex, partitionKey.getStartCol(),
-            partitionKey.getEndCol());
+        return new ServerArbitraryIntRow(rowIndex, (int)partitionKey.getStartCol(),
+          (int)partitionKey.getEndCol());
 
       case T_FLOAT_SPARSE:
-        return  new ServerSparseFloatRow(rowIndex, partitionKey.getStartCol(), partitionKey.getStartCol());
+      case T_FLOAT_SPARSE_COMPONENT:
+        return  new ServerSparseFloatRow(rowIndex, (int)partitionKey.getStartCol(), (int)partitionKey.getStartCol());
 
       default:
         LOG.warn("invalid rowtype " + rowType + ", default is " + RowType.T_DOUBLE_DENSE);
-        return new ServerDenseDoubleRow(rowIndex, partitionKey.getStartCol(),
-            partitionKey.getEndCol());
+        return new ServerDenseDoubleRow(rowIndex, (int)partitionKey.getStartCol(),
+          (int)partitionKey.getEndCol());
     }
   }
 
@@ -204,6 +211,7 @@ public class ServerPartition implements Serialize {
         return new ServerDenseDoubleRow();
 
       case T_DOUBLE_SPARSE:
+      case T_DOUBLE_SPARSE_COMPONENT:
         return new ServerSparseDoubleRow();
 
       case T_INT_DENSE:
@@ -212,7 +220,12 @@ public class ServerPartition implements Serialize {
       case T_FLOAT_DENSE:
         return new ServerDenseFloatRow();
 
+      case T_FLOAT_SPARSE:
+      case T_FLOAT_SPARSE_COMPONENT:
+        return new ServerSparseFloatRow();
+
       case T_INT_SPARSE:
+      case T_INT_SPARSE_COMPONENT:
         return new ServerSparseIntRow();
 
       case T_INT_ARBITRARY:
@@ -229,12 +242,12 @@ public class ServerPartition implements Serialize {
   }
 
   /**
-   * Read rows of partition from input
+   * Read partition elements and state from a input stream
    *
-   * @param input the input
+   * @param input the input stream
    * @throws IOException
    */
-  public void readFrom(DataInputStream input) throws IOException {
+  public void readSnapshot(DataInputStream input) throws IOException {
     readClocks(input);
     int size = input.readInt();
     if (LOG.isDebugEnabled()) {
@@ -244,16 +257,16 @@ public class ServerPartition implements Serialize {
     for (int i = 0; i < size; i++) {
       int rowId = input.readInt();
       if (LOG.isDebugEnabled()) {
-        LOG.info("rowId: " + rowId);
+        LOG.debug("rowId: " + rowId);
       }
       rows.get(rowId).readFrom(input);
     }
   }
-  
+
   private void readClocks(DataInputStream input) throws IOException{
     try {
       lock.writeLock().lock();
-      LOG.debug("readClocks, partition " + partitionKey + " clock details:");      
+      LOG.debug("readClocks, partition " + partitionKey + " clock details:");
       minClock = input.readInt();
       LOG.debug("minClock=" + minClock);
       int clockMapSize = input.readInt();
@@ -269,26 +282,26 @@ public class ServerPartition implements Serialize {
   }
 
   /**
-   * Write rows of partition to output
+   * Write partition elements and state to a output stream
    *
-   * @param output the output
+   * @param output the output stream
    * @throws IOException
    */
-  public void writeTo(DataOutputStream output) throws IOException {
+  public void writeSnapshot(DataOutputStream output) throws IOException {
     if (LOG.isDebugEnabled()) {
       LOG.debug("write partitionKey: " + partitionKey);
       LOG.debug("row size: " + rows.size());
     }
-    
+
     writeClocks(output);
-    
+
     output.writeInt(rows.size()); // write row size
     for (Map.Entry<Integer, ServerRow> entry : rows.entrySet()) {
       output.writeInt(entry.getKey()); // write rowId
       entry.getValue().writeTo(output); // write rowContent
     }
   }
-  
+
   private void writeClocks(DataOutputStream output) throws IOException{
     try {
       lock.readLock().lock();
@@ -321,19 +334,11 @@ public class ServerPartition implements Serialize {
    * @throws IOException the io exception
    */
   public void commit(DataOutputStream output) throws IOException {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("commit partitionKey: " + partitionKey);
-      LOG.debug("row size: " + rows.size());
-    }
-    // start end
-    partitionKey.write(output);
-    // rowtype
-    output.writeUTF(rowType.toString());
-    output.writeInt(rows.size()); // write row size
+    output.writeInt(rows.size());
     for (Map.Entry<Integer, ServerRow> entry : rows.entrySet()) {
-      output.writeInt(entry.getKey()); // write rowId
+      output.writeInt(entry.getKey());
       ServerRow row = entry.getValue();
-      row.writeTo(output); // write rowContent
+      row.writeTo(output);
     }
   }
 
@@ -344,20 +349,6 @@ public class ServerPartition implements Serialize {
    * @throws IOException
    */
   public void load(DataInputStream input) throws IOException {
-    PartitionKey pkey = new PartitionKey(-1, -1, -1, -1, -1, -1);
-    pkey.read(input);
-
-    if (pkey.getStartRow() != partitionKey.getStartRow() ||
-            pkey.getEndRow() != partitionKey.getEndRow() ||
-            pkey.getStartCol() != partitionKey.getStartCol() ||
-            pkey.getEndCol() != partitionKey.getEndCol()) {
-      LOG.error("Load error " + pkey + " while " + partitionKey);
-      throw new IOException("Load Error " + pkey + " while " + partitionKey);
-    }
-
-    String rowType = input.readUTF();
-    LOG.info("RowType for partition " + partitionKey + " is " + rowType);
-
     int size = input.readInt();
     for (int i = 0; i < size; i ++) {
       int rowId = input.readInt();
@@ -444,5 +435,14 @@ public class ServerPartition implements Serialize {
     for(int i = 0; i < size; i++){
       update(rowsSplit.get(i));
     }
+  }
+
+  public int elementNum() {
+    int num = 0;
+    for(ServerRow row:rows.values()) {
+      num = row.size();
+    }
+
+    return num;
   }
 }

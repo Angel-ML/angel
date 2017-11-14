@@ -20,12 +20,14 @@ package com.tencent.angel.ml.factorizationmachines
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.SparseDoubleSortedVector
-import com.tencent.angel.worker.task.{TaskContext, TrainTask}
+import com.tencent.angel.ml.task.TrainTask
+import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.io.{LongWritable, Text}
 
 /**
   * This task train a Factorization Machines model
+ *
   * @param ctx ： task context
   */
 class FMTrainTask (val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
@@ -37,10 +39,10 @@ class FMTrainTask (val ctx: TaskContext) extends TrainTask[LongWritable, Text](c
 
   override def train(taskContext: TaskContext): Unit = {
     LOG.info("FM train task.")
-    trainDataBlock.shuffle()
+    taskDataBlock.shuffle()
 
     val learner = new FMLearner(ctx, minP, maxP, feaUsed)
-    learner.train(trainDataBlock, null)
+    learner.train(taskDataBlock, null)
   }
 
   /**
@@ -80,7 +82,7 @@ class FMTrainTask (val ctx: TaskContext) extends TrainTask[LongWritable, Text](c
     while (reader.nextKeyValue) {
       val data = parse(reader.getCurrentKey, reader.getCurrentValue)
       if (data != null) {
-        trainDataBlock.put(data)
+        taskDataBlock.put(data)
         val indexs = data.getX.asInstanceOf[SparseDoubleSortedVector].getIndices
         for (i <- indexs)
           feaUsed(i) += 1
@@ -88,8 +90,8 @@ class FMTrainTask (val ctx: TaskContext) extends TrainTask[LongWritable, Text](c
         maxP = if (data.getY > maxP) data.getY else maxP
       }
     }
-    trainDataBlock.flush()
-    LOG.info(s"Preprocessed ${trainDataBlock.size()} samples. minP=$minP, maxP=$maxP, feaUsed" +
+    taskDataBlock.flush()
+    LOG.info(s"Preprocessed ${taskDataBlock.size()} samples. minP=$minP, maxP=$maxP, feaUsed" +
       s".size=${feaUsed.count({x:Int => x > 2})}")
   }
 

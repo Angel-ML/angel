@@ -18,29 +18,58 @@ package com.tencent.angel.psagent.matrix.transport;
 
 import com.tencent.angel.ps.ParameterServerId;
 
-/**Refresh server address event*/
+/**
+ * Refresh server address event
+ */
 public class RefreshServerLocationEvent extends DispatcherEvent {
-  /**server id*/
+  /**
+   * server id
+   */
   private final ParameterServerId serverId;
+
+  /**
+   * Is server location is updated
+   */
+  private final boolean isUpdated;
 
   /**
    * Create a new RefreshServerLocationEvent.
    *
-   * @param type event type
+   * @param type     event type
    * @param serverId server id
    */
   public RefreshServerLocationEvent(EventType type, ParameterServerId serverId) {
+    this(type, serverId, false);
+  }
+
+  /**
+   * Create a new RefreshServerLocationEvent.
+   *
+   * @param type      event type
+   * @param serverId  server id
+   * @param isUpdated is the server location is updated
+   */
+  public RefreshServerLocationEvent(EventType type, ParameterServerId serverId, boolean isUpdated) {
     super(type);
     this.serverId = serverId;
+    this.isUpdated = isUpdated;
   }
 
   /**
    * Get server id.
-   * 
+   *
    * @return ParameterServerId  get server id
    */
   public ParameterServerId getServerId() {
     return serverId;
   }
 
+  /**
+   * Is that the server location updated
+   *
+   * @return true means update
+   */
+  public boolean isUpdated() {
+    return isUpdated;
+  }
 }

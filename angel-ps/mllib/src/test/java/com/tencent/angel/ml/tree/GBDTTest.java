@@ -31,8 +31,6 @@ import org.apache.log4j.PropertyConfigurator;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-
 public class GBDTTest {
 
   private static final Log LOG = LogFactory.getLog(GBDTTest.class);
@@ -83,6 +81,7 @@ public class GBDTTest {
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
       // Set GBDT algorithm parameters
+      conf.set(MLConf.ML_DATA_FORMAT(), dataFmt);
       conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(featureNum));
       conf.set(MLConf.ML_FEATURE_NNZ(), String.valueOf(featureNzz));
       conf.set(MLConf.ML_GBDT_TREE_NUM(), String.valueOf(treeNum));

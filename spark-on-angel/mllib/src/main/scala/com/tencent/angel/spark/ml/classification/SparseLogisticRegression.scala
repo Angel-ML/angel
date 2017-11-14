@@ -17,6 +17,9 @@
 
 package com.tencent.angel.spark.ml.classification
 
+import com.tencent.angel.spark.models.MLModel
+import org.apache.spark.rdd.RDD
+
 import scala.collection.mutable
 
 import org.apache.hadoop.fs.Path
@@ -29,8 +32,8 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.ml.common.{Learner, LogisticGradient, Model}
-import com.tencent.angel.spark.ml.optim.ADMM
+import com.tencent.angel.spark.ml.common.{Instance, Learner, LogisticGradient}
+import com.tencent.angel.spark.ml.optimize.ADMM
 import com.tencent.angel.spark.ml.util._
 
 /**
@@ -43,6 +46,7 @@ import com.tencent.angel.spark.ml.util._
  *
  */
 class SparseLogisticRegression extends Learner {
+
   private var partitionNum: Int = _
   private var sampleRate: Double = _
   private var regParam = 0.0
@@ -100,7 +104,7 @@ class SparseLogisticRegression extends Learner {
     this
   }
 
-  def train(input: String, testSet: String): Model = {
+  def train(input: String, testSet: String): MLModel = {
     val instances = DataLoader.loadOneHotInstance(input, partitionNum, sampleRate, -1).rdd
         .map { row =>
           Tuple2(row.getString(0).toDouble, row.getAs[mutable.WrappedArray[Int]](1).toArray)
@@ -130,11 +134,10 @@ class SparseLogisticRegression extends Learner {
 
     println(s"lr loss history: ${lossHistory.mkString(" ")}")
     val lrModel = new SparseModel(weight)
-
     lrModel
   }
 
-  def predict(input: String, output: String, model: Model): Unit = {
+  def predict(input: String, output: String, model: MLModel): Unit = {
     val featSize = model.asInstanceOf[SparseModel].weight.size - 1
     val instances = DataLoader.loadOneHotInstance(input, partitionNum, sampleRate, featSize - 1)
     println(s"predict instance count: ${instances.count()}")
@@ -143,7 +146,7 @@ class SparseLogisticRegression extends Learner {
     DataSaver.save(predictDF, output)
   }
 
-  override def loadModel(modelPath: String): Model = {
+  override def loadModel(modelPath: String): MLModel = {
     val sc = SparkContext.getOrCreate()
     val weight = sc.textFile(modelPath + "/weight")
       .map { line =>
@@ -156,9 +159,11 @@ class SparseLogisticRegression extends Learner {
     println(s"load model successfully, model length: ${weight.length}")
     new SparseModel(new DenseVector(weight))
   }
+
+  override def train(trainSet: RDD[Instance]): MLModel = ???
 }
 
-class SparseModel(val weight: DenseVector) extends Model {
+class SparseModel(val weight: DenseVector) extends MLModel {
 
   override def save(path: String): Unit = {
     val sc = SparkContext.getOrCreate()

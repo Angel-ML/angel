@@ -1,16 +1,38 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
 package com.tencent.angel.master.metrics;
 
 import com.tencent.angel.master.app.AMContext;
-import com.tencent.angel.ml.metrics.Metric;
+import com.tencent.angel.ml.metric.Metric;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.yarn.event.EventHandler;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -24,7 +46,7 @@ public class MetricsService extends AbstractService implements EventHandler<Metr
   private final AMContext context;
 
   /** Iteration number -> (algorithm metric name -> value)*/
-  private final Map<Integer, Map<String, Double>> iterToMetricsMap;
+  private final Map<Integer, Map<String, String>> iterToMetricsMap;
 
   /** Algorithm metric name to Metric map */
   private final Map<String, Metric> metricsCache;
@@ -72,7 +94,7 @@ public class MetricsService extends AbstractService implements EventHandler<Metr
    * @param itertionNum iteration number
    * @return Map<String, Double> algorithm name to value map
    */
-  public Map<String, Double> getAlgoMetrics(int itertionNum) {
+  public Map<String, String> getAlgoMetrics(int itertionNum) {
     return iterToMetricsMap.get(itertionNum);
   }
 
@@ -120,6 +142,8 @@ public class MetricsService extends AbstractService implements EventHandler<Metr
               LOG.error("algorithm log event handler is interrupted. " + e);
             }
             return;
+          } catch (Throwable e) {
+            LOG.error("algorithm log event handler failed.", e);
           }
         }
       }
@@ -164,19 +188,19 @@ public class MetricsService extends AbstractService implements EventHandler<Metr
     }
   }
 
-  private void calAlgoMetrics(int iter) {
-    LinkedHashMap<String, Double> nameToMetricMap = new LinkedHashMap<>(metricsCache.size());
+  private void calAlgoMetrics(int epoch) {
+    LinkedHashMap<String, String> nameToMetricMap = new LinkedHashMap<>(metricsCache.size());
     for(Map.Entry<String, Metric> metricEntry:metricsCache.entrySet()) {
-      nameToMetricMap.put(metricEntry.getKey(), metricEntry.getValue().calculate());
+      nameToMetricMap.put(metricEntry.getKey(), metricEntry.getValue().toString());
     }
-    iterToMetricsMap.put(iter, nameToMetricMap);
+    iterToMetricsMap.put(epoch, nameToMetricMap);
     metricsCache.clear();
 
     if(logWritter != null) {
       try {
         if(needWriteName) {
           List<String> names = new ArrayList<> (nameToMetricMap.size());
-          for(Map.Entry<String, Double> metricEntry:nameToMetricMap.entrySet()) {
+          for(Map.Entry<String, String> metricEntry:nameToMetricMap.entrySet()) {
             names.add(metricEntry.getKey());
           }
           logWritter.setNames(names);
@@ -188,13 +212,20 @@ public class MetricsService extends AbstractService implements EventHandler<Metr
       }
     }
 
-    LOG.info("iter=" + iter + ", indexes=" + toString(nameToMetricMap));
+    try {
+      ObjectMapper mapper = new ObjectMapper();
+      LOG.info("Epoch=" + epoch + " Metrics=" + mapper.writeValueAsString(nameToMetricMap));
+    } catch (Exception e) {
+      LOG.info("LOG metrics error " + e);
+    }
+
   }
 
-  private String toString(Map<String, Double> metrics){
+  private String toString(Map<String, String> metrics){
     StringBuilder sb = new StringBuilder();
-    for(Map.Entry<String, Double> entry:metrics.entrySet()) {
-      sb.append("index name=").append(entry.getKey()).append(",").append("value=").append(entry.getValue());
+    for(Map.Entry<String, String> entry:metrics.entrySet()) {
+      sb.append("\"").append(entry.getKey()).append("\":");
+      sb.append(entry.getValue()).append(",");
     }
     return sb.toString();
   }

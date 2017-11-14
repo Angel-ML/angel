@@ -19,9 +19,10 @@ package com.tencent.angel.ps.impl.matrix;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.protobuf.generated.MLProtos.RowType;
 import io.netty.buffer.ByteBuf;
-
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -31,13 +32,23 @@ import java.io.IOException;
  */
 public class ServerSparseIntRow extends ServerRow {
 
+  /** Index->value map */
   private Int2IntOpenHashMap hashMap;
 
+  /**
+   * Create a ServerSparseIntRow
+   * @param rowId row index
+   * @param startCol partition start column index
+   * @param endCol partition end column index
+   */
   public ServerSparseIntRow(int rowId, int startCol, int endCol) {
     super(rowId, startCol, endCol);
     this.hashMap = new Int2IntOpenHashMap();
   }
 
+  /**
+   * Create a ServerSparseIntRow
+   */
   public ServerSparseIntRow() {
     this(0, 0, 0);
   }
@@ -53,7 +64,11 @@ public class ServerSparseIntRow extends ServerRow {
       lock.readLock().lock();
       super.writeTo(output);
       output.writeInt(hashMap.size());
-      for (Int2IntMap.Entry entry : hashMap.int2IntEntrySet()) {
+
+      ObjectIterator<Int2IntMap.Entry> iter = hashMap.int2IntEntrySet().fastIterator();
+      Int2IntMap.Entry entry = null;
+      while (iter.hasNext()) {
+        entry = iter.next();
         output.writeInt(entry.getIntKey());
         output.writeInt(entry.getIntValue());
       }
@@ -78,7 +93,12 @@ public class ServerSparseIntRow extends ServerRow {
 
   @Override
   public int size() {
-    return hashMap.size();
+    try {
+      lock.readLock().lock();
+      return hashMap.size();
+    } finally {
+      lock.readLock().unlock();
+    }
   }
 
   @Override
@@ -87,14 +107,16 @@ public class ServerSparseIntRow extends ServerRow {
       lock.writeLock().lock();
       switch (rowType) {
         case T_INT_SPARSE:
+        case T_INT_SPARSE_COMPONENT:
           updateIntSparse(buf, size);
           break;
 
         case T_INT_DENSE:
           updateIntDense(buf, size);
           break;
+
         default:
-          break;
+          throw new UnsupportedOperationException("Unsupport operation: update " + rowType + " to " + this.getClass().getName());
       }
 
       updateRowVersion();
@@ -103,18 +125,26 @@ public class ServerSparseIntRow extends ServerRow {
     }
   }
 
+  private void resizeHashMap(int size) {
+    if(hashMap.size() < size) {
+      Int2IntOpenHashMap oldMap = hashMap;
+      hashMap = new Int2IntOpenHashMap(size);
+      hashMap.putAll(oldMap);
+    }
+  }
+
   private void updateIntDense(ByteBuf buf, int size) {
+    resizeHashMap(size);
     for (int i = 0; i < size; i++) {
       hashMap.addTo(i, buf.readInt());
     }
   }
 
   private void updateIntSparse(ByteBuf buf, int size) {
-    ByteBuf valueBuf = buf.slice(buf.readerIndex() + size * 4, size * 4);
+    resizeHashMap(size);
     for (int i = 0; i < size; i++) {
-      hashMap.addTo(buf.readInt(), valueBuf.readInt());
+      hashMap.addTo(buf.readInt(), buf.readInt());
     }
-    buf.readerIndex(buf.readerIndex() + size * 4);
   }
 
   public Int2IntOpenHashMap getData() {
@@ -127,7 +157,11 @@ public class ServerSparseIntRow extends ServerRow {
       lock.readLock().lock();
       super.serialize(buf);
       buf.writeInt(hashMap.size());
-      for (Int2IntMap.Entry entry : hashMap.int2IntEntrySet()) {
+
+      ObjectIterator<Int2IntMap.Entry> iter = hashMap.int2IntEntrySet().fastIterator();
+      Int2IntMap.Entry entry = null;
+      while (iter.hasNext()) {
+        entry = iter.next();
         buf.writeInt(entry.getIntKey());
         buf.writeInt(entry.getIntValue());
       }
@@ -174,19 +208,26 @@ public class ServerSparseIntRow extends ServerRow {
     }
   }
 
+  /**
+   * Merge a serialized dense int vector split to this sparse float int split
+   * @param size dense int vector split length
+   * @param buf serialized dense int vector split
+   */
   public void mergeIntSparse(int size, ByteBuf buf) {
     try {
       lock.writeLock().lock();
-      ByteBuf valueBuf = buf.slice(buf.readerIndex() + size * 4, size * 4);
       for (int i = 0; i < size; i++) {
-        hashMap.addTo(buf.readInt(), valueBuf.readInt());
+        hashMap.addTo(buf.readInt(), buf.readInt());
       }
-      buf.readerIndex(buf.readerIndex() + size * 4);
     } finally {
       lock.writeLock().unlock();
     }
   }
 
+  /**
+   * Merge this sparse int vector split to a map
+   * @param indexToValueMap a index->value map
+   */
   public void mergeTo(Int2IntOpenHashMap indexToValueMap) {
     try {
       lock.readLock().lock();
@@ -196,6 +237,13 @@ public class ServerSparseIntRow extends ServerRow {
     }
   }
 
+  /**
+   * Merge this sparse int vector split to a index/value array
+   * @param indexes index array
+   * @param values value array
+   * @param startPos write start position of the index/value array
+   * @param len write length
+   */
   public void mergeTo(int[] indexes, int[] values, int startPos, int len) {
     try {
       lock.readLock().lock();
@@ -205,7 +253,10 @@ public class ServerSparseIntRow extends ServerRow {
       }
 
       int index = 0;
-      for (Int2IntMap.Entry entry : hashMap.int2IntEntrySet()) {
+      ObjectIterator<Int2IntMap.Entry> iter = hashMap.int2IntEntrySet().fastIterator();
+      Int2IntMap.Entry entry = null;
+      while (iter.hasNext()) {
+        entry = iter.next();
         indexes[startPos + index] = entry.getIntKey();
         values[startPos + index] = entry.getIntValue();
         index++;

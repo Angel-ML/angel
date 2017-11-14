@@ -18,7 +18,7 @@ package com.tencent.angel.ml.math.vector;
 
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.ml.math.VectorType;
+import com.tencent.angel.protobuf.generated.MLProtos;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
@@ -120,7 +120,7 @@ public class DenseIntVector extends TIntVector {
   }
 
   @Override
-  public TVector clone() {
+  public DenseIntVector clone() {
     return new DenseIntVector(this);
   }
 
@@ -198,8 +198,8 @@ public class DenseIntVector extends TIntVector {
   }
 
   @Override
-  public VectorType getType() {
-    return VectorType.T_INT_DENSE;
+  public MLProtos.RowType getType() {
+    return  MLProtos.RowType.T_INT_DENSE;
   }
 
   @Override
@@ -253,6 +253,14 @@ public class DenseIntVector extends TIntVector {
 
     throw new UnsupportedOperationException("Unsupportted operation: "
       + this.getClass().getName() + " plusBy " + other.getClass().getName());
+  }
+
+  @Override public long sum() {
+    long ret = 0;
+    for(int i = 0; i < dim; i++) {
+      ret += values[i];
+    }
+    return ret;
   }
 
   private TIntVector plusBy(DenseIntVector other, int x) {

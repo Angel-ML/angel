@@ -16,8 +16,14 @@
 
 package com.tencent.angel.master.task;
 
+import com.tencent.angel.protobuf.generated.MLProtos.MatrixClock;
+import com.tencent.angel.protobuf.generated.MLProtos.Pair;
+import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.TaskStateProto;
+import com.tencent.angel.worker.task.TaskId;
 import it.unimi.dsi.fastutil.ints.Int2IntMap.Entry;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -28,14 +34,6 @@ import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import com.tencent.angel.protobuf.generated.MLProtos.MatrixClock;
-import com.tencent.angel.protobuf.generated.MLProtos.Pair;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.TaskStateProto;
-import com.tencent.angel.worker.task.TaskId;
 
 /**
  * Manager for a single task.

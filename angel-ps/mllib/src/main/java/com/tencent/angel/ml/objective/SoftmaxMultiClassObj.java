@@ -16,10 +16,10 @@
  */
 package com.tencent.angel.ml.objective;
 
-import com.tencent.angel.ml.RegTree.GradPair;
-import com.tencent.angel.ml.RegTree.RegTDataStore;
+import com.tencent.angel.ml.GBDT.algo.RegTree.GradPair;
+import com.tencent.angel.ml.GBDT.algo.RegTree.RegTDataStore;
 import com.tencent.angel.ml.param.RegTParam;
-import com.tencent.angel.ml.utils.MathUtils;
+import com.tencent.angel.ml.utils.Maths;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -66,7 +66,7 @@ public class SoftmaxMultiClassObj implements ObjFunc {
     float[] tmp = new float[numClass];
     for (int insIdx = 0; insIdx < ndata; insIdx++) {
       System.arraycopy(preds, insIdx * numClass, tmp, 0, numClass);
-      MathUtils.softmax(tmp);
+      Maths.softmax(tmp);
       int label = (int) dataStore.labels[insIdx];
       if (label < 0 || label >= numClass) {
         labelError = label;
@@ -102,9 +102,9 @@ public class SoftmaxMultiClassObj implements ObjFunc {
         tmp[k] = preds.get(insIdx * numClass + k);
       }
       if (!prob) {
-        rec.add((float) MathUtils.findMaxIndex(tmp));
+        rec.add((float) Maths.findMaxIndex(tmp));
       } else {
-        MathUtils.softmax(tmp);
+        Maths.softmax(tmp);
         for (int k = 0; k < numClass; k++) {
           preds.set(insIdx * numClass + k, tmp[k]);
         }

@@ -16,11 +16,10 @@
 
 package com.tencent.angel.master.deploy.yarn;
 
-import org.apache.hadoop.yarn.api.records.Priority;
-
 import com.tencent.angel.common.Id;
 import com.tencent.angel.master.deploy.ContainerAllocatorEvent;
 import com.tencent.angel.master.deploy.ContainerAllocatorEventType;
+import org.apache.hadoop.yarn.api.records.Priority;
 
 /**
  * Yarn container allocator event.

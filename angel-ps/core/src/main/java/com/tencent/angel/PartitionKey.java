@@ -38,14 +38,14 @@ public class PartitionKey implements Comparable<PartitionKey>, Serialize {
    * [StartCol, endCol);
    */
   int startRow = 0;
-  int startCol = 0;
+  long startCol = 0;
   int endRow = 0;
-  int endCol = 0;
+  long endCol = 0;
 
   public PartitionKey() {}
 
-  public PartitionKey(int partitionId, int matrixId, int startRow, int startCol, int endRow,
-      int endCol) {
+  public PartitionKey(int partitionId, int matrixId, int startRow, long startCol, int endRow,
+      long endCol) {
     super();
     this.partitionId = partitionId;
     this.matrixId = matrixId;
@@ -84,7 +84,7 @@ public class PartitionKey implements Comparable<PartitionKey>, Serialize {
     return startRow;
   }
 
-  public int getStartCol() {
+  public long getStartCol() {
     return startCol;
   }
 
@@ -96,7 +96,7 @@ public class PartitionKey implements Comparable<PartitionKey>, Serialize {
     return endRow;
   }
 
-  public int getEndCol() {
+  public long getEndCol() {
     return endCol;
   }
 
@@ -106,16 +106,16 @@ public class PartitionKey implements Comparable<PartitionKey>, Serialize {
 
   public void write(DataOutputStream out) throws IOException {
     out.writeInt(startRow);
-    out.writeInt(startCol);
+    out.writeLong(startCol);
     out.writeInt(endRow);
-    out.writeInt(endCol);
+    out.writeLong(endCol);
   }
 
   public void read(DataInputStream input) throws IOException {
     startRow = input.readInt();
-    startCol = input.readInt();
+    startCol = input.readLong();
     endRow = input.readInt();
-    endCol = input.readInt();
+    endCol = input.readLong();
   }
 
   public void setPartitionId(int partitionId) {
@@ -157,8 +157,8 @@ public class PartitionKey implements Comparable<PartitionKey>, Serialize {
     buf.writeInt(partitionId);
     buf.writeInt(startRow);
     buf.writeInt(endRow);
-    buf.writeInt(startCol);
-    buf.writeInt(endCol);
+    buf.writeLong(startCol);
+    buf.writeLong(endCol);
   }
 
   @Override
@@ -167,8 +167,8 @@ public class PartitionKey implements Comparable<PartitionKey>, Serialize {
     partitionId = buf.readInt();
     startRow = buf.readInt();
     endRow = buf.readInt();
-    startCol = buf.readInt();
-    endCol = buf.readInt();
+    startCol = buf.readLong();
+    endCol = buf.readLong();
   }
 
   @Override

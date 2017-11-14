@@ -26,10 +26,10 @@ import java.util.Map;
 /**
  * The meta of matrix.
  */
-public class MatrixMeta {
+public class MatrixMeta implements java.io.Serializable {
   private final int id;
   private final String name;
-  private final int colNum;
+  private final long colNum;
   private final int rowNum;
   private MLProtos.RowType rowType;
   private final Map<String, String> attributes;
@@ -45,7 +45,7 @@ public class MatrixMeta {
    * @param rowType     the row type
    * @param matrixProto the matrix proto
    */
-  public MatrixMeta(int id, String name, int colNum, int rowNum, MLProtos.RowType rowType,
+  public MatrixMeta(int id, String name, long colNum, int rowNum, MLProtos.RowType rowType,
       MatrixProto matrixProto) {
     this.id = id;
     this.name = name;
@@ -107,7 +107,7 @@ public class MatrixMeta {
    *
    * @return the col num
    */
-  public int getColNum() {
+  public long getColNum() {
     return colNum;
   }
 

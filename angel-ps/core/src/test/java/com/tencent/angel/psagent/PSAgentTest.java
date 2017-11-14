@@ -16,19 +16,16 @@
 
 package com.tencent.angel.psagent;
 
-import com.google.protobuf.ServiceException;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.client.AngelClient;
 import com.tencent.angel.client.AngelClientFactory;
 import com.tencent.angel.common.Location;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.conf.MatrixConf;
-import com.tencent.angel.exception.TimeOutException;
 import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.localcluster.LocalClusterContext;
 import com.tencent.angel.master.AngelApplicationMaster;
 import com.tencent.angel.master.DummyTask;
-import com.tencent.angel.master.task.AMTask;
 import com.tencent.angel.master.task.AMTaskManager;
 import com.tencent.angel.master.worker.WorkerManager;
 import com.tencent.angel.ml.math.TVector;
@@ -41,14 +38,12 @@ import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.psagent.client.MasterClient;
 import com.tencent.angel.psagent.clock.ClockCache;
 import com.tencent.angel.psagent.consistency.ConsistencyController;
-//import com.tencent.angel.psagent.consistency.SSPConsistencyController;
 import com.tencent.angel.psagent.task.TaskContext;
 import com.tencent.angel.worker.Worker;
 import com.tencent.angel.worker.WorkerAttemptId;
 import com.tencent.angel.worker.WorkerGroupId;
 import com.tencent.angel.worker.WorkerId;
 import com.tencent.angel.worker.task.TaskId;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -56,15 +51,20 @@ import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.log4j.PropertyConfigurator;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
-import java.io.IOException;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
+//import com.tencent.angel.psagent.consistency.SSPConsistencyController;
 
 // @RunWith(MockitoJUnitRunner.class)
 public class PSAgentTest {
@@ -519,8 +519,8 @@ public class PSAgentTest {
       assertEquals(taskContext1.getIndex(), 1);
       assertEquals(taskContext2.getIndex(), 2);
 
-      assertEquals(taskContext1.getIteration(), 0);
-      assertEquals(taskContext2.getIteration(), 0);
+      assertEquals(taskContext1.getEpoch(), 0);
+      assertEquals(taskContext2.getEpoch(), 0);
 
       assertEquals(taskContext1.getMatrixClock(1), 0);
       assertEquals(taskContext2.getMatrixClock(2), 0);

@@ -16,7 +16,8 @@
  */
 package com.tencent.angel.ml.param;
 
-import com.tencent.angel.ml.utils.MathUtils;
+import com.tencent.angel.ml.conf.MLConf;
+import com.tencent.angel.ml.utils.Maths;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -28,28 +29,28 @@ public class RegTParam implements TrainParam{
   private static final Log LOG = LogFactory.getLog(RegTParam.class);
 
   // step size for a tree
-  public float learningRate = 0.1f;
+  public float learningRate = (float) MLConf.DEFAULT_ML_LEAR_RATE();
   // number of class
   public int numClass = 2;
   // minimum loss change required for a split
   public float minSplitLoss = 0;
   // maximum depth of a tree
-  public int maxDepth = 6;
+  public int maxDepth = MLConf.DEFAULT_ML_GBDT_TREE_DEPTH();
   // number of features
   public int numFeature;
   // number of nonzero
   public int numNonzero;
   // number of candidates split value
-  public int numSplit = 10;
+  public int numSplit = MLConf.DEFAULT_ML_GBDT_SPLIT_NUM();
   // ----- the rest parameters are less important ----
   // base instance weight
   public float baseWeight = 0;
   // minimum amount of hessian(weight) allowed in a child
-  public float minChildWeight = 0.01f;
+  public float minChildWeight = (float) MLConf.DEFAULT_ML_GBDT_MIN_CHILD_WEIGHT();
   // L2 regularization factor
-  public float regLambda = 1.0f;
+  public float regLambda = (float) MLConf.DEFAULT_ML_GBDT_REG_LAMBDA();
   // L1 regularization factor
-  public float regAlpha = 0;
+  public float regAlpha = (float)MLConf.DEFAULT_ML_GBDT_REG_ALPHA();
   // default direction choice
   public int defaultDirection;
   // maximum delta update we can add in weight estimation
@@ -95,7 +96,7 @@ public class RegTParam implements TrainParam{
     if (regAlpha == 0.0f) {
       dw = -sumGrad / (sumHess + regLambda);
     } else {
-      dw = -MathUtils.thresholdL1(sumGrad, regAlpha) / (sumHess + regLambda);
+      dw = -Maths.thresholdL1(sumGrad, regAlpha) / (sumHess + regLambda);
     }
     if (maxDeltaStep != 0.0f) {
       if (dw > maxDeltaStep)
@@ -120,11 +121,11 @@ public class RegTParam implements TrainParam{
       if (regAlpha == 0.0f) {
         return (sumGrad / (sumHess + regLambda)) * sumGrad;
       } else {
-        return MathUtils.sqr(MathUtils.thresholdL1(sumGrad, regAlpha)) / (sumHess + regLambda);
+        return Maths.sqr(Maths.thresholdL1(sumGrad, regAlpha)) / (sumHess + regLambda);
       }
     } else {
       float w = calcWeight(sumGrad, sumHess);
-      float ret = sumGrad * w + 0.5f * (sumHess + regLambda) * MathUtils.sqr(w);
+      float ret = sumGrad * w + 0.5f * (sumHess + regLambda) * Maths.sqr(w);
       if (regAlpha == 0.0f) {
         return -2.0f * ret;
       } else {
@@ -144,7 +145,7 @@ public class RegTParam implements TrainParam{
    */
   public float calcGain(float sumGrad, float sumHess, float testGrad, float testHess) {
     float w = calcWeight(sumGrad, sumHess);
-    float ret = testGrad * w + 0.5f * (testHess + regLambda) * MathUtils.sqr(w);
+    float ret = testGrad * w + 0.5f * (testHess + regLambda) * Maths.sqr(w);
     if (regAlpha == 0.0f) {
       return -2.0f * ret;
     } else {

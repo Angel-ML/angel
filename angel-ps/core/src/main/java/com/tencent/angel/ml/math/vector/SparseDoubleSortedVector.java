@@ -18,27 +18,32 @@ package com.tencent.angel.ml.math.vector;
 
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.ml.math.VectorType;
+import com.tencent.angel.protobuf.generated.MLProtos;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.util.Arrays;
 
 /**
- * Sparse Double Vector using one array as its backend storage. The dimension of this vector must be
- * less than 2^32
+ * Sparse Double Vector using one array as its backend storage. The vector indexes are sorted in ascending order.
  */
-public class SparseDoubleSortedVector extends TDoubleVector {
+public class SparseDoubleSortedVector extends TIntDoubleVector {
 
   private final static Log LOG = LogFactory.getLog(SparseDoubleSortedVector.class);
 
-  // @brief Sorted index for non-zero items
+  /**
+   * Sorted index for non-zero items
+   */
   int[] indices;
 
-  // @brief Number of non-zero items in this vector
+  /**
+   * Number of non-zero items in this vector
+   */
   int nnz;
 
-  // @brief Array to store values.
+  /**
+   * Non-zero element values
+   */
   public double[] values;
 
   /**
@@ -49,9 +54,10 @@ public class SparseDoubleSortedVector extends TDoubleVector {
   }
 
   /**
-   * init the vector by setting the dim and capacity
+   * Init the vector with the vector dimension and index array capacity
    *
-   * @param dim
+   * @param dim      vector dimension
+   * @param capacity index array capacity
    */
   public SparseDoubleSortedVector(int capacity, int dim) {
     super();
@@ -62,11 +68,11 @@ public class SparseDoubleSortedVector extends TDoubleVector {
   }
 
   /**
-   * init the vector by setting the dim indices and values
+   * Init the vector with the vector dimension, sorted non-zero indexes and values
    *
-   * @param dim
-   * @param indices
-   * @param values
+   * @param dim     vector dimension
+   * @param indices sorted non-zero indexes
+   * @param values  non-zero values
    */
   public SparseDoubleSortedVector(int dim, int[] indices, double[] values) {
     super();
@@ -77,9 +83,9 @@ public class SparseDoubleSortedVector extends TDoubleVector {
   }
 
   /**
-   * init the vector by another vector
+   * Init the vector by another vector
    *
-   * @param other
+   * @param other a SparseDoubleSortedVector with same dimension with this vector
    */
   public SparseDoubleSortedVector(SparseDoubleSortedVector other) {
     super(other);
@@ -90,30 +96,24 @@ public class SparseDoubleSortedVector extends TDoubleVector {
     System.arraycopy(other.values, 0, this.values, 0, nnz);
   }
 
-  @Override
-  public TDoubleVector plusBy(int index, double delta) {
+  @Override public TIntDoubleVector plusBy(int index, double delta) {
     set(index, get(index) + delta);
     return this;
   }
 
-  /**
-   * clone the vector
-   *
-   * @return
-   */
-  @Override
-  public SparseDoubleSortedVector clone() {
+  @Override public double sum() {
+    double ret = 0.0;
+    for (int i = 0; i < values.length; i++) {
+      ret += values[i];
+    }
+    return ret;
+  }
+
+  @Override public SparseDoubleSortedVector clone() {
     return new SparseDoubleSortedVector(this);
   }
 
-
-  /**
-   * clone vector by another one
-   *
-   * @return
-   */
-  @Override
-  public void clone(TVector row) {
+  @Override public void clone(TVector row) {
     SparseDoubleSortedVector sortedRow = (SparseDoubleSortedVector) row;
     if (nnz == sortedRow.nnz) {
       System.arraycopy(sortedRow.indices, 0, this.indices, 0, this.nnz);
@@ -127,12 +127,7 @@ public class SparseDoubleSortedVector extends TDoubleVector {
     }
   }
 
-
-  /**
-   * clear the vector
-   */
-  @Override
-  public void clear() {
+  @Override public void clear() {
     this.nnz = 0;
     if (this.indices != null)
       this.indices = null;
@@ -140,19 +135,13 @@ public class SparseDoubleSortedVector extends TDoubleVector {
       this.values = null;
   }
 
-  /**
-   * calculate the inner product
-   *
-   * @param other
-   * @return
-   */
-  @Override
-  public double dot(TAbstractVector other) {
+  @Override public double dot(TAbstractVector other) {
     if (other instanceof DenseDoubleVector)
       return dot((DenseDoubleVector) other);
 
-    throw new UnsupportedOperationException("Unsupportted operation: "
-      + this.getClass().getName() + " dot " + other.getClass().getName());
+    throw new UnsupportedOperationException(
+      "Unsupportted operation: " + this.getClass().getName() + " dot " + other.getClass()
+        .getName());
   }
 
   private double dot(DenseDoubleVector other) {
@@ -165,13 +154,11 @@ public class SparseDoubleSortedVector extends TDoubleVector {
     return ret;
   }
 
-  @Override
-  public TDoubleVector filter(double x) {
+  @Override public TIntDoubleVector filter(double x) {
     throw new UnsupportedOperationException("Unsupportted operation");
   }
 
-  @Override
-  public double get(int index) {
+  @Override public double get(int index) {
     int position = Arrays.binarySearch(indices, 0, nnz, index);
     if (position >= 0) {
       return values[position];
@@ -180,23 +167,19 @@ public class SparseDoubleSortedVector extends TDoubleVector {
     return 0.0;
   }
 
-  @Override
-  public int[] getIndices() {
+  @Override public int[] getIndices() {
     return indices;
   }
 
-  @Override
-  public VectorType getType() {
-    return VectorType.T_DOUBLE_SPARSE;
+  @Override public MLProtos.RowType getType() {
+    return MLProtos.RowType.T_DOUBLE_SPARSE;
   }
 
-  @Override
-  public double[] getValues() {
+  @Override public double[] getValues() {
     return values;
   }
 
-  @Override
-  public long nonZeroNumber() {
+  @Override public long nonZeroNumber() {
     long ret = 0;
     if (values != null) {
       for (int i = 0; i < values.length; i++) {
@@ -208,46 +191,38 @@ public class SparseDoubleSortedVector extends TDoubleVector {
     return ret;
   }
 
-  @Override
-  public TDoubleVector plus(TAbstractVector other) {
+  @Override public TIntDoubleVector plus(TAbstractVector other) {
     throw new UnsupportedOperationException("Unsupportted operation");
   }
 
-  @Override
-  public TDoubleVector plus(TAbstractVector other, double x) {
+  @Override public TIntDoubleVector plus(TAbstractVector other, double x) {
     throw new UnsupportedOperationException("Unsupportted operation");
   }
 
-  @Override
-  public TDoubleVector plusBy(TAbstractVector other) {
+  @Override public TIntDoubleVector plusBy(TAbstractVector other) {
     throw new UnsupportedOperationException("Unsupportted operation");
   }
 
-  @Override
-  public TDoubleVector plusBy(TAbstractVector other, double x) {
+  @Override public TIntDoubleVector plusBy(TAbstractVector other, double x) {
     throw new UnsupportedOperationException("Unsupportted operation");
   }
 
-  @Override
-  public void set(int index, double value) {
+  @Override public void set(int index, double value) {
     this.indices[nnz] = index;
     this.values[nnz] = value;
     nnz++;
   }
 
-  @Override
-  public int size() {
+  @Override public int size() {
     return nnz;
   }
 
-  @Override
-  public double sparsity() {
+  @Override public double sparsity() {
     return ((double) nnz) / dim;
   }
 
-  @Override
-  public double squaredNorm() {
-    if(values == null) {
+  @Override public double squaredNorm() {
+    if (values == null) {
       return 0.0;
     }
 
@@ -257,16 +232,25 @@ public class SparseDoubleSortedVector extends TDoubleVector {
     return norm;
   }
 
-  @Override
-  public TDoubleVector times(double x) {
+  @Override public double norm() {
+    if (values == null) {
+      return 0.0;
+    }
+
+    double norm = 0.0;
+    for (int i = 0; i < values.length; i++)
+      norm += Math.abs(values[i]);
+    return norm;
+  }
+
+  @Override public TIntDoubleVector times(double x) {
     SparseDoubleSortedVector vector = this.clone();
     for (int i = 0; i < vector.nnz; i++)
       vector.values[i] *= x;
     return vector;
   }
 
-  @Override
-  public TDoubleVector timesBy(double x) {
+  @Override public TIntDoubleVector timesBy(double x) {
     for (int i = 0; i < nnz; i++)
       values[i] *= x;
     return this;

@@ -16,65 +16,33 @@
 
 package com.tencent.angel.master;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-
-import com.tencent.angel.master.ps.ps.AMParameterServer;
-import com.tencent.angel.master.ps.ps.AMParameterServerState;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.LocalFileSystem;
-import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
-import org.apache.log4j.PropertyConfigurator;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import com.google.protobuf.ServiceException;
 import com.tencent.angel.client.AngelClient;
 import com.tencent.angel.client.AngelClientFactory;
 import com.tencent.angel.common.Location;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.ipc.TConnectionManager;
 import com.tencent.angel.localcluster.LocalClusterContext;
 import com.tencent.angel.master.app.AppEvent;
 import com.tencent.angel.master.app.AppEventType;
 import com.tencent.angel.master.app.AppState;
-import com.tencent.angel.master.ps.attempt.*;
 import com.tencent.angel.master.ps.ParameterServerManager;
+import com.tencent.angel.master.ps.attempt.PSAttempt;
+import com.tencent.angel.master.ps.attempt.PSAttemptStateInternal;
+import com.tencent.angel.master.ps.ps.AMParameterServer;
+import com.tencent.angel.master.ps.ps.AMParameterServerState;
 import com.tencent.angel.ml.math.vector.DenseIntVector;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos;
-import com.tencent.angel.protobuf.generated.MLProtos.LocationProto;
 import com.tencent.angel.protobuf.generated.MLProtos.MatrixClock;
 import com.tencent.angel.protobuf.generated.MLProtos.MatrixStatus;
 import com.tencent.angel.protobuf.generated.MLProtos.Pair;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskClockRequest;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskIterationRequest;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.MatrixReport;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSCommandProto;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSDoneRequest;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSErrorRequest;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSRegisterRequest;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSRegisterResponse;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSReportRequest;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSReportResponse;
+import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.*;
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerCommandProto;
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerDoneRequest;
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerDoneResponse;
@@ -89,6 +57,22 @@ import com.tencent.angel.worker.WorkerAttemptId;
 import com.tencent.angel.worker.WorkerGroupId;
 import com.tencent.angel.worker.WorkerId;
 import com.tencent.angel.worker.task.TaskId;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.LocalFileSystem;
+import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
+import org.apache.log4j.PropertyConfigurator;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static org.junit.Assert.*;
 
 public class PSManagerTest {
   private static final Log LOG = LogFactory.getLog(PSManagerTest.class);

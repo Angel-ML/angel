@@ -17,6 +17,7 @@
 
 package com.tencent.angel.spark.examples.ml
 
+import com.tencent.angel.spark.models.vector.enhanced.BreezePSVector
 import scala.collection.mutable.ArrayBuffer
 
 import breeze.linalg.DenseVector
@@ -26,7 +27,7 @@ import org.apache.spark.rdd.RDD
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.examples.util.{Logistic, PSExamples}
-import com.tencent.angel.spark.model.vector.BreezePSVector
+import com.tencent.angel.spark.models.vector.PSVector
 
 /**
  * There is two ways to update PSVectors in RDD, RemotePSVector and RDDFunction.psAggregate.
@@ -38,7 +39,7 @@ object BreezeSGD {
   import PSExamples._
   def main(args: Array[String]): Unit = {
     parseArgs(args)
-    runWithSparkContext(this.getClass.getSimpleName) { sc =>
+    runSpark(this.getClass.getSimpleName) { sc =>
       PSContext.getOrCreate(sc)
       execute(DIM, N, numSlices, ITERATIONS)
       PSContext.stop()
@@ -49,8 +50,8 @@ object BreezeSGD {
       dim: Int,
       sampleNum: Int,
       partitionNum: Int,
-      maxIter: Int, stepSize:
-      Double = 0.1): Unit = {
+      maxIter: Int,
+      stepSize: Double = 0.1): Unit = {
 
     val trainData = Logistic.generateLRData(sampleNum, dim, partitionNum)
 
@@ -93,8 +94,8 @@ object BreezeSGD {
   }
 
   def runPsSGD(trainData: RDD[(Vector, Double)], dim: Int, stepSize: Double, maxIter: Int): Unit = {
-    val pool = PSContext.getOrCreate().createModelPool(dim, 10)
-    val initWeightPS = pool.createZero().mkBreeze()
+    val initWeightPS = PSVector.dense(dim).toBreeze
+
     val sgd = StochasticGradientDescent[BreezePSVector](stepSize, maxIter)
     val states = sgd.iterations(Logistic.PSCost(trainData), initWeightPS)
 
@@ -109,8 +110,7 @@ object BreezeSGD {
       }
     }
     println(s"loss history: ${lossHistory.toArray.mkString(" ")}")
-    println(s"weights: ${weight.toRemote.pull().mkString(" ")}")
-    PSContext.getOrCreate().destroyModelPool(pool)
+    println(s"weights: ${weight.pull().mkString(" ")}")
   }
 
   def runPsAggregateSGD(
@@ -119,8 +119,8 @@ object BreezeSGD {
       stepSize: Double,
       maxIter: Int): Unit = {
 
-    val pool = PSContext.getOrCreate().createModelPool(dim, 10)
-    val initWeightPS = pool.createZero().mkBreeze()
+    val initWeightPS = PSVector.dense(dim).toBreeze
+
     val sgd = StochasticGradientDescent[BreezePSVector](stepSize, maxIter)
     val states = sgd.iterations(Logistic.PSAggregateCost(trainData), initWeightPS)
 
@@ -135,8 +135,7 @@ object BreezeSGD {
       }
     }
     println(s"loss history: ${lossHistory.toArray.mkString(" ")}")
-    println(s"weights: ${weight.toRemote.pull().mkString(" ")}")
-    PSContext.getOrCreate().destroyModelPool(pool)
+    println(s"weights: ${weight.pull().mkString(" ")}")
   }
 
 }

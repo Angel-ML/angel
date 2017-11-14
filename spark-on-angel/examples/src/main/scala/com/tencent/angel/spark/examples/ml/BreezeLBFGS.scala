@@ -17,6 +17,7 @@
 
 package com.tencent.angel.spark.examples.ml
 
+import com.tencent.angel.spark.models.vector.enhanced.BreezePSVector
 import scala.collection.mutable.ArrayBuffer
 
 import breeze.linalg.DenseVector
@@ -26,7 +27,7 @@ import org.apache.spark.rdd.RDD
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.examples.util.{Logistic, PSExamples}
-import com.tencent.angel.spark.model.vector.BreezePSVector
+import com.tencent.angel.spark.models.vector.PSVector
 
 /**
  * There is two ways to update PSVectors in RDD, RemotePSVector and RDDFunction.psAggregate.
@@ -37,7 +38,7 @@ object BreezeLBFGS {
   import PSExamples._
   def main(args: Array[String]): Unit = {
     parseArgs(args)
-    runWithSparkContext(this.getClass.getSimpleName) { sc =>
+    runSpark(this.getClass.getSimpleName) { sc =>
       PSContext.getOrCreate(sc)
       execute(DIM, N, numSlices, ITERATIONS)
     }
@@ -87,9 +88,7 @@ object BreezeLBFGS {
 
   def runPsLBFGS(trainData: RDD[(Vector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
     val tol = 1e-5
-    val psContext = PSContext.getOrCreate()
-    val pool = psContext.createModelPool(dim, 20)
-    val initWeightPSModel = pool.createZero().mkBreeze()
+    val initWeightPSModel = PSVector.dense(dim, 5 * m).toBreeze
     val lbfgs = new LBFGS[BreezePSVector](maxIter, m, tol)
     val states = lbfgs.iterations(Logistic.PSCost(trainData), initWeightPSModel)
 
@@ -104,15 +103,13 @@ object BreezeLBFGS {
       }
     }
     println(s"loss history: ${lossHistory.toArray.mkString(" ")}")
-    println(s"weights: ${weight.toRemote.pull().mkString(" ")}")
-    psContext.destroyModelPool(pool)
+    println(s"weights: ${weight.pull().mkString(" ")}")
   }
 
   def runPsAggregateLBFGS(
       trainData: RDD[(Vector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
     val tol = 1e-5
-    val pool = PSContext.getOrCreate().createModelPool(dim, 20)
-    val initWeightPS = pool.createZero().mkBreeze()
+    val initWeightPS = PSVector.dense(dim, 5 * m).toBreeze
     val lbfgs = new LBFGS[BreezePSVector](maxIter, m, tol)
     val states = lbfgs.iterations(Logistic.PSAggregateCost(trainData), initWeightPS)
 
@@ -127,7 +124,6 @@ object BreezeLBFGS {
       }
     }
     println(s"loss history: ${lossHistory.toArray.mkString(" ")}")
-    println(s"weights: ${weight.toRemote.pull().mkString(" ")}")
-    PSContext.getOrCreate().destroyModelPool(pool)
+    println(s"weights: ${weight.pull().mkString(" ")}")
   }
 }

@@ -16,9 +16,9 @@
 
 package com.tencent.angel.utils;
 
+import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.SplitInfoProto;
 import com.tencent.angel.split.SplitClassification;
 import com.tencent.angel.split.SplitInfo;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.SplitInfoProto;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.io.serializer.Deserializer;

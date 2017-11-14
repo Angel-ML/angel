@@ -19,15 +19,16 @@ package com.tencent.angel.ml.GBDT
 
 import java.util.{ArrayList, List}
 
+import com.tencent.angel.ml.GBDT.algo.RegTree.RegTDataStore
+import com.tencent.angel.ml.GBDT.algo.{FeatureMeta, GBDTController, GBDTPhase}
 import com.tencent.angel.ml.MLLearner
-import com.tencent.angel.ml.RegTree.RegTDataStore
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.SparseDoubleSortedVector
-import com.tencent.angel.ml.metric.log.ErrorMetric
+import com.tencent.angel.ml.metric.ErrorMetric
 import com.tencent.angel.ml.model.MLModel
-import com.tencent.angel.ml.param.{FeatureMeta, GBDTParam, RegTParam}
-import com.tencent.angel.ml.utils.MathUtils
+import com.tencent.angel.ml.param.{GBDTParam, RegTParam}
+import com.tencent.angel.ml.utils.Maths
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
@@ -123,16 +124,16 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     }
 
     val featureMeta: FeatureMeta = new FeatureMeta(numFeature,
-      MathUtils.floatList2Arr(minFeatures), MathUtils.floatList2Arr(maxFeatures))
+      Maths.floatList2Arr(minFeatures), Maths.floatList2Arr(maxFeatures))
     dataStore.setNumRow(totalSample)
     dataStore.setNumCol(numFeature)
     dataStore.setNumNonzero(numNonzero)
     dataStore.setInstances(instances)
-    dataStore.setLabels(MathUtils.floatList2Arr(labels))
-    dataStore.setPreds(MathUtils.floatList2Arr(preds))
+    dataStore.setLabels(Maths.floatList2Arr(labels))
+    dataStore.setPreds(Maths.floatList2Arr(preds))
     dataStore.setFeatureMeta(featureMeta)
-    dataStore.setWeights(MathUtils.floatList2Arr(weights))
-    dataStore.setBaseWeights(MathUtils.floatList2Arr(weights))
+    dataStore.setWeights(Maths.floatList2Arr(weights))
+    dataStore.setBaseWeights(Maths.floatList2Arr(weights))
 
     LOG.info(s"Finish creating data meta, numRow=$totalSample, numCol=$numFeature, nonzero=$numNonzero")
 
@@ -165,8 +166,8 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     val controller: GBDTController = new GBDTController(ctx, param, trainDataStore, validDataStore, model)
     controller.init
 
-    globalMetrics.addMetrics(MLConf.TRAIN_ERROR, ErrorMetric(trainData.size))
-    globalMetrics.addMetrics(MLConf.VALID_ERROR, ErrorMetric(validationData.size))
+    globalMetrics.addMetric(MLConf.TRAIN_ERROR, ErrorMetric(trainData.size))
+    globalMetrics.addMetric(MLConf.VALID_ERROR, ErrorMetric(validationData.size))
 
     while (controller.phase != GBDTPhase.FINISHED) {
 
@@ -216,8 +217,8 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
           controller.updateLeafPreds
           val trainMetrics = controller.eval
           val validMetrics = controller.predict
-          globalMetrics.metrics(MLConf.TRAIN_ERROR, trainMetrics._1)
-          globalMetrics.metrics(MLConf.VALID_ERROR, validMetrics._1)
+          globalMetrics.metric(MLConf.TRAIN_ERROR, trainMetrics._1)
+          globalMetrics.metric(MLConf.VALID_ERROR, validMetrics._1)
           controller.finishCurrentTree()
           controller.setPhase(GBDTPhase.NEW_TREE)
           controller.sampleFeature
@@ -228,7 +229,7 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
         nextClock = true
       }
       controller.clock += 1
-      ctx.incIteration
+      ctx.incEpoch
     }
 
     LOG.info(s"Task[${ctx.getTaskIndex}] finishes training, " +

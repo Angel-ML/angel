@@ -1,9 +1,27 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
 package com.tencent.angel.ps.impl;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.tencent.angel.utils.HdfsUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -22,6 +40,15 @@ import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.GetTaskMatrixC
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.GetTaskMatrixClockResponse;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.TaskMatrixClock;
 import com.tencent.angel.ps.PSAttemptId;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.*;
+import org.apache.hadoop.util.Time;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SnapshotManager {
   private static final Log LOG = LogFactory.getLog(SnapshotManager.class);
@@ -137,13 +164,13 @@ public class SnapshotManager {
     // EnumSet.of(CreateFlag.CREATE));
     FSDataOutputStream output = fs.create(snapshotsTempFilePath);
     LOG.info("write matrix snapshot to " + snapshotsTempFilePath);
-    PSContext.get().getMatrixPartitionManager().writeMatrix(output);
+    PSContext.get().getMatrixPartitionManager().writeSnapshot(output);
     output.flush();
     output.close();
     LOG.info("write matrix snapshot over");
 
     Path snapshotsDestFilePath = getPSSnapshotDestFile();
-    fs.rename(snapshotsTempFilePath, snapshotsDestFilePath);
+    HdfsUtil.rename(snapshotsTempFilePath, snapshotsDestFilePath, fs);
     LOG.info("rename " + snapshotsTempFilePath + " to " + snapshotsDestFilePath + " success");
     Path oldSnapshotFile = getOldSnapshotDestFile();
     if (oldSnapshotFile != null) {
@@ -244,8 +271,14 @@ public class SnapshotManager {
     Path snapshots = getPreviousPSSnapshotsPath();
     if (snapshots != null) {
       LOG.info("ps is recovering from hdfs Snapshot. filePath: " + snapshots);
-      FSDataInputStream input = fs.open(snapshots, 4096);
-      PSContext.get().getMatrixPartitionManager().parseMatricesFromInput(input);
+      long startTs = System.currentTimeMillis();
+      FSDataInputStream input = fs.open(snapshots, 65536);
+      try{
+        PSContext.get().getMatrixPartitionManager().readSnapshot(input);
+        LOG.info("read snapshot use time=" + (System.currentTimeMillis() - startTs) + " ms ");
+      } finally {
+        input.close();
+      }
     } else {
       LOG.warn("snapshot file not found, no recovery happened!");
     }

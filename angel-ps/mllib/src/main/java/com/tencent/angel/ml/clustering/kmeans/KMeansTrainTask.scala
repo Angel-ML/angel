@@ -19,8 +19,9 @@ package com.tencent.angel.ml.clustering.kmeans
 
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.task.TrainTask
 import com.tencent.angel.ml.utils.DataParser
-import com.tencent.angel.worker.task.{TaskContext, TrainTask}
+import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.io.{LongWritable, Text}
 
@@ -32,6 +33,9 @@ class KMeansTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text
   private val LOG = LogFactory.getLog(classOf[KMeansTrainTask])
 
   val feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
+  val dataFormat = conf.get(MLConf.ML_DATA_FORMAT, "libsvm")
+  val dataParser = DataParser(dataFormat, feaNum, false)
+
 
   /**
     * Parse input text to trainning data
@@ -41,16 +45,16 @@ class KMeansTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text
     *     */
   override
   def parse(key: LongWritable, value: Text): LabeledData = {
-    DataParser.parseVector(key, value, feaNum, "libsvm", false)
+    dataParser.parse(value.toString)
   }
 
   override
   def train(ctx: TaskContext) = {
-    LOG.info("#TrainSample=" + trainDataBlock.size)
+    LOG.info("#TrainSample=" + taskDataBlock.size)
 
     val learner = new KMeansLearner(ctx)
-    trainDataBlock.shuffle()
-    learner.train(trainDataBlock, null)
+    taskDataBlock.shuffle()
+    learner.train(taskDataBlock, null)
 
   }
 }

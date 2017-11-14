@@ -47,7 +47,7 @@ public abstract class BaseTask<KEY_IN, VALUE_IN, VALUE_OUT> implements BaseTaskI
   /**
    * The Train data storage.
    */
-  protected final DataBlock<VALUE_OUT> trainDataBlock;
+  protected final DataBlock<VALUE_OUT> taskDataBlock;
 
   public BaseTask(TaskContext taskContext) {
     String storageLevel =
@@ -55,11 +55,11 @@ public abstract class BaseTask<KEY_IN, VALUE_IN, VALUE_OUT> implements BaseTaskI
                 AngelConf.DEFAULT_ANGEL_TASK_DATA_STORAGE_LEVEL);
 
     if (storageLevel.equals("memory")) {
-      trainDataBlock = new MemoryDataBlock<VALUE_OUT>(-1);
+      taskDataBlock = new MemoryDataBlock<VALUE_OUT>(-1);
     } else if (storageLevel.equals("memory_disk")) {
-      trainDataBlock = new MemoryAndDiskDataBlock<VALUE_OUT>(taskContext.getTaskId().getIndex());
+      taskDataBlock = new MemoryAndDiskDataBlock<VALUE_OUT>(taskContext.getTaskId().getIndex());
     } else {
-      trainDataBlock = new DiskDataBlock<VALUE_OUT>(taskContext.getTaskId().getIndex());
+      taskDataBlock = new DiskDataBlock<VALUE_OUT>(taskContext.getTaskId().getIndex());
     }
     conf = taskContext.getConf();
 
@@ -85,11 +85,11 @@ public abstract class BaseTask<KEY_IN, VALUE_IN, VALUE_OUT> implements BaseTaskI
       while (reader.nextKeyValue()) {
         VALUE_OUT out = parse(reader.getCurrentKey(), reader.getCurrentValue());
         if (out != null) {
-          trainDataBlock.put(out);
+          taskDataBlock.put(out);
         }
       }
 
-      trainDataBlock.flush();
+      taskDataBlock.flush();
     } catch (Exception e){
       throw new AngelException("Pre-Process Error.", e);
     }

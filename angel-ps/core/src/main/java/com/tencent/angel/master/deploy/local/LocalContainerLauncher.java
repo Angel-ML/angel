@@ -16,9 +16,6 @@
 
 package com.tencent.angel.master.deploy.local;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.tencent.angel.common.Id;
 import com.tencent.angel.localcluster.LocalClusterContext;
 import com.tencent.angel.localcluster.LocalPS;
@@ -35,6 +32,8 @@ import com.tencent.angel.master.worker.attempt.WorkerAttemptEventType;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.psagent.PSAgentAttemptId;
 import com.tencent.angel.worker.WorkerAttemptId;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Local container launcher.

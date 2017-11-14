@@ -16,7 +16,7 @@
  */
 package com.tencent.angel.ml.objective;
 
-import com.tencent.angel.ml.utils.MathUtils;
+import com.tencent.angel.ml.utils.Maths;
 
 /**
  * Description: implementation of popular loss function
@@ -78,7 +78,7 @@ public class Loss {
 
     @Override
     public float transPred(float x) {
-      return MathUtils.sigmoid(x);
+      return Maths.sigmoid(x);
     }
 
     @Override
@@ -137,14 +137,14 @@ public class Loss {
 
     @Override
     public float firOrderGrad(float pred, float label) {
-      pred = MathUtils.sigmoid(pred);
+      pred = Maths.sigmoid(pred);
       return pred - label;
     }
 
     @Override
     public float secOrderGrad(float pred, float label) {
       float eps = 1e-16f;
-      pred = MathUtils.sigmoid(pred);
+      pred = Maths.sigmoid(pred);
       return Math.max(pred * (1 - pred), eps);
     }
 

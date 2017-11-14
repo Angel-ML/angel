@@ -1,11 +1,11 @@
 # MLRunner
 
-> Angel算法的启动入口类。它定义了启动Angel app标准流程，封装了对 [AngelClient](AngelClient.md)的使用。 
+> Angel算法的启动入口类。它定义了启动Angel任务的标准流程，封装了对 [AngelClient](AngelClient.md)的使用。 
 
 ## 功能
 
-* 启动Angel ps，加载和存储模型，和启动task等过程的默认实现
-* 一般情况下，应用程序直接调用它们就可以了。
+* 通过调用[AngelClient](./AngelClient.md)，启动Angel ps，加载和存储模型，完成Task等一系列动作，完成机器学习任务的默认实现
+* 一般情况下，应用程序直接调用它的默认实现就可以了，不必重写。
 
 ## 核心方法
 

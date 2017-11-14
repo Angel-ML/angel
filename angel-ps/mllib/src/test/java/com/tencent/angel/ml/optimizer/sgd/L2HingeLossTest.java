@@ -17,8 +17,9 @@
 
 package com.tencent.angel.ml.optimizer.sgd;
 
-import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.vector.DenseDoubleVector;
+import com.tencent.angel.ml.math.vector.TDoubleVector;
+import com.tencent.angel.ml.optimizer.sgd.loss.L2HingeLoss;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.PropertyConfigurator;
@@ -58,7 +59,7 @@ public class L2HingeLossTest {
     DenseDoubleVector denseDoubleVector1 = new DenseDoubleVector(2, data1);
     DenseDoubleVector denseDoubleVector2 = new DenseDoubleVector(2, data1);
     DenseDoubleVector w = new DenseDoubleVector(2, data2);
-    TAbstractVector[] xList = new TAbstractVector[2];
+    TDoubleVector[] xList = new TDoubleVector[2];
     xList[0] = denseDoubleVector1;
     xList[1] = denseDoubleVector2;
     double[] yList = new double[2];

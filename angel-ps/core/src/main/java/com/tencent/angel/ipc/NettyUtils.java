@@ -17,9 +17,6 @@
 
 package com.tencent.angel.ipc;
 
-import java.lang.reflect.Field;
-import java.util.concurrent.ThreadFactory;
-
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
@@ -34,6 +31,9 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.internal.PlatformDependent;
+
+import java.lang.reflect.Field;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * Utilities for creating various Netty constructs based on whether we're using EPOLL or NIO.

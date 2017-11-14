@@ -18,11 +18,13 @@
 package com.tencent.angel.ml.matrixfactorization
 
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.worker.task.{TaskContext, TrainTask}
+import com.tencent.angel.ml.task.TrainTask
+import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.io.{LongWritable, Text}
 
 /**
   * Train task that learns a matrix factorizaiton model
+  *
   * @param ctx : the context of current running task
   */
 class MFTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
@@ -39,6 +41,6 @@ class MFTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ct
 
   def train(ctx: TaskContext) {
     val learner = new MFLearner(ctx)
-    learner.train(this.trainDataBlock, null)
+    learner.train(this.taskDataBlock, null)
   }
 }

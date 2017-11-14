@@ -16,9 +16,8 @@
 
 package com.tencent.angel.master.ps.attempt;
 
-import org.apache.hadoop.yarn.event.AbstractEvent;
-
 import com.tencent.angel.ps.PSAttemptId;
+import org.apache.hadoop.yarn.event.AbstractEvent;
 
 /**
  * Base class of ps attempt event.

@@ -16,7 +16,7 @@
 
 package com.tencent.angel.ml.math.vector;
 
-import com.tencent.angel.ml.math.VectorType;
+import com.tencent.angel.protobuf.generated.MLProtos;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -47,7 +47,7 @@ public class SparseDoubleVectorTest {
     for (int i = 0; i < index.length; i++)
       assertEquals(vec.get(i), vec_1.get(i));
 
-    TDoubleVector vec_2 = new SparseDoubleVector(10000, 500);
+    TIntDoubleVector vec_2 = new SparseDoubleVector(10000, 500);
     vec_2.clone(vec);
     int[] index2 = vec_2.getIndices();
     Arrays.sort(index2);
@@ -72,7 +72,7 @@ public class SparseDoubleVectorTest {
   public void denseDoubleComputeTest() throws Exception {
     SparseDoubleVector vec = genSparseDoubleVector(nnz, dim);
 
-    TDoubleVector vec_1 = genDenseDoubleVector(dim);
+    TIntDoubleVector vec_1 = genDenseDoubleVector(dim);
 
     //dot
     double sum  =0.0;
@@ -82,19 +82,19 @@ public class SparseDoubleVectorTest {
     assertEquals(sum, dot);
 
     //plus
-    TDoubleVector vec_2 = vec.plus(vec_1);
+    TIntDoubleVector vec_2 = vec.plus(vec_1);
     for (int i = 0; i < dim; i++)
       assertEquals(vec_1.get(i) + vec.get(i), vec_2.get(i));
-    TDoubleVector vec_3 = vec.plus(vec_1, 3);
+    TIntDoubleVector vec_3 = vec.plus(vec_1, 3);
     for (int i = 0; i < dim; i++)
       assertEquals(3 * vec_1.get(i) + vec.get(i), vec_3.get(i));
 
     //plusBy
-    TDoubleVector vec_5 = vec.clone();
+    TIntDoubleVector vec_5 = vec.clone();
     vec_5.plusBy(vec_1);
     for (int i = 0; i < dim; i++)
       assertEquals(vec.get(i) + vec_1.get(i), vec_5.get(i));
-    TDoubleVector vec_6 = vec.clone();
+    TIntDoubleVector vec_6 = vec.clone();
     vec_6.plusBy(vec_1, 4);
     for (int i = 0; i < dim; i++)
       assertEquals(vec.get(i) + 4 * vec_1.get(i), vec_6.get(i));
@@ -104,7 +104,7 @@ public class SparseDoubleVectorTest {
   @Test
   public void sparseDoubleComputeTest() {
     SparseDoubleVector vec = genSparseDoubleVector(nnz, dim);
-    TDoubleVector vec_1 = genSparseDoubleVector(nnz, dim);
+    TIntDoubleVector vec_1 = genSparseDoubleVector(nnz, dim);
 
     //dot
     double sum = 0.0;
@@ -114,19 +114,19 @@ public class SparseDoubleVectorTest {
     assertEquals(sum, dot, 0.00000000001);
 
     //plus
-    TDoubleVector vec_2 = vec.plus(vec_1);
+    TIntDoubleVector vec_2 = vec.plus(vec_1);
     for (int i = 0; i < dim; i++)
       assertEquals(vec.get(i) + vec_1.get(i), vec_2.get(i));
-    TDoubleVector vec_3 = vec.plus(vec_1, 4);
+    TIntDoubleVector vec_3 = vec.plus(vec_1, 4);
     for (int i = 0; i < dim; i++)
       assertEquals(vec.get(i) + 4 * vec_1.get(i), vec_3.get(i));
 
     //plusBy
-    TDoubleVector vec_4 = vec.clone();
+    TIntDoubleVector vec_4 = vec.clone();
     vec_4.plusBy(vec_1);
     for (int i = 0; i < dim; i++)
       assertEquals(vec.get(i) + vec_1.get(i), vec_4.get(i));
-    TDoubleVector vec_5 = vec.clone();
+    TIntDoubleVector vec_5 = vec.clone();
     vec_5.plusBy(vec_1, 4);
     for (int i = 0; i < dim; i++)
       assertEquals(vec.get(i) + 4* vec_1.get(i), vec_5.get(i));
@@ -136,7 +136,7 @@ public class SparseDoubleVectorTest {
   @Test
   public void sparseDoubleSortedComputeTest() {
     SparseDoubleVector vec = genSparseDoubleVector(nnz, dim);
-    TDoubleVector vec_1 = genSparseDoubleSortedVector((int) 1.5 * nnz, dim);
+    TIntDoubleVector vec_1 = genSparseDoubleSortedVector((int) 1.5 * nnz, dim);
 
     //dot
     double sum = 0.0;
@@ -146,19 +146,19 @@ public class SparseDoubleVectorTest {
     assertEquals(sum, dot, 0.00000000000001);
 
     //plus
-    TDoubleVector vec_2 = vec.plus(vec_1);
+    TIntDoubleVector vec_2 = vec.plus(vec_1);
     for (int i = 0; i < dim; i++)
       assertEquals(vec.get(i) + vec_1.get(i), vec_2.get(i));
-    TDoubleVector vec_3 = vec.plus(vec_1, 5);
+    TIntDoubleVector vec_3 = vec.plus(vec_1, 5);
     for (int i = 0; i < dim; i++)
       assertEquals(vec.get(i) + 5 * vec_1.get(i), vec_3.get(i));
 
     //plusBy
-    TDoubleVector vec_4 = vec.clone();
+    TIntDoubleVector vec_4 = vec.clone();
     vec_4.plusBy(vec_1);
     for (int i = 0; i < dim; i++)
       assertEquals(vec.get(i) + vec_1.get(i), vec_4.get(i));
-    TDoubleVector vec_5 = vec.clone();
+    TIntDoubleVector vec_5 = vec.clone();
     vec_5.plusBy(vec_1, 4);
     for (int i = 0; i < dim; i++)
       assertEquals(vec.get(i) + 4* vec_1.get(i), vec_5.get(i));
@@ -224,7 +224,7 @@ public class SparseDoubleVectorTest {
   @Test
   public void getType() throws Exception {
     SparseDoubleVector vec = genSparseDoubleVector(nnz, dim);
-    assertEquals(VectorType.T_DOUBLE_SPARSE, vec.getType());
+    assertEquals(MLProtos.RowType.T_DOUBLE_SPARSE, vec.getType());
   }
 
   @Test
@@ -262,7 +262,7 @@ public class SparseDoubleVectorTest {
   @Test
   public void times() throws Exception {
     SparseDoubleVector vec = genSparseDoubleVector(nnz, dim);
-    TDoubleVector vec_1 = vec.times(5.5);
+    TIntDoubleVector vec_1 = vec.times(5.5);
 
     for (int i = 0; i < dim; i++)
       assertEquals(vec.get(i) * 5.5, vec_1.get(i));
@@ -271,7 +271,7 @@ public class SparseDoubleVectorTest {
   @Test
   public void timesBy() throws Exception {
     SparseDoubleVector vec = genSparseDoubleVector(nnz, dim);
-    TDoubleVector vec_1 = vec.clone();
+    TIntDoubleVector vec_1 = vec.clone();
 
     vec.timesBy(5.5);
     for (int i = 0; i < dim; i++)

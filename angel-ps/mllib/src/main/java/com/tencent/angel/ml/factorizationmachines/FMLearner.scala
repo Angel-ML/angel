@@ -22,8 +22,9 @@ import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.{DenseDoubleVector, SparseDoubleSortedVector}
 import com.tencent.angel.ml.matrix.psf.update.RandomNormal
-import com.tencent.angel.ml.metric.log.LossMetric
+import com.tencent.angel.ml.metric.LossMetric
 import com.tencent.angel.ml.model.MLModel
+import com.tencent.angel.ml.utils.ValidationUtils
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
@@ -33,16 +34,15 @@ import scala.collection.mutable
 
 /**
   * Learner of Factorization machines
+ *
   * @param ctx: context of this task
   * @param minP: min value of y
   * @param maxP: max value of y
   * @param feaUsed: array of used feature of the input data
   */
-class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Double, val feaUsed: Array[Int])
-  extends MLLearner(ctx) {
-
+class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Double, val feaUsed: Array[Int]) extends MLLearner(ctx) {
   val LOG: Log = LogFactory.getLog(classOf[FMLearner])
-  val fmModel = new FMModel(conf, ctx)
+  val fmmodel = new FMModel(conf, ctx)
 
   val learnType = conf.get(MLConf.ML_FM_LEARN_TYPE, MLConf.DEFAULT_ML_FM_LEARN_TYPE)
   val feaNum: Int = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
@@ -54,11 +54,11 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
   val reg2: Double = conf.getDouble(MLConf.ML_FM_REG2, MLConf.DEFAULT_ML_FM_REG2)
   val lr: Double = conf.getDouble(MLConf.ML_LEARN_RATE, MLConf.DEFAULT_ML_LEAR_RATE)
   val vStddev: Double = conf.getDouble(MLConf.ML_FM_V_STDDEV, MLConf.DEFAULT_ML_FM_V_INIT)
-
-  val vIndexes = new RowIndex()
-  feaUsed.zipWithIndex.filter((p:(Int, Int))=>p._1!=0).map((p:(Int, Int))=>vIndexes.addRowId(p._2))
-  val feaUsedN = vIndexes.getRowsNumber
-  LOG.info("vIndexs's row's number = " + vIndexes)
+  // Put used feature indexes to vIndexs
+  val vIndexs = new RowIndex()
+  feaUsed.zipWithIndex.filter((p:(Int, Int))=>p._1!=0).map((p:(Int, Int))=>vIndexs.addRowId(p._2))
+  val feaUsedN = vIndexs.getRowsNumber
+  LOG.info("vIndexs's row's number = " + vIndexs)
 
   /**
     * Train a Factorization machines Model
@@ -68,7 +68,8 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
     * @return : a learned model
     */
   override
-  def train(trainData: DataBlock[LabeledData], vali: DataBlock[LabeledData]): MLModel = {
+  def train(trainData: DataBlock[LabeledData], vali: DataBlock[LabeledData]):
+  MLModel = {
     val start = System.currentTimeMillis()
     LOG.info(s"learnType=$learnType, feaNum=$feaNum, rank=$rank, #trainData=${trainData.size}")
     LOG.info(s"reg0=$reg0, reg1=$reg1, reg2=$reg2, lr=$lr, vStev=$vStddev")
@@ -78,9 +79,9 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
     val initCost = System.currentTimeMillis() - beforeInit
     LOG.info(s"Init matrixes cost $initCost ms.")
 
-    globalMetrics.addMetrics(fmModel.FM_OBJ, LossMetric(trainData.size()))
+    globalMetrics.addMetric(fmmodel.FM_OBJ, LossMetric(trainData.size()))
 
-    while (ctx.getIteration < epochNum) {
+    while (ctx.getEpoch < epochNum) {
       val startIter = System.currentTimeMillis()
       val (w0, w, v) = oneIteration(trainData)
       val iterCost = System.currentTimeMillis() - startIter
@@ -89,18 +90,19 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
       val loss = evaluate(trainData, w0.get(0), w, v)
       val valiCost = System.currentTimeMillis() - startVali
 
-      globalMetrics.metrics(fmModel.FM_OBJ, loss)
-      LOG.info(s"Epoch=${ctx.getIteration}, evaluate loss=${loss/trainData.size()}. " +
+      globalMetrics.metric(fmmodel.FM_OBJ, loss)
+
+      LOG.info(s"Epoch=${ctx.getEpoch}, evaluate loss=${loss/trainData.size()}. " +
         s"trainCost=$iterCost, " +
         s"valiCost=$valiCost")
 
-      ctx.incIteration()
+      ctx.incEpoch()
     }
 
     val end = System.currentTimeMillis()
     val cost = end - start
     LOG.info(s"FM Learner train cost $cost ms.")
-    fmModel
+    fmmodel
   }
 
   /**
@@ -109,11 +111,11 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
   def initModels(): Unit = {
     if(ctx.getTaskId.getIndex == 0) {
       for (row <- 0 until feaNum) {
-        fmModel.v.update(new RandomNormal(fmModel.v.getMatrixId(), row, 0.0, vStddev)).get()
+        fmmodel.v.update(new RandomNormal(fmmodel.v.getMatrixId(), row, 0.0, vStddev)).get()
       }
     }
 
-    fmModel.v.clock().get()
+    fmmodel.v.syncClock()
   }
 
   /**
@@ -122,21 +124,18 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
     * @param dataBlock
     * @return
     */
-  def oneIteration(dataBlock: DataBlock[LabeledData]):
-    (DenseDoubleVector, DenseDoubleVector, mutable.HashMap[Int, DenseDoubleVector]) = {
-
+  def oneIteration(dataBlock: DataBlock[LabeledData]): (DenseDoubleVector, DenseDoubleVector, mutable.HashMap[Int, DenseDoubleVector]) = {
     val startGet = System.currentTimeMillis()
-    val (w0, w, v) = fmModel.pullFromPS(vIndexes)
+    val (w0, w, v) = fmmodel.pullFromPS(vIndexs)
     val getCost = System.currentTimeMillis() - startGet
     LOG.info(s"Get matrixes cost $getCost ms.")
 
-    val _w0 = w0.clone()
-    val _w = w.clone()
+    val _w0 = w0.clone().asInstanceOf[DenseDoubleVector]
+    val _w = w.clone().asInstanceOf[DenseDoubleVector]
     val _v = new mutable.HashMap[Int, DenseDoubleVector]()
     for (vec <- v) {
-      _v.put(vec._1, vec._2.clone())
+      _v.put(vec._1, vec._2.clone().asInstanceOf[DenseDoubleVector])
     }
-    LOG.info(s"v has ${_v.size} rows.")
 
     dataBlock.resetReadIndex()
     for (_ <- 0 until dataBlock.size) {
@@ -155,7 +154,7 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
       v(update._1).plusBy(update._2, -1.0).timesBy(-1.0)
     }
 
-    fmModel.pushToPS(w0.plusBy(_w0, -1.0).timesBy(-1.0).asInstanceOf[DenseDoubleVector],
+    fmmodel.pushToPS(w0.plusBy(_w0, -1.0).timesBy(-1.0).asInstanceOf[DenseDoubleVector],
       w.plusBy(_w, -1.0).timesBy(-1.0).asInstanceOf[DenseDoubleVector],
       v)
 
@@ -164,6 +163,9 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
 
   /**
     * Evaluate the objective value
+    * For regression: loss(y,\hat y) = (y - \hat y)^2
+    * For classification: loss(y,\hat y) = -\ln (\delta(y, \hat y))),
+    *                     in which \delta(x) = \frac{1}{1+e^{-x}}
  *
     * @param dataBlock
     * @param w0
@@ -174,18 +176,71 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
   def evaluate(dataBlock: DataBlock[LabeledData], w0: Double, w: DenseDoubleVector,
                v: mutable.HashMap[Int, DenseDoubleVector]):
   Double = {
-    var loss = 0.0
-
     dataBlock.resetReadIndex()
-    for (_ <- 0 until dataBlock.size) {
-      val data = dataBlock.read()
-      val x = data.getX.asInstanceOf[SparseDoubleSortedVector]
-      val y = data.getY
-      val pre = predict(x, y, w0, w, v)
-      loss += (pre - y) * (pre - y)
-    }
 
-    loss
+    learnType match {
+      case "r" => {
+        var eval = 0.0
+        for (_ <- 0 until dataBlock.size) {
+          val data = dataBlock.read()
+          val x = data.getX.asInstanceOf[SparseDoubleSortedVector]
+          val y = data.getY
+          val pre = predict(x, y, w0, w, v)
+          eval += (pre - y) * (pre - y)
+        }
+        LOG.info(s"Regression evaluate loss=$eval")
+
+        eval
+      }
+
+      case "c" => {
+        var loss = 0.0
+        var correct = 0.0
+        var tp = 0
+        var fp = 0
+        var tn = 0
+        var fn = 0
+        val yList = new Array[Double](dataBlock.size())
+        val preList = new Array[Double](dataBlock.size())
+
+        for (i <- 0 until dataBlock.size()) {
+          val data = dataBlock.read()
+          val x = data.getX.asInstanceOf[SparseDoubleSortedVector]
+          val y = data.getY
+          val pre = predict(x, y, w0, w, v)
+
+          yList(i) = y
+          preList(i) = pre
+
+          pre * y match {
+            case dot if dot > 0 => {
+              correct += 1
+
+              y match {
+                case y if y > 0 => tp += 1
+                case y if y < 0 => tn += 1
+              }
+            }
+
+            case dot if dot < 0 => {
+              y match {
+                case y if y > 0 => fn += 1
+                case y if y < 0 => fp += 1
+              }
+            }
+
+              loss += Math.log1p(1 / (1 + Math.exp(-dot)))
+          }
+
+        }
+        val metric = ValidationUtils.calAUC(preList, yList, tp, tn, fp, fn)
+        LOG.info(s"loss=${loss/yList.length}, precision=${correct/yList.length},auc=${metric._1}, " +
+          s"trueRecall=${metric._2}, falseRecall=${metric._3}")
+
+        loss
+      }
+
+    }
   }
 
   /**
@@ -198,8 +253,11 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
     * @param v: v mat of FM
     * @return
     */
-  def predict(x: SparseDoubleSortedVector, y: Double, w0: Double, w: DenseDoubleVector, v:
-  mutable.HashMap[Int, DenseDoubleVector]): Double = {
+  def predict(x: SparseDoubleSortedVector,
+              y: Double, w0: Double,
+              w: DenseDoubleVector,
+              v: mutable.HashMap[Int, DenseDoubleVector]): Double = {
+
     var ret: Double = 0.0
     ret += w0
     ret += x.dot(w)
@@ -215,8 +273,13 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
       ret += 0.5 * (ret1 * ret1 - ret2)
     }
 
-    ret = if (ret < maxP) ret else maxP
-    ret = if (ret > minP) ret else minP
+    learnType match {
+      // For classification:
+      case "r" => ret = if (ret < maxP) ret else maxP
+                  ret = if (ret > minP) ret else minP
+      // For regression:
+      case "c" => 1.0 / (1.0 + Math.exp(-ret))
+    }
 
     ret
   }

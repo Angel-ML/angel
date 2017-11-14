@@ -38,8 +38,8 @@ public abstract class ServerRow implements Serialize {
   private static final Log LOG = LogFactory.getLog(ServerRow.class);
   protected int clock;
   protected int rowId;
-  protected int endCol;
-  protected int startCol;
+  protected long endCol;
+  protected long startCol;
   protected int rowVersion;
   protected final ReentrantReadWriteLock lock;
 
@@ -50,7 +50,7 @@ public abstract class ServerRow implements Serialize {
    * @param startCol the start col
    * @param endCol   the end col
    */
-  public ServerRow(int rowId, int startCol, int endCol) {
+  public ServerRow(int rowId, long startCol, long endCol) {
     this.rowId = rowId;
     this.startCol = startCol;
     this.endCol = endCol;
@@ -85,7 +85,7 @@ public abstract class ServerRow implements Serialize {
    * @throws IOException
    */
   protected void writeTo(DataOutputStream output) throws IOException{
-    output.writeInt(clock);
+    //output.writeInt(clock);
   }
 
   /**
@@ -95,15 +95,15 @@ public abstract class ServerRow implements Serialize {
    * @throws IOException
    */
   protected void readFrom(DataInputStream input) throws IOException{
-    clock = input.readInt();
+    //clock = input.readInt();
   }
 
   @Override
   public void serialize(ByteBuf buf) {
     buf.writeInt(rowId);
     buf.writeInt(clock);
-    buf.writeInt(startCol);
-    buf.writeInt(endCol);
+    buf.writeLong(startCol);
+    buf.writeLong(endCol);
     buf.writeInt(rowVersion);
   }
 
@@ -111,8 +111,8 @@ public abstract class ServerRow implements Serialize {
   public void deserialize(ByteBuf buf) {
     rowId = buf.readInt();
     clock = buf.readInt();
-    startCol = buf.readInt();
-    endCol = buf.readInt();
+    startCol = buf.readLong();
+    endCol = buf.readLong();
     rowVersion = buf.readInt();
   }
 
@@ -160,7 +160,7 @@ public abstract class ServerRow implements Serialize {
    *
    * @return the end col
    */
-  public int getEndCol() {
+  public long getEndCol() {
     return endCol;
   }
 
@@ -169,7 +169,7 @@ public abstract class ServerRow implements Serialize {
    *
    * @return the start col
    */
-  public int getStartCol() {
+  public long getStartCol() {
     return startCol;
   }
 

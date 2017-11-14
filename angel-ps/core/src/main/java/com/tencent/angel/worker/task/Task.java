@@ -18,7 +18,6 @@ package com.tencent.angel.worker.task;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.worker.WorkerContext;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -68,7 +67,7 @@ public class Task extends Thread {
       BaseTask userTask = newBaseTask(userTaskClass);
       this.userTask =  userTask;
       runUser(userTask);
-    } catch (Exception e) {
+    } catch (Throwable e) {
       LOG.error("task runner error", e);
       diagnostics.add("task runner error" + e.getMessage());
       setState(TaskState.FAILED);

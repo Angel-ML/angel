@@ -21,11 +21,10 @@ import com.google.protobuf.ServiceException;
 import com.tencent.angel.common.Location;
 import com.tencent.angel.ipc.MLRPC;
 import com.tencent.angel.ipc.RpcServer;
-import com.tencent.angel.utils.NetUtils;
 import com.tencent.angel.protobuf.generated.MasterWorkerServiceProtos.GetThreadStackRequest;
 import com.tencent.angel.protobuf.generated.MasterWorkerServiceProtos.GetThreadStackResponse;
 import com.tencent.angel.protobuf.generated.WorkerWorkerServiceProtos.*;
-
+import com.tencent.angel.utils.NetUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 

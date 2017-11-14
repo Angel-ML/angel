@@ -47,7 +47,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 
 public class ServerPartitionTest {
@@ -184,7 +185,7 @@ public class ServerPartitionTest {
     buf.writeDouble(-7.00);
     buf.writeDouble(-8.00);
     serverPartition.getRow(6).update(MLProtos.RowType.T_DOUBLE_DENSE, buf, 8);
-    serverPartition.writeTo(out);
+    serverPartition.writeSnapshot(out);
     out.close();
     DataInputStream in = new DataInputStream(new FileInputStream("data"));
     PartitionKey partitionKeyNew = new PartitionKey(2, 1, 1, 2, 8, 10);
@@ -192,7 +193,7 @@ public class ServerPartitionTest {
         new ServerPartition(partitionKeyNew, MLProtos.RowType.T_DOUBLE_DENSE);
     assertNotEquals(((ServerDenseDoubleRow) serverPartition.getRow(6)).getData(),
         ((ServerDenseDoubleRow) serverPartitionNew.getRow(6)).getData());
-    serverPartitionNew.readFrom(in);
+    serverPartitionNew.readSnapshot(in);
     in.close();
     assertEquals(((ServerDenseDoubleRow) serverPartition.getRow(6)).getData(),
         ((ServerDenseDoubleRow) serverPartitionNew.getRow(6)).getData());
@@ -213,11 +214,6 @@ public class ServerPartitionTest {
     serverPartition.commit(out);
     out.close();
     DataInputStream in = new DataInputStream(new FileInputStream("data"));
-    assertEquals(partitionKey.getStartRow(), in.readInt());
-    assertEquals(partitionKey.getStartCol(), in.readInt());
-    assertEquals(partitionKey.getEndRow(), in.readInt());
-    assertEquals(partitionKey.getEndCol(), in.readInt());
-    assertEquals(rowType.toString(), in.readUTF());
     assertEquals(partitionKey.getEndRow() - partitionKey.getStartRow(), in.readInt());
     in.close();
   }
@@ -230,8 +226,8 @@ public class ServerPartitionTest {
     assertEquals(partitionKey.getPartitionId(), buf.readInt());
     assertEquals(partitionKey.getStartRow(), buf.readInt());
     assertEquals(partitionKey.getEndRow(), buf.readInt());
-    assertEquals(partitionKey.getStartCol(), buf.readInt());
-    assertEquals(partitionKey.getEndCol(), buf.readInt());
+    assertEquals(partitionKey.getStartCol(), buf.readLong());
+    assertEquals(partitionKey.getEndCol(), buf.readLong());
 
     assertEquals(rowType.getNumber(), buf.readInt());
     assertEquals(serverPartition.getClock(), buf.readInt());

@@ -29,7 +29,7 @@ import org.junit.Test;
 
 import java.io.*;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class ServerSparseDoubleRowTest {
   private final static Log LOG = LogFactory.getLog(ServerSparseDoubleRowTest.class);
@@ -64,12 +64,10 @@ public class ServerSparseDoubleRowTest {
     buf.writeDouble(1.00);
     buf.writeDouble(2.00);
     serverSparseDoubleRow.update(MLProtos.RowType.T_DOUBLE_DENSE, buf, 3);
-    serverSparseDoubleRow.setClock(10);
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
     serverSparseDoubleRow.writeTo(out);
     out.close();
     DataInputStream in = new DataInputStream(new FileInputStream("data"));
-    assertEquals(in.readInt(), 10);
     assertEquals(in.readInt(), 3);
     Int2DoubleOpenHashMap hashMap = new Int2DoubleOpenHashMap();
     hashMap.addTo(0, 0.00);
@@ -85,7 +83,6 @@ public class ServerSparseDoubleRowTest {
     buf.writeDouble(11.00);
     buf.writeDouble(12.00);
     serverSparseDoubleRow.update(MLProtos.RowType.T_DOUBLE_DENSE, buf, 3);
-    serverSparseDoubleRow.setClock(9);
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
     serverSparseDoubleRow.writeTo(out);
     out.close();
@@ -94,7 +91,7 @@ public class ServerSparseDoubleRowTest {
         new ServerSparseDoubleRow(rowId, startCol, endCol);
     newServerSparseDoubleRow.readFrom(in);
     in.close();
-    assertEquals(newServerSparseDoubleRow.getClock(), 9);
+
     assertEquals(newServerSparseDoubleRow.getData().get(0), serverSparseDoubleRow.getData().get(0),
         0.00);
     assertEquals(newServerSparseDoubleRow.getData().get(1), serverSparseDoubleRow.getData().get(1),
@@ -127,8 +124,8 @@ public class ServerSparseDoubleRowTest {
     buf = Unpooled.buffer(0);
     LOG.info(buf);
     buf.writeInt(0);
-    buf.writeInt(2);
     buf.writeDouble(1.00);
+    buf.writeInt(2);
     buf.writeDouble(-2.00);
     serverSparseDoubleRow.update(MLProtos.RowType.T_DOUBLE_SPARSE, buf, 2);
     assertEquals(serverSparseDoubleRow.getData().get(0), 1, 0.000);
@@ -147,8 +144,8 @@ public class ServerSparseDoubleRowTest {
     serverSparseDoubleRow.serialize(buf);
     assertEquals(serverSparseDoubleRow.getRowId(), buf.readInt());
     assertEquals(serverSparseDoubleRow.getClock(), buf.readInt());
-    assertEquals(serverSparseDoubleRow.getStartCol(), buf.readInt());
-    assertEquals(serverSparseDoubleRow.getEndCol(), buf.readInt());
+    assertEquals(serverSparseDoubleRow.getStartCol(), buf.readLong());
+    assertEquals(serverSparseDoubleRow.getEndCol(), buf.readLong());
     assertEquals(serverSparseDoubleRow.getRowVersion(), buf.readInt());
     assertEquals(3, buf.readInt());
   }
@@ -158,8 +155,8 @@ public class ServerSparseDoubleRowTest {
     ByteBuf buf = Unpooled.buffer(16);
     buf.writeInt(0);
     buf.writeInt(1);
-    buf.writeInt(2);
-    buf.writeInt(3);
+    buf.writeLong(2);
+    buf.writeLong(3);
     buf.writeInt(4);
     buf.writeInt(3);
     buf.writeInt(0);

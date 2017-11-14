@@ -19,7 +19,6 @@ package com.tencent.angel.ps.impl;
 import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.MasterProtocol;
-
 import org.apache.hadoop.conf.Configuration;
 
 /**
@@ -49,6 +48,10 @@ public class PSContext {
 
   public Configuration getConf() {
     return ps.getConf();
+  }
+
+  public ParameterServer getPs() {
+    return ps;
   }
   
   public AngelDeployMode getDeployMode() {

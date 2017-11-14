@@ -17,6 +17,7 @@
 
 package com.tencent.angel.spark.examples.util
 
+import com.tencent.angel.spark.models.vector.enhanced.{BreezePSVector, CachedPSVector}
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
@@ -27,7 +28,7 @@ import org.apache.spark.ml.linalg.{DenseVector, Vector}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
-import com.tencent.angel.spark.model.vector.{BreezePSVector, RemotePSVector}
+import com.tencent.angel.spark.models.vector.PSVector
 
 /**
  * This is LogisticRegression data generator and its DiffFunction.
@@ -98,9 +99,9 @@ object Logistic {
   case class PSCost(trainData: RDD[(Vector, Double)]) extends DiffFunction[BreezePSVector] {
 
     override def calculate(x: BreezePSVector) : (Double, BreezePSVector) = {
-      val localX = new BDV[Double](x.toRemote.pull())
+      val localX = new BDV[Double](x.pull())
       val bcX = trainData.sparkContext.broadcast(localX)
-      val cumGradient = x.proxy.getPool().createZero().mkBreeze()
+      val cumGradient = PSVector.duplicate(x.component).toBreeze
 
       val sampleNum = trainData.count()
       val cumLoss = trainData.mapPartitions { iter =>
@@ -120,7 +121,7 @@ object Logistic {
           lossArray += loss
           gradient
         }.reduce(_ + _)
-        cumGradient.toRemote.incrementAndFlush(gradientSum.toArray)
+        cumGradient.toCache.increment(gradientSum.toArray)
         lossArray.toIterator
       }.sum()
 
@@ -132,7 +133,7 @@ object Logistic {
   case class PSAggregateCost(trainData: RDD[(Vector, Double)])
     extends DiffFunction[BreezePSVector] {
 
-    case class Aggregator(bcX: Broadcast[BDV[Double]], remoteGradient: RemotePSVector)
+    case class Aggregator(bcX: Broadcast[BDV[Double]], remoteGradient: CachedPSVector)
       extends Serializable {
       private var lossSum = 0.0
       private var count = 0L
@@ -148,7 +149,7 @@ object Logistic {
           math.log1p(math.exp(margin)) - margin
         }
 
-        remoteGradient.increment(gradient.toArray)
+        remoteGradient.incrementWithCache(gradient.toArray)
         lossSum += loss
         count += 1
         this
@@ -170,10 +171,9 @@ object Logistic {
     override def calculate(x: BreezePSVector): (Double, BreezePSVector) = {
       import com.tencent.angel.spark.rdd.RDDPSFunctions._
 
-      val pool = x.proxy.getPool()
-      val localX = new BDV(x.toRemote.pull())
+      val localX = new BDV(x.pull())
       val bcX = trainData.sparkContext.broadcast(localX)
-      val cumGradient = pool.createZero().mkRemote()
+      val cumGradient = PSVector.duplicate(x.component).toCache
 
       val aggregator = {
         val seqOp = (c: Aggregator, point: (Vector, Double)) => c.add(point)

@@ -16,14 +16,11 @@
 
 package com.tencent.angel.ml.math.vector;
 
-import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.ml.math.VectorType;
-
+import com.tencent.angel.protobuf.generated.MLProtos;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -162,6 +159,7 @@ public class SparseIntVector extends TIntVector {
     ObjectIterator<Int2IntMap.Entry> iter = hashMap.int2IntEntrySet().fastIterator();
     Int2IntMap.Entry entry = null;
     while(iter.hasNext()) {
+      entry = iter.next();
       entry.setValue(entry.getIntValue() * x);
     }
     return this;
@@ -213,6 +211,16 @@ public class SparseIntVector extends TIntVector {
 
     throw new UnsupportedOperationException("Unsupportted operation: "
       + this.getClass().getName() + " plusBy " + other.getClass().getName());
+  }
+
+  @Override public long sum() {
+    ObjectIterator<Int2IntMap.Entry> iter = hashMap.int2IntEntrySet().iterator();
+    long sum = 0;
+    while (iter.hasNext()) {
+      double v = iter.next().getIntValue();
+      sum += v;
+    }
+    return sum;
   }
 
   private SparseIntVector plusBy(SparseIntVector other, int x) {
@@ -327,7 +335,7 @@ public class SparseIntVector extends TIntVector {
   }
 
   @Override
-  public TVector clone() {
+  public SparseIntVector clone() {
     return new SparseIntVector(this);
   }
 
@@ -376,12 +384,16 @@ public class SparseIntVector extends TIntVector {
   }
 
   @Override
-  public VectorType getType() {
-    return VectorType.T_INT_SPARSE;
+  public MLProtos.RowType getType() {
+    return MLProtos.RowType.T_INT_SPARSE;
   }
 
   @Override
   public int size() {
     return hashMap.size();
+  }
+
+  public Int2IntOpenHashMap getIndexToValueMap() {
+    return hashMap;
   }
 }

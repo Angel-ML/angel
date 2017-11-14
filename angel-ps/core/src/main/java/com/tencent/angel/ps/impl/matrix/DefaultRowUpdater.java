@@ -16,12 +16,10 @@
 
 package com.tencent.angel.ps.impl.matrix;
 
+import com.tencent.angel.protobuf.generated.MLProtos.RowType;
 import io.netty.buffer.ByteBuf;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import com.tencent.angel.protobuf.generated.MLProtos.RowType;
 
 import java.nio.DoubleBuffer;
 
@@ -79,6 +77,11 @@ public class DefaultRowUpdater extends RowUpdater {
   @Override
   public void updateDoubleSparseToDoubleSparse(int size, ByteBuf buf, ServerSparseDoubleRow row) {
     row.update(RowType.T_DOUBLE_SPARSE, buf, size);
+  }
+
+  @Override public void updateDoubleSparseToDoubleSparseLongKey(int size, ByteBuf buf,
+    ServerSparseDoubleLongKeyRow row) {
+    row.update(RowType.T_DOUBLE_SPARSE_LONGKEY, buf, size);
   }
 
   @Override

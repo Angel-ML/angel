@@ -20,9 +20,10 @@ package com.tencent.angel.ml.clustering.kmeans
 
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.task.PredictTask
 import com.tencent.angel.ml.utils.DataParser
 import com.tencent.angel.utils.HdfsUtil
-import com.tencent.angel.worker.task.{TaskContext, TrainTask}
+import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.io.{LongWritable, Text}
 
@@ -33,28 +34,23 @@ import org.apache.hadoop.io.{LongWritable, Text}
   * @param ctx : context of current task
   */
 
-class KMeansPredictTask (val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
+class KMeansPredictTask (val ctx: TaskContext) extends PredictTask[LongWritable, Text](ctx) {
   private val LOG = LogFactory.getLog(classOf[KMeansTrainTask])
 
-  val feaNum: Int = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
-  val dataFormat: String = conf.get(MLConf.ML_DATAFORMAT)
 
-  /**
-    * Parse each sample into a labeled data, of which X is the feature weight vector, Y is label.
-    */
-  override def parse(key: LongWritable, value: Text): LabeledData = {
-    DataParser.parseVector(key, value, feaNum, "libsvm", false)
-  }
-
-  override def train(taskContext: TaskContext): Unit = {
-    LOG.info("#PredictSample=" + trainDataBlock.size)
+  override def predict(taskContext: TaskContext): Unit = {
+    LOG.info("#PredictSample=" + taskDataBlock.size)
 
     val model = new KMeansModel(conf, ctx)
 
     // Predict the input dataset and save the result
-    val predictResult = model.predict(trainDataBlock)
+    val predictResult = model.predict(taskDataBlock)
     LOG.info("predict storage.len=" + predictResult.size)
 
     HdfsUtil.writeStorage(predictResult, ctx)
+  }
+
+  override def parse(key: LongWritable, value: Text): LabeledData = {
+    dataParser.parse(value.toString)
   }
 }

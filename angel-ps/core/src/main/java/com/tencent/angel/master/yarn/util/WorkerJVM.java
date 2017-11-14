@@ -76,15 +76,15 @@ public class WorkerJVM {
     }
     int heapMax = maxUse - directRegionSize;
     int youngRegionSize = (int) (heapMax * 0.4);
-    int suvivorRatio = 4;
+    int survivorRatio = 4;
 
     String ret =
         new StringBuilder().append(" -Xmx").append(heapMax).append("M").append(" -Xmn")
             .append(youngRegionSize).append("M").append(" -XX:MaxDirectMemorySize=")
-            .append(directRegionSize).append("M").append(" -XX:SurvivorRatio=").append(suvivorRatio)
+            .append(directRegionSize).append("M").append(" -XX:SurvivorRatio=").append(survivorRatio)
             .append(" -XX:PermSize=100M -XX:MaxPermSize=200M").append(" -XX:+AggressiveOpts")
-            .append(" -XX:+UseLargePages").append(" -XX:+UseParallelGC")
-            .append(" -XX:+UseAdaptiveSizePolicy").append(" -XX:CMSInitiatingOccupancyFraction=70")
+            .append(" -XX:+UseLargePages").append(" -XX:+UseConcMarkSweepGC")
+            .append(" -XX:CMSInitiatingOccupancyFraction=70")
             .append(" -XX:+UseCMSInitiatingOccupancyOnly").append(" -XX:+CMSScavengeBeforeRemark")
             .append(" -XX:+UseCMSCompactAtFullCollection").append(" -verbose:gc")
             .append(" -XX:+PrintGCDateStamps").append(" -XX:+PrintGCDetails")

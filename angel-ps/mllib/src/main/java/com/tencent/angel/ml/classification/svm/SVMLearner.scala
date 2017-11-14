@@ -21,9 +21,10 @@ import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.TDoubleVector
-import com.tencent.angel.ml.metric.log.LossMetric
-import com.tencent.angel.ml.model.{MLModel, PSModel}
-import com.tencent.angel.ml.optimizer.sgd.{GradientDescent, L2HingeLoss}
+import com.tencent.angel.ml.metric.LossMetric
+import com.tencent.angel.ml.model.MLModel
+import com.tencent.angel.ml.optimizer.sgd.GradientDescent
+import com.tencent.angel.ml.optimizer.sgd.loss.L2HingeLoss
 import com.tencent.angel.ml.utils.ValidationUtils
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
@@ -47,7 +48,6 @@ class SVMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   val batchNum: Int = conf.getInt(MLConf.ML_SGD_BATCH_NUM, MLConf.DEFAULT_ML_SGD_BATCH_NUM)
 
   val svmModel = new SVMModel(conf, ctx)
-  val weight:PSModel[TDoubleVector] = svmModel.weight
 
   // SVM used hing loss
   val hingeLoss = new L2HingeLoss(reg)
@@ -66,13 +66,13 @@ class SVMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
 
     val startGD = System.currentTimeMillis()
     // Run mini-batch gradient descent.
-    val ret = GradientDescent.miniBatchGD(trainData, weight, None,
+    val ret = GradientDescent.miniBatchGD(trainData, svmModel.weight, None,
                                           learnRate, hingeLoss, batchSize, batchNum)
     val loss = ret._1
     val localW = ret._2
 
-    val GDcost = System.currentTimeMillis() - startGD
-    LOG.info(s"Task[${ctx.getTaskIndex}] epoch=$epoch mini-batch update cost$GDcost ms. loss=$loss")
+    val GDCost = System.currentTimeMillis() - startGD
+    LOG.info(s"Task[${ctx.getTaskIndex}] epoch=$epoch mini-batch update cost$GDCost ms. loss=$loss")
 
     localW
   }
@@ -95,11 +95,11 @@ class SVMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     LOG.info(s"Task[${ctx.getTaskIndex}] #epoch=$epochNum, initLearnRate=$initLearnRate, " +
       s"learnRateDecay=$decay, L2Reg=$reg")
 
-    globalMetrics.addMetrics(MLConf.TRAIN_LOSS, LossMetric(trainData.size))
-    globalMetrics.addMetrics(MLConf.VALID_LOSS, LossMetric(validationData.size))
+    globalMetrics.addMetric(MLConf.TRAIN_LOSS, LossMetric(trainData.size))
+    globalMetrics.addMetric(MLConf.VALID_LOSS, LossMetric(validationData.size))
 
-    while (ctx.getIteration < epochNum) {
-      val epoch = ctx.getIteration
+    while (ctx.getEpoch < epochNum) {
+      val epoch = ctx.getEpoch
       LOG.info(s"Task[${ctx.getTaskIndex}] epoch=$epoch start")
 
       val startTrain = System.currentTimeMillis()
@@ -113,7 +113,7 @@ class SVMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       LOG.info(s"Task[${ctx.getTaskIndex}]epoch=$epoch success. train cost $trainCost ms, " +
         s"validate cost $valiCost ms")
 
-      ctx.incIteration()
+      ctx.incEpoch()
     }
 
     svmModel
@@ -131,14 +131,14 @@ class SVMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     LOG.info(s"Task[${ctx.getTaskIndex}] epoch=$epoch trainData loss=${trainMetrics._1 / trainData.size()} " +
       s"precision=${trainMetrics._2} auc=${trainMetrics._3} trueRecall=${trainMetrics._4} " +
       s"falseRecall=${trainMetrics._5}")
-    globalMetrics.metrics(MLConf.TRAIN_LOSS, trainMetrics._1)
+    globalMetrics.metric(MLConf.TRAIN_LOSS, trainMetrics._1)
 
     if (valiData.size > 0) {
       val valiMetric = ValidationUtils.calMetrics(valiData, weight, hingeLoss);
       LOG.info(s"Task[${ctx.getTaskIndex}] epoch=$epoch validationData loss=${valiMetric._1 /
         valiData.size()}" + s"precision=${valiMetric._2} auc=${valiMetric._3} trueRecall=${valiMetric._4} " +
         s"falseRecall=${valiMetric._5}")
-      globalMetrics.metrics(MLConf.VALID_LOSS, valiMetric._1)
+      globalMetrics.metric(MLConf.VALID_LOSS, valiMetric._1)
     }
   }
 }

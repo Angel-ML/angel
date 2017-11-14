@@ -16,15 +16,14 @@
 
 package com.tencent.angel.localcluster;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
+import com.tencent.angel.ps.PSAttemptId;
+import com.tencent.angel.worker.WorkerAttemptId;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 
-import com.tencent.angel.ps.PSAttemptId;
-import com.tencent.angel.worker.WorkerAttemptId;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Local cluster context. It contains all modules of Angel application.

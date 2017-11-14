@@ -16,20 +16,55 @@
 
 package com.tencent.angel.master;
 
+import com.google.protobuf.RpcController;
+import com.google.protobuf.ServiceException;
+import com.tencent.angel.common.Location;
 import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.exception.InvalidParameterException;
+import com.tencent.angel.ipc.MLRPC;
+import com.tencent.angel.ipc.RpcServer;
+import com.tencent.angel.master.app.AMContext;
+import com.tencent.angel.master.app.AppEvent;
+import com.tencent.angel.master.app.AppEventType;
 import com.tencent.angel.master.app.InternalErrorEvent;
 import com.tencent.angel.master.metrics.MetricsEvent;
 import com.tencent.angel.master.metrics.MetricsEventType;
 import com.tencent.angel.master.metrics.MetricsUpdateEvent;
+import com.tencent.angel.master.ps.CommitEvent;
+import com.tencent.angel.master.ps.attempt.*;
+import com.tencent.angel.master.psagent.*;
+import com.tencent.angel.master.task.AMTask;
+import com.tencent.angel.master.task.AMTaskManager;
 import com.tencent.angel.master.worker.attempt.*;
 import com.tencent.angel.master.worker.worker.AMWorker;
-import com.tencent.angel.ml.metrics.Metric;
+import com.tencent.angel.master.worker.workergroup.AMWorkerGroup;
+import com.tencent.angel.master.worker.workergroup.AMWorkerGroupState;
+import com.tencent.angel.ml.matrix.MatrixMeta;
+import com.tencent.angel.ml.metric.Metric;
+import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.GetWorkerLogDirRequest;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.GetWorkerLogDirResponse;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.*;
+import com.tencent.angel.protobuf.generated.MLProtos.*;
+import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos;
+import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.*;
+import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.*;
+import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.*;
+import com.tencent.angel.ps.PSAttemptId;
+import com.tencent.angel.ps.ParameterServerId;
+import com.tencent.angel.psagent.PSAgentAttemptId;
 import com.tencent.angel.utils.KryoUtils;
+import com.tencent.angel.utils.NetUtils;
+import com.tencent.angel.utils.StringUtils;
+import com.tencent.angel.worker.WorkerAttemptId;
 import com.tencent.angel.worker.WorkerId;
+import com.tencent.angel.worker.task.TaskId;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.service.AbstractService;
+import org.apache.hadoop.yarn.api.records.Container;
+import org.apache.hadoop.yarn.conf.YarnConfiguration;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -37,125 +72,6 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.service.AbstractService;
-
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
-import com.tencent.angel.common.Location;
-import com.tencent.angel.exception.InvalidParameterException;
-import com.tencent.angel.ipc.MLRPC;
-import com.tencent.angel.ipc.RpcServer;
-import com.tencent.angel.master.app.AMContext;
-import com.tencent.angel.master.app.AppEvent;
-import com.tencent.angel.master.app.AppEventType;
-import com.tencent.angel.master.ps.CommitEvent;
-import com.tencent.angel.master.ps.attempt.PSAttemptDiagnosticsUpdateEvent;
-import com.tencent.angel.master.ps.attempt.PSAttemptEvent;
-import com.tencent.angel.master.ps.attempt.PSAttemptEventType;
-import com.tencent.angel.master.ps.attempt.PSAttemptRegisterEvent;
-import com.tencent.angel.master.ps.attempt.PSAttemptStateUpdateEvent;
-import com.tencent.angel.master.psagent.PSAgentAttemptDiagnosticsUpdateEvent;
-import com.tencent.angel.master.psagent.PSAgentAttemptEvent;
-import com.tencent.angel.master.psagent.PSAgentAttemptEventType;
-import com.tencent.angel.master.psagent.PSAgentAttemptStateUpdateEvent;
-import com.tencent.angel.master.psagent.PSAgentRegisterEvent;
-import com.tencent.angel.master.worker.workergroup.AMWorkerGroup;
-import com.tencent.angel.master.worker.workergroup.AMWorkerGroupState;
-import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.protobuf.ProtobufUtil;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.CheckMatricesCreatedRequest;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.CheckMatricesCreatedResponse;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.CreateMatricesRequest;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.CreateMatricesResponse;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.GetJobReportRequest;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.GetJobReportResponse;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.PingRequest;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.PingResponse;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.SaveRequest;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.SaveResponse;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.SetParamsRequest;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.SetParamsResponse;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.StartRequest;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.StartResponse;
-import com.tencent.angel.protobuf.generated.MLProtos.CreateMatrixRequest;
-import com.tencent.angel.protobuf.generated.MLProtos.CreateMatrixResponse;
-import com.tencent.angel.protobuf.generated.MLProtos.GetAllPSAgentLocationRequest;
-import com.tencent.angel.protobuf.generated.MLProtos.GetAllPSAgentLocationResponse;
-import com.tencent.angel.protobuf.generated.MLProtos.GetAllPSLocationRequest;
-import com.tencent.angel.protobuf.generated.MLProtos.GetAllPSLocationResponse;
-import com.tencent.angel.protobuf.generated.MLProtos.GetMatrixInfoRequest;
-import com.tencent.angel.protobuf.generated.MLProtos.GetMatrixInfoResponse;
-import com.tencent.angel.protobuf.generated.MLProtos.LocationProto;
-import com.tencent.angel.protobuf.generated.MLProtos.MatrixClock;
-import com.tencent.angel.protobuf.generated.MLProtos.MatrixProto;
-import com.tencent.angel.protobuf.generated.MLProtos.MatrixStatus;
-import com.tencent.angel.protobuf.generated.MLProtos.PSAgentLocation;
-import com.tencent.angel.protobuf.generated.MLProtos.PSLocation;
-import com.tencent.angel.protobuf.generated.MLProtos.PSStatus;
-import com.tencent.angel.protobuf.generated.MLProtos.Pair;
-import com.tencent.angel.protobuf.generated.MLProtos.ReleaseMatrixRequest;
-import com.tencent.angel.protobuf.generated.MLProtos.ReleaseMatrixResponse;
-import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos;
-import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.GetAllMatrixInfoRequest;
-import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.GetAllMatrixInfoResponse;
-import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.GetPSLocationReponse;
-import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.GetPSLocationRequest;
-import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.PSAgentCommandProto;
-import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.PSAgentDoneRequest;
-import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.PSAgentDoneResponse;
-import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.PSAgentErrorRequest;
-import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.PSAgentErrorResponse;
-import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.PSAgentRegisterRequest;
-import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.PSAgentRegisterResponse;
-import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.PSAgentReportRequest;
-import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.PSAgentReportResponse;
-import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskClockRequest;
-import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskClockResponse;
-import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskIterationRequest;
-import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskIterationResponse;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.GetExecuteUnitDescRequest;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.GetExecuteUnitDescResponse;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.GetTaskMatrixClockRequest;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.GetTaskMatrixClockResponse;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.MatrixPartition;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.MatrixReport;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSCommandProto;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSDoneRequest;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSDoneResponse;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSErrorRequest;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSErrorResponse;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSRegisterRequest;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSRegisterResponse;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.GetMatrixPartitionRequest;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.GetMatrixPartitionResponse;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSReportRequest;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSReportResponse;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.TaskMatrixClock;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.GetWorkerGroupMetaInfoRequest;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.GetWorkerGroupMetaInfoResponse;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerCommandProto;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerDoneRequest;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerDoneResponse;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerErrorRequest;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerErrorResponse;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerRegisterRequest;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerRegisterResponse;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerReportRequest;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerReportResponse;
-import com.tencent.angel.ps.PSAttemptId;
-import com.tencent.angel.ps.ParameterServerId;
-import com.tencent.angel.psagent.PSAgentAttemptId;
-import com.tencent.angel.utils.NetUtils;
-import com.tencent.angel.utils.StringUtils;
-import com.tencent.angel.worker.WorkerAttemptId;
-import com.tencent.angel.worker.task.TaskId;
-import com.tencent.angel.master.task.AMTask;
-import com.tencent.angel.master.task.AMTaskManager;
-import org.apache.hadoop.yarn.api.records.Container;
 
 /**
  * the RPC server for angel application master. it respond to requests from clients, worker and ps
@@ -195,6 +111,9 @@ public class MasterService extends AbstractService implements MasterProtocol {
   /**host and port of the RPC server*/
   private volatile Location location;
 
+  /** Yarn web port */
+  private final int yarnNMWebPort;
+
   public MasterService(AMContext context) {
     super(MasterService.class.getName());
     this.context = context;
@@ -216,9 +135,26 @@ public class MasterService extends AbstractService implements MasterProtocol {
         conf.getLong(AngelConf.ANGEL_WORKER_HEARTBEAT_TIMEOUT_MS,
             AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_TIMEOUT_MS);
 
+    yarnNMWebPort = getYarnNMWebPort(conf);
+
     LOG.debug("psAgentTimeOutMS:" + psAgentTimeOutMS);
     LOG.debug("psTimeOutMS:" + psTimeOutMS);
     LOG.debug("workerTimeOutMS:" + workerTimeOutMS);
+  }
+
+  private int getYarnNMWebPort(Configuration conf) {
+    String nmWebAddr = conf.get(YarnConfiguration.NM_WEBAPP_ADDRESS, YarnConfiguration.DEFAULT_NM_WEBAPP_ADDRESS);
+    String [] addrItems = nmWebAddr.split(":");
+    if(addrItems.length == 2) {
+      try {
+        return Integer.valueOf(addrItems[1]);
+      } catch (Throwable x) {
+        LOG.error("can not get nm web port from " + nmWebAddr + ", just return default 8080");
+        return 8080;
+      }
+    } else {
+      return 8080;
+    }
   }
 
   @Override
@@ -512,7 +448,7 @@ public class MasterService extends AbstractService implements MasterProtocol {
     }
 
     return GetWorkerLogDirResponse.newBuilder().setLogDir(
-            "http://" + loc.getIp() + ":8080/node/containerlogs/"
+            "http://" + loc.getIp() + ":" + yarnNMWebPort + "/node/containerlogs/"
                     + container.getId() + "/angel/syslog/?start=0").build();
   }
 

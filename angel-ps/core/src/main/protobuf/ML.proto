@@ -33,9 +33,9 @@ message Partition{
   required int32 partitionId = 1;
   required int32 matrixId = 2;
   required int32 startRow = 3;
-  required int32 startCol = 4;
+  required int64 startCol = 4;
   required int32 endRow = 5;
-  required int32 endCol = 6;
+  required int64 endCol = 6;
 }
 
 message Cell{
@@ -99,17 +99,24 @@ enum RowType {
 	T_INT_ARBITRARY = 5;
 	T_FLOAT_DENSE = 6;
 	T_FLOAT_SPARSE = 7;
-	T_INVALID = 8;
+	T_DOUBLE_SPARSE_LONGKEY = 8;
+	T_DOUBLE_SPARSE_COMPONENT = 9;
+	T_FLOAT_SPARSE_COMPONENT = 10;
+	T_INT_SPARSE_COMPONENT = 11;
+	T_DOUBLE_SPARSE_LONGKEY_COMPONENT = 12;
+	T_INVALID = 13;
 }
 
 message MatrixProto{
   required int32 id = 1;
   required string name = 2;
   required int32 rowNum = 3;
-  required int32 colNum = 4;
-  required RowType rowType = 5;
-  repeated Pair attribute = 6;
-  repeated MatrixPartitionLocation matrixPartLocation = 7;
+  required int64 colNum = 4;
+  required int32 blockRowNum = 5;
+  required int64 blockColNum = 6;
+  required RowType rowType = 7;
+  repeated Pair attribute = 8;
+  repeated MatrixPartitionLocation matrixPartLocation = 9;
 }
 
 message MatrixClock{

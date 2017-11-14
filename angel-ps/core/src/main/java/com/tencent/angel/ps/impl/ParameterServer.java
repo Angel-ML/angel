@@ -25,16 +25,15 @@ import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.ipc.TConnectionManager;
 import com.tencent.angel.master.MasterProtocol;
-import com.tencent.angel.ps.PSAttemptId;
-import com.tencent.angel.ps.ParameterServerId;
-import com.tencent.angel.ps.impl.matrix.ServerMatrix;
-import com.tencent.angel.ps.matrix.transport.MatrixTransportServer;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos.MatrixStatus;
 import com.tencent.angel.protobuf.generated.MLProtos.PSAttemptIdProto;
 import com.tencent.angel.protobuf.generated.MLProtos.Pair;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.*;
-
+import com.tencent.angel.ps.PSAttemptId;
+import com.tencent.angel.ps.ParameterServerId;
+import com.tencent.angel.ps.impl.matrix.ServerMatrix;
+import com.tencent.angel.ps.matrix.transport.MatrixTransportServer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -303,6 +302,7 @@ public class ParameterServer {
     LOG.info("Initialize a parameter server");
 
     matrixPartitionManager = new MatrixPartitionManager();
+    matrixPartitionManager.init();
     committer = new MatrixCommitter(this);
     TConnection connection = TConnectionManager.getConnection(conf);
     try {

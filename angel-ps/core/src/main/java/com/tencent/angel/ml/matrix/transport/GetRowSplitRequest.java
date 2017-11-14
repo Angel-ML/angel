@@ -18,10 +18,10 @@ package com.tencent.angel.ml.matrix.transport;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.MatrixMeta;
+import com.tencent.angel.protobuf.generated.MLProtos.RowType;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.impl.matrix.ServerRow;
 import com.tencent.angel.psagent.PSAgentContext;
-import com.tencent.angel.protobuf.generated.MLProtos.RowType;
 import io.netty.buffer.ByteBuf;
 
 /**
@@ -29,19 +29,21 @@ import io.netty.buffer.ByteBuf;
  */
 public class GetRowSplitRequest extends PartitionRequest {
 
-  /** row index */
+  /**
+   * row index
+   */
   private int rowIndex;
 
   /**
    * Create a new GetRowSplitRequest.
    *
    * @param serverId parameter server id
-   * @param clock clock value
-   * @param partKey matrix partition key
+   * @param clock    clock value
+   * @param partKey  matrix partition key
    * @param rowIndex row index
    */
   public GetRowSplitRequest(ParameterServerId serverId, int clock, PartitionKey partKey,
-      int rowIndex) {
+    int rowIndex) {
     super(serverId, clock, partKey);
     this.rowIndex = rowIndex;
   }
@@ -55,7 +57,7 @@ public class GetRowSplitRequest extends PartitionRequest {
 
   /**
    * Get row index.
-   * 
+   *
    * @return int row index
    */
   public int getRowIndex() {
@@ -64,81 +66,63 @@ public class GetRowSplitRequest extends PartitionRequest {
 
   /**
    * Set row index.
-   * 
+   *
    * @param rowIndex row index
    */
   public void setRowIndex(int rowIndex) {
     this.rowIndex = rowIndex;
   }
 
-  @Override
-  public void serialize(ByteBuf buf) {
+  @Override public void serialize(ByteBuf buf) {
     super.serialize(buf);
     buf.writeInt(rowIndex);
   }
 
-  @Override
-  public void deserialize(ByteBuf buf) {
+  @Override public void deserialize(ByteBuf buf) {
     super.deserialize(buf);
     rowIndex = buf.readInt();
   }
 
-  @Override
-  public int bufferLen() {
+  @Override public int bufferLen() {
     return super.bufferLen() + 4;
   }
 
-  @Override
-  public TransportMethod getType() {
+  @Override public TransportMethod getType() {
     return TransportMethod.GET_ROWSPLIT;
   }
 
-  @Override
-  public int getEstimizeDataSize() {
+  @Override public int getEstimizeDataSize() {
     MatrixMeta meta =
-        PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(partKey.getMatrixId());
+      PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(partKey.getMatrixId());
     if (meta == null) {
       return 0;
     } else {
       RowType rowType = meta.getRowType();
       switch (rowType) {
         case T_DOUBLE_DENSE:
-          return 8 * (partKey.getEndCol() - partKey.getStartCol());
+          return 8 * ((int) partKey.getEndCol() - (int) partKey.getStartCol());
 
         case T_INT_DENSE:
-          return 4 * (partKey.getEndCol() - partKey.getStartCol());
+          return 4 * ((int) partKey.getEndCol() - (int) partKey.getStartCol());
 
         case T_FLOAT_DENSE:
-          return 4 * (partKey.getEndCol() - partKey.getStartCol());
+          return 4 * ((int) partKey.getEndCol() - (int) partKey.getStartCol());
 
-        case T_DOUBLE_SPARSE:
-        case T_INT_SPARSE: {
-          ServerRow row =
-              PSAgentContext.get().getMatricesCache()
-                  .getRowSplit(partKey.getMatrixId(), partKey, rowIndex);
-          if (row != null) {
-            return row.bufferLen();
-          } else {
-            return 0;
-          }
+        default: {
+          return 0;
         }
-
-        default:
-          return 8 * (partKey.getEndCol() - partKey.getStartCol());
       }
     }
   }
 
-  @Override
-  public int hashCode() {
+  @Override public int hashCode() {
     final int prime = 31;
     int result = super.hashCode();
     result = prime * result + rowIndex;
     return result;
   }
 
-  @Override
-  public boolean equals(Object obj) {
+  @Override public boolean equals(Object obj) {
     if (this == obj)
       return true;
     if (!super.equals(obj))
@@ -149,8 +133,7 @@ public class GetRowSplitRequest extends PartitionRequest {
     return rowIndex == other.rowIndex;
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "GetRowSplitRequest [rowIndex=" + rowIndex + ", toString()=" + super.toString() + "]";
   }
 }

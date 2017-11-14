@@ -16,7 +16,6 @@
 
 package com.tencent.angel.ml.math.matrix;
 
-import com.tencent.angel.ml.math.TMatrix;
 import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.math.vector.DenseDoubleVector;
 
@@ -47,7 +46,7 @@ public class DenseDoubleMatrix extends TDoubleMatrix {
 
   @Override
   public DenseDoubleVector initVector(int rowIndex) {
-    DenseDoubleVector ret = new DenseDoubleVector(col);
+    DenseDoubleVector ret = new DenseDoubleVector((int)col);
     ret.setMatrixId(matrixId);
     ret.setRowId(rowIndex);
     return ret;
@@ -61,7 +60,7 @@ public class DenseDoubleMatrix extends TDoubleMatrix {
    * @return
    */
   private DenseDoubleVector initVector(int rowIndex, double[] values) {
-    DenseDoubleVector ret = new DenseDoubleVector(col, values);
+    DenseDoubleVector ret = new DenseDoubleVector((int)col, values);
     ret.setMatrixId(matrixId);
     ret.setRowId(rowIndex);
     return ret;

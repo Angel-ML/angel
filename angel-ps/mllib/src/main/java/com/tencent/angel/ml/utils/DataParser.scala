@@ -16,51 +16,24 @@
 package com.tencent.angel.ml.utils
 
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.{SparseDoubleSortedVector, SparseDummyVector}
-import org.apache.hadoop.io.{LongWritable, Text}
-
-object DataParser {
-
-  def parseVector(key: LongWritable, value: Text, maxDim: Int, dataFormat: String, negY: Boolean):
-  LabeledData = {
-    dataFormat match {
-      case "dummy" =>
-        return parseDummyVector(value, maxDim, negY)
-      case "libsvm" =>
-        return parseLibsvmVector(value, maxDim, negY)
-    }
-    return null
-  }
+import com.tencent.angel.ml.math.vector.{SparseDummyVector, SparseDoubleSortedVector}
 
 
-  def parseVector(value: String, maxDim: Int, dataFormat: String, negY: Boolean):
-  LabeledData = {
-    dataFormat match {
-      case "dummy" =>
-        return parseDummyVector(value, maxDim, negY)
-      case "libsvm" =>
-        return parseLibsvmVector(value, maxDim, negY)
-    }
-    return null
-  }
+abstract class DataParser{
+  def parse(value: String): LabeledData
+}
 
-  protected def parseDummyVector(text: Text, maxDim: Int, negY: Boolean): LabeledData = {
-    if (null == text) {
+case class DummyDataParser(val maxDim: Int, val negY: Boolean) extends DataParser{
+  override def parse(value: String): LabeledData = {
+    if (null == value) {
       return null
     }
-    return parseDummyVector(text.toString, maxDim, negY)
-  }
-
-  protected def parseDummyVector(text: String, maxDim: Int, negY: Boolean): LabeledData = {
-    if (null == text) {
-      return null
-    }
-    val splits = text.split(",")
+    val splits = value.split(",")
     if (splits.length < 1) {
       return null
     }
-    val x: SparseDummyVector = new SparseDummyVector(maxDim, splits.length - 1)
-    var y: Double = splits(0).toDouble
+    val x = new SparseDummyVector(maxDim, splits.length - 1)
+    var y = splits(0).toDouble
 
     // y should be +1 or -1 when classification.
     if (negY && y != 1)
@@ -69,19 +42,16 @@ object DataParser {
     splits.tail.map(idx => x.set(idx.toInt, 1))
     new LabeledData(x, y)
   }
+}
 
-  protected def parseLibsvmVector(text: Text, maxDim: Int, negY: Boolean): LabeledData = {
+case class LibSVMDataParser(val maxDim: Int, val negY: Boolean) extends DataParser {
+  type V = SparseDoubleSortedVector
+
+  override def parse(text: String): LabeledData = {
     if (null == text) {
       return null
     }
-    return parseLibsvmVector(text.toString, maxDim, negY)
-  }
-
-  protected def parseLibsvmVector(text: String, maxDim: Int, negY: Boolean): LabeledData = {
-    if (null == text) {
-      return null
-    }
-    val splits = text.trim.split(" ")
+    val splits = text.trim.split("\\s+")
 
     if (splits.length < 1)
       return null
@@ -100,7 +70,7 @@ object DataParser {
     var value: Double = -1.0
     var i: Int = 0
     while (i < len) {
-      kv = splits(i + 1).split(":")
+      kv = splits(i + 1).trim.split(":")
       key = kv(0).toInt
       value = kv(1).toDouble
       keys(i) = key
@@ -108,11 +78,21 @@ object DataParser {
       i += 1
     }
 
-    val x: SparseDoubleSortedVector = new SparseDoubleSortedVector(maxDim, keys, vals)
+    val x = new SparseDoubleSortedVector(maxDim, keys, vals)
 
     new LabeledData(x, y)
   }
+}
+
+object DataParser {
+
+  def apply(dataFormat: String, maxDim: Int, negY: Boolean) :DataParser = {
+    dataFormat match {
+      case "dummy" => new DummyDataParser(maxDim, negY)
+      case "libsvm" => new LibSVMDataParser(maxDim, negY)
+    }
 
 
+  }
 }
 

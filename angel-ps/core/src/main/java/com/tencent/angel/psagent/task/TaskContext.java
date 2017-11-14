@@ -17,13 +17,16 @@
 package com.tencent.angel.psagent.task;
 
 import com.google.protobuf.ServiceException;
+import com.tencent.angel.PartitionKey;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.task.TaskCounter;
-import com.tencent.angel.ml.metrics.Metric;
+import com.tencent.angel.ml.metric.Metric;
 import com.tencent.angel.psagent.PSAgentContext;
+import com.tencent.angel.psagent.clock.ClockCache;
 import com.tencent.angel.psagent.matrix.index.MatrixIndex;
 import com.tencent.angel.psagent.matrix.storage.MatrixStorageManager;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,13 +49,13 @@ public class TaskContext {
   /** Matrix storage for task */
   private final MatrixStorageManager matrixStorage;
 
-  /** Current iteration number */
-  private final AtomicInteger iteration;
+  /** Current epoch number */
+  private final AtomicInteger epoch;
 
   /** Update the matrix clock to Master synchronously */
   private final boolean syncClockEnable;
 
-  /** Task current iteration running progress */
+  /** Task current epoch running progress */
   private volatile float progress;
 
   /** Task system metrics */
@@ -69,7 +72,7 @@ public class TaskContext {
     this.index = index;
     this.matrixIdToClockMap = new ConcurrentHashMap<Integer, AtomicInteger>();
     this.matrixStorage = new MatrixStorageManager();
-    this.iteration = new AtomicInteger(0);
+    this.epoch = new AtomicInteger(0);
     this.matrixIndexes = new ConcurrentHashMap<>();
     this.metrics = new ConcurrentHashMap<>();
     this.algoMetrics = new ConcurrentHashMap<>();
@@ -100,6 +103,71 @@ public class TaskContext {
       matrixIdToClockMap.putIfAbsent(matrixId, new AtomicInteger(0));
     }
     return matrixIdToClockMap.get(matrixId).get();
+  }
+
+  /**
+   * Get the clock value of a matrix
+   * @param matrixId matrix id
+   * @return clock value
+   */
+  public int getPSMatrixClock(int matrixId) {
+    ClockCache clockCache = PSAgentContext.get().getClockCache();
+    List<PartitionKey> pkeys = PSAgentContext.get().getMatrixPartitionRouter().getPartitionKeyList(matrixId);
+    int size = pkeys.size();
+    int clock = Integer.MAX_VALUE;
+    int partClock = 0;
+    for(int i = 0; i < size; i++) {
+      partClock = clockCache.getClock(matrixId, pkeys.get(i));
+      if(partClock < clock) {
+        clock = partClock;
+      }
+    }
+
+    return clock;
+  }
+
+  /**
+   * Global sync with special matrix,still wait until all matrixes's clock is synchronized.
+   *
+   * @param matrixId the matrix id
+   * @throws InterruptedException
+   */
+  public void globalSync(int matrixId) throws InterruptedException {
+    ClockCache clockCache = PSAgentContext.get().getClockCache();
+    List<PartitionKey> pkeys = PSAgentContext.get().getMatrixPartitionRouter().getPartitionKeyList(matrixId);
+
+    int syncTimeIntervalMS =
+      PSAgentContext
+        .get()
+        .getConf()
+        .getInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS,
+          AngelConf.DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS);
+
+    while (true) {
+      boolean sync = true;
+      for (PartitionKey pkey : pkeys) {
+        if (clockCache.getClock(matrixId, pkey) < getMatrixClock(matrixId)) {
+          sync = false;
+          break;
+        }
+      }
+
+      if (!sync) {
+        Thread.sleep(syncTimeIntervalMS);
+      } else {
+        break;
+      }
+    }
+  }
+
+  /**
+   * Global sync with all matrix.
+   *
+   * @throws InterruptedException
+   */
+  public void globalSync() throws InterruptedException {
+    for (Integer matId: getMatrixClocks().keySet())
+      globalSync(matId);
   }
 
   public MatrixIndex getMatrixIndex(int matrixId) {
@@ -146,19 +214,19 @@ public class TaskContext {
   }
 
   /**
-   * Get Task current iteration number
-   * @return current iteration number
+   * Get Task current epoch number
+   * @return current epoch number
    */
-  public int getIteration() {
-    return iteration.get();
+  public int getEpoch() {
+    return epoch.get();
   }
 
   /**
-   * Increase iteration number
+   * Increase epoch number
    * @throws ServiceException
    */
-  public void increaseIteration() throws ServiceException {
-    int iterationValue = iteration.incrementAndGet();
+  public void increaseEpoch() throws ServiceException {
+    int iterationValue = epoch.incrementAndGet();
     if(syncClockEnable){
       PSAgentContext.get().getMasterClient().setAlgoMetrics(index, algoMetrics);
       PSAgentContext.get().getMasterClient().taskIteration(index, iterationValue);
@@ -166,11 +234,11 @@ public class TaskContext {
   }
 
   /**
-   * Set the iteration number
-   * @param iterationValue iteration number
+   * Set the epoch number
+   * @param iterationValue epoch number
    */
-  public void setIteration(int iterationValue){
-    iteration.set(iterationValue);
+  public void setEpoch(int iterationValue){
+    epoch.set(iterationValue);
   }
 
   /**
@@ -199,15 +267,15 @@ public class TaskContext {
   }
 
   /**
-   * Set task running progress in current iteration
-   * @param progress task running progress in current iteration
+   * Set task running progress in current epoch
+   * @param progress task running progress in current epoch
    */
   public void setProgress(float progress) {
     this.progress = progress;
   }
 
   /**
-   * Get task running progress in current iteration
+   * Get task running progress in current epoch
    * @return progress
    */
   public float getProgress() {

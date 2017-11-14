@@ -64,7 +64,7 @@ public class SGDLRLocalExample {
     conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
 
     // Set data format
-    conf.set(MLConf.ML_DATAFORMAT(), dataFmt);
+    conf.set(MLConf.ML_DATA_FORMAT(), dataFmt);
 
     //set angel resource parameters #worker, #task, #PS
     conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
@@ -141,7 +141,7 @@ public class SGDLRLocalExample {
     String predictPath = LOCAL_FS + TMP_PATH + "/predict";
 
     // Set trainning data path
-    conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
+    conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, inputPath);
     // Set load model path
     conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, loadPath);
     // Set predict result path

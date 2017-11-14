@@ -1,3 +1,20 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
 package com.tencent.angel.example.ml
 
 import java.io.{BufferedReader, InputStreamReader}
@@ -11,8 +28,9 @@ import AngelConf._
 import com.tencent.angel.ml.MLRunner
 import com.tencent.angel.ml.conf.MLConf._
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.{DenseDoubleVector, DenseIntVector}
+import com.tencent.angel.ml.math.vector.{TDoubleVector, DenseDoubleVector, DenseIntVector}
 import com.tencent.angel.ml.model.{MLModel, PSModel}
+import com.tencent.angel.ml.task.TrainTask
 import com.tencent.angel.ml.utils.DataParser
 import com.tencent.angel.protobuf.generated.MLProtos
 import com.tencent.angel.protobuf.generated.MLProtos.RowType
@@ -20,7 +38,7 @@ import com.tencent.angel.ps.impl.matrix.{ServerDenseDoubleRow, ServerRow}
 import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.worker.storage.DataBlock
-import com.tencent.angel.worker.task.{TaskContext, TrainTask}
+import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.io.{LongWritable, Text}
@@ -61,7 +79,7 @@ class ReduceTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
     dstat()
 
     model.model.clock(false)
-    ctx.incIteration()
+    ctx.incEpoch()
 
 
     val data = new Array[Double](feaNum)
@@ -85,7 +103,7 @@ class ReduceTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
 
     val startUpdate = System.currentTimeMillis
 
-    model.model.clock()
+    model.model.syncClock()
 
     val startGet = System.currentTimeMillis
 
@@ -108,8 +126,8 @@ class ReduceTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
     model.time.clock().get()
 
     if (taskId == 0) {
-      val updateCost = model.time.getRow(0)
-      val getCost = model.time.getRow(1)
+      val updateCost = model.time.getRow(0).asInstanceOf[TDoubleVector]
+      val getCost = model.time.getRow(1).asInstanceOf[TDoubleVector]
       for (i <- 0 until model.workerNum) {
         LOG.info(s"task[$i] update=${updateCost.get(i)} get=${getCost.get(i)} " +
           s"total=${updateCost.get(i) + getCost.get(i)}")
@@ -225,9 +243,10 @@ class ReduceTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
 
   }
 
+  val dataParser = DataParser("dummy", -1, false)
   override
   def parse(key: LongWritable, value: Text): LabeledData = {
-    DataParser.parseVector(key, value, -1, null, false)
+    dataParser.parse(value.toString)
   }
 
   override
@@ -247,10 +266,8 @@ class ReduceModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
   val ps = conf.getInt(ANGEL_PS_NUMBER, 1)
   val part = conf.getInt(ML_PART_PER_SERVER, 1)
 
-  val model = PSModel[DenseDoubleVector](name, 1, feaNum, 1, feaNum / ps / part )
-  val time  = PSModel[DenseIntVector]("time", 2, workerNum)
-  time.setRowType(MLProtos.RowType.T_INT_DENSE)
-  time.setOplogType("DENSE_INT")
+  val model = PSModel(name, 1, feaNum, 1, feaNum / ps / part).setRowType(RowType.T_DOUBLE_DENSE)
+  val time  = PSModel("time", 2, workerNum).setRowType(MLProtos.RowType.T_INT_DENSE).setOplogType("DENSE_INT")
 
   addPSModel(name, model)
   addPSModel("time", time)

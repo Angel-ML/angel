@@ -26,28 +26,34 @@ Angel从v1.0.0版本开始，就加入了**PS-Service**的特性，不仅仅可�
 	* 利用Spark的Context，和Angel的配置，创建AngelContext，在Driver端负责全局的初始化和启动工作
 
 * **PSClient**
-	* 负责PSVector与local value直接的运算（包括pull、push、increment）， 以及PSVector与PSVector之间的运算（包括大部分的代数运算）；同时还支持PSF（用户自定义的PS函数）
-	* PSClient所有运算会被封装到RemotePSVector和BreezePSVector。
+	* PSClient集成了PSVector和PSMatrix的所有初始化、运算、Pull/Push等操作
+	* 包括三部分Initializer，VectorOps，MatrixOps；分别对应PS的初始化操作，PSVector运算操作和PSMatrix运算操作
 
-* **PSModelPool**
-	* PSModelPool对应了Angel PS上的一个矩阵，PSModelPool负责PSVector的申请、回收、销毁等工作。
+* **PSModel**
+	* PSModel是PS server上PSVector/PSMatrix的总称，包含着PSClient对象
+	* PSModel是PSVector和PSMatrix的父类
 
-* **PSVetorProxy/PSVector**
-	* PSVectorProxy是PSVector（包括RemotePSVector和BreezePSVector）的代理，指向Angel PS上的某个PSVector。
-	* PSVector的RemotePSVector和BreezePSVector封装了在不同场景下的PSVector的运算。RemotePSVector提供了PSVector与local value直接的运算（包括pull、push、increment），而BreezePSVector提供了PSVector与PSVector之间的运算（包括大部分的代数运算），以及PSF（用户自定义的PS函数）
+* **PSVector**
+	* 包括DensePSVector和SparsePSVector
+	* PSVector的申请：通过`PSVector.dense(dim: Int, capacity: Int = 50)`申请PSVector，会创建一个维度为`dim`，容量为`capacity`的VectorPool，同一个VectorPool内的两个PSVector可以做运算。
+	通过`PSVector.duplicate(psVector)`，申请一个与`psVector`在同一个VectorPool的PSVector。
+	* PSVector有两个装饰类：`BreezePSVector`和`CachedPSVector`，`BreezePSVector`使PSVector可以支持Breeze算法库里的Vector运算。而`CachedPSVector`支持PSVector在Pull/Push过程中的缓存功能。
+
+* **PSMatrix**
+	* 包括DensePSMatrix和SparsePSMatrix
+	* PSMatrix的创建和销毁：通过`PSMatrix.dense(rows: Int, cols: Int)`创建，当PSMatrix不再使用后，需要手动调用`destroy`销毁该Matrix
 
 使用Spark on Angel的简单代码如下：
 
 ```Scala
 
-val psContext ＝ PSContext.getOrCreate(spark.sparkContext)
-val pool = psContext.createModelPool(dim, capacity)
-val psVector = pool.createModel(0.0)
+PSContext.getOrCreate(spark.sparkContext)
+val psVector = PSVector.dense(dim, capacity)
 rdd.map { case (label , feature) =>
   	psVector.increment(feature)
   	...
 }
-println("feature sum size:" + psVector.mkRemote.size())
+println("feature sum:" + psVector.pull.mkString(" "))
 ```
 
 ## 3. 启动流程
@@ -56,8 +62,7 @@ Spark on Angel本质上是一个Spark任务。Spark启动后，driver通过Angel
 Spark driver的执行流程
 - 启动SparkSession
 - 启动PSContext
-- 创建PSModelPool
-- 申请PSVector
+- 申请PSVector/PSMatrix
 - 执行算法逻辑
 - 终止PSContext和SparkSession
 
@@ -101,13 +106,11 @@ def runOWLQN(trainData: RDD[(Vector, Double)], dim: Int, m: Int, maxIter: Int): 
 
 def runOWLQN(trainData: RDD[(Vector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
 
-    val pool = PSContext.createModelPool(dim, 20)
-
-    val initWeightPS = pool.createZero().mkBreeze()
-    val l1regPS =  pool.createZero().mkBreeze()
+    val initWeightPS = PSVector.dense(dim, 20).toBreeze()
+    val l1regPS = PSVector.duplicate(initWeightPS.component).zero().toBreeze
 
     val owlqn = new OWLQN(maxIter, m, l1regPS, tol)
-    val states = owlqn.iterations(CostFunc(trainData), initWeightPS)
+    val states = owlqn.iterations(PSCostFunc(trainData), initWeightPS)
     ………
 
 ｝

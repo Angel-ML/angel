@@ -50,7 +50,7 @@ public class KmeansTest {
       // Feature number of train data
       int featureNum = 4;
       // Total iteration number
-      int epochNum = 20;
+      int epochNum = 10;
       // Sample ratio per mini-batch
       double spratio = 1.0;
       // C
@@ -77,7 +77,7 @@ public class KmeansTest {
       conf.set(MLConf.kMEANS_C(), String.valueOf(c));
 
       // Set data format
-      conf.set(MLConf.ML_DATAFORMAT(), dataFmt);
+      conf.set(MLConf.ML_DATA_FORMAT(), dataFmt);
     } catch (Exception x) {
       LOG.error("setup failed ", x);
       throw x;

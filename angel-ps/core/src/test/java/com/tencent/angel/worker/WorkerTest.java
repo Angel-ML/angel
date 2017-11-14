@@ -16,14 +16,12 @@
 
 package com.tencent.angel.worker;
 
-import com.google.protobuf.ServiceException;
 import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.client.AngelClient;
 import com.tencent.angel.client.AngelClientFactory;
 import com.tencent.angel.common.Location;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.conf.MatrixConf;
-import com.tencent.angel.exception.UnvalidIdStrException;
 import com.tencent.angel.localcluster.LocalClusterContext;
 import com.tencent.angel.localcluster.LocalMaster;
 import com.tencent.angel.localcluster.LocalWorker;
@@ -58,7 +56,6 @@ import org.junit.runners.MethodSorters;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.util.Map;
 
 import static junit.framework.TestCase.assertEquals;

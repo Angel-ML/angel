@@ -16,11 +16,11 @@
 
 package com.tencent.angel.master;
 
-import java.io.IOException;
-
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.worker.task.BaseTask;
 import com.tencent.angel.worker.task.TaskContext;
+
+import java.io.IOException;
 
 public class DummyTask extends BaseTask<Long, Long, Long> {
 

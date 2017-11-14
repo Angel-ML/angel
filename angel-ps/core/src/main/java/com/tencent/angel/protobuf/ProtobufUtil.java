@@ -19,38 +19,20 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.ServiceException;
-
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.common.Location;
 import com.tencent.angel.exception.StandbyException;
+import com.tencent.angel.master.task.AMTask;
 import com.tencent.angel.master.worker.attempt.WorkerAttempt;
 import com.tencent.angel.master.worker.worker.AMWorker;
 import com.tencent.angel.master.worker.workergroup.AMWorkerGroup;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.protobuf.generated.MLProtos;
-import com.tencent.angel.protobuf.generated.MLProtos.GetMatrixInfoResponse;
-import com.tencent.angel.protobuf.generated.MLProtos.LocationProto;
-import com.tencent.angel.protobuf.generated.MLProtos.MatrixClock;
-import com.tencent.angel.protobuf.generated.MLProtos.Node;
-import com.tencent.angel.protobuf.generated.MLProtos.PSAgentAttemptIdProto;
-import com.tencent.angel.protobuf.generated.MLProtos.PSAgentIdProto;
-import com.tencent.angel.protobuf.generated.MLProtos.PSAttemptIdProto;
-import com.tencent.angel.protobuf.generated.MLProtos.PSIdProto;
-import com.tencent.angel.protobuf.generated.MLProtos.Pair;
-import com.tencent.angel.protobuf.generated.MLProtos.Partition;
-import com.tencent.angel.protobuf.generated.MLProtos.TaskIdProto;
-import com.tencent.angel.protobuf.generated.MLProtos.WorkerAttemptIdProto;
-import com.tencent.angel.protobuf.generated.MLProtos.WorkerGroupIdProto;
-import com.tencent.angel.protobuf.generated.MLProtos.WorkerIdProto;
+import com.tencent.angel.protobuf.generated.MLProtos.*;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.GetAllMatrixInfoResponse;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.GetWorkerGroupMetaInfoResponse;
+import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.*;
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.GetWorkerGroupMetaInfoResponse.WorkerGroupStatus;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.SplitInfoProto;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.TaskMetaInfoProto;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerGroupMetaInfoProto;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerLocationProto;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerMetaInfoProto;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.psagent.PSAgentAttemptId;
@@ -62,13 +44,10 @@ import com.tencent.angel.worker.WorkerAttemptId;
 import com.tencent.angel.worker.WorkerGroupId;
 import com.tencent.angel.worker.WorkerId;
 import com.tencent.angel.worker.task.TaskId;
-import com.tencent.angel.master.task.AMTask;
-
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -393,6 +372,8 @@ public final class ProtobufUtil {
     mProtoBuilder.setId(mContext.getId());
     mProtoBuilder.setRowNum(mContext.getRowNum());
     mProtoBuilder.setColNum(mContext.getColNum());
+    mProtoBuilder.setBlockRowNum(mContext.getMaxRowNumInBlock());
+    mProtoBuilder.setBlockColNum(mContext.getMaxColNumInBlock());
     mProtoBuilder.setRowType(mContext.getRowType());
     // set MatrixPartitionLocation
     MLProtos.MatrixPartitionLocation.Builder mpLocBuild = MLProtos.MatrixPartitionLocation.newBuilder();

@@ -47,7 +47,7 @@ import org.apache.spark.ml.feature.Instance
 import org.apache.spark.ml.linalg.Vector
 import org.apache.spark.mllib.util.MLUtils
 
-import com.tencent.angel.spark.model.PSModelProxy
+import com.tencent.angel.spark.models.vector.PSVector
 
 /**
  * LogisticAggregator computes the gradient and loss for binary or multinomial logistic (softmax)
@@ -209,8 +209,8 @@ import com.tencent.angel.spark.model.PSModelProxy
  * since this form is optimal for the matrix operations used for prediction.
  */
 private class LogisticAggregator(
-                                  bcCoefficients: PSModelProxy,
-                                  featureStd: PSModelProxy,
+                                  bcCoefficients: PSVector,
+                                  featureStd: PSVector,
                                   numClasses: Int,
                                   val numFeatures: Int,
                                   weightSum: Double,
@@ -218,7 +218,7 @@ private class LogisticAggregator(
                                   multinomial: Boolean) extends Serializable with Logging {
 
   private val numFeaturesPlusIntercept = if (fitIntercept) numFeatures + 1 else numFeatures
-  private val coefficientSize = bcCoefficients.numDimensions
+  private val coefficientSize = bcCoefficients.dimension
   private val numCoefficientSets = if (multinomial) numClasses else 1
   require(weightSum > 0.0, s"The effective number of instances should be " +
     s"greater than 0.0, but $weightSum.")
@@ -234,7 +234,7 @@ private class LogisticAggregator(
 
   private var lossSum = 0.0
 
-  val gradientPSKey = bcCoefficients.getPool().createZero()
+  val gradientPSKey = PSVector.duplicate(bcCoefficients)
 
   if (multinomial && numClasses <= 2) {
     logInfo(s"Multinomial logistic regression for binary classification yields separate " +
@@ -249,12 +249,12 @@ private class LogisticAggregator(
       weight: Double,
       label: Double): Unit = {
 
-    val localCoefficients = bcCoefficients.mkRemote().pull()
+    val localCoefficients = bcCoefficients.pull()
     val deltaGradient = Array.ofDim[Double](coefficientSize)
     val margin = - {
       var sum = 0.0
       features.foreachActive { (index, value) =>
-        if (featureStd.mkRemote().pull().apply(index * numCoefficientSets) != 0 && value != 0.0) {
+        if (featureStd.pull().apply(index * numCoefficientSets) != 0 && value != 0.0) {
           sum += localCoefficients(index) * value
         }
       }
@@ -274,7 +274,7 @@ private class LogisticAggregator(
       deltaGradient(numFeaturesPlusIntercept - 1) = multiplier
     }
 
-    gradientPSKey.mkRemote().increment(deltaGradient.map(_ / weightSum))
+    gradientPSKey.toCache.incrementWithCache(deltaGradient.map(_ / weightSum))
 
     if (label > 0) {
       // The following is equivalent to log(1 + exp(margin)) but more numerically stable.
@@ -294,7 +294,7 @@ private class LogisticAggregator(
       Note: this can still be used when numClasses = 2 for binary
       logistic regression without pivoting.
      */
-    val localCoefficients = bcCoefficients.mkRemote().pull()
+    val localCoefficients = bcCoefficients.pull()
     val deltaGradient = Array.ofDim[Double](coefficientSize)
 
     // marginOfLabel is margins(label) in the formula
@@ -344,7 +344,7 @@ private class LogisticAggregator(
       multipliers(i) = multipliers(i) / sum - (if (label == i) 1.0 else 0.0)
     }
     features.foreachActive { (index, value) =>
-      if (featureStd.mkRemote().pull().apply(index * numCoefficientSets) != 0.0 && value != 0.0) {
+      if (featureStd.pull().apply(index * numCoefficientSets) != 0.0 && value != 0.0) {
         var j = 0
         while (j < numClasses) {
           deltaGradient(index * numClasses + j) =
@@ -360,7 +360,7 @@ private class LogisticAggregator(
         i += 1
       }
     }
-    gradientPSKey.mkRemote().increment(deltaGradient.map(_ / weightSum))
+    gradientPSKey.toCache.incrementWithCache(deltaGradient.map(_ / weightSum))
 
     val loss = if (maxMargin > 0) {
       math.log(sum) - marginOfLabel + maxMargin
@@ -414,7 +414,7 @@ private class LogisticAggregator(
     lossSum / weightSum
   }
 
-  def gradient: PSModelProxy = {
+  def gradient: PSVector = {
     gradientPSKey
   }
 }

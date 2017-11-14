@@ -30,7 +30,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class PSPartitionerTest {
   private final static Log LOG = LogFactory.getLog(PSPartitionerTest.class);

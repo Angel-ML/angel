@@ -16,16 +16,9 @@
 
 package com.tencent.angel.client.local;
 
-import java.util.Random;
-
-import com.tencent.angel.conf.AngelConf;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.yarn.api.records.ApplicationId;
-
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.client.AngelClient;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.ipc.TConnectionManager;
@@ -33,6 +26,12 @@ import com.tencent.angel.localcluster.LocalCluster;
 import com.tencent.angel.localcluster.LocalClusterContext;
 import com.tencent.angel.localcluster.LocalMaster;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.PingRequest;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.yarn.api.records.ApplicationId;
+
+import java.util.Random;
 
 /**
  * Angel client used on LOCAL deploy mode.

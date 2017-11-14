@@ -26,7 +26,7 @@ import static org.junit.Assert.assertEquals;
 
 public class ErrorEvalMetricTest {
   private static final Log LOG = LogFactory.getLog(ErrorEvalMetricTest.class);
-  private ErrorMetric errorMetric = new ErrorMetric();
+  private ErrorEvalMetric errorMetric = new ErrorEvalMetric();
   static {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }

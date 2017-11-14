@@ -16,8 +16,7 @@
 
 package com.tencent.angel.ml.math.vector;
 
-import com.tencent.angel.ml.math.vector.TDoubleVector;
-import com.tencent.angel.ml.math.VectorType;
+import com.tencent.angel.protobuf.generated.MLProtos;
 import org.junit.Test;
 
 import java.util.Random;
@@ -70,7 +69,7 @@ public class SparseDoubleSortedVectorTest {
   @Test
   public void dot() throws Exception {
     SparseDoubleSortedVector vec = genSparseDoubleSortedVector(300, 10000);
-    TDoubleVector vec_1 = genDenseDoubleVector(10000);
+    TIntDoubleVector vec_1 = genDenseDoubleVector(10000);
 
     int[] indexs = vec.getIndices();
     double[] values_1 = vec.getValues();
@@ -124,7 +123,7 @@ public class SparseDoubleSortedVectorTest {
   @Test
   public void getType() throws Exception {
     SparseDoubleSortedVector vec = new SparseDoubleSortedVector(10000, 300);
-    assertEquals(VectorType.T_DOUBLE_SPARSE, vec.getType());
+    assertEquals(MLProtos.RowType.T_DOUBLE_SPARSE, vec.getType());
   }
 
   @Test

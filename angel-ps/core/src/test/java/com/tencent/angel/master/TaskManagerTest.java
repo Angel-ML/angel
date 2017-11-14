@@ -16,19 +16,6 @@
 
 package com.tencent.angel.master;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.LocalFileSystem;
-import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
-import org.apache.log4j.PropertyConfigurator;
-import org.junit.*;
-
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.client.AngelClient;
 import com.tencent.angel.client.AngelClientFactory;
@@ -51,6 +38,19 @@ import com.tencent.angel.worker.WorkerAttemptId;
 import com.tencent.angel.worker.WorkerGroupId;
 import com.tencent.angel.worker.WorkerId;
 import com.tencent.angel.worker.task.TaskId;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.LocalFileSystem;
+import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
+import org.apache.log4j.PropertyConfigurator;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class TaskManagerTest {
   private static final Log LOG = LogFactory.getLog(TaskManagerTest.class);

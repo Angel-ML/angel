@@ -17,7 +17,6 @@
 package com.tencent.angel.ml.math.matrix;
 
 import com.tencent.angel.ml.math.TMatrix;
-import com.tencent.angel.ml.math.vector.TIntVector;
 
 /**
  * The coordinate int matrix
@@ -161,7 +160,7 @@ public class COOIntMatrix extends TMatrix {
       vals[idx] = v;
     }
 
-    return new CSRIntMat(row, col, rs, cols, vals);
+    return new CSRIntMat(row, (int)col, rs, cols, vals);
   }
 
   /**

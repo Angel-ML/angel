@@ -25,8 +25,9 @@ import io.netty.buffer.PooledByteBufAllocator;
 public class ByteBufUtils {
   // private static UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(false);
   private static PooledByteBufAllocator allocator = new PooledByteBufAllocator();
+  public static volatile boolean useDirect = true;
 
-  public static ByteBuf newByteBuf(int estimizeSerilizeSize) {
+  public static ByteBuf newHeapByteBuf(int estimizeSerilizeSize) {
     return allocator.buffer(estimizeSerilizeSize);
   }
 
@@ -39,6 +40,14 @@ public class ByteBufUtils {
       return newDirectByteBuf(estimizeSerilizeSize);
     } else {
       return newByteBuf(estimizeSerilizeSize);
+    }
+  }
+
+  public static ByteBuf newByteBuf(int estimizeSerilizeSize) {
+    if (useDirect) {
+      return newDirectByteBuf(estimizeSerilizeSize);
+    } else {
+      return newHeapByteBuf(estimizeSerilizeSize);
     }
   }
 }

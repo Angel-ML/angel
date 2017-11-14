@@ -18,7 +18,6 @@ package com.tencent.angel.master.deploy.yarn;
 
 import com.tencent.angel.common.Id;
 import com.tencent.angel.master.deploy.ContainerLauncherEventType;
-
 import org.apache.hadoop.util.StringInterner;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;

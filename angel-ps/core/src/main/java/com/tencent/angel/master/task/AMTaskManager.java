@@ -16,6 +16,10 @@
 
 package com.tencent.angel.master.task;
 
+import com.tencent.angel.worker.task.TaskId;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -27,11 +31,6 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import com.tencent.angel.worker.task.TaskId;
 
 /**
  * Task manager in master, it manages all tasks {@link com.tencent.angel.master.task.AMTask} in the application.

@@ -18,20 +18,20 @@ package com.tencent.angel.ps.matrix.transport;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.matrix.transport.*;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateFunc;
+import com.tencent.angel.ml.matrix.transport.*;
 import com.tencent.angel.ps.impl.MatrixPartitionManager;
 import com.tencent.angel.ps.impl.PSContext;
 import com.tencent.angel.ps.impl.matrix.ServerPartition;
 import com.tencent.angel.ps.impl.matrix.ServerRow;
 import com.tencent.angel.utils.ByteBufUtils;
-
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -49,56 +49,101 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
   private static final Log LOG = LogFactory.getLog(MatrixTransportServerHandler.class);
-  private final static ExecutorService workerPool = Executors.newFixedThreadPool(
-    PSContext.get().getConf().getInt(AngelConf.ANGEL_PS_WORKERPOOL_SIZE,
-      AngelConf.DEFAULT_ANGEL_PS_WORKERPOOL_SIZE));
-  private final boolean useDirectorBuffer;
-  private final ConcurrentHashMap<ChannelHandlerContext, AtomicBoolean> channelStates;
+  private final static boolean useDirectorBuffer;
+  private final static ConcurrentHashMap<ChannelHandlerContext, AtomicBoolean> channelStates;
+  private final static ExecutorService workerPool;
+  private final static boolean isUseSender;
+  private final static ExecutorService senderPool;
 
+  static {
+    channelStates = new ConcurrentHashMap<ChannelHandlerContext, AtomicBoolean>();
+    if (PSContext.get() != null && PSContext.get().getPs() != null) {
+      Configuration conf = PSContext.get().getConf();
+      useDirectorBuffer = conf
+        .getBoolean(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER,
+          AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER);
+
+      ByteBufUtils.useDirect = useDirectorBuffer;
+
+      workerPool = Executors.newFixedThreadPool(PSContext.get().getConf()
+        .getInt(AngelConf.ANGEL_MATRIXTRANSFER_SERVER_WORKER_POOL_SIZE,
+          AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_WORKER_POOL_SIZE));
+
+      isUseSender = PSContext.get().getConf()
+        .getBoolean(AngelConf.ANGEL_MATRIXTRANSFER_SERVER_USER_SENDER,
+          AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_USER_SENDER);
+
+      senderPool = isUseSender ?
+        Executors.newFixedThreadPool(PSContext.get().getConf()
+          .getInt(AngelConf.ANGEL_MATRIXTRANSFER_SERVER_SENDER_POOL_SIZE,
+            AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_SENDER_POOL_SIZE)) :
+        null;
+    } else {
+      useDirectorBuffer = AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER;
+      workerPool = Executors
+        .newFixedThreadPool(AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_WORKER_POOL_SIZE);
+      isUseSender = AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_USER_SENDER;
+      senderPool = isUseSender ?
+        Executors
+          .newFixedThreadPool(AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_SENDER_POOL_SIZE) :
+        null;
+    }
+  }
 
   class Processor extends Thread {
     private ByteBuf message;
     private ChannelHandlerContext ctx;
-    Processor(ByteBuf message, ChannelHandlerContext ctx){
+
+    Processor(ByteBuf message, ChannelHandlerContext ctx) {
       this.message = message;
       this.ctx = ctx;
     }
-    @Override
-    public void run() {
-      handle(ctx, message);
+
+    @Override public void run() {
+      handle(ctx, message, false);
       message = null;
       ctx = null;
     }
   }
 
-  public MatrixTransportServerHandler() {
-    Configuration conf = PSContext.get().getConf();
-    useDirectorBuffer =
-        conf.getBoolean(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER,
-            AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER);
-    channelStates = new ConcurrentHashMap<ChannelHandlerContext, AtomicBoolean>();
+
+  class Sender extends Thread {
+    private Object result;
+    private ChannelHandlerContext ctx;
+
+    Sender(ChannelHandlerContext ctx, Object result) {
+      this.result = result;
+      this.ctx = ctx;
+    }
+
+    @Override public void run() {
+      send(ctx, result);
+      result = null;
+      ctx = null;
+    }
   }
 
-  @Override
-  public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+  public MatrixTransportServerHandler() {
+
+  }
+
+  @Override public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
     LOG.debug("channel " + ctx.channel() + " registered");
     channelStates.put(ctx, new AtomicBoolean(false));
     super.channelRegistered(ctx);
   }
 
-  @Override
-  public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+  @Override public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
     LOG.debug("channel " + ctx.channel() + " unregistered");
     channelStates.remove(ctx);
     super.channelRegistered(ctx);
   }
 
-  @Override
-  public void channelRead(ChannelHandlerContext ctx, Object msg) {
-    if(needAsync(msg)) {
+  @Override public void channelRead(ChannelHandlerContext ctx, Object msg) {
+    if (needAsync(msg)) {
       workerPool.execute(new Processor((ByteBuf) msg, ctx));
     } else {
-      handle(ctx, msg);
+      handle(ctx, msg, true);
     }
   }
 
@@ -108,102 +153,133 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
     int methodId = in.readInt();
     in.resetReaderIndex();
     TransportMethod method = TransportMethod.typeIdToTypeMap.get(methodId);
-    if(method == TransportMethod.GET_CLOCKS) {
+    if (method == TransportMethod.GET_CLOCKS) {
       return false;
     } else {
       return true;
     }
   }
 
-  private void sendResult(ChannelHandlerContext ctx, Object result){
-    AtomicBoolean channelInUse = channelStates.get(ctx);
-    while(true) {
-      if(channelInUse.compareAndSet(false, true)) {
-        ctx.writeAndFlush(result);
-        channelInUse.set(false);
+  private void send(ChannelHandlerContext ctx, Object result) {
+    int seqId = 0;
+    Channel ch = ctx.channel();
+
+    try {
+      seqId = ((ByteBuf) result).readInt();
+      ((ByteBuf) result).resetReaderIndex();
+      AtomicBoolean channelInUse = channelStates.get(ctx);
+      if (channelInUse == null) {
         return;
       }
-
-      try {
+      long startTs = System.currentTimeMillis();
+      while (true) {
+        if (channelInUse.compareAndSet(false, true)) {
+          ctx.writeAndFlush(result);
+          channelInUse.set(false);
+          LOG.debug(
+            "send response buf=" + result + ",channel ctx=" + ctx.channel() + ", seqId=" + seqId
+              + " use time=" + (System.currentTimeMillis() - startTs));
+          return;
+        }
         Thread.sleep(10);
-      } catch (InterruptedException e) {
-        LOG.warn("interrupted while waiting for channel " + ctx.channel());
       }
+    } catch (Throwable ex) {
+      LOG.error("send response of request failed, request seqId=" + seqId + ", channel=" + ch, ex);
     }
   }
 
-  private void handle(ChannelHandlerContext ctx, Object msg) {
-    ByteBuf in = (ByteBuf) msg;
-    int seqId = in.readInt();
-    int methodId = in.readInt();
-    TransportMethod method = TransportMethod.typeIdToTypeMap.get(methodId);
-    ByteBuf result = null;
-    switch (method) {
-      case GET_ROWSPLIT: {
-        GetRowSplitRequest request = new GetRowSplitRequest();
-        request.deserialize(in);
-        result = getRowSplit(seqId, request, ctx);
-        break;
-      }
-
-      case GET_ROWSSPLIT: {
-        GetRowsSplitRequest request = new GetRowsSplitRequest();
-        request.deserialize(in);
-        result = getRowsSplit(seqId, request, ctx);
-        break;
-      }
-
-      case GET_PART: {
-        GetPartitionRequest request = new GetPartitionRequest();
-        request.deserialize(in);
-        result = getPartition(seqId, request, ctx);
-        break;
-      }
-
-      case PUT_PARTUPDATE: {
-        result = putPartUpdate(ctx, seqId, methodId, in);
-        break;
-      }
-
-      case PUT_PART: {
-        result = putPart(ctx, seqId, methodId, in);
-        break;
-      }
-
-      case GET_CLOCKS: {
-        GetClocksRequest request = new GetClocksRequest();
-        request.deserialize(in);
-        result = getClocks(seqId, request, ctx);
-        break;
-      }
-
-      case UPDATER: {
-        UpdaterRequest request = new UpdaterRequest();
-        request.deserialize(in);
-        result = update(seqId, request, ctx);
-        break;
-      }
-
-      case GET_UDF: {
-        GetUDFRequest request = new GetUDFRequest();
-        request.deserialize(in);
-        result = getSplit(seqId, request, ctx);
-        break;
-      }
-      default:
-        break;
+  private void sendResult(ChannelHandlerContext ctx, Object result, boolean useSync) {
+    if (!useSync && isUseSender) {
+      senderPool.execute(new Sender(ctx, result));
+    } else {
+      send(ctx, result);
     }
-    in.release();
+  }
 
-    sendResult(ctx, result);
+  private void handle(ChannelHandlerContext ctx, Object msg, boolean useSync) {
+    int seqId = 0;
+    int methodId = 0;
+    TransportMethod method = TransportMethod.GET_ROWSPLIT;
+    ByteBuf in = (ByteBuf) msg;
+
+    try {
+      seqId = in.readInt();
+      methodId = in.readInt();
+      method = TransportMethod.typeIdToTypeMap.get(methodId);
+      ByteBuf result = null;
+      switch (method) {
+        case GET_ROWSPLIT: {
+          GetRowSplitRequest request = new GetRowSplitRequest();
+          request.deserialize(in);
+          result = getRowSplit(seqId, request, ctx);
+          break;
+        }
+
+        case GET_ROWSSPLIT: {
+          GetRowsSplitRequest request = new GetRowsSplitRequest();
+          request.deserialize(in);
+          result = getRowsSplit(seqId, request, ctx);
+          break;
+        }
+
+        case GET_PART: {
+          GetPartitionRequest request = new GetPartitionRequest();
+          request.deserialize(in);
+          result = getPartition(seqId, request, ctx);
+          break;
+        }
+
+        case PUT_PARTUPDATE: {
+          PutPartitionUpdateRequest request = new PutPartitionUpdateRequest();
+          request.deserialize(in);
+          result = putPartUpdate(ctx, seqId, methodId, request, in);
+          break;
+        }
+
+        case PUT_PART: {
+          result = putPart(ctx, seqId, methodId, in);
+          break;
+        }
+
+        case GET_CLOCKS: {
+          GetClocksRequest request = new GetClocksRequest();
+          request.deserialize(in);
+          result = getClocks(seqId, request, ctx);
+          break;
+        }
+
+        case UPDATER: {
+          UpdaterRequest request = new UpdaterRequest();
+          request.deserialize(in);
+          result = update(seqId, request, ctx);
+          break;
+        }
+
+        case GET_UDF: {
+          GetUDFRequest request = new GetUDFRequest();
+          request.deserialize(in);
+          result = getSplit(seqId, request, ctx);
+          break;
+        }
+        default:
+          break;
+      }
+      sendResult(ctx, result, useSync);
+    } catch (Throwable ex) {
+      LOG.error(
+        "handler response of request failed, request seqId=" + seqId + ", request method=" + method,
+        ex);
+    } finally {
+      in.release();
+    }
   }
 
   @SuppressWarnings("unchecked")
   private ByteBuf getSplit(int seqId, GetUDFRequest request, ChannelHandlerContext ctx) {
-    long startTs = System.currentTimeMillis();
     GetUDFResponse response = null;
     try {
-      Class<? extends GetFunc> funcClass = (Class<? extends GetFunc>) Class.forName(request.getGetFuncClass());
+      Class<? extends GetFunc> funcClass =
+        (Class<? extends GetFunc>) Class.forName(request.getGetFuncClass());
       Constructor<? extends GetFunc> constructor = funcClass.getConstructor();
       constructor.setAccessible(true);
       GetFunc func = constructor.newInstance();
@@ -217,7 +293,6 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
       response.setResponseType(ResponseType.FATAL);
     }
 
-    startTs = System.currentTimeMillis();
     ByteBuf buf = ByteBufUtils.newByteBuf(4 + response.bufferLen(), useDirectorBuffer);
     buf.writeInt(seqId);
     response.serialize(buf);
@@ -228,7 +303,8 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
   private ByteBuf update(int seqId, UpdaterRequest request, ChannelHandlerContext ctx) {
     UpdaterResponse response = null;
     try {
-      Class<? extends UpdateFunc> funcClass = (Class<? extends UpdateFunc>) Class.forName(request.getUpdaterFuncClass());
+      Class<? extends UpdateFunc> funcClass =
+        (Class<? extends UpdateFunc>) Class.forName(request.getUpdaterFuncClass());
       Constructor<? extends UpdateFunc> constructor = funcClass.getConstructor();
       constructor.setAccessible(true);
       UpdateFunc func = constructor.newInstance();
@@ -260,7 +336,9 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
   }
 
   private ByteBuf getRowsSplit(int seqId, GetRowsSplitRequest request, ChannelHandlerContext ctx) {
-    LOG.debug("get row request=" + request);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("get row request=" + request);
+    }
     PartitionKey partKey = request.getPartKey();
     int clock = request.getClock();
 
@@ -275,9 +353,8 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
       if (rowIndexes != null) {
         int size = rowIndexes.size();
         for (int i = 0; i < size; i++) {
-          ServerRow row =
-              PSContext.get().getMatrixPartitionManager()
-                  .getRow(partKey.getMatrixId(), rowIndexes.get(i), partKey.getPartitionId());
+          ServerRow row = PSContext.get().getMatrixPartitionManager()
+            .getRow(partKey.getMatrixId(), rowIndexes.get(i), partKey.getPartitionId());
           if (row != null) {
             rows.add(row);
           }
@@ -296,7 +373,9 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
   }
 
   private ByteBuf getPartition(int seqId, GetPartitionRequest request, ChannelHandlerContext ctx) {
-    LOG.debug("get partition request=" + request);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("get partition request=" + request);
+    }
     PartitionKey partKey = request.getPartKey();
     int clock = request.getClock();
 
@@ -306,9 +385,8 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
     if (!PSContext.get().getMatrixPartitionManager().partitionReady(partKey, clock)) {
       response.setResponseType(ResponseType.NOTREADY);
     } else {
-      ServerPartition partition =
-          PSContext.get().getMatrixPartitionManager()
-              .getPartition(partKey.getMatrixId(), partKey.getPartitionId());
+      ServerPartition partition = PSContext.get().getMatrixPartitionManager()
+        .getPartition(partKey.getMatrixId(), partKey.getPartitionId());
       response.setResponseType(ResponseType.SUCCESS);
       response.setPartition(partition);
     }
@@ -321,7 +399,10 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
   }
 
   private ByteBuf getRowSplit(int seqId, GetRowSplitRequest request, ChannelHandlerContext ctx) {
-    LOG.debug("get row request=" + request);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("get row request=" + request + " with seqId=" + seqId);
+    }
+
     PartitionKey partKey = request.getPartKey();
     int clock = request.getClock();
 
@@ -331,9 +412,8 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
     if (!PSContext.get().getMatrixPartitionManager().partitionReady(partKey, clock)) {
       response.setResponseType(ResponseType.NOTREADY);
     } else {
-      ServerRow row =
-          PSContext.get().getMatrixPartitionManager()
-              .getRow(partKey.getMatrixId(), request.getRowIndex(), partKey.getPartitionId());
+      ServerRow row = PSContext.get().getMatrixPartitionManager()
+        .getRow(partKey.getMatrixId(), request.getRowIndex(), partKey.getPartitionId());
       response.setResponseType(ResponseType.SUCCESS);
       response.setRowSplit(row);
     }
@@ -341,24 +421,34 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
     ByteBuf buf = ByteBufUtils.newByteBuf(4 + response.bufferLen(), useDirectorBuffer);
     buf.writeInt(seqId);
     response.serialize(buf);
-
+    if (LOG.isDebugEnabled()) {
+      LOG.debug(
+        "response for request " + request + " serialize use time=" + (System.currentTimeMillis()
+          - startTs) + ", response buf=" + buf);
+    }
     return buf;
   }
 
-  private ByteBuf putPartUpdate(ChannelHandlerContext ctx, int seqId, int methodId, ByteBuf in) {
-    int clock = in.readInt();
-    PartitionKey partKey = new PartitionKey();
-    partKey.deserialize(in);
+  private ByteBuf putPartUpdate(ChannelHandlerContext ctx, int seqId, int methodId,
+    PutPartitionUpdateRequest request, ByteBuf in) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("put update request=" + request + " with seqId=" + seqId);
+    }
 
-    int taskIndex = in.readInt();
-    boolean updateClock = in.readBoolean();
+    long startTs = System.currentTimeMillis();
+    int clock = request.getClock();
+    PartitionKey partKey = request.getPartKey();
+    int taskIndex = request.getTaskIndex();
+    boolean updateClock = request.isUpdateClock();
 
     ByteBuf buf = ByteBufUtils.newByteBuf(8 + 4);
     buf.writeInt(seqId);
 
-    LOG.debug("seqId = " + seqId + " update split request matrixId = " + partKey.getMatrixId()
-        + ", partId = " + partKey.getPartitionId() + " clock = " + clock + ", taskIndex=" + taskIndex + ", updateClock = "
-        + updateClock);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("seqId = " + seqId + " update split request matrixId = " + partKey.getMatrixId()
+        + ", partId = " + partKey.getPartitionId() + " clock = " + clock + ", taskIndex="
+        + taskIndex + ", updateClock = " + updateClock);
+    }
 
     PutPartitionUpdateResponse resposne = null;
     try {
@@ -373,11 +463,16 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
     }
 
     resposne.serialize(buf);
+
+    if (LOG.isDebugEnabled()) {
+      LOG.debug(
+        "update partition for request " + request + " use time=" + (System.currentTimeMillis()
+          - startTs) + ", response buf=" + buf);
+    }
     return buf;
   }
 
-  @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+  @Override public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     cause.printStackTrace();
     ctx.close();
   }

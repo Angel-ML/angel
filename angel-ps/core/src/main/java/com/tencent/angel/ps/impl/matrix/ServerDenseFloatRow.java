@@ -33,14 +33,30 @@ import java.nio.FloatBuffer;
 public class ServerDenseFloatRow extends ServerRow {
 
   private final static Log LOG = LogFactory.getLog(ServerDenseFloatRow.class);
-
+  /** Byte array */
   private byte[] dataBuffer;
+
+  /** The double array view of the byte array */
   private FloatBuffer data;
 
+  /**
+   * Create a ServerDenseFloatRow
+   * @param rowId row index
+   * @param startCol partition start column index
+   * @param endCol partition end column index
+   */
   public ServerDenseFloatRow(int rowId, int startCol, int endCol) {
     this(rowId, startCol, endCol, new byte[(endCol - startCol) * 4]);
   }
 
+  /**
+   *
+   * Create a ServerDenseFloatRow
+   * @param rowId row index
+   * @param startCol partition start column index
+   * @param endCol partition end column index
+   * @param buffer byte buffer
+   */
   public ServerDenseFloatRow(int rowId, int startCol, int endCol, byte[] buffer) {
     super(rowId, startCol, endCol);
     int elemNum = endCol - startCol;
@@ -52,11 +68,12 @@ public class ServerDenseFloatRow extends ServerRow {
     }
   }
 
+  /**
+   * Create a ServerDenseFloatRow
+   */
   public ServerDenseFloatRow() {
     this(0, 0, 0, null);
   }
-
-
 
   @Override
   public MLProtos.RowType getRowType() {
@@ -78,9 +95,12 @@ public class ServerDenseFloatRow extends ServerRow {
           break;
 
         case T_FLOAT_SPARSE:
+        case T_FLOAT_SPARSE_COMPONENT:
           sparseFloatUpdate(buf, size);
-        default:
           break;
+
+        default:
+          throw new UnsupportedOperationException("Unsupport operation: update " + rowType + " to " + this.getClass().getName());
       }
 
       updateRowVersion();
@@ -96,22 +116,29 @@ public class ServerDenseFloatRow extends ServerRow {
     }
   }
 
-  public void sparseFloatUpdate(ByteBuf buf, int size) {
-    ByteBuf valueBuf = buf.slice(buf.readerIndex() + size * 4, size * 4);
+  private void sparseFloatUpdate(ByteBuf buf, int size) {
     int columnId = 0;
     float value = 0;
+    int startColInt = (int) startCol;
     for (int i = 0; i < size; i++) {
-      columnId = buf.readInt();
-      value = data.get(columnId) + valueBuf.readFloat();
+      columnId = buf.readInt() - startColInt;
+      value = data.get(columnId) + buf.readFloat();
       data.put(columnId, value);
     }
-    buf.readerIndex(buf.readerIndex() + size * 4);
   }
 
+  /**
+   * Get float array view
+   * @return float array view
+   */
   public FloatBuffer getData() {
     return data;
   }
 
+  /**
+   * Get byte array
+   * @return byte array
+   */
   public byte[] getDataArray() {
     return dataBuffer;
   }
@@ -120,14 +147,6 @@ public class ServerDenseFloatRow extends ServerRow {
   public void writeTo(DataOutputStream output) throws IOException {
     try {
       lock.readLock().lock();
-      if (LOG.isDebugEnabled()) {
-        int size = data.capacity();
-        if (size > 0) {
-          LOG.debug("server row " + this.toString() + " first element is " + data.get(0));
-        } else {
-          LOG.debug("server row " + this.toString() + " is empty");
-        }
-      }
       super.writeTo(output);
       output.write(dataBuffer, 0, dataBuffer.length);
     } finally {
@@ -140,7 +159,7 @@ public class ServerDenseFloatRow extends ServerRow {
     try {
       lock.writeLock().lock();
       super.readFrom(input);
-      int totalSize = (endCol - startCol) * 4;
+      int totalSize = (int)(endCol - startCol) * 4;
       int size = 0;
       while (size < totalSize) {
         int tempSize = input.read(dataBuffer, size, (totalSize - size));
@@ -157,7 +176,7 @@ public class ServerDenseFloatRow extends ServerRow {
     try {
       lock.readLock().lock();
       super.serialize(buf);
-      buf.writeInt(endCol - startCol);
+      buf.writeInt((int)(endCol - startCol));
       buf.writeBytes(dataBuffer);
     } finally {
       lock.readLock().unlock();
@@ -187,13 +206,18 @@ public class ServerDenseFloatRow extends ServerRow {
     return super.bufferLen() + 4 + dataBuffer.length;
   }
 
+  /**
+   * Merge this dense float vector to a float array
+   * @param dataArray float array
+   */
   public void mergeTo(float[] dataArray) {
     try {
       lock.readLock().lock();
       // data.rewind();
-      int size = endCol - startCol;
+      int size = (int)(endCol - startCol);
+      int startPos = (int) startCol;
       for (int i = 0; i < size; i++) {
-        dataArray[startCol + i] = data.get(i);
+        dataArray[startPos + i] = data.get(i);
       }
     } finally {
       lock.readLock().unlock();

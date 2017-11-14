@@ -19,7 +19,6 @@ package com.tencent.angel.worker.storage;
 import com.tencent.angel.split.SplitClassification;
 import com.tencent.angel.worker.WorkerContext;
 import com.tencent.angel.worker.task.TaskId;
-
 import org.apache.hadoop.conf.Configuration;
 
 import java.io.IOException;

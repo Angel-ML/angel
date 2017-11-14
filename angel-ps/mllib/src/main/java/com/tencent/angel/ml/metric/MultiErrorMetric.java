@@ -16,7 +16,7 @@
  */
 package com.tencent.angel.ml.metric;
 
-import com.tencent.angel.ml.utils.MathUtils;
+import com.tencent.angel.ml.utils.Maths;
 
 /**
  * Description: the metric of multiclass error ratio
@@ -62,7 +62,7 @@ public class MultiErrorMetric implements EvalMetric {
    * @return the eval metric
    */
   public float evalOne(float[] pred, float label) {
-    return MathUtils.findMaxIndex(pred) != label ? 1.0f : 0f;
+    return Maths.findMaxIndex(pred) != label ? 1.0f : 0f;
   }
 
   /**

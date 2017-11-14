@@ -38,8 +38,6 @@ trait SharedPSContext extends BeforeAndAfterAll with BeforeAndAfterEach {
 
   def sc: SparkContext = _spark.sparkContext
 
-  var conf = new SparkConf(false)
-
   override def beforeAll() {
     super.beforeAll()
 
@@ -61,10 +59,10 @@ trait SharedPSContext extends BeforeAndAfterAll with BeforeAndAfterEach {
       .config(psConf)
 
     _spark = builder.getOrCreate()
-    sc.setLogLevel("OFF")
+    _spark.sparkContext.setLogLevel("OFF")
 
     // PS setup
-    PSContext.getOrCreate(sc)
+    PSContext.getOrCreate(_spark.sparkContext)
   }
 
   override def afterAll() {

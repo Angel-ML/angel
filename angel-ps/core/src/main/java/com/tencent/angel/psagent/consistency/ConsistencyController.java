@@ -20,10 +20,10 @@ import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.psf.get.multi.GetRowsFunc;
-import com.tencent.angel.ml.matrix.psf.get.single.GetRowFunc;
-import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult;
-import com.tencent.angel.ml.matrix.psf.get.single.GetRowParam;
 import com.tencent.angel.ml.matrix.psf.get.multi.GetRowsParam;
+import com.tencent.angel.ml.matrix.psf.get.single.GetRowFunc;
+import com.tencent.angel.ml.matrix.psf.get.single.GetRowParam;
+import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult;
 import com.tencent.angel.ml.matrix.psf.update.enhance.VoidResult;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.ResponseType;
@@ -31,11 +31,9 @@ import com.tencent.angel.psagent.matrix.storage.MatrixStorage;
 import com.tencent.angel.psagent.matrix.transport.adapter.GetRowsResult;
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex;
 import com.tencent.angel.psagent.task.TaskContext;
-
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -87,7 +85,9 @@ public class ConsistencyController {
       TVector row = PSAgentContext.get().getMatrixStorageManager().getRow(matrixId, rowIndex);
 
       // if row clock is satisfy ssp staleness limit, just return.
-      if (row != null && (taskContext.getMatrixClock(matrixId) - row.getClock() <= staleness)) {
+      if (row != null
+        && (taskContext.getPSMatrixClock(matrixId) <= row.getClock())
+        && (taskContext.getMatrixClock(matrixId) - row.getClock() <= staleness)) {
         LOG.debug("task " + taskContext.getIndex() + " matrix " + matrixId + " clock " + taskContext.getMatrixClock(matrixId)
             + ", row clock " + row.getClock() + ", staleness " + staleness
             + ", just get from global storage");
@@ -134,7 +134,7 @@ public class ConsistencyController {
     if (staleness >= 0) {
       // For BSP/SSP, get rows from storage/cache first
       int stalnessClock = taskContext.getMatrixClock(rowIndex.getMatrixId()) - staleness;
-      findRowsInStorage(result, rowIndex, stalnessClock);
+      findRowsInStorage(taskContext, result, rowIndex, stalnessClock);
       if (!result.isFetchOver()) {
         LOG.debug("need fetch from parameterserver");
         // Get from ps.
@@ -208,14 +208,16 @@ public class ConsistencyController {
     }
   }
 
-  private void findRowsInStorage(GetRowsResult result, RowIndex rowIndexes, int stalenessClock)
+  private void findRowsInStorage(TaskContext taskContext, GetRowsResult result, RowIndex rowIndexes, int stalenessClock)
       throws InterruptedException {
     MatrixStorage storage =
         PSAgentContext.get().getMatrixStorageManager().getMatrixStoage(rowIndexes.getMatrixId());
 
     for (int rowIndex : rowIndexes.getRowIds()) {
       TVector processRow = storage.getRow(rowIndex);
-      if (processRow != null && processRow.getClock() >= stalenessClock) {
+      if (processRow != null
+        && (taskContext.getPSMatrixClock(rowIndexes.getMatrixId()) <= processRow.getClock())
+        && (processRow.getClock() >= stalenessClock)) {
         result.put(processRow);
         if (result.getRowsNumber() == rowIndexes.getRowsNumber()) {
           rowIndexes.clearFilted();
@@ -242,7 +244,7 @@ public class ConsistencyController {
         if(taskRow == null || (taskRow.getClass() != row.getClass())){
           taskRow = row.clone();
           taskContext.getMatrixStorage().addRow(matrixId, rowIndex, taskRow);
-        }else{
+        } else {
           taskRow.clone(row);
         }
       } finally {

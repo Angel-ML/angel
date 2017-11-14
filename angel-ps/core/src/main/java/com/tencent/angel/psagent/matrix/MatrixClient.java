@@ -16,11 +16,11 @@
 
 package com.tencent.angel.psagent.matrix;
 
-import java.util.concurrent.ExecutionException;
-
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.matrix.psf.update.enhance.ZeroUpdate;
 import com.tencent.angel.psagent.task.TaskContext;
+
+import java.util.concurrent.ExecutionException;
 
 /**
  * The base class of matrix client used by ps client. It contains a task context which use to SSP

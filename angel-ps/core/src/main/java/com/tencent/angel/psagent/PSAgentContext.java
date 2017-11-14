@@ -19,6 +19,7 @@ package com.tencent.angel.psagent;
 import com.tencent.angel.RunningMode;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.matrix.MatrixMetaManager;
+import com.tencent.angel.protobuf.generated.MLProtos.PSAgentAttemptIdProto;
 import com.tencent.angel.psagent.client.MasterClient;
 import com.tencent.angel.psagent.clock.ClockCache;
 import com.tencent.angel.psagent.consistency.ConsistencyController;
@@ -29,8 +30,6 @@ import com.tencent.angel.psagent.matrix.storage.MatrixStorageManager;
 import com.tencent.angel.psagent.matrix.transport.MatrixTransportClient;
 import com.tencent.angel.psagent.matrix.transport.adapter.MatrixClientAdapter;
 import com.tencent.angel.psagent.task.TaskContext;
-import com.tencent.angel.protobuf.generated.MLProtos.PSAgentAttemptIdProto;
-
 import org.apache.hadoop.conf.Configuration;
 
 import java.util.Map;

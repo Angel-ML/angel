@@ -27,7 +27,7 @@ class SparseLRRunner extends MLRunner {
     */
   override
   def train(conf: Configuration): Unit = {
-    train(conf, new SparseLRModel(conf), classOf[SparseLRTask])
+    train(conf, new SparseLRModel(conf), classOf[SparseLRTrainTask])
   }
 
   /**

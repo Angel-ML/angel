@@ -21,9 +21,10 @@ import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.TDoubleVector
-import com.tencent.angel.ml.metric.log.LossMetric
+import com.tencent.angel.ml.metric.LossMetric
 import com.tencent.angel.ml.model.MLModel
-import com.tencent.angel.ml.optimizer.sgd.{GradientDescent, L2LogLoss}
+import com.tencent.angel.ml.optimizer.sgd.GradientDescent
+import com.tencent.angel.ml.optimizer.sgd.loss.L2LogLoss
 import com.tencent.angel.ml.utils.ValidationUtils
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
@@ -32,7 +33,6 @@ import org.apache.commons.logging.{Log, LogFactory}
 /**
   * Learner of logistic regression model using mini-batch gradient descent.
   *
-  * @param ctx : context for each task
   */
 class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   val LOG: Log = LogFactory.getLog(classOf[LRLearner])
@@ -63,8 +63,13 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
 
     // Apply mini-batch gradient descent
     val startBatch = System.currentTimeMillis()
-    val batchGD = GradientDescent.miniBatchGD(trainData, lrModel.weight, lrModel.intercept,
-        lr, l2LL, batchSize, batchNum)
+    val batchGD = GradientDescent.miniBatchGD(trainData,
+      lrModel.weight,
+      lrModel.intercept,
+      lr,
+      l2LL,
+      batchSize,
+      batchNum)
     val loss = batchGD._1
     val localWeight = batchGD._2
     val batchCost = System.currentTimeMillis() - startBatch
@@ -88,11 +93,11 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     LOG.info(s"Task[${ctx.getTaskIndex}]: Sample Ratio per Batch=$spRatio, Sample Size Per " + s"$samplePerBatch")
     LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epochNum, initLearnRate=$lr_0, " + s"learnRateDecay=$decay, L2Reg=$reg")
 
-    globalMetrics.addMetrics(MLConf.TRAIN_LOSS, LossMetric(trainData.size))
-    globalMetrics.addMetrics(MLConf.VALID_LOSS, LossMetric(validationData.size))
+    globalMetrics.addMetric(MLConf.TRAIN_LOSS, LossMetric(trainData.size))
+    globalMetrics.addMetric(MLConf.VALID_LOSS, LossMetric(validationData.size))
 
-    while (ctx.getIteration < epochNum) {
-      val epoch = ctx.getIteration
+    while (ctx.getEpoch < epochNum) {
+      val epoch = ctx.getEpoch
       LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epoch start.")
 
       val startTrain = System.currentTimeMillis()
@@ -108,7 +113,7 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
         s"train cost $trainCost ms. " +
         s"validation cost $validCost ms.")
 
-      ctx.incIteration()
+      ctx.incEpoch()
     }
 
     lrModel
@@ -128,7 +133,7 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       s"auc = ${trainMetrics._3} " +
       s"trueRecall = ${trainMetrics._4} " +
       s"falseRecall = ${trainMetrics._5}")
-    globalMetrics.metrics(MLConf.TRAIN_LOSS, trainMetrics._1)
+    globalMetrics.metric(MLConf.TRAIN_LOSS, trainMetrics._1)
 
     if (valiData.size > 0) {
       val validMetric = ValidationUtils.calMetrics(valiData, weight, l2LL);
@@ -138,7 +143,7 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
         s"auc=${validMetric._3} " +
         s"trueRecall=${validMetric._4} " +
         s"falseRecall=${validMetric._5}")
-      globalMetrics.metrics(MLConf.VALID_LOSS, validMetric._1)
+      globalMetrics.metric(MLConf.VALID_LOSS, validMetric._1)
     }
   }
 

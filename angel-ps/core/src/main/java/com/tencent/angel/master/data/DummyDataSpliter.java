@@ -17,9 +17,8 @@
 package com.tencent.angel.master.data;
 
 import com.tencent.angel.conf.AngelConf;
-import org.apache.hadoop.conf.Configuration;
-
 import com.tencent.angel.master.app.AMContext;
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * Just for test while there is no data.

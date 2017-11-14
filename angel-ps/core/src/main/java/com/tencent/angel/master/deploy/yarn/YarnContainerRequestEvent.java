@@ -15,13 +15,12 @@
  */
 package com.tencent.angel.master.deploy.yarn;
 
-import java.util.Arrays;
-
+import com.tencent.angel.common.Id;
+import com.tencent.angel.master.deploy.ContainerAllocatorEventType;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
 
-import com.tencent.angel.common.Id;
-import com.tencent.angel.master.deploy.ContainerAllocatorEventType;
+import java.util.Arrays;
 
 /**
  * Request a container event. It contains resource context.

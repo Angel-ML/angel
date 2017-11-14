@@ -24,14 +24,12 @@ import com.tencent.angel.protobuf.generated.MLProtos.Partition;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.MatrixPartition;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.MatrixReport;
 import com.tencent.angel.ps.ParameterServerId;
-
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -42,6 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -572,7 +571,6 @@ public class MatrixMetaManager {
       }
       
       for(it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry<MatrixProto> entry:matrixProtoMap.int2ObjectEntrySet()) {
-        LOG.info("write meta for matrix " + entry.getValue());
         entry.getValue().writeDelimitedTo(output);
       }
     } finally {
@@ -593,5 +591,14 @@ public class MatrixMetaManager {
       matrixProtos.add(matrixProto);
     }
     addMatrices(matrixProtos);
+  }
+
+  /**
+   * Get ps ids which contains the matrix
+   * @param matrixId matrix id
+   * @return ps id set
+   */
+  public Set<ParameterServerId> getPsIds(int matrixId) {
+    return matrixIdToPSSetMap.get(matrixId);
   }
 }

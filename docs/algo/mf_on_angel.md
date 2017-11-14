@@ -16,7 +16,7 @@ MF的主要思想是把用户、商品的特征抽象为k维向量表示。
 ![](../img/MF_UV.png)
 
 
-## Gradient Descent Matrix Factorizaion
+## Gradient Descent Matrix Factorization
 用户i对商品j的实际评分为y_{ij}预测值与真实值之差记为e_{ij}，即：e_{ij}=y{ij}-u_i \cdot v_j。
 MF算法的学习目标是最小化预测评分与真实评分之间的差距：
 
@@ -39,6 +39,7 @@ MF算法的学习目标是最小化预测评分与真实评分之间的差距：
 
 
 ## 2. 分布式实现 on Angel
+
 ---
 ### 模型存储
 * 商品矩阵存放在PS，用户矩阵存放在Worker，PS和Worker间传输商品矩阵V即可，不需要传输用户矩阵U。
@@ -88,6 +89,7 @@ MF训练数据的格式：
   * angel.save.modelPath：商品特征矩阵保存路径
   * angel.ml.mf.usermodel.output：用户特征矩阵保存路径
   * angel.log.path：LOG保存路径
+
 * 算法参数
   * ml.mf.rank：用户、商品特征向量的维度
   * ml.mf.item.num：商品数量

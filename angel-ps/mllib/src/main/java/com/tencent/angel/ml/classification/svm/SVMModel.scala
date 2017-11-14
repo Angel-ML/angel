@@ -19,9 +19,10 @@ package com.tencent.angel.ml.classification.svm
 
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.TDoubleVector
+import com.tencent.angel.ml.math.vector.TIntDoubleVector
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
+import com.tencent.angel.protobuf.generated.MLProtos.RowType
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
@@ -38,11 +39,13 @@ object SVMModel{
 }
 
 class SVMModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
+  type V = TIntDoubleVector
+
   var LOG = LogFactory.getLog(classOf[SVMModel])
 
   val SVM_WEIGHT_MAT = "svm.weight.mat"
   val feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
-  val weight = new PSModel[TDoubleVector](SVM_WEIGHT_MAT, 1, feaNum).setAverage(true)
+  val weight = new PSModel(SVM_WEIGHT_MAT, 1, feaNum).setAverage(true).setRowType(RowType.T_DOUBLE_DENSE)
 
   addPSModel(SVM_WEIGHT_MAT, weight)
 

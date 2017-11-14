@@ -95,7 +95,7 @@ public abstract class RowUpdateSplit implements Serialize {
    * 
    * @return int the element number in split
    */
-  public int size() {
+  public long size() {
     return end - start;
   }
 

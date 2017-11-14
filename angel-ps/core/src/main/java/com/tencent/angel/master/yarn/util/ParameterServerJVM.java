@@ -16,14 +16,8 @@
 
 package com.tencent.angel.master.yarn.util;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Vector;
-
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ps.PSAttemptId;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -35,6 +29,11 @@ import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.util.Apps;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Vector;
 
 /**
  * Ps JVM command utils
@@ -126,15 +125,15 @@ public class ParameterServerJVM {
 
     int heapMax = useMax - directRegionSize;
     int youngRegionSize = (int) (heapMax * 0.4);
-    int suvivorRatio = 4;
+    int survivorRatio = 4;
 
     String ret =
         new StringBuilder().append(" -Xmx").append(heapMax).append("M").append(" -Xmn")
             .append(youngRegionSize).append("M").append(" -XX:MaxDirectMemorySize=")
             .append(directRegionSize).append("M").append(" -XX:SurvivorRatio=")
-            .append(suvivorRatio).append(" -XX:PermSize=100M -XX:MaxPermSize=200M")
+            .append(survivorRatio).append(" -XX:PermSize=100M -XX:MaxPermSize=200M")
             .append(" -XX:+AggressiveOpts").append(" -XX:+UseLargePages")
-            .append(" -XX:+UseParallelGC").append(" -XX:+UseAdaptiveSizePolicy")
+            .append(" -XX:+UseConcMarkSweepGC")
             .append(" -XX:CMSInitiatingOccupancyFraction=70")
             .append(" -XX:+UseCMSInitiatingOccupancyOnly").append(" -XX:+CMSScavengeBeforeRemark")
             .append(" -XX:+UseCMSCompactAtFullCollection").append(" -verbose:gc")

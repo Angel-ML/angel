@@ -20,9 +20,10 @@ package com.tencent.angel.ml.regression.linear
 import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.TDoubleVector
+import com.tencent.angel.ml.math.vector.{TDoubleVector, TIntDoubleVector}
 import com.tencent.angel.ml.model.MLModel
-import com.tencent.angel.ml.optimizer.sgd.{GradientDescent, SquareL2Loss}
+import com.tencent.angel.ml.optimizer.sgd.GradientDescent
+import com.tencent.angel.ml.optimizer.sgd.loss.SquareL2Loss
 import com.tencent.angel.ml.utils.ValidationUtils
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
@@ -42,8 +43,7 @@ class LinearRegLeaner(override val ctx: TaskContext) extends MLLearner(ctx) {
   val decay: Double = conf.getDouble(MLConf.ML_LEARN_DECAY, MLConf.DEFAULT_ML_LEARN_DECAY)
   val reg: Double = conf.getDouble(MLConf.ML_REG_L2, MLConf.DEFAULT_ML_REG_L2)
   val feaNum: Int = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
-  val spRatio: Double = conf.getDouble(MLConf.ML_BATCH_SAMPLE_Ratio, MLConf
-    .DEFAULT_ML_BATCH_SAMPLE_Ratio)
+  val spRatio: Double = conf.getDouble(MLConf.ML_BATCH_SAMPLE_Ratio, MLConf.DEFAULT_ML_BATCH_SAMPLE_Ratio)
   val batchNum: Int = conf.getInt(MLConf.ML_SGD_BATCH_NUM, MLConf.DEFAULT_ML_SGD_BATCH_NUM)
 
   val model = new LinearRegModel(conf, ctx)
@@ -91,14 +91,14 @@ class LinearRegLeaner(override val ctx: TaskContext) extends MLLearner(ctx) {
       s"learnRateDecay=$decay, L2Reg=$reg")
 
 
-    while (ctx.getIteration < epochNum) {
-      val epoch = ctx.getIteration
+    while (ctx.getEpoch < epochNum) {
+      val epoch = ctx.getEpoch
 
       val localW = trainOneEpoch(epoch, trainData, batchSize)
 
-      validate(epoch, localW,validationData)
+      validate(epoch, localW, validationData)
 
-      ctx.incIteration()
+      ctx.incEpoch()
     }
 
     model

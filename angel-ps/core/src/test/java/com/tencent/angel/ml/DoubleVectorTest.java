@@ -16,17 +16,15 @@
 
 package com.tencent.angel.ml;
 
-import java.util.Random;
-
-import junit.framework.Assert;
-
-import org.junit.Test;
-
 import com.tencent.angel.ml.math.vector.DenseDoubleVector;
-import com.tencent.angel.ml.math.vector.SparseDoubleVector;
 import com.tencent.angel.ml.math.vector.SparseDummyVector;
+import com.tencent.angel.ml.math.vector.SparseDoubleVector;
 import com.tencent.angel.ml.math.vector.SparseIntVector;
 import com.tencent.angel.utils.Time;
+import junit.framework.Assert;
+import org.junit.Test;
+
+import java.util.Random;
 
 
 public class DoubleVectorTest {

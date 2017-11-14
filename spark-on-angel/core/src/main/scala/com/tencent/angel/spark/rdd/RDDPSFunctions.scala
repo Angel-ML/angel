@@ -17,12 +17,11 @@
 
 package com.tencent.angel.spark.rdd
 
-import scala.language.implicitConversions
-import scala.reflect.ClassTag
-
+import com.tencent.angel.spark.models.vector.enhanced.PushMan
 import org.apache.spark.rdd.RDD
 
-import com.tencent.angel.spark.model.vector.RemotePSVector
+import scala.language.implicitConversions
+import scala.reflect.ClassTag
 
 class RDDPSFunctions[T: ClassTag](self: RDD[T]) extends Serializable {
 
@@ -39,18 +38,18 @@ class RDDPSFunctions[T: ClassTag](self: RDD[T]) extends Serializable {
       combOp: (U, U) => U): U = {
     val res = self.mapPartitions { iter =>
       val result = iter.foldLeft(zeroValue)(seqOp)
+      PushMan.flushAll()
       Iterator(result)
     }.reduce(combOp)
-    RemotePSVector.flush()
     res
   }
 
   def psFoldLeft[U: ClassTag](zeroValue: U)(seqOp: (U, T) => U): U = {
     val res = self.mapPartitions { iter =>
       val result = iter.foldLeft(zeroValue)(seqOp)
+      PushMan.flushAll()
       Iterator(result)
     }.collect().head
-    RemotePSVector.flush()
     res
   }
 

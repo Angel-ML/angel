@@ -17,7 +17,12 @@
 
 package com.tencent.angel.spark.ml.util
 
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import scala.collection.mutable.ArrayBuffer
+
+import org.apache.spark.ml.linalg.{Vector, Vectors}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.types.{StringType, StructField, StructType}
+import org.apache.spark.sql.{DataFrame, Row, SQLContext, SparkSession}
 
 
 /**
@@ -63,6 +68,82 @@ object DataLoader {
       }.repartition(partitionNum)
       .sample(false, sampleRate)
     spark.createDataFrame(instances, ONE_HOT_INSTANCE_ST)
+  }
+
+  def loadDense(
+      input: String,
+      partitionNum: Int,
+      sampleRate: Double): DataFrame = {
+    val spark = SparkSession.builder().getOrCreate()
+
+
+    val inputRDD = spark.sparkContext.textFile(input, partitionNum)
+      .sample(false, sampleRate)
+      .map(line => line.trim.split(SPLIT_SEPARATOR))
+
+    val itemNum = inputRDD.first().length
+
+    // create DataFrame
+    val fields = ArrayBuffer[StructField]()
+    for (i <- 0 until itemNum) {
+      val name = "f_" + i
+      val field = new StructField(name, StringType, false)
+      fields += field
+    }
+    spark.createDataFrame(inputRDD.map(line => Row.fromSeq(line)), StructType(fields))
+  }
+
+  def loadLibsvm(
+      input: String,
+      partitionNum: Int,
+      sampleRate: Double,
+      dim: Int): RDD[(Double, Vector)] = {
+    val spark = SparkSession.builder().getOrCreate()
+
+    val withReplacement = false
+    val parseRDD = spark.sparkContext.textFile(input)
+      .sample(withReplacement, sampleRate)
+      .repartition(partitionNum)
+      .map(line => line.trim)
+      .filter(_.nonEmpty)
+      .map(parseLine)
+
+    val d = if (dim > 0) {
+      dim
+    } else {
+      parseRDD.map(record => record._2.lastOption.getOrElse(0))
+        .reduce(math.max) + 1
+    }
+    parseRDD.map { case (label, indices, values) =>
+      Tuple2(label.toDouble, Vectors.sparse(d, indices, values))
+    }
+  }
+
+  private def parseLine(line: String): (String, Array[Int], Array[Double]) = {
+
+    val indices = ArrayBuffer[Int]()
+    val values = ArrayBuffer[Double]()
+    val items = line.split(SPLIT_SEPARATOR).map(_.trim)
+    val label = items.head
+
+    for (item <- items.tail) {
+      val ids = item.split(":")
+      if (ids.length == 2) {
+        indices += ids(0).toInt - 1 // convert 1-based indices to 0-based indices
+        values += ids(1).toDouble
+      }
+      // check if indices are one-based and in ascending order
+      var previous = -1
+      var i = 0
+      val indicesLength = indices.length
+      while (i < indicesLength) {
+        val current = indices(i)
+        require(current > previous, "indices should be one-based and in ascending order" )
+        previous = current
+        i += 1
+      }
+    }
+    (label, indices.toArray, values.toArray)
   }
 
 }

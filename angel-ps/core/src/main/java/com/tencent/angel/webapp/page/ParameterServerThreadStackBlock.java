@@ -22,7 +22,6 @@ import com.tencent.angel.exception.UnvalidIdStrException;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.psclient.PSClient;
 import com.tencent.angel.ps.PSAttemptId;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
@@ -30,7 +29,6 @@ import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
 import java.io.IOException;
 
 import static com.tencent.angel.webapp.AngelParams.PSATTEMPT_ID;
-
 import static org.apache.hadoop.yarn.util.StringHelper.join;
 
 

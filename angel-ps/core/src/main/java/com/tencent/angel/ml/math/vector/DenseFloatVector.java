@@ -18,7 +18,7 @@ package com.tencent.angel.ml.math.vector;
 
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.ml.math.VectorType;
+import com.tencent.angel.protobuf.generated.MLProtos;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -216,8 +216,8 @@ public class DenseFloatVector extends TFloatVector {
     return values;
   }
 
-  @Override public VectorType getType() {
-    return VectorType.T_FLOAT_DENSE;
+  @Override public MLProtos.RowType getType() {
+    return MLProtos.RowType.T_FLOAT_DENSE;
   }
 
   @Override public int[] getIndices() {
@@ -432,6 +432,14 @@ public class DenseFloatVector extends TFloatVector {
     throw new UnsupportedOperationException(
       "Unsupportted operation: plus " + this.getClass().getName() + " and " + other.getClass()
         .getName());
+  }
+
+  @Override public double sum() {
+    double ret = 0.0;
+    for (int i = 0; i < dim; i++) {
+      ret += this.values[i];
+    }
+    return ret;
   }
 
 

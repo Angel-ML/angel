@@ -20,6 +20,7 @@ package com.tencent.angel.ml.lr;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.classification.lr.LRRunner;
 import com.tencent.angel.ml.conf.MLConf;
+import com.tencent.angel.protobuf.generated.MLProtos;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -58,6 +59,8 @@ public class SgdLRTest {
       double spRatio = 1.0;
       // Batch number
       int batchNum = 10;
+      // Model type
+      String modelType = String.valueOf(MLProtos.RowType.T_DOUBLE_SPARSE);
 
       // Learning rate
       double learnRate = 1.0;
@@ -73,9 +76,9 @@ public class SgdLRTest {
       conf.setBoolean("mapred.mapper.new-api", true);
       conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
       conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
-
+      conf.set(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, "true");
       // Set data format
-      conf.set(MLConf.ML_DATAFORMAT(), dataFmt);
+      conf.set(MLConf.ML_DATA_FORMAT(), dataFmt);
 
       //set angel resource parameters #worker, #task, #PS
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
@@ -83,6 +86,7 @@ public class SgdLRTest {
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
       //set sgd LR algorithm parameters #feature #epoch
+      conf.set(MLConf.LR_MODEL_TYPE(), modelType);
       conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(featureNum));
       conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
       conf.set(MLConf.ML_BATCH_SAMPLE_Ratio(), String.valueOf(spRatio));

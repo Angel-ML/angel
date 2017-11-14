@@ -17,7 +17,6 @@
 package com.tencent.angel.ml.math.matrix;
 
 import com.tencent.angel.ml.math.vector.SparseDoubleVector;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -46,7 +45,7 @@ public class SparseDoubleMatrix extends TDoubleMatrix {
    */
   @Override
   public SparseDoubleVector initVector(int rowIndex) {
-    SparseDoubleVector ret = new SparseDoubleVector(col);
+    SparseDoubleVector ret = new SparseDoubleVector((int)col);
     ret.setMatrixId(matrixId);
     ret.setRowId(rowIndex);
     return ret;

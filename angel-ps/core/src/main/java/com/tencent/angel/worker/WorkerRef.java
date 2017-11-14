@@ -17,13 +17,12 @@
 package com.tencent.angel.worker;
 
 import com.tencent.angel.common.Location;
-import com.tencent.angel.worker.task.TaskContext;
-import com.tencent.angel.worker.task.TaskId;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos.LocationProto;
 import com.tencent.angel.protobuf.generated.MLProtos.WorkerAttemptIdProto;
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.TaskMetaInfoProto;
-
+import com.tencent.angel.worker.task.TaskContext;
+import com.tencent.angel.worker.task.TaskId;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 

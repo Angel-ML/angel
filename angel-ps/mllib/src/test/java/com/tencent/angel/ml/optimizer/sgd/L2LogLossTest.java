@@ -19,7 +19,8 @@ package com.tencent.angel.ml.optimizer.sgd;
 
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.vector.DenseDoubleVector;
-import com.tencent.angel.ml.utils.MathUtilsTest;
+import com.tencent.angel.ml.optimizer.sgd.loss.L2LogLoss;
+import com.tencent.angel.ml.utils.MathsTest;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.PropertyConfigurator;
@@ -30,7 +31,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public class L2LogLossTest {
-  private static final Log LOG = LogFactory.getLog(MathUtilsTest.class);
+  private static final Log LOG = LogFactory.getLog(MathsTest.class);
   L2LogLoss l2LogLoss = new L2LogLoss(0.01);
   static {
     PropertyConfigurator.configure("../conf/log4j.properties");

@@ -18,12 +18,13 @@ package com.tencent.angel.ml.utils;
 
 import com.tencent.angel.ml.feature.LabeledData;
 import com.tencent.angel.ml.math.vector.TDoubleVector;
-import com.tencent.angel.ml.optimizer.sgd.Loss;
+import com.tencent.angel.ml.optimizer.sgd.loss.Loss;
 import com.tencent.angel.utils.Sort;
 import com.tencent.angel.worker.storage.DataBlock;
 import it.unimi.dsi.fastutil.doubles.DoubleComparator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import scala.Tuple3;
 import scala.Tuple4;
 import scala.Tuple5;
 
@@ -36,10 +37,30 @@ import java.io.IOException;
 public class ValidationUtils {
   private static final Log LOG = LogFactory.getLog(ValidationUtils.class);
 
+  private static DoubleComparator cmp = new DoubleComparator() {
+    @Override
+    public int compare(double i, double i1) {
+      if (Math.abs(i - i1) < 10e-12) {
+        return 0;
+      } else {
+        return i - i1 > 10e-12 ? 1 : -1;
+      }
+    }
+
+    @Override
+    public int compare(Double o1, Double o2) {
+      if (Math.abs(o1 - o2) < 10e-12) {
+        return 0;
+      } else {
+        return o1 - o2 > 10e-12 ? 1 : -1;
+      }
+    }
+  };
+
   /**
    * validate loss and precision
    *
-   * @param dataBlock:  validation data trainDataBlock
+   * @param dataBlock:  validation data taskDataBlock
    * @param weight:   the weight vector of features
    * @param lossFunc: the lossFunc used for prediction
    */
@@ -94,7 +115,7 @@ public class ValidationUtils {
   /**
    * validate loss, AUC and precision
    *
-   * @param dataBlock:  validation data trainDataBlock
+   * @param dataBlock:  validation data taskDataBlock
    * @param weight:   the weight vector of features
    * @param lossFunc: the lossFunc used for prediction
    */
@@ -143,32 +164,24 @@ public class ValidationUtils {
     }
 
     loss += lossFunc.getReg(weight);
+    double precision = (double) (truePos + trueNeg) / totalNum;
 
-    long sortStartTime = System.currentTimeMillis();
-    DoubleComparator cmp = new DoubleComparator() {
+    Tuple3<Double, Double, Double> tuple3 = calAUC(scoresArray, labelsArray, truePos, trueNeg, falsePos,
+        falseNeg);
+    double aucResult = tuple3._1();
+    double trueRecall = tuple3._2();
+    double falseRecall = tuple3._3();
 
-      @Override
-      public int compare(double i, double i1) {
-        if (Math.abs(i - i1) < 10e-12) {
-          return 0;
-        } else {
-          return i - i1 > 10e-12 ? 1 : -1;
-        }
-      }
+    return new Tuple5(loss, precision, aucResult, trueRecall, falseRecall);
+  }
 
-      @Override
-      public int compare(Double o1, Double o2) {
-        if (Math.abs(o1 - o2) < 10e-12) {
-          return 0;
-        } else {
-          return o1 - o2 > 10e-12 ? 1 : -1;
-        }
-      }
-    };
+  public static Tuple3<Double, Double, Double> calAUC(double[] scoresArray, double[]
+      labelsArray, int truePos, int trueNeg, int falsePos, int falseNeg) {
+    long startTime = System.currentTimeMillis();
 
-    Sort.quickSort(scoresArray, labelsArray, 0, scoresArray.length, cmp);
+    Sort.quickSort(scoresArray, labelsArray, 0, scoresArray.length, ValidationUtils.cmp);
 
-    LOG.debug("Sort cost " + (System.currentTimeMillis() - sortStartTime) + "ms, Scores list size: "
+    LOG.debug("Sort cost " + (System.currentTimeMillis() - startTime) + "ms, Scores list size: "
         + scoresArray.length + ", sorted values:" + scoresArray[0] + ","
         + scoresArray[scoresArray.length / 5] + "," + scoresArray[scoresArray.length / 3] + ","
         + scoresArray[scoresArray.length / 2] + "," + scoresArray[scoresArray.length - 1]);
@@ -192,22 +205,20 @@ public class ValidationUtils {
     double aucResult = (sigma - (M + 1) * M / 2) / M / N;
     LOG.debug("M = " + M + ", N = " + N + ", sigma = " + sigma + ", AUC = " + aucResult);
 
-    double precision = (double) (truePos + trueNeg) / totalNum;
+    double totalNum = scoresArray.length;
     double trueRecall = (double) truePos / (truePos + falseNeg);
     double falseRecall = (double) trueNeg / (trueNeg + falsePos);
 
-
-    LOG.debug(String.format(
-        "validate cost %d ms, loss= %.5f, auc=%.5f, "
-            + "precision=%.5f, trueRecall=%.5f, falseRecall=%.5f",
-        System.currentTimeMillis() - startTime, loss, aucResult, precision, trueRecall,
+    LOG.debug(String.format("validate cost %d ms, auc=%.5f, trueRecall=%.5f, falseRecall=%.5f",
+        System.currentTimeMillis() - startTime, aucResult, trueRecall,
         falseRecall));
 
     LOG.debug(String.format("Validation TP=%d, TN=%d, FP=%d, FN=%d", truePos, trueNeg, falsePos,
         falseNeg));
 
-    return new Tuple5(loss, precision, aucResult, trueRecall, falseRecall);
+    return new Tuple3<>(aucResult, trueRecall, falseRecall);
   }
+
 
   /**
    * Calculate MSE, RMSE, MAE and R2

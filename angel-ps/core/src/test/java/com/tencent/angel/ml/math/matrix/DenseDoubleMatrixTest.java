@@ -16,9 +16,9 @@
 
 package com.tencent.angel.ml.math.matrix;
 
-import com.tencent.angel.ml.math.vector.TDoubleVector;
 import com.tencent.angel.ml.math.vector.DenseDoubleVector;
 import com.tencent.angel.ml.math.vector.SparseDoubleVector;
+import com.tencent.angel.ml.math.vector.TDoubleVector;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertEquals;

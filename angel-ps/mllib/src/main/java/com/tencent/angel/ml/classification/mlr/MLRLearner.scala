@@ -1,25 +1,35 @@
-package com.tencent.angel.ml.classification.mlr
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
 
-import java.util
+package com.tencent.angel.ml.classification.mlr
 
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.TAbstractVector
-import com.tencent.angel.ml.math.vector.{DenseDoubleVector, SparseDoubleSortedVector, TDoubleVector}
-import com.tencent.angel.ml.metric.log.LossMetric
-import com.tencent.angel.ml.model.{MLModel, PSModel}
-import com.tencent.angel.ml.utils.{MathUtils, ValidationUtils}
+import com.tencent.angel.ml.math.vector.{DenseDoubleVector, SparseDoubleSortedVector, TIntDoubleVector}
+import com.tencent.angel.ml.metric.LossMetric
+import com.tencent.angel.ml.utils.Maths
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.{Log, LogFactory}
 
 import scala.util.Random
-
-/**
-  * Created by hbghh on 2017/8/17.
-  */
 
 case class mlrWeight(sigmoid_wVecot:Array[DenseDoubleVector], sigmoid_b:Array[Double],
                      softmax_wVecot:Array[DenseDoubleVector], softmax_b:Array[Double]){
@@ -69,9 +79,9 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   }
 
 
-  def miniBatchGD[M <: TDoubleVector](trainData: DataBlock[LabeledData],
-                                      lr: Double,
-                                      batchSize: Int) = {
+  def miniBatchGD[M <: TIntDoubleVector](trainData: DataBlock[LabeledData],
+                                         lr: Double,
+                                         batchSize: Int) = {
 
     //Pull model from PS Server
     val (sigmoid_wVecot, sigmoid_b, softmax_wVecot, softmax_b) = mlrModel.pullFromPs()
@@ -99,8 +109,8 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       for (i <- 0 until batchSize) {
         val (x: TAbstractVector, y: Double) = loopingData(trainData)
         val softmax = (0 until rank).map(i => softmax_wVecot(i).dot(x) + softmax_b(i)).toArray
-        MathUtils.softmax(softmax)
-        val sigmoid = (0 until rank).map(i => MathUtils.sigmoid({
+        Maths.softmax(softmax)
+        val sigmoid = (0 until rank).map(i => Maths.sigmoid({
           var temp=sigmoid_wVecot(i).dot(x) + sigmoid_b(i)
           temp=math.max(temp,-18)
           temp=math.min(temp,18)
@@ -175,10 +185,10 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       }).reduce(_+_)*0.5*reg
     }
 
-    mlrModel.sigmoid_weight.clock().get()
-    mlrModel.softmax_weight.clock().get()
-    mlrModel.sigmoid_intercept.clock().get()
-    mlrModel.softmax_intercept.clock().get()
+    mlrModel.sigmoid_weight.syncClock()
+    mlrModel.softmax_weight.syncClock()
+    mlrModel.sigmoid_intercept.syncClock()
+    mlrModel.softmax_intercept.syncClock()
 
 
     (totalLoss, mlrWeight(sigmoid_wVecot, sigmoid_b, softmax_wVecot, softmax_b))
@@ -218,16 +228,16 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     LOG.info(s"Task[${ctx.getTaskIndex}]: Sample Ratio per Batch=$spRatio, Sample Size Per " + s"$samplePerBatch")
     LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epochNum, initLearnRate=$lr_0, " + s"learnRateDecay=$decay, L2Reg=$reg")
 
-    globalMetrics.addMetrics(MLConf.TRAIN_LOSS, LossMetric(1))
-    globalMetrics.addMetrics(MLConf.VALID_LOSS, LossMetric(1))
+    globalMetrics.addMetric(MLConf.TRAIN_LOSS, LossMetric(1))
+    globalMetrics.addMetric(MLConf.VALID_LOSS, LossMetric(1))
 
     val beforeInit = System.currentTimeMillis()
     initModels()
     val initCost = System.currentTimeMillis() - beforeInit
     LOG.info(s"Init matrixes cost $initCost ms.")
 
-    while (ctx.getIteration < epochNum) {
-      val epoch = ctx.getIteration
+    while (ctx.getEpoch < epochNum) {
+      val epoch = ctx.getEpoch
       LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epoch start.")
 
       val startTrain = System.currentTimeMillis()
@@ -243,7 +253,7 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
         s"train cost $trainCost ms. " +
         s"validation cost $validCost ms.")
 
-      ctx.incIteration()
+      ctx.incEpoch()
     }
 
     mlrModel
@@ -259,19 +269,18 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     val trainLoss = evaluate(trainData,weight)
     LOG.info(s"Task[${ctx.getTaskIndex}]: epoch = $epoch " +
       s"trainData loss = ${trainLoss} ")
-    globalMetrics.metrics(MLConf.TRAIN_LOSS, trainLoss)
+    globalMetrics.metric(MLConf.TRAIN_LOSS, trainLoss)
 
     if (valiData.size > 0) {
       val validLoss = evaluate(valiData,weight)
       LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epoch " +
         s"validationData loss=${validLoss} " )
-      globalMetrics.metrics(MLConf.VALID_LOSS, validLoss)
+      globalMetrics.metric(MLConf.VALID_LOSS, validLoss)
     }
   }
 
 
-  def evaluate(dataBlock: DataBlock[LabeledData],weight: mlrWeight):
-  Double = {
+  def evaluate(dataBlock: DataBlock[LabeledData],weight: mlrWeight): Double = {
     var loss = 0.0
     val (sigmoid_wVecot, sigmoid_b, softmax_wVecot, softmax_b) =
       (weight.sigmoid_wVecot,weight.sigmoid_b,weight.softmax_wVecot,weight.softmax_b)
@@ -283,8 +292,8 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       val y = data.getY
 
       val softmax = (0 until rank).map(i => softmax_wVecot(i).dot(x) + softmax_b(i)).toArray
-      MathUtils.softmax(softmax)
-      val sigmoid = (0 until rank).map(i => MathUtils.sigmoid({
+      Maths.softmax(softmax)
+      val sigmoid = (0 until rank).map(i => Maths.sigmoid({
         var temp=sigmoid_wVecot(i).dot(x) + sigmoid_b(i)
         temp=math.max(temp,-18)
         temp=math.min(temp,18)
@@ -324,7 +333,7 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
         mlrModel.sigmoid_weight.increment(randV)
       }
     }
-    mlrModel.sigmoid_weight.clock().get()
+    mlrModel.sigmoid_weight.syncClock()
   }
 
 }

@@ -18,9 +18,10 @@ package com.tencent.angel.ml.regression.linear
 
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.task.TrainTask
 import com.tencent.angel.ml.utils.DataParser
 import com.tencent.angel.worker.storage.MemoryDataBlock
-import com.tencent.angel.worker.task.{TaskContext, TrainTask}
+import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.io.{LongWritable, Text}
 
 
@@ -36,12 +37,11 @@ import org.apache.hadoop.io.{LongWritable, Text}
 
 
 class LinearRegTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
-  // feature number of trainning data
   private val feaNum: Int = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
-  // data format of trainning data, libsvm or dummy
-  private val dataFormat = conf.get(MLConf.ML_DATAFORMAT, "dummy")
-  // validate sample ratio
-  private val valiRat = conf.getDouble(MLConf.ML_VALIDATE_RATIO, 0.05)
+  private val dataFormat = conf.get(MLConf.ML_DATA_FORMAT, "dummy")
+  private val valiRatio = conf.getDouble(MLConf.ML_VALIDATE_RATIO, 0.05)
+
+  private val dataParser = DataParser(dataFormat, feaNum, false)
 
   // validation data storage
   var validDataStorage = new MemoryDataBlock[LabeledData](-1)
@@ -52,7 +52,7 @@ class LinearRegTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, T
   @throws[Exception]
   def train(ctx: TaskContext) {
     val trainer = new LinearRegLeaner(ctx)
-    trainer.train(trainDataBlock, validDataStorage)
+    trainer.train(taskDataBlock, validDataStorage)
   }
 
   /**
@@ -63,8 +63,7 @@ class LinearRegTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, T
     */
   override
   def parse(key: LongWritable, value: Text): LabeledData = {
-    val sample = DataParser.parseVector(key, value, feaNum, dataFormat, false)
-    sample
+    dataParser.parse(value.toString)
   }
 
   /**
@@ -74,7 +73,7 @@ class LinearRegTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, T
   override
   def preProcess(taskContext: TaskContext) {
     var count = 0
-    val vali = Math.ceil(1.0 / valiRat).asInstanceOf[Int]
+    val vali = Math.ceil(1.0 / valiRatio).asInstanceOf[Int]
 
     val reader = taskContext.getReader
 
@@ -84,11 +83,11 @@ class LinearRegTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, T
         if (count % vali == 0)
           validDataStorage.put(out)
         else
-          trainDataBlock.put(out)
+          taskDataBlock.put(out)
         count += 1
       }
     }
-    trainDataBlock.flush()
+    taskDataBlock.flush()
     validDataStorage.flush()
   }
 

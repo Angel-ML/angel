@@ -64,6 +64,9 @@ public class MatrixTransportClientHandler extends ChannelInboundHandlerAdapter {
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) {
     LOG.debug("receive a message " + ((ByteBuf) msg).readableBytes());
+    //int seqId = ((ByteBuf) msg).readInt();
+    //LOG.info("receive result of seqId=" + seqId);
+    //((ByteBuf) msg).resetReaderIndex();
     try {
       msgQueue.put((ByteBuf) msg);
     } catch (InterruptedException e) {

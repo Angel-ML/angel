@@ -18,6 +18,7 @@
 package com.tencent.angel.ml.optimizer.sgd;
 
 import com.tencent.angel.ml.math.vector.DenseDoubleVector;
+import com.tencent.angel.ml.optimizer.sgd.loss.SquareL2Loss;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.PropertyConfigurator;

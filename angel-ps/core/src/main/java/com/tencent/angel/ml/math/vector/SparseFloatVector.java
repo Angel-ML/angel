@@ -18,7 +18,7 @@ package com.tencent.angel.ml.math.vector;
 
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.ml.math.VectorType;
+import com.tencent.angel.protobuf.generated.MLProtos;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
@@ -67,7 +67,11 @@ public class SparseFloatVector extends TFloatVector {
    */
   public SparseFloatVector(int dim, int capacity) {
     super();
-    this.hashMap = new Int2FloatOpenHashMap(capacity);
+    if(capacity > 0){
+      this.hashMap = new Int2FloatOpenHashMap(capacity);
+    } else {
+      this.hashMap = new Int2FloatOpenHashMap(INIT_SIZE);
+    }
     this.dim = dim;
   }
 
@@ -259,8 +263,8 @@ public class SparseFloatVector extends TFloatVector {
   }
 
   @Override
-  public VectorType getType() {
-    return VectorType.T_FLOAT_SPARSE;
+  public MLProtos.RowType getType() {
+    return MLProtos.RowType.T_FLOAT_SPARSE;
   }
 
   @Override
@@ -404,6 +408,16 @@ public class SparseFloatVector extends TFloatVector {
     throw new UnsupportedOperationException("Unsupport operation: " + this.getClass().getName() + " plusBy " + other.getClass().getName());
   }
 
+  @Override public double sum() {
+    ObjectIterator<Int2FloatMap.Entry> iter = hashMap.int2FloatEntrySet().iterator();
+    double sum = 0;
+    while (iter.hasNext()) {
+      float v = iter.next().getFloatValue();
+      sum += v;
+    }
+    return sum;
+  }
+
   public TFloatVector plusBy(DenseFloatVector other, float x) {
     float[] delta = other.getValues();
     float fx = (float) x;
@@ -476,5 +490,9 @@ public class SparseFloatVector extends TFloatVector {
     }
 
     return this;
+  }
+
+  public Int2FloatOpenHashMap getIndexToValueMap() {
+    return hashMap;
   }
 }

@@ -24,7 +24,6 @@ import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.protobuf.generated.MasterWorkerServiceProtos.GetThreadStackRequest;
 import com.tencent.angel.worker.WorkerAttemptId;
 import com.tencent.angel.worker.WorkerProtocol;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 

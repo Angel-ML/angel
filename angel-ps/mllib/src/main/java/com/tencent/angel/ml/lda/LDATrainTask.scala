@@ -17,54 +17,43 @@
 
 package com.tencent.angel.ml.lda
 
-import java.io.BufferedOutputStream
-import java.util
-
-import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.math.vector.{DenseDoubleVector, DenseIntVector}
-import com.tencent.angel.ml.utils.HDFSUtils
-import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex
-import com.tencent.angel.utils.HdfsUtil
+import com.tencent.angel.ml.lda.algo.{CSRTokens, Document}
+import com.tencent.angel.worker.storage.MemoryDataBlock
 import com.tencent.angel.worker.task.{BaseTask, TaskContext}
 import org.apache.commons.logging.LogFactory
-import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{LongWritable, Text}
 
 /**
   * Latent Dirichlet Allocation (LDA) is a probabilic generative model.
   */
-class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Text](ctx) {
+class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Document](ctx) {
 
   private val LOG = LogFactory.getLog(classOf[LDATrainTask])
 
+  var docs = new MemoryDataBlock[Document](-1)
+  var N = 0
+  var did = 0
+
   override
-  def parse(key: LongWritable, value: Text): Text = {
-    // Do nothing
-    null
+  def parse(key: LongWritable, value: Text): Document = {
+    val doc  = new Document(value.toString)
+    if (doc != null) {
+      did += 1
+      N += doc.len()
+    }
+    doc
   }
 
   override
   def preProcess(ctx: TaskContext) {
-    // Do nothing in the preprocess function
+    val reader = ctx.getReader[LongWritable, Text]
+    while (reader.nextKeyValue()) {
+      docs.put(parse(reader.getCurrentKey(), reader.getCurrentValue))
+    }
   }
 
   @throws[Exception]
   def run(ctx: TaskContext): Unit = {
-    // Read documents
-    val reader = ctx.getReader[LongWritable, Text]
-    val docs   = new util.ArrayList[Document]()
-    var did = 0
-    var N = 0
-    while (reader.nextKeyValue()) {
-      val text = reader.getCurrentValue
-      val doc  = new Document(text.toString)
-      if (doc != null) {
-        docs.add(doc)
-        did += 1
-        N += doc.len()
-      }
-    }
-
     // Initializing LDA model
     val model = new LDAModel(ctx.getConf, ctx)
 
@@ -73,18 +62,20 @@ class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Te
        + s"threadNum=${model.threadNum}")
 
     // build topic structures
-    val data = new CSRTokens(model.V, docs.size())
-    data.build(docs, model.K)
-    docs.clear()
+    val tokens = new CSRTokens(model.V, docs.size())
+    tokens.build(docs, model.K)
+    docs.clean()
+    LOG.info(s"build data")
+
 
     // training
-    val learner = new Trainer(ctx, model, data)
+    val learner = new LDALearner(ctx, model, tokens)
     learner.initialize()
     learner.train(model.epoch)
 
     // save values
     if (model.saveWordTopic) learner.saveWordTopic(model)
-    if (model.saveDocTopic) learner.saveDocTopic(data, model)
+    if (model.saveDocTopic) learner.saveDocTopic(tokens, model)
   }
 
 }

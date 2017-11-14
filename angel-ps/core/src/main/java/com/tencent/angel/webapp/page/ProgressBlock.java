@@ -28,7 +28,8 @@ import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
 import java.util.*;
 
 import static org.apache.hadoop.yarn.util.StringHelper.join;
-import static org.apache.hadoop.yarn.webapp.view.JQueryUI.*;
+import static org.apache.hadoop.yarn.webapp.view.JQueryUI._INFO_WRAP;
+import static org.apache.hadoop.yarn.webapp.view.JQueryUI._TH;
 
 public class ProgressBlock extends HtmlBlock {
   final AMContext amContext;

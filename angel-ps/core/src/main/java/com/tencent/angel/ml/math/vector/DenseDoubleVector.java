@@ -18,7 +18,7 @@ package com.tencent.angel.ml.math.vector;
 
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.ml.math.VectorType;
+import com.tencent.angel.protobuf.generated.MLProtos;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -29,7 +29,7 @@ import org.apache.commons.logging.LogFactory;
 /**
  * Dense double vector
  */
-public class DenseDoubleVector extends TDoubleVector {
+public class DenseDoubleVector extends TIntDoubleVector {
 
   private final static Log LOG = LogFactory.getLog(DenseDoubleVector.class);
   /**
@@ -73,9 +73,17 @@ public class DenseDoubleVector extends TDoubleVector {
   }
 
   @Override
-  public TDoubleVector plusBy(int index, double delt) {
+  public TIntDoubleVector plusBy(int index, double delt) {
     values[index] += delt;
     return this;
+  }
+
+  @Override public double sum() {
+    double ret = 0.0;
+    for (int i = 0; i < dim; i++) {
+      ret += this.values[i];
+    }
+    return ret;
   }
 
   @Override
@@ -152,7 +160,7 @@ public class DenseDoubleVector extends TDoubleVector {
   private double dot(SparseFloatVector other) { return other.dot(this); }
 
   @Override
-  public TDoubleVector filter(double x) {
+  public TIntDoubleVector filter(double x) {
     IntArrayList nonzeroIndex = new IntArrayList();
     int nonzero = 0;
     for (int i = 0; i < values.length; i++) {
@@ -190,8 +198,8 @@ public class DenseDoubleVector extends TDoubleVector {
   }
 
   @Override
-  public VectorType getType() {
-    return VectorType.T_DOUBLE_DENSE;
+  public MLProtos.RowType getType() {
+    return MLProtos.RowType.T_DOUBLE_DENSE;
   }
 
   @Override
@@ -216,7 +224,7 @@ public class DenseDoubleVector extends TDoubleVector {
   }
 
   @Override
-  public TDoubleVector plus(TAbstractVector other, double x) {
+  public TIntDoubleVector plus(TAbstractVector other, double x) {
     assert dim == other.getDimension();
     if (other instanceof DenseDoubleVector)
       return plus((DenseDoubleVector) other, x);
@@ -235,21 +243,21 @@ public class DenseDoubleVector extends TDoubleVector {
       + this.getClass().getName() + " plus " + other.getClass().getName());
   }
 
-  private TDoubleVector plus(DenseDoubleVector other, double x) {
+  private TIntDoubleVector plus(DenseDoubleVector other, double x) {
     DenseDoubleVector vector = new DenseDoubleVector(dim);
     for (int i = 0; i < dim; i++)
       vector.values[i] = values[i] + other.values[i] * x;
     return vector;
   }
 
-  private TDoubleVector plus(DenseFloatVector other, double x) {
+  private TIntDoubleVector plus(DenseFloatVector other, double x) {
     DenseDoubleVector vector = new DenseDoubleVector(dim);
     for (int i = 0; i < dim; i++)
       vector.values[i] = values[i] + other.values[i] * x;
     return vector;
   }
 
-  private TDoubleVector plus(SparseDoubleVector other, double x) {
+  private TIntDoubleVector plus(SparseDoubleVector other, double x) {
     DenseDoubleVector vector = this.clone();
     ObjectIterator<Int2DoubleMap.Entry> iter = other.hashMap.int2DoubleEntrySet().iterator();
     Int2DoubleMap.Entry entry = null;
@@ -260,7 +268,7 @@ public class DenseDoubleVector extends TDoubleVector {
     return vector;
   }
 
-  private TDoubleVector plus(SparseDoubleSortedVector other, double x) {
+  private TIntDoubleVector plus(SparseDoubleSortedVector other, double x) {
     DenseDoubleVector vector = this.clone();
     int length = other.indices.length;
     for (int i = 0; i < length; i++) {
@@ -269,7 +277,7 @@ public class DenseDoubleVector extends TDoubleVector {
     return vector;
   }
 
-  private TDoubleVector plus(SparseFloatVector other, double x) {
+  private TIntDoubleVector plus(SparseFloatVector other, double x) {
     DenseDoubleVector vector = this.clone();
     ObjectIterator<Int2FloatMap.Entry> iter = other.hashMap.int2FloatEntrySet().iterator();
     Int2FloatMap.Entry entry = null;
@@ -280,7 +288,7 @@ public class DenseDoubleVector extends TDoubleVector {
     return vector;
   }
 
-  private TDoubleVector plus(SparseDummyVector other, double x) {
+  private TIntDoubleVector plus(SparseDummyVector other, double x) {
     DenseDoubleVector vector = this.clone();
     for (int i = 0; i < other.nonzero; i++) {
       vector.values[other.indices[i]] += x;
@@ -289,7 +297,7 @@ public class DenseDoubleVector extends TDoubleVector {
   }
 
   @Override
-  public TDoubleVector plus(TAbstractVector other) {
+  public TIntDoubleVector plus(TAbstractVector other) {
     assert dim == other.getDimension();
     if (other instanceof DenseDoubleVector)
       return plus((DenseDoubleVector) other);
@@ -308,21 +316,21 @@ public class DenseDoubleVector extends TDoubleVector {
       + this.getClass().getName() + " plus " + other.getClass().getName());
   }
 
-  private TDoubleVector plus(DenseDoubleVector other) {
+  private TIntDoubleVector plus(DenseDoubleVector other) {
     DenseDoubleVector vector = new DenseDoubleVector(dim);
     for (int i = 0; i < dim; i++)
       vector.values[i] = values[i] + other.values[i];
     return vector;
   }
 
-  private TDoubleVector plus(DenseFloatVector other) {
+  private TIntDoubleVector plus(DenseFloatVector other) {
     DenseDoubleVector vector = new DenseDoubleVector(dim);
     for (int i = 0; i < dim; i++)
       vector.values[i] = values[i] + (double) other.values[i];
     return vector;
   }
 
-  private TDoubleVector plus(SparseDoubleVector other) {
+  private TIntDoubleVector plus(SparseDoubleVector other) {
     DenseDoubleVector vector = this.clone();
     ObjectIterator<Int2DoubleMap.Entry> iter = other.hashMap.int2DoubleEntrySet().fastIterator();
     Int2DoubleMap.Entry entry = null;
@@ -333,7 +341,7 @@ public class DenseDoubleVector extends TDoubleVector {
     return vector;
   }
 
-  private TDoubleVector plus(SparseDoubleSortedVector other) {
+  private TIntDoubleVector plus(SparseDoubleSortedVector other) {
     DenseDoubleVector vector = this.clone();
     int length = other.indices.length;
     for (int i = 0; i < length; i++) {
@@ -342,7 +350,7 @@ public class DenseDoubleVector extends TDoubleVector {
     return vector;
   }
 
-  private TDoubleVector plus(SparseFloatVector other) {
+  private TIntDoubleVector plus(SparseFloatVector other) {
     DenseDoubleVector vector = this.clone();
     ObjectIterator<Int2FloatMap.Entry> iter = other.hashMap.int2FloatEntrySet().fastIterator();
     Int2FloatMap.Entry entry = null;
@@ -353,7 +361,7 @@ public class DenseDoubleVector extends TDoubleVector {
     return vector;
   }
 
-  private TDoubleVector plus(SparseDummyVector other) {
+  private TIntDoubleVector plus(SparseDummyVector other) {
     DenseDoubleVector vector = this.clone();
     for (int i = 0; i < other.nonzero; i++) {
       vector.values[other.indices[i]] += 1;
@@ -362,7 +370,7 @@ public class DenseDoubleVector extends TDoubleVector {
   }
 
   @Override
-  public TDoubleVector plusBy(TAbstractVector other, double x) {
+  public TIntDoubleVector plusBy(TAbstractVector other, double x) {
     if (other instanceof DenseDoubleVector)
       return plusBy((DenseDoubleVector) other, x);
     if (other instanceof DenseFloatVector)
@@ -380,7 +388,7 @@ public class DenseDoubleVector extends TDoubleVector {
       + this.getClass().getName() + " plusBy " + other.getClass().getName());
   }
 
-  private TDoubleVector plusBy(DenseDoubleVector other, double x) {
+  private TIntDoubleVector plusBy(DenseDoubleVector other, double x) {
     double[] delta = other.values;
     for (int i = 0; i < delta.length; i++) {
       values[i] += delta[i] * x;
@@ -388,7 +396,7 @@ public class DenseDoubleVector extends TDoubleVector {
     return this;
   }
 
-  private TDoubleVector plusBy(DenseFloatVector other, double x) {
+  private TIntDoubleVector plusBy(DenseFloatVector other, double x) {
     float[] delta = other.values;
     for (int i = 0; i < delta.length; i++) {
       values[i] += delta[i] * x;
@@ -396,7 +404,7 @@ public class DenseDoubleVector extends TDoubleVector {
     return this;
   }
 
-  private TDoubleVector plusBy(SparseDoubleVector other, double x) {
+  private TIntDoubleVector plusBy(SparseDoubleVector other, double x) {
     ObjectIterator<Int2DoubleMap.Entry> iter = other.hashMap.int2DoubleEntrySet().fastIterator();
     while (iter.hasNext()) {
       Int2DoubleMap.Entry entry = iter.next();
@@ -406,7 +414,7 @@ public class DenseDoubleVector extends TDoubleVector {
     return this;
   }
 
-  private TDoubleVector plusBy(SparseDoubleSortedVector other, double x) {
+  private TIntDoubleVector plusBy(SparseDoubleSortedVector other, double x) {
     int[] keys = other.getIndices();
     double[] vals = other.getValues();
     for (int i = 0; i < keys.length; i++) {
@@ -415,14 +423,14 @@ public class DenseDoubleVector extends TDoubleVector {
     return this;
   }
 
-  private TDoubleVector plusBy(SparseDummyVector other, double x) {
+  private TIntDoubleVector plusBy(SparseDummyVector other, double x) {
     for (int i = 0; i < other.nonzero; i++) {
       this.values[other.indices[i]] += x;
     }
     return this;
   }
 
-  private TDoubleVector plusBy(SparseFloatVector other, double x) {
+  private TIntDoubleVector plusBy(SparseFloatVector other, double x) {
     ObjectIterator<Int2FloatMap.Entry> iter = other.hashMap.int2FloatEntrySet().fastIterator();
     while (iter.hasNext()) {
       Int2FloatMap.Entry entry = iter.next();
@@ -431,7 +439,7 @@ public class DenseDoubleVector extends TDoubleVector {
     return this;
   }
 
-  private TDoubleVector plusBy(DenseDoubleVector other) {
+  private TIntDoubleVector plusBy(DenseDoubleVector other) {
     double[] delta = other.values;
     for (int i = 0; i < delta.length; i++) {
       values[i] += delta[i];
@@ -439,7 +447,7 @@ public class DenseDoubleVector extends TDoubleVector {
     return this;
   }
 
-  private TDoubleVector plusBy(DenseFloatVector other) {
+  private TIntDoubleVector plusBy(DenseFloatVector other) {
     float[] delta = other.values;
     for (int i = 0; i < delta.length; i++) {
       values[i] += delta[i];
@@ -448,7 +456,7 @@ public class DenseDoubleVector extends TDoubleVector {
   }
 
   @Override
-  public TDoubleVector plusBy(TAbstractVector other) {
+  public TIntDoubleVector plusBy(TAbstractVector other) {
     if (other instanceof DenseDoubleVector)
       return plusBy((DenseDoubleVector) other);
     if (other instanceof DenseFloatVector)
@@ -466,7 +474,7 @@ public class DenseDoubleVector extends TDoubleVector {
       + this.getClass().getName() + " plusBy " + other.getClass().getName());
   }
 
-  private TDoubleVector plusBy(SparseDoubleVector other) {
+  private TIntDoubleVector plusBy(SparseDoubleVector other) {
     ObjectIterator<Int2DoubleMap.Entry> iter = other.hashMap.int2DoubleEntrySet().fastIterator();
     Int2DoubleMap.Entry entry = null;
     while (iter.hasNext()) {
@@ -476,7 +484,7 @@ public class DenseDoubleVector extends TDoubleVector {
     return this;
   }
 
-  private TDoubleVector plusBy(SparseFloatVector other) {
+  private TIntDoubleVector plusBy(SparseFloatVector other) {
     ObjectIterator<Int2FloatMap.Entry> iter = other.hashMap.int2FloatEntrySet().fastIterator();
     Int2FloatMap.Entry entry = null;
     while (iter.hasNext()) {
@@ -486,18 +494,18 @@ public class DenseDoubleVector extends TDoubleVector {
     return this;
   }
 
-  private TDoubleVector plusBy(SparseDoubleSortedVector other) {
+  private TIntDoubleVector plusBy(SparseDoubleSortedVector other) {
     return plusBy(other.indices, other.getValues());
   }
 
-  private TDoubleVector plusBy(SparseDummyVector other) {
+  private TIntDoubleVector plusBy(SparseDummyVector other) {
     for (int i = 0; i < other.nonzero; i++) {
       this.values[other.indices[i]] += 1.0;
     }
     return this;
   }
 
-  private TDoubleVector plusBy(int[] indexes, double[] deltas) {
+  private TIntDoubleVector plusBy(int[] indexes, double[] deltas) {
     int length = indexes.length;
     for (int i = 0; i < length; i++) {
       values[indexes[i]] += deltas[i];
@@ -534,8 +542,15 @@ public class DenseDoubleVector extends TDoubleVector {
     return norm;
   }
 
+  @Override public double norm() {
+    double norm = 0.0;
+    for (int i = 0; i < dim; i++)
+      norm += Math.abs(values[i]);
+    return norm;
+  }
+
   @Override
-  public TDoubleVector times(double x) {
+  public TIntDoubleVector times(double x) {
     DenseDoubleVector vector = new DenseDoubleVector(this.dim);
     for (int i = 0; i < dim; i++)
       vector.values[i] = values[i] * x;
@@ -543,7 +558,7 @@ public class DenseDoubleVector extends TDoubleVector {
   }
 
   @Override
-  public TDoubleVector timesBy(double x) {
+  public TIntDoubleVector timesBy(double x) {
     for (int i = 0; i < dim; i++)
       values[i] *= x;
     return this;

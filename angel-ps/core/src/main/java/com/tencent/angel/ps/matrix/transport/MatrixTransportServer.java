@@ -16,9 +16,8 @@
 
 package com.tencent.angel.ps.matrix.transport;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.ps.impl.PSContext;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -26,12 +25,11 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 
-import com.tencent.angel.ps.impl.PSContext;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The Matrix transport server,use netty as network server. This is responsible for client matrix

@@ -17,8 +17,7 @@
 package com.tencent.angel.ml.math.vector;
 
 import com.tencent.angel.ml.math.TAbstractVector;
-import com.tencent.angel.ml.math.vector.TDoubleVector;
-import com.tencent.angel.ml.math.VectorType;
+import com.tencent.angel.protobuf.generated.MLProtos;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -45,7 +44,7 @@ public class DenseDoubleVectorTest {
     assertEquals(vec.squaredNorm(), vec_1.squaredNorm(), 0.0);
     assertArrayEquals(vec_1.getValues(), vec.getValues(), 0.0);
 
-    TDoubleVector vec_2 = vec.clone();
+    TIntDoubleVector vec_2 = vec.clone();
 
     assertEquals(vec.squaredNorm(), ((DenseDoubleVector) vec_2).squaredNorm());
     assertArrayEquals(vec_2.getValues(), vec.getValues(), 0.0);
@@ -94,7 +93,7 @@ public class DenseDoubleVectorTest {
     }
 
     DenseDoubleVector vec = new DenseDoubleVector(dim, values);
-    TDoubleVector vec_1 = new DenseDoubleVector(dim, values_1);
+    TIntDoubleVector vec_1 = new DenseDoubleVector(dim, values_1);
 
     double sum = 0.0;
     for (int i = 0; i < dim; i++) {
@@ -139,7 +138,7 @@ public class DenseDoubleVectorTest {
       values[i] = random.nextDouble();
     }
 
-    TDoubleVector vec = new DenseDoubleVector(dim);
+    TIntDoubleVector vec = new DenseDoubleVector(dim);
 
     int nnz = random.nextInt(dim);
     int[] indices_1 = genIndexes(dim, nnz);
@@ -149,7 +148,7 @@ public class DenseDoubleVectorTest {
       values_1[i] = random.nextDouble();
     }
 
-    TDoubleVector vec_1 = new SparseDoubleVector(dim, indices_1, values_1);
+    TIntDoubleVector vec_1 = new SparseDoubleVector(dim, indices_1, values_1);
 
     double sum = 0.0;
     for (int i = 0; i < nnz; i++) {
@@ -168,7 +167,7 @@ public class DenseDoubleVectorTest {
     for (int i = 0; i < 5; i++)
       dVec.set(i, i);
 
-    TDoubleVector sVec = new SparseDoubleSortedVector(5, new int[] {1, 2}, new double[] {2, 4});
+    TIntDoubleVector sVec = new SparseDoubleSortedVector(5, new int[] {1, 2}, new double[] {2, 4});
 
     assertEquals(10.0, dVec.dot(sVec));
 
@@ -191,7 +190,7 @@ public class DenseDoubleVectorTest {
       values_1[i] = random.nextDouble();
     }
 
-    TDoubleVector vec_1 = new SparseDoubleSortedVector(dim, indices_1, values_1);
+    TIntDoubleVector vec_1 = new SparseDoubleSortedVector(dim, indices_1, values_1);
 
     double sum = 0.0;
     for (int i = 0; i < nnz; i++) {
@@ -237,13 +236,13 @@ public class DenseDoubleVectorTest {
     vec.setMatrixId(1);
     vec.setRowId(1);
 
-    TDoubleVector vec_1 = vec.filter(2.0);
+    TIntDoubleVector vec_1 = vec.filter(2.0);
 
     assertEquals(vec.getMatrixId(), vec_1.getMatrixId());
     assertEquals(vec.getRowId(), vec_1.getRowId());
     assertArrayEquals(vec.getValues(), vec_1.getValues(), 0.0);
 
-    TDoubleVector vec_2 = vec.filter(8.0);
+    TIntDoubleVector vec_2 = vec.filter(8.0);
 
     assertEquals(1, vec_2.getMatrixId());
     assertEquals(1, vec_2.getMatrixId());
@@ -279,7 +278,7 @@ public class DenseDoubleVectorTest {
   @Test
   public void getType() throws Exception {
     DenseDoubleVector vec = new DenseDoubleVector(10);
-    assertEquals(VectorType.T_DOUBLE_DENSE, vec.getType());
+    assertEquals(MLProtos.RowType.T_DOUBLE_DENSE, vec.getType());
   }
 
   @Test
@@ -300,19 +299,19 @@ public class DenseDoubleVectorTest {
     }
 
     DenseDoubleVector vec_1 = new DenseDoubleVector(dim, values_1);
-    TDoubleVector vec_2 = new DenseDoubleVector(dim, values_2);
+    TIntDoubleVector vec_2 = new DenseDoubleVector(dim, values_2);
 
-    TDoubleVector vec_3 = vec_1.plus(vec_2);
+    TIntDoubleVector vec_3 = vec_1.plus(vec_2);
     assertEquals(dim, vec_3.size());
     for (int i = 0; i < dim; i++)
       assertEquals(vec_1.get(i) + vec_2.get(i), vec_3.get(i));
 
-    TDoubleVector vec_4 = vec_1.plus(vec_2, 2);
+    TIntDoubleVector vec_4 = vec_1.plus(vec_2, 2);
     assertEquals(dim, vec_4.size());
     for (int i = 0; i < dim; i++)
       assertEquals(vec_4.get(i), vec_1.get(i) + vec_2.get(i) * 2);
 
-    TDoubleVector vec_5 = vec_1.plus(vec_2, 2.0);
+    TIntDoubleVector vec_5 = vec_1.plus(vec_2, 2.0);
     assertEquals(dim, vec_5.size());
     for (int i = 0; i < dim; i++)
       assertEquals(vec_5.get(i), vec_1.get(i) + vec_2.get(i) * 2);
@@ -366,9 +365,9 @@ public class DenseDoubleVectorTest {
   @Test
   public void plusSparDoubleVector() throws Exception {
     DenseDoubleVector vec = new DenseDoubleVector(5, new double[] {1, 2, 3, 4, 5});
-    TDoubleVector vec_1 = new SparseDoubleVector(5, new int[] {2, 4}, new double[] {1.0, 2.0});
+    TIntDoubleVector vec_1 = new SparseDoubleVector(5, new int[] {2, 4}, new double[] {1.0, 2.0});
 
-    TDoubleVector vec_2 = vec.plus(vec_1);
+    TIntDoubleVector vec_2 = vec.plus(vec_1);
 
     assertEquals(1.0, vec_2.get(0));
     assertEquals(2.0, vec_2.get(1));
@@ -376,7 +375,7 @@ public class DenseDoubleVectorTest {
     assertEquals(4.0, vec_2.get(3));
     assertEquals(7.0, vec_2.get(4));
 
-    TDoubleVector vec_3 = vec.plus(vec_1, 0.5);
+    TIntDoubleVector vec_3 = vec.plus(vec_1, 0.5);
 
     assertEquals(1.0, vec_3.get(0));
     assertEquals(2.0, vec_3.get(1));
@@ -384,7 +383,7 @@ public class DenseDoubleVectorTest {
     assertEquals(4.0, vec_3.get(3));
     assertEquals(6.0, vec_3.get(4));
 
-    TDoubleVector vec_4 = vec.plus(vec_1, 3);
+    TIntDoubleVector vec_4 = vec.plus(vec_1, 3);
 
     assertEquals(1.0, vec_4.get(0));
     assertEquals(2.0, vec_4.get(1));
@@ -412,10 +411,10 @@ public class DenseDoubleVectorTest {
   @Test
   public void plusSparseDoubleSortedVector() throws Exception {
     DenseDoubleVector vec = new DenseDoubleVector(5, new double[] {1, 2, 3, 4, 5});
-    TDoubleVector vec_1 = new SparseDoubleSortedVector(5, new int[] {0, 1, 2, 3, 4},
+    TIntDoubleVector vec_1 = new SparseDoubleSortedVector(5, new int[] {0, 1, 2, 3, 4},
         new double[] {0.0, 0.0, 1.0, 0.0, 2.0});
 
-    TDoubleVector vec_2 = vec.plus(vec_1);
+    TIntDoubleVector vec_2 = vec.plus(vec_1);
 
     assertEquals(1.0, vec_2.get(0));
     assertEquals(2.0, vec_2.get(1));
@@ -423,7 +422,7 @@ public class DenseDoubleVectorTest {
     assertEquals(4.0, vec_2.get(3));
     assertEquals(7.0, vec_2.get(4));
 
-    TDoubleVector vec_3 = vec.plus(vec_1, 0.5);
+    TIntDoubleVector vec_3 = vec.plus(vec_1, 0.5);
 
     assertEquals(1.0, vec_3.get(0));
     assertEquals(2.0, vec_3.get(1));
@@ -496,7 +495,7 @@ public class DenseDoubleVectorTest {
   @Test
   public void times() throws Exception {
     DenseDoubleVector vec = new DenseDoubleVector(5, new double[] {1.0, 0.0, 3.0, 0.0, 5.0});
-    TDoubleVector vec_1 = vec.times(2.0);
+    TIntDoubleVector vec_1 = vec.times(2.0);
     assertEquals(2.0, vec_1.get(0));
     assertEquals(0.0, vec_1.get(1));
     assertEquals(6.0, vec_1.get(2));

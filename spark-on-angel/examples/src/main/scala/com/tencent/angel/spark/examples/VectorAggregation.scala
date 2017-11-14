@@ -18,13 +18,14 @@
 package com.tencent.angel.spark.examples
 
 import breeze.linalg.DenseVector
+
+import com.tencent.angel.spark.models.vector.enhanced.CachedPSVector
 import org.apache.spark.rdd.RDD
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.examples.util.Logistic
 import com.tencent.angel.spark.examples.util.PSExamples._
-import com.tencent.angel.spark.model.PSModelProxy
-import com.tencent.angel.spark.model.vector.RemotePSVector
+import com.tencent.angel.spark.models.vector.{DensePSVector, PSVector}
 import com.tencent.angel.spark.rdd.RDDPSFunctions._
 
 /**
@@ -34,7 +35,7 @@ object VectorAggregation {
 
   def main(args: Array[String]): Unit = {
     parseArgs(args)
-    runWithSparkContext(this.getClass.getSimpleName) { sc =>
+    runSpark(this.getClass.getSimpleName) { sc =>
       PSContext.getOrCreate(sc)
       val vectorRDD = Logistic.generateLRData(N, DIM, numSlices)
         .map (x => new DenseVector[Double](x._1.toArray))
@@ -52,41 +53,34 @@ object VectorAggregation {
 
   private def runWithPS(data: RDD[DenseVector[Double]], dim: Int): Unit = {
 
-    val psContext = PSContext.getOrCreate()
-    val pool = psContext.createModelPool(dim, 2)
+    var vecKey: DensePSVector = null
+    var vec: CachedPSVector = null
+    var result: CachedPSVector = null
 
-    var vecKey: PSModelProxy = null
-    var vec: RemotePSVector = null
-    var result: RemotePSVector = null
-
-    vecKey = pool.createZero()
-    vec = vecKey.mkRemote()
+    vecKey = PSVector.dense(dim)
+    vec = vecKey.toCache
     result = data.psFoldLeft(vec) { (pv, bv) =>
-      pv.increment(bv.toArray)
+      pv.incrementWithCache(bv.toArray)
       pv
     }
-    println("sum" + result.pull().mkString(", "))
-    vecKey.delete()
+    println("sum" + result.pullFromCache().mkString(", "))
 
-    vecKey = pool.createModel(Double.NegativeInfinity)
-    vec = vecKey.mkRemote()
+    vecKey.fill(Double.NegativeInfinity)
+    vec = vecKey.toCache
     result = data.psFoldLeft(vec) { (pv, bv) =>
-      pv.mergeMax(bv.toArray)
+      pv.mergeMaxWithCache(bv.toArray)
       pv
     }
-    println("max" + result.pull().mkString(", "))
-    vecKey.delete()
+    println("max" + result.pullFromCache().mkString(", "))
 
-    vecKey = pool.createModel(Double.PositiveInfinity)
-    vec = vecKey.mkRemote()
+    vecKey.fill(Double.PositiveInfinity)
+    vec = vecKey.toCache
     result = data.psFoldLeft(vec) { (pv, bv) =>
-      pv.mergeMin(bv.toArray)
+      pv.mergeMinWithCache(bv.toArray)
       pv
     }
-    println("min" + result.pull().mkString(", "))
-    vecKey.delete()
+    println("min" + result.pullFromCache().mkString(", "))
 
-    psContext.destroyModelPool(pool)
   }
 
 }

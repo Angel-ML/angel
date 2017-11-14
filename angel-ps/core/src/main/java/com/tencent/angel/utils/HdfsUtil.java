@@ -26,7 +26,6 @@ import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.predict.PredictResult;
 import com.tencent.angel.worker.storage.DataBlock;
 import com.tencent.angel.worker.task.TaskContext;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -366,9 +365,11 @@ public class HdfsUtil {
   public static void rename(Path tmpCombinePath, Path outputPath, FileSystem fs)
       throws IOException {
     if (fs.exists(outputPath)) {
-      fs.delete(outputPath, true);
+      fs.delete(outputPath, false);
     }
-    fs.rename(tmpCombinePath, outputPath);
+    if (!fs.rename(tmpCombinePath, outputPath)) {
+      throw new IOException("rename from " + tmpCombinePath + " to " + outputPath + " failed");
+    }
   }
 
   public static Path generateTmpDirectory(Configuration conf, String appId, Path outputPath) {
@@ -408,12 +409,7 @@ public class HdfsUtil {
         break;
       }
 
-      if (isFirstRow) {
-        isFirstRow = false;
-      } else {
-        output.writeBytes("\n");
-      }
-      output.writeBytes(resultItem.getText());
+      output.writeBytes(resultItem.getText() + "\n");
     }
 
     output.close();

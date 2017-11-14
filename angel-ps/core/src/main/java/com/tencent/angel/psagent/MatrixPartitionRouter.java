@@ -16,18 +16,16 @@
 
 package com.tencent.angel.psagent;
 
+import com.tencent.angel.PartitionKey;
+import com.tencent.angel.ps.ParameterServerId;
+import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ps.ParameterServerId;
-import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex;
 
 /**
  * Matrix partitions router table.

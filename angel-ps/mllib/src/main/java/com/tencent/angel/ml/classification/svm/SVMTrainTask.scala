@@ -20,9 +20,10 @@ package com.tencent.angel.ml.classification.svm
 
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.task.TrainTask
 import com.tencent.angel.ml.utils.DataParser
 import com.tencent.angel.worker.storage.MemoryDataBlock
-import com.tencent.angel.worker.task.{TaskContext, TrainTask}
+import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.io.{LongWritable, Text}
 
 class SVMTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
@@ -30,12 +31,14 @@ class SVMTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](c
   // feature number of training data
   private val feaNum: Int = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
   // data format of training data, libsvm or dummy
-  private val dataFormat = conf.get(MLConf.ML_DATAFORMAT, "dummy")
+  private val dataFormat = conf.get(MLConf.ML_DATA_FORMAT, "dummy")
   // validate sample ratio
   private val validRatio = conf.getDouble(MLConf.ML_VALIDATE_RATIO, 0.05)
 
   // validation data storage
   var validDataStorage = new MemoryDataBlock[LabeledData](-1)
+  val dataParser = DataParser(dataFormat, feaNum, true)
+
 
   /**
     * @param ctx: task context
@@ -43,7 +46,7 @@ class SVMTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](c
   override
   def train(ctx: TaskContext) {
     val trainer = new SVMLearner(ctx)
-    trainer.train(trainDataBlock, validDataStorage)
+    trainer.train(taskDataBlock, validDataStorage)
   }
 
   /**
@@ -54,8 +57,7 @@ class SVMTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](c
     */
   override
   def parse(key: LongWritable, value: Text): LabeledData = {
-    val sample = DataParser.parseVector(key, value, feaNum, dataFormat, true)
-    sample
+    dataParser.parse(value.toString)
   }
 
   /**
@@ -75,11 +77,11 @@ class SVMTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](c
         if (count % valid == 0)
           validDataStorage.put(out)
         else
-          trainDataBlock.put(out)
+          taskDataBlock.put(out)
         count += 1
       }
     }
-    trainDataBlock.flush()
+    taskDataBlock.flush()
     validDataStorage.flush()
   }
 

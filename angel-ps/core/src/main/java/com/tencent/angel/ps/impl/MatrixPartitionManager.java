@@ -18,19 +18,23 @@ package com.tencent.angel.ps.impl;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.model.output.format.ModelFilesConstent;
+import com.tencent.angel.protobuf.generated.PSMasterServiceProtos;
 import com.tencent.angel.ps.impl.matrix.RowUpdater;
 import com.tencent.angel.ps.impl.matrix.ServerMatrix;
 import com.tencent.angel.ps.impl.matrix.ServerPartition;
 import com.tencent.angel.ps.impl.matrix.ServerRow;
+import com.tencent.angel.utils.StringUtils;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.MatrixPartition;
 
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -38,30 +42,33 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.RecursiveAction;
 
 /**
- * The matrices manager on parameter server.
- *
+ * The matrix partitions manager on the parameter server.
  */
 public class MatrixPartitionManager {
   private final static Log LOG = LogFactory.getLog(MatrixPartitionManager.class);
-  private final ConcurrentHashMap<Integer, ServerMatrix> matrixIdMap; // matrixId---->Matrix
+  /** matrixId->Matrix  */
+  private final ConcurrentHashMap<Integer, ServerMatrix> matrixIdMap;
 
-  private final RowUpdater rowUpdater;
+  /** Matrix row updater */
+  private volatile RowUpdater rowUpdater;
 
   /**
    * Create a new Matrix partition manager.
-   *
-   * @throws InstantiationException
-   * @throws IllegalAccessException
    */
-  public MatrixPartitionManager() throws InstantiationException, IllegalAccessException {
+  public MatrixPartitionManager() {
     matrixIdMap = new ConcurrentHashMap<Integer, ServerMatrix>();
+  }
+
+  public void init() throws IllegalAccessException, InstantiationException {
     Configuration conf = PSContext.get().getConf();
     Class<?> rowUpdaterClass =
-        conf.getClass(AngelConf.ANGEL_PS_ROW_UPDATER_CLASS,
-            AngelConf.DEFAULT_ANGEL_PS_ROW_UPDATER);
+      conf.getClass(AngelConf.ANGEL_PS_ROW_UPDATER_CLASS,
+        AngelConf.DEFAULT_ANGEL_PS_ROW_UPDATER);
     rowUpdater = (RowUpdater) rowUpdaterClass.newInstance();
   }
 
@@ -80,14 +87,14 @@ public class MatrixPartitionManager {
    * @param output the output
    * @throws IOException
    */
-  public void writeMatrix(DataOutputStream output) throws IOException {
+  public void writeSnapshot(DataOutputStream output) throws IOException {
     if (LOG.isDebugEnabled()) {
       LOG.debug("matrixMap size: " + matrixIdMap.size());
     }
     output.writeInt(matrixIdMap.size());
     for (Map.Entry<Integer, ServerMatrix> entry : matrixIdMap.entrySet()) {
       output.writeInt(entry.getKey());
-      entry.getValue().writeTo(output);
+      entry.getValue().writeSnapshot(output);
     }
   }
 
@@ -97,14 +104,14 @@ public class MatrixPartitionManager {
    * @param input the input
    * @throws IOException the io exception
    */
-  public void parseMatricesFromInput(DataInputStream input) throws IOException {
+  public void readSnapshot(DataInputStream input) throws IOException {
     int size = input.readInt();
     if (LOG.isDebugEnabled()) {
       LOG.debug("read size from input: " + size);
     }
     for (int i = 0; i < size; ++i) {
       int matrixId = input.readInt();
-      matrixIdMap.get(matrixId).readFrom(input);
+      matrixIdMap.get(matrixId).readSnapshot(input);
     }
   }
 
@@ -114,7 +121,7 @@ public class MatrixPartitionManager {
    * @param matrixPartitions the matrix partitions
    * @throws IOException load matrix partition from files failed
    */
-  public void addMatrixPartitions(List<MatrixPartition> matrixPartitions) throws IOException {
+  public void addMatrixPartitions(List<PSMasterServiceProtos.MatrixPartition> matrixPartitions) throws IOException {
     int size = matrixPartitions.size();
     for (int i = 0; i < size; i++) {
       LOG.info("add matrix partition " + matrixPartitions.get(i));
@@ -142,7 +149,7 @@ public class MatrixPartitionManager {
       return;
     }
     ServerMatrix serverMatrix = new ServerMatrix(matrixPartition);
-    serverMatrix.loadPartitions();
+    serverMatrix.load();
     LOG.info("MatrixId [" + matrixId + "] added.");
     matrixIdMap.putIfAbsent(matrixId, serverMatrix);
   }
@@ -192,12 +199,8 @@ public class MatrixPartitionManager {
         rowId = buf.readInt();
         rowType = MLProtos.RowType.valueOf(buf.readInt());
         size = buf.readInt();
-
         if (size == 0)
           continue;
-
-        LOG.debug("rowId = " + rowId + " rowType = " + rowType + " size = " + size + " request " +
-            "update");
 
         ServerRow row = matrix.getPartition(partitionKey).getRow(rowId);
         rowUpdater.update(rowType, size, buf, row);
@@ -304,10 +307,112 @@ public class MatrixPartitionManager {
   /**
    * Get matrix use matrix id
    * 
-   * @param integer matrix id
+   * @param matrixId matrix id
    * @return ServerMatrix matrix
   */      
   public ServerMatrix getMatrix(int matrixId) {
     return matrixIdMap.get(matrixId);
+  }
+
+  public void commit(List<Integer> matrixIds) throws IOException {
+    if(matrixIds == null || matrixIds.isEmpty()) {
+      LOG.info("there are no matrices committed");
+      return;
+    }
+    Configuration conf = PSContext.get().getConf();
+    String outputPath = conf.get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH);
+    LOG.info("start to write matrices :" + getMatrixNames(matrixIds) + " to " + outputPath);
+
+    Path baseDir = new Path(new Path(outputPath, ModelFilesConstent.resultDirName), PSContext.get().getPs().getServerId().toString());
+    FileSystem fs = baseDir.getFileSystem(conf);
+    if (fs.exists(baseDir)) {
+      LOG.warn("ps temp output directory " + baseDir.toString() + " is already existed , just remove it");
+      fs.delete(baseDir, true);
+    }
+
+    Vector<String> errorLogs = new Vector<>();
+    try {
+      MatrixDiskIOOp commitOp = new MatrixDiskIOOp(fs, baseDir, ACTION.COMMIT, errorLogs, matrixIds, 0, matrixIds.size());
+      MatrixDiskIOExecutors.execute(commitOp);
+      commitOp.join();
+      if(!errorLogs.isEmpty()) {
+        throw new IOException(StringUtils.join("\n", errorLogs));
+      }
+    } catch (Throwable x) {
+      throw new IOException(x);
+    }
+
+    return;
+  }
+
+  private void commitMatrix(FileSystem fs, Path outputPath, int matrixId) throws IOException {
+    ServerMatrix matrix = matrixIdMap.get(matrixId);
+    if(matrix != null) {
+      matrix.commit(fs, outputPath);
+    }
+  }
+
+  private String getMatrixNames(List<Integer> matrixIds) {
+    int size = matrixIds.size();
+    StringBuilder sb = new StringBuilder();
+    for(int i = 0; i < size; i++) {
+      ServerMatrix matrix = getMatrix(matrixIds.get(i));
+      if(matrix != null) {
+        sb.append(matrix.getName());
+      } else {
+        sb.append("null");
+      }
+
+      if(i < size - 1) {
+        sb.append(",");
+      }
+    }
+
+    return sb.toString();
+  }
+
+  enum ACTION {
+    LOAD, COMMIT
+  }
+
+  class MatrixDiskIOOp extends RecursiveAction {
+    private final FileSystem fs;
+    private final Path outputPath;
+    private final ACTION action;
+    private final Vector<String> errorLogs;
+    private final List<Integer> matrixIds;
+    private final int startPos;
+    private final int endPos;
+
+    public MatrixDiskIOOp(FileSystem fs, Path outputPath, ACTION action, Vector<String> errorLogs, List<Integer> matrixIds, int start, int end) {
+      this.fs = fs;
+      this.outputPath = outputPath;
+      this.action = action;
+      this.errorLogs = errorLogs;
+      this.matrixIds = matrixIds;
+      this.startPos = start;
+      this.endPos = end;
+    }
+
+    @Override protected void compute() {
+      if (endPos <= startPos) {
+        return;
+      }
+
+      if (endPos - startPos == 1) {
+        try {
+          commitMatrix(fs, outputPath, matrixIds.get(startPos) );
+        } catch (IOException e) {
+          String errorLog = "commit matrix " + matrixIdMap.get(matrixIds.get(startPos)).getMatrixName() + " failed " + e.getMessage();
+          LOG.error(errorLog);
+          errorLogs.add(errorLog);
+        }
+      } else {
+        int middle = (startPos + endPos) / 2;
+        MatrixDiskIOOp opLeft = new MatrixDiskIOOp(fs, outputPath, action, errorLogs, matrixIds, startPos, middle);
+        MatrixDiskIOOp opRight = new MatrixDiskIOOp(fs, outputPath, action, errorLogs, matrixIds, middle, endPos);
+        invokeAll(opLeft, opRight);
+      }
+    }
   }
 }

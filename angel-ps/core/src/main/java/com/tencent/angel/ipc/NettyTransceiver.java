@@ -29,17 +29,17 @@ import com.tencent.angel.exception.StandbyException;
 import com.tencent.angel.ipc.NettyTransportCodec.NettyDataPack;
 import com.tencent.angel.ipc.NettyTransportCodec.NettyFrameDecoder;
 import com.tencent.angel.ipc.NettyTransportCodec.NettyFrameEncoder;
-import com.tencent.angel.utils.ByteBufferInputStream;
-import com.tencent.angel.utils.ByteBufferOutputStream;
 import com.tencent.angel.protobuf.generated.RPCProtos;
 import com.tencent.angel.protobuf.generated.RPCProtos.*;
 import com.tencent.angel.protobuf.generated.RPCProtos.RpcResponseHeader.Status;
+import com.tencent.angel.utils.ByteBufferInputStream;
+import com.tencent.angel.utils.ByteBufferOutputStream;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
-import org.apache.hadoop.conf.Configuration;
 import io.netty.handler.timeout.ReadTimeoutHandler;
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +49,9 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**

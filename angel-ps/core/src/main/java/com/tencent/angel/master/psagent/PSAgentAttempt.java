@@ -35,7 +35,6 @@ import com.tencent.angel.master.deploy.yarn.YarnContainerLauncherEvent;
 import com.tencent.angel.master.deploy.yarn.YarnContainerRequestEvent;
 import com.tencent.angel.master.yarn.util.AngelApps;
 import com.tencent.angel.psagent.PSAgentAttemptId;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -44,7 +43,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.security.Credentials;
-import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.StringInterner;
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
 import org.apache.hadoop.yarn.api.records.*;

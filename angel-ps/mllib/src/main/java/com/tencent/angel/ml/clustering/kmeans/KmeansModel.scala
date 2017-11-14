@@ -18,13 +18,14 @@
 package com.tencent.angel.ml.clustering.kmeans
 
 import java.util
-
 import com.tencent.angel.ml.clustering.kmeans.KMeansModel._
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.TDoubleVector
+import com.tencent.angel.ml.math.TVector
+import com.tencent.angel.ml.math.vector.TIntDoubleVector
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
+import com.tencent.angel.protobuf.generated.MLProtos.RowType
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
@@ -47,10 +48,11 @@ class KMeansModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
   // Number of epoch
   private val epoch: Int = conf.getInt(MLConf.ML_EPOCH_NUM, MLConf.DEFAULT_ML_EPOCH_NUM)
   // Centers pulled to local worker
-  var lcCenters : util.List[TDoubleVector] = new util.ArrayList[TDoubleVector]()
+  var lcCenters:util.List[TVector]  = new util.ArrayList[TVector]()
 
   // Reference for centers matrix on PS server
-  val centers = new PSModel[TDoubleVector](KMEANS_CENTERS_MAT, K, feaNum).setAverage(true)
+  val centers = new PSModel(KMEANS_CENTERS_MAT, K, feaNum).setAverage(true).setRowType(RowType.T_DOUBLE_DENSE)
+
   addPSModel(KMEANS_CENTERS_MAT, centers)
   setSavePath(conf)
   setLoadPath(conf)
@@ -87,7 +89,7 @@ class KMeansModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
     var data: LabeledData = null
     for (i <- 0 until storage.size) {
       data = storage.read()
-      val cid = findClosestCenter(data.getX.asInstanceOf[TDoubleVector])._1
+      val cid = findClosestCenter(data.getX.asInstanceOf[TIntDoubleVector])._1
       predictResult.put(new KMeansResult(data.getY, cid))
     }
 
@@ -100,7 +102,7 @@ class KMeansModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
     * @param x : a instance
     * @return : the closest center id
     */
-  def findClosestCenter(x: TDoubleVector): (Int, Double) = {
+  def findClosestCenter(x: TIntDoubleVector): (Int, Double) = {
     var minDis = Double.MaxValue
     var clstCent: Int = -1
 
@@ -119,7 +121,7 @@ class KMeansModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
     val clstCenter = new util.ArrayList[(Int, Double)]
 
     for (i <- 0 until instances.size) {
-      val pre = findClosestCenter(instances.get(i).getX.asInstanceOf[TDoubleVector])
+      val pre = findClosestCenter(instances.get(i).getX.asInstanceOf[TIntDoubleVector])
       clstCenter.add(pre)
     }
 
@@ -130,11 +132,12 @@ class KMeansModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
     * Calculate distanve between a sample and a center
     *    || a - b || ^ 2 = a^2 - 2ab + b^2
     *
+ *
     * @param cId centerID
     * @param x   sample
     * @return distance from sample to center
     */
-  def distanceToCenterId(cId: Int, x: TDoubleVector): Double = {
+  def distanceToCenterId(cId: Int, x: TIntDoubleVector): Double = {
     x.squaredNorm - 2 * lcCenters.get(cId).dot(x) + lcCenters.get(cId).squaredNorm
   }
 }

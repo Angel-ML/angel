@@ -1,10 +1,10 @@
 # Matrix Factorization
 
-> Matrix Factorizaiton is a commonly used method in recommender systems, which decomposes the user-item matrix into a product of the user matrix and item matrix.
+> Matrix Factorization is a commonly used method in recommender systems, which decomposes the user-item matrix into a product of the user matrix and item matrix.
 
 ## 1. Introduction
 
-Matrix Factorizaiton is a commonly used method in recommender systems, which decomposes the user-item matrix into a product of the user matrix and item matrix.
+Matrix Factorization is a commonly used method in recommender systems, which decomposes the user-item matrix into a product of the user matrix and item matrix.
 
 The user-item rating matrix (abbreviated as rating matrix) is a representation of data for recommender systems, where each row in the matrix corresponds to a user, each column corresponds to an item, and each element corresponds to the user's rating for that item (shown in the figure below). Usually, any single user is likely to have rated only a small subset of a large number of items, thus the rating matrix is sparse (i.e. most elements are zero). MF algorithm factorizes this sparse matrix into the feature-user matrix (the user matrix), and the feature-item matrix (the item matrix).
  
@@ -16,7 +16,7 @@ Assuming there are M users and N items in the data. We denote the M×N rating ma
 ![](../img/MF_UV.png)
 
 
-## Gradient Descent Matrix Factorizaion
+## Gradient Descent Matrix Factorization
 
 The error between the predicted value of user i's explicit rating for item j (y_{ij}) and the true value is denoted by e_{ij}, i.e. e_{ij}=y{ij}-u_i \cdot v_j. The goal of MF algorithm is to minimize the discrepancy of the predicted ratings from the true ratings:
 

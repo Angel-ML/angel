@@ -17,6 +17,7 @@
 
 package com.tencent.angel.ml.matrix.psf.aggr.enhance;
 
+import com.tencent.angel.ml.matrix.psf.common.Utils;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
@@ -48,14 +49,17 @@ public abstract class BinaryAggrFunc extends GetFunc {
     int rowId1 = ((BinaryAggrParam.BinaryPartitionAggrParam) partKey).getRowId1();
     int rowId2 = ((BinaryAggrParam.BinaryPartitionAggrParam) partKey).getRowId2();
 
-    double result = 0.0;
-    if (part != null) {
-      ServerRow row1 = part.getRow(rowId1);
-      ServerRow row2 = part.getRow(rowId2);
-      if (row1 != null && row2 != null) result = processRows(row1, row2);
+    if (Utils.withinPart(partKey.getPartKey(), new int[]{rowId1, rowId2})) {
+      if (part != null) {
+        ServerRow row1 = part.getRow(rowId1);
+        ServerRow row2 = part.getRow(rowId2);
+        if (row1 != null && row2 != null) {
+          double result = processRows(row1, row2);
+          return new ScalarPartitionAggrResult(result);
+        }
+      }
     }
-
-    return new ScalarPartitionAggrResult(result);
+    return null;
   }
 
   private double processRows(ServerRow row1, ServerRow row2) {

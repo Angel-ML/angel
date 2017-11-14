@@ -17,7 +17,7 @@
 package com.tencent.angel.ml.math.matrix;
 
 import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.ml.math.vector.*;
+import com.tencent.angel.ml.math.vector.DenseIntVector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -61,7 +61,7 @@ public class DenseIntMatrix extends TIntMatrix {
    */
   @Override
   public DenseIntVector initVector(int rowIndex) {
-    DenseIntVector ret = new DenseIntVector(col);
+    DenseIntVector ret = new DenseIntVector((int)col);
     ret.setMatrixId(matrixId);
     ret.setRowId(rowIndex);
     return ret;
@@ -75,7 +75,7 @@ public class DenseIntMatrix extends TIntMatrix {
    * @return
    */
   private DenseIntVector initVector(int rowIndex, int[] values) {
-    DenseIntVector ret = new DenseIntVector(col, values);
+    DenseIntVector ret = new DenseIntVector((int)col, values);
     ret.setMatrixId(matrixId);
     ret.setRowId(rowIndex);
     return ret;

@@ -23,8 +23,8 @@ import java.util.{Random, _}
 import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.{DenseDoubleVector, TDoubleVector}
-import com.tencent.angel.ml.metric.log.LossMetric
+import com.tencent.angel.ml.math.vector.{DenseDoubleVector, TIntDoubleVector}
+import com.tencent.angel.ml.metric.LossMetric
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
@@ -74,24 +74,24 @@ class KMeansLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     // Init cluster centers randomly
     initKCentersRandomly(trainData)
 
-    globalMetrics.addMetrics("global.obj", LossMetric(trainData.size))
+    globalMetrics.addMetric("global.obj", LossMetric(trainData.size))
     // Learn KMeans Model iteratively, apply a mini-batch updation in each iteration
-    while (ctx.getIteration < epochNum) {
+    while (ctx.getEpoch < epochNum) {
 
       val startEpoch = System.currentTimeMillis()
-      trainOneEpoch(ctx.getIteration, trainData, spCountPerCenter)
+      trainOneEpoch(ctx.getEpoch, trainData, spCountPerCenter)
       val epochTime = System.currentTimeMillis() - startEpoch
 
       val startObj = System.currentTimeMillis()
-      val localObj = computeObjValue(trainData, ctx.getIteration)
+      val localObj = computeObjValue(trainData, ctx.getEpoch)
       val objTime = System.currentTimeMillis() - startObj
 
-      LOG.info(s"Task[${ctx.getContext.getIndex}] Iter=${ctx.getIteration} success. "
+      LOG.info(s"Task[${ctx.getContext.getIndex}] Iter=${ctx.getEpoch} success. "
         + s"localObj=$localObj. mini-batch cost $epochTime ms, compute " +
         s"obj cost $objTime ms")
 
-      globalMetrics.metrics("global.obj", localObj)
-      ctx.incIteration()
+      globalMetrics.metric("global.obj", localObj)
+      ctx.incEpoch()
     }
 
     kmeansModel
@@ -121,13 +121,13 @@ class KMeansLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
           }
         }
 
-        val newCent = data.getX.asInstanceOf[TDoubleVector]
+        val newCent = data.getX.asInstanceOf[TIntDoubleVector]
         newCent.setRowId(i)
         kmeansModel.centers.increment(newCent)
       }
     }
 
-    kmeansModel.centers.clock().get()
+    kmeansModel.centers.syncClock()
 
     // Wait for all workers finish push centers to PS
     ctx.globalSync(ctx.getMatrix(kmeansModel.centers.modelName).getMatrixId)
@@ -136,7 +136,7 @@ class KMeansLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       s" ms")
   }
 
-  def updateCenters(oldCenters: ArrayList[TDoubleVector]): Unit = {
+  def updateCenters(oldCenters: ArrayList[TIntDoubleVector]): Unit = {
     for (i <- 0 until K) {
       val oldCenter = oldCenters.get(i)
       oldCenter.timesBy(-1)
@@ -145,7 +145,7 @@ class KMeansLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       kmeansModel.centers.increment(oldCenter)
     }
 
-    kmeansModel.centers.clock().get()
+    kmeansModel.centers.syncClock()
   }
 
 
@@ -166,7 +166,7 @@ class KMeansLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     val pullCost = System.currentTimeMillis() - startEpoch
 
     // Back up centers for delta computation
-    val oldCenters = new util.ArrayList[TDoubleVector](K)
+    val oldCenters = new util.ArrayList[TIntDoubleVector](K)
     for (i <- 0 until K) {
       oldCenters.add(kmeansModel.lcCenters.get(i).asInstanceOf[DenseDoubleVector].clone())
     }
@@ -213,7 +213,7 @@ class KMeansLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       data = samples.read
 
       val cId_minDis = kmeansModel.findClosestCenter(samples.get(i).getX
-        .asInstanceOf[TDoubleVector])
+        .asInstanceOf[TIntDoubleVector])
       if (!mini_batch_centers.contains(cId_minDis._1))
         mini_batch_centers.put(cId_minDis._1, new IntArrayList)
       mini_batch_centers(cId_minDis._1).add(i)

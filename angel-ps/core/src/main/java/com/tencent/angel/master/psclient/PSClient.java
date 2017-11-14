@@ -24,7 +24,6 @@ import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.protobuf.generated.MasterPSServiceProtos.GetThreadStackRequest;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.impl.PSProtocol;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 

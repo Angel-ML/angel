@@ -17,9 +17,9 @@
 
 package com.tencent.angel.ml.factorizationmachines
 
-
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.math.TVector
 import com.tencent.angel.ml.math.vector.DenseDoubleVector
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
@@ -51,7 +51,7 @@ class FMModel (conf: Configuration = null, _ctx: TaskContext = null) extends MLM
   val FM_W0 = "fm_w0"
   val FM_W = "fm_w"
   val FM_V = "fm_v"
-  val FM_OBJ = "fm_obj"
+  val FM_OBJ = "fm_evaluate"
 
   // Feature number of data
   val feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
@@ -59,11 +59,11 @@ class FMModel (conf: Configuration = null, _ctx: TaskContext = null) extends MLM
   val rank = conf.getInt(MLConf.ML_FM_RANK, MLConf.DEFAULT_ML_FM_RANK)
 
   // The w0 weight vector, stored on PS
-  val w0 = PSModel[DenseDoubleVector](FM_W0, 1, 1).setAverage(true)
+  val w0 = PSModel(FM_W0, 1, 1).setAverage(true).setOplogType("SPARSE_DOUBLE")
   // The w weight vector, stored on PS
-  val w = PSModel[DenseDoubleVector](FM_W, 1, feaNum).setAverage(true)
+  val w = PSModel(FM_W, 1, feaNum).setAverage(true).setOplogType("SPARSE_DOUBLE")
   // The v weight vector, stored on PS
-  val v = PSModel[DenseDoubleVector](FM_V, feaNum, rank).setAverage(true).setOplogType("SPARSE_DOUBLE")
+  val v = PSModel(FM_V, feaNum, rank).setAverage(true).setOplogType("SPARSE_DOUBLE")
 
   addPSModel(w0)
   addPSModel(w)
@@ -85,7 +85,9 @@ class FMModel (conf: Configuration = null, _ctx: TaskContext = null) extends MLM
     * @param vIndexs
     * @return
     */
-  def pullFromPS(vIndexs: RowIndex) = (w0.getRow(0), w.getRow(0), v.getRows(vIndexs, -1))
+  def pullFromPS(vIndexs: RowIndex) = {
+    (w0.getRow(0).asInstanceOf[DenseDoubleVector], w.getRow(0).asInstanceOf[DenseDoubleVector], v.getRows(vIndexs, -1))
+  }
 
   /** Push update values of w0, w, v
     *
@@ -94,16 +96,18 @@ class FMModel (conf: Configuration = null, _ctx: TaskContext = null) extends MLM
     * @param update2: update values of v
     * @return
     */
-  def pushToPS(update0: DenseDoubleVector, update1: DenseDoubleVector, update2:
-  mutable.Map[Int, DenseDoubleVector]) = {
+  def pushToPS(update0: DenseDoubleVector,
+               update1: DenseDoubleVector,
+               update2: mutable.Map[Int, TVector]) = {
     w0.increment(0, update0)
     w.increment(0, update1)
+
     for (vec <- update2) {
       v.increment(vec._1, vec._2)
     }
 
-    w0.clock().get()
-    w.clock().get()
-    v.clock().get()
+    w0.syncClock()
+    w.syncClock()
+    v.syncClock()
   }
 }
