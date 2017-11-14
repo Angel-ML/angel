@@ -38,18 +38,18 @@ class RDDPSFunctions[T: ClassTag](self: RDD[T]) extends Serializable {
       combOp: (U, U) => U): U = {
     val res = self.mapPartitions { iter =>
       val result = iter.foldLeft(zeroValue)(seqOp)
-      PushMan.flushAll()
       Iterator(result)
     }.reduce(combOp)
+    PushMan.flushAll()
     res
   }
 
   def psFoldLeft[U: ClassTag](zeroValue: U)(seqOp: (U, T) => U): U = {
     val res = self.mapPartitions { iter =>
       val result = iter.foldLeft(zeroValue)(seqOp)
-      PushMan.flushAll()
       Iterator(result)
     }.collect().head
+    PushMan.flushAll()
     res
   }
 

@@ -780,6 +780,10 @@ class VectorOps {
     doIncrement(vector, delta)
   }
 
+  private[spark] def increment(poolId: Int, vectorId: Int, delta: Array[Double]): Unit = {
+    update(poolId, new Increment(poolId, vectorId, delta))
+  }
+
   /**
     * Find the maximum number of each dimension.
     * Notice: only be called in executor
@@ -791,6 +795,10 @@ class VectorOps {
     doMergeMax(vector, other)
   }
 
+  private[spark] def mergeMax(poolId: Int, vectorId: Int, other: Array[Double]): Unit = {
+    update(poolId, new MaxA(poolId, vectorId, other))
+  }
+
   /**
     * Find the minimum number of each dimension.
     * Notice: only be called in executor
@@ -799,6 +807,10 @@ class VectorOps {
     vector.assertValid()
     vector.assertCompatible(other)
     doMergeMin(vector, other)
+  }
+
+  private[spark] def mergeMin(poolId: Int, vectorId: Int, other: Array[Double]): Unit = {
+    update(poolId, new MinA(poolId, vectorId, other))
   }
 
   private def update(modelId: Int, func: UpdateFunc): Unit = {

@@ -74,11 +74,11 @@ private[spark] class CachedPSVector(component: PSVector) extends PSVectorDecorat
       val totalTask = core * executorNum
       val spark = SparkSession.builder().getOrCreate()
       spark.sparkContext.range(0, totalTask, 1, totalTask).foreach {
-        taskId => PushMan.flushOne(this, mergeType)
+        taskId => PushMan.flushOne(poolId, id, mergeType)
       }
     } else {
       //Run flushOne on executor
-      PushMan.flushOne(this, mergeType)
+      PushMan.flushOne(poolId, id, mergeType)
     }
   }
 

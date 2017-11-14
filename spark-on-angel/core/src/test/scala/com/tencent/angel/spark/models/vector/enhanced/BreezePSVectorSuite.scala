@@ -21,7 +21,6 @@ import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.models.vector.{DensePSVector, PSVector}
 import com.tencent.angel.spark.{PSFunSuite, SharedPSContext}
 
-
 class BreezePSVectorSuite extends PSFunSuite with SharedPSContext {
 
   private val dim = 10

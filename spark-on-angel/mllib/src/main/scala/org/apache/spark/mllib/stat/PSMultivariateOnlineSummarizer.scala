@@ -42,20 +42,17 @@
 
 package org.apache.spark.mllib.stat
 
-import com.tencent.angel.spark.context.{PSContext, PSVectorPool}
-import com.tencent.angel.spark.models.vector.PSVector
-import com.tencent.angel.spark.models.vector.enhanced.BreezePSVector
 import org.apache.spark.annotation.{DeveloperApi, Since}
+import org.apache.spark.ml.linalg.ElementwiseSlicing
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
-
 
 /**
  * :: DeveloperApi ::
- * MultivariateOnlineSummarizer implements `MultivariateStatisticalSummary` to compute the mean,
+ * PSMultivariateOnlineSummarizer implements MultivariateStatisticalSummary to compute the mean,
  * variance, minimum, maximum, counts, and nonzero counts for instances in sparse or dense vector
  * format in an online fashion.
  *
- * Two MultivariateOnlineSummarizer can be merged together to have a statistical summary of
+ * Two PSMultivariateOnlineSummarizer can be merged together to have a statistical summary of
  * the corresponding joint dataset.
  *
  * A numerically stable algorithm is implemented to compute the mean and variance of instances:
@@ -71,70 +68,80 @@ import org.apache.spark.mllib.linalg.{Vector, Vectors}
  */
 @Since("1.1.0")
 @DeveloperApi
-class PSMultivariateOnlineSummarizer(@transient private val psVector: PSVector)
-  extends Serializable {
+class PSMultivariateOnlineSummarizer extends MultivariateStatisticalSummary with Serializable {
 
-  private val n = psVector.dimension
-  private val currMean: PSVector = PSVector.duplicate(psVector)
-  private val currM2n: PSVector = PSVector.duplicate(psVector)
-  private val currM2: PSVector = PSVector.duplicate(psVector)
-  private val currL1: PSVector = PSVector.duplicate(psVector)
+  private var n = 0
+  private var currMean: Array[Float] = _
+  private var currM2n: Array[Float] = _
+  private var currM2: Array[Float] = _
+  private var currL1: Array[Float] = _
   private var totalCnt: Long = 0
-  private var totalWeightSum: Double = 0.0
-  private var weightSquareSum: Double = 0.0
-  private val weightSum: PSVector = PSVector.duplicate(psVector)
-  private val nnz: PSVector = PSVector.duplicate(psVector)
-  private val currMax: PSVector = PSVector.duplicate(psVector)
-  private val currMin: PSVector = PSVector.duplicate(psVector)
+  var totalWeightSum: Float = 0.0f
+  private var weightSquareSum: Float = 0.0f
+  private var weightSum: Array[Float] = _
+  private var nnz: Array[Long] = _
+  private var currMax: Array[Float] = _
+  private var currMin: Array[Float] = _
 
   /**
    * Add a new sample to this summarizer, and update the statistical summary.
    *
    * @param sample The sample in dense/sparse vector format to be added into this summarizer.
-   * @return This MultivariateOnlineSummarizer object.
+   * @return This PSMultivariateOnlineSummarizer object.
    */
   @Since("1.1.0")
   def add(sample: Vector): this.type = add(sample, 1.0)
 
-  private[spark] def add(instance: Vector, weight: Double): this.type = {
+  private[spark] def add(instance: Vector, dWeight: Double): this.type = {
+    val weight = dWeight.toFloat
     require(weight >= 0.0, s"sample weight, ${weight} has to be >= 0.0")
-    if (weight == 0.0) return this
+    if (weight == 0.0f) return this
+
+    if (n == 0) {
+      require(instance.size > 0, s"Vector should have dimension larger than zero.")
+      n = instance.size
+
+      currMean = Array.ofDim[Float](n)
+      currM2n = Array.ofDim[Float](n)
+      currM2 = Array.ofDim[Float](n)
+      currL1 = Array.ofDim[Float](n)
+      weightSum = Array.ofDim[Float](n)
+      nnz = Array.ofDim[Long](n)
+      currMax = Array.fill[Float](n)(Float.MinValue)
+      currMin = Array.fill[Float](n)(Float.MaxValue)
+    }
 
     require(n == instance.size, s"Dimensions mismatch when adding new sample." +
       s" Expecting $n but got ${instance.size}.")
 
-    val prevMean = currMean.pull()
-    val prevWeight = weightSum.pull()
-
-    val deltaMean = Array.ofDim[Double](n)
-    val deltaM2n = Array.ofDim[Double](n)
-    val deltaM2 = Array.ofDim[Double](n)
-    val deltaL1 = Array.ofDim[Double](n)
-    val deltaWeightSum = Array.ofDim[Double](n)
-    val deltaNumNonzeros = Array.ofDim[Double](n)
-
+    val localCurrMean = currMean
+    val localCurrM2n = currM2n
+    val localCurrM2 = currM2
+    val localCurrL1 = currL1
+    val localWeightSum = weightSum
+    val localNumNonzeros = nnz
+    val localCurrMax = currMax
+    val localCurrMin = currMin
     instance.foreachActive { (index, value) =>
       if (value != 0.0) {
-        val diff = value - prevMean(index)
-        deltaMean(index) = weight * diff / (prevWeight(index) + weight)
-        val localMean = prevMean(index) + deltaMean(index)
-        deltaM2n(index) = weight * (value - localMean) * diff
-        deltaM2(index) = weight * value * value
-        deltaL1(index) = weight * math.abs(value)
+        if (localCurrMax(index) < value) {
+          localCurrMax(index) = value.toFloat
+        }
+        if (localCurrMin(index) > value) {
+          localCurrMin(index) = value.toFloat
+        }
 
-        deltaWeightSum(index) = weight
-        deltaNumNonzeros(index) = 1
+        val prevMean = localCurrMean(index)
+        val diff = value.toFloat - prevMean
+        localCurrMean(index) = (prevMean + weight * diff / (localWeightSum(index) + weight)).toFloat
+        localCurrM2n(index) += weight * (value.toFloat - localCurrMean(index)) * diff
+        localCurrM2(index) += weight * value.toFloat * value.toFloat
+        localCurrL1(index) += weight * math.abs(value.toFloat)
+
+        localWeightSum(index) += weight
+        localNumNonzeros(index) += 1
       }
     }
-
-    currMean.toCache.incrementWithCache(deltaMean)
-    currM2n.toCache.incrementWithCache(deltaM2n)
-    currM2.toCache.incrementWithCache(deltaM2)
-    currL1.toCache.incrementWithCache(deltaL1)
-    weightSum.toCache.incrementWithCache(deltaWeightSum)
-    nnz.toCache.incrementWithCache(deltaNumNonzeros)
-    currMax.toCache.mergeMax(instance.toArray)
-    currMin.toCache.mergeMin(instance.toArray)
 
     totalWeightSum += weight
     weightSquareSum += weight * weight
@@ -143,11 +150,11 @@ class PSMultivariateOnlineSummarizer(@transient private val psVector: PSVector)
   }
 
   /**
-   * Merge another MultivariateOnlineSummarizer, and update the statistical summary.
+   * Merge another PSMultivariateOnlineSummarizer, and update the statistical summary.
    * (Note that it's in place merging; as a result, `this` object will be modified.)
    *
-   * @param other The other MultivariateOnlineSummarizer to be merged.
-   * @return This MultivariateOnlineSummarizer object.
+   * @param other The other PSMultivariateOnlineSummarizer to be merged.
+   * @return This PSMultivariateOnlineSummarizer object.
    */
   @Since("1.1.0")
   def merge(other: PSMultivariateOnlineSummarizer): this.type = {
@@ -157,25 +164,62 @@ class PSMultivariateOnlineSummarizer(@transient private val psVector: PSVector)
       totalCnt += other.totalCnt
       totalWeightSum += other.totalWeightSum
       weightSquareSum += other.weightSquareSum
+      var i = 0
+      while (i < n) {
+        val thisNnz = weightSum(i)
+        val otherNnz = other.weightSum(i)
+        val totalNnz = thisNnz + otherNnz
+        val totalCnnz = nnz(i) + other.nnz(i)
+        if (totalNnz != 0.0) {
+          val deltaMean = other.currMean(i) - currMean(i)
+          // merge mean together
+          currMean(i) += deltaMean * otherNnz / totalNnz
+          // merge m2n together
+          currM2n(i) += other.currM2n(i) + deltaMean * deltaMean * thisNnz * otherNnz / totalNnz
+          // merge m2 together
+          currM2(i) += other.currM2(i)
+          // merge l1 together
+          currL1(i) += other.currL1(i)
+          // merge max and min
+          currMax(i) = math.max(currMax(i), other.currMax(i))
+          currMin(i) = math.min(currMin(i), other.currMin(i))
+        }
+        weightSum(i) = totalNnz
+        nnz(i) = totalCnnz
+        i += 1
+      }
+    } else if (totalWeightSum == 0.0 && other.totalWeightSum != 0.0) {
+      this.n = other.n
+      this.currMean = other.currMean.clone()
+      this.currM2n = other.currM2n.clone()
+      this.currM2 = other.currM2.clone()
+      this.currL1 = other.currL1.clone()
+      this.totalCnt = other.totalCnt
+      this.totalWeightSum = other.totalWeightSum
+      this.weightSquareSum = other.weightSquareSum
+      this.weightSum = other.weightSum.clone()
+      this.nnz = other.nnz.clone()
+      this.currMax = other.currMax.clone()
+      this.currMin = other.currMin.clone()
     }
-
     this
   }
-
-  /**
-   * access n.
-   */
-  def dimension: Int = n
 
   /**
    * Sample mean of each dimension.
    *
    */
   @Since("1.1.0")
-  def mean: PSVector = {
+  override def mean: Vector = {
     require(totalWeightSum > 0, s"Nothing has been added to this summarizer.")
-    val brzMean  = currMean.toBreeze :* (weightSum.toBreeze :/ totalWeightSum)
-    brzMean.component
+
+    val realMean = Array.ofDim[Double](n)
+    var i = 0
+    while (i < n) {
+      realMean(i) = currMean(i) * (weightSum(i) / totalWeightSum)
+      i += 1
+    }
+    Vectors.dense(realMean)
   }
 
   /**
@@ -183,25 +227,29 @@ class PSMultivariateOnlineSummarizer(@transient private val psVector: PSVector)
    *
    */
   @Since("1.1.0")
-  def variance: PSVector = {
+  override def variance: Vector = {
     require(totalWeightSum > 0, s"Nothing has been added to this summarizer.")
 
-    var brzVariance: BreezePSVector = null
+    val realVariance = Array.ofDim[Double](n)
 
     val denominator = totalWeightSum - (weightSquareSum / totalWeightSum)
 
     // Sample variance is computed, if the denominator is less than 0, the variance is just 0.
     if (denominator > 0.0) {
-      brzVariance = (currM2n.toBreeze :* totalWeightSum) :- (currMean.toBreeze :*
-        currMean.toBreeze :* weightSum.toBreeze :* (weightSum.toBreeze :- totalWeightSum))
-      brzVariance :/= (totalWeightSum * denominator)
+      val deltaMean = currMean
+      var i = 0
+      val len = currM2n.length
+      while (i < len) {
+        realVariance(i) = (currM2n(i) + deltaMean(i) * deltaMean(i) * weightSum(i) *
+          (totalWeightSum - weightSum(i)) / totalWeightSum) / denominator
+        i += 1
+      }
     }
-
-    brzVariance.component
+    Vectors.dense(realVariance)
   }
 
-  def std: PSVector = {
-    BreezePSVector.math.sqrt(this.variance.toBreeze).component
+  def std: Vector = {
+    Vectors.dense(variance.toArray.map(x => math.sqrt(x)))
   }
 
   /**
@@ -209,22 +257,17 @@ class PSMultivariateOnlineSummarizer(@transient private val psVector: PSVector)
    *
    */
   @Since("1.1.0")
-  def count: Long = totalCnt
-
-  /**
-   * total weigth sum.
-   *
-   */
-  def totalWeight: Double = totalWeightSum
+  override def count: Long = totalCnt
 
   /**
    * Number of nonzero elements in each dimension.
    *
    */
   @Since("1.1.0")
-  def numNonzeros: PSVector = {
+  override def numNonzeros: Vector = {
     require(totalCnt > 0, s"Nothing has been added to this summarizer.")
-    nnz
+
+    Vectors.dense(nnz.map(_.toDouble))
   }
 
   /**
@@ -232,18 +275,15 @@ class PSMultivariateOnlineSummarizer(@transient private val psVector: PSVector)
    *
    */
   @Since("1.1.0")
-  def max: Vector = {
+  override def max: Vector = {
     require(totalWeightSum > 0, s"Nothing has been added to this summarizer.")
-
-    val localNnz = nnz.pull()
-    val localCurrMax = currMax.pull()
 
     var i = 0
     while (i < n) {
-      if ((localNnz(i) < totalCnt) && (localCurrMax(i) < 0.0)) localCurrMax(i) = 0.0
+      if ((nnz(i) < totalCnt) && (currMax(i) < 0.0)) currMax(i) = 0.0f
       i += 1
     }
-    Vectors.dense(localCurrMax)
+    Vectors.dense(currMax.map(_.toDouble))
   }
 
   /**
@@ -251,18 +291,15 @@ class PSMultivariateOnlineSummarizer(@transient private val psVector: PSVector)
    *
    */
   @Since("1.1.0")
-  def min: Vector = {
+  override def min: Vector = {
     require(totalWeightSum > 0, s"Nothing has been added to this summarizer.")
-
-    val localNnz = nnz.pull()
-    val localCurrMin = currMin.pull()
 
     var i = 0
     while (i < n) {
-      if ((localNnz(i) < totalCnt) && (localCurrMin(i) > 0.0)) localCurrMin(i) = 0.0
+      if ((nnz(i) < totalCnt) && (currMin(i) > 0.0)) currMin(i) = 0.0f
       i += 1
     }
-    Vectors.dense(localCurrMin)
+    Vectors.dense(currMin.map(_.toDouble))
   }
 
   /**
@@ -270,9 +307,18 @@ class PSMultivariateOnlineSummarizer(@transient private val psVector: PSVector)
    *
    */
   @Since("1.2.0")
-  def normL2: PSVector = {
+  override def normL2: Vector = {
     require(totalWeightSum > 0, s"Nothing has been added to this summarizer.")
-    BreezePSVector.math.sqrt(currM2.toBreeze).component
+
+    val realMagnitude = Array.ofDim[Double](n)
+
+    var i = 0
+    val len = currM2.length
+    while (i < len) {
+      realMagnitude(i) = math.sqrt(currM2(i))
+      i += 1
+    }
+    Vectors.dense(realMagnitude)
   }
 
   /**
@@ -280,8 +326,79 @@ class PSMultivariateOnlineSummarizer(@transient private val psVector: PSVector)
    *
    */
   @Since("1.2.0")
-  def normL1: PSVector = {
+  override def normL1: Vector = {
     require(totalWeightSum > 0, s"Nothing has been added to this summarizer.")
-    currL1
+
+    Vectors.dense(currL1.map(_.toDouble))
+  }
+}
+
+object PSMultivariateOnlineSummarizer {
+  implicit object SummarizerSlicing extends ElementwiseSlicing[PSMultivariateOnlineSummarizer] {
+    override def slice(x: PSMultivariateOnlineSummarizer, num: Int):
+        Iterator[PSMultivariateOnlineSummarizer] = {
+      val sliceLength = math.ceil(x.n.toDouble / num).toInt
+      val meanIter = x.currMean.sliding(sliceLength, sliceLength)
+      val m2nIter = x.currM2n.sliding(sliceLength, sliceLength)
+      val m2Iter = x.currM2.sliding(sliceLength, sliceLength)
+      val l1Iter = x.currL1.sliding(sliceLength, sliceLength)
+      val weightSumIter = x.weightSum.sliding(sliceLength, sliceLength)
+      val nnzIter = x.nnz.sliding(sliceLength, sliceLength)
+      val maxIter = x.currMax.sliding(sliceLength, sliceLength)
+      val minIter = x.currMin.sliding(sliceLength, sliceLength)
+
+      meanIter.map { mean =>
+        val summary = new PSMultivariateOnlineSummarizer
+        summary.currMean = mean
+        summary.currM2n = m2nIter.next()
+        summary.currM2 = m2Iter.next()
+        summary.currL1 = l1Iter.next()
+        summary.totalCnt = x.totalCnt
+        summary.totalWeightSum = x.totalWeightSum
+        summary.weightSquareSum = x.weightSquareSum
+        summary.weightSum = weightSumIter.next()
+        summary.nnz = nnzIter.next()
+        summary.currMax = maxIter.next()
+        summary.currMin = minIter.next()
+        summary.n = summary.currMean.length
+        summary
+      }
+    }
+
+    override def compose(iter: Iterator[PSMultivariateOnlineSummarizer]):
+        PSMultivariateOnlineSummarizer = {
+      val (iter1, iter2) = iter.duplicate
+
+      // what if iter1 is empty
+      val length = iter1.map(_.n).sum
+
+      val compSummary = new PSMultivariateOnlineSummarizer
+      compSummary.n = length
+      compSummary.currMean = new Array[Float](length)
+      compSummary.currM2n = new Array[Float](length)
+      compSummary.currM2 = new Array[Float](length)
+      compSummary.currL1 = new Array[Float](length)
+      compSummary.weightSum = new Array[Float](length)
+      compSummary.nnz = new Array[Long](length)
+      compSummary.currMax = new Array[Float](length)
+      compSummary.currMin = new Array[Float](length)
+
+      var accumNum = 0
+      iter2.foreach { summary =>
+        summary.currMean.copyToArray(compSummary.currMean, accumNum, summary.currMean.length)
+        summary.currM2n.copyToArray(compSummary.currM2n, accumNum, summary.currM2n.length)
+        summary.currM2.copyToArray(compSummary.currM2, accumNum, summary.currM2.length)
+        summary.currL1.copyToArray(compSummary.currL1, accumNum, summary.currL1.length)
+        compSummary.totalCnt = summary.totalCnt
+        compSummary.totalWeightSum = summary.totalWeightSum
+        compSummary.weightSquareSum = summary.weightSquareSum
+        summary.weightSum.copyToArray(compSummary.weightSum, accumNum, summary.weightSum.length)
+        summary.nnz.copyToArray(compSummary.nnz, accumNum, summary.nnz.length)
+        summary.currMax.copyToArray(compSummary.currMax, accumNum, summary.currMax.length)
+        summary.currMin.copyToArray(compSummary.currMin, accumNum, summary.currMin.length)
+        accumNum += summary.currMean.length
+      }
+      compSummary
+    }
   }
 }
