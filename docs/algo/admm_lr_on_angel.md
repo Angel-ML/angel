@@ -1,11 +1,52 @@
 # ADMM_LR
 
-> ADMM[1]是在LogisticRegression中用于求解的一种优化方法。相比于SGD，ADMM可以在少数迭代轮数时就达到一个合理的精度，但是收敛到很精确的解则需要很多次迭代。因此通常ADMM算法会跟其他算法组合来提高收敛速度。
+> 用ADMM[1]求解LogisticRegression的优化方法称作ADMM_LR。ADMM算法是一种求解约束问题的最优化方法，它适用广泛。相比于SGD，ADMM在精度要求不高的情况下，在少数迭代轮数时就达到一个合理的精度，但是收敛到很精确的解则需要很多次迭代。
 
 ## 1. 算法介绍
+ADMM算法结合了对偶分解法(Dual Decomposition)和增广拉格朗日乘子法(Augmented Lagrangians and the Method of Multipliers)的优势，它可以在满足较弱收敛条件的情况下，分解目标函数，交替地更新变量，直至算法收敛。ADMM算法的一般原理为：
+对于以下约束优化问题，
 
+![](../img/admm_general.png)
+
+首先将其转化为不带约束的最优化问题，此处采用了增广拉格朗日乘子法的形式，包括了L2正则项，表达式如下：
+
+![](../img/admm_l2.png)
+
+上述公式进一步改进，则目标函数为:
+
+![](../img/admm_loss_dual.png)
+
+其中，u的表达式为：
+
+![](../img/admm_u.png)
+
+则ADMM的更新迭代步骤为:
+![](../img/admm_iter_xzu.png)
+
+在每一步的优化过程中，可以与牛顿法等高精度算法相结合进行求解。
+以上是ADMM过程的介绍，这里再针对Sparse Logistic Regression分类的优化问题，给出其目标函数的表达式：
+
+![](../img/admm_loss.png)
+按照ADMM的一般过程迭代，直至w与z的差别小于预先确定的界限为止。
 
 ## 2. 分布式实现 on Angel
+在Angel的实现上，采用ADMM算法—Split Across Examples的框架，将m个样本分为N个数据块，把L(w)写成N个数据块上的损失函数加和的形式，具体如下
+
+![](../img/admm_loss_angel.png)
+
+上述约束函数意味着在每个数据块上计算的权值参数都应该与z相等，因此，z属于全局模型。
+ADMM在Angel上实现的一般步骤为：
+
+1. 每个Worker从Parameter Server上将模型z pull回本地，首先计算u，再用LBFGS本地更新x
+2. 计算中间变量w和衡量模型收敛情况的变量t，然后push到Parameter Server
+3. 在PS端计算z
+
+具体u、x、z模型的计算表示如下：
+
+![](../img/admm_u_x.png)
+
+![](../img/admm_z.png)
+
 
 ![](../img/admm_lr_1.png)
 
