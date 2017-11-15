@@ -51,7 +51,6 @@
 	* [KMeans](./docs/algo/kmeans_on_angel.md)
 	* [GBDT](./docs/algo/gbdt_on_angel.md)
 	* [LDA\*](./docs/algo/lda_on_angel.md) ([WrapLDA](./docs/algo/wrap_lda_on_angel.md))
-	* [MLR] (./docs/algo/mlr_on_angel.md)
 
 * **Spark on Angel**
 	* [Logistic Regression](./docs/algo/sona/lr_sona.md)
