@@ -79,6 +79,10 @@ GBDT的流程包括几大步骤
 
 ## 4. 运行 & 性能
 
+###  输入格式
+* ml.feature.num：特征向量的维度   
+* ml.data.type：支持"dummy"、"libsvm"两种数据格式，具体参考:[Angel数据格式](data_format.md)
+
 
 ### 参数
 
@@ -92,9 +96,6 @@ GBDT的流程包括几大步骤
 	* ml.gbdt.server.split：两阶段分裂算法开关，默认为true
 	* ml.compress.bytes：低精度压缩，每个浮点数的大小，可设为[1,8]
 
-* **输入格式**
-  * ml.feature.num：特征向量的维度   
-  * ml.data.type：支持"dummy"、"libsvm"两种数据格式，具体参考:[Angel数据格式](data_format.md)
 
 * **输入输出参数**
 	* angel.train.data.path：训练数据的输入路径

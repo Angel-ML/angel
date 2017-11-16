@@ -3,7 +3,11 @@
 > 用ADMM[1]求解LogisticRegression的优化方法称作ADMM_LR。ADMM算法是一种求解约束问题的最优化方法，它适用广泛。相比于SGD，ADMM在精度要求不高的情况下，在少数迭代轮数时就达到一个合理的精度，但是收敛到很精确的解则需要很多次迭代。
 
 ## 1. 算法介绍
-ADMM算法结合了对偶分解法(Dual Decomposition)和增广拉格朗日乘子法(Augmented Lagrangians and the Method of Multipliers)的优势，它可以在满足较弱收敛条件的情况下，分解目标函数，交替地更新变量，直至算法收敛。ADMM算法的一般原理为：
+
+ADMM算法结合了**对偶分解法(Dual Decomposition)**和**增广拉格朗日乘子法(Augmented Lagrangians and the Method of Multipliers)**的优势，它可以在满足较弱收敛条件的情况下，分解目标函数，交替地更新变量，直至算法收敛。
+
+ADMM算法的一般原理为：
+
 对于以下约束优化问题，
 
 ![](../img/admm_general.png)
@@ -21,38 +25,60 @@ ADMM算法结合了对偶分解法(Dual Decomposition)和增广拉格朗日乘�
 ![](../img/admm_u.png)
 
 则ADMM的更新迭代步骤为:
+
 ![](../img/admm_iter_xzu.png)
 
 在每一步的优化过程中，可以与牛顿法等高精度算法相结合进行求解。
 以上是ADMM过程的介绍，这里再针对Sparse Logistic Regression分类的优化问题，给出其目标函数的表达式：
 
 ![](../img/admm_loss.png)
+
 按照ADMM的一般过程迭代，直至w与z的差别小于预先确定的界限为止。
 
 ## 2. 分布式实现 on Angel
-在Angel的实现上，采用ADMM算法—Split Across Examples的框架，将m个样本分为N个数据块，把L(w)写成N个数据块上的损失函数加和的形式，具体如下
+
+在Angel的实现上，采用ADMM—Split Across Examples的框架，将m个样本分为N个数据块，把L(w)写成N个数据块上的损失函数加和的形式，具体如下
 
 ![](../img/admm_loss_angel.png)
 
 上述约束函数意味着在每个数据块上计算的权值参数都应该与z相等，因此，z属于全局模型。
+
 ADMM在Angel上实现的一般步骤为：
 
-1. 每个Worker从Parameter Server上将模型z pull回本地，首先计算u，再用LBFGS本地更新x
-2. 计算中间变量w和衡量模型收敛情况的变量t，然后push到Parameter Server
-3. 在PS端计算z
+1. 每个Worker从PS上将模型z pull回本地
+2. 计算u，再用LBFGS本地更新x（LBFGS过程通过调用breeze.optimize.LBFGS实现）
+3. 计算`中间变量的w`和`衡量模型收敛情况的t`，然后push到PS
+4. 在PS端计算z，在L1正则项情况下有显式表达式，无需迭代计算
 
-具体u、x、z模型的计算表示如下：
-
-![](../img/admm_u_x.png)
-
-![](../img/admm_z.png)
-
+下面是在Angel上实现的原理图：
 
 ![](../img/admm_lr_1.png)
 
+
+* **Local模型**
+
+	* u模型
+	![](../img/admm_u_x.png)	
+	* x模型
+	![](../img/admm_u_x.png)
+
+* **Global模型**：
+
+	* z模型
+
+	![](../img/admm_z.png)
+
+	* S函数
+	![](../img/admm_z_s.png)
+
 ## 3. 运行 & 性能
 
-###  参数说明
+###  **输入格式**
+  * ml.feature.num：特征向量的维度   
+  * ml.data.type：支持"dummy"、"libsvm"两种数据格式，具体参考[Angel数据格式](data_format.md)
+
+### **参数说明**
+
 
 * **算法参数**  
   * ml.epoch.num：迭代次数   
@@ -65,9 +91,6 @@ ADMM在Angel上实现的一般步骤为：
   * angel.save.model.path：训练完成后，模型的保存路径   
   * angel.log.path：log文件保存路径   
 
-* **输入格式**
-  * ml.feature.num：特征向量的维度   
-  * ml.data.type：支持"dummy"、"libsvm"两种数据格式，具体参考:[Angel数据格式](data_format.md)
        
 * **资源参数**
   * angel.workergroup.number：Worker个数   
@@ -76,7 +99,7 @@ ADMM在Angel上实现的一般步骤为：
   * angel.ps.number：PS个数    
   * angel.ps.memory.mb：PS申请内存大小
 
-###  提交命令
+###  **提交命令**
 
 可以通过下面命令向Yarn集群提交LR算法训练任务:
 

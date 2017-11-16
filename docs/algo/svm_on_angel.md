@@ -26,6 +26,9 @@ Angel MLLib提供了用mini-batch gradient descent优化方法求解的SVM二分
 
 ## 3. 运行 & 性能
 
+### 输入格式
+* ml.feature.num：特征向量的维度   
+* ml.data.type：支持"dummy"、"libsvm"两种数据格式，具体参考：[Angel数据格式](data_format.md)
 
 ### 参数
 
@@ -38,9 +41,7 @@ Angel MLLib提供了用mini-batch gradient descent优化方法求解的SVM二分
   * ml.learn.decay：学习速率衰减系数
   * ml.reg.l2：L2惩罚项系数
 
-* **输入格式**
-  * ml.feature.num：特征向量的维度   
-  * ml.data.type：支持"dummy"、"libsvm"两种数据格式，具体参考：[Angel数据格式](data_format.md)
+
 
 * **输入输出参数**
   * angel.train.data.path：训练数据的输入路径
