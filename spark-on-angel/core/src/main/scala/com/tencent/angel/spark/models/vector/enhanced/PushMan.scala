@@ -33,22 +33,30 @@ import org.apache.spark.{SparkEnv, TaskContext}
 object PushMan {
 
   import MergeType._
-  def vectorOps = PSClient.instance().vectorOps
+  private def vectorOps = PSClient.instance().vectorOps
 
-  val mergeCache = new mutable.HashMap[(Int, Int, MergeType), Array[Double]]()
+  private val mergeCache = new mutable.HashMap[(Int, Int, MergeType), Array[Double]]()
 
   def cacheSize: Int = mergeCache.size
 
-  def getFromIncrementCache(vector: PSVector): Array[Double] = {
+  private[spark] def getFromIncrementCache(vector: PSVector): Array[Double] = {
     getCachedArray(vector, INCREMENT)
   }
 
-  def getFromMaxCache(vector: PSVector): Array[Double] = {
+  private[spark] def getFromMaxCache(vector: PSVector): Array[Double] = {
     getCachedArray(vector, MAX)
   }
 
-  def getFromMinCache(vector: PSVector): Array[Double] = {
+  private[spark] def getFromMinCache(vector: PSVector): Array[Double] = {
     getCachedArray(vector, MIN)
+  }
+
+  def flushAll() = {
+    flush(mergeCache.keys.toArray)
+  }
+
+  private[spark] def flush(poolId: Int, id: Int, mergeType: MergeType): Unit = {
+    flush(Array(Tuple3(poolId, id, mergeType)))
   }
 
   private def getCachedArray(vector: PSVector, mergeType: MergeType): Array[Double] = {
@@ -73,28 +81,7 @@ object PushMan {
     mergeCache((vector.poolId, vector.id, mergeType))
   }
 
-
-  def flushOne(poolId: Int, id: Int, mergeType: MergeType) = {
-    if (mergeCache.contains((poolId, id, mergeType))) {
-      val mergeArray = mergeCache((poolId, id, mergeType))
-      mergeType match {
-        case INCREMENT => vectorOps.increment(poolId, id, mergeArray)
-        case MAX => vectorOps.mergeMax(poolId, id, mergeArray)
-        case MIN => vectorOps.mergeMin(poolId, id, mergeArray)
-      }
-      mergeCache.remove((poolId, id, mergeType))
-    }
-  }
-
-  private[spark] def flushAllKey(): Unit = {
-    mergeCache.synchronized {
-      for (key <- mergeCache.keys) {
-        flushOne(key._1, key._2, key._3)
-      }
-    }
-  }
-
-  def flushAll() = {
+  private def flush(keys: Array[(Int, Int, MergeType)]): Unit = {
     if (TaskContext.get() == null) { // run flush on driver
       val sparkConf = SparkEnv.get.conf
       val executorNum = sparkConf.getInt("spark.executor.instances", 1)
@@ -103,10 +90,29 @@ object PushMan {
       val spark = SparkSession.builder().getOrCreate()
       spark.sparkContext.range(0, totalTask, 1, totalTask)
         .foreach { taskId =>
-          flushAllKey()
+          flushKeys(keys)
         }
     } else { // run flush on executor
-      flushAllKey()
+      flushKeys(keys)
+    }
+  }
+
+  private def flushKeys(keys: Array[(Int, Int, MergeType)]) = {
+    mergeCache.synchronized {
+      keys.foreach { case (poolId, id, mergeType) =>
+        if (mergeCache.contains((poolId, id, mergeType))) {
+          val mergeArray = mergeCache((poolId, id, mergeType))
+          mergeType match {
+            case INCREMENT => {
+              println(s"PushMan Increment.")
+              vectorOps.increment(poolId, id, mergeArray)
+            }
+            case MAX => vectorOps.mergeMax(poolId, id, mergeArray)
+            case MIN => vectorOps.mergeMin(poolId, id, mergeArray)
+          }
+          mergeCache.remove((poolId, id, mergeType))
+        }
+      }
     }
   }
 }
@@ -115,6 +121,3 @@ object MergeType extends Enumeration {
   type MergeType = Value
   val INCREMENT, MAX, MIN = Value
 }
-
-
-
