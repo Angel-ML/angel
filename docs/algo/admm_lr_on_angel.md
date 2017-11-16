@@ -21,6 +21,7 @@ ADMM算法结合了对偶分解法(Dual Decomposition)和增广拉格朗日乘�
 ![](../img/admm_u.png)
 
 则ADMM的更新迭代步骤为:
+
 ![](../img/admm_iter_xzu.png)
 
 在每一步的优化过程中，可以与牛顿法等高精度算法相结合进行求解。
@@ -38,8 +39,9 @@ ADMM算法结合了对偶分解法(Dual Decomposition)和增广拉格朗日乘�
 ADMM在Angel上实现的一般步骤为：
 
 1. 每个Worker从Parameter Server上将模型z pull回本地，首先计算u，再用LBFGS本地更新x
-2. 计算中间变量w和衡量模型收敛情况的变量t，然后push到Parameter Server
-3. 在PS端计算z
+2. LBFGS过程通过调用breeze.optimize.LBFGS实现
+3. 计算中间变量w和衡量模型收敛情况的变量t，然后push到Parameter Server
+4. 在PS端计算z，在L1正则项情况下有显式表达式，无需迭代计算
 
 具体u、x、z模型的计算表示如下：
 
@@ -47,6 +49,11 @@ ADMM在Angel上实现的一般步骤为：
 
 ![](../img/admm_z.png)
 
+其中计算z模型时用到的S函数公式如下：
+
+![](../img/admm_z_s.png)
+
+下面是在Angel上实现的原理图：
 
 ![](../img/admm_lr_1.png)
 
