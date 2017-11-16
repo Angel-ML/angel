@@ -153,17 +153,13 @@ public class NetUtils {
 
   public static void testBindPort(String host, int port) throws IOException {
     Socket s = new Socket();
-    boolean success = false;
     try {
       s.bind(new InetSocketAddress(host, port));
-      success = true;
     } finally {
-      if (success) {
-        try {
-          s.close();
-        } catch (Exception x) {
+      try {
+        s.close();
+      } catch (Exception x) {
 
-        }
       }
     }
   }

@@ -195,7 +195,7 @@ public class TaskManager {
       }
     }
 
-    if (indexSet != null) {
+    if (indexSet != null && meta != null) {
       int size = indexSet.size();
       int[] indexArray = new int[size];
       int index = 0;
