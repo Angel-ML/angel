@@ -67,20 +67,20 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
       colInBlock: Int = -1): MatrixMeta = {
 
     val maxRowNumInBlock = if (rowInBlock == -1) {
-      if (rows > 20000) rows / TOTAL_PS_CORES else rows
+      if (rows > 10000) rows / TOTAL_PS_CORES else rows
     } else {
       rowInBlock
     }
 
     val maxColNumInBlock = if (colInBlock == -1) {
-      if (cols > 20000) cols / TOTAL_PS_CORES else cols
+      if (cols > 10000) cols / TOTAL_PS_CORES else cols
     } else {
       colInBlock
     }
 
     val mt = t match {
       case MatrixType.DENSE => RowType.T_DOUBLE_DENSE
-      case MatrixType.SPARSE => RowType.T_DOUBLE_SPARSE
+      case MatrixType.SPARSE => RowType.T_DOUBLE_SPARSE_LONGKEY
     }
     val matrix = new MatrixContext(s"spark-$matrixCounter", rows, cols,
       maxRowNumInBlock, maxColNumInBlock)
@@ -104,7 +104,7 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
   }
 
   def createVector(
-      dimension: Int,
+      dimension: Long,
       t: VectorType = VectorType.DENSE,
       poolCapacity: Int = PSVectorPool.DEFAULT_POOL_CAPACITY): PSVector = {
 
@@ -129,7 +129,7 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
   }
 
   private[spark] def createVectorPool(
-      dimension: Int,
+      dimension: Long,
       capacity: Int,
       t: VectorType): PSVectorPool = {
 

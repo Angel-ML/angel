@@ -95,7 +95,7 @@ class VectorOpsSuite extends PSFunSuite with SharedPSContext {
 
     val sVector = SparsePSVector(dim)
 
-    _vectorOps.increment(sVector, localPair.toArray)
+    PSClient.instance().sparseRowOps.increment(sVector, localPair.toArray)
     val pullVector = new Array[Double](dim)
     sVector.sparsePull().foreach { case (index, value) => pullVector(index.toInt) = value }
     assert(pullVector.sameElements(result))

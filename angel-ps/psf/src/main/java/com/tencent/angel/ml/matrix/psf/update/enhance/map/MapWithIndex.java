@@ -20,6 +20,8 @@ package com.tencent.angel.ml.matrix.psf.update.enhance.map;
 import com.tencent.angel.common.Serialize;
 import com.tencent.angel.ml.matrix.psf.update.enhance.MFUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 
 import java.nio.DoubleBuffer;
 
@@ -48,5 +50,20 @@ public class MapWithIndex extends MFUpdateFunc {
     for (int i = 0; i < size; i++) {
       to.put(i, mapper.call(startCol + i, from.get(i)));
     }
+  }
+
+  @Override
+  protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows, Serialize func) {
+    MapWithIndexFunc mapper = (MapWithIndexFunc) func;
+    Long2DoubleOpenHashMap data1 = rows[0].getData();
+
+    Long2DoubleOpenHashMap data2 = data1.clone();
+    // TODO: a better way is needed to deal with defaultValue
+    assert (data2.defaultReturnValue() == 0.0);
+
+    for (java.util.Map.Entry<Long, Double> entry: data2.long2DoubleEntrySet()) {
+      entry.setValue(mapper.call(entry.getKey().intValue(), entry.getValue()));
+    }
+    rows[1].setIndex2ValueMap(data2);
   }
 }

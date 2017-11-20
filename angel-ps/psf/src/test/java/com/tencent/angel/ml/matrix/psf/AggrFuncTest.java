@@ -20,7 +20,7 @@ import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.ml.math.vector.DenseDoubleVector;
 import com.tencent.angel.ml.matrix.psf.aggr.*;
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult;
-import com.tencent.angel.ml.matrix.psf.aggr.primitive.Pull;
+import com.tencent.angel.ml.matrix.psf.aggr.Pull;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult;
 import com.tencent.angel.ml.matrix.psf.update.Fill;

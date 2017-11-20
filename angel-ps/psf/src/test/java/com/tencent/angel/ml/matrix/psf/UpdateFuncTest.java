@@ -18,7 +18,7 @@ package com.tencent.angel.ml.matrix.psf;
 
 import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.ml.math.vector.DenseDoubleVector;
-import com.tencent.angel.ml.matrix.psf.aggr.primitive.Pull;
+import com.tencent.angel.ml.matrix.psf.aggr.Pull;
 import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult;
 import com.tencent.angel.ml.matrix.psf.update.*;
 import com.tencent.angel.ml.matrix.psf.update.enhance.CompressUpdateFunc;

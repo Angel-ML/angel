@@ -97,7 +97,7 @@ class CachedPSVectorSuite extends PSFunSuite with Matchers with SharedPSContext 
       Iterator.empty
     }
     rdd2.count()
-    PushMan.flushAll()
+    remoteVector.flushIncrement()
 
     val psArray = remoteVector.pull()
     _localSum.indices.foreach { i => assert(_localSum(i) === psArray(i) +- doubleEps) }

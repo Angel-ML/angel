@@ -18,7 +18,7 @@ package com.tencent.angel.spark.ops
 
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.math.vector.{DenseDoubleVector, SparseLongKeyDoubleVector}
-import com.tencent.angel.ml.matrix.psf.aggr.primitive.Pull
+import com.tencent.angel.ml.matrix.psf.aggr.Pull
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
 import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult
 import com.tencent.angel.ml.matrix.psf.update.SparsePush

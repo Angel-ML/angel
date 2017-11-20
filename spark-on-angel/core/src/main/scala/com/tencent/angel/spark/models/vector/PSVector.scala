@@ -124,7 +124,7 @@ object PSVector {
     DensePSVector.apply(dim, capacity)
   }
 
-  def sparse(dim: Int, capacity: Int = 50): SparsePSVector = {
+  def sparse(dim: Long, capacity: Int = 50): SparsePSVector = {
     SparsePSVector.apply(dim, capacity)
   }
 }

@@ -24,7 +24,6 @@ class SparsePSVector(override val poolId: Int,
                      override val id: Int,
                      override val dimension: Long) extends PSVector {
 
-
   def fill(values: Array[(Long, Double)]): Unit = {
     psClient.sparseRowOps.push(this, values)
   }
@@ -45,7 +44,7 @@ class SparsePSVector(override val poolId: Int,
 }
 
 object SparsePSVector{
-  def apply(dimension: Int, capacity:Int = 20): SparsePSVector = {
+  def apply(dimension: Long, capacity:Int = 20): SparsePSVector = {
     PSContext.instance().createVector(dimension, VectorType.SPARSE, capacity).asInstanceOf[SparsePSVector]
   }
 }

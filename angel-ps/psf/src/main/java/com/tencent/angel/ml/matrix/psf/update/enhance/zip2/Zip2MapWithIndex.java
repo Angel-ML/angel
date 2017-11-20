@@ -20,6 +20,9 @@ package com.tencent.angel.ml.matrix.psf.update.enhance.zip2;
 import com.tencent.angel.common.Serialize;
 import com.tencent.angel.ml.matrix.psf.update.enhance.MFUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.nio.DoubleBuffer;
 
@@ -50,5 +53,23 @@ public class Zip2MapWithIndex extends MFUpdateFunc {
     for (int i = 0; i < size; i++) {
       to.put(i, mapper.call(startCol + i, from1.get(i), from2.get(i)));
     }
+  }
+
+  @Override
+  protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows, Serialize func) {
+    Zip2MapWithIndexFunc mapper = (Zip2MapWithIndexFunc) func;
+    Long2DoubleOpenHashMap from1 = rows[0].getData();
+    Long2DoubleOpenHashMap from2 = rows[1].getData();
+    Long2DoubleOpenHashMap to = from1.clone();
+
+    // TODO: a better way is needed to deal with defaultValue
+    assert (from1.defaultReturnValue() == 0.0 && from2.defaultReturnValue() == 0.0);
+    LongSet keySet = from1.keySet();
+    keySet.addAll(from2.keySet());
+    for (long key: keySet) {
+      to.put(key, mapper.call((int)key, from1.get(key), from2.get(key)));
+    }
+
+    rows[2].setIndex2ValueMap(to);
   }
 }

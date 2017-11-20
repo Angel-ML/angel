@@ -37,7 +37,7 @@ import com.tencent.angel.spark.models.vector.{DensePSVector, PSVector, SparsePSV
 
 private[spark] class PSVectorPool(
     val id: Int,
-    val dimension: Int,
+    val dimension: Long,
     val capacity: Int,
     val vType: VectorType) {
 

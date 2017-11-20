@@ -59,7 +59,7 @@ trait SharedPSContext extends BeforeAndAfterAll with BeforeAndAfterEach {
       .config(psConf)
 
     _spark = builder.getOrCreate()
-    _spark.sparkContext.setLogLevel("INFO")
+    _spark.sparkContext.setLogLevel("OFF")
 
     // PS setup
     PSContext.getOrCreate(_spark.sparkContext)

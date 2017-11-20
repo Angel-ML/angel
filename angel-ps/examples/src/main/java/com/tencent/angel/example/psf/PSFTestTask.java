@@ -20,7 +20,7 @@ package com.tencent.angel.example.psf;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.math.vector.DenseDoubleVector;
-import com.tencent.angel.ml.matrix.psf.aggr.primitive.Pull;
+import com.tencent.angel.ml.matrix.psf.aggr.Pull;
 import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult;
 import com.tencent.angel.psagent.matrix.MatrixClient;
 import com.tencent.angel.worker.task.BaseTask;

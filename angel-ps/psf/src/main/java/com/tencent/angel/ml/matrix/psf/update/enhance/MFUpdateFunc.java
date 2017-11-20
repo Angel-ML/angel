@@ -85,8 +85,6 @@ public abstract class MFUpdateFunc extends UpdateFunc {
 
   protected abstract void doUpdate(ServerDenseDoubleRow[] rows, Serialize func);
 
-  protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows, Serialize func) {
-
-  }
+  protected abstract void doUpdate(ServerSparseDoubleLongKeyRow[] rows, Serialize func);
 
 }
