@@ -19,8 +19,11 @@ package com.tencent.angel.ml.matrix.psf.update;
 
 import com.tencent.angel.ml.matrix.psf.update.enhance.MMUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 
 import java.nio.DoubleBuffer;
+import java.util.Map;
 
 /**
  * `DivS` function will divide `fromId` by `value` and save to `toId`.
@@ -50,6 +53,22 @@ public class DivS extends MMUpdateFunc {
     } finally {
       rows[1].getLock().writeLock().unlock();
     }
+  }
+
+  @Override
+  protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows, double[] scalars) {
+    Long2DoubleOpenHashMap from = rows[0].getIndex2ValueMap();
+    Long2DoubleOpenHashMap to = from.clone();
+
+    double value = scalars[0];
+
+    double defaultValue = to.defaultReturnValue();
+    to.defaultReturnValue(defaultValue / value);
+    for (Map.Entry<Long, Double> entry: to.long2DoubleEntrySet()) {
+      to.put(entry.getKey().longValue(), entry.getValue() / defaultValue);
+    }
+
+    rows[1].setIndex2ValueMap(to);
   }
 
 }

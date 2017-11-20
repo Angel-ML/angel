@@ -3,6 +3,7 @@ package com.tencent.angel.spark.ops
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.matrix.psf.aggr.FullPull
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.FullAggrResult
+import com.tencent.angel.ml.matrix.psf.common.{Fill, Increment}
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
 import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateFunc
 import com.tencent.angel.ml.matrix.psf.update.{Diag, Eye, FullFill}
@@ -12,20 +13,50 @@ import com.tencent.angel.spark.models.matrix.PSMatrix
 
 class MatrixOps {
 
-
   /**
-    * ===================================================
-    * The following methods are matrix oriented.
-    * ===================================================
-    */
-
-  /**
-    * Pull matrix to local
-    */
+   * Pull matrix to local
+   */
   def pull(mat: PSMatrix): Array[Array[Double]] = {
     mat.assertValid()
     aggregate(mat, new FullPull(mat.meta.getId)).asInstanceOf[FullAggrResult].getResult
   }
+
+
+  /**
+   * Push local data to update matrix in PS
+   */
+  def push(mat: PSMatrix, pairs: Array[(Int, Long, Double)]): Unit = {
+    mat.assertValid()
+
+    val rows = new Array[Int](pairs.length)
+    val cols = new Array[Long](pairs.length)
+    val values = new Array[Double](pairs.length)
+    pairs.indices.foreach { i =>
+      rows(i) = pairs(i)._1
+      cols(i) = pairs(i)._2
+      values(i) = pairs(i)._3
+    }
+    update(mat, new Fill(mat.meta.getId, rows, cols, values))
+  }
+
+  def pull(mat: PSMatrix, pairs: Array[(Int, Long)]): Unit = {
+
+  }
+
+  def increment(mat: PSMatrix, pairs: Array[(Int, Long, Double)]): Unit = {
+    mat.assertValid()
+
+    val rows = new Array[Int](pairs.length)
+    val cols = new Array[Long](pairs.length)
+    val values = new Array[Double](pairs.length)
+    pairs.indices.foreach { i =>
+      rows(i) = pairs(i)._1
+      cols(i) = pairs(i)._2
+      values(i) = pairs(i)._3
+    }
+    update(mat, new Increment(mat.meta.getId, rows, cols, values))
+  }
+
 
   /**
     * Assign matrix diagonal with `value`
@@ -58,7 +89,12 @@ class MatrixOps {
     update(mat, new FullFill(mat.meta.getId, value))
   }
 
-  def aggregate(matrix: PSMatrix, func: GetFunc): GetResult = {
+
+
+  /**
+   * the following are private methods
+   */
+  private[spark] def aggregate(matrix: PSMatrix, func: GetFunc): GetResult = {
     val client = MatrixClientFactory.get(matrix.meta.getId, PSContext.getTaskId())
     val result = client.get(func)
     assertSuccess(result)

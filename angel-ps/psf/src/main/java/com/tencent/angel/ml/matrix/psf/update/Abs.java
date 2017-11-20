@@ -19,8 +19,11 @@ package com.tencent.angel.ml.matrix.psf.update;
 
 import com.tencent.angel.ml.matrix.psf.update.enhance.MUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 
 import java.nio.DoubleBuffer;
+import java.util.Map;
 
 /**
  * `Abs` applies math.abs to `fromId` row, and save the result to `toId` row.
@@ -48,6 +51,18 @@ public class Abs extends MUpdateFunc {
     } finally {
       rows[1].getLock().writeLock().unlock();
     }
+  }
+
+  @Override
+  protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows) {
+    Long2DoubleOpenHashMap from = rows[0].getIndex2ValueMap();
+
+    Long2DoubleOpenHashMap to = from.clone();
+    to.defaultReturnValue(Math.abs(to.defaultReturnValue()));
+    for (Map.Entry<Long, Double> entry: to.long2DoubleEntrySet()) {
+      entry.setValue(Math.abs(entry.getValue()));
+    }
+    rows[1].setIndex2ValueMap(to);
   }
 
 }

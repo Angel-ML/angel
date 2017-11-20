@@ -8,12 +8,10 @@ bin=`cd "$bin"; pwd`
 
 lib="$bin"/../lib
 
-echo $lib
 export ANGEL_HOME="$bin/../"
 
 
 for f in "$lib"/*.jar; do
-    echo $f
     if [ "$CLASSPATH" ]; then
         export CLASSPATH=$CLASSPATH:$f
     else
@@ -24,6 +22,4 @@ done
 #export CLASS="com.tencent.angel.utils.AngelRunJar"
 
 export CLASSPATH=$CLASSPATH
-echo "$ANGEL_HOME"
-echo $CLASSPATH
 java $1

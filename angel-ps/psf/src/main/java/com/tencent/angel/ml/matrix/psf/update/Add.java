@@ -19,8 +19,11 @@ package com.tencent.angel.ml.matrix.psf.update;
 
 import com.tencent.angel.ml.matrix.psf.update.enhance.MUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 
 import java.nio.DoubleBuffer;
+import java.util.Map;
 
 /**
  * `Add` function will add `fromId1` and `fromId2` and save to `toId`.
@@ -50,6 +53,19 @@ public class Add extends MUpdateFunc {
     } finally {
       rows[2].getLock().writeLock().unlock();
     }
+  }
+
+  @Override
+  protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows) {
+    Long2DoubleOpenHashMap from1 = rows[0].getIndex2ValueMap();
+    Long2DoubleOpenHashMap from2 = rows[1].getIndex2ValueMap();
+
+    Long2DoubleOpenHashMap to = from1.clone();
+    to.defaultReturnValue(from1.defaultReturnValue() + from2.defaultReturnValue());
+    for (Map.Entry<Long, Double> entry: from2.long2DoubleEntrySet()) {
+      to.addTo(entry.getKey(), entry.getValue());
+    }
+    rows[2].setIndex2ValueMap(to);
   }
 
 }

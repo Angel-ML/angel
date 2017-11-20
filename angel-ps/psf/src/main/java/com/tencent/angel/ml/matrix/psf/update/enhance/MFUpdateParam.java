@@ -19,6 +19,7 @@ package com.tencent.angel.ml.matrix.psf.update.enhance;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.common.Serialize;
+import com.tencent.angel.ml.matrix.psf.common.Utils;
 import com.tencent.angel.psagent.PSAgentContext;
 import io.netty.buffer.ByteBuf;
 
@@ -49,7 +50,12 @@ public class MFUpdateParam extends UpdateParam {
     int size = partList.size();
     List<PartitionUpdateParam> partParams = new ArrayList<PartitionUpdateParam>(size);
     for (PartitionKey part : partList) {
-      partParams.add(new MFPartitionUpdateParam(matrixId, part, rowIds, func));
+      if (Utils.withinPart(part, rowIds)) {
+        partParams.add(new MFPartitionUpdateParam(matrixId, part, rowIds, func));
+      }
+    }
+    if (partParams.isEmpty()) {
+      System.out.println("Rows must in same partition.");
     }
 
     return partParams;

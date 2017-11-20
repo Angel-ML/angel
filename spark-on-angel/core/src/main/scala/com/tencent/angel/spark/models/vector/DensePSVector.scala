@@ -21,7 +21,7 @@ import com.tencent.angel.spark.context.PSContext
 
 class DensePSVector(override val poolId: Int,
                     override val id: Int,
-                    override val dimension: Int) extends PSVector {
+                    override val dimension: Long) extends PSVector {
 
   def one(): DensePSVector = {
     fill(1.0)

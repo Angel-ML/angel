@@ -46,6 +46,7 @@ import org.apache.hadoop.fs.Path;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -81,7 +82,7 @@ public abstract class AngelClient implements AngelClientInterface {
   /** master location */
   protected Location masterLocation;
 
-  private static final String LOG_FORMAT = "%10.6e";
+  private static final DecimalFormat df = new DecimalFormat("#0.000000");
   
   /**
    * 
@@ -474,7 +475,8 @@ public abstract class AngelClient implements AngelClientInterface {
     StringBuilder sb = new StringBuilder("{");
     int size = metrics.size();
     for(int i = 0; i < size; i++) {
-      sb.append("\""+ metrics.get(i).getKey() + "\":" + String.format(LOG_FORMAT, Double.valueOf(metrics.get(i).getValue())));
+      sb.append("\""+ metrics.get(i).getKey() + "\":" + df.format(Double.valueOf(metrics.get(i)
+          .getValue())));
       if(i < size - 1) {
         sb.append(",");
       }

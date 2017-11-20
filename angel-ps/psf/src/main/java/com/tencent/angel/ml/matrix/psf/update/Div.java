@@ -19,8 +19,11 @@ package com.tencent.angel.ml.matrix.psf.update;
 
 import com.tencent.angel.ml.matrix.psf.update.enhance.MUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 
 import java.nio.DoubleBuffer;
+import java.util.Map;
 
 /**
  * `Div` function will divide `fromId1` by `fromId2` and save to `toId`.
@@ -52,4 +55,7 @@ public class Div extends MUpdateFunc {
     }
   }
 
+  protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows) {
+    throw new RuntimeException(" Div PSF can not support sparse type rows, try Mul PSF");
+  }
 }

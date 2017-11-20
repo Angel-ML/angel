@@ -19,6 +19,7 @@ package com.tencent.angel.ml.matrix.psf.update;
 
 import com.tencent.angel.ml.matrix.psf.update.enhance.VAUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
 
 import java.nio.DoubleBuffer;
 
@@ -47,6 +48,11 @@ public class MinA extends VAUpdateFunc {
     } finally {
       row.getLock().writeLock().unlock();
     }
+  }
+
+  @Override
+  protected void doUpdate(ServerSparseDoubleLongKeyRow rows, double[] other) {
+    throw new RuntimeException("MinA PSF can not support sparse type rows");
   }
 
 }

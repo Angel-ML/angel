@@ -64,7 +64,6 @@ class GBDTLearnerSuite extends PSFunSuite with SharedPSContext with Serializable
 
   override def afterAll(): Unit = {
     super.afterAll()
-
   }
 
   test("create sketch") {

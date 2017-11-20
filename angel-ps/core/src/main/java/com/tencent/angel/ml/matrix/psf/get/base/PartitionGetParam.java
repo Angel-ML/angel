@@ -26,10 +26,10 @@ import io.netty.buffer.ByteBuf;
  */
 public class PartitionGetParam implements Serialize {
   /** matrix Id */
-  private int matrixId;
+  protected int matrixId;
 
   /** partition key */
-  private PartitionKey partKey;
+  protected PartitionKey partKey;
 
   /**
    * Creates a new partition parameter.

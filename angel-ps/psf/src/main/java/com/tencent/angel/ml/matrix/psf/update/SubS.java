@@ -19,8 +19,11 @@ package com.tencent.angel.ml.matrix.psf.update;
 
 import com.tencent.angel.ml.matrix.psf.update.enhance.MMUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 
 import java.nio.DoubleBuffer;
+import java.util.Map;
 
 /**
  * `SubS` function will subtract a `value` from `fromId` and save result to `toId`.
@@ -50,6 +53,19 @@ public class SubS extends MMUpdateFunc {
     } finally {
       rows[1].getLock().writeLock().unlock();
     }
+  }
+
+  @Override
+  protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows, double[] values) {
+    double scalar = values[0];
+    Long2DoubleOpenHashMap from = rows[0].getData();
+    Long2DoubleOpenHashMap to = from.clone();
+    to.defaultReturnValue(scalar);
+
+    for (Map.Entry<Long, Double> entry: to.long2DoubleEntrySet()) {
+      entry.setValue(entry.getValue() - scalar);
+    }
+    rows[1].setIndex2ValueMap(to);
   }
 
 }

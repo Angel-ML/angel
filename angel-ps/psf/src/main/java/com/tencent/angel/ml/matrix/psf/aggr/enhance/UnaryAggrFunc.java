@@ -25,6 +25,7 @@ import com.tencent.angel.ps.impl.PSContext;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerPartition;
 import com.tencent.angel.ps.impl.matrix.ServerRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
 
 /**
  * This is abstract class of Unary Aggregate Function of POF (PS Oriented Function),
@@ -68,9 +69,11 @@ public abstract class UnaryAggrFunc extends GetFunc {
     switch (row.getRowType()) {
       case T_DOUBLE_DENSE:
         return doProcessRow((ServerDenseDoubleRow) row);
+      case T_DOUBLE_SPARSE_LONGKEY:
+        return doProcessRow((ServerSparseDoubleLongKeyRow) row);
       default:
         throw new RuntimeException(this.getClass().getName() +
-            "currently only supports Double Dense Row");
+            "currently only supports DoubleDense and SparseDoubleLong Row");
     }
   }
 
@@ -80,5 +83,12 @@ public abstract class UnaryAggrFunc extends GetFunc {
    * @return aggregated result of each partition
    */
   protected abstract double doProcessRow(ServerDenseDoubleRow row);
+
+  /**
+   * The process function for `ServerSparseDoubleLongKeyRow`.
+   * @param row to process
+   * @return aggregated result of each partition
+   */
+  protected abstract double doProcessRow(ServerSparseDoubleLongKeyRow row);
 
 }

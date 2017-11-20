@@ -28,7 +28,7 @@ class MLRRunner extends MLRunner {
   private val LOG = LogFactory.getLog(classOf[MLRRunner])
 
   /**
-    * Run LR train task
+    * Run MLR train task
     *
     * @param conf : configuration of algorithm and resource
     */
@@ -40,7 +40,7 @@ class MLRRunner extends MLRunner {
   }
 
   /*
-   * Run LR predict task
+   * Run MLR predict task
    * @param conf: configuration of algorithm and resource
    */
   override
@@ -50,7 +50,7 @@ class MLRRunner extends MLRunner {
   }
 
   /*
-   * Run LR incremental train task
+   * Run MLR incremental train task
    * @param conf: configuration of algorithm and resource
    */
   def incTrain(conf: Configuration): Unit = {

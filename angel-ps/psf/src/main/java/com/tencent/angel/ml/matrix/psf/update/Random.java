@@ -44,10 +44,10 @@ public class Random extends FullUpdateFunc {
         for (int j = 0; j < row.size(); j++) {
           rowData.put(j, rand.nextDouble());
         }
-
       } finally {
         row.getLock().writeLock().unlock();
       }
     }
   }
+
 }

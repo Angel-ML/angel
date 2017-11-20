@@ -19,8 +19,11 @@ package com.tencent.angel.ml.matrix.psf.update;
 
 import com.tencent.angel.ml.matrix.psf.update.enhance.MMUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 
 import java.nio.DoubleBuffer;
+import java.util.Map;
 
 /**
  * `Scale` function do scale to `rowId` row.
@@ -49,6 +52,18 @@ public class Scale extends MMUpdateFunc {
     } finally {
       rows[0].getLock().writeLock().unlock();
     }
+  }
+
+  @Override
+  protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows, double[] values) {
+    double scalar = values[0];
+    Long2DoubleOpenHashMap rowData = rows[0].getData();
+
+    rowData.defaultReturnValue(rowData.defaultReturnValue() * scalar);
+    for (Map.Entry<Long, Double> entry: rowData.long2DoubleEntrySet()) {
+      entry.setValue(scalar * entry.getValue());
+    }
+    rows[1].setIndex2ValueMap(rowData);
   }
 
 }

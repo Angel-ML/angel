@@ -23,9 +23,12 @@ import com.tencent.angel.ml.matrix.psf.aggr.enhance.UnaryAggrFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 
 import java.nio.DoubleBuffer;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The Aggregate function `Asum` will return the sum absolute value of the `rowId` row in
@@ -51,6 +54,19 @@ public final class Asum extends UnaryAggrFunc {
     for (int i = 0; i < size; i++) {
       asum += Math.abs(data.get(i));
     }
+    return asum;
+  }
+
+  @Override
+  protected double doProcessRow(ServerSparseDoubleLongKeyRow row) {
+    long entireSize = row.getEndCol() - row.getStartCol();
+
+    Long2DoubleOpenHashMap data = row.getData();
+    double asum = 0.0;
+    for (Map.Entry<Long, Double> entry: data.long2DoubleEntrySet()) {
+      asum += Math.abs(entry.getValue());
+    }
+    asum += Math.abs(data.defaultReturnValue()) * (entireSize - data.size());
     return asum;
   }
 

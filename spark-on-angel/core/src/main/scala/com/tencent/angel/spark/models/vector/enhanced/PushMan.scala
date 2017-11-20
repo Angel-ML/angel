@@ -74,7 +74,7 @@ object PushMan {
     if (!mergeCache.contains((vector.poolId, vector.id, mergeType))) {
       mergeCache.synchronized {
         if (!mergeCache.contains((vector.poolId, vector.id, mergeType))) {
-          mergeCache.put((vector.poolId, vector.id, mergeType), Array.fill(vector.dimension)(defaultValue))
+          mergeCache.put((vector.poolId, vector.id, mergeType), Array.fill(vector.dimension.toInt)(defaultValue))
         }
       }
     }

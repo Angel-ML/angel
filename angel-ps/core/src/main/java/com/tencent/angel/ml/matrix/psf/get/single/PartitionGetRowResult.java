@@ -72,6 +72,10 @@ public class PartitionGetRowResult extends PartitionGetResult {
           rowSplit = new ServerSparseDoubleRow();
           break;
         }
+        case T_DOUBLE_SPARSE_LONGKEY: {
+          rowSplit = new ServerSparseDoubleLongKeyRow();
+          break;
+        }
 
         case T_INT_DENSE: {
           rowSplit = new ServerDenseIntRow();

@@ -22,7 +22,7 @@ import breeze.math.MutableEnumeratedCoordinateField
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.examples.psf._
-import com.tencent.angel.spark.examples.util.PSExamples._
+import com.tencent.angel.spark.examples.util.SparkUtils._
 import com.tencent.angel.spark.models.vector.PSVector
 
 /**

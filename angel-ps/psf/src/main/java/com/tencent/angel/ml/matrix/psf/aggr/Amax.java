@@ -23,9 +23,12 @@ import com.tencent.angel.ml.matrix.psf.aggr.enhance.UnaryAggrFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 
 import java.nio.DoubleBuffer;
 import java.util.List;
+import java.util.Map;
 
 /**
  * `Amax` will aggregate the maximum absolute value of the `rowId` row in `matrixId` matrix.
@@ -52,6 +55,18 @@ public final class Amax extends UnaryAggrFunc {
     }
     return amax;
   }
+
+  @Override
+  protected double doProcessRow(ServerSparseDoubleLongKeyRow row) {
+    Long2DoubleOpenHashMap data = row.getIndex2ValueMap();
+
+    double amax = Math.abs(data.defaultReturnValue());
+    for (Map.Entry<Long, Double> entry: data.long2DoubleEntrySet()) {
+      amax = Math.max(amax, Math.abs(entry.getValue()));
+    }
+    return amax;
+  }
+
 
   @Override
   public GetResult merge(List<PartitionGetResult> partResults) {

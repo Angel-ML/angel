@@ -19,6 +19,7 @@ package com.tencent.angel.ml.matrix.psf.update;
 
 import com.tencent.angel.ml.matrix.psf.update.enhance.MMUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
 
 import java.nio.DoubleBuffer;
 
@@ -50,4 +51,8 @@ public class Fill extends MMUpdateFunc {
     }
   }
 
+  @Override
+  protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows, double[] values) {
+    throw new RuntimeException("Fill PSF can not support sparse type rows");
+  }
 }

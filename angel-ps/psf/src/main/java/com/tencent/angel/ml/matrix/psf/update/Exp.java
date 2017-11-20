@@ -19,8 +19,11 @@ package com.tencent.angel.ml.matrix.psf.update;
 
 import com.tencent.angel.ml.matrix.psf.update.enhance.MUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 
 import java.nio.DoubleBuffer;
+import java.util.Map;
 
 /**
  * `Exp` is a implement of `math.exp` for row in matrix.
@@ -50,4 +53,14 @@ public class Exp extends MUpdateFunc {
     }
   }
 
+  @Override
+  protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows) {
+    Long2DoubleOpenHashMap from = rows[0].getData();
+    Long2DoubleOpenHashMap to = from.clone();
+
+    to.defaultReturnValue(Math.exp(to.defaultReturnValue()));
+    for (Map.Entry<Long, Double> entry: to.long2DoubleEntrySet()) {
+      to.put(entry.getKey().longValue(), Math.exp(entry.getValue()));
+    }
+  }
 }

@@ -19,8 +19,11 @@ package com.tencent.angel.ml.matrix.psf.update;
 
 import com.tencent.angel.ml.matrix.psf.update.enhance.MMUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 
 import java.nio.DoubleBuffer;
+import java.util.Map;
 
 /**
  * `Axpy` function is a implement of blas.axpy. That is `yId` += a * `xId`
@@ -51,4 +54,15 @@ public class Axpy extends MMUpdateFunc {
     }
   }
 
+  @Override
+  protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows, double[] scalars) {
+    double a = scalars[0];
+    Long2DoubleOpenHashMap xData = rows[0].getData();
+
+    Long2DoubleOpenHashMap yData = xData.clone();
+    for (Map.Entry<Long, Double> entry: yData.entrySet()) {
+      entry.setValue(entry.getValue() * a);
+    }
+    rows[1].mergeIndexValueMap(yData);
+  }
 }

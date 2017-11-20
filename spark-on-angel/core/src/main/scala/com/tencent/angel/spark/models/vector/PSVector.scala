@@ -36,7 +36,7 @@ abstract class PSVector extends PSModel {
 
   val poolId: Int
   val id: Int
-  val dimension: Int
+  val dimension: Long
 
   /**
     * Generate a CachedPSVector for this PSVectorKey

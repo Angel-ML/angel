@@ -12,37 +12,34 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
  */
 
 package com.tencent.angel.spark.context
 
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
+import scala.collection.{Map, mutable}
 
-import com.tencent.angel.client.AngelContext
-import com.tencent.angel.common.Location
-import com.tencent.angel.conf.AngelConf._
-import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.matrix.{MatrixContext, MatrixMeta}
-import com.tencent.angel.protobuf.generated.MLProtos.RowType
-import com.tencent.angel.psagent.PSAgent
-import com.tencent.angel.psagent.matrix.{MatrixClient, MatrixClientFactory}
-import com.tencent.angel.spark.models.matrix.MatrixType
-import com.tencent.angel.spark.models.matrix.MatrixType.MatrixType
-import com.tencent.angel.spark.models.vector.VectorType.VectorType
-import com.tencent.angel.spark.models.vector.enhanced.PSVectorDecorator
-import com.tencent.angel.spark.models.vector.{PSVector, VectorType}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.util.ShutdownHookManager
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.{SparkConf, TaskContext}
-import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.{Map, mutable}
 
+import com.tencent.angel.client.AngelContext
+import com.tencent.angel.common.Location
+import com.tencent.angel.conf.AngelConf._
+import com.tencent.angel.ml.matrix.{MatrixContext, MatrixMeta}
+import com.tencent.angel.protobuf.generated.MLProtos.RowType
+import com.tencent.angel.psagent.PSAgent
+import com.tencent.angel.psagent.matrix.{MatrixClient, MatrixClientFactory}
 import com.tencent.angel.spark.client.PSClient
+import com.tencent.angel.spark.models.matrix.MatrixType
+import com.tencent.angel.spark.models.matrix.MatrixType.MatrixType
+import com.tencent.angel.spark.models.vector.VectorType.VectorType
+import com.tencent.angel.spark.models.vector.{PSVector, VectorType}
 
 /**
  * AngelPSContext for driver and executor, it is an implement of `PSContext`
@@ -64,7 +61,7 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
   }
 
   def createMatrix(rows: Int,
-      cols: Int,
+      cols: Long,
       t: MatrixType = MatrixType.DENSE,
       rowInBlock: Int = -1,
       colInBlock: Int = -1): MatrixMeta = {
@@ -112,7 +109,8 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
       poolCapacity: Int = PSVectorPool.DEFAULT_POOL_CAPACITY): PSVector = {
 
     val vector = createVectorPool(dimension, poolCapacity, t).allocate()
-    PSClient.instance().initOps.fill(vector, 0.0)
+    // TODO: fix this
+//    PSClient.instance().initOps.fill(vector, 0.0)
     vector
   }
 
@@ -122,7 +120,7 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
       throw new AngelException("Don't try to clone a Decorated PSVector")
     */
     val vector = getPool(original.poolId).allocate()
-    PSClient.instance().initOps.fill(vector, 0.0)
+//    PSClient.instance().initOps.fill(vector, 0.0)
     vector
   }
 
@@ -359,4 +357,3 @@ private[spark] object AngelPSContext {
     }
   }
 }
-

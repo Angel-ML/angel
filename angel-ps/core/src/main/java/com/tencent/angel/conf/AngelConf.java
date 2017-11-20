@@ -29,6 +29,7 @@ import com.tencent.angel.worker.task.BaseTask;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
 
+import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Properties;
 
@@ -790,6 +791,16 @@ public class AngelConf extends Configuration {
   public static final String ML_RPC_TIMEOUT_KEY = "ml.rpc.timeout";
   public static final int DEFAULT_ML_RPC_TIMEOUT = 60000;
   public static final String ML_CLIENT_RPC_MAXATTEMPTS = "ml.client.rpc.maxattempts";
+  
+  // Mark whether use pyangel or not.
+  public static final String ANGEL_API_TYPE = "angel.app.type";
+  
+  public static final String PYANGEL_PYTHON = "angel.pyangel.python";
+  
+  public static final String PYANGEL_PYFILE = "angel.pyangel.pyfile";
+  
+  public static final String PYANGEL_PYDEPFILES = "angel.pyangel.pyfile.dependencies";
+  
   /**
    * Default value of {@link #ML_CLIENT_RPC_MAXATTEMPTS}.
    */

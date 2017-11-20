@@ -52,13 +52,13 @@ object Logistic {
         (0 until (sampleNum / partitionNum)).map { instanceId =>
           val featArray = (0 until dim).toArray.map(_ => rand.nextGaussian())
 
-          val feat = new DenseVector(featArray)
+          val feature = new DenseVector(featArray)
 
-          val score = (0 until dim).map(i => feat(i) * bcWeight.value(i)).sum
+          val score = (0 until dim).map(i => feature(i) * bcWeight.value(i)).sum
           val prob = 1.0 / (1.0 + math.exp(-1 * score))
 
           val label = if (rand.nextInt() < prob) 1.0 else 0.0
-          (feat, label)
+          (feature, label)
         }
       }
   }

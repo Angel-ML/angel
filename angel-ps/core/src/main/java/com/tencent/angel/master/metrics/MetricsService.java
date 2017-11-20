@@ -27,6 +27,7 @@ import org.apache.hadoop.yarn.event.EventHandler;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -67,6 +68,9 @@ public class MetricsService extends AbstractService implements EventHandler<Metr
   private volatile DistributeLog logWritter;
 
   private volatile boolean needWriteName;
+
+  /** LOG format */
+  private static final DecimalFormat df = new DecimalFormat("#0.000000");
 
   /**
    * Construct the service.
@@ -191,7 +195,7 @@ public class MetricsService extends AbstractService implements EventHandler<Metr
   private void calAlgoMetrics(int epoch) {
     LinkedHashMap<String, String> nameToMetricMap = new LinkedHashMap<>(metricsCache.size());
     for(Map.Entry<String, Metric> metricEntry:metricsCache.entrySet()) {
-      nameToMetricMap.put(metricEntry.getKey(), metricEntry.getValue().toString());
+      nameToMetricMap.put(metricEntry.getKey(), df.format(Double.valueOf(metricEntry.getValue().toString())));
     }
     iterToMetricsMap.put(epoch, nameToMetricMap);
     metricsCache.clear();

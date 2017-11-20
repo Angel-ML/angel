@@ -22,7 +22,7 @@
   <parent>
     <groupId>com.tencent.angel</groupId>
     <artifactId>angel</artifactId>
-    <version>1.2.1</version>
+    <version>1.3.0</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -40,6 +40,7 @@
 
   <properties>
     <main.basedir>${project.parent.basedir}</main.basedir>
+    <compile.scope>provided</compile.scope>
   </properties>
 
   <dependencies>
@@ -226,6 +227,7 @@
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-library</artifactId>
       <version>${scala.version}</version>
+      <scope>${compile.scope}}</scope>
     </dependency>
     <dependency>
       <groupId>org.scalatest</groupId>
@@ -351,7 +353,7 @@
           </excludes>-->
         </configuration>
       </plugin>
-      <plugin>
+      <!--plugin>
         <groupId>org.scalastyle</groupId>
         <artifactId>scalastyle-maven-plugin</artifactId>
         <version>0.8.0</version>
@@ -372,7 +374,7 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
+      </plugin-->
     </plugins>
     <resources>
       <resource>

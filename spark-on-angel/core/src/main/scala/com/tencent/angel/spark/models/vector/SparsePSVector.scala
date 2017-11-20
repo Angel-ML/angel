@@ -22,11 +22,30 @@ import com.tencent.angel.spark.context.PSContext
 
 class SparsePSVector(override val poolId: Int,
                      override val id: Int,
-                     override val dimension: Int) extends PSVector {
+                     override val dimension: Long) extends PSVector {
+
+
+  def fill(values: Array[(Long, Double)]): Unit = {
+    psClient.sparseRowOps.push(this, values)
+  }
+
+  def increment(delta: Array[(Long, Double)]): Unit = {
+    psClient.sparseRowOps.increment(this, delta)
+  }
+
+  def pull(indices: Array[Long]): Array[(Long, Double)] = {
+    psClient.sparseRowOps.pull(this, indices)
+  }
+
+  def sparsePull(): Array[(Long, Double)] = {
+    psClient.sparseRowOps.pull(this)
+  }
+
+  // other method of SparsePSVector is going to launch
 }
 
 object SparsePSVector{
-  def apply(dimension: Int, capacity:Int): SparsePSVector = {
+  def apply(dimension: Int, capacity:Int = 20): SparsePSVector = {
     PSContext.instance().createVector(dimension, VectorType.SPARSE, capacity).asInstanceOf[SparsePSVector]
   }
 }

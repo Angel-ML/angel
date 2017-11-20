@@ -12,41 +12,41 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
  */
 
-package com.tencent.angel.ml.matrix.psf.update.primitive;
+package com.tencent.angel.ml.matrix.psf.update;
 
 import com.tencent.angel.ml.matrix.psf.update.enhance.VAUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
 
 import java.nio.DoubleBuffer;
 
 /**
- * `Increment` will increase `delta` to `rowId` row in matrix.
+ * `Push` the `values` to `rowId` row
  */
-public class Increment extends VAUpdateFunc {
+public class Push extends VAUpdateFunc {
 
-  public Increment(int matrixId, int rowId, double[] delta) {
-    super(matrixId, rowId, delta);
+  public Push(int matrixId, int rowId, double[] values) {
+    super(matrixId, rowId, values);
   }
 
-  public Increment() {
+  public Push() {
     super();
   }
 
   @Override
-  protected void doUpdate(ServerDenseDoubleRow row, double[] delta) {
-    try {
-      row.getLock().writeLock().lock();
-      DoubleBuffer data = row.getData();
-      int size = row.size();
-      for (int i = 0; i < size; i++) {
-        data.put(i, data.get(i) + delta[i]);
-      }
-    } finally {
-      row.getLock().writeLock().unlock();
+  protected void doUpdate(ServerDenseDoubleRow row, double[] values) {
+    DoubleBuffer data = row.getData();
+    int size = row.size();
+    for (int i = 0; i < size; i++) {
+      data.put(i, values[i]);
     }
+  }
+
+  @Override
+  protected void doUpdate(ServerSparseDoubleLongKeyRow row, double[] values) {
+    throw new RuntimeException("Push PSF can not support sparse type rows");
   }
 
 }

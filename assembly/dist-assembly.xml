@@ -56,5 +56,35 @@
           <fileMode>0755</fileMode>
           <directoryMode>0755</directoryMode>
       </fileSet>
+      <fileSet>
+          <directory>${project.basedir}/../angel-ps/python</directory>
+          <outputDirectory>python</outputDirectory>
+          <fileMode>0755</fileMode>
+          <directoryMode>0755</directoryMode>
+      </fileSet>
+      <fileSet>
+          <directory>${project.basedir}/../angel-ps/examples/src/main/python</directory>
+          <outputDirectory>python/examples</outputDirectory>
+          <fileMode>0755</fileMode>
+          <directoryMode>0755</directoryMode>
+      </fileSet>
+      <fileSet>
+          <directory>${project.basedir}/../angel-ps/python/lib</directory>
+          <outputDirectory>lib</outputDirectory>
+          <fileMode>0755</fileMode>
+          <directoryMode>0755</directoryMode>
+      </fileSet>
+      <fileSet>
+          <directory>${project.basedir}/../angel-ps/mllib/src/test/data/clustering</directory>
+          <outputDirectory>data/clustering</outputDirectory>
+          <fileMode>0755</fileMode>
+          <directoryMode>0755</directoryMode>
+      </fileSet>
+      <fileSet>
+          <directory>${project.basedir}/../angel-ps/mllib/src/test/data/fm</directory>
+          <outputDirectory>data/fm</outputDirectory>
+          <fileMode>0755</fileMode>
+          <directoryMode>0755</directoryMode>
+      </fileSet>
     </fileSets>
 </assembly>

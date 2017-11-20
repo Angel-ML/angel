@@ -19,8 +19,11 @@ package com.tencent.angel.ml.matrix.psf.update;
 
 import com.tencent.angel.ml.matrix.psf.update.enhance.MMUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 
 import java.nio.DoubleBuffer;
+import java.util.Map;
 
 /**
  * `Round` is a implement of `math.round` for row in matrix.
@@ -48,6 +51,17 @@ public class Pow extends MMUpdateFunc {
       }
     } finally {
       rows[1].getLock().writeLock().unlock();
+    }
+  }
+
+  @Override
+  protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows, double[] values) {
+    Long2DoubleOpenHashMap from = rows[0].getData();
+    Long2DoubleOpenHashMap to = from.clone();
+    double value = values[0];
+
+    for (Map.Entry<Long, Double> entry: to.long2DoubleEntrySet()) {
+      to.put(entry.getKey().longValue(), Math.pow(entry.getValue(), value));
     }
   }
 

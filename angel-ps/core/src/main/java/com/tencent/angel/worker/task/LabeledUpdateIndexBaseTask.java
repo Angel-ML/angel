@@ -28,24 +28,24 @@ import java.io.IOException;
 
 /**
  * The type Labeled update index base task.
- *<p>
- *   Support update index
- *</p>
+ * <p>
+ * Support update index
+ * </p>
  */
 public abstract class LabeledUpdateIndexBaseTask<KEYIN, VALUEIN> extends
-    BaseTask<KEYIN, VALUEIN, LabeledData> {
+        BaseTask<KEYIN, VALUEIN, LabeledData> {
   private final boolean updateIndexEnable;
   private volatile IntOpenHashSet indexSet;
   private final MatrixMeta matrixMeta;
-
+  
   public LabeledUpdateIndexBaseTask(TaskContext taskContext, MatrixMeta matrixMeta)
-      throws IOException {
+          throws IOException {
     super(taskContext);
     this.matrixMeta = matrixMeta;
     updateIndexEnable = true;
     indexSet = new IntOpenHashSet();
   }
-
+  
   @Override
   public void preProcess(TaskContext taskContext) {
     try {
@@ -65,13 +65,13 @@ public abstract class LabeledUpdateIndexBaseTask<KEYIN, VALUEIN> extends
           }
         }
       }
-
+      
       taskDataBlock.flush();
     } catch (Exception e) {
       throw new AngelException("Pre-Process Error.", e);
     }
   }
-
+  
   /**
    * Is update index enable boolean.
    *
@@ -80,7 +80,7 @@ public abstract class LabeledUpdateIndexBaseTask<KEYIN, VALUEIN> extends
   public boolean isUpdateIndexEnable() {
     return updateIndexEnable;
   }
-
+  
   /**
    * Gets index set.
    *
@@ -89,7 +89,7 @@ public abstract class LabeledUpdateIndexBaseTask<KEYIN, VALUEIN> extends
   public IntOpenHashSet getIndexSet() {
     return indexSet;
   }
-
+  
   /**
    * Sets index set.
    *
@@ -98,7 +98,7 @@ public abstract class LabeledUpdateIndexBaseTask<KEYIN, VALUEIN> extends
   public void setIndexSet(IntOpenHashSet indexSet) {
     this.indexSet = indexSet;
   }
-
+  
   /**
    * Gets matrix meta.
    *

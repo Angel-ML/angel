@@ -21,18 +21,20 @@ package com.tencent.angel.ml.matrix.psf.update.enhance;
  * the asynchronous consistency control protocol.
  */
 public abstract class UpdateFunc {
-  /** parameter of get udf */
+  /**
+   * parameter of get udf
+   */
   private final UpdateParam param;
-
+  
   /**
    * Create a new UpdateParam
-   * 
+   *
    * @param param
    */
   public UpdateFunc(UpdateParam param) {
     this.param = param;
   }
-
+  
   /**
    * Gets parameter.
    *
@@ -41,7 +43,7 @@ public abstract class UpdateFunc {
   public UpdateParam getParam() {
     return param;
   }
-
+  
   /**
    * Partition update.
    *

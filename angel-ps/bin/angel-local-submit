@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+export PATH=$JAVA_HOME/bin:$PATH
+
+bin=`which $0`
+bin=`dirname ${bin}`
+bin=`cd "$bin"; pwd`
+
+lib="$bin"/../lib
+
+export ANGEL_HOME="$bin/../"
+export ANGEL_VERSION=2.1.0
+
+
+for f in "$lib"/*.jar; do
+    if [ "$CLASSPATH" ]; then
+        export CLASSPATH=$CLASSPATH:$f
+    else
+        export CLASSPATH=$f
+    fi
+done
+
+export CLASS="com.tencent.angel.utils.AngelRunJar"
+
+export CLASSPATH=$CLASSPATH
+export PYTHONHASHSEED=0
+java $CLASS "$@"

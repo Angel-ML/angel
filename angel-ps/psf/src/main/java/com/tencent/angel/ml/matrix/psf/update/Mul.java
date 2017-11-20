@@ -19,8 +19,12 @@ package com.tencent.angel.ml.matrix.psf.update;
 
 import com.tencent.angel.ml.matrix.psf.update.enhance.MUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.nio.DoubleBuffer;
+import java.util.Map;
 
 /**
  * `Mul` function will multiply `fromId1` and `fromId2` and saves to `toId`.
@@ -52,4 +56,37 @@ public class Mul extends MUpdateFunc {
     }
   }
 
+  @Override
+  protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows) {
+    Long2DoubleOpenHashMap from1 = rows[0].getIndex2ValueMap();
+    Long2DoubleOpenHashMap from2 = rows[1].getIndex2ValueMap();
+
+    Long2DoubleOpenHashMap to;
+    if (from1.defaultReturnValue() == 0.0) {
+      to = from1.clone();
+      for (Map.Entry<Long, Double> entry: to.long2DoubleEntrySet()) {
+        double v = from2.get(entry.getKey());
+        to.put(entry.getKey().longValue(), entry.getValue() * v);
+      }
+    } else if (from2.defaultReturnValue() == 0.0) {
+      to = from2.clone();
+      for (Map.Entry<Long, Double> entry: to.long2DoubleEntrySet()) {
+        double v = from1.get(entry.getKey());
+        to.put(entry.getKey().longValue(), entry.getValue() * v);
+      }
+    } else {
+      to = from1.clone();
+      to.defaultReturnValue(from1.defaultReturnValue() * from2.defaultReturnValue());
+
+      LongSet keys = from1.keySet();
+      keys.addAll(from2.keySet());
+
+      for(long key: keys) {
+        double value1 = from1.get(key);
+        double value2 = from2.get(key);
+        to.put(key, value1 * value2);
+      }
+    }
+    rows[2].setIndex2ValueMap(to);
+  }
 }
