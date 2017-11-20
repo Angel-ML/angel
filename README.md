@@ -40,12 +40,12 @@
 ## Quick Start
 * [Angel入门](./docs/tutorials/angel_ps_quick_start.md)
 * [Spark on Angel入门](./docs/tutorials/spark_on_angel_quick_start.md)
-
+* [PyAngel入门](./doc/tutorials/pyangel_quick_start.md)
 
 ## Algorithm
 
 * **Angel**
-	* [Logistic Regression](./docs/algo/lr_on_angel.md) ([MLR](./docs/algo/mlr_on_angel.md) | [ADMM](./docs/algo/admm_lr_on_angel.md)) 
+	* [Logistic Regression](./docs/algo/lr_on_angel.md) ([MLR](./docs/algo/mlr_on_angel.md) | [ADMM](./docs/algo/admm_lr_on_angel.md))
 	* [Matrix Factorization](./docs/algo/mf_on_angel.md)
 	* [SVM](./docs/algo/svm_on_angel.md)
 	* [KMeans](./docs/algo/kmeans_on_angel.md)
