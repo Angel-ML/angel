@@ -58,15 +58,15 @@ ADMM在Angel上实现的一般步骤为：
 * **Local模型**
 
 	* u模型
-	![](../img/admm_u_x.png)	
+	![](../img/admm_local_u.png)	
 	* x模型
-	![](../img/admm_u_x.png)
+	![](../img/admm_local_x.png)
 
 * **Global模型**：
 
 	* z模型
 
-	![](../img/admm_z.png)
+	![](../img/admm_local_z.png)
 
 	* S函数
 	![](../img/admm_z_s.png)
