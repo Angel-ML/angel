@@ -2,7 +2,7 @@
 
 export HADOOP_HOME="/data/tesla/tdwgaia_angel"
 export JAVA_HOME="/data/tesla/jdk1.8.0_101"
-export ANGEL_VERSION=""
+export ANGEL_VERSION=1.3.0
 export PATH=$JAVA_HOME/bin:$PATH
 
 if [ "$HADOOP_HOME" = "" ]; then
