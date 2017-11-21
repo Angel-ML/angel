@@ -1,6 +1,6 @@
-# FTRL LR SPARK
+# FTRL Sparse_LR SPARK
 
->FTRL是一种在线学习的优化算法，FTRL LR SPARK算法就是在求解LR的过程中通过FTRL进行优化同时在spark on angel上实现。鉴于实际应用中数据集的维度往往很大且为了符合模型稀疏性的特点，本算法采用稀疏方式实现，即数据的格式为标准的libsvm格式，且模型以"index:value"的方式表达。为了满足在线学习的要求，本算法以kafka为消息发送机制，使用时需要填写kafka的配置信息。
+>FTRL是一种在线学习的优化算法，FTRL Sparse_LR SPARK算法就是在求解Sparse_LR的过程中通过FTRL进行优化同时在spark on angel上实现。鉴于实际应用中数据集的维度往往很大且为了符合模型稀疏性的特点，本算法采用稀疏Sparse方式实现，即数据的格式为标准的libsvm格式，且模型以"index:value"的方式表达。为了满足在线学习的要求，本算法以kafka为消息发送机制，使用时需要填写kafka的配置信息。
 
 
 ## 1. 算法介绍
@@ -52,8 +52,10 @@
 
 * **输入输出参数**
   * checkPointPath：streaming流数据的checkpoint路径   
-  * modelPath：每批数据训练完后模型的保存路径 
-  * zkQuorum:Zookeeper的配置信息，格式：hostname:port
+  * modelPath：每批数据训练完后模型的保存路径
+  * actionType："train"表示训练，"predict"表示预测
+  * sampleRate：预测时用来控制样本的输入比例
+  * zkQuorum:Zookeeper的配置信息，格式："hostname:port"
   * topic:kafka的topic信息
   * group:kafka的group信息
   * streamingWindow：控制spark streaming流中每批数据的持续时间
@@ -69,7 +71,7 @@
 
 ###  **提交命令**
 
-可以通过下面命令向Yarn集群提交LR算法训练任务:
+可以通过下面命令向Yarn集群提交FTRL_SparseLR算法的训练任务:
 
 ```shell
 ./bin/spark-submit \
