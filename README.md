@@ -57,6 +57,10 @@
 	* [GBDT](./docs/algo/sona/gbdt_sona.md)
 	* [KMeans](.docs/algo/sona/kmeans_sona.md)
 
+* **在线学习(Online Learning)**
+	* [FTRL](./docs/algo/ftrl_lr_spark.md)
+	
+
 ## Deployment
 
 * [下载和编译](./docs/deploy/source_compile.md)
