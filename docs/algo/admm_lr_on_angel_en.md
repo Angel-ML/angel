@@ -1,71 +1,148 @@
-# SparseLogisticRegression
+# ADMM_LR
 
-SparseLogisticRegression uses L1 regularization that yields sparse solutions, compared to LogisticRegression that uses L2 regularization yielding "dense" solutions. 
+> The optimization method for solving Logistic Regression using Alternating Direction Method of Multipliers (ADMM) [1] is referred to as ADMM_LR. ADMM is a method for solving a broad class of constraint optimization problems. Compared to SGD, ADMM converges to modest accuracy within a few tens of iterations; however, it takes ADMM much more iterations to converge to high accuracy.
+ 
 
-## ADMM
+## 1. Introduction to ADMM
 
-In Angel, we use ADMM algorithm [1] to solve optimization of the objective in LogisticRegression. Comparing to SGD, ADMM converges to modest accuracy within a few tens of iterations [1]; however, ADMM can be very slow to converge to high accuracy. A common practice is to combine ADMM with other algorithms to improve the rate of convergence. In Angel, we use LBFGS in Breeze to optimize for the sub-models in each iteration. 
+ADMM can be viewed as an attempt to blend the benefits of the Dual Decomposition and the Augmented Lagrangian and the Method of Multipliers for constrained optimization. Under weak convergence condition, ADMM can decompose the objective function, separate the optimization so that variables are updated in an alternating way, until convergence is reached.
+
+Consider the following optimization problem:
+
+![](../img/admm_general.png)
+
+We first form the augmented Lagrangian in order to transform the optimization problem to be unconstrained, including the L2 regularization term, as following:
+
+![](../img/admm_l2.png)
+
+Further derivation of the above expression yields:
+
+![](../img/admm_loss_dual.png)
+
+where
+
+![](../img/admm_u.png)
+
+Thus, ADMM consists of the following iterations:
+
+![](../img/admm_iter_xzu.png)
+
+ADMM can blend in methods with high precision (e.g. Newton's method) in each iteration for better results. 
+
+The specific objective function of the Sparse Logistic Regression is:
+
+![](../img/admm_loss.png)
+
+Following the iteration steps of ADMM until updates of w and z become smaller than their pre-determined thresholds. 
+
+## 2. Distributed Implementation of ADMM on Angel
+
+For implementation of ADMM on Angel, we use the framework known as ADMM—Split Across Examples, where m samples are divided into N data blocks, and L(w) is re-written as the sum of loss functions of the N data blocks:
+
+![](../img/admm_loss_angel_en.png)
 
 
-## Execution
+The above constrained objective implies that x_i from each data block needs to equal z, thus z belongs to the global model.
 
-### Input Format
+The implementation steps of ADMM on Angel are:
 
-Data fromat is set in "ml.data.type"; feature vector's dimension is set in "ml.feature.num".
+1. Each worker pulls model z from PS to local
+2. Calculate u, then use LBFGS to update x locally (LBFGS is implemented by calling breeze.optimize.LBFGS)
+3. Calculate the `intermediate variable w` and `t for evaluating convergence`, then push to PS
+4. Calculate z on PS; explicit expression is available under L1 regularization
 
-SparseLR on Angel supports "libsvm" and "dummy" types. For details, see [Angel Data Format](data_format_en.md)
+We show the implementation chart below:
+
+![](../img/admm_lr_1.png)
 
 
-###  Parameters
-* Algorithm Parameters 
-  * ml.epoch.num: number of iterations/epochs   
-  * ml.reg.l1: coefficient of the L1 penalty
+* **Local Models**
+ 
+	![](../img/admm_u_x.png)
+
+* **Global Models**
+
+	* z
+
+	![](../img/admm_z.png)
+
+	* S function
+	![](../img/admm_z_s.png)
+
+## 3. Execution & Performance
+
+###  **Input Format**
+  * ml.feature.num: feature dimension  
+  * ml.data.type: supports "dummy", "libsvm" types; for details, see [Angel Data Format](data_format_en.md)
+
+### **Parameters**
+
+
+* **Algorithm Parameters**
+  * ml.epoch.num: number of iterations
+  * ml.reg.l1: L1 coefficient
   * rho: rho
-  * ml.worker.thread.num: number of threads on each worker (for parallel training)
+  * ml.worker.thread.num: number of parallel threads on each worker
 
-* I/O Parameters
-  * angel.train.data.path: input path
-  * ml.feature.num: number of features  
-  * ml.data.type: [Angel Data Format](data_format_en.md), supporting "dummy" and "libsvm"    
-  * angel.save.model.path: save path for trained model 
+* **I/O Parameters**
+  * angel.train.data.path: input path 
+  * angel.save.model.path: save path for trained model
   * angel.log.path: save path for the log
-   
-* Resource Parameters
-  * angel.workergroup.number: number of workers   
+
+       
+* **Resource Parameters**
+  * angel.workergroup.number: number of workers
   * angel.worker.memory.mb: worker's memory requested in G   
-  * angel.worker.task.number: number of tasks on each worker, default is 1    
+  * angel.worker.task.number: number of tasks on each worker, default is 1
   * angel.ps.number: number of PS
   * angel.ps.memory.mb: PS's memory requested in G
 
-## Performance
-We use Tencent's internal data sets to compare the performance of Angel and Spark as a platform for SparseLR. 
+###  **Command for Submission**
+
+Use the following example for submitting LR trainning job to Yarn 
+
+```shell
+./bin/angel-submit \
+    --action.type train \
+    --angel.app.submit.class com.tencent.angel.ml.classification.lr.LRRunner  \
+    --angel.train.data.path $input_path \
+    --angel.save.model.path $model_path \
+    --angel.log.path $logpath \
+    --ml.epoch.num 10 \
+    --ml.batch.num 10 \
+    --ml.feature.num 10000 \
+    --ml.validate.ratio 0.1 \
+    --ml.data.type dummy \
+    --ml.learn.rate 1 \
+    --ml.learn.decay 0.1 \
+    --ml.reg.l2 0 \
+    --angel.workergroup.number 3 \
+    --angel.worker.task.number 3 \
+    --angel.ps.number 1 \
+    --angel.ps.memory.mb 5000 \
+    --angel.job.name=angel_lr_smalldata
+```
+
+### Performance
+
 
 * Training Data
 
-| Data Set | Data Set Size | Sample Size | Number of Features | Task |
-|:------:|:----------:|:--------:|:--------:|:-------:|
-| XXX  |    350GB    |   100M  |   50M   | Binary |
+	| Data Set | Data Size | Sample Size | Number of Features | Task |
+	|:------:|:----------:|:--------:|:--------:|:-------:|
+	| XXX  |    350GB    |   100M  |   50M   | Binary Classification |
 
 
-* **Environment**
+* **Environment Config**
 
-	The experiment was run on Tencent's Gaia cluster (Yarn), and each instance has the following configuration:
-
-	* CPU: 2680 * 2
-	* Memory: 256 GB
-	* Network: 10G * 2
-	* Disk: 4T * 12 (SATA)
-
-
-* **Variable Setting**
-
-    * Spark: 200 executors, 20G memory; driver 20G memory
-    * Angel：100 workers, 10G memory; 50 ps, 5G memory
+    * Spark: 200 executors, 20G memory, 20G driver memory
+    * Angel: 100 workers, 10G memory; 50 PS, 5G memory
     
-* **Experiment Result**
+* **Result**
 
     ![](../img/admm_lr.png)
 
 
 ## Reference
 1. Boyd S, Parikh N, Chu E, et al. [Distributed optimization and statistical learning via the alternating direction method of multipliers](https://pdfs.semanticscholar.org/905b/cb57493c8b97b216bc6786aa122e1ad608b0.pdf). Foundations and Trends® in Machine Learning, 2011, 3(1): 1-122.
+
