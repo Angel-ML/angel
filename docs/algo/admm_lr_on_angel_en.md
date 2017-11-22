@@ -63,7 +63,7 @@ We show the implementation chart below:
 * **Global Models**
 
 	![](../img/admm_z_s_en.png)
-
+ 
 
 ## 3. Execution & Performance
 
