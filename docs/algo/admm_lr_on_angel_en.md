@@ -31,7 +31,7 @@ ADMM can blend in methods with high precision (e.g. Newton's method) in each ite
 
 The specific objective function of the Sparse Logistic Regression is:
 
-![](../img/admm_loss.png)
+![](../img/admm_loss_en.png)
 
 Following the iteration steps of ADMM until updates of w and z become smaller than their pre-determined thresholds. 
 
@@ -42,7 +42,7 @@ For implementation of ADMM on Angel, we use the framework known as ADMM—Split 
 ![](../img/admm_loss_angel_en.png)
 
 
-The above constrained objective implies that $x_i$ from each data block needs to equal $z$, thus $z$ belongs to the global model.
+The above constrained objective implies that x_i from each data block needs to equal z, thus z belongs to the global model.
 
 The implementation steps of ADMM on Angel are:
 
@@ -57,16 +57,13 @@ We show the implementation chart below:
 
 
 * **Local Models**
- 
-	![](../img/admm_u_x.png)
+	
+	![](../img/admm_u_x_en.png)
 
 * **Global Models**
 
-	* z
-	![](../img/admm_z.png)
+	![](../img/admm_z_s_en.png)
 
-	* S function
-	![](../img/admm_z_s.png)
 
 ## 3. Execution & Performance
 
