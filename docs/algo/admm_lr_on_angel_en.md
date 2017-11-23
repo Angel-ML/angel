@@ -42,7 +42,7 @@ For implementation of ADMM on Angel, we use the framework known as ADMM—Split 
 ![](../img/admm_loss_angel_en.png)
 
 
-The above constrained objective implies that x_i from each data block needs to equal z, thus z belongs to the global model.
+The above constrained objective implies that $x_i$ from each data block needs to equal $z$, thus $z$ belongs to the global model.
 
 The implementation steps of ADMM on Angel are:
 
@@ -63,7 +63,6 @@ We show the implementation chart below:
 * **Global Models**
 
 	* z
-
 	![](../img/admm_z.png)
 
 	* S function
