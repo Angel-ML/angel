@@ -75,7 +75,7 @@ object SparseLRWithLBFGS {
 
   def runLBFGSSpark(trainData: RDD[(OneHotVector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
     val initWeight = new DenseVector[Double](dim)
-    val tol = 1e-6
+    val tol = 1e-9
     val lbfgs = new LBFGS[DenseVector[Double]](maxIter, m, tol)
     val states = lbfgs.iterations(SparseLogistic.Cost(trainData), initWeight)
 

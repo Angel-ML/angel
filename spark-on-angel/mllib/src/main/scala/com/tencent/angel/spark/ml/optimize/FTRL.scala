@@ -10,7 +10,7 @@ object FTRL {
                       beta: Double,
                       lambda1: Double,
                       lambda2: Double,
-                      getGredLoss:(Array[(Long, Double)], Double, Array[(Long, Double)]) => Map[Long, Double]
+                      getGradLoss:(Array[(Long, Double)], Double, Array[(Long, Double)]) => Map[Long, Double]
                      ): (Array[(Long, Double)], Array[(Long, Double)]) = {
 
     val label = data._1.toDouble
@@ -22,7 +22,7 @@ object FTRL {
     val localW = new Array[(Long, Double)](featLeg)
 
     // update the w
-    (0 until featLeg).map{ i =>
+    (0 until featLeg).foreach{ i =>
       val fId = feature(i)._1
       val zVal = localZ.getOrElse(fId, 0.0)
       val nVal = localN.getOrElse(fId, 0.0)
@@ -37,18 +37,18 @@ object FTRL {
     val incrementZ = new Array[(Long, Double)](featLeg)
     val incrementN = new Array[(Long, Double)](featLeg)
 
-    (0 until featLeg).map { i =>
+    (0 until featLeg).foreach{ i =>
 
       val fId = feature(i)._1
       val nVal = localN.getOrElse(fId, 0.0)
 
       // G(t):第t次迭代中损失函数梯度，g(t)表示某一维度上的梯度
-      gOnId = getGredLoss(localW, label, feature).getOrElse(fId, 0.0)
+      gOnId = getGradLoss(localW, label, feature).getOrElse(fId, 0.0)
       // delta(s),n_val初始为0，z(i)初始为0
-      dOnId = (1.0 / alpha * (Math.sqrt(nVal + gOnId * gOnId) - Math.sqrt(nVal)))
+      dOnId = 1.0 / alpha * (Math.sqrt(nVal + gOnId * gOnId) - Math.sqrt(nVal))
 
       incrementZ(i) = (fId, gOnId - dOnId * localW(i)._2)
-      incrementN(i) = (fId, (gOnId * gOnId))
+      incrementN(i) = (fId, gOnId * gOnId)
     }
 
     (incrementZ, incrementN)

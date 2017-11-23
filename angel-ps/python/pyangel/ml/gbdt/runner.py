@@ -29,8 +29,8 @@ class GBDTRunner(MLRunner):
 
     def train(self, conf):
         conf["angel.worker.matrixtransfer.request.timeout.ms"] = 60000
-        featNum = conf[MLConf.ML_FEATURE_NUM]
-        psNumber = conf.get_int(AngelConf.ANGEL_PS_NUMBER, 1)
+        featNum = int(conf[MLConf.ML_FEATURE_NUM])
+        psNumber = int(conf[AngelConf.ANGEL_PS_NUMBER])
         if (featNum % psNumber != 0):
             featNum = (featNum / psNumber + 1) * psNumber
             conf.set_int(MLConf.ML_FEATURE_NUM, featNum)

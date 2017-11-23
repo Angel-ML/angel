@@ -48,7 +48,6 @@ class Initializer {
     update(mat.meta.getId, new Random(mat.meta.getId))
   }
 
-
   /**
     * Fill PSVectorKey with `value`
     * Notice: it can only be called in th driver.
