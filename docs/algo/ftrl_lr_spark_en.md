@@ -7,7 +7,7 @@
 
 `FTRL` blends the benefits of `FOBOS` and `RDA`: it guarantees comparatively high precision as FOBOS does, and can yield better sparcity in result with a reasonably loss in precision. 
 
-The equations used for updating weights of features by FTRL are:
+The equation used for updating weights of features by FTRL is:
 
 ![](../img/ftrl_lr_w.png)
 
@@ -15,21 +15,21 @@ where
 
 * G function is the gradient of the loss function:
 
-![](../img/ftrl_lr_g_en.png)
+	![](../img/ftrl_lr_g_en.png)
 
-* w's updating is separated to N independent scalar minimization problems, depending on the specific dimension of the weights:
+* w's updating is separated to N independent scalar minimization problems, depending on the specific dimension:
 
-![](../img/ftrl_lr_w_update.png)
+	![](../img/ftrl_lr_w_update.png)
 
-* if considering individual learning rate for each dimension, w's updating equation becomes:
+* considering individual learning rate for each dimension, w's updating equation becomes:
 
-![](../img/ftrl_lr_d_t.png)
+	![](../img/ftrl_lr_d_t.png)
 
 
 
 ## 2. Distributed Implementation
 
-Google has provided the implementation of the Logistic Regression model with L1/L2 terms using FTRL:
+Google has provided the implementation of Logistic Regression with L1/L2 terms using FTRL:
 
 ![](../img/ftrl_lr_project.png)
 
@@ -45,7 +45,7 @@ Integrating characteristics of Spark Streaming and Angel into the above referenc
 ###  **Input Format**
 * dim: dimension of the input data
 * Only supports the standard ["libsvm"](./data_format_en.md) format for message 
-* Uses the Kafka messaging mechanism, thus kafka needs to be configured
+* Uses kafka messaging mechanism, thus kafka needs to be configured
 
 ### **Parameters**
 
@@ -71,7 +71,7 @@ Integrating characteristics of Spark Streaming and Angel into the above referenc
 	* executor-memory: executor memory
 	* driver-memory: driver memory
 	* spark.ps.instances: number of Angel PS nodes
-	* spark.ps.cores: number of cors in each PS node
+	* spark.ps.cores: number of cores in each PS node
 	* spark.ps.memory: PS node memory
 
 ###  **Submission Command**
