@@ -76,7 +76,7 @@ Integrating characteristics of Spark Streaming and Angel into the above referenc
 
 ###  **Submission Command**
 
-Submit the FTRL_SparseLR training job to Yarn using the following sample ommand:
+Submit the FTRL_SparseLR training job to Yarn using the following sample command:
 
 ```shell
 ./bin/spark-submit \
