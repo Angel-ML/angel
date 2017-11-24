@@ -15,7 +15,7 @@ where
 
 * G function is the gradient of the loss function:
 
-![](../img/ftrl_lr_g.png)
+![](../img/ftrl_lr_g_en.png)
 
 * w's updating is separated to N independent scalar minimization problems, depending on the specific dimension of the weights:
 
