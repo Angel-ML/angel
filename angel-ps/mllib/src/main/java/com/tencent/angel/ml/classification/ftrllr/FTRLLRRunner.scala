@@ -17,9 +17,10 @@
 package com.tencent.angel.ml.classification.ftrllr
 
 import com.tencent.angel.ml.MLRunner
+import com.tencent.angel.ml.classification.lr.{LRModel, LRPredictTask}
 import org.apache.hadoop.conf.Configuration
 
-class FTRLLRRunner extends MLRunner{
+class FTRLLRRunner extends MLRunner {
   /**
     * Training job to obtain a model
     */
@@ -36,5 +37,8 @@ class FTRLLRRunner extends MLRunner{
   /**
     * Using a model to predict with unobserved samples
     */
-  override def predict(conf: Configuration): Unit = ???
+  override def predict(conf: Configuration): Unit = {
+    conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
+    super.predict(conf, FTRLLRModel(conf), classOf[FTRLLRPredictTask])
+  }
 }
