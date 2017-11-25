@@ -97,11 +97,9 @@ object SparseLRWithOWLQN {
   def runPSOWLQN(trainData: RDD[(OneHotVector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
 
     val initWeightPS = PSVector.dense(dim, 10 * m).toBreeze
-
     val regPS = PSVector.duplicate(initWeightPS.component).toBreeze
 
     val tol = 1e-6
-
     val owlqn = new OWLQN(maxIter, m, regPS, tol)
     val states = owlqn.iterations(SparseLogistic.PSCost(trainData), initWeightPS)
 

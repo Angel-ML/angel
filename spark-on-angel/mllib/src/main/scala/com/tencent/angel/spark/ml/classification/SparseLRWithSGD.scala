@@ -65,8 +65,12 @@ object SparseLRWithSGD {
     println(s"feat length: $featLength")
 
     updateType match {
-      case "spark" => runSGD(instances, featLength, stepSize, maxIter)
-      case "ps" => runPSSGD(instances, featLength, stepSize, maxIter)
+      case "spark" =>
+        println(s"run spark sgd")
+        runSGD(instances, featLength, stepSize, maxIter)
+      case "ps" =>
+        println(s"run ps sgd")
+        runPSSGD(instances, featLength, stepSize, maxIter)
       case _ => println(s"wrong update type: $updateType (spark or ps)")
     }
   }

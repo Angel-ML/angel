@@ -120,7 +120,7 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
       throw new AngelException("Don't try to clone a Decorated PSVector")
     */
     val vector = getPool(original.poolId).allocate()
-//    PSClient.instance().initOps.fill(vector, 0.0)
+    PSClient.instance().initOps.fill(vector, 0.0)
     vector
   }
 

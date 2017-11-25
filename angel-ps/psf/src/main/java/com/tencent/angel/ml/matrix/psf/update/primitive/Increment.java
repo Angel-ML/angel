@@ -15,47 +15,44 @@
  *
  */
 
-package com.tencent.angel.ml.matrix.psf.update;
+package com.tencent.angel.ml.matrix.psf.update.primitive;
 
-import com.tencent.angel.ml.matrix.psf.update.enhance.MMUpdateFunc;
+import com.tencent.angel.ml.matrix.psf.update.enhance.VAUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
-import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 
 import java.nio.DoubleBuffer;
 
 /**
- * `Fill` the `rowId` row with `value`
+ * `Increment` will increase `delta` to `rowId` row in matrix.
  */
-public class Fill extends MMUpdateFunc {
+public class Increment extends VAUpdateFunc {
 
-  public Fill(int matrixId, int rowId, double value) {
-    super(matrixId, new int[]{rowId}, new double[]{value});
+  public Increment(int matrixId, int rowId, double[] delta) {
+    super(matrixId, rowId, delta);
   }
 
-  public Fill() {
+  public Increment() {
     super();
   }
 
   @Override
-  protected void doUpdate(ServerDenseDoubleRow[] rows, double[] values) {
+  protected void doUpdate(ServerDenseDoubleRow row, double[] delta) {
     try {
-      rows[0].getLock().writeLock().lock();
-      DoubleBuffer data = rows[0].getData();
-      double value = values[0];
-      int size = rows[0].size();
+      row.getLock().writeLock().lock();
+      DoubleBuffer data = row.getData();
+      int size = row.size();
       for (int i = 0; i < size; i++) {
-        data.put(i, value);
+        data.put(i, data.get(i) + delta[i]);
       }
     } finally {
-      rows[0].getLock().writeLock().unlock();
+      row.getLock().writeLock().unlock();
     }
   }
 
   @Override
-  protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows, double[] values) {
-    Long2DoubleOpenHashMap data = new Long2DoubleOpenHashMap();
-    data.defaultReturnValue(values[0]);
-    rows[0].setIndex2ValueMap(data);
+  protected void doUpdate(ServerSparseDoubleLongKeyRow row, double[] delta) {
+    throw new RuntimeException("update.Increment PSF can not support sparse type rows");
   }
+
 }
