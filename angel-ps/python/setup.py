@@ -51,7 +51,7 @@ JARS_PATH = glob.glob(os.path.join(ANGEL_HOME, "lib/"))
 
 if len(JARS_PATH) == 1:
     JARS_PATH = JARS_PATH[0]
-elif (os.path.isfile("../RELEASE") and len(glob.glob(../lib/angel*ps*core*.jar)) == 1):
+elif (os.path.isfile("../RELEASE") and len(glob.glob("../lib/angel*ps*core*.jar")) == 1):
     JARS_PATH = os.path.join(ANGEL_HOME, "jars")
 elif len(JARS_PATH) == 0 and not os.path.exists(TEMP_PATH):
     print(incorrect_invocation_message, file=sys.stderr)
