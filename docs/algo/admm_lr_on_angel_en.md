@@ -73,25 +73,24 @@ We show the implementation chart below:
 
 ### **Parameters**
 
-
 * **Algorithm Parameters**
-  * ml.epoch.num: number of iterations
-  * ml.reg.l1: L1 coefficient
-  * rho: rho
-  * ml.worker.thread.num: number of parallel threads on each worker
+	* ml.epoch.num: number of iterations
+	* ml.reg.l1: L1 coefficient
+	* rho: rho
+	* ml.worker.thread.num: number of parallel threads on each worker
 
 * **I/O Parameters**
-  * angel.train.data.path: input path 
-  * angel.save.model.path: save path for trained model
-  * angel.log.path: save path for the log
+	  * angel.train.data.path: input path 
+	  * angel.save.model.path: save path for trained model
+	  * angel.log.path: save path for the log
 
        
 * **Resource Parameters**
-  * angel.workergroup.number: number of workers
-  * angel.worker.memory.mb: worker's memory requested in G   
-  * angel.worker.task.number: number of tasks on each worker, default is 1
-  * angel.ps.number: number of PS
-  * angel.ps.memory.mb: PS's memory requested in G
+	* angel.workergroup.number: number of workers
+	* angel.worker.memory.mb: worker's memory requested in M
+	* angel.worker.task.number: number of tasks on each worker, default is 1
+	* angel.ps.number: number of PS
+	* angel.ps.memory.mb: PS's memory requested in M
 
 ###  **Command for Submission**
 
@@ -100,7 +99,7 @@ Use the following example for submitting LR trainning job to Yarn
 ```shell
 ./bin/angel-submit \
     --action.type train \
-    --angel.app.submit.class com.tencent.angel.ml.classification.lr.LRRunner  \
+    --angel.app.submit.class com.tencent.angel.ml.classification.sparselr.SparseLRRunner  \
     --angel.train.data.path $input_path \
     --angel.save.model.path $model_path \
     --angel.log.path $logpath \

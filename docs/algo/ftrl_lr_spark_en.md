@@ -1,13 +1,13 @@
 # [Spark Streaming on Angel] FTRL
 
->FTRL is a common online-learning optimization method with demonstrated good result in practice. Traditionally implemented in Storm, FTRL is widely used for online models of CTR prediction. In practice, chances are data are high-dimensional and sparse solution is desired, in that case, implementing FTRL in Spark Streaming on Angel can actually achieve better result with robust performance in just a few lines of code.
+>FTRL is a common online-learning optimization method with demonstrated good result in practice. Traditionally implemented in Storm, FTRL is widely used for online models of CTR prediction. In practice, chances are data are high-dimensional and sparse solution is desired. In this case, implementing FTRL in Spark Streaming on Angel can actually achieve better result with robust performance in just a few lines of code.
 
 
 ## 1. Introduction to FTRL
 
-`FTRL` blends the benefits of `FOBOS` and `RDA`: it guarantees comparatively high precision as FOBOS does, and can yield better sparcity in result with a reasonably loss in precision. 
+`FTRL` blends the benefits of `FOBOS` and `RDA`: it guarantees comparatively high precision as FOBOS does, and can yield better sparcity in result with a reasonably loss in precision.
 
-The equation used for updating weights of features by FTRL is:
+The equation for updating weights of features by FTRL is:
 
 ![](../img/ftrl_lr_w.png)
 
@@ -33,7 +33,7 @@ Google has provided the implementation of Logistic Regression with L1/L2 terms u
 
 ![](../img/ftrl_lr_project.png)
 
-Integrating characteristics of Spark Streaming and Angel into the above reference, the distributed implementation has the following framework:
+Integrating the characteristics of Spark Streaming and Angel into above reference, the distributed implementation has the following framework:
 
 ![](../img/ftrl_lr_framework.png)
 
@@ -44,13 +44,13 @@ Integrating characteristics of Spark Streaming and Angel into the above referenc
 
 ###  **Input Format**
 * dim: dimension of the input data
-* Only supports the standard ["libsvm"](./data_format_en.md) format for message 
+* Only supports the standard ["libsvm"](./data_format_en.md) format for message
 * Uses kafka messaging mechanism, thus kafka needs to be configured
 
 ### **Parameters**
 
 * **Algorithm Parameters**
-	* alpha: alpha in w's updating equation 
+	* alpha: alpha in w's updating equation
 	* beta: beta in w's updating equation
 	* lambda1: lambda1 in w's updating equation
 	* lambda2: lambda2 in w's updating equation
@@ -104,4 +104,3 @@ group:$group \
 zkquorum:$zkquorum \
 topic:$topic
 ```
-
