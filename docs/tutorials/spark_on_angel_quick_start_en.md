@@ -48,7 +48,7 @@ $SPARK_HOME/bin/spark-submit \
 
 ## Minimal Example of LR in Spark on Angel Verion
 
-[Complete Code]()
+[Complete Code](https://github.com/Tencent/angel/blob/branch-1.3.0/spark-on-angel/examples/src/main/scala/com/tencent/angel/spark/examples/ml/AngelLR.scala)
 
 ```scala
    PSContext.getOrCreate(sc)
