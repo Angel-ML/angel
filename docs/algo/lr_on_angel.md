@@ -31,8 +31,8 @@
   * α为衰减系数
   * T为迭代次数
   
-* 模型类型： 
-  LR算法的模型支持DoubleDense，DoubleSparse，DoubleSparseLongKey三种格式，可以通过 “ml.lr.model.type”参数设置，具体情况如下：      
+* 模型类型：    
+LR算法的模型支持DoubleDense，DoubleSparse，DoubleSparseLongKey三种格式，可以通过 “ml.lr.model.type”参数设置，具体情况如下：      	
   * DoubleDense      
     * 参数：-- ml.lr.model.type：T_DOUBLE_DENSE      
     * 特点：DoubleDense类型的模型，适合特征比较稠密的数据。模型用数组存储，节省存储空间，访问速度快，性能高。      
