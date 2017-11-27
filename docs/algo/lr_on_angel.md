@@ -32,16 +32,16 @@
   * T为迭代次数
   
 * 模型类型：      
-  LR算法的模型支持DoubleDense，DoubleSparse，DoubleSparseLongKey三种格式，可以通过 “ml.lr.model.type”参数设置，具体情况如下：      
-    * DoubleDense      
-        * 参数：-- ml.lr.model.type：T_DOUBLE_DENSE      
-        * 特点：DoubleDense类型的模型，适合特征比较稠密的数据。模型用数组存储，节省存储空间，访问速度快，性能高。      
-    * DoubleSparse      
-        * 参数：-- ml.lr.model.type：T_DOUBLE_SPARSE      
-        * 特点：DoubleSparse类型的模型，适合特征稀疏度比较高的数据。模型用Map存储，K为特征ID，V为特征对应的值，K的范围为Int型值域。      
-    * DoubleSparseLongKey      
-        * 参数：-- ml.lr.model.type：T_DOUBLE_SPARSE_LONGKEY      
-        * 特点：DoubleSparseLongKey类型的模型，适合特征稀疏度很高的数据。模型用Map存储，K为特征ID，V为对应的值，K的类型为Long型值域。      
+LR算法的模型支持DoubleDense，DoubleSparse，DoubleSparseLongKey三种格式，可以通过 “ml.lr.model.type”参数设置，具体情况如下：      
+  * DoubleDense      
+    * 参数：-- ml.lr.model.type：T_DOUBLE_DENSE      
+    * 特点：DoubleDense类型的模型，适合特征比较稠密的数据。模型用数组存储，节省存储空间，访问速度快，性能高。      
+  * DoubleSparse      
+    * 参数：-- ml.lr.model.type：T_DOUBLE_SPARSE      
+    * 特点：DoubleSparse类型的模型，适合特征稀疏度比较高的数据。模型用Map存储，K为特征ID，V为特征对应的值，K的范围为Int型值域。      
+  * DoubleSparseLongKey      
+    * 参数：-- ml.lr.model.type：T_DOUBLE_SPARSE_LONGKEY      
+    * 特点：DoubleSparseLongKey类型的模型，适合特征稀疏度很高的数据。模型用Map存储，K为特征ID，V为对应的值，K的类型为Long型值域。      
 
 
 ## 3. 运行 & 性能
