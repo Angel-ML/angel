@@ -73,6 +73,10 @@
 * [工程类问题](https://github.com/Tencent/angel/wiki/%E5%B7%A5%E7%A8%8B%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
 * [算法类问题](https://github.com/Tencent/angel/wiki/%E7%AE%97%E6%B3%95%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
 
+## Support
+
+* **QQ群**：20171688
+
 ## Papers
   1. Lele Yu, Bin Cui, Ce Zhang, Yingxia Shao. [LDA*: A Robust and Large-scale Topic Modeling System](http://www.vldb.org/pvldb/vol10/p1406-yu.pdf). VLDB, 2017
   2. Jiawei Jiang, Bin Cui, Ce Zhang, Lele Yu. [Heterogeneity-aware Distributed Parameter Servers](http://dl.acm.org/citation.cfm?id=3035933). SIGMOD, 2017
