@@ -39,15 +39,15 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Logistic 
 
 	* **DoubleDense**
 		* 参数：T_DOUBLE_DENSE      
-		* 特点：适合特征比较稠密的数据。模型用数组存储，节省存储空间，访问速度快，性能高，但是模型维度不能过亿
+		* 特点：适合特征比较稠密的数据。模型用数组存储，节省存储空间，访问速度快，性能高
 
 	* **DoubleSparse**
 		* 参数：T_DOUBLE_SPARSE
-		* 特点：适合特征稀疏度比较高的数据。模型用Map存储，K为特征ID，V为特征对应的值，K的范围为Int型值域，模型维度可以到10亿级别
+		* 特点：适合特征稀疏度比较高的数据。模型用Map存储，K为特征ID，V为特征对应的值，K的范围为Int型值域
 
 	* **DoubleSparseLongKey**
 		* 参数：T_DOUBLE_SPARSE_LONGKEY
-		* 特点：Key可以到Long范围，适合特征稀疏度很高的数据。模型用Map存储，K为特征ID，V为对应的值，K的类型为Long型值域。模型维度可以到百亿级别
+		* 特点：Key可以到Long范围，适合特征稀疏度很高的数据。模型用Map存储，K为特征ID，V为对应的值，K的类型为Long型值域
 
 
 ## 3. 运行 & 性能
