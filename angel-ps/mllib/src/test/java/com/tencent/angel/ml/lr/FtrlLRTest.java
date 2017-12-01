@@ -102,6 +102,7 @@ public class FtrlLRTest {
     @Test
     public void testFTRLLR() throws Exception {
         FtrlLRTrainTest();
+        FtrlLRIncTrainTest();
         FtrlLRPredictTest();
     }
 
@@ -124,6 +125,32 @@ public class FtrlLRTest {
             runner.train(conf);
         } catch (Exception x) {
             LOG.error("run trainOnLocalClusterTest failed ", x);
+            throw x;
+        }
+    }
+
+    private void FtrlLRIncTrainTest() throws Exception {
+        try {
+            String inputPath = "./src/test/data/lr/a9a.train";
+            String loadPath = LOCAL_FS + TMP_PATH + "/model";
+            String savePath = LOCAL_FS + TMP_PATH + "/newmodel";
+            String logPath = LOCAL_FS + TMP_PATH + "/FtrlLRlog";
+
+            // Set trainning data path
+            conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
+            // Set load model path
+            conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, loadPath);
+            // Set save model path
+            conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, savePath);
+            // Set log path
+            conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
+            // Set actionType incremental train
+            conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_INC_TRAIN());
+
+            FTRLLRRunner runner = new FTRLLRRunner();
+            runner.incTrain(conf);
+        } catch (Exception x) {
+            LOG.error("run incTrainTest failed ", x);
             throw x;
         }
     }

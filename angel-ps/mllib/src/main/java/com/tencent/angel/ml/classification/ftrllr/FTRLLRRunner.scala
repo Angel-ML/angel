@@ -32,7 +32,10 @@ class FTRLLRRunner extends MLRunner {
   /**
     * Incremental training job to obtain a model based on a trained model
     */
-  override def incTrain(conf: Configuration): Unit = ???
+  override def incTrain(conf: Configuration): Unit = {
+    conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
+    super.train(conf, FTRLLRModel(conf), classOf[FTRLLRTrainTask])
+  }
 
   /**
     * Using a model to predict with unobserved samples
