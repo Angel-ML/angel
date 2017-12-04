@@ -106,7 +106,7 @@ ADMM在Angel上实现的一般步骤为：
 ```shell
 ./bin/angel-submit \
     --action.type train \
-    --angel.app.submit.class com.tencent.angel.ml.classification.lr.LRRunner  \
+    --angel.app.submit.class com.tencent.angel.ml.classification.sparselr.SparseLRRunner  \
     --angel.train.data.path $input_path \
     --angel.save.model.path $model_path \
     --angel.log.path $logpath \

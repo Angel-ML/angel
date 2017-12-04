@@ -97,7 +97,8 @@
               </execution>
             </executions>
           </plugin>
-          <plugin>
+          <!-- Sub modules will generate scala style docs with scala-maven-plugin -->
+          <!--plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-javadoc-plugin</artifactId>
             <version>2.10.3</version>
@@ -112,7 +113,7 @@
                 </goals>
               </execution>
             </executions>
-          </plugin>
+          </plugin-->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
@@ -120,7 +121,7 @@
             <executions>
               <execution>
                 <id>sign-artifacts</id>
-                <phase>verify</phase>
+                <phase>install</phase>
                 <goals>
                   <goal>sign</goal>
                 </goals>

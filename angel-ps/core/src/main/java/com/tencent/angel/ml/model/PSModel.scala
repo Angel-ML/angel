@@ -327,7 +327,7 @@ class PSModel(
   /**
     * Get a batch of matrix rows
     *
-    * @param rowIndex row indexes
+    * @param rowIndex row index
     * @param batchNum the number of rows get in a rpc
     * @throws com.tencent.angel.exception.AngelException
     * @return row index to row map
@@ -380,7 +380,7 @@ class PSModel(
   /**
     * Get a batch of rows use pipeline mode
     *
-    * @param rowIndex row indexes
+    * @param rowIndex row index
     * @param batchNum the number of rows get in a rpc
     * @throws com.tencent.angel.exception.AngelException
     * @return Get result which contains a blocked queue

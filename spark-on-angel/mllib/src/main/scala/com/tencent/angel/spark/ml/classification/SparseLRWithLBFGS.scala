@@ -94,7 +94,7 @@ object SparseLRWithLBFGS {
   }
 
   def runLBFGSAngel(trainData: RDD[(OneHotVector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
-    val initWeightPS = PSVector.dense(dim, 5 * m).toBreeze
+    val initWeightPS = PSVector.dense(dim, 3 * m).toBreeze
     val tol = 1e-6
     val lbfgs = new LBFGS[BreezePSVector](maxIter, m, tol)
     val states = lbfgs.iterations(SparseLogistic.PSCost(trainData), initWeightPS)

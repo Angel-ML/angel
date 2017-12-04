@@ -97,18 +97,6 @@
       <host>proxy.host.net</host>
       <port>80</port>
       <nonProxyHosts>local.net|some.host.com</nonProxyHosts>
-    </proxy>
-    
-	
-	<proxy>
-      <id>optional</id>
-      <active>true</active>
-      <protocol>http</protocol>
-      <username>proxyuser</username>
-      <password>proxypass</password>
-      <host>web-proxy.oa.com</host>
-      <port>8080</port>
-      <nonProxyHosts>local.net|some.host.com</nonProxyHosts>
     </proxy>-->
 	
   </proxies>
@@ -131,22 +119,6 @@
       <password>repopwd</password>
     </server>
     -->
-    <server>
-      <id>data-repo</id>  
-      <username>deployment</username>  
-      <password>deployment</password>  
-    </server>
-	<server>       
-	    <id>rdm-releases-repo</id>  
-		<username>rdm</username>
-		<password>rdm</password>
-	</server> 	  
-	<server>
-	<id>rdm-snapshots-repo</id>
-	<username>rdm</username>
-	<password>rdm</password>
-	</server>
-
 
     <!-- Another sample, using keys to authenticate.
     <server>
@@ -179,14 +151,6 @@
       <mirrorOf>repositoryId</mirrorOf>
       <name>Human Readable Name for this Mirror.</name>
       <url>http://my.repository.com/repo/path</url>
-    </mirror>
-     </mirror> 
-   	 	   
-	 <mirror>
-		<id>tencentMirror</id>
-        <mirrorOf>central</mirrorOf>
-        <name>tencent mirror</name>
-       <url>http://maven.oa.com/nexus/content/groups/public</url>
      </mirror>-->
   </mirrors>
   
@@ -211,142 +175,6 @@
    |       variables for plugins in the POM.
    |
    |-->
-
-  <profiles> 
-   <profile> 
-     <id>nexus</id> 
-	 <!-- jar仓库-->
-     <repositories> 
-		<!-- tencent android -->
-		<repository>
-            <id>tencent-android</id>
-            <url>http://maven.oa.com/nexus/content/repositories/android/</url>
-        </repository>
-	 
-		<!-- tencent clojars -->
-		<repository>
-            <id>tencent-clojars</id>
-            <url>http://maven.oa.com/nexus/content/repositories/clojars/</url>
-        </repository>
-	 
-		<!-- tencent thirdparty-snapshots -->
-		<repository>
-            <id>tencent-snapshot</id>
-            <url>http://maven.oa.com/nexus/content/repositories/thirdparty-snapshots</url>
-        </repository>
-		
-		<!-- tencent public -->
-        <repository>
-          <id>central</id>
-          <url>http://maven.oa.com/nexus/content/groups/public</url>
-          <releases>
-            <enabled>true</enabled>
-          </releases>
-          <snapshots>
-            <enabled>false</enabled>
-          </snapshots>
-        </repository>
-		
-        <!-- tencent release -->
-        <repository>
-          <id>rdm-releases-repo</id>
-          <url>http://maven.oa.com/nexus/content/repositories/releases</url>
-          <releases>
-            <enabled>true</enabled>
-          </releases>
-          <snapshots>
-            <enabled>false</enabled>
-          </snapshots>
-        </repository>
-		
-		<!-- tencent data public -->
-		<repository> 
-           <id>data-repo</id> 
-           <name>data nexus</name> 
-           <url>http://10.130.72.155:8080/nexus/content/groups/public</url> 
-		   <releases>
-            <enabled>true</enabled>
-          </releases>
-          <snapshots>
-            <enabled>true</enabled>
-          </snapshots>
-       </repository> 
-     </repositories> 
-	 
-	 <!--插件仓库-->
-	 <pluginRepositories>    
-        <pluginRepository>              
-			<id>central</id>
-			<url>http://maven.oa.com/nexus/content/groups/public</url>
-        </pluginRepository>  
-     </pluginRepositories> 
-   </profile> 
-
-    <!-- profile
-     | Specifies a set of introductions to the build process, to be activated using one or more of the
-     | mechanisms described above. For inheritance purposes, and to activate profiles via <activatedProfiles/>
-     | or the command line, profiles have to have an ID that is unique.
-     |
-     | An encouraged best practice for profile identification is to use a consistent naming convention
-     | for profiles, such as 'env-dev', 'env-test', 'env-production', 'user-jdcasey', 'user-brett', etc.
-     | This will make it more intuitive to understand what the set of introduced profiles is attempting
-     | to accomplish, particularly when you only have a list of profile id's for debug.
-     |
-     | This profile example uses the JDK version to trigger activation, and provides a JDK-specific repo.
-    <profile>
-      <id>jdk-1.4</id>
-
-      <activation>
-        <jdk>1.4</jdk>
-      </activation>
-
-      <repositories>
-        <repository>
-          <id>jdk14</id>
-          <name>Repository for JDK 1.4 builds</name>
-          <url>http://www.myhost.com/maven/jdk14</url>
-          <layout>default</layout>
-          <snapshotPolicy>always</snapshotPolicy>
-        </repository>
-      </repositories>
-    </profile>
-    -->
-
-    <!--
-     | Here is another profile, activated by the system property 'target-env' with a value of 'dev',
-     | which provides a specific path to the Tomcat instance. To use this, your plugin configuration
-     | might hypothetically look like:
-     |
-     | ...
-     | <plugin>
-     |   <groupId>org.myco.myplugins</groupId>
-     |   <artifactId>myplugin</artifactId>
-     |   
-     |   <configuration>
-     |     <tomcatLocation>${tomcatPath}</tomcatLocation>
-     |   </configuration>
-     | </plugin>
-     | ...
-     |
-     | NOTE: If you just wanted to inject this configuration whenever someone set 'target-env' to
-     |       anything, you could just leave off the <value/> inside the activation-property.
-     |
-    <profile>
-      <id>env-dev</id>
-
-      <activation>
-        <property>
-          <name>target-env</name>
-          <value>dev</value>
-        </property>
-      </activation>
-
-      <properties>
-        <tomcatPath>/path/to/tomcat/instance</tomcatPath>
-      </properties>
-    </profile>
-    -->
-  </profiles>
 
   <!-- activeProfiles
    | List of profiles that are active for all builds.

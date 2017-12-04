@@ -48,37 +48,13 @@ public class PSFTestTask extends BaseTask<Long, Long, Long> {
     try{
       MatrixClient client = taskContext.getMatrix("psf_test");
       Pull func = new Pull(client.getMatrixId(), 0);
-      Pull func1 = new Pull(client.getMatrixId(), 1);
 
-      while (taskContext.getEpoch() < 100) {
-        taskContext.globalSync(client.getMatrixId());
+      int iteration = 0;
+      while (iteration++ < 100) {
         long startTs = System.currentTimeMillis();
         TVector row = ((GetRowResult) client.get(func)).getRow();
-        TVector row1 = ((GetRowResult) client.get(func1)).getRow();
-        LOG.info("Task " + taskContext.getTaskId() + " in iteration " + taskContext.getEpoch()
-          + " pull use time=" + (System.currentTimeMillis() - startTs) + ", sum of row 0=" + sum((DenseDoubleVector)row)
-          + " sum of row 1=" + sum((DenseDoubleVector)row1));
-
-        double [] delta = new double[10000000];
-        for(int i = 0; i < 10000000; i++) {
-          delta[i] = 1.0;
-        }
-        DenseDoubleVector deltaV = new DenseDoubleVector(10000000, delta);
-        deltaV.setMatrixId(client.getMatrixId());
-        deltaV.setRowId(0);
-
-        double [] delta1 = new double[10000000];
-        for(int i = 0; i < 10000000; i++) {
-          delta1[i] = 2.0;
-        }
-        DenseDoubleVector deltaV1 = new DenseDoubleVector(10000000, delta1);
-        deltaV1.setMatrixId(client.getMatrixId());
-        deltaV1.setRowId(1);
-
-        client.increment(deltaV);
-        client.increment(deltaV1);
-        client.clock().get();
-        taskContext.incEpoch();
+        LOG.info("Task " + taskContext.getTaskId() + " in iteration " + iteration
+          + " pull use time=" + (System.currentTimeMillis() - startTs));
       }
     } catch (Throwable x) {
       throw new AngelException("run task failed ", x);

@@ -32,8 +32,8 @@ public class PSFTestSubmit implements AppSubmitter {
   @Override public void submit(Configuration conf) throws Exception {
     conf.setBoolean(AngelConf.ANGEL_AM_USE_DUMMY_DATASPLITER, true);
     AngelClient angelClient = AngelClientFactory.get(conf);
-    int blockCol = conf.getInt("blockcol", 50000);
-    MatrixContext context = new MatrixContext("psf_test", 2, 10000000, 1, blockCol);
+    int blockCol = conf.getInt("blockcol", 500000);
+    MatrixContext context = new MatrixContext("psf_test", 1, 100000000, 1, blockCol);
     context.setRowType(MLProtos.RowType.T_DOUBLE_DENSE);
     angelClient.addMatrix(context);
     angelClient.startPSServer();

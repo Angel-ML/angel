@@ -23,6 +23,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -35,6 +36,8 @@ public class MatrixTransportClientHandler extends ChannelInboundHandlerAdapter {
   
   /**rpc dispatch event queue*/
   private final LinkedBlockingQueue<DispatcherEvent> dispatchMessageQueue;
+
+  public static final ConcurrentHashMap<Integer, Long> seqIdToReceiveTsMap = new ConcurrentHashMap<>();
 
   /**
    * Create a new MatrixTransportClientHandler.
@@ -64,9 +67,11 @@ public class MatrixTransportClientHandler extends ChannelInboundHandlerAdapter {
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) {
     LOG.debug("receive a message " + ((ByteBuf) msg).readableBytes());
-    //int seqId = ((ByteBuf) msg).readInt();
+    int seqId = ((ByteBuf) msg).readInt();
+    MatrixTransportClient.seqIdToTimeMap.put(seqId, System.currentTimeMillis() - MatrixTransportClient.seqIdToTimeMap.get(seqId));
+    seqIdToReceiveTsMap.put(seqId, System.currentTimeMillis());
     //LOG.info("receive result of seqId=" + seqId);
-    //((ByteBuf) msg).resetReaderIndex();
+    ((ByteBuf) msg).resetReaderIndex();
     try {
       msgQueue.put((ByteBuf) msg);
     } catch (InterruptedException e) {
