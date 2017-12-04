@@ -54,7 +54,6 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
   private final static ExecutorService workerPool;
   private final static boolean isUseSender;
   private final static ExecutorService senderPool;
-  public final static ConcurrentHashMap<Integer, Long> seqIdToSendTsMap = new ConcurrentHashMap<>();
 
   static {
     channelStates = new ConcurrentHashMap<ChannelHandlerContext, AtomicBoolean>();
@@ -175,7 +174,6 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
       long startTs = System.currentTimeMillis();
       while (true) {
         if (channelInUse.compareAndSet(false, true)) {
-          seqIdToSendTsMap.put(seqId, System.currentTimeMillis());
           ctx.writeAndFlush(result);
           channelInUse.set(false);
           LOG.debug(

@@ -380,12 +380,9 @@ public class MatrixClientAdapter {
         new ArrayList<Future<PartitionGetResult>>(size);
     List<PartitionGetResult> resultList = new ArrayList<PartitionGetResult>(size);
 
-    long startTs = System.currentTimeMillis();
     for (int i = 0; i < size; i++) {
       futureResultList.add(matrixClient.get(func, partParams.get(i)));
     }
-    LOG.info("get psf use time = " + (System.currentTimeMillis() - startTs));
-
     for (int i = 0; i < size; i++) {
       resultList.add(futureResultList.get(i).get());
     }

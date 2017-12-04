@@ -46,7 +46,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.hadoop.conf.Configuration;
 
-import java.io.*;
 import java.nio.ByteOrder;
 import java.util.*;
 import java.util.Map.Entry;
@@ -90,8 +89,6 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
   /** ps id to partition put requests map */
   private final ConcurrentHashMap<ParameterServerId, LinkedBlockingQueue<Request>> putItemQueues;
-
-  public static final ConcurrentHashMap<Integer, Long> seqIdToTimeMap = new ConcurrentHashMap<>();
 
   /**
    * timed event generator, it used to check there are failed partition requests we should
@@ -250,33 +247,6 @@ public class MatrixTransportClient implements MatrixTransportInterface {
    */
   public void stop() {
     if (!stopped.getAndSet(true)) {
-      Configuration conf = PSAgentContext.get().getConf();
-      String fileName = conf.get("client.ts.file");
-      try {
-        BufferedWriter bw = new BufferedWriter(new FileWriter(fileName));
-        for(Entry<Integer, Long> entry : MatrixTransportClientHandler.seqIdToReceiveTsMap.entrySet()) {
-          bw.write("" + entry.getKey() + "," + entry.getValue());
-          bw.newLine();
-        }
-        bw.flush();
-        bw.close();
-      } catch (Throwable e) {
-        LOG.error("write receive ts failed, ", e);
-      }
-
-      String fileName1 = conf.get("client.rpc.time");
-      try {
-        BufferedWriter bw = new BufferedWriter(new FileWriter(fileName1));
-        for(Entry<Integer, Long> entry : seqIdToTimeMap.entrySet()) {
-          bw.write("" + entry.getKey() + "," + entry.getValue());
-          bw.newLine();
-        }
-        bw.flush();
-        bw.close();
-      } catch (Throwable e) {
-        LOG.error("write receive ts failed, ", e);
-      }
-
       if (timer != null) {
         timer.cancel();
       }
@@ -1370,7 +1340,6 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
       startTs = System.currentTimeMillis();
       ChannelFuture cf = channel.writeAndFlush(buffer);
-      seqIdToTimeMap.put(seqId, startTs);
 
       if(!(request instanceof GetClocksRequest) && LOG.isDebugEnabled()) {
         LOG.debug("request " + request + " with seqId=" + seqId + " send use time " + (System.currentTimeMillis() - startTs));

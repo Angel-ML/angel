@@ -37,8 +37,6 @@ public class MatrixTransportClientHandler extends ChannelInboundHandlerAdapter {
   /**rpc dispatch event queue*/
   private final LinkedBlockingQueue<DispatcherEvent> dispatchMessageQueue;
 
-  public static final ConcurrentHashMap<Integer, Long> seqIdToReceiveTsMap = new ConcurrentHashMap<>();
-
   /**
    * Create a new MatrixTransportClientHandler.
    *
@@ -67,11 +65,9 @@ public class MatrixTransportClientHandler extends ChannelInboundHandlerAdapter {
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) {
     LOG.debug("receive a message " + ((ByteBuf) msg).readableBytes());
-    int seqId = ((ByteBuf) msg).readInt();
-    MatrixTransportClient.seqIdToTimeMap.put(seqId, System.currentTimeMillis() - MatrixTransportClient.seqIdToTimeMap.get(seqId));
-    seqIdToReceiveTsMap.put(seqId, System.currentTimeMillis());
+    //int seqId = ((ByteBuf) msg).readInt();
     //LOG.info("receive result of seqId=" + seqId);
-    ((ByteBuf) msg).resetReaderIndex();
+    //((ByteBuf) msg).resetReaderIndex();
     try {
       msgQueue.put((ByteBuf) msg);
     } catch (InterruptedException e) {

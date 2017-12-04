@@ -18,7 +18,6 @@ package com.tencent.angel.ps.matrix.transport;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ps.impl.PSContext;
-import com.tencent.angel.psagent.PSAgentContext;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -30,9 +29,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -96,21 +92,6 @@ public class MatrixTransportServer {
 
   public void stop() throws InterruptedException {
     if (!stopped.getAndSet(true)) {
-      Configuration conf = PSAgentContext.get().getConf();
-      String fileName = conf.get("server.ts.file");
-      try {
-        BufferedWriter bw = new BufferedWriter(new FileWriter(fileName));
-        for(Map.Entry<Integer, Long> entry : MatrixTransportServerHandler.seqIdToSendTsMap.entrySet()) {
-          bw.write("" + entry.getKey() + "," + entry.getValue());
-          bw.newLine();
-        }
-        bw.flush();
-        bw.close();
-      } catch (Throwable e) {
-        LOG.error("write receive ts failed, ", e);
-      }
-
-
       try {
         if(channelFuture != null) {
           channelFuture.channel().close();
