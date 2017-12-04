@@ -67,7 +67,7 @@ class SparseLRTest {
     // Feature number of train data
     val featureNum: Int = 124
     // Total iteration number
-    val epochNum: Int = 10
+    val epochNum: Int = 5
 
     conf.setInt(ML_FEATURE_NUM, featureNum)
     conf.setInt(ML_EPOCH_NUM, epochNum)

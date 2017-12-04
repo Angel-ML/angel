@@ -50,7 +50,7 @@ public class KmeansTest {
       // Feature number of train data
       int featureNum = 4;
       // Total iteration number
-      int epochNum = 10;
+      int epochNum = 5;
       // Sample ratio per mini-batch
       double spratio = 1.0;
       // C

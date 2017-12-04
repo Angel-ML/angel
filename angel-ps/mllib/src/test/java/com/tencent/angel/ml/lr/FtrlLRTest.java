@@ -50,7 +50,7 @@ public class FtrlLRTest {
       // Feature number of train data
       int featureNum = 124;
       // Total iteration number
-      int epochNum = 20;
+      int epochNum = 5;
       // Data format, libsvm or dummy
       String dataFmt = "libsvm";
       // Train batch number per epoch.
