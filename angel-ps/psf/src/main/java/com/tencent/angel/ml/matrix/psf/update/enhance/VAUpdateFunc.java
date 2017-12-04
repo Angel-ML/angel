@@ -64,6 +64,7 @@ public abstract class VAUpdateFunc extends UpdateFunc {
         return;
       case T_DOUBLE_SPARSE_LONGKEY:
         doUpdate((ServerSparseDoubleLongKeyRow) row, arraySlice);
+        return;
       default:
         throw new RuntimeException("currently only supports T_DOUBLE_DENSE and T_DOUBLE_SPARSE_LONGKEY");
     }

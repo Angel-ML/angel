@@ -80,6 +80,7 @@ public abstract class MMUpdateFunc extends UpdateFunc {
           sparseRows[i] = (ServerSparseDoubleLongKeyRow) rows[i];
         }
         doUpdate(sparseRows, scalars);
+        return;
       default:
         throw new RuntimeException("currently only supports T_DOUBLE_DENSE and T_DOUBLE_SPARSE_LONGKEY");
     }
