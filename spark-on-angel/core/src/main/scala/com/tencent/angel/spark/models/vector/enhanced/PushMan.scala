@@ -103,10 +103,7 @@ object PushMan {
         if (mergeCache.contains((poolId, id, mergeType))) {
           val mergeArray = mergeCache((poolId, id, mergeType))
           mergeType match {
-            case INCREMENT => {
-              println(s"PushMan Increment.")
-              vectorOps.increment(poolId, id, mergeArray)
-            }
+            case INCREMENT => vectorOps.increment(poolId, id, mergeArray)
             case MAX => vectorOps.mergeMax(poolId, id, mergeArray)
             case MIN => vectorOps.mergeMin(poolId, id, mergeArray)
           }

@@ -62,6 +62,8 @@ class CachedPSVectorSuite extends PSFunSuite with Matchers with SharedPSContext 
       }
     }
     _psVector = PSVector.dense(dim, capacity)
+
+    println(s"PushMan size: ${PushMan.cacheSize}")
   }
 
   override def afterAll(): Unit = {
