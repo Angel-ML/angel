@@ -19,6 +19,7 @@ from pyangel.context import Configuration
 from pyangel.ml.conf import MLConf
 from pyangel.ml.gbdt.runner import GBDTRunner
 
+
 class GBDTExample(object):
 
     def __init__(self):
@@ -32,8 +33,8 @@ class GBDTExample(object):
         # and your out_path could be: "file:///home/angel/angel_1.3.0/data/output"
         # if you need, you can delete the annotation mark before Line35,Line36,Line61,Line62, so
         # there is no need for you to pass the configs every time you submit the pyangel job.
-        #input_path = "file:///${YOUR_ANGEL_HOME}/data/exampledata/GBDTLocalExampleData/agaricus.txt.train"
-        #output_path = "file:///${YOUR_ANGEL_HOME}/data/output"
+        # input_path = "file:///${YOUR_ANGEL_HOME}/data/exampledata/GBDTLocalExampleData/agaricus.txt.train"
+        # output_path = "file:///${YOUR_ANGEL_HOME}/data/output"
         # Feature number of train data
         feature_num = 127
         # Number of nonzero features
@@ -58,8 +59,8 @@ class GBDTExample(object):
 
         # set input] = output path
         self.conf[AngelConf.ANGEL_INPUTFORMAT_CLASS] = 'org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat'
-        #self.conf[AngelConf.ANGEL_TRAIN_DATA_PATH] = input_path
-        #self.conf[AngelConf.ANGEL_SAVE_MODEL_PATH] = output_path
+        # self.conf[AngelConf.ANGEL_TRAIN_DATA_PATH] = input_path
+        # self.conf[AngelConf.ANGEL_SAVE_MODEL_PATH] = output_path
 
         # Set GBDT algorithm parameters
         self.conf[MLConf.ML_FEATURE_NUM] = str(feature_num)
@@ -76,14 +77,12 @@ class GBDTExample(object):
         runner = GBDTRunner()
         runner.train(self.conf)
 
-
-
     def predict(self):
         self.set_conf()
         # Load Model from HDFS.
-        TMP_PATH = tempfile.gettempdir()
-        self.conf["gbdt.split.feature"] = TMP_PATH + "/out/xxx"
-        self.conf["gbdt.split.value"] = TMP_PATH + "/out/xxx"
+        tmp_path = tempfile.gettempdir()
+        self.conf["gbdt.split.feature"] = tmp_path + "/out/xxx"
+        self.conf["gbdt.split.value"] = tmp_path + "/out/xxx"
 
         runner = GBDTRunner()
 

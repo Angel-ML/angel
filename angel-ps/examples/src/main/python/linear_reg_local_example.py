@@ -22,6 +22,7 @@ from pyangel.context import Configuration
 from pyangel.ml.conf import MLConf
 from pyangel.ml.regression.runner import LinearRegRunner
 
+
 class LinearRegLocalExample(object):
     """
     Linear Regression Example used for user test, similar to "com.tencent.angel.example.ml.LinearRegLocalExample".

@@ -23,6 +23,7 @@ from pyangel.ml.conf import MLConf
 from pyangel.ml.client.angel_client_factory import AngelClientFactory
 from pyangel.ml.factorizationmachines.runner import FMRunner
 
+
 class FMLocalExample(oject):
 
     def __init__(self):
@@ -55,12 +56,12 @@ class FMLocalExample(oject):
         self.conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, 'org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat')
         self.conf.set_boolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, True)
 
-        #set angel resource parameters #worker, #task, #PS
+        # set angel resource parameters #worker, #task, #PS
         self.conf.set_int(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1)
         self.conf.set_int(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1)
         self.conf.set_int(AngelConf.ANGEL_PS_NUMBER, 1)
 
-        #set FM algorithm parameters #feature #epoch
+        # set FM algorithm parameters #feature #epoch
         self.conf.set(MLConf.ML_FEATURE_NUM, str(feature_num))
         self.conf.set(MLConf.ML_EPOCH_NUM, str(epoch_num))
         self.conf.set(MLConf.ML_FM_RANK, str(rank))
@@ -73,12 +74,12 @@ class FMLocalExample(oject):
     def train_on_local_cluster(self):
         self.set_conf()
         input_path = "./src/test/data/fm/food_fm_libsvm"
-        LOCAL_FS = LocalFileSystem.DEFAULT_FS
-        TMP_PATH = tempfile.gettempdir()
-        save_path = LOCAL_FS + TMP_PATH + "/model"
-        log_path = LOCAL_FS + TMP_PATH + "/LRlog"
+        local_fs = LocalFileSystem.DEFAULT_FS
+        temp_path = tempfile.gettempdir()
+        save_path = local_fs+ temp_path + "/model"
+        log_path = local_fs + temp_path + "/LRlog"
 
-        # Set trainning data path
+        # Set training data path
         self.conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, input_path)
         # Set save model path
         self.conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, save_path)
@@ -95,12 +96,12 @@ class FMLocalExample(oject):
 
     def fm_classification(self):
         input_path = "./src/test/data/fm/a9a.train"
-        LOCAL_FS = LocalFileSystem.DEFAULT_FS
-        TMP_PATH = tempfile.gettempdir()
-        save_path = LOCAL_FS + TMP_PATH + "/model"
-        log_path = LOCAL_FS + TMP_PATH + "/LRlog"
+        local_fs = LocalFileSystem.DEFAULT_FS
+        temp_path = tempfile.gettempdir()
+        save_path = local_fs + temp_path + "/model"
+        log_path = local_fs + temp_path + "/LRlog"
 
-        # Set trainning data path
+        # Set training data path
         self.conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, input_path)
         # Set save model path
         self.conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, save_path)
@@ -118,6 +119,7 @@ class FMLocalExample(oject):
 
         angel_client = AngelClientFactory.get(self.conf)
         angel_client.stop()
+
 
 example = FMLocalExample()
 example.train_on_local_cluster()
