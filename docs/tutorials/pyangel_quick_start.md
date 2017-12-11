@@ -4,7 +4,7 @@
 
 * Linux任意发行版本,CentOS，Ubuntu等均可
 * Angel >= 1.3
-* Python >= 2.7
+* Python >= 2.7 / 3.6（PyAngel支持2和3，但是建议3）
 
 ## 编写和编译
 
@@ -98,7 +98,10 @@ PyAngel支持**交互式**和**脚本式**两种提交任务的模式，而每�
 
     runner = GBDTRunner()
     runner.train(conf)
-  ```
+   ```
 
 * [完整代码](../../angel-ps/examples/src/main/python/gbdt_example.py)
-* 目前PyAngel还不支持自定义Model，Task等操作，相关功能正在开发中，如有疑问以及需求，请在Angel QQ群中联系Angel8号
+
+### 新版本
+
+支持自定义Model，Task等操作，以及和Spark配合的相关功能正在开发中，如有疑问以及需求，欢迎提Issue和PR，或者联系Angel8号
