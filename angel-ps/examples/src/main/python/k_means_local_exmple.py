@@ -23,6 +23,7 @@ from pyangel.ml.conf import MLConf
 from pyangel.ml.client.angel_client_factory import AngelClientFactory
 from pyangel.ml.clustering.k_means import KMeansRunner
 
+
 class KmeansLocalExample(object):
 
     def __init__(self):

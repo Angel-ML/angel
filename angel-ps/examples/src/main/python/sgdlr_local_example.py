@@ -22,6 +22,7 @@ from pyangel.context import Configuration
 from pyangel.ml.conf import MLConf
 from pyangel.ml.classification.runner import LRRunner
 
+
 class SGDLRLocalExample(object):
 
     def __init__(self):
@@ -91,19 +92,17 @@ class SGDLRLocalExample(object):
         # Set actionType train
         self.conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN)
 
-
         runner = LRRunner()
         runner.train(self.conf)
-
 
     def inc_train(self):
         self.set_conf()
         input_path = "../data/exampledata/LRLocalExampleData/a9a.train"
-        LOCAL_FS = LocalFileSystem.DEFAULT_FS
-        TMP_PATH = tempfile.gettempdir()
-        load_path = LOCAL_FS + TMP_PATH + "/model"
-        save_path = LOCAL_FS + TMP_PATH + "/newmodel"
-        log_path = LOCAL_FS + TMP_PATH + "/log"
+        local_fs = LocalFileSystem.DEFAULT_FS
+        temp_path = tempfile.gettempdir()
+        load_path = load_fs + temp_path + "/model"
+        save_path = local_fs + temp_path + "/newmodel"
+        log_path = local_fs + temp_path + "/log"
 
         # Set trainning data path
         self.conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, input_path)
@@ -118,7 +117,6 @@ class SGDLRLocalExample(object):
 
         runner = LRRunner()
         runner.inc_train(self.conf)
-
 
     def predict(self):
         self.set_conf()
@@ -144,6 +142,7 @@ class SGDLRLocalExample(object):
         runner = LRRunner()
 
         runner.predict(self.conf)
+
 
 example = SGDLRLocalExample()
 example.train_on_local_cluster()

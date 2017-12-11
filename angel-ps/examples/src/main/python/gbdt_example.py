@@ -13,10 +13,13 @@
 # either express or implied. See the License for the specific language governing permissions and
 #
 
+import tempfile
+
 from pyangel.conf import AngelConf
 from pyangel.context import Configuration
 from pyangel.ml.conf import MLConf
 from pyangel.ml.gbdt.runner import GBDTRunner
+
 
 class GBDTExample(object):
 
@@ -69,14 +72,12 @@ class GBDTExample(object):
         runner = GBDTRunner()
         runner.train(self.conf)
 
-
-
     def predict(self):
         self.set_conf()
-        # Load Model from HDFS.
-        TMP_PATH = tempfile.gettempdir()
-        self.conf["gbdt.split.feature"] = TMP_PATH + "/out/xxx"
-        self.conf["gbdt.split.value"] = TMP_PATH + "/out/xxx"
+        # Load Model from HDFS. You can replace “/out/feature” and “out/value” with your prefer path
+        tmp_path = tempfile.gettempdir()
+        self.conf["gbdt.split.feature"] = tmp_path + "/out/feature"
+        self.conf["gbdt.split.value"] = tmp_path + "/out/value"
 
         runner = GBDTRunner()
 
