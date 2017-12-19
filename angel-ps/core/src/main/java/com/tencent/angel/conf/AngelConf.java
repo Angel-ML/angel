@@ -68,7 +68,7 @@ public class AngelConf extends Configuration {
   /** Training data path. */
   public static final String ANGEL_TRAIN_DATA_PATH = "angel.train.data.path";
 
-  /** Training data path. */
+  /** Predict data path. */
   public static final String ANGEL_PREDICT_DATA_PATH = "angel.predict.data.path";
 
   /** Input data path use by Angel */

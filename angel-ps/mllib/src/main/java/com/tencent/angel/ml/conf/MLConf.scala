@@ -117,6 +117,8 @@ object MLConf {
   val DEFAULT_ML_GBDT_BATCH_NUM = 10000
   val ML_GBDT_SERVER_SPLIT = "ml.gbdt.server.split"
   val DEFAULT_ML_GBDT_SERVER_SPLIT = false
+  val ML_GBDT_CATE_FEAT = "ml.gbdt.cate.feat"
+  val DEFAULT_ML_GBDT_CATE_FEAT = "none"
 
   // FM params
   val ML_FM_LEARN_TYPE = "ml.fm.learn.type"
