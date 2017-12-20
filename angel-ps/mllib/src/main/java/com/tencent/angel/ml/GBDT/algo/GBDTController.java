@@ -195,8 +195,6 @@ public class GBDTController {
       float[][] splits = TYahooSketchSplit.getSplitValue(this.trainDataStore, this.param.numSplit,
           this.cateFeatList);
 
-      LOG.info("Splits of feature 242883: " + Arrays.toString(splits[242883]));
-
       if (splits.length == this.param.numFeature && splits[0].length == this.param.numSplit) {
         for (int fid = 0; fid < splits.length; fid++) {
           if (cateFeatList.contains(fid)) {
