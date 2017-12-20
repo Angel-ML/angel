@@ -110,6 +110,7 @@ GBDT on Angel支持“libsvm”、“dummy”两种数据格式，分别如下�
 	* angel.predict.data.path：预测数据的输入路径
 	* ml.feature.num：数据的特征个数
 	* ml.feature.nnz：数据的非零特征个数
+	* ml.gbdt.cate.feat：离散特征，"特征id:特征数量"的格式，以逗号分隔，例如"0:2,1:3"。设为"none"表示没有离散特征，设为"all"表示全部为离散特征。
 	* ml.data.type：数据格式，支持"dummy"、"libsvm"
 	* angel.save.model.path：训练完成后，模型的保存路径
 	* angel.predict.out.path：预测结果的保存路径
@@ -134,6 +135,7 @@ angel-submit \
     -Dml.validate.ratio=0.1 \
     -Dml.feature.num=10000 \
 	-Dml.feature.nnz=100 \
+	-Dml.gbdt.cate.feat=none \
 	-Dml.gbdt.tree.num=20 \
 	-Dml.gbdt.tree.depth=7 \
 	-Dml.gbdt.split.num=10 \
