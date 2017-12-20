@@ -56,6 +56,7 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   param.gradHistNamePrefix = GBDTModel.GRAD_HIST_MAT_PREFIX
   param.activeTreeNodesName = GBDTModel.ACTIVE_NODE_MAT
   param.sampledFeaturesName = GBDTModel.FEAT_SAMPLE_MAT
+  param.cateFeatureName = GBDTModel.FEAT_CATEGORY_MAT
   param.splitFeaturesName = GBDTModel.SPLIT_FEAT_MAT
   param.splitValuesName = GBDTModel.SPLIT_VALUE_MAT
   param.splitGainsName = GBDTModel.SPLIT_GAIN_MAT
@@ -175,6 +176,7 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       if (!nextClock && controller.phase == GBDTPhase.CREATE_SKETCH) {
         LOG.info(s"******Current phase: CREATE_SKETCH, clock[${controller.clock}]******")
         controller.createSketch
+        controller.mergeCateFeatSketch
         controller.setPhase(GBDTPhase.GET_SKETCH)
         nextClock = true
       }

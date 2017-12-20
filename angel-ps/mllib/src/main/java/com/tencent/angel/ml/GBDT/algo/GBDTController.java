@@ -17,10 +17,13 @@
 package com.tencent.angel.ml.GBDT.algo;
 
 
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.GBDT.GBDTModel;
+import com.tencent.angel.ml.GBDT.algo.RegTree.*;
+import com.tencent.angel.ml.GBDT.algo.tree.SplitEntry;
+import com.tencent.angel.ml.GBDT.algo.tree.TYahooSketchSplit;
 import com.tencent.angel.ml.GBDT.psf.GBDTGradHistGetRowFunc;
 import com.tencent.angel.ml.GBDT.psf.GBDTGradHistGetRowResult;
-import com.tencent.angel.ml.GBDT.algo.RegTree.*;
 import com.tencent.angel.ml.GBDT.psf.HistAggrParam;
 import com.tencent.angel.ml.conf.MLConf;
 import com.tencent.angel.ml.math.vector.*;
@@ -32,8 +35,6 @@ import com.tencent.angel.ml.objective.LossHelper;
 import com.tencent.angel.ml.objective.ObjFunc;
 import com.tencent.angel.ml.objective.RegLossObj;
 import com.tencent.angel.ml.param.GBDTParam;
-import com.tencent.angel.ml.GBDT.algo.tree.SplitEntry;
-import com.tencent.angel.ml.GBDT.algo.tree.TYahooSketchSplit;
 import com.tencent.angel.ml.utils.Maths;
 import com.tencent.angel.worker.task.TaskContext;
 import org.apache.commons.logging.Log;
@@ -66,8 +67,10 @@ public class GBDTController {
   // gradient and hessian
   public List<GradPair> gradPairs = new ArrayList<>();
 
-  public float sketches[]; // size: featureNum * splitNum
-  public int[] fset; // sampled features in the current tree
+  public float[] sketches; // size: featureNum * splitNum
+  public List<Integer> cateFeatList; // categorical feature set, null: none, empty: all, else: partial
+  public Map<Integer, Integer> cateFeatNum; // number of splits of categorical features
+  public int[] fSet; // sampled features in the current tree
   public int[] activeNode; // active tree node, 1:active, 0:inactive
   public int[] activeNodeStat; // >=1:running, 0:finished, -1:failed
   public int[] instancePos; // map tree node to instance, each item is instance id
@@ -101,6 +104,31 @@ public class GBDTController {
     LossHelper loss = new Loss.BinaryLogisticLoss();
     objfunc = new RegLossObj(loss);
     this.sketches = new float[this.param.numFeature * this.param.numSplit];
+
+    String cateFeatStr = this.taskContext.getConf().get(MLConf.ML_GBDT_CATE_FEAT());
+    cateFeatList = new ArrayList<>();
+    cateFeatNum = new HashMap<>();
+    switch (cateFeatStr) {
+      case "all":
+        for (int fid = 0; fid < this.param.numFeature; fid++) {
+          cateFeatList.add(fid);
+        }
+        break;
+      case "none":
+        break;
+      default:
+        String[] splits = cateFeatStr.split(",");
+        for (int i = 0; i < splits.length; i++) {
+          String[] fidAndNum = splits[i].split(":");
+          int fid = Integer.parseInt(fidAndNum[0]);
+          int num = Integer.parseInt(fidAndNum[1]);
+          assert num < this.param.numSplit;
+          if (!cateFeatList.contains(fid)) {
+            cateFeatList.add(fid);
+          }
+        }
+    }
+
     this.maxNodeNum = Maths.pow(2, this.param.maxDepth) - 1;
     this.activeNode = new int[maxNodeNum];
     this.activeNodeStat = new int[maxNodeNum];
@@ -152,17 +180,26 @@ public class GBDTController {
   // create data sketch, push candidate split value to PS
   public void createSketch() throws Exception {
     PSModel sketch = model.getPSModel(this.param.sketchName);
+    PSModel cateFeat = model.getPSModel(this.param.cateFeatureName);
     if (taskContext.getTaskIndex() == 0) {
       LOG.info("------Create sketch------");
       long startTime = System.currentTimeMillis();
       DenseDoubleVector sketchVec =
           new DenseDoubleVector(this.param.numFeature * this.param.numSplit);
+      DenseDoubleVector cateFeatVec = null;
+      if (!this.cateFeatList.isEmpty()) {
+        cateFeatVec = new DenseDoubleVector(this.cateFeatList.size() * this.param.numSplit);
+      }
+
       // 1. calculate candidate split value
-      float[][] splits = TYahooSketchSplit.getSplitValue(this.trainDataStore, this.param.numSplit);
+      float[][] splits = TYahooSketchSplit.getSplitValue(this.trainDataStore, this.param.numSplit,
+          this.cateFeatList);
+
       if (splits.length == this.param.numFeature && splits[0].length == this.param.numSplit) {
         for (int fid = 0; fid < splits.length; fid++) {
-          LOG.debug(String.format("Candidate splits of fid[%d]: %s",
-                  fid, Arrays.toString(splits[fid])));
+          if (cateFeatList.contains(fid)) {
+            continue;
+          }
           for (int j = 0; j < splits[fid].length; j++) {
             sketchVec.set(fid * this.param.numSplit + j, splits[fid][j]);
           }
@@ -170,8 +207,26 @@ public class GBDTController {
       } else {
         LOG.error("Incompatible sketches size.");
       }
+
+      // categorical features
+      if (!this.cateFeatList.isEmpty()) {
+        Collections.sort(this.cateFeatList);
+        for (int i = 0; i < this.cateFeatList.size(); i++) {
+          int fid = this.cateFeatList.get(i);
+          int start = i * this.param.numSplit;
+          for (int j = 0; j < splits[fid].length; j++) {
+            if (splits[fid][j] == 0 && j > 0)
+              break;
+            cateFeatVec.set(start + j, splits[fid][j]);
+          }
+        }
+      }
+
       // 2. push local sketch to PS
       sketch.increment(0, sketchVec);
+      if (null != cateFeatVec) {
+        cateFeat.increment(this.taskContext.getTaskIndex(), cateFeatVec);
+      }
       // 3. set phase to GET_SKETCH
       this.phase = GBDTPhase.GET_SKETCH;
       LOG.info(String.format("Create sketch cost: %d ms", System.currentTimeMillis() - startTime));
@@ -179,6 +234,59 @@ public class GBDTController {
 
     Set<String> needFlushMatrixSet = new HashSet<String>(1);
     needFlushMatrixSet.add(this.param.sketchName);
+    needFlushMatrixSet.add(this.param.cateFeatureName);
+    clockAllMatrix(needFlushMatrixSet, true);
+  }
+
+  public void mergeCateFeatSketch() throws Exception {
+
+    LOG.info("------Merge categorical features------");
+
+    Set<String> needFlushMatrixSet = new HashSet<String>(1);
+
+    // the leader worker
+    if (!this.cateFeatList.isEmpty() && this.taskContext.getTaskIndex() == 0) {
+
+      PSModel cateFeat = model.getPSModel(this.param.cateFeatureName);
+      PSModel sketch = model.getPSModel(this.param.sketchName);
+
+      Set<Double>[] featSet = new HashSet[cateFeatList.size()];
+      for (int i = 0; i < cateFeatList.size(); i++) {
+        featSet[i] = new HashSet<>();
+      }
+
+      int workerNum = this.taskContext.getConf().getInt(AngelConf.ANGEL_WORKERGROUP_ACTUAL_NUM, 1);
+
+      // merge categorical features
+      for (int worker = 0; worker < workerNum; worker++) {
+        DenseDoubleVector vec = (DenseDoubleVector) cateFeat.getRow(worker);
+        for (int i = 0; i < cateFeatList.size(); i++) {
+          int fid = cateFeatList.get(i);
+          int start = i * this.param.numSplit;
+          for (int j = 0; j < this.param.numSplit; j++) {
+            double fvalue = vec.get(start + j);
+            featSet[i].add(fvalue);
+          }
+        }
+      }
+
+      // create updates
+      SparseDoubleVector cateFeatVec = new SparseDoubleVector(this.param.numFeature * this.param.numSplit);
+      for (int i = 0; i < cateFeatList.size(); i++) {
+        int fid = cateFeatList.get(i);
+        int start = fid * this.param.numSplit;
+        List<Double> sortedValue = new ArrayList<>(featSet[i]);
+        Collections.sort(sortedValue);
+        assert sortedValue.size() < this.param.numSplit;
+        for (int j = 0; j < sortedValue.size(); j++) {
+          cateFeatVec.set(start + j, sortedValue.get(j));
+        }
+      }
+
+      sketch.increment(0, cateFeatVec);
+      needFlushMatrixSet.add(this.param.sketchName);
+    }
+
     clockAllMatrix(needFlushMatrixSet, true);
   }
 
@@ -189,9 +297,26 @@ public class GBDTController {
     long startTime = System.currentTimeMillis();
     DenseDoubleVector sketchVector = (DenseDoubleVector) sketch.getRow(0);
     LOG.info(String.format("Get sketch cost: %d ms", System.currentTimeMillis() - startTime));
+
     for (int i = 0; i < sketchVector.getDimension(); i++) {
       this.sketches[i] = (float) sketchVector.get(i);
     }
+
+    // number of categorical feature
+    for (int i = 0; i < cateFeatList.size(); i++) {
+      int fid = cateFeatList.get(i);
+      int start = fid * this.param.numSplit;
+      int splitNum = 1;
+      for (int j = 0; j < this.param.numSplit; j++) {
+        if (this.sketches[start + j + 1] > this.sketches[start + j] ) {
+          splitNum++;
+        } else
+          break;
+      }
+      this.cateFeatNum.put(fid, splitNum);
+    }
+
+    LOG.info("Number of splits of categorical features: " + this.cateFeatNum.entrySet().toString());
     this.phase = GBDTPhase.NEW_TREE;
   }
 
@@ -233,14 +358,14 @@ public class GBDTController {
       PSModel featSample = model.getPSModel(this.param.sampledFeaturesName);
       DenseIntVector sampleFeatureVector =
           (DenseIntVector) featSample.getRow(this.currentTree);
-      this.fset = sampleFeatureVector.getValues();
+      this.fSet = sampleFeatureVector.getValues();
       this.forest[this.currentTree].fset = sampleFeatureVector.getValues();
     } else {
       // 2.2. if use all the features, only called one
-      if (null == this.fset) {
-        this.fset = new int[this.trainDataStore.featureMeta.numFeature];
-        for (int fid = 0; fid < this.fset.length; fid++) {
-          this.fset[fid] = fid;
+      if (null == this.fSet) {
+        this.fSet = new int[this.trainDataStore.featureMeta.numFeature];
+        for (int fid = 0; fid < this.fSet.length; fid++) {
+          this.fSet[fid] = fid;
         }
       }
     }
@@ -394,9 +519,8 @@ public class GBDTController {
       // 2.3. find best split result of this tree node
       if (this.param.isServerSplit) {
         // 2.3.1 using server split
-
         if (splitEntry.getFid() != -1) {
-          int trueSplitFid = this.fset[splitEntry.getFid()];
+          int trueSplitFid = this.fSet[splitEntry.getFid()];
           int splitIdx = (int) splitEntry.getFvalue();
           float trueSplitValue = this.sketches[trueSplitFid * this.param.numSplit + splitIdx];
           LOG.info(String.format("Best split of node[%d]: feature[%d], value[%f], "
