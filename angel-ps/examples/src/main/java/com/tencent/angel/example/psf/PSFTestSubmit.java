@@ -25,9 +25,6 @@ import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import org.apache.hadoop.conf.Configuration;
 
-/**
- * Created by payniexiao on 2017/7/18.
- */
 public class PSFTestSubmit implements AppSubmitter {
   @Override public void submit(Configuration conf) throws Exception {
     conf.setBoolean(AngelConf.ANGEL_AM_USE_DUMMY_DATASPLITER, true);
@@ -42,3 +39,4 @@ public class PSFTestSubmit implements AppSubmitter {
     angelClient.stop(0);
   }
 }
+

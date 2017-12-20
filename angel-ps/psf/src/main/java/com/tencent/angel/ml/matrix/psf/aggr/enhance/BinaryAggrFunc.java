@@ -25,6 +25,7 @@ import com.tencent.angel.ps.impl.PSContext;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerPartition;
 import com.tencent.angel.ps.impl.matrix.ServerRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
 
 /**
  * This is abstract class of Binary Aggregate Function of POF (PS Oriented Function),
@@ -66,11 +67,15 @@ public abstract class BinaryAggrFunc extends GetFunc {
     switch (row1.getRowType()) {
       case T_DOUBLE_DENSE:
         return doProcessRow((ServerDenseDoubleRow) row1, (ServerDenseDoubleRow) row2);
+      case T_DOUBLE_SPARSE_LONGKEY:
+        return doProcessRow((ServerSparseDoubleLongKeyRow) row1, (ServerSparseDoubleLongKeyRow) row2);
       default:
         throw new RuntimeException("Spark on Angel currently only supports Double Dense Row");
     }
   }
 
   protected abstract double doProcessRow(ServerDenseDoubleRow row1, ServerDenseDoubleRow row2);
+
+  protected abstract double doProcessRow(ServerSparseDoubleLongKeyRow row1, ServerSparseDoubleLongKeyRow row2);
 
 }

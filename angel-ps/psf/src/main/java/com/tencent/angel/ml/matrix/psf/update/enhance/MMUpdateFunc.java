@@ -19,10 +19,15 @@ package com.tencent.angel.ml.matrix.psf.update.enhance;
 
 
 import com.tencent.angel.ml.matrix.psf.common.Utils;
+import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.ps.impl.PSContext;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerPartition;
 import com.tencent.angel.ps.impl.matrix.ServerRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+
+import static com.tencent.angel.protobuf.generated.MLProtos.RowType.T_DOUBLE_DENSE;
+import static com.tencent.angel.protobuf.generated.MLProtos.RowType.T_DOUBLE_SPARSE_LONGKEY;
 
 /**
  * `MMUpdateFunc` is a POF updater for a row in matrix with multi double parameter.
@@ -52,13 +57,11 @@ public abstract class MMUpdateFunc extends UpdateFunc {
       MMUpdateParam.MMPartitionUpdateParam vs2 =
           (MMUpdateParam.MMPartitionUpdateParam) partParam;
       int[] rowIds = vs2.getRowIds();
-      if (Utils.withinPart(partParam.getPartKey(), rowIds)) {
-        ServerRow[] rows = new ServerRow[rowIds.length];
-        for (int i = 0; i < rowIds.length; i++) {
-          rows[i] = part.getRow(rowIds[i]);
-        }
-        update(rows, vs2.getScalars());
+      ServerRow[] rows = new ServerRow[rowIds.length];
+      for (int i = 0; i < rowIds.length; i++) {
+        rows[i] = part.getRow(rowIds[i]);
       }
+      update(rows, vs2.getScalars());
     }
   }
 
@@ -71,11 +74,20 @@ public abstract class MMUpdateFunc extends UpdateFunc {
         }
         doUpdate(denseRows, scalars);
         return;
+      case T_DOUBLE_SPARSE_LONGKEY:
+        ServerSparseDoubleLongKeyRow[] sparseRows = new ServerSparseDoubleLongKeyRow[rows.length];
+        for (int i = 0; i < rows.length; i++) {
+          sparseRows[i] = (ServerSparseDoubleLongKeyRow) rows[i];
+        }
+        doUpdate(sparseRows, scalars);
+        return;
       default:
-        throw new RuntimeException("currently only supports Double Dense Row");
+        throw new RuntimeException("currently only supports T_DOUBLE_DENSE and T_DOUBLE_SPARSE_LONGKEY");
     }
   }
 
   protected abstract void doUpdate(ServerDenseDoubleRow[] rows, double[] scalars);
+
+  protected abstract void doUpdate(ServerSparseDoubleLongKeyRow[] rows, double[] scalars);
 
 }

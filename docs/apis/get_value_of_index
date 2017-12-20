@@ -1,0 +1,25 @@
+在数据稀疏度非常高的情况下，每个Worker上的数据只包含一小部分特征值，且只能计算出这部分特征的有效更新值。针对这种情况Angel提供了Worker拉取PS上部分参数值的接口getValueOfIndexs，用一个index数组指定要拉取的特征参数的key值，返回对应的特征value值。
+
+### 原理
+getValueOfIndexs 接口通过psf实现，具体过程如下：
+1. 请求划分，根据index列表产生请求列表    
+PS Client根据指定的特征ID列表生成一个请求列表，筛选出包含需要特征的partition列表，每个partition发送一个请求，请求中包含这个partition中需要get的index列表。
+2. 请求发送，partition查找得到对应的value列表        
+Angel将请求列表中的所有请求，发送给模型参数分区所在的PS实例。
+PS实例以模型参数分区，查找得到index列表对应的value列表，并返回相应的结果。
+3. 结果合并，返回稀疏向量   
+合并index列表和value列表，得到最终的结果并返回
+
+![image](../img/get_value_of_index.png)
+
+### 使用方法
+1. 维度选择（数据加载、预处理）：在数据加载、预处理的同时，记录训练数据包含的特征id列表
+2. 拉取局部模型，计算、推送更新值：Worker根据特征id列表，从对应的Ps实例上，拉取对应的模型特征value列表，合并为局部模型；Worker迭代计算得到局部模型更新值，将更新值Push回PS
+3. 全局模型合并：PS合并所有Worker返回的稀疏局部模型更新值，得到更新后的模型
+
+### 接口设计：
+def getValueOfIndexs(rowId: Int, index: Array[Int]): TVector    
+
+### 参数说明：
+* **rowId: Int** 要获取的index列表所在行的ID
+* **index: Array[Int]** 要获取的index列表，每个元素为一个特征ID

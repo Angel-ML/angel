@@ -1,18 +1,17 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Tencent is pleased to support the open source community by making Angel available.
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 /**
@@ -25,11 +24,10 @@
 
 package org.apache.spark.ml.classification.ps
 
-import breeze.optimize.{CachedDiffFunction, DiffFunction, LBFGS => BreezeLBFGS}
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
-import com.tencent.angel.spark.models.vector.PSVector
-import com.tencent.angel.spark.models.vector.enhanced.{BreezePSVector, PullMan, PushMan}
-import com.tencent.angel.spark.ml.optimize.OWLQN
+import breeze.optimize.{CachedDiffFunction, DiffFunction, LBFGS => BreezeLBFGS}
 import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkException
 import org.apache.spark.annotation.{Experimental, Since}
@@ -51,8 +49,10 @@ import org.apache.spark.sql.types.{DataType, DoubleType, StructType}
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.VersionUtils
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
+
+import com.tencent.angel.spark.ml.optimize.OWLQN
+import com.tencent.angel.spark.models.vector.PSVector
+import com.tencent.angel.spark.models.vector.enhanced.{BreezePSVector, PullMan}
 
 /**
  * Params for logistic regression.
@@ -86,7 +86,7 @@ private[classification] trait LogisticRegressionParams extends ProbabilisticClas
   }
 
   /**
-   * Param for the name of family which is a description of the label distribution
+   * CommonParam for the name of family which is a description of the label distribution
    * to be used in the model.
    * Supported options:
    *  - "auto": Automatically select the family based on the number of classes:
@@ -175,9 +175,9 @@ private[classification] trait LogisticRegressionParams extends ProbabilisticClas
     if (isSet(threshold) && isSet(thresholds)) {
       val ts = $(thresholds)
       require(ts.length == 2, "Logistic Regression found inconsistent values for threshold and" +
-        s" thresholds.  Param threshold is set (${$(threshold)}), indicating binary" +
-        s" classification, but Param thresholds is set with length ${ts.length}." +
-        " Clear one Param value to fix this problem.")
+        s" thresholds.  CommonParam threshold is set (${$(threshold)}), indicating binary" +
+        s" classification, but CommonParam thresholds is set with length ${ts.length}." +
+        " Clear one CommonParam value to fix this problem.")
       val t = 1.0 / (1.0 + ts(0) / ts(1))
       require(math.abs($(threshold) - t) < 1E-5, "Logistic Regression getThreshold found" +
         s" inconsistent values for threshold (${$(threshold)}) and thresholds (equivalent to $t)")
@@ -1326,24 +1326,24 @@ private class LogisticCostFun(
 
     val lossSum = instances.mapPartitions { iter =>
       val aggregator = new LogisticAggregator(coefficients.component, featureStdKey,
-        numClasses, numFeatures, weightSum, fitIntercept, multinomial)
+        numClasses, numFeatures.toInt, weightSum, fitIntercept, multinomial)
       val (gradient, loss) = aggregator.calculate(iter)
 
       gradientPS.increment(gradient)
       Iterator.single(loss)
     }.sum()
 
-    PullMan.delete(coefficients)
+    PullMan.release(coefficients)
 
     val regVal = if (regParamL2 != 0.0) {
       val interceptIndex = numCoefficientSets * numFeaturesPlusIntercept - numCoefficientSets - 1
       val deltaGradient = coefficients.zipMapWithIndex(featureStdKey.toBreeze,
-        new RegGradient(regParamL2, interceptIndex, fitIntercept, standardization))
+        new RegGradient(regParamL2, interceptIndex.toInt, fitIntercept, standardization))
 
       gradientPS.toBreeze += deltaGradient
 
       val sum = coefficients.zipMapWithIndex(featureStdKey.toBreeze,
-        new RegLoss(interceptIndex, fitIntercept, standardization)).sum
+        new RegLoss(interceptIndex.toInt, fitIntercept, standardization)).sum
 
       0.5 * regParamL2 * sum
     } else {

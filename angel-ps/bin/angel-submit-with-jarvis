@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+export HADOOP_HOME="/data/tesla/tdwgaia_angel"
+export JAVA_HOME="/data/tesla/jdk1.8.0_101"
+export ANGEL_VERSION=1.3.0
+export PATH=$JAVA_HOME/bin:$PATH
+
+if [ "$HADOOP_HOME" = "" ]; then
+    echo "HADOOP_HOME is not set"
+    exit 1
+fi
+
+bin=`which $0`
+bin=`dirname ${bin}`
+bin=`cd "$bin"; pwd`
+
+conf="$bin"/../conf
+lib="$bin"/../lib
+
+export ANGEL_HOME="$bin/../"
+
+DEFAULT_LIBEXEC_DIR="$HADOOP_HOME"/libexec
+HADOOP_LIBEXEC_DIR=${HADOOP_LIBEXEC_DIR:-$DEFAULT_LIBEXEC_DIR}
+. $HADOOP_LIBEXEC_DIR/hadoop-config.sh
+
+for f in "$lib"/*.jar; do
+    echo $f
+    if [ "$CLASSPATH" ]; then
+        export CLASSPATH=$CLASSPATH:$f
+    else
+        export CLASSPATH=$f
+    fi
+done
+
+for f in `pwd`/*.jar; do
+    echo $f
+    export CLASSPATH=$CLASSPATH:$f
+done
+
+export CLASS="com.tencent.angel.jarvis.Submitter"
+export JAVA=/data/tesla/jdk1.8.0_101/bin/java
+
+echo "$ANGEL_HOME"
+
+echo $JAVA_HOME
+export JAVA_HOME="/data/tesla/jdk1.8.0_101"
+export JAVA=$JAVA_HOME/bin/java
+echo $JAVA $JAVA_HEAP_MAX $HADOOP_OPTS $CLASS "$@"
+exec "$JAVA" $JAVA_HEAP_MAX $HADOOP_OPTS $CLASS "$@"
+
+

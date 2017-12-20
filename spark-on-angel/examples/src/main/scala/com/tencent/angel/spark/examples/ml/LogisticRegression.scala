@@ -23,7 +23,7 @@ import org.apache.spark.sql.SparkSession
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.examples.util.Logistic
-import com.tencent.angel.spark.examples.util.PSExamples._
+import com.tencent.angel.spark.examples.util.SparkUtils._
 
 object LogisticRegression {
 

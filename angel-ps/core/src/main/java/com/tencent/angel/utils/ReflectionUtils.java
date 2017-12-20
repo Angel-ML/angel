@@ -21,15 +21,18 @@
  */
 package com.tencent.angel.utils;
 
+import com.tencent.angel.conf.AngelConf;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -168,5 +171,12 @@ public class ReflectionUtils {
 
   static int getCacheSize() {
     return CONSTRUCTOR_CACHE.size();
+  }
+  
+  public static String getAttr(String item, Object conf) throws Exception {
+    Class angelConfClass = AngelConf.class;
+    Field field = angelConfClass.getDeclaredField(item);
+    Class fieldType = field.getDeclaringClass();
+    return (String) field.get(conf);
   }
 }

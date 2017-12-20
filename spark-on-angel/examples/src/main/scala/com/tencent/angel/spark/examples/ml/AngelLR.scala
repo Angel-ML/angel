@@ -17,7 +17,7 @@
 package com.tencent.angel.spark.examples.ml
 
 import breeze.linalg.DenseVector
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.SparkContext
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.examples.util.Logistic
@@ -25,50 +25,51 @@ import com.tencent.angel.spark.models.vector.PSVector
 
 
 object AngelLR {
-  import com.tencent.angel.spark.examples.util.PSExamples._
+  import com.tencent.angel.spark.examples.util.SparkUtils._
 
   def main(args: Array[String]): Unit = {
     parseArgs(args)
     runSpark(this.getClass.getSimpleName) { sc =>
-      PSContext.getOrCreate(sc)
-      execute(DIM, N, numSlices, ITERATIONS)
+      execute(sc, DIM, N, numSlices, ITERATIONS)
     }
   }
 
   def execute(
+      sc: SparkContext,
       dim: Int,
       sampleNum: Int,
       partitionNum: Int,
       maxIter: Int,
       stepSize: Double = 0.1): Unit = {
 
+    PSContext.getOrCreate(sc)
     val trainData = Logistic.generateLRData(sampleNum, dim, partitionNum)
+      .map { case (feat, label) =>
+        if (label == 0.0) (feat, -1.0) else (feat, 1.0)
+      }
 
-    val w = PSVector.dense(dim)
-    val sc = SparkSession.builder().getOrCreate().sparkContext
+    val psW = PSVector.dense(dim)
+    val psG = PSVector.duplicate(psW)
+
+    println("Initial psW: " + psW.dimension)
 
     for (i <- 1 to ITERATIONS) {
-      val bcW = sc.broadcast(w.pull())
-      val totalG = PSVector.duplicate(w)
+      println("On iteration " + i)
 
-      val tempRDD = trainData.mapPartitions { iter =>
-        val breezeW = new DenseVector(bcW.value)
+      val localW = new DenseVector(psW.pull())
 
-        val subG = iter.map { case (feat, label) =>
-          val brzData = new DenseVector[Double](feat.toArray)
-          val margin: Double = -1.0 * breezeW.dot(brzData)
-          val gradientMultiplier = (1.0 / (1.0 + math.exp(margin))) - label
-          val gradient = brzData * gradientMultiplier
-          gradient
-        }.reduce(_ + _)
-        totalG.increment(subG.toArray)
-        Iterator.empty
+      val temp = trainData.map { case (feature, label) =>
+        val x = new DenseVector(feature.toArray)
+        val g = -label * (1 - 1.0 / (1.0 + math.exp(-label * localW.dot(x)))) * x
+        psG.increment(g.toArray)
       }
-      tempRDD.count()
-      w.toBreeze -= (totalG.toBreeze :* (1.0 / sampleNum))
+      temp.count()
+
+      psW.toBreeze -= (psG.toBreeze :* (1.0 / sampleNum))
+      psG.zero()
     }
 
-    println(s"w: ${w.pull().mkString(" ")}")
+    println(s"Final psW: ${psW.pull().mkString(" ")}")
   }
 
 }

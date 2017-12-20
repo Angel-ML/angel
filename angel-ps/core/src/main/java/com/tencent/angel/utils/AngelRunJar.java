@@ -8,8 +8,8 @@
  *
  * https://opensource.org/licenses/BSD-3-Clause
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is
- * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -43,6 +43,10 @@ public class AngelRunJar {
   }
 
   public static void submit(Configuration conf) throws Exception {
+    LOG.info("angel python file: " + conf.get("angel.pyangel.pyfile"));
+    if (null != conf.get("angel.pyangel.pyfile")) {
+      conf.set(AngelConf.ANGEL_APP_SUBMIT_CLASS, "com.tencent.angel.api.python.PythonRunner");
+    }
     // instance submitter class
     final String submitClassName =
       conf.get(AngelConf.ANGEL_APP_SUBMIT_CLASS, AngelConf.DEFAULT_ANGEL_APP_SUBMIT_CLASS);
@@ -59,7 +63,6 @@ public class AngelRunJar {
           LOG.fatal(message, x);
           throw new InvalidParameterException(message);
         }
-        LOG.info("submit jars: " + conf.get(AngelConf.ANGEL_JOB_LIBJARS));
 
         submmiter.submit(conf);
         return "OK";

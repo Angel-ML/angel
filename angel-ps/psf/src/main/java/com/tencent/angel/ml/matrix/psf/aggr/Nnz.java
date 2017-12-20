@@ -23,6 +23,7 @@ import com.tencent.angel.ml.matrix.psf.aggr.enhance.UnaryAggrFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
 
 import java.nio.DoubleBuffer;
 import java.util.List;
@@ -52,6 +53,14 @@ public final class Nnz extends UnaryAggrFunc {
       if (data.get(i) != 0) nnz++;
     }
     return nnz;
+  }
+
+  @Override
+  protected double doProcessRow(ServerSparseDoubleLongKeyRow row) {
+    long entireSize = row.getEndCol() - row.getStartCol();
+    long nnz = entireSize - row.getIndex2ValueMap().size();
+
+    return (double)nnz;
   }
 
   @Override

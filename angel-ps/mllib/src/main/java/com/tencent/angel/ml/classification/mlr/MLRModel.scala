@@ -90,7 +90,7 @@ class MLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
     val predict = new MemoryDataBlock[PredictResult](-1)
 
     dataSet.resetReadIndex()
-    for (idx: Int <- 0 until dataSet.size) {
+    ( 0 until dataSet.size).foreach( _ => {
       val instance = dataSet.read
       val id = instance.getY
       val softmax = (0 until rank).map(i => softmax_wVecot(i).dot(instance.getX) + softmax_b(i)).toArray
@@ -104,7 +104,8 @@ class MLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
       val pre = (0 until rank).map(i => softmax(i) * sigmoid(i)).reduce(_ + _)
 
       predict.put(new MLRPredictResult(id, pre))
-    }
+    })
+
     predict
   }
 
@@ -141,13 +142,19 @@ class MLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
       softmax_intercept.increment(i, update_softmax_b.get(i))
     }
 
-    sigmoid_weight.clock().get()
-    softmax_weight.clock().get()
-    sigmoid_intercept.clock().get()
-    softmax_intercept.clock().get()
+    incClock()
   }
 
-
+  def incClock(): Unit = {
+    val f1 = sigmoid_weight.clock()
+    val f2 = softmax_weight.clock()
+    val f3 = sigmoid_intercept.clock()
+    val f4 = softmax_intercept.clock()
+    f1.get()
+    f2.get()
+    f3.get()
+    f4.get()
+  }
 }
 
 class MLRPredictResult(id: Double, sig: Double) extends PredictResult {

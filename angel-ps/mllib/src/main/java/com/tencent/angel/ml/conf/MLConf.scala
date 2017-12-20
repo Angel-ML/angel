@@ -47,7 +47,7 @@ object MLConf {
 
   // network param
   val ML_COMPRESS_BYTES = "ml.compress.bytes"
-  val DEFAULT_ML_COMPRESS_BYTES = 8;
+  val DEFAULT_ML_COMPRESS_BYTES = 8
 
   // Regularization params
   val ML_REG_L1 = "ml.reg.l1"
@@ -171,5 +171,6 @@ object MLConf {
   /** The predict error of all samples */
   val TRAIN_ERROR = "train.error"
   val VALID_ERROR = "validate.error"
-
 }
+
+class MLConf {}

@@ -23,6 +23,9 @@ import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarPartitionAggrResult;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.nio.DoubleBuffer;
 import java.util.List;
@@ -52,6 +55,25 @@ public final class Dot extends BinaryAggrFunc {
     }
     return sum;
   }
+
+  @Override
+  protected double doProcessRow(ServerSparseDoubleLongKeyRow row1, ServerSparseDoubleLongKeyRow row2) {
+    long entireSize = row1.getEndCol() - row2.getStartCol();
+
+    Long2DoubleOpenHashMap data1 = row1.getIndex2ValueMap();
+    Long2DoubleOpenHashMap data2 = row2.getIndex2ValueMap();
+    LongSet keys = data1.keySet();
+    keys.addAll(data2.keySet());
+
+    double sum = 0.0;
+    for (long key: keys) {
+      sum += data1.get(key) * data2.get(key);
+    }
+    sum += (entireSize - keys.size()) * data1.defaultReturnValue() * data2.defaultReturnValue();
+
+    return sum;
+  }
+
 
   @Override
   public GetResult merge(List<PartitionGetResult> partResults) {

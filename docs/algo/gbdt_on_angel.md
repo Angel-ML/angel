@@ -79,24 +79,15 @@ GBDT的流程包括几大步骤
 
 ## 4. 运行 & 性能
 
-### 输入格式
+###  输入格式
+* ml.feature.num：特征向量的维度   
+* ml.data.type：支持"dummy"、"libsvm"两种数据格式，具体参考:[Angel数据格式](data_format.md)
 
-数据的格式通过“ml.data.type”参数设置；数据特征的个数，即训练数据的维度通过参数“ml.feature.num”设置。
-
-GBDT on Angel支持“libsvm”、“dummy”两种数据格式，分别如下所示：
-
-* **dummy格式**
-
-每行文本表示一个样本，每个样本的格式为"y index1 index2 index3 ..."。其中：index特征的ID；训练数据的y为样本的类别，可以取1、-1两个值；预测数据的y为样本的ID值。比如，属于正类的样本[2.0, 3.1, 0.0, 0.0, -1, 2.2]的文本表示为“1 0 1 4 5”，其中“1”为类别，“0 1 4 5”表示特征向量的第0、1、4、5个维度的值不为0。同理，属于负类的样本[2.0, 0.0, 0.1, 0.0, 0.0, 0.0]被表示为“-1 0 2”。
-
- * **libsvm格式**
-
-每行文本表示一个样本，每个样本的格式为"y index1:value1 index2:value1 index3:value3 ..."。其中：index为特征的ID,value为对应的特征值；训练数据的y为样本的类别，可以取1、-1两个值；预测数据的y为样本的ID值。比如，属于正类的样本[2.0, 3.1, 0.0, 0.0, -1, 2.2]的文本表示为“1 0:2.0 1:3.1 4:-1 5:2.2”，其中“1”为类别，"0:2.0"表示第0个特征的值为2.0。同理，属于负类的样本[2.0, 0.0, 0.1, 0.0, 0.0, 0.0]被表示为“-1 0:2.0 2：0.1”。
 
 ### 参数
 
-* 算法参数
-	* ml.gbdt.tree.num：树的最大数量
+* **算法参数**
+	* ml.gbdt.tree.num：树的数量
 	* ml.gbdt.tree.depth：树的最大高度
 	* ml.gbdt.split.num：每个特征的梯度直方图的大小
 	* ml.learn.rate：学习速率
@@ -105,7 +96,8 @@ GBDT on Angel支持“libsvm”、“dummy”两种数据格式，分别如下�
 	* ml.gbdt.server.split：两阶段分裂算法开关，默认为true
 	* ml.compress.bytes：低精度压缩，每个浮点数的大小，可设为[1,8]
 
-* 输入输出参数
+
+* **输入输出参数**
 	* angel.train.data.path：训练数据的输入路径
 	* angel.predict.data.path：预测数据的输入路径
 	* ml.feature.num：数据的特征个数
@@ -116,7 +108,7 @@ GBDT on Angel支持“libsvm”、“dummy”两种数据格式，分别如下�
 	* angel.predict.out.path：预测结果的保存路径
 	* angel.log.path：日志文件的保存路径
 
-* 资源参数
+* **资源参数**
 	* angel.workergroup.number：Worker个数
 	* angel.worker.memory.mb：Worker申请内存大小
 	* angel.worker.task.number：每个Worker上的task的个数，默认为1
@@ -134,12 +126,12 @@ angel-submit \
     -Dangel.ml.data.type=libsvm \
     -Dml.validate.ratio=0.1 \
     -Dml.feature.num=10000 \
-	-Dml.feature.nnz=100 \
-	-Dml.gbdt.cate.feat=none \
-	-Dml.gbdt.tree.num=20 \
-	-Dml.gbdt.tree.depth=7 \
-	-Dml.gbdt.split.num=10 \
-	-Dml.gbdt.sample.ratio=1.0 \
+	  -Dml.feature.nnz=100 \
+	  -Dml.gbdt.cate.feat=none \
+	  -Dml.gbdt.tree.num=20 \
+	  -Dml.gbdt.tree.depth=7 \
+	  -Dml.gbdt.split.num=10 \
+	  -Dml.gbdt.sample.ratio=1.0 \
     -Dml.learn.rate=0.01 \
     -Dml.gbdt.server.split=true \
     -Dml.compress.bytes=2 \
@@ -164,10 +156,10 @@ angel-submit \
     -Dangel.ml.data.type=libsvm \
     -Dml.validate.ratio=0.1 \
     -Dml.feature.num=10000 \
-	-Dml.feature.nnz=100 \
-	-Dml.gbdt.tree.num=20 \
-	-Dml.gbdt.tree.depth=7 \
-	-Dml.gbdt.sample.ratio=1.0 \
+	  -Dml.feature.nnz=100 \
+	  -Dml.gbdt.tree.num=20 \
+	  -Dml.gbdt.tree.depth=7 \
+	  -Dml.gbdt.sample.ratio=1.0 \
     -Dml.learn.rate=0.01 \
     -Dangel.predict.data.path=$input_path \
     -Dangel.save.model.path=$model_path \
@@ -212,12 +204,12 @@ angel-submit \
 	  * 工作节点数据：50
 	  * 参数服务器数量：10
 	  * 每个工作节点内存：2GB(UserGender1)、10GB(UserGender2)
+	  
+* **实验结果**
 
-### **实验结果**
-
-| 系统   | 数据集      | 训练总时间 |每棵树时间| 测试集误差 |
-|:------:|:-----------:|:----------:|:--------:|:----------:|
-| XGBoost| UserGender1 | 36min 48s  |  110s    |  0.155008  |
-| Angel  | UserGender1 | 25min 22s  |   76s    |  0.154160  |
-| XGBoost| UserGender2 | 2h 25min   |  435s    |  0.232039  |
-| Angel  | UserGender2 | 58min 39s  |  175s    |  0.243316  |
+	| 系统   | 数据集      | 训练总时间 |每棵树时间| 测试集误差 |
+	|:------:|:-----------:|:----------:|:--------:|:----------:|
+	| XGBoost| UserGender1 | 36min 48s  |  110s    |  0.155008  |
+	| Angel  | UserGender1 | 25min 22s  |   76s    |  0.154160  |
+	| XGBoost| UserGender2 | 2h 25min   |  435s    |  0.232039  |
+	| Angel  | UserGender2 | 58min 39s  |  175s    |  0.243316  |

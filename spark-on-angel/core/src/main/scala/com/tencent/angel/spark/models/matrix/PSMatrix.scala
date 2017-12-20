@@ -26,12 +26,12 @@ import com.tencent.angel.spark.models.vector.{DensePSVector, PSVector}
 
 abstract class PSMatrix(
     val rows: Int,
-    val columns: Int,
+    val columns: Long,
     val meta: MatrixMeta) extends PSModel {
 
   private var deleted: Boolean = false
 
-  def size: Int = rows * columns
+  def size: Long = rows * columns
 
   /**
    * Operations for each row of `PSMatrix`

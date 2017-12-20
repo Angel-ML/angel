@@ -12,7 +12,6 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
  */
 
 package com.tencent.angel.spark.models.vector.enhanced
@@ -27,7 +26,7 @@ import com.tencent.angel.spark.models.vector.PSVector
 /**
  * PullManager is a Cache which cache PSVector in local static memory.
  */
-
+// TODO: support SparseVector and matrix
 object PullMan {
   private val pullCache = new scala.collection.mutable.HashMap[(Int, Int), Array[Double]]
 
@@ -45,25 +44,27 @@ object PullMan {
     pullCache((vector.poolId, vector.id))
   }
 
-  def delete(poolId: Int, id: Int): Unit = {
+  private[spark] def autoRelease(poolId: Int, id: Int): Unit = {
     if (TaskContext.get() == null) { // run flush on driver
       // TODO: can not run spark task in CleanTask
-//      val sparkConf = SparkEnv.get.conf
-//      val executorNum = sparkConf.getInt("spark.executor.instances", 1)
-//      val core = sparkConf.getInt("spark.executor.cores", 1)
-//      val totalTask = core * executorNum
-//      val spark = SparkSession.builder().getOrCreate()
-//      spark.sparkContext.range(0, totalTask, 1, totalTask)
-//        .foreach { taskId =>
-//
-//        }
+      /*
+      val sparkConf = SparkEnv.get.conf
+      val executorNum = sparkConf.getInt("spark.executor.instances", 1)
+      val core = sparkConf.getInt("spark.executor.cores", 1)
+      val totalTask = core * executorNum
+      val spark = SparkSession.builder().getOrCreate()
+      spark.sparkContext.range(0, totalTask, 1, totalTask)
+        .foreach { taskId =>
+
+        }
+       */
       deleteVector(poolId, id)
     } else { // run flush on executor
       deleteVector(poolId, id)
     }
   }
 
-  def delete(vector: PSVector): Unit = {
+  def release(vector: PSVector): Unit = {
     if (TaskContext.get() == null) { // run flush on driver
       val sparkConf = SparkEnv.get.conf
       val executorNum = sparkConf.getInt("spark.executor.instances", 1)

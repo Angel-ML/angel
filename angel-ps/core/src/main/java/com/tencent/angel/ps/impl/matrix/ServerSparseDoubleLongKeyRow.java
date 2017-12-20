@@ -28,6 +28,7 @@ import org.apache.commons.logging.LogFactory;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * Sparse double vector partition with long key.
@@ -62,6 +63,28 @@ public class ServerSparseDoubleLongKeyRow extends ServerRow{
 
   public Long2DoubleOpenHashMap getIndex2ValueMap() {
     return index2ValueMap;
+  }
+
+  /**
+   * Set the row with Long2DoubleOpenHashMap
+   * @param map the map to set.
+   */
+  public void setIndex2ValueMap(Long2DoubleOpenHashMap map) {
+    try {
+      lock.writeLock().lock();
+      index2ValueMap = map;
+    } finally {
+      lock.writeLock().unlock();
+    }
+  }
+
+  public void clear() {
+    try {
+      lock.writeLock().lock();
+      index2ValueMap.clear();
+    } finally {
+      lock.writeLock().unlock();
+    }
   }
 
   @Override
@@ -189,6 +212,39 @@ public class ServerSparseDoubleLongKeyRow extends ServerRow{
   }
 
   /**
+   * Merge a Long2DoubleOpenHashMap to this vector partition
+   * @param index2ValueMap
+   */
+  public void mergeIndexValueMap(Long2DoubleOpenHashMap index2ValueMap) {
+    try {
+      lock.writeLock().lock();
+      for (Map.Entry<Long, Double> entry: index2ValueMap.long2DoubleEntrySet()) {
+        index2ValueMap.addTo(entry.getKey(), entry.getValue());
+      }
+    } finally {
+      lock.writeLock().unlock();
+    }
+  }
+
+  /**
+   * Merge in indices and values pair to this vector partition,
+   * indices and values must have the same length.
+   * @param indices
+   * @param values
+   */
+  public void merge(long[] indices, double[] values) {
+    assert (indices.length == values.length);
+    try {
+      lock.writeLock().lock();
+      for (int i = 0; i < indices.length; i++) {
+        index2ValueMap.addTo(indices[i], values[i]);
+      }
+    } finally {
+      lock.writeLock().unlock();
+    }
+  }
+
+  /**
    * Merge a dense double vector to this vector partition
    * @param size the elements number of the dense double vector
    * @param buf  serialized dense double vector
@@ -204,6 +260,7 @@ public class ServerSparseDoubleLongKeyRow extends ServerRow{
       lock.writeLock().unlock();
     }
   }
+
 
   /**
    * Merge a sparse double vector to this vector partition

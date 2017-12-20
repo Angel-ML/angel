@@ -74,7 +74,7 @@ object PushMan {
     if (!mergeCache.contains((vector.poolId, vector.id, mergeType))) {
       mergeCache.synchronized {
         if (!mergeCache.contains((vector.poolId, vector.id, mergeType))) {
-          mergeCache.put((vector.poolId, vector.id, mergeType), Array.fill(vector.dimension)(defaultValue))
+          mergeCache.put((vector.poolId, vector.id, mergeType), Array.fill(vector.dimension.toInt)(defaultValue))
         }
       }
     }
@@ -103,10 +103,7 @@ object PushMan {
         if (mergeCache.contains((poolId, id, mergeType))) {
           val mergeArray = mergeCache((poolId, id, mergeType))
           mergeType match {
-            case INCREMENT => {
-              println(s"PushMan Increment.")
-              vectorOps.increment(poolId, id, mergeArray)
-            }
+            case INCREMENT => vectorOps.increment(poolId, id, mergeArray)
             case MAX => vectorOps.mergeMax(poolId, id, mergeArray)
             case MIN => vectorOps.mergeMin(poolId, id, mergeArray)
           }

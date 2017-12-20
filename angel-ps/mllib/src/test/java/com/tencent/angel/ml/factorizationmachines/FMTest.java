@@ -42,7 +42,7 @@ public class FMTest {
     // Feature number of train data
     int featureNum = 236;
     // Total iteration number
-    int epochNum = 10;
+    int epochNum = 5;
     // Rank
     int rank = 5;
     // Regularization parameters

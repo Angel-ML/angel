@@ -35,7 +35,7 @@ class LRRunner extends MLRunner {
     */
   override
   def train(conf: Configuration): Unit = {
-    conf.setInt("angel.worker.matrixtransfer.request.timeout.ms", 60000)
+    conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
     train(conf, LRModel(conf), classOf[LRTrainTask])
   }
   

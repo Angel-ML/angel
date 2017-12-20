@@ -2,8 +2,7 @@ package com.tencent.angel.spark.ops
 
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateFunc
-import com.tencent.angel.ml.matrix.psf.update.primitive.Push
-import com.tencent.angel.ml.matrix.psf.update.{Fill, RandomNormal, Random, RandomUniform}
+import com.tencent.angel.ml.matrix.psf.update._
 import com.tencent.angel.psagent.matrix.{MatrixClientFactory, ResponseType, Result}
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.models.matrix.PSMatrix
@@ -49,7 +48,6 @@ class Initializer {
     update(mat.meta.getId, new Random(mat.meta.getId))
   }
 
-
   /**
     * Fill PSVectorKey with `value`
     * Notice: it can only be called in th driver.
@@ -70,10 +68,4 @@ class Initializer {
       throw new AngelException("PS computation failed!")
     }
   }
-
-
-
-
-
-
 }

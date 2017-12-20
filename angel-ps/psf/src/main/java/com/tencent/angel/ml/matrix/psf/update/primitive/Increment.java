@@ -19,6 +19,7 @@ package com.tencent.angel.ml.matrix.psf.update.primitive;
 
 import com.tencent.angel.ml.matrix.psf.update.enhance.VAUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
 
 import java.nio.DoubleBuffer;
 
@@ -47,6 +48,11 @@ public class Increment extends VAUpdateFunc {
     } finally {
       row.getLock().writeLock().unlock();
     }
+  }
+
+  @Override
+  protected void doUpdate(ServerSparseDoubleLongKeyRow row, double[] delta) {
+    throw new RuntimeException("update.Increment PSF can not support sparse type rows");
   }
 
 }

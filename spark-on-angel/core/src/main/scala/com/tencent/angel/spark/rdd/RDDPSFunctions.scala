@@ -12,16 +12,16 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
  */
 
 package com.tencent.angel.spark.rdd
 
-import com.tencent.angel.spark.models.vector.enhanced.PushMan
-import org.apache.spark.rdd.RDD
-
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
+
+import org.apache.spark.rdd.RDD
+
+import com.tencent.angel.spark.models.vector.enhanced.PushMan
 
 class RDDPSFunctions[T: ClassTag](self: RDD[T]) extends Serializable {
 

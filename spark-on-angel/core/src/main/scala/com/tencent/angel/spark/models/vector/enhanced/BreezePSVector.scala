@@ -45,7 +45,7 @@ import scala.language.implicitConversions
  */
 class BreezePSVector(component: PSVector) extends PSVectorDecorator(component) with NumericOps[BreezePSVector] {
 
-  override val dimension: Int = component.dimension
+  override val dimension: Long = component.dimension
   override val id: Int = component.id
   override val poolId: Int = component.poolId
 
@@ -661,7 +661,7 @@ object BreezePSVector {
   }
 
   implicit val canDim: dim.Impl[BreezePSVector, Int] = new dim.Impl[BreezePSVector, Int] {
-    def apply(v: BreezePSVector): Int = v.dimension
+    def apply(v: BreezePSVector): Int = v.dimension.toInt
   }
 
   implicit val space: MutableLPVectorField[BreezePSVector, Double] = {

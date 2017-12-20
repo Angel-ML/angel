@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+#
+# Tencent is pleased to support the open source community by making Angel available.
+#
+# Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+#
+# Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+#
+# https://opensource.org/licenses/BSD-3-Clause
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License is
+# distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific language governing permissions and
+#
+
+if [ -z "${ANGEL_HOME}" ]; then
+  source "$(dirname "$0")/find-angel-home.sh"
+fi
+
+echo "$ANGEL_HOME"
+
+source "${ANGEL_HOME}"/bin/load-angel-env
+export _ANGEL_CMD_USAGE_="Usage: ./bin/pyangel [options]"
+
+if [[ -z "${PYANGEL_PYTHON_SHELL}" ]]; then
+  PYANGEL_PYTHON_SHELL="${PYANGEL_PYTHON:-"python"}"
+fi
+
+WORKS_WITH_IPYTHON=$(python -c 'import sys; print(sys.version_info >= (2, 7, 0))')
+
+if [[ -z "${PYANGEL_PYTHON}" ]]; then
+  if [[ ${PYANGEL_PYTHON_SHELL} == *ipython* && ! ${WORKS_WITH_IPYTHON} ]]; then
+    echo "IPython requires Python 2.7+; please install python2.7 or set PYANGEL_PYTHON" 1>&2
+    exit 1
+  else
+    PYANGEL_PYTHON=python
+  fi
+fi
+export PYANGEL_PYTHON
+
+# Judge if it's local mode
+if [[ $1 == "local" ]]; then
+    export PYANGEL_LOCAL_MODE=True
+fi
+
+# Add the PyAngel classes to the Python path:
+export PYTHONPATH="${ANGEL_HOME}/python/:${PYTHONPATH}"
+export PYTHONPATH="${ANGEL_HOME}/python/lib/py4j-0.10.4-src.zip:${PYTHONPATH}"
+
+# Load the PyAngel shell.py script when ./angel-py is used interactively:
+export OLD_PYTHONSTARTUP="${PYTHONSTARTUP}"
+export PYTHONSTARTUP="${ANGEL_HOME}/python/pyangel/shell.py"
+
+if [ -z "${PYANGEL_PYTHON_SHELL_OPTS}" ]; then
+  exec "${PYANGEL_PYTHON_SHELL}" 
+else
+  exec "${PYANGEL_PYTHON_SHELL}" "${PYANGEL_PYTHON_SHELL_OPTS}" 
+fi

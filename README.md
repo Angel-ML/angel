@@ -2,7 +2,7 @@
 
 
 [![license](http://img.shields.io/badge/license-BSD3-blue.svg?style=flat)](https://github.com/tencent/angel/blob/master/LICENSE)
-[![Release Version](https://img.shields.io/badge/release-1.2.0-red.svg)](https://github.com/tencent/angel/releases)
+[![Release Version](https://img.shields.io/badge/release-1.3.0-red.svg)](https://github.com/tencent/angel/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/tencent/angel/pulls)
 
 [(English Documents Available)](./README_en.md)
@@ -40,17 +40,26 @@
 ## Quick Start
 * [Angel入门](./docs/tutorials/angel_ps_quick_start.md)
 * [Spark on Angel入门](./docs/tutorials/spark_on_angel_quick_start.md)
-
+* [PyAngel入门](./docs/tutorials/pyangel_quick_start.md)
 
 ## Algorithm
 
-* [Logistic Regression](./docs/algo/lr_on_angel.md)
-* [Matrix Factorization](./docs/algo/mf_on_angel.md)
-* [SVM](./docs/algo/svm_on_angel.md)
-* [KMeans](./docs/algo/kmeans_on_angel.md)
-* [GBDT](./docs/algo/gbdt_on_angel.md)
-* [LDA](./docs/algo/lda_on_angel.md)
-* [LR (Spark on Angel)](./docs/algo/spark_on_angel_optimizer.md)
+* **Angel**
+	* [Logistic Regression](./docs/algo/lr_on_angel.md) ([MLR](./docs/algo/mlr_on_angel.md) | [ADMM](./docs/algo/admm_lr_on_angel.md))
+	* [Matrix Factorization](./docs/algo/mf_on_angel.md)
+	* [SVM](./docs/algo/svm_on_angel.md)
+	* [KMeans](./docs/algo/kmeans_on_angel.md)
+	* [GBDT](./docs/algo/gbdt_on_angel.md)
+	* [LDA\*](./docs/algo/lda_on_angel.md) ([WrapLDA](./docs/algo/wrap_lda_on_angel.md))
+
+* **Spark on Angel**
+	* [Logistic Regression](./docs/algo/sona/lr_sona.md)
+	* [GBDT](./docs/algo/sona/gbdt_sona.md)
+	* [KMeans](.docs/algo/sona/kmeans_sona.md)
+
+* **在线学习(Online Learning)**
+	* [FTRL](./docs/algo/ftrl_lr_spark.md)
+	
 
 ## Deployment
 
@@ -61,7 +70,12 @@
 * [资源配置指南](./docs/deploy/resource_config_guide.md)
 
 ## FAQ
-* [Angel常见问题](https://github.com/Tencent/angel/wiki/Angel%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
+* [工程类问题](https://github.com/Tencent/angel/wiki/%E5%B7%A5%E7%A8%8B%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
+* [算法类问题](https://github.com/Tencent/angel/wiki/%E7%AE%97%E6%B3%95%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
+
+## Support
+
+* **QQ群**：20171688
 
 ## Papers
   1. Lele Yu, Bin Cui, Ce Zhang, Yingxia Shao. [LDA*: A Robust and Large-scale Topic Modeling System](http://www.vldb.org/pvldb/vol10/p1406-yu.pdf). VLDB, 2017
@@ -72,3 +86,5 @@
 ## Presentation
 
 1. [Angel: A Machine Learning Framework for High Dimensionality](https://cdn.oreillystatic.com/en/assets/1/event/273/Angel_%E9%9D%A2%E5%90%91%E9%AB%98%E7%BB%B4%E5%BA%A6%E7%9A%84%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E8%AE%A1%E7%AE%97%E6%A1%86%E6%9E%B6%20_Angel_%20A%20machine%20learning%20framework%20for%20high%20dimensionality_%20%E8%AE%B2%E8%AF%9D.pdf).  Strata China, 2017
+
+2. [方圆并济：基于 Spark on Angel 的高性能机器学习](./docs/slides/Angel_QCon_2017.pdf).  QCon ShangHai China, 2017

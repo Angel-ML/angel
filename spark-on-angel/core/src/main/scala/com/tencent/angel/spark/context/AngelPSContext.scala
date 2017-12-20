@@ -12,37 +12,34 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
  */
 
 package com.tencent.angel.spark.context
 
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
+import scala.collection.{Map, mutable}
 
-import com.tencent.angel.client.AngelContext
-import com.tencent.angel.common.Location
-import com.tencent.angel.conf.AngelConf._
-import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.matrix.{MatrixContext, MatrixMeta}
-import com.tencent.angel.protobuf.generated.MLProtos.RowType
-import com.tencent.angel.psagent.PSAgent
-import com.tencent.angel.psagent.matrix.{MatrixClient, MatrixClientFactory}
-import com.tencent.angel.spark.models.matrix.MatrixType
-import com.tencent.angel.spark.models.matrix.MatrixType.MatrixType
-import com.tencent.angel.spark.models.vector.VectorType.VectorType
-import com.tencent.angel.spark.models.vector.enhanced.PSVectorDecorator
-import com.tencent.angel.spark.models.vector.{PSVector, VectorType}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.util.ShutdownHookManager
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.{SparkConf, TaskContext}
-import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.{Map, mutable}
 
+import com.tencent.angel.client.AngelContext
+import com.tencent.angel.common.Location
+import com.tencent.angel.conf.AngelConf._
+import com.tencent.angel.ml.matrix.{MatrixContext, MatrixMeta}
+import com.tencent.angel.protobuf.generated.MLProtos.RowType
+import com.tencent.angel.psagent.PSAgent
+import com.tencent.angel.psagent.matrix.{MatrixClient, MatrixClientFactory}
 import com.tencent.angel.spark.client.PSClient
+import com.tencent.angel.spark.models.matrix.MatrixType
+import com.tencent.angel.spark.models.matrix.MatrixType.MatrixType
+import com.tencent.angel.spark.models.vector.VectorType.VectorType
+import com.tencent.angel.spark.models.vector.{PSVector, VectorType}
 
 /**
  * AngelPSContext for driver and executor, it is an implement of `PSContext`
@@ -64,26 +61,26 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
   }
 
   def createMatrix(rows: Int,
-      cols: Int,
+      cols: Long,
       t: MatrixType = MatrixType.DENSE,
       rowInBlock: Int = -1,
       colInBlock: Int = -1): MatrixMeta = {
 
     val maxRowNumInBlock = if (rowInBlock == -1) {
-      if (rows > 20000) rows / TOTAL_PS_CORES else rows
+      if (rows > 10000) rows / TOTAL_PS_CORES else rows
     } else {
       rowInBlock
     }
 
     val maxColNumInBlock = if (colInBlock == -1) {
-      if (cols > 20000) cols / TOTAL_PS_CORES else cols
+      if (cols > 10000) cols / TOTAL_PS_CORES else cols
     } else {
       colInBlock
     }
 
     val mt = t match {
       case MatrixType.DENSE => RowType.T_DOUBLE_DENSE
-      case MatrixType.SPARSE => RowType.T_DOUBLE_SPARSE
+      case MatrixType.SPARSE => RowType.T_DOUBLE_SPARSE_LONGKEY
     }
     val matrix = new MatrixContext(s"spark-$matrixCounter", rows, cols,
       maxRowNumInBlock, maxColNumInBlock)
@@ -107,12 +104,13 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
   }
 
   def createVector(
-      dimension: Int,
+      dimension: Long,
       t: VectorType = VectorType.DENSE,
       poolCapacity: Int = PSVectorPool.DEFAULT_POOL_CAPACITY): PSVector = {
 
     val vector = createVectorPool(dimension, poolCapacity, t).allocate()
-    PSClient.instance().initOps.fill(vector, 0.0)
+    // TODO: fix this
+//    PSClient.instance().initOps.fill(vector, 0.0)
     vector
   }
 
@@ -131,7 +129,7 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
   }
 
   private[spark] def createVectorPool(
-      dimension: Int,
+      dimension: Long,
       capacity: Int,
       t: VectorType): PSVectorPool = {
 
@@ -359,4 +357,3 @@ private[spark] object AngelPSContext {
     }
   }
 }
-

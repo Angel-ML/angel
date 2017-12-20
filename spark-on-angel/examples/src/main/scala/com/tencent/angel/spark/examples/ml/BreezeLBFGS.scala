@@ -26,7 +26,7 @@ import org.apache.spark.ml.linalg.Vector
 import org.apache.spark.rdd.RDD
 
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.examples.util.{Logistic, PSExamples}
+import com.tencent.angel.spark.examples.util.{Logistic, SparkUtils}
 import com.tencent.angel.spark.models.vector.PSVector
 
 /**
@@ -35,7 +35,7 @@ import com.tencent.angel.spark.models.vector.PSVector
  * respectively.
  */
 object BreezeLBFGS {
-  import PSExamples._
+  import SparkUtils._
   def main(args: Array[String]): Unit = {
     parseArgs(args)
     runSpark(this.getClass.getSimpleName) { sc =>

@@ -383,7 +383,6 @@ public class MatrixClientAdapter {
     for (int i = 0; i < size; i++) {
       futureResultList.add(matrixClient.get(func, partParams.get(i)));
     }
-
     for (int i = 0; i < size; i++) {
       resultList.add(futureResultList.get(i).get());
     }

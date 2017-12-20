@@ -26,9 +26,9 @@ import com.tencent.angel.spark.models.vector.PSVector
 
 private[spark] class CachedPSVector(component: PSVector) extends PSVectorDecorator(component) {
 
-  override val dimension: Int = component.dimension
-  override val id: Int = component.id
-  override val poolId: Int = component.poolId
+  override val dimension = component.dimension
+  override val id  = component.id
+  override val poolId  = component.poolId
 
   def pullFromCache(): Array[Double] = {
     PullMan.pullFromCache(this)
@@ -40,7 +40,7 @@ private[spark] class CachedPSVector(component: PSVector) extends PSVectorDecorat
     */
   def incrementWithCache(delta: Array[Double]): Unit = {
     val mergedArray = PushMan.getFromIncrementCache(this)
-    PSClient.instance().BLAS.daxpy(this.dimension, 1.0, delta, 1, mergedArray, 1)
+    PSClient.instance().BLAS.daxpy(this.dimension.toInt, 1.0, delta, 1, mergedArray, 1)
   }
 
   /**

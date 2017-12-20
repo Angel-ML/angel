@@ -36,7 +36,7 @@ abstract class PSVector extends PSModel {
 
   val poolId: Int
   val id: Int
-  val dimension: Int
+  val dimension: Long
 
   /**
     * Generate a CachedPSVector for this PSVectorKey
@@ -124,7 +124,7 @@ object PSVector {
     DensePSVector.apply(dim, capacity)
   }
 
-  def sparse(dim: Int, capacity: Int = 50): SparsePSVector = {
+  def sparse(dim: Long, capacity: Int = 50): SparsePSVector = {
     SparsePSVector.apply(dim, capacity)
   }
 }

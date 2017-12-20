@@ -18,7 +18,11 @@
 angel-ps/core/target/
 angel-ps/psf/target/
 angel-ps/examples/target/
+angel-ps/jarvis/target/
+angel-ps/tools/target/
 angel-ps/mllib/target/
+angel-ps/jarvis/target/
+angel-ps/tools/target/
 angel-ps/target/
 angel-ps/core/log/
 angel-ps/psf/log/

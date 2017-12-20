@@ -113,12 +113,28 @@ public class ServerMatrixTest {
     mpBuilderNew.addPartitions(partitionBuilderNew.build());
     MatrixPartition matrixNew = mpBuilderNew.build();
     ServerMatrix ServerMatrixNew = new ServerMatrix(matrixNew);
-    DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
-    ServerMatrixNew.writeSnapshot(out);
-    out.close();
+
+    DataOutputStream out = null;
+    try {
+      out = new DataOutputStream(new FileOutputStream("data"));
+      ServerMatrixNew.writeSnapshot(out);
+    } finally {
+      if(out != null) {
+        out.close();
+      }
+    }
+
     assertEquals(1, ServerMatrixNew.getTotalPartitionKeys().size());
-    DataInputStream in = new DataInputStream(new FileInputStream("data"));
-    serverMatrix.readSnapshot(in);
+
+    DataInputStream in = null;
+    try {
+      in = new DataInputStream(new FileInputStream("data"));
+      serverMatrix.readSnapshot(in);
+    } finally {
+      if(in != null) {
+        in.close();
+      }
+    }
   }
 
   @Test

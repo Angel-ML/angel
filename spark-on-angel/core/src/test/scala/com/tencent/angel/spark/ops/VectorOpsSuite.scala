@@ -16,11 +16,14 @@
 
 package com.tencent.angel.spark.ops
 
+import scala.collection.mutable.HashSet
+import scala.collection.mutable.ArrayBuffer
+import scala.util.Random
 import scala.{math => SMath}
 
 import com.tencent.angel.spark._
 import com.tencent.angel.spark.client.PSClient
-import com.tencent.angel.spark.models.vector.{DensePSVector, PSVector}
+import com.tencent.angel.spark.models.vector.{DensePSVector, PSVector, SparsePSVector}
 import com.tencent.angel.spark.pof._
 
 class VectorOpsSuite extends PSFunSuite with SharedPSContext {
@@ -65,7 +68,7 @@ class VectorOpsSuite extends PSFunSuite with SharedPSContext {
     assert(_vectorOps.pull(normalVector).sameElements(normalVector.pull()))
   }
 
-  test("doIncrement") {
+  test("doIncrement dense") {
     val localArray = Array.fill[Double](dim)(0.1)
 
     val oldPSArray = normalVector.pull()
@@ -74,6 +77,28 @@ class VectorOpsSuite extends PSFunSuite with SharedPSContext {
     _vectorOps.increment(normalVector, localArray)
 
     assert(normalVector.pull().sameElements(result))
+  }
+
+  test("doIncrement sparse") {
+    val localPair = new ArrayBuffer[(Long, Double)]()
+    val rand = new Random()
+    val indics = new HashSet[Long]()
+    (0 until dim / 2).foreach { i =>
+      indics.add(rand.nextInt(dim).toLong)
+    }
+    indics.foreach { i => localPair.append(Tuple2(i, rand.nextDouble())) }
+
+    val result = new Array[Double](dim)
+    localPair.foreach { case (index, value) =>
+      result(index.toInt) += value
+    }
+
+    val sVector = SparsePSVector(dim)
+
+    PSClient.instance().sparseRowOps.increment(sVector, localPair.toArray)
+    val pullVector = new Array[Double](dim)
+    sVector.sparsePull().foreach { case (index, value) => pullVector(index.toInt) = value }
+    assert(pullVector.sameElements(result))
   }
 
   test("doMergeMax") {
@@ -230,6 +255,17 @@ class VectorOpsSuite extends PSFunSuite with SharedPSContext {
 
     val result = uniformVector.pull().map(x => SMath.abs(x))
     assert(psVector.pull().sameElements(result))
+
+    // sparse vector test
+    val sVector = SparsePSVector(dim)
+    val absVector = PSVector.duplicate(sVector)
+    val fillPair = Array[(Long, Double)]((1L, 0.1), (2L, -0.2))
+    sVector.fill(fillPair)
+
+    _vectorOps.abs(sVector, absVector)
+
+    val pullPair = absVector.sparsePull().sortBy(_._1)
+    assert(pullPair.sameElements(fillPair.map(x=>(x._1, Math.abs(x._2)))))
   }
 
   test("doSignum") {

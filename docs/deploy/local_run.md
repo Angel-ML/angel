@@ -4,7 +4,6 @@
 
 ## 1. 运行环境准备
 
-* Hadoop >=  2.2.0
 * Java >= 1.8
 * Angel发布包 angel-\<version\>-bin.zip
 

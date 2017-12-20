@@ -21,55 +21,35 @@ import com.tencent.angel.spark.context.PSContext
 
 class SparsePSMatrix(
     rows: Int,
-    columns: Int,
+    columns: Long,
     meta: MatrixMeta) extends PSMatrix(rows, columns, meta) {
-  /**
-   * Operations for the whole matrix
-   */
-
   /**
    * Update specific elements in Matrix.
     *
     * @param pairs is a Array of Tuples[rowId, colsId, value]
    */
-  def push(pairs: Array[(Int, Int, Double)]): Unit = ???
+  def push(pairs: Array[(Int, Long, Double)]): Unit = {
+    psClient.matrixOps.push(this, pairs)
+  }
+
+  def pull(): Array[(Int, Long, Double)] = ???
 
 
-  def increment(pairs: Array[(Int, Int, Double)]): Unit = ???
+//  override def pull(rowId: Int): Array[(Long, Double)] = ???
+
+  def nnz: Long = ???
+
+
+  def increment(pairs: Array[(Int, Long, Double)]): Unit = {
+    psClient.matrixOps.increment(this, pairs)
+  }
 }
 
 object SparsePSMatrix {
   val psContext = PSContext.instance()
 
-  def apply(rows: Int, cols: Int): SparsePSMatrix = {
+  def apply(rows: Int, cols: Long): SparsePSMatrix = {
     val matrixMeta = psContext.createMatrix(rows, cols, MatrixType.SPARSE, -1, -1)
     new SparsePSMatrix(rows, cols, matrixMeta)
   }
-
-  /**
-   * Create Matrix full of zero.
-   */
-  def zero(rows: Int, cols: Int): SparsePSMatrix = ???
-
-  /**
-   * Matrix of random elements from 0 to 1
-   */
-  def rand(rows: Int, cols: Int): SparsePSMatrix = ???
-
-  /**
-   * Create identity matrix
-   */
-  def eye(dim: Int): SparsePSMatrix = ???
-
-  /**
-   * Create diagonal matrix
-   */
-  def diag(array: Array[Double]): SparsePSMatrix = ???
-
-  /**
-   * Create a matrix filled with `x`
-   */
-  def fill(row: Int, cols: Int, x: Double): SparsePSMatrix = ???
-
-
 }

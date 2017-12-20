@@ -18,13 +18,13 @@ package com.tencent.angel.ml.matrix.psf;
 
 import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.ml.math.vector.DenseDoubleVector;
-import com.tencent.angel.ml.matrix.psf.aggr.primitive.Pull;
+import com.tencent.angel.ml.matrix.psf.aggr.Pull;
 import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult;
 import com.tencent.angel.ml.matrix.psf.update.*;
 import com.tencent.angel.ml.matrix.psf.update.enhance.CompressUpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateFunc;
-import com.tencent.angel.ml.matrix.psf.update.primitive.Increment;
-import com.tencent.angel.ml.matrix.psf.update.primitive.Push;
+import com.tencent.angel.ml.matrix.psf.update.Increment;
+import com.tencent.angel.ml.matrix.psf.update.Push;
 import com.tencent.angel.psagent.matrix.MatrixClient;
 import com.tencent.angel.psagent.matrix.MatrixClientFactory;
 import org.apache.commons.logging.LogFactory;

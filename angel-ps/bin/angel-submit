@@ -12,15 +12,14 @@ bin=`cd "$bin"; pwd`
 conf="$bin"/../conf
 lib="$bin"/../lib
 
-echo $lib
 export ANGEL_HOME="$bin/../"
+export ANGEL_VERSION=1.3.0
 
 DEFAULT_LIBEXEC_DIR="$HADOOP_HOME"/libexec
 HADOOP_LIBEXEC_DIR=${HADOOP_LIBEXEC_DIR:-$DEFAULT_LIBEXEC_DIR}
 . $HADOOP_LIBEXEC_DIR/hadoop-config.sh
 
 for f in "$lib"/*.jar; do
-    echo $f
     if [ "$CLASSPATH" ]; then
         export CLASSPATH=$CLASSPATH:$f
     else
@@ -31,5 +30,5 @@ done
 export CLASS="com.tencent.angel.utils.AngelRunJar"
 
 export CLASSPATH=$CLASSPATH
-echo "$ANGEL_HOME"
+export PYTHONHASHSEED=0
 exec "$JAVA" $JAVA_HEAP_MAX $HADOOP_OPTS $CLASS "$@"

@@ -19,8 +19,11 @@ package com.tencent.angel.ml.matrix.psf.update;
 
 import com.tencent.angel.ml.matrix.psf.update.enhance.MUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 
 import java.nio.DoubleBuffer;
+import java.util.Map;
 
 /**
  * `MaxV` is find the maximum value of each element in `fromId1` row and `fromId2`
@@ -49,6 +52,30 @@ public class MaxV extends MUpdateFunc {
     } finally {
       rows[2].getLock().writeLock().unlock();
     }
+  }
+
+  @Override
+  protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows) {
+    Long2DoubleOpenHashMap from1 = rows[0].getIndex2ValueMap();
+    Long2DoubleOpenHashMap from2 = rows[1].getIndex2ValueMap();
+
+    Long2DoubleOpenHashMap to = from1.clone();
+    double defaultValue = Math.max(from1.defaultReturnValue(), from2.defaultReturnValue());
+    to.defaultReturnValue(defaultValue);
+
+    for (Map.Entry<Long, Double> entry: to.long2DoubleEntrySet()) {
+      if (entry.getValue() < defaultValue) {
+        entry.setValue(defaultValue);
+      }
+    }
+
+    for (Map.Entry<Long, Double> entry: from2.long2DoubleEntrySet()) {
+      if (entry.getValue() > to.get(entry.getKey().longValue())) {
+        to.put(entry.getKey(), entry.getValue());
+      }
+    }
+
+    rows[2].setIndex2ValueMap(to);
   }
 
 }

@@ -1,4 +1,4 @@
-# LDA（Latent Dirichlet Allocation）
+# LDA*（Latent Dirichlet Allocation）
 
 > LDA是一种常见的主题模型算法。简单来说它是一个贝叶斯概率生成模型，用于对文档集进行降维或者潜在语义分析。
 
@@ -66,10 +66,11 @@ F+LDA通过将概率公式进行了分解成两部分``$ C_{dk} \frac{C_{wk} + \
 
 ### 输入格式
 
-输入数据分为多行，每行是一个文档，每个文档由一系列的词id构成，词id之间由空格隔开
+输入数据分为多行，每行是一个文档，每个文档由文档id和一系列的词id构成，文档id和词id之间由'\t'符合
+相隔，词id之间由空格隔开
 
 ```math
-	wid_0 wid_1 ... wid_n 
+	doc_id '\t' wid_0 wid_1 ... wid_n 
 ```
 
 ### 参数
@@ -84,6 +85,8 @@ F+LDA通过将概率公式进行了分解成两部分``$ C_{dk} \frac{C_{wk} + \
   * ml.worker.thread.num：worker内部并行度
   * ml.lda.alpha: alpha
   * ml.lda.beta: beta
+  * save.doc.topic: 是否存储文档-话题矩阵
+  * save.word.topic: 是否存储词-话题矩阵
 
 ### 性能
 
@@ -98,3 +101,7 @@ F+LDA通过将概率公式进行了分解成两部分``$ C_{dk} \frac{C_{wk} + \
 	* Angel：15min
 	* Spark：>300min
 
+
+## Reference
+
+1. Lele Yu, Bin Cui, Ce Zhang, Yingxia Shao. [LDA*: A Robust and Large-scale Topic Modeling System](http://www.vldb.org/pvldb/vol10/p1406-yu.pdf). VLDB, 2017

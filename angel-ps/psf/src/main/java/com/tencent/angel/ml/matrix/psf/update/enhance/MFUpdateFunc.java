@@ -23,6 +23,7 @@ import com.tencent.angel.ps.impl.PSContext;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerPartition;
 import com.tencent.angel.ps.impl.matrix.ServerRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
 
 /**
  * `MFUpdateFunc` is a POF Update for multi rows in matrix with a user-defined function.
@@ -70,11 +71,20 @@ public abstract class MFUpdateFunc extends UpdateFunc {
         }
         doUpdate(denseRows, func);
         return;
+      case T_DOUBLE_SPARSE_LONGKEY:
+        ServerSparseDoubleLongKeyRow[] sparseRows = new ServerSparseDoubleLongKeyRow[rows.length];
+        for (int i = 0; i < rows.length; i++) {
+          sparseRows[i] = (ServerSparseDoubleLongKeyRow) rows[i];
+        }
+        doUpdate(sparseRows, func);
+        return;
       default:
         throw new RuntimeException("currently only supports Double Dense Row");
     }
   }
 
   protected abstract void doUpdate(ServerDenseDoubleRow[] rows, Serialize func);
+
+  protected abstract void doUpdate(ServerSparseDoubleLongKeyRow[] rows, Serialize func);
 
 }

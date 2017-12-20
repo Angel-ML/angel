@@ -30,18 +30,14 @@ import org.apache.hadoop.io.{LongWritable, Text}
 class MLRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
   val LOG: Log = LogFactory.getLog(classOf[MLRTrainTask])
 
-
   // validate sample ratio
   private val valiRat = conf.getDouble(MLConf.ML_VALIDATE_RATIO, 0.05)
-
   // validation data storage
   var validDataBlock = new MemoryDataBlock[LabeledData](-1)
-
   // feature number of training data
   private val feaNum: Int = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
   // data format of training data, libsvm or dummy
   private val dataFormat = conf.get(MLConf.ML_DATA_FORMAT, "dummy")
-  // validate sample ratio
 
 
   private val dataParser = DataParser(dataFormat, feaNum, true)
@@ -73,9 +69,7 @@ class MLRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](c
 
     var count = 0
     val vali = Math.ceil(1.0 / valiRat).asInstanceOf[Int]
-
     val reader = taskContext.getReader
-
     while (reader.nextKeyValue) {
       val out = parse(reader.getCurrentKey, reader.getCurrentValue)
       if (out != null) {

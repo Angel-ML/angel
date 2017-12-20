@@ -19,6 +19,7 @@ package com.tencent.angel.ml.matrix.psf.update;
 
 import com.tencent.angel.ml.matrix.psf.update.enhance.MMUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
 
 import java.nio.DoubleBuffer;
 import java.util.Random;
@@ -52,6 +53,11 @@ public class RandomNormal extends MMUpdateFunc {
     } finally {
       rows[0].getLock().writeLock().unlock();
     }
+  }
+
+  @Override
+  protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows, double[] values) {
+    throw new RuntimeException("RandomNormal PSF can not support sparse type rows");
   }
 
 }

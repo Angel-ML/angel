@@ -12,17 +12,16 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
  */
 
 package com.tencent.angel.spark.context
 
-import com.tencent.angel.spark.models.vector.{DensePSVector, PSVector, SparsePSVector, VectorType}
 import org.apache.spark.SparkException
 import sun.misc.Cleaner
 
 import com.tencent.angel.spark.models.vector.VectorType.VectorType
 import com.tencent.angel.spark.models.vector.enhanced.PullMan
+import com.tencent.angel.spark.models.vector.{DensePSVector, PSVector, SparsePSVector, VectorType}
 
 /**
  * PSVectorPool delegate a memory space on PS servers,
@@ -38,7 +37,7 @@ import com.tencent.angel.spark.models.vector.enhanced.PullMan
 
 private[spark] class PSVectorPool(
     val id: Int,
-    val dimension: Int,
+    val dimension: Long,
     val capacity: Int,
     val vType: VectorType) {
 
@@ -101,7 +100,7 @@ private[spark] class PSVectorPool(
         bitSet.clear(index)
         size -= 1
       }
-      PullMan.delete(poolId, index)
+      PullMan.autoRelease(poolId, index)
     }
   }
 

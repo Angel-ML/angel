@@ -16,19 +16,41 @@
 
 package com.tencent.angel.client;
 
+import java.util.HashMap;
+import java.util.Iterator;
+
+import com.tencent.angel.api.python.PythonUtils;
+import org.apache.hadoop.conf.Configuration;
+
 import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.client.local.AngelLocalClient;
 import com.tencent.angel.client.yarn.AngelYarnClient;
 import com.tencent.angel.conf.AngelConf;
-import org.apache.hadoop.conf.Configuration;
 
 /**
  * Angel client factory, it support two types client now: LOCAL and YARN
  */
 public class AngelClientFactory {
-  public static AngelClient get(Configuration conf){
+  
+  private static AngelClientFactory factory;
+  
+  // Used for java code to get a AngelClient instance
+  public static AngelClient get(Configuration conf) {
+    if (factory == null) {
+      factory = new AngelClientFactory();
+    }
+    return factory.doGet(conf);
+  }
+  
+  // Used for python code to get a AngelClient instance
+  public static AngelClient get(HashMap confMap, Configuration conf) {
+    Configuration mapConf = PythonUtils.addMapToConf(confMap, conf);
+    return get(mapConf);
+  }
+  
+  public AngelClient doGet(Configuration conf) {
     String mode = conf.get(AngelConf.ANGEL_DEPLOY_MODE, AngelConf.DEFAULT_ANGEL_DEPLOY_MODE);
-
+  
     if (mode.equals(AngelDeployMode.LOCAL.toString())) {
       return new AngelLocalClient(conf);
     } else {

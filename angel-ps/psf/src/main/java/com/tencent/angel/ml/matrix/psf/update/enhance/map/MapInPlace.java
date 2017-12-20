@@ -19,6 +19,8 @@ package com.tencent.angel.ml.matrix.psf.update.enhance.map;
 import com.tencent.angel.common.Serialize;
 import com.tencent.angel.ml.matrix.psf.update.enhance.MFUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
+import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 
 import java.nio.DoubleBuffer;
 
@@ -44,4 +46,19 @@ public class MapInPlace extends MFUpdateFunc {
       rowData.put(i, mapper.call(rowData.get(i)));
     }
   }
+
+  @Override
+  protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows, Serialize func) {
+    MapFunc mapper = (MapFunc) func;
+    Long2DoubleOpenHashMap data1 = rows[0].getData();
+
+    double defaultValue = data1.defaultReturnValue();
+    data1.defaultReturnValue(mapper.call(defaultValue));
+
+    for (java.util.Map.Entry<Long, Double> entry: data1.long2DoubleEntrySet()) {
+      double value = entry.getValue();
+      entry.setValue(mapper.call(value));
+    }
+  }
+
 }
