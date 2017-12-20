@@ -127,8 +127,6 @@ public class GradHistHelper {
       histogram.set(gradZeroIdx, histogram.get(gradZeroIdx) + gradSum);
       histogram.set(hessZeroIdx, histogram.get(hessZeroIdx) + hessSum);
     }
-    printHistogram(histogram, 34, splitNum);
-    printHistogram(histogram, 100, splitNum);
 
     return histogram;
   }
