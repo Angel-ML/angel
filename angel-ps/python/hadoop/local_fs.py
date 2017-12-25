@@ -45,7 +45,7 @@ class CommonConfigurationKeys(object):
     # Default umask for files created in HDFS #
     FS_PERMISSIONS_UMASK_KEY = "fs.permissions.umask-mode"
     # Default value for FS_PERMISSIONS_UMASK_KEY #
-    FS_PERMISSIONS_UMASK_DEFAULT = 0022
+    FS_PERMISSIONS_UMASK_DEFAULT = 18
     # How often does RPC client send pings to RPC server #
     IPC_PING_INTERVAL_KEY = "ipc.ping.erval"
     # Default value for IPC_PING_INTERVAL_KEY #

@@ -58,6 +58,7 @@ class GBDTExample(object):
         self.conf[AngelConf.ANGEL_SAVE_MODEL_PATH] = output_path
 
         # Set GBDT algorithm parameters
+        self.conf[MLConf.ML_DATA_FORMAT] = dataFmt
         self.conf[MLConf.ML_FEATURE_NUM] = feature_num
         self.conf[MLConf.ML_FEATURE_NNZ] = feature_nzz
         self.conf[MLConf.ML_GBDT_TREE_NUM] = tree_num

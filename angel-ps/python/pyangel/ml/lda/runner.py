@@ -17,20 +17,33 @@ class LDARunner(MLRunner):
 
 
     # Training job to obtain a model
-    override
     def train(self, conf):
-        conf.set_int(AngelConf.ANGEL_WORKER_MAX_ATTEMPTS, 1)
-        conf.set_int(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1)
-        conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, 'BalanceInputFormat')
 
-        client = AngelClientFactory.get(conf)
+        conf[AngelConf.ANGEL_WORKER_MAX_ATTEMPTS] = 1
+        conf[AngelConf.ANGEL_WORKER_TASK_NUMBER] = 1
+        conf[AngelConf.ANGEL_INPUTFORMAT_CLASS] = classOf[BalanceInputFormat].getName)
 
-        client.startPSServer()
-        client.loadModel(new LDAModel(conf))
-        client.runTask([LDATrainTask])
-        client.waitForCompletion()
+        mem = conf[AngelConf.ANGEL_WORKER_MEMORY_MB]
+        if (mem == -1):
+            conf.setdefault(AngelConf.ANGEL_WORKER_MEMORY_GB, default=1)
+            mem = conf[AngelConf.ANGEL_WORKER_MEMORY_GB] * 1000
+        javaOpts = "-Xmx%(d)M -Xms%(d)M -XX:+UseConcMarkSweepGC -XX:+PrintGCTimeStamps -XX:+PrintGCDetails" % (mem, mem)
+        conf[AngelConf.ANGEL_WORKER_JAVA_OPTS] = javaOpts
 
-        client.stop()
+        conf.setdefault(AngelConf.ANGEL_PS_MEMORY_MB, default=-1)
+        mem = conf[AngelConf.ANGEL_PS_MEMORY_MB]
+        if (mem == -1):
+            conf.setdefault(AngelConf.ANGEL_PS_MEMORY_GB], default=1)
+            mem = conf[AngelConf.ANGEL_PS_MEMORY_GB] * 1000
+        javaOpts = s"-Xmx${mem}M -Xms${mem}M -XX:+UseConcMarkSweepGC -XX:+PrintGCTimeStamps -XX:+PrintGCDetails"
+        conf[AngelConf.ANGEL_PS_JAVA_OPTS] =javaOpts
+
+        conf[AngelConf.ANGEL_WORKER_MAX_ATTEMPTS] = 1
+        conf[AngelConf.ANGEL_WORKER_TASK_NUMBER] = 1
+        conf[AngelConf.ANGEL_INPUTFORMAT_CLASS] = 'BalanceInputFormat'
+
+        jconf = conf.dict_to_jconf()
+        super(MatrixFactorizationRunner, self).train(conf, conf._jvm.com.tencent.angel.ml.lda.LDAModel(jconf, None), 'com.tencent.angel.ml.lda.LDATrainTask')
 
     def predict(self, conf):
         """

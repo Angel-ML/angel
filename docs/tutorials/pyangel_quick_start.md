@@ -65,7 +65,7 @@ PyAngel支持**交互式**和**脚本式**两种提交任务的模式，而每�
 
   ```Python
 
-   from pyangel.ml.gbdt.runner import GBDTRunner
+    from pyangel.ml.gbdt.runner import GBDTRunner
 
 	# Trainning data input path
 	input_path = "file:///${YOUR_ANGEL_HOME}/data/exampledata/GBDTLocalExampleData/agaricus.txt.train"
