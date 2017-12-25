@@ -35,6 +35,8 @@ public class GBDTParam extends RegTParam {
   public String activeTreeNodesName;
   // sampled features. size = treeNum * sampleRatio * featureNum
   public String sampledFeaturesName;
+  // categorical feature. size = workerNum * cateFeatNum * splitNum
+  public String cateFeatureName;
   // split features, size = treeNum * treeNodeNum
   public String splitFeaturesName;
   // split values, size = treeNum * treeNodeNum

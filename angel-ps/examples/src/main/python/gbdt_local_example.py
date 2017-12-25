@@ -22,11 +22,11 @@ from pyangel.context import Configuration
 from pyangel.ml.conf import MLConf
 from pyangel.ml.gbdt.runner import GBDTRunner
 
+
 class GBDTExample(object):
 
     def __init__(self):
         self.conf= Configuration()
-        self.MLConf = MLConf()
 
     def set_conf(self):
         """
@@ -121,14 +121,12 @@ class GBDTExample(object):
         runner = GBDTRunner()
         runner.train(self.conf)
 
-
-
     def predict(self):
         self.set_conf()
         # Load Model from HDFS.
-        TMP_PATH = tempfile.gettempdir()
-        self.conf["gbdt.split.feature"] = TMP_PATH + "/out/xxx"
-        self.conf["gbdt.split.value"] = TMP_PATH + "/out/xxx"
+        tmp_path = tempfile.gettempdir()
+        self.conf["gbdt.split.feature"] = tmp_path + "/out/xxx"
+        self.conf["gbdt.split.value"] = tmp_path + "/out/xxx"
 
         runner = GBDTRunner()
 

@@ -80,6 +80,31 @@ class FMLocalExample(object):
 
         # Set trainning data path
         self.conf[AngelConf.ANGEL_TRAIN_DATA_PATH] = input_path
+        # set angel resource parameters #worker, #task, #PS
+        self.conf.set_int(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1)
+        self.conf.set_int(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1)
+        self.conf.set_int(AngelConf.ANGEL_PS_NUMBER, 1)
+
+        # set FM algorithm parameters #feature #epoch
+        self.conf.set(MLConf.ML_FEATURE_NUM, str(feature_num))
+        self.conf.set(MLConf.ML_EPOCH_NUM, str(epoch_num))
+        self.conf.set(MLConf.ML_FM_RANK, str(rank))
+        self.conf.set(MLConf.ML_LEARN_RATE, str(lr))
+        self.conf.set(MLConf.ML_FM_REG0, str(reg0))
+        self.conf.set(MLConf.ML_FM_REG1, str(reg1))
+        self.conf.set(MLConf.ML_FM_REG2, str(reg2))
+        self.conf.set(MLConf.ML_FM_V_STDDEV, str(stev))
+
+    def train_on_local_cluster(self):
+        self.set_conf()
+        input_path = "./src/test/data/fm/food_fm_libsvm"
+        local_fs = LocalFileSystem.DEFAULT_FS
+        temp_path = tempfile.gettempdir()
+        save_path = local_fs+ temp_path + "/model"
+        log_path = local_fs + temp_path + "/LRlog"
+
+        # Set training data path
+        self.conf[AngelConf.ANGEL_TRAIN_DATA_PATH] = input_path
         # Set save model path
         self.conf[AngelConf.ANGEL_SAVE_MODEL_PATH] = save_path
         # Set log path
@@ -97,21 +122,25 @@ class FMLocalExample(object):
         save_path = LOCAL_FS + TMP_PATH + "/model"
         log_path = LOCAL_FS + TMP_PATH + "/LRlog"
 
-        # Set trainning data path
-        self.conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, input_path)
+        # Set training data path
+        self.conf[AngelConf.ANGEL_TRAIN_DATA_PATH] = input_path
         # Set save model path
-        self.conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, save_path)
+        self.conf[AngelConf.ANGEL_SAVE_MODEL_PATH] = save_path
         # Set log path
-        self.conf.set(AngelConf.ANGEL_LOG_PATH, log_path)
+        self.conf[AngelConf.ANGEL_LOG_PATH] = log_path
         # Set actionType train
-        self.conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN)
+        self.conf[AngelConf.ANGEL_ACTION_TYPE] = MLConf.ANGEL_ML_TRAIN
         # Set learnType
-        self.conf.set(MLConf.ML_FM_LEARN_TYPE, "c")
+        self.conf[MLConf.ML_FM_LEARN_TYPE] = "c"
         # Set feature number
-        self.conf.set(MLConf.ML_FEATURE_NUM, str(124))
+        self.conf[MLConf.ML_FEATURE_NUM] = str(124)
 
         runner = FMRunner()
         runner.train(self.conf)
+
+        angel_client = AngelClientFactory.get(self.conf)
+        angel_client.stop()
+
 
 example = FMLocalExample()
 example.train_on_local_cluster()

@@ -71,7 +71,7 @@ Matrix Factorization on Angel的算法逻辑如下所示：
 MF训练数据的格式：
 
 ```
-		用户ID，商品ID：评分，…，商品：评分
+		用户ID 商品ID 评分 … 商品 评分
 ```
 
 一个用户的所有评分存储在一行。

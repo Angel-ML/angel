@@ -22,6 +22,7 @@ from pyangel.context import Configuration
 from pyangel.ml.conf import MLConf
 from pyangel.ml.classification.runner import LRRunner
 
+
 class SGDLRLocalExample(object):
 
     def __init__(self):
@@ -91,10 +92,8 @@ class SGDLRLocalExample(object):
         # Set actionType train
         self.conf[AngelConf.ANGEL_ACTION_TYPE] = MLConf.ANGEL_ML_TRAIN
 
-
         runner = LRRunner()
         runner.train(self.conf)
-
 
     def inc_train(self):
         self.set_conf()
@@ -118,7 +117,6 @@ class SGDLRLocalExample(object):
 
         runner = LRRunner()
         runner.inc_train(self.conf)
-
 
     def predict(self):
         self.set_conf()
@@ -144,6 +142,7 @@ class SGDLRLocalExample(object):
         runner = LRRunner()
 
         runner.predict(self.conf)
+
 
 example = SGDLRLocalExample()
 example.train_on_local_cluster()

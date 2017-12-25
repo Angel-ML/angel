@@ -343,7 +343,7 @@ class GBDTLearner(@transient val param: GBTreeParam) extends Learner {
         if (splitEntry.fId != -1) {
           val trueSplitFid = sampledFeatureBC.value(splitEntry.fId)
           val splitIndex = splitEntry.fValue.toInt
-          val trueSplitValue = sampledSketchBC.value(splitEntry.fId)(splitIndex - 1)
+          val trueSplitValue = sampledSketchBC.value(splitEntry.fId)(splitIndex)
 
           splitEntry.fId = trueSplitFid
           splitEntry.fValue = trueSplitValue

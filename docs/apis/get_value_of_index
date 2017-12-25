@@ -10,10 +10,13 @@ PS实例以模型参数分区，查找得到index列表对应的value列表，�
 3. 结果合并，返回稀疏向量   
 合并index列表和value列表，得到最终的结果并返回
 
-
 ![image](../img/get_value_of_index.png)
 
-  
+### 使用方法
+1. 维度选择（数据加载、预处理）：在数据加载、预处理的同时，记录训练数据包含的特征id列表
+2. 拉取局部模型，计算、推送更新值：Worker根据特征id列表，从对应的Ps实例上，拉取对应的模型特征value列表，合并为局部模型；Worker迭代计算得到局部模型更新值，将更新值Push回PS
+3. 全局模型合并：PS合并所有Worker返回的稀疏局部模型更新值，得到更新后的模型
+
 ### 接口设计：
 def getValueOfIndexs(rowId: Int, index: Array[Int]): TVector    
 

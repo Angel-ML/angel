@@ -18,8 +18,9 @@
 package com.tencent.angel.ml.GBDT.algo.tree;
 
 import com.tencent.angel.ml.GBDT.algo.RegTree.RegTDataStore;
-import com.tencent.angel.ml.utils.Maths;
 import com.yahoo.sketches.quantiles.DoublesSketch;
+
+import java.util.*;
 
 /**
  * Description: get candidate split value, using yahoo datasketches
@@ -27,11 +28,6 @@ import com.yahoo.sketches.quantiles.DoublesSketch;
 public class TYahooSketchSplit{
 
   public static float[][] getSplitValue(RegTDataStore dataStore, int splitNum) {
-
-    double[] fracs = new double[splitNum];
-    for (int i = 0; i < splitNum; i++) {
-      fracs[i] = i / (double) splitNum;
-    }
 
     int numFeature = dataStore.featureMeta.numFeature;
 
@@ -52,9 +48,96 @@ public class TYahooSketchSplit{
     float[][] splitSet = new float[numFeature][splitNum];
 
     for (int fid = 0; fid < numFeature; fid++) {
-      splitSet[fid] = Maths.double2Float(sketches[fid].getQuantiles(fracs));
+
+      // left child <= split value; right child > split value
+      if (sketches[fid].getQuantile(0) > 0) {
+        splitSet[fid][0] = 0.0f;
+        for (int i = 1; i < splitNum; i++) {
+          splitSet[fid][i] = (float) sketches[fid].getQuantile( (i - 1) / (splitNum - 2));
+        }
+      } else if (sketches[fid].getQuantile(1) < 0) {
+        splitSet[fid][splitNum - 1] = 0.0f;
+        for (int i = 0; i < splitNum - 1; i++) {
+          splitSet[fid][i] = (float) sketches[fid].getQuantile( i / (splitNum - 2) );
+        }
+      } else {
+        for (int i = 0; i < splitNum; i++) {
+          splitSet[fid][i] = (float) sketches[fid].getQuantile( i / (splitNum - 1) );
+        }
+      }
+
     }
 
     return splitSet;
   }
+
+  public static float[][] getSplitValue(RegTDataStore dataStore, int splitNum, List<Integer> cateFeat) {
+
+    int numFeature = dataStore.featureMeta.numFeature;
+
+    DoublesSketch[] sketches = new DoublesSketch[numFeature];
+
+    Map<Integer, Set<Float>> cateFeatTable = new HashMap<Integer, Set<Float>>();
+    for (Integer feat : cateFeat) {
+      cateFeatTable.put(feat, new HashSet<Float>());
+    }
+
+    for (int i = 0; i < sketches.length; i++) {
+      sketches[i] = DoublesSketch.builder().build(); // default k=128
+    }
+
+    for (int nid = 0; nid < dataStore.numRow; nid++) {
+      int[] indice = dataStore.instances.get(nid).getIndices();
+      for (int i = 0; i < indice.length; i++) {
+        int fid = indice[i];
+        double fvalue = dataStore.instances.get(nid).get(fid);
+        if (cateFeat.contains(fid)) {
+          cateFeatTable.get(fid).add((float) fvalue);
+        } else {
+          sketches[fid].update(fvalue);
+        }
+      }
+    }
+
+    // the first: minimal, the last: maximal
+    float[][] splitSet = new float[numFeature][splitNum];
+
+    // categorical features
+    for (Map.Entry<Integer, Set<Float>> ent : cateFeatTable.entrySet()) {
+      int fid = ent.getKey();
+      int i = 1;  // the first value is 0
+      for (float fvalue : ent.getValue()) {
+        splitSet[fid][i++] = fvalue;
+      }
+    }
+
+    // continuous features
+    for (int fid = 0; fid < numFeature; fid++) {
+
+      if (cateFeat.contains(fid))
+        continue;
+
+      // left child <= split value; right child > split value
+      if (sketches[fid].getQuantile(0) > 0) {
+        splitSet[fid][0] = 0.0f;
+        for (int i = 1; i < splitNum; i++) {
+          splitSet[fid][i] = (float) sketches[fid].getQuantile( (float) (i - 1) / (splitNum - 2));
+        }
+      } else if (sketches[fid].getQuantile(1) < 0) {
+        splitSet[fid][splitNum - 1] = 0.0f;
+        for (int i = 0; i < splitNum - 1; i++) {
+          splitSet[fid][i] = (float) sketches[fid].getQuantile( (float) i / (splitNum - 2) );
+        }
+      } else {
+        for (int i = 0; i < splitNum; i++) {
+          splitSet[fid][i] = (float) sketches[fid].getQuantile( (float) i / (splitNum - 1) );
+        }
+      }
+
+    }
+
+    return splitSet;
+  }
+
+
 }

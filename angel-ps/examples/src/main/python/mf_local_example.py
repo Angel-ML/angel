@@ -22,6 +22,7 @@ from pyangel.context import Configuration
 from pyangel.ml.conf import MLConf
 from pyangel.ml.matrixfactorization.runner import MatrixFactorizationRunner
 
+
 class MFLocalExample(object):
 
     def __init__(self):

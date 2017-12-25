@@ -48,13 +48,11 @@ public class GradHistHelper {
     // 1. new feature's histogram (grad + hess)
     // size: sampled_featureNum * (2 * splitNum)
     // in other words, concatenate each feature's histogram
-    int featureNum = this.controller.fset.length;
+    int featureNum = this.controller.fSet.length;
     int splitNum = this.controller.param.numSplit;
     DenseDoubleVector histogram = new DenseDoubleVector(featureNum * 2 * splitNum);
 
     // 2. get the span of this node
-    //int nodeStart = this.controller.nodePosStart[nid];
-    //int nodeEnd = this.controller.nodePosEnd[nid];
     int nodeStart = insStart;
     int nodeEnd = insEnd;
     LOG.debug(String.format("Build histogram of node[%d]: size[%d] instance span [%d - %d]",
@@ -78,14 +76,21 @@ public class GradHistHelper {
         // 3.4.1. get feature value
         float fv = (float) instance.getValues()[i];
         // 3.4.2. current feature's position in the sampled feature set
-        int fPos = findFidPlace(this.controller.fset, fid);
+        int fPos = findFidPlace(this.controller.fSet, fid);
         if (fPos == -1) {
           continue;
         }
         // 3.4.3. find the position of feature value in a histogram
         // the search area in the sketch is [fid * #splitNum, (fid+1) * #splitNum - 1]
+        int start = fPos * splitNum;
+        int end;
+        if (this.controller.cateFeatNum.containsKey(fid)) {
+          end = start + this.controller.cateFeatNum.get(fid) - 1;
+        } else {
+          end = start + splitNum - 1;
+        }
         int fValueIdx =
-            findFvaluePlace(this.controller.sketches, fv, fPos * splitNum, (fPos + 1) * splitNum - 1);
+            findFvaluePlace(this.controller.sketches, fv, start, end);
         int gradIdx = 2 * splitNum * fPos + fValueIdx;
         int hessIdx = 2 * splitNum * fPos + fValueIdx + splitNum;
         // 3.4.4. add the grad and hess to the corresponding bin
@@ -93,7 +98,7 @@ public class GradHistHelper {
         histogram.set(hessIdx, histogram.get(hessIdx) + gradPair.getHess());
         // 3.4.5. add the reverse to the bin that contains 0.0f
         int fZeroValueIdx =
-            findFvaluePlace(this.controller.sketches, 0.0f, fPos * splitNum, (fPos + 1) * splitNum - 1);
+            findFvaluePlace(this.controller.sketches, 0.0f, start, end);
         int gradZeroIdx = 2 * splitNum * fPos + fZeroValueIdx;
         int hessZeroIdx = gradZeroIdx + splitNum;
         double curGrad = histogram.get(gradZeroIdx);
@@ -104,14 +109,25 @@ public class GradHistHelper {
     }
     // 4. add the grad and hess sum to the zero bin of all features
     for (int fid = 0; fid < featureNum; fid++) {
-      // int startIdx = fid * 2 * splitNum;
+      int fPos = findFidPlace(this.controller.fSet, fid);
+      if (fPos == -1) {
+        continue;
+      }
+      int start = fPos * splitNum;
+      int end;
+      if (this.controller.cateFeatNum.containsKey(fid)) {
+        end = start + this.controller.cateFeatNum.get(fid) - 1;
+      } else {
+        end = start + splitNum - 1;
+      }
       int fZeroValueIdx =
-          findFvaluePlace(this.controller.sketches, 0.0f, fid * splitNum, (fid + 1) * splitNum - 1);
-      int gradZeroIdx = 2 * splitNum * fid + fZeroValueIdx;
-      int hessZeroIdx = 2 * splitNum * fid + fZeroValueIdx + splitNum;
+          findFvaluePlace(this.controller.sketches, 0.0f, start, end);
+      int gradZeroIdx = 2 * splitNum * fPos + fZeroValueIdx;
+      int hessZeroIdx = 2 * splitNum * fPos + fZeroValueIdx + splitNum;
       histogram.set(gradZeroIdx, histogram.get(gradZeroIdx) + gradSum);
       histogram.set(hessZeroIdx, histogram.get(hessZeroIdx) + hessSum);
     }
+
     return histogram;
   }
 
@@ -140,9 +156,9 @@ public class GradHistHelper {
       return splitEntry;
     }
 
-    for (int fid = 0; fid < this.controller.fset.length; fid++) {
+    for (int fid = 0; fid < this.controller.fSet.length; fid++) {
       // 2.1. get the ture feature id in the sampled feature set
-      int trueFid = this.controller.fset[fid];
+      int trueFid = this.controller.fSet[fid];
       // 2.2. get the indexes of histogram of this feature
       int startIdx = 2 * this.controller.param.numSplit * fid;
       // 2.3. find the best split of current feature
@@ -204,8 +220,8 @@ public class GradHistHelper {
                 leftStats.calcGain(this.controller.param) + rightStats.calcGain(this.controller.param)
                     - rootGain;
             // 5.5. check whether we should update the split result with current loss gain
-            int splitIdx = fid * this.controller.param.numSplit + histIdx - startIdx + 1;
-            // split value = sketches[splitIdx+1]
+            // split value = sketches[splitIdx]
+            int splitIdx = fid * this.controller.param.numSplit + histIdx - startIdx;
             if (splitEntry.update(lossChg, fid, this.controller.sketches[splitIdx])) {
               // 5.6. if should update, also update the best left and right grad stats
               bestLeftStat.update(leftStats.sumGrad, leftStats.sumHess);
@@ -242,7 +258,7 @@ public class GradHistHelper {
       if (splitFid == -1) {
         continue;
       }
-      int trueSplitFid = this.controller.fset[splitFid];
+      int trueSplitFid = this.controller.fSet[splitFid];
       int splitIdx = (int) histogram.get(startIdx + 1);
       float splitValue = this.controller.sketches[trueSplitFid * this.controller.param.numSplit + splitIdx];
       float lossChg = (float) histogram.get(startIdx + 2);
@@ -266,22 +282,18 @@ public class GradHistHelper {
     LOG.debug(String.format("The best split after looping the histogram: fid[%d], fvalue[%f], loss gain[%f]",
             splitEntry.fid, splitEntry.fvalue, splitEntry.lossChg));
 
-//    // update the grad stats of the root node on PS, only called once by leader worker
-//    if (this.nid == 0) {
-//      GradStats rootStats = new GradStats(splitEntry.leftGradStat);
-//      rootStats.add(splitEntry.rightGradStat);
-//      this.controller.updateNodeGradStats(this.nid, rootStats);
-//    }
-//
-//    // 3. update the grad stats of children node
-//    if (splitEntry.fid != -1) {
-//      // 3.1. update the left child
-//      this.controller.updateNodeGradStats(2 * this.nid + 1, splitEntry.leftGradStat);
-//      // 3.2. update the right child
-//      this.controller.updateNodeGradStats(2 * this.nid + 2, splitEntry.rightGradStat);
-//    }
-
     return splitEntry;
+
+  }
+
+  private void printHistogram(TDoubleVector histogram, int fid, int splitnum) {
+    int start = 2 * fid * splitnum;
+    int end = start + splitnum - 1;
+    StringBuilder sb = new StringBuilder();
+    for (int i = start; i <= end; i++) {
+      sb.append(histogram.get(i) + ", ");
+    }
+    LOG.info(String.format("Histogram of feature %d: %s", fid, sb.toString()));
   }
 
   private GradStats calGradStats(TDoubleVector histogram) {
@@ -340,11 +352,10 @@ public class GradHistHelper {
   }
 
   private static int findFvaluePlace(float[] sketch, float fvalue, int start, int end) {
-    // loop all the possible split value, start from split[1], since the first item is the minimal
-    // feature value
-    for (int offset = 1; start + offset <= end; offset++) {
-      if (sketch[offset + start] > fvalue) {
-        return offset - 1;
+    // loop all the possible split value, start from split[0], the first item is the minimal feature value
+    for (int offset = 0; start + offset < end; offset++) {
+      if (sketch[offset + start + 1] > fvalue) {
+        return offset;
       }
     }
     return (end - start);
@@ -485,7 +496,7 @@ public class GradHistHelper {
   // find the best split result of one feature from a server row, used by the PS
   public static SplitEntry findSplitOfFeature(int fid, ServerDenseDoubleRow row, int startIdx, GBDTParam param) {
 
-    LOG.debug(String.format("Find best split for fid[%d] in histogram size[%d], startIdx[%d]", fid,
+    LOG.info(String.format("Find best split for fid[%d] in histogram size[%d], startIdx[%d]", fid,
         row.size(), startIdx));
 
     SplitEntry splitEntry = new SplitEntry();
@@ -518,7 +529,7 @@ public class GradHistHelper {
             // 5.4. calculate the current loss gain
             float lossChg = leftStats.calcGain(param) + rightStats.calcGain(param) - rootGain;
             // 5.5. check whether we should update the split result with current loss gain
-            int splitIdx = histIdx - startIdx + 1;
+            int splitIdx = histIdx - startIdx;  // split rule: value <= split
             // here we set the fvalue=splitIndex, true split value = sketches[splitIdx+1]
             // the task use index to find fvalue
             if (splitEntry.update(lossChg, fid, splitIdx)) {

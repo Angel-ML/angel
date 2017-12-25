@@ -1,43 +1,45 @@
-# PyAngel快速入门
+# PyAngel Quick Start
 
-## 环境
 
-* Linux任意发行版本,CentOS，Ubuntu等均可
+## Environment
+
+* Any Linux distribution, CentOS and Ubuntu, etc.
 * Angel >= 1.3
-* Python >= 2.7 / 3.6（PyAngel支持2和3，但是建议3）
-
-## 编写和编译
-
-1. **编写**: 推荐使用Atom或者pyCharm，高手请自备Vim或者Emacs
-2. **编译**：参考[Angel编译指南](../deploy/source_compile.md)，注意Python的版本
+* Python >= 2.7 / 3.6 (PyAngel supports Python 2 and 3, but Python3 is recommended)
 
 
-## 提交任务
+## Programming and Compiling
 
-PyAngel支持**交互式**和**脚本式**两种提交任务的模式，而每种提交任务的模式，都支持2种运行模式：**local & Yarn**。Yarn模式依赖Hadoop，需要在提交机器上将Hadoop安装好，并且保证`HADOOP_HOME`设置正确，具体可以参考[Yarn运行模式](../deploy/run_on_yarn.md)
+1. **Programming**: Atom or pyCharm are recommended IDEs; otherwise, Vim or Emacs are fine
+2. **Compiling**: refer to [Angel Compilation Guide](../deploy/source_compile_en.md); note the Python version
 
-- **交互式**
 
-	* **local模式**
+## Submitting Jobs
+
+PyAngel supports **interactive** and **script** modes for submitting jobs. Each mode can run on **local** or **Yarn**. Running on Yarn requires Hadoop deployed to the submitting machine and `HADOOP_HOME` properly set. Refer to [Running Angel on Yarn](../deploy/run_on_yarn_en.md) for details. 
+
+- **Interactive mode**
+
+	* **local**
 
 		```bash
 		bin/pyangel local
 		```
-	* **Yarn模式**
+	* **Yarn**
 
 		```bash
 		bin/pyangel
 		```
 
-- **脚本式**
+- **Script mode**
 
-  - **local模式**
+  - **local**
 
     ```bash
 	bin/angel-local-submit --angel.pyangel.pyfile ${ANGEL_HOME}/python/examples/gbdt_local_example/py
 	```
 
-  - **Yarn模式**
+  - **Yarn**
 	
 	```bash
 	bin/angel-submit --angel.pyangel.pyfile ${ANGEL_HOME}/python/examples/gbdt_example.py
@@ -45,9 +47,9 @@ PyAngel支持**交互式**和**脚本式**两种提交任务的模式，而每�
 
 
 
-### **样例命令**
+### **Sample Command**
 
-* **Local模式提交**
+* **Local**
 
   ```bash
   bin/angel-local-submit \
@@ -57,15 +59,15 @@ PyAngel支持**交互式**和**脚本式**两种提交任务的模式，而每�
 			  --angel.save.model.path "file:///${ANGEL_HOME}/data/output"
 	```
 
-### Example Code
+### Code Example
 
-* **PyAngel版本的GBDT**
+* **PyAngel version of GBDT**
     
-可以通过运行`bin/pyangel local`命令启动PyAngel本地交互式命令行，然后在命令行中输入下面的代码，运行GBDTRunner，注意：需要将input_path中的`${YOUR_ANGERL_HOME}`修改为你自己的angel绝对安装路径    
+Run `bin/pyangel local` to start PyAngel local interactive command-line, then input the sample code below to run GBDTRunner. Note: `${YOUR_ANGERL_HOME}` in input_path needs to be filled with the absolute path to where Angel is installed on your machine.
 
   ```Python
 
-    from pyangel.ml.gbdt.runner import GBDTRunner
+   from pyangel.ml.gbdt.runner import GBDTRunner
 
 	# Trainning data input path
 	input_path = "file:///${YOUR_ANGEL_HOME}/data/exampledata/GBDTLocalExampleData/agaricus.txt.train"
@@ -100,8 +102,8 @@ PyAngel支持**交互式**和**脚本式**两种提交任务的模式，而每�
     runner.train(conf)
    ```
 
-* [完整代码](../../angel-ps/examples/src/main/python/gbdt_example.py)
+* [Complete Code](../../angel-ps/examples/src/main/python/gbdt_example.py)
 
-### 新版本
+### New Version
 
-支持自定义Model，Task等操作，以及和Spark配合的相关功能正在开发中，如有疑问以及需求，欢迎提Issue和PR，或者联系Angel8号
+Supports customized model/task operations. We are developing new functionalities that incorporates Spark. We welcome issue/PR for any questions or requests.
