@@ -50,46 +50,46 @@ class SGDLRLocalExample(object):
         reg = 0.2
 
         # Set local deploy mode
-        self.conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL")
+        self.conf[AngelConf.ANGEL_DEPLOY_MODE] = 'LOCAL'
 
         # Set basic configuration keys
-        self.conf.set_boolean("mapred.mapper.new-api", True)
-        self.conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, 'org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat')
-        self.conf.set_boolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, True)
+        self.conf['mapred.mapper.new-api'] = True
+        self.conf[AngelConf.ANGEL_INPUTFORMAT_CLASS] = 'org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat'
+        self.conf[AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST] = True
 
         # Set data format
-        self.conf.set(MLConf.ML_DATAFORMAT, data_fmt)
+        self.conf[MLConf.ML_DATA_FORMAT] = data_fmt
 
         # set angel resource parameters #worker, #task, #PS
-        self.conf.set_int(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1)
-        self.conf.set_int(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1)
-        self.conf.set_int(AngelConf.ANGEL_PS_NUMBER, 1)
+        self.conf[AngelConf.ANGEL_WORKERGROUP_NUMBER] = 1
+        self.conf[AngelConf.ANGEL_WORKER_TASK_NUMBER] = 1
+        self.conf[AngelConf.ANGEL_PS_NUMBER] = 1
 
         # set sgd LR algorithm parameters #feature #epoch
-        self.conf.set(MLConf.ML_FEATURE_NUM, str(feature_num))
-        self.conf.set(MLConf.ML_EPOCH_NUM, str(epoch_num))
-        self.conf.set(MLConf.ML_BATCH_SAMPLE_Ratio, str(sp_ratio))
-        self.conf.set(MLConf.ML_VALIDATE_RATIO, str(v_ratio))
-        self.conf.set(MLConf.ML_LEARN_RATE, str(learn_rate))
-        self.conf.set(MLConf.ML_LEARN_DECAY, str(decay))
-        self.conf.set(MLConf.ML_REG_L2, str(reg))
+        self.conf[MLConf.ML_FEATURE_NUM] = str(feature_num)
+        self.conf[MLConf.ML_EPOCH_NUM] = str(epoch_num)
+        self.conf[MLConf.ML_BATCH_SAMPLE_Ratio] = str(sp_ratio)
+        self.conf[MLConf.ML_VALIDATE_RATIO] = str(v_ratio)
+        self.conf[MLConf.ML_LEARN_RATE] = str(learn_rate)
+        self.conf[MLConf.ML_LEARN_DECAY] = str(decay)
+        self.conf[MLConf.ML_REG_L2] = str(reg)
 
     def train_on_local_cluster(self):
         self.set_conf()
-        input_path = "../data/exampledata/LRLocalExampleData/a9a.train"
+        input_path = 'data/exampledata/LRLocalExampleData/a9a.train'
         LOCAL_FS = LocalFileSystem.DEFAULT_FS
         TMP_PATH = tempfile.gettempdir()
         save_path = LOCAL_FS + TMP_PATH + "/model"
         log_path = LOCAL_FS + TMP_PATH + "/log"
 
         # Set trainning data path
-        self.conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, input_path)
+        self.conf[AngelConf.ANGEL_TRAIN_DATA_PATH] = input_path
         # Set save model path
-        self.conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, save_path)
+        self.conf[AngelConf.ANGEL_SAVE_MODEL_PATH] = save_path
         # Set log path
-        self.conf.set(AngelConf.ANGEL_LOG_PATH, log_path)
+        self.conf[AngelConf.ANGEL_LOG_PATH] = log_path
         # Set actionType train
-        self.conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN)
+        self.conf[AngelConf.ANGEL_ACTION_TYPE] = MLConf.ANGEL_ML_TRAIN
 
 
         runner = LRRunner()
@@ -98,7 +98,7 @@ class SGDLRLocalExample(object):
 
     def inc_train(self):
         self.set_conf()
-        input_path = "../data/exampledata/LRLocalExampleData/a9a.train"
+        input_path = 'data/exampledata/LRLocalExampleData/a9a.train'
         LOCAL_FS = LocalFileSystem.DEFAULT_FS
         TMP_PATH = tempfile.gettempdir()
         load_path = LOCAL_FS + TMP_PATH + "/model"
@@ -106,15 +106,15 @@ class SGDLRLocalExample(object):
         log_path = LOCAL_FS + TMP_PATH + "/log"
 
         # Set trainning data path
-        self.conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, input_path)
+        self.conf[AngelConf.ANGEL_TRAIN_DATA_PATH] = input_path
         # Set load model path
-        self.conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, load_path)
+        self.conf[AngelConf.ANGEL_LOAD_MODEL_PATH] = load_path
         # Set save model path
-        self.conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, save_path)
+        self.conf[AngelConf.ANGEL_SAVE_MODEL_PATH] = save_path
         # Set log path
-        self.conf.set(AngelConf.ANGEL_LOG_PATH, log_path)
+        self.conf[AngelConf.ANGEL_LOG_PATH] = log_path
         # Set actionType incremental train
-        self.conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_INC_TRAIN)
+        self.conf[AngelConf.ANGEL_ACTION_TYPE] = MLConf.ANGEL_ML_INC_TRAIN
 
         runner = LRRunner()
         runner.inc_train(self.conf)
@@ -122,7 +122,7 @@ class SGDLRLocalExample(object):
 
     def predict(self):
         self.set_conf()
-        input_path = "../data/exampledata/LRLocalExampleData/a9a.test"
+        input_path = 'data/exampledata/LRLocalExampleData/a9a.test'
         LOCAL_FS = LocalFileSystem.DEFAULT_FS
         TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp")
         load_path = LOCAL_FS + TMP_PATH + "/model"
@@ -131,15 +131,15 @@ class SGDLRLocalExample(object):
         predict_path = LOCAL_FS + TMP_PATH + "/predict"
 
         # Set trainning data path
-        self.conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, input_path)
+        self.conf[AngelConf.ANGEL_TRAIN_DATA_PATH] = input_path
         # Set load model path
-        self.conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, load_path)
+        self.conf[AngelConf.ANGEL_LOAD_MODEL_PATH] = load_path
         # Set predict result path
-        self.conf.set(AngelConf.ANGEL_PREDICT_PATH, predict_path)
+        self.conf[AngelConf.ANGEL_PREDICT_PATH] = predict_path
         # Set log path
-        self.conf.set(AngelConf.ANGEL_LOG_PATH, log_path)
+        self.conf[AngelConf.ANGEL_LOG_PATH] = log_path
         # Set actionType prediction
-        self.conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT())
+        self.conf[AngelConf.ANGEL_ACTION_TYPE] = MLConf.ANGEL_ML_PREDICT
 
         runner = LRRunner()
 

@@ -23,7 +23,7 @@ from pyangel.ml.conf import MLConf
 from pyangel.ml.client.angel_client_factory import AngelClientFactory
 from pyangel.ml.factorizationmachines.runner import FMRunner
 
-class FMLocalExample(oject):
+class FMLocalExample(object):
 
     def __init__(self):
         self.conf = Configuration()
@@ -48,53 +48,50 @@ class FMLocalExample(oject):
         stev = 0.1
 
         # Set local deploy mode
-        self.conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL")
+        self.conf[AngelConf.ANGEL_DEPLOY_MODE] = 'LOCAL'
 
         # Set basic self.configuration keys
-        self.conf.set_boolean("mapred.mapper.new-api", True)
-        self.conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, 'org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat')
-        self.conf.set_boolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, True)
+        self.conf['mapred.mapper.new-api'] = True
+        self.conf[AngelConf.ANGEL_INPUTFORMAT_CLASS] = 'org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat'
+        self.conf[AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST] = True
 
         #set angel resource parameters #worker, #task, #PS
-        self.conf.set_int(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1)
-        self.conf.set_int(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1)
-        self.conf.set_int(AngelConf.ANGEL_PS_NUMBER, 1)
+        self.conf[AngelConf.ANGEL_WORKERGROUP_NUMBER] = 1
+        self.conf[AngelConf.ANGEL_WORKER_TASK_NUMBER] = 1
+        self.conf[AngelConf.ANGEL_PS_NUMBER] = 1
 
         #set FM algorithm parameters #feature #epoch
-        self.conf.set(MLConf.ML_FEATURE_NUM, str(feature_num))
-        self.conf.set(MLConf.ML_EPOCH_NUM, str(epoch_num))
-        self.conf.set(MLConf.ML_FM_RANK, str(rank))
-        self.conf.set(MLConf.ML_LEARN_RATE, str(lr))
-        self.conf.set(MLConf.ML_FM_REG0, str(reg0))
-        self.conf.set(MLConf.ML_FM_REG1, str(reg1))
-        self.conf.set(MLConf.ML_FM_REG2, str(reg2))
-        self.conf.set(MLConf.ML_FM_V_STDDEV, str(stev))
+        self.conf[MLConf.ML_FEATURE_NUM] = str(feature_num)
+        self.conf[MLConf.ML_EPOCH_NUM] = str(epoch_num)
+        self.conf[MLConf.ML_FM_RANK] = str(rank)
+        self.conf[MLConf.ML_LEARN_RATE] = str(lr)
+        self.conf[MLConf.ML_FM_REG0] = str(reg0)
+        self.conf[MLConf.ML_FM_REG1] = str(reg1)
+        self.conf[MLConf.ML_FM_REG2] = str(reg2)
+        self.conf[MLConf.ML_FM_V_STDDEV] = str(stev)
 
     def train_on_local_cluster(self):
         self.set_conf()
-        input_path = "./src/test/data/fm/food_fm_libsvm"
+        input_path = "data/fm/food_fm_libsvm"
         LOCAL_FS = LocalFileSystem.DEFAULT_FS
         TMP_PATH = tempfile.gettempdir()
         save_path = LOCAL_FS + TMP_PATH + "/model"
         log_path = LOCAL_FS + TMP_PATH + "/LRlog"
 
         # Set trainning data path
-        self.conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, input_path)
+        self.conf[AngelConf.ANGEL_TRAIN_DATA_PATH] = input_path
         # Set save model path
-        self.conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, save_path)
+        self.conf[AngelConf.ANGEL_SAVE_MODEL_PATH] = save_path
         # Set log path
-        self.conf.set(AngelConf.ANGEL_LOG_PATH, log_path)
+        self.conf[AngelConf.ANGEL_LOG_PATH] = log_path
         # Set actionType train
-        self.conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN())
+        self.conf[AngelConf.ANGEL_ACTION_TYPE] = MLConf.ANGEL_ML_TRAIN
 
         runner = FMRunner()
         runner.train(self.conf)
 
-        angel_client = AngelClientFactory.get(self.conf)
-        angel_client.stop()
-
     def fm_classification(self):
-        input_path = "./src/test/data/fm/a9a.train"
+        input_path = "data/fm/a9a.train"
         LOCAL_FS = LocalFileSystem.DEFAULT_FS
         TMP_PATH = tempfile.gettempdir()
         save_path = LOCAL_FS + TMP_PATH + "/model"
@@ -115,9 +112,6 @@ class FMLocalExample(oject):
 
         runner = FMRunner()
         runner.train(self.conf)
-
-        angel_client = AngelClientFactory.get(self.conf)
-        angel_client.stop()
 
 example = FMLocalExample()
 example.train_on_local_cluster()

@@ -56,29 +56,29 @@ class LinearRegLocalExample(object):
         # self.conf.set('mapreduce.job.queue.name', 'default')
 
         # Set local deploy mode
-        self.conf.set(AngelConf.ANGEL_DEPLOY_MODE, 'LOCAL')
+        self.conf[AngelConf.ANGEL_DEPLOY_MODE] = 'LOCAL'
 
         # Set basic self.configuration keys
-        self.conf.set_boolean('mapred.mapper.new-api', True)
-        self.conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, 'org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat')
-        self.conf.set_boolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, True)
+        self.conf['mapred.mapper.new-api'] = True
+        self.conf[AngelConf.ANGEL_INPUTFORMAT_CLASS] = 'org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat'
+        self.conf[AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST] = True
 
         # Set data format
-        self.conf.set(MLConf.ML_DATAFORMAT, data_fmt)
+        self.conf[MLConf.ML_DATA_FORMAT] = data_fmt
 
         # set angel resource parameters #worker, #tast, #ps
-        self.conf.set_int(AngelConf.ANGEL_WORKERGROUP_NUMBER, 2)
-        self.conf.set_int(AngelConf.ANGEL_WORKER_TASK_NUMBER, 10)
-        self.conf.set_int(AngelConf.ANGEL_PS_NUMBER, 2)
+        self.conf[AngelConf.ANGEL_WORKERGROUP_NUMBER] = 2
+        self.conf[AngelConf.ANGEL_WORKER_TASK_NUMBER] = 10
+        self.conf[AngelConf.ANGEL_PS_NUMBER]=  2
 
         # set sgd LR algorithim parameters # feature # epoch
-        self.conf.set(MLConf.ML_FEATURE_NUM, str(feature_num))
-        self.conf.set(MLConf.ML_EPOCH_NUM, str(epoch_num))
-        self.conf.set(MLConf.ML_BATCH_SAMPLE_Ratio, str(sp_ratio))
-        self.conf.set(MLConf.ML_VALIDATE_RATIO, str(v_ratio))
-        self.conf.set(MLConf.ML_LEARN_RATE, str(learn_rate))
-        self.conf.set(MLConf.ML_LEARN_DECAY, str(decay))
-        self.conf.set(MLConf.ML_REG_L2, str(reg))
+        self.conf[MLConf.ML_FEATURE_NUM] = str(feature_num)
+        self.conf[MLConf.ML_EPOCH_NUM] = str(epoch_num)
+        self.conf[MLConf.ML_BATCH_SAMPLE_Ratio] = str(sp_ratio)
+        self.conf[MLConf.ML_VALIDATE_RATIO] = str(v_ratio)
+        self.conf[MLConf.ML_LEARN_RATE] = str(learn_rate)
+        self.conf[MLConf.ML_LEARN_DECAY] = str(decay)
+        self.conf[MLConf.ML_REG_L2] = str(reg)
 
 
     def train_on_local_cluster(self):
@@ -86,18 +86,18 @@ class LinearRegLocalExample(object):
         Train model on local cluster
         """
         self.set_conf()
-        input_path = '../data/exampledata/LinearRegression'
+        input_path = 'data/exampledata/LinearRegression'
         LOCAL_FS = LocalFileSystem.DEFAULT_FS
         TMP_PATH = tempfile.gettempdir()
         log_path = ".src/test/log"
         model_path = 'file:///tmp/angel/model'
 
 
-        self.conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, input_path)
-        self.conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, model_path)
-        self.conf.set(AngelConf.ANGEL_LOG_PATH, log_path)
-        self.conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN)
-        self.conf.set("fs.defaultFS", LOCAL_FS + TMP_PATH)
+        self.conf[AngelConf.ANGEL_TRAIN_DATA_PATH] = input_path
+        self.conf[AngelConf.ANGEL_SAVE_MODEL_PATH] = model_path
+        self.conf[AngelConf.ANGEL_LOG_PATH] = log_path
+        self.conf[AngelConf.ANGEL_ACTION_TYPE] = MLConf.ANGEL_ML_TRAIN
+        self.conf['fs.defaultFS'] = LOCAL_FS + TMP_PATH
 
         runner = LinearRegRunner()
         runner.train(self.conf)
@@ -105,39 +105,39 @@ class LinearRegLocalExample(object):
 
     def inc_train(self):
         self.set_conf()
-        input_path = "../data/exampledata/LinearRegression/LinearReg100.train"
+        input_path = "data/exampledata/LinearRegression/LinearReg100.train"
         LOCAL_FS = LocalFileSystem.DEFAULT_FS
         TMP_PATH = tempfile.gettempdir()
         log_path = "./src/test/log"
 
         # Set trainning data path
-        self.conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath)
+        self.conf[AngelConf.ANGEL_TRAIN_DATA_PATH] = inputPath
         # Set load model path
-        self.conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model")
+        self.conf[AngelConf.ANGEL_LOAD_MODEL_PATH] = LOCAL_FS + TMP_PATH + "/model"
         # Set save model path
-        self.conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/newmodel")
+        self.conf[AngelConf.ANGEL_SAVE_MODEL_PATH] = LOCAL_FS + TMP_PATH + "/newmodel"
         # Set actionType incremental train
-        self.conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_INC_TRAIN())
+        self.conf[AngelConf.ANGEL_ACTION_TYPE] = MLConf.ANGEL_ML_INC_TRAIN
         # Set log path
-        self.conf.set(AngelConf.ANGEL_LOG_PATH, logPath)
+        self.conf[AngelConf.ANGEL_LOG_PATH] = logPath
 
         runner = LinearRegRunner()
         runner.incTrain(self.conf)
 
     def predict(self):
         self.set_conf()
-        input_path = "../data/exampledata/LinearRegression/LinearReg100.train"
+        input_path = "data/exampledata/LinearRegression/LinearReg100.train"
         LOCAL_FS = LocalFileSystem.DEFAULT_FS
         TMP_PATH = tempfile.gettempdir()
 
         # Set trainning data path
-        self.conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath)
+        self.conf[AngelConf.ANGEL_TRAIN_DATA_PATH] = input_path
         # Set load model path
-        self.conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model")
+        self.conf[AngelConf.ANGEL_LOAD_MODEL_PATH] = LOCAL_FS + TMP_PATH + "/model"
         # Set predict result path
-        self.conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/predict")
+        self.conf[AngelConf.ANGEL_PREDICT_PATH] = LOCAL_FS + TMP_PATH + "/predict"
         # Set actionType prediction
-        self.conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT())
+        self.conf[AngelConf.ANGEL_ACTION_TYPE] = MLConf.ANGEL_ML_PREDICT
         runner = LinearRegRunner()
 
         runner.predict(self.conf)
