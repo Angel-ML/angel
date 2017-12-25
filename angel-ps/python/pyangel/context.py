@@ -13,13 +13,12 @@
 # either express or implied. See the License for the specific language governing permissions and
 #
 
-import sys
+import json
+from collections import Counter
 from threading import RLock
 
 from pyangel.java_gateway import launch_gateway
 
-if sys.version > '3':
-    xrange = range
 
 __all__ = ['Configuration']
 
@@ -51,7 +50,40 @@ class Configuration(dict):
                 Configuration._jvm = Configuration._gateway.jvm
                 Configuration._jconf = Configuration._jvm.com.tencent.angel.api.python.PythonGatewayServer.getJconf()
 
+
+    def load(self, dict_config):
+        """
+         Use a Json string to pass the params to Configuration, note that the json_config and dict_config should not be
+         used both, you only need to take one ot them.
+        :param json_config: A Json string contains the params specified by user
+        :param dict_config: A dict contains the params specified by user
+        :return:
+        """
+        self.update(dict_config)
+        if dict_config == None:
+            print('dict_config is none')
+        else:
+            print('dict_config is not none')
+        self.dict_to_jconf()
+
+    def json_to_jconf(self, json_config):
+        """
+        Transfer a json format string to Configuration.
+        :param json_config: json format string
+        :return: Configuration dict which contains the params json has.
+        """
+        parsed_json = json.loads(json_config)
+        appended_config = dict(Counter(json_config)+Counter(self))
+        jmap = Configuration._jvm.java.util.HashMap()
+        for k, v in appended_config:
+            jmap[k] = v
+        return self._jvm.com.tencent.angel.api.python.PythonUtils.addMapToConf(jmap, Configuration._jconf)
+
     def dict_to_jmap(self):
+        """
+        Transfer a python dict(self) to a Java HashMap
+        :return: A HashMap which contains all params user has set using Configuration as a dict.
+        """
         jmap = Configuration._jvm.java.util.HashMap()
         for k, v in self.items():
             jmap[k] = v
@@ -69,9 +101,9 @@ class Configuration(dict):
     def set(self, name, value):
         """Set a configuration property."""
         if self._jconf is not None:
-            self._jconf.set(name, unicode(value))
+            self._jconf.set(name, str(value))
         else:
-            self[name] = unicode(value)
+            self[name] = str(value)
         return self
 
     def set_boolean(self, name, value):

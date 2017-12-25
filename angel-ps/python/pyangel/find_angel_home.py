@@ -27,8 +27,8 @@ def _find_angel_home():
     def is_angel_home(path):
         """Takes a path and returns true if the provided path could be a reasonable ANGEL_HOME"""
         return (os.path.isfile(os.path.join(path, "bin/angel-submit")) and
-                (os.path.isdir(os.path.join(path, "jars")) or
-                 os.path.isdir(os.path.join(path, "assembly"))))
+                (os.path.isdir(os.path.join(path, "python")) or
+                 os.path.isdir(os.path.join(path, "lib"))))
 
     paths = ["../", os.path.dirname(os.path.realpath(__file__))]
 

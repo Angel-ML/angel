@@ -19,22 +19,27 @@ import os
 import sys
 from setuptools import setup, find_packages
 
-if sys.version_info < (2.7):
-    print("PyAngel not support prior to 2.7 when you use pip.",
+if sys.version < '3':
+    print("PyAngel not support python2  when you use pip.",
           file=sys.stderr)
     exit(-1)
 
 try:
     exec(open('pyangel/version.py').read())
 except IOError:
-    print("Failed to load PyAngel version file for installing. You operation should be in Angel's python directory",
+    print("Failed to load PyAngel version file for installing. Your operation should be in Angel's python directory",
           file=sys.stderr)
     sys.exit(-1)
 
-VERSION = __version__
-
-TEMP_PATH = "deps"
 ANGEL_HOME = os.path.abspath("../")
+TEMP_PATH = "deps"
+
+try:
+    os.mkdir(TEMP_PATH)
+except:
+    print("Temp path for symlink to parent already exists {0}".format(TEMP_PATH),
+          file=sys.stderr)
+    exit(-1)
 
 incorrect_invocation_message = """
 If you are installing pyangel from angel source, you must first build Angel and run sdist.
@@ -44,7 +49,7 @@ If you are installing pyangel from angel source, you must first build Angel and 
     Building the source dist is done in the python directoty:
         cd python
         python setup.py sdist
-        pip install dist/*.tar.gz
+        pip install dist/target/*.zip
 """
 
 JARS_PATH = glob.glob(os.path.join(ANGEL_HOME, "lib/"))
@@ -58,16 +63,26 @@ elif len(JARS_PATH) == 0 and not os.path.exists(TEMP_PATH):
     sys.exit(-1)
 
 EXAMPLES_PATH = os.path.join(ANGEL_HOME, "python/examples")
-SCRIPT_PATH = os.path.join(ANGEL_HOME, "bin")
+SCRIPTS_PATH = os.path.join(ANGEL_HOME, "bin")
 DATA_PATH = os.path.join(ANGEL_HOME, "data")
 
 SCRIPTS_TARGET = os.path.join(TEMP_PATH, "bin")
+JARS_TARGET = os.path.join(TEMP_PATH, "jars")
+EXAMPLES_TARGET = os.path.join(TEMP_PATH, "examples")
+DATA_TARGET = os.path.join(TEMP_PATH, "data")
+
+os.symlink(JARS_PATH, JARS_TARGET)
+os.symlink(SCRIPTS_PATH, SCRIPTS_TARGET)
+os.symlink(EXAMPLES_PATH, EXAMPLES_TARGET)
+os.symlink(DATA_PATH, DATA_TARGET)
 
 script_names = os.listdir(SCRIPTS_TARGET)
 scripts = list(map(lambda script: os.path.join(SCRIPTS_TARGET, script), script_names))
+
+scripts.append("pyspark/find_spark_home.py")
 setup(
     name='pyangel',
-    version=VERSION,
+    version='1.3.0',
     description='Tencent Angerl Python API',
     author='Angel Deveplopers',
     url='https://github.com/tencent/angel/tree/master/python',
@@ -87,5 +102,6 @@ setup(
     install_requires=['py4j==0.10.4'],
     classifiers=[
         'License :: OSI Approved :: BSD License',
-        'Programming Language :: Python :: 2.7']
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: Implementation :: CPython']
 )

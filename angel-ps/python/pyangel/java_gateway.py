@@ -40,16 +40,18 @@ def launch_gateway(conf=None):
     :param conf: configuration that ml_runner must have
     :return:
     """
+    print('launch gateway')
     if "PYANGEL_GATEWAY_PORT" in os.environ:
         gateway_port = int(os.environ["PYANGEL_GATEWAY_PORT"])
     else:
         ANGEL_HOME = _find_angel_home()
         # Launch the Py4j gateway
 
-        if os.environ.get("PYANGEL_LOCAL_MODE") == "True":
-            script = "./bin/angel-local-submit"
-        else:
+        if os.environ.get("PYANGEL_DIS_MODE") == "True":
             script = "./bin/angel-submit"
+        else:
+            script = "./bin/angel-local-submit"
+        print(script)    
         command = [os.path.join(ANGEL_HOME, script)]
         if conf:
             for k, v in conf.getAll():
