@@ -227,7 +227,7 @@
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-library</artifactId>
       <version>${scala.version}</version>
-      <scope>${compile.scope}}</scope>
+      <scope>${compile.scope}</scope>
     </dependency>
     <dependency>
       <groupId>org.scalatest</groupId>
