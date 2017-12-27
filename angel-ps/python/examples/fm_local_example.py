@@ -55,12 +55,12 @@ class FMLocalExample(object):
         self.conf[AngelConf.ANGEL_INPUTFORMAT_CLASS] = 'org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat'
         self.conf[AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST] = True
 
-        #set angel resource parameters #worker, #task, #PS
+        # Set angel resource parameters #worker, #task, #PS
         self.conf[AngelConf.ANGEL_WORKERGROUP_NUMBER] = 1
         self.conf[AngelConf.ANGEL_WORKER_TASK_NUMBER] = 1
         self.conf[AngelConf.ANGEL_PS_NUMBER] = 1
 
-        #set FM algorithm parameters #feature #epoch
+        # Set FM algorithm parameters #feature #epoch
         self.conf[MLConf.ML_FEATURE_NUM] = str(feature_num)
         self.conf[MLConf.ML_EPOCH_NUM] = str(epoch_num)
         self.conf[MLConf.ML_FM_RANK] = str(rank)
