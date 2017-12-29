@@ -51,15 +51,15 @@ Spark MLLib中Logistic Regression算法，适合于低维度稠密型的特征�
 	|  SGD LR   |     Executor                     |  Driver   |  Angel PS   |
 	|---|---|---|---|
 	| Spark | 100 Executors(14G RAM, 2 core)   | 50G        | -   |
-	| Spark on Angel  |  100 Executors(14G RAM, 2 core)  | 5G | 20 PS(5G RAM, 2core)  |
+	| Spark on Angel  |  100 Executors(14G RAM, 2 core)  | 5G | 5 PS(20G RAM, 8core)  |
 
 	|  L-BFGS LR   |     Executor                     |  Driver   |  Angel PS   |
 	|---|---|---|---|
 	| Spark | 100 Executors(14G RAM, 2 core)   | 50G        | -   |
-	| Spark on Angel  |  100 Executors(14G RAM, 2 core)  | 5G | 20 PS(10G RAM, 2core)  |
+	| Spark on Angel  |  100 Executors(14G RAM, 2 core)  | 5G | 5 PS(20G RAM, 8core)  |
 
 	|  OWL-QN LR   |     Executor                     |  Driver   |  Angel PS   |
 	|---|---|---|---|
 	| Spark | 100 Executors(14G RAM, 2 core)   | 50G        | -   |
-	| Spark on Angel  |  100 Executors(14G RAM, 2 core)  | 5G | 50 PS(10G RAM, 2core)  |
+	| Spark on Angel  |  100 Executors(14G RAM, 2 core)  | 5G | 5 PS(20G RAM, 8core)  |
 
