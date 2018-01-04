@@ -83,7 +83,7 @@ public class TaskCalPerfChecker extends CheckPolicy {
       + totalCalTimeMs + ", averageRate = " + averageRate + ", slowest rate = " + averageRate * slowestDiscount);
 
     for(Map.Entry<TaskId, Double> rateEntry:taskIdToRateMap.entrySet()) {
-      if(rateEntry.getValue() < averageRate * slowestDiscount) {
+      if(averageRate < rateEntry.getValue() * slowestDiscount) {
         LOG.info("task " + rateEntry.getKey() + " rate = " + rateEntry.getValue() + " is < " + averageRate * slowestDiscount);
         AMWorker worker = workerManager.getWorker(rateEntry.getKey());
         if(worker != null) {
