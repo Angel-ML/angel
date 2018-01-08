@@ -4,13 +4,10 @@ source ./spark-on-angel-env.sh
 
 $SPARK_HOME/bin/spark-submit \
     --master yarn-cluster \
-    --conf spark.hadoop.hadoop.job.ugi=tdwadmin,supergroup \
-    --conf spark.submitter=kevinzwyou \
     --conf spark.ps.jars=$SONA_ANGEL_JARS \
     --conf spark.ps.instances=10 \
     --conf spark.ps.cores=2 \
     --conf spark.ps.memory=6g \
-    --queue g_teg_angel.g_teg_angel-offline \
     --jars $SONA_SPARK_JARS\
     --name "BreezeSGD-spark-on-angel" \
     --driver-memory 10g \
