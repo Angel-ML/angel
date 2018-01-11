@@ -47,13 +47,13 @@ class GBTreeParam extends Serializable {
   var regLambda: Double = 1.0
 
   // L1 regularization parameter
-  var regAlpha: Double = 0
+  var regAlpha: Double = 0.0
 
-  var loss: Loss = new LeastSquareLoss
+  var loss: Loss = new LogisticLoss
 
   var minSplitLoss: Double = 0.0
 
-  var minChildWeight: Double = 1.0
+  var minChildWeight: Double = 0.1
 
   var maxDeltaStep: Double = 0.0
 

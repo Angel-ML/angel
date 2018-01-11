@@ -28,12 +28,8 @@ import com.tencent.angel.ml.GBDT.psf.HistAggrParam;
 import com.tencent.angel.ml.conf.MLConf;
 import com.tencent.angel.ml.math.vector.*;
 import com.tencent.angel.ml.metric.EvalMetric;
-import com.tencent.angel.ml.metric.LogErrorMetric;
 import com.tencent.angel.ml.model.PSModel;
-import com.tencent.angel.ml.objective.Loss;
-import com.tencent.angel.ml.objective.LossHelper;
 import com.tencent.angel.ml.objective.ObjFunc;
-import com.tencent.angel.ml.objective.RegLossObj;
 import com.tencent.angel.ml.param.GBDTParam;
 import com.tencent.angel.ml.utils.Maths;
 import com.tencent.angel.worker.task.TaskContext;
@@ -101,8 +97,8 @@ public class GBDTController {
     this.currentTree = 0; // tree starts from 0
     this.currentDepth = 1; // depth starts from 1
     // create loss function
-    LossHelper loss = new Loss.BinaryLogisticLoss();
-    objfunc = new RegLossObj(loss);
+    this.objfunc = param.getLossFunc();
+
     this.sketches = new float[this.param.numFeature * this.param.numSplit];
 
     String cateFeatStr = this.taskContext.getConf().get(MLConf.ML_GBDT_CATE_FEAT());
@@ -842,7 +838,7 @@ public class GBDTController {
   public Tuple1<Double> eval() {
     LOG.info("------Evaluation------");
     long startTime = System.currentTimeMillis();
-    EvalMetric evalMetric = new LogErrorMetric();
+    EvalMetric evalMetric = this.param.getEvalMetric();
     float error = evalMetric.eval(this.trainDataStore.preds, this.trainDataStore.labels);
     LOG.info(String.format("Error after tree[%d]: %f", this.currentTree, error));
     LOG.info(String.format("Evaluation cost: %d ms", System.currentTimeMillis() - startTime));
@@ -867,7 +863,7 @@ public class GBDTController {
       this.validDataStore.preds[insIdx] += this.param.learningRate * curPred;
     }
 
-    EvalMetric evalMetric = new LogErrorMetric();
+    EvalMetric evalMetric = this.param.getEvalMetric();
     float error = evalMetric.eval(this.validDataStore.preds, this.validDataStore.labels);
     LOG.info(String.format("Error after tree[%d]: %f", this.currentTree, error));
     LOG.info(String.format("Evaluation cost: %d ms", System.currentTimeMillis() - startTime));

@@ -109,7 +109,7 @@ public class MatrixClockCache {
    */
   public int getClock(int rowIndex) {
     List<PartitionKey> parts =
-        PSAgentContext.get().getMatrixPartitionRouter().getPartitionKeyList(matrixId, rowIndex);
+        PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId, rowIndex);
     int size = parts.size();
     int clock = Integer.MAX_VALUE;
     for (int i = 0; i < size; i++) {

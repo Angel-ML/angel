@@ -18,18 +18,14 @@ package com.tencent.angel.ps.impl.matrix;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.conf.MatrixConf;
+import com.tencent.angel.ml.matrix.MatrixMeta;
+import com.tencent.angel.ml.matrix.PartitionMeta;
 import com.tencent.angel.model.output.format.*;
-import com.tencent.angel.protobuf.ProtobufUtil;
-import com.tencent.angel.protobuf.generated.MLProtos;
-import com.tencent.angel.protobuf.generated.MLProtos.Pair;
-import com.tencent.angel.protobuf.generated.MLProtos.Partition;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.MatrixPartition;
-import com.tencent.angel.ps.impl.MatrixDiskIOExecutors;
 import com.tencent.angel.ps.impl.PSContext;
+import com.tencent.angel.ps.recovery.snapshot.SnapshotRecover;
 import com.tencent.angel.utils.HdfsUtil;
 import com.tencent.angel.utils.StringUtils;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -46,9 +42,6 @@ import java.util.concurrent.*;
 
 /**
  * The Server matrix on parameter server,assigned by {@link com.tencent.angel.master.AngelApplicationMaster},which represents a set of partitions of matrix
- *
- * @see com.tencent.angel.ml.matrix.MatrixMeta
- * @see com.tencent.angel.master.MatrixMetaManager
  */
 public class ServerMatrix {
 
@@ -59,64 +52,98 @@ public class ServerMatrix {
    */
   private final HashMap<Integer, ServerPartition> partitionMaps;
 
-  /**
-   * Matrix parameters
-   */
-  private final Map<String, String> attribute;
-
-  /**
-   * Matrix id
-   */
   private final int matrixId;
 
-  /**
-   * Matrix name
-   */
   private final String matrixName;
+
+  private final PSContext context;
 
   /**
    * The partitions in this PS
    */
-  private final List<PartitionKey> partitionKeys;
-
-  /**
-   * The maximum number of partitions that write to a single file
-   */
-  private static final int maxPartNumInAFile;
-
-  static {
-    if (PSContext.get().getPs() != null && PSContext.get().getConf() != null) {
-      maxPartNumInAFile = PSContext.get().getConf()
-        .getInt(AngelConf.ANGEL_PS_MAX_PARTITION_NUM_SINGLE_FILE,
-          AngelConf.DEFAULT_ANGEL_PS_MAX_PARTITION_NUM_SINGLE_FILE);
-    } else {
-      maxPartNumInAFile = AngelConf.DEFAULT_ANGEL_PS_MAX_PARTITION_NUM_SINGLE_FILE;
-    }
-  }
+  //private final List<PartitionKey> partitionKeys;
 
   /**
    * Create a new Server matrix by matrix partition.
    *
-   * @param matrix the matrix partition contains a set of partitions, which need to load on Parameter Server
+   * @param matrixMeta the matrix partition contains a set of partitions, which need to load on Parameter Server
    */
-  public ServerMatrix(MatrixPartition matrix) {
-    this.matrixId = matrix.getMatrixId();
-    this.matrixName = matrix.getMatrixName();
+  public ServerMatrix(MatrixMeta matrixMeta, PSContext context) {
+    this.context = context;
 
-    LOG.info("Creating a Server Matrix, id: " + matrixId + ", name: " + matrixName);
-    partitionKeys = new ArrayList<>(matrix.getPartitionsCount());
-    attribute = new HashMap<>();
-    for (Pair pair : matrix.getConfigurationsList()) {
-      attribute.put(pair.getKey(), pair.getValue());
-    }
-    partitionMaps = new HashMap<>();
+    LOG.info("Creating a Server Matrix, id: " + matrixMeta.getId() + ", name: " + matrixMeta.getName());
+    partitionMaps = new HashMap<>( matrixMeta.getPartitionMetas().size());
+    matrixId = matrixMeta.getId();
+    matrixName = matrixMeta.getName();
+  }
 
-    for (Partition partition : matrix.getPartitionsList()) {
-      PartitionKey partitionKey = ProtobufUtil.convertPartition(partition);
-      MLProtos.RowType rowType = matrix.getRowType();
-      partitionKeys.add(partitionKey);
-      partitionMaps.put(partitionKey.getPartitionId(), new ServerPartition(partitionKey, rowType));
+  public void init() {
+    MatrixMeta matrixMeta = context.getMatrixMetaManager().getMatrixMeta(matrixId);
+    Map<Integer, PartitionMeta> partMetas = matrixMeta.getPartitionMetas();
+    for (PartitionMeta partMeta : partMetas.values()) {
+      ServerPartition part = new ServerPartition(partMeta.getPartitionKey(), matrixMeta.getRowType());
+      partitionMaps.put(partMeta.getPartId(), part);
+      part.init();
     }
+  }
+
+  /**
+   * Gets partition specified by partition id
+   *
+   * @param partId the part id
+   * @return the partition
+   */
+  public ServerPartition getPartition(int partId) {
+    return partitionMaps.get(partId);
+  }
+
+  /**
+   * Gets the matrix name.
+   *
+   * @return the name
+   */
+  public String getName() {
+    return matrixName;
+  }
+
+
+  /**
+   * Gets the matrix id.
+   *
+   * @return the id
+   */
+  public int getId() {
+    return matrixId;
+  }
+
+  /**
+   * Get row split
+   * @param partId partition id
+   * @param rowId row index
+   * @return
+   */
+  public ServerRow getRow(int partId, int rowId) {
+    ServerPartition part = getPartition(partId);
+    if(part == null) {
+      return null;
+    }
+    return part.getRow(rowId);
+  }
+
+  /**
+   * Update related rows of partition which specified by partition key
+   *
+   * @param partId partition id
+   * @param buf          the data buf
+   * @throws Exception
+   */
+  public void update(int partId, ByteBuf buf, RowUpdater updater) throws Exception{
+    ServerPartition part = partitionMaps.get(partId);
+    if(part == null) {
+      return;
+    }
+
+    part.update(buf, updater);
   }
 
   /**
@@ -124,34 +151,56 @@ public class ServerMatrix {
    *
    * @throws IOException read files error
    */
-  public void load() throws IOException {
-    String path = attribute.get(MatrixConf.MATRIX_LOAD_PATH);
-    if (path == null || partitionMaps.isEmpty()) {
+  public void load(MatrixMeta matrixMeta, Path path) throws IOException {
+    if(path == null) {
+      startServering();
       return;
     }
 
-    Configuration conf = PSContext.get().getConf();
-    Path matrixPath = new Path(path, matrixName);
-
-    // Read matrix meta from meta file
-    Path metaFilePath = new Path(matrixPath, ModelFilesConstent.modelMetaFileName);
-    FileSystem fs = metaFilePath.getFileSystem(conf);
-
-    FSDataInputStream input = fs.open(metaFilePath);
-    ModelFilesMeta matrixMeta = new ModelFilesMeta();
-    matrixMeta.read(input);
-    input.close();
-
-    Map<Integer, ModelPartitionMeta> partMetas = matrixMeta.getPartMetas();
-    List<ModelPartitionMeta> partMetaList = new ArrayList<>(partitionMaps.size());
-
-    PSModelFilesMeta serverMatrixMeta = new PSModelFilesMeta(matrixMeta.getMatrixId());
-    for (int partId : partitionMaps.keySet()) {
-      partMetaList.add(partMetas.get(partId));
-      serverMatrixMeta.addPartitionMeta(partId, partMetas.get(partId));
+    LOG.info("load matrix " + matrixMeta + " from path " + path);
+    Path matrixFilesPath = new Path(path, matrixMeta.getName());
+    FileSystem fs = matrixFilesPath.getFileSystem(context.getConf());
+    if(!fs.exists(matrixFilesPath)) {
+      LOG.warn("Can not find matrix " + matrixMeta.getName() + " in directory " + path);
+      startServering();
+      return;
     }
 
-    Collections.sort(partMetaList, new Comparator<ModelPartitionMeta>() {
+    // Read matrix meta from meta file
+    PSModelFilesMeta psMatrixFilesMeta = new PSModelFilesMeta(matrixMeta.getId());
+    List<ModelPartitionMeta> partFileMetas = new ArrayList<>(partitionMaps.size());
+    Path metaFilePath = new Path(matrixFilesPath, ModelFilesConstent.modelMetaFileName);
+    if(fs.exists(metaFilePath)) {
+      FSDataInputStream input = fs.open(metaFilePath);
+      ModelFilesMeta matrixFilesMeta = new ModelFilesMeta();
+      matrixFilesMeta.read(input);
+      input.close();
+
+      Map<Integer, ModelPartitionMeta> partIdToFileMetaMap = matrixFilesMeta.getPartMetas();
+      for (int partId : partitionMaps.keySet()) {
+        partFileMetas.add(partIdToFileMetaMap.get(partId));
+        psMatrixFilesMeta.addPartitionMeta(partId, partIdToFileMetaMap.get(partId));
+      }
+    } else {
+      Path psMetaFilePath = new Path(matrixFilesPath, ModelFilesConstent.psModelMetaFileName);
+      if(fs.exists(psMetaFilePath)) {
+        FSDataInputStream input = fs.open(psMetaFilePath);
+        psMatrixFilesMeta.read(input);
+        input.close();
+
+        Map<Integer, ModelPartitionMeta> partIdToFileMetaMap = psMatrixFilesMeta.getPartMetas();
+        for (int partId : partitionMaps.keySet()) {
+          partFileMetas.add(partIdToFileMetaMap.get(partId));
+          psMatrixFilesMeta.addPartitionMeta(partId, partIdToFileMetaMap.get(partId));
+        }
+      } else {
+        LOG.warn("Can not find matrix meta file in directory " + path);
+        startServering();
+        return;
+      }
+    }
+
+    Collections.sort(partFileMetas, new Comparator<ModelPartitionMeta>() {
       @Override public int compare(ModelPartitionMeta p1, ModelPartitionMeta p2) {
         if(p1.getFileName().compareTo(p2.getFileName()) < 0) {
           return -1;
@@ -163,69 +212,85 @@ public class ServerMatrix {
       }
     });
 
-    int size = partMetaList.size();
+    int size = partFileMetas.size();
     List<Integer> partitionIds = new ArrayList<>(size);
     for(int i = 0; i < size; i++) {
-      LOG.info("======partMetaList[" + i + "]=" + partMetaList.get(i));
-      partitionIds.add(partMetaList.get(i).getPartId());
+      partitionIds.add(partFileMetas.get(i).getPartId());
     }
 
     // Load partitions from file use fork-join
     Vector<String> errorLogs = new Vector<>();
     PartitionDiskOp loadOp =
-      new PartitionDiskOp(fs, matrixPath, ACTION.LOAD, partitionIds, serverMatrixMeta, errorLogs, 0,
-        partitionIds.size());
-    MatrixDiskIOExecutors.execute(loadOp);
+      new PartitionDiskOp(fs, matrixFilesPath, ACTION.LOAD, partitionIds, psMatrixFilesMeta, errorLogs, 0,
+        partitionIds.size(), getMaxFileInSingleFile(context.getConf()));
+    context.getIOExecutors().execute(loadOp);
     loadOp.join();
     if (!errorLogs.isEmpty()) {
-      String errorLog = "load partitions for matrix " + matrixName + " failed, error log is " + StringUtils.join("\n", errorLogs);
+      String errorLog = "load partitions for matrix " + matrixMeta.getName() + " failed, error log is " + StringUtils.join("\n", errorLogs);
       LOG.error(errorLog);
       throw new IOException(errorLog);
     }
   }
 
-  public void commit(FileSystem fs, Path outputPath) throws IOException {
-    Path matrixPath = new Path(outputPath, matrixName);
-    if (!fs.mkdirs(matrixPath)) {
-      String errorMsg = "can not create output path " + matrixPath + " for matrix " + matrixName;
+  private int getMaxFileInSingleFile(Configuration conf) {
+    return conf
+      .getInt(AngelConf.ANGEL_PS_MAX_PARTITION_NUM_SINGLE_FILE,
+        AngelConf.DEFAULT_ANGEL_PS_MAX_PARTITION_NUM_SINGLE_FILE);
+  }
+
+  private void startServering() {
+    for(ServerPartition part : partitionMaps.values()) {
+      part.setState(PartitionState.READ_AND_WRITE);
+    }
+  }
+
+  public void save(MatrixMeta matrixMeta, List<Integer> partIds, Path outputPath) throws IOException {
+    if(partIds == null || partIds.isEmpty()) {
+      return;
+    }
+
+    FileSystem fs = outputPath.getFileSystem(context.getConf());
+    Path matrixFilesPath = new Path(outputPath, matrixMeta.getName());
+    if (!fs.mkdirs(matrixFilesPath)) {
+      String errorMsg = "can not create output path " + matrixFilesPath + " for matrix " + matrixMeta.getName();
       LOG.error(errorMsg);
       throw new IOException(errorMsg);
     }
 
-    LOG.info("Commit partitions of matrix " + matrixName + " to path " + matrixPath);
+    LOG.info("Commit partitions of matrix " + matrixMeta.getName() + " to path " + matrixFilesPath);
 
     // Save partitions to files use fork-join
-    PSModelFilesMeta matrixMeta = new PSModelFilesMeta(matrixId);
-    List<Integer> partitionIds = new ArrayList<>(partitionMaps.keySet());
+    PSModelFilesMeta psMatrixFilesMeta = new PSModelFilesMeta(matrixMeta.getId());
 
-    Collections.sort(partitionIds, new Comparator<Integer>() {
+    Collections.sort(partIds, new Comparator<Integer>() {
       @Override public int compare(Integer id1, Integer id2) {
         return id1 - id2;
       }
     });
 
     Vector<String> errorLogs = new Vector<>();
-    PartitionDiskOp commitOp = new PartitionDiskOp(fs, matrixPath, ACTION.COMMIT, partitionIds, matrixMeta, errorLogs, 0, partitionIds.size());
-    MatrixDiskIOExecutors.execute(commitOp);
+    PartitionDiskOp commitOp = new PartitionDiskOp(fs, matrixFilesPath, ACTION.SAVE, partIds,
+      psMatrixFilesMeta, errorLogs, 0, partIds.size(), getMaxFileInSingleFile(context.getConf()));
+    context.getIOExecutors().execute(commitOp);
     commitOp.join();
     if(!errorLogs.isEmpty()) {
       throw new IOException(StringUtils.join("\n", errorLogs));
     }
 
     // Write the ps matrix meta to the meta file
-    Path metaFile = new Path(matrixPath, ModelFilesConstent.psModelMetaFileName);
+    Path metaFile = new Path(matrixFilesPath, ModelFilesConstent.psModelMetaFileName);
     Path tmpMetaFile = HdfsUtil.toTmpPath(metaFile);
     FSDataOutputStream metaOut = fs.create(tmpMetaFile, (short) 1);
-    matrixMeta.write(metaOut);
+    psMatrixFilesMeta.write(metaOut);
     metaOut.flush();
     metaOut.close();
+    LOG.info("Rename from " + tmpMetaFile.toString() + " to " + metaFile);
     HdfsUtil.rename(tmpMetaFile, metaFile, fs);
   }
 
   enum ACTION {
-    LOAD, COMMIT
+    LOAD, SAVE
   }
-
 
   class PartitionDiskOp extends RecursiveAction {
     private final Path matrixPath;
@@ -236,10 +301,11 @@ public class ServerMatrix {
     private final int startPos;
     private final int endPos;
     private final ACTION action;
+    private final int maxFileInSingleFile;
 
     public PartitionDiskOp(FileSystem fs, Path matrixPath, ACTION action,
       List<Integer> partitionIds, PSModelFilesMeta serverMatrixMeta,
-      Vector<String> errorMsgs, int startPos, int endPos) {
+      Vector<String> errorMsgs, int startPos, int endPos, int maxFileInSingleFile) {
       this.fs = fs;
       this.matrixPath = matrixPath;
       this.action = action;
@@ -248,6 +314,7 @@ public class ServerMatrix {
       this.errorMsgs = errorMsgs;
       this.startPos = startPos;
       this.endPos = endPos;
+      this.maxFileInSingleFile = maxFileInSingleFile;
     }
 
     @Override protected void compute() {
@@ -255,21 +322,21 @@ public class ServerMatrix {
         return;
       }
 
-      if (endPos - startPos <= maxPartNumInAFile) {
+      if (endPos - startPos <= maxFileInSingleFile) {
         try {
           process(matrixPath, fs, action, partitionIds, startPos, endPos, serverMatrixMeta);
         } catch (Throwable x) {
-          LOG.error("load model partitions failed.", x);
-          errorMsgs.add("load model partitions failed." + x.getMessage());
+          LOG.error(action + " model partitions failed.", x);
+          errorMsgs.add(action + " model partitions failed." + x.getMessage());
         }
       } else {
         int middle = (startPos + endPos) / 2;
         PartitionDiskOp opLeft =
           new PartitionDiskOp(fs, matrixPath, action, partitionIds, serverMatrixMeta, errorMsgs,
-            startPos, middle);
+            startPos, middle, maxFileInSingleFile);
         PartitionDiskOp opRight =
           new PartitionDiskOp(fs, matrixPath, action, partitionIds, serverMatrixMeta, errorMsgs,
-            middle, endPos);
+            middle, endPos, maxFileInSingleFile);
         invokeAll(opLeft, opRight);
       }
     }
@@ -279,8 +346,8 @@ public class ServerMatrix {
     List<Integer> partitionIds, int startPos, int endPos,
     PSModelFilesMeta serverMatrixMeta) throws IOException {
     switch (action) {
-      case COMMIT:
-        commitPartitions(matrixPath, fs, partitionIds, startPos, endPos, serverMatrixMeta);
+      case SAVE:
+        savePartitions(matrixPath, fs, partitionIds, startPos, endPos, serverMatrixMeta);
         break;
 
       case LOAD:
@@ -292,11 +359,11 @@ public class ServerMatrix {
     }
   }
 
-  private void commitPartitions(Path matrixPath, FileSystem fs,
+  private void savePartitions(Path matrixPath, FileSystem fs,
     List<Integer> partitionIds, int startPos, int endPos,
     PSModelFilesMeta serverMatrixMeta) throws IOException {
 
-    Path destFile = new Path(matrixPath, ModelFilesUtils.fileName(PSContext.get().getPs().getServerId(), partitionIds.get(startPos)));
+    Path destFile = new Path(matrixPath, ModelFilesUtils.fileName(context.getPs().getServerId(), partitionIds.get(startPos)));
     Path tmpDestFile = HdfsUtil.toTmpPath(destFile);
 
     FSDataOutputStream out = fs.create(tmpDestFile);
@@ -311,7 +378,7 @@ public class ServerMatrix {
       ModelPartitionMeta partMeta = new ModelPartitionMeta(partKey.getPartitionId(), partKey.getStartRow(),
         partKey.getEndRow(), partKey.getStartCol(), partKey.getEndCol(), partition.elementNum(),
         destFile.getName(), streamPos, 0);
-      partition.commit(out);
+      partition.save(out, partMeta);
       partMeta.setLength(out.getPos() - streamPos);
       serverMatrixMeta.addPartitionMeta(partitionIds.get(i), partMeta);
     }
@@ -351,44 +418,6 @@ public class ServerMatrix {
   }
 
   /**
-   * Gets partition specified by partition key.
-   *
-   * @param partitionKey the partition key
-   * @return the partition
-   */
-  public ServerPartition getPartition(PartitionKey partitionKey) {
-    return partitionMaps.get(partitionKey.getPartitionId());
-  }
-
-  /**
-   * Gets total partition keys.
-   *
-   * @return the total partition keys
-   */
-  public List<PartitionKey> getTotalPartitionKeys() {
-    return partitionKeys;
-  }
-
-  /**
-   * Gets the matrix name.
-   *
-   * @return the name
-   */
-  public String getName() {
-    return matrixName;
-  }
-
-
-  /**
-   * Gets the matrix id.
-   *
-   * @return the id
-   */
-  public int getId() {
-    return matrixId;
-  }
-
-  /**
    * Read partitions of matrix from input
    *
    * @param input the input
@@ -403,7 +432,7 @@ public class ServerMatrix {
     for (int i = 0; i < partitionNum; i++) {
       int partitionId = input.readInt();
       LOG.debug("parse partitionId: " + partitionId);
-      partitionMaps.get(partitionId).readSnapshot(input);
+      partitionMaps.get(partitionId).load(input);
     }
   }
 
@@ -423,77 +452,7 @@ public class ServerMatrix {
       LOG.debug("write partitionId: " + entry.getKey());
       output.writeInt(entry.getKey());
       ServerPartition serverPartition = entry.getValue();
-      serverPartition.writeSnapshot(output);
+      serverPartition.save(output);
     }
-  }
-
-  /**
-   * Write matrix id and partition num as header.
-   *
-   * @param output the output
-   * @throws IOException
-   */
-  private void writeHeader(DataOutputStream output) throws IOException {
-    output.writeInt(matrixId);
-    output.writeUTF(matrixName);
-    output.writeInt(partitionMaps.size());
-  }
-
-  /**
-   * Filter file header
-   *
-   * @param input input stream
-   * @throws IOException
-   */
-  private void filterHeader(DataInputStream input) throws IOException {
-    input.readInt();
-    input.readUTF();
-    input.readInt();
-  }
-
-  /**
-   * Gets partition specified by partition id
-   *
-   * @param partId the part id
-   * @return the partition
-   */
-  public ServerPartition getPartition(int partId) {
-    return partitionMaps.get(partId);
-  }
-
-  /**
-   * Gets partitions of matrix's clocks.
-   *
-   * @param clocks the clocks
-   */
-  public void getClocks(Object2IntOpenHashMap<PartitionKey> clocks) {
-    for (Map.Entry<Integer, ServerPartition> partEntry : partitionMaps.entrySet()) {
-      LOG.debug(
-        "partitionKey = " + partEntry.getValue().partitionKey + ", clock = " + partEntry.getValue()
-          .getClock());
-      clocks.put(partEntry.getValue().partitionKey, partEntry.getValue().getClock());
-    }
-  }
-
-  /**
-   * Sets clock of task.
-   *
-   * @param taskIndex the task index
-   * @param clock     the clock
-   */
-  public void setClock(int taskIndex, int clock) {
-    for (ServerPartition partition : partitionMaps.values()) {
-      partition.clock(taskIndex, clock);
-      LOG.info("partition " + partition.getPartitionKey() + ", clock is " + partition.getClock());
-    }
-  }
-
-  /**
-   * Get matrix name
-   *
-   * @return matrix name
-   */
-  public String getMatrixName() {
-    return matrixName;
   }
 }

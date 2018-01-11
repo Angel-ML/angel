@@ -29,6 +29,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
 import com.tencent.angel.spark.models.vector.PSVector
+import com.tencent.angel.spark.linalg.{DenseVector => SONADV}
 
 /**
  * This is LogisticRegression data generator and its DiffFunction.
@@ -99,7 +100,7 @@ object Logistic {
   case class PSCost(trainData: RDD[(Vector, Double)]) extends DiffFunction[BreezePSVector] {
 
     override def calculate(x: BreezePSVector) : (Double, BreezePSVector) = {
-      val localX = new BDV[Double](x.pull())
+      val localX = new BDV[Double](x.pull.toDense.values)
       val bcX = trainData.sparkContext.broadcast(localX)
       val cumGradient = PSVector.duplicate(x.component).toBreeze
 
@@ -121,7 +122,7 @@ object Logistic {
           lossArray += loss
           gradient
         }.reduce(_ + _)
-        cumGradient.toCache.increment(gradientSum.toArray)
+        cumGradient.toCache.increment(new SONADV(gradientSum.toArray))
         lossArray.toIterator
       }.sum()
 
@@ -149,7 +150,7 @@ object Logistic {
           math.log1p(math.exp(margin)) - margin
         }
 
-        remoteGradient.incrementWithCache(gradient.toArray)
+        remoteGradient.incrementWithCache(new SONADV(gradient.toArray))
         lossSum += loss
         count += 1
         this
@@ -171,7 +172,7 @@ object Logistic {
     override def calculate(x: BreezePSVector): (Double, BreezePSVector) = {
       import com.tencent.angel.spark.rdd.RDDPSFunctions._
 
-      val localX = new BDV(x.pull())
+      val localX = new BDV(x.pull.toDense.values)
       val bcX = trainData.sparkContext.broadcast(localX)
       val cumGradient = PSVector.duplicate(x.component).toCache
 

@@ -22,7 +22,7 @@
   <parent>
     <groupId>com.tencent.angel</groupId>
     <artifactId>angel</artifactId>
-    <version>1.3.0</version>
+    <version>1.4.0</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -33,6 +33,7 @@
   <modules>
     <module>core</module>
     <module>psf</module>
+    <module>serving</module>
     <module>mllib</module>
     <module>examples</module>
     <module>tools</module>
@@ -227,7 +228,7 @@
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-library</artifactId>
       <version>${scala.version}</version>
-      <scope>${compile.scope}</scope>
+      <scope>${compile.scope}}</scope>
     </dependency>
     <dependency>
       <groupId>org.scalatest</groupId>
@@ -244,7 +245,7 @@
     <dependency>
       <groupId>org.scalanlp</groupId>
       <artifactId>breeze_2.11</artifactId>
-      <version>0.12</version>
+      <version>0.13</version>
     </dependency>
     <dependency>
       <groupId>net.sf.py4j</groupId>
@@ -353,7 +354,7 @@
           </excludes>-->
         </configuration>
       </plugin>
-      <!--plugin>
+      <plugin>
         <groupId>org.scalastyle</groupId>
         <artifactId>scalastyle-maven-plugin</artifactId>
         <version>0.8.0</version>
@@ -374,7 +375,7 @@
             </goals>
           </execution>
         </executions>
-      </plugin-->
+      </plugin>
     </plugins>
     <resources>
       <resource>

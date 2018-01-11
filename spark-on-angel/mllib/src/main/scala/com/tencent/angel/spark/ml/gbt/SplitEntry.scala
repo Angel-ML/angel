@@ -89,7 +89,7 @@ class SplitEntry(
     if (this.fId <= splitFeature) {
       newLossChg > this.gain
     } else {
-      newLossChg > this.gain
+      newLossChg >= this.gain
     }
   }
 

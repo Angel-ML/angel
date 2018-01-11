@@ -79,7 +79,7 @@ trait MLRunner extends AppSubmitter{
       client.runTask(taskClass)
       client.waitForCompletion()
     } finally {
-      client.stop()
+      client.stop(0)
     }
   }
 

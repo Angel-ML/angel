@@ -17,11 +17,12 @@
 package com.tencent.angel.psagent;
 
 import com.google.protobuf.ServiceException;
-import com.tencent.angel.PartitionKey;
 import com.tencent.angel.RunningMode;
 import com.tencent.angel.common.AngelEnvironment;
-import com.tencent.angel.common.Location;
+import com.tencent.angel.common.location.Location;
+import com.tencent.angel.common.location.LocationManager;
 import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.exception.TimeOutException;
 import com.tencent.angel.ipc.TConnection;
@@ -29,19 +30,22 @@ import com.tencent.angel.ipc.TConnectionManager;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.MatrixMetaManager;
+import com.tencent.angel.ml.matrix.transport.PSFailedReport;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos.PSAgentAttemptIdProto;
-import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.GetAllMatrixInfoResponse;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.PSAgentCommandProto;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.PSAgentRegisterResponse;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.PSAgentReportResponse;
 import com.tencent.angel.ps.ParameterServerId;
+import com.tencent.angel.ps.impl.ParameterServer;
 import com.tencent.angel.psagent.client.MasterClient;
 import com.tencent.angel.psagent.clock.ClockCache;
 import com.tencent.angel.psagent.consistency.ConsistencyController;
 import com.tencent.angel.psagent.executor.Executor;
 import com.tencent.angel.psagent.matrix.MatrixClient;
 import com.tencent.angel.psagent.matrix.MatrixClientFactory;
+import com.tencent.angel.psagent.matrix.PSAgentLocationManager;
+import com.tencent.angel.psagent.matrix.PSAgentMatrixMetaManager;
 import com.tencent.angel.psagent.matrix.cache.MatricesCache;
 import com.tencent.angel.psagent.matrix.oplog.cache.MatrixOpLogCache;
 import com.tencent.angel.psagent.matrix.storage.MatrixStorageManager;
@@ -60,11 +64,7 @@ import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -73,8 +73,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <p>
  * It use {@link MasterClient} to communicate with master. The meta data contains: <br>
  * matrix meta {@link MatrixMetaManager}, <br>
- * matrix partition routers {@link MatrixPartitionRouter}, <br>
- * server locations {@link LocationCache}.
+ * server locations {@link LocationManager}.
  * 
  * <p>
  * It use {@link MatrixTransportClient} to communicate with parameter servers. Because an
@@ -94,9 +93,6 @@ public class PSAgent {
   /** the user that submit the application */
   private final String user;
 
-  /** master location(ip and listening port) */
-  private final Location masterLocation;
-
   /** ps agent attempt id */
   private final PSAgentAttemptId id;
 
@@ -112,14 +108,14 @@ public class PSAgent {
   /** psagent location(ip and listening port) */
   private Location location = null;
 
-  /** parameter server locations cache */
-  private LocationCache locationCache = null;
+  /** psagent location(ip and listening port) */
+  private final Location masterLocation;
 
-  /** matrix partitions router table */
-  private MatrixPartitionRouter matrixPartitionRouter = null;
+  /** master location(ip and listening port) */
+  private PSAgentLocationManager locationManager;
 
   /** matrix meta manager */
-  private MatrixMetaManager matrixMetaManager = null;
+  private PSAgentMatrixMetaManager matrixMetaManager = null;
 
   /** matrix updates cache */
   private MatrixOpLogCache opLogCache = null;
@@ -226,7 +222,7 @@ public class PSAgent {
     this.psAgentInitFinishedFlag = new AtomicBoolean(false);
     this.stopped = new AtomicBoolean(false);
     this.exitedFlag = new AtomicBoolean(false);
-    this.metrics = new HashMap<String, String>();
+    this.metrics = new HashMap<>();
     PSAgentContext.get().setPsAgent(this);
   }
 
@@ -251,9 +247,10 @@ public class PSAgent {
             AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_INTERVAL);
     this.runningMode = initRunningMode(conf);
 
+    this.masterLocation = new Location(masterIp, masterPort);
     this.appId = null;
     this.user = null;
-    this.masterLocation = new Location(masterIp, masterPort);
+
     this.id = new PSAgentAttemptId(new PSAgentId(clientIndex), 0);
     this.idProto = ProtobufUtil.convertToIdProto(id);
 
@@ -261,7 +258,7 @@ public class PSAgent {
     this.psAgentInitFinishedFlag = new AtomicBoolean(false);
     this.stopped = new AtomicBoolean(false);
     this.exitedFlag = new AtomicBoolean(false);
-    this.metrics = new HashMap<String, String>();
+    this.metrics = new HashMap<>();
     PSAgentContext.get().setPsAgent(this);
   }
 
@@ -280,6 +277,10 @@ public class PSAgent {
   }
 
   public void initAndStart() throws Exception {
+    // Get ps locations from master and put them to the location cache.
+    locationManager = new PSAgentLocationManager(PSAgentContext.get());
+    locationManager.setMasterLocation(masterLocation);
+
     // Build and initialize rpc client to master
     masterClient = new MasterClient();
     masterClient.init();
@@ -289,31 +290,33 @@ public class PSAgent {
     int port = NetUtils.chooseAListenPort(conf);
     location = new Location(localIp, port);
 
-    // Initialize matrix info, this method will wait until master accepts the information from
-    // client
-    GetAllMatrixInfoResponse response = masterClient.getMatrices();
-    LOG.debug("get matrix info=" + response);
-
-    // Get ps locations from master and put them to the location cache.
-    locationCache = new LocationCache(masterLocation, masterClient.getPSLocations());
-    this.matrixPartitionRouter =
-        new MatrixPartitionRouter(ProtobufUtil.getMatrixRoutingInfo(response));
-
     // Initialize matrix meta information
-    this.matrixMetaManager = new MatrixMetaManager();
-    matrixMetaManager.addMatrixes(ProtobufUtil.getMatrixMetaInfo(response));
+    clockCache = new ClockCache();
+    List<MatrixMeta> matrixMetas = masterClient.getMatrices();
+    LOG.info("===========================PSAgent get matrices from master," + matrixMetas.size());
+    this.matrixMetaManager = new PSAgentMatrixMetaManager(clockCache);
+    matrixMetaManager.addMatrices(matrixMetas);
+
+    Map<ParameterServerId, Location> psIdToLocMap = masterClient.getPSLocations();
+    List<ParameterServerId> psIds = new ArrayList<>(psIdToLocMap.keySet());
+    Collections.sort(psIds, new Comparator<ParameterServerId>() {
+      @Override public int compare(ParameterServerId s1, ParameterServerId s2) {
+        return s1.getIndex() - s2.getIndex();
+      }
+    });
+    int size = psIds.size();
+    locationManager.setPsIds(psIds.toArray(new ParameterServerId[0]));
+    for(int i = 0; i < size; i++) {
+      if(psIdToLocMap.containsKey(psIds.get(i))) {
+        locationManager.setPsLocation(psIds.get(i), psIdToLocMap.get(psIds.get(i)));
+      }
+    }
 
     matrixTransClient = new MatrixTransportClient();
     matrixClientAdapter = new MatrixClientAdapter();
     opLogCache = new MatrixOpLogCache();
-    clockCache = new ClockCache();
-    Map<Integer, List<PartitionKey>> matrixToPartMap = matrixPartitionRouter.getMatrixToPartMap();
-    for (Entry<Integer, List<PartitionKey>> entry : matrixToPartMap.entrySet()) {
-      clockCache.addMatrix(entry.getKey(), entry.getValue());
-    }
 
     matrixStorageManager = new MatrixStorageManager();
-
     matricesCache = new MatricesCache();
     int staleness =
         conf.getInt(AngelConf.ANGEL_STALENESS, AngelConf.DEFAULT_ANGEL_STALENESS);
@@ -341,24 +344,9 @@ public class PSAgent {
    * @throws ServiceException rpc failed
    * @throws InterruptedException interrupted while wait for rpc results
    */
-  public void refreshMatrixInfo() throws InterruptedException, ServiceException  {
-    GetAllMatrixInfoResponse response = masterClient.getMatrices();
-    HashMap<PartitionKey, ParameterServerId> routingInfo =
-        ProtobufUtil.getMatrixRoutingInfo(response);
-    matrixPartitionRouter.clear();
-    for (Entry<PartitionKey, ParameterServerId> entry : routingInfo.entrySet()) {
-      PartitionKey part = entry.getKey();
-      ParameterServerId psId = entry.getValue();
-      matrixPartitionRouter.addPartition(entry.getKey(), psId);
-      Map<Integer, List<PartitionKey>> matrixToParts = matrixPartitionRouter.getMatrixToPartMap();
-      List<PartitionKey> partList = matrixToParts.get(part.getMatrixId());
-      if (partList == null) {
-        partList = new ArrayList<PartitionKey>();
-        matrixToParts.put(part.getMatrixId(), partList);
-      }
-      partList.add(part);
-    }
-    matrixMetaManager.addMatrixes(ProtobufUtil.getMatrixMetaInfo(response));
+  public void refreshMatrixInfo()
+    throws InterruptedException, ServiceException, ClassNotFoundException {
+    matrixMetaManager.addMatrices(masterClient.getMatrices());
   }
 
   private void startHeartbeatThread() {
@@ -449,6 +437,10 @@ public class PSAgent {
         matrixTransClient.stop();
         matrixTransClient = null;
       }
+
+      if(PSAgentContext.get() != null) {
+        PSAgentContext.get().clear();
+      }
     }
   }
 
@@ -505,7 +497,7 @@ public class PSAgent {
    * @return Location master location
    */
   public Location getMasterLocation() {
-    return masterLocation;
+    return locationManager.getMasterLocation();
   }
 
   /**
@@ -654,17 +646,8 @@ public class PSAgent {
    * 
    * @return LocationCache ps location cache
    */
-  public LocationCache getLocationCache() {
-    return locationCache;
-  }
-
-  /**
-   * Get matrix partition router manager
-   * 
-   * @return MatrixPartitionRouter matrix partition router manager
-   */
-  public MatrixPartitionRouter getMatrixPartitionRouter() {
-    return matrixPartitionRouter;
+  public PSAgentLocationManager getLocationManager() {
+    return locationManager;
   }
 
   /**
@@ -672,7 +655,7 @@ public class PSAgent {
    * 
    * @return MatrixMetaManager matrix meta manager
    */
-  public MatrixMetaManager getMatrixMetaManager() {
+  public PSAgentMatrixMetaManager getMatrixMetaManager() {
     return matrixMetaManager;
   }
 
@@ -797,27 +780,134 @@ public class PSAgent {
    * @param matrixContext matrix configuration
    * @param timeOutMs maximun wait time in milliseconds
    * @return MatrixMeta matrix meta
-   * @throws ServiceException exception come from master
-   * @throws TimeOutException create matrix time out
-   * @throws InterruptedException interrupted when wait
-   * @throws IOException read matrix meta from hdfs failed
+   * @throws AngelException exception come from master
    */
-  public MatrixMeta createMatrix(MatrixContext matrixContext, long timeOutMs)
-      throws ServiceException, TimeOutException, InterruptedException, IOException {
-    MatrixMeta matrix =
-        PSAgentContext.get().getMasterClient().createMatrix(matrixContext, timeOutMs);
-    return matrix;
+  public void createMatrix(MatrixContext matrixContext, long timeOutMs)
+      throws AngelException {
+    try {
+      PSAgentContext.get().getMasterClient().createMatrix(matrixContext, timeOutMs);
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+  }
+
+  /**
+   * Get Matrix meta
+   * @param matrixName matrix name
+   * @return
+   */
+  public MatrixMeta getMatrix(String matrixName) {
+    try {
+      return masterClient.getMatrix(matrixName);
+    } catch (Throwable e) {
+      throw new AngelException(e);
+    }
+  }
+
+  private void removeLocalMatrix(String matrixName) {
+    int matrixId = matrixMetaManager.getMatrixId(matrixName);
+    matrixMetaManager.removeMatrix(matrixId);
+    removeCacheData(matrixId);
+  }
+
+  private void removeCacheData(int matrixId){
+    matricesCache.remove(matrixId);
+    matrixStorageManager.removeMatrix(matrixId);
+    opLogCache.remove(matrixId);
+  }
+
+  /**
+   * Release a batch of matrices
+   *
+   * @param matrixNames matrix names
+   * @throws AngelException exception come from master
+   */
+  public void releaseMatricesUseName(List<String> matrixNames) throws AngelException {
+    int size = matrixNames.size();
+    for(int i = 0; i < size; i++) {
+      removeLocalMatrix(matrixNames.get(i));
+    }
+
+    try {
+      masterClient.releaseMatrices(matrixNames);
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
   }
 
   /**
    * Release a matrix
    * 
-   * @param matrix matrix meta
-   * @throws ServiceException exception come from master
-   * @throws InterruptedException interrupted when wait
+   * @param matrixName matrix name
+   * @throws AngelException exception come from master
    */
-  public void releaseMatrix(MatrixMeta matrix) throws ServiceException, InterruptedException {
-    PSAgentContext.get().getMasterClient().releaseMatrix(matrix);
+  public void releaseMatrix(String matrixName) throws AngelException {
+    try {
+      removeLocalMatrix(matrixName);
+      masterClient.releaseMatrix(matrixName);
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+  }
+
+  /**
+   * Release a batch of matrices
+   *
+   * @param matrixIds matrix ids
+   * @throws AngelException exception come from master
+   */
+  public void releaseMatrices(List<Integer> matrixIds) throws AngelException {
+    int size = matrixIds.size();
+    List<String> matrixNames = new ArrayList<>(size);
+    for(int i = 0; i < size; i++) {
+      MatrixMeta meta = matrixMetaManager.getMatrixMeta(matrixIds.get(i));
+      if(meta == null) {
+        continue;
+      }
+      matrixNames.add(meta.getName());
+    }
+
+    releaseMatricesUseName(matrixNames);
+  }
+
+  /**
+   * Release a matrix
+   *
+   * @param matrixId matrix id
+   * @throws AngelException exception come from master
+   */
+  public void releaseMatrix(int matrixId) throws AngelException {
+    MatrixMeta meta = matrixMetaManager.getMatrixMeta(matrixId);
+    if(meta == null) {
+      return;
+    }
+
+    releaseMatrix(meta.getName());
+  }
+
+  /**
+   * Create a batch of matrices
+   *
+   * @param matrixContexts matrices configuration
+   * @param timeOutMs maximun wait time in milliseconds
+   * @return MatrixMeta matrix meta
+   * @throws AngelException exception come from master
+   */
+  public void createMatrices(List<MatrixContext> matrixContexts, long timeOutMs)
+    throws AngelException {
+    try {
+      masterClient.createMatrices(matrixContexts, timeOutMs);
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+  }
+
+  public List<MatrixMeta> getMatrices(List<String> matrixNames) {
+    try {
+      return masterClient.getMatrices(matrixNames);
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
   }
 
   /**
@@ -825,12 +915,15 @@ public class PSAgent {
    * 
    * @param matrixName matrix name
    * @param taskIndex task index
-   * @throws InvalidParameterException matrix does not exist
-   * @return MatrixClient matrix client
+   * @throws AngelException matrix does not exist
    */
   public MatrixClient getMatrixClient(String matrixName, int taskIndex)
-      throws InvalidParameterException {
-    return MatrixClientFactory.get(matrixName, taskIndex);
+      throws AngelException {
+    try {
+      return MatrixClientFactory.get(matrixName, taskIndex);
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
   }
 
   /**

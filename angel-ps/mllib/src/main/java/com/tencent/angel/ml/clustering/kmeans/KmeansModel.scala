@@ -25,7 +25,7 @@ import com.tencent.angel.ml.math.TVector
 import com.tencent.angel.ml.math.vector.TIntDoubleVector
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
-import com.tencent.angel.protobuf.generated.MLProtos.RowType
+import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration

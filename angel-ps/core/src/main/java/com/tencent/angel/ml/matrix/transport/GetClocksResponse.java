@@ -86,7 +86,7 @@ public class GetClocksResponse extends Response {
     super.deserialize(buf);
     if (buf.readableBytes() != 0) {
       int size = buf.readInt();
-      clocks = new HashMap<PartitionKey, Integer>(size);
+      clocks = new HashMap<>(size);
       for (int i = 0; i < size; i++) {
         PartitionKey partKey = new PartitionKey();
         partKey.deserialize(buf);
@@ -97,6 +97,6 @@ public class GetClocksResponse extends Response {
 
   @Override
   public int bufferLen() {
-    return 4;
+    return super.bufferLen() + 4 + clocks.size() * 28;
   }
 }

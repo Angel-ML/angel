@@ -17,7 +17,7 @@
 
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
-import com.tencent.angel.protobuf.generated.MLProtos;
+import com.tencent.angel.ml.matrix.RowType;
 import io.netty.buffer.ByteBuf;
 
 public class LongKeySparseDoubleRowUpdateSplit extends RowUpdateSplit{
@@ -35,7 +35,7 @@ public class LongKeySparseDoubleRowUpdateSplit extends RowUpdateSplit{
    * @param start    split start position
    * @param end      split end position
    */
-  public LongKeySparseDoubleRowUpdateSplit(int rowIndex, MLProtos.RowType rowType, int start,
+  public LongKeySparseDoubleRowUpdateSplit(int rowIndex, RowType rowType, int start,
     int end, long[] offsets, double[] values) {
     super(rowIndex, rowType, start, end);
     this.offsets = offsets;

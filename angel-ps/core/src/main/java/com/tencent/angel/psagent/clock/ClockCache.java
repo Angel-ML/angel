@@ -18,6 +18,8 @@ package com.tencent.angel.psagent.clock;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.ml.matrix.transport.GetClocksResponse;
+import com.tencent.angel.ml.matrix.transport.ResponseType;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.transport.MatrixTransportInterface;
@@ -25,6 +27,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -83,19 +86,27 @@ public class ClockCache {
   }
 
   /**
+   * Remove partition clock cache for a matrix
+   * @param matrixId
+   */
+  public void removeMatrix(int matrixId) {
+    matrixClockCacheMap.remove(matrixId);
+  }
+
+  /**
    * Clocks sync thread. The clocks are stored on ps, it synchronizes the clocks to the local at
    * regular intervals.
    */
   class Syncer extends Thread {
     private final MatrixTransportInterface matrixClient = PSAgentContext.get().getMatrixTransportClient();
-    private final ParameterServerId[] serverIds = PSAgentContext.get().getLocationCache().getPSIds();
+    private final ParameterServerId[] serverIds = PSAgentContext.get().getLocationManager().getPsIds();
     private final ClockCache cache = PSAgentContext.get().getClockCache();
 
     @SuppressWarnings("unchecked")
     @Override
     public void run() {
       @SuppressWarnings("rawtypes")
-      List<Future> getResults = new ArrayList<Future>(serverIds.length);
+      Map<ParameterServerId, Future> psIdToResultMap = new HashMap<>(serverIds.length);
       long startTsMs = 0;
       long useTimeMs = 0;
       int syncNum = 0;
@@ -104,7 +115,7 @@ public class ClockCache {
         // Send request to every ps
         for (int i = 0; i < serverIds.length; i++) {
           try {
-            getResults.add(matrixClient.getClocks(serverIds[i]));
+            psIdToResultMap.put(serverIds[i], matrixClient.getClocks(serverIds[i]));
           } catch (Exception e) {
             LOG.error("get clocks failed from server " + serverIds[i] + " failed, ", e);
           }
@@ -112,26 +123,30 @@ public class ClockCache {
 
         // Wait the responses
         try {
-          for (int i = 0; i < serverIds.length; i++) {
-            Map<PartitionKey, Integer> clocks = (Map<PartitionKey, Integer>) getResults.get(i).get();
-            if (clocks == null || clocks.isEmpty()) {
-              continue;
-            }
-            
-            for(Entry<PartitionKey, Integer> entry:clocks.entrySet()) {
-              // Update clock cache
-              cache.update(entry.getKey().getMatrixId(), entry.getKey(), entry.getValue());
-            }
+          for(Entry<ParameterServerId, Future> resultEntry : psIdToResultMap.entrySet()) {
+            GetClocksResponse response = (GetClocksResponse) resultEntry.getValue().get();
+            if(response.getResponseType() == ResponseType.SUCCESS) {
+              Map<PartitionKey, Integer> clocks = response.getClocks();
+              for(Entry<PartitionKey, Integer> entry:clocks.entrySet()) {
+                // Update clock cache
+                cache.update(entry.getKey().getMatrixId(), entry.getKey(), entry.getValue());
+              }
 
-            if(LOG.isDebugEnabled()) {
-              if(syncNum % 1024 == 0) {
+              if(LOG.isDebugEnabled()) {
+                //if(syncNum % 1024 == 0) {
                 for(Entry<PartitionKey, Integer> entry:clocks.entrySet()) {
                   LOG.debug("partition " + entry.getKey() + " update clock to " + entry.getValue());
                 }
+                //}
               }
+            } else {
+              LOG.error("Get clock from ps " + resultEntry.getKey()
+                + ", failed. Detail log is " + response.getResponseType()
+                + ":" + response.getDetail());
+              PSAgentContext.get().getLocationManager().getPsLocation(resultEntry.getKey(), true);
             }
           }
-          getResults.clear();
+          psIdToResultMap.clear();
 
           useTimeMs = System.currentTimeMillis() - startTsMs;
           if (useTimeMs < syncTimeIntervalMS) {
@@ -174,7 +189,9 @@ public class ClockCache {
       matrixClockCacheMap.putIfAbsent(matrixId, new MatrixClockCache(matrixId));
       matrixClockCache = matrixClockCacheMap.get(matrixId);
     }
-    matrixClockCache.update(partKey, clock);
+    if(matrixClockCache.getClock(partKey) < clock) {
+      matrixClockCache.update(partKey, clock);
+    }
   }
 
   /**

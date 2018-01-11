@@ -81,6 +81,11 @@ class LDATest {
   }
 
   @Test
+  def testTrainAndPredict(): Unit = {
+    train()
+    inference()
+  }
+
   def train(): Unit = {
 
     conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/out")
@@ -106,8 +111,6 @@ class LDATest {
     client.stop()
   }
 
-
-  @Test
   def inference(): Unit = {
     conf.set(AngelConf.ANGEL_ACTION_TYPE, "predict")
 

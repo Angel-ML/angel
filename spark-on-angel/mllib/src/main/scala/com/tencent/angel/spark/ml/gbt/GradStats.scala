@@ -54,14 +54,14 @@ class GradStats(
   }
 
   def calcWeight(param: GBTreeParam): Double = {
-    if (sumHess < param.minChildWeight) return 0.0f
+    if (sumHess <= param.minChildWeight) return 0.0f
     var dw: Double = 0.0
     if (param.regAlpha == 0.0f) {
       dw = -sumGrad / (sumHess + param.regLambda)
     } else {
       dw = -1 * shrinkage(sumGrad, param.regAlpha) / (sumHess + param.regLambda)
     }
-    if (param.maxDeltaStep != 0.0f) {
+    if (param.maxDeltaStep > 0.0f) {
       if (dw > param.maxDeltaStep) dw = param.maxDeltaStep
       if (dw < -param.maxDeltaStep) dw = -param.maxDeltaStep
     }
@@ -70,7 +70,7 @@ class GradStats(
 
 
   def calcLoss(param: GBTreeParam): Double = {
-    if (sumHess < param.minChildWeight) return 0.0
+    if (sumHess <= param.minChildWeight) return 0.0
 
     var loss = 0.0
     if (param.maxDeltaStep == 0.0f) {
@@ -91,8 +91,6 @@ class GradStats(
     }
     loss
   }
-
-
 
   /**
    * The corresponding proximal operator for the L1 norm is the soft-threshold

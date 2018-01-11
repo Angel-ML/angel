@@ -23,7 +23,8 @@ import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.master.DummyTask;
 import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.protobuf.generated.MLProtos;
+import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.model.output.format.ModelPartitionMeta;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.worker.WorkerAttemptId;
@@ -59,7 +60,7 @@ public class ServerPartitionTest {
   private int startCol;
   private int endRow;
   private int endCol;
-  private MLProtos.RowType rowType;
+  private RowType rowType;
   private PartitionKey partitionKey;
   private ServerPartition serverPartition;
   private static final String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
@@ -86,9 +87,10 @@ public class ServerPartitionTest {
     startCol = 2;
     endRow = 8;
     endCol = 10;
-    rowType = MLProtos.RowType.T_DOUBLE_DENSE;
+    rowType = RowType.T_DOUBLE_DENSE;
     partitionKey = new PartitionKey(partitionId, matrixId, startRow, startCol, endRow, endCol);
     serverPartition = new ServerPartition(partitionKey, rowType);
+    serverPartition.init();
   }
 
   @After
@@ -154,7 +156,7 @@ public class ServerPartitionTest {
     mMatrix.setColNum(100000);
     mMatrix.setMaxRowNumInBlock(1);
     mMatrix.setMaxColNumInBlock(50000);
-    mMatrix.setRowType(MLProtos.RowType.T_INT_DENSE);
+    mMatrix.setRowType(RowType.T_INT_DENSE);
     mMatrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
     mMatrix.set(MatrixConf.MATRIX_HOGWILD, "true");
     mMatrix.set(MatrixConf.MATRIX_AVERAGE, "false");
@@ -173,7 +175,6 @@ public class ServerPartitionTest {
     psId = new ParameterServerId(0);
     psAttempt0Id = new PSAttemptId(psId, 0);
 
-    serverPartition.clock(3, 10);
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
     ByteBuf buf = Unpooled.buffer(16);
     buf.writeDouble(0.00);
@@ -184,34 +185,35 @@ public class ServerPartitionTest {
     buf.writeDouble(-6.00);
     buf.writeDouble(-7.00);
     buf.writeDouble(-8.00);
-    serverPartition.getRow(6).update(MLProtos.RowType.T_DOUBLE_DENSE, buf, 8);
-    serverPartition.writeSnapshot(out);
+    serverPartition.getRow(6).update(RowType.T_DOUBLE_DENSE, buf, 8);
+    serverPartition.save(out);
     out.close();
     DataInputStream in = new DataInputStream(new FileInputStream("data"));
     PartitionKey partitionKeyNew = new PartitionKey(2, 1, 1, 2, 8, 10);
     ServerPartition serverPartitionNew =
-        new ServerPartition(partitionKeyNew, MLProtos.RowType.T_DOUBLE_DENSE);
+        new ServerPartition(partitionKeyNew, RowType.T_DOUBLE_DENSE);
+    serverPartitionNew.init();
     assertNotEquals(((ServerDenseDoubleRow) serverPartition.getRow(6)).getData(),
         ((ServerDenseDoubleRow) serverPartitionNew.getRow(6)).getData());
-    serverPartitionNew.readSnapshot(in);
+    serverPartitionNew.load(in);
     in.close();
     assertEquals(((ServerDenseDoubleRow) serverPartition.getRow(6)).getData(),
         ((ServerDenseDoubleRow) serverPartitionNew.getRow(6)).getData());
     angelClient.stop();
   }
 
-  @Test
+  /*@Test
   public void testReset() throws Exception {
     ServerDenseDoubleRow serverDenseDoubleRowNew = (ServerDenseDoubleRow) serverPartition.getRow(6);
     assertEquals(serverDenseDoubleRowNew, serverPartition.getRow(6));
     serverPartition.reset();
     assertNotEquals(serverDenseDoubleRowNew, serverPartition.getRow(6));
-  }
+  }*/
 
   @Test
   public void testCommit() throws Exception {
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
-    serverPartition.commit(out);
+    serverPartition.save(out, new ModelPartitionMeta());
     out.close();
     DataInputStream in = new DataInputStream(new FileInputStream("data"));
     assertEquals(partitionKey.getEndRow() - partitionKey.getStartRow(), in.readInt());
@@ -230,7 +232,6 @@ public class ServerPartitionTest {
     assertEquals(partitionKey.getEndCol(), buf.readLong());
 
     assertEquals(rowType.getNumber(), buf.readInt());
-    assertEquals(serverPartition.getClock(), buf.readInt());
     assertEquals(partitionKey.getEndRow() - partitionKey.getStartRow(), buf.readInt());
   }
 
@@ -240,12 +241,12 @@ public class ServerPartitionTest {
     serverPartition.serialize(buf);
     PartitionKey partitionKeyNew = new PartitionKey(2, 1, 1, 2, 8, 10);
     ServerPartition serverPartitionNew =
-        new ServerPartition(partitionKeyNew, MLProtos.RowType.T_DOUBLE_DENSE);
-    assertNotEquals(serverPartition.partitionKey.getPartitionId(),
-        serverPartitionNew.partitionKey.getPartitionId());
+        new ServerPartition(partitionKeyNew, RowType.T_DOUBLE_DENSE);
+    assertNotEquals(serverPartition.getPartitionKey().getPartitionId(),
+        serverPartitionNew.getPartitionKey().getPartitionId());
     serverPartitionNew.deserialize(buf);
-    assertEquals(serverPartition.partitionKey.getPartitionId(),
-        serverPartitionNew.partitionKey.getPartitionId());
+    assertEquals(serverPartition.getPartitionKey().getPartitionId(),
+        serverPartitionNew.getPartitionKey().getPartitionId());
   }
 
   @Test

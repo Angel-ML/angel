@@ -16,6 +16,7 @@
 
 package com.tencent.angel.ps.impl.matrix;
 
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -61,7 +62,7 @@ public class ServerDenseDoubleRowTest {
 
   @Test
   public void testGetRowType() throws Exception {
-    assertEquals(serverDenseDoubleRow.getRowType(), MLProtos.RowType.T_DOUBLE_DENSE);
+    assertEquals(serverDenseDoubleRow.getRowType(), RowType.T_DOUBLE_DENSE);
   }
 
   @Test
@@ -79,7 +80,7 @@ public class ServerDenseDoubleRowTest {
 
     double newValue0 = buf.getDouble(0) + serverDenseDoubleRow.getData().get(0);
     double newValue1 = buf.getDouble(8) + serverDenseDoubleRow.getData().get(1);
-    serverDenseDoubleRow.update(MLProtos.RowType.T_DOUBLE_DENSE, buf, 3);
+    serverDenseDoubleRow.update(RowType.T_DOUBLE_DENSE, buf, 3);
     assertEquals(serverDenseDoubleRow.getData().get(0), newValue0, 0.000);
     assertEquals(serverDenseDoubleRow.getData().get(1), newValue1, 0.000);
     assertEquals(serverDenseDoubleRow.getData().get(2), -1, 0.000);
@@ -91,7 +92,7 @@ public class ServerDenseDoubleRowTest {
     buf.writeDouble(1.00);
     buf.writeInt(2);
     buf.writeDouble(-2.00);
-    serverDenseDoubleRow.update(MLProtos.RowType.T_DOUBLE_SPARSE, buf, 2);
+    serverDenseDoubleRow.update(RowType.T_DOUBLE_SPARSE, buf, 2);
     assertEquals(serverDenseDoubleRow.getData().get(0), 1, 0.000);
     assertEquals(serverDenseDoubleRow.getData().get(1), 0, 0.000);
     assertEquals(serverDenseDoubleRow.getData().get(2), -2, 0.000);
@@ -105,7 +106,7 @@ public class ServerDenseDoubleRowTest {
     buf.writeDouble(0.00);
     buf.writeDouble(1.00);
     buf.writeDouble(2.00);
-    serverDenseDoubleRow.update(MLProtos.RowType.T_DOUBLE_DENSE, buf, 3);
+    serverDenseDoubleRow.update(RowType.T_DOUBLE_DENSE, buf, 3);
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
     serverDenseDoubleRow.writeTo(out);
     out.close();
@@ -122,7 +123,7 @@ public class ServerDenseDoubleRowTest {
     buf.writeDouble(10.00);
     buf.writeDouble(11.00);
     buf.writeDouble(12.00);
-    serverDenseDoubleRow.update(MLProtos.RowType.T_DOUBLE_DENSE, buf, 3);
+    serverDenseDoubleRow.update(RowType.T_DOUBLE_DENSE, buf, 3);
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
     serverDenseDoubleRow.writeTo(out);
     out.close();
@@ -186,7 +187,7 @@ public class ServerDenseDoubleRowTest {
     buf.writeDouble(10.00);
     buf.writeDouble(11.00);
     buf.writeDouble(12.00);
-    serverDenseDoubleRow.update(MLProtos.RowType.T_DOUBLE_DENSE, buf, 3);
+    serverDenseDoubleRow.update(RowType.T_DOUBLE_DENSE, buf, 3);
     double[] dataArray = {0, 1, 2, 3, 4};
     serverDenseDoubleRow.mergeTo(dataArray);
     assertEquals(dataArray[0], 10, 0.00);

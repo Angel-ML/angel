@@ -29,7 +29,6 @@ import com.tencent.angel.worker.task.BaseTask;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
 
-import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Properties;
 
@@ -222,6 +221,12 @@ public class AngelConf extends Configuration {
   /** Local worker directory */
   public static final String LOCAL_DIR = "angel.cluster.local.dir";
 
+  public static final String ANGEL_CLIENT_HEARTBEAT_INTERVAL_MS = "angel.client.heartbeat.interval.ms";
+  public static final int DEFAULT_ANGEL_CLIENT_HEARTBEAT_INTERVAL_MS = 5000;
+
+  public static final String ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS = "angel.client.heartbeat.interval.timeout.ms";
+  public static final int DEFAULT_ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS = 30000;
+
   // //////////////////////////////
   // Master Configs
   // //////////////////////////////
@@ -294,14 +299,6 @@ public class AngelConf extends Configuration {
   public static final String ANGEL_AM_WRITE_STATE_INTERVAL_MS = ANGEL_AM_PREFIX
       + "write.state.interval.ms";
   public static final int DEFAULT_ANGEL_AM_WRITE_STATE_INTERVAL_MS = 10000;
-
-  /** The number of worker threads for committing matrices in AppMaster. */
-  public static final String ANGEL_AM_COMMIT_TASK_NUM = ANGEL_AM_PREFIX + "commit.task.num";
-  public static final int DEFAULT_ANGEL_AM_COMMIT_TASK_NUM = 16;
-
-  /** The longest allowed time for AppMaster committing matrices. */
-  public static final String ANGEL_AM_COMMIT_TIMEOUT_MS = ANGEL_AM_PREFIX + "commit.timeout.ms";
-  public static final int DEFAULT_ANGEL_AM_COMMIT_TIMEOUT_MS = 60000;
 
   /** Slow ps/worker check polices */
   public static final String ANGEL_AM_SLOW_CHECK_POLICES = ANGEL_AM_PREFIX + "slow.check.polices";
@@ -489,6 +486,19 @@ public class AngelConf extends Configuration {
   public static final String ANGEL_PS_NUMBER = ANGEL_PS_PREFIX + "number";
   public static final int DEFAULT_ANGEL_PS_NUMBER = 1;
 
+  /** The number of ps. */
+  public static final String ANGEL_PS_HA_REPLICATION_NUMBER = ANGEL_PS_PREFIX + "ha.replication.number";
+  public static final int DEFAULT_ANGEL_PS_HA_REPLICATION_NUMBER = 1;
+
+  public static final String ANGEL_PS_HA_USE_EVENT_PUSH = ANGEL_PS_PREFIX + "ha.use.event.push";
+  public static final boolean DEFAULT_ANGEL_PS_HA_USE_EVENT_PUSH = false;
+
+  public static final String ANGEL_PS_HA_PUSH_SYNC = ANGEL_PS_PREFIX + "ha.push.sync";
+  public static final boolean DEFAULT_ANGEL_PS_HA_PUSH_SYNC = true;
+
+  public static final String ANGEL_PS_HA_PUSH_INTERVAL_MS = ANGEL_PS_PREFIX + "push.interval.ms";
+  public static final int DEFAULT_ANGEL_PS_HA_PUSH_INTERVAL_MS = 30000;
+
   /** The CPU vcore quota for a single ps. */
   public static final String ANGEL_PS_CPU_VCORES = ANGEL_PS_PREFIX + "cpu.vcores";
   public static final int DEFAULT_ANGEL_PS_CPU_VCORES = 1;
@@ -505,7 +515,10 @@ public class AngelConf extends Configuration {
 
   /** The time interval in milliseconds of a ps writing the snapshot for matrices to hdfs. */
   public static final String ANGEL_PS_BACKUP_INTERVAL_MS = ANGEL_PS_PREFIX + "backup.interval.ms";
-  public static final int DEFAULT_ANGEL_PS_BACKUP_INTERVAL_MS = 600000;
+  public static final int DEFAULT_ANGEL_PS_BACKUP_INTERVAL_MS = 300000;
+
+  /** The matrices that need to backup in SnapshotDumper */
+  public static final String ANGEL_PS_BACKUP_MATRICES = ANGEL_PS_PREFIX + "backup.matrices";
 
   /** The maximum number of times a ps can retry when run failed. */
   public static final String ANGEL_PS_MAX_ATTEMPTS = ANGEL_PS_PREFIX + "max-attempts";
@@ -530,6 +543,14 @@ public class AngelConf extends Configuration {
   public static final String ANGEL_PS_HEARTBEAT_INTERVAL_MS = ANGEL_PS_PREFIX
       + "heartbeat.interval.ms";
   public static final int DEFAULT_ANGEL_PS_HEARTBEAT_INTERVAL_MS = 5000;
+
+  /** PS HA update sync worker number */
+  public static final String ANGEL_PS_HA_SYNC_WORKER_NUM = ANGEL_PS_PREFIX + "ha.sync.worker.number";
+  public static final int DEFAULT_ANGEL_PS_HA_SYNC_WORKER_NUM = Math.max(8, (int)(Runtime.getRuntime().availableProcessors() * 0.25));
+
+  /** PS HA update sync worker send buffer size*/
+  public static final String ANGEL_PS_HA_SYNC_SEND_BUFFER_SIZE = ANGEL_PS_PREFIX + "ha.sync.send.buffer.size";
+  public static final int DEFAULT_ANGEL_PS_HA_SYNC_SEND_BUFFER_SIZE = 1024 * 1024;
 
   /**
    * Ps resource priority, it use to YARN container allocation. The smaller the priority, the higher
@@ -612,6 +633,12 @@ public class AngelConf extends Configuration {
   public static final String ANGEL_NETTY_MATRIXTRANSFER_SERVER_EVENTGROUP_THREADNUM =
       "angel.netty.matrixtransfer.server.eventgroup.threadnum";
   public static final int DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_EVENTGROUP_THREADNUM = Runtime.getRuntime().availableProcessors() * 2;
+
+
+  /** The eventgroup thread number for netty server for serving transfer. */
+  public static final String ANGEL_NETTY_SERVING_TRANSFER_SERVER_EVENTGROUP_THREADNUM =
+      "angel.netty.serving.transfer.server.eventgroup.threadnum";
+  public static final int DEFAULT_ANGEL_NETTY_SERVING_TRANSFER_SERVER_EVENTGROUP_THREADNUM = Runtime.getRuntime().availableProcessors() * 2;
 
   /** The send buffer size for netty server for matrix transfer. */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_SERVER_SNDBUF =
@@ -702,7 +729,7 @@ public class AngelConf extends Configuration {
    */
   public static final String ANGEL_MATRIXTRANSFER_REQUEST_TIMEOUT_MS = ANGEL_PREFIX
       + "matrixtransfer.request.timeout.ms";
-  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_REQUEST_TIMEOUT_MS = 30000;
+  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_REQUEST_TIMEOUT_MS = 10000;
 
   /**
    * The time interval in milliseconds of clock events. We will check timeout requests and retry
@@ -800,6 +827,8 @@ public class AngelConf extends Configuration {
   public static final String PYANGEL_PYFILE = "angel.pyangel.pyfile";
   
   public static final String PYANGEL_PYDEPFILES = "angel.pyangel.pyfile.dependencies";
+
+  public static final String ANGEL_PLUGIN_SERVICE_ENABLE =  "angel.plugin.service.enable";
   
   /**
    * Default value of {@link #ML_CLIENT_RPC_MAXATTEMPTS}.

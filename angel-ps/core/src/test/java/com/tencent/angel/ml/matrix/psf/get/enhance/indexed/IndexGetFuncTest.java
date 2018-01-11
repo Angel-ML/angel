@@ -1,3 +1,19 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.tencent.angel.ml.matrix.psf.get.enhance.indexed;
 
 import com.google.protobuf.ServiceException;
@@ -10,6 +26,7 @@ import com.tencent.angel.localcluster.LocalClusterContext;
 import com.tencent.angel.ml.math.vector.DenseDoubleVector;
 import com.tencent.angel.ml.math.vector.SparseDoubleVector;
 import com.tencent.angel.ml.matrix.MatrixContext;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.ps.PSAttemptId;
@@ -85,7 +102,7 @@ public class IndexGetFuncTest {
     dMat.setRowNum(1);
     dMat.setColNum(feaNum);
     dMat.setMaxColNumInBlock(feaNum / 3);
-    dMat.setRowType(MLProtos.RowType.T_DOUBLE_DENSE);
+    dMat.setRowType(RowType.T_DOUBLE_DENSE);
     angelClient.addMatrix(dMat);
 
     // add sparse double matrix
@@ -94,7 +111,7 @@ public class IndexGetFuncTest {
     sMat.setRowNum(1);
     sMat.setColNum(feaNum);
     sMat.setMaxColNumInBlock(feaNum / 3);
-    sMat.setRowType(MLProtos.RowType.T_DOUBLE_DENSE);
+    sMat.setRowType(RowType.T_DOUBLE_DENSE);
     angelClient.addMatrix(sMat);
 
     // add sparse double long key matrix
@@ -103,7 +120,7 @@ public class IndexGetFuncTest {
     lMat.setRowNum(1);
     lMat.setColNum(feaNum);
     lMat.setMaxColNumInBlock(feaNum / 3);
-    lMat.setRowType(MLProtos.RowType.T_DOUBLE_DENSE);
+    lMat.setRowType(RowType.T_DOUBLE_DENSE);
     angelClient.addMatrix(lMat);
 
     // Start PS

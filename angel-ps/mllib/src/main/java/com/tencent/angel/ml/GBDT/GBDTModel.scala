@@ -22,10 +22,10 @@ import com.tencent.angel.ml.GBDT.GBDTModel._
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.{TIntDoubleVector, TIntVector}
+import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.ml.utils.Maths
-import com.tencent.angel.protobuf.generated.MLProtos.RowType
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
@@ -152,13 +152,14 @@ class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
     .setNeedSave(false)
   addPSModel(FEAT_CATEGORY_MAT, featCategory)
 
-
-
   super.setSavePath(conf)
   super.setLoadPath(conf)
 
   override def predict(dataSet: DataBlock[LabeledData]): DataBlock[PredictResult] = {
+
     val predict = new MemoryDataBlock[PredictResult](-1)
+
+
 
     val splitFeatVecs: Array[TIntVector] = new Array[TIntVector](this.maxTreeNum)
     val splitValueVecs: Array[TIntDoubleVector] = new Array[TIntDoubleVector](this.maxTreeNum)
@@ -219,6 +220,7 @@ class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
         if (y * pred >= 0) negTrue += 1
       }
     }
+
     LOG.info(s"Positive accuracy: ${posTrue.toDouble/posNum.toDouble}, " +
       s"negative accuracy: ${negTrue.toDouble/negNum.toDouble}")
     predict

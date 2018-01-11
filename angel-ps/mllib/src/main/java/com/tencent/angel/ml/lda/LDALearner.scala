@@ -53,8 +53,8 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
 
   val LOG = LogFactory.getLog(classOf[LDALearner])
 
-  val pkeys = PSAgentContext.get().getMatrixPartitionRouter.
-    getPartitionKeyList(model.wtMat.getMatrixId())
+  val pkeys = PSAgentContext.get().getMatrixMetaManager.
+    getPartitions(model.wtMat.getMatrixId())
 
   val reqRows = new util.HashMap[Int, util.List[Integer]]()
 
@@ -132,7 +132,7 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
 
       // submit to client
       globalMetrics.metric(LOG_LIKELIHOOD, ll)
-      ctx.incEpoch()
+//      ctx.incEpoch()
 
       if (epoch % 4 == 0) reset(epoch)
     }
@@ -454,7 +454,7 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
 
     val fs  = dest.getFileSystem(conf)
     val tmp = HdfsUtil.toTmpPath(dest)
-    val out = new BufferedOutputStream(fs.create(tmp, 1.toShort))
+    val out = new BufferedOutputStream(fs.create(tmp))
 
 
     val num = model.V / ctx.getTotalTaskNum + 1
@@ -490,7 +490,7 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
     val dest = new Path(base, part.toString)
     val fs   = dest.getFileSystem(conf)
     val tmp  = HdfsUtil.toTmpPath(dest)
-    val out  = new BufferedOutputStream(fs.create(tmp, 1.toShort))
+    val out  = new BufferedOutputStream(fs.create(tmp))
 
     for (d <- 0 until data.dks.size) {
       val sb = new StringBuilder

@@ -16,17 +16,20 @@
 
 package com.tencent.angel.ml.math.vector;
 
+import com.tencent.angel.common.Serialize;
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.protobuf.generated.MLProtos;
+import com.tencent.angel.ml.matrix.RowType;
+import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import java.util.stream.IntStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public class DenseFloatVector extends TFloatVector {
+public class DenseFloatVector extends TFloatVector implements Serialize{
 
   private final static Log LOG = LogFactory.getLog(DenseFloatVector.class);
 
@@ -216,8 +219,8 @@ public class DenseFloatVector extends TFloatVector {
     return values;
   }
 
-  @Override public MLProtos.RowType getType() {
-    return MLProtos.RowType.T_FLOAT_DENSE;
+  @Override public RowType getType() {
+    return RowType.T_FLOAT_DENSE;
   }
 
   @Override public int[] getIndices() {
@@ -542,5 +545,27 @@ public class DenseFloatVector extends TFloatVector {
     for (int i = 0; i < dim; i++)
       square += values[i] * values[i];
     return square;
+  }
+
+  @Override
+  public void serialize(ByteBuf buf) {
+    buf.writeInt(dim);
+    buf.writeInt(values.length);
+    IntStream.range(0,values.length).forEach(i->buf.writeFloat(values[i]));
+  }
+
+  @Override
+  public void deserialize(ByteBuf buf) {
+    int dim = buf.readInt();
+    int length = buf.readInt();
+    float[] data = new float[length];
+    IntStream.range(0,length).forEach(i->data[i] = buf.readFloat());
+    this.dim = dim;
+    this.values = data;
+  }
+
+  @Override
+  public int bufferLen() {
+    return 4 + 4 * values.length;
   }
 }

@@ -17,6 +17,7 @@
 
 package com.tencent.angel.ml.matrix.psf.get.enhance.indexed;
 
+import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import io.netty.buffer.ByteBuf;
 
@@ -24,33 +25,29 @@ import io.netty.buffer.ByteBuf;
  * Specified index get func result
  */
 public class IndexGetResult extends PartitionGetResult {
-  public int pid;
+  public PartitionKey partKey;
   public double[] values;
 
   /**
-   * @param pid param id
+   * @param partKey param id
    * @param values values of specified index array of one partition
    */
-  public IndexGetResult(int pid, double[] values) {
-    this.pid = pid;
+  public IndexGetResult(PartitionKey partKey, double[] values) {
+    this.partKey = partKey;
     this.values = values;
   }
 
   public IndexGetResult() {
-    this(-1, null);
+    this(null, null);
   }
 
   public double[] getValues() {
     return values;
   }
 
-  public int getParamId() {
-    return pid;
-  }
-
   @Override
   public void serialize(ByteBuf buf) {
-    buf.writeInt(pid);
+    partKey.serialize(buf);
     buf.writeInt(values.length);
     for (int i = 0; i < values.length; i++)
       buf.writeDouble(values[i]);
@@ -58,7 +55,8 @@ public class IndexGetResult extends PartitionGetResult {
 
   @Override
   public void deserialize(ByteBuf buf) {
-    this.pid = buf.readInt();
+    partKey = new PartitionKey();
+    partKey.deserialize(buf);
     int len = buf.readInt();
     values = new double[len];
     for (int i = 0; i < len; i++) {
@@ -68,6 +66,10 @@ public class IndexGetResult extends PartitionGetResult {
 
   @Override
   public int bufferLen() {
-    return 4 + values.length * 8;
+    return partKey.bufferLen() + values.length * 8;
+  }
+
+  public PartitionKey getPartKey() {
+    return partKey;
   }
 }

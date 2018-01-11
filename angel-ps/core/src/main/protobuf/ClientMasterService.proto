@@ -79,14 +79,6 @@ message GetJobReportResponse{
   optional JobReportProto jobReport = 1;
 }
 
-message CreateMatricesRequest{
-  repeated MatrixProto matrices = 1;
-}
-
-message CreateMatricesResponse{
-
-}
-
 message PingRequest {
 
 }
@@ -111,13 +103,6 @@ message SaveResponse {
 
 }
 
-message CheckMatricesCreatedRequest {
-  repeated string matrixNames = 1;
-}
-
-message CheckMatricesCreatedResponse {
-  repeated MatrixStatus status = 1;
-}
 
 message SetParamsRequest {
   repeated Pair kvs = 1;
@@ -143,19 +128,33 @@ message StopResponse{
 
 }
 
+message KeepAliveRequest {
+  required string clientId = 1;
+}
+
+message KeepAliveResponse {
+
+}
+
+message ClientRegisterRequest {
+  required string clientId = 1;
+}
+
+message ClientRegisterResponse {
+
+}
+
 service ClientMasterService {
   rpc start(StartRequest) returns (StartResponse);
+  rpc getAllPSLocation(GetAllPSLocationRequest) returns (GetAllPSLocationResponse);
   rpc save(SaveRequest) returns (SaveResponse);
   rpc stop(StopRequest) returns (StopResponse);
   rpc ping(PingRequest) returns (PingResponse);
   rpc getJobReport(GetJobReportRequest) returns (GetJobReportResponse);
   rpc getWorkerLogDir(GetWorkerLogDirRequest) returns (GetWorkerLogDirResponse);
   rpc createMatrices(CreateMatricesRequest) returns (CreateMatricesResponse);
-  rpc getAllPSLocation(GetAllPSLocationRequest) returns (GetAllPSLocationResponse);
-  rpc getAllPSAgentLocation(GetAllPSAgentLocationRequest) returns (GetAllPSAgentLocationResponse);
-  rpc createMatrix(CreateMatrixRequest) returns (CreateMatrixResponse);
-  rpc getMatrixInfo(GetMatrixInfoRequest) returns (GetMatrixInfoResponse);
-  rpc releaseMatrix(ReleaseMatrixRequest) returns (ReleaseMatrixResponse);
   rpc checkMatricesCreated(CheckMatricesCreatedRequest) returns (CheckMatricesCreatedResponse);
   rpc setParams(SetParamsRequest) returns (SetParamsResponse);
+  rpc keepAlive(KeepAliveRequest) returns (KeepAliveResponse);
+  rpc clientRegister(ClientRegisterRequest) returns (ClientRegisterResponse);
 }

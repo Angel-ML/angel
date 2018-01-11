@@ -33,7 +33,7 @@ import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.task.TrainTask
 import com.tencent.angel.ml.utils.DataParser
 import com.tencent.angel.protobuf.generated.MLProtos
-import com.tencent.angel.protobuf.generated.MLProtos.RowType
+import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ps.impl.matrix.{ServerDenseDoubleRow, ServerRow}
 import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.ml.predict.PredictResult
@@ -151,7 +151,7 @@ class ReduceTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
 
   def manuallyGet(): Unit = {
 
-    val keys = PSAgentContext.get().getMatrixPartitionRouter.getPartitionKeyList(model.model.getMatrixId)
+    val keys = PSAgentContext.get().getMatrixMetaManager.getPartitions(model.model.getMatrixId)
     val client = PSAgentContext.get().getMatrixTransportClient
     val futures = new ArrayBuffer[Future[ServerRow]]
     val splits = new ArrayBuffer[ServerRow]()
@@ -185,7 +185,7 @@ class ReduceTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
   }
 
   def pipelineGet() = {
-    var keys = PSAgentContext.get().getMatrixPartitionRouter.getPartitionKeyList(model.model.getMatrixId)
+    var keys = PSAgentContext.get().getMatrixMetaManager.getPartitions(model.model.getMatrixId)
     val client = PSAgentContext.get().getMatrixTransportClient
     val futures = new ArrayBuffer[Future[ServerRow]]
     val splits = new ArrayBuffer[ServerRow]()
@@ -267,7 +267,7 @@ class ReduceModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
   val part = conf.getInt(ML_PART_PER_SERVER, 1)
 
   val model = PSModel(name, 1, feaNum, 1, feaNum / ps / part).setRowType(RowType.T_DOUBLE_DENSE)
-  val time  = PSModel("time", 2, workerNum).setRowType(MLProtos.RowType.T_INT_DENSE).setOplogType("DENSE_INT")
+  val time  = PSModel("time", 2, workerNum).setRowType(RowType.T_INT_DENSE).setOplogType("DENSE_INT")
 
   addPSModel(name, model)
   addPSModel("time", time)

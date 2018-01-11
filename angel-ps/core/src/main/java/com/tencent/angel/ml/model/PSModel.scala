@@ -19,20 +19,18 @@ package com.tencent.angel.ml.model
 
 import java.util.{ArrayList, List}
 import java.util.concurrent.Future
+
 import scala.collection.mutable.Map
-
 import org.apache.commons.logging.{Log, LogFactory}
-
 import com.tencent.angel.conf.MatrixConf
 import com.tencent.angel.exception.{AngelException, InvalidParameterException}
 import com.tencent.angel.ml.math.TVector
-import com.tencent.angel.ml.matrix.{MatrixContext, MatrixOpLogType}
+import com.tencent.angel.ml.matrix.{MatrixContext, MatrixOpLogType, RowType}
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
-import com.tencent.angel.ml.matrix.psf.get.enhance.indexed.{IndexGetFunc, IndexGetParam}
+import com.tencent.angel.ml.matrix.psf.get.enhance.indexed.{IndexGetFunc, IndexGetParam, LongIndexGetFunc, LongIndexGetParam}
 import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult
 import com.tencent.angel.ml.matrix.psf.update.enhance.{UpdateFunc, VoidResult, ZeroUpdate}
 import com.tencent.angel.ml.matrix.psf.update.enhance.ZeroUpdate.ZeroUpdateParam
-import com.tencent.angel.protobuf.generated.MLProtos
 import com.tencent.angel.psagent.matrix.transport.adapter.{GetRowsResult, RowIndex}
 import com.tencent.angel.worker.task.TaskContext
 
@@ -50,9 +48,9 @@ import com.tencent.angel.worker.task.TaskContext
 class PSModel(
     val modelName: String,
     row: Int,
-    col: Int,
+    col: Long,
     blockRow: Int = -1,
-    blockCol: Int = -1,
+    blockCol: Long = -1,
     var needSave: Boolean = true)(implicit ctx: TaskContext) {
   
   val LOG: Log = LogFactory.getLog(classOf[PSModel])
@@ -150,7 +148,7 @@ class PSModel(
     *
     * @param rowType row type
     */
-  def setRowType(rowType: MLProtos.RowType): this.type = {
+  def setRowType(rowType: RowType):this.type = {
     matrixCtx.setRowType(rowType)
     this
   }
@@ -327,7 +325,7 @@ class PSModel(
   /**
     * Get a batch of matrix rows
     *
-    * @param rowIndex row index
+    * @param rowIndex row indexes
     * @param batchNum the number of rows get in a rpc
     * @throws com.tencent.angel.exception.AngelException
     * @return row index to row map
@@ -380,7 +378,7 @@ class PSModel(
   /**
     * Get a batch of rows use pipeline mode
     *
-    * @param rowIndex row index
+    * @param rowIndex row indexes
     * @param batchNum the number of rows get in a rpc
     * @throws com.tencent.angel.exception.AngelException
     * @return Get result which contains a blocked queue
@@ -409,7 +407,22 @@ class PSModel(
       new IndexGetParam(ctx.getMatrix(this.modelName).getMatrixId, rowId, index)
     )
     
-    getClient.get(func).asInstanceOf[GetRowResult].getRow
+    getClient.getRow(func)
+  }
+
+  /**
+    * Get value of specified index array
+    *
+    * @param rowId row Id
+    * @param index specified index ids
+    * @return sparse vector, key of this vector is the specified index array
+    */
+  def getRowWithLongIndex(rowId: Int, index: Array[Long]): TVector = {
+    val func = new LongIndexGetFunc(
+      new LongIndexGetParam(ctx.getMatrix(this.modelName).getMatrixId, rowId, index)
+    )
+
+    getClient.getRow(func)
   }
   
   /**
@@ -454,7 +467,7 @@ class PSModel(
 }
 
 object PSModel {
-  def apply(modelName: String, row: Int, col: Int, blockRow: Int = -1, blockCol: Int = -1)(implicit ctx: TaskContext) = {
+  def apply(modelName: String, row: Int, col: Long, blockRow: Int = -1, blockCol: Long = -1)(implicit ctx: TaskContext) = {
     new PSModel(modelName, row, col, blockRow, blockCol)(ctx)
   }
 }

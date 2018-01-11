@@ -17,17 +17,10 @@
 
 package com.tencent.angel.ml.matrix.psf.update.enhance;
 
-
-import com.tencent.angel.ml.matrix.psf.common.Utils;
-import com.tencent.angel.protobuf.generated.MLProtos;
-import com.tencent.angel.ps.impl.PSContext;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerPartition;
 import com.tencent.angel.ps.impl.matrix.ServerRow;
 import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
-
-import static com.tencent.angel.protobuf.generated.MLProtos.RowType.T_DOUBLE_DENSE;
-import static com.tencent.angel.protobuf.generated.MLProtos.RowType.T_DOUBLE_SPARSE_LONGKEY;
 
 /**
  * `MMUpdateFunc` is a POF updater for a row in matrix with multi double parameter.
@@ -50,8 +43,7 @@ public abstract class MMUpdateFunc extends UpdateFunc {
 
   @Override
   public void partitionUpdate(PartitionUpdateParam partParam) {
-    ServerPartition part = PSContext.get().getMatrixPartitionManager()
-        .getPartition(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
+    ServerPartition part = psContext.getMatrixStorageManager().getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
 
     if (part != null) {
       MMUpdateParam.MMPartitionUpdateParam vs2 =

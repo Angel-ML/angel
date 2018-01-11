@@ -86,7 +86,7 @@ public class PartitionGetRowsParam extends PartitionGetParam {
   public void deserialize(ByteBuf buf) {
     super.deserialize(buf);
     int size = buf.readInt();
-    rowIndexes = new ArrayList<Integer>(size);
+    rowIndexes = new ArrayList<>(size);
     for (int i = 0; i < size; i++) {
       rowIndexes.add(buf.readInt());
     }
@@ -94,6 +94,6 @@ public class PartitionGetRowsParam extends PartitionGetParam {
 
   @Override
   public int bufferLen() {
-    return 4 + ((rowIndexes != null) ? rowIndexes.size() * 4 : 0);
+    return 4 + super.bufferLen() + ((rowIndexes != null) ? rowIndexes.size() * 4 : 0);
   }
 }

@@ -16,7 +16,7 @@
 package com.tencent.angel.ml.utils
 
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.{SparseDummyVector, SparseDoubleSortedVector}
+import com.tencent.angel.ml.math.vector.{SparseDoubleSortedVector, SparseDummyVector}
 
 
 abstract class DataParser{
@@ -86,13 +86,11 @@ case class LibSVMDataParser(val maxDim: Int, val negY: Boolean) extends DataPars
 
 object DataParser {
 
-  def apply(dataFormat: String, maxDim: Int, negY: Boolean) :DataParser = {
+  def apply(dataFormat: String, maxDim: Long, negY: Boolean) :DataParser = {
     dataFormat match {
-      case "dummy" => new DummyDataParser(maxDim, negY)
-      case "libsvm" => new LibSVMDataParser(maxDim, negY)
+      case "dummy" => new DummyDataParser(maxDim.toInt, negY)
+      case "libsvm" => new LibSVMDataParser(maxDim.toInt, negY)
     }
-
-
   }
 }
 

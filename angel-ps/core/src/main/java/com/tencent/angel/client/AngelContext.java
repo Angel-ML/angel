@@ -16,7 +16,7 @@
 
 package com.tencent.angel.client;
 
-import com.tencent.angel.common.Location;
+import com.tencent.angel.common.location.Location;
 import org.apache.hadoop.conf.Configuration;
 
 /**

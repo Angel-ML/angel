@@ -22,7 +22,7 @@
 	<parent>
 		<groupId>com.tencent.angel</groupId>
 		<artifactId>angel</artifactId>
-		<version>1.3.0</version>
+		<version>1.4.0</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 	<artifactId>spark-on-angel</artifactId>
@@ -36,7 +36,7 @@
 	</modules>
 
 	<properties>
-		<spark.version>2.1.0</spark.version>
+		<spark.version>2.2.0</spark.version>
 		<PermGen>512m</PermGen>
 		<MaxPermGen>512m</MaxPermGen>
 		<CodeCacheSize>1024m</CodeCacheSize>
@@ -227,7 +227,7 @@
 					</excludes>
 				</configuration>
 			</plugin>
-      <!--plugin>
+      <plugin>
         <groupId>org.scalastyle</groupId>
         <artifactId>scalastyle-maven-plugin</artifactId>
         <version>0.8.0</version>
@@ -250,8 +250,8 @@
             </goals>
           </execution>
         </executions>
-      </plugin-->
-      <!--plugin>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
         <version>2.17</version>
@@ -273,7 +273,7 @@
             </goals>
           </execution>
         </executions>
-      </plugin-->
+      </plugin>
 		</plugins>
 	</build>
 

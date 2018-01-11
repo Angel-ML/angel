@@ -22,6 +22,7 @@ import com.tencent.angel.ps.ParameterServerId;
  * Get matrix partition clocks request.
  */
 public class GetClocksRequest extends Request {
+  private ParameterServerId serverId;
 
   /**
    * Create a new GetClocksRequest.
@@ -29,7 +30,8 @@ public class GetClocksRequest extends Request {
    * @param serverId parameter server id
    */
   public GetClocksRequest(ParameterServerId serverId) {
-    super(serverId);
+    super(new RequestContext());
+    this.serverId = serverId;
   }
 
   /**
@@ -49,4 +51,11 @@ public class GetClocksRequest extends Request {
     return TransportMethod.GET_CLOCKS;
   }
 
+  /**
+   * Get the rpc dest ps
+   * @return the rpc dest ps
+   */
+  public ParameterServerId getServerId() {
+    return serverId;
+  }
 }

@@ -16,20 +16,23 @@
 
 package com.tencent.angel.ml.math.vector;
 
+import com.tencent.angel.common.Serialize;
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.protobuf.generated.MLProtos;
+import com.tencent.angel.ml.matrix.RowType;
+import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import java.util.stream.IntStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
  * Sparse float vector, it use a (int, float) map to store elements.
  */
-public class SparseFloatVector extends TFloatVector {
+public class SparseFloatVector extends TFloatVector implements Serialize{
   private final static Log LOG = LogFactory.getLog(SparseFloatVector.class);
 
   /**
@@ -40,7 +43,7 @@ public class SparseFloatVector extends TFloatVector {
   /**
    * store the value
    */
-  final Int2FloatOpenHashMap hashMap;
+  Int2FloatOpenHashMap hashMap;
 
   /**
    * init the empty vector
@@ -263,8 +266,8 @@ public class SparseFloatVector extends TFloatVector {
   }
 
   @Override
-  public MLProtos.RowType getType() {
-    return MLProtos.RowType.T_FLOAT_SPARSE;
+  public RowType getType() {
+    return RowType.T_FLOAT_SPARSE;
   }
 
   @Override
@@ -494,5 +497,30 @@ public class SparseFloatVector extends TFloatVector {
 
   public Int2FloatOpenHashMap getIndexToValueMap() {
     return hashMap;
+  }
+
+  @Override
+  public void serialize(ByteBuf buf) {
+    buf.writeInt(dim);
+    buf.writeInt(hashMap.size());
+    hashMap.forEach((key, value) -> {
+      buf.writeInt(key);
+      buf.writeFloat(value);
+    });
+  }
+
+  @Override
+  public void deserialize(ByteBuf buf) {
+    int dim = buf.readInt();
+    int length = buf.readInt();
+    Int2FloatOpenHashMap data = new Int2FloatOpenHashMap(length);
+    IntStream.range(0,length).forEach(i-> data.put(buf.readInt(), buf.readFloat()));
+    this.dim = dim;
+    this.hashMap = data;
+  }
+
+  @Override
+  public int bufferLen() {
+    return 4 + (4 + 4) * hashMap.size();
   }
 }

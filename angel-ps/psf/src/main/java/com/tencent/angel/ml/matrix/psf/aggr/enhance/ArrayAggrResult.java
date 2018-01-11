@@ -23,10 +23,21 @@ import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
  * `ArrayAggrResult` is a result Class for all Aggregate function whose result is double[].
  */
 public class ArrayAggrResult extends GetResult {
+  private final long[] cols;
   private final double[] result;
 
   public ArrayAggrResult(double[] result) {
     this.result = result;
+    this.cols = null;
+  }
+
+  public ArrayAggrResult(long[] cols, double[] result) {
+    this.cols = cols;
+    this.result = result;
+  }
+
+  public long[] getCols() {
+    return cols;
   }
 
   public double[] getResult() {

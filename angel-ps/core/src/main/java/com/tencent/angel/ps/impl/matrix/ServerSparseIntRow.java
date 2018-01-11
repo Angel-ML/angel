@@ -16,8 +16,7 @@
 
 package com.tencent.angel.ps.impl.matrix;
 
-import com.tencent.angel.protobuf.generated.MLProtos;
-import com.tencent.angel.protobuf.generated.MLProtos.RowType;
+import com.tencent.angel.ml.matrix.RowType;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
@@ -54,8 +53,8 @@ public class ServerSparseIntRow extends ServerRow {
   }
 
   @Override
-  public MLProtos.RowType getRowType() {
-    return MLProtos.RowType.T_INT_SPARSE;
+  public RowType getRowType() {
+    return RowType.T_INT_SPARSE;
   }
 
   @Override
@@ -194,6 +193,15 @@ public class ServerSparseIntRow extends ServerRow {
       return super.bufferLen() + 4 + hashMap.size() * 8;
     } finally {
       lock.readLock().unlock();
+    }
+  }
+
+  @Override public void reset() {
+    try {
+      lock.writeLock().lock();
+      hashMap.clear();
+    } finally {
+      lock.writeLock().unlock();
     }
   }
 

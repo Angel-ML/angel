@@ -16,7 +16,7 @@
 
 package com.tencent.angel.master.psagent;
 
-import com.tencent.angel.common.Location;
+import com.tencent.angel.common.location.Location;
 import com.tencent.angel.psagent.PSAgentAttemptId;
 
 public class PSAgentRegisterEvent extends PSAgentManagerEvent {

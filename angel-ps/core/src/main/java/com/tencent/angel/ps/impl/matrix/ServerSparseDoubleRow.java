@@ -16,7 +16,7 @@
 
 package com.tencent.angel.ps.impl.matrix;
 
-import com.tencent.angel.protobuf.generated.MLProtos.RowType;
+import com.tencent.angel.ml.matrix.RowType;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
@@ -190,6 +190,15 @@ public class ServerSparseDoubleRow extends ServerRow {
       return super.bufferLen() + 4 + hashMap.size() * 12;
     } finally {
       lock.readLock().unlock();
+    }
+  }
+
+  @Override public void reset() {
+    try {
+      lock.writeLock().lock();
+      hashMap.clear();
+    } finally {
+      lock.writeLock().unlock();
     }
   }
 

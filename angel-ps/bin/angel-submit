@@ -13,7 +13,7 @@ conf="$bin"/../conf
 lib="$bin"/../lib
 
 export ANGEL_HOME="$bin/../"
-export ANGEL_VERSION=1.3.0
+export ANGEL_VERSION=1.4.0
 
 DEFAULT_LIBEXEC_DIR="$HADOOP_HOME"/libexec
 HADOOP_LIBEXEC_DIR=${HADOOP_LIBEXEC_DIR:-$DEFAULT_LIBEXEC_DIR}

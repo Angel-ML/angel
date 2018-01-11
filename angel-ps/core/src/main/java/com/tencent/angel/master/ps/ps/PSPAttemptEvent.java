@@ -27,7 +27,7 @@ public class PSPAttemptEvent extends AMParameterServerEvent {
   private final PSAttemptId psAttemptId;
 
   public PSPAttemptEvent(PSAttemptId attemptId, AMParameterServerEventType type) {
-    super(type, attemptId.getParameterServerId());
+    super(type, attemptId.getPsId());
     this.psAttemptId = attemptId;
   }
 

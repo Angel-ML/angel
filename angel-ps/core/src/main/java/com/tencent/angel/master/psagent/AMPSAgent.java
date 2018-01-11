@@ -17,7 +17,7 @@
 package com.tencent.angel.master.psagent;
 
 import com.tencent.angel.RunningMode;
-import com.tencent.angel.common.Location;
+import com.tencent.angel.common.location.Location;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.psagent.PSAgentAttemptId;
 import com.tencent.angel.psagent.PSAgentId;

@@ -16,6 +16,12 @@
  */
 package com.tencent.angel.ml.param;
 
+import com.tencent.angel.ml.metric.EvalMetric;
+import com.tencent.angel.ml.metric.LogErrorMetric;
+import com.tencent.angel.ml.metric.RMSEMetric;
+import com.tencent.angel.ml.objective.Loss;
+import com.tencent.angel.ml.objective.RegLossObj;
+
 /**
  * Description:
  *
@@ -26,6 +32,9 @@ public class GBDTParam extends RegTParam {
   public int treeNum = 10;
   public int maxThreadNum = 20;
   public int batchNum = 10000;
+
+  // task type: classification, regression, or ranking
+  public String taskType;
 
   // quantile sketch, size = featureNum * splitNum
   public String sketchName;
@@ -50,5 +59,27 @@ public class GBDTParam extends RegTParam {
 
   // if using PS to perform split
   public boolean isServerSplit = true;
+
+  public RegLossObj getLossFunc() {
+    switch (taskType) {
+      case "classification":
+        return new RegLossObj(new Loss.BinaryLogisticLoss());
+      case "regression":
+        return new RegLossObj(new Loss.LinearSquareLoss());
+      default:
+        return new RegLossObj(new Loss.BinaryLogisticLoss());
+    }
+  }
+
+  public EvalMetric getEvalMetric() {
+    switch (taskType) {
+      case "classification":
+        return new LogErrorMetric();
+      case "regression":
+        return new RMSEMetric();
+      default:
+        return new LogErrorMetric();
+    }
+  }
 
 }

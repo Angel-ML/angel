@@ -30,7 +30,7 @@ import com.tencent.angel.ml.math.vector.DenseIntVector
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.ml.utils.HDFSUtils
-import com.tencent.angel.protobuf.generated.MLProtos.RowType
+import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
@@ -76,6 +76,8 @@ object LDAModel {
   val SAVE_WORD_TOPIC = "save.word.topic"
 
   val WORD_NUM_PATH = "word.num.path"
+
+  val SAVE_PATH = "save.path"
 }
 
 class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {

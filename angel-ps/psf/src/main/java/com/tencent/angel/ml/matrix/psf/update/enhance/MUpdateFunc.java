@@ -43,8 +43,7 @@ public abstract class MUpdateFunc extends UpdateFunc {
 
   @Override
   public void partitionUpdate(PartitionUpdateParam partParam) {
-    ServerPartition part = PSContext.get().getMatrixPartitionManager()
-        .getPartition(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
+    ServerPartition part = psContext.getMatrixStorageManager().getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
 
     if (part != null) {
       MUpdateParam.MPartitionUpdateParam m = (MUpdateParam.MPartitionUpdateParam) partParam;

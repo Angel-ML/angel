@@ -108,7 +108,7 @@ package object util {
 
   val ONE_HOT_INSTANCE_ST = StructType(
     StructField(DFStruct.LABEL, StringType, false) ::
-      StructField(DFStruct.FEATURE, ArrayType(IntegerType, containsNull = false), false) ::
+      StructField(DFStruct.FEATURE, ArrayType(LongType, containsNull = false), false) ::
       Nil)
 
 }

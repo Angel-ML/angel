@@ -16,7 +16,7 @@
 
 package com.tencent.angel.ps.impl.matrix;
 
-import com.tencent.angel.protobuf.generated.MLProtos;
+import com.tencent.angel.ml.matrix.RowType;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.apache.commons.logging.Log;
@@ -61,7 +61,7 @@ public class ServerDenseFloatRowTest {
 
   @Test
   public void testGetRowType() throws Exception {
-    assertEquals(serverDenseFloatRow.getRowType(), MLProtos.RowType.T_FLOAT_DENSE);
+    assertEquals(serverDenseFloatRow.getRowType(), RowType.T_FLOAT_DENSE);
   }
 
   @Test
@@ -78,7 +78,7 @@ public class ServerDenseFloatRowTest {
     buf.writeFloat((float) -1.00);
     float newValue0 = buf.getFloat(0) + serverDenseFloatRow.getData().get(0);
     float newValue1 = buf.getFloat(4) + serverDenseFloatRow.getData().get(1);
-    serverDenseFloatRow.update(MLProtos.RowType.T_FLOAT_DENSE, buf, 3);
+    serverDenseFloatRow.update(RowType.T_FLOAT_DENSE, buf, 3);
     assertEquals(serverDenseFloatRow.getData().get(0), newValue0, 0.000);
     assertEquals(serverDenseFloatRow.getData().get(1), newValue1, 0.000);
     assertEquals(serverDenseFloatRow.getData().get(2), -1, 0.000);
@@ -89,7 +89,7 @@ public class ServerDenseFloatRowTest {
     buf.writeFloat((float) 1.00);
     buf.writeInt(2);
     buf.writeFloat((float) -2.00);
-    serverDenseFloatRow.update(MLProtos.RowType.T_FLOAT_SPARSE, buf, 2);
+    serverDenseFloatRow.update(RowType.T_FLOAT_SPARSE, buf, 2);
     assertEquals(serverDenseFloatRow.getData().get(0), 1, 0.000);
     assertEquals(serverDenseFloatRow.getData().get(1), 0, 0.000);
     assertEquals(serverDenseFloatRow.getData().get(2), -2, 0.000);
@@ -102,7 +102,7 @@ public class ServerDenseFloatRowTest {
     buf.writeFloat((float) 0.00);
     buf.writeFloat((float) 1.00);
     buf.writeFloat((float) 2.00);
-    serverDenseFloatRow.update(MLProtos.RowType.T_FLOAT_DENSE, buf, 3);
+    serverDenseFloatRow.update(RowType.T_FLOAT_DENSE, buf, 3);
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
     serverDenseFloatRow.writeTo(out);
     out.close();
@@ -118,7 +118,7 @@ public class ServerDenseFloatRowTest {
     buf.writeFloat((float) 10.00);
     buf.writeFloat((float) 11.00);
     buf.writeFloat((float) 12.00);
-    serverDenseFloatRow.update(MLProtos.RowType.T_FLOAT_DENSE, buf, 3);
+    serverDenseFloatRow.update(RowType.T_FLOAT_DENSE, buf, 3);
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
     serverDenseFloatRow.writeTo(out);
     out.close();
@@ -181,7 +181,7 @@ public class ServerDenseFloatRowTest {
     buf.writeFloat((float) 10.00);
     buf.writeFloat((float) 11.00);
     buf.writeFloat((float) 12.00);
-    serverDenseFloatRow.update(MLProtos.RowType.T_FLOAT_DENSE, buf, 3);
+    serverDenseFloatRow.update(RowType.T_FLOAT_DENSE, buf, 3);
     float[] dataArray = {0, 1, 2, 3, 4};
     serverDenseFloatRow.mergeTo(dataArray);
     assertEquals(dataArray[0], 10, 0.00);

@@ -25,8 +25,8 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
 import com.tencent.angel.spark.context.PSContext
+import com.tencent.angel.spark.linalg.OneHotVector
 import com.tencent.angel.spark.ml.sparse.SparseLogistic
-import com.tencent.angel.spark.ml.common.OneHot.OneHotVector
 import com.tencent.angel.spark.ml.util.{ArgsUtil, DataLoader}
 import com.tencent.angel.spark.models.vector.PSVector
 
@@ -50,27 +50,24 @@ object SparseLRWithSGD {
 
     if (updateType == "ps") PSContext.getOrCreate(spark.sparkContext)
 
-    val instances = DataLoader.loadOneHotInstance(input, partitionNum, sampleRate, -1).rdd
+    val tempInstances = DataLoader.loadOneHotInstance(input, partitionNum, sampleRate, -1).rdd
       .map { row =>
-        Tuple2(row.getAs[scala.collection.mutable.WrappedArray[Int]](1).toArray, row.getString(0).toDouble)
-      }.mapPartitions { iter =>
-        Thread.sleep(20 * 1000)
-        iter
+        Tuple2(row.getAs[scala.collection.mutable.WrappedArray[Long]](1).toArray, row.getString(0).toDouble)
       }
+    val featLength = tempInstances.map { case (feature, label) => feature.max }.max() + 1
+    println(s"feat length: $featLength")
 
+    val instances = tempInstances.map { case (feat, label) => (new OneHotVector(featLength, feat), label)}
     instances.cache()
     println(s"instance num: ${instances.count()}")
-
-    val featLength = instances.map { case (feature, label) => feature.max }.max() + 1
-    println(s"feat length: $featLength")
 
     updateType match {
       case "spark" =>
         println(s"run spark sgd")
-        runSGD(instances, featLength, stepSize, maxIter)
+        runSGD(instances, featLength.toInt, stepSize, maxIter)
       case "ps" =>
         println(s"run ps sgd")
-        runPSSGD(instances, featLength, stepSize, maxIter)
+        runPSSGD(instances, featLength.toInt, stepSize, maxIter)
       case _ => println(s"wrong update type: $updateType (spark or ps)")
     }
   }
@@ -111,7 +108,7 @@ object SparseLRWithSGD {
       }
     }
     println(s"loss history: ${lossHistory.toArray.mkString(" ")}")
-    println(s"weights: ${weight.pull().take(100).mkString(" ")}")
+    println(s"weights: ${weight.pull.toDense.values.take(100).mkString(" ")}")
   }
 
 }

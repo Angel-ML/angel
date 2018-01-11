@@ -21,7 +21,7 @@ import scala.reflect.ClassTag
 
 import org.apache.spark.rdd.RDD
 
-import com.tencent.angel.spark.models.vector.enhanced.PushMan
+import com.tencent.angel.spark.models.vector.cache.PushMan
 
 class RDDPSFunctions[T: ClassTag](self: RDD[T]) extends Serializable {
 

@@ -17,7 +17,7 @@
 package com.tencent.angel.worker;
 
 import com.tencent.angel.AngelDeployMode;
-import com.tencent.angel.common.Location;
+import com.tencent.angel.common.location.Location;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.protobuf.generated.MLProtos.WorkerAttemptIdProto;
 import com.tencent.angel.protobuf.generated.MLProtos.WorkerIdProto;
@@ -226,5 +226,9 @@ public class WorkerContext {
     } else {
       return AngelDeployMode.YARN;
     }
+  }
+
+  public void clear() {
+    worker = null;
   }
 }

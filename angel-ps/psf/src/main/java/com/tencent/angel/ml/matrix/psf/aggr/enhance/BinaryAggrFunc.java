@@ -45,8 +45,8 @@ public abstract class BinaryAggrFunc extends GetFunc {
   @Override
   public PartitionGetResult partitionGet(PartitionGetParam partKey) {
     ServerPartition part =
-        PSContext.get().getMatrixPartitionManager()
-            .getPartition(partKey.getMatrixId(), partKey.getPartKey().getPartitionId());
+        psContext.getMatrixStorageManager()
+            .getPart(partKey.getMatrixId(), partKey.getPartKey().getPartitionId());
     int rowId1 = ((BinaryAggrParam.BinaryPartitionAggrParam) partKey).getRowId1();
     int rowId2 = ((BinaryAggrParam.BinaryPartitionAggrParam) partKey).getRowId2();
 

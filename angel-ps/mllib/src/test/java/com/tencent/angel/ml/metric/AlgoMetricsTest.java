@@ -22,7 +22,7 @@ import com.tencent.angel.client.AngelClientFactory;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.protobuf.generated.MLProtos;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.worker.task.TaskId;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -76,7 +76,7 @@ public class AlgoMetricsTest {
       mMatrix.setColNum(100000);
       mMatrix.setMaxRowNumInBlock(1);
       mMatrix.setMaxColNumInBlock(50000);
-      mMatrix.setRowType(MLProtos.RowType.T_INT_DENSE);
+      mMatrix.setRowType(RowType.T_INT_DENSE);
       mMatrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       mMatrix.set(MatrixConf.MATRIX_HOGWILD, "true");
       mMatrix.set(MatrixConf.MATRIX_AVERAGE, "false");

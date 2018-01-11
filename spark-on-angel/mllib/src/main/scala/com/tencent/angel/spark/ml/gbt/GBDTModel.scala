@@ -17,7 +17,7 @@
 package com.tencent.angel.spark.ml.gbt
 
 import org.apache.spark.ml.linalg.Vector
-import org.apache.spark.mllib.evaluation.RegressionMetrics
+import org.apache.spark.mllib.evaluation.{BinaryClassificationMetrics, RegressionMetrics}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 
@@ -50,7 +50,7 @@ class GBDTModel(param: GBTreeParam) extends MLModel {
   }
 
   def updateLeafWeight(treeId: Int, weights: Array[Double]): Unit = {
-    leafWeightMat.increment(treeId, weights)
+    leafWeightMat.push(treeId, weights)
   }
 
   def getSplitFeature(treeId: Int): Array[Int] = {
@@ -72,7 +72,8 @@ class GBDTModel(param: GBTreeParam) extends MLModel {
   def predict(feature: Vector,
       splitFeats: Array[Array[Int]],
       splitValues: Array[Array[Double]],
-      leafWeights: Array[Array[Double]]): Double = {
+      leafWeights: Array[Array[Double]],
+      loss: Loss): Double = {
 
     val featArray = feature.toArray
 
@@ -97,10 +98,10 @@ class GBDTModel(param: GBTreeParam) extends MLModel {
     preds.foreach { p =>
       prediction += p * param.learningRate
     }
-    prediction
+    loss.transPred(prediction.toFloat).toDouble
   }
 
-  def predict(dataset: RDD[Vector]): RDD[Double] = {
+  def predict(dataset: RDD[Vector], loss: Loss): RDD[Double] = {
     dataset.mapPartitions { iter =>
       val splitFeatures = (0 until treeNum).toArray
         .map { treeId => splitFeatureMat.pull(treeId).map(_.toInt) }
@@ -110,23 +111,29 @@ class GBDTModel(param: GBTreeParam) extends MLModel {
         .map { treeId => leafWeightMat.pull(treeId) }
 
       iter.map { feature =>
-        predict(feature, splitFeatures, splitValues, leafWeight)
+        predict(feature, splitFeatures, splitValues, leafWeight, loss)
       }
     }
   }
 
 
   def evaluate(dataset: RDD[Instance]): Double = {
-    val prediction = predict(dataset.map(_.feature))
+    if (dataset.count() == 0) return Double.NaN
+    val prediction = predict(dataset.map(_.feature), this.param.loss)
     val scoreAndLabel = dataset.zip(prediction).map { case (instance, score) =>
       Tuple2(score, instance.label)
     }
-    println("score and label")
-    scoreAndLabel.take(5).foreach { case (score, label) =>
-      println(s"score: $score label: $label")
+
+    param.loss.evalMetric match {
+      // RMSE for LeastSquareLoss
+      case "RMSE" =>
+        val metric = new RegressionMetrics(scoreAndLabel)
+        metric.rootMeanSquaredError
+      // AUC for LogisticLoss
+      case "AUC" =>
+        val metric = new BinaryClassificationMetrics(scoreAndLabel)
+        metric.areaUnderROC
     }
-    val metric = new RegressionMetrics(scoreAndLabel)
-    metric.meanAbsoluteError
   }
 
 

@@ -31,8 +31,10 @@ import com.tencent.angel.master.worker.worker.AMWorker;
 import com.tencent.angel.master.worker.workergroup.AMWorkerGroup;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.MatrixMetaManager;
-import com.tencent.angel.protobuf.generated.MLProtos;
+import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.psagent.PSAgent;
 import com.tencent.angel.psagent.client.MasterClient;
+import com.tencent.angel.psagent.matrix.PSAgentMatrixMetaManager;
 import com.tencent.angel.worker.Worker;
 import com.tencent.angel.worker.WorkerAttemptId;
 import com.tencent.angel.worker.WorkerGroupId;
@@ -98,24 +100,25 @@ public class TaskManagerTest {
       mMatrix.setColNum(100000);
       mMatrix.setMaxRowNumInBlock(1);
       mMatrix.setMaxColNumInBlock(50000);
-      mMatrix.setRowType(MLProtos.RowType.T_INT_DENSE);
+      mMatrix.setRowType(RowType.T_INT_DENSE);
       mMatrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       mMatrix.set(MatrixConf.MATRIX_HOGWILD, "true");
       mMatrix.set(MatrixConf.MATRIX_AVERAGE, "false");
       mMatrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_INT");
       angelClient.addMatrix(mMatrix);
 
-      mMatrix.setName("w2");
-      mMatrix.setRowNum(1);
-      mMatrix.setColNum(100000);
-      mMatrix.setMaxRowNumInBlock(1);
-      mMatrix.setMaxColNumInBlock(50000);
-      mMatrix.setRowType(MLProtos.RowType.T_DOUBLE_DENSE);
-      mMatrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
-      mMatrix.set(MatrixConf.MATRIX_HOGWILD, "false");
-      mMatrix.set(MatrixConf.MATRIX_AVERAGE, "false");
-      mMatrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
-      angelClient.addMatrix(mMatrix);
+      MatrixContext mMatrix2 = new MatrixContext();
+      mMatrix2.setName("w2");
+      mMatrix2.setRowNum(1);
+      mMatrix2.setColNum(100000);
+      mMatrix2.setMaxRowNumInBlock(1);
+      mMatrix2.setMaxColNumInBlock(50000);
+      mMatrix2.setRowType(RowType.T_DOUBLE_DENSE);
+      mMatrix2.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
+      mMatrix2.set(MatrixConf.MATRIX_HOGWILD, "false");
+      mMatrix2.set(MatrixConf.MATRIX_AVERAGE, "false");
+      mMatrix2.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
+      angelClient.addMatrix(mMatrix2);
 
       angelClient.startPSServer();
       angelClient.run();
@@ -176,7 +179,7 @@ public class TaskManagerTest {
       AMTaskManager taskManager = angelAppMaster.getAppContext().getTaskManager();
 
       Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
-      MatrixMetaManager matrixMetaManager = worker.getPSAgent().getMatrixMetaManager();
+      PSAgentMatrixMetaManager matrixMetaManager = worker.getPSAgent().getMatrixMetaManager();
       int w1Id = matrixMetaManager.getMatrixId("w1");
       int w2Id = matrixMetaManager.getMatrixId("w2");
       MasterClient masterClient = worker.getPSAgent().getMasterClient();

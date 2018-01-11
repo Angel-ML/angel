@@ -22,14 +22,14 @@ import com.tencent.angel.ml.math.vector.DenseDoubleVector;
 /**
  * Dense double matrix that is represented by a group of dense double vector {@link DenseDoubleVector}
  */
-public class DenseDoubleMatrix extends TDoubleMatrix {
+public class DenseDoubleMatrix extends TDoubleMatrix<DenseDoubleVector> {
   public DenseDoubleMatrix(int row, int col) {
-    super(row, col);
+    super(row, col, new DenseDoubleVector[row]);
   }
 
   /**
    * Build the matrix
-   * 
+   *
    * @param row row number
    * @param col column number
    * @param values values
@@ -54,7 +54,7 @@ public class DenseDoubleMatrix extends TDoubleMatrix {
 
   /**
    * init the vector by set the value
-   * 
+   *
    * @param rowIndex
    * @param values
    * @return
@@ -64,13 +64,5 @@ public class DenseDoubleMatrix extends TDoubleMatrix {
     ret.setMatrixId(matrixId);
     ret.setRowId(rowIndex);
     return ret;
-  }
-
-  @Override
-  public TVector getTVector(int rowIndex) {
-    if(vectors[rowIndex] == null) {
-      vectors[rowIndex] = initVector(rowIndex);
-    }
-    return vectors[rowIndex];
   }
 }

@@ -20,7 +20,7 @@ package com.tencent.angel.spark.client
 import com.github.fommil.netlib.F2jBLAS
 
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.ops.{Initializer, MatrixOps, SparseRowOps, VectorOps}
+import com.tencent.angel.spark.ops._
 
 /**
  * PSClient is a _instance which contains operations for PSVector &  PSMatrix on the PS nodes.
@@ -30,8 +30,8 @@ private[spark] class PSClient {
   private[spark] val context = PSContext.instance()
   private[spark] val BLAS = new F2jBLAS
 
-  private[spark] val initOps = new Initializer()
   private[spark] val vectorOps = new VectorOps()
+  private[spark] val denseRowOps = new DenseRowOps()
   private[spark] val sparseRowOps = new SparseRowOps()
   private[spark] val matrixOps = new MatrixOps()
 }
@@ -39,7 +39,7 @@ private[spark] class PSClient {
 object PSClient {
   private var _instance: PSClient = _
 
-  private [angel] def instance(): PSClient = {
+  private [spark] def instance(): PSClient = {
     if (_instance == null) {
       classOf[PSClient].synchronized {
         if (_instance == null) {

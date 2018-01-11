@@ -18,7 +18,7 @@ package com.tencent.angel.ps;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.protobuf.generated.MLProtos.Partition;
+import com.tencent.angel.ml.matrix.PartitionMeta;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -47,10 +47,10 @@ public class PSPartitioner implements Partitioner{
   }
 
   @Override
-  public List<Partition> getPartitions() {
-    List<Partition> array = new ArrayList<Partition>();
+  public List<PartitionMeta> getPartitions() {
+    List<PartitionMeta> partitions = new ArrayList<PartitionMeta>();
     int id = 0;
-    int matrixId = mContext.getId();
+    int matrixId = mContext.getMatrixId();
     int row = mContext.getRowNum();
     long col = mContext.getColNum();
 
@@ -71,27 +71,19 @@ public class PSPartitioner implements Partitioner{
 
     LOG.info("blockRow = " + blockRow + ", blockCol=" + blockCol);
 
-    Partition.Builder partition = Partition.newBuilder();
     for (int i = 0; i < row; ) {
       for (long j = 0; j < col; ) {
         int startRow = i;
         long startCol = j;
         int endRow = (i <= (row - blockRow)) ? (i + blockRow) : row;
         long endCol = (j <= (col - blockCol)) ? (j + blockCol) : col;
-        partition.setMatrixId(matrixId);
-        partition.setPartitionId(id++);
-        partition.setStartRow(startRow);
-        partition.setStartCol(startCol);
-        partition.setEndRow(endRow);
-        partition.setEndCol(endCol);
-        array.add(partition.build());
-
+        partitions.add(new PartitionMeta(matrixId, id++, startRow, endRow, startCol, endCol));
         j = (j <= (col - blockCol)) ? (j + blockCol) : col;
       }
       i = (i <= (row - blockRow)) ? (i + blockRow) : row;
     }
-    LOG.debug("partition count: " + array.size());
-    return array;
+    LOG.debug("partition count: " + partitions.size());
+    return partitions;
   }
 
   private long getDefaultPartSize() {

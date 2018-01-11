@@ -17,13 +17,17 @@
 
 package com.tencent.angel.ml.optimizer.sgd
 
-import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector._
 import com.tencent.angel.ml.model.PSModel
 import com.tencent.angel.ml.optimizer.sgd.loss.Loss
+import com.tencent.angel.exception.AngelException
+import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.math.vector.TDoubleVector
 import com.tencent.angel.worker.storage.DataBlock
 import org.apache.commons.logging.{Log, LogFactory}
 
+import scala.math.Numeric
+import scala.reflect.runtime.universe._
 
 object GradientDescent {
   private val LOG: Log = LogFactory.getLog(GradientDescent.getClass)
@@ -31,15 +35,37 @@ object GradientDescent {
   type baseT = TDoubleVector
 
   def miniBatchGD(trainData: DataBlock[LabeledData],
-                                      wM: PSModel,
-                                      intercept: Option[PSModel],
-                                      lr: Double,
-                                      loss: Loss,
-                                      batchSize: Int,
-                                      batchNum: Int): (Double, baseT) = {
+                  wM: PSModel,
+                  intercept: Option[PSModel],
+                  lr: Double,
+                  loss: Loss,
+                  batchSize: Int,
+                  batchNum: Int): (Double, baseT) = {
+    miniBatchGD(trainData, wM, intercept, lr, loss, batchSize, batchNum, new Array[Int](0))
+  }
 
-    //Pull model from PS Server
-    val w = wM.getRow(0).asInstanceOf[baseT]
+  def miniBatchGD[N: Numeric : TypeTag](trainData: DataBlock[LabeledData],
+                  wM: PSModel,
+                  intercept: Option[PSModel],
+                  lr: Double,
+                  loss: Loss,
+                  batchSize: Int,
+                  batchNum: Int,
+                  indexes : Array[N]): (Double, baseT) = {
+
+    // Pull model from PS Server
+    val elementType = typeOf[N]
+
+    val w = if(indexes == null || indexes.length == 0) {
+      wM.getRow(0).asInstanceOf[baseT]
+    } else {
+      elementType match {
+        case t if t == typeOf[Int] => wM.getRowWithIndex(0, indexes.asInstanceOf[Array[Int]]).asInstanceOf[TIntDoubleVector]
+        case t if t == typeOf[Long] => wM.getRowWithLongIndex(0, indexes.asInstanceOf[Array[Long]]).asInstanceOf[TLongDoubleVector]
+        case _ => throw new AngelException(s"unsupported type: $elementType")
+      }
+    }
+
     var b: Option[Double] = intercept.map(_.getRow(0).asInstanceOf[baseT].get(0))
     var totalLoss = 0.0
 
@@ -51,9 +77,11 @@ object GradientDescent {
       val grad =
         w match {
           case _: DenseDoubleVector => new DenseDoubleVector(w.getDimension)
-          case _: SparseDoubleVector => new SparseDoubleVector(w.getDimension)
-          case _: SparseLongKeyDoubleVector => new SparseLongKeyDoubleVector(w.asInstanceOf[SparseLongKeyDoubleVector].getLongDim)
-          case _ => new DenseDoubleVector(w.getDimension)
+          case _: SparseDoubleVector => new SparseDoubleVector(w.getDimension, w.asInstanceOf[TIntDoubleVector].size())
+          case _: CompSparseDoubleVector => w.asInstanceOf[CompSparseDoubleVector].cloneAndReset()
+          case _: CompSparseLongKeyDoubleVector => w.asInstanceOf[CompSparseLongKeyDoubleVector].cloneAndReset()
+          case _: SparseLongKeyDoubleVector => new SparseLongKeyDoubleVector(w.asInstanceOf[TLongDoubleVector].getLongDim, w.asInstanceOf[SparseLongKeyDoubleVector].size())
+          case _ => new SparseLongKeyDoubleVector(w.asInstanceOf[TLongDoubleVector].getLongDim, w.asInstanceOf[SparseLongKeyDoubleVector].size())
         }
 
       grad.setRowId(0)
@@ -136,6 +164,20 @@ object GradientDescent {
           }
         }
 
+      case compSparse: CompSparseDoubleVector => {
+        class L2UpdateParam(lossRegParam:Double, w: baseT) extends ElemUpdateParam {
+          def getW = w
+          def getLossRegParam = lossRegParam
+        }
+
+        class L2Updater extends IntDoubleElemUpdater {
+          override def action(index: Int, value: Double, param: ElemUpdateParam): Double = {
+            value + param.asInstanceOf[L2UpdateParam].getW.get(index) * param.asInstanceOf[L2UpdateParam].getLossRegParam
+          }
+        }
+        compSparse.elemUpdate(new L2Updater, new L2UpdateParam(loss.getRegParam, w))
+      }
+
       case long: SparseLongKeyDoubleVector =>
         val map = long.asInstanceOf[SparseLongKeyDoubleVector].getIndexToValueMap
         val iter = map.long2DoubleEntrySet().fastIterator()
@@ -149,6 +191,20 @@ object GradientDescent {
             entry.setValue(v + w.get(k) * loss.getRegParam)
           }
         }
+
+      case compLong : CompSparseLongKeyDoubleVector => {
+        class L2UpdateParam(lossRegParam:Double, w: baseT) extends ElemUpdateParam {
+          def getW = w
+          def getLossRegParam = lossRegParam
+        }
+
+        class L2Updater extends LongDoubleElemUpdater {
+          override def action(index: Long, value: Double, param: ElemUpdateParam): Double = {
+            value + param.asInstanceOf[L2UpdateParam].getW.get(index) * param.asInstanceOf[L2UpdateParam].getLossRegParam
+          }
+        }
+        compLong.elemUpdate(new L2Updater, new L2UpdateParam(loss.getRegParam, w))
+      }
     }
   }
 

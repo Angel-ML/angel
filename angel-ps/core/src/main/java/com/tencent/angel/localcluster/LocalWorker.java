@@ -16,7 +16,7 @@
 
 package com.tencent.angel.localcluster;
 
-import com.tencent.angel.common.Location;
+import com.tencent.angel.common.location.Location;
 import com.tencent.angel.worker.Worker;
 import com.tencent.angel.worker.WorkerAttemptId;
 import org.apache.commons.logging.Log;

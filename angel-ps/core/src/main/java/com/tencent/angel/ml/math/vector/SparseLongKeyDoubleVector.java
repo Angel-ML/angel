@@ -17,19 +17,23 @@
 
 package com.tencent.angel.ml.math.vector;
 
+import com.tencent.angel.common.Serialize;
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.TVector;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.protobuf.generated.MLProtos;
+import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import java.util.stream.IntStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
  * Sparse double vector with long key.
  */
-public class SparseLongKeyDoubleVector extends TLongDoubleVector {
+public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Serialize{
   private static final Log LOG = LogFactory.getLog(SparseLongKeyDoubleVector.class);
   /** A (long->double) map */
   private volatile Long2DoubleOpenHashMap indexToValueMap;
@@ -113,8 +117,8 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector {
       return plusBy((SparseLongKeySortedDoubleVector) other);
     else if (other instanceof SparseDummyVector)
       return plusBy((SparseDummyVector) other);
-    else if (other instanceof SparseDummyLongKeyVector)
-      return plusBy((SparseDummyLongKeyVector) other);
+    else if (other instanceof SparseLongKeyDummyVector)
+      return plusBy((SparseLongKeyDummyVector) other);
     throw new UnsupportedOperationException(
       "Unsupportted operation: " + this.getClass().getName() + " plusBy " + other.getClass()
         .getName());
@@ -183,7 +187,7 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector {
     return this;
   }
 
-  private SparseLongKeyDoubleVector plusBy(SparseDummyLongKeyVector other) {
+  private SparseLongKeyDoubleVector plusBy(SparseLongKeyDummyVector other) {
     assert (dim == -1 || dim == other.getDimension());
     resize(other.size());
     long [] indexes = other.getIndices();
@@ -218,8 +222,8 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector {
       return plusBy((SparseLongKeySortedDoubleVector) other, x);
     else if (other instanceof SparseDummyVector)
       return plusBy((SparseDummyVector) other, x);
-    else if (other instanceof SparseDummyLongKeyVector)
-      return plusBy((SparseDummyLongKeyVector) other, x);
+    else if (other instanceof SparseLongKeyDummyVector)
+      return plusBy((SparseLongKeyDummyVector) other, x);
     throw new UnsupportedOperationException(
       "Unsupportted operation: " + this.getClass().getName() + " plusBy " + other.getClass()
         .getName());
@@ -290,7 +294,7 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector {
     return this;
   }
 
-  private SparseLongKeyDoubleVector plusBy(SparseDummyLongKeyVector other, double x) {
+  private SparseLongKeyDoubleVector plusBy(SparseLongKeyDummyVector other, double x) {
     assert (dim == -1 || dim == other.getDimension());
     resize(other.size());
 
@@ -374,8 +378,8 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector {
       return dot((SparseLongKeySortedDoubleVector) other);
     else if (other instanceof SparseDummyVector)
       return dot((SparseDummyVector) other);
-    else if (other instanceof SparseDummyLongKeyVector)
-      return dot((SparseDummyLongKeyVector) other);
+    else if (other instanceof SparseLongKeyDummyVector)
+      return dot((SparseLongKeyDummyVector) other);
     throw new UnsupportedOperationException(
       "Unsupportted operation: " + this.getClass().getName() + " dot " + other.getClass()
         .getName());
@@ -433,7 +437,7 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector {
     return ret;
   }
 
-  private double dot(SparseDummyLongKeyVector other) {
+  private double dot(SparseLongKeyDummyVector other) {
     assert (dim == -1 || dim == other.getDimension());
     long [] indexes = other.getIndices();
     double ret = 0.0;
@@ -563,8 +567,8 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector {
     return nonZeroNumber() / dim;
   }
 
-  @Override public MLProtos.RowType getType() {
-    return MLProtos.RowType.T_DOUBLE_SPARSE_LONGKEY;
+  @Override public RowType getType() {
+    return RowType.T_DOUBLE_SPARSE_LONGKEY;
   }
 
   @Override public int size() {
@@ -583,5 +587,42 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector {
 
   public Long2DoubleOpenHashMap getIndexToValueMap() {
     return indexToValueMap;
+  }
+
+  @Override
+  public TLongDoubleVector elemUpdate(LongDoubleElemUpdater updater, ElemUpdateParam param) {
+    ObjectIterator<Long2DoubleMap.Entry> iter = indexToValueMap.long2DoubleEntrySet().fastIterator();
+    Long2DoubleMap.Entry entry;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      entry.setValue(updater.action(entry.getLongKey(), entry.getDoubleValue(), param));
+    }
+    return null;
+  }
+
+  @Override
+  public void serialize(ByteBuf buf) {
+    buf.writeLong(dim);
+    buf.writeInt(indexToValueMap.size());
+    indexToValueMap.forEach((key, value) -> {
+      buf.writeLong(key);
+      buf.writeDouble(value);
+    });
+  }
+
+  @Override
+  public void deserialize(ByteBuf buf) {
+    int dim = buf.readInt();
+    int length = buf.readInt();
+    Long2DoubleOpenHashMap data = new Long2DoubleOpenHashMap(dim);
+    IntStream.range(0,length).forEach(i->data.put(buf.readLong(), buf.readDouble()));
+    this.dim = dim;
+    this.indexToValueMap = data;
+
+  }
+
+  @Override
+  public int bufferLen() {
+    return 4 + (8 + 8) * indexToValueMap.size();
   }
 }

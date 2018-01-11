@@ -29,27 +29,6 @@ message Pair{
   required string value = 2;
 }
 
-message Partition{
-  required int32 partitionId = 1;
-  required int32 matrixId = 2;
-  required int32 startRow = 3;
-  required int64 startCol = 4;
-  required int32 endRow = 5;
-  required int64 endCol = 6;
-}
-
-message Cell{
-  required int32 row = 1;
-  required int32 col = 2;
-  required bytes value = 3;
-}
-
-message Node{
-  required string id = 1;
-  required string ip = 2;
-  required int32 port = 3;
-}
-
 message WorkerGroupIdProto {
   required int32 workerGroupIndex = 1;
 }
@@ -86,37 +65,30 @@ message PSAgentAttemptIdProto {
   required int32 attemptIndex = 2;
 }
 
-message MatrixPartitionLocation{
-  required Partition part = 1;
-  required PSIdProto psId = 2;
-}
-
-enum RowType {
-	T_DOUBLE_SPARSE = 1;
-	T_DOUBLE_DENSE = 2;
-	T_INT_SPARSE = 3;
-	T_INT_DENSE = 4;
-	T_INT_ARBITRARY = 5;
-	T_FLOAT_DENSE = 6;
-	T_FLOAT_SPARSE = 7;
-	T_DOUBLE_SPARSE_LONGKEY = 8;
-	T_DOUBLE_SPARSE_COMPONENT = 9;
-	T_FLOAT_SPARSE_COMPONENT = 10;
-	T_INT_SPARSE_COMPONENT = 11;
-	T_DOUBLE_SPARSE_LONGKEY_COMPONENT = 12;
-	T_INVALID = 13;
-}
-
-message MatrixProto{
+message MatrixContextProto {
   required int32 id = 1;
   required string name = 2;
   required int32 rowNum = 3;
   required int64 colNum = 4;
   required int32 blockRowNum = 5;
   required int64 blockColNum = 6;
-  required RowType rowType = 7;
-  repeated Pair attribute = 8;
-  repeated MatrixPartitionLocation matrixPartLocation = 9;
+  required int32 rowType = 7;
+  required string partitionerClassName = 8;
+  repeated Pair attribute = 9;
+}
+
+message PartitionMetaProto{
+  required int32 partitionId = 1;
+  required int32 startRow = 2;
+  required int64 startCol = 3;
+  required int32 endRow = 4;
+  required int64 endCol = 5;
+  repeated PSIdProto storedPs = 6;;
+}
+
+message MatrixMetaProto {
+  required MatrixContextProto matrixContext = 1;
+  repeated PartitionMetaProto partMetas = 2;
 }
 
 message MatrixClock{
@@ -152,16 +124,26 @@ message LocationProto {
   required int32 port = 2;
 }
 
-message PSLocation {
-  required PSIdProto psId = 1;
-  required PSStatus psStatus = 2;
-  optional LocationProto location = 3;  
-}
 
-message PSAgentLocation {
+message PSAgentLocationProto {
   required PSAgentIdProto psAgentId = 1;
   required PSAgentStatus psAgentStatus = 2;
-  optional LocationProto location = 3;  
+  optional LocationProto location = 3;
+}
+
+message PSLocationProto {
+  required PSIdProto psId = 1;
+  required PSStatus psStatus = 2;
+  optional LocationProto location = 3;
+}
+
+// used by client and psagent
+message CreateMatricesRequest{
+  repeated MatrixContextProto matrices = 1;
+}
+
+message CreateMatricesResponse{
+
 }
 
 message GetAllPSLocationRequest {
@@ -169,40 +151,67 @@ message GetAllPSLocationRequest {
 }
 
 message GetAllPSLocationResponse {
-  repeated PSLocation psLocations = 1;
+  repeated PSLocationProto psLocations = 1;
 }
 
-message GetAllPSAgentLocationRequest {
-
+message GetPSLocationRequest {
+  required PSIdProto psId = 1;
 }
 
-message GetAllPSAgentLocationResponse {
-  repeated PSAgentLocation psAgentLocations = 1;
+message GetPSLocationReponse {
+  required PSLocationProto psLocation = 1;
 }
 
-message CreateMatrixRequest{
-  required MatrixProto matrixProto = 1;
+message CheckMatricesCreatedRequest {
+  repeated string matrixNames = 1;
 }
 
-message CreateMatrixResponse{
-  required MatrixStatus matrixStatus = 1;
-  optional int32 matrixId = 2;
+message CheckMatricesCreatedResponse {
+  required int32 status = 1; // -1: create failed, 0: creating, 1:create success
+  optional string log = 2;
 }
 
-message GetMatrixInfoRequest{
-  required int32 matrixId = 1; 
+message IntKeyCounter {
+  required int32 key = 1;
+  required int32 counter = 2;
 }
 
-message GetMatrixInfoResponse{
-  required MatrixStatus matrixStatus = 1;
-  optional MatrixProto matrixInfo = 2; 
+message ServerFailedReportProto {
+  required PSIdProto psId = 1;
+  required LocationProto location = 2;
+  repeated IntKeyCounter counters = 3;
 }
 
-message ReleaseMatrixRequest{
+message ServerFailedReportRequest {
+  repeated ServerFailedReportProto reports = 1;
+}
+
+message ServerFailedReportResponse {
+}
+
+message GetPartLocationRequest {
   required int32 matrixId = 1;
-  required string matrixName = 2;
+  required int32 partId = 2;
 }
 
-message ReleaseMatrixResponse{
+message GetPartLocationResponse {
+  repeated PSLocationProto locations = 1;
 }
 
+message GetStoredPssRequest {
+  required int32 matrixId = 1;
+  required int32 partId = 2;
+}
+
+message GetStoredPssResponse {
+  repeated PSIdProto psIds = 1;
+}
+
+message PSFailedReportsProto {
+  repeated PSFailedReportProto psFailedReports = 1;
+}
+
+message PSFailedReportProto {
+  required PSLocationProto psLoc = 1;
+  required int32 failedCounter = 2;
+}

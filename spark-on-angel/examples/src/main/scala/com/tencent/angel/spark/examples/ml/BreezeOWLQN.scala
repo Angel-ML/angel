@@ -107,7 +107,7 @@ object BreezeOWLQN {
       }
     }
     println(s"loss history: ${lossHistory.toArray.mkString(" ")}")
-    println(s"weights: ${weight.pull().mkString(" ")}")
+    println(s"weights: ${weight.pull.toDense.values.mkString(" ")}")
   }
 
   def runPsAggregateOWLQN(
@@ -129,6 +129,6 @@ object BreezeOWLQN {
       }
     }
     println(s"loss history: ${lossHistory.toArray.mkString(" ")}")
-    println(s"weights: ${weight.pull().mkString(" ")}")
+    println(s"weights: ${weight.pull.toDense.values.mkString(" ")}")
   }
 }

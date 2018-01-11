@@ -44,8 +44,8 @@ public class MFUpdateParam extends UpdateParam {
   @Override
   public List<PartitionUpdateParam> split() {
     List<PartitionKey> partList = PSAgentContext.get()
-        .getMatrixPartitionRouter()
-        .getPartitionKeyList(matrixId);
+        .getMatrixMetaManager()
+        .getPartitions(matrixId);
 
     int size = partList.size();
     List<PartitionUpdateParam> partParams = new ArrayList<PartitionUpdateParam>(size);

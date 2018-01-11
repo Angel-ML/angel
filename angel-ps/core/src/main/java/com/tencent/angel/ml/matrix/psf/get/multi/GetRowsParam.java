@@ -56,8 +56,7 @@ public class GetRowsParam extends GetParam {
   @Override
   public List<PartitionGetParam> split() {
     Map<PartitionKey, List<Integer>> parts =
-        PSAgentContext.get().getMatrixPartitionRouter()
-            .getPartitionKeyRowIndexesMap(matrixId, rowIndexes);
+        PSAgentContext.get().getMatrixMetaManager().getPartitionToRowsMap(matrixId, rowIndexes);
 
     List<PartitionGetParam> partParams = new ArrayList<PartitionGetParam>(parts.size());
 

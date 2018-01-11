@@ -129,7 +129,7 @@ public class HistAggrParam extends GetParam {
   @Override
   public List<PartitionGetParam> split() {
     List<PartitionKey> parts =
-        PSAgentContext.get().getMatrixPartitionRouter().getPartitionKeyList(matrixId);
+        PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
     int size = parts.size();
 
     List<PartitionGetParam> partParams = new ArrayList<PartitionGetParam>(size);

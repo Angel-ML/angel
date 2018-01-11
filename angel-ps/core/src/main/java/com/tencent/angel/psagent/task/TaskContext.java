@@ -23,8 +23,9 @@ import com.tencent.angel.master.task.TaskCounter;
 import com.tencent.angel.ml.metric.Metric;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.clock.ClockCache;
-import com.tencent.angel.psagent.matrix.index.MatrixIndex;
 import com.tencent.angel.psagent.matrix.storage.MatrixStorageManager;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -37,14 +38,12 @@ import java.util.concurrent.atomic.AtomicLong;
  * Task running context. Task is executing unit for consistency control.
  */
 public class TaskContext {
-
+  private static final Log LOG = LogFactory.getLog(TaskContext.class);
   // matrix id to clock map
   private final ConcurrentHashMap<Integer, AtomicInteger> matrixIdToClockMap;
 
   // task index, it must be unique for whole application
   private final int index;
-
-  private final ConcurrentHashMap<Integer, MatrixIndex> matrixIndexes;
 
   /** Matrix storage for task */
   private final MatrixStorageManager matrixStorage;
@@ -73,7 +72,6 @@ public class TaskContext {
     this.matrixIdToClockMap = new ConcurrentHashMap<Integer, AtomicInteger>();
     this.matrixStorage = new MatrixStorageManager();
     this.epoch = new AtomicInteger(0);
-    this.matrixIndexes = new ConcurrentHashMap<>();
     this.metrics = new ConcurrentHashMap<>();
     this.algoMetrics = new ConcurrentHashMap<>();
 
@@ -112,7 +110,7 @@ public class TaskContext {
    */
   public int getPSMatrixClock(int matrixId) {
     ClockCache clockCache = PSAgentContext.get().getClockCache();
-    List<PartitionKey> pkeys = PSAgentContext.get().getMatrixPartitionRouter().getPartitionKeyList(matrixId);
+    List<PartitionKey> pkeys = PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
     int size = pkeys.size();
     int clock = Integer.MAX_VALUE;
     int partClock = 0;
@@ -134,7 +132,7 @@ public class TaskContext {
    */
   public void globalSync(int matrixId) throws InterruptedException {
     ClockCache clockCache = PSAgentContext.get().getClockCache();
-    List<PartitionKey> pkeys = PSAgentContext.get().getMatrixPartitionRouter().getPartitionKeyList(matrixId);
+    List<PartitionKey> pkeys = PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
 
     int syncTimeIntervalMS =
       PSAgentContext
@@ -170,13 +168,9 @@ public class TaskContext {
       globalSync(matId);
   }
 
-  public MatrixIndex getMatrixIndex(int matrixId) {
-    return matrixIndexes.get(matrixId);
-  }
-
   @Override
   public String toString() {
-    return "TaskContext [index=" + index + ", matrix clocks=" + printMatrixClocks() + "]";
+    return super.toString() + "TaskContext [index=" + index + ", matrix clocks=" + printMatrixClocks() + "]";
   }
 
   private String printMatrixClocks() {
@@ -322,10 +316,6 @@ public class TaskContext {
       }
     }
     counter.set(updateValue);
-  }
-
-  public Map<String,AtomicLong> getCounters() {
-    return metrics;
   }
 
   public Map<String,AtomicLong> getMetrics() {

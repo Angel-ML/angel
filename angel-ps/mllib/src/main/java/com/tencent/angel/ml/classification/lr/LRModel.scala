@@ -21,10 +21,10 @@ import java.text.DecimalFormat
 
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.ml.utils.Maths
-import com.tencent.angel.protobuf.generated.MLProtos.RowType
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
@@ -52,7 +52,7 @@ class LRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(con
   val LR_WEIGHT_MAT = "lr_weight"
   val LR_INTERCEPT = "lr_intercept"
 
-  val feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
+  val feaNum = conf.getLong(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
   val modelType = RowType.valueOf(conf.get(MLConf.LR_MODEL_TYPE, RowType.T_DOUBLE_SPARSE.toString))
 
   val weight = PSModel(LR_WEIGHT_MAT, 1, feaNum).setAverage(true).setRowType(modelType)

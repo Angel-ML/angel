@@ -54,6 +54,13 @@ class LDARunner extends MLRunner {
     LOG.info(s"n_tasks=${conf.getInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 0)}")
 //    train(conf, new LDAModel(conf), classOf[LDATrainTask])
 
+    LOG.info(s"save path=${conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH)}")
+
+    if (conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH) == null)
+      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, conf.get(LDAModel.SAVE_PATH))
+
+    LOG.info(s"save path=${conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH)}")
+
     val client = AngelClientFactory.get(conf)
 
     client.startPSServer()

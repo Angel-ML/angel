@@ -44,7 +44,7 @@ class GetRowsFunc(param: GetParam) extends GetFunc(param) {
     val rowsParam = partParam.asInstanceOf[PartitionGetRowsParam]
     val rowIndexes: List[Integer] = rowsParam.getRowIndexes
 
-    val rows:List[ServerRow] = rowIndexes.map(PSContext.get.getMatrixPartitionManager.getRow(rowsParam.getMatrixId, _, rowsParam.getPartKey.getPartitionId))
+    val rows:List[ServerRow] = rowIndexes.map(psContext.getMatrixStorageManager.getRow(rowsParam.getMatrixId, _, rowsParam.getPartKey.getPartitionId))
     new PartitionGetRowsResult(rows)
   }
 

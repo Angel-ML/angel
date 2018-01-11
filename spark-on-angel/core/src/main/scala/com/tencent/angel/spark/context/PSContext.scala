@@ -32,7 +32,7 @@ abstract class PSContext {
   protected def stop()
 
   def createMatrix(rows: Int, cols: Long, t: MatrixType, rowInBlock: Int, colInBlock: Int): MatrixMeta
-  def destroyMatrix(meta: MatrixMeta)
+  def destroyMatrix(matrixId: Int)
 
   def createVector(dim: Long, t: VectorType, poolCapacity: Int): PSVector
   def duplicateVector(originVector: PSVector): PSVector

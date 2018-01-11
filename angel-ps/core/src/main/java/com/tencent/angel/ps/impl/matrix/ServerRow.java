@@ -17,8 +17,7 @@
 package com.tencent.angel.ps.impl.matrix;
 
 import com.tencent.angel.common.Serialize;
-import com.tencent.angel.protobuf.generated.MLProtos;
-import com.tencent.angel.protobuf.generated.MLProtos.RowType;
+import com.tencent.angel.ml.matrix.RowType;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -67,7 +66,7 @@ public abstract class ServerRow implements Serialize {
    *
    * @return the row type
    */
-  public abstract MLProtos.RowType getRowType();
+  public abstract RowType getRowType();
 
   /**
    * Update row data
@@ -242,4 +241,6 @@ public abstract class ServerRow implements Serialize {
     return "ServerRow [rowId=" + rowId + ", clock=" + clock + ", endCol=" + endCol + ", startCol="
         + startCol + ", rowVersion=" + rowVersion + "]";
   }
+
+  public abstract void reset();
 }

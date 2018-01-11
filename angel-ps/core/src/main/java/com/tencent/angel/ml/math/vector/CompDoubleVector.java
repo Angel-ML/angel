@@ -81,7 +81,7 @@ abstract class CompDoubleVector extends TIntDoubleVector {
     this.dim = dim;
 
     List<PartitionKey> partKeyList =
-      PSAgentContext.get().getMatrixPartitionRouter().getPartitionKeyList(matrixId, rowIndex);
+      PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId, rowIndex);
     LOG.info("get part keys for matrixId=" + matrixId + ", rowIndex=" + rowIndex + " size=" + partKeyList.size());
 
     if (partKeyList.size() >= 1) {
@@ -440,6 +440,41 @@ abstract class CompDoubleVector extends TIntDoubleVector {
     }
   }
 
+  class ElementUpdateOp extends RecursiveAction {
+    private final TIntDoubleVector[] splits;
+    private final int startPos;
+    private final int endPos;
+    private final IntDoubleElemUpdater updater;
+    private final ElemUpdateParam param;
+
+    public ElementUpdateOp(TIntDoubleVector[] splits, int startPos, int endPos, IntDoubleElemUpdater updater, ElemUpdateParam param) {
+      this.splits = splits;
+      this.startPos = startPos;
+      this.endPos = endPos;
+      this.updater = updater;
+      this.param = param;
+    }
+
+    @Override protected void compute() {
+      if (endPos <= startPos) {
+        return;
+      }
+
+      if (endPos - startPos == 1) {
+        if(splits[startPos] != null) {
+          splits[startPos].elemUpdate(updater, param);
+        }
+      } else {
+        int middle = (startPos + endPos) / 2;
+        ElementUpdateOp opLeft =
+          new ElementUpdateOp(splits, startPos, middle, updater, param);
+        ElementUpdateOp opRight =
+          new ElementUpdateOp(splits, middle, endPos, updater, param);
+        invokeAll(opLeft, opRight);
+      }
+    }
+  }
+
   /**
    * Init a split vector
    *
@@ -574,7 +609,7 @@ abstract class CompDoubleVector extends TIntDoubleVector {
     } else if (other instanceof  SparseDummyVector) {
       return plusBy((SparseDummyVector) other, x);
     } else if (other instanceof SparseDoubleSortedVector) {
-      return plusBy((SparseDoubleVector) other, x);
+      return plusBy((SparseDoubleSortedVector) other, x);
     }
 
     throw new UnsupportedOperationException(
@@ -738,4 +773,12 @@ abstract class CompDoubleVector extends TIntDoubleVector {
 
   @Override
   abstract public CompDoubleVector clone();
+
+  @Override
+  public TIntDoubleVector elemUpdate(IntDoubleElemUpdater updater, ElemUpdateParam param) {
+    ElementUpdateOp
+      op = new ElementUpdateOp(vectors, 0, splitNum, updater, param);
+    MatrixOpExecutors.execute(op);
+    return this;
+  }
 }

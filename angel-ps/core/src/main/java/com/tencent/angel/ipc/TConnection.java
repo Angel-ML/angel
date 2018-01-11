@@ -19,6 +19,7 @@ package com.tencent.angel.ipc;
 import com.tencent.angel.master.MasterProtocol;
 import com.tencent.angel.ps.impl.PSProtocol;
 import com.tencent.angel.worker.WorkerProtocol;
+import java.util.List;
 import org.apache.hadoop.conf.Configuration;
 
 import java.io.Closeable;
@@ -81,4 +82,9 @@ public interface TConnection extends Closeable {
    * @throws IOException
    */
   public MasterProtocol getMasterService(String hostname, int port) throws IOException;
+
+
+  VersionedProtocol getProtocol(final String hostname, final int port,
+      final Class<? extends VersionedProtocol> protocolClass, final long version,
+      List<String> addrList4Failover) throws IOException ;
 }

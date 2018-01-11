@@ -18,7 +18,7 @@ package com.tencent.angel.ml.math.matrix;
 
 import com.tencent.angel.ml.math.vector.TFloatVector;
 
-public abstract class TFloatMatrix extends RowbaseMatrix {
+public abstract class TFloatMatrix<ROW extends TFloatVector> extends RowbaseMatrix<ROW> {
 
   /**
    * Create a new float matrix.
@@ -26,8 +26,8 @@ public abstract class TFloatMatrix extends RowbaseMatrix {
    * @param row the row
    * @param col the col
    */
-  public TFloatMatrix(int row, int col) {
-    super(row, col);
+  public TFloatMatrix(int row, int col, ROW[] vectors) {
+    super(row, col, vectors);
   }
 
   /**
@@ -43,7 +43,7 @@ public abstract class TFloatMatrix extends RowbaseMatrix {
       vectors[rowIndex] = initVector(rowIndex);
     }
 
-    ((TFloatVector)vectors[rowIndex]).plusBy(colIndex, value);
+    vectors[rowIndex].plusBy(colIndex, value);
     return this;
   }
 
@@ -61,7 +61,7 @@ public abstract class TFloatMatrix extends RowbaseMatrix {
       if(vectors[rowIndexes[i]] == null) {
         vectors[rowIndexes[i]] = initVector(rowIndexes[i]);
       }
-      ((TFloatVector)vectors[rowIndexes[i]]).plusBy(colIndexes[i], values[i]);
+      vectors[rowIndexes[i]].plusBy(colIndexes[i], values[i]);
     }
     return this;
   }
@@ -81,7 +81,7 @@ public abstract class TFloatMatrix extends RowbaseMatrix {
     }
 
     for(int i = 0; i < colIndexes.length; i++) {
-      ((TFloatVector)vectors[rowIndex]).plusBy(colIndexes[i], values[i]);
+      vectors[rowIndex].plusBy(colIndexes[i], values[i]);
     }
     return this;
   }
@@ -96,6 +96,6 @@ public abstract class TFloatMatrix extends RowbaseMatrix {
   public float get(int rowIndex, int colIndex) {
     if (vectors[rowIndex] == null)
       return 0.0f;
-    return ((TFloatVector)vectors[rowIndex]).get(colIndex);
+    return vectors[rowIndex].get(colIndex);
   }
 }

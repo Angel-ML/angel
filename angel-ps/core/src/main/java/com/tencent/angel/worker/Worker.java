@@ -19,7 +19,7 @@ package com.tencent.angel.worker;
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.common.AngelEnvironment;
-import com.tencent.angel.common.Location;
+import com.tencent.angel.common.location.Location;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.ipc.TConnectionManager;
@@ -236,34 +236,38 @@ public class Worker implements Executor {
    * @throws Exception the exception
    */
   public void initAndStart() throws Exception {
-    LOG.info("init and start worker");
+    LOG.info("Init and start worker");
+
     psAgent = new PSAgent(conf, masterLocation.getIp(), masterLocation.getPort(),
         workerAttemptId.getWorkerId().getIndex(), false, this);
-
-    LOG.info("after init psagent");
     dataBlockManager = new DataBlockManager();
-    
-    LOG.info("after init datablockmanager");
     taskManager = new TaskManager();
 
+    LOG.info("Init and start psagent for worker");
     psAgent.initAndStart();
+
+    LOG.info("Init data block manager");
     dataBlockManager.init();
 
+    LOG.info("Init and start worker rpc server");
     workerService = new WorkerService();
     workerService.start();
 
-
+    LOG.info("Init counter updater");
     counterUpdater.initialize();
 
     // init task manager and start tasks
     masterClient = psAgent.getMasterClient();
 
     // start heartbeat thread
+    LOG.info("Register to master and start the heartbeat thread");
     startHeartbeatThread();
 
+    LOG.info("Get data splits from master");
     workerGroup = masterClient.getWorkerGroupMetaInfo();
     dataBlockManager.setSplitClassification(workerGroup.getSplits());
 
+    LOG.info("Init and start task manager and all task");
     taskManager.init();
     taskManager.startAllTasks(
         workerGroup.getWorkerRef(workerAttemptId.getWorkerId()).getTaskIdToContextMap());
@@ -407,8 +411,11 @@ public class Worker implements Executor {
   public void workerError(String msg) {
     if (exitedFlag.compareAndSet(false, true)) {
       try {
-        masterClient.workerError(msg);
-        LOG.info("worker failed message : " + msg + ", send it to appmaster success");
+        if(masterClient != null) {
+          masterClient.workerError(msg);
+          LOG.info("worker failed message : " + msg + ", send it to appmaster success");
+          masterClient = null;
+        }
       } catch (ServiceException e) {
         LOG.error("send error message error ", e);
       } finally {
@@ -429,6 +436,7 @@ public class Worker implements Executor {
    */
   public void stop() {
     LOG.info("stop workerService");
+
     if (workerService != null) {
       workerService.stop();
     }
@@ -439,7 +447,6 @@ public class Worker implements Executor {
         psAgent.stop();
         psAgent = null;
       }
-
 
       LOG.info("stop heartbeat thread");
       if (heartbeatThread != null) {

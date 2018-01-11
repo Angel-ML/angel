@@ -36,7 +36,7 @@ public class PartitionClockPolicy implements SyncPolicy {
 
   @Override
   public void sync(MatricesCache cache) {
-    ClockCache clockCache = PSAgentContext.get().getClockCache();
+    /*ClockCache clockCache = PSAgentContext.get().getClockCache();
     MatrixTransportClient matrixClient = PSAgentContext.get().getMatrixTransportClient();
     ConcurrentHashMap<Integer, MatrixCache> matrixCacheMap = cache.getMatricesCacheMap();
     PartitionKey partKey = null;
@@ -63,6 +63,6 @@ public class PartitionClockPolicy implements SyncPolicy {
           }
         }
       }
-    }
+    }*/
   }
 }

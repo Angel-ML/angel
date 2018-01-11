@@ -75,10 +75,10 @@ public class SparseFloatMatrixTest {
     assertEquals(matrix.get(0, 1), 0.0f);
     assertEquals(matrix.get(1, 0), 0.0f);
     assertEquals(matrix.get(1, 1), 2.0f);
-    assertEquals(((SparseFloatVector)matrix.getTVector(0)).get(0), 2.0f);
-    assertEquals(((SparseFloatVector)matrix.getTVector(0)).get(1), 0.0f);
-    assertEquals(((SparseFloatVector)matrix.getTVector(1)).get(0), 0.0f);
-    assertEquals(((SparseFloatVector)matrix.getTVector(1)).get(1), 2.0f);
+    assertEquals(((SparseFloatVector)matrix.getRow(0)).get(0), 2.0f);
+    assertEquals(((SparseFloatVector)matrix.getRow(0)).get(1), 0.0f);
+    assertEquals(((SparseFloatVector)matrix.getRow(1)).get(0), 0.0f);
+    assertEquals(((SparseFloatVector)matrix.getRow(1)).get(1), 2.0f);
   }
 
   @Test

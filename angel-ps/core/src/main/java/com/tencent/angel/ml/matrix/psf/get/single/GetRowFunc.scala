@@ -32,7 +32,7 @@ class GetRowFunc(param: GetParam) extends GetFunc(param) {
 
   def partitionGet(partParam: PartitionGetParam): PartitionGetResult = {
     val param = partParam.asInstanceOf[PartitionGetRowParam]
-    val row = PSContext.get.getMatrixPartitionManager.getRow(param.getMatrixId, param.getRowIndex,
+    val row = psContext.getMatrixStorageManager.getRow(param.getMatrixId, param.getRowIndex,
                                                               param.getPartKey.getPartitionId)
     new PartitionGetRowResult(row)
   }

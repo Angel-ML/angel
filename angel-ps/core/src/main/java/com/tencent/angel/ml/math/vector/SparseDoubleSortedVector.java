@@ -18,7 +18,7 @@ package com.tencent.angel.ml.math.vector;
 
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.protobuf.generated.MLProtos;
+import com.tencent.angel.ml.matrix.RowType;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -109,6 +109,11 @@ public class SparseDoubleSortedVector extends TIntDoubleVector {
     return ret;
   }
 
+  @Override
+  public TIntDoubleVector elemUpdate(IntDoubleElemUpdater updater, ElemUpdateParam param) {
+    throw new UnsupportedOperationException("Unsupport operation");
+  }
+
   @Override public SparseDoubleSortedVector clone() {
     return new SparseDoubleSortedVector(this);
   }
@@ -171,8 +176,8 @@ public class SparseDoubleSortedVector extends TIntDoubleVector {
     return indices;
   }
 
-  @Override public MLProtos.RowType getType() {
-    return MLProtos.RowType.T_DOUBLE_SPARSE;
+  @Override public RowType getType() {
+    return RowType.T_DOUBLE_SPARSE;
   }
 
   @Override public double[] getValues() {

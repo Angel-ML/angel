@@ -18,6 +18,7 @@ package com.tencent.angel.master;
 
 import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.RunningMode;
+import com.tencent.angel.common.location.LocationManager;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.*;
 import com.tencent.angel.master.data.DataSpliter;
@@ -30,6 +31,7 @@ import com.tencent.angel.master.deploy.local.LocalContainerAllocator;
 import com.tencent.angel.master.deploy.local.LocalContainerLauncher;
 import com.tencent.angel.master.deploy.yarn.YarnContainerAllocator;
 import com.tencent.angel.master.deploy.yarn.YarnContainerLauncher;
+import com.tencent.angel.master.matrixmeta.AMMatrixMetaManager;
 import com.tencent.angel.master.metrics.MetricsEventType;
 import com.tencent.angel.master.metrics.MetricsService;
 import com.tencent.angel.master.oplog.AppStateStorage;
@@ -51,6 +53,7 @@ import com.tencent.angel.master.worker.worker.AMWorkerEvent;
 import com.tencent.angel.master.worker.worker.AMWorkerEventType;
 import com.tencent.angel.master.worker.workergroup.AMWorkerGroupEvent;
 import com.tencent.angel.master.worker.workergroup.AMWorkerGroupEventType;
+import com.tencent.angel.plugin.AngelServiceLoader;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.webapp.AngelWebApp;
@@ -86,8 +89,7 @@ import org.apache.hadoop.yarn.webapp.WebApps;
 
 import java.io.IOException;
 import java.security.PrivilegedExceptionAction;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -157,7 +159,7 @@ public class AngelApplicationMaster extends CompositeService {
   private volatile MasterService masterService;
 
   /** matrix meta manager */
-  private MatrixMetaManager matrixMetaManager;
+  private AMMatrixMetaManager matrixMetaManager;
 
   /** parameter server location manager */
   private LocationManager locationManager;
@@ -213,6 +215,8 @@ public class AngelApplicationMaster extends CompositeService {
     angelApp = new App(appContext);
     lock = new ReentrantLock();
   }
+
+
 
   /**
    * running application master context
@@ -306,7 +310,7 @@ public class AngelApplicationMaster extends CompositeService {
     }
 
     @Override
-    public MatrixMetaManager getMatrixMetaManager() {
+    public AMMatrixMetaManager getMatrixMetaManager() {
       return matrixMetaManager;
     }
 
@@ -355,6 +359,10 @@ public class AngelApplicationMaster extends CompositeService {
 
     @Override
     public MetricsService getAlgoMetricsService() {return algoMetricsService; }
+
+    @Override public int getPSReplicationNum() {
+      return conf.getInt(AngelConf.ANGEL_PS_HA_REPLICATION_NUMBER, AngelConf.DEFAULT_ANGEL_PS_HA_REPLICATION_NUMBER);
+    }
 
     @Override
     public int getAMAttemptTime() {
@@ -434,6 +442,7 @@ public class AngelApplicationMaster extends CompositeService {
   @Override
   public void serviceStop() throws Exception {
     super.serviceStop();
+    AngelServiceLoader.stopService();
   }
 
   /**
@@ -607,7 +616,7 @@ public class AngelApplicationMaster extends CompositeService {
   /**
    * init and start all service modules for angel applicaiton master.
    */
-  public void initAndStart() throws IOException {
+  public void initAndStart() throws Exception {
     addIfService(angelApp);
 
     // init app state storage
@@ -625,7 +634,7 @@ public class AngelApplicationMaster extends CompositeService {
     LOG.info("build event dispacher");
 
     // init location manager
-    locationManager = new LocationManager(appContext);
+    locationManager = new LocationManager();
 
     // init container allocator
     AngelDeployMode deployMode = appContext.getDeployMode();
@@ -664,6 +673,15 @@ public class AngelApplicationMaster extends CompositeService {
     // init parameter server manager
     psManager = new ParameterServerManager(appContext, psIdToAttemptIndexMap);
     addIfService(psManager);
+    psManager.init();
+    List<ParameterServerId> psIds = new ArrayList<>(psManager.getParameterServerMap().keySet());
+    Collections.sort(psIds, new Comparator<ParameterServerId>() {
+      @Override public int compare(ParameterServerId s1, ParameterServerId s2) {
+        return s1.getIndex() - s2.getIndex();
+      }
+    });
+    locationManager.setPsIds(psIds.toArray(new ParameterServerId[0]));
+
     dispatcher.register(ParameterServerManagerEventType.class, psManager);
     dispatcher.register(AMParameterServerEventType.class, new ParameterServerEventHandler());
     dispatcher.register(PSAttemptEventType.class, new PSAttemptEventDispatcher());
@@ -725,32 +743,51 @@ public class AngelApplicationMaster extends CompositeService {
     dispatcher.register(AppEventType.class, angelApp);
     dispatcher.register(AppFinishEventType.class, new AppFinishEventHandler());
 
-    try {
-      masterService.init(conf);
-      super.init(conf);
+    masterService.init(conf);
+    super.init(conf);
 
-      // start a web service if use yarn deploy mode
-      if (deployMode == AngelDeployMode.YARN) {
-        try {
-          webApp = WebApps.$for("angel", AMContext.class, appContext).with(conf)
-              .start(new AngelWebApp());
-          LOG.info("start webapp server success");
-          LOG.info("webApp.port()=" + webApp.port());
-        } catch (Exception e) {
-          LOG.error("Webapps failed to start. Ignoring for now:", e);
-        }
+    // start a web service if use yarn deploy mode
+    if (deployMode == AngelDeployMode.YARN) {
+      try {
+        webApp = WebApps.$for("angel", AMContext.class, appContext).with(conf)
+            .start(new AngelWebApp());
+        LOG.info("start webapp server success");
+        LOG.info("webApp.port()=" + webApp.port());
+      } catch (Exception e) {
+        LOG.error("Webapps failed to start. Ignoring for now:", e);
       }
+    }
 
-      masterService.start();
-      super.serviceStart();    
-      psManager.startAllPS();
-      
-      LOG.info("appAttemptId.getAttemptId()=" + appAttemptId.getAttemptId());
-      if (appAttemptId.getAttemptId() > 1) {
-        angelApp.startExecute();
+    masterService.start();
+    locationManager.setMasterLocation(masterService.getLocation());
+
+    super.serviceStart();
+    psManager.startAllPS();
+    AngelServiceLoader.startServiceIfNeed(this,getConfig());
+
+    LOG.info("appAttemptId.getAttemptId()=" + appAttemptId.getAttemptId());
+    if (appAttemptId.getAttemptId() > 1) {
+      waitForAllPsRegisted();
+      waitForAllMetricsInited();
+      angelApp.startExecute();
+    }
+  }
+
+  private void waitForAllPsRegisted() throws InterruptedException {
+    while(true) {
+      if(locationManager.isAllPsRegisted()) {
+        return;
       }
-    } catch (Exception e) {
-      LOG.error("Failed startup APPMaster.", e);
+      Thread.sleep(100);
+    }
+  }
+
+  private void waitForAllMetricsInited() throws InterruptedException {
+    while(true) {
+      if(matrixMetaManager.isAllMatricesCreated()) {
+        return;
+      }
+      Thread.sleep(100);
     }
   }
 
@@ -767,7 +804,7 @@ public class AngelApplicationMaster extends CompositeService {
 
     // if load failed, just build a new MatrixMetaManager
     if (matrixMetaManager == null) {
-      matrixMetaManager = new MatrixMetaManager();
+      matrixMetaManager = new AMMatrixMetaManager(appContext);
     }
   }
 
@@ -906,7 +943,7 @@ public class AngelApplicationMaster extends CompositeService {
     @Override
     public void handle(PSAttemptEvent event) {
       PSAttemptId attemptId = event.getPSAttemptId();
-      ParameterServerId id = attemptId.getParameterServerId();
+      ParameterServerId id = attemptId.getPsId();
       psManager.getParameterServer(id).getPSAttempt(attemptId).handle(event);
     }
   }

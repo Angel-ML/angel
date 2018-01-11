@@ -16,7 +16,7 @@
 
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
-import com.tencent.angel.protobuf.generated.MLProtos.RowType;
+import com.tencent.angel.ml.matrix.RowType;
 import io.netty.buffer.ByteBuf;
 
 /**

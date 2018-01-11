@@ -1,54 +1,69 @@
-package com.tencent.angel.spark.ml.optim
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.tencent.angel.spark.ml.optimize
 
 object FTRL {
 
   // compute the increment for z and n model for one instance
-  def trainByInstance(data: (String, Array[(Long, Double)]),
+  def trainByInstance(data: (Double, Array[(Long, Double)]),
                       localZ: Map[Long, Double],
                       localN: Map[Long, Double],
                       alpha: Double,
                       beta: Double,
                       lambda1: Double,
                       lambda2: Double,
-                      getGradLoss:(Array[(Long, Double)], Double, Array[(Long, Double)]) => Map[Long, Double]
-                     ): (Array[(Long, Double)], Array[(Long, Double)]) = {
+                      getGradLoss:(Map[Long, Double], Double, Array[(Long, Double)]) => Map[Long, Double]
+                     ): (Map[Long, Double], Map[Long, Double]) = {
 
-    val label = data._1.toDouble
+    val label = data._1
     val feature = data._2
-    // the number of not zero of feature
-    val featLeg = feature.length
 
     // init w which is the weight of the model
-    val localW = new Array[(Long, Double)](featLeg)
+    var localW: Map[Long, Double] = Map()
 
     // update the w
-    (0 until featLeg).foreach{ i =>
-      val fId = feature(i)._1
+    feature.foreach{ case(fId, value) =>
       val zVal = localZ.getOrElse(fId, 0.0)
       val nVal = localN.getOrElse(fId, 0.0)
       // w_local的更新
-      localW(i) = (fId, updateWeight(zVal, nVal, alpha, beta, lambda1, lambda2))
+      localW += (fId -> updateWeight(zVal, nVal, alpha, beta, lambda1, lambda2))
     }
+
+    // compute the new gradient
+    val newGradient = getGradLoss(localW, label, feature)
 
     var gOnId = 0.0
     var dOnId = 0.0
 
     // update z and n in all dimension
-    val incrementZ = new Array[(Long, Double)](featLeg)
-    val incrementN = new Array[(Long, Double)](featLeg)
+    var incrementZ: Map[Long, Double] = Map()
+    var incrementN: Map[Long, Double] = Map()
 
-    (0 until featLeg).foreach{ i =>
+    feature.foreach{ case(fId, value) =>
 
-      val fId = feature(i)._1
       val nVal = localN.getOrElse(fId, 0.0)
 
       // G(t):第t次迭代中损失函数梯度，g(t)表示某一维度上的梯度
-      gOnId = getGradLoss(localW, label, feature).getOrElse(fId, 0.0)
+      gOnId = newGradient.getOrElse(fId, 0.0)
       // delta(s),n_val初始为0，z(i)初始为0
       dOnId = 1.0 / alpha * (Math.sqrt(nVal + gOnId * gOnId) - Math.sqrt(nVal))
 
-      incrementZ(i) = (fId, gOnId - dOnId * localW(i)._2)
-      incrementN(i) = (fId, gOnId * gOnId)
+      incrementZ += (fId -> (gOnId - dOnId * localW.getOrElse(fId, 0.0)))
+      incrementN += (fId -> gOnId * gOnId)
     }
 
     (incrementZ, incrementN)

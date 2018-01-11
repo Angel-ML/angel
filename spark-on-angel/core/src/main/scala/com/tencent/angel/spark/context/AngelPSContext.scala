@@ -29,10 +29,10 @@ import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.{SparkConf, TaskContext}
 
 import com.tencent.angel.client.AngelContext
-import com.tencent.angel.common.Location
+import com.tencent.angel.common.location.Location
 import com.tencent.angel.conf.AngelConf._
 import com.tencent.angel.ml.matrix.{MatrixContext, MatrixMeta}
-import com.tencent.angel.protobuf.generated.MLProtos.RowType
+import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.psagent.PSAgent
 import com.tencent.angel.psagent.matrix.{MatrixClient, MatrixClientFactory}
 import com.tencent.angel.spark.client.PSClient
@@ -86,20 +86,17 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
       maxRowNumInBlock, maxColNumInBlock)
     matrix.setRowType(mt)
 
-    val meta = psAgent.createMatrix(matrix, 5000L)
+    psAgent.createMatrix(matrix, 5000L)
+    val meta = psAgent.getMatrix(matrix.getName)
     matrixCounter += 1
     matrixMetaMap(meta.getId) = meta
 
     meta
   }
 
-  def destroyMatrix(meta: MatrixMeta): Unit = {
-    destroyMatrix(meta.getId())
-  }
-
   def destroyMatrix(matrixId: Int): Unit = {
     matrixMetaMap.remove(matrixId).foreach { x =>
-      psAgent.releaseMatrix(x)
+      psAgent.releaseMatrix(x.getId)
     }
   }
 
@@ -109,18 +106,13 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
       poolCapacity: Int = PSVectorPool.DEFAULT_POOL_CAPACITY): PSVector = {
 
     val vector = createVectorPool(dimension, poolCapacity, t).allocate()
-    // TODO: fix this
-//    PSClient.instance().initOps.fill(vector, 0.0)
+    PSClient.instance().vectorOps.fill(vector, 0.0)
     vector
   }
 
   def duplicateVector(original: PSVector): PSVector = {
-    /**
-    if (original.isInstanceOf[PSVectorDecorator])
-      throw new AngelException("Don't try to clone a Decorated PSVector")
-    */
     val vector = getPool(original.poolId).allocate()
-    PSClient.instance().initOps.fill(vector, 0.0)
+    PSClient.instance().vectorOps.fill(vector, 0.0)
     vector
   }
 
@@ -133,11 +125,7 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
       capacity: Int,
       t: VectorType): PSVectorPool = {
 
-    val matrixType = if (t == VectorType.SPARSE) {
-      MatrixType.SPARSE
-    } else {
-      MatrixType.DENSE
-    }
+    val matrixType = if (t == VectorType.SPARSE) MatrixType.SPARSE else MatrixType.DENSE
 
     val thisCapacity = if (capacity > 0) capacity else PSVectorPool.DEFAULT_POOL_CAPACITY
 
@@ -255,7 +243,10 @@ private[spark] object AngelPSContext {
     val queue = conf.get("spark.yarn.queue", "root.default")
 
     /** mode: YARN or LOCAL */
-    val deployMode = conf.get("spark.ps.mode", DEFAULT_ANGEL_DEPLOY_MODE)
+    val master = conf.getOption("spark.master")
+    val isLocal = if (master.isEmpty || master.get.toLowerCase.startsWith("local")) true else false
+    val deployMode = if (isLocal) "LOCAL" else conf.get("spark.ps.mode", DEFAULT_ANGEL_DEPLOY_MODE)
+
     val psNum = conf.getInt("spark.ps.instances", 1)
     val psCores = conf.getInt("spark.ps.cores", 1)
     val psMem = conf.getSizeAsMb("spark.ps.memory", "4g").toInt
@@ -289,7 +280,7 @@ private[spark] object AngelPSContext {
 
     hadoopConf.set(ANGEL_DEPLOY_MODE, deployMode)
     if (deployMode == "LOCAL") {
-      hadoopConf.set(ANGEL_PS_HEARTBEAT_INTERVAL_MS, "1000")
+      hadoopConf.set(ANGEL_PS_HEARTBEAT_INTERVAL_MS, "200")
     }
     hadoopConf.setInt(ANGEL_PS_NUMBER, psNum)
     hadoopConf.setInt(ANGEL_PS_CPU_VCORES, psCores)

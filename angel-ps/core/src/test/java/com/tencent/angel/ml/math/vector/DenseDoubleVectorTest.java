@@ -17,7 +17,7 @@
 package com.tencent.angel.ml.math.vector;
 
 import com.tencent.angel.ml.math.TAbstractVector;
-import com.tencent.angel.protobuf.generated.MLProtos;
+import com.tencent.angel.ml.matrix.RowType;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -278,7 +278,7 @@ public class DenseDoubleVectorTest {
   @Test
   public void getType() throws Exception {
     DenseDoubleVector vec = new DenseDoubleVector(10);
-    assertEquals(MLProtos.RowType.T_DOUBLE_DENSE, vec.getType());
+    assertEquals(RowType.T_DOUBLE_DENSE, vec.getType());
   }
 
   @Test

@@ -17,15 +17,17 @@
 
 package com.tencent.angel.ml.matrix.psf.get.enhance.indexed;
 
+import com.tencent.angel.PartitionKey;
+import com.tencent.angel.ml.math.vector.CompSparseDoubleVector;
 import com.tencent.angel.ml.math.vector.SparseDoubleVector;
+import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.psf.get.base.*;
 import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult;
-import com.tencent.angel.protobuf.generated.MLProtos;
-import com.tencent.angel.ps.impl.PSContext;
 import com.tencent.angel.ps.impl.matrix.*;
+import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.ResponseType;
+import com.tencent.angel.ml.matrix.RowType;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
-import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 
 import java.nio.DoubleBuffer;
 import java.util.HashMap;
@@ -53,31 +55,26 @@ public class IndexGetFunc extends GetFunc {
   @Override
   public PartitionGetResult partitionGet(PartitionGetParam partParam) {
     ServerPartition part =
-        PSContext.get().getMatrixPartitionManager()
-            .getPartition(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
+        psContext.getMatrixStorageManager()
+            .getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
 
     if (part != null) {
       int rowId = ((IndexPartGetParam) partParam).getRowId();
-      int[] index = ((IndexPartGetParam) partParam).getIndex();
-      int paramId = ((IndexPartGetParam) partParam).getParamId();
+      int[] indexes = ((IndexPartGetParam) partParam).getIndexes();
 
       ServerRow row = part.getRow(rowId);
-      MLProtos.RowType rowType = row.getRowType();
-      double[] values = new double[index.length];
+      RowType rowType = row.getRowType();
+      double[] values;
       switch (rowType) {
         case T_DOUBLE_DENSE: {
-          values = getVluesofServerDenseDoubleRow(row, index);
-          return new IndexGetResult(paramId, values);
+          values = getVluesofServerDenseDoubleRow(row, indexes);
+          return new IndexGetResult(partParam.getPartKey(), values);
         }
 
-        case T_DOUBLE_SPARSE: {
-          values = getVluesofServerSparseDoubleRow(row, index);
-          return new IndexGetResult(paramId, values);
-        }
-
-        case T_DOUBLE_SPARSE_LONGKEY: {
-          values = getVluesofServerSparseDoubleLongRow(row, index);
-          return new IndexGetResult(paramId, values);
+        case T_DOUBLE_SPARSE:
+        case T_DOUBLE_SPARSE_COMPONENT:{
+          values = getVluesofServerSparseDoubleRow(row, indexes);
+          return new IndexGetResult(partParam.getPartKey(), values);
         }
 
         default:
@@ -116,18 +113,6 @@ public class IndexGetFunc extends GetFunc {
     return values;
   }
 
-  private double[] getVluesofServerSparseDoubleLongRow(ServerRow row, int[] index) {
-    Long2DoubleOpenHashMap data = ((ServerSparseDoubleLongKeyRow) row).getData();
-    double[] values = new double[index.length];
-
-    for (int i = 0; i < index.length; i++) {
-      values[i] = data.get(index[i]);
-    }
-
-    return values;
-  }
-
-
   /**
    * Merge all partition get result and return a sparse double vector
    * @param partResults the partition results
@@ -136,22 +121,14 @@ public class IndexGetFunc extends GetFunc {
 
   @Override
   public GetResult merge(List<PartitionGetResult> partResults) {
-    GetParam getParam = getParam();
-    List<PartitionGetParam> partParams = getParam.split();
-    Map<Integer, PartitionGetParam> paramIdToPartGetParam = new HashMap<Integer,
-        PartitionGetParam>();
-    for (PartitionGetParam partParam: partParams) {
-      paramIdToPartGetParam.put(((IndexPartGetParam) partParam).getParamId(), partParam);
-    }
-
-    MLProtos.RowType rowType = PSContext.get().getMatrixPartitionManager()
-          .getPartition(param.getMatrixId(), ((IndexGetParam) param).getRowId())
-          .getRow(((IndexGetParam) param).getRowId()).getRowType();
-
+    RowType rowType = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(param.getMatrixId()).getRowType();
     switch (rowType) {
       case T_DOUBLE_DENSE:
       case T_DOUBLE_SPARSE:
-        return mergeSparseDoubleVector(paramIdToPartGetParam, partResults);
+        return mergeSparseDoubleVector(((IndexGetParam) param).getPartKeyToIndexesMap(), partResults);
+
+      case T_DOUBLE_SPARSE_COMPONENT:
+        return mergeSparseDoubleCompVector(((IndexGetParam) param).getPartKeyToIndexesMap(), partResults);
 
       default:
         throw new UnsupportedOperationException("Unsupport operation: update " + rowType + " to " + this.getClass().getName());
@@ -159,21 +136,53 @@ public class IndexGetFunc extends GetFunc {
 
   }
 
-  public GetResult mergeSparseDoubleVector(Map<Integer, PartitionGetParam> paramIdToPartGetParam,
-                                           List<PartitionGetResult> partResults) {
+  private GetResult mergeSparseDoubleVector(Map<PartitionKey, int[]> partKeyToIndexesMap,
+    List<PartitionGetResult> partResults) {
+    SparseDoubleVector vector = new SparseDoubleVector(
+      (int)PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(getParam().getMatrixId()).getColNum(),
+      ((IndexGetParam) param).size());
 
-    SparseDoubleVector vector = new SparseDoubleVector();
     for (PartitionGetResult part: partResults) {
-      int paramId = ((IndexGetResult) part).getParamId();
-      int[] index = ((IndexPartGetParam) paramIdToPartGetParam.get(paramId)).getIndex();
+      PartitionKey partKey = ((IndexGetResult) part).partKey;
+      int[] indexes = partKeyToIndexesMap.get(partKey);
       double[] values = ((IndexGetResult) part).getValues();
-      for (int i = 0; i < index.length; i++) {
-        vector.set(index[i], values[i]);
+      for (int i = 0; i < indexes.length; i++) {
+        vector.set(indexes[i], values[i]);
       }
     }
-
+    vector.setMatrixId(param.getMatrixId());
+    vector.setRowId(((IndexGetParam) param).getRowId());
     return new GetRowResult(ResponseType.SUCCESS, vector);
   }
 
+  private GetResult mergeSparseDoubleCompVector(Map<PartitionKey, int[]> partKeyToIndexesMap,
+    List<PartitionGetResult> partResults) {
+    int size = partResults.size();
+    Map<PartitionKey, PartitionGetResult> partKeyToResultMap = new HashMap<>(size);
+    for(int i = 0; i < size; i++) {
+      partKeyToResultMap.put(((IndexGetResult)partResults.get(i)).getPartKey(), partResults.get(i));
+    }
 
+    List<PartitionKey> partKeys = PSAgentContext.get().getMatrixMetaManager().getPartitions(
+      param.matrixId, ((IndexGetParam) param).getRowId());
+    MatrixMeta meta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(param.matrixId);
+
+    partKeys.sort((PartitionKey part1, PartitionKey part2) -> {
+      return (int)(part1.getStartCol() - part2.getStartCol());
+    });
+
+    size = partKeys.size();
+    SparseDoubleVector [] splitVecs = new SparseDoubleVector[size];
+    for(int i = 0; i < size; i++) {
+      if(partKeyToIndexesMap.containsKey(partKeys.get(i))) {
+        splitVecs[i] = new SparseDoubleVector((int)meta.getColNum(),
+          partKeyToIndexesMap.get(partKeys.get(i)),
+          ((IndexGetResult)partKeyToResultMap.get(partKeys.get(i))).getValues());
+      }
+    }
+
+    CompSparseDoubleVector vector = new CompSparseDoubleVector(meta.getId(),
+      ((IndexGetParam) param).getRowId(), (int)meta.getColNum(), partKeys.toArray(new PartitionKey[0]), splitVecs);
+    return new GetRowResult(ResponseType.SUCCESS, vector);
+  }
 }

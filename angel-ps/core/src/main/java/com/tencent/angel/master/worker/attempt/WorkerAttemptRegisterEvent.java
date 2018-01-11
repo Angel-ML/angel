@@ -16,7 +16,7 @@
 
 package com.tencent.angel.master.worker.attempt;
 
-import com.tencent.angel.common.Location;
+import com.tencent.angel.common.location.Location;
 import com.tencent.angel.worker.WorkerAttemptId;
 
 /**

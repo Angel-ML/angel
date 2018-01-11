@@ -16,19 +16,24 @@
 
 package com.tencent.angel.ml.math.vector;
 
+import com.tencent.angel.common.Serialize;
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.TVector;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.protobuf.generated.MLProtos;
+import io.netty.buffer.ByteBuf;
+import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import java.util.stream.IntStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
  * Sparse int vector.
  */
-public class SparseIntVector extends TIntVector {
+public class SparseIntVector extends TIntVector implements Serialize{
 
   private final static Log LOG = LogFactory.getLog(SparseIntVector.class);
 
@@ -40,7 +45,7 @@ public class SparseIntVector extends TIntVector {
   /**
    * store the data
    */
-  final Int2IntOpenHashMap hashMap;
+  Int2IntOpenHashMap hashMap;
 
   /**
    * init the vector by init size
@@ -384,8 +389,8 @@ public class SparseIntVector extends TIntVector {
   }
 
   @Override
-  public MLProtos.RowType getType() {
-    return MLProtos.RowType.T_INT_SPARSE;
+  public RowType getType() {
+    return RowType.T_INT_SPARSE;
   }
 
   @Override
@@ -395,5 +400,30 @@ public class SparseIntVector extends TIntVector {
 
   public Int2IntOpenHashMap getIndexToValueMap() {
     return hashMap;
+  }
+
+  @Override
+  public void serialize(ByteBuf buf) {
+    buf.writeInt(dim);
+    buf.writeInt(hashMap.size());
+    hashMap.forEach((key, value) -> {
+      buf.writeInt(key);
+      buf.writeFloat(value);
+    });
+  }
+
+  @Override
+  public void deserialize(ByteBuf buf) {
+    int dim = buf.readInt();
+    int length = buf.readInt();
+    Int2IntOpenHashMap data = new Int2IntOpenHashMap(length);
+    IntStream.range(0,length).forEach(i-> data.put(buf.readInt(), buf.readInt()));
+    this.dim = dim;
+    this.hashMap = data;
+  }
+
+  @Override
+  public int bufferLen() {
+    return 4 + (4 + 4) * hashMap.size();
   }
 }

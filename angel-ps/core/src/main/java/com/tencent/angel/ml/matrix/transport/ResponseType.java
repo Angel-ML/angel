@@ -20,15 +20,30 @@ import java.util.HashMap;
 import java.util.Map;
 
 public enum ResponseType {
-  SUCCESS(1), FAILED(2), FATAL(3), NOTREADY(4);
+  SUCCESS(1),
+  SERVER_NOT_READY(2),
+  CONNECT_REFUSED(3),
+  NETWORK_ERROR(4),
+  TIMEOUT(5),
+  SERVER_HANDLE_FAILED(6),
+  SERVER_HANDLE_FATAL(7),
+  CLOCK_NOTREADY(8),
+  PARTITION_READ_ONLY(9),
+  UNKNOWN_ERROR(10);
 
   public static Map<Integer, ResponseType> typeIdToTypeMap;
   static {
     typeIdToTypeMap = new HashMap<Integer, ResponseType>();
     typeIdToTypeMap.put(SUCCESS.typeId, SUCCESS);
-    typeIdToTypeMap.put(FAILED.typeId, FAILED);
-    typeIdToTypeMap.put(FATAL.typeId, FATAL);
-    typeIdToTypeMap.put(NOTREADY.typeId, NOTREADY);
+    typeIdToTypeMap.put(SERVER_NOT_READY.typeId, SERVER_NOT_READY);
+    typeIdToTypeMap.put(CONNECT_REFUSED.typeId, CONNECT_REFUSED);
+    typeIdToTypeMap.put(NETWORK_ERROR.typeId, NETWORK_ERROR);
+    typeIdToTypeMap.put(TIMEOUT.typeId, TIMEOUT);
+    typeIdToTypeMap.put(SERVER_HANDLE_FAILED.typeId, SERVER_HANDLE_FAILED);
+    typeIdToTypeMap.put(SERVER_HANDLE_FATAL.typeId, SERVER_HANDLE_FATAL);
+    typeIdToTypeMap.put(CLOCK_NOTREADY.typeId, CLOCK_NOTREADY);
+    typeIdToTypeMap.put(PARTITION_READ_ONLY.typeId, PARTITION_READ_ONLY);
+    typeIdToTypeMap.put(UNKNOWN_ERROR.typeId, UNKNOWN_ERROR);
   }
 
 

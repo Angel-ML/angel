@@ -22,19 +22,17 @@ import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.localcluster.LocalClusterContext;
+import com.tencent.angel.master.matrixmeta.AMMatrixMetaManager;
 import com.tencent.angel.master.task.AMTask;
 import com.tencent.angel.master.task.AMTaskManager;
 import com.tencent.angel.ml.math.vector.DenseDoubleVector;
-import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.ml.matrix.MatrixMeta;
+import com.tencent.angel.ml.matrix.*;
 import com.tencent.angel.protobuf.ProtobufUtil;
-import com.tencent.angel.protobuf.generated.MLProtos;
-import com.tencent.angel.protobuf.generated.MLProtos.MatrixPartitionLocation;
-import com.tencent.angel.protobuf.generated.MLProtos.MatrixProto;
-import com.tencent.angel.protobuf.generated.MLProtos.RowType;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
-import com.tencent.angel.ps.impl.MatrixPartitionManager;
+import com.tencent.angel.ps.impl.MatrixStorageManager;
+import com.tencent.angel.ps.impl.PSContext;
+import com.tencent.angel.ps.impl.PSMatrixMetaManager;
 import com.tencent.angel.ps.impl.ParameterServer;
 import com.tencent.angel.ps.impl.matrix.ServerMatrix;
 import com.tencent.angel.ps.impl.matrix.ServerPartition;
@@ -57,7 +55,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -96,8 +94,8 @@ public class MatrixMetaManagerTest {
       conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
 
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
-      conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
       conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 2);
+      conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 10000);
 
       // get a angel client
       angelClient = AngelClientFactory.get(conf);
@@ -109,24 +107,25 @@ public class MatrixMetaManagerTest {
       mMatrix.setColNum(100000);
       mMatrix.setMaxRowNumInBlock(1);
       mMatrix.setMaxColNumInBlock(50000);
-      mMatrix.setRowType(MLProtos.RowType.T_INT_DENSE);
+      mMatrix.setRowType(RowType.T_INT_DENSE);
       mMatrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       mMatrix.set(MatrixConf.MATRIX_HOGWILD, "true");
       mMatrix.set(MatrixConf.MATRIX_AVERAGE, "false");
       mMatrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_INT");
       angelClient.addMatrix(mMatrix);
 
-      mMatrix.setName("w2");
-      mMatrix.setRowNum(1);
-      mMatrix.setColNum(100000);
-      mMatrix.setMaxRowNumInBlock(1);
-      mMatrix.setMaxColNumInBlock(50000);
-      mMatrix.setRowType(MLProtos.RowType.T_DOUBLE_DENSE);
-      mMatrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
-      mMatrix.set(MatrixConf.MATRIX_HOGWILD, "false");
-      mMatrix.set(MatrixConf.MATRIX_AVERAGE, "false");
-      mMatrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
-      angelClient.addMatrix(mMatrix);
+      MatrixContext mMatrix2 = new MatrixContext();
+      mMatrix2.setName("w2");
+      mMatrix2.setRowNum(1);
+      mMatrix2.setColNum(100000);
+      mMatrix2.setMaxRowNumInBlock(1);
+      mMatrix2.setMaxColNumInBlock(50000);
+      mMatrix2.setRowType(RowType.T_DOUBLE_DENSE);
+      mMatrix2.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
+      mMatrix2.set(MatrixConf.MATRIX_HOGWILD, "false");
+      mMatrix2.set(MatrixConf.MATRIX_AVERAGE, "false");
+      mMatrix2.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
+      angelClient.addMatrix(mMatrix2);
 
       angelClient.startPSServer();
       angelClient.run();
@@ -150,41 +149,40 @@ public class MatrixMetaManagerTest {
       LOG.info("===========================testMatrixMetaManager===============================");
       AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
       assertTrue(angelAppMaster != null);
-      com.tencent.angel.master.MatrixMetaManager matrixMetaManager =
-        angelAppMaster.getAppContext().getMatrixMetaManager();
-      MatrixProto matrixw1Proto = matrixMetaManager.getMatrix("w1");
-      MatrixProto matrixw2Proto = matrixMetaManager.getMatrix("w2");
+      AMMatrixMetaManager matrixMetaManager = angelAppMaster.getAppContext().getMatrixMetaManager();
+      MatrixMeta matrixw1Proto = matrixMetaManager.getMatrix("w1");
+      MatrixMeta matrixw2Proto = matrixMetaManager.getMatrix("w2");
       assertTrue(matrixw1Proto != null);
       assertTrue(matrixw2Proto != null);
 
       assertEquals(matrixw1Proto.getRowNum(), 1);
       assertEquals(matrixw1Proto.getColNum(), 100000);
-      assertEquals(matrixw1Proto.getMatrixPartLocationCount(), 2);
-      List<MatrixPartitionLocation> w1Parts = matrixw1Proto.getMatrixPartLocationList();
-      assertEquals(w1Parts.get(0).getPsId(), ProtobufUtil.convertToIdProto(psId));
-      assertEquals(w1Parts.get(0).getPart().getPartitionId(), 0);
-      assertEquals(w1Parts.get(0).getPart().getStartRow(), 0);
-      assertEquals(w1Parts.get(0).getPart().getEndRow(), 1);
-      assertEquals(w1Parts.get(0).getPart().getStartCol(), 0);
-      assertEquals(w1Parts.get(0).getPart().getEndCol(), 50000);
-      assertEquals(w1Parts.get(1).getPart().getPartitionId(), 1);
-      assertEquals(w1Parts.get(1).getPart().getStartRow(), 0);
-      assertEquals(w1Parts.get(1).getPart().getEndRow(), 1);
-      assertEquals(w1Parts.get(1).getPart().getStartCol(), 50000);
-      assertEquals(w1Parts.get(1).getPart().getEndCol(), 100000);
+      assertEquals(matrixw1Proto.getPartitionMetas().size(), 2);
+      Map<Integer, PartitionMeta> w1Parts = matrixw1Proto.getPartitionMetas();
+      assertEquals(w1Parts.get(0).getPss().get(0), psId);
+      assertEquals(w1Parts.get(0).getPartId(), 0);
+      assertEquals(w1Parts.get(0).getStartRow(), 0);
+      assertEquals(w1Parts.get(0).getEndRow(), 1);
+      assertEquals(w1Parts.get(0).getStartCol(), 0);
+      assertEquals(w1Parts.get(0).getEndCol(), 50000);
+      assertEquals(w1Parts.get(1).getPartId(), 1);
+      assertEquals(w1Parts.get(1).getStartRow(), 0);
+      assertEquals(w1Parts.get(1).getEndRow(), 1);
+      assertEquals(w1Parts.get(1).getStartCol(), 50000);
+      assertEquals(w1Parts.get(1).getEndCol(), 100000);
 
-      List<MatrixPartitionLocation> w2Parts = matrixw2Proto.getMatrixPartLocationList();
-      assertEquals(w2Parts.get(0).getPsId(), ProtobufUtil.convertToIdProto(psId));
-      assertEquals(w2Parts.get(0).getPart().getPartitionId(), 0);
-      assertEquals(w2Parts.get(0).getPart().getStartRow(), 0);
-      assertEquals(w2Parts.get(0).getPart().getEndRow(), 1);
-      assertEquals(w2Parts.get(0).getPart().getStartCol(), 0);
-      assertEquals(w2Parts.get(0).getPart().getEndCol(), 50000);
-      assertEquals(w2Parts.get(1).getPart().getPartitionId(), 1);
-      assertEquals(w2Parts.get(1).getPart().getStartRow(), 0);
-      assertEquals(w2Parts.get(1).getPart().getEndRow(), 1);
-      assertEquals(w2Parts.get(1).getPart().getStartCol(), 50000);
-      assertEquals(w2Parts.get(1).getPart().getEndCol(), 100000);
+      Map<Integer, PartitionMeta> w2Parts = matrixw2Proto.getPartitionMetas();
+      assertEquals(w2Parts.get(0).getPss().get(0), psId);
+      assertEquals(w2Parts.get(0).getPartId(), 0);
+      assertEquals(w2Parts.get(0).getStartRow(), 0);
+      assertEquals(w2Parts.get(0).getEndRow(), 1);
+      assertEquals(w2Parts.get(0).getStartCol(), 0);
+      assertEquals(w2Parts.get(0).getEndCol(), 50000);
+      assertEquals(w2Parts.get(1).getPartId(), 1);
+      assertEquals(w2Parts.get(1).getStartRow(), 0);
+      assertEquals(w2Parts.get(1).getEndRow(), 1);
+      assertEquals(w2Parts.get(1).getStartCol(), 50000);
+      assertEquals(w2Parts.get(1).getEndCol(), 100000);
     } catch (Exception x) {
       LOG.error("run testMatrixMetaManager failed ", x);
       throw x;
@@ -208,7 +206,7 @@ public class MatrixMetaManagerTest {
       mMatrix.setColNum(100000);
       mMatrix.setMaxRowNumInBlock(1);
       mMatrix.setMaxColNumInBlock(50000);
-      mMatrix.setRowType(MLProtos.RowType.T_DOUBLE_DENSE);
+      mMatrix.setRowType(RowType.T_DOUBLE_DENSE);
       mMatrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       mMatrix.set(MatrixConf.MATRIX_HOGWILD, "true");
       mMatrix.set(MatrixConf.MATRIX_AVERAGE, "false");
@@ -220,7 +218,7 @@ public class MatrixMetaManagerTest {
       mMatrix.setColNum(100000);
       mMatrix.setMaxRowNumInBlock(1);
       mMatrix.setMaxColNumInBlock(50000);
-      mMatrix.setRowType(MLProtos.RowType.T_DOUBLE_DENSE);
+      mMatrix.setRowType(RowType.T_DOUBLE_DENSE);
       mMatrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       mMatrix.set(MatrixConf.MATRIX_HOGWILD, "true");
       mMatrix.set(MatrixConf.MATRIX_AVERAGE, "false");
@@ -240,46 +238,48 @@ public class MatrixMetaManagerTest {
 
       AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
       assertTrue(angelAppMaster != null);
-      com.tencent.angel.master.MatrixMetaManager matrixMetaManager =
+      AMMatrixMetaManager matrixMetaManager =
         angelAppMaster.getAppContext().getMatrixMetaManager();
-      MatrixProto matrixw3Proto = matrixMetaManager.getMatrix("w3");
-      MatrixProto matrixw4Proto = matrixMetaManager.getMatrix("w4");
+
+      MatrixMeta matrixw3Proto = matrixMetaManager.getMatrix("w3");
+      MatrixMeta matrixw4Proto = matrixMetaManager.getMatrix("w4");
       assertNotNull(matrixw3Proto);
       assertNotNull(matrixw4Proto);
 
       assertEquals(matrixw3Proto.getRowNum(), 1);
       assertEquals(matrixw3Proto.getColNum(), 100000);
-      assertEquals(matrixw3Proto.getMatrixPartLocationCount(), 2);
-      List<MatrixPartitionLocation> w3Parts = matrixw3Proto.getMatrixPartLocationList();
-      assertEquals(w3Parts.get(0).getPsId(), ProtobufUtil.convertToIdProto(psId));
-      assertEquals(w3Parts.get(0).getPart().getPartitionId(), 0);
-      assertEquals(w3Parts.get(0).getPart().getStartRow(), 0);
-      assertEquals(w3Parts.get(0).getPart().getEndRow(), 1);
-      assertEquals(w3Parts.get(0).getPart().getStartCol(), 0);
-      assertEquals(w3Parts.get(0).getPart().getEndCol(), 50000);
-      assertEquals(w3Parts.get(1).getPart().getPartitionId(), 1);
-      assertEquals(w3Parts.get(1).getPart().getStartRow(), 0);
-      assertEquals(w3Parts.get(1).getPart().getEndRow(), 1);
-      assertEquals(w3Parts.get(1).getPart().getStartCol(), 50000);
-      assertEquals(w3Parts.get(1).getPart().getEndCol(), 100000);
+      assertEquals(matrixw3Proto.getPartitionMetas().size(), 2);
 
-      List<MatrixPartitionLocation> w4Parts = matrixw4Proto.getMatrixPartLocationList();
-      assertEquals(w4Parts.get(0).getPsId(), ProtobufUtil.convertToIdProto(psId));
-      assertEquals(w4Parts.get(0).getPart().getPartitionId(), 0);
-      assertEquals(w4Parts.get(0).getPart().getStartRow(), 0);
-      assertEquals(w4Parts.get(0).getPart().getEndRow(), 1);
-      assertEquals(w4Parts.get(0).getPart().getStartCol(), 0);
-      assertEquals(w4Parts.get(0).getPart().getEndCol(), 50000);
-      assertEquals(w4Parts.get(1).getPart().getPartitionId(), 1);
-      assertEquals(w4Parts.get(1).getPart().getStartRow(), 0);
-      assertEquals(w4Parts.get(1).getPart().getEndRow(), 1);
-      assertEquals(w4Parts.get(1).getPart().getStartCol(), 50000);
-      assertEquals(w4Parts.get(1).getPart().getEndCol(), 100000);
+      Map<Integer, PartitionMeta> w3Parts = matrixw3Proto.getPartitionMetas();
+      assertEquals(w3Parts.get(0).getPss().get(0), psId);
+      assertEquals(w3Parts.get(0).getPartId(), 0);
+      assertEquals(w3Parts.get(0).getStartRow(), 0);
+      assertEquals(w3Parts.get(0).getEndRow(), 1);
+      assertEquals(w3Parts.get(0).getStartCol(), 0);
+      assertEquals(w3Parts.get(0).getEndCol(), 50000);
+      assertEquals(w3Parts.get(1).getPartId(), 1);
+      assertEquals(w3Parts.get(1).getStartRow(), 0);
+      assertEquals(w3Parts.get(1).getEndRow(), 1);
+      assertEquals(w3Parts.get(1).getStartCol(), 50000);
+      assertEquals(w3Parts.get(1).getEndCol(), 100000);
+
+      Map<Integer, PartitionMeta>  w4Parts = matrixw4Proto.getPartitionMetas();
+      assertEquals(w4Parts.get(0).getPss().get(0), psId);
+      assertEquals(w4Parts.get(0).getPartId(), 0);
+      assertEquals(w4Parts.get(0).getStartRow(), 0);
+      assertEquals(w4Parts.get(0).getEndRow(), 1);
+      assertEquals(w4Parts.get(0).getStartCol(), 0);
+      assertEquals(w4Parts.get(0).getEndCol(), 50000);
+      assertEquals(w4Parts.get(1).getPartId(), 1);
+      assertEquals(w4Parts.get(1).getStartRow(), 0);
+      assertEquals(w4Parts.get(1).getEndRow(), 1);
+      assertEquals(w4Parts.get(1).getStartCol(), 50000);
+      assertEquals(w4Parts.get(1).getEndCol(), 100000);
 
       ParameterServer ps = LocalClusterContext.get().getPS(psAttempt0Id).getPS();
-      MatrixPartitionManager matrixPartManager = ps.getMatrixPartitionManager();
-      ServerPartition w3Part0 = matrixPartManager.getPartition(w3Id, 0);
-      ServerPartition w3Part1 = matrixPartManager.getPartition(w3Id, 1);
+      PSMatrixMetaManager matrixPartManager = ps.getMatrixMetaManager();
+      PartitionMeta w3Part0 = matrixPartManager.getPartMeta(w3Id, 0);
+      PartitionMeta w3Part1 = matrixPartManager.getPartMeta(w3Id, 1);
       assertTrue(w3Part0 != null);
       assertTrue(w3Part1 != null);
       assertEquals(w3Part0.getPartitionKey().getStartRow(), 0);
@@ -291,8 +291,8 @@ public class MatrixMetaManagerTest {
       assertEquals(w3Part1.getPartitionKey().getStartCol(), 50000);
       assertEquals(w3Part1.getPartitionKey().getEndCol(), 100000);
 
-      ServerPartition w4Part0 = matrixPartManager.getPartition(w4Id, 0);
-      ServerPartition w4Part1 = matrixPartManager.getPartition(w4Id, 1);
+      PartitionMeta w4Part0 = matrixPartManager.getPartMeta(w4Id, 0);
+      PartitionMeta w4Part1 = matrixPartManager.getPartMeta(w4Id, 1);
       assertTrue(w4Part0 != null);
       assertTrue(w4Part1 != null);
       assertEquals(w4Part0.getPartitionKey().getStartRow(), 0);
@@ -328,8 +328,8 @@ public class MatrixMetaManagerTest {
 
         DenseDoubleVector row2 = (DenseDoubleVector) w4ClientForTask1.getRow(0);
         double sum2 = sum(row2.getValues());
-        LOG.info("taskid=" + task0Context.getIndex() + ", matrixId=" + w4ClientForTask1.getMatrixId()
-          + ", rowIndex=0, local row sum=" + sum2);
+        LOG.info("taskid=" + task1Context.getIndex() + ", matrixId=" + w4ClientForTask1.getMatrixId()
+          + ", rowIndex=1, local row sum=" + sum2);
         DenseDoubleVector deltaRow2 = new DenseDoubleVector(delta.length, delta);
         deltaRow2.setMatrixId(w4ClientForTask1.getMatrixId());
         deltaRow2.setRowId(0);
@@ -358,12 +358,14 @@ public class MatrixMetaManagerTest {
       double sum2 = sum(row2.getValues());
       assertEquals(sum2, 1000000.0, 0.000001);
 
-      masterClient.releaseMatrix(w3Meta);
+      masterClient.releaseMatrix(w3Meta.getName());
       Thread.sleep(10000);
 
       matrixw3Proto = matrixMetaManager.getMatrix("w3");
       assertTrue(matrixw3Proto == null);
-      ServerMatrix sw3 = matrixPartManager.getMatrixIdMap().get(w3Id);
+
+      MatrixStorageManager matrixStorageManager = LocalClusterContext.get().getPS(psAttempt0Id).getPS().getMatrixStorageManager();
+      ServerMatrix sw3 = matrixStorageManager.getMatrix(w3Id);
       assertTrue(sw3 == null);
 
       w4ClientForTask0.clock().get();

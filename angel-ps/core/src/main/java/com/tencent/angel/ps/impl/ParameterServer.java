@@ -20,39 +20,48 @@ import com.google.protobuf.ServiceException;
 import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.RunningMode;
 import com.tencent.angel.common.AngelEnvironment;
-import com.tencent.angel.common.Location;
+import com.tencent.angel.common.location.Location;
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ipc.TConnection;
-import com.tencent.angel.ipc.TConnectionManager;
-import com.tencent.angel.master.MasterProtocol;
+import com.tencent.angel.conf.MatrixConf;
+import com.tencent.angel.ml.matrix.MatrixMeta;
+import com.tencent.angel.ml.matrix.PartitionMeta;
+import com.tencent.angel.ml.matrix.transport.PSFailedReport;
+import com.tencent.angel.plugin.AngelServiceLoader;
 import com.tencent.angel.protobuf.ProtobufUtil;
-import com.tencent.angel.protobuf.generated.MLProtos.MatrixStatus;
+import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.protobuf.generated.MLProtos.PSAttemptIdProto;
 import com.tencent.angel.protobuf.generated.MLProtos.Pair;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.*;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
+import com.tencent.angel.ps.backup.ha.push.AsyncEventPusher;
+import com.tencent.angel.ps.backup.ha.push.PS2PSPusherImpl;
+import com.tencent.angel.ps.backup.ha.push.PeriodPusher;
+import com.tencent.angel.ps.backup.ha.push.SyncEventPusher;
+import com.tencent.angel.ps.backup.snapshot.SnapshotDumper;
+import com.tencent.angel.ps.client.MasterClient;
+import com.tencent.angel.ps.client.PSLocationManager;
 import com.tencent.angel.ps.impl.matrix.ServerMatrix;
+import com.tencent.angel.ps.io.IOExecutors;
 import com.tencent.angel.ps.matrix.transport.MatrixTransportServer;
+import com.tencent.angel.ps.matrix.transport.WorkerPool;
+import com.tencent.angel.ps.recovery.snapshot.SnapshotRecover;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
 
 /**
  * Parameter server,hold and manage individual parameters that divided by {@link com.tencent.angel.master.AngelApplicationMaster}.
@@ -63,22 +72,105 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ParameterServer {
   private static final Log LOG = LogFactory.getLog(ParameterServer.class);
-  private final Location masterLocation;
+
+  /**
+   * PS context
+   */
+  private final PSContext context;
+
+  /**
+   * Application configuration
+   */
   private final Configuration conf;
-  private volatile MasterProtocol masterProxy;
-  private ParameterServerService psServerService;
-  private MatrixTransportServer matrixTransportServer;
-  private SnapshotManager snapshotManager;
+
+  /**
+   * Master location
+   */
+  private final Location masterLocation;
+
+  /**
+   * PS Attempt id
+   */
   private final PSAttemptId attemptId;
+
+  /**
+   * PS Attempt id proto
+   */
   private final PSAttemptIdProto attemptIdProto;
+
   private final AtomicBoolean stopped;
+
+  /**
+   * PS Attempt index
+   */
   private final int attemptIndex;
-  private ParameterServerState state;
 
-  private Thread heartbeatThread;
-  private MatrixPartitionManager matrixPartitionManager;
+  /**
+   * PS RPC server for control message
+   */
+  private volatile ParameterServerService psServerService;
 
-  private MatrixCommitter committer;
+  /**
+   * PS RPC server for data
+   */
+  private volatile MatrixTransportServer matrixTransportServer;
+
+  /**
+   * Heartbeat thread
+   */
+  private volatile Thread heartbeatThread;
+
+  /**
+   * Location manager
+   */
+  private volatile PSLocationManager locationManager;
+
+  /**
+   * Matrix data storage
+   */
+  private volatile MatrixStorageManager matrixStorageManager;
+
+  /**
+   * Matrix meta manager
+   */
+  private volatile PSMatrixMetaManager matrixMetaManager;
+
+  /**
+   * Matrix clock vector manager
+   */
+  private volatile ClockVectorManager clockVectorManager;
+
+  /**
+   * Matrix final data dumper
+   */
+  private volatile MatrixCommitter committer;
+
+  /**
+   * Matrix snapshot dumper
+   */
+  private volatile SnapshotDumper snapshotDumper;
+
+  /**
+   * Master RPC client
+   */
+  private volatile MasterClient master;
+
+  /**
+   * HA update pusher
+   */
+  private volatile PS2PSPusherImpl ps2PSPusher;
+
+  /**
+   * The RPC handlers for matrix data
+   */
+  private volatile WorkerPool workerPool;
+
+  private final PSFailedReport psFailedReport;
+
+  /**
+   * Matrix Load/Dump workers
+   */
+  private volatile IOExecutors ioExecutors;
 
   private static final AtomicInteger runningWorkerGroupNum = new AtomicInteger(0);
   private static final AtomicInteger runningWorkerNum = new AtomicInteger(0);
@@ -122,9 +214,11 @@ public class ParameterServer {
     this.attemptId = new PSAttemptId(new ParameterServerId(serverIndex), attemptIndex);
     this.attemptIdProto = ProtobufUtil.convertToIdProto(attemptId);
     this.attemptIndex = attemptIndex;
-    this.masterLocation = new Location(appMasterHost, appMasterPort);
     this.conf = conf;
+    this.masterLocation = new Location(appMasterHost, appMasterPort);
     this.stopped = new AtomicBoolean(false);
+    this.psFailedReport = new PSFailedReport();
+    this.context = new PSContext(this);
   }
 
   /**
@@ -132,12 +226,24 @@ public class ParameterServer {
    *
    * @return the matrix partition manager
    */
-  public MatrixPartitionManager getMatrixPartitionManager() {
-    return matrixPartitionManager;
+  public MatrixStorageManager getMatrixStorageManager() {
+    return matrixStorageManager;
   }
 
-  public SnapshotManager getSnapshotManager() {
-    return snapshotManager;
+  /**
+   * Get matrix meta manager
+   * @return
+   */
+  public PSMatrixMetaManager getMatrixMetaManager() {
+    return matrixMetaManager;
+  }
+
+  /**
+   * Get matrix clock vector manager
+   * @return
+   */
+  public ClockVectorManager getClockVectorManager() {
+    return clockVectorManager;
   }
 
   /**
@@ -171,16 +277,44 @@ public class ParameterServer {
         }
         matrixTransportServer = null;
       }
-      
-      if(snapshotManager != null) {
-        snapshotManager.stop();
+
+      if(snapshotDumper != null) {
+        snapshotDumper.stop();
+        snapshotDumper = null;
       }
+
+      if(master != null) {
+        master.stop();
+        master = null;
+      }
+
+      if(ps2PSPusher != null) {
+        ps2PSPusher.stop();
+        ps2PSPusher = null;
+      }
+
+      if(workerPool != null) {
+        workerPool.stop();
+        workerPool = null;
+      }
+
+      if(clockVectorManager != null) {
+        clockVectorManager.stop();
+        clockVectorManager = null;
+      }
+
+      if(ioExecutors != null) {
+        ioExecutors.stop();
+        ioExecutors = null;
+      }
+
+      AngelServiceLoader.stopService();
       exit(exitCode);
     }
   }
 
   private  void exit(int code) {
-    AngelDeployMode deployMode = PSContext.get().getDeployMode();
+    AngelDeployMode deployMode = context.getDeployMode();
     if(deployMode == AngelDeployMode.YARN) {
       System.exit(code);
     }
@@ -210,8 +344,6 @@ public class ParameterServer {
 
     final ParameterServer psServer =
         new ParameterServer(serverIndex, attemptIndex, appMasterHost, appMasterPort, conf);
-
-    PSContext.get().setPs(psServer);
 
     try{
       Credentials credentials =
@@ -261,7 +393,7 @@ public class ParameterServer {
    * @return the server id
    */
   public ParameterServerId getServerId() {
-    return attemptId.getParameterServerId();
+    return attemptId.getPsId();
   }
 
   /**
@@ -279,7 +411,7 @@ public class ParameterServer {
    * @return the master location
    */
   public Location getMasterLocation() {
-    return masterLocation;
+    return locationManager.getMasterLocation();
   }
 
   /**
@@ -300,23 +432,46 @@ public class ParameterServer {
    */
   public void initialize() throws IOException, InstantiationException, IllegalAccessException {
     LOG.info("Initialize a parameter server");
+    locationManager = new PSLocationManager(context);
+    locationManager.setMasterLocation(masterLocation);
 
-    matrixPartitionManager = new MatrixPartitionManager();
-    matrixPartitionManager.init();
-    committer = new MatrixCommitter(this);
-    TConnection connection = TConnectionManager.getConnection(conf);
-    try {
-      masterProxy = connection.getMasterService(masterLocation.getIp(), masterLocation.getPort());
-    } catch (IOException e) {
-      LOG.error("Connect to master failed! PS is to exit now!", e);
-      stop(-1);
-    }
+    workerPool = new WorkerPool(context);
+    workerPool.init();
+
+    ioExecutors = new IOExecutors(context);
+    ioExecutors.init();
+
+    matrixStorageManager = new MatrixStorageManager(context);
+    int taskNum = conf.getInt(AngelConf.ANGEL_TASK_ACTUAL_NUM, 1);
+    clockVectorManager = new ClockVectorManager(taskNum, context);
+    clockVectorManager.init();
+    matrixMetaManager = new PSMatrixMetaManager(context);
+
+    master = new MasterClient(context);
+    master.init();
     
-    psServerService = new ParameterServerService();
+    psServerService = new ParameterServerService(context);
     psServerService.start();
-    matrixTransportServer = new MatrixTransportServer(getPort() + 1); 
-    snapshotManager = new SnapshotManager(attemptId);
-    snapshotManager.init();
+    matrixTransportServer = new MatrixTransportServer(getPort() + 1, context);
+
+    int replicNum = conf.getInt(AngelConf.ANGEL_PS_HA_REPLICATION_NUMBER, AngelConf.DEFAULT_ANGEL_PS_HA_REPLICATION_NUMBER);
+
+    if(replicNum > 1) {
+      boolean useEventPush = false;//conf.getBoolean(AngelConf.ANGEL_PS_HA_USE_EVENT_PUSH, AngelConf.DEFAULT_ANGEL_PS_HA_USE_EVENT_PUSH);
+      if(useEventPush) {
+        boolean sync = conf.getBoolean(AngelConf.ANGEL_PS_HA_PUSH_SYNC, AngelConf.DEFAULT_ANGEL_PS_HA_PUSH_SYNC);
+        if(sync) {
+          ps2PSPusher = new SyncEventPusher(context);
+        } else {
+          ps2PSPusher = new AsyncEventPusher(context);
+        }
+      } else {
+        ps2PSPusher = new PeriodPusher(context);
+      }
+      ps2PSPusher.init();
+    } else {
+      snapshotDumper = new SnapshotDumper(context);
+    }
   }
 
   private void startHeartbeat() {
@@ -324,29 +479,26 @@ public class ParameterServer {
         conf.getInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS,
             AngelConf.DEFAULT_ANGEL_PS_HEARTBEAT_INTERVAL_MS);
     LOG.info("Starting HeartbeatThread, interval is " + heartbeatInterval + " ms");
-    heartbeatThread = new Thread(new Runnable() {
-      @Override
-      public void run() {
-        while (!stopped.get() && !Thread.currentThread().isInterrupted()) {
-          try {
-            Thread.sleep(heartbeatInterval);
-          } catch (InterruptedException e) {
-            if (!stopped.get()) {
-              LOG.warn("Allocated thread interrupted. Returning.");
-            }
-            return;
+    heartbeatThread = new Thread(() -> {
+      while (!stopped.get() && !Thread.currentThread().isInterrupted()) {
+        try {
+          Thread.sleep(heartbeatInterval);
+        } catch (InterruptedException e) {
+          if (!stopped.get()) {
+            LOG.warn("Allocated thread interrupted. Returning.", e);
           }
+          return;
+        }
 
-          try {
-            if(!stopped.get()) {
-              heartbeat();
-            }
-          } catch (YarnRuntimeException e) {
-            LOG.error("Error communicating with AM: " + e.getMessage(), e);
-            return;
-          } catch (Exception e) {
-            LOG.error("ERROR IN CONTACTING RM. ", e);
+        try {
+          if(!stopped.get()) {
+            heartbeat();
           }
+        } catch (YarnRuntimeException e) {
+          LOG.error("Error communicating with AM: " + e.getMessage(), e);
+          return;
+        } catch (Exception e) {
+          LOG.error("ERROR IN CONTACTING RM. ", e);
         }
       }
     });
@@ -354,35 +506,33 @@ public class ParameterServer {
     heartbeatThread.start();
   }
 
-  private void register() throws IOException {
-    LOG.info("Registering to AppMaster " + masterLocation);
-    PSRegisterRequest.Builder regBuilder = PSRegisterRequest.newBuilder();
-    regBuilder.setPsAttemptId(attemptIdProto);
-    try {    
-      Location location = new Location(InetAddress.getLocalHost().getHostAddress(), psServerService.getPort());
-      regBuilder.setLocation(ProtobufUtil.convertLocation(location));
-    } catch (UnknownHostException eop) {
-      LOG.error("UnknownHostException: " + eop);
-      throw new IOException(eop);
-    }
-    
+  private void register() {
     try {
-      masterProxy.psRegister(null, regBuilder.build());
+      master.register();
       LOG.info("Register to AppMaster successfully");
-    } catch (ServiceException e) {
+    } catch (Throwable e) {
       // to exit
       LOG.error("ps register to AppMaster failed: ", e);
       stop(-1);
     }
   }
 
-  private List<MatrixReport> buildMatrixReports() {
-    MatrixReport.Builder builder = MatrixReport.newBuilder();
-    List<MatrixReport> ret = new ArrayList<MatrixReport>();
-    ConcurrentHashMap<Integer, ServerMatrix> matrixIdMap = matrixPartitionManager.getMatrixIdMap();
-    for (Entry<Integer, ServerMatrix> matrixEntry : matrixIdMap.entrySet()) {
-      ret.add(builder.setMatrixId(matrixEntry.getKey())
-          .setMatrixName(matrixEntry.getValue().getName()).setStatus(MatrixStatus.M_OK).build());
+  private List<MatrixReportProto> buildMatrixReports() {
+    MatrixReportProto.Builder matrixBuilder = MatrixReportProto.newBuilder();
+    PartReportProto.Builder partBuilder = PartReportProto.newBuilder();
+    List<MatrixReportProto> ret = new ArrayList<>();
+
+    for(MatrixMeta matrix : matrixMetaManager.getMatrixMetas().values()) {
+      matrixBuilder.setMatrixId(matrix.getId()).setMatrixName(matrix.getName());
+      if(context.getPartReplication() > 1) {
+        for(PartitionMeta part : matrix.getPartitionMetas().values()) {
+          partBuilder.setPartId(part.getPartId()).setStatus(
+            context.getMatrixStorageManager().getPart(matrix.getId(), part.getPartId()).getState().getNumber());
+          matrixBuilder.addPartReports(partBuilder.build());
+        }
+      }
+      ret.add(matrixBuilder.build());
+      matrixBuilder.clear();
     }
     return ret;
   }
@@ -396,10 +546,12 @@ public class ParameterServer {
     builder.addMetrics(pairBuilder.build());
     builder.addAllMatrixReports(buildMatrixReports());
 
+    builder.setPsFailedReports(ProtobufUtil.convertToPSFailedReportsProto(psFailedReport.getReports()));
+
     PSReportResponse ret = null;
+    PSReportRequest request = builder.build();
     try {
-      ret = masterProxy.psReport(null, builder.build());
-      LOG.debug("heartbeat response " + ret);
+      ret = master.psReport(request);
       switch (ret.getPsCommand()) {
         case PSCOMMAND_REGISTER:
           try {
@@ -418,31 +570,81 @@ public class ParameterServer {
         case PSCOMMAND_COMMIT:
           LOG.info("received ps commit command, ps is committing now!");
           LOG.info("to stop taskSnapshotsThread.");
-          snapshotManager.stop();
-          committer.commit(ret.getNeedCommitMatrixIdsList());
+          if(snapshotDumper != null) {
+            snapshotDumper.stop();
+          }
+          if(committer == null) {
+            committer = new MatrixCommitter(context);
+          }
+          committer.commit(ProtobufUtil.convertToNeedSaveMatrices(ret.getNeedSaveMatricesList()));
           break;
           
         default:
           break;
       }
 
-      syncMatrixInfo(ret.getNeedCreateMatrixIdsList(), ret.getNeedReleaseMatrixIdsList());
-    } catch (ServiceException e) {
+      syncMatrices(ret.getNeedCreateMatricesList(), ret.getNeedReleaseMatrixIdsList(), ret.getNeedRecoverPartsList());
+    } catch (Throwable e) {
       LOG.error("send heartbeat to appmaster failed ", e);
       stop(-1);
     }
   }
 
-  private void syncMatrixInfo(List<MatrixPartition> needCreateMatrixesList,
-      List<Integer> needReleaseMatrixesList) {
-    try {
-      matrixPartitionManager.addMatrixPartitions(needCreateMatrixesList);
-    } catch (IOException e) {
-      LOG.fatal("init matrix failed, exit now ", e);
-      stop(-1);
+  private void syncMatrices(List<MLProtos.MatrixMetaProto> needCreateMatrices,
+    List<Integer> needReleaseMatrices, List<RecoverPartKeyProto> needRecoverParts)
+    throws Exception {
+    if(!needCreateMatrices.isEmpty()) {
+      createMatrices(ProtobufUtil.convertToMatricesMeta(needCreateMatrices));
     }
-    PSContext.get().getSnapshotManager().processRecovery();
-    matrixPartitionManager.removeMatrices(needReleaseMatrixesList);
+
+    if(!needReleaseMatrices.isEmpty()) {
+      releaseMatrices(needReleaseMatrices);
+    }
+
+    if(needCreateMatrices.isEmpty() && needReleaseMatrices.isEmpty()
+      && !needRecoverParts.isEmpty() && (ps2PSPusher != null)) {
+      LOG.info("need recover parts:" + needRecoverParts);
+      int size = needRecoverParts.size();
+      for(int i = 0; i < size; i++) {
+        ps2PSPusher.recover(ProtobufUtil.convert(needRecoverParts.get(i)));
+      }
+    }
+    //context.getSnapshotManager().processRecovery();
+  }
+
+  private void createMatrices(List<MatrixMeta> matrixMetas) throws Exception {
+    matrixMetaManager.addMatrices(matrixMetas);
+    clockVectorManager.addMatrices(matrixMetas);
+    if(context.getPartReplication() == 1) {
+      clockVectorManager.adjustClocks(master.getTaskMatrixClocks());
+    }
+    matrixStorageManager.addMatrices(matrixMetas);
+    initMatricesData(matrixMetas);
+  }
+
+  private void initMatricesData(final List<MatrixMeta> matrixMetas) throws IOException {
+    if(context.getPartReplication() > 1 && context.getPSAttemptId().getIndex() > 0) {
+      return;
+    }
+
+    int size = matrixMetas.size();
+    List<Integer> matrixIds = new ArrayList<>(size);
+    for(int i = 0; i < size; i++) {
+      matrixIds.add(matrixMetas.get(i).getId());
+    }
+    context.getMatrixStorageManager().load(matrixIds, null);
+  }
+
+  private void releaseMatrices(List<Integer> matrixIds) {
+    if(!matrixIds.isEmpty()) {
+      matrixMetaManager.removeMatrices(matrixIds);
+      clockVectorManager.removeMatrices(matrixIds);
+      clearMatricesData(matrixIds);
+    }
+  }
+
+  private void clearMatricesData(List<Integer> matrixIds) {
+    matrixStorageManager.removeMatrices(matrixIds);
   }
 
   /**
@@ -450,12 +652,30 @@ public class ParameterServer {
    *
    * @throws IOException the io exception
    */
-  public void start() throws IOException { 
+  public void start() throws Exception {
+    if(snapshotDumper != null) {
+      snapshotDumper.start();
+    }
+    master.start();
+
+    if(ps2PSPusher != null) {
+      ps2PSPusher.start();
+    }
+
+    workerPool.start();
+    ioExecutors.start();
     matrixTransportServer.start();
+    clockVectorManager.start();
+
+    if(getAttemptIndex() > 0) {
+      LOG.info("PS " + getServerId() + " running attempt " + getAttemptIndex() + " load matrices from snapshot if need");
+      List<MatrixMeta> matrixMetas = master.getMatricesMeta();
+      createMatrices(matrixMetas);
+    }
 
     register();
     startHeartbeat();
-    snapshotManager.start();
+    AngelServiceLoader.startServiceIfNeed(this,getConf());
   }
 
   /**
@@ -463,7 +683,7 @@ public class ParameterServer {
    */
   public void done() {
     try {
-      masterProxy.psDone(null, PSDoneRequest.newBuilder().setPsAttemptId(attemptIdProto).build());
+      master.done();
       LOG.info("send done message to master success");
     } catch (ServiceException e) {
       LOG.error("send done message to master failed ", e);
@@ -479,22 +699,13 @@ public class ParameterServer {
    */
   public void failed(String errorLog) {
     try {
-      masterProxy.psError(null, PSErrorRequest.newBuilder().setPsAttemptId(attemptIdProto).setMsg(errorLog).build());
+      master.failed(errorLog);
       LOG.info("send failed message to master success");
     } catch (ServiceException e) {
       LOG.error("send failed message to master failed ", e);
     } finally {
       stop(-1);
     }
-  }
-
-  /**
-   * Gets state.
-   *
-   * @return the state
-   */
-  public ParameterServerState getState() {
-    return state;
   }
 
   /**
@@ -510,11 +721,37 @@ public class ParameterServer {
    * Gets rpc client to master
    * @return MasterProtocol rpc client to master
    */
-  public MasterProtocol getMaster() {
-    return masterProxy;
+  public MasterClient getMaster() {
+    return master;
   }
 
+  /**
+   * Get attempt index
+   * @return attempt index
+   */
   public int getAttemptIndex() {
     return attemptIndex;
+  }
+
+  public PSLocationManager getLocationManager() {
+    return locationManager;
+  }
+
+  public PS2PSPusherImpl getPs2PSPusher() {
+    return ps2PSPusher;
+  }
+
+  public WorkerPool getWorkerPool() {
+    return workerPool;
+  }
+
+  public IOExecutors getIOExecutors() {
+    return ioExecutors;
+  }
+
+  public SnapshotDumper getSnapshotDumper() { return snapshotDumper; }
+
+  public PSFailedReport getPSFailedReport() {
+    return psFailedReport;
   }
 }

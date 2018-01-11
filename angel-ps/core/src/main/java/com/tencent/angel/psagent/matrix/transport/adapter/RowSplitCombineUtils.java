@@ -20,8 +20,8 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.math.vector.*;
 import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.ps.impl.matrix.*;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.psagent.PSAgentContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -85,7 +85,7 @@ public class RowSplitCombineUtils {
   public static TVector combineRowSplitsPipeline(GetRowPipelineCache cache, int matrixId,
                                                  int rowIndex) throws InterruptedException {
     MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
-    MLProtos.RowType rowType = matrixMeta.getRowType();
+    RowType rowType = matrixMeta.getRowType();
 
     switch (rowType) {
       case T_DOUBLE_DENSE:
@@ -221,7 +221,7 @@ public class RowSplitCombineUtils {
    */
   public static TVector combineServerRowSplits(List<ServerRow> rowSplits, int matrixId, int rowIndex) {
     MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
-    MLProtos.RowType rowType = matrixMeta.getRowType();
+    RowType rowType = matrixMeta.getRowType();
 
     switch (rowType) {
       case T_DOUBLE_DENSE:
@@ -407,7 +407,7 @@ public class RowSplitCombineUtils {
 
   private static TVector combineCompServerSparseDoubleLongKeyRowSplits(List<ServerRow> rowSplits,
     MatrixMeta matrixMeta, int rowIndex) {
-    List<PartitionKey> partitionKeys = PSAgentContext.get().getMatrixPartitionRouter().getPartitionKeyList(matrixMeta.getId(), rowIndex);
+    List<PartitionKey> partitionKeys = PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixMeta.getId(), rowIndex);
     assert rowSplits.size() == partitionKeys.size();
     Collections.sort(rowSplits, serverRowComp);
     Collections.sort(partitionKeys, partKeyComp);
@@ -429,7 +429,7 @@ public class RowSplitCombineUtils {
 
   private static TVector combineComponentServerSparseIntRowSplits(List<ServerRow> rowSplits,
     MatrixMeta matrixMeta, int rowIndex) {
-    List<PartitionKey> partitionKeys = PSAgentContext.get().getMatrixPartitionRouter().getPartitionKeyList(matrixMeta.getId(), rowIndex);
+    List<PartitionKey> partitionKeys = PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixMeta.getId(), rowIndex);
     assert rowSplits.size() == partitionKeys.size();
     Collections.sort(rowSplits, serverRowComp);
     Collections.sort(partitionKeys, partKeyComp);
@@ -451,7 +451,7 @@ public class RowSplitCombineUtils {
 
   private static TVector combineComponentServerSparseDoubleRowSplits(List<ServerRow> rowSplits,
     MatrixMeta matrixMeta, int rowIndex) {
-    List<PartitionKey> partitionKeys = PSAgentContext.get().getMatrixPartitionRouter().getPartitionKeyList(matrixMeta.getId(), rowIndex);
+    List<PartitionKey> partitionKeys = PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixMeta.getId(), rowIndex);
     assert rowSplits.size() == partitionKeys.size();
     Collections.sort(rowSplits, serverRowComp);
     Collections.sort(partitionKeys, partKeyComp);
@@ -474,7 +474,7 @@ public class RowSplitCombineUtils {
   private static TVector combineComponentServerSparseFloatRowSplits(List<ServerRow> rowSplits,
     MatrixMeta matrixMeta, int rowIndex) {
     long startTs = System.currentTimeMillis();
-    List<PartitionKey> partitionKeys = PSAgentContext.get().getMatrixPartitionRouter().getPartitionKeyList(matrixMeta.getId(), rowIndex);
+    List<PartitionKey> partitionKeys = PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixMeta.getId(), rowIndex);
     assert rowSplits.size() == partitionKeys.size();
     Collections.sort(rowSplits, serverRowComp);
     Collections.sort(partitionKeys, partKeyComp);

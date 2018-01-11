@@ -16,13 +16,15 @@
 
 package com.tencent.angel.master.matrix.committer;
 
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.app.AppEvent;
 import com.tencent.angel.master.app.AppEventType;
 import com.tencent.angel.master.app.InternalErrorEvent;
+import com.tencent.angel.ml.matrix.MatrixMeta;
+import com.tencent.angel.model.io.IOExecutors;
 import com.tencent.angel.model.output.format.ModelFilesConstent;
 import com.tencent.angel.model.output.format.PSModelFilesMeta;
-import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.utils.HdfsUtil;
 import com.tencent.angel.model.output.format.ModelFilesMeta;
@@ -70,7 +72,7 @@ public class AMMatrixCommitter extends AbstractService {
   private final AtomicBoolean stopped;
 
   /** HDFS operation executor */
-  private volatile MatrixDiskIOExecutors fileOpExecutor;
+  private volatile IOExecutors fileOpExecutor;
   
   private FileSystem fs;
 
@@ -143,14 +145,9 @@ public class AMMatrixCommitter extends AbstractService {
     LOG.info("start commit matrix " + matrixId);
 
     // Init matrix files meta
-    List<ParameterServerId> psIds = new ArrayList<>(context.getMatrixMetaManager().getPsIds(matrixId));
-    MLProtos.MatrixProto meta = context.getMatrixMetaManager().getMatrix(matrixId);
-    List<MLProtos.Pair> attrs = meta.getAttributeList();
-    int size = attrs.size();
-    Map<String, String> kvMap = new HashMap<>(size);
-    for(int i = 0; i < size; i++) {
-      kvMap.put(attrs.get(i).getKey(), attrs.get(i).getValue());
-    }
+    List<ParameterServerId> psIds = new ArrayList<>(context.getMatrixMetaManager().getMasterPsIds(matrixId));
+    MatrixMeta meta = context.getMatrixMetaManager().getMatrix(matrixId);
+    Map<String, String> kvMap = meta.getAttributes();
 
     ModelFilesMeta filesMeta = new ModelFilesMeta(matrixId, meta.getName(), meta.getRowType().getNumber(),
       meta.getRowNum(), meta.getColNum(), meta.getBlockRowNum(), meta.getBlockColNum(), kvMap);
@@ -268,7 +265,10 @@ public class AMMatrixCommitter extends AbstractService {
       public void run() {
         Vector<String> errorLogs = new Vector<>();
         MatrixCommitOp op = new MatrixCommitOp(needSaveMatrixIds, errorLogs, 0, needSaveMatrixIds.size());
-        fileOpExecutor = new MatrixDiskIOExecutors(context);
+        fileOpExecutor = new IOExecutors(context.getConf().getInt(AngelConf.ANGEL_AM_MATRIX_DISKIO_WORKER_POOL_SIZE,
+          AngelConf.DEFAULT_ANGEL_AM_MATRIX_DISKIO_WORKER_POOL_SIZE));
+        fileOpExecutor.init();
+        fileOpExecutor.start();
 
         try {
           fileOpExecutor.execute(op);

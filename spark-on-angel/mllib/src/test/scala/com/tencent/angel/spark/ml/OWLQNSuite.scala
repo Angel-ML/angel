@@ -48,11 +48,11 @@ class OWLQNSuite extends PSFunSuite with SharedPSContext {
     }
 
     val initWeightPS = PSVector.duplicate(l1reg.component)
-      .asInstanceOf[DensePSVector].fill(Array(-1.1053, 0.0, 0.0))
+      .toDense.push(Array(-1.1053, 0.0, 0.0))
       .toBreeze
 
     val result = optimizeThis(initWeightPS)
-    assert((result.pull()(0) - 2.5) < 1E-4, result)
+    assert((result.pull(0) - 2.5) < 1E-4, result)
   }
 
 
@@ -74,7 +74,7 @@ class OWLQNSuite extends PSFunSuite with SharedPSContext {
     }
 
     val initWeightPS = PSVector.duplicate(l1reg.component)
-      .asInstanceOf[DensePSVector].fill(Array(0.0, 0.0, 0.0))
+      .toDense.push(Array(0.0, 0.0, 0.0))
       .toBreeze
 
     val result = optimizeThis(initWeightPS)

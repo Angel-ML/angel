@@ -17,6 +17,7 @@
 package com.tencent.angel.localcluster;
 
 import com.tencent.angel.ps.PSAttemptId;
+import com.tencent.angel.psagent.PSAgent;
 import com.tencent.angel.worker.WorkerAttemptId;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.ApplicationId;

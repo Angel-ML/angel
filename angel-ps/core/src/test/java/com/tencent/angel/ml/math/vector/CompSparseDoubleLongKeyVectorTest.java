@@ -69,7 +69,7 @@ public class CompSparseDoubleLongKeyVectorTest {
 
     assertEquals(addVector.dot(vector), Double.valueOf(sampleNum) * 3);
 
-    SparseDummyLongKeyVector addVector1 = new SparseDummyLongKeyVector(-1);
+    SparseLongKeyDummyVector addVector1 = new SparseLongKeyDummyVector(-1);
     for(int i = 0; i < indexes.length; i++) {
       addVector1.set(indexes[i], 1.0);
     }

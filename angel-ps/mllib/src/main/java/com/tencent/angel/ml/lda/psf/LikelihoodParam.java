@@ -70,7 +70,7 @@ public class LikelihoodParam extends GetParam {
   public List<PartitionGetParam> split() {
     List<PartitionGetParam> params = new ArrayList<>();
     List<PartitionKey> pkeys =
-            PSAgentContext.get().getMatrixPartitionRouter().getPartitionKeyList(matrixId);
+            PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
 
     for (PartitionKey pkey : pkeys) {
       params.add(new LikelihoodPartParam(matrixId, pkey, beta));

@@ -55,6 +55,10 @@ public class PartitionKey implements Comparable<PartitionKey>, Serialize {
     this.endCol = endCol;
   }
 
+  public PartitionKey(int matrixId, int partId) {
+    this(partId, matrixId, -1, -1, -1, -1);
+  }
+
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();

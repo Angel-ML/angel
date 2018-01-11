@@ -168,9 +168,9 @@ message GetWorkerGroupMetaInfoResponse {
 }
 
 service WorkerMasterService {
-	rpc workerReport(WorkerReportRequest) returns (WorkerReportResponse);	
-	rpc workerRegister(WorkerRegisterRequest) returns (WorkerRegisterResponse);
-	rpc getWorkerGroupMetaInfo(GetWorkerGroupMetaInfoRequest) returns (GetWorkerGroupMetaInfoResponse);	
-	rpc workerDone(WorkerDoneRequest) returns (WorkerDoneResponse);	
-	rpc workerError(WorkerErrorRequest) returns (WorkerErrorResponse);
+  rpc workerReport(WorkerReportRequest) returns (WorkerReportResponse);
+  rpc workerRegister(WorkerRegisterRequest) returns (WorkerRegisterResponse);
+  rpc getWorkerGroupMetaInfo(GetWorkerGroupMetaInfoRequest) returns (GetWorkerGroupMetaInfoResponse);
+  rpc workerDone(WorkerDoneRequest) returns (WorkerDoneResponse);
+  rpc workerError(WorkerErrorRequest) returns (WorkerErrorResponse);
 }

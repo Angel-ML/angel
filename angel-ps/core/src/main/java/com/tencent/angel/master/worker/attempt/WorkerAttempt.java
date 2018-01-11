@@ -17,7 +17,7 @@
 package com.tencent.angel.master.worker.attempt;
 
 import com.tencent.angel.AngelDeployMode;
-import com.tencent.angel.common.Location;
+import com.tencent.angel.common.location.Location;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.deploy.ContainerAllocatorEvent;
 import com.tencent.angel.master.deploy.ContainerAllocatorEventType;

@@ -32,7 +32,7 @@ class SparseLRTrainTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](
   val featNum = conf.getInt(ML_FEATURE_NUM, DEFAULT_ML_FEATURE_NUM)
   val dataFormat = conf.get(ML_DATA_FORMAT, "dummy")
 
-  val dataParser = DataParser(dataFormat, featNum, true)
+  val dataParser = DataParser(dataFormat, featNum, false)
 
   override
   def train(ctx: TaskContext): Unit = {

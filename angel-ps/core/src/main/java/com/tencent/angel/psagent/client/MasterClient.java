@@ -18,26 +18,22 @@ package com.tencent.angel.psagent.client;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.ServiceException;
-import com.tencent.angel.PartitionKey;
-import com.tencent.angel.common.Location;
+import com.tencent.angel.common.location.Location;
 import com.tencent.angel.exception.TimeOutException;
 import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.ipc.TConnectionManager;
 import com.tencent.angel.master.MasterProtocol;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ml.matrix.MatrixMetaManager;
+import com.tencent.angel.ml.matrix.PartitionLocation;
+import com.tencent.angel.ml.matrix.transport.PSLocation;
 import com.tencent.angel.ml.metric.Metric;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.RequestConverter;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.CheckMatricesCreatedRequest;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.CheckMatricesCreatedResponse;
-import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.protobuf.generated.MLProtos.*;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.*;
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.*;
 import com.tencent.angel.ps.ParameterServerId;
-import com.tencent.angel.psagent.MatrixPartitionRouter;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.split.SplitClassification;
 import com.tencent.angel.utils.KryoUtils;
@@ -49,8 +45,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * The RPC client to master use protobuf codec protocol
@@ -86,16 +81,7 @@ public class MasterClient {
   public Location getPSLocation(ParameterServerId psId) throws ServiceException {
     GetPSLocationRequest request =
         GetPSLocationRequest.newBuilder().setPsId(ProtobufUtil.convertToIdProto(psId)).build();
-
-    GetPSLocationReponse response;
-    response = master.getPSLocation(null, request);
-    if (response.getPsStatus() == PSStatus.PS_NOTREADY) {
-      LOG.warn("location is not ready for " + psId);
-      return null;
-    }
-
-    return new Location(response.getLocation().getIp(), response.getLocation().getPort());
-
+    return ProtobufUtil.convertToLocation(master.getPSLocation(null, request).getPsLocation());
   }
 
   /**
@@ -110,16 +96,10 @@ public class MasterClient {
     HashMap<ParameterServerId, Location> routingMap = new HashMap<>();
     try {
       GetAllPSLocationResponse response = master.getAllPSLocation(null, request);
-
-      for (PSLocation location : response.getPsLocationsList()) {
-        PSIdProto psIdProto = location.getPsId();
-        if (PSStatus.PS_OK == location.getPsStatus()) {
-          LocationProto locationProto = location.getLocation();
-          routingMap.put(ProtobufUtil.convertToId(psIdProto), new Location(locationProto.getIp(),
-              locationProto.getPort()));
-        } else {
-          routingMap.put(ProtobufUtil.convertToId(psIdProto), null);
-        }
+      List<PSLocationProto> psLocs = response.getPsLocationsList();
+      int size = psLocs.size();
+      for(int i = 0; i < size; i++) {
+        routingMap.put(ProtobufUtil.convertToId(psLocs.get(i).getPsId()), ProtobufUtil.convertToLocation(psLocs.get(i)));
       }
     } catch (com.google.protobuf.ServiceException e) {
       LOG.error("get all ps locations from master failed.", e);
@@ -136,20 +116,49 @@ public class MasterClient {
    * @throws InterruptedException interrupted when sleep for next try
    * @throws ServiceException rpc failed
    */
-  public GetAllMatrixInfoResponse getMatrices() throws InterruptedException, ServiceException {
-    GetAllMatrixInfoRequest request = GetAllMatrixInfoRequest.newBuilder().build();
-    while (true) {
-      LOG.debug("to get matrixInfo from master.......");
-      GetAllMatrixInfoResponse response = master.getAllMatrixInfo(null, request);
-
-      if (response.getMatrixStatus() == MLProtos.MatrixStatus.M_OK) {
-        return response;
-      } else {
-        if (response.getMatrixStatus() == MLProtos.MatrixStatus.M_NOT_READY) {
-          Thread.sleep(PSAgentContext.get().getRequestSleepTimeMS());
-        }
-      }
+  public List<MatrixMeta> getMatrices()
+    throws InterruptedException, ServiceException, ClassNotFoundException {
+    GetAllMatrixMetaResponse response = master.getAllMatrixMeta(null, GetAllMatrixMetaRequest.newBuilder().build());
+    List<MatrixMetaProto> matrixMetaProtos = response.getMatrixMetasList();
+    int size = matrixMetaProtos.size();
+    List<MatrixMeta> matrixMetas = new ArrayList<>(size);
+    for(int i = 0; i< size; i++) {
+      matrixMetas.add(ProtobufUtil.convertToMatrixMeta(matrixMetaProtos.get(i)));
     }
+
+    return matrixMetas;
+  }
+
+  /**
+   * Get a matrix meta
+   * @param matrixName matrix name
+   * @return matrix meta
+   * @throws ServiceException
+   * @throws ClassNotFoundException
+   */
+  public MatrixMeta getMatrix(String matrixName) throws ServiceException, ClassNotFoundException {
+    GetMatricesResponse response = master.getMatrices(null, GetMatricesRequest.newBuilder().addMatrixNames(matrixName).build());
+    return ProtobufUtil.convertToMatrixMeta(response.getMatrixMetas(0));
+  }
+
+  /**
+   * Get matrix metas
+   * @param matrixNames matrix names
+   * @return matrix metas
+   * @throws ServiceException
+   * @throws ClassNotFoundException
+   */
+  public List<MatrixMeta> getMatrices(List<String> matrixNames)
+    throws ServiceException, ClassNotFoundException {
+    GetMatricesResponse response = master.getMatrices(null, GetMatricesRequest.newBuilder().addAllMatrixNames(matrixNames).build());
+    List<MatrixMetaProto> matrixMetaProtos = response.getMatrixMetasList();
+    int size = matrixMetaProtos.size();
+    List<MatrixMeta> matrixMetas = new ArrayList<>(size);
+
+    for(int i = 0; i < size; i++) {
+      matrixMetas.add(ProtobufUtil.convertToMatrixMeta(matrixMetaProtos.get(i)));
+    }
+    return matrixMetas;
   }
 
   /**
@@ -189,77 +198,86 @@ public class MasterClient {
    * 
    * @param matrixContext matrix configuration
    * @param timeOutMS maximun wait time in milliseconds
-   * @return MatrixMeta matrix meta
    * @throws ServiceException rpc failed
    * @throws TimeOutException create matrix time out
    * @throws InterruptedException interrupted when wait
    * @throws IOException read matrix meta from hdfs failed
    */
-  public MatrixMeta createMatrix(MatrixContext matrixContext, long timeOutMS)
-      throws ServiceException, TimeOutException, InterruptedException, IOException {
-
-    MatrixProto matrixProto = matrixContext.buildMatProto(PSAgentContext.get().getConf());
-
-    CreateMatrixRequest createRequest =
-        CreateMatrixRequest.newBuilder().setMatrixProto(matrixProto).build();
-    
-    MatrixMetaManager matrixManager = PSAgentContext.get().getMatrixMetaManager();
-
-    CreateMatrixResponse createResponse = master.createMatrix(null, createRequest);
-    LOG.debug("create matrix response = " + createResponse);
-    if (createResponse.getMatrixStatus() == MatrixStatus.M_OK) {
-      matrixManager.addMatrix(new MatrixMeta(matrixContext, createResponse.getMatrixId()));
-      updateMatrixPartitionRouter(createResponse.getMatrixId(), matrixProto, PSAgentContext.get()
-          .getMatrixPartitionRouter());
-      return matrixManager.getMatrixMeta(createResponse.getMatrixId());
-    } else {
-      CheckMatricesCreatedRequest request = CheckMatricesCreatedRequest.newBuilder().addMatrixNames(matrixContext.getName()).build();
-      CheckMatricesCreatedResponse response = null;
-      while (true) {
-        long startTs = Time.now();
-        //if (matrixManager.getMatrixMeta(createResponse.getMatrixId()) != null) {
-        //  return matrixManager.getMatrixMeta(createResponse.getMatrixId());
-        //}
-
-        response = master.checkMatricesCreated(null, request);
-        if(response.getStatus(0) == MatrixStatus.M_OK) {
-          LOG.debug("getMatrixInfo response is OK, add matrix to matrixManager now");
-          matrixManager.addMatrix(new MatrixMeta(matrixContext, createResponse.getMatrixId()));
-          updateMatrixPartitionRouter(createResponse.getMatrixId(), matrixProto, PSAgentContext
-              .get().getMatrixPartitionRouter());
-          return matrixManager.getMatrixMeta(createResponse.getMatrixId());
-        } else {
-          if (Time.now() - startTs > timeOutMS) {
-            throw new TimeOutException("create matrix time out ", (Time.now() - startTs), timeOutMS);
-          }
-
-          Thread.sleep(1000);
-        }
-      }
-    }
+  public void createMatrix(MatrixContext matrixContext, long timeOutMS)
+    throws ServiceException, TimeOutException, InterruptedException, IOException,
+    ClassNotFoundException {
+    matrixContext.init(PSAgentContext.get().getConf());
+    List<MatrixContext> matrixContexts = new ArrayList<>(1);
+    matrixContexts.add(matrixContext);
+    createMatrices(matrixContexts, timeOutMS);
   }
 
-  private void updateMatrixPartitionRouter(int matrixId, MatrixProto matrixProto,
-      MatrixPartitionRouter router) {
-    for (MLProtos.MatrixPartitionLocation location : matrixProto.getMatrixPartLocationList()) {
-      PartitionKey partitionKey = ProtobufUtil.convertPartition(location.getPart());
-      partitionKey.setMatrixId(matrixId);
-      router.addPartition(partitionKey, ProtobufUtil.convertToId(location.getPsId()));
+  /**
+   * Create a new matrix
+   *
+   * @param matrixContexts matrices configuration
+   * @param timeOutMS maximun wait time in milliseconds
+   * @throws ServiceException rpc failed
+   * @throws TimeOutException create matrix time out
+   * @throws InterruptedException interrupted when wait
+   * @throws IOException read matrix meta from hdfs failed
+   */
+  public void createMatrices(List<MatrixContext> matrixContexts, long timeOutMS)
+    throws ServiceException, TimeOutException, InterruptedException, IOException,
+    ClassNotFoundException {
+    CreateMatricesRequest.Builder createBuilder = CreateMatricesRequest.newBuilder();
+    CheckMatricesCreatedRequest.Builder checkBuilder = CheckMatricesCreatedRequest.newBuilder();
+    List<String> matrixNames = new ArrayList<>(matrixContexts.size());
+
+    int size = matrixContexts.size();
+    for(int i = 0; i < size; i++) {
+      matrixContexts.get(i).init(PSAgentContext.get().getConf());
+      matrixNames.add(matrixContexts.get(i).getName());
+      checkBuilder.addMatrixNames(matrixContexts.get(i).getName());
+      createBuilder.addMatrices(ProtobufUtil.convertToMatrixContextProto(matrixContexts.get(i)));
+    }
+
+    LOG.info("start to create matrices " + String.join(",", matrixNames));
+    master.createMatrices(null, createBuilder.build());
+
+    CheckMatricesCreatedRequest checkRequest = checkBuilder.build();
+    CheckMatricesCreatedResponse checkResponse = null;
+    while (true) {
+      long startTs = Time.now();
+      checkResponse = master.checkMatricesCreated(null, checkRequest);
+      if(checkResponse.getStatus() == 0) {
+        LOG.info("create matrices " + String.join(",", matrixNames) + " success");
+
+        List<MatrixMetaProto> metaProtos = master.getMatrices(null,
+          GetMatricesRequest.newBuilder().addAllMatrixNames(matrixNames).build()).getMatrixMetasList();
+        for(int i = 0; i < size; i++) {
+          PSAgentContext.get().getMatrixMetaManager().addMatrix(ProtobufUtil.convertToMatrixMeta(metaProtos.get(i)));
+        }
+        return;
+      } else {
+        if (Time.now() - startTs > timeOutMS) {
+          throw new TimeOutException("create matrix time out ", (Time.now() - startTs), timeOutMS);
+        }
+        Thread.sleep(1000);
+      }
     }
   }
 
   /**
    * Release a matrix
    * 
-   * @param matrix matrix meta
+   * @param matrixName matrix name
    * @throws ServiceException exception come from master
    * @throws InterruptedException interrupted when wait
    */
-  public void releaseMatrix(MatrixMeta matrix) throws ServiceException {
-    ReleaseMatrixRequest request =
-        ReleaseMatrixRequest.newBuilder().setMatrixId(matrix.getId())
-            .setMatrixName(matrix.getName()).build();
-    master.releaseMatrix(null, request);
+  public void releaseMatrix(String matrixName) throws ServiceException {
+    List<String> matrixNames = new ArrayList<>(1);
+    matrixNames.add(matrixName);
+    releaseMatrices(matrixNames);
+  }
+
+  public void releaseMatrices(List<String> matrixNames) throws ServiceException {
+    master.releaseMatrices(null, ReleaseMatricesRequest.newBuilder().addAllMatrixNames(matrixNames).build());
   }
 
   /**
@@ -453,5 +471,35 @@ public class MasterClient {
         ByteString.copyFrom(KryoUtils.serializeAlgoMetric(metricEntry.getValue()))).build());
     }
     master.setAlgoMetrics(null, builder.build());
+  }
+
+  public List<ParameterServerId> getStoredPss(int matrixId, int partitionId)
+    throws ServiceException {
+    List<PSIdProto> psIdProtos = master.getStoredPss(null,
+      GetStoredPssRequest.newBuilder().setMatrixId(matrixId).setPartId(partitionId).build()).getPsIdsList();
+    int size = psIdProtos.size();
+    List<ParameterServerId> psIds = new ArrayList<>(psIdProtos.size());
+    for(int i = 0; i < size; i++) {
+      psIds.add(ProtobufUtil.convertToId(psIdProtos.get(i)));
+    }
+    return psIds;
+  }
+
+  public void psFailedReport(HashMap<PSLocation, Integer> reports) throws ServiceException {
+    PSFailedReportRequest.Builder builder = PSFailedReportRequest.newBuilder();
+    builder.setReports(ProtobufUtil.convertToPSFailedReportsProto(reports));
+    master.psFailedReport(null, builder.build());
+  }
+
+  public PartitionLocation getPartLocation(int matrixId, int partId) throws ServiceException {
+    GetPartLocationResponse response = master.getPartLocation(null,
+      GetPartLocationRequest.newBuilder().setMatrixId(matrixId).setPartId(partId).build());
+    List<PSLocationProto> psLocsProto = response.getLocationsList();
+    int size = psLocsProto.size();
+    List<PSLocation> psLocs = new ArrayList<>(size);
+    for(int i = 0; i < size; i++) {
+      psLocs.add(new PSLocation(ProtobufUtil.convertToId(psLocsProto.get(i).getPsId()), ProtobufUtil.convertToLocation(psLocsProto.get(i))));
+    }
+    return new PartitionLocation(psLocs);
   }
 }

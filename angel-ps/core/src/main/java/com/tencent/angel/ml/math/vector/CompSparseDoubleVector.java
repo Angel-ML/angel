@@ -18,7 +18,7 @@
 package com.tencent.angel.ml.math.vector;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.protobuf.generated.MLProtos;
+import com.tencent.angel.ml.matrix.RowType;
 
 /**
  * Component sparse double vector. It contains a group of {@link SparseDoubleVector},
@@ -84,8 +84,23 @@ public class CompSparseDoubleVector extends CompDoubleVector {
     return clonedVector;
   }
 
-  @Override public MLProtos.RowType getType() {
-    return MLProtos.RowType.T_DOUBLE_SPARSE_COMPONENT;
+  public CompSparseDoubleVector cloneAndReset() {
+    SparseDoubleVector[] clonedVectors = new SparseDoubleVector[splitNum];
+    for(int i = 0; i < splitNum; i++) {
+      if(vectors[i] != null) {
+        clonedVectors[i] = (SparseDoubleVector)initComponentVector(vectors[i].size());
+      } else {
+        clonedVectors[i] = null;
+      }
+    }
+
+    CompSparseDoubleVector clonedVector = new CompSparseDoubleVector(matrixId, rowId, dim, partKeys,
+        clonedVectors);
+    return clonedVector;
+  }
+
+  @Override public RowType getType() {
+    return RowType.T_DOUBLE_SPARSE_COMPONENT;
   }
 
   @Override protected TIntDoubleVector initComponentVector() {

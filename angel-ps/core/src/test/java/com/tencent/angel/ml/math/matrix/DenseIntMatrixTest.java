@@ -146,8 +146,8 @@ public class DenseIntMatrixTest {
     int[][] value = {{1, 2}, {3, 4}};
     DenseIntMatrix mat = new DenseIntMatrix(2, 2, value);
 
-    DenseIntVector row0 = (DenseIntVector)mat.getTVector(0);
-    DenseIntVector row1 = (DenseIntVector)mat.getTVector(1);
+    DenseIntVector row0 = (DenseIntVector)mat.getRow(0);
+    DenseIntVector row1 = (DenseIntVector)mat.getRow(1);
 
     assertEquals(1, row0.get(0));
     assertEquals(2, row0.get(1));
@@ -172,14 +172,14 @@ public class DenseIntMatrixTest {
   public void getTIntVector() throws Exception {
     int[][] value = {{1, 2}, {3, 4}};
     DenseIntMatrix mat = new DenseIntMatrix(2, 2, value);
-    TIntVector vec = (TIntVector)mat.getTVector(0);
+    TIntVector vec = (TIntVector)mat.getRow(0);
 
     assertEquals(1, vec.get(0));
     assertEquals(2, vec.get(1));
 
     DenseIntMatrix mat_1 = new DenseIntMatrix(2, 2);
     mat_1.plusBy(vec);
-    TIntVector vec_1 = (TIntVector)mat_1.getTVector(1);
+    TIntVector vec_1 = (TIntVector)mat_1.getRow(1);
 
     assertEquals(0, vec_1.get(0));
     assertEquals(0, vec_1.get(1));

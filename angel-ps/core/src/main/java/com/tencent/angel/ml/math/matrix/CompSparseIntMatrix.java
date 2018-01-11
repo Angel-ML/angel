@@ -17,7 +17,6 @@
 
 package com.tencent.angel.ml.math.matrix;
 
-import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.math.vector.CompSparseIntVector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -25,7 +24,7 @@ import org.apache.commons.logging.LogFactory;
 /**
  * Sparse double matrix that is represented by a group of component sparse int vector  {@link CompSparseIntVector}
  */
-public class CompSparseIntMatrix extends TIntMatrix {
+public class CompSparseIntMatrix extends TIntMatrix<CompSparseIntVector> {
   private static final Log LOG = LogFactory.getLog(SparseIntMatrix.class);
 
   /**
@@ -34,8 +33,12 @@ public class CompSparseIntMatrix extends TIntMatrix {
    * @param row the row number
    * @param col the col number
    */
-  public CompSparseIntMatrix(int row, int col) {
-    super(row, col);
+  public CompSparseIntMatrix(int row, long col) {
+    this(row, col, new CompSparseIntVector[row]);
+  }
+
+  public CompSparseIntMatrix(int row, long col, CompSparseIntVector[] vectors) {
+    super(row, col, vectors);
   }
 
   /**
@@ -44,7 +47,7 @@ public class CompSparseIntMatrix extends TIntMatrix {
    * @param rowIndex row index
    * @return
    */
-  @Override public TVector initVector(int rowIndex) {
+  @Override public CompSparseIntVector initVector(int rowIndex) {
     return new CompSparseIntVector(matrixId, rowIndex, (int)col);
   }
 }

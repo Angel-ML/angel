@@ -22,7 +22,6 @@ import com.tencent.angel.ml.math.TUpdate;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.MatrixOpLogType;
 import com.tencent.angel.ml.matrix.psf.update.enhance.VoidResult;
-import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.ResponseType;
 import com.tencent.angel.psagent.matrix.transport.FutureResult;
@@ -41,6 +40,8 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import com.tencent.angel.ml.matrix.RowType;
 
 /**
  * Matrix oplog(updates) cache.
@@ -112,19 +113,22 @@ public class MatrixOpLogCache {
    * Stop all merge/flush tasks and dispatcher
    */
   public void stop() {
-    if (stopped.getAndSet(true)) {
-      return;
-    }
-
-    workerPool.shutdownNow();
-    if (dispatcher != null) {
-      dispatcher.interrupt();
-      try {
-        dispatcher.join();
-      } catch (InterruptedException ie) {
-        LOG.warn("InterruptedException while stopping");
+    if (!stopped.getAndSet(true)) {
+      if(workerPool != null) {
+        workerPool.shutdownNow();
+        workerPool = null;
       }
-      dispatcher = null;
+
+      if (dispatcher != null) {
+        dispatcher.interrupt();
+        try {
+          dispatcher.join();
+        } catch (InterruptedException ie) {
+          LOG.warn("InterruptedException while stopping");
+        }
+        dispatcher = null;
+      }
+      return;
     }
   }
 
@@ -507,7 +511,7 @@ public class MatrixOpLogCache {
         MatrixConf.DEFAULT_MATRIX_OPLOG_ENABLEFILTER).equalsIgnoreCase("true");
 
     if(type == null) {
-      MLProtos.RowType rowType = matrixMeta.getRowType();
+      RowType rowType = matrixMeta.getRowType();
       switch(rowType) {
         case T_DOUBLE_DENSE:
           return new DenseDoubleMatrixOpLog(matrixId, enableFilter);
@@ -568,7 +572,7 @@ public class MatrixOpLogCache {
         OpLogMessageType.MERGE_SUCCESS, message.getContext()));
   }
 
-  public void delOplog(int matrixId) {
+  public void remove(int matrixId) {
     opLogs.remove(matrixId);
   }
 }

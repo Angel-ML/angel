@@ -21,6 +21,7 @@ import com.tencent.angel.ml.matrix.psf.common.CommonParam;
 import com.tencent.angel.ml.matrix.psf.update.enhance.PartitionUpdateParam;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 
 /**
  * `Push` the `values` to `rowId` row
@@ -37,7 +38,7 @@ public class SparsePush extends CommonFunc {
 
   @Override
   protected void doUpdate(ServerDenseDoubleRow[] rows, PartitionUpdateParam param) {
-    throw new RuntimeException("MinA PSF can not support dense type rows");
+    throw new RuntimeException("SparsePush PSF can not support dense type rows");
   }
 
   @Override
@@ -49,8 +50,8 @@ public class SparsePush extends CommonFunc {
     double[] values = partParam.getDoubles();
     ServerSparseDoubleLongKeyRow row = rows[rowId];
 
-    row.clear();
-    row.merge(indices, values);
+    Long2DoubleOpenHashMap data = new Long2DoubleOpenHashMap(indices, values);
+    row.setIndex2ValueMap(data);
   }
 
 }

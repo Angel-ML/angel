@@ -18,33 +18,35 @@
 package com.tencent.angel.spark.models.vector
 
 import com.tencent.angel.spark.context.PSContext
+import com.tencent.angel.spark.linalg.SparseVector
 
 
 class SparsePSVector(override val poolId: Int,
                      override val id: Int,
-                     override val dimension: Long) extends PSVector {
+                     override val dimension: Long) extends ConcretePSVector {
 
-  def fill(values: Array[(Long, Double)]): Unit = {
-    psClient.sparseRowOps.push(this, values)
-  }
-
-  def increment(delta: Array[(Long, Double)]): Unit = {
-    psClient.sparseRowOps.increment(this, delta)
-  }
-
-  def pull(indices: Array[Long]): Array[(Long, Double)] = {
-    psClient.sparseRowOps.pull(this, indices)
-  }
-
-  def sparsePull(): Array[(Long, Double)] = {
+  override def pull: SparseVector = {
     psClient.sparseRowOps.pull(this)
   }
 
-  // other method of SparsePSVector is going to launch
+  def push(local: SparseVector): SparsePSVector = {
+    psClient.sparseRowOps.push(this, local)
+    this
+  }
+
+  def increment(delta: SparseVector): Unit = {
+    psClient.sparseRowOps.increment(this, delta)
+  }
+
+  def pull(indices: Array[Long]): SparseVector = {
+    psClient.sparseRowOps.pull(this, indices)
+  }
+
 }
 
 object SparsePSVector{
-  def apply(dimension: Long, capacity:Int = 20): SparsePSVector = {
-    PSContext.instance().createVector(dimension, VectorType.SPARSE, capacity).asInstanceOf[SparsePSVector]
+  def apply(dimension: Long = -1, capacity: Int = 20): SparsePSVector = {
+    PSContext.instance().createVector(dimension, VectorType.SPARSE, capacity)
+      .asInstanceOf[SparsePSVector]
   }
 }

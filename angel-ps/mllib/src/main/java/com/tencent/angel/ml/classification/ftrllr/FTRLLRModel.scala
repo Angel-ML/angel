@@ -16,28 +16,23 @@
  */
 package com.tencent.angel.ml.classification.ftrllr
 
-import java.text.DecimalFormat
-
-import com.tencent.angel.ml.classification.lr.LRPredictResult
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.{DenseDoubleVector, SparseDoubleVector, SparseLongKeyDoubleVector, TDoubleVector}
+import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.model.{MLModel, PSModel}
-import com.tencent.angel.ml.optimizer.ftrl.FTRL
 import com.tencent.angel.ml.predict.PredictResult
-import com.tencent.angel.ml.utils.Maths
 import com.tencent.angel.protobuf.generated.MLProtos
-import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
+import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
 
-object FTRLLRModel {
+object FTRLLRModel{
   def apply(conf: Configuration) = {
     new FTRLLRModel(conf)
   }
 
-  def apply(ctx: TaskContext, conf: Configuration) = {
+  def apply(ctx:TaskContext, conf: Configuration) = {
     new FTRLLRModel(conf, ctx)
   }
 }
@@ -60,13 +55,13 @@ class FTRLLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
 
   // PSModel z, z^t = \Sigma_{s=1}^t g - \Sigma_{s=1}^t \delta^s \cdot w
   val zMat = PSModel(FTRL_LR_Z, 1, feaNum)
-    .setAverage(true)
-    .setRowType(MLProtos.RowType.T_DOUBLE_SPARSE)
+            .setAverage(true)
+            .setRowType(RowType.T_DOUBLE_SPARSE)
 
   // PSModel n, n^t = \Sigma_{i=1}^t g_i^2
   val nMat = PSModel(FTRL_LR_N, 1, feaNum).setAverage(true)
-    .setAverage(true)
-    .setRowType(MLProtos.RowType.T_DOUBLE_SPARSE)
+            .setAverage(true)
+            .setRowType(RowType.T_DOUBLE_SPARSE)
 
   addPSModel(FTRL_LR_Z, zMat)
   addPSModel(FTRL_LR_N, nMat)
@@ -80,37 +75,9 @@ class FTRLLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
     * @return
     */
   override
-  def predict(dataSet: DataBlock[LabeledData]): DataBlock[PredictResult] = {
-    val start = System.currentTimeMillis()
-    val z = zMat.getRow(0).asInstanceOf[TDoubleVector]
-    val n = nMat.getRow(0).asInstanceOf[TDoubleVector]
-    val wVector = z match {
-      case _: DenseDoubleVector => new DenseDoubleVector(z.getDimension)
-      case _: SparseDoubleVector => new SparseDoubleVector(z.getDimension)
-      case _: SparseLongKeyDoubleVector => new SparseLongKeyDoubleVector(z.getDimension)
-    }
-    FTRL.computeW(z, n, wVector, alpha, beta, lambda1, lambda2)
-    val cost = System.currentTimeMillis() - start
-    LOG.info(s"pull FTRLLR Model from PS cost $cost ms.")
-
-    val predict = new MemoryDataBlock[PredictResult](-1)
-
-    dataSet.resetReadIndex()
-    for (idx: Int <- 0 until dataSet.size) {
-      val instance = dataSet.read
-      val id = instance.getY
-      val dot = wVector.dot(instance.getX)
-      val sig = Maths.sigmoid(dot)
-      predict.put(new FTRLLRPredictResult(id, dot, sig))
-    }
-    predict
-  }
+  def predict(dataSet: DataBlock[LabeledData]): DataBlock[PredictResult] = ???
 }
 
-class FTRLLRPredictResult(id: Double, dot: Double, sig: Double) extends PredictResult {
-  val df = new DecimalFormat("0")
+abstract class FTRLLRPredictResult(id: Double, dot: Double, sig: Double) extends PredictResult {
 
-  override def getText(): String = {
-    df.format(id) + separator + format.format(dot) + separator + format.format(sig)
-  }
 }

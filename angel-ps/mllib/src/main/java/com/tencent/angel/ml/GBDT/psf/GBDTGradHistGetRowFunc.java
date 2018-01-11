@@ -54,6 +54,7 @@ public class GBDTGradHistGetRowFunc extends GetRowFunc {
 
   @Override
   public PartitionGetResult partitionGet(PartitionGetParam partParam) {
+
     HistAggrParam.HistPartitionAggrParam param = (HistAggrParam.HistPartitionAggrParam) partParam;
     
     LOG.info("For the gradient histogram of GBT, we use PS to find the optimal split");
@@ -64,7 +65,7 @@ public class GBDTGradHistGetRowFunc extends GetRowFunc {
     gbtparam.regAlpha = param.getRegAlpha();
     gbtparam.regLambda = param.getRegLambda();
 
-    ServerDenseDoubleRow row = (ServerDenseDoubleRow) PSContext.get().getMatrixPartitionManager()
+    ServerDenseDoubleRow row = (ServerDenseDoubleRow) psContext.getMatrixStorageManager()
             .getRow(param.getMatrixId(), param.getRowId(), param.getPartKey().getPartitionId());
 
     SplitEntry splitEntry = GradHistHelper.findSplitOfServerRow(row, gbtparam);
@@ -141,4 +142,5 @@ public class GBDTGradHistGetRowFunc extends GetRowFunc {
 
     return new GBDTGradHistGetRowResult(ResponseType.SUCCESS, splitEntry);
   }
+
 }

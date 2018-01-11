@@ -19,8 +19,12 @@ package com.tencent.angel.psagent.matrix;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math.TMatrix;
 import com.tencent.angel.ml.math.TVector;
+import com.tencent.angel.ml.math.vector.TIntDoubleVector;
+import com.tencent.angel.ml.math.vector.TLongDoubleVector;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
+import com.tencent.angel.ml.matrix.psf.get.enhance.indexed.IndexGetFunc;
+import com.tencent.angel.ml.matrix.psf.get.enhance.indexed.LongIndexGetFunc;
 import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.enhance.VoidResult;
 import com.tencent.angel.psagent.matrix.transport.adapter.GetRowsResult;
@@ -126,4 +130,8 @@ public interface MatrixInterface {
    * @throws AngelException
    */
   Future<VoidResult> clock() throws AngelException;
+
+  TIntDoubleVector getRow(IndexGetFunc func) throws AngelException;
+
+  TLongDoubleVector getRow(LongIndexGetFunc func) throws AngelException;
 }

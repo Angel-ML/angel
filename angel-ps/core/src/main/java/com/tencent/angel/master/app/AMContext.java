@@ -18,11 +18,11 @@ package com.tencent.angel.master.app;
 
 import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.RunningMode;
-import com.tencent.angel.master.LocationManager;
+import com.tencent.angel.common.location.LocationManager;
 import com.tencent.angel.master.MasterService;
-import com.tencent.angel.master.MatrixMetaManager;
 import com.tencent.angel.master.data.DataSpliter;
 import com.tencent.angel.master.deploy.ContainerAllocator;
+import com.tencent.angel.master.matrixmeta.AMMatrixMetaManager;
 import com.tencent.angel.master.metrics.MetricsService;
 import com.tencent.angel.master.oplog.AppStateStorage;
 import com.tencent.angel.master.ps.ParameterServerManager;
@@ -147,7 +147,7 @@ public interface AMContext {
    * Get matrix meta manager
    * @return MatrixMetaManager matrix meta manager
    */
-  MatrixMetaManager getMatrixMetaManager();
+  AMMatrixMetaManager getMatrixMetaManager();
 
   /**
    * Get ps location manager
@@ -219,5 +219,11 @@ public interface AMContext {
    * Get algorithm log collector
    * @return AlgoLogService
    */
-  public MetricsService getAlgoMetricsService();
+  MetricsService getAlgoMetricsService();
+
+  /**
+   * Get Matrix partition Replication number
+   * @return Matrix partition Replication number
+   */
+  int getPSReplicationNum();
 }

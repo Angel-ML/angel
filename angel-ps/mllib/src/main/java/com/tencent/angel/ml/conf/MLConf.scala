@@ -36,6 +36,8 @@ object MLConf {
   val DEFAULT_ML_FEATURE_NNZ = 10000
   val ML_MF_USER_OUTPUT_PATH="ml.mf.user.model.output"
   val ANGEL_PREDICT_PATH = "angel.predict.path"
+  val ML_INDEX_GET_ENABLE = "ml.index.get.enable"
+  val DEFAULT_ML_INDEX_GET_ENABLE = false
 
   // Model params
   val ML_PART_PER_SERVER = "ml.part.per.server"
@@ -97,6 +99,8 @@ object MLConf {
   val ANGEL_ACTION_TYPE = "actionType"
 
   // GBDT Params
+  val ML_GBDT_TASK_TYPE = "ml.gbdt.task.type"
+  val DEFAULT_ML_GBDT_TASK_TYPE = "classification"
   val ML_GBDT_TREE_NUM = "ml.gbdt.tree.num"
   val DEFAULT_ML_GBDT_TREE_NUM = 10
   val ML_GBDT_TREE_DEPTH = "ml.gbdt.tree.depth"

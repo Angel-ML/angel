@@ -18,15 +18,16 @@ package com.tencent.angel.master;
 
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
-import com.tencent.angel.common.Location;
+import com.tencent.angel.common.location.Location;
+import com.tencent.angel.common.location.LocationManager;
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.ipc.MLRPC;
 import com.tencent.angel.ipc.RpcServer;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.app.AppEvent;
 import com.tencent.angel.master.app.AppEventType;
 import com.tencent.angel.master.app.InternalErrorEvent;
+import com.tencent.angel.master.matrixmeta.AMMatrixMetaManager;
 import com.tencent.angel.master.metrics.MetricsEvent;
 import com.tencent.angel.master.metrics.MetricsEventType;
 import com.tencent.angel.master.metrics.MetricsUpdateEvent;
@@ -40,17 +41,22 @@ import com.tencent.angel.master.worker.worker.AMWorker;
 import com.tencent.angel.master.worker.workergroup.AMWorkerGroup;
 import com.tencent.angel.master.worker.workergroup.AMWorkerGroupState;
 import com.tencent.angel.ml.matrix.MatrixMeta;
+import com.tencent.angel.ml.matrix.MatrixReport;
+import com.tencent.angel.ml.matrix.transport.PSLocation;
 import com.tencent.angel.ml.metric.Metric;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.*;
+import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.protobuf.generated.MLProtos.*;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.*;
+import com.tencent.angel.protobuf.generated.PSMasterServiceProtos;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.*;
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.*;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
+import com.tencent.angel.ps.recovery.ha.RecoverPartKey;
 import com.tencent.angel.psagent.PSAgentAttemptId;
 import com.tencent.angel.utils.KryoUtils;
 import com.tencent.angel.utils.NetUtils;
@@ -71,6 +77,7 @@ import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -114,14 +121,18 @@ public class MasterService extends AbstractService implements MasterProtocol {
   /** Yarn web port */
   private final int yarnNMWebPort;
 
+  private final Map<String, Long> clientToLastHBTsMap;
+  private final long clientTimeoutMS;
+
   public MasterService(AMContext context) {
     super(MasterService.class.getName());
     this.context = context;
     this.stopped = new AtomicBoolean(false);
-    workerLastHeartbeatTS = new ConcurrentHashMap<WorkerAttemptId, Long>();
-    psAgentLastHeartbeatTS = new ConcurrentHashMap<PSAgentAttemptId, Long>();
-    psLastHeartbeatTS = new ConcurrentHashMap<PSAttemptId, Long>();
-    matrics = new ArrayList<MatrixMeta>();
+    workerLastHeartbeatTS = new ConcurrentHashMap<>();
+    psAgentLastHeartbeatTS = new ConcurrentHashMap<>();
+    psLastHeartbeatTS = new ConcurrentHashMap<>();
+    clientToLastHBTsMap = new ConcurrentHashMap<>();
+    matrics = new ArrayList<>();
 
     Configuration conf = context.getConf();
     psAgentTimeOutMS =
@@ -134,6 +145,10 @@ public class MasterService extends AbstractService implements MasterProtocol {
     workerTimeOutMS =
         conf.getLong(AngelConf.ANGEL_WORKER_HEARTBEAT_TIMEOUT_MS,
             AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_TIMEOUT_MS);
+
+    clientTimeoutMS =
+      conf.getLong(AngelConf.ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS,
+        AngelConf.DEFAULT_ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS);
 
     yarnNMWebPort = getYarnNMWebPort(conf);
 
@@ -217,32 +232,47 @@ public class MasterService extends AbstractService implements MasterProtocol {
         List<Integer> ids = context.getParameterServerManager().getNeedCommitMatrixIds();
         LOG.info("notify ps" + psAttemptId + " to commit now! commit matrices:" + StringUtils.joinInts(",", ids));
         resBuilder.setPsCommand(PSCommandProto.PSCOMMAND_COMMIT);
-        resBuilder.addAllNeedCommitMatrixIds(ids);
+
+        NeedSaveMatrixProto.Builder saveBuilder = NeedSaveMatrixProto.newBuilder();
+        for(int matrixId : ids) {
+          resBuilder.addNeedSaveMatrices(saveBuilder.setMatrixId(matrixId).addAllPartIds(
+            context.getMatrixMetaManager().getMasterPartsInPS(matrixId, psAttemptId.getPsId())).build());
+          saveBuilder.clear();
+        }
       } else {
         resBuilder.setPsCommand(PSCommandProto.PSCOMMAND_OK);
       }
     }
 
+    // Update PS failed counters
+    context.getParameterServerManager().psFailedReports(ProtobufUtil.convert(request.getPsFailedReports()));
+
     //check matrix metadata inconsistencies between master and parameter server.
     //if a matrix exists on the Master and does not exist on ps, then it is necessary to notify ps to establish the matrix
     //if a matrix exists on the ps and does not exist on master, then it is necessary to notify ps to remove the matrix
-    List<MatrixReport> matrixReports = request.getMatrixReportsList();
-    List<Integer> needReleaseMatrixes = new ArrayList<Integer>();
-    List<MatrixPartition> needCreateMatrixes = new ArrayList<MatrixPartition>();
-    context.getMatrixMetaManager().syncMatrixInfos(matrixReports, needCreateMatrixes,
-        needReleaseMatrixes, psAttemptId.getParameterServerId());
+    List<MatrixReportProto> matrixReportsProto = request.getMatrixReportsList();
+    List<Integer> needReleaseMatrices = new ArrayList<>();
+    List<MatrixMeta> needCreateMatrices = new ArrayList<>();
+    List<RecoverPartKey> needRecoverParts = new ArrayList<>();
 
-    size = needCreateMatrixes.size();
+    List<MatrixReport> matrixReports = ProtobufUtil.convertToMatrixReports(matrixReportsProto);
+    context.getMatrixMetaManager().syncMatrixInfos(
+      matrixReports, needCreateMatrices, needReleaseMatrices, needRecoverParts, psAttemptId.getPsId());
+
+    size = needCreateMatrices.size();
     for (int i = 0; i < size; i++) {
-      resBuilder.addNeedCreateMatrixIds(needCreateMatrixes.get(i));
+      resBuilder.addNeedCreateMatrices(ProtobufUtil.convertToMatrixMetaProto(needCreateMatrices.get(i)));
     }
 
-    size = needReleaseMatrixes.size();
+    size = needReleaseMatrices.size();
     for (int i = 0; i < size; i++) {
-      resBuilder.addNeedReleaseMatrixIds(needReleaseMatrixes.get(i));
+      resBuilder.addNeedReleaseMatrixIds(needReleaseMatrices.get(i));
     }
 
-    context.getMatrixMetaManager().psMatricesUpdate(psAttemptId.getParameterServerId(), matrixReports);
+    size = needRecoverParts.size();
+    for (int i = 0; i < size; i++) {
+      resBuilder.addNeedRecoverParts(ProtobufUtil.convert(needRecoverParts.get(i)));
+    }
 
     return resBuilder.build();
   }
@@ -299,22 +329,39 @@ public class MasterService extends AbstractService implements MasterProtocol {
       @SuppressWarnings("unchecked")
       @Override
       public void run() {
-        Iterator<Map.Entry<PSAgentAttemptId, Long>> psAgentIt = null;
-        Iterator<Map.Entry<PSAttemptId, Long>> psIt = null;
-        Entry<PSAgentAttemptId, Long> psAgentEntry = null;
-        Entry<PSAttemptId, Long> psEntry = null;
-        Iterator<Map.Entry<WorkerAttemptId, Long>> workerIt = null;
-        Entry<WorkerAttemptId, Long> workerEntry = null;
+        Iterator<Map.Entry<String, Long>> clientIt;
+        Iterator<Map.Entry<PSAgentAttemptId, Long>> psAgentIt;
+        Iterator<Map.Entry<PSAttemptId, Long>> psIt;
+        Entry<PSAgentAttemptId, Long> psAgentEntry;
+        Entry<PSAttemptId, Long> psEntry;
+        Entry<String, Long> clientEntry;
+        Iterator<Map.Entry<WorkerAttemptId, Long>> workerIt;
+        Entry<WorkerAttemptId, Long> workerEntry;
         long currentTs = 0;
 
         while (!stopped.get() && !Thread.currentThread().isInterrupted()) {
-
           try {
             Thread.sleep(1000);
           } catch (InterruptedException e) {
             LOG.warn(Thread.currentThread().getName() + " is interupted");
           }
           currentTs = System.currentTimeMillis();
+
+          clientIt = clientToLastHBTsMap.entrySet().iterator();
+          boolean isTimeOut = false;
+          while(clientIt.hasNext()) {
+            clientEntry = clientIt.next();
+            if (currentTs - clientEntry.getValue() > clientTimeoutMS) {
+              LOG.error("Client " + clientEntry.getKey() + " heartbeat timeout");
+              clientIt.remove();
+              isTimeOut = true;
+            }
+          }
+
+          if(isTimeOut && clientToLastHBTsMap.isEmpty()) {
+            LOG.error("All client timeout, just exit the application");
+            stop(1);
+          }
 
           //check whether psagent heartbeat timeout
           psAgentIt = psAgentLastHeartbeatTS.entrySet().iterator();
@@ -407,6 +454,10 @@ public class MasterService extends AbstractService implements MasterProtocol {
     LOG.info("WorkerPSService is stoped!");
   }
 
+  public RpcServer getRpcServer() {
+    return rpcServer;
+  }
+
   /**
    * get application state.
    * @param controller rpc controller of protobuf
@@ -462,13 +513,13 @@ public class MasterService extends AbstractService implements MasterProtocol {
   public CreateMatricesResponse createMatrices(RpcController controller,
       CreateMatricesRequest request) throws ServiceException {
     if (LOG.isDebugEnabled()) {
-      LOG.debug("receive set matrix partitions request. request=" + request);
+      LOG.debug("receive create matrix request. request=" + request);
     }
 
     try {
-      context.getMatrixMetaManager().addMatrices(request.getMatricesList());
-    } catch (InvalidParameterException e1) {
-      throw new ServiceException(e1);
+      context.getMatrixMetaManager().createMatrices(ProtobufUtil.convertToMatrixContexts(request.getMatricesList()));
+    } catch (Throwable e) {
+      throw new ServiceException(e);
     }
 
     try {
@@ -479,39 +530,53 @@ public class MasterService extends AbstractService implements MasterProtocol {
     return CreateMatricesResponse.newBuilder().build();
   }
 
-  public InetSocketAddress getRPCListenAddr() {
-    return rpcServer.getListenerAddress();
-  }
-
   /**
-   * get partitions meta for a specific matrix and a specific parameter server
-   * @param rpcControl rpc controller of protobuf
-   * @param request matrix id and parameter server attempt id
+   * Get matrices metadata
+   * @param controller
+   * @param request
+   * @return
    * @throws ServiceException
    */
   @Override
-  public GetMatrixPartitionResponse getMatrixPartition(RpcController rpcControl,
-      GetMatrixPartitionRequest request) {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("receive getMatrixPartition request. request=" + request);
-    }
+  public GetMatricesResponse getMatrices(RpcController controller, GetMatricesRequest request)
+    throws ServiceException {
+    GetMatricesResponse.Builder builder = GetMatricesResponse.newBuilder();
+    AMMatrixMetaManager matrixMetaManager = context.getMatrixMetaManager();
 
-    GetMatrixPartitionResponse.Builder resBuilder = GetMatrixPartitionResponse.newBuilder();
-    PSAttemptId psAttemptId = ProtobufUtil.convertToId(request.getPsAttemptId());
-
-    //find matrix partitions from master matrix meta manager for this parameter server
-    List<MatrixPartition> matrixPartitions =
-        context.getMatrixMetaManager().getMatrixPartitions(psAttemptId.getParameterServerId());
-
-    if (matrixPartitions != null) {
-      for (MatrixPartition matrixPart : matrixPartitions) {
-        resBuilder.addMatrixPartitions(matrixPart);
+    List<String> matrixNames = request.getMatrixNamesList();
+    int size = matrixNames.size();
+    for(int i = 0; i < size; i++) {
+      MatrixMeta matrixMeta = matrixMetaManager.getMatrix(matrixNames.get(i));
+      if(matrixMeta == null) {
+        throw new ServiceException("Can not find matrix " + matrixNames.get(i));
       }
-      resBuilder.setMatrixStatus(MatrixStatus.M_OK);
-    } else {
-      resBuilder.setMatrixStatus(MatrixStatus.M_NOT_READY);
+      builder.addMatrixMetas(ProtobufUtil.convertToMatrixMetaProto(matrixMeta));
     }
-    return resBuilder.build();
+    return builder.build();
+  }
+
+  /**
+   * Release matrices
+   * @param controller
+   * @param request
+   * @return
+   * @throws ServiceException
+   */
+  @Override public ReleaseMatricesResponse releaseMatrices(RpcController controller,
+    ReleaseMatricesRequest request) throws ServiceException {
+    AMMatrixMetaManager matrixMetaManager = context.getMatrixMetaManager();
+    List<String> matrixNames = request.getMatrixNamesList();
+
+    int size = matrixNames.size();
+    for(int i = 0; i < size; i++) {
+      matrixMetaManager.releaseMatrix(matrixNames.get(i));
+    }
+    return ReleaseMatricesResponse.newBuilder().build();
+  }
+
+
+  public InetSocketAddress getRPCListenAddr() {
+    return rpcServer.getListenerAddress();
   }
 
   /**
@@ -567,18 +632,14 @@ public class MasterService extends AbstractService implements MasterProtocol {
    * @throws ServiceException
    */
   @Override
-  public GetAllMatrixInfoResponse getAllMatrixInfo(RpcController controller,
-      GetAllMatrixInfoRequest request) throws ServiceException {
+  public GetAllMatrixMetaResponse getAllMatrixMeta(RpcController controller,
+      GetAllMatrixMetaRequest request) throws ServiceException {
 
-    GetAllMatrixInfoResponse.Builder resBuilder = GetAllMatrixInfoResponse.newBuilder();
-    List<MatrixProto> matrixProtos = context.getMatrixMetaManager().getMatrixProtos();
-    if (matrixProtos == null) {
-      resBuilder.setMatrixStatus(MatrixStatus.M_NOT_READY);
-    } else {
-      resBuilder.setMatrixStatus(MatrixStatus.M_OK);
-      for (MatrixProto matrixProto : matrixProtos) {
-        resBuilder.addMatrixInfo(matrixProto);
-      }
+    GetAllMatrixMetaResponse.Builder resBuilder = GetAllMatrixMetaResponse.newBuilder();
+    Map<Integer, MatrixMeta> matrixIdToMetaMap = context.getMatrixMetaManager().getMatrixMetas();
+
+    for(Entry<Integer, MatrixMeta> metaEntry : matrixIdToMetaMap.entrySet()) {
+      resBuilder.addMatrixMetas(ProtobufUtil.convertToMatrixMetaProto(metaEntry.getValue()));
     }
     return resBuilder.build();
   }
@@ -592,11 +653,11 @@ public class MasterService extends AbstractService implements MasterProtocol {
   @Override
   public GetAllPSLocationResponse getAllPSLocation(RpcController controller,
       GetAllPSLocationRequest request) {
-
     GetAllPSLocationResponse.Builder resBuilder = GetAllPSLocationResponse.newBuilder();
-    List<PSLocation> psLocList = context.getLocationManager().getAllPSLocation();
-    for (PSLocation psLoc : psLocList) {
-      resBuilder.addPsLocations(psLoc);
+    LocationManager locationManager = context.getLocationManager();
+    ParameterServerId [] psIds = locationManager.getPsIds();
+    for(int i = 0; i < psIds.length; i++) {
+      resBuilder.addPsLocations(ProtobufUtil.convertToPSLocProto(psIds[i], locationManager.getPsLocation(psIds[i])));
     }
     return resBuilder.build();
   }
@@ -613,104 +674,97 @@ public class MasterService extends AbstractService implements MasterProtocol {
     GetPSLocationReponse.Builder resBuilder = GetPSLocationReponse.newBuilder();
     ParameterServerId psId = ProtobufUtil.convertToId(request.getPsId());
 
-    LocationProto psLocation = context.getLocationManager().getPSLocation(psId);
+    Location psLocation = context.getLocationManager().getPsLocation(psId);
     if (psLocation == null) {
-      resBuilder.setPsStatus(PSStatus.PS_NOTREADY);
+      resBuilder.setPsLocation(PSLocationProto.newBuilder().setPsId(request.getPsId()).setPsStatus(PSStatus.PS_NOTREADY).build());
     } else {
-      resBuilder.setPsStatus(PSStatus.PS_OK);
-      resBuilder.setLocation(psLocation);
+      resBuilder.setPsLocation(ProtobufUtil.convertToPSLocProto(psId, psLocation));
     }
     return resBuilder.build();
   }
 
   /**
-   * create a matrix
-   *
-   * @param controller rpc controller of protobuf
-   * @param request matrix meta
+   * Get locations for a partition
+   * @param controller
+   * @param request
+   * @return
    * @throws ServiceException
    */
-  @Override
-  public CreateMatrixResponse createMatrix(RpcController controller, CreateMatrixRequest request)
-      throws ServiceException {
-    LOG.info("create matrix " + request);
-    CreateMatrixResponse.Builder builder = CreateMatrixResponse.newBuilder();
-    int matrixId = -1;
+  @Override public GetPartLocationResponse getPartLocation(RpcController controller,
+    GetPartLocationRequest request) throws ServiceException {
+    GetPartLocationResponse.Builder builder = GetPartLocationResponse.newBuilder();
+    List<ParameterServerId> psIds = context.getMatrixMetaManager().getPss(request.getMatrixId(), request.getPartId());
 
-    try {
-      matrixId = context.getMatrixMetaManager().addMatrix(request.getMatrixProto());
-    } catch (InvalidParameterException e) {
-      throw new ServiceException(e);
-    }
-
-    try {
-      context.getAppStateStorage().writeMatrixMeta(context.getMatrixMetaManager());
-    } catch (Exception e) {
-      LOG.error("write matrix meta to file failed.", e);
-    }
-
-    builder.setMatrixStatus(MatrixStatus.M_NOT_READY);
-    return builder.setMatrixId(matrixId).build();
-  }
-
-  /**
-   * get a specific matrix meta
-   * @param controller rpc controller of protobuf
-   * @param request matrix id
-   * @throws ServiceException
-   */
-  @Override
-  public GetMatrixInfoResponse getMatrixInfo(RpcController controller, GetMatrixInfoRequest request)
-      throws ServiceException {
-    GetMatrixInfoResponse.Builder builder = GetMatrixInfoResponse.newBuilder();
-    MatrixProto matrix = context.getMatrixMetaManager().getMatrix(request.getMatrixId());
-    if (matrix == null) {
-      builder.setMatrixStatus(MatrixStatus.M_NOT_READY);
-    } else {
-      builder.setMatrixStatus(MatrixStatus.M_OK).setMatrixInfo(matrix);
+    if(psIds != null) {
+      int size = psIds.size();
+      for(int i = 0; i < size; i++) {
+        Location psLocation = context.getLocationManager().getPsLocation(psIds.get(i));
+        if (psLocation == null) {
+          builder.addLocations((PSLocationProto.newBuilder().setPsId(
+            ProtobufUtil.convertToIdProto(psIds.get(i))).setPsStatus(PSStatus.PS_NOTREADY).build()));
+        } else {
+          builder.addLocations(ProtobufUtil.convertToPSLocProto(psIds.get(i), psLocation));
+        }
+      }
     }
 
     return builder.build();
   }
 
   /**
-   * release a matrix
-   * @param controller rpc controller of protobuf
-   * @param request matrix id
+   * Get iteration now
+   * @param controller
+   * @param request
+   * @return
    * @throws ServiceException
    */
   @Override
-  public ReleaseMatrixResponse releaseMatrix(RpcController controller, ReleaseMatrixRequest request)
-      throws ServiceException {
-    context.getMatrixMetaManager().releaseMatrix(request.getMatrixId());
-    try {
-      context.getAppStateStorage().writeMatrixMeta(context.getMatrixMetaManager());
-    } catch (Exception e) {
-      LOG.error("write matrix meta to file failed.", e);
+  public GetIterationResponse getIteration(RpcController controller, GetIterationRequest request)
+    throws ServiceException {
+    int curIteration = 0;
+    if(context.getAlgoMetricsService() != null) {
+      curIteration = context.getAlgoMetricsService().getCurrentIter();
     }
-    return ReleaseMatrixResponse.newBuilder().build();
+    return GetIterationResponse.newBuilder().setIteration(curIteration).build();
+  }
+
+  @Override public GetPSMatricesResponse getPSMatricesMeta(RpcController controller,
+    GetPSMatricesMetaRequest request) throws ServiceException {
+    Map<Integer, MatrixMeta> matrixIdToMetaMap = context.getMatrixMetaManager().getMatrixPartitions(ProtobufUtil.convertToId(request.getPsId()));
+    GetPSMatricesResponse.Builder builder = GetPSMatricesResponse.newBuilder();
+    if(matrixIdToMetaMap != null && !matrixIdToMetaMap.isEmpty()) {
+      for(MatrixMeta meta : matrixIdToMetaMap.values()) {
+        builder.addMatricesMeta(ProtobufUtil.convertToMatrixMetaProto(meta));
+      }
+    }
+    return builder.build();
+  }
+
+  /**
+   * Get the stored pss of a matrix partition
+   * @param controller
+   * @param request
+   * @return
+   * @throws ServiceException
+   */
+  @Override
+  public GetStoredPssResponse getStoredPss(RpcController controller, GetStoredPssRequest request)
+    throws ServiceException {
+    GetStoredPssResponse.Builder builder = GetStoredPssResponse.newBuilder();
+    List<ParameterServerId> psIds = context.getMatrixMetaManager().getPss(request.getMatrixId(), request.getMatrixId());
+
+    if(psIds != null) {
+      int size = psIds.size();
+      for(int i = 0; i < size; i++) {
+        builder.addPsIds(ProtobufUtil.convertToIdProto(psIds.get(i)));
+      }
+    }
+    return builder.build();
   }
 
   public void unRegisterPSAgentAttemptID(PSAgentAttemptId attemptId) {
     LOG.info(attemptId + " is unregistered in monitor!");
     psAgentLastHeartbeatTS.remove(attemptId);
-  }
-
-  /**
-   * get all psagent locations.
-   * @param controller rpc controller of protobuf
-   * @param request
-   * @throws ServiceException
-   */
-  @Override
-  public GetAllPSAgentLocationResponse getAllPSAgentLocation(RpcController controller,
-      GetAllPSAgentLocationRequest request) throws ServiceException {
-    GetAllPSAgentLocationResponse.Builder resBuilder = GetAllPSAgentLocationResponse.newBuilder();
-    List<PSAgentLocation> psLocList = context.getLocationManager().getAllPSAgentLocation();
-    for (PSAgentLocation psLoc : psLocList) {
-      resBuilder.addPsAgentLocations(psLoc);
-    }
-    return resBuilder.build();
   }
 
   /**
@@ -1112,6 +1166,13 @@ public class MasterService extends AbstractService implements MasterProtocol {
     return PSAgentMasterServiceProtos.SetAlgoMetricsResponse.newBuilder().build();
   }
 
+  @Override public PSFailedReportResponse psFailedReport(RpcController controller,
+    PSFailedReportRequest request) throws ServiceException {
+    HashMap<PSLocation, Integer> reports = ProtobufUtil.convert(request.getReports());
+    context.getParameterServerManager().psFailedReports(reports);
+    return PSFailedReportResponse.newBuilder().build();
+  }
+
   /**
    * get clock of all matrices for all task
    * @param controller rpc controller of protobuf
@@ -1185,13 +1246,14 @@ public class MasterService extends AbstractService implements MasterProtocol {
     List<String> needSaveMatrices = request.getMatrixNamesList();
 
     List<Integer> matrixIds = new ArrayList<Integer> (needSaveMatrices.size());
-    MatrixMetaManager matrixMetaManager = context.getMatrixMetaManager();
+    AMMatrixMetaManager matrixMetaManager = context.getMatrixMetaManager();
     int size = needSaveMatrices.size();
     for(int i = 0; i < size; i++) {
-      MatrixProto matrixMeta = matrixMetaManager.getMatrix(needSaveMatrices.get(i));
+      MatrixMeta matrixMeta = matrixMetaManager.getMatrix(needSaveMatrices.get(i));
       if(matrixMeta == null) {
         throw new ServiceException("matrix " + needSaveMatrices.get(i) + " does not exist");
       }
+      LOG.info("Need save matrix " + matrixMeta.getName());
       matrixIds.add(matrixMeta.getId());
     }
 
@@ -1212,7 +1274,11 @@ public class MasterService extends AbstractService implements MasterProtocol {
   public ClientMasterServiceProtos.StopResponse stop(RpcController controller,
     ClientMasterServiceProtos.StopRequest request) throws ServiceException {
     LOG.info("receive stop command from client, request=" + request);
-    int exitStatus = request.getExitStatus();
+    stop(request.getExitStatus());
+    return ClientMasterServiceProtos.StopResponse.newBuilder().build();
+  }
+
+  private void stop(int exitStatus) {
     switch(exitStatus) {
       case 1:{
         context.getEventHandler().handle(new AppEvent(AppEventType.KILL));
@@ -1226,8 +1292,6 @@ public class MasterService extends AbstractService implements MasterProtocol {
         context.getEventHandler().handle(new AppEvent(AppEventType.SUCCESS));
       }
     }
-
-    return ClientMasterServiceProtos.StopResponse.newBuilder().build();
   }
 
   /**
@@ -1242,14 +1306,13 @@ public class MasterService extends AbstractService implements MasterProtocol {
     CheckMatricesCreatedResponse.Builder builder = CheckMatricesCreatedResponse.newBuilder();
     int size = names.size();
     for(int i = 0; i < size; i++) {
-      if(context.getMatrixMetaManager().isCreated(names.get(i))) {
-        builder.addStatus(MatrixStatus.M_OK);
-      } else {
-        builder.addStatus(MatrixStatus.M_NOT_READY);
+      if(!context.getMatrixMetaManager().isCreated(names.get(i))) {
+        builder.setStatus(-1);
+        return builder.build();
       }
     }
 
-    return builder.build();
+    return builder.setStatus(0).build();
   }
   /**
    * Set parameters.
@@ -1266,5 +1329,19 @@ public class MasterService extends AbstractService implements MasterProtocol {
     }
 
     return SetParamsResponse.newBuilder().build();
+  }
+
+  @Override public KeepAliveResponse keepAlive(RpcController controller, KeepAliveRequest request)
+    throws ServiceException {
+    if(clientToLastHBTsMap.containsKey(request.getClientId())) {
+      clientToLastHBTsMap.put(request.getClientId(), System.currentTimeMillis());
+    }
+    return KeepAliveResponse.getDefaultInstance();
+  }
+
+  @Override public ClientRegisterResponse clientRegister(RpcController controller,
+    ClientRegisterRequest request) throws ServiceException {
+    clientToLastHBTsMap.put(request.getClientId(), System.currentTimeMillis());
+    return ClientRegisterResponse.getDefaultInstance();
   }
 }

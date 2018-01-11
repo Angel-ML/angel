@@ -20,10 +20,13 @@ package com.tencent.angel.ml.classification.lr
 
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.math.TVector
+import com.tencent.angel.ml.math.vector.{SparseDoubleSortedVector, SparseDummyVector}
 import com.tencent.angel.ml.task.TrainTask
 import com.tencent.angel.ml.utils.DataParser
 import com.tencent.angel.worker.storage.MemoryDataBlock
 import com.tencent.angel.worker.task.TaskContext
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap
 import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.hadoop.io.{LongWritable, Text}
 
@@ -47,17 +50,20 @@ class LRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ct
   // validate sample ratio
   private val valiRat = conf.getDouble(MLConf.ML_VALIDATE_RATIO, 0.05)
 
-
   private val dataParser = DataParser(dataFormat, feaNum, true)
 
   // validation data storage
   var validDataBlock = new MemoryDataBlock[LabeledData](-1)
 
+  // Enable index get
+  private val enableIndexGet = conf.getBoolean(MLConf.ML_INDEX_GET_ENABLE, MLConf.DEFAULT_ML_INDEX_GET_ENABLE)
+
+  var indexes:Array[Int] = new Array[Int](0)
 
   override
   def train(ctx: TaskContext) {
     val trainer = new LRLearner(ctx)
-    trainer.train(taskDataBlock, validDataBlock)
+    trainer.train(taskDataBlock, validDataBlock, indexes)
   }
 
   /**
@@ -83,10 +89,11 @@ class LRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ct
     val vali = Math.ceil(1.0 / valiRat).asInstanceOf[Int]
 
     val reader = taskContext.getReader
-
+    val indexSet = new Int2IntOpenHashMap()
     while (reader.nextKeyValue) {
       val out = parse(reader.getCurrentKey, reader.getCurrentValue)
       if (out != null) {
+        updateIndex(out, indexSet)
         if (count % vali == 0)
           validDataBlock.put(out)
         else
@@ -94,6 +101,11 @@ class LRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ct
         count += 1
       }
     }
+    if(enableIndexGet && !indexSet.isEmpty) {
+      indexes = indexSet.keySet().toIntArray
+      LOG.info("after preprocess data , index length = " + indexes.length)
+    }
+
     taskDataBlock.flush()
     validDataBlock.flush()
 
@@ -103,4 +115,20 @@ class LRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ct
       s"${validDataBlock.size} for validation. feanum=$feaNum")
   }
 
+  def updateIndex(labeledData: LabeledData, indexSet:Int2IntOpenHashMap): Unit = {
+    if(enableIndexGet) {
+      val x:TVector = labeledData.getX
+      if(x.isInstanceOf[SparseDummyVector]) {
+        updateIndex(x.asInstanceOf[SparseDummyVector].getIndices, indexSet)
+      } else if(x.isInstanceOf[SparseDoubleSortedVector]) {
+        updateIndex(x.asInstanceOf[SparseDoubleSortedVector].getIndices, indexSet)
+      }
+    }
+  }
+
+  def updateIndex(itemIndexes:Array[Int], indexSet:Int2IntOpenHashMap): Unit = {
+    for(index <- itemIndexes) {
+      indexSet.put(index, 0)
+    }
+  }
 }

@@ -24,7 +24,7 @@ import org.apache.commons.logging.LogFactory;
 /**
  * Sparse int matrix that is represented by a group of sparse int vector {@link SparseIntVector}
  */
-public class SparseIntMatrix extends TIntMatrix {
+public class SparseIntMatrix extends TIntMatrix<SparseIntVector> {
 
   private static final Log LOG = LogFactory.getLog(SparseIntMatrix.class);
 
@@ -35,7 +35,11 @@ public class SparseIntMatrix extends TIntMatrix {
    * @param col the col number
    */
   public SparseIntMatrix(int row, int col) {
-    super(row, col);
+    super(row, col, new SparseIntVector[row]);
+  }
+
+  public SparseIntMatrix(int row, long col, SparseIntVector[] vectors) {
+    super(row, col, vectors);
   }
 
   /**

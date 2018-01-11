@@ -17,6 +17,7 @@
 
 package com.tencent.angel.ml.classification.lr
 
+import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
@@ -30,6 +31,9 @@ import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.{Log, LogFactory}
 
+import scala.math.Numeric
+import scala.reflect.runtime.universe._
+
 /**
   * Learner of logistic regression model using mini-batch gradient descent.
   *
@@ -41,7 +45,7 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   val lr_0: Double = conf.getDouble(MLConf.ML_LEARN_RATE, MLConf.DEFAULT_ML_LEAR_RATE)
   val decay: Double = conf.getDouble(MLConf.ML_LEARN_DECAY, MLConf.DEFAULT_ML_LEARN_DECAY)
   val reg: Double = conf.getDouble(MLConf.ML_REG_L2, MLConf.DEFAULT_ML_REG_L2)
-  val feaNum: Int = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
+  val feaNum: Long = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
   val spRatio: Double = conf.getDouble(MLConf.ML_BATCH_SAMPLE_Ratio, MLConf.DEFAULT_ML_BATCH_SAMPLE_Ratio)
   val batchNum: Int = conf.getInt(MLConf.ML_SGD_BATCH_NUM, MLConf.DEFAULT_ML_SGD_BATCH_NUM)
 
@@ -50,26 +54,40 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   // LR uses log loss
   val l2LL = new L2LogLoss(reg)
 
+
   /**
     * run mini-batch gradient descent LR for one epoch
     *
     * @param epoch     : epoch id
     * @param trainData : trainning data storage
     */
-  def trainOneEpoch(epoch: Int, trainData: DataBlock[LabeledData], batchSize: Int): TDoubleVector = {
-
+  def trainOneEpoch[N: Numeric : TypeTag](epoch: Int, trainData: DataBlock[LabeledData], batchSize: Int, indexes: Array[N]): TDoubleVector = {
     // Decay learning rate.
     val lr = lr_0 / Math.sqrt(1.0 + decay * epoch)
 
     // Apply mini-batch gradient descent
     val startBatch = System.currentTimeMillis()
-    val batchGD = GradientDescent.miniBatchGD(trainData,
-      lrModel.weight,
-      lrModel.intercept,
-      lr,
-      l2LL,
-      batchSize,
-      batchNum)
+
+    val elementType = typeOf[N]
+    val batchGD = elementType match {
+      case t if t == typeOf[Int] => GradientDescent.miniBatchGD(trainData,
+        lrModel.weight,
+        lrModel.intercept,
+        lr,
+        l2LL,
+        batchSize,
+        batchNum,
+        indexes.asInstanceOf[Array[Int]])
+      case t if t == typeOf[Long] => GradientDescent.miniBatchGD(trainData,
+        lrModel.weight,
+        lrModel.intercept,
+        lr,
+        l2LL,
+        batchSize,
+        batchNum,
+        indexes.asInstanceOf[Array[Long]])
+      case _ => throw new AngelException(s"unsupported type: $elementType")
+    }
     val loss = batchGD._1
     val localWeight = batchGD._2
     val batchCost = System.currentTimeMillis() - startBatch
@@ -86,6 +104,10 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     * @param validationData : validation data storage
     */
   override def train(trainData: DataBlock[LabeledData], validationData: DataBlock[LabeledData]): MLModel = {
+    train(trainData, validationData, new Array[Int](0))
+  }
+
+  def train[N: Numeric : TypeTag](trainData: DataBlock[LabeledData], validationData: DataBlock[LabeledData], indexes : Array[N]): MLModel = {
     val trainSampleSize = (trainData.size * spRatio).toInt
     val samplePerBatch = trainSampleSize / batchNum
 
@@ -101,7 +123,7 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epoch start.")
 
       val startTrain = System.currentTimeMillis()
-      val localWeight = trainOneEpoch(epoch, trainData, samplePerBatch)
+      val localWeight = trainOneEpoch(epoch, trainData, samplePerBatch, indexes)
       val trainCost = System.currentTimeMillis() - startTrain
 
       val startValid = System.currentTimeMillis()

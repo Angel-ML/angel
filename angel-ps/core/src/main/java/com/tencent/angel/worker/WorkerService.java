@@ -18,7 +18,7 @@ package com.tencent.angel.worker;
 
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
-import com.tencent.angel.common.Location;
+import com.tencent.angel.common.location.Location;
 import com.tencent.angel.ipc.MLRPC;
 import com.tencent.angel.ipc.RpcServer;
 import com.tencent.angel.protobuf.generated.MasterWorkerServiceProtos.GetThreadStackRequest;

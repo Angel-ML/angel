@@ -18,23 +18,23 @@ package com.tencent.angel.ps.impl.matrix;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.common.Serialize;
-import com.tencent.angel.protobuf.generated.MLProtos.RowType;
-import com.tencent.angel.ps.impl.PSContext;
+import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.matrix.psf.update.enhance.PartitionUpdateParam;
+import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateFunc;
+import com.tencent.angel.model.output.format.ModelPartitionMeta;
+import com.tencent.angel.model.output.format.ModelPartitionMeta.RowOffset;
 import io.netty.buffer.ByteBuf;
-import it.unimi.dsi.fastutil.ints.Int2IntMap.Entry;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.fs.FSDataOutputStream;
 
 /**
  * The Server partition represents a partition of matrix, which hold and manager the related matrix rows.
@@ -43,27 +43,35 @@ public class ServerPartition implements Serialize {
   private final static Log LOG = LogFactory.getLog(ServerPartition.class);
 
   private final ConcurrentHashMap<Integer, ServerRow> rows;
-  private final Int2IntOpenHashMap taskIndexToClockMap;
-  private final ReentrantReadWriteLock lock;
+
+  private PartitionKey partitionKey;
 
   private RowType rowType;
-  protected PartitionKey partitionKey;
-  protected int minClock;
+
+  private int clock;
+
+  private volatile PartitionState state;
+
+  private final AtomicInteger updateCounter = new AtomicInteger(0);
 
   /**
    * Create a new Server partition,include load rows.
    *
-   * @param partitionKey the partition key
+   * @param partitionKey the partition meta
    * @param rowType      the row type
    */
   public ServerPartition(PartitionKey partitionKey, RowType rowType) {
+    this.state = PartitionState.INITIALIZING;
     this.partitionKey = partitionKey;
     this.rowType = rowType;
-    this.minClock = 0;
-
-    this.taskIndexToClockMap = new Int2IntOpenHashMap();
-    this.lock = new ReentrantReadWriteLock();
     this.rows = new ConcurrentHashMap<Integer, ServerRow>();
+    this.clock = 0;
+  }
+
+  /**
+   * Init partition
+   */
+  public void init() {
     if (partitionKey != null) {
       initRows(partitionKey, rowType);
     }
@@ -73,7 +81,7 @@ public class ServerPartition implements Serialize {
    * Create a new Server partition.
    */
   public ServerPartition() {
-    this(null, RowType.T_INVALID);
+    this(null, RowType.T_DOUBLE_DENSE);
   }
 
   /**
@@ -95,113 +103,47 @@ public class ServerPartition implements Serialize {
     return partitionKey;
   }
 
-  /**
-   * Clock of task
-   *
-   * @param taskIndex the task index
-   * @param clock     the clock
-   */
-  public void clock(int taskIndex, int clock) {
-    try {
-      lock.writeLock().lock();
-      if (!taskIndexToClockMap.containsKey(taskIndex)) {
-        taskIndexToClockMap.put(taskIndex, clock);
-      } else {
-        int oldClock = taskIndexToClockMap.get(taskIndex);
-        if (oldClock < clock) {
-          taskIndexToClockMap.put(taskIndex, clock);
-        }
-      }
-
-      if (minClock < clock) {
-        refreshMinClock();
-      }
-    } finally {
-      lock.writeLock().unlock();
-    }
-  }
-
-  private void refreshMinClock() {
-    if (taskIndexToClockMap.size() < PSContext.get().getTaskNum()) {
-      minClock = 0;
-      return;
-    }
-
-    int min = Integer.MAX_VALUE;
-    for (Entry entry : taskIndexToClockMap.int2IntEntrySet()) {
-      if (entry.getIntValue() < min) {
-        min = entry.getIntValue();
-      }
-    }
-
-    if (minClock < min) {
-      minClock = min;
-      for (ServerRow row : rows.values()) {
-        row.setClock(min);
-      }
-    }
-  }
-
-  /**
-   * Gets represented clock.
-   *
-   * @return the clock
-   */
-  public int getClock() {
-    try {
-      lock.readLock().lock();
-      return minClock;
-    } finally {
-      lock.readLock().unlock();
-    }
-  }
-
   private void initRows(PartitionKey partitionKey, RowType rowType) {
     int rowStart = partitionKey.getStartRow();
     int rowEnd = partitionKey.getEndRow();
     for (int rowIndex = rowStart; rowIndex < rowEnd; rowIndex++) {
-      rows.put(rowIndex, initRow(partitionKey, rowIndex, rowType));
+      rows.put(rowIndex, initRow(rowIndex, rowType, partitionKey.getStartCol(), partitionKey.getEndCol()));
     }
   }
 
-  private ServerRow initRow(PartitionKey partitionKey, int rowIndex, RowType rowType) {
+  private ServerRow initRow(int rowIndex, RowType rowType, long startCol, long endCol) {
     switch (rowType) {
       case T_DOUBLE_DENSE:
-        return new ServerDenseDoubleRow(rowIndex, (int)partitionKey.getStartCol(),
-          (int)partitionKey.getEndCol());
+        return new ServerDenseDoubleRow(rowIndex, (int)startCol, (int)endCol);
 
       case T_FLOAT_DENSE:
-        return new ServerDenseFloatRow(rowIndex, (int)partitionKey.getStartCol(),
-          (int)partitionKey.getEndCol());
+        return new ServerDenseFloatRow(rowIndex, (int)startCol, (int)endCol);
 
       case T_DOUBLE_SPARSE:
       case T_DOUBLE_SPARSE_COMPONENT:
-        return new ServerSparseDoubleRow(rowIndex, (int)partitionKey.getStartCol(),
-          (int)partitionKey.getEndCol());
+        return new ServerSparseDoubleRow(rowIndex, (int)startCol, (int)endCol);
 
       case T_DOUBLE_SPARSE_LONGKEY:
-        return new ServerSparseDoubleLongKeyRow(rowIndex, partitionKey.getStartCol(), partitionKey.getEndCol());
+      case T_DOUBLE_SPARSE_LONGKEY_COMPONENT:
+        return new ServerSparseDoubleLongKeyRow(rowIndex, startCol, endCol);
 
       case T_INT_DENSE:
-        return new ServerDenseIntRow(rowIndex, (int)partitionKey.getStartCol(), (int)partitionKey.getEndCol());
+        return new ServerDenseIntRow(rowIndex, (int)startCol, (int)endCol);
 
       case T_INT_SPARSE:
       case T_INT_SPARSE_COMPONENT:
-        return new ServerSparseIntRow(rowIndex, (int)partitionKey.getStartCol(),
-          (int)partitionKey.getEndCol());
+        return new ServerSparseIntRow(rowIndex, (int)startCol, (int)endCol);
 
       case T_INT_ARBITRARY:
-        return new ServerArbitraryIntRow(rowIndex, (int)partitionKey.getStartCol(),
-          (int)partitionKey.getEndCol());
+        return new ServerArbitraryIntRow(rowIndex, (int)startCol, (int)endCol);
 
       case T_FLOAT_SPARSE:
       case T_FLOAT_SPARSE_COMPONENT:
-        return  new ServerSparseFloatRow(rowIndex, (int)partitionKey.getStartCol(), (int)partitionKey.getStartCol());
+        return  new ServerSparseFloatRow(rowIndex, (int)startCol, (int)endCol);
 
       default:
         LOG.warn("invalid rowtype " + rowType + ", default is " + RowType.T_DOUBLE_DENSE);
-        return new ServerDenseDoubleRow(rowIndex, (int)partitionKey.getStartCol(),
-          (int)partitionKey.getEndCol());
+        return new ServerDenseDoubleRow(rowIndex, (int)startCol, (int)endCol);
     }
   }
 
@@ -213,6 +155,10 @@ public class ServerPartition implements Serialize {
       case T_DOUBLE_SPARSE:
       case T_DOUBLE_SPARSE_COMPONENT:
         return new ServerSparseDoubleRow();
+
+      case T_DOUBLE_SPARSE_LONGKEY:
+      case T_DOUBLE_SPARSE_LONGKEY_COMPONENT:
+        return new ServerSparseDoubleLongKeyRow();
 
       case T_INT_DENSE:
         return new ServerDenseIntRow();
@@ -237,123 +183,65 @@ public class ServerPartition implements Serialize {
     }
   }
 
-  public RowType getRowType() {
-    return rowType;
-  }
-
-  /**
-   * Read partition elements and state from a input stream
-   *
-   * @param input the input stream
-   * @throws IOException
-   */
-  public void readSnapshot(DataInputStream input) throws IOException {
-    readClocks(input);
-    int size = input.readInt();
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("read partitionKey: " + partitionKey);
-      LOG.debug("row size: " + size);
-    }
-    for (int i = 0; i < size; i++) {
-      int rowId = input.readInt();
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("rowId: " + rowId);
-      }
-      rows.get(rowId).readFrom(input);
-    }
-  }
-
-  private void readClocks(DataInputStream input) throws IOException{
-    try {
-      lock.writeLock().lock();
-      LOG.debug("readClocks, partition " + partitionKey + " clock details:");
-      minClock = input.readInt();
-      LOG.debug("minClock=" + minClock);
-      int clockMapSize = input.readInt();
-      for(int i = 0; i < clockMapSize; i++){
-        int taskId = input.readInt();
-        int clock = input.readInt();
-        LOG.debug("taskId=" + taskId + ", clock=" + clock);
-        taskIndexToClockMap.put(taskId, clock);
-      }
-    } finally {
-      lock.writeLock().unlock();
-    }
-  }
-
-  /**
-   * Write partition elements and state to a output stream
-   *
-   * @param output the output stream
-   * @throws IOException
-   */
-  public void writeSnapshot(DataOutputStream output) throws IOException {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("write partitionKey: " + partitionKey);
-      LOG.debug("row size: " + rows.size());
-    }
-
-    writeClocks(output);
-
-    output.writeInt(rows.size()); // write row size
-    for (Map.Entry<Integer, ServerRow> entry : rows.entrySet()) {
-      output.writeInt(entry.getKey()); // write rowId
-      entry.getValue().writeTo(output); // write rowContent
-    }
-  }
-
-  private void writeClocks(DataOutputStream output) throws IOException{
-    try {
-      lock.readLock().lock();
-      LOG.debug("writeClocks, partition " + partitionKey + " clock details:");
-      LOG.debug("minClock=" + minClock);
-      output.writeInt(minClock);
-      output.writeInt(taskIndexToClockMap.size());
-      for(Entry clockEntry:taskIndexToClockMap.int2IntEntrySet()){
-        LOG.debug("taskId=" + clockEntry.getIntKey() + ", clock=" + clockEntry.getIntValue());
-        output.writeInt(clockEntry.getIntKey());
-        output.writeInt(clockEntry.getIntValue());
-      }
-    } finally {
-      lock.readLock().unlock();
-    }
-  }
-
   /**
    * Reset rows.
    */
   public void reset() {
-    rows.clear();
-    initRows(partitionKey, rowType);
-  }
-
-  /**
-   * Commit partition.
-   *
-   * @param output the output
-   * @throws IOException the io exception
-   */
-  public void commit(DataOutputStream output) throws IOException {
-    output.writeInt(rows.size());
-    for (Map.Entry<Integer, ServerRow> entry : rows.entrySet()) {
-      output.writeInt(entry.getKey());
-      ServerRow row = entry.getValue();
-      row.writeTo(output);
+    for(ServerRow row : rows.values()) {
+      row.reset();
     }
   }
 
   /**
-   * Load partition.
+   * Save a matrix partition to file.
+   *
+   * @param output the output
+   * @throws IOException the io exception
+   */
+  public void save(DataOutputStream output) throws IOException {
+    save(output, null);
+  }
+
+
+  /**
+   * Save a matrix partition to file.
+   *
+   * @param output the output
+   * @param partitionMeta the meta
+   * @throws IOException the io exception
+   */
+  public void save(DataOutputStream output , ModelPartitionMeta partitionMeta) throws IOException {
+    FSDataOutputStream dataOutputStream = new FSDataOutputStream(output, null,
+        partitionMeta != null ? partitionMeta.getOffset() : 0);
+    dataOutputStream.writeInt(rows.size());
+    long offset;
+    for (Map.Entry<Integer, ServerRow> entry : rows.entrySet()) {
+      offset = dataOutputStream.getPos();
+      dataOutputStream.writeInt(entry.getKey());
+      ServerRow row = entry.getValue();
+      row.writeTo(dataOutputStream);
+      if (partitionMeta != null) {
+        partitionMeta.setRowMeta(new RowOffset(entry.getKey(), offset));
+      }
+    }
+  }
+
+  /**
+   * Load partition from model file.
    *
    * @param input the input
    * @throws IOException
    */
   public void load(DataInputStream input) throws IOException {
-    int size = input.readInt();
-    for (int i = 0; i < size; i ++) {
-      int rowId = input.readInt();
-      ServerRow serverRow = rows.get(rowId);
-      serverRow.readFrom(input);
+    try {
+      int size = input.readInt();
+      for (int i = 0; i < size; i ++) {
+        int rowId = input.readInt();
+        ServerRow serverRow = rows.get(rowId);
+        serverRow.readFrom(input);
+      }
+    } finally {
+      setState(PartitionState.READ_AND_WRITE);
     }
   }
 
@@ -365,9 +253,9 @@ public class ServerPartition implements Serialize {
 
     partitionKey.serialize(buf);
     buf.writeInt(rowType.getNumber());
-    buf.writeInt(minClock);
     buf.writeInt(rows.size());
     for (java.util.Map.Entry<Integer, ServerRow> rowEntry : rows.entrySet()) {
+      buf.writeInt(rowEntry.getValue().getRowType().getNumber());
       rowEntry.getValue().serialize(buf);
     }
   }
@@ -377,9 +265,10 @@ public class ServerPartition implements Serialize {
     partitionKey = new PartitionKey();
     partitionKey.deserialize(buf);
     rowType = RowType.valueOf(buf.readInt());
-    minClock = buf.readInt();
     int rowNum = buf.readInt();
+    RowType rowType;
     for (int i = 0; i < rowNum; i++) {
+      rowType = RowType.valueOf(buf.readInt());
       ServerRow row = initRow(rowType);
       row.deserialize(buf);
       rows.put(row.getRowId(), row);
@@ -414,15 +303,6 @@ public class ServerPartition implements Serialize {
     return rows;
   }
 
-  public List<Integer> getRowIds() {
-    Enumeration<Integer> iter = this.rows.keys();
-    List<Integer> rowIds = new ArrayList<Integer>();
-    while(iter.hasMoreElements()) {
-      rowIds.add(iter.nextElement());
-    }
-    return rowIds;
-  }
-
   public void update(ServerRow rowSplit) {
     ServerRow oldRowSplit = rows.get(rowSplit.getRowId());
     if(oldRowSplit == null || rowSplit.clock > oldRowSplit.clock || rowSplit.rowVersion > oldRowSplit.rowVersion){
@@ -444,5 +324,86 @@ public class ServerPartition implements Serialize {
     }
 
     return num;
+  }
+
+  public int getClock() {
+    return clock;
+  }
+
+  public void setClock(int clock) {
+    this.clock = clock;
+  }
+
+  public RowType getRowType() {
+    return rowType;
+  }
+
+  public void waitAndSetReadOnly() throws InterruptedException {
+    setState(PartitionState.READ_ONLY);
+    while(true) {
+      if(updateCounter.get() == 0) {
+        return;
+      } else {
+        Thread.sleep(10);
+      }
+    }
+  }
+
+  public void setState(PartitionState state) {
+    this.state = state;
+  }
+
+  public PartitionState getState() {
+    return state;
+  }
+
+  public void startUpdate() {
+    updateCounter.incrementAndGet();
+  }
+
+  public void endUpdate() {
+    updateCounter.decrementAndGet();
+  }
+
+  public void recover(ServerPartition part) {
+    startUpdate();
+    try {
+      rows.putAll(part.rows);
+      setState(PartitionState.READ_AND_WRITE);
+    } finally {
+      endUpdate();
+    }
+  }
+
+  public void update(ByteBuf buf, RowUpdater updater) throws Exception {
+    startUpdate();
+    try {
+      int rowNum = buf.readInt();
+      int rowId;
+      RowType rowType;
+      int size;
+
+      for (int i = 0; i < rowNum; i++) {
+        rowId = buf.readInt();
+        rowType = RowType.valueOf(buf.readInt());
+        size = buf.readInt();
+        if (size == 0)
+          continue;
+
+        ServerRow row = getRow(rowId);
+        updater.update(rowType, size, buf, row);
+      }
+    } finally {
+      endUpdate();
+    }
+  }
+
+  public void update(UpdateFunc func, PartitionUpdateParam partParam) {
+    startUpdate();
+    try {
+      func.partitionUpdate(partParam);
+    } finally {
+      endUpdate();
+    }
   }
 }

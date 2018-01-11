@@ -17,7 +17,7 @@
 package com.tencent.angel.master.psagent;
 
 import com.tencent.angel.RunningMode;
-import com.tencent.angel.common.Location;
+import com.tencent.angel.common.location.Location;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.master.app.AMContext;

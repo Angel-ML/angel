@@ -76,4 +76,6 @@ abstract class TIntDoubleVector() extends TDoubleVector {
   def plusBy(index: Int, delta: Double): TIntDoubleVector
 
   def sum: Double
+
+  def elemUpdate (updater: IntDoubleElemUpdater, param: ElemUpdateParam) : TIntDoubleVector
 }

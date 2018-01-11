@@ -17,13 +17,12 @@
 
 package com.tencent.angel.ml.math.matrix;
 
-import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.math.vector.SparseLongKeyDoubleVector;
 
 /**
  * Sparse double matrix that is represented by a group of sparse double vector {@link SparseLongKeyDoubleVector}
  */
-public class SparseDoubleLongKeyMatrix extends DoubleLongKeyMatrix {
+public class SparseDoubleLongKeyMatrix extends DoubleLongKeyMatrix<SparseLongKeyDoubleVector> {
 
   /**
    * Create a SparseDoubleLongKeyMatrix
@@ -31,10 +30,14 @@ public class SparseDoubleLongKeyMatrix extends DoubleLongKeyMatrix {
    * @param col row vector dimension
    */
   public SparseDoubleLongKeyMatrix(int row, long col) {
-    super(row, col);
+    super(row, col, new SparseLongKeyDoubleVector[row]);
   }
 
-  @Override public TVector initVector(int rowIndex) {
+  public SparseDoubleLongKeyMatrix(int row, long col, SparseLongKeyDoubleVector[] vectors) {
+    super(row, col, vectors);
+  }
+
+  @Override public SparseLongKeyDoubleVector initVector(int rowIndex) {
     SparseLongKeyDoubleVector ret = new SparseLongKeyDoubleVector(col);
     ret.setMatrixId(matrixId);
     ret.setRowId(rowIndex);

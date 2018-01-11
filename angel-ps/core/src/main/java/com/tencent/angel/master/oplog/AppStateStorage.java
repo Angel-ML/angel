@@ -18,9 +18,9 @@ package com.tencent.angel.master.oplog;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.InvalidParameterException;
-import com.tencent.angel.master.MatrixMetaManager;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.data.DataSpliter;
+import com.tencent.angel.master.matrixmeta.AMMatrixMetaManager;
 import com.tencent.angel.master.ps.ParameterServerManager;
 import com.tencent.angel.master.ps.ps.AMParameterServer;
 import com.tencent.angel.master.task.AMTaskManager;
@@ -197,7 +197,7 @@ public class AppStateStorage extends AbstractService {
    * @param matrixMetaManager matrix meta storage
    * @throws IOException
    */
-  public void writeMatrixMeta(MatrixMetaManager matrixMetaManager) throws IOException {
+  public void writeMatrixMeta(AMMatrixMetaManager matrixMetaManager) throws IOException {
     try{
       matrixMetaLock.lock();
       String matrixMetaFile = getMatrixMetaFile();
@@ -233,7 +233,7 @@ public class AppStateStorage extends AbstractService {
    * @return MatrixMetaManager matrix meta storage
    * @throws IOException, ClassNotFoundException, InvalidParameterException 
    */
-  public MatrixMetaManager loadMatrixMeta() throws IOException, ClassNotFoundException, InvalidParameterException {
+  public AMMatrixMetaManager loadMatrixMeta() throws IOException, ClassNotFoundException, InvalidParameterException {
     try{
       matrixMetaLock.lock();
       Path matrixFilePath = null;
@@ -249,7 +249,7 @@ public class AppStateStorage extends AbstractService {
       }
       
       FSDataInputStream inputStream = fs.open(new Path(writeDir, matrixFilePath));
-      MatrixMetaManager matrixMetaManager = new MatrixMetaManager();
+      AMMatrixMetaManager matrixMetaManager = new AMMatrixMetaManager(context);
       matrixMetaManager.deserialize(inputStream);
       return matrixMetaManager;
     } finally {

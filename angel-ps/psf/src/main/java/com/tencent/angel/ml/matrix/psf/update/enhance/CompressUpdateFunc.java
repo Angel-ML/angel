@@ -47,8 +47,8 @@ public class CompressUpdateFunc extends UpdateFunc {
   @Override
   public void partitionUpdate(PartitionUpdateParam partParam) {
     ServerPartition part =
-        PSContext.get().getMatrixPartitionManager()
-            .getPartition(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
+      psContext.getMatrixStorageManager()
+            .getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
 
     if (part != null) {
       CompressUpdateParam.CompressPartitionUpdateParam cp =

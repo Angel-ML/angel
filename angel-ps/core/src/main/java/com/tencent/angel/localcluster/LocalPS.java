@@ -16,7 +16,7 @@
 
 package com.tencent.angel.localcluster;
 
-import com.tencent.angel.common.Location;
+import com.tencent.angel.common.location.Location;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.impl.PSContext;
 import com.tencent.angel.ps.impl.ParameterServer;
@@ -39,8 +39,7 @@ public class LocalPS extends Thread {
    * @param conf cluster configuration
    */
   public LocalPS(PSAttemptId psAttemptId, Location masterLocation, Configuration conf) {
-    ps = new ParameterServer(psAttemptId.getParameterServerId().getIndex(), psAttemptId.getIndex(), masterLocation.getIp(), masterLocation.getPort(), conf);
-    PSContext.get().setPs(ps);
+    ps = new ParameterServer(psAttemptId.getPsId().getIndex(), psAttemptId.getIndex(), masterLocation.getIp(), masterLocation.getPort(), conf);
   }
 
   @Override

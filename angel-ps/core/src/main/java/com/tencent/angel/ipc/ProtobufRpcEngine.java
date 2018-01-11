@@ -1,19 +1,34 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
+ */
+
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements.  See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with the License.  You may obtain
+ * a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ * Add shutDown method to fix Angel client exit problem.
  */
 
 /**
@@ -33,27 +48,31 @@ import com.tencent.angel.io.retry.RetryPolicy.RetryAction;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.RPCProtos;
 import com.tencent.angel.utils.ThreadUtils;
-import org.apache.hadoop.conf.Configuration;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.net.SocketFactory;
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.InetSocketAddress;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
+import javax.net.SocketFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The {@link RpcEngine} implementation for ProtoBuf-based RPCs.
  */
 class ProtobufRpcEngine implements RpcEngine {
+
   private static final Logger LOG = LoggerFactory.getLogger(ProtobufRpcEngine.class);
   protected final static ClientCache CLIENTS = new ClientCache();
 
@@ -70,7 +89,7 @@ class ProtobufRpcEngine implements RpcEngine {
       invokerHandler = new Invoker(protocol, addr, conf, factory, rpcTimeout);
     }
     return (VersionedProtocol) Proxy.newProxyInstance(protocol.getClassLoader(),
-        new Class[] {protocol}, invokerHandler);
+        new Class[]{protocol}, invokerHandler);
   }
 
   @Override
@@ -94,12 +113,13 @@ class ProtobufRpcEngine implements RpcEngine {
 
   @Override
   public void shutDown() {
-    if(CLIENTS != null) {
+    if (CLIENTS != null) {
       CLIENTS.clear();
     }
   }
 
   static class FailoverInvoker implements InvocationHandler {
+
     private final FailoverInvokerProvider<ProtobufRpcEngine.Invoker> failoverProvider;
     private final RetryPolicy failoverPolicy = RetryPolicies.failoverOnNetworkException(
         RetryPolicies.RETRY_FOREVER, -1);
@@ -193,6 +213,7 @@ class ProtobufRpcEngine implements RpcEngine {
   }
 
   static class Invoker implements InvocationHandler {
+
     private static final Map<String, Message> returnTypes =
         new ConcurrentHashMap<String, Message>();
     private Class<? extends VersionedProtocol> protocol;
@@ -252,7 +273,7 @@ class ProtobufRpcEngine implements RpcEngine {
      * This is the client side invoker of RPC method. It only throws ServiceException, since the
      * invocation proxy expects only ServiceException to be thrown by the method in case protobuf
      * service.
-     * 
+     *
      * ServiceException has the following causes:
      * <ol>
      * <li>Exceptions encountered on the client side in this method are set as cause in
@@ -260,7 +281,7 @@ class ProtobufRpcEngine implements RpcEngine {
      * <li>Exceptions from the server are wrapped in RemoteException and are set as cause in
      * ServiceException</li>
      * </ol>
-     * 
+     *
      * Note that the client calling protobuf RPC methods, must handle ServiceException by getting
      * the cause from the ServiceException. If the cause is RemoteException, then unwrap it to get
      * the exception thrown by the server.
@@ -291,8 +312,9 @@ class ProtobufRpcEngine implements RpcEngine {
 
         if (LOG.isDebugEnabled()) {
           long callTime = System.currentTimeMillis() - startTime;
-          if (LOG.isTraceEnabled())
+          if (LOG.isTraceEnabled()) {
             LOG.trace("Call: " + method.getName() + " " + callTime);
+          }
         }
         return val;
       } catch (Throwable e) {
@@ -335,8 +357,10 @@ class ProtobufRpcEngine implements RpcEngine {
   }
 
   public static class Server extends NettyServer {
+
     Object instance;
     Class<?> implementation;
+    private static final Map<Class<?>, Object> protocolImplMap = new HashMap<>();
     private static final String WARN_RESPONSE_TIME = "ml.ipc.warn.response.time";
     private static final String WARN_RESPONSE_SIZE = "ml.ipc.warn.response.size";
 
@@ -357,14 +381,20 @@ class ProtobufRpcEngine implements RpcEngine {
       this.listenerAddress = new InetSocketAddress(bindAddress, this.getPort());
       this.instance = instance;
       this.implementation = instance.getClass();
-
       this.warnResponseTime = conf.getInt(WARN_RESPONSE_TIME, DEFAULT_WARN_RESPONSE_TIME);
       this.warnResponseSize = conf.getInt(WARN_RESPONSE_SIZE, DEFAULT_WARN_RESPONSE_SIZE);
+      addProtocolImpl(implementation, instance);
     }
 
     private static final Map<String, Message> methodArg = new ConcurrentHashMap<String, Message>();
     private static final Map<String, Method> methodInstances =
         new ConcurrentHashMap<String, Method>();
+
+
+    @Override
+    public void addProtocolImpl(Class<?> protocol, Object impl) {
+      protocolImplMap.put(protocol, impl);
+    }
 
     @Override
     /**
@@ -392,6 +422,9 @@ class ProtobufRpcEngine implements RpcEngine {
         if (protocol.isAssignableFrom(this.implementation)) {
           impl = this.instance;
         } else {
+          impl = protocolImplMap.get(protocol);
+        }
+        if (impl == null) {
           throw new UnknownProtocolException(protocol, "the server class is "
               + this.implementation.getName());
         }
@@ -435,7 +468,7 @@ class ProtobufRpcEngine implements RpcEngine {
           buffer.append(param.getClass().getName());
           buffer.append(")");
           buffer.append(", client version=").append(clientVersion);
-          logResponse(new Object[] {rpcRequest.getRequest()}, methodName, buffer.toString(),
+          logResponse(new Object[]{rpcRequest.getRequest()}, methodName, buffer.toString(),
               (tooLarge ? "TooLarge" : "TooSlow"), startTime, processingTime, qTime, responseSize);
           // provides a count of log-reported slow responses
 
@@ -508,7 +541,7 @@ class ProtobufRpcEngine implements RpcEngine {
 
     /**
      * Logs an RPC response to the LOG file, producing valid JSON objects for client Operations.
-     * 
+     *
      * @param params The parameters received in the call.
      * @param methodName The name of the method invoked
      * @param call The string representation of the call
@@ -538,8 +571,9 @@ class ProtobufRpcEngine implements RpcEngine {
 
     protected static void log(String value, Logger LOG) {
       String v = value;
-      if (v != null && v.length() > 55)
+      if (v != null && v.length() > 55) {
         v = v.substring(0, 55) + "...";
+      }
       LOG.info(v);
     }
 

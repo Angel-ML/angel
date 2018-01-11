@@ -27,11 +27,11 @@ if [[ -z "${PYANGEL_PYTHON_SHELL}" ]]; then
   PYANGEL_PYTHON_SHELL="${PYANGEL_PYTHON:-"python"}"
 fi
 
-WORKS_WITH_IPYTHON=$(python -c 'import sys; print(sys.version_info >= (3, 5, 0))')
+WORKS_WITH_IPYTHON=$(python -c 'import sys; print(sys.version_info >= (2, 7, 0))')
 
 if [[ -z "${PYANGEL_PYTHON}" ]]; then
   if [[ ${PYANGEL_PYTHON_SHELL} == *ipython* && ! ${WORKS_WITH_IPYTHON} ]]; then
-    echo "IPython requires Python 3.5+; please install python3.5 or set PYANGEL_PYTHON" 1>&2
+    echo "IPython requires Python 2.7+; please install python2.7 or set PYANGEL_PYTHON" 1>&2
     exit 1
   else
     PYANGEL_PYTHON=python
@@ -41,9 +41,7 @@ export PYANGEL_PYTHON
 
 # Judge if it's local mode
 if [[ $1 == "local" ]]; then
-    export PYANGEL_DIS_MODE=False
-else
-    export PYANGEL_DIS_MODE=True
+    export PYANGEL_LOCAL_MODE=True
 fi
 
 # Add the PyAngel classes to the Python path:

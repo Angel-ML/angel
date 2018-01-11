@@ -16,7 +16,7 @@
 
 package com.tencent.angel.ps.impl.matrix;
 
-import com.tencent.angel.protobuf.generated.MLProtos;
+import com.tencent.angel.ml.matrix.RowType;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -26,6 +26,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
+import java.util.Arrays;
 
 /**
  * The class represent dense double row on parameter server.
@@ -77,8 +78,8 @@ public class ServerDenseDoubleRow extends ServerRow {
   }
   
   @Override
-  public MLProtos.RowType getRowType() {
-    return MLProtos.RowType.T_DOUBLE_DENSE;
+  public RowType getRowType() {
+    return RowType.T_DOUBLE_DENSE;
   }
 
   @Override
@@ -87,7 +88,7 @@ public class ServerDenseDoubleRow extends ServerRow {
   }
 
   @Override
-  public void update(MLProtos.RowType rowType, ByteBuf buf, int size) {
+  public void update(RowType rowType, ByteBuf buf, int size) {
     try {
       lock.writeLock().lock();
       switch (rowType) {
@@ -204,6 +205,15 @@ public class ServerDenseDoubleRow extends ServerRow {
   @Override
   public int bufferLen() {
     return super.bufferLen() + 4 + dataBuffer.length;
+  }
+
+  @Override public void reset() {
+    try {
+      lock.writeLock().lock();
+      Arrays.fill(dataBuffer, (byte) 0);
+    } finally {
+      lock.writeLock().unlock();
+    }
   }
 
   /**

@@ -121,6 +121,7 @@ public class SlowChecker extends AbstractService {
 
   @Override
   protected void serviceInit(Configuration conf) throws Exception {
+    super.serviceInit(conf);
     if(slowCheckEnable) {
       String polices = conf.get(AngelConf.ANGEL_AM_SLOW_CHECK_POLICES,
         AngelConf.DEFAULT_ANGEL_AM_SLOW_CHECK_POLICES);

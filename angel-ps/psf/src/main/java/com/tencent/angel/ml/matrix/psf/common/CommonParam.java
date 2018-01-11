@@ -167,8 +167,8 @@ public class CommonParam extends UpdateParam {
   @Override
   public List<PartitionUpdateParam> split() {
     List<PartitionKey> parts = PSAgentContext.get()
-        .getMatrixPartitionRouter()
-        .getPartitionKeyList(matrixId);
+        .getMatrixMetaManager()
+        .getPartitions(matrixId);
 
     int size = parts.size();
     List<PartitionUpdateParam> partParams = new ArrayList<PartitionUpdateParam>(size);

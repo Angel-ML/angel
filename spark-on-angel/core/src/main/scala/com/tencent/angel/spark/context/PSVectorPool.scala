@@ -20,7 +20,7 @@ import org.apache.spark.SparkException
 import sun.misc.Cleaner
 
 import com.tencent.angel.spark.models.vector.VectorType.VectorType
-import com.tencent.angel.spark.models.vector.enhanced.PullMan
+import com.tencent.angel.spark.models.vector.cache.PullMan
 import com.tencent.angel.spark.models.vector.{DensePSVector, PSVector, SparsePSVector, VectorType}
 
 /**

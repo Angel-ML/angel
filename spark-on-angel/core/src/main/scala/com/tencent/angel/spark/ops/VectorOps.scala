@@ -17,11 +17,9 @@
 package com.tencent.angel.spark.ops
 
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.math.vector.{DenseDoubleVector, SparseLongKeyDoubleVector}
 import com.tencent.angel.ml.matrix.psf.aggr._
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
-import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult
 import com.tencent.angel.ml.matrix.psf.update._
 import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateFunc
 import com.tencent.angel.ml.matrix.psf.update.enhance.map._
@@ -32,39 +30,6 @@ import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.models.vector.PSVector
 
 class VectorOps {
-  /**
-   * Put `value` to PSVectorKey
-   */
-  def push(to: PSVector, value: Array[Double]): Unit = {
-    to.assertValid()
-    to.assertCompatible(value)
-    update(to.poolId, new Push(to.poolId, to.id, value))
-  }
-
-  /**
-   * Get the array value of [[PSVector]]
-   */
-  def pull(vector: PSVector): Array[Double] = {
-    vector.assertValid()
-    doPull(vector)
-  }
-
-  def doPull(vector: PSVector): Array[Double] = {
-    val row = aggregate(vector.poolId, new Pull(vector.poolId, vector.id)).asInstanceOf[GetRowResult]
-    row.getRow match {
-      case vector: DenseDoubleVector => vector.getValues
-      case vector: SparseLongKeyDoubleVector =>
-        val result = new Array[Double](vector.getLongDim.toInt)
-        val iter = vector.getIndexToValueMap.long2DoubleEntrySet().fastIterator()
-        while (iter.hasNext) {
-          val entry = iter.next()
-          result(entry.getLongKey.toInt) = entry.getDoubleValue
-        }
-        result
-      case _ =>
-        throw new Exception("only support DenseIntDoubleVector and SparseLongKeyDoubleVector")
-    }
-  }
 
   /**
    * Process `MapFunc` for each element of `from` PSVector
@@ -72,7 +37,7 @@ class VectorOps {
   def map(from: PSVector, func: MapFunc, to: PSVector): Unit = {
     from.assertValid()
     to.assertValid()
-    from.assertCompatible(to)
+    to.assertCompatible(to)
     update(from.poolId, new Map(from.poolId, from.id, to.id, func))
   }
 
@@ -93,8 +58,8 @@ class VectorOps {
     from1.assertValid()
     from2.assertValid()
     to.assertValid()
-    from1.assertCompatible(to)
-    from2.assertCompatible(to)
+
+    from1.assertCompatible(from2, to)
     update(from1.poolId, new Zip2Map(from1.poolId, from1.id, from2.id, to.id, func))
   }
 
@@ -114,9 +79,8 @@ class VectorOps {
     from2.assertValid()
     from3.assertValid()
     to.assertValid()
-    from1.assertCompatible(to)
-    from2.assertCompatible(to)
-    from3.assertCompatible(to)
+    from1.assertCompatible(from2, from3, to)
+
     update(from1.poolId,
       new Zip3Map(from1.poolId, from1.id, from2.id, from3.id, to.id, func))
   }
@@ -147,8 +111,8 @@ class VectorOps {
     from1.assertValid()
     from2.assertValid()
     to.assertValid()
-    from1.assertCompatible(to)
-    from2.assertCompatible(to)
+    from1.assertCompatible(from2, to)
+
     update(from1.poolId,
       new Zip2MapWithIndex(from1.poolId, from1.id, from2.id, to.id, func))
   }
@@ -168,12 +132,16 @@ class VectorOps {
     from2.assertValid()
     from3.assertValid()
     to.assertValid()
-    from1.assertCompatible(to)
-    from2.assertCompatible(to)
-    from3.assertCompatible(to)
+    from1.assertCompatible(from2, from3, to)
+
     update(from1.poolId,
       new Zip3MapWithIndex(from1.poolId, from1.id, from2.id, from3.id, to.id, func))
   }
+
+
+  // ===========================
+  //    Aggregate Operations
+  // ===========================
 
   /**
    * Judge if v1 is equal to v2 by element-wise.
@@ -191,7 +159,6 @@ class VectorOps {
     vector.assertValid()
     aggregate(vector.poolId, new Sum(vector.poolId, vector.id)).asInstanceOf[ScalarAggrResult].getResult
   }
-
 
   /**
    * Find the maximum element of `vector`
@@ -219,6 +186,19 @@ class VectorOps {
       .asInstanceOf[ScalarAggrResult].getResult.toInt
   }
 
+
+  // ===========================
+  //    Update Operations
+  // ===========================
+  /**
+   * Fill PSVectorKey with `value`
+   * Notice: it can only be called in th driver.
+   */
+  def fill(to: PSVector, value: Double): Unit = {
+    to.assertValid()
+    update(to.poolId, new Fill(to.poolId, to.id, value))
+  }
+
   /**
    * Subtract a `value` to `from` PSVector and save the result to `to` PSVector
    */
@@ -232,6 +212,7 @@ class VectorOps {
   def add(from: PSVector, value: Double, to: PSVector): Unit = {
     from.assertValid()
     to.assertValid()
+    from.assertCompatible(to)
     update(from.poolId, new AddS(from.poolId, from.id, to.id, value))
   }
 
@@ -241,6 +222,7 @@ class VectorOps {
   def mul(from: PSVector, value: Double, to: PSVector): Unit = {
     from.assertValid()
     to.assertValid()
+    from.assertCompatible(to)
     update(from.poolId, new MulS(from.poolId, from.id, to.id, value))
   }
 
@@ -250,6 +232,7 @@ class VectorOps {
   def div(from: PSVector, value: Double, to: PSVector): Unit = {
     from.assertValid()
     to.assertValid()
+    from.assertCompatible(to)
     update(from.poolId, new DivS(from.poolId, from.id, to.id, value))
   }
 
@@ -259,6 +242,7 @@ class VectorOps {
   def pow(from: PSVector, value: Double, to: PSVector): Unit = {
     from.assertValid()
     to.assertValid()
+    from.assertCompatible(to)
     update(from.poolId, new Pow(from.poolId, from.id, to.id, value))
   }
 
@@ -268,6 +252,7 @@ class VectorOps {
   def sqrt(from: PSVector, to: PSVector): Unit = {
     from.assertValid()
     to.assertValid()
+    from.assertCompatible(to)
     update(from.poolId, new Sqrt(from.poolId, from.id, to.id))
   }
 
@@ -277,6 +262,7 @@ class VectorOps {
   def exp(from: PSVector, to: PSVector): Unit = {
     from.assertValid()
     to.assertValid()
+    from.assertCompatible(to)
     update(from.poolId, new Exp(from.poolId, from.id, to.id))
   }
 
@@ -286,6 +272,7 @@ class VectorOps {
   def expm1(from: PSVector, to: PSVector): Unit = {
     from.assertValid()
     to.assertValid()
+    from.assertCompatible(to)
     update(from.poolId, new Expm1(from.poolId, from.id, to.id))
   }
 
@@ -295,6 +282,7 @@ class VectorOps {
   def log(from: PSVector, to: PSVector): Unit = {
     from.assertValid()
     to.assertValid()
+    from.assertCompatible(to)
     update(from.poolId, new Log(from.poolId, from.id, to.id))
   }
 
@@ -304,6 +292,7 @@ class VectorOps {
   def log1p(from: PSVector, to: PSVector): Unit = {
     from.assertValid()
     to.assertValid()
+    from.assertCompatible(to)
     update(from.poolId, new Log1p(from.poolId, from.id, to.id))
   }
 
@@ -314,6 +303,7 @@ class VectorOps {
   def log10(from: PSVector, to: PSVector): Unit = {
     from.assertValid()
     to.assertValid()
+    from.assertCompatible(to)
     update(from.poolId, new Log10(from.poolId, from.id, to.id))
   }
 
@@ -323,6 +313,7 @@ class VectorOps {
   def ceil(from: PSVector, to: PSVector): Unit = {
     from.assertValid()
     to.assertValid()
+    from.assertCompatible(to)
     update(from.poolId, new Ceil(from.poolId, from.id, to.id))
   }
 
@@ -332,6 +323,7 @@ class VectorOps {
   def floor(from: PSVector, to: PSVector): Unit = {
     from.assertValid()
     to.assertValid()
+    from.assertCompatible(to)
     update(from.poolId, new Floor(from.poolId, from.id, to.id))
   }
 
@@ -341,6 +333,7 @@ class VectorOps {
   def round(from: PSVector, to: PSVector): Unit = {
     from.assertValid()
     to.assertValid()
+    from.assertCompatible(to)
     update(from.poolId, new Round(from.poolId, from.id, to.id))
   }
 
@@ -350,6 +343,7 @@ class VectorOps {
   def abs(from: PSVector, to: PSVector): Unit = {
     from.assertValid()
     to.assertValid()
+    from.assertCompatible(to)
     update(from.poolId, new Abs(from.poolId, from.id, to.id))
   }
 
@@ -359,6 +353,7 @@ class VectorOps {
   def signum(from: PSVector, to: PSVector): Unit = {
     from.assertValid()
     to.assertValid()
+    from.assertCompatible(to)
     update(from.poolId, new Signum(from.poolId, from.id, to.id))
   }
 
@@ -366,12 +361,10 @@ class VectorOps {
    * Add `from1` PSVector and `from2` PSVector to `to` PSVector
    */
   def add(from1: PSVector, from2: PSVector, to: PSVector): Unit = {
-
     from1.assertValid()
     from2.assertValid()
     to.assertValid()
-    from1.assertCompatible(to)
-    from2.assertCompatible(to)
+    from1.assertCompatible(from2, to)
     update(from1.poolId, new Add(from1.poolId, from1.id, from2.id, to.id))
   }
 
@@ -383,8 +376,7 @@ class VectorOps {
     from1.assertValid()
     from2.assertValid()
     to.assertValid()
-    from1.assertCompatible(to)
-    from2.assertCompatible(to)
+    from1.assertCompatible(from2, to)
     update(from1.poolId, new Sub(from1.poolId, from1.id, from2.id, to.id))
   }
 
@@ -395,8 +387,7 @@ class VectorOps {
     from1.assertValid()
     from2.assertValid()
     to.assertValid()
-    from1.assertCompatible(to)
-    from2.assertCompatible(to)
+    from1.assertCompatible(from2, to)
     update(from1.poolId, new Mul(from1.poolId, from1.id, from2.id, to.id))
   }
 
@@ -408,8 +399,7 @@ class VectorOps {
     from1.assertValid()
     from2.assertValid()
     to.assertValid()
-    from1.assertCompatible(to)
-    from2.assertCompatible(to)
+    from1.assertCompatible(from2, to)
     update(from1.poolId, new Div(from1.poolId, from1.id, from2.id, to.id))
   }
 
@@ -421,8 +411,7 @@ class VectorOps {
     from1.assertValid()
     from2.assertValid()
     to.assertValid()
-    from1.assertCompatible(to)
-    from2.assertCompatible(to)
+    from1.assertCompatible(from2, to)
     update(from1.poolId, new MaxV(from1.poolId, from1.id, from2.id, to.id))
   }
 
@@ -434,8 +423,7 @@ class VectorOps {
     from1.assertValid()
     from2.assertValid()
     to.assertValid()
-    from1.assertCompatible(to)
-    from2.assertCompatible(to)
+    from1.assertCompatible(from2, to)
     update(from1.poolId, new MinV(from1.poolId, from1.id, from2.id, to.id))
   }
 
@@ -513,48 +501,6 @@ class VectorOps {
     x.assertValid()
     aggregate(x.poolId, new Amin(x.poolId, x.id))
       .asInstanceOf[ScalarAggrResult].getResult
-  }
-
-  /**
-   * Increment `delta` to `vector`.
-   * Notice: only be called in executor
-   */
-  def increment(vector: PSVector, delta: Array[Double]): Unit = {
-    vector.assertValid()
-    vector.assertCompatible(delta)
-    update(vector.poolId, new Increment(vector.poolId, vector.id, delta))
-  }
-
-  private[spark] def increment(poolId: Int, vectorId: Int, delta: Array[Double]): Unit = {
-    update(poolId, new Increment(poolId, vectorId, delta))
-  }
-
-  /**
-   * Find the maximum number of each dimension.
-   * Notice: only be called in executor
-   */
-  def mergeMax(vector: PSVector, other: Array[Double]): Unit = {
-    vector.assertValid()
-    vector.assertCompatible(other)
-    update(vector.poolId, new MaxA(vector.poolId, vector.id, other))
-  }
-
-  private[spark] def mergeMax(poolId: Int, vectorId: Int, other: Array[Double]): Unit = {
-    update(poolId, new MaxA(poolId, vectorId, other))
-  }
-
-  /**
-   * Find the minimum number of each dimension.
-   * Notice: only be called in executor
-   */
-  def mergeMin(vector: PSVector, other: Array[Double]): Unit = {
-    vector.assertValid()
-    vector.assertCompatible(other)
-    update(vector.poolId, new MinA(vector.poolId, vector.id, other))
-  }
-
-  private[spark] def mergeMin(poolId: Int, vectorId: Int, other: Array[Double]): Unit = {
-    update(poolId, new MinA(poolId, vectorId, other))
   }
 
   private def update(modelId: Int, func: UpdateFunc): Unit = {

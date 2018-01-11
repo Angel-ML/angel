@@ -19,7 +19,8 @@ package com.tencent.angel.psagent;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.client.AngelClient;
 import com.tencent.angel.client.AngelClientFactory;
-import com.tencent.angel.common.Location;
+import com.tencent.angel.common.location.Location;
+import com.tencent.angel.common.location.LocationManager;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.ipc.TConnection;
@@ -32,12 +33,14 @@ import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.MatrixMetaManager;
-import com.tencent.angel.protobuf.generated.MLProtos;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.psagent.client.MasterClient;
 import com.tencent.angel.psagent.clock.ClockCache;
 import com.tencent.angel.psagent.consistency.ConsistencyController;
+import com.tencent.angel.psagent.matrix.PSAgentLocationManager;
+import com.tencent.angel.psagent.matrix.PSAgentMatrixMetaManager;
 import com.tencent.angel.psagent.task.TaskContext;
 import com.tencent.angel.worker.Worker;
 import com.tencent.angel.worker.WorkerAttemptId;
@@ -62,6 +65,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 //import com.tencent.angel.psagent.consistency.SSPConsistencyController;
@@ -118,24 +122,25 @@ public class PSAgentTest {
       mMatrix.setColNum(100000);
       mMatrix.setMaxRowNumInBlock(1);
       mMatrix.setMaxColNumInBlock(50000);
-      mMatrix.setRowType(MLProtos.RowType.T_DOUBLE_DENSE);
+      mMatrix.setRowType(RowType.T_DOUBLE_DENSE);
       mMatrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       mMatrix.set(MatrixConf.MATRIX_HOGWILD, "true");
       mMatrix.set(MatrixConf.MATRIX_AVERAGE, "false");
       mMatrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
       angelClient.addMatrix(mMatrix);
 
-      mMatrix.setName("w2");
-      mMatrix.setRowNum(1);
-      mMatrix.setColNum(100000);
-      mMatrix.setMaxRowNumInBlock(1);
-      mMatrix.setMaxColNumInBlock(50000);
-      mMatrix.setRowType(MLProtos.RowType.T_DOUBLE_DENSE);
-      mMatrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
-      mMatrix.set(MatrixConf.MATRIX_HOGWILD, "true");
-      mMatrix.set(MatrixConf.MATRIX_AVERAGE, "false");
-      mMatrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
-      angelClient.addMatrix(mMatrix);
+      MatrixContext mMatrix2 = new MatrixContext();
+      mMatrix2.setName("w2");
+      mMatrix2.setRowNum(1);
+      mMatrix2.setColNum(100000);
+      mMatrix2.setMaxRowNumInBlock(1);
+      mMatrix2.setMaxColNumInBlock(50000);
+      mMatrix2.setRowType(RowType.T_DOUBLE_DENSE);
+      mMatrix2.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
+      mMatrix2.set(MatrixConf.MATRIX_HOGWILD, "true");
+      mMatrix2.set(MatrixConf.MATRIX_AVERAGE, "false");
+      mMatrix2.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
+      angelClient.addMatrix(mMatrix2);
 
       angelClient.startPSServer();
       angelClient.run();
@@ -167,7 +172,7 @@ public class PSAgentTest {
 
       Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
 
-      MatrixMetaManager matrixMetaManager = worker.getPSAgent().getMatrixMetaManager();
+      PSAgentMatrixMetaManager matrixMetaManager = worker.getPSAgent().getMatrixMetaManager();
       int w1Id = matrixMetaManager.getMatrixId("w1");
       int w2Id = matrixMetaManager.getMatrixId("w2");
 
@@ -282,7 +287,7 @@ public class PSAgentTest {
       PSAgent psAgent = worker.getPSAgent();
       assertTrue(psAgent != null);
 
-      LocationCache locationCache = psAgent.getLocationCache();
+      PSAgentLocationManager locationCache = psAgent.getLocationManager();
       assertTrue(locationCache != null);
 
       // test master location
@@ -295,14 +300,14 @@ public class PSAgentTest {
       assertTrue(masterLoc.getPort() >= 1 && masterLoc.getPort() <= 65535);
 
       // test ps location
-      Location psLoc = locationCache.getPSLocation(psId);
+      Location psLoc = locationCache.getPsLocation(psId);
       matcher = pattern.matcher(psLoc.getIp());
       assertTrue(matcher.matches());
       assertTrue(psLoc.getPort() >= 1 && psLoc.getPort() <= 65535);
       // assertEquals(psLoc, locationCache.updateAndGetPSLocation(psId));
 
       // test all ps ids
-      ParameterServerId[] allPSIds = locationCache.getPSIds();
+      ParameterServerId[] allPSIds = locationCache.getPsIds();
       assertEquals(allPSIds.length, 1);
       assertEquals(allPSIds[0], psId);
     } catch (Exception x) {
@@ -329,27 +334,24 @@ public class PSAgentTest {
       PSAgent psAgent = worker.getPSAgent();
       assertTrue(psAgent != null);
 
-      MatrixMetaManager matrixMetaManager = psAgent.getMatrixMetaManager();
+      PSAgentMatrixMetaManager matrixMetaManager = psAgent.getMatrixMetaManager();
       assertTrue(matrixMetaManager != null);
 
       // test all matrix ids
-      Set<Integer> matrixIds = matrixMetaManager.getMatrixIds();
-      assertEquals(matrixIds.size(), 2);
+      assertEquals(matrixMetaManager.getMatrixMetas().size(), 2);
 
       // test all matrix names
-      Set<String> matrixNames = matrixMetaManager.getMatrixNames();
-      assertEquals(matrixNames.size(), 2);
-      assertTrue(matrixNames.contains("w1"));
-      assertTrue(matrixNames.contains("w1"));
+      assertNotNull(matrixMetaManager.getMatrixMeta("w1"));
+      assertNotNull(matrixMetaManager.getMatrixMeta("w2"));
 
       // test matrix attribute
       int matrixId1 = matrixMetaManager.getMatrixId("w1");
       int matrixId2 = matrixMetaManager.getMatrixId("w2");
       String hogwildAttr =
-        matrixMetaManager.getAttribute(matrixId1, MatrixConf.MATRIX_HOGWILD, "true");
+        matrixMetaManager.getMatrixMeta(matrixId1).getAttribute(MatrixConf.MATRIX_HOGWILD, "true");
       assertEquals(hogwildAttr, "true");
       hogwildAttr =
-        matrixMetaManager.getAttribute(matrixId2, MatrixConf.MATRIX_HOGWILD, "true");
+        matrixMetaManager.getMatrixMeta(matrixId2).getAttribute(MatrixConf.MATRIX_HOGWILD, "true");
       assertEquals(hogwildAttr, "true");
 
       int matrix1Id = LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMatrixMetaManager().getMatrix("w1").getId();
@@ -362,7 +364,7 @@ public class PSAgentTest {
       assertEquals(matrixMetaById.getName(), "w1");
       assertEquals(matrixMetaById.getRowNum(), 1);
       assertEquals(matrixMetaById.getColNum(), 100000);
-      assertEquals(matrixMetaById.getRowType(), MLProtos.RowType.T_DOUBLE_DENSE);
+      assertEquals(matrixMetaById.getRowType(), RowType.T_DOUBLE_DENSE);
       assertEquals(matrixMetaById.getAttribute(MatrixConf.MATRIX_HOGWILD, "true"), "true");
       assertEquals(matrixMetaById.getStaleness(), 0);
     } catch (Exception x) {
@@ -389,12 +391,12 @@ public class PSAgentTest {
       PSAgent psAgent = worker.getPSAgent();
       assertTrue(psAgent != null);
 
-      MatrixPartitionRouter matrixPartitionRouter = psAgent.getMatrixPartitionRouter();
-      LocationCache locationCache = psAgent.getLocationCache();
+      PSAgentMatrixMetaManager matrixPartitionRouter = psAgent.getMatrixMetaManager();
+      PSAgentLocationManager locationCache = psAgent.getLocationManager();
       assertTrue(matrixPartitionRouter != null);
 
       // test ps location
-      Location psLoc = locationCache.getPSLocation(psId);
+      Location psLoc = locationCache.getPsLocation(psId);
       String ipRegex =
         "(2[5][0-5]|2[0-4]\\d|1\\d{2}|\\d{1,2})\\.(25[0-5]|2[0-4]\\d|1\\d{2}|\\d{1,2})\\.(25[0-5]|2[0-4]\\d|1\\d{2}|\\d{1,2})\\.(25[0-5]|2[0-4]\\d|1\\d{2}|\\d{1,2})";
       Pattern pattern = Pattern.compile(ipRegex);
@@ -406,25 +408,22 @@ public class PSAgentTest {
       int matrix2Id = LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMatrixMetaManager().getMatrix("w2").getId();
 
       // test partitions
-      List<PartitionKey> partition1Keys = matrixPartitionRouter.getPartitionKeyList(matrix1Id);
+      List<PartitionKey> partition1Keys = matrixPartitionRouter.getPartitions(matrix1Id);
       assertEquals(partition1Keys.size(), 2);
-      List<PartitionKey> partition2Keys = matrixPartitionRouter.getPartitionKeyList(matrix1Id);
+      List<PartitionKey> partition2Keys = matrixPartitionRouter.getPartitions(matrix1Id);
       assertEquals(partition2Keys.size(), 2);
 
       partition1Keys.clear();
-      partition1Keys = matrixPartitionRouter.getPartitionKeyList(matrix1Id, 0);
+      partition1Keys = matrixPartitionRouter.getPartitions(matrix1Id, 0);
       assertEquals(partition1Keys.size(), 2);
       partition2Keys.clear();
-      partition2Keys = matrixPartitionRouter.getPartitionKeyList(matrix1Id, 0);
+      partition2Keys = matrixPartitionRouter.getPartitions(matrix1Id, 0);
       assertEquals(partition2Keys.size(), 2);
 
       int rowPartSize = matrixPartitionRouter.getRowPartitionSize(matrix1Id, 0);
       assertEquals(rowPartSize, 2);
       rowPartSize = matrixPartitionRouter.getRowPartitionSize(matrix1Id, 0);
       assertEquals(rowPartSize, 2);
-
-      Map<Integer, List<PartitionKey>> allParts = matrixPartitionRouter.getMatrixToPartMap();
-      assertEquals(allParts.size(), 2);
     } catch (Exception x) {
       LOG.error("run testMatrixLocationManager failed ", x);
       throw x;
@@ -457,9 +456,9 @@ public class PSAgentTest {
       assertTrue(psAgentContext.getIdProto() != null);
       assertTrue(psAgentContext.getOpLogCache() != null);
       assertTrue(psAgentContext.getMatrixTransportClient() != null);
-      assertTrue(psAgentContext.getMatrixPartitionRouter() != null);
       assertTrue(psAgentContext.getMatrixMetaManager() != null);
-      assertTrue(psAgentContext.getLocationCache() != null);
+      assertTrue(psAgentContext.getMatrixMetaManager() != null);
+      assertTrue(psAgentContext.getLocationManager() != null);
 
       assertEquals(psAgentContext.getRunningMode(), psAgent.getRunningMode());
       assertEquals(psAgentContext.getIp(), psAgent.getIp());

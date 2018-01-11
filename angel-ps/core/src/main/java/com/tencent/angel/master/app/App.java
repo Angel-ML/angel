@@ -307,7 +307,7 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
   @Override
   public void handle(AppEvent event) {
     if (LOG.isDebugEnabled()) {
-      LOG.debug("Processing AppEvent type " + event.getType());
+      LOG.debug("Processing AppEvent type " + event);
     }
     try {
       writeLock.lock();

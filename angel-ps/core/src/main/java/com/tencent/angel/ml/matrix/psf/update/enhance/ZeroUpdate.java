@@ -63,7 +63,7 @@ public class ZeroUpdate extends UpdateFunc {
     @Override
     public List<PartitionUpdateParam> split() {
       List<PartitionKey> partList =
-          PSAgentContext.get().getMatrixPartitionRouter().getPartitionKeyList(matrixId);
+          PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
       int size = partList.size();
       List<PartitionUpdateParam> partParamList = new ArrayList<PartitionUpdateParam>(size);
       for (int i = 0; i < size; i++) {
@@ -100,8 +100,8 @@ public class ZeroUpdate extends UpdateFunc {
   @Override
   public void partitionUpdate(PartitionUpdateParam partParam) {
     ServerPartition part =
-        PSContext.get().getMatrixPartitionManager()
-            .getPartition(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
+        psContext.getMatrixStorageManager()
+            .getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
 
     if (part != null) {
       int startRow = part.getPartitionKey().getStartRow();

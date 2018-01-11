@@ -31,6 +31,7 @@ import com.tencent.angel.ml.math.vector.DenseFloatVector;
 import com.tencent.angel.ml.math.vector.DenseDoubleVector;
 import com.tencent.angel.ml.math.vector.DenseIntVector;
 import com.tencent.angel.ml.matrix.MatrixContext;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
@@ -120,12 +121,13 @@ public class TransportTest {
       matrix.setColNum(ddCol);
       matrix.setMaxRowNumInBlock(ddRow / 2);
       matrix.setMaxColNumInBlock(ddCol / 2);
-      matrix.setRowType(MLProtos.RowType.T_DOUBLE_DENSE);
+      matrix.setRowType(RowType.T_DOUBLE_DENSE);
       matrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       matrix.set(MatrixConf.MATRIX_HOGWILD, "false");
       matrix.set(MatrixConf.MATRIX_AVERAGE, "false");
       matrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
       angelClient.addMatrix(matrix);
+
 
       matrix = new MatrixContext();
       matrix.setName("dense_double_mat_1");
@@ -133,7 +135,7 @@ public class TransportTest {
       matrix.setColNum(ddCol);
       matrix.setMaxRowNumInBlock(ddRow / 2);
       matrix.setMaxColNumInBlock(ddCol / 2);
-      matrix.setRowType(MLProtos.RowType.T_DOUBLE_DENSE);
+      matrix.setRowType(RowType.T_DOUBLE_DENSE);
       matrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       matrix.set(MatrixConf.MATRIX_HOGWILD, "false");
       matrix.set(MatrixConf.MATRIX_AVERAGE, "false");
@@ -146,7 +148,7 @@ public class TransportTest {
       matrix.setColNum(diCol);
       matrix.setMaxRowNumInBlock(diRow / 2);
       matrix.setMaxColNumInBlock(diCol / 2);
-      matrix.setRowType(MLProtos.RowType.T_INT_DENSE);
+      matrix.setRowType(RowType.T_INT_DENSE);
       matrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       matrix.set(MatrixConf.MATRIX_HOGWILD, "false");
       matrix.set(MatrixConf.MATRIX_AVERAGE, "false");
@@ -159,7 +161,7 @@ public class TransportTest {
       matrix.setColNum(diCol);
       matrix.setMaxRowNumInBlock(diRow / 2);
       matrix.setMaxColNumInBlock(diCol / 2);
-      matrix.setRowType(MLProtos.RowType.T_INT_DENSE);
+      matrix.setRowType(RowType.T_INT_DENSE);
       matrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       matrix.set(MatrixConf.MATRIX_HOGWILD, "false");
       matrix.set(MatrixConf.MATRIX_AVERAGE, "false");
@@ -172,7 +174,7 @@ public class TransportTest {
       matrix.setColNum(dfCol);
       matrix.setMaxRowNumInBlock(dfRow / 2);
       matrix.setMaxColNumInBlock(dfCol / 2);
-      matrix.setRowType(MLProtos.RowType.T_FLOAT_DENSE);
+      matrix.setRowType(RowType.T_FLOAT_DENSE);
       matrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       matrix.set(MatrixConf.MATRIX_HOGWILD, "false");
       matrix.set(MatrixConf.MATRIX_AVERAGE, "false");
@@ -252,7 +254,8 @@ public class TransportTest {
 
       TVector row;
       while ((row = result.take()) != null) {
-        assertArrayEquals(((DenseDoubleVector)expect.getTVector(row.getRowId())).getValues(), ((DenseDoubleVector) row).getValues(), 0.0);
+        LOG.info("===========get row index=" + row.getRowId());
+        assertArrayEquals(((DenseDoubleVector)expect.getRow(row.getRowId())).getValues(), ((DenseDoubleVector) row).getValues(), 0.0);
       }
 
       Random rand = new Random(System.currentTimeMillis());
@@ -263,7 +266,7 @@ public class TransportTest {
           update.set(j, rand.nextDouble());
 
         mat.increment(rowId, update);
-        expect.getTVector(rowId).plusBy(update);
+        expect.getRow(rowId).plusBy(update);
       }
 
       mat.clock().get();
@@ -274,7 +277,7 @@ public class TransportTest {
       result = mat.getRowsFlow(rowIndex, 2);
 
       while ((row = result.take()) != null) {
-        assertArrayEquals(((DenseDoubleVector)expect.getTVector(row.getRowId())).getValues(), ((DenseDoubleVector) row).getValues(), 0.0);
+        assertArrayEquals(((DenseDoubleVector)expect.getRow(row.getRowId())).getValues(), ((DenseDoubleVector) row).getValues(), 0.0);
       }
 
       rowIndex = new RowIndex();
@@ -290,7 +293,7 @@ public class TransportTest {
         if (row == null)
           continue;
 
-        assertArrayEquals(((DenseDoubleVector)expect.getTVector(row.getRowId())).getValues(), ((DenseDoubleVector) row).getValues(), 0.0);
+        assertArrayEquals(((DenseDoubleVector)expect.getRow(row.getRowId())).getValues(), ((DenseDoubleVector) row).getValues(), 0.0);
       }
     } catch (Exception x) {
       LOG.error("run testGetFlowDenseDoubleMatrix failed ", x);
@@ -306,6 +309,7 @@ public class TransportTest {
 
       Random rand = new Random(System.currentTimeMillis());
       for (int rowId = 0; rowId < dfRow; rowId += (rand.nextInt(4) + 1)) {
+        LOG.info("=================get row " + rowId);
         DenseFloatVector getRow = (DenseFloatVector) mat.getRow(rowId);
         DenseFloatVector expect = new DenseFloatVector(dfCol);
         assertArrayEquals(getRow.getValues(), expect.getValues(), 0.0F);
@@ -396,7 +400,7 @@ public class TransportTest {
 
       TVector row;
       while ((row = result.take()) != null) {
-        assertArrayEquals(((DenseIntVector)expect.getTVector(row.getRowId())).getValues(), ((DenseIntVector) row).getValues());
+        assertArrayEquals(((DenseIntVector)expect.getRow(row.getRowId())).getValues(), ((DenseIntVector) row).getValues());
       }
 
       Random rand = new Random(System.currentTimeMillis());
@@ -407,7 +411,7 @@ public class TransportTest {
           update.set(j, rand.nextInt());
 
         mat.increment(rowId, update);
-        expect.getTVector(rowId).plusBy(update);
+        expect.getRow(rowId).plusBy(update);
       }
 
       mat.clock().get();
@@ -418,7 +422,7 @@ public class TransportTest {
       result = mat.getRowsFlow(rowIndex, 2);
 
       while ((row = result.take()) != null) {
-        assertArrayEquals(((DenseIntVector)expect.getTVector(row.getRowId())).getValues(), ((DenseIntVector) row).getValues());
+        assertArrayEquals(((DenseIntVector)expect.getRow(row.getRowId())).getValues(), ((DenseIntVector) row).getValues());
       }
 
 
@@ -435,7 +439,7 @@ public class TransportTest {
         if (row == null)
           continue;
 
-        assertArrayEquals(((DenseIntVector)expect.getTVector(row.getRowId())).getValues(), ((DenseIntVector) row).getValues());
+        assertArrayEquals(((DenseIntVector)expect.getRow(row.getRowId())).getValues(), ((DenseIntVector) row).getValues());
       }
     } catch (Exception x) {
       LOG.error("run testGetFlowDenseIntMatrix failed ", x);

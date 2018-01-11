@@ -22,6 +22,7 @@ import com.tencent.angel.client.AngelClient;
 import com.tencent.angel.client.AngelClientFactory;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.matrix.MatrixContext;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import org.apache.hadoop.conf.Configuration;
 
@@ -31,7 +32,7 @@ public class LongKeySubmit implements AppSubmitter {
     AngelClient angelClient = AngelClientFactory.get(conf);
     int blockCol = conf.getInt("blockcol", 5000000);
     MatrixContext context = new MatrixContext("longkey_test", 1, 2100000000, 1, blockCol);
-    context.setRowType(MLProtos.RowType.T_DOUBLE_SPARSE_LONGKEY);
+    context.setRowType(RowType.T_DOUBLE_SPARSE_LONGKEY);
     angelClient.addMatrix(context);
     angelClient.startPSServer();
     angelClient.run();

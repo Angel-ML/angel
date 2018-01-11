@@ -104,6 +104,30 @@ public class Sort {
     }
   }
 
+  public static void quickSort(int[] array, int low, int high) {
+    if (low < high) {
+      int tmp = array[low];
+      int ii = low, jj = high;
+      while (ii < jj) {
+        while (ii < jj && array[jj] >= tmp) {
+          jj--;
+        }
+
+        array[ii] = array[jj];
+
+        while (ii < jj && array[ii] <= tmp) {
+          ii++;
+        }
+
+        array[jj] = array[ii];
+      }
+      array[ii] = tmp;
+
+      quickSort(array, low, ii - 1);
+      quickSort(array,  ii + 1, high);
+    }
+  }
+
   public static void quickSort(int[] array, int[] values, int low, int high) {
     if (low < high) {
       int tmp = array[low];

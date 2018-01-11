@@ -15,12 +15,8 @@
  */
 package com.tencent.angel.protobuf;
 
-import com.tencent.angel.PartitionKey;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.CreateMatricesRequest;
 import com.tencent.angel.protobuf.generated.MLProtos.MatrixClock;
-import com.tencent.angel.protobuf.generated.MLProtos.MatrixProto;
 import com.tencent.angel.protobuf.generated.MLProtos.Pair;
-import com.tencent.angel.protobuf.generated.MLProtos.Partition;
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.TaskStateProto;
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerReportRequest;
 import com.tencent.angel.psagent.PSAgentContext;
@@ -30,7 +26,6 @@ import com.tencent.angel.worker.task.TaskId;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -46,16 +41,6 @@ public final class RequestConverter {
 
   private RequestConverter() {}
 
-  public static Partition buildPartition(int matrixId, PartitionKey part) {
-    Partition.Builder partitionBuilder = Partition.newBuilder();
-    partitionBuilder.setMatrixId(matrixId);
-    partitionBuilder.setPartitionId(part.getPartitionId());
-    partitionBuilder.setStartRow(part.getStartRow());
-    partitionBuilder.setEndRow(part.getEndRow());
-    partitionBuilder.setStartCol(part.getStartCol());
-    partitionBuilder.setEndCol(part.getEndCol());
-    return partitionBuilder.build();
-  }
 
   public static WorkerReportRequest buildWorkerReportRequest(Worker worker) {
     WorkerReportRequest.Builder builder = WorkerReportRequest.newBuilder();
@@ -115,18 +100,5 @@ public final class RequestConverter {
       builder.addCounters(kvBuilder.build());
     }
     return builder.build();
-  }
-
-  public static CreateMatricesRequest buildCreateMatricesRequest(
-      List<MatrixProto> matrixList)  {
-    CreateMatricesRequest.Builder createMatricesReqBuilder =
-        CreateMatricesRequest.newBuilder();
-    if (matrixList != null) {
-      for (MatrixProto matrixProto : matrixList) {
-        createMatricesReqBuilder.addMatrices(matrixProto);
-      }
-    }
-
-    return createMatricesReqBuilder.build();
   }
 }

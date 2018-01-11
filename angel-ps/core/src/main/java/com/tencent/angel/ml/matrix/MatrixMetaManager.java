@@ -16,10 +16,10 @@
 
 package com.tencent.angel.ml.matrix;
 
-import com.tencent.angel.psagent.PSAgentContext;
+import com.tencent.angel.ps.ParameterServerId;
 
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -27,40 +27,57 @@ import java.util.concurrent.ConcurrentHashMap;
  * The matrix meta manager.
  */
 public class MatrixMetaManager {
-  private final ConcurrentHashMap<Integer, MatrixMeta> matrixMetas;
-  private final ConcurrentHashMap<String, Integer> matrixNameIndex;
-  
+  /**
+   * Matrix id to matrix meta map
+   */
+  private final ConcurrentHashMap<Integer, MatrixMeta> matrixIdToMetaMap;
+
+  /**
+   * Matrix name to matrix id map
+   */
+  private final ConcurrentHashMap<String, Integer> matrixNameToIdMap;
+
   /**
    * Creates a new matrix meta manager.
    */
   public MatrixMetaManager() {
-    this.matrixMetas = new ConcurrentHashMap<Integer, MatrixMeta>();
-    this.matrixNameIndex = new ConcurrentHashMap<String, Integer>();
+    this.matrixIdToMetaMap = new ConcurrentHashMap<>();
+    this.matrixNameToIdMap = new ConcurrentHashMap<>();
   }
-  
+
   /**
    * Add matrixes.
    *
    * @param matrixMetas the matrix metas
    */
-  public void addMatrixes(Map<Integer, MatrixMeta> matrixMetas) {
-    for (Entry<Integer, MatrixMeta> matrixMetaEntry : matrixMetas.entrySet()) {
-      this.matrixMetas.putIfAbsent(matrixMetaEntry.getKey(), matrixMetaEntry.getValue());
-      this.matrixNameIndex.putIfAbsent(matrixMetaEntry.getValue().getName(),
-              matrixMetaEntry.getKey());
+  public void addMatrices(List<MatrixMeta> matrixMetas) {
+    int size = matrixMetas.size();
+    for(int i = 0; i < size; i++) {
+      addMatrix(matrixMetas.get(i));
     }
   }
-  
+
   /**
    * Add matrix.
    *
    * @param matrixMeta the matrix meta
    */
   public void addMatrix(MatrixMeta matrixMeta) {
-    this.matrixMetas.putIfAbsent(matrixMeta.getId(), matrixMeta);
-    this.matrixNameIndex.putIfAbsent(matrixMeta.getName(), matrixMeta.getId());
+    this.matrixIdToMetaMap.putIfAbsent(matrixMeta.getId(), matrixMeta);
+    this.matrixNameToIdMap.putIfAbsent(matrixMeta.getName(), matrixMeta.getId());
   }
-  
+
+  /**
+   * Remove a matrix
+   * @param matrixId matrix id
+   */
+  public void removeMatrix(int matrixId) {
+    MatrixMeta meta = matrixIdToMetaMap.remove(matrixId);
+    if(meta != null) {
+      matrixNameToIdMap.remove(meta.getName());
+    }
+  }
+
   /**
    * Gets matrix id.
    *
@@ -68,57 +85,13 @@ public class MatrixMetaManager {
    * @return the matrix id
    */
   public int getMatrixId(String matrixName) {
-    if (matrixNameIndex.containsKey(matrixName)) {
-      return matrixNameIndex.get(matrixName);
+    if (matrixNameToIdMap.containsKey(matrixName)) {
+      return matrixNameToIdMap.get(matrixName);
     } else {
-      synchronized (this) {
-        if (!matrixNameIndex.containsKey(matrixName)) {
-          try {
-            PSAgentContext.get().getPsAgent().refreshMatrixInfo();
-          } catch (Exception e) {
-            e.printStackTrace();
-          }
-        }
-        if (matrixNameIndex.containsKey(matrixName)) {
-          return matrixNameIndex.get(matrixName);
-        } else {
-          return -1;
-        }
-      }
+      return -1;
     }
   }
-  
-  /**
-   * Gets attribute.
-   *
-   * @param matrixId the matrix id
-   * @param key      the key
-   * @param value    the value
-   * @return the attribute
-   */
-  public String getAttribute(int matrixId, String key, String value) {
-    if (!exist(matrixId)) {
-      return null;
-    } else {
-      return matrixMetas.get(matrixId).getAttribute(key, value);
-    }
-  }
-  
-  /**
-   * Gets attribute.
-   *
-   * @param matrixId the matrix id
-   * @param key      the key
-   * @return the attribute
-   */
-  public String getAttribute(int matrixId, String key) {
-    if (!exist(matrixId)) {
-      return null;
-    } else {
-      return matrixMetas.get(matrixId).getAttribute(key);
-    }
-  }
-  
+
   /**
    * Gets matrix meta.
    *
@@ -126,13 +99,9 @@ public class MatrixMetaManager {
    * @return the matrix meta
    */
   public MatrixMeta getMatrixMeta(int matrixId) {
-    if (!exist(matrixId)) {
-      return null;
-    } else {
-      return matrixMetas.get(matrixId);
-    }
+    return matrixIdToMetaMap.get(matrixId);
   }
-  
+
   /**
    * Gets matrix meta.
    *
@@ -140,45 +109,153 @@ public class MatrixMetaManager {
    * @return the matrix meta
    */
   public MatrixMeta getMatrixMeta(String matrixName) {
-    return matrixMetas.get(getMatrixId(matrixName));
+    int matrixId = getMatrixId(matrixName);
+    if(matrixId == -1) {
+      return null;
+    } else {
+      return matrixIdToMetaMap.get(matrixId);
+    }
   }
-  
+
   /**
    * Gets matrix ids.
    *
    * @return the matrix ids
    */
   public Set<Integer> getMatrixIds() {
-    return matrixMetas.keySet();
+    return matrixIdToMetaMap.keySet();
   }
-  
+
   /**
    * Gets matrix names.
    *
    * @return the matrix names
    */
   public Set<String> getMatrixNames() {
-    return matrixNameIndex.keySet();
+    return matrixNameToIdMap.keySet();
   }
-  
+
   /**
-   * Exist boolean.
-   *
-   * @param matrixId the matrix id
-   * @return the result
+   * Is a matrix exist
+   * @param matrixName matrix name
+   * @return true means exist
    */
-  public boolean exist(int matrixId) {
-    if (!matrixMetas.containsKey(matrixId)) {
-      synchronized (this) {
-        if (!matrixMetas.containsKey(matrixId)) {
-          try {
-            PSAgentContext.get().getPsAgent().refreshMatrixInfo();
-          } catch (Exception e) {
-            e.printStackTrace();
-          }
-        }
-      }
+  public boolean exists(String matrixName) {
+    return matrixNameToIdMap.containsKey(matrixName);
+  }
+
+  /**
+   * Is a matrix exist
+   * @param matrixId matrix id
+   * @return true means exist
+   */
+  public boolean exists(int matrixId) { return matrixIdToMetaMap.containsKey(matrixId); }
+
+  /**
+   * Get all matrices meta
+   * @return all matrices meta
+   */
+  public Map<Integer,MatrixMeta> getMatrixMetas() {
+    return matrixIdToMetaMap;
+  }
+
+  /**
+   * Get the stored pss for a matrix partition
+   * @param matrixId matrix id
+   * @param partId partition id
+   * @return the stored pss
+   */
+  public List<ParameterServerId> getPss(int matrixId, int partId) {
+    MatrixMeta matrixMeta = matrixIdToMetaMap.get(matrixId);
+    if(matrixMeta == null) {
+      return null;
     }
-    return matrixMetas.containsKey(matrixId);
+
+    return matrixMeta.getPss(partId);
+  }
+
+  /**
+   * Remove the matrix
+   * @param matrixName matrix name
+   */
+  public void removeMatrix(String matrixName) {
+    if(matrixNameToIdMap.containsKey(matrixName)) {
+      int matrixId = matrixNameToIdMap.remove(matrixName);
+      matrixIdToMetaMap.remove(matrixId);
+    }
+  }
+
+  /**
+   * Remove all matrices
+   */
+  public void clear() {
+    matrixIdToMetaMap.clear();
+    matrixNameToIdMap.clear();
+  }
+
+  /**
+   * Get the master stored ps for a matrix partition
+   * @param matrixId matrix id
+   * @param partId partition id
+   * @return the master stored ps
+   */
+  public ParameterServerId getMasterPs(int matrixId, int partId) {
+    MatrixMeta matrixMeta = matrixIdToMetaMap.get(matrixId);
+    if(matrixMeta == null) {
+      return null;
+    }
+
+    return matrixMeta.getMasterPs(partId);
+  }
+
+  /**
+   * Remove matrices
+   * @param matrixIds matrix ids
+   */
+  public void removeMatrices(List<Integer> matrixIds) {
+    int size = matrixIds.size();
+    for(int i = 0; i < size; i++) {
+      removeMatrix(matrixIds.get(i));
+    }
+  }
+
+  /**
+   * Remove the stored ps for all matrix partitions
+   * @param psId ps id
+   */
+  public void removePs(ParameterServerId psId) {
+    for(MatrixMeta matrixMeta : matrixIdToMetaMap.values()) {
+      matrixMeta.removePs(psId);
+    }
+  }
+
+  /**
+   * Set the stored pss for a matrix partition
+   * @param matrixId matrix id
+   * @param partId partition id
+   * @param psIds the stored pss
+   */
+  public void setPss(int matrixId, int partId, List<ParameterServerId> psIds) {
+    MatrixMeta matrixMeta = matrixIdToMetaMap.get(matrixId);
+    if(matrixMeta == null) {
+      return;
+    }
+
+    matrixMeta.setPss(partId, psIds);
+  }
+
+  /**
+   * Add a the stored ps for a matrix partition
+   * @param matrixId matrix id
+   * @param partId
+   * @param psId ps id
+   */
+  public void addPs(int matrixId, int partId, ParameterServerId psId) {
+    MatrixMeta matrixMeta = matrixIdToMetaMap.get(matrixId);
+    if(matrixMeta == null) {
+      return;
+    }
+
+    matrixMeta.addPs(partId, psId);
   }
 }

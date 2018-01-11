@@ -18,7 +18,10 @@ package com.tencent.angel.psagent.consistency;
 
 import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.ml.math.TVector;
+import com.tencent.angel.ml.math.vector.TIntDoubleVector;
+import com.tencent.angel.ml.math.vector.TLongDoubleVector;
 import com.tencent.angel.ml.matrix.MatrixMeta;
+import com.tencent.angel.ml.matrix.psf.get.enhance.indexed.*;
 import com.tencent.angel.ml.matrix.psf.get.multi.GetRowsFunc;
 import com.tencent.angel.ml.matrix.psf.get.multi.GetRowsParam;
 import com.tencent.angel.ml.matrix.psf.get.single.GetRowFunc;
@@ -26,6 +29,7 @@ import com.tencent.angel.ml.matrix.psf.get.single.GetRowParam;
 import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult;
 import com.tencent.angel.ml.matrix.psf.update.enhance.VoidResult;
 import com.tencent.angel.psagent.PSAgentContext;
+import com.tencent.angel.psagent.clock.ClockCache;
 import com.tencent.angel.psagent.matrix.ResponseType;
 import com.tencent.angel.psagent.matrix.storage.MatrixStorage;
 import com.tencent.angel.psagent.matrix.transport.adapter.GetRowsResult;
@@ -195,12 +199,12 @@ public class ConsistencyController {
    * @return int staleness value
    */
   public int getStaleness(int matrixId) {
-    String staleStr = PSAgentContext.get().getMatrixMetaManager().getAttribute(matrixId, MatrixConf.MATRIX_STALENESS);
-    if(staleStr == null) {
+    MatrixMeta meta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
+    if(meta == null || meta.getAttribute(MatrixConf.MATRIX_STALENESS) == null) {
       return globalStaleness;
     } else {
       try{
-        return Integer.valueOf(staleStr);
+        return Integer.valueOf(meta.getAttribute(MatrixConf.MATRIX_STALENESS));
       } catch (Exception x) {
         LOG.warn("parse matrix staleness value failed for matrix " + matrixId, x);
         return globalStaleness;
@@ -261,5 +265,42 @@ public class ConsistencyController {
     int localTaskNum = PSAgentContext.get().getLocalTaskNum();
 
     return !matrixMeta.isHogwild() && localTaskNum > 1;
+  }
+
+  public TIntDoubleVector getRow(TaskContext taskContext, IndexGetFunc func) throws Exception{
+    int matrixId = func.getParam().getMatrixId();
+    int rowIndex = ((IndexGetParam)func.getParam()).getRowId();
+    int staleness = getStaleness(matrixId);
+    if(staleness >= 0) {
+      waitForClock(matrixId, rowIndex, taskContext.getMatrixClock(matrixId) - staleness);
+    }
+    return (TIntDoubleVector)((GetRowResult)PSAgentContext.get().getMatrixClientAdapter().get(func)).getRow();
+  }
+
+  public TLongDoubleVector getRow(TaskContext taskContext, LongIndexGetFunc func) throws Exception{
+    int matrixId = func.getParam().getMatrixId();
+    int rowIndex = ((LongIndexGetParam)func.getParam()).getRowId();
+    int staleness = getStaleness(matrixId);
+    if(staleness >= 0) {
+      waitForClock(matrixId, rowIndex, taskContext.getMatrixClock(matrixId) - staleness);
+    }
+    return (TLongDoubleVector)((GetRowResult)PSAgentContext.get().getMatrixClientAdapter().get(func)).getRow();
+  }
+
+  public void waitForClock(int matrixId, int rowIndex, int clock) {
+    ClockCache clockCache = PSAgentContext.get().getClockCache();
+    while (true) {
+      int cachedClock = clockCache.getClock(matrixId, rowIndex);
+      if (cachedClock >= clock) {
+        return;
+      }
+
+      try {
+        Thread.sleep(10);
+      } catch (InterruptedException e) {
+        LOG.warn("waitForClock is interrupted " + e.getMessage());
+        return;
+      }
+    }
   }
 }

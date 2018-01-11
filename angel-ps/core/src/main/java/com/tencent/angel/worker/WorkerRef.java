@@ -16,7 +16,7 @@
 
 package com.tencent.angel.worker;
 
-import com.tencent.angel.common.Location;
+import com.tencent.angel.common.location.Location;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos.LocationProto;
 import com.tencent.angel.protobuf.generated.MLProtos.WorkerAttemptIdProto;

@@ -63,8 +63,8 @@ public class SparseDoubleLongKeyMatrixTest {
     matrix1.plusBy(0, -100, 1.0);
     matrix1.plusBy(1, 100, 1.0);
     matrix.plusBy(matrix1);
-    assertEquals(((SparseLongKeyDoubleVector)matrix.getTVector(0)).get(-100), 2.0);
-    assertEquals(((SparseLongKeyDoubleVector)matrix.getTVector(1)).get(100), 2.0);
+    assertEquals(((SparseLongKeyDoubleVector)matrix.getRow(0)).get(-100), 2.0);
+    assertEquals(((SparseLongKeyDoubleVector)matrix.getRow(1)).get(100), 2.0);
   }
 
   @Test

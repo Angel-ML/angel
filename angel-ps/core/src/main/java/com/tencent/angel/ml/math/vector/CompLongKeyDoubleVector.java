@@ -357,6 +357,41 @@ public abstract class CompLongKeyDoubleVector extends TLongDoubleVector {
     }
   }
 
+  class ElementUpdateOp extends RecursiveAction {
+    private final TLongDoubleVector[] splits;
+    private final int startPos;
+    private final int endPos;
+    private final LongDoubleElemUpdater updater;
+    private final ElemUpdateParam param;
+
+    public ElementUpdateOp(TLongDoubleVector[] splits, int startPos, int endPos, LongDoubleElemUpdater updater, ElemUpdateParam param) {
+      this.splits = splits;
+      this.startPos = startPos;
+      this.endPos = endPos;
+      this.updater = updater;
+      this.param = param;
+    }
+
+    @Override protected void compute() {
+      if (endPos <= startPos) {
+        return;
+      }
+
+      if (endPos - startPos == 1) {
+        if(splits[startPos] != null) {
+          splits[startPos].elemUpdate(updater, param);
+        }
+      } else {
+        int middle = (startPos + endPos) / 2;
+        ElementUpdateOp opLeft =
+          new ElementUpdateOp(splits, startPos, middle, updater, param);
+        ElementUpdateOp opRight =
+          new ElementUpdateOp(splits, middle, endPos, updater, param);
+        invokeAll(opLeft, opRight);
+      }
+    }
+  }
+
   /**
    * Init a split vector
    *
@@ -449,7 +484,7 @@ public abstract class CompLongKeyDoubleVector extends TLongDoubleVector {
     setRowId(rowIndex);
 
     List<PartitionKey> partKeyList =
-      PSAgentContext.get().getMatrixPartitionRouter().getPartitionKeyList(matrixId, rowIndex);
+      PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId, rowIndex);
     LOG.info("matrixId=" + matrixId + ", rowIndex=" + rowIndex + ", partNum=" + partKeyList.size());
 
     if (partKeyList.size() >= 1) {
@@ -527,8 +562,8 @@ public abstract class CompLongKeyDoubleVector extends TLongDoubleVector {
       return plusBy((CompLongKeyDoubleVector) other);
     } else if(other instanceof SparseLongKeyDoubleVector) {
       return plusBy((SparseLongKeyDoubleVector) other);
-    } else if (other instanceof  SparseDummyLongKeyVector) {
-      return plusBy((SparseDummyLongKeyVector) other);
+    } else if (other instanceof  SparseLongKeyDummyVector) {
+      return plusBy((SparseLongKeyDummyVector) other);
     } else if (other instanceof SparseLongKeySortedDoubleVector) {
       return plusBy((SparseLongKeySortedDoubleVector) other);
     } else if (other instanceof  SparseDummyVector) {
@@ -577,7 +612,7 @@ public abstract class CompLongKeyDoubleVector extends TLongDoubleVector {
     return this;
   }
 
-  private TVector plusBy(SparseDummyLongKeyVector other) {
+  private TVector plusBy(SparseLongKeyDummyVector other) {
     long [] indexes = other.getIndices();
     for(int i = 0; i < indexes.length; i++) {
       plusBy(indexes[i], 1);
@@ -599,8 +634,8 @@ public abstract class CompLongKeyDoubleVector extends TLongDoubleVector {
       return plusBy((CompLongKeyDoubleVector) other, x);
     } else if(other instanceof SparseLongKeyDoubleVector) {
       return plusBy((SparseLongKeyDoubleVector) other, x);
-    } else if (other instanceof  SparseDummyLongKeyVector) {
-      return plusBy((SparseDummyLongKeyVector) other, x);
+    } else if (other instanceof  SparseLongKeyDummyVector) {
+      return plusBy((SparseLongKeyDummyVector) other, x);
     } else if (other instanceof SparseLongKeySortedDoubleVector) {
       return plusBy((SparseLongKeySortedDoubleVector) other, x);
     } else if (other instanceof  SparseDummyVector) {
@@ -650,7 +685,7 @@ public abstract class CompLongKeyDoubleVector extends TLongDoubleVector {
     return this;
   }
 
-  private TVector plusBy(SparseDummyLongKeyVector other, double x) {
+  private TVector plusBy(SparseLongKeyDummyVector other, double x) {
     long [] indexes = other.getIndices();
     for(int i = 0; i < indexes.length; i++) {
       plusBy(indexes[i], x);
@@ -679,8 +714,8 @@ public abstract class CompLongKeyDoubleVector extends TLongDoubleVector {
       return dot((CompLongKeyDoubleVector) other);
     } else if(other instanceof SparseLongKeyDoubleVector) {
       return dot((SparseLongKeyDoubleVector) other);
-    } else if (other instanceof  SparseDummyLongKeyVector) {
-      return dot((SparseDummyLongKeyVector) other);
+    } else if (other instanceof  SparseLongKeyDummyVector) {
+      return dot((SparseLongKeyDummyVector) other);
     } else if (other instanceof SparseLongKeySortedDoubleVector) {
       return dot((SparseLongKeySortedDoubleVector) other);
     } else if (other instanceof  SparseDummyVector) {
@@ -721,7 +756,7 @@ public abstract class CompLongKeyDoubleVector extends TLongDoubleVector {
     return dotValue;
   }
 
-  private double dot(SparseDummyLongKeyVector other) {
+  private double dot(SparseLongKeyDummyVector other) {
     double dotValue = 0.0;
     long [] indexes = other.getIndices();
     for(int i = 0; i < indexes.length; i++) {
@@ -735,7 +770,7 @@ public abstract class CompLongKeyDoubleVector extends TLongDoubleVector {
     int [] indexes = other.getIndices();
     double [] values = other.getValues();
     for(int i = 0; i < indexes.length; i++) {
-      dotValue += get(indexes[i]) * values[i];
+      dotValue += get((long)indexes[i]) * values[i];
     }
     return dotValue;
   }
@@ -826,5 +861,12 @@ public abstract class CompLongKeyDoubleVector extends TLongDoubleVector {
    */
   public PartitionKey[] getPartKeys() {
     return partKeys;
+  }
+
+  @Override
+  public TLongDoubleVector elemUpdate(LongDoubleElemUpdater updater, ElemUpdateParam param) {
+    ElementUpdateOp op = new ElementUpdateOp(vectors, 0, splitNum, updater, param);
+    MatrixOpExecutors.execute(op);
+    return this;
   }
 }

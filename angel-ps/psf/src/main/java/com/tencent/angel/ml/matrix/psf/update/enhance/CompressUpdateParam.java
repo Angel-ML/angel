@@ -46,8 +46,8 @@ public class CompressUpdateParam extends UpdateParam {
   @Override
   public List<PartitionUpdateParam> split() {
     List<PartitionKey> partList = PSAgentContext.get()
-        .getMatrixPartitionRouter()
-        .getPartitionKeyList(matrixId, rowId);
+        .getMatrixMetaManager()
+        .getPartitions(matrixId, rowId);
 
     int size = partList.size();
     List<PartitionUpdateParam> partParams = new ArrayList<PartitionUpdateParam>(size);

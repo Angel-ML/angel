@@ -236,7 +236,7 @@ private class LogisticAggregator(
     val margin = - {
       var sum = 0.0
       features.foreachActive { (index, value) =>
-        if (localFeatureStd.apply(index * numCoefficientSets) != 0 && value != 0.0) {
+        if (localFeatureStd.apply(index) > 1e-6 && value != 0.0) {
           sum += localCoefficients(index) * value
         }
       }
@@ -247,7 +247,7 @@ private class LogisticAggregator(
     val multiplier = weight * (1.0 / (1.0 + math.exp(margin)) - label)
 
     features.foreachActive { (index, value) =>
-      if (value != 0.0) {
+      if (localFeatureStd.apply(index) > 1e-6 && value != 0.0) {
         gradient(index) += multiplier * value / weightSum
       }
     }

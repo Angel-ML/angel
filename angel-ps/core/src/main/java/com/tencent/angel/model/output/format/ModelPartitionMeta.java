@@ -16,14 +16,20 @@
 
 package com.tencent.angel.model.output.format;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * The meta data for a Matrix partition.
  */
 public class ModelPartitionMeta {
+  private static final Log LOG = LogFactory.getLog(ModelPartitionMeta.class);
   /**
    * Partition id
    */
@@ -69,6 +75,12 @@ public class ModelPartitionMeta {
    */
   private long length;
 
+
+  /**
+   * rows offset
+   */
+  private Map<Integer,RowOffset> rowMetas;
+
   /**
    * Create a empty PartitionMeta
    */
@@ -98,6 +110,7 @@ public class ModelPartitionMeta {
     this.fileName = fileName;
     this.offset = offset;
     this.length = length;
+    this.rowMetas = new HashMap<>(endRow - startRow);
   }
 
   /**
@@ -115,6 +128,15 @@ public class ModelPartitionMeta {
     output.writeUTF(fileName);
     output.writeLong(offset);
     output.writeLong(length);
+    if(!rowMetas.isEmpty()){
+      output.writeInt(rowMetas.size());
+      for(RowOffset meta:rowMetas.values()){
+        output.writeInt(meta.rowId);
+        output.writeLong(meta.offset);
+      }
+    } else {
+      output.writeInt(0);
+    }
   }
 
   /**
@@ -132,6 +154,13 @@ public class ModelPartitionMeta {
     fileName = input.readUTF();
     offset = input.readLong();
     length = input.readLong();
+    rowMetas = new HashMap<>();
+
+    int rowIndexNum = input.readInt();
+    for(int i = 0; i < rowIndexNum; i++) {
+      RowOffset rowOffset = new RowOffset(input.readInt(), input.readLong());
+      rowMetas.put(rowOffset.rowId, rowOffset);
+    }
   }
 
   /**
@@ -263,6 +292,24 @@ public class ModelPartitionMeta {
   }
 
   /**
+   * Gets row metas.
+   *
+   * @return the row metas
+   */
+  public Map<Integer, RowOffset> getRowMetas() {
+    return rowMetas;
+  }
+
+  /**
+   * Sets row meta.
+   *
+   * @param rowOffset the row meta
+   */
+  public void setRowMeta(RowOffset rowOffset) {
+    this.rowMetas.put(rowOffset.rowId, rowOffset);
+  }
+
+  /**
    * Set non-zero element number
    * @param nnz
    */
@@ -290,5 +337,35 @@ public class ModelPartitionMeta {
     return "PartitionMeta{" + "partId=" + partId + ", startRow=" + startRow + ", endRow=" + endRow
       + ", startCol=" + startCol + ", endCol=" + endCol + ", nnz=" + nnz + ", fileName='" + fileName
       + '\'' + ", offset=" + offset + ", length=" + length + '}';
+  }
+
+  public static class RowOffset {
+    private int rowId;
+    private long offset;
+
+    public RowOffset(int rowId, long offset) {
+      this.rowId = rowId;
+      this.offset = offset;
+    }
+
+    public int getRowId() {
+      return rowId;
+    }
+
+    public void setRowId(int rowId) {
+      this.rowId = rowId;
+    }
+
+    public long getOffset() {
+      return offset;
+    }
+
+    public void setOffset(long offset) {
+      this.offset = offset;
+    }
+
+    @Override public String toString() {
+      return "RowOffset{" + "rowId=" + rowId + ", offset=" + offset + '}';
+    }
   }
 }

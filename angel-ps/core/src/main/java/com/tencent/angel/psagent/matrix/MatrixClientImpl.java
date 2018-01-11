@@ -19,10 +19,15 @@ package com.tencent.angel.psagent.matrix;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math.TMatrix;
 import com.tencent.angel.ml.math.TVector;
+import com.tencent.angel.ml.math.vector.TIntDoubleVector;
+import com.tencent.angel.ml.math.vector.TLongDoubleVector;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
+import com.tencent.angel.ml.matrix.psf.get.enhance.indexed.IndexGetFunc;
+import com.tencent.angel.ml.matrix.psf.get.enhance.indexed.LongIndexGetFunc;
 import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.enhance.VoidResult;
+import com.tencent.angel.psagent.PSAgent;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.transport.adapter.GetRowsResult;
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex;
@@ -98,6 +103,22 @@ public class MatrixClientImpl extends MatrixClient {
       return PSAgentContext.get().getMatrixClientAdapter().get(func);
     } catch (InterruptedException | ExecutionException e) {
       throw new AngelException(e);
+    }
+  }
+
+  public TIntDoubleVector getRow(IndexGetFunc func) throws AngelException {
+    try {
+      return PSAgentContext.get().getConsistencyController().getRow(taskContext, func);
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+  }
+
+  public TLongDoubleVector getRow(LongIndexGetFunc func) throws AngelException {
+    try {
+      return PSAgentContext.get().getConsistencyController().getRow(taskContext, func);
+    } catch (Throwable x) {
+      throw new AngelException(x);
     }
   }
 }

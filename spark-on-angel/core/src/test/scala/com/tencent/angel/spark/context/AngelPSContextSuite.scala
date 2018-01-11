@@ -21,7 +21,7 @@ import com.tencent.angel.spark.PSFunSuite
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.SparkConf
 
-import com.tencent.angel.protobuf.generated.MLProtos.RowType
+import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.spark.models.vector.VectorType
 
 class AngelPSContextSuite extends PSFunSuite {

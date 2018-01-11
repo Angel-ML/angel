@@ -155,15 +155,11 @@ public class DenseFloatMatrixTest {
     float[][] value = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     DenseFloatMatrix mat = new DenseFloatMatrix(2, 2, value);
 
-    TFloatVector vec = (TFloatVector) mat.getTVector(0);
+    TFloatVector vec = (TFloatVector) mat.getRow(0);
 
     assertEquals(0, vec.getRowId());
     assertEquals(1.0f, vec.get(0));
     assertEquals(2.0f, vec.get(1));
-
-    DenseFloatMatrix mat_2 = new DenseFloatMatrix(2, 2);
-    assertEquals(null, mat_2.getTVector(0));
-
   }
 
   @Test

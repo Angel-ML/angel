@@ -52,7 +52,7 @@ public class MatrixStorage {
    * Add the row to the storage.
    * 
    * @param rowIndex row index
-   * @param TVector row
+   * @param row
    */
   public void addRow(int rowIndex, TVector row) {
     rowIndexToRowMap.put(rowIndex, row);

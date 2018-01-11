@@ -108,7 +108,7 @@ public class DenseDoubleMatrixTest {
     double[][] value = {{1.0, 2.0},{3.0, 4.0}};
     DenseDoubleMatrix mat = new DenseDoubleMatrix(2, 2, value);
 
-    TDoubleVector vec = (TDoubleVector)mat.getTVector(0);
+    TDoubleVector vec = (TDoubleVector)mat.getRow(0);
 
     assertEquals(2, vec.size());
     assertEquals(0, vec.getRowId());
@@ -120,7 +120,7 @@ public class DenseDoubleMatrixTest {
     vec_1.setRowId(0);
     mat_1.plusBy(vec_1);
 
-    TDoubleVector vec_2 = (TDoubleVector)mat_1.getTVector(0);
+    TDoubleVector vec_2 = (TDoubleVector)mat_1.getRow(0);
 
     assertEquals(1.0, vec_2.get(0));
     assertEquals(2.0, vec_2.get(1));

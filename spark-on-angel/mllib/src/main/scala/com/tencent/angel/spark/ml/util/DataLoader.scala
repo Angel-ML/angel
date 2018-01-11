@@ -47,7 +47,7 @@ object DataLoader {
       input: String,
       partitionNum: Int,
       sampleRate: Double,
-      maxIndex: Int = -1) : DataFrame = {
+      maxIndex: Long = -1) : DataFrame = {
     val spark = SparkSession.builder().getOrCreate()
 
     val instances = spark.sparkContext.textFile(input)
@@ -58,7 +58,7 @@ object DataLoader {
           Iterator.empty
         } else {
           val label = items.head
-          val feature = items.tail.map(_.toInt)
+          val feature = items.tail.map(_.toLong)
           if (maxIndex > 0) {
             Iterator.single(Row(label, feature.filter(x => x <= maxIndex)))
           } else {

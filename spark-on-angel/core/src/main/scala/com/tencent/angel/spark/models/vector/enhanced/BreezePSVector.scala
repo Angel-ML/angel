@@ -26,7 +26,7 @@ import com.tencent.angel.ml.matrix.psf.update.enhance.map.{MapFunc, MapWithIndex
 import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.{Zip2MapFunc, Zip2MapWithIndexFunc}
 import com.tencent.angel.ml.matrix.psf.update.enhance.zip3.{Zip3MapFunc, Zip3MapWithIndexFunc}
 import com.tencent.angel.spark.client.PSClient
-import com.tencent.angel.spark.models.vector.PSVector
+import com.tencent.angel.spark.models.vector.{ConcretePSVector, PSVector}
 import org.apache.spark.SparkException
 import scala.language.implicitConversions
 
@@ -43,23 +43,18 @@ import scala.language.implicitConversions
  *
  * val c = a + b  // "+" is an operation in `breeze.linalg.NumericOps`
  */
-class BreezePSVector(component: PSVector) extends PSVectorDecorator(component) with NumericOps[BreezePSVector] {
+class BreezePSVector(component: ConcretePSVector) extends PSVectorDecorator(component) with NumericOps[BreezePSVector] {
 
   override val dimension: Long = component.dimension
   override val id: Int = component.id
   override val poolId: Int = component.poolId
 
   override def delete(): Unit = component.delete()
-  
 
   // Ensure that operators are all loaded.
   BreezePSVector.init()
 
   override def repr: BreezePSVector = this
-
-  override def toString: String = {
-    PSClient.instance().vectorOps.pull(this).mkString("BreezePSVector(", ", ", ")")
-  }
 
   import BreezePSVector._
 
@@ -444,7 +439,7 @@ object BreezePSVector {
   implicit val canSetIntoS: OpSet.InPlaceImpl2[BreezePSVector, Double] = {
     new OpSet.InPlaceImpl2[BreezePSVector, Double] {
       def apply(a: BreezePSVector, b: Double): Unit = {
-        psClient.initOps.fill(a, b)
+        psClient.vectorOps.fill(a, b)
       }
     }
   }

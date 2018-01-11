@@ -21,21 +21,20 @@ import java.util.concurrent._
 
 import breeze.linalg.{DenseVector => BDV, Vector => BV}
 import breeze.optimize.{CachedDiffFunction, DiffFunction, LBFGS => BreezeLBFGS}
+
 import com.tencent.angel.spark.models.vector.PSVector
-import com.tencent.angel.spark.ml.common.OneHot.OneHotVector
-import com.tencent.angel.spark.ml.common.{BLAS, Gradient, OneHot}
 import com.tencent.angel.spark.ml.psf.ADMMZUpdater
 import org.apache.spark.HashPartitioner
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
-import org.apache.spark.mllib.linalg.{DenseVector, Vector, Vectors}
 import org.apache.spark.mllib.optimization.{L1Updater, Updater}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.user.CoalescedRDD
-import org.apache.spark.sql.{DataFrame, Row}
 import org.apache.spark.storage.StorageLevel
-
 import scala.collection.mutable.ArrayBuffer
+
+import com.tencent.angel.spark.linalg.{BLAS, Vector, DenseVector, OneHotVector}
+import com.tencent.angel.spark.ml.common.Gradient
 
 /**
  * :: DeveloperApi ::
@@ -71,7 +70,7 @@ class ADMM(private var gradient: Gradient, private var updater: Updater) {
   private var maxNumIterations = 20
   private var regParam = 0.0
   private var rho = 1.0
-  private var testSet: RDD[(Double, OneHotVector)] = null
+  private var testSet: RDD[(Double, OneHotVector)] = _
 
   /**
    * Set the maximal number of iterations for ADMM. Default 20.
@@ -160,13 +159,6 @@ class ADMM(private var gradient: Gradient, private var updater: Updater) {
     this
   }
 
-  def optimize(data: DataFrame, initModel: DenseVector): (DenseVector, Array[Double]) = {
-    val dataRDD = data.rdd.map { case Row(label: Double, feature: Array[Int]) =>
-      Tuple2(label, feature)
-    }
-    optimize(dataRDD, initModel)
-  }
-
   def optimize(data: RDD[(Double, OneHotVector)],
                initModel: DenseVector): (DenseVector, Array[Double]) = {
     ADMM.runADMM(data, testSet, initModel)(
@@ -227,7 +219,7 @@ object ADMM {
     var (states, subModels) = initialize(data, initModel, numSubModel)
 
     var lastZ: PSVector = null
-    var zPS: PSVector = PSVector.dense(initModel.size)
+    var zPS: PSVector = PSVector.dense(initModel.length.toInt)
 
     val history = new ArrayBuffer[Double]()
     history += getGlobalLoss(states, zPS, gradient, updater, regParam)
@@ -243,7 +235,7 @@ object ADMM {
           val (id, subModel) = iterModel.next()
           require(!iterModel.hasNext,
             s"zipPartitions failed, 1 partition has ${iterModel.length + 1} model")
-          val localZ = new DenseVector(zPS.pull())
+          val localZ = new DenseVector(zPS.pull.toDense.values)
 
           // update u_i (u_i = u_i + x_i - z)
           BLAS.axpy(1, subModel.x, subModel.u)
@@ -288,7 +280,7 @@ object ADMM {
       !isConverged(subModels, lastZ, zPS, rho, primalTol, dualTol))
     println(s"global loss history: ${history.mkString(" ")}")
 
-    val finalModel = new DenseVector(zPS.pull()).asInstanceOf[SparkV]
+    val finalModel = new DenseVector(zPS.pull.toDense.values).asInstanceOf[SparkV]
     (finalModel, history.toArray)
   }
 
@@ -359,19 +351,18 @@ object ADMM {
   private def wUpdate(wSum: PSVector,
                       subModels: RDD[(Int, Model)],
                       subModelNum: Int): PSVector = {
-    subModels.foreach { case (id, model) =>
-      println(s"id: $id x nnz: ${model.x.numNonzeros} u nnz: ${model.u.numNonzeros}")}
 
     def sumArray(x: Array[Double], y: Array[Double]): Array[Double] = {
       require(x.length == y.length)
       x.indices.toArray.map(index => x(index) + y(index))
     }
 
+    import com.tencent.angel.spark.linalg.{DenseVector => SONADV}
     subModels.mapPartitions { iter =>
       val sum = iter.map { case (index, model) =>
         sumArray(model.x.toArray, model.u.toArray)
       }.reduce((x1, x2) => sumArray(x1, x2))
-      wSum.toCache.increment(sum)
+      wSum.toCache.increment(new SONADV(sum))
       Iterator.empty
     }.count()
 
@@ -416,13 +407,13 @@ object ADMM {
   }
 
   private def getGlobalLoss(
-                             states: RDD[(Int, OneHotInstance)],
-                             zPS: PSVector,
-                             gradient: Gradient,
-                             updater: Updater,
-                             regParam: Double): Double = {
-    val localZ = new DenseVector(zPS.pull())
-    val featNum = localZ.size
+      states: RDD[(Int, OneHotInstance)],
+      zPS: PSVector,
+      gradient: Gradient,
+      updater: Updater,
+      regParam: Double): Double = {
+    val localZ = new DenseVector(zPS.pull.toDense.values)
+    val featNum = localZ.length
 
     // only for logistic regression, without using gradient.
     val dataLoss = states.map { case (id, point) =>
@@ -431,7 +422,11 @@ object ADMM {
       gradient.compute(feature, label, localZ)
     }.mean()
 
-    val regVal = updater.compute(localZ, Vectors.zeros(featNum), 0, 1, regParam)._2
+    import org.apache.spark.mllib.linalg.{DenseVector => MLDV}
+    val mlLocalZ = new MLDV(localZ.values)
+    val zeroGrad = new MLDV(new Array[Double](featNum.toInt))
+
+    val regVal = updater.compute(mlLocalZ, zeroGrad, 0, 1, regParam)._2
     dataLoss + regVal
   }
 
@@ -449,8 +444,8 @@ object ADMM {
                            primalTol: Double,
                            dualTol: Double): Boolean = {
 
-    val localLastZ = lastZ.pull()
-    val localZ = zPS.pull()
+    val localLastZ = lastZ.pull.toDense.values
+    val localZ = zPS.pull.toDense.values
 
     val featNum = localLastZ.length
     val t = models.map { case (_, subModel) =>
@@ -512,7 +507,7 @@ object ADMM {
       val n = weights.length
       val mlWeight = new DenseVector(weights.toArray)
 
-      gradientAndLoss = GradientAndLoss(Vectors.zeros(n).toDense, 0.0, 0)
+      gradientAndLoss = GradientAndLoss(new DenseVector(new Array[Double](n.toInt)), 0.0, 0)
       val threadPool = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
         new SynchronousQueue[Runnable])
       data.foreach { iter =>
@@ -521,7 +516,7 @@ object ADMM {
       threadPool.shutdown()
 
       // temp = x - z + u
-      val temp = mlWeight.copy
+      val temp = new DenseVector(mlWeight.values.clone())
       BLAS.axpy(-1, z, temp)
       BLAS.axpy(1, u, temp)
       val regLoss = 0.5 * rho * BLAS.dot(temp, temp)
@@ -537,8 +532,6 @@ object ADMM {
       BLAS.axpy(1.0 / gradientAndLoss.countSum, gradientAndLoss.gradSum, temp)
 
       val loss = gradientAndLoss.lossSum / gradientAndLoss.countSum + regLoss
-      println(s"repeat: $repeatTime loss: $loss(${gradientAndLoss.countSum}," +
-        s"${gradientAndLoss.lossSum}, $regLoss), gradient nonZero: ${temp.numNonzeros}")
 
       (loss, new BDV(temp.values))
     }
@@ -546,7 +539,7 @@ object ADMM {
 
   private def evaluate(dataSet: RDD[(Double, OneHotVector)], modelPS: PSVector): Double = {
     val scoreAndLabel = dataSet.map { case (label, feature) =>
-      val raw = OneHot.dot(feature, new DenseVector(modelPS.pull()))
+      val raw = BLAS.dot(feature, new DenseVector(modelPS.pull.toDense.values))
       val prob = 1.0 / (1.0 + math.exp(-1 * raw))
       (prob, label)
     }
@@ -557,9 +550,9 @@ object ADMM {
 
   private def evaluateState(states: RDD[(Int, OneHotInstance)], model: PSVector): Double = {
     val scoreAndLabel = states.mapPartitions { iter =>
-      val thisModel = new DenseVector(model.pull())
+      val thisModel = new DenseVector(model.pull.toDense.values)
       iter.map { case (id, instance) =>
-        val raw = OneHot.dot(instance.features, thisModel)
+        val raw = BLAS.dot(instance.features, thisModel)
         val prob = 1.0 / (1.0 + math.exp(-1 * raw))
         (prob, instance.label)
       }

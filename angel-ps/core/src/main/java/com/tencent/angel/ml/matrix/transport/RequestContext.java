@@ -16,6 +16,8 @@
 
 package com.tencent.angel.ml.matrix.transport;
 
+import com.tencent.angel.common.location.Location;
+import com.tencent.angel.ps.ParameterServerId;
 import io.netty.channel.Channel;
 import org.apache.commons.pool.impl.GenericObjectPool;
 
@@ -25,6 +27,17 @@ import org.apache.commons.pool.impl.GenericObjectPool;
 public class RequestContext {
   /** request last fime time */
   private long failedTs;
+
+  /** The server the request send to */
+  private volatile ParameterServerId serverId;
+
+  /**
+   * The actual PS that the request send to
+   */
+  private volatile ParameterServerId actualServerId;
+
+  /** The actual PS location */
+  private volatile Location location;
 
   /** netty channel allocated to this request */
   private volatile Channel channel;
@@ -102,7 +115,7 @@ public class RequestContext {
   /**
    * Set the netty channel pool for this request.
    * 
-   * @param GenericObjectPool<Channel> the netty channel pool for this request
+   * @param channelPool the netty channel pool for this request
    */
   public void setChannelPool(GenericObjectPool<Channel> channelPool) {
     this.channelPool = channelPool;
@@ -111,7 +124,7 @@ public class RequestContext {
   /**
    * Set the time ticks of waiting for request result.
    * 
-   * @param int the time ticks of waiting for request result
+   * @param waitTimeTicks the time ticks of waiting for request result
    */
   public void setWaitTimeTicks(int waitTimeTicks) {
     this.waitTimeTicks = waitTimeTicks;
@@ -120,9 +133,57 @@ public class RequestContext {
   /**
    * Increment wait time ticks.
    * 
-   * @param int increment value
+   * @param ticks increment value
    */
   public void addWaitTimeTicks(int ticks) {
     waitTimeTicks += ticks;
+  }
+
+  /**
+   * Get the ps that send the request
+   * @return the ps that send the request
+   */
+  public ParameterServerId getServerId() {
+    return serverId;
+  }
+
+  /**
+   * Set the ps that send the request
+   * @param serverId the ps that send the request
+   */
+  public void setServerId(ParameterServerId serverId) {
+    this.serverId = serverId;
+  }
+
+  /**
+   * Get the location of ps that send the request
+   * @return the location of ps that send the request
+   */
+  public Location getLocation() {
+    return location;
+  }
+
+  /**
+   * Set the location of ps that send the request
+   * @param location the location of ps that send the request
+   */
+  public void setLocation(Location location) {
+    this.location = location;
+  }
+
+  /**
+   * Get the actual PS that the request send to
+   * @return the actual PS that the request send to
+   */
+  public ParameterServerId getActualServerId() {
+    return actualServerId;
+  }
+
+  /**
+   * Set the actual PS that the request send to
+   * @param actualServerId the actual PS that the request send to
+   */
+  public void setActualServerId(ParameterServerId actualServerId) {
+    this.actualServerId = actualServerId;
   }
 }

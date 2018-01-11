@@ -54,6 +54,14 @@ public class MatricesCache {
   }
 
   /**
+   * Remove cache data for a matrix
+   * @param matrixId
+   */
+  public void remove(int matrixId) {
+    matricesCacheMap.remove(matrixId);
+  }
+
+  /**
    * Matrices cache sync thread.
    */
   class Syncer extends Thread {

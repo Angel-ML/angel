@@ -22,7 +22,7 @@ import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.TIntDoubleVector
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
-import com.tencent.angel.protobuf.generated.MLProtos.RowType
+import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
@@ -74,6 +74,6 @@ class SVMModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
 
 class SVMPredictResult(id: Double, pre: Double) extends PredictResult {
   override def getText():String = {
-    (id + separator + separator + format.format(pre))
+    (id + separator + format.format(pre))
   }
 }

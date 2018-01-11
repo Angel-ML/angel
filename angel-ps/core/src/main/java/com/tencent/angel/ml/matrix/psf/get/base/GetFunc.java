@@ -16,6 +16,8 @@
 
 package com.tencent.angel.ml.matrix.psf.get.base;
 
+import com.tencent.angel.ps.impl.PSContext;
+
 import java.util.List;
 
 /**
@@ -25,6 +27,9 @@ import java.util.List;
 public abstract class GetFunc {
   /** parameter of get udf */
   public final GetParam param;
+
+  /** PS context */
+  protected PSContext psContext;
 
   /**
    * Create a new DefaultGetFunc.
@@ -42,6 +47,14 @@ public abstract class GetFunc {
    */
   public GetParam getParam() {
     return param;
+  }
+
+  /**
+   * Set PS context
+   * @param psContext ps context
+   */
+  public void setPsContext(PSContext psContext) {
+    this.psContext = psContext;
   }
 
   /**

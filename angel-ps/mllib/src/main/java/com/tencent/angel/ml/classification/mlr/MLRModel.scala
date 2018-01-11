@@ -18,13 +18,14 @@
 package com.tencent.angel.ml.classification.mlr
 
 import java.util
+
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.DenseDoubleVector
+import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.ml.utils.Maths
-import com.tencent.angel.protobuf.generated.MLProtos.RowType
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory

@@ -18,10 +18,10 @@ package com.tencent.angel.ml.matrix.transport;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.protobuf.generated.MLProtos.RowType;
-import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.impl.matrix.ServerPartition;
 import com.tencent.angel.psagent.PSAgentContext;
+
+import com.tencent.angel.ml.matrix.RowType;
 
 /**
  * Get matrix partition rpc request.
@@ -31,12 +31,11 @@ public class GetPartitionRequest extends PartitionRequest {
   /**
    * Create a new GetPartitionRequest.
    *
-   * @param serverId parameter server id
    * @param partKey  matrix partition key
    * @param clock    clock value
    */
-  public GetPartitionRequest(ParameterServerId serverId, PartitionKey partKey, int clock) {
-    super(serverId, clock, partKey);
+  public GetPartitionRequest(PartitionKey partKey, int clock) {
+    super(clock, partKey);
   }
 
   /**

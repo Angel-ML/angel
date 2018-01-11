@@ -88,7 +88,7 @@ public class MatrixStorageManager {
    * 
    * @param matrixId matrix id
    * @param rowIndex row index
-   * @param TVector row
+   * @param row
    */
   public void addRow(int matrixId, int rowIndex, TVector row) {
     if (!matrixIdToStorageMap.containsKey(matrixId)) {

@@ -16,26 +16,15 @@
 
 package com.tencent.angel.ps.impl;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.tencent.angel.PartitionKey;
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ps.impl.matrix.ServerMatrix;
-import com.tencent.angel.ps.impl.matrix.ServerPartition;
-import com.tencent.angel.utils.HdfsUtil;
+import com.tencent.angel.model.output.format.ModelFilesConstent;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.util.Time;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -43,23 +32,24 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class MatrixCommitter {
   private static final Log LOG = LogFactory.getLog(MatrixCommitter.class);
-  private final ParameterServer ps;
   private final AtomicBoolean isCommitting = new AtomicBoolean(false);
+  private final PSContext context;
+  private volatile Thread commitRunner;
 
   /**
    * Create a new Matrix committer according to parameter server
    *
-   * @param ps the ps
+   * @param context the ps context
    */
-  public MatrixCommitter(ParameterServer ps) {
-    this.ps = ps;
+  public MatrixCommitter(PSContext context) {
+    this.context = context;
   }
 
   /**
    * For committing Parameter Server's matrices.
-   * @param matrixIds 
+   * @param matrixPartitions matrix id -> need save matrices map
    */
-  public void commit(final List<Integer> matrixIds) {
+  public void commit(Map<Integer, List<Integer>> matrixPartitions) {
     if (isCommitting.get()) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("ps is commiting......");
@@ -68,24 +58,33 @@ public class MatrixCommitter {
     }
     LOG.info("to start commit tasks!");
     isCommitting.set(true);
-    Thread commitRunner = new Thread(new Runnable() {
+    commitRunner = new Thread(new Runnable() {
       @Override
       public void run() {
         try {
           long startTime = System.currentTimeMillis();
-          PSContext.get().getMatrixPartitionManager().commit(matrixIds);
+          Configuration conf = context.getConf();
+          String outputPath = conf.get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH);
+          Path baseDir = new Path(new Path(outputPath, ModelFilesConstent.resultDirName), context.getPs().getServerId().toString());
+          context.getMatrixStorageManager().save(matrixPartitions, baseDir);
           isCommitting.set(false);
           LOG.info("commit matrices use time " + (System.currentTimeMillis() - startTime)  + " ms ");
-          ps.done();
+          context.getPs().done();
         } catch (Throwable x) {
           isCommitting.set(false);
           LOG.fatal("ps commit error ", x);
-          ps.failed("commit failed." + x.getMessage());
+          context.getPs().failed("commit failed." + x.getMessage());
         }
       }
     });
 
     commitRunner.setName("commit runner");
     commitRunner.start();
+  }
+
+  public void stop() {
+    if(commitRunner != null) {
+      commitRunner.interrupt();
+    }
   }
 }

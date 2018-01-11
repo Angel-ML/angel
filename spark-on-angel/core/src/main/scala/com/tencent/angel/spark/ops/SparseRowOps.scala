@@ -17,54 +17,80 @@
 package com.tencent.angel.spark.ops
 
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.math.vector.{DenseDoubleVector, SparseLongKeyDoubleVector}
-import com.tencent.angel.ml.matrix.psf.aggr.Pull
+import com.tencent.angel.ml.math.vector.SparseLongKeyDoubleVector
+import com.tencent.angel.ml.matrix.psf.aggr.enhance.ArrayAggrResult
+import com.tencent.angel.ml.matrix.psf.aggr.{Pull, PullWithCols}
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
 import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult
 import com.tencent.angel.ml.matrix.psf.update.SparsePush
 import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateFunc
 import com.tencent.angel.psagent.matrix.{MatrixClientFactory, ResponseType, Result}
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.models.vector.{PSVector, SparsePSVector}
+import com.tencent.angel.spark.linalg.SparseVector
+import com.tencent.angel.spark.models.vector.SparsePSVector
 
+
+/**
+ * SparseRowOps contains kinds of operations for sparse rows.
+ */
 class SparseRowOps {
 
-  def push(to: PSVector, pairs: Array[(Long, Double)]): Unit = {
-    to.assertValid()
-    val (indices, values) = pairs.unzip
-    update(to.poolId, new SparsePush(to.poolId, to.id, indices, values))
+  /**
+   * Pull a specific set of index from SparsePSVector
+   * @return SparseVector which contain (index, value) pairs
+   */
+  def pull(vector: SparsePSVector, indices: Array[Long]): SparseVector = {
+    vector.assertValid()
+    val rowResult = aggregate(vector.poolId, new PullWithCols(vector.poolId, vector.id, indices))
+        .asInstanceOf[ArrayAggrResult]
+
+    new SparseVector(vector.dimension, rowResult.getCols, rowResult.getResult)
   }
 
-  def pull(vector: PSVector, indices: Array[Long]): Array[(Long, Double)] = ???
-
-  def pull(vector: SparsePSVector): Array[(Long, Double)] = {
+  /**
+   * Pull a whole SparsePSVector to local.
+   */
+  def pull(vector: SparsePSVector): SparseVector = {
     vector.assertValid()
 
     val row = aggregate(vector.poolId, new Pull(vector.poolId, vector.id)).asInstanceOf[GetRowResult]
-    row.getRow match {
-      case vector: SparseLongKeyDoubleVector =>
-        val result = new Array[(Long, Double)](vector.size())
 
-        val iter = vector.getIndexToValueMap.long2DoubleEntrySet().fastIterator()
-        var index = 0
-        while (iter.hasNext) {
-          val entry = iter.next()
-          result(index) = Tuple2(entry.getLongKey, entry.getDoubleValue)
-          index += 1
-        }
-        result
+    row.getRow match {
+      case longKeyVector: SparseLongKeyDoubleVector =>
+        new SparseVector(longKeyVector.getLongDim, longKeyVector.getIndexToValueMap)
       case _ =>
         throw new Exception("only support SparseLongKeyDoubleVector")
     }
   }
 
-  def increment(vector: PSVector, pair: Array[(Long, Double)]): Unit = {
+  /**
+   * Push a local sparse vector to SparsePSVector.
+   * @param to is the PSVector to push
+   * @param local is the local sparse vector, that is (long, double) pairs
+   */
+  def push(to: SparsePSVector, local: SparseVector): Unit = {
+    to.assertValid()
+    update(to.poolId, new SparsePush(to.poolId, to.id, local.indices, local.values))
+  }
+
+  /**
+   * Increment a local sparse vector to SparsePSVector
+   * @param vector is the PSVector to increment
+   * @param local is the local sparse vector
+   */
+  def increment(vector: SparsePSVector, local: SparseVector): Unit = {
     vector.assertValid()
     import com.tencent.angel.ml.matrix.psf.common.{Increment => CommonIncrement}
-    val rows = Array.fill(pair.length)(vector.id)
-    val (cols, values) = pair.unzip
+    val rows = Array.fill(local.nnz)(vector.id)
 
-    update(vector.poolId, new CommonIncrement(vector.poolId, rows, cols, values))
+    update(vector.poolId, new CommonIncrement(vector.poolId, rows, local.indices, local.values))
+  }
+
+  private[spark] def increment(poolId: Int, vectorId: Int, local: SparseVector): Unit ={
+    import com.tencent.angel.ml.matrix.psf.common.{Increment => CommonIncrement}
+    val rows = Array.fill(local.nnz)(vectorId)
+
+    update(poolId, new CommonIncrement(poolId, rows, local.indices, local.values))
   }
 
   /**

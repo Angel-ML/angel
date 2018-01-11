@@ -29,32 +29,51 @@ import "ML.proto";
 
 message PSReportRequest {
   required PSAttemptIdProto psAttemptId = 1;
-  repeated MatrixReport matrixReports = 2;
-  optional string diagnostics = 3;
-  repeated Pair metrics = 4;
+  repeated MatrixReportProto matrixReports = 2;
+  required PSFailedReportsProto psFailedReports = 3;
+  optional string diagnostics = 4;
+  repeated Pair metrics = 5;
 }
 
-message MatrixReport{
+message MatrixReportProto{
   required int32 matrixId = 1;
   required string matrixName = 2;
-  required MatrixStatus status = 3;
+  repeated PartReportProto partReports = 4;
+}
+
+message PartReportProto {
+  required int32 partId = 1;
+  required int32 status = 2;
 }
 
 enum PSCommandProto {
-	PSCOMMAND_OK = 1;
-    PSCOMMAND_RESYNC = 2;
-    PSCOMMAND_SHUTDOWN = 3;
-    PSCOMMAND_REGISTER = 4;
-    PSCOMMAND_COMMIT = 5;
-    PSCOMMAND_INVALID = 6;    
+  PSCOMMAND_OK = 1;
+  PSCOMMAND_RESYNC = 2;
+  PSCOMMAND_SHUTDOWN = 3;
+  PSCOMMAND_REGISTER = 4;
+  PSCOMMAND_COMMIT = 5;
+  PSCOMMAND_INVALID = 6;
 }
 
 message PSReportResponse {
   required PSCommandProto psCommand = 1 [default = PSCOMMAND_OK];
-  repeated MatrixPartition needCreateMatrixIds = 2;
+  repeated MatrixMetaProto needCreateMatrices = 2;
   repeated int32 needReleaseMatrixIds = 3;
-  repeated int32 needCommitMatrixIds = 4;
-  optional ExecuteUnitDesc executeUnitDesc = 5;
+  repeated NeedSaveMatrixProto needSaveMatrices = 4;
+  repeated RecoverPartKeyProto needRecoverParts = 5;
+  optional ExecuteUnitDesc executeUnitDesc = 6;
+}
+
+message NeedSaveMatrixProto {
+  required int32 matrixId = 1;
+  repeated int32 partIds = 2;
+}
+
+message RecoverPartKeyProto {
+  required int32 matrixId = 1;
+  required int32 partId = 2;
+  required PSIdProto psId = 3;
+  required LocationProto loc = 4;
 }
 
 message ExecuteUnitDesc{
@@ -64,25 +83,6 @@ message ExecuteUnitDesc{
   required int32 activeWorkerNum = 4;
   required int32 totalTaskNum = 5;
   required int32 activeTaskNum = 6;
-}
-
-message GetMatrixPartitionRequest {
-  required PSAttemptIdProto psAttemptId = 1;
-}
-
-message MatrixPartition {
-  required int32 matrixId = 1;
-  required string matrixName = 2;
-  required int64 rowNum = 3;
-  required int64 colNum = 4;
-  required RowType rowType = 5;
-  repeated Partition partitions = 6;
-  repeated Pair configurations = 7;
-}
-
-message GetMatrixPartitionResponse {
-  required MatrixStatus matrixStatus = 1;
-  repeated MatrixPartition matrixPartitions = 2;
 }
 
 message PSRegisterRequest {
@@ -118,7 +118,6 @@ message GetExecuteUnitDescResponse{
 }
 
 message GetTaskMatrixClockRequest {
-  required PSAttemptIdProto psAttemptId = 1;
 }
 
 message TaskMatrixClock {
@@ -130,12 +129,31 @@ message GetTaskMatrixClockResponse {
   repeated TaskMatrixClock taskMatrixClocks = 1;
 }
 
+message GetIterationRequest {
+}
+
+message GetIterationResponse {
+  required int32 iteration = 1;
+}
+
+message GetPSMatricesMetaRequest {
+  required PSIdProto psId = 1;
+}
+
+message GetPSMatricesResponse {
+  repeated MatrixMetaProto matricesMeta = 1;
+}
+
 service PSMasterService {
   rpc psRegister(PSRegisterRequest) returns (PSRegisterResponse);
   rpc psReport(PSReportRequest) returns (PSReportResponse);
-  rpc getMatrixPartition(GetMatrixPartitionRequest) returns (GetMatrixPartitionResponse);
   rpc psDone(PSDoneRequest) returns (PSDoneResponse);
   rpc psError(PSErrorRequest) returns (PSErrorResponse);
   rpc getExecuteUnitDesc(GetExecuteUnitDescRequest) returns (GetExecuteUnitDescResponse);
   rpc getTaskMatrixClocks(GetTaskMatrixClockRequest) returns (GetTaskMatrixClockResponse);
+  rpc getAllPSLocation(GetAllPSLocationRequest) returns (GetAllPSLocationResponse);
+  rpc getPSLocation(GetPSLocationRequest) returns (GetPSLocationReponse);
+  rpc getPartLocation(GetPartLocationRequest) returns (GetPartLocationResponse);
+  rpc getIteration(GetIterationRequest) returns (GetIterationResponse);
+  rpc getPSMatricesMeta(GetPSMatricesMetaRequest) returns (GetPSMatricesResponse);
 }

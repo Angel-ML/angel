@@ -18,8 +18,7 @@
 package com.tencent.angel.ml.math.vector;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.protobuf.generated.MLProtos;
+import com.tencent.angel.ml.matrix.RowType;
 
 /**
  * Component double vector with long key. It contains a group of {@link SparseLongKeyDoubleVector},
@@ -79,7 +78,23 @@ public class CompSparseLongKeyDoubleVector extends CompLongKeyDoubleVector {
       if(vectors[i] != null) {
         clonedVectors[i] = (SparseLongKeyDoubleVector)vectors[i].clone();
       } else {
-        clonedVectors[i] = (SparseLongKeyDoubleVector)initComponentVector();
+        clonedVectors[i] = null;
+      }
+    }
+
+    CompSparseLongKeyDoubleVector clonedVector =
+      new CompSparseLongKeyDoubleVector(matrixId, rowId, dim, partKeys,
+        clonedVectors);
+    return clonedVector;
+  }
+
+  public CompSparseLongKeyDoubleVector cloneAndReset() {
+    SparseLongKeyDoubleVector[] clonedVectors = new SparseLongKeyDoubleVector[splitNum];
+    for(int i = 0; i < splitNum; i++) {
+      if(vectors[i] != null) {
+        clonedVectors[i] = (SparseLongKeyDoubleVector)initComponentVector(vectors[i].size());
+      } else {
+        clonedVectors[i] = null;
       }
     }
 
@@ -109,7 +124,7 @@ public class CompSparseLongKeyDoubleVector extends CompLongKeyDoubleVector {
     throw new UnsupportedOperationException("Unsupport operation: clone from " + vector.getClass().getSimpleName() + " to SparseLongKeyDoubleVector ");
   }
 
-  @Override public MLProtos.RowType getType() {
-    return MLProtos.RowType.T_DOUBLE_SPARSE_LONGKEY;
+  @Override public RowType getType() {
+    return RowType.T_DOUBLE_SPARSE_LONGKEY;
   }
 }

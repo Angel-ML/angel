@@ -17,7 +17,7 @@
 
 package com.tencent.angel.ps.impl.matrix;
 
-import com.tencent.angel.protobuf.generated.MLProtos;
+import com.tencent.angel.ml.matrix.RowType;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
@@ -57,8 +57,8 @@ public class ServerSparseDoubleLongKeyRow extends ServerRow{
     this(0, 0, 0);
   }
 
-  @Override public MLProtos.RowType getRowType() {
-    return MLProtos.RowType.T_DOUBLE_SPARSE_LONGKEY;
+  @Override public RowType getRowType() {
+    return RowType.T_DOUBLE_SPARSE_LONGKEY;
   }
 
   public Long2DoubleOpenHashMap getIndex2ValueMap() {
@@ -130,7 +130,7 @@ public class ServerSparseDoubleLongKeyRow extends ServerRow{
   }
 
   @Override
-  public void update(MLProtos.RowType rowType, ByteBuf buf, int size) {
+  public void update(RowType rowType, ByteBuf buf, int size) {
     try {
       lock.writeLock().lock();
       switch (rowType) {
@@ -208,6 +208,15 @@ public class ServerSparseDoubleLongKeyRow extends ServerRow{
       return super.bufferLen() + 4 + index2ValueMap.size() * 16;
     } finally {
       lock.readLock().unlock();
+    }
+  }
+
+  @Override public void reset() {
+    try {
+      lock.writeLock().lock();
+      index2ValueMap.clear();
+    } finally {
+      lock.writeLock().unlock();
     }
   }
 

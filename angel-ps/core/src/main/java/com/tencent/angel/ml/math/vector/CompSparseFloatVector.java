@@ -18,7 +18,7 @@
 package com.tencent.angel.ml.math.vector;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.protobuf.generated.MLProtos;
+import com.tencent.angel.ml.matrix.RowType;
 
 /**
  * Component sparse float vector. It contains a group of {@link SparseFloatVector},
@@ -72,8 +72,8 @@ public class CompSparseFloatVector extends CompTFloatVector {
     this(matrixId, rowIndex, dim, -1);
   }
 
-  @Override public MLProtos.RowType getType() {
-    return MLProtos.RowType.T_FLOAT_SPARSE_COMPONENT;
+  @Override public RowType getType() {
+    return RowType.T_FLOAT_SPARSE_COMPONENT;
   }
 
   @Override public CompSparseFloatVector clone() {

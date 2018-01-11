@@ -66,13 +66,13 @@ object AngelMapFunction {
     val e = aa.mapWithIndex(new Filter(2))
     val f = aa.zipMapWithIndex(b, new FilterZipAdd(2))
 
-    println("c: " + c.pull().mkString("Array(", ", ", ")"))
-    println("d: " + d.pull().mkString("Array(", ", ", ")"))
-    println("e: " + e.pull().mkString("Array(", ", ", ")"))
-    println("f: " + f.pull().mkString("Array(", ", ", ")"))
+    println("c: " + c.pull.toDense.values.mkString("Array(", ", ", ")"))
+    println("d: " + d.pull.toDense.values.mkString("Array(", ", ", ")"))
+    println("e: " + e.pull.toDense.values.mkString("Array(", ", ", ")"))
+    println("f: " + f.pull.toDense.values.mkString("Array(", ", ", ")"))
 
     val g = b.zipMap(c, d, new Zip3Add)
-    println("g: " + g.pull().mkString("Array(", ", ", ")"))
+    println("g: " + g.pull.toDense.values.mkString("Array(", ", ", ")"))
 
   }
 

@@ -17,38 +17,8 @@
 
 package com.tencent.angel.spark.ml.common
 
-import breeze.linalg.{DenseVector => BDV}
-import org.apache.spark.mllib.linalg.DenseVector
 
-import com.tencent.angel.spark.ml.common.OneHot.OneHotVector
-
-/**
- * One hot feature is used by sparse and high-dimension learning algorithm.
- */
-object OneHot {
-  type OneHotVector = Array[Int]
-
-  def axpy(a: Double, x: OneHotVector, y: DenseVector): Unit = {
-    // require(x.max < y.size)
-    x.foreach(index => y.values(index) = y(index) + a * 1)
-  }
-
-  def dot(x: OneHotVector, y: DenseVector): Double = {
-    x.map(index => y(index)).sum
-  }
-
-  def dot(x: DenseVector, y: OneHotVector): Double = dot(y, x)
-
-  def dot(x: OneHotVector, y: BDV[Double]): Double = {
-    x.map(index => y(index)).sum
-  }
-
-  def dot(x: OneHotVector, y: Array[Double]): Double = {
-    x.map(index => y(index)).sum
-  }
-
-
-}
+import com.tencent.angel.spark.linalg.{BLAS, OneHotVector, DenseVector}
 
 /**
  * Class used to compute the gradient for a loss function, given a single data point.
@@ -77,7 +47,7 @@ class LogisticGradient(numClasses: Int = 2) extends Gradient {
   override def compute(data: OneHotVector, label: Double, weights: DenseVector): Double = {
     numClasses match {
       case 2 =>
-        val margin = -1.0 * OneHot.dot(data, weights)
+        val margin = -1.0 * BLAS.dot(data, new DenseVector(weights.toArray))
         if (label > 0) {
           // The following is equivalent to log(1 + exp(margin)) but more numerically stable.
           log1pExp(margin)
@@ -93,12 +63,12 @@ class LogisticGradient(numClasses: Int = 2) extends Gradient {
                         label: Double,
                         weights: DenseVector,
                         cumGradient: DenseVector): Double = {
-    require(weights.size == cumGradient.size)
+    require(weights.length == cumGradient.length)
     numClasses match {
       case 2 =>
-        val margin = -1.0 * OneHot.dot(data, weights)
+        val margin = -1.0 * BLAS.dot(data, new DenseVector(weights.toArray))
         val multiplier = (1.0 / (1.0 + math.exp(margin))) - label
-        OneHot.axpy(multiplier, data, cumGradient)
+        BLAS.axpy(multiplier, data, new DenseVector(cumGradient.toArray))
         if (label > 0) {
           // The following is equivalent to log(1 + exp(margin)) but more numerically stable.
           log1pExp(margin)

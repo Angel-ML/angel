@@ -132,7 +132,7 @@ public class LinearRegLocalExample {
     String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
 
     // Set trainning data path
-    conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, inputPath);
+    conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
     // Set load model path
     conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model");
     // Set predict result path

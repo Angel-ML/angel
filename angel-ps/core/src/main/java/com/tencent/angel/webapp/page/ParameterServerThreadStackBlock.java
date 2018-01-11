@@ -20,7 +20,7 @@ import com.google.inject.Inject;
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.exception.UnvalidIdStrException;
 import com.tencent.angel.master.app.AMContext;
-import com.tencent.angel.master.psclient.PSClient;
+import com.tencent.angel.master.client.PSClient;
 import com.tencent.angel.ps.PSAttemptId;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

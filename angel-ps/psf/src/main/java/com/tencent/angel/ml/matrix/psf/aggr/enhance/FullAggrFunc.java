@@ -41,8 +41,7 @@ public abstract class FullAggrFunc extends GetFunc {
 
   @Override
   public PartitionGetResult partitionGet(PartitionGetParam partKey) {
-    ServerPartition part = PSContext.get().getMatrixPartitionManager()
-        .getPartition(partKey.getMatrixId(), partKey.getPartKey().getPartitionId());
+    ServerPartition part = psContext.getMatrixStorageManager().getPart(partKey.getMatrixId(), partKey.getPartKey().getPartitionId());
 
     double[][] result = null;
     if (part != null) {

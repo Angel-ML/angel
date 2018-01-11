@@ -16,7 +16,7 @@
 
 package com.tencent.angel.ml.matrix.transport;
 
-import com.tencent.angel.protobuf.generated.MLProtos.RowType;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.impl.matrix.*;
 import io.netty.buffer.ByteBuf;
 
@@ -108,7 +108,9 @@ public class GetRowSplitResponse extends Response {
       }
     }
 
-    rowSplit.deserialize(buf);
+    if(rowSplit != null) {
+      rowSplit.deserialize(buf);
+    }
   }
 
   @Override

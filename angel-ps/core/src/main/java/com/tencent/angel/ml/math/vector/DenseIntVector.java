@@ -16,19 +16,22 @@
 
 package com.tencent.angel.ml.math.vector;
 
+import com.tencent.angel.common.Serialize;
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.protobuf.generated.MLProtos;
+import com.tencent.angel.ml.matrix.RowType;
+import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import java.util.stream.IntStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
  * Dense int vector.
  */
-public class DenseIntVector extends TIntVector {
+public class DenseIntVector extends TIntVector implements Serialize{
 
   private final static Log LOG = LogFactory.getLog(DenseIntVector.class);
 
@@ -198,8 +201,8 @@ public class DenseIntVector extends TIntVector {
   }
 
   @Override
-  public MLProtos.RowType getType() {
-    return  MLProtos.RowType.T_INT_DENSE;
+  public RowType getType() {
+    return  RowType.T_INT_DENSE;
   }
 
   @Override
@@ -356,4 +359,27 @@ public class DenseIntVector extends TIntVector {
   public int size() {
     return values.length;
   }
+
+  @Override
+  public void serialize(ByteBuf buf) {
+    buf.writeInt(dim);
+    buf.writeInt(values.length);
+    IntStream.range(0, values.length).forEach(i -> buf.writeInt(values[i]));
+  }
+
+  @Override
+  public void deserialize(ByteBuf buf) {
+    int dim = buf.readInt();
+    int length = buf.readInt();
+    int[] data = new int[length];
+    IntStream.range(0, length).forEach(i -> data[i] = buf.readInt());
+    this.dim = dim;
+    this.values = data;
+  }
+
+  @Override
+  public int bufferLen() {
+    return 4 + 4 * values.length;
+  }
 }
+

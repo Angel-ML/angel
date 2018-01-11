@@ -116,4 +116,6 @@ class Tree extends Serializable {
     s"tree id: $id depth: $depth active node: ${getActiveNode.map(_.id).mkString(" ")}\n" +
     s"node: ${nodes.filter(n => n.id != -1).map(_.id).mkString(" ")}"
   }
+
+  def visualize: String = ???
 }

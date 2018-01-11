@@ -17,20 +17,21 @@
 
 package com.tencent.angel.spark.models.vector.enhanced
 
-import com.tencent.angel.spark.client.PSClient
-import com.tencent.angel.spark.models.vector.PSVector
+import com.tencent.angel.spark.models.vector.{ConcretePSVector, PSVector}
+import com.tencent.angel.spark.linalg.{BLAS, DenseVector, SparseVector, Vector}
+import com.tencent.angel.spark.models.vector.cache.{Local2RemoteOps, MergeType, PullMan, PushMan}
 
 /**
  * CachedPSVector implements a more efficient Vector, which can benefit multi tasks on one executor
  */
 
-private[spark] class CachedPSVector(component: PSVector) extends PSVectorDecorator(component) {
+private[spark] class CachedPSVector(component: ConcretePSVector) extends PSVectorDecorator(component) {
 
   override val dimension = component.dimension
   override val id  = component.id
   override val poolId  = component.poolId
 
-  def pullFromCache(): Array[Double] = {
+  def pullFromCache(): Vector = {
     PullMan.pullFromCache(this)
   }
 
@@ -38,28 +39,25 @@ private[spark] class CachedPSVector(component: PSVector) extends PSVectorDecorat
     * Increment a local dense Double array to PSVector
     * Notice: You should call `flushOne` to flushOne `mergedArray` result to PS nodes.
     */
-  def incrementWithCache(delta: Array[Double]): Unit = {
-    val mergedArray = PushMan.getFromIncrementCache(this)
-    PSClient.instance().BLAS.daxpy(this.dimension.toInt, 1.0, delta, 1, mergedArray, 1)
+  def incrementWithCache(delta: Vector): Unit = {
+    val mergedCache = PushMan.getFromIncrementCache(this)
+    BLAS.axpy(1.0, delta, mergedCache)
   }
 
   /**
     * Increment a local sparse Double array to PSVector
     * Notice: You should call `flushOne` to flushOne `mergedArray` result to PS nodes.
     */
-  def incrementWithCache(indices: Array[Int], values: Array[Double]): Unit = {
+  def incrementWithCache(indices: Array[Long], values: Array[Double]): Unit = {
     require(indices.length == values.length && indices.length <= this.dimension)
-    val mergedArray = PushMan.getFromIncrementCache(this)
-    var i = 0
-    for(indict <- indices){
-      mergedArray(indict) += values(i)
-      i += 1
-    }
+    incrementWithCache(new SparseVector(dimension, indices, values))
   }
 
-  def flushIncrement(): Unit = PushMan.flush(poolId, id, MergeType.INCREMENT)
-  def flushMax(): Unit = PushMan.flush(poolId, id, MergeType.MAX)
-  def flushMin(): Unit = PushMan.flush(poolId, id, MergeType.MIN)
+  def increment(local: Vector): Unit = {
+    this.assertValid()
+    require(this.dimension == local.length)
+    Local2RemoteOps.increment(this, local)
+  }
 
   // =======================================================================
   // Merge Operator
@@ -72,25 +70,14 @@ private[spark] class CachedPSVector(component: PSVector) extends PSVectorDecorat
   def mergeMaxWithCache(other: Array[Double]): Unit = {
     require(other.length == dimension)
     val mergedArray = PushMan.getFromMaxCache(this)
-    var i = 0
-      while (i < dimension) {
-        mergedArray(i) = math.max(mergedArray(i), other(i))
-        i += 1
-      }
-  }
 
-  /**
-   * Find the maximum number of each dimension for PSVector and local sparse array.
-   * Notice: You should call `flushOne` to flushOne `mergedArray` result to PS nodes.
-   */
-  def mergeMaxWithCache(indices: Array[Int], values: Array[Double]): Unit = {
-    require(indices.length == values.length && indices.length <= dimension)
-    val mergedArray = PushMan.getFromMaxCache(this)
-    var i = 0
-    while (i < indices.length) {
-      val index = indices(i)
-      mergedArray(index) = math.max(mergedArray(index), values(i))
-      i += 1
+    mergedArray match {
+      case dv: DenseVector =>
+        other.indices.foreach { i =>
+          if (other(i) > dv.values(i)) {
+            dv.values(i) = other(i)
+          }
+        }
     }
   }
 
@@ -98,36 +85,25 @@ private[spark] class CachedPSVector(component: PSVector) extends PSVectorDecorat
    * Find the maximum number of each dimension for PSVector and local sparse array, and flushOne to
    * PS nodes immediately
    */
-  def mergeMax(other: Array[Double]): Unit = {
-    PSClient.instance().vectorOps.mergeMax(this, other)
-  }
-
-  /**
-   * Find the maximum number of each dimension for PSVector and local dense array.
-   * Notice: You should call `flushOne` to flushOne `mergedArray` result to PS nodes.
-   */
-  def mergeMinWithCache(other: Array[Double]): Unit = {
-    require(other.length == dimension)
-    val mergedArray = PushMan.getFromMinCache(this)
-    var i = 0
-    while (i < mergedArray.length) {
-      mergedArray(i) = math.min(mergedArray(i), other(i))
-      i += 1
-    }
+  def mergeMax(other: Vector): Unit = {
+    Local2RemoteOps.mergeMax(this, other)
   }
 
   /**
    * Find the minimum number of each dimension for PSVector and local sparse array.
    * Notice: You should call `flushOne` to flushOne `mergedArray` result to PS nodes.
    */
-  def mergeMinWithCache(indices: Array[Int], values: Array[Double]): Unit = {
-    require(indices.length == values.length && indices.length <= dimension)
+  def mergeMinWithCache(other: Array[Double]): Unit = {
+    require(other.length == dimension)
     val mergedArray = PushMan.getFromMinCache(this)
-    var i = 0
-    while (i < indices.length) {
-      val index = indices(i)
-      mergedArray(index) = math.min(mergedArray(index), values(i))
-      i += 1
+
+    mergedArray match {
+      case dv: DenseVector =>
+        other.indices.foreach { i =>
+          if (other(i) < dv.values(i)) {
+            dv.values(i) = other(i)
+          }
+        }
     }
   }
 
@@ -135,12 +111,14 @@ private[spark] class CachedPSVector(component: PSVector) extends PSVectorDecorat
    * Find the minimum number of each dimension for PSVector and local dense array.
    * Notice: You should call `flushOne` to flushOne `mergedArray` result to PS nodes.
    */
-  def mergeMin(delta: Array[Double]): Unit = {
-    PSClient.instance().vectorOps.mergeMin(this, delta)
+  def mergeMin(delta: Vector): Unit = {
+    Local2RemoteOps.mergeMin(this, delta)
   }
 
+  def flushIncrement(): Unit = PushMan.flush(this.component, MergeType.INCREMENT)
+  def flushMax(): Unit = PushMan.flush(this.component, MergeType.MAX)
+  def flushMin(): Unit = PushMan.flush(this.component, MergeType.MIN)
+
   override def delete(): Unit = component.delete()
-
-
 }
 

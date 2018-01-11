@@ -43,8 +43,7 @@ public abstract class MultiAggrFunc extends GetFunc {
 
   @Override
   public PartitionGetResult partitionGet(PartitionGetParam partKey) {
-    ServerPartition part = PSContext.get().getMatrixPartitionManager()
-        .getPartition(partKey.getMatrixId(), partKey.getPartKey().getPartitionId());
+    ServerPartition part = psContext.getMatrixStorageManager().getPart(partKey.getMatrixId(), partKey.getPartKey().getPartitionId());
     int[] rowIds = ((MultiAggrParam.MultiPartitionAggrParam) partKey).getRowIds();
 
     double[] result = null;

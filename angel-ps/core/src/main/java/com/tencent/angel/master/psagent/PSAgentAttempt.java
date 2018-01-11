@@ -19,7 +19,7 @@ package com.tencent.angel.master.psagent;
 import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.RunningMode;
 import com.tencent.angel.common.AngelEnvironment;
-import com.tencent.angel.common.Location;
+import com.tencent.angel.common.location.Location;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.MasterService;
 import com.tencent.angel.master.app.AMContext;
@@ -767,6 +767,7 @@ public class PSAgentAttempt implements EventHandler<PSAgentAttemptEvent> {
       taskCredentials.writeTokenStorageToStream(containerTokens_dob);
       taskCredentialsBuffer =
           ByteBuffer.wrap(containerTokens_dob.getData(), 0, containerTokens_dob.getLength());
+      containerTokens_dob.close();
 
       InetSocketAddress listenAddr = masterService.getRPCListenAddr();
 

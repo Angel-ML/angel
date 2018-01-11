@@ -18,8 +18,8 @@ package com.tencent.angel.spark.ml.classification
 
 import breeze.linalg.DenseVector
 import breeze.optimize.{OWLQN => BrzOWLQN}
+
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.ml.common.OneHot.OneHotVector
 import com.tencent.angel.spark.ml.optimize.OWLQN
 import com.tencent.angel.spark.ml.sparse.SparseLogistic
 import com.tencent.angel.spark.ml.util.{ArgsUtil, DataLoader}
@@ -27,9 +27,9 @@ import com.tencent.angel.spark.models.vector.PSVector
 import com.tencent.angel.spark.models.vector.enhanced.BreezePSVector
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
-
 import scala.collection.mutable.ArrayBuffer
 
+import com.tencent.angel.spark.linalg.OneHotVector
 
 object SparseLRWithOWLQN {
 
@@ -51,24 +51,24 @@ object SparseLRWithOWLQN {
     if (updateType == "ps")
       PSContext.getOrCreate(spark.sparkContext)
 
-    val instances = DataLoader.loadOneHotInstance(input, partitionNum, sampleRate, -1).rdd
+    val tempInstances = DataLoader.loadOneHotInstance(input, partitionNum, sampleRate, -1).rdd
       .map { row =>
-        Tuple2(row.getAs[scala.collection.mutable.WrappedArray[Int]](1).toArray, row.getString(0).toDouble)
+        Tuple2(row.getAs[scala.collection.mutable.WrappedArray[Long]](1).toArray, row.getString(0).toDouble)
       }
+    val featLength = tempInstances.map { case (feature, label) => feature.max }.max() + 1
+    println(s"feat length: $featLength")
 
+    val instances = tempInstances.map { case (feat, label) => (new OneHotVector(featLength, feat), label)}
     instances.cache()
     println(s"instance num: ${instances.count()}")
-
-    val featLength = instances.map { case (feature, label) => feature.max }.max() + 1
-    println(s"feat length: $featLength")
 
     updateType match {
       case "spark" =>
         println(s"run spark OWLQN")
-        runOWLQN(instances, featLength, m, maxIter)
+        runOWLQN(instances, featLength.toInt, m, maxIter)
       case "ps" =>
         println(s"run Angel PS OWLQN")
-        runPSOWLQN(instances, featLength, m, maxIter)
+        runPSOWLQN(instances, featLength.toInt, m, maxIter)
       case _ => println(s"wrong update type: $updateType (spark or ps)")
     }
   }
@@ -96,10 +96,12 @@ object SparseLRWithOWLQN {
 
   def runPSOWLQN(trainData: RDD[(OneHotVector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
 
-    val initWeightPS = PSVector.dense(dim, 10 * m).toBreeze
-    val regPS = PSVector.duplicate(initWeightPS.component).toBreeze
+    val initWeightPS = PSVector.dense(dim, 4 * m).toBreeze
+
+    val regPS = PSVector.duplicate(initWeightPS).toBreeze
 
     val tol = 1e-6
+
     val owlqn = new OWLQN(maxIter, m, regPS, tol)
     val states = owlqn.iterations(SparseLogistic.PSCost(trainData), initWeightPS)
 
@@ -114,7 +116,7 @@ object SparseLRWithOWLQN {
       }
     }
     println(s"loss history: ${lossHistory.toArray.mkString(" ")}")
-    println(s"weights: ${weight.pull().take(10).mkString(" ")}")
+    println(s"weights: ${weight.pull.toDense.values.take(10).mkString(" ")}")
   }
 
 }

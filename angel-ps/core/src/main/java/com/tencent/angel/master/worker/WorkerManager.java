@@ -50,7 +50,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * Global worker manager, it manages all worker groups {@link com.tencent.angel.master.worker.workergroup.AMWorkerGroup}
  * and all workers {@link com.tencent.angel.master.worker.worker.AMWorker} in the application.
  */
-public class WorkerManager extends AbstractService implements EventHandler<WorkerManagerEvent> {
+public class WorkerManager implements EventHandler<WorkerManagerEvent> {
   private static final Log LOG = LogFactory.getLog(WorkerManager.class);
 
   private final AMContext context;
@@ -103,7 +103,6 @@ public class WorkerManager extends AbstractService implements EventHandler<Worke
   private boolean isInited = false;
 
   public WorkerManager(AMContext context) {
-    super(WorkerManager.class.getName());
     this.context = context;
     
     ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
@@ -147,21 +146,6 @@ public class WorkerManager extends AbstractService implements EventHandler<Worke
     successGroups = new HashSet<WorkerGroupId>();
     killedGroups = new HashSet<WorkerGroupId>();
     failedGroups = new HashSet<WorkerGroupId>();
-  }
-
-  @Override
-  protected void serviceStart() throws Exception {
-    super.serviceStart();
-  }
-
-  @Override
-  protected void serviceInit(Configuration conf) throws Exception {
-    super.serviceInit(conf);
-  }
-
-  @Override
-  protected void serviceStop() throws Exception {
-    super.serviceStop();
   }
 
   public AMWorkerGroup getWorkGroup(WorkerId workerId) {

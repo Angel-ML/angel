@@ -113,10 +113,11 @@ public class TaskContext {
    * @throws IOException
    */
   public MatrixMeta createMatrix(MatrixContext matrixContext, long timeOutMs)
-          throws ServiceException, TimeOutException, InterruptedException, IOException {
+    throws ServiceException, TimeOutException, InterruptedException, IOException,
+    ClassNotFoundException {
     MasterClient masterClient = WorkerContext.get().getPSAgent().getMasterClient();
-    MatrixMeta matrix = masterClient.createMatrix(matrixContext, timeOutMs);
-    return matrix;
+    masterClient.createMatrix(matrixContext, timeOutMs);
+    return masterClient.getMatrix(matrixContext.getName());
   }
   
   /**
@@ -129,7 +130,7 @@ public class TaskContext {
    */
   public MatrixMeta releaseMatrix(MatrixMeta matrix) throws ServiceException, InterruptedException {
     MasterClient masterClient = WorkerContext.get().getPSAgent().getMasterClient();
-    masterClient.releaseMatrix(matrix);
+    masterClient.releaseMatrix(matrix.getName());
     return matrix;
   }
   

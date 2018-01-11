@@ -26,7 +26,7 @@ import org.apache.hadoop.io.{LongWritable, Text}
 class SVMPredictTask(val ctx: TaskContext) extends PredictTask[LongWritable, Text](ctx) {
 
   def predict(ctx: TaskContext) {
-    predict(ctx, SVMModel(conf), taskDataBlock);
+    predict(ctx, SVMModel(ctx, conf), taskDataBlock);
   }
 
   def parse(key: LongWritable, value: Text): LabeledData = {

@@ -40,7 +40,7 @@ public class PSAttemptIdTest {
 
   @Test
   public void testGetParameterServerId() throws Exception {
-    assertEquals(psId, psAttemptId.getParameterServerId());
+    assertEquals(psId, psAttemptId.getPsId());
   }
 
   @Test

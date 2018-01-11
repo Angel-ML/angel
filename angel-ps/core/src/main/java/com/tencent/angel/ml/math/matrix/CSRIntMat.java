@@ -77,6 +77,11 @@ public class CSRIntMat extends TMatrix {
     throw new UnsupportedOperationException("Unsupport operation");
   }
 
+  //TODO Should be implemented
+  @Override public Object getRow(int rowIndex) {
+    return null;
+  }
+
   /**
    * convert to COOIntMatrix
    *

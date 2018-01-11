@@ -16,20 +16,23 @@
 
 package com.tencent.angel.ml.math.vector;
 
+import com.tencent.angel.common.Serialize;
 import com.tencent.angel.ml.math.TAbstractVector;
 import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.protobuf.generated.MLProtos;
+import com.tencent.angel.ml.matrix.RowType;
+import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import java.util.stream.IntStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
  * Dense double vector
  */
-public class DenseDoubleVector extends TIntDoubleVector {
+public class DenseDoubleVector extends TIntDoubleVector implements Serialize{
 
   private final static Log LOG = LogFactory.getLog(DenseDoubleVector.class);
   /**
@@ -84,6 +87,14 @@ public class DenseDoubleVector extends TIntDoubleVector {
       ret += this.values[i];
     }
     return ret;
+  }
+
+  @Override
+  public TIntDoubleVector elemUpdate(IntDoubleElemUpdater updater, ElemUpdateParam param) {
+    for (int i = 0; i < dim; i++) {
+      updater.action(i, values[i], param);
+    }
+    return this;
   }
 
   @Override
@@ -198,8 +209,8 @@ public class DenseDoubleVector extends TIntDoubleVector {
   }
 
   @Override
-  public MLProtos.RowType getType() {
-    return MLProtos.RowType.T_DOUBLE_DENSE;
+  public RowType getType() {
+    return RowType.T_DOUBLE_DENSE;
   }
 
   @Override
@@ -562,5 +573,27 @@ public class DenseDoubleVector extends TIntDoubleVector {
     for (int i = 0; i < dim; i++)
       values[i] *= x;
     return this;
+  }
+
+  @Override
+  public void serialize(ByteBuf buf) {
+    buf.writeInt(dim);
+    buf.writeInt(values.length);
+    IntStream.range(0,values.length).forEach(i->buf.writeDouble(values[i]));
+  }
+
+  @Override
+  public void deserialize(ByteBuf buf) {
+    int dim = buf.readInt();
+    int length = buf.readInt();
+    double[] data = new double[length];
+    IntStream.range(0,length).forEach(i->data[i] = buf.readDouble());
+    this.dim = dim;
+    this.values = data;
+  }
+
+  @Override
+  public int bufferLen() {
+    return 4 + 8 * values.length;
   }
 }

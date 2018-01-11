@@ -19,7 +19,7 @@ package com.tencent.angel.psagent.matrix.oplog.cache;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.math.vector.*;
-import com.tencent.angel.protobuf.generated.MLProtos;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.utils.Sort;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -276,7 +276,7 @@ public class RowUpdateSplitUtils {
       }
 
       RowUpdateSplit split =
-        new LongKeySparseDoubleRowUpdateSplit(rowId, MLProtos.RowType.T_DOUBLE_SPARSE_LONGKEY,
+        new LongKeySparseDoubleRowUpdateSplit(rowId, RowType.T_DOUBLE_SPARSE_LONGKEY,
           ii - length, ii, indices, values);
       ret.put(partitionOfVector.get(keyIndex), split);
 
@@ -318,7 +318,7 @@ public class RowUpdateSplitUtils {
     for(int i = 0; i < partKeys.length; i++) {
       if(partKeys[i] != null && splits[i] != null) {
         updateSplitMap.put(partKeys[i], new CompSparseDoubleLongKeyRowUpdateSplit((SparseLongKeyDoubleVector)splits[i],
-          vector.getRowId(), MLProtos.RowType.T_DOUBLE_SPARSE_LONGKEY));
+          vector.getRowId(), RowType.T_DOUBLE_SPARSE_LONGKEY));
       }
     }
 
@@ -333,7 +333,7 @@ public class RowUpdateSplitUtils {
     for(int i = 0; i < partKeys.length; i++) {
       if(partKeys[i] != null && splits[i] != null) {
         updateSplitMap.put(partKeys[i], new CompSparseDoubleRowUpdateSplit((SparseDoubleVector)splits[i],
-          vector.getRowId(), MLProtos.RowType.T_DOUBLE_SPARSE));
+          vector.getRowId(), RowType.T_DOUBLE_SPARSE));
       }
     }
 
@@ -348,7 +348,7 @@ public class RowUpdateSplitUtils {
     for(int i = 0; i < partKeys.length; i++) {
       if(partKeys[i] != null && splits[i] != null) {
         updateSplitMap.put(partKeys[i], new CompSparseFloatRowUpdateSplit((SparseFloatVector)splits[i],
-          vector.getRowId(), MLProtos.RowType.T_FLOAT_SPARSE));
+          vector.getRowId(), RowType.T_FLOAT_SPARSE));
       }
     }
 
@@ -363,7 +363,7 @@ public class RowUpdateSplitUtils {
     for(int i = 0; i < partKeys.length; i++) {
       if(partKeys[i] != null && splits[i] != null) {
         updateSplitMap.put(partKeys[i], new CompSparseIntRowUpdateSplit((SparseIntVector)splits[i],
-          vector.getRowId(), MLProtos.RowType.T_INT_SPARSE));
+          vector.getRowId(), RowType.T_INT_SPARSE));
       }
     }
 

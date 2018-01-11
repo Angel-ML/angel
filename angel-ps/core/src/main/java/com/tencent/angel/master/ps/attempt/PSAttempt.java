@@ -17,7 +17,7 @@
 package com.tencent.angel.master.ps.attempt;
 
 import com.tencent.angel.AngelDeployMode;
-import com.tencent.angel.common.Location;
+import com.tencent.angel.common.location.Location;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.app.InternalErrorEvent;
 import com.tencent.angel.master.deploy.ContainerAllocatorEvent;
@@ -221,10 +221,23 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
 
   private final StateMachine<PSAttemptStateInternal, PSAttemptEventType, PSAttemptEvent> stateMachine;
 
+  /**
+   * Init the Attempt for PS
+   * @param psId ps id
+   * @param attemptIndex attempt index
+   * @param amContext Master context
+   */
   public PSAttempt(ParameterServerId psId, int attemptIndex, AMContext amContext) {
     this(null, psId, attemptIndex, amContext);
   }
 
+  /**
+   * Init the Attempt for PS
+   * @param ip excepted host for this ps attempt
+   * @param psId ps id
+   * @param attemptIndex attempt index
+   * @param amContext Master context
+   */
   public PSAttempt(String ip, ParameterServerId psId, int attemptIndex, AMContext amContext) {
     this.expectedIp = ip;
     attemptId = new PSAttemptId(psId, attemptIndex);
@@ -394,7 +407,7 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
       psAttempt.location = registerEvent.getLocation();
       LOG.info(psAttempt.attemptId + " is registering, location: " + psAttempt.location);
       psAttempt.getContext().getLocationManager()
-          .setPSLocation(psAttempt.attemptId.getParameterServerId(), psAttempt.location);
+          .setPsLocation(psAttempt.attemptId.getPsId(), psAttempt.location);
     }
   }
 

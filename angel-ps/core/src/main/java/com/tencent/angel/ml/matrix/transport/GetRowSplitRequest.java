@@ -18,11 +18,10 @@ package com.tencent.angel.ml.matrix.transport;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.protobuf.generated.MLProtos.RowType;
-import com.tencent.angel.ps.ParameterServerId;
-import com.tencent.angel.ps.impl.matrix.ServerRow;
 import com.tencent.angel.psagent.PSAgentContext;
 import io.netty.buffer.ByteBuf;
+
+import com.tencent.angel.ml.matrix.RowType;
 
 /**
  * Get a row split rpc request.
@@ -37,14 +36,13 @@ public class GetRowSplitRequest extends PartitionRequest {
   /**
    * Create a new GetRowSplitRequest.
    *
-   * @param serverId parameter server id
    * @param clock    clock value
    * @param partKey  matrix partition key
    * @param rowIndex row index
    */
-  public GetRowSplitRequest(ParameterServerId serverId, int clock, PartitionKey partKey,
+  public GetRowSplitRequest(int clock, PartitionKey partKey,
     int rowIndex) {
-    super(serverId, clock, partKey);
+    super(clock, partKey);
     this.rowIndex = rowIndex;
   }
 
@@ -52,7 +50,7 @@ public class GetRowSplitRequest extends PartitionRequest {
    * Create a new GetRowSplitRequest.
    */
   public GetRowSplitRequest() {
-    this(null, 0, null, 0);
+    this(0, null, 0);
   }
 
   /**

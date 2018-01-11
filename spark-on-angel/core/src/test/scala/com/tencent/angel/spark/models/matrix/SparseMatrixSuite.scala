@@ -59,7 +59,7 @@ class SparseMatrixSuite extends PSFunSuite with SharedPSContext {
     }
 
     points.foreach { case (row, col, value) =>
-      assert(value == psMatrix(row)(col.toInt))
+      assert(value == psMatrix(row)(col))
     }
 
 

@@ -16,8 +16,7 @@
 
 package com.tencent.angel.ml.math;
 
-
-import com.tencent.angel.protobuf.generated.MLProtos;
+import com.tencent.angel.ml.matrix.RowType;
 
 /**
  * Vector is the Class operated by users.
@@ -75,7 +74,7 @@ public abstract class TAbstractVector extends TUpdate {
    *
    * @return the type
    */
-  public abstract MLProtos.RowType getType();
+  public abstract RowType getType();
 
   /**
    * Gets dimension,the represented length of vector

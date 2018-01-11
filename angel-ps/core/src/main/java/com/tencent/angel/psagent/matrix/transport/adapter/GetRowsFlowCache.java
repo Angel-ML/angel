@@ -78,7 +78,7 @@ public class GetRowsFlowCache extends PartitionResponseCache {
       return rowIndexToPartSizeCache.get(rowIndex);
     } else {
       int rowPartSize =
-          PSAgentContext.get().getMatrixPartitionRouter().getRowPartitionSize(matrixId, rowIndex);
+          PSAgentContext.get().getMatrixMetaManager().getRowPartitionSize(matrixId, rowIndex);
       rowIndexToPartSizeCache.put(rowIndex, rowPartSize);
       return rowPartSize;
     }

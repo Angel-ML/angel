@@ -75,10 +75,10 @@ public class SparseDoubleMatrixTest {
     assertEquals(matrix.get(0, 1), 0.0);
     assertEquals(matrix.get(1, 0), 0.0);
     assertEquals(matrix.get(1, 1), 2.0);
-    assertEquals(((SparseDoubleVector)matrix.getTVector(0)).get(0), 2.0);
-    assertEquals(((SparseDoubleVector)matrix.getTVector(0)).get(1), 0.0);
-    assertEquals(((SparseDoubleVector)matrix.getTVector(1)).get(0), 0.0);
-    assertEquals(((SparseDoubleVector)matrix.getTVector(1)).get(1), 2.0);
+    assertEquals(((SparseDoubleVector)matrix.getRow(0)).get(0), 2.0);
+    assertEquals(((SparseDoubleVector)matrix.getRow(0)).get(1), 0.0);
+    assertEquals(((SparseDoubleVector)matrix.getRow(1)).get(0), 0.0);
+    assertEquals(((SparseDoubleVector)matrix.getRow(1)).get(1), 2.0);
   }
 
   @Test

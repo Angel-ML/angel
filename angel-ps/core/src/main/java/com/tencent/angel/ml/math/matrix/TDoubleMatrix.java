@@ -21,7 +21,7 @@ import com.tencent.angel.ml.math.vector.TDoubleVector;
 /**
  * The double matrix.
  */
-public abstract class TDoubleMatrix extends RowbaseMatrix {
+public abstract class TDoubleMatrix<ROW extends TDoubleVector> extends RowbaseMatrix<ROW> {
 
   /**
    * Create a new double matrix.
@@ -29,8 +29,8 @@ public abstract class TDoubleMatrix extends RowbaseMatrix {
    * @param row the row
    * @param col the col
    */
-  public TDoubleMatrix(int row, int col) {
-    super(row, col);
+  public TDoubleMatrix(int row, int col,ROW[] vectors) {
+    super(row, col, vectors);
   }
 
   /**
@@ -45,7 +45,7 @@ public abstract class TDoubleMatrix extends RowbaseMatrix {
     if (vectors[rowIndex] == null) {
       vectors[rowIndex] = initVector(rowIndex);
     }
-    ((TDoubleVector)vectors[rowIndex]).plusBy(colIndex, value);
+    vectors[rowIndex].plusBy(colIndex, value);
     return this;
   }
 
@@ -63,7 +63,7 @@ public abstract class TDoubleMatrix extends RowbaseMatrix {
       if(vectors[rowIndexes[i]] == null) {
         vectors[rowIndexes[i]] = initVector(rowIndexes[i]);
       }
-      ((TDoubleVector)vectors[rowIndexes[i]]).plusBy(colIndexes[i], values[i]);
+      vectors[rowIndexes[i]].plusBy(colIndexes[i], values[i]);
     }
     return this;
   }
@@ -83,7 +83,7 @@ public abstract class TDoubleMatrix extends RowbaseMatrix {
     }
 
     for(int i = 0; i < colIndexes.length; i++) {
-      ((TDoubleVector)vectors[rowIndex]).plusBy(colIndexes[i], values[i]);
+      vectors[rowIndex].plusBy(colIndexes[i], values[i]);
     }
     return this;
   }
@@ -99,6 +99,6 @@ public abstract class TDoubleMatrix extends RowbaseMatrix {
     if(vectors[rowIndex] == null) {
       return 0.0;
     }
-    return ((TDoubleVector)vectors[rowIndex]).get(colIndex);
+    return vectors[rowIndex].get(colIndex);
   }
 }

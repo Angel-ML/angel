@@ -78,15 +78,15 @@ class GBDTLearner(@transient val param: GBTreeParam) extends Learner {
 
         growTree(currentTree, instances)
       }
-
       LOG.info(s"tree: $treeId grow finish, tree: ${currentTree.toString}")
-      println(s"tree: $treeId train error: ${gbtModel.evaluate(instances.map(_._2))} " +
-        s"validate error: ${gbtModel.evaluate(validateSet)}")
-
       updateLeafPred(currentTree)
       predictions = updateInstancePred(currentTree, predictions)
 
       forest.append(currentTree)
+
+      println(s"tree: $treeId train set ${param.loss.evalMetric}: " +
+        s"${gbtModel.evaluate(instances.sample(false, 0.1).map(_._2))} " +
+        s"validate set ${param.loss.evalMetric}: ${gbtModel.evaluate(validateSet)}")
 
       sampledFeatureBC.unpersist()
       sampledSketchBC.unpersist()
@@ -97,7 +97,7 @@ class GBDTLearner(@transient val param: GBTreeParam) extends Learner {
 
 
   private[gbt] def init(dataSet: RDD[Instance]): (RDD[(Long, Instance)], RDD[Instance]) = {
-    val validateFraction = 1.0 - param.validateFraction
+    val validateFraction = param.validateFraction
     val rdds = dataSet.randomSplit(Array(1.0 - validateFraction, validateFraction))
     val (trainSet, validateSet) = (rdds(0), rdds(1))
 
@@ -105,7 +105,8 @@ class GBDTLearner(@transient val param: GBTreeParam) extends Learner {
       .map(x => (x._2, x._1))
       .partitionBy(new HashPartitioner(param.partitionNum))
       .cache()
-    instances.count()
+    validateSet.cache()
+    LOG.info(s"train set size: ${instances.count()} validate set size: ${validateSet.count()}")
 
     val maxInstNum = instances.mapPartitions(iter => Iterator.single(iter.length)).max()
 
@@ -121,7 +122,8 @@ class GBDTLearner(@transient val param: GBTreeParam) extends Learner {
    */
   private[gbt] def createSketch(instances: RDD[(Long, Instance)]): Array[Array[Double]] = {
     val sketch = splitWithYahooSketch(instances, param.splitNum)
-
+//  fake sketch
+//  sketch = Range(0, param.featureNum).toArray.map(_ => Array(-0.5, 0.5))
     sketch
   }
 
@@ -185,7 +187,7 @@ class GBDTLearner(@transient val param: GBTreeParam) extends Learner {
 
       posInfoMat.push(pId, pos)
       // TODO: init a array sequence
-      val cols = instLayout.meta.getColNum.toInt
+      val cols = instLayout.columns.toInt
       instLayout.push(pId, (0 until cols).map(_.toDouble).toArray)
       Iterator.empty
     }
@@ -205,8 +207,9 @@ class GBDTLearner(@transient val param: GBTreeParam) extends Learner {
     val instanceGradRDD = instances.zip(prediction)
         .map { case ((instId1, instance), (instId2, pred)) =>
           require(instId1 == instId2)
-          val grad = loss.firstGradient(instance.label.toFloat, pred.toFloat)
-          val hess = loss.secondGradient(instance.label.toFloat, pred.toFloat)
+          val transPred = loss.transPred(pred.toFloat)
+          val grad = loss.firstGradient(instance.label.toFloat, transPred)
+          val hess = loss.secondGradient(instance.label.toFloat, transPred)
           (instId1, (grad.toDouble, hess.toDouble))
         }
     instanceGradRDD.cache()
@@ -250,22 +253,22 @@ class GBDTLearner(@transient val param: GBTreeParam) extends Learner {
     val gradHistMat = this.gradHistMatrix
     val gbtParam = this.paramBC
     println(tree.toString)
-    tree.forActive { node =>
-      val tempRDD = instances.zip(gradRDD)
-        .mapPartitionsWithIndex { case (pId, iter) =>
-          val instance2Grad = iter.map{ case ((instId1, inst), (instId2, grad)) =>
-            require(instId1 == instId2)
-            (instId1, inst, grad)
-          }.toArray
+    val tempRDD = instances.zip(gradRDD)
+      .mapPartitionsWithIndex { case (pId, iter) =>
+        val instance2Grad = iter.map { case ((instId1, inst), (instId2, grad)) =>
+          require(instId1 == instId2)
+          (instId1, inst, grad)
+        }.toArray
+        val nodePos = posInfoMat.pull(pId)
+        val instanceLayout = layoutMat.pull(pId)
+        val zeroIndex = sketchBC.value.map { sketch => Utils.findFValuePosition(sketch, 0.0) }
 
-          val nodePos = posInfoMat.pull(pId)
+        tree.forActive { node =>
           val nodeStart = nodePos(node.id * 2).toInt
           val nodeEnd = nodePos(node.id * 2 + 1).toInt
 
           if (nodeStart != -1 && nodeEnd != -1) {
-            val instanceLayout = layoutMat.pull(pId)
             val histogram = new Array[Double](gbtParam.value.sampledFeatNum * 2 * gbtParam.value.splitNum)
-            val zeroIndex = sketchBC.value.map { sketch => Utils.findFValuePosition(sketch, 0.0) }
 
             var gradSum = 0.0
             var hessSum = 0.0
@@ -308,13 +311,13 @@ class GBDTLearner(@transient val param: GBTreeParam) extends Learner {
               histogram(zeroHessIndex) += hessSum
             }
 
-            println(s"node id ${node.id}: ${histogram.mkString(" ")}")
+            println(s"node id ${node.id}: ${histogram.slice(0, 100).mkString(" ")}")
             gradHistMat.increment(node.id, histogram)
           }
-          Iterator.empty
+        }
+        Iterator.empty
       }
-      tempRDD.count()
-    }
+    tempRDD.count()
   }
 
   def findSplit(
@@ -331,7 +334,7 @@ class GBDTLearner(@transient val param: GBTreeParam) extends Learner {
       .mapPartitions { iter =>
         val nId = iter.next()
         require(!iter.hasNext, "each partition must only have one element")
-        val matrixId = gradHistMat.meta.getId
+        val matrixId = gradHistMat.id
         val func = new GBDTGradHistGetRowFunc(new HistAggrParam(matrixId, nId,
           thisParam.value.splitNum, thisParam.value.minChildWeight.toFloat,
           thisParam.value.regAlpha.toFloat, thisParam.value.regLambda.toFloat))
@@ -342,7 +345,7 @@ class GBDTLearner(@transient val param: GBTreeParam) extends Learner {
 
         if (splitEntry.fId != -1) {
           val trueSplitFid = sampledFeatureBC.value(splitEntry.fId)
-          val splitIndex = splitEntry.fValue.toInt
+          val splitIndex = splitEntry.fValue.toInt + 1
           val trueSplitValue = sampledSketchBC.value(splitEntry.fId)(splitIndex)
 
           splitEntry.fId = trueSplitFid
@@ -417,30 +420,28 @@ class GBDTLearner(@transient val param: GBTreeParam) extends Learner {
 
   private[gbt] def growTree(tree: Tree, instances: RDD[(Long, Instance)]): Unit = {
     val splitFeature = gbtModel.getSplitFeature(tree.id)
-    val splitValue = gbtModel.getSplitValue(tree.id)
     val nodesGradHess = gradHessMat.pull(tree.id)
 
     LOG.info(s"before grow, tree: ${tree.toString}")
 
+    // Update instance layout and position info
+    updateInstanceLayout(tree, instances)
     tree.getActiveNode.foreach { node =>
-
       if (splitFeature(node.id) != -1) {
-        updateInstanceLayout(tree, node.id, splitFeature(node.id), splitValue(node.id), instances)
-
         tree.addChildren(node.id)
+        val leftId = 2 * node.id + 1
+        val rightId = 2 * node.id + 2
+
         if (tree.depth >= param.maxDepth) {
           // set child node to leaf
-          val leftId = 2 * node.id + 1
-          val rightId = 2 * node.id + 2
-
           val leftGradStats = new GradStats(nodesGradHess(leftId * 2), nodesGradHess(leftId * 2 + 1))
           val rightGradStats = new GradStats(nodesGradHess(rightId * 2), nodesGradHess(rightId * 2 + 1))
 
           tree.setLeaf(leftId, leftGradStats.calcWeight(param))
           tree.setLeaf(rightId, rightGradStats.calcWeight(param))
         } else {
-          tree.setNodeActive(2 * node.id + 1)
-          tree.setNodeActive(2 * node.id + 2)
+          tree.setNodeActive(leftId)
+          tree.setNodeActive(rightId)
         }
       } else {
         // set node to leaf, and set node inactive
@@ -454,84 +455,90 @@ class GBDTLearner(@transient val param: GBTreeParam) extends Learner {
 
   private def updateInstanceLayout(
       tree: Tree,
-      nodeId: Int,
-      splitFeature: Int,
-      splitValue: Double,
       instances: RDD[(Long, Instance)]): Unit = {
 
-    val depth = tree.depth
+    val maxDepth = paramBC.value.maxDepth
 
-    if (splitFeature != -1 && depth < paramBC.value.maxDepth) {
-      val posInfoMat = this.instancePosInfoMat
-      val layoutMat = this.instanceLayoutMat
+    val posInfoMat = this.instancePosInfoMat
+    val layoutMat = this.instanceLayoutMat
+    val gbtModel = this.gbtModel
 
-      val tempRDD = instances.mapPartitionsWithIndex { case (pId, iter) =>
-        val dataSet = iter.toArray
-        val instancePos = posInfoMat.pull(pId).map(_.toInt)
-        val layout = layoutMat.pull(pId).map(_.toInt)
+    val tempRDD = instances.mapPartitionsWithIndex { case (pId, iter) =>
+      val dataSet = iter.toArray
+      val splitFeatures = gbtModel.getSplitFeature(tree.id)
+      val splitValues = gbtModel.getSplitValue(tree.id)
 
-        val startPos = instancePos(nodeId * 2)
-        val endPos = instancePos(nodeId * 2 + 1)
+      val instancePos = posInfoMat.pull(pId).map(_.toInt)
+      val layout = layoutMat.pull(pId).map(_.toInt)
 
-        var left = startPos
-        var right = endPos
+      tree.forActive { node =>
+        val nodeId = node.id
+        val splitFeature = splitFeatures(nodeId)
+        val splitValue = splitValues(nodeId)
 
-        while (left < right) {
-          // 1. left to right, find the first instance that should be in the right child
-          var leftInstIdx = layout(left)
-          var leftInstValue = dataSet(leftInstIdx)._2.feature(splitFeature)
+        if (splitFeature != -1 && tree.depth < maxDepth) {
 
-          while (leftInstValue <= splitValue && left < right) {
-            left += 1
-            leftInstIdx = layout(left)
-            leftInstValue = dataSet(leftInstIdx)._2.feature(splitFeature)
+          val startPos = instancePos(nodeId * 2)
+          val endPos = instancePos(nodeId * 2 + 1)
+
+          var left = startPos
+          var right = endPos
+
+          while (left < right) {
+            // 1. left to right, find the first instance that should be in the right child
+            var leftInstIdx = layout(left)
+            var leftInstValue = dataSet(leftInstIdx)._2.feature(splitFeature)
+
+            while (leftInstValue <= splitValue && left < right) {
+              left += 1
+              leftInstIdx = layout(left)
+              leftInstValue = dataSet(leftInstIdx)._2.feature(splitFeature)
+            }
+
+            // 2. right to left, find the first instance that should be in the left child
+            var rightInstIdx = layout(right)
+            var rightInstValue = dataSet(rightInstIdx)._2.feature(splitFeature)
+            while (rightInstValue > splitValue && right > left) {
+              right -= 1
+              rightInstIdx = layout(right)
+              rightInstValue = dataSet(rightInstIdx)._2.feature(splitFeature)
+            }
+
+            // 3. swap two instances
+            if (left < right) {
+              layout(left) = rightInstIdx
+              layout(right) = leftInstIdx
+            }
           }
 
-          // 2. right to left, find the first instance that should be in the left child
-          var rightInstIdx = layout(right)
-          var rightInstValue = dataSet(rightInstIdx)._2.feature(splitFeature)
-          while (rightInstValue > splitValue && right > left) {
-            right -= 1
-            rightInstIdx = layout(right)
-            rightInstValue = dataSet(rightInstIdx)._2.feature(splitFeature)
-          }
+          val currInstIdx = layout(left)
+          val currValue = dataSet(currInstIdx)._2.feature(splitFeature)
+          // the first instance that is larger than the split value
+          val cutPos = if (currValue >= splitValue) left - 1 else left
 
-          // 3. swap two instances
-          if (left < right) {
-            layout(left) = rightInstIdx
-            layout(right) = leftInstIdx
+          if (startPos <= cutPos || cutPos + 1 <= endPos) {
+            if (startPos <= cutPos) {
+              instancePos((2 * nodeId + 1) * 2) = startPos
+              instancePos((2 * nodeId + 1) * 2 + 1) = cutPos
+            }
+
+            if (cutPos + 1 <= endPos) {
+              instancePos((2 * nodeId + 2) * 2) = cutPos + 1
+              instancePos((2 * nodeId + 2) * 2 + 1) = endPos
+            }
+            posInfoMat.push(pId, instancePos.map(_.toDouble))
+            layoutMat.push(pId, layout.map(_.toDouble))
+          } else {
+            println(s"pId: $pId instances do not be split")
           }
+          println(s"pId: $pId position: ${instancePos.mkString(" ")}")
+          println(s"pId: $pId layout: ${layout.slice(0, 100).mkString(" ")}")
         }
-
-        val currInstIdx = layout(left)
-        val currValue = dataSet(currInstIdx)._2.feature(splitFeature)
-        // the first instance that is larger than the split value
-        val cutPos = if (currValue >= splitValue) left - 1 else left
-
-        if (startPos <= cutPos || cutPos + 1 <= endPos) {
-          if (startPos <= cutPos) {
-            instancePos((2 * nodeId + 1) * 2) = startPos
-            instancePos((2 * nodeId + 1) * 2 + 1) = cutPos
-          }
-
-          if (cutPos + 1 <= endPos) {
-            instancePos((2 * nodeId + 2) * 2) = cutPos + 1
-            instancePos((2 * nodeId + 2) * 2 + 1) = endPos
-          }
-          posInfoMat.push(pId, instancePos.map(_.toDouble))
-          layoutMat.push(pId, layout.map(_.toDouble))
-        } else {
-          println(s"pId: $pId instances do not be split")
-        }
-
-        println(s"pId: $pId position: ${instancePos.mkString(" ")}")
-        println(s"pId: $pId layout: ${layout.mkString(" ")}")
-        Iterator.empty
       }
-      tempRDD.count()
+      Iterator.empty
     }
+    tempRDD.count()
   }
-
 
   private def splitWithYahooSketch(
       instances: RDD[(Long, Instance)],

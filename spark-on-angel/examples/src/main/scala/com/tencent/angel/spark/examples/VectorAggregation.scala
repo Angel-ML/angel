@@ -27,6 +27,7 @@ import com.tencent.angel.spark.examples.util.Logistic
 import com.tencent.angel.spark.examples.util.SparkUtils._
 import com.tencent.angel.spark.models.vector.{DensePSVector, PSVector}
 import com.tencent.angel.spark.rdd.RDDPSFunctions._
+import com.tencent.angel.spark.linalg.{DenseVector => SONADV}
 
 /**
  * These are examples of RDDFunction.psAggregate and RDDFunction.foldLeft
@@ -60,10 +61,10 @@ object VectorAggregation {
     vecKey = PSVector.dense(dim)
     vec = vecKey.toCache
     result = data.psFoldLeft(vec) { (pv, bv) =>
-      pv.incrementWithCache(bv.toArray)
+      pv.incrementWithCache(new SONADV(bv.toArray))
       pv
     }
-    println("sum" + result.pullFromCache().mkString(", "))
+    println("sum" + result.pullFromCache().toDense.values.mkString(", "))
 
     vecKey.fill(Double.NegativeInfinity)
     vec = vecKey.toCache
@@ -71,7 +72,7 @@ object VectorAggregation {
       pv.mergeMaxWithCache(bv.toArray)
       pv
     }
-    println("max" + result.pullFromCache().mkString(", "))
+    println("max" + result.pullFromCache().toDense.values.mkString(", "))
 
     vecKey.fill(Double.PositiveInfinity)
     vec = vecKey.toCache
@@ -79,7 +80,7 @@ object VectorAggregation {
       pv.mergeMinWithCache(bv.toArray)
       pv
     }
-    println("min" + result.pullFromCache().mkString(", "))
+    println("min" + result.pullFromCache().toDense.values.mkString(", "))
 
   }
 

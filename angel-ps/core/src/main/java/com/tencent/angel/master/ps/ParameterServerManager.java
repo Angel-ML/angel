@@ -25,7 +25,10 @@ import com.tencent.angel.master.matrix.committer.AMMatrixCommitter;
 import com.tencent.angel.master.ps.ps.AMParameterServer;
 import com.tencent.angel.master.ps.ps.AMParameterServerEvent;
 import com.tencent.angel.master.ps.ps.AMParameterServerEventType;
+import com.tencent.angel.ml.matrix.transport.PSFailedReport;
+import com.tencent.angel.ml.matrix.transport.PSLocation;
 import com.tencent.angel.ps.ParameterServerId;
+import com.tencent.angel.ps.impl.ParameterServer;
 import com.tencent.angel.utils.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -92,8 +95,14 @@ public class ParameterServerManager extends AbstractService implements
   /**parameter server id to attempt index map, it use to master recover*/
   private final Map<ParameterServerId, Integer> psIdToAttemptIndexMap;
 
+  private final AMPSFailedReport report;
+
+  private Thread failedChecker;
+
+  private final AtomicBoolean stopped = new AtomicBoolean(false);
+
   public ParameterServerManager(AMContext context, Map<ParameterServerId, Integer> psIdToAttemptIndexMap) {
-    super(ParameterServerManager.class.getName());
+    super("PS Manager");
     this.context = context;
     this.psIdToAttemptIndexMap = psIdToAttemptIndexMap;
     Configuration conf = context.getConf();
@@ -124,8 +133,8 @@ public class ParameterServerManager extends AbstractService implements
     priority = RecordFactoryProvider.getRecordFactory(null).newRecordInstance(Priority.class);
     priority.setPriority(psPriority);
 
-    psMap = new HashMap<ParameterServerId, AMParameterServer>();
-    committedPs = new HashSet<ParameterServerId>();
+    psMap = new HashMap<>();
+    committedPs = new HashSet<>();
 
     String outputPathStr = conf.get(AngelConf.ANGEL_JOB_OUTPUT_PATH);
     String tmpOutputPathStr = conf.get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH);
@@ -133,20 +142,55 @@ public class ParameterServerManager extends AbstractService implements
     tmpOutputPath = new Path(tmpOutputPathStr);
 
     canCommit = new AtomicBoolean(false);
+    report = new AMPSFailedReport();
+  }
+
+  @Override
+  protected void serviceStart() throws Exception  {
+    int limit = Math.max(context.getConf().getInt(
+      AngelConf.ANGEL_WORKERGROUP_NUMBER, AngelConf.DEFAULT_ANGEL_WORKERGROUP_NUMBER)
+      * context.getConf().getInt(
+        AngelConf.ANGEL_WORKER_TASK_NUMBER, AngelConf.DEFAULT_ANGEL_WORKER_TASK_NUMBER), 1024);
+
+    failedChecker = new Thread(() -> {
+      while (!stopped.get() && !Thread.interrupted()) {
+        try {
+          Thread.sleep(5000);
+          Map<PSLocation, Integer> failedPSCounters = report.getFailedPS(limit);
+          for(PSLocation psLoc : failedPSCounters.keySet()) {
+            if(psLoc.loc.equals(context.getLocationManager().getPsLocation(psLoc.psId))) {
+              LOG.info("PS " + psLoc.psId + " network failed times over " + limit + ", just restart it");
+              restartPS(psLoc.psId);
+            }
+          }
+        } catch (Throwable e) {
+          if(!stopped.get()) {
+            LOG.error("check ps failed information failed ", e);
+          }
+        }
+      }
+    });
+    failedChecker.setName("psfailed-checker");
+    failedChecker.start();
   }
 
   @Override
   protected void serviceStop() throws Exception {
-    if (committer != null) {
-      committer.stop();
+    if(!stopped.getAndSet(true)) {
+      if (committer != null) {
+        committer.stop();
+      }
+
+      if(failedChecker != null) {
+        failedChecker.interrupt();
+      }
     }
-    super.serviceStop();
   }
 
   /**
-   * init and start parameter servers
+   * Init all PS
    */
-  public void startAllPS() {
+  public void init(){
     for (int i = 0; i < psNumber; i++) {
       ParameterServerId id = new ParameterServerId(i);
       AMParameterServer server = null;
@@ -160,8 +204,24 @@ public class ParameterServerManager extends AbstractService implements
         server.setNextAttemptNumber(psIdToAttemptIndexMap.get(id));
       }
       psMap.put(id, server);
-      server.handle(new AMParameterServerEvent(AMParameterServerEventType.PS_SCHEDULE, id));
     }
+  }
+
+  /**
+   * Start all PS
+   */
+  public void startAllPS() {
+    for(Map.Entry<ParameterServerId, AMParameterServer> entry : psMap.entrySet()) {
+      entry.getValue().handle(new AMParameterServerEvent(AMParameterServerEventType.PS_SCHEDULE, entry.getKey()));
+    }
+  }
+
+  /**
+   * Restart a ps
+   * @param psId ps id
+   */
+  public void restartPS(ParameterServerId psId) {
+    psMap.get(psId).restart();
   }
 
   /**
@@ -282,5 +342,13 @@ public class ParameterServerManager extends AbstractService implements
    */
   public List<Integer> getNeedCommitMatrixIds() {
     return needCommitMatrixIds;
+  }
+
+  /**
+   * Update ps failed counters
+   * @param counters ps failed counters
+   */
+  public void psFailedReports(Map<PSLocation, Integer> counters) {
+    report.psFailedReports(counters);
   }
 }

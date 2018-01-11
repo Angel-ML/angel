@@ -42,6 +42,7 @@ import org.apache.spark.util.random.XORShiftRandom
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.models.vector.PSVector
 import com.tencent.angel.spark.models.vector.enhanced.BreezePSVector
+import com.tencent.angel.spark.linalg.{DenseVector => SONADV}
 
 /**
   * Common params for KMeans and KMeansModel
@@ -173,7 +174,7 @@ class KMeans @Since("1.5.0")(@Since("1.5.0") override val uid: String)
     data.takeSample(false, $(k), new XORShiftRandom($(seed)).nextInt())
       .map(_.vector).distinct.map(v => {
       val initPSCenter = PSVector.duplicate(psVector)
-      initPSCenter.push(v.toArray)
+      initPSCenter.toDense.push(new SONADV(v.toArray))
       new PsVectorWithNorm(initPSCenter.toBreeze)
     })
   }
@@ -284,7 +285,7 @@ class KMeans @Since("1.5.0")(@Since("1.5.0") override val uid: String)
       initRandom(data, psVector)
     } else {
       initKMeansParallel(data).map { center=>
-        val psCenter = PSVector.duplicate(psVector).fill(center.vector.toArray)
+        val psCenter = PSVector.duplicate(psVector).push(new SONADV(center.vector.toArray))
         new PsVectorWithNorm(psCenter.toBreeze)
       }
     }
@@ -304,7 +305,7 @@ class KMeans @Since("1.5.0")(@Since("1.5.0") override val uid: String)
     // Execute iterations of Lloyd's algorithm until converged
     while (iteration < $(maxIter) && !converged) {
       val costAccum = sc.doubleAccumulator
-      val thisCenters = centers.map(center=>new VectorWithNorm(Vectors.dense(center.vector.pull()),center.norm))
+      val thisCenters = centers.map(center=>new VectorWithNorm(Vectors.dense(center.vector.pull.toDense.values),center.norm))
 
       // Find the sum and count of points mapping to each center
       val totalContribs = data.mapPartitions { points =>
@@ -337,7 +338,7 @@ class KMeans @Since("1.5.0")(@Since("1.5.0") override val uid: String)
         if (converged && KMeans.fastSquaredDistance(centers(j), newCenter) > $(tol) * $(tol)) {
           converged = false
         }
-        centers(j).vector.push(newCenter.vector.toArray)
+        centers(j).vector.toDense.push(new SONADV(newCenter.vector.toArray))
         centers(j) = new PsVectorWithNorm(centers(j).vector, newCenter.norm)
       }
 
@@ -363,7 +364,7 @@ class KMeans @Since("1.5.0")(@Since("1.5.0") override val uid: String)
         + " parent RDDs are also uncached.")
     }
 
-    val model = copyValues(new KMeansModel(uid, centers.map(center => Vectors.dense(center.vector.pull()))).setParent(this))
+    val model = copyValues(new KMeansModel(uid, centers.map(center => Vectors.dense(center.vector.pull.toDense.values))).setParent(this))
 
     centers.foreach(_.vector.delete())
     val summary = new KMeansSummary(
@@ -515,7 +516,7 @@ object KMeans extends DefaultParamsReadable[KMeans] {
 
   private[clustering] def fastSquaredDistance(center: PsVectorWithNorm,
                                               point: VectorWithNorm): Double = {
-    fastSquaredDistance(Vectors.dense(center.vector.pull()), center.norm, point.vector, point.norm)
+    fastSquaredDistance(Vectors.dense(center.vector.pull.toDense.values), center.norm, point.vector, point.norm)
   }
 
 
@@ -527,7 +528,7 @@ object KMeans extends DefaultParamsReadable[KMeans] {
 
   private[clustering] def fastSquaredDistance(center1: PsVectorWithNorm,
                                               center2: PsVectorWithNorm): Double = {
-    fastSquaredDistance(center1,new VectorWithNorm(Vectors.dense(center2.vector.pull()),center2.norm))
+    fastSquaredDistance(center1,new VectorWithNorm(Vectors.dense(center2.vector.pull.toDense.values), center2.norm))
   }
 
 
@@ -611,7 +612,6 @@ class KMeansModel private[ml](
       clusterCenters.map(v => new VectorWithNorm(v))
     }
   }
-
 
   @Since("2.0.0")
   override def transform(dataset: Dataset[_]): DataFrame = {

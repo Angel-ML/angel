@@ -19,7 +19,10 @@ package com.tencent.angel.spark.models.vector
 import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
 import com.tencent.angel.spark.models.vector.enhanced._
 import com.tencent.angel.spark.models.PSModel
+import com.tencent.angel.spark.linalg.Vector
 import org.apache.spark.SparkException
+
+import com.tencent.angel.spark.models.vector.cache.Local2RemoteOps
 
 /**
  * PSVector is a vector store on the PS nodes, and PSVectorProxy is the proxy of PSVector.
@@ -38,12 +41,14 @@ abstract class PSVector extends PSModel {
   val id: Int
   val dimension: Long
 
+  def pull: Vector = Local2RemoteOps.pull(this)
+
   /**
     * Generate a CachedPSVector for this PSVectorKey
     */
   def toCache: CachedPSVector = {
     assertValid()
-    new CachedPSVector(this)
+    new CachedPSVector(this.getComponent)
   }
 
   /**
@@ -51,19 +56,28 @@ abstract class PSVector extends PSModel {
     */
   def toBreeze: BreezePSVector = {
     assertValid()
-    new BreezePSVector(this)
+    new BreezePSVector(this.getComponent)
   }
 
-  def pull(): Array[Double]= {
-    psClient.vectorOps.pull(this)
+  /**
+   * Convert to DensePSVector
+   */
+  def toDense: DensePSVector = {
+    val component = getComponent
+    component match {
+      case dv: DensePSVector => dv
+      case _ => throw new RuntimeException("can not convert SparsePSVector to DensePSVector")
+    }
   }
 
-  def push(value: Array[Double]): Unit = {
-    psClient.vectorOps.push(this, value)
-  }
-
-  def increment(delta: Array[Double]): Unit = {
-    psClient.vectorOps.increment(this, delta)
+  /**
+   * Convert to SparsePSVector
+   */
+  def toSparse: SparsePSVector = {
+    getComponent match {
+      case sv: SparsePSVector => sv
+      case _ => throw new RuntimeException("can not convert DensePSVector to SparsePSVector")
+    }
   }
 
   def delete(): Unit = {
@@ -89,11 +103,19 @@ abstract class PSVector extends PSModel {
     s"poolId: $poolId vectorId: $id"
   }
 
+  private[spark] def getComponent: ConcretePSVector = {
+    this match {
+      case decorator: PSVectorDecorator => decorator.component
+      case concrete: ConcretePSVector => concrete
+    }
+  }
 
-  private[spark] def assertCompatible(other: PSVector): Unit = {
-    if (this.poolId != other.poolId) {
-      throw new SparkException("Operators can only " +
-        "be performed on vectors of the same pool!")
+  private[spark] def assertCompatible(others: PSVector*): Unit = {
+    for (other <- others) {
+      if (this.poolId != other.poolId) {
+        throw new SparkException("Operators can only " +
+          "be performed on vectors of the same pool!")
+      }
     }
   }
 
@@ -124,7 +146,7 @@ object PSVector {
     DensePSVector.apply(dim, capacity)
   }
 
-  def sparse(dim: Long, capacity: Int = 50): SparsePSVector = {
+  def sparse(dim: Long = -1, capacity: Int = 20): SparsePSVector = {
     SparsePSVector.apply(dim, capacity)
   }
 }

@@ -19,8 +19,8 @@ package com.tencent.angel.spark.models.vector
 
 import scala.util.Random
 
-import com.tencent.angel.spark.client.PSClient
-import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
+import com.tencent.angel.spark.context.PSContext
+import com.tencent.angel.spark.linalg.DenseVector
 import com.tencent.angel.spark.{PSFunSuite, SharedPSContext}
 
 class DensePSVectorSuite extends PSFunSuite with SharedPSContext {
@@ -44,7 +44,7 @@ class DensePSVectorSuite extends PSFunSuite with SharedPSContext {
   test("fill with value") {
     val dVector = PSVector.duplicate(_psVector).fill(3.14)
 
-    dVector.pull().foreach { element =>
+    dVector.pull.values.foreach { element =>
       assert(element == 3.14)
     }
   }
@@ -54,9 +54,9 @@ class DensePSVectorSuite extends PSFunSuite with SharedPSContext {
     val localArray = (0 until dim).toArray.map { i =>
       rand.nextDouble()
     }
-    val dVector = PSVector.duplicate(_psVector).fill(localArray)
+    val dVector = PSVector.duplicate(_psVector).push(new DenseVector(localArray))
 
-    val remoteArray = dVector.pull()
+    val remoteArray = dVector.pull
 
     (0 until dim).foreach { index =>
       assert(math.abs(remoteArray(index) - localArray(index)) < 1e-6)
@@ -67,7 +67,7 @@ class DensePSVectorSuite extends PSFunSuite with SharedPSContext {
     val dVector = PSVector.duplicate(_psVector).randomUniform(0.0, 1.0)
 
     var isCorrect = true
-    dVector.pull().foreach(x => if (x < 0.0 || x > 1.0) isCorrect = false )
+    dVector.pull.values.foreach(x => if (x < 0.0 || x > 1.0) isCorrect = false )
     assert(isCorrect)
   }
 
@@ -75,7 +75,7 @@ class DensePSVectorSuite extends PSFunSuite with SharedPSContext {
 
     val dVector = PSVector.dense(10000, 2).randomNormal(0.0, 1.0)
 
-    val array = dVector.pull()
+    val array = dVector.pull.values
     val mean = array.sum / array.length
     val variety = array.map(x => math.pow(x - mean, 2.0)).sum / (array.length - 1)
 

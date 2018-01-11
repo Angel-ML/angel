@@ -40,8 +40,8 @@ public class RegTDataStore {
   public List<SparseDoubleSortedVector> instances; // training instances
   public float[] labels; // label of each instances
   public float[] preds; // pred of each instance
-  public int[] rootIndex; // specified root index of each instances, can be used for multi task setting
-  public int[] groupPtr; // the index of begin and end of a group, needed when the learning task is ranking.
+  //public int[] rootIndex; // specified root index of each instances, can be used for multi task setting
+  //public int[] groupPtr; // the index of begin and end of a group, needed when the learning task is ranking.
   public float[] weights; // weights of each instances, optional
 
   public float[] baseWeights; // initial prediction to boost from.

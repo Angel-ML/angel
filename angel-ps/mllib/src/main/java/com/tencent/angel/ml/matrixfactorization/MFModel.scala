@@ -24,7 +24,7 @@ import com.tencent.angel.ml.matrixfactorization.MFModel._
 import com.tencent.angel.ml.matrixfactorization.threads.{ItemVec, UserVec}
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
-import com.tencent.angel.protobuf.generated.MLProtos.RowType
+import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration

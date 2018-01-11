@@ -16,7 +16,7 @@
 
 package com.tencent.angel.spark.context
 
-import com.tencent.angel.spark.models.vector.enhanced.PushMan
+import com.tencent.angel.spark.models.vector.cache.PushMan
 import com.tencent.angel.spark.models.vector.{PSVector, VectorType}
 import com.tencent.angel.spark.{PSFunSuite, SharedPSContext}
 

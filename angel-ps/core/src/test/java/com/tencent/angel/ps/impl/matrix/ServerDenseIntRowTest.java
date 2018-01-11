@@ -16,6 +16,7 @@
 
 package com.tencent.angel.ps.impl.matrix;
 
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -61,7 +62,7 @@ public class ServerDenseIntRowTest {
 
   @Test
   public void testGetRowType() throws Exception {
-    assertEquals(serverDenseIntRow.getRowType(), MLProtos.RowType.T_INT_DENSE);
+    assertEquals(serverDenseIntRow.getRowType(), RowType.T_INT_DENSE);
   }
 
   @Test
@@ -78,7 +79,7 @@ public class ServerDenseIntRowTest {
     buf.writeInt(-1);
     int newValue0 = buf.getInt(0) + serverDenseIntRow.getData().get(0);
     int newValue1 = buf.getInt(4) + serverDenseIntRow.getData().get(1);
-    serverDenseIntRow.update(MLProtos.RowType.T_INT_DENSE, buf, 3);
+    serverDenseIntRow.update(RowType.T_INT_DENSE, buf, 3);
     assertEquals(serverDenseIntRow.getData().get(0), newValue0, 0.000);
     assertEquals(serverDenseIntRow.getData().get(1), newValue1, 0.000);
     assertEquals(serverDenseIntRow.getData().get(2), -1, 0.000);
@@ -89,7 +90,7 @@ public class ServerDenseIntRowTest {
     buf.writeInt(1);
     buf.writeInt(2);
     buf.writeInt(-2);
-    serverDenseIntRow.update(MLProtos.RowType.T_INT_SPARSE, buf, 2);
+    serverDenseIntRow.update(RowType.T_INT_SPARSE, buf, 2);
     assertEquals(serverDenseIntRow.getData().get(0), 1, 0.000);
     assertEquals(serverDenseIntRow.getData().get(1), 0, 0.000);
     assertEquals(serverDenseIntRow.getData().get(2), -2, 0.000);
@@ -102,7 +103,7 @@ public class ServerDenseIntRowTest {
     buf.writeInt(0);
     buf.writeInt(1);
     buf.writeInt(2);
-    serverDenseIntRow.update(MLProtos.RowType.T_INT_DENSE, buf, 3);
+    serverDenseIntRow.update(RowType.T_INT_DENSE, buf, 3);
 
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
     serverDenseIntRow.writeTo(out);
@@ -120,7 +121,7 @@ public class ServerDenseIntRowTest {
     buf.writeInt(10);
     buf.writeInt(11);
     buf.writeInt(12);
-    serverDenseIntRow.update(MLProtos.RowType.T_INT_DENSE, buf, 3);
+    serverDenseIntRow.update(RowType.T_INT_DENSE, buf, 3);
 
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
     serverDenseIntRow.writeTo(out);
@@ -181,7 +182,7 @@ public class ServerDenseIntRowTest {
     buf.writeInt(10);
     buf.writeInt(11);
     buf.writeInt(12);
-    serverDenseIntRow.update(MLProtos.RowType.T_INT_DENSE, buf, 3);
+    serverDenseIntRow.update(RowType.T_INT_DENSE, buf, 3);
     int[] dataArray = {0, 1, 2, 3, 4};
     serverDenseIntRow.mergeTo(dataArray);
     assertEquals(dataArray[0], 10, 0.00);

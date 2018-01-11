@@ -18,7 +18,6 @@ package com.tencent.angel.ml.matrix.transport;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.psf.update.enhance.PartitionUpdateParam;
-import com.tencent.angel.ps.ParameterServerId;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -37,14 +36,13 @@ public class UpdaterRequest extends PartitionRequest {
   /**
    * Create a new UpdaterRequest.
    *
-   * @param serverId parameter server id
    * @param partKey matrix partition key
    * @param updaterFuncClass update udf function class name
    * @param partParam the partition parameter of the update udf
    */
-  public UpdaterRequest(ParameterServerId serverId, PartitionKey partKey, String updaterFuncClass,
+  public UpdaterRequest(PartitionKey partKey, String updaterFuncClass,
       PartitionUpdateParam partParam) {
-    super(serverId, 0, partKey);
+    super(0, partKey);
     this.updaterFuncClass = updaterFuncClass;
     this.partParam = partParam;
   }
@@ -53,7 +51,7 @@ public class UpdaterRequest extends PartitionRequest {
    * Create a new UpdaterRequest.
    */
   public UpdaterRequest() {
-    this(null, null, null, null);
+    this(null, null, null);
   }
 
 

@@ -165,6 +165,13 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
             AngelConf.DEFAULT_PS_MAX_ATTEMPTS);
   }
 
+  public void restart() {
+    if(runningPSAttemptId != null) {
+      getContext().getEventHandler().handle(
+        new PSAttemptEvent(PSAttemptEventType.PA_FAILMSG, runningPSAttemptId));
+    }
+  }
+
   private static class ScheduleTransition implements
       SingleArcTransition<AMParameterServer, AMParameterServerEvent> {
     @Override
@@ -197,6 +204,13 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
 
       //check whether the number of failed attempts is less than the maximum number of allowed
       if (parameterServer.failedAttempts.size() < parameterServer.maxAttempts) {
+        // Refresh ps location & matrix meta
+        LOG.info("PS " + parameterServer.getId() + " failed, modify location and metadata");
+        parameterServer.context.getLocationManager().setPsLocation(psAttemptId.getPsId(), null);
+        if(parameterServer.context.getPSReplicationNum() > 1) {
+          parameterServer.context.getMatrixMetaManager().psFailed(psAttemptId.getPsId());
+        }
+
         //start a new attempt for this ps
         parameterServer.addAndScheduleAttempt();
         return parameterServer.stateMachine.getCurrentState();
@@ -225,7 +239,7 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
     } finally {
       writeLock.unlock();
     }
-    getContext().getLocationManager().setPSLocation(id, null);
+    //getContext().getLocationManager().setPsLocation(id, null);
     getContext().getEventHandler().handle(
         new PSAttemptEvent(PSAttemptEventType.PA_SCHEDULE, attempt.getId()));
   }

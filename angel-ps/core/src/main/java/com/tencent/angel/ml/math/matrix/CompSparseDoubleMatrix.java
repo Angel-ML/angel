@@ -23,7 +23,7 @@ import com.tencent.angel.ml.math.vector.CompSparseDoubleVector;
 /**
  * Sparse double matrix that is represented by a group of component sparse double vector {@link CompSparseDoubleVector}
  */
-public class CompSparseDoubleMatrix extends TDoubleMatrix {
+public class CompSparseDoubleMatrix extends TDoubleMatrix<CompSparseDoubleVector> {
   /**
    * Create a ComponentSparseDoubleMatrix
    *
@@ -31,10 +31,10 @@ public class CompSparseDoubleMatrix extends TDoubleMatrix {
    * @param col row vector dimension
    */
   public CompSparseDoubleMatrix(int row, int col) {
-    super(row, col);
+    super(row, col, new CompSparseDoubleVector[row]);
   }
 
-  @Override public TVector initVector(int rowIndex) {
+  @Override public CompSparseDoubleVector initVector(int rowIndex) {
     return  new CompSparseDoubleVector(matrixId, rowIndex, (int)col);
   }
 }

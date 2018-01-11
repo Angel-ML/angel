@@ -44,9 +44,9 @@ public abstract class MFUpdateFunc extends UpdateFunc {
 
   @Override
   public void partitionUpdate(PartitionUpdateParam partParam) {
-    ServerPartition part = PSContext.get()
-        .getMatrixPartitionManager()
-        .getPartition(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
+    ServerPartition part = psContext
+        .getMatrixStorageManager()
+        .getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
 
     if (part != null) {
       MFUpdateParam.MFPartitionUpdateParam mf = (MFUpdateParam.MFPartitionUpdateParam) partParam;
@@ -79,7 +79,7 @@ public abstract class MFUpdateFunc extends UpdateFunc {
         doUpdate(sparseRows, func);
         return;
       default:
-        throw new RuntimeException("currently only supports Double Dense Row");
+        throw new RuntimeException("currently only supports Double Dense Row and Sparse LongKey Row");
     }
   }
 

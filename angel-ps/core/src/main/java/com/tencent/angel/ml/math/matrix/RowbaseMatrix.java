@@ -25,26 +25,18 @@ import java.util.Arrays;
 /**
  * The base class of Matrix that defined by a row vector list
  */
-public abstract class RowbaseMatrix extends TMatrix {
+public abstract class RowbaseMatrix<ROW extends TVector> extends TMatrix<ROW> {
   /* Row vectors of matrix */
-  protected final TVector[] vectors;
+  protected ROW[] vectors;
 
   /**
    * Build a RowbaseMatrix
    * @param row row number
    * @param col column number
    */
-  public RowbaseMatrix(int row, long col) {
+  public RowbaseMatrix(int row, long col, ROW[] vectors) {
     super(row, col);
-    vectors = new TVector[row];
-  }
-
-  /**
-   * Build a RowbaseMatrix
-   * @param row row number
-   */
-  public RowbaseMatrix(int row) {
-    this(row, -1);
+    this.vectors = vectors;
   }
 
   @Override
@@ -88,7 +80,11 @@ public abstract class RowbaseMatrix extends TMatrix {
    * @param rowIndex the row id
    * @return the vector if exists
    */
-  public TVector getTVector(int rowIndex) {
+  @Override
+  public ROW getRow(int rowIndex) {
+    if(vectors[rowIndex] == null) {
+      vectors[rowIndex] = initVector(rowIndex);
+    }
     return vectors[rowIndex];
   }
 
@@ -102,7 +98,7 @@ public abstract class RowbaseMatrix extends TMatrix {
     assert (col == other.getColNum());
     if(other instanceof RowbaseMatrix) {
       for (int i = 0; i < row; i++) {
-        plusBy(((RowbaseMatrix)other).getTVector(i));
+        plusBy(((RowbaseMatrix)other).getRow(i));
       }
       return this;
     } else {
@@ -134,5 +130,5 @@ public abstract class RowbaseMatrix extends TMatrix {
    * @param rowIndex row index
    * @return row vector
    */
-  public abstract TVector initVector(int rowIndex);
+  public abstract ROW initVector(int rowIndex);
 }

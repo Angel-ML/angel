@@ -18,11 +18,13 @@ package com.tencent.angel.spark.models.matrix
 
 import com.tencent.angel.ml.matrix.MatrixMeta
 import com.tencent.angel.spark.context.PSContext
+import com.tencent.angel.spark.linalg.SparseVector
+import com.tencent.angel.spark.models.vector.SparsePSVector
 
 class SparsePSMatrix(
+    id: Int,
     rows: Int,
-    columns: Long,
-    meta: MatrixMeta) extends PSMatrix(rows, columns, meta) {
+    columns: Long) extends PSMatrix(id, rows, columns) {
   /**
    * Update specific elements in Matrix.
     *
@@ -35,13 +37,16 @@ class SparsePSMatrix(
   def pull(): Array[(Int, Long, Double)] = ???
 
 
-//  override def pull(rowId: Int): Array[(Long, Double)] = ???
-
-  def nnz: Long = ???
-
+  def pull(rowId: Int): SparseVector = {
+    psClient.sparseRowOps.pull(getRow(rowId))
+  }
 
   def increment(pairs: Array[(Int, Long, Double)]): Unit = {
     psClient.matrixOps.increment(this, pairs)
+  }
+
+  private def getRow(rowId: Int): SparsePSVector = {
+    new SparsePSVector(id, rowId, columns)
   }
 }
 
@@ -50,6 +55,6 @@ object SparsePSMatrix {
 
   def apply(rows: Int, cols: Long): SparsePSMatrix = {
     val matrixMeta = psContext.createMatrix(rows, cols, MatrixType.SPARSE, -1, -1)
-    new SparsePSMatrix(rows, cols, matrixMeta)
+    new SparsePSMatrix(matrixMeta.getId, rows, cols)
   }
 }
