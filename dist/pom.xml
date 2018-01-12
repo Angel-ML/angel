@@ -29,6 +29,7 @@
 
   <artifactId>angel-dist</artifactId>
   <name>angel-dist</name>
+  <packaging>pom</packaging>
 
   <properties>
     <main.basedir>${project.parent.basedir}</main.basedir>
