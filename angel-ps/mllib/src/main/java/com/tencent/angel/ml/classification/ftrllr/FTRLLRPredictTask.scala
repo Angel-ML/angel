@@ -38,6 +38,4 @@ class FTRLLRPredictTask(ctx: TaskContext) extends PredictTask[LongWritable, Text
   def parse(key: LongWritable, value: Text): LabeledData = {
     dataParser.parse(value.toString)
   }
-
-
 }

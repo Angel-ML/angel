@@ -39,7 +39,6 @@ class SparseLRRunner extends MLRunner {
     * Using a model to predict with unobserved samples
     */
   override def predict(conf: Configuration): Unit = {
-    conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
     predict(conf, new SparseLRModel(conf), classOf[SparseLRPredictTask])
   }
 }

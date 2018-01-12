@@ -63,6 +63,11 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>angel-ps-serving</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>spark-on-angel-core</artifactId>
       <version>${project.version}</version>
     </dependency>

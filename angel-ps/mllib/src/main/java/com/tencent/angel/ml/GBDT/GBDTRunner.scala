@@ -36,9 +36,6 @@ class GBDTRunner extends MLRunner {
   var featureSampleRatio: Float = 0.0f
 
   override def train(conf: Configuration): Unit = {
-
-    conf.setInt("angel.worker.matrixtransfer.request.timeout.ms", 60000)
-
     var featNum = conf.getInt(MLConf.ML_FEATURE_NUM, 10000)
 
     val psNumber = conf.getInt(AngelConf.ANGEL_PS_NUMBER, 1)
@@ -55,7 +52,6 @@ class GBDTRunner extends MLRunner {
   }
 
   override def predict(conf: Configuration) {
-    conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
     super.predict(conf, GBDTModel(conf), classOf[GBDTPredictTask])
   }
 
@@ -63,7 +59,6 @@ class GBDTRunner extends MLRunner {
     * Incremental training job to obtain a model based on a trained model
     */
   override def incTrain(conf: Configuration): Unit = {
-    conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
     train(conf)
   }
 }

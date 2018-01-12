@@ -35,8 +35,6 @@ class SVMRunner extends MLRunner {
     * @param conf: configuration of algorithm and resource
     */
   override def train(conf: Configuration): Unit = {
-    conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
-
     train(conf, SVMModel(conf), classOf[SVMTrainTask])
   }
 
@@ -46,7 +44,6 @@ class SVMRunner extends MLRunner {
     * @param conf: configuration of algorithm and resource
     */
   override def predict(conf: Configuration): Unit = {
-    conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
     predict(conf, SVMModel(conf), classOf[SVMPredictTask])
   }
 
@@ -55,7 +52,6 @@ class SVMRunner extends MLRunner {
    * @param conf: configuration of algorithm and resource
    */
   def incTrain(conf: Configuration): Unit = {
-    conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
     conf.set(AngelConf.ANGEL_TASK_USER_TASKCLASS, classOf[SVMTrainTask].getName)
 
     // Create an angel job client

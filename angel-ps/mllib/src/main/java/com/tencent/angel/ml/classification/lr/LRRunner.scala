@@ -37,7 +37,6 @@ class LRRunner extends MLRunner {
     */
   override
   def train(conf: Configuration): Unit = {
-    conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
     val modelType = RowType.valueOf(conf.get(MLConf.LR_MODEL_TYPE, RowType.T_DOUBLE_SPARSE.toString))
     LOG.info("model type=" + modelType)
     modelType match {
@@ -56,7 +55,6 @@ class LRRunner extends MLRunner {
    */
   override
   def predict(conf: Configuration): Unit = {
-    conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
     super.predict(conf, LRModel(conf), classOf[LRPredictTask])
   }
   
@@ -65,7 +63,6 @@ class LRRunner extends MLRunner {
    * @param conf: configuration of algorithm and resource
    */
   def incTrain(conf: Configuration): Unit = {
-    conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
     val modelType = RowType.valueOf(conf.get(MLConf.LR_MODEL_TYPE, RowType.T_DOUBLE_SPARSE.toString))
     modelType match {
       case RowType.T_DOUBLE_SPARSE_LONGKEY | RowType.T_DOUBLE_SPARSE_LONGKEY_COMPONENT => {
