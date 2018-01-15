@@ -36,7 +36,7 @@
 	</modules>
 
 	<properties>
-		<spark.version>2.2.0</spark.version>
+		<spark.version>2.1.0</spark.version>
 		<PermGen>512m</PermGen>
 		<MaxPermGen>512m</MaxPermGen>
 		<CodeCacheSize>1024m</CodeCacheSize>
@@ -57,6 +57,12 @@
 			<scope>${dist.deps.scope}</scope>
 		</dependency>
 		<dependency>
+			<groupId>org.apache.spark</groupId>
+			<artifactId>spark-streaming-kafka-0-8_${scala.binary.version}</artifactId>
+      <version>${spark.version}</version>
+      <scope>${dist.deps.scope}</scope>
+		</dependency>
+		<dependency>
 			<groupId>com.tencent.angel</groupId>
 			<artifactId>angel-ps-core</artifactId>
 			<version>${project.version}</version>
@@ -73,12 +79,6 @@
 			<artifactId>scalatest_${scala.binary.version}</artifactId>
 			<version>${scalatest.version}</version>
 			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.spark</groupId>
-			<artifactId>spark-streaming-kafka-0-8_2.11</artifactId>
-			<version>2.2.0</version>
-			<scope>compile</scope>
 		</dependency>
 	</dependencies>
 
