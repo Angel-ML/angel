@@ -51,7 +51,7 @@ class GBDTLearnerSuite extends PSFunSuite with SharedPSContext with Serializable
     param.splitNum = 2
     param.featureSampleRate = 1.0
     param.maxDepth = 5
-    param.maxTreeNum = 5
+    param.maxTreeNum = 3
     param.minChildWeight = 0.1
     param.learningRate = 0.3
     param.validateFraction = 0.0
@@ -134,20 +134,7 @@ class GBDTLearnerSuite extends PSFunSuite with SharedPSContext with Serializable
   }
 
   test("grow tree") {
-    println(s"instance layout:")
-    instances.partitions.indices.foreach { pId =>
-      println(s"partition $pId position info: ${learner.instancePosInfoMat.pull(pId).mkString(" ")}")
-      println(s"partition $pId layout: ${learner.instanceLayoutMat.pull(pId).mkString(" ")}")
-    }
-
     learner.growTree(tree, instances)
-
-    println(s"instance layout:")
-    instances.partitions.indices.foreach { pId =>
-      println(s"partition $pId position info: ${learner.instancePosInfoMat.pull(pId).mkString(" ")}")
-      println(s"partition $pId layout: ${learner.instanceLayoutMat.pull(pId).mkString(" ")}")
-    }
-
     println(s"tree after grow: ${tree.toString}")
   }
 

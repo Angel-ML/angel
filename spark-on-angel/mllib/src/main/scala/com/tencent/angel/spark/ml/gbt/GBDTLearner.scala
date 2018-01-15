@@ -311,7 +311,7 @@ class GBDTLearner(@transient val param: GBTreeParam) extends Learner {
               histogram(zeroHessIndex) += hessSum
             }
 
-            println(s"node id ${node.id}: ${histogram.slice(0, 100).mkString(" ")}")
+            println(s"node id ${node.id}: ${histogram.slice(0, 10).mkString(" ")}")
             gradHistMat.increment(node.id, histogram)
           }
         }
@@ -531,8 +531,8 @@ class GBDTLearner(@transient val param: GBTreeParam) extends Learner {
           } else {
             println(s"pId: $pId instances do not be split")
           }
-          println(s"pId: $pId position: ${instancePos.mkString(" ")}")
-          println(s"pId: $pId layout: ${layout.slice(0, 100).mkString(" ")}")
+          println(s"pId: $pId position: ${instancePos.slice(0, 10).mkString(" ")}")
+          println(s"pId: $pId layout: ${layout.slice(0, 10).mkString(" ")}")
         }
       }
       Iterator.empty

@@ -26,8 +26,6 @@ abstract class PSMatrix(
     val rows: Int,
     val columns: Long) extends PSModel {
 
-  println(s"initialize ${this.toString}")
-
   private var deleted: Boolean = false
 
   def size: Long = rows * columns
