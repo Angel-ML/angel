@@ -138,10 +138,11 @@ class GBDTLearnerSuite extends PSFunSuite with SharedPSContext with Serializable
     println(s"tree after grow: ${tree.toString}")
   }
 
+  /**
   test("train") {
     param.loss = new LogisticLoss
     val gbtModel = learner.train(instances.map(_._2))
     println(s"gbt model ${gbtModel.toString}")
   }
-
+  */
 }
