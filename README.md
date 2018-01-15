@@ -2,7 +2,7 @@
 
 
 [![license](http://img.shields.io/badge/license-BSD3-blue.svg?style=flat)](https://github.com/tencent/angel/blob/master/LICENSE)
-[![Release Version](https://img.shields.io/badge/release-1.3.0-red.svg)](https://github.com/tencent/angel/releases)
+[![Release Version](https://img.shields.io/badge/release-1.4.0-red.svg)](https://github.com/tencent/angel/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/tencent/angel/pulls)
 
 [(English Documents Available)](./README_en.md)
@@ -59,7 +59,7 @@
 
 * **在线学习(Online Learning)**
 	* [FTRL](./docs/algo/ftrl_lr_spark.md)
-	
+
 
 ## Deployment
 
