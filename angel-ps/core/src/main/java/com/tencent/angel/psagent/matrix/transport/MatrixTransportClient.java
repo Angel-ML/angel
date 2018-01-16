@@ -1106,13 +1106,10 @@ public class MatrixTransportClient implements MatrixTransportInterface {
   }
 
   private void requestFailed(int seqId, Request request, ResponseType failedType, String errorLog) {
-    if(reporter == null) {
-      return;
-    }
-
     seqIdToRequestMap.remove(seqId);
     returnChannel(request);
-    if(failedType == ResponseType.NETWORK_ERROR || failedType == ResponseType.TIMEOUT && request.getContext().getActualServerId() != null) {
+    returnBuffer(request);
+    if(reporter != null && (failedType == ResponseType.NETWORK_ERROR || failedType == ResponseType.TIMEOUT && request.getContext().getActualServerId() != null)) {
       reporter.psFailed(new PSLocation(request.getContext().getActualServerId(), request.getContext().getLocation()));
     }
 
@@ -1256,6 +1253,14 @@ public class MatrixTransportClient implements MatrixTransportInterface {
                 AngelConf.DEFAULT_ANGEL_WORKER_TASK_NUMBER));
   }
 
+  private void returnBuffer(Request item) {
+    ByteBuf buf = item.getContext().getSerializedData();
+    if(buf != null) {
+      buf.release();
+      item.getContext().setSerializedData(null);
+    }
+  }
+
   private void returnChannel(Request item) {
     try {
       if (item.getContext().getChannelPool() != null && item.getContext().getChannel() != null) {
@@ -1323,12 +1328,6 @@ public class MatrixTransportClient implements MatrixTransportInterface {
      */
     private void sendRequest(int seqId, Request request) throws InterruptedException {
       long startTs = System.currentTimeMillis();
-
-      // allocate the bytebuf
-      ByteBuf buffer = ByteBufUtils.newByteBuf(request.bufferLen(), useDirectBuffer);
-      buffer.writeInt(seqId);
-      buffer.writeInt(request.getType().getMethodId());
-      request.serialize(buffer);
       if(!(request instanceof GetClocksRequest)) {
         LOG.debug("serialize request use time=" + (System.currentTimeMillis() - startTs));
       }
@@ -1393,6 +1392,13 @@ public class MatrixTransportClient implements MatrixTransportInterface {
         LOG.debug("request " + request + " with seqId=" + seqId + " get location use time " + (System.currentTimeMillis() - startTs));
       }
 
+      // allocate the bytebuf
+      ByteBuf buffer = ByteBufUtils.newByteBuf(request.bufferLen(), useDirectBuffer);
+      buffer.writeInt(seqId);
+      buffer.writeInt(request.getType().getMethodId());
+      request.serialize(buffer);
+      request.getContext().setSerializedData(buffer);
+
       // get a channel to server from pool
       Channel channel = null;
       GenericObjectPool<Channel> pool = null;
@@ -1431,6 +1437,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       request.getContext().setChannel(channel);
 
       startTs = System.currentTimeMillis();
+
       ChannelFuture cf = channel.writeAndFlush(buffer);
 
       if(!(request instanceof GetClocksRequest) && LOG.isDebugEnabled()) {
