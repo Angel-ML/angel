@@ -2,7 +2,7 @@
 
 
 [![license](http://img.shields.io/badge/license-BSD3-blue.svg?style=flat)](https://github.com/tencent/angel/blob/master/LICENSE)
-[![Release Version](https://img.shields.io/badge/release-1.3.0-red.svg)](https://github.com/tencent/angel/releases)
+[![Release Version](https://img.shields.io/badge/release-1.4.0-red.svg)](https://github.com/tencent/angel/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/tencent/angel/pulls)
 
 [(English Documents Available)](./README_en.md)
@@ -59,7 +59,7 @@
 
 * **在线学习(Online Learning)**
 	* [FTRL](./docs/algo/ftrl_lr_spark.md)
-	
+
 
 ## Deployment
 
@@ -88,3 +88,5 @@
 1. [Angel: A Machine Learning Framework for High Dimensionality](https://cdn.oreillystatic.com/en/assets/1/event/273/Angel_%E9%9D%A2%E5%90%91%E9%AB%98%E7%BB%B4%E5%BA%A6%E7%9A%84%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E8%AE%A1%E7%AE%97%E6%A1%86%E6%9E%B6%20_Angel_%20A%20machine%20learning%20framework%20for%20high%20dimensionality_%20%E8%AE%B2%E8%AF%9D.pdf).  Strata China, 2017
 
 2. [方圆并济：基于 Spark on Angel 的高性能机器学习](./docs/slides/Angel_QCon_2017.pdf).  QCon ShangHai China, 2017
+
+3. [基于Angel和Spark Streaming的高维度Online Learning](./docs/slides/Angel_GIAC_2017.pdf). GIAC China, 2017
