@@ -4,7 +4,7 @@
 
 * Linux任意发行版本,CentOS，Ubuntu等均可
 * Angel >= 1.3
-* Python >= 2.7 / 3.6（PyAngel支持2和3，但是建议3）
+* Python >= 2.7 / 3.6（PyAngel1.4支持python2，python1.4放弃对python2的支持，只支持python3）
 
 ## 编写和编译
 
