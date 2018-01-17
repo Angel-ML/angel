@@ -311,7 +311,6 @@ class GBDTLearner(@transient val param: GBTreeParam) extends Learner {
               histogram(zeroHessIndex) += hessSum
             }
 
-            println(s"node id ${node.id}: ${histogram.slice(0, 10).mkString(" ")}")
             gradHistMat.increment(node.id, histogram)
           }
         }
@@ -471,6 +470,7 @@ class GBDTLearner(@transient val param: GBTreeParam) extends Learner {
       val instancePos = posInfoMat.pull(pId).map(_.toInt)
       val layout = layoutMat.pull(pId).map(_.toInt)
 
+      import scala.util.control._
       tree.forActive { node =>
         val nodeId = node.id
         val splitFeature = splitFeatures(nodeId)
@@ -480,43 +480,46 @@ class GBDTLearner(@transient val param: GBTreeParam) extends Learner {
 
           val startPos = instancePos(nodeId * 2)
           val endPos = instancePos(nodeId * 2 + 1)
+          if (startPos != -1 && endPos != -1) { // no valid instances in this partition
+            var left = startPos
+            var right = endPos
 
-          var left = startPos
-          var right = endPos
+            while (left < right) {
+              // 1. left to right, find the first instance that should be in the right child
+              val loop = new Breaks
+              loop.breakable {
+                while (left < right) {
+                  val leftInstIdx = layout(left)
+                  val leftInstValue = dataSet(leftInstIdx)._2.feature(splitFeature)
+                  if (leftInstValue > splitValue) loop.break()
+                  left += 1
+                }
+              }
 
-          while (left < right) {
-            // 1. left to right, find the first instance that should be in the right child
-            var leftInstIdx = layout(left)
-            var leftInstValue = dataSet(leftInstIdx)._2.feature(splitFeature)
+              // 2. right to left, find the first instance that should be in the left child
+              loop.breakable {
+                while (left < right) {
+                  val rightInstIdx = layout(right)
+                  val rightInstValue = dataSet(rightInstIdx)._2.feature(splitFeature)
+                  if (rightInstValue <= splitValue) loop.break()
+                  right -= 1
+                }
+              }
 
-            while (leftInstValue <= splitValue && left < right) {
-              left += 1
-              leftInstIdx = layout(left)
-              leftInstValue = dataSet(leftInstIdx)._2.feature(splitFeature)
+              // 3. swap two instances
+              if (left < right) {
+                val temp = layout(left)
+                layout(left) = layout(right)
+                layout(right) = temp
+              }
             }
+            require(left == right, s"left == right, but left is $left right is $right, start is $startPos end is $endPos")
 
-            // 2. right to left, find the first instance that should be in the left child
-            var rightInstIdx = layout(right)
-            var rightInstValue = dataSet(rightInstIdx)._2.feature(splitFeature)
-            while (rightInstValue > splitValue && right > left) {
-              right -= 1
-              rightInstIdx = layout(right)
-              rightInstValue = dataSet(rightInstIdx)._2.feature(splitFeature)
-            }
+            val currInstIdx = layout(left)
+            val currValue = dataSet(currInstIdx)._2.feature(splitFeature)
+            // the first instance that is larger than the split value
+            val cutPos = if (currValue > splitValue) left - 1 else left
 
-            // 3. swap two instances
-            if (left < right) {
-              layout(left) = rightInstIdx
-              layout(right) = leftInstIdx
-            }
-          }
-
-          val currInstIdx = layout(left)
-          val currValue = dataSet(currInstIdx)._2.feature(splitFeature)
-          // the first instance that is larger than the split value
-          val cutPos = if (currValue >= splitValue) left - 1 else left
-
-          if (startPos <= cutPos || cutPos + 1 <= endPos) {
             if (startPos <= cutPos) {
               instancePos((2 * nodeId + 1) * 2) = startPos
               instancePos((2 * nodeId + 1) * 2 + 1) = cutPos
@@ -526,13 +529,10 @@ class GBDTLearner(@transient val param: GBTreeParam) extends Learner {
               instancePos((2 * nodeId + 2) * 2) = cutPos + 1
               instancePos((2 * nodeId + 2) * 2 + 1) = endPos
             }
+
             posInfoMat.push(pId, instancePos.map(_.toDouble))
             layoutMat.push(pId, layout.map(_.toDouble))
-          } else {
-            println(s"pId: $pId instances do not be split")
           }
-          println(s"pId: $pId position: ${instancePos.slice(0, 10).mkString(" ")}")
-          println(s"pId: $pId layout: ${layout.slice(0, 10).mkString(" ")}")
         }
       }
       Iterator.empty
