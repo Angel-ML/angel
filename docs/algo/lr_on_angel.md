@@ -33,21 +33,21 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Logistic 
 	* T为迭代次数
 
   
-* 模型格式支持稠密和稀疏
+* 模型格式支持稠密和稀疏，32 bit和64bit
 
 	> 目前支持`DoubleDense，DoubleSparse，DoubleSparseLongKey`三种格式，配置参数为 “ml.lr.model.type”
 
 	* **DoubleDense**
 		* 参数：T_DOUBLE_DENSE      
-		* 特点：适合特征比较稠密的数据。模型用数组存储，节省存储空间，访问速度快，性能高
+		* 特点：适合特征比较稠密的数据。模型用数组存储，节省存储空间，访问速度快，性能高。该选项为默认配置
 
 	* **DoubleSparse**
-		* 参数：T_DOUBLE_SPARSE
-		* 特点：适合特征稀疏度比较高的数据。模型用Map存储，K为特征ID，V为特征对应的值，K的范围为Int型值域
+		* 参数：T_DOUBLE_SPARSE 或者 T_DOUBLE_SPARSE_COMPNENT
+		* 特点：适合特征稀疏度比较高的数据。模型使用Map存储，K为特征ID，V为特征对应的值，K的范围为Int型值域。T_DOUBLE_SPARSE类型使用一个单一的Map来存储整个模型，适合模型非零值不是很多的场景；T_DOUBLE_SPARSE_COMPNENT使用多个较小的Map来表示整个模型，适合非零值较多的场景，在一些计算场景下可以使用多个子Map并行计算的方式加速稀疏型向量的计算， 同时可以降低超大Map给内存带来的压力
 
 	* **DoubleSparseLongKey**
-		* 参数：T_DOUBLE_SPARSE_LONGKEY
-		* 特点：Key可以到Long范围，适合特征稀疏度很高的数据。模型用Map存储，K为特征ID，V为对应的值，K的类型为Long型值域
+		* 参数：T_DOUBLE_SPARSE_LONGKEY 或者 T_DOUBLE_SPARSE_LONGKEY_COMPNENT
+		* 特点：Key可以到Long范围，适合特征稀疏度很高的数据。模型用Map存储，K为特征ID，V为对应的值，K的类型为Long型值域。T_DOUBLE_SPARSE_LONGKEY类型使用一个单一的Map来存储整个模型，适合模型非零值不是很多的场景；T_DOUBLE_SPARSE_LONGKEY_COMPNENT使用多个较小的Map来表示整个模型，适合非零值较多的场景，在一些计算场景下可以使用多个子Map并行计算的方式加速稀疏型向量的计算， 同时可以降低超大Map给内存带来的压力
 
 
 ## 3. 运行 & 性能
@@ -66,6 +66,7 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Logistic 
 	* ml.learn.decay：学习速率衰减系数   
 	* ml.reg.l2：L2惩罚项系数
 	* ml.lr.use.intercept：使用截距   
+	* ml.index.get.enable：是否使用基于index的模型获取，**true**表示使用index来获取模型的指定部分，**false**表示不使用，默认为**false**。 当模型稀疏度较高时，建议配置为**true**。当该选择配置为**true**时，在LR的训练数据预处理过程中，算法会自动记录训练数据中出现的特征的index，在获取模型时会根据这些index来获取模型
 
 * 输入输出参数
 	* angel.train.data.path：训练数据的输入路径
