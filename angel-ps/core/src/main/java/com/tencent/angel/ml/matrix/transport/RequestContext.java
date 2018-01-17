@@ -18,6 +18,7 @@ package com.tencent.angel.ml.matrix.transport;
 
 import com.tencent.angel.common.location.Location;
 import com.tencent.angel.ps.ParameterServerId;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import org.apache.commons.pool.impl.GenericObjectPool;
 
@@ -47,6 +48,9 @@ public class RequestContext {
 
   /** time ticks of waiting for request result, it used to check the request is timeout or not */
   private int waitTimeTicks;
+
+  /** Buf that save the serialized request */
+  private volatile ByteBuf serializedData;
 
   /**
    * Create a new RequestContext.
@@ -185,5 +189,21 @@ public class RequestContext {
    */
   public void setActualServerId(ParameterServerId actualServerId) {
     this.actualServerId = actualServerId;
+  }
+
+  /**
+   * Get the serialized request data buffer
+   * @return the serialized request data buffer
+   */
+  public ByteBuf getSerializedData() {
+    return serializedData;
+  }
+
+  /**
+   * Set the serialized request data buffer
+   * @param serializedData the serialized request data buffer
+   */
+  public void setSerializedData(ByteBuf serializedData) {
+    this.serializedData = serializedData;
   }
 }

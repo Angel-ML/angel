@@ -155,7 +155,7 @@ public abstract class AngelClient implements AngelClientInterface {
     }
 
     master.clientRegister(null, ClientRegisterRequest.newBuilder().setClientId(clientId).build());
-
+    stopped.set(false);
     hbThread = new Thread(() -> {
       while(!stopped.get() && !Thread.interrupted()) {
         try {
@@ -298,9 +298,11 @@ public abstract class AngelClient implements AngelClientInterface {
     nameToMatrixMap.clear();
     isExecuteFinished = false;
     isFinished = false;
+
     if(!stopped.getAndSet(true)) {
       if(hbThread != null) {
         hbThread.interrupt();
+        hbThread = null;
       }
     }
   }

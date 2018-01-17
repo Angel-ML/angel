@@ -1333,6 +1333,7 @@ public class MasterService extends AbstractService implements MasterProtocol {
 
   @Override public KeepAliveResponse keepAlive(RpcController controller, KeepAliveRequest request)
     throws ServiceException {
+    LOG.info("Client " + request.getClientId() + " is alive.");
     if(clientToLastHBTsMap.containsKey(request.getClientId())) {
       clientToLastHBTsMap.put(request.getClientId(), System.currentTimeMillis());
     }
@@ -1341,6 +1342,7 @@ public class MasterService extends AbstractService implements MasterProtocol {
 
   @Override public ClientRegisterResponse clientRegister(RpcController controller,
     ClientRegisterRequest request) throws ServiceException {
+    LOG.info("Client " + request.getClientId() + " register.");
     clientToLastHBTsMap.put(request.getClientId(), System.currentTimeMillis());
     return ClientRegisterResponse.getDefaultInstance();
   }
