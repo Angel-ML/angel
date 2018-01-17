@@ -66,6 +66,8 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Logistic 
 	* ml.learn.decay：学习速率衰减系数   
 	* ml.reg.l2：L2惩罚项系数
 	* ml.lr.use.intercept：使用截距   
+	* ml.lr.model.type 使用的模型类型，目前可支持32位和64位特征。 目前可以配置的模型类型为：T_DOUBLE_SPARSE（32 bit稀疏型double），T_DOUBLE_DENSE（32 bit稠密型double，改选项为默认配置），T_DOUBLE_SPARSE_LONGKEY（64 bit稀疏型double），T_DOUBLE_SPARSE_COMPNENT（32 bit稀疏型double，当模型非零值较多时，可以考虑使用该类型，可以减轻内存的压力）和 T_DOUBLE_SPARSE_LONGKEY_COMPNENT（64 bit稀疏型double，当模型非零值较多时，可以考虑使用该类型，可以减轻内存的压力）五种。当该选项配置为T_DOUBLE_SPARSE_LONGKEY和T_DOUBLE_SPARSE_LONGKEY_COMPNENT时，算法会自动按照64 bit index来解析训练数据。
+	* ml.index.get.enable：是否使用基于索引的模型获取，true表示使用特征index来获取模型的指定部分，false表示不使用，默认为false。 当模型系数度较高时，建议配置为true。在LR的预处理过程中，算法会自动记录训练数据中出现的特征的index。
 
 * 输入输出参数
 	* angel.train.data.path：训练数据的输入路径
