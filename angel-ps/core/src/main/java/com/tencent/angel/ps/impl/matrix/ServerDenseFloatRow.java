@@ -31,7 +31,7 @@ import java.util.Arrays;
 /**
  * The class represent dense float row on parameter server.
  */
-public class ServerDenseFloatRow extends ServerRow {
+public class ServerDenseFloatRow extends ServerFloatRow {
 
   private final static Log LOG = LogFactory.getLog(ServerDenseFloatRow.class);
   /** Byte array */
@@ -74,6 +74,10 @@ public class ServerDenseFloatRow extends ServerRow {
    */
   public ServerDenseFloatRow() {
     this(0, 0, 0, null);
+  }
+
+  @Override public float getValue(int index) {
+    return data.get(index - (int) startCol);
   }
 
   @Override

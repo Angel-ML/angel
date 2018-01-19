@@ -29,10 +29,10 @@ import java.io.IOException;
 /**
  * The class represent sparse int row on parameter server.
  */
-public class ServerSparseIntRow extends ServerRow {
+public class ServerSparseIntRow extends ServerIntRow {
 
   /** Index->value map */
-  private Int2IntOpenHashMap hashMap;
+  private Int2IntOpenHashMap data;
 
   /**
    * Create a ServerSparseIntRow
@@ -42,7 +42,7 @@ public class ServerSparseIntRow extends ServerRow {
    */
   public ServerSparseIntRow(int rowId, int startCol, int endCol) {
     super(rowId, startCol, endCol);
-    this.hashMap = new Int2IntOpenHashMap();
+    this.data = new Int2IntOpenHashMap();
   }
 
   /**
@@ -62,9 +62,9 @@ public class ServerSparseIntRow extends ServerRow {
     try {
       lock.readLock().lock();
       super.writeTo(output);
-      output.writeInt(hashMap.size());
+      output.writeInt(data.size());
 
-      ObjectIterator<Int2IntMap.Entry> iter = hashMap.int2IntEntrySet().fastIterator();
+      ObjectIterator<Int2IntMap.Entry> iter = data.int2IntEntrySet().fastIterator();
       Int2IntMap.Entry entry = null;
       while (iter.hasNext()) {
         entry = iter.next();
@@ -83,7 +83,7 @@ public class ServerSparseIntRow extends ServerRow {
       super.readFrom(input);
       int nnz = input.readInt();
       for (int i = 0; i < nnz; i++) {
-        hashMap.addTo(input.readInt(), input.readInt());
+        data.addTo(input.readInt(), input.readInt());
       }
     } finally {
       lock.writeLock().unlock();
@@ -94,7 +94,7 @@ public class ServerSparseIntRow extends ServerRow {
   public int size() {
     try {
       lock.readLock().lock();
-      return hashMap.size();
+      return data.size();
     } finally {
       lock.readLock().unlock();
     }
@@ -125,29 +125,29 @@ public class ServerSparseIntRow extends ServerRow {
   }
 
   private void resizeHashMap(int size) {
-    if(hashMap.size() < size) {
-      Int2IntOpenHashMap oldMap = hashMap;
-      hashMap = new Int2IntOpenHashMap(size);
-      hashMap.putAll(oldMap);
+    if(data.size() < size) {
+      Int2IntOpenHashMap oldMap = data;
+      data = new Int2IntOpenHashMap(size);
+      data.putAll(oldMap);
     }
   }
 
   private void updateIntDense(ByteBuf buf, int size) {
     resizeHashMap(size);
     for (int i = 0; i < size; i++) {
-      hashMap.addTo(i, buf.readInt());
+      data.addTo(i, buf.readInt());
     }
   }
 
   private void updateIntSparse(ByteBuf buf, int size) {
     resizeHashMap(size);
     for (int i = 0; i < size; i++) {
-      hashMap.addTo(buf.readInt(), buf.readInt());
+      data.addTo(buf.readInt(), buf.readInt());
     }
   }
 
   public Int2IntOpenHashMap getData() {
-    return hashMap;
+    return data;
   }
 
   @Override
@@ -155,9 +155,9 @@ public class ServerSparseIntRow extends ServerRow {
     try {
       lock.readLock().lock();
       super.serialize(buf);
-      buf.writeInt(hashMap.size());
+      buf.writeInt(data.size());
 
-      ObjectIterator<Int2IntMap.Entry> iter = hashMap.int2IntEntrySet().fastIterator();
+      ObjectIterator<Int2IntMap.Entry> iter = data.int2IntEntrySet().fastIterator();
       Int2IntMap.Entry entry = null;
       while (iter.hasNext()) {
         entry = iter.next();
@@ -175,11 +175,11 @@ public class ServerSparseIntRow extends ServerRow {
       lock.writeLock().lock();
       super.deserialize(buf);
       int elemNum = buf.readInt();
-      if (hashMap == null) {
-        hashMap = new Int2IntOpenHashMap(elemNum);
+      if (data == null) {
+        data = new Int2IntOpenHashMap(elemNum);
       }
       for (int i = 0; i < elemNum; i++) {
-        hashMap.put(buf.readInt(), buf.readInt());
+        data.put(buf.readInt(), buf.readInt());
       }
     } finally {
       lock.writeLock().unlock();
@@ -190,7 +190,7 @@ public class ServerSparseIntRow extends ServerRow {
   public int bufferLen() {
     try {
       lock.readLock().lock();
-      return super.bufferLen() + 4 + hashMap.size() * 8;
+      return super.bufferLen() + 4 + data.size() * 8;
     } finally {
       lock.readLock().unlock();
     }
@@ -199,7 +199,7 @@ public class ServerSparseIntRow extends ServerRow {
   @Override public void reset() {
     try {
       lock.writeLock().lock();
-      hashMap.clear();
+      data.clear();
     } finally {
       lock.writeLock().unlock();
     }
@@ -209,7 +209,7 @@ public class ServerSparseIntRow extends ServerRow {
     try {
       lock.writeLock().lock();
       for (int i = 0; i < size; i++) {
-        hashMap.addTo(i, buf.readInt());
+        data.addTo(i, buf.readInt());
       }
     } finally {
       lock.writeLock().unlock();
@@ -225,7 +225,7 @@ public class ServerSparseIntRow extends ServerRow {
     try {
       lock.writeLock().lock();
       for (int i = 0; i < size; i++) {
-        hashMap.addTo(buf.readInt(), buf.readInt());
+        data.addTo(buf.readInt(), buf.readInt());
       }
     } finally {
       lock.writeLock().unlock();
@@ -239,7 +239,7 @@ public class ServerSparseIntRow extends ServerRow {
   public void mergeTo(Int2IntOpenHashMap indexToValueMap) {
     try {
       lock.readLock().lock();
-      indexToValueMap.putAll(hashMap);
+      indexToValueMap.putAll(data);
     } finally {
       lock.readLock().unlock();
     }
@@ -255,13 +255,13 @@ public class ServerSparseIntRow extends ServerRow {
   public void mergeTo(int[] indexes, int[] values, int startPos, int len) {
     try {
       lock.readLock().lock();
-      int writeLen = len < hashMap.size() ? len : hashMap.size();
+      int writeLen = len < data.size() ? len : data.size();
       if (writeLen == 0) {
         return;
       }
 
       int index = 0;
-      ObjectIterator<Int2IntMap.Entry> iter = hashMap.int2IntEntrySet().fastIterator();
+      ObjectIterator<Int2IntMap.Entry> iter = data.int2IntEntrySet().fastIterator();
       Int2IntMap.Entry entry = null;
       while (iter.hasNext()) {
         entry = iter.next();
@@ -275,5 +275,9 @@ public class ServerSparseIntRow extends ServerRow {
     } finally {
       lock.readLock().unlock();
     }
+  }
+
+  @Override protected int getValue(int index) {
+    return data.get(index);
   }
 }

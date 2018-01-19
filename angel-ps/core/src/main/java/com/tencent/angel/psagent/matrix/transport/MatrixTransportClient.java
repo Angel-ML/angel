@@ -1397,10 +1397,14 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       }
 
       // allocate the bytebuf
+      startTs = System.currentTimeMillis();
       ByteBuf buffer = ByteBufUtils.newByteBuf(request.bufferLen(), useDirectBuffer);
       buffer.writeInt(seqId);
       buffer.writeInt(request.getType().getMethodId());
       request.serialize(buffer);
+      if(request instanceof GetUDFRequest) {
+        LOG.info("Serialize request use time=" + (System.currentTimeMillis() - startTs));
+      }
       request.getContext().setSerializedData(buffer);
 
       // get a channel to server from pool

@@ -33,7 +33,7 @@ import java.util.Map;
 /**
  * Sparse double vector partition with long key.
  */
-public class ServerSparseDoubleLongKeyRow extends ServerRow{
+public class ServerSparseDoubleLongKeyRow extends ServerLongKeyRow{
   private final static Log LOG = LogFactory.getLog(ServerSparseDoubleLongKeyRow.class);
 
   /** Index->Value map */
@@ -329,6 +329,37 @@ public class ServerSparseDoubleLongKeyRow extends ServerRow{
           return;
         }
       }
+    } finally {
+      lock.readLock().unlock();
+    }
+  }
+
+  @Override public void getValues(long[] indexes, ByteBuf buffer) {
+    try {
+      lock.readLock().lock();
+      int len = indexes.length;
+      for(int i = 0; i < len; i++) {
+        buffer.writeDouble(index2ValueMap.get(indexes[i]));
+      }
+    } finally {
+      lock.readLock().unlock();
+    }
+  }
+
+  /**
+   * Batch get values use indexes
+   * @param indexes elements indexes
+   * @return element values
+   */
+  public double[] getValues(long[] indexes) {
+    double [] values = new double[indexes.length];
+    try {
+      lock.readLock().lock();
+      int len = indexes.length;
+      for(int i = 0; i < len; i++) {
+        values[i] = index2ValueMap.get(indexes[i]);
+      }
+      return values;
     } finally {
       lock.readLock().unlock();
     }

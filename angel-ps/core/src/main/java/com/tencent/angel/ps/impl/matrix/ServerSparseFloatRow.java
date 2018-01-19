@@ -31,11 +31,11 @@ import java.io.IOException;
 /**
  * The class represent sparse float row on parameter server.
  */
-public class ServerSparseFloatRow extends ServerRow {
+public class ServerSparseFloatRow extends ServerFloatRow {
   private final static Log LOG = LogFactory.getLog(ServerSparseFloatRow.class);
 
   /** Index->value map */
-  private Int2FloatOpenHashMap hashMap;
+  private Int2FloatOpenHashMap data;
 
   /**
    * Create a ServerSparseFloatRow
@@ -45,7 +45,7 @@ public class ServerSparseFloatRow extends ServerRow {
    */
   public ServerSparseFloatRow(int rowId, int startCol, int endCol) {
     super(rowId, startCol, endCol);
-    hashMap = new Int2FloatOpenHashMap();
+    data = new Int2FloatOpenHashMap();
   }
 
   /**
@@ -55,13 +55,17 @@ public class ServerSparseFloatRow extends ServerRow {
     this(0, 0, 0);
   }
 
+  @Override public float getValue(int index) {
+    return data.get(index);
+  }
+
   @Override public void writeTo(DataOutputStream output) throws IOException {
     try {
       lock.readLock().lock();
       super.writeTo(output);
-      output.writeInt(hashMap.size());
+      output.writeInt(data.size());
 
-      ObjectIterator<Int2FloatMap.Entry> iter = hashMap.int2FloatEntrySet().fastIterator();
+      ObjectIterator<Int2FloatMap.Entry> iter = data.int2FloatEntrySet().fastIterator();
       Int2FloatMap.Entry entry = null;
       while (iter.hasNext()) {
         entry = iter.next();
@@ -79,7 +83,7 @@ public class ServerSparseFloatRow extends ServerRow {
       super.readFrom(input);
       int nnz = input.readInt();
       for (int i = 0; i < nnz; i++) {
-        hashMap.addTo(input.readInt(), input.readFloat());
+        data.addTo(input.readInt(), input.readFloat());
       }
     } finally {
       lock.writeLock().unlock();
@@ -89,7 +93,7 @@ public class ServerSparseFloatRow extends ServerRow {
   @Override public int size() {
     try {
       lock.readLock().lock();
-      return hashMap.size();
+      return data.size();
     } finally {
       lock.readLock().unlock();
     }
@@ -117,24 +121,24 @@ public class ServerSparseFloatRow extends ServerRow {
   }
 
   private void resizeHashMap(int size) {
-    if(hashMap.size() < size) {
-      Int2FloatOpenHashMap oldMap = hashMap;
-      hashMap = new Int2FloatOpenHashMap(size);
-      hashMap.putAll(oldMap);
+    if(data.size() < size) {
+      Int2FloatOpenHashMap oldMap = data;
+      data = new Int2FloatOpenHashMap(size);
+      data.putAll(oldMap);
     }
   }
 
   private void updateFloatDense(ByteBuf buf, int size) {
     resizeHashMap(size);
     for (int i = 0; i < size; i++) {
-      hashMap.addTo(i, buf.readFloat());
+      data.addTo(i, buf.readFloat());
     }
   }
 
   private void updateFloatSparse(ByteBuf buf, int size) {
     resizeHashMap(size);
     for (int i = 0; i < size; i++) {
-      hashMap.addTo(buf.readInt(), buf.readFloat());
+      data.addTo(buf.readInt(), buf.readFloat());
     }
   }
 
@@ -142,9 +146,9 @@ public class ServerSparseFloatRow extends ServerRow {
     try {
       lock.readLock().lock();
       super.serialize(buf);
-      buf.writeInt(hashMap.size());
+      buf.writeInt(data.size());
 
-      ObjectIterator<Int2FloatMap.Entry> iter = hashMap.int2FloatEntrySet().fastIterator();
+      ObjectIterator<Int2FloatMap.Entry> iter = data.int2FloatEntrySet().fastIterator();
       Int2FloatMap.Entry entry = null;
       while (iter.hasNext()) {
         entry = iter.next();
@@ -161,11 +165,11 @@ public class ServerSparseFloatRow extends ServerRow {
       lock.writeLock().lock();
       super.deserialize(buf);
       int elemNum = buf.readInt();
-      if (hashMap == null) {
-        hashMap = new Int2FloatOpenHashMap(elemNum);
+      if (data == null) {
+        data = new Int2FloatOpenHashMap(elemNum);
       }
       for (int i = 0; i < elemNum; i++) {
-        hashMap.put(buf.readInt(), buf.readFloat());
+        data.put(buf.readInt(), buf.readFloat());
       }
     } finally {
       lock.writeLock().unlock();
@@ -175,7 +179,7 @@ public class ServerSparseFloatRow extends ServerRow {
   @Override public int bufferLen() {
     try {
       lock.readLock().lock();
-      return super.bufferLen() + 4 + hashMap.size() * 8;
+      return super.bufferLen() + 4 + data.size() * 8;
     } finally {
       lock.readLock().unlock();
     }
@@ -184,7 +188,7 @@ public class ServerSparseFloatRow extends ServerRow {
   @Override public void reset() {
     try {
       lock.writeLock().lock();
-      hashMap.clear();
+      data.clear();
     } finally {
       lock.writeLock().unlock();
     }
@@ -200,7 +204,7 @@ public class ServerSparseFloatRow extends ServerRow {
       lock.writeLock().lock();
       resizeHashMap(size);
       for (int i = 0; i < size; i++) {
-        hashMap.addTo(buf.readInt(), buf.readFloat());
+        data.addTo(buf.readInt(), buf.readFloat());
       }
     } finally {
       lock.writeLock().unlock();
@@ -214,7 +218,7 @@ public class ServerSparseFloatRow extends ServerRow {
   public void mergeTo(Int2FloatOpenHashMap indexToValueMap) {
     try {
       lock.readLock().lock();
-      indexToValueMap.putAll(hashMap);
+      indexToValueMap.putAll(data);
     } finally {
       lock.readLock().unlock();
     }
@@ -230,13 +234,13 @@ public class ServerSparseFloatRow extends ServerRow {
   public void mergeTo(int[] indexes, float[] values, int startPos, int len) {
     try {
       lock.readLock().lock();
-      int writeLen = len < hashMap.size() ? len : hashMap.size();
+      int writeLen = len < data.size() ? len : data.size();
       if (writeLen == 0) {
         return;
       }
 
       int index = 0;
-      for (Int2FloatMap.Entry entry : hashMap.int2FloatEntrySet()) {
+      for (Int2FloatMap.Entry entry : data.int2FloatEntrySet()) {
         indexes[startPos + index] = entry.getIntKey();
         values[startPos + index] = entry.getFloatValue();
         index++;
@@ -254,6 +258,6 @@ public class ServerSparseFloatRow extends ServerRow {
   }
 
   public Int2FloatOpenHashMap getData() {
-    return hashMap;
+    return data;
   }
 }

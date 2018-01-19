@@ -81,6 +81,7 @@ public class PSAgentContext {
    * @param psAgent ps agent
    */
   public void setPsAgent(PSAgent psAgent) {
+    LOG.info("==================Set psAgent=" + psAgent + "======================");
     this.psAgent = psAgent;
   }
 

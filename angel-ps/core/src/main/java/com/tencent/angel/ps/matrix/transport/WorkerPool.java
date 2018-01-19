@@ -440,9 +440,11 @@ public class WorkerPool {
       response.setResponseType(ResponseType.SERVER_HANDLE_FATAL);
     }
 
+    long startTs = System.currentTimeMillis();
     ByteBuf buf = ByteBufUtils.newByteBuf(4 + response.bufferLen(), useDirectorBuffer);
     buf.writeInt(seqId);
     response.serialize(buf);
+    LOG.info("Serialize use time=" + (System.currentTimeMillis() - startTs));
     return buf;
   }
 

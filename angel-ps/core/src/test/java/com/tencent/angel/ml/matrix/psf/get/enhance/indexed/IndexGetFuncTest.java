@@ -16,19 +16,15 @@
 
 package com.tencent.angel.ml.matrix.psf.get.enhance.indexed;
 
-import com.google.protobuf.ServiceException;
 import com.tencent.angel.client.AngelClient;
 import com.tencent.angel.client.AngelClientFactory;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.localcluster.LocalClusterContext;
-import com.tencent.angel.ml.math.vector.DenseDoubleVector;
-import com.tencent.angel.ml.math.vector.SparseDoubleVector;
+import com.tencent.angel.ml.math.vector.*;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult;
-import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.psagent.DummyTask;
@@ -55,7 +51,18 @@ import java.util.concurrent.ExecutionException;
 public class IndexGetFuncTest {
   public static String DENSE_DOUBLE_MAT = "dense_double_mat";
   public static String SPARSE_DOUBLE_MAT = "sparse_double_mat";
+  public static String SPARSE_DOUBLE_MAT_COMP = "sparse_double_mat_comp";
+
   public static String SPARSE_DOUBLE_LONG_MAT = "sparse_double_long_mat";
+  public static String SPARSE_DOUBLE_LONG_MAT_COMP = "sparse_double_long_mat_comp";
+
+  public static String DENSE_FLOAT_MAT = "dense_float_mat";
+  public static String SPARSE_FLOAT_MAT = "sparse_float_mat";
+  public static String SPARSE_FLOAT_MAT_COMP = "sparse_float_mat_comp";
+
+  public static String DENSE_INT_MAT = "dense_int_mat";
+  public static String SPARSE_INT_MAT = "sparse_int_mat";
+  public static String SPARSE_INT_MAT_COMP = "sparse_int_mat_comp";
 
   private static final Log LOG = LogFactory.getLog(IndexGetFuncTest.class);
   private static final String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
@@ -111,17 +118,90 @@ public class IndexGetFuncTest {
     sMat.setRowNum(1);
     sMat.setColNum(feaNum);
     sMat.setMaxColNumInBlock(feaNum / 3);
-    sMat.setRowType(RowType.T_DOUBLE_DENSE);
+    sMat.setRowType(RowType.T_DOUBLE_SPARSE);
     angelClient.addMatrix(sMat);
 
-    // add sparse double long key matrix
-    MatrixContext lMat = new MatrixContext();
-    lMat.setName(SPARSE_DOUBLE_LONG_MAT);
-    lMat.setRowNum(1);
-    lMat.setColNum(feaNum);
-    lMat.setMaxColNumInBlock(feaNum / 3);
-    lMat.setRowType(RowType.T_DOUBLE_DENSE);
-    angelClient.addMatrix(lMat);
+    // add component sparse double matrix
+    MatrixContext sCompMat = new MatrixContext();
+    sCompMat.setName(SPARSE_DOUBLE_MAT_COMP);
+    sCompMat.setRowNum(1);
+    sCompMat.setColNum(feaNum);
+    sCompMat.setMaxColNumInBlock(feaNum / 3);
+    sCompMat.setRowType(RowType.T_DOUBLE_SPARSE_COMPONENT);
+    angelClient.addMatrix(sCompMat);
+
+
+    // add sparse long-key double matrix
+    MatrixContext dLongKeysMatrix = new MatrixContext();
+    dLongKeysMatrix.setName(SPARSE_DOUBLE_LONG_MAT);
+    dLongKeysMatrix.setRowNum(1);
+    dLongKeysMatrix.setColNum(feaNum);
+    dLongKeysMatrix.setMaxColNumInBlock(feaNum / 3);
+    dLongKeysMatrix.setRowType(RowType.T_DOUBLE_SPARSE_LONGKEY);
+    angelClient.addMatrix(dLongKeysMatrix);
+
+    // add component long-key sparse double matrix
+    MatrixContext dLongKeysCompMatrix = new MatrixContext();
+    dLongKeysCompMatrix.setName(SPARSE_DOUBLE_LONG_MAT_COMP);
+    dLongKeysCompMatrix.setRowNum(1);
+    dLongKeysCompMatrix.setColNum(feaNum);
+    dLongKeysCompMatrix.setMaxColNumInBlock(feaNum / 3);
+    dLongKeysCompMatrix.setRowType(RowType.T_DOUBLE_SPARSE_LONGKEY_COMPONENT);
+    angelClient.addMatrix(dLongKeysCompMatrix);
+
+    // add dense float matrix
+    MatrixContext dfMat = new MatrixContext();
+    dfMat.setName(DENSE_FLOAT_MAT);
+    dfMat.setRowNum(1);
+    dfMat.setColNum(feaNum);
+    dfMat.setMaxColNumInBlock(feaNum / 3);
+    dfMat.setRowType(RowType.T_FLOAT_DENSE);
+    angelClient.addMatrix(dfMat);
+
+    // add sparse float matrix
+    MatrixContext sfMat = new MatrixContext();
+    sfMat.setName(SPARSE_FLOAT_MAT);
+    sfMat.setRowNum(1);
+    sfMat.setColNum(feaNum);
+    sfMat.setMaxColNumInBlock(feaNum / 3);
+    sfMat.setRowType(RowType.T_FLOAT_SPARSE);
+    angelClient.addMatrix(sfMat);
+
+    // add component sparse float matrix
+    MatrixContext sfCompMat = new MatrixContext();
+    sfCompMat.setName(SPARSE_FLOAT_MAT_COMP);
+    sfCompMat.setRowNum(1);
+    sfCompMat.setColNum(feaNum);
+    sfCompMat.setMaxColNumInBlock(feaNum / 3);
+    sfCompMat.setRowType(RowType.T_FLOAT_SPARSE_COMPONENT);
+    angelClient.addMatrix(sfCompMat);
+
+    // add dense float matrix
+    MatrixContext diMat = new MatrixContext();
+    diMat.setName(DENSE_INT_MAT);
+    diMat.setRowNum(1);
+    diMat.setColNum(feaNum);
+    diMat.setMaxColNumInBlock(feaNum / 3);
+    diMat.setRowType(RowType.T_INT_DENSE);
+    angelClient.addMatrix(diMat);
+
+    // add sparse float matrix
+    MatrixContext siMat = new MatrixContext();
+    siMat.setName(SPARSE_INT_MAT);
+    siMat.setRowNum(1);
+    siMat.setColNum(feaNum);
+    siMat.setMaxColNumInBlock(feaNum / 3);
+    siMat.setRowType(RowType.T_INT_SPARSE);
+    angelClient.addMatrix(siMat);
+
+    // add component sparse float matrix
+    MatrixContext siCompMat = new MatrixContext();
+    siCompMat.setName(SPARSE_INT_MAT_COMP);
+    siCompMat.setRowNum(1);
+    siCompMat.setColNum(feaNum);
+    siCompMat.setMaxColNumInBlock(feaNum / 3);
+    siCompMat.setRowType(RowType.T_INT_SPARSE_COMPONENT);
+    angelClient.addMatrix(siCompMat);
 
     // Start PS
     angelClient.startPSServer();
@@ -139,13 +219,75 @@ public class IndexGetFuncTest {
   }
 
   @Test
-  public void test() throws ServiceException, ExecutionException, InvalidParameterException,
-      InterruptedException, IOException {
+  public void test() throws Exception {
     testDenseDoubleUDF();
+    testSparseDoubleUDF();
+    testSparseDoubleCompUDF();
+    testDenseFloatUDF();
+    testSparseFloatUDF();
+    testSparseFloatCompUDF();
+    testDenseIntUDF();
+    testSparseIntUDF();
+    testSparseIntCompUDF();
+    testSparseDoubleLongKeyUDF();
+    testSparseDoubleLongKeyCompUDF();
   }
 
-  public void testDenseDoubleUDF() throws ServiceException, IOException, InvalidParameterException,
-      AngelException, InterruptedException, ExecutionException {
+  public void testSparseDoubleLongKeyUDF() throws Exception {
+
+    Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
+    MatrixClient client1 = worker.getPSAgent().getMatrixClient(SPARSE_DOUBLE_LONG_MAT, 0);
+    int matrixW1Id = client1.getMatrixId();
+
+    long[] index = genLongIndexs(feaNum, nnz);
+
+    SparseLongKeyDoubleVector deltaVec = new SparseLongKeyDoubleVector(feaNum);
+    for (int i = 0; i < feaNum; i++)
+      deltaVec.set(i, i);
+    deltaVec.setRowId(0);
+
+    client1.increment(deltaVec);
+    client1.clock().get();
+
+    LongIndexGetFunc func = new LongIndexGetFunc(new LongIndexGetParam(matrixW1Id, 0, index));
+
+    SparseLongKeyDoubleVector row = (SparseLongKeyDoubleVector) ((GetRowResult) client1.get(func)).getRow();
+    for (long id: index) {
+      System.out.println("id=" + id + ", value=" + row.get(id));
+      Assert.assertTrue(row.get(id) == deltaVec.get(id));
+    }
+
+    //Assert.assertTrue(index.length == row.size());
+  }
+
+  public void testSparseDoubleLongKeyCompUDF() throws Exception {
+
+    Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
+    MatrixClient client1 = worker.getPSAgent().getMatrixClient(SPARSE_DOUBLE_LONG_MAT_COMP, 0);
+    int matrixW1Id = client1.getMatrixId();
+
+    long[] index = genLongIndexs(feaNum, nnz);
+
+    CompSparseLongKeyDoubleVector deltaVec = new CompSparseLongKeyDoubleVector(matrixW1Id, 0, feaNum, feaNum);
+    for (long i = 0; i < feaNum; i++)
+      deltaVec.set(i, i);
+    deltaVec.setRowId(0);
+
+    client1.increment(deltaVec);
+    client1.clock().get();
+
+    LongIndexGetFunc func = new LongIndexGetFunc(new LongIndexGetParam(matrixW1Id, 0, index));
+
+    CompSparseLongKeyDoubleVector row = (CompSparseLongKeyDoubleVector) ((GetRowResult) client1.get(func)).getRow();
+    for (long id: index) {
+      System.out.println("id=" + id + ", value=" + row.get(id));
+      Assert.assertTrue(row.get(id) == deltaVec.get(id));
+    }
+
+    //Assert.assertTrue(index.length == row.size());
+  }
+
+  public void testDenseDoubleUDF() throws Exception {
     Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
     MatrixClient client1 = worker.getPSAgent().getMatrixClient(DENSE_DOUBLE_MAT, 0);
     int matrixW1Id = client1.getMatrixId();
@@ -169,9 +311,7 @@ public class IndexGetFuncTest {
 
   }
 
-  @Test
-  public void testSparseDoubleUDF() throws ServiceException, IOException, InvalidParameterException,
-      AngelException, InterruptedException, ExecutionException {
+  public void testSparseDoubleUDF() throws Exception {
 
     Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
     MatrixClient client1 = worker.getPSAgent().getMatrixClient(SPARSE_DOUBLE_MAT, 0);
@@ -198,6 +338,190 @@ public class IndexGetFuncTest {
     Assert.assertTrue(index.length == row.size());
   }
 
+  public void testSparseDoubleCompUDF() throws Exception {
+
+    Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
+    MatrixClient client1 = worker.getPSAgent().getMatrixClient(SPARSE_DOUBLE_MAT_COMP, 0);
+    int matrixW1Id = client1.getMatrixId();
+
+    int[] index = genIndexs(feaNum, nnz);
+
+    CompSparseDoubleVector deltaVec = new CompSparseDoubleVector(matrixW1Id, 0, feaNum, feaNum);
+    for (int i = 0; i < feaNum; i++)
+      deltaVec.set(i, i);
+    deltaVec.setRowId(0);
+
+    client1.increment(deltaVec);
+    client1.clock().get();
+
+    IndexGetFunc func = new IndexGetFunc(new IndexGetParam(matrixW1Id, 0, index));
+
+    CompSparseDoubleVector row = (CompSparseDoubleVector) ((GetRowResult) client1.get(func)).getRow();
+    for (int id: index) {
+      System.out.println("id=" + id + ", value=" + row.get(id));
+      Assert.assertTrue(row.get(id) == deltaVec.get(id));
+    }
+
+    Assert.assertTrue(index.length == row.size());
+  }
+
+  public void testDenseFloatUDF() throws Exception {
+    Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
+    MatrixClient client1 = worker.getPSAgent().getMatrixClient(DENSE_FLOAT_MAT, 0);
+    int matrixW1Id = client1.getMatrixId();
+
+    int[] index = genIndexs(feaNum, nnz);
+
+    DenseFloatVector deltaVec = new DenseFloatVector(feaNum);
+    for (int i = 0; i < feaNum; i++)
+      deltaVec.set(i, i);
+    deltaVec.setRowId(0);
+
+    client1.increment(deltaVec);
+    client1.clock().get();
+
+    IndexGetFunc func = new IndexGetFunc(new IndexGetParam(matrixW1Id, 0, index));
+    SparseFloatVector row = (SparseFloatVector) ((GetRowResult) client1.get(func)).getRow();
+    for (int id: index) {
+      Assert.assertTrue(row.get(id) == deltaVec.get(id));
+    }
+    Assert.assertTrue(index.length == row.size());
+
+  }
+
+  public void testSparseFloatUDF() throws Exception {
+
+    Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
+    MatrixClient client1 = worker.getPSAgent().getMatrixClient(SPARSE_FLOAT_MAT, 0);
+    int matrixW1Id = client1.getMatrixId();
+
+    int[] index = genIndexs(feaNum, nnz);
+
+    SparseFloatVector deltaVec = new SparseFloatVector(feaNum);
+    for (int i = 0; i < feaNum; i++)
+      deltaVec.set(i, i);
+    deltaVec.setRowId(0);
+
+    client1.increment(deltaVec);
+    client1.clock().get();
+
+    IndexGetFunc func = new IndexGetFunc(new IndexGetParam(matrixW1Id, 0, index));
+
+    SparseFloatVector row = (SparseFloatVector) ((GetRowResult) client1.get(func)).getRow();
+    for (int id: index) {
+      System.out.println("id=" + id + ", value=" + row.get(id));
+      Assert.assertTrue(row.get(id) == deltaVec.get(id));
+    }
+
+    Assert.assertTrue(index.length == row.size());
+  }
+
+  public void testSparseFloatCompUDF() throws Exception {
+
+    Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
+    MatrixClient client1 = worker.getPSAgent().getMatrixClient(SPARSE_FLOAT_MAT_COMP, 0);
+    int matrixW1Id = client1.getMatrixId();
+
+    int[] index = genIndexs(feaNum, nnz);
+
+    CompSparseFloatVector deltaVec = new CompSparseFloatVector(matrixW1Id, 0, feaNum, feaNum);
+    for (int i = 0; i < feaNum; i++)
+      deltaVec.set(i, i);
+    deltaVec.setRowId(0);
+
+    client1.increment(deltaVec);
+    client1.clock().get();
+
+    IndexGetFunc func = new IndexGetFunc(new IndexGetParam(matrixW1Id, 0, index));
+
+    CompSparseFloatVector row = (CompSparseFloatVector) ((GetRowResult) client1.get(func)).getRow();
+    for (int id: index) {
+      System.out.println("id=" + id + ", value=" + row.get(id));
+      Assert.assertTrue(row.get(id) == deltaVec.get(id));
+    }
+
+    Assert.assertTrue(index.length == row.size());
+  }
+
+  public void testDenseIntUDF() throws Exception {
+    Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
+    MatrixClient client1 = worker.getPSAgent().getMatrixClient(DENSE_INT_MAT, 0);
+    int matrixW1Id = client1.getMatrixId();
+
+    int[] index = genIndexs(feaNum, nnz);
+
+    DenseIntVector deltaVec = new DenseIntVector(feaNum);
+    for (int i = 0; i < feaNum; i++)
+      deltaVec.set(i, i);
+    deltaVec.setRowId(0);
+
+    client1.increment(deltaVec);
+    client1.clock().get();
+
+    IndexGetFunc func = new IndexGetFunc(new IndexGetParam(matrixW1Id, 0, index));
+    SparseIntVector row = (SparseIntVector) ((GetRowResult) client1.get(func)).getRow();
+    for (int id: index) {
+      Assert.assertTrue(row.get(id) == deltaVec.get(id));
+    }
+    Assert.assertTrue(index.length == row.size());
+
+  }
+
+  public void testSparseIntUDF() throws Exception {
+
+    Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
+    MatrixClient client1 = worker.getPSAgent().getMatrixClient(SPARSE_INT_MAT, 0);
+    int matrixW1Id = client1.getMatrixId();
+
+    int[] index = genIndexs(feaNum, nnz);
+
+    SparseIntVector deltaVec = new SparseIntVector(feaNum);
+    for (int i = 0; i < feaNum; i++)
+      deltaVec.set(i, i);
+    deltaVec.setRowId(0);
+
+    client1.increment(deltaVec);
+    client1.clock().get();
+
+    IndexGetFunc func = new IndexGetFunc(new IndexGetParam(matrixW1Id, 0, index));
+
+    SparseIntVector row = (SparseIntVector) ((GetRowResult) client1.get(func)).getRow();
+    for (int id: index) {
+      System.out.println("id=" + id + ", value=" + row.get(id));
+      Assert.assertTrue(row.get(id) == deltaVec.get(id));
+    }
+
+    Assert.assertTrue(index.length == row.size());
+  }
+
+  public void testSparseIntCompUDF() throws Exception {
+
+    Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
+    MatrixClient client1 = worker.getPSAgent().getMatrixClient(SPARSE_INT_MAT_COMP, 0);
+    int matrixW1Id = client1.getMatrixId();
+
+    int[] index = genIndexs(feaNum, nnz);
+
+    CompSparseIntVector deltaVec = new CompSparseIntVector(matrixW1Id, 0, feaNum, feaNum);
+    for (int i = 0; i < feaNum; i++)
+      deltaVec.set(i, i);
+    deltaVec.setRowId(0);
+
+    client1.increment(deltaVec);
+    client1.clock().get();
+
+    IndexGetFunc func = new IndexGetFunc(new IndexGetParam(matrixW1Id, 0, index));
+
+    CompSparseIntVector row = (CompSparseIntVector) ((GetRowResult) client1.get(func)).getRow();
+    for (int id: index) {
+      System.out.println("id=" + id + ", value=" + row.get(id));
+      Assert.assertTrue(row.get(id) == deltaVec.get(id));
+    }
+
+    Assert.assertTrue(index.length == row.size());
+  }
+
+
   public static int[] genIndexs(int feaNum, int nnz) {
 
     int[] sortedIndex = new int[nnz];
@@ -212,7 +536,14 @@ public class IndexGetFuncTest {
     return sortedIndex;
   }
 
-
+  public static long[] genLongIndexs(long feaNum, int nnz) {
+    long[] sortedIndex = new long[nnz];
+    Random random = new Random(System.currentTimeMillis());
+    for (int i = 1; i < nnz; i ++) {
+      sortedIndex[i] = Math.abs(random.nextLong()) % feaNum;
+    }
+    return sortedIndex;
+  }
 
   @After
   public void stop() throws AngelException {

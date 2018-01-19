@@ -17,12 +17,12 @@
 
 package com.tencent.angel.ml.matrix.psf.get.enhance.indexed;
 
-import com.google.common.primitives.Ints;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.psagent.PSAgentContext;
-import com.tencent.angel.utils.Sort;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.util.*;
 
@@ -30,6 +30,7 @@ import java.util.*;
  * The GetParam of IndexGetFunc
  */
 public class IndexGetParam extends GetParam {
+  private static final Log LOG = LogFactory.getLog(IndexGetParam.class);
   private int rowId;
   private int[] indexes;
   private Map<PartitionKey, int[]> partKeyToIndexesMap;
@@ -62,6 +63,7 @@ public class IndexGetParam extends GetParam {
    */
   @Override
   public List<PartitionGetParam> split() {
+    long startTs = System.currentTimeMillis();
     if(partKeyToIndexesMap == null) {
       partKeyToIndexesMap = split(PSAgentContext.get().getMatrixMetaManager()
         .getPartitions(matrixId, rowId), indexes);
@@ -74,6 +76,7 @@ public class IndexGetParam extends GetParam {
         partParams.add(new IndexPartGetParam(matrixId, rowId, entry.getKey(), entry.getValue()));
       }
     }
+    LOG.info("split use time=" + (System.currentTimeMillis() - startTs) + " ms " + " partParams number=" + partParams.size());
     return partParams;
   }
 
