@@ -7,7 +7,7 @@ Spark on Angel同时支持YARN和Local两种运行模型，从而方便用户在
 1. **安装Spark**
 2. **安装Angel**
 	1. 解压angel-\<version\>-bin.zip
-	2. 配置angel-\<version\>-bin/bin/spark-on-angl-env.sh下的`SPARK_HOME`, `ANGEL_HOME`, `ANGEL_HDFS_HOME`三个环境变量
+	2. 配置angel-\<version\>-bin/bin/spark-on-angel-env.sh下的`SPARK_HOME`, `ANGEL_HOME`, `ANGEL_HDFS_HOME`三个环境变量
 	3. 将解压后的angel-\<version\>-bin目录上传到HDFS路径
 
 3. 配置环境变量
