@@ -17,12 +17,11 @@
 
 package com.tencent.angel.ml.optimizer.sgd
 
-import com.tencent.angel.ml.math.vector._
-import com.tencent.angel.ml.model.PSModel
-import com.tencent.angel.ml.optimizer.sgd.loss.Loss
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.TDoubleVector
+import com.tencent.angel.ml.math.vector.{TDoubleVector, _}
+import com.tencent.angel.ml.model.PSModel
+import com.tencent.angel.ml.optimizer.sgd.loss.Loss
 import com.tencent.angel.worker.storage.DataBlock
 import org.apache.commons.logging.{Log, LogFactory}
 
@@ -45,13 +44,13 @@ object GradientDescent {
   }
 
   def miniBatchGD[N: Numeric : TypeTag](trainData: DataBlock[LabeledData],
-                  wM: PSModel,
-                  intercept: Option[PSModel],
-                  lr: Double,
-                  loss: Loss,
-                  batchSize: Int,
-                  batchNum: Int,
-                  indexes : Array[N]): (Double, baseT) = {
+                                        wM: PSModel,
+                                        intercept: Option[PSModel],
+                                        lr: Double,
+                                        loss: Loss,
+                                        batchSize: Int,
+                                        batchNum: Int,
+                                        indexes : Array[N]): (Double, baseT) = {
 
     // Pull model from PS Server
     val elementType = typeOf[N]
@@ -66,6 +65,10 @@ object GradientDescent {
       }
     }
 
+    // check the sparsity of weight
+    val weightSparsity = sparsity(w)
+    LOG.info("the sparsity for w is:" + weightSparsity)
+
     var b: Option[Double] = intercept.map(_.getRow(0).asInstanceOf[baseT].get(0))
     var totalLoss = 0.0
 
@@ -74,15 +77,14 @@ object GradientDescent {
     for (batch <- 1 to batchNum) {
       val batchStartTs = System.currentTimeMillis()
 
-      val grad =
-        w match {
-          case _: DenseDoubleVector => new DenseDoubleVector(w.getDimension)
-          case _: SparseDoubleVector => new SparseDoubleVector(w.getDimension, w.asInstanceOf[TIntDoubleVector].size())
-          case _: CompSparseDoubleVector => w.asInstanceOf[CompSparseDoubleVector].cloneAndReset()
-          case _: CompSparseLongKeyDoubleVector => w.asInstanceOf[CompSparseLongKeyDoubleVector].cloneAndReset()
-          case _: SparseLongKeyDoubleVector => new SparseLongKeyDoubleVector(w.asInstanceOf[TLongDoubleVector].getLongDim, w.asInstanceOf[SparseLongKeyDoubleVector].size())
-          case _ => new SparseLongKeyDoubleVector(w.asInstanceOf[TLongDoubleVector].getLongDim, w.asInstanceOf[SparseLongKeyDoubleVector].size())
-        }
+      val grad = w match {
+        case _: DenseDoubleVector => new DenseDoubleVector(w.getDimension)
+        case _: SparseDoubleVector => new SparseDoubleVector(w.getDimension, w.asInstanceOf[TIntDoubleVector].size())
+        case _: CompSparseDoubleVector => w.asInstanceOf[CompSparseDoubleVector].cloneAndReset()
+        case _: CompSparseLongKeyDoubleVector => w.asInstanceOf[CompSparseLongKeyDoubleVector].cloneAndReset()
+        case _: SparseLongKeyDoubleVector => new SparseLongKeyDoubleVector(w.asInstanceOf[TLongDoubleVector].getLongDim, w.asInstanceOf[SparseLongKeyDoubleVector].size())
+        case _ => new SparseLongKeyDoubleVector(w.asInstanceOf[TLongDoubleVector].getLongDim, w.asInstanceOf[SparseLongKeyDoubleVector].size())
+      }
 
       grad.setRowId(0)
 
@@ -92,6 +94,7 @@ object GradientDescent {
       var batchLoss: Double = 0.0
       var gradScalarSum: Double = 0.0
 
+      // 统计 minibatch,有偏置的情况下，w:(w0,w1,w2,...,wn),x:(1,x1,x2,...,xn)
       for (i <- 0 until batchSize) {
         val data = trainData.loopingRead()
         val x = data.getX
@@ -100,6 +103,7 @@ object GradientDescent {
         val gradScalar = -loss.grad(pre, y)    // not negative gradient
         grad.plusBy(x, gradScalar)
         batchLoss += loss.loss(pre, y)
+        // 为偏置求的梯度
         gradScalarSum += gradScalar
       }
 
@@ -107,11 +111,19 @@ object GradientDescent {
       gradScalarSum /= batchSize
 
       if (loss.isL2Reg) {
+        LOG.info("this is in l2")
         L2Loss(loss, w, grad)
       }
 
-      if (loss.isL1Reg) {
-        truncGradient(grad, 0, loss.getRegParam)
+      // 不可微的正则项采用
+      //      if (loss.isL1Reg) {
+      //        truncGradient(grad, 0, loss.getRegParam)
+      //      }
+
+      // L is (0,1)
+      if(loss.isL1Reg){
+        LOG.info("this is in l1")
+        PGD4Grad(w, grad, loss.getRegParam, lr)
       }
 
       totalLoss += batchLoss
@@ -119,6 +131,7 @@ object GradientDescent {
       b = b.map(bv => bv - lr * gradScalarSum)
 
       wM.increment(grad.timesBy(-1.0 * lr).asInstanceOf[TDoubleVector])
+
       intercept.map { bv =>
         bUpdate.set(0, -lr * gradScalarSum)
         bv.increment(bUpdate)
@@ -130,7 +143,7 @@ object GradientDescent {
     }
 
     //Push model update to PS Server
-    totalLoss /= (batchNum*batchSize)
+    totalLoss /= (batchNum * batchSize)
     totalLoss += loss.getReg(w.asInstanceOf[TDoubleVector])
 
     wM.syncClock()
@@ -232,6 +245,41 @@ object GradientDescent {
     }
 
     update
+  }
+
+  // pgd algorithm,just return the gradient and L > 0
+  // x(k+1) = x(k) - L * Grad(k)
+  // Grad(k) = (x(k) - prox(x - L * grad(x(k)))) / L
+  def PGD4Grad(weight: baseT, grad: baseT, l1Reg: Double, L: Double) = {
+
+    val theta = l1Reg * L
+    val dim = weight.asInstanceOf[baseT].size()
+    for(id <- 0 until dim){
+
+      val wVal = weight.get(id)
+      val zVal = wVal - L * grad.get(id)
+
+      val proxVal = if(zVal > theta){
+        zVal - theta
+      }else if(zVal < -1 * theta){
+        zVal + theta
+      }else{
+        0
+      }
+
+      val newG = (wVal - proxVal) / L
+      grad.set(id, newG)
+    }
+  }
+
+  def sparsity(weight: baseT): Double = {
+    val dim = weight.asInstanceOf[baseT].size()
+    var nonzero = 0
+    for(id <- 0 until dim) {
+      val wVal = weight.get(id)
+      if (Math.abs(wVal) > 0) nonzero += 1
+    }
+    return nonzero.toDouble / dim.toDouble
   }
 
 }

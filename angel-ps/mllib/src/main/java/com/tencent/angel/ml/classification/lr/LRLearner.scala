@@ -25,7 +25,7 @@ import com.tencent.angel.ml.math.vector.TDoubleVector
 import com.tencent.angel.ml.metric.LossMetric
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.ml.optimizer.sgd.GradientDescent
-import com.tencent.angel.ml.optimizer.sgd.loss.L2LogLoss
+import com.tencent.angel.ml.optimizer.sgd.loss.{L1LogLoss, L2LogLoss, Loss}
 import com.tencent.angel.ml.utils.ValidationUtils
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
@@ -39,21 +39,30 @@ import scala.reflect.runtime.universe._
   *
   */
 class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
+
+  val LOSS1 = "loss1"
+  val LOSS2 = "loss2"
   val LOG: Log = LogFactory.getLog(classOf[LRLearner])
 
   val epochNum: Int = conf.getInt(MLConf.ML_EPOCH_NUM, MLConf.DEFAULT_ML_EPOCH_NUM)
   val lr_0: Double = conf.getDouble(MLConf.ML_LEARN_RATE, MLConf.DEFAULT_ML_LEAR_RATE)
   val decay: Double = conf.getDouble(MLConf.ML_LEARN_DECAY, MLConf.DEFAULT_ML_LEARN_DECAY)
-  val reg: Double = conf.getDouble(MLConf.ML_REG_L2, MLConf.DEFAULT_ML_REG_L2)
+  val reg: Double = conf.getDouble(MLConf.ML_REG_LAMADA, MLConf.DEFAULT_ML_REG_L2)
   val feaNum: Long = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
   val spRatio: Double = conf.getDouble(MLConf.ML_BATCH_SAMPLE_Ratio, MLConf.DEFAULT_ML_BATCH_SAMPLE_Ratio)
   val batchNum: Int = conf.getInt(MLConf.ML_SGD_BATCH_NUM, MLConf.DEFAULT_ML_SGD_BATCH_NUM)
+  val regLoss: String = conf.getStrings(MLConf.REG_LOSS_TYPE, LOSS1)(0)
 
   // Init LR Model
   val lrModel = new LRModel(conf, ctx)
-  // LR uses log loss
-  val l2LL = new L2LogLoss(reg)
 
+  LOG.info("the loss is:" + regLoss)
+  // LR uses log loss
+  val regLL = regLoss match {
+    case LOSS1 => new L1LogLoss(reg)
+    case LOSS2 => new L2LogLoss(reg)
+    case _ => new L2LogLoss(reg)
+  }
 
   /**
     * run mini-batch gradient descent LR for one epoch
@@ -61,7 +70,12 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     * @param epoch     : epoch id
     * @param trainData : trainning data storage
     */
-  def trainOneEpoch[N: Numeric : TypeTag](epoch: Int, trainData: DataBlock[LabeledData], batchSize: Int, indexes: Array[N]): TDoubleVector = {
+  def trainOneEpoch[N: Numeric : TypeTag](epoch: Int,
+                                          trainData: DataBlock[LabeledData],
+                                          batchSize: Int,
+                                          indexes: Array[N]): TDoubleVector = {
+    val LLoss: Loss = regLL
+
     // Decay learning rate.
     val lr = lr_0 / Math.sqrt(1.0 + decay * epoch)
 
@@ -74,7 +88,7 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
         lrModel.weight,
         lrModel.intercept,
         lr,
-        l2LL,
+        LLoss,
         batchSize,
         batchNum,
         indexes.asInstanceOf[Array[Int]])
@@ -82,7 +96,7 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
         lrModel.weight,
         lrModel.intercept,
         lr,
-        l2LL,
+        LLoss,
         batchSize,
         batchNum,
         indexes.asInstanceOf[Array[Long]])
@@ -108,12 +122,15 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   }
 
   def train[N: Numeric : TypeTag](trainData: DataBlock[LabeledData], validationData: DataBlock[LabeledData], indexes : Array[N]): MLModel = {
+
+    // 总batch的样本量
     val trainSampleSize = (trainData.size * spRatio).toInt
+    // 每个minibatch的样本量
     val samplePerBatch = trainSampleSize / batchNum
 
     LOG.info(s"Task[${ctx.getTaskIndex}]: Starting to train a LR model...")
     LOG.info(s"Task[${ctx.getTaskIndex}]: Sample Ratio per Batch=$spRatio, Sample Size Per " + s"$samplePerBatch")
-    LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epochNum, initLearnRate=$lr_0, " + s"learnRateDecay=$decay, L2Reg=$reg")
+    LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epochNum, initLearnRate=$lr_0, " + s"learnRateDecay=$decay, Reg=$reg")
 
     globalMetrics.addMetric(MLConf.TRAIN_LOSS, LossMetric(trainData.size))
     globalMetrics.addMetric(MLConf.VALID_LOSS, LossMetric(validationData.size))
@@ -148,7 +165,7 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     * @param valiData : validata data storage
     */
   def validate(epoch: Int, weight: TDoubleVector, trainData: DataBlock[LabeledData], valiData: DataBlock[LabeledData]) = {
-    val trainMetrics = ValidationUtils.calMetrics(trainData, weight, l2LL)
+    val trainMetrics = ValidationUtils.calMetrics(trainData, weight, regLL)
     LOG.info(s"Task[${ctx.getTaskIndex}]: epoch = $epoch " +
       s"trainData loss = ${trainMetrics._1 / trainData.size()} " +
       s"precision = ${trainMetrics._2} " +
@@ -158,7 +175,7 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     globalMetrics.metric(MLConf.TRAIN_LOSS, trainMetrics._1)
 
     if (valiData.size > 0) {
-      val validMetric = ValidationUtils.calMetrics(valiData, weight, l2LL);
+      val validMetric = ValidationUtils.calMetrics(valiData, weight, regLL);
       LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epoch " +
         s"validationData loss=${validMetric._1 / valiData.size()} " +
         s"precision=${validMetric._2} " +
