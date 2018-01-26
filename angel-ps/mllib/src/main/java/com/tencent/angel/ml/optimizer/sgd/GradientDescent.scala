@@ -65,10 +65,6 @@ object GradientDescent {
       }
     }
 
-    // check the sparsity of weight
-    val weightSparsity = sparsity(w)
-    LOG.info("the sparsity for w is:" + weightSparsity)
-
     var b: Option[Double] = intercept.map(_.getRow(0).asInstanceOf[baseT].get(0))
     var totalLoss = 0.0
 
@@ -115,11 +111,6 @@ object GradientDescent {
         L2Loss(loss, w, grad)
       }
 
-      // 不可微的正则项采用
-      //      if (loss.isL1Reg) {
-      //        truncGradient(grad, 0, loss.getRegParam)
-      //      }
-
       // L is (0,1)
       if(loss.isL1Reg){
         LOG.info("this is in l1")
@@ -148,7 +139,6 @@ object GradientDescent {
 
     wM.syncClock()
     intercept.map(_.syncClock())
-
 
     (totalLoss , w)
   }
@@ -253,33 +243,64 @@ object GradientDescent {
   def PGD4Grad(weight: baseT, grad: baseT, l1Reg: Double, L: Double) = {
 
     val theta = l1Reg * L
-    val dim = weight.asInstanceOf[baseT].size()
-    for(id <- 0 until dim){
 
-      val wVal = weight.get(id)
-      val zVal = wVal - L * grad.get(id)
+    grad match {
 
-      val proxVal = if(zVal > theta){
-        zVal - theta
-      }else if(zVal < -1 * theta){
-        zVal + theta
-      }else{
-        0
-      }
+      case denseG: DenseDoubleVector =>
+        LOG.info("this is dense vector")
+        for (i <- 0 until denseG.size) {
+          val wVal = weight.get(i)
+          val gVal = grad.get(i)
+          grad.set(i, pdgGetG(wVal, gVal, L, theta))
+        }
 
-      val newG = (wVal - proxVal) / L
-      grad.set(id, newG)
+      case sparseLongG: SparseLongKeyDoubleVector =>
+        val iterLongG = grad.asInstanceOf[SparseLongKeyDoubleVector]
+          .getIndexToValueMap
+          .long2DoubleEntrySet
+          .fastIterator
+
+        while (iterLongG.hasNext) {
+          val entry = iterLongG.next()
+          val gId = entry.getLongKey
+          val gVal = entry.getDoubleValue
+          val wVal = weight.get(gId)
+
+          entry.setValue(pdgGetG(wVal, gVal, L, theta))
+        }
+
+      case sparseG: SparseDoubleVector =>
+        val iterG = grad.asInstanceOf[SparseDoubleVector]
+          .getIndexToValueMap
+          .int2DoubleEntrySet
+          .fastIterator
+
+        while (iterG.hasNext) {
+          val entry = iterG.next()
+          val gId = entry.getIntKey
+          val gVal = entry.getDoubleValue
+          val wVal = weight.get(gId)
+
+          if (Math.abs(gVal) > 10e-7) {
+            entry.setValue(pdgGetG(wVal, gVal, L, theta))
+          }
+        }
     }
   }
 
-  def sparsity(weight: baseT): Double = {
-    val dim = weight.asInstanceOf[baseT].size()
-    var nonzero = 0
-    for(id <- 0 until dim) {
-      val wVal = weight.get(id)
-      if (Math.abs(wVal) > 0) nonzero += 1
+  def pdgGetG(wVal: Double, gVal: Double, L: Double, theta: Double): Double = {
+
+    val zVal = wVal - L * gVal
+
+    val proxVal = if (zVal > theta) {
+      zVal - theta
+    } else if (zVal < -1 * theta) {
+      zVal + theta
+    } else {
+      0
     }
-    return nonzero.toDouble / dim.toDouble
+
+    (wVal - proxVal) / L
   }
 
 }

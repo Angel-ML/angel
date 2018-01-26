@@ -21,7 +21,7 @@ import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.TDoubleVector
+import com.tencent.angel.ml.math.vector.{DenseDoubleVector, SparseDoubleVector, SparseLongKeyDoubleVector, TDoubleVector}
 import com.tencent.angel.ml.metric.LossMetric
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.ml.optimizer.sgd.GradientDescent
@@ -104,6 +104,12 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     }
     val loss = batchGD._1
     val localWeight = batchGD._2
+
+    // check the sparsity of weight
+    val dimInt = feaNum.toInt
+    val weightSparsity = sparsity(localWeight, dimInt)
+    LOG.info("the sparsity for w is:" + weightSparsity)
+
     val batchCost = System.currentTimeMillis() - startBatch
     LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epoch mini-batch update success." +
       s"Cost $batchCost ms. " +
@@ -175,7 +181,7 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     globalMetrics.metric(MLConf.TRAIN_LOSS, trainMetrics._1)
 
     if (valiData.size > 0) {
-      val validMetric = ValidationUtils.calMetrics(valiData, weight, regLL);
+      val validMetric = ValidationUtils.calMetrics(valiData, weight, regLL)
       LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epoch " +
         s"validationData loss=${validMetric._1 / valiData.size()} " +
         s"precision=${validMetric._2} " +
@@ -184,6 +190,40 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
         s"falseRecall=${validMetric._5}")
       globalMetrics.metric(MLConf.VALID_LOSS, validMetric._1)
     }
+  }
+
+  def sparsity(weight: TDoubleVector, dim: Int): Double = {
+    var nonzero: Int = 0
+
+    weight match {
+
+      case denseW: DenseDoubleVector =>
+        for (id <- 0 until dim) {
+          val wVal = weight.get(id)
+          if (Math.abs(wVal) > 0) nonzero += 1
+        }
+
+      case sparseW: SparseDoubleVector =>
+        val mapW = sparseW.asInstanceOf[SparseDoubleVector].getIndexToValueMap
+        val iterW = mapW.int2DoubleEntrySet().fastIterator()
+
+        while (iterW.hasNext) {
+          val entryW = iterW.next()
+          val wVal = entryW.getDoubleValue
+          if (Math.abs(wVal) > 0) nonzero += 1
+        }
+
+      case sparseLongW: SparseLongKeyDoubleVector =>
+        val mapLongW = sparseLongW.asInstanceOf[SparseLongKeyDoubleVector].getIndexToValueMap
+        val iterLongW = mapLongW.long2DoubleEntrySet().fastIterator()
+
+        while (iterLongW.hasNext) {
+          val entryLongW = iterLongW.next()
+          val wVal = entryLongW.getDoubleValue
+          if (Math.abs(wVal) > 0) nonzero += 1
+        }
+    }
+    nonzero.toDouble / dim.toDouble
   }
 
 }
