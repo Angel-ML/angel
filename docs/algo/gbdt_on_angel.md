@@ -87,6 +87,7 @@ GBDT的流程包括几大步骤
 ### 参数
 
 * **算法参数**
+	* ml.gbdt.task.type：任务类型，classification或者regression
 	* ml.gbdt.tree.num：树的数量
 	* ml.gbdt.tree.depth：树的最大高度
 	* ml.gbdt.split.num：每个特征的梯度直方图的大小
