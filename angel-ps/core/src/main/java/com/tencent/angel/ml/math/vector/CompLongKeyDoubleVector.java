@@ -824,10 +824,10 @@ public abstract class CompLongKeyDoubleVector extends TLongDoubleVector {
   }
 
   @Override public double sparsity() {
-    if (getDimension() == -1) {
-      return nonZeroNumber() / Long.MAX_VALUE / 2;
+    if (getLongDim() == -1) {
+      return (double) nonZeroNumber() / (double) Long.MAX_VALUE / 2.0;
     } else {
-      return nonZeroNumber() / getLongDim();
+      return (double) nonZeroNumber() / (double) getLongDim();
     }
   }
 
