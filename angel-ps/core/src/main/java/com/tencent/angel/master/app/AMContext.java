@@ -226,4 +226,10 @@ public interface AMContext {
    * @return Matrix partition Replication number
    */
   int getPSReplicationNum();
+
+  /**
+   * Get Yarn NM web port
+   * @return Yarn NM web port
+   */
+  int getYarnNMWebPort();
 }

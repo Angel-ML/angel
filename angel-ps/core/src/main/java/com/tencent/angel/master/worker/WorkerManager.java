@@ -34,7 +34,6 @@ import com.tencent.angel.worker.task.TaskId;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.event.EventHandler;
@@ -227,8 +226,8 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
 
   private String getDetailWorkerExitMessage() {
     StringBuilder sb = new StringBuilder();
-    sb.append("killed and failed workergroup is over tolerate ").append(tolerateFailedGroup);
-    sb.append("\n");
+    //sb.append("killed and failed workergroup is over tolerate ").append(tolerateFailedGroup);
+    sb.append("There are some Workers failed\n");
     if (!failedGroups.isEmpty()) {
       sb.append("failed workergroups:");
       for (WorkerGroupId groupId : failedGroups) {

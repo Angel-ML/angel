@@ -755,4 +755,17 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
     }
     return minIteration;
   }
+
+  /**
+   * Get worker attempt log url
+   * @return worker log url
+   */
+  public String getLogUrl() {
+    if(location == null || container == null) {
+      return "";
+    } else {
+      return "http://" + location.getIp() + ":" + context.getYarnNMWebPort() + "/node/containerlogs/"
+        + container.getId() + "/angel/syslog/?start=0";
+    }
+  }
 }
