@@ -52,7 +52,7 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   val feaNum: Long = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
   val spRatio: Double = conf.getDouble(MLConf.ML_BATCH_SAMPLE_Ratio, MLConf.DEFAULT_ML_BATCH_SAMPLE_Ratio)
   val batchNum: Int = conf.getInt(MLConf.ML_SGD_BATCH_NUM, MLConf.DEFAULT_ML_SGD_BATCH_NUM)
-  val regLoss: String = conf.getStrings(MLConf.REG_LOSS_TYPE, LOSS1)(0)
+  val regLoss: String = conf.getStrings(MLConf.REG_LOSS_TYPE, LOSS2)(0)
 
   // Init LR Model
   val lrModel = new LRModel(conf, ctx)
