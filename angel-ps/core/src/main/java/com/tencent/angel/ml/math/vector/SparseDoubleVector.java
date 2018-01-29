@@ -659,7 +659,7 @@ public class SparseDoubleVector extends TIntDoubleVector implements Serialize{
     Int2DoubleMap.Entry entry = null;
     while (iter.hasNext()) {
       entry = iter.next();
-      this.hashMap.put(entry.getIntKey(), entry.getDoubleValue() * x);
+      entry.setValue(entry.getDoubleValue() * x);
     }
     return this;
   }

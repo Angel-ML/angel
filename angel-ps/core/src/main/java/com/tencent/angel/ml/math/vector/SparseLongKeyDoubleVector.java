@@ -527,7 +527,7 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
     ObjectIterator<Long2DoubleMap.Entry> iter =
       indexToValueMap.long2DoubleEntrySet().fastIterator();
     while (iter.hasNext()) {
-      if(iter.next().getDoubleValue() > 0.0)
+      if(iter.next().getDoubleValue() != 0.0)
         counter++;
     }
 
