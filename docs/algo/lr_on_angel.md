@@ -57,14 +57,16 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Logistic 
 * ml.data.type：支持"dummy"、"libsvm"两种数据格式，具体参考：[Angel数据格式](data_format.md)
 
 ###  参数
-* 算法参数  
-	* ml.epoch.num：迭代次数   
+* 算法参数
+
+	* reg.loss.type:正则项的类型，有l1和l2两种方式，其中l1正则用"loss1"表示，并且使用PGD(proximal gradient descent)算法进行计算；l2用"loss2"表示，使用梯度下降(GD,gradient descent)算法求解
+	* ml.epoch.num：迭代次数
 	* ml.batch.sample.ratio：每次迭代的样本采样率   
 	* ml.sgd.batch.num：每次迭代的mini-batch的个数   
 	* ml.validate.ratio：每次validation的样本比率，设为0时不做validation    
 	* ml.learn.rate：初始学习速率   
 	* ml.learn.decay：学习速率衰减系数   
-	* ml.reg.l2：L2惩罚项系数
+	* ml.learn.decay：正则项的惩罚系数，正则项可分为l1或l2
 	* ml.lr.use.intercept：使用截距   
 	* ml.index.get.enable：是否使用基于index的模型获取，**true**表示使用index来获取模型的指定部分，**false**表示不使用，默认为**false**。 当模型稀疏度较高时，建议配置为**true**。当该选择配置为**true**时，在LR的训练数据预处理过程中，算法会自动记录训练数据中出现的特征的index，在获取模型时会根据这些index来获取模型
 
@@ -100,12 +102,13 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Logistic 
 	    --ml.data.type dummy \
 	    --ml.learn.rate 1 \
 	    --ml.learn.decay 0.1 \
-	    --ml.reg.l2 0 \
+	    --ml.reg.lamada 0.001 \
 	    --angel.workergroup.number 3 \
 	    --angel.worker.task.number 3 \
 	    --angel.ps.number 1 \
 	    --angel.ps.memory.mb 5000 \
-	    --angel.job.name=angel_lr_smalldata
+	    --angel.job.name angel_lr_smalldata \
+		--reg.loss.type loss1
 	```
 
 ### 性能

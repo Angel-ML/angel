@@ -56,6 +56,8 @@ object MLConf {
   val DEFAULT_ML_REG_L1 = 1.0
   val ML_REG_L2 = "ml.reg.l2"
   val DEFAULT_ML_REG_L2 = 1.0
+  val REG_LOSS_TYPE = "reg.loss.type"
+  val ML_REG_LAMADA = "ml.reg.lamada"
 
   // mini-batch sgd params
   val ML_EPOCH_NUM = "ml.epoch.num"
