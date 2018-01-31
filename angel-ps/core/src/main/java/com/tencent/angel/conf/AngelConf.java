@@ -729,7 +729,7 @@ public class AngelConf extends Configuration {
    */
   public static final String ANGEL_MATRIXTRANSFER_REQUEST_TIMEOUT_MS = ANGEL_PREFIX
       + "matrixtransfer.request.timeout.ms";
-  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_REQUEST_TIMEOUT_MS = 10000;
+  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_REQUEST_TIMEOUT_MS = 20000;
 
   /**
    * The time interval in milliseconds of clock events. We will check timeout requests and retry
