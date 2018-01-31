@@ -527,7 +527,7 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
     ObjectIterator<Long2DoubleMap.Entry> iter =
       indexToValueMap.long2DoubleEntrySet().fastIterator();
     while (iter.hasNext()) {
-      if(iter.next().getDoubleValue() > 0)
+      if(iter.next().getDoubleValue() != 0.0)
         counter++;
     }
 
@@ -564,7 +564,7 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
   }
 
   @Override public double sparsity() {
-    return nonZeroNumber() / dim;
+    return (double)nonZeroNumber() / (double) dim;
   }
 
   @Override public RowType getType() {
@@ -597,7 +597,7 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
       entry = iter.next();
       entry.setValue(updater.action(entry.getLongKey(), entry.getDoubleValue(), param));
     }
-    return null;
+    return this;
   }
 
   @Override

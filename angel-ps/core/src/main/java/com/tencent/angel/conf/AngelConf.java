@@ -409,7 +409,7 @@ public class AngelConf extends Configuration {
   public static final double DEFAULT_WORKERGROUP_FAILED_TOLERATE = 0.1;
 
   public static final String ANGEL_TASK_ERROR_TOLERATE = ANGEL_PREFIX + "task.error.tolerate";
-  public static final double DEFAULT_ANGEL_TASK_ERROR_TOLERATE = 0.01;
+  public static final double DEFAULT_ANGEL_TASK_ERROR_TOLERATE = 0.0;
   
   /** The maximum number of times AppMaster can try. */
   public static final String ANGEL_WORKER_MAX_ATTEMPTS = ANGEL_WORKER_PREFIX + "max-attempts";
@@ -729,7 +729,7 @@ public class AngelConf extends Configuration {
    */
   public static final String ANGEL_MATRIXTRANSFER_REQUEST_TIMEOUT_MS = ANGEL_PREFIX
       + "matrixtransfer.request.timeout.ms";
-  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_REQUEST_TIMEOUT_MS = 10000;
+  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_REQUEST_TIMEOUT_MS = 20000;
 
   /**
    * The time interval in milliseconds of clock events. We will check timeout requests and retry

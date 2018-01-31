@@ -43,6 +43,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
@@ -628,7 +629,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
         }
         catch (Throwable e) {
           LOG.fatal("RequestDispatcher is failed ", e);
-          PSAgentContext.get().getPsAgent().error("RequestDispatcher is failed. " + e.getMessage());
+          PSAgentContext.get().getPsAgent().error("RequestDispatcher is failed. " + ExceptionUtils.getFullStackTrace(e));
         }
       }
     }
@@ -1397,10 +1398,14 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       }
 
       // allocate the bytebuf
+      startTs = System.currentTimeMillis();
       ByteBuf buffer = ByteBufUtils.newByteBuf(request.bufferLen(), useDirectBuffer);
       buffer.writeInt(seqId);
       buffer.writeInt(request.getType().getMethodId());
       request.serialize(buffer);
+      if(request instanceof GetUDFRequest) {
+        LOG.info("Serialize request use time=" + (System.currentTimeMillis() - startTs));
+      }
       request.getContext().setSerializedData(buffer);
 
       // get a channel to server from pool
@@ -1496,7 +1501,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       }
       catch (Throwable e) {
         LOG.fatal("ResponseDispatcher is failed ", e);
-        PSAgentContext.get().getPsAgent().error("ResponseDispatcher is failed. " + e.getMessage());
+        PSAgentContext.get().getPsAgent().error("ResponseDispatcher is failed. " + ExceptionUtils.getFullStackTrace(e));
       }
     }
   }
@@ -1576,7 +1581,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
         LOG.warn(Thread.currentThread().getName() + " is interruptted");
       } catch (Throwable x) {
         LOG.fatal("hanlder rpc response failed ", x);
-        PSAgentContext.get().getPsAgent().error("hanlder rpc response failed " + x.getMessage());
+        PSAgentContext.get().getPsAgent().error("hanlder rpc response failed " + ExceptionUtils.getFullStackTrace(x));
       }
     }
     

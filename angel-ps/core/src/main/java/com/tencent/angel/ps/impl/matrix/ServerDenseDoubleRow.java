@@ -31,7 +31,7 @@ import java.util.Arrays;
 /**
  * The class represent dense double row on parameter server.
  */
-public class ServerDenseDoubleRow extends ServerRow {
+public class ServerDenseDoubleRow extends ServerDoubleRow {
   private final static Log LOG = LogFactory.getLog(ServerDenseDoubleRow.class);
 
   /** Byte array */
@@ -119,8 +119,8 @@ public class ServerDenseDoubleRow extends ServerRow {
   }
 
   private void sparseDoubleUpdate(ByteBuf buf, int size) {
-    int columnId = 0;
-    double value = 0;
+    int columnId;
+    double value;
     int startColInt = (int) startCol;
     for (int i = 0; i < size; i++) {
       columnId = buf.readInt() - startColInt;
@@ -224,7 +224,7 @@ public class ServerDenseDoubleRow extends ServerRow {
     try {
       lock.readLock().lock();
       // data.rewind();
-      int size = (int)(endCol - startCol);
+      int size = (int) (endCol - startCol);
       int startPos = (int) startCol;
       for (int i = 0; i < size; i++) {
         dataArray[startPos + i] = data.get(i);
@@ -232,5 +232,9 @@ public class ServerDenseDoubleRow extends ServerRow {
     } finally {
       lock.readLock().unlock();
     }
+  }
+
+  @Override protected double getValue(int index) {
+    return data.get(index - (int) startCol);
   }
 }

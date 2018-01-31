@@ -137,7 +137,7 @@ public class SparseDoubleVector extends TIntDoubleVector implements Serialize{
     Int2DoubleMap.Entry entry;
     while (iter.hasNext()) {
       entry = iter.next();
-      updater.action(entry.getIntKey(), entry.getDoubleValue(), param);
+      entry.setValue(updater.action(entry.getIntKey(), entry.getDoubleValue(), param));
     }
     return this;
   }
@@ -288,7 +288,7 @@ public class SparseDoubleVector extends TIntDoubleVector implements Serialize{
     if (hashMap != null) {
       ObjectIterator<Int2DoubleMap.Entry> iter = this.hashMap.int2DoubleEntrySet().fastIterator();
       while (iter.hasNext()) {
-        if (iter.next().getDoubleValue() != 0) {
+        if (iter.next().getDoubleValue() != 0.0) {
           ret++;
         }
       }
@@ -637,7 +637,7 @@ public class SparseDoubleVector extends TIntDoubleVector implements Serialize{
   }
 
   @Override public double sparsity() {
-    return ((double) nonZeroNumber()) / dim;
+    return ((double) nonZeroNumber()) / (double)dim;
   }
 
   @Override
@@ -659,7 +659,7 @@ public class SparseDoubleVector extends TIntDoubleVector implements Serialize{
     Int2DoubleMap.Entry entry = null;
     while (iter.hasNext()) {
       entry = iter.next();
-      this.hashMap.put(entry.getIntKey(), entry.getDoubleValue() * x);
+      entry.setValue(entry.getDoubleValue() * x);
     }
     return this;
   }

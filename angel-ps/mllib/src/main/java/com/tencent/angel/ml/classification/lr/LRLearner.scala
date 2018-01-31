@@ -21,7 +21,7 @@ import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.{DenseDoubleVector, SparseDoubleVector, SparseLongKeyDoubleVector, TDoubleVector}
+import com.tencent.angel.ml.math.vector._
 import com.tencent.angel.ml.metric.LossMetric
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.ml.optimizer.sgd.GradientDescent
@@ -47,11 +47,12 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   val epochNum: Int = conf.getInt(MLConf.ML_EPOCH_NUM, MLConf.DEFAULT_ML_EPOCH_NUM)
   val lr_0: Double = conf.getDouble(MLConf.ML_LEARN_RATE, MLConf.DEFAULT_ML_LEAR_RATE)
   val decay: Double = conf.getDouble(MLConf.ML_LEARN_DECAY, MLConf.DEFAULT_ML_LEARN_DECAY)
-  val reg: Double = conf.getDouble(MLConf.ML_REG_LAMADA, MLConf.DEFAULT_ML_REG_L2)
+  val reg1: Double = conf.getDouble(MLConf.ML_REG_L1, MLConf.DEFAULT_ML_REG_L1)
+  val reg2: Double = conf.getDouble(MLConf.ML_REG_L2, MLConf.DEFAULT_ML_REG_L2)
   val feaNum: Long = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
   val spRatio: Double = conf.getDouble(MLConf.ML_BATCH_SAMPLE_Ratio, MLConf.DEFAULT_ML_BATCH_SAMPLE_Ratio)
   val batchNum: Int = conf.getInt(MLConf.ML_SGD_BATCH_NUM, MLConf.DEFAULT_ML_SGD_BATCH_NUM)
-  val regLoss: String = conf.getStrings(MLConf.REG_LOSS_TYPE, LOSS1)(0)
+  val regLoss: String = conf.getStrings(MLConf.REG_LOSS_TYPE, LOSS2)(0)
 
   // Init LR Model
   val lrModel = new LRModel(conf, ctx)
@@ -59,9 +60,9 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   LOG.info("the loss is:" + regLoss)
   // LR uses log loss
   val regLL = regLoss match {
-    case LOSS1 => new L1LogLoss(reg)
-    case LOSS2 => new L2LogLoss(reg)
-    case _ => new L2LogLoss(reg)
+    case LOSS1 => new L1LogLoss(reg1)
+    case LOSS2 => new L2LogLoss(reg2)
+    case _ => new L2LogLoss(reg2)
   }
 
   /**
@@ -106,8 +107,8 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     val localWeight = batchGD._2
 
     // check the sparsity of weight
-    val dimInt = feaNum.toInt
-    val weightSparsity = sparsity(localWeight, dimInt)
+    //val dimInt = feaNum.toInt
+    val weightSparsity = localWeight.sparsity()
     LOG.info("the sparsity for w is:" + weightSparsity)
 
     val batchCost = System.currentTimeMillis() - startBatch
@@ -136,7 +137,7 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
 
     LOG.info(s"Task[${ctx.getTaskIndex}]: Starting to train a LR model...")
     LOG.info(s"Task[${ctx.getTaskIndex}]: Sample Ratio per Batch=$spRatio, Sample Size Per " + s"$samplePerBatch")
-    LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epochNum, initLearnRate=$lr_0, " + s"learnRateDecay=$decay, Reg=$reg")
+    LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epochNum, initLearnRate=$lr_0, " + s"learnRateDecay=$decay, Reg1=$reg1, Reg1=$reg2")
 
     globalMetrics.addMetric(MLConf.TRAIN_LOSS, LossMetric(trainData.size))
     globalMetrics.addMetric(MLConf.VALID_LOSS, LossMetric(validationData.size))
@@ -192,13 +193,14 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     }
   }
 
-  def sparsity(weight: TDoubleVector, dim: Int): Double = {
-    var nonzero: Int = 0
+  //def sparsity(weight: TDoubleVector, dim: Int): Double = {
+  //  var nonzero: Int = 0
 
-    weight match {
-
-      case denseW: DenseDoubleVector =>
-        for (id <- 0 until dim) {
+  //  weight match {
+  //    case w:DenseDoubleVector | SparseDoubleVector | CompSparseDoubleVector | CompSparseLongKeyDoubleVector | SparseLongKeyDoubleVector =>
+   //     return w.asInstanceOf[TDoubleVector].sparsity()
+   //   case _ => 0.0
+        /*for (id <- 0 until dim) {
           val wVal = weight.get(id)
           if (Math.abs(wVal) > 0) nonzero += 1
         }
@@ -221,9 +223,9 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
           val entryLongW = iterLongW.next()
           val wVal = entryLongW.getDoubleValue
           if (Math.abs(wVal) > 0) nonzero += 1
-        }
-    }
-    nonzero.toDouble / dim.toDouble
-  }
+        }*/
+    //}
+    //nonzero.toDouble / dim.toDouble
+  //}
 
 }

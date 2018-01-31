@@ -113,7 +113,6 @@ object GradientDescent {
 
       // L is (0,1)
       if(loss.isL1Reg){
-        LOG.info("this is in l1")
         PGD4Grad(w, grad, loss.getRegParam, lr)
       }
 
@@ -249,9 +248,7 @@ object GradientDescent {
       case denseG: DenseDoubleVector =>
         LOG.info("this is dense vector")
         for (i <- 0 until denseG.size) {
-          val wVal = weight.get(i)
-          val gVal = grad.get(i)
-          grad.set(i, pdgGetG(wVal, gVal, L, theta))
+          grad.set(i, pdgGetG(weight.get(i), grad.get(i), L, theta))
         }
 
       case sparseLongG: SparseLongKeyDoubleVector =>
@@ -262,11 +259,7 @@ object GradientDescent {
 
         while (iterLongG.hasNext) {
           val entry = iterLongG.next()
-          val gId = entry.getLongKey
-          val gVal = entry.getDoubleValue
-          val wVal = weight.get(gId)
-
-          entry.setValue(pdgGetG(wVal, gVal, L, theta))
+          entry.setValue(pdgGetG(weight.get(entry.getLongKey), entry.getDoubleValue, L, theta))
         }
 
       case sparseG: SparseDoubleVector =>
@@ -277,19 +270,44 @@ object GradientDescent {
 
         while (iterG.hasNext) {
           val entry = iterG.next()
-          val gId = entry.getIntKey
-          val gVal = entry.getDoubleValue
-          val wVal = weight.get(gId)
+          entry.setValue(pdgGetG(weight.get(entry.getIntKey), entry.getDoubleValue, L, theta))
+        }
 
-          if (Math.abs(gVal) > 10e-7) {
-            entry.setValue(pdgGetG(wVal, gVal, L, theta))
+      case compSparse: CompSparseDoubleVector => {
+        class L1UpdateParam(theta:Double, L:Double, w: baseT) extends ElemUpdateParam {
+          def getW = w
+          def getTheta = theta
+          def getL = L
+        }
+
+        class L1Updater extends IntDoubleElemUpdater {
+          override def action(index: Int, value: Double, param: ElemUpdateParam): Double = {
+            pdgGetG(param.asInstanceOf[L1UpdateParam].getW.get(index), value, param.asInstanceOf[L1UpdateParam].getL, param.asInstanceOf[L1UpdateParam].getTheta)
           }
         }
+
+        compSparse.elemUpdate(new L1Updater, new L1UpdateParam(theta, L, weight))
+      }
+
+      case compLong : CompSparseLongKeyDoubleVector => {
+        class L1UpdateParam(theta:Double, L:Double, w: baseT) extends ElemUpdateParam {
+          def getW = w
+          def getTheta = theta
+          def getL = L
+        }
+
+        class L1Updater extends LongDoubleElemUpdater {
+          override def action(index: Long, value: Double, param: ElemUpdateParam): Double = {
+            pdgGetG(param.asInstanceOf[L1UpdateParam].getW.get(index), value, param.asInstanceOf[L1UpdateParam].getL, param.asInstanceOf[L1UpdateParam].getTheta)
+          }
+        }
+
+        compLong.elemUpdate(new L1Updater, new L1UpdateParam(theta, L, weight))
+      }
     }
   }
 
   def pdgGetG(wVal: Double, gVal: Double, L: Double, theta: Double): Double = {
-
     val zVal = wVal - L * gVal
 
     val proxVal = if (zVal > theta) {
@@ -299,8 +317,6 @@ object GradientDescent {
     } else {
       0
     }
-
     (wVal - proxVal) / L
   }
-
 }

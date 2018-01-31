@@ -38,6 +38,7 @@ import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -458,9 +459,9 @@ public class MatrixClientAdapter {
         }
       } catch (InterruptedException ie) {
         LOG.info("interupted");
-      } catch (Exception e) {
+      } catch (Throwable e) {
         LOG.fatal("merge dispatcher error ", e);
-        PSAgentContext.get().getPsAgent().error("merge dispatcher error " + e.getMessage());
+        PSAgentContext.get().getPsAgent().error("merge dispatcher error " + ExceptionUtils.getFullStackTrace(e));
       }
     }
   }
@@ -484,9 +485,9 @@ public class MatrixClientAdapter {
           .combineRowSplitsPipeline(pipelineCache, request.getMatrixId(), request.getRowIndex());
         vector.setMatrixId(request.getMatrixId());
         pipelineCache.setMergedResult(vector);
-      } catch (Exception x) {
+      } catch (Throwable x) {
         LOG.fatal("merge row failed ", x);
-        PSAgentContext.get().getPsAgent().error("merge row splits failed " + x.getMessage());
+        PSAgentContext.get().getPsAgent().error("merge row splits failed " + ExceptionUtils.getFullStackTrace(x));
       }
     }
 
@@ -523,9 +524,9 @@ public class MatrixClientAdapter {
         vector = RowSplitCombineUtils
           .combineServerRowSplits(splits, request.getIndex().getMatrixId(), rowIndex);
         return vector;
-      } catch (Exception x) {
+      } catch (Throwable x) {
         LOG.fatal("merge row failed ", x);
-        PSAgentContext.get().getPsAgent().error("merge row splits failed " + x.getMessage());
+        PSAgentContext.get().getPsAgent().error("merge row splits failed " + ExceptionUtils.getFullStackTrace(x));
       }
 
       return vector;

@@ -30,6 +30,7 @@ import com.tencent.angel.psagent.task.TaskContext;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectAVLTreeMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -447,7 +448,7 @@ public class MatrixOpLogCache {
         LOG.warn("merge " + message + " is interruped");
       } catch (Throwable e) {
         LOG.fatal("merge " + message + " falied, ", e);
-        PSAgentContext.get().getPsAgent().error("merge " + message + " falied, " + e.getMessage());
+        PSAgentContext.get().getPsAgent().error("merge " + message + " falied, " + ExceptionUtils.getFullStackTrace(e));
       }
     }
   }
@@ -479,7 +480,7 @@ public class MatrixOpLogCache {
         ((FutureResult<VoidResult>) messageToFutureMap.remove(message)).set(result);
       } catch (Throwable e) {
         LOG.fatal("flush op " + message + " failed, ", e);
-        PSAgentContext.get().getPsAgent().error("flush op " + message + " falied, " + e.getMessage());
+        PSAgentContext.get().getPsAgent().error("flush op " + message + " falied, " + ExceptionUtils.getFullStackTrace(e));
       }
     }
 

@@ -31,7 +31,7 @@ import java.util.Arrays;
 /**
  * The class represent dense int row on parameter server.
  */
-public class ServerDenseIntRow extends ServerRow {
+public class ServerDenseIntRow extends ServerIntRow {
   private final static Log LOG = LogFactory.getLog(ServerDenseIntRow.class);
 
   /** Byte array */
@@ -73,6 +73,10 @@ public class ServerDenseIntRow extends ServerRow {
    */
   public ServerDenseIntRow() {
     this(0, 0, 0, null);
+  }
+
+  @Override protected int getValue(int index) {
+    return data.get(index - (int) startCol);
   }
 
   @Override

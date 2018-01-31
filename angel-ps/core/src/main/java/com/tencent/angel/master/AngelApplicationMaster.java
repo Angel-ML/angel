@@ -364,6 +364,21 @@ public class AngelApplicationMaster extends CompositeService {
       return conf.getInt(AngelConf.ANGEL_PS_HA_REPLICATION_NUMBER, AngelConf.DEFAULT_ANGEL_PS_HA_REPLICATION_NUMBER);
     }
 
+    @Override public int getYarnNMWebPort() {
+      String nmWebAddr = conf.get(YarnConfiguration.NM_WEBAPP_ADDRESS, YarnConfiguration.DEFAULT_NM_WEBAPP_ADDRESS);
+      String [] addrItems = nmWebAddr.split(":");
+      if(addrItems.length == 2) {
+        try {
+          return Integer.valueOf(addrItems[1]);
+        } catch (Throwable x) {
+          LOG.error("can not get nm web port from " + nmWebAddr + ", just return default 8080");
+          return 8080;
+        }
+      } else {
+        return 8080;
+      }
+    }
+
     @Override
     public int getAMAttemptTime() {
       return conf.getInt(YarnConfiguration.RM_AM_MAX_ATTEMPTS,
