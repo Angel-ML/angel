@@ -97,6 +97,27 @@ PSModel中包含了**MatrixContext，MatrixClient，TaskContext**这3个核心�
 	- 参数：
 		- func: GetFunc get类型的psf函数。psf函数是Angel提供的一种参数服务器功能扩展接口
 	- 返回值：GetResult：psf get函数返回结果
+	
+	
+* **getRowWithIndex**
+
+	- 定义：```def getRowWithIndex(rowIndex: Int, index: Array[Int]): TVector```
+	- 功能：获取模型指定行的指定index对应的部分，用于32 bit的模型
+	- 参数：
+		- rowIndex: 行号
+		- index: 列下标数组
+	- 返回值：TVector：一个稀疏类型的向量
+	
+	
+* **getRowWithLongIndex**
+
+	- 定义：```def getRowWithLongIndex(rowIndex: Int, index: Array[Long]): TVector```
+	- 功能：获取模型指定行的指定index对应的部分， 用于64 bit的模型
+	- 参数：
+		- rowIndex: 行号
+		- index: 列下标数组
+	- 返回值：TVector：一个稀疏类型的向量
+
 
 * **getRowWithIndex**
 
