@@ -72,7 +72,7 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Logistic 
 	* ml.validate.ratio：每次validation的样本比率，设为0时不做validation    
 	* ml.learn.rate：初始学习速率   
 	* ml.learn.decay：学习速率衰减系数
-	* reg.loss.type：正则项类型，目前可以配置**loss1**和**loss2**，**loss1**表示使用L1正则项，**loss2**表示使用L2正则项
+	* ml.reg.loss.type：正则项类型，目前可以配置**loss1**和**loss2**，**loss1**表示使用L1正则项，**loss2**表示使用L2正则项
 	* ml.reg.l1：L1惩罚项系数，仅当reg.loss.type配置为**loss1**时有效
 	* ml.reg.l2：L2惩罚项系数，仅当reg.loss.type配置为**loss2**时有效
 	* ml.lr.use.intercept：使用截距 
