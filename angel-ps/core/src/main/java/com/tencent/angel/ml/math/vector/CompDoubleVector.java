@@ -779,6 +779,7 @@ abstract class CompDoubleVector extends TIntDoubleVector {
     ElementUpdateOp
       op = new ElementUpdateOp(vectors, 0, splitNum, updater, param);
     MatrixOpExecutors.execute(op);
+    op.join();
     return this;
   }
 }
