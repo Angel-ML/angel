@@ -24,6 +24,7 @@ angel-ps/tools/target/
 angel-ps/mllib/target/
 angel-ps/jarvis/target/
 angel-ps/tools/target/
+angel-ps/serving/target/
 angel-ps/target/
 angel-ps/core/log/
 angel-ps/psf/log/
