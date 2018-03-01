@@ -45,6 +45,15 @@ class SparsePSMatrix(
     psClient.matrixOps.increment(this, pairs)
   }
 
+  def fill(value: Double): Unit = {
+    assertValid()
+    psClient.matrixOps.fill(this, value)
+  }
+
+  def zero(): Unit = {
+    fill(0.0)
+  }
+
   private def getRow(rowId: Int): SparsePSVector = {
     new SparsePSVector(id, rowId, columns)
   }
