@@ -124,7 +124,7 @@ angel-submit \
     -Dangel.worker.log.level=INFO \
     -Dangel.app.submit.class=com.tencent.angel.ml.GBDT.GBDTRunner  \
     -Daction.type=train \
-    -Dangel.ml.data.type=libsvm \
+    -Dml.data.type=libsvm \
     -Dml.validate.ratio=0.1 \
     -Dml.feature.num=10000 \
 	  -Dml.feature.nnz=100 \
@@ -154,7 +154,7 @@ angel-submit \
     -Dangel.worker.log.level=INFO \
     -Dangel.app.submit.class=com.tencent.angel.ml.GBDT.GBDTRunner  \
     -Daction.type=predict \
-    -Dangel.ml.data.type=libsvm \
+    -Dml.data.type=libsvm \
     -Dml.validate.ratio=0.1 \
     -Dml.feature.num=10000 \
 	  -Dml.feature.nnz=100 \
