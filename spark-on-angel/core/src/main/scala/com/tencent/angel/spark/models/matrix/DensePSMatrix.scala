@@ -87,6 +87,20 @@ class DensePSMatrix(
     PSClient.instance().denseRowOps.increment(getRow(rowId), array)
   }
 
+  /**
+    * Fill matrix with `value`
+    */
+  def fill(value: Double): Unit = {
+    assertValid()
+    PSClient.instance().matrixOps.fill(this, value)
+  }
+
+  /**
+    * Set all matrix elements to zero
+    */
+  def zero(): Unit = {
+    fill(0.0)
+  }
 
   private def getRow(rowId: Int): DensePSVector = {
     new DensePSVector(id, rowId, columns.toInt)
