@@ -88,8 +88,8 @@ object DataParser64 {
 
   def apply(dataFormat: String, maxDim: Long, negY: Boolean) :DataParser = {
     dataFormat match {
-      case "dummy" => new Dummy64DataParser(maxDim.toInt, negY)
-      case "libsvm" => new LibSVM64DataParser(maxDim.toInt, negY)
+      case "dummy" => new Dummy64DataParser(maxDim, negY)
+      case "libsvm" => new LibSVM64DataParser(maxDim, negY)
     }
   }
 }
