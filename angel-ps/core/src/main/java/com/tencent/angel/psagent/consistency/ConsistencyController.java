@@ -85,6 +85,12 @@ public class ConsistencyController {
   public TVector getRow(TaskContext taskContext, int matrixId, int rowIndex) throws Exception {
     int staleness = getStaleness(matrixId);
     if(staleness >= 0) {
+      // Use simple flow, do not use any cache
+      if(staleness == 0 && PSAgentContext.get().getLocalTaskNum() == 1) {
+        waitForClock(matrixId, rowIndex, taskContext.getMatrixClock(matrixId));
+        return ((GetRowResult)PSAgentContext.get().getMatrixClientAdapter().get(new GetRowFunc(new GetRowParam(matrixId, rowIndex)))).getRow();
+      }
+      
       // Get row from cache.
       TVector row = PSAgentContext.get().getMatrixStorageManager().getRow(matrixId, rowIndex);
 
