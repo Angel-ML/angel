@@ -34,6 +34,8 @@ object FailureMessage {
   }
 
   def toError(msg: FailureMessage): String = {
-    msg.body.readCharSequence(msg.bodyLen, StandardCharsets.UTF_8).toString
+    val bytes = new Array[Byte](msg.bodyLen)
+    msg.body.readBytes(bytes)
+    new String(bytes, StandardCharsets.UTF_8)
   }
 }

@@ -192,4 +192,6 @@ public class PSContext {
   public PSFailedReport getPSFailedReport() {
     return ps.getPSFailedReport();
   }
+
+  public RunningContext getRunningContext() { return ps.getRunningContext(); }
 }

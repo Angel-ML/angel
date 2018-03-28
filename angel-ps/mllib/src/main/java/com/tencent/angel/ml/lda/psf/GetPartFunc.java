@@ -42,23 +42,27 @@ public class GetPartFunc extends GetFunc {
 
   @Override
   public PartitionGetResult partitionGet(PartitionGetParam partParam) {
-    PartitionGetRowsParam param = (PartitionGetRowsParam) partParam;
+    if (partParam instanceof PartitionGetRowsParam) {
+      PartitionGetRowsParam param = (PartitionGetRowsParam) partParam;
 
-    PartitionKey pkey = param.getPartKey();
-    pkey = psContext.getMatrixMetaManager().getMatrixMeta(pkey.getMatrixId())
-      .getPartitionMeta(pkey.getPartitionId()).getPartitionKey();
-    int ws = pkey.getStartRow();
-    int es = pkey.getEndRow();
+      PartitionKey pkey = param.getPartKey();
+      pkey = psContext.getMatrixMetaManager().getMatrixMeta(pkey.getMatrixId())
+          .getPartitionMeta(pkey.getPartitionId()).getPartitionKey();
+      int ws = pkey.getStartRow();
+      int es = pkey.getEndRow();
 
-    List<Integer> reqRows = param.getRowIndexes();
+      List<Integer> reqRows = param.getRowIndexes();
 
-    MatrixStorageManager manager = psContext.getMatrixStorageManager();
-    List<ServerRow> rows = new ArrayList<>();
-    for (int w : reqRows)
-      rows.add(manager.getRow(pkey, w));
+      MatrixStorageManager manager = psContext.getMatrixStorageManager();
+      List<ServerRow> rows = new ArrayList<>();
+      for (int w : reqRows)
+        rows.add(manager.getRow(pkey, w));
 
-    PartCSRResult csr = new PartCSRResult(rows);
-    return csr;
+      PartCSRResult csr = new PartCSRResult(rows);
+      return csr;
+    } else {
+      return null;
+    }
   }
 
   @Override

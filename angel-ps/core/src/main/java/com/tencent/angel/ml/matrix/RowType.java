@@ -85,7 +85,13 @@ public enum RowType {
    * Sparse int: the element type is "double"; the index is same as "T_DOUBLE_SPARSE_LONGKEY"
    * This vector is contains of a batch of "T_DOUBLE_SPARSE_LONGKEY" vectors and can be do parallel computing, so if the number of non-zero values of sparse vector is big, you can try it
    */
-  T_DOUBLE_SPARSE_LONGKEY_COMPONENT(11, RowType.T_DOUBLE_SPARSE_LONGKEY_COMPONENT_VALUE);
+  T_DOUBLE_SPARSE_LONGKEY_COMPONENT(11, RowType.T_DOUBLE_SPARSE_LONGKEY_COMPONENT_VALUE),
+
+  /**
+   * Sparse float: the element type is "float"; the index is same as "T_FLOAT_SPARSE_LONGKEY"
+   * This vector is contains of a batch of "T_FLOAT_SPARSE_LONGKEY" vectors and can be do parallel computing, so if the number of non-zero values of sparse vector is big, you can try it
+   */
+  T_FLOAT_SPARSE_LONGKEY(12, RowType.T_FLOAT_SPARSE_LONGKEY_VALUE);
 
   public static final int T_DOUBLE_SPARSE_VALUE = 1;
   public static final int T_DOUBLE_DENSE_VALUE = 2;
@@ -99,7 +105,8 @@ public enum RowType {
   public static final int T_FLOAT_SPARSE_COMPONENT_VALUE = 10;
   public static final int T_INT_SPARSE_COMPONENT_VALUE = 11;
   public static final int T_DOUBLE_SPARSE_LONGKEY_COMPONENT_VALUE = 12;
-  public static final int T_INVALID_VALUE = 13;
+  public static final int T_FLOAT_SPARSE_LONGKEY_VALUE = 13;
+  public static final int T_INVALID_VALUE = 14;
 
   public final int getNumber() {
     return value;
@@ -131,6 +138,8 @@ public enum RowType {
         return T_INT_SPARSE_COMPONENT;
       case T_DOUBLE_SPARSE_LONGKEY_COMPONENT_VALUE:
         return T_DOUBLE_SPARSE_LONGKEY_COMPONENT;
+      case T_FLOAT_SPARSE_LONGKEY_VALUE:
+        return T_FLOAT_SPARSE_LONGKEY;
       default:
         return null;
     }

@@ -38,14 +38,14 @@ public class FullFill extends FullUpdateFunc {
   protected void doUpdate(ServerDenseDoubleRow[] rows, double[] values) {
     for (ServerDenseDoubleRow row: rows) {
       double value = values[0];
+      row.tryToLockWrite();
       try {
-        row.getLock().writeLock().lock();
         DoubleBuffer rowData = row.getData();
         for (int j = 0; j < row.size(); j++) {
           rowData.put(j, value);
         }
       } finally {
-        row.getLock().writeLock().unlock();
+        row.unlockWrite();
       }
     }
   }

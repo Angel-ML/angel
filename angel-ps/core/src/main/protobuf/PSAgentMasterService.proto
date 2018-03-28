@@ -50,7 +50,7 @@ message ReleaseMatricesResponse{
 }
 
 message PSAgentReportRequest {
-  required PSAgentAttemptIdProto psAgentAttemptId = 1;
+  required int32 psAgentId = 1;
   repeated Pair pairs = 3; 
 }
 
@@ -66,7 +66,7 @@ message PSAgentReportResponse {
 }
 
 message PSAgentRegisterRequest{
-  required PSAgentAttemptIdProto psAgentAttemptId = 1;
+  required int32 psAgentId = 1;
   required LocationProto location = 2; 
 }
 
@@ -89,7 +89,7 @@ message FetchMinClockResponse {
 }
 
 message PSAgentDoneRequest{
-  required PSAgentAttemptIdProto psAgentAttemptId = 1;
+  required int32 psAgentId = 1;
 }
 
 message PSAgentDoneResponse{
@@ -97,7 +97,7 @@ message PSAgentDoneResponse{
 }
 
 message PSAgentErrorRequest{
-  required PSAgentAttemptIdProto psAgentAttemptId = 1;
+  required int32 psAgentId = 1;
   required string msg = 2;
 }
 
@@ -144,10 +144,27 @@ message SetAlgoMetricsResponse {
 }
 
 message PSFailedReportRequest {
-  required PSFailedReportsProto reports = 1;
+  required int32 clientId = 1;
+  required PSLocationProto psLoc = 2;
 }
 
 message PSFailedReportResponse {
+}
+
+message GetPSAgentIdRequest {
+}
+
+message GetPSAgentIdResponse {
+  required int32 psAgentId = 1;
+}
+
+message CheckPSExitRequest {
+  required int32 clientId = 1;
+  required PSLocationProto psLoc = 2;
+}
+
+message CheckPSExitResponse {
+  required int32 exited = 1; // 1 means exited, 0 means not
 }
 
 service PSAgentMasterService {
@@ -172,4 +189,6 @@ service PSAgentMasterService {
   rpc psFailedReport(PSFailedReportRequest) returns (PSFailedReportResponse);
   rpc getPartLocation(GetPartLocationRequest) returns (GetPartLocationResponse);
   rpc getStoredPss(GetStoredPssRequest) returns (GetStoredPssResponse);
+  rpc getPSAgentId(GetPSAgentIdRequest) returns (GetPSAgentIdResponse);
+  rpc checkPSExited(CheckPSExitRequest) returns (CheckPSExitResponse);
 }

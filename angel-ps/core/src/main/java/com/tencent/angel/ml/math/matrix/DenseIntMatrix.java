@@ -84,4 +84,10 @@ public class DenseIntMatrix extends TIntMatrix {
     ret.setRowId(rowIndex);
     return ret;
   }
+
+  public void setRow(int rowIndex, DenseIntVector vect) {
+    vect.setMatrixId(matrixId);
+    vect.setRowId(rowIndex);
+    vectors[rowIndex] = vect;
+  }
 }

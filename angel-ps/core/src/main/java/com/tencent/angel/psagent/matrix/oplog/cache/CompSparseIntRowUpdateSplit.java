@@ -61,6 +61,6 @@ public class CompSparseIntRowUpdateSplit extends RowUpdateSplit {
   }
 
   @Override public int bufferLen() {
-    return super.bufferLen() + split.size() * 8;
+    return 4 + super.bufferLen() + split.size() * 8;
   }
 }

@@ -167,10 +167,18 @@ message GetWorkerGroupMetaInfoResponse {
   optional WorkerGroupMetaInfoProto workerGroupMeta = 2;
 }
 
+message GetWorkerGroupSuccessNumRequest {
+}
+
+message GetWorkerGroupSuccessNumResponse {
+  required int32 successNum = 1;
+}
+
 service WorkerMasterService {
   rpc workerReport(WorkerReportRequest) returns (WorkerReportResponse);
   rpc workerRegister(WorkerRegisterRequest) returns (WorkerRegisterResponse);
   rpc getWorkerGroupMetaInfo(GetWorkerGroupMetaInfoRequest) returns (GetWorkerGroupMetaInfoResponse);
   rpc workerDone(WorkerDoneRequest) returns (WorkerDoneResponse);
   rpc workerError(WorkerErrorRequest) returns (WorkerErrorResponse);
+  rpc getWorkerGroupSuccessNum(GetWorkerGroupSuccessNumRequest) returns (GetWorkerGroupSuccessNumResponse);
 }

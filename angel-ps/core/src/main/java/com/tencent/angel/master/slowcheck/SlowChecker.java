@@ -47,7 +47,7 @@ public class SlowChecker extends AbstractService {
 
   /** enable checker or not */
   private final boolean slowCheckEnable;
-  private AtomicBoolean stopped;
+  private final AtomicBoolean stopped;
 
   /** check interval in milliseconds*/
   private final int checkIntervalMs;

@@ -86,16 +86,24 @@ class ServingAgentManager(config: Configuration, val servingHost: ServingHost, p
     }
   }
 
-  def requestLoadModel(splitID: ModelSplitID, dir: String, modelSplit: ModelSplit): Unit = {
-    loadingModelFutures.put(splitID, pool.submit(new ModelLoaderTask(splitID, dir, modelSplit, config)))
+  def requestLoadModel(splitID: ModelSplitID, dir: String, modelSplit: ModelSplit, shardingModelClass: String): Unit = {
+    loadingModelFutures.put(
+      splitID,
+      pool.submit(new ModelLoaderTask(splitID, dir, modelSplit, shardingModelClass, config))
+    )
     LOG.info(s"$splitID is request to load, and the dir is $dir")
   }
 
   def requestUnloadModel(splitID: ModelSplitID): Unit = {
-    val removed = loadingModelFutures.remove(splitID).map(future => future.cancel(true)).isDefined
-    if (!removed) {
+    val loadingFuture = loadingModelFutures.get(splitID)
+    if (loadingFuture.isDefined) {
+      loadingFuture.foreach{ future => future.cancel(true)}
+      loadingModelFutures.remove(splitID)
+      modelDefinitionMap.remove(splitID)
+    } else {
       modelDefinitionMap.remove(splitID)
     }
+
     LOG.info(s"$splitID is request to unload")
   }
 
@@ -119,12 +127,12 @@ class ServingAgentManager(config: Configuration, val servingHost: ServingHost, p
   }
 
 
-  class ModelLoaderTask(splitID: ModelSplitID, dir: String, modelSplit: ModelSplit, config: Configuration) extends Callable[ShardingModel] {
+  class ModelLoaderTask(splitID: ModelSplitID, dir: String, modelSplit: ModelSplit, shardingModelClass:String, config: Configuration) extends Callable[ShardingModel] {
     override def call(): ShardingModel = {
       var model: ShardingModel = null
       try {
         val shardingMatrices = modelSplit.matrixSplits.map { case (name, matrixSplit) => (name, matrixSplit.load(dir, config)) }
-        val modelClass = ModelFactory.get(splitID.name, config)
+        val modelClass = ModelFactory.get(splitID.name, shardingModelClass)
         model = ModelFactory.init(modelClass, shardingMatrices)
       } catch {
         case NonFatal(e) => {
@@ -170,11 +178,11 @@ class ServingAgentManager(config: Configuration, val servingHost: ServingHost, p
           if (LOG.isDebugEnabled) {
             LOG.debug(s"agent of $loc report:$modelReport and receive command:$command")
           }
-          command.forUnload.foreach(requestUnloadModel(_))
+          command.forUnload.foreach(requestUnloadModel)
           command.forLoading.foreach(
             splitGroup => {
-
               val model = splitGroup.name
+              val shardingModelClass = splitGroup.shardingModelClass
               if (splitGroup.concurrent > 1) {
                 servingExecutors.getOrElseUpdate(model,
                   {
@@ -186,7 +194,7 @@ class ServingAgentManager(config: Configuration, val servingHost: ServingHost, p
               splitGroup.splits.foreach(
                 split =>
                   if (!loadingModelFutures.contains(new ModelSplitID(model, split.index))) {
-                    requestLoadModel(new ModelSplitID(splitGroup.name, split.index), splitGroup.dir, split)
+                    requestLoadModel(new ModelSplitID(splitGroup.name, split.index), splitGroup.dir, split, shardingModelClass)
                   })
             })
         } catch {

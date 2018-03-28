@@ -81,6 +81,12 @@ public class MatrixMeta {
   }
 
   /**
+   * Get number of non-zero elements
+   * @return number of non-zero elements
+   */
+  public long getNnz() { return matrixContext.getNnz(); }
+
+  /**
    * Gets name.
    *
    * @return the name

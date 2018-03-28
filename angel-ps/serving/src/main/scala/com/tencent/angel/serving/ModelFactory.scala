@@ -36,9 +36,8 @@ object ModelFactory {
     require(modelMap.put(name, clazz).isEmpty)
   }
 
-  def get[M <: ShardingModel](name: String, config: Configuration, classLoader: ClassLoader = Thread.currentThread().getContextClassLoader): Class[M] = {
+  def get[M <: ShardingModel](name: String, clazzName:String, classLoader: ClassLoader = Thread.currentThread().getContextClassLoader): Class[M] = {
     modelMap.getOrElseUpdate(name, {
-      val clazzName = config.get(s"angel.serving.model.$name.class")
       if (clazzName != null) {
         var clazz: Class[_] = null
         try {

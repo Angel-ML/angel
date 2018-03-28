@@ -19,185 +19,165 @@ package com.tencent.angel.ps.impl.matrix;
 import com.tencent.angel.exception.ServerRowNotFoundException;
 import com.tencent.angel.ml.matrix.RowType;
 import io.netty.buffer.ByteBuf;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * The base of Row updater.
  */
 public abstract class RowUpdater implements RowUpdaterInterface {
-
+  private static final Log LOG = LogFactory.getLog(RowUpdater.class);
   @Override
-  public void update(RowType updateRowType, int size, ByteBuf dataBuf, ServerRow row)
+  public void update(RowType updateRowType, ByteBuf dataBuf, ServerRow row)
       throws Exception {
-    try {
-      row.getLock().writeLock().lock();
-      if (row instanceof ServerSparseDoubleRow) {
-        updateDoubleSparse(updateRowType, size, dataBuf, (ServerSparseDoubleRow) row);
-      } else if (row instanceof ServerDenseDoubleRow) {
-        updateDoubleDense(updateRowType, size, dataBuf, (ServerDenseDoubleRow) row);
-      } else if (row instanceof ServerSparseDoubleLongKeyRow) {
-        updateDoubleSparseLongKey(updateRowType, size, dataBuf, (ServerSparseDoubleLongKeyRow) row);
-      } else if (row instanceof ServerSparseIntRow) {
-        updateIntSparse(updateRowType, size, dataBuf, (ServerSparseIntRow) row);
-      } else if (row instanceof ServerDenseIntRow) {
-        updateIntDense(updateRowType, size, dataBuf, (ServerDenseIntRow) row);
-      } else if (row instanceof ServerArbitraryIntRow) {
-        updateIntArbitrary(updateRowType, size, dataBuf, (ServerArbitraryIntRow) row);
-      } else if (row instanceof ServerDenseFloatRow) {
-        updateFloatDense(updateRowType, size, dataBuf, (ServerDenseFloatRow) row);
-      } else if (row instanceof ServerSparseFloatRow) {
-        updateFloatSparse(updateRowType, size, dataBuf, (ServerSparseFloatRow) row);
-      } else
-        throw new ServerRowNotFoundException(row.getClass().getName());
-      row.updateRowVersion();
-    } finally {
-      row.getLock().writeLock().unlock();
-    }
-
+    if (row instanceof ServerSparseDoubleRow) {
+      updateDoubleSparse(updateRowType, dataBuf, (ServerSparseDoubleRow) row);
+    } else if (row instanceof ServerDenseDoubleRow) {
+      updateDoubleDense(updateRowType, dataBuf, (ServerDenseDoubleRow) row);
+    } else if (row instanceof ServerSparseDoubleLongKeyRow) {
+      updateDoubleSparseLongKey(updateRowType, dataBuf, (ServerSparseDoubleLongKeyRow) row);
+    } else if (row instanceof ServerSparseIntRow) {
+      updateIntSparse(updateRowType, dataBuf, (ServerSparseIntRow) row);
+    } else if (row instanceof ServerDenseIntRow) {
+      updateIntDense(updateRowType, dataBuf, (ServerDenseIntRow) row);
+    } else if (row instanceof ServerArbitraryIntRow) {
+      updateIntArbitrary(updateRowType, dataBuf, (ServerArbitraryIntRow) row);
+    } else if (row instanceof ServerDenseFloatRow) {
+      updateFloatDense(updateRowType, dataBuf, (ServerDenseFloatRow) row);
+    } else if (row instanceof ServerSparseFloatRow) {
+      updateFloatSparse(updateRowType, dataBuf, (ServerSparseFloatRow) row);
+    } else
+      throw new ServerRowNotFoundException(row.getClass().getName());
+    row.updateRowVersion();
   }
 
   /**
    * Update int dense data  to int arbitrary row.
-   *
-   * @param size    the size
    * @param dataBuf the data buf
    * @param row     the row
    */
-  public abstract void updateIntDenseToIntArbitrary(int size, ByteBuf dataBuf, ServerArbitraryIntRow row);
+  public abstract void updateIntDenseToIntArbitrary(ByteBuf dataBuf, ServerArbitraryIntRow row);
 
   /**
    * Update int sparse data to int arbitrary row.
    *
-   * @param size    the size
    * @param dataBuf the data buf
    * @param row     the row
    */
-  public abstract void updateIntSparseToIntArbitrary(int size, ByteBuf dataBuf, ServerArbitraryIntRow row);
+  public abstract void updateIntSparseToIntArbitrary(ByteBuf dataBuf, ServerArbitraryIntRow row);
 
   /**
    * Update int dense data to int dense row.
    *
-   * @param size    the size
    * @param dataBuf the data buf
    * @param row     the row
    */
-  public abstract void updateIntDenseToIntDense(int size, ByteBuf dataBuf, ServerDenseIntRow row);
+  public abstract void updateIntDenseToIntDense(ByteBuf dataBuf, ServerDenseIntRow row);
 
   /**
    * Update int sparse data to int dense row.
    *
-   * @param size    the size
    * @param dataBuf the data buf
    * @param row     the row
    */
-  public abstract void updateIntSparseToIntDense(int size, ByteBuf dataBuf, ServerDenseIntRow row);
+  public abstract void updateIntSparseToIntDense(ByteBuf dataBuf, ServerDenseIntRow row);
 
   /**
    * Update int dense data to int sparse row.
    *
-   * @param size    the size
    * @param dataBuf the data buf
    * @param row     the row
    */
-  public abstract void updateIntDenseToIntSparse(int size, ByteBuf dataBuf, ServerSparseIntRow row);
+  public abstract void updateIntDenseToIntSparse(ByteBuf dataBuf, ServerSparseIntRow row);
 
   /**
    * Update int sparse data to int sparse row.
    *
-   * @param size    the size
    * @param dataBuf the data buf
    * @param row     the row
    */
-  public abstract void updateIntSparseToIntSparse(int size, ByteBuf dataBuf, ServerSparseIntRow row);
+  public abstract void updateIntSparseToIntSparse(ByteBuf dataBuf, ServerSparseIntRow row);
 
   /**
    * Update double dense to double dense.
    *
-   * @param size    the size
    * @param dataBuf the data buf
    * @param row     the row
    */
-  public abstract void updateDoubleDenseToDoubleDense(int size, ByteBuf dataBuf, ServerDenseDoubleRow row);
+  public abstract void updateDoubleDenseToDoubleDense(ByteBuf dataBuf, ServerDenseDoubleRow row);
 
   /**
    * Update double sparse to double dense.
    *
-   * @param size    the size
    * @param dataBuf the data buf
    * @param row     the row
    */
-  public abstract void updateDoubleSparseToDoubleDense(int size, ByteBuf dataBuf, ServerDenseDoubleRow row);
+  public abstract void updateDoubleSparseToDoubleDense(ByteBuf dataBuf, ServerDenseDoubleRow row);
 
   /**
    * Update double dense data to double sparse row.
    *
-   * @param size    the size
    * @param dataBuf the data buf
    * @param row     the row
    */
-  public abstract void updateDoubleDenseToDoubleSparse(int size, ByteBuf dataBuf, ServerSparseDoubleRow row);
+  public abstract void updateDoubleDenseToDoubleSparse(ByteBuf dataBuf, ServerSparseDoubleRow row);
 
   /**
    * Update double sparse data to double sparse row.
    *
-   * @param size    the size
    * @param dataBuf the data buf
    * @param row     the row
    */
-  public abstract void updateDoubleSparseToDoubleSparse(int size, ByteBuf dataBuf, ServerSparseDoubleRow row);
+  public abstract void updateDoubleSparseToDoubleSparse(ByteBuf dataBuf, ServerSparseDoubleRow row);
 
   /**
    * Update double sparse data with long key to double sparse  row with long key.
    *
-   * @param size    the size
    * @param dataBuf the data buf
    * @param row     the row
    */
-  public abstract void updateDoubleSparseToDoubleSparseLongKey(int size, ByteBuf dataBuf, ServerSparseDoubleLongKeyRow row);
+  public abstract void updateDoubleSparseToDoubleSparseLongKey(ByteBuf dataBuf, ServerSparseDoubleLongKeyRow row);
 
   /**
    * Update float dense data to float dense row.
    *
-   * @param size    the size
    * @param dataBuf the data buf
    * @param row     the row
    */
-  public abstract void updateFloatDenseToFloatDense(int size, ByteBuf dataBuf, ServerDenseFloatRow row);
+  public abstract void updateFloatDenseToFloatDense(ByteBuf dataBuf, ServerDenseFloatRow row);
 
   /**
    * Update float sparse data to float dense row.
    *
-   * @param size    the size
    * @param dataBuf the data buf
    * @param row     the row
    */
-  public abstract void updateFloatSparseToFloatDense(int size, ByteBuf dataBuf, ServerDenseFloatRow row);
+  public abstract void updateFloatSparseToFloatDense(ByteBuf dataBuf, ServerDenseFloatRow row);
 
   /**
    * Update float dense data to float sparse row.
    *
-   * @param size    the size
    * @param dataBuf the data buf
    * @param row     the row
    */
-  public abstract void updateFloatDenseToFloatSparse(int size, ByteBuf dataBuf, ServerSparseFloatRow row);
+  public abstract void updateFloatDenseToFloatSparse(ByteBuf dataBuf, ServerSparseFloatRow row);
 
   /**
    * Update float sparse data to float sparse row.
    *
-   * @param size    the size
    * @param dataBuf the data buf
    * @param row     the row
    */
-  public abstract void updateFloatSparseToFloatSparse(int size, ByteBuf dataBuf, ServerSparseFloatRow row);
+  public abstract void updateFloatSparseToFloatSparse(ByteBuf dataBuf, ServerSparseFloatRow row);
 
-  private void updateIntArbitrary(RowType updateRowType, int size, ByteBuf dataBuf,
-      ServerArbitraryIntRow row) {
+  private void updateIntArbitrary(RowType updateRowType, ByteBuf dataBuf,
+      ServerArbitraryIntRow row){
     switch (updateRowType) {
       case T_INT_SPARSE:
-        updateIntSparseToIntArbitrary(size, dataBuf, row);
+        updateIntSparseToIntArbitrary(dataBuf, row);
         break;
       case T_INT_DENSE:
-        updateIntDenseToIntArbitrary(size, dataBuf, row);
+        updateIntDenseToIntArbitrary(dataBuf, row);
         break;
 
       default:
@@ -205,14 +185,14 @@ public abstract class RowUpdater implements RowUpdaterInterface {
     }
   }
 
-  private void updateIntDense(RowType updateRowType, int size, ByteBuf dataBuf,
-      ServerDenseIntRow row) {
+  private void updateIntDense(RowType updateRowType, ByteBuf dataBuf,
+      ServerDenseIntRow row){
     switch (updateRowType) {
       case T_INT_SPARSE:
-        updateIntSparseToIntDense(size, dataBuf, row);
+        updateIntSparseToIntDense(dataBuf, row);
         break;
       case T_INT_DENSE:
-        updateIntDenseToIntDense(size, dataBuf, row);
+        updateIntDenseToIntDense(dataBuf, row);
         break;
 
       default:
@@ -221,14 +201,14 @@ public abstract class RowUpdater implements RowUpdaterInterface {
   }
 
 
-  private void updateIntSparse(RowType updateRowType, int size, ByteBuf dataBuf,
-      ServerSparseIntRow row) {
+  private void updateIntSparse(RowType updateRowType, ByteBuf dataBuf,
+      ServerSparseIntRow row){
     switch (updateRowType) {
       case T_INT_SPARSE:
-        updateIntSparseToIntSparse(size, dataBuf, row);
+        updateIntSparseToIntSparse(dataBuf, row);
         break;
       case T_INT_DENSE:
-        updateIntDenseToIntSparse(size, dataBuf, row);
+        updateIntDenseToIntSparse(dataBuf, row);
         break;
 
       default:
@@ -236,14 +216,14 @@ public abstract class RowUpdater implements RowUpdaterInterface {
     }
   }
 
-  private void updateDoubleDense(RowType updateRowType, int size, ByteBuf dataBuf,
-      ServerDenseDoubleRow row) {
+  private void updateDoubleDense(RowType updateRowType, ByteBuf dataBuf,
+      ServerDenseDoubleRow row){
     switch (updateRowType) {
       case T_DOUBLE_SPARSE:
-        updateDoubleSparseToDoubleDense(size, dataBuf, row);
+        updateDoubleSparseToDoubleDense(dataBuf, row);
         break;
       case T_DOUBLE_DENSE:
-        updateDoubleDenseToDoubleDense(size, dataBuf, row);
+        updateDoubleDenseToDoubleDense(dataBuf, row);
         break;
 
       default:
@@ -251,14 +231,14 @@ public abstract class RowUpdater implements RowUpdaterInterface {
     }
   }
 
-  private void updateDoubleSparse(RowType updateRowType, int size, ByteBuf dataBuf,
+  private void updateDoubleSparse(RowType updateRowType, ByteBuf dataBuf,
       ServerSparseDoubleRow row) {
     switch (updateRowType) {
       case T_DOUBLE_SPARSE:
-        updateDoubleSparseToDoubleSparse(size, dataBuf, row);
+        updateDoubleSparseToDoubleSparse(dataBuf, row);
         break;
       case T_DOUBLE_DENSE:
-        updateDoubleDenseToDoubleSparse(size, dataBuf, row);
+        updateDoubleDenseToDoubleSparse(dataBuf, row);
         break;
 
       default:
@@ -266,11 +246,11 @@ public abstract class RowUpdater implements RowUpdaterInterface {
     }
   }
 
-  private void updateDoubleSparseLongKey(RowType updateRowType, int size, ByteBuf dataBuf,
-    ServerSparseDoubleLongKeyRow row) {
+  private void updateDoubleSparseLongKey(RowType updateRowType, ByteBuf dataBuf,
+    ServerSparseDoubleLongKeyRow row){
     switch (updateRowType) {
       case T_DOUBLE_SPARSE_LONGKEY:
-        updateDoubleSparseToDoubleSparseLongKey(size, dataBuf, row);
+        updateDoubleSparseToDoubleSparseLongKey(dataBuf, row);
         break;
 
       default:
@@ -278,34 +258,33 @@ public abstract class RowUpdater implements RowUpdaterInterface {
     }
   }
 
-  private void updateFloatDense(RowType updateRowType, int size, ByteBuf dataBuf,
-      ServerDenseFloatRow row) {
+  private void updateFloatDense(RowType updateRowType, ByteBuf dataBuf,
+      ServerDenseFloatRow row){
     switch (updateRowType) {
       case T_FLOAT_DENSE:
-        updateFloatDenseToFloatDense(size, dataBuf, row);
+        updateFloatDenseToFloatDense(dataBuf, row);
         break;
 
       case T_FLOAT_SPARSE:
-        updateFloatSparseToFloatDense(size, dataBuf, row);
+        updateFloatSparseToFloatDense(dataBuf, row);
 
       default:
         break;
     }
   }
 
-  private void updateFloatSparse(RowType updateRowType, int size, ByteBuf dataBuf,
-      ServerSparseFloatRow row) {
+  private void updateFloatSparse(RowType updateRowType, ByteBuf dataBuf,
+      ServerSparseFloatRow row){
     switch (updateRowType) {
       case T_FLOAT_DENSE:
-        updateFloatDenseToFloatSparse(size, dataBuf, row);
+        updateFloatDenseToFloatSparse(dataBuf, row);
         break;
       case T_FLOAT_SPARSE:
-        updateFloatSparseToFloatSparse(size, dataBuf, row);
+        updateFloatSparseToFloatSparse(dataBuf, row);
         break;
 
       default:
         break;
     }
   }
-
 }

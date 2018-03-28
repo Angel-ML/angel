@@ -40,5 +40,8 @@ class FMRunner extends MLRunner{
   /**
     * Using a FM model to predict with unobserved samples
     */
-  override def predict(conf: Configuration): Unit = ???
+  override def predict(conf: Configuration): Unit = {
+    conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
+    super.predict(conf, FMModel(conf), classOf[FMPredictTask])
+  }
 }

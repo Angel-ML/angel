@@ -70,11 +70,12 @@ message MatrixContextProto {
   required string name = 2;
   required int32 rowNum = 3;
   required int64 colNum = 4;
-  required int32 blockRowNum = 5;
-  required int64 blockColNum = 6;
-  required int32 rowType = 7;
-  required string partitionerClassName = 8;
-  repeated Pair attribute = 9;
+  required int64 nnz = 5;
+  required int32 blockRowNum = 6;
+  required int64 blockColNum = 7;
+  required int32 rowType = 8;
+  required string partitionerClassName = 9;
+  repeated Pair attribute = 10;
 }
 
 message PartitionMetaProto{

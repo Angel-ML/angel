@@ -41,8 +41,8 @@ public class RandomUniform extends MMUpdateFunc {
   protected void doUpdate(ServerDenseDoubleRow[] rows, double[] scalars) {
     Random rand = new Random(System.currentTimeMillis());
 
+    rows[0].tryToLockWrite();
     try {
-      rows[0].getLock().writeLock().lock();
       double min = scalars[0];
       double max = scalars[1];
       double factor = max - min;
@@ -53,7 +53,7 @@ public class RandomUniform extends MMUpdateFunc {
         data.put(i, factor * rand.nextDouble() + min);
       }
     } finally {
-      rows[0].getLock().writeLock().unlock();
+      rows[0].unlockWrite();
     }
   }
 

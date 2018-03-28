@@ -52,10 +52,14 @@ class ServingServiceManager(conf: Configuration) {
 
   val modelDefinitionMap: concurrent.Map[String, ServingModelDefinition] = new ConcurrentHashMap[String, ServingModelDefinition]().asScala
 
+  val shardingModelClassMap: concurrent.Map[String, String] = new ConcurrentHashMap[String, String]().asScala
+
   def onAddServingAgent(agent: ServingHost): Unit = {
-    servingAgentHosts.add(agent)
-    if (LOG.isDebugEnabled) {
-      LOG.debug(s"the agent:$agent is added")
+    if (! servingAgentHosts.contains(agent)) {
+      servingAgentHosts.add(agent)
+      if (LOG.isDebugEnabled) {
+        LOG.debug(s"the agent:$agent is added")
+      }
     }
   }
 
@@ -76,100 +80,122 @@ class ServingServiceManager(conf: Configuration) {
     }
   }
 
-  def registerModel(model: ModelDefinition) = {
-    require(modelDefinitionMap.put(model.name, new ServingModelDefinition(model)).isEmpty)
-    LOG.info(s"the model:${model.name} is registered")
+  def registerModel(model: ModelDefinition, shardingModelClass: String): Boolean = {
+    if (shardingModelClassMap.contains(model.name) || modelDefinitionMap.contains(model.name)) {
+      false
+    } else {
+      require(shardingModelClassMap.put(model.name, shardingModelClass).isEmpty)
+
+      val modelDef = new ServingModelDefinition(model)
+      modelDef.modelDefinition.splits.foreach { split =>
+        val diff = modelDef.diff(split.index)
+        modelDef.askLoad(split.index, diff, modelDef.diff(split.index, servingAgentLocs))
+        if (LOG.isDebugEnabled) {
+          val splitStr = split.index + ":" + split.replica.locations
+          LOG.debug(s"the model:${modelDef.modelDefinition.name}'s split:$splitStr")
+        }
+      }
+
+      require(modelDefinitionMap.put(model.name, modelDef).isEmpty, s"${model.name} is registered")
+      LOG.info(s"the model:${model.name} is registered")
+
+      true
+    }
   }
 
-  def unregisterModel(name: String) = {
-    modelDefinitionMap.remove(name)
-    servingAgentMap.foreach { case (_, agentDesc) => agentDesc.remove(name) }
-    LOG.info(s"the model:${name} is unregistered")
+  def unregisterModel(name: String): Boolean = {
+    if (modelDefinitionMap.contains(name) && shardingModelClassMap.contains(name)) {
+      modelDefinitionMap.remove(name)
+      shardingModelClassMap.remove(name)
+      servingAgentMap.foreach { case (_, agentDesc) => agentDesc.remove(name) }
+      LOG.info(s"the model:${name} is unregistered")
+      true
+    } else {
+      false
+    }
   }
 
   def modelReport(modelReport: ModelReport): ModelCommand = {
+    // 1. get corresponding ServingAgentDescriptor
     val loc = modelReport.servingLoc
     val servingAgentDesc = servingAgentMap.get(loc).orNull
-    val unloadedSplits: ArrayBuffer[ModelSplitID] = ArrayBuffer.empty
-    val forLoadingSplits: ArrayBuffer[ModelSplitGroup] = ArrayBuffer.empty
     require(servingAgentDesc != null, s"the agent:$loc is not register as serving agent")
 
-    val loadedOnAgent = modelReport.loaded
-    val loadingOnAgent = modelReport.loading
+    // 2. get data from modelReport
+    val loadedOnAgentByName = modelReport.loaded.groupBy(_.name)
+      .map { case (name, splitIDs) => (name, splitIDs.map(_.index).toSet) }
 
-    val loadedOnAgentByName = loadedOnAgent.groupBy(_.name)
-      .map {
-        case (name, splitIDs) => {
-          (name, splitIDs.map(_.index).toSet)
-        }
-      }
-
-    val loadingOnAgentByName = loadingOnAgent.groupBy(_.name)
-      .map {
-        case (name, splitIDs) => {
-          (name, splitIDs.map(_.index).toSet)
-        }
-      }
-
-
+    val loadingOnAgentByName = modelReport.loading.groupBy(_.name)
+      .map { case (name, splitIDs) => (name, splitIDs.map(_.index).toSet) }
 
     // 1.0 process master loading
-    servingAgentDesc.forLoadingModelDefinitionMap.foreach {
-      case (name, splits) => {
-        // 1.0 master loading change to loaded if agent is loaded
-        loadedOnAgentByName.get(name).foreach(_.foreach(splits.get(_).foreach(loadedSplit => servingAgentDesc.finishLoad(name, loadedSplit.index))))
-        // 2.0 compare with agent loading
-        val loadingOnAgentModelOpt = loadingOnAgentByName.get(name)
-        val model = modelDefinitionMap(name).modelDefinition
-        if (loadingOnAgentModelOpt.isEmpty && !splits.isEmpty) {
-          forLoadingSplits += new ModelSplitGroup(model.name, model.dir, model.concurrent, splits.values.toArray)
-        } else {
-          val needLoading = splits.values.filterNot(split => loadingOnAgentModelOpt.get.contains(split.index))
-          if (needLoading.size > 0) {
-            forLoadingSplits += new ModelSplitGroup(model.name, model.dir, model.concurrent, needLoading.toArray)
+    val unloadedSplits: ArrayBuffer[ModelSplitID] = ArrayBuffer.empty
+    val forLoadingSplits: ArrayBuffer[ModelSplitGroup] = ArrayBuffer.empty
+    servingAgentDesc.forLoadingModelDefinitionMap.clone().foreach { case (modelName, splits) =>
+        // a) master loading change to loaded if agent is loaded
+        loadedOnAgentByName.get(modelName).foreach { idxSet =>
+          idxSet.foreach { idx =>
+            splits.get(idx).foreach{ loadedSplit =>
+              servingAgentDesc.finishLoad(modelName, loadedSplit.index)
+            }
           }
         }
-      }
 
+        // b) compare with agent loading
+        val loadingOnAgentModelOpt = loadingOnAgentByName.get(modelName)
+        val model = modelDefinitionMap(modelName).modelDefinition
+        val shardingModelClass = shardingModelClassMap(modelName)
+        if (loadingOnAgentModelOpt.isEmpty && splits.nonEmpty) {
+          forLoadingSplits += new ModelSplitGroup(model.name, model.dir, model.concurrent,
+                                                  splits.values.toArray, shardingModelClass)
+        } else {
+          val needLoading = splits.values.filterNot(split => loadingOnAgentModelOpt.get.contains(split.index))
+          if (needLoading.nonEmpty) {
+            forLoadingSplits += new ModelSplitGroup(model.name, model.dir, model.concurrent,
+                                                    needLoading.toArray, shardingModelClass)
+          }
+        }
     }
 
     // 2.0 process master loaded
-    servingAgentDesc.loadedModelDefinitionMap.foreach {
-      case (name, splits) => {
-        val model = modelDefinitionMap(name).modelDefinition
-        val loadedOnAgentByNameOpt = loadedOnAgentByName.get(name)
+    servingAgentDesc.loadedModelDefinitionMap.foreach { case (modelName, splits) =>
+        val model = modelDefinitionMap(modelName).modelDefinition
+        val shardingModelClass = shardingModelClassMap(modelName)
+        val loadedOnAgentByNameOpt = loadedOnAgentByName.get(modelName)
 
         // accident
         if (loadedOnAgentByNameOpt.isEmpty) {
           splits.values.foreach(split => {
             val idx = split.index
-            LOG.warn(s"matrix[$idx] $name has loaded,but missing on agent: $loc")
-            servingAgentDesc.removeSplit(name, idx)
-            servingAgentDesc.addForLoading(name, split)
+            LOG.warn(s"matrix[$idx] $modelName has loaded, but missing on agent: $loc")
+            servingAgentDesc.removeSplit(modelName, idx)
+            servingAgentDesc.addForLoading(modelName, split)
           })
-          forLoadingSplits += new ModelSplitGroup(model.name, model.dir, model.concurrent, splits.values.toArray)
+          forLoadingSplits += new ModelSplitGroup(model.name, model.dir, model.concurrent,
+                                                  splits.values.toArray, shardingModelClass)
         } else {
-          val needUnload = loadedOnAgentByNameOpt.get.filterNot(splits.contains(_)).map(idx => new ModelSplitID(name, idx))
-          if (needUnload.size > 0) {
+          val needUnload = loadedOnAgentByNameOpt.get.filterNot(splits.contains).map(idx => new ModelSplitID(modelName, idx))
+          if (needUnload.nonEmpty) {
             unloadedSplits ++= needUnload
           }
         }
-      }
     }
 
     val loadedModelOnMaster = servingAgentDesc.loadedModelDefinitionMap.keys.toSet
     val loadingModelOnMaster = servingAgentDesc.forLoadingModelDefinitionMap.keys.toSet
 
-    //3.0 process agent exceed
-    unloadedSplits ++= loadedOnAgentByName.filterNot { case (name, _) => (loadedModelOnMaster.contains(name) || loadingModelOnMaster.contains(name)) }
-      .flatMap {
+    // 3.0 process agent exceed
+    unloadedSplits ++= loadedOnAgentByName.filterNot { case (name, _) =>
+      loadedModelOnMaster.contains(name) || loadingModelOnMaster.contains(name)
+    }.flatMap {
         case (name, splitIds) => splitIds.map(new ModelSplitID(name, _))
-      }
+    }
 
-    unloadedSplits ++= loadingOnAgentByName.filterNot { case (name, _) => (loadedModelOnMaster.contains(name) || loadingModelOnMaster.contains(name)) }
-      .flatMap {
+    unloadedSplits ++= loadingOnAgentByName.filterNot { case (name, _) =>
+      loadedModelOnMaster.contains(name) || loadingModelOnMaster.contains(name)
+    }.flatMap {
         case (name, splitIds) => splitIds.map(new ModelSplitID(name, _))
-      }
+    }
 
     val command = new ModelCommand(forLoadingSplits.toArray, unloadedSplits.toArray)
 
@@ -178,20 +204,23 @@ class ServingServiceManager(conf: Configuration) {
       val loaded = servingAgentDesc.loadedModelDefinitionMap.map { case (model, splits) => model + ":" + splits.keySet }.mkString(",")
       LOG.debug(s"the agent:$loc loading:$loading ,loaded:$loaded")
     }
+
     command
   }
 
   def getModelLocations(): ModelLocationList = {
     val modelLocs = modelDefinitionMap.map { case (_, modelDef) => modelDef }
       .map(modelDef =>
-        new ModelLocation(modelDef.modelDefinition.name, modelDef.loadedSplitLocs.map { case (idx, replica) => new ModelSplitLocation(idx, replica.locations) }.toArray))
-    new ModelLocationList(modelLocs.toArray)
+        ModelLocation(modelDef.modelDefinition.name, modelDef.loadedSplitLocs.map { case (idx, replica) =>
+          ModelSplitLocation(idx, replica.locations)
+        }.toArray)
+      )
+    ModelLocationList(modelLocs.toArray)
   }
 
   def start(): Unit = {
     monitor.start()
   }
-
 
   def exit(): Unit = {
     monitor.getRunnable.asInstanceOf[ServingModelMonitor].stop
@@ -215,8 +244,8 @@ class ServingServiceManager(conf: Configuration) {
       while (!stop) {
         try {
           val agentLocs = servingAgentLocs.clone()
-          modelDefinitionMap.values.foreach(modelDef => {
-            modelDef.splits.foreach(split => {
+          modelDefinitionMap.values.foreach { modelDef =>
+            modelDef.modelDefinition.splits.foreach{ split =>
               val diff = modelDef.diff(split.index)
               if (diff > 0) {
                 modelDef.askLoad(split.index, diff, modelDef.diff(split.index, agentLocs))
@@ -227,8 +256,8 @@ class ServingServiceManager(conf: Configuration) {
                 val splitStr = split.index + ":" + split.replica.locations
                 LOG.debug(s"the model:${modelDef.modelDefinition.name}'s split:$splitStr")
               }
-            })
-          })
+            }
+          }
           Thread.sleep(interval)
         } catch {
           case NonFatal(e) => LOG.error("model monitor occur error", e)
@@ -245,8 +274,8 @@ class ServingServiceManager(conf: Configuration) {
     val forLoadingModelDefinitionMap: concurrent.Map[String, mutable.Map[Int, ModelSplit]] = new ConcurrentHashMap[String, mutable.Map[Int, ModelSplit]]().asScala
 
     def remove(name: String): Unit = {
-      forLoadingModelDefinitionMap.remove(name)
-      loadedModelDefinitionMap.remove(name)
+      if (forLoadingModelDefinitionMap.contains(name)) forLoadingModelDefinitionMap.remove(name)
+      if (loadedModelDefinitionMap.contains(name)) loadedModelDefinitionMap.remove(name)
     }
 
     def exit(): Unit = {
@@ -269,7 +298,6 @@ class ServingServiceManager(conf: Configuration) {
       modelSplitMap.getOrElseUpdate(modelSplit.index, modelSplit)
     }
 
-
     def removeSplit(name: String, modelSplit: Int): Option[ModelSplit] = {
       forLoadingModelDefinitionMap.get(name).flatMap(model => model.remove(modelSplit))
         .orElse(loadedModelDefinitionMap.get(name).flatMap(model => model.remove(modelSplit)))
@@ -283,14 +311,17 @@ class ServingServiceManager(conf: Configuration) {
       loadedModelDefinitionMap.get(name).flatMap(model => model.remove(modelSplit))
     }
 
-
     def finishLoad(name: String, modelSplitIdx: Int): Unit = {
-      forLoadingModelDefinitionMap.get(name).flatMap(model => {
-        model.remove(modelSplitIdx)
-      }).foreach(modelSplit => {
-        loadedModelDefinitionMap.getOrElseUpdate(name, new mutable.HashMap[Int, ModelSplit]()).put(modelSplitIdx, modelSplit)
-        modelDefinitionMap(name).finishLoad(modelSplitIdx, servingLoc)
-      })
+      forLoadingModelDefinitionMap.get(name)
+        .flatMap{ model => model.remove(modelSplitIdx) }
+        .foreach{ modelSplit =>
+          loadedModelDefinitionMap.getOrElseUpdate(name, new mutable.HashMap[Int, ModelSplit]()).put(modelSplitIdx, modelSplit)
+          modelDefinitionMap(name).finishLoad(modelSplitIdx, servingLoc)
+        }
+    }
+
+    def finishUnload(name: String, modelSplitIdx: Int): Unit = {
+
     }
 
     def get(loading: Boolean, name: String, modelSplitIdx: Int = -1): Option[Array[(Int, ModelSplit)]] = {
@@ -311,8 +342,6 @@ class ServingServiceManager(conf: Configuration) {
 
   class ServingModelDefinition(val modelDefinition: ModelDefinition) {
 
-    lazy val splits: Array[ReplicaModelSplit] = modelDefinition.splits
-
     lazy val splitLocs: Map[Int, ServingReplica] = modelDefinition.splits.map(split => (split.index, split.replica)).toMap
 
     lazy val loadedSplitLocs: Map[Int, ServingReplica] = modelDefinition.splits.indices
@@ -331,16 +360,15 @@ class ServingServiceManager(conf: Configuration) {
       loadedSplitLocs(splitIdx).addLoc(servingLoc)
     }
 
+    def finishUnload(splitIdx: Int, servingLoc: ServingLocation): Unit = {
+      require(!splitLocs(splitIdx).locations.contains(servingLoc))
+      loadedSplitLocs(splitIdx).removeLoc(servingLoc)
+    }
 
     def askUnload(splitIdx: Int, replica: Int): Unit = {
       val toUnloadLocs = splitLocs(splitIdx).remove(replica)
       if (toUnloadLocs.length > 0) {
-        toUnloadLocs.foreach(
-          loc => {
-            servingAgentMap(loc).removeSplit(modelDefinition.name, splitIdx)
-            loadedSplitLocs(splitIdx).removeLoc(loc)
-          }
-        )
+        toUnloadLocs.foreach(servingAgentMap(_).removeSplit(modelDefinition.name, splitIdx))
       }
     }
 
@@ -349,12 +377,8 @@ class ServingServiceManager(conf: Configuration) {
       loadedSplitLocs(splitIdx).removeLoc(servingLoc)
     }
 
-    def replica(splitIdx: Int): Int = {
-      splitLocs(splitIdx).locations.length
-    }
-
     def diff(splitIdx: Int): Int = {
-      modelDefinition.replica - replica(splitIdx)
+      modelDefinition.replica - splitLocs(splitIdx).locations.length
     }
 
     def diff(splitIdx: Int, servingLocs: Traversable[ServingLocation]): Traversable[ServingLocation] = {

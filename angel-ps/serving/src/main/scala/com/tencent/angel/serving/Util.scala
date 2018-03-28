@@ -17,7 +17,7 @@
 
 package com.tencent.angel.serving
 
-import java.io.{BufferedReader, InputStreamReader}
+import java.io._
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -51,7 +51,6 @@ object Util {
         throw new AngelException(s"unsupported $rowType")
     }
   }
-
 
   def read(conf: Configuration, dir: Path, dim: Long, format: String = "dummy"): Iterator[TVector] = {
     val input = dir.getFileSystem(conf).open(dir)

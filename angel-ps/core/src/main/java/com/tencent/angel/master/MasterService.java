@@ -20,7 +20,6 @@ import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.common.location.Location;
 import com.tencent.angel.common.location.LocationManager;
-import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ipc.MLRPC;
 import com.tencent.angel.ipc.RpcServer;
 import com.tencent.angel.master.app.AMContext;
@@ -33,7 +32,6 @@ import com.tencent.angel.master.metrics.MetricsEventType;
 import com.tencent.angel.master.metrics.MetricsUpdateEvent;
 import com.tencent.angel.master.ps.CommitEvent;
 import com.tencent.angel.master.ps.attempt.*;
-import com.tencent.angel.master.psagent.*;
 import com.tencent.angel.master.task.AMTask;
 import com.tencent.angel.master.task.AMTaskManager;
 import com.tencent.angel.master.worker.attempt.*;
@@ -47,17 +45,15 @@ import com.tencent.angel.ml.metric.Metric;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.*;
-import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.protobuf.generated.MLProtos.*;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.*;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.*;
+import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos;
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.*;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.recovery.ha.RecoverPartKey;
-import com.tencent.angel.psagent.PSAgentAttemptId;
 import com.tencent.angel.utils.KryoUtils;
 import com.tencent.angel.utils.NetUtils;
 import com.tencent.angel.utils.StringUtils;
@@ -71,6 +67,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import scala.Int;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -92,24 +89,6 @@ public class MasterService extends AbstractService implements MasterProtocol {
   /**heartbeat timeout check thread*/
   private Thread timeOutChecker;
 
-  /**worker attempt id to last heartbeat timestamp map*/
-  private final ConcurrentHashMap<WorkerAttemptId, Long> workerLastHeartbeatTS;
-
-  /**parameter server attempt id to last heartbeat timestamp map*/
-  private final ConcurrentHashMap<PSAttemptId, Long> psLastHeartbeatTS;
-
-  /**psagent attempt id to last heartbeat timestamp map*/
-  private final ConcurrentHashMap<PSAgentAttemptId, Long> psAgentLastHeartbeatTS;
-
-  /**psagent heartbeat timeout value in millisecond*/
-  private final long psAgentTimeOutMS;
-
-  /**parameter server heartbeat timeout value in millisecond*/
-  private final long psTimeOutMS;
-
-  /**worker timeout value in millisecond*/
-  private final long workerTimeOutMS;
-
   private final AtomicBoolean stopped;
 
   /**received matrix meta from client*/
@@ -121,62 +100,36 @@ public class MasterService extends AbstractService implements MasterProtocol {
   /** Yarn web port */
   private final int yarnNMWebPort;
 
-  private final Map<String, Long> clientToLastHBTsMap;
-  private final long clientTimeoutMS;
 
   public MasterService(AMContext context) {
     super(MasterService.class.getName());
     this.context = context;
     this.stopped = new AtomicBoolean(false);
-    workerLastHeartbeatTS = new ConcurrentHashMap<>();
-    psAgentLastHeartbeatTS = new ConcurrentHashMap<>();
-    psLastHeartbeatTS = new ConcurrentHashMap<>();
-    clientToLastHBTsMap = new ConcurrentHashMap<>();
     matrics = new ArrayList<>();
 
     Configuration conf = context.getConf();
-    psAgentTimeOutMS =
-        conf.getLong(AngelConf.ANGEL_PSAGENT_HEARTBEAT_TIMEOUT_MS,
-            AngelConf.DEFAULT_ANGEL_PSAGENT_HEARTBEAT_TIMEOUT_MS);
+    yarnNMWebPort = getYarnNMWebPort(conf);
+  }
 
-    psTimeOutMS =
-        conf.getLong(AngelConf.ANGEL_PS_HEARTBEAT_TIMEOUT_MS,
-            AngelConf.DEFAULT_ANGEL_PS_HEARTBEAT_TIMEOUT_MS);
-    workerTimeOutMS =
-        conf.getLong(AngelConf.ANGEL_WORKER_HEARTBEAT_TIMEOUT_MS,
-            AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_TIMEOUT_MS);
-
-    clientTimeoutMS =
-      conf.getLong(AngelConf.ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS,
-        AngelConf.DEFAULT_ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS);
-
-    yarnNMWebPort = context.getYarnNMWebPort();
-
-    LOG.debug("psAgentTimeOutMS:" + psAgentTimeOutMS);
-    LOG.debug("psTimeOutMS:" + psTimeOutMS);
-    LOG.debug("workerTimeOutMS:" + workerTimeOutMS);
+  private int getYarnNMWebPort(Configuration conf) {
+    String nmWebAddr = conf.get(YarnConfiguration.NM_WEBAPP_ADDRESS, YarnConfiguration.DEFAULT_NM_WEBAPP_ADDRESS);
+    String [] addrItems = nmWebAddr.split(":");
+    if(addrItems.length == 2) {
+      try {
+        return Integer.valueOf(addrItems[1]);
+      } catch (Throwable x) {
+        LOG.error("can not get nm web port from " + nmWebAddr + ", just return default 8080");
+        return 8080;
+      }
+    } else {
+      return 8080;
+    }
   }
 
   @Override
   public long getProtocolVersion(String protocol, long clientVersion) throws IOException {
     return 0;
   }
-
-  public void registerPSAttemptId(PSAttemptId psAttemptId) {
-    LOG.info(psAttemptId + " is registered in monitor!");
-    psLastHeartbeatTS.put(psAttemptId, System.currentTimeMillis());
-  }
-
-  public void unRegisterPSAttemptId(PSAttemptId psAttemptId) {
-    LOG.info(psAttemptId + " is finished,  delete it in monitor!");
-    psLastHeartbeatTS.remove(psAttemptId);
-  }
-
-  public void registerPSAgentAttemptId(PSAgentAttemptId attemptId) {
-    LOG.info(attemptId + " is registered in monitor!");
-    psAgentLastHeartbeatTS.put(attemptId, System.currentTimeMillis());
-  }
-
 
   /**
    * response for parameter server heartbeat
@@ -202,13 +155,14 @@ public class MasterService extends AbstractService implements MasterProtocol {
 
     PSAttemptId psAttemptId = ProtobufUtil.convertToId(request.getPsAttemptId());
     PSReportResponse.Builder resBuilder = PSReportResponse.newBuilder();
-    if (!psLastHeartbeatTS.containsKey(psAttemptId)) {
+    if (!context.getParameterServerManager().isAlive(psAttemptId)) {
       //if psAttemptId is not in monitor set, just return a PSCOMMAND_SHUTDOWN command.
       LOG.error("ps attempt " + psAttemptId + " is not in running ps attempt set");
       resBuilder.setPsCommand(PSCommandProto.PSCOMMAND_SHUTDOWN);
     } else {
       //refresh last heartbeat timestamp
-      psLastHeartbeatTS.put(psAttemptId, System.currentTimeMillis());
+      context.getParameterServerManager().alive(psAttemptId);
+
       //send a state update event to the specific PSAttempt
       context.getEventHandler().handle(new PSAttemptStateUpdateEvent(psAttemptId, paramsMap));
 
@@ -228,9 +182,6 @@ public class MasterService extends AbstractService implements MasterProtocol {
         resBuilder.setPsCommand(PSCommandProto.PSCOMMAND_OK);
       }
     }
-
-    // Update PS failed counters
-    context.getParameterServerManager().psFailedReports(ProtobufUtil.convert(request.getPsFailedReports()));
 
     //check matrix metadata inconsistencies between master and parameter server.
     //if a matrix exists on the Master and does not exist on ps, then it is necessary to notify ps to establish the matrix
@@ -285,13 +236,11 @@ public class MasterService extends AbstractService implements MasterProtocol {
     PSRegisterResponse.Builder resBuilder = PSRegisterResponse.newBuilder();
 
     //if psAttemptId is not in monitor set, just return a PSCOMMAND_SHUTDOWN command.
-    if (!psLastHeartbeatTS.containsKey(psAttemptId)) {
+    if (!context.getParameterServerManager().isAlive(psAttemptId)) {
       LOG.info(psAttemptId + " doesn't exists!");
-      for (PSAttemptId id : psLastHeartbeatTS.keySet()) {
-        LOG.info("contains psKey: " + id);
-      }
       resBuilder.setPsCommand(PSCommandProto.PSCOMMAND_SHUTDOWN);
     } else {
+      context.getParameterServerManager().alive(psAttemptId);
       context.getEventHandler()
           .handle(
               new PSAttemptRegisterEvent(psAttemptId, new Location(request.getLocation().getIp(), request.getLocation()
@@ -305,99 +254,7 @@ public class MasterService extends AbstractService implements MasterProtocol {
 
   @Override
   protected void serviceStart() throws Exception {
-    startCheckThread();
     super.serviceStart();
-  }
-
-  private void startCheckThread() {
-    timeOutChecker = new Thread(new Runnable() {
-      @SuppressWarnings("unchecked")
-      @Override
-      public void run() {
-        Iterator<Map.Entry<String, Long>> clientIt;
-        Iterator<Map.Entry<PSAgentAttemptId, Long>> psAgentIt;
-        Iterator<Map.Entry<PSAttemptId, Long>> psIt;
-        Entry<PSAgentAttemptId, Long> psAgentEntry;
-        Entry<PSAttemptId, Long> psEntry;
-        Entry<String, Long> clientEntry;
-        Iterator<Map.Entry<WorkerAttemptId, Long>> workerIt;
-        Entry<WorkerAttemptId, Long> workerEntry;
-        long currentTs = 0;
-
-        while (!stopped.get() && !Thread.currentThread().isInterrupted()) {
-          try {
-            Thread.sleep(1000);
-          } catch (InterruptedException e) {
-            LOG.warn(Thread.currentThread().getName() + " is interupted");
-          }
-          currentTs = System.currentTimeMillis();
-
-          clientIt = clientToLastHBTsMap.entrySet().iterator();
-          boolean isTimeOut = false;
-          while(clientIt.hasNext()) {
-            clientEntry = clientIt.next();
-            if (currentTs - clientEntry.getValue() > clientTimeoutMS) {
-              LOG.error("Client " + clientEntry.getKey() + " heartbeat timeout");
-              clientIt.remove();
-              isTimeOut = true;
-            }
-          }
-
-          if(isTimeOut && clientToLastHBTsMap.isEmpty()) {
-            LOG.error("All client timeout, just exit the application");
-            stop(1);
-          }
-
-          //check whether psagent heartbeat timeout
-          psAgentIt = psAgentLastHeartbeatTS.entrySet().iterator();
-          while (psAgentIt.hasNext()) {
-            psAgentEntry = psAgentIt.next();
-            if (currentTs - psAgentEntry.getValue() > psAgentTimeOutMS) {
-              context.getEventHandler().handle(
-                  new PSAgentAttemptEvent(PSAgentAttemptEventType.PSAGENT_ATTEMPT_FAILMSG,
-                      psAgentEntry.getKey()));
-              context.getEventHandler().handle(
-                  new PSAgentAttemptDiagnosticsUpdateEvent(psAgentEntry.getKey(),
-                      "heartbeat timeout"));
-              LOG.info("removing psagent: " + psAgentEntry.getKey());
-              psAgentIt.remove();
-            }
-          }
-
-          //check whether parameter server heartbeat timeout
-          psIt = psLastHeartbeatTS.entrySet().iterator();
-          while (psIt.hasNext()) {
-            psEntry = psIt.next();
-            if (currentTs - psEntry.getValue() > psTimeOutMS) {
-              LOG.error(psEntry.getKey() + " heartbeat timeout!!!");
-              context.getEventHandler().handle(
-                  new PSAttemptDiagnosticsUpdateEvent("heartbeat timeout", psEntry.getKey()));
-
-              context.getEventHandler().handle(
-                  new PSAttemptEvent(PSAttemptEventType.PA_FAILMSG, psEntry.getKey()));
-              psIt.remove();
-            }
-          }
-
-          //check whether worker heartbeat timeout
-          workerIt = workerLastHeartbeatTS.entrySet().iterator();
-          while (workerIt.hasNext()) {
-            workerEntry = workerIt.next();
-            if (currentTs - workerEntry.getValue() > workerTimeOutMS) {
-              LOG.error(workerEntry.getKey() + " heartbeat timeout!!!");
-              context.getEventHandler().handle(
-                  new WorkerAttemptDiagnosticsUpdateEvent(workerEntry.getKey(), "heartbeat timeout"));
-
-              context.getEventHandler().handle(
-                  new WorkerAttemptEvent(WorkerAttemptEventType.ERROR, workerEntry.getKey()));
-              workerIt.remove();
-            }
-          }
-        }
-      }
-    });
-    timeOutChecker.setName("Heartbeat Timeout checker");
-    timeOutChecker.start();
   }
 
   @Override
@@ -559,7 +416,6 @@ public class MasterService extends AbstractService implements MasterProtocol {
     return ReleaseMatricesResponse.newBuilder().build();
   }
 
-
   public InetSocketAddress getRPCListenAddr() {
     return rpcServer.getListenerAddress();
   }
@@ -578,7 +434,7 @@ public class MasterService extends AbstractService implements MasterProtocol {
     LOG.info("psAttempt " + psAttemptId + " is done");
 
     //remove this parameter server attempt from monitor set
-    psLastHeartbeatTS.remove(psAttemptId);
+    context.getParameterServerManager().unRegister(psAttemptId);
 
     context.getEventHandler()
         .handle(new PSAttemptEvent(PSAttemptEventType.PA_SUCCESS, psAttemptId));
@@ -599,7 +455,7 @@ public class MasterService extends AbstractService implements MasterProtocol {
     LOG.info("error happened in psAttempt " + psAttemptId + " error msg=" + request.getMsg());
 
     //remove this parameter server attempt from monitor set
-    psLastHeartbeatTS.remove(psAttemptId);
+    context.getParameterServerManager().unRegister(psAttemptId);
 
     context.getEventHandler().handle(
         new PSAttemptDiagnosticsUpdateEvent(request.getMsg(), psAttemptId));
@@ -747,10 +603,36 @@ public class MasterService extends AbstractService implements MasterProtocol {
     return builder.build();
   }
 
-  public void unRegisterPSAgentAttemptID(PSAgentAttemptId attemptId) {
-    LOG.info(attemptId + " is unregistered in monitor!");
-    psAgentLastHeartbeatTS.remove(attemptId);
+  /**
+   * Get a new psagent id
+   * @param controller
+   * @param request
+   * @return
+   * @throws ServiceException
+   */
+  @Override
+  public GetPSAgentIdResponse getPSAgentId(RpcController controller, GetPSAgentIdRequest request)
+    throws ServiceException {
+    return GetPSAgentIdResponse.newBuilder().setPsAgentId(context.getPSAgentManager().getId()).build();
   }
+
+  /**
+   * Check PS exited or not
+   * @param controller
+   * @param request
+   * @return
+   * @throws ServiceException
+   */
+  @Override
+  public CheckPSExitResponse checkPSExited(RpcController controller, CheckPSExitRequest request)
+    throws ServiceException {
+    if(context.getParameterServerManager().checkFailed(ProtobufUtil.convert(request.getPsLoc()))) {
+      return CheckPSExitResponse.newBuilder().setExited(1).build();
+    } else {
+      return CheckPSExitResponse.newBuilder().setExited(0).build();
+    }
+  }
+
 
   /**
    * response for psagent heartbeat.
@@ -763,23 +645,7 @@ public class MasterService extends AbstractService implements MasterProtocol {
   @Override
   public PSAgentReportResponse psAgentReport(RpcController controller, PSAgentReportRequest request)
       throws ServiceException {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("receive ps agent state report, request=" + request);
-    }
-    PSAgentAttemptId psAgentAttemptId = ProtobufUtil.convertToId(request.getPsAgentAttemptId());
-
-    if (!psAgentLastHeartbeatTS.containsKey(psAgentAttemptId)) {
-      LOG.error("psagent attempt " + psAgentAttemptId + " is not in running worker attempt set now, shutdown it");
-      return PSAgentReportResponse.newBuilder().setCommand(PSAgentCommandProto.PSAGENT_SHUTDOWN)
-          .build();
-
-    } else {
-      context.getEventHandler().handle(
-          new PSAgentAttemptStateUpdateEvent(psAgentAttemptId, request));
-      psAgentLastHeartbeatTS.put(psAgentAttemptId, System.currentTimeMillis());
-      return PSAgentReportResponse.newBuilder().setCommand(PSAgentCommandProto.PSAGENT_SUCCESS)
-          .build();
-    }
+    return PSAgentReportResponse.newBuilder().build();
   }
 
   /**
@@ -793,26 +659,8 @@ public class MasterService extends AbstractService implements MasterProtocol {
   @Override
   public PSAgentRegisterResponse psAgentRegister(RpcController controller,
       PSAgentRegisterRequest request) throws ServiceException {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("receive ps agent register, request=" + request);
-    }
-
-    PSAgentRegisterResponse.Builder registerResponseBuilder = PSAgentRegisterResponse.newBuilder();
-
-    PSAgentAttemptId psAgentAttemptId = ProtobufUtil.convertToId(request.getPsAgentAttemptId());
-    if (!psAgentLastHeartbeatTS.containsKey(psAgentAttemptId)) {
-      LOG.error("psagent attempt " + psAgentAttemptId + " is not in running worker attempt set now, shutdown it");
-      registerResponseBuilder.setCommand(PSAgentCommandProto.PSAGENT_SHUTDOWN);
-    } else {
-      registerPSAgentAttemptId(psAgentAttemptId);
-      Location location =
-          new Location(request.getLocation().getIp(), request.getLocation().getPort());
-      context.getEventHandler().handle(new PSAgentRegisterEvent(psAgentAttemptId, location));
-      registerResponseBuilder.setCommand(PSAgentCommandProto.PSAGENT_SUCCESS);
-    }
-
-    LOG.info("psagent " + psAgentAttemptId + " register finished!");
-    return registerResponseBuilder.build();
+    LOG.info("PSAgent register:"  + request);
+    return PSAgentRegisterResponse.newBuilder().setCommand(PSAgentCommandProto.PSAGENT_SUCCESS).build();
   }
 
   /**
@@ -826,22 +674,7 @@ public class MasterService extends AbstractService implements MasterProtocol {
   @Override
   public PSAgentDoneResponse psAgentDone(RpcController controller, PSAgentDoneRequest request)
       throws ServiceException {
-    PSAgentAttemptId psAgentAttemptId = ProtobufUtil.convertToId(request.getPsAgentAttemptId());
-    LOG.info("psagent " + psAgentAttemptId + " is done");
     PSAgentDoneResponse.Builder resBuilder = PSAgentDoneResponse.newBuilder();
-
-    if (!psAgentLastHeartbeatTS.containsKey(psAgentAttemptId)) {
-      LOG.error("psagent attempt " + psAgentAttemptId + " is not in running worker attempt set now, shutdown it");
-      resBuilder.setCommand(PSAgentCommandProto.PSAGENT_SHUTDOWN);
-    } else {
-      psAgentLastHeartbeatTS.remove(psAgentAttemptId);
-      resBuilder.setCommand(PSAgentCommandProto.PSAGENT_SUCCESS);
-      context.getEventHandler()
-          .handle(
-              new PSAgentAttemptEvent(PSAgentAttemptEventType.PSAGENT_ATTEMPT_SUCCESS,
-                  psAgentAttemptId));
-    }
-
     return resBuilder.build();
   }
 
@@ -857,22 +690,6 @@ public class MasterService extends AbstractService implements MasterProtocol {
   public PSAgentErrorResponse psAgentError(RpcController controller, PSAgentErrorRequest request)
       throws ServiceException {
     PSAgentErrorResponse.Builder resBuilder = PSAgentErrorResponse.newBuilder();
-    PSAgentAttemptId psAgentAttemptId = ProtobufUtil.convertToId(request.getPsAgentAttemptId());
-
-    if (!psAgentLastHeartbeatTS.containsKey(psAgentAttemptId)) {
-      LOG.error("psagent attempt " + psAgentAttemptId + " is not in running worker attempt set now, shutdown it");
-      resBuilder.setCommand(PSAgentCommandProto.PSAGENT_SHUTDOWN);
-    } else {
-      psAgentLastHeartbeatTS.remove(psAgentAttemptId);
-      LOG.error("error happened in psagent " + psAgentAttemptId + ", error msg:" + request.getMsg());
-      context.getEventHandler().handle(
-          new PSAgentAttemptDiagnosticsUpdateEvent(psAgentAttemptId, request.getMsg()));
-      context.getEventHandler()
-          .handle(
-              new PSAgentAttemptEvent(PSAgentAttemptEventType.PSAGENT_ATTEMPT_FAILMSG,
-                  psAgentAttemptId));
-      resBuilder.setCommand(PSAgentCommandProto.PSAGENT_SUCCESS);
-    }
     return resBuilder.build();
   }
 
@@ -898,12 +715,12 @@ public class MasterService extends AbstractService implements MasterProtocol {
     }
 
     WorkerAttemptId workerAttemptId = ProtobufUtil.convertToId(request.getWorkerAttemptId());
-    if (!workerLastHeartbeatTS.containsKey(workerAttemptId)) {
+    if (!context.getWorkerManager().isAlive(workerAttemptId)) {
       LOG.error("worker attempt " + workerAttemptId + " is not in running worker attempt set now, shutdown it");
       return WorkerReportResponse.newBuilder().setCommand(WorkerCommandProto.W_SHUTDOWN).build();
     } else {
       context.getEventHandler().handle(new WorkerAttemptStateUpdateEvent(workerAttemptId, request));
-      workerLastHeartbeatTS.put(workerAttemptId, System.currentTimeMillis());
+      context.getWorkerManager().alive(workerAttemptId);
       return WorkerReportResponse.newBuilder()
           .setActiveTaskNum(context.getWorkerManager().getActiveTaskNum())
           .setCommand(WorkerCommandProto.W_SUCCESS).build();
@@ -928,10 +745,11 @@ public class MasterService extends AbstractService implements MasterProtocol {
     WorkerAttemptId workerAttemptId = ProtobufUtil.convertToId(request.getWorkerAttemptId());
 
     //if worker attempt id is not in monitor set, we should shutdown it
-    if (!workerLastHeartbeatTS.containsKey(workerAttemptId)) {
+    if (!context.getWorkerManager().isAlive(workerAttemptId)) {
       LOG.error("worker attempt " + workerAttemptId + " is not in running worker attempt set now, shutdown it");
       registerResponseBuilder.setCommand(WorkerCommandProto.W_SHUTDOWN);
     } else {
+      context.getWorkerManager().alive(workerAttemptId);
       Location location =
           new Location(request.getLocation().getIp(), request.getLocation().getPort());
       context.getEventHandler().handle(new WorkerAttemptRegisterEvent(workerAttemptId, location));
@@ -1004,10 +822,10 @@ public class MasterService extends AbstractService implements MasterProtocol {
     WorkerDoneResponse.Builder resBuilder = WorkerDoneResponse.newBuilder();
 
     //if worker attempt id is not in monitor set, we should shutdown it
-    if (!workerLastHeartbeatTS.containsKey(workerAttemptId)) {
+    if (!context.getWorkerManager().isAlive(workerAttemptId)) {
       resBuilder.setCommand(WorkerCommandProto.W_SHUTDOWN);
     } else {
-      workerLastHeartbeatTS.remove(workerAttemptId);
+      context.getWorkerManager().unRegister(workerAttemptId);
       resBuilder.setCommand(WorkerCommandProto.W_SUCCESS);
       context.getEventHandler().handle(new WorkerAttemptEvent(WorkerAttemptEventType.DONE, workerAttemptId));
     }
@@ -1032,10 +850,10 @@ public class MasterService extends AbstractService implements MasterProtocol {
     WorkerErrorResponse.Builder resBuilder = WorkerErrorResponse.newBuilder();
 
     //if worker attempt id is not in monitor set, we should shutdown it
-    if (!workerLastHeartbeatTS.containsKey(workerAttemptId)) {
+    if (!context.getWorkerManager().isAlive(workerAttemptId)) {
       resBuilder.setCommand(WorkerCommandProto.W_SHUTDOWN);
     } else {
-      workerLastHeartbeatTS.remove(workerAttemptId);
+      context.getWorkerManager().unRegister(workerAttemptId);
       context.getEventHandler()
           .handle(new WorkerAttemptDiagnosticsUpdateEvent(workerAttemptId, request.getMsg()));
       context.getEventHandler().handle(new WorkerAttemptEvent(WorkerAttemptEventType.ERROR, workerAttemptId));
@@ -1045,26 +863,22 @@ public class MasterService extends AbstractService implements MasterProtocol {
     return resBuilder.build();
   }
 
+  /**
+   * Get success Worker group number
+   * @param controller rpc controller of protobuf
+   * @param request empty
+   * @return success Worker group number
+   * @throws ServiceException
+   */
+  @Override
+  public GetWorkerGroupSuccessNumResponse getWorkerGroupSuccessNum(RpcController controller,
+    GetWorkerGroupSuccessNumRequest request) throws ServiceException {
+    return GetWorkerGroupSuccessNumResponse.newBuilder().setSuccessNum(
+      context.getWorkerManager().getSuccessWorkerGroupNum()).build();
+  }
+
   public List<MatrixMeta> getMatrics() {
     return matrics;
-  }
-
-  /**
-   * remove worker attempt from monitor set
-   * @param workerAttemptId worker attempt id
-   */
-  public void unRegisterWorkerAttemptId(WorkerAttemptId workerAttemptId) {
-    LOG.info(workerAttemptId + " is unregistered in monitor!");
-    workerLastHeartbeatTS.remove(workerAttemptId);
-  }
-
-  /**
-   * add worker attempt to monitor set
-   * @param workerAttemptId worker attempt id
-   */
-  public void registerWorkerAttemptId(WorkerAttemptId workerAttemptId) {
-    LOG.info(workerAttemptId + " is registered in monitor!");
-    workerLastHeartbeatTS.put(workerAttemptId, System.currentTimeMillis());
   }
 
   /**
@@ -1153,8 +967,9 @@ public class MasterService extends AbstractService implements MasterProtocol {
 
   @Override public PSFailedReportResponse psFailedReport(RpcController controller,
     PSFailedReportRequest request) throws ServiceException {
-    HashMap<PSLocation, Integer> reports = ProtobufUtil.convert(request.getReports());
-    context.getParameterServerManager().psFailedReports(reports);
+    LOG.info("Receive client ps failed report " + request);
+    PSLocation psLoc = ProtobufUtil.convert(request.getPsLoc());
+    context.getParameterServerManager().psFailedReport(psLoc);
     return PSFailedReportResponse.newBuilder().build();
   }
 
@@ -1263,7 +1078,7 @@ public class MasterService extends AbstractService implements MasterProtocol {
     return ClientMasterServiceProtos.StopResponse.newBuilder().build();
   }
 
-  private void stop(int exitStatus) {
+  public void stop(int exitStatus) {
     switch(exitStatus) {
       case 1:{
         context.getEventHandler().handle(new AppEvent(AppEventType.KILL));
@@ -1316,19 +1131,22 @@ public class MasterService extends AbstractService implements MasterProtocol {
     return SetParamsResponse.newBuilder().build();
   }
 
+  @Override
+  public GetClientIdResponse getClientId(RpcController controller, GetClientIdRequest request)
+    throws ServiceException {
+    return GetClientIdResponse.newBuilder().setClientId(context.getClientManager().getId()).build();
+  }
+
   @Override public KeepAliveResponse keepAlive(RpcController controller, KeepAliveRequest request)
     throws ServiceException {
-    LOG.info("Client " + request.getClientId() + " is alive.");
-    if(clientToLastHBTsMap.containsKey(request.getClientId())) {
-      clientToLastHBTsMap.put(request.getClientId(), System.currentTimeMillis());
-    }
+    context.getClientManager().alive(request.getClientId());
     return KeepAliveResponse.getDefaultInstance();
   }
 
   @Override public ClientRegisterResponse clientRegister(RpcController controller,
     ClientRegisterRequest request) throws ServiceException {
-    LOG.info("Client " + request.getClientId() + " register.");
-    clientToLastHBTsMap.put(request.getClientId(), System.currentTimeMillis());
+    context.getClientManager().register(request.getClientId());
     return ClientRegisterResponse.getDefaultInstance();
   }
+
 }

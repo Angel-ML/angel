@@ -19,7 +19,6 @@ package com.tencent.angel.ml.matrix.psf.get.single;
 
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
-import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.ps.impl.matrix.*;
 import io.netty.buffer.ByteBuf;
 
@@ -93,7 +92,7 @@ public class PartitionGetRowResult extends PartitionGetResult {
           break;
         }
         default:
-          break;
+          throw new UnsupportedOperationException("Can not support deserialize row type:" + type);
       }
     }
 
@@ -102,10 +101,12 @@ public class PartitionGetRowResult extends PartitionGetResult {
 
   @Override
   public int bufferLen() {
-    if (rowSplit != null)
-      return rowSplit.bufferLen();
-    else
+    if (rowSplit != null) {
+      return 4 + rowSplit.bufferLen();
+    }
+    else {
       return 0;
+    }
   }
 
   /**

@@ -97,6 +97,15 @@ public class GetClocksResponse extends Response {
 
   @Override
   public int bufferLen() {
-    return super.bufferLen() + 4 + clocks.size() * 28;
+    int len = super.bufferLen();
+    if(clocks != null) {
+      len += (4 + clocks.size() * 32);
+    }
+    return len;
+  }
+
+  @Override
+  public void clear() {
+    setClocks(null);
   }
 }

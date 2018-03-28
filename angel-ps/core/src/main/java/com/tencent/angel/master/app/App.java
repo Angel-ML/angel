@@ -19,8 +19,6 @@ package com.tencent.angel.master.app;
 
 import com.tencent.angel.RunningMode;
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.master.psagent.PSAgentManagerEvent;
-import com.tencent.angel.master.psagent.PSAgentManagerEventType;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.GetJobReportResponse;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.JobReportProto;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.JobStateProto;
@@ -483,10 +481,7 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
     @SuppressWarnings("unchecked")
     @Override
     public void transition(App app, AppEvent event) {
-      if (app.context.getRunningMode() == RunningMode.ANGEL_PS_PSAGENT) {
-        app.context.getEventHandler().handle(
-            new PSAgentManagerEvent(PSAgentManagerEventType.PSAGENTS_START));
-      } else if (app.context.getRunningMode() == RunningMode.ANGEL_PS_WORKER) {
+      if (app.context.getRunningMode() == RunningMode.ANGEL_PS_WORKER) {
         app.context.getWorkerManager().startAllWorker();
       }
     }

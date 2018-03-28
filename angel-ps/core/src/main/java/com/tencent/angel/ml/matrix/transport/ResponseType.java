@@ -29,7 +29,9 @@ public enum ResponseType {
   SERVER_HANDLE_FATAL(7),
   CLOCK_NOTREADY(8),
   PARTITION_READ_ONLY(9),
-  UNKNOWN_ERROR(10);
+  SERVER_IS_BUSY(10),
+  UNKNOWN_ERROR(11),
+  OOM(12);
 
   public static Map<Integer, ResponseType> typeIdToTypeMap;
   static {
@@ -43,7 +45,9 @@ public enum ResponseType {
     typeIdToTypeMap.put(SERVER_HANDLE_FATAL.typeId, SERVER_HANDLE_FATAL);
     typeIdToTypeMap.put(CLOCK_NOTREADY.typeId, CLOCK_NOTREADY);
     typeIdToTypeMap.put(PARTITION_READ_ONLY.typeId, PARTITION_READ_ONLY);
+    typeIdToTypeMap.put(SERVER_IS_BUSY.typeId, SERVER_IS_BUSY);
     typeIdToTypeMap.put(UNKNOWN_ERROR.typeId, UNKNOWN_ERROR);
+    typeIdToTypeMap.put(OOM.typeId, OOM);
   }
 
 

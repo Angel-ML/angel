@@ -60,7 +60,8 @@ class NetworkServer(val context: NetworkContext, val hostToBind: String, portToB
 
   private def init() = {
 
-    val workerNum = conf.getInt(AngelConf.ANGEL_NETTY_SERVING_TRANSFER_SERVER_EVENTGROUP_THREADNUM, AngelConf.DEFAULT_ANGEL_NETTY_SERVING_TRANSFER_SERVER_EVENTGROUP_THREADNUM)
+    val workerNum = conf.getInt(AngelConf.ANGEL_NETTY_SERVING_TRANSFER_SERVER_EVENTGROUP_THREADNUM,
+      AngelConf.DEFAULT_ANGEL_NETTY_SERVING_TRANSFER_SERVER_EVENTGROUP_THREADNUM)
     val bossGroup = new NioEventLoopGroup(1)
     val workerGroup = new NioEventLoopGroup(workerNum)
     workerGroup.asInstanceOf[NioEventLoopGroup].setIoRatio(70)

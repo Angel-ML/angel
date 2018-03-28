@@ -49,8 +49,18 @@ public class RequestContext {
   /** time ticks of waiting for request result, it used to check the request is timeout or not */
   private int waitTimeTicks;
 
+  private volatile long submitStartTs = -1L;
+
+  private volatile long getChannelStartTs = -1L;
+
+  private volatile long serializeStartTs = -1L;
+
+  private volatile long sendStartTs = -1L;
+
   /** Buf that save the serialized request */
   private volatile ByteBuf serializedData;
+
+  private volatile long nextRetryTs = -1L;
 
   /**
    * Create a new RequestContext.
@@ -205,5 +215,46 @@ public class RequestContext {
    */
   public void setSerializedData(ByteBuf serializedData) {
     this.serializedData = serializedData;
+  }
+
+  /**
+   * Set send start timestamp
+   * @param ts start timestamp
+   */
+  public void setSendStartTs(long ts) {
+    this.sendStartTs = ts;
+  }
+
+  /**
+   * Get send start timestamp
+   * @return send start timestamp
+   */
+  public long getSendStartTs() {
+    return sendStartTs;
+  }
+
+  /**
+   * Reset context
+   */
+  public void reset() {
+    sendStartTs = -1;
+    failedTs = -1;
+    waitTimeTicks = 0;
+  }
+
+  /**
+   * Set next retry ts
+   * @param nextRetryTs next retry ts
+   */
+  public void setNextRetryTs(long nextRetryTs) {
+    this.nextRetryTs = nextRetryTs;
+  }
+
+  /**
+   * Get next retry ts
+   * @return next retry ts
+   */
+  public long getNextRetryTs() {
+    return nextRetryTs;
   }
 }

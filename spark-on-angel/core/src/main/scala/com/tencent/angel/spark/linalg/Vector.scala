@@ -59,45 +59,48 @@ class DenseVector(val values: Array[Double]) extends Vector {
   }
 }
 
-/**
-class SparseVector(
-    override val length: Long,
-    val indices: Array[Long],
-    val values: Array[Double]) extends Vector {
-
-  def nnz: Int = indices.length
-
-  def this(len: Long, other: Long2DoubleOpenHashMap) {
-    this(len, other.keySet().toLongArray, other.values().toDoubleArray)
-  }
-}
-*/
-
 class SparseVector(override val length: Long) extends Vector {
   var keyValues: Long2DoubleOpenHashMap = new Long2DoubleOpenHashMap()
 
   def this(len: Long, indices: Array[Long], values: Array[Double]) {
     this(len)
+    keyValues = null
     keyValues = new Long2DoubleOpenHashMap(indices, values)
   }
 
   def this(len: Long, pairs: Array[(Long, Double)]) {
     this(len)
     val (keys, values) = pairs.unzip
+    keyValues = null
     keyValues = new Long2DoubleOpenHashMap(keys, values)
   }
 
   def this(len: Long, other: Long2DoubleOpenHashMap) {
     this(len)
-    require(other.defaultReturnValue() == 0.0, "Long2DoubleOpenHashMap default value must be 0.0")
+    keyValues = null
     keyValues = other.clone()
+  }
+
+  def reSize(size: Long): Unit = {
+    val temp = new Long2DoubleOpenHashMap(size.toInt)
+    temp.putAll(keyValues)
+    keyValues = temp
   }
 
   def toDense: DenseVector = throw new Exception("Can not convert SparseVector to DenseVector")
 
   def toSparse: SparseVector = this
 
-  def nnz: Int = keyValues.size()
+  def nnz: Long = {
+    import scala.collection.JavaConverters._
+    var num = 0L
+    for (entry <- keyValues.asScala) {
+      if (math.abs(entry._2 - keyValues.defaultReturnValue()) > 1e-11) {
+        num += 1
+      }
+    }
+    num
+  }
 
   def apply(index: Long): Double = {
     keyValues.get(index)

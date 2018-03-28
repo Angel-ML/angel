@@ -16,6 +16,7 @@
 
 package com.tencent.angel.psagent.matrix.transport;
 
+import com.tencent.angel.utils.StringUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -36,6 +37,8 @@ public class MatrixTransportClientHandler extends ChannelInboundHandlerAdapter {
   /**rpc dispatch event queue*/
   private final LinkedBlockingQueue<DispatcherEvent> dispatchMessageQueue;
 
+  private final RPCContext rpcContext;
+
   /**
    * Create a new MatrixTransportClientHandler.
    *
@@ -43,9 +46,10 @@ public class MatrixTransportClientHandler extends ChannelInboundHandlerAdapter {
    * @param dispatchMessageQueue rpc dispatch event queue
    */
   public MatrixTransportClientHandler(LinkedBlockingQueue<ByteBuf> msgQueue,
-      LinkedBlockingQueue<DispatcherEvent> dispatchMessageQueue) {
+      LinkedBlockingQueue<DispatcherEvent> dispatchMessageQueue, RPCContext rpcContext) {
     this.msgQueue = msgQueue;
     this.dispatchMessageQueue = dispatchMessageQueue;
+    this.rpcContext = rpcContext;
   }
 
   @Override
@@ -63,10 +67,13 @@ public class MatrixTransportClientHandler extends ChannelInboundHandlerAdapter {
 
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) {
-    LOG.debug("receive a message " + ((ByteBuf) msg).readableBytes());
-    //int seqId = ((ByteBuf) msg).readInt();
-    //LOG.info("receive result of seqId=" + seqId);
-    //((ByteBuf) msg).resetReaderIndex();
+    //LOG.debug("receive a message " + ((ByteBuf) msg).readableBytes());
+    if(LOG.isDebugEnabled()) {
+      int seqId = ((ByteBuf) msg).readInt();
+      LOG.debug("receive result of seqId=" + seqId);
+      ((ByteBuf) msg).resetReaderIndex();
+    }
+
     try {
       msgQueue.put((ByteBuf) msg);
     } catch (InterruptedException e) {
@@ -75,8 +82,13 @@ public class MatrixTransportClientHandler extends ChannelInboundHandlerAdapter {
   }
 
   @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-    cause.printStackTrace();
-    ctx.close();
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable x) {
+    LOG.info("exceptin happened ", x);
+    String errorMsg = StringUtils.stringifyException(x);
+    if(x instanceof OutOfMemoryError || (errorMsg.contains("MemoryError"))) {
+      rpcContext.oom();
+    } else {
+      ctx.close();
+    }
   }
 }

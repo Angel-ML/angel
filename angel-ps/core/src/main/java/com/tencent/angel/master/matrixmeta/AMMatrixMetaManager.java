@@ -118,7 +118,12 @@ public class AMMatrixMetaManager {
   public final Map<Integer, MatrixMeta> getMatrixPartitions(ParameterServerId psId) {
     try {
       readLock.lock();
-      return new HashMap<>(matrixPartitionsOnPS.get(psId));
+      Map<Integer, MatrixMeta> metaInPS = matrixPartitionsOnPS.get(psId);
+      if(metaInPS == null) {
+        return new HashMap<>();
+      } else {
+        return new HashMap<>(metaInPS);
+      }
     } finally {
       readLock.unlock();
     }

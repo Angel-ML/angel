@@ -300,7 +300,9 @@ public class PSClient {
     seqIdToRequestMap.put(seqId, request);
 
     // Serialize the request
-    ByteBuf msg = ByteBufUtils.newByteBuf(8 + request.bufferLen(), useDirectBuf);
+    ByteBuf msg = ByteBufUtils.newByteBuf(16 + request.bufferLen(), useDirectBuf);
+    msg.writeInt(-1);
+    msg.writeInt(0);
     msg.writeInt(seqId);
     msg.writeInt(request.getType().getMethodId());
     request.serialize(msg);
@@ -348,7 +350,9 @@ public class PSClient {
     seqIdToRequestMap.put(seqId, request);
 
     // Serialize the request
-    ByteBuf msg = ByteBufUtils.newByteBuf(8 + request.bufferLen(), useDirectBuf);
+    ByteBuf msg = ByteBufUtils.newByteBuf(16 + request.bufferLen(), useDirectBuf);
+    msg.writeInt(-1);
+    msg.writeInt(0);
     msg.writeInt(seqId);
     msg.writeInt(request.getType().getMethodId());
     request.serialize(msg);
@@ -357,7 +361,7 @@ public class PSClient {
   }
 
   private void changeSeqId(int seqId, ByteBuf update) {
-    update.setInt(0, seqId);
+    update.setInt(8, seqId);
   }
 
   private void returnChannel(Request item) {

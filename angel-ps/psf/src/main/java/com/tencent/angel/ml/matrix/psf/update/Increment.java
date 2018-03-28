@@ -37,15 +37,15 @@ public class Increment extends VAUpdateFunc {
 
   @Override
   protected void doUpdate(ServerDenseDoubleRow row, double[] delta) {
+    row.tryToLockWrite();
     try {
-      row.getLock().writeLock().lock();
       DoubleBuffer data = row.getData();
       int size = row.size();
       for (int i = 0; i < size; i++) {
         data.put(i, data.get(i) + delta[i]);
       }
     } finally {
-      row.getLock().writeLock().unlock();
+      row.unlockWrite();
     }
   }
 

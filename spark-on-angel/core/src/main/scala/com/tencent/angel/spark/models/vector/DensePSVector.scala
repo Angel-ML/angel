@@ -65,7 +65,7 @@ class DensePSVector(override val poolId: Int,
 
 object DensePSVector {
   def apply(dimension: Int, capacity:Int = 20): DensePSVector = {
-    PSContext.instance().createVector(dimension, VectorType.DENSE, capacity)
+    PSContext.instance().createVector(dimension, VectorType.DENSE, capacity, dimension)
       .asInstanceOf[DensePSVector]
   }
 }

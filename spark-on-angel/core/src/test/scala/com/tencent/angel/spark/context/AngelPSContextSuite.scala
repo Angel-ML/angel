@@ -72,7 +72,7 @@ class AngelPSContextSuite extends PSFunSuite {
   }
 
   test("create matrix and destroy matrix") {
-    val meta = angel.createMatrix(rows, cols)
+    val meta = angel.createDenseMatrix(rows, cols)
 
     assert(meta.getColNum == cols)
     assert(meta.getRowNum == rows)
@@ -83,7 +83,7 @@ class AngelPSContextSuite extends PSFunSuite {
 
   test("doCreateVectorPool && doDestroyVectorPool") {
 
-    val thisPool = angel.createVectorPool(dim, capacity, VectorType.DENSE)
+    val thisPool = angel.createVectorPool(dim, capacity, VectorType.DENSE, -1)
     val firstVector = thisPool.allocate()
 
     assert(thisPool.vType == VectorType.DENSE)

@@ -29,6 +29,7 @@ package com.tencent.angel.spark.linalg
 
 import com.github.fommil.netlib.{F2jBLAS, BLAS => NetlibBLAS}
 import com.github.fommil.netlib.BLAS.{getInstance => NativeBLAS}
+import it.unimi.dsi.fastutil.longs.{Long2DoubleMap, Long2DoubleOpenHashMap, LongOpenHashSet}
 
 /**
  * BLAS routines for MLlib's vectors and matrices.
@@ -68,6 +69,10 @@ private[spark] object BLAS extends Serializable {
         x match {
           case ox: OneHotVector =>
             axpy(a, ox, sy)
+          case sx: SparseVector =>
+            axpy(a, sx, sy)
+          case dx: DenseVector =>
+            axpy(a, dx, sy)
           case _ => throw new UnsupportedOperationException(
             s"axpy doesn't support x type ${x.getClass}.")
         }
@@ -121,6 +126,41 @@ private[spark] object BLAS extends Serializable {
 
   private def axpy(a: Double, x: OneHotVector, y: SparseVector): Unit = {
     x.indices.foreach(i => y.keyValues.addTo(i, a))
+  }
+
+  private def axpy(a: Double, x: SparseVector, y: SparseVector): Unit = {
+    if (a == 0.0) {
+      return
+    } else if(x.keyValues.defaultReturnValue() == 0.0) {
+      if (x.keyValues.size() != 0 || y.keyValues.size().toDouble / x.keyValues.size() < 1.1) {
+        y.reSize(x.keyValues.size() + y.keyValues.size())
+      }
+      val iter = x.keyValues.long2DoubleEntrySet().fastIterator()
+      var entry: Long2DoubleMap.Entry = null
+      while (iter.hasNext) {
+        entry = iter.next()
+        y.keyValues.addTo(entry.getLongKey, entry.getDoubleValue * a)
+      }
+      val yDefaultValue = y.keyValues.defaultReturnValue()
+      val xDefaultValue = x.keyValues.defaultReturnValue()
+      y.keyValues.defaultReturnValue(yDefaultValue + a * xDefaultValue)
+    } else {
+      val keySet = new LongOpenHashSet(x.keyValues.keySet())
+      keySet.addAll(y.keyValues.keySet())
+      val iter = keySet.iterator()
+      while (iter.hasNext) {
+        val key = iter.nextLong()
+        y.keyValues.addTo(key, x.keyValues.get(key) * a)
+      }
+      val yDefaultValue = y.keyValues.defaultReturnValue()
+      val xDefaultValue = x.keyValues.defaultReturnValue()
+      y.keyValues.defaultReturnValue(yDefaultValue + a * xDefaultValue)
+    }
+
+  }
+
+  private def axpy(a: Double, x: DenseVector, y: SparseVector): Unit = {
+    x.values.indices.foreach { index => y.keyValues.addTo(index, x(index) * a) }
   }
 
   /**
@@ -278,7 +318,14 @@ private[spark] object BLAS extends Serializable {
   def scal(a: Double, x: Vector): Unit = {
     x match {
       case sx: SparseVector =>
-        f2jBLAS.dscal(sx.values.length, a, sx.values, 1)
+        val iter = sx.keyValues.long2DoubleEntrySet().fastIterator()
+        var entry: Long2DoubleMap.Entry = null
+        while (iter.hasNext) {
+          entry = iter.next()
+          entry.setValue(entry.getDoubleValue * a)
+        }
+        val default = sx.keyValues.defaultReturnValue()
+        sx.keyValues.defaultReturnValue(default * a)
       case dx: DenseVector =>
         f2jBLAS.dscal(dx.values.length, a, dx.values, 1)
       case _ =>

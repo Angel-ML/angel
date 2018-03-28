@@ -280,7 +280,7 @@ public class ServerMatrix {
     // Write the ps matrix meta to the meta file
     Path metaFile = new Path(matrixFilesPath, ModelFilesConstent.psModelMetaFileName);
     Path tmpMetaFile = HdfsUtil.toTmpPath(metaFile);
-    FSDataOutputStream metaOut = fs.create(tmpMetaFile, (short) 1);
+    FSDataOutputStream metaOut = fs.create(tmpMetaFile);
     psMatrixFilesMeta.write(metaOut);
     metaOut.flush();
     metaOut.close();

@@ -48,6 +48,7 @@ message ModelSplitGroupProto {
   required string dir = 2;
   optional int32 concurrent = 3 [default = -1];
   repeated ModelSplitProto splits = 4;
+  required string shardingModelClass = 5;
 }
 
 message ModelCommandProto {

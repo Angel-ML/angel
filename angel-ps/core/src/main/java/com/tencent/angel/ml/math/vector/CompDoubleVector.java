@@ -610,6 +610,8 @@ abstract class CompDoubleVector extends TIntDoubleVector {
       return plusBy((SparseDummyVector) other, x);
     } else if (other instanceof SparseDoubleSortedVector) {
       return plusBy((SparseDoubleSortedVector) other, x);
+    } else if (other instanceof SparseDoubleVector) {
+      return plusBy((SparseDoubleVector) other, x);
     }
 
     throw new UnsupportedOperationException(
@@ -740,7 +742,7 @@ abstract class CompDoubleVector extends TIntDoubleVector {
   }
 
   @Override public double sparsity() {
-    return (double)nonZeroNumber() / (double)getDimension();
+    return (double)nonZeroNumber() / getDimension();
   }
 
   @Override public int size() {
@@ -779,7 +781,6 @@ abstract class CompDoubleVector extends TIntDoubleVector {
     ElementUpdateOp
       op = new ElementUpdateOp(vectors, 0, splitNum, updater, param);
     MatrixOpExecutors.execute(op);
-    op.join();
     return this;
   }
 }

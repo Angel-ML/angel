@@ -118,17 +118,18 @@ public class ServerDenseIntRow extends ServerIntRow {
   }
 
   @Override
-  public void update(RowType rowType, ByteBuf buf, int size) {
+  public void update(RowType rowType, ByteBuf buf) {
+    tryToLockWrite();
+
     try {
-      lock.writeLock().lock();
       switch (rowType) {
         case T_INT_DENSE:
-          updateIntDense(buf, size);
+          updateIntDense(buf);
           break;
 
         case T_INT_SPARSE:
         case T_INT_SPARSE_COMPONENT:
-          updateIntSparse(buf, size);
+          updateIntSparse(buf);
           break;
 
         default:
@@ -136,20 +137,22 @@ public class ServerDenseIntRow extends ServerIntRow {
       }
       updateRowVersion();
     } finally {
-      lock.writeLock().unlock();
+      unlockWrite();
     }
   }
 
-  private void updateIntDense(ByteBuf buf, int size) {
+  private void updateIntDense(ByteBuf buf) {
+    int size = buf.readInt();
     for (int colId = 0; colId < size; colId++) {
       data.put(colId, data.get(colId) + buf.readInt());
     }
   }
 
-  private void updateIntSparse(ByteBuf buf, int size) {
-    int columnId = 0;
-    int value = 0;
+  private void updateIntSparse(ByteBuf buf) {
+    int columnId;
+    int value;
     int startColInt = (int) startCol;
+    int size = buf.readInt();
     for (int i = 0; i < size; i++) {
       columnId = buf.readInt()- startColInt;
       value = data.get(columnId) + buf.readInt();

@@ -25,5 +25,5 @@ import com.tencent.angel.common.Serialize;
  * as parameter of `MapWithIndex`
  */
 public interface MapWithIndexFunc extends Serialize {
-  double call(int index, double value);
+  double call(long index, double value);
 }

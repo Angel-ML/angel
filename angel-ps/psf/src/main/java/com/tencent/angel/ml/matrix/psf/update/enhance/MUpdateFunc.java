@@ -17,6 +17,7 @@
 
 package com.tencent.angel.ml.matrix.psf.update.enhance;
 
+import com.tencent.angel.exception.WaitLockTimeOutException;
 import com.tencent.angel.ml.matrix.psf.common.Utils;
 import com.tencent.angel.ps.impl.PSContext;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;

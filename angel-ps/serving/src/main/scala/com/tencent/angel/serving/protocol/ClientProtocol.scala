@@ -24,9 +24,10 @@ import com.tencent.angel.serving.common.{ModelDefinition, ModelLocationList}
   */
 trait ClientProtocol {
 
-  def registerModel(model: ModelDefinition)
+  def registerModel(model: ModelDefinition, shardingModelClass: String): Boolean
 
-  def unregisterModel(name: String)
+  def unregisterModel(name: String): Boolean
 
   def getModelLocations(): ModelLocationList
+
 }

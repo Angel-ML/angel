@@ -277,8 +277,8 @@ public class WorkerTest {
       PSAgent psAgent = worker.getPSAgent();
       assertTrue(psAgent != null);
 
-      PSAgentAttemptId psAgentAttemptId = psAgent.getId();
-      Assert.assertEquals(psAgentAttemptId.toString(), "PSAgentAttempt_0_0");
+      int psAgentId = psAgent.getId();
+      Assert.assertEquals(psAgentId, 1);
 
       assertEquals(psAgent.getMasterLocation(), worker.getMasterLocation());
     } catch (Exception x) {

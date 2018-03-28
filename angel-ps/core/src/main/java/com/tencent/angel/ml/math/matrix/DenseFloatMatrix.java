@@ -70,6 +70,13 @@ public class DenseFloatMatrix extends TFloatMatrix<DenseFloatVector>  {
     return ret;
   }
 
+  public void setRow(int rowIndex, float[] values) {
+    DenseFloatVector ret = new DenseFloatVector((int)col, values);
+    ret.setMatrixId(matrixId);
+    ret.setRowId(rowIndex);
+    vectors[rowIndex] = ret;
+  }
+
   /**
    * init the vector by set the value
    *

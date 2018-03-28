@@ -56,24 +56,24 @@ class ServingMaster extends AngelService[AngelApplicationMaster] {
     rpcServer.addProtocolImpl(classOf[ClientProtocolPB], new ClientProtocolServerTranslatorPB(servingService))
     rpcServer.addProtocolImpl(classOf[AgentProtocolPB], new AgentProtocolServerTranslatorPB(servingService))
 
-    master.getAppContext.getDispatcher.register(classOf[PSAttemptEventType],
-
-      new EventHandler[PSAttemptEvent] {
-        override def handle(event: PSAttemptEvent): Unit = {
-          val psAttemptId = event.getPSAttemptId
-          val ps = psManager.getParameterServer(psAttemptId.getPsId)
-          val psAttempt = ps.getPSAttempt(psAttemptId)
-          if (psAttempt != null) {
-            event.getType match {
-              case PSAttemptEventType.PA_REGISTER
-              => servingManager.onAddServingAgent(new ServingHost(psAttempt.getLocation.getIp))
-              case PSAttemptEventType.PA_KILL | PSAttemptEventType.PA_FAILMSG | PSAttemptEventType.PA_UNREGISTER
-              => servingManager.onRemoveServingAgent(new ServingHost(psAttempt.getLocation.getIp))
-              case _ =>
-            }
+    val psEventHandler = new EventHandler[PSAttemptEvent] {
+      override def handle(event: PSAttemptEvent): Unit = {
+        val psAttemptId = event.getPSAttemptId
+        val ps = psManager.getParameterServer(psAttemptId.getPsId)
+        val psAttempt = ps.getPSAttempt(psAttemptId)
+        if (psAttempt != null) {
+          event.getType match {
+            case PSAttemptEventType.PA_REGISTER =>
+              servingManager.onAddServingAgent(new ServingHost(psAttempt.getLocation.getIp))
+            case PSAttemptEventType.PA_KILL | PSAttemptEventType.PA_FAILMSG | PSAttemptEventType.PA_UNREGISTER =>
+              servingManager.onRemoveServingAgent(new ServingHost(psAttempt.getLocation.getIp))
+            case _ =>
           }
         }
-      })
+      }
+    }
+
+    master.getAppContext.getDispatcher.register(classOf[PSAttemptEventType], psEventHandler)
     servingService.start()
   }
 

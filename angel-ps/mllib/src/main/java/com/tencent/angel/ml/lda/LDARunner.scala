@@ -78,6 +78,21 @@ class LDARunner extends MLRunner {
   override def predict(conf: Configuration): Unit = {
     conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1)
     conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, classOf[BalanceInputFormat].getName)
+
+
+    var mem = conf.getInt(AngelConf.ANGEL_WORKER_MEMORY_MB, -1)
+    if (mem == -1)
+      mem = conf.getInt(AngelConf.ANGEL_WORKER_MEMORY_GB, 1) * 1000
+    var javaOpts = s"-Xmx${mem}M -Xms${mem}M -XX:+UseConcMarkSweepGC -XX:+PrintGCTimeStamps -XX:+PrintGCDetails"
+    LOG.info(javaOpts)
+    conf.set(AngelConf.ANGEL_WORKER_JAVA_OPTS, javaOpts)
+
+    mem = conf.getInt(AngelConf.ANGEL_PS_MEMORY_MB, -1)
+    if (mem == -1)
+      mem = conf.getInt(AngelConf.ANGEL_PS_MEMORY_GB, 1) * 1000
+    javaOpts = s"-Xmx${mem}M -Xms${mem}M -XX:+UseConcMarkSweepGC -XX:+PrintGCTimeStamps -XX:+PrintGCDetails"
+    conf.set(AngelConf.ANGEL_PS_JAVA_OPTS, javaOpts)
+    LOG.info(javaOpts)
     val client = AngelClientFactory.get(conf)
 
     client.startPSServer()

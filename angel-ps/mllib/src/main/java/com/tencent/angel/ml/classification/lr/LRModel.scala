@@ -54,8 +54,9 @@ class LRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(con
 
   val feaNum = conf.getLong(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
   val modelType = RowType.valueOf(conf.get(MLConf.LR_MODEL_TYPE, RowType.T_DOUBLE_SPARSE.toString))
+  val nnz = conf.getLong(MLConf.ML_FEATURE_NNZ, -1)
 
-  val weight = PSModel(LR_WEIGHT_MAT, 1, feaNum).setAverage(true).setRowType(modelType)
+  val weight = PSModel(LR_WEIGHT_MAT, 1, feaNum, -1, -1, nnz).setAverage(true).setRowType(modelType)
   val intercept_ = PSModel(LR_INTERCEPT, 1, 1).setAverage(true).setRowType(modelType)
 
   val intercept =

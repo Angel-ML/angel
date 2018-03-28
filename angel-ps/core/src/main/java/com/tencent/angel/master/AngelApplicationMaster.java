@@ -21,6 +21,7 @@ import com.tencent.angel.RunningMode;
 import com.tencent.angel.common.location.LocationManager;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.*;
+import com.tencent.angel.master.client.ClientManager;
 import com.tencent.angel.master.data.DataSpliter;
 import com.tencent.angel.master.data.DummyDataSpliter;
 import com.tencent.angel.master.deploy.ContainerAllocator;
@@ -193,6 +194,12 @@ public class AngelApplicationMaster extends CompositeService {
 
   private final Lock lock;
 
+  /** Angel Client manager */
+  private ClientManager clientManager;
+
+  /** Heartbeat monitor */
+  private HeartbeatMonitor hbMonitor;
+
   public AngelApplicationMaster(Configuration conf, String appName,
       ApplicationAttemptId applicationAttemptId, ContainerId containerId, String nmHost, int nmPort,
       int nmHttpPort, long appSubmitTime, Credentials credentials)  {
@@ -325,8 +332,6 @@ public class AngelApplicationMaster extends CompositeService {
           AngelConf.DEFAULT_ANGEL_RUNNING_MODE);
       if (mode.equals(RunningMode.ANGEL_PS.toString())) {
         return RunningMode.ANGEL_PS;
-      } else if (mode.equals(RunningMode.ANGEL_PS_PSAGENT.toString())) {
-        return RunningMode.ANGEL_PS_PSAGENT;
       } else {
         return RunningMode.ANGEL_PS_WORKER;
       }
@@ -362,6 +367,10 @@ public class AngelApplicationMaster extends CompositeService {
 
     @Override public int getPSReplicationNum() {
       return conf.getInt(AngelConf.ANGEL_PS_HA_REPLICATION_NUMBER, AngelConf.DEFAULT_ANGEL_PS_HA_REPLICATION_NUMBER);
+    }
+
+    @Override public ClientManager getClientManager() {
+      return clientManager;
     }
 
     @Override public int getYarnNMWebPort() {
@@ -685,6 +694,14 @@ public class AngelApplicationMaster extends CompositeService {
       }
     }
 
+    // Init Client manager
+    clientManager = new ClientManager(appContext);
+    addIfService(clientManager);
+
+    // Init PS Client manager
+    psAgentManager = new PSAgentManager(appContext);
+    addIfService(psAgentManager);
+
     // init parameter server manager
     psManager = new ParameterServerManager(appContext, psIdToAttemptIndexMap);
     addIfService(psManager);
@@ -708,17 +725,6 @@ public class AngelApplicationMaster extends CompositeService {
     RunningMode mode = appContext.getRunningMode();
     LOG.info("running mode=" + mode);
     switch (mode) {
-      case ANGEL_PS_PSAGENT: {
-        // init psagent manager and register psagent manager event
-        psAgentManager = new PSAgentManager(appContext);
-        addIfService(psAgentManager);
-        dispatcher.register(PSAgentManagerEventType.class, psAgentManager);
-        dispatcher.register(AMPSAgentEventType.class, new PSAgentEventHandler());
-        dispatcher.register(PSAgentAttemptEventType.class, new PSAgentAttemptEventHandler());
-        LOG.info("build PSAgentManager success");
-        break;
-      }
-
       case ANGEL_PS_WORKER: {
         // a dummy data spliter is just for test now
         boolean useDummyDataSpliter =
@@ -758,6 +764,9 @@ public class AngelApplicationMaster extends CompositeService {
     dispatcher.register(AppEventType.class, angelApp);
     dispatcher.register(AppFinishEventType.class, new AppFinishEventHandler());
 
+    hbMonitor = new HeartbeatMonitor(appContext);
+    addIfService(hbMonitor);
+
     masterService.init(conf);
     super.init(conf);
 
@@ -778,7 +787,7 @@ public class AngelApplicationMaster extends CompositeService {
 
     super.serviceStart();
     psManager.startAllPS();
-    AngelServiceLoader.startServiceIfNeed(this,getConfig());
+    AngelServiceLoader.startServiceIfNeed(this, getConfig());
 
     LOG.info("appAttemptId.getAttemptId()=" + appAttemptId.getAttemptId());
     if (appAttemptId.getAttemptId() > 1) {
@@ -960,23 +969,6 @@ public class AngelApplicationMaster extends CompositeService {
       PSAttemptId attemptId = event.getPSAttemptId();
       ParameterServerId id = attemptId.getPsId();
       psManager.getParameterServer(id).getPSAttempt(attemptId).handle(event);
-    }
-  }
-
-  public class PSAgentEventHandler implements EventHandler<AMPSAgentEvent> {
-
-    @Override
-    public void handle(AMPSAgentEvent event) {
-      psAgentManager.getPsAgent(event.getId()).handle(event);
-    }
-  }
-
-  public class PSAgentAttemptEventHandler implements EventHandler<PSAgentAttemptEvent> {
-
-    @Override
-    public void handle(PSAgentAttemptEvent event) {
-      psAgentManager.getPsAgent(event.getId().getPsAgentId()).getAttempt(event.getId())
-          .handle(event);
     }
   }
 

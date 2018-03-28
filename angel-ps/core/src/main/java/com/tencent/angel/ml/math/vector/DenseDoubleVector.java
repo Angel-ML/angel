@@ -25,6 +25,8 @@ import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
+
+import java.util.Arrays;
 import java.util.stream.IntStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -100,9 +102,7 @@ public class DenseDoubleVector extends TIntDoubleVector implements Serialize{
   @Override
   public void clear() {
     if (values != null) {
-      for (int i = 0; i < values.length; i++) {
-        values[i] = 0.0;
-      }
+      Arrays.fill(values, 0.0);
     }
   }
 

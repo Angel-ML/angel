@@ -17,10 +17,15 @@
 
 package com.tencent.angel.ml.matrix.psf.update;
 
+import com.tencent.angel.exception.WaitLockTimeOutException;
 import com.tencent.angel.ml.matrix.psf.update.enhance.MMUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongIterator;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 import java.nio.DoubleBuffer;
 import java.util.Map;
@@ -40,8 +45,8 @@ public class Axpy extends MMUpdateFunc {
 
   @Override
   protected void doUpdate(ServerDenseDoubleRow[] rows, double[] scalars) {
+    rows[1].tryToLockWrite();
     try {
-      rows[1].getLock().writeLock().lock();
       DoubleBuffer xData = rows[0].getData();
       DoubleBuffer yData = rows[1].getData();
       double a = scalars[0];
@@ -50,19 +55,33 @@ public class Axpy extends MMUpdateFunc {
         yData.put(i, a * xData.get(i) + yData.get(i));
       }
     } finally {
-      rows[1].getLock().writeLock().unlock();
+      rows[1].unlockWrite();
     }
   }
 
   @Override
   protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows, double[] scalars) {
-    double a = scalars[0];
-    Long2DoubleOpenHashMap xData = rows[0].getData();
+    rows[1].tryToLockWrite();
+    try {
+      double a = scalars[0];
+      Long2DoubleOpenHashMap xData = rows[0].getData();
+      Long2DoubleOpenHashMap yData = rows[1].getData();
+      double xDefault = xData.defaultReturnValue();
+      double yDefault = yData.defaultReturnValue();
 
-    Long2DoubleOpenHashMap yData = xData.clone();
-    for (Map.Entry<Long, Double> entry: yData.entrySet()) {
-      entry.setValue(entry.getValue() * a);
+      LongOpenHashSet keySet = new LongOpenHashSet(xData.keySet());
+      keySet.addAll(yData.keySet());
+
+      LongIterator iter = keySet.iterator();
+      while (iter.hasNext()) {
+        long key = iter.nextLong();
+        yData.put(key, a * xData.get(key) + yData.get(key));
+      }
+      yData.defaultReturnValue(a * xDefault + yDefault);
+
+      rows[1].setIndex2ValueMap(yData);
+    } finally {
+      rows[1].unlockWrite();
     }
-    rows[1].mergeIndexValueMap(yData);
   }
 }

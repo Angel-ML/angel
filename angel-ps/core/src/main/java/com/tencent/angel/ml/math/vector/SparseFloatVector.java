@@ -32,7 +32,7 @@ import org.apache.commons.logging.LogFactory;
 /**
  * Sparse float vector, it use a (int, float) map to store elements.
  */
-public class SparseFloatVector extends TFloatVector implements Serialize{
+public class SparseFloatVector extends TIntFloatVector implements Serialize{
   private final static Log LOG = LogFactory.getLog(SparseFloatVector.class);
 
   /**
@@ -115,7 +115,7 @@ public class SparseFloatVector extends TFloatVector implements Serialize{
   }
 
   @Override
-  public TFloatVector clone() {
+  public SparseFloatVector clone() {
     return new SparseFloatVector(this);
   }
 
@@ -134,7 +134,7 @@ public class SparseFloatVector extends TFloatVector implements Serialize{
   @Override
   public void clear() {
     if (hashMap != null)
-      hashMap.clear();;
+      hashMap.clear();
   }
 
   @Override
@@ -150,16 +150,28 @@ public class SparseFloatVector extends TFloatVector implements Serialize{
       return dot((SparseDoubleVector) other);
     if (other instanceof SparseDoubleSortedVector)
       return dot((SparseDoubleSortedVector) other);
+    if (other instanceof SparseFloatSortedVector)
+      return dot((SparseFloatSortedVector) other);
+    if (other instanceof SparseDummyVector)
+      return dot((SparseDummyVector) other);
 
     throw new UnsupportedOperationException("Unsupport operation: " + this.getClass().getName() + " dot " + other.getClass().getName());
+  }
+
+  private double dot(SparseDummyVector other) {
+    double dot = 0.0;
+    for (int idx: other.getIndices()){
+      dot += get(idx);
+    }
+
+    return dot;
   }
 
   private double dot(DenseFloatVector other) {
     double dot = 0.0;
     ObjectIterator<Int2FloatMap.Entry> iter = this.hashMap.int2FloatEntrySet().fastIterator();
-    Int2FloatMap.Entry entry = null;
     while (iter.hasNext()) {
-      entry = iter.next();
+      Int2FloatMap.Entry entry = iter.next();
       dot += entry.getFloatValue() * other.values[entry.getIntKey()];
     }
     return dot;
@@ -238,6 +250,20 @@ public class SparseFloatVector extends TFloatVector implements Serialize{
     return dot;
   }
 
+  private double dot(SparseFloatSortedVector other) {
+    double dot = 0.0;
+    int [] indexes = other.getIndices();
+    float [] values = other.getValues();
+
+    for(int i = 0; i < indexes.length; i++) {
+      if(hashMap.containsKey(indexes[i])) {
+        dot += hashMap.get(indexes[i]) * values[i];
+      }
+    }
+    return dot;
+  }
+
+
   @Override
   public TFloatVector filter(float x) {
     SparseFloatVector  vector = new SparseFloatVector(dim);
@@ -294,10 +320,12 @@ public class SparseFloatVector extends TFloatVector implements Serialize{
     assert dim == other.getDimension();
     if (other instanceof DenseFloatVector)
       return plus((DenseFloatVector) other);
-    if (other instanceof SparseFloatVector)
+    else if (other instanceof SparseFloatVector)
       return plus((SparseFloatVector) other);
-
-    throw new UnsupportedOperationException("Unsupport operation: " + this.getClass().getName() + " plus " + other.getClass().getName());
+    else if (other instanceof SparseFloatSortedVector)
+      return plus((SparseFloatSortedVector) other);
+    else
+      throw new UnsupportedOperationException("Unsupport operation: " + this.getClass().getName() + " plus " + other.getClass().getName());
   }
 
   private TVector plus(DenseFloatVector other) {
@@ -326,6 +354,20 @@ public class SparseFloatVector extends TFloatVector implements Serialize{
     return newVector;
   }
 
+  private TVector plus(SparseFloatSortedVector other) {
+    SparseFloatVector newVector = (SparseFloatVector) this.clone();
+    int[] idxs = other.getIndices();
+    float[] values = other.getValues();
+
+    int vidx = 0;
+    for (int idx : idxs) {
+      newVector.plusBy(idx, values[vidx]);
+      vidx += 1;
+    }
+
+    return newVector;
+  }
+
   /**
    * plus the vector by another vector
    *
@@ -338,10 +380,12 @@ public class SparseFloatVector extends TFloatVector implements Serialize{
     assert dim == other.getDimension();
     if (other instanceof DenseFloatVector)
       return plus((DenseFloatVector) other, x);
-    if (other instanceof SparseFloatVector)
+    else if (other instanceof SparseFloatVector)
       return plus((SparseFloatVector) other, x);
-
-    throw new UnsupportedOperationException("Unsupport operation: " + this.getClass().getName() + " plus " + other.getClass().getName());
+    else if (other instanceof SparseFloatSortedVector)
+      return plus((SparseFloatSortedVector) other, x);
+    else
+      throw new UnsupportedOperationException("Unsupport operation: " + this.getClass().getName() + " plus " + other.getClass().getName());
   }
 
   private TVector plus(DenseFloatVector other, float x) {
@@ -371,15 +415,31 @@ public class SparseFloatVector extends TFloatVector implements Serialize{
     return newVector;
   }
 
+  private TVector plus(SparseFloatSortedVector other, float x) {
+    SparseFloatVector newVector = (SparseFloatVector) this.clone();
+    int[] idxs = other.getIndices();
+    float[] values = other.getValues();
+
+    int vidx = 0;
+    for (int idx : idxs) {
+      newVector.plusBy(idx, values[vidx] * x );
+      vidx += 1;
+    }
+
+    return newVector;
+  }
+
   @Override
   public TVector plusBy(TAbstractVector other) {
     assert dim == other.getDimension();
     if (other instanceof DenseFloatVector)
       return plusBy((DenseFloatVector) other);
-    if (other instanceof SparseFloatVector)
+    else if (other instanceof SparseFloatVector)
       return plusBy((SparseFloatVector) other);
-
-    throw new UnsupportedOperationException("Unsupport operation: " + this.getClass().getName() + " plusBy " + other.getClass().getName());
+    else if (other instanceof SparseFloatSortedVector)
+      return plusBy((SparseFloatSortedVector) other);
+    else
+      throw new UnsupportedOperationException("Unsupport operation: " + this.getClass().getName() + " plusBy " + other.getClass().getName());
   }
 
   private TVector plusBy(DenseFloatVector other) {
@@ -400,15 +460,31 @@ public class SparseFloatVector extends TFloatVector implements Serialize{
     return this;
   }
 
+  private TVector plusBy(SparseFloatSortedVector other) {
+    int[] idxs = other.getIndices();
+    float[] values = other.getValues();
+
+    int vidx = 0;
+    for (int idx : idxs) {
+      this.hashMap.addTo(idx, values[vidx]);
+      vidx += 1;
+    }
+    return this;
+  }
+
   @Override
   public TFloatVector plusBy(TAbstractVector other, float x) {
     assert dim == other.getDimension();
     if (other instanceof DenseFloatVector)
       return plusBy((DenseFloatVector) other, x);
-    if (other instanceof SparseFloatVector)
+    else if (other instanceof SparseFloatVector)
       return plusBy((SparseFloatVector) other, x);
-
-    throw new UnsupportedOperationException("Unsupport operation: " + this.getClass().getName() + " plusBy " + other.getClass().getName());
+    else if (other instanceof SparseFloatSortedVector)
+      return plusBy((SparseFloatSortedVector) other, x);
+    else if (other instanceof SparseDummyVector)
+      return plusBy((SparseDummyVector) other, x);
+    else
+      throw new UnsupportedOperationException("Unsupport operation: " + this.getClass().getName() + " plusBy " + other.getClass().getName());
   }
 
   @Override public double sum() {
@@ -419,6 +495,19 @@ public class SparseFloatVector extends TFloatVector implements Serialize{
       sum += v;
     }
     return sum;
+  }
+
+  @Override
+  public TFloatVector elemUpdate(IntFloatElemUpdater updater, ElemUpdateParam param) {
+    return null;
+  }
+
+
+  public TFloatVector plusBy(SparseDummyVector other, float x) {
+    for (int idx:other.getIndices()) {
+      hashMap.addTo(idx, x);
+    }
+    return this;
   }
 
   public TFloatVector plusBy(DenseFloatVector other, float x) {
@@ -439,6 +528,18 @@ public class SparseFloatVector extends TFloatVector implements Serialize{
       this.hashMap.addTo(entry.getIntKey(), fx * entry.getFloatValue());
     }
 
+    return this;
+  }
+
+  public TFloatVector plusBy(SparseFloatSortedVector other, float x) {
+    int[] idxs = other.getIndices();
+    float[] values = other.getValues();
+
+    int vidx = 0;
+    for (int idx : idxs) {
+      this.hashMap.addTo(idx, values[vidx] * x);
+      vidx += 1;
+    }
     return this;
   }
 

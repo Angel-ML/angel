@@ -30,9 +30,8 @@ import "ML.proto";
 message PSReportRequest {
   required PSAttemptIdProto psAttemptId = 1;
   repeated MatrixReportProto matrixReports = 2;
-  required PSFailedReportsProto psFailedReports = 3;
-  optional string diagnostics = 4;
-  repeated Pair metrics = 5;
+  optional string diagnostics = 3;
+  repeated Pair metrics = 4;
 }
 
 message MatrixReportProto{

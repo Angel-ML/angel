@@ -136,4 +136,25 @@ class DenseMatrixSuite extends PSFunSuite with SharedPSContext {
     mat.destroy()
   }
 
+  test("pull with rows") {
+    val rand = new Random(41)
+    val diag = (0 until dim).toArray.map(_ => rand.nextDouble())
+    val diagMatrix = DensePSMatrix.diag(diag)
+
+    val selectRows = Array(0, dim / 2, dim / 3,dim - 1)
+
+    val result = diagMatrix.pull(selectRows)
+
+    result.foreach { case (index, row) =>
+       row.zipWithIndex.foreach { case (value, id) =>
+          if (id != index) {
+            assert(value == 0.0)
+          } else {
+            assert(row(index) == diag(index))
+          }
+       }
+    }
+
+  }
+
 }

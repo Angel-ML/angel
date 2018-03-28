@@ -17,6 +17,7 @@
 package com.tencent.angel.ml.matrix.psf.common;
 
 
+import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.psf.update.enhance.PartitionUpdateParam;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
@@ -34,12 +35,12 @@ public class Increment extends CommonFunc {
   }
 
   @Override
-  protected void doUpdate(ServerDenseDoubleRow[] rows, PartitionUpdateParam param) {
+  protected void doUpdate(ServerDenseDoubleRow[] rows, PartitionKey key, PartitionUpdateParam param) {
 
   }
 
   @Override
-  protected void doUpdate(ServerSparseDoubleLongKeyRow[] partRows, PartitionUpdateParam param) {
+  protected void doUpdate(ServerSparseDoubleLongKeyRow[] partRows, PartitionKey key, PartitionUpdateParam param) {
     CommonParam.PSFPartitionUpdateParam partParam = (CommonParam.PSFPartitionUpdateParam)param;
     int[] rows = partParam.getInts();
     long[] cols = partParam.getLongs();

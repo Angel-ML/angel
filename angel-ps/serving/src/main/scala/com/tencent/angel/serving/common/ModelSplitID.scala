@@ -46,7 +46,9 @@ case class ModelSplitID(val name: String, val index: Int) extends Encodable {
 object ModelSplitID {
   def decode(byteBuf: ByteBuf): ModelSplitID = {
     val nameLen = byteBuf.readInt()
-    val name = byteBuf.readCharSequence(nameLen, StandardCharsets.UTF_8).toString
+    val bytes = new Array[Byte](nameLen)
+    byteBuf.readBytes(bytes)
+    val name = new String(bytes, StandardCharsets.UTF_8)
     new ModelSplitID(name, byteBuf.readInt())
   }
 }

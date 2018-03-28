@@ -16,6 +16,8 @@
 
 package com.tencent.angel.psagent.consistency;
 
+import com.google.protobuf.ServiceException;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.ml.math.TVector;
 import com.tencent.angel.ml.math.vector.TIntDoubleVector;
@@ -28,6 +30,7 @@ import com.tencent.angel.ml.matrix.psf.get.single.GetRowFunc;
 import com.tencent.angel.ml.matrix.psf.get.single.GetRowParam;
 import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult;
 import com.tencent.angel.ml.matrix.psf.update.enhance.VoidResult;
+import com.tencent.angel.psagent.PSAgent;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.clock.ClockCache;
 import com.tencent.angel.psagent.matrix.ResponseType;
@@ -90,7 +93,7 @@ public class ConsistencyController {
         waitForClock(matrixId, rowIndex, taskContext.getMatrixClock(matrixId));
         return ((GetRowResult)PSAgentContext.get().getMatrixClientAdapter().get(new GetRowFunc(new GetRowParam(matrixId, rowIndex)))).getRow();
       }
-      
+
       // Get row from cache.
       TVector row = PSAgentContext.get().getMatrixStorageManager().getRow(matrixId, rowIndex);
 
@@ -273,6 +276,13 @@ public class ConsistencyController {
     return !matrixMeta.isHogwild() && localTaskNum > 1;
   }
 
+  /**
+   * Get row use index
+   * @param taskContext task context
+   * @param func index get psf
+   * @return the need row
+   * @throws Exception
+   */
   public TIntDoubleVector getRow(TaskContext taskContext, IndexGetFunc func) throws Exception{
     int matrixId = func.getParam().getMatrixId();
     int rowIndex = ((IndexGetParam)func.getParam()).getRowId();
@@ -283,6 +293,13 @@ public class ConsistencyController {
     return (TIntDoubleVector)((GetRowResult)PSAgentContext.get().getMatrixClientAdapter().get(func)).getRow();
   }
 
+  /**
+   * Get row use index
+   * @param taskContext task context
+   * @param func index get psf
+   * @return the need row
+   * @throws Exception
+   */
   public TLongDoubleVector getRow(TaskContext taskContext, LongIndexGetFunc func) throws Exception{
     int matrixId = func.getParam().getMatrixId();
     int rowIndex = ((LongIndexGetParam)func.getParam()).getRowId();
@@ -293,8 +310,21 @@ public class ConsistencyController {
     return (TLongDoubleVector)((GetRowResult)PSAgentContext.get().getMatrixClientAdapter().get(func)).getRow();
   }
 
+  /**
+   * Wait for clock for the row of the matrix
+   * TODO:check success task instead
+   * @param matrixId matrix id
+   * @param rowIndex row index
+   * @param clock clock value
+   */
   public void waitForClock(int matrixId, int rowIndex, int clock) {
+    LOG.info("wait for clock " + clock);
     ClockCache clockCache = PSAgentContext.get().getClockCache();
+    int clockUpdateIntervalMs = PSAgentContext.get().getConf().getInt(
+      AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS,
+      AngelConf.DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS);
+    int checkMasterIntervalMs = clockUpdateIntervalMs * 2;
+    long startTs = System.currentTimeMillis();
     while (true) {
       int cachedClock = clockCache.getClock(matrixId, rowIndex);
       if (cachedClock >= clock) {
@@ -306,6 +336,18 @@ public class ConsistencyController {
       } catch (InterruptedException e) {
         LOG.warn("waitForClock is interrupted " + e.getMessage());
         return;
+      }
+
+      if(System.currentTimeMillis() - startTs > checkMasterIntervalMs) {
+        try {
+          if(PSAgentContext.get().getMasterClient().getSuccessWorkerGroupNum() >= 1) {
+            LOG.info("Some Worker run success, do not need wait");
+            return;
+          }
+        } catch (ServiceException e) {
+          LOG.error("getSuccessWorkerGroupNum from Master falied ", e);
+        }
+        startTs = System.currentTimeMillis();
       }
     }
   }

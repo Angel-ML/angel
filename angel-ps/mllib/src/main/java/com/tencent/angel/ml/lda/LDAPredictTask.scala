@@ -62,14 +62,17 @@ class LDAPredictTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, 
 
   @throws[Exception]
   def run(ctx: TaskContext): Unit = {
+    ctx.incEpoch()
     // load model
     val model = new LDAModel(conf, ctx)
     // load model for inference
     model.loadModel()
+    ctx.incEpoch()
 
     val data = new CSRTokens(model.V, docs.size())
     data.build(docs, model.K)
     docs.clean()
+    ctx.incEpoch()
 
     val infer = new LDALearner(ctx, model, data)
     infer.initForInference()

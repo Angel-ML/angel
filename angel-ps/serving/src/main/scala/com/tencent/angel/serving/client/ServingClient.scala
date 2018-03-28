@@ -37,7 +37,7 @@ trait ServingClient {
     * @param replica    the num of sharding serving nodes
     * @param concurrent the concurrent capacity for serving
     */
-  def loadModel(name: String, dir: String, replica: Int, concurrent: Int)
+  def loadModel(name: String, dir: String, replica: Int, concurrent: Int, shardingModelClass: String): Boolean
 
   /**
     * ask to load the model for serving, use specified splitter and coordinator
@@ -49,7 +49,10 @@ trait ServingClient {
     * @param splitter     the splitter for model and predict data
     * @param coordinator  the coordinator for serving
     */
-  def loadModel(name: String, dir: String, servingNodes: Int, concurrent: Int, splitter: ModelSplitter, coordinator: ModelCoordinator)
+  def loadModel(name: String, dir: String, servingNodes: Int, concurrent: Int,
+                splitter: ModelSplitter, coordinator: ModelCoordinator, shardingModelClass: String): Boolean
+
+  def loadModelLocal(name: String, dir: String, replica: Int, concurrent: Int)
 
   /**
     * get the model by name
@@ -72,8 +75,7 @@ trait ServingClient {
     *
     * @param name
     */
-  def unloadModel(name: String)
-
+  def unloadModel(name: String): Boolean
 
   /**
     * get the model router while model is loaded

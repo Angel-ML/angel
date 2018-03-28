@@ -63,11 +63,17 @@ class AgentProtocolServerTranslatorPB(server: AgentProtocol) extends AgentProtoc
 
     val builder = ModelCommandProto.newBuilder
 
-    val forLoad = command.forLoading.map(group => ModelSplitGroupProto.newBuilder().setName(group.name).setDir(group.dir).setConcurrent(group.concurrent).addAllSplits(
-      group.splits.map(toModelSplitProto).toIterable.asJava
-    ).build).toList.asJava
+    val forLoad = command.forLoading.map { group =>
+      ModelSplitGroupProto.newBuilder()
+        .setName(group.name)
+        .setDir(group.dir)
+        .setConcurrent(group.concurrent)
+        .addAllSplits(group.splits.map(toModelSplitProto).toIterable.asJava)
+        .setShardingModelClass(group.shardingModelClass)
+        .build
+    }.toList.asJava
     val forUnload = command.forUnload.map(splitID => ModelSplitIDProto.newBuilder.setName(splitID.name).setIndex(splitID.index).build()).toList.asJava
-    builder.addAllForLoading(forLoad).addAllForUnload(forUnload).build
+    builder.addAllForLoading(forLoad).addAllForUnload(forUnload).build()
   }
 
 

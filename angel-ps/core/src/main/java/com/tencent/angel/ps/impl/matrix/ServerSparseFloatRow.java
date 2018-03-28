@@ -99,24 +99,25 @@ public class ServerSparseFloatRow extends ServerFloatRow {
     }
   }
 
-  @Override public void update(RowType rowType, ByteBuf buf, int size) {
+  @Override public void update(RowType rowType, ByteBuf buf) {
+    tryToLockWrite();
+
     try {
-      lock.writeLock().lock();
       switch (rowType) {
         case T_FLOAT_DENSE:
-          updateFloatDense(buf, size);
+          updateFloatDense(buf);
           break;
 
         case T_FLOAT_SPARSE:
         case T_FLOAT_SPARSE_COMPONENT:
-          updateFloatSparse(buf, size);
+          updateFloatSparse(buf);
           break;
 
         default:
           throw new UnsupportedOperationException("Unsupport operation: update " + rowType + " to " + this.getClass().getName());
       }
     } finally {
-      lock.writeLock().unlock();
+      unlockWrite();
     }
   }
 
@@ -124,18 +125,21 @@ public class ServerSparseFloatRow extends ServerFloatRow {
     if(data.size() < size) {
       Int2FloatOpenHashMap oldMap = data;
       data = new Int2FloatOpenHashMap(size);
+      data.defaultReturnValue(oldMap.defaultReturnValue());
       data.putAll(oldMap);
     }
   }
 
-  private void updateFloatDense(ByteBuf buf, int size) {
+  private void updateFloatDense(ByteBuf buf) {
+    int size = buf.readInt();
     resizeHashMap(size);
     for (int i = 0; i < size; i++) {
       data.addTo(i, buf.readFloat());
     }
   }
 
-  private void updateFloatSparse(ByteBuf buf, int size) {
+  private void updateFloatSparse(ByteBuf buf) {
+    int size = buf.readInt();
     resizeHashMap(size);
     for (int i = 0; i < size; i++) {
       data.addTo(buf.readInt(), buf.readFloat());
@@ -195,7 +199,7 @@ public class ServerSparseFloatRow extends ServerFloatRow {
   }
 
   /**
-   * Merge a serialized dense float vector split to this sparse float vector split
+   * Merge a serialized sparse float vector split to this sparse float vector split
    * @param size dense float vector split length
    * @param buf serialized dense float vector split
    */

@@ -176,7 +176,8 @@ public class ServerPartitionTest {
     psAttempt0Id = new PSAttemptId(psId, 0);
 
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
-    ByteBuf buf = Unpooled.buffer(16);
+    ByteBuf buf = Unpooled.buffer(4 + 8 * 8);
+    buf.writeInt(8);
     buf.writeDouble(0.00);
     buf.writeDouble(1.00);
     buf.writeDouble(-1.00);
@@ -185,7 +186,7 @@ public class ServerPartitionTest {
     buf.writeDouble(-6.00);
     buf.writeDouble(-7.00);
     buf.writeDouble(-8.00);
-    serverPartition.getRow(6).update(RowType.T_DOUBLE_DENSE, buf, 8);
+    serverPartition.getRow(6).update(RowType.T_DOUBLE_DENSE, buf);
     serverPartition.save(out);
     out.close();
     DataInputStream in = new DataInputStream(new FileInputStream("data"));
@@ -251,7 +252,7 @@ public class ServerPartitionTest {
 
   @Test
   public void testBufferLen() throws Exception {
-    assertEquals(serverPartition.bufferLen(), 544);
+    assertEquals(serverPartition.bufferLen(), 592);
   }
 
   @Test

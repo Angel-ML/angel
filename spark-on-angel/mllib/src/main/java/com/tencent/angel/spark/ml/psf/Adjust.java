@@ -17,24 +17,37 @@
 
 package com.tencent.angel.spark.ml.psf;
 
+import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.Zip2MapFunc;
 import com.tencent.angel.ml.matrix.psf.update.enhance.zip3.Zip3MapFunc;
 import io.netty.buffer.ByteBuf;
 
-public class Adjust implements Zip3MapFunc {
+public class Adjust implements Zip2MapFunc, Zip3MapFunc {
+  private double l1reg = 0.0;
 
   public Adjust() {}
 
+  public Adjust(double l1reg) {
+    this.l1reg = l1reg;
+  }
+
+  // implement Zip2Map interface
   @Override
-  public double call(double xv, double v, double l1regValue) {
+  public double call(double xv, double grad) {
+    return call(xv, grad, l1reg);
+  }
+
+  // implement Zip3Map interface
+  @Override
+  public double call(double xv, double grad, double l1regValue) {
     if (l1regValue < 0) {
       throw new IllegalArgumentException("negative l1reg value!");
     }
 
     if (l1regValue == 0.0) {
-      return v;
+      return grad;
     } else if (xv == 0.0) {
-      double deltaPlus = v + l1regValue;
-      double deltaMinus = v - l1regValue;
+      double deltaPlus = grad + l1regValue;
+      double deltaMinus = grad - l1regValue;
       if (deltaMinus > 0) {
         return deltaMinus;
       } else if (deltaPlus < 0) {
@@ -43,19 +56,23 @@ public class Adjust implements Zip3MapFunc {
         return 0.0;
       }
     } else {
-      return v + Math.signum(xv) * l1regValue;
+      return grad + Math.signum(xv) * l1regValue;
     }
   }
 
   @Override
-  public void serialize(ByteBuf buf) {}
+  public void serialize(ByteBuf buf) {
+    buf.writeDouble(l1reg);
+  }
 
   @Override
-  public void deserialize(ByteBuf buf) {}
+  public void deserialize(ByteBuf buf) {
+    this.l1reg = buf.readDouble();
+  }
 
   @Override
   public int bufferLen() {
-    return 0;
+    return 8;
   }
 
 }

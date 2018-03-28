@@ -51,15 +51,9 @@ object MLConf {
   val ML_COMPRESS_BYTES = "ml.compress.bytes"
   val DEFAULT_ML_COMPRESS_BYTES = 8
 
-  // Regularization params
-  val ML_REG_L1 = "ml.reg.l1"
-  val DEFAULT_ML_REG_L1 = 1.0
-  val ML_REG_L2 = "ml.reg.l2"
-  val DEFAULT_ML_REG_L2 = 1.0
-  val ML_REG_LOSS_TYPE = "ml.reg.loss.type"
-  val DEFAULT_ML_REG_LOSS_TYPE = "loss2"
-
   // mini-batch sgd params
+  val ML_OPT_METHOD = "ml.opt.method"
+  val DEFAULT_ML_OPT_METHOD = "MiniBatchSGD"
   val ML_EPOCH_NUM = "ml.epoch.num"
   val DEFAULT_ML_EPOCH_NUM = 50
   val ML_SGD_BATCH_NUM = "ml.sgd.batch.num"
@@ -70,11 +64,54 @@ object MLConf {
   val DEFAULT_ML_LEAR_RATE = 1.0
   val ML_LEARN_DECAY = "ml.learn.decay"
   val DEFAULT_ML_LEARN_DECAY = 0.5
+  val ML_NUM_UPDATE_PER_EPOCH = "ml.sgd.num.update.per.epoch"
+  val DEFAULT_ML_NUM_UPDATE_PER_EPOCH = 10
+  val ML_SGD_BATCH_SIZE = "ml.sgd.batch.num"
+  val DEFAULT_ML_SGD_BATCH_SIZE=128
+
+  // Adamm params
+  val ML_OPT_ADAMM_RHO = "ml.opt.adamm.rho"
+  val DEFAULT_ML_OPT_ADAMM_RHO=0.9
+  val ML_OPT_ADAMM_PHI = "ml.opt.adamm.phi"
+  val DEFAULT_ML_OPT_ADAMM_PHI=0.99
+
+  // Momentum params
+  val ML_OPT_MOMENTUM_RHO = "ml.opt.momentum.rho"
+  val DEFAULT_ML_OPT_MOMENTUM_RHO=0.9
+
+  // RMSProp params
+  val ML_OPT_RMSPROP_RHO = "ml.opt.rmsprop.rho"
+  val DEFAULT_ML_OPT_RMSPROP_RHO=0.9
+
+  // Adadelta params
+  val ML_OPT_ADADELTA_RHO = "ml.opt.rmsprop.rho"
+  val DEFAULT_ML_OPT_ADADELTA_RHO=0.95
+
+  // Regularization params
+  val ML_REG_L1 = "ml.reg.l1"
+  val DEFAULT_ML_REG_L1 = 0.0
+  val ML_REG_L2 = "ml.reg.l2.w"
+  val DEFAULT_ML_REG_L2 = 0.0
+  val ML_REG_LOSS_TYPE = "ml.reg.loss.type"
+  val DEFAULT_ML_REG_LOSS_TYPE = "loss2"
+  val ML_LEARN_RATE_BOUND = "ml.learn.rate.bound"
+  val DEFAULT_ML_LEARN_RATE_BOUND = 5
 
   // Logistic Regression param
   val LR_USE_INTERCEPT = "ml.lr.use.intercept"
   val DEFAULT_LR_USE_INTERCEPT = false
   val LR_MODEL_TYPE = "ml.lr.model.type"
+
+  // Factorization machine M params
+  val ML_FM_REG_L1_V = "ml.fm.reg.l1.v"
+  val DEFAULT_ML_FM_REG_L1_V = 0.0
+  val ML_FM_REG_L1_W = "ml.fm.reg.l1.w"
+  val DEFAULT_ML_FM_REG_L1_W = 0.0
+  val ML_FM_REG_L2_V = "ml.fm.reg.l2.v"
+  val DEFAULT_ML_FM_REG_L2_V = 0.0
+  val ML_FM_REG_L2_W = "ml.fm.reg.l2.w"
+  val DEFAULT_ML_FM_REG_L2_W = 0.0
+  val FM_MODEL_TYPE = "ml.fm.model.type"
 
   // Kmeans params
   val KMEANS_CENTER_NUM = "ml.kmeans.center.num"
@@ -103,12 +140,19 @@ object MLConf {
   // GBDT Params
   val ML_GBDT_TASK_TYPE = "ml.gbdt.task.type"
   val DEFAULT_ML_GBDT_TASK_TYPE = "classification"
+  val ML_GBDT_CLASS_NUM = "ml.gbdt.class.num"
+  val DEFAULT_ML_GBDT_CLASS_NUM = 2
+  val ML_GBDT_PARALLEL_MODE = "ml.gbdt.parallel.mode"
+  val DEFAULT_ML_GBDT_PARALLEL_MODE = "data"
   val ML_GBDT_TREE_NUM = "ml.gbdt.tree.num"
   val DEFAULT_ML_GBDT_TREE_NUM = 10
   val ML_GBDT_TREE_DEPTH = "ml.gbdt.tree.depth"
   val DEFAULT_ML_GBDT_TREE_DEPTH = 5
+  val ML_GBDT_MAX_NODE_NUM = "ml.gbdt.max.node.num"
   val ML_GBDT_SPLIT_NUM = "ml.gbdt.split.num"
   val DEFAULT_ML_GBDT_SPLIT_NUM = 5
+  val ML_GBDT_ROW_SAMPLE_RATIO = "ml.gbdt.row.sample.ratio"
+  val DEFAULT_ML_GBDT_ROW_SAMPLE_RATIO = 1
   val ML_GBDT_SAMPLE_RATIO = "ml.gbdt.sample.ratio"
   val DEFAULT_ML_GBDT_SAMPLE_RATIO = 1
   val ML_GBDT_MIN_CHILD_WEIGHT = "ml.gbdt.min.child.weight"
@@ -131,14 +175,18 @@ object MLConf {
   val DEFAULT_ML_FM_LEARN_TYPE = "r"
   val ML_FM_RANK = "ml.fm.rank"
   val DEFAULT_ML_FM_RANK = 10
-  val ML_FM_REG0 = "ml.fm.reg0"
-  val DEFAULT_ML_FM_REG0 = 0.0
   val ML_FM_REG1 = "ml.fm.reg1"
   val DEFAULT_ML_FM_REG1 = 0.0
   val ML_FM_REG2 = "ml.fm.reg2"
   val DEFAULT_ML_FM_REG2 = 0.0
   val ML_FM_V_STDDEV = "ml.fm.v.stddev"
   val DEFAULT_ML_FM_V_INIT = 0.1
+  val ML_FM_POSITIVE_WEIGHT = "ml.fm.positive.weight"
+  val DEFAULT_ML_FM_POSITIVE_WEIGHT = "1.0"
+  val ML_FM_NEGATIVE_WEIGHT = "ml.fm.negative.weight"
+  val DEFAULT_ML_FM_NEGATIVE_WEIGHT = "1.0"
+  val ML_FM_MINIBATCH_SIZE = "ml.fm.minibatch.size"
+  val DEFAULT_ML_FM_MINIBATCH_SIZE = 128
 
   val ML_MLR_RANK = "ml.mlr.rank"
   val DEFAULT_ML_MLR_RANK = 5

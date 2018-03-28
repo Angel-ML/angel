@@ -96,7 +96,7 @@ public class PartitionGetRowsResult extends PartitionGetResult {
         }
 
         default:
-          break;
+          throw new UnsupportedOperationException("Can not support deserialize row type:" + type);
       }
 
       rowSplit.deserialize(buf);

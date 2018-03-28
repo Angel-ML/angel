@@ -34,6 +34,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import scala.util.Try
 import scala.util.control.NonFatal
 
+
 class NetworkClient(val context: NetworkContext) extends Closeable {
   private val LOG: Logger = LoggerFactory.getLogger(classOf[NetworkClient])
 
@@ -53,7 +54,9 @@ class NetworkClient(val context: NetworkContext) extends Closeable {
   /**
     * channel pool manager:it maintain a channel pool for every server
     */
-  private val channelManager: ChannelManager = new ChannelManager(bootstrap)
+  private val channelManager: ChannelManager = new ChannelManager(bootstrap,
+    conf.getInt("serving.client.max.thread.per.location", 5)
+  )
 
   /**
     * use direct netty buffer or not
@@ -71,7 +74,9 @@ class NetworkClient(val context: NetworkContext) extends Closeable {
     val sendBuffSize = conf.getInt("angel.transport.client.send.buf", 1024 * 1024)
 
     val recvBuffSize = conf.getInt("angel.transport.client.recv.buf", 1024 * 1024)
-    _eventGroup = new NioEventLoopGroup(conf.getInt("angel.transport.work.num", Runtime.getRuntime.availableProcessors() * 2))
+    _eventGroup = new NioEventLoopGroup(
+      conf.getInt("angel.transport.work.num", Runtime.getRuntime.availableProcessors() * 2)
+    )
     _eventGroup.asInstanceOf[NioEventLoopGroup].setIoRatio(70)
     bootstrap.group(_eventGroup).channel(classOf[NioSocketChannel])
       .option(ChannelOption.TCP_NODELAY, Boolean.box(true))
@@ -111,13 +116,14 @@ class NetworkClient(val context: NetworkContext) extends Closeable {
             if (LOG.isTraceEnabled) {
               LOG.trace(s"Sending request $msg.id to $remote took $timeTaken ms")
             }
-          }
-          else {
+          } else {
             val cause = future.cause()
             val errorMsg: String = s"Failed to send msg $msg.id to $remote: $cause"
             LOG.error(errorMsg, cause)
             responseMessageHandler.removeCallback(msg.id)
-            channel.close
+
+            // why we need close channel here, I think the channel can be reuse
+            // channel.close
             try {
               callback.onFailure(new IOException(errorMsg, cause))
             } catch {
@@ -151,7 +157,7 @@ class NetworkClient(val context: NetworkContext) extends Closeable {
 }
 
 
-class ChannelProxy(channel: Channel, pool: ObjectPool[Channel]) {
+class ChannelProxy(val channel: Channel, val pool: ObjectPool[Channel]) {
   def run(f: Channel => Unit): Unit = {
     try {
       f(channel)

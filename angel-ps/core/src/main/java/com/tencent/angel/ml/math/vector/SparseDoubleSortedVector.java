@@ -141,15 +141,50 @@ public class SparseDoubleSortedVector extends TIntDoubleVector {
   }
 
   @Override public double dot(TAbstractVector other) {
-    if (other instanceof DenseDoubleVector)
-      return dot((DenseDoubleVector) other);
-
-    throw new UnsupportedOperationException(
+    if (other instanceof TIntDoubleVector)
+      return dot((TIntDoubleVector) other);
+    else if (other instanceof TLongDoubleVector)
+      return dot((TLongDoubleVector) other);
+    else if (other instanceof TIntFloatVector)
+      return dot((TIntFloatVector) other);
+    else if (other instanceof TLongFloatVector)
+      return dot((TLongFloatVector) other);
+    else throw new UnsupportedOperationException(
       "Unsupportted operation: " + this.getClass().getName() + " dot " + other.getClass()
         .getName());
   }
 
-  private double dot(DenseDoubleVector other) {
+  private double dot(TIntDoubleVector other) {
+    double ret = 0.0;
+    int[] indexs = this.indices;
+    double[] values = this.values;
+    for (int i = 0; i < this.nnz; i++) {
+      ret += values[i] * other.get(indexs[i]);
+    }
+    return ret;
+  }
+
+  private double dot(TLongDoubleVector other) {
+    double ret = 0.0;
+    int[] indexs = this.indices;
+    double[] values = this.values;
+    for (int i = 0; i < this.nnz; i++) {
+      ret += values[i] * other.get(indexs[i]);
+    }
+    return ret;
+  }
+
+  private double dot(TIntFloatVector other) {
+    double ret = 0.0;
+    int[] indexs = this.indices;
+    double[] values = this.values;
+    for (int i = 0; i < this.nnz; i++) {
+      ret += values[i] * other.get(indexs[i]);
+    }
+    return ret;
+  }
+
+  private double dot(TLongFloatVector other) {
     double ret = 0.0;
     int[] indexs = this.indices;
     double[] values = this.values;

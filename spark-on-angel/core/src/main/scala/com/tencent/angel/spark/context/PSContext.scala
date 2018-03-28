@@ -31,10 +31,11 @@ abstract class PSContext {
   private[spark] def conf: Map[String, String]
   protected def stop()
 
-  def createMatrix(rows: Int, cols: Long, t: MatrixType, rowInBlock: Int, colInBlock: Int): MatrixMeta
+  def createDenseMatrix(rows: Int, cols: Long, rowInBlock: Int, colInBlock: Long): MatrixMeta
+  def createSparseMatrix(rows: Int, cols: Long, range: Long, rowInBlock: Int, colInBlock: Long): MatrixMeta
   def destroyMatrix(matrixId: Int)
 
-  def createVector(dim: Long, t: VectorType, poolCapacity: Int): PSVector
+  def createVector(dim: Long, t: VectorType, poolCapacity: Int, range: Long): PSVector
   def duplicateVector(originVector: PSVector): PSVector
   def destroyVector(vector: PSVector)
 

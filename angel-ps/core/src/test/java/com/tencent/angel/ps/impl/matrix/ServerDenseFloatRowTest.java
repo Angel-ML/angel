@@ -73,23 +73,25 @@ public class ServerDenseFloatRowTest {
   public void testUpdate() throws Exception {
     serverDenseFloatRow = new ServerDenseFloatRow(rowId, startCol, endCol);
     ByteBuf buf = Unpooled.buffer(16);
+    buf.writeInt(3);
     buf.writeFloat((float) 0.00);
     buf.writeFloat((float) 1.00);
     buf.writeFloat((float) -1.00);
-    float newValue0 = buf.getFloat(0) + serverDenseFloatRow.getData().get(0);
-    float newValue1 = buf.getFloat(4) + serverDenseFloatRow.getData().get(1);
-    serverDenseFloatRow.update(RowType.T_FLOAT_DENSE, buf, 3);
+    float newValue0 = buf.getFloat(4) + serverDenseFloatRow.getData().get(0);
+    float newValue1 = buf.getFloat(8) + serverDenseFloatRow.getData().get(1);
+    serverDenseFloatRow.update(RowType.T_FLOAT_DENSE, buf);
     assertEquals(serverDenseFloatRow.getData().get(0), newValue0, 0.000);
     assertEquals(serverDenseFloatRow.getData().get(1), newValue1, 0.000);
     assertEquals(serverDenseFloatRow.getData().get(2), -1, 0.000);
 
     serverDenseFloatRow = new ServerDenseFloatRow(rowId, startCol, endCol);
-    buf = Unpooled.buffer(0);
+    buf = Unpooled.buffer(4 + 8 * 2);
+    buf.writeInt(2);
     buf.writeInt(0);
     buf.writeFloat((float) 1.00);
     buf.writeInt(2);
     buf.writeFloat((float) -2.00);
-    serverDenseFloatRow.update(RowType.T_FLOAT_SPARSE, buf, 2);
+    serverDenseFloatRow.update(RowType.T_FLOAT_SPARSE, buf);
     assertEquals(serverDenseFloatRow.getData().get(0), 1, 0.000);
     assertEquals(serverDenseFloatRow.getData().get(1), 0, 0.000);
     assertEquals(serverDenseFloatRow.getData().get(2), -2, 0.000);
@@ -99,10 +101,11 @@ public class ServerDenseFloatRowTest {
   @Test
   public void testWriteTo() throws Exception {
     ByteBuf buf = Unpooled.buffer(16);
+    buf.writeInt(3);
     buf.writeFloat((float) 0.00);
     buf.writeFloat((float) 1.00);
     buf.writeFloat((float) 2.00);
-    serverDenseFloatRow.update(RowType.T_FLOAT_DENSE, buf, 3);
+    serverDenseFloatRow.update(RowType.T_FLOAT_DENSE, buf);
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
     serverDenseFloatRow.writeTo(out);
     out.close();
@@ -115,10 +118,11 @@ public class ServerDenseFloatRowTest {
   @Test
   public void testReadFrom() throws Exception {
     ByteBuf buf = Unpooled.buffer(16);
+    buf.writeInt(3);
     buf.writeFloat((float) 10.00);
     buf.writeFloat((float) 11.00);
     buf.writeFloat((float) 12.00);
-    serverDenseFloatRow.update(RowType.T_FLOAT_DENSE, buf, 3);
+    serverDenseFloatRow.update(RowType.T_FLOAT_DENSE, buf);
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
     serverDenseFloatRow.writeTo(out);
     out.close();
@@ -178,10 +182,11 @@ public class ServerDenseFloatRowTest {
   @Test
   public void testMergeTo() throws Exception {
     ByteBuf buf = Unpooled.buffer(16);
+    buf.writeInt(3);
     buf.writeFloat((float) 10.00);
     buf.writeFloat((float) 11.00);
     buf.writeFloat((float) 12.00);
-    serverDenseFloatRow.update(RowType.T_FLOAT_DENSE, buf, 3);
+    serverDenseFloatRow.update(RowType.T_FLOAT_DENSE, buf);
     float[] dataArray = {0, 1, 2, 3, 4};
     serverDenseFloatRow.mergeTo(dataArray);
     assertEquals(dataArray[0], 10, 0.00);

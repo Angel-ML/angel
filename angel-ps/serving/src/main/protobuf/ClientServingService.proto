@@ -30,6 +30,7 @@ import "Serving.proto";
 
 message RegisterModelRequestProto {
   required ModelDefinitionProto model = 1;
+  required string shardingModelClass = 2;
 }
 
 message UnregisterModelRequestProto {
@@ -51,6 +52,10 @@ message ModelSplitLocationProto {
 message ModelLocationProto {
   required string model = 1;
   repeated ModelSplitLocationProto splitLocationList = 2;
+}
+
+message ModelNamesProto {
+  repeated string modelNames = 1;
 }
 
 

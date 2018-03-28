@@ -35,7 +35,7 @@ import java.util.concurrent.RecursiveTask;
 /**
  * Base class of component double vector.
  */
-abstract class CompTFloatVector extends TFloatVector {
+abstract class CompTFloatVector extends TIntFloatVector {
   private static final Log LOG = LogFactory.getLog(CompTFloatVector.class);
 
   /**
@@ -445,6 +445,7 @@ abstract class CompTFloatVector extends TFloatVector {
       vectors[partIndex] = initComponentVector();
     }
     vectors[partIndex].set(index, value);
+
     return this;
   }
 

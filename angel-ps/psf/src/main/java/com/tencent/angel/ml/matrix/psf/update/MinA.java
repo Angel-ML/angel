@@ -38,15 +38,15 @@ public class MinA extends VAUpdateFunc {
 
   @Override
   protected void doUpdate(ServerDenseDoubleRow row, double[] other) {
+    row.tryToLockWrite();
     try {
-      row.getLock().writeLock().lock();
       DoubleBuffer data = row.getData();
       int size = row.size();
       for (int i = 0; i < size; i++) {
         data.put(i, Math.min(data.get(i), other[i]));
       }
     } finally {
-      row.getLock().writeLock().unlock();
+      row.unlockWrite();
     }
   }
 

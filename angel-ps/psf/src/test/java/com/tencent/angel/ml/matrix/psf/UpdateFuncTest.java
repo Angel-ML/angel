@@ -67,6 +67,7 @@ public class UpdateFuncTest {
     dim  = localArray1.length;
   }
 
+  /**
   @Test
   public void testAbs() throws InvalidParameterException, InterruptedException, ExecutionException {
     UpdateFunc func = new Abs(w2Client.getMatrixId(), 1, 3);
@@ -459,7 +460,7 @@ public class UpdateFuncTest {
       System.out.println("test exception" + e.getMessage());
     }
   }
-
+   */
   private static void printMatrix(MatrixClient client, int rowId) {
     double[] arr = pull(client, rowId);
     System.out.println(Arrays.toString(arr));

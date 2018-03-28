@@ -17,10 +17,13 @@
 package com.tencent.angel.psagent;
 
 import com.tencent.angel.RunningMode;
+import com.tencent.angel.common.location.Location;
 import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.ml.matrix.transport.PSFailedReport;
 import com.tencent.angel.protobuf.generated.MLProtos.PSAgentAttemptIdProto;
 import com.tencent.angel.psagent.client.MasterClient;
+import com.tencent.angel.psagent.client.PSControlClientManager;
 import com.tencent.angel.psagent.clock.ClockCache;
 import com.tencent.angel.psagent.consistency.ConsistencyController;
 import com.tencent.angel.psagent.executor.Executor;
@@ -81,7 +84,6 @@ public class PSAgentContext {
    * @param psAgent ps agent
    */
   public void setPsAgent(PSAgent psAgent) {
-    LOG.info("==================Set psAgent=" + psAgent + "======================");
     this.psAgent = psAgent;
   }
 
@@ -112,14 +114,6 @@ public class PSAgentContext {
     return psAgent.getMasterClient();
   }
 
-  /**
-   * Get ps agent attempt id used in rpc to master
-   * 
-   * @return PSAgentAttemptIdProto  ps agent attempt id used in rpc to master
-   */
-  public PSAgentAttemptIdProto getIdProto() {
-    return psAgent.getIdProto();
-  }
 
   /**
    * Get matrix update cache
@@ -312,9 +306,44 @@ public class PSAgentContext {
     return getExecutor().getTaskNum();
   }
 
+  /**
+   * Clear context
+   */
   public void clear() {
     MatrixClientFactory.clear();
     psAgent = null;
     taskContexts.clear();
+  }
+
+  /**
+   * Get PSAgent id
+   * @return PSAgent id
+   */
+  public int getPSAgentId() {
+    return psAgent.getId();
+  }
+
+  /**
+   * Get control connection manager
+   * @return control connection manager
+   */
+  public TConnection getControlConnectManager() {
+    return psAgent.getControlConnectManager();
+  }
+
+  /**
+   * Get ps control rpc client manager
+   * @return ps control rpc client manager
+   */
+  public PSControlClientManager getPSControlClientManager() {
+    return psAgent.getPsControlClientManager();
+  }
+
+  /**
+   * Get psagent location
+   * @return psagent location
+   */
+  public Location getLocation() {
+    return psAgent.getLocation();
   }
 }

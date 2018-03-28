@@ -73,26 +73,28 @@ public class ServerDenseDoubleRowTest {
   @Test
   public void testUpdate() throws Exception {
     serverDenseDoubleRow = new ServerDenseDoubleRow(rowId, startCol, endCol);
-    ByteBuf buf = Unpooled.buffer(16);
+    ByteBuf buf = Unpooled.buffer(24);
+    buf.writeInt(3);
     buf.writeDouble(0.00);
     buf.writeDouble(1.00);
     buf.writeDouble(-1.00);
 
-    double newValue0 = buf.getDouble(0) + serverDenseDoubleRow.getData().get(0);
-    double newValue1 = buf.getDouble(8) + serverDenseDoubleRow.getData().get(1);
-    serverDenseDoubleRow.update(RowType.T_DOUBLE_DENSE, buf, 3);
+    double newValue0 = buf.getDouble(4) + serverDenseDoubleRow.getData().get(0);
+    double newValue1 = buf.getDouble(12) + serverDenseDoubleRow.getData().get(1);
+    serverDenseDoubleRow.update(RowType.T_DOUBLE_DENSE, buf);
     assertEquals(serverDenseDoubleRow.getData().get(0), newValue0, 0.000);
     assertEquals(serverDenseDoubleRow.getData().get(1), newValue1, 0.000);
     assertEquals(serverDenseDoubleRow.getData().get(2), -1, 0.000);
 
     serverDenseDoubleRow = new ServerDenseDoubleRow(rowId, startCol, endCol);
-    buf = Unpooled.buffer(0);
+    buf = Unpooled.buffer(4 + 12 * 2);
     LOG.info(buf);
+    buf.writeInt(2);
     buf.writeInt(0);
     buf.writeDouble(1.00);
     buf.writeInt(2);
     buf.writeDouble(-2.00);
-    serverDenseDoubleRow.update(RowType.T_DOUBLE_SPARSE, buf, 2);
+    serverDenseDoubleRow.update(RowType.T_DOUBLE_SPARSE, buf);
     assertEquals(serverDenseDoubleRow.getData().get(0), 1, 0.000);
     assertEquals(serverDenseDoubleRow.getData().get(1), 0, 0.000);
     assertEquals(serverDenseDoubleRow.getData().get(2), -2, 0.000);
@@ -102,11 +104,12 @@ public class ServerDenseDoubleRowTest {
 
   @Test
   public void testWriteTo() throws Exception {
-    ByteBuf buf = Unpooled.buffer(16);
+    ByteBuf buf = Unpooled.buffer(28);
+    buf.writeInt(3);
     buf.writeDouble(0.00);
     buf.writeDouble(1.00);
     buf.writeDouble(2.00);
-    serverDenseDoubleRow.update(RowType.T_DOUBLE_DENSE, buf, 3);
+    serverDenseDoubleRow.update(RowType.T_DOUBLE_DENSE, buf);
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
     serverDenseDoubleRow.writeTo(out);
     out.close();
@@ -119,11 +122,12 @@ public class ServerDenseDoubleRowTest {
 
   @Test
   public void testReadFrom() throws Exception {
-    ByteBuf buf = Unpooled.buffer(16);
+    ByteBuf buf = Unpooled.buffer(28);
+    buf.writeInt(3);
     buf.writeDouble(10.00);
     buf.writeDouble(11.00);
     buf.writeDouble(12.00);
-    serverDenseDoubleRow.update(RowType.T_DOUBLE_DENSE, buf, 3);
+    serverDenseDoubleRow.update(RowType.T_DOUBLE_DENSE, buf);
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
     serverDenseDoubleRow.writeTo(out);
     out.close();
@@ -183,11 +187,12 @@ public class ServerDenseDoubleRowTest {
 
   @Test
   public void testMergeTo() throws Exception {
-    ByteBuf buf = Unpooled.buffer(16);
+    ByteBuf buf = Unpooled.buffer(28);
+    buf.writeInt(3);
     buf.writeDouble(10.00);
     buf.writeDouble(11.00);
     buf.writeDouble(12.00);
-    serverDenseDoubleRow.update(RowType.T_DOUBLE_DENSE, buf, 3);
+    serverDenseDoubleRow.update(RowType.T_DOUBLE_DENSE, buf);
     double[] dataArray = {0, 1, 2, 3, 4};
     serverDenseDoubleRow.mergeTo(dataArray);
     assertEquals(dataArray[0], 10, 0.00);

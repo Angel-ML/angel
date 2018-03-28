@@ -18,10 +18,12 @@
 <configuration>
   <property>
     <name>angel.job.libjars</name>
-    <value>${ANGEL_HOME}/lib/scala-reflect-2.11.7.jar,${ANGEL_HOME}/lib/memory-0.8.1.jar,${ANGEL_HOME}/lib/sketches-core-0.8.1.jar,${ANGEL_HOME}/lib/commons-pool-1.6.jar,${ANGEL_HOME}/lib/kryo-shaded-4.0.0.jar,${ANGEL_HOME}/lib/kryo-serializers-0.42.jar,${ANGEL_HOME}/lib/scala-library-2.11.8.jar,${ANGEL_HOME}/lib/angel-ps-core-${ANGEL_VERSION}.jar,${ANGEL_HOME}/lib/angel-ps-tools-${ANGEL_VERSION}.jar,${ANGEL_HOME}/lib/angel-ps-mllib-${ANGEL_VERSION}.jar,${ANGEL_HOME}/lib/angel-ps-psf-${ANGEL_VERSION}.jar,${ANGEL_HOME}/lib/angel-ps-examples-${ANGEL_VERSION}.jar,${ANGEL_HOME}/lib/fastutil-7.1.0.jar,${ANGEL_HOME}/lib/sizeof-0.3.0.jar,${ANGEL_HOME}/lib/minlog-1.3.0.jar,${ANGEL_HOME}/lib/breeze_2.11-0.12.jar</value>
+    <value>${ANGEL_HOME}/lib/angel-ps-serving-${ANGEL_VERSION}.jar,${ANGEL_HOME}/lib/netty-all-4.1.1.Final.jar,${ANGEL_HOME}/lib/angel-ps-mllib-${ANGEL_VERSION}.jar,${ANGEL_HOME}/lib/angel-ps-tools-${ANGEL_VERSION}.jar,${ANGEL_HOME}/lib/scala-reflect-2.11.7.jar,${ANGEL_HOME}/lib/memory-0.8.1.jar,${ANGEL_HOME}/lib/sketches-core-0.8.1.jar,${ANGEL_HOME}/lib/commons-pool-1.6.jar,${ANGEL_HOME}/lib/kryo-shaded-4.0.0.jar,${ANGEL_HOME}/lib/kryo-serializers-0.42.jar,${ANGEL_HOME}/lib/scala-library-2.11.8.jar,${ANGEL_HOME}/lib/angel-ps-core-${ANGEL_VERSION}.jar,${ANGEL_HOME}/lib/angel-ps-psf-${ANGEL_VERSION}.jar,${ANGEL_HOME}/lib/angel-ps-examples-${ANGEL_VERSION}.jar,${ANGEL_HOME}/lib/fastutil-7.1.0.jar,${ANGEL_HOME}/lib/sizeof-0.3.0.jar,${ANGEL_HOME}/lib/minlog-1.3.0.jar,${ANGEL_HOME}/lib/breeze_2.11-0.12.jar</value>
   </property>
+
   <property>
     <name>mapred.mapper.new-api</name>
     <value>true</value>
   </property>
+
 </configuration>

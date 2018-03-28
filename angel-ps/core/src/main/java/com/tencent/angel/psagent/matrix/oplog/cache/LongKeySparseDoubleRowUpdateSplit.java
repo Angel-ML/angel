@@ -63,6 +63,7 @@ public class LongKeySparseDoubleRowUpdateSplit extends RowUpdateSplit{
   @Override
   public void serialize(ByteBuf buf) {
     super.serialize(buf);
+    buf.writeDouble(0.0);
     buf.writeInt(end - start);
     LOG.debug("double size = " + (end - start));
     for (int i = start; i < end; i++) {
@@ -73,6 +74,6 @@ public class LongKeySparseDoubleRowUpdateSplit extends RowUpdateSplit{
 
   @Override
   public int bufferLen() {
-    return super.bufferLen() + (end - start) * 16;
+    return 12 + super.bufferLen() + (end - start) * 16;
   }
 }

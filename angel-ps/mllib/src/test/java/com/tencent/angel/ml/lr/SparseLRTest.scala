@@ -57,6 +57,7 @@ class SparseLRTest {
     conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1)
     conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1)
     conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1)
+    conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 100)
 
     // Set memory storage
     conf.set(AngelConf.ANGEL_TASK_DATA_STORAGE_LEVEL, "memory")

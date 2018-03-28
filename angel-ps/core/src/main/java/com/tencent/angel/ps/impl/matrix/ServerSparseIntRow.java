@@ -101,17 +101,17 @@ public class ServerSparseIntRow extends ServerIntRow {
   }
 
   @Override
-  public void update(RowType rowType, ByteBuf buf, int size) {
+  public void update(RowType rowType, ByteBuf buf) {
+    tryToLockWrite();
     try {
-      lock.writeLock().lock();
       switch (rowType) {
         case T_INT_SPARSE:
         case T_INT_SPARSE_COMPONENT:
-          updateIntSparse(buf, size);
+          updateIntSparse(buf);
           break;
 
         case T_INT_DENSE:
-          updateIntDense(buf, size);
+          updateIntDense(buf);
           break;
 
         default:
@@ -120,7 +120,7 @@ public class ServerSparseIntRow extends ServerIntRow {
 
       updateRowVersion();
     } finally {
-      lock.writeLock().unlock();
+      unlockWrite();
     }
   }
 
@@ -132,14 +132,16 @@ public class ServerSparseIntRow extends ServerIntRow {
     }
   }
 
-  private void updateIntDense(ByteBuf buf, int size) {
+  private void updateIntDense(ByteBuf buf) {
+    int size = buf.readInt();
     resizeHashMap(size);
     for (int i = 0; i < size; i++) {
       data.addTo(i, buf.readInt());
     }
   }
 
-  private void updateIntSparse(ByteBuf buf, int size) {
+  private void updateIntSparse(ByteBuf buf) {
+    int size = buf.readInt();
     resizeHashMap(size);
     for (int i = 0; i < size; i++) {
       data.addTo(buf.readInt(), buf.readInt());
@@ -158,7 +160,7 @@ public class ServerSparseIntRow extends ServerIntRow {
       buf.writeInt(data.size());
 
       ObjectIterator<Int2IntMap.Entry> iter = data.int2IntEntrySet().fastIterator();
-      Int2IntMap.Entry entry = null;
+      Int2IntMap.Entry entry;
       while (iter.hasNext()) {
         entry = iter.next();
         buf.writeInt(entry.getIntKey());

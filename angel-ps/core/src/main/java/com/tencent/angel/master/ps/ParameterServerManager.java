@@ -16,17 +16,21 @@
 
 package com.tencent.angel.master.ps;
 
+import com.tencent.angel.common.location.Location;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.app.AppEvent;
 import com.tencent.angel.master.app.AppEventType;
 import com.tencent.angel.master.app.InternalErrorEvent;
 import com.tencent.angel.master.matrix.committer.AMMatrixCommitter;
+import com.tencent.angel.master.ps.attempt.PSAttemptDiagnosticsUpdateEvent;
+import com.tencent.angel.master.ps.attempt.PSAttemptEvent;
+import com.tencent.angel.master.ps.attempt.PSAttemptEventType;
 import com.tencent.angel.master.ps.ps.AMParameterServer;
 import com.tencent.angel.master.ps.ps.AMParameterServerEvent;
 import com.tencent.angel.master.ps.ps.AMParameterServerEventType;
-import com.tencent.angel.ml.matrix.transport.PSFailedReport;
 import com.tencent.angel.ml.matrix.transport.PSLocation;
+import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.impl.ParameterServer;
 import com.tencent.angel.utils.StringUtils;
@@ -41,6 +45,7 @@ import org.apache.hadoop.yarn.event.EventHandler;
 import org.apache.hadoop.yarn.factory.providers.RecordFactoryProvider;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -97,9 +102,14 @@ public class ParameterServerManager extends AbstractService implements
 
   private final AMPSFailedReport report;
 
-  private Thread failedChecker;
-
   private final AtomicBoolean stopped = new AtomicBoolean(false);
+
+  /**parameter server attempt id to last heartbeat timestamp map*/
+  private final ConcurrentHashMap<PSAttemptId, Long> psLastHeartbeatTS = new ConcurrentHashMap<>();
+
+  /**parameter server heartbeat timeout value in millisecond*/
+  private final long psTimeOutMS;
+
 
   public ParameterServerManager(AMContext context, Map<ParameterServerId, Integer> psIdToAttemptIndexMap) {
     super("PS Manager");
@@ -129,6 +139,10 @@ public class ParameterServerManager extends AbstractService implements
         conf.getInt(AngelConf.ANGEL_PS_PRIORITY,
             AngelConf.DEFAULT_ANGEL_PS_PRIORITY);
 
+    psTimeOutMS =
+      conf.getLong(AngelConf.ANGEL_PS_HEARTBEAT_TIMEOUT_MS,
+        AngelConf.DEFAULT_ANGEL_PS_HEARTBEAT_TIMEOUT_MS);
+
     psResource = Resource.newInstance(psServerMemory, psServerVcores);
     priority = RecordFactoryProvider.getRecordFactory(null).newRecordInstance(Priority.class);
     priority.setPriority(psPriority);
@@ -147,31 +161,7 @@ public class ParameterServerManager extends AbstractService implements
 
   @Override
   protected void serviceStart() throws Exception  {
-    int limit = Math.max(context.getConf().getInt(
-      AngelConf.ANGEL_WORKERGROUP_NUMBER, AngelConf.DEFAULT_ANGEL_WORKERGROUP_NUMBER)
-      * context.getConf().getInt(
-        AngelConf.ANGEL_WORKER_TASK_NUMBER, AngelConf.DEFAULT_ANGEL_WORKER_TASK_NUMBER), 1024);
 
-    failedChecker = new Thread(() -> {
-      while (!stopped.get() && !Thread.interrupted()) {
-        try {
-          Thread.sleep(5000);
-          Map<PSLocation, Integer> failedPSCounters = report.getFailedPS(limit);
-          for(PSLocation psLoc : failedPSCounters.keySet()) {
-            if(psLoc.loc.equals(context.getLocationManager().getPsLocation(psLoc.psId))) {
-              LOG.info("PS " + psLoc.psId + " network failed times over " + limit + ", just restart it");
-              restartPS(psLoc.psId);
-            }
-          }
-        } catch (Throwable e) {
-          if(!stopped.get()) {
-            LOG.error("check ps failed information failed ", e);
-          }
-        }
-      }
-    });
-    failedChecker.setName("psfailed-checker");
-    failedChecker.start();
   }
 
   @Override
@@ -179,10 +169,6 @@ public class ParameterServerManager extends AbstractService implements
     if(!stopped.getAndSet(true)) {
       if (committer != null) {
         committer.stop();
-      }
-
-      if(failedChecker != null) {
-        failedChecker.interrupt();
       }
     }
   }
@@ -214,14 +200,6 @@ public class ParameterServerManager extends AbstractService implements
     for(Map.Entry<ParameterServerId, AMParameterServer> entry : psMap.entrySet()) {
       entry.getValue().handle(new AMParameterServerEvent(AMParameterServerEventType.PS_SCHEDULE, entry.getKey()));
     }
-  }
-
-  /**
-   * Restart a ps
-   * @param psId ps id
-   */
-  public void restartPS(ParameterServerId psId) {
-    psMap.get(psId).restart();
   }
 
   /**
@@ -350,5 +328,81 @@ public class ParameterServerManager extends AbstractService implements
    */
   public void psFailedReports(Map<PSLocation, Integer> counters) {
     report.psFailedReports(counters);
+  }
+
+  public void psFailedReport(PSLocation psLoc) {
+    restartPS(psLoc);
+  }
+
+  private void restartPS(PSLocation psLoc) {
+    getParameterServer(psLoc.psId).restart(psLoc);
+  }
+
+  public void checkHBTimeOut() {
+    //check whether parameter server heartbeat timeout
+    Iterator<Map.Entry<PSAttemptId, Long>> psIt = psLastHeartbeatTS.entrySet().iterator();
+    Map.Entry<PSAttemptId, Long> psEntry;
+    long currentTs = System.currentTimeMillis();
+    while (psIt.hasNext()) {
+      psEntry = psIt.next();
+      if (currentTs - psEntry.getValue() > psTimeOutMS) {
+        LOG.error(psEntry.getKey() + " heartbeat timeout!!!");
+        context.getEventHandler().handle(
+          new PSAttemptDiagnosticsUpdateEvent("heartbeat timeout", psEntry.getKey()));
+
+        context.getEventHandler().handle(
+          new PSAttemptEvent(PSAttemptEventType.PA_FAILMSG, psEntry.getKey()));
+        psIt.remove();
+      }
+    }
+  }
+
+  /**
+   * PS attempt register
+   * @param psAttemptId PS attempt id
+   */
+  public void register(PSAttemptId psAttemptId) {
+    LOG.info("PS " + psAttemptId + " is registered in monitor!");
+    psLastHeartbeatTS.put(psAttemptId, System.currentTimeMillis());
+  }
+
+  /**
+   * PS attempt unregister
+   * @param psAttemptId PS attempt id
+   */
+  public void unRegister(PSAttemptId psAttemptId) {
+    LOG.info("PS " + psAttemptId + " is finished,  delete it in monitor!");
+    psLastHeartbeatTS.remove(psAttemptId);
+  }
+
+  /**
+   * Is PS attempt alive
+   * @param psAttemptId PS attempt id
+   * @return true mean alive
+   */
+  public boolean isAlive(PSAttemptId psAttemptId) {
+    return psLastHeartbeatTS.containsKey(psAttemptId);
+  }
+
+  /**
+   * Update PS attempt latest heartbeat timestamp
+   * @param psAttemptId PS attempt id
+   */
+  public void alive(PSAttemptId psAttemptId) {
+    psLastHeartbeatTS.put(psAttemptId, System.currentTimeMillis());
+  }
+
+  /**
+   * Is PS attempt failed
+   * @param psLoc PS id and PS location
+   * @return true means failed
+   */
+  public boolean checkFailed(PSLocation psLoc) {
+    Location loc = context.getLocationManager().getPsLocation(psLoc.psId);
+    if(loc == null || !loc.equals(psLoc.loc)) {
+      return true;
+    } else {
+      return false;
+    }
   }
 }

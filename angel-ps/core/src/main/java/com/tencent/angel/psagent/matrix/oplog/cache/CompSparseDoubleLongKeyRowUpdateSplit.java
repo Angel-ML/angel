@@ -44,6 +44,7 @@ public class CompSparseDoubleLongKeyRowUpdateSplit extends RowUpdateSplit {
 
   @Override public void serialize(ByteBuf buf) {
     super.serialize(buf);
+    buf.writeDouble(split.getIndexToValueMap().defaultReturnValue());
     buf.writeInt(split.size());
 
     ObjectIterator<Long2DoubleMap.Entry> iter =
@@ -61,6 +62,6 @@ public class CompSparseDoubleLongKeyRowUpdateSplit extends RowUpdateSplit {
   }
 
   @Override public int bufferLen() {
-    return super.bufferLen() + split.size() * 16;
+    return 8 + 4 + super.bufferLen() + split.size() * 16;
   }
 }

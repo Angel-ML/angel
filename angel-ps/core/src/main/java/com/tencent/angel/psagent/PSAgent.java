@@ -18,27 +18,22 @@ package com.tencent.angel.psagent;
 
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.RunningMode;
-import com.tencent.angel.common.AngelEnvironment;
 import com.tencent.angel.common.location.Location;
 import com.tencent.angel.common.location.LocationManager;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.exception.InvalidParameterException;
-import com.tencent.angel.exception.TimeOutException;
 import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.ipc.TConnectionManager;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.MatrixMetaManager;
-import com.tencent.angel.ml.matrix.transport.PSFailedReport;
-import com.tencent.angel.protobuf.ProtobufUtil;
-import com.tencent.angel.protobuf.generated.MLProtos.PSAgentAttemptIdProto;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.PSAgentCommandProto;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.PSAgentRegisterResponse;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.PSAgentReportResponse;
 import com.tencent.angel.ps.ParameterServerId;
-import com.tencent.angel.ps.impl.ParameterServer;
 import com.tencent.angel.psagent.client.MasterClient;
+import com.tencent.angel.psagent.client.PSControlClient;
+import com.tencent.angel.psagent.client.PSControlClientManager;
 import com.tencent.angel.psagent.clock.ClockCache;
 import com.tencent.angel.psagent.consistency.ConsistencyController;
 import com.tencent.angel.psagent.executor.Executor;
@@ -55,15 +50,8 @@ import com.tencent.angel.utils.NetUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.util.StringUtils;
-import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
-import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
-import org.apache.hadoop.yarn.api.records.ContainerId;
-import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
-import org.apache.hadoop.yarn.util.ConverterUtils;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -94,40 +82,39 @@ public class PSAgent {
   private final String user;
 
   /** ps agent attempt id */
-  private final PSAgentAttemptId id;
-
-  /** ps agent attempt id for rpc */
-  private final PSAgentAttemptIdProto idProto;
+  private volatile int id;
 
   /** the connection manager for rpc to master */
   private final TConnection connection;
 
   /** the rpc client to master */
-  private MasterClient masterClient = null;
+  private volatile MasterClient masterClient;
+
+  private volatile PSControlClientManager psControlClientManager;
 
   /** psagent location(ip and listening port) */
-  private Location location = null;
+  private volatile Location location;
 
   /** psagent location(ip and listening port) */
   private final Location masterLocation;
 
   /** master location(ip and listening port) */
-  private PSAgentLocationManager locationManager;
+  private volatile PSAgentLocationManager locationManager;
 
   /** matrix meta manager */
-  private PSAgentMatrixMetaManager matrixMetaManager = null;
+  private volatile PSAgentMatrixMetaManager matrixMetaManager;
 
   /** matrix updates cache */
-  private MatrixOpLogCache opLogCache = null;
+  private volatile MatrixOpLogCache opLogCache;
 
   /** the rpc client to parameter servers */
-  private MatrixTransportClient matrixTransClient = null;
+  private volatile MatrixTransportClient matrixTransClient;
 
   /** psagent initialization completion flag */
   private final AtomicBoolean psAgentInitFinishedFlag;
 
   /** psagent heartbeat thread */
-  private Thread heartbeatThread = null;
+  private volatile Thread heartbeatThread;
 
   /** psagent stop flag */
   private final AtomicBoolean stopped;
@@ -139,19 +126,19 @@ public class PSAgent {
   private final Map<String, String> metrics;
 
   /** SSP consistency controller */
-  private ConsistencyController consistencyController;
+  private volatile ConsistencyController consistencyController;
 
   /** matrix partitions clock cache */
-  private ClockCache clockCache;
+  private volatile ClockCache clockCache;
 
   /** matrices cache */
-  private MatricesCache matricesCache;
+  private volatile MatricesCache matricesCache;
 
   /** matrix storage manager */
-  private MatrixStorageManager matrixStorageManager;
+  private volatile MatrixStorageManager matrixStorageManager;
 
   /** application layer request adapter */
-  private MatrixClientAdapter matrixClientAdapter;
+  private volatile MatrixClientAdapter matrixClientAdapter;
 
   /** if we need startup heartbeat thread */
   private final boolean needHeartBeat;
@@ -164,6 +151,9 @@ public class PSAgent {
 
   /** psagent exited flag */
   private final AtomicBoolean exitedFlag;
+
+  /** Control connection manager*/
+  private volatile TConnection controlConnectManager;
 
   /**
    * 
@@ -197,13 +187,12 @@ public class PSAgent {
    * @param conf application configuration
    * @param appId application id
    * @param user the user that submit this application
-   * @param id ps agent id
    * @param masterIp master ip
    * @param masterPort master port
    * @param needHeartBeat true means need startup heartbeat thread
    * @param executor the machine learning executor reference
    */
-  public PSAgent(Configuration conf, ApplicationId appId, String user, PSAgentAttemptId id,
+  public PSAgent(Configuration conf, ApplicationId appId, String user,
       String masterIp, int masterPort, boolean needHeartBeat, Executor executor) {
     this.needHeartBeat = needHeartBeat;
     this.conf = conf;
@@ -216,8 +205,6 @@ public class PSAgent {
     this.appId = appId;
     this.user = user;
     this.masterLocation = new Location(masterIp, masterPort);
-    this.id = id;
-    this.idProto = ProtobufUtil.convertToIdProto(id);
     this.connection = TConnectionManager.getConnection(conf);
     this.psAgentInitFinishedFlag = new AtomicBoolean(false);
     this.stopped = new AtomicBoolean(false);
@@ -251,9 +238,6 @@ public class PSAgent {
     this.appId = null;
     this.user = null;
 
-    this.id = new PSAgentAttemptId(new PSAgentId(clientIndex), 0);
-    this.idProto = ProtobufUtil.convertToIdProto(id);
-
     this.connection = TConnectionManager.getConnection(conf);
     this.psAgentInitFinishedFlag = new AtomicBoolean(false);
     this.stopped = new AtomicBoolean(false);
@@ -269,14 +253,15 @@ public class PSAgent {
 
     if (mode.equals(RunningMode.ANGEL_PS.toString())) {
       return RunningMode.ANGEL_PS;
-    } else if (mode.equals(RunningMode.ANGEL_PS_PSAGENT.toString())) {
-      return RunningMode.ANGEL_PS_PSAGENT;
     } else {
       return RunningMode.ANGEL_PS_WORKER;
     }
   }
 
   public void initAndStart() throws Exception {
+    // Init control connection manager
+    controlConnectManager = TConnectionManager.getConnection(conf);
+    
     // Get ps locations from master and put them to the location cache.
     locationManager = new PSAgentLocationManager(PSAgentContext.get());
     locationManager.setMasterLocation(masterLocation);
@@ -285,15 +270,22 @@ public class PSAgent {
     masterClient = new MasterClient();
     masterClient.init();
 
+    // Get psagent id
+    id = masterClient.getPSAgentId();
+
+    // Build PS control rpc client manager
+    psControlClientManager = new PSControlClientManager();
+
     // Build local location
     String localIp = NetUtils.getRealLocalIP();
     int port = NetUtils.chooseAListenPort(conf);
     location = new Location(localIp, port);
+    register();
 
     // Initialize matrix meta information
     clockCache = new ClockCache();
     List<MatrixMeta> matrixMetas = masterClient.getMatrices();
-    LOG.info("===========================PSAgent get matrices from master," + matrixMetas.size());
+    LOG.info("PSAgent get matrices from master," + matrixMetas.size());
     this.matrixMetaManager = new PSAgentMatrixMetaManager(clockCache);
     matrixMetaManager.addMatrices(matrixMetas);
 
@@ -325,11 +317,6 @@ public class PSAgent {
 
     psAgentInitFinishedFlag.set(true);
 
-    // Start heartbeat thread if need
-    if (needHeartBeat) {
-      startHeartbeatThread();
-    }
-
     // Start all services
     matrixTransClient.start();
     matrixClientAdapter.start();
@@ -347,49 +334,6 @@ public class PSAgent {
   public void refreshMatrixInfo()
     throws InterruptedException, ServiceException, ClassNotFoundException {
     matrixMetaManager.addMatrices(masterClient.getMatrices());
-  }
-
-  private void startHeartbeatThread() {
-    heartbeatThread = new Thread(new Runnable() {
-      @Override
-      public void run() {
-        // Register to master first
-        try {
-          register();
-        } catch (Exception x) {
-          LOG.error("register am to rm error:" + x);
-          stop();
-          if (runningMode == RunningMode.ANGEL_PS_PSAGENT) {
-            System.exit(-1);
-          }
-        }
-
-        // Report state to master every specified time
-        while (!stopped.get() && !Thread.currentThread().isInterrupted()) {
-          try {
-            Thread.sleep(heartbeatIntervalMs);
-            try {
-              heartbeat();
-            } catch (YarnRuntimeException e) {
-              LOG.error("Error communicating with RM: " + e.getMessage(), e);
-              stop();
-              if (runningMode == RunningMode.ANGEL_PS_PSAGENT) {
-                System.exit(-1);
-              }
-            } catch (Exception e) {
-              LOG.error("ERROR IN CONTACTING RM. ", e);
-            }
-          } catch (InterruptedException e) {
-            if (!stopped.get()) {
-              LOG.warn("Allocated thread interrupted. Returning.");
-            }
-            return;
-          }
-        }
-      }
-    });
-    heartbeatThread.setName("heartbeat");
-    heartbeatThread.start();
   }
 
   /**
@@ -453,18 +397,12 @@ public class PSAgent {
         } catch (Exception x) {
           LOG.error("register failed: ", x);
           stop();
-          if (runningMode == RunningMode.ANGEL_PS_PSAGENT) {
-            System.exit(-1);
-          }
         }
         break;
 
       case PSAGENT_SHUTDOWN:
         LOG.error("shutdown command come from appmaster, exit now!!");
         stop();
-        if (runningMode == RunningMode.ANGEL_PS_PSAGENT) {
-          System.exit(-1);
-        }
         break;
       default:
         break;
@@ -476,9 +414,6 @@ public class PSAgent {
     if (response.getCommand() == PSAgentCommandProto.PSAGENT_SHUTDOWN) {
       LOG.fatal("register to master, receive shutdown command");
       stop();
-      if (runningMode == RunningMode.ANGEL_PS_PSAGENT) {
-        System.exit(-1);
-      }
     }
   }
 
@@ -519,15 +454,6 @@ public class PSAgent {
   }
 
   /**
-   * Get ps agent attempt id
-   * 
-   * @return PSAgentAttemptId ps agent attempt id
-   */
-  public PSAgentAttemptId getId() {
-    return id;
-  }
-
-  /**
    * Get the connection manager for rpc to master
    *
    * @return TConnection the connection manager for rpc to master
@@ -562,32 +488,11 @@ public class PSAgent {
       LOG.info("psagent success done");
       RunningMode mode = PSAgentContext.get().getRunningMode();
 
-      // Notify run success to master only on ANGEL_PS_PSAGENT running mode
-      if (mode == RunningMode.ANGEL_PS_PSAGENT) {
-        try {
-          masterClient.psAgentDone();
-          LOG.info("send done message to appmaster success");
-        } catch (ServiceException e) {
-          LOG.error("send done message error ", e);
-        } finally {
-          try {
-            connection.close();
-          } catch (Exception e) {
-            LOG.error("close connection error", e);
-          }
-        }
-      }
-
       // Stop all modules
       if (executor != null) {
         executor.done();
       } else {
         stop();
-      }
-
-      // Exit the process if on ANGEL_PS_PSAGENT mode
-      if (mode == RunningMode.ANGEL_PS_PSAGENT) {
-        System.exit(0);
       }
     }
   }
@@ -600,34 +505,11 @@ public class PSAgent {
   public void error(String errorMsg) {
     if (!exitedFlag.getAndSet(true)) {
       LOG.info("psagent falied");
-
-      // Notify run success to master only on ANGEL_PS_PSAGENT running mode
-      RunningMode mode = PSAgentContext.get().getRunningMode();
-      if (mode == RunningMode.ANGEL_PS_PSAGENT) {
-        try {
-          masterClient.psAgentError(errorMsg);
-          LOG.info("psagent failed message : " + errorMsg + ", send it to appmaster success");
-        } catch (ServiceException e) {
-          LOG.error("send error message error ", e);
-        } finally {
-          try {
-            connection.close();
-          } catch (Exception e) {
-            LOG.error("close connection error", e);
-          }
-        }
-      }
-
       // Stop all modules
       if (executor != null) {
         executor.error(errorMsg);
       } else {
         stop();
-      }
-
-      // Exit the process if on ANGEL_PS_PSAGENT mode
-      if (mode == RunningMode.ANGEL_PS_PSAGENT) {
-        System.exit(-1);
       }
     }
   }
@@ -677,49 +559,6 @@ public class PSAgent {
     return matrixTransClient;
   }
 
-  public static void main(String[] args) {
-    // get configuration from config file
-    Configuration conf = new Configuration();
-    conf.addResource(AngelConf.ANGEL_JOB_CONF_FILE);
-
-    String containerIdStr = System.getenv(Environment.CONTAINER_ID.name());
-    ContainerId containerId = ConverterUtils.toContainerId(containerIdStr);
-    ApplicationAttemptId applicationAttemptId = containerId.getApplicationAttemptId();
-    ApplicationId appId = applicationAttemptId.getApplicationId();
-    String user = System.getenv(Environment.USER.name());
-
-    // set localDir with enviroment set by nm.
-    String[] localSysDirs =
-        StringUtils.getTrimmedStrings(System.getenv(Environment.LOCAL_DIRS.name()));
-    conf.setStrings(AngelConf.LOCAL_DIR, localSysDirs);
-    LOG.info(AngelConf.LOCAL_DIR + " for child: " + conf.get(AngelConf.LOCAL_DIR));
-
-    String psAgentindex = System.getenv(AngelEnvironment.PSAGENT_ID.name());
-    String psAgentAttemptIndex = System.getenv(AngelEnvironment.PSAGENT_ATTEMPT_ID.name());
-    String masterAddr = System.getenv(AngelEnvironment.LISTEN_ADDR.name());
-    String portStr = System.getenv(AngelEnvironment.LISTEN_PORT.name());
-    Location masterLocation = new Location(masterAddr, Integer.valueOf(portStr));
-
-    LOG.info("psAgentindex=" + psAgentindex);
-    LOG.info("psAgentAttemptIndex=" + psAgentAttemptIndex);
-    LOG.info("masterLocation=" + masterLocation);
-    LOG.info("user=" + user);
-    LOG.info("appId=" + appId);
-
-    PSAgentId psAgentId = new PSAgentId(Integer.valueOf(psAgentindex));
-    PSAgentAttemptId psAgentAttemptId =
-        new PSAgentAttemptId(psAgentId, Integer.valueOf(psAgentAttemptIndex));
-
-    try {
-      PSAgent psAgent =
-          new PSAgent(conf, appId, user, psAgentAttemptId, masterAddr, Integer.valueOf(portStr),
-              true, null);
-      psAgent.initAndStart();
-    } catch (Exception e) {
-      LOG.fatal("Failed to start worker.", e);
-    }
-  }
-
   /**
    * Get heartbeat interval in milliseconds
    * 
@@ -727,15 +566,6 @@ public class PSAgent {
    */
   public int getHeartbeatIntervalMs() {
     return heartbeatIntervalMs;
-  }
-
-  /**
-   * Get ps agent attempt id used for rpc
-   * 
-   * @return PSAgentAttemptIdProto ps agent attempt id used for rpc
-   */
-  public PSAgentAttemptIdProto getIdProto() {
-    return idProto;
   }
 
   /**
@@ -890,7 +720,6 @@ public class PSAgent {
    *
    * @param matrixContexts matrices configuration
    * @param timeOutMs maximun wait time in milliseconds
-   * @return MatrixMeta matrix meta
    * @throws AngelException exception come from master
    */
   public void createMatrices(List<MatrixContext> matrixContexts, long timeOutMs)
@@ -960,5 +789,29 @@ public class PSAgent {
    */
   public Executor getExecutor() {
     return executor;
+  }
+
+  /**
+   * Get PSAgent ID
+   * @return PSAgent ID
+   */
+  public int getId() {
+    return id;
+  }
+
+  /**
+   * Get control connection manager
+   * @return control connection manager
+   */
+  public TConnection getControlConnectManager() {
+    return controlConnectManager;
+  }
+
+  /**
+   * Get PS control rpc client manager
+   * @return PS control rpc client manager
+   */
+  public PSControlClientManager getPsControlClientManager() {
+    return psControlClientManager;
   }
 }

@@ -236,14 +236,8 @@ public class PSAgentTest {
       String user = psAgent.getUser();
 
       // test ps agent attempt id
-      PSAgentAttemptId psAgentAttemptId = psAgent.getId();
-      assertEquals(psAgentAttemptId.toString(), "PSAgentAttempt_0_0");
-      assertEquals(psAgentAttemptId.getIndex(), 0);
-
-      // test ps agent id
-      PSAgentId psAgentId = psAgentAttemptId.getPsAgentId();
-      assertEquals(psAgentId.toString(), "PSAgent_0");
-      assertEquals(psAgentId.getIndex(), 0);
+      int psAgentId = psAgent.getId();
+      assertEquals(psAgentId, 1);
 
       // test connection
       TConnection conn = psAgent.getConnection();
@@ -453,7 +447,6 @@ public class PSAgentTest {
       assertTrue(psAgentContext.getConf() != null);
       assertTrue(psAgentContext.getMetrics() != null);
       assertTrue(psAgentContext.getMasterClient() != null);
-      assertTrue(psAgentContext.getIdProto() != null);
       assertTrue(psAgentContext.getOpLogCache() != null);
       assertTrue(psAgentContext.getMatrixTransportClient() != null);
       assertTrue(psAgentContext.getMatrixMetaManager() != null);

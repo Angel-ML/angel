@@ -17,8 +17,8 @@
 package com.tencent.angel.spark.ops
 
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.matrix.psf.aggr.FullPull
-import com.tencent.angel.ml.matrix.psf.aggr.enhance.FullAggrResult
+import com.tencent.angel.ml.matrix.psf.aggr.{FullPull, PullWithRows}
+import com.tencent.angel.ml.matrix.psf.aggr.enhance.{FullAggrResult, SBAggrResult}
 import com.tencent.angel.ml.matrix.psf.common.{Fill, Increment}
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
 import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateFunc
@@ -44,6 +44,17 @@ class MatrixOps {
   def pull(mat: PSMatrix): Array[Array[Double]] = {
     mat.assertValid()
     aggregate(mat, new FullPull(mat.id)).asInstanceOf[FullAggrResult].getResult
+  }
+
+  /**
+   * pull multi rows to local
+   */
+  def pull(mat: PSMatrix, rows: Array[Int]): Array[(Int, Array[Double])] = {
+    mat.assertValid()
+    val sbResult = aggregate(mat, new PullWithRows(mat.id, rows)).asInstanceOf[SBAggrResult]
+    val resData = sbResult.getData
+    val resRows = sbResult.getRowIds
+    resRows.zip(resData)
   }
 
 
@@ -113,8 +124,6 @@ class MatrixOps {
     mat.assertValid()
     update(mat, new FullFill(mat.id, value))
   }
-
-
 
   /**
    * the following are private methods

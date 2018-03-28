@@ -213,9 +213,12 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
     val iter = pkeys.iterator()
     val func = new GetPartFunc(null)
     val futures = new mutable.HashMap[PartitionKey, Future[PartitionGetResult]]()
-    while (iter.hasNext) {
-      val pkey = iter.next()
-      val param = new PartitionGetRowsParam(model.wtMat.getMatrixId(), pkey, reqRows.get(pkey.getPartitionId))
+    val size = pkeys.size
+    var idx = Math.min(10, size)
+    for (i <- 0 until idx) {
+      val pkey = pkeys.get(i)
+      val param = new PartitionGetRowsParam(model.wtMat.getMatrixId(), pkey,
+        reqRows.get(pkey.getPartitionId))
       val future = client.get(func, param)
       futures.put(pkey, future)
     }
@@ -230,6 +233,16 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
         val future = futures.get(pkey).get
         if (future.isDone) {
           val sampler = queue.take()
+
+          if (idx < size) {
+            val pkey = pkeys.get(idx)
+            val param = new PartitionGetRowsParam(model.wtMat.getMatrixId(), pkey,
+              reqRows.get(pkey.getPartitionId))
+            val future = client.get(func, param)
+            futures.put(pkey, future)
+            idx += 1
+          }
+
           future.get() match {
             case csr: PartCSRResult => executor.execute(new Task(sampler, pkey, csr))
             case _ => throw new AngelException("should by PartCSRResult")
@@ -371,6 +384,7 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
   }
 
   def initForInference(): Unit = {
+    fetchNk
     class Task(sampler: Sampler, pkey: PartitionKey) extends Thread {
       override def run(): Unit = {
         sampler.initForInference(pkey)
@@ -404,10 +418,13 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
     val iter = pkeys.iterator()
     val func = new GetPartFunc(null)
     val futures = new mutable.HashMap[PartitionKey, Future[PartitionGetResult]]()
-    while (iter.hasNext) {
-      val pkey = iter.next()
-//      val param = new PartitionGetParam(model.wtMat.getMatrixId, pkey)
-      val param = new PartitionGetRowsParam(model.wtMat.getMatrixId(), pkey, reqRows.get(pkey.getPartitionId))
+
+    val size = pkeys.size
+    var idx = Math.min(10, size)
+    for (i <- 0 until idx) {
+      val pkey = pkeys.get(i)
+      val param = new PartitionGetRowsParam(model.wtMat.getMatrixId(), pkey,
+        reqRows.get(pkey.getPartitionId))
       val future = client.get(func, param)
       futures.put(pkey, future)
     }
@@ -422,6 +439,16 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
         val future = futures.get(pkey).get
         if (future.isDone) {
           val sampler = queue.take()
+
+          if (idx < size) {
+            val pkey = pkeys.get(idx)
+            val param = new PartitionGetRowsParam(model.wtMat.getMatrixId(), pkey,
+              reqRows.get(pkey.getPartitionId))
+            val future = client.get(func, param)
+            futures.put(pkey, future)
+            idx += 1
+          }
+
           future.get() match {
             case csr: PartCSRResult => executor.execute(new Task(sampler, pkey, csr))
             case _ => throw new AngelException("should by PartCSRResult")

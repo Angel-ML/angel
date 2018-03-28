@@ -18,11 +18,13 @@ package com.tencent.angel.ps.impl;
 
 import com.tencent.angel.ipc.VersionedProtocol;
 import com.tencent.angel.protobuf.generated.MasterPSServiceProtos.MasterPSService;
+import com.tencent.angel.protobuf.generated.PSAgentPSServiceProtos;
 
 /**
  * The interface parameter server protocol.
  */
-public interface PSProtocol extends VersionedProtocol ,MasterPSService.BlockingInterface{
+public interface PSProtocol extends VersionedProtocol ,MasterPSService.BlockingInterface,
+  PSAgentPSServiceProtos.PSAgentPSService.BlockingInterface{
 
   static long VERSION = 0L;
   /**

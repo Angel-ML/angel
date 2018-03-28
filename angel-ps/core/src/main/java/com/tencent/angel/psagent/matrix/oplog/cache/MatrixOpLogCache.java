@@ -30,7 +30,6 @@ import com.tencent.angel.psagent.task.TaskContext;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectAVLTreeMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -175,7 +174,7 @@ public class MatrixOpLogCache {
     FutureResult<VoidResult> futureResult = new FutureResult<VoidResult>();
     try {
       // Generate a clock request and put it to request queue
-      LOG.debug("clock matrix " + matrixId);
+      LOG.debug("task " + context.getIndex() + " clock matrix " + matrixId);
       ClockMessage clockMessage =
           new ClockMessage(seqIdGenerator.incrementAndGet(), matrixId, context, flushFirst);
       messageToFutureMap.put(clockMessage, futureResult);
@@ -448,7 +447,7 @@ public class MatrixOpLogCache {
         LOG.warn("merge " + message + " is interruped");
       } catch (Throwable e) {
         LOG.fatal("merge " + message + " falied, ", e);
-        PSAgentContext.get().getPsAgent().error("merge " + message + " falied, " + ExceptionUtils.getFullStackTrace(e));
+        PSAgentContext.get().getPsAgent().error("merge " + message + " falied, " + e.getMessage());
       }
     }
   }
@@ -480,7 +479,7 @@ public class MatrixOpLogCache {
         ((FutureResult<VoidResult>) messageToFutureMap.remove(message)).set(result);
       } catch (Throwable e) {
         LOG.fatal("flush op " + message + " failed, ", e);
-        PSAgentContext.get().getPsAgent().error("flush op " + message + " falied, " + ExceptionUtils.getFullStackTrace(e));
+        PSAgentContext.get().getPsAgent().error("flush op " + message + " falied, " + e.getMessage());
       }
     }
 

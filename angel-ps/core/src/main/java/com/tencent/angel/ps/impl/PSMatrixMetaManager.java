@@ -158,6 +158,9 @@ public class PSMatrixMetaManager {
    */
   public PartitionLocation getPartLocation(PartitionKey partitionKey) throws ServiceException {
     List<ParameterServerId> psIds = getPss(partitionKey);
+    if(psIds == null) {
+      return new PartitionLocation(new ArrayList<>());
+    }
     int size = psIds.size();
     List<PSLocation> psLocs = new ArrayList<>(size);
     for(int i = 0; i < size; i++) {

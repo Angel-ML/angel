@@ -41,7 +41,9 @@ private[spark] class CachedPSVector(component: ConcretePSVector) extends PSVecto
     */
   def incrementWithCache(delta: Vector): Unit = {
     val mergedCache = PushMan.getFromIncrementCache(this)
-    BLAS.axpy(1.0, delta, mergedCache)
+    mergedCache.synchronized {
+      BLAS.axpy(1.0, delta, mergedCache)
+    }
   }
 
   /**
@@ -70,14 +72,15 @@ private[spark] class CachedPSVector(component: ConcretePSVector) extends PSVecto
   def mergeMaxWithCache(other: Array[Double]): Unit = {
     require(other.length == dimension)
     val mergedArray = PushMan.getFromMaxCache(this)
-
-    mergedArray match {
-      case dv: DenseVector =>
-        other.indices.foreach { i =>
-          if (other(i) > dv.values(i)) {
-            dv.values(i) = other(i)
+    mergedArray.synchronized {
+      mergedArray match {
+        case dv: DenseVector =>
+          other.indices.foreach { i =>
+            if (other(i) > dv.values(i)) {
+              dv.values(i) = other(i)
+            }
           }
-        }
+      }
     }
   }
 
@@ -96,14 +99,15 @@ private[spark] class CachedPSVector(component: ConcretePSVector) extends PSVecto
   def mergeMinWithCache(other: Array[Double]): Unit = {
     require(other.length == dimension)
     val mergedArray = PushMan.getFromMinCache(this)
-
-    mergedArray match {
-      case dv: DenseVector =>
-        other.indices.foreach { i =>
-          if (other(i) < dv.values(i)) {
-            dv.values(i) = other(i)
+    mergedArray.synchronized {
+      mergedArray match {
+        case dv: DenseVector =>
+          other.indices.foreach { i =>
+            if (other(i) < dv.values(i)) {
+              dv.values(i) = other(i)
+            }
           }
-        }
+      }
     }
   }
 

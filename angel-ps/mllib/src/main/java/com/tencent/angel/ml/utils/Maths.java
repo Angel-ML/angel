@@ -131,6 +131,14 @@ public class Maths {
     return ret;
   }
 
+  public static long[] longList2Arr(List<Long> longs) {
+    long[] ret = new long[longs.size()];
+    for (int i = 0; i < longs.size(); i++) {
+      ret[i] = longs.get(i);
+    }
+    return ret;
+  }
+
   public static int[] list2Arr(List<Integer> nzzIdxes) {
     // TODO Auto-generated method stub
     return null;

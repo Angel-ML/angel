@@ -57,14 +57,14 @@ public abstract class CommonFunc extends UpdateFunc {
         for (int i = startRow; i < endRow; i++) {
           denseRows[i - startRow] = (ServerDenseDoubleRow) part.getRow(i);
         }
-        doUpdate(denseRows, param);
+        doUpdate(denseRows, key, param);
         return;
       case T_DOUBLE_SPARSE_LONGKEY:
         ServerSparseDoubleLongKeyRow[] longKeyRows = new ServerSparseDoubleLongKeyRow[endRow - startRow];
         for (int i = startRow; i < endRow; i++) {
           longKeyRows[i - startRow] = (ServerSparseDoubleLongKeyRow) part.getRow(i);
         }
-        doUpdate(longKeyRows, param);
+        doUpdate(longKeyRows, key, param);
         return;
       default:
         throw new RuntimeException("currently only supports DoubleDenseRow and SparseDoubleLongKey," +
@@ -72,7 +72,7 @@ public abstract class CommonFunc extends UpdateFunc {
     }
   }
 
-  protected abstract void doUpdate(ServerDenseDoubleRow[] rows, PartitionUpdateParam values);
+  protected abstract void doUpdate(ServerDenseDoubleRow[] rows, PartitionKey key, PartitionUpdateParam values);
 
-  protected abstract void doUpdate(ServerSparseDoubleLongKeyRow[] rows, PartitionUpdateParam values);
+  protected abstract void doUpdate(ServerSparseDoubleLongKeyRow[] rows, PartitionKey key, PartitionUpdateParam values);
 }

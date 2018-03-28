@@ -137,12 +137,12 @@ public class SparseDoubleVector extends TIntDoubleVector implements Serialize{
     Int2DoubleMap.Entry entry;
     while (iter.hasNext()) {
       entry = iter.next();
-      entry.setValue(updater.action(entry.getIntKey(), entry.getDoubleValue(), param));
+      updater.action(entry.getIntKey(), entry.getDoubleValue(), param);
     }
     return this;
   }
 
-  @Override public TIntDoubleVector clone() {
+  @Override public SparseDoubleVector clone() {
     return new SparseDoubleVector(this);
   }
 
@@ -165,18 +165,19 @@ public class SparseDoubleVector extends TIntDoubleVector implements Serialize{
     assert (dim == other.getDimension());
     if (other instanceof SparseDoubleSortedVector)
       return dot((SparseDoubleSortedVector) other);
-    if (other instanceof SparseDoubleVector)
+    else if (other instanceof SparseDoubleVector)
       return dot((SparseDoubleVector) other);
-    if (other instanceof DenseDoubleVector)
+    else if (other instanceof DenseDoubleVector)
       return dot((DenseDoubleVector) other);
-    if (other instanceof SparseDummyVector)
+    else if (other instanceof SparseDummyVector)
       return dot((SparseDummyVector) other);
-    if (other instanceof DenseFloatVector)
+    else if (other instanceof DenseFloatVector)
       return dot((DenseFloatVector) other);
-    if (other instanceof SparseFloatVector)
+    else if (other instanceof SparseFloatVector)
       return dot((SparseFloatVector) other);
-
-    throw new UnsupportedOperationException("Unsupportted operation: "
+    else if (other instanceof SparseLongKeyDoubleVector)
+      return dot((SparseLongKeyDoubleVector) other);
+    else throw new UnsupportedOperationException("Unsupportted operation: "
       + this.getClass().getName() + " dot " + other.getClass().getName());
   }
 
@@ -224,14 +225,7 @@ public class SparseDoubleVector extends TIntDoubleVector implements Serialize{
   }
 
   private double dot(SparseDoubleSortedVector other) {
-    int [] indices = other.getIndices();
-    double [] values = other.getValues();
-    int len = indices.length;
-    double dotValue = 0.0;
-    for(int i = 0; i < len; i++) {
-      dotValue += values[i] * get(indices[i]);
-    }
-    return dotValue;
+    return other.dot(this);
   }
 
   private double dot(SparseFloatVector other) {
@@ -245,6 +239,18 @@ public class SparseDoubleVector extends TIntDoubleVector implements Serialize{
     while (iter.hasNext()) {
       entry = iter.next();
       ret += entry.getDoubleValue() * other.values[entry.getIntKey()];
+    }
+    return ret;
+  }
+
+  private double dot(SparseLongKeyDoubleVector other) {
+    double ret = 0.0;
+    ObjectIterator<Int2DoubleMap.Entry> iter = this.hashMap.int2DoubleEntrySet().fastIterator();
+    Int2DoubleMap.Entry entry = null;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      entry.getIntKey();
+      ret += entry.getDoubleValue() * other.get((long) entry.getIntKey());
     }
     return ret;
   }
@@ -288,7 +294,7 @@ public class SparseDoubleVector extends TIntDoubleVector implements Serialize{
     if (hashMap != null) {
       ObjectIterator<Int2DoubleMap.Entry> iter = this.hashMap.int2DoubleEntrySet().fastIterator();
       while (iter.hasNext()) {
-        if (iter.next().getDoubleValue() != 0.0) {
+        if (iter.next().getDoubleValue() != 0) {
           ret++;
         }
       }
@@ -637,7 +643,7 @@ public class SparseDoubleVector extends TIntDoubleVector implements Serialize{
   }
 
   @Override public double sparsity() {
-    return ((double) nonZeroNumber()) / (double)dim;
+    return ((double) nonZeroNumber()) / dim;
   }
 
   @Override
@@ -659,7 +665,7 @@ public class SparseDoubleVector extends TIntDoubleVector implements Serialize{
     Int2DoubleMap.Entry entry = null;
     while (iter.hasNext()) {
       entry = iter.next();
-      entry.setValue(entry.getDoubleValue() * x);
+      this.hashMap.put(entry.getIntKey(), entry.getDoubleValue() * x);
     }
     return this;
   }

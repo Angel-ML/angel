@@ -42,10 +42,17 @@ import com.tencent.angel.spark.models.vector.enhanced.BreezePSVector
 class OWLQN(maxIter: Int, m: Int, l1reg: BreezePSVector, tolerance: Double)(
     implicit space: MutableInnerProductModule[BreezePSVector, Double])
   extends LBFGS[BreezePSVector](maxIter, m, tolerance = tolerance) with SerializableLogging {
+  private var l1Param: Double = 0.0
 
   def this(maxIter: Int, m: Int, l1reg: BreezePSVector)(
       implicit space: MutableInnerProductModule[BreezePSVector, Double]) =
     this(maxIter, m, l1reg, 1E-8)
+
+  def this(maxIter: Int, m: Int, l1Param: Double)(
+      implicit space: MutableInnerProductModule[BreezePSVector, Double]) = {
+    this(maxIter, m, null, 1E-8)
+    this.l1Param = l1Param
+  }
 
   require(m > 0)
 
@@ -122,10 +129,15 @@ class OWLQN(maxIter: Int, m: Int, l1reg: BreezePSVector, tolerance: Double)(
       newX: BreezePSVector,
       newGrad: BreezePSVector,
       newVal: Double): (Double, BreezePSVector) = {
-    val adjValue = newVal + newX.zipMap(l1reg, new ComputeAdjustValue).sum
-    val res = newX.zipMap(newGrad, l1reg, new Adjust)
-
-    adjValue -> res
+    if (l1reg != null) {
+      val adjValue = newVal + newX.zipMap(l1reg, new ComputeAdjustValue).sum
+      val res = newX.zipMap(newGrad, l1reg, new Adjust)
+      adjValue -> res
+    } else {
+      val adjValue = newVal + newX.map(new ComputeAdjustValue(l1Param)).sum
+      val res = newX.zipMap(newGrad, new Adjust(l1Param))
+      adjValue -> res
+    }
   }
 
   private def computeOrthant(x: BreezePSVector, grad: BreezePSVector) = {

@@ -50,4 +50,5 @@ object ReplicaModelSplit {
   * @param concurrent the serving concurrent capacity
   * @param splits the model splits
   */
-class ModelSplitGroup(val name: String, val dir: String, val concurrent: Int = -1, val splits: Array[ModelSplit])
+class ModelSplitGroup(val name: String, val dir: String, val concurrent: Int = -1,
+                      val splits: Array[ModelSplit], val shardingModelClass: String)

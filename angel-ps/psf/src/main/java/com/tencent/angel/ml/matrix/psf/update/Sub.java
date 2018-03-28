@@ -20,8 +20,12 @@ package com.tencent.angel.ml.matrix.psf.update;
 import com.tencent.angel.ml.matrix.psf.update.enhance.MUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongIterator;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 
 import java.nio.DoubleBuffer;
+import java.util.Map;
 
 /**
  * `Sub` function is `fromId1` subtract `fromId2` and saves to `toId`.
@@ -40,8 +44,8 @@ public class Sub extends MUpdateFunc {
 
   @Override
   protected void doUpdate(ServerDenseDoubleRow[] rows) {
+    rows[2].tryToLockWrite();
     try {
-      rows[2].getLock().writeLock().lock();
       DoubleBuffer from1 = rows[0].getData();
       DoubleBuffer from2 = rows[1].getData();
       DoubleBuffer to = rows[2].getData();
@@ -50,13 +54,30 @@ public class Sub extends MUpdateFunc {
         to.put(i, from1.get(i) - from2.get(i));
       }
     } finally {
-      rows[2].getLock().writeLock().unlock();
+      rows[2].unlockWrite();
     }
   }
 
   @Override
   protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows) {
-    throw new RuntimeException("Sub PSF can not support sparse type rows");
+    Long2DoubleOpenHashMap from1 = rows[0].getIndex2ValueMap();
+    Long2DoubleOpenHashMap from2 = rows[1].getIndex2ValueMap();
+
+    LongOpenHashSet keySet = new LongOpenHashSet(from1.keySet());
+    keySet.addAll(from2.keySet());
+
+    Long2DoubleOpenHashMap to = new Long2DoubleOpenHashMap(keySet.size());
+
+    LongIterator iter = keySet.iterator();
+    while (iter.hasNext()) {
+      long key = iter.nextLong();
+      to.put(key, from1.get(key) - from2.get(key));
+    }
+    double default1 = from1.defaultReturnValue();
+    double default2 = from2.defaultReturnValue();
+    to.defaultReturnValue(default1 * default2);
+
+    rows[2].setIndex2ValueMap(to);
   }
 
 }

@@ -74,6 +74,6 @@ public class SparseDoubleRowUpdateSplit extends RowUpdateSplit {
 
   @Override
   public int bufferLen() {
-    return super.bufferLen() + (end - start) * 12;
+    return 4 + super.bufferLen() + (end - start) * 12;
   }
 }

@@ -18,10 +18,10 @@
 package com.tencent.angel.ml.matrix.psf.update;
 
 import com.tencent.angel.ml.matrix.psf.update.enhance.MMUpdateFunc;
-import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
-import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import com.tencent.angel.ps.impl.matrix.*;
 
 import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
 import java.util.Random;
 
 /**
@@ -33,6 +33,10 @@ public class RandomNormal extends MMUpdateFunc {
     super(matrixId, new int[]{rowId}, new double[]{mean, stddev});
   }
 
+  public RandomNormal(int matrixId, int startId, int length, double mean, double stddev) {
+    super(matrixId, startId, length, new double[]{mean, stddev});
+  }
+
   public RandomNormal() {
     super();
   }
@@ -41,18 +45,25 @@ public class RandomNormal extends MMUpdateFunc {
   protected void doUpdate(ServerDenseDoubleRow[] rows, double[] scalars) {
     Random rand = new Random(System.currentTimeMillis());
 
-    try {
-      rows[0].getLock().writeLock().lock();
-      double mean = scalars[0];
-      double stdDev = scalars[1];
-      DoubleBuffer data = rows[0].getData();
-      int size = rows[0].size();
-      for (int i = 0; i < size; i++) {
-        data.put(i, stdDev * rand.nextGaussian() + mean);
+    for (ServerDenseDoubleRow row: rows) {
+      row.tryToLockWrite();
+      try {
+        double mean = scalars[0];
+        double stdDev = scalars[1];
+        DoubleBuffer data = row.getData();
+        int size = row.size();
+        for (int i = 0; i < size; i++) {
+          data.put(i, stdDev * rand.nextGaussian() + mean);
+        }
+      } finally {
+        row.unlockWrite();
       }
-    } finally {
-      rows[0].getLock().writeLock().unlock();
     }
+  }
+
+  @Override
+  protected void doUpdate(ServerSparseDoubleRow[] rows, double[] scalars) {
+    throw new RuntimeException("RandomNormal PSF can not support sparse type rows");
   }
 
   @Override
@@ -60,4 +71,28 @@ public class RandomNormal extends MMUpdateFunc {
     throw new RuntimeException("RandomNormal PSF can not support sparse type rows");
   }
 
+  @Override
+  protected void doUpdate(ServerDenseFloatRow[] rows, double[] scalars) {
+    Random rand = new Random(System.currentTimeMillis());
+
+    for (ServerDenseFloatRow row: rows) {
+      row.tryToLockWrite();
+      try {
+        double mean = scalars[0];
+        double stdDev = scalars[1];
+        FloatBuffer data = row.getData();
+        int size = row.size();
+        for (int i = 0; i < size; i++) {
+          data.put(i, Double.valueOf(stdDev * rand.nextGaussian() + mean).floatValue());
+        }
+      } finally {
+        row.unlockWrite();
+      }
+    }
+  }
+
+  @Override
+  protected void doUpdate(ServerSparseFloatRow[] rows, double[] values) {
+    throw new RuntimeException("RandomNormal PSF can not support sparse type rows");
+  }
 }

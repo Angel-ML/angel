@@ -43,4 +43,5 @@ public class SparseDoubleLongKeyMatrix extends DoubleLongKeyMatrix<SparseLongKey
     ret.setRowId(rowIndex);
     return ret;
   }
+
 }

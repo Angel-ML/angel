@@ -39,8 +39,8 @@ public class Copy extends MUpdateFunc {
 
   @Override
   protected void doUpdate(ServerDenseDoubleRow[] rows) {
+    rows[1].tryToLockWrite();
     try {
-      rows[1].getLock().writeLock().lock();
       DoubleBuffer source = rows[0].getData();
       DoubleBuffer target = rows[1].getData();
       int size = rows[0].size();

@@ -98,4 +98,5 @@ public abstract class TFloatMatrix<ROW extends TFloatVector> extends RowbaseMatr
       return 0.0f;
     return vectors[rowIndex].get(colIndex);
   }
+
 }

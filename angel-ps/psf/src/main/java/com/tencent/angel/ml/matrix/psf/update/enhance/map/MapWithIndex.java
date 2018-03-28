@@ -21,7 +21,9 @@ import com.tencent.angel.common.Serialize;
 import com.tencent.angel.ml.matrix.psf.update.enhance.MFUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 import java.nio.DoubleBuffer;
 
@@ -58,11 +60,12 @@ public class MapWithIndex extends MFUpdateFunc {
     Long2DoubleOpenHashMap data1 = rows[0].getData();
 
     Long2DoubleOpenHashMap data2 = data1.clone();
-    // TODO: a better way is needed to deal with defaultValue
-    assert (data2.defaultReturnValue() == 0.0);
 
-    for (java.util.Map.Entry<Long, Double> entry: data2.long2DoubleEntrySet()) {
-      entry.setValue(mapper.call(entry.getKey().intValue(), entry.getValue()));
+    ObjectIterator<Long2DoubleMap.Entry> iter = data2.long2DoubleEntrySet().fastIterator();
+    Long2DoubleMap.Entry entry;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      entry.setValue(mapper.call(entry.getLongKey(), entry.getDoubleValue()));
     }
     rows[1].setIndex2ValueMap(data2);
   }

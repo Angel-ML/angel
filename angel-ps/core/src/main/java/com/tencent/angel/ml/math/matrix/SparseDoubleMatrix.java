@@ -16,6 +16,7 @@
 
 package com.tencent.angel.ml.math.matrix;
 
+import com.tencent.angel.ml.math.vector.DenseFloatVector;
 import com.tencent.angel.ml.math.vector.SparseDoubleVector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

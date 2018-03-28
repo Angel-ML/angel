@@ -99,17 +99,18 @@ public class ServerSparseDoubleRow extends ServerDoubleRow {
     }
   }
 
-  @Override public void update(RowType rowType, ByteBuf buf, int size) {
+  @Override public void update(RowType rowType, ByteBuf buf) {
+    tryToLockWrite();
+
     try {
-      lock.writeLock().lock();
       switch (rowType) {
         case T_DOUBLE_SPARSE:
         case T_DOUBLE_SPARSE_COMPONENT:
-          updateDoubleSparse(buf, size);
+          updateDoubleSparse(buf);
           break;
 
         case T_DOUBLE_DENSE:
-          updateDoubleDense(buf, size);
+          updateDoubleDense(buf);
           break;
 
         default:{
@@ -119,11 +120,12 @@ public class ServerSparseDoubleRow extends ServerDoubleRow {
 
       updateRowVersion();
     } finally {
-      lock.writeLock().unlock();
+      unlockWrite();
     }
   }
 
-  private void updateDoubleDense(ByteBuf buf, int size) {
+  private void updateDoubleDense(ByteBuf buf) {
+    int size = buf.readInt();
     int startColInt = (int) startCol;
     resizeHashMap(size);
     for (int i = 0; i < size; i++) {
@@ -131,7 +133,8 @@ public class ServerSparseDoubleRow extends ServerDoubleRow {
     }
   }
 
-  private void updateDoubleSparse(ByteBuf buf, int size) {
+  private void updateDoubleSparse(ByteBuf buf) {
+    int size = buf.readInt();
     resizeHashMap(size);
     for (int i = 0; i < size; i++) {
       data.addTo(buf.readInt(), buf.readDouble());

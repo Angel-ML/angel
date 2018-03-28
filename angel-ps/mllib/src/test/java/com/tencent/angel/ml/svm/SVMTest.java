@@ -66,6 +66,7 @@ public class SVMTest {
       // Set basic configuration keys
       conf.setBoolean("mapred.mapper.new-api", true);
       conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
+      conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 100);
 
       // Set data format
       conf.set(MLConf.ML_DATA_FORMAT(), dataFmt);

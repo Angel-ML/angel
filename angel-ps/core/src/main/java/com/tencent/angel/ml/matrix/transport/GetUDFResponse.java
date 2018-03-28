@@ -31,19 +31,39 @@ public class GetUDFResponse extends Response {
   private PartitionGetResult partResult;
 
   /**
-   * Create a new GetUDFResponse.
-   *
-   * @param partResult the get result of the matrix partition
+   * Create a new GetUDFResponse
+   * @param responseType response type
+   * @param detail detail failed message if the response is not success
+   * @param partResult result
    */
-  public GetUDFResponse(PartitionGetResult partResult) {
+  public GetUDFResponse(ResponseType responseType, String detail, PartitionGetResult partResult) {
+    super(responseType, detail);
     this.partResult = partResult;
+  }
+
+  /**
+   * Create a new GetUDFResponse
+   * @param responseType response type
+   * @param partResult result
+   */
+  public GetUDFResponse(ResponseType responseType, PartitionGetResult partResult) {
+    this(responseType, null, partResult);
+  }
+
+  /**
+   * Create a new GetUDFResponse
+   * @param responseType response type
+   * @param detail detail failed message if the response is not success
+   */
+  public GetUDFResponse(ResponseType responseType, String detail) {
+    this(responseType, detail, null);
   }
 
   /**
    * Create a new GetUDFResponse.
    */
   public GetUDFResponse() {
-    this(null);
+    this(ResponseType.SUCCESS, null, null);
   }
 
   /**
@@ -98,6 +118,7 @@ public class GetUDFResponse extends Response {
     int size = super.bufferLen();
     if (partResult != null) {
       size += 4;
+      size += partResult.getClass().getName().getBytes().length;
       size += partResult.bufferLen();
     }
 
@@ -107,5 +128,10 @@ public class GetUDFResponse extends Response {
   @Override
   public String toString() {
     return "GetUDFResponse [partResult=" + partResult + ", toString()=" + super.toString() + "]";
+  }
+
+  @Override
+  public void clear() {
+    setPartResult(null);
   }
 }

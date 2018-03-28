@@ -23,10 +23,8 @@ import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.deploy.ContainerAllocator;
 import com.tencent.angel.master.deploy.ContainerAllocatorEvent;
 import com.tencent.angel.master.ps.attempt.PSAttemptContainerAssignedEvent;
-import com.tencent.angel.master.psagent.PSAgentAttemptContainerAssignedEvent;
 import com.tencent.angel.master.worker.attempt.WorkerAttemptContainerAssignedEvent;
 import com.tencent.angel.ps.PSAttemptId;
-import com.tencent.angel.psagent.PSAgentAttemptId;
 import com.tencent.angel.worker.WorkerAttemptId;
 
 /**
@@ -72,9 +70,6 @@ public class LocalContainerAllocator extends ContainerAllocator {
     if (id instanceof PSAttemptId) {
       context.getEventHandler().handle(
           new PSAttemptContainerAssignedEvent((PSAttemptId) id, allocated));
-    } else if (id instanceof PSAgentAttemptId) {
-      context.getEventHandler().handle(
-          new PSAgentAttemptContainerAssignedEvent((PSAgentAttemptId) id, allocated));
     } else if (id instanceof WorkerAttemptId) {
       context.getEventHandler().handle(
           new WorkerAttemptContainerAssignedEvent((WorkerAttemptId) id, allocated));

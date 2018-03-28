@@ -20,7 +20,8 @@ package com.tencent.angel.ml.factorizationmachines
 import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.{DenseDoubleVector, SparseDoubleSortedVector}
+import com.tencent.angel.ml.math.TVector
+import com.tencent.angel.ml.math.vector.{DenseDoubleVector, SparseDoubleSortedVector, SparseDoubleVector, SparseDummyVector}
 import com.tencent.angel.ml.matrix.psf.update.RandomNormal
 import com.tencent.angel.ml.metric.LossMetric
 import com.tencent.angel.ml.model.MLModel
@@ -38,27 +39,23 @@ import scala.collection.mutable
   * @param ctx: context of this task
   * @param minP: min value of y
   * @param maxP: max value of y
-  * @param feaUsed: array of used feature of the input data
   */
-class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Double, val feaUsed: Array[Int]) extends MLLearner(ctx) {
+class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Double) extends MLLearner(ctx) {
   val LOG: Log = LogFactory.getLog(classOf[FMLearner])
   val fmmodel = new FMModel(conf, ctx)
 
-  val learnType = conf.get(MLConf.ML_FM_LEARN_TYPE, MLConf.DEFAULT_ML_FM_LEARN_TYPE)
+  val learnType: String = conf.get(MLConf.ML_FM_LEARN_TYPE, MLConf.DEFAULT_ML_FM_LEARN_TYPE)
   val feaNum: Int = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
   val epochNum: Int = conf.getInt(MLConf.ML_EPOCH_NUM, MLConf.DEFAULT_ML_EPOCH_NUM)
 
   val rank: Int = conf.getInt(MLConf.ML_FM_RANK, MLConf.DEFAULT_ML_FM_RANK)
-  val reg0: Double = conf.getDouble(MLConf.ML_FM_REG0, MLConf.DEFAULT_ML_FM_REG0)
   val reg1: Double = conf.getDouble(MLConf.ML_FM_REG1, MLConf.DEFAULT_ML_FM_REG1)
   val reg2: Double = conf.getDouble(MLConf.ML_FM_REG2, MLConf.DEFAULT_ML_FM_REG2)
   val lr: Double = conf.getDouble(MLConf.ML_LEARN_RATE, MLConf.DEFAULT_ML_LEAR_RATE)
   val vStddev: Double = conf.getDouble(MLConf.ML_FM_V_STDDEV, MLConf.DEFAULT_ML_FM_V_INIT)
-  // Put used feature indexes to vIndexs
+  val miniBatcSize: Int = conf.getInt(MLConf.ML_FM_MINIBATCH_SIZE, MLConf.DEFAULT_ML_FM_MINIBATCH_SIZE)
   val vIndexs = new RowIndex()
-  feaUsed.zipWithIndex.filter((p:(Int, Int))=>p._1!=0).map((p:(Int, Int))=>vIndexs.addRowId(p._2))
-  val feaUsedN = vIndexs.getRowsNumber
-  LOG.info("vIndexs's row's number = " + vIndexs)
+  (0 until rank).foreach(vIndexs.addRowId)
 
   /**
     * Train a Factorization machines Model
@@ -68,11 +65,10 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
     * @return : a learned model
     */
   override
-  def train(trainData: DataBlock[LabeledData], vali: DataBlock[LabeledData]):
-  MLModel = {
+  def train(trainData: DataBlock[LabeledData], vali: DataBlock[LabeledData]): MLModel = {
     val start = System.currentTimeMillis()
     LOG.info(s"learnType=$learnType, feaNum=$feaNum, rank=$rank, #trainData=${trainData.size}")
-    LOG.info(s"reg0=$reg0, reg1=$reg1, reg2=$reg2, lr=$lr, vStev=$vStddev")
+    LOG.info(s"reg1=$reg1, reg2=$reg2, lr=$lr, vStev=$vStddev")
 
     val beforeInit = System.currentTimeMillis()
     initModels()
@@ -83,11 +79,13 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
 
     while (ctx.getEpoch < epochNum) {
       val startIter = System.currentTimeMillis()
+      LOG.info(s"The ${ctx.getEpoch} Epoch in Task ${ctx.getTaskId.toString} started!")
       val (w0, w, v) = oneIteration(trainData)
+      LOG.info(s"The ${ctx.getEpoch} Epoch in Task ${ctx.getTaskId.toString} finished!")
       val iterCost = System.currentTimeMillis() - startIter
 
       val startVali = System.currentTimeMillis()
-      val loss = evaluate(trainData, w0.get(0), w, v)
+      val loss = evaluate(trainData, w0, w, v)
       val valiCost = System.currentTimeMillis() - startVali
 
       globalMetrics.metric(fmmodel.FM_OBJ, loss)
@@ -102,6 +100,7 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
     val end = System.currentTimeMillis()
     val cost = end - start
     LOG.info(s"FM Learner train cost $cost ms.")
+
     fmmodel
   }
 
@@ -110,11 +109,20 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
     */
   def initModels(): Unit = {
     if(ctx.getTaskId.getIndex == 0) {
-      for (row <- 0 until feaNum) {
-        fmmodel.v.update(new RandomNormal(fmmodel.v.getMatrixId(), row, 0.0, vStddev)).get()
-      }
+      LOG.info(s"${ctx.getTaskId} is in charge of intial model, start ...")
+      fmmodel.w0.zero()
+      LOG.info(s"w0 initial finished!")
+      fmmodel.w.update(new RandomNormal(fmmodel.w.getMatrixId(), 0, 0.0, vStddev)).get()
+      LOG.info(s"w initial finished!")
+      fmmodel.v.update(new RandomNormal(fmmodel.v.getMatrixId(), 0, rank, 0.0, vStddev)).get()
+
+      LOG.info(s"v initial finished!")
+      LOG.info(s"${ctx.getTaskId} finished intial model!")
     }
 
+    LOG.info(s"Now begin to syncClock w0, w, v in the frist time!")
+    fmmodel.w0.syncClock()
+    fmmodel.w.syncClock()
     fmmodel.v.syncClock()
   }
 
@@ -124,209 +132,180 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
     * @param dataBlock
     * @return
     */
-  def oneIteration(dataBlock: DataBlock[LabeledData]): (DenseDoubleVector, DenseDoubleVector, mutable.HashMap[Int, DenseDoubleVector]) = {
+  def oneIteration(dataBlock: DataBlock[LabeledData]): (DenseDoubleVector, DenseDoubleVector, mutable.Map[Int, TVector]) = {
     val startGet = System.currentTimeMillis()
     val (w0, w, v) = fmmodel.pullFromPS(vIndexs)
     val getCost = System.currentTimeMillis() - startGet
     LOG.info(s"Get matrixes cost $getCost ms.")
 
-    val _w0 = w0.clone().asInstanceOf[DenseDoubleVector]
-    val _w = w.clone().asInstanceOf[DenseDoubleVector]
-    val _v = new mutable.HashMap[Int, DenseDoubleVector]()
-    for (vec <- v) {
-      _v.put(vec._1, vec._2.clone().asInstanceOf[DenseDoubleVector])
-    }
+    val _w0 = w0.clone()
+    val _w = w.clone()
+    val _v: mutable.Map[Int, TVector] = new mutable.HashMap[Int, TVector]()
+    v.foreach { case (idx, vec) => _v.put(idx, vec.clone()) }
 
     dataBlock.resetReadIndex()
+    LOG.info(s"Start trainning in oneIteration ...")
+
+    // initial gredient
+    var grad_w0: Double = 0.0
+    val capacity = Math.max(w.getDimension/100, 64)
+    val grad_w1: SparseDoubleVector = new SparseDoubleVector(w.getDimension, capacity)
+    val grad_v: mutable.Map[Int, SparseDoubleVector] = new mutable.HashMap[Int, SparseDoubleVector]()
+    v.foreach { case (idx, _) => grad_v.put(idx, new SparseDoubleVector(w.getDimension, capacity)) }
+
+    var batchInnerCounter = 0
     for (_ <- 0 until dataBlock.size) {
       val data = dataBlock.read()
-      val x = data.getX.asInstanceOf[SparseDoubleSortedVector]
-      val y = data.getY
-      val pre = predict(x, y, _w0.get(0), _w, _v)
+      val (x, y) = (data.getX, data.getY)
+      val pre = fmmodel.calModel(x, _w0, _w, _v)
       val dm = derviationMultipler(y, pre)
+      batchInnerCounter += 1
 
-      _w0.plusBy(0, -lr * (dm + reg0 * _w0.get(0)))
-      _w.timesBy(1 - lr * reg1).plusBy(x, -lr * dm)
-      updateV(x, dm, _v)
+      // calculate gradient
+      grad_w0 += dm
+      grad_w1.plusBy(x, dm)
+      _v.foreach{ case (idx, v_row_) =>
+        val v_row = v_row_.asInstanceOf[DenseDoubleVector]
+        val dot = v_row.dot(x)
+
+        x match {
+          case ifeat: SparseDoubleSortedVector =>
+            ifeat.getValues.zip(ifeat.getIndices).foreach { case (value, i) =>
+              grad_v(idx).plusBy(i, dm * (dot - v_row.get(i) * value) * value)
+            }
+          case ifeat: SparseDummyVector =>
+            ifeat.getIndices.foreach { i =>
+              grad_v(idx).plusBy(i, dm * (dot - v_row.get(i)))
+            }
+          case ifeat: DenseDoubleVector =>
+            ifeat.getValues.zipWithIndex.foreach{ case (value, i) =>
+              grad_v(idx).plusBy(i, dm * (dot - v_row.get(i) * value) * value)
+            }
+          case _ => throw new Exception("Data type not support!")
+        }
+      }
+
+      if (batchInnerCounter == miniBatcSize) {
+        // 1. update parameter
+        updateParameters(_w0, _w, _v, grad_w0, grad_w1, grad_v, miniBatcSize)
+
+        // 2. reset count and grad
+        batchInnerCounter = 0
+        grad_w0 = 0.0
+        grad_w1.clear()
+        grad_v.foreach{ case (_, vect) => vect.clear()}
+      }
     }
 
-    for (update <- _v) {
-      v(update._1).plusBy(update._2, -1.0).timesBy(-1.0)
+    if (batchInnerCounter != 0) {
+      updateParameters(_w0, _w, _v, grad_w0, grad_w1, grad_v, batchInnerCounter)
     }
 
-    fmmodel.pushToPS(w0.plusBy(_w0, -1.0).timesBy(-1.0).asInstanceOf[DenseDoubleVector],
-      w.plusBy(_w, -1.0).timesBy(-1.0).asInstanceOf[DenseDoubleVector],
-      v)
+    LOG.info(s"Calculate Delta for update ...")
+    calDeltaInplace(w0, w, v, _w0, _w, _v)
+
+    LOG.info(s"Begin to update parameter in PS ...")
+    fmmodel.pushToPS(w0, w, v)
+    LOG.info(s"Parameter has update in PS ...")
 
     (_w0, _w, _v)
   }
 
   /**
-    * Evaluate the objective value
-    * For regression: loss(y,\hat y) = (y - \hat y)^2
-    * For classification: loss(y,\hat y) = -\ln (\delta(y, \hat y))),
-    *                     in which \delta(x) = \frac{1}{1+e^{-x}}
- *
     * @param dataBlock
     * @param w0
     * @param w
     * @param v
     * @return
     */
-  def evaluate(dataBlock: DataBlock[LabeledData], w0: Double, w: DenseDoubleVector,
-               v: mutable.HashMap[Int, DenseDoubleVector]):
-  Double = {
+  def evaluate(dataBlock: DataBlock[LabeledData], w0: DenseDoubleVector, w: DenseDoubleVector,
+               v: mutable.Map[Int, TVector]): Double = {
     dataBlock.resetReadIndex()
 
+    var loss = 0.0
     learnType match {
-      case "r" => {
-        var eval = 0.0
+      case "r" =>
         for (_ <- 0 until dataBlock.size) {
           val data = dataBlock.read()
-          val x = data.getX.asInstanceOf[SparseDoubleSortedVector]
-          val y = data.getY
-          val pre = predict(x, y, w0, w, v)
-          eval += (pre - y) * (pre - y)
+          val (x, y) = (data.getX, data.getY)
+          val pre = fmmodel.calModel(x, w0, w, v)
+          loss += 0.5 * (pre - y) * (pre - y)
         }
-        LOG.info(s"Regression evaluate loss=$eval")
+        LOG.info(s"Regression evaluate loss=$loss")
 
-        eval
-      }
-
-      case "c" => {
-        var loss = 0.0
+      case "c" =>
         var correct = 0.0
-        var tp = 0
-        var fp = 0
-        var tn = 0
-        var fn = 0
+        var (tp, fp, tn, fn) = (0, 0, 0, 0)
         val yList = new Array[Double](dataBlock.size())
         val preList = new Array[Double](dataBlock.size())
 
         for (i <- 0 until dataBlock.size()) {
           val data = dataBlock.read()
-          val x = data.getX.asInstanceOf[SparseDoubleSortedVector]
-          val y = data.getY
-          val pre = predict(x, y, w0, w, v)
+          val (x, y) = (data.getX, data.getY)
+          val pre = fmmodel.calModel(x, w0, w, v)
 
           yList(i) = y
-          preList(i) = pre
+          preList(i) = 1.0/Math.log1p(Math.exp(-pre))
 
-          pre * y match {
-            case dot if dot > 0 => {
-              correct += 1
-
-              y match {
-                case y if y > 0 => tp += 1
-                case y if y < 0 => tn += 1
-              }
-            }
-
-            case dot if dot < 0 => {
-              y match {
-                case y if y > 0 => fn += 1
-                case y if y < 0 => fp += 1
-              }
-            }
-
-              loss += Math.log1p(1 / (1 + Math.exp(-dot)))
+          if ( (pre > 0.0 && y > 0) || (pre < 0.0 && y <= 0) ) {
+            correct += 1
+            if (pre > 0.0) { tp += 1 } else { tn += 1 }
+          } else {
+            if (pre > 0.0) { fp += 1 } else { fn += 1 }
           }
 
+          val weight = if ( y > 0 ) {
+            conf.getDouble(MLConf.ML_FM_POSITIVE_WEIGHT, 1.0)
+          } else {
+            conf.getDouble(MLConf.ML_FM_NEGATIVE_WEIGHT, 1.0)
+          }
+          loss += weight * Math.log1p(Math.exp(- y * pre))
         }
+
         val metric = ValidationUtils.calAUC(preList, yList, tp, tn, fp, fn)
         LOG.info(s"loss=${loss/yList.length}, precision=${correct/yList.length},auc=${metric._1}, " +
           s"trueRecall=${metric._2}, falseRecall=${metric._3}")
-
-        loss
-      }
-
     }
+
+    loss / dataBlock.size
   }
 
   /**
-    * Predict an instance
- *
-    * @param x：feature vector of instance
-    * @param y: label value of instance
-    * @param w0: w0 mat of FM
-    * @param w: w mat of FM
-    * @param v: v mat of FM
-    * @return
-    */
-  def predict(x: SparseDoubleSortedVector,
-              y: Double, w0: Double,
-              w: DenseDoubleVector,
-              v: mutable.HashMap[Int, DenseDoubleVector]): Double = {
-
-    var ret: Double = 0.0
-    ret += w0
-    ret += x.dot(w)
-
-    for (f <- 0 until rank) {
-      var ret1 = 0.0
-      var ret2 = 0.0
-      for (i <- 0 until x.size()) {
-        val tmp = x.getValues()(i) * v(x.getIndices()(i)).get(f)
-        ret1 += tmp
-        ret2 += tmp * tmp
-      }
-      ret += 0.5 * (ret1 * ret1 - ret2)
-    }
-
-    learnType match {
-      // For classification:
-      case "r" => ret = if (ret < maxP) ret else maxP
-                  ret = if (ret > minP) ret else minP
-      // For regression:
-      case "c" => 1.0 / (1.0 + Math.exp(-ret))
-    }
-
-    ret
-  }
-
-  /**
-    * \frac{\partial loss}{\partial x} = dm * \frac{\partial y}{\partial x}
- *
     * @param y: label of the instance
     * @param pre: predict value of the instance
     * @return : dm value
     */
   def derviationMultipler(y: Double, pre: Double): Double = {
     learnType match {
-      // For classification:
-      // loss=-ln(\delta (pre\cdot y))
-      // \frac{\partial loss}{\partial x}=(\delta (pre\cdot y)-1)y\frac{\partial y}{\partial x}
-      case "c" => -y * (1.0 - 1.0 / (1 + Math.exp(-y * pre)))
-      // For regression:
-      // loss = (pre-y)^2
-      // \frac{\partial loss}{\partial x}=2(pre-y)\frac{\partial y}{\partial x}
-      //      case "r" => 2 * (pre - y)
-      case "r" => pre - y
+      case "c" =>
+        val weight = if ( y > 0 ) {
+          conf.getDouble(MLConf.ML_FM_POSITIVE_WEIGHT, 1.0)
+        } else {
+          conf.getDouble(MLConf.ML_FM_NEGATIVE_WEIGHT, 1.0)
+        }
+        - weight * y  / Math.log1p(Math.exp(y * pre))
+      case "r" =>
+        pre - y
     }
   }
 
-  /**
-    * Update v mat
- *
-    * @param x: a train instance
-    * @param dm: dm value of the instance
-    * @param v: v mat
-    */
-  def updateV(x: SparseDoubleSortedVector, dm: Double, v: mutable.HashMap[Int, DenseDoubleVector]):
-  Unit = {
+  def calDeltaInplace(w0_old: DenseDoubleVector, w_old: DenseDoubleVector, v_old: mutable.Map[Int, TVector],
+                      w0_new: DenseDoubleVector, w_new: DenseDoubleVector, v_new: mutable.Map[Int, TVector]
+                     ): Unit = {
+    w0_old.plusBy(w0_new, -1.0).timesBy(-1.0)
+    w_old.plusBy(w_new, -1.0).timesBy(-1.0)
+    v_new.foreach { case (idx, vec) =>
+      v_old(idx).asInstanceOf[DenseDoubleVector].plusBy(vec.asInstanceOf[DenseDoubleVector], -1.0).timesBy(-1.0)
+    }
+  }
 
-    for (f <- 0 until rank) {
-      // calculate dot(vf, x)
-      var dot = 0.0
-      for (i <- 0 until x.size()) {
-        dot += x.getValues()(i) * v(x.getIndices()(i)).get(f)
-      }
-
-      for (i <- 0 until x.size()) {
-        val j = x.getIndices()(i)
-        val grad = dot * x.getValues()(i) - v(j).get(f) * x.getValues()(i) * x.getValues()(i)
-        v(j).plusBy(f, -lr * (dm * grad + reg2 * v(j).get(f)))
-      }
+  def updateParameters(w0_param: DenseDoubleVector, w_param: DenseDoubleVector, v_param: mutable.Map[Int, TVector],
+             w0_grad: Double, w_grad: SparseDoubleVector, v_grad: mutable.Map[Int, SparseDoubleVector],
+             numSamples: Int): Unit = {
+    w0_param.plusBy(0, -lr * w0_grad / numSamples)
+    w_param.timesBy(1.0 - lr * reg1).plusBy(w_grad, -lr/numSamples)
+    v_param.foreach{ case (i, vect) =>
+      vect.timesBy(1.0 - lr * reg2).plusBy(v_grad(i), -lr/numSamples)
     }
   }
 

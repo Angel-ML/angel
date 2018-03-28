@@ -36,35 +36,26 @@ class DefaultModelSplitter(targetNum: Int) extends ModelSplitter {
   override def split(meta: ModelMeta): Array[ModelSplit] = {
     val matricesMeta = meta.matricesMeta
     // (idx,(columnQuota, lastColumnQuota))
-    val splitQuota = matricesMeta.map(matrixMeta => (matrixMeta.dimension > targetNum, matrixMeta.dimension,
-      if (matrixMeta.dimension > targetNum) {
-        (matrixMeta.dimension + targetNum - 1) / targetNum
-      } else {
-        matrixMeta.dimension
-      }))
-      .map { case (isSharding, dimension, quota) => (isSharding, quota,
-        if (isSharding && dimension != quota * targetNum) {
-          dimension - (quota * (targetNum - 1))
-        } else {
-          quota
-        })
-      }.zipWithIndex
+    val splitQuota = matricesMeta.map{ matrixMeta =>
+      val isSharding = matrixMeta.dimension > targetNum
+      val quota = if (isSharding) (matrixMeta.dimension + targetNum -1)/targetNum else matrixMeta.dimension
+      val lastQuota = if (isSharding) matrixMeta.dimension - quota * (targetNum-1) else matrixMeta.dimension
 
-    def getModelSplit(idx: Int): ModelSplit = {
-      new ModelSplit(idx, splitQuota.map {
-        case ((isSharding, columnQuota, lastColumnQuota), matrixIdx) => {
-          val matrixMeta = matricesMeta(matrixIdx)
-          (matrixMeta.name, new MatrixSplit(matrixMeta.name, idx, 0, matrixMeta.rowNum,
-            if (isSharding) {
-              idx * columnQuota
-            } else {
-              0
-            }, if (idx == targetNum - 1) lastColumnQuota else columnQuota))
-        }
-      }.toMap)
+      (isSharding, quota, lastQuota)
     }
 
-    (0 until targetNum).map(idx => getModelSplit(idx)).toArray
+    (0 until targetNum).map{idx =>
+      val matrixSplits = splitQuota.zipWithIndex.map {case ((isSharding, columnQuota, lastColumnQuota), matrixIdx) =>
+          val matrixMeta = matricesMeta(matrixIdx)
+          val matrixSplit = MatrixSplit(matrixMeta.name, idx, 0, matrixMeta.rowNum,
+            if (isSharding) idx * columnQuota else 0,
+            if (idx == targetNum - 1) lastColumnQuota else columnQuota)
+
+          (matrixMeta.name, matrixSplit)
+      }
+
+      new ModelSplit(idx, matrixSplits.toMap)
+    }.toArray
   }
 }
 

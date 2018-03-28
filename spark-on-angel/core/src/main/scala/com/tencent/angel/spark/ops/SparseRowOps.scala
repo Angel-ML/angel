@@ -22,7 +22,7 @@ import com.tencent.angel.ml.matrix.psf.aggr.enhance.ArrayAggrResult
 import com.tencent.angel.ml.matrix.psf.aggr.{Pull, PullWithCols}
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
 import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult
-import com.tencent.angel.ml.matrix.psf.update.SparsePush
+import com.tencent.angel.ml.matrix.psf.update.{Compress, SparseIncrement, SparsePush}
 import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateFunc
 import com.tencent.angel.psagent.matrix.{MatrixClientFactory, ResponseType, Result}
 import com.tencent.angel.spark.context.PSContext
@@ -57,7 +57,7 @@ class SparseRowOps {
 
     row.getRow match {
       case longKeyVector: SparseLongKeyDoubleVector =>
-        new SparseVector(longKeyVector.getLongDim, longKeyVector.getIndexToValueMap)
+        new SparseVector(longKeyVector.getModelNnz, longKeyVector.getIndexToValueMap)
       case _ =>
         throw new Exception("only support SparseLongKeyDoubleVector")
     }
@@ -80,17 +80,20 @@ class SparseRowOps {
    */
   def increment(vector: SparsePSVector, local: SparseVector): Unit = {
     vector.assertValid()
-    import com.tencent.angel.ml.matrix.psf.common.{Increment => CommonIncrement}
-    val rows = Array.fill(local.nnz)(vector.id)
 
-    update(vector.poolId, new CommonIncrement(vector.poolId, rows, local.indices, local.values))
+    update(vector.poolId, new SparseIncrement(vector.poolId, vector.id, local.indices, local.values))
   }
 
-  private[spark] def increment(poolId: Int, vectorId: Int, local: SparseVector): Unit ={
-    import com.tencent.angel.ml.matrix.psf.common.{Increment => CommonIncrement}
-    val rows = Array.fill(local.nnz)(vectorId)
+  private[spark] def increment(poolId: Int, vectorId: Int, local: SparseVector): Unit = {
+    update(poolId, new SparseIncrement(poolId, vectorId, local.indices, local.values))
+  }
 
-    update(poolId, new CommonIncrement(poolId, rows, local.indices, local.values))
+  private[spark] def increment(poolId: Int, vectorId: Int, indices: Array[Long], values: Array[Double]): Unit = {
+    update(poolId, new SparseIncrement(poolId, vectorId, indices, values))
+  }
+
+  def compress(vector: SparsePSVector): Unit = {
+    update(vector.poolId, new Compress(vector.poolId, vector.id))
   }
 
   /**

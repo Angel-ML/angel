@@ -45,7 +45,7 @@ class ClientProtocolClientTranslatorPB(server: InetSocketAddress, conf: Configur
     TConnectionManager.getConnection(conf).getProtocol(server.getHostName, server.getPort, classOf[ClientProtocolPB], 0, null).asInstanceOf[ClientProtocolPB]
   }
 
-  override def registerModel(model: ModelDefinition): Unit = {
+  override def registerModel(model: ModelDefinition, shardingModelClass: String): Boolean = {
     def toMatrixSplitProto(matrixSplit: MatrixSplit): MatrixSplitProto = {
       MatrixSplitProto.newBuilder.setName(matrixSplit.name).setIndex(matrixSplit.idx).setRowOffset(matrixSplit.rowOffset).setRowNum(matrixSplit.rowNum).setColumnOffset(matrixSplit.columnOffset).setDimension(matrixSplit.dimension).build
     }
@@ -60,11 +60,14 @@ class ClientProtocolClientTranslatorPB(server: InetSocketAddress, conf: Configur
       split.matrixSplits.values.map(toMatrixSplitProto).toList.asJava
     ).build).toList.asJava)
     requestBuilder.setModel(modelBuilder.build())
-    proxy.registerModel(null, requestBuilder.build)
+    requestBuilder.setShardingModelClass(shardingModelClass)
+    val commonResponseProto = proxy.registerModel(null, requestBuilder.build)
+    commonResponseProto.getSeemSucess
   }
 
-  override def unregisterModel(name: String): Unit = {
-    proxy.unregisterModel(null, UnregisterModelRequestProto.newBuilder.setModel(name).build)
+  override def unregisterModel(name: String): Boolean = {
+    val commonResponseProto = proxy.unregisterModel(null, UnregisterModelRequestProto.newBuilder.setModel(name).build)
+    commonResponseProto.getSeemSucess
   }
 
   override def getModelLocations(): ModelLocationList = {
@@ -72,4 +75,5 @@ class ClientProtocolClientTranslatorPB(server: InetSocketAddress, conf: Configur
     val modelLocs = locsProto.getModelLocationListList.asScala.map(modelLoc => ModelLocation(modelLoc.getModel, modelLoc.getSplitLocationListList.asScala.map(splitLoc => ModelSplitLocation(splitLoc.getIndex, splitLoc.getLocationListList.asScala.map(loc => ServingLocation(loc.getIp, loc.getPort)).toArray)).toArray)).toArray
     ModelLocationList(modelLocs)
   }
+
 }

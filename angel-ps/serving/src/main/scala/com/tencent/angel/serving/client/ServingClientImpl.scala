@@ -17,8 +17,9 @@
 
 package com.tencent.angel.serving.client
 
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.matrix.RowType
-import com.tencent.angel.serving.common._
+import com.tencent.angel.serving.common.{ModelMeta, _}
 import com.tencent.angel.serving.protocol.ClientProtocol
 import com.tencent.angel.serving.transport.serving.ServingTransportClient
 import com.tencent.angel.tools.ModelLoader
@@ -42,10 +43,42 @@ class ServingClientImpl(clientService: ClientProtocol, transportClient: ServingT
 
   def getServingManager(): ClientServingManager = servingManager
 
-
-  override def loadModel(name: String, dir: String, servingNodes: Int, concurrent: Int, splitter: ModelSplitter, coordinator: ModelCoordinator): Unit = {
+  override def loadModel(name: String,
+                         dir: String,
+                         servingNodes: Int,
+                         concurrent: Int,
+                         splitter: ModelSplitter,
+                         coordinator: ModelCoordinator,
+                         shardingModelClass: String
+  ): Boolean = {
     require(!servingManager.isRegistered(name), s"$name is loaded")
+    val modelMeta = getModelMetaInfo(name, dir)
+    val modelFormat = new ModelFormat(name, dir, concurrent, servingNodes, modelMeta, splitter, coordinator)
+    loadModel(modelFormat, shardingModelClass)
+  }
 
+  override def loadModel(name: String, dir: String, replica: Int, concurrent: Int, shardingModelClass: String): Boolean = {
+    val splitter = new DefaultModelSplitter(config.getInt(AngelConf.ANGEL_SERVING_SHARDING_NUM, 1))
+    val coordinator = new DefaultModelCoordinator(name, this)
+
+    val psNum = config.getInt(AngelConf.ANGEL_PS_NUMBER, 1)
+    val replicaReal = if (replica > psNum) psNum else replica
+    loadModel(name, dir, replicaReal, concurrent, splitter, coordinator, shardingModelClass)
+  }
+
+  override def loadModelLocal(name: String, dir: String, replica: Int, concurrent: Int): Unit = {
+    require(!servingManager.isRegistered(name), s"$name is loaded")
+    val splitter = new DefaultModelSplitter(config.getInt(AngelConf.ANGEL_SERVING_SHARDING_NUM, 1))
+    val coordinator = new DefaultModelCoordinator(name, this)
+    val modelMeta = getModelMetaInfo(name, dir)
+
+    val psNum = config.getInt(AngelConf.ANGEL_PS_NUMBER, 1)
+    val replicaReal = if (replica > psNum) psNum else replica
+    val modelFormat = new ModelFormat(name, dir, concurrent, replicaReal, modelMeta, splitter, coordinator)
+    loadModel(modelFormat, null, isRemoteLoad = false)
+  }
+
+  private[this] def getModelMetaInfo(name: String, dir: String): ModelMeta = {
     val path = new Path(dir)
     val fs = path.getFileSystem(config)
     require(fs.isDirectory(path), s"$dir not found or not directory")
@@ -54,35 +87,37 @@ class ServingClientImpl(clientService: ClientProtocol, transportClient: ServingT
       .map(fileStatus => Try(ModelLoader.getMeta(fileStatus.getPath.toString, config)))
       .filter(_.isSuccess)
       .map(_.get)
-      .map(fileMeta => new MatrixMeta(fileMeta.getMatrixName, RowType.valueOf(fileMeta.getRowType), fileMeta.getRow, fileMeta.getCol))
+      .map(fileMeta => MatrixMeta(fileMeta.getMatrixName, RowType.valueOf(fileMeta.getRowType), fileMeta.getRow, fileMeta.getCol))
 
-    val modelFormat = new ModelFormat(name, dir, concurrent, servingNodes, new ModelMeta(matricesMeta), splitter, coordinator)
-    loadModel(modelFormat)
+    ModelMeta(matricesMeta)
   }
 
-  override def loadModel(name: String, dir: String, replica: Int, concurrent: Int): Unit = {
-    val splitter = new DefaultModelSplitter(config.getInt(s"angel.serving.$name.sharding.num", 1))
-    val coordinator = new DefaultModelCoordinator(name, this);
-    loadModel(name, dir, replica, concurrent, splitter, coordinator)
-  }
-
-  private[this] def loadModel(modelFormat: ModelFormat): Unit = {
+  private[this] def loadModel(modelFormat: ModelFormat, shardingModelClass: String, isRemoteLoad: Boolean = true): Boolean = {
     val model = modelFormat.getModel()
-    val definition = model.toModelDefinition()
-    definition.validate()
-    clientService.registerModel(definition)
     servingManager.register(model)
-    LOG.info(s"${model.name} ask to load")
+
+    if (isRemoteLoad) {
+      val definition = model.toModelDefinition()
+      definition.validate()
+      val seemSucess = clientService.registerModel(definition, shardingModelClass)
+      LOG.info(s"${model.name} ask to load")
+      seemSucess
+    } else {
+      LOG.info(s"${model.name} does not remotely loaded, only load a local model handle")
+      true
+    }
   }
+
 
   override def isServable(name: String): Boolean = {
     servingManager.isServable(name)
   }
 
-  override def unloadModel(name: String): Unit = {
-    clientService.unregisterModel(name)
+  override def unloadModel(name: String): Boolean = {
+    val seemSuccess = clientService.unregisterModel(name)
     servingManager.unregister(name)
     LOG.info(s"$name ask to unload")
+    seemSuccess
   }
 
   override def getModel(name: String): Option[DistributedModel] = {

@@ -32,14 +32,10 @@ import com.tencent.angel.master.deploy.ContainerLauncherEvent;
 import com.tencent.angel.master.ps.attempt.PSAttemptDiagnosticsUpdateEvent;
 import com.tencent.angel.master.ps.attempt.PSAttemptEvent;
 import com.tencent.angel.master.ps.attempt.PSAttemptEventType;
-import com.tencent.angel.master.psagent.PSAgentAttemptDiagnosticsUpdateEvent;
-import com.tencent.angel.master.psagent.PSAgentAttemptEvent;
-import com.tencent.angel.master.psagent.PSAgentAttemptEventType;
 import com.tencent.angel.master.worker.attempt.WorkerAttemptDiagnosticsUpdateEvent;
 import com.tencent.angel.master.worker.attempt.WorkerAttemptEvent;
 import com.tencent.angel.master.worker.attempt.WorkerAttemptEventType;
 import com.tencent.angel.ps.PSAttemptId;
-import com.tencent.angel.psagent.PSAgentAttemptId;
 import com.tencent.angel.worker.WorkerAttemptId;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -175,10 +171,6 @@ public class YarnContainerLauncher extends ContainerLauncher {
       if (id instanceof PSAttemptId) {
         context.getEventHandler().handle(
             new PSAttemptEvent(PSAttemptEventType.PA_CONTAINER_LAUNCHED, (PSAttemptId) id));
-      } else if (id instanceof PSAgentAttemptId) {
-        context.getEventHandler().handle(
-            new PSAgentAttemptEvent(PSAgentAttemptEventType.PSAGENT_ATTEMPT_CONTAINER_LAUNCHED,
-                (PSAgentAttemptId) id));
       } else if (id instanceof WorkerAttemptId) {
         context.getEventHandler().handle(
             new WorkerAttemptEvent(WorkerAttemptEventType.CONTAINER_LAUNCHED, (WorkerAttemptId) id));
@@ -193,14 +185,6 @@ public class YarnContainerLauncher extends ContainerLauncher {
             new PSAttemptDiagnosticsUpdateEvent(message, (PSAttemptId) id));
         context.getEventHandler().handle(
             new PSAttemptEvent(PSAttemptEventType.PA_CONTAINER_LAUNCH_FAILED, (PSAttemptId) id));
-      } else if (id instanceof PSAgentAttemptId) {
-        context.getEventHandler().handle(
-            new PSAgentAttemptDiagnosticsUpdateEvent(
-                (PSAgentAttemptId) id, message));       
-        context.getEventHandler().handle(
-            new PSAgentAttemptEvent(
-                PSAgentAttemptEventType.PSAGENT_ATTEMPT_CONTAINER_LAUNCH_FAILED,
-                (PSAgentAttemptId) id));
       } else if (id instanceof WorkerAttemptId) {
         context.getEventHandler().handle(
             new WorkerAttemptDiagnosticsUpdateEvent((WorkerAttemptId) id, message));

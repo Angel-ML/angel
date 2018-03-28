@@ -21,6 +21,9 @@ import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.app.AppEvent;
 import com.tencent.angel.master.app.AppEventType;
 import com.tencent.angel.master.app.InternalErrorEvent;
+import com.tencent.angel.master.worker.attempt.WorkerAttemptDiagnosticsUpdateEvent;
+import com.tencent.angel.master.worker.attempt.WorkerAttemptEvent;
+import com.tencent.angel.master.worker.attempt.WorkerAttemptEventType;
 import com.tencent.angel.master.worker.worker.AMWorker;
 import com.tencent.angel.master.worker.worker.AMWorkerEvent;
 import com.tencent.angel.master.worker.worker.AMWorkerEventType;
@@ -28,12 +31,14 @@ import com.tencent.angel.master.worker.workergroup.AMWorkerGroup;
 import com.tencent.angel.master.worker.workergroup.AMWorkerGroupEvent;
 import com.tencent.angel.master.worker.workergroup.AMWorkerGroupEventType;
 import com.tencent.angel.utils.StringUtils;
+import com.tencent.angel.worker.WorkerAttemptId;
 import com.tencent.angel.worker.WorkerGroupId;
 import com.tencent.angel.worker.WorkerId;
 import com.tencent.angel.worker.task.TaskId;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.event.EventHandler;
@@ -41,6 +46,7 @@ import org.apache.hadoop.yarn.factory.providers.RecordFactoryProvider;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -95,6 +101,11 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
   
   /**failed worker group id set*/
   private final Set<WorkerGroupId> failedGroups;
+
+  /**worker attempt id to last heartbeat timestamp map*/
+  private final ConcurrentHashMap<WorkerAttemptId, Long> workerLastHeartbeatTS = new ConcurrentHashMap<>();
+  /**worker timeout value in millisecond*/
+  private final long workerTimeOutMS;
   
   private final Lock readLock;
   private final Lock writeLock;
@@ -132,6 +143,10 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
     int workerPriority =
         conf.getInt(AngelConf.ANGEL_WORKER_PRIORITY,
             AngelConf.DEFAULT_ANGEL_WORKER_PRIORITY);
+
+    workerTimeOutMS =
+      conf.getLong(AngelConf.ANGEL_WORKER_HEARTBEAT_TIMEOUT_MS,
+        AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_TIMEOUT_MS);
 
     workerResource = Resource.newInstance(workerMemory, workerVcores);
     PRIORITY_WORKER =
@@ -226,7 +241,7 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
 
   private String getDetailWorkerExitMessage() {
     StringBuilder sb = new StringBuilder();
-    //sb.append("killed and failed workergroup is over tolerate ").append(tolerateFailedGroup);
+    sb.append("killed and failed workergroup is over tolerate ").append(tolerateFailedGroup);
     sb.append("There are some Workers failed\n");
     if (!failedGroups.isEmpty()) {
       sb.append("failed workergroups:");
@@ -512,5 +527,74 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
    */
   public AMWorker getWorker(TaskId taskId) {
     return taskIdToWorkerMap.get(taskId);
+  }
+
+  public void checkHBTimeOut() {
+    //check whether worker heartbeat timeout
+    Iterator<Map.Entry<WorkerAttemptId, Long>> workerIt = workerLastHeartbeatTS.entrySet().iterator();
+    long currentTs = System.currentTimeMillis();
+    while (workerIt.hasNext()) {
+      Entry<WorkerAttemptId, Long> workerEntry = workerIt.next();
+      if (currentTs - workerEntry.getValue() > workerTimeOutMS) {
+        LOG.error(workerEntry.getKey() + " heartbeat timeout!!!");
+        context.getEventHandler().handle(
+          new WorkerAttemptDiagnosticsUpdateEvent(workerEntry.getKey(), "heartbeat timeout"));
+
+        context.getEventHandler().handle(
+          new WorkerAttemptEvent(WorkerAttemptEventType.ERROR, workerEntry.getKey()));
+        workerIt.remove();
+      }
+    }
+  }
+
+  /**
+   * remove worker attempt from monitor set
+   * @param workerAttemptId worker attempt id
+   */
+  public void unRegister(WorkerAttemptId workerAttemptId) {
+    LOG.info(workerAttemptId + " is unregistered in monitor!");
+    workerLastHeartbeatTS.remove(workerAttemptId);
+  }
+
+  /**
+   * add worker attempt to monitor set
+   * @param workerAttemptId worker attempt id
+   */
+  public void register(WorkerAttemptId workerAttemptId) {
+    LOG.info(workerAttemptId + " is registered in monitor!");
+    workerLastHeartbeatTS.put(workerAttemptId, System.currentTimeMillis());
+  }
+
+  /**
+   * Check is a Worker alive
+   * @param workerAttemptId Worker attempt id
+   * @return true mean alive
+   */
+  public boolean isAlive(WorkerAttemptId workerAttemptId) {
+    return workerLastHeartbeatTS.containsKey(workerAttemptId);
+  }
+
+  /**
+   * Update Worker lastest heartbeat timestamp
+   * @param workerAttemptId Worker attempt id
+   */
+  public void alive(WorkerAttemptId workerAttemptId) {
+    workerLastHeartbeatTS.put(workerAttemptId, System.currentTimeMillis());
+  }
+
+  /**
+   * Check is there worker group run success
+   * @return true means some workergroups have run success
+   */
+  public boolean isThereWorkerGroupSuccess() {
+    return !successGroups.isEmpty();
+  }
+
+  /**
+   * Get success worker group number
+   * @return success worker group number
+   */
+  public int getSuccessWorkerGroupNum() {
+    return successGroups.size();
   }
 }

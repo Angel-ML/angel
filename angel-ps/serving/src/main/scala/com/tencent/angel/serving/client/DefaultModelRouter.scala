@@ -31,13 +31,13 @@ class DefaultModelRouter(val name: String, servingClient: ServingClient, transpo
   }
 
   override def route[V <: TVector](data: PredictData[V]): Array[PredictSplitData[V]] = {
-    val model = getModel
-    val modelLocs = getLocations(model)
-    splitPredictData(model, data).zipWithIndex.map(splitData => {
-      val locs = modelLocs(splitData._2)._2
+    val model = getModel                  // DistributedModel
+    val modelLocs = getLocations(model)   // Array[(Map[String, MatrixSplit], Array[ServingLocation])]
+    splitPredictData(model, data).zipWithIndex.map{ case (chunkedShardingData, idx) =>
+      val locs = modelLocs(idx)._2       // Array[ServingLocation]
       val shuffledLocs = Random.shuffle(locs.toList).toArray
-      new PredictSplitData(new ModelSplitID(model.name, splitData._2), shuffledLocs, splitData._1)
-    })
+      new PredictSplitData(new ModelSplitID(model.name, idx), shuffledLocs, chunkedShardingData)
+    }
   }
 
 
@@ -62,22 +62,19 @@ class DefaultModelRouter(val name: String, servingClient: ServingClient, transpo
   }
 
   def splitPredictData[V <: TVector](model: DistributedModel, data: PredictData[V]): Array[ChunkedShardingData[V]] = {
-    val splitsOffsets = model.splits.map(split => {
-      split.matrixSplits.values.map(matrixSplit => (matrixSplit.columnOffset, matrixSplit.dimension)).toArray
-    })
+    val splitsOffsets = model.splits.map{split =>
+      split.matrixSplits.values.map{matrixSplit => (matrixSplit.columnOffset, matrixSplit.dimension)}.toArray
+    }
+
     val shardingData = new SingleShardingData[V](data.x)
 
-    def getChunkData(offsets: Array[(Long, Long)]): ChunkedShardingData[V] = {
+    splitsOffsets.map{offsets =>
       val chunk = ChunkedShardingData(data.x.getType).asInstanceOf[ChunkedShardingData[V]]
-      offsets.foreach {
-        case (offset, dimension) => {
-          chunk.insert(offset, shardingData.getData(offset, dimension))
-        }
+      offsets.foreach { case (offset, dimension) =>
+        chunk.insert(offset, shardingData.getData(offset, dimension))
       }
       chunk
     }
-
-    splitsOffsets.map(getChunkData(_))
   }
 
   override def predict[V <: TVector](data: PredictSplitData[V]): PredictResult = {

@@ -21,8 +21,11 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import io.netty.channel.ChannelFuture;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
@@ -44,6 +47,11 @@ public class ChannelManager {
    */
   private final HashMap<Location, GenericObjectPool<Channel>> locToChannelPoolMap;
 
+  /**
+   * Location to channel map
+   */
+  private final HashMap<Location, Channel> locToChannelMap;
+
   private final int maxPoolSize;
 
   /**
@@ -63,12 +71,71 @@ public class ChannelManager {
   public ChannelManager(Bootstrap bootstrap, int maxPoolSize) {
     this.bootstrap = bootstrap;
     this.locToChannelPoolMap = new HashMap<Location, GenericObjectPool<Channel>>();
+    this.locToChannelMap = new HashMap<>();
     this.lock = new ReentrantLock();
     this.maxPoolSize = maxPoolSize;
   }
 
+  /**
+   * Get the channel pool for the location, if the pool does not exist, create a new for it
+   * @param loc server location
+   * @return channel pool
+   */
   public GenericObjectPool<Channel> getOrCreateChannelPool(Location loc) {
     return getOrCreateChannelPool(loc, maxPoolSize);
+  }
+
+  /**
+   * Get the channel for the location, if the pool does not exist, create a new for it
+   * @param loc server location
+   * @return channel
+   */
+  public Channel getOrCreateChannel(Location loc) throws Exception {
+    try {
+      lock.lock();
+      if (!locToChannelMap.containsKey(loc)) {
+        locToChannelMap.put(loc, createChannel(loc));
+      }
+
+      return locToChannelMap.get(loc);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  /**
+   * Release channel for server
+   * @param loc server location
+   */
+  public void releaseChannel(Location loc) {
+    try {
+      lock.lock();
+      Channel channel = locToChannelMap.get(loc);
+      if(channel != null) {
+        channel.close();
+      }
+      locToChannelMap.remove(loc);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  private Channel createChannel(Location loc) throws Exception {
+    ChannelFuture connectFuture =
+      bootstrap.connect(loc.getIp(), loc.getPort());
+    int ticks = 10000;
+    while (ticks-- > 0) {
+      if (connectFuture.isDone()) {
+        return connectFuture.channel();
+      }
+      Thread.sleep(10);
+    }
+
+    if (!connectFuture.isDone()) {
+      throw new TimeoutException("connect " + loc + " timeout");
+    } else {
+      return connectFuture.channel();
+    }
   }
 
   /**
@@ -78,16 +145,19 @@ public class ChannelManager {
    * @return GenericObjectPool<Channel> the channel pool
    */
   public GenericObjectPool<Channel> getOrCreateChannelPool(Location loc, int active) {
+    GenericObjectPool<Channel> result;
+    lock.lock();
+
     try {
-      lock.lock();
       if (!locToChannelPoolMap.containsKey(loc)) {
         locToChannelPoolMap.put(loc, createPool(loc, active));
       }
-
-      return locToChannelPoolMap.get(loc);
+      result = locToChannelPoolMap.get(loc);
     } finally {
       lock.unlock();
     }
+
+    return result;
   }
 
   private GenericObjectPool<Channel> createPool(Location loc, int active) {
@@ -100,7 +170,7 @@ public class ChannelManager {
     poolConfig.testOnReturn = false;
     poolConfig.minEvictableIdleTimeMillis = Integer.MAX_VALUE;
     poolConfig.whenExhaustedAction = GenericObjectPool.WHEN_EXHAUSTED_BLOCK;
-    return new GenericObjectPool<Channel>(new ChannelObjectFactory(loc, bootstrap), poolConfig);
+    return new GenericObjectPool<>(new ChannelObjectFactory(loc, bootstrap), poolConfig);
   }
 
   /**
@@ -108,9 +178,8 @@ public class ChannelManager {
    *
    * @param loc server address
    */
-  public void refreshChannelPool(Location loc) {
+  public void closeChannelPool(Location loc) {
     try {
-      lock.lock();
       GenericObjectPool<Channel> pool = locToChannelPoolMap.get(loc);
       if(pool == null) {
         return;
@@ -121,8 +190,6 @@ public class ChannelManager {
           LOG.error("Close channel for location " + loc +" error ", e);
         }
       }
-
-      locToChannelPoolMap.put(loc, createPool(loc, pool.getNumActive() / 5));
     } finally {
       lock.unlock();
     }
@@ -134,14 +201,15 @@ public class ChannelManager {
    * @param loc server address
    */
   public void removeChannelPool(Location loc) {
+    lock.lock();
+
     try {
-      lock.lock();
       GenericObjectPool<Channel> pool = locToChannelPoolMap.remove(loc);
       if (pool != null) {
         try {
           pool.close();
-        } catch (Exception e) {
-          e.printStackTrace();
+        } catch (Throwable e) {
+          LOG.error("close channel falied ", e);
         }
       }
     } finally {
@@ -153,8 +221,8 @@ public class ChannelManager {
    * Clear and close all channels.
    */
   public void clear() {
+    lock.lock();
     try {
-      lock.lock();
       for (Entry<Location, GenericObjectPool<Channel>> entry : locToChannelPoolMap.entrySet()) {
         try {
           entry.getValue().close();

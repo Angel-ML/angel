@@ -40,8 +40,8 @@ public class MaxV extends MUpdateFunc {
 
   @Override
   protected void doUpdate(ServerDenseDoubleRow[] rows) {
+    rows[2].tryToLockWrite();
     try {
-      rows[2].getLock().writeLock().lock();
       DoubleBuffer from1 = rows[0].getData();
       DoubleBuffer from2 = rows[1].getData();
       DoubleBuffer to = rows[2].getData();
@@ -50,7 +50,7 @@ public class MaxV extends MUpdateFunc {
         to.put(i, Math.max(from1.get(i), from2.get(i)));
       }
     } finally {
-      rows[2].getLock().writeLock().unlock();
+      rows[2].unlockWrite();
     }
   }
 

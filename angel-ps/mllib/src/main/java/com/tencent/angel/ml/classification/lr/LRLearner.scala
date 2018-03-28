@@ -53,6 +53,8 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   val spRatio: Double = conf.getDouble(MLConf.ML_BATCH_SAMPLE_Ratio, MLConf.DEFAULT_ML_BATCH_SAMPLE_Ratio)
   val batchNum: Int = conf.getInt(MLConf.ML_SGD_BATCH_NUM, MLConf.DEFAULT_ML_SGD_BATCH_NUM)
   val regLoss: String = conf.getStrings(MLConf.ML_REG_LOSS_TYPE, MLConf.DEFAULT_ML_REG_LOSS_TYPE)(0)
+  // control the lower bound of learning rate
+  val lrLowerBound: Int = conf.getInt(MLConf.ML_LEARN_RATE_BOUND, MLConf.DEFAULT_ML_LEARN_RATE_BOUND)
 
   // Init LR Model
   val lrModel = new LRModel(conf, ctx)
@@ -74,14 +76,24 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   def trainOneEpoch[N: Numeric : TypeTag](epoch: Int,
                                           trainData: DataBlock[LabeledData],
                                           batchSize: Int,
-                                          indexes: Array[N]): TDoubleVector = {
+                                          indexes: Array[N],
+                                          ctx: TaskContext): TDoubleVector = {
     val LLoss: Loss = regLL
 
     // Decay learning rate.
-    val lr = lr_0 / Math.sqrt(1.0 + decay * epoch)
+    var lr = lr_0 / Math.sqrt(1.0 + decay * epoch)
+
+    lr = Math.max(lr_0 * (1.0 / lrLowerBound), lr)
+    LOG.info("the current learning rate is:" + lr)
 
     // Apply mini-batch gradient descent
     val startBatch = System.currentTimeMillis()
+    if (lrModel.intercept.isDefined){
+      LOG.info("the intercept is:" + lrModel.intercept.get.getRow(0).asInstanceOf[TDoubleVector].get(0))
+    } else {
+      LOG.info("intercept is not set")
+    }
+
 
     val elementType = typeOf[N]
     val batchGD = elementType match {
@@ -92,7 +104,8 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
         LLoss,
         batchSize,
         batchNum,
-        indexes.asInstanceOf[Array[Int]])
+        indexes.asInstanceOf[Array[Int]],
+        ctx)
       case t if t == typeOf[Long] => GradientDescent.miniBatchGD(trainData,
         lrModel.weight,
         lrModel.intercept,
@@ -100,16 +113,12 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
         LLoss,
         batchSize,
         batchNum,
-        indexes.asInstanceOf[Array[Long]])
+        indexes.asInstanceOf[Array[Long]],
+        ctx)
       case _ => throw new AngelException(s"unsupported type: $elementType")
     }
     val loss = batchGD._1
     val localWeight = batchGD._2
-
-    // check the sparsity of weight
-    //val dimInt = feaNum.toInt
-    val weightSparsity = localWeight.sparsity()
-    LOG.info("the sparsity for w is:" + weightSparsity)
 
     val batchCost = System.currentTimeMillis() - startBatch
     LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epoch mini-batch update success." +
@@ -137,7 +146,7 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
 
     LOG.info(s"Task[${ctx.getTaskIndex}]: Starting to train a LR model...")
     LOG.info(s"Task[${ctx.getTaskIndex}]: Sample Ratio per Batch=$spRatio, Sample Size Per " + s"$samplePerBatch")
-    LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epochNum, initLearnRate=$lr_0, " + s"learnRateDecay=$decay, Reg1=$reg1, Reg1=$reg2")
+    LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epochNum, initLearnRate=$lr_0, " + s"learnRateDecay=$decay, Reg1=$reg1, Reg2=$reg2")
 
     globalMetrics.addMetric(MLConf.TRAIN_LOSS, LossMetric(trainData.size))
     globalMetrics.addMetric(MLConf.VALID_LOSS, LossMetric(validationData.size))
@@ -147,7 +156,7 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epoch start.")
 
       val startTrain = System.currentTimeMillis()
-      val localWeight = trainOneEpoch(epoch, trainData, samplePerBatch, indexes)
+      val localWeight = trainOneEpoch(epoch, trainData, samplePerBatch, indexes, ctx)
       val trainCost = System.currentTimeMillis() - startTrain
 
       val startValid = System.currentTimeMillis()
@@ -193,39 +202,8 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     }
   }
 
-  //def sparsity(weight: TDoubleVector, dim: Int): Double = {
-  //  var nonzero: Int = 0
-
-  //  weight match {
-  //    case w:DenseDoubleVector | SparseDoubleVector | CompSparseDoubleVector | CompSparseLongKeyDoubleVector | SparseLongKeyDoubleVector =>
-   //     return w.asInstanceOf[TDoubleVector].sparsity()
-   //   case _ => 0.0
-        /*for (id <- 0 until dim) {
-          val wVal = weight.get(id)
-          if (Math.abs(wVal) > 0) nonzero += 1
-        }
-
-      case sparseW: SparseDoubleVector =>
-        val mapW = sparseW.asInstanceOf[SparseDoubleVector].getIndexToValueMap
-        val iterW = mapW.int2DoubleEntrySet().fastIterator()
-
-        while (iterW.hasNext) {
-          val entryW = iterW.next()
-          val wVal = entryW.getDoubleValue
-          if (Math.abs(wVal) > 0) nonzero += 1
-        }
-
-      case sparseLongW: SparseLongKeyDoubleVector =>
-        val mapLongW = sparseLongW.asInstanceOf[SparseLongKeyDoubleVector].getIndexToValueMap
-        val iterLongW = mapLongW.long2DoubleEntrySet().fastIterator()
-
-        while (iterLongW.hasNext) {
-          val entryLongW = iterLongW.next()
-          val wVal = entryLongW.getDoubleValue
-          if (Math.abs(wVal) > 0) nonzero += 1
-        }*/
-    //}
-    //nonzero.toDouble / dim.toDouble
-  //}
+  def sparsity(weight: TDoubleVector, dim: Int): Double = {
+    weight.nonZeroNumber().toDouble / dim.toDouble
+  }
 
 }

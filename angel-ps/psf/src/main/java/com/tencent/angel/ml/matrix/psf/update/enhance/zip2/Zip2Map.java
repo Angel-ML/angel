@@ -22,7 +22,8 @@ import com.tencent.angel.ml.matrix.psf.update.enhance.MFUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongSet;
+import it.unimi.dsi.fastutil.longs.LongIterator;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 
 import java.nio.DoubleBuffer;
 
@@ -33,7 +34,7 @@ import java.nio.DoubleBuffer;
 public class Zip2Map extends MFUpdateFunc {
 
   public Zip2Map(int matrixId, int fromId1, int fromId2, int toId, Zip2MapFunc func) {
-    super(matrixId, new int[] {fromId1, fromId2, toId} , func);
+    super(matrixId, new int[] {fromId1, fromId2, toId}, func);
   }
 
   public Zip2Map() {
@@ -57,11 +58,14 @@ public class Zip2Map extends MFUpdateFunc {
     Zip2MapFunc mapper = (Zip2MapFunc) func;
     Long2DoubleOpenHashMap from1 = rows[0].getData();
     Long2DoubleOpenHashMap from2 = rows[1].getData();
-    Long2DoubleOpenHashMap to = from1.clone();
+    Long2DoubleOpenHashMap to = new Long2DoubleOpenHashMap();
     to.defaultReturnValue(mapper.call(from1.defaultReturnValue(), from2.defaultReturnValue()));
 
-    LongSet keySet = from1.keySet();
-    keySet.addAll(from2.keySet());
+    LongOpenHashSet keySet = new LongOpenHashSet(from1.keySet());
+    LongIterator iter = from2.keySet().iterator();
+    while (iter.hasNext()) {
+      keySet.add(iter.next());
+    }
 
     for (long key: keySet) {
       to.put(key, mapper.call(from1.get(key), from2.get(key)));

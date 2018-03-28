@@ -60,39 +60,53 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
     }
   }
 
-  def createMatrix(rows: Int,
-      cols: Long,
-      t: MatrixType = MatrixType.DENSE,
-      rowInBlock: Int = -1,
-      colInBlock: Int = -1): MatrixMeta = {
-
-    val maxRowNumInBlock = if (rowInBlock == -1) {
-      if (rows > 10000) rows / TOTAL_PS_CORES else rows
-    } else {
-      rowInBlock
-    }
-
+  def createDenseMatrix(rows: Int, cols: Long, rowInBlock: Int = -1, colInBlock: Long = -1): MatrixMeta = {
+    val maxRowNumInBlock = if (rowInBlock == -1) rows else rowInBlock
+    val maxBlockSize = 5000000
     val maxColNumInBlock = if (colInBlock == -1) {
-      if (cols > 10000) cols / TOTAL_PS_CORES else cols
+      math.max(maxBlockSize / maxRowNumInBlock, 1L)
     } else {
       colInBlock
     }
-
-    val mt = t match {
-      case MatrixType.DENSE => RowType.T_DOUBLE_DENSE
-      case MatrixType.SPARSE => RowType.T_DOUBLE_SPARSE_LONGKEY
-    }
-    val matrix = new MatrixContext(s"spark-$matrixCounter", rows, cols,
+    val mc = new MatrixContext(s"spark-$matrixCounter", rows, cols,
       maxRowNumInBlock, maxColNumInBlock)
-    matrix.setRowType(mt)
-
-    psAgent.createMatrix(matrix, 5000L)
-    val meta = psAgent.getMatrix(matrix.getName)
+    mc.setRowType(RowType.T_DOUBLE_DENSE)
+    psAgent.createMatrix(mc, 5000L)
+    val meta = psAgent.getMatrix(mc.getName)
     matrixCounter += 1
     matrixMetaMap(meta.getId) = meta
-
     meta
   }
+
+  /**
+   * create a sparse long key matrix
+   * @param rows matrix row num
+   * @param dim dimension for each row
+   * @param range long type range for each row
+   *              if range = -1, the range is (Long.MinValue, Long.MaxValue),
+   *              else range is [0, range), usually range will be set to Long.MaxValue.
+   * @param rowInBlock row number for each block
+   * @param colInBlock col number for each block
+   * @return
+   */
+  def createSparseMatrix(
+      rows: Int,
+      dim: Long,
+      range: Long,
+      rowInBlock: Int = -1,
+      colInBlock: Long = -1): MatrixMeta = {
+
+    val maxRowNumInBlock = if (rowInBlock == -1) rows else rowInBlock
+    val maxColNumInBlock = -1
+    val mc = new MatrixContext(s"spark-$matrixCounter", rows, range, dim, maxRowNumInBlock, maxColNumInBlock)
+    mc.setRowType(RowType.T_DOUBLE_SPARSE_LONGKEY)
+    psAgent.createMatrix(mc, 5000L)
+    val meta = psAgent.getMatrix(mc.getName)
+    matrixCounter += 1
+    matrixMetaMap(meta.getId) = meta
+    meta
+  }
+
 
   def destroyMatrix(matrixId: Int): Unit = {
     matrixMetaMap.remove(matrixId).foreach { x =>
@@ -103,9 +117,10 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
   def createVector(
       dimension: Long,
       t: VectorType = VectorType.DENSE,
-      poolCapacity: Int = PSVectorPool.DEFAULT_POOL_CAPACITY): PSVector = {
+      poolCapacity: Int = PSVectorPool.DEFAULT_POOL_CAPACITY,
+      range: Long): PSVector = {
 
-    val vector = createVectorPool(dimension, poolCapacity, t).allocate()
+    val vector = createVectorPool(dimension, poolCapacity, t, range).allocate()
     PSClient.instance().vectorOps.fill(vector, 0.0)
     vector
   }
@@ -123,15 +138,17 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
   private[spark] def createVectorPool(
       dimension: Long,
       capacity: Int,
-      t: VectorType): PSVectorPool = {
-
-    val matrixType = if (t == VectorType.SPARSE) MatrixType.SPARSE else MatrixType.DENSE
+      t: VectorType,
+      range: Long): PSVectorPool = {
 
     val thisCapacity = if (capacity > 0) capacity else PSVectorPool.DEFAULT_POOL_CAPACITY
 
-    val matrixMeta = createMatrix(thisCapacity, dimension, matrixType)
+    val matrixMeta = t match {
+      case VectorType.DENSE => createDenseMatrix(thisCapacity, dimension)
+      case VectorType.SPARSE => createSparseMatrix(thisCapacity, dimension, range)
+    }
 
-    val pool = new PSVectorPool(matrixMeta.getId, dimension, thisCapacity, t: VectorType)
+    val pool = new PSVectorPool(matrixMeta.getId, dimension, thisCapacity, t)
     psVectorPools.put(pool.id, pool)
     pool
   }
@@ -251,8 +268,7 @@ private[spark] object AngelPSContext {
     val psCores = conf.getInt("spark.ps.cores", 1)
     val psMem = conf.getSizeAsMb("spark.ps.memory", "4g").toInt
     val psHeap = psMem - 200
-    val psOpts = s" -Xms${psHeap}M -Xmx${psHeap}M " +
-      s"${conf.get("spark.ps.extraJavaOptions", "")}"
+    val psOpts = conf.getOption("spark.ps.extraJavaOptions")
 
     val psJars = conf.get("spark.ps.jars", "")
     val psLogLevel = conf.get("spark.ps.log.level", "INFO")
@@ -282,10 +298,13 @@ private[spark] object AngelPSContext {
     if (deployMode == "LOCAL") {
       hadoopConf.set(ANGEL_PS_HEARTBEAT_INTERVAL_MS, "200")
     }
+    if (psOpts.isDefined) {
+      hadoopConf.set(ANGEL_PS_JAVA_OPTS, psOpts.get)
+    }
+
     hadoopConf.setInt(ANGEL_PS_NUMBER, psNum)
     hadoopConf.setInt(ANGEL_PS_CPU_VCORES, psCores)
     hadoopConf.setInt(ANGEL_PS_MEMORY_MB, psMem)
-    hadoopConf.set(ANGEL_PS_JAVA_OPTS, psOpts)
     hadoopConf.setInt(TOTAL_CORES, psNum * psCores)
 
     hadoopConf.set(ANGEL_AM_LOG_LEVEL, psLogLevel)
@@ -346,5 +365,49 @@ private[spark] object AngelPSContext {
       angelClient.stopPS()
       angelClient = null
     }
+  }
+
+  def adjustExecutorJVM(conf: SparkConf) = {
+    val extraOps = conf.getOption("spark.ps.executor.extraJavaOptions")
+    val defaultOps = conf.get("spark.executor.extraJavaOptions", "")
+
+    val extraOpsStr = if (extraOps.isDefined) {
+      extraOps.get
+    } else {
+      var executorMemSizeInMB = conf.getSizeAsMb("spark.executor.memory", "2048M")
+      if (executorMemSizeInMB < 2048) executorMemSizeInMB = 2048
+
+      val isUseDirect: Boolean = conf.getBoolean("spark.ps.usedirectbuffer", true)
+      val maxUse = executorMemSizeInMB - 512
+      var directRegionSize: Int = 0
+      if (isUseDirect) directRegionSize = (maxUse * 0.3).toInt
+      else directRegionSize = (maxUse * 0.2).toInt
+      val heapMax = maxUse - directRegionSize
+      val youngRegionSize = (heapMax * 0.3).toInt
+      val survivorRatio = 4
+
+      conf.set("spark.executor.memory", heapMax + "M")
+
+      val executorOps = new StringBuilder()
+        .append(" -Xmn").append(youngRegionSize).append("M")
+        .append(" -XX:MaxDirectMemorySize=").append(directRegionSize).append("M")
+        .append(" -XX:SurvivorRatio=").append(survivorRatio)
+        .append(" -XX:+AggressiveOpts")
+        .append(" -XX:+UseLargePages")
+        .append(" -XX:+UseConcMarkSweepGC")
+        .append(" -XX:CMSInitiatingOccupancyFraction=50")
+        .append(" -XX:+UseCMSInitiatingOccupancyOnly")
+        .append(" -XX:+CMSScavengeBeforeRemark")
+        .append(" -XX:+UseCMSCompactAtFullCollection")
+        .append(" -verbose:gc")
+        .append(" -XX:+PrintGCDateStamps")
+        .append(" -XX:+PrintGCDetails")
+        .append(" -XX:+PrintCommandLineFlags")
+        .append(" -XX:+PrintTenuringDistribution")
+        .append(" -XX:+PrintAdaptiveSizePolicy")
+        .toString()
+      executorOps
+    }
+    conf.set("spark.executor.extraJavaOptions", defaultOps + " " + extraOpsStr)
   }
 }

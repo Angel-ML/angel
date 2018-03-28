@@ -405,7 +405,7 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
     public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
       LOG.info("add " + attempt.getId() + " to monitor!");
       // if the worker attempt launch successfully, add it to heartbeat timeout listening list
-      attempt.getContext().getMasterService().registerWorkerAttemptId(attempt.getId());
+      attempt.getContext().getWorkerManager().register(attempt.getId());
     }
   }
 
@@ -735,7 +735,7 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
   }
 
   private void unregisterFromHeartBeatListers() {
-    context.getMasterService().unRegisterWorkerAttemptId(id);
+    context.getWorkerManager().unRegister(id);
   }
 
   /**

@@ -21,8 +21,6 @@ import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.nio.DoubleBuffer;
-
 /**
  * Default row updater.
  */
@@ -30,104 +28,78 @@ public class DefaultRowUpdater extends RowUpdater {
   private final static Log LOG = LogFactory.getLog(DefaultRowUpdater.class);
 
   @Override
-  public void updateIntDenseToIntArbitrary(int size, ByteBuf buf, ServerArbitraryIntRow row) {
-    row.updateIntDense(buf, size);
+  public void updateIntDenseToIntArbitrary(ByteBuf buf, ServerArbitraryIntRow row) {
+    row.updateIntDense(buf);
   }
 
   @Override
-  public void updateIntSparseToIntArbitrary(int size, ByteBuf buf, ServerArbitraryIntRow row) {
-    row.updateIntSparse(buf, size);
+  public void updateIntSparseToIntArbitrary(ByteBuf buf, ServerArbitraryIntRow row) {
+    row.updateIntSparse(buf);
   }
 
   @Override
-  public void updateIntDenseToIntDense(int size, ByteBuf buf, ServerDenseIntRow row) {
-    row.update(RowType.T_INT_DENSE, buf, size);
+  public void updateIntDenseToIntDense(ByteBuf buf, ServerDenseIntRow row) {
+    row.update(RowType.T_INT_DENSE, buf);
   }
 
   @Override
-  public void updateIntSparseToIntDense(int size, ByteBuf buf, ServerDenseIntRow row) {
-    row.update(RowType.T_INT_SPARSE, buf, size);
+  public void updateIntSparseToIntDense(ByteBuf buf, ServerDenseIntRow row) {
+    row.update(RowType.T_INT_SPARSE, buf);
   }
 
   @Override
-  public void updateIntDenseToIntSparse(int size, ByteBuf buf, ServerSparseIntRow row) {
-    row.update(RowType.T_INT_DENSE, buf, size);
+  public void updateIntDenseToIntSparse(ByteBuf buf, ServerSparseIntRow row) {
+    row.update(RowType.T_INT_DENSE, buf);
   }
 
   @Override
-  public void updateIntSparseToIntSparse(int size, ByteBuf buf, ServerSparseIntRow row) {
-    row.update(RowType.T_INT_SPARSE, buf, size);
+  public void updateIntSparseToIntSparse(ByteBuf buf, ServerSparseIntRow row) {
+    row.update(RowType.T_INT_SPARSE, buf);
   }
 
   @Override
-  public void updateDoubleDenseToDoubleDense(int size, ByteBuf buf, ServerDenseDoubleRow row) {
-    row.update(RowType.T_DOUBLE_DENSE, buf, size);
+  public void updateDoubleDenseToDoubleDense(ByteBuf buf, ServerDenseDoubleRow row) {
+    row.update(RowType.T_DOUBLE_DENSE, buf);
   }
 
   @Override
-  public void updateDoubleSparseToDoubleDense(int size, ByteBuf buf, ServerDenseDoubleRow row) {
-    row.update(RowType.T_DOUBLE_SPARSE, buf, size);
+  public void updateDoubleSparseToDoubleDense(ByteBuf buf, ServerDenseDoubleRow row) {
+    row.update(RowType.T_DOUBLE_SPARSE, buf);
   }
 
   @Override
-  public void updateDoubleDenseToDoubleSparse(int size, ByteBuf buf, ServerSparseDoubleRow row) {
-    row.update(RowType.T_DOUBLE_DENSE, buf, size);
+  public void updateDoubleDenseToDoubleSparse(ByteBuf buf, ServerSparseDoubleRow row) {
+    row.update(RowType.T_DOUBLE_DENSE, buf);
   }
 
   @Override
-  public void updateDoubleSparseToDoubleSparse(int size, ByteBuf buf, ServerSparseDoubleRow row) {
-    row.update(RowType.T_DOUBLE_SPARSE, buf, size);
+  public void updateDoubleSparseToDoubleSparse(ByteBuf buf, ServerSparseDoubleRow row) {
+    row.update(RowType.T_DOUBLE_SPARSE, buf);
   }
 
-  @Override public void updateDoubleSparseToDoubleSparseLongKey(int size, ByteBuf buf,
+  @Override public void updateDoubleSparseToDoubleSparseLongKey(ByteBuf buf,
     ServerSparseDoubleLongKeyRow row) {
-    row.update(RowType.T_DOUBLE_SPARSE_LONGKEY, buf, size);
+    row.update(RowType.T_DOUBLE_SPARSE_LONGKEY, buf);
   }
 
   @Override
-  public void updateFloatDenseToFloatDense(int size, ByteBuf buf, ServerDenseFloatRow row) {
-    row.update(RowType.T_FLOAT_DENSE, buf, size);
+  public void updateFloatDenseToFloatDense(ByteBuf buf, ServerDenseFloatRow row) {
+    row.update(RowType.T_FLOAT_DENSE, buf);
   }
 
   @Override
-  public void updateFloatSparseToFloatDense(int size, ByteBuf buf, ServerDenseFloatRow row) {
-    row.update(RowType.T_FLOAT_SPARSE, buf, size);
+  public void updateFloatSparseToFloatDense(ByteBuf buf, ServerDenseFloatRow row) {
+    row.update(RowType.T_FLOAT_SPARSE, buf);
   }
 
   @Override
-  public void updateFloatDenseToFloatSparse(int size, ByteBuf buf, ServerSparseFloatRow row) {
-    row.update(RowType.T_FLOAT_DENSE, buf, size);
+  public void updateFloatDenseToFloatSparse(ByteBuf buf, ServerSparseFloatRow row) {
+    row.update(RowType.T_FLOAT_DENSE, buf);
   }
 
   @Override
-  public void updateFloatSparseToFloatSparse(int size, ByteBuf buf, ServerSparseFloatRow row) {
-    row.update(RowType.T_FLOAT_SPARSE, buf, size);
-  }
-
-  public void updateDoubleDenseToDoubleDense(int size, ByteBuf buf, ServerDenseDoubleRow row,
-      int compressRatio) {
-    int bitPerItem = 8 * 8 / compressRatio;
-
-    DoubleBuffer data = row.getData();
-
-    LOG.debug("update double to double, size: " + size);
-
-    if (size <= 0)
-      return;
-
-    double maxAbs = buf.readDouble();
-    int maxPoint = (int) Math.pow(2, bitPerItem - 1) - 1;
-
-    for (int i = 0; i < size - 1; i++) {
-      byte[] itemBytes = new byte[bitPerItem / 8];
-      buf.readBytes(itemBytes);
-      int point = byteArray2int(itemBytes);
-      double parsedValue = (double) point / (double) maxPoint * maxAbs;
-      data.put(i, data.get(i) + parsedValue);
-    }
-
-    LOG.info(String.format("parse compressed %d double data, max abs: %f, max point: %d", size - 1,
-        maxAbs, maxPoint));
+  public void updateFloatSparseToFloatSparse(ByteBuf buf, ServerSparseFloatRow row) {
+    row.update(RowType.T_FLOAT_SPARSE, buf);
   }
 
   private static String byte2hex(byte[] buffer) {

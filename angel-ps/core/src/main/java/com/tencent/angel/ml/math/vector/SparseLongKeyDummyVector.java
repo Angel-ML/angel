@@ -24,11 +24,12 @@ import com.tencent.angel.ml.matrix.RowType;
 /**
  * Sparse double vector with long key, it only contains the element indexes as the values are always 1.
  */
-public class SparseLongKeyDummyVector extends TLongDoubleVector {
+public class SparseLongKeyDummyVector extends TVector {
   /**
    * The size of alloc more
    */
   private final static int ALLOC_MORE_SIZE = 256;
+  private long longDim;
 
   /**
    * The init size of index array
@@ -62,7 +63,7 @@ public class SparseLongKeyDummyVector extends TLongDoubleVector {
    *
    * @param dim vector dimension
    */
-  public SparseLongKeyDummyVector(int dim) {
+  public SparseLongKeyDummyVector(long dim) {
     this(dim, INIT_ALLOC_SIZE);
   }
 
@@ -73,15 +74,23 @@ public class SparseLongKeyDummyVector extends TLongDoubleVector {
    * @param capacity index array capacity
    */
   public SparseLongKeyDummyVector(long dim, int capacity) {
-    super(dim);
+    super();
+    this.longDim = dim;
     this.capacity = capacity;
     this.nonzero = 0;
     this.indices = new long[capacity];
   }
 
-  /**
-   * Alloc more space for vector when the size is out of capacity
-   */
+  public SparseLongKeyDummyVector(long[] indices, long dim) {
+    super();
+    this.longDim = dim;
+    this.capacity = indices.length;
+    this.nonzero = indices.length;
+    this.indices = indices;
+  }
+
+  public long getLongDim() { return longDim; }
+
   private void allocMore() {
     int allocSize = capacity + ALLOC_MORE_SIZE;
     long[] allocIndexes = new long[allocSize];
@@ -90,78 +99,36 @@ public class SparseLongKeyDummyVector extends TLongDoubleVector {
     indices = allocIndexes;
   }
 
-  /**
-   * clone the vector
-   *
-   * @return
-   */
   @Override public SparseLongKeyDummyVector clone() {
     throw new UnsupportedOperationException("Unsupport operation");
   }
 
-  @Override public double sum() {
+  public double sum() {
     return nonzero * 1.0;
   }
 
-  @Override public TLongDoubleVector elemUpdate(LongDoubleElemUpdater updater, ElemUpdateParam param) {
-    throw new UnsupportedOperationException("Unsupport operation");
-  }
-
-  /**
-   * get all of the index
-   *
-   * @return
-   */
   public long[] getIndices() {
     return indices;
   }
 
-  /**
-   * get the count of nonzero element
-   *
-   * @return
-   */
   public int getNonzero() {
     return nonzero;
   }
 
-  /**
-   * get the type
-   *
-   * @return
-   */
   @Override public RowType getType() {
-    return RowType.T_DOUBLE_SPARSE;
+    return RowType.T_DOUBLE_SPARSE_LONGKEY;
   }
 
-  /**
-   * get the size
-   *
-   * @return
-   */
   @Override public int size() {
     return nonzero;
   }
 
-  /**
-   * get the sparsity
-   *
-   * @return
-   */
   @Override public double sparsity() {
     return ((double) nonzero) / dim;
   }
 
-  @Override public TVector plusBy(long index, double x) {
-    throw new UnsupportedOperationException("Unsupport operation");
-  }
+  public TVector plusBy(long index, double x) { throw new UnsupportedOperationException("Unsupport operation"); }
 
-  /**
-   * set the value by index
-   *
-   * @param index the index
-   * @param value the value
-   */
   public void set(long index, double value) {
     if (nonzero >= indices.length) {
       allocMore();
@@ -169,33 +136,27 @@ public class SparseLongKeyDummyVector extends TLongDoubleVector {
     indices[nonzero++] = index;
   }
 
-  @Override public double get(long index) {
+  public double get(long index) {
     throw new UnsupportedOperationException("Unsupport operation");
   }
 
-  @Override public long[] getIndexes() {
+  public long[] getIndexes() {
     return indices;
   }
 
-  @Override public double[] getValues() {
+  public double[] getValues() {
     throw new UnsupportedOperationException("Unsupport operation");
   }
 
-  @Override public TVector plusBy(TAbstractVector other) {
-    throw new UnsupportedOperationException("Unsupport operation");
-  }
+  @Override public TVector plusBy(TAbstractVector other) { throw new UnsupportedOperationException("Unsupport operation"); }
 
-  @Override public TVector plusBy(TAbstractVector other, double x) {
-    throw new UnsupportedOperationException("Unsupport operation");
-  }
+  @Override public TVector plusBy(int index, double x) { throw new UnsupportedOperationException("Unsupport operation"); }
 
-  @Override public TVector plus(TAbstractVector other) {
-    throw new UnsupportedOperationException("Unsupport operation");
-  }
+  @Override public TVector plusBy(TAbstractVector other, double x) { throw new UnsupportedOperationException("Unsupport operation"); }
 
-  @Override public TVector plus(TAbstractVector other, double x) {
-    throw new UnsupportedOperationException("Unsupport operation");
-  }
+  @Override public TVector plus(TAbstractVector other) { throw new UnsupportedOperationException("Unsupport operation"); }
+
+  @Override public TVector plus(TAbstractVector other, double x) { throw new UnsupportedOperationException("Unsupport operation"); }
 
   @Override public double dot(TAbstractVector other) {
     throw new UnsupportedOperationException("Unsupport operation");
@@ -225,7 +186,7 @@ public class SparseLongKeyDummyVector extends TLongDoubleVector {
     throw new UnsupportedOperationException("Unsupport operation");
   }
 
-  @Override public double norm() {
+  public double norm() {
     throw new UnsupportedOperationException("Unsupport operation");
   }
 }

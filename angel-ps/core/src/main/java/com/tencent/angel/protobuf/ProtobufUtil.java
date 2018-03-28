@@ -28,6 +28,7 @@ import com.tencent.angel.master.worker.worker.AMWorker;
 import com.tencent.angel.master.worker.workergroup.AMWorkerGroup;
 import com.tencent.angel.ml.matrix.*;
 import com.tencent.angel.ml.matrix.transport.PSLocation;
+import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.protobuf.generated.MLProtos.*;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos;
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.*;
@@ -312,6 +313,7 @@ public final class ProtobufUtil {
       .setId(mContext.getMatrixId())
       .setRowNum(mContext.getRowNum())
       .setColNum(mContext.getColNum())
+      .setNnz(mContext.getNnz())
       .setBlockRowNum(mContext.getMaxRowNumInBlock())
       .setBlockColNum(mContext.getMaxColNumInBlock())
       .setRowType(mContext.getRowType().getNumber())
@@ -352,7 +354,7 @@ public final class ProtobufUtil {
   public static MatrixContext convertToMatrixContext(MatrixContextProto matrixContextProto)
     throws ClassNotFoundException {
     MatrixContext matrixContext = new MatrixContext(matrixContextProto.getName(), matrixContextProto.getRowNum(),
-      matrixContextProto.getColNum(), matrixContextProto.getBlockRowNum(), matrixContextProto.getBlockColNum(),
+      matrixContextProto.getColNum(), matrixContextProto.getNnz(), matrixContextProto.getBlockRowNum(), matrixContextProto.getBlockColNum(),
       RowType.valueOf(matrixContextProto.getRowType()));
 
     matrixContext.setMatrixId(matrixContextProto.getId());
@@ -450,6 +452,10 @@ public final class ProtobufUtil {
     return new Location(psLocation.getLocation().getIp(), psLocation.getLocation().getPort());
   }
 
+  public static Location convertToLocation(LocationProto loc) {
+    return new Location(loc.getIp(), loc.getPort());
+  }
+
   public static MatrixMetaProto loadMatrixMetaProto(FSDataInputStream input) throws IOException {
     return MatrixMetaProto.parseDelimitedFrom(input);
   }
@@ -507,17 +513,6 @@ public final class ProtobufUtil {
     return needSaveMatrices;
   }
 
-  public static PSFailedReportsProto convertToPSFailedReportsProto(HashMap<PSLocation, Integer> reports) {
-    PSFailedReportsProto.Builder builder = PSFailedReportsProto.newBuilder();
-    for(Entry<PSLocation, Integer> entry : reports.entrySet()) {
-      builder.addPsFailedReports(convert(entry.getKey(), entry.getValue()));
-    }
-    return builder.build();
-  }
-
-  public static PSFailedReportProto convert(PSLocation psLoc, int counter) {
-    return PSFailedReportProto.newBuilder().setPsLoc(convert(psLoc)).setFailedCounter(counter).build();
-  }
 
   public static PSLocationProto convert(PSLocation psLoc) {
     return PSLocationProto.newBuilder().setPsId(convertToIdProto(psLoc.psId))
@@ -534,5 +529,9 @@ public final class ProtobufUtil {
         convert(reportList.get(i).getPsLoc().getLocation())), reportList.get(i).getFailedCounter());
     }
     return reports;
+  }
+
+  public static PSLocation convert(PSLocationProto psLoc) {
+    return new PSLocation(convertToId(psLoc.getPsId()), convertToLocation(psLoc.getLocation()));
   }
 }

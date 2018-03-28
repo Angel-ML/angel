@@ -146,7 +146,15 @@ object PSVector {
     DensePSVector.apply(dim, capacity)
   }
 
-  def sparse(dim: Long = -1, capacity: Int = 20): SparsePSVector = {
+  /**
+   * @param maxRange if maxRange > 0, colId range is [0, maxRange),
+   *                 if maxRange = -1, colId range is (Long.MinValue, Long.MaxValue)
+   */
+  def longKeySparse(dim: Long, maxRange: Long, capacity: Int = 20): SparsePSVector = {
+    SparsePSVector.apply(dim, capacity, maxRange)
+  }
+
+  def sparse(dim: Long, capacity: Int = 20): SparsePSVector = {
     SparsePSVector.apply(dim, capacity)
   }
 }

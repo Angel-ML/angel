@@ -128,8 +128,16 @@ message StopResponse{
 
 }
 
+message GetClientIdRequest {
+
+}
+
+message GetClientIdResponse {
+  required int32 clientId = 1;
+}
+
 message KeepAliveRequest {
-  required string clientId = 1;
+  required int32 clientId = 1;
 }
 
 message KeepAliveResponse {
@@ -137,7 +145,7 @@ message KeepAliveResponse {
 }
 
 message ClientRegisterRequest {
-  required string clientId = 1;
+  required int32 clientId = 1;
 }
 
 message ClientRegisterResponse {
@@ -155,6 +163,7 @@ service ClientMasterService {
   rpc createMatrices(CreateMatricesRequest) returns (CreateMatricesResponse);
   rpc checkMatricesCreated(CheckMatricesCreatedRequest) returns (CheckMatricesCreatedResponse);
   rpc setParams(SetParamsRequest) returns (SetParamsResponse);
+  rpc getClientId(GetClientIdRequest) returns (GetClientIdResponse);
   rpc keepAlive(KeepAliveRequest) returns (KeepAliveResponse);
   rpc clientRegister(ClientRegisterRequest) returns (ClientRegisterResponse);
 }

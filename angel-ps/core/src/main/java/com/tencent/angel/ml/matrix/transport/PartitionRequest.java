@@ -33,11 +33,10 @@ public abstract class PartitionRequest extends Request {
   /** Is the request come from ps */
   protected boolean comeFromPs;
 
-  /** The ps that send the request */
-  //protected ParameterServerId psId;
+  /** Token number*/
+  protected int tokenNum;
 
-  /** The location of ps that send the request */
-  //protected Location location;
+  //public String uuid;
 
   /**
    * Create a new PartitionRequest.
@@ -49,6 +48,7 @@ public abstract class PartitionRequest extends Request {
     super(new RequestContext());
     this.clock = clock;
     this.partKey = partKey;
+    //this.uuid = UUID.randomUUID().toString();
   }
 
   /**
@@ -116,14 +116,11 @@ public abstract class PartitionRequest extends Request {
     super.serialize(buf);
     buf.writeBoolean(comeFromPs);
     buf.writeInt(clock);
+    buf.writeInt(tokenNum);
     partKey.serialize(buf);
-    //if(comeFromPs) {
-    //  buf.writeInt(psId.getIndex());
-    //  byte[] data = location.getIp().getBytes();
-    //  buf.writeInt(data.length);
-    //  buf.writeBytes(data);
-    //  buf.writeInt(location.getPort());
-    //}
+    //byte [] data = uuid.getBytes();
+    //buf.writeInt(data.length);
+    //buf.writeBytes(data);
   }
 
   @Override
@@ -131,16 +128,29 @@ public abstract class PartitionRequest extends Request {
     super.deserialize(buf);
     comeFromPs = buf.readBoolean();
     clock = buf.readInt();
+    tokenNum = buf.readInt();
     partKey = new PartitionKey();
     partKey.deserialize(buf);
+    //int size = buf.readInt();
+    //byte [] data = new byte[size];
+    //buf.readBytes(data);
+    //uuid = new String(data);
+  }
 
-    //if(comeFromPs) {
-    //  psId = new ParameterServerId(buf.readInt());
-    //  int size = buf.readInt();
-    //  byte[] data = new byte[size];
-    //  buf.readBytes(data);
-    //  location = new Location(new String(data), buf.readInt());
-    //}
+  /**
+   * Get token number
+   * @return token number
+   */
+  public int getTokenNum() {
+    return tokenNum;
+  }
+
+  /**
+   * Set token number
+   * @param tokenNum token number
+   */
+  public void setTokenNum(int tokenNum) {
+    this.tokenNum = tokenNum;
   }
 
   @Override
@@ -155,6 +165,8 @@ public abstract class PartitionRequest extends Request {
   @Override public String toString() {
     return "PartitionRequest{" + "clock=" + clock + ", partKey=" + partKey + ", comeFromPs="
       + comeFromPs + "} " + super.toString();
+    //return "PartitionRequest{" + "clock=" + clock + ", partKey=" + partKey + ", uuid=" + uuid + ", comeFromPs="
+    //  + comeFromPs + "} " + super.toString();
   }
 
   @Override public boolean equals(Object o) {

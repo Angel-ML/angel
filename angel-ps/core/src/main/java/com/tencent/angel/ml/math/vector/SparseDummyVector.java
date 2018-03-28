@@ -65,6 +65,13 @@ public class SparseDummyVector extends TVector {
     this.indices = new int[INIT_ALLOC_SIZE];
   }
 
+  public SparseDummyVector(int[] indices, int dim) {
+    this.dim = dim;
+    this.capacity = indices.length;
+    this.nonzero = indices.length;
+    this.indices = indices;
+  }
+
   /**
    * init the vector by setting the dim and capacity
    *
@@ -91,47 +98,47 @@ public class SparseDummyVector extends TVector {
 
   @Override
   public TVector plusBy(TAbstractVector other) {
-    return null;
+    throw new UnsupportedOperationException("unsupport operation");
   }
 
   @Override
   public TVector plusBy(int index, double x) {
-    return null;
+    throw new UnsupportedOperationException("unsupport operation");
   }
 
   @Override
   public TVector plusBy(TAbstractVector other, double x) {
-    return null;
+    throw new UnsupportedOperationException("unsupport operation");
   }
 
   @Override
   public TVector plus(TAbstractVector other) {
-    return null;
+    throw new UnsupportedOperationException("unsupport operation");
   }
 
   @Override
   public TVector plus(TAbstractVector other, double x) {
-    return null;
+    throw new UnsupportedOperationException("unsupport operation");
   }
 
   @Override
   public double dot(TAbstractVector other) {
-    return 0;
+    throw new UnsupportedOperationException("unsupport operation");
   }
 
   @Override
   public TVector times(double x) {
-    return null;
+    throw new UnsupportedOperationException("unsupport operation");
   }
 
   @Override
   public TVector timesBy(double x) {
-    return null;
+    throw new UnsupportedOperationException("unsupport operation");
   }
 
   @Override
   public TVector filter(double x) {
-    return null;
+    throw new UnsupportedOperationException("unsupport operation");
   }
 
   @Override
@@ -141,12 +148,12 @@ public class SparseDummyVector extends TVector {
 
   @Override
   public long nonZeroNumber() {
-    return 0;
+    throw new UnsupportedOperationException("unsupport operation");
   }
 
   @Override
   public double squaredNorm() {
-    return 0;
+    throw new UnsupportedOperationException("unsupport operation");
   }
 
   /**
@@ -156,7 +163,7 @@ public class SparseDummyVector extends TVector {
    */
   @Override
   public SparseDummyVector clone() {
-    return null;
+    throw new UnsupportedOperationException("unsupport operation");
   }
 
   /**
@@ -184,7 +191,7 @@ public class SparseDummyVector extends TVector {
      */
   @Override
   public RowType getType() {
-    return RowType.T_DOUBLE_SPARSE;
+    return RowType.T_FLOAT_SPARSE;
   }
 
   /**

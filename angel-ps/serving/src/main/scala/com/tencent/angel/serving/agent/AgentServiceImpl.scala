@@ -44,10 +44,10 @@ class AgentServiceImpl(val conf: Configuration, servingAgentManager: ServingAgen
   override def stop(): Unit = onAgentClose
 
   def afterAgentStart(): Unit = {
-    server = new NetworkContext(conf, new ServingRequestMessageHandler(this, servingAgentManager)).createServer(servingAgentManager.servingHost.ip)
+    server = new NetworkContext(conf, new ServingRequestMessageHandler(this, servingAgentManager))
+      .createServer(servingAgentManager.servingHost.ip)
     servingAgentManager.register(server.getPort)
   }
-
 
   def onAgentClose(): Unit = {
     if (server != null) {

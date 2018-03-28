@@ -51,6 +51,7 @@ class LDATest {
 
     // Use local deploy mode
     conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL")
+    conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 100)
 
     // Set input and output path
     conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true)

@@ -24,6 +24,7 @@ import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSemiIndirectHeaps;
 import it.unimi.dsi.fastutil.longs.LongSet;
 
@@ -66,8 +67,13 @@ public final class Equal extends BinaryAggrFunc {
     if (data1.defaultReturnValue() != data2.defaultReturnValue()) {
       return 0.0;
     }
-    LongSet keys = data1.keySet();
-    keys.addAll(data2.keySet());
+    LongSet keys = new LongOpenHashSet();
+    for (long key: data1.keySet()) {
+      keys.add(key);
+    }
+    for (long key: data2.keySet()) {
+      keys.add(key);
+    }
 
     if (keys.size() != data1.keySet().size() || keys.size() != data2.keySet().size()) {
       return 0.0;

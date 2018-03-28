@@ -50,7 +50,7 @@ public class SgdLRTest {
       // Feature number of train data
       int featureNum = 124;
       // Total iteration number
-      int epochNum = 5;
+      int epochNum = 10;
       // Validation sample Ratio
       double vRatio = 0.1;
       // Data format, libsvm or dummy
@@ -77,6 +77,8 @@ public class SgdLRTest {
       conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
       conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
       conf.set(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, "true");
+      conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 100);
+
       conf.setBoolean(MLConf.ML_INDEX_GET_ENABLE(), true);
       // Set data format
       conf.set(MLConf.ML_DATA_FORMAT(), dataFmt);
@@ -95,6 +97,7 @@ public class SgdLRTest {
       conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
       conf.set(MLConf.ML_LEARN_DECAY(), String.valueOf(decay));
       conf.set(MLConf.ML_REG_L2(), String.valueOf(reg));
+      conf.setLong(MLConf.ML_FEATURE_NNZ(), 124L);
     } catch (Exception x) {
       LOG.error("setup failed ", x);
       throw x;
@@ -102,13 +105,13 @@ public class SgdLRTest {
   }
 
   @Test
-  public void testSGDLR() throws Exception {
+  public void testLR() throws Exception {
     trainOnLocalClusterTest();
     incTrainTest();
     predictTest();
   }
 
-  private void trainOnLocalClusterTest() throws Exception {
+  public void trainOnLocalClusterTest() throws Exception {
     try {
       String inputPath = "./src/test/data/lr/a9a.train";
       String savePath = LOCAL_FS + TMP_PATH + "/model";
@@ -131,7 +134,7 @@ public class SgdLRTest {
     }
   }
 
-  private void incTrainTest() throws Exception {
+  public void incTrainTest() throws Exception {
     LOG.info("=====================================incTrainTest===================================");
     try{
       String inputPath = "./src/test/data/lr/a9a.train";
@@ -158,7 +161,7 @@ public class SgdLRTest {
     }
   }
 
-  private void predictTest() throws Exception {
+  public void predictTest() throws Exception {
     try {
       String inputPath = "./src/test/data/lr/a9a.test";
       String loadPath = LOCAL_FS + TMP_PATH + "/model";

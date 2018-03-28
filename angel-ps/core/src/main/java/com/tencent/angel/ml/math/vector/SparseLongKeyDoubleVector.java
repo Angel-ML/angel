@@ -38,8 +38,9 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
   /** A (long->double) map */
   private volatile Long2DoubleOpenHashMap indexToValueMap;
 
-  public static final int INIT_SIZE = 1024 * 1024;
+  public static final int INIT_SIZE = 1024;
 
+  private volatile long modelNnz;
   /**
    * Init the empty vector
    */
@@ -188,7 +189,7 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
   }
 
   private SparseLongKeyDoubleVector plusBy(SparseLongKeyDummyVector other) {
-    assert (dim == -1 || dim == other.getDimension());
+    assert (dim == -1 || dim == other.getLongDim());
     resize(other.size());
     long [] indexes = other.getIndices();
     for(int i = 0; i < indexes.length; i++) {
@@ -295,7 +296,7 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
   }
 
   private SparseLongKeyDoubleVector plusBy(SparseLongKeyDummyVector other, double x) {
-    assert (dim == -1 || dim == other.getDimension());
+    assert (dim == -1 || dim == other.getLongDim());
     resize(other.size());
 
     long [] indexes = other.getIndices();
@@ -391,9 +392,8 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
     if (size() <= other.size()) {
       ObjectIterator<Long2DoubleMap.Entry> iter =
         indexToValueMap.long2DoubleEntrySet().fastIterator();
-      Long2DoubleMap.Entry entry = null;
       while (iter.hasNext()) {
-        entry = iter.next();
+        Long2DoubleMap.Entry entry = iter.next();
         ret += other.get(entry.getLongKey()) * entry.getDoubleValue();
       }
       return ret;
@@ -438,14 +438,21 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
   }
 
   private double dot(SparseLongKeyDummyVector other) {
-    assert (dim == -1 || dim == other.getDimension());
-    long [] indexes = other.getIndices();
+    assert (dim == -1 || dim == other.getLongDim());
     double ret = 0.0;
-    for(int i = 0; i < indexes.length; i++) {
-      ret += get(indexes[i]);
+    for(long i:  other.getIndices()) {
+      ret += get(i);
     }
 
     return ret;
+  }
+
+  public long getModelNnz() {
+    return modelNnz;
+  }
+
+  public void setModelNnz(long modelNnz) {
+    this.modelNnz = modelNnz;
   }
 
   @Override public double get(long key) {
@@ -564,7 +571,7 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
   }
 
   @Override public double sparsity() {
-    return (double)nonZeroNumber() / (double) dim;
+    return (double)nonZeroNumber() / dim;
   }
 
   @Override public RowType getType() {
@@ -597,7 +604,7 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
       entry = iter.next();
       entry.setValue(updater.action(entry.getLongKey(), entry.getDoubleValue(), param));
     }
-    return this;
+    return null;
   }
 
   @Override

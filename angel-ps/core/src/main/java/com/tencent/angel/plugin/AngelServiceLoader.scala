@@ -67,7 +67,9 @@ object AngelServiceLoader {
   def startServiceIfNeed[T](t: T, conf: Configuration): Unit = {
     if (conf.getBoolean(AngelConf.ANGEL_PLUGIN_SERVICE_ENABLE, false)) {
       AngelServiceLoader.loadServices()
-      val tmpServices = serviceClasses.map(clazz => initServices(clazz.asInstanceOf[Class[AngelService[_]]], conf).asInstanceOf[AngelService[T]]).filter(_.check(t)).toArray
+      val tmpServices = serviceClasses.map(clazz =>
+        initServices(clazz.asInstanceOf[Class[AngelService[_]]], conf).asInstanceOf[AngelService[T]]
+      ).filter(_.check(t)).toArray
       tmpServices.foreach(service => Try({
         service.start(t)
         LOG.info(s" start plugin service:$service")

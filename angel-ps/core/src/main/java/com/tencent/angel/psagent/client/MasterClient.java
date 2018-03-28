@@ -27,13 +27,16 @@ import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.PartitionLocation;
 import com.tencent.angel.ml.matrix.transport.PSLocation;
+import com.tencent.angel.ml.matrix.transport.ServerState;
 import com.tencent.angel.ml.metric.Metric;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.RequestConverter;
 import com.tencent.angel.protobuf.generated.MLProtos.*;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.*;
+import com.tencent.angel.protobuf.generated.PSAgentPSServiceProtos.*;
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.*;
 import com.tencent.angel.ps.ParameterServerId;
+import com.tencent.angel.ps.impl.PSProtocol;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.split.SplitClassification;
 import com.tencent.angel.utils.KryoUtils;
@@ -54,7 +57,7 @@ public class MasterClient {
   private static final Log LOG = LogFactory.getLog(MasterClient.class);
   
   /**protobuf RPC client*/
-  private MasterProtocol master;
+  private volatile MasterProtocol master;
 
   public MasterClient() {
 
@@ -66,9 +69,11 @@ public class MasterClient {
    * @throws IOException connect to master failed
    */
   public void init() throws IOException{
-    TConnection connection = TConnectionManager.getConnection(PSAgentContext.get().getConf());
-    Location masterLoc = PSAgentContext.get().getPsAgent().getMasterLocation();
-    this.master = connection.getMasterService(masterLoc.getIp(), masterLoc.getPort());
+    this.master = getOrCreateMasterClient(PSAgentContext.get().getPsAgent().getMasterLocation());
+  }
+
+  private MasterProtocol getOrCreateMasterClient(Location loc) throws IOException {
+    return PSAgentContext.get().getPsAgent().getControlConnectManager().getMasterService(loc.getIp(), loc.getPort());
   }
 
   /**
@@ -163,7 +168,7 @@ public class MasterClient {
 
   /**
    * PSAgent register to master
-   * 
+   *
    * @return PSAgentRegisterResponse register response
    * @throws ServiceException rpc failed
    */
@@ -171,10 +176,8 @@ public class MasterClient {
     PSAgentRegisterRequest request =
         PSAgentRegisterRequest
             .newBuilder()
-            .setPsAgentAttemptId(PSAgentContext.get().getIdProto())
-            .setLocation(
-                LocationProto.newBuilder().setIp(PSAgentContext.get().getIp()).setPort(10000)
-                    .build()).build();
+            .setPsAgentId(PSAgentContext.get().getPsAgent().getId())
+            .setLocation(ProtobufUtil.convertToLocationProto(PSAgentContext.get().getLocation())).build();
 
     return master.psAgentRegister(null, request);
   }
@@ -187,7 +190,7 @@ public class MasterClient {
    */
   public PSAgentReportResponse psAgentReport() throws ServiceException {
     PSAgentReportRequest request =
-        PSAgentReportRequest.newBuilder().setPsAgentAttemptId(PSAgentContext.get().getIdProto())
+        PSAgentReportRequest.newBuilder().setPsAgentId(PSAgentContext.get().getPsAgent().getId())
             .build();
 
     return master.psAgentReport(null, request);
@@ -359,26 +362,26 @@ public class MasterClient {
 
   /**
    * Notify ps agent failed message to master
-   * 
+   *
    * @param msg ps agent detail failed message
    * @throws ServiceException rpc failed
    */
   public void psAgentError(String msg) throws ServiceException {
     PSAgentErrorRequest request =
         PSAgentErrorRequest.newBuilder()
-            .setPsAgentAttemptId(PSAgentContext.get().getPsAgent().getIdProto()).setMsg(msg).build();
+          .setPsAgentId(PSAgentContext.get().getPsAgent().getId()).setMsg(msg).build();
     master.psAgentError(null, request);
   }
 
   /**
    * Notify ps agent success message to master
-   * 
+   *
    * @throws ServiceException rpc failed
    */
   public void psAgentDone() throws ServiceException {
     PSAgentDoneRequest request =
         PSAgentDoneRequest.newBuilder()
-            .setPsAgentAttemptId(PSAgentContext.get().getPsAgent().getIdProto()).build();
+            .setPsAgentId(PSAgentContext.get().getPsAgent().getId()).build();
     master.psAgentDone(null, request);
   }
 
@@ -413,7 +416,7 @@ public class MasterClient {
    * @param taskIndex task index
    * @param matrixId matrix id
    * @param clock clock value
-   * @throws ServiceException    参数
+   * @throws ServiceException
    */
   public void updateClock(int taskIndex, int matrixId, int clock) throws ServiceException {
     TaskClockRequest request =
@@ -473,6 +476,13 @@ public class MasterClient {
     master.setAlgoMetrics(null, builder.build());
   }
 
+  /**
+   * Get the pss that stored the partition
+   * @param matrixId matrix id
+   * @param partitionId partition id
+   * @return the pss that stored the partition
+   * @throws ServiceException
+   */
   public List<ParameterServerId> getStoredPss(int matrixId, int partitionId)
     throws ServiceException {
     List<PSIdProto> psIdProtos = master.getStoredPss(null,
@@ -485,12 +495,13 @@ public class MasterClient {
     return psIds;
   }
 
-  public void psFailedReport(HashMap<PSLocation, Integer> reports) throws ServiceException {
-    PSFailedReportRequest.Builder builder = PSFailedReportRequest.newBuilder();
-    builder.setReports(ProtobufUtil.convertToPSFailedReportsProto(reports));
-    master.psFailedReport(null, builder.build());
-  }
-
+  /**
+   * Get the pss and their locations that stored the partition
+   * @param matrixId matrix id
+   * @param partId partition id
+   * @return the pss and their locations that stored the partition
+   * @throws ServiceException
+   */
   public PartitionLocation getPartLocation(int matrixId, int partId) throws ServiceException {
     GetPartLocationResponse response = master.getPartLocation(null,
       GetPartLocationRequest.newBuilder().setMatrixId(matrixId).setPartId(partId).build());
@@ -501,5 +512,44 @@ public class MasterClient {
       psLocs.add(new PSLocation(ProtobufUtil.convertToId(psLocsProto.get(i).getPsId()), ProtobufUtil.convertToLocation(psLocsProto.get(i))));
     }
     return new PartitionLocation(psLocs);
+  }
+
+  /**
+   * Report a ps failed to Master
+   * @param psLoc ps id and location
+   * @throws ServiceException
+   */
+  public void psFailed(PSLocation psLoc) throws ServiceException {
+    master.psFailedReport(null, PSFailedReportRequest.newBuilder()
+      .setClientId(PSAgentContext.get().getPSAgentId()).setPsLoc(ProtobufUtil.convert(psLoc)).build());
+  }
+
+  /**
+   * Get the number of success worker group
+   * @return the number of success worker group
+   * @throws ServiceException
+   */
+  public int getSuccessWorkerGroupNum() throws ServiceException {
+    return master.getWorkerGroupSuccessNum(null,
+      GetWorkerGroupSuccessNumRequest.getDefaultInstance().newBuilder().build()).getSuccessNum();
+  }
+
+  /**
+   * Get a psagent id
+   * @return psagent id
+   * @throws ServiceException
+   */
+  public int getPSAgentId() throws ServiceException {
+    return master.getPSAgentId(null, GetPSAgentIdRequest.getDefaultInstance()).getPsAgentId();
+  }
+
+  /**
+   * Check PS exist or not
+   * @param psLoc ps id and location
+   * @return true means ps exited
+   */
+  public boolean isPSExited(PSLocation psLoc) throws ServiceException {
+    return master.checkPSExited(null,
+      CheckPSExitRequest.newBuilder().setClientId(PSAgentContext.get().getPSAgentId()).setPsLoc(ProtobufUtil.convert(psLoc)).build()).getExited() == 1;
   }
 }

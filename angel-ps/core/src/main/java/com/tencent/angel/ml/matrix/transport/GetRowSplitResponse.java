@@ -46,6 +46,27 @@ public class GetRowSplitResponse extends Response {
     this(ResponseType.SUCCESS, null, null);
   }
 
+  /**
+   * Create a new GetRowSplitResponse.
+   *
+   * @param responseType response type
+   * @param rowSplit row split
+   */
+  public GetRowSplitResponse(ResponseType responseType, ServerRow rowSplit) {
+    this(responseType, null, rowSplit);
+  }
+
+  /**
+   * Create a new GetRowSplitResponse.
+   *
+   * @param responseType response type
+   * @param detail detail failed message if the response type is failed
+   */
+  public GetRowSplitResponse(ResponseType responseType, String detail) {
+    this(responseType, detail, null);
+  }
+
+
   @Override
   public void serialize(ByteBuf buf) {
     super.serialize(buf);
@@ -134,5 +155,10 @@ public class GetRowSplitResponse extends Response {
    */
   public void setRowSplit(ServerRow rowSplit) {
     this.rowSplit = rowSplit;
+  }
+
+  @Override
+  public void clear() {
+    setRowSplit(null);
   }
 }

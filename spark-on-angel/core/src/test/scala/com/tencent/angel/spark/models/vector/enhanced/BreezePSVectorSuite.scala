@@ -16,8 +16,10 @@
 
 package com.tencent.angel.spark.models.vector.enhanced
 
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet
+
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.linalg.DenseVector
+import com.tencent.angel.spark.linalg.{BLAS, DenseVector, SparseVector}
 import com.tencent.angel.spark.models.vector.{DensePSVector, PSVector}
 import com.tencent.angel.spark.{PSFunSuite, SharedPSContext}
 

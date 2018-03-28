@@ -74,6 +74,6 @@ public class SparseFloatRowUpdateSplit extends RowUpdateSplit {
 
   @Override
   public int bufferLen() {
-    return super.bufferLen() + (end - start) * 8;
+    return 4 + super.bufferLen() + (end - start) * 8;
   }
 }

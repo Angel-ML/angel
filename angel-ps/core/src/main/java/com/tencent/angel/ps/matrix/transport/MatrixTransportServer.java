@@ -75,10 +75,13 @@ public class MatrixTransportServer {
     workerGroup = new NioEventLoopGroup(workerNum);
     ((NioEventLoopGroup) workerGroup).setIoRatio(70);
 
+    LOG.info("Server port = " + port);
+
     ServerBootstrap b = new ServerBootstrap();
     b.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
         .option(ChannelOption.SO_SNDBUF, sendBuffSize)
         .option(ChannelOption.SO_RCVBUF, recvBuffSize)
+        .option(ChannelOption.SO_KEEPALIVE, true)
         .childHandler(new ChannelInitializer<SocketChannel>() {
           @Override
           public void initChannel(SocketChannel ch) throws Exception {

@@ -90,6 +90,11 @@ public class CompSparseFloatVector extends CompTFloatVector {
     return clonedVector;
   }
 
+  @Override
+  public TFloatVector elemUpdate(IntFloatElemUpdater updater, ElemUpdateParam param) {
+    return null;
+  }
+
   @Override protected TFloatVector initComponentVector() {
     return initComponentVector(initCapacity);
   }

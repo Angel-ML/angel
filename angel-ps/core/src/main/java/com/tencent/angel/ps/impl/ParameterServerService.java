@@ -20,8 +20,8 @@ import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.ipc.MLRPC;
 import com.tencent.angel.ipc.RpcServer;
-import com.tencent.angel.protobuf.generated.MasterPSServiceProtos.GetThreadStackRequest;
-import com.tencent.angel.protobuf.generated.MasterPSServiceProtos.GetThreadStackResponse;
+import com.tencent.angel.protobuf.generated.MasterPSServiceProtos.*;
+import com.tencent.angel.protobuf.generated.PSAgentPSServiceProtos.*;
 import com.tencent.angel.utils.NetUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -125,5 +125,13 @@ public class ParameterServerService implements PSProtocol {
       stackTraceString.append(infoBlock).append("\n\n");
     }
     return stackTraceString.toString();
+  }
+
+  @Override public GetStateResponse getState(RpcController controller, GetStateRequest request) throws ServiceException {
+    return GetStateResponse.newBuilder().setState(context.getRunningContext().getState().getTypeId()).build();
+  }
+
+  @Override public GetTokenResponse getToken(RpcController controller, GetTokenRequest request) throws ServiceException {
+    return GetTokenResponse.newBuilder().setToken(context.getRunningContext().allocateToken(request.getClientId(), request.getDataSize())).build();
   }
 }

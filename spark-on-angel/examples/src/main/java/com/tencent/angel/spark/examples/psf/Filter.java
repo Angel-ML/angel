@@ -32,7 +32,7 @@ public class Filter implements MapWithIndexFunc {
   }
 
   @Override
-  public double call(int index, double value) {
+  public double call(long index, double value) {
     double result = 0;
     if (index != zeroIndex) {
       result = value;

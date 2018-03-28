@@ -31,7 +31,7 @@ abstract class PredictTask[KEYIN, VALUEIN](ctx: TaskContext) extends BaseTask[KE
   val feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
   val dataFormat = conf.get(MLConf.ML_DATA_FORMAT)
 
-  val dataParser = DataParser(dataFormat, feaNum,  negY= false)
+  val dataParser = DataParser(dataFormat, feaNum,  negY= true)
 
 
 

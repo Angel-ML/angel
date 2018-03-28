@@ -17,11 +17,13 @@
 
 package com.tencent.angel.transport
 
+import java.net.InetSocketAddress
+
 import com.tencent.angel.client.AngelClientFactory
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.math.TVector
 import com.tencent.angel.serving.client.ServingClient
-import com.tencent.angel.serving.ml.LRServingModel
+import com.tencent.angel.serving.ml.lr.LRServingModel
 import com.tencent.angel.serving.{PredictData, Util}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
@@ -68,8 +70,13 @@ class ServingSuite extends FunSuite with BeforeAndAfterAll {
   test("lr serving") {
     val client = AngelClientFactory.get(conf)
     client.startPSServer()
-    val servingClient = ServingClient.create(client)
-    servingClient.loadModel("lr", "../data/exampledata/ServingData/lr_model", 3, 3)
+
+    val masterIP = client.getMasterLocation.getIp
+    val masterPort = client.getMasterLocation.getPort
+    val masterAddr = new InetSocketAddress(masterIP,masterPort)
+    val servingClient = ServingClient.create(masterAddr, conf)
+
+    servingClient.loadModel("lr", "../data/exampledata/ServingData/lr_model", 3, 3, "")
     var stop: Boolean = false
     while (!stop) {
       if (servingClient.isServable("lr")) {

@@ -382,16 +382,11 @@ public class ServerPartition implements Serialize {
       int rowId;
       RowType rowType;
       int size;
-
       for (int i = 0; i < rowNum; i++) {
         rowId = buf.readInt();
         rowType = RowType.valueOf(buf.readInt());
-        size = buf.readInt();
-        if (size == 0)
-          continue;
-
         ServerRow row = getRow(rowId);
-        updater.update(rowType, size, buf, row);
+        updater.update(rowType, buf, row);
       }
     } finally {
       endUpdate();

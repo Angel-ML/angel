@@ -67,7 +67,7 @@ class SVMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     val startGD = System.currentTimeMillis()
     // Run mini-batch gradient descent.
     val ret = GradientDescent.miniBatchGD(trainData, svmModel.weight, None,
-                                          learnRate, hingeLoss, batchSize, batchNum)
+                                          learnRate, hingeLoss, batchSize, batchNum, ctx)
     val loss = ret._1
     val localW = ret._2
 

@@ -21,7 +21,9 @@ import scala.{math => SMath}
 import com.tencent.angel.spark._
 import com.tencent.angel.spark.client.PSClient
 import com.tencent.angel.spark.linalg.DenseVector
-import com.tencent.angel.spark.models.vector.{DensePSVector, PSVector, SparsePSVector}
+import com.tencent.angel.spark.models.vector.enhanced.BreezePSVector
+import com.tencent.angel.spark.models.vector.enhanced.BreezePSVector.blas
+import com.tencent.angel.spark.models.vector.{DensePSVector, PSVector}
 import com.tencent.angel.spark.pof._
 
 class VectorOpsSuite extends PSFunSuite with SharedPSContext {
@@ -85,7 +87,7 @@ class VectorOpsSuite extends PSFunSuite with SharedPSContext {
 
   test("doAdd") {
     val constNum = 3.14
-    _vectorOps.add(uniformVector, constNum, psVector)
+    psVector = BreezePSVector.canAddS(uniformVector.toBreeze, constNum).toDense
 
     val result = uniformVector.pull.values.map(_ + constNum)
     assert(psVector.pull.values.sameElements(result))
@@ -93,7 +95,7 @@ class VectorOpsSuite extends PSFunSuite with SharedPSContext {
 
   test("doMul") {
     val constNum = 3.14
-    _vectorOps.mul(uniformVector, constNum, psVector)
+    psVector = BreezePSVector.canMulS(uniformVector.toBreeze, constNum).toDense
 
     val result = uniformVector.pull.values.map(_ * constNum)
     assert(psVector.pull.values.sameElements(result))
@@ -101,7 +103,7 @@ class VectorOpsSuite extends PSFunSuite with SharedPSContext {
 
   test("doDiv") {
     val constNum = 3.14
-    _vectorOps.div(uniformVector, constNum, psVector)
+    psVector = BreezePSVector.canDivS(uniformVector.toBreeze, constNum).toDense
 
     val result = uniformVector.pull.values.map(_ / constNum)
     assert(psVector.pull.values.sameElements(result))
@@ -109,84 +111,84 @@ class VectorOpsSuite extends PSFunSuite with SharedPSContext {
 
   test("doPow") {
     val constNum = 3.14
-    _vectorOps.pow(uniformVector, constNum, psVector)
+    psVector = BreezePSVector.math.pow(uniformVector.toBreeze, constNum).toDense
 
     val result = uniformVector.pull.values.map(SMath.pow(_, constNum))
     assert(psVector.pull.values.sameElements(result))
   }
 
   test("doSqrt") {
-    _vectorOps.sqrt(uniformVector, psVector)
+    psVector = BreezePSVector.math.sqrt(uniformVector.toBreeze).toDense
 
     val result = uniformVector.pull.values.map(x => SMath.sqrt(x))
     assert(psVector.pull.values.sameElements(result))
   }
 
   test("doExp") {
-    _vectorOps.exp(uniformVector, psVector)
+    psVector = BreezePSVector.math.exp(uniformVector.toBreeze).toDense
 
     val result = uniformVector.pull.values.map(x => SMath.exp(x))
     assert(psVector.pull.values.sameElements(result))
   }
 
   test("doExpm1") {
-    _vectorOps.expm1(uniformVector, psVector)
+    psVector = BreezePSVector.math.expm1(uniformVector.toBreeze).toDense
 
     val result = uniformVector.pull.values.map(x => SMath.expm1(x))
     assert(psVector.pull.values.sameElements(result))
   }
 
   test("doLog") {
-    _vectorOps.log(uniformVector, psVector)
+    psVector = BreezePSVector.math.log(uniformVector.toBreeze).toDense
 
     val result = uniformVector.pull.values.map(x => SMath.log(x))
     assert(psVector.pull.values.sameElements(result))
   }
 
   test("doLog1p") {
-    _vectorOps.log1p(uniformVector, psVector)
+    psVector = BreezePSVector.math.log1p(uniformVector.toBreeze).toDense
 
     val result = uniformVector.pull.values.map(x => SMath.log1p(x))
     assert(psVector.pull.values.sameElements(result))
   }
 
   test("doLog10") {
-    _vectorOps.log10(uniformVector, psVector)
+    psVector = BreezePSVector.math.log10(uniformVector.toBreeze).toDense
 
     val result = uniformVector.pull.values.map(x => SMath.log10(x))
     assert(psVector.pull.values.sameElements(result))
   }
 
   test("doCeil") {
-    _vectorOps.ceil(uniformVector, psVector)
+    psVector = BreezePSVector.math.ceil(uniformVector.toBreeze).toDense
 
     val result = uniformVector.pull.values.map(x => SMath.ceil(x))
     assert(psVector.pull.values.sameElements(result))
   }
 
   test("doFloor") {
-    _vectorOps.floor(uniformVector, psVector)
+    psVector = BreezePSVector.math.floor(uniformVector.toBreeze).toDense
 
     val result = uniformVector.pull.values.map(x => SMath.floor(x))
     assert(psVector.pull.values.sameElements(result))
   }
 
   test("doRound") {
-    _vectorOps.round(uniformVector, psVector)
+    psVector = BreezePSVector.math.round(uniformVector.toBreeze).toDense
 
     val result = uniformVector.pull.values.map(x => SMath.round(x))
     assert(psVector.pull.values.sameElements(result))
   }
 
   test("doAbs") {
-    _vectorOps.abs(uniformVector, psVector)
+    psVector = BreezePSVector.math.abs(uniformVector.toBreeze).toDense
 
     val result = uniformVector.pull.values.map(x => SMath.abs(x))
     assert(psVector.pull.values.sameElements(result))
   }
 
   test("doSignum") {
-    _vectorOps.signum(uniformVector, psVector)
+    psVector = BreezePSVector.math.signum(uniformVector.toBreeze).toDense
 
     val result = uniformVector.pull.values.map(x => SMath.signum(x))
     assert(psVector.pull.values.sameElements(result))
@@ -367,7 +369,7 @@ class VectorOpsSuite extends PSFunSuite with SharedPSContext {
 
   test("doScal") {
     val result = normalVector.pull.values.map(_ * -0.1)
-    _vectorOps.scal(-0.1, normalVector)
+    blas.scal(-0.1, normalVector.toBreeze)
     val scale = normalVector.pull.values
 
     (0 until dim).foreach { i =>

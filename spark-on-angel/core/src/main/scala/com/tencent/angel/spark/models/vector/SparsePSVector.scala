@@ -42,11 +42,31 @@ class SparsePSVector(override val poolId: Int,
     psClient.sparseRowOps.pull(this, indices)
   }
 
+  def zero(): Unit = fill(0.0)
+
+  def fill(value: Double): Unit = {
+    psClient.vectorOps.fill(this, value)
+  }
+
+  /**
+   * Sparse PSVector is stored as Long2DoubleOpenHashMap in PS. `compress` is try to remove the
+   * Map.Entry[Long, Double] which value is equal to Long2DoubleOpenHashMap.defaultReturnValue,
+   * this will reduce the store size of Sparse PSVector in PS.
+   */
+  def compress(): Unit = {
+    psClient.sparseRowOps.compress(this)
+  }
 }
 
 object SparsePSVector{
-  def apply(dimension: Long = -1, capacity: Int = 20): SparsePSVector = {
-    PSContext.instance().createVector(dimension, VectorType.SPARSE, capacity)
+
+  def apply(dimension: Long, capacity: Int): SparsePSVector = {
+    PSContext.instance().createVector(dimension, VectorType.SPARSE, capacity, dimension)
+      .asInstanceOf[SparsePSVector]
+  }
+
+  def apply(dimension: Long, capacity: Int, range: Long): SparsePSVector = {
+    PSContext.instance().createVector(dimension, VectorType.SPARSE, capacity, range)
       .asInstanceOf[SparsePSVector]
   }
 }

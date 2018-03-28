@@ -204,7 +204,6 @@ public class PSManagerTest {
       pairBuilder.setKey("ps_key2");
       pairBuilder.setValue("200");
       builder.addMetrics(pairBuilder.build());
-      builder.setPsFailedReports(MLProtos.PSFailedReportsProto.getDefaultInstance());
 
       MatrixReportProto.Builder matrixBuilder = MatrixReportProto.newBuilder();
       ConcurrentHashMap<Integer, ServerMatrix> matrixIdMap = ps.getMatrixStorageManager().getMatrices();

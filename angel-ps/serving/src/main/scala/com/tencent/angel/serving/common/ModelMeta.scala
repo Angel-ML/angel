@@ -34,4 +34,4 @@ case class ModelMeta(matricesMeta: Array[MatrixMeta]) {
   * @param rowNum the row num
   * @param dimension the dimension
   */
-case class MatrixMeta(name: String, rowType: RowType, rowNum: Int, dimension: Long)
+case class MatrixMeta(name: String, rowType: RowType, rowNum: Int, dimension: Long, acceptInput:Boolean=true)

@@ -48,22 +48,26 @@ public class ServerArbitraryIntRowTest {
 
   @Test
   public void testUpdateIntSparse() throws Exception {
-    ByteBuf buf = Unpooled.buffer(16);
+    ByteBuf buf = Unpooled.buffer(20);
+    buf.writeInt(3);
     buf.writeInt(0);
     buf.writeInt(1);
     buf.writeInt(-1);
-    serverArbitraryIntRow1.updateIntDense(buf, 3);
+    serverArbitraryIntRow1.updateIntDense(buf);
     serverArbitraryIntRow1.setStartCol(0);
     serverArbitraryIntRow1.setEndCol(3);
     assertNull(serverArbitraryIntRow1.getSparseRep());
     assertNotNull(serverArbitraryIntRow1.getDenseRep());
-    buf = Unpooled.buffer(16);
+    buf = Unpooled.buffer(20);
+    buf.writeInt(3);
     buf.writeInt(0);
     buf.writeInt(-1);
     buf.writeInt(-1);
-    serverArbitraryIntRow1.updateIntDense(buf, 3);
+    serverArbitraryIntRow1.updateIntDense(buf);
     assertNotNull(serverArbitraryIntRow1.getSparseRep());
     assertNull(serverArbitraryIntRow1.getDenseRep());
+    buf = Unpooled.buffer(4 + 3 * 8);
+    buf.writeInt(3);
     buf.writeInt(0);
     buf.writeInt(1);
     buf.writeInt(2);
@@ -71,43 +75,48 @@ public class ServerArbitraryIntRowTest {
     buf.writeInt(1);
     buf.writeInt(1);
     // LOG.info(serverArbitraryIntRow1.getSparseRep());
-    serverArbitraryIntRow1.updateIntSparse(buf, 3);
+    serverArbitraryIntRow1.updateIntSparse(buf);
     assertNull(serverArbitraryIntRow1.getSparseRep());
     assertNotNull(serverArbitraryIntRow1.getDenseRep());
+    buf = Unpooled.buffer(4 + 3 * 8);
+    buf.writeInt(3);
     buf.writeInt(0);
     buf.writeInt(1);
     buf.writeInt(2);
     buf.writeInt(-1);
     buf.writeInt(-1);
     buf.writeInt(-1);
-    serverArbitraryIntRow1.updateIntSparse(buf, 3);
+    serverArbitraryIntRow1.updateIntSparse(buf);
     assertNotNull(serverArbitraryIntRow1.getSparseRep());
     assertNull(serverArbitraryIntRow1.getDenseRep());
   }
 
   @Test
   public void testUpdateIntDense() throws Exception {
-    ByteBuf buf = Unpooled.buffer(16);
+    ByteBuf buf = Unpooled.buffer(20);
+    buf.writeInt(3);
     buf.writeInt(0);
     buf.writeInt(1);
     buf.writeInt(-1);
-    serverArbitraryIntRow1.updateIntDense(buf, 3);
+    serverArbitraryIntRow1.updateIntDense(buf);
     assertEquals(serverArbitraryIntRow1.get(0), 0);
     assertEquals(serverArbitraryIntRow1.get(1), 1);
     assertEquals(serverArbitraryIntRow1.get(2), -1);
     assertNull(serverArbitraryIntRow1.getSparseRep());
-    buf = Unpooled.buffer(16);
+    buf = Unpooled.buffer(20);
+    buf.writeInt(3);
     buf.writeInt(0);
     buf.writeInt(-1);
     buf.writeInt(0);
-    serverArbitraryIntRow1.updateIntDense(buf, 3);
+    serverArbitraryIntRow1.updateIntDense(buf);
     assertNotNull(serverArbitraryIntRow1.getSparseRep());
     assertNull(serverArbitraryIntRow1.getDenseRep());
-    buf = Unpooled.buffer(16);
+    buf = Unpooled.buffer(20);
+    buf.writeInt(3);
     buf.writeInt(0);
     buf.writeInt(-1);
     buf.writeInt(0);
-    serverArbitraryIntRow1.updateIntDense(buf, 3);
+    serverArbitraryIntRow1.updateIntDense(buf);
     assertNull(serverArbitraryIntRow1.getSparseRep());
   }
 
@@ -122,15 +131,16 @@ public class ServerArbitraryIntRowTest {
     ByteBuf bufOut = Unpooled.buffer(16);
     serverArbitraryIntRow1.encode(bufIn, bufOut, 1);
     assertEquals(0, bufOut.readInt());
-    ByteBuf buf = Unpooled.buffer(16);
+    ByteBuf buf = Unpooled.buffer(20);
+    buf.writeInt(3);
     buf.writeInt(0);
     buf.writeInt(1);
     buf.writeInt(-1);
-    serverArbitraryIntRow1.updateIntDense(buf, 3);
+    serverArbitraryIntRow1.updateIntDense(buf);
     serverArbitraryIntRow1.encode(bufIn, bufOut, 1);
     assertNull(serverArbitraryIntRow1.getSparseRep());
     assertNotNull(serverArbitraryIntRow1.getDenseRep());
-    bufIn = Unpooled.buffer(16);
+    bufIn = Unpooled.buffer(20);
     bufIn.writeInt(0);
     bufIn.writeInt(1);
     bufIn.writeInt(2);
@@ -139,11 +149,12 @@ public class ServerArbitraryIntRowTest {
     assertEquals(0, bufOut.readInt());
     assertEquals(1, bufOut.readInt());
     assertEquals(-1, bufOut.readInt());
-    buf = Unpooled.buffer(16);
+    buf = Unpooled.buffer(20);
+    buf.writeInt(3);
     buf.writeInt(0);
     buf.writeInt(-1);
     buf.writeInt(0);
-    serverArbitraryIntRow1.updateIntDense(buf, 3);
+    serverArbitraryIntRow1.updateIntDense(buf);
     assertNotNull(serverArbitraryIntRow1.getSparseRep());
     assertNull(serverArbitraryIntRow1.getDenseRep());
     // LOG.info(serverArbitraryIntRow1.getSparseRep());

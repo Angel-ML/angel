@@ -16,6 +16,7 @@
 
 package com.tencent.angel.ps.impl.matrix;
 
+import com.tencent.angel.exception.WaitLockTimeOutException;
 import com.tencent.angel.ml.matrix.RowType;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2IntMap.Entry;
@@ -397,27 +398,27 @@ public class ServerArbitraryIntRow extends ServerRow {
   }
 
   @Override
-  public void update(RowType rowType, ByteBuf buf, int size) {
+  public void update(RowType rowType, ByteBuf buf) {
+    tryToLockWrite();
     try {
-      lock.writeLock().lock();
-
       switch (rowType) {
         case T_INT_DENSE:
-          updateIntDense(buf, size);
+          updateIntDense(buf);
           break;
         case T_INT_SPARSE:
-          updateIntSparse(buf, size);
+          updateIntSparse(buf);
           break;
         default:
           LOG.error("Invalid rowType to update ServerDenseIntRow!");
       }
       updateRowVersion();
     } finally {
-      lock.writeLock().unlock();
+      unlockWrite();
     }
   }
 
-  public void updateIntSparse(ByteBuf buf, int size) {
+  public void updateIntSparse(ByteBuf buf) {
+    int size = buf.readInt();
     if (sparseRep == null && denseRep == null) {
       initSparseRep(buf, size);
     } else if (sparseRep != null) {
@@ -474,7 +475,8 @@ public class ServerArbitraryIntRow extends ServerRow {
     buf.readerIndex(buf.readerIndex() + size * 4);
   }
 
-  public void updateIntDense(ByteBuf buf, int size) {
+  public void updateIntDense(ByteBuf buf) {
+    int size = buf.readInt();
     if (sparseRep == null && denseRep == null) {
       initDenseRep(buf, size);
     } else if (denseRep != null) {

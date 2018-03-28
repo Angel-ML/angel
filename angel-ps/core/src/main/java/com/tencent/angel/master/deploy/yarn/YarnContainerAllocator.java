@@ -36,10 +36,6 @@ import com.tencent.angel.master.ps.attempt.PSAttemptContainerAssignedEvent;
 import com.tencent.angel.master.ps.attempt.PSAttemptDiagnosticsUpdateEvent;
 import com.tencent.angel.master.ps.attempt.PSAttemptEvent;
 import com.tencent.angel.master.ps.attempt.PSAttemptEventType;
-import com.tencent.angel.master.psagent.PSAgentAttemptContainerAssignedEvent;
-import com.tencent.angel.master.psagent.PSAgentAttemptDiagnosticsUpdateEvent;
-import com.tencent.angel.master.psagent.PSAgentAttemptEvent;
-import com.tencent.angel.master.psagent.PSAgentAttemptEventType;
 import com.tencent.angel.master.worker.attempt.WorkerAttemptContainerAssignedEvent;
 import com.tencent.angel.master.worker.attempt.WorkerAttemptDiagnosticsUpdateEvent;
 import com.tencent.angel.master.worker.attempt.WorkerAttemptEvent;
@@ -362,11 +358,6 @@ public class YarnContainerAllocator extends ContainerAllocator {
           context.getEventHandler().handle(
               new PSAttemptDiagnosticsUpdateEvent(diagnostics, (PSAttemptId) id));
           context.getEventHandler().handle(createContainerFinishedEvent(cont, (PSAttemptId) id));
-        } else if (id instanceof PSAgentAttemptId) {
-          context.getEventHandler().handle(
-              new PSAgentAttemptDiagnosticsUpdateEvent((PSAgentAttemptId) id, diagnostics));
-          context.getEventHandler().handle(
-              createContainerFinishedEvent(cont, (PSAgentAttemptId) id));
         } else if(id instanceof WorkerAttemptId){
           context.getEventHandler().handle(
               new WorkerAttemptDiagnosticsUpdateEvent((WorkerAttemptId) id, diagnostics));
@@ -383,17 +374,6 @@ public class YarnContainerAllocator extends ContainerAllocator {
       return new PSAttemptEvent(PSAttemptEventType.PA_KILL, psAttemptId);
     } else {
       return new PSAttemptEvent(PSAttemptEventType.PA_CONTAINER_COMPLETE, psAttemptId);
-    }
-  }
-
-  private PSAgentAttemptEvent createContainerFinishedEvent(ContainerStatus cont,
-      PSAgentAttemptId attemptId) {
-    if (cont.getExitStatus() == ContainerExitStatus.ABORTED) {
-      // killed by framework
-      return new PSAgentAttemptEvent(PSAgentAttemptEventType.PSAGENT_ATTEMPT_KILL, attemptId);
-    } else {
-      return new PSAgentAttemptEvent(PSAgentAttemptEventType.PSAGENT_ATTEMPT_CONTAINER_COMPLETE,
-          attemptId);
     }
   }
    
@@ -671,11 +651,6 @@ public class YarnContainerAllocator extends ContainerAllocator {
     }
     remoteRequest.setNumContainers(remoteRequest.getNumContainers() + 1);
 
-    if (context.getPSAgentManager() != null
-        && priority == context.getPSAgentManager().getPsAgentPriority()) {
-      remoteRequest.setRelaxLocality(false);
-    }
-
     // Note this down for next interaction with ResourceManager
     addResourceRequestToAsk(remoteRequest);
     if (LOG.isDebugEnabled()) {
@@ -835,13 +810,6 @@ public class YarnContainerAllocator extends ContainerAllocator {
     while (it.hasNext()) {
       Container allocated = it.next();
       Map<Id, ContainerRequest> idToRequestMap = idToRequestMaps.get(allocated.getPriority());
-      if ((context.getPSAgentManager() != null && allocated.getPriority() == context
-          .getPSAgentManager().getPsAgentPriority())
-          || idToRequestMap == null
-          || idToRequestMap.isEmpty()) {
-        continue;
-      }
-
       Id tId = idToRequestMap.keySet().iterator().next();
       ContainerRequest assigned = idToRequestMap.remove(tId);
       containerAssigned(allocated, assigned);
@@ -861,9 +829,6 @@ public class YarnContainerAllocator extends ContainerAllocator {
     if (assigned.id instanceof PSAttemptId) {
       context.getEventHandler().handle(
           new PSAttemptContainerAssignedEvent((PSAttemptId) assigned.id, allocated));
-    } else if (assigned.id instanceof PSAgentAttemptId) {
-      context.getEventHandler().handle(
-          new PSAgentAttemptContainerAssignedEvent((PSAgentAttemptId) assigned.id, allocated));
     } else if (assigned.id instanceof WorkerAttemptId) {
       context.getEventHandler().handle(
           new WorkerAttemptContainerAssignedEvent((WorkerAttemptId) assigned.id, allocated));

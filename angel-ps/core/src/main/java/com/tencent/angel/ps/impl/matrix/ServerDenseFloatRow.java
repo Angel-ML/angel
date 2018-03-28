@@ -76,7 +76,7 @@ public class ServerDenseFloatRow extends ServerFloatRow {
     this(0, 0, 0, null);
   }
 
-  @Override public float getValue(int index) {
+  @Override protected float getValue(int index) {
     return data.get(index - (int) startCol);
   }
 
@@ -87,21 +87,27 @@ public class ServerDenseFloatRow extends ServerFloatRow {
 
   @Override
   public int size() {
-    return dataBuffer.length / 4;
+    try {
+      lock.readLock().lock();
+      return dataBuffer.length / 4;
+    } finally {
+      lock.readLock().unlock();
+    }
   }
 
   @Override
-  public void update(RowType rowType, ByteBuf buf, int size) {
+  public void update(RowType rowType, ByteBuf buf) {
+    tryToLockWrite();
+
     try {
-      lock.writeLock().lock();
       switch (rowType) {
         case T_FLOAT_DENSE:
-          denseFloatUpdate(buf, size);
+          denseFloatUpdate(buf);
           break;
 
         case T_FLOAT_SPARSE:
         case T_FLOAT_SPARSE_COMPONENT:
-          sparseFloatUpdate(buf, size);
+          sparseFloatUpdate(buf);
           break;
 
         default:
@@ -110,21 +116,23 @@ public class ServerDenseFloatRow extends ServerFloatRow {
 
       updateRowVersion();
     } finally {
-      lock.writeLock().unlock();
+      unlockWrite();
     }
   }
 
-  private void denseFloatUpdate(ByteBuf buf, int size) {
+  private void denseFloatUpdate(ByteBuf buf) {
+    int size = buf.readInt();
     assert size == (endCol - startCol);
     for (int i = 0; i < size; i++) {
       data.put(i, data.get(i) + buf.readFloat());
     }
   }
 
-  private void sparseFloatUpdate(ByteBuf buf, int size) {
-    int columnId = 0;
-    float value = 0;
+  private void sparseFloatUpdate(ByteBuf buf) {
+    int columnId;
+    float value;
     int startColInt = (int) startCol;
+    int size = buf.readInt();
     for (int i = 0; i < size; i++) {
       columnId = buf.readInt() - startColInt;
       value = data.get(columnId) + buf.readFloat();

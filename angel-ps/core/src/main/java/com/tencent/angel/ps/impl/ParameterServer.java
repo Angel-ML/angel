@@ -165,6 +165,8 @@ public class ParameterServer {
    */
   private volatile WorkerPool workerPool;
 
+  private volatile RunningContext runningContext;
+
   private final PSFailedReport psFailedReport;
 
   /**
@@ -435,7 +437,8 @@ public class ParameterServer {
     locationManager = new PSLocationManager(context);
     locationManager.setMasterLocation(masterLocation);
 
-    workerPool = new WorkerPool(context);
+    runningContext = new RunningContext(context);
+    workerPool = new WorkerPool(context, runningContext);
     workerPool.init();
 
     ioExecutors = new IOExecutors(context);
@@ -545,9 +548,6 @@ public class ParameterServer {
     pairBuilder.setValue("value");
     builder.addMetrics(pairBuilder.build());
     builder.addAllMatrixReports(buildMatrixReports());
-
-    builder.setPsFailedReports(ProtobufUtil.convertToPSFailedReportsProto(psFailedReport.getReports()));
-
     PSReportResponse ret = null;
     PSReportRequest request = builder.build();
     try {
@@ -666,11 +666,14 @@ public class ParameterServer {
     ioExecutors.start();
     matrixTransportServer.start();
     clockVectorManager.start();
+    runningContext.start();
 
     if(getAttemptIndex() > 0) {
       LOG.info("PS " + getServerId() + " running attempt " + getAttemptIndex() + " load matrices from snapshot if need");
       List<MatrixMeta> matrixMetas = master.getMatricesMeta();
-      createMatrices(matrixMetas);
+      if(!matrixMetas.isEmpty()) {
+        createMatrices(matrixMetas);
+      }
     }
 
     register();
@@ -733,25 +736,57 @@ public class ParameterServer {
     return attemptIndex;
   }
 
+  /**
+   * Get location manager
+   * @return location manager
+   */
   public PSLocationManager getLocationManager() {
     return locationManager;
   }
 
+  /**
+   * Get PS 2 PS update pusher
+   * @return PS 2 PS update pusher
+   */
   public PS2PSPusherImpl getPs2PSPusher() {
     return ps2PSPusher;
   }
 
+  /**
+   * Get RPC worker pool
+   * @return RPC worker pool
+   */
   public WorkerPool getWorkerPool() {
     return workerPool;
   }
 
+  /**
+   * Get File Read/Writer executors
+   * @return File Read/Writer executors
+   */
   public IOExecutors getIOExecutors() {
     return ioExecutors;
   }
 
+  /**
+   * Get Snapshot dumper
+   * @return Snapshot dumper
+   */
   public SnapshotDumper getSnapshotDumper() { return snapshotDumper; }
 
+  /**
+   * Get PS failed information reporter
+   * @return PS failed information reporter
+   */
   public PSFailedReport getPSFailedReport() {
     return psFailedReport;
+  }
+
+  /**
+   * Get PS running context
+   * @return PS running context
+   */
+  public RunningContext getRunningContext() {
+    return runningContext;
   }
 }

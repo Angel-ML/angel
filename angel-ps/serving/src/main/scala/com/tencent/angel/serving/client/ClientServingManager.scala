@@ -67,9 +67,11 @@ class ClientServingManager(clientService: ClientProtocol, config: Configuration)
     * @param name
     */
   def unregister(name: String): Unit = {
-    distributedModelMap.remove(name)
-    if (LOG.isDebugEnabled) {
-      LOG.debug(s"the model:${name} is unregistered")
+    if (distributedModelMap.contains(name)) {
+      distributedModelMap.remove(name)
+      if (LOG.isDebugEnabled) LOG.debug(s"the model:${name} is unregistered")
+    } else {
+      if (LOG.isDebugEnabled)LOG.debug(s"the model:${name} is not exsits in distributedModelMap !")
     }
   }
 
@@ -115,14 +117,13 @@ class ClientServingManager(clientService: ClientProtocol, config: Configuration)
           val modelLocationList = clientService.getModelLocations().modelLocations
           val modelLocs = modelLocationList.map(_.name).toSet
 
-          modelLocationList.foreach(modelLocation => {
-            distributedModelMap.get(modelLocation.name).foreach(clientModel => {
-
+          modelLocationList.foreach{ modelLocation =>
+            distributedModelMap.get(modelLocation.name).foreach{clientModel =>
 
               val splitLocs = modelLocation.splitLocations.map(splitLoc => (splitLoc.idx, splitLoc.locs)).toMap
               clientModel.splits.filter(modelSplit => splitLocs.contains(modelSplit.index)).foreach(modelSplit => modelSplit.replica.renew(splitLocs(modelSplit.index)))
-            })
-          })
+            }
+          }
 
           distributedModelMap.foreach((model: (String, DistributedModel)) => {
             if (!modelLocs.contains(model._1)) {

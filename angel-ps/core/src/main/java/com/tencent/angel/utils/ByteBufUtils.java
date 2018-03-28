@@ -16,30 +16,40 @@
 
 package com.tencent.angel.utils;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.*;
 
 /**
  * Netty ByteBuf allocation utils.
  */
 public class ByteBufUtils {
-  // private static UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(false);
-  private static PooledByteBufAllocator allocator = new PooledByteBufAllocator();
+  private static volatile ByteBufAllocator allocator = null;
   public static volatile boolean useDirect = true;
+  public static volatile boolean usePool = true;
+
+  private static ByteBufAllocator getBufferAllocator() {
+    if(allocator == null) {
+      if(usePool) {
+        allocator = new PooledByteBufAllocator();
+      } else {
+        allocator = new UnpooledByteBufAllocator(true);
+      }
+    }
+    return allocator;
+  }
 
   public static ByteBuf newHeapByteBuf(int estimizeSerilizeSize) {
-    return allocator.buffer(estimizeSerilizeSize);
+    return getBufferAllocator().buffer(estimizeSerilizeSize);
   }
 
   public static ByteBuf newDirectByteBuf(int estimizeSerilizeSize) {
-    return allocator.directBuffer(estimizeSerilizeSize);
+    return getBufferAllocator().directBuffer(estimizeSerilizeSize);
   }
 
   public static ByteBuf newByteBuf(int estimizeSerilizeSize, boolean useDirect) {
     if (useDirect) {
       return newDirectByteBuf(estimizeSerilizeSize);
     } else {
-      return newByteBuf(estimizeSerilizeSize);
+      return newHeapByteBuf(estimizeSerilizeSize);
     }
   }
 

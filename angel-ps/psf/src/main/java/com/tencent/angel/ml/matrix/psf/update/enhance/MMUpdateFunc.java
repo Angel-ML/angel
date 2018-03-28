@@ -17,10 +17,9 @@
 
 package com.tencent.angel.ml.matrix.psf.update.enhance;
 
-import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
-import com.tencent.angel.ps.impl.matrix.ServerPartition;
-import com.tencent.angel.ps.impl.matrix.ServerRow;
-import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.exception.WaitLockTimeOutException;
+import com.tencent.angel.ps.impl.matrix.*;
 
 /**
  * `MMUpdateFunc` is a POF updater for a row in matrix with multi double parameter.
@@ -37,13 +36,18 @@ public abstract class MMUpdateFunc extends UpdateFunc {
     super(new MMUpdateParam(matrixId, rowIds, scalars));
   }
 
+  public MMUpdateFunc(int matrixId, int startId, int length, double[] scalars) {
+    super(new MMUpdateParam(matrixId, startId, length, scalars));
+  }
+
   public MMUpdateFunc() {
     super(null);
   }
 
   @Override
   public void partitionUpdate(PartitionUpdateParam partParam) {
-    ServerPartition part = psContext.getMatrixStorageManager().getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
+    ServerPartition part = psContext.getMatrixStorageManager().getPart(
+            partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
 
     if (part != null) {
       MMUpdateParam.MMPartitionUpdateParam vs2 =
@@ -66,12 +70,33 @@ public abstract class MMUpdateFunc extends UpdateFunc {
         }
         doUpdate(denseRows, scalars);
         return;
-      case T_DOUBLE_SPARSE_LONGKEY:
-        ServerSparseDoubleLongKeyRow[] sparseRows = new ServerSparseDoubleLongKeyRow[rows.length];
+      case T_DOUBLE_SPARSE:
+        ServerSparseDoubleRow[] sparseRows = new ServerSparseDoubleRow[rows.length];
         for (int i = 0; i < rows.length; i++) {
-          sparseRows[i] = (ServerSparseDoubleLongKeyRow) rows[i];
+          sparseRows[i] = (ServerSparseDoubleRow) rows[i];
         }
         doUpdate(sparseRows, scalars);
+        return;
+      case T_DOUBLE_SPARSE_LONGKEY:
+        ServerSparseDoubleLongKeyRow[] sparseLongKeyRows = new ServerSparseDoubleLongKeyRow[rows.length];
+        for (int i = 0; i < rows.length; i++) {
+          sparseLongKeyRows[i] = (ServerSparseDoubleLongKeyRow) rows[i];
+        }
+        doUpdate(sparseLongKeyRows, scalars);
+        return;
+      case T_FLOAT_DENSE:
+        ServerDenseFloatRow[] denseFloatRows = new ServerDenseFloatRow[rows.length];
+        for (int i = 0; i < rows.length; i++) {
+          denseFloatRows[i] = (ServerDenseFloatRow) rows[i];
+        }
+        doUpdate(denseFloatRows, scalars);
+        return;
+      case T_FLOAT_SPARSE:
+        ServerSparseFloatRow[] sparseFloatRows = new ServerSparseFloatRow[rows.length];
+        for (int i = 0; i < rows.length; i++) {
+          sparseFloatRows[i] = (ServerSparseFloatRow) rows[i];
+        }
+        doUpdate(sparseFloatRows, scalars);
         return;
       default:
         throw new RuntimeException("currently only supports T_DOUBLE_DENSE and T_DOUBLE_SPARSE_LONGKEY");
@@ -82,4 +107,15 @@ public abstract class MMUpdateFunc extends UpdateFunc {
 
   protected abstract void doUpdate(ServerSparseDoubleLongKeyRow[] rows, double[] scalars);
 
+  protected void doUpdate(ServerSparseDoubleRow[] rows, double[] scalars) {
+    throw new AngelException("Please implement ServerSparseDoubleRow doUpdate frist!");
+  }
+
+  protected void doUpdate(ServerDenseFloatRow[] rows, double[] scalars) {
+    throw new AngelException("Please implement ServerDenseFloatRow doUpdate frist!");
+  }
+
+  protected void doUpdate(ServerSparseFloatRow[] rows, double[] scalars) {
+    throw new AngelException("Please implement ServerSparseFloatRow doUpdate frist!");
+  }
 }

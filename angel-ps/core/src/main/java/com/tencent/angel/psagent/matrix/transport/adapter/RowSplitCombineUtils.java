@@ -23,6 +23,7 @@ import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ps.impl.matrix.*;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.psagent.PSAgentContext;
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -83,7 +84,7 @@ public class RowSplitCombineUtils {
    * @throws InterruptedException interrupted while waiting for row splits
    */
   public static TVector combineRowSplitsPipeline(GetRowPipelineCache cache, int matrixId,
-                                                 int rowIndex) throws InterruptedException {
+                                                 int rowIndex) throws Exception {
     MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
     RowType rowType = matrixMeta.getRowType();
 
@@ -122,7 +123,7 @@ public class RowSplitCombineUtils {
         return combineCompServerSparseDoubleLongKeyRowSplits(getAllRowSplitsFromCache(cache), matrixMeta, rowIndex);
 
       default:
-        return null;
+        throw new UnsupportedOperationException("Unsupport operation: merge " + rowType + " vector splits");
     }
   }
 
@@ -370,7 +371,7 @@ public class RowSplitCombineUtils {
 
   private static TVector combineServerSparseDoubleLongKeyRowSplits(List<ServerRow> rowSplits,
     MatrixMeta matrixMeta, int rowIndex) {
-    int colNum = (int)matrixMeta.getColNum();
+    long colNum = matrixMeta.getColNum();
     int splitNum = rowSplits.size();
     int totalElemNum = 0;
     int[] lens = new int[splitNum];
@@ -389,20 +390,26 @@ public class RowSplitCombineUtils {
 
     int clock = Integer.MAX_VALUE;
     int startPos = 0;
+    assert(rowSplits.size() > 0);
+    double defaultValue = ((ServerSparseDoubleLongKeyRow) rowSplits.get(0)).getDefaultValue();
     for (int i = 0; i < splitNum; i++) {
       if (rowSplits.get(i).getClock() < clock) {
         clock = rowSplits.get(i).getClock();
       }
-      ((ServerSparseDoubleLongKeyRow) rowSplits.get(i)).mergeTo(indexes, values, startPos, lens[i]);
+      ServerSparseDoubleLongKeyRow row = (ServerSparseDoubleLongKeyRow) rowSplits.get(i);
+      row.mergeTo(indexes, values, startPos, lens[i]);
+      assert(defaultValue == row.getDefaultValue());
       startPos += lens[i];
     }
 
-    TVector row = new SparseLongKeyDoubleVector(colNum, indexes, values);
+    Long2DoubleOpenHashMap data = new Long2DoubleOpenHashMap(indexes, values);
+    data.defaultReturnValue(defaultValue);
+    SparseLongKeyDoubleVector row = new SparseLongKeyDoubleVector(colNum, data);
+    row.setModelNnz(matrixMeta.getNnz());
     row.setMatrixId(matrixMeta.getId());
     row.setRowId(rowIndex);
     row.setClock(clock);
     return row;
-
   }
 
   private static TVector combineCompServerSparseDoubleLongKeyRowSplits(List<ServerRow> rowSplits,

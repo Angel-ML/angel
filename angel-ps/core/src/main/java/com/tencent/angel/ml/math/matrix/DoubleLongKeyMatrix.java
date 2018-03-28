@@ -17,6 +17,7 @@
 
 package com.tencent.angel.ml.math.matrix;
 
+import com.tencent.angel.ml.math.vector.SparseLongKeyDoubleVector;
 import com.tencent.angel.ml.math.vector.TLongDoubleVector;
 
 /**
@@ -102,4 +103,5 @@ public abstract class DoubleLongKeyMatrix<ROW extends  TLongDoubleVector> extend
     }
     return vectors[rowIndex].get(colIndex);
   }
+
 }

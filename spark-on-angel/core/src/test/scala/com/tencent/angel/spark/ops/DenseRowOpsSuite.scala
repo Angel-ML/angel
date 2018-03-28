@@ -16,8 +16,6 @@
 
 package com.tencent.angel.spark.ops
 
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 import com.tencent.angel.spark.client.PSClient

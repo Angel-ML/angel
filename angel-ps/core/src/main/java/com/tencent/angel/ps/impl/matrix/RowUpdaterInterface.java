@@ -32,7 +32,7 @@ public interface RowUpdaterInterface {
    * @param row           the row of updating
    * @throws Exception
    */
-  void update(RowType updateRowType, int size, ByteBuf dataBuf, ServerRow row)
+  void update(RowType updateRowType, ByteBuf dataBuf, ServerRow row)
       throws Exception;
 
 }

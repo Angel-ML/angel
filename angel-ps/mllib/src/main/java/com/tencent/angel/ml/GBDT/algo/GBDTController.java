@@ -101,7 +101,8 @@ public class GBDTController {
 
     this.sketches = new float[this.param.numFeature * this.param.numSplit];
 
-    String cateFeatStr = this.taskContext.getConf().get(MLConf.ML_GBDT_CATE_FEAT());
+    String cateFeatStr = this.taskContext.getConf()
+        .get(MLConf.ML_GBDT_CATE_FEAT(), MLConf.DEFAULT_ML_GBDT_CATE_FEAT());
     cateFeatList = new ArrayList<>();
     cateFeatNum = new HashMap<>();
     switch (cateFeatStr) {

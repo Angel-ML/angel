@@ -35,6 +35,7 @@ import com.tencent.angel.ps.impl.matrix.ServerRow;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplit;
 import com.tencent.angel.utils.ByteBufUtils;
+import com.tencent.angel.utils.StringUtils;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
@@ -43,18 +44,19 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
-import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.hadoop.conf.Configuration;
 
+import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * RPC client to parameter servers. It uses Netty as the network communication framework.
@@ -115,6 +117,12 @@ public class MatrixTransportClient implements MatrixTransportInterface {
    * client worker pool: 1.use to deserialize partition responses and merge them to final result
    * 2.use to generate partition request and serialize it
    * */
+  private ExecutorService hbThreadPool;
+
+  /**
+   * client worker pool: 1.use to deserialize partition responses and merge them to final result
+   * 2.use to generate partition request and serialize it
+   * */
   private ExecutorService responseThreadPool;
 
   /** response message handler */
@@ -128,11 +136,62 @@ public class MatrixTransportClient implements MatrixTransportInterface {
   /** use direct netty buffer or not */
   private final boolean useDirectBuffer;
 
+  /** use pooled netty buffer or not */
+  private final boolean usePool;
+
   private final boolean disableRouterCache;
 
   private final int partReplicNum;
 
-  private volatile PSAgentPSFailedReporter reporter;
+  /**
+   * PSAgent to PS heartbeat sender
+   */
+  private volatile PSHeartbeat psHeartbeater;
+
+  /**
+   * PS location refresher
+   */
+  private volatile PSLocRefresher psLocRefresher;
+
+  /**
+   * PS to last heartbeat timestamp map, it only contains the PSS that some RPCS failed
+   */
+  private final ConcurrentHashMap<ParameterServerId, GrayServer> grayServers = new ConcurrentHashMap<>();
+
+  /**
+   * Failed PS to old loc map
+   */
+  private final ConcurrentHashMap<ParameterServerId, Location> failedPSToLocMap = new ConcurrentHashMap<>();
+
+  /**
+   * Request id to request send result map
+   */
+  private final ConcurrentHashMap<Integer, SendResultKey> seqIdToSendCFMap = new ConcurrentHashMap<>();
+
+  /**
+   * Request id generator
+   */
+  private final AtomicInteger currentSeqId = new AtomicInteger(0);
+
+  /**
+   * PS id to PS state map
+   */
+  private final ConcurrentHashMap<ParameterServerId, ServerState> psIdToStateMap = new ConcurrentHashMap<>();
+
+  /**
+   * RPC running context
+   */
+  private final RPCContext rpcContext;
+
+  /**
+   * PS location to last get channel timestamp map
+   */
+  private final ConcurrentHashMap<PSLocation, GetChannelContext> psLocToGetChannelContextMap = new ConcurrentHashMap<>();
+
+  /**
+   * PS location to "no active channel" error counter map
+   */
+  private final ConcurrentHashMap<PSLocation, AtomicInteger> psLocToNoActiveCounterMap = new ConcurrentHashMap<>();
 
   /**
    * Create a new MatrixTransportClient.
@@ -165,15 +224,26 @@ public class MatrixTransportClient implements MatrixTransportInterface {
         conf.getBoolean(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_CLIENT_USEDIRECTBUFFER,
             AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_USEDIRECTBUFFER);
 
+    usePool =
+        conf.getBoolean(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_CLIENT_USEPOOL,
+            AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_USEPOOL);
+
+    ByteBufUtils.useDirect = useDirectBuffer;
+    ByteBufUtils.usePool = usePool;
+
     partReplicNum = conf.getInt(AngelConf.ANGEL_PS_HA_REPLICATION_NUMBER,
       AngelConf.DEFAULT_ANGEL_PS_HA_REPLICATION_NUMBER);
     disableRouterCache = partReplicNum > 1;
 
     channelManager = null;
+    rpcContext = new RPCContext();
   }
 
   private void init() {
     Configuration conf = PSAgentContext.get().getConf();
+
+    rpcContext.init(conf, PSAgentContext.get().getLocationManager().getPsIds());
+
     int nettyWorkerNum =
         conf.getInt(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_CLIENT_EVENTGROUP_THREADNUM,
             AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_EVENTGROUP_THREADNUM);
@@ -198,6 +268,8 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       conf.getInt(AngelConf.ANGEL_MATRIXTRANSFER_CLIENT_RESPONSER_POOL_SIZE,
         AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_CLIENT_RESPONSER_POOL_SIZE));
 
+    hbThreadPool = Executors.newFixedThreadPool(8);
+
     bootstrap = new Bootstrap();
     channelManager = new ChannelManager(bootstrap);
 
@@ -220,13 +292,14 @@ public class MatrixTransportClient implements MatrixTransportInterface {
     bootstrap.group(eventGroup).channel(NioSocketChannel.class)
         .option(ChannelOption.SO_SNDBUF, sendBuffSize)
         .option(ChannelOption.SO_RCVBUF, recvBuffSize)
+        .option(ChannelOption.SO_KEEPALIVE, true)
         .handler(new ChannelInitializer<SocketChannel>() {
           @Override
           protected void initChannel(SocketChannel ch) throws Exception {
             ChannelPipeline pipeLine = ch.pipeline();
             pipeLine.addLast(new LengthFieldBasedFrameDecoder(maxMessageSize, 0, 4, 0, 4));
             pipeLine.addLast(new LengthFieldPrepender(4));
-            pipeLine.addLast(new MatrixTransportClientHandler(msgQueue, dispatchMessageQueue));
+            pipeLine.addLast(new MatrixTransportClientHandler(msgQueue, dispatchMessageQueue, rpcContext));
           }
         });
   }
@@ -237,14 +310,20 @@ public class MatrixTransportClient implements MatrixTransportInterface {
   public void start() {
     init();
 
-    reporter = new PSAgentPSFailedReporter(PSAgentContext.get());
-    reporter.init();
-    reporter.start();
+    psHeartbeater = new PSHeartbeat();
+    psHeartbeater.setName("ps-heartbeat");
+    psHeartbeater.start();
+
+    psLocRefresher = new PSLocRefresher();
+    psLocRefresher.setName("psloc-refresher");
+    psLocRefresher.start();
 
     requestDispacher = new RequestDispatcher();
+    requestDispacher.setName("request-dispatcher");
     requestDispacher.start();
 
     responseDispatcher = new ResponseDispatcher();
+    responseDispatcher.setName("response-dispatcher");
     responseDispatcher.start();
 
     timer.schedule(new TimerTask() {
@@ -266,11 +345,6 @@ public class MatrixTransportClient implements MatrixTransportInterface {
     if (!stopped.getAndSet(true)) {
       if (timer != null) {
         timer.cancel();
-      }
-
-      if(reporter != null) {
-        reporter.stop();
-        reporter = null;
       }
 
       if (requestDispacher != null) {
@@ -392,42 +466,211 @@ public class MatrixTransportClient implements MatrixTransportInterface {
     queue.add(request);
   }
 
+  class PSLocRefresher extends Thread {
+    @Override
+    public void run() {
+      while(!stopped.get() && !Thread.interrupted()) {
+        Iterator<Entry<ParameterServerId, Location>> iter = failedPSToLocMap.entrySet().iterator();
+        while(iter.hasNext()) {
+          Entry<ParameterServerId, Location> entry = iter.next();
+          try {
+            Location loc = PSAgentContext.get().getMasterClient().getPSLocation(entry.getKey());
+            if(loc != null && !loc.equals(entry.getValue())) {
+              LOG.info("Refresh location for PS " + entry.getKey() + ", new location=" + loc);
+              // Update location table
+              PSAgentContext.get().getLocationManager().setPsLocation(entry.getKey(), loc);
+
+              // Remove the server from failed list
+              removeFailedServers(entry.getKey());
+
+              // Notify refresh success message to request dispatcher
+              refreshServerLocationSuccess(entry.getKey(), true);
+            }
+          } catch (Throwable e) {
+            LOG.error("Get location from master failed ", e);
+          }
+        }
+        try {
+          Thread.sleep(5000);
+        } catch (Throwable e) {
+          if(!stopped.get()) {
+            LOG.error("ps-heartbeat is interruptted");
+          }
+        }
+      }
+    }
+  }
+
+  private boolean isRefreshing(ParameterServerId psId) {
+    return failedPSToLocMap.containsKey(psId);
+  }
+
+  private void removeFailedServers(ParameterServerId psId) {
+    failedPSToLocMap.remove(psId);
+  }
+
+  class PSHeartbeat extends Thread {
+    /**
+     * PS heartbeat timeout in milliseconds
+     */
+    private final int psHbTimeOutMS;
+
+    /**
+     * PS heartbeat interval in milliseconds
+     */
+    private final int psHbTimeIntervalMS;
+
+    public PSHeartbeat() {
+      Configuration conf = PSAgentContext.get().getConf();
+      psHbTimeIntervalMS =
+        conf.getInt(AngelConf.ANGEL_PSAGENT_TO_PS_HEARTBEAT_INTERVAL_MS,
+          AngelConf.DEFAULT_ANGEL_PSAGENT_TO_PS_HEARTBEAT_INTERVAL_MS);
+
+      psHbTimeOutMS =
+        conf.getInt(AngelConf.ANGEL_PSAGENT_TO_PS_HEARTBEAT_TIMEOUT_MS,
+          AngelConf.DEFAULT_ANGEL_PSAGENT_TO_PS_HEARTBEAT_TIMEOUT_MS);
+    }
+
+    @Override
+    public void run() {
+      while(!stopped.get() && !Thread.interrupted()) {
+        Iterator<Entry<ParameterServerId, GrayServer>> iter = grayServers.entrySet().iterator();
+        Entry<ParameterServerId, GrayServer> entry;
+        while(iter.hasNext()) {
+          entry = iter.next();
+          LOG.warn("PS " + entry.getKey() + " is in gray server list, Send hb to it to check");
+
+          // Check PS exist or not
+          if(isPSExited(entry.getValue())) {
+            LOG.error("PS " + entry.getValue().psLoc + " already exited, just remove from gray"
+              + " list and put it to failed list");
+            try {
+              notifyServerFailed(entry.getValue(), false);
+            } catch (ServiceException e) {
+              continue;
+            }
+            iter.remove();
+            continue;
+          }
+
+          // Check heartbeat timeout
+          if(isTimeOut(entry.getValue())) {
+            LOG.error("PS " + entry.getValue().psLoc + " heartbeat timeout, notify to Master");
+            try {
+              notifyServerFailed(entry.getValue(), true);
+            } catch (ServiceException e) {
+              LOG.error("Notify PS " + entry.getValue().psLoc + " failed message to Master failed ", e);
+              continue;
+            }
+            iter.remove();
+            continue;
+          }
+
+          if(shouldRemoveFromGrayList(entry.getValue())) {
+            LOG.info("PS " + entry.getValue().psLoc + " state back to normal, remove it from gray server list");
+            iter.remove();
+            notifyServerNormal(entry.getValue());
+            continue;
+          }
+          sendHeartBeat(entry.getValue().psLoc);
+        }
+        try {
+          Thread.sleep(psHbTimeIntervalMS);
+        } catch (Throwable e) {
+          if(!stopped.get()) {
+            LOG.error("ps-heartbeat is interruptted");
+          }
+        }
+      }
+    }
+
+    private boolean isTimeOut(GrayServer server) {
+      return System.currentTimeMillis() - server.lastHBTs > psHbTimeOutMS;
+    }
+
+    private boolean isPSExited(GrayServer server) {
+      return server.state == ServerState.EXITED;
+    }
+
+    private boolean shouldRemoveFromGrayList(GrayServer server) {
+      return server.state != null && (server.state == ServerState.IDLE || server.state == ServerState.GENERAL);
+    }
+  }
+
+  private void notifyServerFailed(GrayServer server, boolean notifyToMaster) throws ServiceException {
+    try {
+      dispatchMessageQueue.add(new ServerEvent(EventType.SERVER_FAILED, server.psLoc));
+    } catch (Exception e) {
+      LOG.error("add SERVER_FAILED event for request failed, ", e);
+    }
+
+    if(notifyToMaster) {
+      PSAgentContext.get().getMasterClient().psFailed(server.psLoc);
+    }
+  }
+
+  private void notifyServerNormal(GrayServer server) {
+    psIdToStateMap.put(server.psLoc.psId, server.state);
+    try {
+      dispatchMessageQueue.add(new ServerEvent(EventType.SERVER_NORMAL, server.psLoc));
+    } catch (Exception e) {
+      LOG.error("add SERVER_NORMAL event for request failed, ", e);
+    }
+  }
+
+  private void sendHeartBeat(final PSLocation psLoc) {
+    hbThreadPool.execute(() -> {
+      try {
+        LOG.info("Start to send hb to " + psLoc);
+        ServerState state = PSAgentContext.get().getPSControlClientManager().getOrCreatePSClient(psLoc.loc).getState();
+        GrayServer server = grayServers.get(psLoc.psId);
+        if(server != null) {
+          server.state = state;
+          server.lastHBTs = System.currentTimeMillis();
+        }
+      } catch (Throwable e) {
+        LOG.error("Send heartbeat to " + psLoc + " failed ", e);
+
+        // Check PS restart or not
+        try {
+          if(PSAgentContext.get().getMasterClient().isPSExited(psLoc)) {
+            GrayServer server = grayServers.get(psLoc.psId);
+            if(server != null) {
+              server.state = ServerState.EXITED;
+              server.lastHBTs = System.currentTimeMillis();
+            }
+          }
+        } catch (Throwable x) {
+
+        }
+      }
+    });
+  }
+
+  private int genSeqId() {
+    return currentSeqId.incrementAndGet();
+  }
+
+  private boolean isFailed(ParameterServerId psId) {
+    return failedPSToLocMap.containsKey(psId);
+  }
+
+  private boolean isInGrayList(ParameterServerId psId) {
+    return grayServers.containsKey(psId);
+  }
+
+  private void removeFromGrayList(ParameterServerId psId) {
+    grayServers.remove(psId);
+  }
+
+  private void addToGrayList(PSLocation psLoc) {
+    grayServers.putIfAbsent(psLoc.psId, new GrayServer(psLoc, System.currentTimeMillis()));
+  }
+
   /**
    * RPC request dispatcher.
    */
   class RequestDispatcher extends Thread {
-    /** max bytes of the flight get/put request */
-    private final long maxBytesInFlight;
-
-    /** total data bytes of the flight put requests */
-    private final AtomicInteger totalBytesInFlightPut;
-
-    /** total data bytes of the flight get requests */
-    private final AtomicInteger totalBytesInFlightGet;
-
-    /** max number of the flight requests */
-    private final int maxReqNumInFlight;
-
-    /** total flight request counter */
-    private final AtomicInteger totalRequestNumInFlightAtomic;
-
-    /** max number of the flight requests to each ps */
-    private final int maxReqNumInFlightPerServer;
-
-    /** ps id to flight request counter map */
-    private final Map<ParameterServerId, Integer> reqNumInFlightCounters;
-
-    private int totalRequestNumInFlight;
-
-    /**
-     * if partition request to a parameterserver continuous failure, we should refresh the location
-     * for it
-     */
-    private final int refreshThreshold;
-
-    /** server id to the number of falied request counter map */
-    private final Map<ParameterServerId, Integer> serverFailedStatics;
-
     /**
      * schedulable failed put request queue: the requests in the will be scheduled first
      */
@@ -437,8 +680,6 @@ public class MatrixTransportClient implements MatrixTransportInterface {
      * schedulable failed get request queue: the requests in the will be scheduled first
      */
     private final LinkedBlockingQueue<Request> schedulableFailedGetCache;
-
-    private final LinkedList<Request> waitGetList;
 
     /**
      * un-schedulable failed partition request queues: the requests in these queues will be move to
@@ -457,12 +698,13 @@ public class MatrixTransportClient implements MatrixTransportInterface {
     public int lastChosenGetServerIndex;
 
     /** refreshing server set:the partition request for refreshing server can not be scheduled */
-    private final HashSet<ParameterServerId> refreshingServerSet;
+    //private final HashSet<ParameterServerId> refreshingServerSet;
 
     private final int requestTimeOut;
 
+    private final int psHbTimeOutMS;
+
     private int tickClock;
-    private int currentSeqId;
 
     public RequestDispatcher() {
       Configuration conf = PSAgentContext.get().getConf();
@@ -470,50 +712,18 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       lastChosenPutServerIndex = new Random().nextInt(psIds.length);
       lastChosenGetServerIndex = new Random().nextInt(psIds.length);
 
-      totalBytesInFlightPut = new AtomicInteger(0);
-      totalBytesInFlightGet = new AtomicInteger(0);
-      totalRequestNumInFlightAtomic = new AtomicInteger(0);
-      maxBytesInFlight = PSAgentContext.get().getMaxBytesInFlight();
-      int serverNum =
-          conf.getInt(AngelConf.ANGEL_PS_NUMBER,
-              AngelConf.DEFAULT_ANGEL_PS_NUMBER);
-
-      maxReqNumInFlightPerServer =
-          conf.getInt(AngelConf.ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM_PERSERVER,
-              AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM_PERSERVER);
-
-      reqNumInFlightCounters = new HashMap<>();
-      for (int i = 0; i < psIds.length; i++) {
-        reqNumInFlightCounters.put(psIds[i], 0);
-      }
-
-      int maxReqNumInFlight =
-          conf.getInt(AngelConf.ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM,
-              AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_MAX);
-
-      if (maxReqNumInFlight > serverNum * maxReqNumInFlightPerServer) {
-        maxReqNumInFlight = serverNum * maxReqNumInFlightPerServer;
-      }
-      this.maxReqNumInFlight = maxReqNumInFlight;
-
-      totalRequestNumInFlight = 0;
-
       failedPutCache = new LinkedList<>();
       failedGetCache = new LinkedList<>();
       schedulableFailedPutCache = new LinkedBlockingQueue<>();
       schedulableFailedGetCache = new LinkedBlockingQueue<>();
-      waitGetList = new LinkedList<>();
-      serverFailedStatics = new HashMap<>();
-
-      refreshThreshold =
-          conf.getInt(AngelConf.ANGEL_REFRESH_SERVERLOCATION_THRESHOLD,
-              AngelConf.DEFAULT_ANGEL_REFRESH_SERVERLOCATION_THRESHOLD);
-
-      refreshingServerSet = new HashSet<>();
 
       requestTimeOut =
           conf.getInt(AngelConf.ANGEL_MATRIXTRANSFER_REQUEST_TIMEOUT_MS,
               AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_REQUEST_TIMEOUT_MS);
+
+      psHbTimeOutMS =
+        conf.getInt(AngelConf.ANGEL_PSAGENT_TO_PS_HEARTBEAT_TIMEOUT_MS,
+          AngelConf.DEFAULT_ANGEL_PSAGENT_TO_PS_HEARTBEAT_TIMEOUT_MS);
 
       tickClock = 0;
       LOG.info("ByteOrder.nativeOrder()=" + ByteOrder.nativeOrder());
@@ -533,29 +743,25 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
             case GET_SUCCESS: {
               Request request = ((RequestDispatchEvent) event).getRequest();
-              serverFailedStatics.put(request.getContext().getServerId(), 0);
-              updateGetFlowControl(request, -1);
-              getDataSplit();
-              break;
-            }
-
-            case GET_NOTREADY: {
-              Request request = ((RequestDispatchEvent) event).getRequest();
-              updateGetFlowControl(request, -1);
-              waitGetList.add(request);
               getDataSplit();
               break;
             }
 
             case GET_FAILED: {
-              Request request = ((RequestDispatchEvent) event).getRequest();
+              RequestFailedEvent getFailedEvent = (RequestFailedEvent) event;
+              Request request = getFailedEvent.getRequest();
               request.getContext().setFailedTs(System.currentTimeMillis());
-              updateGetFlowControl(request, -1);
+
+              // Add it to failed rpc list
               if(request instanceof PartitionRequest) {
+                request.getContext().setNextRetryTs(genNextRetryTs());
                 failedGetCache.add(request);
-                refreshConn(request);
               }
 
+              // Add the server to gray server list
+              if(needPutToGrayServers(getFailedEvent.getFailedType())) {
+                addToGrayList(new PSLocation(request.getContext().getActualServerId(), request.getContext().getLocation()));
+              }
               getDataSplit();
               break;
             }
@@ -567,22 +773,46 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
             case PUT_SUCCESS: {
               Request request = ((RequestDispatchEvent) event).getRequest();
-              serverFailedStatics.put(request.getContext().getServerId(), 0);
-              updatePutFlowControl(request, -1);
               putDataSplit();
               break;
             }
 
             case PUT_FAILED: {
-              Request request = ((RequestDispatchEvent) event).getRequest();
+              RequestFailedEvent putFailedEvent = (RequestFailedEvent) event;
+              Request request = putFailedEvent.getRequest();
               request.getContext().setFailedTs(System.currentTimeMillis());
-              updatePutFlowControl(request, -1);
 
+              // Add it to failed rpc list
               if(request instanceof PartitionRequest) {
+                request.getContext().setNextRetryTs(genNextRetryTs());
                 failedPutCache.add(request);
-                refreshConn(request);
               }
+
+              // Add the server to gray server list
+              if(needPutToGrayServers(putFailedEvent.getFailedType())) {
+                addToGrayList(new PSLocation(request.getContext().getActualServerId(), request.getContext().getLocation()));
+              }
+
               putDataSplit();
+              break;
+            }
+
+            case SERVER_FAILED: {
+              ServerEvent serverFailedEvent = (ServerEvent)event;
+
+              // Move from gray server list to failed server list
+              failedPSToLocMap.put(serverFailedEvent.getPsLoc().psId, serverFailedEvent.getPsLoc().loc);
+              grayServers.remove(serverFailedEvent.getPsLoc().psId);
+
+              // Handle the RPCS to this server
+              psFailed(serverFailedEvent.getPsLoc());
+              break;
+            }
+
+            case SERVER_NORMAL: {
+              ServerEvent serverNormalEvent = (ServerEvent)event;
+              grayServers.remove(serverNormalEvent.getPsLoc().psId);
+              psNormal(serverNormalEvent.getPsLoc());
               break;
             }
 
@@ -590,20 +820,9 @@ public class MatrixTransportClient implements MatrixTransportInterface {
               RefreshServerLocationEvent refreshEvent = (RefreshServerLocationEvent) event;
               ParameterServerId serverId = refreshEvent.getServerId();
               LOG.info("refresh location for server " + serverId + " success ");
-              if(refreshEvent.isUpdated()) {
-                closeChannelForServer(serverId);
-                reDispatchEventForServer(serverId);
-              }
-              removeRefreshingServer(serverId);
-              dispatchTransportEvent(serverId);
-              break;
-            }
 
-            case REFRESH_SERVER_LOCATION_FAILED: {
-              ParameterServerId serverId = ((RefreshServerLocationEvent) event).getServerId();
-              removeRefreshingServer(serverId);
-              LOG.fatal("get server location from master failed");
-              PSAgentContext.get().getPsAgent().error("get server location from master failed");
+              failedPSToLocMap.remove(serverId);
+              dispatchTransportEvent(serverId);
               break;
             }
 
@@ -629,66 +848,36 @@ public class MatrixTransportClient implements MatrixTransportInterface {
         }
         catch (Throwable e) {
           LOG.fatal("RequestDispatcher is failed ", e);
-          PSAgentContext.get().getPsAgent().error("RequestDispatcher is failed. " + ExceptionUtils.getFullStackTrace(e));
+          PSAgentContext.get().getPsAgent().error("RequestDispatcher is failed. " + e.getMessage());
         }
       }
     }
 
-    private void refreshConn(Request request) {
-      if(partReplicNum == 1) {
-        Integer counter = serverFailedStatics.get(request.getContext().getServerId());
-        if (counter == null) {
-          serverFailedStatics.put(request.getContext().getServerId(), 1);
-        } else {
-          serverFailedStatics.put(request.getContext().getServerId(), counter + 1);
-        }
-
-        if (serverFailedStatics.get(request.getContext().getServerId()) >= refreshThreshold) {
-          LOG.info("PS " + request.getContext().getServerId() + " failed time "
-            + serverFailedStatics.get(request.getContext().getServerId()) + " over " + refreshThreshold);
-          addRefreshingServer(request.getContext().getServerId());
-          closeChannelForServer(request.getContext().getServerId());
-          refreshServerLocation(request.getContext().getServerId());
-          serverFailedStatics.put(request.getContext().getServerId(), 0);
-        }
-      }
+    private long genNextRetryTs() {
+      long startTs = System.currentTimeMillis();
+      Random r = new Random();
+      return startTs + (long)(requestTimeOut * r.nextDouble());
     }
 
-    private void updateGetFlowControl(Request request, int factor) {
-      updateGetBytesInFlight(request, factor);
-      updateReqNumInFlight(request.getContext().getServerId(), factor);
-    }
-
-    private void updatePutFlowControl(Request request, int factor) {
-      updatePutBytesInFlight(request, factor);
-      updateReqNumInFlight(request.getContext().getServerId(), factor);
-    }
-
-    private void addRefreshingServer(ParameterServerId serverId) {
-      refreshingServerSet.add(serverId);
-    }
-
-    private void removeRefreshingServer(ParameterServerId serverId) {
-      refreshingServerSet.remove(serverId);
-    }
-
-    private boolean isRefreshing(ParameterServerId serverId) {
-      return refreshingServerSet.contains(serverId);
+    private boolean needPutToGrayServers(ResponseType type) {
+      return type == ResponseType.NETWORK_ERROR
+        || type == ResponseType.SERVER_IS_BUSY
+        || type == ResponseType.TIMEOUT
+        || type == ResponseType.CONNECT_REFUSED;
     }
 
     /**
      * choose get partition requests and send it to server first schedule schedulableFailedGetCache
      */
     private void getDataSplit() {
-      if (checkIsOverReqNumLimit()) {
+      // Submit the schedulable failed get RPCS
+      submitTask(schedulableFailedGetCache);
+      if (!schedulableFailedGetCache.isEmpty()) {
         return;
       }
 
-      if (submitGetTask(schedulableFailedGetCache) == 0) {
-        return;
-      }
-
-      LinkedBlockingQueue<Request> getQueue = null;
+      // Submit new get RPCS
+      LinkedBlockingQueue<Request> getQueue;
       while (true) {
         getQueue = chooseGetQueue();
         if (getQueue == null) {
@@ -696,7 +885,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
         }
 
         // if submit task in getQueue failed, we should make up the last chosen get queue index
-        if (submitGetTask(getQueue) == 0) {
+        if (!getQueue.isEmpty() && (submitTask(getQueue) == 0)) {
           makeUpChoosedGetQueue();
           return;
         }
@@ -721,7 +910,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       int maxCheckTime = psIds.length;
 
       while (maxCheckTime-- > 0) {
-        if (!isRefreshing(psIds[index]) && !checkIsOverReqNumLimit(psIds[index])) {
+        if (!isInGrayList(psIds[index]) && !isFailed(psIds[index]) && !checkIsOverReqNumLimit(psIds[index])) {
           retQueue = getItemQueues.get(psIds[index]);
           if (retQueue != null && !retQueue.isEmpty()) {
             lastChosenGetServerIndex = index;
@@ -742,64 +931,47 @@ public class MatrixTransportClient implements MatrixTransportInterface {
      * submit get partition requests in a queue, if a request in this queue satisfy flow-control
      * condition and the server location for this request is not refreshing, it can be submit
      * 
-     * @param getQueue
-     * @return
+     * @param queue get request queue
+     * @return submit request number
      */
-    private int submitGetTask(LinkedBlockingQueue<Request> getQueue) {
-      Request item;
-      if ((item = getQueue.peek()) != null) {
-        if (isRefreshing(item.getContext().getServerId())) {
-          return 1;
-        }
-
-        if (!checkIsOverGetFlowControlLimit(item) && !checkIsOverReqNumLimit(item.getContext().getServerId())) {
-          item = getQueue.poll();
-          updateGetFlowControl(item, 1);
-          submit(item);
-          return 1;
-        } else {
-          return 0;
-        }
-      } else {
-        return 1;
+    private int submitTask(LinkedBlockingQueue<Request> queue) {
+      // If the queue is empty, just return 0
+      if(queue.isEmpty()) {
+        return 0;
       }
-    }
 
-    private boolean checkIsOverReqNumLimit() {
-      return ((totalRequestNumInFlight + 1) > maxReqNumInFlight);
+      Request item;
+      int submitNum = 0;
+      while((item = queue.poll()) != null) {
+        if (!checkIsOverReqNumLimit(item.getContext().getServerId())) {
+          // If request is not over limit, just submit it
+          submit(item);
+          submitNum++;
+        } else {
+          queue.add(item);
+          break;
+        }
+      }
+
+      return submitNum;
     }
 
     private boolean checkIsOverReqNumLimit(ParameterServerId serverId) {
-      return (reqNumInFlightCounters.get(serverId) + 1) > maxReqNumInFlightPerServer;
-    }
-
-    private void updateReqNumInFlight(ParameterServerId serverId, int factor) {
-      totalRequestNumInFlight += factor;
-      totalRequestNumInFlightAtomic.addAndGet(factor);
-      reqNumInFlightCounters.put(serverId, reqNumInFlightCounters.get(serverId) + factor);
-    }
-
-    private boolean checkIsOverGetFlowControlLimit(Request request) {
-      return request.getEstimizeDataSize() + totalBytesInFlightGet.get() > maxBytesInFlight;
-    }
-
-    private void updateGetBytesInFlight(Request request, int factor) {
-      totalBytesInFlightGet.addAndGet(request.getEstimizeDataSize() * factor);
+      return ((rpcContext.getInflightRPCCounters() + 1) > rpcContext.getMaxInflightRPCNum())
+        || ((rpcContext.getServerInflightRPCCounters(serverId) + 1) > rpcContext.getMaxInflightRPCNumPerServer());
     }
 
     /**
      * choose put partition requests and send it to server first schedule schedulableFailedGetCache
      */
     private void putDataSplit() {
-      if (checkIsOverReqNumLimit()) {
+      // Submit the schedulable failed get RPCS
+      submitTask(schedulableFailedPutCache);
+      if (!schedulableFailedPutCache.isEmpty()) {
         return;
       }
 
-      // Then submit normal task until reach upper limit of flow control or all tasks are submit
-      if (submitPutTask(schedulableFailedPutCache) == 0) {
-        return;
-      }
-
+      // Submit new put RPCS
       LinkedBlockingQueue<Request> putQueue = null;
       while (true) {
         putQueue = choosePutQueue();
@@ -808,7 +980,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
         }
 
         // if submit task in getQueue failed, we should make up the last chosen get queue index
-        if (submitPutTask(putQueue) == 0) {
+        if (!putQueue.isEmpty() && submitTask(putQueue) == 0) {
           makeUpChoosedPutQueue();
           return;
         }
@@ -822,45 +994,15 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       }
     }
 
-    /**
-     * submit put partition requests in a queue, if a request in this queue satisfy flow-control
-     * condition and the server location for this request is not refreshing, it can be submit
-     * 
-     * @return
-     */
-    private int submitPutTask(LinkedBlockingQueue<Request> putQueue) {
-      Request item;
-      if ((item = putQueue.peek()) != null) {
-        if (isRefreshing(item.getContext().getServerId())) {
-          return 1;
-        }
-
-        if (!checkIsOverPutFlowControlLimit(item) && !checkIsOverReqNumLimit(item.getContext().getServerId())) {
-          item = putQueue.poll();
-          updatePutFlowControl(item, 1);
-          submit(item);
-          return 1;
-        } else {
-          return 0;
-        }
-      } else {
-        return 1;
-      }
-    }
-
     private void submit(Request item) {
-      int seqId = currentSeqId++;
+      int seqId = currentSeqId.incrementAndGet();
       item.getContext().setWaitTimeTicks(0);
+      if(item instanceof PartitionRequest) {
+        rpcContext.before(item.getContext().getServerId());
+      }
+      LOG.debug("submit request seqId=" + seqId + ",request=" + item);
       seqIdToRequestMap.put(seqId, item);
       requestThreadPool.execute(new Requester(item, seqId));
-    }
-
-    private void updatePutBytesInFlight(Request request, int factor) {
-      totalBytesInFlightPut.addAndGet(request.getEstimizeDataSize() * factor);
-    }
-
-    private boolean checkIsOverPutFlowControlLimit(Request request) {
-      return request.getEstimizeDataSize() + totalBytesInFlightPut.get() > maxBytesInFlight;
     }
 
     /**
@@ -893,149 +1035,121 @@ public class MatrixTransportClient implements MatrixTransportInterface {
     }
 
     private void printDispatchInfo() {
-      LOG.debug("dispatcheableFailedPutCache size = " + schedulableFailedPutCache.size());
-      LOG.debug("dispatcheableFailedGetCache size = " + schedulableFailedGetCache.size());
       for (Entry<ParameterServerId, LinkedBlockingQueue<Request>> entry : getItemQueues.entrySet()) {
-        LOG.debug("period check, for server " + entry.getKey() + ", there is "
+        LOG.info("period check, for server " + entry.getKey() + ", there is "
             + entry.getValue().size() + " get items need dispatch ");
       }
 
       for (Entry<ParameterServerId, LinkedBlockingQueue<Request>> entry : putItemQueues.entrySet()) {
-        LOG.debug("period check, for server " + entry.getKey() + ", there is "
+        LOG.info("period check, for server " + entry.getKey() + ", there is "
             + entry.getValue().size() + " put items need dispatch ");
       }
 
-      LOG.debug("dispatcheableFailedGetCache size = " + schedulableFailedGetCache.size());
-      LOG.debug("totalRequestNumInFlight=" + totalRequestNumInFlight);
-      LOG.debug("totalRequestNumInFlightAtomic=" + totalRequestNumInFlightAtomic.get());
-      LOG.debug("maxReqNumInFlight=" + maxReqNumInFlight);
-      LOG.debug("totalBytesInFlightGet.get()=" + totalBytesInFlightGet.get());
-      LOG.debug("totalBytesInFlightPut.get()=" + totalBytesInFlightPut.get());
-      LOG.debug("maxBytesInFlight=" + maxBytesInFlight);
-
-      for (Entry<ParameterServerId, Integer> entry : reqNumInFlightCounters.entrySet()) {
-        LOG.debug("for server " + entry.getKey() + " isRefreshing=" + isRefreshing(entry.getKey())
-            + ", reqNumInFlightCounters=" + reqNumInFlightCounters.get(entry.getKey())
-            + ", maxReqNumInFlightPerServer=" + maxReqNumInFlightPerServer);
-
-      }
+      LOG.info("schedulableFailedGetCache size = " + schedulableFailedGetCache.size());
+      LOG.info("schedulableFailedPutCache size = " + schedulableFailedPutCache.size());
 
       for (Entry<Integer, Request> entry : seqIdToRequestMap.entrySet()) {
-        LOG.debug("infight request seqId=" + entry.getKey() + ", request context=" + entry.getValue()
+        LOG.info("infight request seqId=" + entry.getKey() + ", request context=" + entry.getValue()
             + ", request channel=" + entry.getValue().getContext().getChannel());
       }
+
+      rpcContext.print();
     }
 
     private void dispatchTransportEvent(ParameterServerId serverId) {
-      retryGet();
       if (tickClock % 10 != 0) {
         return;
       }
 
-      removeTimeOutRequestItem();
+      // Check all pending RPCS
+      checkTimeout();
 
+      // Check get channel context
+      if(tickClock % 100 == 0) {
+        checkChannelContext();
+      }
+
+      // Check all failed PUT RPCS and put it to schedulable list for re-schedule
       long ts = System.currentTimeMillis();
       Iterator<Request> iter = failedPutCache.iterator();
+      ParameterServerId requestServerId;
+      Request item;
       while (iter.hasNext()) {
-        Request item = iter.next();
-        if ((serverId == null || item.getContext().getServerId() == serverId)
-            && !isRefreshing(item.getContext().getServerId())
-            && (ts - item.getContext().getFailedTs() >= retryIntervalMs)) {
+        item = iter.next();
+        requestServerId = item.getContext().getServerId();
+        if ((serverId == null || requestServerId == serverId)
+            && !isInGrayList(requestServerId)
+            && !isFailed(requestServerId)
+            && (ts - item.getContext().getNextRetryTs() > 0)) {
+            //&& (ts - item.getContext().getFailedTs() >= retryIntervalMs)) {
           schedulableFailedPutCache.add(item);
           iter.remove();
         }
       }
       putDataSplit();
 
+      // Check all failed PUT RPCS and put it to schedulable list for re-schedule
       iter = failedGetCache.iterator();
       while (iter.hasNext()) {
-        Request item = iter.next();
-        if ((serverId == null || item.getContext().getServerId() == serverId)
-            && !isRefreshing(item.getContext().getServerId())
-            && (ts - item.getContext().getFailedTs() >= retryIntervalMs)) {
+        item = iter.next();
+        requestServerId = item.getContext().getServerId();
+        if ((serverId == null || requestServerId == serverId)
+            && !isInGrayList(item.getContext().getServerId())
+            && !isFailed(requestServerId)
+            && (ts - item.getContext().getNextRetryTs() > 0)) {
+            //&& (ts - item.getContext().getFailedTs() >= retryIntervalMs)) {
           schedulableFailedGetCache.add(item);
           iter.remove();
         }
       }
-
       getDataSplit();
-
-      if (LOG.isDebugEnabled()) {
+      if (LOG.isDebugEnabled() && (tickClock % 100 == 0)) {
         printDispatchInfo();
       }
     }
 
-    private void retryGet() {
-      Iterator<Request> iter = waitGetList.iterator();
-      while (iter.hasNext()) {
-        Request item = iter.next();
-        try {
-          getItemQueues.get(item.getContext().getServerId()).add(item);
-          iter.remove();
-        } catch (Exception x) {
-          LOG.warn("add " + item + " to getItemQueues falied, ", x);
+    private void checkChannelContext() {
+      long startTs = System.currentTimeMillis();
+      for(Entry<PSLocation, GetChannelContext> entry : psLocToGetChannelContextMap.entrySet()) {
+        if ((entry.getValue().getInactiveCounter() > 0)
+          || ((startTs - entry.getValue().getLastCheckTs() > requestTimeOut * 2)
+             && (entry.getValue().getSuccessCounter() == 0 && entry.getValue().failedCounter > 0))) {
+          LOG.error("Channel for ps " + entry.getKey() + " noactive channel happened time:"
+            + entry.getValue().getInactiveCounter() + ", success time:" + entry.getValue().successCounter
+            + ", failed time:" + entry.getValue().failedCounter);
+          closeChannels(entry.getKey());
+          entry.getValue().reset();
+          continue;
         }
       }
     }
 
-    private void reDispatchEventForServer(ParameterServerId serverId) {
-      LOG.debug("redispatch all events for server " + serverId);
-      Iterator<Entry<Integer, Request>> iter = seqIdToRequestMap.entrySet().iterator();
-      Entry<Integer, Request> entry = null;
-      while(iter.hasNext()) {
-        entry = iter.next();
-        if(entry.getValue().getContext().getServerId().equals(serverId)) {
-          reDispatchRequest(entry.getValue());
-          LOG.debug("remove request " + entry.getValue() + " from  seqIdToRequestMap");
-          iter.remove();
-        }
-      }
-    }
-
-    private void reDispatchRequest(Request request) {
-      returnChannel(request);
-      switch (request.getType()) {
-        case GET_PART:
-        case GET_ROWSPLIT:
-        case GET_ROWSSPLIT:
-        case GET_CLOCKS:
-        case GET_UDF:
-          schedulableFailedGetCache.add(request);
-          break;
-
-        case PUT_PART:
-        case PUT_PARTUPDATE:
-        case UPDATER:
-          schedulableFailedPutCache.add(request);
-          break;
-
-        default:
-          LOG.error("unvalid request " + request);
-          break;
-      }
-    }
-
-    private void removeTimeOutRequestItem() {
-      int removeNum = 0;
+    private void checkTimeout() {
       try {
+        long ts = System.currentTimeMillis();
         for (Entry<Integer, Request> entry : seqIdToRequestMap.entrySet()) {
           Request item = entry.getValue();
-          item.getContext().addWaitTimeTicks(checkPeriodMS * 10);
-          LOG.debug("request seqId=" + entry.getKey() + " wait time="
-              + item.getContext().getWaitTimeTicks());
-          if (item.getContext().getWaitTimeTicks() > requestTimeOut) {
-            item = seqIdToRequestMap.get(entry.getKey());
-            if (item != null) {
-              LOG.info("remove timeout request seqId=" + entry.getKey() + ", request=" + entry.getValue());
-              removeNum++;
-              requestFailed(entry.getKey(), item, ResponseType.TIMEOUT, "request timeout");
+          if(item.getContext().getSendStartTs() > 0 && ((ts - item.getContext().getSendStartTs()) > requestTimeOut)) {
+            LOG.error("Request " + item + " to PS " + item.getContext().getActualServerId()
+              + " not return result over " + requestTimeOut + " milliseconds");
+            SendResultKey sendResultKey = seqIdToSendCFMap.get(entry.getKey());
+            if(sendResultKey != null && item.getContext().getChannel() != null) {
+              sendResultKey.cf.cancel(true);
             }
+            requestFailed(entry.getKey(), ResponseType.TIMEOUT, "request timeout");
           }
         }
 
-        LOG.debug("remove timeout request, removeNum=" + removeNum);
+        //for(Entry<PSLocation, Long> entry : psLocToLastChannelTsMap.entrySet()) {
+        //  if(ts - entry.getValue() > requestTimeOut * 2)  {
+        //    LOG.error("Can not get channel for PS " + entry.getKey() + " over " + (ts - entry.getValue())
+        //      + " milliseconds, close all channels to it");
+        //    closeChannels(entry.getKey());
+        //    psLocToLastChannelTsMap.put(entry.getKey(), ts);
+        //  }
+        //}
       } catch (Exception x) {
-        LOG.fatal("remove request failed ", x);
+        LOG.error("remove request failed ", x);
       }
     }
 
@@ -1045,45 +1159,34 @@ public class MatrixTransportClient implements MatrixTransportInterface {
      * @param channel closed channel
      */
     private void removeRequestForChannel(Channel channel) {
-      LOG.debug("remove channel " + channel);
+      LOG.info("remove channel " + channel);
       int removeNum = 0;
       try {
         for (Entry<Integer, Request> entry : seqIdToRequestMap.entrySet()) {
           Channel ch = entry.getValue().getContext().getChannel();
           if (ch != null && ch.equals(channel)) {
             removeNum++;
-            Request item = seqIdToRequestMap.get(entry.getKey());
-            if (item != null) {
-              requestFailed(entry.getKey(), item, ResponseType.NETWORK_ERROR, "channel is closed");
-            }
+            requestFailed(entry.getKey(), ResponseType.NETWORK_ERROR, "channel is closed");
           }
         }
 
-        LOG.debug("remove channel " + channel + ", removeNum=" + removeNum);
+        LOG.info("remove channel " + channel + ", removeNum=" + removeNum);
       } catch (Exception x) {
         LOG.fatal("remove request failed ", x);
       }
     }
   }
 
-  private void requestNotReady(int seqId, Request request) {
-    seqIdToRequestMap.remove(seqId);
-    returnChannel(request);
-    switch (request.getType()) {
-      case GET_PART:
-      case GET_ROWSPLIT:
-      case GET_ROWSSPLIT:
-        getRequestNotReady(request);
-        break;
-
-      default:
-        LOG.error("unvalid response for request " + request + " with seqId " + seqId);
-        break;
+  private void requestSuccess(int seqId) {
+    Request request = seqIdToRequestMap.remove(seqId);
+    if(request == null) {
+      return;
     }
-  }
 
-  private void requestSuccess(int seqId, Request request) {
-    seqIdToRequestMap.remove(seqId);
+    if(request instanceof PartitionRequest) {
+      rpcContext.after(request.getContext().getServerId());
+    }
+    seqIdToSendCFMap.remove(seqId);
     returnChannel(request);
     switch (request.getType()) {
       case GET_PART:
@@ -1106,13 +1209,20 @@ public class MatrixTransportClient implements MatrixTransportInterface {
     }
   }
 
-  private void requestFailed(int seqId, Request request, ResponseType failedType, String errorLog) {
-    seqIdToRequestMap.remove(seqId);
+  private void requestFailed(int seqId, ResponseType failedType, String errorLog) {
+    Request request = seqIdToRequestMap.remove(seqId);
+    if(request == null) {
+      return;
+    }
+
+    if(request instanceof PartitionRequest) {
+      rpcContext.after(request.getContext().getServerId());
+    }
+    seqIdToSendCFMap.remove(seqId);
+    LOG.error("request failed " + request + ", failedType=" + failedType + ", errorLog=" + errorLog);
     returnChannel(request);
     returnBuffer(request);
-    if(reporter != null && (failedType == ResponseType.NETWORK_ERROR || failedType == ResponseType.TIMEOUT && request.getContext().getActualServerId() != null)) {
-      reporter.psFailed(new PSLocation(request.getContext().getActualServerId(), request.getContext().getLocation()));
-    }
+    resetContext(request);
 
     switch (request.getType()) {
       case GET_PART:
@@ -1141,6 +1251,42 @@ public class MatrixTransportClient implements MatrixTransportInterface {
         LOG.error("unvalid request " + request);
         break;
     }
+  }
+
+  private void resetContext(Request request) {
+    request.getContext().reset();
+  }
+
+  private void psFailed(PSLocation psLoc) {
+    // Remove all pending RPCS
+    removePendingRPCS(psLoc);
+
+    // Close all channel to this PS
+    closeChannels(psLoc);
+  }
+
+  private void  psNormal(PSLocation psLoc) {
+
+  }
+
+  private void removePendingRPCS(PSLocation psLoc) {
+    Iterator<Entry<Integer, SendResultKey>> iter = seqIdToSendCFMap.entrySet().iterator();
+    Entry<Integer, SendResultKey> entry;
+    while(iter.hasNext()) {
+      entry = iter.next();
+      if(entry.getValue().psLoc.equals(psLoc)) {
+        SendResultKey sendResultKey = seqIdToSendCFMap.get(entry.getKey());
+        Request request = seqIdToRequestMap.get(entry.getKey());
+        if(request != null && request.getContext().getChannel() != null) {
+          sendResultKey.cf.cancel(true);
+        }
+        requestFailed(entry.getKey(), ResponseType.NETWORK_ERROR, "Server no response");
+      }
+    }
+  }
+
+  private void closeChannels(PSLocation psLoc) {
+    channelManager.removeChannelPool(new Location(psLoc.loc.getIp(), psLoc.loc.getPort() + 1));
   }
 
   private void putRequestSuccess(Request request) {
@@ -1183,42 +1329,6 @@ public class MatrixTransportClient implements MatrixTransportInterface {
     }
   }
 
-  /**
-   * refresh the server location use async mode
-   * 
-   * @param serverId server id
-   */
-  private void refreshServerLocation(final ParameterServerId serverId) {
-    Thread psLocRefresher = new Thread() {
-      @Override
-      public void run() {
-        Location location = null;
-        try {
-          while (location == null) {
-            Thread.sleep(PSAgentContext.get().getRequestSleepTimeMS());
-            location = PSAgentContext.get().getMasterClient().getPSLocation(serverId);
-            LOG.info("Get PS " + serverId + " location = " + location);
-            if(location != null) {
-              Location oldLocation = PSAgentContext.get().getLocationManager().getPsLocation(serverId);
-              PSAgentContext.get().getLocationManager().setPsLocation(serverId, location);
-              if(oldLocation != null && location.equals(oldLocation)) {
-                refreshServerLocationSuccess(serverId, false);
-              } else {
-                refreshServerLocationSuccess(serverId, true);
-              }
-              return;
-            }           
-          }
-        } catch (Exception x) {
-          refreshServerLocationFailed(serverId);
-        }
-      }
-    };
-
-    psLocRefresher.setName("ps-location-getter");
-    psLocRefresher.start();
-  }
-
   private void refreshServerLocationSuccess(ParameterServerId serverId, boolean isUpdated) {
     dispatchMessageQueue.add(new RefreshServerLocationEvent(
         EventType.REFRESH_SERVER_LOCATION_SUCCESS, serverId, isUpdated));
@@ -1237,13 +1347,8 @@ public class MatrixTransportClient implements MatrixTransportInterface {
     dispatchMessageQueue.add(new DispatcherEvent(EventType.START_PUT));
   }
 
-  private void closeChannelForServer(ParameterServerId serverId) {
-    Location loc = PSAgentContext.get().getLocationManager().getPsLocation(serverId);
-    if (loc == null) {
-      return;
-    }
-
-    channelManager.removeChannelPool(loc);
+  private Channel getChannel(Location loc) throws Exception {
+    return channelManager.getOrCreateChannel(new Location(loc.getIp(), loc.getPort() + 1));
   }
 
   private GenericObjectPool<Channel> getChannelPool(Location loc) throws InterruptedException {
@@ -1271,6 +1376,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       if (item.getContext().getChannelPool() != null && item.getContext().getChannel() != null) {
         item.getContext().getChannelPool().returnObject(item.getContext().getChannel());
         item.getContext().setChannelPool(null);
+        item.getContext().setChannel(null);
       }
     } catch (Exception x) {
       LOG.error("return channel to channel pool failed ", x);
@@ -1300,6 +1406,123 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
   public ArrayList<Long> getGetUseTimes() {
     return getUseTimes;
+  }
+
+  class SendResultKey {
+    public final PSLocation psLoc;
+    public final ChannelFuture cf;
+
+    public SendResultKey(PSLocation psLoc, ChannelFuture cf) {
+      this.psLoc = psLoc;
+      this.cf = cf;
+    }
+  }
+
+  class GetChannelContext {
+    public int failedCounter = 0;
+    public int successCounter = 0;
+    public int notactiveCounter = 0;
+    public long lastCheckTs = System.currentTimeMillis();
+    public final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+
+    public void getChannelSuccess() {
+      try {
+        lock.writeLock().lock();
+        successCounter++;
+      } finally {
+        lock.writeLock().unlock();
+      }
+    }
+
+    public void getChannelFailed() {
+      try {
+        lock.writeLock().lock();
+        failedCounter++;
+      } finally {
+        lock.writeLock().unlock();
+      }
+    }
+
+    public void channelNotactive() {
+      try {
+        lock.writeLock().lock();
+        notactiveCounter++;
+      } finally {
+        lock.writeLock().unlock();
+      }
+    }
+
+    public void reset() {
+      try {
+        lock.writeLock().lock();
+        failedCounter = 0;
+        successCounter = 0;
+        notactiveCounter = 0;
+        lastCheckTs = System.currentTimeMillis();
+      } finally {
+        lock.writeLock().unlock();
+      }
+    }
+
+    public int getFailedCounter() {
+      try {
+        lock.readLock().lock();
+        return failedCounter;
+      } finally {
+        lock.readLock().unlock();
+      }
+    }
+
+    public int getSuccessCounter() {
+      try {
+        lock.readLock().lock();
+        return successCounter;
+      } finally {
+        lock.readLock().unlock();
+      }
+    }
+
+    public int getInactiveCounter() {
+      try {
+        lock.readLock().lock();
+        return notactiveCounter;
+      } finally {
+        lock.readLock().unlock();
+      }
+    }
+
+    public long getLastCheckTs() {
+      try {
+        lock.readLock().lock();
+        return lastCheckTs;
+      } finally {
+        lock.readLock().unlock();
+      }
+    }
+  }
+
+  private GetChannelContext getChannelContext(PSLocation psLoc) {
+    GetChannelContext context = psLocToGetChannelContextMap.get(psLoc);
+    if(context == null) {
+      context = psLocToGetChannelContextMap.putIfAbsent(psLoc, new GetChannelContext());
+      if(context == null) {
+        context = psLocToGetChannelContextMap.get(psLoc);
+      }
+    }
+    return context;
+  }
+
+  class GrayServer {
+    public final PSLocation psLoc;
+    public final long ts;
+    public volatile long lastHBTs;
+    public volatile ServerState state;
+
+    public GrayServer(PSLocation psLoc, long ts) {
+      this.psLoc = psLoc;
+      this.ts = ts;
+      this.lastHBTs = ts;
+    }
   }
 
   /**
@@ -1333,15 +1556,106 @@ public class MatrixTransportClient implements MatrixTransportInterface {
      */
     private void sendRequest(int seqId, Request request) throws InterruptedException {
       long startTs = System.currentTimeMillis();
-      if(!(request instanceof GetClocksRequest)) {
-        LOG.debug("serialize request use time=" + (System.currentTimeMillis() - startTs));
+
+      // Get server id and location for this request
+      PSLocation psLoc = getPSLoc(request);
+      request.getContext().setActualServerId(psLoc.psId);
+      request.getContext().setLocation(psLoc.loc);
+
+      // If location is null, means that the server is not ready
+      if (psLoc.loc == null) {
+        LOG.error("request " + request + " server " + request.getContext().getServerId() + " location is null");
+        if (psLoc.loc == null) {
+          requestFailed(seqId, ResponseType.SERVER_NOT_READY, "location is null");
+          return;
+        }
       }
 
+      if(LOG.isDebugEnabled() && request instanceof PartitionRequest) {
+        LOG.debug("request " + request + " with seqId=" + seqId + " get location use time " + (System.currentTimeMillis() - startTs));
+      }
+
+      // Get the channel for the location
       startTs = System.currentTimeMillis();
-      // check the location of server is ready, if not, we should wait
+      Channel channel;
+      try {
+        channel = getChannel(request, psLoc);
+      } catch (Throwable e) {
+        if(!stopped.get()) {
+          getChannelContext(psLoc).getChannelFailed();
+          LOG.error("get channel for " + psLoc.loc + " failed ", e);
+          requestFailed(seqId, ResponseType.NETWORK_ERROR, StringUtils.stringifyException(e));
+        }
+        return;
+      }
+
+      getChannelContext(psLoc).getChannelSuccess();
+
+      if(LOG.isDebugEnabled() && (request instanceof PartitionRequest)) {
+        LOG.debug("request with seqId=" + seqId + " get channel use time " + (System.currentTimeMillis() - startTs));
+      }
+
+      // Check if need get token first
+      int token = 0;
+      if(request instanceof PartitionRequest) {
+        if(psIdToStateMap.get(psLoc.psId) == ServerState.BUSY) {
+          requestFailed(seqId, ResponseType.SERVER_IS_BUSY, "server " + psLoc.psId + " is busy");
+          return;
+        } else if(psIdToStateMap.get(psLoc.psId) == ServerState.GENERAL) {
+          try {
+            LOG.debug("PS " + psLoc + " is in GENERAL, need get token first");
+            token = getToken(psLoc.loc);
+            LOG.debug("token=" + token);
+            if(token == 0) {
+              requestFailed(seqId, ResponseType.SERVER_IS_BUSY, "PS " + psLoc.psId + " is busy");
+              return;
+            }
+            ((PartitionRequest) request).setTokenNum(token);
+          } catch (Throwable e) {
+            LOG.error("get token from PS " + psLoc.loc + " failed ", e);
+            requestFailed(seqId, ResponseType.NETWORK_ERROR, StringUtils.stringifyException(e));
+            return;
+          }
+        }
+      } else {
+        token = 0;
+      }
+
+      // Serialize the request
+      startTs = System.currentTimeMillis();
+      ByteBuf buffer;
+      try {
+        buffer = serializeRequest(request, seqId, token);
+      } catch (Throwable e) {
+        if(e instanceof OutOfMemoryError) {
+          rpcContext.oom();
+        }
+
+        LOG.error("serialize request " + request + " failed ", e);
+        requestFailed(seqId, ResponseType.OOM, StringUtils.stringifyException(e));
+        return;
+      }
+
+      if(LOG.isDebugEnabled() && (request instanceof PartitionRequest)) {
+        LOG.debug("request with seqId=" + seqId + " serialize request use time " + (System.currentTimeMillis() - startTs));
+      }
+
+      // Send the request
+      request.getContext().setSendStartTs(System.currentTimeMillis());
+      ChannelFuture cf = channel.writeAndFlush(buffer);
+      cf.addListener(new RequesterChannelFutureListener(seqId, request));
+
+      seqIdToSendCFMap.put(seqId, new SendResultKey(
+        new PSLocation(request.getContext().getActualServerId(), request.getContext().getLocation()), cf));
+    }
+
+    private int getToken(Location loc) throws IOException, ServiceException {
+      return PSAgentContext.get().getPSControlClientManager().getOrCreatePSClient(loc).getToken(0);
+    }
+
+    private PSLocation getPSLoc(Request request) {
       ParameterServerId serverId = null;
       Location loc = null;
-
       if(request instanceof GetClocksRequest){
         serverId = ((GetClocksRequest) request).getServerId();
         loc = PSAgentContext.get().getLocationManager().getPsLocation(serverId);
@@ -1382,79 +1696,50 @@ public class MatrixTransportClient implements MatrixTransportInterface {
           }
         }
       }
-      request.getContext().setActualServerId(serverId);
-      request.getContext().setLocation(loc);
 
-      if (loc == null) {
-        LOG.error("request " + request + " server " + request.getContext().getServerId() + " location is null");
-        if (loc == null) {
-          requestFailed(seqId, request, ResponseType.SERVER_NOT_READY, "location is null");
-          return;
-        }
-      }
+      return new PSLocation(serverId, loc);
+    }
 
-      if(!(request instanceof GetClocksRequest) && LOG.isDebugEnabled()) {
-        LOG.debug("request " + request + " with seqId=" + seqId + " get location use time " + (System.currentTimeMillis() - startTs));
-      }
-
-      // allocate the bytebuf
-      startTs = System.currentTimeMillis();
-      ByteBuf buffer = ByteBufUtils.newByteBuf(request.bufferLen(), useDirectBuffer);
-      buffer.writeInt(seqId);
-      buffer.writeInt(request.getType().getMethodId());
-      request.serialize(buffer);
-      if(request instanceof GetUDFRequest) {
-        LOG.info("Serialize request use time=" + (System.currentTimeMillis() - startTs));
-      }
-      request.getContext().setSerializedData(buffer);
-
+    private Channel getChannel(Request request, PSLocation psLoc) throws Exception{
       // get a channel to server from pool
-      Channel channel = null;
-      GenericObjectPool<Channel> pool = null;
+      Channel channel;
+      GenericObjectPool<Channel> pool;
 
-      startTs = System.currentTimeMillis();
-      try {
-        pool = getChannelPool(loc);
-        if(!(request instanceof GetClocksRequest) && LOG.isDebugEnabled()) {
-          LOG.debug("request " + request + " with seqId=" + seqId + " pool=" + pool.getNumActive());
-        }
-        channel = pool.borrowObject();
-        if(!(request instanceof GetClocksRequest) && LOG.isDebugEnabled()) {
-          LOG.debug("request " + request + " with seqId=" + seqId + " wait for channel use time " + (
-            System.currentTimeMillis() - startTs));
-        }
+      long startTs = System.currentTimeMillis();
+      pool = getChannelPool(psLoc.loc);
+      if(LOG.isDebugEnabled() && (request instanceof PartitionRequest)) {
+        LOG.debug("request with seqId=" + seqId + " pool=" + pool.getNumActive());
+      }
 
-        LOG.debug("request " + request + " with seqId=" + seqId + " wait for channel use time " + (
+      channel = pool.borrowObject();
+      if(LOG.isDebugEnabled() && (request instanceof PartitionRequest)) {
+        LOG.debug("request with seqId=" + seqId + " wait for channel use time " + (
           System.currentTimeMillis() - startTs));
+      }
 
-        // if channel is not valid, it means maybe the connections to the server are closed
-        if (!channel.isActive() || !channel.isOpen()) {
-          LOG.error("channel " + channel + " is not active");
-          // channelManager.removeChannelPool(loc);
-          requestFailed(seqId, request, ResponseType.NETWORK_ERROR, "channel get from pool is not active or closed");
-          return;
-        }
-      } catch (Exception x) {
-        if(!stopped.get()) {
-          LOG.error("send request " + request + " get channel failed ", x);
-          requestFailed(seqId, request, ResponseType.NETWORK_ERROR, "connect to server failed");
-        }
-        return;
+      // if channel is not valid, it means maybe the connections to the server are closed
+      if (!channel.isActive() || !channel.isOpen()) {
+        getChannelContext(psLoc).channelNotactive();
+        LOG.error("channel " + channel + " is not active");
+        throw new IOException("channel " + channel + " is not active");
       }
 
       request.getContext().setChannelPool(pool);
       request.getContext().setChannel(channel);
-
-      startTs = System.currentTimeMillis();
-
-      ChannelFuture cf = channel.writeAndFlush(buffer);
-
-      if(!(request instanceof GetClocksRequest) && LOG.isDebugEnabled()) {
-        LOG.debug("request " + request + " with seqId=" + seqId + " send use time " + (System.currentTimeMillis() - startTs));
-      }
-
-      cf.addListener(new RequesterChannelFutureListener(seqId, request));
+      return channel;
     }
+  }
+
+  private ByteBuf serializeRequest(Request request, int seqId, int token) {
+    // Allocate the bytebuf and serialize the request
+    ByteBuf buffer = ByteBufUtils.newByteBuf(16 + request.bufferLen(), useDirectBuffer);
+    buffer.writeInt(PSAgentContext.get().getPSAgentId());
+    buffer.writeInt(token);
+    buffer.writeInt(seqId);
+    buffer.writeInt(request.getType().getMethodId());
+    request.serialize(buffer);
+    request.getContext().setSerializedData(buffer);
+    return buffer;
   }
 
   private String poolInfo(GenericObjectPool<Channel> pool) {
@@ -1478,10 +1763,15 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
     @Override
     public void operationComplete(ChannelFuture future) throws Exception {
-      LOG.debug("send request " + request + " with seqId=" + seqId + " complete");
+      if(LOG.isDebugEnabled() && (request instanceof PartitionRequest)) {
+        LOG.info("send request with seqId=" + seqId + " complete");
+      }
+
       if (!future.isSuccess()) {
-        LOG.error("send " + seqId + " failed ", future.cause());
-        requestFailed(seqId, request, ResponseType.NETWORK_ERROR, "send request failed " + future.cause().toString());
+        LOG.error("send request " + seqId + " failed ", future.cause());
+        requestFailed(seqId, ResponseType.NETWORK_ERROR, "send request failed " + future.cause().toString());
+      } else {
+        returnChannel(request);
       }
     }
   }
@@ -1501,7 +1791,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       }
       catch (Throwable e) {
         LOG.fatal("ResponseDispatcher is failed ", e);
-        PSAgentContext.get().getPsAgent().error("ResponseDispatcher is failed. " + ExceptionUtils.getFullStackTrace(e));
+        PSAgentContext.get().getPsAgent().error("ResponseDispatcher is failed. " + e.getMessage());
       }
     }
   }
@@ -1517,11 +1807,13 @@ public class MatrixTransportClient implements MatrixTransportInterface {
     }
 
     @Override public void run() {
+      int seqId = 0;
+      Request request = null;
       try {
-        int seqId = msg.readInt();
+        seqId = msg.readInt();
 
         // find the partition request context from cache
-        Request request = seqIdToRequestMap.get(seqId);
+        request = seqIdToRequestMap.get(seqId);
         long startTs = System.currentTimeMillis();
         if (request == null) {
           return;
@@ -1529,8 +1821,8 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
         TransportMethod method = request.getType();
 
-        if(!(request instanceof GetClocksRequest) && LOG.isDebugEnabled()) {
-          LOG.info("response handler, seqId=" + seqId + ", method=" + method + ", ts=" + System
+        if(LOG.isDebugEnabled() && (request instanceof PartitionRequest)) {
+          LOG.debug("response handler, seqId=" + seqId + ", method=" + method + ", ts=" + System
             .currentTimeMillis());
         }
 
@@ -1572,7 +1864,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
         msg.release();
 
-        if (!(request instanceof GetClocksRequest) && LOG.isDebugEnabled()) {
+        if(LOG.isDebugEnabled() && (request instanceof PartitionRequest)) {
           LOG.debug(
             "handle response of request " + request + " use time=" + (System.currentTimeMillis()
               - startTs));
@@ -1580,8 +1872,13 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       } catch (InterruptedException ie) {
         LOG.warn(Thread.currentThread().getName() + " is interruptted");
       } catch (Throwable x) {
-        LOG.fatal("hanlder rpc response failed ", x);
-        PSAgentContext.get().getPsAgent().error("hanlder rpc response failed " + ExceptionUtils.getFullStackTrace(x));
+        LOG.error("hanlder rpc response failed ", x);
+        if(x instanceof OutOfMemoryError) {
+          rpcContext.oom();
+          requestFailed(seqId, ResponseType.OOM, StringUtils.stringifyException(x));
+        } else {
+          requestFailed(seqId, ResponseType.UNKNOWN_ERROR, StringUtils.stringifyException(x));
+        }
       }
     }
     
@@ -1590,19 +1887,16 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       GetUDFResponse response = new GetUDFResponse();
       response.deserialize(buf);
 
+      handleServerState(request, response.getState());
+
       if (response.getResponseType() == ResponseType.SUCCESS) {
         FutureResult<PartitionGetResult> future = requestToResultMap.remove(request);
         if (future != null) {
           future.set(response.getPartResult());
         }
-        requestSuccess(seqId, request);
-      } else if (response.getResponseType() == ResponseType.SERVER_HANDLE_FATAL) {
-        String errorMsg = "get udf fatal error happened " + response.getDetail();
-        LOG.fatal(errorMsg);
-        PSAgentContext.get().getPsAgent().error(errorMsg);
+        requestSuccess(seqId);
       } else {
-        LOG.error("get udf error happened " + response.getDetail() + ", retry later");
-        requestFailed(seqId, request, ResponseType.SERVER_HANDLE_FAILED, response.getDetail());
+        handleExceptionResponse(seqId, request, response);
       }
     }
 
@@ -1611,19 +1905,16 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       UpdaterResponse response = new UpdaterResponse();
       response.deserialize(buf);
 
+      handleServerState(request, response.getState());
+
       if (response.getResponseType() == ResponseType.SUCCESS) {
         FutureResult<VoidResult> future = requestToResultMap.remove(request);
         if (future != null) {
           future.set(new VoidResult(com.tencent.angel.psagent.matrix.ResponseType.SUCCESS));
         }
-        requestSuccess(seqId, request);
-      } else if (response.getResponseType() == ResponseType.SERVER_HANDLE_FATAL) {
-        String errorMsg = "updater fatal error happened " + response.getDetail();
-        LOG.fatal(errorMsg);
-        PSAgentContext.get().getPsAgent().error(errorMsg);
+        requestSuccess(seqId);
       } else {
-        LOG.error("updater error happened " + response.getDetail() + ", retry later");
-        requestFailed(seqId, request, ResponseType.SERVER_HANDLE_FAILED, response.getDetail());
+        handleExceptionResponse(seqId, request, response);
       }
     }
 
@@ -1633,19 +1924,16 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       PutPartitionUpdateResponse response = new PutPartitionUpdateResponse();
       response.deserialize(buf);
 
+      handleServerState(request, response.getState());
+
       if (response.getResponseType() == ResponseType.SUCCESS) {
         FutureResult<VoidResult> future = requestToResultMap.remove(request);
         if (future != null) {
           future.set(new VoidResult(com.tencent.angel.psagent.matrix.ResponseType.SUCCESS));
         }
-        requestSuccess(seqId, request);
-      } else if (response.getResponseType() == ResponseType.SERVER_HANDLE_FATAL) {
-        String errorMsg = "put partition update fatal error happened " + response.getDetail();
-        LOG.fatal(errorMsg);
-        PSAgentContext.get().getPsAgent().error(errorMsg);
-      } else {
-        LOG.error("put partupdate error happened " + response.getDetail() + ", retry later");
-        requestFailed(seqId, request, ResponseType.SERVER_HANDLE_FAILED, response.getDetail());
+        requestSuccess(seqId);
+      }else {
+        handleExceptionResponse(seqId, request, response);
       }
     }
 
@@ -1654,20 +1942,17 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       GetClocksResponse response = new GetClocksResponse();
       response.deserialize(buf);
 
+      handleServerState(request, response.getState());
+
       FutureResult<GetClocksResponse> future = requestToResultMap.remove(request);
       if (future != null) {
         future.set(response);
       }
 
       if (response.getResponseType() == ResponseType.SUCCESS) {
-        requestSuccess(seqId, request);
-      } else if (response.getResponseType() == ResponseType.SERVER_HANDLE_FATAL) {
-        String errorMsg = "get clocks fatal error happened " + response.getDetail();
-        LOG.fatal(errorMsg);
-        PSAgentContext.get().getPsAgent().error(errorMsg);
+        requestSuccess(seqId);
       } else {
-        LOG.error("get clocks error happened " + response.getDetail() + ", retry later");
-        requestFailed(seqId, request, ResponseType.SERVER_HANDLE_FAILED, response.getDetail());
+        handleExceptionResponse(seqId, request, response);
       }
     }
 
@@ -1675,23 +1960,18 @@ public class MatrixTransportClient implements MatrixTransportInterface {
     private void handleGetPartitionResponse(ByteBuf buf, int seqId, GetPartitionRequest request) {
       GetPartitionResponse response = new GetPartitionResponse();
       response.deserialize(buf);
+
+      handleServerState(request, response.getState());
+
       if (response.getResponseType() == ResponseType.SUCCESS) {
         updateMatrixCache(request.getPartKey(), response.getPartition());
         FutureResult<ServerPartition> future = requestToResultMap.remove(request);
         if (future != null) {
           future.set(response.getPartition());
         }
-
-        requestSuccess(seqId, request);
-      } else if (response.getResponseType() == ResponseType.CLOCK_NOTREADY) {
-        requestNotReady(seqId, request);
-      } else if (response.getResponseType() == ResponseType.SERVER_HANDLE_FATAL) {
-        String errorMsg = "get row split fatal error happened " + response.getDetail();
-        LOG.fatal(errorMsg);
-        PSAgentContext.get().getPsAgent().error(errorMsg);
+        requestSuccess(seqId);
       } else {
-        LOG.error("get row split error happened " + response.getDetail() + ", retry later");
-        requestFailed(seqId, request, ResponseType.SERVER_HANDLE_FAILED, response.getDetail());
+        handleExceptionResponse(seqId, request, response);
       }
     }
 
@@ -1699,23 +1979,18 @@ public class MatrixTransportClient implements MatrixTransportInterface {
     private void handleGetRowsSplitResponse(ByteBuf buf, int seqId, GetRowsSplitRequest request) {
       GetRowsSplitResponse response = new GetRowsSplitResponse();
       response.deserialize(buf);
+
+      handleServerState(request, response.getState());
+
       if (response.getResponseType() == ResponseType.SUCCESS) {
         updateMatrixCache(request.getPartKey(), response.getRowsSplit());
         FutureResult<List<ServerRow>> future = requestToResultMap.remove(request);
         if (future != null) {
           future.set(response.getRowsSplit());
         }
-
-        requestSuccess(seqId, request);
-      } else if (response.getResponseType() == ResponseType.CLOCK_NOTREADY) {
-        requestNotReady(seqId, request);
-      } else if (response.getResponseType() == ResponseType.SERVER_HANDLE_FATAL) {
-        String errorMsg = "get row split fatal error happened " + response.getDetail();
-        LOG.fatal(errorMsg);
-        PSAgentContext.get().getPsAgent().error(errorMsg);
+        requestSuccess(seqId);
       } else {
-        LOG.error("get row split error happened " + response.getDetail() + ", retry later");
-        requestFailed(seqId, request, ResponseType.SERVER_HANDLE_FAILED, response.getDetail());
+        handleExceptionResponse(seqId, request, response);
       }
     }
 
@@ -1732,23 +2007,50 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       response.setRowSplit(rowSplit);
       response.deserialize(buf);
 
+      handleServerState(request, response.getState());
+
       if (response.getResponseType() == ResponseType.SUCCESS) {
         updateMatrixCache(request.getPartKey(), response.getRowSplit());
         FutureResult<ServerRow> future = requestToResultMap.remove(request);
         if (future != null) {
           future.set(response.getRowSplit());
         }
-
-        requestSuccess(seqId, request);
-      } else if (response.getResponseType() == ResponseType.CLOCK_NOTREADY) {
-        requestNotReady(seqId, request);
-      } else if (response.getResponseType() == ResponseType.SERVER_HANDLE_FATAL) {
-        String errorMsg = "get row split fatal error happened " + response.getDetail();
-        LOG.fatal(errorMsg);
-        PSAgentContext.get().getPsAgent().error(errorMsg);
+        requestSuccess(seqId);
       } else {
-        LOG.error("get row split error happened " + response.getDetail() + ", retry later");
-        requestFailed(seqId, request, ResponseType.SERVER_HANDLE_FAILED, response.getDetail());
+        handleExceptionResponse(seqId, request, response);
+      }
+    }
+
+    private void handleExceptionResponse(int seqId, Request request, Response response) {
+      LOG.error("request " + request + " has a exception response " + response);
+      switch (response.getResponseType()) {
+        case CLOCK_NOTREADY:
+        case SERVER_IS_BUSY:
+        case SERVER_HANDLE_FAILED:
+          requestFailed(seqId, response.getResponseType(), response.getDetail());
+          break;
+
+        case SERVER_HANDLE_FATAL:
+          handleFatalError(seqId, request, response);
+          break;
+
+        default:
+          break;
+      }
+    }
+
+    private void handleFatalError(int seqId, Request request, Response response) {
+      String errorMsg = "get row split fatal error happened " + response.getDetail();
+      LOG.fatal(errorMsg);
+      PSAgentContext.get().getPsAgent().error(errorMsg);
+    }
+
+    private void handleServerState(Request request, ServerState state) {
+      if(LOG.isDebugEnabled() && (request instanceof PartitionRequest)) {
+        LOG.debug("request " + request + " response state = " + state);
+      }
+      if(state != null) {
+        psIdToStateMap.put(request.getContext().getActualServerId(), state);
       }
     }
 

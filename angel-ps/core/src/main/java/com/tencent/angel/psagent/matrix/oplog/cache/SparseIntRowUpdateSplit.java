@@ -24,10 +24,10 @@ import io.netty.buffer.ByteBuf;
  */
 public class SparseIntRowUpdateSplit extends RowUpdateSplit {
   /**indexes*/
-  private int[] offsets;
+  private final int[] offsets;
   
   /** values of row */
-  private int[] values;
+  private final int[] values;
 
   /**
    * Create a new sparse int row split update
@@ -74,6 +74,6 @@ public class SparseIntRowUpdateSplit extends RowUpdateSplit {
 
   @Override
   public int bufferLen() {
-    return super.bufferLen() + (end - start) * 8;
+    return 4 + super.bufferLen() + (end - start) * 8;
   }
 }

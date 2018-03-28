@@ -31,11 +31,18 @@ import com.tencent.angel.serving.common.{MatrixMeta, ModelDefinition, ReplicaMod
   * @param coordinator the model coordinator
   * @param splitter the model splitter
   */
-class DistributedModel(val name: String, val dir: String, val concurrent: Int, val replica: Int = 1, val splits: Array[ReplicaModelSplit], val metas: Map[String, MatrixMeta], coordinator: ModelCoordinator,val splitter: ModelSplitter) {
+class DistributedModel(val name: String,
+                       val dir: String,
+                       val concurrent: Int,
+                       val replica: Int = 1,
+                       val splits: Array[ReplicaModelSplit],
+                       val metas: Map[String, MatrixMeta],
+                       val coordinator: ModelCoordinator,
+                       val splitter: ModelSplitter) {
 
 
   def isServable(): Boolean = {
-    return splits.filter(split => split.replica.locations.length == 0).length == 0
+    splits.forall(split => split.replica.locations.length != 0)
   }
 
   def getCoordinator(): ModelCoordinator = {

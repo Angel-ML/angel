@@ -32,7 +32,7 @@ public class MapWithIndexFuncTest implements MapWithIndexFunc {
   }
 
   @Override
-  public double call(int index, double value) {
+  public double call(long index, double value) {
     if (index == 0) {
       return value * value;
     } else {

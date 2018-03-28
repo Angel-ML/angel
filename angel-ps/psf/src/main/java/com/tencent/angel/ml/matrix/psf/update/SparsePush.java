@@ -16,6 +16,7 @@
 
 package com.tencent.angel.ml.matrix.psf.update;
 
+import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.psf.common.CommonFunc;
 import com.tencent.angel.ml.matrix.psf.common.CommonParam;
 import com.tencent.angel.ml.matrix.psf.update.enhance.PartitionUpdateParam;
@@ -37,12 +38,12 @@ public class SparsePush extends CommonFunc {
   }
 
   @Override
-  protected void doUpdate(ServerDenseDoubleRow[] rows, PartitionUpdateParam param) {
+  protected void doUpdate(ServerDenseDoubleRow[] rows, PartitionKey key, PartitionUpdateParam param) {
     throw new RuntimeException("SparsePush PSF can not support dense type rows");
   }
 
   @Override
-  protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows, PartitionUpdateParam param) {
+  protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows, PartitionKey key, PartitionUpdateParam param) {
     CommonParam.PSFPartitionUpdateParam partParam = (CommonParam.PSFPartitionUpdateParam)param;
 
     int rowId = partParam.getInts()[0];

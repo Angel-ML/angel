@@ -104,6 +104,20 @@ public class MMUpdateParam extends UpdateParam {
     this.scalars = scalars;
   }
 
+  public MMUpdateParam(int matrixId, int startId, int length, double[] scalars) {
+    super(matrixId, false);
+    this.rowIds = getRowIds(startId, length);
+    this.scalars = scalars;
+  }
+
+  private int[] getRowIds(int startId, int length) {
+    int[] rowIds = new int[length];
+    for (int i = 0 ; i < length; i++) {
+      rowIds[i] = startId + i;
+    }
+    return rowIds;
+  }
+
   @Override
   public List<PartitionUpdateParam> split() {
     List<PartitionKey> parts =

@@ -42,6 +42,7 @@ class GBDTLearnerSuite extends PSFunSuite with SharedPSContext with Serializable
     super.beforeAll()
 
     val dataSet = DataLoader.loadLibsvm(input, 2, 1.0, -1)
+      .sample(false, 0.1)
       .map { case (label, feat) => Instance(label, feat, 1.0) }
 
     val featureNum = dataSet.first().feature.size
@@ -51,7 +52,7 @@ class GBDTLearnerSuite extends PSFunSuite with SharedPSContext with Serializable
     param.splitNum = 2
     param.featureSampleRate = 1.0
     param.maxDepth = 5
-    param.maxTreeNum = 3
+    param.maxTreeNum = 2
     param.minChildWeight = 0.1
     param.learningRate = 0.3
     param.validateFraction = 0.0
@@ -98,12 +99,12 @@ class GBDTLearnerSuite extends PSFunSuite with SharedPSContext with Serializable
 
     this.gradHessRDD = learner.calculateGradient(instances, predictions)
 
-    /**
+
     this.gradHessRDD.join(instances).collect()
       .foreach { case (id, ((grad, hess), instance)) =>
         assert(grad == 0.0 - instance.label)
         assert(hess == 1.0)
-      } */
+      }
   }
 
   test("build histogram") {
@@ -136,14 +137,14 @@ class GBDTLearnerSuite extends PSFunSuite with SharedPSContext with Serializable
 
   test("grow tree") {
     learner.growTree(tree, instances)
+
     println(s"tree after grow: ${tree.toString}")
   }
 
-  /**
   test("train") {
     param.loss = new LogisticLoss
     val gbtModel = learner.train(instances.map(_._2))
     println(s"gbt model ${gbtModel.toString}")
   }
-  */
+
 }

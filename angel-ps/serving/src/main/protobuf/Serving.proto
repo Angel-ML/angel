@@ -12,6 +12,10 @@ import "ML.proto";
 
 
 message CommonResponseProto {
+  optional bool seemSucess = 1;
+}
+
+message CommonRequestProto {
 
 }
 

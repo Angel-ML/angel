@@ -67,4 +67,5 @@ public class SparseIntMatrix extends TIntMatrix<SparseIntVector> {
   private TMatrix plusBy(COOIntMatrix other) {
     return plusBy(other.rowIds, other.colIds, other.values);
   }
+
 }

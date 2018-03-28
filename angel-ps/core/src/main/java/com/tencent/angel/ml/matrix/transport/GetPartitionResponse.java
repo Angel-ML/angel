@@ -40,6 +40,26 @@ public class GetPartitionResponse extends Response {
 
   /**
    * Create a new GetPartitionResponse.
+   *
+   * @param responseType response type
+   * @param detail the detail information of response
+   */
+  public GetPartitionResponse(ResponseType responseType, String detail) {
+    this(responseType, detail, null);
+  }
+
+  /**
+   * Create a new GetPartitionResponse.
+   *
+   * @param responseType response type
+   * @param partition matrix partition
+   */
+  public GetPartitionResponse(ResponseType responseType, ServerPartition partition) {
+    this(responseType, null, partition);
+  }
+
+  /**
+   * Create a new GetPartitionResponse.
    */
   public GetPartitionResponse() {
     this(ResponseType.SUCCESS, null, null);

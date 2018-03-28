@@ -21,6 +21,7 @@ package com.tencent.angel.ml.classification.svm
 
 import com.tencent.angel.client.AngelClientFactory
 import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.MLRunner
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
@@ -35,6 +36,8 @@ class SVMRunner extends MLRunner {
     * @param conf: configuration of algorithm and resource
     */
   override def train(conf: Configuration): Unit = {
+    conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
+
     train(conf, SVMModel(conf), classOf[SVMTrainTask])
   }
 
@@ -44,6 +47,7 @@ class SVMRunner extends MLRunner {
     * @param conf: configuration of algorithm and resource
     */
   override def predict(conf: Configuration): Unit = {
+    conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
     predict(conf, SVMModel(conf), classOf[SVMPredictTask])
   }
 
@@ -52,6 +56,9 @@ class SVMRunner extends MLRunner {
    * @param conf: configuration of algorithm and resource
    */
   def incTrain(conf: Configuration): Unit = {
+    conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
+    val path = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH)
+    if (path == null) throw new AngelException("parameter '" + AngelConf.ANGEL_LOAD_MODEL_PATH + "' should be set to load model")
     conf.set(AngelConf.ANGEL_TASK_USER_TASKCLASS, classOf[SVMTrainTask].getName)
 
     // Create an angel job client

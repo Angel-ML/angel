@@ -39,6 +39,8 @@ public abstract class RowbaseMatrix<ROW extends TVector> extends TMatrix<ROW> {
     this.vectors = vectors;
   }
 
+  public ROW[] getVectors() { return vectors; }
+
   @Override
   public double sparsity() {
     if(col <= 0) {
@@ -131,4 +133,10 @@ public abstract class RowbaseMatrix<ROW extends TVector> extends TMatrix<ROW> {
    * @return row vector
    */
   public abstract ROW initVector(int rowIndex);
+
+  public void setRow(int rowIndex, ROW vect) {
+    vect.setMatrixId(matrixId);
+    vect.setRowId(rowIndex);
+    vectors[rowIndex] = vect;
+  }
 }

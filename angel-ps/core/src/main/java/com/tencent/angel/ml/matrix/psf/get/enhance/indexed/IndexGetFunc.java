@@ -88,7 +88,7 @@ public class IndexGetFunc extends GetFunc {
           throw new UnsupportedOperationException("Unsupport operation: update " + rowType + " to " + this.getClass().getName());
       }
     }
-    LOG.info("Partition get use time=" + (System.currentTimeMillis() - startTs) + " ms");
+    LOG.debug("Partition get use time=" + (System.currentTimeMillis() - startTs) + " ms");
     return result;
   }
 
@@ -129,7 +129,7 @@ public class IndexGetFunc extends GetFunc {
         throw new UnsupportedOperationException("Unsupport operation: update " + rowType + " to " + this.getClass().getName());
     }
 
-    LOG.info("Merge use time=" + (System.currentTimeMillis() - startTs) + " ms");
+    LOG.debug("Merge use time=" + (System.currentTimeMillis() - startTs) + " ms");
     return result;
   }
 }

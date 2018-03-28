@@ -21,6 +21,8 @@ import com.tencent.angel.ml.matrix.psf.update.enhance.MUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongIterator;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.nio.DoubleBuffer;
@@ -42,8 +44,8 @@ public class Mul extends MUpdateFunc {
 
   @Override
   protected void doUpdate(ServerDenseDoubleRow[] rows) {
+    rows[2].tryToLockWrite();
     try {
-      rows[2].getLock().writeLock().lock();
       DoubleBuffer from1 = rows[0].getData();
       DoubleBuffer from2 = rows[1].getData();
       DoubleBuffer to = rows[2].getData();
@@ -52,7 +54,7 @@ public class Mul extends MUpdateFunc {
         to.put(i, from1.get(i) * from2.get(i));
       }
     } finally {
-      rows[2].getLock().writeLock().unlock();
+      rows[2].unlockWrite();
     }
   }
 
@@ -61,32 +63,20 @@ public class Mul extends MUpdateFunc {
     Long2DoubleOpenHashMap from1 = rows[0].getIndex2ValueMap();
     Long2DoubleOpenHashMap from2 = rows[1].getIndex2ValueMap();
 
-    Long2DoubleOpenHashMap to;
-    if (from1.defaultReturnValue() == 0.0) {
-      to = from1.clone();
-      for (Map.Entry<Long, Double> entry: to.long2DoubleEntrySet()) {
-        double v = from2.get(entry.getKey());
-        to.put(entry.getKey().longValue(), entry.getValue() * v);
-      }
-    } else if (from2.defaultReturnValue() == 0.0) {
-      to = from2.clone();
-      for (Map.Entry<Long, Double> entry: to.long2DoubleEntrySet()) {
-        double v = from1.get(entry.getKey());
-        to.put(entry.getKey().longValue(), entry.getValue() * v);
-      }
-    } else {
-      to = from1.clone();
-      to.defaultReturnValue(from1.defaultReturnValue() * from2.defaultReturnValue());
+    LongOpenHashSet keySet = new LongOpenHashSet(from1.keySet());
+    keySet.addAll(from2.keySet());
 
-      LongSet keys = from1.keySet();
-      keys.addAll(from2.keySet());
+    Long2DoubleOpenHashMap to = new Long2DoubleOpenHashMap(keySet.size());
 
-      for(long key: keys) {
-        double value1 = from1.get(key);
-        double value2 = from2.get(key);
-        to.put(key, value1 * value2);
-      }
+    LongIterator iter = keySet.iterator();
+    while (iter.hasNext()) {
+      long key = iter.nextLong();
+      to.put(key, from1.get(key) * from2.get(key));
     }
+    double default1 = from1.defaultReturnValue();
+    double default2 = from2.defaultReturnValue();
+    to.defaultReturnValue(default1 * default2);
+
     rows[2].setIndex2ValueMap(to);
   }
 }

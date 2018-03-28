@@ -75,14 +75,15 @@ class ChunkedShardingData[V <: TVector : TypeTag](val rowType: RowType) extends 
 
   override def getData(offset: Long, dimension: Long): V = {
     indexData.find { case (start: Long, len: Long, _) => offset >= start && dimension <= len }
-      .map { case (_, _, data) => data.getData(offset, dimension) }.orElse(
-      {
-        val gaps = indexData.filter { case (start: Long, len: Long, _) => (start < offset && start + len > offset) || (start < offset + dimension && start + len > (offset + dimension) || start > offset && start + len < offset + dimension) }
-          .sortBy(_._1)
-          .map { case (start, len, _) => s"($start,$len)" }.reduce((gap1: String, gap2: String) => gap1 + "," + gap2)
+      .map { case (_, _, data) => data.getData(offset, dimension) }.orElse{
+        val gaps = indexData.filter { case (start: Long, len: Long, _) =>
+          (start < offset && start + len > offset) ||
+            (start < offset + dimension && start + len > (offset + dimension) ||
+              start > offset && start + len < offset + dimension)
+        }.sortBy(_._1).map { case (start, len, _) => s"($start,$len)"
+        }.reduce((gap1: String, gap2: String) => gap1 + "," + gap2)
         throw new AngelException(if (gaps.isEmpty) s"(offset:$offset,dimension:$dimension) not found" else s"(offset:$offset,dimension:$dimension) has gap: $gaps")
-      }
-    ).get
+      }.get
   }
 
   /**

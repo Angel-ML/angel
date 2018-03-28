@@ -73,9 +73,18 @@ class AgentProtocolClientTranslatorPB(server: InetSocketAddress, conf: Configura
     }
 
 
-    val forLoad = commandProto.getForLoadingList.asScala.map(groupProto => new ModelSplitGroup(groupProto.getName, groupProto.getDir, groupProto.getConcurrent, groupProto.getSplitsList.asScala.map(toModelSplit).toArray)).toArray
+    val forLoad = commandProto.getForLoadingList.asScala.map{groupProto =>
+      new ModelSplitGroup(
+        groupProto.getName,
+        groupProto.getDir,
+        groupProto.getConcurrent,
+        groupProto.getSplitsList.asScala.map(toModelSplit).toArray,
+        groupProto.getShardingModelClass
+      )
+    }.toArray
 
     val forUnload = commandProto.getForUnloadList.asScala.map(proto => new ModelSplitID(proto.getName, proto.getIndex)).toArray
+
     new ModelCommand(forLoad, forUnload)
   }
 

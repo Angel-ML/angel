@@ -17,6 +17,7 @@
 package com.tencent.angel.ps.matrix.transport;
 
 import com.tencent.angel.ps.impl.PSContext;
+import com.tencent.angel.utils.StringUtils;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.apache.commons.logging.Log;
@@ -53,6 +54,10 @@ public class MatrixTransportServerHandler extends ChannelInboundHandlerAdapter {
 
   @Override public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     LOG.error("catch a exception ", cause);
+    String errorMsg = StringUtils.stringifyException(cause);
+    if(cause instanceof OutOfMemoryError || (errorMsg.contains("MemoryError"))) {
+      context.getRunningContext().oom();
+    }
     ctx.close();
   }
 }

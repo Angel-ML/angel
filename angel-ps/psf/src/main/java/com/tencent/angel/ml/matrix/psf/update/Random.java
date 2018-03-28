@@ -37,15 +37,15 @@ public class Random extends FullUpdateFunc {
   @Override
   protected void doUpdate(ServerDenseDoubleRow[] rows, double[] value) {
     for (ServerDenseDoubleRow row: rows) {
+      row.tryToLockWrite();
       try {
-        row.getLock().writeLock().lock();
         DoubleBuffer rowData = row.getData();
         java.util.Random rand = new java.util.Random(row.getRowId());
         for (int j = 0; j < row.size(); j++) {
           rowData.put(j, rand.nextDouble());
         }
       } finally {
-        row.getLock().writeLock().unlock();
+        row.unlockWrite();
       }
     }
   }

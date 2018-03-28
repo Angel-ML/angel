@@ -825,9 +825,9 @@ public abstract class CompLongKeyDoubleVector extends TLongDoubleVector {
 
   @Override public double sparsity() {
     if (getLongDim() == -1) {
-      return (double) nonZeroNumber() / (double) Long.MAX_VALUE / 2.0;
+      return (double)nonZeroNumber() / Long.MAX_VALUE / 2;
     } else {
-      return (double) nonZeroNumber() / (double) getLongDim();
+      return (double)nonZeroNumber() / getLongDim();
     }
   }
 
@@ -867,7 +867,6 @@ public abstract class CompLongKeyDoubleVector extends TLongDoubleVector {
   public TLongDoubleVector elemUpdate(LongDoubleElemUpdater updater, ElemUpdateParam param) {
     ElementUpdateOp op = new ElementUpdateOp(vectors, 0, splitNum, updater, param);
     MatrixOpExecutors.execute(op);
-    op.join();
     return this;
   }
 }

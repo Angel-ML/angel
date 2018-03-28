@@ -82,7 +82,6 @@ class ServingTransportClient(client: NetworkClient, timeout: Long) {
     }
   }
 
-
   def predict[V <: TVector](dataList: PredictSplitDataList[V]): PredictResultList = {
     val start = System.currentTimeMillis()
     val result = SettableFuture.create[BatchPredictResMsg]()

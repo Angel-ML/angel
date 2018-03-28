@@ -20,6 +20,7 @@ import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.RunningMode;
 import com.tencent.angel.common.location.LocationManager;
 import com.tencent.angel.master.MasterService;
+import com.tencent.angel.master.client.ClientManager;
 import com.tencent.angel.master.data.DataSpliter;
 import com.tencent.angel.master.deploy.ContainerAllocator;
 import com.tencent.angel.master.matrixmeta.AMMatrixMetaManager;
@@ -228,8 +229,14 @@ public interface AMContext {
   int getPSReplicationNum();
 
   /**
-   * Get Yarn NM web port
-   * @return Yarn NM web port
+   * Get Client Manager
+   * @return Angel client manager
+   */
+  ClientManager getClientManager();
+
+  /**
+   * Get Yarn web port
+   * @return Yarn web port
    */
   int getYarnNMWebPort();
 }

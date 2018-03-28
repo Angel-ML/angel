@@ -26,11 +26,6 @@ package com.tencent.angel;
  */
 public enum RunningMode {
   /**
-   * Run ParameterServer  & ParameterServerAgent
-   */
-  ANGEL_PS_PSAGENT,
-
-  /**
    * Only Run ParameterServer
    */
   ANGEL_PS,

@@ -28,12 +28,8 @@ class TransportChannelHandler(channel: Channel, val requestMessageHandler: Reque
   override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit = {
     msg match {
       case requestMsg: RequestMessage => requestMessageHandler.handler(requestMsg)
-
       case responseMsg: ResponseMessage => responseMessageHandler.handler(responseMsg)
-
-      case _ => {
-        ctx.fireChannelRead(msg)
-      }
+      case _ => ctx.fireChannelRead(msg)
     }
   }
 

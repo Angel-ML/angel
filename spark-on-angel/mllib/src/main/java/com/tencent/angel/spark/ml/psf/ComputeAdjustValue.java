@@ -17,12 +17,24 @@
 
 package com.tencent.angel.spark.ml.psf;
 
+import com.tencent.angel.ml.matrix.psf.update.enhance.map.MapFunc;
 import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.Zip2MapFunc;
 import io.netty.buffer.ByteBuf;
 
-public class ComputeAdjustValue implements Zip2MapFunc {
+public class ComputeAdjustValue implements MapFunc, Zip2MapFunc {
+
+  private double l1reg = 0.0;
 
   public ComputeAdjustValue() {}
+
+  public ComputeAdjustValue(double l1reg) {
+    this.l1reg = l1reg;
+  }
+
+  @Override
+  public double call(double xv) {
+    return call(xv, l1reg);
+  }
 
   @Override
   public double call(double xv, double l1regValue) {
@@ -38,14 +50,18 @@ public class ComputeAdjustValue implements Zip2MapFunc {
   }
 
   @Override
-  public void serialize(ByteBuf buf) {}
+  public void serialize(ByteBuf buf) {
+    buf.writeDouble(l1reg);
+  }
 
   @Override
-  public void deserialize(ByteBuf buf) {}
+  public void deserialize(ByteBuf buf) {
+    l1reg = buf.readDouble();
+  }
 
   @Override
   public int bufferLen() {
-    return 0;
+    return 8;
   }
 
 }

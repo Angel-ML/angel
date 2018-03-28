@@ -46,10 +46,11 @@ class SingleShardingData[V <: TVector](vector: V) extends ShardingData {
     }
 
     val data = vector match {
+      // for dense vector
       case v: DenseIntVector => new DenseIntVector(dimension.toInt, v.getValues.slice(offset.toInt, dimension.toInt))
       case v: DenseDoubleVector => new DenseDoubleVector(dimension.toInt, v.getValues.slice(offset.toInt, dimension.toInt))
       case v: DenseFloatVector => new DenseFloatVector(dimension.toInt, v.getValues.slice(offset.toInt, dimension.toInt))
-      //TODO sorted will faster
+      // for sparse vector
       case v: SparseIntVector => {
         val map = new Int2IntOpenHashMap()
         map.putAll(v.getIndexToValueMap.asScala.filterKeys(key => key >= offset && key < (offset + dimension)).asJava)
@@ -70,6 +71,18 @@ class SingleShardingData[V <: TVector](vector: V) extends ShardingData {
         map.putAll(v.getIndexToValueMap.asScala.filterKeys(key => key >= offset && key < (offset + dimension)).asJava)
         new SparseLongKeyDoubleVector(dimension.toInt, map)
       }
+      // for dummy vector
+      case v: SparseDummyVector => {
+        val idxs = v.getIndices.filter(idx => offset <= idx && offset + dimension > idx)
+        new SparseDummyVector(idxs, dimension.toInt)
+      }
+      case v: SparseLongKeyDummyVector => {
+        val idxs = v.getIndices.filter(idx => offset <= idx && offset+dimension > idx)
+        new SparseLongKeyDummyVector(idxs, dimension.toInt)
+      }
+      // for sorted vector
+      case v: SparseDoubleSortedVector =>
+      case v: SparseLongKeySortedDoubleVector =>
       case _ => throw new AngelException(s"unsupported type:$vType")
     }
     data.asInstanceOf[V]

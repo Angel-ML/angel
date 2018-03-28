@@ -535,8 +535,8 @@ object FTRLLearner{
   def computeAUC(result: Array[(Double, Double)], posLabel: Double): Double = {
 
     // the number of positive and negative sample
-    val M = result.filter(x => x._1 == posLabel).length
-    val N = result.filter(x => x._1 != posLabel).length
+    val M = result.count(_._1 == posLabel)
+    val N = result.count(_._1 != posLabel)
 
     // sorted and ordered from 1 and filter the positive samples
     val posRankSum = result

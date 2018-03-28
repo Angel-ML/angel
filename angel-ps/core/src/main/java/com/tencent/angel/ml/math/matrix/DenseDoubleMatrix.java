@@ -49,6 +49,7 @@ public class DenseDoubleMatrix extends TDoubleMatrix<DenseDoubleVector> {
     DenseDoubleVector ret = new DenseDoubleVector((int)col);
     ret.setMatrixId(matrixId);
     ret.setRowId(rowIndex);
+    vectors[rowIndex] = ret;
     return ret;
   }
 
@@ -64,5 +65,12 @@ public class DenseDoubleMatrix extends TDoubleMatrix<DenseDoubleVector> {
     ret.setMatrixId(matrixId);
     ret.setRowId(rowIndex);
     return ret;
+  }
+
+  public void setRow(int rowIndex, double[] values) {
+    DenseDoubleVector ret = new DenseDoubleVector((int)col, values);
+    ret.setMatrixId(matrixId);
+    ret.setRowId(rowIndex);
+    vectors[rowIndex] = ret;
   }
 }

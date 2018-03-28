@@ -42,21 +42,23 @@ import com.tencent.angel.worker.task.TaskContext
  * @param col          matrix column number
  * @param blockRow    matrix partition row number
  * @param blockCol    matrix partition column number
- * @param needSave
+ * @param nnz          number of non-zero elements
+ * @param needSave    need save to filesystem or not
  * @param ctx          Task context
  */
 class PSModel(
     val modelName: String,
-    row: Int,
-    col: Long,
-    blockRow: Int = -1,
-    blockCol: Long = -1,
+    val row: Int,
+    val col: Long,
+    val blockRow: Int = -1,
+    val blockCol: Long = -1,
+    val nnz : Long = -1,
     var needSave: Boolean = true)(implicit ctx: TaskContext) {
   
   val LOG: Log = LogFactory.getLog(classOf[PSModel])
   
   /** Matrix configuration */
-  val matrixCtx = new MatrixContext(modelName, row, col, blockRow, blockCol)
+  val matrixCtx = new MatrixContext(modelName, row, col, nnz, blockRow, blockCol)
   
   /** Get task context */
   def getTaskContext = ctx
@@ -152,7 +154,9 @@ class PSModel(
     matrixCtx.setRowType(rowType)
     this
   }
-  
+
+  def getRowType():RowType = matrixCtx.getRowType
+
   /**
     * Set model load path
     *
@@ -467,7 +471,7 @@ class PSModel(
 }
 
 object PSModel {
-  def apply(modelName: String, row: Int, col: Long, blockRow: Int = -1, blockCol: Long = -1)(implicit ctx: TaskContext) = {
-    new PSModel(modelName, row, col, blockRow, blockCol)(ctx)
+  def apply(modelName: String, row: Int, col: Long, blockRow: Int = -1, blockCol: Long = -1, nnz:Long = -1)(implicit ctx: TaskContext) = {
+    new PSModel(modelName, row, col, blockRow, blockCol, nnz)(ctx)
   }
 }

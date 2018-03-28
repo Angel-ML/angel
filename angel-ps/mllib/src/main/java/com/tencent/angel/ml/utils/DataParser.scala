@@ -15,81 +15,157 @@
  */
 package com.tencent.angel.ml.utils
 
+import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.{SparseDoubleSortedVector, SparseDummyVector}
+import com.tencent.angel.ml.math.vector._
+import com.tencent.angel.ml.matrix.RowType
 
 
 abstract class DataParser{
   def parse(value: String): LabeledData
 }
 
-case class DummyDataParser(val maxDim: Int, val negY: Boolean) extends DataParser{
+case class DummyDataParser(maxDim: Long, negY: Boolean, hasLable:Boolean, isClassification:Boolean, rowType:RowType)(implicit splitor:String) extends DataParser{
   override def parse(value: String): LabeledData = {
     if (null == value) {
       return null
     }
-    val splits = value.split(",")
+
+    var splits = value.trim.split(splitor)
     if (splits.length < 1) {
       return null
     }
-    val x = new SparseDummyVector(maxDim, splits.length - 1)
-    var y = splits(0).toDouble
 
-    // y should be +1 or -1 when classification.
-    if (negY && y != 1)
-      y = -1
+    val y = if (hasLable) {
+      var label = splits(0).toDouble
+      if (negY && isClassification && label != 1) label = -1.0
+      splits = splits.tail
+      label
+    } else Double.NaN
 
-    splits.tail.map(idx => x.set(idx.toInt, 1))
+    val x = rowType match {
+      case RowType.T_DOUBLE_SPARSE_LONGKEY | RowType.T_FLOAT_SPARSE_LONGKEY  | RowType.T_DOUBLE_SPARSE_LONGKEY_COMPONENT =>
+        new SparseLongKeyDummyVector(splits.map(_.toLong), maxDim)
+      case _ =>
+        new SparseDummyVector(splits.map(_.toInt), maxDim.toInt)
+    }
+
     new LabeledData(x, y)
   }
 }
 
-case class LibSVMDataParser(val maxDim: Int, val negY: Boolean) extends DataParser {
+case class LibSVMDataParser(maxDim: Long, negY: Boolean, hasLable:Boolean, isClassification:Boolean, rowType:RowType)(implicit splitor:String) extends DataParser {
   type V = SparseDoubleSortedVector
 
   override def parse(text: String): LabeledData = {
     if (null == text) {
       return null
     }
-    val splits = text.trim.split("\\s+")
+
+    var splits = text.trim.split(splitor)
 
     if (splits.length < 1)
       return null
 
-    val len: Int = splits.length - 1
-    val keys: Array[Int] = new Array[Int](len)
-    val vals: Array[Double] = new Array[Double](len)
-    var y: Double = splits(0).toDouble
+    val y = if (hasLable) {
+      var label = splits(0).toDouble
+      splits = splits.tail
+      if (negY && isClassification && label != 1) label = -1
+      label
+    } else Double.NaN
+    val len = splits.length
 
-    // y should be +1 or -1 when classification.
-    if (negY && y != 1)
-      y = -1
+    val x = rowType match {
+      case RowType.T_DOUBLE_DENSE | RowType.T_DOUBLE_SPARSE =>
+        val keys: Array[Int] = new Array[Int](len)
+        val vals: Array[Double] = new Array[Double](len)
 
-    var kv = Array[String]()
-    var key: Int = -1
-    var value: Double = -1.0
-    var i: Int = 0
-    while (i < len) {
-      kv = splits(i + 1).trim.split(":")
-      key = kv(0).toInt
-      value = kv(1).toDouble
-      keys(i) = key
-      vals(i) = value
-      i += 1
+        // y should be +1 or -1 when classification.
+        splits.zipWithIndex.foreach{ case (value:String, indx2:Int) =>
+          val kv = value.trim.split(":")
+          keys(indx2) = kv(0).toInt -1
+          vals(indx2) = kv(1).toDouble
+        }
+        new SparseDoubleSortedVector(maxDim.toInt, keys, vals)
+      case RowType.T_DOUBLE_SPARSE_LONGKEY | RowType.T_DOUBLE_SPARSE_LONGKEY_COMPONENT =>
+        val keys: Array[Long] = new Array[Long](len)
+        val vals: Array[Double] = new Array[Double](len)
+
+        // y should be +1 or -1 when classification.
+        splits.zipWithIndex.foreach{ case (value:String, indx2:Int) =>
+          val kv = value.trim.split(":")
+          keys(indx2) = kv(0).toLong -1
+          vals(indx2) = kv(1).toDouble
+        }
+        new SparseLongKeySortedDoubleVector(maxDim, keys, vals)
+      case RowType.T_FLOAT_DENSE | RowType.T_FLOAT_SPARSE | RowType.T_FLOAT_SPARSE_COMPONENT =>
+        val keys: Array[Int] = new Array[Int](len)
+        val vals: Array[Float] = new Array[Float](len)
+
+        // y should be +1 or -1 when classification.
+        splits.zipWithIndex.foreach{ case (value:String, indx2:Int) =>
+          val kv = value.trim.split(":")
+          keys(indx2) = kv(0).toInt -1
+          vals(indx2) = kv(1).toFloat
+        }
+        new SparseFloatSortedVector(maxDim.toInt, keys, vals)
+      case RowType.T_FLOAT_SPARSE_LONGKEY =>
+        val keys: Array[Long] = new Array[Long](len)
+        val vals: Array[Float] = new Array[Float](len)
+
+        // y should be +1 or -1 when classification.
+        splits.zipWithIndex.foreach{ case (value:String, indx2:Int) =>
+          val kv = value.trim.split(":")
+          keys(indx2) = kv(0).toLong -1
+          vals(indx2) = kv(1).toFloat
+        }
+        new SparseLongKeySortedFloatVector(maxDim, keys, vals)
+      case _ => throw new AngelException("RowType is not support!")
     }
 
-    val x = new SparseDoubleSortedVector(maxDim, keys, vals)
+    new LabeledData(x, y)
+  }
+}
+
+case class DenseDataParser(maxDim: Int, negY: Boolean, hasLable:Boolean, isClassification:Boolean, rowType:RowType)(implicit splitor:String) extends DataParser {
+
+  override def parse(value: String): LabeledData = {
+    if (null == value) {
+      return null
+    }
+
+    var splits = value.trim.split(splitor)
+    if (splits.length < 1) {
+      return null
+    }
+
+    val y = if (hasLable) {
+      var label = splits(0).toDouble
+      if (negY && isClassification && label != 1) label = -1.0
+      splits = splits.tail
+      label
+    } else 0.0
+
+    val x = rowType match {
+      case RowType.T_DOUBLE_DENSE =>
+        new DenseDoubleVector(maxDim, splits.map(_.toDouble))
+      case RowType.T_FLOAT_DENSE =>
+        new DenseFloatVector(maxDim, splits.map(_.toFloat))
+      case _ => throw new AngelException("RowType is not support!")
+    }
 
     new LabeledData(x, y)
   }
 }
 
 object DataParser {
-
-  def apply(dataFormat: String, maxDim: Long, negY: Boolean) :DataParser = {
+  def apply(dataFormat: String, maxDim: Long, negY: Boolean, hasLable:Boolean=true,
+            isClassification:Boolean=true, rowType:RowType=RowType.T_DOUBLE_DENSE) :DataParser = {
+    implicit val splitor:String = "(?:, *| +|\t+)"
     dataFormat match {
-      case "dummy" => new DummyDataParser(maxDim.toInt, negY)
-      case "libsvm" => new LibSVMDataParser(maxDim.toInt, negY)
+      case "dummy" => DummyDataParser(maxDim, negY, hasLable, isClassification, rowType)
+      case "libsvm" => LibSVMDataParser(maxDim, negY, hasLable, isClassification, rowType)
+      case "dense" => DenseDataParser(maxDim.toInt, negY, hasLable, isClassification, rowType)
     }
   }
 }

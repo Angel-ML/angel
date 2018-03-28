@@ -21,6 +21,7 @@ package com.tencent.angel.serving.master
 import com.tencent.angel.serving.ServingLocation
 import com.tencent.angel.serving.common.{ModelCommand, ModelDefinition, ModelLocationList, ModelReport}
 import com.tencent.angel.serving.protocol.ServingService
+import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
 
 /**
@@ -28,6 +29,8 @@ import org.apache.hadoop.conf.Configuration
   * @param config
   */
 class ServingServiceImpl(config: Configuration) extends ServingService {
+  val LOG = LogFactory.getLog(classOf[ServingServiceImpl])
+
   val servingServiceManager: ServingServiceManager = new ServingServiceManager(config)
 
   override def start(): Unit = servingServiceManager.start()
@@ -38,12 +41,12 @@ class ServingServiceImpl(config: Configuration) extends ServingService {
     servingServiceManager.registerServingAgent(agent)
   }
 
-  override def registerModel(model: ModelDefinition): Unit = {
-    servingServiceManager.registerModel(model)
+  override def registerModel(model: ModelDefinition, shardingModelClass:String): Boolean = {
+    LOG.info(s"registerModel: \t$shardingModelClass")
+    servingServiceManager.registerModel(model, shardingModelClass)
   }
 
-
-  override def unregisterModel(name: String): Unit = {
+  override def unregisterModel(name: String): Boolean = {
     servingServiceManager.unregisterModel(name)
   }
 

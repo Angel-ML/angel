@@ -28,11 +28,17 @@ import java.io.UnsupportedEncodingException;
  */
 public class Response implements Serialize {
   private static final Log LOG = LogFactory.getLog(Response.class);
+
+  /** Server state:IDLE, GENERAL, BUSY*/
+  private ServerState state;
+
   /** response type */
   private ResponseType responseType;
 
   /** detail error message */
   private String detail;
+
+  //public String uuid;
 
   /**
    * Create a new Response.
@@ -64,7 +70,7 @@ public class Response implements Serialize {
   @Override
   public void serialize(ByteBuf buf) {
     buf.writeInt(responseType.getTypeId());
-
+    buf.writeInt(state.getTypeId());
     try {
       if (detail != null && !detail.isEmpty()) {
         byte[] serializedErrMsg = detail.getBytes("utf-8");
@@ -81,6 +87,7 @@ public class Response implements Serialize {
   @Override
   public void deserialize(ByteBuf buf) {
     responseType = ResponseType.valueOf(buf.readInt());
+    state = ServerState.valueOf(buf.readInt());
     int len = buf.readInt();
     if (len != 0) {
       byte[] detailData = new byte[len];
@@ -132,5 +139,31 @@ public class Response implements Serialize {
    */
   public void setDetail(String detail) {
     this.detail = detail;
+  }
+
+  /**
+   * Clear RPC Get result
+   */
+  public void clear() {}
+
+  /**
+   * Get server state
+   * @return server state
+   */
+  public ServerState getState() {
+    return state;
+  }
+
+  /**
+   * Set server state
+   * @param state server state
+   */
+  public void setState(ServerState state) {
+    this.state = state;
+  }
+
+  @Override public String toString() {
+    return "Response{" + "state=" + state + ", responseType=" + responseType + ", detail='" + detail
+      + '\'' + '}';
   }
 }

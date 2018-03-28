@@ -16,6 +16,7 @@
 
 package com.tencent.angel.master.ps.ps;
 
+import com.tencent.angel.common.location.Location;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.ps.ParameterServerManagerEvent;
@@ -23,6 +24,7 @@ import com.tencent.angel.master.ps.ParameterServerManagerEventType;
 import com.tencent.angel.master.ps.attempt.PSAttempt;
 import com.tencent.angel.master.ps.attempt.PSAttemptEvent;
 import com.tencent.angel.master.ps.attempt.PSAttemptEventType;
+import com.tencent.angel.ml.matrix.transport.PSLocation;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.utils.StringUtils;
@@ -165,8 +167,8 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
             AngelConf.DEFAULT_PS_MAX_ATTEMPTS);
   }
 
-  public void restart() {
-    if(runningPSAttemptId != null) {
+  public void restart(PSLocation psLoc) {
+    if(runningPSAttemptId != null && psLoc.loc.equals(context.getLocationManager().getPsLocation(psLoc.psId))) {
       getContext().getEventHandler().handle(
         new PSAttemptEvent(PSAttemptEventType.PA_FAILMSG, runningPSAttemptId));
     }

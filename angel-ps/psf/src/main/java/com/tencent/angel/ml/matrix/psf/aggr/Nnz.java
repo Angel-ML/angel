@@ -24,6 +24,9 @@ import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 import java.nio.DoubleBuffer;
 import java.util.List;
@@ -57,9 +60,17 @@ public final class Nnz extends UnaryAggrFunc {
 
   @Override
   protected double doProcessRow(ServerSparseDoubleLongKeyRow row) {
-    long entireSize = row.getEndCol() - row.getStartCol();
-    long nnz = entireSize - row.getIndex2ValueMap().size();
-
+    Long2DoubleOpenHashMap data = row.getIndex2ValueMap();
+    int nnz = 0;
+    ObjectIterator<Long2DoubleMap.Entry> iter  = data.long2DoubleEntrySet().iterator();
+    while (iter.hasNext()) {
+      Long2DoubleMap.Entry entry = iter.next();
+      if (Math.abs(entry.getDoubleValue() - data.defaultReturnValue()) > 1e-11) {
+         nnz += 1;
+      } else {
+        iter.remove();
+      }
+    }
     return (double)nnz;
   }
 

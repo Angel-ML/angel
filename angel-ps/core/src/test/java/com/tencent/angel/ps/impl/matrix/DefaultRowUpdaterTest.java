@@ -66,10 +66,11 @@ public class DefaultRowUpdaterTest {
   public void testUpdateIntDenseToIntDense() throws Exception {
     ServerDenseIntRow serverDenseIntRow = new ServerDenseIntRow(rowId, startCol, endCol);
     ByteBuf buf = Unpooled.buffer(16);
+    buf.writeInt(3);
     buf.writeInt(0);
     buf.writeInt(1);
     buf.writeInt(-1);
-    rowUpdater.updateIntDenseToIntDense(3, buf, serverDenseIntRow);
+    rowUpdater.updateIntDenseToIntDense(buf, serverDenseIntRow);
     assertEquals(serverDenseIntRow.getData().get(0), 0);
     assertEquals(serverDenseIntRow.getData().get(1), 1);
     assertEquals(serverDenseIntRow.getData().get(2), -1);
@@ -79,13 +80,14 @@ public class DefaultRowUpdaterTest {
   public void testUpdateIntSparseToIntDense() throws Exception {
     ServerDenseIntRow serverDenseIntRow = new ServerDenseIntRow(rowId, startCol, endCol);
     ByteBuf buf = Unpooled.buffer(16);
+    buf.writeInt(3);
     buf.writeInt(0);
     buf.writeInt(0);
     buf.writeInt(1);
     buf.writeInt(1);
     buf.writeInt(2);
     buf.writeInt(-1);
-    rowUpdater.updateIntSparseToIntDense(3, buf, serverDenseIntRow);
+    rowUpdater.updateIntSparseToIntDense(buf, serverDenseIntRow);
     assertEquals(serverDenseIntRow.getData().get(0), 0, 0.00);
     assertEquals(serverDenseIntRow.getData().get(1), 1, 0.00);
     assertEquals(serverDenseIntRow.getData().get(2), -1, 0.00);
@@ -95,10 +97,11 @@ public class DefaultRowUpdaterTest {
   public void testUpdateIntDenseToIntSparse() throws Exception {
     ServerSparseIntRow serverSparseIntRow = new ServerSparseIntRow(rowId, startCol, endCol);
     ByteBuf buf = Unpooled.buffer(16);
+    buf.writeInt(3);
     buf.writeInt(0);
     buf.writeInt(1);
     buf.writeInt(2);
-    rowUpdater.updateIntDenseToIntSparse(3, buf, serverSparseIntRow);
+    rowUpdater.updateIntDenseToIntSparse(buf, serverSparseIntRow);
     Int2IntOpenHashMap hashMap = new Int2IntOpenHashMap();
     hashMap.addTo(0, 0);
     hashMap.addTo(1, 1);
@@ -110,13 +113,14 @@ public class DefaultRowUpdaterTest {
   public void testUpdateIntSparseToIntSparse() throws Exception {
     ServerSparseIntRow serverSparseIntRow = new ServerSparseIntRow(rowId, startCol, endCol);
     ByteBuf buf = Unpooled.buffer(16);
+    buf.writeInt(3);
     buf.writeInt(0);
     buf.writeInt(0);
     buf.writeInt(1);
     buf.writeInt(1);
     buf.writeInt(2);
     buf.writeInt(2);
-    rowUpdater.updateIntSparseToIntSparse(3, buf, serverSparseIntRow);
+    rowUpdater.updateIntSparseToIntSparse(buf, serverSparseIntRow);
     Int2IntOpenHashMap hashMap = new Int2IntOpenHashMap();
     hashMap.addTo(0, 0);
     hashMap.addTo(1, 1);
@@ -128,10 +132,11 @@ public class DefaultRowUpdaterTest {
   public void testUpdateDoubleDenseToDoubleDense() throws Exception {
     ServerDenseDoubleRow serverDenseDoubleRow = new ServerDenseDoubleRow(rowId, startCol, endCol);
     ByteBuf buf = Unpooled.buffer(16);
+    buf.writeInt(3);
     buf.writeDouble(0.00);
     buf.writeDouble(1.00);
     buf.writeDouble(-1.00);
-    rowUpdater.updateDoubleDenseToDoubleDense(3, buf, serverDenseDoubleRow);
+    rowUpdater.updateDoubleDenseToDoubleDense(buf, serverDenseDoubleRow);
     assertEquals(serverDenseDoubleRow.getData().get(0), 0, 0.00);
     assertEquals(serverDenseDoubleRow.getData().get(1), 1, 0.00);
     assertEquals(serverDenseDoubleRow.getData().get(2), -1, 0.00);
@@ -141,13 +146,14 @@ public class DefaultRowUpdaterTest {
   public void testUpdateDoubleSparseToDoubleDense() throws Exception {
     ServerDenseDoubleRow serverDenseDoubleRow = new ServerDenseDoubleRow(rowId, startCol, endCol);
     ByteBuf buf = Unpooled.buffer(16);
+    buf.writeInt(3);
     buf.writeInt(0);
     buf.writeDouble(0.00);
     buf.writeInt(1);
     buf.writeDouble(1.00);
     buf.writeInt(2);
     buf.writeDouble(-1.00);
-    rowUpdater.updateDoubleSparseToDoubleDense(3, buf, serverDenseDoubleRow);
+    rowUpdater.updateDoubleSparseToDoubleDense(buf, serverDenseDoubleRow);
     assertEquals(serverDenseDoubleRow.getData().get(0), 0, 0.00);
     assertEquals(serverDenseDoubleRow.getData().get(1), 1, 0.00);
     assertEquals(serverDenseDoubleRow.getData().get(2), -1, 0.00);
@@ -158,10 +164,11 @@ public class DefaultRowUpdaterTest {
     ServerSparseDoubleRow serverSparseDoubleRow =
         new ServerSparseDoubleRow(rowId, startCol, endCol);
     ByteBuf buf = Unpooled.buffer(16);
+    buf.writeInt(3);
     buf.writeDouble(0.00);
     buf.writeDouble(1.00);
     buf.writeDouble(2.00);
-    rowUpdater.updateDoubleDenseToDoubleSparse(3, buf, serverSparseDoubleRow);
+    rowUpdater.updateDoubleDenseToDoubleSparse(buf, serverSparseDoubleRow);
     Int2DoubleOpenHashMap hashMap = new Int2DoubleOpenHashMap();
     hashMap.addTo(0, 0.00);
     hashMap.addTo(1, 1.00);
@@ -174,13 +181,14 @@ public class DefaultRowUpdaterTest {
     ServerSparseDoubleRow serverSparseDoubleRow =
         new ServerSparseDoubleRow(rowId, startCol, endCol);
     ByteBuf buf = Unpooled.buffer(16);
+    buf.writeInt(3);
     buf.writeInt(0);
     buf.writeDouble(0.00);
     buf.writeInt(1);
     buf.writeDouble(1.00);
     buf.writeInt(2);
     buf.writeDouble(2.00);
-    rowUpdater.updateDoubleSparseToDoubleSparse(3, buf, serverSparseDoubleRow);
+    rowUpdater.updateDoubleSparseToDoubleSparse(buf, serverSparseDoubleRow);
     Int2DoubleOpenHashMap hashMap = new Int2DoubleOpenHashMap();
     hashMap.addTo(0, 0.00);
     hashMap.addTo(1, 1.00);
@@ -192,10 +200,11 @@ public class DefaultRowUpdaterTest {
   public void testUpdateFloatDenseToFloatDense() throws Exception {
     ServerDenseFloatRow serverDenseFloatRow = new ServerDenseFloatRow(rowId, startCol, endCol);
     ByteBuf buf = Unpooled.buffer(16);
+    buf.writeInt(3);
     buf.writeFloat((float) 0.00);
     buf.writeFloat((float) 1.00);
     buf.writeFloat((float) -1.00);
-    rowUpdater.updateFloatDenseToFloatDense(3, buf, serverDenseFloatRow);
+    rowUpdater.updateFloatDenseToFloatDense(buf, serverDenseFloatRow);
     assertEquals(serverDenseFloatRow.getData().get(0), 0, 0.00);
     assertEquals(serverDenseFloatRow.getData().get(1), 1, 0.00);
     assertEquals(serverDenseFloatRow.getData().get(2), -1, 0.00);

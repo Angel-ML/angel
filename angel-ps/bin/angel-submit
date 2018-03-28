@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 
-if [ "$HADOOP_HOME" = "" ]; then
+# export HADOOP_HOME="/data/tesla/tdwgaia_angel"
+# export JAVA_HOME="/data/tesla/jdk1.8.0_101"
+export ANGEL_VERSION=1.5.0
+export PATH=${JAVA_HOME}/bin:$PATH
+
+if [ "${HADOOP_HOME}" = "" ]; then
     echo "HADOOP_HOME is not set"
     exit 1
 fi
@@ -13,22 +18,22 @@ conf="$bin"/../conf
 lib="$bin"/../lib
 
 export ANGEL_HOME="$bin/../"
-export ANGEL_VERSION=1.4.0
 
-DEFAULT_LIBEXEC_DIR="$HADOOP_HOME"/libexec
+DEFAULT_LIBEXEC_DIR="${HADOOP_HOME}"/libexec
 HADOOP_LIBEXEC_DIR=${HADOOP_LIBEXEC_DIR:-$DEFAULT_LIBEXEC_DIR}
-. $HADOOP_LIBEXEC_DIR/hadoop-config.sh
+. ${HADOOP_LIBEXEC_DIR}/hadoop-config.sh
 
 for f in "$lib"/*.jar; do
-    if [ "$CLASSPATH" ]; then
-        export CLASSPATH=$CLASSPATH:$f
+    if [ "${CLASSPATH}" ]; then
+        export CLASSPATH=${CLASSPATH}:${f}
     else
-        export CLASSPATH=$f
+        export CLASSPATH=${f}
     fi
 done
 
 export CLASS="com.tencent.angel.utils.AngelRunJar"
 
-export CLASSPATH=$CLASSPATH
+export CLASSPATH=${CLASSPATH}
 export PYTHONHASHSEED=0
-exec "$JAVA" $JAVA_HEAP_MAX $HADOOP_OPTS $CLASS "$@"
+exec "${JAVA}" ${JAVA_HEAP_MAX} ${HADOOP_OPTS} ${CLASS} "$@"
+

@@ -39,12 +39,12 @@ public class Diag extends FullUpdateFunc {
     for (ServerDenseDoubleRow row : rows) {
       int rowId = row.getRowId();
       if (rowId >= row.getStartCol() && rowId < row.getEndCol()) {
+        row.tryToLockWrite();
         try {
-          row.getLock().writeLock().lock();
           DoubleBuffer rowData = row.getData();
           rowData.put(rowId - (int)row.getStartCol(), values[rowId]);
         } finally {
-          row.getLock().writeLock().unlock();
+          row.unlockWrite();
         }
       }
     }

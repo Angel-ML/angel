@@ -23,6 +23,8 @@ import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.Zip2MapWithIndexFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongIterator;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.nio.DoubleBuffer;
@@ -62,12 +64,20 @@ public class Zip3MapWithIndex extends MFUpdateFunc {
     Long2DoubleOpenHashMap from1 = rows[0].getData();
     Long2DoubleOpenHashMap from2 = rows[1].getData();
     Long2DoubleOpenHashMap from3 = rows[2].getData();
-    Long2DoubleOpenHashMap to = from1.clone();
+    Long2DoubleOpenHashMap to = new Long2DoubleOpenHashMap();
 
     // TODO: a better way is needed to deal with defaultValue
     assert (from1.defaultReturnValue() == 0.0 && from2.defaultReturnValue() == 0.0);
-    LongSet keySet = from1.keySet();
-    keySet.addAll(from2.keySet());
+    LongOpenHashSet keySet = new LongOpenHashSet(from1.keySet());
+    LongIterator iter = from2.keySet().iterator();
+    while (iter.hasNext()) {
+      keySet.add(iter.next());
+    }
+    iter = from3.keySet().iterator();
+    while (iter.hasNext()) {
+      keySet.add(iter.next());
+    }
+
     for (long key: keySet) {
       to.put(key, mapper.call((int)key, from1.get(key), from2.get(key), from3.get(key)));
     }

@@ -57,6 +57,7 @@ package object util {
   object ActionType {
     val TRAIN = "train"
     val PREDICT = "predict"
+    val SERVING= "serving"
   }
 
   object ParamKeys {

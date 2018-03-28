@@ -219,19 +219,15 @@ class GBDTLearner(@transient val param: GBTreeParam) extends Learner {
 
 
   private def resetHistogram(gradHist: DensePSMatrix): DensePSMatrix = {
-    if (gradHist != null) {
-      gradHist.zero()
-      gradHist
-    } else {
-      val conf = SparkSession.builder().getOrCreate().sparkContext.getConf
-      val psNum = conf.get("spark.ps.instances", "1").toInt
-      val psCore = conf.get("spark.ps.cores", "1").toInt
-      val totalCore = psNum * psCore
-      val samplesPerCore = math.ceil(param.sampledFeatNum.toDouble / totalCore).toInt
+    if (gradHist != null) gradHist.destroy()
+    val conf = SparkSession.builder().getOrCreate().sparkContext.getConf
+    val psNum = conf.get("spark.ps.instances", "1").toInt
+    val psCore = conf.get("spark.ps.cores", "1").toInt
+    val totalCore = psNum * psCore
+    val samplesPerCore = math.ceil(param.sampledFeatNum.toDouble / totalCore).toInt
 
-      DensePSMatrix(param.maxNodeNum, 2 * param.splitNum * param.sampledFeatNum,
-        param.maxNodeNum, samplesPerCore * 2 * param.splitNum)
-    }
+    DensePSMatrix(param.maxNodeNum, 2 * param.splitNum * param.sampledFeatNum,
+      param.maxNodeNum, samplesPerCore * 2 * param.splitNum)
   }
 
 

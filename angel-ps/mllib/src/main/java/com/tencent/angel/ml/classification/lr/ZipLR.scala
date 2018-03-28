@@ -17,6 +17,8 @@
 
 package com.tencent.angel.ml.classification.lr
 
+import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.MLRunner
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
@@ -55,6 +57,8 @@ class ZipLR extends MLRunner {
    */
   def incTrain(conf: Configuration): Unit = {
     conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
+    val path = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH)
+    if (path == null) throw new AngelException("parameter '" + AngelConf.ANGEL_LOAD_MODEL_PATH + "' should be set to load model")
     super.train(conf, LRModel(conf), classOf[LRTrainTask])
   }
 }

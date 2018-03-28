@@ -84,21 +84,27 @@ public class ServerDenseDoubleRow extends ServerDoubleRow {
 
   @Override
   public int size() {
-    return dataBuffer.length / 8;
+    try {
+      lock.readLock().lock();
+      return dataBuffer.length / 8;
+    } finally {
+      lock.readLock().unlock();
+    }
   }
 
   @Override
-  public void update(RowType rowType, ByteBuf buf, int size) {
+  public void update(RowType rowType, ByteBuf buf) {
+    tryToLockWrite();
+
     try {
-      lock.writeLock().lock();
       switch (rowType) {
         case T_DOUBLE_SPARSE:
         case T_DOUBLE_SPARSE_COMPONENT:
-          sparseDoubleUpdate(buf, size);
+          sparseDoubleUpdate(buf);
           break;
 
         case T_DOUBLE_DENSE:
-          denseDoubleUpdate(buf, size);
+          denseDoubleUpdate(buf);
           break;
 
         default:
@@ -107,21 +113,23 @@ public class ServerDenseDoubleRow extends ServerDoubleRow {
 
       updateRowVersion();
     } finally {
-      lock.writeLock().unlock();
+      unlockWrite();
     }
   }
 
-  private void denseDoubleUpdate(ByteBuf buf, int size) {
+  private void denseDoubleUpdate(ByteBuf buf) {
+    int size = buf.readInt();
     assert size == (endCol - startCol);
     for (int i = 0; i < size; i++) {
       data.put(i, data.get(i) + buf.readDouble());
     }
   }
 
-  private void sparseDoubleUpdate(ByteBuf buf, int size) {
+  private void sparseDoubleUpdate(ByteBuf buf) {
     int columnId;
     double value;
     int startColInt = (int) startCol;
+    int size = buf.readInt();
     for (int i = 0; i < size; i++) {
       columnId = buf.readInt() - startColInt;
       value = data.get(columnId) + buf.readDouble();
@@ -204,7 +212,12 @@ public class ServerDenseDoubleRow extends ServerDoubleRow {
 
   @Override
   public int bufferLen() {
-    return super.bufferLen() + 4 + dataBuffer.length;
+    try {
+      lock.readLock().lock();
+      return super.bufferLen() + 4 + dataBuffer.length;
+    } finally {
+      lock.readLock().unlock();
+    }
   }
 
   @Override public void reset() {

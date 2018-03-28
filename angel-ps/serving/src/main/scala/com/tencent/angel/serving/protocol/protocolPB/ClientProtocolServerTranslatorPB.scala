@@ -19,7 +19,7 @@ package com.tencent.angel.serving.protocol.protocolPB
 
 import com.google.protobuf.RpcController
 import com.tencent.angel.ml.matrix.RowType
-import com.tencent.angel.protobuf.generated.ClientServingServiceProtos
+import com.tencent.angel.protobuf.generated.{ClientServingServiceProtos, ServingProtos}
 import com.tencent.angel.protobuf.generated.ClientServingServiceProtos.{LocationResponseProto, ModelLocationProto, ModelSplitLocationProto}
 import com.tencent.angel.protobuf.generated.ServingProtos.{CommonResponseProto, ServingLocationProto}
 import com.tencent.angel.serving.common._
@@ -48,13 +48,16 @@ class ClientProtocolServerTranslatorPB(server: ClientProtocol) extends ClientPro
         matrixSplitProto => (matrixSplitProto.getName, MatrixSplit(matrixSplitProto.getName, matrixSplitProto.getIndex, matrixSplitProto.getRowOffset, matrixSplitProto.getRowNum, matrixSplitProto.getColumnOffset, matrixSplitProto.getDimension))
       ).toMap)).toArray
 
-    server.registerModel(new ModelDefinition(modelProto.getName, modelProto.getDir, modelProto.getConcurrent, modelProto.getReplica, metas, splits))
-    CommonResponseProto.newBuilder.build
+    val seemSucess = server.registerModel(
+      new ModelDefinition(modelProto.getName, modelProto.getDir, modelProto.getConcurrent, modelProto.getReplica, metas, splits),
+      request.getShardingModelClass
+    )
+    CommonResponseProto.newBuilder.setSeemSucess(seemSucess).build
   }
 
   override def unregisterModel(controller: RpcController, request: ClientServingServiceProtos.UnregisterModelRequestProto): CommonResponseProto = {
-    server.unregisterModel(request.getModel)
-    CommonResponseProto.newBuilder.build
+    val seemSucess = server.unregisterModel(request.getModel)
+    CommonResponseProto.newBuilder.setSeemSucess(seemSucess).build
   }
 
   override def getLocations(controller: RpcController, request: ClientServingServiceProtos.LocationRequestProto): ClientServingServiceProtos.LocationResponseProto = {
@@ -71,5 +74,4 @@ class ClientProtocolServerTranslatorPB(server: ClientProtocol) extends ClientPro
       .addAllSplitLocationList(modelLoc.splitLocations.map(toModelSplitProto(_)).toList.asJava).build()).toList.asJava
     LocationResponseProto.newBuilder().addAllModelLocationList(modelLocs).build()
   }
-
 }

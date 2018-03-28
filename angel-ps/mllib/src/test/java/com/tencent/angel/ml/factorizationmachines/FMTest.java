@@ -44,14 +44,14 @@ public class FMTest {
     // Total iteration number
     int epochNum = 5;
     // Rank
-    int rank = 5;
+    int rank = 3;
     // Regularization parameters
     double reg0 = 0.0;
-    double reg1 = 0.0;
-    double reg2 = 0.001;
+    double reg1 = 0.00001;
+    double reg2 = 0.00005;
     // Learn rage
-    double lr = 0.001;
-    double stev = 0.1;
+    double lr = 1.0;
+    double stev = 0.0001;
 
     // Set local deploy mode
     conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
@@ -60,6 +60,7 @@ public class FMTest {
     conf.setBoolean("mapred.mapper.new-api", true);
     conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
     conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
+    conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 100);
 
     //set angel resource parameters #worker, #task, #PS
     conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
@@ -71,7 +72,6 @@ public class FMTest {
     conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
     conf.set(MLConf.ML_FM_RANK(), String.valueOf(rank));
     conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(lr));
-    conf.set(MLConf.ML_FM_REG0(), String.valueOf(reg0));
     conf.set(MLConf.ML_FM_REG1(), String.valueOf(reg1));
     conf.set(MLConf.ML_FM_REG2(), String.valueOf(reg2));
     conf.set(MLConf.ML_FM_V_STDDEV(), String.valueOf(stev));
@@ -83,7 +83,7 @@ public class FMTest {
     String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
     String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
     String savePath = LOCAL_FS + TMP_PATH + "/model";
-    String logPath = LOCAL_FS + TMP_PATH + "/LRlog";
+    String logPath = LOCAL_FS + TMP_PATH + "/FMlog";
 
     // Set trainning data path
     conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
@@ -93,6 +93,8 @@ public class FMTest {
     conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
     // Set actionType train
     conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
+    // Set feature number
+    conf.set(MLConf.ML_DATA_FORMAT(), "libsvm");
 
     FMRunner runner = new FMRunner();
     runner.train(conf);
@@ -100,7 +102,7 @@ public class FMTest {
 
   @Test
   public void FMClassificationTest() throws Exception {
-    String inputPath = "./src/test/data/fm/a9a.train";
+    String inputPath = "./src/test/data/fm/a9a.train.dummy";
     String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
     String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
     String savePath = LOCAL_FS + TMP_PATH + "/model";
@@ -114,13 +116,54 @@ public class FMTest {
     conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
     // Set actionType train
     conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
+    conf.set(MLConf.ML_DATA_FORMAT(), "dummy");
     // Set learnType
     conf.set(MLConf.ML_FM_LEARN_TYPE(), "c");
     // Set feature number
     conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(124));
+    // Set
+    conf.set(MLConf.ML_FM_POSITIVE_WEIGHT(), "1.0");
+    conf.set(MLConf.ML_FM_NEGATIVE_WEIGHT(), "0.5");
+    conf.set(MLConf.ML_LEARN_RATE(), "0.000001");
+    conf.set(MLConf.ML_FM_V_STDDEV(), "0.000001");
+    conf.set(MLConf.ML_EPOCH_NUM(), "50");
+    conf.set(AngelConf.ANGEL_WORKERGROUP_NUMBER, "1");
+    conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(0.01));
 
     FMRunner runner = new FMRunner();
     runner.train(conf);
+  }
+
+  @Test
+  public void FMPredictTest() throws Exception {
+    String inputPath = "./src/test/data/fm/a9a.train.dummy";
+    String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
+    String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
+    String savePath = LOCAL_FS + TMP_PATH + "/model";
+    String logPath = LOCAL_FS + TMP_PATH + "/FMlog";
+    String outPath = LOCAL_FS + TMP_PATH + "/FMPredictOut";
+
+    // Set trainning data path
+    conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, inputPath);
+    // Set save model path
+    conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, savePath);
+    // Set log path
+    conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
+    // Set FM predict output path
+    conf.set(AngelConf.ANGEL_PREDICT_PATH, outPath);
+    // Set actionType train
+    conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT());
+    conf.set(MLConf.ML_DATA_FORMAT(), "dummy");
+    // Set learnType
+    conf.set(MLConf.ML_FM_LEARN_TYPE(), "c");
+    // Set feature number
+    conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(124));
+    conf.set(AngelConf.ANGEL_WORKERGROUP_NUMBER, "1");
+
+    FMRunner runner = new FMRunner();
+    runner.predict(conf);
+
+    System.out.println(outPath);
   }
 }
 

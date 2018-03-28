@@ -46,7 +46,7 @@ public class MultiErrorMetric implements EvalMetric {
     int insNum = labels.length;
     int classNum = preds.length / insNum;
     float err = 0.0f;
-    for (int insIdx = 0; insIdx < insNum; insNum++) {
+    for (int insIdx = 0; insIdx < insNum; insIdx++) {
       float[] temp = new float[classNum];
       System.arraycopy(preds, insIdx * classNum, temp, 0, classNum);
       err += evalOne(temp, labels[insIdx]);

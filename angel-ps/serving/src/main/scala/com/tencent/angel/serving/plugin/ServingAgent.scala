@@ -48,8 +48,11 @@ class ServingAgent extends AngelService[ParameterServer] {
 
   override def start(agent: ParameterServer): Unit = {
     val masterLoc = agent.getMasterLocation
-    val servingAgentManager: ServingAgentManager = new ServingAgentManager(getConf, new ServingHost(agent.getHostAddress),
-      new AgentProtocolClientTranslatorPB(new InetSocketAddress(masterLoc.getIp, masterLoc.getPort), getConf))
+    val servingAgentManager: ServingAgentManager = new ServingAgentManager(
+      getConf,
+      new ServingHost(agent.getHostAddress),
+      new AgentProtocolClientTranslatorPB(new InetSocketAddress(masterLoc.getIp, masterLoc.getPort), getConf)
+    )
     agentService = new AgentServiceImpl(getConf, servingAgentManager)
     agentService.start()
   }

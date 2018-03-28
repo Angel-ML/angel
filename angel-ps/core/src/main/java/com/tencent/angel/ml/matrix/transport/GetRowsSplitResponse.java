@@ -44,6 +44,27 @@ public class GetRowsSplitResponse extends Response {
 
   /**
    * Create a new GetRowsSplitResponse.
+   *
+   * @param responseType response type
+   * @param rowsSplit row splits
+   */
+  public GetRowsSplitResponse(ResponseType responseType, List<ServerRow> rowsSplit) {
+    this(responseType, null, rowsSplit);
+  }
+
+
+  /**
+   * Create a new GetRowsSplitResponse.
+   *
+   * @param responseType response type
+   * @param detail detail error message if the response type is error
+   */
+  public GetRowsSplitResponse(ResponseType responseType, String detail) {
+    this(responseType, detail, null);
+  }
+
+  /**
+   * Create a new GetRowsSplitResponse.
    */
   public GetRowsSplitResponse() {
     this(ResponseType.SUCCESS, null, null);
@@ -140,4 +161,8 @@ public class GetRowsSplitResponse extends Response {
     return len;
   }
 
+  @Override
+  public void clear() {
+    setRowsSplit(null);
+  }
 }

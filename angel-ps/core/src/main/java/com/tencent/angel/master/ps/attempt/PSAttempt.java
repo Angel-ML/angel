@@ -394,7 +394,7 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
                   AMParameterServerEventType.PS_ATTEMPT_LAUNCHED));
 
       // add the ps attempt to the heartbeat timeout monitoring list
-      psAttempt.getContext().getMasterService().registerPSAttemptId(psAttempt.attemptId);
+      psAttempt.getContext().getParameterServerManager().register(psAttempt.attemptId);
       LOG.info("has telled attempt started for attempid: " + psAttempt.attemptId);
     }
   }
@@ -456,7 +456,7 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
       }
 
       // remove ps attempt id from heartbeat timeout monitor list
-      psAttempt.getContext().getMasterService().unRegisterPSAttemptId(psAttempt.attemptId);
+      psAttempt.getContext().getParameterServerManager().unRegister(psAttempt.attemptId);
 
       // release container:send a release request to container launcher
       AngelDeployMode deployMode = psAttempt.getContext().getDeployMode();
