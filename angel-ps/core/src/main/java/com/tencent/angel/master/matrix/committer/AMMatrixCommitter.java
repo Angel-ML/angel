@@ -164,7 +164,7 @@ public class AMMatrixCommitter extends AbstractService {
       long startTs = System.currentTimeMillis();
       Path metaFile = new Path(destPath, ModelFilesConstent.modelMetaFileName);
       Path tmpMetaFile = HdfsUtil.toTmpPath(metaFile);
-      FSDataOutputStream metaOut = fs.create(tmpMetaFile, (short) 1);
+      FSDataOutputStream metaOut = fs.create(tmpMetaFile);
       filesMeta.write(metaOut);
       metaOut.flush();
       metaOut.close();
