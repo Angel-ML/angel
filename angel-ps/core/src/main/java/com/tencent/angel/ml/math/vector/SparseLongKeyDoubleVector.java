@@ -126,7 +126,6 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
   }
 
   private SparseLongKeyDoubleVector plusBy(SparseLongKeyDoubleVector other) {
-    assert (dim == -1 || dim == other.getLongDim());
     if(indexToValueMap.size() == 0) {
       indexToValueMap = other.indexToValueMap.clone();
     } else if(indexToValueMap.size() < other.size()) {
@@ -154,7 +153,6 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
   }
 
   private SparseLongKeyDoubleVector plusBy(SparseDoubleSortedVector other) {
-    assert (dim == -1 || dim == other.getDimension());
     resize(other.size());
     int [] indexes = other.getIndices();
     double [] values = other.getValues();
@@ -166,7 +164,6 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
   }
 
   private SparseLongKeyDoubleVector plusBy(SparseLongKeySortedDoubleVector other) {
-    assert (dim == -1 || dim == other.getLongDim());
     resize(other.size());
     long [] indexes = other.getIndexes();
     double [] values = other.getValues();
@@ -178,7 +175,6 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
   }
 
   private SparseLongKeyDoubleVector plusBy(SparseDummyVector other) {
-    assert (dim == -1 || dim == other.getDimension());
     resize(other.size());
     int [] indexes = other.getIndices();
     for(int i = 0; i < indexes.length; i++) {
@@ -189,7 +185,6 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
   }
 
   private SparseLongKeyDoubleVector plusBy(SparseLongKeyDummyVector other) {
-    assert (dim == -1 || dim == other.getLongDim());
     resize(other.size());
     long [] indexes = other.getIndices();
     for(int i = 0; i < indexes.length; i++) {
@@ -231,7 +226,6 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
   }
 
   private SparseLongKeyDoubleVector plusBy(SparseLongKeyDoubleVector other, double x) {
-    assert (dim == -1 || dim == other.getLongDim());
     if(this.indexToValueMap.isEmpty()) {
       this.indexToValueMap.putAll(other.getIndexToValueMap());
     } else {
@@ -258,7 +252,6 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
   }
 
   private SparseLongKeyDoubleVector plusBy(SparseDoubleSortedVector other, double x) {
-    assert (dim == -1 || dim == other.getDimension());
     resize(other.size());
 
     int [] indexes = other.getIndices();
@@ -271,7 +264,6 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
   }
 
   private SparseLongKeyDoubleVector plusBy(SparseLongKeySortedDoubleVector other, double x) {
-    assert (dim == -1 || dim == other.getLongDim());
     resize(other.size());
 
     long [] indexes = other.getIndexes();
@@ -284,7 +276,6 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
   }
 
   private SparseLongKeyDoubleVector plusBy(SparseDummyVector other, double x) {
-    assert (dim == -1 || dim == other.getDimension());
     resize(other.size());
 
     int [] indexes = other.getIndices();
@@ -296,9 +287,7 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
   }
 
   private SparseLongKeyDoubleVector plusBy(SparseLongKeyDummyVector other, double x) {
-    assert (dim == -1 || dim == other.getLongDim());
     resize(other.size());
-
     long [] indexes = other.getIndices();
     for(int i = 0; i < indexes.length; i++) {
       indexToValueMap.addTo(indexes[i], x);
@@ -317,7 +306,6 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
   }
 
   private SparseLongKeyDoubleVector plus(SparseLongKeyDoubleVector other) {
-    assert dim == other.dim;
     SparseLongKeyDoubleVector baseVector = null;
     SparseLongKeyDoubleVector streamVector = null;
     if (size() < other.size()) {
@@ -348,7 +336,6 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
   }
 
   private SparseLongKeyDoubleVector plus(SparseLongKeyDoubleVector other, double x) {
-    assert (dim == -1 || dim == other.getLongDim());
     SparseLongKeyDoubleVector baseVector = null;
     SparseLongKeyDoubleVector streamVector = null;
     if (size() < other.size()) {
@@ -387,7 +374,6 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
   }
 
   private double dot(SparseLongKeyDoubleVector other) {
-    assert (dim == -1 || dim == other.getLongDim());
     double ret = 0.0;
     if (size() <= other.size()) {
       ObjectIterator<Long2DoubleMap.Entry> iter =
@@ -403,7 +389,6 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
   }
 
   private double dot(SparseDoubleSortedVector other) {
-    assert (dim == -1 || dim == other.getDimension());
     int [] indexes = other.getIndices();
     double [] values = other.getValues();
     double ret = 0.0;
@@ -415,7 +400,6 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
   }
 
   private double dot(SparseLongKeySortedDoubleVector other) {
-    assert (dim == -1 || dim == other.getLongDim());
     long [] indexes = other.getIndexes();
     double [] values = other.getValues();
     double ret = 0.0;
@@ -427,7 +411,6 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
   }
 
   private double dot(SparseDummyVector other) {
-    assert (dim == -1 || dim == other.getDimension());
     int [] indexes = other.getIndices();
     double ret = 0.0;
     for(int i = 0; i < indexes.length; i++) {
@@ -438,7 +421,6 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
   }
 
   private double dot(SparseLongKeyDummyVector other) {
-    assert (dim == -1 || dim == other.getLongDim());
     double ret = 0.0;
     for(long i:  other.getIndices()) {
       ret += get(i);
@@ -630,6 +612,6 @@ public class SparseLongKeyDoubleVector extends TLongDoubleVector implements Seri
 
   @Override
   public int bufferLen() {
-    return 4 + (8 + 8) * indexToValueMap.size();
+    return 12 + (8 + 8) * indexToValueMap.size();
   }
 }
