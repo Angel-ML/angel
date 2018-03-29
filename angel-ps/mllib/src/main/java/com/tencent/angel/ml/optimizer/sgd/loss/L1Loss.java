@@ -28,18 +28,15 @@ public abstract class L1Loss implements Loss {
 
   protected double lambda;
 
-  @Override
-  public boolean isL2Reg() {
+  @Override public boolean isL2Reg() {
     return false;
   }
 
-  @Override
-  public boolean isL1Reg() {
+  @Override public boolean isL1Reg() {
     return this.lambda > 1e-12;
   }
 
-  @Override
-  public double getReg(TDoubleVector w) {
+  @Override public double getReg(TDoubleVector w) {
     double reg = 0.0;
     if (isL1Reg()) {
       reg = w.norm();
@@ -47,8 +44,7 @@ public abstract class L1Loss implements Loss {
     return getRegParam() * reg;
   }
 
-  @Override
-  public double getRegParam() {
+  @Override public double getRegParam() {
     return this.lambda;
   }
 }

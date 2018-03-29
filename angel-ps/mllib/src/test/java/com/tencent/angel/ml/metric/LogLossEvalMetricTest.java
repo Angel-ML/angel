@@ -25,25 +25,25 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public class LogLossEvalMetricTest {
-    private static final Log LOG = LogFactory.getLog(LogLossMetric.class);
-    private LogLossMetric logLossMetric = new LogLossMetric();
-    static {
-        PropertyConfigurator.configure("../conf/log4j.properties");
-    }
-    @Test
-    public void testEval() throws Exception {
-        float pred[] = {0.6f, 0.3f, 0.7f};
-        float label[] = {1f, 0f, 1f};
-        assertEquals(0.40805, logLossMetric.eval(pred, label), 0.0001);
-    }
+  private static final Log LOG = LogFactory.getLog(LogLossMetric.class);
+  private LogLossMetric logLossMetric = new LogLossMetric();
 
-    @Test
-    public void testEvalOne() throws Exception {
-        float pred = 0.0f, label = 1f;
-        assertEquals(36.841, logLossMetric.evalOne(pred, label), 0.001);
-        pred=0.6f;
-        assertEquals(0.510, logLossMetric.evalOne(pred, label), 0.001);
-        pred=0.002f;
-        assertEquals(6.214, logLossMetric.evalOne(pred, label), 0.001);
-    }
+  static {
+    PropertyConfigurator.configure("../conf/log4j.properties");
+  }
+
+  @Test public void testEval() throws Exception {
+    float pred[] = {0.6f, 0.3f, 0.7f};
+    float label[] = {1f, 0f, 1f};
+    assertEquals(0.40805, logLossMetric.eval(pred, label), 0.0001);
+  }
+
+  @Test public void testEvalOne() throws Exception {
+    float pred = 0.0f, label = 1f;
+    assertEquals(36.841, logLossMetric.evalOne(pred, label), 0.001);
+    pred = 0.6f;
+    assertEquals(0.510, logLossMetric.evalOne(pred, label), 0.001);
+    pred = 0.002f;
+    assertEquals(6.214, logLossMetric.evalOne(pred, label), 0.001);
+  }
 }

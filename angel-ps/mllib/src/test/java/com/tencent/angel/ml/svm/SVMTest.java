@@ -42,8 +42,7 @@ public class SVMTest {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
-  @Before
-  public void setup() throws Exception {
+  @Before public void setup() throws Exception {
     try {
       // Feature number of train data
       int featureNum = 124;
@@ -93,8 +92,7 @@ public class SVMTest {
     }
   }
 
-  @Test
-  public void testSVM()throws Exception {
+  @Test public void testSVM() throws Exception {
     trainOnLocalClusterTest();
     incLearnTest();
   }
@@ -122,7 +120,7 @@ public class SVMTest {
     }
   }
 
-  private void incLearnTest()  throws Exception{
+  private void incLearnTest() throws Exception {
     try {
       String inputPath = "./src/test/data/lr/a9a.train";
       String logPath = "./src/test/log";
@@ -130,7 +128,7 @@ public class SVMTest {
       // Set trainning data path
       conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
       // Set load model path
-      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS+TMP_PATH+"/SVMModel");
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/SVMModel");
       // Set save model path
       conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/newSVMModel");
       // Set actionType incremental train

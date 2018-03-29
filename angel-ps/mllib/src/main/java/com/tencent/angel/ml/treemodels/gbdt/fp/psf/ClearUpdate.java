@@ -1,3 +1,20 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
 package com.tencent.angel.ml.treemodels.gbdt.fp.psf;
 
 import com.tencent.angel.PartitionKey;
@@ -28,7 +45,7 @@ public class ClearUpdate extends UpdateFunc {
     /**
      * Instantiates a new Clear updater param.
      *
-     * @param matrixId the matrix id
+     * @param matrixId    the matrix id
      * @param updateClock the update clock
      */
     public ClearUpdateParam(int matrixId, boolean updateClock) {
@@ -40,10 +57,9 @@ public class ClearUpdate extends UpdateFunc {
      *
      * @return the list
      */
-    @Override
-    public List<PartitionUpdateParam> split() {
+    @Override public List<PartitionUpdateParam> split() {
       List<PartitionKey> partList =
-              PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
+        PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
       int size = partList.size();
       List<PartitionUpdateParam> partParamList = new ArrayList<>(size);
       for (int i = 0; i < size; i++) {
@@ -53,6 +69,7 @@ public class ClearUpdate extends UpdateFunc {
     }
   }
 
+
   /**
    * The partition updater parameter.
    */
@@ -60,8 +77,8 @@ public class ClearUpdate extends UpdateFunc {
     /**
      * Creates new partition updater parameter.
      *
-     * @param matrixId the matrix id
-     * @param partKey the part key
+     * @param matrixId    the matrix id
+     * @param partKey     the part key
      * @param updateClock the update clock
      */
     public ClearPartitionUpdateParam(int matrixId, PartitionKey partKey, boolean updateClock) {
@@ -81,11 +98,9 @@ public class ClearUpdate extends UpdateFunc {
    *
    * @param partParam the partition parameter
    */
-  @Override
-  public void partitionUpdate(PartitionUpdateParam partParam) {
-    ServerPartition part =
-        psContext.getMatrixStorageManager()
-            .getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
+  @Override public void partitionUpdate(PartitionUpdateParam partParam) {
+    ServerPartition part = psContext.getMatrixStorageManager()
+      .getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
 
     if (part != null) {
       int startRow = part.getPartitionKey().getStartRow();
@@ -145,7 +160,7 @@ public class ClearUpdate extends UpdateFunc {
     try {
       row.getLock().writeLock().lock();
       byte[] data = row.getDataArray();
-      Arrays.fill(data, (byte)0);
+      Arrays.fill(data, (byte) 0);
     } finally {
       row.getLock().writeLock().unlock();
     }

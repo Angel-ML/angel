@@ -33,11 +33,13 @@ Double, var lambda: Double, var rank: Int) extends Callable[Double] {
   def call: Double = {
     var itemVec: ItemVec = null
     var loss = 0.0
-    while ({itemVec = taskQueue.poll; itemVec != null}) {
+    while ( {
+      itemVec = taskQueue.poll; itemVec != null
+    }) {
 
-        val itemId: Int = itemVec.getItemId
-        val Rj = R(itemId)
-        loss += Utils.lossOneItemVec(itemVec, Rj, L, eta, lambda, rank)
+      val itemId: Int = itemVec.getItemId
+      val Rj = R(itemId)
+      loss += Utils.lossOneItemVec(itemVec, Rj, L, eta, lambda, rank)
 
     }
     return loss

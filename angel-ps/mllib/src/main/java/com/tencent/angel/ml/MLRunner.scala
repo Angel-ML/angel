@@ -26,7 +26,7 @@ import com.tencent.angel.worker.task.BaseTask
 import org.apache.hadoop.conf.Configuration
 
 
-trait MLRunner extends AppSubmitter{
+trait MLRunner extends AppSubmitter {
 
   /**
     * Training job to obtain a model
@@ -40,7 +40,7 @@ trait MLRunner extends AppSubmitter{
     * @param model
     * @param taskClass
     */
-  final protected def train(conf: Configuration, model: MLModel, taskClass: Class[_ <: BaseTask[_, _, _]]): Unit ={
+  final protected def train(conf: Configuration, model: MLModel, taskClass: Class[_ <: BaseTask[_, _, _]]): Unit = {
     val client = AngelClientFactory.get(conf)
 
     try {
@@ -71,7 +71,7 @@ trait MLRunner extends AppSubmitter{
     * @param model
     * @param taskClass
     */
-  final protected def predict(conf: Configuration, model: MLModel, taskClass: Class[_ <: BaseTask[_, _, _]]): Unit ={
+  final protected def predict(conf: Configuration, model: MLModel, taskClass: Class[_ <: BaseTask[_, _, _]]): Unit = {
     val client = AngelClientFactory.get(conf)
     try {
       client.startPSServer()
@@ -82,8 +82,6 @@ trait MLRunner extends AppSubmitter{
       client.stop(0)
     }
   }
-
-
 
 
   @throws[Exception]

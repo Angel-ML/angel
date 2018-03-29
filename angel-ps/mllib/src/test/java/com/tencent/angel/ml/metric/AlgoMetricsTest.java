@@ -46,9 +46,8 @@ public class AlgoMetricsTest {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
-  @Before
-  public void setup() throws Exception {
-    try{
+  @Before public void setup() throws Exception {
+    try {
       // set basic configuration keys
       Configuration conf = new Configuration();
       conf.setBoolean("mapred.mapper.new-api", true);
@@ -94,8 +93,7 @@ public class AlgoMetricsTest {
     }
   }
 
-  @Test
-  public void testAlgo() throws Exception {
+  @Test public void testAlgo() throws Exception {
     try {
       angelClient.waitForCompletion();
     } catch (Exception x) {
@@ -104,9 +102,8 @@ public class AlgoMetricsTest {
     }
   }
 
-  @After
-  public void stop() throws Exception {
-    try{
+  @After public void stop() throws Exception {
+    try {
       LOG.info("stop local cluster");
       angelClient.stop();
     } catch (Exception x) {

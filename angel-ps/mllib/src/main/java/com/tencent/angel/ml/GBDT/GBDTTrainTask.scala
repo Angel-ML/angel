@@ -27,7 +27,7 @@ import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.io.{LongWritable, Text}
 
-class GBDTTrainTask (val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
+class GBDTTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
 
   private val LOG = LogFactory.getLog(classOf[GBDTTrainTask])
 
@@ -41,7 +41,7 @@ class GBDTTrainTask (val ctx: TaskContext) extends TrainTask[LongWritable, Text]
   private val dataParser = DataParser(dataFormat, feaNum, true)
 
   /**
-    * @param ctx: task context
+    * @param ctx : task context
     */
   @throws[Exception]
   def train(ctx: TaskContext) {

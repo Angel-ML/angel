@@ -37,7 +37,9 @@ class LDAInferTask(val ctx: TaskContext) extends
   val LOG = LogFactory.getLog(classOf[LDAInferTask])
 
   override
-  def parse(key: LongWritable, value: Text): Text = { null }
+  def parse(key: LongWritable, value: Text): Text = {
+    null
+  }
 
   override
   def preProcess(ctx: TaskContext) {
@@ -51,7 +53,7 @@ class LDAInferTask(val ctx: TaskContext) extends
     loadModel(model)
 
     // load data
-    val data = read(model.V, model.K,model.mh)
+    val data = read(model.V, model.K, model.mh)
 
     val infer = new LDATrainer(ctx, model, data)
     infer.initForInference()
@@ -69,7 +71,7 @@ class LDAInferTask(val ctx: TaskContext) extends
     for (i <- 0 until paths.length) {
       val path = paths(i)
       LOG.info(s"Load model from path ${path}")
-      val fs   = path.getFileSystem(conf)
+      val fs = path.getFileSystem(conf)
 
       val in = new BufferedReader(new InputStreamReader(fs.open(path)))
 
@@ -99,9 +101,9 @@ class LDAInferTask(val ctx: TaskContext) extends
 
   def getPaths(): Array[Path] = {
     val taskId = ctx.getTaskIndex
-    val total  = ctx.getTotalTaskNum
-    val dir    = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH)
-    val base   = dir + "/" + "word_topic"
+    val total = ctx.getTotalTaskNum
+    val dir = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH)
+    val base = dir + "/" + "word_topic"
 
     val basePath = new Path(base)
     val fs = basePath.getFileSystem(conf)
@@ -122,14 +124,14 @@ class LDAInferTask(val ctx: TaskContext) extends
     ret.toArray
   }
 
-  def read(V: Int, K: Int, mh:Int): WTokens = {
+  def read(V: Int, K: Int, mh: Int): WTokens = {
     // Read documents
     val reader = ctx.getReader[LongWritable, Text]
-    val docs   = new ArrayBuffer[Document]()
+    val docs = new ArrayBuffer[Document]()
     var did = 0
     var N = 0
     while (reader.nextKeyValue()) {
-      val doc  = new Document(reader.getCurrentValue.toString)
+      val doc = new Document(reader.getCurrentValue.toString)
       docs.+=(doc)
       did += 1
       N += doc.len

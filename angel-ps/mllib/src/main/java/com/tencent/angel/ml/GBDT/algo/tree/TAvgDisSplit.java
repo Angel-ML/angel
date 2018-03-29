@@ -36,8 +36,8 @@ public class TAvgDisSplit extends TSplitValueHelper {
     float[] binWidths = new float[numFeature];
     for (int fid = 0; fid < numFeature; fid++) {
       binWidths[fid] =
-          (dataStore.featureMeta.maxFeatures[fid] - dataStore.featureMeta.minFeatures[fid])
-              / splitNum;
+        (dataStore.featureMeta.maxFeatures[fid] - dataStore.featureMeta.minFeatures[fid])
+          / splitNum;
     }
 
     // 2. calculate the candidate split value

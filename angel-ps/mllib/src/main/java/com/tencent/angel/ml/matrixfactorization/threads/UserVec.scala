@@ -65,8 +65,8 @@ class UserVec(var userId: Int, var itemIds: Array[Int], var ratings: Array[Int])
     var form = new DecimalFormat("0.00000")
 
     var ustring = userId.toString + " "
-    for ( i <- 0 until rank)
-      ustring = ustring +  form.format(features.get(i)) + " "
+    for (i <- 0 until rank)
+      ustring = ustring + form.format(features.get(i)) + " "
 
     ustring
   }

@@ -24,7 +24,6 @@ import com.tencent.angel.ml.objective.RegLossObj;
 
 /**
  * Description:
- *
  */
 
 public class GBDTParam extends RegTParam {

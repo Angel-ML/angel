@@ -33,7 +33,8 @@ public class GradStats {
   // ridx)
   private int kSimpleStats = 1;
 
-  public GradStats() {}
+  public GradStats() {
+  }
 
   public GradStats(GradStats old) {
     this(old.sumGrad, old.sumHess);
@@ -66,7 +67,8 @@ public class GradStats {
   }
 
   // check if necessary information is ready
-  public void CheckInfo(RegTDataStore info) {}
+  public void CheckInfo(RegTDataStore info) {
+  }
 
   public void update(float sumGrad, float sumHess) {
     this.sumGrad = sumGrad;
@@ -97,8 +99,8 @@ public class GradStats {
    * accumulate statistics, more complicated version.
    *
    * @param gpairs the list storing the gradient statistics
-   * @param info the additional information
-   * @param ridx instances index of this instances
+   * @param info   the additional information
+   * @param ridx   instances index of this instances
    */
   public void add(List<GradPair> gpairs, RegTDataStore info, int ridx) {
     GradPair b = gpairs.get(ridx);
@@ -165,8 +167,9 @@ public class GradStats {
    * set leaf vector value based on statistics .
    *
    * @param param the reg tree param
-   * @param vec the leaf vector
+   * @param vec   the leaf vector
    */
-  public void setLeafVec(RegTParam param, float[] vec) {}
+  public void setLeafVec(RegTParam param, float[] vec) {
+  }
 
 }

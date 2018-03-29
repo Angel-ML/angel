@@ -71,7 +71,7 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
 
   // Hyper parameters
   val alpha = model.alpha
-  val beta  = model.beta
+  val beta = model.beta
   val lgammaBeta = Gamma.logGamma(beta)
   val lgammaAlpha = Gamma.logGamma(alpha)
   val lgammaAlphaSum = Gamma.logGamma(alpha * model.K)
@@ -132,7 +132,7 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
 
       // submit to client
       globalMetrics.metric(LOG_LIKELIHOOD, ll)
-//      ctx.incEpoch()
+      //      ctx.incEpoch()
 
       if (epoch % 4 == 0) reset(epoch)
     }
@@ -179,7 +179,7 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
 
   def computeWordLLH: Double = {
     model.wtMat.get(new LikelihoodFunc(model.wtMat.getMatrixId(), beta)) match {
-      case r : ScalarAggrResult => r.getResult
+      case r: ScalarAggrResult => r.getResult
       case _ => throw new AngelException("should be ScalarAggrResult")
     }
   }
@@ -278,6 +278,7 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
     val results = new LinkedBlockingQueue[Double]()
     class Task(index: AtomicInteger) extends Thread {
       private var ll = 0.0
+
       override def run(): Unit = {
         while (index.get() < n_docs) {
           val d = index.incrementAndGet()
@@ -293,7 +294,8 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
     }
 
     val index = new AtomicInteger(0)
-    var ll = 0.0; var nnz = 0
+    var ll = 0.0;
+    var nnz = 0
     for (i <- 0 until model.threadNum) executor.execute(new Task(index))
     for (i <- 0 until model.threadNum) ll += results.take()
     for (d <- 0 until n_docs) nnz += data.dks(d).size
@@ -474,19 +476,19 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
 
   def saveWordTopic(model: LDAModel): Unit = {
     LOG.info("save word topic")
-    val dir  = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH)
+    val dir = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH)
     val base = dir + "/" + "word_topic"
     val taskId = ctx.getTaskIndex
     val dest = new Path(base, taskId.toString)
 
-    val fs  = dest.getFileSystem(conf)
+    val fs = dest.getFileSystem(conf)
     val tmp = HdfsUtil.toTmpPath(dest)
     val out = new BufferedOutputStream(fs.create(tmp))
 
 
     val num = model.V / ctx.getTotalTaskNum + 1
     val start = taskId * num
-    val end   = Math.min(model.V, start + num)
+    val end = Math.min(model.V, start + num)
 
     val index = new RowIndex()
     for (i <- start until end) index.addRowId(i)
@@ -510,14 +512,14 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
 
   def saveDocTopic(data: CSRTokens, model: LDAModel): Unit = {
     LOG.info("save doc topic ")
-    val dir  = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH)
+    val dir = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH)
     val base = dir + "/" + "doc_topic"
     val part = ctx.getTaskIndex
 
     val dest = new Path(base, part.toString)
-    val fs   = dest.getFileSystem(conf)
-    val tmp  = HdfsUtil.toTmpPath(dest)
-    val out  = new BufferedOutputStream(fs.create(tmp))
+    val fs = dest.getFileSystem(conf)
+    val tmp = HdfsUtil.toTmpPath(dest)
+    val out = new BufferedOutputStream(fs.create(tmp))
 
     for (d <- 0 until data.dks.size) {
       val sb = new StringBuilder

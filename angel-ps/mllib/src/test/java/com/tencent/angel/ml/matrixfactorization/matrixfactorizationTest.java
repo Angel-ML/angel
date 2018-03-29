@@ -39,8 +39,7 @@ public class matrixfactorizationTest {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
-  @Test
-  public void testMF() throws Exception {
+  @Test public void testMF() throws Exception {
     try {
       String inputPath = "./src/test/data/recommendation/MovieLensDataSet";
 

@@ -50,7 +50,7 @@ class SparseLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLMod
   val z = PSModel(Z, 1, feaNum).setRowType(RowType.T_DOUBLE_SPARSE)
   val t = PSModel(T, 1, 1).setRowType(RowType.T_DOUBLE_DENSE).setNeedSave(false)
   val loss = PSModel(LOSS, 1, 1).setRowType(RowType.T_DOUBLE_DENSE).setNeedSave(false)
-  val auc  = PSModel(AUC, 1, bucketNum * 2).setRowType(RowType.T_INT_DENSE).setNeedSave(false).setOplogType("DENSE_INT")
+  val auc = PSModel(AUC, 1, bucketNum * 2).setRowType(RowType.T_INT_DENSE).setNeedSave(false).setOplogType("DENSE_INT")
 
   addPSModel(w)
   addPSModel(z)
@@ -60,7 +60,6 @@ class SparseLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLMod
 
   super.setSavePath(conf)
   super.setLoadPath(conf)
-
 
 
   override
@@ -90,6 +89,7 @@ class SparseLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLMod
 
 class SparseLRPredictResult(id: Double, dot: Double, sig: Double) extends PredictResult {
   val df = new DecimalFormat("0")
+
   override def getText(): String = {
     df.format(id) + separator + format.format(dot) + separator + format.format(sig)
   }

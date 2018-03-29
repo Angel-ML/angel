@@ -34,7 +34,7 @@ object MLConf {
   val ANGEL_FEATURE_CONFIG = "ml.feature.conf"
   val ML_FEATURE_NNZ = "ml.feature.nnz"
   val DEFAULT_ML_FEATURE_NNZ = 10000
-  val ML_MF_USER_OUTPUT_PATH="ml.mf.user.model.output"
+  val ML_MF_USER_OUTPUT_PATH = "ml.mf.user.model.output"
   val ANGEL_PREDICT_PATH = "angel.predict.path"
   val ML_INDEX_GET_ENABLE = "ml.index.get.enable"
   val DEFAULT_ML_INDEX_GET_ENABLE = false
@@ -57,7 +57,7 @@ object MLConf {
   val ML_EPOCH_NUM = "ml.epoch.num"
   val DEFAULT_ML_EPOCH_NUM = 50
   val ML_SGD_BATCH_NUM = "ml.sgd.batch.num"
-  val DEFAULT_ML_SGD_BATCH_NUM=10
+  val DEFAULT_ML_SGD_BATCH_NUM = 10
   val ML_BATCH_SAMPLE_Ratio = "ml.batch.sample.ratio"
   val DEFAULT_ML_BATCH_SAMPLE_Ratio = 1.0
   val ML_LEARN_RATE = "ml.learn.rate"
@@ -67,25 +67,25 @@ object MLConf {
   val ML_NUM_UPDATE_PER_EPOCH = "ml.sgd.num.update.per.epoch"
   val DEFAULT_ML_NUM_UPDATE_PER_EPOCH = 10
   val ML_SGD_BATCH_SIZE = "ml.sgd.batch.num"
-  val DEFAULT_ML_SGD_BATCH_SIZE=128
+  val DEFAULT_ML_SGD_BATCH_SIZE = 128
 
   // Adamm params
   val ML_OPT_ADAMM_RHO = "ml.opt.adamm.rho"
-  val DEFAULT_ML_OPT_ADAMM_RHO=0.9
+  val DEFAULT_ML_OPT_ADAMM_RHO = 0.9
   val ML_OPT_ADAMM_PHI = "ml.opt.adamm.phi"
-  val DEFAULT_ML_OPT_ADAMM_PHI=0.99
+  val DEFAULT_ML_OPT_ADAMM_PHI = 0.99
 
   // Momentum params
   val ML_OPT_MOMENTUM_RHO = "ml.opt.momentum.rho"
-  val DEFAULT_ML_OPT_MOMENTUM_RHO=0.9
+  val DEFAULT_ML_OPT_MOMENTUM_RHO = 0.9
 
   // RMSProp params
   val ML_OPT_RMSPROP_RHO = "ml.opt.rmsprop.rho"
-  val DEFAULT_ML_OPT_RMSPROP_RHO=0.9
+  val DEFAULT_ML_OPT_RMSPROP_RHO = 0.9
 
   // Adadelta params
   val ML_OPT_ADADELTA_RHO = "ml.opt.rmsprop.rho"
-  val DEFAULT_ML_OPT_ADADELTA_RHO=0.95
+  val DEFAULT_ML_OPT_ADADELTA_RHO = 0.95
 
   // Regularization params
   val ML_REG_L1 = "ml.reg.l1"
@@ -125,7 +125,7 @@ object MLConf {
   // MF params
   val ML_MF_RANK = "ml.mf.rank"
   val DEFAULT_ML_MF_RANK = 10
-  val ML_MF_ITEM_NUM  = "ml.mf.item.num"
+  val ML_MF_ITEM_NUM = "ml.mf.item.num"
   val DEFAULT_ML_MF_ITEM_NUM = -1
   val ML_MF_LAMBDA = "ml.mf.lambda"
   val DEFAULT_ML_MF_LAMBDA = 0.01

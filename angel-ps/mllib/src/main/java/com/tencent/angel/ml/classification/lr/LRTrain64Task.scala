@@ -29,7 +29,7 @@ import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap
 import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.hadoop.io.{LongWritable, Text}
 
-class LRTrain64Task(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx){
+class LRTrain64Task(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
   val LOG: Log = LogFactory.getLog(classOf[LRTrain64Task])
 
   // feature number of training data
@@ -47,7 +47,7 @@ class LRTrain64Task(val ctx: TaskContext) extends TrainTask[LongWritable, Text](
   // Enable index get
   private val enableIndexGet = conf.getBoolean(MLConf.ML_INDEX_GET_ENABLE, MLConf.DEFAULT_ML_INDEX_GET_ENABLE)
 
-  var indexes:Array[Long] = new Array[Long](0)
+  var indexes: Array[Long] = new Array[Long](0)
 
   override
   def train(ctx: TaskContext) {
@@ -90,7 +90,7 @@ class LRTrain64Task(val ctx: TaskContext) extends TrainTask[LongWritable, Text](
         count += 1
       }
     }
-    if(enableIndexGet && !indexSet.isEmpty) {
+    if (enableIndexGet && !indexSet.isEmpty) {
       indexes = indexSet.keySet().toLongArray
       LOG.info("after preprocess data , index length = " + indexes.length)
     }
@@ -99,24 +99,26 @@ class LRTrain64Task(val ctx: TaskContext) extends TrainTask[LongWritable, Text](
     validDataBlock.flush()
 
     val cost = System.currentTimeMillis() - start
-    LOG.info(s"Task[${ctx.getTaskIndex}] preprocessed ${taskDataBlock.size +
-      validDataBlock.size} samples, ${taskDataBlock.size} for train, " +
+    LOG.info(s"Task[${ctx.getTaskIndex}] preprocessed ${
+      taskDataBlock.size +
+        validDataBlock.size
+    } samples, ${taskDataBlock.size} for train, " +
       s"${validDataBlock.size} for validation. feanum=$feaNum")
   }
 
-  def updateIndex(labeledData: LabeledData, indexSet:Long2IntOpenHashMap): Unit = {
-    if(enableIndexGet) {
-      val x:TVector = labeledData.getX
-      if(x.isInstanceOf[SparseLongKeyDummyVector]) {
+  def updateIndex(labeledData: LabeledData, indexSet: Long2IntOpenHashMap): Unit = {
+    if (enableIndexGet) {
+      val x: TVector = labeledData.getX
+      if (x.isInstanceOf[SparseLongKeyDummyVector]) {
         updateIndex(x.asInstanceOf[SparseLongKeyDummyVector].getIndices, indexSet)
-      } else if(x.isInstanceOf[SparseLongKeySortedDoubleVector]) {
+      } else if (x.isInstanceOf[SparseLongKeySortedDoubleVector]) {
         updateIndex(x.asInstanceOf[SparseLongKeySortedDoubleVector].getIndexes, indexSet)
       }
     }
   }
 
-  def updateIndex(itemIndexes:Array[Long], indexSet:Long2IntOpenHashMap): Unit = {
-    for(index <- itemIndexes) {
+  def updateIndex(itemIndexes: Array[Long], indexSet: Long2IntOpenHashMap): Unit = {
+    for (index <- itemIndexes) {
       indexSet.put(index, 0)
     }
   }

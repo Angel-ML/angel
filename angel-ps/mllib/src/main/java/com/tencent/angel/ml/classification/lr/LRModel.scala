@@ -35,12 +35,12 @@ import org.apache.hadoop.conf.Configuration
   *
   */
 
-object LRModel{
+object LRModel {
   def apply(conf: Configuration) = {
     new LRModel(conf)
   }
 
-  def apply(ctx:TaskContext, conf: Configuration) = {
+  def apply(ctx: TaskContext, conf: Configuration) = {
     new LRModel(conf, ctx)
   }
 }
@@ -60,11 +60,11 @@ class LRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(con
   val intercept_ = PSModel(LR_INTERCEPT, 1, 1).setAverage(true).setRowType(modelType)
 
   val intercept =
-  if (conf.getBoolean(MLConf.LR_USE_INTERCEPT, MLConf.DEFAULT_LR_USE_INTERCEPT)) {
-    Some(intercept_)
-  } else {
-    None
-  }
+    if (conf.getBoolean(MLConf.LR_USE_INTERCEPT, MLConf.DEFAULT_LR_USE_INTERCEPT)) {
+      Some(intercept_)
+    } else {
+      None
+    }
   addPSModel(LR_WEIGHT_MAT, weight)
   addPSModel(LR_INTERCEPT, intercept_)
 
@@ -82,7 +82,7 @@ class LRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(con
     val start = System.currentTimeMillis()
     val wVector = weight.getRow(0)
     val cost = System.currentTimeMillis() - start
-    LOG.info(s"pull LR Model from PS cost $cost ms." )
+    LOG.info(s"pull LR Model from PS cost $cost ms.")
 
     val predict = new MemoryDataBlock[PredictResult](-1)
 
@@ -100,7 +100,8 @@ class LRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(con
 
 class LRPredictResult(id: Double, dot: Double, sig: Double) extends PredictResult {
   val df = new DecimalFormat("0")
-  override def getText():String = {
+
+  override def getText(): String = {
     df.format(id) + separator + format.format(dot) + separator + format.format(sig)
   }
 }

@@ -48,7 +48,7 @@ public class AvgQSketch {
     }
     indices[size - 1] = max;
     for (int indice = 0; indice < vec.getDimension(); indice++) {
-      counts[indexOf(vec.get(indice))-1] ++;
+      counts[indexOf(vec.get(indice)) - 1]++;
     }
     //System.out.println("Indices: " + Arrays.toString(indices));
   }
@@ -85,7 +85,7 @@ public class AvgQSketch {
     return ret;
   }
 
-  public double min(){
+  public double min() {
     return indices[0];
   }
 

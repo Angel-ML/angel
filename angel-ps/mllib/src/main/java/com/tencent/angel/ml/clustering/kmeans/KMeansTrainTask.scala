@@ -42,7 +42,7 @@ class KMeansTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text
     *
     * @param key   the key type
     * @param value the value
-    *     */
+    **/
   override
   def parse(key: LongWritable, value: Text): LabeledData = {
     dataParser.parse(value.toString)

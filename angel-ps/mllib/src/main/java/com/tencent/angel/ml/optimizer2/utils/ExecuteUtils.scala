@@ -1,3 +1,20 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
 package com.tencent.angel.ml.optimizer2.utils
 
 import java.util
@@ -11,12 +28,12 @@ import scala.collection.JavaConversions._
 
 
 object ExecuteUtils {
-  def executeScalar(base:util.HashMap[String, TUpdate], op:ScalarExpr): util.HashMap[String, TUpdate] ={
-    val alphaMap = base.map{ case (name, _) => name -> op.alpha.toDouble }.toMap
+  def executeScalar(base: util.HashMap[String, TUpdate], op: ScalarExpr): util.HashMap[String, TUpdate] = {
+    val alphaMap = base.map { case (name, _) => name -> op.alpha.toDouble }.toMap
     executeScalar(base, alphaMap, op)
   }
 
-  def executeScalar(base:util.HashMap[String, TUpdate], alpha:Map[String, Double], op:ScalarExpr): util.HashMap[String, TUpdate] ={
+  def executeScalar(base: util.HashMap[String, TUpdate], alpha: Map[String, Double], op: ScalarExpr): util.HashMap[String, TUpdate] = {
     val restult = if (op.isInplace) base else new util.HashMap[String, TUpdate]
 
     base.foreach {
@@ -44,7 +61,7 @@ object ExecuteUtils {
           bm.getVectors.foreach(vect => op(vect))
         } else {
           val temp = new DenseDoubleMatrix(bm.getRowNum, bm.getColNum.toInt)
-          bm.getVectors.zipWithIndex.foreach{ case (vect, vidx) =>
+          bm.getVectors.zipWithIndex.foreach { case (vect, vidx) =>
             temp.setRow(vidx, op(vect))
           }
           restult.put(name, temp)
@@ -55,7 +72,7 @@ object ExecuteUtils {
           bm.getVectors.foreach(vect => op(vect))
         } else {
           val temp = new DenseFloatMatrix(bm.getRowNum, bm.getColNum.toInt)
-          bm.getVectors.zipWithIndex.foreach{ case (vect, vidx) =>
+          bm.getVectors.zipWithIndex.foreach { case (vect, vidx) =>
             temp.setRow(vidx, op(vect))
           }
           restult.put(name, temp)
@@ -66,7 +83,7 @@ object ExecuteUtils {
           bm.getVectors.foreach(vect => op(vect))
         } else {
           val temp = new SparseDoubleMatrix(bm.getRowNum, bm.getColNum.toInt)
-          bm.getVectors.zipWithIndex.foreach{ case (vect, vidx) =>
+          bm.getVectors.zipWithIndex.foreach { case (vect, vidx) =>
             temp.setRow(vidx, op(vect))
           }
           restult.put(name, temp)
@@ -77,7 +94,7 @@ object ExecuteUtils {
           bm.getVectors.foreach(vect => op(vect))
         } else {
           val temp = new SparseDoubleLongKeyMatrix(bm.getRowNum, bm.getColNum)
-          bm.getVectors.zipWithIndex.foreach{ case (vect, vidx) =>
+          bm.getVectors.zipWithIndex.foreach { case (vect, vidx) =>
             temp.setRow(vidx, op(vect))
           }
           restult.put(name, temp)
@@ -88,7 +105,7 @@ object ExecuteUtils {
           bm.getVectors.foreach(vect => op(vect))
         } else {
           val temp = new SparseFloatMatrix(bm.getRowNum, bm.getColNum.toInt)
-          bm.getVectors.zipWithIndex.foreach{ case (vect, vidx) =>
+          bm.getVectors.zipWithIndex.foreach { case (vect, vidx) =>
             temp.setRow(vidx, op(vect))
           }
           restult.put(name, temp)
@@ -100,10 +117,10 @@ object ExecuteUtils {
     restult
   }
 
-  def executeUnary(grad:util.HashMap[String, TUpdate], flag: util.HashMap[String, Boolean], top:Unary, fop:Unary): util.HashMap[String, TUpdate] = {
+  def executeUnary(grad: util.HashMap[String, TUpdate], flag: util.HashMap[String, Boolean], top: Unary, fop: Unary): util.HashMap[String, TUpdate] = {
     val result = new util.HashMap[String, TUpdate]
 
-    grad.foreach{ case (name:String, gradmv:TUpdate) =>
+    grad.foreach { case (name: String, gradmv: TUpdate) =>
       gradmv match {
         case gv: DenseDoubleVector =>
           if (flag(name)) {
@@ -202,11 +219,11 @@ object ExecuteUtils {
     result
   }
 
-  def executeBinary(grad:util.HashMap[String, TUpdate], base:util.HashMap[String, TUpdate],
-                     flag: util.HashMap[String, Boolean], top:Binary, fop:Binary): util.HashMap[String, TUpdate] = {
+  def executeBinary(grad: util.HashMap[String, TUpdate], base: util.HashMap[String, TUpdate],
+                    flag: util.HashMap[String, Boolean], top: Binary, fop: Binary): util.HashMap[String, TUpdate] = {
     val result = new util.HashMap[String, TUpdate]
 
-    grad.foreach{ case (name:String, gradmv:TUpdate) =>
+    grad.foreach { case (name: String, gradmv: TUpdate) =>
       val basemv = base.get(name)
       (gradmv, basemv) match {
         case (gv: DenseDoubleVector, bv: TDoubleVector) =>
@@ -306,11 +323,11 @@ object ExecuteUtils {
     result
   }
 
-  def executeTernary(grad:util.HashMap[String, TUpdate], base1:util.HashMap[String, TUpdate],
-                      base2:util.HashMap[String, TUpdate], flag: util.HashMap[String, Boolean], top:Ternary, fop:Ternary): util.HashMap[String, TUpdate] = {
+  def executeTernary(grad: util.HashMap[String, TUpdate], base1: util.HashMap[String, TUpdate],
+                     base2: util.HashMap[String, TUpdate], flag: util.HashMap[String, Boolean], top: Ternary, fop: Ternary): util.HashMap[String, TUpdate] = {
     val result = new util.HashMap[String, TUpdate]
 
-    grad.foreach{ case (name:String, gradmv: TUpdate) =>
+    grad.foreach { case (name: String, gradmv: TUpdate) =>
       val (b1mv, b2mv) = (base1(name), base2(name))
       (gradmv, b1mv, b2mv) match {
         case (gv: DenseDoubleVector, b1v: TDoubleVector, b2v: TDoubleVector) =>

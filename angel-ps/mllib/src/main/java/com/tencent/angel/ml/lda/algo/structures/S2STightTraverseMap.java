@@ -169,21 +169,18 @@ public class S2STightTraverseMap extends TraverseHashMap {
     return 1;
   }
 
-  @Override
-  public int bytes() {
+  @Override public int bytes() {
     int sum = 0;
     sum += key.length * 2;
     sum += values.length * 2;
     return sum;
   }
 
-  @Override
-  public short getKey(int idx) {
+  @Override public short getKey(int idx) {
     return key[values[idx(idx)]];
   }
 
-  @Override
-  public int getVal(int idx) {
+  @Override public int getVal(int idx) {
     return values[values[idx(idx)]];
   }
 

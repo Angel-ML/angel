@@ -48,12 +48,12 @@ import org.apache.hadoop.fs.Path
 import scala.collection.mutable
 
 
-class LDATrainer(ctx:TaskContext, model:LDAModel,
-                 data:WTokens) extends MLLearner(ctx){
-  val LOG:Log = LogFactory.getLog(classOf[LDATrainer])
-  val pkeys: util.List[PartitionKey]= PSAgentContext.get().getMatrixMetaManager.
+class LDATrainer(ctx: TaskContext, model: LDAModel,
+                 data: WTokens) extends MLLearner(ctx) {
+  val LOG: Log = LogFactory.getLog(classOf[LDATrainer])
+  val pkeys: util.List[PartitionKey] = PSAgentContext.get().getMatrixMetaManager.
     getPartitions(model.wtMat.getMatrixId())
-  val dKeys:Int = data.n_docs
+  val dKeys: Int = data.n_docs
   val reqRows = new util.HashMap[Int, util.List[Integer]]()
   for (i <- 0 until pkeys.size()) {
     val pkey = pkeys.get(i)
@@ -68,8 +68,8 @@ class LDATrainer(ctx:TaskContext, model:LDAModel,
   Collections.shuffle(pkeys)
 
   // Hyper parameters
-  val alpha:Float = model.alpha
-  val beta:Float  = model.beta
+  val alpha: Float = model.alpha
+  val beta: Float = model.beta
 
 
   val nk = new Array[Int](model.K)
@@ -85,6 +85,7 @@ class LDATrainer(ctx:TaskContext, model:LDAModel,
     */
   override
   def train(train: DataBlock[LabeledData], vali: DataBlock[LabeledData]): MLModel = ???
+
   def initialize(): Unit = {
     scheduleInit()
     ctx.incEpoch()
@@ -94,7 +95,7 @@ class LDATrainer(ctx:TaskContext, model:LDAModel,
     ctx.incEpoch()
   }
 
-  def reset(epoch: Int):Unit = {
+  def reset(epoch: Int): Unit = {
     LOG.info(s"start reset")
     model.tMat.getRow(0)
     if (ctx.getTaskIndex == 0) {
@@ -138,7 +139,7 @@ class LDATrainer(ctx:TaskContext, model:LDAModel,
   }
 
 
-  def sampleForDocInference():Unit = {
+  def sampleForDocInference(): Unit = {
     class Task(sampler: Sampler, pkey: Int) extends Thread {
       override def run(): Unit = {
         sampler.docSample(pkey)
@@ -149,7 +150,7 @@ class LDATrainer(ctx:TaskContext, model:LDAModel,
     // copy nk to each sampler
     for (i <- 0 until model.threadNum) queue.add(new Sampler(data, model).set(nk))
 
-    (0 until dKeys).foreach{dkey =>
+    (0 until dKeys).foreach { dkey =>
       val sampler = queue.take()
       executor.execute(new Task(sampler, dkey))
     }
@@ -172,7 +173,7 @@ class LDATrainer(ctx:TaskContext, model:LDAModel,
     val futures = new mutable.HashMap[PartitionKey, Future[PartitionGetResult]]()
     while (iter.hasNext) {
       val pkey = iter.next()
-      val param = new PartitionGetRowsParam(model.wtMat.getMatrixId, pkey,reqRows.get(pkey.getPartitionId))
+      val param = new PartitionGetRowsParam(model.wtMat.getMatrixId, pkey, reqRows.get(pkey.getPartitionId))
       val future = client.get(func, param)
       futures.put(pkey, future)
     }
@@ -200,7 +201,6 @@ class LDATrainer(ctx:TaskContext, model:LDAModel,
 
     model.tMat.clock(false).get()
   }
-
 
 
   def scheduleReset(): Unit = {
@@ -236,10 +236,9 @@ class LDATrainer(ctx:TaskContext, model:LDAModel,
   }
 
 
-
   def computeWordLLH: Double = {
     model.wtMat.get(new LikelihoodFunc(model.wtMat.getMatrixId(), beta)) match {
-      case r : ScalarAggrResult => r.getResult
+      case r: ScalarAggrResult => r.getResult
       case _ => throw new AngelException("should be ScalarAggrResult")
     }
   }
@@ -260,22 +259,23 @@ class LDATrainer(ctx:TaskContext, model:LDAModel,
     ll
   }
 
-  def scheduleDocllh(n_docs: Int):Double = {
+  def scheduleDocllh(n_docs: Int): Double = {
     val results = new LinkedBlockingQueue[Double]()
     val nnzs = new LinkedBlockingQueue[Int]()
     class Task(index: AtomicInteger) extends Thread {
       private var ll = 0.0
       private var nnz = 0
+
       override def run(): Unit = {
         while (index.get() < n_docs) {
           val d = index.incrementAndGet()
           if (d < n_docs) {
-            val dk = mutable.Map[Int,Int]()
-            (data.accDoc(d) until data.accDoc(d+1)) foreach {j=>
+            val dk = mutable.Map[Int, Int]()
+            (data.accDoc(d) until data.accDoc(d + 1)) foreach { j =>
               val k = data.topics(data.inverseMatrix(j))
-              dk += k ->(dk.getOrElse(k, 0) + 1)
+              dk += k -> (dk.getOrElse(k, 0) + 1)
             }
-            dk.foreach{case(_, value) =>
+            dk.foreach { case (_, value) =>
               ll += Gamma.logGamma(alpha + value)
             }
             ll -= Gamma.logGamma(data.docLens(d) + alpha * model.K)
@@ -288,7 +288,8 @@ class LDATrainer(ctx:TaskContext, model:LDAModel,
     }
 
     val index = new AtomicInteger(0)
-    var ll = 0.0; var nnz = 0
+    var ll = 0.0;
+    var nnz = 0
     for (i <- 0 until model.threadNum) executor.execute(new Task(index))
     for (i <- 0 until model.threadNum) ll += results.take()
     for (d <- 0 until model.threadNum) nnz += nnzs.take()
@@ -361,7 +362,7 @@ class LDATrainer(ctx:TaskContext, model:LDAModel,
     val futures = new mutable.HashMap[PartitionKey, Future[PartitionGetResult]]()
     while (iter.hasNext) {
       val pkey = iter.next()
-      val param = new PartitionGetRowsParam(model.wtMat.getMatrixId, pkey,reqRows.get(pkey.getPartitionId))
+      val param = new PartitionGetRowsParam(model.wtMat.getMatrixId, pkey, reqRows.get(pkey.getPartitionId))
       val future = client.get(func, param)
       futures.put(pkey, future)
     }
@@ -419,7 +420,7 @@ class LDATrainer(ctx:TaskContext, model:LDAModel,
     val futures = new mutable.HashMap[PartitionKey, Future[PartitionGetResult]]()
     while (iter.hasNext) {
       val pkey = iter.next()
-      val param = new PartitionGetRowsParam(model.wtMat.getMatrixId, pkey,reqRows.get(pkey.getPartitionId))
+      val param = new PartitionGetRowsParam(model.wtMat.getMatrixId, pkey, reqRows.get(pkey.getPartitionId))
       val future = client.get(func, param)
       futures.put(pkey, future)
     }
@@ -454,8 +455,7 @@ class LDATrainer(ctx:TaskContext, model:LDAModel,
   }
 
 
-
-  def scheduleDocSample(dKeys:Int): Boolean = {
+  def scheduleDocSample(dKeys: Int): Boolean = {
     class Task(sampler: Sampler, pkey: Int) extends Thread {
       override def run(): Unit = {
         sampler.docSample(pkey)
@@ -466,9 +466,9 @@ class LDATrainer(ctx:TaskContext, model:LDAModel,
     // copy nk to each sampler
     for (i <- 0 until model.threadNum) queue.add(new Sampler(data, model).set(nk))
 
-    (0 until dKeys).foreach{dkey =>
+    (0 until dKeys).foreach { dkey =>
       val sampler = queue.take()
-       executor.execute(new Task(sampler, dkey))
+      executor.execute(new Task(sampler, dkey))
     }
 
     var error = false
@@ -509,19 +509,19 @@ class LDATrainer(ctx:TaskContext, model:LDAModel,
 
   def saveWordTopic(model: LDAModel): Unit = {
     LOG.info("save word topic")
-    val dir  = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH)
+    val dir = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH)
     val base = dir + "/" + "word_topic"
     val taskId = ctx.getTaskIndex
     val dest = new Path(base, taskId.toString)
 
-    val fs  = dest.getFileSystem(conf)
+    val fs = dest.getFileSystem(conf)
     val tmp = HdfsUtil.toTmpPath(dest)
     val out = new BufferedOutputStream(fs.create(tmp, 1.toShort))
 
 
     val num = model.V / ctx.getTotalTaskNum + 1
     val start = taskId * num
-    val end   = Math.min(model.V, start + num)
+    val end = Math.min(model.V, start + num)
 
     val index = new RowIndex()
     for (i <- start until end) index.addRowId(i)
@@ -545,24 +545,24 @@ class LDATrainer(ctx:TaskContext, model:LDAModel,
 
   def saveDocTopic(data: WTokens, model: LDAModel): Unit = {
     LOG.info("save doc topic ")
-    val dir  = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH)
+    val dir = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH)
     val base = dir + "/" + "doc_topic"
     val part = ctx.getTaskIndex
 
     val dest = new Path(base, part.toString)
-    val fs   = dest.getFileSystem(conf)
-    val tmp  = HdfsUtil.toTmpPath(dest)
-    val out  = new BufferedOutputStream(fs.create(tmp, 1.toShort))
+    val fs = dest.getFileSystem(conf)
+    val tmp = HdfsUtil.toTmpPath(dest)
+    val out = new BufferedOutputStream(fs.create(tmp, 1.toShort))
 
     for (d <- 0 until data.n_docs) {
       val sb = new StringBuilder
       val dk = mutable.Map[Int, Int]()
-      (data.accDoc(d) until data.accDoc(d + 1)) foreach{ i=>
+      (data.accDoc(d) until data.accDoc(d + 1)) foreach { i =>
         val k = data.topics(data.inverseMatrix(i))
         dk += k -> (dk.getOrElse(k, 0) + 1)
       }
       sb.append(data.docIds(d))
-      dk.foreach{case(k ,v) =>
+      dk.foreach { case (k, v) =>
         sb.append(s" $k:$v")
       }
       sb.append("\n")

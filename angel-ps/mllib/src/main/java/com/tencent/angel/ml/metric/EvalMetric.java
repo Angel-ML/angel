@@ -32,7 +32,7 @@ public interface EvalMetric {
   /**
    * evaluate a specific metric for instances
    *
-   * @param preds the predictions
+   * @param preds  the predictions
    * @param labels the labels
    * @return the eval metric
    */
@@ -41,7 +41,7 @@ public interface EvalMetric {
   /**
    * evaluate a specific metric for one instance
    *
-   * @param pred the prediction
+   * @param pred  the prediction
    * @param label the label
    * @return the eval metric
    */

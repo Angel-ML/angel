@@ -172,7 +172,7 @@ class KMeansLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     }
 
     val batchSize = (trainData.size * spRatio).asInstanceOf[Int]
-    
+
     val sampleBatch = picInstances(trainData)
 
     // Run Mini-batch update

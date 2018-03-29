@@ -30,20 +30,18 @@ public class SquareL2Loss extends L2Loss {
     this.lambda = _lambda;
   }
 
-  public SquareL2Loss() {}
+  public SquareL2Loss() {
+  }
 
-  @Override
-  public double loss(double dot, double y) {
+  @Override public double loss(double dot, double y) {
     return (dot - y) * (dot - y) / 2.0;
   }
 
-  @Override
-  public double grad(double dot, double y) {
+  @Override public double grad(double dot, double y) {
     return (y - dot);
   }
 
-  @Override
-  public double predict(TDoubleVector w, TVector x) {
+  @Override public double predict(TDoubleVector w, TVector x) {
     return w.dot(x);
   }
 

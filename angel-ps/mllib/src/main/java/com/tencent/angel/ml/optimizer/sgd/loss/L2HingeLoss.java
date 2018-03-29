@@ -52,30 +52,29 @@ public class L2HingeLoss extends L2Loss {
 
   /**
    * calculate SVM's loss of a sample, loss = max{0, 1-y*pre}
-   * 
+   *
    * @param pre: predictive value
-   * @param y: ground truth
+   * @param y:   ground truth
    */
-  @Override
-  public double loss(double pre, double y) {
+  @Override public double loss(double pre, double y) {
     double z = pre * y;
     if (z < 1) {
       return 1 - z;
     }
     return 0.0;
 
-//    double z=pre*y;
-//    if(z<=0) return 0.5-z;
-//    else if(z>0 && z<1) return 0.5*Math.pow(1-z,2);
-//    return 0.0;
+    //    double z=pre*y;
+    //    if(z<=0) return 0.5-z;
+    //    else if(z>0 && z<1) return 0.5*Math.pow(1-z,2);
+    //    return 0.0;
   }
 
   /**
    * calculate SVM's loss of a batch, loss = 0.5*regParam*w*w + sum(max{0, 1-y*w*x})
    *
-   * @param xList : training samples
-   * @param yList : training labels
-   * @param w : weight vector
+   * @param xList     : training samples
+   * @param yList     : training labels
+   * @param w         : weight vector
    * @param batchSize : number of training samples
    * @return the double
    */
@@ -88,23 +87,21 @@ public class L2HingeLoss extends L2Loss {
     return loss;
   }
 
-  @Override
-  public double grad(double pre, double y) {
-     if (pre * y <= 1) {
-     return y;
-     } else {
-     return 0.0;
-     }
+  @Override public double grad(double pre, double y) {
+    if (pre * y <= 1) {
+      return y;
+    } else {
+      return 0.0;
+    }
   }
 
   /**
    * predict the label of a sample
-   * 
+   *
    * @param w: weight vector
    * @param x: feature vector of a sample
    */
-  @Override
-  public double predict(TDoubleVector w, TVector x) {
+  @Override public double predict(TDoubleVector w, TVector x) {
     return w.dot(x);
   }
 

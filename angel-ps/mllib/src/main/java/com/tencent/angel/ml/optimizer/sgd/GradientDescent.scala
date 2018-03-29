@@ -42,7 +42,7 @@ object GradientDescent {
                   loss: Loss,
                   batchSize: Int,
                   batchNum: Int,
-                  ctx:TaskContext): (Double, baseT) = {
+                  ctx: TaskContext): (Double, baseT) = {
     miniBatchGD(trainData, wM, intercept, lr, loss, batchSize, batchNum, new Array[Int](0), ctx)
   }
 
@@ -53,7 +53,7 @@ object GradientDescent {
                                         loss: Loss,
                                         batchSize: Int,
                                         batchNum: Int,
-                                        indexes : Array[N],
+                                        indexes: Array[N],
                                         ctx: TaskContext): (Double, baseT) = {
 
     var w: TDoubleVector = pullPSWeight[N](wM, indexes)
@@ -90,28 +90,30 @@ object GradientDescent {
         val x = data.getX
         val y = data.getY
         val pre = w.dot(x) + b.getOrElse(0.0)
-        val gradScalar = -loss.grad(pre, y)    // not negative gradient
+        val gradScalar = -loss.grad(pre, y) // not negative gradient
         grad.plusBy(x, gradScalar)
         batchLoss += loss.loss(pre, y)
-        gradScalarSum += gradScalar  // the grad of interception
+        gradScalarSum += gradScalar // the grad of interception
       }
 
       grad.timesBy(1.0 / batchSize)
       gradScalarSum /= batchSize
 
       // compute the grad of regularization
-      if (loss.isL2Reg) { // for l2
+      if (loss.isL2Reg) {
+        // for l2
         L2Loss(loss, w, grad)
 
         wM.increment(grad.timesBy(-1.0 * lr).asInstanceOf[TDoubleVector])
         wM.syncClock()
-      } else if (loss.isL1Reg) {// for l1
+      } else if (loss.isL1Reg) {
+        // for l1
         // the update of weight is on ps,x(k-1) - t * grad(x(k-1))
         wM.increment(grad.timesBy(-1.0 * lr).asInstanceOf[TDoubleVector])
         wM.syncClock()
 
         val threshold = loss.getRegParam * lr
-        if(ctx.getTaskId.getIndex == 0){
+        if (ctx.getTaskId.getIndex == 0) {
           val softThrFun: UpdateFunc = new SoftThreshold(wM.getMatrixId(), 0, threshold)
           // update wModel
           wM.update(softThrFun)
@@ -123,7 +125,7 @@ object GradientDescent {
       }
 
       // update intercept
-      intercept.foreach{ bv =>
+      intercept.foreach { bv =>
         val bUpdate = new DenseDoubleVector(1)
         bv.increment(0, bUpdate)
         bv.syncClock()
@@ -172,8 +174,9 @@ object GradientDescent {
         }
 
       case compSparse: CompSparseDoubleVector => {
-        class L2UpdateParam(lossRegParam:Double, w: baseT) extends ElemUpdateParam {
+        class L2UpdateParam(lossRegParam: Double, w: baseT) extends ElemUpdateParam {
           def getW = w
+
           def getLossRegParam = lossRegParam
         }
 
@@ -199,9 +202,10 @@ object GradientDescent {
           }
         }
 
-      case compLong : CompSparseLongKeyDoubleVector => {
-        class L2UpdateParam(lossRegParam:Double, w: baseT) extends ElemUpdateParam {
+      case compLong: CompSparseLongKeyDoubleVector => {
+        class L2UpdateParam(lossRegParam: Double, w: baseT) extends ElemUpdateParam {
           def getW = w
+
           def getLossRegParam = lossRegParam
         }
 
@@ -279,9 +283,11 @@ object GradientDescent {
         }
 
       case compSparse: CompSparseDoubleVector => {
-        class L1UpdateParam(theta:Double, L:Double, w: baseT) extends ElemUpdateParam {
+        class L1UpdateParam(theta: Double, L: Double, w: baseT) extends ElemUpdateParam {
           def getW = w
+
           def getTheta = theta
+
           def getL = L
         }
 
@@ -294,10 +300,12 @@ object GradientDescent {
         compSparse.elemUpdate(new L1Updater, new L1UpdateParam(theta, L, weight))
       }
 
-      case compLong : CompSparseLongKeyDoubleVector => {
-        class L1UpdateParam(theta:Double, L:Double, w: baseT) extends ElemUpdateParam {
+      case compLong: CompSparseLongKeyDoubleVector => {
+        class L1UpdateParam(theta: Double, L: Double, w: baseT) extends ElemUpdateParam {
           def getW = w
+
           def getTheta = theta
+
           def getL = L
         }
 
@@ -326,11 +334,11 @@ object GradientDescent {
   }
 
   // pull the weight model from PS
-  def pullPSWeight[N: Numeric : TypeTag](wM: PSModel, indexes : Array[N]): TDoubleVector = {
+  def pullPSWeight[N: Numeric : TypeTag](wM: PSModel, indexes: Array[N]): TDoubleVector = {
     // Pull model from PS Server，include wM and intercept
     val elementType = typeOf[N]
 
-    val w = if(indexes == null || indexes.length == 0) {
+    val w = if (indexes == null || indexes.length == 0) {
       wM.getRow(0).asInstanceOf[baseT]
     } else {
       elementType match {

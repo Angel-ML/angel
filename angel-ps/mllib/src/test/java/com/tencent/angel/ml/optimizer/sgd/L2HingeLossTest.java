@@ -30,20 +30,19 @@ import static org.junit.Assert.assertEquals;
 public class L2HingeLossTest {
   private static final Log LOG = LogFactory.getLog(L2HingeLossTest.class);
   L2HingeLoss l2HingeLoss = new L2HingeLoss(0.01);
+
   static {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
-  @Test
-  public void testLoss() throws Exception {
+  @Test public void testLoss() throws Exception {
     double pre = 2, y = 5;
     assertEquals(0, l2HingeLoss.loss(pre, y), 0.00);
     y = 0.4;
     assertEquals(0.20, l2HingeLoss.loss(pre, y), 0.00001);
   }
 
-  @Test
-  public void testLoss1() throws Exception {
+  @Test public void testLoss1() throws Exception {
     double data1[] = {1.0, 2.0};
     DenseDoubleVector denseDoubleVector1 = new DenseDoubleVector(2, data1);
     double data2[] = {1.0, 2.0};
@@ -52,8 +51,7 @@ public class L2HingeLossTest {
     assertEquals(0.00, test, 0.00);
   }
 
-  @Test
-  public void testLoss2() throws Exception {
+  @Test public void testLoss2() throws Exception {
     double data1[] = {1.0, 2.0};
     double data2[] = {2.0, 1.0};
     DenseDoubleVector denseDoubleVector1 = new DenseDoubleVector(2, data1);
@@ -69,16 +67,14 @@ public class L2HingeLossTest {
     assertEquals(1.025, test, 0.00000001);
   }
 
-  @Test
-  public void testGrad() throws Exception {
+  @Test public void testGrad() throws Exception {
     double pre = 1.1, y = 2;
     assertEquals(0, l2HingeLoss.grad(pre, y), 0.0);
     y = 0.00001;
     assertEquals(0.00001, l2HingeLoss.grad(pre, y), 0.0);
   }
 
-  @Test
-  public void testPredict() throws Exception {
+  @Test public void testPredict() throws Exception {
 
   }
 }

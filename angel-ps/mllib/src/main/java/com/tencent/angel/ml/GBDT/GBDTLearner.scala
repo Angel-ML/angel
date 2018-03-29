@@ -68,7 +68,7 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   val model = new GBDTModel(conf, ctx)
 
 
-  def initDataMetaInfo(trainDataStorage: DataBlock[LabeledData], param: RegTParam):RegTDataStore = {
+  def initDataMetaInfo(trainDataStorage: DataBlock[LabeledData], param: RegTParam): RegTDataStore = {
     var totalSample: Int = 0
     val numFeature: Int = param.numFeature
     val numNonzero: Int = param.numNonzero
@@ -83,7 +83,7 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     val minFeatures: List[java.lang.Float] = new ArrayList[java.lang.Float]
     val maxFeatures: List[java.lang.Float] = new ArrayList[java.lang.Float]
 
-    for(i <- 0 to numFeature - 1) {
+    for (i <- 0 to numFeature - 1) {
       minFeatures.add(0.0f)
       maxFeatures.add(Float.MinValue)
     }
@@ -105,7 +105,7 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       }
       val indices: Array[Int] = x.getIndices
       val values: Array[Double] = x.getValues
-      for ( i <- 0 to (indices.length - 1) ) {
+      for (i <- 0 to (indices.length - 1)) {
         val fid: Int = indices(i)
         if (values(i) > maxFeatures.get(fid)) {
           maxFeatures.set(fid, values(i).toFloat)
@@ -145,8 +145,8 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   /**
     * train GBDT model iteratively
     *
-    * @param trainData: trainning data storage
-    * @param validationData: validation data storage
+    * @param trainData      : trainning data storage
+    * @param validationData : validation data storage
     */
   override
   def train(trainData: DataBlock[LabeledData], validationData: DataBlock[LabeledData]): MLModel = {

@@ -29,7 +29,7 @@ import org.apache.hadoop.conf.Configuration
 
 class LRRunner extends MLRunner {
   private val LOG = LogFactory.getLog(classOf[LRRunner])
-  
+
   /**
     * Run LR train task
     *
@@ -40,7 +40,7 @@ class LRRunner extends MLRunner {
     conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
     train(conf, LRModel(conf), classOf[LRTrainTask])
   }
-  
+
   /*
    * Run LR predict task
    * @param conf: configuration of algorithm and resource
@@ -50,7 +50,7 @@ class LRRunner extends MLRunner {
     conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
     super.predict(conf, LRModel(conf), classOf[LRPredictTask])
   }
-  
+
   /*
    * Run LR incremental train task
    * @param conf: configuration of algorithm and resource

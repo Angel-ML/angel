@@ -1,3 +1,20 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
 package com.tencent.angel.ml.optimizer2
 
 import java.util
@@ -17,14 +34,14 @@ import scala.reflect.runtime.universe._
 // http://www.jmlr.org/papers/volume12/duchi11a/duchi11a.pdf
 // http://ruder.io/optimizing-gradient-descent/
 
-abstract class Optimizer(var batchSize:Int, val numUpdatePerEpoch:Int, var lr:Double) {
+abstract class Optimizer(var batchSize: Int, val numUpdatePerEpoch: Int, var lr: Double) {
   private val LOG = LogFactory.getLog(classOf[Optimizer])
   protected var globalParams: util.HashMap[String, TUpdate] = _
   protected var localParams: util.HashMap[String, TUpdate] = _
   protected var grad: util.HashMap[String, TUpdate] = _
-  var epoch:Int = 0
+  var epoch: Int = 0
 
-  def optimize[N: Numeric : TypeTag](trainData: DataBlock[LabeledData], model: OptModel, indexes:Array[N]): (util.HashMap[String, TUpdate], Double) = {
+  def optimize[N: Numeric : TypeTag](trainData: DataBlock[LabeledData], model: OptModel, indexes: Array[N]): (util.HashMap[String, TUpdate], Double) = {
     var (pull, calulate, push) = (0l, 0l, 0l)
     var (startpull, stoppull) = (0l, 0l)
     var (startcalulate, stopcalulate) = (0l, 0l)
@@ -55,13 +72,14 @@ abstract class Optimizer(var batchSize:Int, val numUpdatePerEpoch:Int, var lr:Do
     var (loss, lastLogFlag) = (0.0, -1)
     var (inbatchCount, batchCount, pullpushFlag) = (0, 0, false)
 
-    if ((trainData.size+numUpdatePerEpoch-1) / numUpdatePerEpoch < batchSize) {
-      batchSize = (trainData.size+numUpdatePerEpoch-1) / numUpdatePerEpoch
+    if ((trainData.size + numUpdatePerEpoch - 1) / numUpdatePerEpoch < batchSize) {
+      batchSize = (trainData.size + numUpdatePerEpoch - 1) / numUpdatePerEpoch
     }
-    val totalBatch = (trainData.size+batchSize-1)/batchSize
-    val numBatchPerUpdate = (totalBatch+numUpdatePerEpoch-1)/numUpdatePerEpoch
+    val totalBatch = (trainData.size + batchSize - 1) / batchSize
+    val numBatchPerUpdate = (totalBatch + numUpdatePerEpoch - 1) / numUpdatePerEpoch
     for (idx <- 0 until trainData.size) {
-      val data = trainData.loopingRead()  // note: loopingRead
+      val data = trainData.loopingRead()
+      // note: loopingRead
       val (x, y) = (data.getX, data.getY)
 
       // calculate the loss and grad of a sample, and update gradient
@@ -72,20 +90,20 @@ abstract class Optimizer(var batchSize:Int, val numUpdatePerEpoch:Int, var lr:Do
       inbatchCount += 1
 
       // this pice of core is used to print logs, just skip!
-      val thisLogFlag = idx / (trainData.size/10)
+      val thisLogFlag = idx / (trainData.size / 10)
       if (thisLogFlag != lastLogFlag && thisLogFlag != 0) {
-        LOG.info(s"Process: ${thisLogFlag}0% of samples have finished ! The current average loss is ${loss/(idx+1)}")
+        LOG.info(s"Process: ${thisLogFlag}0% of samples have finished ! The current average loss is ${loss / (idx + 1)}")
         lastLogFlag = thisLogFlag
       }
 
       // for each minibatch, we update the local parameters and clear gradient
       // Note: we do not push parameters at all here, because push for each minibatch is
       //       not efficient in some condition
-      if (inbatchCount == batchSize || (idx +1) == trainData.size) {
+      if (inbatchCount == batchSize || (idx + 1) == trainData.size) {
         batchCount += 1
         pullpushFlag = true
         // a). update local parameters
-        val numSampesInBath = if ((idx +1) == trainData.size) trainData.size % batchSize else batchSize
+        val numSampesInBath = if ((idx + 1) == trainData.size) trainData.size % batchSize else batchSize
         updateLocal(model, numSampesInBath, epoch * totalBatch + batchCount)
 
         // b). clear gradinet to take on the next batch
@@ -94,7 +112,7 @@ abstract class Optimizer(var batchSize:Int, val numUpdatePerEpoch:Int, var lr:Do
       }
 
       // push and pull parameter
-      if (pullpushFlag && (batchCount % numBatchPerUpdate == 0 || (idx +1) == trainData.size)) {
+      if (pullpushFlag && (batchCount % numBatchPerUpdate == 0 || (idx + 1) == trainData.size)) {
         // a) calcute delta since last push
         val delta = OptUtils.axpy(localParams, globalParams, -1.0)
         stopcalulate = System.currentTimeMillis()
@@ -138,9 +156,9 @@ abstract class Optimizer(var batchSize:Int, val numUpdatePerEpoch:Int, var lr:Do
     (localParams, loss)
   }
 
-  protected def updateLocal(model: OptModel, numSample: Int, iterCount:Int): Unit
+  protected def updateLocal(model: OptModel, numSample: Int, iterCount: Int): Unit
 
-  protected def initialLocal(model: OptModel, local:util.HashMap[String, TUpdate], global:util.HashMap[String, TUpdate]): Unit
+  protected def initialLocal(model: OptModel, local: util.HashMap[String, TUpdate], global: util.HashMap[String, TUpdate]): Unit
 
   protected def psfHook(model: OptModel, numSample: Int): Unit = {}
 

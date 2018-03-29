@@ -82,7 +82,7 @@ public class SplitEntry {
    * better priority to lower index when loss_chg == new_loss_chg. Not the best way, but helps to
    * give consistent result during multi-thread execution.
    *
-   * @param newLossChg the new loss change
+   * @param newLossChg   the new loss change
    * @param splitFeature the split index
    * @return the boolean whether the proposed split is better and can replace current split
    */

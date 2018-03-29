@@ -44,12 +44,12 @@ class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Te
   def run(ctx: TaskContext): Unit = {
     // Read documents
     val reader = ctx.getReader[LongWritable, Text]
-    var docs   = new ArrayBuffer[Document]()
+    var docs = new ArrayBuffer[Document]()
     var did = 0
     var N = 0
     while (reader.nextKeyValue()) {
       val text = reader.getCurrentValue
-      val doc  = new Document(text.toString)
+      val doc = new Document(text.toString)
       if (doc != null) {
         docs.+=(doc)
         did += 1
@@ -67,7 +67,7 @@ class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Te
 
     // build topic structures
     val data = new WTokens(model.V, docs.length)
-    data.build(docs, model.K,model.mh)
+    data.build(docs, model.K, model.mh)
     docs.clear()
 
     // training

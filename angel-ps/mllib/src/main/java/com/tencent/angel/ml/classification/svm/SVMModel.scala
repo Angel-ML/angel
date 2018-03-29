@@ -28,12 +28,12 @@ import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
 
-object SVMModel{
+object SVMModel {
   def apply(conf: Configuration) = {
     new SVMModel(conf)
   }
 
-  def apply(ctx:TaskContext, conf: Configuration) = {
+  def apply(ctx: TaskContext, conf: Configuration) = {
     new SVMModel(conf, ctx)
   }
 }
@@ -73,7 +73,7 @@ class SVMModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
 }
 
 class SVMPredictResult(id: Double, pre: Double) extends PredictResult {
-  override def getText():String = {
+  override def getText(): String = {
     (id + separator + format.format(pre))
   }
 }

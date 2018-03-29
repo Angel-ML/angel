@@ -38,7 +38,7 @@ import org.apache.hadoop.io.{LongWritable, Text}
   * P(Y=+1|X) = 1 / [1+ exp(-dot(w,x))]. This task learns a binomial logistic regression model
   * with mini-batch gradient descent.
   *
-  * @param ctx: task context
+  * @param ctx : task context
   **/
 class LRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
   val LOG: Log = LogFactory.getLog(classOf[LRTrainTask])
@@ -58,7 +58,7 @@ class LRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ct
   // Enable index get
   private val enableIndexGet = conf.getBoolean(MLConf.ML_INDEX_GET_ENABLE, MLConf.DEFAULT_ML_INDEX_GET_ENABLE)
 
-  var indexes:Array[Int] = new Array[Int](0)
+  var indexes: Array[Int] = new Array[Int](0)
 
   override
   def train(ctx: TaskContext) {
@@ -101,7 +101,7 @@ class LRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ct
         count += 1
       }
     }
-    if(enableIndexGet && !indexSet.isEmpty) {
+    if (enableIndexGet && !indexSet.isEmpty) {
       indexes = indexSet.keySet().toIntArray
       LOG.info("after preprocess data , index length = " + indexes.length)
     }
@@ -110,24 +110,26 @@ class LRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ct
     validDataBlock.flush()
 
     val cost = System.currentTimeMillis() - start
-    LOG.info(s"Task[${ctx.getTaskIndex}] preprocessed ${taskDataBlock.size +
-      validDataBlock.size} samples, ${taskDataBlock.size} for train, " +
+    LOG.info(s"Task[${ctx.getTaskIndex}] preprocessed ${
+      taskDataBlock.size +
+        validDataBlock.size
+    } samples, ${taskDataBlock.size} for train, " +
       s"${validDataBlock.size} for validation. feanum=$feaNum")
   }
 
-  def updateIndex(labeledData: LabeledData, indexSet:Int2IntOpenHashMap): Unit = {
-    if(enableIndexGet) {
-      val x:TVector = labeledData.getX
-      if(x.isInstanceOf[SparseDummyVector]) {
+  def updateIndex(labeledData: LabeledData, indexSet: Int2IntOpenHashMap): Unit = {
+    if (enableIndexGet) {
+      val x: TVector = labeledData.getX
+      if (x.isInstanceOf[SparseDummyVector]) {
         updateIndex(x.asInstanceOf[SparseDummyVector].getIndices, indexSet)
-      } else if(x.isInstanceOf[SparseDoubleSortedVector]) {
+      } else if (x.isInstanceOf[SparseDoubleSortedVector]) {
         updateIndex(x.asInstanceOf[SparseDoubleSortedVector].getIndices, indexSet)
       }
     }
   }
 
-  def updateIndex(itemIndexes:Array[Int], indexSet:Int2IntOpenHashMap): Unit = {
-    for(index <- itemIndexes) {
+  def updateIndex(itemIndexes: Array[Int], indexSet: Int2IntOpenHashMap): Unit = {
+    for (index <- itemIndexes) {
       indexSet.put(index, 0)
     }
   }

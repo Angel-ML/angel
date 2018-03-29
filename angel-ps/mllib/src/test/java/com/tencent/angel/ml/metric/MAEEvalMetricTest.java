@@ -25,21 +25,21 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public class MAEEvalMetricTest {
-    private static final Log LOG = LogFactory.getLog(MAEEvalMetricTest.class);
-    private MAEMetric maeMetric = new MAEMetric();
-    static {
-        PropertyConfigurator.configure("../conf/log4j.properties");
-    }
-    @Test
-    public void testEval() throws Exception {
-        float pred[] = {0.6f, 0.3f, 0.7f};
-        float label[] = {1f, 0f, 1f};
-        assertEquals(0.3333, maeMetric.eval(pred, label), 0.0001);
-    }
+  private static final Log LOG = LogFactory.getLog(MAEEvalMetricTest.class);
+  private MAEMetric maeMetric = new MAEMetric();
 
-    @Test
-    public void testEvalOne() throws Exception {
-        float pred = 0.6f, label = 1f;
-        assertEquals(0.4, maeMetric.evalOne(pred, label), 0.1);
-    }
+  static {
+    PropertyConfigurator.configure("../conf/log4j.properties");
+  }
+
+  @Test public void testEval() throws Exception {
+    float pred[] = {0.6f, 0.3f, 0.7f};
+    float label[] = {1f, 0f, 1f};
+    assertEquals(0.3333, maeMetric.eval(pred, label), 0.0001);
+  }
+
+  @Test public void testEvalOne() throws Exception {
+    float pred = 0.6f, label = 1f;
+    assertEquals(0.4, maeMetric.evalOne(pred, label), 0.1);
+  }
 }

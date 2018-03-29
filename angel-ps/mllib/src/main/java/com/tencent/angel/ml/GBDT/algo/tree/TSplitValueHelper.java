@@ -21,6 +21,8 @@ import com.tencent.angel.ml.GBDT.algo.RegTree.RegTDataStore;
 
 abstract class TSplitValueHelper {
 
-  static float[][] getSplitValue(RegTDataStore regTDataStore, int splitNum) { return new float[0][]; }
+  static float[][] getSplitValue(RegTDataStore regTDataStore, int splitNum) {
+    return new float[0][];
+  }
 
 }

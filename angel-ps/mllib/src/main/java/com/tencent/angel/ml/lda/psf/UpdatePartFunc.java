@@ -39,8 +39,7 @@ public class UpdatePartFunc extends UpdateFunc {
     super(null);
   }
 
-  @Override
-  public void partitionUpdate(PartitionUpdateParam partParam) {
+  @Override public void partitionUpdate(PartitionUpdateParam partParam) {
     CSRPartUpdateParam param = (CSRPartUpdateParam) partParam;
 
     PartitionKey pkey = partParam.getPartKey();
@@ -56,9 +55,9 @@ public class UpdatePartFunc extends UpdateFunc {
       serverRow.getLock().writeLock().lock();
       ServerDenseIntRow denseIntRow = (ServerDenseIntRow) serverRow;
       IntBuffer buffer = denseIntRow.getData();
-      for (int i = 0; i < len; i ++) {
+      for (int i = 0; i < len; i++) {
         short key = param.buf.readShort();
-        int val   = param.buf.readInt();
+        int val = param.buf.readInt();
         buffer.put(key, buffer.get(key) + val);
       }
       serverRow.getLock().writeLock().unlock();

@@ -20,7 +20,6 @@ import com.tencent.angel.ml.utils.Maths;
 
 /**
  * Description: implementation of popular loss function
- *
  */
 
 public class Loss {
@@ -30,43 +29,38 @@ public class Loss {
    */
   public static class LinearSquareLoss implements LossHelper {
 
-    public LinearSquareLoss() {}
+    public LinearSquareLoss() {
+    }
 
-    @Override
-    public float transPred(float x) {
+    @Override public float transPred(float x) {
       return x;
     }
 
-    @Override
-    public boolean checkLabel(float x) {
+    @Override public boolean checkLabel(float x) {
       return true;
     }
 
-    @Override
-    public float firOrderGrad(float pred, float label) {
+    @Override public float firOrderGrad(float pred, float label) {
       return (pred - label);
     }
 
-    @Override
-    public float secOrderGrad(float pred, float label) {
+    @Override public float secOrderGrad(float pred, float label) {
       return 1.0f;
     }
 
-    @Override
-    public float prob2Margin(float baseScore) {
+    @Override public float prob2Margin(float baseScore) {
       return baseScore;
     }
 
-    @Override
-    public String labelErrorMsg() {
+    @Override public String labelErrorMsg() {
       return "";
     }
 
-    @Override
-    public String defaultEvalMetric() {
+    @Override public String defaultEvalMetric() {
       return "rmse";
     }
   }
+
 
   /**
    * logistic loss for probability regression task. loss(y,y')=y*log(1+e^-y')+(1-y)*log(1+e^y'),
@@ -74,82 +68,75 @@ public class Loss {
    */
   public static class LogisticLoss implements LossHelper {
 
-    public LogisticLoss() {}
+    public LogisticLoss() {
+    }
 
-    @Override
-    public float transPred(float x) {
+    @Override public float transPred(float x) {
       return Maths.sigmoid(x);
     }
 
-    @Override
-    public boolean checkLabel(float x) {
+    @Override public boolean checkLabel(float x) {
       return x >= 0.0f && x <= 1.0f;
     }
 
-    @Override
-    public float firOrderGrad(float pred, float label) {
+    @Override public float firOrderGrad(float pred, float label) {
       return pred - label;
     }
 
-    @Override
-    public float secOrderGrad(float pred, float label) {
+    @Override public float secOrderGrad(float pred, float label) {
       float eps = 1e-16f;
       return Math.max(pred * (1 - pred), eps);
     }
 
-    @Override
-    public float prob2Margin(float baseScore) {
+    @Override public float prob2Margin(float baseScore) {
       assert baseScore > 0 && baseScore < 1.0f; // base_score must be in (0,1) for logistic loss
       return (float) Math.log(1.0 / (double) baseScore - 1.0);
     }
 
-    @Override
-    public String labelErrorMsg() {
+    @Override public String labelErrorMsg() {
       return "label must be in [0,1] for logistic regression";
     }
 
-    @Override
-    public String defaultEvalMetric() {
+    @Override public String defaultEvalMetric() {
       return "rmse";
     }
   }
 
+
   // logistic loss for binary classification task.
   public static class BinaryLogisticLoss extends LogisticLoss {
 
-    public BinaryLogisticLoss() {}
+    public BinaryLogisticLoss() {
+    }
 
-    @Override
-    public String defaultEvalMetric() {
+    @Override public String defaultEvalMetric() {
       return "error";
     }
   }
 
+
   // logistic loss, but predict un-transformed margin
   public static class DirectLogisticLoss extends LogisticLoss {
 
-    public DirectLogisticLoss() {}
+    public DirectLogisticLoss() {
+    }
 
-    @Override
-    public float transPred(float x) {
+    @Override public float transPred(float x) {
       return x;
     }
 
-    @Override
-    public float firOrderGrad(float pred, float label) {
+    @Override public float firOrderGrad(float pred, float label) {
       pred = Maths.sigmoid(pred);
       return pred - label;
     }
 
-    @Override
-    public float secOrderGrad(float pred, float label) {
+    @Override public float secOrderGrad(float pred, float label) {
       float eps = 1e-16f;
       pred = Maths.sigmoid(pred);
       return Math.max(pred * (1 - pred), eps);
     }
 
-    @Override
-    public String defaultEvalMetric() {
+    @Override public String defaultEvalMetric() {
       return "auc";
     }
   }

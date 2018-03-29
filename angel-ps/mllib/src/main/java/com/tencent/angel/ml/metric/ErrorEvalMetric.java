@@ -29,20 +29,18 @@ public class ErrorEvalMetric implements EvalMetric {
    *
    * @return the name
    */
-  @Override
-  public String getName() {
+  @Override public String getName() {
     return "error";
   }
 
   /**
    * evaluate a specific metric for instances
    *
-   * @param preds the predictions
+   * @param preds  the predictions
    * @param labels the labels
    * @return the eval metric
    */
-  @Override
-  public float eval(float[] preds, float[] labels) {
+  @Override public float eval(float[] preds, float[] labels) {
     float err = 0.0f;
     for (int i = 0; i < preds.length; i++) {
       err += evalOne(preds[i], labels[i]);
@@ -53,12 +51,11 @@ public class ErrorEvalMetric implements EvalMetric {
   /**
    * evaluate a specific metric for one instance
    *
-   * @param pred the prediction
+   * @param pred  the prediction
    * @param label the label
    * @return the eval metric
    */
-  @Override
-  public float evalOne(float pred, float label) {
+  @Override public float evalOne(float pred, float label) {
     return pred > threshold ? 1.0f - label : label;
   }
 }

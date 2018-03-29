@@ -53,11 +53,10 @@ class Sampler(var data: WTokens, var model: LDAModel) {
     var w: Int = ws
     while (w < we) {
       breakable {
-        if (data.ws(w + 1) - data.ws(w) == 0)
-          {
-            w += 1
-            break()
-          }
+        if (data.ws(w + 1) - data.ws(w) == 0) {
+          w += 1
+          break()
+        }
         if (!csr.read(wk)) {
           throw new AngelException("some error happens")
         }

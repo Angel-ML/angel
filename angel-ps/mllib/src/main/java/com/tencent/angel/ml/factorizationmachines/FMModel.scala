@@ -39,7 +39,7 @@ import scala.collection.mutable
  * Factorization machines model
  */
 object FMModel {
-  def apply(conf: Configuration) =  {
+  def apply(conf: Configuration) = {
     new FMModel(conf)
   }
 
@@ -49,7 +49,7 @@ object FMModel {
 }
 
 
-class FMModel (conf: Configuration = null, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
+class FMModel(conf: Configuration = null, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
   private val LOG = LogFactory.getLog(classOf[FMModel])
 
   val FM_W0 = "fm_w0"
@@ -68,7 +68,7 @@ class FMModel (conf: Configuration = null, _ctx: TaskContext = null) extends MLM
   // The w weight vector, stored on PS
   val w = PSModel(FM_W, 1, feaNum).setAverage(true)
   // The v weight vector, stored on PS
-  private val blockCol = if (rank * feaNum < 1000000) -1 else 1000000/rank
+  private val blockCol = if (rank * feaNum < 1000000) -1 else 1000000 / rank
   val v = PSModel(FM_V, rank, feaNum, rank, blockCol).setAverage(true)
 
   addPSModel(w0)
@@ -184,9 +184,9 @@ class FMModel (conf: Configuration = null, _ctx: TaskContext = null) extends MLM
 
   /** Push update values of w0, w, v
     *
-    * @param update0: update values of w0
-    * @param update1: update values of w
-    * @param update2: update values of v
+    * @param update0 : update values of w0
+    * @param update1 : update values of w
+    * @param update2 : update values of v
     * @return
     */
   def pushToPS(update0: DenseDoubleVector,
@@ -194,7 +194,7 @@ class FMModel (conf: Configuration = null, _ctx: TaskContext = null) extends MLM
                update2: mutable.Map[Int, TVector]) = {
     w0.increment(0, update0)
     w.increment(0, update1)
-    update2.foreach{ case (idx, vec) => v.increment(idx, vec) }
+    update2.foreach { case (idx, vec) => v.increment(idx, vec) }
 
     LOG.info("Start to push w0 from PS ...")
     w0.syncClock()
@@ -213,6 +213,7 @@ class FMModel (conf: Configuration = null, _ctx: TaskContext = null) extends MLM
 
 case class FMPredictResult(id: Double, pval: Double) extends PredictResult {
   val df = new DecimalFormat("0")
+
   override def getText = {
     df.format(id) + separator + format.format(pval)
   }

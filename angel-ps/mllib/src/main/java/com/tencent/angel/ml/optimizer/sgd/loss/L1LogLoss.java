@@ -37,7 +37,7 @@ public class L1LogLoss extends L1Loss {
 
   /**
    * calculate logloss(x,y,w) = log(1+exp(-w*x*y))
-   * 
+   *
    * @param x : training sample
    * @param y : ground truth
    * @param w : weight vector
@@ -50,13 +50,12 @@ public class L1LogLoss extends L1Loss {
 
   /**
    * calculate logloss(a,y) = log(1+exp(-a*y)), in which a = w.dot(x)
-   * 
+   *
    * @param pre: predictive value
-   * @param y: ground truth
+   * @param y:   ground truth
    * @return
    */
-  @Override
-  public double loss(double pre, double y) {
+  @Override public double loss(double pre, double y) {
     double z = pre * y;
     if (z > 18) {
       return Math.exp(-z);
@@ -70,9 +69,9 @@ public class L1LogLoss extends L1Loss {
    * calculte regularized logloss of a training batch, logloss(w,x,y) = lambda*|w| +
    * log(1+exp(-w*x*y))
    *
-   * @param xList : training samples
-   * @param yList : training labels
-   * @param w : weight vector
+   * @param xList     : training samples
+   * @param yList     : training labels
+   * @param w         : weight vector
    * @param batchSize : number of training samples
    * @return double double
    */
@@ -88,13 +87,12 @@ public class L1LogLoss extends L1Loss {
   /**
    * calculate gradient of log loss function d(log(1+exp(-pre*y)))/d(pre) =
    * y*exp(-pre*y)/(1+exp(-pre*y), we omit the negative sign here
-   * 
+   *
    * @param pre: predictive value
-   * @param y: ground truth
+   * @param y:   ground truth
    * @return
    */
-  @Override
-  public double grad(double pre, double y) {
+  @Override public double grad(double pre, double y) {
     double z = pre * y;
     if (z > 18) {
       return y * Math.exp(-z);
@@ -107,17 +105,15 @@ public class L1LogLoss extends L1Loss {
 
   /**
    * predict the label of a sample
-   * 
+   *
    * @param w: weight vector
    * @param x: feature vector of a sample
    */
-  @Override
-  public double predict(TDoubleVector w, TVector x) {
+  @Override public double predict(TDoubleVector w, TVector x) {
     return w.dot(x);
   }
 
-  @Override
-  public double getRegParam() {
+  @Override public double getRegParam() {
     return super.getRegParam();
   }
 }

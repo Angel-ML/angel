@@ -36,7 +36,7 @@ class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Do
 
   override
   def parse(key: LongWritable, value: Text): Document = {
-    val doc  = new Document(value.toString)
+    val doc = new Document(value.toString)
     if (doc != null) {
       did += 1
       N += doc.len()
@@ -58,8 +58,8 @@ class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Do
     val model = new LDAModel(ctx.getConf, ctx)
 
     LOG.info(s"V=${model.V} K=${model.K} alpha=${model.alpha} "
-       + s"beta=${model.beta} M=${docs.size()} tokens=$N "
-       + s"threadNum=${model.threadNum}")
+      + s"beta=${model.beta} M=${docs.size()} tokens=$N "
+      + s"threadNum=${model.threadNum}")
 
     // build topic structures
     val tokens = new CSRTokens(model.V, docs.size())

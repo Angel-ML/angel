@@ -18,7 +18,6 @@ package com.tencent.angel.ml.param;
 
 /**
  * Description: hyper-parameter of ML model
- *
  */
 
 public interface TrainParam {

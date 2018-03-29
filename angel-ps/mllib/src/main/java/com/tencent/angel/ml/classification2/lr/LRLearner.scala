@@ -57,7 +57,7 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   // Init LR Model
   val lrModel = new LRModel(conf, ctx)
 
-  val l1Reg: Map[String,Double] = if (reg1 != 0.0) {
+  val l1Reg: Map[String, Double] = if (reg1 != 0.0) {
     Map[String, Double]("lr_weight" -> reg1, "lr_intercept" -> 0.0)
   } else null
 
@@ -70,11 +70,11 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       val rho = conf.getDouble(MLConf.ML_OPT_ADADELTA_RHO, MLConf.DEFAULT_ML_OPT_ADADELTA_RHO)
       new AdaDelta(batchSize, numUpdateEpoch, lr0, rho, l2Reg)
     case OptMethods.AdaGrad =>
-      new AdaGrad(batchSize,numUpdateEpoch, lr0, l2Reg)
+      new AdaGrad(batchSize, numUpdateEpoch, lr0, l2Reg)
     case OptMethods.Adam =>
       val rho = conf.getDouble(MLConf.ML_OPT_ADAMM_RHO, MLConf.DEFAULT_ML_OPT_ADAMM_RHO)
       val phi = conf.getDouble(MLConf.ML_OPT_ADAMM_PHI, MLConf.DEFAULT_ML_OPT_ADAMM_PHI)
-      new Adam (batchSize, numUpdateEpoch, lr0, rho, phi, l2Reg)
+      new Adam(batchSize, numUpdateEpoch, lr0, rho, phi, l2Reg)
     case OptMethods.MiniBatchSGD =>
       new MiniBatchSGD(batchSize, numUpdateEpoch, lr0, l1Reg, l2Reg)
     case OptMethods.Momentum =>
@@ -92,9 +92,9 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     * @param epoch     : epoch id
     * @param trainData : trainning data storage
     */
-  def trainOneEpoch[N: Numeric : TypeTag](epoch: Int, trainData: DataBlock[LabeledData], indexes : Array[N]): util.HashMap[String, TUpdate] = {
+  def trainOneEpoch[N: Numeric : TypeTag](epoch: Int, trainData: DataBlock[LabeledData], indexes: Array[N]): util.HashMap[String, TUpdate] = {
     // Decay learning rate.
-    optimizer.lr = Math.max(lr0 / Math.sqrt(1.0 + decay * epoch), lr0/5.0)
+    optimizer.lr = Math.max(lr0 / Math.sqrt(1.0 + decay * epoch), lr0 / 5.0)
     optimizer.epoch = epoch
     // (util.HashMap[String, TUpdate], Double)
     val result = optimizer.optimize(trainData, lrModel, indexes)
@@ -106,7 +106,7 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     train(trainData, validationData, new Array[Int](0))
   }
 
-  def train[N: Numeric : TypeTag](trainData: DataBlock[LabeledData], validationData: DataBlock[LabeledData], indexes : Array[N]): MLModel = {
+  def train[N: Numeric : TypeTag](trainData: DataBlock[LabeledData], validationData: DataBlock[LabeledData], indexes: Array[N]): MLModel = {
 
     LOG.info(s"Task[${ctx.getTaskIndex}]: Starting to train the model...")
     LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epochNum, initLearnRate=$lr0, learnRateDecay=$decay, L1Reg=$reg1, L2Reg=$reg2")

@@ -37,7 +37,7 @@ import org.apache.commons.logging.LogFactory;
  *         Created at 2017/6/27 9:41
  */
 
-public class AfterSplitRunner implements Runnable{
+public class AfterSplitRunner implements Runnable {
 
   private static final Log LOG = LogFactory.getLog(AfterSplitRunner.class);
 
@@ -48,9 +48,9 @@ public class AfterSplitRunner implements Runnable{
   private final DenseDoubleVector splitGainVec;
   private final DenseDoubleVector nodeGradStatsVec;
 
-  public AfterSplitRunner(GBDTController controller, int nid,
-                          DenseIntVector splitFeatureVec, DenseDoubleVector splitValueVec,
-                          DenseDoubleVector splitGainVec, DenseDoubleVector nodeGradStatsVec) {
+  public AfterSplitRunner(GBDTController controller, int nid, DenseIntVector splitFeatureVec,
+    DenseDoubleVector splitValueVec, DenseDoubleVector splitGainVec,
+    DenseDoubleVector nodeGradStatsVec) {
     this.controller = controller;
     this.nid = nid;
     this.splitFeatureVec = splitFeatureVec;
@@ -65,8 +65,8 @@ public class AfterSplitRunner implements Runnable{
     float splitGain = (float) splitGainVec.get(nid);
     float nodeSumGrad = (float) nodeGradStatsVec.get(nid);
     float nodeSumHess = (float) nodeGradStatsVec.get(nid + this.controller.maxNodeNum);
-    LOG.info(String.format(
-        "Active node[%d]: split feature[%d] value[%f], lossChg[%f], sumGrad[%f], sumHess[%f]",
+    LOG.info(String
+      .format("Active node[%d]: split feature[%d] value[%f], lossChg[%f], sumGrad[%f], sumHess[%f]",
         nid, splitFeature, splitValue, splitGain, nodeSumGrad, nodeSumHess));
     if (splitFeature != -1) {
       // 5.1. set the children nodes of this node
@@ -76,7 +76,8 @@ public class AfterSplitRunner implements Runnable{
       SplitEntry splitEntry = new SplitEntry(splitFeature, splitValue, splitGain);
       this.controller.forest[this.controller.currentTree].stats.get(nid).setSplitEntry(splitEntry);
       this.controller.forest[this.controller.currentTree].stats.get(nid).lossChg = splitGain;
-      this.controller.forest[this.controller.currentTree].stats.get(nid).setStats(nodeSumGrad, nodeSumHess);
+      this.controller.forest[this.controller.currentTree].stats.get(nid)
+        .setStats(nodeSumGrad, nodeSumHess);
       // 5.2. create children nodes
       TNode leftChild = new TNode(2 * nid + 1, nid, -1, -1);
       TNode rightChild = new TNode(2 * nid + 2, nid, -1, -1);
@@ -87,8 +88,10 @@ public class AfterSplitRunner implements Runnable{
       RegTNodeStat rightChildStat = new RegTNodeStat(this.controller.param);
       float leftChildSumGrad = (float) nodeGradStatsVec.get(2 * nid + 1);
       float rightChildSumGrad = (float) nodeGradStatsVec.get(2 * nid + 2);
-      float leftChildSumHess = (float) nodeGradStatsVec.get(2 * nid + 1 + this.controller.maxNodeNum);
-      float rightChildSumHess = (float) nodeGradStatsVec.get(2 * nid + 2 + this.controller.maxNodeNum);
+      float leftChildSumHess =
+        (float) nodeGradStatsVec.get(2 * nid + 1 + this.controller.maxNodeNum);
+      float rightChildSumHess =
+        (float) nodeGradStatsVec.get(2 * nid + 2 + this.controller.maxNodeNum);
       leftChildStat.setStats(leftChildSumGrad, leftChildSumHess);
       rightChildStat.setStats(rightChildSumGrad, rightChildSumHess);
       this.controller.forest[this.controller.currentTree].stats.set(2 * nid + 1, leftChildStat);
@@ -97,20 +100,23 @@ public class AfterSplitRunner implements Runnable{
       this.controller.resetInsPos(nid, splitFeature, splitValue);
       // 5.5. add new active nodes if possible, inc depth, otherwise finish this tree
       if (this.controller.currentDepth < this.controller.param.maxDepth - 1) {
-        LOG.debug(String.format("Add children nodes of node[%d]:[%d][%d] to active nodes",
-            nid, 2 * nid + 1, 2 * nid + 2));
+        LOG.debug(String
+          .format("Add children nodes of node[%d]:[%d][%d] to active nodes", nid, 2 * nid + 1,
+            2 * nid + 2));
         this.controller.addActiveNode(2 * nid + 1);
         this.controller.addActiveNode(2 * nid + 2);
       } else {
         // 5.6. set children nodes to leaf nodes
-        LOG.debug(String.format("Set children nodes of node[%d]:[%d][%d] to leaf nodes",
-            nid, 2 * nid + 1, 2 * nid + 2));
+        LOG.debug(String
+          .format("Set children nodes of node[%d]:[%d][%d] to leaf nodes", nid, 2 * nid + 1,
+            2 * nid + 2));
         this.controller.setNodeToLeaf(2 * nid + 1, leftChildStat.baseWeight);
         this.controller.setNodeToLeaf(2 * nid + 2, rightChildStat.baseWeight);
       }
     } else {
       // 5.7. set nid to leaf node
-      this.controller.setNodeToLeaf(nid, this.controller.param.calcWeight(nodeSumGrad, nodeSumHess));
+      this.controller
+        .setNodeToLeaf(nid, this.controller.param.calcWeight(nodeSumGrad, nodeSumHess));
     }
     // 5.8. deactivate active node
     this.controller.resetActiveTNodes(nid);

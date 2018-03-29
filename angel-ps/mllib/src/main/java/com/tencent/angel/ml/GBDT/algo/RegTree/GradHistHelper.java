@@ -55,8 +55,9 @@ public class GradHistHelper {
     // 2. get the span of this node
     int nodeStart = insStart;
     int nodeEnd = insEnd;
-    LOG.debug(String.format("Build histogram of node[%d]: size[%d] instance span [%d - %d]",
-        this.nid, histogram.getDimension(), nodeStart, nodeEnd));
+    LOG.debug(String
+      .format("Build histogram of node[%d]: size[%d] instance span [%d - %d]", this.nid,
+        histogram.getDimension(), nodeStart, nodeEnd));
     // ------ 3. using sparse-aware method to build histogram ---
     // first add grads of all instances to the zero bin of all features, then loop the non-zero entries of all the instances
     float gradSum = 0.0f;
@@ -89,16 +90,14 @@ public class GradHistHelper {
         } else {
           end = start + splitNum - 1;
         }
-        int fValueIdx =
-            findFvaluePlace(this.controller.sketches, fv, start, end);
+        int fValueIdx = findFvaluePlace(this.controller.sketches, fv, start, end);
         int gradIdx = 2 * splitNum * fPos + fValueIdx;
         int hessIdx = 2 * splitNum * fPos + fValueIdx + splitNum;
         // 3.4.4. add the grad and hess to the corresponding bin
         histogram.set(gradIdx, histogram.get(gradIdx) + gradPair.getGrad());
         histogram.set(hessIdx, histogram.get(hessIdx) + gradPair.getHess());
         // 3.4.5. add the reverse to the bin that contains 0.0f
-        int fZeroValueIdx =
-            findFvaluePlace(this.controller.sketches, 0.0f, start, end);
+        int fZeroValueIdx = findFvaluePlace(this.controller.sketches, 0.0f, start, end);
         int gradZeroIdx = 2 * splitNum * fPos + fZeroValueIdx;
         int hessZeroIdx = gradZeroIdx + splitNum;
         double curGrad = histogram.get(gradZeroIdx);
@@ -120,8 +119,7 @@ public class GradHistHelper {
       } else {
         end = start + splitNum - 1;
       }
-      int fZeroValueIdx =
-          findFvaluePlace(this.controller.sketches, 0.0f, start, end);
+      int fZeroValueIdx = findFvaluePlace(this.controller.sketches, 0.0f, start, end);
       int gradZeroIdx = 2 * splitNum * fPos + fZeroValueIdx;
       int hessZeroIdx = 2 * splitNum * fPos + fZeroValueIdx + splitNum;
       histogram.set(gradZeroIdx, histogram.get(gradZeroIdx) + gradSum);
@@ -135,8 +133,9 @@ public class GradHistHelper {
   public SplitEntry findBestSplit(TDoubleVector histogram) throws Exception {
     LOG.debug(String.format("------To find the best split of node[%d]------", this.nid));
     SplitEntry splitEntry = new SplitEntry();
-    LOG.debug(String.format("The best split before looping the histogram: fid[%d], fvalue[%f]",
-        splitEntry.fid, splitEntry.fvalue));
+    LOG.debug(String
+      .format("The best split before looping the histogram: fid[%d], fvalue[%f]", splitEntry.fid,
+        splitEntry.fvalue));
 
     // 1. calculate the gradStats of the root node
     GradStats rootStats = null;
@@ -180,15 +179,15 @@ public class GradHistHelper {
       this.controller.updateNodeGradStats(2 * this.nid + 2, splitEntry.rightGradStat);
     }
 
-    LOG.debug(String.format(
-        "The best split after looping the histogram: fid[%d], fvalue[%f], loss gain[%f]",
+    LOG.debug(String
+      .format("The best split after looping the histogram: fid[%d], fvalue[%f], loss gain[%f]",
         splitEntry.fid, splitEntry.fvalue, splitEntry.lossChg));
     return splitEntry;
   }
 
   // find the best split result of one feature
   public SplitEntry findBestSplitOfOneFeature(int fid, TDoubleVector histogram, int startIdx,
-      GradStats rootStats) {
+    GradStats rootStats) {
 
     SplitEntry splitEntry = new SplitEntry();
     // 1. set the feature id
@@ -204,7 +203,8 @@ public class GradHistHelper {
       GradStats leftStats = new GradStats();
       GradStats rightStats = new GradStats();
       // 5. loop over all the data in histogram
-      for (int histIdx = startIdx; histIdx < startIdx + this.controller.param.numSplit - 1; histIdx++) {
+      for (int histIdx = startIdx;
+           histIdx < startIdx + this.controller.param.numSplit - 1; histIdx++) {
         // 5.1. get the grad and hess of current hist bin
         float grad = (float) histogram.get(histIdx);
         float hess = (float) histogram.get(this.controller.param.numSplit + histIdx);
@@ -217,8 +217,8 @@ public class GradHistHelper {
           if (rightStats.sumHess >= this.controller.param.minChildWeight) {
             // 5.4. calculate the current loss gain
             float lossChg =
-                leftStats.calcGain(this.controller.param) + rightStats.calcGain(this.controller.param)
-                    - rootGain;
+              leftStats.calcGain(this.controller.param) + rightStats.calcGain(this.controller.param)
+                - rootGain;
             // 5.5. check whether we should update the split result with current loss gain
             // split value = sketches[splitIdx]
             int splitIdx = fid * this.controller.param.numSplit + histIdx - startIdx;
@@ -242,12 +242,13 @@ public class GradHistHelper {
   public SplitEntry findBestFromServerSplit(TDoubleVector histogram) throws Exception {
     LOG.debug(String.format("------To find the best split of node[%d]------", this.nid));
     SplitEntry splitEntry = new SplitEntry();
-    LOG.debug(String.format("The best split before looping the histogram: fid[%d], fvalue[%f]",
-        splitEntry.fid, splitEntry.fvalue));
+    LOG.debug(String
+      .format("The best split before looping the histogram: fid[%d], fvalue[%f]", splitEntry.fid,
+        splitEntry.fvalue));
 
     // partition number
     int partitionNum = WorkerContext.get().getConf()
-            .getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER);
+      .getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER);
     // cols of each partition
     int colPerPartition = histogram.getDimension() / partitionNum;
     assert histogram.getDimension() == partitionNum * colPerPartition;
@@ -260,7 +261,8 @@ public class GradHistHelper {
       }
       int trueSplitFid = this.controller.fSet[splitFid];
       int splitIdx = (int) histogram.get(startIdx + 1);
-      float splitValue = this.controller.sketches[trueSplitFid * this.controller.param.numSplit + splitIdx];
+      float splitValue =
+        this.controller.sketches[trueSplitFid * this.controller.param.numSplit + splitIdx];
       float lossChg = (float) histogram.get(startIdx + 2);
       float leftSumGrad = (float) histogram.get(startIdx + 3);
       float leftSumHess = (float) histogram.get(startIdx + 4);
@@ -268,9 +270,9 @@ public class GradHistHelper {
       float rightSumHess = (float) histogram.get(startIdx + 6);
       LOG.debug(String.format("The best split of the %d-th partition: "
           + "split feature[%d], split index[%d], split value[%f], loss gain[%f], "
-          + "left sumGrad[%f], left sumHess[%f], right sumGrad[%f], right sumHess[%f]",
-              pid, trueSplitFid, splitIdx, splitValue, lossChg,
-              leftSumGrad, leftSumHess, rightSumGrad, rightSumHess));
+          + "left sumGrad[%f], left sumHess[%f], right sumGrad[%f], right sumHess[%f]", pid,
+        trueSplitFid, splitIdx, splitValue, lossChg, leftSumGrad, leftSumHess, rightSumGrad,
+        rightSumHess));
       GradStats curLeftGradStat = new GradStats(leftSumGrad, leftSumHess);
       GradStats curRightGradStat = new GradStats(rightSumGrad, rightSumHess);
       SplitEntry curSplitEntry = new SplitEntry(trueSplitFid, splitValue, lossChg);
@@ -279,8 +281,9 @@ public class GradHistHelper {
       splitEntry.update(curSplitEntry);
     }
 
-    LOG.debug(String.format("The best split after looping the histogram: fid[%d], fvalue[%f], loss gain[%f]",
-            splitEntry.fid, splitEntry.fvalue, splitEntry.lossChg));
+    LOG.debug(String
+      .format("The best split after looping the histogram: fid[%d], fvalue[%f], loss gain[%f]",
+        splitEntry.fid, splitEntry.fvalue, splitEntry.lossChg));
 
     return splitEntry;
 
@@ -362,20 +365,20 @@ public class GradHistHelper {
   }
 
   // find the best split result of the histogram of a tree node
-  public static SplitEntry findBestSplitHelper(TDoubleVector histogram) throws InterruptedException {
+  public static SplitEntry findBestSplitHelper(TDoubleVector histogram)
+    throws InterruptedException {
     LOG.debug(String.format("------To find the best split of histogram size[%d]------",
-        histogram.getDimension()));
+      histogram.getDimension()));
 
     SplitEntry splitEntry = new SplitEntry();
-    LOG.debug(String.format("The best split before looping the histogram: fid[%d], fvalue[%f]",
-        splitEntry.fid, splitEntry.fvalue));
+    LOG.debug(String
+      .format("The best split before looping the histogram: fid[%d], fvalue[%f]", splitEntry.fid,
+        splitEntry.fvalue));
 
-    int featureNum =
-        WorkerContext.get().getConf().getInt(MLConf.ML_FEATURE_NUM(),
-                MLConf.DEFAULT_ML_FEATURE_NUM());
-    int splitNum =
-        WorkerContext.get().getConf().getInt(MLConf.ML_GBDT_SPLIT_NUM(),
-                MLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
+    int featureNum = WorkerContext.get().getConf()
+      .getInt(MLConf.ML_FEATURE_NUM(), MLConf.DEFAULT_ML_FEATURE_NUM());
+    int splitNum = WorkerContext.get().getConf()
+      .getInt(MLConf.ML_GBDT_SPLIT_NUM(), MLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
 
     if (histogram.getDimension() != featureNum * 2 * splitNum) {
       LOG.debug("The size of histogram is not equal to 2 * featureNum*splitNum.");
@@ -391,21 +394,21 @@ public class GradHistHelper {
       splitEntry.update(curSplit);
     }
 
-    LOG.debug(String.format(
-        "The best split after looping the histogram: fid[%d], fvalue[%f], loss gain[%f]",
+    LOG.debug(String
+      .format("The best split after looping the histogram: fid[%d], fvalue[%f], loss gain[%f]",
         splitEntry.fid, splitEntry.fvalue, splitEntry.lossChg));
     return splitEntry;
   }
 
   // find the best split result of one feature
   public static SplitEntry findBestSplitOfOneFeatureHelper(int fid, TDoubleVector histogram,
-                                                           int startIdx) {
+    int startIdx) {
 
     LOG.debug(String.format("Find best split for fid[%d] in histogram size[%d], startIdx[%d]", fid,
-        histogram.getDimension(), startIdx));
+      histogram.getDimension(), startIdx));
 
-    int splitNum = WorkerContext.get().getConf().getInt(MLConf.ML_GBDT_SPLIT_NUM(),
-        MLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
+    int splitNum = WorkerContext.get().getConf()
+      .getInt(MLConf.ML_GBDT_SPLIT_NUM(), MLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
 
     SplitEntry splitEntry = new SplitEntry();
     // 1. set the feature id
@@ -421,8 +424,9 @@ public class GradHistHelper {
     if (startIdx + 2 * splitNum <= histogram.getDimension()) {
       // 3. the gain of the root node
       float rootGain = rootStats.calcGain(param);
-      LOG.debug(String.format("Feature[%d]: sumGrad[%f], sumHess[%f], gain[%f]", fid,
-          rootStats.sumGrad, rootStats.sumHess, rootGain));
+      LOG.debug(String
+        .format("Feature[%d]: sumGrad[%f], sumHess[%f], gain[%f]", fid, rootStats.sumGrad,
+          rootStats.sumHess, rootGain));
       // 4. create the temp left and right grad stats
       GradStats leftStats = new GradStats();
       GradStats rightStats = new GradStats();
@@ -453,8 +457,8 @@ public class GradHistHelper {
       // 6. set the best left and right grad stats
       splitEntry.leftGradStat = bestLeftStat;
       splitEntry.rightGradStat = bestRightStat;
-      LOG.debug(String.format(
-          "Find best split for fid[%d], split feature[%d]: split index[%f], lossChg[%f]", fid,
+      LOG.debug(String
+        .format("Find best split for fid[%d], split feature[%d]: split index[%f], lossChg[%f]", fid,
           splitEntry.fid, splitEntry.fvalue, splitEntry.lossChg));
     } else {
       LOG.error("index out of grad histogram size.");
@@ -464,18 +468,21 @@ public class GradHistHelper {
 
   // find the best split result of a serve row on the PS
   public static SplitEntry findSplitOfServerRow(ServerDenseDoubleRow row, GBDTParam param) {
-    LOG.debug(String.format("------To find the best split from server row[%d], cols[%d-%d]------",
-        row.getRowId(), row.getStartCol(), row.getEndCol()));
+    LOG.debug(String
+      .format("------To find the best split from server row[%d], cols[%d-%d]------", row.getRowId(),
+        row.getStartCol(), row.getEndCol()));
     SplitEntry splitEntry = new SplitEntry();
     splitEntry.leftGradStat = new GradStats();
     splitEntry.rightGradStat = new GradStats();
-    LOG.debug(String.format("The best split before looping the histogram: fid[%d], fvalue[%f]",
-        splitEntry.fid, splitEntry.fvalue));
+    LOG.debug(String
+      .format("The best split before looping the histogram: fid[%d], fvalue[%f]", splitEntry.fid,
+        splitEntry.fvalue));
 
-    int startFid = (int)row.getStartCol() / (2 * param.numSplit);
-    int endFid = ((int)row.getEndCol()) / (2 * param.numSplit) - 1;
-    LOG.debug(String.format("Row split col[%d-%d), start feature[%d], end feature[%d]",
-        row.getStartCol(), row.getEndCol(), startFid, endFid));
+    int startFid = (int) row.getStartCol() / (2 * param.numSplit);
+    int endFid = ((int) row.getEndCol()) / (2 * param.numSplit) - 1;
+    LOG.debug(String
+      .format("Row split col[%d-%d), start feature[%d], end feature[%d]", row.getStartCol(),
+        row.getEndCol(), startFid, endFid));
 
     // 2. the fid here is the index in the sampled feature set, rather than the true feature id
     for (int i = 0; startFid + i <= endFid; i++) {
@@ -487,17 +494,19 @@ public class GradHistHelper {
       splitEntry.update(curSplit);
     }
 
-    LOG.debug(String.format(
-        "The best split after looping the histogram: fid[%d], fvalue[%f], loss gain[%f]",
+    LOG.debug(String
+      .format("The best split after looping the histogram: fid[%d], fvalue[%f], loss gain[%f]",
         splitEntry.fid, splitEntry.fvalue, splitEntry.lossChg));
     return splitEntry;
   }
 
   // find the best split result of one feature from a server row, used by the PS
-  public static SplitEntry findSplitOfFeature(int fid, ServerDenseDoubleRow row, int startIdx, GBDTParam param) {
+  public static SplitEntry findSplitOfFeature(int fid, ServerDenseDoubleRow row, int startIdx,
+    GBDTParam param) {
 
-    LOG.debug(String.format("Find best split for fid[%d] in histogram size[%d], startIdx[%d]", fid,
-        row.size(), startIdx));
+    LOG.debug(String
+      .format("Find best split for fid[%d] in histogram size[%d], startIdx[%d]", fid, row.size(),
+        startIdx));
 
     SplitEntry splitEntry = new SplitEntry();
     // 1. set the feature id

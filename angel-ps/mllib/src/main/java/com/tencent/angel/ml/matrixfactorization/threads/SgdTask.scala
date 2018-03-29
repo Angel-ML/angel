@@ -32,7 +32,9 @@ class SgdTask(var L: Array[DenseFloatVector], var R: Array[DenseFloatVector], va
   @throws[Exception]
   def call: Boolean = {
     var itemVec: ItemVec = null
-    while ({itemVec = taskQueue.poll; itemVec != null}) {
+    while ( {
+      itemVec = taskQueue.poll; itemVec != null
+    }) {
       {
         val itemId: Int = itemVec.getItemId
         val Rj = R(itemId)

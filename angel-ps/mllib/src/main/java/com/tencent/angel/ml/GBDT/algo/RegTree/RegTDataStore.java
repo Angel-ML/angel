@@ -74,7 +74,8 @@ public class RegTDataStore {
   }
 
   // clear all the information
-  public void Clear() {}
+  public void Clear() {
+  }
 
   public void setNumRow(int numRow) {
     this.numRow = numRow;

@@ -43,8 +43,7 @@ public class GradHistThread implements Runnable {
     this.insEnd = end;
   }
 
-  @Override
-  public void run() {
+  @Override public void run() {
     LOG.debug(String.format("Run active node[%d]", this.nid));
     // 1. name of this node's grad histogram on PS
     String histParaName = this.controller.param.gradHistNamePrefix + nid;
@@ -52,8 +51,8 @@ public class GradHistThread implements Runnable {
     GradHistHelper histMaker = new GradHistHelper(this.controller, this.nid);
     DenseDoubleVector histogram = histMaker.buildHistogram(insStart, insEnd);
     int bytesPerItem = this.controller.taskContext.getConf().
-        getInt(MLConf.ML_COMPRESS_BYTES(), MLConf.DEFAULT_ML_COMPRESS_BYTES());
-    if (bytesPerItem < 1 || bytesPerItem > 8 ) {
+      getInt(MLConf.ML_COMPRESS_BYTES(), MLConf.DEFAULT_ML_COMPRESS_BYTES());
+    if (bytesPerItem < 1 || bytesPerItem > 8) {
       LOG.info("Invalid compress configuration: " + bytesPerItem + ", it should be [1,8].");
       bytesPerItem = MLConf.DEFAULT_ML_COMPRESS_BYTES();
     }
@@ -62,7 +61,8 @@ public class GradHistThread implements Runnable {
       if (bytesPerItem == 8) {
         this.model.increment(0, histogram);
       } else {
-        CompressUpdateFunc func = new CompressUpdateFunc(this.model.getMatrixId(), 0, histogram, bytesPerItem * 8);
+        CompressUpdateFunc func =
+          new CompressUpdateFunc(this.model.getMatrixId(), 0, histogram, bytesPerItem * 8);
         this.model.update(func);
       }
     } catch (Exception e) {

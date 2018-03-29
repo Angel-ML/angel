@@ -64,7 +64,7 @@ class LinearRegLeaner(override val ctx: TaskContext) extends MLLearner(ctx) {
 
     // Run mini-batch gradient descent.
     val ret = GradientDescent.miniBatchGD(trainData, model.weight, None,
-                                          learnRate, squareLoss, batchSize, batchNum, ctx)
+      learnRate, squareLoss, batchSize, batchNum, ctx)
 
     val loss = ret._1
     val localW = ret._2
@@ -110,7 +110,7 @@ class LinearRegLeaner(override val ctx: TaskContext) extends MLLearner(ctx) {
     * @param epoch          : epoch id
     * @param validationData : validata data storage
     */
-  def validate(epoch: Int, weight:TDoubleVector, validationData: DataBlock[LabeledData]): Unit = {
+  def validate(epoch: Int, weight: TDoubleVector, validationData: DataBlock[LabeledData]): Unit = {
     if (validationData.size > 0) {
       ValidationUtils.calMSER2(validationData, weight, squareLoss)
     }

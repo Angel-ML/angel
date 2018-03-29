@@ -27,20 +27,19 @@ import static org.junit.Assert.assertEquals;
 public class ErrorEvalMetricTest {
   private static final Log LOG = LogFactory.getLog(ErrorEvalMetricTest.class);
   private ErrorEvalMetric errorMetric = new ErrorEvalMetric();
+
   static {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
 
-  @Test
-  public void testEval() throws Exception {
+  @Test public void testEval() throws Exception {
     float pred[] = {0.6f, 0.3f, 0.7f};
     float label[] = {1f, 0f, 1f};
     assertEquals(0, errorMetric.eval(pred, label), 0.000);
   }
 
-  @Test
-  public void testEvalOne() throws Exception {
+  @Test public void testEvalOne() throws Exception {
     float pred = 0.6f, label = 1f;
     assertEquals(0, errorMetric.evalOne(pred, label), 0.000);
   }

@@ -42,10 +42,10 @@ public class PartCSRResult extends PartitionGetResult {
     this.splits = splits;
   }
 
-  public PartCSRResult() {}
+  public PartCSRResult() {
+  }
 
-  @Override
-  public void serialize(ByteBuf buf) {
+  @Override public void serialize(ByteBuf buf) {
     // Write #rows
     buf.writeInt(splits.size());
     // Write each row
@@ -63,7 +63,7 @@ public class PartCSRResult extends PartitionGetResult {
     try {
       row.getLock().readLock().lock();
       IntBuffer ints = row.getData();
-      int len = (int)(row.getEndCol() - row.getStartCol());
+      int len = (int) (row.getEndCol() - row.getStartCol());
       int cnt = 0;
       for (int i = 0; i < len; i++)
         if (ints.get(i) > 0)
@@ -91,17 +91,15 @@ public class PartCSRResult extends PartitionGetResult {
 
   }
 
-  @Override
-  public void deserialize(ByteBuf buf) {
+  @Override public void deserialize(ByteBuf buf) {
     this.len = buf.readInt();
     this.buf = buf.duplicate();
     this.buf.retain();
-//    LOG.info(buf.refCnt());
+    //    LOG.info(buf.refCnt());
     this.readerIdx = 0;
   }
 
-  @Override
-  public int bufferLen() {
+  @Override public int bufferLen() {
     return 16;
   }
 
@@ -109,7 +107,7 @@ public class PartCSRResult extends PartitionGetResult {
     if (readerIdx == len)
       return false;
 
-    readerIdx ++;
+    readerIdx++;
 
     int type = buf.readByte();
     int len;
@@ -117,14 +115,14 @@ public class PartCSRResult extends PartitionGetResult {
       case 0:
         // dense
         len = buf.readShort();
-        for (int i = 0; i < len; i ++)
+        for (int i = 0; i < len; i++)
           row[i] = buf.readInt();
         break;
       case 1:
         // sparse
         len = buf.readShort();
         Arrays.fill(row, 0);
-        for (int i = 0; i < len; i ++) {
+        for (int i = 0; i < len; i++) {
           int key = buf.readShort();
           int val = buf.readInt();
           row[key] = val;
@@ -136,7 +134,7 @@ public class PartCSRResult extends PartitionGetResult {
 
     if (readerIdx == this.len) {
       buf.release();
-//      LOG.info(buf.refCnt());
+      //      LOG.info(buf.refCnt());
     }
     return true;
   }

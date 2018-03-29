@@ -43,7 +43,7 @@ class LDAPredictTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, 
 
   override
   def parse(key: LongWritable, value: Text): Document = {
-    val doc  = new Document(value.toString)
+    val doc = new Document(value.toString)
     if (doc != null) {
       did += 1
       N += doc.len()
@@ -55,7 +55,7 @@ class LDAPredictTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, 
   def preProcess(ctx: TaskContext) {
     val reader = ctx.getReader[LongWritable, Text]
     while (reader.nextKeyValue()) {
-      val doc  = new Document(reader.getCurrentValue.toString)
+      val doc = new Document(reader.getCurrentValue.toString)
       docs.put(doc)
     }
   }
@@ -88,7 +88,7 @@ class LDAPredictTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, 
     for (i <- 0 until paths.length) {
       val path = paths(i)
       LOG.info(s"Load model from path ${path}")
-      val fs   = path.getFileSystem(conf)
+      val fs = path.getFileSystem(conf)
 
       val in = new BufferedReader(new InputStreamReader(fs.open(path)))
 
@@ -118,9 +118,9 @@ class LDAPredictTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, 
 
   def getPaths(): Array[Path] = {
     val taskId = ctx.getTaskIndex
-    val total  = ctx.getTotalTaskNum
-    val dir    = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH)
-    val base   = dir + "/" + "word_topic"
+    val total = ctx.getTotalTaskNum
+    val dir = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH)
+    val base = dir + "/" + "word_topic"
 
     val basePath = new Path(base)
     val fs = basePath.getFileSystem(conf)

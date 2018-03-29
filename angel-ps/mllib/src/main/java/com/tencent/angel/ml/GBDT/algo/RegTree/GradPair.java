@@ -18,7 +18,6 @@ package com.tencent.angel.ml.GBDT.algo.RegTree;
 
 /**
  * Description: first order and second order gradients for com.tencent.ml.algorithm.LocalGBDT
- *
  */
 public class GradPair {
 

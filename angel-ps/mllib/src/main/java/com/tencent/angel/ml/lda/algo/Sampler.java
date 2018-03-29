@@ -36,6 +36,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math.special.Gamma;
 
 import com.tencent.angel.ml.lda.algo.structures.*;
+
 import java.util.Random;
 import java.util.concurrent.Future;
 
@@ -66,7 +67,7 @@ public class Sampler {
 
     K = model.K();
     alpha = model.alpha();
-    beta  = model.beta();
+    beta = model.beta();
     vbeta = data.n_words * beta;
 
     lgammaBeta = Gamma.logGamma(beta);
@@ -89,16 +90,17 @@ public class Sampler {
 
     Short2IntOpenHashMap[] updates = new Short2IntOpenHashMap[we - ws];
 
-    for (int w = ws; w < we; w ++) {
+    for (int w = ws; w < we; w++) {
 
       if (data.ws[w + 1] - data.ws[w] == 0)
         continue;
 
-      if (!csr.read(wk)) throw new AngelException("some error happens");
+      if (!csr.read(wk))
+        throw new AngelException("some error happens");
 
       buildFTree();
       updates[w - ws] = new Short2IntOpenHashMap();
-      for (int wi = data.ws[w]; wi < data.ws[w + 1]; wi ++) {
+      for (int wi = data.ws[w]; wi < data.ws[w + 1]; wi++) {
         int d = data.docs[wi];
         TraverseHashMap dk = data.dks[d];
         int tt = data.topics[wi];
@@ -108,8 +110,8 @@ public class Sampler {
           continue;
         }
 
-        wk[tt] --;
-        nk[tt] --;
+        wk[tt]--;
+        nk[tt]--;
         float value = (wk[tt] + beta) / (nk[tt] + vbeta);
         tree.update(tt, value);
         updates[w - ws].addTo((short) tt, -1);
@@ -128,32 +130,31 @@ public class Sampler {
           dk.inc(tt);
         }
 
-        wk[tt] ++;
-        nk[tt] ++;
+        wk[tt]++;
+        nk[tt]++;
         value = (wk[tt] + beta) / (nk[tt] + vbeta);
         tree.update(tt, value);
         data.topics[wi] = tt;
         updates[w - ws].addTo((short) tt, 1);
       }
 
-//      model.wtMat().increment(w, update);
+      //      model.wtMat().increment(w, update);
     }
-    CSRPartUpdateParam param = new CSRPartUpdateParam(model.wtMat().getMatrixId(),
-        pkey, updates);
-    Future<VoidResult> future = PSAgentContext.get().getMatrixTransportClient()
-        .update(new UpdatePartFunc(null), param);
+    CSRPartUpdateParam param = new CSRPartUpdateParam(model.wtMat().getMatrixId(), pkey, updates);
+    Future<VoidResult> future =
+      PSAgentContext.get().getMatrixTransportClient().update(new UpdatePartFunc(null), param);
     return future;
   }
 
   private void buildFTree() {
-    for (int k = 0; k < K; k ++)
+    for (int k = 0; k < K; k++)
       psum[k] = (wk[k] + beta) / (nk[k] + vbeta);
     tree.build(psum);
   }
 
   private float build(S2STraverseMap dk) {
     float sum = 0;
-    for (int i = 0; i < dk.size; i ++) {
+    for (int i = 0; i < dk.size; i++) {
       short k = dk.key[dk.idx[i]];
       short v = dk.value[dk.idx[i]];
       sum += v * tree.get(k);
@@ -165,7 +166,7 @@ public class Sampler {
 
   private float build(S2BTraverseMap dk) {
     float sum = 0;
-    for (int i = 0; i < dk.size; i ++) {
+    for (int i = 0; i < dk.size; i++) {
       short k = dk.key[dk.idx[i]];
       short v = dk.value[dk.idx[i]];
       sum += v * tree.get(k);
@@ -177,9 +178,9 @@ public class Sampler {
 
   private float build(S2ITraverseMap dk) {
     float sum = 0;
-    for (int i = 0; i < dk.size; i ++) {
+    for (int i = 0; i < dk.size; i++) {
       short k = dk.key[dk.idx[i]];
-      int v   = dk.value[dk.idx[i]];
+      int v = dk.value[dk.idx[i]];
       sum += v * tree.get(k);
       psum[i] = sum;
       tidx[i] = k;
@@ -205,31 +206,30 @@ public class Sampler {
 
     Short2IntOpenHashMap[] updates = new Short2IntOpenHashMap[es - ws];
 
-    for (int w = ws; w < es; w ++) {
+    for (int w = ws; w < es; w++) {
       if (data.ws[w + 1] == data.ws[w])
         continue;
 
       updates[w - ws] = new Short2IntOpenHashMap();
 
-      for (int wi = data.ws[w]; wi < data.ws[w + 1]; wi ++) {
+      for (int wi = data.ws[w]; wi < data.ws[w + 1]; wi++) {
         int d = data.docs[wi];
         int t = rand.nextInt(K);
         data.topics[wi] = t;
-        nk[t] ++;
+        nk[t]++;
         synchronized (data.dks[d]) {
           data.dks[d].inc(t);
         }
-//        update.plusBy(t, 1);
+        //        update.plusBy(t, 1);
         updates[w - ws].addTo((short) t, 1);
       }
 
-//      model.wtMat().increment(w, update);
+      //      model.wtMat().increment(w, update);
     }
 
-    CSRPartUpdateParam param = new CSRPartUpdateParam(model.wtMat().getMatrixId(),
-        pkey, updates);
-    Future<VoidResult> future = PSAgentContext.get().getMatrixTransportClient()
-        .update(new UpdatePartFunc(null), param);
+    CSRPartUpdateParam param = new CSRPartUpdateParam(model.wtMat().getMatrixId(), pkey, updates);
+    Future<VoidResult> future =
+      PSAgentContext.get().getMatrixTransportClient().update(new UpdatePartFunc(null), param);
     return future;
   }
 
@@ -243,22 +243,21 @@ public class Sampler {
     int es = pkey.getEndRow();
     Short2IntOpenHashMap[] updates = new Short2IntOpenHashMap[es - ws];
 
-    for (int w = ws; w < es; w ++) {
+    for (int w = ws; w < es; w++) {
       if (data.ws[w + 1] == data.ws[w])
         continue;
 
       updates[w - ws] = new Short2IntOpenHashMap();
-      for (int wi = data.ws[w]; wi < data.ws[w + 1]; wi ++) {
+      for (int wi = data.ws[w]; wi < data.ws[w + 1]; wi++) {
         int tt = data.topics[wi];
         updates[w - ws].addTo((short) tt, 1);
-        nk[tt] ++;
+        nk[tt]++;
       }
     }
 
-    CSRPartUpdateParam param = new CSRPartUpdateParam(model.wtMat().getMatrixId(),
-        pkey, updates);
-    Future<VoidResult> future = PSAgentContext.get().getMatrixTransportClient()
-        .update(new UpdatePartFunc(null), param);
+    CSRPartUpdateParam param = new CSRPartUpdateParam(model.wtMat().getMatrixId(), pkey, updates);
+    Future<VoidResult> future =
+      PSAgentContext.get().getMatrixTransportClient().update(new UpdatePartFunc(null), param);
     return future;
   }
 
@@ -268,8 +267,8 @@ public class Sampler {
 
     Random rand = new Random(System.currentTimeMillis());
 
-    for (int w = ws; w < es; w ++) {
-      for (int wi = data.ws[w]; wi < data.ws[w + 1]; wi ++) {
+    for (int w = ws; w < es; w++) {
+      for (int wi = data.ws[w]; wi < data.ws[w + 1]; wi++) {
         int d = data.docs[wi];
         int t = rand.nextInt(K);
         data.topics[wi] = t;
@@ -286,16 +285,17 @@ public class Sampler {
 
     Random rand = new Random(System.currentTimeMillis());
 
-    for (int w = ws; w < we; w ++) {
+    for (int w = ws; w < we; w++) {
 
       if (data.ws[w + 1] - data.ws[w] == 0)
         continue;
 
-      if (!csr.read(wk)) throw new AngelException("some error happens");
+      if (!csr.read(wk))
+        throw new AngelException("some error happens");
 
       buildFTree();
 
-      for (int wi = data.ws[w]; wi < data.ws[w + 1]; wi ++) {
+      for (int wi = data.ws[w]; wi < data.ws[w + 1]; wi++) {
         int d = data.docs[wi];
         TraverseHashMap dk = data.dks[d];
         int tt = data.topics[wi];

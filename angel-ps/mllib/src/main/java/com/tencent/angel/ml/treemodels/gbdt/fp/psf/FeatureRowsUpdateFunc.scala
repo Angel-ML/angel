@@ -1,3 +1,20 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
 package com.tencent.angel.ml.treemodels.gbdt.fp.psf
 
 import java.nio.ByteBuffer
@@ -56,7 +73,7 @@ class FeatureRowsUpdateFunc[@specialized(Byte, Short, Int) T <: scala.AnyVal](pa
 
       var pos: Int = 4
       val bytesPerBin = if (param.numBin <= 256) 1
-        else if (param.numBin <= 65536) 2 else 4
+      else if (param.numBin <= 65536) 2 else 4
       var skip = numSet
       while (skip > 0) {
         //val workerId = buf.getInt(pos)
@@ -66,8 +83,10 @@ class FeatureRowsUpdateFunc[@specialized(Byte, Short, Int) T <: scala.AnyVal](pa
         skip -= 1
       }
 
-      buf.putInt(pos, param.workerId); pos += 4
-      buf.putInt(pos, indices.length); pos += 4
+      buf.putInt(pos, param.workerId);
+      pos += 4
+      buf.putInt(pos, indices.length);
+      pos += 4
       for (indice <- indices) {
         buf.putInt(pos, indice); pos += 4
       }
@@ -98,8 +117,8 @@ class FeatureRowsUpdateFunc[@specialized(Byte, Short, Int) T <: scala.AnyVal](pa
 }
 
 class FeatureRowsUpdateParam[@specialized(Byte, Short, Int) T <: scala.AnyVal](matrixId: Int, updateClock: Boolean,
-                                                numWorker: Int, workerId: Int,
-                                                nrows: Int, numBin: Int) extends UpdateParam(matrixId, updateClock) {
+                                                                               numWorker: Int, workerId: Int,
+                                                                               nrows: Int, numBin: Int) extends UpdateParam(matrixId, updateClock) {
   val LOG: Log = LogFactory.getLog(classOf[FeatureRowsUpdateParam[T]])
 
   val rowIndexes: util.List[Int] = new util.ArrayList[Int](nrows)
@@ -180,8 +199,8 @@ class FeatureRowsUpdateParam[@specialized(Byte, Short, Int) T <: scala.AnyVal](m
 }
 
 class FeatureRowsPartitionUpdateParam[@specialized(Byte, Short, Int) T <: scala.AnyVal](matrixId: Int, partKey: PartitionKey, updateClock: Boolean,
-                                                _featureRows: util.Map[Int, (Array[Int], Array[T])],
-                                                _numWorker: Int, _workerId: Int, _numBin: Int) extends PartitionUpdateParam(matrixId, partKey, updateClock) {
+                                                                                        _featureRows: util.Map[Int, (Array[Int], Array[T])],
+                                                                                        _numWorker: Int, _workerId: Int, _numBin: Int) extends PartitionUpdateParam(matrixId, partKey, updateClock) {
   var featureRows: util.Map[Int, (Array[Int], Array[T])] = _featureRows
   var numWorker: Int = _numWorker
   var workerId: Int = _workerId
@@ -287,11 +306,11 @@ class FeatureRowsPartitionUpdateParam[@specialized(Byte, Short, Int) T <: scala.
   override def bufferLen(): Int = {
     var res = super.bufferLen() + 16
     val bytesPerBin = if (numBin <= 256) 1 else if (numBin <= 65536) 2 else 4
-  val iter = featureRows.entrySet().iterator()
-  while (iter.hasNext) {
-    val entry = iter.next()
-    res += 4 + entry.getValue._1.length * (4 + bytesPerBin)
+    val iter = featureRows.entrySet().iterator()
+    while (iter.hasNext) {
+      val entry = iter.next()
+      res += 4 + entry.getValue._1.length * (4 + bytesPerBin)
+    }
+    res
   }
-  res
-}
 }

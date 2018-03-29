@@ -49,7 +49,7 @@ object GBDTModel {
     new GBDTModel(conf)
   }
 
-  def apply(ctx:TaskContext, conf: Configuration) = {
+  def apply(ctx: TaskContext, conf: Configuration) = {
     new GBDTModel(conf, ctx)
   }
 }
@@ -160,7 +160,6 @@ class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
     val predict = new MemoryDataBlock[PredictResult](-1)
 
 
-
     val splitFeatVecs: Array[TIntVector] = new Array[TIntVector](this.maxTreeNum)
     val splitValueVecs: Array[TIntDoubleVector] = new Array[TIntDoubleVector](this.maxTreeNum)
     val nodePredVecs: Array[TIntDoubleVector] = new Array[TIntDoubleVector](this.maxTreeNum)
@@ -221,15 +220,15 @@ class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
       }
     }
 
-    LOG.info(s"Positive accuracy: ${posTrue.toDouble/posNum.toDouble}, " +
-      s"negative accuracy: ${negTrue.toDouble/negNum.toDouble}")
+    LOG.info(s"Positive accuracy: ${posTrue.toDouble / posNum.toDouble}, " +
+      s"negative accuracy: ${negTrue.toDouble / negNum.toDouble}")
     predict
   }
 
 }
 
 class GBDTPredictResult(label: Double, pred: Double) extends PredictResult {
-  override def getText():String = {
+  override def getText(): String = {
     (label + separator + format.format(pred))
   }
 }

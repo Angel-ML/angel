@@ -40,7 +40,7 @@ import scala.reflect.runtime.universe._
   * P(Y=+1|X) = 1 / [1+ exp(-dot(w,x))]. This task learns a binomial logistic regression model
   * with mini-batch gradient descent.
   *
-  * @param ctx: task context
+  * @param ctx : task context
   **/
 class LRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
   val LOG: Log = LogFactory.getLog(classOf[LRTrainTask])
@@ -86,7 +86,7 @@ class LRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ct
 
     val reader = taskContext.getReader
     val indexSet = modelType match {
-      case RowType.T_DOUBLE_SPARSE_LONGKEY | RowType.T_DOUBLE_SPARSE_LONGKEY_COMPONENT | RowType.T_FLOAT_SPARSE_LONGKEY=>
+      case RowType.T_DOUBLE_SPARSE_LONGKEY | RowType.T_DOUBLE_SPARSE_LONGKEY_COMPONENT | RowType.T_FLOAT_SPARSE_LONGKEY =>
         new LongOpenHashSet()
       case _ => new IntOpenHashSet()
     }
@@ -94,7 +94,9 @@ class LRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ct
     while (reader.nextKeyValue) {
       val out = parse(reader.getCurrentKey, reader.getCurrentValue)
       if (out != null) {
-        if (enableIndexGet) { updateIndex(out, indexSet) }
+        if (enableIndexGet) {
+          updateIndex(out, indexSet)
+        }
         if (count % vali == 0)
           validDataBlock.put(out)
         else
@@ -102,7 +104,7 @@ class LRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ct
         count += 1
       }
     }
-    if(enableIndexGet && !indexSet.isEmpty) {
+    if (enableIndexGet && !indexSet.isEmpty) {
       indexes = modelType match {
         case RowType.T_DOUBLE_SPARSE_LONGKEY | RowType.T_FLOAT_SPARSE_LONGKEY | RowType.T_FLOAT_SPARSE_LONGKEY =>
           val array = indexSet.asInstanceOf[LongOpenHashSet].toLongArray
@@ -119,25 +121,27 @@ class LRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ct
     validDataBlock.flush()
 
     val cost = System.currentTimeMillis() - start
-    LOG.info(s"Task[${ctx.getTaskIndex}] preprocessed ${taskDataBlock.size +
-      validDataBlock.size} samples, ${taskDataBlock.size} for train, " +
+    LOG.info(s"Task[${ctx.getTaskIndex}] preprocessed ${
+      taskDataBlock.size +
+        validDataBlock.size
+    } samples, ${taskDataBlock.size} for train, " +
       s"${validDataBlock.size} for validation. feanum=$feaNum" +
       s" processing time is $cost"
     )
   }
 
-  def updateIndex(labeledData: LabeledData, indexSet:Any): Unit = {
-    if(enableIndexGet) {
-      (labeledData.getX, indexSet)  match {
-        case (x: SparseDummyVector, index:IntOpenHashSet) => x.getIndices.foreach{ idx => index.add(idx)}
-        case (x: SparseDoubleVector, index:IntOpenHashSet) => x.getIndices.foreach{ idx => index.add(idx)}
-        case (x: SparseFloatVector, index: IntOpenHashSet) => x.getIndices.foreach{ idx => index.add(idx)}
-        case (x: SparseDoubleSortedVector, index:IntOpenHashSet) => x.getIndices.foreach{ idx => index.add(idx)}
-        case (x: SparseFloatSortedVector, index:IntOpenHashSet) => x.getIndices.foreach{ idx => index.add(idx) }
-        case (x: SparseFloatSortedVector, index:IntOpenHashSet) => x.getIndices.foreach{ idx => index.add(idx)}
-        case (x: SparseLongKeyDummyVector, index:LongOpenHashSet) => x.getIndexes.foreach{ idx => index.add(idx)}
-        case (x: SparseLongKeySortedDoubleVector, index:LongOpenHashSet) => x.getIndexes.foreach{ idx => index.add(idx)}
-        case (x: SparseLongKeySortedFloatVector, index:LongOpenHashSet) => x.getIndexes.foreach{ idx => index.add(idx)}
+  def updateIndex(labeledData: LabeledData, indexSet: Any): Unit = {
+    if (enableIndexGet) {
+      (labeledData.getX, indexSet) match {
+        case (x: SparseDummyVector, index: IntOpenHashSet) => x.getIndices.foreach { idx => index.add(idx) }
+        case (x: SparseDoubleVector, index: IntOpenHashSet) => x.getIndices.foreach { idx => index.add(idx) }
+        case (x: SparseFloatVector, index: IntOpenHashSet) => x.getIndices.foreach { idx => index.add(idx) }
+        case (x: SparseDoubleSortedVector, index: IntOpenHashSet) => x.getIndices.foreach { idx => index.add(idx) }
+        case (x: SparseFloatSortedVector, index: IntOpenHashSet) => x.getIndices.foreach { idx => index.add(idx) }
+        case (x: SparseFloatSortedVector, index: IntOpenHashSet) => x.getIndices.foreach { idx => index.add(idx) }
+        case (x: SparseLongKeyDummyVector, index: LongOpenHashSet) => x.getIndexes.foreach { idx => index.add(idx) }
+        case (x: SparseLongKeySortedDoubleVector, index: LongOpenHashSet) => x.getIndexes.foreach { idx => index.add(idx) }
+        case (x: SparseLongKeySortedFloatVector, index: LongOpenHashSet) => x.getIndexes.foreach { idx => index.add(idx) }
       }
     }
   }

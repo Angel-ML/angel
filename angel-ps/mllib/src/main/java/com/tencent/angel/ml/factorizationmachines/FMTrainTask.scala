@@ -28,10 +28,10 @@ import org.apache.hadoop.io.{LongWritable, Text}
 
 /**
   * This task train a Factorization Machines model
- *
+  *
   * @param ctx ： task context
   */
-class FMTrainTask (val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
+class FMTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
   val LOG = LogFactory.getLog(classOf[FMTrainTask])
   val feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
   private val dataFormat = conf.get(MLConf.ML_DATA_FORMAT, "dummy")

@@ -24,7 +24,7 @@ import com.tencent.angel.worker.task.{BaseTask, TaskContext}
 abstract class TrainTask[KEYIN, VALUEIN](taskContext: TaskContext) extends BaseTask[KEYIN, VALUEIN, LabeledData](taskContext) {
 
 
-  final def run(taskContext: TaskContext) ={
+  final def run(taskContext: TaskContext) = {
     this.train(taskContext)
   }
 

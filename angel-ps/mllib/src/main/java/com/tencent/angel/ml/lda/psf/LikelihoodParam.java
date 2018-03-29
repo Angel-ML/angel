@@ -30,27 +30,27 @@ public class LikelihoodParam extends GetParam {
 
   public static class LikelihoodPartParam extends PartitionGetParam {
     private float beta;
+
     public LikelihoodPartParam(int matrixId, PartitionKey pkey, float beta) {
       super(matrixId, pkey);
       this.beta = beta;
     }
 
-    public LikelihoodPartParam() { super();}
+    public LikelihoodPartParam() {
+      super();
+    }
 
-    @Override
-    public void serialize(ByteBuf buf) {
+    @Override public void serialize(ByteBuf buf) {
       super.serialize(buf);
       buf.writeFloat(beta);
     }
 
-    @Override
-    public void deserialize(ByteBuf buf) {
+    @Override public void deserialize(ByteBuf buf) {
       super.deserialize(buf);
       beta = buf.readFloat();
     }
 
-    @Override
-    public int bufferLen() {
+    @Override public int bufferLen() {
       return super.bufferLen() + 4;
     }
 
@@ -59,6 +59,7 @@ public class LikelihoodParam extends GetParam {
     }
   }
 
+
   private final float beta;
 
   public LikelihoodParam(int matrixId, float beta) {
@@ -66,11 +67,9 @@ public class LikelihoodParam extends GetParam {
     this.beta = beta;
   }
 
-  @Override
-  public List<PartitionGetParam> split() {
+  @Override public List<PartitionGetParam> split() {
     List<PartitionGetParam> params = new ArrayList<>();
-    List<PartitionKey> pkeys =
-            PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
+    List<PartitionKey> pkeys = PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
 
     for (PartitionKey pkey : pkeys) {
       params.add(new LikelihoodPartParam(matrixId, pkey, beta));

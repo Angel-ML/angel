@@ -156,12 +156,13 @@ object ADMM {
   private val lbfgsConvergenceTol = 1e-9
 
   private case class LocalModel(var x: Array[Double], u: Array[Double])
+
   private case class LocalIndex(localFeaNum: Int, localToGloabl: Array[Int], globalToLocal: Int2IntOpenHashMap)
 
   private val LOG = LogFactory.getLog(classOf[ADMM])
 
   type T = SparseDoubleVector
-  
+
   def runADMM(data: DataBlock[LabeledData], model: SparseLRModel)
              (regParam: Double, rho: Double, N: Int, threadNum: Int,
               maxNumIterations: Int = 20, primalTol: Double = 1e-5, dualTol: Double = 1e-5)
@@ -203,7 +204,7 @@ object ADMM {
   private def initialize(data: DataBlock[LabeledData]): (LocalModel, LocalIndex) = {
     val globalToLocal = new Int2IntOpenHashMap()
     val localToGlobal = new Int2IntOpenHashMap()
-    var localFeatNum  = 0
+    var localFeatNum = 0
 
     // Reset the reader index for data samples
     data.resetReadIndex()
@@ -430,6 +431,7 @@ object ADMM {
     }
 
     var gradientAndLoss: GradientAndLoss = _
+
     class CalThread(iter: DataBlock[LabeledData],
                     weight: DenseDoubleVector,
                     featNum: Int) extends Runnable {
@@ -461,13 +463,13 @@ object ADMM {
 
     override def calculate(weights: breeze.linalg.Vector[Double]): (Double, breeze.linalg.Vector[Double]) = {
       repeatTime += 1
-      val featNum   = weights.length
+      val featNum = weights.length
       val mlWeights = new DenseDoubleVector(weights.length, weights.toArray)
 
       gradientAndLoss = GradientAndLoss(new DenseDoubleVector(featNum), 0.0, 0)
-      val threadPool  = new ThreadPoolExecutor(4, 8, 1, TimeUnit.HOURS,
+      val threadPool = new ThreadPoolExecutor(4, 8, 1, TimeUnit.HOURS,
         new LinkedBlockingQueue[Runnable])
-      data.foreach( iter => threadPool.execute(new CalThread(iter, mlWeights, featNum)))
+      data.foreach(iter => threadPool.execute(new CalThread(iter, mlWeights, featNum)))
       threadPool.shutdown()
 
       // temp = x - z + u
@@ -517,18 +519,18 @@ object ADMM {
               val score = Maths.sigmoid(dot)
               if (score >= 0.5 && sample.getY > 0)
                 acn += 1
-              if (score < 0.5  && sample.getY <= 0)
+              if (score < 0.5 && sample.getY <= 0)
                 acn += 1
             case x: SparseDoubleSortedVector =>
               val indices = x.getIndices
-              val values  = x.getValues
+              val values = x.getValues
               var dot = 0.0
               for (i <- 0 until indices.length)
                 dot += z.get(localIndex.localToGloabl(indices(i))) * values(i)
               val score = Maths.sigmoid(dot)
               if (score >= 0.5 && sample.getY > 0)
                 acn += 1
-              if (score < 0.5  && sample.getY <= 0)
+              if (score < 0.5 && sample.getY <= 0)
                 acn += 1
           }
       }

@@ -51,14 +51,14 @@ public class CSRTokens {
     int[] wcnt = new int[n_words];
     this.ws = new int[n_words + 1];
     docLens = new int[n_docs];
-    docIds  = new long[n_docs];
+    docIds = new long[n_docs];
     n_tokens = 0;
 
     // count word
-    for (int d = 0; d < n_docs; d ++) {
+    for (int d = 0; d < n_docs; d++) {
       Document doc = docs.get(d);
-      for (int w = 0; w < doc.len; w ++)
-        wcnt[doc.wids[w]] ++;
+      for (int w = 0; w < doc.len; w++)
+        wcnt[doc.wids[w]]++;
       n_tokens += doc.len;
       docLens[d] = doc.len;
       docIds[d] = doc.docId;
@@ -70,12 +70,12 @@ public class CSRTokens {
 
     // build word start index
     ws[0] = 0;
-    for (int i = 0; i < n_words; i ++)
+    for (int i = 0; i < n_words; i++)
       ws[i + 1] = ws[i] + wcnt[i];
 
-    for (int d = n_docs - 1; d >= 0; d --) {
+    for (int d = n_docs - 1; d >= 0; d--) {
       Document doc = docs.get(d);
-      for (int w = 0; w < doc.len; w ++) {
+      for (int w = 0; w < doc.len; w++) {
         int wid = doc.wids[w];
         int pos = ws[wid] + (--wcnt[wid]);
         this.docs[pos] = d;
@@ -84,7 +84,7 @@ public class CSRTokens {
 
     // build dks
     dks = new TraverseHashMap[n_docs];
-    for (int d = 0; d < n_docs; d ++) {
+    for (int d = 0; d < n_docs; d++) {
       if (docs.get(d).len < Byte.MAX_VALUE)
         dks[d] = new S2BTraverseMap(docs.get(d).len);
       if (docs.get(d).len < Short.MAX_VALUE)

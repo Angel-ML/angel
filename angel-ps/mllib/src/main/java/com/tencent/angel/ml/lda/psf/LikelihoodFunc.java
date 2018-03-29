@@ -40,10 +40,11 @@ public class LikelihoodFunc extends GetFunc {
     super(new LikelihoodParam(matrixId, beta));
   }
 
-  public LikelihoodFunc() { super(null);}
+  public LikelihoodFunc() {
+    super(null);
+  }
 
-  @Override
-  public PartitionGetResult partitionGet(PartitionGetParam partParam) {
+  @Override public PartitionGetResult partitionGet(PartitionGetParam partParam) {
     PartitionKey pkey = partParam.getPartKey();
 
     pkey = psContext.getMatrixMetaManager().getMatrixMeta(pkey.getMatrixId())
@@ -71,11 +72,11 @@ public class LikelihoodFunc extends GetFunc {
   }
 
   private double likelihood(ServerRow row, float beta, double lgammaBeta) {
-    int len = (int)(row.getEndCol() - row.getStartCol());
+    int len = (int) (row.getEndCol() - row.getStartCol());
     double ll = 0;
     if (row instanceof ServerDenseIntRow) {
       IntBuffer buf = ((ServerDenseIntRow) row).getData();
-      for (int i = 0; i < len; i ++) {
+      for (int i = 0; i < len; i++) {
         if (buf.get(i) > 0)
           ll += Gamma.logGamma(buf.get(i) + beta) - lgammaBeta;
       }
@@ -84,8 +85,7 @@ public class LikelihoodFunc extends GetFunc {
     return ll;
   }
 
-  @Override
-  public GetResult merge(List<PartitionGetResult> partResults) {
+  @Override public GetResult merge(List<PartitionGetResult> partResults) {
     double ll = 0;
     for (PartitionGetResult r : partResults) {
       ll += ((ScalarPartitionAggrResult) r).result;

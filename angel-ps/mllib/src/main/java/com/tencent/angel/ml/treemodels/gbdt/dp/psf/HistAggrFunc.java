@@ -1,3 +1,20 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
 package com.tencent.angel.ml.treemodels.gbdt.dp.psf;
 
 import com.tencent.angel.PartitionKey;
@@ -18,13 +35,13 @@ import java.util.List;
 
 public class HistAggrFunc extends UpdateFunc {
 
-  public HistAggrFunc(int matrixId, boolean updateClock, int rowId,
-                       float[] array, int bitsPerItem) {
+  public HistAggrFunc(int matrixId, boolean updateClock, int rowId, float[] array,
+    int bitsPerItem) {
     super(new HistAggrParam(matrixId, updateClock, rowId, array, bitsPerItem));
   }
 
-  public HistAggrFunc(int matrixId, boolean updateClock, int rowId,
-                      DenseFloatVector vec, int bitsPerItem) {
+  public HistAggrFunc(int matrixId, boolean updateClock, int rowId, DenseFloatVector vec,
+    int bitsPerItem) {
     super(new HistAggrParam(matrixId, updateClock, rowId, vec.getValues(), bitsPerItem));
   }
 
@@ -38,18 +55,17 @@ public class HistAggrFunc extends UpdateFunc {
     private final float[] array;
     private final int bitsPerItem;
 
-    public HistAggrParam(int matrixId, boolean updateClock,
-                         int rowId, float[] array, int bitsPerItem) {
+    public HistAggrParam(int matrixId, boolean updateClock, int rowId, float[] array,
+      int bitsPerItem) {
       super(matrixId, updateClock);
       this.rowId = rowId;
       this.array = array;
       this.bitsPerItem = bitsPerItem;
     }
 
-    @Override
-    public List<PartitionUpdateParam> split() {
-      List<PartitionKey> partList = PSAgentContext.get()
-          .getMatrixMetaManager().getPartitions(matrixId, rowId);
+    @Override public List<PartitionUpdateParam> split() {
+      List<PartitionKey> partList =
+        PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId, rowId);
 
       int size = partList.size();
       List<PartitionUpdateParam> partParams = new ArrayList<>(size);
@@ -57,12 +73,13 @@ public class HistAggrFunc extends UpdateFunc {
         if (rowId < partKey.getStartRow() || rowId >= partKey.getEndRow()) {
           throw new AngelException("Wrong rowId");
         }
-        partParams.add(new HistAggrPartitionParam(matrixId, partKey, updateClock,
-          rowId, array, (int) partKey.getStartCol(), (int) partKey.getEndCol(), bitsPerItem));
+        partParams.add(new HistAggrPartitionParam(matrixId, partKey, updateClock, rowId, array,
+          (int) partKey.getStartCol(), (int) partKey.getEndCol(), bitsPerItem));
       }
       return partParams;
     }
   }
+
 
   public static class HistAggrPartitionParam extends PartitionUpdateParam {
     private int rowId;
@@ -73,7 +90,7 @@ public class HistAggrFunc extends UpdateFunc {
     private int bitsPerItem;
 
     public HistAggrPartitionParam(int matrixId, PartitionKey partKey, boolean updateClock,
-                                  int rowId, float[] array, int start, int end, int bitsPerItem) {
+      int rowId, float[] array, int start, int end, int bitsPerItem) {
       super(matrixId, partKey, updateClock);
       this.rowId = rowId;
       this.array = array;
@@ -86,8 +103,7 @@ public class HistAggrFunc extends UpdateFunc {
       super();
     }
 
-    @Override
-    public void serialize(ByteBuf buf) {
+    @Override public void serialize(ByteBuf buf) {
       super.serialize(buf);
       buf.writeInt(rowId);
       buf.writeInt(end - start);
@@ -104,15 +120,15 @@ public class HistAggrFunc extends UpdateFunc {
         double value = array[i];
         long point = (long) Math.floor(Math.abs(value) / maxAbs * maxPoint);
         if (value > 1e-10 && point < Integer.MAX_VALUE) {
-          point += (point < maxPoint && Math.random() > 0.5) ? 1 : 0;  // add Bernoulli random variable
+          point +=
+            (point < maxPoint && Math.random() > 0.5) ? 1 : 0;  // add Bernoulli random variable
         }
         byte[] tmp = long2Byte(point, bitsPerItem / 8, value < -1e-10);
         buf.writeBytes(tmp);
       }
     }
 
-    @Override
-    public void deserialize(ByteBuf buf) {
+    @Override public void deserialize(ByteBuf buf) {
       super.deserialize(buf);
       rowId = buf.readInt();
       int length = buf.readInt();
@@ -129,8 +145,7 @@ public class HistAggrFunc extends UpdateFunc {
       }
     }
 
-    @Override
-    public int bufferLen() {
+    @Override public int bufferLen() {
       return super.bufferLen() + 20 + (end - start) * bitsPerItem / 8;
     }
 
@@ -147,7 +162,7 @@ public class HistAggrFunc extends UpdateFunc {
       return rec;
     }
 
-    public static long byte2long(byte[] buffer){
+    public static long byte2long(byte[] buffer) {
       long rec = 0;
       boolean isNegative = (buffer[0] & 0x80) == 0x80;
       buffer[0] &= 0x7F;  // set the negative flag to 0
@@ -175,11 +190,9 @@ public class HistAggrFunc extends UpdateFunc {
     }
   }
 
-  @Override
-  public void partitionUpdate(PartitionUpdateParam partParam) {
-    ServerPartition part =
-        psContext.getMatrixStorageManager()
-            .getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
+  @Override public void partitionUpdate(PartitionUpdateParam partParam) {
+    ServerPartition part = psContext.getMatrixStorageManager()
+      .getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
 
     if (part != null) {
       HistAggrPartitionParam param = (HistAggrPartitionParam) partParam;

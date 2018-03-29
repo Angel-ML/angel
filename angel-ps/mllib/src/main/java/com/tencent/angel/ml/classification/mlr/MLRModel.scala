@@ -91,15 +91,15 @@ class MLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
     val predict = new MemoryDataBlock[PredictResult](-1)
 
     dataSet.resetReadIndex()
-    ( 0 until dataSet.size).foreach( _ => {
+    (0 until dataSet.size).foreach(_ => {
       val instance = dataSet.read
       val id = instance.getY
       val softmax = (0 until rank).map(i => softmax_wVecot(i).dot(instance.getX) + softmax_b(i)).toArray
       Maths.softmax(softmax)
       val sigmoid = (0 until rank).map(i => Maths.sigmoid({
-        var temp=sigmoid_wVecot(i).dot(instance.getX) + sigmoid_b(i)
-        temp=math.max(temp,-18)
-        temp=math.min(temp,18)
+        var temp = sigmoid_wVecot(i).dot(instance.getX) + sigmoid_b(i)
+        temp = math.max(temp, -18)
+        temp = math.min(temp, 18)
         temp
       })).toArray
       val pre = (0 until rank).map(i => softmax(i) * sigmoid(i)).reduce(_ + _)

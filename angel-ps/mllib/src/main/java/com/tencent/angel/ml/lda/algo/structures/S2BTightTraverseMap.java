@@ -34,8 +34,7 @@ public class S2BTightTraverseMap extends TraverseHashMap {
     this((byte) expected);
   }
 
-  @Override
-  public short get(short k) {
+  @Override public short get(short k) {
     // The starting point
     int pos = (HashCommon.murmurHash3(k)) & mask;
 
@@ -56,13 +55,11 @@ public class S2BTightTraverseMap extends TraverseHashMap {
     return 0;
   }
 
-  @Override
-  public short get(int k) {
+  @Override public short get(int k) {
     return get((short) k);
   }
 
-  @Override
-  public void put(short k, short v) {
+  @Override public void put(short k, short v) {
     put(k, (byte) v);
   }
 
@@ -89,8 +86,7 @@ public class S2BTightTraverseMap extends TraverseHashMap {
     size++;
   }
 
-  @Override
-  public void rehash() {
+  @Override public void rehash() {
     short[] kkey = key;
     byte[] vvalue = values;
 
@@ -110,8 +106,7 @@ public class S2BTightTraverseMap extends TraverseHashMap {
 
   }
 
-  @Override
-  public short dec(short k) {
+  @Override public short dec(short k) {
     int pos = (HashCommon.murmurHash3(k)) & mask;
 
     while (used(pos)) {
@@ -130,13 +125,11 @@ public class S2BTightTraverseMap extends TraverseHashMap {
     return 0;
   }
 
-  @Override
-  public short dec(int k) {
+  @Override public short dec(int k) {
     return dec((short) k);
   }
 
-  @Override
-  public short inc(short k) {
+  @Override public short inc(short k) {
     int pos = (HashCommon.murmurHash3(k)) & mask;
 
     int cnt = 0;
@@ -168,26 +161,22 @@ public class S2BTightTraverseMap extends TraverseHashMap {
     return 1;
   }
 
-  @Override
-  public short inc(int k) {
+  @Override public short inc(int k) {
     return inc((short) k);
   }
 
-  @Override
-  public int bytes() {
+  @Override public int bytes() {
     int sum = 0;
     sum += key.length * 2;
     sum += values.length;
     return sum;
   }
 
-  @Override
-  public short getKey(int idx) {
+  @Override public short getKey(int idx) {
     return key[values[idx(idx)]];
   }
 
-  @Override
-  public int getVal(int idx) {
+  @Override public int getVal(int idx) {
     return values[values[idx(idx)]];
   }
 }

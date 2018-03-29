@@ -37,14 +37,8 @@ public class HistAggrParam extends GetParam {
     private float regAlpha;
     private float regLambda;
 
-    public HistPartitionAggrParam(
-        int matrixId,
-        PartitionKey partKey,
-        int rowId,
-        int splitNum,
-        float minChildWeight,
-        float regAlpha,
-        float regLambda) {
+    public HistPartitionAggrParam(int matrixId, PartitionKey partKey, int rowId, int splitNum,
+      float minChildWeight, float regAlpha, float regLambda) {
       super(matrixId, partKey);
       this.rowId = rowId;
       this.splitNum = splitNum;
@@ -57,8 +51,7 @@ public class HistAggrParam extends GetParam {
       this(0, null, 0, 0, 0.0f, 0.0f, 0.0f);
     }
 
-    @Override
-    public void serialize(ByteBuf buf) {
+    @Override public void serialize(ByteBuf buf) {
       super.serialize(buf);
       buf.writeInt(rowId);
       buf.writeInt(splitNum);
@@ -67,8 +60,7 @@ public class HistAggrParam extends GetParam {
       buf.writeFloat(regLambda);
     }
 
-    @Override
-    public void deserialize(ByteBuf buf) {
+    @Override public void deserialize(ByteBuf buf) {
       super.deserialize(buf);
       rowId = buf.readInt();
       splitNum = buf.readInt();
@@ -77,8 +69,7 @@ public class HistAggrParam extends GetParam {
       regLambda = buf.readFloat();
     }
 
-    @Override
-    public int bufferLen() {
+    @Override public int bufferLen() {
       return super.bufferLen() + 4 * 2 + 4 * 3;
     }
 
@@ -104,19 +95,15 @@ public class HistAggrParam extends GetParam {
     }
   }
 
+
   private final int rowId;
   private final int splitNum;
   private float minChildWeight;
   private float regAlpha;
   private float regLambda;
 
-  public HistAggrParam(
-      int matrixId,
-      int rowId,
-      int splitNum,
-      float minChildWeight,
-      float regAlpha,
-      float regLambda) {
+  public HistAggrParam(int matrixId, int rowId, int splitNum, float minChildWeight, float regAlpha,
+    float regLambda) {
 
     super(matrixId);
     this.rowId = rowId;
@@ -126,17 +113,16 @@ public class HistAggrParam extends GetParam {
     this.regLambda = regLambda;
   }
 
-  @Override
-  public List<PartitionGetParam> split() {
-    List<PartitionKey> parts =
-        PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
+  @Override public List<PartitionGetParam> split() {
+    List<PartitionKey> parts = PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
     int size = parts.size();
 
     List<PartitionGetParam> partParams = new ArrayList<PartitionGetParam>(size);
 
     for (PartitionKey part : parts) {
-      partParams.add(new HistPartitionAggrParam(matrixId, part, rowId,
-          splitNum, minChildWeight, regAlpha, regLambda));
+      partParams.add(
+        new HistPartitionAggrParam(matrixId, part, rowId, splitNum, minChildWeight, regAlpha,
+          regLambda));
     }
 
     return partParams;

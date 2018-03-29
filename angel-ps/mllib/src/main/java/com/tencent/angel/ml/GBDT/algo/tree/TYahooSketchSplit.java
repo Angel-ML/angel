@@ -25,7 +25,7 @@ import java.util.*;
 /**
  * Description: get candidate split value, using yahoo datasketches
  */
-public class TYahooSketchSplit{
+public class TYahooSketchSplit {
 
   public static float[][] getSplitValue(RegTDataStore dataStore, int splitNum) {
 
@@ -53,16 +53,16 @@ public class TYahooSketchSplit{
       if (sketches[fid].getQuantile(0) > 0) {
         splitSet[fid][0] = 0.0f;
         for (int i = 1; i < splitNum; i++) {
-          splitSet[fid][i] = (float) sketches[fid].getQuantile( (i - 1) / (splitNum - 2));
+          splitSet[fid][i] = (float) sketches[fid].getQuantile((i - 1) / (splitNum - 2));
         }
       } else if (sketches[fid].getQuantile(1) < 0) {
         splitSet[fid][splitNum - 1] = 0.0f;
         for (int i = 0; i < splitNum - 1; i++) {
-          splitSet[fid][i] = (float) sketches[fid].getQuantile( i / (splitNum - 2) );
+          splitSet[fid][i] = (float) sketches[fid].getQuantile(i / (splitNum - 2));
         }
       } else {
         for (int i = 0; i < splitNum; i++) {
-          splitSet[fid][i] = (float) sketches[fid].getQuantile( i / (splitNum - 1) );
+          splitSet[fid][i] = (float) sketches[fid].getQuantile(i / (splitNum - 1));
         }
       }
 
@@ -71,7 +71,8 @@ public class TYahooSketchSplit{
     return splitSet;
   }
 
-  public static float[][] getSplitValue(RegTDataStore dataStore, int splitNum, List<Integer> cateFeat) {
+  public static float[][] getSplitValue(RegTDataStore dataStore, int splitNum,
+    List<Integer> cateFeat) {
 
     int numFeature = dataStore.featureMeta.numFeature;
 
@@ -121,16 +122,16 @@ public class TYahooSketchSplit{
       if (sketches[fid].getQuantile(0) > 0) {
         splitSet[fid][0] = 0.0f;
         for (int i = 1; i < splitNum; i++) {
-          splitSet[fid][i] = (float) sketches[fid].getQuantile( (float) (i - 1) / (splitNum - 2));
+          splitSet[fid][i] = (float) sketches[fid].getQuantile((float) (i - 1) / (splitNum - 2));
         }
       } else if (sketches[fid].getQuantile(1) < 0) {
         splitSet[fid][splitNum - 1] = 0.0f;
         for (int i = 0; i < splitNum - 1; i++) {
-          splitSet[fid][i] = (float) sketches[fid].getQuantile( (float) i / (splitNum - 2) );
+          splitSet[fid][i] = (float) sketches[fid].getQuantile((float) i / (splitNum - 2));
         }
       } else {
         for (int i = 0; i < splitNum; i++) {
-          splitSet[fid][i] = (float) sketches[fid].getQuantile( (float) i / (splitNum - 1) );
+          splitSet[fid][i] = (float) sketches[fid].getQuantile((float) i / (splitNum - 1));
         }
       }
 

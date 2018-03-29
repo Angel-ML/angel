@@ -47,12 +47,12 @@ import collection.JavaConversions._
   *
   */
 
-object LRModel{
+object LRModel {
   def apply(conf: Configuration) = {
     new LRModel(conf)
   }
 
-  def apply(ctx:TaskContext, conf: Configuration) = {
+  def apply(ctx: TaskContext, conf: Configuration) = {
     new LRModel(conf, ctx)
   }
 }
@@ -68,7 +68,7 @@ class LRModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
 
   var blockRow = 1
   var blockCol = -1
-  if(nnz != -1) {
+  if (nnz != -1) {
     blockCol = (feaNum.toDouble / (nnz.toDouble / defaultPartSize)).toInt
   }
   addPSModel(weight, PSModel(weight, 1, feaNum, 1, blockCol).setAverage(true).setRowType(modelType))
@@ -76,11 +76,11 @@ class LRModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
   setSavePath(conf)
   setLoadPath(conf)
 
-  def initModels[N: Numeric : TypeTag](indexes:Array[N]): Unit = {
+  def initModels[N: Numeric : TypeTag](indexes: Array[N]): Unit = {
     val weightParams = getPSModels.get(weight)
     val biasParams = getPSModels.get(intercept)
 
-    if(ctx.getTaskId.getIndex == 0) {
+    if (ctx.getTaskId.getIndex == 0) {
       LOG.info(s"${ctx.getTaskId} is in charge of intial model, start ...")
       val vStddev = 0.0001
       initBiasModel(biasParams)
@@ -104,7 +104,7 @@ class LRModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
     val bias = getBias(getPSModels.get(intercept).getRow(0))
 
     val cost = System.currentTimeMillis() - start
-    LOG.info(s"pull LR Model from PS cost $cost ms." )
+    LOG.info(s"pull LR Model from PS cost $cost ms.")
 
     val predict = new MemoryDataBlock[PredictResult](-1)
 
@@ -119,9 +119,9 @@ class LRModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
     predict
   }
 
-  override def calLossAndUpdateGrad(x:TVector, y: Double,
+  override def calLossAndUpdateGrad(x: TVector, y: Double,
                                     params: util.HashMap[String, TUpdate],
-                                    gradient:util.HashMap[String, TUpdate]): Double = {
+                                    gradient: util.HashMap[String, TUpdate]): Double = {
     val wVector = params.get(weight).asInstanceOf[TVector]
     val bias = getBias(params.get(intercept))
 
@@ -142,7 +142,7 @@ class LRModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
 
     val fxValue = wVector.dot(x) + bias
 
-    1.0/(1.0 + Math.exp(-fxValue)) -> LogisticLoss(fxValue, y)
+    1.0 / (1.0 + Math.exp(-fxValue)) -> LogisticLoss(fxValue, y)
   }
 
   private def getBias(bias: Any): Double = {
@@ -173,9 +173,9 @@ class LRModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
 
   override def psfHook(thresh: mutable.Map[String, Double]): Unit = {
     if (ctx.getTaskId.getIndex == 0 && thresh != null) {
-      getPSModels.foreach{ case (name:String, psm:PSModel) =>
+      getPSModels.foreach { case (name: String, psm: PSModel) =>
         if (getIndexFlag.get(name)) {
-          (0 until psm.row).foreach{ idx =>
+          (0 until psm.row).foreach { idx =>
             psm.update(new SoftThreshold(psm.getMatrixId(), idx, thresh(name)))
           }
         }
@@ -183,7 +183,7 @@ class LRModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
     }
 
     if (thresh != null) {
-      getPSModels.foreach{ case (_, psm: PSModel) =>
+      getPSModels.foreach { case (_, psm: PSModel) =>
         psm.syncClock()
       }
     }
@@ -192,7 +192,8 @@ class LRModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
 
 class LRPredictResult(id: Double, dot: Double, sig: Double) extends PredictResult {
   val df = new DecimalFormat("0")
-  override def getText():String = {
+
+  override def getText(): String = {
     df.format(id) + separator + format.format(dot) + separator + format.format(sig)
   }
 }

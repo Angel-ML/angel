@@ -169,8 +169,7 @@ public class S2STraverseMap extends TraverseHashMap {
     return 1;
   }
 
-  @Override
-  public int bytes() {
+  @Override public int bytes() {
     int sum = 0;
     sum += key.length * 2;
     sum += value.length * 2;
@@ -180,13 +179,11 @@ public class S2STraverseMap extends TraverseHashMap {
     return sum;
   }
 
-  @Override
-  public short getKey(int idx) {
+  @Override public short getKey(int idx) {
     return key[this.idx[idx]];
   }
 
-  @Override
-  public int getVal(int idx) {
+  @Override public int getVal(int idx) {
     return value[this.idx[idx]];
   }
 }

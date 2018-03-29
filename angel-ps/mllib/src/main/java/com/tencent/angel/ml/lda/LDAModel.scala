@@ -123,8 +123,8 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
   addPSModel(wtMat)
   addPSModel(tMat)
 
-//  setSavePath(conf)
-//  setLoadPath(conf)
+  //  setSavePath(conf)
+  //  setLoadPath(conf)
 
   override
   def predict(dataSet: DataBlock[LabeledData]): DataBlock[PredictResult] = {
@@ -144,7 +144,7 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
     for (i <- 0 until paths.length) {
       val path = paths(i)
       LOG.info(s"Load model from path ${path}")
-      val fs   = path.getFileSystem(conf)
+      val fs = path.getFileSystem(conf)
 
       val in = new BufferedReader(new InputStreamReader(fs.open(path)))
 
@@ -174,9 +174,9 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
 
   def getPaths(): Array[Path] = {
     val taskId = ctx.getTaskIndex
-    val total  = ctx.getTotalTaskNum
-    val dir    = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH)
-    val base   = dir + "/" + "word_topic"
+    val total = ctx.getTotalTaskNum
+    val dir = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH)
+    val base = dir + "/" + "word_topic"
 
     val basePath = new Path(base)
     val fs = basePath.getFileSystem(conf)

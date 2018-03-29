@@ -41,7 +41,7 @@ class SVMTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](c
 
 
   /**
-    * @param ctx: task context
+    * @param ctx : task context
     */
   override
   def train(ctx: TaskContext) {

@@ -32,10 +32,11 @@ import org.apache.commons.logging.{Log, LogFactory}
 
 
 /**
-  *  A FTRL LR Learner
+  * A FTRL LR Learner
+  *
   * @param ctx
   */
-class FTRLLRLearner(override val ctx: TaskContext) extends MLLearner(ctx){
+class FTRLLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   val LOG: Log = LogFactory.getLog(classOf[FTRLLRLearner])
 
   // Init LR Model
@@ -98,7 +99,7 @@ class FTRLLRLearner(override val ctx: TaskContext) extends MLLearner(ctx){
   /**
     * validate loss, Auc, Precision or other
     *
-    * @param epoch          : epoch id
+    * @param epoch    : epoch id
     * @param valiData : validata data storage
     */
   def validate(epoch: Int, weight: TDoubleVector, trainData: DataBlock[LabeledData], valiData: DataBlock[LabeledData]) = {

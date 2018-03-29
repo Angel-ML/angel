@@ -25,7 +25,7 @@ import org.apache.commons.logging.LogFactory;
  * Description: hyper-parameter of regression tree model
  */
 
-public class RegTParam implements TrainParam{
+public class RegTParam implements TrainParam {
   private static final Log LOG = LogFactory.getLog(RegTParam.class);
 
   // step size for a tree
@@ -50,7 +50,7 @@ public class RegTParam implements TrainParam{
   // L2 regularization factor
   public float regLambda = (float) MLConf.DEFAULT_ML_GBDT_REG_LAMBDA();
   // L1 regularization factor
-  public float regAlpha = (float)MLConf.DEFAULT_ML_GBDT_REG_ALPHA();
+  public float regAlpha = (float) MLConf.DEFAULT_ML_GBDT_REG_ALPHA();
   // default direction choice
   public int defaultDirection;
   // maximum delta update we can add in weight estimation
@@ -74,11 +74,10 @@ public class RegTParam implements TrainParam{
   // whether to not print info during training.
   public boolean silent = false;
 
-  @Override
-  public void printParam() {
+  @Override public void printParam() {
     LOG.info(String.format("Tree hyper-parameters------"
         + "maxdepth: %d, minSplitLoss: %f, rowSample: %f, colSample: %f", this.maxDepth,
-        this.minSplitLoss, this.rowSample, this.colSample));
+      this.minSplitLoss, this.rowSample, this.colSample));
   }
 
   /**
@@ -137,8 +136,8 @@ public class RegTParam implements TrainParam{
   /**
    * calculate cost of loss function with four statistics.
    *
-   * @param sumGrad the sum of grad
-   * @param sumHess the sum of hess
+   * @param sumGrad  the sum of grad
+   * @param sumHess  the sum of hess
    * @param testGrad the test grad
    * @param testHess the test hess
    * @return the float
@@ -157,7 +156,7 @@ public class RegTParam implements TrainParam{
    * given the loss change, whether we need to invoke pruning.
    *
    * @param lossChg the loss chg
-   * @param depth the depth
+   * @param depth   the depth
    * @return the boolean
    */
   public boolean needPrune(float lossChg, int depth) {
@@ -168,7 +167,7 @@ public class RegTParam implements TrainParam{
    * whether we can split with current hessian.
    *
    * @param sumHess the sum of hess
-   * @param depth the depth
+   * @param depth   the depth
    * @return the boolean
    */
   public boolean cannotSplit(float sumHess, int depth) {

@@ -39,7 +39,7 @@ class SparseLRTrainTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](
 
     val epochNum = conf.getInt(ML_EPOCH_NUM, 5)
     val regParam = conf.getDouble(ML_REG_L1, 0.001)
-    val rho      = conf.getDouble("rho", 0.01)
+    val rho = conf.getDouble("rho", 0.01)
     val threadNum = conf.getInt(ML_WORKER_THREAD_NUM, 1)
 
     LOG.info(s"Start training for SparseLR model with epochNum=$epochNum L1=$regParam rho=$rho")
@@ -47,9 +47,9 @@ class SparseLRTrainTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](
     val learner = new SparseLRLearner(ctx)
 
     learner.setMaxIter(epochNum)
-           .setRegParam(regParam)
-           .setThreadNum(threadNum)
-           .setRho(rho)
+      .setRegParam(regParam)
+      .setThreadNum(threadNum)
+      .setRho(rho)
 
     learner.train(taskDataBlock, null)
   }
@@ -59,7 +59,7 @@ class SparseLRTrainTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](
     *
     * @param key   the key
     * @param value the value
-    *     */
+    **/
   override
   def parse(key: LongWritable, value: Text): LabeledData = {
     dataParser.parse(value.toString)

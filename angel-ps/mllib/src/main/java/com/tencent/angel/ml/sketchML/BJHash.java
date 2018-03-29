@@ -23,8 +23,7 @@ public class BJHash extends Int2IntHash {
     super(length);
   }
 
-  @Override
-  public int encode(int key) {
+  @Override public int encode(int key) {
     key = (key + 0x7ed55d16) + (key << 12);
     key = (key ^ 0xc761c23c) ^ (key >> 19);
     key = (key + 0x165667b1) + (key << 5);

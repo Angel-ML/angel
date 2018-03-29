@@ -60,13 +60,14 @@ public class RegTree {
 
   }
 
-  public void clear() {}
+  public void clear() {
+  }
 
 
   /**
    * get the leaf index of an instances.
    *
-   * @param feat the feature vector of an instances
+   * @param feat   the feature vector of an instances
    * @param rootId the start node id
    * @return the leaf index
    */
@@ -77,7 +78,7 @@ public class RegTree {
   /**
    * get the prediction of regression tree.
    *
-   * @param feat the feature vector of an instances
+   * @param feat   the feature vector of an instances
    * @param rootId the start node id
    * @return the weight of leaf
    */

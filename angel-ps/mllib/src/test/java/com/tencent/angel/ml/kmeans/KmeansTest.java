@@ -40,8 +40,7 @@ public class KmeansTest {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
-  @Before
-  public void setup() throws Exception {
+  @Before public void setup() throws Exception {
     try {
       String dataFmt = "libsvm";
 
@@ -85,14 +84,13 @@ public class KmeansTest {
     }
   }
 
-  @Test
-  public void testKMeans() throws Exception {
+  @Test public void testKMeans() throws Exception {
     trainOnLocalClusterTest();
     predictOnLocalClusterTest();
   }
 
-  private void trainOnLocalClusterTest() throws Exception{
-    try{
+  private void trainOnLocalClusterTest() throws Exception {
+    try {
       // Set trainning data path
       conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
       // Set save model path

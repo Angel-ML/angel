@@ -27,15 +27,15 @@ import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 
-abstract class MLLearner(val ctx:TaskContext) {
+abstract class MLLearner(val ctx: TaskContext) {
   val globalMetrics = new GlobalMetrics(ctx)
   val conf = ctx.getConf();
 
   /**
     * Train a ML Model
- *
+    *
     * @param train : input train data storage
-    * @param vali : validate data storage
+    * @param vali  : validate data storage
     * @return : a learned model
     */
   def train(train: DataBlock[LabeledData], vali: DataBlock[LabeledData]): MLModel

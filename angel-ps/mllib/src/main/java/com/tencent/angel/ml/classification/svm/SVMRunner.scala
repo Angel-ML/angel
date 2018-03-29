@@ -32,8 +32,8 @@ class SVMRunner extends MLRunner {
 
   /**
     * Run SVM train task
- *
-    * @param conf: configuration of algorithm and resource
+    *
+    * @param conf : configuration of algorithm and resource
     */
   override def train(conf: Configuration): Unit = {
     conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
@@ -43,8 +43,8 @@ class SVMRunner extends MLRunner {
 
   /**
     * Run SVM predict task
- *
-    * @param conf: configuration of algorithm and resource
+    *
+    * @param conf : configuration of algorithm and resource
     */
   override def predict(conf: Configuration): Unit = {
     conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)

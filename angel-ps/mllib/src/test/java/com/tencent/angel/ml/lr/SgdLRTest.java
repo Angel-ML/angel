@@ -38,17 +38,18 @@ public class SgdLRTest {
   private static final Log LOG = LogFactory.getLog(SgdLRTest.class);
   private static String LOCAL_FS = FileSystem.DEFAULT_FS;
   private static String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
+
   static {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
+
   /**
    * set parameter values of conf
    */
-  @Before
-  public void setConf() throws Exception {
+  @Before public void setConf() throws Exception {
     try {
       // Feature number of train data
-      int featureNum = 124;
+      long featureNum = 10000000005L;
       // Total iteration number
       int epochNum = 10;
       // Validation sample Ratio
@@ -60,7 +61,7 @@ public class SgdLRTest {
       // Batch number
       int batchNum = 10;
       // Model type
-      String modelType = String.valueOf(RowType.T_DOUBLE_DENSE);
+      String modelType = String.valueOf(RowType.T_DOUBLE_SPARSE_LONGKEY);
 
       // Learning rate
       double learnRate = 1.0;
@@ -97,15 +98,14 @@ public class SgdLRTest {
       conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
       conf.set(MLConf.ML_LEARN_DECAY(), String.valueOf(decay));
       conf.set(MLConf.ML_REG_L2(), String.valueOf(reg));
-      conf.setLong(MLConf.ML_FEATURE_NNZ(), 124L);
+      conf.setLong(MLConf.ML_FEATURE_NNZ(), 125L);
     } catch (Exception x) {
       LOG.error("setup failed ", x);
       throw x;
     }
   }
 
-  @Test
-  public void testLR() throws Exception {
+  @Test public void testLR() throws Exception {
     trainOnLocalClusterTest();
     incTrainTest();
     predictTest();
@@ -135,8 +135,9 @@ public class SgdLRTest {
   }
 
   public void incTrainTest() throws Exception {
-    LOG.info("=====================================incTrainTest===================================");
-    try{
+    LOG
+      .info("=====================================incTrainTest===================================");
+    try {
       String inputPath = "./src/test/data/lr/a9a.train";
       String loadPath = LOCAL_FS + TMP_PATH + "/model";
       String savePath = LOCAL_FS + TMP_PATH + "/newmodel";

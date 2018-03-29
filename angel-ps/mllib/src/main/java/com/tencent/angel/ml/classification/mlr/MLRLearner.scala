@@ -90,7 +90,7 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     * run mini-batch gradient descent MLR
     *
     * @param trainData : trainning data storage
-    * @param lr : learning rate
+    * @param lr        : learning rate
     * @param batchSize : number of samples per mini-batch
     */
   def miniBatchGD[M <: TIntDoubleVector](trainData: DataBlock[LabeledData],
@@ -132,7 +132,7 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
         val pre = (0 until rank).map(i => softmax(i) * sigmoid(i)).reduce(_ + _)
 
         val loss = {
-          if ( y == 1 ) -Math.log(pre)
+          if (y == 1) -Math.log(pre)
           else -Math.log(1 - pre)
         }
         batchLoss += loss
@@ -140,7 +140,7 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
         // Update sigmoid parameters
         (0 until rank).map(i => {
           var temp = softmax(i) * sigmoid(i) * (1 - sigmoid(i)) * y
-          if ( y == 1 ) {
+          if (y == 1) {
             temp /= (-pre)
           } else {
             temp /= (pre - 1)
@@ -150,7 +150,7 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
         })
         (0 until rank).map(i => {
           var temp = {
-            if ( y == 1 ) {
+            if (y == 1) {
               softmax(i) * (1 - sigmoid(i) / pre)
             } else {
               softmax(i) * (1 - (1 - sigmoid(i)) / (1 - pre))
@@ -227,12 +227,12 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     */
   def loopingData(trainData: DataBlock[LabeledData]): (TAbstractVector, Double) = {
     var data = trainData.read()
-    if ( data == null ) {
+    if (data == null) {
       trainData.resetReadIndex()
       data = trainData.read()
     }
 
-    if ( data != null )
+    if (data != null)
       (data.getX, data.getY)
     else
       throw new AngelException("Train data storage is empty or corrupted.")
@@ -299,7 +299,7 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       s"trainData loss = ${trainLoss} ")
     globalMetrics.metric(MLConf.TRAIN_LOSS, trainLoss)
 
-    if ( valiData.size > 0 ) {
+    if (valiData.size > 0) {
       val validLoss = evaluate(valiData, weight)
       LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epoch " +
         s"validationData loss=${validLoss} ")
@@ -330,7 +330,7 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       val pre = (0 until rank).map(i => softmax(i) * sigmoid(i)).reduce(_ + _)
 
       loss += {
-        if ( y == 1 ) -Math.log(pre)
+        if (y == 1) -Math.log(pre)
         else -Math.log(1 - pre)
       }
     }
@@ -349,7 +349,7 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     val random = new Random()
 
     for (row <- 0 until rank) {
-      if ( row % totalTask == taskId ) {
+      if (row % totalTask == taskId) {
         val randV = new DenseDoubleVector(feaNum);
         randV.setRowId(row)
 

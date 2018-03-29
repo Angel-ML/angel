@@ -48,8 +48,8 @@ public class CMSketch {
       //else if (Math.random() > 0.5) {
       //  t[i][code] = freq;
       //}
-      else if (Math.abs(t[i][code]-zeroIdx) > Math.abs(freq-zeroIdx)
-              && (t[i][code]-zeroIdx)*(freq-zeroIdx) > 0) {
+      else if (Math.abs(t[i][code] - zeroIdx) > Math.abs(freq - zeroIdx)
+        && (t[i][code] - zeroIdx) * (freq - zeroIdx) > 0) {
         //System.out.println("Change from " + t[i][code] + " to " + freq);
         t[i][code] = freq;
       }

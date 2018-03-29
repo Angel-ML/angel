@@ -43,7 +43,7 @@ object MFModel {
   * User model a UserVecs storage, each UserVec represents a user by a rank-dim vector.
   * To save storage, we only cached items that appears in the local worker trainning data.
   *
-  * @param _ctx  : context of running task
+  * @param _ctx : context of running task
   * @param conf : configuration of algorithm
   */
 class MFModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {

@@ -20,30 +20,33 @@ package com.tencent.angel.ml.utils
 import com.tencent.angel.ml.conf.MLConf
 
 object ReflectionUtils {
+
   import scala.reflect.runtime.{universe => ru}
+
   private lazy val rootMirror = ru.runtimeMirror(getClass.getClassLoader)
-  
+
   def getAttr(item: String): String = {
     getCompanionAttr(item)
   }
-  
+
   /**
     * Used for python code to get MLConf parameters, since MLConf.scala is a companion object,
     * we add MLConf class, although it contains nothing.
+    *
     * @param item The fields that python code want to get
-    * @param tt Rutime TypeTag
+    * @param tt   Rutime TypeTag
     * @return The fields value
     */
   def getCompanionAttr(item: String)(implicit tt: ru.TypeTag[MLConf]): String = {
-    
+
     val classMirror = rootMirror.reflectClass(tt.tpe.typeSymbol.asClass)
     val companionSymbol = classMirror.symbol.companion
     val companionInstance = rootMirror.reflectModule(companionSymbol.asModule)
     val companionMirror = rootMirror.reflect(companionInstance.instance)
-    
+
     val fieldSymbol = companionSymbol.typeSignature.decl(ru.TermName(item)).asTerm
     val fieldMirror = companionMirror.reflectField(fieldSymbol)
-    
+
     fieldMirror.get.asInstanceOf[String]
   }
 }

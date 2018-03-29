@@ -34,8 +34,7 @@ public class MathsTest {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
-  @Test
-  public void testSigmoid() throws Exception {
+  @Test public void testSigmoid() throws Exception {
     float data[] = {0.000001f, 1f, 100f, 1000f};
     for (int i = 0; i < data.length; i++) {
       // LOG.info(sigmoid(data[i]));
@@ -44,16 +43,14 @@ public class MathsTest {
     }
   }
 
-  @Test
-  public void testSigmoid1() throws Exception {
+  @Test public void testSigmoid1() throws Exception {
     double data[] = {0.000001, 1, 100, 1000};
     for (int i = 0; i < data.length; i++) {
       assertTrue((Maths.sigmoid(data[i]) > 0.00) && (Maths.sigmoid(data[i]) <= 1.00));
     }
   }
 
-  @Test
-  public void testSoftmax() throws Exception {
+  @Test public void testSoftmax() throws Exception {
     double data[] = {0.2, 3, 4, 900, 1};
     Maths.softmax(data);
     for (int i = 0; i < data.length; i++) {
@@ -62,8 +59,7 @@ public class MathsTest {
 
   }
 
-  @Test
-  public void testSoftmax1() throws Exception {
+  @Test public void testSoftmax1() throws Exception {
     float data[] = {0.2f, 3f, 4f, 900f, 1f};
     Maths.softmax(data);
     for (int i = 0; i < data.length; i++) {
@@ -71,8 +67,7 @@ public class MathsTest {
     }
   }
 
-  @Test
-  public void testThresholdL1() throws Exception {
+  @Test public void testThresholdL1() throws Exception {
     double data[] = {0.2, 3, -4, 900, -200};
     assertTrue(Maths.thresholdL1(data[0], 20) == 0);
     assertTrue(Maths.thresholdL1(data[1], 20) == 0);
@@ -81,8 +76,7 @@ public class MathsTest {
     assertTrue(Maths.thresholdL1(data[4], 20) == -180.0);
   }
 
-  @Test
-  public void testThresholdL11() throws Exception {
+  @Test public void testThresholdL11() throws Exception {
     float data[] = {0.2f, 3f, -4f, 900f, -200f};
     assertTrue(Maths.thresholdL1(data[0], 20) == 0f);
     assertTrue(Maths.thresholdL1(data[1], 20) == 0f);
@@ -91,8 +85,7 @@ public class MathsTest {
     assertTrue(Maths.thresholdL1(data[4], 20) == -180.0f);
   }
 
-  @Test
-  public void testIsEven() throws Exception {
+  @Test public void testIsEven() throws Exception {
     int data1[] = {2, 4, 6, 8, 10};
     for (int i = 0; i < data1.length; i++)
       assertTrue(Maths.isEven(data1[i]));
@@ -101,8 +94,7 @@ public class MathsTest {
       assertFalse(Maths.isEven(data2[i]));
   }
 
-  @Test
-  public void testPow() throws Exception {
+  @Test public void testPow() throws Exception {
     int a[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
     for (int i = 0; i < a.length; i++)
       assertTrue(Maths.pow(a[i], 0) == 1);
@@ -117,13 +109,11 @@ public class MathsTest {
       assertTrue(Maths.pow(a[i], -2) == a[i] * a[i]);
   }
 
-  @Test
-  public void testShuffle() throws Exception {
+  @Test public void testShuffle() throws Exception {
 
   }
 
-  @Test
-  public void testIntList2Arr() throws Exception {
+  @Test public void testIntList2Arr() throws Exception {
     int data[] = {-1, 2, 3, 900};
     List<Integer> integers = new ArrayList();
     for (int i = 0; i < data.length; i++)
@@ -132,8 +122,7 @@ public class MathsTest {
     assertArrayEquals(data, test);
   }
 
-  @Test
-  public void testFloatList2Arr() throws Exception {
+  @Test public void testFloatList2Arr() throws Exception {
     float data[] = {-1f, 2f, 3f, 900f};
     List<Float> floats = new ArrayList();
     for (int i = 0; i < data.length; i++)
@@ -143,20 +132,17 @@ public class MathsTest {
       assertEquals(data[i], test[i], 0.0f);
   }
 
-  @Test
-  public void testList2Arr() throws Exception {
+  @Test public void testList2Arr() throws Exception {
 
   }
 
-  @Test
-  public void testFindMaxIndex() throws Exception {
+  @Test public void testFindMaxIndex() throws Exception {
     float data[] = {-1f, 2f, 3f, 900f};
     int index = Maths.findMaxIndex(data);
     assertEquals(index, 3);
   }
 
-  @Test
-  public void testDouble2Float() throws Exception {
+  @Test public void testDouble2Float() throws Exception {
     float data[] = {-1.00f, 2.00f, 3.00f, 900.00f};
     double test[] = {-1, 2, 3, 900};
     float dataTest[] = Maths.double2Float(test);
@@ -164,8 +150,7 @@ public class MathsTest {
       assertEquals(data[i], dataTest[i], 0.0f);
   }
 
-  @Test
-  public void testMain() throws Exception {
+  @Test public void testMain() throws Exception {
 
   }
 }

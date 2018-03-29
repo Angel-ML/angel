@@ -32,7 +32,7 @@ import org.apache.hadoop.io.{LongWritable, Text}
   * P(Y=+1|X) = 1 / [1+ exp(-dot(w,x))]. This task learns a binomial logistic regression model
   * with mini-batch gradient descent.
   *
-  * @param ctx: task context
+  * @param ctx : task context
   **/
 
 
@@ -47,7 +47,7 @@ class LinearRegTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, T
   var validDataStorage = new MemoryDataBlock[LabeledData](-1)
 
   /**
-    * @param ctx: task context
+    * @param ctx : task context
     */
   @throws[Exception]
   def train(ctx: TaskContext) {

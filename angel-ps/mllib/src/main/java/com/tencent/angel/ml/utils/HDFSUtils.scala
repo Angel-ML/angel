@@ -28,10 +28,10 @@ object HDFSUtils {
 
   val LOG = LogFactory.getLog("HDFSUtils")
 
-  def readFeatureNum(path: String, conf: Configuration) : Int = {
+  def readFeatureNum(path: String, conf: Configuration): Int = {
     val maxdimPath = new Path(path)
     val fin = maxdimPath.getFileSystem(conf).open(maxdimPath)
-    if (! maxdimPath.getFileSystem(conf).exists(maxdimPath)) {
+    if (!maxdimPath.getFileSystem(conf).exists(maxdimPath)) {
       LOG.info("maxdimPath is null.")
     }
 

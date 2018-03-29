@@ -51,14 +51,13 @@ public class SoftmaxMultiClassObj implements ObjFunc {
 
   /**
    * get gradient over each of predictions, given existing information.
-   * 
-   * @param preds: prediction of current round
+   *
+   * @param preds:    prediction of current round
    * @param dataStore information about labels, weights, groups in rank
    * @param iteration current iteration number. return:_gpair output of get gradient, saves gradient
-   *        and second order gradient in
+   *                  and second order gradient in
    */
-  @Override
-  public List<GradPair> calGrad(float[] preds, RegTDataStore dataStore, int iteration) {
+  @Override public List<GradPair> calGrad(float[] preds, RegTDataStore dataStore, int iteration) {
     assert preds.length == this.numClass * dataStore.labels.length;
     List<GradPair> rec = new ArrayList<GradPair>();
     int ndata = preds.length / numClass;
@@ -87,7 +86,7 @@ public class SoftmaxMultiClassObj implements ObjFunc {
     }
     if (labelError >= 0 && labelError < numClass) {
       LOG.error(String.format("SoftmaxMultiClassObj: label must be in [0, num_class), "
-          + "numClass = %d, but found %d in label", numClass, labelError));
+        + "numClass = %d, but found %d in label", numClass, labelError));
     }
     return rec;
   }
@@ -113,8 +112,7 @@ public class SoftmaxMultiClassObj implements ObjFunc {
     return rec;
   }
 
-  @Override
-  public String defaultEvalMetric() {
+  @Override public String defaultEvalMetric() {
     return "merror";
   }
 
@@ -124,8 +122,7 @@ public class SoftmaxMultiClassObj implements ObjFunc {
    *
    * @param preds
    */
-  @Override
-  public void transPred(List<Float> preds) {
+  @Override public void transPred(List<Float> preds) {
     this.transform(preds, this.outputProb);
   }
 
@@ -135,8 +132,7 @@ public class SoftmaxMultiClassObj implements ObjFunc {
    *
    * @param preds
    */
-  @Override
-  public void transEval(List<Float> preds) {
+  @Override public void transEval(List<Float> preds) {
     this.transform(preds, true);
   }
 
@@ -146,8 +142,7 @@ public class SoftmaxMultiClassObj implements ObjFunc {
    *
    * @param base_score
    */
-  @Override
-  public float prob2Margin(float base_score) {
+  @Override public float prob2Margin(float base_score) {
     return 0;
   }
 }

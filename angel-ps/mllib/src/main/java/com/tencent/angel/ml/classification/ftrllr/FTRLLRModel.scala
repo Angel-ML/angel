@@ -27,12 +27,12 @@ import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
 
-object FTRLLRModel{
+object FTRLLRModel {
   def apply(conf: Configuration) = {
     new FTRLLRModel(conf)
   }
 
-  def apply(ctx:TaskContext, conf: Configuration) = {
+  def apply(ctx: TaskContext, conf: Configuration) = {
     new FTRLLRModel(conf, ctx)
   }
 }
@@ -55,13 +55,13 @@ class FTRLLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
 
   // PSModel z, z^t = \Sigma_{s=1}^t g - \Sigma_{s=1}^t \delta^s \cdot w
   val zMat = PSModel(FTRL_LR_Z, 1, feaNum)
-            .setAverage(true)
-            .setRowType(RowType.T_DOUBLE_SPARSE)
+    .setAverage(true)
+    .setRowType(RowType.T_DOUBLE_SPARSE)
 
   // PSModel n, n^t = \Sigma_{i=1}^t g_i^2
   val nMat = PSModel(FTRL_LR_N, 1, feaNum).setAverage(true)
-            .setAverage(true)
-            .setRowType(RowType.T_DOUBLE_SPARSE)
+    .setAverage(true)
+    .setRowType(RowType.T_DOUBLE_SPARSE)
 
   addPSModel(FTRL_LR_Z, zMat)
   addPSModel(FTRL_LR_N, nMat)

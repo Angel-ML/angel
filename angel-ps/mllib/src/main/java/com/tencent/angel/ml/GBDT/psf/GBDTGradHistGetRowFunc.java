@@ -40,7 +40,9 @@ import java.util.List;
  */
 public class GBDTGradHistGetRowFunc extends GetRowFunc {
 
-  public GBDTGradHistGetRowFunc() {}
+  public GBDTGradHistGetRowFunc() {
+  }
+
   /**
    * Creates a function.
    *
@@ -52,11 +54,10 @@ public class GBDTGradHistGetRowFunc extends GetRowFunc {
 
   private static final Log LOG = LogFactory.getLog(GBDTGradHistGetRowFunc.class);
 
-  @Override
-  public PartitionGetResult partitionGet(PartitionGetParam partParam) {
+  @Override public PartitionGetResult partitionGet(PartitionGetParam partParam) {
 
     HistAggrParam.HistPartitionAggrParam param = (HistAggrParam.HistPartitionAggrParam) partParam;
-    
+
     LOG.info("For the gradient histogram of GBT, we use PS to find the optimal split");
 
     GBDTParam gbtparam = new GBDTParam();
@@ -66,7 +67,7 @@ public class GBDTGradHistGetRowFunc extends GetRowFunc {
     gbtparam.regLambda = param.getRegLambda();
 
     ServerDenseDoubleRow row = (ServerDenseDoubleRow) psContext.getMatrixStorageManager()
-            .getRow(param.getMatrixId(), param.getRowId(), param.getPartKey().getPartitionId());
+      .getRow(param.getMatrixId(), param.getRowId(), param.getPartKey().getPartitionId());
 
     SplitEntry splitEntry = GradHistHelper.findSplitOfServerRow(row, gbtparam);
 
@@ -81,19 +82,19 @@ public class GBDTGradHistGetRowFunc extends GetRowFunc {
     double rightSumHess = rightGradStat.sumHess;
 
     LOG.info(String.format(
-        "split of matrix[%d] part[%d] row[%d]: fid[%d], split index[%d], loss gain[%f], "
-            + "left sumGrad[%f], left sum hess[%f], right sumGrad[%f], right sum hess[%f]",
-        param.getMatrixId(), param.getPartKey().getPartitionId(), param.getRowId(), fid,
-        splitIndex, lossGain, leftSumGrad, leftSumHess, rightSumGrad, rightSumHess));
+      "split of matrix[%d] part[%d] row[%d]: fid[%d], split index[%d], loss gain[%f], "
+        + "left sumGrad[%f], left sum hess[%f], right sumGrad[%f], right sum hess[%f]",
+      param.getMatrixId(), param.getPartKey().getPartitionId(), param.getRowId(), fid, splitIndex,
+      lossGain, leftSumGrad, leftSumHess, rightSumGrad, rightSumHess));
 
-    int startFid = (int)row.getStartCol() / (2 * gbtparam.numSplit);
+    int startFid = (int) row.getStartCol() / (2 * gbtparam.numSplit);
     //int sendStartCol = startFid * 7; // each split contains 7 doubles
-    int sendStartCol = (int)row.getStartCol();
+    int sendStartCol = (int) row.getStartCol();
     int sendEndCol = sendStartCol + 7;
     ServerDenseDoubleRow sendRow =
-        new ServerDenseDoubleRow(param.getRowId(), sendStartCol, sendEndCol);
-    LOG.info(String.format(
-        "Create server row of split result: row id[%d], start col[%d], end col[%d]",
+      new ServerDenseDoubleRow(param.getRowId(), sendStartCol, sendEndCol);
+    LOG.info(String
+      .format("Create server row of split result: row id[%d], start col[%d], end col[%d]",
         param.getRowId(), sendStartCol, sendEndCol));
     sendRow.getData().put(0, fid);
     sendRow.getData().put(1, splitIndex);
@@ -106,19 +107,18 @@ public class GBDTGradHistGetRowFunc extends GetRowFunc {
     return new PartitionGetRowResult(sendRow);
   }
 
-  @Override
-  public GetResult merge(List<PartitionGetResult> partResults) {
+  @Override public GetResult merge(List<PartitionGetResult> partResults) {
     int size = partResults.size();
     List<ServerRow> rowSplits = new ArrayList<ServerRow>(size);
     for (int i = 0; i < size; i++) {
-      rowSplits.add(((PartitionGetRowResult)partResults.get(i)).getRowSplit());
+      rowSplits.add(((PartitionGetRowResult) partResults.get(i)).getRowSplit());
     }
 
     SplitEntry splitEntry = new SplitEntry();
 
     for (int i = 0; i < size; i++) {
       ServerDenseDoubleRow row =
-          (ServerDenseDoubleRow) ((PartitionGetRowResult)partResults.get(i)).getRowSplit();
+        (ServerDenseDoubleRow) ((PartitionGetRowResult) partResults.get(i)).getRowSplit();
       int fid = (int) row.getData().get(0);
       if (fid != -1) {
         int splitIndex = (int) row.getData().get(1);
@@ -128,9 +128,9 @@ public class GBDTGradHistGetRowFunc extends GetRowFunc {
         float rightSumGrad = (float) row.getData().get(5);
         float rightSumHess = (float) row.getData().get(6);
         LOG.debug(String.format(
-            "psFunc: the best split after looping a split: fid[%d], fvalue[%d], loss gain[%f]"
-                + ", leftSumGrad[%f], leftSumHess[%f], rightSumGrad[%f], rightSumHess[%f]",
-            fid, splitIndex, lossGain, leftSumGrad, leftSumHess, rightSumGrad, rightSumHess));
+          "psFunc: the best split after looping a split: fid[%d], fvalue[%d], loss gain[%f]"
+            + ", leftSumGrad[%f], leftSumHess[%f], rightSumGrad[%f], rightSumHess[%f]", fid,
+          splitIndex, lossGain, leftSumGrad, leftSumHess, rightSumGrad, rightSumHess));
         GradStats curLeftGradStat = new GradStats(leftSumGrad, leftSumHess);
         GradStats curRightGradStat = new GradStats(rightSumGrad, rightSumHess);
         SplitEntry curSplitEntry = new SplitEntry(fid, splitIndex, lossGain);

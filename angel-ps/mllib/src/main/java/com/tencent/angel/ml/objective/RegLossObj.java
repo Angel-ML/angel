@@ -45,12 +45,11 @@ public class RegLossObj implements ObjFunc {
    * round info information about labels, weights, groups in rank iteration current iteration
    * number. return:_gpair output of get gradient, saves gradient and second order gradient in
    *
-   * @param preds: predictive value
+   * @param preds:     predictive value
    * @param dataStore: data meta info
    * @param iteration: current interation
    */
-  @Override
-  public List<GradPair> calGrad(float[] preds, RegTDataStore dataStore, int iteration) {
+  @Override public List<GradPair> calGrad(float[] preds, RegTDataStore dataStore, int iteration) {
     assert preds.length > 0;
     assert preds.length == dataStore.labels.length;
     List<GradPair> rec = new ArrayList<GradPair>();
@@ -64,9 +63,8 @@ public class RegLossObj implements ObjFunc {
         w *= scalePosWeight;
       if (!loss.checkLabel(dataStore.labels[i]))
         label_correct = false;
-      GradPair pair =
-          new GradPair(loss.firOrderGrad(p, dataStore.labels[i]) * w, loss.secOrderGrad(p,
-                  dataStore.labels[i]) * w);
+      GradPair pair = new GradPair(loss.firOrderGrad(p, dataStore.labels[i]) * w,
+        loss.secOrderGrad(p, dataStore.labels[i]) * w);
       rec.add(pair);
     }
     if (!label_correct) {
@@ -81,8 +79,7 @@ public class RegLossObj implements ObjFunc {
    *
    * @param preds
    */
-  @Override
-  public void transPred(List<Float> preds) {
+  @Override public void transPred(List<Float> preds) {
     int ndata = preds.size();
     for (int j = 0; j < ndata; ++j) {
       preds.set(j, loss.transPred(preds.get(j)));
@@ -95,8 +92,7 @@ public class RegLossObj implements ObjFunc {
    *
    * @param preds
    */
-  @Override
-  public void transEval(List<Float> preds) {
+  @Override public void transEval(List<Float> preds) {
     this.transPred(preds);
   }
 
@@ -106,13 +102,11 @@ public class RegLossObj implements ObjFunc {
    *
    * @param base_score
    */
-  @Override
-  public float prob2Margin(float base_score) {
+  @Override public float prob2Margin(float base_score) {
     return loss.prob2Margin(base_score);
   }
 
-  @Override
-  public String defaultEvalMetric() {
+  @Override public String defaultEvalMetric() {
     return loss.defaultEvalMetric();
   }
 }

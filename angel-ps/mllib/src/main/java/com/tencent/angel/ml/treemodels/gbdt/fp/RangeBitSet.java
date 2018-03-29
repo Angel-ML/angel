@@ -1,3 +1,20 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
 package com.tencent.angel.ml.treemodels.gbdt.fp;
 
 import com.tencent.angel.common.Serialize;
@@ -20,8 +37,8 @@ public class RangeBitSet implements Serialize {
   private int offset;
 
   public RangeBitSet(int from, int to) {
-    LOG.debug(String.format("New RangeBitSet: [%d-%d], numBytes[%d]",
-            from, to, needNumBytes(from, to)));
+    LOG.debug(
+      String.format("New RangeBitSet: [%d-%d], numBytes[%d]", from, to, needNumBytes(from, to)));
     this.from = from;
     this.to = to;
     this.offset = from & 0b111;
@@ -33,10 +50,9 @@ public class RangeBitSet implements Serialize {
     this.to = to;
     this.offset = from & 0b111;
     if (bits.length != needNumBytes(from, to)) {
-      LOG.error(String.format("Invalid RangeBitSet size: %d, should be %d",
-              bits.length, needNumBytes(from, to)));
-    }
-    else
+      LOG.error(String
+        .format("Invalid RangeBitSet size: %d, should be %d", bits.length, needNumBytes(from, to)));
+    } else
       this.bits = bits;
   }
 
@@ -48,8 +64,8 @@ public class RangeBitSet implements Serialize {
   }
 
   private int needNumBytes(int from, int to) {
-    int first = (int)(from >> 3);
-    int last = (int)(to >> 3);
+    int first = (int) (from >> 3);
+    int last = (int) (to >> 3);
     return last - first + 1;
   }
 
@@ -57,14 +73,14 @@ public class RangeBitSet implements Serialize {
     index = index - from + offset;
     int x = index >> 3;
     int y = index & 0b111;
-    bits[x] = (byte)(bits[x] | (1 << y));
+    bits[x] = (byte) (bits[x] | (1 << y));
   }
 
   public void clear(int index) {
     index = index - from + offset;
     int x = index >> 3;
     int y = index & 0b111;
-    bits[x] = (byte)(bits[x] & (~(1 << y)));
+    bits[x] = (byte) (bits[x] & (~(1 << y)));
   }
 
   // TODO: use arraycopy to make it faster
@@ -72,7 +88,8 @@ public class RangeBitSet implements Serialize {
     int from = other.getRangeFrom(), to = other.getRangeTo();
     assert from >= this.from && to <= this.to;
     for (int i = from; i <= to; i++) {
-      if (other.get(i)) set(i);
+      if (other.get(i))
+        set(i);
     }
   }
 
@@ -85,8 +102,8 @@ public class RangeBitSet implements Serialize {
 
   public RangeBitSet subset(int newFrom, int newTo) {
     if ((newFrom <= from && newTo >= to) || newFrom > newTo) {
-      LOG.error(String.format("Invalid subset range: [%d-%d], should be in [%d-%d]",
-              newFrom, newTo, from, to));
+      LOG.error(String
+        .format("Invalid subset range: [%d-%d], should be in [%d-%d]", newFrom, newTo, from, to));
       return null;
     }
     LOG.debug(String.format("Create subset: [%d-%d]", newFrom, newTo));
@@ -106,8 +123,7 @@ public class RangeBitSet implements Serialize {
       return null;
     if (newFrom != from || newTo != to) {
       return subset(newFrom, newTo);
-    }
-    else {
+    } else {
       return this;
     }
   }
@@ -128,21 +144,20 @@ public class RangeBitSet implements Serialize {
   public int getNumValid() {
     int res = 0;
     for (int i = from; i <= to; i++) {
-      if (get(i)) res++;
+      if (get(i))
+        res++;
     }
     return res;
   }
 
-  @Override
-  public void serialize(ByteBuf buf) {
+  @Override public void serialize(ByteBuf buf) {
     buf.writeInt(from);
     buf.writeInt(to);
     buf.writeInt(offset);
     buf.writeBytes(bits);
   }
 
-  @Override
-  public void deserialize(ByteBuf buf) {
+  @Override public void deserialize(ByteBuf buf) {
     from = buf.readInt();
     to = buf.readInt();
     offset = buf.readInt();
@@ -151,8 +166,7 @@ public class RangeBitSet implements Serialize {
     buf.readBytes(bits);
   }
 
-  @Override
-  public int bufferLen() {
+  @Override public int bufferLen() {
     return 12 + bits.length;
   }
 

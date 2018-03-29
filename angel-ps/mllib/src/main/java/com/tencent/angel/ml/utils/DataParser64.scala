@@ -19,11 +19,11 @@ import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.{SparseLongKeyDummyVector, SparseLongKeySortedDoubleVector}
 
 
-abstract class DataParser64{
+abstract class DataParser64 {
   def parse(value: String): LabeledData
 }
 
-case class Dummy64DataParser(val maxDim: Long, val negY: Boolean) extends DataParser{
+case class Dummy64DataParser(val maxDim: Long, val negY: Boolean) extends DataParser {
   override def parse(value: String): LabeledData = {
     if (null == value) {
       return null
@@ -86,7 +86,7 @@ case class LibSVM64DataParser(val maxDim: Long, val negY: Boolean) extends DataP
 
 object DataParser64 {
 
-  def apply(dataFormat: String, maxDim: Long, negY: Boolean) :DataParser = {
+  def apply(dataFormat: String, maxDim: Long, negY: Boolean): DataParser = {
     dataFormat match {
       case "dummy" => new Dummy64DataParser(maxDim, negY)
       case "libsvm" => new LibSVM64DataParser(maxDim, negY)

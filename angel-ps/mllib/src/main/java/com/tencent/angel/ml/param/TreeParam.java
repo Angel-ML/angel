@@ -55,6 +55,6 @@ public class TreeParam implements TrainParam {
   public void printParam() {
     LOG.info(String.format("Tree hyper-parameters------"
         + "maxdepth: %d, numFeature: %d, minSplitLoss: %f, rowSample: %f, colSample: %f", maxDepth,
-        numFeature, minSplitLoss, rowSample, colSample));
+      numFeature, minSplitLoss, rowSample, colSample));
   }
 }

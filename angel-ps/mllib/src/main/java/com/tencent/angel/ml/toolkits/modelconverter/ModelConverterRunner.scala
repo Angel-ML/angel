@@ -26,7 +26,7 @@ import org.apache.hadoop.conf.Configuration
   * Run model convert task use cluster mode. Normally, use the "ModelConvert" please, which is in the tools package.
   * If your client machine doesn't have enough resources, you can start the Angel job to complete the model convert.
   */
-class ModelConverterRunner extends AppSubmitter{
+class ModelConverterRunner extends AppSubmitter {
 
   /**
     * Run model convert task

@@ -84,8 +84,10 @@ class MLRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](c
     validDataBlock.flush()
 
     val cost = System.currentTimeMillis() - start
-    LOG.info(s"Task[${ctx.getTaskIndex}] preprocessed ${taskDataBlock.size +
-      validDataBlock.size} samples, ${taskDataBlock.size} for train, " +
+    LOG.info(s"Task[${ctx.getTaskIndex}] preprocessed ${
+      taskDataBlock.size +
+        validDataBlock.size
+    } samples, ${taskDataBlock.size} for train, " +
       s"${validDataBlock.size} for validation. feanum=$feaNum")
   }
 

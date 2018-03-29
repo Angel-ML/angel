@@ -38,16 +38,17 @@ public class GetPartFunc extends GetFunc {
     super(param);
   }
 
-  public GetPartFunc() { super(null);}
+  public GetPartFunc() {
+    super(null);
+  }
 
-  @Override
-  public PartitionGetResult partitionGet(PartitionGetParam partParam) {
+  @Override public PartitionGetResult partitionGet(PartitionGetParam partParam) {
     if (partParam instanceof PartitionGetRowsParam) {
       PartitionGetRowsParam param = (PartitionGetRowsParam) partParam;
 
       PartitionKey pkey = param.getPartKey();
       pkey = psContext.getMatrixMetaManager().getMatrixMeta(pkey.getMatrixId())
-          .getPartitionMeta(pkey.getPartitionId()).getPartitionKey();
+        .getPartitionMeta(pkey.getPartitionId()).getPartitionKey();
       int ws = pkey.getStartRow();
       int es = pkey.getEndRow();
 
@@ -65,8 +66,7 @@ public class GetPartFunc extends GetFunc {
     }
   }
 
-  @Override
-  public GetResult merge(List<PartitionGetResult> partResults) {
+  @Override public GetResult merge(List<PartitionGetResult> partResults) {
     return null;
   }
 }

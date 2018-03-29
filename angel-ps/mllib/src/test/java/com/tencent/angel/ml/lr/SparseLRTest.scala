@@ -78,7 +78,7 @@ class SparseLRTest {
   }
 
   @Test
-  def testOnLocalCluster(): Unit= {
+  def testOnLocalCluster(): Unit = {
     trainOnLocalClusterTest()
     predictTest()
   }
@@ -111,7 +111,7 @@ class SparseLRTest {
     // Set actionType prediction
     conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT)
 
-    val runner= new SparseLRRunner
+    val runner = new SparseLRRunner
     runner.predict(conf)
   }
 

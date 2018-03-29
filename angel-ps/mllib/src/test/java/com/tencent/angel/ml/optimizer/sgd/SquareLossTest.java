@@ -34,29 +34,25 @@ public class SquareLossTest {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
-  @Before
-  public void setUp() throws Exception {
+  @Before public void setUp() throws Exception {
 
   }
 
-  @Test
-  public void testLoss() throws Exception {
+  @Test public void testLoss() throws Exception {
     double dot = 1.0, y = 2.0;
     SquareL2Loss squareLoss = new SquareL2Loss();
     double test = squareLoss.loss(dot, y);
     assertEquals(0.50, test, 0.00);
   }
 
-  @Test
-  public void testGrad() throws Exception {
+  @Test public void testGrad() throws Exception {
     double dot = 1.0, y = 2.0;
     SquareL2Loss squareLoss = new SquareL2Loss();
     double test = squareLoss.grad(dot, y);
     assertEquals(1.0, test, 0.00);
   }
 
-  @Test
-  public void testPredict() throws Exception {
+  @Test public void testPredict() throws Exception {
     double data1[] = {1.0, 2.0, 3.0, 4.0};
     DenseDoubleVector denseDoubleVector1 = new DenseDoubleVector(4, data1);
     double data2[] = {1.0, 2.0, 3.0, 4.0};

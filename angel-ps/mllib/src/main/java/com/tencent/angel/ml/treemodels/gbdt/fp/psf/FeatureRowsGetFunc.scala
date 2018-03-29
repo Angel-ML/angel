@@ -148,7 +148,7 @@ class FeatureRowsGetFunc[@specialized(Byte, Short, Int) T <: scala.AnyVal](param
 }
 
 class FeatureRowsGetParam[@specialized(Byte, Short, Int) T <: scala.AnyVal](matrixId: Int, numWorker: Int,
-                          rowIndexes: Array[Int], numBin: Int) extends GetParam(matrixId) {
+                                                                            rowIndexes: Array[Int], numBin: Int) extends GetParam(matrixId) {
   def getNumWorker = numWorker
 
   def getRowIndexes = rowIndexes
@@ -181,7 +181,7 @@ class FeatureRowsGetParam[@specialized(Byte, Short, Int) T <: scala.AnyVal](matr
 }
 
 class FeatureRowsPartitionGetParam[@specialized(Byte, Short, Int) T <: scala.AnyVal](matrixId: Int, partKey: PartitionKey, _rowIndexes: util.List[Int],
-                                                      _numWorker: Int, _numBin: Int) extends PartitionGetParam(matrixId, partKey) {
+                                                                                     _numWorker: Int, _numBin: Int) extends PartitionGetParam(matrixId, partKey) {
   var rowIndexes: util.List[Int] = _rowIndexes
   var numWorker: Int = _numWorker
   var numBin: Int = _numBin

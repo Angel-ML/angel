@@ -42,11 +42,10 @@ public class FTree {
 
   public void build(float[] p) {
     int start = Math.min(2 * length - 1, length + p.length - 1);
-    for (int i = start; i > 0; i --)  {
+    for (int i = start; i > 0; i--) {
       if (i >= length) {
         tree[i] = p[i - length];
-      }
-      else {
+      } else {
         tree[i] = tree[i << 1] + tree[(i << 1) + 1];
       }
     }
@@ -85,7 +84,7 @@ public class FTree {
   }
 
   public static int nextPowerOfTwo(int x) {
-    if(x == 0) {
+    if (x == 0) {
       return 1;
     } else {
       --x;

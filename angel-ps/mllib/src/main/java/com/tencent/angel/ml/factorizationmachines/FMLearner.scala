@@ -35,10 +35,10 @@ import scala.collection.mutable
 
 /**
   * Learner of Factorization machines
- *
-  * @param ctx: context of this task
-  * @param minP: min value of y
-  * @param maxP: max value of y
+  *
+  * @param ctx  : context of this task
+  * @param minP : min value of y
+  * @param maxP : max value of y
   */
 class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Double) extends MLLearner(ctx) {
   val LOG: Log = LogFactory.getLog(classOf[FMLearner])
@@ -90,7 +90,7 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
 
       globalMetrics.metric(fmmodel.FM_OBJ, loss)
 
-      LOG.info(s"Epoch=${ctx.getEpoch}, evaluate loss=${loss/trainData.size()}. " +
+      LOG.info(s"Epoch=${ctx.getEpoch}, evaluate loss=${loss / trainData.size()}. " +
         s"trainCost=$iterCost, " +
         s"valiCost=$valiCost")
 
@@ -108,7 +108,7 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
     * Initialize with random values
     */
   def initModels(): Unit = {
-    if(ctx.getTaskId.getIndex == 0) {
+    if (ctx.getTaskId.getIndex == 0) {
       LOG.info(s"${ctx.getTaskId} is in charge of intial model, start ...")
       fmmodel.w0.zero()
       LOG.info(s"w0 initial finished!")
@@ -128,7 +128,7 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
 
   /**
     * One iteration to train Factorization Machines
- *
+    *
     * @param dataBlock
     * @return
     */
@@ -148,7 +148,7 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
 
     // initial gredient
     var grad_w0: Double = 0.0
-    val capacity = Math.max(w.getDimension/100, 64)
+    val capacity = Math.max(w.getDimension / 100, 64)
     val grad_w1: SparseDoubleVector = new SparseDoubleVector(w.getDimension, capacity)
     val grad_v: mutable.Map[Int, SparseDoubleVector] = new mutable.HashMap[Int, SparseDoubleVector]()
     v.foreach { case (idx, _) => grad_v.put(idx, new SparseDoubleVector(w.getDimension, capacity)) }
@@ -164,7 +164,7 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
       // calculate gradient
       grad_w0 += dm
       grad_w1.plusBy(x, dm)
-      _v.foreach{ case (idx, v_row_) =>
+      _v.foreach { case (idx, v_row_) =>
         val v_row = v_row_.asInstanceOf[DenseDoubleVector]
         val dot = v_row.dot(x)
 
@@ -178,7 +178,7 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
               grad_v(idx).plusBy(i, dm * (dot - v_row.get(i)))
             }
           case ifeat: DenseDoubleVector =>
-            ifeat.getValues.zipWithIndex.foreach{ case (value, i) =>
+            ifeat.getValues.zipWithIndex.foreach { case (value, i) =>
               grad_v(idx).plusBy(i, dm * (dot - v_row.get(i) * value) * value)
             }
           case _ => throw new Exception("Data type not support!")
@@ -193,7 +193,7 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
         batchInnerCounter = 0
         grad_w0 = 0.0
         grad_w1.clear()
-        grad_v.foreach{ case (_, vect) => vect.clear()}
+        grad_v.foreach { case (_, vect) => vect.clear() }
       }
     }
 
@@ -245,25 +245,33 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
           val pre = fmmodel.calModel(x, w0, w, v)
 
           yList(i) = y
-          preList(i) = 1.0/Math.log1p(Math.exp(-pre))
+          preList(i) = 1.0 / Math.log1p(Math.exp(-pre))
 
-          if ( (pre > 0.0 && y > 0) || (pre < 0.0 && y <= 0) ) {
+          if ((pre > 0.0 && y > 0) || (pre < 0.0 && y <= 0)) {
             correct += 1
-            if (pre > 0.0) { tp += 1 } else { tn += 1 }
+            if (pre > 0.0) {
+              tp += 1
+            } else {
+              tn += 1
+            }
           } else {
-            if (pre > 0.0) { fp += 1 } else { fn += 1 }
+            if (pre > 0.0) {
+              fp += 1
+            } else {
+              fn += 1
+            }
           }
 
-          val weight = if ( y > 0 ) {
+          val weight = if (y > 0) {
             conf.getDouble(MLConf.ML_FM_POSITIVE_WEIGHT, 1.0)
           } else {
             conf.getDouble(MLConf.ML_FM_NEGATIVE_WEIGHT, 1.0)
           }
-          loss += weight * Math.log1p(Math.exp(- y * pre))
+          loss += weight * Math.log1p(Math.exp(-y * pre))
         }
 
         val metric = ValidationUtils.calAUC(preList, yList, tp, tn, fp, fn)
-        LOG.info(s"loss=${loss/yList.length}, precision=${correct/yList.length},auc=${metric._1}, " +
+        LOG.info(s"loss=${loss / yList.length}, precision=${correct / yList.length},auc=${metric._1}, " +
           s"trueRecall=${metric._2}, falseRecall=${metric._3}")
     }
 
@@ -271,19 +279,19 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
   }
 
   /**
-    * @param y: label of the instance
-    * @param pre: predict value of the instance
+    * @param y   : label of the instance
+    * @param pre : predict value of the instance
     * @return : dm value
     */
   def derviationMultipler(y: Double, pre: Double): Double = {
     learnType match {
       case "c" =>
-        val weight = if ( y > 0 ) {
+        val weight = if (y > 0) {
           conf.getDouble(MLConf.ML_FM_POSITIVE_WEIGHT, 1.0)
         } else {
           conf.getDouble(MLConf.ML_FM_NEGATIVE_WEIGHT, 1.0)
         }
-        - weight * y  / Math.log1p(Math.exp(y * pre))
+        -weight * y / Math.log1p(Math.exp(y * pre))
       case "r" =>
         pre - y
     }
@@ -300,12 +308,12 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
   }
 
   def updateParameters(w0_param: DenseDoubleVector, w_param: DenseDoubleVector, v_param: mutable.Map[Int, TVector],
-             w0_grad: Double, w_grad: SparseDoubleVector, v_grad: mutable.Map[Int, SparseDoubleVector],
-             numSamples: Int): Unit = {
+                       w0_grad: Double, w_grad: SparseDoubleVector, v_grad: mutable.Map[Int, SparseDoubleVector],
+                       numSamples: Int): Unit = {
     w0_param.plusBy(0, -lr * w0_grad / numSamples)
-    w_param.timesBy(1.0 - lr * reg1).plusBy(w_grad, -lr/numSamples)
-    v_param.foreach{ case (i, vect) =>
-      vect.timesBy(1.0 - lr * reg2).plusBy(v_grad(i), -lr/numSamples)
+    w_param.timesBy(1.0 - lr * reg1).plusBy(w_grad, -lr / numSamples)
+    v_param.foreach { case (i, vect) =>
+      vect.timesBy(1.0 - lr * reg2).plusBy(v_grad(i), -lr / numSamples)
     }
   }
 

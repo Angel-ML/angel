@@ -48,12 +48,12 @@ import scala.reflect.runtime.universe._
   *
   */
 
-object FMModel{
+object FMModel {
   def apply(conf: Configuration) = {
     new FMModel(conf)
   }
 
-  def apply(ctx:TaskContext, conf: Configuration) = {
+  def apply(ctx: TaskContext, conf: Configuration) = {
     new FMModel(conf, ctx)
   }
 }
@@ -67,17 +67,17 @@ class FMModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
   val modelType: RowType = RowType.valueOf(conf.get(MLConf.FM_MODEL_TYPE, RowType.T_DOUBLE_SPARSE.toString))
   addPSModel(intercept, PSModel(intercept, 1, 1).setAverage(true).setRowType(modelType))
   addPSModel(weight, PSModel(weight, 1, feaNum).setAverage(true).setRowType(modelType))
-  private val blockCol = if (rank * feaNum < 1000000) -1 else 1000000/rank
+  private val blockCol = if (rank * feaNum < 1000000) -1 else 1000000 / rank
   addPSModel(vmat, PSModel(vmat, rank, feaNum, rank, blockCol).setAverage(true).setRowType(modelType))
   setSavePath(conf)
   setLoadPath(conf)
 
-  def initModels[N: Numeric : TypeTag](indexes:Array[N]): Unit = {
+  def initModels[N: Numeric : TypeTag](indexes: Array[N]): Unit = {
     val vmatParams = getPSModels.get(vmat)
     val weightParams = getPSModels.get(weight)
     val biasParams = getPSModels.get(intercept)
 
-    if(ctx.getTaskId.getIndex == 0) {
+    if (ctx.getTaskId.getIndex == 0) {
       LOG.info(s"${ctx.getTaskId} is in charge of intial model, start ...")
       val vStddev = 0.0001
       initBiasModel(biasParams)
@@ -98,7 +98,7 @@ class FMModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
     biasParams.syncClock()
   }
 
-  private def calModel(x:TVector, vMatrix:TMatrix[_], wVector:TVector, bias:Double):Double = {
+  private def calModel(x: TVector, vMatrix: TMatrix[_], wVector: TVector, bias: Double): Double = {
     var fxValue = wVector.dot(x) + bias
 
     x match {
@@ -145,7 +145,7 @@ class FMModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
           var (ret1, ret2) = (0.0, 0.0)
           val v_row = vMatrix.getRow(f).asInstanceOf[TDoubleVector]
           val iter = x.getIndexToValueMap.int2DoubleEntrySet().fastIterator()
-          while(iter.hasNext) {
+          while (iter.hasNext) {
             val entry = iter.next()
             val idx = entry.getIntKey
             val value = entry.getDoubleValue
@@ -160,7 +160,7 @@ class FMModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
           var (ret1, ret2) = (0.0, 0.0)
           val v_row = vMatrix.getRow(f).asInstanceOf[TFloatVector]
           val iter = x.getIndexToValueMap.int2FloatEntrySet().fastIterator()
-          while(iter.hasNext) {
+          while (iter.hasNext) {
             val entry = iter.next()
             val idx = entry.getIntKey
             val value = entry.getFloatValue
@@ -242,7 +242,7 @@ class FMModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
     fxValue
   }
 
-  private def updateGrad(x:TVector, params:util.HashMap[String, TUpdate], gradient:util.HashMap[String, TUpdate], derviationMultipler:Double):Unit = {
+  private def updateGrad(x: TVector, params: util.HashMap[String, TUpdate], gradient: util.HashMap[String, TUpdate], derviationMultipler: Double): Unit = {
     val vMatrix = params.get(vmat).asInstanceOf[RowbaseMatrix[_]]
     val gmat = gradient.get(vmat).asInstanceOf[RowbaseMatrix[_]]
 
@@ -295,7 +295,7 @@ class FMModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
             val entry = iter.next()
             val idx = entry.getIntKey
             val value = entry.getDoubleValue
-            val g = derviationMultipler * (dot - value*v_row.get(idx)) * value
+            val g = derviationMultipler * (dot - value * v_row.get(idx)) * value
             gv.plusBy(idx, g)
           }
         }
@@ -309,7 +309,7 @@ class FMModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
             val entry = iter.next()
             val idx = entry.getIntKey
             val value = entry.getFloatValue
-            val g = derviationMultipler * (dot - value*v_row.get(idx)) * value
+            val g = derviationMultipler * (dot - value * v_row.get(idx)) * value
             gv.plusBy(idx, g.toFloat)
           }
         }
@@ -319,7 +319,7 @@ class FMModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
           val gv = gmat.getRow(f).asInstanceOf[TDoubleVector]
           val dot = v_row.dot(x)
           x.getIndices.zip(x.getValues).foreach { case (idx, value) =>
-            val g = derviationMultipler * (dot - value*v_row.get(idx)) * value
+            val g = derviationMultipler * (dot - value * v_row.get(idx)) * value
             gv.plusBy(idx, g)
           }
         }
@@ -329,7 +329,7 @@ class FMModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
           val gv = gmat.getRow(f).asInstanceOf[TFloatVector]
           val dot = v_row.dot(x)
           x.getIndices.zip(x.getValues).foreach { case (idx, value) =>
-            val g = derviationMultipler * (dot - value*v_row.get(idx)) * value
+            val g = derviationMultipler * (dot - value * v_row.get(idx)) * value
             gv.plusBy(idx, g.toFloat)
           }
         }
@@ -339,7 +339,7 @@ class FMModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
           val gv = gmat.getRow(f).asInstanceOf[TLongDoubleVector]
           val dot = v_row.dot(x)
           x.getIndexes.zip(x.getValues).foreach { case (idx, value) =>
-            val g = derviationMultipler * (dot - value*v_row.get(idx)) * value
+            val g = derviationMultipler * (dot - value * v_row.get(idx)) * value
             gv.plusBy(idx, g)
           }
         }
@@ -349,7 +349,7 @@ class FMModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
           val gv = gmat.getRow(f).asInstanceOf[TLongFloatVector]
           val dot = v_row.dot(x)
           x.getIndexes.zip(x.getValues).foreach { case (idx, value) =>
-            val g = derviationMultipler * (dot - value*v_row.get(idx)) * value
+            val g = derviationMultipler * (dot - value * v_row.get(idx)) * value
             gv.plusBy(idx, g.toFloat)
           }
         }
@@ -359,7 +359,7 @@ class FMModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
           val gv = gmat.getRow(f).asInstanceOf[TDoubleVector]
           val dot = v_row.dot(x)
           x.getValues.zipWithIndex.foreach { case (value, idx) =>
-            val g = derviationMultipler * (dot - value*v_row.get(idx)) * value
+            val g = derviationMultipler * (dot - value * v_row.get(idx)) * value
             gv.plusBy(idx, g)
           }
         }
@@ -369,7 +369,7 @@ class FMModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
           val gv = gmat.getRow(f).asInstanceOf[TFloatVector]
           val dot = v_row.dot(x)
           x.getValues.zipWithIndex.foreach { case (value, idx) =>
-            val g = derviationMultipler * (dot - value*v_row.get(idx)) * value
+            val g = derviationMultipler * (dot - value * v_row.get(idx)) * value
             gv.plusBy(idx, g.toFloat)
           }
         }
@@ -386,7 +386,7 @@ class FMModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
     val params = modelType match {
       case RowType.T_DOUBLE_SPARSE_LONGKEY | RowType.T_FLOAT_SPARSE_LONGKEY =>
         pullParamsFromPS(Array[Long](), getIndexFlag)
-      case _ =>  pullParamsFromPS(Array[Int](), getIndexFlag)
+      case _ => pullParamsFromPS(Array[Int](), getIndexFlag)
     }
 
     val vMatrix = params.get(vmat).asInstanceOf[RowbaseMatrix[_]]
@@ -394,7 +394,7 @@ class FMModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
     val bias = getBias(params.get(intercept))
 
     val cost = System.currentTimeMillis() - start
-    LOG.info(s"pull LR Model from PS cost $cost ms." )
+    LOG.info(s"pull LR Model from PS cost $cost ms.")
 
     val predict = new MemoryDataBlock[PredictResult](-1)
 
@@ -409,9 +409,9 @@ class FMModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
     predict
   }
 
-  override def calLossAndUpdateGrad(x:TVector, y: Double,
+  override def calLossAndUpdateGrad(x: TVector, y: Double,
                                     params: util.HashMap[String, TUpdate],
-                                    gradient:util.HashMap[String, TUpdate]): Double = {
+                                    gradient: util.HashMap[String, TUpdate]): Double = {
     val vMatrix = params.get(vmat).asInstanceOf[RowbaseMatrix[_]]
     val wVector = params.get(weight).asInstanceOf[TVector]
     val bias = getBias(params.get(intercept))
@@ -433,7 +433,7 @@ class FMModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
 
     val fxValue = calModel(x, vMatrix, wVector, bias)
 
-    1.0/(1.0 + Math.exp(-fxValue)) -> LogisticLoss(fxValue, y)
+    1.0 / (1.0 + Math.exp(-fxValue)) -> LogisticLoss(fxValue, y)
   }
 
   private def getBias(bias: Any): Double = {
@@ -465,9 +465,9 @@ class FMModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
 
   override def psfHook(thresh: mutable.Map[String, Double]): Unit = {
     if (ctx.getTaskId.getIndex == 0 && thresh != null) {
-      getPSModels.foreach{ case (name:String, psm:PSModel) =>
+      getPSModels.foreach { case (name: String, psm: PSModel) =>
         if (getIndexFlag.get(name)) {
-          (0 until psm.row).foreach{ idx =>
+          (0 until psm.row).foreach { idx =>
             psm.update(new SoftThreshold(psm.getMatrixId(), idx, thresh(name)))
           }
         }
@@ -475,7 +475,7 @@ class FMModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
     }
 
     if (thresh != null) {
-      getPSModels.foreach{ case (_, psm: PSModel) =>
+      getPSModels.foreach { case (_, psm: PSModel) =>
         psm.syncClock()
       }
     }
@@ -484,7 +484,8 @@ class FMModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
 
 class LRPredictResult(id: Double, dot: Double, sig: Double) extends PredictResult {
   val df = new DecimalFormat("0")
-  override def getText():String = {
+
+  override def getText(): String = {
     df.format(id) + separator + format.format(dot) + separator + format.format(sig)
   }
 }

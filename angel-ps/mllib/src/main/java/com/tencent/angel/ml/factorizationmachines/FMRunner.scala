@@ -23,7 +23,7 @@ import org.apache.hadoop.conf.Configuration
 /**
   * Run Factorization Machines train task on Angel
   */
-class FMRunner extends MLRunner{
+class FMRunner extends MLRunner {
   /**
     * Training job to obtain a FM model
     */

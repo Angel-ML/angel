@@ -34,7 +34,7 @@ import org.apache.hadoop.io.{LongWritable, Text}
   * @param ctx : context of current task
   */
 
-class KMeansPredictTask (val ctx: TaskContext) extends PredictTask[LongWritable, Text](ctx) {
+class KMeansPredictTask(val ctx: TaskContext) extends PredictTask[LongWritable, Text](ctx) {
   private val LOG = LogFactory.getLog(classOf[KMeansTrainTask])
 
 

@@ -36,7 +36,7 @@ class PEvaluateTask(var users: Map[Int, UserVec], var items: Map[Int, ItemVec],
 
   @throws[Exception]
   def call: Double = {
-    var row:DenseFloatVector = null
+    var row: DenseFloatVector = null
     var totalLoss = 0.0
 
     //    while (row != null && !taskQueue.isFetchOver) {

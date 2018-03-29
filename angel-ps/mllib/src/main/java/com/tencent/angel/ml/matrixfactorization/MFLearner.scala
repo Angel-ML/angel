@@ -43,7 +43,7 @@ import scala.collection.mutable.HashMap
   * @param ctx : the context of running task
   */
 
-class MFLearner(override val ctx: TaskContext) extends MLLearner(ctx){
+class MFLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   val LOG = LogFactory.getLog(classOf[MFLearner])
 
   // Matrix factorization model
@@ -92,8 +92,8 @@ class MFLearner(override val ctx: TaskContext) extends MLLearner(ctx){
   /**
     * Train a matrix factorizaiton model
     *
-    * @param trainData: trainning dataset storage
-    * @param validataSet: validate dataset storage
+    * @param trainData   : trainning dataset storage
+    * @param validataSet : validate dataset storage
     * @return : a learned model
     */
   override
@@ -104,7 +104,7 @@ class MFLearner(override val ctx: TaskContext) extends MLLearner(ctx){
     LOG.info("mfModel.userNum=" + mfModel.userNum)
     globalMetrics.addMetric(MFModel.MF_METRIC, ObjMetric())
 
-    while (ctx.getEpoch <  epochNum) {
+    while (ctx.getEpoch < epochNum) {
       LOG.info(s"Start Epoch ${ctx.getEpoch}")
       oneEpoch(ctx.getEpoch)
 
@@ -254,7 +254,7 @@ class MFLearner(override val ctx: TaskContext) extends MLLearner(ctx){
   /**
     * Train mf model in one epoch
     *
-    * @param epoch: epoch ID
+    * @param epoch : epoch ID
     */
   def trainOneEpoch(epoch: Int) {
     val rowOneBatch = rRow / batchNum
@@ -303,7 +303,7 @@ class MFLearner(override val ctx: TaskContext) extends MLLearner(ctx){
   /**
     * Evaluate loss values in one epoch
     *
-    * @param epoch: epoch ID
+    * @param epoch : epoch ID
     * @return : loss values of local users and realated items
     */
   @throws[InterruptedException]
@@ -365,7 +365,7 @@ class MFLearner(override val ctx: TaskContext) extends MLLearner(ctx){
     loss
   }
 
-  def writeUserVectors : Unit = {
+  def writeUserVectors: Unit = {
     var idx = new AtomicInteger(0);
 
     val future = new Array[Future[Boolean]](parallelism)

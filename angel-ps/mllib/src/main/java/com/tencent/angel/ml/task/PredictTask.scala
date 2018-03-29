@@ -31,8 +31,7 @@ abstract class PredictTask[KEYIN, VALUEIN](ctx: TaskContext) extends BaseTask[KE
   val feaNum = conf.getLong(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
   val dataFormat = conf.get(MLConf.ML_DATA_FORMAT)
 
-  val dataParser = DataParser(dataFormat, feaNum,  negY= true)
-
+  val dataParser = DataParser(dataFormat, feaNum, negY = true)
 
 
   @throws(classOf[AngelException])

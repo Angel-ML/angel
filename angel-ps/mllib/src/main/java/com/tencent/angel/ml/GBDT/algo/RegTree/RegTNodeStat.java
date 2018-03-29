@@ -31,7 +31,8 @@ public class RegTNodeStat {
   public float baseWeight; // weight of current node
   public SplitEntry splitEntry;
 
-  public RegTNodeStat() {}
+  public RegTNodeStat() {
+  }
 
   public RegTNodeStat(RegTParam param) {
     this.param = param;

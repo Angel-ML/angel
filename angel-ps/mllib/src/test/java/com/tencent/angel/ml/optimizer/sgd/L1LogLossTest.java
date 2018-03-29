@@ -30,12 +30,12 @@ import static org.junit.Assert.assertEquals;
 public class L1LogLossTest {
   private static final Log LOG = LogFactory.getLog(L1LogLossTest.class);
   L1LogLoss l1LogLoss = new L1LogLoss(0.01);
+
   static {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
-  @Test
-  public void testLoss() throws Exception {
+  @Test public void testLoss() throws Exception {
     double data1[] = {1.0, 2.0};
     DenseDoubleVector denseDoubleVector1 = new DenseDoubleVector(2, data1);
     double data2[] = {1.0, 2.0};
@@ -44,8 +44,7 @@ public class L1LogLossTest {
     assertEquals(Math.log(1 + Math.exp(-5 * 2)), test, 0.00);
   }
 
-  @Test
-  public void testLoss1() throws Exception {
+  @Test public void testLoss1() throws Exception {
     double pre = 2, y = 5;
     assertEquals(Math.log(1 + Math.exp(-2 * 5)), l1LogLoss.loss(pre, y), 0.00);
     y = 10;
@@ -55,8 +54,7 @@ public class L1LogLossTest {
 
   }
 
-  @Test
-  public void testLoss2() throws Exception {
+  @Test public void testLoss2() throws Exception {
     double data1[] = {1.0, 2.0};
     double data2[] = {2.0, 1.0};
     DenseDoubleVector denseDoubleVector1 = new DenseDoubleVector(2, data1);
@@ -72,15 +70,13 @@ public class L1LogLossTest {
     assertEquals(0.741297, test, 0.00001);
   }
 
-  @Test
-  public void testGrad() throws Exception {
+  @Test public void testGrad() throws Exception {
     double pre = 2, y = 5;
     double test = l1LogLoss.grad(pre, y);
     assertEquals((5 / (1.0 + Math.exp(10))), test, 0.00001);
   }
 
-  @Test
-  public void testPredict() throws Exception {
+  @Test public void testPredict() throws Exception {
     double data1[] = {1.0, 2.0, 3.0, 4.0};
     DenseDoubleVector denseDoubleVector1 = new DenseDoubleVector(4, data1);
     double data2[] = {1.0, 2.0, 3.0, 4.0};

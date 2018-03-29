@@ -88,7 +88,7 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
 
     // Apply mini-batch gradient descent
     val startBatch = System.currentTimeMillis()
-    if (lrModel.intercept.isDefined){
+    if (lrModel.intercept.isDefined) {
       LOG.info("the intercept is:" + lrModel.intercept.get.getRow(0).asInstanceOf[TDoubleVector].get(0))
     } else {
       LOG.info("intercept is not set")
@@ -137,7 +137,7 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     train(trainData, validationData, new Array[Int](0))
   }
 
-  def train[N: Numeric : TypeTag](trainData: DataBlock[LabeledData], validationData: DataBlock[LabeledData], indexes : Array[N]): MLModel = {
+  def train[N: Numeric : TypeTag](trainData: DataBlock[LabeledData], validationData: DataBlock[LabeledData], indexes: Array[N]): MLModel = {
 
     // 总batch的样本量
     val trainSampleSize = (trainData.size * spRatio).toInt
@@ -177,7 +177,7 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   /**
     * validate loss, Auc, Precision or other
     *
-    * @param epoch          : epoch id
+    * @param epoch    : epoch id
     * @param valiData : validata data storage
     */
   def validate(epoch: Int, weight: TDoubleVector, trainData: DataBlock[LabeledData], valiData: DataBlock[LabeledData]) = {

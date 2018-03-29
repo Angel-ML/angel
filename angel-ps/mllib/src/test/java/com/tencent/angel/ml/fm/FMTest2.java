@@ -38,8 +38,7 @@ public class FMTest2 {
   /**
    * set parameter values of conf
    */
-  @Before
-  public void setConf() {
+  @Before public void setConf() {
 
     // Feature number of train data
     int featureNum = 236;
@@ -79,8 +78,7 @@ public class FMTest2 {
   }
 
 
-  @Test
-  public void FMClassificationTest() throws Exception {
+  @Test public void FMClassificationTest() throws Exception {
     String inputPath = "./src/test/data/fm/a9a.train.libsvm";
     String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
     String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
@@ -111,8 +109,7 @@ public class FMTest2 {
     runner.train(conf);
   }
 
-  @Test
-  public void FMPredictTest() throws Exception {
+  @Test public void FMPredictTest() throws Exception {
     String inputPath = "./src/test/data/fm/a9a.train.dummy";
     String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
     String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");

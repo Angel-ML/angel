@@ -60,11 +60,11 @@ class FMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   val fmModel = new FMModel(conf, ctx)
 
   val l2Reg: Map[String, Double] = if (reg2_v != 0.0 || reg2_w != 0.0) {
-    Map[String, Double]("fm_vmat"-> reg2_w, "fm_weight" -> reg2_v, "fm_intercept" -> 0.0)
+    Map[String, Double]("fm_vmat" -> reg2_w, "fm_weight" -> reg2_v, "fm_intercept" -> 0.0)
   } else null
 
   val l1Reg: Map[String, Double] = if (reg1_v != 0.0 || reg1_w != 0.0) {
-    Map[String, Double]("fm_vmat"-> reg1_w, "fm_weight" -> reg1_v, "fm_intercept" -> 0.0)
+    Map[String, Double]("fm_vmat" -> reg1_w, "fm_weight" -> reg1_v, "fm_intercept" -> 0.0)
   } else null
 
   val optimizer: Optimizer = new MiniBatchSGD(batchSize, numUpdatePerEpoch, lr0, l1Reg, l2Reg)
@@ -75,9 +75,9 @@ class FMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     * @param epoch     : epoch id
     * @param trainData : trainning data storage
     */
-  def trainOneEpoch[N: Numeric : TypeTag](epoch: Int, trainData: DataBlock[LabeledData], indexes : Array[N]): util.HashMap[String, TUpdate] = {
+  def trainOneEpoch[N: Numeric : TypeTag](epoch: Int, trainData: DataBlock[LabeledData], indexes: Array[N]): util.HashMap[String, TUpdate] = {
     // Decay learning rate.
-    optimizer.lr = Math.max(lr0 / Math.sqrt(1.0 + decay * epoch), lr0/5.0)
+    optimizer.lr = Math.max(lr0 / Math.sqrt(1.0 + decay * epoch), lr0 / 5.0)
     // (util.HashMap[String, TUpdate], Double)
     optimizer.epoch = epoch
     val result = optimizer.optimize(trainData, fmModel, indexes)
@@ -89,7 +89,7 @@ class FMLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     train(trainData, validationData, new Array[Int](0))
   }
 
-  def train[N: Numeric : TypeTag](trainData: DataBlock[LabeledData], validationData: DataBlock[LabeledData], indexes : Array[N]): MLModel = {
+  def train[N: Numeric : TypeTag](trainData: DataBlock[LabeledData], validationData: DataBlock[LabeledData], indexes: Array[N]): MLModel = {
 
     LOG.info(s"Task[${ctx.getTaskIndex}]: Starting to train the model...")
     LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epochNum, initLearnRate=$lr0, learnRateDecay=$decay")

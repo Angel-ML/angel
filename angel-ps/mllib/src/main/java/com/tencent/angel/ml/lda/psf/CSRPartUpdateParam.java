@@ -40,11 +40,10 @@ public class CSRPartUpdateParam extends PartitionUpdateParam {
   public CSRPartUpdateParam() {
   }
 
-  @Override
-  public void serialize(ByteBuf buf) {
+  @Override public void serialize(ByteBuf buf) {
     super.serialize(buf);
     int w = getPartKey().getStartRow();
-    for (int i = 0; i < updates.length; i ++) {
+    for (int i = 0; i < updates.length; i++) {
       if (updates[i] != null) {
         buf.writeInt(w + i);
         Short2IntOpenHashMap map = updates[i];
@@ -60,18 +59,16 @@ public class CSRPartUpdateParam extends PartitionUpdateParam {
 
   }
 
-  @Override
-  public void deserialize(ByteBuf buf) {
+  @Override public void deserialize(ByteBuf buf) {
     super.deserialize(buf);
     this.buf = buf.duplicate();
     this.buf.retain();
 
   }
 
-  @Override
-  public int bufferLen() {
+  @Override public int bufferLen() {
     int len = 0;
-    for (int i = 0; i < updates.length; i ++) {
+    for (int i = 0; i < updates.length; i++) {
       if (updates[i] != null)
         len += updates[i].size() * 6;
     }

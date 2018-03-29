@@ -27,8 +27,7 @@ public class LogLossMetric implements EvalMetric {
    *
    * @return the name
    */
-  @Override
-  public String getName() {
+  @Override public String getName() {
     return "logloss";
   }
 
@@ -36,11 +35,10 @@ public class LogLossMetric implements EvalMetric {
    * evaluate a specific metric for instances
    *
    * @param predProbs the probability predictions
-   * @param labels the labels
+   * @param labels    the labels
    * @return the eval metric
    */
-  @Override
-  public float eval(float[] predProbs, float[] labels) {
+  @Override public float eval(float[] predProbs, float[] labels) {
     float errSum = 0.0f;
     for (int i = 0; i < predProbs.length; i++) {
       errSum += evalOne(predProbs[i], labels[i]);
@@ -52,11 +50,10 @@ public class LogLossMetric implements EvalMetric {
    * evaluate a specific metric for one instance
    *
    * @param predProb the probability prediction
-   * @param label the label
+   * @param label    the label
    * @return the eval metric
    */
-  @Override
-  public float evalOne(float predProb, float label) {
+  @Override public float evalOne(float predProb, float label) {
     float eps = 1e-16f;
     float pneg = 1.0f - predProb;
     if (predProb < eps) {

@@ -48,7 +48,7 @@ class KMeansModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
   // Number of epoch
   private val epoch: Int = conf.getInt(MLConf.ML_EPOCH_NUM, MLConf.DEFAULT_ML_EPOCH_NUM)
   // Centers pulled to local worker
-  var lcCenters:util.List[TVector]  = new util.ArrayList[TVector]()
+  var lcCenters: util.List[TVector] = new util.ArrayList[TVector]()
 
   // Reference for centers matrix on PS server
   val centers = new PSModel(KMEANS_CENTERS_MAT, K, feaNum).setAverage(true).setRowType(RowType.T_DOUBLE_DENSE)
@@ -130,9 +130,9 @@ class KMeansModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
 
   /**
     * Calculate distanve between a sample and a center
-    *    || a - b || ^ 2 = a^2 - 2ab + b^2
+    * || a - b || ^ 2 = a^2 - 2ab + b^2
     *
- *
+    *
     * @param cId centerID
     * @param x   sample
     * @return distance from sample to center

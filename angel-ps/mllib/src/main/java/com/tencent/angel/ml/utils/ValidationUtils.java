@@ -38,8 +38,7 @@ public class ValidationUtils {
   private static final Log LOG = LogFactory.getLog(ValidationUtils.class);
 
   private static DoubleComparator cmp = new DoubleComparator() {
-    @Override
-    public int compare(double i, double i1) {
+    @Override public int compare(double i, double i1) {
       if (Math.abs(i - i1) < 10e-12) {
         return 0;
       } else {
@@ -47,8 +46,7 @@ public class ValidationUtils {
       }
     }
 
-    @Override
-    public int compare(Double o1, Double o2) {
+    @Override public int compare(Double o1, Double o2) {
       if (Math.abs(o1 - o2) < 10e-12) {
         return 0;
       } else {
@@ -60,12 +58,12 @@ public class ValidationUtils {
   /**
    * validate loss and precision
    *
-   * @param dataBlock:  validation data taskDataBlock
-   * @param weight:   the weight vector of features
-   * @param lossFunc: the lossFunc used for prediction
+   * @param dataBlock: validation data taskDataBlock
+   * @param weight:    the weight vector of features
+   * @param lossFunc:  the lossFunc used for prediction
    */
   public static double calLossPrecision(DataBlock<LabeledData> dataBlock, TDoubleVector weight,
-                                        Loss lossFunc) throws IOException, InterruptedException {
+    Loss lossFunc) throws IOException, InterruptedException {
     dataBlock.resetReadIndex();
 
     long startTime = System.currentTimeMillis();
@@ -103,11 +101,11 @@ public class ValidationUtils {
     double falseRecall = (double) trueNeg / (trueNeg + falsePos);
 
     LOG.debug(String.format(
-        "validate cost %d ms, loss= %.5f, precision=%.5f, trueRecall=%.5f, " + "falseRecall=%.5f",
-        totalNum, cost, loss, precision, trueRecall, falseRecall));
+      "validate cost %d ms, loss= %.5f, precision=%.5f, trueRecall=%.5f, " + "falseRecall=%.5f",
+      totalNum, cost, loss, precision, trueRecall, falseRecall));
 
-    LOG.debug(String.format("Validation TP=%d, TN=%d, FP=%d, FN=%d", truePos, trueNeg, falsePos,
-        falseNeg));
+    LOG.debug(
+      String.format("Validation TP=%d, TN=%d, FP=%d, FN=%d", truePos, trueNeg, falsePos, falseNeg));
 
     return loss;
   }
@@ -115,13 +113,13 @@ public class ValidationUtils {
   /**
    * validate loss, AUC and precision
    *
-   * @param dataBlock:  validation data taskDataBlock
-   * @param weight:   the weight vector of features
-   * @param lossFunc: the lossFunc used for prediction
+   * @param dataBlock: validation data taskDataBlock
+   * @param weight:    the weight vector of features
+   * @param lossFunc:  the lossFunc used for prediction
    */
-  public static Tuple5<Double, Double, Double, Double, Double> calMetrics(DataBlock<LabeledData> dataBlock,
-                                                                          TDoubleVector weight,
-                                                                          Loss lossFunc) throws IOException, InterruptedException {
+  public static Tuple5<Double, Double, Double, Double, Double> calMetrics(
+    DataBlock<LabeledData> dataBlock, TDoubleVector weight, Loss lossFunc)
+    throws IOException, InterruptedException {
 
     dataBlock.resetReadIndex();
 
@@ -166,8 +164,8 @@ public class ValidationUtils {
     loss += lossFunc.getReg(weight);
     double precision = (double) (truePos + trueNeg) / totalNum;
 
-    Tuple3<Double, Double, Double> tuple3 = calAUC(scoresArray, labelsArray, truePos, trueNeg, falsePos,
-        falseNeg);
+    Tuple3<Double, Double, Double> tuple3 =
+      calAUC(scoresArray, labelsArray, truePos, trueNeg, falsePos, falseNeg);
     double aucResult = tuple3._1();
     double trueRecall = tuple3._2();
     double falseRecall = tuple3._3();
@@ -175,16 +173,16 @@ public class ValidationUtils {
     return new Tuple5(loss, precision, aucResult, trueRecall, falseRecall);
   }
 
-  public static Tuple3<Double, Double, Double> calAUC(double[] scoresArray, double[]
-      labelsArray, int truePos, int trueNeg, int falsePos, int falseNeg) {
+  public static Tuple3<Double, Double, Double> calAUC(double[] scoresArray, double[] labelsArray,
+    int truePos, int trueNeg, int falsePos, int falseNeg) {
     long startTime = System.currentTimeMillis();
 
     Sort.quickSort(scoresArray, labelsArray, 0, scoresArray.length, ValidationUtils.cmp);
 
     LOG.debug("Sort cost " + (System.currentTimeMillis() - startTime) + "ms, Scores list size: "
-        + scoresArray.length + ", sorted values:" + scoresArray[0] + ","
-        + scoresArray[scoresArray.length / 5] + "," + scoresArray[scoresArray.length / 3] + ","
-        + scoresArray[scoresArray.length / 2] + "," + scoresArray[scoresArray.length - 1]);
+      + scoresArray.length + ", sorted values:" + scoresArray[0] + "," + scoresArray[
+      scoresArray.length / 5] + "," + scoresArray[scoresArray.length / 3] + "," + scoresArray[
+      scoresArray.length / 2] + "," + scoresArray[scoresArray.length - 1]);
 
     long M = 0; // positive sample
     long N = 0; // negtive sample
@@ -210,11 +208,10 @@ public class ValidationUtils {
     double falseRecall = (double) trueNeg / (trueNeg + falsePos);
 
     LOG.debug(String.format("validate cost %d ms, auc=%.5f, trueRecall=%.5f, falseRecall=%.5f",
-        System.currentTimeMillis() - startTime, aucResult, trueRecall,
-        falseRecall));
+      System.currentTimeMillis() - startTime, aucResult, trueRecall, falseRecall));
 
-    LOG.debug(String.format("Validation TP=%d, TN=%d, FP=%d, FN=%d", truePos, trueNeg, falsePos,
-        falseNeg));
+    LOG.debug(
+      String.format("Validation TP=%d, TN=%d, FP=%d, FN=%d", truePos, trueNeg, falsePos, falseNeg));
 
     return new Tuple3<>(aucResult, trueRecall, falseRecall);
   }
@@ -229,9 +226,8 @@ public class ValidationUtils {
    * @throws IOException
    * @throws InterruptedException
    */
-  public static Tuple4<Double, Double, Double, Double> calMSER2(DataBlock<LabeledData>
-                                                                            dataBlock, TDoubleVector weight, Loss lossFunc)
-      throws IOException, InterruptedException {
+  public static Tuple4<Double, Double, Double, Double> calMSER2(DataBlock<LabeledData> dataBlock,
+    TDoubleVector weight, Loss lossFunc) throws IOException, InterruptedException {
     dataBlock.resetReadIndex();
 
     long startTime = System.currentTimeMillis();
@@ -260,8 +256,9 @@ public class ValidationUtils {
     double MAE = maeLossSum / totalNum;
     double R2 = 1 - uLoss / vLoss;
 
-    LOG.info(String.format("validate %d samples cost %d ms, MSE= %.5f ,RMSE= %.5f ,MAE=%.5f ," +
-        "R2= %.5f", totalNum, System.currentTimeMillis() - startTime, MSE, RMSE, MAE, R2));
+    LOG.info(String
+      .format("validate %d samples cost %d ms, MSE= %.5f ,RMSE= %.5f ,MAE=%.5f ," + "R2= %.5f",
+        totalNum, System.currentTimeMillis() - startTime, MSE, RMSE, MAE, R2));
 
     return new Tuple4<>(MSE, RMSE, MAE, R2);
   }

@@ -23,8 +23,7 @@ public class Mix64Hash extends Int2IntHash {
     super(length);
   }
 
-  @Override
-  public int encode(int key) {
+  @Override public int encode(int key) {
     key = (~key) + (key << 21); // key = (key << 21) - key - 1;
     key = key ^ (key >> 24);
     key = (key + (key << 3)) + (key << 8); // key * 265

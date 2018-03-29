@@ -39,21 +39,22 @@ public class SgdLRTest2 {
   private static final Log LOG = LogFactory.getLog(SgdLRTest2.class);
   private static String LOCAL_FS = FileSystem.DEFAULT_FS;
   private static String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
+
   static {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
+
   /**
    * set parameter values of conf
    */
-  @Before
-  public void setConf() throws Exception {
+  @Before public void setConf() throws Exception {
     try {
       // Feature number of train data
       int featureNum = 124;
       // Total iteration number
       int epochNum = 5;
       // number of mini batch within a update periorid
-      int updatePerEpoch = 10 ;
+      int updatePerEpoch = 10;
       // Data format, libsvm or dummy
       String dataFmt = "libsvm";
       // Batch size
@@ -105,8 +106,7 @@ public class SgdLRTest2 {
   }
 
 
-  @Test
-  public void trainOnLocalClusterTest() throws Exception {
+  @Test public void trainOnLocalClusterTest() throws Exception {
     try {
       String inputPath = "./src/test/data/lr/a9a.train";
       String savePath = LOCAL_FS + TMP_PATH + "/model";
@@ -136,8 +136,7 @@ public class SgdLRTest2 {
   }
 
 
-  @Test
-  public void predictTest() throws Exception {
+  @Test public void predictTest() throws Exception {
     try {
       String inputPath = "./src/test/data/lr/a9a.test";
       String loadPath = LOCAL_FS + TMP_PATH + "/model";

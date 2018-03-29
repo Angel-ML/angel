@@ -92,8 +92,7 @@ public class LinearRegTest {
     }
   }
 
-  @Test
-  public void testLinearRegression() throws Exception {
+  @Test public void testLinearRegression() throws Exception {
     trainOnLocalClusterTest();
     incTrainTest();
     predictTest();

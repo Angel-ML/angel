@@ -27,6 +27,7 @@ import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
+
 /**
   * The parameters of LDA model.
   */
@@ -99,7 +100,6 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
 
   addPSModel(wtMat)
   addPSModel(tMat)
-
 
 
   override

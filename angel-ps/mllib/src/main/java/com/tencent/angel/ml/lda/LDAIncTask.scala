@@ -30,7 +30,7 @@ class LDAIncTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Docu
 
   override
   def parse(key: LongWritable, value: Text): Document = {
-    val doc  = new Document(value.toString)
+    val doc = new Document(value.toString)
     if (doc != null) {
       did += 1
       N += doc.len()
@@ -51,11 +51,12 @@ class LDAIncTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Docu
     //infer.train()
 
   }
+
   override
   def preProcess(ctx: TaskContext) {
     val reader = ctx.getReader[LongWritable, Text]
     while (reader.nextKeyValue()) {
-      val doc  = new Document(reader.getCurrentValue.toString)
+      val doc = new Document(reader.getCurrentValue.toString)
       docs.put(doc)
     }
   }
