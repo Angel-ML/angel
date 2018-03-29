@@ -567,7 +567,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
           }
 
           if(shouldRemoveFromGrayList(entry.getValue())) {
-            LOG.info("PS " + entry.getValue().psLoc + " state back to normal, remove it from gray server list");
+            LOG.debug("PS " + entry.getValue().psLoc + " state back to normal, remove it from gray server list");
             iter.remove();
             notifyServerNormal(entry.getValue());
             continue;
@@ -621,7 +621,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
   private void sendHeartBeat(final PSLocation psLoc) {
     hbThreadPool.execute(() -> {
       try {
-        LOG.info("Start to send hb to " + psLoc);
+        LOG.debug("Start to send hb to " + psLoc);
         ServerState state = PSAgentContext.get().getPSControlClientManager().getOrCreatePSClient(psLoc.loc).getState();
         GrayServer server = grayServers.get(psLoc.psId);
         if(server != null) {
@@ -1219,7 +1219,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       rpcContext.after(request.getContext().getServerId());
     }
     seqIdToSendCFMap.remove(seqId);
-    LOG.error("request failed " + request + ", failedType=" + failedType + ", errorLog=" + errorLog);
+    //LOG.debug("request failed " + request + ", failedType=" + failedType + ", errorLog=" + errorLog);
     returnChannel(request);
     returnBuffer(request);
     resetContext(request);
@@ -1763,8 +1763,8 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
     @Override
     public void operationComplete(ChannelFuture future) throws Exception {
-      if(LOG.isDebugEnabled() && (request instanceof PartitionRequest)) {
-        LOG.info("send request with seqId=" + seqId + " complete");
+      if(request instanceof PartitionRequest) {
+        LOG.debug("send request with seqId=" + seqId + " complete");
       }
 
       if (!future.isSuccess()) {
