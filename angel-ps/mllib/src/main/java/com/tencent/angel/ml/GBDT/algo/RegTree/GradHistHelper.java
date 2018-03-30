@@ -54,7 +54,7 @@ public class GradHistHelper {
 
     // 2. get the span of this node
     int nodeStart = insStart;
-    int nodeEnd = insEnd;
+    int nodeEnd = insEnd; // inclusive
     LOG.debug(String
       .format("Build histogram of node[%d]: size[%d] instance span [%d - %d]", this.nid,
         histogram.getDimension(), nodeStart, nodeEnd));
@@ -83,8 +83,8 @@ public class GradHistHelper {
         }
         // 3.4.3. find the position of feature value in a histogram
         // the search area in the sketch is [fid * #splitNum, (fid+1) * #splitNum - 1]
-        int start = fPos * splitNum;
-        int end;
+        int start = fPos * splitNum; // inclusive
+        int end; // inclusive
         if (this.controller.cateFeatNum.containsKey(fid)) {
           end = start + this.controller.cateFeatNum.get(fid) - 1;
         } else {

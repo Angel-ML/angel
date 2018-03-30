@@ -409,8 +409,7 @@ public class GBDTController {
         int nodeStart = this.nodePosStart[nid];
         int nodeEnd = this.nodePosEnd[nid];
         int batchSize = this.param.batchNum;
-        int batchNum =
-          (nodeEnd - nodeStart) / batchSize + (nodeEnd - nodeStart) % batchSize == 0 ? 0 : 1;
+        int batchNum = (nodeEnd - nodeStart + 1) / batchSize + (nodeEnd - nodeStart + 1) % batchSize == 0 ? 0 : 1;
 
         // 1.2. set thread status to batch num
         this.activeNodeStat[nid] = batchNum;
@@ -711,8 +710,8 @@ public class GBDTController {
     // 4. find the cut pos
     int curInsIdx = this.instancePos[left];
     float curValue = (float) this.trainDataStore.instances.get(curInsIdx).get(splitFeature);
-    int cutPos = (curValue >= splitValue) ? left : left + 1; // the first instance that is larger
-    // than the split value
+    int cutPos = (curValue > splitValue) ? left : left + 1; // the first instance that is larger
+                                                            // than the split value
     // 5. set the span of left child
     this.nodePosStart[2 * nid + 1] = nodePosStart;
     this.nodePosEnd[2 * nid + 1] = cutPos - 1;
@@ -808,7 +807,7 @@ public class GBDTController {
         LOG.debug(String.format("Leaf weight of node[%d]: %f", nid, weight));
         int nodePosStart = this.nodePosStart[nid];
         int nodePosEnd = this.nodePosEnd[nid];
-        for (int i = nodePosStart; i < nodePosEnd; i++) {
+        for (int i = nodePosStart; i <= nodePosEnd; i++) {
           int insIdx = this.instancePos[i];
           this.trainDataStore.preds[insIdx] += this.param.learningRate * weight;
         }

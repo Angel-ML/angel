@@ -32,8 +32,8 @@ public class GradHistThread implements Runnable {
   private final GBDTController controller;
   private final int nid; // tree node id
   private final PSModel model;
-  private int insStart;
-  private int insEnd;
+  private int insStart; // inclusive
+  private int insEnd; // inclusive
 
   public GradHistThread(GBDTController controller, int nid, PSModel model, int start, int end) {
     this.controller = controller;
