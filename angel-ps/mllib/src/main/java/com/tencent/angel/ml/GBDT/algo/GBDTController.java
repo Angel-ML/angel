@@ -77,6 +77,7 @@ public class GBDTController {
 
   public int[] splitFeats; // local stored split feature id
   public double[] splitValues; // local stored split feature value
+  public DenseDoubleVector[] histogramCache; // only used for histogram subtraction
 
   private ExecutorService threadPool;
 
@@ -140,6 +141,7 @@ public class GBDTController {
     this.nodePosEnd[0] = instancePos.length - 1;
     this.splitFeats = new int[maxNodeNum];
     this.splitValues = new double[maxNodeNum];
+    this.histogramCache = new DenseDoubleVector[maxNodeNum];
     this.threadPool = Executors.newFixedThreadPool(this.param.maxThreadNum);
   }
 
@@ -396,43 +398,71 @@ public class GBDTController {
     LOG.info("------Run active node------");
     long startTime = System.currentTimeMillis();
     Set<String> needFlushMatrixSet = new HashSet<String>();
+    int bytesPerItem = this.taskContext.getConf().
+            getInt(MLConf.ANGEL_COMPRESS_BYTES(), MLConf.DEFAULT_ANGEL_COMPRESS_BYTES());
+    boolean histSubtraction = this.taskContext.getConf().getBoolean(MLConf.ML_GBDT_HISTO_SUBTRACTION(),
+                                                                    MLConf.DEFAULT_ML_GBDT_HISTO_SUBTRACTION());
 
-
-    // 1. start threads of active tree nodes
+    // 1. decide nodes that should be calculated
+    Set<Integer> calculateNodes = new HashSet<>();
+    Set<Integer> subtractionNodes = new HashSet<>();
     for (int nid = 0; nid < this.maxNodeNum; nid++) {
       if (this.activeNode[nid] == 1) {
-        String histParaName = this.param.gradHistNamePrefix + nid;
-
-        // 1.1. start threads for active nodes to generate histogram
-        PSModel histMat = model.getPSModel(histParaName);
-
-        int nodeStart = this.nodePosStart[nid];
-        int nodeEnd = this.nodePosEnd[nid];
-        int batchSize = this.param.batchNum;
-        int batchNum = (nodeEnd - nodeStart + 1) / batchSize + (nodeEnd - nodeStart + 1) % batchSize == 0 ? 0 : 1;
-
-        // 1.2. set thread status to batch num
-        this.activeNodeStat[nid] = batchNum;
-
-        for (int batch = 0; batch < batchNum; batch++) {
-          int start = nodeStart + batch * batchSize;
-          int end = nodeStart + (batch + 1) * batchSize;
-          if (end > nodeEnd) {
-            end = nodeEnd;
+        if (nid == 0) {
+          calculateNodes.add(nid);
+        } else {
+          int parentNid = (nid-1) / 2;
+          int siblingNid = 4*parentNid + 3 - nid;
+          int sampleNum = this.nodePosEnd[nid] - this.nodePosStart[nid] + 1;
+          int siblingSampleNum = this.nodePosEnd[siblingNid] - this.nodePosStart[siblingNid] + 1;
+          boolean ltSibling = (sampleNum < siblingSampleNum || (sampleNum == siblingSampleNum && nid < siblingNid));
+          if (histSubtraction && ltSibling) {
+            calculateNodes.add(nid);
+            subtractionNodes.add(siblingNid);
+          } else {
+            calculateNodes.add(siblingNid);
+            subtractionNodes.add(nid);
           }
-          GradHistThread runner = new GradHistThread(this, nid, histMat, start, end);
-          this.threadPool.submit(runner);
-        }
-
-        // 1.3. set the oplog to active
-        int bytesPerItem = this.taskContext.getConf().
-          getInt(MLConf.ANGEL_COMPRESS_BYTES(), MLConf.DEFAULT_ANGEL_COMPRESS_BYTES());
-        if (!(bytesPerItem >= 1 && bytesPerItem <= 7)) {
-          needFlushMatrixSet.add(histParaName);
         }
       }
     }
-    // 2. check thread stats, if all threads finish, return
+    if (histSubtraction) {
+      LOG.info(String.format("Node %s will use histogram subtraction", subtractionNodes.toString()));
+    }
+    // 2. calculate histograms
+    for (int nid : calculateNodes) {
+      int nodeStart = this.nodePosStart[nid];
+      int nodeEnd = this.nodePosEnd[nid];
+      GradHistHelper histMaker = new GradHistHelper(this, nid);
+      DenseDoubleVector histogram = histMaker.buildHistogram(nodeStart, nodeEnd);
+      this.histogramCache[nid] = histogram;
+      this.activeNodeStat[nid] = 1;
+    }
+    // 3. subtract histograms
+    for (int nid : subtractionNodes) {
+      int parentNid = (nid-1) / 2;
+      int siblingNid = 4*parentNid + 3 - nid;
+      this.histogramCache[nid] = (DenseDoubleVector)
+              this.histogramCache[parentNid].plus(this.histogramCache[siblingNid], -1.0);
+      this.activeNodeStat[nid] = 1;
+    }
+    // 4. push histograms to PS
+    for (int nid = 0; nid < this.maxNodeNum; nid++) {
+      if (this.activeNode[nid] == 1) {
+        String histParaName = this.param.gradHistNamePrefix + nid;
+        PSModel model = this.model.getPSModel(histParaName);
+        this.threadPool.submit(new GradHistThread(model, nid, this.histogramCache[nid], bytesPerItem));
+        if (!(bytesPerItem >= 1 && bytesPerItem <= 7)) {
+          needFlushMatrixSet.add(histParaName);
+        }
+        // the parent's histogram can be collected
+        int parentNid = (nid-1) / 2;
+        if (parentNid >= 0) {
+          this.histogramCache[parentNid] = null;
+        }
+      }
+    }
+    // 5. check thread stats, if all threads finish, return
     boolean hasRunning = true;
     while (hasRunning) {
       hasRunning = false;
@@ -748,6 +778,9 @@ public class GBDTController {
   public void finishCurrentTree() {
     this.currentTree++;
     this.currentDepth = 1;
+    for (int i = 0; i < this.histogramCache.length; i++) {
+      this.histogramCache[i] = null;
+    }
   }
 
   // finish current depth

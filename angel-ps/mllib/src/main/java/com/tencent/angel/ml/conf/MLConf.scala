@@ -187,6 +187,8 @@ object MLConf {
   val DEFAULT_ML_GBDT_SERVER_SPLIT = false
   val ML_GBDT_CATE_FEAT = "ml.gbdt.cate.feat"
   val DEFAULT_ML_GBDT_CATE_FEAT = "none"
+  val ML_GBDT_HISTO_SUBTRACTION = "ml.gbdt.histo.subtraction"
+  val DEFAULT_ML_GBDT_HISTO_SUBTRACTION = false
 
   // FTRL param
   val ML_FTRL_ALPHA = "ml.ftrl.alpha"
