@@ -45,15 +45,15 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
   val fmmodel = new FMModel(conf, ctx)
 
   val learnType: String = conf.get(MLConf.ML_FM_LEARN_TYPE, MLConf.DEFAULT_ML_FM_LEARN_TYPE)
-  val feaNum: Int = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
   val epochNum: Int = conf.getInt(MLConf.ML_EPOCH_NUM, MLConf.DEFAULT_ML_EPOCH_NUM)
 
   val rank: Int = conf.getInt(MLConf.ML_FM_RANK, MLConf.DEFAULT_ML_FM_RANK)
-  val reg1: Double = conf.getDouble(MLConf.ML_FM_REG1, MLConf.DEFAULT_ML_FM_REG1)
-  val reg2: Double = conf.getDouble(MLConf.ML_FM_REG2, MLConf.DEFAULT_ML_FM_REG2)
+  val reg1: Double = conf.getDouble(MLConf.ML_FM_REG_L2_W, MLConf.DEFAULT_ML_FM_REG_L2_W)
+  val reg2: Double = conf.getDouble(MLConf.ML_FM_REG_L2_V, MLConf.DEFAULT_ML_FM_REG_L2_V)
   val lr: Double = conf.getDouble(MLConf.ML_LEARN_RATE, MLConf.DEFAULT_ML_LEAR_RATE)
   val vStddev: Double = conf.getDouble(MLConf.ML_FM_V_STDDEV, MLConf.DEFAULT_ML_FM_V_INIT)
-  val miniBatcSize: Int = conf.getInt(MLConf.ML_FM_MINIBATCH_SIZE, MLConf.DEFAULT_ML_FM_MINIBATCH_SIZE)
+  val miniBatcSize: Int = conf.getInt(MLConf.ML_MINIBATCH_SIZE, MLConf.DEFAULT_ML_MINIBATCH_SIZE)
   val vIndexs = new RowIndex()
   (0 until rank).foreach(vIndexs.addRowId)
 
@@ -67,7 +67,7 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
   override
   def train(trainData: DataBlock[LabeledData], vali: DataBlock[LabeledData]): MLModel = {
     val start = System.currentTimeMillis()
-    LOG.info(s"learnType=$learnType, feaNum=$feaNum, rank=$rank, #trainData=${trainData.size}")
+    LOG.info(s"learnType=$learnType, feaNum=$indexRange, rank=$rank, #trainData=${trainData.size}")
     LOG.info(s"reg1=$reg1, reg2=$reg2, lr=$lr, vStev=$vStddev")
 
     val beforeInit = System.currentTimeMillis()
@@ -245,7 +245,7 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
           val pre = fmmodel.calModel(x, w0, w, v)
 
           yList(i) = y
-          preList(i) = 1.0 / Math.log1p(Math.exp(-pre))
+          preList(i) = 1.0 / (1.0 + Math.exp(-pre))
 
           if ((pre > 0.0 && y > 0) || (pre < 0.0 && y <= 0)) {
             correct += 1
@@ -263,9 +263,9 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
           }
 
           val weight = if (y > 0) {
-            conf.getDouble(MLConf.ML_FM_POSITIVE_WEIGHT, 1.0)
+            conf.getDouble(MLConf.ML_POSITIVE_SAMPLE_WEIGHT, 1.0)
           } else {
-            conf.getDouble(MLConf.ML_FM_NEGATIVE_WEIGHT, 1.0)
+            conf.getDouble(MLConf.ML_NEGATIVE_SAMPLE_WEIGHT, 1.0)
           }
           loss += weight * Math.log1p(Math.exp(-y * pre))
         }
@@ -287,11 +287,11 @@ class FMLearner(override val ctx: TaskContext, val minP: Double, val maxP: Doubl
     learnType match {
       case "c" =>
         val weight = if (y > 0) {
-          conf.getDouble(MLConf.ML_FM_POSITIVE_WEIGHT, 1.0)
+          conf.getDouble(MLConf.ML_POSITIVE_SAMPLE_WEIGHT, 1.0)
         } else {
-          conf.getDouble(MLConf.ML_FM_NEGATIVE_WEIGHT, 1.0)
+          conf.getDouble(MLConf.ML_NEGATIVE_SAMPLE_WEIGHT, 1.0)
         }
-        -weight * y / Math.log1p(Math.exp(y * pre))
+        -weight * y / (1.0 + Math.exp(y * pre))
       case "r" =>
         pre - y
     }

@@ -81,6 +81,12 @@ class SparseVector(override val length: Long) extends Vector {
     keyValues = other.clone()
   }
 
+  def this(len: Long, expectedSize: Int) {
+    this(len)
+    keyValues = null
+    keyValues = new Long2DoubleOpenHashMap(expectedSize)
+  }
+
   def reSize(size: Long): Unit = {
     val temp = new Long2DoubleOpenHashMap(size.toInt)
     temp.putAll(keyValues)
@@ -126,6 +132,10 @@ class SparseVector(override val length: Long) extends Vector {
       i += 1
     }
     (length, keys, values)
+  }
+
+  def put(key: Long, value: Double): Unit = {
+    keyValues.put(key, value)
   }
 }
 

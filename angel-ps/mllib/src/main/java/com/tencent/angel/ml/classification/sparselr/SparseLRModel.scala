@@ -20,7 +20,7 @@ package com.tencent.angel.ml.classification.sparselr
 
 import java.text.DecimalFormat
 
-import com.tencent.angel.ml.conf.MLConf._
+import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.model.{MLModel, PSModel}
@@ -42,12 +42,14 @@ class SparseLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLMod
   val BUCKET_NUM = "bucket_num"
 
   // Number of dimensions
-  val feaNum = conf.getInt(ML_FEATURE_NUM, DEFAULT_ML_FEATURE_NUM)
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
+  val modelSize: Long = conf.getLong(MLConf.ML_MODEL_SIZE, indexRange)
+
   // Bucket number for calculation of AUC
   val bucketNum = conf.getInt(BUCKET_NUM, 10000)
 
-  val w = PSModel(W, 1, feaNum).setRowType(RowType.T_DOUBLE_DENSE).setNeedSave(false)
-  val z = PSModel(Z, 1, feaNum).setRowType(RowType.T_DOUBLE_SPARSE)
+  val w = PSModel(W, 1, indexRange, -1, -1, modelSize).setRowType(RowType.T_DOUBLE_DENSE).setNeedSave(false)
+  val z = PSModel(Z, 1, indexRange, -1, -1, modelSize).setRowType(RowType.T_DOUBLE_SPARSE)
   val t = PSModel(T, 1, 1).setRowType(RowType.T_DOUBLE_DENSE).setNeedSave(false)
   val loss = PSModel(LOSS, 1, 1).setRowType(RowType.T_DOUBLE_DENSE).setNeedSave(false)
   val auc = PSModel(AUC, 1, bucketNum * 2).setRowType(RowType.T_INT_DENSE).setNeedSave(false).setOplogType("DENSE_INT")

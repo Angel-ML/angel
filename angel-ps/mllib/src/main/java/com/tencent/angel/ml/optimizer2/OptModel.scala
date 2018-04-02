@@ -1,20 +1,3 @@
-/*
- * Tencent is pleased to support the open source community by making Angel available.
- *
- * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
- *
- * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- *
- * https://opensource.org/licenses/BSD-3-Clause
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
- *
- */
-
 package com.tencent.angel.ml.optimizer2
 
 import java.util
@@ -38,7 +21,7 @@ import scala.reflect.runtime.universe._
 
 abstract class OptModel(conf: Configuration, _ctx: TaskContext) extends MLModel(conf, _ctx) {
   private val LOG = LogFactory.getLog(classOf[OptModel])
-  private val feaNum: Long = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
+  private val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
   private val fetchRate: Double = 0.8
 
   def calLossAndUpdateGrad(x: TVector, y: Double,
@@ -49,7 +32,7 @@ abstract class OptModel(conf: Configuration, _ctx: TaskContext) extends MLModel(
 
   def getZeroParams: util.HashMap[String, TUpdate] = {
     val grad: util.HashMap[String, TUpdate] = new util.HashMap[String, TUpdate]()
-    val useDense = conf.get(MLConf.ML_DATA_FORMAT) match {
+    val useDense = conf.get(MLConf.ML_DATA_INPUT_FORMAT) match {
       case "dummy" | "libsvm" => false
       case _ => true
     }
@@ -120,13 +103,13 @@ abstract class OptModel(conf: Configuration, _ctx: TaskContext) extends MLModel(
         // for vector
         val vect = typeOf[N] match {
           case t if t == typeOf[Int] =>
-            if (indexes != null && flag(name) && 1.0 * indexes.length / feaNum < fetchRate) {
+            if (indexes != null && flag(name) && 1.0 * indexes.length / indexRange < fetchRate) {
               psm.getRowWithIndex(0, indexes.asInstanceOf[Array[Int]])
             } else {
               psm.getRow(0)
             }
           case t if t == typeOf[Long] =>
-            if (indexes != null && flag(name) && 1.0 * indexes.length / feaNum < fetchRate) {
+            if (indexes != null && flag(name) && 1.0 * indexes.length / indexRange < fetchRate) {
               psm.getRowWithLongIndex(0, indexes.asInstanceOf[Array[Long]])
             } else {
               psm.getRow(0)
@@ -139,7 +122,7 @@ abstract class OptModel(conf: Configuration, _ctx: TaskContext) extends MLModel(
           case RowType.T_DOUBLE_SPARSE =>
             val mat = new SparseDoubleMatrix(psm.row, psm.col.toInt)
             (0 until psm.row).foreach { ridx =>
-              if (indexes != null && flag(name) && 1.0 * indexes.length / feaNum < fetchRate) {
+              if (indexes != null && flag(name) && 1.0 * indexes.length / indexRange < fetchRate) {
                 mat.setRow(ridx, psm.getRowWithIndex(ridx, indexes.asInstanceOf[Array[Int]]).asInstanceOf[SparseDoubleVector])
               } else {
                 mat.setRow(ridx, psm.getRow(ridx).asInstanceOf[SparseDoubleVector])
@@ -155,7 +138,7 @@ abstract class OptModel(conf: Configuration, _ctx: TaskContext) extends MLModel(
           case RowType.T_DOUBLE_SPARSE_LONGKEY =>
             val mat = new SparseDoubleLongKeyMatrix(psm.row, psm.col)
             (0 until psm.row).foreach { ridx =>
-              if (indexes != null && flag(name) && 1.0 * indexes.length / feaNum < fetchRate) {
+              if (indexes != null && flag(name) && 1.0 * indexes.length / indexRange < fetchRate) {
                 mat.setRow(ridx, psm.getRowWithLongIndex(ridx, indexes.asInstanceOf[Array[Long]]).asInstanceOf[SparseLongKeyDoubleVector])
               } else {
                 mat.setRow(ridx, psm.getRow(ridx).asInstanceOf[SparseLongKeyDoubleVector])
@@ -171,7 +154,7 @@ abstract class OptModel(conf: Configuration, _ctx: TaskContext) extends MLModel(
           case RowType.T_FLOAT_SPARSE =>
             val mat = new SparseFloatMatrix(psm.row, psm.col.toInt)
             (0 until psm.row).foreach { ridx =>
-              if (indexes != null && flag(name) && 1.0 * indexes.length / feaNum < fetchRate) {
+              if (indexes != null && flag(name) && 1.0 * indexes.length / indexRange < fetchRate) {
                 mat.setRow(ridx, psm.getRowWithIndex(ridx, indexes.asInstanceOf[Array[Int]]).asInstanceOf[SparseFloatVector])
               } else {
                 mat.setRow(ridx, psm.getRow(ridx).asInstanceOf[SparseFloatVector])
@@ -214,48 +197,48 @@ abstract class OptModel(conf: Configuration, _ctx: TaskContext) extends MLModel(
     var nonZeroNumber: Long = 0L
     var totalNumber: Long = 0L
     params.foreach {
-      case (_, v: DenseDoubleVector) =>
+      case (name, v: DenseDoubleVector) =>
         nonZeroNumber += v.nonZeroNumber()
-        totalNumber += v.getDimension
-      case (_, v: DenseFloatVector) =>
+        totalNumber += getPSModels(name).validIndexNum
+      case (name, v: DenseFloatVector) =>
         nonZeroNumber += v.nonZeroNumber()
-        totalNumber += v.getDimension
-      case (_, v: SparseDoubleVector) =>
+        totalNumber += getPSModels(name).validIndexNum
+      case (name, v: SparseDoubleVector) =>
         nonZeroNumber += v.nonZeroNumber()
-        totalNumber += v.getDimension
-      case (_, v: SparseFloatVector) =>
+        totalNumber += getPSModels(name).validIndexNum
+      case (name, v: SparseFloatVector) =>
         nonZeroNumber += v.nonZeroNumber()
-        totalNumber += v.getDimension
-      case (_, v: SparseLongKeyDoubleVector) =>
+        totalNumber += getPSModels(name).validIndexNum
+      case (name, v: SparseLongKeyDoubleVector) =>
         nonZeroNumber += v.nonZeroNumber()
-        totalNumber += v.getLongDim
-      case (_, v: SparseLongKeyFloatVector) =>
+        totalNumber += getPSModels(name).validIndexNum
+      case (name, v: SparseLongKeyFloatVector) =>
         nonZeroNumber += v.nonZeroNumber()
-        totalNumber += v.getLongDim
-      case (_, m: DenseDoubleMatrix) =>
+        totalNumber += getPSModels(name).validIndexNum
+      case (name, m: DenseDoubleMatrix) =>
         m.getVectors.foreach { v =>
           nonZeroNumber += v.nonZeroNumber()
-          totalNumber += v.getDimension
+          totalNumber += getPSModels(name).validIndexNum
         }
-      case (_, m: DenseFloatMatrix) =>
+      case (name, m: DenseFloatMatrix) =>
         m.getVectors.foreach { v =>
           nonZeroNumber += v.nonZeroNumber()
-          totalNumber += v.getDimension
+          totalNumber += getPSModels(name).validIndexNum
         }
-      case (_, m: SparseDoubleMatrix) =>
+      case (name, m: SparseDoubleMatrix) =>
         m.getVectors.foreach { v =>
           nonZeroNumber += v.nonZeroNumber()
-          totalNumber += v.getDimension
+          totalNumber += getPSModels(name).validIndexNum
         }
-      case (_, m: SparseFloatMatrix) =>
+      case (name, m: SparseFloatMatrix) =>
         m.getVectors.foreach { v =>
           nonZeroNumber += v.nonZeroNumber()
-          totalNumber += v.getDimension
+          totalNumber += getPSModels(name).validIndexNum
         }
-      case (_, m: SparseDoubleLongKeyMatrix) =>
+      case (name, m: SparseDoubleLongKeyMatrix) =>
         m.getVectors.foreach { v =>
           nonZeroNumber += v.nonZeroNumber()
-          totalNumber += v.getLongDim
+          totalNumber += getPSModels(name).validIndexNum
         }
     }
 

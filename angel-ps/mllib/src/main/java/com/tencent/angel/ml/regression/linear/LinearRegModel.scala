@@ -34,8 +34,8 @@ class LinearRegModel(conf: Configuration, _ctx: TaskContext = null) extends MLMo
   private val LOG = LogFactory.getLog(classOf[LinearRegModel])
 
 
-  val feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, 10000)
-  val weight = PSModel(LR_WEIGHT_MAT, 1, feaNum).setAverage(true)
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
+  val weight = PSModel(LR_WEIGHT_MAT, 1, indexRange).setAverage(true)
   addPSModel(LR_WEIGHT_MAT, weight)
 
   super.setSavePath(conf)

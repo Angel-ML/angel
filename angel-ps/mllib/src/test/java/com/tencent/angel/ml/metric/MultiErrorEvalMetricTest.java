@@ -35,7 +35,7 @@ public class MultiErrorEvalMetricTest {
   @Test public void testEval() throws Exception {
     float pred[] = {0f, 1f};
     float label[] = {1f, 0f};
-    assertEquals(8388608, multiErrorMetric.eval(pred, label), 0.00);
+    assertEquals(0.5, multiErrorMetric.eval(pred, label), 0.00);
   }
 
   @Test public void testEvalOne() throws Exception {

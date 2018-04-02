@@ -54,9 +54,9 @@ public abstract class RangePartitioner implements Partitioner {
     int matrixId = mContext.getMatrixId();
     int row = mContext.getRowNum();
     long col = mContext.getColNum();
-    long nnz = mContext.getNnz();
-    if(col > 0 && nnz > col) {
-      nnz = col;
+    long validIndexNum = mContext.getValidIndexNum();
+    if(col > 0 && validIndexNum > col) {
+      validIndexNum = col;
     }
     int blockRow = mContext.getMaxRowNumInBlock();
     long blockCol = mContext.getMaxColNumInBlock();
@@ -66,8 +66,8 @@ public abstract class RangePartitioner implements Partitioner {
 
     if(col == -1) {
       long partSize = DEFAULT_PARTITION_SIZE;
-      if(nnz > 0) {
-        partSize = (long)(DEFAULT_PARTITION_SIZE * (row * (double)getMaxIndex() * 2 / nnz));
+      if(validIndexNum > 0) {
+        partSize = (long)(DEFAULT_PARTITION_SIZE * (row * (double)getMaxIndex() * 2 / validIndexNum));
       }
       if(blockRow == -1) {
         if (row > serverNum) {
@@ -81,8 +81,8 @@ public abstract class RangePartitioner implements Partitioner {
     } else {
       if(blockRow == -1 || blockCol == -1) {
         long partSize = DEFAULT_PARTITION_SIZE;
-        if(nnz > 0) {
-          partSize = (long)(DEFAULT_PARTITION_SIZE * (row * (double)col / nnz));
+        if(validIndexNum > 0) {
+          partSize = (long)(DEFAULT_PARTITION_SIZE * (row * (double)col / validIndexNum));
         }
         if(blockRow == -1) {
           if(row > serverNum) {

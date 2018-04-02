@@ -43,7 +43,7 @@ class FTRLLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   val ftrlModel = new FTRLLRModel(conf, ctx)
 
   // Init ftrl algorithm parameters
-  val feaNum: Int = ftrlModel.feaNum
+  val indexRange: Long = ftrlModel.indexRange
   val epochNum: Int = ftrlModel.epochNum
   val batchSize: Int = ftrlModel.batchSize
   val spRatio: Double = ftrlModel.spRatio
@@ -65,7 +65,7 @@ class FTRLLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   def train(trainData: DataBlock[LabeledData], valiData: DataBlock[LabeledData]): MLModel = {
     LOG.info("Start to train a FTRL LR Model.")
     LOG.info(s"#trainData=${trainData.size()}, #valiData=${valiData.size()}, " +
-      s"#samplePerBatch=$batchSize. #feature=$feaNum, #epoch=$epochNum, " +
+      s"#samplePerBatch=$batchSize. #feature=$indexRange, #epoch=$epochNum, " +
       s"alpha=$alpha, beta=$beta, lambda1=$lambda1, lambda2=$lambda2.")
 
     globalMetrics.addMetric(MLConf.TRAIN_LOSS, LossMetric(trainData.size))

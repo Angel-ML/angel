@@ -64,7 +64,9 @@ public final class Sum extends UnaryAggrFunc {
     for (Map.Entry<Long, Double> entry: data.long2DoubleEntrySet()) {
       asum += entry.getValue();
     }
-    asum += data.defaultReturnValue() * (entireSize - data.size());
+    // TODO: Have to deal with default values
+    assert (data.defaultReturnValue() == 0.0);
+    //asum += data.defaultReturnValue() * (entireSize - data.size());
     return asum;
   }
 

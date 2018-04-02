@@ -32,10 +32,9 @@ import org.apache.hadoop.io.{LongWritable, Text}
 class KMeansTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
   private val LOG = LogFactory.getLog(classOf[KMeansTrainTask])
 
-  val feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
-  val dataFormat = conf.get(MLConf.ML_DATA_FORMAT, "libsvm")
-  val dataParser = DataParser(dataFormat, feaNum, false)
-
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
+  assert(indexRange != -1L)
+  override val dataParser = DataParser(conf)
 
   /**
     * Parse input text to trainning data

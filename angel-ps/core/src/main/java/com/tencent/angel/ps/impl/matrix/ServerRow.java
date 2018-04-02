@@ -19,6 +19,7 @@ package com.tencent.angel.ps.impl.matrix;
 import com.tencent.angel.common.Serialize;
 import com.tencent.angel.exception.WaitLockTimeOutException;
 import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.utils.StringUtils;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -88,7 +89,7 @@ public abstract class ServerRow implements Serialize {
     try {
       ret = lock.writeLock().tryLock(milliseconds, TimeUnit.MILLISECONDS);
     } catch (Throwable e) {
-      throw new WaitLockTimeOutException("wait write lock timeout", milliseconds);
+      throw new WaitLockTimeOutException("wait write lock timeout " + StringUtils.stringifyException(e), milliseconds);
     }
 
     if(!ret) {
@@ -119,7 +120,7 @@ public abstract class ServerRow implements Serialize {
     try {
       ret = lock.readLock().tryLock(milliseconds, TimeUnit.MILLISECONDS);
     } catch (Throwable e) {
-      throw new WaitLockTimeOutException("wait read lock timeout", milliseconds);
+      throw new WaitLockTimeOutException("wait read lock timeout " + StringUtils.stringifyException(e), milliseconds);
     }
 
     if(!ret) {

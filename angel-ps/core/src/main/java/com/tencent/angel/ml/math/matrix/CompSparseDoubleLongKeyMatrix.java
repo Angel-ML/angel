@@ -40,4 +40,5 @@ public class CompSparseDoubleLongKeyMatrix extends DoubleLongKeyMatrix<CompSpars
   @Override public CompSparseLongKeyDoubleVector initVector(int rowIndex) {
     return new CompSparseLongKeyDoubleVector(matrixId, rowIndex, col);
   }
+
 }

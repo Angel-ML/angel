@@ -16,6 +16,66 @@
 
 package com.tencent.angel.spark.ml.optimize
 
+import com.tencent.angel.spark.linalg.{OneHotVector, SparseVector}
+import com.tencent.angel.spark.models.vector.{PSVector, SparsePSVector}
+
+class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) extends Serializable {
+  @transient var localZ: SparseVector = null
+  @transient var localN: SparseVector = null
+
+  def updateState(z: SparsePSVector, n: SparsePSVector, featIds: Array[Long]): Unit = {
+    localZ = z.pull(featIds)
+    localN = n.pull(featIds)
+  }
+
+  def optimize(
+      feature: OneHotVector,
+      label: Double,
+      costFun: (SparseVector, Double, OneHotVector) => (SparseVector, Double)): (SparseVector, SparseVector, Double) = {
+
+    val wPairs = feature.indices.map { fId =>
+      val zVal = localZ(fId)
+      val nVal = localN(fId)
+      val wVal = FTRL.updateWeight(zVal, nVal, alpha, beta, lambda1, lambda2)
+      (fId, wVal)
+    }
+    val localW = new SparseVector(feature.length, wPairs)
+
+    val (newGradient, loss) = costFun(localW, label, feature)
+
+    val deltaZ = new SparseVector(feature.length)
+    val deltaN = new SparseVector(feature.length)
+
+    feature.indices.foreach { fId =>
+      val nVal = localN(fId)
+      val gOnId = newGradient(fId)
+      val dOnId = 1.0 / alpha * (Math.sqrt(nVal + gOnId * gOnId) - Math.sqrt(nVal))
+
+      deltaZ.put(fId, gOnId - dOnId * localW(fId))
+      deltaN.put(fId, gOnId * gOnId)
+    }
+    (deltaZ, deltaN, loss)
+  }
+
+  def weight: SparseVector = {
+    val w = new SparseVector(localZ.length)
+
+    val zMap = localZ.keyValues
+    val iter = zMap.long2DoubleEntrySet().fastIterator()
+    while (iter.hasNext) {
+      val entry = iter.next()
+      val fId = entry.getLongKey
+      val zVal = entry.getDoubleValue
+      val nVal = localN(fId)
+      val wVal = FTRL.updateWeight(zVal, nVal, alpha, beta, lambda1, lambda2)
+      w.put(fId, wVal)
+    }
+    w
+  }
+
+}
+
+
 object FTRL {
 
   // compute the increment for z and n model for one instance
@@ -76,10 +136,11 @@ object FTRL {
                    beta: Double,
                    lambda1: Double,
                    lambda2: Double): Double = {
-    if (Math.abs(zOnId) <= lambda1)
+    if (Math.abs(zOnId) <= lambda1) {
       0.0
-    else
+    } else {
       (-1) * (1.0 / (lambda2 + (beta + Math.sqrt(nOnId)) / alpha)) * (zOnId - Math.signum(zOnId).toInt * lambda1)
+    }
   }
 
 }

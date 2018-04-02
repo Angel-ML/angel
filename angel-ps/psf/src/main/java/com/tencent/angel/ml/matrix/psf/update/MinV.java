@@ -20,7 +20,9 @@ package com.tencent.angel.ml.matrix.psf.update;
 import com.tencent.angel.ml.matrix.psf.update.enhance.MUpdateFunc;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 import java.nio.DoubleBuffer;
 import java.util.Map;
@@ -63,15 +65,20 @@ public class MinV extends MUpdateFunc {
     double defaultValue = Math.min(from1.defaultReturnValue(), from2.defaultReturnValue());
     to.defaultReturnValue(defaultValue);
 
-    for (Map.Entry<Long, Double> entry: to.long2DoubleEntrySet()) {
-      if (entry.getValue() > defaultValue) {
-        entry.setValue(defaultValue);
+    ObjectIterator<Long2DoubleMap.Entry> iter = to.long2DoubleEntrySet().fastIterator();
+    Long2DoubleMap.Entry entry;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      if (entry.getDoubleValue() >= defaultValue) {
+        iter.remove();
       }
     }
 
-    for (Map.Entry<Long, Double> entry: from2.long2DoubleEntrySet()) {
-      if (entry.getValue() < to.get(entry.getKey().longValue())) {
-        to.put(entry.getKey(), entry.getValue());
+    iter = from2.long2DoubleEntrySet().fastIterator();
+    while (iter.hasNext()) {
+      entry = iter.next();
+      if (entry.getDoubleValue() < to.get(entry.getLongKey())) {
+        to.put(entry.getLongKey(), entry.getDoubleValue());
       }
     }
 

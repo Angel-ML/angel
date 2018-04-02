@@ -26,7 +26,7 @@ import org.apache.hadoop.io.{LongWritable, Text}
 class MLRPredictTask(ctx: TaskContext) extends PredictTask[LongWritable, Text](ctx) {
 
   def predict(ctx: TaskContext) {
-    predict(ctx, MLRModel(ctx, conf), taskDataBlock);
+    predict(ctx, MLRModel(ctx, conf), taskDataBlock)
   }
 
   def parse(key: LongWritable, value: Text): LabeledData = {

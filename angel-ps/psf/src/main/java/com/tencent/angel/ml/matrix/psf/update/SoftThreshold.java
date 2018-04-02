@@ -29,7 +29,6 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
-import java.util.Map;
 
 /**
  * `AddS` function will add a `value` to `fromId` and save result to `toId`.
@@ -37,8 +36,8 @@ import java.util.Map;
  */
 public class SoftThreshold extends MMUpdateFunc {
 
-  public SoftThreshold(int matrixId, int rowId, double threshhold) {
-    super(matrixId, new int[]{rowId}, new double[]{threshhold});
+  public SoftThreshold(int matrixId, int rowId, double threshold) {
+    super(matrixId, new int[]{rowId}, new double[]{threshold});
   }
 
   public SoftThreshold() {
@@ -46,18 +45,18 @@ public class SoftThreshold extends MMUpdateFunc {
   }
 
   @Override
-  protected void doUpdate(ServerDenseDoubleRow[] rows, double[] threshholds) {
+  protected void doUpdate(ServerDenseDoubleRow[] rows, double[] thresholds) {
     try {
       rows[0].getLock().writeLock().lock();
       DoubleBuffer data = rows[0].getData();
-      double threshhold = threshholds[0];
+      double threshold = thresholds[0];
       int size = rows[0].size();
       for (int i = 0; i < size; i++) {
         double value = data.get(i);
-        if (value > threshhold) {
-          data.put(i, value - threshhold);
-        } else if (value < - threshhold ) {
-          data.put(i, value + threshhold);
+        if (value > threshold) {
+          data.put(i, value - threshold);
+        } else if (value < - threshold ) {
+          data.put(i, value + threshold);
         } else {
           data.put(i, 0.0);
         }
@@ -68,19 +67,19 @@ public class SoftThreshold extends MMUpdateFunc {
   }
 
   @Override
-  protected void doUpdate(ServerSparseDoubleRow[] rows, double[] threshholds) {
+  protected void doUpdate(ServerSparseDoubleRow[] rows, double[] thresholds) {
     try {
       rows[0].getLock().writeLock().lock();
       Int2DoubleOpenHashMap data = rows[0].getData();
-      double threshhold = threshholds[0];
+      double threshold = thresholds[0];
       ObjectIterator<Int2DoubleMap.Entry> iter = data.int2DoubleEntrySet().fastIterator();
       while (iter.hasNext()) {
         Int2DoubleMap.Entry entry = iter.next();
         double value = entry.getDoubleValue();
-        if (value > threshhold) {
-          entry.setValue(value - threshhold);
-        } else if (value < - threshhold ) {
-          entry.setValue(value + threshhold);
+        if (value > threshold) {
+          entry.setValue(value - threshold);
+        } else if (value < - threshold ) {
+          entry.setValue(value + threshold);
         } else {
           iter.remove();
         }
@@ -91,19 +90,19 @@ public class SoftThreshold extends MMUpdateFunc {
   }
 
   @Override
-  protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows, double[] threshholds) {
+  protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows, double[] thresholds) {
     try {
       rows[0].getLock().writeLock().lock();
       Long2DoubleOpenHashMap data = rows[0].getData();
-      double threshhold = threshholds[0];
+      double threshold = thresholds[0];
       ObjectIterator<Long2DoubleMap.Entry> iter = data.long2DoubleEntrySet().fastIterator();
       while (iter.hasNext()) {
         Long2DoubleMap.Entry entry = iter.next();
         double value = entry.getDoubleValue();
-        if (value > threshhold) {
-          entry.setValue(value - threshhold);
-        } else if (value < - threshhold ) {
-          entry.setValue(value + threshhold);
+        if (value > threshold) {
+          entry.setValue(value - threshold);
+        } else if (value < - threshold ) {
+          entry.setValue(value + threshold);
         } else {
           iter.remove();
         }
@@ -114,18 +113,18 @@ public class SoftThreshold extends MMUpdateFunc {
   }
 
   @Override
-  protected void doUpdate(ServerDenseFloatRow[] rows, double[] threshholds) {
+  protected void doUpdate(ServerDenseFloatRow[] rows, double[] thresholds) {
     try {
       rows[0].getLock().writeLock().lock();
       FloatBuffer data = rows[0].getData();
-      float threshhold = Double.valueOf(threshholds[0]).floatValue();
+      float threshold = Double.valueOf(thresholds[0]).floatValue();
       int size = rows[0].size();
       for (int i = 0; i < size; i++) {
         float value = data.get(i);
-        if (value > threshhold) {
-          data.put(i, value - threshhold);
-        } else if (value < - threshhold ) {
-          data.put(i, value + threshhold);
+        if (value > threshold) {
+          data.put(i, value - threshold);
+        } else if (value < - threshold ) {
+          data.put(i, value + threshold);
         } else {
           data.put(i, 0.0f);
         }
@@ -136,19 +135,19 @@ public class SoftThreshold extends MMUpdateFunc {
   }
 
   @Override
-  protected void doUpdate(ServerSparseFloatRow[] rows, double[] threshholds) {
+  protected void doUpdate(ServerSparseFloatRow[] rows, double[] thresholds) {
     try {
       rows[0].getLock().writeLock().lock();
       Int2FloatOpenHashMap data = rows[0].getData();
-      float threshhold = Double.valueOf(threshholds[0]).floatValue();
+      float threshold = Double.valueOf(thresholds[0]).floatValue();
       ObjectIterator<Int2FloatMap.Entry> iter = data.int2FloatEntrySet().fastIterator();
       while (iter.hasNext()) {
         Int2FloatMap.Entry entry = iter.next();
         float value = entry.getFloatValue();
-        if (value > threshhold) {
-          entry.setValue(value - threshhold);
-        } else if (value < - threshhold ) {
-          entry.setValue(value + threshhold);
+        if (value > threshold) {
+          entry.setValue(value - threshold);
+        } else if (value < - threshold ) {
+          entry.setValue(value + threshold);
         } else {
           iter.remove();
         }

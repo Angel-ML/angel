@@ -201,7 +201,7 @@ public class ServerSparseDoubleLongKeyRow extends ServerLongKeyRow{
       buf.writeInt(index2ValueMap.size());
 
       ObjectIterator<Long2DoubleMap.Entry> iter = index2ValueMap.long2DoubleEntrySet().fastIterator();
-      Long2DoubleMap.Entry entry = null;
+      Long2DoubleMap.Entry entry;
       while (iter.hasNext()) {
         entry = iter.next();
         buf.writeLong(entry.getLongKey());

@@ -303,6 +303,7 @@ public abstract class AngelClient implements AngelClientInterface {
         hbThread.interrupt();
       }
     }
+    stopped.set(false);
   }
 
   @Override

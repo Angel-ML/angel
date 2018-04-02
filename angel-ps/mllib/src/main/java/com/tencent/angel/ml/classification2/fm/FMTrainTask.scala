@@ -46,17 +46,19 @@ class FMTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ct
   val LOG: Log = LogFactory.getLog(classOf[FMTrainTask])
 
   // feature number of training data
-  private val feaNum: Int = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
-  private val valiRat = conf.getDouble(MLConf.ML_VALIDATE_RATIO, 0.05)
+  private val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
+
+  private val valiRat = conf.getDouble(MLConf.ML_VALIDATE_RATIO, MLConf.DEFAULT_ML_VALIDATE_RATIO)
+
   // validation data storage
   var validDataBlock = new MemoryDataBlock[LabeledData](-1)
 
   // Enable index get
-  private val enableIndexGet = conf.getBoolean(MLConf.ML_INDEX_GET_ENABLE, MLConf.DEFAULT_ML_INDEX_GET_ENABLE)
-  val modelType: RowType = RowType.valueOf(conf.get(MLConf.FM_MODEL_TYPE, RowType.T_DOUBLE_SPARSE.toString))
+  private val enableIndexGet = conf.getBoolean(MLConf.ML_PULL_WITH_INDEX_ENABLE, MLConf.DEFAULT_ML_PULL_WITH_INDEX_ENABLE)
   // data format of training data, libsvm or dummy
-  private val dataFormat = conf.get(MLConf.ML_DATA_FORMAT, "dummy")
-  private val dataParser = DataParser(dataFormat, feaNum, negY = true, hasLable = true, isClassification = true, modelType)
+  override val dataParser = DataParser(conf)
+
+  val modelType: RowType = RowType.valueOf(conf.get(MLConf.ML_MODEL_TYPE, MLConf.DEFAULT_ML_MODEL_TYPE))
 
   var indexes: Any = _
 
@@ -125,7 +127,7 @@ class FMTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ct
       taskDataBlock.size +
         validDataBlock.size
     } samples, ${taskDataBlock.size} for train, " +
-      s"${validDataBlock.size} for validation. feanum=$feaNum" +
+      s"${validDataBlock.size} for validation." +
       s" processing time is $cost"
     )
   }

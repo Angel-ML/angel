@@ -71,13 +71,13 @@ public class KmeansTest {
 
       //set Kmeans algorithm parameters #cluster #feature #epoch
       conf.set(MLConf.KMEANS_CENTER_NUM(), String.valueOf(centerNum));
-      conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(featureNum));
+      conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
       conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
       conf.set(MLConf.KMEANS_SAMPLE_RATIO_PERBATCH(), String.valueOf(spratio));
       conf.set(MLConf.kMEANS_C(), String.valueOf(c));
 
       // Set data format
-      conf.set(MLConf.ML_DATA_FORMAT(), dataFmt);
+      conf.set(MLConf.ML_DATA_INPUT_FORMAT(), dataFmt);
     } catch (Exception x) {
       LOG.error("setup failed ", x);
       throw x;

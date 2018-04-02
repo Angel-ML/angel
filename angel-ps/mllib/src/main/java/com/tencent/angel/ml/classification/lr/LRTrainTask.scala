@@ -20,15 +20,19 @@ package com.tencent.angel.ml.classification.lr
 
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.TVector
-import com.tencent.angel.ml.math.vector.{SparseDoubleSortedVector, SparseDummyVector}
+import com.tencent.angel.ml.math.vector._
+import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.task.TrainTask
 import com.tencent.angel.ml.utils.DataParser
 import com.tencent.angel.worker.storage.MemoryDataBlock
 import com.tencent.angel.worker.task.TaskContext
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet
 import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.hadoop.io.{LongWritable, Text}
+
+import scala.math.Numeric
+import scala.reflect.runtime.universe._
 
 
 /**
@@ -44,56 +48,56 @@ class LRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ct
   val LOG: Log = LogFactory.getLog(classOf[LRTrainTask])
 
   // feature number of training data
-  private val feaNum: Int = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
-  // data format of training data, libsvm or dummy
-  private val dataFormat = conf.get(MLConf.ML_DATA_FORMAT, "dummy")
-  // validate sample ratio
-  private val valiRat = conf.getDouble(MLConf.ML_VALIDATE_RATIO, 0.05)
-
-  private val dataParser = DataParser(dataFormat, feaNum, true)
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
+  private val valiRat = conf.getDouble(MLConf.ML_VALIDATE_RATIO, MLConf.DEFAULT_ML_VALIDATE_RATIO)
 
   // validation data storage
   var validDataBlock = new MemoryDataBlock[LabeledData](-1)
 
   // Enable index get
-  private val enableIndexGet = conf.getBoolean(MLConf.ML_INDEX_GET_ENABLE, MLConf.DEFAULT_ML_INDEX_GET_ENABLE)
+  private val enableIndexGet = conf.getBoolean(MLConf.ML_PULL_WITH_INDEX_ENABLE, MLConf.DEFAULT_ML_PULL_WITH_INDEX_ENABLE)
+  // data format of training data, libsvm or dummy
+  override val dataParser = DataParser(conf)
+  val modelType: RowType = RowType.valueOf(conf.get(MLConf.ML_MODEL_TYPE, MLConf.DEFAULT_ML_MODEL_TYPE))
+  var indexes: Any = _
 
-  var indexes: Array[Int] = new Array[Int](0)
+  override def train(ctx: TaskContext) {
+    modelType match {
+      case RowType.T_DOUBLE_SPARSE_LONGKEY | RowType.T_FLOAT_SPARSE_LONGKEY | RowType.T_DOUBLE_SPARSE_LONGKEY_COMPONENT =>
+        train(ctx: TaskContext, indexes.asInstanceOf[Array[Long]])
+      case _ => train(ctx: TaskContext, indexes.asInstanceOf[Array[Int]])
+    }
+  }
 
-  override
-  def train(ctx: TaskContext) {
+  def train[N: Numeric : TypeTag](ctx: TaskContext, indexes: Array[N]): Unit = {
     val trainer = new LRLearner(ctx)
+    LOG.info("Begin to train ...")
     trainer.train(taskDataBlock, validDataBlock, indexes)
   }
 
-  /**
-    * parse the input text to trainning data
-    *
-    * @param key   the key
-    * @param value the text
-    */
-  override
-  def parse(key: LongWritable, value: Text): LabeledData = {
-    dataParser.parse(value.toString())
+  override def parse(key: LongWritable, value: Text): LabeledData = {
+    dataParser.parse(value.toString)
   }
 
-  /**
-    * before trainning, preprocess input text to trainning data and put them into trainning data
-    * storage and validation data storage separately
-    */
-  override
-  def preProcess(taskContext: TaskContext) {
+  override def preProcess(taskContext: TaskContext) {
     val start = System.currentTimeMillis()
 
     var count = 0
-    val vali = Math.ceil(1.0 / valiRat).asInstanceOf[Int]
+    val vali = Math.ceil(1.0 / valiRat).toInt
 
     val reader = taskContext.getReader
-    val indexSet = new Int2IntOpenHashMap()
+    val indexSet = modelType match {
+      case RowType.T_DOUBLE_SPARSE_LONGKEY | RowType.T_DOUBLE_SPARSE_LONGKEY_COMPONENT | RowType.T_FLOAT_SPARSE_LONGKEY =>
+        new LongOpenHashSet()
+      case _ => new IntOpenHashSet()
+    }
+
     while (reader.nextKeyValue) {
       val out = parse(reader.getCurrentKey, reader.getCurrentValue)
       if (out != null) {
-        updateIndex(out, indexSet)
+        if (enableIndexGet) {
+          updateIndex(out, indexSet)
+        }
         if (count % vali == 0)
           validDataBlock.put(out)
         else
@@ -102,8 +106,16 @@ class LRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ct
       }
     }
     if (enableIndexGet && !indexSet.isEmpty) {
-      indexes = indexSet.keySet().toIntArray
-      LOG.info("after preprocess data , index length = " + indexes.length)
+      indexes = modelType match {
+        case RowType.T_DOUBLE_SPARSE_LONGKEY | RowType.T_DOUBLE_SPARSE_LONGKEY_COMPONENT | RowType.T_FLOAT_SPARSE_LONGKEY =>
+          val array = indexSet.asInstanceOf[LongOpenHashSet].toLongArray
+          LOG.info("after preprocess data , index length = " + array.length)
+          array
+        case _ =>
+          val array = indexSet.asInstanceOf[IntOpenHashSet].toIntArray
+          LOG.info("after preprocess data , index length = " + array.length)
+          array
+      }
     }
 
     taskDataBlock.flush()
@@ -114,23 +126,25 @@ class LRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ct
       taskDataBlock.size +
         validDataBlock.size
     } samples, ${taskDataBlock.size} for train, " +
-      s"${validDataBlock.size} for validation. feanum=$feaNum")
+      s"${validDataBlock.size} for validation. " +
+      s" processing time is $cost"
+    )
   }
 
-  def updateIndex(labeledData: LabeledData, indexSet: Int2IntOpenHashMap): Unit = {
+  def updateIndex(labeledData: LabeledData, indexSet: Any): Unit = {
     if (enableIndexGet) {
-      val x: TVector = labeledData.getX
-      if (x.isInstanceOf[SparseDummyVector]) {
-        updateIndex(x.asInstanceOf[SparseDummyVector].getIndices, indexSet)
-      } else if (x.isInstanceOf[SparseDoubleSortedVector]) {
-        updateIndex(x.asInstanceOf[SparseDoubleSortedVector].getIndices, indexSet)
+      (labeledData.getX, indexSet) match {
+        case (x: SparseDummyVector, index: IntOpenHashSet) => x.getIndices.foreach { idx => index.add(idx) }
+        case (x: SparseDoubleVector, index: IntOpenHashSet) => x.getIndices.foreach { idx => index.add(idx) }
+        case (x: SparseFloatVector, index: IntOpenHashSet) => x.getIndices.foreach { idx => index.add(idx) }
+        case (x: SparseDoubleSortedVector, index: IntOpenHashSet) => x.getIndices.foreach { idx => index.add(idx) }
+        case (x: SparseFloatSortedVector, index: IntOpenHashSet) => x.getIndices.foreach { idx => index.add(idx) }
+        case (x: SparseFloatSortedVector, index: IntOpenHashSet) => x.getIndices.foreach { idx => index.add(idx) }
+        case (x: SparseLongKeyDummyVector, index: LongOpenHashSet) => x.getIndexes.foreach { idx => index.add(idx) }
+        case (x: SparseLongKeySortedDoubleVector, index: LongOpenHashSet) => x.getIndexes.foreach { idx => index.add(idx) }
+        case (x: SparseLongKeySortedFloatVector, index: LongOpenHashSet) => x.getIndexes.foreach { idx => index.add(idx) }
       }
     }
   }
 
-  def updateIndex(itemIndexes: Array[Int], indexSet: Int2IntOpenHashMap): Unit = {
-    for (index <- itemIndexes) {
-      indexSet.put(index, 0)
-    }
-  }
 }

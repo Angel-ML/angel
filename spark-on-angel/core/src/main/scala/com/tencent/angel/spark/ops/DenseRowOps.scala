@@ -24,7 +24,7 @@ import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
 import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult
 import com.tencent.angel.ml.matrix.psf.update._
 import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateFunc
-import com.tencent.angel.ml.matrix.psf.update.primitive.Push
+import com.tencent.angel.ml.matrix.psf.update.Push
 import com.tencent.angel.psagent.matrix.{MatrixClientFactory, ResponseType, Result}
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.linalg.{DenseVector, SparseVector}

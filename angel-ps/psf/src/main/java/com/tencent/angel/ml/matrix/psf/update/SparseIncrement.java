@@ -16,15 +16,20 @@
 
 package com.tencent.angel.ml.matrix.psf.update;
 
+import com.tencent.angel.ml.matrix.psf.update.enhance.CompressUpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.enhance.SparseFunc;
 import com.tencent.angel.ml.matrix.psf.update.enhance.SparseParam;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.nio.DoubleBuffer;
 
 public class SparseIncrement extends SparseFunc {
+  private static final Log LOG = LogFactory.getLog(SparseIncrement.class);
+
   public SparseIncrement(int matrixId, int row, long[] cols, double[] values) {
     super(new SparseParam(matrixId, row, cols, values));
   }
@@ -51,9 +56,15 @@ public class SparseIncrement extends SparseFunc {
   protected void doUpdate(ServerSparseDoubleLongKeyRow row, long[] cols, double[] values) {
     row.tryToLockWrite();
     try {
+      long begin = System.currentTimeMillis();
       Long2DoubleOpenHashMap rowData = row.getData();
       for (int i = 0; i < cols.length; i++) {
         rowData.addTo(cols[i], values[i]);
+      }
+      long end = System.currentTimeMillis();
+      if (end - begin > 1000) {
+        LOG.info("Long2DoubleHashMap addTo time: " + (end - begin) + " ms");
+        LOG.info("Long2DoubleHashMap size: " + rowData.size() + " increment size: "  + cols.length);
       }
     } finally {
       row.unlockWrite();

@@ -32,7 +32,7 @@ import org.apache.hadoop.io.{LongWritable, Text}
 class FTRLLRPredictTask(ctx: TaskContext) extends PredictTask[LongWritable, Text](ctx) {
 
   def predict(ctx: TaskContext) {
-    predict(ctx, FTRLLRModel(ctx, conf), taskDataBlock);
+    predict(ctx, FTRLLRModel(ctx, conf), taskDataBlock)
   }
 
   def parse(key: LongWritable, value: Text): LabeledData = {

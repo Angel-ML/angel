@@ -18,6 +18,7 @@
 package com.tencent.angel.master.metrics;
 
 import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.utils.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -78,12 +79,19 @@ public class DistributeLog {
   }
 
   /**
-   * Write the index names to file
+   * Set the index name list
    * @param names index name list
    * @throws IOException
    */
   public void setNames(List<String> names) throws IOException {
     this.names = names;
+  }
+
+  /**
+   * Write the index names to file
+   * @throws IOException
+   */
+  public void writeNames() throws IOException {
     for (String name : names) {
       outputStream.write((name + "\t").getBytes());
     }

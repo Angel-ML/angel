@@ -31,16 +31,16 @@ class MLRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](c
   val LOG: Log = LogFactory.getLog(classOf[MLRTrainTask])
 
   // validate sample ratio
-  private val valiRat = conf.getDouble(MLConf.ML_VALIDATE_RATIO, 0.05)
+  private val valiRat = conf.getDouble(MLConf.ML_VALIDATE_RATIO, MLConf.DEFAULT_ML_VALIDATE_RATIO)
   // validation data storage
   var validDataBlock = new MemoryDataBlock[LabeledData](-1)
+
   // feature number of training data
-  private val feaNum: Int = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
+  private val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
+
   // data format of training data, libsvm or dummy
-  private val dataFormat = conf.get(MLConf.ML_DATA_FORMAT, "dummy")
+  override val dataParser = DataParser(conf)
 
-
-  private val dataParser = DataParser(dataFormat, feaNum, true)
 
   override
   def train(ctx: TaskContext) {
@@ -88,7 +88,7 @@ class MLRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](c
       taskDataBlock.size +
         validDataBlock.size
     } samples, ${taskDataBlock.size} for train, " +
-      s"${validDataBlock.size} for validation. feanum=$feaNum")
+      s"${validDataBlock.size} for validation.")
   }
 
 }

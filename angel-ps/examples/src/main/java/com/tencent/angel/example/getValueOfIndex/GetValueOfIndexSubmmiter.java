@@ -24,7 +24,6 @@ import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.ml.conf.MLConf;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.RowType;
-import com.tencent.angel.protobuf.generated.MLProtos;
 import org.apache.hadoop.conf.Configuration;
 
 public class GetValueOfIndexSubmmiter implements AppSubmitter {
@@ -36,7 +35,7 @@ public class GetValueOfIndexSubmmiter implements AppSubmitter {
   @Override
   public void submit(Configuration conf) throws Exception {
     AngelClient client = AngelClientFactory.get(conf);
-    int feaNum = conf.getInt(MLConf.ML_FEATURE_NUM(), MLConf.DEFAULT_ML_FEATURE_NUM());
+    int feaNum = conf.getInt(MLConf.ML_FEATURE_INDEX_RANGE(), MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE());
 
     MatrixContext dMat = new MatrixContext(DENSE_DOUBLE_MAT, 1, feaNum, -1,-1);
     dMat.setRowType(RowType.T_DOUBLE_DENSE);

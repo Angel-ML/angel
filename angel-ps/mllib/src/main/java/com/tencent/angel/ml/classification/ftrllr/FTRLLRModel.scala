@@ -43,7 +43,8 @@ class FTRLLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
   val FTRL_LR_Z = "ftrl_lr_z"
   val FTRL_LR_N = "ftrl_lr_n"
 
-  val feaNum: Int = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
+  val modelSize: Long = conf.getLong(MLConf.ML_MODEL_SIZE, indexRange)
   val epochNum: Int = conf.getInt(MLConf.ML_EPOCH_NUM, MLConf.DEFAULT_ML_EPOCH_NUM)
   val batchSize: Int = conf.getInt(MLConf.ML_FTRL_BATCH_SIZE, MLConf.DEFAULT_ML_FTRL_BATCH_SIZE)
   val spRatio: Double = conf.getDouble(MLConf.ML_VALIDATE_RATIO, MLConf.DEFAULT_ML_VALIDATE_RATIO)
@@ -54,12 +55,12 @@ class FTRLLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
 
 
   // PSModel z, z^t = \Sigma_{s=1}^t g - \Sigma_{s=1}^t \delta^s \cdot w
-  val zMat = PSModel(FTRL_LR_Z, 1, feaNum)
+  val zMat = PSModel(FTRL_LR_Z, 1, indexRange, -1, -1, modelSize)
     .setAverage(true)
     .setRowType(RowType.T_DOUBLE_SPARSE)
 
   // PSModel n, n^t = \Sigma_{i=1}^t g_i^2
-  val nMat = PSModel(FTRL_LR_N, 1, feaNum).setAverage(true)
+  val nMat = PSModel(FTRL_LR_N, 1, indexRange, -1, -1, modelSize).setAverage(true)
     .setAverage(true)
     .setRowType(RowType.T_DOUBLE_SPARSE)
 

@@ -26,6 +26,7 @@ import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
 
+import java.nio.DoubleBuffer;
 import java.util.*;
 
 /**
@@ -45,43 +46,61 @@ public class PullWithCols extends ArrayAggrFunc {
   }
 
   @Override
-  protected List<Map.Entry<Long, Double>> doProcess(ServerDenseDoubleRow row, long[] cols) {
-    Map<Long, Double> result = new HashMap<>();
-    for (long colId: cols) {
-      double value = row.getData().get((int)colId);
-      result.put(colId, value);
+  protected ArrayPartitionAggrResult doProcess(ServerDenseDoubleRow row, long[] cols) {
+    try {
+      row.getLock().readLock().lock();
+      double[] values = new double[cols.length];
+      DoubleBuffer db = row.getData();
+      int i = 0;
+      for (long colId : cols) {
+        values[i++] = db.get((int) (colId - row.getStartCol()));
+      }
+      return new ArrayPartitionAggrResult(cols, values);
+    } finally {
+      row.getLock().readLock().unlock();
     }
-    return new ArrayList<>(result.entrySet());
   }
 
   @Override
-  protected List<Map.Entry<Long, Double>> doProcess(ServerSparseDoubleLongKeyRow row, long[] cols) {
-    Map<Long, Double> result = new HashMap<>();
-    for (long colId : cols) {
-      double value = row.getIndex2ValueMap().get(colId);
-      result.put(colId, value);
+  protected ArrayPartitionAggrResult doProcess(ServerSparseDoubleLongKeyRow row, long[] cols) {
+    try {
+      row.getLock().readLock().lock();
+      double[] values = new double[cols.length];
+      int i = 0;
+      for (long colId: cols) {
+        values[i++] = row.getIndex2ValueMap().get(colId);
+      }
+      return new ArrayPartitionAggrResult(cols, values);
+    } finally {
+      row.getLock().readLock().unlock();
     }
-    return new ArrayList<>(result.entrySet());
   }
-
 
   @Override
   public GetResult merge(List<PartitionGetResult> partResults) {
-    ArrayList<Long> cols = new ArrayList<>();
-    ArrayList<Double> result = new ArrayList<>();
+    int totalLen = 0;
+    for (PartitionGetResult part: partResults) {
+      ArrayPartitionAggrResult partResult = (ArrayPartitionAggrResult) part;
+      totalLen += partResult.getCols().length;
+    }
+
+    long[] combCols = new long[totalLen];
+    double[] combValues = new double[totalLen];
+
+    int accuIndex = 0;
 
     for (PartitionGetResult part: partResults) {
       ArrayPartitionAggrResult partResult = (ArrayPartitionAggrResult) part;
+
       long[] keys = partResult.getCols();
       double[] values = partResult.getResult();
       assert (keys.length == values.length);
 
-      for (int i = 0; i < keys.length; i++) {
-        cols.add(keys[i]);
-        result.add(values[i]);
-      }
+      System.arraycopy(keys, 0, combCols, accuIndex, keys.length);
+      System.arraycopy(values, 0, combValues, accuIndex, values.length);
+      accuIndex += keys.length;
     }
 
-    return new ArrayAggrResult(Utils.longListToArray(cols), Utils.doubleListToArray(result));
+    return new ArrayAggrResult(combCols, combValues);
   }
 }

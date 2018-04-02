@@ -54,7 +54,7 @@ object Util {
 
   def read(conf: Configuration, dir: Path, dim: Long, format: String = "dummy"): Iterator[TVector] = {
     val input = dir.getFileSystem(conf).open(dir)
-    val parser = DataParser.apply(format, dim, true)
+    val parser = DataParser.apply(conf)
     val reader = new BufferedReader(new InputStreamReader(input))
 
     //TODO support train data

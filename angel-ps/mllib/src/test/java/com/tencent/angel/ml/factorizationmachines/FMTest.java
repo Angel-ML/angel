@@ -67,12 +67,12 @@ public class FMTest {
     conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
     //set FM algorithm parameters #feature #epoch
-    conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(featureNum));
+    conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
     conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
     conf.set(MLConf.ML_FM_RANK(), String.valueOf(rank));
     conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(lr));
-    conf.set(MLConf.ML_FM_REG1(), String.valueOf(reg1));
-    conf.set(MLConf.ML_FM_REG2(), String.valueOf(reg2));
+    conf.set(MLConf.ML_FM_REG_L2_W(), String.valueOf(reg1));
+    conf.set(MLConf.ML_FM_REG_L2_V(), String.valueOf(reg2));
     conf.set(MLConf.ML_FM_V_STDDEV(), String.valueOf(stev));
   }
 
@@ -92,7 +92,7 @@ public class FMTest {
     // Set actionType train
     conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
     // Set feature number
-    conf.set(MLConf.ML_DATA_FORMAT(), "libsvm");
+    conf.set(MLConf.ML_DATA_INPUT_FORMAT(), "libsvm");
 
     FMRunner runner = new FMRunner();
     runner.train(conf);
@@ -113,14 +113,14 @@ public class FMTest {
     conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
     // Set actionType train
     conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
-    conf.set(MLConf.ML_DATA_FORMAT(), "dummy");
+    conf.set(MLConf.ML_DATA_INPUT_FORMAT(), "dummy");
     // Set learnType
     conf.set(MLConf.ML_FM_LEARN_TYPE(), "c");
     // Set feature number
-    conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(124));
+    conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(124));
     // Set
-    conf.set(MLConf.ML_FM_POSITIVE_WEIGHT(), "1.0");
-    conf.set(MLConf.ML_FM_NEGATIVE_WEIGHT(), "0.5");
+    conf.set(MLConf.ML_POSITIVE_SAMPLE_WEIGHT(), "1.0");
+    conf.set(MLConf.ML_NEGATIVE_SAMPLE_WEIGHT(), "0.5");
     conf.set(MLConf.ML_LEARN_RATE(), "0.000001");
     conf.set(MLConf.ML_FM_V_STDDEV(), "0.000001");
     conf.set(MLConf.ML_EPOCH_NUM(), "50");
@@ -149,11 +149,11 @@ public class FMTest {
     conf.set(AngelConf.ANGEL_PREDICT_PATH, outPath);
     // Set actionType train
     conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT());
-    conf.set(MLConf.ML_DATA_FORMAT(), "dummy");
+    conf.set(MLConf.ML_DATA_INPUT_FORMAT(), "dummy");
     // Set learnType
     conf.set(MLConf.ML_FM_LEARN_TYPE(), "c");
     // Set feature number
-    conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(124));
+    conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(124));
     conf.set(AngelConf.ANGEL_WORKERGROUP_NUMBER, "1");
 
     FMRunner runner = new FMRunner();

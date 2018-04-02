@@ -57,8 +57,7 @@ object GBDTModel {
 class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
   var LOG = LogFactory.getLog(classOf[GBDTModel])
 
-  var featNum = conf.getInt(MLConf.ML_FEATURE_NUM, 10000)
-  val featNonzero = conf.getInt(MLConf.ML_FEATURE_NNZ, MLConf.DEFAULT_ML_FEATURE_NNZ)
+  var indexRange = conf.getInt(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
   val maxTreeNum = conf.getInt(MLConf.ML_GBDT_TREE_NUM, MLConf.DEFAULT_ML_GBDT_TREE_NUM)
   val maxTreeDepth = conf.getInt(MLConf.ML_GBDT_TREE_DEPTH, MLConf.DEFAULT_ML_GBDT_TREE_DEPTH)
   val splitNum = conf.getInt(MLConf.ML_GBDT_SPLIT_NUM, MLConf.DEFAULT_ML_GBDT_SPLIT_NUM)
@@ -73,16 +72,16 @@ class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
   val workerNumber = conf.getInt(AngelConf.ANGEL_WORKERGROUP_ACTUAL_NUM, 1)
 
   // adjust feature number to ensure the parameter partition
-  if (featNum % psNumber != 0) {
-    featNum = (featNum / psNumber + 1) * psNumber
-    conf.setInt(MLConf.ML_FEATURE_NUM, featNum)
-    LOG.info(s"PS num: ${psNumber}, true feat num: ${featNum}")
+  if (indexRange % psNumber != 0) {
+    indexRange = (indexRange / psNumber + 1) * psNumber
+    conf.setInt(MLConf.ML_FEATURE_INDEX_RANGE, indexRange)
+    LOG.info(s"PS num: ${psNumber}, true feat num: ${indexRange}")
   }
 
-  val sampleFeatNum: Int = (featNum * featSampleRatio).toInt
+  val sampleFeatNum: Int = (indexRange * featSampleRatio).toInt
 
   // Matrix 1: quantile sketch
-  val sketch = PSModel(SKETCH_MAT, 1, featNum * splitNum, 1, featNum * splitNum / psNumber)
+  val sketch = PSModel(SKETCH_MAT, 1, indexRange * splitNum, 1, indexRange * splitNum / psNumber)
     .setRowType(RowType.T_DOUBLE_DENSE)
     .setOplogType("DENSE_DOUBLE")
     .setNeedSave(false)
@@ -98,7 +97,8 @@ class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
   val histMats: Array[PSModel] = new Array[PSModel](maxTNodeNum)
   // Matrix 3: gradient and hess histogram, one for each node
   for (nid <- 0 until maxTNodeNum) {
-    val histMat = PSModel(GRAD_HIST_MAT_PREFIX + nid, 1, 2 * this.splitNum * sampleFeatNum, 1, 2 * this.splitNum * sampleFeatNum / psNumber)
+    val histMat = PSModel(GRAD_HIST_MAT_PREFIX + nid,
+      1, 2 * this.splitNum * sampleFeatNum, 1, 2 * this.splitNum * sampleFeatNum / psNumber)
       .setRowType(RowType.T_DOUBLE_DENSE)
       .setOplogType("DENSE_DOUBLE")
       .setNeedSave(false)
@@ -156,9 +156,7 @@ class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
   super.setLoadPath(conf)
 
   override def predict(dataSet: DataBlock[LabeledData]): DataBlock[PredictResult] = {
-
     val predict = new MemoryDataBlock[PredictResult](-1)
-
 
     val splitFeatVecs: Array[TIntVector] = new Array[TIntVector](this.maxTreeNum)
     val splitValueVecs: Array[TIntDoubleVector] = new Array[TIntDoubleVector](this.maxTreeNum)

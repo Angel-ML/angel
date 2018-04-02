@@ -72,7 +72,9 @@ public final class Dot extends BinaryAggrFunc {
       sum += data1.get(key) * data2.get(key);
     }
 
-    sum += (entireSize - keys.size()) * data1.defaultReturnValue() * data2.defaultReturnValue();
+    // TODO: Have to deal with default values
+    assert (data1.defaultReturnValue() == 0.0 || data2.defaultReturnValue() == 0.0);
+//    sum += (entireSize - keys.size()) * data1.defaultReturnValue() * data2.defaultReturnValue();
 
     return sum;
   }

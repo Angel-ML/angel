@@ -203,12 +203,13 @@ public class MetricsService extends AbstractService implements EventHandler<Metr
 
     if(logWritter != null) {
       try {
+        List<String> names = new ArrayList<> (nameToMetricMap.size());
+        for(Map.Entry<String, String> metricEntry:nameToMetricMap.entrySet()) {
+          names.add(metricEntry.getKey());
+        }
+        logWritter.setNames(names);
         if(needWriteName) {
-          List<String> names = new ArrayList<> (nameToMetricMap.size());
-          for(Map.Entry<String, String> metricEntry:nameToMetricMap.entrySet()) {
-            names.add(metricEntry.getKey());
-          }
-          logWritter.setNames(names);
+          logWritter.writeNames();
           needWriteName = false;
         }
         logWritter.writeLog(nameToMetricMap);

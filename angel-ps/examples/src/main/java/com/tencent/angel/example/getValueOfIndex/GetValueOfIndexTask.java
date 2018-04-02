@@ -37,8 +37,8 @@ import static com.tencent.angel.example.getValueOfIndex.GetValueOfIndexSubmmiter
 public class GetValueOfIndexTask extends BaseTask<Long, Long, Long> {
   Log LOG = LogFactory.getLog(GetValueOfIndexTask.class);
 
-  int feaNum = conf.getInt(MLConf.ML_FEATURE_NUM(), MLConf.DEFAULT_ML_FEATURE_NUM());
-  int nnz = conf.getInt(MLConf.ML_FEATURE_NNZ(), MLConf.DEFAULT_ML_FEATURE_NNZ());
+  int feaNum = conf.getInt(MLConf.ML_FEATURE_INDEX_RANGE(), MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE());
+  int nnz = conf.getInt(MLConf.ML_MODEL_SIZE(), MLConf.DEFAULT_ML_MODEL_SIZE());
 
   public GetValueOfIndexTask(TaskContext taskContext) {super(taskContext);}
 

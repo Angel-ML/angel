@@ -24,6 +24,7 @@ import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 
 import java.nio.DoubleBuffer;
@@ -63,10 +64,12 @@ public final class Asum extends UnaryAggrFunc {
 
     Long2DoubleOpenHashMap data = row.getData();
     double asum = 0.0;
-    for (Map.Entry<Long, Double> entry: data.long2DoubleEntrySet()) {
-      asum += Math.abs(entry.getValue());
+    for (Long2DoubleMap.Entry entry: data.long2DoubleEntrySet()) {
+      asum += Math.abs(entry.getDoubleValue());
     }
-    asum += Math.abs(data.defaultReturnValue()) * (entireSize - data.size());
+    // TODO: Have to deal with default values
+    assert (data.defaultReturnValue() == 0.0);
+    // asum += Math.abs(data.defaultReturnValue()) * (entireSize - data.size());
     return asum;
   }
 

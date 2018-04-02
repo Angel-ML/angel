@@ -19,7 +19,6 @@ package com.tencent.angel.ml.factorizationmachines
 
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.{DenseDoubleVector, SparseDoubleSortedVector, SparseDummyVector}
 import com.tencent.angel.ml.task.TrainTask
 import com.tencent.angel.ml.utils.DataParser
 import com.tencent.angel.worker.task.TaskContext
@@ -33,9 +32,9 @@ import org.apache.hadoop.io.{LongWritable, Text}
   */
 class FMTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
   val LOG = LogFactory.getLog(classOf[FMTrainTask])
-  val feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
-  private val dataFormat = conf.get(MLConf.ML_DATA_FORMAT, "dummy")
-  private val dataParser = DataParser(dataFormat, feaNum, negY = true)
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
+  override val dataParser = DataParser(conf)
+
   private var minP = Double.MaxValue
   private var maxP = Double.MinValue
 

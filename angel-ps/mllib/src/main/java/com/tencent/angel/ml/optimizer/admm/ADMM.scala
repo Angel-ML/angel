@@ -170,7 +170,7 @@ object ADMM {
 
     val (localModel, localIndex) = initialize(data)
     val history = new ArrayBuffer[Double]()
-    val z = TVector(model.feaNum, VectorType.T_DOUBLE_SPARSE).asInstanceOf[T]
+    val z = TVector(model.indexRange.toInt, VectorType.T_DOUBLE_SPARSE).asInstanceOf[T]
 
     for (iter <- 1 until maxNumIterations) {
       val startTrainX = System.currentTimeMillis()
@@ -325,7 +325,7 @@ object ADMM {
   def updateW(model: SparseLRModel,
               localModel: LocalModel,
               localIndex: LocalIndex): Unit = {
-    val update = new DenseDoubleVector(model.feaNum)
+    val update = new DenseDoubleVector(model.indexRange.toInt)
     update.setRowId(0)
     for (i <- 0 until localIndex.localFeaNum) {
       update.set(localIndex.localToGloabl(i), localModel.u(i) + localModel.x(i))
@@ -365,7 +365,7 @@ object ADMM {
 
     z.clear()
 
-    for (i <- 0 until model.feaNum) {
+    for (i <- 0 until model.indexRange.toInt) {
       var value = w.get(i)
       value = value / N
       if (value > kappa)

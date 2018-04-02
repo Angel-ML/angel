@@ -58,7 +58,8 @@ class FMModel(conf: Configuration = null, _ctx: TaskContext = null) extends MLMo
   val FM_OBJ = "fm_evaluate"
 
   // Feature number of data
-  val feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
+  val modelSize: Long = conf.getLong(MLConf.ML_MODEL_SIZE, indexRange)
   // Rank of each feature vector
   val rank = conf.getInt(MLConf.ML_FM_RANK, MLConf.DEFAULT_ML_FM_RANK)
   // val rowType =  RowType.valueOf(conf.get(MLConf.LR_MODEL_TYPE, RowType.T_DOUBLE_SPARSE.toString))
@@ -66,10 +67,10 @@ class FMModel(conf: Configuration = null, _ctx: TaskContext = null) extends MLMo
   // The w0 weight vector, stored on PS # setOplogType("SPARSE_DOUBLE")
   val w0 = PSModel(FM_W0, 1, 1).setAverage(true)
   // The w weight vector, stored on PS
-  val w = PSModel(FM_W, 1, feaNum).setAverage(true)
+  val w = PSModel(FM_W, 1, indexRange, -1, -1, modelSize).setAverage(true)
   // The v weight vector, stored on PS
-  private val blockCol = if (rank * feaNum < 1000000) -1 else 1000000 / rank
-  val v = PSModel(FM_V, rank, feaNum, rank, blockCol).setAverage(true)
+  private val blockCol = if (rank * indexRange < 1000000) -1 else 1000000 / rank
+  val v = PSModel(FM_V, rank, indexRange, rank, blockCol, modelSize).setAverage(true)
 
   addPSModel(w0)
   addPSModel(w)

@@ -51,10 +51,10 @@ public class GradHistThread implements Runnable {
     GradHistHelper histMaker = new GradHistHelper(this.controller, this.nid);
     DenseDoubleVector histogram = histMaker.buildHistogram(insStart, insEnd);
     int bytesPerItem = this.controller.taskContext.getConf().
-      getInt(MLConf.ML_COMPRESS_BYTES(), MLConf.DEFAULT_ML_COMPRESS_BYTES());
+      getInt(MLConf.ANGEL_COMPRESS_BYTES(), MLConf.DEFAULT_ANGEL_COMPRESS_BYTES());
     if (bytesPerItem < 1 || bytesPerItem > 8) {
       LOG.info("Invalid compress configuration: " + bytesPerItem + ", it should be [1,8].");
-      bytesPerItem = MLConf.DEFAULT_ML_COMPRESS_BYTES();
+      bytesPerItem = MLConf.DEFAULT_ANGEL_COMPRESS_BYTES();
     }
     // 3. push the histograms to PS
     try {

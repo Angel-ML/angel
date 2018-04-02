@@ -67,7 +67,7 @@ class ReduceRunner extends MLRunner {
 
 class ReduceTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
 
-  val feaNum = ctx.getConf.getInt(ML_FEATURE_NUM, 100)
+  val feaNum = ctx.getConf.getInt(ML_FEATURE_INDEX_RANGE, 100)
 
   val LOG = LogFactory.getLog(classOf[ReduceTask])
 
@@ -243,7 +243,6 @@ class ReduceTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
 
   }
 
-  val dataParser = DataParser("dummy", -1, false)
   override
   def parse(key: LongWritable, value: Text): LabeledData = {
     dataParser.parse(value.toString)
@@ -260,11 +259,11 @@ class ReduceModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
 
   val name = "model"
 
-  val feaNum = conf.getInt(ML_FEATURE_NUM, 100)
+  val feaNum = conf.getInt(ML_FEATURE_INDEX_RANGE, 100)
   val workerNum = conf.getInt(ANGEL_WORKERGROUP_NUMBER, 10)
 
   val ps = conf.getInt(ANGEL_PS_NUMBER, 1)
-  val part = conf.getInt(ML_PART_PER_SERVER, 1)
+  val part = conf.getInt(ML_MODEL_PART_PER_SERVER, 1)
 
   val model = PSModel(name, 1, feaNum, 1, feaNum / ps / part).setRowType(RowType.T_DOUBLE_DENSE)
   val time  = PSModel("time", 2, workerNum).setRowType(RowType.T_INT_DENSE).setOplogType("DENSE_INT")

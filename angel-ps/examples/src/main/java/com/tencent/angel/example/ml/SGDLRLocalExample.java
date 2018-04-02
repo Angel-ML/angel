@@ -64,7 +64,7 @@ public class SGDLRLocalExample {
     conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
 
     // Set data format
-    conf.set(MLConf.ML_DATA_FORMAT(), dataFmt);
+    conf.set(MLConf.ML_DATA_INPUT_FORMAT(), dataFmt);
 
     //set angel resource parameters #worker, #task, #PS
     conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
@@ -72,13 +72,13 @@ public class SGDLRLocalExample {
     conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
     //set sgd LR algorithm parameters #feature #epoch
-    conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(featureNum));
+    conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
     conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
-    conf.set(MLConf.ML_BATCH_SAMPLE_Ratio(), String.valueOf(spRatio));
+    conf.set(MLConf.ML_BATCH_SAMPLE_RATIO(), String.valueOf(spRatio));
     conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
     conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
     conf.set(MLConf.ML_LEARN_DECAY(), String.valueOf(decay));
-    conf.set(MLConf.ML_REG_L2(), String.valueOf(reg));
+    conf.set(MLConf.ML_LR_REG_L2(), String.valueOf(reg));
   }
 
   public void trainOnLocalCluster() throws Exception {

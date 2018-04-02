@@ -24,6 +24,7 @@ import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 
 import java.nio.DoubleBuffer;
@@ -61,8 +62,8 @@ public final class Max extends UnaryAggrFunc {
     Long2DoubleOpenHashMap data = row.getIndex2ValueMap();
 
     double amax = data.defaultReturnValue();
-    for (Map.Entry<Long, Double> entry: data.long2DoubleEntrySet()) {
-      amax = Math.max(amax, entry.getValue());
+    for (Long2DoubleMap.Entry entry: data.long2DoubleEntrySet()) {
+      amax = Math.max(amax, entry.getDoubleValue());
     }
     return amax;
   }

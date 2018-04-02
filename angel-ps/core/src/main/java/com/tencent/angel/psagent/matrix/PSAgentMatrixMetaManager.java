@@ -226,8 +226,12 @@ public class PSAgentMatrixMetaManager {
     while (iter.hasNext()) {
       partitionKeys.add(iter.next().getPartitionKey());
     }
-    partitionKeys.sort(new Comparator<PartitionKey>() {
-      @Override public int compare(PartitionKey p1, PartitionKey p2) {
+    partitionKeys.sort((PartitionKey p1, PartitionKey p2) -> {
+      if (p1.getStartCol() < p2.getStartCol()) {
+        return -1;
+      } else if (p1.getStartCol() < p2.getStartCol()) {
+        return 1;
+      } else {
         return 0;
       }
     });

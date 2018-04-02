@@ -27,12 +27,8 @@ import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.{BaseTask, TaskContext}
 
 abstract class PredictTask[KEYIN, VALUEIN](ctx: TaskContext) extends BaseTask[KEYIN, VALUEIN, LabeledData](ctx) {
-
-  val feaNum = conf.getLong(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
-  val dataFormat = conf.get(MLConf.ML_DATA_FORMAT)
-
-  val dataParser = DataParser(dataFormat, feaNum, negY = true)
-
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
+  val dataParser = DataParser(conf)
 
   @throws(classOf[AngelException])
   final def run(taskContext: TaskContext) {
@@ -46,5 +42,4 @@ abstract class PredictTask[KEYIN, VALUEIN](ctx: TaskContext) extends BaseTask[KE
     val predictResult = model.predict(dataBlock)
     HdfsUtil.writeStorage(predictResult, taskContext)
   }
-
 }
