@@ -54,7 +54,7 @@ public class SgdLRTest2 {
       // Total iteration number
       int epochNum = 5;
       // number of mini batch within a update periorid
-      int updatePerEpoch = 10;
+      int updatePerEpoch = 2;
       // Data format, libsvm or dummy
       String dataFmt = "libsvm";
       // Batch size
