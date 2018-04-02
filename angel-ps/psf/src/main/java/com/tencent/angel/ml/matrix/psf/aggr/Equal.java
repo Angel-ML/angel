@@ -67,20 +67,15 @@ public final class Equal extends BinaryAggrFunc {
     if (data1.defaultReturnValue() != data2.defaultReturnValue()) {
       return 0.0;
     }
-    LongSet keys = new LongOpenHashSet();
-    for (long key: data1.keySet()) {
-      keys.add(key);
-    }
-    for (long key: data2.keySet()) {
-      keys.add(key);
-    }
+    LongSet keys = new LongOpenHashSet(data1.keySet());
+    keys.addAll(data2.keySet());
 
     if (keys.size() != data1.keySet().size() || keys.size() != data2.keySet().size()) {
       return 0.0;
     }
 
     for (long key: keys) {
-      if (Math.abs(data1.get(key) - data2.get(key)) > 1e-10) {
+      if (Math.abs(data1.get(key) - data2.get(key)) > 1e-11) {
         return 0.0;
       }
     }

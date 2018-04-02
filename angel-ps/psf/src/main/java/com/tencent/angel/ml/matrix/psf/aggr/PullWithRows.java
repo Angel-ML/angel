@@ -50,8 +50,6 @@ public class PullWithRows extends GetFunc {
     int startRow = key.getStartRow();
     int endRow = key.getEndRow();
 
-    Map<Integer, DoubleBuffer> map = new HashMap<>();
-
     int count = 0;
     for (int rowId: rows) {
       if (rowId >= startRow && rowId < endRow) {
@@ -65,7 +63,7 @@ public class PullWithRows extends GetFunc {
       if (rowId >= startRow && rowId < endRow) {
         ServerDenseDoubleRow row = (ServerDenseDoubleRow) part.getRow(rowId);
         DoubleBuffer data = row.getData();
-        double[] array = null;
+        double[] array;
         if (data.hasArray()) {
           array = data.array();
         } else {

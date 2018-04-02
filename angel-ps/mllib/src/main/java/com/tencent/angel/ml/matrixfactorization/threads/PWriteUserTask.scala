@@ -34,7 +34,7 @@ class PWriteUserTask(ctx: TaskContext, users: mutable.HashMap[Int, UserVec], idx
   def call(): Boolean = {
     val conf = ctx.getConf()
 
-    val dir = conf.get(MLConf.ML_MF_USER_OUTPUT_PATH) + "/userVects/"
+    val dir = conf.get(MLConf.ML_MODEL_OUTPUT_PATH) + "/userVects/"
     System.out.print("user vector saved to " + dir)
     val taskID = ctx.getTaskId
     val path = dir + taskID + "_" + pid

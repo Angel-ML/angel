@@ -37,13 +37,10 @@ class QSLRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](
 
   val epochNum: Int = conf.getInt(ML_EPOCH_NUM, DEFAULT_ML_EPOCH_NUM)
   val lr: Double = conf.getDouble(ML_LEARN_RATE, DEFAULT_ML_LEAR_RATE)
-  val feaNum: Int = conf.getInt(ML_FEATURE_NUM, DEFAULT_ML_FEATURE_NUM)
-  val dataFormat: String = conf.get(ML_DATA_FORMAT, DEFAULT_ML_DATAFORMAT)
-  val reg: Double = conf.getDouble(ML_REG_L2, DEFAULT_ML_REG_L2)
+  val feaNum: Int = conf.getInt(ML_FEATURE_INDEX_RANGE, DEFAULT_ML_FEATURE_INDEX_RANGE)
+  val dataFormat: String = conf.get(ML_DATA_INPUT_FORMAT, DEFAULT_ML_DATA_FORMAT)
+  val reg: Double = conf.getDouble(ML_LR_REG_L2, DEFAULT_ML_LR_REG_L2)
   val loss = new L2LogLoss(reg)
-
-  val dataParser = DataParser(dataFormat, feaNum, true)
-
 
   /**
     * Parse input text as labeled data, X is the feature weight vector, Y is label.

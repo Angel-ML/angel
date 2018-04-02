@@ -66,10 +66,10 @@ public class QSLRLocalExample {
     conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
     //set sgd LR algorithm parameters #feature #epoch
-    conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(featureNum));
+    conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
     conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
     conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
-    conf.set(MLConf.ML_REG_L2(), String.valueOf(reg));
+    conf.set(MLConf.ML_LR_REG_L2(), String.valueOf(reg));
 
     // Set input data path
     conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
@@ -77,7 +77,7 @@ public class QSLRLocalExample {
     conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, savePath);
     // Set actionType train
     conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
-    conf.set(MLConf.ML_DATA_FORMAT(), "libsvm");
+    conf.set(MLConf.ML_DATA_INPUT_FORMAT(), "libsvm");
     return conf;
   }
 

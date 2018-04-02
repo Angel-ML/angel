@@ -79,6 +79,6 @@ public class ArrayPartitionAggrResult extends PartitionGetResult {
 
   @Override
   public int bufferLen() {
-    return 4 + result.length * 8 + cols.length * 8;
+    return 4 + 4 + result.length * 8 + cols.length * 8;
   }
 }

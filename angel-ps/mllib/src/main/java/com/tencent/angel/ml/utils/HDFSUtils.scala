@@ -40,7 +40,7 @@ object HDFSUtils {
     dim.readLine(line)
     val feaNum = Integer.valueOf(line.toString)
     dim.close()
-    conf.set(MLConf.ML_FEATURE_NUM, String.valueOf(feaNum))
+    conf.set(MLConf.ML_FEATURE_INDEX_RANGE, String.valueOf(feaNum))
     feaNum
   }
 }

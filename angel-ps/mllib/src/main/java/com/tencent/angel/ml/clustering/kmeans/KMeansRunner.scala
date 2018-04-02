@@ -21,6 +21,7 @@ package com.tencent.angel.ml.clustering.kmeans
 import com.tencent.angel.client.AngelClientFactory
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.MLRunner
+import com.tencent.angel.ml.conf.MLConf
 import org.apache.hadoop.conf.Configuration
 
 object KMeansRunner {
@@ -34,7 +35,7 @@ class KMeansRunner extends MLRunner {
     */
   override
   def train(conf: Configuration): Unit = {
-    conf.set("angel.task.user.task.class", "com.tencent.angel.ml.clustering.kmeans.KMeansTrainTask")
+    conf.setBoolean(MLConf.ML_DATA_IS_NEGY, false)
     conf.set(AngelConf.ANGEL_TASK_USER_TASKCLASS, classOf[KMeansTrainTask].getName)
 
     // Create an angel job client
@@ -68,7 +69,7 @@ class KMeansRunner extends MLRunner {
     */
   override
   def predict(conf: Configuration): Unit = {
-    conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
+    conf.setBoolean(MLConf.ML_DATA_IS_NEGY, false)
     conf.set(AngelConf.ANGEL_TASK_USER_TASKCLASS, classOf[KMeansPredictTask].getName)
 
     // Create an angel job client

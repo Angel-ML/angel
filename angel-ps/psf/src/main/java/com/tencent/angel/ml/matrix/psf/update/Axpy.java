@@ -78,8 +78,6 @@ public class Axpy extends MMUpdateFunc {
         yData.put(key, a * xData.get(key) + yData.get(key));
       }
       yData.defaultReturnValue(a * xDefault + yDefault);
-
-      rows[1].setIndex2ValueMap(yData);
     } finally {
       rows[1].unlockWrite();
     }

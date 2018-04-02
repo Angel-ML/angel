@@ -47,13 +47,18 @@ public class Compress extends MUpdateFunc {
 
   @Override
   protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows) {
-    Long2DoubleOpenHashMap data = rows[0].getIndex2ValueMap();
-    ObjectIterator<Long2DoubleMap.Entry> iter = data.long2DoubleEntrySet().fastIterator();
-    while (iter.hasNext()) {
-      Long2DoubleMap.Entry entry = iter.next();
-      if (Math.abs(entry.getDoubleValue() - data.defaultReturnValue()) < 1e-11) {
-        iter.remove();
+    rows[0].tryToLockWrite();
+    try {
+      Long2DoubleOpenHashMap data = rows[0].getIndex2ValueMap();
+      ObjectIterator<Long2DoubleMap.Entry> iter = data.long2DoubleEntrySet().fastIterator();
+      while (iter.hasNext()) {
+        Long2DoubleMap.Entry entry = iter.next();
+        if (Math.abs(entry.getDoubleValue() - data.defaultReturnValue()) < 1e-11) {
+          iter.remove();
+        }
       }
+    } finally {
+      rows[0].unlockWrite();
     }
   }
 

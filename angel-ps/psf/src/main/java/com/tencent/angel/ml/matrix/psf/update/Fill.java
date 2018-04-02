@@ -54,8 +54,13 @@ public class Fill extends MMUpdateFunc {
 
   @Override
   protected void doUpdate(ServerSparseDoubleLongKeyRow[] rows, double[] values) {
-    Long2DoubleOpenHashMap data = new Long2DoubleOpenHashMap();
-    data.defaultReturnValue(values[0]);
-    rows[0].setIndex2ValueMap(data);
+    rows[0].tryToLockWrite();
+    try {
+      Long2DoubleOpenHashMap data = rows[0].getIndex2ValueMap();
+      data.clear();
+      data.defaultReturnValue(values[0]);
+    } finally {
+      rows[0].unlockWrite();
+    }
   }
 }

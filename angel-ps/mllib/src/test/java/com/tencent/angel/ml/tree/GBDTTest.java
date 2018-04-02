@@ -86,9 +86,8 @@ public class GBDTTest {
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
       // Set GBDT algorithm parameters
-      conf.set(MLConf.ML_DATA_FORMAT(), dataFmt);
-      conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(featureNum));
-      conf.set(MLConf.ML_FEATURE_NNZ(), String.valueOf(featureNzz));
+      conf.set(MLConf.ML_DATA_INPUT_FORMAT(), dataFmt);
+      conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
       conf.set(MLConf.ML_GBDT_TREE_NUM(), String.valueOf(treeNum));
       conf.set(MLConf.ML_GBDT_TREE_DEPTH(), String.valueOf(treeDepth));
       conf.set(MLConf.ML_GBDT_SPLIT_NUM(), String.valueOf(splitNum));

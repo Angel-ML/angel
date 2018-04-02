@@ -49,7 +49,7 @@ public class SgdLRTest {
   @Before public void setConf() throws Exception {
     try {
       // Feature number of train data
-      long featureNum = 10000000005L;
+      int featureNum = 124;
       // Total iteration number
       int epochNum = 10;
       // Validation sample Ratio
@@ -80,9 +80,9 @@ public class SgdLRTest {
       conf.set(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, "true");
       conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 100);
 
-      conf.setBoolean(MLConf.ML_INDEX_GET_ENABLE(), true);
+      conf.setBoolean(MLConf.ML_PULL_WITH_INDEX_ENABLE(), true);
       // Set data format
-      conf.set(MLConf.ML_DATA_FORMAT(), dataFmt);
+      conf.set(MLConf.ML_DATA_INPUT_FORMAT(), dataFmt);
 
       //set angel resource parameters #worker, #task, #PS
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
@@ -90,15 +90,15 @@ public class SgdLRTest {
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
       //set sgd LR algorithm parameters #feature #epoch
-      conf.set(MLConf.LR_MODEL_TYPE(), modelType);
-      conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(featureNum));
+      conf.set(MLConf.ML_MODEL_TYPE(), modelType);
+      conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
       conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
-      conf.set(MLConf.ML_BATCH_SAMPLE_Ratio(), String.valueOf(spRatio));
+      conf.set(MLConf.ML_BATCH_SAMPLE_RATIO(), String.valueOf(spRatio));
       conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
       conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
       conf.set(MLConf.ML_LEARN_DECAY(), String.valueOf(decay));
-      conf.set(MLConf.ML_REG_L2(), String.valueOf(reg));
-      conf.setLong(MLConf.ML_FEATURE_NNZ(), 125L);
+      conf.set(MLConf.ML_LR_REG_L2(), String.valueOf(reg));
+      conf.setLong(MLConf.ML_FEATURE_NNZ(), 124L);
     } catch (Exception x) {
       LOG.error("setup failed ", x);
       throw x;

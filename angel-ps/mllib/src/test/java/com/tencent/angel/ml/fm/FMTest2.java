@@ -68,7 +68,7 @@ public class FMTest2 {
     conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
     //set FM algorithm parameters #feature #epoch
-    conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(featureNum));
+    conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
     conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
     conf.set(MLConf.ML_FM_RANK(), String.valueOf(rank));
     conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(lr));
@@ -78,7 +78,7 @@ public class FMTest2 {
   }
 
 
-  @Test public void FMClassificationTest() throws Exception {
+  public void FMClassificationTest() throws Exception {
     String inputPath = "./src/test/data/fm/a9a.train.libsvm";
     String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
     String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
@@ -93,23 +93,23 @@ public class FMTest2 {
     conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
     // Set actionType train
     conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
-    conf.set(MLConf.ML_DATA_FORMAT(), "libsvm");
+    conf.set(MLConf.ML_DATA_INPUT_FORMAT(), "libsvm");
     // Set feature number
-    conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(124));
+    conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(124));
     conf.set(MLConf.ML_LEARN_RATE(), "0.001");
     conf.set(MLConf.ML_FM_V_STDDEV(), "0.000001");
     conf.set(MLConf.ML_EPOCH_NUM(), "10");
     conf.set(AngelConf.ANGEL_WORKERGROUP_NUMBER, "1");
     conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(0.01));
-    conf.set(MLConf.ML_INDEX_GET_ENABLE(), String.valueOf(true));
+    conf.set(MLConf.ML_PULL_WITH_INDEX_ENABLE(), String.valueOf(true));
 
-    conf.set(MLConf.FM_MODEL_TYPE(), String.valueOf(RowType.T_DOUBLE_DENSE));
+    conf.set(MLConf.ML_MODEL_TYPE(), String.valueOf(RowType.T_DOUBLE_DENSE));
 
     FMRunner runner = new FMRunner();
     runner.train(conf);
   }
 
-  @Test public void FMPredictTest() throws Exception {
+  public void FMPredictTest() throws Exception {
     String inputPath = "./src/test/data/fm/a9a.train.dummy";
     String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
     String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
@@ -127,16 +127,22 @@ public class FMTest2 {
     conf.set(AngelConf.ANGEL_PREDICT_PATH, outPath);
     // Set actionType train
     conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT());
-    conf.set(MLConf.ML_DATA_FORMAT(), "dummy");
+    conf.set(MLConf.ML_DATA_INPUT_FORMAT(), "dummy");
     // Set feature number
-    conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(124));
+    conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(124));
     conf.set(AngelConf.ANGEL_WORKERGROUP_NUMBER, "1");
-    conf.set(MLConf.FM_MODEL_TYPE(), String.valueOf(RowType.T_DOUBLE_SPARSE));
+    conf.set(MLConf.ML_MODEL_TYPE(), String.valueOf(RowType.T_DOUBLE_SPARSE));
 
     FMRunner runner = new FMRunner();
     runner.predict(conf);
 
     System.out.println(outPath);
+  }
+
+  @Test
+  public void testFM() throws Exception {
+    FMClassificationTest();
+    FMPredictTest();
   }
 }
 

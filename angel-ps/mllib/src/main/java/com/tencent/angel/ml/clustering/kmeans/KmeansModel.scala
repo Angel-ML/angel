@@ -44,14 +44,16 @@ class KMeansModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
   // Number of clusters
   private val K: Int = conf.getInt(MLConf.KMEANS_CENTER_NUM, 3)
   // Number of features
-  private val feaNum: Int = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
+  private val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
+  assert(indexRange != -1L)
+  val modelSize: Long = conf.getLong(MLConf.ML_MODEL_SIZE, indexRange)
   // Number of epoch
   private val epoch: Int = conf.getInt(MLConf.ML_EPOCH_NUM, MLConf.DEFAULT_ML_EPOCH_NUM)
   // Centers pulled to local worker
   var lcCenters: util.List[TVector] = new util.ArrayList[TVector]()
 
   // Reference for centers matrix on PS server
-  val centers = new PSModel(KMEANS_CENTERS_MAT, K, feaNum).setAverage(true).setRowType(RowType.T_DOUBLE_DENSE)
+  val centers = new PSModel(KMEANS_CENTERS_MAT, K, indexRange, -1, -1, modelSize).setAverage(true).setRowType(RowType.T_DOUBLE_DENSE)
 
   addPSModel(KMEANS_CENTERS_MAT, centers)
   setSavePath(conf)
@@ -130,8 +132,7 @@ class KMeansModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
 
   /**
     * Calculate distanve between a sample and a center
-    * || a - b || ^ 2 = a^2 - 2ab + b^2
-    *
+    * || a - b || ^ 2 = a^2 - 2ab + b^^2
     *
     * @param cId centerID
     * @param x   sample

@@ -33,7 +33,7 @@ import org.apache.hadoop.io.{LongWritable, Text}
 class LRPredictTask(ctx: TaskContext) extends PredictTask[LongWritable, Text](ctx) {
 
   def predict(ctx: TaskContext) {
-    predict(ctx, LRModel(ctx, conf), taskDataBlock);
+    predict(ctx, LRModel(ctx, conf), taskDataBlock)
   }
 
   def parse(key: LongWritable, value: Text): LabeledData = {

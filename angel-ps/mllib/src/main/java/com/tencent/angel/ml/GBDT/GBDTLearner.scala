@@ -41,8 +41,8 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
 
   // 1. set training param
   param.taskType = conf.get(MLConf.ML_GBDT_TASK_TYPE, MLConf.DEFAULT_ML_GBDT_TASK_TYPE)
-  param.numFeature = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
-  param.numNonzero = conf.getInt(MLConf.ML_FEATURE_NNZ, MLConf.DEFAULT_ML_FEATURE_NNZ)
+  param.numFeature = conf.getInt(MLConf.ML_FEATURE_INDEX_RANGE, -1)
+  param.numNonzero = conf.getInt(MLConf.ML_MODEL_SIZE, MLConf.DEFAULT_ML_MODEL_SIZE)
   param.numSplit = conf.getInt(MLConf.ML_GBDT_SPLIT_NUM, MLConf.DEFAULT_ML_GBDT_SPLIT_NUM)
   param.treeNum = conf.getInt(MLConf.ML_GBDT_TREE_NUM, MLConf.DEFAULT_ML_GBDT_TREE_NUM)
   param.maxDepth = conf.getInt(MLConf.ML_GBDT_TREE_DEPTH, MLConf.DEFAULT_ML_GBDT_TREE_DEPTH)

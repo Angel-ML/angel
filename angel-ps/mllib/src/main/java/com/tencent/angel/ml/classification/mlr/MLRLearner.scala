@@ -48,11 +48,12 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   val epochNum: Int = conf.getInt(MLConf.ML_EPOCH_NUM, MLConf.DEFAULT_ML_EPOCH_NUM)
   val lr_0: Double = conf.getDouble(MLConf.ML_LEARN_RATE, MLConf.DEFAULT_ML_LEAR_RATE)
   val decay: Double = conf.getDouble(MLConf.ML_LEARN_DECAY, MLConf.DEFAULT_ML_LEARN_DECAY)
-  val reg: Double = conf.getDouble(MLConf.ML_REG_L2, MLConf.DEFAULT_ML_REG_L2)
-  val feaNum: Int = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
-  val spRatio: Double = conf.getDouble(MLConf.ML_BATCH_SAMPLE_Ratio, MLConf
-    .DEFAULT_ML_BATCH_SAMPLE_Ratio)
-  val batchNum: Int = conf.getInt(MLConf.ML_SGD_BATCH_NUM, MLConf.DEFAULT_ML_SGD_BATCH_NUM)
+  val reg: Double = conf.getDouble(MLConf.ML_LR_REG_L2, MLConf.DEFAULT_ML_LR_REG_L2)
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
+  assert(indexRange != -1L)
+  val spRatio: Double = conf.getDouble(MLConf.ML_BATCH_SAMPLE_RATIO, MLConf
+    .DEFAULT_ML_BATCH_SAMPLE_RATIO)
+  val batchNum: Int = conf.getInt(MLConf.ML_NUM_UPDATE_PER_EPOCH, MLConf.DEFAULT_ML_NUM_UPDATE_PER_EPOCH)
 
   // Number of local regions
   val rank: Int = conf.getInt(MLConf.ML_MLR_RANK, MLConf.DEFAULT_ML_MLR_RANK)
@@ -111,8 +112,8 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       val grad_softmax_wVecot = new Array[DenseDoubleVector](rank)
       val grad_softmax_b = new Array[Double](rank)
       (0 until rank).foreach(i => {
-        grad_sigmoid_wVecot(i) = new DenseDoubleVector(feaNum)
-        grad_softmax_wVecot(i) = new DenseDoubleVector(feaNum)
+        grad_sigmoid_wVecot(i) = new DenseDoubleVector(indexRange.toInt)
+        grad_softmax_wVecot(i) = new DenseDoubleVector(indexRange.toInt)
       })
 
       var batchLoss: Double = 0.0
@@ -129,7 +130,7 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
           temp = math.min(temp, 18)
           temp
         })).toArray
-        val pre = (0 until rank).map(i => softmax(i) * sigmoid(i)).reduce(_ + _)
+        val pre = (0 until rank).map(i => softmax(i) * sigmoid(i)).sum
 
         val loss = {
           if (y == 1) -Math.log(pre)
@@ -202,7 +203,7 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     totalLoss += {
       (0 until rank).map(i => {
         sigmoid_wVecot(i).dot(sigmoid_wVecot(i)) + softmax_wVecot(i).dot(softmax_wVecot(i))
-      }).reduce(_ + _) * 0.5 * reg
+      }).sum * 0.5 * reg
     }
 
     val f1 = mlrModel.sigmoid_weight.clock()
@@ -327,7 +328,7 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
         temp = math.min(temp, 18)
         temp
       })).toArray
-      val pre = (0 until rank).map(i => softmax(i) * sigmoid(i)).reduce(_ + _)
+      val pre = (0 until rank).map(i => softmax(i) * sigmoid(i)).sum
 
       loss += {
         if (y == 1) -Math.log(pre)
@@ -338,7 +339,7 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     loss += {
       (0 until rank).map(i => {
         sigmoid_wVecot(i).dot(sigmoid_wVecot(i)) + softmax_wVecot(i).dot(softmax_wVecot(i))
-      }).reduce(_ + _) * 0.5 * reg
+      }).sum * 0.5 * reg
     }
     loss
   }
@@ -350,11 +351,10 @@ class MLRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
 
     for (row <- 0 until rank) {
       if (row % totalTask == taskId) {
-        val randV = new DenseDoubleVector(feaNum);
-        randV.setRowId(row)
+        val randV = new DenseDoubleVector(indexRange.toInt)
+        randV.setRowId(row.toInt)
 
-        for (col <- 0 until feaNum) {
-          val rand = math.random
+        for (col <- 0 until indexRange.toInt) {
           randV.set(col, vInit * random.nextGaussian())
         }
 

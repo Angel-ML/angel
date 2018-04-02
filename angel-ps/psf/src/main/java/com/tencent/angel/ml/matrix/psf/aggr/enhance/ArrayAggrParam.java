@@ -25,6 +25,7 @@ import io.netty.buffer.ByteBuf;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -92,29 +93,31 @@ public class ArrayAggrParam extends GetParam {
     this.cols = cols;
   }
 
+
+
   @Override
   public List<PartitionGetParam> split() {
     List<PartitionKey> parts =
         PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
-    int size = parts.size();
 
-    List<PartitionGetParam> partParams = new ArrayList<PartitionGetParam>(size);
+    List<PartitionGetParam> partParams = new ArrayList<>();
 
-    for (PartitionKey part : parts) {
+    int beginIdx = 0;
+    int endIdx = 0;
+    for (PartitionKey part: parts) {
       if (Utils.withinPart(part, new int[]{rowId})) {
         long startCol = part.getStartCol();
         long endCol = part.getEndCol();
 
-        ArrayList<Long> partCols = new ArrayList<>();
-        for (long col : this.cols) {
-          if (col >= startCol && col < endCol) {
-            partCols.add(col);
-          }
-        }
+        if (cols[beginIdx] >= startCol) {
+          while (endIdx < cols.length && cols[endIdx] < endCol) endIdx++;
 
-        if (partCols.size() > 0) {
-          partParams.add(new ArrayPartitionAggrParam(matrixId, part,
-              rowId, Utils.longListToArray(partCols)));
+          long[] partCols = new long[endIdx - beginIdx];
+          System.arraycopy(cols, beginIdx, partCols, 0, endIdx - beginIdx);
+          partParams.add(new ArrayPartitionAggrParam(matrixId, part, rowId, partCols));
+
+          if (endIdx == cols.length) break;
+          beginIdx = endIdx;
         }
       }
     }

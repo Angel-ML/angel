@@ -42,7 +42,7 @@ import com.tencent.angel.worker.task.TaskContext
  * @param col          matrix column number
  * @param blockRow    matrix partition row number
  * @param blockCol    matrix partition column number
- * @param nnz          number of non-zero elements
+ * @param validIndexNum          number of valid indexes
  * @param needSave    need save to filesystem or not
  * @param ctx          Task context
  */
@@ -52,13 +52,13 @@ class PSModel(
     val col: Long,
     val blockRow: Int = -1,
     val blockCol: Long = -1,
-    val nnz : Long = -1,
+    val validIndexNum : Long = -1,
     var needSave: Boolean = true)(implicit ctx: TaskContext) {
   
   val LOG: Log = LogFactory.getLog(classOf[PSModel])
   
   /** Matrix configuration */
-  val matrixCtx = new MatrixContext(modelName, row, col, nnz, blockRow, blockCol)
+  val matrixCtx = new MatrixContext(modelName, row, col, validIndexNum, blockRow, blockCol)
   
   /** Get task context */
   def getTaskContext = ctx

@@ -63,7 +63,7 @@ public class Task extends Thread {
       userTaskClass =
           conf.getClassByName(conf.get(AngelConf.ANGEL_TASK_USER_TASKCLASS,
               AngelConf.DEFAULT_ANGEL_TASK_USER_TASKCLASS));
-      LOG.info("userTaskClass = " + userTaskClass);
+      LOG.info("userTaskClass = " + userTaskClass + " task index = " + taskContext.getTaskIndex() + ", name = " + this.getName());
 
       BaseTask userTask = newBaseTask(userTaskClass);
       this.userTask =  userTask;
@@ -81,9 +81,9 @@ public class Task extends Thread {
   private BaseTask newBaseTask(Class<?> userTask) throws NoSuchMethodException, SecurityException,
       InstantiationException, IllegalAccessException, IllegalArgumentException,
       InvocationTargetException {
-    Constructor<?> meth = userTask.getDeclaredConstructor(TaskContext.class);
-    meth.setAccessible(true);
-    return (BaseTask) meth.newInstance(taskContext);
+      Constructor<?> meth = userTask.getDeclaredConstructor(TaskContext.class);
+      meth.setAccessible(true);
+      return (BaseTask) meth.newInstance(taskContext);
   }
 
   private <KEY, VALUE, VALUEOUT> void runUser(BaseTask<KEY, VALUE, VALUEOUT> userTask)

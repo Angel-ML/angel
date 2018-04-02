@@ -24,6 +24,7 @@ import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 
 import java.nio.DoubleBuffer;
@@ -61,10 +62,12 @@ public final class Nrm2 extends UnaryAggrFunc {
 
     double qSum = 0.0;
     Long2DoubleOpenHashMap data = row.getIndex2ValueMap();
-    for (Map.Entry<Long, Double> entry: data.long2DoubleEntrySet()) {
-      qSum += Math.pow(entry.getValue(), 2);
+    for (Long2DoubleMap.Entry entry: data.long2DoubleEntrySet()) {
+      qSum += Math.pow(entry.getDoubleValue(), 2);
     }
-    qSum += Math.pow(data.defaultReturnValue(), 2) * (entireSize - data.size());
+    // TODO: Have to deal with default values
+    assert (data.defaultReturnValue() == 0.0);
+//    qSum += Math.pow(data.defaultReturnValue(), 2) * (entireSize - data.size());
     return qSum;
   }
 

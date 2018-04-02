@@ -77,7 +77,7 @@ public class MLRTest {
       conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 100);
 
       // Set data format
-      conf.set(MLConf.ML_DATA_FORMAT(), dataFmt);
+      conf.set(MLConf.ML_DATA_INPUT_FORMAT(), dataFmt);
 
       //set angel resource parameters #worker, #task, #PS
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
@@ -85,16 +85,16 @@ public class MLRTest {
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
       //set MLR algorithm parameters #feature #epoch
-      conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(featureNum));
+      conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
       conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
-      conf.set(MLConf.ML_BATCH_SAMPLE_Ratio(), String.valueOf(spRatio));
+      conf.set(MLConf.ML_BATCH_SAMPLE_RATIO(), String.valueOf(spRatio));
       conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
       conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
       conf.set(MLConf.ML_LEARN_DECAY(), String.valueOf(decay));
-      conf.set(MLConf.ML_REG_L2(), String.valueOf(reg));
+      conf.set(MLConf.ML_LR_REG_L2(), String.valueOf(reg));
       conf.set(MLConf.ML_MLR_RANK(), String.valueOf(rank));
       conf.set(MLConf.ML_MLR_V_INIT(), String.valueOf(vInit));
-      conf.set(MLConf.ML_SGD_BATCH_NUM(), String.valueOf(batchNum));
+      conf.set(MLConf.ML_NUM_UPDATE_PER_EPOCH(), String.valueOf(batchNum));
     } catch (Exception x) {
       LOG.error("setup failed ", x);
       throw x;

@@ -28,9 +28,11 @@ import org.apache.hadoop.conf.Configuration;
 public class PSFTestSubmit implements AppSubmitter {
   @Override public void submit(Configuration conf) throws Exception {
     conf.setBoolean(AngelConf.ANGEL_AM_USE_DUMMY_DATASPLITER, true);
+    //conf.setInt(AngelConf.ANGEL_STALENESS, -1);
     AngelClient angelClient = AngelClientFactory.get(conf);
-    int blockCol = conf.getInt("blockcol", 50000);
-    MatrixContext context = new MatrixContext("psf_test", 2, 10000000, 1, blockCol);
+    int blockCol = conf.getInt("blockcol", 5000000);
+    int col = conf.getInt("col", 100000000);
+    MatrixContext context = new MatrixContext("psf_test", 1, col, 1, blockCol);
     context.setRowType(RowType.T_DOUBLE_DENSE);
     angelClient.addMatrix(context);
     angelClient.startPSServer();

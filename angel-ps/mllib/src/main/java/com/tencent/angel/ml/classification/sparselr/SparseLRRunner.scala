@@ -18,6 +18,7 @@
 package com.tencent.angel.ml.classification.sparselr
 
 import com.tencent.angel.ml.MLRunner
+import com.tencent.angel.ml.conf.MLConf
 import org.apache.hadoop.conf.Configuration
 
 
@@ -27,6 +28,7 @@ class SparseLRRunner extends MLRunner {
     */
   override
   def train(conf: Configuration): Unit = {
+    conf.setBoolean(MLConf.ML_DATA_IS_NEGY, false)
     train(conf, new SparseLRModel(conf), classOf[SparseLRTrainTask])
   }
 
@@ -39,7 +41,7 @@ class SparseLRRunner extends MLRunner {
     * Using a model to predict with unobserved samples
     */
   override def predict(conf: Configuration): Unit = {
-    conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
+    conf.setBoolean(MLConf.ML_DATA_IS_NEGY, false)
     predict(conf, new SparseLRModel(conf), classOf[SparseLRPredictTask])
   }
 }

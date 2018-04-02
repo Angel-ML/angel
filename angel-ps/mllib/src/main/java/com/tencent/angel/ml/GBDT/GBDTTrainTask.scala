@@ -28,17 +28,16 @@ import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.io.{LongWritable, Text}
 
 class GBDTTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
-
   private val LOG = LogFactory.getLog(classOf[GBDTTrainTask])
 
-  private val feaNum = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
-  private val dataFormat = conf.get(MLConf.ML_DATA_FORMAT, "libsvm")
+  private val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
+  assert(indexRange != -1L)
   private val validRatio = conf.getDouble(MLConf.ML_VALIDATE_RATIO, 0.05)
 
   // validation data storage
   var validDataStorage = new MemoryDataBlock[LabeledData](-1)
 
-  private val dataParser = DataParser(dataFormat, feaNum, true)
+  override val dataParser = DataParser(conf)
 
   /**
     * @param ctx : task context

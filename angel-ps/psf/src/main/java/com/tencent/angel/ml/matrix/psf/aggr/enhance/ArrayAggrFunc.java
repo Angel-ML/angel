@@ -16,12 +16,10 @@
 
 package com.tencent.angel.ml.matrix.psf.aggr.enhance;
 
-import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.psf.common.Utils;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
-import com.tencent.angel.ps.impl.PSContext;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.ps.impl.matrix.ServerPartition;
 import com.tencent.angel.ps.impl.matrix.ServerRow;
@@ -56,21 +54,14 @@ public abstract class ArrayAggrFunc extends GetFunc {
       if (Utils.withinPart(part.getPartitionKey(), new int[]{rowId})) {
         ServerRow row = part.getRow(rowId);
         long[] colsParam = ((ArrayAggrParam.ArrayPartitionAggrParam) partKey).getCols();
-        List<Map.Entry<Long, Double>> result = processRow(row, colsParam);
-        long[] cols = new long[result.size()];
-        double[] values = new double[result.size()];
-        for (int i = 0; i < result.size(); i++) {
-          cols[i] = result.get(i).getKey();
-          values[i] = result.get(i).getValue();
-        }
 
-        return new ArrayPartitionAggrResult(cols, values);
+        return processRow(row, colsParam);
       }
     }
     return null;
   }
 
-  private List<Map.Entry<Long, Double>> processRow(ServerRow row, long[] cols) {
+  private ArrayPartitionAggrResult processRow(ServerRow row, long[] cols) {
     switch (row.getRowType()) {
       case T_DOUBLE_DENSE:
         return doProcess((ServerDenseDoubleRow) row, cols);
@@ -82,8 +73,8 @@ public abstract class ArrayAggrFunc extends GetFunc {
     }
   }
 
-  protected abstract List<Map.Entry<Long, Double>> doProcess(ServerDenseDoubleRow row, long[] cols);
+  protected abstract ArrayPartitionAggrResult doProcess(ServerDenseDoubleRow row, long[] cols);
 
-  protected abstract List<Map.Entry<Long, Double>> doProcess(ServerSparseDoubleLongKeyRow row, long[] cols);
+  protected abstract ArrayPartitionAggrResult doProcess(ServerSparseDoubleLongKeyRow row, long[] cols);
 
 }

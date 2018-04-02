@@ -75,7 +75,7 @@ public class FtrlLRTest {
       conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 100);
 
       // Set data format
-      conf.set(MLConf.ML_DATA_FORMAT(), dataFmt);
+      conf.set(MLConf.ML_DATA_INPUT_FORMAT(), dataFmt);
 
       //set angel resource parameters #worker, #task, #PS
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
@@ -83,10 +83,10 @@ public class FtrlLRTest {
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
       //set FTRL LR algorithm parameters #feature #epoch
-      conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(featureNum));
+      conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
       conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
       conf.set(MLConf.ML_FTRL_BATCH_SIZE(), String.valueOf(spPerBatch));
-      conf.set(MLConf.ML_BATCH_SAMPLE_Ratio(), String.valueOf(spRatio));
+      conf.set(MLConf.ML_BATCH_SAMPLE_RATIO(), String.valueOf(spRatio));
 
       conf.set(MLConf.ML_FTRL_ALPHA(), String.valueOf(alpha));
       conf.set(MLConf.ML_FTRL_BETA(), String.valueOf(beta));

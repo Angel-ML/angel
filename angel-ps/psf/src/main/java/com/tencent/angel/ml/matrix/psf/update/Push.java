@@ -38,7 +38,8 @@ public class Push extends VAUpdateFunc {
   @Override
   protected void doUpdate(ServerDenseDoubleRow row, double[] values) {
     DoubleBuffer data = row.getData();
-    int size = row.size();    for (int i = 0; i < size; i++) {
+    int size = row.size();
+    for (int i = 0; i < size; i++) {
       data.put(i, values[i]);
     }
   }

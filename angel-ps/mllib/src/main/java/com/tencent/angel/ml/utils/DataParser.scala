@@ -16,16 +16,17 @@
 package com.tencent.angel.ml.utils
 
 import com.tencent.angel.exception.AngelException
+import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector._
 import com.tencent.angel.ml.matrix.RowType
-
+import org.apache.hadoop.conf.Configuration
 
 abstract class DataParser {
   def parse(value: String): LabeledData
 }
 
-case class DummyDataParser(maxDim: Long, negY: Boolean, hasLable: Boolean, isClassification: Boolean, rowType: RowType)(implicit splitor: String) extends DataParser {
+case class DummyDataParser(splitor: String, featRange: Long, negY: Boolean, hasLable: Boolean, isClassification: Boolean, rowType: RowType) extends DataParser {
   override def parse(value: String): LabeledData = {
     if (null == value) {
       return null
@@ -45,16 +46,16 @@ case class DummyDataParser(maxDim: Long, negY: Boolean, hasLable: Boolean, isCla
 
     val x = rowType match {
       case RowType.T_DOUBLE_SPARSE_LONGKEY | RowType.T_FLOAT_SPARSE_LONGKEY | RowType.T_DOUBLE_SPARSE_LONGKEY_COMPONENT =>
-        new SparseLongKeyDummyVector(splits.map(_.toLong), maxDim)
+        new SparseLongKeyDummyVector(splits.map(_.toLong), featRange)
       case _ =>
-        new SparseDummyVector(splits.map(_.toInt), maxDim.toInt)
+        new SparseDummyVector(splits.map(_.toInt), featRange.toInt)
     }
 
     new LabeledData(x, y)
   }
 }
 
-case class LibSVMDataParser(maxDim: Long, negY: Boolean, hasLable: Boolean, isClassification: Boolean, rowType: RowType)(implicit splitor: String) extends DataParser {
+case class LibSVMDataParser(splitor: String, featRange: Long, negY: Boolean, hasLable: Boolean, isClassification: Boolean, rowType: RowType) extends DataParser {
   type V = SparseDoubleSortedVector
 
   override def parse(text: String): LabeledData = {
@@ -86,7 +87,7 @@ case class LibSVMDataParser(maxDim: Long, negY: Boolean, hasLable: Boolean, isCl
           keys(indx2) = kv(0).toInt - 1
           vals(indx2) = kv(1).toDouble
         }
-        new SparseDoubleSortedVector(maxDim.toInt, keys, vals)
+        new SparseDoubleSortedVector(featRange.toInt, keys, vals)
       case RowType.T_DOUBLE_SPARSE_LONGKEY | RowType.T_DOUBLE_SPARSE_LONGKEY_COMPONENT =>
         val keys: Array[Long] = new Array[Long](len)
         val vals: Array[Double] = new Array[Double](len)
@@ -97,7 +98,7 @@ case class LibSVMDataParser(maxDim: Long, negY: Boolean, hasLable: Boolean, isCl
           keys(indx2) = kv(0).toLong - 1
           vals(indx2) = kv(1).toDouble
         }
-        new SparseLongKeySortedDoubleVector(maxDim, keys, vals)
+        new SparseLongKeySortedDoubleVector(featRange, keys, vals)
       case RowType.T_FLOAT_DENSE | RowType.T_FLOAT_SPARSE | RowType.T_FLOAT_SPARSE_COMPONENT =>
         val keys: Array[Int] = new Array[Int](len)
         val vals: Array[Float] = new Array[Float](len)
@@ -108,7 +109,7 @@ case class LibSVMDataParser(maxDim: Long, negY: Boolean, hasLable: Boolean, isCl
           keys(indx2) = kv(0).toInt - 1
           vals(indx2) = kv(1).toFloat
         }
-        new SparseFloatSortedVector(maxDim.toInt, keys, vals)
+        new SparseFloatSortedVector(featRange.toInt, keys, vals)
       case RowType.T_FLOAT_SPARSE_LONGKEY =>
         val keys: Array[Long] = new Array[Long](len)
         val vals: Array[Float] = new Array[Float](len)
@@ -119,7 +120,7 @@ case class LibSVMDataParser(maxDim: Long, negY: Boolean, hasLable: Boolean, isCl
           keys(indx2) = kv(0).toLong - 1
           vals(indx2) = kv(1).toFloat
         }
-        new SparseLongKeySortedFloatVector(maxDim, keys, vals)
+        new SparseLongKeySortedFloatVector(featRange, keys, vals)
       case _ => throw new AngelException("RowType is not support!")
     }
 
@@ -127,7 +128,7 @@ case class LibSVMDataParser(maxDim: Long, negY: Boolean, hasLable: Boolean, isCl
   }
 }
 
-case class DenseDataParser(maxDim: Int, negY: Boolean, hasLable: Boolean, isClassification: Boolean, rowType: RowType)(implicit splitor: String) extends DataParser {
+case class DenseDataParser(splitor: String, featRange: Int, negY: Boolean, hasLable: Boolean, isClassification: Boolean, rowType: RowType) extends DataParser {
 
   override def parse(value: String): LabeledData = {
     if (null == value) {
@@ -148,9 +149,9 @@ case class DenseDataParser(maxDim: Int, negY: Boolean, hasLable: Boolean, isClas
 
     val x = rowType match {
       case RowType.T_DOUBLE_DENSE =>
-        new DenseDoubleVector(maxDim, splits.map(_.toDouble))
+        new DenseDoubleVector(featRange, splits.map(_.toDouble))
       case RowType.T_FLOAT_DENSE =>
-        new DenseFloatVector(maxDim, splits.map(_.toFloat))
+        new DenseFloatVector(featRange, splits.map(_.toFloat))
       case _ => throw new AngelException("RowType is not support!")
     }
 
@@ -159,13 +160,18 @@ case class DenseDataParser(maxDim: Int, negY: Boolean, hasLable: Boolean, isClas
 }
 
 object DataParser {
-  def apply(dataFormat: String, maxDim: Long, negY: Boolean, hasLable: Boolean = true,
-            isClassification: Boolean = true, rowType: RowType = RowType.T_DOUBLE_DENSE): DataParser = {
-    implicit val splitor: String = "(?:, *| +|\t+)"
+  def apply(conf: Configuration): DataParser = {
+    val featRange = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
+    val dataFormat = conf.get(MLConf.ML_DATA_INPUT_FORMAT, MLConf.DEFAULT_ML_DATA_FORMAT)
+    val splitor = conf.get(MLConf.ML_DATA_SPLITOR, MLConf.DEFAULT_ML_DATA_SPLITOR)
+    val rowType = RowType.valueOf(conf.get(MLConf.ML_MODEL_TYPE, MLConf.DEFAULT_ML_MODEL_TYPE))
+    val negY = conf.getBoolean(MLConf.ML_DATA_IS_NEGY, MLConf.DEFAULT_ML_DATA_IS_NEGY)
+    val hasLabel = conf.getBoolean(MLConf.ML_DATA_HAS_LABEL, MLConf.DEFAULT_ML_DATA_HAS_LABEL)
+    val isClassification = conf.getBoolean(MLConf.ML_DATA_IS_CLASSIFICATION, MLConf.DEFAULT_ML_DATA_IS_CLASSIFICATION)
     dataFormat match {
-      case "dummy" => DummyDataParser(maxDim, negY, hasLable, isClassification, rowType)
-      case "libsvm" => LibSVMDataParser(maxDim, negY, hasLable, isClassification, rowType)
-      case "dense" => DenseDataParser(maxDim.toInt, negY, hasLable, isClassification, rowType)
+      case "dummy" => DummyDataParser(splitor, featRange, negY, hasLabel, isClassification, rowType)
+      case "libsvm" => LibSVMDataParser(splitor, featRange, negY, hasLabel, isClassification, rowType)
+      case "dense" => DenseDataParser(splitor, featRange.toInt, negY, hasLabel, isClassification, rowType)
     }
   }
 }

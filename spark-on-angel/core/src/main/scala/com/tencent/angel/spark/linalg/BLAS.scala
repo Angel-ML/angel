@@ -31,6 +31,8 @@ import com.github.fommil.netlib.{F2jBLAS, BLAS => NetlibBLAS}
 import com.github.fommil.netlib.BLAS.{getInstance => NativeBLAS}
 import it.unimi.dsi.fastutil.longs.{Long2DoubleMap, Long2DoubleOpenHashMap, LongOpenHashSet}
 
+import com.tencent.angel.utils.HLLC
+
 /**
  * BLAS routines for MLlib's vectors and matrices.
  */
@@ -132,8 +134,9 @@ private[spark] object BLAS extends Serializable {
     if (a == 0.0) {
       return
     } else if(x.keyValues.defaultReturnValue() == 0.0) {
-      if (x.keyValues.size() != 0 || y.keyValues.size().toDouble / x.keyValues.size() < 1.1) {
-        y.reSize(x.keyValues.size() + y.keyValues.size())
+      if (x.keyValues.size() != 0) {
+        val distinctNum = 1.1 * HLLC.distinct(Array(x.keyValues, y.keyValues))
+        y.reSize(distinctNum.toLong)
       }
       val iter = x.keyValues.long2DoubleEntrySet().fastIterator()
       var entry: Long2DoubleMap.Entry = null

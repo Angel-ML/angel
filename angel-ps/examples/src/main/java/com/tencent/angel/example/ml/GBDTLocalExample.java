@@ -72,7 +72,7 @@ public class GBDTLocalExample {
 
     // Use local deploy mode and data format
     conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
-    conf.set(MLConf.ML_DATA_FORMAT(), String.valueOf(dataFmt));
+    conf.set(MLConf.ML_DATA_INPUT_FORMAT(), String.valueOf(dataFmt));
 
     // set input, output path
     conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
@@ -86,8 +86,8 @@ public class GBDTLocalExample {
     conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
     // Set GBDT algorithm parameters
-    conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(featureNum));
-    conf.set(MLConf.ML_FEATURE_NNZ(), String.valueOf(featureNzz));
+    conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
+    conf.set(MLConf.ML_MODEL_SIZE(), String.valueOf(featureNzz));
     conf.set(MLConf.ML_GBDT_TREE_NUM(), String.valueOf(treeNum));
     conf.set(MLConf.ML_GBDT_TREE_DEPTH(), String.valueOf(treeDepth));
     conf.set(MLConf.ML_GBDT_SPLIT_NUM(), String.valueOf(splitNum));

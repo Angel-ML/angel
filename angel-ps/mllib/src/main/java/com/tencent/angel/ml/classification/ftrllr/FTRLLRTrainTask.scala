@@ -34,17 +34,16 @@ import org.apache.hadoop.io.{LongWritable, Text}
 class FTRLLRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
   val LOG: Log = LogFactory.getLog(classOf[FTRLLRTrainTask])
 
+
   // feature number of training data
-  private val feaNum: Int = conf.getInt(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
-  // data format of training data, libsvm or dummy
-  private val dataFormat = conf.get(MLConf.ML_DATA_FORMAT, "dummy")
+  private val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
+  assert(indexRange != -1)
   // validate sample ratio
   private val valiRat = conf.getDouble(MLConf.ML_VALIDATE_RATIO, MLConf.DEFAULT_ML_VALIDATE_RATIO)
 
   // validation data storage
   var validDataBlock = new MemoryDataBlock[LabeledData](-1)
-
-  private val dataParser = DataParser(dataFormat, feaNum, true)
+  override val dataParser = DataParser(conf)
 
   override
   def train(ctx: TaskContext) {
@@ -95,6 +94,6 @@ class FTRLLRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text
       taskDataBlock.size +
         validDataBlock.size
     } samples, ${taskDataBlock.size} for train, " +
-      s"${validDataBlock.size} for validation. feanum=$feaNum")
+      s"${validDataBlock.size} for validation.")
   }
 }

@@ -48,13 +48,14 @@ class KMeansLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   // Adaptive learnning rate parameter
   val C = conf.getDouble(MLConf.kMEANS_C, 0.1);
   // Number of features
-  val feaNum: Int = conf.getInt(MLConf.ML_FEATURE_NUM, 10000)
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
+  assert(indexRange != -1L)
   // Number of epoch
   val epochNum: Int = conf.getInt(MLConf.ML_EPOCH_NUM, 10)
   // Number of samples per batch
   val spRatio: Double = conf.getDouble(MLConf.KMEANS_SAMPLE_RATIO_PERBATCH, 0.5)
 
-  LOG.info(s"Task[${ctx.getTaskIndex}] Start KMeans learner, K=$K, C=$C, #Feature=$feaNum, " +
+  LOG.info(s"Task[${ctx.getTaskIndex}] Start KMeans learner, K=$K, C=$C, #Feature=$indexRange, " +
     s"#Iteration=$epochNum, #SampleRaioPerMiniBatch=$spRatio")
 
   // Create a Kmeans Model according to the conf

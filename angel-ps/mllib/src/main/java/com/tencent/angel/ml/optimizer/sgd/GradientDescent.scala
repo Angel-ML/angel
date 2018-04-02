@@ -134,7 +134,7 @@ object GradientDescent {
       w = pullPSWeight[N](wM, indexes)
       b = pullPSIntercept(intercept)
 
-      val weightSparsity = w.sparsity
+      val weightSparsity = sparsity(w, wM)
       LOG.info("the sparsity for w is:" + weightSparsity)
 
       totalLoss += batchLoss
@@ -147,6 +147,15 @@ object GradientDescent {
     totalLoss += loss.getReg(w)
 
     (totalLoss, w)
+  }
+
+
+  def sparsity(w: TDoubleVector, wM: PSModel): Double = {
+    if (wM.validIndexNum > 0) {
+      w.nonZeroNumber().toDouble / wM.validIndexNum
+    } else {
+      w.sparsity()
+    }
   }
 
   def L2Loss(loss: Loss, w: baseT, grad: baseT): Unit = {

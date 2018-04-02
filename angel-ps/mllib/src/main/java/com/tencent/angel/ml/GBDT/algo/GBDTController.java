@@ -427,7 +427,7 @@ public class GBDTController {
 
         // 1.3. set the oplog to active
         int bytesPerItem = this.taskContext.getConf().
-          getInt(MLConf.ML_COMPRESS_BYTES(), MLConf.DEFAULT_ML_COMPRESS_BYTES());
+          getInt(MLConf.ANGEL_COMPRESS_BYTES(), MLConf.DEFAULT_ANGEL_COMPRESS_BYTES());
         if (!(bytesPerItem >= 1 && bytesPerItem <= 7)) {
           needFlushMatrixSet.add(histParaName);
         }

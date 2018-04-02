@@ -82,7 +82,7 @@ public class SgdLRTest2 {
 
       // conf.setBoolean(MLConf.ML_INDEX_GET_ENABLE(), true);
       // Set data format
-      conf.set(MLConf.ML_DATA_FORMAT(), dataFmt);
+      conf.set(MLConf.ML_DATA_INPUT_FORMAT(), dataFmt);
 
       //set angel resource parameters #worker, #task, #PS
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
@@ -90,14 +90,14 @@ public class SgdLRTest2 {
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
       //set sgd LR algorithm parameters #feature #epoch
-      conf.set(MLConf.LR_MODEL_TYPE(), modelType);
-      conf.set(MLConf.ML_FEATURE_NUM(), String.valueOf(featureNum));
+      conf.set(MLConf.ML_MODEL_TYPE(), modelType);
+      conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
       conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
       conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
       conf.set(MLConf.ML_LEARN_DECAY(), String.valueOf(decay));
-      conf.set(MLConf.ML_REG_L1(), String.valueOf(reg1));
-      conf.set(MLConf.ML_REG_L2(), String.valueOf(reg2));
-      conf.set(MLConf.ML_SGD_BATCH_SIZE(), String.valueOf(batchSize));
+      conf.set(MLConf.ML_LR_REG_L1(), String.valueOf(reg1));
+      conf.set(MLConf.ML_LR_REG_L2(), String.valueOf(reg2));
+      conf.set(MLConf.ML_MINIBATCH_SIZE(), String.valueOf(batchSize));
       conf.set(MLConf.ML_NUM_UPDATE_PER_EPOCH(), String.valueOf(updatePerEpoch));
     } catch (Exception x) {
       LOG.error("setup failed ", x);
@@ -123,7 +123,7 @@ public class SgdLRTest2 {
       conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(0.05));
 
       String modelType = String.valueOf(RowType.T_DOUBLE_DENSE);
-      conf.set(MLConf.LR_MODEL_TYPE(), modelType);
+      conf.set(MLConf.ML_MODEL_TYPE(), modelType);
 
       conf.set(MLConf.ML_OPT_METHOD(), OptMethods.AdaGrad());
 
@@ -149,8 +149,6 @@ public class SgdLRTest2 {
       // Set predict result path
       conf.set(AngelConf.ANGEL_PREDICT_PATH, predictPath);
       // Set actionType prediction
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_INC_TRAIN());
-
       conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT());
       LRRunner runner = new LRRunner();
 

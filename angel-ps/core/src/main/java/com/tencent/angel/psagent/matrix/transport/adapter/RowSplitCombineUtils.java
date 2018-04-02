@@ -405,7 +405,7 @@ public class RowSplitCombineUtils {
     Long2DoubleOpenHashMap data = new Long2DoubleOpenHashMap(indexes, values);
     data.defaultReturnValue(defaultValue);
     SparseLongKeyDoubleVector row = new SparseLongKeyDoubleVector(colNum, data);
-    row.setModelNnz(matrixMeta.getNnz());
+    row.setModelNnz(matrixMeta.getValidIndexNum());
     row.setMatrixId(matrixMeta.getId());
     row.setRowId(rowIndex);
     row.setClock(clock);

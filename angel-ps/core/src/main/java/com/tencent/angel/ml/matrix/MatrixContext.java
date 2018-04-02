@@ -46,8 +46,8 @@ public class MatrixContext {
   /** Number of cols for this matrix */
   private long colNum;
 
-  /** Number of nonzero elements */
-  private long nnz;
+  /** Number of valid indexes */
+  private long validIndexNum;
 
   /** Number of rows for one block */
   private int maxRowNumInBlock;
@@ -90,8 +90,8 @@ public class MatrixContext {
    * @param rowNum matrix row number
    * @param colNum matrix column number
    */
-  public MatrixContext(String name, int rowNum, long colNum, long nnz) {
-    this(name, rowNum, colNum, nnz, -1, -1, RowType.T_DOUBLE_DENSE);
+  public MatrixContext(String name, int rowNum, long colNum, long validIndexNum) {
+    this(name, rowNum, colNum, validIndexNum, -1, -1, RowType.T_DOUBLE_DENSE);
   }
 
 
@@ -125,12 +125,12 @@ public class MatrixContext {
    * @param name matrix name
    * @param rowNum matrix row number
    * @param colNum matrix column number
-   * @param nnz number of non-zero elements
+   * @param validIndexNum number of valid indexes
    * @param maxRowNumInBlock matrix block row number
    * @param maxColNumInBlock matrix block column number
    */
-  public MatrixContext(String name, int rowNum, long colNum, long nnz, int maxRowNumInBlock, long maxColNumInBlock) {
-    this(name, rowNum, colNum, nnz, maxRowNumInBlock, maxColNumInBlock, RowType.T_DOUBLE_DENSE);
+  public MatrixContext(String name, int rowNum, long colNum, long validIndexNum, int maxRowNumInBlock, long maxColNumInBlock) {
+    this(name, rowNum, colNum, validIndexNum, maxRowNumInBlock, maxColNumInBlock, RowType.T_DOUBLE_DENSE);
   }
 
   /**
@@ -138,16 +138,16 @@ public class MatrixContext {
    * @param name matrix name
    * @param rowNum matrix row number
    * @param colNum matrix column number
-   * @param nnz number of non-zero elements
+   * @param validIndexNum number of valid indexes
    * @param maxRowNumInBlock matrix block row number
    * @param maxColNumInBlock matrix block column number
    * @param rowType matrix row type
    */
-  public MatrixContext(String name, int rowNum, long colNum, long nnz, int maxRowNumInBlock, long maxColNumInBlock, RowType rowType) {
+  public MatrixContext(String name, int rowNum, long colNum, long validIndexNum, int maxRowNumInBlock, long maxColNumInBlock, RowType rowType) {
     this.name = name;
     this.rowNum = rowNum;
     this.colNum = colNum;
-    this.nnz = nnz;
+    this.validIndexNum = validIndexNum;
     this.maxRowNumInBlock = maxRowNumInBlock;
     this.maxColNumInBlock = maxColNumInBlock;
     this.rowType = rowType;
@@ -184,19 +184,19 @@ public class MatrixContext {
   }
 
   /**
-   * Get number of non-zero element
-   * @return number of non-zero element
+   * Get number of valid indexes
+   * @return number of valid indexes
    */
-  public long getNnz() {
-    return nnz;
+  public long getValidIndexNum() {
+    return validIndexNum;
   }
 
   /**
-   * Set number of non-zero element
-   * @param nnz number of non-zero element
+   * Set number of valid indexes
+   * @param validIndexNum number of valid indexes
    */
-  public void setNnz(long nnz) {
-    this.nnz = nnz;
+  public void setValidIndexNum(long validIndexNum) {
+    this.validIndexNum = validIndexNum;
   }
 
   /**
@@ -399,7 +399,7 @@ public class MatrixContext {
   }
 
   @Override public String toString() {
-    return "MatrixContext{" + "name='" + name + '\'' + ", rowNum=" + rowNum + ", colNum=" + colNum + ", nnz=" + nnz
+    return "MatrixContext{" + "name='" + name + '\'' + ", rowNum=" + rowNum + ", colNum=" + colNum + ", validIndexNum=" + validIndexNum
       + ", maxRowNumInBlock=" + maxRowNumInBlock + ", maxColNumInBlock=" + maxColNumInBlock
       + ", partitionerClass=" + partitionerClass + ", rowType=" + rowType + ", attributes="
       + attributes + ", matrixId=" + matrixId + '}';

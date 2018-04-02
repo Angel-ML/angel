@@ -313,7 +313,7 @@ public final class ProtobufUtil {
       .setId(mContext.getMatrixId())
       .setRowNum(mContext.getRowNum())
       .setColNum(mContext.getColNum())
-      .setNnz(mContext.getNnz())
+      .setValidIndexNum(mContext.getValidIndexNum())
       .setBlockRowNum(mContext.getMaxRowNumInBlock())
       .setBlockColNum(mContext.getMaxColNumInBlock())
       .setRowType(mContext.getRowType().getNumber())
@@ -354,7 +354,7 @@ public final class ProtobufUtil {
   public static MatrixContext convertToMatrixContext(MatrixContextProto matrixContextProto)
     throws ClassNotFoundException {
     MatrixContext matrixContext = new MatrixContext(matrixContextProto.getName(), matrixContextProto.getRowNum(),
-      matrixContextProto.getColNum(), matrixContextProto.getNnz(), matrixContextProto.getBlockRowNum(), matrixContextProto.getBlockColNum(),
+      matrixContextProto.getColNum(), matrixContextProto.getValidIndexNum(), matrixContextProto.getBlockRowNum(), matrixContextProto.getBlockColNum(),
       RowType.valueOf(matrixContextProto.getRowType()));
 
     matrixContext.setMatrixId(matrixContextProto.getId());

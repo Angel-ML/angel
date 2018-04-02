@@ -62,13 +62,16 @@ class FMModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
   private val LOG = LogFactory.getLog(classOf[FMModel])
   private val (vmat, weight, intercept) = ("fm_vmat", "fm_weight", "fm_intercept")
 
-  val feaNum: Long = conf.getLong(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
+  assert(indexRange != -1L)
+  val modelSize: Long = conf.getLong(MLConf.ML_MODEL_SIZE, indexRange)
+
   val rank: Int = conf.getInt(MLConf.ML_FM_RANK, MLConf.DEFAULT_ML_FM_RANK)
-  val modelType: RowType = RowType.valueOf(conf.get(MLConf.FM_MODEL_TYPE, RowType.T_DOUBLE_SPARSE.toString))
-  addPSModel(intercept, PSModel(intercept, 1, 1).setAverage(true).setRowType(modelType))
-  addPSModel(weight, PSModel(weight, 1, feaNum).setAverage(true).setRowType(modelType))
-  private val blockCol = if (rank * feaNum < 1000000) -1 else 1000000 / rank
-  addPSModel(vmat, PSModel(vmat, rank, feaNum, rank, blockCol).setAverage(true).setRowType(modelType))
+  val modelType: RowType = RowType.valueOf(conf.get(MLConf.ML_MODEL_TYPE, RowType.T_DOUBLE_DENSE.toString))
+  addPSModel(intercept, PSModel(intercept, 1, 1, -1, -1, 1).setAverage(true).setRowType(modelType))
+  addPSModel(weight, PSModel(weight, 1, indexRange, -1, -1, modelSize).setAverage(true).setRowType(modelType))
+  private val blockCol = if (rank * indexRange < 1000000) -1 else 1000000 / rank
+  addPSModel(vmat, PSModel(vmat, rank, indexRange, rank, blockCol, modelSize).setAverage(true).setRowType(modelType))
   setSavePath(conf)
   setLoadPath(conf)
 
@@ -437,7 +440,7 @@ class FMModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
   }
 
   private def getBias(bias: Any): Double = {
-    modelType match {
+    bias.asInstanceOf[TVector].getType match {
       case RowType.T_DOUBLE_SPARSE =>
         bias.asInstanceOf[SparseDoubleVector].get(0)
       case RowType.T_DOUBLE_DENSE =>

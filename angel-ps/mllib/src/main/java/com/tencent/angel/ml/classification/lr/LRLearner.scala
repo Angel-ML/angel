@@ -47,14 +47,16 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   val epochNum: Int = conf.getInt(MLConf.ML_EPOCH_NUM, MLConf.DEFAULT_ML_EPOCH_NUM)
   val lr_0: Double = conf.getDouble(MLConf.ML_LEARN_RATE, MLConf.DEFAULT_ML_LEAR_RATE)
   val decay: Double = conf.getDouble(MLConf.ML_LEARN_DECAY, MLConf.DEFAULT_ML_LEARN_DECAY)
-  val reg1: Double = conf.getDouble(MLConf.ML_REG_L1, MLConf.DEFAULT_ML_REG_L1)
-  val reg2: Double = conf.getDouble(MLConf.ML_REG_L2, MLConf.DEFAULT_ML_REG_L2)
-  val feaNum: Long = conf.getLong(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
-  val spRatio: Double = conf.getDouble(MLConf.ML_BATCH_SAMPLE_Ratio, MLConf.DEFAULT_ML_BATCH_SAMPLE_Ratio)
-  val batchNum: Int = conf.getInt(MLConf.ML_SGD_BATCH_NUM, MLConf.DEFAULT_ML_SGD_BATCH_NUM)
+  val reg1: Double = conf.getDouble(MLConf.ML_LR_REG_L1, MLConf.DEFAULT_ML_LR_REG_L1)
+  val reg2: Double = conf.getDouble(MLConf.ML_LR_REG_L2, MLConf.DEFAULT_ML_LR_REG_L2)
+  val spRatio: Double = conf.getDouble(MLConf.ML_BATCH_SAMPLE_RATIO, MLConf.DEFAULT_ML_BATCH_SAMPLE_RATIO)
+  val batchNum: Int = conf.getInt(MLConf.ML_NUM_UPDATE_PER_EPOCH, MLConf.DEFAULT_ML_NUM_UPDATE_PER_EPOCH)
   val regLoss: String = conf.getStrings(MLConf.ML_REG_LOSS_TYPE, MLConf.DEFAULT_ML_REG_LOSS_TYPE)(0)
   // control the lower bound of learning rate
   val lrLowerBound: Int = conf.getInt(MLConf.ML_LEARN_RATE_BOUND, MLConf.DEFAULT_ML_LEARN_RATE_BOUND)
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
+  assert(indexRange != -1L)
+  val modelSize: Long = conf.getLong(MLConf.ML_MODEL_SIZE, indexRange)
 
   // Init LR Model
   val lrModel = new LRModel(conf, ctx)
@@ -203,7 +205,7 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   }
 
   def sparsity(weight: TDoubleVector, dim: Int): Double = {
-    weight.nonZeroNumber().toDouble / dim.toDouble
+    weight.nonZeroNumber().toDouble / modelSize
   }
 
 }

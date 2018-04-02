@@ -26,12 +26,16 @@ import it.unimi.dsi.fastutil.Swapper;
 import it.unimi.dsi.fastutil.ints.IntComparator;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
 public class SparseParam extends UpdateParam {
+
+  private Log LOG = LogFactory.getLog(SparseParam.class);
 
   public static class SparseFPartitionUpdateParam extends PartitionUpdateParam {
     private int rowId;
@@ -98,6 +102,11 @@ public class SparseParam extends UpdateParam {
       }
       this.values = doubles;
     }
+
+    @Override
+    public int bufferLen() {
+      return super.bufferLen() + 4 + (4 + cols.length * 8) + (4 + values.length * 8);
+    }
   }
 
 
@@ -124,44 +133,30 @@ public class SparseParam extends UpdateParam {
         .getMatrixMetaManager()
         .getPartitions(matrixId);
 
-    List<PartitionKey> filteredParts = new ArrayList<>();
-    for (PartitionKey part: parts) {
-      if (Utils.withinPart(part, new int[]{rowId})) {
-        filteredParts.add(part);
-      }
-    }
-
-    PartitionKey[] partitionKeys = filteredParts.toArray(new PartitionKey[filteredParts.size()]);
-    java.util.Arrays.sort(partitionKeys, new PartitionComp());
-
     int beginIndex = 0;
     int endIndex = 0;
-    List<PartitionUpdateParam> partParams = new ArrayList<PartitionUpdateParam>();
+    List<PartitionUpdateParam> partParams = new ArrayList<>();
 
-    for (PartitionKey part: partitionKeys) {
-      if (beginIndex < cols.length && cols[beginIndex] >= part.getStartCol()) {
-        while(endIndex < cols.length && cols[endIndex] < part.getEndCol()) endIndex++;
+    for (PartitionKey part: parts) {
+      if (Utils.withinPart(part, new int[]{rowId})) {
+        if (beginIndex < cols.length && cols[beginIndex] >= part.getStartCol()) {
+          while(endIndex < cols.length && cols[endIndex] < part.getEndCol()) endIndex++;
 
-        long[] thisCols = new long[endIndex - beginIndex];
-        double[] thisValues = new double[endIndex - beginIndex];
-        System.arraycopy(cols, beginIndex, thisCols, 0, endIndex - beginIndex);
-        System.arraycopy(values, beginIndex, thisValues, 0, endIndex - beginIndex);
-        SparseFPartitionUpdateParam partParam =
-            new SparseFPartitionUpdateParam(matrixId, part, rowId, thisCols, thisValues);
+          long[] thisCols = new long[endIndex - beginIndex];
+          double[] thisValues = new double[endIndex - beginIndex];
+          System.arraycopy(cols, beginIndex, thisCols, 0, endIndex - beginIndex);
+          System.arraycopy(values, beginIndex, thisValues, 0, endIndex - beginIndex);
+          SparseFPartitionUpdateParam partParam =
+              new SparseFPartitionUpdateParam(matrixId, part, rowId, thisCols, thisValues);
 
-        partParams.add(partParam);
-        beginIndex = endIndex;
+          partParams.add(partParam);
+          if (endIndex == cols.length) break;
+          beginIndex = endIndex;
+        }
       }
     }
 
     return partParams;
-  }
-}
-
-class PartitionComp implements Comparator<PartitionKey> {
-  @Override
-  public int compare(PartitionKey o1, PartitionKey o2) {
-    return (int)(o1.getStartCol() - o2.getEndCol());
   }
 }
 

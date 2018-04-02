@@ -60,19 +60,15 @@ object LRModel {
 class LRModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(conf, _ctx) {
   private val LOG = LogFactory.getLog(classOf[LRModel])
   private val (weight, intercept) = ("lr_weight", "lr_intercept")
-  private val defaultPartSize = 500000
 
-  val feaNum: Long = conf.getLong(MLConf.ML_FEATURE_NUM, MLConf.DEFAULT_ML_FEATURE_NUM)
-  val nnz: Long = conf.getLong(MLConf.ML_FEATURE_NNZ, -1)
-  val modelType: RowType = RowType.valueOf(conf.get(MLConf.LR_MODEL_TYPE, RowType.T_DOUBLE_SPARSE.toString))
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
+  assert(indexRange != -1L)
+  val modelSize: Long = conf.getLong(MLConf.ML_MODEL_SIZE, indexRange)
+  val modelType: RowType = RowType.valueOf(conf.get(MLConf.ML_MODEL_TYPE, MLConf.DEFAULT_ML_MODEL_TYPE))
 
-  var blockRow = 1
-  var blockCol = -1
-  if (nnz != -1) {
-    blockCol = (feaNum.toDouble / (nnz.toDouble / defaultPartSize)).toInt
-  }
-  addPSModel(weight, PSModel(weight, 1, feaNum, 1, blockCol).setAverage(true).setRowType(modelType))
-  addPSModel(intercept, PSModel(intercept, 1, 1).setAverage(true).setRowType(modelType))
+  addPSModel(weight, PSModel(weight, 1, indexRange, -1, -1, modelSize).setAverage(true).setRowType(modelType))
+  addPSModel(intercept, PSModel(intercept, 1, 1, -1, -1, 1).setAverage(true).setRowType(modelType))
+
   setSavePath(conf)
   setLoadPath(conf)
 
@@ -146,7 +142,7 @@ class LRModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
   }
 
   private def getBias(bias: Any): Double = {
-    modelType match {
+    bias.asInstanceOf[TVector].getType match {
       case RowType.T_DOUBLE_SPARSE =>
         bias.asInstanceOf[SparseDoubleVector].get(0)
       case RowType.T_DOUBLE_DENSE =>
