@@ -51,7 +51,7 @@ public class SgdLRTest {
       // Feature number of train data
       int featureNum = -1;
       // Total iteration number
-      int epochNum = 10;
+      int epochNum = 5;
       // Validation sample Ratio
       double vRatio = 0.1;
       // Data format, libsvm or dummy
