@@ -35,7 +35,7 @@ KMeans on Angel的算法流程如下图所示：
 ### 参数
 
 * **输入格式**
-  * ml.feature.num：特征向量的维度   
+  * ml.feature.index.range：特征向量的维度
   * ml.data.type：支持"dummy"、"libsvm"两种数据格式，具体参考:[Angel数据格式](data_format.md)
 
 * **输入输出参数**
