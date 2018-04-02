@@ -6,24 +6,15 @@
 
 逻辑回归模型（logistic regression model）是一种分类模型。样本x属于类别y的概率P(y|x)服从logistic分布：   
 
-![model](http://latex.codecogs.com/png.latex?
-\dpi{150}
-P(y=+1|x) = \frac{1}{1+\exp(-wx)},  P(y=-1|x) = \frac{1}{1+\exp(wx)}
-)
+![model](http://latex.codecogs.com/png.latex?\dpi{150}P(y=+1|x)=\frac{1}{1+\exp(-wx)},P(y=-1|x)=\frac{1}{1+\exp(wx)})
 
 综合两种情况，有：      
 
-![model](http://latex.codecogs.com/png.latex?
-\dpi{150}
-P(y|x) = \frac{1}{1+\exp(-ywx)}
-)
+![model](http://latex.codecogs.com/png.latex?\dpi{150}P(y|x)=\frac{1}{1+\exp(-ywx)})
 
 逻辑回归模型使用log损失函数，带L2惩罚项的目标函数如下所示：    
 
-![model](http://latex.codecogs.com/png.latex?
-\dpi{150}
-\min_w \sum_i^N \log(1+\exp(-y_i w x_i)) + \lambda \|w\|_2^2
-)
+![model](http://latex.codecogs.com/png.latex?\dpi{150}\min_w\sum_i^N\log(1+\exp(-y_iwx_i))+\lambda\|w\|_2^2)
 
 其中：![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20\lambda\|w\|_2^2)为L2正则项。
 
@@ -37,9 +28,7 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Logistic 
 
 * Learning Rate在迭代过程中衰减:
 
-![](http://latex.codecogs.com/png.latex?
-\dpi{150} \eta=\frac{\eta_0}{\sqrt{1+\alpha\cdot%20T}}
-)
+![](http://latex.codecogs.com/png.latex?\dpi{150}\eta=\frac{\eta_0}{\sqrt{1+\alpha\cdot%20T}})
 
 其中, α为衰减系数, T为迭代次数
 

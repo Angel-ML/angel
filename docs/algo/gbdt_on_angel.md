@@ -80,7 +80,7 @@ GBDT的流程包括几大步骤
 ## 4. 运行 & 性能
 
 ###  输入格式
-* ml.feature.num：特征向量的维度   
+* ml.feature.index.range：特征向量的维度
 * ml.data.type：支持"dummy"、"libsvm"两种数据格式，具体参考:[Angel数据格式](data_format.md)
 
 
@@ -92,7 +92,7 @@ GBDT的流程包括几大步骤
 	* ml.gbdt.tree.depth：树的最大高度
 	* ml.gbdt.split.num：每个特征的梯度直方图的大小
 	* ml.learn.rate：学习速率
-	* ml.validate.ratio：每次validation的样本比率，设为0时不做validation
+	* ml.data.validate.ratio：每次validation的样本比率，设为0时不做validation
 	* ml.gbdt.sample.ratio：特征下采样的比率，默认为1
 	* ml.gbdt.server.split：两阶段分裂算法开关，默认为true
 	* ml.compress.bytes：低精度压缩，每个浮点数的大小，可设为[1,8]
@@ -101,7 +101,7 @@ GBDT的流程包括几大步骤
 * **输入输出参数**
 	* angel.train.data.path：训练数据的输入路径
 	* angel.predict.data.path：预测数据的输入路径
-	* ml.feature.num：数据的特征个数
+	* ml.feature.index.range：数据的特征个数
 	* ml.feature.nnz：数据的非零特征个数
 	* ml.gbdt.cate.feat：离散特征，"特征id:特征数量"的格式，以逗号分隔，例如"0:2,1:3"。设为"none"表示没有离散特征，设为"all"表示全部为离散特征。
 	* ml.data.type：数据格式，支持"dummy"、"libsvm"
@@ -125,14 +125,14 @@ angel-submit \
     -Dangel.app.submit.class=com.tencent.angel.ml.GBDT.GBDTRunner  \
     -Daction.type=train \
     -Dml.data.type=libsvm \
-    -Dml.validate.ratio=0.1 \
-    -Dml.feature.num=10000 \
-	  -Dml.feature.nnz=100 \
-	  -Dml.gbdt.cate.feat=none \
-	  -Dml.gbdt.tree.num=20 \
-	  -Dml.gbdt.tree.depth=7 \
-	  -Dml.gbdt.split.num=10 \
-	  -Dml.gbdt.sample.ratio=1.0 \
+    -Dml.data.validate.ratio=0.1 \
+    -Dml.feature.index.range=10000 \
+	-Dml.feature.nnz=100 \
+	-Dml.gbdt.cate.feat=none \
+	-Dml.gbdt.tree.num=20 \
+	-Dml.gbdt.tree.depth=7 \
+	-Dml.gbdt.split.num=10 \
+	-Dml.gbdt.sample.ratio=1.0 \
     -Dml.learn.rate=0.01 \
     -Dml.gbdt.server.split=true \
     -Dml.compress.bytes=2 \
@@ -155,12 +155,12 @@ angel-submit \
     -Dangel.app.submit.class=com.tencent.angel.ml.GBDT.GBDTRunner  \
     -Daction.type=predict \
     -Dml.data.type=libsvm \
-    -Dml.validate.ratio=0.1 \
-    -Dml.feature.num=10000 \
-	  -Dml.feature.nnz=100 \
-	  -Dml.gbdt.tree.num=20 \
-	  -Dml.gbdt.tree.depth=7 \
-	  -Dml.gbdt.sample.ratio=1.0 \
+    -Dml.data.validate.ratio=0.1 \
+    -Dml.feature.index.range=10000 \
+	-Dml.feature.nnz=100 \
+	-Dml.gbdt.tree.num=20 \
+	-Dml.gbdt.tree.depth=7 \
+	-Dml.gbdt.sample.ratio=1.0 \
     -Dml.learn.rate=0.01 \
     -Dangel.predict.data.path=$input_path \
     -Dangel.save.model.path=$model_path \

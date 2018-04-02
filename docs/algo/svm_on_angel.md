@@ -6,16 +6,14 @@
 ## 1. 算法介绍
 SVM分类模型可以抽象为以下优化问题：
 
-![](../img/SVM_obj.png)
+![model](http://latex.codecogs.com/png.latex?\dpi{150}\min_{w}\lambda\\|w\\|_2^2+\sum_i^N\max{(0,1-y_if(x_i))})
 
-其中：
-![](../img/SVM_reg.png)
-为正则项；
-![](../img/SVM_lambda.png)
-为正则项系数；![](../img/SVM_hingeloss.png)为合页损失函数（hinge loss），如下图所示：  
+其中：![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20\\|w\\|_2^2)
+为正则项；![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20\lambda)
+为正则项系数；![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20\sum_i^N\max{(0,1-y_if(x_i))})
+为合页损失函数（hinge loss），如下图所示：
 
 ![](../img/SVM_hingeloss_pic.png)
-
 
 ## 2. 分布式实现 on Angel
 Angel MLLib提供了用mini-batch gradient descent优化方法求解的SVM二分类算法，算法逻辑如下：
@@ -33,20 +31,18 @@ Angel MLLib提供了用mini-batch gradient descent优化方法求解的SVM二分
 ### 参数
 
 * **算法参数**
-  * ml.epochnum：迭代次数
+  * ml.epoch.num：迭代次数
   * ml.batch.sample.ratio：每次迭代的样本采样率
-  * ml.sgd.batch.num：每次迭代的mini-batch的个数
-  * ml.validate.ratio：每次validation的样本比率，设为0时不做validation
+  * ml.num.update.per.epoch：个epoch中参数更新的次数
+  * ml.data.validate.ratio：每次validation的样本比率，设为0时不做validation
   * ml.learn.rate：初始学习速率
   * ml.learn.decay：学习速率衰减系数
-  * ml.reg.l2：L2惩罚项系数
-
-
+  * ml.svm.reg.l2：L2惩罚项系数
 
 * **输入输出参数**
   * angel.train.data.path：训练数据的输入路径
   * angel.predict.data.path：预测数据的输入路径
-  * ml.feature.num：数据特征个数
+  * ml.feature.index.range：数据特征个数
   * ml.data.type：数据格式，支持"dummy"、"libsvm" 
   * angel.save.model.path：训练完成后，模型的保存路径
   *	angel.predict.out.path：预测结果存储路径

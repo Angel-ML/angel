@@ -81,7 +81,7 @@ ADMM在Angel上实现的一般步骤为：
 
 
 * **算法参数**  
-  * ml.epoch.num：迭代次数   
+  * ml.epoch.num：迭代次数
   * ml.lr.reg.l1: L1惩罚系数
   * rho: rho
   * ml.worker.thread.num: 子模型训练并行度
@@ -111,7 +111,6 @@ ADMM在Angel上实现的一般步骤为：
     --angel.save.model.path $model_path \
     --angel.log.path $logpath \
     --ml.epoch.num 10 \
-    --ml.num.update.per.epoch 10 \
     --ml.feature.index.range 10000 \
     --ml.data.validate.ratio 0.1 \
     --ml.data.type dummy \
