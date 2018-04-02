@@ -102,9 +102,11 @@ public class LongIndexGetParam extends GetParam {
         length++;
       }
 
-      long [] split = new long[length];
-      System.arraycopy(indexes, ii - length, split, 0, length);
-      ret.put(partKeys.get(keyIndex), split);
+      if(length != 0) {
+        long [] split = new long[length];
+        System.arraycopy(indexes, ii - length, split, 0, length);
+        ret.put(partKeys.get(keyIndex), split);
+      }
       keyIndex++;
     }
     return ret;

@@ -43,8 +43,7 @@ class FTRLLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
   val FTRL_LR_Z = "ftrl_lr_z"
   val FTRL_LR_N = "ftrl_lr_n"
 
-  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
-  assert(indexRange != -1L)
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
   val modelSize: Long = conf.getLong(MLConf.ML_MODEL_SIZE, indexRange)
   val epochNum: Int = conf.getInt(MLConf.ML_EPOCH_NUM, MLConf.DEFAULT_ML_EPOCH_NUM)
   val batchSize: Int = conf.getInt(MLConf.ML_FTRL_BATCH_SIZE, MLConf.DEFAULT_ML_FTRL_BATCH_SIZE)

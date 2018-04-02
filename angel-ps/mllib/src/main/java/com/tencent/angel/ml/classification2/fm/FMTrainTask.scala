@@ -46,8 +46,8 @@ class FMTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ct
   val LOG: Log = LogFactory.getLog(classOf[FMTrainTask])
 
   // feature number of training data
-  private val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
-  assert(indexRange != -1L)
+  private val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
+
   private val valiRat = conf.getDouble(MLConf.ML_VALIDATE_RATIO, MLConf.DEFAULT_ML_VALIDATE_RATIO)
 
   // validation data storage

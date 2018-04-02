@@ -59,8 +59,7 @@ class MLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
   val MLR_SOFTMAX_WEIGHT_MAT = "mlr_softmax_weight"
   val MLR_SOFTMAX_INTERCEPT = "mlr_softmax_intercept"
 
-  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
-  assert(indexRange != -1L)
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
   val modelSize: Long = conf.getLong(MLConf.ML_MODEL_SIZE, indexRange)
   val rank = conf.getInt(MLConf.ML_MLR_RANK, MLConf.DEFAULT_ML_MLR_RANK)
 

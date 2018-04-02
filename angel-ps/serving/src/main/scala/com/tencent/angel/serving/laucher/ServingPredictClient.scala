@@ -64,11 +64,7 @@ object ServingPredictClient {
   private def predict(servingClient: ServingClient, conf: Configuration): Unit = {
     // 1. prepare data
     val hdfsInputFileName = conf.get(AngelConf.ANGEL_PREDICT_DATA_PATH)
-    val dim = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1)
-    if (dim == -1) {
-      println(s"Invalide ${MLConf.ML_FEATURE_INDEX_RANGE}, please check!")
-      System.exit(0)
-    }
+    val dim = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
     val format = conf.get(MLConf.ML_DATA_INPUT_FORMAT)
     val iterator = Util.read(conf, new Path(hdfsInputFileName), dim, format)
 

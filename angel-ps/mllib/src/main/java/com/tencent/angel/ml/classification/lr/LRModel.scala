@@ -52,8 +52,7 @@ class LRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(con
   val LR_WEIGHT_MAT = "lr_weight"
   val LR_INTERCEPT = "lr_intercept"
 
-  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
-  assert(indexRange != -1L)
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
   val modelSize: Long = conf.getLong(MLConf.ML_MODEL_SIZE, indexRange)
   val modelType = RowType.valueOf(conf.get(MLConf.ML_MODEL_TYPE, MLConf.DEFAULT_ML_MODEL_TYPE))
 

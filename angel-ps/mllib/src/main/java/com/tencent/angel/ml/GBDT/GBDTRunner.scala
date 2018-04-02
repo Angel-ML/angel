@@ -37,12 +37,7 @@ class GBDTRunner extends MLRunner {
   var featureSampleRatio: Float = 0.0f
 
   override def train(conf: Configuration): Unit = {
-
-    conf.setInt("angel.worker.matrixtransfer.request.timeout.ms", 60000)
-
-    var indexRange = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
-    assert(indexRange != -1L)
-
+    var indexRange = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
     val psNumber = conf.getInt(AngelConf.ANGEL_PS_NUMBER, 1)
 
     if (indexRange % psNumber != 0) {

@@ -49,7 +49,7 @@ public class SgdLRTest {
   @Before public void setConf() throws Exception {
     try {
       // Feature number of train data
-      int featureNum = 124;
+      int featureNum = -1;
       // Total iteration number
       int epochNum = 10;
       // Validation sample Ratio
@@ -98,7 +98,7 @@ public class SgdLRTest {
       conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
       conf.set(MLConf.ML_LEARN_DECAY(), String.valueOf(decay));
       conf.set(MLConf.ML_LR_REG_L2(), String.valueOf(reg));
-      conf.setLong(MLConf.ML_FEATURE_NNZ(), 124L);
+      conf.setLong(MLConf.ML_MODEL_SIZE(), 124L);
     } catch (Exception x) {
       LOG.error("setup failed ", x);
       throw x;

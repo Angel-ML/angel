@@ -36,8 +36,8 @@ class MLRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](c
   var validDataBlock = new MemoryDataBlock[LabeledData](-1)
 
   // feature number of training data
-  private val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
-  assert(indexRange != -1L)
+  private val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
+
   // data format of training data, libsvm or dummy
   override val dataParser = DataParser(conf)
 

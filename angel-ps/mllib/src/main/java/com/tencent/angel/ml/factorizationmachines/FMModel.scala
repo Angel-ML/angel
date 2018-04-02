@@ -58,8 +58,7 @@ class FMModel(conf: Configuration = null, _ctx: TaskContext = null) extends MLMo
   val FM_OBJ = "fm_evaluate"
 
   // Feature number of data
-  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
-  assert(indexRange != -1L)
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
   val modelSize: Long = conf.getLong(MLConf.ML_MODEL_SIZE, indexRange)
   // Rank of each feature vector
   val rank = conf.getInt(MLConf.ML_FM_RANK, MLConf.DEFAULT_ML_FM_RANK)

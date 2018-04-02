@@ -20,8 +20,12 @@ package com.tencent.angel.ml.matrix.psf.get.enhance.indexed;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import io.netty.buffer.ByteBuf;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class LongIndexPartGetParam extends PartitionGetParam {
+
+  private final static Log LOG = LogFactory.getLog(LongIndexPartGetParam.class);
   private int rowId;
   private long[] index;
 

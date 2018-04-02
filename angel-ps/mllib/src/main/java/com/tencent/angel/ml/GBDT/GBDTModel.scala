@@ -57,8 +57,7 @@ object GBDTModel {
 class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
   var LOG = LogFactory.getLog(classOf[GBDTModel])
 
-  var indexRange = conf.getInt(MLConf.ML_FEATURE_INDEX_RANGE, -1)
-  assert(indexRange != -1)
+  var indexRange = conf.getInt(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
   val maxTreeNum = conf.getInt(MLConf.ML_GBDT_TREE_NUM, MLConf.DEFAULT_ML_GBDT_TREE_NUM)
   val maxTreeDepth = conf.getInt(MLConf.ML_GBDT_TREE_DEPTH, MLConf.DEFAULT_ML_GBDT_TREE_DEPTH)
   val splitNum = conf.getInt(MLConf.ML_GBDT_SPLIT_NUM, MLConf.DEFAULT_ML_GBDT_SPLIT_NUM)

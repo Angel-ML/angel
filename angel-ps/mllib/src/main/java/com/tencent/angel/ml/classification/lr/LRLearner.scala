@@ -54,8 +54,7 @@ class LRLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   val regLoss: String = conf.getStrings(MLConf.ML_REG_LOSS_TYPE, MLConf.DEFAULT_ML_REG_LOSS_TYPE)(0)
   // control the lower bound of learning rate
   val lrLowerBound: Int = conf.getInt(MLConf.ML_LEARN_RATE_BOUND, MLConf.DEFAULT_ML_LEARN_RATE_BOUND)
-  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
-  assert(indexRange != -1L)
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
   val modelSize: Long = conf.getLong(MLConf.ML_MODEL_SIZE, indexRange)
 
   // Init LR Model

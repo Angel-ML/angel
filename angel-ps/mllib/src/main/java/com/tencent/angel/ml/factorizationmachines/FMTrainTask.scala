@@ -32,8 +32,7 @@ import org.apache.hadoop.io.{LongWritable, Text}
   */
 class FMTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
   val LOG = LogFactory.getLog(classOf[FMTrainTask])
-  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
-  assert(indexRange != -1L)
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
   override val dataParser = DataParser(conf)
 
   private var minP = Double.MaxValue

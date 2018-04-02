@@ -375,8 +375,7 @@ public class GradHistHelper {
       .format("The best split before looping the histogram: fid[%d], fvalue[%f]", splitEntry.fid,
         splitEntry.fvalue));
 
-    int featureNum = WorkerContext.get().getConf().getInt(MLConf.ML_FEATURE_INDEX_RANGE(), -1);
-    assert featureNum != -1;
+    int featureNum = WorkerContext.get().getConf().getInt(MLConf.ML_FEATURE_INDEX_RANGE(), MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE());
     int splitNum = WorkerContext.get().getConf()
       .getInt(MLConf.ML_GBDT_SPLIT_NUM(), MLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
 

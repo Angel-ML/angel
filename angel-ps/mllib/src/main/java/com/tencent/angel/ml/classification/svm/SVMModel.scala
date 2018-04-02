@@ -44,8 +44,7 @@ class SVMModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
   var LOG = LogFactory.getLog(classOf[SVMModel])
 
   val SVM_WEIGHT_MAT = "svm.weight.mat"
-  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
-  assert(indexRange != -1L)
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
   val modelSize: Long = conf.getLong(MLConf.ML_MODEL_SIZE, indexRange)
   val weight = new PSModel(SVM_WEIGHT_MAT, 1, indexRange, -1, -1, modelSize).setAverage(true).setRowType(RowType.T_DOUBLE_DENSE)
 

@@ -28,9 +28,7 @@ import org.apache.hadoop.io.{LongWritable, Text}
 
 class SVMTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
   // feature number of training data
-  private val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
-  assert(indexRange != -1L)
-  // data format of training data, libsvm or dummy
+  private val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
 
   // validate sample ratio
   private val validRatio = conf.getDouble(MLConf.ML_VALIDATE_RATIO, MLConf.DEFAULT_ML_VALIDATE_RATIO)

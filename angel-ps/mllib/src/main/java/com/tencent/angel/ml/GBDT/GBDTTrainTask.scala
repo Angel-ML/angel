@@ -30,9 +30,8 @@ import org.apache.hadoop.io.{LongWritable, Text}
 class GBDTTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
   private val LOG = LogFactory.getLog(classOf[GBDTTrainTask])
 
-  private val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
-  assert(indexRange != -1L)
-  private val validRatio = conf.getDouble(MLConf.ML_VALIDATE_RATIO, 0.05)
+  private val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
+  private val validRatio = conf.getDouble(MLConf.ML_VALIDATE_RATIO, MLConf.DEFAULT_ML_VALIDATE_RATIO)
 
   // validation data storage
   var validDataStorage = new MemoryDataBlock[LabeledData](-1)

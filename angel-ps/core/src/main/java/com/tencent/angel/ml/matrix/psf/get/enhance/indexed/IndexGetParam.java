@@ -111,9 +111,11 @@ public class IndexGetParam extends GetParam {
         length++;
       }
 
-      int [] split = new int[length];
-      System.arraycopy(indexes, ii - length, split, 0, length);
-      ret.put(partKeys.get(keyIndex), split);
+      if(length != 0) {
+        int [] split = new int[length];
+        System.arraycopy(indexes, ii - length, split, 0, length);
+        ret.put(partKeys.get(keyIndex), split);
+      }
       keyIndex++;
     }
     return ret;

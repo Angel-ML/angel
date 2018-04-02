@@ -21,8 +21,7 @@ import scala.reflect.runtime.universe._
 
 abstract class OptModel(conf: Configuration, _ctx: TaskContext) extends MLModel(conf, _ctx) {
   private val LOG = LogFactory.getLog(classOf[OptModel])
-  private val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
-  assert(indexRange != -1L)
+  private val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
   private val fetchRate: Double = 0.8
 
   def calLossAndUpdateGrad(x: TVector, y: Double,

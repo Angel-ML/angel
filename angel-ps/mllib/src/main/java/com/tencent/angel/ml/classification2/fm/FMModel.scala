@@ -62,8 +62,7 @@ class FMModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
   private val LOG = LogFactory.getLog(classOf[FMModel])
   private val (vmat, weight, intercept) = ("fm_vmat", "fm_weight", "fm_intercept")
 
-  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
-  assert(indexRange != -1L)
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
   val modelSize: Long = conf.getLong(MLConf.ML_MODEL_SIZE, indexRange)
 
   val rank: Int = conf.getInt(MLConf.ML_FM_RANK, MLConf.DEFAULT_ML_FM_RANK)

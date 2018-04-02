@@ -42,9 +42,9 @@ class SparseLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLMod
   val BUCKET_NUM = "bucket_num"
 
   // Number of dimensions
-  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
-  assert(indexRange != -1L)
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
   val modelSize: Long = conf.getLong(MLConf.ML_MODEL_SIZE, indexRange)
+
   // Bucket number for calculation of AUC
   val bucketNum = conf.getInt(BUCKET_NUM, 10000)
 

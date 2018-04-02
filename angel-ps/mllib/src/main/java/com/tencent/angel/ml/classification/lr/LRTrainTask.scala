@@ -48,8 +48,7 @@ class LRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ct
   val LOG: Log = LogFactory.getLog(classOf[LRTrainTask])
 
   // feature number of training data
-  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
-  assert(indexRange != -1L)
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
   private val valiRat = conf.getDouble(MLConf.ML_VALIDATE_RATIO, MLConf.DEFAULT_ML_VALIDATE_RATIO)
 
   // validation data storage
@@ -108,7 +107,7 @@ class LRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ct
     }
     if (enableIndexGet && !indexSet.isEmpty) {
       indexes = modelType match {
-        case RowType.T_DOUBLE_SPARSE_LONGKEY | RowType.T_FLOAT_SPARSE_LONGKEY | RowType.T_FLOAT_SPARSE_LONGKEY =>
+        case RowType.T_DOUBLE_SPARSE_LONGKEY | RowType.T_DOUBLE_SPARSE_LONGKEY_COMPONENT | RowType.T_FLOAT_SPARSE_LONGKEY =>
           val array = indexSet.asInstanceOf[LongOpenHashSet].toLongArray
           LOG.info("after preprocess data , index length = " + array.length)
           array

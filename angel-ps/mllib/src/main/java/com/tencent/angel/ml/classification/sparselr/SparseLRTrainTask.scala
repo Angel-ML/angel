@@ -17,6 +17,7 @@
 
 package com.tencent.angel.ml.classification.sparselr
 
+import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.conf.MLConf._
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.task.TrainTask
@@ -27,8 +28,7 @@ import org.apache.hadoop.io.{LongWritable, Text}
 
 class SparseLRTrainTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
   val LOG = LogFactory.getLog(classOf[SparseLRTrainTask])
-  val indexRange: Long = conf.getLong(ML_FEATURE_INDEX_RANGE, -1L)
-  assert(indexRange != -1L)
+  val indexRange: Long = conf.getLong(ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
   val modelSize: Long = conf.getLong(ML_MODEL_SIZE, indexRange)
   override val dataParser = DataParser(conf)
 

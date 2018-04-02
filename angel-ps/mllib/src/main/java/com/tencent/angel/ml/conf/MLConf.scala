@@ -41,8 +41,6 @@ object MLConf {
   val DEFAULT_ML_VALIDATE_RATIO = 0.05
   val ML_FEATURE_INDEX_RANGE = "ml.feature.index.range"
   val DEFAULT_ML_FEATURE_INDEX_RANGE = -1
-  val ML_FEATURE_NNZ = "ml.feature.nnz"
-  val DEFAULT_ML_FEATURE_NNZ = -1
   val ML_PULL_WITH_INDEX_ENABLE = "ml.pull.with.index.enable"
   val DEFAULT_ML_PULL_WITH_INDEX_ENABLE = false
 

@@ -61,8 +61,7 @@ class LRModel(conf: Configuration, _ctx: TaskContext = null) extends OptModel(co
   private val LOG = LogFactory.getLog(classOf[LRModel])
   private val (weight, intercept) = ("lr_weight", "lr_intercept")
 
-  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
-  assert(indexRange != -1L)
+  val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
   val modelSize: Long = conf.getLong(MLConf.ML_MODEL_SIZE, indexRange)
   val modelType: RowType = RowType.valueOf(conf.get(MLConf.ML_MODEL_TYPE, MLConf.DEFAULT_ML_MODEL_TYPE))
 

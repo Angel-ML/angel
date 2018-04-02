@@ -36,8 +36,8 @@ class FTRLLRTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text
 
 
   // feature number of training data
-  private val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, -1L)
-  assert(indexRange != -1)
+  private val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
+
   // validate sample ratio
   private val valiRat = conf.getDouble(MLConf.ML_VALIDATE_RATIO, MLConf.DEFAULT_ML_VALIDATE_RATIO)
 
