@@ -6,18 +6,26 @@
 
 逻辑回归模型（logistic regression model）是一种分类模型。样本x属于类别y的概率P(y|x)服从logistic分布：   
 
-![](../img/LR_P.png)  
+![model](http://latex.codecogs.com/png.latex?
+\dpi{150}
+P(y=+1|x) = \frac{1}{1+\exp(-wx)},  P(y=-1|x) = \frac{1}{1+\exp(wx)}
+)
 
 综合两种情况，有：      
 
-![](../img/LR_P1.png)  
-
+![model](http://latex.codecogs.com/png.latex?
+\dpi{150}
+P(y|x) = \frac{1}{1+\exp(-ywx)}
+)
 
 逻辑回归模型使用log损失函数，带L2惩罚项的目标函数如下所示：    
 
-![](../img/LR_loss.png)  
+![model](http://latex.codecogs.com/png.latex?
+\dpi{150}
+\min_w \sum_i^N \log(1+\exp(-y_i w x_i)) + \lambda \|w\|_2^2
+)
 
-其中：![](../img/LR_reg.gif)为L2正则项。
+其中：![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20\lambda\|w\|_2^2)为L2正则项。
 
 ## 2. 分布式实现 on Angel
 
@@ -27,10 +35,13 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Logistic 
 
 其说明如下：
 
-* Learning Rate在迭代过程中衰减:![](../img/LR_lr_ecay.gif) 
+* Learning Rate在迭代过程中衰减:
 
-	* α为衰减系数
-	* T为迭代次数
+![](http://latex.codecogs.com/png.latex?
+\dpi{150} \eta=\frac{\eta_0}{\sqrt{1+\alpha\cdot%20T}}
+)
+
+其中, α为衰减系数, T为迭代次数
 
   
 * 模型格式支持稠密和稀疏，32 bit和64bit
@@ -61,22 +72,22 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Logistic 
 ## 3. 运行 & 性能
 
 ### 输入格式
-* ml.feature.num：特征向量的维度   
+* ml.feature.index.range：特征向量的维度
 * ml.data.type：支持"dummy"、"libsvm"两种数据格式，具体参考：[Angel数据格式](data_format.md)
 
 ###  参数
 * 算法参数  
 	* ml.epoch.num：迭代次数   
 	* ml.batch.sample.ratio：每次迭代的样本采样率   
-	* ml.sgd.batch.num：每次迭代的mini-batch的个数   
-	* ml.validate.ratio：每次validation的样本比率，设为0时不做validation    
+	* ml.num.update.per.epoch：个epoch中更新参数的个数
+	* ml.data.validate.ratio：每次validation的样本比率，设为0时不做validation
 	* ml.learn.rate：初始学习速率   
 	* ml.learn.decay：学习速率衰减系数
 	* ml.reg.loss.type：正则项类型，目前可以配置**loss1**和**loss2**，**loss1**表示使用L1正则项，**loss2**表示使用L2正则项
-	* ml.reg.l1：L1惩罚项系数，仅当reg.loss.type配置为**loss1**时有效
-	* ml.reg.l2：L2惩罚项系数，仅当reg.loss.type配置为**loss2**时有效
+	* ml.lr.reg.l1：L1惩罚项系数，仅当reg.loss.type配置为**loss1**时有效
+	* ml.lr.reg.l2：L2惩罚项系数，仅当reg.loss.type配置为**loss2**时有效
 	* ml.lr.use.intercept：使用截距 
-	* ml.index.get.enable：是否使用基于index的模型获取，**true**表示使用index来获取模型的指定部分，**false**表示不使用，默认为**false**。 当模型稀疏度较高时，建议配置为**true**。当该选择配置为**true**时，在LR的训练数据预处理过程中，算法会自动记录训练数据中出现的特征的index，在获取模型时会根据这些index来获取模型
+	* ml.pull.with.index.enable：是否使用基于index的模型获取，**true**表示使用index来获取模型的指定部分，**false**表示不使用，默认为**false**。 当模型稀疏度较高时，建议配置为**true**。当该选择配置为**true**时，在LR的训练数据预处理过程中，算法会自动记录训练数据中出现的特征的index，在获取模型时会根据这些index来获取模型
 
 * 输入输出参数
 	* angel.train.data.path：训练数据的输入路径
@@ -104,13 +115,13 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Logistic 
 	    --angel.save.model.path $model_path \
 	    --angel.log.path $logpath \
 	    --ml.epoch.num 10 \
-	    --ml.batch.num 10 \
-	    --ml.feature.num 10000 \
-	    --ml.validate.ratio 0.1 \
+	    --ml.num.update.per.epoch 10 \
+	    --ml.ml.feature.index.range 10000 \
+	    --ml.data.validate.ratio 0.1 \
 	    --ml.data.type dummy \
 	    --ml.learn.rate 1 \
 	    --ml.learn.decay 0.1 \
-	    --ml.reg.l2 0 \
+	    --ml.lr.reg.l2 0 \
 	    --angel.workergroup.number 3 \
 	    --angel.worker.task.number 3 \
 	    --angel.ps.number 1 \
