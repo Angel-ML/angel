@@ -13,8 +13,8 @@ label index1:value1 index2:value1 index3:value3 ...
   - when the input is test data, it is the index of the data point
 * index:value
   - represents the feature's index-value pair, where index type is Int and value type is Double
-  - feature index starts from 0
-* For Angel's libsvm type,  index starts from 0, which is different from the conventional practice where the libsvm index starts from 1
+  - feature index starts from 1, similar to libsvm' style
+
 
 ```
 # libsvm example
@@ -26,9 +26,9 @@ label index1:value1 index2:value1 index3:value3 ...
 
 ## 2 dummy
 
-A text format where each line represents a labeled feature vector, separated by `,` using the following format:
+A text format where each line represents a labeled feature vector, separated by ` `(space) using the following format:
 ```
-label,index1,index2,index3
+label index1 index2 index3
 ```
 
 * label
@@ -42,7 +42,10 @@ label,index1,index2,index3
 
 ```
 # dummy type example
-0,3,7,999,666
-1,0,2,88,77
+0 3 7 999 666
+1 0 2 88 77
   ...
 ```
+
+Note: if the row splitor is not ` `(space), you can specify a splitor (say ",") by using the following option:
+> ml.data.splitor=,

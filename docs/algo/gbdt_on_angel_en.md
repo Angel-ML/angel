@@ -100,7 +100,8 @@ Overall, Angel PS's advantage as stated above is demonstrated by GBDT's performa
 * I/O Parameters
 	* angel.train.data.path: input path for train
 	* angel.predict.data.path: input path for predict
-	* ml.feature.num: number of features
+	* ml.feature.index.range: number of features
+	* ml.model.size: the size of model. for some sparse model, there are features that all samples are zero at those indices (invalidate indices). ml.model.size = ml.feature.index.range - number of invalidate indices
 	* ml.data.type: [Angel Data Format](data_format_en.md), can be "dummy" or "libsvm"
 	* angel.save.model.path: save path for trained model
     * angel.predict.out.path: output path for predict
@@ -119,10 +120,10 @@ We compare Angel and XGBoost using Tencent's internal data:
 
 * Training data
 
-| Data Set | Data Set Size | Sample Size  | Sample Dimension (Number of Features) | Task |
-|:------:|:----------:|:--------:|:--------:|:-------:|
-| UserGender1  |    24GB    |   12.5M  |   2.57K   | binary classification |
-| UserGender2  |    145GB    |   120M  |   330K   | binary classification |
+|   Data Set  | Data Set Size | Sample Size | Sample Dimension (Number of Features) |          Task         |
+|:-----------:|:-------------:|:-----------:|:-------------------------------------:|:---------------------:|
+| UserGender1 |      24GB     |    12.5M    |                 2.57K                 | binary classification |
+| UserGender2 |     145GB     |     120M    |                  330K                 | binary classification |
 
 Task is to classify user's gender. The dataset **UserGender1** is 24GB，including 12.5M training samples, each of which has 2570 features. **UserGender2** is 145GB, including 120M samples, each of which has 330K features. Both data sets are sparse. 
 

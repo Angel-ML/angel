@@ -68,14 +68,16 @@ We show the implementation chart below:
 ## 3. Execution & Performance
 
 ###  **Input Format**
-  * ml.feature.num: feature dimension  
+  * ml.feature.index.range: the index range of features, for dense feature, it's the feature dimension, while for sparse feature, it's the max index among all samples
   * ml.data.type: supports "dummy", "libsvm" types; for details, see [Angel Data Format](data_format_en.md)
 
 ### **Parameters**
 
 * **Algorithm Parameters**
 	* ml.epoch.num: number of iterations
-	* ml.reg.l1: L1 coefficient
+    * ml.num.update.per.epoch: the number of update during an epoch
+    * ml.model.size: the size of model. for some sparse model, there are features that all samples are zero at those indices (invalidate indices). ml.model.size = ml.feature.index.range - number of invalidate indices
+	* ml.lr.reg.l1: L1 coefficient
 	* rho: rho
 	* ml.worker.thread.num: number of parallel threads on each worker
 
@@ -104,9 +106,9 @@ Use the following example for submitting LR trainning job to Yarn
     --angel.save.model.path $model_path \
     --angel.log.path $logpath \
     --ml.epoch.num 10 \
-    --ml.batch.num 10 \
-    --ml.feature.num 10000 \
-    --ml.validate.ratio 0.1 \
+    --ml.num.update.per.epoch 10 \
+    --ml.num.update.per.epoch 10000 \
+    --ml.data.validate.ratio 0.1 \
     --ml.data.type dummy \
     --ml.learn.rate 1 \
     --ml.learn.decay 0.1 \

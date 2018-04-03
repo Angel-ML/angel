@@ -34,13 +34,13 @@ Angel MLLib uses mini-batch gradient descent optimization method for solving SVM
 
 ### Parameters
 * Algorithm Parameters
-  * ml.epochnum: number of epochs
+  * ml.epoch.num: number of epochs
   * ml.batch.sample.ratio: sampling rate for each epoch
-  * ml.sgd.batch.num: number of mini-batches in each epoch
-  * ml.validate.ratio: proportion of data used for validation, no validation when set to 0
+  * ml.num.update.per.epoch: number of mini-batches in each epoch
+  * ml.data.validate.ratio: proportion of data used for validation, no validation when set to 0
   * ml.learn.rate: initial learning rate
   * ml.learn.decay: decay rate of the learning rate
-  * ml.reg.l2: coefficient of the L2 penalty
+  * ml.svm.reg.l2: coefficient of the L2 penalty
 
 * I/O Parameters
   * angel.train.data.path: input path for train

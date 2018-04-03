@@ -75,6 +75,7 @@ ADMM在Angel上实现的一般步骤为：
 
 ###  **输入格式**
   * ml.feature.index.range：特征向量的维度
+  * ml.model.size: 模型大小, 对于一些稀疏模型, 存在一些无效维度, 即所有样本要这一维度上的取值匀为0. ml.model.size = ml.feature.index.range - number of invalidate indices
   * ml.data.type：支持"dummy"、"libsvm"两种数据格式，具体参考[Angel数据格式](data_format.md)
 
 ### **参数说明**

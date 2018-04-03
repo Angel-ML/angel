@@ -59,18 +59,19 @@ The LR algorithm supports three types of models: DoubleDense, DoubleSparse, Doub
 ### Input Format
 
 * Data fromat is set in "ml.data.type", supporting "libsvm" and "dummy" types. For details, see [Angel Data Format](data_format_en.md)
-* Feature vector's dimension is set in "ml.feature.num"
+* Feature vector's dimension is set in "ml.feature.index.range"
 
 
 ###  Parameters
 * Algorithm Parameters 
-  * ml.epoch.num: number of iterations/epochs   
+  * ml.epoch.num: number of iterations/epochs
+  * ml.model.size: the size of model. for some sparse model, there are features that all samples are zero at those indices (invalidate indices). ml.model.size = ml.feature.index.range - number of invalidate indices 
   * ml.batch.sample.ratio: sampling rate for each iteration   
-  * ml.sgd.batch.num: number of mini-batch in each iteration    
-  * ml.validate.ratio: proportion of data used for validation, no validation when set to 0    
+  * ml.num.update.per.epoch: number update in each iteration    
+  * ml.data.validate.ratio: proportion of data used for validation, no validation when set to 0    
   * ml.learn.rate: initial learning rate
   * ml.learn.decay: decay rate of the learning rate
-  * ml.reg.l2: coefficient of the L2 penalty
+  * ml.lr.reg.l2: coefficient of the L2 penalty
 
 * I/O Parameters
   * angel.train.data.path: input path for train
@@ -102,13 +103,13 @@ The LR algorithm supports three types of models: DoubleDense, DoubleSparse, Doub
     --angel.save.model.path $model_path \
     --angel.log.path $logpath \
     --ml.epoch.num 10 \
-    --ml.batch.num 10 \
-    --ml.feature.num 10000 \
-    --ml.validate.ratio 0.1 \
+    --ml.num.update.per.epoch 10 \
+    --ml.feature.index.range 10000 \
+    --ml.data.validate.ratio 0.1 \
     --ml.data.type dummy \
     --ml.learn.rate 1 \
     --ml.learn.decay 0.1 \
-    --ml.reg.l2 0 \
+    --ml.lr.reg.l2 0 \
     --angel.workergroup.number 3 \
     --angel.worker.task.number 3 \
     --angel.ps.number 1 \
