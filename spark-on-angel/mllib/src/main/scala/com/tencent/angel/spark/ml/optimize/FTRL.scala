@@ -16,21 +16,51 @@
 
 package com.tencent.angel.spark.ml.optimize
 
+import it.unimi.dsi.fastutil.longs.Long2DoubleMap
+
 import com.tencent.angel.spark.linalg.{OneHotVector, SparseVector}
+import com.tencent.angel.spark.ml.psf.FTRLWUpdater
 import com.tencent.angel.spark.models.vector.{PSVector, SparsePSVector}
 
 class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) extends Serializable {
-  @transient var localZ: SparseVector = null
-  @transient var localN: SparseVector = null
+  var zPS: SparsePSVector = null
+  var nPS: SparsePSVector = null
 
-  def updateState(z: SparsePSVector, n: SparsePSVector, featIds: Array[Long]): Unit = {
-    localZ = z.pull(featIds)
-    localN = n.pull(featIds)
+  def initPSModel(dim: Long): Unit = {
+    zPS = PSVector.longKeySparse(dim, -1, 5)
+    nPS = PSVector.duplicate(zPS)
   }
+
+  def optimize(
+      batch: Array[(OneHotVector, Double)],
+      costFun: (SparseVector, Double, OneHotVector) => (SparseVector, Double)): Double = {
+
+    val dim = batch.head._1.length
+    val featIds = batch.flatMap { case (feat, label) => feat.indices }.distinct
+
+    val localZ = zPS.pull(featIds)
+    val localN = nPS.pull(featIds)
+    val deltaZ = new SparseVector(dim, featIds.length)
+    val deltaN = new SparseVector(dim, featIds.length)
+
+    val lossSum = batch.map { case (feature, label) =>
+      val (littleZ, littleN, loss) = optimize(feature, label, localZ, localN, costFun)
+      plusTo(littleZ, deltaZ)
+      plusTo(littleN, deltaN)
+      loss
+    }.sum
+
+    zPS.increment(deltaZ)
+    nPS.increment(deltaN)
+    lossSum / batch.length
+  }
+
 
   def optimize(
       feature: OneHotVector,
       label: Double,
+      localZ: SparseVector,
+      localN: SparseVector,
       costFun: (SparseVector, Double, OneHotVector) => (SparseVector, Double)): (SparseVector, SparseVector, Double) = {
 
     val wPairs = feature.indices.map { fId =>
@@ -57,22 +87,20 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) extend
     (deltaZ, deltaN, loss)
   }
 
-  def weight: SparseVector = {
-    val w = new SparseVector(localZ.length)
-
-    val zMap = localZ.keyValues
-    val iter = zMap.long2DoubleEntrySet().fastIterator()
-    while (iter.hasNext) {
-      val entry = iter.next()
-      val fId = entry.getLongKey
-      val zVal = entry.getDoubleValue
-      val nVal = localN(fId)
-      val wVal = FTRL.updateWeight(zVal, nVal, alpha, beta, lambda1, lambda2)
-      w.put(fId, wVal)
-    }
-    w
+  def weight: SparsePSVector = {
+    val wPS = zPS.toBreeze.zipMap(nPS.toBreeze, new FTRLWUpdater(alpha, beta, lambda1, lambda2))
+    wPS.toSparse.compress()
+    wPS.toSparse
   }
 
+  private def plusTo(a: SparseVector, b: SparseVector): Unit = {
+    val iter = a.keyValues.long2DoubleEntrySet().fastIterator()
+    var entry: Long2DoubleMap.Entry = null
+    while(iter.hasNext) {
+      entry = iter.next()
+      b.keyValues.addTo(entry.getLongKey, entry.getDoubleValue)
+    }
+  }
 }
 
 

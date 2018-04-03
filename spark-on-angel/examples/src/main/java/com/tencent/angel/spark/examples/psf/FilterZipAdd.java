@@ -31,7 +31,7 @@ public class FilterZipAdd implements Zip2MapWithIndexFunc {
   public FilterZipAdd() {}
 
   @Override
-  public double call(int index, double value1, double value2) {
+  public double call(long index, double value1, double value2) {
     double result = 0;
     if (index != zeroIndex) {
       result = value1 + value2;

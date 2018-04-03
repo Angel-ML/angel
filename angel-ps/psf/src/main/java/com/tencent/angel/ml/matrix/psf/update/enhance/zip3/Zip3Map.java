@@ -62,13 +62,14 @@ public class Zip3Map extends MFUpdateFunc {
     Long2DoubleOpenHashMap from1 = rows[0].getData();
     Long2DoubleOpenHashMap from2 = rows[1].getData();
     Long2DoubleOpenHashMap from3 = rows[2].getData();
-    Long2DoubleOpenHashMap to = new Long2DoubleOpenHashMap();
-    to.defaultReturnValue(mapper
-        .call(from1.defaultReturnValue(), from2.defaultReturnValue(), from3.defaultReturnValue()));
 
     LongOpenHashSet keySet = new LongOpenHashSet(from1.keySet());
     keySet.addAll(from2.keySet());
     keySet.addAll(from3.keySet());
+
+    Long2DoubleOpenHashMap to = new Long2DoubleOpenHashMap(keySet.size());
+    to.defaultReturnValue(mapper
+        .call(from1.defaultReturnValue(), from2.defaultReturnValue(), from3.defaultReturnValue()));
 
     for (long key: keySet) {
       to.put(key, mapper.call(from1.get(key), from2.get(key), from3.get(key)));

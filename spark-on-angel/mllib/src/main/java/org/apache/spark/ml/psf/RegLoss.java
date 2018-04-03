@@ -37,7 +37,7 @@ public class RegLoss implements Zip2MapWithIndexFunc {
   }
 
   @Override
-  public double call(int index, double coefficient, double featStd) {
+  public double call(long index, double coefficient, double featStd) {
 
     boolean isIntercept = (fitIntercept) && (index > interceptIndex);
 

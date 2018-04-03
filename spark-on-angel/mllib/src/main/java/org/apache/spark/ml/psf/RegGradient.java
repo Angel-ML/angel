@@ -39,7 +39,7 @@ public class RegGradient implements Zip2MapWithIndexFunc {
   }
 
   @Override
-  public double call(int index, double coeff, double featureStd) {
+  public double call(long index, double coeff, double featureStd) {
     boolean isIntercept = index > interceptIndex;
     if (fitIntercept && isIntercept ) {
       return 0.0;

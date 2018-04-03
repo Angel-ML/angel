@@ -16,17 +16,16 @@
 
 package com.tencent.angel.spark.ml.classification
 
-
-import it.unimi.dsi.fastutil.longs.{Long2DoubleMap, Long2DoubleOpenHashMap}
 import org.apache.spark.SparkConf
+import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
 import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
 import com.tencent.angel.spark.linalg.{BLAS, OneHotVector, SparseVector}
-import com.tencent.angel.spark.ml.optimize.{FTRL, OWLQN}
+import com.tencent.angel.spark.ml.optimize.FTRL
 import com.tencent.angel.spark.ml.util.{ArgsUtil, DataLoader}
-import com.tencent.angel.spark.models.vector.{PSVector, SparsePSVector}
+import com.tencent.angel.spark.models.vector.cache.PullMan
 import com.tencent.angel.utils.MurmurHash3
 
 object SparseLRWithFTRL {
@@ -37,10 +36,11 @@ object SparseLRWithFTRL {
     val input = params("input")
     val partitionNum = params.getOrElse("partitionNum", "10").toInt
     val sampleRate = params.getOrElse("sampleRate", "1.0").toDouble
+    val validateFaction = params.getOrElse("validateFaction", "0.3").toDouble
     val epoch = params.getOrElse("epoch", "5").toInt
     val pDim = params.getOrElse("dim", "-1").toDouble.toInt
-    val lambda1 = params.getOrElse("lambda1", "0.1").toDouble
-    val lambda2 = params.getOrElse("lambda2", "0.1").toDouble
+    val lambda1 = params.getOrElse("lambda1", "1.0").toDouble
+    val lambda2 = params.getOrElse("lambda2", "1.0").toDouble
     val alpha = params.getOrElse("alpha", "0.1").toDouble
     val beta = params.getOrElse("beta", "1.0").toDouble
     val batchSize = params.getOrElse("batchSize", "10000").toInt
@@ -64,7 +64,8 @@ object SparseLRWithFTRL {
           val bytes = f"$index%4d".getBytes
           MurmurHash3.murmurhash3_x64_64(bytes, bytes.length, 41)
         }
-        (0L +: hashed, label)
+        //(0L +: hashed, label)
+        (hashed, label)
       }
 
     val dim = if (pDim > 0) {
@@ -83,98 +84,108 @@ object SparseLRWithFTRL {
     println(s"total count: $sampleNum posSample: $posSamples negSamples: $negSamples")
     require(posSamples + negSamples == sampleNum, "labels must be 0 or 1")
 
-    train(instances, sampleNum, batchSize, dim, lambda1, lambda2, alpha, beta, epoch)
+    train(instances, sampleNum, dim, epoch, batchSize, lambda1, lambda2, alpha, beta, validateFaction)
   }
 
   def train(
-      trainData: RDD[(OneHotVector, Double)],
+      instances: RDD[(OneHotVector, Double)],
       sampleNum: Long,
-      batchSize: Int,
       dim: Long,
+      epoch: Int,
+      batchSize: Int,
       lambda1: Double,
       lambda2: Double,
       alpha: Double,
       beta: Double,
-      epoch: Int): Unit = {
+      validateFaction: Double): Unit = {
 
-    def getGradLoss(w: SparseVector, label: Double, feature: OneHotVector): (SparseVector, Double) = {
-      val margin = -1 * BLAS.dot(w, feature)
-      val gradientMultiplier = 1.0 / (1.0 + math.exp(margin)) - label
-      val grad = new SparseVector(w.length)
-      feature.indices.foreach { fId =>
-        grad.put(fId, gradientMultiplier)
-      }
-
-      val loss = if (label > 0) {
-        math.log1p(math.exp(margin))
-      } else {
-        math.log1p(math.exp(margin)) - margin
-      }
-      (grad, loss)
+    val (trainSet, validateSet) = if (validateFaction > 0 && validateFaction < 1.0) {
+      val rdds = instances.randomSplit(Array(1 - validateFaction, validateFaction))
+      (rdds(0), rdds(1))
+    } else {
+      (instances, null)
     }
 
-    def plusTo(a: SparseVector, b: SparseVector): Unit = {
-      val iter = a.keyValues.long2DoubleEntrySet().fastIterator()
-      var entry: Long2DoubleMap.Entry = null
-      while(iter.hasNext) {
-        entry = iter.next()
-        b.keyValues.addTo(entry.getLongKey, entry.getDoubleValue)
-      }
-    }
-
-    val initWeightPS = PSVector.longKeySparse(dim, -1, 5)
-    val zPS = PSVector.duplicate(initWeightPS)
-    val nPS = PSVector.duplicate(initWeightPS)
-
+    println(s"epoch num: $epoch batch size: $batchSize")
     val ftrl = new FTRL(lambda1, lambda2, alpha, beta)
-
-    val partNum = trainData.partitions.length
-    val instNumPerPart = batchSize / partNum
-    val batchNum = trainData.count().toInt / batchSize
-    println(s"epoch num: $epoch batch size: $batchSize partition num: $partNum")
-    println(s"For each partition, batch num: $batchNum batch size: $instNumPerPart")
+    ftrl.initPSModel(dim)
 
     (0 until epoch).foreach { epochId =>
-      trainData.mapPartitions { iter =>
+      val tempRDD = trainSet.mapPartitions { iter =>
         var batchId = 0
-        iter.toArray.sliding(instNumPerPart, instNumPerPart)
+        val instances = iter.toArray
+        instances.sliding(batchSize, batchSize)
           .map { batch =>
-            val featIds = batch.flatMap { case (feat, label) => feat.indices }.distinct
-
-            ftrl.updateState(zPS, nPS, featIds)
-            val deltaZ = new SparseVector(dim, featIds.length)
-            val deltaN = new SparseVector(dim, featIds.length)
-
-            val lossSum = batch.map { case (feature, label) =>
-              val (littleZ, littleN, loss) = ftrl.optimize(feature, label, getGradLoss)
-              plusTo(littleN, deltaN)
-              plusTo(littleZ, deltaZ)
-              loss
-            }.sum
-            zPS.increment(deltaZ)
-            nPS.increment(deltaN)
-
+            val batchLoss = ftrl.optimize(batch, calcGradientLoss)
             if (batchId % 10 == 0) {
-              println(s"batch id: $batchId")
-              //println(s"epoch $epochId batchId: $batchId zPS nnz: ${zPS.toBreeze.norm(0)} nPS nnz: ${nPS.toBreeze.norm(0)}")
-              // val sampleNum = instNumPerPart * partNum
-              // println(s"epoch $epochId batchId: $batchId loss ${lossSum / sampleNum}")
+               println(s"epoch $epochId batchId: $batchId loss $batchLoss")
             }
             batchId += 1
-            Thread.sleep(30 * 1000)
-            lossSum
+            batchLoss
           }
-      }.count()
+        }
+      tempRDD.count()
 
-      println(s"zPS nnz: ${zPS.toBreeze.norm(0)} nPS nnz: ${nPS.toBreeze.norm(0)}")
-      println(s"finish epoch $epochId")
+      val wPS = ftrl.weight
+      val lrModel = SparseLRModel(wPS)
 
-//      ftrl.updateState(zPS, nPS)
-//      val localWeight = ftrl.weight
-//      println(s"weights nnz: ${localWeight.nnz} index: ${localWeight.indices.take(10).mkString(" ")} " +
-//        s"value: ${localWeight.values.take(10).mkString(" ")}")
-//      println(s"inception: ${localWeight(0)}")
+      println(s"epoch: $epochId model info: ${lrModel.simpleInfo}")
+      println(s"epoch: $epochId zPS nnz: ${ftrl.zPS.toBreeze.norm(0)} nPS nnz: ${ftrl.nPS.toBreeze.norm(0)}")
+      val (loss, auc) = evaluate(trainSet, lrModel)
+      println(s"epoch: $epochId train global loss: $loss auc: $auc")
+      if (validateSet != null) {
+        val (validateLoss, validateAuc) = evaluate(validateSet, lrModel)
+        println(s"epoch: $epochId validate global loss: $validateLoss auc: $validateAuc")
+      }
     }
   }
+
+
+  def evaluate(evalRDD: RDD[(OneHotVector, Double)], lrModel: SparseLRModel): (Double, Double) = {
+
+    val tempRDD = evalRDD.mapPartitions { iter =>
+      val localW = lrModel.w.toCache.pullFromCache().toSparse
+      iter.map { case (feature, label) =>
+        val loss = calcLoss(localW, label, feature)
+        val prob = lrModel.predict(feature, localW)
+        Tuple3(loss, prob, label)
+      }
+    }.cache()
+    PullMan.release(lrModel.w)
+
+    val loss = tempRDD.map(_._1).mean()
+
+    val binEvaluator = new BinaryClassificationMetrics(tempRDD.map(x => Tuple2(x._2, x._3)))
+    val auc = binEvaluator.areaUnderROC()
+    tempRDD.unpersist(false)
+    (loss, auc)
+  }
+
+  private def calcLoss(w: SparseVector, label: Double, feature: OneHotVector): Double = {
+    val margin = -1 * BLAS.dot(w, feature)
+    val loss = if (label > 0) {
+      math.log1p(math.exp(margin))
+    } else {
+      math.log1p(math.exp(margin)) - margin
+    }
+    loss
+  }
+
+  private def calcGradientLoss(w: SparseVector, label: Double, feature: OneHotVector): (SparseVector, Double) = {
+    val margin = -1 * BLAS.dot(w, feature)
+    val gradientMultiplier = 1.0 / (1.0 + math.exp(margin)) - label
+    val grad = new SparseVector(w.length, feature.indices.length)
+    feature.indices.foreach { fId =>
+      grad.put(fId, gradientMultiplier)
+    }
+
+    val loss = if (label > 0) {
+      math.log1p(math.exp(margin))
+    } else {
+      math.log1p(math.exp(margin)) - margin
+    }
+    (grad, loss)
+  }
+
 }
 

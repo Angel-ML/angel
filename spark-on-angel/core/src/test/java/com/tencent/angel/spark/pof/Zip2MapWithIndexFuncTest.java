@@ -33,7 +33,7 @@ public class Zip2MapWithIndexFuncTest implements Zip2MapWithIndexFunc {
   }
 
   @Override
-  public double call(int index, double value1, double value2) {
+  public double call(long index, double value1, double value2) {
     if (index == 0) {
       return value1 + value2 * value2;
     } else {
