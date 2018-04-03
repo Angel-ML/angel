@@ -69,7 +69,7 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Logistic 
 * 算法参数  
 	* ml.epoch.num：迭代次数   
 	* ml.batch.sample.ratio：每次迭代的样本采样率   
-	* ml.num.update.per.epoch：个epoch中更新参数的个数
+	* ml.num.update.per.epoch：一个epoch中更新参数的次数
 	* ml.data.validate.ratio：每次validation的样本比率，设为0时不做validation
 	* ml.learn.rate：初始学习速率   
 	* ml.learn.decay：学习速率衰减系数
