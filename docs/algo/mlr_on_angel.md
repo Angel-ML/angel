@@ -7,18 +7,6 @@ MLR算法有三个明显的优点：
 2. 扩展性：与LR算法相似，MLR算法对海量样本，超高维度模型都有很好的扩展性。
 3. 稀疏性：带![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20L_1)，![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20L_{2,1})正则项的MLR算法可以得到很好的稀疏性
 
-MLR模型的示意图如下,
-
-![](../img/mlr.png)
-
-可多两个角度理解这个模型:
-- 可将MLR看成一个带门(threshold)三层神经网络, 有隐含层中有k个sigmoid神经元, 每个神经元的输出一有一个门, softmax的输出值就是门的开关.
-- 可将MLR看成组合模型(ensemble model), 由k个简单的sigmoid模型组合, softmax的输出值就是组合系数
-
-在很多情况下, 需要对一部分数据建立子模型, 然后用多个模型分别预测. MLR用softmax对数据进行划分(soft划分), 用一个统一的模型来预测. MLR的另个好处是可以做特征组合, 一部分特征对于sigmoid是"活动"有, 另一部分特征对softmax是"活动"的, 将它们乘起来相当于在低层做特征组合.
-
-注: 由于sigmoid模型的输出值在0~1之间, softmax的输出值在0~1之间且归一化,所以组合后的值也在0~1之间(当所有的sigmoid取值为1时,取得最大值,当然在其它情况下也能取得最大值,组合后的和为1), 可看成一种概率.
-
 ### 公式
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}P(y|x)=g(\sum_{j=1}^m\sigma(u_j^Tx)\eta(yw_j^Tx)))
@@ -37,6 +25,18 @@ MLR算法模型使用softmax作为划分函数
 ![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20g(x)=x)，得到MLR的模型如下：
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}%20P(y=1|x)=\sum_{i=1}^m%20\frac{\exp(u_i^T%20x)}{\sum_{j=1}^m%20\exp(u_j^Tx)}\cdot\frac{1}{1+\exp(-w_i^Tx)})
+
+MLR模型的示意图如下,
+
+![](../img/mlr.png)
+
+可从两个角度理解这个模型:
+- 可将MLR看成一个带门(threshold)三层神经网络, 有隐含层中有k个sigmoid神经元, 每个神经元的输出一有一个门, softmax的输出值就是门的开关.
+- 可将MLR看成组合模型(ensemble model), 由k个简单的sigmoid模型组合, softmax的输出值就是组合系数
+
+在很多情况下, 需要对一部分数据建立子模型, 然后用多个模型分别预测. MLR用softmax对数据进行划分(soft划分), 用一个统一的模型来预测. MLR的另个好处是可以做特征组合, 一部分特征对于sigmoid是"活动"有, 另一部分特征对softmax是"活动"的, 将它们乘起来相当于在低层做特征组合.
+
+注: 由于sigmoid模型的输出值在0\~1之间, softmax的输出值在0\~1之间且归一化,所以组合后的值也在0~1之间(当所有的sigmoid取值为1时,取得最大值,当然在其它情况下也能取得最大值,组合后的和为1), 可看成一种概率.
 
 ## 2. 分布式实现 on Angel
 ### 梯度下降法
