@@ -14,7 +14,7 @@
 
 逻辑回归模型使用log损失函数，带L2惩罚项的目标函数如下所示：    
 
-![model](http://latex.codecogs.com/png.latex?\dpi{150}\min_w\sum_i^N\log(1+\exp(-y_iwx_i))+\lambda\|w\|_2^2)
+![model](http://latex.codecogs.com/png.latex?\dpi{150}\min_w\sum_i^N\log(1+\exp(-y_iwx_i))+\lambda\\|w\\|_2^2)
 
 其中：![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20\lambda\|w\|_2^2)为L2正则项。
 
@@ -35,7 +35,7 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Logistic 
   
 * 模型格式支持稠密和稀疏，32 bit和64bit
 
-	> 目前支持`T_DOUBLE_DENSE，T_DOUBLE_SPARSE，T_DOUBLE_SPARSE_COMPONENT，T_DOUBLE_SPARSE_LONGKEY，T_DOUBLE_SPARSE_LONGKEY_COMPONENT `五种格式，配置参数为 “ml.lr.model.type”
+	> 目前支持`T_DOUBLE_DENSE，T_DOUBLE_SPARSE，T_DOUBLE_SPARSE_COMPONENT，T_DOUBLE_SPARSE_LONGKEY，T_DOUBLE_SPARSE_LONGKEY_COMPONENT `五种格式，配置参数为 “ml.model.type”
 
 	* **T_DOUBLE_DENSE**
 		* 含义：稠密double     
@@ -61,7 +61,7 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Logistic 
 ## 3. 运行 & 性能
 
 ### 输入格式
-* ml.feature.index.range：特征向量的维度
+* ml.feature.index.range：特征向量的维度, 即特征index的范围：例如如果index范围为[0, 100000000]， 则可以将该参数配置为100000000；这个参数也可以配置为-1，表示index 范围为[Integer.MIN_VALUE, Integer.MAX_VALUE] 或者[Long.MIN_VALUE, Long.MAX_VALUE]
 * ml.model.size: 模型大小, 对于一些稀疏模型, 存在一些无效维度, 即所有样本要这一维度上的取值匀为0. ml.model.size = ml.feature.index.range - number of invalidate indices
 * ml.data.type：支持"dummy"、"libsvm"两种数据格式，具体参考：[Angel数据格式](data_format.md)
 
@@ -69,7 +69,7 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Logistic 
 * 算法参数  
 	* ml.epoch.num：迭代次数   
 	* ml.batch.sample.ratio：每次迭代的样本采样率   
-	* ml.num.update.per.epoch：个epoch中更新参数的个数
+	* ml.num.update.per.epoch：一个epoch中更新参数的次数
 	* ml.data.validate.ratio：每次validation的样本比率，设为0时不做validation
 	* ml.learn.rate：初始学习速率   
 	* ml.learn.decay：学习速率衰减系数
