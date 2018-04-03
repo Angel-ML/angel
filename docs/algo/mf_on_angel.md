@@ -17,26 +17,22 @@ MF的主要思想是把用户、商品的特征抽象为k维向量表示。
 
 
 ## Gradient Descent Matrix Factorization
-用户i对商品j的实际评分为y_{ij}预测值与真实值之差记为e_{ij}，即：e_{ij}=y{ij}-u_i \cdot v_j。
+用户i对商品j的实际评分为![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20y_{ij})预测值与真实值之差记为![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20e_{ij})，即：![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20e_{ij}=y{ij}-u_i\cdot%20v_j)。
 MF算法的学习目标是最小化预测评分与真实评分之间的差距：
 
-![](../img/MF_obj.png)
-
+![model](http://latex.codecogs.com/png.latex?\dpi{150}\min_{u_i,v_j}\sum{e_{ij}^2}=\min_{u_i,v_j}\sum{(y_{ij}-u_i\cdot%20v_j)^2})
 
 为了防止模型过拟合，加入L2正则项：
 
-![](../img/MF_l2obj.png)
+![model](http://latex.codecogs.com/png.latex?\dpi{150}\min_{u_i,v_j}\sum{(y_{ij}-u_i\cdot%20v_j)^2+\frac{\beta}{2}(\|u_i\|_2^2+\|v_j\|_2^2)})
 
-其中：![](../img/MF_uvdot.png)     
+其中：![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20u_i\cdot%20v_j=\sum_{k=1}^K%20u_{ik}v_{jk})
 
-用梯度下降法最小化目标函数，得到用户特征向量u_i、商品特征向量v_j的更新公式为：  
+用梯度下降法最小化目标函数，得到用户特征向量![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20u_i)、商品特征向量![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20v_j)的更新公式为：
 
-![](../img/MF_update_u.png)    
+![model](http://latex.codecogs.com/png.latex?\dpi{150}u_{ik}\leftarrow%20u_{ik}+2\alpha%20e_{ij}v_{ij})
 
-![](../img/MF_update_v.png)
-
-
-
+![model](http://latex.codecogs.com/png.latex?\dpi{150}v_{ik}\leftarrow%20v_{ik}+2\alpha%20e_{ij}u_{ij})
 
 ## 2. 分布式实现 on Angel
 
@@ -87,7 +83,7 @@ MF训练数据的格式：
 * IO参数
   * angel.train.data.path：输入数据路径
   * angel.save.modelPath：商品特征矩阵保存路径
-  * angel.ml.mf.usermodel.output：用户特征矩阵保存路径
+  * ml.mf.user.model.output.path：用户特征矩阵保存路径
   * angel.log.path：LOG保存路径
 
 * 算法参数
@@ -96,26 +92,27 @@ MF训练数据的格式：
   * ml.mf.lambda：正则化系数
   * ml.mf.eta：学习速率
   * ml.mf.row.batch.num：每次迭代的batch数
+
 ### 提交命令
 ```
 ./bin/angel-submit \
---angel.app.submit.class com.tencent.angel.ml.matrixfactorization.MatrixFactorizationRunner \
---action.type train \
---angel.train.data.path $input_path \
---angel.save.model.path $model_path \
---angel.ml.mf.usermodel.output $usermodelpath \
---angel.log.path $logpath \
---angel.worker.memory.mb 10000 \
---angel.ps.memory.mb 8000 \
---angel.worker.task.number 1 \
---angel.ps.number 2 \
---angel.workergroup.number 5 \
---ml.mf.item.num 17771 \
---ml.mf.row.batch.num 3 \
---ml.mf.rank 200 \
---ml.epoch.num 5 \
---ml.mf.lambda 0.01 \
---ml.mf.eta 0.00005 \
+    --angel.app.submit.class com.tencent.angel.ml.matrixfactorization.MatrixFactorizationRunner \
+    --action.type train \
+    --angel.train.data.path $input_path \
+    --angel.save.model.path $model_path \
+    --ml.mf.user.model.output.path $usermodelpath \
+    --angel.log.path $logpath \
+    --angel.worker.memory.mb 10000 \
+    --angel.ps.memory.mb 8000 \
+    --angel.worker.task.number 1 \
+    --angel.ps.number 2 \
+    --angel.workergroup.number 5 \
+    --ml.mf.item.num 17771 \
+    --ml.mf.row.batch.num 3 \
+    --ml.mf.rank 200 \
+    --ml.epoch.num 5 \
+    --ml.mf.lambda 0.01 \
+    --ml.mf.eta 0.00005 \
 ```
 
 ### 性能对比

@@ -5,22 +5,14 @@
 ### Factorization Model     
 * Factorization Machine Model
 
-![model](http://latex.codecogs.com/png.latex?
-\dpi{150}
-\hat{y}(x):=b+\sum_{i=1}^n{w_ix_i}+\sum_{i=1}^n\sum_{j=i+1}^n<v_i,v_j>x_ix_j
-)
+![model](http://latex.codecogs.com/png.latex?\dpi{150}\hat{y}(x)=b+\sum_{i=1}^n{w_ix_i}+\sum_{i=1}^n\sum_{j=i+1}^n<v_i,v_j>x_ix_j)
 
 其中：![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20<v_i,v_j>)是两个k维向量的点乘:
 
-![dot](http://latex.codecogs.com/png.latex?
-\dpi{150}\inline <v_i, v_j>:=\sum_{i=1}^kv_{i,f} \cdot v_{j,f}
-)
+![dot](http://latex.codecogs.com/png.latex?\dpi{150}\inline%20<v_i,v_j>=\sum_{i=1}^kv_{i,f}\cdot%20v_{j,f})
 
 模型参数为：
-![parameter](http://latex.codecogs.com/png.latex?
-\dpi{100}\inline
-w_0 \in R, w \in R^n, V \in R^{n \times k}
-)
+![parameter](http://latex.codecogs.com/png.latex?\dpi{100}\inlinew_0\in%20R,w\in%20R^n,V\in%20R^{n\times%20k})
 其中![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20v_i)表示用k个因子表示特征i，k是决定因子分解的超参数。
 
 ### Factorization Machines as Predictors

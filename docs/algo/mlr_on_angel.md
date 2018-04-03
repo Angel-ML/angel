@@ -7,41 +7,42 @@ MLR算法有三个明显的优点：
 2. 扩展性：与LR算法相似，MLR算法对海量样本，超高维度模型都有很好的扩展性。
 3. 稀疏性：带${L_1}，${L_{2,1}}正则项的MLR算法可以得到很好的稀疏性
 
-### 公式        
-```math
-p(y=1|x)=g( \Sigma_{j=1}^m \sigma(u_j^Tx) \eta (w_j^T x))
-```
-其中：${\sigma(\cdot)} 是划分函数，${w_1,w_2,...,w_m}是拟合函数${\eta (\cdot)}的参数。对于一个给定样本x，我们的预测函模型${p（y|x)}有两部分，第一部分${\sigma (u_ {j^T} x)}把特征空间划分为m个区域，第二部分${\eta(w_j^Tx)}给出每个区域的预测值。函数${g(\cdot)}确保模型满足概率函数的定义。
+### 公式
 
-MLR算法模型使用softmax作为划分函数${\sigma (x)}，sigmoid函数作为拟合函数${\eta (x)}，并且：${g(x)=x}，得到MLR的模型如下：
-```math
-p(y=1|x)=\Sigma^m_{i=1} \frac{exp(u_i^Tx)}{\Sigma_{j=1}^m exp(u_j^Tx)} \cdot \frac{1}{1+exp(-w_i^Tx)}   
-```
+![model](http://latex.codecogs.com/png.latex?\dpi{150}p(y=1|x)=g(\Sigma_{j=1}^m\sigma(u_j^Tx)\eta(w_j^Tx)))
+
+其中：![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20\sigma(\cdot)) 是划分函数，
+![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20w_1,w_2,...,w_m)是拟合函数
+![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20\eta(\cdot))的参数。对于一个给定样本x，我们的预测函模型
+![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20p(y|x))有两部分，第一部分
+![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20\sigma(u_{j^T}x))把特征空间划分为m个区域，第二部分
+![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20\eta(w_j^Tx))给出每个区域的预测值。函数
+![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20g(\cdot))确保模型满足概率函数的定义。
+
+MLR算法模型使用softmax作为划分函数
+![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20\sigma(x))，sigmoid函数作为拟合函数
+![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20\eta(x))，并且：
+![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20g(x)=x)，得到MLR的模型如下：
+
+![model](http://latex.codecogs.com/png.latex?\dpi{150}p(y=1|x)=\Sigma^m_{i=1}\frac{exp(u_i^Tx)}{\Sigma_{j=1}^m%20exp(u_j^Tx)}\cdot\frac{1}{1+exp(-w_i^Tx)})
 
 ## 2. 分布式实现 on Angel
 ### 梯度下降法
-对于 ${y \in {-1, 1}}，模型可以统一形式：
-```math
-p(y=1|x)=\Sigma^m_{i=1} \frac{exp(u_i^Tx)}{\Sigma_{j=1}^m exp(u_j^Tx)} \cdot \frac{1}{1+exp(-yw_i^Tx)}
+对于![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20y\in%20\\{-1,1\\})，模型可以统一形式：
 
-=\Sigma^m_{i=1} \frac{exp(u_i^Tx)}{\Sigma_{j=1}^m exp(u_j^Tx)} \cdot \sigma(yw_i^Tx)
-```
+![model](http://latex.codecogs.com/png.latex?\dpi{150}\begin{array}{ll}p(y=1|x)&=\Sigma^m_{i=1}\frac{exp(u_i^Tx)}{\Sigma_{j=1}^m%20exp(u_j^Tx)}\cdot\frac{1}{1+exp(-yw_i^Tx)}\\\\\\\\%20&=\Sigma^m_{i=1}\frac{exp(u_i^Tx)}{\Sigma_{j=1}^m%20exp(u_j^Tx)}\cdot\sigma(yw_i^Tx)\end{array})
+
 对于样本(x, y)，损失函数为：
-```math
-l(x,y)=-\ln{P(y|x)}=-\ln \frac{1}{\Sigma_{j=1}^m e^{u_j^Tx}} \Sigma_{i=1}^m{e^{u_i^Tx}} \sigma(yw_i^Tx)
 
-= \ln \Sigma_{j=1}^m e^{u_j^Tx} - \ln (\Sigma_{i=1}^m e^{u_i^Tx} \sigma(yw_i^Tx))
-```
+![model](http://latex.codecogs.com/png.latex?\dpi{150}\begin{array}{rl}l(x,y)&=-\ln{P(y|x)}=-\ln\frac{1}{\Sigma_{j=1}^m%20e^{u_j^Tx}}\Sigma_{i=1}^m{e^{u_i^Tx}}\sigma(yw_i^Tx)\\\\\\\\%20&=\ln\Sigma_{j=1}^m%20e^{u_j^Tx}-\ln(\Sigma_{i=1}^m%20e^{u_i^Tx}\sigma(yw_i^Tx))\end{array})
+
 梯度：
-```math
-\triangledown_{u_k}l = \frac{e^{u_k^Tx}x}{\Sigma_{j=1}^m e^{u_j^T}x} - \frac{e^{u_k^Tx} \sigma(yw_k^Tx)x}{\Sigma_{i=1}^m e^{u_i^Tx} \sigma(yw_i^Tx)}
 
-\triangledown_{w_k} l = \frac {ye^{u_k^Tx} \sigma(yw_k^Tx)(\sigma(yw_k^Tx)-1)x}{\Sigma_{i=1}^m e^{u_i^Tx} \sigma(yw_i^Tx)}
-```
+![model](http://latex.codecogs.com/png.latex?\dpi{150}\begin{array}{rl}\triangledown_{u_k}l&=\frac{e^{u_k^Tx}x}{\Sigma_{j=1}^m%20e^{u_j^T}x}-\frac{e^{u_k^Tx}\sigma(yw_k^Tx)x}{\Sigma_{i=1}^m%20e^{u_i^Tx}\sigma(yw_i^Tx)}\\\\\\\\%20\triangledown_{w_k}l&=\frac{ye^{u_k^Tx}\sigma(yw_k^Tx)(\sigma(yw_k^Tx)-1)x}{\Sigma_{i=1}^m%20e^{u_i^Tx}\sigma(yw_i^Tx)}\end{array})
 
 ### 基于Angel的实现
 * 模型存储：
-    * MLR算法的模型参数有：softmax函数参数：${u_1, u_2, ..., u_m}，sigmoid函数参数：${w_1,w_2,...,w_m}     。其中${u_i}、${w_i}为N维向量，N为数据的维度，即特征个数。用两个m*N维的矩阵分别表示softmax矩阵、sigmodi矩阵。
+    * MLR算法的模型参数有：softmax函数参数：![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20u_1,u_2,...,u_m)，sigmoid函数参数：![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20w_1,w_2,...,w_m)     。其中![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20u_i)、![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20w_i)为N维向量，N为数据的维度，即特征个数。用两个m*N维的矩阵分别表示softmax矩阵、sigmodi矩阵。
     * 用两个m*1维度的矩阵，分别表示softmax函数、sigmodi函数的截断值。
     
 * 模型计算：    
@@ -67,18 +68,18 @@ MLR on Angel支持“libsvm”、“dummy”两种数据格式，分别如下所
 * 算法参数  
   * ml.epoch.num：迭代次数   
   * ml.batch.sample.ratio：每次迭代的样本采样率   
-  * ml.sgd.batch.num：每次迭代的mini-batch的个数   
-  * ml.validate.ratio：每次validation的样本比率，设为0时不做validation    
+  * ml.num.update.per.epoch：每次迭代(epoch)参数的更新次数
+  * ml.data.validate.ratio：每次validation的样本比率，设为0时不做validation
   * ml.learn.rate：初始学习速率   
   * ml.learn.decay：学习速率衰减系数   
-  * ml.reg.l2：L2惩罚项系数
+  * ml.mlr.reg.l2：L2惩罚项系数
   * ml.mlr.rank：区域个数，对应于模型公式中的m
   * ml.mlr.v.init：模型初始化参数，高斯分布的标准差值
 
 * 输入输出参数
   * angel.train.data.path：训练数据的输入路径
   * angel.predict.data.path：预测数据的输入路径
-  * ml.feature.num：数据特征个数   
+  * ml.feature.index.range：数据特征个数
   * ml.data.type：数据格式，支持"dummy"、"libsvm"    
   * angel.save.model.path：训练完成后，模型的保存路径
   *	angel.predict.out.path：预测结果存储路径
@@ -102,13 +103,13 @@ MLR on Angel支持“libsvm”、“dummy”两种数据格式，分别如下所
     --angel.save.model.path $model_path \
     --angel.log.path $logpath \
     --ml.epoch.num 10 \
-    --ml.batch.num 10 \
-    --ml.feature.num 10000 \
-    --ml.validate.ratio 0.1 \
+    --ml.num.update.per.epoch 10 \
+    --ml.feature.index.range 10000 \
+    --ml.data.validate.ratio 0.1 \
     --ml.data.type dummy \
     --ml.learn.rate 1 \
     --ml.learn.decay 0.1 \
-    --ml.reg.l2 0 \
+    --ml.mlr.reg.l2 0 \
     --ml.mlr.rank 5 \
     --ml.mlr.v.init 0.00000001 \ 
     --angel.workergroup.number 3 \
