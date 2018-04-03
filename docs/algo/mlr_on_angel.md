@@ -9,14 +9,14 @@ MLR算法有三个明显的优点：
 
 ### 公式
 
-![model](http://latex.codecogs.com/png.latex?\dpi{150}p(y=1|x)=g(\Sigma_{j=1}^m\sigma(u_j^Tx)\eta(w_j^Tx)))
+![model](http://latex.codecogs.com/png.latex?\dpi{150}P(y|x)=g(\sum_{j=1}^m\sigma(u_j^Tx)\eta(yw_j^Tx)))
 
 其中：![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20\sigma(\cdot)) 是划分函数，
 ![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20w_1,w_2,...,w_m)是拟合函数
 ![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20\eta(\cdot))的参数。对于一个给定样本x，我们的预测函模型
 ![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20p(y|x))有两部分，第一部分
 ![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20\sigma(u_{j^T}x))把特征空间划分为m个区域，第二部分
-![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20\eta(w_j^Tx))给出每个区域的预测值。函数
+![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20\eta(yw_j^Tx))给出每个区域的预测值。函数
 ![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20g(\cdot))确保模型满足概率函数的定义。
 
 MLR算法模型使用softmax作为划分函数
@@ -24,26 +24,32 @@ MLR算法模型使用softmax作为划分函数
 ![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20\eta(x))，并且：
 ![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20g(x)=x)，得到MLR的模型如下：
 
-![model](http://latex.codecogs.com/png.latex?\dpi{150}p(y=1|x)=\Sigma^m_{i=1}\frac{\exp(u_i^Tx)}{\Sigma_{j=1}^m\exp(u_j^Tx)}\cdot\frac{1}{1+\exp(-w_i^Tx)})
+![model](http://latex.codecogs.com/png.latex?\dpi{150}P(y=1|x)=\sum^m_{i=1}\frac{\exp(u_i^Tx)}{\sum_{j=1}^m\exp(u_j^Tx)}\cdot\frac{1}{1+\exp(-w_i^Tx)})
 
 ## 2. 分布式实现 on Angel
 ### 梯度下降法
 对于![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20y\in%20\\{-1,1\\})，模型可以统一形式：
 
-![model](http://latex.codecogs.com/png.latex?\dpi{150}\begin{array}{ll}p(y=1|x)&=\Sigma^m_{i=1}\frac{exp(u_i^Tx)}{\Sigma_{j=1}^m%20exp(u_j^Tx)}\cdot\frac{1}{1+exp(-yw_i^Tx)}\\\\\\\\%20&=\Sigma^m_{i=1}\frac{exp(u_i^Tx)}{\Sigma_{j=1}^m%20exp(u_j^Tx)}\cdot\sigma(yw_i^Tx)\end{array})
+![model](http://latex.codecogs.com/png.latex?\dpi{150}\begin{array}{ll}P(y|x)&=\sum^m_{i=1}\frac{exp(u_i^Tx)}{\sum_{j=1}^m%20exp(u_j^Tx)}\cdot\frac{1}{1+exp(-yw_i^Tx)}\\\\\\\\%20&=\sum^m_{i=1}\frac{exp(u_i^Tx)}{\sum_{j=1}^m%20exp(u_j^Tx)}\cdot\sigma(yw_i^Tx)\\\\\\\\%20&=\sum^m_{i=1}P_{softmax}(x)P_{sigmoid}(y|x)\end{array})
 
-对于样本(x, y)，损失函数为：
+对于样本(x, y)，利用cross entripy损失函数为：
 
-![model](http://latex.codecogs.com/png.latex?\dpi{150}\begin{array}{rl}l(x,y)&=-\ln{P(y|x)}=-\ln\frac{1}{\Sigma_{j=1}^m%20e^{u_j^Tx}}\Sigma_{i=1}^m{e^{u_i^Tx}}\sigma(yw_i^Tx)\\\\\\\\%20&=\ln\Sigma_{j=1}^m%20e^{u_j^Tx}-\ln(\Sigma_{i=1}^m%20e^{u_i^Tx}\sigma(yw_i^Tx))\end{array})
+![model](http://latex.codecogs.com/png.latex?\dpi{150}l(x,y)=-\ln{P(y|x)})
+
+注: 正常情况下cross entripy表现为![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20loss(x,y)=y\log{P(y|x)}+(1-y)\log{(1-P(y|x))}), 其中![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20P(y|x))的意义是给定, y=1时的概率, 如果![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20P(y|x))表示给定x时y的概率(即y不仅是y=1的概率), cross entripy的表现形式为:![model](http://latex.codecogs.com/png.latex?\dpi{100}l\inline%20(x,y)=-\ln{P(y|x)})
+
+这样, 对单个样本求导有,
+
+![model](http://latex.codecogs.com/png.latex?\dpi{150}\begin{array}{rl}l(x,y)&=-\ln{P(y|x)}=-\ln\frac{1}{\sum_{j=1}^m%20e^{u_j^Tx}}\sum_{i=1}^m{e^{u_i^Tx}}\sum(yw_i^Tx)\\\\\\\\%20&=\ln\sum_{j=1}^m%20e^{u_j^Tx}-\ln(\Sigma_{i=1}^m%20e^{u_i^Tx}\sigma(yw_i^Tx))\end{array})
 
 梯度：
 
-![model](http://latex.codecogs.com/png.latex?\dpi{150}\begin{array}{rl}\triangledown_{u_k}l&=\frac{e^{u_k^Tx}x}{\Sigma_{j=1}^m%20e^{u_j^T}x}-\frac{e^{u_k^Tx}\sigma(yw_k^Tx)x}{\Sigma_{i=1}^m%20e^{u_i^Tx}\sigma(yw_i^Tx)}\\\\\\\\%20\triangledown_{w_k}l&=\frac{ye^{u_k^Tx}\sigma(yw_k^Tx)(\sigma(yw_k^Tx)-1)x}{\Sigma_{i=1}^m%20e^{u_i^Tx}\sigma(yw_i^Tx)}\end{array})
+![model](http://latex.codecogs.com/png.latex?\dpi{150}\begin{array}{rl}\triangledown_{u_k}l&=\frac{e^{u_k^Tx}x}{\Sigma_{j=1}^m%20e^{u_j^Tx}}-\frac{e^{u_k^Tx}\sigma(yw_k^Tx)x}{\Sigma_{i=1}^m%20e^{u_i^Tx}\sigma(yw_i^Tx)}=x(P_{softmax}^k(x)-\frac{P_{softmax}^k(x)P_{sigmoid}^k(y|x)}{P(y|x)})\\\\\\\\%20\triangledown_{w_k}l&=\frac{ye^{u_k^Tx}\sigma(yw_k^Tx)(\sigma(yw_k^Tx)-1)x}{\Sigma_{i=1}^m%20e^{u_i^Tx}\sigma(yw_i^Tx)}=\frac{yP_{softmax}^k(x)P_{sigmoid}^k(y|x)}{P(y|x)}(P_{sigmoid}^k(y|x)-1)x\end{array})
 
 ### 基于Angel的实现
 * 模型存储：
-    * MLR算法的模型参数有：softmax函数参数：![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20u_1,u_2,...,u_m)，sigmoid函数参数：![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20w_1,w_2,...,w_m)     。其中![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20u_i)、![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20w_i)为N维向量，N为数据的维度，即特征个数。用两个m*N维的矩阵分别表示softmax矩阵、sigmodi矩阵。
-    * 用两个m*1维度的矩阵，分别表示softmax函数、sigmodi函数的截断值。
+    * MLR算法的模型参数有：softmax函数参数：![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20u_1,u_2,...,u_m)，sigmoid函数参数：![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20w_1,w_2,...,w_m)。其中![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20u_i)、![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20w_i)为N维向量，N为数据的维度，即特征个数。用两个m*N维的矩阵分别表示softmax矩阵、sigmodi矩阵。
+    * 用两个m*1维度的矩阵，分别表示softmax函数、sigmoid函数的截断值。
     
 * 模型计算：    
     * 用梯度下降法训练MLR模型，算法以迭代的方式进行。每次迭代开始，worker从PS上拉最新的模型参数，并用自己的训练数据计算出梯度，将梯度推送给PS。
