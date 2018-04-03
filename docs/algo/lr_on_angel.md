@@ -35,7 +35,7 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Logistic 
   
 * 模型格式支持稠密和稀疏，32 bit和64bit
 
-	> 目前支持`T_DOUBLE_DENSE，T_DOUBLE_SPARSE，T_DOUBLE_SPARSE_COMPONENT，T_DOUBLE_SPARSE_LONGKEY，T_DOUBLE_SPARSE_LONGKEY_COMPONENT `五种格式，配置参数为 “ml.lr.model.type”
+	> 目前支持`T_DOUBLE_DENSE，T_DOUBLE_SPARSE，T_DOUBLE_SPARSE_COMPONENT，T_DOUBLE_SPARSE_LONGKEY，T_DOUBLE_SPARSE_LONGKEY_COMPONENT `五种格式，配置参数为 “ml.model.type”
 
 	* **T_DOUBLE_DENSE**
 		* 含义：稠密double     
