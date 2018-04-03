@@ -45,7 +45,8 @@
 ## Algorithm
 
 * **Angel**
-	* [Logistic Regression](./docs/algo/lr_on_angel.md) ([MLR](./docs/algo/mlr_on_angel.md) | [ADMM](./docs/algo/admm_lr_on_angel.md))
+	* [Logistic Regression](./docs/algo/lr_on_angel.md) ([ADMM](./docs/algo/admm_lr_on_angel.md))
+	* [Large Scale Piece-wise Linear Model/Mix Logistic Regression](./docs/algo/mlr_on_angel.md) | 
 	* [Matrix Factorization](./docs/algo/mf_on_angel.md)
 	* [SVM](./docs/algo/svm_on_angel.md)
 	* [KMeans](./docs/algo/kmeans_on_angel.md)
