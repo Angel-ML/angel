@@ -44,11 +44,11 @@ MLR模型的示意图如下,
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}\begin{array}{ll}P(y|x)&=\sum^m_{i=1}\frac{exp(u_i^Tx)}{\sum_{j=1}^m%20exp(u_j^Tx)}\cdot\frac{1}{1+exp(-yw_i^Tx)}\\\\\\\\%20&=\sum^m_{i=1}\frac{exp(u_i^Tx)}{\sum_{j=1}^m%20exp(u_j^Tx)}\cdot\sigma(yw_i^Tx)\\\\\\\\%20&=\sum^m_{i=1}P_{softmax}^i(x)P_{sigmoid}^i(y|x)\end{array})
 
-对于样本(x, y)，利用cross entripy损失函数为：
+对于样本(x, y)，利用cross entropy损失函数为：
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}l(x,y)=-\ln{P(y|x)})
 
-注: 正常情况下cross entripy表现为![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20loss(x,y)=y\log{P(y|x)}+(1-y)\log{(1-P(y|x))}), 其中![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20P(y|x))的意义是给定, y=1时的概率, 如果![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20P(y|x))表示给定x时y的概率(即y不仅是y=1的概率), cross entripy的表现形式为:![model](http://latex.codecogs.com/png.latex?\dpi{100}l\inline%20(x,y)=-\ln{P(y|x)})
+注: 正常情况下cross entropy表现为![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20loss(x,y)=y\log{P(y|x)}+(1-y)\log{(1-P(y|x))}), 其中![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20P(y|x))的意义是给定, y=1时的概率, 如果![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20P(y|x))表示给定x时y的概率(即y不仅是y=1的概率), cross entropy的表现形式为:![model](http://latex.codecogs.com/png.latex?\dpi{100}l\inline%20(x,y)=-\ln{P(y|x)})
 
 这样, 对单个样本求导有,
 
