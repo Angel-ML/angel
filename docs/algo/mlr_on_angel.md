@@ -5,7 +5,7 @@ MLR是一个分区域的线性模型，广泛应用于广告ctr预估。MLR采�
 MLR算法有三个明显的优点：
 1. 非线性：选择足够多的划分区域，MLR算法可以拟合任意复杂的非线性函数。
 2. 扩展性：与LR算法相似，MLR算法对海量样本，超高维度模型都有很好的扩展性。
-3. 稀疏性：带${L_1}，${L_{2,1}}正则项的MLR算法可以得到很好的稀疏性
+3. 稀疏性：带![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20L_1)，![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20L_{2,1})正则项的MLR算法可以得到很好的稀疏性
 
 ### 公式
 
@@ -24,7 +24,7 @@ MLR算法模型使用softmax作为划分函数
 ![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20\eta(x))，并且：
 ![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20g(x)=x)，得到MLR的模型如下：
 
-![model](http://latex.codecogs.com/png.latex?\dpi{150}p(y=1|x)=\Sigma^m_{i=1}\frac{exp(u_i^Tx)}{\Sigma_{j=1}^m%20exp(u_j^Tx)}\cdot\frac{1}{1+exp(-w_i^Tx)})
+![model](http://latex.codecogs.com/png.latex?\dpi{150}p(y=1|x)=\Sigma^m_{i=1}\frac{\exp(u_i^Tx)}{\Sigma_{j=1}^m\exp(u_j^Tx)}\cdot\frac{1}{1+\exp(-w_i^Tx)})
 
 ## 2. 分布式实现 on Angel
 ### 梯度下降法
