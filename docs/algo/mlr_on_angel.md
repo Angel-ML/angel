@@ -42,7 +42,7 @@ MLR模型的示意图如下,
 ### 梯度下降法
 对于![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20y\in%20\\{-1,1\\})，模型可以统一形式：
 
-![model](http://latex.codecogs.com/png.latex?\dpi{150}\begin{array}{ll}P(y|x)&=\sum^m_{i=1}\frac{exp(u_i^Tx)}{\sum_{j=1}^m%20exp(u_j^Tx)}\cdot\frac{1}{1+exp(-yw_i^Tx)}\\\\\\\\%20&=\sum^m_{i=1}\frac{exp(u_i^Tx)}{\sum_{j=1}^m%20exp(u_j^Tx)}\cdot\sigma(yw_i^Tx)\\\\\\\\%20&=\sum^m_{i=1}P_{softmax}(x)P_{sigmoid}(y|x)\end{array})
+![model](http://latex.codecogs.com/png.latex?\dpi{150}\begin{array}{ll}P(y|x)&=\sum^m_{i=1}\frac{exp(u_i^Tx)}{\sum_{j=1}^m%20exp(u_j^Tx)}\cdot\frac{1}{1+exp(-yw_i^Tx)}\\\\\\\\%20&=\sum^m_{i=1}\frac{exp(u_i^Tx)}{\sum_{j=1}^m%20exp(u_j^Tx)}\cdot\sigma(yw_i^Tx)\\\\\\\\%20&=\sum^m_{i=1}P_{softmax}^i(x)P_{sigmoid}^i(y|x)\end{array})
 
 对于样本(x, y)，利用cross entripy损失函数为：
 
