@@ -14,7 +14,7 @@
 
 逻辑回归模型使用log损失函数，带L2惩罚项的目标函数如下所示：    
 
-![model](http://latex.codecogs.com/png.latex?\dpi{150}\min_w\sum_i^N\log(1+\exp(-y_iwx_i))+\lambda\|w\|_2^2)
+![model](http://latex.codecogs.com/png.latex?\dpi{150}\min_w\sum_i^N\log(1+\exp(-y_iwx_i))+\lambda\\|w\\|_2^2)
 
 其中：![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20\lambda\|w\|_2^2)为L2正则项。
 
