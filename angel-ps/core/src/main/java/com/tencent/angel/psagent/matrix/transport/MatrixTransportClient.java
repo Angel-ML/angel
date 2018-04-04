@@ -376,7 +376,11 @@ public class MatrixTransportClient implements MatrixTransportInterface {
   }
 
   private void periodCheck() throws InterruptedException {
-    dispatchMessageQueue.put(new DispatcherEvent(EventType.PERIOD_CHECK));
+    try {
+      dispatchMessageQueue.put(new DispatcherEvent(EventType.PERIOD_CHECK));
+    } catch (Throwable x) {
+      LOG.error("put PERIOD_CHECK event to queue failed ", x);
+    }
   }
 
   @Override
@@ -599,7 +603,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
   private void notifyServerFailed(GrayServer server, boolean notifyToMaster) throws ServiceException {
     try {
-      dispatchMessageQueue.add(new ServerEvent(EventType.SERVER_FAILED, server.psLoc));
+      dispatchMessageQueue.put(new ServerEvent(EventType.SERVER_FAILED, server.psLoc));
     } catch (Exception e) {
       LOG.error("add SERVER_FAILED event for request failed, ", e);
     }
@@ -612,7 +616,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
   private void notifyServerNormal(GrayServer server) {
     psIdToStateMap.put(server.psLoc.psId, server.state);
     try {
-      dispatchMessageQueue.add(new ServerEvent(EventType.SERVER_NORMAL, server.psLoc));
+      dispatchMessageQueue.put(new ServerEvent(EventType.SERVER_NORMAL, server.psLoc));
     } catch (Exception e) {
       LOG.error("add SERVER_NORMAL event for request failed, ", e);
     }
@@ -1291,7 +1295,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
   private void putRequestSuccess(Request request) {
     try {
-      dispatchMessageQueue.add(new RequestDispatchEvent(EventType.PUT_SUCCESS, request));
+      dispatchMessageQueue.put(new RequestDispatchEvent(EventType.PUT_SUCCESS, request));
     } catch (Exception e) {
       LOG.error("add PUT_SUCCESS event for request " + request + " failed, ", e);
     }
@@ -1299,7 +1303,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
   private void getRequestSuccess(Request request) {
     try {
-      dispatchMessageQueue.add(new RequestDispatchEvent(EventType.GET_SUCCESS, request));
+      dispatchMessageQueue.put(new RequestDispatchEvent(EventType.GET_SUCCESS, request));
     } catch (Exception e) {
       LOG.error("add GET_SUCCESS event for request " + request + " failed, ", e);
     }
@@ -1307,7 +1311,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
   private void getRequestNotReady(Request request) {
     try {
-      dispatchMessageQueue.add(new RequestDispatchEvent(EventType.GET_NOTREADY, request));
+      dispatchMessageQueue.put(new RequestDispatchEvent(EventType.GET_NOTREADY, request));
     } catch (Exception e) {
       LOG.error("add GET_NOTREADY event for request " + request + " failed, ", e);
     }
@@ -1315,7 +1319,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
   private void getRequestFailed(Request request, ResponseType failedType, String errorLog) {
     try {
-      dispatchMessageQueue.add(new RequestFailedEvent(EventType.GET_FAILED, request, failedType, errorLog));
+      dispatchMessageQueue.put(new RequestFailedEvent(EventType.GET_FAILED, request, failedType, errorLog));
     } catch (Exception e) {
       LOG.error("add GET_FAILED event for request " + request + " failed, ", e);
     }
@@ -1323,28 +1327,45 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
   private void putRequestFailed(Request request, ResponseType failedType, String errorLog) {
     try {
-      dispatchMessageQueue.add(new RequestFailedEvent(EventType.PUT_FAILED, request, failedType, errorLog));
+      dispatchMessageQueue.put(new RequestFailedEvent(EventType.PUT_FAILED, request, failedType, errorLog));
     } catch (Exception e) {
       LOG.error("add PUT_FAILED event for request " + request + " failed, ", e);
     }
   }
 
   private void refreshServerLocationSuccess(ParameterServerId serverId, boolean isUpdated) {
-    dispatchMessageQueue.add(new RefreshServerLocationEvent(
+    try {
+      dispatchMessageQueue.put(new RefreshServerLocationEvent(
         EventType.REFRESH_SERVER_LOCATION_SUCCESS, serverId, isUpdated));
+    } catch (Exception e) {
+      LOG.error("add REFRESH_SERVER_LOCATION_SUCCESS event failed, ", e);
+    }
   }
 
   private void refreshServerLocationFailed(ParameterServerId serverId) {
-    dispatchMessageQueue.add(new RefreshServerLocationEvent(
+    try {
+      dispatchMessageQueue.put(new RefreshServerLocationEvent(
         EventType.REFRESH_SERVER_LOCATION_FAILED, serverId));
+    } catch (Exception e) {
+      LOG.error("add REFRESH_SERVER_LOCATION_FAILED event failed, ", e);
+    }
   }
 
   private void startGet() {
-    dispatchMessageQueue.add(new DispatcherEvent(EventType.START_GET));
+    try {
+      dispatchMessageQueue.put(new DispatcherEvent(EventType.START_GET));
+    } catch (Exception e) {
+      LOG.error("add START_GET event failed, ", e);
+    }
+
   }
 
   private void startPut() {
-    dispatchMessageQueue.add(new DispatcherEvent(EventType.START_PUT));
+    try {
+      dispatchMessageQueue.put(new DispatcherEvent(EventType.START_PUT));
+    } catch (Exception e) {
+      LOG.error("add START_PUT event failed, ", e);
+    }
   }
 
   private Channel getChannel(Location loc) throws Exception {
