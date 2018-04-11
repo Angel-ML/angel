@@ -241,7 +241,7 @@ public class AngelConf extends Configuration {
   @Deprecated
   public static final String ANGEL_AM_MEMORY_MB = ANGEL_AM_PREFIX + "memory.mb";
   @Deprecated
-  public static final int DEFAULT_ANGEL_AM_MEMORY_MB = 1280;
+  public static final int DEFAULT_ANGEL_AM_MEMORY_MB = 2048;
 
   /** Memory quota for AppMaster in GB. */
   public static final String ANGEL_AM_MEMORY_GB = ANGEL_AM_PREFIX + "memory.gb";
@@ -357,11 +357,11 @@ public class AngelConf extends Configuration {
   @Deprecated
   public static final String ANGEL_WORKER_MEMORY_MB = ANGEL_WORKER_PREFIX + "memory.mb";
   @Deprecated
-  public static final int DEFAULT_ANGEL_WORKER_MEMORY_MB = 1024;
+  public static final int DEFAULT_ANGEL_WORKER_MEMORY_MB = 4096;
 
   /** The memory quota for a single worker in GB. */
   public static final String ANGEL_WORKER_MEMORY_GB = ANGEL_WORKER_PREFIX + "memory.gb";
-  public static final int DEFAULT_ANGEL_WORKER_MEMORY_GB = 5;
+  public static final int DEFAULT_ANGEL_WORKER_MEMORY_GB = 4;
 
   /** The CPU vcore quota for a single worker in MB. */
   public static final String ANGEL_WORKER_CPU_VCORES = ANGEL_WORKER_PREFIX + "cpu.vcores";
