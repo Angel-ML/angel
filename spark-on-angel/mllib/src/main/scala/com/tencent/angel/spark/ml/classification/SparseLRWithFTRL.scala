@@ -34,6 +34,7 @@ object SparseLRWithFTRL {
     val params = ArgsUtil.parse(args)
     val mode = params.getOrElse("mode", "yarn-cluster")
     val input = params("input")
+    val modelPath = params("modelPath")
     val partitionNum = params.getOrElse("partitionNum", "10").toInt
     val sampleRate = params.getOrElse("sampleRate", "1.0").toDouble
     val validateFaction = params.getOrElse("validateFaction", "0.3").toDouble
@@ -56,22 +57,17 @@ object SparseLRWithFTRL {
 
     PSContext.getOrCreate(spark.sparkContext)
 
-    val tempInstances = DataLoader.loadOneHotInstance(input, partitionNum, sampleRate, -1).rdd
+    val tempInstances = DataLoader.loadOneHotInstance(input, partitionNum, sampleRate).rdd
       .map { row =>
         Tuple2(row.getAs[scala.collection.mutable.WrappedArray[Long]](1).toArray, row.getString(0).toDouble)
       }.map { case (feat, label) =>
-        val hashed = feat.map { index =>
-          val bytes = f"$index%4d".getBytes
-          MurmurHash3.murmurhash3_x64_64(bytes, bytes.length, 41)
-        }
-        //(0L +: hashed, label)
-        (hashed, label)
+        (0L +: feat, label)
       }
 
     val dim = if (pDim > 0) {
       pDim
     } else {
-      tempInstances.flatMap { case (feat, label) => feat.distinct}.distinct().count()
+      tempInstances.flatMap { case (feat, label) => feat.distinct }.distinct().count()
     }
 
     println(s"feat number: $dim")
@@ -84,7 +80,8 @@ object SparseLRWithFTRL {
     println(s"total count: $sampleNum posSample: $posSamples negSamples: $negSamples")
     require(posSamples + negSamples == sampleNum, "labels must be 0 or 1")
 
-    train(instances, sampleNum, dim, epoch, batchSize, lambda1, lambda2, alpha, beta, validateFaction)
+    val model = train(instances, sampleNum, dim, epoch, batchSize, lambda1, lambda2, alpha, beta, validateFaction)
+    model.save(modelPath)
   }
 
   def train(
@@ -97,7 +94,7 @@ object SparseLRWithFTRL {
       lambda2: Double,
       alpha: Double,
       beta: Double,
-      validateFaction: Double): Unit = {
+      validateFaction: Double): SparseLRModel = {
 
     val (trainSet, validateSet) = if (validateFaction > 0 && validateFaction < 1.0) {
       val rdds = instances.randomSplit(Array(1 - validateFaction, validateFaction))
@@ -138,6 +135,8 @@ object SparseLRWithFTRL {
         println(s"epoch: $epochId validate global loss: $validateLoss auc: $validateAuc")
       }
     }
+
+    SparseLRModel(ftrl.weight)
   }
 
 

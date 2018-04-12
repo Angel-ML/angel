@@ -43,7 +43,7 @@ case class SparseLRModel(w: PSVector) {
     var i = 0
     while (iter.hasNext) {
       val entry = iter.next()
-      modelArray(i) = entry.getLongKey + ":" + entry.getDoubleValue
+      modelArray(i) = f"${entry.getLongKey} : ${entry.getDoubleValue}%.6f"
       i += 1
     }
     val spark = SparkSession.builder().getOrCreate()

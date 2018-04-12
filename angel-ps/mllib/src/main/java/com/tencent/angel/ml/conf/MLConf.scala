@@ -63,8 +63,6 @@ object MLConf {
   val ML_MODEL_CONVERT_THREAD_COUNT = "ml.model.convert.thread.count"
   val DEFAULT_ML_MODEL_CONVERT_THREAD_COUNT = 1
   val ML_MODEL_NAME = "ml.model.name"
-  val ML_MODEL_INPUT_PATH = "ml.model.input.path"
-  val ML_MODEL_OUTPUT_PATH = "ml.model.output.path"
 
   // mini-batch sgd params
   val ML_OPT_METHOD = "ml.opt.method"

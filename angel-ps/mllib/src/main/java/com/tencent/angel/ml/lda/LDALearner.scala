@@ -30,11 +30,11 @@ import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.conf.MLConf._
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.lda.algo.{CSRTokens, Sampler}
-import com.tencent.angel.ml.lda.psf.{GetPartFunc, LikelihoodFunc, PartCSRResult}
+import com.tencent.angel.ml.lda.psf._
 import com.tencent.angel.ml.math.vector.{DenseIntVector, TIntVector}
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult
-import com.tencent.angel.ml.matrix.psf.get.multi.PartitionGetRowsParam
+import com.tencent.angel.ml.matrix.psf.get.multi.{GetRowsParam, PartitionGetRowsParam}
 import com.tencent.angel.ml.matrix.psf.update.enhance.VoidResult
 import com.tencent.angel.ml.metric.ObjMetric
 import com.tencent.angel.ml.model.MLModel
@@ -132,7 +132,6 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
 
       // submit to client
       globalMetrics.metric(LOG_LIKELIHOOD, ll)
-      //      ctx.incEpoch()
 
       if (epoch % 4 == 0) reset(epoch)
     }
@@ -498,9 +497,11 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
       val x = rr.get(row).get.asInstanceOf[TIntVector]
       val len = x.size()
       val sb = new StringBuilder
-      sb.append(x.getRowId + ":")
-      for (i <- 0 until len)
-        sb.append(s" ${x.get(i)}")
+      sb.append(x.getRowId)
+      for (i <- 0 until len) {
+        if (x.get(i) > 0)
+          sb.append(s" ${i}:${x.get(i)}")
+      }
       sb.append("\n")
       out.write(sb.toString().getBytes("UTF-8"))
     }
@@ -508,6 +509,58 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
     out.flush()
     out.close()
     fs.rename(tmp, dest)
+  }
+
+  def saveWordTopicDistribution(model: LDAModel): Unit = {
+    LOG.info("save word topic distribution")
+    val dir = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH)
+    val base = dir + "/" + "word_topic_distribution"
+    val taskId = ctx.getTaskIndex
+    val dest = new Path(base, taskId.toString)
+
+    val fs = dest.getFileSystem(conf)
+    val tmp = HdfsUtil.toTmpPath(dest)
+    val out = new BufferedOutputStream(fs.create(tmp))
+
+    val num = model.K / ctx.getTotalTaskNum + 1
+    val start = taskId * num
+    val end = Math.min(model.K, start + num)
+
+    val index = new util.ArrayList[Integer]()
+    for (i <- start until end) index.add(i)
+
+    val param = new GetRowsParam(model.wtMat.getMatrixId(), index)
+    val func  = new GetColumnFunc(param)
+    val result = model.wtMat.get(func).asInstanceOf[ColumnGetResult]
+
+    fetchNk
+
+    var sum: Long = 0L
+    val cks = result.cks
+    val keyIterator = cks.keySet().iterator()
+    while (keyIterator.hasNext) {
+      val column = keyIterator.next()
+      val sb = new StringBuilder
+      sb.append(column)
+      val ck = cks.get(column)
+      val numTopicSum = nk(column.toInt)
+      val iter = ck.int2IntEntrySet().fastIterator()
+      while (iter.hasNext) {
+        val entry = iter.next()
+        val row   = entry.getIntKey
+        val value = entry.getIntValue
+        sum += value
+        val p = (value + model.beta) / (numTopicSum + model.V * model.beta)
+        sb.append(s" ${row}:${p}")
+      }
+      sb.append("\n")
+      out.write(sb.toString().getBytes("UTF-8"))
+    }
+
+    out.flush()
+    out.close()
+    fs.rename(tmp, dest)
+    LOG.info(s"sum = $sum")
   }
 
   def saveDocTopic(data: CSRTokens, model: LDAModel): Unit = {
@@ -535,5 +588,36 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
     out.flush()
     out.close()
     fs.rename(tmp, dest)
+  }
+
+  def saveDocTopicDistribution(data: CSRTokens, model: LDAModel): Unit = {
+    LOG.info("save doc topic distribution")
+    val dir = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH)
+    val base = dir + "/" + "doc_topic_distribution"
+    val part = ctx.getTaskIndex
+
+    val dest = new Path(base, part.toString)
+    val fs   = dest.getFileSystem(conf)
+    val tmp  = HdfsUtil.toTmpPath(dest)
+    val out  = new BufferedOutputStream(fs.create(tmp))
+
+    for (d <- 0 until data.dks.size) {
+      val sb = new StringBuilder
+      val dk = data.dks(d)
+      sb.append(data.docIds(d))
+      val num = data.docLens(d)
+      val len = dk.size
+      for (i <- 0 until len) {
+        val value = (dk.getVal(i) + model.alpha) / (num + model.K * model.alpha)
+        sb.append(s" ${dk.getKey(i)}:${value}")
+      }
+      sb.append("\n")
+      out.write(sb.toString().getBytes("UTF-8"))
+    }
+
+    out.flush()
+    out.close()
+    fs.rename(tmp, dest)
+
   }
 }

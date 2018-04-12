@@ -127,7 +127,6 @@ object GradientDescent {
       // update intercept
       intercept.foreach { bv =>
         val bUpdate = new DenseDoubleVector(1)
-        bUpdate.set(0, - gradScalarSum * lr)
         bv.increment(0, bUpdate)
         bv.syncClock()
       }

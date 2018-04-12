@@ -46,8 +46,7 @@ object DataLoader {
   def loadOneHotInstance(
       input: String,
       partitionNum: Int,
-      sampleRate: Double,
-      maxIndex: Long = -1) : DataFrame = {
+      sampleRate: Double) : DataFrame = {
     val spark = SparkSession.builder().getOrCreate()
 
     val instances = spark.sparkContext.textFile(input)
@@ -59,11 +58,7 @@ object DataLoader {
         } else {
           val label = items.head
           val feature = items.tail.map(_.toLong)
-          if (maxIndex > 0) {
-            Iterator.single(Row(label, feature.filter(x => x <= maxIndex)))
-          } else {
-            Iterator.single(Row(label, feature))
-          }
+          Iterator.single(Row(label, feature))
         }
       }.repartition(partitionNum)
       .sample(false, sampleRate)

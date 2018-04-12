@@ -22,7 +22,7 @@ import com.tencent.angel.spark.linalg.{OneHotVector, SparseVector}
 import com.tencent.angel.spark.ml.psf.FTRLWUpdater
 import com.tencent.angel.spark.models.vector.{PSVector, SparsePSVector}
 
-class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) extends Serializable {
+class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regularSkipFeatIndex: Long = 0) extends Serializable {
   var zPS: SparsePSVector = null
   var nPS: SparsePSVector = null
 
@@ -66,7 +66,7 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) extend
     val wPairs = feature.indices.map { fId =>
       val zVal = localZ(fId)
       val nVal = localN(fId)
-      val wVal = FTRL.updateWeight(zVal, nVal, alpha, beta, lambda1, lambda2)
+      val wVal = updateWeight(fId, zVal, nVal, alpha, beta, lambda1, lambda2)
       (fId, wVal)
     }
     val localW = new SparseVector(feature.length, wPairs)
@@ -88,7 +88,9 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) extend
   }
 
   def weight: SparsePSVector = {
-    val wPS = zPS.toBreeze.zipMap(nPS.toBreeze, new FTRLWUpdater(alpha, beta, lambda1, lambda2))
+    val wPS = zPS.toBreeze.zipMapWithIndex(nPS.toBreeze,
+      new FTRLWUpdater(alpha, beta, lambda1, lambda2, regularSkipFeatIndex))
+
     wPS.toSparse.compress()
     wPS.toSparse
   }
@@ -99,6 +101,23 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) extend
     while(iter.hasNext) {
       entry = iter.next()
       b.keyValues.addTo(entry.getLongKey, entry.getDoubleValue)
+    }
+  }
+
+  def updateWeight(
+      fId: Long,
+      zOnId: Double,
+      nOnId: Double,
+      alpha: Double,
+      beta: Double,
+      lambda1: Double,
+      lambda2: Double): Double = {
+    if (fId == regularSkipFeatIndex) {
+      -1.0 * alpha * zOnId / (beta + Math.sqrt(nOnId))
+    } else if (Math.abs(zOnId) <= lambda1) {
+      0.0
+    } else {
+      (-1) * (1.0 / (lambda2 + (beta + Math.sqrt(nOnId)) / alpha)) * (zOnId - Math.signum(zOnId).toInt * lambda1)
     }
   }
 }
@@ -158,17 +177,17 @@ object FTRL {
   }
 
   // compute new weight
-  def updateWeight(zOnId: Double,
-                   nOnId: Double,
-                   alpha: Double,
-                   beta: Double,
-                   lambda1: Double,
-                   lambda2: Double): Double = {
+  def updateWeight(
+      zOnId: Double,
+      nOnId: Double,
+      alpha: Double,
+      beta: Double,
+      lambda1: Double,
+      lambda2: Double): Double = {
     if (Math.abs(zOnId) <= lambda1) {
       0.0
     } else {
       (-1) * (1.0 / (lambda2 + (beta + Math.sqrt(nOnId)) / alpha)) * (zOnId - Math.signum(zOnId).toInt * lambda1)
     }
   }
-
 }
