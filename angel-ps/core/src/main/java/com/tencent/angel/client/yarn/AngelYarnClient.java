@@ -487,7 +487,10 @@ public class AngelYarnClient extends AngelClient {
 
     int heapMax = masterMemoryMB - 512;
     return new StringBuilder().append(" -Xmx").append(heapMax).append("M").append(" -Xms")
-      .append(heapMax).append("M").append(" -XX:PermSize=100M -XX:MaxPermSize=200M").toString();
+      .append(heapMax).append("M").append(" -XX:PermSize=100M -XX:MaxPermSize=200M")
+      .append(" -XX:+PrintGCDateStamps").append(" -XX:+PrintGCDetails")
+      .append(" -XX:+PrintCommandLineFlags").append(" -XX:+PrintTenuringDistribution")
+      .append(" -XX:+PrintAdaptiveSizePolicy").append(" -Xloggc:<LOG_DIR>/gc.log").toString();
   }
 
   private LocalResource createApplicationResource(FileContext fs, Path p, LocalResourceType type)
