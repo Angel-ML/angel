@@ -258,4 +258,18 @@ public class MatrixMetaManager {
 
     matrixMeta.addPs(partId, psId);
   }
+
+  /**
+   * Get estimate sparsity
+   * @param matrixId matrix id
+   * @return estimate sparsity
+   */
+  public double getEstSparsity(int matrixId) {
+    MatrixMeta meta = matrixIdToMetaMap.get(matrixId);
+    if(meta == null) {
+      return 1.0;
+    } else {
+      return meta.getEstSparsity();
+    }
+  }
 }

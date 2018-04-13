@@ -17,12 +17,8 @@
 
 package com.tencent.angel.ml.lda
 
-import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.lda.LDAModel.{ WORD_TOPIC_MAT}
 import com.tencent.angel.ml.lda.algo.{CSRTokens, Document}
 import com.tencent.angel.ml.math.vector.{DenseIntVector, SparseIntVector}
-import com.tencent.angel.ml.matrix.RowType
-import com.tencent.angel.ml.model.PSModel
 import com.tencent.angel.worker.storage.MemoryDataBlock
 import com.tencent.angel.worker.task.{BaseTask, TaskContext}
 import org.apache.commons.logging.LogFactory
@@ -74,8 +70,6 @@ class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Do
     model.vocabularyMatrix.clock()
 
     val values = model.vocabularyMatrix.getRow(0).asInstanceOf[DenseIntVector].getValues
-
-    values.foreach(f => println(f))
 
     values.max + 1
   }

@@ -45,16 +45,16 @@ public class ServerSparseDoubleLongKeyRow extends ServerLongKeyRow{
    * @param startCol vector partition start position
    * @param endCol vector partition end position
    */
-  public ServerSparseDoubleLongKeyRow(int rowId, long startCol, long endCol) {
+  public ServerSparseDoubleLongKeyRow(int rowId, long startCol, long endCol, int estEleNum) {
     super(rowId, startCol, endCol);
-    index2ValueMap = new Long2DoubleOpenHashMap();
+    index2ValueMap = new Long2DoubleOpenHashMap(estEleNum);
   }
 
   /**
    * Create a ServerSparseDoubleLongKeyRow
    */
   public ServerSparseDoubleLongKeyRow() {
-    this(0, 0, 0);
+    this(0, 0, 0, 0);
   }
 
   @Override public RowType getRowType() {

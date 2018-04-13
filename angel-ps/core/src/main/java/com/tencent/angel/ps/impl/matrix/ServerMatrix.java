@@ -81,7 +81,7 @@ public class ServerMatrix {
     MatrixMeta matrixMeta = context.getMatrixMetaManager().getMatrixMeta(matrixId);
     Map<Integer, PartitionMeta> partMetas = matrixMeta.getPartitionMetas();
     for (PartitionMeta partMeta : partMetas.values()) {
-      ServerPartition part = new ServerPartition(partMeta.getPartitionKey(), matrixMeta.getRowType());
+      ServerPartition part = new ServerPartition(partMeta.getPartitionKey(), matrixMeta.getRowType(), matrixMeta.getEstSparsity());
       partitionMaps.put(partMeta.getPartId(), part);
       part.init();
     }

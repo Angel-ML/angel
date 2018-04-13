@@ -107,14 +107,14 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
   def fetchNk: Unit = {
     val row = model.tMat.getRow(0).asInstanceOf[TIntVector]
     var sum = 0L
-    val sb = new mutable.StringBuilder()
+//    val sb = new mutable.StringBuilder()
     for (i <- 0 until model.K) {
       nk(i) = row.get(i)
       sum += nk(i)
-      sb.append(nk(i) + " ")
+//      sb.append(nk(i) + " ")
     }
 
-    LOG.info(sb.toString())
+//    LOG.info(sb.toString())
     LOG.info(s"nk_sum=$sum")
   }
 
@@ -475,52 +475,48 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
 
   def saveWordTopic(model: LDAModel): Unit = {
     LOG.info("save word topic")
-    val dir = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH)
-    val base = dir + "/" + "word_topic"
     val taskId = ctx.getTaskIndex
-    val dest = new Path(base, taskId.toString)
-
-    val fs = dest.getFileSystem(conf)
-    val tmp = HdfsUtil.toTmpPath(dest)
-    val out = new BufferedOutputStream(fs.create(tmp))
-
 
     val num = model.V / ctx.getTotalTaskNum + 1
     val start = taskId * num
     val end = Math.min(model.V, start + num)
 
-    val index = new RowIndex()
-    for (i <- start until end) index.addRowId(i)
-    val rr = model.wtMat.getRows(index, 1000)
+    if (start < end) {
+      val index = new RowIndex()
+      for (i <- start until end) index.addRowId(i)
 
-    for (row <- start until end) {
-      val x = rr.get(row).get.asInstanceOf[TIntVector]
-      val len = x.size()
-      val sb = new StringBuilder
-      sb.append(x.getRowId)
-      for (i <- 0 until len) {
-        if (x.get(i) > 0)
-          sb.append(s" ${i}:${x.get(i)}")
+      val dir = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH)
+      val base = dir + "/" + "word_topic"
+      val dest = new Path(base, taskId.toString)
+
+      val fs = dest.getFileSystem(conf)
+      val tmp = HdfsUtil.toTmpPath(dest)
+      val out = new BufferedOutputStream(fs.create(tmp))
+
+      val rr = model.wtMat.getRows(index, 1000)
+
+      for (row <- start until end) {
+        val x = rr.get(row).get.asInstanceOf[TIntVector]
+        val len = x.size()
+        val sb = new StringBuilder
+        sb.append(x.getRowId)
+        for (i <- 0 until len) {
+          if (x.get(i) > 0)
+            sb.append(s" ${i}:${x.get(i)}")
+        }
+        sb.append("\n")
+        out.write(sb.toString().getBytes("UTF-8"))
       }
-      sb.append("\n")
-      out.write(sb.toString().getBytes("UTF-8"))
-    }
 
-    out.flush()
-    out.close()
-    fs.rename(tmp, dest)
+      out.flush()
+      out.close()
+      fs.rename(tmp, dest)
+    }
   }
 
   def saveWordTopicDistribution(model: LDAModel): Unit = {
     LOG.info("save word topic distribution")
-    val dir = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH)
-    val base = dir + "/" + "word_topic_distribution"
     val taskId = ctx.getTaskIndex
-    val dest = new Path(base, taskId.toString)
-
-    val fs = dest.getFileSystem(conf)
-    val tmp = HdfsUtil.toTmpPath(dest)
-    val out = new BufferedOutputStream(fs.create(tmp))
 
     val num = model.K / ctx.getTotalTaskNum + 1
     val start = taskId * num
@@ -529,38 +525,49 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
     val index = new util.ArrayList[Integer]()
     for (i <- start until end) index.add(i)
 
-    val param = new GetRowsParam(model.wtMat.getMatrixId(), index)
-    val func  = new GetColumnFunc(param)
-    val result = model.wtMat.get(func).asInstanceOf[ColumnGetResult]
+    if (index.size() > 0) {
 
-    fetchNk
+      val dir = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH)
+      val base = dir + "/" + "word_topic_distribution"
+      val dest = new Path(base, taskId.toString)
 
-    var sum: Long = 0L
-    val cks = result.cks
-    val keyIterator = cks.keySet().iterator()
-    while (keyIterator.hasNext) {
-      val column = keyIterator.next()
-      val sb = new StringBuilder
-      sb.append(column)
-      val ck = cks.get(column)
-      val numTopicSum = nk(column.toInt)
-      val iter = ck.int2IntEntrySet().fastIterator()
-      while (iter.hasNext) {
-        val entry = iter.next()
-        val row   = entry.getIntKey
-        val value = entry.getIntValue
-        sum += value
-        val p = (value + model.beta) / (numTopicSum + model.V * model.beta)
-        sb.append(s" ${row}:${p}")
+      val fs = dest.getFileSystem(conf)
+      val tmp = HdfsUtil.toTmpPath(dest)
+      val out = new BufferedOutputStream(fs.create(tmp))
+
+      val param = new GetRowsParam(model.wtMat.getMatrixId(), index)
+      val func = new GetColumnFunc(param)
+      val result = model.wtMat.get(func).asInstanceOf[ColumnGetResult]
+
+      fetchNk
+
+      var sum: Long = 0L
+      val cks = result.cks
+      val keyIterator = cks.keySet().iterator()
+      while (keyIterator.hasNext) {
+        val column = keyIterator.next()
+        val sb = new StringBuilder
+        sb.append(column)
+        val ck = cks.get(column)
+        val numTopicSum = nk(column.toInt)
+        val iter = ck.int2IntEntrySet().fastIterator()
+        while (iter.hasNext) {
+          val entry = iter.next()
+          val row = entry.getIntKey
+          val value = entry.getIntValue
+          sum += value
+          val p = (value + model.beta) / (numTopicSum + model.V * model.beta)
+          sb.append(s" ${row}:${p}")
+        }
+        sb.append("\n")
+        out.write(sb.toString().getBytes("UTF-8"))
       }
-      sb.append("\n")
-      out.write(sb.toString().getBytes("UTF-8"))
-    }
 
-    out.flush()
-    out.close()
-    fs.rename(tmp, dest)
-    LOG.info(s"sum = $sum")
+      out.flush()
+      out.close()
+      fs.rename(tmp, dest)
+      LOG.info(s"sum = $sum")
+    }
   }
 
   def saveDocTopic(data: CSRTokens, model: LDAModel): Unit = {

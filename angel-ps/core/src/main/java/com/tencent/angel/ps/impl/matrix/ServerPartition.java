@@ -54,18 +54,21 @@ public class ServerPartition implements Serialize {
 
   private final AtomicInteger updateCounter = new AtomicInteger(0);
 
+  private double estSparsity;
+
   /**
    * Create a new Server partition,include load rows.
    *
    * @param partitionKey the partition meta
    * @param rowType      the row type
    */
-  public ServerPartition(PartitionKey partitionKey, RowType rowType) {
+  public ServerPartition(PartitionKey partitionKey, RowType rowType, double estSparsity) {
     this.state = PartitionState.INITIALIZING;
     this.partitionKey = partitionKey;
     this.rowType = rowType;
-    this.rows = new ConcurrentHashMap<Integer, ServerRow>();
+    this.rows = new ConcurrentHashMap<>();
     this.clock = 0;
+    this.estSparsity = estSparsity;
   }
 
   /**
@@ -73,7 +76,7 @@ public class ServerPartition implements Serialize {
    */
   public void init() {
     if (partitionKey != null) {
-      initRows(partitionKey, rowType);
+      initRows(partitionKey, rowType, estSparsity);
     }
   }
 
@@ -81,7 +84,7 @@ public class ServerPartition implements Serialize {
    * Create a new Server partition.
    */
   public ServerPartition() {
-    this(null, RowType.T_DOUBLE_DENSE);
+    this(null, RowType.T_DOUBLE_DENSE, 1.0);
   }
 
   /**
@@ -103,15 +106,16 @@ public class ServerPartition implements Serialize {
     return partitionKey;
   }
 
-  private void initRows(PartitionKey partitionKey, RowType rowType) {
+  private void initRows(PartitionKey partitionKey, RowType rowType, double estSparsity) {
     int rowStart = partitionKey.getStartRow();
     int rowEnd = partitionKey.getEndRow();
     for (int rowIndex = rowStart; rowIndex < rowEnd; rowIndex++) {
-      rows.put(rowIndex, initRow(rowIndex, rowType, partitionKey.getStartCol(), partitionKey.getEndCol()));
+      rows.put(rowIndex, initRow(rowIndex, rowType, partitionKey.getStartCol(), partitionKey.getEndCol(), estSparsity));
     }
   }
 
-  private ServerRow initRow(int rowIndex, RowType rowType, long startCol, long endCol) {
+  private ServerRow initRow(int rowIndex, RowType rowType, long startCol, long endCol, double estSparsity) {
+    int estEleNum = (int)((endCol - startCol) * estSparsity);
     switch (rowType) {
       case T_DOUBLE_DENSE:
         return new ServerDenseDoubleRow(rowIndex, (int)startCol, (int)endCol);
@@ -121,25 +125,25 @@ public class ServerPartition implements Serialize {
 
       case T_DOUBLE_SPARSE:
       case T_DOUBLE_SPARSE_COMPONENT:
-        return new ServerSparseDoubleRow(rowIndex, (int)startCol, (int)endCol);
+        return new ServerSparseDoubleRow(rowIndex, (int)startCol, (int)endCol, estEleNum);
 
       case T_DOUBLE_SPARSE_LONGKEY:
       case T_DOUBLE_SPARSE_LONGKEY_COMPONENT:
-        return new ServerSparseDoubleLongKeyRow(rowIndex, startCol, endCol);
+        return new ServerSparseDoubleLongKeyRow(rowIndex, startCol, endCol, estEleNum);
 
       case T_INT_DENSE:
         return new ServerDenseIntRow(rowIndex, (int)startCol, (int)endCol);
 
       case T_INT_SPARSE:
       case T_INT_SPARSE_COMPONENT:
-        return new ServerSparseIntRow(rowIndex, (int)startCol, (int)endCol);
+        return new ServerSparseIntRow(rowIndex, (int)startCol, (int)endCol, estEleNum);
 
       case T_INT_ARBITRARY:
         return new ServerArbitraryIntRow(rowIndex, (int)startCol, (int)endCol);
 
       case T_FLOAT_SPARSE:
       case T_FLOAT_SPARSE_COMPONENT:
-        return  new ServerSparseFloatRow(rowIndex, (int)startCol, (int)endCol);
+        return  new ServerSparseFloatRow(rowIndex, (int)startCol, (int)endCol, estEleNum);
 
       default:
         LOG.warn("invalid rowtype " + rowType + ", default is " + RowType.T_DOUBLE_DENSE);

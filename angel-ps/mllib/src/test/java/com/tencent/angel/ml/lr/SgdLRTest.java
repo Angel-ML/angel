@@ -49,7 +49,7 @@ public class SgdLRTest {
   @Before public void setConf() throws Exception {
     try {
       // Feature number of train data
-      int featureNum = -1;
+      int featureNum = 124;
       // Total iteration number
       int epochNum = 5;
       // Validation sample Ratio
@@ -61,7 +61,7 @@ public class SgdLRTest {
       // Batch number
       int batchNum = 10;
       // Model type
-      String modelType = String.valueOf(RowType.T_DOUBLE_SPARSE_LONGKEY);
+      String modelType = String.valueOf(RowType.T_DOUBLE_DENSE);
 
       // Learning rate
       double learnRate = 1.0;

@@ -7,10 +7,14 @@ import com.tencent.angel.ps.impl.MatrixStorageManager;
 import com.tencent.angel.ps.impl.matrix.ServerDenseIntRow;
 import com.tencent.angel.ps.impl.matrix.ServerRow;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.util.*;
 
 public class GetColumnFunc extends GetFunc {
+
+  private final static Log LOG = LogFactory.getLog(GetColumnFunc.class);
 
   public GetColumnFunc(GetParam param) {
     super(param);
@@ -64,6 +68,8 @@ public class GetColumnFunc extends GetFunc {
     for (PartitionGetResult r: partResults) {
       if (r instanceof PartColumnResult)
         columnResults.add((PartColumnResult) r);
+      else
+        LOG.error("r should be PartColumnResult but it is " + r.getClass());
     }
 
     // calculate columns

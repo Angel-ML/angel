@@ -364,9 +364,16 @@ public class MatrixContext {
    */
   public void init(Configuration conf) throws IOException {
     initPartitioner();
+    check();
     String loadPath = attributes.get(MatrixConf.MATRIX_LOAD_PATH);
     if(loadPath != null) {
       loadMatrixMetaFromFile(name, loadPath, conf);
+    }
+  }
+
+  private void check() {
+    if(rowType == RowType.T_DOUBLE_DENSE || rowType == RowType.T_FLOAT_DENSE || rowType == RowType.T_INT_DENSE) {
+      assert colNum > 0;
     }
   }
 
@@ -403,5 +410,25 @@ public class MatrixContext {
       + ", maxRowNumInBlock=" + maxRowNumInBlock + ", maxColNumInBlock=" + maxColNumInBlock
       + ", partitionerClass=" + partitionerClass + ", rowType=" + rowType + ", attributes="
       + attributes + ", matrixId=" + matrixId + '}';
+  }
+
+  /**
+   * Get estimate sparsity
+   * @return estimate sparsity
+   */
+  public double getEstSparsity() {
+    if(validIndexNum <= 0) {
+      return 0.0;
+    } else {
+      if(colNum <= 0) {
+        if(rowType == RowType.T_DOUBLE_SPARSE || rowType == RowType.T_FLOAT_SPARSE || rowType == RowType.T_INT_SPARSE) {
+          return (double) validIndexNum / rowNum / 2 / Integer.MAX_VALUE;
+        } else {
+          return (double) validIndexNum / rowNum / 2 / Long.MAX_VALUE;
+        }
+      } else {
+        return (double) validIndexNum / rowNum / colNum;
+      }
+    }
   }
 }

@@ -201,14 +201,10 @@ public class MasterClient {
    * 
    * @param matrixContext matrix configuration
    * @param timeOutMS maximun wait time in milliseconds
-   * @throws ServiceException rpc failed
-   * @throws TimeOutException create matrix time out
-   * @throws InterruptedException interrupted when wait
-   * @throws IOException read matrix meta from hdfs failed
+   * @throws Exception rpc failed
    */
   public void createMatrix(MatrixContext matrixContext, long timeOutMS)
-    throws ServiceException, TimeOutException, InterruptedException, IOException,
-    ClassNotFoundException {
+    throws Exception {
     matrixContext.init(PSAgentContext.get().getConf());
     List<MatrixContext> matrixContexts = new ArrayList<>(1);
     matrixContexts.add(matrixContext);
@@ -220,14 +216,10 @@ public class MasterClient {
    *
    * @param matrixContexts matrices configuration
    * @param timeOutMS maximun wait time in milliseconds
-   * @throws ServiceException rpc failed
-   * @throws TimeOutException create matrix time out
-   * @throws InterruptedException interrupted when wait
-   * @throws IOException read matrix meta from hdfs failed
+   * @throws Exception rpc failed
    */
   public void createMatrices(List<MatrixContext> matrixContexts, long timeOutMS)
-    throws ServiceException, TimeOutException, InterruptedException, IOException,
-    ClassNotFoundException {
+    throws Exception {
     CreateMatricesRequest.Builder createBuilder = CreateMatricesRequest.newBuilder();
     CheckMatricesCreatedRequest.Builder checkBuilder = CheckMatricesCreatedRequest.newBuilder();
     List<String> matrixNames = new ArrayList<>(matrixContexts.size());

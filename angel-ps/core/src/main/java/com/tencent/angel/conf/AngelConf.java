@@ -241,7 +241,7 @@ public class AngelConf extends Configuration {
   @Deprecated
   public static final String ANGEL_AM_MEMORY_MB = ANGEL_AM_PREFIX + "memory.mb";
   @Deprecated
-  public static final int DEFAULT_ANGEL_AM_MEMORY_MB = 2048;
+  public static final int DEFAULT_ANGEL_AM_MEMORY_MB = 1280;
 
   /** Memory quota for AppMaster in GB. */
   public static final String ANGEL_AM_MEMORY_GB = ANGEL_AM_PREFIX + "memory.gb";

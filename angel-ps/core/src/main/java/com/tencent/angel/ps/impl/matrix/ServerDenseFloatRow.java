@@ -159,11 +159,11 @@ public class ServerDenseFloatRow extends ServerFloatRow {
   @Override
   public void writeTo(DataOutputStream output) throws IOException {
     try {
-      lock.readLock().lock();
+      //lock.readLock().lock();
       super.writeTo(output);
       output.write(dataBuffer, 0, dataBuffer.length);
     } finally {
-      lock.readLock().unlock();
+      //lock.readLock().unlock();
     }
   }
 

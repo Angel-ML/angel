@@ -43,16 +43,16 @@ public class ServerSparseFloatRow extends ServerFloatRow {
    * @param startCol partition start column index
    * @param endCol partition end column index
    */
-  public ServerSparseFloatRow(int rowId, int startCol, int endCol) {
+  public ServerSparseFloatRow(int rowId, int startCol, int endCol, int estEleNum) {
     super(rowId, startCol, endCol);
-    data = new Int2FloatOpenHashMap();
+    data = new Int2FloatOpenHashMap(estEleNum);
   }
 
   /**
    * Create a ServerSparseFloatRow
    */
   public ServerSparseFloatRow() {
-    this(0, 0, 0);
+    this(0, 0, 0, 0);
   }
 
   @Override public float getValue(int index) {

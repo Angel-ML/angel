@@ -20,7 +20,6 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.psf.update.enhance.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.enhance.UpdateParam;
-import com.tencent.angel.ps.impl.PSContext;
 import com.tencent.angel.ps.impl.matrix.ServerDenseIntRow;
 import com.tencent.angel.ps.impl.matrix.ServerRow;
 import org.apache.commons.logging.Log;
@@ -47,22 +46,27 @@ public class UpdatePartFunc extends UpdateFunc {
     pkey = psContext.getMatrixMetaManager().getMatrixMeta(pkey.getMatrixId())
       .getPartitionMeta(pkey.getPartitionId()).getPartitionKey();
 
-    while (param.buf.isReadable()) {
-      int row = param.buf.readInt();
-      int len = param.buf.readShort();
+    try {
+      while (param.buf.isReadable()) {
+        int row = param.buf.readInt();
+        int len = param.buf.readShort();
 
-      ServerRow serverRow = psContext.getMatrixStorageManager().getRow(pkey, row);
-      serverRow.getLock().writeLock().lock();
-      ServerDenseIntRow denseIntRow = (ServerDenseIntRow) serverRow;
-      IntBuffer buffer = denseIntRow.getData();
-      for (int i = 0; i < len; i++) {
-        short key = param.buf.readShort();
-        int val = param.buf.readInt();
-        buffer.put(key, buffer.get(key) + val);
+        ServerRow serverRow = psContext.getMatrixStorageManager().getRow(pkey, row);
+        serverRow.tryToLockWrite();
+        try {
+          ServerDenseIntRow denseIntRow = (ServerDenseIntRow) serverRow;
+          IntBuffer buffer = denseIntRow.getData();
+          for (int i = 0; i < len; i++) {
+            short key = param.buf.readShort();
+            int val = param.buf.readInt();
+            buffer.put(key, buffer.get(key) + val);
+          }
+        } finally {
+          serverRow.unlockWrite();
+        }
       }
-      serverRow.getLock().writeLock().unlock();
+    } finally {
+      param.buf.release();
     }
-
-    param.buf.release();
   }
 }

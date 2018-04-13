@@ -40,16 +40,16 @@ public class ServerSparseIntRow extends ServerIntRow {
    * @param startCol partition start column index
    * @param endCol partition end column index
    */
-  public ServerSparseIntRow(int rowId, int startCol, int endCol) {
+  public ServerSparseIntRow(int rowId, int startCol, int endCol, int estEleNum) {
     super(rowId, startCol, endCol);
-    this.data = new Int2IntOpenHashMap();
+    this.data = new Int2IntOpenHashMap(estEleNum);
   }
 
   /**
    * Create a ServerSparseIntRow
    */
   public ServerSparseIntRow() {
-    this(0, 0, 0);
+    this(0, 0, 0, 0);
   }
 
   @Override

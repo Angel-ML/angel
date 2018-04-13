@@ -43,16 +43,16 @@ public class ServerSparseDoubleRow extends ServerDoubleRow {
    * @param startCol partition start column index
    * @param endCol partition end column index
    */
-  public ServerSparseDoubleRow(int rowId, int startCol, int endCol) {
+  public ServerSparseDoubleRow(int rowId, int startCol, int endCol, int estElemNum) {
     super(rowId, startCol, endCol);
-    data = new Int2DoubleOpenHashMap();
+    data = new Int2DoubleOpenHashMap(estElemNum);
   }
 
   /**
    * Create a ServerSparseDoubleRow
    */
   public ServerSparseDoubleRow() {
-    this(0, 0, 0);
+    this(0, 0, 0, 0);
   }
 
   @Override public void writeTo(DataOutputStream output) throws IOException {
