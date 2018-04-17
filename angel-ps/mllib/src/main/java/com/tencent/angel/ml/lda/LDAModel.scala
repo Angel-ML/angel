@@ -109,7 +109,7 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
   val alpha = conf.getFloat(ALPHA, 50.0F / K)
   val beta = conf.getFloat(BETA, 0.01F)
   var vBeta = 0F
-  var V = -1
+  var V = conf.getInt(WORD_NUM, 1)
 
   val threadNum = conf.getInt(ANGEL_WORKER_THREAD_NUM, 4)
 
@@ -122,7 +122,7 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
 
   // Initializing model matrices
 
-  var wtMat: PSModel = PSModel(WORD_TOPIC_MAT, V, K)
+  var wtMat: PSModel = PSModel(WORD_TOPIC_MAT, V, K, blockNum(V, K), K)
     .setRowType(RowType.T_INT_DENSE)
     .setOplogType("SPARSE_INT")
 
@@ -138,7 +138,11 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
     .setNeedSave(false)
 
 
-//  addPSModel(wtMat)
+  val actType = conf.get(AngelConf.ANGEL_ACTION_TYPE)
+  actType match {
+    case MLConf.ANGEL_ML_PREDICT => addPSModel(wtMat)
+    case _ =>
+  }
   addPSModel(tMat)
   addPSModel(vocabularyMatrix)
 
@@ -152,13 +156,15 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
 
   def blockNum(V: Int, K: Int): Int = {
     val blockNum = 20 * 1024 * 1024 / (K * 4)
-    return Math.max(V / 10000, Math.min(V / psNum, blockNum))
+    return Math.max(1, Math.max(V / 10000, Math.min(V / psNum, blockNum)))
   }
 
 
   def loadModel(): Unit = {
     val paths = getPaths()
     val update = new DenseIntVector(K)
+
+    System.out.println(paths.length)
 
     for (i <- 0 until paths.length) {
       val path = paths(i)
@@ -171,14 +177,15 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
       while (!finish) {
         in.readLine() match {
           case line: String =>
-            val parts = line.split(": ")
-            val topics = parts(1).split(" ")
+            val parts = line.split(" ")
+            val topic = parts(0).toInt
             val vector = new DenseIntVector(K)
-            for (i <- 0 until K) {
-              vector.set(i, topics(i).toInt)
-              update.plusBy(i, topics(i).toInt)
+            for (i <- 1 until parts.length) {
+              val pp = parts(i).split(":")
+              vector.set(pp(0).toInt, pp(1).toInt)
+              update.plusBy(pp(0).toInt, pp(1).toInt)
             }
-            wtMat.increment(parts(0).toInt, vector)
+            wtMat.increment(topic, vector)
           case null => finish = true
         }
       }
