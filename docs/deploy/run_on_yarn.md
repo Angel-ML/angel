@@ -49,7 +49,7 @@ Angel的分布式Yarn运行模式需要的环境，其实也非常简单：
 			--angel.save.model.path "hdfs://my-nn:54310/test/model" \
 			--action.type train \
 			--ml.data.type libsvm \
-			--ml.feature.num 1024 \
+			--ml.feature.index.range 1024 \
 			--angel.job.name LR_test \
 			--angel.am.memory.gb 2 \
 			--angel.worker.memory.gb 2 \
@@ -67,7 +67,7 @@ Angel的分布式Yarn运行模式需要的环境，其实也非常简单：
 	| angel.log.path | 算法指标日志输出路径 |
 	| angel.save.model.path | 模型保存路径 |
 	| ml.data.type | 训练数据格式，默认支持两种格式libsvm和dummy |
-	| ml.feature.num | 模型维度 |
+	| ml.feature.index.range | 模型index范围 |
 	| angel.job.name | 任务名|
 	| angel.am.memory.gb | Master所需内存大小|
 	| angel.worker.memory.gb | 一个Worker所需内存大小|
