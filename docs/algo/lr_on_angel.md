@@ -116,7 +116,7 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Logistic 
 	    --angel.worker.task.number 3 \
 	    --angel.ps.number 1 \
 	    --angel.ps.memory.mb 5000 \
-	    --angel.job.name=angel_lr_smalldata
+	    --angel.job.name angel_lr_smalldata
 	```
 
 ### 性能
