@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The tool that write algorithm logs to file.
+ * The tool that writes algorithm logs to file.
  */
 public class DistributeLog {
   static final Log LOG = LogFactory.getLog(DistributeLog.class);
@@ -115,7 +115,7 @@ public class DistributeLog {
   }
 
   /**
-   * Close file writter
+   * Close fileWriter
    * @throws IOException
    */
   public void close() throws IOException {
