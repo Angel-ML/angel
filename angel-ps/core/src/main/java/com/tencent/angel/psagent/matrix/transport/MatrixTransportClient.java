@@ -19,6 +19,7 @@ package com.tencent.angel.psagent.matrix.transport;
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.common.location.Location;
+import com.tencent.angel.common.location.LocationManager;
 import com.tencent.angel.common.transport.ChannelManager;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.matrix.PartitionLocation;
@@ -50,6 +51,8 @@ import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.hadoop.conf.Configuration;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.ByteOrder;
 import java.util.*;
 import java.util.Map.Entry;
@@ -1175,8 +1178,16 @@ public class MatrixTransportClient implements MatrixTransportInterface {
         }
 
         LOG.info("remove channel " + channel + ", removeNum=" + removeNum);
+
+        InetSocketAddress address = (InetSocketAddress)(channel.remoteAddress());
+        Location loc = new Location(address.getHostName(), address.getPort() - 1);
+        ParameterServerId psId = PSAgentContext.get().getLocationManager().getPsId(loc);
+        if(psId != null) {
+          getChannelContext(new PSLocation(psId, loc)).channelNotactive();
+        }
+
       } catch (Exception x) {
-        LOG.fatal("remove request failed ", x);
+        LOG.error("remove request failed ", x);
       }
     }
   }

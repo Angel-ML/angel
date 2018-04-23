@@ -164,7 +164,7 @@ public class ChannelManager {
     GenericObjectPool.Config poolConfig = new GenericObjectPool.Config();
     poolConfig.maxActive = active * 5;
     poolConfig.maxWait = 30000;
-    poolConfig.maxIdle = active * 5;
+    poolConfig.maxIdle = -1;
     poolConfig.minIdle = active;
     poolConfig.testOnBorrow = false;
     poolConfig.testOnReturn = false;
