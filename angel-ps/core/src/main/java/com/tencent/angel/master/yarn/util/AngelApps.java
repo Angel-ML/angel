@@ -86,9 +86,18 @@ public class AngelApps extends Apps {
       }
     }
 
-    for (String c : conf.getStrings(MRJobConfig.MAPREDUCE_APPLICATION_CLASSPATH,
+    // Add mr
+    String mrConf = conf.get(MRJobConfig.MAPREDUCE_APPLICATION_CLASSPATH);
+    LOG.info("mapreduce.application.classpath=" + mrConf);
+    if(mrConf == null || mrConf.isEmpty() || mrConf.trim().isEmpty()) {
+      for (String c : StringUtils.getStrings(MRJobConfig.DEFAULT_MAPREDUCE_APPLICATION_CLASSPATH)) {
+        Apps.addToEnvironment(environment, Environment.CLASSPATH.name(), c.trim());
+      }
+    } else {
+      for (String c : conf.getStrings(MRJobConfig.MAPREDUCE_APPLICATION_CLASSPATH,
         StringUtils.getStrings(MRJobConfig.DEFAULT_MAPREDUCE_APPLICATION_CLASSPATH))) {
-      Apps.addToEnvironment(environment, Environment.CLASSPATH.name(), c.trim());
+        Apps.addToEnvironment(environment, Environment.CLASSPATH.name(), c.trim());
+      }
     }
   }
 
