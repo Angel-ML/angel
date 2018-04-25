@@ -222,7 +222,7 @@ public class ServerMatrix {
     Vector<String> errorLogs = new Vector<>();
     PartitionDiskOp loadOp =
       new PartitionDiskOp(fs, matrixFilesPath, ACTION.LOAD, partitionIds, psMatrixFilesMeta, errorLogs, 0,
-        partitionIds.size(), getMaxFileInSingleFile(context.getConf()));
+        partitionIds.size(), getMaxFileInSingleFile(context.getConf()), false);
     context.getIOExecutors().execute(loadOp);
     loadOp.join();
     if (!errorLogs.isEmpty()) {
@@ -244,7 +244,7 @@ public class ServerMatrix {
     }
   }
 
-  public void save(MatrixMeta matrixMeta, List<Integer> partIds, Path outputPath) throws IOException {
+  public void save(MatrixMeta matrixMeta, List<Integer> partIds, Path outputPath, boolean cloneFirst) throws IOException {
     if(partIds == null || partIds.isEmpty()) {
       return;
     }
@@ -270,7 +270,7 @@ public class ServerMatrix {
 
     Vector<String> errorLogs = new Vector<>();
     PartitionDiskOp commitOp = new PartitionDiskOp(fs, matrixFilesPath, ACTION.SAVE, partIds,
-      psMatrixFilesMeta, errorLogs, 0, partIds.size(), getMaxFileInSingleFile(context.getConf()));
+      psMatrixFilesMeta, errorLogs, 0, partIds.size(), getMaxFileInSingleFile(context.getConf()),cloneFirst);
     context.getIOExecutors().execute(commitOp);
     commitOp.join();
     if(!errorLogs.isEmpty()) {
@@ -302,10 +302,11 @@ public class ServerMatrix {
     private final int endPos;
     private final ACTION action;
     private final int maxFileInSingleFile;
+    private final boolean cloneFirst;
 
     public PartitionDiskOp(FileSystem fs, Path matrixPath, ACTION action,
       List<Integer> partitionIds, PSModelFilesMeta serverMatrixMeta,
-      Vector<String> errorMsgs, int startPos, int endPos, int maxFileInSingleFile) {
+      Vector<String> errorMsgs, int startPos, int endPos, int maxFileInSingleFile, boolean cloneFirst) {
       this.fs = fs;
       this.matrixPath = matrixPath;
       this.action = action;
@@ -315,6 +316,7 @@ public class ServerMatrix {
       this.startPos = startPos;
       this.endPos = endPos;
       this.maxFileInSingleFile = maxFileInSingleFile;
+      this.cloneFirst = cloneFirst;
     }
 
     @Override protected void compute() {
@@ -324,7 +326,7 @@ public class ServerMatrix {
 
       if (endPos - startPos <= maxFileInSingleFile) {
         try {
-          process(matrixPath, fs, action, partitionIds, startPos, endPos, serverMatrixMeta);
+          process(matrixPath, fs, action, partitionIds, startPos, endPos, serverMatrixMeta, cloneFirst);
         } catch (Throwable x) {
           LOG.error(action + " model partitions failed.", x);
           errorMsgs.add(action + " model partitions failed." + x.getMessage());
@@ -333,10 +335,10 @@ public class ServerMatrix {
         int middle = (startPos + endPos) / 2;
         PartitionDiskOp opLeft =
           new PartitionDiskOp(fs, matrixPath, action, partitionIds, serverMatrixMeta, errorMsgs,
-            startPos, middle, maxFileInSingleFile);
+            startPos, middle, maxFileInSingleFile, cloneFirst);
         PartitionDiskOp opRight =
           new PartitionDiskOp(fs, matrixPath, action, partitionIds, serverMatrixMeta, errorMsgs,
-            middle, endPos, maxFileInSingleFile);
+            middle, endPos, maxFileInSingleFile, cloneFirst);
         invokeAll(opLeft, opRight);
       }
     }
@@ -344,10 +346,10 @@ public class ServerMatrix {
 
   private void process(Path matrixPath, FileSystem fs, ACTION action,
     List<Integer> partitionIds, int startPos, int endPos,
-    PSModelFilesMeta serverMatrixMeta) throws IOException {
+    PSModelFilesMeta serverMatrixMeta, boolean cloneFirst) throws IOException {
     switch (action) {
       case SAVE:
-        savePartitions(matrixPath, fs, partitionIds, startPos, endPos, serverMatrixMeta);
+        savePartitions(matrixPath, fs, partitionIds, startPos, endPos, serverMatrixMeta, cloneFirst);
         break;
 
       case LOAD:
@@ -361,7 +363,7 @@ public class ServerMatrix {
 
   private void savePartitions(Path matrixPath, FileSystem fs,
     List<Integer> partitionIds, int startPos, int endPos,
-    PSModelFilesMeta serverMatrixMeta) throws IOException {
+    PSModelFilesMeta serverMatrixMeta, boolean cloneFirst) throws IOException {
 
     Path destFile = new Path(matrixPath, ModelFilesUtils.fileName(context.getPs().getServerId(), partitionIds.get(startPos)));
     Path tmpDestFile = HdfsUtil.toTmpPath(destFile);
@@ -378,7 +380,7 @@ public class ServerMatrix {
       ModelPartitionMeta partMeta = new ModelPartitionMeta(partKey.getPartitionId(), partKey.getStartRow(),
         partKey.getEndRow(), partKey.getStartCol(), partKey.getEndCol(), partition.elementNum(),
         destFile.getName(), streamPos, 0);
-      partition.save(out, partMeta);
+      partition.save(out, partMeta, cloneFirst);
       partMeta.setLength(out.getPos() - streamPos);
       serverMatrixMeta.addPartitionMeta(partitionIds.get(i), partMeta);
     }
@@ -414,45 +416,6 @@ public class ServerMatrix {
 
     if(input != null) {
       input.close();
-    }
-  }
-
-  /**
-   * Read partitions of matrix from input
-   *
-   * @param input the input
-   * @throws IOException
-   */
-  public void readSnapshot(DataInputStream input) throws IOException {
-    int partitionNum = input.readInt();
-    LOG.info("partitionNum=" + partitionNum);
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("readFrom input, matrixId: " + matrixId + ", partitionNum: " + partitionNum);
-    }
-    for (int i = 0; i < partitionNum; i++) {
-      int partitionId = input.readInt();
-      LOG.debug("parse partitionId: " + partitionId);
-      partitionMaps.get(partitionId).load(input);
-    }
-  }
-
-  /**
-   * Write partitions of matrix to output
-   *
-   * @param output the output
-   * @throws IOException
-   */
-  public void writeSnapshot(DataOutputStream output) throws IOException {
-    output.writeInt(partitionMaps.size());
-    if (LOG.isDebugEnabled()) {
-      LOG.debug(
-        "writeTo output, matrixId: " + matrixId + ", martitionSize: " + partitionMaps.size());
-    }
-    for (Map.Entry<Integer, ServerPartition> entry : partitionMaps.entrySet()) {
-      LOG.debug("write partitionId: " + entry.getKey());
-      output.writeInt(entry.getKey());
-      ServerPartition serverPartition = entry.getValue();
-      serverPartition.save(output);
     }
   }
 }

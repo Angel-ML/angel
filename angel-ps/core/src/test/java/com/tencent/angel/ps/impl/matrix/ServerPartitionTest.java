@@ -187,7 +187,7 @@ public class ServerPartitionTest {
     buf.writeDouble(-7.00);
     buf.writeDouble(-8.00);
     serverPartition.getRow(6).update(RowType.T_DOUBLE_DENSE, buf);
-    serverPartition.save(out);
+    serverPartition.save(out,false);
     out.close();
     DataInputStream in = new DataInputStream(new FileInputStream("data"));
     PartitionKey partitionKeyNew = new PartitionKey(2, 1, 1, 2, 8, 10);
@@ -214,7 +214,7 @@ public class ServerPartitionTest {
   @Test
   public void testCommit() throws Exception {
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
-    serverPartition.save(out, new ModelPartitionMeta());
+    serverPartition.save(out, new ModelPartitionMeta(), false);
     out.close();
     DataInputStream in = new DataInputStream(new FileInputStream("data"));
     assertEquals(partitionKey.getEndRow() - partitionKey.getStartRow(), in.readInt());

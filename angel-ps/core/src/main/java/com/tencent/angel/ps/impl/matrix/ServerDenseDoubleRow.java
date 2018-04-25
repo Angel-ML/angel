@@ -154,10 +154,10 @@ public class ServerDenseDoubleRow extends ServerDoubleRow {
   }
 
   @Override
-  public void writeTo(DataOutputStream output) throws IOException {
+  public void writeTo(DataOutputStream output, boolean cloneFirst) throws IOException {
     try {
       //lock.readLock().lock();
-      super.writeTo(output);
+      super.writeTo(output, cloneFirst);
       output.write(dataBuffer, 0, dataBuffer.length);
     } finally {
       //lock.readLock().unlock();

@@ -18,6 +18,8 @@ package com.tencent.angel.ps.impl.matrix;
 
 import com.tencent.angel.ml.matrix.RowType;
 import io.netty.buffer.ByteBuf;
+import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
@@ -59,21 +61,36 @@ public class ServerSparseFloatRow extends ServerFloatRow {
     return data.get(index);
   }
 
-  @Override public void writeTo(DataOutputStream output) throws IOException {
-    try {
-      lock.readLock().lock();
-      super.writeTo(output);
-      output.writeInt(data.size());
-
-      ObjectIterator<Int2FloatMap.Entry> iter = data.int2FloatEntrySet().fastIterator();
-      Int2FloatMap.Entry entry = null;
-      while (iter.hasNext()) {
-        entry = iter.next();
-        output.writeInt(entry.getIntKey());
-        output.writeFloat(entry.getFloatValue());
+  @Override public void writeTo(DataOutputStream output, boolean cloneFirst) throws IOException {
+    if(cloneFirst) {
+      Int2FloatOpenHashMap clonedData;
+      try {
+        lock.readLock().lock();
+        super.writeTo(output, cloneFirst);
+        clonedData = data.clone();
+      } finally {
+        lock.readLock().unlock();
       }
-    } finally {
-      lock.readLock().unlock();
+      writeTo(output, clonedData);
+    } else {
+      try {
+        lock.readLock().lock();
+        super.writeTo(output, cloneFirst);
+        writeTo(output, data);
+      } finally {
+        lock.readLock().unlock();
+      }
+    }
+  }
+
+  private void writeTo(DataOutputStream output, Int2FloatOpenHashMap data) throws IOException {
+    output.writeInt(data.size());
+    ObjectIterator<Int2FloatMap.Entry> iter = data.int2FloatEntrySet().fastIterator();
+    Int2FloatMap.Entry entry;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      output.writeInt(entry.getIntKey());
+      output.writeFloat(entry.getFloatValue());
     }
   }
 

@@ -20,6 +20,7 @@ import com.tencent.angel.ml.matrix.RowType;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -55,21 +56,36 @@ public class ServerSparseDoubleRow extends ServerDoubleRow {
     this(0, 0, 0, 0);
   }
 
-  @Override public void writeTo(DataOutputStream output) throws IOException {
-    try {
-      lock.readLock().lock();
-      super.writeTo(output);
-      output.writeInt(data.size());
-
-      ObjectIterator<Int2DoubleMap.Entry> iter = data.int2DoubleEntrySet().fastIterator();
-      Int2DoubleMap.Entry entry = null;
-      while (iter.hasNext()) {
-        entry = iter.next();
-        output.writeInt(entry.getIntKey());
-        output.writeDouble(entry.getDoubleValue());
+  @Override public void writeTo(DataOutputStream output, boolean cloneFirst) throws IOException {
+    if(cloneFirst) {
+      Int2DoubleOpenHashMap clonedData;
+      try {
+        lock.readLock().lock();
+        super.writeTo(output, cloneFirst);
+        clonedData = data.clone();
+      } finally {
+        lock.readLock().unlock();
       }
-    } finally {
-      lock.readLock().unlock();
+      writeTo(output, clonedData);
+    } else {
+      try {
+        lock.readLock().lock();
+        super.writeTo(output, cloneFirst);
+        writeTo(output, data);
+      } finally {
+        lock.readLock().unlock();
+      }
+    }
+  }
+
+  private void writeTo(DataOutputStream output, Int2DoubleOpenHashMap data) throws IOException {
+    output.writeInt(data.size());
+    ObjectIterator<Int2DoubleMap.Entry> iter = data.int2DoubleEntrySet().fastIterator();
+    Int2DoubleMap.Entry entry;
+    while (iter.hasNext()) {
+      entry = iter.next();
+      output.writeInt(entry.getIntKey());
+      output.writeDouble(entry.getDoubleValue());
     }
   }
 

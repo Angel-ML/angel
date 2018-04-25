@@ -17,7 +17,6 @@
 package com.tencent.angel.ps.impl.matrix;
 
 import com.tencent.angel.ml.matrix.RowType;
-import com.tencent.angel.protobuf.generated.MLProtos;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.apache.commons.logging.Log;
@@ -109,7 +108,7 @@ public class ServerDenseIntRowTest {
     serverDenseIntRow.update(RowType.T_INT_DENSE, buf);
 
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
-    serverDenseIntRow.writeTo(out);
+    serverDenseIntRow.writeTo(out, false);
     out.close();
     DataInputStream in = new DataInputStream(new FileInputStream("data"));
     assertEquals(in.readInt(), 0, 0.00);
@@ -128,7 +127,7 @@ public class ServerDenseIntRowTest {
     serverDenseIntRow.update(RowType.T_INT_DENSE, buf);
 
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
-    serverDenseIntRow.writeTo(out);
+    serverDenseIntRow.writeTo(out, false);
     out.close();
     DataInputStream in = new DataInputStream(new FileInputStream("data"));
     ServerDenseIntRow newServerDenseIntRow = new ServerDenseIntRow(rowId, startCol, endCol);

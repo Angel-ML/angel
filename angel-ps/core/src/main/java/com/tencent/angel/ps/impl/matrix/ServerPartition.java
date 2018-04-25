@@ -138,9 +138,6 @@ public class ServerPartition implements Serialize {
       case T_INT_SPARSE_COMPONENT:
         return new ServerSparseIntRow(rowIndex, (int)startCol, (int)endCol, estEleNum);
 
-      case T_INT_ARBITRARY:
-        return new ServerArbitraryIntRow(rowIndex, (int)startCol, (int)endCol);
-
       case T_FLOAT_SPARSE:
       case T_FLOAT_SPARSE_COMPONENT:
         return  new ServerSparseFloatRow(rowIndex, (int)startCol, (int)endCol, estEleNum);
@@ -178,9 +175,6 @@ public class ServerPartition implements Serialize {
       case T_INT_SPARSE_COMPONENT:
         return new ServerSparseIntRow();
 
-      case T_INT_ARBITRARY:
-        return new ServerArbitraryIntRow();
-
       default:
         LOG.warn("invalid rowtype " + rowType + ", default is " + RowType.T_DOUBLE_DENSE);
         return new ServerDenseDoubleRow();
@@ -200,10 +194,11 @@ public class ServerPartition implements Serialize {
    * Save a matrix partition to file.
    *
    * @param output the output
+   * @param cloneFirst clone the row before saving
    * @throws IOException the io exception
    */
-  public void save(DataOutputStream output) throws IOException {
-    save(output, null);
+  public void save(DataOutputStream output, boolean cloneFirst) throws IOException {
+    save(output, null, cloneFirst);
   }
 
 
@@ -212,9 +207,10 @@ public class ServerPartition implements Serialize {
    *
    * @param output the output
    * @param partitionMeta the meta
+   * @param cloneFirst clone the row before saving
    * @throws IOException the io exception
    */
-  public void save(DataOutputStream output , ModelPartitionMeta partitionMeta) throws IOException {
+  public void save(DataOutputStream output , ModelPartitionMeta partitionMeta, boolean cloneFirst) throws IOException {
     FSDataOutputStream dataOutputStream = new FSDataOutputStream(output, null,
         partitionMeta != null ? partitionMeta.getOffset() : 0);
     dataOutputStream.writeInt(rows.size());
@@ -223,7 +219,7 @@ public class ServerPartition implements Serialize {
       offset = dataOutputStream.getPos();
       dataOutputStream.writeInt(entry.getKey());
       ServerRow row = entry.getValue();
-      row.writeTo(dataOutputStream);
+      row.writeTo(dataOutputStream, cloneFirst);
       if (partitionMeta != null) {
         partitionMeta.setRowMeta(new RowOffset(entry.getKey(), offset));
       }
@@ -385,7 +381,7 @@ public class ServerPartition implements Serialize {
       int rowNum = buf.readInt();
       int rowId;
       RowType rowType;
-      int size;
+
       for (int i = 0; i < rowNum; i++) {
         rowId = buf.readInt();
         rowType = RowType.valueOf(buf.readInt());

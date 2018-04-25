@@ -28,16 +28,6 @@ public class DefaultRowUpdater extends RowUpdater {
   private final static Log LOG = LogFactory.getLog(DefaultRowUpdater.class);
 
   @Override
-  public void updateIntDenseToIntArbitrary(ByteBuf buf, ServerArbitraryIntRow row) {
-    row.updateIntDense(buf);
-  }
-
-  @Override
-  public void updateIntSparseToIntArbitrary(ByteBuf buf, ServerArbitraryIntRow row) {
-    row.updateIntSparse(buf);
-  }
-
-  @Override
   public void updateIntDenseToIntDense(ByteBuf buf, ServerDenseIntRow row) {
     row.update(RowType.T_INT_DENSE, buf);
   }

@@ -119,23 +119,6 @@ public class MatrixStorageManager {
   }
 
   /**
-   * Write matrices to output
-   *
-   * @param output the output
-   * @throws IOException
-   */
-  public void writeSnapshot(DataOutputStream output) throws IOException {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("matrixMap size: " + matrixIdToDataMap.size());
-    }
-    output.writeInt(matrixIdToDataMap.size());
-    for (Map.Entry<Integer, ServerMatrix> entry : matrixIdToDataMap.entrySet()) {
-      output.writeInt(entry.getKey());
-      entry.getValue().writeSnapshot(output);
-    }
-  }
-
-  /**
    * Get a row split
    *
    * @param matrixId the matrix id
@@ -216,7 +199,7 @@ public class MatrixStorageManager {
     Vector<String> errorLogs = new Vector<>();
     try {
       MatrixDiskIOOp commitOp = new MatrixDiskIOOp(baseDir, ACTION.LOAD, errorLogs, matrixIds,
-        new HashMap<>(), 0, matrixIds.size());
+        new HashMap<>(), 0, matrixIds.size(), false);
       context.getIOExecutors().execute(commitOp);
       commitOp.join();
       if(!errorLogs.isEmpty()) {
@@ -231,9 +214,10 @@ public class MatrixStorageManager {
    * Save matrices to files
    * @param matrixIds matrix ids
    * @param baseDir base save directory
+   * @param cloneFirst clone the row first before saving
    * @throws IOException
    */
-  public void save(List<Integer> matrixIds, Path baseDir) throws IOException {
+  public void save(List<Integer> matrixIds, Path baseDir, boolean cloneFirst) throws IOException {
     if(matrixIds == null || matrixIds.isEmpty()) {
       LOG.info("there are no matrices need save");
       return;
@@ -244,15 +228,27 @@ public class MatrixStorageManager {
         context.getMatrixMetaManager().getMatrixMeta(matrixId).getPartitionMetas().keySet()));
     }
 
-    save(matrixPartitions, baseDir);
+    save(matrixPartitions, baseDir, cloneFirst);
+  }
+
+  /**
+   * Save matrices to files
+   * @param matrixIds matrix ids
+   * @param baseDir base save directory
+   * @throws IOException
+   */
+  public void save(List<Integer> matrixIds, Path baseDir) throws IOException {
+    save(matrixIds, baseDir, false);
   }
 
   /**
    * Save matrices to files
    * @param matrixPartitions matrix id -> need save partitions map
+   * @param baseDir save directory
+   * @param cloneFirst clone the row first before saving
    * @throws IOException
    */
-  public void save(Map<Integer, List<Integer>> matrixPartitions, Path baseDir) throws IOException {
+  public void save(Map<Integer, List<Integer>> matrixPartitions, Path baseDir, boolean cloneFirst) throws IOException {
     if(matrixPartitions == null || matrixPartitions.isEmpty()) {
       LOG.info("there are no matrices need save");
       return;
@@ -267,7 +263,7 @@ public class MatrixStorageManager {
     List<Integer> matrixIds = new ArrayList<>(matrixPartitions.keySet());
     Vector<String> errorLogs = new Vector<>();
     try {
-      MatrixDiskIOOp commitOp = new MatrixDiskIOOp(baseDir, ACTION.SAVE, errorLogs, matrixIds, matrixPartitions, 0, matrixIds.size());
+      MatrixDiskIOOp commitOp = new MatrixDiskIOOp(baseDir, ACTION.SAVE, errorLogs, matrixIds, matrixPartitions, 0, matrixIds.size(), cloneFirst);
       context.getIOExecutors().execute(commitOp);
       commitOp.join();
       if(!errorLogs.isEmpty()) {
@@ -278,6 +274,15 @@ public class MatrixStorageManager {
     }
 
     return;
+  }
+
+  /**
+   * Save matrices to files
+   * @param matrixPartitions matrix id -> need save partitions map
+   * @throws IOException
+   */
+  public void save(Map<Integer, List<Integer>> matrixPartitions, Path baseDir) throws IOException {
+    save(matrixPartitions, baseDir, false);
   }
 
   private String getMatrixNames(Collection<Integer> matrixIds) {
@@ -317,9 +322,10 @@ public class MatrixStorageManager {
     private final Map<Integer, List<Integer>> matrixPartitions;
     private final int startPos;
     private final int endPos;
+    private final boolean cloneFirst;
 
     public MatrixDiskIOOp(Path path, ACTION action, Vector<String> errorLogs,
-      List<Integer> matrixIds, Map<Integer, List<Integer>> matrixPartitions, int start, int end) {
+      List<Integer> matrixIds, Map<Integer, List<Integer>> matrixPartitions, int start, int end, boolean cloneFirst) {
       this.path = path;
       this.action = action;
       this.errorLogs = errorLogs;
@@ -327,6 +333,7 @@ public class MatrixStorageManager {
       this.matrixPartitions = matrixPartitions;
       this.startPos = start;
       this.endPos = end;
+      this.cloneFirst = cloneFirst;
     }
 
     @Override protected void compute() {
@@ -336,7 +343,7 @@ public class MatrixStorageManager {
 
       if (endPos - startPos == 1) {
         try {
-          process(path, matrixIds.get(startPos), matrixPartitions.get(matrixIds.get(startPos)), action);
+          process(path, matrixIds.get(startPos), matrixPartitions.get(matrixIds.get(startPos)), action, cloneFirst);
         } catch (Throwable e) {
           String errorLog = "commit matrix " + matrixIdToDataMap.get(matrixIds.get(startPos)).getName() + " failed " + e.getMessage();
           LOG.error(errorLog, e);
@@ -344,14 +351,14 @@ public class MatrixStorageManager {
         }
       } else {
         int middle = (startPos + endPos) / 2;
-        MatrixDiskIOOp opLeft = new MatrixDiskIOOp(path, action, errorLogs, matrixIds, matrixPartitions, startPos, middle);
-        MatrixDiskIOOp opRight = new MatrixDiskIOOp( path, action, errorLogs, matrixIds, matrixPartitions, middle, endPos);
+        MatrixDiskIOOp opLeft = new MatrixDiskIOOp(path, action, errorLogs, matrixIds, matrixPartitions, startPos, middle, cloneFirst);
+        MatrixDiskIOOp opRight = new MatrixDiskIOOp( path, action, errorLogs, matrixIds, matrixPartitions, middle, endPos, cloneFirst);
         invokeAll(opLeft, opRight);
       }
     }
   }
 
-  private void process(Path path, int matrixId, List<Integer> partIds, ACTION action)
+  private void process(Path path, int matrixId, List<Integer> partIds, ACTION action, boolean cloneFirst)
     throws IOException {
     switch (action) {
       case LOAD:{
@@ -360,7 +367,7 @@ public class MatrixStorageManager {
       }
 
       case SAVE:{
-        saveMatrix(path, matrixId, partIds);
+        saveMatrix(path, matrixId, partIds, cloneFirst);
         break;
       }
     }
@@ -388,10 +395,10 @@ public class MatrixStorageManager {
     }
   }
 
-  private void saveMatrix(Path outputPath, int matrixId, List<Integer> partIds) throws IOException {
+  private void saveMatrix(Path outputPath, int matrixId, List<Integer> partIds, boolean cloneFirst) throws IOException {
     ServerMatrix matrix = matrixIdToDataMap.get(matrixId);
     if(matrix != null) {
-      matrix.save(context.getMatrixMetaManager().getMatrixMeta(matrixId), partIds, outputPath);
+      matrix.save(context.getMatrixMetaManager().getMatrixMeta(matrixId), partIds, outputPath, cloneFirst);
     }
   }
 }

@@ -160,10 +160,21 @@ public abstract class ServerRow implements Serialize {
    * Write row to output
    *
    * @param output the output
+   * @param cloneFirst
+   * @throws IOException
+   */
+  protected void writeTo(DataOutputStream output, boolean cloneFirst) throws IOException{
+    //output.writeInt(clock);
+  }
+
+  /**
+   * Write row to output
+   *
+   * @param output the output
    * @throws IOException
    */
   protected void writeTo(DataOutputStream output) throws IOException{
-    //output.writeInt(clock);
+    writeTo(output, false);
   }
 
   /**

@@ -63,9 +63,9 @@ public class PSFTestTask extends BaseTask<Long, Long, Long> {
           func = new LongIndexGetFunc(new LongIndexGetParam(client.getMatrixId(), 0, indexes));
         TVector row = ((GetRowResult) client.get(func)).getRow();
         pullTime += (System.currentTimeMillis() - startTs);
-        if(time % 1000 == 0) {
+        if(time % 100 == 0) {
           LOG.info("Task " + taskContext.getTaskId() + " in iteration " + taskContext.getEpoch()
-            + " pull use time=" + (pullTime / 1000) + ", sum of row 0=" + sum((SparseLongKeyDoubleVector)row));
+            + " pull use time=" + (pullTime / 100) + ", sum of row 0=" + sum((SparseLongKeyDoubleVector)row));
           pullTime = 0;
         }
 
@@ -82,7 +82,7 @@ public class PSFTestTask extends BaseTask<Long, Long, Long> {
         client.clock().get();
         pushTime += (System.currentTimeMillis() - startTs);
 
-        if(time % 1000 == 0) {
+        if(time % 100 == 0) {
           LOG.info("Task " + taskContext.getTaskId() + " in iteration " + taskContext.getEpoch()
             + " push use time=" + (pushTime / 1000));
           pushTime = 0;

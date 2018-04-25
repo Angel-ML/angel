@@ -17,7 +17,6 @@
 package com.tencent.angel.ps.impl.matrix;
 
 import com.tencent.angel.ml.matrix.RowType;
-import com.tencent.angel.protobuf.generated.MLProtos;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
@@ -67,7 +66,7 @@ public class ServerSparseDoubleRowTest {
     buf.writeDouble(2.00);
     serverSparseDoubleRow.update(RowType.T_DOUBLE_DENSE, buf);
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
-    serverSparseDoubleRow.writeTo(out);
+    serverSparseDoubleRow.writeTo(out, false);
     out.close();
     DataInputStream in = new DataInputStream(new FileInputStream("data"));
     assertEquals(in.readInt(), 3);

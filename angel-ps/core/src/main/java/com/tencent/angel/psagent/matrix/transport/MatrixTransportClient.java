@@ -1112,6 +1112,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       getDataSplit();
       if (LOG.isDebugEnabled() && (tickClock % 100 == 0)) {
         printDispatchInfo();
+        //channelManager.printPools();
       }
     }
 
