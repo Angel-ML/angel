@@ -108,8 +108,19 @@ public class MatrixClockCache {
    * @return int minimal clock of the given row
    */
   public int getClock(int rowIndex) {
-    List<PartitionKey> parts =
-        PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId, rowIndex);
+    return getMinClock(PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId, rowIndex));
+  }
+
+  /**
+   * Get minimal clock of all partitions of matrix
+   *
+   * @return int minimal clock of all partitions of matrix
+   */
+  public int getClock() {
+    return getMinClock(PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId));
+  }
+
+  private int getMinClock(List<PartitionKey> parts) {
     int size = parts.size();
     int clock = Integer.MAX_VALUE;
     for (int i = 0; i < size; i++) {

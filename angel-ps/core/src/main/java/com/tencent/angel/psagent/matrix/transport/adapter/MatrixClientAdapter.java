@@ -154,11 +154,6 @@ public class MatrixClientAdapter {
     LOG.debug("start to getRow request, matrix=" + matrixId + ", rowIndex=" + rowIndex + ", clock="
       + clock);
     long startTs = System.currentTimeMillis();
-    // Wait until the clock value of this row is greater than or equal to the value
-    PSAgentContext.get().getConsistencyController().waitForClock(matrixId, rowIndex, clock);
-    LOG.debug("getRow wait clock time=" + (System.currentTimeMillis() - startTs));
-
-    startTs = System.currentTimeMillis();
     // Get partitions for this row
     List<PartitionKey> partList =
       PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId, rowIndex);
