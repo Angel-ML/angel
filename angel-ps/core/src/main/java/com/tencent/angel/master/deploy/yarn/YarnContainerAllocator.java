@@ -810,6 +810,9 @@ public class YarnContainerAllocator extends ContainerAllocator {
     while (it.hasNext()) {
       Container allocated = it.next();
       Map<Id, ContainerRequest> idToRequestMap = idToRequestMaps.get(allocated.getPriority());
+      if(idToRequestMap == null || idToRequestMap.isEmpty()) {
+        continue;
+      }
       Id tId = idToRequestMap.keySet().iterator().next();
       ContainerRequest assigned = idToRequestMap.remove(tId);
       containerAssigned(allocated, assigned);
