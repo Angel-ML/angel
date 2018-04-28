@@ -18,14 +18,17 @@ package com.tencent.angel.spark.ml.online_learning
 
 import java.util.Random
 
-import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.linalg.SparseVector
-import com.tencent.angel.spark.ml.util.{ActionType, ArgsUtil, Infor2HDFS, ParamKeys}
-import com.tencent.angel.spark.models.vector.{PSVector, SparsePSVector}
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.streaming.dstream.DStream
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
+
+import com.tencent.angel.spark.context.PSContext
+import com.tencent.angel.spark.linalg.{BLAS, OneHotVector, SparseVector, Vector}
+import com.tencent.angel.spark.ml.classification.SparseLRModel
+import com.tencent.angel.spark.ml.optimize.{FTRL, FTRLWithVRG}
+import com.tencent.angel.spark.ml.util._
+import com.tencent.angel.spark.models.vector.{PSVector, SparsePSVector}
 
 /**
   * this module is to run sparse lr with ftrl or ftrl_vrg,
@@ -49,16 +52,15 @@ object FTRLRunner {
   val ZK_QUORUM = "zkQuorum"
   val TOPIC = "topic"
   val GROUP = "group"
-  val TID = "tid"
 
   // decide the way of optimize between ftrl and ftrl_vrg
   val OPT_METHOD = "optMethod"
   val FTRL = "ftrl"
   val FTRL_VRG = "ftrlVRG"
-  val BATCH2_CHECK = "batch2Check"
   val BATCH2_SAVE = "batch2Save"
+  val IS_ONE_HOT = "isOneHot"
 
-  val MODEL_SAVE_PATH = "modelSavePath"
+  val MODEL_PATH = "modelPath"
   val RECEIVER_NUM = "receiverNum"
   val STREAMING_WINDOW = "streamingWindow"
   val LOG_PATH = "logPath"
@@ -72,7 +74,6 @@ object FTRLRunner {
   def main(args: Array[String]): Unit = {
 
     val params = ArgsUtil.parse(args)
-    val actionType = params.getOrElse(ParamKeys.ACTION_TYPE, ActionType.TRAIN)
     val alpha = params.getOrElse(ALPHA, "1.0").toDouble
     val beta = params.getOrElse(BETA, "1.0").toDouble
     val lambda1 = params.getOrElse(LAMBDA1, "1.0").toDouble
@@ -82,139 +83,87 @@ object FTRLRunner {
     val dim = params.getOrElse("dim", "11").toLong
     val partitionNum = params.getOrElse(ParamKeys.PARTITION_NUM, "3").toInt
     val streamingWindow = params.getOrElse(STREAMING_WINDOW, "60").toInt
-    val modelSavePath = params.getOrElse(MODEL_SAVE_PATH, null)
+    val modelPath = params.getOrElse(MODEL_PATH, null)
     val logPath = params.getOrElse(LOG_PATH, null)
     val checkPointPath = params.getOrElse(CHECK_POINT_PATH, null)
     val zkQuorum = params.getOrElse(ZK_QUORUM, null)
     val topic = params.getOrElse(TOPIC, null)
     val group = params.getOrElse(GROUP, null)
-    val tid = params.getOrElse(TID, null)
     val optMethod = params.getOrElse(OPT_METHOD, FTRL)
-    val input = params.getOrElse(ParamKeys.INPUT, null)
-    val output = params.getOrElse(ParamKeys.OUTPUT, null)
-    val sampleRate = params.getOrElse(ParamKeys.SAMPLE_RATE, "1.0").toDouble
     val isIncrementLearn = params.getOrElse(IS_INCREMENT_LEARN, "false").toBoolean
-    val batch2Check = params.getOrElse(BATCH2_CHECK, "0").toInt
+    val isOneHot = params.getOrElse(IS_ONE_HOT, "true").toBoolean
     val batch2Save = params.getOrElse(BATCH2_SAVE, "10").toInt
     val receiverNum = params.getOrElse(RECEIVER_NUM, "4").toInt
 
-    if (actionType == ActionType.TRAIN) {
-      val sparkConf = new SparkConf().setAppName("SparseLRFTRL")
-      val ssc = new StreamingContext(sparkConf, Seconds(streamingWindow))
-      ssc.checkpoint(checkPointPath)
-      // should not ignored
-      val sc = ssc.sparkContext
-      PSContext.getOrCreate(sc)
+    val sparkConf = new SparkConf().setAppName("SparseLRFTRL")
+    val ssc = new StreamingContext(sparkConf, Seconds(streamingWindow))
+    ssc.checkpoint(checkPointPath)
+    // should not ignored
+    val sc = ssc.sparkContext
+    PSContext.getOrCreate(sc)
 
-      // for kafka mode
-      val topicMap: Map[String, Int] = Map(topic -> receiverNum)
-      val featureDS = KafkaUtils.createStream(ssc, zkQuorum, group, topicMap).map(_._2)
+    // for kafka mode
+    val topicMap: Map[String, Int] = Map(topic -> receiverNum)
+    val featureDS = KafkaUtils.createStream(ssc, zkQuorum, group, topicMap).map(_._2)
 
-      // init the log path
-      Infor2HDFS.initLogPath(ssc, logPath)
+    // init the log path
+    Infor2HDFS.initLogPath(ssc, logPath)
 
-      optMethod match {
-        case FTRL =>
+    optMethod match {
+      case FTRL =>
+        val zPS: SparsePSVector = PSVector.sparse(dim)
+        val nPS: SparsePSVector = PSVector.duplicate(zPS)
+        // init the model
+        if (isIncrementLearn) {
+          println("this is increment learning")
+          val ZNModel = incLearnZNModel(sc, modelPath)
+          zPS.increment(new SparseVector(dim, ZNModel._1))
+          nPS.increment(new SparseVector(dim, ZNModel._2))
+        }
 
-          val zPS: SparsePSVector = PSVector.sparse(dim)
-          val nPS: SparsePSVector = PSVector.sparse(dim)
-          // init the model
-          if(isIncrementLearn){
-            println("this is increment learning")
-            val ZNModel = incLearnZNModel(sc, modelSavePath)
-            zPS.increment(new SparseVector(dim, ZNModel._1))
-            nPS.increment(new SparseVector(dim, ZNModel._2))
-          }
+        val ftrl = new FTRL(lambda1, lambda2, alpha, beta)
+        ftrl.initPSModel(dim)
 
-          FTRLLearner.train(
-            zPS,
-            nPS,
-            featureDS,
-            dim,
-            alpha,
-            beta,
-            lambda1,
-            lambda2,
-            partitionNum,
-            modelSavePath,
-            batch2Check,
-            batch2Save)
+        train(ftrl, featureDS, dim, partitionNum, modelPath, batch2Save, isOneHot)
 
-        case FTRL_VRG =>
+      case FTRL_VRG =>
 
-          val zPS: SparsePSVector = PSVector.sparse(dim)
-          val nPS: SparsePSVector = PSVector.sparse(dim)
-          val vPS: SparsePSVector = PSVector.sparse(dim)
-          var initW: Map[Long, Double] = Map()
+        val zPS: SparsePSVector = PSVector.sparse(dim)
+        val nPS: SparsePSVector = PSVector.duplicate(zPS)
+        val vPS: SparsePSVector = PSVector.duplicate(zPS)
+        var initW: SparseVector = null
 
-          // increment learn from original model or just init the w and z model
-          if(isIncrementLearn){
-            println("this is increment learning")
-            val ZNVWModel = incLearnZNVWModel(sc, modelSavePath)
-            zPS.increment(new SparseVector(dim, ZNVWModel._1))
-            nPS.increment(new SparseVector(dim, ZNVWModel._2))
-            vPS.increment(new SparseVector(dim, ZNVWModel._3))
+        // increment learn from original model or just init the w and z model
+        if (isIncrementLearn) {
+          println("this is increment learning")
+          val ZNVWModel = incLearnZNVWModel(sc, modelPath)
+          zPS.increment(new SparseVector(dim, ZNVWModel._1))
+          nPS.increment(new SparseVector(dim, ZNVWModel._2))
+          vPS.increment(new SparseVector(dim, ZNVWModel._3))
 
-            initW = ZNVWModel._4.toMap
+          initW = new SparseVector(dim, ZNVWModel._4)
 
-          }else{
-            // randomly initialize the w and z model
-            initW = randomInit(dim)
-            val initZInc = randomInit(dim).toArray
+        } else {
+          // randomly initialize the w and z model
+          val randomW = randomInit(dim).toArray
+          val initZInc = randomInit(dim).toArray
 
-            println("random w is:" + initW.mkString(SPACE_SPLITER))
-            println("random z is:" + initZInc.mkString(SPACE_SPLITER))
+          println("random w is:" + randomW.mkString(SPACE_SPLITER))
+          println("random z is:" + initZInc.mkString(SPACE_SPLITER))
 
-            zPS.increment(new SparseVector(dim, initZInc))
-          }
+          initW = new SparseVector(dim, randomW)
+          zPS.increment(new SparseVector(dim, initZInc))
+        }
 
-          FTRLLearner.train(
-            zPS,
-            nPS,
-            vPS,
-            initW,
-            featureDS,
-            dim,
-            alpha,
-            beta,
-            lambda1,
-            lambda2,
-            rho1,
-            rho2,
-            partitionNum,
-            modelSavePath,
-            batch2Check,
-            batch2Save)
+        val ftrlVRG = new FTRLWithVRG(lambda1, lambda2, alpha, beta, rho1, rho2)
+        ftrlVRG.initPSModel(dim)
+
+        train(ftrlVRG, initW, featureDS, dim, partitionNum, modelPath, batch2Save, isOneHot)
       }
       // start to create the job
       ssc.start()
       // await for application stop
       ssc.awaitTermination()
-    } else {
-      val sparkConf = new SparkConf().setAppName("SparseFTRLTest")
-      val sc = SparkContext.getOrCreate(sparkConf)
-
-      // parse the model of z and n
-      val modelLocal = sc.textFile(modelSavePath).collect()
-      val wModel = sparseModel(modelLocal, W)
-      val parseRDD = sc.textFile(input)
-        .sample(false, sampleRate)
-        .repartition(partitionNum)
-        .map(line => line.trim)
-        .filter(_.nonEmpty)
-        .map { dataStr =>
-          val labelFeature = dataStr.split(SPACE_SPLITER)
-          val feature = labelFeature.tail
-          val featureIdVal = feature.map { idVal =>
-            val idValArr = idVal.split(":")
-            (idValArr(0).toLong, idValArr(1).toDouble)
-          }
-          Array(dataStr, FTRLLearner.predictInstance(featureIdVal, wModel.toMap).toString)
-        }
-
-      // save the predict rdd
-      FTRLLearner.save(parseRDD, output)
-    }
   }
 
   // parse the z and n model
@@ -272,27 +221,154 @@ object FTRLRunner {
     resultRandom.filter(x => x._1 > 0)
   }
 
-  def runSpark(name: String)(body: SparkContext => Unit): Unit = {
-    println("this is in run spark")
-    val conf = new SparkConf
-    val master = conf.getOption("spark.master")
-    val isLocalTest = if (master.isEmpty || master.get.toLowerCase.startsWith("local")) true else false
-    val sparkBuilder = SparkSession.builder().appName(name)
-    if (isLocalTest) {
-      sparkBuilder.master("local")
-        .config("spark.ps.mode", "LOCAL")
-        .config("spark.ps.jars", "")
-        .config("spark.ps.instances", "1")
-        .config("spark.ps.cores", "1")
+  // train by ftrl
+  def train(ftrl: FTRL,
+            featureDS: DStream[String],
+            dim: Long,
+            partitionNum: Int,
+            modelPath: String,
+            batch2Save: Int,
+            isOneHot: Boolean) = {
+
+    var numBatch = 0
+    featureDS.foreachRDD { labelFeatRdd =>
+
+      numBatch += 1
+      var is2Save = false
+      if(batch2Save != 0 && numBatch % batch2Save == 0 ){
+        is2Save = true
+      }
+
+      val aveLossRdd = labelFeatRdd.repartition(partitionNum)
+        .mapPartitions{ dataIter =>
+          val dataCollects = dataIter.toArray
+
+          if(dataCollects.length != 0){
+            val dataVector = dataCollects.map(x => parseData(x, dim, isOneHot))
+            val batchAveLoss = ftrl.optimize(dataVector, calcGradientLoss)
+            Iterator(batchAveLoss)
+          }else{
+            Iterator()
+          }
+        }
+
+      val globalAveLoss = aveLossRdd.collect
+
+      // save the information to hdfs for persistence
+      if(globalAveLoss.length != 0){
+
+        val globalLoss = globalAveLoss.sum / globalAveLoss.length
+
+        println("the current average loss is:" + globalLoss)
+        Infor2HDFS.saveLog2HDFS(globalLoss.toString)
+      }
+
+      if(is2Save){
+        val wModel = SparseLRModel(ftrl.weight)
+        println(s"batch: $numBatch model info: ${wModel.simpleInfo}")
+        wModel.save(modelPath)
+      }
     }
-    val sc = sparkBuilder.getOrCreate().sparkContext
-    body(sc)
-    val wait = sys.props.get("spark.local.wait").exists(_.toBoolean)
-    if (isLocalTest && wait) {
-      println("press Enter to exit!")
-      Console.in.read()
+  }
+
+  // train by ftrl_VRG
+  def train(ftrlVRG: FTRLWithVRG,
+            initW: SparseVector,
+            featureDS: DStream[String],
+            dim: Long,
+            partitionNum: Int,
+            modelPath: String,
+            batch2Save: Int,
+            isOneHot: Boolean) = {
+
+    var localW = initW
+    var numBatch = 0
+    featureDS.foreachRDD { labelFeatRdd =>
+
+      numBatch += 1
+      var is2Save = false
+      if(batch2Save != 0 && numBatch % batch2Save == 0 ){
+        is2Save = true
+      }
+
+      val aveLossRdd = labelFeatRdd.repartition(partitionNum)
+        .mapPartitions{ dataIter =>
+
+          val dataCollects = dataIter.toArray
+          if(dataCollects.length != 0){
+
+            val dataVector = dataCollects.map(x => parseData(x, dim, isOneHot))
+            val wAndLoss = ftrlVRG.optimize(dataVector, localW, calcGradientLoss)
+            localW = wAndLoss._1
+
+            Iterator(wAndLoss._2)
+          }else{
+            Iterator()
+          }
+        }
+
+      val globalAveLoss = aveLossRdd.collect
+
+      if(globalAveLoss.length != 0){
+
+        val globalLoss = globalAveLoss.sum / globalAveLoss.length
+
+        println("the current average loss is:" + globalLoss)
+        Infor2HDFS.saveLog2HDFS(globalLoss.toString)
+      }
+
+      if(is2Save){
+        val wModel = SparseLRModel(ftrlVRG.weight)
+        println(s"batch: $numBatch model info: ${wModel.simpleInfo}")
+        wModel.save(modelPath)
+      }
     }
-    sc.stop()
+  }
+
+  def parseData(dataStr: String, dim: Long, isOneHot: Boolean): (Vector, Double) = {
+
+    if(!isOneHot) {
+
+      // SparseVector
+      val (feature, label) = DataLoader.transform2Sparse(dataStr)
+      val featAddInter =  Array((0L, 1.0)) ++ feature
+      val featV: Vector = new SparseVector(dim.toLong, featAddInter)
+
+      (featV, label)
+    } else {
+      // OneHotVector
+      val (feature, label) = DataLoader.transform2OneHot(dataStr)
+      val featAddInter = 0L +: feature
+      val featV: Vector = new OneHotVector(dim.toLong, featAddInter)
+
+      (featV, label)
+    }
+
+  }
+
+  private def calcLoss(w: SparseVector, label: Double, feature: Vector): Double = {
+    val margin = -1 * BLAS.dot(w, feature)
+    val loss = if (label > 0) {
+      math.log1p(math.exp(margin))
+    } else {
+      math.log1p(math.exp(margin)) - margin
+    }
+    loss
+  }
+
+  private def calcGradientLoss(w: SparseVector, label: Double, feature: Vector): (SparseVector, Double) = {
+    val margin = -1 * BLAS.dot(w, feature)
+    val gradientMultiplier = 1.0 / (1.0 + math.exp(margin)) - label
+    val grad = new SparseVector(w.length)
+    BLAS.axpy(gradientMultiplier, feature, grad)
+
+    val loss = if (label > 0) {
+      math.log1p(math.exp(margin))
+    } else {
+      math.log1p(math.exp(margin)) - margin
+    }
+
+    (grad, loss)
   }
 
 }
