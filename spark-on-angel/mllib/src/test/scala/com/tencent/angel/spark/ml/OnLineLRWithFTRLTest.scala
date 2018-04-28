@@ -2,23 +2,35 @@ package com.tencent.angel.spark.ml
 
 import java.util.Random
 
-import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.linalg.SparseVector
-import com.tencent.angel.spark.ml.online_learning.FTRLLearner
-import com.tencent.angel.spark.models.vector.{PSVector, SparsePSVector}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.streaming.dstream.DStream
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
 
-object SparseLRFTRLTest {
+import com.tencent.angel.spark.context.PSContext
+import com.tencent.angel.spark.linalg.SparseVector
+import com.tencent.angel.spark.ml.online_learning.FTRLRunner
+import com.tencent.angel.spark.ml.optimize.FTRLWithVRG
+import com.tencent.angel.spark.ml.util.Infor2HDFS
+
+object OnLineLRWithFTRLTest {
 
   def main(args: Array[String]): Unit = {
 
-    val topic = "ftrltopic"
+    val topic = "20180428"
     val zkQuorum = "localhost:2181"
     val group = "ftrltest"
+    val lambda1 = 0.1
+    val lambda2 = 0.2
+    val alpha = 0.1
+    val beta = 1.0
+    val rho1 = 0.1
+    val rho2 = 0.1
+    val dim = 5
+    val partitionNum = 1
+    val modelSavePath = "./spark-on-angel/mllib/src/test/data/model_path"
+    val logPath = "./spark-on-angel/mllib/src/test/data/log_path"
+    val batch2Save = 10
 
     val sparkConf = new SparkConf().setMaster("local[2]").setAppName("FTRLTest")
     val ssc = new StreamingContext(sparkConf, Seconds(10))
@@ -27,84 +39,24 @@ object SparseLRFTRLTest {
     val topicMap: Map[String, Int] = Map(topic -> 1)
     val featureDS = KafkaUtils.createStream(ssc, zkQuorum, group, topicMap).map(_._2)
 
+    Infor2HDFS.initLogPath(ssc, logPath)
+
     runSpark(this.getClass.getSimpleName) { sc =>
       PSContext.getOrCreate(sc)
-      execute(ssc,featureDS, 11, 0.1, 1.0, 0.1, 0.1, 2, null, 0, 0, topic, zkQuorum, group, 0.3, 0.3, "ftrl")
-    }
+      val ftrlVRG = new FTRLWithVRG(lambda1, lambda2, alpha, beta, rho1, rho2)
+      ftrlVRG.initPSModel(dim)
 
-  }
+      featureDS.print()
 
-  def execute(ssc: StreamingContext,
-              featureDS: DStream[String],
-              dim: Long,
-              alpha: Double,
-              beta: Double,
-              lambda1: Double,
-              lambda2: Double,
-              partitionNum: Int,
-              modelSavePath: String,
-              batch2Check: Int,
-              batch2Save: Int,
-              topic: String,
-              zkQuorum: String,
-              group: String,
-              rho1: Double,
-              rho2: Double,
-              method: String
-             ) = {
-
-    featureDS.print()
-
-    if(method == "ftrl"){
-      val zPS: SparsePSVector = PSVector.sparse(dim)
-      val nPS: SparsePSVector = PSVector.sparse(dim)
-      FTRLLearner.train(
-        zPS,
-        nPS,
-        featureDS,
-        dim,
-        alpha,
-        beta,
-        lambda1,
-        lambda2,
-        partitionNum,
-        modelSavePath,
-        batch2Check,
-        batch2Save)
-    } else{
-      val zPS: SparsePSVector = PSVector.sparse(dim)
-      val nPS: SparsePSVector = PSVector.sparse(dim)
-      val vPS: SparsePSVector = PSVector.sparse(dim)
-
-      val initW = randomInit(dim)
-      val initZInc = randomInit(dim).toArray
-
-      println("random w is:" + initW.mkString(" "))
-      println("random z is:" + initZInc.mkString(" "))
-
-      zPS.increment(new SparseVector(dim, initZInc))
-
-      FTRLLearner.train(zPS,
-        nPS,
-        vPS,
-        initW,
-        featureDS,
-        dim,
-        alpha,
-        beta,
-        lambda1,
-        lambda2,
-        rho1,
-        rho2,
-        partitionNum,
-        modelSavePath,
-        batch2Check,
-        batch2Save)
+      val initW = new SparseVector(dim, Array((1l, 0.1), (2l, 0.2)))
+      FTRLRunner.train(ftrlVRG, initW, featureDS, dim, partitionNum, modelSavePath, batch2Save, true)
+      // start to create the job
+      ssc.start()
+      // await for application stop
+      ssc.awaitTermination()
 
     }
 
-    ssc.start()
-    ssc.awaitTermination()
   }
 
 
