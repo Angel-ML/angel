@@ -16,6 +16,7 @@
  */
 package com.tencent.angel.ml.GBDT.algo;
 
+import com.tencent.angel.ml.GBDT.algo.RegTree.GradHistHelper;
 import com.tencent.angel.ml.conf.MLConf;
 import com.tencent.angel.ml.math.vector.DenseDoubleVector;
 import com.tencent.angel.ml.matrix.psf.update.enhance.CompressUpdateFunc;
@@ -23,39 +24,32 @@ import com.tencent.angel.ml.model.PSModel;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public class GradHistThread implements Runnable {
+import java.util.concurrent.Callable;
 
-  private static final Log LOG = LogFactory.getLog(GradHistThread.class);
+public class HistSubtractionThread implements Callable<DenseDoubleVector> {
 
-  private final PSModel model;
+  private static final Log LOG = LogFactory.getLog(HistSubtractionThread.class);
+
+  private final GBDTController controller;
   private final int nid;
-  private final DenseDoubleVector histogram;
-  private int bytesPerItem;
+  private final int bytesPerItem;
 
-  public GradHistThread(PSModel model, int nid, DenseDoubleVector histogram, int bytesPerItem) {
-    this.model = model;
+  public HistSubtractionThread(GBDTController controller, int nid, int bytesPerItem) {
+    this.controller = controller;
     this.nid = nid;
-    this.histogram = histogram;
     this.bytesPerItem = bytesPerItem;
   }
 
-  @Override public void run() {
-    LOG.debug(String.format("Run active node[%d]", this.nid));
-    if (bytesPerItem < 1 || bytesPerItem > 8) {
-      LOG.info("Invalid compress configuration: " + bytesPerItem + ", it should be [1,8].");
-      bytesPerItem = MLConf.DEFAULT_ANGEL_COMPRESS_BYTES();
-    }
-    try {
-      if (bytesPerItem == 8) {
-        this.model.increment(0, histogram);
-      } else {
-        CompressUpdateFunc func =
-          new CompressUpdateFunc(this.model.getMatrixId(), 0, histogram, bytesPerItem * 8);
-        this.model.update(func);
-      }
-    } catch (Exception e) {
-      LOG.error(model.modelName() + " increment failed, ", e);
-    }
+  @Override public DenseDoubleVector call() {
+    LOG.debug(String.format("Subtract active node[%d]", this.nid));
+
+    String histParaName = controller.param.gradHistNamePrefix + nid;
+    PSModel model = controller.model.getPSModel(histParaName);
+
+    GradHistHelper histMaker = new GradHistHelper(controller, nid);
+    DenseDoubleVector result = histMaker.subtractHistogram();
+    histMaker.pushHistogram(model, result, bytesPerItem);
     LOG.debug(String.format("Active node[%d] finish", this.nid));
+    return result;
   }
 }

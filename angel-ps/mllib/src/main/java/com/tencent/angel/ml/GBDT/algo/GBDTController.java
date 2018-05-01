@@ -41,6 +41,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class GBDTController {
 
@@ -69,7 +70,7 @@ public class GBDTController {
   public Map<Integer, Integer> cateFeatNum; // number of splits of categorical features
   public int[] fSet; // sampled features in the current tree
   public int[] activeNode; // active tree node, 1:active, 0:inactive
-  public int[] activeNodeStat; // >=1:running, 0:finished, -1:failed
+  public AtomicInteger[] activeNodeStat; // >=1:running, 0:finished, -1:failed
   public int[] instancePos; // map tree node to instance, each item is instance id
   public int[] nodePosStart; // node's start index in instancePos, size: maxNodeNum
   public int[] nodePosEnd; // node's end index in instancePos, instances in [start, end] belong to a
@@ -130,7 +131,10 @@ public class GBDTController {
 
     this.maxNodeNum = Maths.pow(2, this.param.maxDepth) - 1;
     this.activeNode = new int[maxNodeNum];
-    this.activeNodeStat = new int[maxNodeNum];
+    this.activeNodeStat = new AtomicInteger[maxNodeNum];
+    for (int i = 0; i < maxNodeNum; i++) {
+      this.activeNodeStat[i] = new AtomicInteger();
+    }
     this.instancePos = new int[trainDataStore.numRow];
     for (int i = 0; i < this.trainDataStore.instances.size(); i++) {
       this.instancePos[i] = i;
@@ -430,53 +434,47 @@ public class GBDTController {
       LOG.info(String.format("Node %s will use histogram subtraction", subtractionNodes.toString()));
     }
     // 2. calculate histograms
+    Map<Integer, List<Future<DenseDoubleVector>>> futures = new HashMap<>();
     for (int nid : calculateNodes) {
+      futures.put(nid, new ArrayList<>());
       int nodeStart = this.nodePosStart[nid];
       int nodeEnd = this.nodePosEnd[nid];
-      GradHistHelper histMaker = new GradHistHelper(this, nid);
-      DenseDoubleVector histogram = histMaker.buildHistogram(nodeStart, nodeEnd);
-      this.histogramCache[nid] = histogram;
-      this.activeNodeStat[nid] = 1;
+      int batchNum = (nodeEnd - nodeStart + 1) / this.param.batchNum +
+                     (nodeEnd - nodeStart + 1) % this.param.batchNum == 0 ? 0 : 1;
+      for (int batch = 0; batch < batchNum; batch++) {
+        int start = nodeStart + batch * this.param.batchNum;
+        int end = nodeStart + (batch + 1) * this.param.batchNum;
+        if (end > nodeEnd) {
+          end = nodeEnd;
+        }
+        Future<DenseDoubleVector> future = this.threadPool.submit(
+                new HistCalculationThread(this, nid, start, end, bytesPerItem));
+        futures.get(nid).add(future);
+      }
+    }
+    int featureNum = this.fSet.length;
+    int splitNum = this.param.numSplit;
+    for (int nid : calculateNodes) {
+      this.histogramCache[nid] = new DenseDoubleVector(featureNum * 2 * splitNum);
+      for (Future<DenseDoubleVector> future : futures.get(nid)) {
+        this.histogramCache[nid].plusBy(future.get());
+      }
     }
     // 3. subtract histograms
-    for (int nid : subtractionNodes) {
-      int parentNid = (nid-1) / 2;
-      int siblingNid = 4*parentNid + 3 - nid;
-      this.histogramCache[nid] = (DenseDoubleVector)
-              this.histogramCache[parentNid].plus(this.histogramCache[siblingNid], -1.0);
-      this.activeNodeStat[nid] = 1;
-    }
-    // 4. push histograms to PS
-    for (int nid = 0; nid < this.maxNodeNum; nid++) {
-      if (this.activeNode[nid] == 1) {
-        String histParaName = this.param.gradHistNamePrefix + nid;
-        PSModel model = this.model.getPSModel(histParaName);
-        this.threadPool.submit(new GradHistThread(model, nid, this.histogramCache[nid], bytesPerItem));
-        if (!(bytesPerItem >= 1 && bytesPerItem <= 7)) {
-          needFlushMatrixSet.add(histParaName);
-        }
+    if (histSubtraction) {
+      Map<Integer, Future<DenseDoubleVector>> subtractFutures = new HashMap<>();
+      for (int nid : subtractionNodes) {
+        Future<DenseDoubleVector> future = this.threadPool.submit(
+                new HistSubtractionThread(this, nid, bytesPerItem));
+        subtractFutures.put(nid, future);
+      }
+      for (int nid : subtractionNodes) {
+        this.histogramCache[nid] = subtractFutures.get(nid).get();
         // the parent's histogram can be collected
-        int parentNid = (nid-1) / 2;
+        int parentNid = (nid - 1) / 2;
         if (parentNid >= 0) {
           this.histogramCache[parentNid] = null;
         }
-      }
-    }
-    // 5. check thread stats, if all threads finish, return
-    boolean hasRunning = true;
-    while (hasRunning) {
-      hasRunning = false;
-      for (int nid = 0; nid < this.maxNodeNum; nid++) {
-        int stat = this.activeNodeStat[nid];
-        if (stat >= 1) {
-          hasRunning = true;
-          break;
-        } else if (stat == -1) {
-          LOG.error(String.format("Histogram build thread of tree node[%d] failed", nid));
-        }
-      }
-      if (hasRunning) {
-        LOG.debug("current has running thread");
       }
     }
     this.phase = GBDTPhase.FIND_SPLIT;
@@ -656,7 +654,7 @@ public class GBDTController {
     int[] preActiveNode = this.activeNode.clone();
     for (int nid = 0; nid < this.maxNodeNum; nid++) {
       if (preActiveNode[nid] == 1) {
-        this.activeNodeStat[nid] = 1;
+        this.activeNodeStat[nid].set(1);
         AfterSplitRunner runner =
           new AfterSplitRunner(this, nid, splitFeatureVec, splitValueVec, splitGainVec,
             nodeGradStatsVec);
@@ -669,8 +667,7 @@ public class GBDTController {
     while (hasRunning) {
       hasRunning = false;
       for (int nid = 0; nid < this.maxNodeNum; nid++) {
-        int stat = this.activeNodeStat[nid];
-        if (stat == 1) {
+        if (this.activeNodeStat[nid].get() == 1) {
           hasRunning = true;
           break;
         }
@@ -757,7 +754,7 @@ public class GBDTController {
   // set tree node to active
   public void addActiveNode(int nid) {
     this.activeNode[nid] = 1;
-    this.activeNodeStat[nid] = 0;
+    this.activeNodeStat[nid].set(0);
   }
 
   // set node to leaf
@@ -771,7 +768,7 @@ public class GBDTController {
   // set node to inactive
   public void resetActiveTNodes(int nid) {
     this.activeNode[nid] = 0;
-    this.activeNodeStat[nid] = 0;
+    this.activeNodeStat[nid].set(0);
   }
 
   // finish current tree
