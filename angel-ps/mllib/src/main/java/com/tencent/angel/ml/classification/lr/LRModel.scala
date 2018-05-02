@@ -19,8 +19,11 @@ package com.tencent.angel.ml.classification.lr
 
 import java.text.DecimalFormat
 
+import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.math.TVector
+import com.tencent.angel.ml.math.vector._
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
@@ -81,20 +84,37 @@ class LRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(con
   def predict(dataSet: DataBlock[LabeledData]): DataBlock[PredictResult] = {
     val start = System.currentTimeMillis()
     val wVector = weight.getRow(0)
+    val bias = if (conf.getBoolean(MLConf.LR_USE_INTERCEPT, MLConf.DEFAULT_LR_USE_INTERCEPT)) {
+      getBias(intercept_.getRow(0))
+    } else {
+      0.0
+    }
     val cost = System.currentTimeMillis() - start
     LOG.info(s"pull LR Model from PS cost $cost ms.")
 
     val predict = new MemoryDataBlock[PredictResult](-1)
 
     dataSet.resetReadIndex()
-    for (idx: Int <- 0 until dataSet.size) {
+    for (_: Int <- 0 until dataSet.size) {
       val instance = dataSet.read
       val id = instance.getY
-      val dot = wVector.dot(instance.getX)
+      val dot = wVector.dot(instance.getX) + bias
       val sig = Maths.sigmoid(dot)
       predict.put(new LRPredictResult(id, dot, sig))
     }
     predict
+  }
+
+  private def getBias(vec: TVector):Double = {
+    vec.getType match {
+      case RowType.T_DOUBLE_DENSE => vec.asInstanceOf[DenseDoubleVector].get(0)
+      case RowType.T_DOUBLE_SPARSE => vec.asInstanceOf[SparseDoubleVector].get(0)
+      case RowType.T_DOUBLE_SPARSE_LONGKEY => vec.asInstanceOf[SparseLongKeyDoubleVector].get(0)
+      case RowType.T_FLOAT_DENSE => vec.asInstanceOf[DenseFloatVector].get(0).toDouble
+      case RowType.T_FLOAT_SPARSE => vec.asInstanceOf[SparseFloatVector].get(0).toDouble
+      case RowType.T_FLOAT_SPARSE_LONGKEY => vec.asInstanceOf[SparseLongKeyFloatVector].get(0).toDouble
+      case _ => throw new AngelException("RowType is not support for intercept")
+    }
   }
 }
 
