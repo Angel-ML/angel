@@ -532,8 +532,16 @@ public abstract class AngelClient implements AngelClientInterface {
     StringBuilder sb = new StringBuilder("{");
     int size = metrics.size();
     for(int i = 0; i < size; i++) {
-      sb.append("\""+ metrics.get(i).getKey() + "\":" + df.format(Double.valueOf(metrics.get(i)
-          .getValue())));
+      Pair pair = metrics.get(i);
+      sb.append("\"");
+      sb.append(pair.getKey());
+      sb.append("\":");
+      try {
+        sb.append(df.format(Double.valueOf(pair.getValue())));
+      } catch (Exception e) {
+        sb.append(df.format(-1.0));
+        LOG.info("Cannot convert to double, maybe NaN, INF");
+      }
       if(i < size - 1) {
         sb.append(",");
       }
