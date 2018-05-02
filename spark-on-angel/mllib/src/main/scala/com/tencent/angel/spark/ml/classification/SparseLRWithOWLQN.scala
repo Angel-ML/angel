@@ -68,13 +68,9 @@ object SparseLRWithOWLQN {
 
     val tempInstances = DataLoader.loadOneHotInstance(input, partitionNum, sampleRate).rdd
       .map { row =>
-        Tuple2(row.getAs[scala.collection.mutable.WrappedArray[Long]](1).toArray, row.getString(0).toDouble)
-      }.map { case (feat, label) =>
-        val hashed = feat.map { index =>
-          val bytes = f"$index%4d".getBytes
-          MurmurHash3.murmurhash3_x64_64(bytes, bytes.length, 41)
-        }
-        (0L +: hashed, label)
+        val feat = row.getAs[scala.collection.mutable.WrappedArray[Long]](1).toArray
+        val label = row.getString(0).toDouble
+        Tuple2(0L +: feat, label)
       }
 
     val dim = if (pDim > 0) {
