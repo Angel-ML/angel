@@ -27,9 +27,9 @@
 
 package com.tencent.angel.spark.linalg
 
-import com.github.fommil.netlib.{F2jBLAS, BLAS => NetlibBLAS}
 import com.github.fommil.netlib.BLAS.{getInstance => NativeBLAS}
-import it.unimi.dsi.fastutil.longs.{Long2DoubleMap, Long2DoubleOpenHashMap, LongOpenHashSet}
+import com.github.fommil.netlib.{F2jBLAS, BLAS => NetlibBLAS}
+import it.unimi.dsi.fastutil.longs.{Long2DoubleMap, LongOpenHashSet}
 
 import com.tencent.angel.utils.HLLC
 
@@ -236,29 +236,20 @@ private[spark] object BLAS extends Serializable {
    * dot(x, y)
    */
   private def dot(x: SparseVector, y: SparseVector): Double = {
-    val xValues = x.values
-    val xIndices = x.indices
-    val yValues = y.values
-    val yIndices = y.indices
-    val nnzx = xIndices.length
-    val nnzy = yIndices.length
+    val keySet = new LongOpenHashSet(x.keyValues.keySet())
+    keySet.addAll(y.keyValues.keySet())
 
-    var kx = 0
-    var ky = 0
-    var sum = 0.0
-    // y catching x
-    while (kx < nnzx && ky < nnzy) {
-      val ix = xIndices(kx)
-      while (ky < nnzy && yIndices(ky) < ix) {
-        ky += 1
-      }
-      if (ky < nnzy && yIndices(ky) == ix) {
-        sum += xValues(kx) * yValues(ky)
-        ky += 1
-      }
-      kx += 1
+    var dotResult = 0.0
+    val iter = keySet.iterator()
+    while (iter.hasNext) {
+      val key = iter.nextLong()
+      dotResult += x(key) * y(key)
     }
-    sum
+
+    val xDefault = x.keyValues.defaultReturnValue()
+    val yDefault = y.keyValues.defaultReturnValue()
+    dotResult += yDefault * xDefault * (x.length - keySet.size())
+    dotResult
   }
 
   private def dot(x: OneHotVector, y: DenseVector): Double = {

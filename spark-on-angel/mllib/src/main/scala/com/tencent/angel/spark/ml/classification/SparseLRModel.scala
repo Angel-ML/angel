@@ -5,7 +5,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
-import com.tencent.angel.spark.linalg.{BLAS, OneHotVector, SparseVector}
+import com.tencent.angel.spark.linalg.{BLAS, SparseVector, Vector}
 import com.tencent.angel.spark.models.vector.cache.PullMan
 import com.tencent.angel.spark.models.vector.{PSVector, SparsePSVector}
 
@@ -15,7 +15,7 @@ case class SparseLRModel(w: PSVector) {
     1.0 / (1.0 + math.exp(-x))
   }
 
-  def predict(instances: RDD[(Long, OneHotVector)]): RDD[(Long, Double)] = {
+  def predict(instances: RDD[(Long, Vector)]): RDD[(Long, Double)] = {
     val result = instances.mapPartitions { iter =>
       val localX = w.toCache.pullFromCache()
       iter.map { case (id, feature) =>
@@ -27,7 +27,7 @@ case class SparseLRModel(w: PSVector) {
     result
   }
 
-  def predict(feat: OneHotVector, localW: SparseVector): Double = {
+  def predict(feat: Vector, localW: SparseVector): Double = {
     val score = BLAS.dot(localW, feat)
     sigmod(score)
   }
@@ -60,7 +60,10 @@ case class SparseLRModel(w: PSVector) {
 
   def simpleInfo: String = {
     val localW = w.pull.toSparse
-    s"weight nnz: ${localW.nnz} some index and value: ${localW.indices.slice(0, 10).mkString("[", "," ,"]")}" +
+    val wSparsity = localW.nnz.toDouble / w.dimension
+
+    s"weight sparsity : $wSparsity " +
+      s"weight nnz: ${localW.nnz} some index and value: ${localW.indices.slice(0, 10).mkString("[", "," ,"]")}" +
       s" => ${localW.values.slice(0, 10).mkString("[", "," ,"]")}"
   }
 }
