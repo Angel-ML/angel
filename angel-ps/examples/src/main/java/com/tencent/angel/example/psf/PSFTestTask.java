@@ -59,13 +59,15 @@ public class PSFTestTask extends BaseTask<Long, Long, Long> {
       for(int time = 0; time < exeTime; time++) {
         long startTs = System.currentTimeMillis();
         long[] indexes = generateIndexes(col, len);
+        LOG.info("start to get values");
         LongIndexGetFunc
           func = new LongIndexGetFunc(new LongIndexGetParam(client.getMatrixId(), 0, indexes));
         TVector row = ((GetRowResult) client.get(func)).getRow();
+        LOG.info("after to get values");
         pullTime += (System.currentTimeMillis() - startTs);
-        if(time % 100 == 0) {
+        if(time % 1 == 0) {
           LOG.info("Task " + taskContext.getTaskId() + " in iteration " + taskContext.getEpoch()
-            + " pull use time=" + (pullTime / 100) + ", sum of row 0=" + sum((SparseLongKeyDoubleVector)row));
+            + " pull use time=" + (pullTime / 1) + ", sum of row 0=" + sum((SparseLongKeyDoubleVector)row));
           pullTime = 0;
         }
 
@@ -82,12 +84,14 @@ public class PSFTestTask extends BaseTask<Long, Long, Long> {
         client.clock().get();
         pushTime += (System.currentTimeMillis() - startTs);
 
-        if(time % 100 == 0) {
+        if(time % 1 == 0) {
           LOG.info("Task " + taskContext.getTaskId() + " in iteration " + taskContext.getEpoch()
-            + " push use time=" + (pushTime / 1000));
+            + " push use time=" + (pushTime / 1));
           pushTime = 0;
           taskContext.incEpoch();
         }
+
+        Thread.sleep(10000);
       }
     } catch (Throwable x) {
       throw new AngelException("run task failed ", x);
