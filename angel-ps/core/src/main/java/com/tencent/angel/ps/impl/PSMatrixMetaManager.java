@@ -178,4 +178,13 @@ public class PSMatrixMetaManager {
   public List<ParameterServerId> getPss(PartitionKey partitionKey) {
     return matrixMetaManager.getPss(partitionKey.getMatrixId(), partitionKey.getPartitionId());
   }
+
+  /**
+   * Get estimate sparsity
+   * @param matrixId matrix id
+   * @return estimate sparsity
+   */
+  public double getEstSparsity(int matrixId) {
+    return matrixMetaManager.getEstSparsity(matrixId);
+  }
 }

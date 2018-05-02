@@ -95,7 +95,7 @@ public class DefaultRowUpdaterTest {
 
   @Test
   public void testUpdateIntDenseToIntSparse() throws Exception {
-    ServerSparseIntRow serverSparseIntRow = new ServerSparseIntRow(rowId, startCol, endCol);
+    ServerSparseIntRow serverSparseIntRow = new ServerSparseIntRow(rowId, startCol, endCol, 0);
     ByteBuf buf = Unpooled.buffer(16);
     buf.writeInt(3);
     buf.writeInt(0);
@@ -111,7 +111,7 @@ public class DefaultRowUpdaterTest {
 
   @Test
   public void testUpdateIntSparseToIntSparse() throws Exception {
-    ServerSparseIntRow serverSparseIntRow = new ServerSparseIntRow(rowId, startCol, endCol);
+    ServerSparseIntRow serverSparseIntRow = new ServerSparseIntRow(rowId, startCol, endCol, 0);
     ByteBuf buf = Unpooled.buffer(16);
     buf.writeInt(3);
     buf.writeInt(0);
@@ -162,7 +162,7 @@ public class DefaultRowUpdaterTest {
   @Test
   public void testUpdateDoubleDenseToDoubleSparse() throws Exception {
     ServerSparseDoubleRow serverSparseDoubleRow =
-        new ServerSparseDoubleRow(rowId, startCol, endCol);
+        new ServerSparseDoubleRow(rowId, startCol, endCol, 0);
     ByteBuf buf = Unpooled.buffer(16);
     buf.writeInt(3);
     buf.writeDouble(0.00);
@@ -179,7 +179,7 @@ public class DefaultRowUpdaterTest {
   @Test
   public void testUpdateDoubleSparseToDoubleSparse() throws Exception {
     ServerSparseDoubleRow serverSparseDoubleRow =
-        new ServerSparseDoubleRow(rowId, startCol, endCol);
+        new ServerSparseDoubleRow(rowId, startCol, endCol, 0);
     ByteBuf buf = Unpooled.buffer(16);
     buf.writeInt(3);
     buf.writeInt(0);

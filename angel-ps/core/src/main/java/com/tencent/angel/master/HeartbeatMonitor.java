@@ -59,16 +59,24 @@ public class HeartbeatMonitor extends AbstractService{
           }
 
           // Check Workers
-          context.getWorkerManager().checkHBTimeOut();
+          if(context.getWorkerManager() != null) {
+            context.getWorkerManager().checkHBTimeOut();
+          }
 
           // Check PSS
-          context.getParameterServerManager().checkHBTimeOut();
+          if(context.getParameterServerManager() != null) {
+            context.getParameterServerManager().checkHBTimeOut();
+          }
 
           // Check Clients
-          context.getClientManager().checkHBTimeOut();
+          if(context.getClientManager() != null) {
+            context.getClientManager().checkHBTimeOut();
+          }
 
           // Check PS Clients
-          context.getPSAgentManager().checkHBTimeOut();
+          if(context.getPSAgentManager() != null) {
+            context.getPSAgentManager().checkHBTimeOut();
+          }
         }
       }
     });

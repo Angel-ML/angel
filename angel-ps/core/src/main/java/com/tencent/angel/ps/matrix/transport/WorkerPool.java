@@ -430,6 +430,7 @@ public class WorkerPool {
     Response result;
     ServerState state = runningContext.getState();
     String log = "server is busy now, retry later";
+    long startTs = System.currentTimeMillis();
     switch (method) {
       case GET_ROWSPLIT: {
         if(state == ServerState.BUSY) {
@@ -527,6 +528,7 @@ public class WorkerPool {
       runningContext.printToken();
     }
     result.setState(state);
+    LOG.debug("handle request " + seqId + " use time=" + (System.currentTimeMillis() - startTs));
     return result;
   }
 

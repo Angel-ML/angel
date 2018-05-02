@@ -56,6 +56,7 @@
 
 * **Spark on Angel**
 	* [Logistic Regression](./docs/algo/sona/lr_sona.md)
+	* [Sparse LR with FTRL](./docs/algo/sona/sparselr_ftrl.md)
 	* [GBDT](./docs/algo/sona/gbdt_sona.md)
 	* [KMeans](.docs/algo/sona/kmeans_sona.md)
 

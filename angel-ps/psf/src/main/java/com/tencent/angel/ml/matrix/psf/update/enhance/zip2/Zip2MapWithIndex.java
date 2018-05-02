@@ -62,18 +62,15 @@ public class Zip2MapWithIndex extends MFUpdateFunc {
     Zip2MapWithIndexFunc mapper = (Zip2MapWithIndexFunc) func;
     Long2DoubleOpenHashMap from1 = rows[0].getData();
     Long2DoubleOpenHashMap from2 = rows[1].getData();
-    Long2DoubleOpenHashMap to = new Long2DoubleOpenHashMap();
-
     // TODO: a better way is needed to deal with defaultValue
     assert (from1.defaultReturnValue() == 0.0 && from2.defaultReturnValue() == 0.0);
-    LongOpenHashSet keySet = new LongOpenHashSet(from1.keySet());
-    LongIterator iter = from2.keySet().iterator();
-    while (iter.hasNext()) {
-      keySet.add(iter.next());
-    }
 
+    LongOpenHashSet keySet = new LongOpenHashSet(from1.keySet());
+    keySet.addAll(from2.keySet());
+
+    Long2DoubleOpenHashMap to = new Long2DoubleOpenHashMap(keySet.size());
     for (long key: keySet) {
-      to.put(key, mapper.call((int)key, from1.get(key), from2.get(key)));
+      to.put(key, mapper.call(key, from1.get(key), from2.get(key)));
     }
 
     rows[2].setIndex2ValueMap(to);

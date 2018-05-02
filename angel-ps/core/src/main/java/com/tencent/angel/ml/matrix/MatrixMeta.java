@@ -281,11 +281,24 @@ public class MatrixMeta {
     }
   }
 
+  /**
+   * Add the stored ps for the partition
+   * @param partId partition id
+   * @param psId ps id
+   */
   public void addPs(int partId, ParameterServerId psId) {
     PartitionMeta partitionMeta = partitionMetas.get(partId);
     if(partitionMeta == null) {
       return;
     }
     partitionMeta.addReplicationPS(psId);
+  }
+
+  /**
+   * Get estimate sparsity
+   * @return estimate sparsity
+   */
+  public double getEstSparsity() {
+    return matrixContext.getEstSparsity();
   }
 }

@@ -40,12 +40,32 @@ public abstract class RangePartitioner implements Partitioner {
    * Application configuration
    */
   protected Configuration conf;
-  protected final static long DEFAULT_PARTITION_SIZE = 500000;
-  protected final static int maxPartNum = 10000;
+  protected long DEFAULT_PARTITION_SIZE;
+  protected int maxPartNum;
 
   @Override public void init(MatrixContext mContext, Configuration conf) {
     this.mContext = mContext;
     this.conf = conf;
+
+    long defaultPartSize = conf.getLong(
+      AngelConf.ANGEL_MODEL_PARTITIONER_PARTITION_SIZE,
+      AngelConf.DEFAULT_ANGEL_MODEL_PARTITIONER_PARTITION_SIZE);
+    int maxPartNumTotal = conf.getInt(
+      AngelConf.ANGEL_MODEL_PARTITIONER_MAX_PARTITION_NUM,
+      AngelConf.DEFAULT_ANGEL_MODEL_PARTITIONER_MAX_PARTITION_NUM);
+    int psNum = conf.getInt(
+      AngelConf.ANGEL_PS_NUMBER,
+      AngelConf.DEFAULT_ANGEL_PS_NUMBER);
+    int partNumPerServer = conf.getInt(
+      AngelConf.ANGEL_MODEL_PARTITIONER_PARTITION_NUM_PERSERVER,
+      -1);
+
+    if(partNumPerServer > 0) {
+      maxPartNum = Math.min(maxPartNumTotal, psNum * partNumPerServer);
+    } else {
+      maxPartNum = maxPartNumTotal;
+    }
+    DEFAULT_PARTITION_SIZE = defaultPartSize;
   }
 
   @Override public List<PartitionMeta> getPartitions() {

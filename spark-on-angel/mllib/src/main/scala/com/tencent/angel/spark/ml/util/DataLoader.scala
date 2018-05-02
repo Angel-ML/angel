@@ -22,7 +22,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.ml.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
-import org.apache.spark.sql.{DataFrame, Row, SQLContext, SparkSession}
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 
 /**
@@ -46,8 +46,7 @@ object DataLoader {
   def loadOneHotInstance(
       input: String,
       partitionNum: Int,
-      sampleRate: Double,
-      maxIndex: Long = -1) : DataFrame = {
+      sampleRate: Double) : DataFrame = {
     val spark = SparkSession.builder().getOrCreate()
 
     val instances = spark.sparkContext.textFile(input)
@@ -59,15 +58,43 @@ object DataLoader {
         } else {
           val label = items.head
           val feature = items.tail.map(_.toLong)
-          if (maxIndex > 0) {
-            Iterator.single(Row(label, feature.filter(x => x <= maxIndex)))
-          } else {
-            Iterator.single(Row(label, feature))
-          }
+          Iterator.single(Row(label, feature))
         }
       }.repartition(partitionNum)
       .sample(false, sampleRate)
     spark.createDataFrame(instances, ONE_HOT_INSTANCE_ST)
+  }
+
+  // transform data to one-hot type
+  def transform2OneHot(dataRdd: RDD[String]): RDD[(Array[Long], Double)] = {
+
+    val instances = dataRdd
+      .map(line => line.trim)
+      .filter(_.nonEmpty)
+      .flatMap { line =>
+        val items = line.split(SPLIT_SEPARATOR)
+        if (items.length < 2) {
+          println(s"record length < 2, line: $line")
+          Iterator.empty
+        } else {
+          val label = items.head
+          val feature = items.tail.map(_.toLong)
+          Iterator.single(feature, label.toDouble)
+        }
+      }
+    instances
+  }
+
+  // transform data to one-hot type
+  def transform2OneHot(dataStr: String): (Array[Long], Double) = {
+
+    val instances = dataStr.split(SPLIT_SEPARATOR)
+    if (instances.length < 2) println(s"record length < 2, line: $dataStr")
+
+    val label = instances.head
+    val feature = instances.tail.map(_.toLong)
+    (feature, label.toDouble)
+
   }
 
   def loadDense(
@@ -132,7 +159,7 @@ object DataLoader {
         indices += ids(0).toInt - 1 // convert 1-based indices to 0-based indices
         values += ids(1).toDouble
       }
-      // check if indices are one-based and in ascending order
+      // check if indices from the input are one-based and in ascending order
       var previous = -1
       var i = 0
       val indicesLength = indices.length
@@ -144,6 +171,98 @@ object DataLoader {
       }
     }
     (label, indices.toArray, values.toArray)
+  }
+
+  // check data in type of one-hot or libsvm automatically
+  def isOneHotType(input: String, sampleRate: Double, partitionNum: Int): Boolean = {
+
+    val spark = SparkSession.builder().getOrCreate()
+
+    val samples = spark.sparkContext.textFile(input)
+      .sample(false, sampleRate)
+      .repartition(partitionNum)
+      .map(line => line.trim)
+      .filter(_.nonEmpty)
+      .take(1)
+
+    val oneSample = samples(0).split(SPLIT_SEPARATOR).map(_.trim)
+    val firstFeat = oneSample(1).split(KEY_VALUE_SEP)
+
+    if (firstFeat.length == 1) true else false
+  }
+
+  // check the type of data for other way of loading
+  def isOneHotType(dataRdd: RDD[String]): Boolean = {
+
+    val samples = dataRdd.map(line => line.trim).filter(_.nonEmpty).take(1)
+
+    val oneSample = samples(0).split(SPLIT_SEPARATOR).map(_.trim)
+    val firstFeat = oneSample(1).split(KEY_VALUE_SEP)
+
+    if (firstFeat.length == 1) true else false
+  }
+
+  // load SparseVector instance
+  def loadSparseInstance(input: String,
+                         partitionNum: Int,
+                         sampleRate: Double): RDD[(Array[(Long, Double)], Double)] = {
+
+    val spark = SparkSession.builder().getOrCreate()
+
+    val labelAndFeature = spark.sparkContext.textFile(input)
+      .sample(false, sampleRate)
+      .repartition(partitionNum)
+      .map(line => line.trim)
+      .filter(_.nonEmpty)
+      .map { dataStr =>
+        val labelFeature = dataStr.split(" ")
+
+        val feature = labelFeature.tail.map { idVal =>
+          val idValArr = idVal.split(":")
+          (idValArr(0).toLong, idValArr(1).toDouble)
+        }
+
+        (feature, labelFeature(0).toDouble)
+      }
+
+    labelAndFeature
+  }
+
+  // transform data to sparse type
+  def transform2Sparse(dataRdd: RDD[String]): RDD[(Array[(Long, Double)], Double)] = {
+
+    dataRdd
+      .map(line => line.trim)
+      .filter(_.nonEmpty)
+      .map { dataStr =>
+        val labelFeature = dataStr.split(SPLIT_SEPARATOR)
+
+        val feature = labelFeature.tail.map { idVal =>
+          val idValArr = idVal.split(":")
+
+          // for test
+          println("test1:" + idValArr.mkString(" "))
+
+          (idValArr(0).toLong, idValArr(1).toDouble)
+        }
+
+        (feature, labelFeature(0).toDouble)
+      }
+  }
+
+  // transform data to sparse type
+  def transform2Sparse(dataStr: String): (Array[(Long, Double)], Double) = {
+
+    val labelFeature = dataStr.split(SPLIT_SEPARATOR)
+
+    val featureStyled = labelFeature.tail
+      .map {_.split(":")}
+      .filter(x => x.length == 2)
+      .map{featInfor =>
+        (featInfor(0).toLong, featInfor(1).toDouble)
+      }
+
+    (featureStyled, labelFeature(0).toDouble)
   }
 
 }

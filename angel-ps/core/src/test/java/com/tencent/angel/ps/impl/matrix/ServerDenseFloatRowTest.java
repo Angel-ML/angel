@@ -107,7 +107,7 @@ public class ServerDenseFloatRowTest {
     buf.writeFloat((float) 2.00);
     serverDenseFloatRow.update(RowType.T_FLOAT_DENSE, buf);
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
-    serverDenseFloatRow.writeTo(out);
+    serverDenseFloatRow.writeTo(out, false);
     out.close();
     DataInputStream in = new DataInputStream(new FileInputStream("data"));
     assertEquals(in.readFloat(), 0, 0.00);
@@ -124,7 +124,7 @@ public class ServerDenseFloatRowTest {
     buf.writeFloat((float) 12.00);
     serverDenseFloatRow.update(RowType.T_FLOAT_DENSE, buf);
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
-    serverDenseFloatRow.writeTo(out);
+    serverDenseFloatRow.writeTo(out, false);
     out.close();
     DataInputStream in = new DataInputStream(new FileInputStream("data"));
     ServerDenseFloatRow newServerDenseFloatRow = new ServerDenseFloatRow(rowId, startCol, endCol);

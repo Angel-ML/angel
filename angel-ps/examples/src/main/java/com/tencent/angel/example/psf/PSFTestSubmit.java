@@ -30,10 +30,12 @@ public class PSFTestSubmit implements AppSubmitter {
     conf.setBoolean(AngelConf.ANGEL_AM_USE_DUMMY_DATASPLITER, true);
     //conf.setInt(AngelConf.ANGEL_STALENESS, -1);
     AngelClient angelClient = AngelClientFactory.get(conf);
-    int blockCol = conf.getInt("blockcol", 5000000);
-    int col = conf.getInt("col", 100000000);
-    MatrixContext context = new MatrixContext("psf_test", 1, col, 1, blockCol);
-    context.setRowType(RowType.T_DOUBLE_DENSE);
+    long col = conf.getLong("col", 1000000);
+    long blockCol = conf.getLong("blockcol", -1);
+    long modelSize = conf.getLong("model.size", 100000);
+
+    MatrixContext context = new MatrixContext("psf_test", 1, col, modelSize, 1, blockCol);
+    context.setRowType(RowType.T_DOUBLE_SPARSE_LONGKEY);
     angelClient.addMatrix(context);
     angelClient.startPSServer();
     angelClient.run();

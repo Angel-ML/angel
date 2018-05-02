@@ -89,7 +89,7 @@ public class ServerPartitionTest {
     endCol = 10;
     rowType = RowType.T_DOUBLE_DENSE;
     partitionKey = new PartitionKey(partitionId, matrixId, startRow, startCol, endRow, endCol);
-    serverPartition = new ServerPartition(partitionKey, rowType);
+    serverPartition = new ServerPartition(partitionKey, rowType, 0.0);
     serverPartition.init();
   }
 
@@ -187,12 +187,12 @@ public class ServerPartitionTest {
     buf.writeDouble(-7.00);
     buf.writeDouble(-8.00);
     serverPartition.getRow(6).update(RowType.T_DOUBLE_DENSE, buf);
-    serverPartition.save(out);
+    serverPartition.save(out,false);
     out.close();
     DataInputStream in = new DataInputStream(new FileInputStream("data"));
     PartitionKey partitionKeyNew = new PartitionKey(2, 1, 1, 2, 8, 10);
     ServerPartition serverPartitionNew =
-        new ServerPartition(partitionKeyNew, RowType.T_DOUBLE_DENSE);
+        new ServerPartition(partitionKeyNew, RowType.T_DOUBLE_DENSE, 0.0);
     serverPartitionNew.init();
     assertNotEquals(((ServerDenseDoubleRow) serverPartition.getRow(6)).getData(),
         ((ServerDenseDoubleRow) serverPartitionNew.getRow(6)).getData());
@@ -214,7 +214,7 @@ public class ServerPartitionTest {
   @Test
   public void testCommit() throws Exception {
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
-    serverPartition.save(out, new ModelPartitionMeta());
+    serverPartition.save(out, new ModelPartitionMeta(), false);
     out.close();
     DataInputStream in = new DataInputStream(new FileInputStream("data"));
     assertEquals(partitionKey.getEndRow() - partitionKey.getStartRow(), in.readInt());
@@ -242,7 +242,7 @@ public class ServerPartitionTest {
     serverPartition.serialize(buf);
     PartitionKey partitionKeyNew = new PartitionKey(2, 1, 1, 2, 8, 10);
     ServerPartition serverPartitionNew =
-        new ServerPartition(partitionKeyNew, RowType.T_DOUBLE_DENSE);
+        new ServerPartition(partitionKeyNew, RowType.T_DOUBLE_DENSE, 0.0);
     assertNotEquals(serverPartition.getPartitionKey().getPartitionId(),
         serverPartitionNew.getPartitionKey().getPartitionId());
     serverPartitionNew.deserialize(buf);

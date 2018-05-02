@@ -36,7 +36,6 @@ import java.util.Properties;
  * Angel system parameters.
  */
 public class AngelConf extends Configuration {
-
   public AngelConf(Configuration conf) {
     super(conf);
   }
@@ -329,6 +328,15 @@ public class AngelConf extends Configuration {
   public static final String ANGEL_AM_MATRIX_DISKIO_WORKER_POOL_SIZE = ANGEL_AM_PREFIX + "matrix.diskio.worker.pool.size";
   public static final int DEFAULT_ANGEL_AM_MATRIX_DISKIO_WORKER_POOL_SIZE = Math.max(8, (int)(Runtime.getRuntime().availableProcessors() * 0.25));
 
+  public static final String ANGEL_MODEL_PARTITIONER_PARTITION_SIZE = "angel.model.partitioner.partition.size";
+  public static final long DEFAULT_ANGEL_MODEL_PARTITIONER_PARTITION_SIZE = 500000;
+
+  public static final String ANGEL_MODEL_PARTITIONER_MAX_PARTITION_NUM = "angel.model.partitioner.max.partition.number";
+  public static final int DEFAULT_ANGEL_MODEL_PARTITIONER_MAX_PARTITION_NUM = 10000;
+
+  public static final String ANGEL_MODEL_PARTITIONER_PARTITION_NUM_PERSERVER = "angel.model.partitioner.partition.number.perserver";
+  public static final int DEFAULT_ANGEL_MODEL_PARTITIONER_PARTITION_NUM_PERSERVER = 1;
+
   // //////////////////////////////
   // Worker Configs
   // //////////////////////////////
@@ -357,11 +365,11 @@ public class AngelConf extends Configuration {
   @Deprecated
   public static final String ANGEL_WORKER_MEMORY_MB = ANGEL_WORKER_PREFIX + "memory.mb";
   @Deprecated
-  public static final int DEFAULT_ANGEL_WORKER_MEMORY_MB = 1024;
+  public static final int DEFAULT_ANGEL_WORKER_MEMORY_MB = 4096;
 
   /** The memory quota for a single worker in GB. */
   public static final String ANGEL_WORKER_MEMORY_GB = ANGEL_WORKER_PREFIX + "memory.gb";
-  public static final int DEFAULT_ANGEL_WORKER_MEMORY_GB = 5;
+  public static final int DEFAULT_ANGEL_WORKER_MEMORY_GB = 4;
 
   /** The CPU vcore quota for a single worker in MB. */
   public static final String ANGEL_WORKER_CPU_VCORES = ANGEL_WORKER_PREFIX + "cpu.vcores";
@@ -662,7 +670,7 @@ public class AngelConf extends Configuration {
    */
   public static final String ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM_PERSERVER = ANGEL_PREFIX
       + "matrixtransfer.max.requestnum.perserver";
-  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM_PERSERVER = 8;
+  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM_PERSERVER = 16;
 
   public static final String ANGEL_MATRIXTRANSFER_CLIENT_REQUESTER_POOL_SIZE = ANGEL_PREFIX
     + "matrixtransfer.client.requester.pool.size";
@@ -920,5 +928,8 @@ public class AngelConf extends Configuration {
     for (Map.Entry<String, String> e : srcConf) {
       destConf.set(e.getKey(), e.getValue());
     }
+  }
+
+  public class ANGEL_MODEL_PARTITIONER_DEFAULT_PARTITION_SIZE {
   }
 }

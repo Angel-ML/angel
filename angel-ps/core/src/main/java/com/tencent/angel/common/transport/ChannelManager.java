@@ -164,13 +164,13 @@ public class ChannelManager {
     GenericObjectPool.Config poolConfig = new GenericObjectPool.Config();
     poolConfig.maxActive = active * 5;
     poolConfig.maxWait = 30000;
-    poolConfig.maxIdle = active * 5;
+    poolConfig.maxIdle = -1;
     poolConfig.minIdle = active;
     poolConfig.testOnBorrow = false;
     poolConfig.testOnReturn = false;
     poolConfig.minEvictableIdleTimeMillis = Integer.MAX_VALUE;
     poolConfig.whenExhaustedAction = GenericObjectPool.WHEN_EXHAUSTED_BLOCK;
-    return new GenericObjectPool<>(new ChannelObjectFactory(loc, bootstrap), poolConfig);
+    return new GenericObjectPool(new ChannelObjectFactory(loc, bootstrap), poolConfig);
   }
 
   /**
@@ -234,5 +234,18 @@ public class ChannelManager {
     } finally {
       lock.unlock();
     }
+  }
+
+  public void printPools() {
+    for(Entry<Location, GenericObjectPool<Channel>> entry : locToChannelPoolMap.entrySet()) {
+      LOG.info("location " + entry.getKey() + ", pool=" + poolToString(entry.getValue()));
+    }
+  }
+
+  private String poolToString(GenericObjectPool<Channel> pool) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("active=").append(pool.getNumActive()).append(",");
+    sb.append("idle=").append(pool.getNumIdle()).append(",");
+    return sb.toString();
   }
 }

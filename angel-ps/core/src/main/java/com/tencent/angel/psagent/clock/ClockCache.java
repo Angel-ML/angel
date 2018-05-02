@@ -225,6 +225,20 @@ public class ClockCache {
   }
 
   /**
+   * Get matrix clock
+   *
+   * @param matrixId matrix id
+   * @return int clock
+   */
+  public int getClock(int matrixId) {
+    MatrixClockCache matrixClockCache = matrixClockCacheMap.get(matrixId);
+    if (matrixClockCache == null) {
+      return 0;
+    }
+    return matrixClockCache.getClock();
+  }
+
+  /**
    * Get a matrix clock cache
    * @param matrixId
    * @return MatrixClockCache

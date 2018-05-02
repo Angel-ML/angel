@@ -25,5 +25,5 @@ import com.tencent.angel.common.Serialize;
  * parameter of `Zip2MapWithIndex`
  */
 public interface Zip2MapWithIndexFunc extends Serialize {
-   double call(int index, double value1, double value2);
+   double call(long index, double value1, double value2);
 }

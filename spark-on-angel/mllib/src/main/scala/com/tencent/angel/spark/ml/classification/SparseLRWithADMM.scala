@@ -104,7 +104,7 @@ class SparseLRWithADMM extends Learner {
   }
 
   def train(input: String, testSet: String): MLModel = {
-    val tmpInstances = DataLoader.loadOneHotInstance(input, partitionNum, sampleRate, -1).rdd
+    val tmpInstances = DataLoader.loadOneHotInstance(input, partitionNum, sampleRate).rdd
         .map { row =>
           Tuple2(row.getString(0).toDouble, row.getAs[mutable.WrappedArray[Long]](1).toArray)
         }
@@ -114,7 +114,7 @@ class SparseLRWithADMM extends Learner {
     val instances = tmpInstances.map { case (label, feat) => (label, new OneHotVector(featLength, feat)) }
 
     val testRDD = if (testSet != null && testSet != "") {
-      DataLoader.loadOneHotInstance(testSet, partitionNum, sampleRate, featLength - 1).rdd
+      DataLoader.loadOneHotInstance(testSet, partitionNum, sampleRate).rdd
         .map { row =>
           Tuple2(row.getString(0).toDouble, row.getAs[mutable.WrappedArray[Int]](1).toArray)
         }.map { case (label, feat) => (label, new OneHotVector(featLength, feat)) }
@@ -139,7 +139,7 @@ class SparseLRWithADMM extends Learner {
 
   def predict(input: String, output: String, model: MLModel): Unit = {
     val featSize = model.asInstanceOf[SparseModel].weight.length - 1
-    val instances = DataLoader.loadOneHotInstance(input, partitionNum, sampleRate, featSize - 1)
+    val instances = DataLoader.loadOneHotInstance(input, partitionNum, sampleRate)
     println(s"predict instance count: ${instances.count()}")
 
     val predictDF = model.predict(instances)

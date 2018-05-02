@@ -5,28 +5,36 @@ import org.apache.hadoop.fs.Path
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
-import com.tencent.angel.spark.linalg.{BLAS, OneHotVector, SparseVector}
+import com.tencent.angel.spark.linalg.{BLAS, SparseVector, Vector}
+import com.tencent.angel.spark.models.vector.cache.PullMan
 import com.tencent.angel.spark.models.vector.{PSVector, SparsePSVector}
 
-case class SparseLRModel(x: PSVector) {
+case class SparseLRModel(w: PSVector) {
 
   def sigmod(x: Double): Double = {
     1.0 / (1.0 + math.exp(-x))
   }
 
-  def predict(instances: RDD[(Long, OneHotVector)]): RDD[(Long, Double)] = {
-    instances.mapPartitions { iter =>
-      val localX = x.toCache.pullFromCache()
+  def predict(instances: RDD[(Long, Vector)]): RDD[(Long, Double)] = {
+    val result = instances.mapPartitions { iter =>
+      val localX = w.toCache.pullFromCache()
       iter.map { case (id, feature) =>
         val margin = BLAS.dot(localX, feature)
         Tuple2(id, sigmod(margin))
       }
     }
+    PullMan.release(w)
+    result
+  }
+
+  def predict(feat: Vector, localW: SparseVector): Double = {
+    val score = BLAS.dot(localW, feat)
+    sigmod(score)
   }
 
   def save(modelPath: String): Unit = {
-    x.toSparse.compress()
-    val localX = x.pull.toSparse
+    w.toSparse.compress()
+    val localX = w.pull.toSparse
     val keyValues = localX.keyValues
     assert(keyValues.defaultReturnValue() == 0.0)
     val iter = keyValues.long2DoubleEntrySet().fastIterator()
@@ -35,7 +43,7 @@ case class SparseLRModel(x: PSVector) {
     var i = 0
     while (iter.hasNext) {
       val entry = iter.next()
-      modelArray(i) = entry.getLongKey + ":" + entry.getDoubleValue
+      modelArray(i) = f"${entry.getLongKey} : ${entry.getDoubleValue}%.6f"
       i += 1
     }
     val spark = SparkSession.builder().getOrCreate()
@@ -45,9 +53,18 @@ case class SparseLRModel(x: PSVector) {
     if (fs.exists(path)) fs.delete(path, true)
 
     spark.sparkContext.makeRDD(modelArray).saveAsTextFile(modelPath + "/data")
-    val meta = Array(x.dimension.toString)
+    val meta = Array(w.dimension.toString)
     spark.sparkContext.makeRDD(meta, 1).saveAsTextFile(modelPath + "/meta")
     println(s"save model finished")
+  }
+
+  def simpleInfo: String = {
+    val localW = w.pull.toSparse
+    val wSparsity = localW.nnz.toDouble / w.dimension
+
+    s"weight sparsity : $wSparsity " +
+      s"weight nnz: ${localW.nnz} some index and value: ${localW.indices.slice(0, 10).mkString("[", "," ,"]")}" +
+      s" => ${localW.values.slice(0, 10).mkString("[", "," ,"]")}"
   }
 }
 

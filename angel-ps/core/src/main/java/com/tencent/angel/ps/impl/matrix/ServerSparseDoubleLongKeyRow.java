@@ -45,16 +45,16 @@ public class ServerSparseDoubleLongKeyRow extends ServerLongKeyRow{
    * @param startCol vector partition start position
    * @param endCol vector partition end position
    */
-  public ServerSparseDoubleLongKeyRow(int rowId, long startCol, long endCol) {
+  public ServerSparseDoubleLongKeyRow(int rowId, long startCol, long endCol, int estEleNum) {
     super(rowId, startCol, endCol);
-    index2ValueMap = new Long2DoubleOpenHashMap();
+    index2ValueMap = new Long2DoubleOpenHashMap(estEleNum);
   }
 
   /**
    * Create a ServerSparseDoubleLongKeyRow
    */
   public ServerSparseDoubleLongKeyRow() {
-    this(0, 0, 0);
+    this(0, 0, 0, 0);
   }
 
   @Override public RowType getRowType() {
@@ -105,18 +105,37 @@ public class ServerSparseDoubleLongKeyRow extends ServerLongKeyRow{
   }
 
   @Override
-  public void writeTo(DataOutputStream output) throws IOException {
-    try {
-      lock.readLock().lock();
-      super.writeTo(output);
-      output.writeDouble(getDefaultValue());
-      output.writeInt(index2ValueMap.size());
-      for (Long2DoubleMap.Entry entry : index2ValueMap.long2DoubleEntrySet()) {
-        output.writeLong(entry.getLongKey());
-        output.writeDouble(entry.getDoubleValue());
+  public void writeTo(DataOutputStream output, boolean cloneFirst) throws IOException {
+    if(cloneFirst) {
+      Long2DoubleOpenHashMap clonedData;
+      try {
+        lock.readLock().lock();
+        super.writeTo(output, cloneFirst);
+        clonedData = index2ValueMap.clone();
+      } finally {
+        lock.readLock().unlock();
       }
-    } finally {
-      lock.readLock().unlock();
+      writeTo(output, clonedData);
+    } else {
+      try {
+        lock.readLock().lock();
+        super.writeTo(output, cloneFirst);
+        //output.writeDouble(getDefaultValue());
+        writeTo(output, index2ValueMap);
+      } finally {
+        lock.readLock().unlock();
+      }
+    }
+  }
+
+  private void writeTo(DataOutputStream output, Long2DoubleOpenHashMap data) throws IOException {
+    output.writeInt(data.size());
+    ObjectIterator<Long2DoubleMap.Entry> iter = data.long2DoubleEntrySet().fastIterator();
+    Long2DoubleMap.Entry entry;
+    while(iter.hasNext()) {
+      entry = iter.next();
+      output.writeLong(entry.getLongKey());
+      output.writeDouble(entry.getDoubleValue());
     }
   }
 

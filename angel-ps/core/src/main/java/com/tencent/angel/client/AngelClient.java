@@ -301,6 +301,11 @@ public abstract class AngelClient implements AngelClientInterface {
     if(!stopped.getAndSet(true)) {
       if(hbThread != null) {
         hbThread.interrupt();
+        try {
+          hbThread.join();
+        } catch (Throwable e) {
+          
+        }
       }
     }
     stopped.set(false);

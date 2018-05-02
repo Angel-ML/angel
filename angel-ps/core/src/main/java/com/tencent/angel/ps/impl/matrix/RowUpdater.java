@@ -40,8 +40,6 @@ public abstract class RowUpdater implements RowUpdaterInterface {
       updateIntSparse(updateRowType, dataBuf, (ServerSparseIntRow) row);
     } else if (row instanceof ServerDenseIntRow) {
       updateIntDense(updateRowType, dataBuf, (ServerDenseIntRow) row);
-    } else if (row instanceof ServerArbitraryIntRow) {
-      updateIntArbitrary(updateRowType, dataBuf, (ServerArbitraryIntRow) row);
     } else if (row instanceof ServerDenseFloatRow) {
       updateFloatDense(updateRowType, dataBuf, (ServerDenseFloatRow) row);
     } else if (row instanceof ServerSparseFloatRow) {
@@ -50,21 +48,6 @@ public abstract class RowUpdater implements RowUpdaterInterface {
       throw new ServerRowNotFoundException(row.getClass().getName());
     row.updateRowVersion();
   }
-
-  /**
-   * Update int dense data  to int arbitrary row.
-   * @param dataBuf the data buf
-   * @param row     the row
-   */
-  public abstract void updateIntDenseToIntArbitrary(ByteBuf dataBuf, ServerArbitraryIntRow row);
-
-  /**
-   * Update int sparse data to int arbitrary row.
-   *
-   * @param dataBuf the data buf
-   * @param row     the row
-   */
-  public abstract void updateIntSparseToIntArbitrary(ByteBuf dataBuf, ServerArbitraryIntRow row);
 
   /**
    * Update int dense data to int dense row.
@@ -169,21 +152,6 @@ public abstract class RowUpdater implements RowUpdaterInterface {
    * @param row     the row
    */
   public abstract void updateFloatSparseToFloatSparse(ByteBuf dataBuf, ServerSparseFloatRow row);
-
-  private void updateIntArbitrary(RowType updateRowType, ByteBuf dataBuf,
-      ServerArbitraryIntRow row){
-    switch (updateRowType) {
-      case T_INT_SPARSE:
-        updateIntSparseToIntArbitrary(dataBuf, row);
-        break;
-      case T_INT_DENSE:
-        updateIntDenseToIntArbitrary(dataBuf, row);
-        break;
-
-      default:
-        break;
-    }
-  }
 
   private void updateIntDense(RowType updateRowType, ByteBuf dataBuf,
       ServerDenseIntRow row){

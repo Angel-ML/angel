@@ -27,7 +27,7 @@ object MLConf {
   val ANGEL_ML_INC_TRAIN = "inctrain"
 
   // Data params
-  val ML_DATA_INPUT_FORMAT = "ml.data.input.type"
+  val ML_DATA_INPUT_FORMAT = "ml.data.type"
   val DEFAULT_ML_DATA_FORMAT = "dummy"
   val ML_DATA_SPLITOR = "ml.data.splitor"
   val DEFAULT_ML_DATA_SPLITOR = " "
@@ -60,8 +60,6 @@ object MLConf {
   val DEFAULT_ML_MODEL_TYPE = RowType.T_DOUBLE_DENSE.toString
   val ML_MODEL_PART_PER_SERVER = "ml.model.part.per.server"
   val DEFAULT_ML_MODEL_PART_PER_SERVER = 5
-  val ML_MODEL_INPUT_PATH = "ml.model.input.path"
-  val ML_MODEL_OUTPUT_PATH = "ml.model.output.path"
   val ML_MODEL_CONVERT_THREAD_COUNT = "ml.model.convert.thread.count"
   val DEFAULT_ML_MODEL_CONVERT_THREAD_COUNT = 1
   val ML_MODEL_NAME = "ml.model.name"
@@ -137,6 +135,12 @@ object MLConf {
   val DEFAULT_ML_MLR_RANK = 5
   val ML_MLR_V_INIT = "ml.mlr.v.init"
   val DEFAULT_ML_MLR_V_INIT = 0.1
+  val ML_MLR_REG_L2="ml.mlr.reg.l2"
+  val DEFAULT_ML_MLR_REG_L2 = 0.0
+
+  // SVM parameters
+  val ML_SVM_REG_L2="ml.svm.reg.l2"
+  val DEFAULT_ML_SVM_REG_L2 = 0.0
 
   // Kmeans params
   val KMEANS_CENTER_NUM = "ml.kmeans.center.num"
@@ -152,6 +156,7 @@ object MLConf {
   val DEFAULT_ML_MF_LAMBDA = 0.01
   val ML_MF_ETA = "ml.mf.eta"
   val DEFAULT_ML_MF_ETA = 0.1
+  val ML_MF_USER_MODEL_OUTPUT_PATH = "ml.mf.user.model.output.path"
   val ML_MF_ROW_BATCH_NUM = "ml.mf.row.batch.num"
   val DEFAULT_ML_MF_ROW_BATCH_NUM = 1
 

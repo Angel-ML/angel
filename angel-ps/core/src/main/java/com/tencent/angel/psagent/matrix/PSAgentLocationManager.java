@@ -22,6 +22,8 @@ import com.tencent.angel.common.location.LocationManager;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.psagent.PSAgentContext;
 
+import java.util.Map;
+
 /**
  * PSAgent location manager
  */
@@ -110,5 +112,20 @@ public class PSAgentLocationManager {
    */
   public ParameterServerId[] getPsIds() {
     return locationManager.getPsIds();
+  }
+
+  /**
+   * Lookup ps id use location
+   * @param loc ps location
+   * @return ps id
+   */
+  public ParameterServerId getPsId(Location loc) {
+    Map<ParameterServerId, Location> locations = locationManager.getPsLocations();
+    for(Map.Entry<ParameterServerId, Location> locEntry : locations.entrySet()) {
+      if(loc.equals(locEntry.getValue())) {
+        return locEntry.getKey();
+      }
+    }
+    return null;
   }
 }

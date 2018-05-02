@@ -138,4 +138,12 @@ public class LocationManager {
   public boolean isAllPsRegisted() {
     return (psIds != null) && (psIds.length == psIdToLocMap.size());
   }
+
+  /**
+   * Get all ps locations
+   * @return all ps locations
+   */
+  public Map<ParameterServerId, Location> getPsLocations() {
+    return psIdToLocMap;
+  }
 }

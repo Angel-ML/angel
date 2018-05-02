@@ -108,10 +108,10 @@ public class ConsistencyController {
       }
 
       // Get row from ps.
-      row =
-          PSAgentContext.get().getMatrixClientAdapter()
-              .getRow(matrixId, rowIndex, taskContext.getMatrixClock(matrixId) - staleness);
-
+      // Wait until the clock value of this row is greater than or equal to the value
+      int stalenessClock = taskContext.getMatrixClock(matrixId) - staleness;
+      waitForClock(matrixId, rowIndex, stalenessClock);
+      row = PSAgentContext.get().getMatrixClientAdapter().getRow(matrixId, rowIndex, stalenessClock);
       return cloneRow(matrixId, rowIndex, row, taskContext);
     } else {
       // For ASYNC mode, just get from pss.
@@ -146,13 +146,14 @@ public class ConsistencyController {
     int staleness = getStaleness(rowIndex.getMatrixId());
     if (staleness >= 0) {
       // For BSP/SSP, get rows from storage/cache first
-      int stalnessClock = taskContext.getMatrixClock(rowIndex.getMatrixId()) - staleness;
-      findRowsInStorage(taskContext, result, rowIndex, stalnessClock);
+      int stalenessClock = taskContext.getMatrixClock(rowIndex.getMatrixId()) - staleness;
+      findRowsInStorage(taskContext, result, rowIndex, stalenessClock);
       if (!result.isFetchOver()) {
         LOG.debug("need fetch from parameterserver");
         // Get from ps.
-        PSAgentContext.get().getMatrixClientAdapter()
-            .getRowsFlow(result, rowIndex, rpcBatchSize, stalnessClock);
+        // Wait until the clock value of this row is greater than or equal to the value
+        waitForClock(rowIndex.getMatrixId(), -1, stalenessClock);
+        PSAgentContext.get().getMatrixClientAdapter().getRowsFlow(result, rowIndex, rpcBatchSize, stalenessClock);
       }
       return result;
     } else {
@@ -326,8 +327,14 @@ public class ConsistencyController {
     int checkMasterIntervalMs = clockUpdateIntervalMs * 2;
     long startTs = System.currentTimeMillis();
     while (true) {
-      int cachedClock = clockCache.getClock(matrixId, rowIndex);
+      int cachedClock;
+      if(rowIndex == -1) {
+        cachedClock = clockCache.getClock(matrixId);
+      } else {
+        cachedClock = clockCache.getClock(matrixId, rowIndex);
+      }
       if (cachedClock >= clock) {
+        LOG.info("wait for clock " + clock + " over");
         return;
       }
 

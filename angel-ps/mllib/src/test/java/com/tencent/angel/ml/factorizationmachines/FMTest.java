@@ -130,7 +130,7 @@ public class FMTest {
     conf.set(MLConf.ML_NEGATIVE_SAMPLE_WEIGHT(), "0.5");
     conf.set(MLConf.ML_LEARN_RATE(), "0.000001");
     conf.set(MLConf.ML_FM_V_STDDEV(), "0.000001");
-    conf.set(MLConf.ML_EPOCH_NUM(), "50");
+    conf.set(MLConf.ML_EPOCH_NUM(), "10");
     conf.set(AngelConf.ANGEL_WORKERGROUP_NUMBER, "1");
     conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(0.01));
 

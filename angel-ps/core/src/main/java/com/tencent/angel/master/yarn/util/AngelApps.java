@@ -73,13 +73,31 @@ public class AngelApps extends Apps {
     }
 
     // Add standard Hadoop classes
-    for (String c : conf.getStrings(YarnConfiguration.YARN_APPLICATION_CLASSPATH,
+    String yarnConf = conf.get(YarnConfiguration.YARN_APPLICATION_CLASSPATH);
+    LOG.info("yarn.application.classpath=" + yarnConf);
+    if(yarnConf == null || yarnConf.isEmpty() || yarnConf.trim().isEmpty()) {
+      for (String c : YarnConfiguration.DEFAULT_YARN_APPLICATION_CLASSPATH) {
+        Apps.addToEnvironment(environment, Environment.CLASSPATH.name(), c.trim());
+      }
+    } else {
+      for (String c : conf.getStrings(YarnConfiguration.YARN_APPLICATION_CLASSPATH,
         YarnConfiguration.DEFAULT_YARN_APPLICATION_CLASSPATH)) {
-      Apps.addToEnvironment(environment, Environment.CLASSPATH.name(), c.trim());
+        Apps.addToEnvironment(environment, Environment.CLASSPATH.name(), c.trim());
+      }
     }
-    for (String c : conf.getStrings(MRJobConfig.MAPREDUCE_APPLICATION_CLASSPATH,
+
+    // Add mr
+    String mrConf = conf.get(MRJobConfig.MAPREDUCE_APPLICATION_CLASSPATH);
+    LOG.info("mapreduce.application.classpath=" + mrConf);
+    if(mrConf == null || mrConf.isEmpty() || mrConf.trim().isEmpty()) {
+      for (String c : StringUtils.getStrings(MRJobConfig.DEFAULT_MAPREDUCE_APPLICATION_CLASSPATH)) {
+        Apps.addToEnvironment(environment, Environment.CLASSPATH.name(), c.trim());
+      }
+    } else {
+      for (String c : conf.getStrings(MRJobConfig.MAPREDUCE_APPLICATION_CLASSPATH,
         StringUtils.getStrings(MRJobConfig.DEFAULT_MAPREDUCE_APPLICATION_CLASSPATH))) {
-      Apps.addToEnvironment(environment, Environment.CLASSPATH.name(), c.trim());
+        Apps.addToEnvironment(environment, Environment.CLASSPATH.name(), c.trim());
+      }
     }
   }
 

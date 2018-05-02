@@ -166,7 +166,7 @@ public class SnapshotDumper {
       if(fs.exists(tmpPath)) {
         fs.delete(tmpPath, true);
       }
-      context.getMatrixStorageManager().save(filter(matrixIds), tmpPath);
+      context.getMatrixStorageManager().save(filter(matrixIds), tmpPath, true);
       HdfsUtil.rename(tmpPath, baseDirPath, fs);
     }
   }

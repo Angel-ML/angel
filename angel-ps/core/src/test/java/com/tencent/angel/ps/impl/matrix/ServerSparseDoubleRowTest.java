@@ -17,7 +17,6 @@
 package com.tencent.angel.ps.impl.matrix;
 
 import com.tencent.angel.ml.matrix.RowType;
-import com.tencent.angel.protobuf.generated.MLProtos;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
@@ -48,7 +47,7 @@ public class ServerSparseDoubleRowTest {
     rowId = 0;
     startCol = 0;
     endCol = 3;
-    serverSparseDoubleRow = new ServerSparseDoubleRow(rowId, startCol, endCol);
+    serverSparseDoubleRow = new ServerSparseDoubleRow(rowId, startCol, endCol, 0);
   }
 
   @After
@@ -67,7 +66,7 @@ public class ServerSparseDoubleRowTest {
     buf.writeDouble(2.00);
     serverSparseDoubleRow.update(RowType.T_DOUBLE_DENSE, buf);
     DataOutputStream out = new DataOutputStream(new FileOutputStream("data"));
-    serverSparseDoubleRow.writeTo(out);
+    serverSparseDoubleRow.writeTo(out, false);
     out.close();
     DataInputStream in = new DataInputStream(new FileInputStream("data"));
     assertEquals(in.readInt(), 3);
@@ -91,7 +90,7 @@ public class ServerSparseDoubleRowTest {
     out.close();
     DataInputStream in = new DataInputStream(new FileInputStream("data"));
     ServerSparseDoubleRow newServerSparseDoubleRow =
-        new ServerSparseDoubleRow(rowId, startCol, endCol);
+        new ServerSparseDoubleRow(rowId, startCol, endCol, 0);
     newServerSparseDoubleRow.readFrom(in);
     in.close();
 
@@ -111,7 +110,7 @@ public class ServerSparseDoubleRowTest {
 
   @Test
   public void testUpdate() throws Exception {
-    serverSparseDoubleRow = new ServerSparseDoubleRow(rowId, startCol, endCol);
+    serverSparseDoubleRow = new ServerSparseDoubleRow(rowId, startCol, endCol, 0);
     ByteBuf buf = Unpooled.buffer(4 + 8 * 3);
     buf.writeInt(3);
     buf.writeDouble(0.00);
@@ -124,7 +123,7 @@ public class ServerSparseDoubleRowTest {
     assertEquals(serverSparseDoubleRow.getData().get(1), newValue1, 0.000);
     assertEquals(serverSparseDoubleRow.getData().get(2), -1, 0.000);
 
-    serverSparseDoubleRow = new ServerSparseDoubleRow(rowId, startCol, endCol);
+    serverSparseDoubleRow = new ServerSparseDoubleRow(rowId, startCol, endCol, 0);
     buf = Unpooled.buffer(4 + 2 * 12);
     buf.writeInt(2);
     LOG.info(buf);

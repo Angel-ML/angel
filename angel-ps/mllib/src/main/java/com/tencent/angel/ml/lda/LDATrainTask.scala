@@ -18,6 +18,7 @@
 package com.tencent.angel.ml.lda
 
 import com.tencent.angel.ml.lda.algo.{CSRTokens, Document}
+import com.tencent.angel.ml.math.vector.{DenseIntVector, SparseIntVector}
 import com.tencent.angel.worker.storage.MemoryDataBlock
 import com.tencent.angel.worker.task.{BaseTask, TaskContext}
 import org.apache.commons.logging.LogFactory
@@ -52,20 +53,62 @@ class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Do
     }
   }
 
+  def calcuateVocabularyNum(model: LDAModel): Int = {
+
+    val iter = docs.getvList().iterator()
+    var maxVocabularyId = -1
+    while (iter.hasNext) {
+      val doc = iter.next()
+      maxVocabularyId = Math.max(maxVocabularyId, doc.wids.max)
+    }
+
+    val taskId = ctx.getTaskIndex
+    val taskNum = ctx.getTotalTaskNum
+    val update = new SparseIntVector(taskNum)
+    update.set(taskId, maxVocabularyId)
+    model.vocabularyMatrix.increment(0, update)
+    model.vocabularyMatrix.clock()
+
+    val values = model.vocabularyMatrix.getRow(0).asInstanceOf[DenseIntVector].getValues
+
+    values.max + 1
+  }
+
   @throws[Exception]
   def run(ctx: TaskContext): Unit = {
     // Initializing LDA model
     val model = new LDAModel(ctx.getConf, ctx)
 
+    val numVocabulary = calcuateVocabularyNum(model)
+
     LOG.info(s"V=${model.V} K=${model.K} alpha=${model.alpha} "
       + s"beta=${model.beta} M=${docs.size()} tokens=$N "
       + s"threadNum=${model.threadNum}")
+
+    LOG.info(s"V=${model.V} real V=${numVocabulary}")
+
+    model.V = numVocabulary
+    model.vBeta = model.beta * model.V
+
+    val taskId = ctx.getTaskIndex
+    model.wtMat.matrixCtx.setRowNum(numVocabulary)
+    model.wtMat.matrixCtx.setMaxRowNumInBlock(model.blockNum(numVocabulary, model.K))
+    model.wtMat.matrixCtx.setMaxColNumInBlock(model.K)
+
+    if (taskId == 0) {
+      ctx.createMatrix(model.wtMat.matrixCtx, 10000)
+    }
 
     // build topic structures
     val tokens = new CSRTokens(model.V, docs.size())
     tokens.build(docs, model.K)
     docs.clean()
     LOG.info(s"build data")
+
+    // synchronize here, guaranteeing that word.topic matrix has been built
+
+    model.tMat.clock(false).get()
+    model.tMat.getRow(0)
 
 
     // training
@@ -76,6 +119,8 @@ class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Do
     // save values
     if (model.saveWordTopic) learner.saveWordTopic(model)
     if (model.saveDocTopic) learner.saveDocTopic(tokens, model)
+    if (model.saveDocTopicDistribution) learner.saveDocTopicDistribution(tokens, model)
+    if (model.saveTopicWordDistribution) learner.saveWordTopicDistribution(model)
   }
 
 }

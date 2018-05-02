@@ -66,7 +66,7 @@ object SparseLRWithOWLQN {
 
     PSContext.getOrCreate(spark.sparkContext)
 
-    val tempInstances = DataLoader.loadOneHotInstance(input, partitionNum, sampleRate, -1).rdd
+    val tempInstances = DataLoader.loadOneHotInstance(input, partitionNum, sampleRate).rdd
       .map { row =>
         Tuple2(row.getAs[scala.collection.mutable.WrappedArray[Long]](1).toArray, row.getString(0).toDouble)
       }.map { case (feat, label) =>

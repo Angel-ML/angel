@@ -114,7 +114,8 @@ public class MatrixCache {
   public void update(PartitionKey partKey, ServerRow rowSplit) {
     ServerPartition partCache = partitionCacheMap.get(partKey);
     if (partCache == null) {
-      partitionCacheMap.putIfAbsent(partKey, new ServerPartition(partKey, PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId).getRowType()));
+      partitionCacheMap.putIfAbsent(partKey, new ServerPartition(partKey,
+        PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId).getRowType(),0));
       partCache = partitionCacheMap.get(partKey);
     }
     
@@ -130,7 +131,8 @@ public class MatrixCache {
   public void update(PartitionKey partKey, List<ServerRow> rowsSplit) {
     ServerPartition partCache = partitionCacheMap.get(partKey);
     if (partCache == null) {
-      partitionCacheMap.putIfAbsent(partKey, new ServerPartition(partKey, PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId).getRowType()));
+      partitionCacheMap.putIfAbsent(partKey, new ServerPartition(partKey,
+        PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId).getRowType(),0));
       partCache = partitionCacheMap.get(partKey);
     }
     

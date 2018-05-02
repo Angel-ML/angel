@@ -71,7 +71,7 @@ class LDATest {
 
     // Set LDA parameters #V, #K
     val V = 12420
-    val K = 1000
+    val K = 100
 
     conf.setInt(WORD_NUM, V)
     conf.setInt(TOPIC_NUM, K)
@@ -113,7 +113,7 @@ class LDATest {
   }
 
   def inference(): Unit = {
-    conf.set(AngelConf.ANGEL_ACTION_TYPE, "predict")
+    conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT)
 
     conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/out_1")
     conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/out")

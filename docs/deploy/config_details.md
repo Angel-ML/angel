@@ -30,14 +30,19 @@ angel.ps.env | 无 | Angel PS环境变量设置，形式为K1=V1,K2=V2
 angel.workergroup.number | 1 | 需要启动的workergroup数量，目前一个workergroup仅支持一个worker，因此worker和workergroup数量相等
 angel.worker.task.number | 1 | 每个worker上运行的task数量
 angel.ps.number | 1 | 需要启动的ps数量
+angel.am.cpu.vcores | 1 | Angel master使用的CPU vcore数量
+angel.am.memory.mb | 2048 | Angel master使用的内存大小，以MB为单位
+angel.am.memory.gb | 2 | Angel master使用的内存大小，以GB为单位
 angel.am.java.opts | 无 | Angel master进程JVM参数
-angel.am.resource.cpu-vcores | 1 | Angel master使用的CPU vcore数量
-angel.worker.memory.mb | 1024 | 一个worker使用的内存大小，以MB为单位
-angel.worker.java.opts | 无 | worker进程JVM参数
 angel.worker.cpu.vcores | 1 | 一个worker使用的vcore数量
-angel.ps.memory.mb | 1024 | 一个PS使用的内存大小，以MB为单位
-angel.ps.java.opts | 无 | PS进程JVM参数
+angel.worker.memory.mb | 4096 | 一个worker使用的内存大小，以MB为单位
+angel.worker.memory.gb | 4 | 一个worker使用的内存大小，以GB为单位
+angel.worker.java.opts | 无 | worker进程JVM参数
 angel.ps.cpu.vcores | 1 | 一个PS使用的vcore数量
+angel.ps.memory.mb | 4096 | 一个PS使用的内存大小，以MB为单位
+angel.ps.memory.mb | 4 | 一个PS使用的内存大小，以GB为单位
+angel.ps.java.opts | 无 | PS进程JVM参数
+
 
 ## RPC相关配置
     

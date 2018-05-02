@@ -53,6 +53,9 @@ object LDAModel {
   // Topic count matrix
   val TOPIC_MAT = "topic"
 
+  // Vocabulary ID matrix
+  val VOCABULARY_MAT = "vocabulary"
+
   // Number of vocabulary
   val WORD_NUM = "ml.lda.word.num"
 
@@ -70,10 +73,15 @@ object LDAModel {
   // Beta value
   val BETA = "ml.lda.beta"
 
-  val SPLIT_NUM = "ml.lda.split.num"
-
+  // Whether to save doc.topic matrix
   val SAVE_DOC_TOPIC = "save.doc.topic"
+
+  val SAVE_DOC_TOPIC_DISTRIBUTION = "save.doc.topic.distribution"
+
+  // Whether to save word.topic matrix
   val SAVE_WORD_TOPIC = "save.word.topic"
+
+  val SAVE_TOPIC_WORD_DISTRIBUTION = "save.topic.word.distribution"
 
   val WORD_NUM_PATH = "word.num.path"
 
@@ -84,13 +92,15 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
 
   val LOG = LogFactory.getLog(classOf[LDAModel])
 
+  val numTasks = conf.getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, -1)
+
   // Initializing parameters
-  var V: Int = 0
-  val path = conf.get(WORD_NUM_PATH)
-  if (path != null && path.length > 0)
-    V = HDFSUtils.readFeatureNum(path, conf)
-  else
-    V = conf.getInt(WORD_NUM, 1)
+//  var V: Int = 0
+//  val path = conf.get(WORD_NUM_PATH)
+//  if (path != null && path.length > 0)
+//    V = HDFSUtils.readFeatureNum(path, conf)
+//  else
+//    V = conf.getInt(WORD_NUM, 1)
 
 
   val K = conf.getInt(TOPIC_NUM, 1)
@@ -98,19 +108,21 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
   val epoch = conf.getInt(MLConf.ML_EPOCH_NUM, 10)
   val alpha = conf.getFloat(ALPHA, 50.0F / K)
   val beta = conf.getFloat(BETA, 0.01F)
-  val vBeta = beta * V
+  var vBeta = 0F
+  var V = conf.getInt(WORD_NUM, 1)
 
-  val threadNum = conf.getInt(ANGEL_WORKER_THREAD_NUM, DEFAULT_ANGEL_WORKER_THREAD_NUM)
-  val splitNum = conf.getInt(SPLIT_NUM, 1)
+  val threadNum = conf.getInt(ANGEL_WORKER_THREAD_NUM, 4)
+
   val psNum = conf.getInt(ANGEL_PS_NUMBER, 1)
-  val parts = conf.getInt(ML_MODEL_PART_PER_SERVER, DEFAULT_ML_MODEL_PART_PER_SERVER)
 
   val saveDocTopic = conf.getBoolean(SAVE_DOC_TOPIC, false)
   val saveWordTopic = conf.getBoolean(SAVE_WORD_TOPIC, true)
+  val saveDocTopicDistribution = conf.getBoolean(SAVE_DOC_TOPIC_DISTRIBUTION, false)
+  val saveTopicWordDistribution = conf.getBoolean(SAVE_TOPIC_WORD_DISTRIBUTION, false)
 
   // Initializing model matrices
 
-  val wtMat = PSModel(WORD_TOPIC_MAT, V, K, blockNum(V, K), K)
+  var wtMat: PSModel = PSModel(WORD_TOPIC_MAT, V, K, blockNum(V, K), K)
     .setRowType(RowType.T_INT_DENSE)
     .setOplogType("SPARSE_INT")
 
@@ -120,8 +132,19 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
     .setNeedSave(false)
 
 
-  addPSModel(wtMat)
+  val vocabularyMatrix = PSModel(VOCABULARY_MAT, 1, numTasks, 1, numTasks)
+    .setRowType(RowType.T_INT_DENSE)
+    .setOplogType("DENSE_INT")
+    .setNeedSave(false)
+
+
+  val actType = conf.get(AngelConf.ANGEL_ACTION_TYPE)
+  actType match {
+    case MLConf.ANGEL_ML_PREDICT => addPSModel(wtMat)
+    case _ =>
+  }
   addPSModel(tMat)
+  addPSModel(vocabularyMatrix)
 
   //  setSavePath(conf)
   //  setLoadPath(conf)
@@ -133,13 +156,15 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
 
   def blockNum(V: Int, K: Int): Int = {
     val blockNum = 20 * 1024 * 1024 / (K * 4)
-    return Math.max(V / 10000, Math.min(V / psNum, blockNum))
+    return Math.max(1, Math.max(V / 10000, Math.min(V / psNum, blockNum)))
   }
 
 
   def loadModel(): Unit = {
     val paths = getPaths()
     val update = new DenseIntVector(K)
+
+    System.out.println(paths.length)
 
     for (i <- 0 until paths.length) {
       val path = paths(i)
@@ -152,14 +177,15 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
       while (!finish) {
         in.readLine() match {
           case line: String =>
-            val parts = line.split(": ")
-            val topics = parts(1).split(" ")
+            val parts = line.split(" ")
+            val topic = parts(0).toInt
             val vector = new DenseIntVector(K)
-            for (i <- 0 until K) {
-              vector.set(i, topics(i).toInt)
-              update.plusBy(i, topics(i).toInt)
+            for (i <- 1 until parts.length) {
+              val pp = parts(i).split(":")
+              vector.set(pp(0).toInt, pp(1).toInt)
+              update.plusBy(pp(0).toInt, pp(1).toInt)
             }
-            wtMat.increment(parts(0).toInt, vector)
+            wtMat.increment(topic, vector)
           case null => finish = true
         }
       }

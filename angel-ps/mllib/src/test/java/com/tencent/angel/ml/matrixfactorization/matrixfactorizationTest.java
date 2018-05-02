@@ -63,7 +63,7 @@ public class matrixfactorizationTest {
       conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
       conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model");
       conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/Log/log");
-      conf.set(MLConf.ML_MODEL_OUTPUT_PATH(), LOCAL_FS + TMP_PATH + "/usermodel");
+      conf.set(MLConf.ML_MF_USER_MODEL_OUTPUT_PATH(), LOCAL_FS + TMP_PATH + "/usermodel");
       // Set actionType train
       conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
 
