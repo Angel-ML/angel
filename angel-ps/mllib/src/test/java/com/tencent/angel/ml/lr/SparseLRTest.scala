@@ -83,7 +83,7 @@ class SparseLRTest {
     predictTest()
   }
 
-  @Test
+
   def trainOnLocalClusterTest(): Unit = {
     val inputPath: String = "./src/test/data/lr/a9a.train_label"
 
@@ -97,8 +97,7 @@ class SparseLRTest {
     val runner = new SparseLRRunner
     runner.train(conf)
   }
-
-  @Test
+  
   def predictTest() {
     val inputPath: String = "./src/test/data/lr/a9a.train_label"
     val loadPath: String = LOCAL_FS + TMP_PATH + "/admmlrmodel"
