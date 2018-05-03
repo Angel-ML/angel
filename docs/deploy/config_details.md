@@ -40,7 +40,7 @@ angel.worker.memory.gb | 4 | 一个worker使用的内存大小，以GB为单位
 angel.worker.java.opts | 无 | worker进程JVM参数
 angel.ps.cpu.vcores | 1 | 一个PS使用的vcore数量
 angel.ps.memory.mb | 4096 | 一个PS使用的内存大小，以MB为单位
-angel.ps.memory.mb | 4 | 一个PS使用的内存大小，以GB为单位
+angel.ps.memory.gb | 4 | 一个PS使用的内存大小，以GB为单位
 angel.ps.java.opts | 无 | PS进程JVM参数
 
 
