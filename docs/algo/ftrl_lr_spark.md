@@ -7,7 +7,7 @@
 
  `FTRL`算法兼顾了`FOBOS`和`RDA`两种算法的优势，既能同FOBOS保证比较高的精度，又能在损失一定精度的情况下产生更好的稀疏性。
  
-该算法的特征权重的更新公式为：
+该算法的特征权重的更新公式(参考文献1)为：
 
 ![](../img/ftrl_lr_w.png)
 
@@ -38,7 +38,7 @@ Google给出的带有L1和L2正则项的基于FTRL优化的逻辑回归算法的
 
 ![](../img/svrg.png)
 
-为此，算法在损失函数的梯度g处增加了一步基于SVRG的更新，同时为了符合SVRG算法的原理，增加了两个参数rho1，rho2,近似计算每个阶段的权重和梯度。给出基于SVRG算法的FTRL算法（后文简称"FTRL_VRG"）的一般过程：
+为此，算法在损失函数的梯度g处增加了一步基于SVRG的更新，同时为了符合SVRG算法的原理，增加了两个参数rho1，rho2,近似计算每个阶段的权重和梯度(参考文献2)。给出基于SVRG算法的FTRL算法（后文简称"FTRL_VRG"）的一般过程：
 
 ![](../img/ftrl_vrg.png)
 
@@ -48,7 +48,7 @@ Google给出的带有L1和L2正则项的基于FTRL优化的逻辑回归算法的
 
 FTRL_VRG的分布式实现框架图如下：
 
-![](../img/ftrl_vrg_framework.png)
+![](../img/ftrl_vrg_framework_new.png)
 
 ## 3. 运行 & 性能
 
@@ -217,3 +217,6 @@ FTRL_VRG的分布式实现框架图如下：
 
 
 ```
+## 4. 参考文献
+1. H. Brendan McMahan, Gary Holt, D. Sculley, Michael Young. Ad Click Prediction: a View from the Trenches.KDD’13, August 11–14, 2013
+2. 腾讯大数据技术峰会2017-广告中的大数据与机器学习
