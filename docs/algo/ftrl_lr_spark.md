@@ -59,10 +59,9 @@ FTRL_VRG的分布式实现框架图如下：
 ### **说明**
 在线方式以kafka为消息发送机制，使用时需要填写kafka的配置信息。优化方式包括FTRL和FTRL_VRG两种
 
-###  **输入格式**
-* dim：输入数据的维度,特征ID默认从0开始计数
-* isOneHot:数据格式是否为One-Hot,若是则为true
-* 数据格式说明：消息格式仅支持标准的["libsvm"](./data_format.md)数据格式或者["Dummy"](./data_format.md)格式
+###  **输入格式说明**
+* 消息格式仅支持标准的["libsvm"](./data_format.md)数据格式或者["Dummy"](./data_format.md)格式
+* 为了模型的准确性，算法内部都自动对每个样本增加了index为0，value为1的特征值，以实现偏置效果，因此该算法的输入数据中index从1开始
 
 ### **参数说明**
 
@@ -79,6 +78,8 @@ FTRL_VRG的分布式实现框架图如下：
 	 * zkQuorum:Zookeeper的配置信息，格式："hostname:port"
 	 * topic:kafka的topic信息
 	 * group:kafka的group信息
+	 * dim：输入数据的维度,特征ID默认从0开始计数
+	 * isOneHot:数据格式是否为One-Hot,若是则为true
 	 * receiverNum:kafka receiver的个数
 	 * streamingWindow：控制spark streaming流中每批数据的持续时间
 	 * modelPath：训练时模型的保存路
@@ -148,9 +149,9 @@ FTRL_VRG的分布式实现框架图如下：
 ### **说明**
 离线方式的输入数据储存在HDFS上。优化方式为FTRL
 
-###  **输入格式**
-* dim：输入数据的维度,特征ID默认从0开始计数，-1表示系统自行统计
-* 数据格式说明：数据格式仅支持标准的["libsvm"](./data_format.md)数据格式或者["Dummy"](./data_format.md)格式
+###  **输入格式说明**
+* 数据格式仅支持标准的["libsvm"](./data_format.md)数据格式或者["Dummy"](./data_format.md)格式
+* 为了模型的准确性，算法内部都自动对每个样本增加了index为0，value为1的特征值，以实现偏置效果，因此该算法的输入数据中index从1开始
 
 ### **参数说明**
 
@@ -163,6 +164,7 @@ FTRL_VRG的分布式实现框架图如下：
 * **输入输出参数**
 	 
 	 * input:训练数据路径 
+	 * dim：输入数据的维度,特征ID默认从0开始计数，-1表示系统自行统计
 	 * modelPath：训练时模型的保存路径
 	 * logPath:每个batch的平均loss输出路径
 	 * partitionNum：streaming中的分区数
