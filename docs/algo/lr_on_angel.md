@@ -106,7 +106,7 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Logistic 
 	    --angel.log.path $logpath \
 	    --ml.epoch.num 10 \
 	    --ml.num.update.per.epoch 10 \
-	    --ml.ml.feature.index.range 10000 \
+	    --ml.feature.index.range 10000 \
 	    --ml.data.validate.ratio 0.1 \
 	    --ml.data.type dummy \
 	    --ml.learn.rate 1 \
