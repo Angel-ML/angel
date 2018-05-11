@@ -40,11 +40,10 @@ FM算法的模型是三个存储在PS上的矩阵，矩阵元信息分别如下�
     ```
 * 参数说明            
   * ml.feature.index.range：数据特征个数
-  * ml.model.size: 模型大小, 对于一些稀疏模型, 存在一些无效维度, 即所有样本要这一维度上的取值匀为0.
-    - ml.model.size = ml.feature.index.range - number of invalidate indices
-  * ml.data.type 训练数据格式，支持libsvm和dummy两种格式
-  * action.type 任务类型，可以选择train，inctrain和predict三种类型，分别代表训练，增量训练和预测
-  * ml.num.update.per.epoch: 每个epoch中更新参数的次数
+  * ml.model.size: 模型大小, 对于一些稀疏模型, 存在一些无效维度, 即所有样本要这一维度上的取值匀为0. ml.model.size = ml.feature.index.range - number of invalidate indices
+  * ml.data.type：训练数据格式，支持libsvm和dummy两种格式
+  * action.type：任务类型，可以选择train，inctrain和predict三种类型，分别代表训练，增量训练和预测
+  * ml.num.update.per.epoch: 每个epoch中更新参数的次数
   * ml.epoch.num：训练迭代次数            
   * ml.learn.rate：学习速率          
   * ml.fm.learn.type：学习类型, 可以是分类或回归(取值为:"c"或"r")
@@ -63,8 +62,8 @@ FM算法的模型是三个存储在PS上的矩阵，矩阵元信息分别如下�
     --angel.train.data.path $input_path \
     --angel.save.model.path $model_path \
     --ml.feature.index.range $featureNum \
-    --action.type train \
-    --ml.data.type libsvm \
+    --action.type $action_type \
+    --ml.data.type $data_type \
     --ml.epoch.num $epochNum \
     --ml.num.update.per.epoch $batchNum \
     --ml.learn.rate $learnRate \
