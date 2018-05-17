@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class MatrixCommitter {
   private static final Log LOG = LogFactory.getLog(MatrixCommitter.class);
-  private final AtomicBoolean isCommitting = new AtomicBoolean(false);
+  private final AtomicBoolean canCommit = new AtomicBoolean(true);
   private final PSContext context;
   private volatile Thread commitRunner;
 
@@ -50,14 +50,12 @@ public class MatrixCommitter {
    * @param matrixPartitions matrix id -> need save matrices map
    */
   public void commit(Map<Integer, List<Integer>> matrixPartitions) {
-    if (isCommitting.get()) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("ps is commiting......");
-      }
+    if(!canCommit.getAndSet(false)) {
+      LOG.debug("Model is saved, just return");
       return;
     }
+
     LOG.info("to start commit tasks!");
-    isCommitting.set(true);
     commitRunner = new Thread(new Runnable() {
       @Override
       public void run() {
@@ -67,11 +65,9 @@ public class MatrixCommitter {
           String outputPath = conf.get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH);
           Path baseDir = new Path(new Path(outputPath, ModelFilesConstent.resultDirName), context.getPs().getServerId().toString());
           context.getMatrixStorageManager().save(matrixPartitions, baseDir);
-          isCommitting.set(false);
           LOG.info("commit matrices use time " + (System.currentTimeMillis() - startTime)  + " ms ");
           context.getPs().done();
         } catch (Throwable x) {
-          isCommitting.set(false);
           LOG.fatal("ps commit error ", x);
           context.getPs().failed("commit failed." + x.getMessage());
         }
