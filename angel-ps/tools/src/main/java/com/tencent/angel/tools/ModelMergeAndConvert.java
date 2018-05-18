@@ -18,6 +18,7 @@
 package com.tencent.angel.tools;
 
 import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.model.output.format.ModelFilesConstent;
 import com.tencent.angel.model.output.format.ModelFilesMeta;
 import com.tencent.angel.utils.ConfUtils;
@@ -32,6 +33,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.*;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.log4j.PropertyConfigurator;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -45,14 +47,13 @@ import java.util.List;
  */
 public class ModelMergeAndConvert {
   private static final Log LOG = LogFactory.getLog(ModelMergeAndConvert.class);
-  private final static int SPARSE_DOUBLE = 1;
-  private final static int DENSE_DOUBLE = 2;
-  private final static int SPARSE_INT = 3;
-  private final static int DENSE_INT = 4;
-  private final static int DENSE_FLOAT = 6;
-  private final static int SPARSE_FLOAT = 7;
-  private final static int SPARSE_DOUBLE_LONGKEY = 8;
   private final static String dataFile = "data";
+
+  static {
+    System.out.println(System.getProperty("user.dir"));
+    PropertyConfigurator.configure("./angel-ps/conf/log4j.properties");
+  }
+
 
   /**
    * Convert a angel model to other format
@@ -78,39 +79,43 @@ public class ModelMergeAndConvert {
     FileSystem fs = outputFile.getFileSystem(conf);
     FSDataOutputStream output = fs.create(outputFile);
     convertHeader(meta, output);
-
-    switch (meta.getRowType()) {
-      case DENSE_DOUBLE:{
+    RowType rowType = RowType.valueOf(meta.getRowType());
+    switch (rowType) {
+      case T_DOUBLE_DENSE: {
         convertDenseDoubleModel(conf, output, modelInputDir, lineConvert);
         break;
       }
 
-      case SPARSE_DOUBLE:{
+      case T_DOUBLE_SPARSE:
+      case T_DOUBLE_SPARSE_COMPONENT: {
         convertSparseDoubleModel(conf, output, modelInputDir, lineConvert);
         break;
       }
 
-      case SPARSE_DOUBLE_LONGKEY :{
+      case T_DOUBLE_SPARSE_LONGKEY:
+      case T_DOUBLE_SPARSE_LONGKEY_COMPONENT: {
         convertSparseDoubleLongKeyModel(conf, output, modelInputDir, lineConvert);
         break;
       }
 
-      case DENSE_FLOAT:{
+      case T_FLOAT_DENSE: {
         convertDenseFloatModel(conf, output, modelInputDir, lineConvert);
         break;
       }
 
-      case SPARSE_FLOAT:{
+      case T_FLOAT_SPARSE:
+      case T_FLOAT_SPARSE_COMPONENT: {
         convertSparseFloatModel(conf, output, modelInputDir, lineConvert);
         break;
       }
 
-      case DENSE_INT :{
+      case T_INT_DENSE: {
         convertDenseIntModel(conf, output, modelInputDir, lineConvert);
         break;
       }
 
-      case SPARSE_INT:{
+      case T_INT_SPARSE:
+      case T_INT_SPARSE_COMPONENT: {
         convertSparseIntModel(conf, output, modelInputDir, lineConvert);
         break;
       }
@@ -243,45 +248,12 @@ public class ModelMergeAndConvert {
   }
 
   private static void convertHeader(ModelFilesMeta meta, FSDataOutputStream output) throws IOException {
+    LOG.info("model meta=" + meta);
     output.writeBytes("modelName=" + meta.getMatrixName() + "\n");
     output.writeBytes("row=" + meta.getRow() + "\n");
     output.writeBytes("column=" + meta.getCol() + "\n");
-    switch (meta.getRowType()) {
-      case DENSE_DOUBLE:{
-        output.writeBytes("rowType=T_DOUBLE_DENSE\n");
-        break;
-      }
-
-      case SPARSE_DOUBLE:{
-        output.writeBytes("rowType=T_DOUBLE_SPARSE\n");
-        break;
-      }
-
-      case SPARSE_DOUBLE_LONGKEY :{
-        output.writeBytes("rowType=T_DOUBLE_SPARSE_LONGKEY\n");
-        break;
-      }
-
-      case DENSE_FLOAT:{
-        output.writeBytes("rowType=T_FLOAT_DENSE\n");
-        break;
-      }
-
-      case SPARSE_FLOAT:{
-        output.writeBytes("rowType=T_FLOAT_SPARSE\n");
-        break;
-      }
-
-      case DENSE_INT :{
-        output.writeBytes("rowType=T_INT_DENSE\n");
-        break;
-      }
-
-      case SPARSE_INT:{
-        output.writeBytes("rowType=T_INT_SPARSE\n");
-        break;
-      }
-    }
+    RowType rowType = RowType.valueOf(meta.getRowType());
+    output.writeBytes("rowType=" + rowType.toString() + "\n");
   }
 
   /**
