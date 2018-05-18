@@ -867,6 +867,7 @@ public abstract class CompLongKeyDoubleVector extends TLongDoubleVector {
   public TLongDoubleVector elemUpdate(LongDoubleElemUpdater updater, ElemUpdateParam param) {
     ElementUpdateOp op = new ElementUpdateOp(vectors, 0, splitNum, updater, param);
     MatrixOpExecutors.execute(op);
+    op.join();
     return this;
   }
 }

@@ -77,7 +77,7 @@ case class LibSVMDataParser(splitor: String, featRange: Long, negY: Boolean, has
     val len = splits.length
 
     val x = rowType match {
-      case RowType.T_DOUBLE_DENSE | RowType.T_DOUBLE_SPARSE =>
+      case RowType.T_DOUBLE_DENSE | RowType.T_DOUBLE_SPARSE | RowType.T_DOUBLE_SPARSE_COMPONENT=>
         val keys: Array[Int] = new Array[Int](len)
         val vals: Array[Double] = new Array[Double](len)
 
