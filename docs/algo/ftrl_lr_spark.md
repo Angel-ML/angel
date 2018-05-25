@@ -52,7 +52,7 @@ FTRL_VRG的分布式实现框架图如下：
 
 ## 3. 运行 & 性能
 
-提供了两种数据接入方式:**在线与离线**方式
+提供了两种数据接入方式:**在线与离线**方式，其中**离线**方式的详情查看[这里](./sona/sparselr_ftrl.md)
 
 **<在线方式>**
 
@@ -121,14 +121,14 @@ FTRL_VRG的分布式实现框架图如下：
     --executor-cores 2 \
     --executor-memory 12g \
     --class com.tencent.angel.spark.ml.online_learning.FTRLRunner \
-    spark-on-angel-mllib-2.2.0.jar \
+    spark-on-angel-mllib-<version>.jar \
     partitionNum:10 \
     modelPath:$modelPath \
     checkPointPath:$checkPointPath \
     logPath:$logPath \
-    group:$group \
-    master:$master \
-    topic:$topic \
+    zkQuorum:<zookeeper IP> \
+    group:<kafka group> \
+    topic:<kafka topic> \
     rho1:0.2 \
     rho2:0.2 \
     alpha:0.1 \
@@ -144,81 +144,6 @@ FTRL_VRG的分布式实现框架图如下：
 
 ```
 
-**<离线方式>**
-
-### **说明**
-离线方式的输入数据储存在HDFS上。优化方式为FTRL
-
-###  **输入格式说明**
-* 数据格式仅支持标准的["libsvm"](./data_format.md)数据格式或者["Dummy"](./data_format.md)格式
-* 为了模型的准确性，算法内部都自动对每个样本增加了index为0，value为1的特征值，以实现偏置效果，因此该算法的输入数据中index从1开始
-
-### **参数说明**
-
-* **算法参数**  
-	* alpha：w更新公式中的alpha 
-	* beta: w更新公式中的beta
-	* lambda1: w更新公式中的lambda1
-	* lambda2: w更新公式中的lambda2
-
-* **输入输出参数**
-	 
-	 * input:训练数据路径 
-	 * dim：输入数据的维度,特征ID默认从0开始计数，-1表示系统自行统计
-	 * modelPath：训练时模型的保存路径
-	 * logPath:每个batch的平均loss输出路径
-	 * partitionNum：streaming中的分区数
-	 * sampleRate:样本采样率
-	 * validateFaction：验证集的采样率
-	 * epoch:整个数据集的迭代轮数
-	 * batchSize:每个批处理的样本量
-
-
-* **资源参数**
-	* num-executors：executor个数   
-	* executor-cores：executor的核数    
-	* executor-memory：executor的内存    
-	* driver-memory：driver端内存    
-	* spark.ps.instances:Angel PS节点数
-	* spark.ps.cores:每个PS节点的Core数
-	* spark.ps.memory：每个PS节点的Memory大小
-
-###  **提交命令**
-
-可以通过下面命令向Yarn集群提交FTRL_SparseLR算法的训练任务:
-
-```shell
-./bin/spark-submit \
---master yarn-cluster \
-    --conf spark.hadoop.angel.ps.ha.replication.number=2 \
-    --conf fs.default.name=$defaultFS \
-    --conf spark.yarn.allocation.am.maxMemory=55g \
-    --conf spark.yarn.allocation.executor.maxMemory=55g \
-    --conf spark.ps.jars=$SONA_ANGEL_JARS \
-    --conf spark.ps.instances=20 \
-    --conf spark.ps.cores=2 \
-    --conf spark.ps.memory=6g \
-    --jars $SONA_SPARK_JARS \
-    --name $name \
-    --driver-memory 5g \
-    --num-executors 10 \
-    --executor-cores 2 \
-    --executor-memory 12g \
-    --class com.tencent.angel.spark.ml.online_learning.FTRLRunner \
-    spark-on-angel-mllib-2.2.0.jar \
-    input:$input
-    partitionNum:10 \
-    modelPath:$modelPath \
-    alpha:0.1 \
-    beta:1.0 \
-    lambda1:0.3 \
-    lambda2:0.3 \
-    dim:175835 \
-    epoch:2 \
-    batchSize:1000 
-
-
-```
 ## 4. 参考文献
 1. H. Brendan McMahan, Gary Holt, D. Sculley, Michael Young. Ad Click Prediction: a View from the Trenches.KDD’13, August 11–14, 2013
 2. 腾讯大数据技术峰会2017-广告中的大数据与机器学习
