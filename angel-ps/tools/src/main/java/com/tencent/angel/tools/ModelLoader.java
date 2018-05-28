@@ -18,7 +18,7 @@
 package com.tencent.angel.tools;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.model.output.format.ModelFilesConstent;
 import com.tencent.angel.model.output.format.ModelFilesMeta;
 import com.tencent.angel.model.output.format.ModelPartitionMeta;
@@ -51,13 +51,6 @@ public class ModelLoader {
   private static volatile int batchNum = 1;
   private final static ForkJoinPool pool =
       new ForkJoinPool(Runtime.getRuntime().availableProcessors() * 2);
-  private final static int SPARSE_DOUBLE = 1;
-  private final static int DENSE_DOUBLE = 2;
-  private final static int SPARSE_INT = 3;
-  private final static int DENSE_INT = 4;
-  private final static int DENSE_FLOAT = 6;
-  private final static int SPARSE_FLOAT = 7;
-  private final static int SPARSE_DOUBLE_LONGKEY = 8;
 
   /**
    * Read model row type
@@ -94,7 +87,7 @@ public class ModelLoader {
     /**
      * Row type
      */
-    int rowType;
+    RowType rowType;
 
     /**
      * Row number
@@ -113,7 +106,7 @@ public class ModelLoader {
      * @param row row number
      * @param col column number
      */
-    public Model(int rowType, int row, long col) {
+    public Model(RowType rowType, int row, long col) {
       this.rowType = rowType;
       this.row = row;
       this.col = col;
@@ -122,7 +115,7 @@ public class ModelLoader {
     /**
      * Get row type
      */
-    int getRowType() {
+    RowType getRowType() {
       return rowType;
     }
   }
@@ -145,7 +138,7 @@ public class ModelLoader {
      * @param col column number
      */
     public DenseDoubleModel(int row, long col) {
-      super(DENSE_DOUBLE, row, col);
+      super(RowType.T_DOUBLE_DENSE, row, col);
       model = new double[row][];
     }
 
@@ -197,7 +190,7 @@ public class ModelLoader {
      * @param col column number
      */
     public SparseDoubleModel(int row, long col) {
-      super(SPARSE_DOUBLE, row, col);
+      super(RowType.T_DOUBLE_SPARSE, row, col);
       tempModel = new HashMap<>();
     }
 
@@ -294,7 +287,7 @@ public class ModelLoader {
      * @param col column number
      */
     public DenseFloatModel(int row, long col) {
-      super(DENSE_FLOAT, row, col);
+      super(RowType.T_FLOAT_DENSE, row, col);
       model = new float[row][];
     }
 
@@ -346,7 +339,7 @@ public class ModelLoader {
      * @param col column number
      */
     public SparseFloatModel(int row, long col) {
-      super(SPARSE_FLOAT, row, col);
+      super(RowType.T_FLOAT_SPARSE, row, col);
       tempModel = new HashMap<>();
     }
 
@@ -443,7 +436,7 @@ public class ModelLoader {
      * @param col column number
      */
     public DenseIntModel(int row, long col) {
-      super(DENSE_INT, row, col);
+      super(RowType.T_INT_DENSE, row, col);
       model = new int[row][];
     }
 
@@ -493,7 +486,7 @@ public class ModelLoader {
      * @param col column number
      */
     public SparseIntModel(int row, long col) {
-      super(SPARSE_INT, row, col);
+      super(RowType.T_INT_SPARSE, row, col);
       tempModel = new HashMap<>();
     }
 
@@ -596,7 +589,7 @@ public class ModelLoader {
      * @param col column number
      */
     public SparseDoubleLongKeyModel(int row, long col) {
-      super(SPARSE_DOUBLE_LONGKEY, row, col);
+      super(RowType.T_DOUBLE_SPARSE_LONGKEY, row, col);
       tempModel = new HashMap<>();
     }
 
@@ -794,31 +787,31 @@ public class ModelLoader {
   private static void loadPartition(Model model, FSDataInputStream input,
       ModelPartitionMeta partMeta) throws IOException {
     switch (model.getRowType()) {
-      case SPARSE_DOUBLE:
+      case T_DOUBLE_SPARSE:
         loadSparseDoublePartition((SparseDoubleModel) model, input, partMeta);
         break;
 
-      case DENSE_DOUBLE:
+      case T_DOUBLE_DENSE:
         loadDenseDoublePartition((DenseDoubleModel) model, input, partMeta);
         break;
 
-      case SPARSE_INT:
+      case T_INT_SPARSE:
         loadSparseIntPartition((SparseIntModel) model, input, partMeta);
         break;
 
-      case DENSE_INT:
+      case T_INT_DENSE:
         loadDenseIntPartition((DenseIntModel) model, input, partMeta);
         break;
 
-      case DENSE_FLOAT:
+      case T_FLOAT_DENSE:
         loadDenseFloatPartition((DenseFloatModel) model, input, partMeta);
         break;
 
-      case SPARSE_FLOAT:
+      case T_FLOAT_SPARSE:
         loadSparseFloatPartition((SparseFloatModel) model, input, partMeta);
         break;
 
-      case SPARSE_DOUBLE_LONGKEY:
+      case T_DOUBLE_SPARSE_LONGKEY:
         loadSparseDoubleLongKeyPartition((SparseDoubleLongKeyModel) model, input, partMeta);
         break;
 
@@ -1074,9 +1067,10 @@ public class ModelLoader {
       throws IOException {
     // Load model meta
     ModelFilesMeta meta = getMeta(modelDir, conf);
+    RowType rowType = RowType.valueOf(meta.getRowType());
 
     // Check row type
-    if (meta.getRowType() != DENSE_DOUBLE) {
+    if (rowType != RowType.T_DOUBLE_DENSE) {
       throw new IOException("model row type is not dense double, you should check it");
     }
 
@@ -1097,9 +1091,10 @@ public class ModelLoader {
       throws IOException {
     // Load model meta
     ModelFilesMeta meta = getMeta(modelDir, conf);
+    RowType rowType = RowType.valueOf(meta.getRowType());
 
     // Check row type
-    if (meta.getRowType() != SPARSE_DOUBLE) {
+    if (rowType != RowType.T_DOUBLE_SPARSE && rowType != RowType.T_DOUBLE_SPARSE_COMPONENT) {
       throw new IOException("model row type is not sparse double, you should check it");
     }
 
@@ -1120,9 +1115,10 @@ public class ModelLoader {
       throws IOException {
     // Load model meta
     ModelFilesMeta meta = getMeta(modelDir, conf);
+    RowType rowType = RowType.valueOf(meta.getRowType());
 
     // Check row type
-    if (meta.getRowType() != DENSE_FLOAT) {
+    if (rowType != RowType.T_FLOAT_DENSE) {
       throw new IOException("model row type is not dense float, you should check it");
     }
 
@@ -1143,9 +1139,10 @@ public class ModelLoader {
       throws IOException {
     // Load model meta
     ModelFilesMeta meta = getMeta(modelDir, conf);
+    RowType rowType = RowType.valueOf(meta.getRowType());
 
     // Check row type
-    if (meta.getRowType() != SPARSE_FLOAT) {
+    if (rowType != RowType.T_FLOAT_SPARSE && rowType != rowType.T_FLOAT_SPARSE_COMPONENT) {
       throw new IOException("model row type is not sparse float, you should check it");
     }
 
@@ -1165,9 +1162,10 @@ public class ModelLoader {
   public static int[][] loadToIntArrays(String modelDir, Configuration conf) throws IOException {
     // Load model meta
     ModelFilesMeta meta = getMeta(modelDir, conf);
+    RowType rowType = RowType.valueOf(meta.getRowType());
 
     // Check row type
-    if (meta.getRowType() != DENSE_INT) {
+    if (rowType != RowType.T_INT_DENSE) {
       throw new IOException("model row type is not dense int, you should check it");
     }
 
@@ -1188,9 +1186,10 @@ public class ModelLoader {
       throws IOException {
     // Load model meta
     ModelFilesMeta meta = getMeta(modelDir, conf);
+    RowType rowType = RowType.valueOf(meta.getRowType());
 
     // Check row type
-    if (meta.getRowType() != SPARSE_INT) {
+    if (rowType != RowType.T_INT_SPARSE && rowType != RowType.T_INT_SPARSE_COMPONENT) {
       throw new IOException("model row type is not sparse int, you should check it");
     }
 
@@ -1212,10 +1211,11 @@ public class ModelLoader {
       throws IOException {
     // Load model meta
     ModelFilesMeta meta = getMeta(modelDir, conf);
+    RowType rowType = RowType.valueOf(meta.getRowType());
 
     // Check row type
-    if (meta.getRowType() != SPARSE_DOUBLE_LONGKEY) {
-      throw new IOException("model row type is not sparse int, you should check it");
+    if (rowType != RowType.T_DOUBLE_SPARSE_LONGKEY && rowType != RowType.T_DOUBLE_SPARSE_LONGKEY_COMPONENT) {
+      throw new IOException("model row type is not sparse long double, you should check it");
     }
 
     // Load model

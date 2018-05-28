@@ -103,7 +103,6 @@ object GradientDescent {
       if (loss.isL2Reg) {
         // for l2
         L2Loss(loss, w, grad)
-
         wM.increment(grad.timesBy(-1.0 * lr).asInstanceOf[TDoubleVector])
         wM.syncClock()
       } else if (loss.isL1Reg) {
@@ -192,7 +191,11 @@ object GradientDescent {
 
         class L2Updater extends IntDoubleElemUpdater {
           override def action(index: Int, value: Double, param: ElemUpdateParam): Double = {
-            value + param.asInstanceOf[L2UpdateParam].getW.get(index) * param.asInstanceOf[L2UpdateParam].getLossRegParam
+            if(Math.abs(value) > 10e-7) {
+              value + param.asInstanceOf[L2UpdateParam].getW.get(index) * param.asInstanceOf[L2UpdateParam].getLossRegParam
+            } else {
+              value
+            }
           }
         }
         compSparse.elemUpdate(new L2Updater, new L2UpdateParam(loss.getRegParam, w))
@@ -221,7 +224,11 @@ object GradientDescent {
 
         class L2Updater extends LongDoubleElemUpdater {
           override def action(index: Long, value: Double, param: ElemUpdateParam): Double = {
-            value + param.asInstanceOf[L2UpdateParam].getW.get(index) * param.asInstanceOf[L2UpdateParam].getLossRegParam
+            if(Math.abs(value) > 10e-7) {
+              value + param.asInstanceOf[L2UpdateParam].getW.get(index) * param.asInstanceOf[L2UpdateParam].getLossRegParam
+            } else {
+              value
+            }
           }
         }
         compLong.elemUpdate(new L2Updater, new L2UpdateParam(loss.getRegParam, w))
