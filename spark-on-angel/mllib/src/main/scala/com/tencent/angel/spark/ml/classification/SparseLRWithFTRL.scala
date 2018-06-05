@@ -16,6 +16,8 @@
 
 package com.tencent.angel.spark.ml.classification
 
+import scala.util.Random
+
 import org.apache.spark.SparkConf
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.rdd.RDD
@@ -148,7 +150,7 @@ object SparseLRWithFTRL {
     (0 until epoch).foreach { epochId =>
       val tempRDD = trainSet.mapPartitions { iter =>
         var batchId = 0
-        val instances = iter.toArray
+        val instances = Random.shuffle(iter).toArray
 
         instances.sliding(batchSize, batchSize)
           .map { batch =>
