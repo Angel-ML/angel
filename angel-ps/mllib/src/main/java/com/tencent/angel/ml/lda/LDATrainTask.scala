@@ -17,6 +17,7 @@
 
 package com.tencent.angel.ml.lda
 
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.lda.algo.{CSRTokens, Document}
 import com.tencent.angel.ml.math.vector.{DenseIntVector, SparseIntVector}
 import com.tencent.angel.worker.storage.MemoryDataBlock
@@ -118,8 +119,10 @@ class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Do
 
     // save values
     if (model.saveWordTopic) learner.saveWordTopic(model)
-    if (model.saveDocTopic) learner.saveDocTopic(tokens, model)
-    if (model.saveDocTopicDistribution) learner.saveDocTopicDistribution(tokens, model)
+    if (model.saveDocTopic) learner.saveDocTopic(
+      conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH), tokens, model)
+    if (model.saveDocTopicDistribution) learner.saveDocTopicDistribution(
+      conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH), tokens, model)
     if (model.saveTopicWordDistribution) learner.saveWordTopicDistribution(model)
   }
 
