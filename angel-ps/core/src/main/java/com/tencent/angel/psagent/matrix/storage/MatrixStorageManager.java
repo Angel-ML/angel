@@ -118,4 +118,8 @@ public class MatrixStorageManager {
 
     storage.removeRow(rowIndex);
   }
+
+  public void clear() {
+    matrixIdToStorageMap.clear();
+  }
 }
