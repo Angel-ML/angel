@@ -108,7 +108,7 @@ F+LDA通过将概率公式进行了分解成两部分![](http://latex.codecogs.c
   - 输入与输出 
     * angel.predict.data.path：预测数据的输入路径    
     * angel.predict.out.path：预测结果存储路径 
-  * angel.load.model.path: 预测时模型加载路径（即训练时模型保存路径）
+    * angel.load.model.path: 预测时模型加载路径（即训练时模型保存路径）
   
 * **注意事项**
   * 目前angel lda上的输出需要对词语进行编号，最好保证编号从0开始，并且连续，输入文件中需要将文档中的词语换成编号。词语到编号的映射关系需要用户自行维护。
