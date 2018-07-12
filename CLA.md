@@ -23,7 +23,6 @@ It is important to read and understand this legal agreement.
 
 2. Click to sign in with Github to agree.
 
-
 ![](docs/img/CLA2.png)
 
 
