@@ -1,6 +1,7 @@
 # Contributing to Angel
 Welcome to [report Issues](https://github.com/Tencent/angel/issues) or [pull requests](https://github.com/Tencent/angel/pulls). It's recommended to read the following Contributing Guide first before contributing. 
 
+
 ## Issues
 We use Github Issues to track public bugs and feature requests.
 
@@ -12,6 +13,9 @@ If you open an issue, the more information the better. Such as detailed descript
 
 ## Pull Requests
 We strongly welcome your pull request to make Angel better. 
+
+Ensure you have signed the [Contributor License Agreement (CLA).](master/CLA.md)
+
 
 ### Branch Management
 There are three main branches here:
