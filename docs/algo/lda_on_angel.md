@@ -91,10 +91,10 @@ F+LDA通过将概率公式进行了分解成两部分![](http://latex.codecogs.c
     * angel.save.model.path: 模型保存路径
   
   * 输出配置
-  * save.doc.topic=true: 是否保存doc-topic矩阵
-  * save.word.topic=true: 是否保存word-topic矩阵
-  * save.doc.topic.distribution=true: 是否保存doc.topic分布
-  * save.topic.word.distribution=true: 是否保存topic.word分布
+    * save.doc.topic=true: 是否保存doc-topic矩阵
+    * save.word.topic=true: 是否保存word-topic矩阵
+    * save.doc.topic.distribution=true: 是否保存doc.topic分布
+    * save.topic.word.distribution=true: 是否保存topic.word分布
   
   * 算法参数
     * ml.epoch.num: 算法迭代次数
