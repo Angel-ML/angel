@@ -388,6 +388,68 @@ public class PSAgent {
     }
   }
 
+  public void reset() {
+    stopped.set(false);
+    psAgentInitFinishedFlag.set(false);
+    LOG.info("stop heartbeat thread!");
+    if (heartbeatThread != null) {
+      heartbeatThread.interrupt();
+      try {
+        heartbeatThread.join();
+      } catch (InterruptedException ie) {
+        LOG.warn("InterruptedException while stopping heartbeatThread:", ie);
+      }
+      heartbeatThread = null;
+    }
+
+    LOG.info("stop op log merger");
+    if (opLogCache != null) {
+      opLogCache.stop();
+      opLogCache = null;
+    }
+
+    LOG.info("stop clock cache");
+    if (clockCache != null) {
+      clockCache.stop();
+      clockCache = null;
+    }
+
+    LOG.info("stop matrix cache");
+    if (matricesCache != null) {
+      matricesCache.stop();
+      matricesCache = null;
+    }
+
+    LOG.info("stop matrix client adapater");
+    if (matrixClientAdapter != null) {
+      matrixClientAdapter.stop();
+      matrixClientAdapter = null;
+    }
+
+    LOG.info("stop rpc dispacher");
+    if (matrixTransClient != null) {
+      matrixTransClient.stop();
+      matrixTransClient = null;
+    }
+
+    controlConnectManager = null;
+    masterClient = null;
+    locationManager = null;
+    location = null;
+    id = -1;
+    psControlClientManager = null;
+    if(matrixMetaManager != null) {
+      matrixMetaManager.clear();
+      matrixMetaManager = null;
+    }
+
+    if(matrixStorageManager != null) {
+      matrixStorageManager.clear();
+      matrixStorageManager = null;
+    }
+    consistencyController = null;
+  }
+
   protected void heartbeat() throws ServiceException {
     PSAgentReportResponse response = masterClient.psAgentReport();
     switch (response.getCommand()) {

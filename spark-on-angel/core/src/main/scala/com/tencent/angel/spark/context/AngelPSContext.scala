@@ -18,10 +18,12 @@ package com.tencent.angel.spark.context
 
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{Map, mutable}
 
+import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.util.ShutdownHookManager
@@ -30,14 +32,13 @@ import org.apache.spark.{SparkConf, TaskContext}
 
 import com.tencent.angel.client.AngelContext
 import com.tencent.angel.common.location.Location
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.conf.AngelConf._
 import com.tencent.angel.ml.matrix.{MatrixContext, MatrixMeta}
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.psagent.PSAgent
 import com.tencent.angel.psagent.matrix.{MatrixClient, MatrixClientFactory}
 import com.tencent.angel.spark.client.PSClient
-import com.tencent.angel.spark.models.matrix.MatrixType
-import com.tencent.angel.spark.models.matrix.MatrixType.MatrixType
 import com.tencent.angel.spark.models.vector.VectorType.VectorType
 import com.tencent.angel.spark.models.vector.{PSVector, VectorType}
 
@@ -45,6 +46,8 @@ import com.tencent.angel.spark.models.vector.{PSVector, VectorType}
  * AngelPSContext for driver and executor, it is an implement of `PSContext`
  */
 private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) extends PSContext {
+
+  val LOG = LogFactory.getLog(this.getClass)
 
   import AngelPSContext._
 
@@ -164,8 +167,8 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
     destroyVectorPool(vector.poolId)
   }
 
-
   def TOTAL_PS_CORES = angelCtx.getConf.getInt(TOTAL_CORES, 2)
+
   private val matrixMetaMap = mutable.HashMap.empty[Int, MatrixMeta]
   private var matrixCounter = 0
   private val psVectorPools = new ConcurrentHashMap[Int, PSVectorPool]()
@@ -192,7 +195,20 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
     val masterPort = angelCtx.getMasterLocation.getPort
     new PSAgent(angelCtx.getConf, masterIp, masterPort, contextId, false, null)
   }
-  psAgent.initAndStart()
+
+  private val isAlive = new AtomicBoolean(false)
+  while (!isAlive.get()) {
+    try {
+      psAgent.initAndStart()
+      isAlive.set(true)
+    } catch {
+      case e: Throwable =>
+        println(s"init PSAgent failed, cause: $e")
+        psAgent.reset()
+        isAlive.set(false)
+    }
+    Thread.sleep(5 * 1000)
+  }
 
   ShutdownHookManager.get().addShutdownHook(
     new Runnable {
@@ -402,9 +418,6 @@ private[spark] object AngelPSContext {
         .append(" -verbose:gc")
         .append(" -XX:+PrintGCDateStamps")
         .append(" -XX:+PrintGCDetails")
-        .append(" -XX:+PrintCommandLineFlags")
-        .append(" -XX:+PrintTenuringDistribution")
-        .append(" -XX:+PrintAdaptiveSizePolicy")
         .toString()
       executorOps
     }
