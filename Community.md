@@ -35,7 +35,7 @@ The TSC may add additional members to the TSC by a 2/3 majority vote.
 
 ## Committer
 
-Any existing Committer can nominate an individual making significant and valuable contributions across the Angel Project to become a new Collaborator. 
+Any existing Committer can nominate an individual making significant and valuable contributions across the Angel Project to become a new Committer. 
 
 One may become a Committer by a majority approval of the existing Committers. A Committer may be removed by a majority approval of the other existing Committers.
 
