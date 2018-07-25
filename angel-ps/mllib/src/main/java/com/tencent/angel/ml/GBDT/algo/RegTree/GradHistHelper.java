@@ -22,6 +22,8 @@ import com.tencent.angel.ml.conf.MLConf;
 import com.tencent.angel.ml.math.vector.DenseDoubleVector;
 import com.tencent.angel.ml.math.vector.SparseDoubleSortedVector;
 import com.tencent.angel.ml.math.vector.TDoubleVector;
+import com.tencent.angel.ml.matrix.psf.update.enhance.CompressUpdateFunc;
+import com.tencent.angel.ml.model.PSModel;
 import com.tencent.angel.ml.param.GBDTParam;
 import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
 import com.tencent.angel.worker.WorkerContext;
@@ -54,7 +56,7 @@ public class GradHistHelper {
 
     // 2. get the span of this node
     int nodeStart = insStart;
-    int nodeEnd = insEnd;
+    int nodeEnd = insEnd; // inclusive
     LOG.debug(String
       .format("Build histogram of node[%d]: size[%d] instance span [%d - %d]", this.nid,
         histogram.getDimension(), nodeStart, nodeEnd));
@@ -83,8 +85,8 @@ public class GradHistHelper {
         }
         // 3.4.3. find the position of feature value in a histogram
         // the search area in the sketch is [fid * #splitNum, (fid+1) * #splitNum - 1]
-        int start = fPos * splitNum;
-        int end;
+        int start = fPos * splitNum; // inclusive
+        int end; // inclusive
         if (this.controller.cateFeatNum.containsKey(fid)) {
           end = start + this.controller.cateFeatNum.get(fid) - 1;
         } else {
@@ -127,6 +129,31 @@ public class GradHistHelper {
     }
 
     return histogram;
+  }
+
+  public DenseDoubleVector subtractHistogram() {
+    int parentNid = (nid - 1) / 2;
+    int siblingNid = 4 * parentNid + 3 - nid;
+    return (DenseDoubleVector)
+            controller.histogramCache[parentNid].plus(controller.histogramCache[siblingNid], -1.0);
+  }
+
+  public void pushHistogram(PSModel model, DenseDoubleVector histogram, int bytesPerItem) {
+    if (bytesPerItem < 1 || bytesPerItem > 8) {
+      LOG.info("Invalid compress configuration: " + bytesPerItem + ", it should be [1,8].");
+      bytesPerItem = MLConf.DEFAULT_ANGEL_COMPRESS_BYTES();
+    }
+    try {
+      if (bytesPerItem == 8) {
+        model.increment(0, histogram);
+      } else {
+        CompressUpdateFunc func =
+                new CompressUpdateFunc(model.getMatrixId(), 0, histogram, bytesPerItem * 8);
+        model.update(func);
+      }
+    } catch (Exception e) {
+      LOG.error(model.modelName() + " increment failed, ", e);
+    }
   }
 
   // find the best split result of the histogram of a tree node

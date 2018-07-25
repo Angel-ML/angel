@@ -120,6 +120,6 @@ public class AfterSplitRunner implements Runnable {
     }
     // 5.8. deactivate active node
     this.controller.resetActiveTNodes(nid);
-    this.controller.activeNodeStat[nid] = 0;
+    this.controller.activeNodeStat[nid].decrementAndGet();
   }
 }
