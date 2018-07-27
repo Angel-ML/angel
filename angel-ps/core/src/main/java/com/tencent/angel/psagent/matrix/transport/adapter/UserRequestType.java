@@ -17,5 +17,5 @@
 package com.tencent.angel.psagent.matrix.transport.adapter;
 
 public enum UserRequestType {
-  GET_ROW, GET_ROWS, UPDATER, FLUSH
+  GET_ROW, GET_ROWS, UPDATER, FLUSH, PLUS
 }

@@ -164,7 +164,7 @@ public class PutPartitionUpdateRequest extends PartitionRequest {
   @Override
   public String toString() {
     return "PutPartitionUpdateRequest [taskIndex=" + taskIndex + ", rowsSplit size="
-        + rowsSplit.size() + ", updateClock=" + updateClock + ", toString()=" + super.toString()
+        + (rowsSplit != null ? rowsSplit.size() : 0) + ", updateClock=" + updateClock + ", toString()=" + super.toString()
         + "]";
   }
 

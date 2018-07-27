@@ -21,7 +21,7 @@ import java.util.Map;
 
 public enum TransportMethod {
   GET_ROWSPLIT(1), PUT_PARTUPDATE(2), GET_ROWSSPLIT(3), GET_PART(4), PUT_PART(5), GET_CLOCKS(6), UPDATER(
-      7), GET_UDF(8), RECOVER_PART(9), UPDATE_CLOCK(10);
+      7), GET_UDF(8), RECOVER_PART(9), UPDATE_CLOCK(10), PLUS(11);
 
   public static Map<Integer, TransportMethod> typeIdToTypeMap;
   static {
@@ -36,6 +36,7 @@ public enum TransportMethod {
     typeIdToTypeMap.put(GET_UDF.methodId, GET_UDF);
     typeIdToTypeMap.put(RECOVER_PART.methodId, RECOVER_PART);
     typeIdToTypeMap.put(UPDATE_CLOCK.methodId, UPDATE_CLOCK);
+    typeIdToTypeMap.put(PLUS.methodId, PLUS);
   }
 
   public static TransportMethod valueOf(int id) {
