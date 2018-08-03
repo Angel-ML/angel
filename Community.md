@@ -22,9 +22,10 @@ The TSC may add additional members to the TSC by a 2/3 majority vote.
 ### TSC Current Members
 
 - [paynie](https://github.com/paynie) - **Paynie Xiao** <[payniexiao@tencent.com](payniexiao@tencent.com) >
-
-
-
+- [Fitz](https://github.com/fitz) - **Fitz Wang** <[fitzwang@tencent.com](fitzwang@tencent.com) >
+- [leleyu](https://github.com/leleyu)- **Lele Yu** <[leleyu@tencent.com](leleyu@tencent.com) >
+- [lbluesjjw](https://github.com/bluesjjw)- **Jeremy Jiang** <[jeremyjiang@tencent.com](leleyu@tencent.com) >
+ 
 ### TSC Meeting
 
 - The TSC meets regularly in a voice meeting call
@@ -42,7 +43,10 @@ One may become a Committer by a majority approval of the existing Committers. A 
 Committers should be familiar with the guidelines for new contributors in [CONTRIBUTING.md](https://github.com/Tencent/angel/blob/master/CONTRIBUTING.md).
 
 ### Committer Members
-- [xxx](https://github.com/paynie) - **Paynie Xiao** <[payniexiao@tencent.com](payniexiao@tencent.com) >
+- [paynie](https://github.com/paynie) - **Paynie Xiao** <[payniexiao@tencent.com](payniexiao@tencent.com) >
+- [Fitz](https://github.com/fitz) - **Fitz Wang** <[fitzwang@tencent.com](fitzwang@tencent.com) >
+- [leleyu](https://github.com/leleyu)- **Lele Yu** <[leleyu@tencent.com](leleyu@tencent.com) >
+- [lbluesjjw](https://github.com/bluesjjw)- **Jeremy Jiang** <[jeremyjiang@tencent.com](leleyu@tencent.com) >
 
 
 
