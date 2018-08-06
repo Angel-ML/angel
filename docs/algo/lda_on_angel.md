@@ -76,41 +76,67 @@ F+LDA通过将概率公式进行了分解成两部分![](http://latex.codecogs.c
 
 ## 3. 运行 & 性能
 
-### 输入格式
+* **输入格式**
 
-输入数据分为多行，每行是一个文档，每个文档由文档id和一系列的词id构成，文档id和词id之间由'\t'符合相隔，词id之间由空格隔开
+输入数据分为多行，每行是一个文档，每个文档的第一个部分是文档的ID，文档的ID可以是字符串或者数字；
+文档ID后紧跟一个\t字符，然后由一系列的词id构成，词id之间由空格隔开
 
 ```
-	doc_id '\t' wid_0 wid_1 ... wid_n 
+  docId\twid_0 wid_1 ... wid_n 
 ```
 
-### 参数
+* **模型训练**
+  * 输入
+    * angel.train.data.path: 输入数据路径
+    * angel.save.model.path: 模型保存路径
+  
+  * 输出配置
+    * save.doc.topic=true: 是否保存doc-topic矩阵
+    * save.word.topic=true: 是否保存word-topic矩阵
+    * save.doc.topic.distribution=true: 是否保存doc.topic分布
+    * save.topic.word.distribution=true: 是否保存topic.word分布
+  
+  * 算法参数
+    * ml.epoch.num: 算法迭代次数
+    * ml.lda.word.num：词个数
+    * ml.lda.topic.num：话题个数
+    * ml.worker.thread.num：worker内部并行度
+    * ml.lda.alpha: alpha参数
+    * ml.lda.beta: beta参数
 
-* 数据参数
-  * angel.train.data.path: 输入数据路径
-  * angel.save.model.path: 模型保存路径
-* 算法参数
-  * ml.epoch.num: 算法迭代次数
-  * ml.lda.word.num：词个数
-  * ml.lda.topic.num：话题个数
-  * ml.worker.thread.num：worker内部并行度
-  * ml.lda.alpha: alpha
-  * ml.lda.beta: beta
-  * save.doc.topic: 是否存储文档-话题矩阵
-  * save.word.topic: 是否存储词-话题矩阵
+* **结果预测**
+  - 输入与输出 
+    * angel.predict.data.path：预测数据的输入路径    
+    * angel.predict.out.path：预测结果存储路径 
+    * angel.load.model.path: 预测时模型加载路径（即训练时模型保存路径）
+  
+* **注意事项**
+  * 目前angel lda上的输出需要对词语进行编号，最好保证编号从0开始，并且连续，输入文件中需要将文档中的词语换成编号。词语到编号的映射关系需要用户自行维护。
+  
+* **参数说明**
+  * 输入输出路径均为HDFS路径
+  * 预测是需要给定话题个数与训练时需相同，预测时需要给定最大word ID，或者给一个较大的值，保证能覆盖所有词语ID。
 
-### 性能
+* **输出格式说明**
+  * doc-topic矩阵：每行是一个文档，格式为libsvm格式，第一个元素是文档id，后面每一个key:value表示该文档中有多少个词语（value）赋予到了话题（key）。Angel中采用吉布斯采样来求解LDA，本质即是为每个词语赋予话题，用于可以根据根据该矩阵估计每个文档中的话题分布。
+  * doc.topic.distribution: 每行是一个文档，格式为libsvm格式，第一个元素是文档id，后面每一个key:value表示每个话题的概率。这里的概率即根据doc-topic矩阵算出，具体的公式可参看LDA原文。我们这里只给出了上述非零赋值的话题概率，剩余每个话题的概率相等，可以自行算出。
+  * word-topic: 每行是一个词语，格式为libsvm，第一个元素是word id，后面每一个key:value表示在该词语的所有出现中，每个话题（key)分配到了多少个词语（value)。word-topic是预测时必须的参数，如要进行预测，请保存word-topic。一般根据word-topic，可以估计出每个word在话题上的分布。如果发现一些word没有话题分配信息，是因为这个词语在整个文档集中没有出现。
+  * topic.word.distribution: 每行是一个话题，格式为libsvm，第一个元素是topic id，后面的key:value表示每个话题在词语集合上的概率分布。我们这里也只给出了非零赋值的概率，剩余的词语概率相等，可以自行算出。
 
-* **测试数据**
-	 * PubMED 数据集
+  
 
-* **资源**
-	* worker：20个
-	* ps：20个
+* **性能**
 
-* **Angel vs Spark**: 迭代100次的训练时间
-	* Angel：15min
-	* Spark：>300min
+  * 测试数据
+  * PubMED 数据集
+
+  * 资源
+  * worker：20个
+  * ps：20个
+
+  * Angel vs Spark: 迭代100次的训练时间
+    * Angel：15min
+  * Spark：>300min
 
 
 ## Reference

@@ -17,8 +17,12 @@
 
 package com.tencent.angel.psagent.matrix.transport.adapter;
 
+import com.google.protobuf.ServiceException;
 import com.tencent.angel.PartitionKey;
+import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.ml.math.TMatrix;
 import com.tencent.angel.ml.math.TVector;
+import com.tencent.angel.ml.math.matrix.RowbaseMatrix;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.psf.get.base.*;
 import com.tencent.angel.ml.matrix.psf.update.enhance.PartitionUpdateParam;
@@ -31,6 +35,8 @@ import com.tencent.angel.psagent.matrix.ResponseType;
 import com.tencent.angel.psagent.matrix.cache.MatricesCache;
 import com.tencent.angel.psagent.matrix.oplog.cache.MatrixOpLog;
 import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplit;
+import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplitUtils;
+import com.tencent.angel.psagent.matrix.oplog.cache.SparseDoubleRowUpdateSplit;
 import com.tencent.angel.psagent.matrix.storage.MatrixStorage;
 import com.tencent.angel.psagent.matrix.transport.FutureResult;
 import com.tencent.angel.psagent.matrix.transport.MatrixTransportClient;
@@ -367,6 +373,208 @@ public class MatrixClientAdapter {
     }
 
     return func.merge(resultList);
+  }
+
+  /**
+   * Increment a matrix to the matrix stored in pss
+   * @param matrixId matrix id
+   * @param matrix update matrix
+   * @throws ExecutionException
+   * @throws InterruptedException
+   */
+  public void increment(int matrixId, TMatrix matrix)
+    throws ExecutionException, InterruptedException {
+    MatrixTransportClient matrixClient = PSAgentContext.get().getMatrixTransportClient();
+    MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
+    List<PartitionKey> partitions = PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
+    int row = matrixMeta.getRowNum();
+    RowbaseMatrix rbMatrix = (RowbaseMatrix) matrix;
+    Map<PartitionKey, List<RowUpdateSplit>> plusData = new HashMap<>();
+    List<Future<VoidResult>> futureResults = new ArrayList<>(partitions.size());
+
+    PartitionKey part0Key = partitions.get(0);
+    if(part0Key.getEndCol() - part0Key.getStartCol() == matrixMeta.getColNum()) {
+      TVector [] vectors = rbMatrix.getVectors();
+      int validRowNum = 0;
+      for(int i = 0;i < vectors.length; i++) {
+        if(vectors[i] != null) {
+          validRowNum++;
+          vectors[i].setRowId(i);
+        }
+      }
+
+      TVector [] rows = new TVector[validRowNum];
+      int index = 0;
+      for(int i = 0;i < vectors.length; i++) {
+        if(vectors[i] != null) {
+          rows[index++] = vectors[i];
+        }
+      }
+
+      int rowIndex = 0;
+      int partIndex = 0;
+      while (rowIndex < rows.length || partIndex < partitions.size()) {
+        int length = 0;
+        int endRow = partitions.get(partIndex).getEndRow();
+        while (rowIndex < rows.length && rows[rowIndex].getRowId() < endRow) {
+          rowIndex++;
+          length++;
+        }
+
+        if(length > 0) {
+          futureResults.add(matrixClient.plus(partitions.get(partIndex), new RowsUpdateSplit(rows, rowIndex - length, rowIndex)));
+        }
+
+        partIndex++;
+      }
+    } else {
+      for (int rowId = 0; rowId < row; rowId++) {
+        TVector vector = rbMatrix.getRow(rowId);
+        if (vector == null)
+          continue;
+
+        // Split this row according the matrix partitions
+        Map<PartitionKey, RowUpdateSplit> splits = RowUpdateSplitUtils.split(vector, partitions);
+        rbMatrix.clear(rowId);
+
+        // Add the splits to the result container
+        for (Map.Entry<PartitionKey, RowUpdateSplit> entry : splits.entrySet()) {
+          List<RowUpdateSplit> rowSplits = plusData.get(entry.getKey());
+          if(rowSplits == null) {
+            rowSplits = new ArrayList<>();
+            plusData.put(entry.getKey(), rowSplits);
+          }
+          rowSplits.add(entry.getValue());
+        }
+      }
+
+      for(Entry<PartitionKey, List<RowUpdateSplit>> entry : plusData.entrySet()) {
+        futureResults.add(matrixClient.putPart(entry.getKey(), entry.getValue(), -1, -1, false));
+      }
+    }
+
+    waitVoidResult(futureResults);
+    return;
+  }
+
+  /**
+   * Increment the vector in pss use a update row
+   * @param matrixId matrix id
+   * @param rowId row id
+   * @param row update row
+   * @throws ExecutionException
+   * @throws InterruptedException
+   */
+  public void increment(int matrixId, int rowId, TVector row)
+    throws ExecutionException, InterruptedException {
+    MatrixTransportClient matrixClient = PSAgentContext.get().getMatrixTransportClient();
+    Map<PartitionKey, List<RowUpdateSplit>> plusData = new HashMap<>();
+    List<PartitionKey> partitions = PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId, rowId);
+    List<Future<VoidResult>> futureResults = new ArrayList<>(partitions.size());
+
+    if(partitions.size() == 1) {
+      TVector [] rows = new TVector[1];
+      rows[0] = row;
+      futureResults.add(matrixClient.plus(partitions.get(0), new RowsUpdateSplit(rows, 0, 1)));
+    } else {
+      Map<PartitionKey, RowUpdateSplit> splits = RowUpdateSplitUtils.split(row, partitions);
+      // Add the splits to the result container
+      for (Map.Entry<PartitionKey, RowUpdateSplit> entry : splits.entrySet()) {
+        List<RowUpdateSplit> rowSplits = plusData.get(entry.getKey());
+        if(rowSplits == null) {
+          rowSplits = new ArrayList<>();
+          plusData.put(entry.getKey(), rowSplits);
+        }
+        rowSplits.add(entry.getValue());
+      }
+
+      for(Entry<PartitionKey, List<RowUpdateSplit>> entry : plusData.entrySet()) {
+        futureResults.add(matrixClient.putPart(entry.getKey(), entry.getValue(), -1, -1, false));
+      }
+    }
+
+    waitVoidResult(futureResults);
+    return;
+  }
+
+  /**
+   * Increment the rows in pss use a batch update rows
+   * @param matrixId matrix id
+   * @param rows update rows
+   * @throws ExecutionException
+   * @throws InterruptedException
+   */
+  public void increment(int matrixId, TVector[] rows)
+    throws ExecutionException, InterruptedException {
+    MatrixTransportClient matrixClient = PSAgentContext.get().getMatrixTransportClient();
+    List<PartitionKey> partitions = PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
+    Map<PartitionKey, List<RowUpdateSplit>> plusData = new HashMap<>();
+    MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
+
+    PartitionKey part0Key = partitions.get(0);
+    List<Future<VoidResult>> futureResults = new ArrayList<>(partitions.size());
+
+    // If the matrix is partitioned by rows
+    if(part0Key.getEndCol() - part0Key.getStartCol() == matrixMeta.getColNum()) {
+      Arrays.sort(rows, new Comparator<TVector>() {
+        @Override public int compare(TVector r1, TVector r2) {
+          return r1.getRowId() - r2.getRowId();
+        }
+      });
+
+      int rowIndex = 0;
+      int partIndex = 0;
+      while (rowIndex < rows.length || partIndex < partitions.size()) {
+        int length = 0;
+        int endRow = partitions.get(partIndex).getEndRow();
+        while (rowIndex < rows.length && rows[rowIndex].getRowId() < endRow) {
+          rowIndex++;
+          length++;
+        }
+
+        if(length > 0) {
+          futureResults.add(matrixClient.plus(partitions.get(partIndex), new RowsUpdateSplit(rows, rowIndex - length, rowIndex)));
+        }
+
+        partIndex++;
+      }
+    } else {
+      for (int i = 0; i < rows.length; i++) {
+        if (rows[i] == null)
+          continue;
+
+        // Split this row according the matrix partitions
+        Map<PartitionKey, RowUpdateSplit> splits = RowUpdateSplitUtils.split(rows[i], partitions);
+
+        // Add the splits to the result container
+        for (Map.Entry<PartitionKey, RowUpdateSplit> entry : splits.entrySet()) {
+          List<RowUpdateSplit> rowSplits = plusData.get(entry.getKey());
+          if(rowSplits == null) {
+            rowSplits = new ArrayList<>();
+            plusData.put(entry.getKey(), rowSplits);
+          }
+          rowSplits.add(entry.getValue());
+        }
+      }
+
+      for(Entry<PartitionKey, List<RowUpdateSplit>> entry : plusData.entrySet()) {
+        futureResults.add(matrixClient.putPart(entry.getKey(), entry.getValue(), -1, -1, false));
+      }
+    }
+    waitVoidResult(futureResults);
+    return;
+  }
+
+  private void waitVoidResult(List<Future<VoidResult>> futureResults)
+    throws ExecutionException, InterruptedException {
+    for(Future<VoidResult> futureResult : futureResults) {
+      VoidResult result = futureResult.get();
+      if(result.getResponseType() == ResponseType.FAILED) {
+        throw new AngelException(result.getResponseType().toString());
+      }
+    }
+
+    return;
   }
 
   /**

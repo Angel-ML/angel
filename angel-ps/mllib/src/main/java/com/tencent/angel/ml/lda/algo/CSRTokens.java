@@ -14,7 +14,6 @@
  * the License.
  *
  */
-
 package com.tencent.angel.ml.lda.algo;
 
 
@@ -40,7 +39,7 @@ public class CSRTokens {
 
   public TraverseHashMap[] dks;
   public int[] docLens;
-  public long[] docIds;
+  public String[] docIds;
 
   public CSRTokens(int n_words, int n_docs) {
     this.n_words = n_words;
@@ -51,7 +50,7 @@ public class CSRTokens {
     int[] wcnt = new int[n_words];
     this.ws = new int[n_words + 1];
     docLens = new int[n_docs];
-    docIds = new long[n_docs];
+    docIds = new String[n_docs];
     n_tokens = 0;
 
     // count word
@@ -95,7 +94,5 @@ public class CSRTokens {
 
     return this;
   }
-
-
-
 }
+

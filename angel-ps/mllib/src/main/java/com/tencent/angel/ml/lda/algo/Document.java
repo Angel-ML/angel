@@ -19,11 +19,11 @@ package com.tencent.angel.ml.lda.algo;
 
 
 public class Document {
-  public long docId;
+  public String docId;
   public int len;
   public int[] wids;
 
-  public Document(long docId, int[] wids) {
+  public Document(String docId, int[] wids) {
     this.docId = docId;
     this.len = wids.length;
     this.wids = wids;
@@ -34,7 +34,7 @@ public class Document {
       return;
 
     String[] parts = str.split("\t");
-    docId = Long.parseLong(parts[0]);
+    docId = parts[0];
     String wordIds = parts[1];
 
     String[] splits = wordIds.split(" ");

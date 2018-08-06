@@ -70,6 +70,7 @@ object PSContext {
             case e: Exception =>
               _instance = null
               failCause = e
+              throw new Exception(s"init PSContext failed, $failCause")
           }
         }
       }
