@@ -53,4 +53,4 @@ Use [Code Style](https://github.com/Tencent/angel/blob/master/dev/checkstyle.xml
 
 ## License
 By contributing to Angel, you agree that your contributions will be licensed
-under its [BSD LICENSE](https://github.com/Tencent/angel/blob/master/LICENSE)
+under its [ Apache License, Version 2.0](https://github.com/Tencent/angel/blob/master/LICENSE)
