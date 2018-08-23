@@ -15,12 +15,13 @@
  *
  */
 
+
 package com.tencent.angel.ml.matrix.psf.aggr;
 
-import com.tencent.angel.ml.matrix.psf.get.single.GetRowFunc;
-import com.tencent.angel.ml.matrix.psf.get.single.GetRowParam;
+import com.tencent.angel.ml.matrix.psf.get.getrow.GetRow;
+import com.tencent.angel.ml.matrix.psf.get.getrow.GetRowParam;
 
-public final class Pull extends GetRowFunc {
+public final class Pull extends GetRow {
 
   public Pull(int matrixId, int rowId) {
     super(new GetRowParam(matrixId, rowId));

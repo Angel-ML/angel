@@ -1,3 +1,21 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
+
 package com.tencent.angel.psagent.matrix.transport;
 
 import com.tencent.angel.conf.AngelConf;
@@ -12,16 +30,24 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class RPCContext {
   private static final Log LOG = LogFactory.getLog(RPCContext.class);
-  /** max number of the flight requests */
+  /**
+   * max number of the flight requests
+   */
   private final AtomicInteger maxInflightRPCNum;
 
-  /** total flight request counter */
+  /**
+   * total flight request counter
+   */
   private final AtomicInteger inflightRPCCounter;
 
-  /** max number of the flight requests to each ps */
+  /**
+   * max number of the flight requests to each ps
+   */
   private final AtomicInteger maxInflightRPCNumPerServer;
 
-  /** ps id to flight request counter map */
+  /**
+   * ps id to flight request counter map
+   */
   private final ConcurrentHashMap<ParameterServerId, AtomicInteger> serverInflightRPCCounters;
 
   private final AtomicInteger lastOOMInflightRPCCounter;
@@ -35,21 +61,18 @@ public class RPCContext {
   }
 
   public void init(Configuration conf, ParameterServerId[] psIds) {
-    int serverNum =
-      conf.getInt(AngelConf.ANGEL_PS_NUMBER,
-        AngelConf.DEFAULT_ANGEL_PS_NUMBER);
+    int serverNum = conf.getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER);
 
-    maxInflightRPCNumPerServer.set(conf.getInt(
-      AngelConf.ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM_PERSERVER,
-      AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM_PERSERVER));
+    maxInflightRPCNumPerServer.set(conf
+      .getInt(AngelConf.ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM_PERSERVER,
+        AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM_PERSERVER));
 
     for (int i = 0; i < psIds.length; i++) {
       serverInflightRPCCounters.put(psIds[i], new AtomicInteger(0));
     }
 
-    int maxReqNumInFlight =
-      conf.getInt(AngelConf.ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM,
-        AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_MAX);
+    int maxReqNumInFlight = conf.getInt(AngelConf.ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM,
+      AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_MAX);
 
     if (maxReqNumInFlight > serverNum * maxInflightRPCNumPerServer.get()) {
       maxReqNumInFlight = serverNum * maxInflightRPCNumPerServer.get();
@@ -69,7 +92,7 @@ public class RPCContext {
 
   public void oom() {
     lastOOMInflightRPCCounter.set(inflightRPCCounter.get());
-    maxInflightRPCNum.set((int)(maxInflightRPCNum.get() * 0.8));
+    maxInflightRPCNum.set((int) (maxInflightRPCNum.get() * 0.8));
   }
 
   public int getServerInflightRPCCounters(ParameterServerId psId) {

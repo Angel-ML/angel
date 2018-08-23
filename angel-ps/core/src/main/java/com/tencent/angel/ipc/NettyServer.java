@@ -1,20 +1,20 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
  */
+
 
 package com.tencent.angel.ipc;
 
@@ -60,45 +60,39 @@ public abstract class NettyServer implements RpcServer {
   private ServerBootstrap bootstrap;
   private ChannelFuture channelFuture;
   private int port = -1;
-  private AtomicInteger numConnections= new AtomicInteger();
+  private AtomicInteger numConnections = new AtomicInteger();
   private final CountDownLatch closed = new CountDownLatch(1);
 
-  private final static Map<Thread, String> thread2Address =
-      new ConcurrentHashMap<Thread, String>();
+  private final static Map<Thread, String> thread2Address = new ConcurrentHashMap<Thread, String>();
 
   private Map<String, Class<? extends VersionedProtocol>> className2Class =
-      new HashMap<String, Class<? extends VersionedProtocol>>();
+    new HashMap<String, Class<? extends VersionedProtocol>>();
 
   private volatile boolean started = false;
 
   final InetSocketAddress addr;
 
   public NettyServer(InetSocketAddress addr, Configuration conf) {
-    int nThreads = conf.getInt(AngelConf.SERVER_IO_THREAD, Runtime
-        .getRuntime().availableProcessors() * 2);
+    int nThreads =
+      conf.getInt(AngelConf.SERVER_IO_THREAD, Runtime.getRuntime().availableProcessors() * 2);
     IOMode ioMode = IOMode.valueOf(conf.get(AngelConf.NETWORK_IO_MODE, "NIO"));
-    EventLoopGroup bossGroup =
-        NettyUtils.createEventLoop(ioMode, nThreads,   "ML-server");
+    EventLoopGroup bossGroup = NettyUtils.createEventLoop(ioMode, nThreads, "ML-server");
     EventLoopGroup workerGroup = bossGroup;
     PooledByteBufAllocator allocator =
-        NettyUtils.createPooledByteBufAllocator(true, true, nThreads);
-    bootstrap = new ServerBootstrap()
-        .group(bossGroup, workerGroup)
-        .channel(NettyUtils.getServerChannelClass(ioMode))
-        .option(ChannelOption.ALLOCATOR, allocator)
-        .childOption(ChannelOption.ALLOCATOR, allocator);
+      NettyUtils.createPooledByteBufAllocator(true, true, nThreads);
+    bootstrap = new ServerBootstrap().group(bossGroup, workerGroup)
+      .channel(NettyUtils.getServerChannelClass(ioMode)).option(ChannelOption.ALLOCATOR, allocator)
+      .childOption(ChannelOption.ALLOCATOR, allocator);
     bootstrap.option(ChannelOption.TCP_NODELAY, true);
     bootstrap.childOption(ChannelOption.TCP_NODELAY, true);
     bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
     bootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
     bootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
-      @Override
-      protected void initChannel(SocketChannel ch) throws Exception {
-        ch.pipeline()
-            .addLast("encoder", NettyFrameEncoder.INSTANCE)
-            .addLast("frameDecoder", NettyUtils.createFrameDecoder())
-            .addLast("decoder", NettyFrameDecoder.INSTANCE)
-            .addLast("handler", new NettyServerMLHandler());
+      @Override protected void initChannel(SocketChannel ch) throws Exception {
+        ch.pipeline().addLast("encoder", NettyFrameEncoder.INSTANCE)
+          .addLast("frameDecoder", NettyUtils.createFrameDecoder())
+          .addLast("decoder", NettyFrameDecoder.INSTANCE)
+          .addLast("handler", new NettyServerMLHandler());
       }
     });
     channelFuture = bootstrap.bind(addr);
@@ -113,8 +107,7 @@ public abstract class NettyServer implements RpcServer {
     return thread2Address.get(Thread.currentThread());
   }
 
-  @Override
-  public void stop() {
+  @Override public void stop() {
     LOG.info("Stopping server on " + getPort());
     if (channelFuture != null) {
       // close is a local operation and should finish within milliseconds; timeout just to be safe
@@ -132,26 +125,22 @@ public abstract class NettyServer implements RpcServer {
     closed.countDown();
   }
 
-  @Override
-  public int getPort() {
+  @Override public int getPort() {
     if (port == -1) {
       throw new IllegalStateException("Server not initialized");
     }
     return port;
   }
 
-  @Override
-  public void join() throws InterruptedException {
+  @Override public void join() throws InterruptedException {
     closed.await();
   }
 
-  @Override
-  public void openServer() {
+  @Override public void openServer() {
     started = true;
   }
 
-  @Override
-  public int getNumberOfConnections() {
+  @Override public int getNumberOfConnections() {
     return numConnections.get();
   }
 
@@ -159,20 +148,17 @@ public abstract class NettyServer implements RpcServer {
    * ML server handler for the ML transport
    */
   class NettyServerMLHandler extends ChannelInboundHandlerAdapter {
-    @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+    @Override public void channelActive(ChannelHandlerContext ctx) throws Exception {
       numConnections.incrementAndGet();
       super.channelActive(ctx);
     }
 
-    @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+    @Override public void channelInactive(ChannelHandlerContext ctx) throws Exception {
       numConnections.decrementAndGet();
       super.channelInactive(ctx);
     }
 
-    @Override
-    public void channelRead(ChannelHandlerContext ctx, Object obj) throws Exception {
+    @Override public void channelRead(ChannelHandlerContext ctx, Object obj) throws Exception {
       try {
         if (!(obj instanceof NettyDataPack)) {
           ctx.fireChannelRead(obj);
@@ -186,8 +172,8 @@ public abstract class NettyServer implements RpcServer {
         List<ByteBuffer> req = dataPack.getDatas();
         ByteBufferInputStream dis = new ByteBufferInputStream(req);
         ConnectionHeader header = ConnectionHeader.parseDelimitedFrom(dis);
-        @SuppressWarnings("unused")
-        RpcRequestHeader request = RpcRequestHeader.parseDelimitedFrom(dis);
+        @SuppressWarnings("unused") RpcRequestHeader request =
+          RpcRequestHeader.parseDelimitedFrom(dis);
         RpcRequestBody rpcRequestBody;
         try {
           if (!started) {
@@ -195,15 +181,15 @@ public abstract class NettyServer implements RpcServer {
           }
           rpcRequestBody = RpcRequestBody.parseDelimitedFrom(dis);
           if (LOG.isDebugEnabled()) {
-            LOG.debug("message received in server, serial: " + dataPack.getSerial() + ", channel: "
-                + ctx.channel() + ", methodName: " + rpcRequestBody.getMethodName());
+            LOG.debug(
+              "message received in server, serial: " + dataPack.getSerial() + ", channel: " + ctx
+                .channel() + ", methodName: " + rpcRequestBody.getMethodName());
           }
         } catch (Throwable t) {
-          LOG.warn("Unable to read call parameters for client " +
-              NettyUtils.getRemoteAddress(ctx.channel()), t);
-          List<ByteBuffer> res =
-              prepareResponse(null, Status.FATAL, t.getClass().getName(),
-                  "IPC server unable to read call parameters:" + t.getMessage());
+          LOG.warn("Unable to read call parameters for client " + NettyUtils
+            .getRemoteAddress(ctx.channel()), t);
+          List<ByteBuffer> res = prepareResponse(null, Status.FATAL, t.getClass().getName(),
+            "IPC server unable to read call parameters:" + t.getMessage());
           if (res != null) {
             dataPack.setDatas(res);
             NettyDataPack.writeDataPack(ctx.channel(), dataPack);
@@ -216,7 +202,7 @@ public abstract class NettyServer implements RpcServer {
           if (class_ == null) {
             try {
               className2Class.put(header.getProtocol(),
-                  (Class<? extends VersionedProtocol>) Class.forName(header.getProtocol()));
+                (Class<? extends VersionedProtocol>) Class.forName(header.getProtocol()));
             } catch (Exception e1) {
               LOG.error("ClassNotFoundException.", e1);
               throw new ClassNotFoundException(e1.getMessage(), e1);
@@ -226,7 +212,8 @@ public abstract class NettyServer implements RpcServer {
 
           returnValue = call(class_, rpcRequestBody, System.currentTimeMillis());
         } catch (Throwable e2) {
-          LOG.error(Thread.currentThread().getName() + ", call " + rpcRequestBody + ": error: ", e2);
+          LOG
+            .error(Thread.currentThread().getName() + ", call " + rpcRequestBody + ": error: ", e2);
           if (e2.getCause() != null && e2.getCause() instanceof StandbyException) {
             errorClass = e2.getCause().getClass().getName();
             error = e2.getCause().getMessage();
@@ -236,32 +223,33 @@ public abstract class NettyServer implements RpcServer {
           }
         }
         List<ByteBuffer> res =
-            prepareResponse(returnValue, errorClass == null ? Status.SUCCESS : Status.ERROR,
-                errorClass, error);
+          prepareResponse(returnValue, errorClass == null ? Status.SUCCESS : Status.ERROR,
+            errorClass, error);
 
         // response will be null for one way messages.
         if (res != null) {
           dataPack.setDatas(res);
           NettyDataPack.writeDataPack(ctx.channel(), dataPack);
           if (LOG.isDebugEnabled()) {
-            LOG.debug("response message in server, serial: " + dataPack.getSerial() + ", channel: "
-                + ctx.channel() + ", for methodName: " + rpcRequestBody.getMethodName());
+            LOG.debug(
+              "response message in server, serial: " + dataPack.getSerial() + ", channel: " + ctx
+                .channel() + ", for methodName: " + rpcRequestBody.getMethodName());
           }
         }
       } catch (OutOfMemoryError e4) {
         throw e4;
       } catch (ClosedChannelException cce) {
         LOG.warn(Thread.currentThread().getName() + " caught a ClosedChannelException, "
-            + "this means that the server was processing a "
-            + "request but the client went away. The error message was: " + cce.getMessage());
+          + "this means that the server was processing a "
+          + "request but the client went away. The error message was: " + cce.getMessage());
       } catch (Exception e4) {
-        LOG.warn(Thread.currentThread().getName() + " caught: "
-            + StringUtils.stringifyException(e4));
+        LOG.warn(
+          Thread.currentThread().getName() + " caught: " + StringUtils.stringifyException(e4));
       }
     }
 
     protected List<ByteBuffer> prepareResponse(Object value, Status status, String errorClass,
-        String error) {
+      String error) {
       ByteBufferOutputStream buf = new ByteBufferOutputStream();
       DataOutputStream out = new DataOutputStream(buf);
       try {
@@ -284,10 +272,9 @@ public abstract class NettyServer implements RpcServer {
       return buf.getBufferList();
     }
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-      LOG.warn("Unexpected exception from downstream.Remote Host:"
-          + NettyUtils.getRemoteAddress(ctx.channel()), cause);
+    @Override public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+      LOG.warn("Unexpected exception from downstream.Remote Host:" + NettyUtils
+        .getRemoteAddress(ctx.channel()), cause);
       ctx.close();
     }
   }
@@ -295,6 +282,6 @@ public abstract class NettyServer implements RpcServer {
   /**
    * @see com.tencent.angel.ipc.RpcServer#start()
    */
-  @Override
-  public void start() {}
+  @Override public void start() {
+  }
 }

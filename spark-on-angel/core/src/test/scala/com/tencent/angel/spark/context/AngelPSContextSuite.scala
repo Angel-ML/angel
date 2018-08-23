@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.spark.context
 
 import com.tencent.angel.spark.PSFunSuite
@@ -22,7 +23,6 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.SparkConf
 
 import com.tencent.angel.ml.matrix.RowType
-import com.tencent.angel.spark.models.vector.VectorType
 
 class AngelPSContextSuite extends PSFunSuite {
 
@@ -83,10 +83,10 @@ class AngelPSContextSuite extends PSFunSuite {
 
   test("doCreateVectorPool && doDestroyVectorPool") {
 
-    val thisPool = angel.createVectorPool(dim, capacity, VectorType.DENSE, -1)
+    val thisPool = angel.createVectorPool(dim, capacity, RowType.T_DOUBLE_DENSE, -1)
     val firstVector = thisPool.allocate()
 
-    assert(thisPool.vType == VectorType.DENSE)
+    assert(thisPool.rowType == RowType.T_DOUBLE_DENSE)
     assert(thisPool.size == 1)
     assert(thisPool.id == firstVector.poolId)
     assert(thisPool.dimension == firstVector.dimension)

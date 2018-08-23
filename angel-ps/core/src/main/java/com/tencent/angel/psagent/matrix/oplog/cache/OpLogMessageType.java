@@ -15,8 +15,9 @@
  *
  */
 
+
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
 public enum OpLogMessageType {
-  MERGE, FLUSH, CLOCK, MERGE_SUCCESS
+  MERGE, VECTOR_MERGE, MATRIX_MERGE, FLUSH, CLOCK, MERGE_SUCCESS
 }

@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
 import com.tencent.angel.common.Serialize;
@@ -28,25 +29,35 @@ import org.apache.commons.logging.LogFactory;
  */
 public abstract class RowUpdateSplit implements Serialize {
   protected final static Log LOG = LogFactory.getLog(RowUpdateSplit.class);
-  /**split start position*/
+  /**
+   * split start position
+   */
   protected final int start;
-  
-  /**split end position*/
+
+  /**
+   * split end position
+   */
   protected final int end;
-  
-  /**row index*/
+
+  /**
+   * row index
+   */
   protected final int rowId;
-  
-  /**row type*/
-  protected final RowType rowType;
+
+  /**
+   * row type
+   */
+  protected RowType rowType;
+
+  protected RowUpdateSplitContext splitContext;
 
   /**
    * Create a new RowUpdateSplit.
    *
    * @param rowIndex row index
-   * @param rowType row type
-   * @param start split start position
-   * @param end split end position
+   * @param rowType  row type
+   * @param start    split start position
+   * @param end      split end position
    */
   public RowUpdateSplit(int rowIndex, RowType rowType, int start, int end) {
     this.rowId = rowIndex;
@@ -57,7 +68,7 @@ public abstract class RowUpdateSplit implements Serialize {
 
   /**
    * Get the end position of row update split
-   * 
+   *
    * @return int the end position of row update split
    */
   public int getEnd() {
@@ -66,7 +77,7 @@ public abstract class RowUpdateSplit implements Serialize {
 
   /**
    * Get the start position of row update split
-   * 
+   *
    * @return int the start position of row update split
    */
   public int getStart() {
@@ -75,7 +86,7 @@ public abstract class RowUpdateSplit implements Serialize {
 
   /**
    * Get the row type of row update split
-   * 
+   *
    * @return RowType row type
    */
   public RowType getRowType() {
@@ -83,8 +94,17 @@ public abstract class RowUpdateSplit implements Serialize {
   }
 
   /**
+   * Get the row type of row update split
+   *
+   * @return RowType row type
+   */
+  public void setRowType(RowType rowType) {
+    this.rowType = rowType;
+  }
+
+  /**
    * Get the row index that the split update to
-   * 
+   *
    * @return int the row index that the split update to
    */
   public int getRowId() {
@@ -93,26 +113,41 @@ public abstract class RowUpdateSplit implements Serialize {
 
   /**
    * Get the element number in split
-   * 
+   *
    * @return int the element number in split
    */
   public long size() {
     return end - start;
   }
 
-  @Override
-  public void serialize(ByteBuf buf) {
+  @Override public void serialize(ByteBuf buf) {
     buf.writeInt(rowId);
     buf.writeInt(rowType.getNumber());
   }
 
-  @Override
-  public void deserialize(ByteBuf buf) {
+  @Override public void deserialize(ByteBuf buf) {
     //unused now
   }
 
-  @Override
-  public int bufferLen() {
+  @Override public int bufferLen() {
     return 8;
+  }
+
+  /**
+   * Get row update split context
+   *
+   * @return row update split context
+   */
+  public RowUpdateSplitContext getSplitContext() {
+    return splitContext;
+  }
+
+  /**
+   * Set row update split context
+   *
+   * @param splitContext row update split context
+   */
+  public void setSplitContext(RowUpdateSplitContext splitContext) {
+    this.splitContext = splitContext;
   }
 }

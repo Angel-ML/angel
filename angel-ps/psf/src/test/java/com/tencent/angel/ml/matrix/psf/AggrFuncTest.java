@@ -15,18 +15,19 @@
  *
  */
 
+
 package com.tencent.angel.ml.matrix.psf;
 
 import com.tencent.angel.exception.InvalidParameterException;
-import com.tencent.angel.ml.math.vector.DenseDoubleVector;
+import com.tencent.angel.ml.math2.storage.DoubleVectorStorage;
 import com.tencent.angel.ml.matrix.psf.aggr.*;
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult;
 import com.tencent.angel.ml.matrix.psf.aggr.Pull;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
-import com.tencent.angel.ml.matrix.psf.get.single.GetRowResult;
-import com.tencent.angel.ml.matrix.psf.update.Fill;
+import com.tencent.angel.ml.matrix.psf.get.getrow.GetRowResult;
 import com.tencent.angel.ml.matrix.psf.update.RandomNormal;
 import com.tencent.angel.ml.matrix.psf.update.RandomUniform;
+import com.tencent.angel.ml.matrix.psf.update.enhance.map.MapInPlace;
 import com.tencent.angel.psagent.matrix.MatrixClient;
 import com.tencent.angel.psagent.matrix.MatrixClientFactory;
 import org.apache.log4j.PropertyConfigurator;
@@ -46,8 +47,7 @@ public class AggrFuncTest {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
-  @BeforeClass
-  public static  void setup() throws Exception {
+  @BeforeClass public static void setup() throws Exception {
     LocalClusterHelper.setup();
     w2Client = MatrixClientFactory.get("w2", 0);
     // row 0 is a random uniform
@@ -55,39 +55,42 @@ public class AggrFuncTest {
     // row 1 is a random normal
     w2Client.update(new RandomNormal(w2Client.getMatrixId(), 1, 0.0, 1.0)).get();
     // row 2 is filled with 1.0
-    w2Client.update(new Fill(w2Client.getMatrixId(), 2, 1.0)).get();
+    w2Client.update(new MapInPlace(w2Client.getMatrixId(), 2,
+      new com.tencent.angel.ml.matrix.psf.update.enhance.map.func.Set(1.0))).get();
 
     localArray0 = pull(w2Client, 0);
     localArray1 = pull(w2Client, 1);
-    dim  = localArray1.length;
+    dim = localArray1.length;
   }
 
-  @Test
-  public void testAmax() throws InvalidParameterException, InterruptedException, ExecutionException {
+  @Test public void testAmax()
+    throws InvalidParameterException, InterruptedException, ExecutionException {
     GetFunc func = new Amax(w2Client.getMatrixId(), 1);
     double result = ((ScalarAggrResult) w2Client.get(func)).getResult();
 
     double max = Double.MIN_VALUE;
     for (double x : localArray1) {
-      if (max < Math.abs(x)) max = Math.abs(x);
+      if (max < Math.abs(x))
+        max = Math.abs(x);
     }
     Assert.assertEquals(result, max, delta);
   }
 
-  @Test
-  public void testAmin() throws InvalidParameterException, InterruptedException, ExecutionException {
+  @Test public void testAmin()
+    throws InvalidParameterException, InterruptedException, ExecutionException {
     GetFunc func = new Amin(w2Client.getMatrixId(), 1);
     double result = ((ScalarAggrResult) w2Client.get(func)).getResult();
 
     double min = Double.MAX_VALUE;
     for (double x : localArray1) {
-      if (min > Math.abs(x)) min = Math.abs(x);
+      if (min > Math.abs(x))
+        min = Math.abs(x);
     }
     Assert.assertEquals(result, min, delta);
   }
 
-  @Test
-  public void testAsum() throws InvalidParameterException, InterruptedException, ExecutionException {
+  @Test public void testAsum()
+    throws InvalidParameterException, InterruptedException, ExecutionException {
     GetFunc func = new Asum(w2Client.getMatrixId(), 1);
     double result = ((ScalarAggrResult) w2Client.get(func)).getResult();
 
@@ -98,8 +101,8 @@ public class AggrFuncTest {
     Assert.assertEquals(result, sum, delta);
   }
 
-  @Test
-  public void testDot() throws InvalidParameterException, InterruptedException, ExecutionException {
+  @Test public void testDot()
+    throws InvalidParameterException, InterruptedException, ExecutionException {
     GetFunc func = new Dot(w2Client.getMatrixId(), 0, 1);
     double result = ((ScalarAggrResult) w2Client.get(func)).getResult();
 
@@ -110,44 +113,47 @@ public class AggrFuncTest {
     Assert.assertEquals(result, dot, delta);
   }
 
-  @Test
-  public void testMax() throws InvalidParameterException, InterruptedException, ExecutionException {
+  @Test public void testMax()
+    throws InvalidParameterException, InterruptedException, ExecutionException {
     GetFunc func = new Max(w2Client.getMatrixId(), 1);
     double result = ((ScalarAggrResult) w2Client.get(func)).getResult();
 
     double max = Double.MIN_VALUE;
     for (double x : localArray1) {
-      if (max < x) max = x;
+      if (max < x)
+        max = x;
     }
     Assert.assertEquals(result, max, delta);
   }
 
-  @Test
-  public void testMin() throws InvalidParameterException, InterruptedException, ExecutionException {
+  @Test public void testMin()
+    throws InvalidParameterException, InterruptedException, ExecutionException {
     GetFunc func = new Min(w2Client.getMatrixId(), 1);
     double result = ((ScalarAggrResult) w2Client.get(func)).getResult();
 
     double min = Double.MAX_VALUE;
     for (double x : localArray1) {
-      if (min > x) min = x;
+      if (min > x)
+        min = x;
     }
     Assert.assertEquals(result, min, delta);
   }
 
-  @Test
-  public void testNnz() throws InvalidParameterException, InterruptedException, ExecutionException {
+  @Test public void testNnz()
+    throws InvalidParameterException, InterruptedException, ExecutionException {
     GetFunc func = new Nnz(w2Client.getMatrixId(), 1);
     double result = ((ScalarAggrResult) w2Client.get(func)).getResult();
 
     int count = 0;
     for (double x : localArray1) {
-      if (Math.abs(x - 0.0) > delta) count++;
+      if (Math.abs(x - 0.0) > delta)
+        count++;
     }
-    Assert.assertEquals((int)result, count);
+    Assert.assertEquals((int) result, count);
   }
 
-  @Test
-  public void testNrm2() throws InvalidParameterException, InterruptedException, ExecutionException {
+  @Test public void testNrm2()
+    throws InvalidParameterException, InterruptedException, ExecutionException {
     GetFunc func = new Nrm2(w2Client.getMatrixId(), 1);
     double result = ((ScalarAggrResult) w2Client.get(func)).getResult();
 
@@ -159,18 +165,20 @@ public class AggrFuncTest {
     Assert.assertEquals(result, nrm2, delta);
   }
 
-  @Test
-  public void testPull() throws InvalidParameterException, InterruptedException, ExecutionException {
+  @Test public void testPull()
+    throws InvalidParameterException, InterruptedException, ExecutionException {
     GetFunc func = new Pull(w2Client.getMatrixId(), 1);
-    double[] result = ((DenseDoubleVector)(((GetRowResult) w2Client.get(func)).getRow())).getValues();
+    double[] result =
+      ((DoubleVectorStorage) (((GetRowResult) w2Client.get(func)).getRow()).getStorage())
+        .getValues();
 
-    for (int i = 0; i < dim; i ++ ) {
+    for (int i = 0; i < dim; i++) {
       Assert.assertEquals(result[i], localArray1[i], delta);
     }
   }
 
-  @Test
-  public void testSum() throws InvalidParameterException, InterruptedException, ExecutionException {
+  @Test public void testSum()
+    throws InvalidParameterException, InterruptedException, ExecutionException {
     GetFunc func = new Sum(w2Client.getMatrixId(), 1);
     double result = ((ScalarAggrResult) w2Client.get(func)).getResult();
 
@@ -188,11 +196,10 @@ public class AggrFuncTest {
 
   private static double[] pull(MatrixClient client, int rowId) {
     GetRowResult rowResult = (GetRowResult) client.get(new Pull(client.getMatrixId(), rowId));
-    return ((DenseDoubleVector)rowResult.getRow()).getValues();
+    return ((DoubleVectorStorage) rowResult.getRow().getStorage()).getValues();
   }
 
-  @AfterClass
-  public static void stop() throws Exception{
+  @AfterClass public static void stop() throws Exception {
     LocalClusterHelper.cleanup();
   }
 }

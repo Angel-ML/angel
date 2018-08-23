@@ -15,9 +15,10 @@
  *
  */
 
+
 package com.tencent.angel.psagent.matrix.storage;
 
-import com.tencent.angel.ml.math.TVector;
+import com.tencent.angel.ml.math2.vector.Vector;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -25,7 +26,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * Matrix storage manager. It holds a {@link MatrixStorage} for each matrix.
  */
 public class MatrixStorageManager {
-  /**matrix id to matrix storage map*/
+  /**
+   * matrix id to matrix storage map
+   */
   private final ConcurrentHashMap<Integer, MatrixStorage> matrixIdToStorageMap;
 
   /**
@@ -37,7 +40,7 @@ public class MatrixStorageManager {
 
   /**
    * Create the storage for the matrix.
-   * 
+   *
    * @param matrixId matrix id
    */
   public void addMatrix(int matrixId) {
@@ -46,7 +49,7 @@ public class MatrixStorageManager {
 
   /**
    * Remove the storage for the matrix.
-   * 
+   *
    * @param matrixId matrix id
    */
   public void removeMatrix(int matrixId) {
@@ -55,7 +58,7 @@ public class MatrixStorageManager {
 
   /**
    * Get the storage for the matrix.
-   * 
+   *
    * @param matrixId matrix id
    * @return MatrixStorage matrix storage
    */
@@ -70,12 +73,12 @@ public class MatrixStorageManager {
 
   /**
    * Get the row from matrix storage.
-   * 
+   *
    * @param matrixId matrix id
    * @param rowIndex row index
    * @return TVector row
    */
-  public TVector getRow(int matrixId, int rowIndex) {
+  public Vector getRow(int matrixId, int rowIndex) {
     MatrixStorage storage = getMatrixStoage(matrixId);
     if (storage == null) {
       return null;
@@ -86,12 +89,12 @@ public class MatrixStorageManager {
 
   /**
    * Add the row to matrix storage.
-   * 
+   *
    * @param matrixId matrix id
    * @param rowIndex row index
    * @param row
    */
-  public void addRow(int matrixId, int rowIndex, TVector row) {
+  public void addRow(int matrixId, int rowIndex, Vector row) {
     if (!matrixIdToStorageMap.containsKey(matrixId)) {
       addMatrix(matrixId);
     }
@@ -106,7 +109,7 @@ public class MatrixStorageManager {
 
   /**
    * Remove the row from matrix storage.
-   * 
+   *
    * @param matrixId matrix id
    * @param rowIndex row index
    * @return TVector row
@@ -118,9 +121,5 @@ public class MatrixStorageManager {
     }
 
     storage.removeRow(rowIndex);
-  }
-
-  public void clear() {
-    matrixIdToStorageMap.clear();
   }
 }

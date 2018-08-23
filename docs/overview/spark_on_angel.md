@@ -34,14 +34,14 @@ Angel从v1.0.0版本开始，就加入了**PS-Service**的特性，不仅仅可�
 	* PSModel是PSVector和PSMatrix的父类
 
 * **PSVector**
-	* 包括DensePSVector和SparsePSVector
+	* 包括DensePSVecotr和SparsePSVector
 	* PSVector的申请：通过`PSVector.dense(dim: Int, capacity: Int = 50)`申请PSVector，会创建一个维度为`dim`，容量为`capacity`的VectorPool，同一个VectorPool内的两个PSVector可以做运算。
 	通过`PSVector.duplicate(psVector)`，申请一个与`psVector`在同一个VectorPool的PSVector。
 	* PSVector有两个装饰类：`BreezePSVector`和`CachedPSVector`，`BreezePSVector`使PSVector可以支持Breeze算法库里的Vector运算。而`CachedPSVector`支持PSVector在Pull/Push过程中的缓存功能。
 
 * **PSMatrix**
 	* 包括DensePSMatrix和SparsePSMatrix
-	* PSMatrix的创建和销毁：通过`PSMatrix.dense(rows: Int, cols: Int)`创建，当PSMatrix不再使用后，需要手动调用`destroy`销毁该Matrix
+	* PSMatrix的创建和销毁：通过`PSMatrix.dense(rows: Int, cols: Int)`创建，当PSMatrix不再使用后，需要手动调用`destory`销毁该Matrix
 
 使用Spark on Angel的简单代码如下：
 

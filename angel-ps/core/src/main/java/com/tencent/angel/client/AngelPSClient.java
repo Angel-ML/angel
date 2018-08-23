@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.client;
 
 import com.tencent.angel.RunningMode;
@@ -22,6 +23,8 @@ import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.ml.matrix.MatrixContext;
+import com.tencent.angel.model.MatrixSaveContext;
+import com.tencent.angel.model.ModelSaveContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -86,10 +89,11 @@ public class AngelPSClient {
 
   /**
    * Start Angel ps
+   *
    * @return Angel ps running context
    * @throws AngelException
    */
-  public AngelContext startPS() throws AngelException  {
+  public AngelContext startPS() throws AngelException {
     int psNum = conf.getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER);
     if (psNum <= 0) {
       throw new AngelException("Invalid parameter:Wrong ps number!");
@@ -97,31 +101,61 @@ public class AngelPSClient {
     conf.set(AngelConf.ANGEL_RUNNING_MODE, RunningMode.ANGEL_PS.toString());
     client.addMatrix(new MatrixContext("init", 1, psNum, 1, 1));
     client.startPSServer();
-    client.run(); 
+    client.run();
     return new AngelContext(client.getMasterLocation(), conf);
   }
 
   /**
    * Add a matrix
+   *
    * @param mContext matrix context
    */
-  public void addMatrix(MatrixContext mContext)  throws AngelException{
+  public void addMatrix(MatrixContext mContext) throws AngelException {
     client.addMatrix(mContext);
   }
 
   /**
+   * Create matrices
+   *
+   * @param matrixContexts matrix context
+   * @throws AngelException
+   */
+  public void createMatrices(List<MatrixContext> matrixContexts) throws AngelException {
+    client.createMatrices(matrixContexts);
+  }
+
+  /**
    * Save given matrices
+   *
    * @param matrixNames need to save matrix name list
    * @throws AngelException
    */
-  public void save(List<String> matrixNames) throws AngelException{
+  public void save(List<String> matrixNames) throws AngelException {
     client.saveMatrices(matrixNames);
+  }
+
+  public void save(List<MatrixContext> matrices, String path) throws AngelException {
+    ModelSaveContext saveContext = new ModelSaveContext();
+    for (MatrixContext matrixContext : matrices)
+      saveContext.addMatrix(new MatrixSaveContext(matrixContext.getName()));
+    saveContext.setSavePath(path);
+    client.save(saveContext);
+  }
+
+  /**
+   * Save model to hdfs
+   *
+   * @param saveContext model save context
+   * @throws AngelException
+   */
+  public void save(ModelSaveContext saveContext) throws AngelException {
+    client.save(saveContext);
   }
 
   /**
    * Stop Angel ps
    */
-  public void stopPS(){
+  public void stopPS() {
     try {
       client.stop(0);
     } catch (AngelException e) {
@@ -132,7 +166,7 @@ public class AngelPSClient {
   /**
    * Kill Angel ps
    */
-  public void killPS(){
+  public void killPS() {
     try {
       client.stop();
     } catch (AngelException e) {

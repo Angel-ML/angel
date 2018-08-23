@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.worker;
 
 import com.tencent.angel.AngelDeployMode;
@@ -169,7 +170,7 @@ public class WorkerContext {
 
   /**
    * Get worker location(ip and listening port)
-   * 
+   *
    * @return Location worker location(ip and listening port)
    */
   public Location getLocation() {
@@ -219,8 +220,7 @@ public class WorkerContext {
    */
   public AngelDeployMode getDeployMode() {
     String mode =
-        worker.getConf().get(AngelConf.ANGEL_DEPLOY_MODE,
-            AngelConf.DEFAULT_ANGEL_DEPLOY_MODE);
+      worker.getConf().get(AngelConf.ANGEL_DEPLOY_MODE, AngelConf.DEFAULT_ANGEL_DEPLOY_MODE);
 
     if (mode.equals(AngelDeployMode.LOCAL.toString())) {
       return AngelDeployMode.LOCAL;

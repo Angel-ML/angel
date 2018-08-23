@@ -15,13 +15,14 @@
  *
  */
 
+
 package com.tencent.angel.ps.client;
 
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.common.location.Location;
 import com.tencent.angel.common.location.LocationManager;
+import com.tencent.angel.ps.PSContext;
 import com.tencent.angel.ps.ParameterServerId;
-import com.tencent.angel.ps.impl.PSContext;
 
 /**
  * PS location manager
@@ -39,6 +40,7 @@ public class PSLocationManager {
 
   /**
    * Create a PSLocationManager
+   *
    * @param context PS context
    */
   public PSLocationManager(PSContext context) {
@@ -48,6 +50,7 @@ public class PSLocationManager {
 
   /**
    * Get master location
+   *
    * @return master location
    */
   public Location getMasterLocation() {
@@ -56,6 +59,7 @@ public class PSLocationManager {
 
   /**
    * Set master location
+   *
    * @param masterLocation master location
    */
   public void setMasterLocation(Location masterLocation) {
@@ -64,15 +68,16 @@ public class PSLocationManager {
 
   /**
    * Get ps location, it will first get from cache, if can not find it in cache, it will get from master
+   *
    * @param psId ps id
    * @return ps location, null if not found
    * @throws ServiceException
    */
   public Location getPsLocation(ParameterServerId psId) throws ServiceException {
     Location location = locationManager.getPsLocation(psId);
-    if(location == null) {
+    if (location == null) {
       location = context.getMaster().getPsLocation(psId);
-      if(location != null) {
+      if (location != null) {
         locationManager.setPsLocation(psId, location);
       }
     }

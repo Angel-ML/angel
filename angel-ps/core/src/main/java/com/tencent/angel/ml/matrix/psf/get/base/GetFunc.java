@@ -15,9 +15,11 @@
  *
  */
 
+
 package com.tencent.angel.ml.matrix.psf.get.base;
 
-import com.tencent.angel.ps.impl.PSContext;
+
+import com.tencent.angel.ps.PSContext;
 
 import java.util.List;
 
@@ -26,10 +28,14 @@ import java.util.List;
  * the asynchronous consistency control protocol.
  */
 public abstract class GetFunc {
-  /** parameter of get udf */
+  /**
+   * parameter of get udf
+   */
   public final GetParam param;
 
-  /** PS context */
+  /**
+   * PS context
+   */
   protected PSContext psContext;
 
   /**
@@ -52,6 +58,7 @@ public abstract class GetFunc {
 
   /**
    * Set PS context
+   *
    * @param psContext ps context
    */
   public void setPsContext(PSContext psContext) {

@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.client;
 
 import com.google.protobuf.ServiceException;
@@ -24,7 +25,7 @@ import com.tencent.angel.ipc.TConnectionManager;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.protobuf.generated.MasterPSServiceProtos.GetThreadStackRequest;
 import com.tencent.angel.ps.PSAttemptId;
-import com.tencent.angel.ps.impl.PSProtocol;
+import com.tencent.angel.ps.server.control.PSProtocol;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -35,18 +36,25 @@ import java.io.IOException;
  */
 public class PSClient implements PSClientInterface {
   private static final Log LOG = LogFactory.getLog(PSClient.class);
-  /**master context*/
+  /**
+   * master context
+   */
   private final AMContext context;
 
-  /**connection from master to the worker*/
+  /**
+   * connection from master to the worker
+   */
   private TConnection connection;
 
-  /**rpc protocol*/
+  /**
+   * rpc protocol
+   */
   private PSProtocol ps;
 
   /**
    * Create a PSClient
-   * @param context master context
+   *
+   * @param context   master context
    * @param attemptId ps attempt id
    * @throws IOException
    */
@@ -54,17 +62,15 @@ public class PSClient implements PSClientInterface {
     this.context = context;
     this.connection = TConnectionManager.getConnection(context.getConf());
 
-    Location psLoc =
-        context.getParameterServerManager().getParameterServer(attemptId.getPsId())
-            .getPSAttempt(attemptId).getLocation();
+    Location psLoc = context.getParameterServerManager().getParameterServer(attemptId.getPsId())
+      .getPSAttempt(attemptId).getLocation();
     LOG.info("psLoc= " + psLoc.toString());
-    LOG.info("psLoc.getIp()=    " + psLoc.getIp() + "   " + "          psLoc.getPort()=   "
-        + psLoc.getPort());
+    LOG.info("psLoc.getIp()=    " + psLoc.getIp() + "   " + "          psLoc.getPort()=   " + psLoc
+      .getPort());
     this.ps = connection.getPSService(psLoc.getIp(), psLoc.getPort());
   }
 
-  @Override
-  public String getThreadStack() throws ServiceException {
+  @Override public String getThreadStack() throws ServiceException {
     PSProtocol pSProtocol = getPS();
     GetThreadStackRequest request = GetThreadStackRequest.newBuilder().build();
     return pSProtocol.psThreadStack(null, request).getStack();

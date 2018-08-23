@@ -1,26 +1,23 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
  */
 
-/**
- * Add some balance policy to make the data block sizes are as equal as possible.
- */
 
 package com.tencent.angel.data.inputformat;
+
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
@@ -43,21 +40,17 @@ import java.util.*;
 
 public class BalanceInputFormat extends CombineTextInputFormat {
 
-  private HashMap<String, Set<String>> rackToNodes =
-    new HashMap<String, Set<String>>();
+  private HashMap<String, Set<String>> rackToNodes = new HashMap<String, Set<String>>();
+
 
   static class OneFileInfo {
     private long fileSize;               // size of the file
     private OneBlockInfo[] blocks;       // all blocks in this file
 
-    OneFileInfo(FileStatus stat, Configuration conf,
-      boolean isSplitable,
+    OneFileInfo(FileStatus stat, Configuration conf, boolean isSplitable,
       HashMap<String, List<OneBlockInfo>> rackToBlocks,
-      HashMap<OneBlockInfo, String[]> blockToNodes,
-      HashMap<String, Set<OneBlockInfo>> nodeToBlocks,
-      HashMap<String, Set<String>> rackToNodes,
-      long maxSize)
-      throws IOException {
+      HashMap<OneBlockInfo, String[]> blockToNodes, HashMap<String, Set<OneBlockInfo>> nodeToBlocks,
+      HashMap<String, Set<String>> rackToNodes, long maxSize) throws IOException {
       this.fileSize = 0;
 
       // get block locations from file system
@@ -73,8 +66,8 @@ public class BalanceInputFormat extends CombineTextInputFormat {
         blocks = new OneBlockInfo[0];
       } else {
 
-        if(locations.length == 0) {
-          locations = new BlockLocation[] { new BlockLocation() };
+        if (locations.length == 0) {
+          locations = new BlockLocation[] {new BlockLocation()};
         }
 
         if (!isSplitable) {
@@ -82,11 +75,10 @@ public class BalanceInputFormat extends CombineTextInputFormat {
           // full file length
           blocks = new OneBlockInfo[1];
           fileSize = stat.getLen();
-          blocks[0] = new OneBlockInfo(stat.getPath(), 0, fileSize,
-            locations[0].getHosts(), locations[0].getTopologyPaths());
+          blocks[0] = new OneBlockInfo(stat.getPath(), 0, fileSize, locations[0].getHosts(),
+            locations[0].getTopologyPaths());
         } else {
-          ArrayList<OneBlockInfo> blocksList = new ArrayList<OneBlockInfo>(
-            locations.length);
+          ArrayList<OneBlockInfo> blocksList = new ArrayList<OneBlockInfo>(locations.length);
           for (int i = 0; i < locations.length; i++) {
             fileSize += locations[i].getLength();
 
@@ -109,9 +101,9 @@ public class BalanceInputFormat extends CombineTextInputFormat {
                   myLength = Math.min(maxSize, left);
                 }
               }
-              OneBlockInfo oneblock = new OneBlockInfo(stat.getPath(),
-                myOffset, myLength, locations[i].getHosts(),
-                locations[i].getTopologyPaths());
+              OneBlockInfo oneblock =
+                new OneBlockInfo(stat.getPath(), myOffset, myLength, locations[i].getHosts(),
+                  locations[i].getTopologyPaths());
               left -= myLength;
               myOffset += myLength;
 
@@ -121,16 +113,13 @@ public class BalanceInputFormat extends CombineTextInputFormat {
           blocks = blocksList.toArray(new OneBlockInfo[blocksList.size()]);
         }
 
-        populateBlockInfo(blocks, rackToBlocks, blockToNodes,
-          nodeToBlocks, rackToNodes);
+        populateBlockInfo(blocks, rackToBlocks, blockToNodes, nodeToBlocks, rackToNodes);
       }
     }
 
     static void populateBlockInfo(OneBlockInfo[] blocks,
-      Map<String, List<OneBlockInfo>> rackToBlocks,
-      Map<OneBlockInfo, String[]> blockToNodes,
-      Map<String, Set<OneBlockInfo>> nodeToBlocks,
-      Map<String, Set<String>> rackToNodes) {
+      Map<String, List<OneBlockInfo>> rackToBlocks, Map<OneBlockInfo, String[]> blockToNodes,
+      Map<String, Set<OneBlockInfo>> nodeToBlocks, Map<String, Set<String>> rackToNodes) {
       for (OneBlockInfo oneblock : blocks) {
         // add this block to the block --> node locations map
         blockToNodes.put(oneblock, oneblock.hosts);
@@ -139,7 +128,7 @@ public class BalanceInputFormat extends CombineTextInputFormat {
         // assign to default  rack.
         String[] racks = null;
         if (oneblock.hosts.length == 0) {
-          racks = new String[]{NetworkTopology.DEFAULT_RACK};
+          racks = new String[] {NetworkTopology.DEFAULT_RACK};
         } else {
           racks = oneblock.racks;
         }
@@ -181,6 +170,7 @@ public class BalanceInputFormat extends CombineTextInputFormat {
     }
   }
 
+
   static class OneBlockInfo {
     Path onepath;                // name of this file
     long offset;                 // offset in file
@@ -188,22 +178,19 @@ public class BalanceInputFormat extends CombineTextInputFormat {
     String[] hosts;              // nodes on which this block resides
     String[] racks;              // network topology of hosts
 
-    OneBlockInfo(Path path, long offset, long len,
-      String[] hosts, String[] topologyPaths) {
+    OneBlockInfo(Path path, long offset, long len, String[] hosts, String[] topologyPaths) {
       this.onepath = path;
       this.offset = offset;
       this.hosts = hosts;
       this.length = len;
-      assert (hosts.length == topologyPaths.length ||
-        topologyPaths.length == 0);
+      assert (hosts.length == topologyPaths.length || topologyPaths.length == 0);
 
       // if the file system does not have any rack information, then
       // use dummy rack location.
       if (topologyPaths.length == 0) {
         topologyPaths = new String[hosts.length];
         for (int i = 0; i < topologyPaths.length; i++) {
-          topologyPaths[i] = (new NodeBase(hosts[i],
-            NetworkTopology.DEFAULT_RACK)).toString();
+          topologyPaths[i] = (new NodeBase(hosts[i], NetworkTopology.DEFAULT_RACK)).toString();
         }
       }
 
@@ -220,8 +207,8 @@ public class BalanceInputFormat extends CombineTextInputFormat {
     }
   }
 
-  private static void addHostToRack(Map<String, Set<String>> rackToNodes,
-    String rack, String host) {
+  private static void addHostToRack(Map<String, Set<String>> rackToNodes, String rack,
+    String host) {
     Set<String> hosts = rackToNodes.get(rack);
     if (hosts == null) {
       hosts = new HashSet<String>();
@@ -272,7 +259,7 @@ public class BalanceInputFormat extends CombineTextInputFormat {
 
     PathFilter inputFilter = new MultiPathFilter(filters);
 
-    for (int i=0; i < dirs.length; ++i) {
+    for (int i = 0; i < dirs.length; ++i) {
       Path p = dirs[i];
       FileSystem fs = p.getFileSystem(conf);
       FileStatus[] matches = fs.globStatus(p, inputFilter);
@@ -281,15 +268,14 @@ public class BalanceInputFormat extends CombineTextInputFormat {
       } else if (matches.length == 0) {
         errors.add(new IOException("Input Pattern " + p + " matches 0 files"));
       } else {
-        for (FileStatus globStat: matches) {
+        for (FileStatus globStat : matches) {
           if (globStat.isDirectory()) {
             RemoteIterator<LocatedFileStatus> iter = fs.listLocatedStatus(globStat.getPath());
             while (iter.hasNext()) {
               LocatedFileStatus stat = iter.next();
               if (inputFilter.accept(stat.getPath())) {
                 if (recursive && stat.isDirectory()) {
-                  addInputPathRecursively(result, fs, stat.getPath(),
-                    inputFilter);
+                  addInputPathRecursively(result, fs, stat.getPath(), inputFilter);
                 } else {
                   result.add(stat);
                 }
@@ -311,16 +297,14 @@ public class BalanceInputFormat extends CombineTextInputFormat {
 
 
   protected boolean isSplitable(Configuration conf, Path file) {
-    final CompressionCodec codec =
-      new CompressionCodecFactory(conf).getCodec(file);
+    final CompressionCodec codec = new CompressionCodecFactory(conf).getCodec(file);
     if (null == codec) {
       return true;
     }
     return codec instanceof SplittableCompressionCodec;
   }
 
-  @Override
-  public List<InputSplit> getSplits(JobContext job) throws IOException {
+  @Override public List<InputSplit> getSplits(JobContext job) throws IOException {
 
     long maxSize = 0;
     Configuration conf = job.getConfiguration();
@@ -341,13 +325,9 @@ public class BalanceInputFormat extends CombineTextInputFormat {
   }
 
   void createSplits(Map<String, Set<OneBlockInfo>> nodeToBlocks,
-    Map<OneBlockInfo, String[]> blockToNodes,
-    Map<String, List<OneBlockInfo>> rackToBlocks,
-    long totLength,
-    long maxSize,
-    long minSizeNode,
-    long minSizeRack,
-    List<InputSplit> splits) throws InterruptedException, IOException {
+    Map<OneBlockInfo, String[]> blockToNodes, Map<String, List<OneBlockInfo>> rackToBlocks,
+    long totLength, long maxSize, long minSizeNode, long minSizeRack, List<InputSplit> splits)
+    throws InterruptedException, IOException {
     ArrayList<OneBlockInfo> validBlocks = new ArrayList<OneBlockInfo>();
     long curSplitSize = 0;
 
@@ -359,14 +339,14 @@ public class BalanceInputFormat extends CombineTextInputFormat {
 
     System.out.println("blockToNodes.size()=" + blockToNodes.size());
 
-    while(true) {
+    while (true) {
       // it is allowed for maxSize to be 0. Disable smoothing load for such cases
 
       // process all nodes and create splits that are local to a node. Generate
       // one split per node iteration, and walk over nodes multiple times to
       // distribute the splits across nodes.
-      for (Iterator<Map.Entry<String, Set<OneBlockInfo>>> iter = nodeToBlocks
-        .entrySet().iterator(); iter.hasNext();) {
+      for (Iterator<Map.Entry<String, Set<OneBlockInfo>>> iter =
+           nodeToBlocks.entrySet().iterator(); iter.hasNext(); ) {
         Map.Entry<String, Set<OneBlockInfo>> one = iter.next();
 
         String node = one.getKey();
@@ -387,7 +367,7 @@ public class BalanceInputFormat extends CombineTextInputFormat {
 
           // Remove all blocks which may already have been assigned to other
           // splits.
-          if(!blockToNodes.containsKey(oneblock)) {
+          if (!blockToNodes.containsKey(oneblock)) {
             oneBlockIter.remove();
             continue;
           }
@@ -428,8 +408,7 @@ public class BalanceInputFormat extends CombineTextInputFormat {
           // same rack later on.
           // This condition also kicks in when max split size is not set. All
           // blocks on a node will be grouped together into a single split.
-          if (minSizeNode != 0 && curSplitSize >= minSizeNode
-            && splitsPerNode.count(node) == 0) {
+          if (minSizeNode != 0 && curSplitSize >= minSizeNode && splitsPerNode.count(node) == 0) {
             // haven't created any split on this machine. so its ok to add a
             // smaller one for parallelism. Otherwise group it in the rack for
             // balanced size create an input split and add it to the splits
@@ -492,7 +471,7 @@ public class BalanceInputFormat extends CombineTextInputFormat {
 
       // iterate over all racks
       for (Iterator<Map.Entry<String, List<OneBlockInfo>>> iter =
-           rackToBlocks.entrySet().iterator(); iter.hasNext();) {
+           rackToBlocks.entrySet().iterator(); iter.hasNext(); ) {
 
         Map.Entry<String, List<OneBlockInfo>> one = iter.next();
         racks.add(one.getKey());
@@ -507,7 +486,7 @@ public class BalanceInputFormat extends CombineTextInputFormat {
         for (OneBlockInfo oneblock : blocks) {
           if (blockToNodes.containsKey(oneblock)) {
 
-            for (String host: oneblock.hosts) {
+            for (String host : oneblock.hosts) {
               System.out.print(host + " ");
             }
             System.out.println();
@@ -602,8 +581,7 @@ public class BalanceInputFormat extends CombineTextInputFormat {
     return hosts;
   }
 
-  private void addCreatedSplit(List<InputSplit> splitList,
-    Collection<String> locations,
+  private void addCreatedSplit(List<InputSplit> splitList, Collection<String> locations,
     ArrayList<OneBlockInfo> validBlocks) {
     // create an input split
     Path[] fl = new Path[validBlocks.size()];
@@ -615,25 +593,19 @@ public class BalanceInputFormat extends CombineTextInputFormat {
       length[i] = validBlocks.get(i).length;
     }
     // add this split to the list that is returned
-    CombineFileSplit thissplit = new CombineFileSplit(fl, offset,
-      length, locations.toArray(new String[0]));
+    CombineFileSplit thissplit =
+      new CombineFileSplit(fl, offset, length, locations.toArray(new String[0]));
     splitList.add(thissplit);
   }
 
 
   void createSplitsGreedy(Map<String, Set<OneBlockInfo>> nodeToBlocks,
-    Map<OneBlockInfo, String[]> blockToNodes,
-    Map<String, List<OneBlockInfo>> rackToBlocks,
-    long totLength,
-    int num,
-    long minSizeNode,
-    long minSizeRack,
-    List<InputSplit> splits) {
+    Map<OneBlockInfo, String[]> blockToNodes, Map<String, List<OneBlockInfo>> rackToBlocks,
+    long totLength, int num, long minSizeNode, long minSizeRack, List<InputSplit> splits) {
 
     List<OneBlockInfo> blocks = new ArrayList<>(blockToNodes.keySet());
     Collections.sort(blocks, new Comparator<OneBlockInfo>() {
-      @Override
-      public int compare(OneBlockInfo o1, OneBlockInfo o2) {
+      @Override public int compare(OneBlockInfo o1, OneBlockInfo o2) {
         return -(int) (o1.length - o2.length);
       }
     });
@@ -644,7 +616,7 @@ public class BalanceInputFormat extends CombineTextInputFormat {
 
     //    long num = totLength / maxSize;
 
-    for (int i = 0; i < num; i ++) {
+    for (int i = 0; i < num; i++) {
       parts.put(i, new ArrayList<OneBlockInfo>());
       locations.put(i, new HashSet<String>());
     }
@@ -653,7 +625,7 @@ public class BalanceInputFormat extends CombineTextInputFormat {
 
       long min = Long.MAX_VALUE;
       int selectPart = -1;
-      for (int s = 0; s < num; s ++) {
+      for (int s = 0; s < num; s++) {
         if (loads.get(s) < min) {
           min = loads.get(s);
           selectPart = s;
@@ -666,28 +638,24 @@ public class BalanceInputFormat extends CombineTextInputFormat {
         locations.get(selectPart).add(host);
     }
 
-    for (Map.Entry<Integer, ArrayList<OneBlockInfo>> entry: parts.entrySet()) {
+    for (Map.Entry<Integer, ArrayList<OneBlockInfo>> entry : parts.entrySet()) {
       addCreatedSplit(splits, locations.get(entry.getKey()), entry.getValue());
     }
   }
 
-  public void getMoreSplits(Configuration conf, List<FileStatus> stats,
-    long maxSize, long minSizeNode, long minSizeRack,
-    List<InputSplit> splits) throws IOException {
+  public void getMoreSplits(Configuration conf, List<FileStatus> stats, long maxSize,
+    long minSizeNode, long minSizeRack, List<InputSplit> splits) throws IOException {
     // all blocks for all the files in input set
     OneFileInfo[] files;
 
     // mapping from a rack name to the list of blocks it has
-    HashMap<String, List<OneBlockInfo>> rackToBlocks =
-      new HashMap<String, List<OneBlockInfo>>();
+    HashMap<String, List<OneBlockInfo>> rackToBlocks = new HashMap<String, List<OneBlockInfo>>();
 
     // mapping from a block to the nodes on which it has replicas
-    HashMap<OneBlockInfo, String[]> blockToNodes =
-      new HashMap<OneBlockInfo, String[]>();
+    HashMap<OneBlockInfo, String[]> blockToNodes = new HashMap<OneBlockInfo, String[]>();
 
     // mapping from a node to the list of blocks that it contains
-    HashMap<String, Set<OneBlockInfo>> nodeToBlocks =
-      new HashMap<String, Set<OneBlockInfo>>();
+    HashMap<String, Set<OneBlockInfo>> nodeToBlocks = new HashMap<String, Set<OneBlockInfo>>();
 
     files = new OneFileInfo[stats.size()];
     if (stats.size() == 0) {
@@ -698,16 +666,16 @@ public class BalanceInputFormat extends CombineTextInputFormat {
     long totLength = 0;
     int i = 0;
     for (FileStatus stat : stats) {
-      files[i] = new OneFileInfo(stat, conf, isSplitable(conf, stat.getPath()),
-        rackToBlocks, blockToNodes, nodeToBlocks,
-        rackToNodes, 256 * 1024 * 1024);
+      files[i] =
+        new OneFileInfo(stat, conf, isSplitable(conf, stat.getPath()), rackToBlocks, blockToNodes,
+          nodeToBlocks, rackToNodes, 256 * 1024 * 1024);
       totLength += files[i].getLength();
     }
 
     int partNum = (int) (totLength / maxSize);
 
-    createSplitsGreedy(nodeToBlocks, blockToNodes, rackToBlocks, totLength,
-      partNum, minSizeNode, minSizeRack, splits);
+    createSplitsGreedy(nodeToBlocks, blockToNodes, rackToBlocks, totLength, partNum, minSizeNode,
+      minSizeRack, splits);
 
   }
 }

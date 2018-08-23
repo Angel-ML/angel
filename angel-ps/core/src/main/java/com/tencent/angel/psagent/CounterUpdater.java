@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.psagent;
 
 import com.tencent.angel.common.AngelCounter;
@@ -38,10 +39,13 @@ public class CounterUpdater {
   private long initCpuCumulativeTime = 0;
   private GcTimeUpdater gcUpdater;
   private ResourceCalculatorProcessTree pTree;
-  
-  /** A Map where Key-> URIScheme and value->FileSystemStatisticUpdater*/
+
+  /**
+   * A Map where Key-> URIScheme and value->FileSystemStatisticUpdater
+   */
   private Map<String, FileSystemStatisticUpdater> statisticUpdaters =
-      new HashMap<String, FileSystemStatisticUpdater>();
+    new HashMap<String, FileSystemStatisticUpdater>();
+
 
   class GcTimeUpdater {
     private long lastGcMillis = 0;
@@ -54,7 +58,7 @@ public class CounterUpdater {
 
     /**
      * @return the number of milliseconds that the gc has used for CPU since the last time this
-     *         method was called.
+     * method was called.
      */
     protected long getElapsedGc() {
       long thisGcMillis = 0;
@@ -86,6 +90,7 @@ public class CounterUpdater {
     }
   }
 
+
   class FileSystemStatisticUpdater {
     private List<FileSystem.Statistics> stats;
     private String schema;
@@ -110,22 +115,22 @@ public class CounterUpdater {
         writeOps = writeOps + stat.getWriteOps();
       }
       PSAgentContext.get().getMetrics()
-          .put(counterPrifix + AngelCounter.BYTES_READ, Long.toString(readBytes));
+        .put(counterPrifix + AngelCounter.BYTES_READ, Long.toString(readBytes));
       PSAgentContext.get().getMetrics()
-          .put(counterPrifix.toString() + AngelCounter.BYTES_WRITTEN, Long.toString(writeBytes));
+        .put(counterPrifix.toString() + AngelCounter.BYTES_WRITTEN, Long.toString(writeBytes));
       PSAgentContext.get().getMetrics()
-          .put(counterPrifix + AngelCounter.READ_OPS, Long.toString(readOps));
+        .put(counterPrifix + AngelCounter.READ_OPS, Long.toString(readOps));
       PSAgentContext.get().getMetrics()
-          .put(counterPrifix + AngelCounter.LARGE_READ_OPS, Long.toString(largeReadOps));
+        .put(counterPrifix + AngelCounter.LARGE_READ_OPS, Long.toString(largeReadOps));
       PSAgentContext.get().getMetrics()
-          .put(counterPrifix + AngelCounter.WRITE_OPS, Long.toString(writeOps));
+        .put(counterPrifix + AngelCounter.WRITE_OPS, Long.toString(writeOps));
     }
   }
 
 
   public synchronized void updateCounters() {
     Map<String, List<FileSystem.Statistics>> map =
-        new HashMap<String, List<FileSystem.Statistics>>();
+      new HashMap<String, List<FileSystem.Statistics>>();
     for (Statistics stat : FileSystem.getAllStatistics()) {
       String uriScheme = stat.getScheme();
       if (map.containsKey(uriScheme)) {
@@ -150,8 +155,7 @@ public class CounterUpdater {
     updateResourceCounters();
   }
 
-  @SuppressWarnings("deprecation")
-  private void updateResourceCounters() {
+  @SuppressWarnings("deprecation") private void updateResourceCounters() {
     // Update generic resource counters
     updateHeapUsageCounter();
 
@@ -177,7 +181,7 @@ public class CounterUpdater {
   private void updateHeapUsageCounter() {
     long currentHeapUsage = Runtime.getRuntime().totalMemory();
     PSAgentContext.get().getMetrics()
-        .put(AngelCounter.COMMITTED_HEAP_BYTES, Long.toString(currentHeapUsage));
+      .put(AngelCounter.COMMITTED_HEAP_BYTES, Long.toString(currentHeapUsage));
   }
 
   public CounterUpdater() {
@@ -185,15 +189,12 @@ public class CounterUpdater {
   }
 
   public void initialize() {
-    Class<? extends ResourceCalculatorProcessTree> clazz =
-        PSAgentContext
-            .get()
-            .getConf()
-            .getClass(MRConfig.RESOURCE_CALCULATOR_PROCESS_TREE, null,
-                ResourceCalculatorProcessTree.class);
-    pTree =
-        ResourceCalculatorProcessTree.getResourceCalculatorProcessTree(
-            System.getenv().get("JVM_PID"), clazz, PSAgentContext.get().getConf());
+    Class<? extends ResourceCalculatorProcessTree> clazz = PSAgentContext.get().getConf()
+      .getClass(MRConfig.RESOURCE_CALCULATOR_PROCESS_TREE, null,
+        ResourceCalculatorProcessTree.class);
+    pTree = ResourceCalculatorProcessTree
+      .getResourceCalculatorProcessTree(System.getenv().get("JVM_PID"), clazz,
+        PSAgentContext.get().getConf());
     if (pTree != null) {
       pTree.updateProcessTree();
       initCpuCumulativeTime = pTree.getCumulativeCpuTime();

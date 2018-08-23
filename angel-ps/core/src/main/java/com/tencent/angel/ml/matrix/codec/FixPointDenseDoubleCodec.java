@@ -15,52 +15,52 @@
  *
  */
 
+
 package com.tencent.angel.ml.matrix.codec;
 
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public class FixPointDenseDoubleCodec implements DenseDoubleCodec{
+public class FixPointDenseDoubleCodec implements DenseDoubleCodec {
   protected final static Log LOG = LogFactory.getLog(FixPointDenseDoubleCodec.class);
-  
+
   private int itemPerDouble;
 
-  public FixPointDenseDoubleCodec(int itemPerDouble){
+  public FixPointDenseDoubleCodec(int itemPerDouble) {
     this.itemPerDouble = itemPerDouble;
   }
-  
-  public FixPointDenseDoubleCodec(){
+
+  public FixPointDenseDoubleCodec() {
     this(1);
   }
-  
-  @Override
-  public void encode(ByteBuf out, double[] values, int startPos, int length) {
+
+  @Override public void encode(ByteBuf out, double[] values, int startPos, int length) {
     long startTime = System.currentTimeMillis();
     if (length == 0) {
       out.writeInt(length);
       return;
     }
-    
+
     int end = startPos + length;
-    
+
     // write the max abs
     int size = length;
-    size += 1; 
+    size += 1;
     out.writeInt(size);
     int bitPerItem = 8 * 8 / itemPerDouble;
     int maxPoint = (int) Math.pow(2, bitPerItem - 1) - 1;
     double maxAbs = 0.0;
-    for (int i = startPos ; i < end; i++) {
+    for (int i = startPos; i < end; i++) {
       if (Math.abs(values[i]) > maxAbs) {
         maxAbs = Math.abs(values[i]);
       }
     }
-    out.writeDouble(maxAbs);  
-    
+    out.writeDouble(maxAbs);
+
     int totalBytes = 0;
-    
-    for(int i = startPos ; i < end; i++){
+
+    for (int i = startPos; i < end; i++) {
       double value = values[i];
       int point = (int) Math.floor(Math.abs(value) / maxAbs * maxPoint);
       point += (point < maxPoint && Math.random() > 0.5) ? 1 : 0; // add Bernoulli random variable
@@ -71,13 +71,13 @@ public class FixPointDenseDoubleCodec implements DenseDoubleCodec{
       out.writeBytes(tmp);
       totalBytes += bitPerItem / 8;
     }
-    
-    LOG.info(String.format("compress %d doubles from %d bytes to %d bytes, " +
-            "bit per item: %d, max point: %d, max abs: %f, cost %d ms",
-            end - startPos, (end - startPos) * 8, totalBytes + 8,
-            bitPerItem, maxPoint, maxAbs, System.currentTimeMillis() - startTime));
+
+    LOG.info(String.format("compress %d doubles from %d bytes to %d bytes, "
+        + "bit per item: %d, max point: %d, max abs: %f, cost %d ms", end - startPos,
+      (end - startPos) * 8, totalBytes + 8, bitPerItem, maxPoint, maxAbs,
+      System.currentTimeMillis() - startTime));
   }
-  
+
   private static byte[] int2ByteArray(int value, int size) {
     assert Math.pow(2, 8 * size - 1) > value;
     byte[] rec = new byte[size];
@@ -87,14 +87,13 @@ public class FixPointDenseDoubleCodec implements DenseDoubleCodec{
     }
     return rec;
   }
-  
-  @SuppressWarnings("unused")
-  private static String byte2hex(byte [] buffer){
+
+  @SuppressWarnings("unused") private static String byte2hex(byte[] buffer) {
     String h = "";
 
-    for(int i = 0; i < buffer.length; i++){
+    for (int i = 0; i < buffer.length; i++) {
       String temp = Integer.toHexString(buffer[i] & 0xFF);
-      if(temp.length() == 1){
+      if (temp.length() == 1) {
         temp = "0" + temp;
       }
       h = h + " " + temp;
@@ -102,8 +101,8 @@ public class FixPointDenseDoubleCodec implements DenseDoubleCodec{
 
     return h.trim();
   }
-  
-  private static int byteArray2int(byte[] buffer){
+
+  private static int byteArray2int(byte[] buffer) {
     int rec = 0;
     boolean isNegative = (buffer[0] & 0x80) == 0x80;
     buffer[0] &= 0x7F;  // set the negative flag to 0
@@ -123,8 +122,7 @@ public class FixPointDenseDoubleCodec implements DenseDoubleCodec{
     return rec;
   }
 
-  @Override
-  public void decode(ByteBuf in, double[] data, int startPos, int length) {
+  @Override public void decode(ByteBuf in, double[] data, int startPos, int length) {
     int bitPerItem = 8 * 8 / itemPerDouble;
     int size = in.readInt();
 
@@ -141,22 +139,20 @@ public class FixPointDenseDoubleCodec implements DenseDoubleCodec{
       data[startPos + i] = (double) byteArray2int(itemBytes) / (double) maxPoint * maxAbs;
     }
 
-    LOG.info(String.format("parse compressed %d double data, max abs: %f, max point: %d", size - 1,
-        maxAbs, maxPoint));
+    LOG.info(String
+      .format("parse compressed %d double data, max abs: %f, max point: %d", size - 1, maxAbs,
+        maxPoint));
   }
 
-  @Override
-  public void serialize(ByteBuf buf) {
+  @Override public void serialize(ByteBuf buf) {
     buf.writeInt(itemPerDouble);
   }
 
-  @Override
-  public void deserialize(ByteBuf buf) {
+  @Override public void deserialize(ByteBuf buf) {
     itemPerDouble = buf.readInt();
   }
 
-  @Override
-  public int bufferLen() {
+  @Override public int bufferLen() {
     return 4;
   }
 }

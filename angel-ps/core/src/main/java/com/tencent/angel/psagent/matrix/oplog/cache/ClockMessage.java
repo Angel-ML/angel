@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
 import com.tencent.angel.psagent.task.TaskContext;
@@ -22,14 +23,17 @@ import com.tencent.angel.psagent.task.TaskContext;
 /**
  * Clock message
  */
-public class ClockMessage extends OpLogMessage{
-  /** Whether we need to flush update first */
+public class ClockMessage extends OpLogMessage {
+  /**
+   * Whether we need to flush update first
+   */
   private final boolean flushFirst;
+
   public ClockMessage(int seqId, int matrixId, TaskContext context, boolean flushFirst) {
     super(seqId, matrixId, OpLogMessageType.CLOCK, context);
     this.flushFirst = flushFirst;
   }
-  
+
   public boolean isFlushFirst() {
     return flushFirst;
   }

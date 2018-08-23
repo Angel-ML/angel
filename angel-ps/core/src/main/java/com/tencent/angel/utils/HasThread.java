@@ -1,17 +1,20 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
- * agreements. See the NOTICE file distributed with this work for additional information regarding
- * copyright ownership. The ASF licenses this file to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance with the License. You may obtain a
- * copy of the License at
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
  *
  * Unless required by applicable law or agreed to in writing, software distributed under the License
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
+ *
  */
+
 
 package com.tencent.angel.utils;
 
@@ -19,7 +22,7 @@ import java.lang.Thread.UncaughtExceptionHandler;
 
 /**
  * Abstract class which contains a Thread and delegates the common Thread methods to that instance.
- * 
+ * <p>
  * The purpose of this class is to workaround Sun JVM bug #6915621, in which something internal to
  * the JDK uses Thread.currentThread() as a monitor lock. This can produce deadlocks like
  * HBASE-4367, HBASE-4101, etc.

@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.app;
 
 import com.tencent.angel.RunningMode;
@@ -50,37 +51,57 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
 
   private final AMContext context;
 
-  /** application diagnostics */
+  /**
+   * application diagnostics
+   */
   private final List<String> diagnostics;
 
-  /** application state machine */
+  /**
+   * application state machine
+   */
   private final StateMachine<AppState, AppEventType, AppEvent> stateMachine;
 
-  /** the state is externally enforced, its priority is higher than the state of the state machine */
+  /**
+   * the state is externally enforced, its priority is higher than the state of the state machine
+   */
   private AppState forcedState = null;
 
-  /** application launch time */
+  /**
+   * application launch time
+   */
   private final long launchTime;
 
-  /** application finish time */
+  /**
+   * application finish time
+   */
   private long finishTime;
 
-  /** read/write lock */
+  /**
+   * read/write lock
+   */
   private final Lock readLock;
   private final Lock writeLock;
 
-  /** identify whether the application needs to be retried, */
+  /**
+   * identify whether the application needs to be retried,
+   */
   private boolean shouldRetry;
-  
-  /** state timeout monitor*/
-  private Thread stateMonitor;
-  
-  /** state to state start timestamp map*/
+
+  /**
+   * state timeout monitor
+   */
+  private volatile Thread stateMonitor;
+
+  /**
+   * state to state start timestamp map
+   */
   private final Map<AppState, Long> stateToTsMap;
-  
-  /**the longest time in milliseconds for a state(NEW,INITED,EXECUTE_SUCCESSED,SUCCEEDED,FAILED,KILLED)*/
+
+  /**
+   * the longest time in milliseconds for a state(NEW,INITED,EXECUTE_SUCCESSED,SUCCEEDED,FAILED,KILLED)
+   */
   private final long stateTimeOutMs;
-  
+
   private final AtomicBoolean stopped;
 
   public App(AMContext context) {
@@ -94,10 +115,9 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
     this.launchTime = context.getStartTime();
     shouldRetry = false;
     diagnostics = new ArrayList<String>();
-    
-    stateTimeOutMs = 
-        context.getConf().getLong(AngelConf.ANGEL_AM_APPSTATE_TIMEOUT_MS,
-            AngelConf.DEFAULT_ANGEL_AM_APPSTATE_TIMEOUT_MS);
+
+    stateTimeOutMs = context.getConf().getLong(AngelConf.ANGEL_AM_APPSTATE_TIMEOUT_MS,
+      AngelConf.DEFAULT_ANGEL_AM_APPSTATE_TIMEOUT_MS);
     stateToTsMap = new HashMap<AppState, Long>();
     stateToTsMap.put(AppState.NEW, context.getClock().getTime());
     stopped = new AtomicBoolean(false);
@@ -107,70 +127,54 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
   private static final AppKilledTransition APP_KILLED_TRANSITION = new AppKilledTransition();
   private static final AppFailedTransition APP_FAILED_TRANSITION = new AppFailedTransition();
 
-  protected static final StateMachineFactory<App, AppState, AppEventType, AppEvent> stateMachineFactory =
-      new StateMachineFactory<App, AppState, AppEventType, AppEvent>(AppState.NEW)
-          .addTransition(AppState.NEW, AppState.INITED, AppEventType.INIT)
-          .addTransition(AppState.NEW, AppState.KILLED, AppEventType.KILL, APP_KILLED_TRANSITION)
-          .addTransition(AppState.NEW, AppState.FAILED, AppEventType.INTERNAL_ERROR,
-              APP_FAILED_TRANSITION)
+  protected static final StateMachineFactory<App, AppState, AppEventType, AppEvent>
+    stateMachineFactory =
+    new StateMachineFactory<App, AppState, AppEventType, AppEvent>(AppState.NEW)
+      .addTransition(AppState.NEW, AppState.INITED, AppEventType.INIT)
+      .addTransition(AppState.NEW, AppState.KILLED, AppEventType.KILL, APP_KILLED_TRANSITION)
+      .addTransition(AppState.NEW, AppState.FAILED, AppEventType.INTERNAL_ERROR,
+        APP_FAILED_TRANSITION)
 
-          .addTransition(AppState.INITED, AppState.RUNNING, AppEventType.START,
-              new AppStartTransition())
-          .addTransition(AppState.INITED, AppState.KILLED, AppEventType.KILL, APP_KILLED_TRANSITION)
-          .addTransition(AppState.INITED, AppState.FAILED, AppEventType.INTERNAL_ERROR,
-              APP_FAILED_TRANSITION)
+      .addTransition(AppState.INITED, AppState.RUNNING, AppEventType.START,
+        new AppStartTransition())
+      .addTransition(AppState.INITED, AppState.KILLED, AppEventType.KILL, APP_KILLED_TRANSITION)
+      .addTransition(AppState.INITED, AppState.FAILED, AppEventType.INTERNAL_ERROR,
+        APP_FAILED_TRANSITION)
 
-          .addTransition(AppState.RUNNING, AppState.EXECUTE_SUCCESSED, AppEventType.EXECUTE_SUCESS)
-          .addTransition(AppState.RUNNING, AppState.KILLED, AppEventType.KILL,
-              APP_KILLED_TRANSITION)
-          .addTransition(AppState.RUNNING, AppState.FAILED, AppEventType.INTERNAL_ERROR,
-              APP_FAILED_TRANSITION)
-          .addTransition(AppState.RUNNING, AppState.SUCCEEDED, AppEventType.SUCCESS,
-              APP_SUCCESS_TRANSITION)
-          .addTransition(AppState.RUNNING, AppState.COMMITTING, AppEventType.COMMIT)
+      .addTransition(AppState.RUNNING, AppState.EXECUTE_SUCCESSED, AppEventType.EXECUTE_SUCESS)
+      .addTransition(AppState.RUNNING, AppState.KILLED, AppEventType.KILL, APP_KILLED_TRANSITION)
+      .addTransition(AppState.RUNNING, AppState.FAILED, AppEventType.INTERNAL_ERROR,
+        APP_FAILED_TRANSITION)
+      .addTransition(AppState.RUNNING, AppState.SUCCEEDED, AppEventType.SUCCESS,
+        APP_SUCCESS_TRANSITION)
 
-          .addTransition(AppState.EXECUTE_SUCCESSED, AppState.COMMITTING, AppEventType.COMMIT)
-          .addTransition(AppState.EXECUTE_SUCCESSED, AppState.KILLED, AppEventType.KILL,
-              APP_KILLED_TRANSITION)
-          .addTransition(AppState.EXECUTE_SUCCESSED, AppState.FAILED, AppEventType.INTERNAL_ERROR,
-              APP_FAILED_TRANSITION)
-          .addTransition(AppState.EXECUTE_SUCCESSED, AppState.SUCCEEDED, AppEventType.SUCCESS,
-              APP_SUCCESS_TRANSITION)
+      .addTransition(AppState.EXECUTE_SUCCESSED, AppState.KILLED, AppEventType.KILL,
+        APP_KILLED_TRANSITION)
+      .addTransition(AppState.EXECUTE_SUCCESSED, AppState.FAILED, AppEventType.INTERNAL_ERROR,
+        APP_FAILED_TRANSITION)
+      .addTransition(AppState.EXECUTE_SUCCESSED, AppState.SUCCEEDED, AppEventType.SUCCESS,
+        APP_SUCCESS_TRANSITION)
 
-          .addTransition(AppState.COMMITTING, AppState.SUCCEEDED, AppEventType.SUCCESS,
-              APP_SUCCESS_TRANSITION)
-          .addTransition(AppState.COMMITTING, AppState.FAILED, AppEventType.INTERNAL_ERROR,
-              APP_FAILED_TRANSITION)
-          .addTransition(AppState.COMMITTING, AppState.KILLED, AppEventType.KILL,
-              APP_KILLED_TRANSITION)
+      .addTransition(AppState.SUCCEEDED, AppState.SUCCEEDED, EnumSet
+        .of(AppEventType.INIT, AppEventType.START, AppEventType.EXECUTE_SUCESS,
+          AppEventType.SUCCESS, AppEventType.KILL, AppEventType.INTERNAL_ERROR))
 
-          .addTransition(
-              AppState.SUCCEEDED,
-              AppState.SUCCEEDED,
-              EnumSet.of(AppEventType.INIT, AppEventType.START, AppEventType.COMMIT, AppEventType.EXECUTE_SUCESS,
-                  AppEventType.SUCCESS, AppEventType.KILL, AppEventType.INTERNAL_ERROR))
+      .addTransition(AppState.KILLED, AppState.KILLED, EnumSet
+        .of(AppEventType.INIT, AppEventType.START, AppEventType.EXECUTE_SUCESS,
+          AppEventType.SUCCESS, AppEventType.KILL, AppEventType.INTERNAL_ERROR))
 
-          .addTransition(
-              AppState.KILLED,
-              AppState.KILLED,
-              EnumSet.of(AppEventType.INIT, AppEventType.START, AppEventType.COMMIT, AppEventType.EXECUTE_SUCESS,
-                  AppEventType.SUCCESS, AppEventType.KILL, AppEventType.INTERNAL_ERROR))
+      .addTransition(AppState.FAILED, AppState.FAILED, EnumSet
+        .of(AppEventType.INIT, AppEventType.START, AppEventType.EXECUTE_SUCESS,
+          AppEventType.SUCCESS, AppEventType.KILL, AppEventType.INTERNAL_ERROR));
 
-          .addTransition(
-              AppState.FAILED,
-              AppState.FAILED,
-              EnumSet.of(AppEventType.INIT, AppEventType.START, AppEventType.COMMIT, AppEventType.EXECUTE_SUCESS,
-                  AppEventType.SUCCESS, AppEventType.KILL, AppEventType.INTERNAL_ERROR));
-
-  @SuppressWarnings("unchecked")
-  public void startExecute() {
+  @SuppressWarnings("unchecked") public void startExecute() {
     context.getEventHandler().handle(new AppEvent(AppEventType.INIT));
     context.getEventHandler().handle(new AppEvent(AppEventType.START));
   }
-  
+
   /**
    * get state of application, only return RUNNING, EXECUTE_SUCCEEDED, COMMITING, SUCCEEDED, KILLED, FAILED
-   * 
+   *
    * @return AppState the state of application
    */
   public AppState getExternAppState() {
@@ -179,61 +183,53 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
       case NEW:
       case INITED:
       case RUNNING:
-        return AppState.RUNNING;       
+        return AppState.RUNNING;
       default:
         return state;
     }
   }
-  
-  @Override
-  protected void serviceStart() throws Exception {
+
+  @Override protected void serviceStart() throws Exception {
     stateMonitor = new Thread(new Runnable() {
-      @SuppressWarnings("unchecked")
-      @Override
-      public void run() {
-        while(!stopped.get() && !Thread.interrupted()) {
+      @SuppressWarnings("unchecked") @Override public void run() {
+        while (!stopped.get() && !Thread.interrupted()) {
           AppState state = getInternalState();
           try {
             readLock.lock();
             if (stateToTsMap.containsKey(state)
-                && context.getClock().getTime() - stateToTsMap.get(state) >= stateTimeOutMs) {
-              context.getEventHandler().handle(
-                  new InternalErrorEvent(context.getApplicationId(), "app in state " + state
-                      + " over " + stateTimeOutMs + " milliseconds!"));
+              && context.getClock().getTime() - stateToTsMap.get(state) >= stateTimeOutMs) {
+              context.getEventHandler().handle(new InternalErrorEvent(context.getApplicationId(),
+                "app in state " + state + " over " + stateTimeOutMs + " milliseconds!"));
             }
           } finally {
             readLock.unlock();
           }
         }
       }
-      
+
     });
     stateMonitor.setName("app-state-monitor");
     stateMonitor.start();
     super.serviceStart();
   }
-  
-  @Override
-  protected void serviceStop() throws Exception {
-    if (!stopped.getAndSet(true)) {
-      if (stateMonitor != null) {
-        stateMonitor.interrupt();
-        try {
-          stateMonitor.join();
-        } catch (InterruptedException ie) {
-          LOG.warn("InterruptedException while stopping", ie);
-        }
-        stateMonitor = null;
-      }
+
+  @Override protected void serviceStop() throws Exception {
+    if (stopped.getAndSet(true)) {
+      return;
     }
-    
+
+    if (stateMonitor != null) {
+      stateMonitor.interrupt();
+      stateMonitor = null;
+    }
     super.serviceStop();
+    LOG.info("App manager stopped");
   }
 
   /**
    * get application running state: current state, current iteration and diagnostics TODO:we can add
    * more details of the app.
-   * 
+   *
    * @return GetJobReportResponse application state
    */
   public GetJobReportResponse getJobReportResponse() {
@@ -244,19 +240,19 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
     sb.append(StringUtils.join("\n", getDiagnostics()));
     report.setDiagnostics(sb.toString());
 
-    int totalIteration =
-        context.getConf().getInt(AngelConf.ANGEL_TASK_ITERATION_NUMBER,
-            AngelConf.DEFAULT_ANGEL_TASK_ITERATION_NUMBER);
+    int totalIteration = context.getConf()
+      .getInt(AngelConf.ANGEL_TASK_ITERATION_NUMBER, AngelConf.DEFAULT_ANGEL_TASK_ITERATION_NUMBER);
     report.setTotalIteration(totalIteration);
     int curIteration = 0;
-    if(context.getAlgoMetricsService() != null) {
+    if (context.getAlgoMetricsService() != null) {
       curIteration = context.getAlgoMetricsService().getCurrentIter();
       Map<String, String> metrics = context.getAlgoMetricsService().getAlgoMetrics(curIteration);
       MLProtos.Pair.Builder pairBuilder = MLProtos.Pair.newBuilder();
 
-      if(metrics != null) {
-        for(Map.Entry<String, String> entry:metrics.entrySet()) {
-          report.addMetrics(pairBuilder.setKey(entry.getKey()).setValue(String.valueOf(entry.getValue())).build());
+      if (metrics != null) {
+        for (Map.Entry<String, String> entry : metrics.entrySet()) {
+          report.addMetrics(
+            pairBuilder.setKey(entry.getKey()).setValue(String.valueOf(entry.getValue())).build());
         }
       }
     }
@@ -266,11 +262,12 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
     return getJobReportResBuilder.build();
   }
 
-  private String toString(Map<String, Double> metrics){
+  private String toString(Map<String, Double> metrics) {
     StringBuilder sb = new StringBuilder();
 
-    for(Map.Entry<String, Double> entry:metrics.entrySet()) {
-      sb.append("index name=").append(entry.getKey()).append(",").append("value=").append(entry.getValue());
+    for (Map.Entry<String, Double> entry : metrics.entrySet()) {
+      sb.append("index name=").append(entry.getKey()).append(",").append("value=")
+        .append(entry.getValue());
     }
 
     return sb.toString();
@@ -279,7 +276,7 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
 
   /**
    * write application state to output stream
-   * 
+   *
    * @param out output stream
    */
   public void serilize(FSDataOutputStream out) throws IOException {
@@ -301,9 +298,7 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
     }
   }
 
-  @SuppressWarnings("unchecked")
-  @Override
-  public void handle(AppEvent event) {
+  @SuppressWarnings("unchecked") @Override public void handle(AppEvent event) {
     if (LOG.isDebugEnabled()) {
       LOG.debug("Processing AppEvent type " + event);
     }
@@ -314,30 +309,27 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
         stateMachine.doTransition(event.getType(), event);
       } catch (InvalidStateTransitonException e) {
         LOG.error("Can't handle this event at current state", e);
-        context.getEventHandler().handle(
-            new InternalErrorEvent(context.getApplicationId(),
-                "Can't handle this event at current state" + e.getMessage()));
+        context.getEventHandler().handle(new InternalErrorEvent(context.getApplicationId(),
+          "Can't handle this event at current state" + e.getMessage()));
       }
       // notify the event handler of state change
       AppState newState = getInternalState();
       if (oldState != newState) {
-        // If new state is not RUNNING and COMMITTING, add it to state timeout monitor
-        if(newState != AppState.RUNNING && newState != AppState.COMMITTING){
+        // If new state is not RUNNING and EXECUTE_SUCCESSED, add it to state timeout monitor
+        if (newState != AppState.RUNNING && newState != AppState.EXECUTE_SUCCESSED) {
           stateToTsMap.put(newState, context.getClock().getTime());
         }
-        LOG.info(context.getApplicationId() + "Job Transitioned from " + oldState + " to "
-            + newState);
+        LOG.info(
+          context.getApplicationId() + "Job Transitioned from " + oldState + " to " + newState);
       }
-    }
-
-    finally {
+    } finally {
       writeLock.unlock();
     }
   }
 
   /**
    * get application state
-   * 
+   *
    * @return AppState application state
    */
   public AppState getInternalState() {
@@ -357,7 +349,7 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
 
   /**
    * get application diagnostics
-   * 
+   *
    * @return List<String> application diagnostics
    */
   public List<String> getDiagnostics() {
@@ -373,7 +365,7 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
 
   /**
    * get application launch time
-   * 
+   *
    * @return long application launch time, in milliseconds
    */
   public long getLaunchTime() {
@@ -382,7 +374,7 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
 
   /**
    * get application finish time
-   * 
+   *
    * @return long application finish time, in milliseconds
    */
   public long getFinishTime() {
@@ -400,14 +392,19 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
 
   /**
    * force the application to specific state
-   * 
+   *
    * @param state forced state need to set
    */
   public void forceState(AppState state) {
+    if (isFinish()) {
+      return;
+    }
+
     try {
       writeLock.lock();
       forcedState = state;
-      if ((state == AppState.SUCCEEDED) || (state == AppState.FAILED) || (state == AppState.KILLED)) {
+      if ((state == AppState.SUCCEEDED) || (state == AppState.FAILED) || (state
+        == AppState.KILLED)) {
         setFinishTime();
       }
     } finally {
@@ -418,18 +415,18 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
   /**
    * check application is finish or not. when the application is in the SUCCEEDED, FAILED or KILLED
    * state, indicating that the application is finish
-   * 
+   *
    * @return boolean true if finish, otherwise false
    */
   public boolean isFinish() {
     AppState state = getInternalState();
-    return (state == AppState.SUCCEEDED) || (state == AppState.FAILED)
-        || (state == AppState.KILLED);
+    return (state == AppState.SUCCEEDED) || (state == AppState.FAILED) || (state
+      == AppState.KILLED);
   }
 
   /**
    * check application is finish with SUCCEEDED
-   * 
+   *
    * @return boolean true if finish with SUCCEEDED, otherwise false
    */
   public boolean isSuccess() {
@@ -439,7 +436,7 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
 
   /**
    * check if the application master needs to retry
-   * 
+   *
    * @return boolean true if need retry, otherwise false
    */
   public boolean isShouldRetry() {
@@ -453,7 +450,7 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
 
   /**
    * set application master retry flag
-   * 
+   *
    * @param retryEnable retry flag
    */
   public void shouldRetry(boolean retryEnable) {
@@ -467,45 +464,40 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
 
   public static class AppSuccessTransition implements SingleArcTransition<App, AppEvent> {
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public void transition(App app, AppEvent event) {
+    @SuppressWarnings("unchecked") @Override public void transition(App app, AppEvent event) {
       app.context.getEventHandler().handle(
-          new AppFinishEvent(AppFinishEventType.SUCCESS_FINISH, app.context.getApplicationId()));
+        new AppFinishEvent(AppFinishEventType.SUCCESS_FINISH, app.context.getApplicationId()));
       app.setFinishTime();
     }
   }
 
+
   public static class AppStartTransition implements SingleArcTransition<App, AppEvent> {
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public void transition(App app, AppEvent event) {
+    @SuppressWarnings("unchecked") @Override public void transition(App app, AppEvent event) {
       if (app.context.getRunningMode() == RunningMode.ANGEL_PS_WORKER) {
         app.context.getWorkerManager().startAllWorker();
       }
     }
   }
 
+
   public static class AppKilledTransition implements SingleArcTransition<App, AppEvent> {
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public void transition(App app, AppEvent event) {
-      app.context.getEventHandler().handle(
-          new AppFinishEvent(AppFinishEventType.KILL_FINISH, app.context.getApplicationId()));
+    @SuppressWarnings("unchecked") @Override public void transition(App app, AppEvent event) {
+      app.context.getEventHandler()
+        .handle(new AppFinishEvent(AppFinishEventType.KILL_FINISH, app.context.getApplicationId()));
       app.setFinishTime();
     }
   }
 
+
   public static class AppFailedTransition implements SingleArcTransition<App, AppEvent> {
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public void transition(App app, AppEvent event) {
+    @SuppressWarnings("unchecked") @Override public void transition(App app, AppEvent event) {
       app.context.getEventHandler().handle(
-          new AppFinishEvent(AppFinishEventType.INTERNAL_ERROR_FINISH, app.context
-              .getApplicationId()));
+        new AppFinishEvent(AppFinishEventType.INTERNAL_ERROR_FINISH,
+          app.context.getApplicationId()));
 
       InternalErrorEvent errorEvent = (InternalErrorEvent) event;
       app.shouldRetry = errorEvent.isShouldRetry();

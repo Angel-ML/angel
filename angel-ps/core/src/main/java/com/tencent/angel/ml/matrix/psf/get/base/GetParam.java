@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.ml.matrix.psf.get.base;
 
 import com.tencent.angel.PartitionKey;
@@ -55,10 +56,8 @@ public class GetParam implements ParamSplit {
     return matrixId;
   }
 
-  @Override
-  public List<PartitionGetParam> split() {
-    List<PartitionKey> parts =
-        PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
+  @Override public List<PartitionGetParam> split() {
+    List<PartitionKey> parts = PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
     int size = parts.size();
 
     List<PartitionGetParam> partParams = new ArrayList<PartitionGetParam>(size);

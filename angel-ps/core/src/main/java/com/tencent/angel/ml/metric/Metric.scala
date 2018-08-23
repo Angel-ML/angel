@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.ml.metric
 
 import com.tencent.angel.conf.AngelConf
@@ -30,24 +31,24 @@ abstract class Metric {
   /**
     * Set metric calculate dependency counters
     */
-  def setValue(value:Double)
+  def setValue(value: Double)
 
   /**
     * Merge dependency counters
- *
+    *
     * @param other
     * @return
     */
-  def merge(other:this.type) : this.type
+  def merge(other: this.type): this.type
 
   /**
     * Use counters calculate metric
- *
+    *
     * @return metric value
     */
-  def calculate() : Double
+  def calculate(): Double
 
   override def toString(): String = {
-   AngelConf.DEFAULT_METRIC_FORMAT.format(this.calculate)
+    AngelConf.DEFAULT_METRIC_FORMAT.format(this.calculate)
   }
 }

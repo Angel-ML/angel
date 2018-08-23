@@ -15,10 +15,11 @@
  *
  */
 
+
 package com.tencent.angel.psagent.matrix;
 
 import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.matrix.psf.update.enhance.ZeroUpdate;
+import com.tencent.angel.ml.matrix.psf.update.zero.Zero;
 import com.tencent.angel.psagent.task.TaskContext;
 
 import java.util.concurrent.ExecutionException;
@@ -28,15 +29,19 @@ import java.util.concurrent.ExecutionException;
  * consistency control.
  */
 public abstract class MatrixClient implements MatrixInterface {
-  /** matrix id */
+  /**
+   * matrix id
+   */
   protected int matrixId;
 
-  /** task context */
+  /**
+   * task context
+   */
   protected TaskContext taskContext;
 
   /**
    * Set matrix id.
-   * 
+   *
    * @param matrixId matrix id
    */
   public void setMatrixId(int matrixId) {
@@ -45,7 +50,7 @@ public abstract class MatrixClient implements MatrixInterface {
 
   /**
    * Get matrix id.
-   * 
+   *
    * @return int matrix id
    */
   public int getMatrixId() {
@@ -54,7 +59,7 @@ public abstract class MatrixClient implements MatrixInterface {
 
   /**
    * Set task context.
-   * 
+   *
    * @param taskContext task context
    */
   public void setTaskContext(TaskContext taskContext) {
@@ -63,7 +68,7 @@ public abstract class MatrixClient implements MatrixInterface {
 
   /**
    * Get task context.
-   * 
+   *
    * @return task context
    */
   public TaskContext getTaskContext() {
@@ -71,8 +76,8 @@ public abstract class MatrixClient implements MatrixInterface {
   }
 
   public void zero() throws AngelException {
-    ZeroUpdate updater = new ZeroUpdate(new ZeroUpdate.ZeroUpdateParam(getMatrixId(), false));
-    try{
+    Zero updater = new Zero(new Zero.ZeroParam(getMatrixId(), false));
+    try {
       update(updater).get();
     } catch (InterruptedException | ExecutionException e) {
       throw new AngelException(e);

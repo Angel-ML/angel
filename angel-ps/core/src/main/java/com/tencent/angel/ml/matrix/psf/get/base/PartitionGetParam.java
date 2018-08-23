@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.ml.matrix.psf.get.base;
 
 import com.tencent.angel.PartitionKey;
@@ -26,17 +27,21 @@ import io.netty.buffer.ByteBuf;
  * parameters.
  */
 public class PartitionGetParam implements Serialize {
-  /** matrix Id */
+  /**
+   * matrix Id
+   */
   protected int matrixId;
 
-  /** partition key */
+  /**
+   * partition key
+   */
   protected PartitionKey partKey;
 
   /**
    * Creates a new partition parameter.
    *
    * @param matrixId the matrix id
-   * @param partKey the part key
+   * @param partKey  the part key
    */
   public PartitionGetParam(int matrixId, PartitionKey partKey) {
     this.matrixId = matrixId;
@@ -51,16 +56,14 @@ public class PartitionGetParam implements Serialize {
   }
 
 
-  @Override
-  public void serialize(ByteBuf buf) {
+  @Override public void serialize(ByteBuf buf) {
     buf.writeInt(matrixId);
     if (partKey != null) {
       partKey.serialize(buf);
     }
   }
 
-  @Override
-  public void deserialize(ByteBuf buf) {
+  @Override public void deserialize(ByteBuf buf) {
     matrixId = buf.readInt();
     if (buf.isReadable()) {
       if (partKey == null) {
@@ -71,8 +74,7 @@ public class PartitionGetParam implements Serialize {
     }
   }
 
-  @Override
-  public int bufferLen() {
+  @Override public int bufferLen() {
     return 4 + ((partKey != null) ? partKey.bufferLen() : 0);
   }
 

@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.deploy;
 
 import org.apache.hadoop.service.AbstractService;
@@ -26,8 +27,8 @@ import java.util.Map;
 /**
  * Base class for container allocator.
  */
-public abstract class ContainerAllocator extends AbstractService implements
-    EventHandler<ContainerAllocatorEvent> {
+public abstract class ContainerAllocator extends AbstractService
+  implements EventHandler<ContainerAllocatorEvent> {
   public ContainerAllocator(String name) {
     super(name);
   }

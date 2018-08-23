@@ -15,53 +15,56 @@
  *
  */
 
+
 package com.tencent.angel.psagent.matrix.storage;
 
 /**
  * The storage for a single matrix.
  */
 
-import com.tencent.angel.ml.math.TVector;
+import com.tencent.angel.ml.math2.vector.Vector;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class MatrixStorage {
-  /** row index to row map*/
-  private final ConcurrentHashMap<Integer, TVector> rowIndexToRowMap;
+  /**
+   * row index to row map
+   */
+  private final ConcurrentHashMap<Integer, Vector> rowIndexToRowMap;
   private final ReentrantReadWriteLock lock;
 
   /**
    * Create a new MatrixStorage.
    */
   public MatrixStorage() {
-    rowIndexToRowMap = new ConcurrentHashMap<Integer, TVector>();
+    rowIndexToRowMap = new ConcurrentHashMap<>();
     lock = new ReentrantReadWriteLock();
   }
 
   /**
    * Get the row from the storage.
-   * 
+   *
    * @param rowIndex row index
    * @return TVector row
    */
-  public TVector getRow(int rowIndex) {
+  public Vector getRow(int rowIndex) {
     return rowIndexToRowMap.get(rowIndex);
   }
 
   /**
    * Add the row to the storage.
-   * 
+   *
    * @param rowIndex row index
    * @param row
    */
-  public void addRow(int rowIndex, TVector row) {
+  public void addRow(int rowIndex, Vector row) {
     rowIndexToRowMap.put(rowIndex, row);
   }
 
   /**
    * Remove the row from the storage.
-   * 
+   *
    * @param rowIndex row index
    */
   public void removeRow(int rowIndex) {

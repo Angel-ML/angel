@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.ps;
 
 import com.tencent.angel.common.location.Location;
@@ -23,22 +24,19 @@ import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.app.AppEvent;
 import com.tencent.angel.master.app.AppEventType;
 import com.tencent.angel.master.app.InternalErrorEvent;
-import com.tencent.angel.master.matrix.committer.AMMatrixCommitter;
 import com.tencent.angel.master.ps.attempt.PSAttemptDiagnosticsUpdateEvent;
 import com.tencent.angel.master.ps.attempt.PSAttemptEvent;
 import com.tencent.angel.master.ps.attempt.PSAttemptEventType;
 import com.tencent.angel.master.ps.ps.AMParameterServer;
 import com.tencent.angel.master.ps.ps.AMParameterServerEvent;
 import com.tencent.angel.master.ps.ps.AMParameterServerEventType;
-import com.tencent.angel.ml.matrix.transport.PSLocation;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
-import com.tencent.angel.ps.impl.ParameterServer;
+import com.tencent.angel.ps.server.data.PSLocation;
 import com.tencent.angel.utils.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
@@ -53,66 +51,77 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Parameter server manager, it managers a group of
  * {@link com.tencent.angel.master.ps.ps.AMParameterServer}. It is responsible for starting all the
  * parameter servers. If all the workers have completed the model training, it will inform the
- * parameter servers to write models to the corresponding file, and finally merge them use
- * {@link com.tencent.angel.master.matrix.committer.AMMatrixCommitter}
+ * parameter servers to write models to the corresponding file, and finally merge them.
  */
-public class ParameterServerManager extends AbstractService implements
-    EventHandler<ParameterServerManagerEvent> {
+public class ParameterServerManager extends AbstractService
+  implements EventHandler<ParameterServerManagerEvent> {
 
   private static final Log LOG = LogFactory.getLog(ParameterServerManager.class);
   private final AMContext context;
-  
-  /**parameter server number*/
+
+  /**
+   * parameter server number
+   */
   private final int psNumber;
-  
+
   /**
    * If we need to suggest physical machines which the parameter servers will running on, we can
    * specify the physical machine ip list
    */
   private final String[] ips;
-  
-  /**the amount of resources requested for each parameter server*/
+
+  /**
+   * the amount of resources requested for each parameter server
+   */
   private final Resource psResource;
-  
-  /**the resource priority for parameter servers*/
+
+  /**
+   * the resource priority for parameter servers
+   */
   private final Priority priority;
-  
-  /**parameter server id to parameter server management unit map*/
+
+  /**
+   * parameter server id to parameter server management unit map
+   */
   private final Map<ParameterServerId, AMParameterServer> psMap;
-  
-  /**The parameter server collection that has completed the commit operation*/
+
+  /**
+   * The parameter server collection that has completed the commit operation
+   */
   private final Set<ParameterServerId> committedPs;
-  
-  /**model output path*/
-  private final Path outputPath;
-  
-  /**temporary model output path*/
-  private final Path tmpOutputPath;
-  
-  /**model committer, it move model files to output path*/
-  private AMMatrixCommitter committer;
-  
-  /**whether you can start commit operation*/
+
+  /**
+   * whether you can start commit operation
+   */
   private final AtomicBoolean canCommit;
-  
-  /**need commit matrices*/
+
+  /**
+   * need commit matrices
+   */
   private volatile List<Integer> needCommitMatrixIds;
-  
-  /**parameter server id to attempt index map, it use to master recover*/
+
+  /**
+   * parameter server id to attempt index map, it use to master recover
+   */
   private final Map<ParameterServerId, Integer> psIdToAttemptIndexMap;
 
   private final AMPSFailedReport report;
 
   private final AtomicBoolean stopped = new AtomicBoolean(false);
 
-  /**parameter server attempt id to last heartbeat timestamp map*/
+  /**
+   * parameter server attempt id to last heartbeat timestamp map
+   */
   private final ConcurrentHashMap<PSAttemptId, Long> psLastHeartbeatTS = new ConcurrentHashMap<>();
 
-  /**parameter server heartbeat timeout value in millisecond*/
+  /**
+   * parameter server heartbeat timeout value in millisecond
+   */
   private final long psTimeOutMS;
 
 
-  public ParameterServerManager(AMContext context, Map<ParameterServerId, Integer> psIdToAttemptIndexMap) {
+  public ParameterServerManager(AMContext context,
+    Map<ParameterServerId, Integer> psIdToAttemptIndexMap) {
     super("PS Manager");
     this.context = context;
     this.psIdToAttemptIndexMap = psIdToAttemptIndexMap;
@@ -123,26 +132,19 @@ public class ParameterServerManager extends AbstractService implements
       psNumber = ips.length;
     } else {
       ips = null;
-      psNumber =
-          conf.getInt(AngelConf.ANGEL_PS_NUMBER,
-              AngelConf.DEFAULT_ANGEL_PS_NUMBER);
+      psNumber = conf.getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER);
     }
 
     int psServerMemory =
-        conf.getInt(AngelConf.ANGEL_PS_MEMORY_GB,
-            AngelConf.DEFAULT_ANGEL_PS_MEMORY_GB) * 1024;
+      conf.getInt(AngelConf.ANGEL_PS_MEMORY_GB, AngelConf.DEFAULT_ANGEL_PS_MEMORY_GB) * 1024;
 
     int psServerVcores =
-        conf.getInt(AngelConf.ANGEL_PS_CPU_VCORES,
-            AngelConf.DEFAULT_ANGEL_PS_CPU_VCORES);
+      conf.getInt(AngelConf.ANGEL_PS_CPU_VCORES, AngelConf.DEFAULT_ANGEL_PS_CPU_VCORES);
 
-    int psPriority =
-        conf.getInt(AngelConf.ANGEL_PS_PRIORITY,
-            AngelConf.DEFAULT_ANGEL_PS_PRIORITY);
+    int psPriority = conf.getInt(AngelConf.ANGEL_PS_PRIORITY, AngelConf.DEFAULT_ANGEL_PS_PRIORITY);
 
-    psTimeOutMS =
-      conf.getLong(AngelConf.ANGEL_PS_HEARTBEAT_TIMEOUT_MS,
-        AngelConf.DEFAULT_ANGEL_PS_HEARTBEAT_TIMEOUT_MS);
+    psTimeOutMS = conf.getLong(AngelConf.ANGEL_PS_HEARTBEAT_TIMEOUT_MS,
+      AngelConf.DEFAULT_ANGEL_PS_HEARTBEAT_TIMEOUT_MS);
 
     psResource = Resource.newInstance(psServerMemory, psServerVcores);
     priority = RecordFactoryProvider.getRecordFactory(null).newRecordInstance(Priority.class);
@@ -151,33 +153,26 @@ public class ParameterServerManager extends AbstractService implements
     psMap = new HashMap<>();
     committedPs = new HashSet<>();
 
-    String outputPathStr = conf.get(AngelConf.ANGEL_JOB_OUTPUT_PATH);
-    String tmpOutputPathStr = conf.get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH);
-    outputPath = new Path(outputPathStr);
-    tmpOutputPath = new Path(tmpOutputPathStr);
-
     canCommit = new AtomicBoolean(false);
     report = new AMPSFailedReport();
   }
 
-  @Override
-  protected void serviceStart() throws Exception  {
+  @Override protected void serviceStart() throws Exception {
 
   }
 
-  @Override
-  protected void serviceStop() throws Exception {
-    if(!stopped.getAndSet(true)) {
-      if (committer != null) {
-        committer.stop();
-      }
+  @Override protected void serviceStop() throws Exception {
+    if (stopped.getAndSet(true)) {
+      return;
     }
+    super.serviceStop();
+    LOG.info("ParameterServerManager stopped");
   }
 
   /**
    * Init all PS
    */
-  public void init(){
+  public void init() {
     for (int i = 0; i < psNumber; i++) {
       ParameterServerId id = new ParameterServerId(i);
       AMParameterServer server = null;
@@ -187,7 +182,7 @@ public class ParameterServerManager extends AbstractService implements
         server = new AMParameterServer(id, context);
       }
 
-      if(psIdToAttemptIndexMap != null && psIdToAttemptIndexMap.containsKey(id)) {
+      if (psIdToAttemptIndexMap != null && psIdToAttemptIndexMap.containsKey(id)) {
         server.setNextAttemptNumber(psIdToAttemptIndexMap.get(id));
       }
       psMap.put(id, server);
@@ -198,21 +193,22 @@ public class ParameterServerManager extends AbstractService implements
    * Start all PS
    */
   public void startAllPS() {
-    for(Map.Entry<ParameterServerId, AMParameterServer> entry : psMap.entrySet()) {
-      entry.getValue().handle(new AMParameterServerEvent(AMParameterServerEventType.PS_SCHEDULE, entry.getKey()));
+    for (Map.Entry<ParameterServerId, AMParameterServer> entry : psMap.entrySet()) {
+      entry.getValue()
+        .handle(new AMParameterServerEvent(AMParameterServerEventType.PS_SCHEDULE, entry.getKey()));
     }
   }
 
   /**
    * get parameter servers map
+   *
    * @return Map<ParameterServerId, AMParameterServer> parameter servers map
    */
   public Map<ParameterServerId, AMParameterServer> getParameterServerMap() {
     return psMap;
   }
 
-  @Override
-  public void handle(ParameterServerManagerEvent event) {
+  @Override public void handle(ParameterServerManagerEvent event) {
     LOG.debug("Processing event type " + event.getType());
     switch (event.getType()) {
       case COMMIT: {
@@ -244,6 +240,7 @@ public class ParameterServerManager extends AbstractService implements
 
   /**
    * Check whether we can start the commit operation
+   *
    * @return boolean true indicates that a commit operation can be performed
    */
   public boolean psCanCommit() {
@@ -252,6 +249,7 @@ public class ParameterServerManager extends AbstractService implements
 
   /**
    * get parameter server manager unit use id
+   *
    * @param id parameter server id
    * @return AMParameterServer parameter server manager unit
    */
@@ -261,6 +259,7 @@ public class ParameterServerManager extends AbstractService implements
 
   /**
    * get parameter server number
+   *
    * @return int parameter server number
    */
   public int getPsNumber() {
@@ -269,6 +268,7 @@ public class ParameterServerManager extends AbstractService implements
 
   /**
    * get parameter server resource allocation
+   *
    * @return Resource parameter server resource allocation
    */
   public Resource getPsResource() {
@@ -277,25 +277,24 @@ public class ParameterServerManager extends AbstractService implements
 
   /**
    * get parameter server resource priority
+   *
    * @return Priority parameter server resource priority
    */
   public Priority getPriority() {
     return priority;
   }
-  
-  @SuppressWarnings("unchecked")
-  private void psKilled(ParameterServerManagerEvent event) {
+
+  @SuppressWarnings("unchecked") private void psKilled(ParameterServerManagerEvent event) {
     context.getEventHandler().handle(new AppEvent(context.getApplicationId(), AppEventType.KILL));
   }
 
-  @SuppressWarnings("unchecked")
-  private void psFailed(ParameterServerManagerEvent event) {
+  @SuppressWarnings("unchecked") private void psFailed(ParameterServerManagerEvent event) {
     List<String> diagnostics =
-        context.getParameterServerManager().getParameterServer(event.getPsId()).getDiagnostics();
+      context.getParameterServerManager().getParameterServer(event.getPsId()).getDiagnostics();
     StringBuilder sb = new StringBuilder();
     sb.append(StringUtils.join("\n", diagnostics));
-    context.getEventHandler().handle(
-        new InternalErrorEvent(context.getApplicationId(), sb.toString()));
+    context.getEventHandler()
+      .handle(new InternalErrorEvent(context.getApplicationId(), sb.toString()));
   }
 
   private void commitSuccess(ParameterServerManagerEvent event) {
@@ -307,16 +306,12 @@ public class ParameterServerManager extends AbstractService implements
   }
 
   private void commit() {
-    //init and start master committer
-    committer = new AMMatrixCommitter(context, outputPath, tmpOutputPath, needCommitMatrixIds);
-    committer.init(context.getConf());
-    committer.start();
   }
 
 
   /**
    * Get the matrices that need commit.
-   * 
+   *
    * @return List<Integer> matrices that need commit.
    */
   public List<Integer> getNeedCommitMatrixIds() {
@@ -325,6 +320,7 @@ public class ParameterServerManager extends AbstractService implements
 
   /**
    * Update ps failed counters
+   *
    * @param counters ps failed counters
    */
   public void psFailedReports(Map<PSLocation, Integer> counters) {
@@ -348,11 +344,11 @@ public class ParameterServerManager extends AbstractService implements
       psEntry = psIt.next();
       if (currentTs - psEntry.getValue() > psTimeOutMS) {
         LOG.error(psEntry.getKey() + " heartbeat timeout!!!");
-        context.getEventHandler().handle(
-          new PSAttemptDiagnosticsUpdateEvent("heartbeat timeout", psEntry.getKey()));
+        context.getEventHandler()
+          .handle(new PSAttemptDiagnosticsUpdateEvent("heartbeat timeout", psEntry.getKey()));
 
-        context.getEventHandler().handle(
-          new PSAttemptEvent(PSAttemptEventType.PA_FAILMSG, psEntry.getKey()));
+        context.getEventHandler()
+          .handle(new PSAttemptEvent(PSAttemptEventType.PA_FAILMSG, psEntry.getKey()));
         psIt.remove();
       }
     }
@@ -360,6 +356,7 @@ public class ParameterServerManager extends AbstractService implements
 
   /**
    * PS attempt register
+   *
    * @param psAttemptId PS attempt id
    */
   public void register(PSAttemptId psAttemptId) {
@@ -369,6 +366,7 @@ public class ParameterServerManager extends AbstractService implements
 
   /**
    * PS attempt unregister
+   *
    * @param psAttemptId PS attempt id
    */
   public void unRegister(PSAttemptId psAttemptId) {
@@ -378,6 +376,7 @@ public class ParameterServerManager extends AbstractService implements
 
   /**
    * Is PS attempt alive
+   *
    * @param psAttemptId PS attempt id
    * @return true mean alive
    */
@@ -387,6 +386,7 @@ public class ParameterServerManager extends AbstractService implements
 
   /**
    * Update PS attempt latest heartbeat timestamp
+   *
    * @param psAttemptId PS attempt id
    */
   public void alive(PSAttemptId psAttemptId) {
@@ -395,12 +395,13 @@ public class ParameterServerManager extends AbstractService implements
 
   /**
    * Is PS attempt failed
+   *
    * @param psLoc PS id and PS location
    * @return true means failed
    */
   public boolean checkFailed(PSLocation psLoc) {
     Location loc = context.getLocationManager().getPsLocation(psLoc.psId);
-    if(loc == null || !loc.equals(psLoc.loc)) {
+    if (loc == null || !loc.equals(psLoc.loc)) {
       return true;
     } else {
       return false;

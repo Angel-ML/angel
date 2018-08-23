@@ -15,17 +15,16 @@
  *
  */
 
+
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.math.TMatrix;
-import com.tencent.angel.ml.math.TUpdate;
-import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.ml.math.matrix.*;
-import com.tencent.angel.ml.math.vector.DenseFloatVector;
-import com.tencent.angel.ml.math.vector.DenseDoubleVector;
-import com.tencent.angel.ml.math.vector.DenseIntVector;
+import com.tencent.angel.conf.MatrixConf;
+import com.tencent.angel.ml.math2.matrix.Matrix;
+import com.tencent.angel.ml.math2.matrix.RowBasedMatrix;
+import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.MatrixMeta;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.storage.MatrixStorage;
 import org.apache.commons.logging.Log;
@@ -39,50 +38,61 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 /**
  * Matrix update cache.
  */
-public abstract class MatrixOpLog {
+public class MatrixOpLog {
   protected final static Log LOG = LogFactory.getLog(MatrixOpLog.class);
 
-  /** matrix id*/
+  /**
+   * matrix id
+   */
   protected final int matrixId;
-
-  /**filter zero values before split the update*/
-  protected final boolean enableFilter;
   protected final ReentrantReadWriteLock lock;
 
-  protected TMatrix matrix;
-  
+  protected Matrix matrix;
+
   /**
    * Create a new MatrixOpLog for matrix.
    *
-   * @param matrixId matrix id 
-   * @param enableFilter true means filter zero values before split the update
-   */
-  public MatrixOpLog(int matrixId, boolean enableFilter) {
-    this.matrixId = matrixId;
-    this.enableFilter = enableFilter;
-    this.lock = new ReentrantReadWriteLock();    
-  }
-  
-  /**
-   * Create a new MatrixOpLog for matrix.
-   *
-   * @param matrixId matrix id 
+   * @param matrixId matrix id
    */
   public MatrixOpLog(int matrixId) {
-    this(matrixId, true);
+    this.matrixId = matrixId;
+    this.lock = new ReentrantReadWriteLock();
   }
- 
+
+  public void init() {
+    MatrixMeta meta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
+    matrix = createMatrix(meta);
+  }
+
+  public Matrix getMatrix() {
+    return matrix;
+  }
+
+  private Matrix createMatrix(MatrixMeta meta) {
+    RowType rowType = meta.getRowType();
+    String opLogTypeStr = meta.getAttribute(MatrixConf.MATRIX_OPLOG_TYPE);
+    RowType opLogType;
+    if (opLogTypeStr == null) {
+      opLogType = rowType;
+    } else {
+      opLogType = RowType.valueOf(opLogTypeStr);
+    }
+
+    return MatrixFactory
+      .createRBMatrix(opLogType, meta.getRowNum(), meta.getColNum(), meta.getBlockColNum());
+  }
+
   /**
    * Flush the update in cache to local matrix storage
    */
   public void flushToLocalStorage() {
     MatrixStorage storage =
-        PSAgentContext.get().getMatrixStorageManager().getMatrixStoage(matrixId);
+      PSAgentContext.get().getMatrixStorageManager().getMatrixStoage(matrixId);
     MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
     int row = matrixMeta.getRowNum();
 
-    TVector deltaVector = null;
-    TVector vector = null;
+    Vector deltaVector;
+    Vector vector;
 
     ReentrantReadWriteLock globalStorageLock = storage.getLock();
     try {
@@ -92,7 +102,7 @@ public abstract class MatrixOpLog {
         vector = storage.getRow(rowIndex);
         if (deltaVector == null || vector == null)
           continue;
-        vector.plusBy(deltaVector, 1.0 / PSAgentContext.get().getTotalTaskNum());
+        vector.iaxpy(deltaVector, 1.0 / PSAgentContext.get().getTotalTaskNum());
       }
     } finally {
       globalStorageLock.writeLock().unlock();
@@ -101,90 +111,103 @@ public abstract class MatrixOpLog {
 
   /**
    * Split the update according to the matrix partitions
-   * 
+   *
    * @param psUpdateData partition -> row split list map
    */
   public void split(Map<PartitionKey, List<RowUpdateSplit>> psUpdateData) {
     long startTime = System.currentTimeMillis();
     MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
-    List<PartitionKey> partitions = PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
+    List<PartitionKey> partitions =
+      PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
     int row = matrixMeta.getRowNum();
-    
+    boolean enableFilter = matrixMeta.getAttribute(MatrixConf.MATRIX_OPLOG_ENABLEFILTER,
+      MatrixConf.DEFAULT_MATRIX_OPLOG_ENABLEFILTER).equalsIgnoreCase("true");
+    double filterThreshold = Double.valueOf(matrixMeta
+      .getAttribute(MatrixConf.MATRIX_OPLOG_FILTER_THRESHOLD,
+        MatrixConf.DEFAULT_MATRIX_OPLOG_FILTER_THRESHOLD));
+
     for (int rowId = 0; rowId < row; rowId++) {
-      TVector vector = getRow(rowId);
+      Vector vector = getRow(rowId);
       if (vector == null)
         continue;
 
-      // Filter it, removing zero values
-      if(enableFilter && isNeedFilter(vector)){
-        vector = vector.filter(0.0);
-      }    
-
       // Doing average or not
       if (matrixMeta.isAverage()) {
-        vector.timesBy(1.0 / PSAgentContext.get().getTotalTaskNum());
+        vector.div(PSAgentContext.get().getTotalTaskNum());
+      }
+
+      // Filter un-important update
+      if (enableFilter) {
+        vector = vector.filter(filterThreshold);
       }
 
       // Split this row according the matrix partitions
       Map<PartitionKey, RowUpdateSplit> splits = RowUpdateSplitUtils.split(vector, partitions);
-      removeRow(rowId);
 
-      // Add the splits to the result container
+      // Set split context
       for (Map.Entry<PartitionKey, RowUpdateSplit> entry : splits.entrySet()) {
+        RowUpdateSplitContext context = new RowUpdateSplitContext();
+        context.setEnableFilter(enableFilter);
+        context.setFilterThreshold(filterThreshold);
+        context.setPartKey(entry.getKey());
+        entry.getValue().setSplitContext(context);
+
         List<RowUpdateSplit> rowSplits = psUpdateData.get(entry.getKey());
-        if(rowSplits == null) {
+        if (rowSplits == null) {
           rowSplits = new ArrayList<>();
           psUpdateData.put(entry.getKey(), rowSplits);
         }
         rowSplits.add(entry.getValue());
       }
-    }
-      
-    LOG.debug( "taking " + (System.currentTimeMillis() - startTime) + " ms to split logs for matrix=" + matrixId);
-  }
 
-  private boolean isNeedFilter(TVector vector) {
-    return (vector instanceof DenseIntVector)
-      || (vector instanceof DenseDoubleVector)
-      || (vector instanceof DenseFloatVector);
+      // Remove the row from matrix
+      removeRow(rowId);
+    }
+
+    LOG.debug("taking " + (System.currentTimeMillis() - startTime) + " ms to split logs for matrix="
+      + matrixId);
   }
 
   /**
    * Merge the update with exist update in cache
-   * 
+   *
    * @param update a matrix update
    */
-  void merge(TUpdate update) {
+  void merge(Vector update) {
     try {
       lock.writeLock().lock();
-      if ((update instanceof TVector) && (matrix instanceof RowbaseMatrix)) {
-        ((RowbaseMatrix)matrix).plusBy((TVector) update);
-        return;
-      } else if (update instanceof TMatrix) {
-        matrix.plusBy((TMatrix) update);
-        return;
-      }
-
-      String errorMsg =
-        String.format("can not merge type %s to %s ", update.getClass().getName(), matrix.getClass().getName());
-      LOG.fatal(errorMsg);
-      throw new UnsupportedOperationException(errorMsg);
+      matrix.iadd(update.getRowId(), update);
     } finally {
       lock.writeLock().unlock();
     }
   }
-  
+
+  /**
+   * Merge the update with exist update in cache
+   *
+   * @param update a matrix update
+   */
+  void merge(Matrix update) {
+    try {
+      lock.writeLock().lock();
+      matrix.iadd(update);
+    } finally {
+      lock.writeLock().unlock();
+    }
+  }
+
   /**
    * Get vector from update cache
-   * 
+   *
    * @param rowIndex row index
-   * @return  TVector vector
+   * @return TVector vector
    */
-  TVector getRow(int rowIndex) {
-    if(matrix instanceof RowbaseMatrix) {
-      return ((RowbaseMatrix) matrix).getRow(rowIndex);
+  Vector getRow(int rowIndex) {
+    if (matrix instanceof RowBasedMatrix) {
+      return ((RowBasedMatrix) matrix).getRow(rowIndex);
     } else {
-      throw new UnsupportedOperationException("Unsupportted operation");
+      throw new UnsupportedOperationException(
+        "get row is unsupported for this type matrix:" + matrix.getClass().getName());
     }
   }
 
@@ -192,214 +215,11 @@ public abstract class MatrixOpLog {
    * Remove vector from update cache
    */
   void removeRow(int rowIndex) {
-    if(matrix instanceof RowbaseMatrix) {
-      ((RowbaseMatrix) matrix).clear(rowIndex);
+    if (matrix instanceof RowBasedMatrix) {
+      ((RowBasedMatrix) matrix).clearRow(rowIndex);
     } else {
-      throw new UnsupportedOperationException("Unsupportted operation");
+      throw new UnsupportedOperationException(
+        "get row is unsupported for this type matrix:" + matrix.getClass().getName());
     }
-  }
-}
-
-
-/**
- * Dense double matrix cache, it use a dense double matrix {@link DenseDoubleMatrix} as the storage.
- * We can use this type cache if the update is a double matrix or vector
- */
-class DenseDoubleMatrixOpLog extends MatrixOpLog {
-  public DenseDoubleMatrixOpLog(int matrixId, boolean enableFilter) {
-    super(matrixId, enableFilter);
-    LOG.debug("init DenseDoubleMatrixOpLog for matrix " + matrixId);
-
-    MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
-    matrix = new DenseDoubleMatrix(matrixMeta.getRowNum(), (int)matrixMeta.getColNum());
-  }
-  
-  public DenseDoubleMatrixOpLog(int matrixId) {
-    this(matrixId, true);
-  }
-}
-
-/**
- * Sparse int matrix cache, it use a sparse int matrix {@link SparseIntMatrix} as the storage.
- * We can use this type cache if the update is a int matrix or vector
- */
-class SparseIntMatrixOpLog extends MatrixOpLog {
-  public SparseIntMatrixOpLog(int matrixId, boolean enableFilter) {
-    super(matrixId, enableFilter);
-    LOG.debug("init SparseIntMatrixOpLog for matrix " + matrixId);
-
-    MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
-    matrix = new SparseIntMatrix(matrixMeta.getRowNum(), (int)matrixMeta.getColNum());
-  }
-  
-  public SparseIntMatrixOpLog(int matrixId) {
-    this(matrixId, true);
-  }
-}
-
-/**
- * Dense int matrix cache, it use a dense int matrix {@link DenseIntMatrix} as the storage.
- * We can use this type cache if the update is a int matrix or vector
- */
-class DenseIntMatrixOpLog extends MatrixOpLog {
-  public DenseIntMatrixOpLog(int matrixId, boolean enableFilter) {
-    super(matrixId, enableFilter);
-    LOG.debug("init DenseIntMatrixOpLog for matrix " + matrixId);
-
-    MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
-    matrix = new DenseIntMatrix(matrixMeta.getRowNum(), (int)matrixMeta.getColNum());
-  }
-  
-  public DenseIntMatrixOpLog(int matrixId) {
-    this(matrixId, true);
-  }
-}
-
-/**
- * Dense float matrix cache, it use a dense float matrix {@link DenseFloatMatrix} as the storage.
- * We can use this type cache if the update is a float matrix or vector
- */
-class DenseFloatMatrixOplog extends MatrixOpLog {
-  public DenseFloatMatrixOplog(int matrixId, boolean enableFilter) {
-    super(matrixId, enableFilter);
-    LOG.debug("Init DenseFloatMatrixOplog for " + matrixId);
-
-    MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
-    matrix = new DenseFloatMatrix(matrixMeta.getRowNum(), (int)matrixMeta.getColNum());
-  }
-
-  public DenseFloatMatrixOplog(int matrixId) { this(matrixId, true);}
-}
-
-/**
- * Sparse float matrix cache, it use a sparse float matrix {@link SparseFloatMatrix} as the storage.
- * We can use this type cache if the update is a double matrix or vector
- */
-class SparseFloatMatrixOpLog extends MatrixOpLog {
-  private final static Log LOG = LogFactory.getLog(SparseFloatMatrixOpLog.class);
-
-  public SparseFloatMatrixOpLog(int matrixId, boolean enableFilter) {
-    super(matrixId, enableFilter);
-    LOG.debug("Init SparseFloatMatrixOpLog for " + matrixId);
-
-    MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
-    matrix = new SparseFloatMatrix(matrixMeta.getRowNum(), (int)matrixMeta.getColNum());
-  }
-
-  public SparseFloatMatrixOpLog(int matrixId) {
-    this(matrixId, true);
-  }
-}
-
-/**
- * Sparse double matrix cache, it use a sparse float matrix {@link SparseDoubleMatrix} as the storage.
- * We can use this type cache if the update is a double matrix or vector
- */
-class SparseDoubleMatrixOplog extends MatrixOpLog {
-  public SparseDoubleMatrixOplog(int matrixId, boolean enableFilter) {
-    super(matrixId, enableFilter);
-    LOG.debug("Init SparseDoubleMatrixOplog for " + matrixId);
-
-    MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
-    matrix = new SparseDoubleMatrix(matrixMeta.getRowNum(), (int)matrixMeta.getColNum());
-  }
-
-  public SparseDoubleMatrixOplog(int matrixId) {
-    this(matrixId, true);
-  }
-}
-
-/**
- * Sparse double with long key matrix cache, it use a sparse float matrix {@link SparseDoubleLongKeyMatrix} as the storage.
- * We can use this type cache if the update is a double matrix or vector
- */
-class SparseDoubleLongKeyMatrixOpLog extends MatrixOpLog {
-  public SparseDoubleLongKeyMatrixOpLog(int matrixId, boolean enableFilter) {
-    super(matrixId, enableFilter);
-    LOG.debug("Init SparseDoubleMatrixOplog for " + matrixId);
-
-    MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
-    matrix = new SparseDoubleLongKeyMatrix(matrixMeta.getRowNum(), matrixMeta.getColNum());
-    matrix.setMatrixId(matrixId);
-  }
-
-  public SparseDoubleLongKeyMatrixOpLog(int matrixId) {
-    this(matrixId, true);
-  }
-}
-
-/**
- * Component parse double with long key matrix cache, it use a component sparse float matrix {@link CompSparseDoubleLongKeyMatrix} as the storage.
- * We can use this type cache if the update is a double matrix or vector
- */
-class CompSparseDoubleLongKeyMatrixOpLog extends MatrixOpLog {
-  public CompSparseDoubleLongKeyMatrixOpLog(int matrixId, boolean enableFilter) {
-    super(matrixId, enableFilter);
-    LOG.debug("Init SparseDoubleMatrixOplog for " + matrixId);
-
-    MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
-    matrix = new CompSparseDoubleLongKeyMatrix(matrixMeta.getRowNum(), matrixMeta.getColNum());
-    matrix.setMatrixId(matrixId);
-  }
-
-  public CompSparseDoubleLongKeyMatrixOpLog(int matrixId) {
-    this(matrixId, true);
-  }
-}
-
-/**
- * Component sparse double with long key matrix cache, it use a component sparse float matrix {@link CompSparseDoubleMatrix} as the storage.
- * We can use this type cache if the update is a double matrix or vector
- */
-class CompSparseDoubleMatrixOpLog extends MatrixOpLog {
-  public CompSparseDoubleMatrixOpLog(int matrixId, boolean enableFilter) {
-    super(matrixId, enableFilter);
-    LOG.debug("Init SparseDoubleMatrixOplog for " + matrixId);
-
-    MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
-    matrix = new CompSparseDoubleMatrix(matrixMeta.getRowNum(), (int)matrixMeta.getColNum());
-    matrix.setMatrixId(matrixId);
-  }
-
-  public CompSparseDoubleMatrixOpLog(int matrixId) {
-    this(matrixId, true);
-  }
-}
-
-/**
- * Component sparse float with long key matrix cache, it use a component sparse float matrix {@link CompSparseFloatMatrix} as the storage.
- * We can use this type cache if the update is a float matrix or vector
- */
-class CompSparseFloatMatrixOpLog extends MatrixOpLog {
-  public CompSparseFloatMatrixOpLog(int matrixId, boolean enableFilter) {
-    super(matrixId, enableFilter);
-    LOG.debug("Init SparseDoubleMatrixOplog for " + matrixId);
-
-    MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
-    matrix = new CompSparseFloatMatrix(matrixMeta.getRowNum(), (int)matrixMeta.getColNum());
-    matrix.setMatrixId(matrixId);
-  }
-
-  public CompSparseFloatMatrixOpLog(int matrixId) {
-    this(matrixId, true);
-  }
-}
-
-/**
- * Component spars double with long key matrix cache, it use a component sparse float matrix {@link CompSparseIntMatrix} as the storage.
- * We can use this type cache if the update is a int matrix or vector
- */
-class CompSparseIntMatrixOpLog extends MatrixOpLog {
-  public CompSparseIntMatrixOpLog(int matrixId, boolean enableFilter) {
-    super(matrixId, enableFilter);
-    LOG.debug("Init SparseDoubleMatrixOplog for " + matrixId);
-
-    MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
-    matrix = new CompSparseIntMatrix(matrixMeta.getRowNum(), (int)matrixMeta.getColNum());
-    matrix.setMatrixId(matrixId);
-  }
-
-  public CompSparseIntMatrixOpLog(int matrixId) {
-    this(matrixId, true);
   }
 }

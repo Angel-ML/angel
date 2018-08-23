@@ -1,25 +1,21 @@
-/**
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
  *
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
  */
 
-/**
- * Add or modify some parameters for Angel; Add shutDown method to fix Angel client exit problem.
- */
+
 package com.tencent.angel.ipc;
 
 import com.tencent.angel.Chore;
@@ -28,7 +24,7 @@ import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.RemoteException;
 import com.tencent.angel.io.Addressing;
 import com.tencent.angel.master.MasterProtocol;
-import com.tencent.angel.ps.impl.PSProtocol;
+import com.tencent.angel.ps.server.control.PSProtocol;
 import com.tencent.angel.worker.WorkerProtocol;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
@@ -46,13 +42,12 @@ public class TConnectionManager {
   private static final Logger LOG = LoggerFactory.getLogger(TConnectionManager.class);
 
   static final Map<TConnectionKey, TConnectionImplementation> ML_INSTANCES =
-      new LinkedHashMap<TConnectionKey, TConnectionImplementation>();
+    new LinkedHashMap<TConnectionKey, TConnectionImplementation>();
 
   /**
    * Get the connection that goes with the passed <code>conf</code> configuration instance. If no
    * current connection exists, method creates a new connection for the passed <code>conf</code>
    * instance.
-   * 
    */
   public static TConnection getConnection(Configuration conf) {
     TConnectionKey connectionKey = new TConnectionKey(conf);
@@ -75,34 +70,46 @@ public class TConnectionManager {
 
     public static final String PS_CLIENT_PROTOCOL_CLASS = "ml.ps.client.protocol.class";
 
-    /** Default client protocol class name. */
+    /**
+     * Default client protocol class name.
+     */
     public static final String DEFAULT_PS_CLIENT_PROTOCOL_CLASS = PSProtocol.class.getName();
 
     private final Class<? extends PSProtocol.AsyncProtocol> asyncPSClientClass;
 
     public static final String ASYNC_PS_CLIENT_PROTOCOL_CLASS = "ml.ps.async.client.protocol.class";
 
-    /** Default ps client protocol class name. */
+    /**
+     * Default ps client protocol class name.
+     */
     public static final String DEFAULT_PS_ASYNC_CLIENT_PROTOCOL_CLASS =
-        PSProtocol.AsyncProtocol.class.getName();
+      PSProtocol.AsyncProtocol.class.getName();
 
-        private final Class<? extends WorkerProtocol> workerClientClass;
+    private final Class<? extends WorkerProtocol> workerClientClass;
 
-    /** Parameter name for what client protocol to use. */
+    /**
+     * Parameter name for what client protocol to use.
+     */
     public static final String WORKER_CLIENT_PROTOCOL_CLASS = "ml.worker.client.protocol.class";
 
-    /** Default client protocol class name. */
-    public static final String DEFAULT_WORKER_CLIENT_PROTOCOL_CLASS = WorkerProtocol.class
-    .getName();
+    /**
+     * Default client protocol class name.
+     */
+    public static final String DEFAULT_WORKER_CLIENT_PROTOCOL_CLASS =
+      WorkerProtocol.class.getName();
 
     private final Class<? extends MasterProtocol> masterClientClass;
 
-    /** Parameter name for what client protocol to use. */
+    /**
+     * Parameter name for what client protocol to use.
+     */
     public static final String MASTER_CLIENT_PROTOCOL_CLASS = "ml.master.client.protocol.class";
 
-    /** Default client protocol class name. */
-    public static final String DEFAULT_MASTER_CLIENT_PROTOCOL_CLASS = MasterProtocol.class
-        .getName();
+    /**
+     * Default client protocol class name.
+     */
+    public static final String DEFAULT_MASTER_CLIENT_PROTOCOL_CLASS =
+      MasterProtocol.class.getName();
 
     private final int rpcTimeout;
     private final int maxRPCAttempts;
@@ -115,10 +122,10 @@ public class TConnectionManager {
     private final boolean managed;
 
     private final ConcurrentHashMap<String, Map<String, VersionedProtocol>> servers =
-        new ConcurrentHashMap<String, Map<String, VersionedProtocol>>();
+      new ConcurrentHashMap<String, Map<String, VersionedProtocol>>();
 
     private final ConcurrentHashMap<String, String> connectionLock =
-        new ConcurrentHashMap<String, String>();
+      new ConcurrentHashMap<String, String>();
 
     private boolean stopProxy = true;
 
@@ -128,49 +135,46 @@ public class TConnectionManager {
 
     /**
      * constructor
-     * 
+     *
      * @param conf Configuration object
      */
-    @SuppressWarnings("unchecked")
-    public TConnectionImplementation(Configuration conf, boolean managed) {
+    @SuppressWarnings("unchecked") public TConnectionImplementation(Configuration conf,
+      boolean managed) {
       this.conf = conf;
       this.managed = managed;
       this.closed = false;
       try {
         String clientClassName =
-            conf.get(PS_CLIENT_PROTOCOL_CLASS, DEFAULT_PS_CLIENT_PROTOCOL_CLASS);
+          conf.get(PS_CLIENT_PROTOCOL_CLASS, DEFAULT_PS_CLIENT_PROTOCOL_CLASS);
         this.psClientClass = (Class<? extends PSProtocol>) Class.forName(clientClassName);
 
         String asyncClassName =
-            conf.get(ASYNC_PS_CLIENT_PROTOCOL_CLASS, DEFAULT_PS_ASYNC_CLIENT_PROTOCOL_CLASS);
+          conf.get(ASYNC_PS_CLIENT_PROTOCOL_CLASS, DEFAULT_PS_ASYNC_CLIENT_PROTOCOL_CLASS);
         this.asyncPSClientClass =
-            (Class<? extends PSProtocol.AsyncProtocol>) Class.forName(asyncClassName);
+          (Class<? extends PSProtocol.AsyncProtocol>) Class.forName(asyncClassName);
 
         clientClassName =
-            conf.get(WORKER_CLIENT_PROTOCOL_CLASS, DEFAULT_WORKER_CLIENT_PROTOCOL_CLASS);
+          conf.get(WORKER_CLIENT_PROTOCOL_CLASS, DEFAULT_WORKER_CLIENT_PROTOCOL_CLASS);
         this.workerClientClass = (Class<? extends WorkerProtocol>) Class.forName(clientClassName);
         clientClassName =
-            conf.get(MASTER_CLIENT_PROTOCOL_CLASS, DEFAULT_MASTER_CLIENT_PROTOCOL_CLASS);
+          conf.get(MASTER_CLIENT_PROTOCOL_CLASS, DEFAULT_MASTER_CLIENT_PROTOCOL_CLASS);
         this.masterClientClass = (Class<? extends MasterProtocol>) Class.forName(clientClassName);
       } catch (ClassNotFoundException e) {
         throw new UnsupportedOperationException(e);
       }
 
-      this.rpcTimeout =
-          conf.getInt(AngelConf.ML_RPC_TIMEOUT_KEY, AngelConf.DEFAULT_ML_RPC_TIMEOUT);
-      this.maxRPCAttempts =
-          conf.getInt(AngelConf.ML_CLIENT_RPC_MAXATTEMPTS,
-              AngelConf.DEFAULT_ML_CLIENT_RPC_MAXATTEMPTS);
+      this.rpcTimeout = conf.getInt(AngelConf.ML_RPC_TIMEOUT_KEY, AngelConf.DEFAULT_ML_RPC_TIMEOUT);
+      this.maxRPCAttempts = conf
+        .getInt(AngelConf.ML_CLIENT_RPC_MAXATTEMPTS, AngelConf.DEFAULT_ML_CLIENT_RPC_MAXATTEMPTS);
     }
 
-    @Override
-    public Configuration getConfiguration() {
+    @Override public Configuration getConfiguration() {
       return this.conf;
     }
 
     /**
      * Return if this client has no reference
-     * 
+     *
      * @return true if this client has no reference; false otherwise
      */
     boolean isZeroReference() {
@@ -195,7 +199,7 @@ public class TConnectionManager {
 
     /**
      * Either the passed <code>isa</code> is null or <code>hostname</code> can be but not both.
-     * 
+     *
      * @param hostname
      * @param port
      * @param protocolClass
@@ -204,15 +208,15 @@ public class TConnectionManager {
      * @throws java.io.IOException
      */
     public VersionedProtocol getProtocol(final String hostname, final int port,
-        final Class<? extends VersionedProtocol> protocolClass, final long version,
-        List<String> addrList4Failover) throws IOException {
+      final Class<? extends VersionedProtocol> protocolClass, final long version,
+      List<String> addrList4Failover) throws IOException {
       String rsName = Addressing.createHostAndPortStr(hostname, port);
       // See if we already have a connection (common case)
       Map<String, VersionedProtocol> protocols = this.servers.get(rsName);
       if (protocols == null) {
         protocols = new HashMap<String, VersionedProtocol>();
         Map<String, VersionedProtocol> existingProtocols =
-            this.servers.putIfAbsent(rsName, protocols);
+          this.servers.putIfAbsent(rsName, protocols);
         if (existingProtocols != null) {
           protocols = existingProtocols;
         }
@@ -233,9 +237,9 @@ public class TConnectionManager {
               InetSocketAddress address = new InetSocketAddress(hostname, port);
               // definitely a cache miss. establish an RPC for
               // this RS
-              server =
-                  MLRPC.waitForProxy(protocolClass, version, address, this.conf,
-                      this.maxRPCAttempts, this.rpcTimeout, this.rpcTimeout, addrList4Failover);
+              server = MLRPC
+                .waitForProxy(protocolClass, version, address, this.conf, this.maxRPCAttempts,
+                  this.rpcTimeout, this.rpcTimeout, addrList4Failover);
               protocols.put(protocol, server);
             } catch (RemoteException e) {
               LOG.warn("RemoteException connecting to RS", e);
@@ -248,8 +252,7 @@ public class TConnectionManager {
       return server;
     }
 
-    @Override
-    public boolean isClosed() {
+    @Override public boolean isClosed() {
       return this.closed;
     }
 
@@ -284,8 +287,7 @@ public class TConnectionManager {
       this.closed = true;
     }
 
-    @Override
-    public void close() {
+    @Override public void close() {
       if (LOG.isDebugEnabled()) {
         LOG.debug("connection is closing!");
       }
@@ -296,22 +298,16 @@ public class TConnectionManager {
       }
     }
 
-    /**
-     * Creates a Chore thread to check the connections to master & zookeeper and close them when
-     * they reach their closing time ( {@link MasterProtocolState} and
-     * {@link #keepZooKeeperWatcherAliveUntil} ). Keep alive time is managed by the release
-     * functions and the variable {@link #keepAlive}
-     */
     private static class DelayedClosing extends Chore implements Stoppable {
       private TConnectionImplementation hci;
       Stoppable stoppable;
 
       private DelayedClosing(TConnectionImplementation hci, Stoppable stoppable) {
         super("ZooKeeperWatcher and Master delayed closing for connection " + hci, 60 * 1000, // We
-                                                                                              // check
-                                                                                              // every
-                                                                                              // minutes
-            stoppable);
+          // check
+          // every
+          // minutes
+          stoppable);
         this.hci = hci;
         this.stoppable = stoppable;
       }
@@ -320,13 +316,11 @@ public class TConnectionManager {
         Stoppable stoppable = new Stoppable() {
           private volatile boolean isStopped = false;
 
-          @Override
-          public void stop(String why) {
+          @Override public void stop(String why) {
             isStopped = true;
           }
 
-          @Override
-          public boolean isStopped() {
+          @Override public boolean isStopped() {
             return isStopped;
           }
         };
@@ -334,45 +328,38 @@ public class TConnectionManager {
         return new DelayedClosing(hci, stoppable);
       }
 
-      @Override
-      protected void chore() {
+      @Override protected void chore() {
         // TODO
       }
 
-      @Override
-      public void stop(String why) {
+      @Override public void stop(String why) {
         stoppable.stop(why);
       }
 
-      @Override
-      public boolean isStopped() {
+      @Override public boolean isStopped() {
         return stoppable.isStopped();
       }
     }
 
-    @Override
-    public PSProtocol getPSService(String hostname, int port) throws IOException {
+    @Override public PSProtocol getPSService(String hostname, int port) throws IOException {
       return (PSProtocol) getProtocol(hostname, port, psClientClass, 0L, null);
     }
 
-    @Override
-    public PSProtocol.AsyncProtocol getAsyncPSService(String hostname, int port) throws IOException {
+    @Override public PSProtocol.AsyncProtocol getAsyncPSService(String hostname, int port)
+      throws IOException {
       return (PSProtocol.AsyncProtocol) getProtocol(hostname, port, asyncPSClientClass, 0L, null);
     }
 
-        @Override
-        public WorkerProtocol getWorkerService(String hostname, int port)
-                throws IOException {
-            LOG.info("workerClientClass="+workerClientClass.getName());
-            return (WorkerProtocol) getProtocol(hostname, port, workerClientClass,
-                    0L, null);
-        }
+    @Override public WorkerProtocol getWorkerService(String hostname, int port) throws IOException {
+      LOG.info("workerClientClass=" + workerClientClass.getName());
+      return (WorkerProtocol) getProtocol(hostname, port, workerClientClass, 0L, null);
+    }
 
-    @Override
-    public MasterProtocol getMasterService(String hostname, int port) throws IOException {
+    @Override public MasterProtocol getMasterService(String hostname, int port) throws IOException {
       return (MasterProtocol) getProtocol(hostname, port, masterClientClass, 0L, null);
     }
   }
+
 
   static class TConnectionKey {
     public static String[] CONNECTION_PROPERTIES = new String[] {};
@@ -393,8 +380,7 @@ public class TConnectionManager {
       this.properties = Collections.unmodifiableMap(m);
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
       final int prime = 31;
       int result = 1;
       if (username != null) {
@@ -410,8 +396,7 @@ public class TConnectionManager {
       return result;
     }
 
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
       if (this == obj)
         return true;
       if (obj == null)
@@ -446,18 +431,17 @@ public class TConnectionManager {
       return true;
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "TConnectionKey{" + "properties=" + properties + ", username='" + username + '\''
-          + '}';
+        + '}';
     }
   }
 
   private static void deleteConnection(TConnection connection, boolean stopProxy,
-      boolean staleConnection) {
+    boolean staleConnection) {
     synchronized (ML_INSTANCES) {
       for (Entry<TConnectionKey, TConnectionImplementation> connectionEntry : ML_INSTANCES
-          .entrySet()) {
+        .entrySet()) {
         if (connectionEntry.getValue() == connection) {
           deleteConnection(connectionEntry.getKey(), stopProxy, staleConnection);
           break;
@@ -467,7 +451,7 @@ public class TConnectionManager {
   }
 
   private static void deleteConnection(TConnectionKey connectionKey, boolean stopProxy,
-      boolean staleConnection) {
+    boolean staleConnection) {
     synchronized (ML_INSTANCES) {
       TConnectionImplementation connection = ML_INSTANCES.get(connectionKey);
       if (connection != null) {
@@ -480,8 +464,9 @@ public class TConnectionManager {
           connection.stopProxyOnClose(stopProxy);
         }
       } else {
-        LOG.error("Connection not found in the list, can't delete it " + "(connection key="
-            + connectionKey + "). May be the key was modified?");
+        LOG.error(
+          "Connection not found in the list, can't delete it " + "(connection key=" + connectionKey
+            + "). May be the key was modified?");
       }
     }
   }
@@ -490,10 +475,10 @@ public class TConnectionManager {
    * Delete connection information for the instance specified by configuration. If there are no more
    * references to it, this will then close connection to the zookeeper ensemble and let go of all
    * resources.
-   * 
-   * @param conf configuration whose identity is used to find {@link TConnection} instance.
+   *
+   * @param conf      configuration whose identity is used to find {@link TConnection} instance.
    * @param stopProxy Shuts down all the proxy's put up to cluster members including to cluster
-   *        TMaster. .
+   *                  TMaster. .
    */
   public static void deleteConnection(Configuration conf, boolean stopProxy) {
     deleteConnection(new TConnectionKey(conf), stopProxy, false);
@@ -501,7 +486,7 @@ public class TConnectionManager {
 
   /**
    * Delete information for all connections.
-   * 
+   *
    * @param stopProxy stop the proxy as well
    * @throws java.io.IOException
    */
@@ -516,7 +501,7 @@ public class TConnectionManager {
     }
   }
 
-  public static void shutDown(){
+  public static void shutDown() {
     MLRPC.shutDown();
   }
 }

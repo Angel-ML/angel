@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.api.python;
 
 import com.tencent.angel.AppSubmitter;
@@ -35,7 +36,7 @@ import java.net.Socket;
  * Currently we do not suggest you to use this Python API in some certain high
  * performance situation, for the reason that Py4J communicate JVM and python use
  * socket
- *
+ * <p>
  * This process is launched via AngelRunJar by java_gateway.py
  */
 public class PythonGatewayServer implements AppSubmitter {
@@ -43,20 +44,20 @@ public class PythonGatewayServer implements AppSubmitter {
     String currentPath = System.getenv("ANGEL_HOME");
     PropertyConfigurator.configure(currentPath + "/conf/log4j.properties");
   }
+
   private static final Log LOG = LogFactory.getLog(PythonGatewayServer.class);
-  
+
   // Configuration that should be used in python environment, there should only be one
   // configuration instance in each Angel context.
   // Use private access means jconf should not be changed or modified in this way.
   private static Configuration jconf;
-  
-  @Override
-  public void submit(Configuration conf) throws Exception {
+
+  @Override public void submit(Configuration conf) throws Exception {
     LOG.info("Starting python gateway server...");
     jconf = conf;
     startServer();
   }
- 
+
   public static Configuration getJconf() {
     if (jconf != null) {
       return jconf;
@@ -66,7 +67,7 @@ public class PythonGatewayServer implements AppSubmitter {
       return null;
     }
   }
-  
+
   private void startServer() throws IOException {
     GatewayServer gatewayServer = new GatewayServer(null, 0);
     gatewayServer.start();

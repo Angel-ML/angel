@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.worker.storage;
 
 import com.tencent.angel.split.SplitClassification;
@@ -74,25 +75,24 @@ public class DataBlockManager {
   /**
    * Get the reade for given task
    *
-   * @param <K> the type parameter
-   * @param <V> the type parameter
+   * @param <K>    the type parameter
+   * @param <V>    the type parameter
    * @param taskId the task id
    * @return the reader
-   * @throws IOException the io exception
-   * @throws InterruptedException the interrupted exception
+   * @throws IOException            the io exception
+   * @throws InterruptedException   the interrupted exception
    * @throws ClassNotFoundException the class not found exception
    */
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  public <K, V> Reader<K, V> getReader(TaskId taskId) throws IOException, InterruptedException,
-      ClassNotFoundException {
+  @SuppressWarnings({"rawtypes", "unchecked"}) public <K, V> Reader<K, V> getReader(TaskId taskId)
+    throws IOException, InterruptedException, ClassNotFoundException {
     if (useNewAPI) {
       DFSStorageNewAPI storage =
-          new DFSStorageNewAPI(splitClassification.getSplitNewAPI(splitInfos.get(taskId)));
+        new DFSStorageNewAPI(splitClassification.getSplitNewAPI(splitInfos.get(taskId)));
       storage.initReader();
       return storage.getReader();
     } else {
       DFSStorageOldAPI storage =
-          new DFSStorageOldAPI(splitClassification.getSplitOldAPI(splitInfos.get(taskId)));
+        new DFSStorageOldAPI(splitClassification.getSplitOldAPI(splitInfos.get(taskId)));
       storage.initReader();
       return storage.getReader();
     }

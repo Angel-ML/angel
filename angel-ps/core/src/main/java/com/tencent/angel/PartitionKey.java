@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel;
 
 import com.tencent.angel.common.Serialize;
@@ -27,7 +28,6 @@ import java.io.IOException;
 
 /**
  * The type Partition key,represent a part of matrix
- *
  */
 public class PartitionKey implements Comparable<PartitionKey>, Serialize {
 
@@ -43,10 +43,11 @@ public class PartitionKey implements Comparable<PartitionKey>, Serialize {
   int endRow = 0;
   long endCol = 0;
 
-  public PartitionKey() {}
+  public PartitionKey() {
+  }
 
   public PartitionKey(int partitionId, int matrixId, int startRow, long startCol, int endRow,
-      long endCol) {
+    long endCol) {
     super();
     this.partitionId = partitionId;
     this.matrixId = matrixId;
@@ -60,8 +61,7 @@ public class PartitionKey implements Comparable<PartitionKey>, Serialize {
     this(partId, matrixId, -1, -1, -1, -1);
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     StringBuilder builder = new StringBuilder();
     builder.append("PartitionKey(");
     builder.append("matrixId=").append(matrixId).append(", ");
@@ -135,8 +135,7 @@ public class PartitionKey implements Comparable<PartitionKey>, Serialize {
     this.endRow = endRow;
   }
 
-  @Override
-  public int compareTo(PartitionKey other) {
+  @Override public int compareTo(PartitionKey other) {
     if (this.startRow > other.startRow) {
       return 1;
     }
@@ -156,8 +155,7 @@ public class PartitionKey implements Comparable<PartitionKey>, Serialize {
     return 0;
   }
 
-  @Override
-  public void serialize(ByteBuf buf) {
+  @Override public void serialize(ByteBuf buf) {
     buf.writeInt(matrixId);
     buf.writeInt(partitionId);
     buf.writeInt(startRow);
@@ -166,8 +164,7 @@ public class PartitionKey implements Comparable<PartitionKey>, Serialize {
     buf.writeLong(endCol);
   }
 
-  @Override
-  public void deserialize(ByteBuf buf) {
+  @Override public void deserialize(ByteBuf buf) {
     matrixId = buf.readInt();
     partitionId = buf.readInt();
     startRow = buf.readInt();
@@ -176,13 +173,11 @@ public class PartitionKey implements Comparable<PartitionKey>, Serialize {
     endCol = buf.readLong();
   }
 
-  @Override
-  public int bufferLen() {
+  @Override public int bufferLen() {
     return 8;
   }
 
-  @Override
-  public int hashCode() {
+  @Override public int hashCode() {
     final int prime = 31;
     int result = 1;
     result = prime * result + matrixId;
@@ -190,8 +185,7 @@ public class PartitionKey implements Comparable<PartitionKey>, Serialize {
     return result;
   }
 
-  @Override
-  public boolean equals(Object obj) {
+  @Override public boolean equals(Object obj) {
     if (this == obj)
       return true;
     if (obj == null)

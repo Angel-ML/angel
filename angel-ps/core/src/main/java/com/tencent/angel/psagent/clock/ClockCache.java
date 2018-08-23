@@ -15,13 +15,14 @@
  *
  */
 
+
 package com.tencent.angel.psagent.clock;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.matrix.transport.GetClocksResponse;
-import com.tencent.angel.ml.matrix.transport.ResponseType;
 import com.tencent.angel.ps.ParameterServerId;
+import com.tencent.angel.ps.server.data.response.GetClocksResponse;
+import com.tencent.angel.ps.server.data.response.ResponseType;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.transport.MatrixTransportInterface;
 import org.apache.commons.logging.Log;
@@ -41,16 +42,24 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class ClockCache {
   private static final Log LOG = LogFactory.getLog(ClockCache.class);
-  /**matrix id to matrix clock cache map*/
+  /**
+   * matrix id to matrix clock cache map
+   */
   private final ConcurrentHashMap<Integer, MatrixClockCache> matrixClockCacheMap;
-  
-  /**clocks sync thread*/
+
+  /**
+   * clocks sync thread
+   */
   private Syncer syncer;
-  
-  /**clocks sync time interval in milliseconds*/
+
+  /**
+   * clocks sync time interval in milliseconds
+   */
   private int syncTimeIntervalMS;
-  
-  /**stop the sync thread*/
+
+  /**
+   * stop the sync thread
+   */
   private final AtomicBoolean stopped;
 
   public ClockCache() {
@@ -62,12 +71,9 @@ public class ClockCache {
    * Start sync thread
    */
   public void start() {
-    syncTimeIntervalMS =
-        PSAgentContext
-            .get()
-            .getConf()
-            .getInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS,
-                AngelConf.DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS);
+    syncTimeIntervalMS = PSAgentContext.get().getConf()
+      .getInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS,
+        AngelConf.DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS);
 
     syncer = new Syncer();
     syncer.setName("clock-syncer");
@@ -78,7 +84,7 @@ public class ClockCache {
    * Stop sync thread
    */
   public void stop() {
-    if(!stopped.getAndSet(true)){
+    if (!stopped.getAndSet(true)) {
       if (syncer != null) {
         syncer.interrupt();
       }
@@ -88,6 +94,7 @@ public class ClockCache {
 
   /**
    * Remove partition clock cache for a matrix
+   *
    * @param matrixId
    */
   public void removeMatrix(int matrixId) {
@@ -99,15 +106,15 @@ public class ClockCache {
    * regular intervals.
    */
   class Syncer extends Thread {
-    private final MatrixTransportInterface matrixClient = PSAgentContext.get().getMatrixTransportClient();
-    private final ParameterServerId[] serverIds = PSAgentContext.get().getLocationManager().getPsIds();
+    private final MatrixTransportInterface matrixClient =
+      PSAgentContext.get().getMatrixTransportClient();
+    private final ParameterServerId[] serverIds =
+      PSAgentContext.get().getLocationManager().getPsIds();
     private final ClockCache cache = PSAgentContext.get().getClockCache();
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public void run() {
-      @SuppressWarnings("rawtypes")
-      Map<ParameterServerId, Future> psIdToResultMap = new HashMap<>(serverIds.length);
+    @SuppressWarnings("unchecked") @Override public void run() {
+      @SuppressWarnings("rawtypes") Map<ParameterServerId, Future> psIdToResultMap =
+        new HashMap<>(serverIds.length);
       long startTsMs = 0;
       long useTimeMs = 0;
       int syncNum = 0;
@@ -124,26 +131,26 @@ public class ClockCache {
 
         // Wait the responses
         try {
-          for(Entry<ParameterServerId, Future> resultEntry : psIdToResultMap.entrySet()) {
+          for (Entry<ParameterServerId, Future> resultEntry : psIdToResultMap.entrySet()) {
             GetClocksResponse response = (GetClocksResponse) resultEntry.getValue().get();
-            if(response.getResponseType() == ResponseType.SUCCESS) {
+            if (response.getResponseType() == ResponseType.SUCCESS) {
               Map<PartitionKey, Integer> clocks = response.getClocks();
-              for(Entry<PartitionKey, Integer> entry:clocks.entrySet()) {
+              for (Entry<PartitionKey, Integer> entry : clocks.entrySet()) {
                 // Update clock cache
                 cache.update(entry.getKey().getMatrixId(), entry.getKey(), entry.getValue());
               }
 
-              if(LOG.isDebugEnabled()) {
+              if (LOG.isDebugEnabled()) {
                 //if(syncNum % 1024 == 0) {
-                for(Entry<PartitionKey, Integer> entry:clocks.entrySet()) {
+                for (Entry<PartitionKey, Integer> entry : clocks.entrySet()) {
                   LOG.debug("partition " + entry.getKey() + " update clock to " + entry.getValue());
                 }
                 //}
               }
             } else {
-              LOG.error("Get clock from ps " + resultEntry.getKey()
-                + ", failed. Detail log is " + response.getResponseType()
-                + ":" + response.getDetail());
+              LOG.error(
+                "Get clock from ps " + resultEntry.getKey() + ", failed. Detail log is " + response
+                  .getResponseType() + ":" + response.getDetail());
               PSAgentContext.get().getLocationManager().getPsLocation(resultEntry.getKey(), true);
             }
           }
@@ -155,7 +162,7 @@ public class ClockCache {
           }
 
           syncNum++;
-        } catch(InterruptedException ie) {
+        } catch (InterruptedException ie) {
           LOG.info("sync thread is interrupted");
         } catch (Exception e) {
           LOG.error("get clocks failed, ", e);
@@ -166,9 +173,9 @@ public class ClockCache {
 
   /**
    * Add matrix clock cache
-   * 
+   *
    * @param matrixId matrix id
-   * @param parts matrix partitons
+   * @param parts    matrix partitons
    */
   public void addMatrix(int matrixId, List<PartitionKey> parts) {
     if (!matrixClockCacheMap.containsKey(matrixId)) {
@@ -178,10 +185,10 @@ public class ClockCache {
 
   /**
    * Update matrix partition clock
-   *  
+   *
    * @param matrixId matrix id
-   * @param partKey partition key
-   * @param clock clock value
+   * @param partKey  partition key
+   * @param clock    clock value
    */
   public void update(int matrixId, PartitionKey partKey, int clock) {
     LOG.debug("partition " + partKey + " clock update to " + clock);
@@ -190,16 +197,16 @@ public class ClockCache {
       matrixClockCacheMap.putIfAbsent(matrixId, new MatrixClockCache(matrixId));
       matrixClockCache = matrixClockCacheMap.get(matrixId);
     }
-    if(matrixClockCache.getClock(partKey) < clock) {
+    if (matrixClockCache.getClock(partKey) < clock) {
       matrixClockCache.update(partKey, clock);
     }
   }
 
   /**
    * Get a matrix partition clock
-   * 
+   *
    * @param matrixId matrix id
-   * @param partKey partition key
+   * @param partKey  partition key
    * @return int clock
    */
   public int getClock(int matrixId, PartitionKey partKey) {
@@ -212,7 +219,7 @@ public class ClockCache {
 
   /**
    * Get a matrix row clock
-   * 
+   *
    * @param matrixId matrix id
    * @param rowIndex row index
    * @return int clock
@@ -241,6 +248,7 @@ public class ClockCache {
 
   /**
    * Get a matrix clock cache
+   *
    * @param matrixId
    * @return MatrixClockCache
    */

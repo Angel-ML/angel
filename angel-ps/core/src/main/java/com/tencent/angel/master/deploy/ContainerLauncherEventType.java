@@ -15,15 +15,20 @@
  *
  */
 
+
 package com.tencent.angel.master.deploy;
 
 /**
  * Container launch event type.
  */
 public enum ContainerLauncherEventType {
-  /** launch the container */
+  /**
+   * launch the container
+   */
   CONTAINER_REMOTE_LAUNCH,
 
-  /** clean up the container */
+  /**
+   * clean up the container
+   */
   CONTAINER_REMOTE_CLEANUP
 }

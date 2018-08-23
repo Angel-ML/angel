@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.deploy.local;
 
 import org.apache.hadoop.yarn.api.records.*;
@@ -22,69 +23,56 @@ import org.apache.hadoop.yarn.api.records.*;
 /**
  * Local container.
  */
-public class LocalContainer extends Container{
+public class LocalContainer extends Container {
 
-  @Override
-  public int compareTo(Container o) {
+  @Override public int compareTo(Container o) {
     return 0;
   }
 
-  @Override
-  public ContainerId getId() {
+  @Override public ContainerId getId() {
     return null;
   }
 
-  @Override
-  public void setId(ContainerId id) {
-    
+  @Override public void setId(ContainerId id) {
+
   }
 
-  @Override
-  public NodeId getNodeId() {
+  @Override public NodeId getNodeId() {
     return null;
   }
 
-  @Override
-  public void setNodeId(NodeId nodeId) {
+  @Override public void setNodeId(NodeId nodeId) {
   }
 
-  @Override
-  public String getNodeHttpAddress() {
+  @Override public String getNodeHttpAddress() {
     return null;
   }
 
-  @Override
-  public void setNodeHttpAddress(String nodeHttpAddress) {
-    
+  @Override public void setNodeHttpAddress(String nodeHttpAddress) {
+
   }
 
-  @Override
-  public Resource getResource() {
+  @Override public Resource getResource() {
     return null;
   }
 
-  @Override
-  public void setResource(Resource resource) {
-    
+  @Override public void setResource(Resource resource) {
+
   }
 
-  @Override
-  public Priority getPriority() {
+  @Override public Priority getPriority() {
     return null;
   }
 
-  @Override
-  public void setPriority(Priority priority) {
+  @Override public void setPriority(Priority priority) {
   }
 
-  @Override
-  public Token getContainerToken() {
+  @Override public Token getContainerToken() {
     return null;
   }
 
-  @Override
-  public void setContainerToken(Token containerToken) {
-    
+  @Override public void setContainerToken(Token containerToken) {
+
   }
 
 }

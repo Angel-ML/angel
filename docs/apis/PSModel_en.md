@@ -167,10 +167,10 @@ With decent ways of initializing PSModel, setting PSModel's behavioral propertie
 
 * **setRowType**
 
-	- **Definition**: ```def setRowType(rowType: MLProtos.RowType)```
+	- **Definition**: ```def setRowType(rowType: RowType)```
 	- **Functionality**: set type and storage method for matrix's row vector, can be based on the model's characteristics such as its sparsity. Currently, Angel supports int, float and double row element, and sparse and dense models
 	- **Parameters**:
-		- rowType: MLProtos.RowType, currently support
+		- rowType: RowType, currently support
 			* **T\_DOUBLE\_SPARSE**: sparse, double type
 			* **T\_DOUBLE\_DENSE**: dense, double type
 			* **T\_INT\_SPARSE**: sparse, int type

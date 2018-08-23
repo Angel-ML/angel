@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.utils;
 
 import io.netty.buffer.*;
@@ -28,8 +29,8 @@ public class ByteBufUtils {
   public static volatile boolean usePool = true;
 
   private static ByteBufAllocator getBufferAllocator() {
-    if(allocator == null) {
-      if(usePool) {
+    if (allocator == null) {
+      if (usePool) {
         allocator = new PooledByteBufAllocator();
       } else {
         allocator = new UnpooledByteBufAllocator(true);

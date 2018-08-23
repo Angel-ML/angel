@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.ps;
 
 import com.tencent.angel.common.Id;
@@ -37,28 +38,29 @@ public class ParameterServerId extends Id {
 
   /**
    * Create a new Parameter server id.
-   *<p>
-   *   'idStr' must match ParameterServer_XXX
-   *</p>
+   * <p>
+   * 'idStr' must match ParameterServer_XXX
+   * </p>
+   *
    * @param idStr the id str
    * @throws UnvalidIdStrException
    */
-  public ParameterServerId(String idStr) throws UnvalidIdStrException{
+  public ParameterServerId(String idStr) throws UnvalidIdStrException {
     if (idStr == null) {
       throw new UnvalidIdStrException("id str can not be null");
     }
 
     String[] idElemts = idStr.split(SEPARATOR);
     if (idElemts.length != 2 || !idElemts[0].equals(PS)) {
-      throw new UnvalidIdStrException("unvalid id str " + idStr
-          + ", must be like this:" + PS + SEPARATOR + "psIndex");
+      throw new UnvalidIdStrException(
+        "unvalid id str " + idStr + ", must be like this:" + PS + SEPARATOR + "psIndex");
     }
 
     try {
       index = Integer.valueOf(idElemts[1]);
     } catch (Exception x) {
-      throw new UnvalidIdStrException("unvalid id str " + idStr
-          + ", must be like this:" + PS + SEPARATOR + "psIndex");
+      throw new UnvalidIdStrException(
+        "unvalid id str " + idStr + ", must be like this:" + PS + SEPARATOR + "psIndex");
     }
   }
 
@@ -72,8 +74,7 @@ public class ParameterServerId extends Id {
     return builder.append(SEPARATOR).append(index);
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return appendTo(new StringBuilder(PS)).toString();
   }
 }

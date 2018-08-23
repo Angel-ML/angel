@@ -15,11 +15,14 @@
  *
  */
 
+
 package com.tencent.angel.spark.models.matrix
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
+import com.tencent.angel.spark.models.CompatibleImplicit._
+import com.tencent.angel.spark.util.PSMatrixImplicit._
 
 import com.tencent.angel.spark.{PSFunSuite, SharedPSContext}
 
@@ -35,7 +38,7 @@ class SparseMatrixSuite extends PSFunSuite with SharedPSContext {
   }
 
   test("push && increment") {
-    val sparseMatrix = SparsePSMatrix(rows, cols)
+    val sparseMatrix = PSMatrix.sparse(rows, cols)
     val rand = new Random()
 
     val points = new ArrayBuffer[(Int, Long, Double)]()
@@ -54,7 +57,6 @@ class SparseMatrixSuite extends PSFunSuite with SharedPSContext {
 
     // push
     sparseMatrix.push(points.toArray)
-
     var psMatrix = (0 until rows).toArray.map { rowId =>
       sparseMatrix.pull(rowId)
     }
@@ -66,6 +68,7 @@ class SparseMatrixSuite extends PSFunSuite with SharedPSContext {
 
     // increment
     sparseMatrix.increment(points.toArray)
+
 
     psMatrix = (0 until rows).toArray.map { rowId =>
       sparseMatrix.pull(rowId)

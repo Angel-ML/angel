@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.app;
 
 import org.apache.hadoop.yarn.api.records.ApplicationId;
@@ -24,13 +25,16 @@ import org.apache.hadoop.yarn.event.AbstractEvent;
  * Applicatin run over event.
  */
 public class AppFinishEvent extends AbstractEvent<AppFinishEventType> {
-  
-  /**application id*/
+
+  /**
+   * application id
+   */
   private ApplicationId appId;
 
   /**
    * Create a AppFinishEvent
-   * @param type event type
+   *
+   * @param type  event type
    * @param appId application id
    */
   public AppFinishEvent(AppFinishEventType type, ApplicationId appId) {
@@ -40,6 +44,7 @@ public class AppFinishEvent extends AbstractEvent<AppFinishEventType> {
 
   /**
    * Get application id
+   *
    * @return application id
    */
   public ApplicationId getAppId() {
@@ -48,6 +53,7 @@ public class AppFinishEvent extends AbstractEvent<AppFinishEventType> {
 
   /**
    * Set application id
+   *
    * @param appId application id
    */
   public void setAppId(ApplicationId appId) {

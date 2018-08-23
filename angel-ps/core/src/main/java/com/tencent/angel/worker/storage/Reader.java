@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.worker.storage;
 
 import java.io.IOException;
@@ -29,7 +30,7 @@ public interface Reader<K, V> {
 
   /**
    * Read the next key, value pair
-   * 
+   *
    * @return true if a key/value pair was read
    * @throws IOException
    * @throws InterruptedException the interrupted exception

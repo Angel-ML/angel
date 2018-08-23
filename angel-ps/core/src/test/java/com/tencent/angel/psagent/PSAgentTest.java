@@ -15,13 +15,13 @@
  *
  */
 
+
 package com.tencent.angel.psagent;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.client.AngelClient;
 import com.tencent.angel.client.AngelClientFactory;
 import com.tencent.angel.common.location.Location;
-import com.tencent.angel.common.location.LocationManager;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.ipc.TConnection;
@@ -30,10 +30,9 @@ import com.tencent.angel.master.AngelApplicationMaster;
 import com.tencent.angel.master.DummyTask;
 import com.tencent.angel.master.task.AMTaskManager;
 import com.tencent.angel.master.worker.WorkerManager;
-import com.tencent.angel.ml.math.TVector;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ml.matrix.MatrixMetaManager;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
@@ -71,6 +70,7 @@ import static org.junit.Assert.assertTrue;
 
 //import com.tencent.angel.psagent.consistency.SSPConsistencyController;
 
+
 // @RunWith(MockitoJUnitRunner.class)
 public class PSAgentTest {
 
@@ -91,8 +91,7 @@ public class PSAgentTest {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
-  @BeforeClass
-  public static void setup() throws Exception {
+  @BeforeClass public static void setup() throws Exception {
     try {
       // set basic configuration keys
       Configuration conf = new Configuration();
@@ -159,8 +158,7 @@ public class PSAgentTest {
     }
   }
 
-  @Test
-  public void testMasterClient() throws Exception {
+  @Test public void testMasterClient() throws Exception {
     try {
       AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
       assertTrue(angelAppMaster != null);
@@ -196,8 +194,7 @@ public class PSAgentTest {
     }
   }
 
-  @Test
-  public void testPSClient() throws Exception {
+  @Test public void testPSClient() throws Exception {
     try {
       AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
       assertTrue(angelAppMaster != null);
@@ -261,12 +258,11 @@ public class PSAgentTest {
       assertTrue(loc.getPort() >= 1 && loc.getPort() <= 65535);
     } catch (Exception x) {
       LOG.error("run testPSClient failed ", x);
-      throw  x;
+      throw x;
     }
   }
 
-  @Test
-  public void testLocationCache() throws Exception {
+  @Test public void testLocationCache() throws Exception {
     try {
       AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
       assertTrue(angelAppMaster != null);
@@ -311,8 +307,7 @@ public class PSAgentTest {
     }
   }
 
-  @Test
-  public void testMatrixMetaManager() throws Exception {
+  @Test public void testMatrixMetaManager() throws Exception {
     try {
       AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
       assertTrue(angelAppMaster != null);
@@ -349,8 +344,12 @@ public class PSAgentTest {
         matrixMetaManager.getMatrixMeta(matrixId2).getAttribute(MatrixConf.MATRIX_HOGWILD, "true");
       assertEquals(hogwildAttr, "true");
 
-      int matrix1Id = LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMatrixMetaManager().getMatrix("w1").getId();
-      int matrix2Id = LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMatrixMetaManager().getMatrix("w2").getId();
+      int matrix1Id =
+        LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMatrixMetaManager()
+          .getMatrix("w1").getId();
+      int matrix2Id =
+        LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMatrixMetaManager()
+          .getMatrix("w2").getId();
 
       // test matrix meta
       MatrixMeta matrixMetaById = matrixMetaManager.getMatrixMeta(matrix1Id);
@@ -368,8 +367,7 @@ public class PSAgentTest {
     }
   }
 
-  @Test
-  public void testMatrixLocationManager() throws Exception {
+  @Test public void testMatrixLocationManager() throws Exception {
     try {
       AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
       assertTrue(angelAppMaster != null);
@@ -399,8 +397,12 @@ public class PSAgentTest {
       assertTrue(matcher.matches());
       assertTrue(psLoc.getPort() >= 1 && psLoc.getPort() <= 65535);
 
-      int matrix1Id = LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMatrixMetaManager().getMatrix("w1").getId();
-      int matrix2Id = LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMatrixMetaManager().getMatrix("w2").getId();
+      int matrix1Id =
+        LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMatrixMetaManager()
+          .getMatrix("w1").getId();
+      int matrix2Id =
+        LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMatrixMetaManager()
+          .getMatrix("w2").getId();
 
       // test partitions
       List<PartitionKey> partition1Keys = matrixPartitionRouter.getPartitions(matrix1Id);
@@ -425,8 +427,7 @@ public class PSAgentTest {
     }
   }
 
-  @Test
-  public void testPSAgentContext() throws Exception {
+  @Test public void testPSAgentContext() throws Exception {
     try {
       AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
       assertTrue(angelAppMaster != null);
@@ -456,16 +457,14 @@ public class PSAgentTest {
 
       assertEquals(psAgentContext.getRunningMode(), psAgent.getRunningMode());
       assertEquals(psAgentContext.getIp(), psAgent.getIp());
-      assertEquals(
-        psAgentContext.getStaleness(),
-        psAgent.getConf().getInt(AngelConf.ANGEL_STALENESS,
-          AngelConf.DEFAULT_ANGEL_STALENESS));
+      assertEquals(psAgentContext.getStaleness(),
+        psAgent.getConf().getInt(AngelConf.ANGEL_STALENESS, AngelConf.DEFAULT_ANGEL_STALENESS));
       assertEquals(psAgentContext.getConsistencyController(), psAgent.getConsistencyController());
       assertEquals(psAgentContext.getMatrixOpLogCache(), psAgent.getOpLogCache());
       assertEquals(psAgentContext.getClockCache(), psAgent.getClockCache());
       assertEquals(psAgentContext.getMatricesCache(), psAgent.getMatricesCache());
       assertEquals(psAgentContext.getMatrixStorageManager(), psAgent.getMatrixStorageManager());
-      assertEquals(psAgentContext.getMatrixClientAdapter(), psAgent.getMatrixClientAdapter());
+      assertEquals(psAgentContext.getUserRequestAdapter(), psAgent.getUserRequestAdapter());
       assertEquals(psAgentContext.getExecutor(), psAgent.getExecutor());
 
       assertTrue(psAgentContext.getTaskContext(1) != null);
@@ -483,8 +482,7 @@ public class PSAgentTest {
     }
   }
 
-  @Test
-  public void testTaskContext() throws Exception {
+  @Test public void testTaskContext() throws Exception {
     try {
       AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
       assertTrue(angelAppMaster != null);
@@ -529,8 +527,7 @@ public class PSAgentTest {
     }
   }
 
-  @Test
-  public void testConsistencyController() throws Exception {
+  @Test public void testConsistencyController() throws Exception {
     try {
       AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
       assertTrue(angelAppMaster != null);
@@ -558,14 +555,18 @@ public class PSAgentTest {
       assertTrue(taskContext1 != null);
       assertTrue(taskContext2 != null);
 
-      int matrix1Id = LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMatrixMetaManager().getMatrix("w1").getId();
-      int matrix2Id = LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMatrixMetaManager().getMatrix("w2").getId();
+      int matrix1Id =
+        LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMatrixMetaManager()
+          .getMatrix("w1").getId();
+      int matrix2Id =
+        LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMatrixMetaManager()
+          .getMatrix("w2").getId();
 
-      TVector row1 = consistControl.getRow(taskContext1, matrix1Id, 0);
+      IntDoubleVector row1 = (IntDoubleVector) consistControl.getRow(taskContext1, matrix1Id, 0);
       assertTrue(row1 != null);
       assertEquals(row1.size(), 100000);
 
-      TVector row2 = consistControl.getRow(taskContext1, matrix2Id, 0);
+      IntDoubleVector row2 = (IntDoubleVector) consistControl.getRow(taskContext1, matrix2Id, 0);
       assertTrue(row2 != null);
       assertEquals(row2.size(), 100000);
 
@@ -573,16 +574,14 @@ public class PSAgentTest {
       assertEquals(taskContext1.getMatrixClock(matrix1Id), 1);
 
       int staleness =
-        psAgent.getConf().getInt(AngelConf.ANGEL_STALENESS,
-          AngelConf.DEFAULT_ANGEL_STALENESS);
+        psAgent.getConf().getInt(AngelConf.ANGEL_STALENESS, AngelConf.DEFAULT_ANGEL_STALENESS);
     } catch (Exception x) {
       LOG.error("run testConsistencyController failed ", x);
       throw x;
     }
   }
 
-  @Test
-  public void testClockCache() throws Exception {
+  @Test public void testClockCache() throws Exception {
     try {
       AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
       assertTrue(angelAppMaster != null);
@@ -610,8 +609,7 @@ public class PSAgentTest {
     }
   }
 
-  @AfterClass
-  public static void stop() throws Exception {
+  @AfterClass public static void stop() throws Exception {
     try {
       LOG.info("stop local cluster");
       angelClient.stop();

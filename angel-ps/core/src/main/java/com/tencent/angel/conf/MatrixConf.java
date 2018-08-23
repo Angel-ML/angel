@@ -15,16 +15,19 @@
  *
  */
 
+
 package com.tencent.angel.conf;
 
-import com.tencent.angel.ps.impl.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.matrix.ServerPartition;
 
 /**
  * Matrix parameters.
  */
 public class MatrixConf {
 
-  /** matrix partitioner class */
+  /**
+   * matrix partitioner class
+   */
   public static final String SERVER_PARTITION_CLASS = "server.partition.class";
   public static final String DEFAULT_SERVER_PARTITION_CLASS = ServerPartition.class.getName();
 
@@ -45,27 +48,46 @@ public class MatrixConf {
    */
   public static final String MATRIX_OPLOG_TYPE = "matrix.oplog.type";
   public static final String DEFAULT_MATRIX_OPLOG_TYPE = "DENSE_DOUBLE";
-  
-  /** check and filter zero values in oplog before transfer */
-  public static final String MATRIX_OPLOG_ENABLEFILTER = "matrix.oplog.enablefilter"; // true, false
-  public static final String DEFAULT_MATRIX_OPLOG_ENABLEFILTER = "true";
 
-  /** staleness value */
+  /**
+   * check and filter zero values in oplog before transfer
+   */
+  public static final String MATRIX_OPLOG_ENABLEFILTER = "matrix.oplog.enablefilter"; // true, false
+  public static final String DEFAULT_MATRIX_OPLOG_ENABLEFILTER = "false";
+
+  /**
+   * check and filter zero values in oplog before transfer
+   */
+  public static final String MATRIX_OPLOG_FILTER_THRESHOLD = "matrix.oplog.filter.threshold";
+    // true, false
+  public static final String DEFAULT_MATRIX_OPLOG_FILTER_THRESHOLD = "0.0";
+
+  /**
+   * staleness value
+   */
   public static final String MATRIX_STALENESS = "matrix.staleness";
 
-  /** Is we need divide oplog by task number. "true" means need, "false" means does not need. */
+  /**
+   * Is we need divide oplog by task number. "true" means need, "false" means does not need.
+   */
   public static final String MATRIX_AVERAGE = "matrix.average";
   public static final String DEFAULT_MATRIX_AVERAGE = "false";
 
-  /** enable hogwild mode. "true" means enable, "false" means disable */
+  /**
+   * enable hogwild mode. "true" means enable, "false" means disable
+   */
   public static final String MATRIX_HOGWILD = "matrix.hogwild";
   public static final String DEFAULT_MATRIX_HOGWILD = "false";
 
-  /** existed matrix data files path */
+  /**
+   * existed matrix data files path
+   */
   public static final String MATRIX_LOAD_PATH = "matrix.load.path";
   public static final String DEFAULT_MATRIX_LOAD_PATH = "";
 
-  /** matrix data files save path */
+  /**
+   * matrix data files save path
+   */
   public static final String MATRIX_SAVE_PATH = "matrix.save.path";
   public static final String DEFAULT_MATRIX_SAVE_PATH = "";
 }

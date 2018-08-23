@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master;
 
 import com.google.protobuf.ServiceException;
@@ -70,8 +71,7 @@ public class TaskManagerTest {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
-  @BeforeClass
-  public static void setup() throws Exception {
+  @BeforeClass public static void setup() throws Exception {
     try {
       // set basic configuration keys
       Configuration conf = new Configuration();
@@ -135,8 +135,7 @@ public class TaskManagerTest {
     }
   }
 
-  @Test
-  public void testTaskIteration() throws Exception {
+  @Test public void testTaskIteration() throws Exception {
     try {
       LOG.info("===========================testTaskIteration===============================");
       AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
@@ -165,14 +164,13 @@ public class TaskManagerTest {
       assertEquals(worker0Attempt0.getMinIteration(), 1);
       assertEquals(worker0.getMinIteration(), 1);
       assertEquals(workerGroup0.getMinIteration(), 1);
-    } catch (Exception x){
+    } catch (Exception x) {
       LOG.error("run testTaskIteration failed ", x);
       throw x;
     }
   }
 
-  @Test
-  public void testTaskMatrixClock() throws ServiceException {
+  @Test public void testTaskMatrixClock() throws ServiceException {
     try {
       LOG.info("===========================testTaskMatrixClock===============================");
       AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
@@ -211,8 +209,7 @@ public class TaskManagerTest {
     }
   }
 
-  @AfterClass
-  public static void stop() throws AngelException {
+  @AfterClass public static void stop() throws AngelException {
     try {
       LOG.info("stop local cluster");
       angelClient.stop();

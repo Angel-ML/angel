@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.split;
 
 public class SplitInfo {

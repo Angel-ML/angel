@@ -15,13 +15,13 @@
  *
  */
 
+
 package com.tencent.angel.webapp.page;
 
 import org.apache.hadoop.yarn.webapp.SubView;
 
 public class AngelAppPage extends TwoColumnLayout2 {
-  @Override
-  protected Class<? extends SubView> content() {
+  @Override protected Class<? extends SubView> content() {
     return AngelAppBlock.class;
   }
 }

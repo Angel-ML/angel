@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.ps.ps;
 
 import com.tencent.angel.ps.PSAttemptId;
@@ -24,7 +25,9 @@ import com.tencent.angel.ps.PSAttemptId;
  */
 public class PSPAttemptEvent extends AMParameterServerEvent {
 
-  /**ps attempt id*/
+  /**
+   * ps attempt id
+   */
   private final PSAttemptId psAttemptId;
 
   public PSPAttemptEvent(PSAttemptId attemptId, AMParameterServerEventType type) {
@@ -34,6 +37,7 @@ public class PSPAttemptEvent extends AMParameterServerEvent {
 
   /**
    * get ps attempt id
+   *
    * @return PSAttemptId ps attempt id
    */
   public PSAttemptId getPSAttemptId() {

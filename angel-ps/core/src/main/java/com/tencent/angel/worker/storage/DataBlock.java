@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.worker.storage;
 
 import com.tencent.angel.exception.AngelException;
@@ -23,9 +24,9 @@ import java.io.IOException;
 
 /**
  * DataBlock is a Basic storage abstract in Angel.
- *
+ * <p>
  * All Data read from HDFS or somewhere else will be read to become a DataBlock.
- *
+ * <p>
  * The data can be reuse multi-times for Machine Learning, and some other useful features is created to make it more convenience for ML
  *
  * @param <VALUE> the value type
@@ -128,7 +129,7 @@ public abstract class DataBlock<VALUE> {
    * Slice storage
    *
    * @param startIndex the start index
-   * @param length the length
+   * @param length     the length
    * @return the sliced storage
    * @throws IOException the io exception
    */
@@ -189,7 +190,7 @@ public abstract class DataBlock<VALUE> {
    *
    * @return
    */
-  public VALUE loopingRead() throws IOException{
+  public VALUE loopingRead() throws IOException {
     VALUE data = this.read();
     if (data == null) {
       resetReadIndex();
@@ -202,9 +203,8 @@ public abstract class DataBlock<VALUE> {
       throw new AngelException("Train data storage is empty or corrupted.");
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "DataBlock [valueClass=" + valueClass + ", readIndex=" + readIndex + ", writeIndex="
-        + writeIndex + "]";
+      + writeIndex + "]";
   }
 }

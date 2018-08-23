@@ -15,10 +15,11 @@
  *
  */
 
+
 package com.tencent.angel.ps.io;
 
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ps.impl.PSContext;
+import com.tencent.angel.ps.PSContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -42,6 +43,7 @@ public class IOExecutors {
 
   /**
    * Create a IOExecutors
+   *
    * @param context PS context
    */
   public IOExecutors(PSContext context) {
@@ -67,7 +69,7 @@ public class IOExecutors {
    * Stop
    */
   public void stop() {
-    if(pool != null) {
+    if (pool != null) {
       pool.shutdownNow();
       pool = null;
     }
@@ -84,7 +86,10 @@ public class IOExecutors {
 
   /**
    * Execute a task
+   *
    * @param task
    */
-  public void execute(Runnable task) { pool.execute(task);}
+  public void execute(Runnable task) {
+    pool.execute(task);
+  }
 }

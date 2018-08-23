@@ -14,6 +14,8 @@
  * the License.
  *
  */
+
+
 package com.tencent.angel.utils;
 
 
@@ -25,7 +27,7 @@ public final class Time {
   /**
    * Current system time. Do not use this to calculate a duration or interval to sleep, because it
    * will be broken by settimeofday. Instead, use monotonicNow.
-   * 
+   *
    * @return current time in msec.
    */
   public static long now() {
@@ -36,7 +38,7 @@ public final class Time {
    * Current time from some arbitrary time base in the past, counting in milliseconds, and not
    * affected by settimeofday or similar system clock changes. This is appropriate to use when
    * computing how much longer to wait for an interval to expire.
-   * 
+   *
    * @return a monotonic clock that counts in milliseconds.
    */
   public static long monotonicNow() {

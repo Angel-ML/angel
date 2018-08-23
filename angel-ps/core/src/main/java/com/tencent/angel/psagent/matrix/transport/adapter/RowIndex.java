@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.psagent.matrix.transport.adapter;
 
 import it.unimi.dsi.fastutil.ints.IntIterator;
@@ -27,16 +28,24 @@ import java.util.UUID;
  * Row indexes for GET_ROWS request.
  */
 public class RowIndex {
-  /** index set of rows that need to fetch */
+  /**
+   * index set of rows that need to fetch
+   */
   private final IntOpenHashSet rowIdSet;
 
-  /** index set of rows that are found in matrix storage or matrix cache */
+  /**
+   * index set of rows that are found in matrix storage or matrix cache
+   */
   private final IntOpenHashSet filtedIdSet;
 
-  /** parent RowIndex instance, a RowIndex instance can be splited to many son RowIndex instances */
+  /**
+   * parent RowIndex instance, a RowIndex instance can be splited to many son RowIndex instances
+   */
   private final RowIndex parent;
 
-  /** matrix id */
+  /**
+   * matrix id
+   */
   private int matrixId;
   private final UUID uuid;
 
@@ -45,7 +54,7 @@ public class RowIndex {
    *
    * @param matrixId matrix id
    * @param rowIdSet need fetch row index set
-   * @param parent parent RowIndex instance
+   * @param parent   parent RowIndex instance
    */
   public RowIndex(int matrixId, IntOpenHashSet rowIdSet, RowIndex parent) {
     this.matrixId = matrixId;
@@ -74,7 +83,7 @@ public class RowIndex {
 
   /**
    * Get the index set of the rows that need to fetch.
-   * 
+   *
    * @return IntOpenHashSet the index set of rows that need to fetch
    */
   public IntOpenHashSet getRowIds() {
@@ -83,7 +92,7 @@ public class RowIndex {
 
   /**
    * Add a row index to the index set of the rows that need to fetch.
-   * 
+   *
    * @param rowId int row index
    */
   public void addRowId(int rowId) {
@@ -92,7 +101,7 @@ public class RowIndex {
 
   /**
    * Get the parent RowIndex instance.
-   * 
+   *
    * @return RowIndex the parent RowIndex instance
    */
   public RowIndex getParent() {
@@ -101,7 +110,7 @@ public class RowIndex {
 
   /**
    * Get matrix id.
-   * 
+   *
    * @return int matrix id
    */
   public int getMatrixId() {
@@ -110,7 +119,7 @@ public class RowIndex {
 
   /**
    * Set matrix id
-   * 
+   *
    * @param matrixId matrix id
    */
   public void setMatrixId(int matrixId) {
@@ -119,9 +128,9 @@ public class RowIndex {
 
   /**
    * Get the index set of the rows that have been found in matrix storage or matrix cache.
-   * 
+   *
    * @return IntOpenHashSet the index set of rows that have been found in matrix storage or matrix
-   *         cache
+   * cache
    */
   public IntOpenHashSet getFiltedIdSet() {
     return filtedIdSet;
@@ -130,7 +139,7 @@ public class RowIndex {
   /**
    * Add a row index to the index set of the rows that have been found in matrix storage or matrix
    * cache.
-   * 
+   *
    * @param rowId row index
    */
   public void filted(int rowId) {
@@ -146,7 +155,7 @@ public class RowIndex {
 
   /**
    * Is the row has been found in matrix storage or matrix cache.
-   * 
+   *
    * @param rowId row index
    * @return boolean true means the row that has been found in matrix storage or matrix cache
    */
@@ -154,10 +163,9 @@ public class RowIndex {
     return filtedIdSet.contains(rowId);
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "RowIndex [rowIds size=" + getRowsNumber() + ", indexHashCode=" + uuid + ", parent="
-        + parent + ", matrixId=" + matrixId + "]";
+      + parent + ", matrixId=" + matrixId + "]";
   }
 
   public String listRowIds() {
@@ -181,7 +189,7 @@ public class RowIndex {
 
   /**
    * Get the number of the rows that need to fetch.
-   * 
+   *
    * @return int the number of the rows that need to fetch
    */
   public int getRowsNumber() {
@@ -190,7 +198,7 @@ public class RowIndex {
 
   /**
    * Get the number of the rows that need to fetch.
-   * 
+   *
    * @return int the number of the rows that have been found in matrix storage or matrix cache
    */
   public int getFiltedRowsNumber() {
@@ -199,7 +207,7 @@ public class RowIndex {
 
   /**
    * If the row index is in the set of the rows that need to fetch.
-   * 
+   *
    * @param rowId row index
    * @return boolean true means the row index is in the set of the rows that need to fetch
    */
@@ -207,16 +215,14 @@ public class RowIndex {
     return rowIdSet.contains(rowId);
   }
 
-  @Override
-  public int hashCode() {
+  @Override public int hashCode() {
     final int prime = 31;
     int result = 1;
     result = prime * result + ((uuid == null) ? 0 : uuid.hashCode());
     return result;
   }
 
-  @Override
-  public boolean equals(Object obj) {
+  @Override public boolean equals(Object obj) {
     if (this == obj)
       return true;
     if (obj == null)

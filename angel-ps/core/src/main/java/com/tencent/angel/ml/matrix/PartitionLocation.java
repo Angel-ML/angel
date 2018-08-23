@@ -15,9 +15,10 @@
  *
  */
 
+
 package com.tencent.angel.ml.matrix;
 
-import com.tencent.angel.ml.matrix.transport.PSLocation;
+import com.tencent.angel.ps.server.data.PSLocation;
 
 import java.util.List;
 
@@ -29,6 +30,7 @@ public class PartitionLocation {
 
   /**
    * Create a PartitionLocation
+   *
    * @param psLocs ps location
    */
   public PartitionLocation(List<PSLocation> psLocs) {
@@ -39,7 +41,7 @@ public class PartitionLocation {
     StringBuilder sb = new StringBuilder();
     int size = psLocs.size();
     sb.append("partition location:{");
-    for(int i = 0; i < size; i++) {
+    for (int i = 0; i < size; i++) {
       sb.append("server:").append(psLocs.get(i));
     }
     sb.append("}");

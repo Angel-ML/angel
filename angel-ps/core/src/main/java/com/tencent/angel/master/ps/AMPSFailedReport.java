@@ -15,15 +15,15 @@
  *
  */
 
+
 package com.tencent.angel.master.ps;
 
-import com.tencent.angel.ml.matrix.transport.PSFailedReport;
-import com.tencent.angel.ml.matrix.transport.PSLocation;
+import com.tencent.angel.ps.server.data.PSFailedReport;
+import com.tencent.angel.ps.server.data.PSLocation;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+
 
 /**
  * Master PS Failed counters
@@ -36,13 +36,13 @@ public class AMPSFailedReport {
 
   public AMPSFailedReport() {
     reports = new PSFailedReport[N];
-    for(int i = 0; i < N; i++) {
+    for (int i = 0; i < N; i++) {
       reports[i] = new PSFailedReport();
     }
   }
 
   public void psFailedReports(Map<PSLocation, Integer> counters) {
-    for(Map.Entry<PSLocation, Integer> entry : counters.entrySet()) {
+    for (Map.Entry<PSLocation, Integer> entry : counters.entrySet()) {
       reports[currentIndex].psFailed(entry.getKey(), entry.getValue());
     }
   }
@@ -54,18 +54,18 @@ public class AMPSFailedReport {
   public Map<PSLocation, Integer> getFailedPS(int limit) {
     Map<PSLocation, Integer> mergeCounters = new HashMap<>();
     float currentFactor = 1.0f;
-    for(int i = 0; i < N; i++) {
+    for (int i = 0; i < N; i++) {
       merge(reports[(currentIndex - i + N) % N].getReports(), mergeCounters, currentFactor);
       currentFactor *= factor;
     }
 
-    if(mergeCounters.isEmpty()) {
+    if (mergeCounters.isEmpty()) {
       clock();
       return mergeCounters;
     } else {
       Map<PSLocation, Integer> result = new HashMap<>();
-      for(Map.Entry<PSLocation, Integer> entry : mergeCounters.entrySet()) {
-        if(entry.getValue() >= limit) {
+      for (Map.Entry<PSLocation, Integer> entry : mergeCounters.entrySet()) {
+        if (entry.getValue() >= limit) {
           result.put(entry.getKey(), entry.getValue());
         }
       }
@@ -74,12 +74,14 @@ public class AMPSFailedReport {
     }
   }
 
-  private void merge(Map<PSLocation, Integer> source, Map<PSLocation, Integer> dest, float currentFactor) {
-    for(Map.Entry<PSLocation, Integer> entry : source.entrySet()) {
-      if(dest.containsKey(entry.getKey())) {
-        dest.put(entry.getKey(), dest.get(entry.getKey()) + (int)(entry.getValue() * currentFactor));
+  private void merge(Map<PSLocation, Integer> source, Map<PSLocation, Integer> dest,
+    float currentFactor) {
+    for (Map.Entry<PSLocation, Integer> entry : source.entrySet()) {
+      if (dest.containsKey(entry.getKey())) {
+        dest
+          .put(entry.getKey(), dest.get(entry.getKey()) + (int) (entry.getValue() * currentFactor));
       } else {
-        dest.put(entry.getKey(), (int)(entry.getValue() * currentFactor));
+        dest.put(entry.getKey(), (int) (entry.getValue() * currentFactor));
       }
     }
   }

@@ -15,10 +15,11 @@
  *
  */
 
+
 package com.tencent.angel.psagent.matrix.transport.adapter;
 
-import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.ml.math.vector.DenseDoubleVector;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
+import com.tencent.angel.ml.math2.vector.Vector;
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -28,15 +29,21 @@ import java.util.concurrent.atomic.AtomicInteger;
  * The result of get rows flow request.
  */
 public class GetRowsResult {
-  private static TVector wakeUpVector = new DenseDoubleVector(0);
+  private static Vector wakeUpVector = new IntDoubleVector(0, null);
 
-  /** If all rows are fetched */
+  /**
+   * If all rows are fetched
+   */
   private final AtomicBoolean isFetchOver;
 
-  /** the queue of the received rows */
-  private final LinkedBlockingQueue<TVector> newRowsQueue;
+  /**
+   * the queue of the received rows
+   */
+  private final LinkedBlockingQueue<Vector> newRowsQueue;
 
-  /** the counter of rows that are fetched */
+  /**
+   * the counter of rows that are fetched
+   */
   private final AtomicInteger rowCounter;
 
   /**
@@ -44,28 +51,28 @@ public class GetRowsResult {
    */
   public GetRowsResult() {
     isFetchOver = new AtomicBoolean(false);
-    newRowsQueue = new LinkedBlockingQueue<TVector>();
+    newRowsQueue = new LinkedBlockingQueue<>();
     rowCounter = new AtomicInteger(0);
   }
 
   /**
    * Put a row to queue.
-   * 
+   *
    * @param row the row need to put to the queue
    * @throws InterruptedException interrupted while wait for queue space
    */
-  public void put(TVector row) throws InterruptedException {
+  public void put(Vector row) throws InterruptedException {
     newRowsQueue.put(row);
     rowCounter.incrementAndGet();
   }
 
   /**
    * Get a row from queue, if the queue is empty or all rows are consumed, just return null.
-   * 
+   *
    * @return TVector the row get from the queue
    */
-  public TVector poll() {
-    TVector ret = newRowsQueue.poll();
+  public Vector poll() {
+    Vector ret = newRowsQueue.poll();
     if (ret == wakeUpVector) {
       ret = null;
     }
@@ -76,16 +83,16 @@ public class GetRowsResult {
   /**
    * Get a row from queue, it will wait if the queue is empty. If the all rows are consumed, just
    * return null.
-   * 
-   * @throws InterruptedException interrupted while is blocked by queue.
+   *
    * @return TVector the row get from the queue
+   * @throws InterruptedException interrupted while is blocked by queue.
    */
-  public TVector take() throws InterruptedException {
+  public Vector take() throws InterruptedException {
     if (isFetchOver.get() && newRowsQueue.peek() == null) {
       return null;
     }
 
-    TVector row = newRowsQueue.take();
+    Vector row = newRowsQueue.take();
     if (isFetchOver.get() && row == wakeUpVector) {
       return null;
     } else {
@@ -95,7 +102,7 @@ public class GetRowsResult {
 
   /**
    * Get the number of rows received.
-   * 
+   *
    * @return int the number of rows received
    */
   public int getRowsNumber() {
@@ -116,7 +123,7 @@ public class GetRowsResult {
 
   /**
    * Is all rows are received.
-   * 
+   *
    * @return boolean true means all rows needed are received
    */
   public boolean isFetchOver() {

@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.ps.attempt;
 
 import com.tencent.angel.ps.PSAttemptId;
@@ -23,13 +24,16 @@ import com.tencent.angel.ps.PSAttemptId;
  * PS diagnostics update event
  */
 public class PSAttemptDiagnosticsUpdateEvent extends PSAttemptEvent {
-  /**diagnostices*/
+  /**
+   * diagnostices
+   */
   private final String diagnostics;
 
   /**
    * Create a PSAttemptDiagnosticsUpdateEvent
+   *
    * @param diagnostics new diagnostics
-   * @param id ps attempt id
+   * @param id          ps attempt id
    */
   public PSAttemptDiagnosticsUpdateEvent(String diagnostics, PSAttemptId id) {
     super(PSAttemptEventType.PA_DIAGNOSTICS_UPDATE, id);
@@ -38,6 +42,7 @@ public class PSAttemptDiagnosticsUpdateEvent extends PSAttemptEvent {
 
   /**
    * Get diagnostics
+   *
    * @return diagnostics
    */
   public String getDiagnostics() {

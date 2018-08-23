@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.spark.models
 
 import org.apache.spark.ml.evaluation.Evaluator
@@ -35,8 +36,6 @@ trait MLModel extends Serializable {
     0.0
   }
 }
-
-
 
 
 

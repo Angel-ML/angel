@@ -1,19 +1,20 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Tencent is pleased to support the open source community by making Angel available.
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
  */
+
 
 package com.tencent.angel.ipc;
 
@@ -39,12 +40,16 @@ import java.util.concurrent.ThreadFactory;
  * Utilities for creating various Netty constructs based on whether we're using EPOLL or NIO.
  */
 public class NettyUtils {
-  /** Creates a new ThreadFactory which prefixes each thread with the given name. */
+  /**
+   * Creates a new ThreadFactory which prefixes each thread with the given name.
+   */
   public static ThreadFactory createThreadFactory(String threadPoolPrefix) {
     return new DefaultThreadFactory(threadPoolPrefix, true);
   }
 
-  /** Creates a Netty EventLoopGroup based on the IOMode. */
+  /**
+   * Creates a Netty EventLoopGroup based on the IOMode.
+   */
   public static EventLoopGroup createEventLoop(IOMode mode, int numThreads, String threadPrefix) {
     ThreadFactory threadFactory = createThreadFactory(threadPrefix);
 
@@ -58,7 +63,9 @@ public class NettyUtils {
     }
   }
 
-  /** Returns the correct (client) SocketChannel class based on IOMode. */
+  /**
+   * Returns the correct (client) SocketChannel class based on IOMode.
+   */
   public static Class<? extends Channel> getClientChannelClass(IOMode mode) {
     switch (mode) {
       case NIO:
@@ -70,7 +77,9 @@ public class NettyUtils {
     }
   }
 
-  /** Returns the correct ServerSocketChannel class based on IOMode. */
+  /**
+   * Returns the correct ServerSocketChannel class based on IOMode.
+   */
   public static Class<? extends ServerChannel> getServerChannelClass(IOMode mode) {
     switch (mode) {
       case NIO:
@@ -95,7 +104,9 @@ public class NettyUtils {
     return new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 8, -8, 8);
   }
 
-  /** Returns the remote address on the channel or "&lt;unknown remote&gt;" if none exists. */
+  /**
+   * Returns the remote address on the channel or "&lt;unknown remote&gt;" if none exists.
+   */
   public static String getRemoteAddress(Channel channel) {
     if (channel != null && channel.remoteAddress() != null) {
       return channel.remoteAddress().toString();
@@ -109,26 +120,23 @@ public class NettyUtils {
    * but released by the executor thread rather than the event loop thread. Those thread-local
    * caches actually delay the recycling of buffers, leading to larger memory usage.
    */
-  public static PooledByteBufAllocator createPooledByteBufAllocator(
-      boolean allowDirectBufs,
-      boolean allowCache,
-      int numCores) {
+  public static PooledByteBufAllocator createPooledByteBufAllocator(boolean allowDirectBufs,
+    boolean allowCache, int numCores) {
     if (numCores == 0) {
       numCores = Runtime.getRuntime().availableProcessors();
     }
-    return new PooledByteBufAllocator(
-        allowDirectBufs && PlatformDependent.directBufferPreferred(),
-        Math.min(getPrivateStaticField("DEFAULT_NUM_HEAP_ARENA"), numCores),
-        Math.min(getPrivateStaticField("DEFAULT_NUM_DIRECT_ARENA"), allowDirectBufs ? numCores : 0),
-        getPrivateStaticField("DEFAULT_PAGE_SIZE"),
-        getPrivateStaticField("DEFAULT_MAX_ORDER"),
-        allowCache ? getPrivateStaticField("DEFAULT_TINY_CACHE_SIZE") : 0,
-        allowCache ? getPrivateStaticField("DEFAULT_SMALL_CACHE_SIZE") : 0,
-        allowCache ? getPrivateStaticField("DEFAULT_NORMAL_CACHE_SIZE") : 0
-    );
+    return new PooledByteBufAllocator(allowDirectBufs && PlatformDependent.directBufferPreferred(),
+      Math.min(getPrivateStaticField("DEFAULT_NUM_HEAP_ARENA"), numCores),
+      Math.min(getPrivateStaticField("DEFAULT_NUM_DIRECT_ARENA"), allowDirectBufs ? numCores : 0),
+      getPrivateStaticField("DEFAULT_PAGE_SIZE"), getPrivateStaticField("DEFAULT_MAX_ORDER"),
+      allowCache ? getPrivateStaticField("DEFAULT_TINY_CACHE_SIZE") : 0,
+      allowCache ? getPrivateStaticField("DEFAULT_SMALL_CACHE_SIZE") : 0,
+      allowCache ? getPrivateStaticField("DEFAULT_NORMAL_CACHE_SIZE") : 0);
   }
 
-  /** Used to get defaults from Netty's private static fields. */
+  /**
+   * Used to get defaults from Netty's private static fields.
+   */
   private static int getPrivateStaticField(String name) {
     try {
       Field f = PooledByteBufAllocator.DEFAULT.getClass().getDeclaredField(name);

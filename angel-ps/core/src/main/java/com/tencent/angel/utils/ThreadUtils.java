@@ -15,7 +15,12 @@
  *
  */
 
+
 package com.tencent.angel.utils;
+
+import java.lang.management.LockInfo;
+import java.lang.management.MonitorInfo;
+import java.lang.management.ThreadInfo;
 
 public class ThreadUtils {
   public static RuntimeException launderThrowable(Throwable t) {
@@ -31,7 +36,7 @@ public class ThreadUtils {
   /**
    * Cause the current thread to sleep as close as possible to the provided number of milliseconds.
    * This method will log and ignore any {@link InterruptedException} encountered.
-   * 
+   *
    * @param millis the number of milliseconds for the current thread to sleep
    */
   public static void sleepAtLeastIgnoreInterrupts(long millis) {
@@ -44,5 +49,70 @@ public class ThreadUtils {
         // LOG.warn("interrupted while sleeping", ie);
       }
     }
+  }
+
+  public static String toString(ThreadInfo tInfo) {
+    StringBuilder sb = new StringBuilder(
+      "\"" + tInfo.getThreadName() + "\"" + " Id=" + tInfo.getThreadId() + " " + tInfo
+        .getThreadState());
+    if (tInfo.getLockName() != null) {
+      sb.append(" on " + tInfo.getLockName());
+    }
+    if (tInfo.getLockOwnerName() != null) {
+      sb.append(" owned by \"" + tInfo.getLockOwnerName() + "\" Id=" + tInfo.getLockOwnerId());
+    }
+    if (tInfo.isSuspended()) {
+      sb.append(" (suspended)");
+    }
+    if (tInfo.isInNative()) {
+      sb.append(" (in native)");
+    }
+    sb.append('\n');
+    int i = 0;
+
+    StackTraceElement[] stackTrace = tInfo.getStackTrace();
+    for (; i < stackTrace.length; i++) {
+      StackTraceElement ste = stackTrace[i];
+      sb.append("\tat " + ste.toString());
+      sb.append('\n');
+      if (i == 0 && tInfo.getLockInfo() != null) {
+        Thread.State ts = tInfo.getThreadState();
+        switch (ts) {
+          case BLOCKED:
+            sb.append("\t-  blocked on " + tInfo.getLockInfo());
+            sb.append('\n');
+            break;
+          case WAITING:
+            sb.append("\t-  waiting on " + tInfo.getLockInfo());
+            sb.append('\n');
+            break;
+          case TIMED_WAITING:
+            sb.append("\t-  waiting on " + tInfo.getLockInfo());
+            sb.append('\n');
+            break;
+          default:
+        }
+      }
+
+      MonitorInfo[] lockedMonitors = tInfo.getLockedMonitors();
+      for (MonitorInfo mi : lockedMonitors) {
+        if (mi.getLockedStackDepth() == i) {
+          sb.append("\t-  locked " + mi);
+          sb.append('\n');
+        }
+      }
+    }
+
+    LockInfo[] locks = tInfo.getLockedSynchronizers();
+    if (locks.length > 0) {
+      sb.append("\n\tNumber of locked synchronizers = " + locks.length);
+      sb.append('\n');
+      for (LockInfo li : locks) {
+        sb.append("\t- " + li);
+        sb.append('\n');
+      }
+    }
+    sb.append('\n');
+    return sb.toString();
   }
 }

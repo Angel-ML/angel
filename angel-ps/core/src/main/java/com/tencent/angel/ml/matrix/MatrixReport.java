@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.ml.matrix;
 
 import java.util.List;
@@ -35,7 +36,8 @@ public class MatrixReport {
 
   /**
    * Create a matrix report
-   * @param matrixId matrix id
+   *
+   * @param matrixId    matrix id
    * @param partReports matrix partitions reports
    */
   public MatrixReport(int matrixId, List<PartReport> partReports) {

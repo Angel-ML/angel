@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.utils;
 
 import com.tencent.angel.conf.AngelConf;
@@ -94,10 +95,10 @@ public class NetUtils {
   }
 
   public static InetSocketAddress getRealLocalAddr(InetSocketAddress listenAddr)
-      throws UnknownHostException {
+    throws UnknownHostException {
     InetSocketAddress ret = null;
-    if (listenAddr.isUnresolved() || listenAddr.getAddress().isAnyLocalAddress()
-        || listenAddr.getAddress().isLoopbackAddress()) {
+    if (listenAddr.isUnresolved() || listenAddr.getAddress().isAnyLocalAddress() || listenAddr
+      .getAddress().isLoopbackAddress()) {
       ret = new InetSocketAddress(InetAddress.getLocalHost(), listenAddr.getPort());
     } else {
       ret = listenAddr;
@@ -112,8 +113,7 @@ public class NetUtils {
 
   public static int chooseAListenPort(Configuration conf) throws IOException {
     String portRangeStr =
-        conf.get(AngelConf.ANGEL_LISTEN_PORT_RANGE,
-            AngelConf.DEFAULT_ANGEL_LISTEN_PORT_RANGE);
+      conf.get(AngelConf.ANGEL_LISTEN_PORT_RANGE, AngelConf.DEFAULT_ANGEL_LISTEN_PORT_RANGE);
 
     String[] portRangeArray = null;
     int startPort = -1;
@@ -124,13 +124,13 @@ public class NetUtils {
       endPort = Integer.valueOf(portRangeArray[1]);
 
       if (startPort <= 1024 || startPort > 65535 || endPort <= 1024 || endPort > 65535
-          || startPort > endPort) {
-        throw new InvalidParameterException(AngelConf.ANGEL_LISTEN_PORT_RANGE,
-            portRangeStr, "port should in range 1024~63335");
+        || startPort > endPort) {
+        throw new InvalidParameterException(AngelConf.ANGEL_LISTEN_PORT_RANGE, portRangeStr,
+          "port should in range 1024~63335");
       }
     } catch (Exception x) {
       LOG.error("use port set for " + AngelConf.ANGEL_LISTEN_PORT_RANGE
-          + " is unvalid, we use default value now. error msg = " + x.getMessage());
+        + " is unvalid, we use default value now. error msg = " + x.getMessage());
       portRangeArray = AngelConf.DEFAULT_ANGEL_LISTEN_PORT_RANGE.split(",");
       startPort = Integer.valueOf(portRangeArray[0]);
       endPort = Integer.valueOf(portRangeArray[1]);

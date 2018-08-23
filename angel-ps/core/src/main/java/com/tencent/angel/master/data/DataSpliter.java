@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.data;
 
 import com.tencent.angel.conf.AngelConf;
@@ -45,10 +46,14 @@ public class DataSpliter {
   private static final Log LOG = LogFactory.getLog(DataSpliter.class);
   protected final AMContext context;
 
-  /** index to SplitClassification map */
+  /**
+   * index to SplitClassification map
+   */
   private final Map<Integer, SplitClassification> splitClassifications;
 
-  /** use new version MapReduce API */
+  /**
+   * use new version MapReduce API
+   */
   private final boolean useNewAPI;
 
   private final static int maxLocationLimit = 10;
@@ -67,11 +72,11 @@ public class DataSpliter {
   /**
    * Split training data in the input directory into roughly equal pieces, and then group them by
    * workergroup
-   * 
+   *
    * @return Map<Integer,SplitClassification> splits group map
    */
-  public Map<Integer, SplitClassification> generateSplits() throws IOException,
-      InterruptedException, ClassNotFoundException {
+  public Map<Integer, SplitClassification> generateSplits()
+    throws IOException, InterruptedException, ClassNotFoundException {
     Configuration conf = context.getConf();
     String trainDataPath = conf.get(AngelConf.ANGEL_JOB_INPUT_PATH);
     if (trainDataPath != null) {
@@ -83,11 +88,9 @@ public class DataSpliter {
     // Calculate how many splits we need. As each task handles a separate split of data, so we want
     // the number of splits equal to the number of tasks
     int workergroupNumber =
-        conf.getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER,
-            AngelConf.DEFAULT_ANGEL_WORKERGROUP_NUMBER);
+      conf.getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, AngelConf.DEFAULT_ANGEL_WORKERGROUP_NUMBER);
     int taskNumInWorker =
-        conf.getInt(AngelConf.ANGEL_WORKER_TASK_NUMBER,
-            AngelConf.DEFAULT_ANGEL_WORKER_TASK_NUMBER);
+      conf.getInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, AngelConf.DEFAULT_ANGEL_WORKER_TASK_NUMBER);
     int splitNum = workergroupNumber * taskNumInWorker;
     LOG.info("expected split number=" + splitNum);
 
@@ -110,7 +113,7 @@ public class DataSpliter {
       LOG.info("use new mapreduce api");
       // split data
       List<org.apache.hadoop.mapreduce.InputSplit> splitsNewAPI =
-          generateSplitsUseNewAPI(conf, splitNum);
+        generateSplitsUseNewAPI(conf, splitNum);
       LOG.info("splits number=" + splitsNewAPI.size());
       if (LOG.isDebugEnabled()) {
         int num = splitsNewAPI.size();
@@ -127,7 +130,7 @@ public class DataSpliter {
   }
 
   private List<org.apache.hadoop.mapreduce.InputSplit> generateSplitsUseNewAPI(Configuration conf,
-      int expectedSplitNum) throws IOException, ClassNotFoundException, InterruptedException {
+    int expectedSplitNum) throws IOException, ClassNotFoundException, InterruptedException {
     String jobIDStr = conf.get(AngelConf.ANGEL_JOB_ID);
     JobID jobID = JobID.forName(jobIDStr);
     JobContext jobConf = new JobContextImpl(new JobConf(conf), jobID);
@@ -138,20 +141,19 @@ public class DataSpliter {
     long totalInputFileSize = HdfsUtil.getInputFileTotalSize(jobConf);
     LOG.info("totalInputFileSize=" + totalInputFileSize);
 
-    jobConf.getConfiguration().setLong(
-        org.apache.hadoop.mapreduce.lib.input.FileInputFormat.SPLIT_MINSIZE,
+    jobConf.getConfiguration()
+      .setLong(org.apache.hadoop.mapreduce.lib.input.FileInputFormat.SPLIT_MINSIZE,
         totalInputFileSize / expectedSplitNum);
-    jobConf.getConfiguration().setLong(
-        org.apache.hadoop.mapreduce.lib.input.FileInputFormat.SPLIT_MAXSIZE,
+    jobConf.getConfiguration()
+      .setLong(org.apache.hadoop.mapreduce.lib.input.FileInputFormat.SPLIT_MAXSIZE,
         totalInputFileSize / expectedSplitNum);
 
     // get input format class from configuration and then instantiation a input format object
-    String inputFormatClassName =
-        jobConf.getConfiguration().get(AngelConf.ANGEL_INPUTFORMAT_CLASS,
-            AngelConf.DEFAULT_ANGEL_INPUTFORMAT_CLASS);
+    String inputFormatClassName = jobConf.getConfiguration()
+      .get(AngelConf.ANGEL_INPUTFORMAT_CLASS, AngelConf.DEFAULT_ANGEL_INPUTFORMAT_CLASS);
     org.apache.hadoop.mapreduce.InputFormat<?, ?> input =
-        (org.apache.hadoop.mapreduce.InputFormat<?, ?>) ReflectionUtils.newInstance(
-            Class.forName(inputFormatClassName), conf);
+      (org.apache.hadoop.mapreduce.InputFormat<?, ?>) ReflectionUtils
+        .newInstance(Class.forName(inputFormatClassName), conf);
     LOG.debug("inputFormatClassName=" + inputFormatClassName);
 
     // split data
@@ -159,7 +161,7 @@ public class DataSpliter {
   }
 
   private org.apache.hadoop.mapred.InputSplit[] generateSplitsUseOldAPI(Configuration conf,
-      int expectedSplitNum) throws ClassNotFoundException, IOException {
+    int expectedSplitNum) throws ClassNotFoundException, IOException {
     // Set split minsize and maxsize to expected split size. We need to get the total size of data
     // first, then divided by expected split number
     JobConf jobConf = new JobConf(conf);
@@ -167,16 +169,15 @@ public class DataSpliter {
     LOG.info("totalInputFileSize=" + totalInputFileSize);
 
     jobConf.setLong(org.apache.hadoop.mapreduce.lib.input.FileInputFormat.SPLIT_MINSIZE,
-        totalInputFileSize / expectedSplitNum);
+      totalInputFileSize / expectedSplitNum);
     jobConf.setLong(org.apache.hadoop.mapreduce.lib.input.FileInputFormat.SPLIT_MAXSIZE,
-        totalInputFileSize / expectedSplitNum);
+      totalInputFileSize / expectedSplitNum);
 
     // get input format class from configuration and then instantiation a input format object
     String inputFormatClassName =
-        jobConf.get(AngelConf.ANGEL_INPUTFORMAT_CLASS,
-            AngelConf.DEFAULT_ANGEL_INPUTFORMAT_CLASS);
+      jobConf.get(AngelConf.ANGEL_INPUTFORMAT_CLASS, AngelConf.DEFAULT_ANGEL_INPUTFORMAT_CLASS);
     InputFormat<?, ?> input =
-        (InputFormat<?, ?>) ReflectionUtils.newInstance(Class.forName(inputFormatClassName), conf);
+      (InputFormat<?, ?>) ReflectionUtils.newInstance(Class.forName(inputFormatClassName), conf);
     LOG.debug("inputFormatClassName=" + inputFormatClassName);
 
     // split data
@@ -184,7 +185,7 @@ public class DataSpliter {
   }
 
   private void dispatchSplitsUseLocation(List<org.apache.hadoop.mapreduce.InputSplit> splitsNewAPI,
-      int groupNumber, int groupItemNumber) throws IOException, InterruptedException {
+    int groupNumber, int groupItemNumber) throws IOException, InterruptedException {
     splitNum = splitsNewAPI.size();
 
     // Since the actual split size is sometimes not exactly equal to the expected split size, we
@@ -197,7 +198,7 @@ public class DataSpliter {
     for (int i = 0; i < estimatedGroupNum; i++) {
       List<String> locationList = new ArrayList<String>(maxLocationLimit);
       List<org.apache.hadoop.mapreduce.InputSplit> splitList =
-          new ArrayList<org.apache.hadoop.mapreduce.InputSplit>();
+        new ArrayList<org.apache.hadoop.mapreduce.InputSplit>();
 
       base = i * groupItemNumber;
       for (int j = 0; j < groupItemNumber && (base < splitNum); j++, base++) {
@@ -208,15 +209,14 @@ public class DataSpliter {
         }
       }
 
-      SplitClassification splitClassification =
-          new SplitClassification(null, splitList, locationList.toArray(new String[locationList
-              .size()]), true);
+      SplitClassification splitClassification = new SplitClassification(null, splitList,
+        locationList.toArray(new String[locationList.size()]), true);
       splitClassifications.put(i, splitClassification);
     }
   }
 
   private void dispatchSplitsUseLocation(InputSplit[] splitArray, int groupNumber,
-      int groupItemNumber) throws IOException {
+    int groupItemNumber) throws IOException {
     splitNum = splitArray.length;
 
     // Since the actual split size is sometimes not exactly equal to the expected split size, we
@@ -229,7 +229,7 @@ public class DataSpliter {
     for (int i = 0; i < estimatedGroupNum; i++) {
       List<String> locationList = new ArrayList<String>(maxLocationLimit);
       List<org.apache.hadoop.mapred.InputSplit> splitList =
-          new ArrayList<org.apache.hadoop.mapred.InputSplit>();
+        new ArrayList<org.apache.hadoop.mapred.InputSplit>();
 
       base = i * groupItemNumber;
       for (int j = 0; j < groupItemNumber && (base < splitNum); j++, base++) {
@@ -240,9 +240,8 @@ public class DataSpliter {
         }
       }
 
-      SplitClassification splitClassification =
-          new SplitClassification(splitList, null, locationList.toArray(new String[locationList
-              .size()]), useNewAPI);
+      SplitClassification splitClassification = new SplitClassification(splitList, null,
+        locationList.toArray(new String[locationList.size()]), useNewAPI);
       splitClassifications.put(i, splitClassification);
     }
   }
@@ -261,7 +260,7 @@ public class DataSpliter {
 
   /**
    * write data splits to a output stream
-   * 
+   *
    * @param outputStream output stream
    * @throws IOException
    */
@@ -276,11 +275,12 @@ public class DataSpliter {
 
   /**
    * read data splits from a input stream
-   * 
+   *
    * @param inputStream input stream
    * @throws IOException
    */
-  public void deserialize(FSDataInputStream inputStream) throws IOException, ClassNotFoundException {
+  public void deserialize(FSDataInputStream inputStream)
+    throws IOException, ClassNotFoundException {
     splitNum = inputStream.readInt();
     int size = inputStream.readInt();
 

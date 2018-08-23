@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.ml.matrix.psf.get.base;
 
 import com.tencent.angel.psagent.matrix.ResponseType;
@@ -32,7 +33,6 @@ public abstract class GetResult extends Result {
   }
 
   /**
-   * 
    * Get a new GetResult.
    *
    * @param responseType SUCCESS or FAILED

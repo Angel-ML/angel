@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.ps.ps;
 
 import com.tencent.angel.ps.ParameterServerId;
@@ -25,13 +26,16 @@ import org.apache.hadoop.yarn.event.AbstractEvent;
  */
 public class AMParameterServerEvent extends AbstractEvent<AMParameterServerEventType> {
 
-  /**ps id*/
+  /**
+   * ps id
+   */
   private final ParameterServerId psId;
 
   /**
    * Create a AMParameterServerEvent
+   *
    * @param type event type
-   * @param id ps id
+   * @param id   ps id
    */
   public AMParameterServerEvent(AMParameterServerEventType type, ParameterServerId id) {
     super(type);
@@ -40,6 +44,7 @@ public class AMParameterServerEvent extends AbstractEvent<AMParameterServerEvent
 
   /**
    * get ps id
+   *
    * @return ParameterServerId ps id
    */
   public ParameterServerId getPsId() {

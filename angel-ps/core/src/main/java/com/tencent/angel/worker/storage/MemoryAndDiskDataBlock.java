@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.worker.storage;
 
 import org.apache.commons.logging.Log;
@@ -51,8 +52,7 @@ public class MemoryAndDiskDataBlock<VALUE> extends DataBlock<VALUE> {
     memoryCheckCounter = 0;
   }
 
-  @Override
-  public VALUE read() throws IOException {
+  @Override public VALUE read() throws IOException {
     VALUE value = null;
     readIndex++;
     if (memoryReadInUse) {
@@ -70,8 +70,7 @@ public class MemoryAndDiskDataBlock<VALUE> extends DataBlock<VALUE> {
     return diskStorage.read();
   }
 
-  @Override
-  protected boolean hasNext() throws IOException {
+  @Override protected boolean hasNext() throws IOException {
     if (readIndex < memoryStorage.writeIndex) {
       return true;
     } else {
@@ -84,8 +83,7 @@ public class MemoryAndDiskDataBlock<VALUE> extends DataBlock<VALUE> {
     }
   }
 
-  @Override
-  public VALUE get(int index) throws IOException {
+  @Override public VALUE get(int index) throws IOException {
     if (index < memoryStorage.writeIndex) {
       return memoryStorage.get(index);
     } else {
@@ -93,8 +91,7 @@ public class MemoryAndDiskDataBlock<VALUE> extends DataBlock<VALUE> {
     }
   }
 
-  @Override
-  public void put(VALUE value) throws IOException {
+  @Override public void put(VALUE value) throws IOException {
     if (memoryWriteInUse) {
       memoryStorage.put(value);
       writeIndex++;
@@ -113,8 +110,7 @@ public class MemoryAndDiskDataBlock<VALUE> extends DataBlock<VALUE> {
     }
   }
 
-  @Override
-  public void resetReadIndex() throws IOException {
+  @Override public void resetReadIndex() throws IOException {
     readIndex = 0;
     if (memoryReadInUse) {
       memoryStorage.resetReadIndex();
@@ -125,8 +121,7 @@ public class MemoryAndDiskDataBlock<VALUE> extends DataBlock<VALUE> {
     }
   }
 
-  @Override
-  public void clean() throws IOException {
+  @Override public void clean() throws IOException {
     memoryStorage.clean();
     if (diskStorage != null) {
       diskStorage.clean();
@@ -138,13 +133,11 @@ public class MemoryAndDiskDataBlock<VALUE> extends DataBlock<VALUE> {
 
   }
 
-  @Override
-  public void shuffle() throws IOException {
+  @Override public void shuffle() throws IOException {
     memoryStorage.shuffle();
   }
 
-  @Override
-  public void flush() throws IOException {
+  @Override public void flush() throws IOException {
     if (memoryWriteInUse) {
       memoryStorage.flush();
     } else {
@@ -152,8 +145,7 @@ public class MemoryAndDiskDataBlock<VALUE> extends DataBlock<VALUE> {
     }
   }
 
-  @Override
-  public DataBlock<VALUE> slice(int startIndex, int length) throws IOException {
+  @Override public DataBlock<VALUE> slice(int startIndex, int length) throws IOException {
     if (startIndex + length <= memoryStorage.writeIndex) {
       return memoryStorage.slice(startIndex, length);
     } else {
@@ -161,12 +153,10 @@ public class MemoryAndDiskDataBlock<VALUE> extends DataBlock<VALUE> {
     }
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "MemoryAndDiskDataBlock [memoryStorage=" + memoryStorage + ", diskStorage=" + diskStorage
-        + ", memoryWriteInUse=" + memoryWriteInUse + ", memoryReadInUse=" + memoryReadInUse
-        + ", memoryCheckInterval=" + memoryCheckInterval + ", memoryCheckCounter="
-        + memoryCheckCounter + ", taskIndex=" + taskIndex + ", toString()=" + super.toString()
-        + "]";
+      + ", memoryWriteInUse=" + memoryWriteInUse + ", memoryReadInUse=" + memoryReadInUse
+      + ", memoryCheckInterval=" + memoryCheckInterval + ", memoryCheckCounter="
+      + memoryCheckCounter + ", taskIndex=" + taskIndex + ", toString()=" + super.toString() + "]";
   }
 }

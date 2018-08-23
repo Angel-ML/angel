@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.client;
 
 import com.google.protobuf.ServiceException;
@@ -35,33 +36,38 @@ import java.io.IOException;
  */
 public class WorkerClient implements WorkerClientInterface {
   private static final Log LOG = LogFactory.getLog(WorkerClient.class);
-  /**master context*/
+  /**
+   * master context
+   */
   private final AMContext context;
 
-  /**connection from master to the worker*/
+  /**
+   * connection from master to the worker
+   */
   private final TConnection connection;
 
-  /**rpc protocol*/
+  /**
+   * rpc protocol
+   */
   private final WorkerProtocol worker;
 
   /**
    * Create a WorkerClient
-   * @param context master context
+   *
+   * @param context         master context
    * @param workerAttemptId worker attempt id
    * @throws IOException
    */
   public WorkerClient(AMContext context, WorkerAttemptId workerAttemptId) throws IOException {
     this.context = context;
     this.connection = TConnectionManager.getConnection(context.getConf());
-    Location workerLoc =
-        context.getWorkerManager().getWorker(workerAttemptId.getWorkerId())
-            .getWorkerAttempt(workerAttemptId).getLocation();
+    Location workerLoc = context.getWorkerManager().getWorker(workerAttemptId.getWorkerId())
+      .getWorkerAttempt(workerAttemptId).getLocation();
     LOG.debug("workerLoc= " + workerLoc.toString());
     this.worker = connection.getWorkerService(workerLoc.getIp(), workerLoc.getPort());
   }
 
-  @Override
-  public String getThreadStack() throws ServiceException {
+  @Override public String getThreadStack() throws ServiceException {
     WorkerProtocol workerProtocol = getWorker();
     GetThreadStackRequest request = GetThreadStackRequest.newBuilder().build();
     LOG.info("the class of workerProtocol is " + workerProtocol.getClass());

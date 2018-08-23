@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.worker;
 
 import com.tencent.angel.ipc.VersionedProtocol;
@@ -24,8 +25,9 @@ import com.tencent.angel.protobuf.generated.WorkerWorkerServiceProtos.WorkerWork
 /**
  * The Worker protocol.
  */
-public interface WorkerProtocol extends WorkerWorkerService.BlockingInterface,MasterWorkerService.BlockingInterface,
-        VersionedProtocol {
+public interface WorkerProtocol
+  extends WorkerWorkerService.BlockingInterface, MasterWorkerService.BlockingInterface,
+  VersionedProtocol {
   /**
    * The VERSION.
    */

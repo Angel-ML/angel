@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.worker;
 
 import com.tencent.angel.common.Id;
@@ -43,6 +44,7 @@ public class WorkerAttemptId extends Id {
   /**
    * Instantiates a new Worker attempt id.
    * <p> the 'idStr' must match <code>WorkerAttempt_XXX_XXX_XXX</code>
+   *
    * @param idStr the id str
    * @throws UnvalidIdStrException
    */
@@ -53,8 +55,9 @@ public class WorkerAttemptId extends Id {
 
     String[] idElemts = idStr.split(SEPARATOR);
     if (idElemts.length != 4 || !idElemts[0].equals(WORKERATTEMPT)) {
-      throw new UnvalidIdStrException("unvalid id str " + idStr + ", must be like this:" + WORKERATTEMPT
-          + SEPARATOR + "workerGroupIndex" + SEPARATOR + "workerIndex" + SEPARATOR + "attemptIndex");
+      throw new UnvalidIdStrException(
+        "unvalid id str " + idStr + ", must be like this:" + WORKERATTEMPT + SEPARATOR
+          + "workerGroupIndex" + SEPARATOR + "workerIndex" + SEPARATOR + "attemptIndex");
     }
 
     try {
@@ -62,9 +65,10 @@ public class WorkerAttemptId extends Id {
       workerId = new WorkerId(workerGroupId, Integer.valueOf(idElemts[2]));
       index = Integer.valueOf(idElemts[3]);
     } catch (Exception x) {
-      throw new UnvalidIdStrException("unvalid id str " + idStr + " " + x.getMessage()
-          + ", must be like this:" + WORKERATTEMPT + SEPARATOR + "workerGroupIndex" + SEPARATOR
-          + "workerIndex" + SEPARATOR + "attemptIndex");
+      throw new UnvalidIdStrException(
+        "unvalid id str " + idStr + " " + x.getMessage() + ", must be like this:" + WORKERATTEMPT
+          + SEPARATOR + "workerGroupIndex" + SEPARATOR + "workerIndex" + SEPARATOR
+          + "attemptIndex");
     }
   }
 
@@ -81,21 +85,18 @@ public class WorkerAttemptId extends Id {
     return workerId.appendTo(builder).append(SEPARATOR).append(index);
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return appendTo(new StringBuilder(WORKERATTEMPT)).toString();
   }
-  
-  @Override
-  public int hashCode() {
+
+  @Override public int hashCode() {
     final int prime = 31;
     int result = super.hashCode();
     result = prime * result + ((workerId == null) ? 0 : workerId.hashCode());
     return result;
   }
 
-  @Override
-  public boolean equals(Object obj) {
+  @Override public boolean equals(Object obj) {
     if (this == obj)
       return true;
     if (!super.equals(obj))

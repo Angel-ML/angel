@@ -1,20 +1,21 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Tencent is pleased to support the open source community by making Angel available.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
  */
+
+
 package com.tencent.angel.io.retry;
 
 import com.google.protobuf.ServiceException;
@@ -38,8 +39,7 @@ public class RetryPolicies {
   public static final Logger LOG = LoggerFactory.getLogger(RetryPolicies.class);
 
   private static ThreadLocal<Random> RANDOM = new ThreadLocal<Random>() {
-    @Override
-    protected Random initialValue() {
+    @Override protected Random initialValue() {
       return new Random();
     }
   };
@@ -66,7 +66,7 @@ public class RetryPolicies {
    * </p>
    */
   public static final RetryPolicy retryUpToMaximumCountWithFixedSleep(int maxRetries,
-      long sleepTime, TimeUnit timeUnit) {
+    long sleepTime, TimeUnit timeUnit) {
     return new RetryUpToMaximumCountWithFixedSleep(maxRetries, sleepTime, timeUnit);
   }
 
@@ -77,7 +77,7 @@ public class RetryPolicies {
    * </p>
    */
   public static final RetryPolicy retryUpToMaximumTimeWithFixedSleep(long maxTime, long sleepTime,
-      TimeUnit timeUnit) {
+    TimeUnit timeUnit) {
     return new RetryUpToMaximumTimeWithFixedSleep(maxTime, sleepTime, timeUnit);
   }
 
@@ -89,7 +89,7 @@ public class RetryPolicies {
    * </p>
    */
   public static final RetryPolicy retryUpToMaximumCountWithProportionalSleep(int maxRetries,
-      long sleepTime, TimeUnit timeUnit) {
+    long sleepTime, TimeUnit timeUnit) {
     return new RetryUpToMaximumCountWithProportionalSleep(maxRetries, sleepTime, timeUnit);
   }
 
@@ -101,7 +101,7 @@ public class RetryPolicies {
    * </p>
    */
   public static final RetryPolicy exponentialBackoffRetry(int maxRetries, long sleepTime,
-      TimeUnit timeUnit) {
+    TimeUnit timeUnit) {
     return new ExponentialBackoffRetry(maxRetries, sleepTime, timeUnit);
   }
 
@@ -111,7 +111,7 @@ public class RetryPolicies {
    * </p>
    */
   public static final RetryPolicy retryByException(RetryPolicy defaultPolicy,
-      Map<Class<? extends Exception>, RetryPolicy> exceptionToPolicyMap) {
+    Map<Class<? extends Exception>, RetryPolicy> exceptionToPolicyMap) {
     return new ExceptionDependentRetry(defaultPolicy, exceptionToPolicyMap);
   }
 
@@ -122,7 +122,7 @@ public class RetryPolicies {
    * </p>
    */
   public static final RetryPolicy retryByRemoteException(RetryPolicy defaultPolicy,
-      Map<Class<? extends Exception>, RetryPolicy> exceptionToPolicyMap) {
+    Map<Class<? extends Exception>, RetryPolicy> exceptionToPolicyMap) {
     return new RemoteExceptionDependentRetry(defaultPolicy, exceptionToPolicyMap);
   }
 
@@ -131,42 +131,42 @@ public class RetryPolicies {
   }
 
   public static final RetryPolicy failoverOnNetworkException(RetryPolicy fallbackPolicy,
-      int maxFailovers) {
+    int maxFailovers) {
     return failoverOnNetworkException(fallbackPolicy, maxFailovers, 0, 0);
   }
 
   public static final RetryPolicy failoverOnNetworkException(RetryPolicy fallbackPolicy,
-      int maxFailovers, long delayMillis, long maxDelayBase) {
+    int maxFailovers, long delayMillis, long maxDelayBase) {
     return new FailoverOnNetworkExceptionRetry(fallbackPolicy, maxFailovers, delayMillis,
-        maxDelayBase);
+      maxDelayBase);
   }
 
   public static final RetryPolicy failoverOnNetworkException(RetryPolicy fallbackPolicy,
-      int maxFailovers, int maxRetries, long delayMillis, long maxDelayBase) {
+    int maxFailovers, int maxRetries, long delayMillis, long maxDelayBase) {
     return new FailoverOnNetworkExceptionRetry(fallbackPolicy, maxFailovers, maxRetries,
-        delayMillis, maxDelayBase);
+      delayMillis, maxDelayBase);
   }
 
   static class TryOnceThenFail implements RetryPolicy {
-    @Override
-    public RetryAction shouldRetry(Exception e, int retries, int failovers,
-        boolean isIdempotentOrAtMostOnce) throws Exception {
+    @Override public RetryAction shouldRetry(Exception e, int retries, int failovers,
+      boolean isIdempotentOrAtMostOnce) throws Exception {
       return RetryAction.FAIL;
     }
   }
 
+
   static class RetryForever implements RetryPolicy {
-    @Override
-    public RetryAction shouldRetry(Exception e, int retries, int failovers,
-        boolean isIdempotentOrAtMostOnce) throws Exception {
+    @Override public RetryAction shouldRetry(Exception e, int retries, int failovers,
+      boolean isIdempotentOrAtMostOnce) throws Exception {
       return RetryAction.RETRY;
     }
   }
 
+
   /**
    * Retry up to maxRetries. The actual sleep time of the n-th retry is f(n, sleepTime), where f is
    * a function provided by the subclass implementation.
-   *
+   * <p>
    * The object of the subclasses should be immutable; otherwise, the subclass must override
    * hashCode(), equals(..) and toString().
    */
@@ -190,25 +190,22 @@ public class RetryPolicies {
       this.timeUnit = timeUnit;
     }
 
-    @Override
-    public RetryAction shouldRetry(Exception e, int retries, int failovers,
-        boolean isIdempotentOrAtMostOnce) throws Exception {
+    @Override public RetryAction shouldRetry(Exception e, int retries, int failovers,
+      boolean isIdempotentOrAtMostOnce) throws Exception {
       if (retries >= maxRetries) {
         return RetryAction.FAIL;
       }
       return new RetryAction(RetryAction.RetryDecision.RETRY,
-          timeUnit.toMillis(calculateSleepTime(retries)));
+        timeUnit.toMillis(calculateSleepTime(retries)));
     }
 
     protected abstract long calculateSleepTime(int retries);
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
       return toString().hashCode();
     }
 
-    @Override
-    public boolean equals(final Object that) {
+    @Override public boolean equals(final Object that) {
       if (this == that) {
         return true;
       } else if (that == null || this.getClass() != that.getClass()) {
@@ -217,27 +214,27 @@ public class RetryPolicies {
       return this.toString().equals(that.toString());
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       if (myString == null) {
         myString =
-            getClass().getSimpleName() + "(maxRetries=" + maxRetries + ", sleepTime=" + sleepTime
-                + " " + timeUnit + ")";
+          getClass().getSimpleName() + "(maxRetries=" + maxRetries + ", sleepTime=" + sleepTime
+            + " " + timeUnit + ")";
       }
       return myString;
     }
   }
+
 
   static class RetryUpToMaximumCountWithFixedSleep extends RetryLimited {
     public RetryUpToMaximumCountWithFixedSleep(int maxRetries, long sleepTime, TimeUnit timeUnit) {
       super(maxRetries, sleepTime, timeUnit);
     }
 
-    @Override
-    protected long calculateSleepTime(int retries) {
+    @Override protected long calculateSleepTime(int retries) {
       return sleepTime;
     }
   }
+
 
   static class RetryUpToMaximumTimeWithFixedSleep extends RetryUpToMaximumCountWithFixedSleep {
     public RetryUpToMaximumTimeWithFixedSleep(long maxTime, long sleepTime, TimeUnit timeUnit) {
@@ -245,30 +242,33 @@ public class RetryPolicies {
     }
   }
 
+
   static class RetryUpToMaximumCountWithProportionalSleep extends RetryLimited {
     public RetryUpToMaximumCountWithProportionalSleep(int maxRetries, long sleepTime,
-        TimeUnit timeUnit) {
+      TimeUnit timeUnit) {
       super(maxRetries, sleepTime, timeUnit);
     }
 
-    @Override
-    protected long calculateSleepTime(int retries) {
+    @Override protected long calculateSleepTime(int retries) {
       return sleepTime * (retries + 1);
     }
   }
+
 
   /**
    * Given pairs of number of retries and sleep time (n0, t0), (n1, t1), ..., the first n0 retries
    * sleep t0 milliseconds on average, the following n1 retries sleep t1 milliseconds on average,
    * and so on.
-   * 
+   * <p>
    * For all the sleep, the actual sleep time is randomly uniform distributed in the close interval
    * [0.5t, 1.5t], where t is the sleep time specified.
-   *
+   * <p>
    * The objects of this class are immutable.
    */
   public static class MultipleLinearRandomRetry implements RetryPolicy {
-    /** Pairs of numRetries and sleepSeconds */
+    /**
+     * Pairs of numRetries and sleepSeconds
+     */
     public static class Pair {
       final int numRetries;
       final int sleepMillis;
@@ -285,11 +285,11 @@ public class RetryPolicies {
         this.sleepMillis = sleepMillis;
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return numRetries + "x" + sleepMillis + "ms";
       }
     }
+
 
     private final List<Pair> pairs;
     private String myString;
@@ -301,9 +301,8 @@ public class RetryPolicies {
       this.pairs = Collections.unmodifiableList(pairs);
     }
 
-    @Override
-    public RetryAction shouldRetry(Exception e, int curRetry, int failovers,
-        boolean isIdempotentOrAtMostOnce) throws Exception {
+    @Override public RetryAction shouldRetry(Exception e, int curRetry, int failovers,
+      boolean isIdempotentOrAtMostOnce) throws Exception {
       final Pair p = searchPair(curRetry);
       if (p == null) {
         // no more retries.
@@ -318,9 +317,9 @@ public class RetryPolicies {
 
     /**
      * Given the current number of retry, search the corresponding pair.
-     * 
+     *
      * @return the corresponding pair, or null if the current number of retry > maximum number of
-     *         retry.
+     * retry.
      */
     private Pair searchPair(int curRetry) {
       int i = 0;
@@ -330,13 +329,11 @@ public class RetryPolicies {
       return i == pairs.size() ? null : pairs.get(i);
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
       return toString().hashCode();
     }
 
-    @Override
-    public boolean equals(final Object that) {
+    @Override public boolean equals(final Object that) {
       if (this == that) {
         return true;
       } else if (that == null || this.getClass() != that.getClass()) {
@@ -345,8 +342,7 @@ public class RetryPolicies {
       return this.toString().equals(that.toString());
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       if (myString == null) {
         myString = getClass().getSimpleName() + pairs;
       }
@@ -368,14 +364,14 @@ public class RetryPolicies {
       }
       if (elements.length % 2 != 0) {
         LOG.warn("Illegal value: the number of elements in \"" + s + "\" is " + elements.length
-            + " but an even number of elements is expected.");
+          + " but an even number of elements is expected.");
         return null;
       }
 
       final List<RetryPolicies.MultipleLinearRandomRetry.Pair> pairs =
-          new ArrayList<RetryPolicies.MultipleLinearRandomRetry.Pair>();
+        new ArrayList<RetryPolicies.MultipleLinearRandomRetry.Pair>();
 
-      for (int i = 0; i < elements.length;) {
+      for (int i = 0; i < elements.length; ) {
         // parse the i-th sleep-time
         final int sleep = parsePositiveInt(elements, i++, s);
         if (sleep == -1) {
@@ -395,29 +391,31 @@ public class RetryPolicies {
 
     /**
      * Parse the i-th element as an integer.
-     * 
+     *
      * @return -1 if the parsing fails or the parsed value <= 0; otherwise, return the parsed value.
      */
     private static int parsePositiveInt(final String[] elements, final int i,
-        final String originalString) {
+      final String originalString) {
       final String s = elements[i].trim();
       final int n;
       try {
         n = Integer.parseInt(s);
       } catch (NumberFormatException nfe) {
         LOG.warn("Failed to parse \"" + s + "\", which is the index " + i + " element in \""
-            + originalString + "\"", nfe);
+          + originalString + "\"", nfe);
         return -1;
       }
 
       if (n <= 0) {
-        LOG.warn("The value " + n + " <= 0: it is parsed from the string \"" + s
-            + "\" which is the index " + i + " element in \"" + originalString + "\"");
+        LOG.warn(
+          "The value " + n + " <= 0: it is parsed from the string \"" + s + "\" which is the index "
+            + i + " element in \"" + originalString + "\"");
         return -1;
       }
       return n;
     }
   }
+
 
   static class ExceptionDependentRetry implements RetryPolicy {
 
@@ -425,14 +423,13 @@ public class RetryPolicies {
     Map<Class<? extends Exception>, RetryPolicy> exceptionToPolicyMap;
 
     public ExceptionDependentRetry(RetryPolicy defaultPolicy,
-        Map<Class<? extends Exception>, RetryPolicy> exceptionToPolicyMap) {
+      Map<Class<? extends Exception>, RetryPolicy> exceptionToPolicyMap) {
       this.defaultPolicy = defaultPolicy;
       this.exceptionToPolicyMap = exceptionToPolicyMap;
     }
 
-    @Override
-    public RetryAction shouldRetry(Exception e, int retries, int failovers,
-        boolean isIdempotentOrAtMostOnce) throws Exception {
+    @Override public RetryAction shouldRetry(Exception e, int retries, int failovers,
+      boolean isIdempotentOrAtMostOnce) throws Exception {
       RetryPolicy policy = exceptionToPolicyMap.get(e.getClass());
       if (policy == null) {
         policy = defaultPolicy;
@@ -442,13 +439,14 @@ public class RetryPolicies {
 
   }
 
+
   static class RemoteExceptionDependentRetry implements RetryPolicy {
 
     RetryPolicy defaultPolicy;
     Map<String, RetryPolicy> exceptionNameToPolicyMap;
 
     public RemoteExceptionDependentRetry(RetryPolicy defaultPolicy,
-        Map<Class<? extends Exception>, RetryPolicy> exceptionToPolicyMap) {
+      Map<Class<? extends Exception>, RetryPolicy> exceptionToPolicyMap) {
       this.defaultPolicy = defaultPolicy;
       this.exceptionNameToPolicyMap = new HashMap<String, RetryPolicy>();
       for (Entry<Class<? extends Exception>, RetryPolicy> e : exceptionToPolicyMap.entrySet()) {
@@ -456,9 +454,8 @@ public class RetryPolicies {
       }
     }
 
-    @Override
-    public RetryAction shouldRetry(Exception e, int retries, int failovers,
-        boolean isIdempotentOrAtMostOnce) throws Exception {
+    @Override public RetryAction shouldRetry(Exception e, int retries, int failovers,
+      boolean isIdempotentOrAtMostOnce) throws Exception {
       RetryPolicy policy = null;
       if (e instanceof RemoteException) {
         policy = exceptionNameToPolicyMap.get(((RemoteException) e).getClassName());
@@ -469,6 +466,7 @@ public class RetryPolicies {
       return policy.shouldRetry(e, retries, failovers, isIdempotentOrAtMostOnce);
     }
   }
+
 
   static class ExponentialBackoffRetry extends RetryLimited {
 
@@ -483,23 +481,23 @@ public class RetryPolicies {
       }
     }
 
-    @Override
-    protected long calculateSleepTime(int retries) {
+    @Override protected long calculateSleepTime(int retries) {
       return calculateExponentialTime(sleepTime, retries + 1);
     }
   }
+
 
   /**
    * Fail over and retry in the case of: Remote StandbyException (server is up, but is not the
    * active server) Immediate socket exceptions (e.g. no route to host, econnrefused) Socket
    * exceptions after initial connection when operation is idempotent
-   * 
+   * <p>
    * The first failover is immediate, while all subsequent failovers wait an
    * exponentially-increasing random amount of time.
-   * 
+   * <p>
    * Fail immediately in the case of: Socket exceptions after initial connection when operation is
    * not idempotent
-   * 
+   * <p>
    * Fall back on underlying retry policy otherwise.
    */
   static class FailoverOnNetworkExceptionRetry implements RetryPolicy {
@@ -515,12 +513,12 @@ public class RetryPolicies {
     }
 
     public FailoverOnNetworkExceptionRetry(RetryPolicy fallbackPolicy, int maxFailovers,
-        long delayMillis, long maxDelayBase) {
+      long delayMillis, long maxDelayBase) {
       this(fallbackPolicy, maxFailovers, 0, delayMillis, maxDelayBase);
     }
 
     public FailoverOnNetworkExceptionRetry(RetryPolicy fallbackPolicy, int maxFailovers,
-        int maxRetries, long delayMillis, long maxDelayBase) {
+      int maxRetries, long delayMillis, long maxDelayBase) {
       this.fallbackPolicy = fallbackPolicy;
       this.maxFailovers = maxFailovers;
       this.maxRetries = maxRetries;
@@ -530,19 +528,17 @@ public class RetryPolicies {
 
     /**
      * @return 0 if this is our first failover/retry (i.e., retry immediately), sleep exponentially
-     *         otherwise
+     * otherwise
      */
     private long getFailoverOrRetrySleepTime(int times) {
       return times == 0 ? 0 : calculateExponentialTime(delayMillis, times, maxDelayBase);
     }
 
-    @Override
-    public RetryAction shouldRetry(Exception e, int retries, int failovers,
-        boolean isIdempotentOrAtMostOnce) throws Exception {
-      if ((e instanceof ServiceException) && (e.getCause() != null)
-          && (e.getCause() instanceof IOException /** 连接丢失异常 */
-          || e.getCause() instanceof StandbyException /** 非Master异常 */
-          )) {
+    @Override public RetryAction shouldRetry(Exception e, int retries, int failovers,
+      boolean isIdempotentOrAtMostOnce) throws Exception {
+      if ((e instanceof ServiceException) && (e.getCause() != null) && (
+        e.getCause() instanceof IOException /** 连接丢失异常 */ || e
+          .getCause() instanceof StandbyException /** 非Master异常 */)) {
         return new RetryAction(RetryAction.RetryDecision.FAILOVER_AND_RETRY, 0);
       } else {
         return fallbackPolicy.shouldRetry(e, retries, failovers, isIdempotentOrAtMostOnce);
@@ -553,10 +549,10 @@ public class RetryPolicies {
   /**
    * Return a value which is <code>time</code> increasing exponentially as a function of
    * <code>retries</code>, +/- 0%-50% of that value, chosen randomly.
-   * 
-   * @param time the base amount of time to work with
+   *
+   * @param time    the base amount of time to work with
    * @param retries the number of retries that have so occurred so far
-   * @param cap value at which to cap the base sleep time
+   * @param cap     value at which to cap the base sleep time
    * @return an amount of time to sleep
    */
   private static long calculateExponentialTime(long time, int retries, long cap) {

@@ -1,30 +1,13 @@
 # Spark on Angel Quick Start
 
-Spark on Angel supports Yarn and Local modes, allowing users to debug the applications on local. A Spark on Angel application is essentially a Spark application with one auxiliary application. Once an application has been successfully submitted, there will be two applications shown on Yarn: the Spark application and the Angel-PS application.
-
 ## Deployment Steps
-1. Install Spark
-2. Unzip angel-\<version\>-bin.zip
-3. Set `SPARK_HOME`, `ANGEL_HOME`, `ANGEL_HDFS_HOME` variables in angel-<version>-bin/bin/spark-on-angel-env.sh
-4. Upload angel-\<version\>-bin dir to the HDFS path
+- Install Spark 
+- Unzip angel-\<version\>-bin.zip
+- Upload angel-\<version\>-bin dir to the HDFS path
+- Set SPARK_HOME, ANGEL_HOME, ANGEL_HDFS_HOME variables in angel-<version>-bin/bin/spark-on-angel-env.sh
 
-## Submit a Spark on Angel Job
-Once a Spark on Angel application has been packaged, it can be launched by the spark-submit script; make sure to do the following:
-
-- source ./spark-on-angel-env.sh
-- set location for the jar: spark.ps.jars=$SONA_ANGEL_JARS and --jars $SONA_SPARK_JARS
-- set the Angel PS resource parameters: spark.ps.instance, spark.ps.cores, spark.ps.memory
-
-
-## Running Example (BreezeSGD)
-
-```bash
-#! /bin/bash
-- cd angel-<version>-bin/bin; 
-- ./SONA-example
-```
-
-The script is:
+## Running Examples
+- cd angel-\<version\>-bin/bin; ./SONA-example
 
 ```bash
 #! /bin/bash
@@ -35,7 +18,7 @@ $SPARK_HOME/bin/spark-submit \
     --conf spark.ps.instances=10 \
     --conf spark.ps.cores=2 \
     --conf spark.ps.memory=6g \
-    --queue g_teg_angel-offline \
+    --queue g_teg_angel.g_teg_angel-offline \
     --jars $SONA_SPARK_JARS \
     --name "BreezeSGD-spark-on-angel" \
     --driver-memory 10g \
@@ -46,31 +29,50 @@ $SPARK_HOME/bin/spark-submit \
     ./../lib/spark-on-angel-examples-${ANGEL_VERSION}.jar
 ```
 
-## Minimal Example of LR in Spark on Angel Verion
+## How to submit a Spark on Angel Job
+Spark on Angel job is essentially a Spark application. After a Spark on Angel application is bundled, it can be launched by the spark-submit script; however, there are a few differences：
+- source ./spark-on-angel-env.sh
+- set spark.ps.jars=$SONA_ANGEL_JARS and --jars $SONA_SPARK_JARS
+- spark.ps.instance，spark.ps.cores，spark.ps.memory are the resource-allocation variables for Angel PS
 
-[Complete Code](https://github.com/Tencent/angel/blob/branch-1.3.0/spark-on-angel/examples/src/main/scala/com/tencent/angel/spark/examples/ml/AngelLR.scala)
+Once you have successfully submitted your job，YARN will show two applications: the Spark application and the Angel-PS application
 
-```scala
-   PSContext.getOrCreate(sc)
+## Supported Modes
+Support both YARN mode and Local mode
 
-   val psW = PSVector.dense(dim)
-   val psG = PSVector.duplicate(psW)
+## Example Code: Implementing Gradient Descent with Angel PS
 
-   println("Initial psW: " + psW.dimension)
+A simple example is shown below
+
+```Scala
+
+   val points:RDD[Point] = _
+
+   val wPS = PSVector.dense(DIM).fill(0.0)
+   val gradientPS = PSVector.dense(DIM).fill(0.0)
 
    for (i <- 1 to ITERATIONS) {
-     println("On iteration " + i)
+     val totalG = gradientPS.toCache
 
-     val localW = new DenseVector(psW.pull())
+   val trigger = points.mapPartitions { iter =>
+     val brzW = new DenseVector(wPS.pull())
 
-     trainData.map { case (x, label) =>
-       val g = -label * (1 - 1.0 / (1.0 + math.exp(-label * localW.dot(x)))) * x
-       psG.increment(g.toArray)
-     }.count()
+     val subG = iter.map { p =>
+       p.x * (1 / (1 + math.exp(-p.y * brzW.dot(p.x))) - 1) * p.y
+     }.reduce(_ + _)
 
-     psW.toBreeze -= (psG.toBreeze :* (1.0 / sampleNum))
-     psG.zero()
-    }
+     totalG.push(subG.toArray())
+     Iterator.empty
+      }
+     trigger.count()
 
-   println(s"Final psW: ${psW.pull().mkString(" ")}")
+     wPS.toBreeze += -1.0 * gradientPS.toBreeze
+     gradientPS.fill(0.0)
+   }
+
+   println("feature sum:" + wPS.pull())
+
+   gradientPS.delete()
+   wPS.delete()
+  }
 ```

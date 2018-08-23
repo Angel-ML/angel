@@ -15,10 +15,11 @@
  *
  */
 
+
 package com.tencent.angel.spark.context
 
-import com.tencent.angel.spark.models.vector.cache.PushMan
-import com.tencent.angel.spark.models.vector.{PSVector, VectorType}
+import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.spark.models.vector.{PSVector, VectorCacheManager}
 import com.tencent.angel.spark.{PSFunSuite, SharedPSContext}
 
 class PSVectorPoolSuite extends PSFunSuite with SharedPSContext {
@@ -26,7 +27,7 @@ class PSVectorPoolSuite extends PSFunSuite with SharedPSContext {
   test("allocate") {
     val dim = 10
     val capacity = 10
-    val pool = new PSVectorPool(0, dim, capacity, VectorType.DENSE)
+    val pool = new PSVectorPool(0, dim, capacity, RowType.T_DOUBLE_DENSE)
 
     var proxys: Array[PSVector] = null
 
@@ -72,15 +73,15 @@ class PSVectorPoolSuite extends PSFunSuite with SharedPSContext {
     }
 
     vectorArray.foreach { v =>
-//      v.toCache.pullFromCache()
-//      v.toCache.incrementWithCache(Array.fill(dim)(1.0))
-//      v.toBreeze :+= 0.1
+      //      v.toCache.pullFromCache()
+      //      v.toCache.incrementWithCache(Array.fill(dim)(1.0))
+      //      v.toBreeze :+= 0.1
     }
 
-    PushMan.flushAll()
+    VectorCacheManager.flushAll()
 
     vectorArray.foreach { v =>
-//      assert(v.pull().sameElements(Array.fill(dim)(1.1)))
+      //      assert(v.pull().sameElements(Array.fill(dim)(1.1)))
     }
 
     (capacity / 2 until capacity).foreach { i =>

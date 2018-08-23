@@ -15,23 +15,120 @@
  *
  */
 
+
 package com.tencent.angel.spark.ml.embedding
 
 class Param extends Serializable {
-  var partitionNum = 10
 
-  var window = 5
+  var partitionNum: Int = _
+  var windowSize: Int = _
+  var embeddingDim: Int = _
+  var negSample: Int = _
+  var learningRate: Float = _
+  var batchSize: Int = _
+  var numEpoch: Int = _
+  var maxIndex: Int = _
+  var sampleRate: Float = _
+  var numPSPart: Int = 1
+  var modelPath: String = _
+  var modelCPInterval: Int = Int.MaxValue
+  var order: Int = _
+  var nodesNumPerRow: Int = -1
+  var numRowDataSet: Option[Long] = None
+  var seed: Int = _
 
-  var vectorDim = 10
+  def setNumRowDataSet(numRowDataSet: Long): this.type = {
+    this.numRowDataSet = Some(numRowDataSet)
+    this
+  }
 
-  var negSample = 5
+  def setSeed(seed: Int): this.type = {
+    this.seed = seed
+    this
+  }
 
-  var learningRate = 1.0f
+  def setPartitionNum(partitionNum: Int): this.type = {
+    require(partitionNum > 0, s"require partitionNum > 0, $partitionNum given")
+    this.partitionNum = partitionNum
+    this
+  }
 
-  var maxEpoch = 1000
+  def setWindowSize(windowSize: Int): this.type = {
+    require(windowSize > 0, s"require windowSize > 0, $windowSize given")
+    this.windowSize = windowSize
+    this
+  }
 
-  var vocaSize = 100
+  def setEmbeddingDim(embeddingDim: Int): this.type = {
+    require(embeddingDim > 0, s"require embedding dimension > 0, $embeddingDim given")
+    this.embeddingDim = embeddingDim
+    this
+  }
 
-  var sampleRate = 0.1
+  def setNegSample(negSample: Int): this.type = {
+    require(negSample > 0, s"require num of negative sample > 0, $negSample given")
+    this.negSample = negSample
+    this
+  }
+
+  def setLearningRate(learningRate: Float): this.type = {
+    require(learningRate > 0, s"require learning rate > 0, $learningRate given")
+    this.learningRate = learningRate
+    this
+  }
+
+  def setBatchSize(batchSize: Int): this.type = {
+    require(batchSize > 0, s"require batch size > 0, $batchSize given")
+    this.batchSize = batchSize
+    this
+  }
+
+  def setNumEpoch(numEpoch: Int): this.type = {
+    require(numEpoch > 0, s"require num of epoch > 0, $numEpoch given")
+    this.numEpoch = numEpoch
+    this
+  }
+
+  def setMaxIndex(maxIndex: Long): this.type = {
+    require(maxIndex > 0 && maxIndex < Int.MaxValue, s"require maxIndex > 0 && maxIndex < Int.maxValue, $maxIndex given")
+    this.maxIndex = maxIndex.toInt
+    this
+  }
+
+  def setSampleRate(sampleRate: Float): this.type = {
+    require(sampleRate > 0, s"sample rate belongs to [0, 1], $sampleRate given")
+    this.sampleRate = sampleRate
+    this
+  }
+
+  def setModelPath(modelPath: String): this.type = {
+    require(null != modelPath && modelPath.nonEmpty, s"require non empty path to save model, $modelPath given")
+    this.modelPath = modelPath
+    this
+  }
+
+  def setModelCPInterval(modelCPInterval: Int): this.type = {
+    require(modelCPInterval > 0, s"model checkpoint interval > 0, $modelCPInterval given")
+    this.modelCPInterval = modelCPInterval
+    this
+  }
+
+  def setOrder(order: Int): this.type = {
+    require(order == 1 || order == 2, s"order equals 1 or 2, $order given")
+    this.order = order
+    this
+  }
+
+  def setNumPSPart(numPSPart: Option[Int]): this.type = {
+    require(numPSPart.fold(true)(_ > 0), s"require num of PS part > 0, $numPSPart given")
+    numPSPart.foreach(this.numPSPart = _)
+    this
+  }
+
+  def setNodesNumPerRow(nodesNumPerRow: Option[Int]): this.type = {
+    nodesNumPerRow.foreach(this.nodesNumPerRow = _)
+    this
+  }
+
 
 }

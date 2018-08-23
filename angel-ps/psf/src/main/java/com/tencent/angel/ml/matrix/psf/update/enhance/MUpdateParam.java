@@ -15,10 +15,13 @@
  *
  */
 
+
 package com.tencent.angel.ml.matrix.psf.update.enhance;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.matrix.psf.common.Utils;
+import com.tencent.angel.ml.matrix.psf.Utils;
+import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
+import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
 import com.tencent.angel.psagent.PSAgentContext;
 import io.netty.buffer.ByteBuf;
 
@@ -31,53 +34,6 @@ import java.util.List;
  */
 public class MUpdateParam extends UpdateParam {
 
-  public static class MPartitionUpdateParam extends PartitionUpdateParam {
-    private int[] rowIds;
-
-    public MPartitionUpdateParam(
-        int matrixId, PartitionKey partKey, int[] rowIds) {
-      super(matrixId, partKey, false);
-      this.rowIds = rowIds;
-    }
-
-    public MPartitionUpdateParam() {
-      super();
-    }
-
-    @Override
-    public void serialize(ByteBuf buf) {
-      super.serialize(buf);
-      buf.writeInt(rowIds.length);
-      for (int rowId: rowIds){
-        buf.writeInt(rowId);
-      }
-    }
-
-    @Override
-    public void deserialize(ByteBuf buf) {
-      super.deserialize(buf);
-      int rowLength = buf.readInt();
-      rowIds = new int[rowLength];
-      for (int i = 0; i < rowLength; i++){
-        rowIds[i] = buf.readInt();
-      }
-    }
-
-    @Override
-    public int bufferLen() {
-      return super.bufferLen() + 4 + 4 * rowIds.length;
-    }
-
-    public int[] getRowIds() {
-      return rowIds;
-    }
-
-    @Override
-    public String toString() {
-      return "MPartitionUpdateParam [rowIds=" + Arrays.toString(rowIds) + ", toString()=" + super.toString() + "]";
-    }
-  }
-
   private final int[] rowIds;
 
   public MUpdateParam(int matrixId, int[] rowIds) {
@@ -85,11 +41,9 @@ public class MUpdateParam extends UpdateParam {
     this.rowIds = rowIds;
   }
 
-  @Override
-  public List<PartitionUpdateParam> split() {
-    List<PartitionKey> partList = PSAgentContext.get()
-        .getMatrixMetaManager()
-        .getPartitions(matrixId);
+  @Override public List<PartitionUpdateParam> split() {
+    List<PartitionKey> partList =
+      PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
 
     int size = partList.size();
     List<PartitionUpdateParam> partParams = new ArrayList<PartitionUpdateParam>(size);
@@ -103,6 +57,49 @@ public class MUpdateParam extends UpdateParam {
     }
 
     return partParams;
+  }
+
+  public static class MPartitionUpdateParam extends PartitionUpdateParam {
+    private int[] rowIds;
+
+    public MPartitionUpdateParam(int matrixId, PartitionKey partKey, int[] rowIds) {
+      super(matrixId, partKey, false);
+      this.rowIds = rowIds;
+    }
+
+    public MPartitionUpdateParam() {
+      super();
+    }
+
+    @Override public void serialize(ByteBuf buf) {
+      super.serialize(buf);
+      buf.writeInt(rowIds.length);
+      for (int rowId : rowIds) {
+        buf.writeInt(rowId);
+      }
+    }
+
+    @Override public void deserialize(ByteBuf buf) {
+      super.deserialize(buf);
+      int rowLength = buf.readInt();
+      rowIds = new int[rowLength];
+      for (int i = 0; i < rowLength; i++) {
+        rowIds[i] = buf.readInt();
+      }
+    }
+
+    @Override public int bufferLen() {
+      return super.bufferLen() + 4 + 4 * rowIds.length;
+    }
+
+    public int[] getRowIds() {
+      return rowIds;
+    }
+
+    @Override public String toString() {
+      return "MPartitionUpdateParam [rowIds=" + Arrays.toString(rowIds) + ", toString()=" + super
+        .toString() + "]";
+    }
   }
 
 }

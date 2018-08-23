@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.client;
 
 import com.google.protobuf.ServiceException;
@@ -25,6 +26,7 @@ import com.google.protobuf.ServiceException;
 public interface PSClientInterface {
   /**
    * Get thread stack of ps
+   *
    * @return thread stack
    * @throws ServiceException
    */

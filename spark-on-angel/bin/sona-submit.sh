@@ -6,12 +6,13 @@
 # 3. upload angel-<version>-bin directory to HDFS
 # 4. set the following variables, ANGEL_HOME, ANGEL_HDFS_HOME, ANGEL_VERSION
 
-export ANGEL_HOME=<Angel/Home>
-export ANGEL_HDFS_HOME=<Angel/HDFS/Home>
-export ANGEL_VERSION=<Version>
+export ANGEL_VERSION=2.3.0
+export ANGEL_HOME=/data/tesla/angel/angel
+export ANGEL_HDFS_HOME=hdfs://tl-nn-tdw.tencent-distribute.com:54310/user/spark-on-angel/angel-${ANGEL_VERSION}-bin
+
 
 scala_jar=scala-library-2.11.8.jar
-external_jar=fastutil-7.1.0.jar,htrace-core-2.05.jar,sizeof-0.3.0.jar,kryo-shaded-4.0.0.jar,minlog-1.3.0.jar,sketches-core-0.8.1.jar,memory-0.8.1.jar,commons-pool-1.6.jar
+external_jar=fastutil-7.1.0.jar,htrace-core-2.05.jar,sizeof-0.3.0.jar,kryo-shaded-4.0.0.jar,minlog-1.3.0.jar,sketches-core-0.8.1.jar,memory-0.8.1.jar,commons-pool-1.6.jar,netty-all-4.1.1.Final.jar,hll-1.6.0.jar
 angel_ps_jar=angel-ps-core-${ANGEL_VERSION}.jar,angel-ps-mllib-${ANGEL_VERSION}.jar,angel-ps-examples-${ANGEL_VERSION}.jar,angel-ps-psf-${ANGEL_VERSION}.jar
 
 sona_jar=spark-on-angel-core-${ANGEL_VERSION}.jar,spark-on-angel-mllib-${ANGEL_VERSION}.jar
@@ -43,7 +44,7 @@ done
 echo SONA_SPARK_JARS: $SONA_SPARK_JARS
 export SONA_SPARK_JARS
 
-command="$1 --conf spark.ps.jars=$SONA_ANGEL_JARS --jars $SONA_SPARK_JARS"
+command="$1 --driver-java-options=\"-XX:-DisableExplicitGC\" --conf spark.ps.jars=$SONA_ANGEL_JARS --jars $SONA_SPARK_JARS"
 
 is_first_parama=true
 is_jars=false
@@ -61,4 +62,4 @@ for param in "$@"; do
     fi
 done
 
-exec $command 
+exec $command

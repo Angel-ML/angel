@@ -15,41 +15,90 @@
  *
  */
 
+
 package com.tencent.angel.spark.models.vector
 
-import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
-import com.tencent.angel.spark.models.vector.enhanced._
-import com.tencent.angel.spark.models.PSModel
-import com.tencent.angel.spark.linalg.Vector
+import java.util.concurrent.Future
+
 import org.apache.spark.SparkException
 
-import com.tencent.angel.spark.models.vector.cache.Local2RemoteOps
+import com.tencent.angel.exception.AngelException
+import com.tencent.angel.ml.math2.VFactory
+import com.tencent.angel.ml.math2.vector.{IntDoubleVector, Vector}
+import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
+import com.tencent.angel.ml.matrix.psf.update._
+import com.tencent.angel.ml.matrix.psf.update.base.{UpdateFunc, VoidResult}
+import com.tencent.angel.psagent.matrix.{MatrixClient, MatrixClientFactory, ResponseType, Result}
+import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
+import com.tencent.angel.spark.models.PSModel
+import com.tencent.angel.spark.models.vector.enhanced._
+import com.tencent.angel.ml.matrix.psf.update.enhance.map.MapInPlace
+import com.tencent.angel.ml.matrix.psf.update.enhance.map.func.{Set => SetFunc}
 
 /**
- * PSVector is a vector store on the PS nodes, and PSVectorProxy is the proxy of PSVector.
- * PSVector has three forms: LocalPSVector, RemotePSVector and BreezePSVector,
- * these three forms of PSVector have implement a set of operations for different situation.
- * LocalPSVector implements the operations for PSVector local form.
- * RemotePSVector implements the operations between PSVector and local data.
- * BreezePSVector implements the operations among PSVectors on PS nodes.
- */
+  * PSVector is a vector store on the PS nodes, and PSVectorProxy is the proxy of PSVector.
+  * PSVector has three forms: LocalPSVector, RemotePSVector and BreezePSVector,
+  * these three forms of PSVector have implement a set of operations for different situation.
+  * LocalPSVector implements the operations for PSVector local form.
+  * RemotePSVector implements the operations between PSVector and local data.
+  * BreezePSVector implements the operations among PSVectors on PS nodes.
+  */
 
 abstract class PSVector extends PSModel {
-
-  @transient private var deleted = false
-
   val poolId: Int
   val id: Int
   val dimension: Long
+  val rowType: RowType
+  @transient private var deleted = false
 
-  def pull: Vector = Local2RemoteOps.pull(this)
+  def pull(): Vector = vectorPoolClient.getRow(id, true)
 
-  /**
-    * Generate a CachedPSVector for this PSVectorKey
-    */
-  def toCache: CachedPSVector = {
+  def pull(indices: Array[Long]): Vector = vectorPoolClient.get(id, indices)
+
+  def pull(indices: Array[Int]): Vector = vectorPoolClient.get(id, indices)
+
+  def increment(delta: Vector): this.type = {
+    vectorPoolClient.increment(id, delta, true)
+    this
+  }
+
+  def update(local: Vector): this.type = {
+    vectorPoolClient.update(id, local)
+    this
+  }
+
+  def push(local: Vector): this.type =
+    assertValid().reset.update(local)
+
+
+  def reset: this.type = {
+    psfUpdate(new Reset(poolId, id)).get()
+    this
+  }
+
+  private def vectorPoolClient: MatrixClient = {
     assertValid()
-    new CachedPSVector(this.getComponent)
+    PSContext.instance()
+    MatrixClientFactory.get(poolId, PSContext.getTaskId())
+  }
+
+  private[spark] def assertValid(): this.type = {
+    if (deleted)
+      throw new SparkException("This vector has been deleted!")
+    this
+  }
+
+  def psfUpdate(func: UpdateFunc): Future[VoidResult] = {
+    assertValid()
+    vectorPoolClient.update(func)
+  }
+
+  def psfGet(func: GetFunc): GetResult = {
+    assertValid()
+    val result = vectorPoolClient.get(func)
+    assertSuccess(result)
+    result
   }
 
   /**
@@ -61,8 +110,8 @@ abstract class PSVector extends PSModel {
   }
 
   /**
-   * Convert to DensePSVector
-   */
+    * Convert to DensePSVector
+    */
   def toDense: DensePSVector = {
     val component = getComponent
     component match {
@@ -72,8 +121,23 @@ abstract class PSVector extends PSModel {
   }
 
   /**
-   * Convert to SparsePSVector
-   */
+    * Generate a CachedPSVector for this PSVectorKey
+    */
+  def toCache: CachedPSVector = {
+    assertValid()
+    new CachedPSVector(this.getComponent)
+  }
+
+  private[spark] def getComponent: ConcretePSVector = {
+    this match {
+      case decorator: PSVectorDecorator => decorator.component
+      case concrete: ConcretePSVector => concrete
+    }
+  }
+
+  /**
+    * Convert to SparsePSVector
+    */
   def toSparse: SparsePSVector = {
     getComponent match {
       case sv: SparsePSVector => sv
@@ -104,11 +168,28 @@ abstract class PSVector extends PSModel {
     s"poolId: $poolId vectorId: $id"
   }
 
-  private[spark] def getComponent: ConcretePSVector = {
-    this match {
-      case decorator: PSVectorDecorator => decorator.component
-      case concrete: ConcretePSVector => concrete
+  def one(): this.type = {
+    fill(1.0)
+  }
+
+  /**
+    * Fill PSVectorKey with `value`
+    * Notice: it can only be called in th driver.
+    */
+  def fill(value: Double): this.type = {
+    assertValid()
+    psfUpdate(new MapInPlace(poolId, id, new SetFunc(value))).get()
+    this
+  }
+
+  private[spark] def assertSuccess(result: Result): Unit = {
+    if (result.getResponseType == ResponseType.FAILED) {
+      throw new AngelException("PS computation failed!")
     }
+  }
+
+  def zero(): this.type = {
+    fill(0.0)
   }
 
   private[spark] def assertCompatible(others: PSVector*): Unit = {
@@ -129,10 +210,16 @@ abstract class PSVector extends PSModel {
     }
   }
 
-  private[spark] def assertValid(): Unit = {
-    if (deleted) {
-      throw new SparkException("This vector has been deleted!")
-    }
+  def randomUniform(min: Double, max: Double): this.type = {
+    assertValid()
+    psfUpdate(new RandomUniform(poolId, id, min, max)).get()
+    this
+  }
+
+  def randomNormal(mean: Double, stddev: Double): this.type = {
+    assertValid()
+    psfUpdate(new RandomNormal(poolId, id, mean, stddev)).get()
+    this
   }
 
 }
@@ -143,25 +230,26 @@ object PSVector {
     PSContext.instance().duplicateVector(original).asInstanceOf[K]
   }
 
-  def dense(dim: Int, capacity: Int = 50): DensePSVector = {
-    DensePSVector.apply(dim, capacity)
+  def dense(dimension: Int, capacity: Int = 20, rowType: RowType = RowType.T_DOUBLE_DENSE): DensePSVector = {
+    PSContext.instance().createVector(dimension, rowType, capacity, dimension)
+      .asInstanceOf[DensePSVector]
   }
 
   /**
-   * @param maxRange if maxRange > 0, colId range is [0, maxRange),
-   *                 if maxRange = -1, colId range is (Long.MinValue, Long.MaxValue)
-   */
-  def longKeySparse(dim: Long, maxRange: Long, capacity: Int = 20): SparsePSVector = {
-    SparsePSVector.apply(dim, capacity, maxRange)
+    * @param maxRange if maxRange > 0, colId range is [0, maxRange),
+    *                 if maxRange = -1, colId range is (Long.MinValue, Long.MaxValue)
+    */
+  def longKeySparse(dim: Long, maxRange: Long, capacity: Int = 20, rowType: RowType = RowType.T_DOUBLE_SPARSE_LONGKEY): SparsePSVector = {
+    sparse(dim, capacity, maxRange, rowType)
   }
 
-  def sparse(dim: Long, capacity: Int = 20): SparsePSVector = {
-    SparsePSVector.apply(dim, capacity)
+  def sparse(dimension: Long, capacity: Int = 20, rowType: RowType = RowType.T_DOUBLE_SPARSE_LONGKEY): SparsePSVector = {
+    sparse(dimension, capacity, dimension, rowType)
   }
-}
 
+  def sparse(dimension: Long, capacity: Int, range: Long, rowType: RowType): SparsePSVector = {
+    PSContext.instance().createVector(dimension, rowType, capacity, range)
+      .asInstanceOf[SparsePSVector]
+  }
 
-object VectorType extends Enumeration {
-  type VectorType = Value
-  val DENSE, SPARSE = Value
 }

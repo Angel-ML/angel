@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.ml.matrix;
 
 import com.tencent.angel.ps.ParameterServerId;
@@ -53,7 +54,7 @@ public class MatrixMetaManager {
    */
   public void addMatrices(List<MatrixMeta> matrixMetas) {
     int size = matrixMetas.size();
-    for(int i = 0; i < size; i++) {
+    for (int i = 0; i < size; i++) {
       addMatrix(matrixMetas.get(i));
     }
   }
@@ -70,11 +71,12 @@ public class MatrixMetaManager {
 
   /**
    * Remove a matrix
+   *
    * @param matrixId matrix id
    */
   public void removeMatrix(int matrixId) {
     MatrixMeta meta = matrixIdToMetaMap.remove(matrixId);
-    if(meta != null) {
+    if (meta != null) {
       matrixNameToIdMap.remove(meta.getName());
     }
   }
@@ -111,7 +113,7 @@ public class MatrixMetaManager {
    */
   public MatrixMeta getMatrixMeta(String matrixName) {
     int matrixId = getMatrixId(matrixName);
-    if(matrixId == -1) {
+    if (matrixId == -1) {
       return null;
     } else {
       return matrixIdToMetaMap.get(matrixId);
@@ -138,6 +140,7 @@ public class MatrixMetaManager {
 
   /**
    * Is a matrix exist
+   *
    * @param matrixName matrix name
    * @return true means exist
    */
@@ -147,28 +150,33 @@ public class MatrixMetaManager {
 
   /**
    * Is a matrix exist
+   *
    * @param matrixId matrix id
    * @return true means exist
    */
-  public boolean exists(int matrixId) { return matrixIdToMetaMap.containsKey(matrixId); }
+  public boolean exists(int matrixId) {
+    return matrixIdToMetaMap.containsKey(matrixId);
+  }
 
   /**
    * Get all matrices meta
+   *
    * @return all matrices meta
    */
-  public Map<Integer,MatrixMeta> getMatrixMetas() {
+  public Map<Integer, MatrixMeta> getMatrixMetas() {
     return matrixIdToMetaMap;
   }
 
   /**
    * Get the stored pss for a matrix partition
+   *
    * @param matrixId matrix id
-   * @param partId partition id
+   * @param partId   partition id
    * @return the stored pss
    */
   public List<ParameterServerId> getPss(int matrixId, int partId) {
     MatrixMeta matrixMeta = matrixIdToMetaMap.get(matrixId);
-    if(matrixMeta == null) {
+    if (matrixMeta == null) {
       return null;
     }
 
@@ -177,10 +185,11 @@ public class MatrixMetaManager {
 
   /**
    * Remove the matrix
+   *
    * @param matrixName matrix name
    */
   public void removeMatrix(String matrixName) {
-    if(matrixNameToIdMap.containsKey(matrixName)) {
+    if (matrixNameToIdMap.containsKey(matrixName)) {
       int matrixId = matrixNameToIdMap.remove(matrixName);
       matrixIdToMetaMap.remove(matrixId);
     }
@@ -196,13 +205,14 @@ public class MatrixMetaManager {
 
   /**
    * Get the master stored ps for a matrix partition
+   *
    * @param matrixId matrix id
-   * @param partId partition id
+   * @param partId   partition id
    * @return the master stored ps
    */
   public ParameterServerId getMasterPs(int matrixId, int partId) {
     MatrixMeta matrixMeta = matrixIdToMetaMap.get(matrixId);
-    if(matrixMeta == null) {
+    if (matrixMeta == null) {
       return null;
     }
 
@@ -211,34 +221,37 @@ public class MatrixMetaManager {
 
   /**
    * Remove matrices
+   *
    * @param matrixIds matrix ids
    */
   public void removeMatrices(List<Integer> matrixIds) {
     int size = matrixIds.size();
-    for(int i = 0; i < size; i++) {
+    for (int i = 0; i < size; i++) {
       removeMatrix(matrixIds.get(i));
     }
   }
 
   /**
    * Remove the stored ps for all matrix partitions
+   *
    * @param psId ps id
    */
   public void removePs(ParameterServerId psId) {
-    for(MatrixMeta matrixMeta : matrixIdToMetaMap.values()) {
+    for (MatrixMeta matrixMeta : matrixIdToMetaMap.values()) {
       matrixMeta.removePs(psId);
     }
   }
 
   /**
    * Set the stored pss for a matrix partition
+   *
    * @param matrixId matrix id
-   * @param partId partition id
-   * @param psIds the stored pss
+   * @param partId   partition id
+   * @param psIds    the stored pss
    */
   public void setPss(int matrixId, int partId, List<ParameterServerId> psIds) {
     MatrixMeta matrixMeta = matrixIdToMetaMap.get(matrixId);
-    if(matrixMeta == null) {
+    if (matrixMeta == null) {
       return;
     }
 
@@ -247,13 +260,14 @@ public class MatrixMetaManager {
 
   /**
    * Add a the stored ps for a matrix partition
+   *
    * @param matrixId matrix id
    * @param partId
-   * @param psId ps id
+   * @param psId     ps id
    */
   public void addPs(int matrixId, int partId, ParameterServerId psId) {
     MatrixMeta matrixMeta = matrixIdToMetaMap.get(matrixId);
-    if(matrixMeta == null) {
+    if (matrixMeta == null) {
       return;
     }
 
@@ -262,12 +276,13 @@ public class MatrixMetaManager {
 
   /**
    * Get estimate sparsity
+   *
    * @param matrixId matrix id
    * @return estimate sparsity
    */
   public double getEstSparsity(int matrixId) {
     MatrixMeta meta = matrixIdToMetaMap.get(matrixId);
-    if(meta == null) {
+    if (meta == null) {
       return 1.0;
     } else {
       return meta.getEstSparsity();

@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master;
 
 import com.tencent.angel.client.AngelClient;
@@ -26,17 +27,15 @@ import com.tencent.angel.localcluster.LocalClusterContext;
 import com.tencent.angel.master.matrixmeta.AMMatrixMetaManager;
 import com.tencent.angel.master.task.AMTask;
 import com.tencent.angel.master.task.AMTaskManager;
-import com.tencent.angel.ml.math.vector.DenseDoubleVector;
+import com.tencent.angel.ml.math2.storage.IntDoubleDenseVectorStorage;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
 import com.tencent.angel.ml.matrix.*;
-import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
-import com.tencent.angel.ps.impl.MatrixStorageManager;
-import com.tencent.angel.ps.impl.PSContext;
-import com.tencent.angel.ps.impl.PSMatrixMetaManager;
-import com.tencent.angel.ps.impl.ParameterServer;
-import com.tencent.angel.ps.impl.matrix.ServerMatrix;
-import com.tencent.angel.ps.impl.matrix.ServerPartition;
+import com.tencent.angel.ps.ParameterServer;
+import com.tencent.angel.ps.meta.PSMatrixMetaManager;
+import com.tencent.angel.ps.storage.MatrixStorageManager;
+import com.tencent.angel.ps.storage.matrix.ServerMatrix;
 import com.tencent.angel.psagent.client.MasterClient;
 import com.tencent.angel.psagent.matrix.MatrixClient;
 import com.tencent.angel.psagent.task.TaskContext;
@@ -77,8 +76,7 @@ public class MatrixMetaManagerTest {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
-  @BeforeClass
-  public static void setup() throws Exception {
+  @BeforeClass public static void setup() throws Exception {
     try {
       // set basic configuration keys
       Configuration conf = new Configuration();
@@ -96,7 +94,7 @@ public class MatrixMetaManagerTest {
 
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
       conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 2);
-      conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 10000);
+      conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 100);
 
       // get a angel client
       angelClient = AngelClientFactory.get(conf);
@@ -112,7 +110,7 @@ public class MatrixMetaManagerTest {
       mMatrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       mMatrix.set(MatrixConf.MATRIX_HOGWILD, "true");
       mMatrix.set(MatrixConf.MATRIX_AVERAGE, "false");
-      mMatrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_INT");
+      mMatrix.set(MatrixConf.MATRIX_OPLOG_TYPE, RowType.T_DOUBLE_DENSE.name());
       angelClient.addMatrix(mMatrix);
 
       MatrixContext mMatrix2 = new MatrixContext();
@@ -125,7 +123,7 @@ public class MatrixMetaManagerTest {
       mMatrix2.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       mMatrix2.set(MatrixConf.MATRIX_HOGWILD, "false");
       mMatrix2.set(MatrixConf.MATRIX_AVERAGE, "false");
-      mMatrix2.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
+      mMatrix2.set(MatrixConf.MATRIX_OPLOG_TYPE, RowType.T_DOUBLE_DENSE.name());
       angelClient.addMatrix(mMatrix2);
 
       angelClient.startPSServer();
@@ -144,8 +142,7 @@ public class MatrixMetaManagerTest {
     }
   }
 
-  @Test
-  public void testMatrixMetaManager() throws  Exception{
+  @Test public void testMatrixMetaManager() throws Exception {
     try {
       LOG.info("===========================testMatrixMetaManager===============================");
       AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
@@ -191,9 +188,8 @@ public class MatrixMetaManagerTest {
   }
 
 
-  @Test
-  public void testCreateMatrix() throws Exception {
-    try{
+  @Test public void testCreateMatrix() throws Exception {
+    try {
       LOG.info("===========================testCreateMatrix===============================");
       Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
       MasterClient masterClient = worker.getPSAgent().getMasterClient();
@@ -211,7 +207,7 @@ public class MatrixMetaManagerTest {
       mMatrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       mMatrix.set(MatrixConf.MATRIX_HOGWILD, "true");
       mMatrix.set(MatrixConf.MATRIX_AVERAGE, "false");
-      mMatrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
+      mMatrix.set(MatrixConf.MATRIX_OPLOG_TYPE, RowType.T_DOUBLE_DENSE.name());
       masterClient.createMatrix(mMatrix, 10000);
 
       mMatrix.setName("w4");
@@ -223,7 +219,7 @@ public class MatrixMetaManagerTest {
       mMatrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       mMatrix.set(MatrixConf.MATRIX_HOGWILD, "true");
       mMatrix.set(MatrixConf.MATRIX_AVERAGE, "false");
-      mMatrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
+      mMatrix.set(MatrixConf.MATRIX_OPLOG_TYPE, RowType.T_DOUBLE_DENSE.name());
       masterClient.createMatrix(mMatrix, 10000);
 
       MatrixMeta w3Meta = worker.getPSAgent().getMatrixMetaManager().getMatrixMeta("w3");
@@ -239,8 +235,7 @@ public class MatrixMetaManagerTest {
 
       AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
       assertTrue(angelAppMaster != null);
-      AMMatrixMetaManager matrixMetaManager =
-        angelAppMaster.getAppContext().getMatrixMetaManager();
+      AMMatrixMetaManager matrixMetaManager = angelAppMaster.getAppContext().getMatrixMetaManager();
 
       MatrixMeta matrixw3Proto = matrixMetaManager.getMatrix("w3");
       MatrixMeta matrixw4Proto = matrixMetaManager.getMatrix("w4");
@@ -264,7 +259,7 @@ public class MatrixMetaManagerTest {
       assertEquals(w3Parts.get(1).getStartCol(), 50000);
       assertEquals(w3Parts.get(1).getEndCol(), 100000);
 
-      Map<Integer, PartitionMeta>  w4Parts = matrixw4Proto.getPartitionMetas();
+      Map<Integer, PartitionMeta> w4Parts = matrixw4Proto.getPartitionMetas();
       assertEquals(w4Parts.get(0).getPss().get(0), psId);
       assertEquals(w4Parts.get(0).getPartId(), 0);
       assertEquals(w4Parts.get(0).getStartRow(), 0);
@@ -316,22 +311,26 @@ public class MatrixMetaManagerTest {
 
       int iterIndex = 0;
       while (iterIndex < 5) {
-        DenseDoubleVector row1 = (DenseDoubleVector) w4ClientForTask0.getRow(0);
-        double sum1 = sum(row1.getValues());
-        LOG.info("taskid=" + task0Context.getIndex() + ", matrixId=" + w4ClientForTask0.getMatrixId()
-          + ", rowIndex=0, local row sum=" + sum1);
-        DenseDoubleVector deltaRow1 = new DenseDoubleVector(delta.length, delta);
+        IntDoubleVector row1 = (IntDoubleVector) w4ClientForTask0.getRow(0);
+        double sum1 = sum(row1.getStorage().getValues());
+        LOG.info(
+          "taskid=" + task0Context.getIndex() + ", matrixId=" + w4ClientForTask0.getMatrixId()
+            + ", rowIndex=0, local row sum=" + sum1);
+        IntDoubleVector deltaRow1 =
+          new IntDoubleVector(delta.length, new IntDoubleDenseVectorStorage(delta));
         deltaRow1.setMatrixId(w4ClientForTask0.getMatrixId());
         deltaRow1.setRowId(0);
         w4ClientForTask0.increment(deltaRow1);
         w4ClientForTask0.clock().get();
         task0Context.increaseEpoch();
 
-        DenseDoubleVector row2 = (DenseDoubleVector) w4ClientForTask1.getRow(0);
-        double sum2 = sum(row2.getValues());
-        LOG.info("taskid=" + task1Context.getIndex() + ", matrixId=" + w4ClientForTask1.getMatrixId()
-          + ", rowIndex=1, local row sum=" + sum2);
-        DenseDoubleVector deltaRow2 = new DenseDoubleVector(delta.length, delta);
+        IntDoubleVector row2 = (IntDoubleVector) w4ClientForTask1.getRow(0);
+        double sum2 = sum(row2.getStorage().getValues());
+        LOG.info(
+          "taskid=" + task1Context.getIndex() + ", matrixId=" + w4ClientForTask1.getMatrixId()
+            + ", rowIndex=1, local row sum=" + sum2);
+        IntDoubleVector deltaRow2 =
+          new IntDoubleVector(delta.length, new IntDoubleDenseVectorStorage(delta));
         deltaRow2.setMatrixId(w4ClientForTask1.getMatrixId());
         deltaRow2.setRowId(0);
         w4ClientForTask1.increment(deltaRow2);
@@ -352,11 +351,11 @@ public class MatrixMetaManagerTest {
       assertEquals(task1MatrixClocks.size(), 1);
       assertEquals(task1MatrixClocks.get(w4Id), 5);
 
-      DenseDoubleVector row1 = (DenseDoubleVector) w4ClientForTask0.getRow(0);
-      double sum1 = sum(row1.getValues());
+      IntDoubleVector row1 = (IntDoubleVector) w4ClientForTask0.getRow(0);
+      double sum1 = sum(row1.getStorage().getValues());
       assertEquals(sum1, 1000000.0, 0.000001);
-      DenseDoubleVector row2 = (DenseDoubleVector) w4ClientForTask1.getRow(0);
-      double sum2 = sum(row2.getValues());
+      IntDoubleVector row2 = (IntDoubleVector) w4ClientForTask1.getRow(0);
+      double sum2 = sum(row2.getStorage().getValues());
       assertEquals(sum2, 1000000.0, 0.000001);
 
       masterClient.releaseMatrix(w3Meta.getName());
@@ -365,17 +364,18 @@ public class MatrixMetaManagerTest {
       matrixw3Proto = matrixMetaManager.getMatrix("w3");
       assertTrue(matrixw3Proto == null);
 
-      MatrixStorageManager matrixStorageManager = LocalClusterContext.get().getPS(psAttempt0Id).getPS().getMatrixStorageManager();
+      MatrixStorageManager matrixStorageManager =
+        LocalClusterContext.get().getPS(psAttempt0Id).getPS().getMatrixStorageManager();
       ServerMatrix sw3 = matrixStorageManager.getMatrix(w3Id);
       assertTrue(sw3 == null);
 
       w4ClientForTask0.clock().get();
       w4ClientForTask1.clock().get();
-      row1 = (DenseDoubleVector) w4ClientForTask0.getRow(0);
-      sum1 = sum(row1.getValues());
+      row1 = (IntDoubleVector) w4ClientForTask0.getRow(0);
+      sum1 = sum(row1.getStorage().getValues());
       assertEquals(sum1, 1000000.0, 0.000001);
-      row2 = (DenseDoubleVector) w4ClientForTask1.getRow(0);
-      sum2 = sum(row2.getValues());
+      row2 = (IntDoubleVector) w4ClientForTask1.getRow(0);
+      sum2 = sum(row2.getStorage().getValues());
       assertEquals(sum2, 1000000.0, 0.000001);
     } catch (Exception x) {
       LOG.error("run testCreateMatrix failed ", x);
@@ -391,8 +391,7 @@ public class MatrixMetaManagerTest {
     return sum;
   }
 
-  @AfterClass
-  public static void stop() throws AngelException {
+  @AfterClass public static void stop() throws AngelException {
     try {
       LOG.info("stop local cluster");
       angelClient.stop();

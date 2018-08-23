@@ -14,6 +14,8 @@
  * the License.
  *
  */
+
+
 package com.tencent.angel.worker.task
 
 import com.tencent.angel.ml.feature.LabeledData
@@ -22,10 +24,10 @@ import com.tencent.angel.ml.feature.LabeledData
   * The type labeled base task.
   */
 abstract class TrainTask[KEYIN, VALUEIN](taskContext: TaskContext) extends BaseTask[KEYIN, VALUEIN, LabeledData](taskContext) {
-  
+
   final def run(taskContext: TaskContext) = {
     this.train(taskContext)
   }
-  
+
   def train(taskContext: TaskContext);
 }

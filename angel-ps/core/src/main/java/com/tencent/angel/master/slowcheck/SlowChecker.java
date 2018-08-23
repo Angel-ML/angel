@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.slowcheck;
 
 import com.tencent.angel.common.Id;
@@ -42,14 +43,20 @@ public class SlowChecker extends AbstractService {
   private static final Log LOG = LogFactory.getLog(SlowChecker.class);
   private final AMContext context;
 
-  /** check polices*/
+  /**
+   * check polices
+   */
   private final List<CheckPolicy> checkPolices;
 
-  /** enable checker or not */
+  /**
+   * enable checker or not
+   */
   private final boolean slowCheckEnable;
   private final AtomicBoolean stopped;
 
-  /** check interval in milliseconds*/
+  /**
+   * check interval in milliseconds
+   */
   private final int checkIntervalMs;
   private volatile Thread checker;
 
@@ -67,18 +74,16 @@ public class SlowChecker extends AbstractService {
     stopped = new AtomicBoolean(false);
   }
 
-  @Override
-  protected void serviceStart() throws Exception {
+  @Override protected void serviceStart() throws Exception {
     LOG.info("slowCheckEnable = " + slowCheckEnable + ", checkIntervalMs = " + checkIntervalMs);
 
-    if(slowCheckEnable) {
+    if (slowCheckEnable) {
       checker = new Thread(new Runnable() {
-        @Override
-        public void run() {
+        @Override public void run() {
           LOG.info("start slow check thread");
           int size = checkPolices.size();
-          while(!stopped.get() && !Thread.interrupted()) {
-            for(int i = 0; i < size; i++) {
+          while (!stopped.get() && !Thread.interrupted()) {
+            for (int i = 0; i < size; i++) {
               List<Id> slowItems = checkPolices.get(i).check(context);
               handleSlowItems(slowItems);
             }
@@ -97,9 +102,9 @@ public class SlowChecker extends AbstractService {
   }
 
   private void handleSlowItems(List<Id> slowItems) {
-    if(slowItems != null && slowItems.isEmpty()) {
+    if (slowItems != null && slowItems.isEmpty()) {
       int size = slowItems.size();
-      for(int i = 0; i < size; i++) {
+      for (int i = 0; i < size; i++) {
         handleSlowItem(slowItems.get(i));
       }
     }
@@ -107,28 +112,28 @@ public class SlowChecker extends AbstractService {
 
   private void handleSlowItem(Id id) {
     LOG.info("slow item " + id + " is checked!!");
-    if(id instanceof WorkerId) {
+    if (id instanceof WorkerId) {
       AMWorker worker = context.getWorkerManager().getWorker((WorkerId) id);
 
-      if(worker.getAttempts().size() < worker.getMaxAttempts()) {
+      if (worker.getAttempts().size() < worker.getMaxAttempts()) {
         WorkerAttempt runningAttempt = worker.getRunningAttempt();
-        if(runningAttempt != null) {
-          context.getEventHandler().handle(new WorkerAttemptEvent(WorkerAttemptEventType.KILL, runningAttempt.getId()));
+        if (runningAttempt != null) {
+          context.getEventHandler()
+            .handle(new WorkerAttemptEvent(WorkerAttemptEventType.KILL, runningAttempt.getId()));
         }
       }
     }
   }
 
-  @Override
-  protected void serviceInit(Configuration conf) throws Exception {
+  @Override protected void serviceInit(Configuration conf) throws Exception {
     super.serviceInit(conf);
-    if(slowCheckEnable) {
-      String polices = conf.get(AngelConf.ANGEL_AM_SLOW_CHECK_POLICES,
-        AngelConf.DEFAULT_ANGEL_AM_SLOW_CHECK_POLICES);
+    if (slowCheckEnable) {
+      String polices = conf
+        .get(AngelConf.ANGEL_AM_SLOW_CHECK_POLICES, AngelConf.DEFAULT_ANGEL_AM_SLOW_CHECK_POLICES);
 
       LOG.info("slow check policy list = " + polices);
-      String [] policyNames = polices.split(",");
-      for(int i = 0; i < policyNames.length; i++) {
+      String[] policyNames = polices.split(",");
+      for (int i = 0; i < policyNames.length; i++) {
         Class<? extends CheckPolicy> policyClass =
           (Class<? extends CheckPolicy>) Class.forName(policyNames[i]);
         Constructor<? extends CheckPolicy> constructor = policyClass.getConstructor();
@@ -138,18 +143,15 @@ public class SlowChecker extends AbstractService {
     }
   }
 
-  @Override
-  protected void serviceStop() throws Exception {
+  @Override protected void serviceStop() throws Exception {
     if (stopped.getAndSet(true)) {
       return;
     }
     if (checker != null) {
       checker.interrupt();
-      try {
-        checker.join();
-      } catch (InterruptedException ie) {
-        LOG.warn("slow-checker interrupted while stopping");
-      }
+      checker = null;
     }
+    super.serviceStop();
+    LOG.info("Slow checker stopped");
   }
 }

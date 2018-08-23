@@ -15,11 +15,12 @@
  *
  */
 
+
 package com.tencent.angel.exception;
 
 public class TimeOutException extends Exception {
   /**
-   * 
+   *
    */
   private static final long serialVersionUID = 1L;
   private final long useTime;
@@ -39,8 +40,7 @@ public class TimeOutException extends Exception {
     return timeOutValue;
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "TimeOutException [useTime=" + useTime + ", timeOutValue=" + timeOutValue + "]";
   }
 }

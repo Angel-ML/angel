@@ -15,43 +15,42 @@
  *
  */
 
+
 package com.tencent.angel.ml.matrix.psf.update;
 
+import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.psf.update.enhance.VAUpdateFunc;
-import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
-import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
-
-import java.nio.DoubleBuffer;
+import com.tencent.angel.ps.storage.vector.ServerIntDoubleRow;
+import com.tencent.angel.ps.storage.vector.ServerLongDoubleRow;
 
 /**
  * `MinA` is find the minimum value of each element in `rowId` row and `other`
  */
 public class MinA extends VAUpdateFunc {
 
-  public MinA(int matrixId, int rowId, double[] other) {
-    super(matrixId, rowId, other);
+  //todo:implements
+  public MinA(int matrixId, int rowId, Vector other) {
+    super();
   }
 
   public MinA() {
     super();
   }
 
-  @Override
-  protected void doUpdate(ServerDenseDoubleRow row, double[] other) {
-    row.tryToLockWrite();
+  @Override protected void doUpdate(ServerIntDoubleRow row, double[] other) {
+    row.startWrite();
     try {
-      DoubleBuffer data = row.getData();
+      double[] values = row.getValues();
       int size = row.size();
       for (int i = 0; i < size; i++) {
-        data.put(i, Math.min(data.get(i), other[i]));
+        values[i] = Math.min(values[i], other[i]);
       }
     } finally {
-      row.unlockWrite();
+      row.endWrite();
     }
   }
 
-  @Override
-  protected void doUpdate(ServerSparseDoubleLongKeyRow rows, double[] other) {
+  @Override protected void doUpdate(ServerLongDoubleRow rows, double[] other) {
     throw new RuntimeException("MinA PSF can not support sparse type rows");
   }
 

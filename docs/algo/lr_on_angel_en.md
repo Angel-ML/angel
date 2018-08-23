@@ -38,40 +38,30 @@ In each iteration, PS receives △w from all workers, add their average to w，o
 
 
 * Decaying learning rate    
-The learning rate decays along iterations as ![](../img/LR_lr_ecay.gif), where:
+The learning rate decays along iterations as ![](../img/LR_lr_ecay.gif), where:   
 	* α is the decay rate 
 	* T is the iteration/epoch
 
-* Model Type
-The LR algorithm supports three types of models: DoubleDense, DoubleSparse, DoubleSparseLongKey. Use `ml.lr.model.type` to configure. 
-	* DoubleDense
-		* Parameters: -- ml.lr.model.type: T_DOUBLE_DENSE
-		* Description: DoubleDense type model is suitable for dense data; model saved as array to save space; quick access and high performance
-	* DoubleSparse
-		* Parameters: -- ml.lr.model.type：T_DOUBLE_SPARSE
-		* Description: DoubleSparse type model is suitable for sparse data; model saved as map, where K is feature ID and V is feature value; range of K same as range of Int
-	* DoubleSparseLongKey
-		* Parameters: -- ml.lr.model.type：T_DOUBLE_SPARSE_LONGKEY
-		* DoubleSparseLongKey type model is suitable for highly sparse data; model saved as map, where K is feature ID and V is feature value; range of K same as range of Long
+
+
 
 ## 3. Execution & Performance
 
 ### Input Format
 
 * Data fromat is set in "ml.data.type", supporting "libsvm" and "dummy" types. For details, see [Angel Data Format](data_format_en.md)
-* Feature vector's dimension is set in "ml.feature.index.range"
+* Feature vector's dimension is set in "ml.feature.num"
 
 
 ###  Parameters
 * Algorithm Parameters 
-  * ml.epoch.num: number of iterations/epochs
-  * ml.model.size: the size of model. for some sparse model, there are features that all samples are zero at those indices (invalidate indices). ml.model.size = ml.feature.index.range - number of invalidate indices 
+  * ml.epoch.num: number of iterations/epochs   
   * ml.batch.sample.ratio: sampling rate for each iteration   
-  * ml.num.update.per.epoch: number update in each iteration    
-  * ml.data.validate.ratio: proportion of data used for validation, no validation when set to 0    
+  * ml.sgd.batch.num: number of mini-batch in each iteration    
+  * ml.validate.ratio: proportion of data used for validation, no validation when set to 0    
   * ml.learn.rate: initial learning rate
   * ml.learn.decay: decay rate of the learning rate
-  * ml.lr.reg.l2: coefficient of the L2 penalty
+  * ml.reg.l2: coefficient of the L2 penalty
 
 * I/O Parameters
   * angel.train.data.path: input path for train
@@ -103,13 +93,13 @@ The LR algorithm supports three types of models: DoubleDense, DoubleSparse, Doub
     --angel.save.model.path $model_path \
     --angel.log.path $logpath \
     --ml.epoch.num 10 \
-    --ml.num.update.per.epoch 10 \
-    --ml.feature.index.range 10000 \
-    --ml.data.validate.ratio 0.1 \
+    --ml.batch.num 10 \
+    --ml.feature.num 10000 \
+    --ml.validate.ratio 0.1 \
     --ml.data.type dummy \
     --ml.learn.rate 1 \
     --ml.learn.decay 0.1 \
-    --ml.lr.reg.l2 0 \
+    --ml.reg.l2 0 \
     --angel.workergroup.number 3 \
     --angel.worker.task.number 3 \
     --angel.ps.number 1 \

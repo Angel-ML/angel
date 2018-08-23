@@ -15,9 +15,10 @@
  *
  */
 
+
 package com.tencent.angel.ml.metric
 
-class ErrorMetric(var sampleNum: Int) extends Metric{
+class ErrorMetric(var sampleNum: Int) extends Metric {
 
   var globalErr: Double = 0.0
 
@@ -38,8 +39,8 @@ class ErrorMetric(var sampleNum: Int) extends Metric{
 
 }
 
-object ErrorMetric{
-  def apply(sampleNum:Int):Metric = {
+object ErrorMetric {
+  def apply(sampleNum: Int): Metric = {
     new ErrorMetric(sampleNum)
   }
 

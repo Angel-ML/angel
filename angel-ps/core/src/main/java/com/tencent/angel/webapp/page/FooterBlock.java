@@ -15,16 +15,16 @@
  *
  */
 
+
 package com.tencent.angel.webapp.page;
 
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
 
-@InterfaceAudience.LimitedPrivate({"YARN", "MapReduce"})
-public class FooterBlock extends HtmlBlock {
+@InterfaceAudience.LimitedPrivate({"YARN", "MapReduce"}) public class FooterBlock
+  extends HtmlBlock {
 
-  @Override
-  protected void render(Block html) {
+  @Override protected void render(Block html) {
     /*
      * String str = ""; str="user_dir: \n  "+System.getProperty("user.dir"); html.
      * div("#user_dir:"). _(str)._();

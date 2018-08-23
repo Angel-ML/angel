@@ -15,10 +15,13 @@
  *
  */
 
+
 package com.tencent.angel.psagent.executor;
 
 public interface Executor {
   public int getTaskNum();
+
   public void error(String errorMsg);
+
   public void done();
 }

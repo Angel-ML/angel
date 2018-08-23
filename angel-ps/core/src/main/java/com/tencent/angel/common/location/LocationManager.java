@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.common.location;
 
 import com.tencent.angel.ps.ParameterServerId;
@@ -46,12 +47,12 @@ public class LocationManager {
   /**
    * All ps ids
    */
-  private volatile ParameterServerId [] psIds;
+  private volatile ParameterServerId[] psIds;
 
   /**
    * Create a location manager
    */
-  public LocationManager(){
+  public LocationManager() {
     this.masterLocation = null;
     this.psIdToLocMap = new ConcurrentHashMap<>();
     this.workerIdToLocMap = new ConcurrentHashMap<>();
@@ -59,6 +60,7 @@ public class LocationManager {
 
   /**
    * Get master location
+   *
    * @return master location
    */
   public Location getMasterLocation() {
@@ -67,6 +69,7 @@ public class LocationManager {
 
   /**
    * Get a ps location
+   *
    * @param psId ps id
    * @return ps location
    */
@@ -76,6 +79,7 @@ public class LocationManager {
 
   /**
    * Get a worker location
+   *
    * @param workerId worker id
    * @return worker location
    */
@@ -85,6 +89,7 @@ public class LocationManager {
 
   /**
    * Set master location
+   *
    * @param masterLocation master location
    */
   public void setMasterLocation(Location masterLocation) {
@@ -93,11 +98,12 @@ public class LocationManager {
 
   /**
    * Set a ps location
+   *
    * @param psId ps id
-   * @param loc ps location
+   * @param loc  ps location
    */
   public void setPsLocation(ParameterServerId psId, Location loc) {
-    if(loc == null) {
+    if (loc == null) {
       psIdToLocMap.remove(psId);
     } else {
       psIdToLocMap.put(psId, loc);
@@ -106,8 +112,9 @@ public class LocationManager {
 
   /**
    * Set worker location
+   *
    * @param workerId worker id
-   * @param loc worker location
+   * @param loc      worker location
    */
   public void setWorkerLocation(WorkerId workerId, Location loc) {
     workerIdToLocMap.put(workerId, loc);
@@ -115,6 +122,7 @@ public class LocationManager {
 
   /**
    * Set all ps ids
+   *
    * @param psIds all ps ids
    */
   public void setPsIds(ParameterServerId[] psIds) {
@@ -123,6 +131,7 @@ public class LocationManager {
 
   /**
    * Get all ps ids
+   *
    * @return all ps ids
    */
   public ParameterServerId[] getPsIds() {
@@ -134,6 +143,7 @@ public class LocationManager {
 
   /**
    * Are all pss registered
+   *
    * @return true mean all pss have registered to master
    */
   public boolean isAllPsRegisted() {
@@ -142,6 +152,7 @@ public class LocationManager {
 
   /**
    * Get all ps locations
+   *
    * @return all ps locations
    */
   public Map<ParameterServerId, Location> getPsLocations() {

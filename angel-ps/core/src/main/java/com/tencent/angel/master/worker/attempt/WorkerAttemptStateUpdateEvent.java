@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.worker.attempt;
 
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerReportRequest;
@@ -23,22 +24,27 @@ import com.tencent.angel.worker.WorkerAttemptId;
 /**
  * Worker attempt report its state to master.
  */
-public class WorkerAttemptStateUpdateEvent extends WorkerAttemptEvent{
-  /**worker attempt report*/
+public class WorkerAttemptStateUpdateEvent extends WorkerAttemptEvent {
+  /**
+   * worker attempt report
+   */
   private final WorkerReportRequest report;
 
   /**
    * Create a WorkerAttemptStateUpdateEvent
+   *
    * @param workerAttemptId worker attempt id
-   * @param report state update report
+   * @param report          state update report
    */
-  public WorkerAttemptStateUpdateEvent(WorkerAttemptId workerAttemptId, WorkerReportRequest report) {
+  public WorkerAttemptStateUpdateEvent(WorkerAttemptId workerAttemptId,
+    WorkerReportRequest report) {
     super(WorkerAttemptEventType.UPDATE_STATE, workerAttemptId);
     this.report = report;
   }
 
   /**
    * Get worker attempt report
+   *
    * @return worker attempt report
    */
   public WorkerReportRequest getReport() {

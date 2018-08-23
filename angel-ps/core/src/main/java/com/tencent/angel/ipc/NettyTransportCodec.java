@@ -1,19 +1,18 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
  */
 
 
@@ -39,6 +38,8 @@ import java.util.List;
  */
 public class NettyTransportCodec {
   private static final Logger LOG = LoggerFactory.getLogger(NettyTransportCodec.class.getName());
+
+
   /**
    * Transport protocol data structure when using Netty.
    */
@@ -69,12 +70,10 @@ public class NettyTransportCodec {
     public List<ByteBuffer> getDatas() {
       return datas;
     }
-    @Override
-    public String toString() {
-      return Objects
-          .toStringHelper(this)
-          .add("serial", serial)
-          .add("listSize", datas.size()).toString();
+
+    @Override public String toString() {
+      return Objects.toStringHelper(this).add("serial", serial).add("listSize", datas.size())
+        .toString();
     }
 
     /**
@@ -89,8 +88,8 @@ public class NettyTransportCodec {
         if (future.isSuccess()) {
           LOG.trace("Sent result {} to client {}", dataPack, NettyUtils.getRemoteAddress(channel));
         } else {
-          String msg = String.format("Error sending result %s to %s; closing connection",
-              dataPack, NettyUtils.getRemoteAddress(channel));
+          String msg = String.format("Error sending result %s to %s; closing connection", dataPack,
+            NettyUtils.getRemoteAddress(channel));
           LOG.error(msg, future.cause());
           throw new IOException(msg, future.cause());
         }
@@ -98,21 +97,23 @@ public class NettyTransportCodec {
     }
   }
 
+
   /**
    * Protocol encoder which converts NettyDataPack which contains the Responder's output
    * List&lt;ByteBuffer&gt; to ChannelBuffer needed by Netty.
    */
-  @ChannelHandler.Sharable
-  public static class NettyFrameEncoder extends MessageToMessageEncoder<NettyDataPack> {
+  @ChannelHandler.Sharable public static class NettyFrameEncoder
+    extends MessageToMessageEncoder<NettyDataPack> {
     public static final NettyFrameEncoder INSTANCE = new NettyFrameEncoder();
+
     /**
      * encode msg to ChannelBuffer
      *
      * @param dataPack NettyDataPack from NettyServerAvroHandler/NettyClientAvroHandler in the pipeline
      * @return encoded ChannelBuffer
      */
-    @Override
-    public void encode(ChannelHandlerContext ctx, NettyDataPack dataPack, List<Object> out) throws Exception {
+    @Override public void encode(ChannelHandlerContext ctx, NettyDataPack dataPack,
+      List<Object> out) throws Exception {
       List<ByteBuffer> origs = dataPack.getDatas();
       int sumLen = 8 + 4 + 4;
       for (ByteBuffer b : origs) {
@@ -131,18 +132,20 @@ public class NettyTransportCodec {
     }
   }
 
+
   /**
    * Protocol decoder which converts Netty's ChannelBuffer to NettyDataPack which contains a
    * List&lt;ByteBuffer&gt; needed by Avro Responder.
    */
-  @ChannelHandler.Sharable
-  public static class NettyFrameDecoder extends MessageToMessageDecoder<ByteBuf> {
+  @ChannelHandler.Sharable public static class NettyFrameDecoder
+    extends MessageToMessageDecoder<ByteBuf> {
     public static final NettyFrameDecoder INSTANCE = new NettyFrameDecoder();
+
     /**
      * decode buffer to NettyDataPack
      */
-    @Override
-    public void decode(io.netty.channel.ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+    @Override public void decode(io.netty.channel.ChannelHandlerContext ctx, ByteBuf in,
+      List<Object> out) throws Exception {
       int serial = in.readInt();
       int listSize = in.readInt();
       List<ByteBuffer> datas = new ArrayList<ByteBuffer>(listSize);

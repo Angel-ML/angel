@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.psagent;
 
 import com.google.protobuf.ServiceException;
@@ -23,6 +24,7 @@ import com.tencent.angel.common.location.Location;
 import com.tencent.angel.common.location.LocationManager;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.ipc.TConnectionManager;
 import com.tencent.angel.ml.matrix.MatrixContext;
@@ -33,7 +35,6 @@ import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.PSAgentRe
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.PSAgentReportResponse;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.psagent.client.MasterClient;
-import com.tencent.angel.psagent.client.PSControlClient;
 import com.tencent.angel.psagent.client.PSControlClientManager;
 import com.tencent.angel.psagent.clock.ClockCache;
 import com.tencent.angel.psagent.consistency.ConsistencyController;
@@ -46,7 +47,7 @@ import com.tencent.angel.psagent.matrix.cache.MatricesCache;
 import com.tencent.angel.psagent.matrix.oplog.cache.MatrixOpLogCache;
 import com.tencent.angel.psagent.matrix.storage.MatrixStorageManager;
 import com.tencent.angel.psagent.matrix.transport.MatrixTransportClient;
-import com.tencent.angel.psagent.matrix.transport.adapter.MatrixClientAdapter;
+import com.tencent.angel.psagent.matrix.transport.adapter.UserRequestAdapter;
 import com.tencent.angel.utils.NetUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -63,105 +64,157 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * It use {@link MasterClient} to communicate with master. The meta data contains: <br>
  * matrix meta {@link MatrixMetaManager}, <br>
  * server locations {@link LocationManager}.
- * 
+ * <p>
  * <p>
  * It use {@link MatrixTransportClient} to communicate with parameter servers. Because an
  * application layer request generally needs to access multiple parameter servers, so we use
- * {@link MatrixClientAdapter} first to divide the application layer request to many underlying
+ * {@link UserRequestAdapter} first to divide the application layer request to many underlying
  * network requests in matrix partition.
- *
  */
 public class PSAgent {
   private static final Log LOG = LogFactory.getLog(PSAgent.class);
-  /** application configuration */
+  /**
+   * application configuration
+   */
   private final Configuration conf;
 
-  /** application id */
+  /**
+   * application id
+   */
   private final ApplicationId appId;
 
-  /** the user that submit the application */
+  /**
+   * the user that submit the application
+   */
   private final String user;
 
-  /** ps agent attempt id */
+  /**
+   * ps agent attempt id
+   */
   private volatile int id;
 
-  /** the connection manager for rpc to master */
+  /**
+   * the connection manager for rpc to master
+   */
   private final TConnection connection;
 
-  /** the rpc client to master */
+  /**
+   * the rpc client to master
+   */
   private volatile MasterClient masterClient;
 
   private volatile PSControlClientManager psControlClientManager;
 
-  /** psagent location(ip and listening port) */
+  /**
+   * psagent location(ip and listening port)
+   */
   private volatile Location location;
 
-  /** psagent location(ip and listening port) */
+  /**
+   * psagent location(ip and listening port)
+   */
   private final Location masterLocation;
 
-  /** master location(ip and listening port) */
+  /**
+   * master location(ip and listening port)
+   */
   private volatile PSAgentLocationManager locationManager;
 
-  /** matrix meta manager */
+  /**
+   * matrix meta manager
+   */
   private volatile PSAgentMatrixMetaManager matrixMetaManager;
 
-  /** matrix updates cache */
+  /**
+   * matrix updates cache
+   */
   private volatile MatrixOpLogCache opLogCache;
 
-  /** the rpc client to parameter servers */
+  /**
+   * the rpc client to parameter servers
+   */
   private volatile MatrixTransportClient matrixTransClient;
 
-  /** psagent initialization completion flag */
+  /**
+   * psagent initialization completion flag
+   */
   private final AtomicBoolean psAgentInitFinishedFlag;
 
-  /** psagent heartbeat thread */
+  /**
+   * psagent heartbeat thread
+   */
   private volatile Thread heartbeatThread;
 
-  /** psagent stop flag */
+  /**
+   * psagent stop flag
+   */
   private final AtomicBoolean stopped;
 
-  /** psagent heartbeat interval in milliseconds */
+  /**
+   * psagent heartbeat interval in milliseconds
+   */
   private final int heartbeatIntervalMs;
 
-  /** psagent metrics */
+  /**
+   * psagent metrics
+   */
   private final Map<String, String> metrics;
 
-  /** SSP consistency controller */
+  /**
+   * SSP consistency controller
+   */
   private volatile ConsistencyController consistencyController;
 
-  /** matrix partitions clock cache */
+  /**
+   * matrix partitions clock cache
+   */
   private volatile ClockCache clockCache;
 
-  /** matrices cache */
+  /**
+   * matrices cache
+   */
   private volatile MatricesCache matricesCache;
 
-  /** matrix storage manager */
+  /**
+   * matrix storage manager
+   */
   private volatile MatrixStorageManager matrixStorageManager;
 
-  /** application layer request adapter */
-  private volatile MatrixClientAdapter matrixClientAdapter;
+  /**
+   * application layer request adapter
+   */
+  private volatile UserRequestAdapter userRequestAdapter;
 
-  /** if we need startup heartbeat thread */
+  /**
+   * if we need startup heartbeat thread
+   */
   private final boolean needHeartBeat;
 
-  /** application running mode(LOCAL,YARN) */
+  /**
+   * application running mode(LOCAL,YARN)
+   */
   private final RunningMode runningMode;
 
-  /** the machine learning executor reference */
+  /**
+   * the machine learning executor reference
+   */
   private final Executor executor;
 
-  /** psagent exited flag */
+  /**
+   * psagent exited flag
+   */
   private final AtomicBoolean exitedFlag;
 
-  /** Control connection manager*/
+  /**
+   * Control connection manager
+   */
   private volatile TConnection controlConnectManager;
 
   /**
-   * 
    * Create a new PSAgent instance.
    *
-   * @param masterIp master ip
-   * @param masterPort master listening port
+   * @param masterIp    master ip
+   * @param masterPort  master listening port
    * @param clientIndex psagent index
    */
   public PSAgent(String masterIp, int masterPort, int clientIndex) {
@@ -169,12 +222,11 @@ public class PSAgent {
   }
 
   /**
-   * 
    * Create a new PSAgent instance.
    *
-   * @param conf application configuration
-   * @param masterIp master listening port
-   * @param masterPort master listening port
+   * @param conf        application configuration
+   * @param masterIp    master listening port
+   * @param masterPort  master listening port
    * @param clientIndex psagent index
    */
   public PSAgent(Configuration conf, String masterIp, int masterPort, int clientIndex) {
@@ -182,26 +234,24 @@ public class PSAgent {
   }
 
   /**
-   * 
    * Create a new PSAgent instance.
    *
-   * @param conf application configuration
-   * @param appId application id
-   * @param user the user that submit this application
-   * @param masterIp master ip
-   * @param masterPort master port
+   * @param conf          application configuration
+   * @param appId         application id
+   * @param user          the user that submit this application
+   * @param masterIp      master ip
+   * @param masterPort    master port
    * @param needHeartBeat true means need startup heartbeat thread
-   * @param executor the machine learning executor reference
+   * @param executor      the machine learning executor reference
    */
-  public PSAgent(Configuration conf, ApplicationId appId, String user,
-      String masterIp, int masterPort, boolean needHeartBeat, Executor executor) {
+  public PSAgent(Configuration conf, ApplicationId appId, String user, String masterIp,
+    int masterPort, boolean needHeartBeat, Executor executor) {
     this.needHeartBeat = needHeartBeat;
     this.conf = conf;
     this.executor = executor;
 
-    this.heartbeatIntervalMs =
-        conf.getInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL,
-            AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_INTERVAL);
+    this.heartbeatIntervalMs = conf.getInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL,
+      AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_INTERVAL);
     this.runningMode = initRunningMode(conf);
     this.appId = appId;
     this.user = user;
@@ -215,24 +265,22 @@ public class PSAgent {
   }
 
   /**
-   * 
    * Create a new PSAgent instance.
    *
-   * @param conf application configuration
-   * @param masterIp master ip
-   * @param masterPort master port
-   * @param clientIndex ps agent index
+   * @param conf          application configuration
+   * @param masterIp      master ip
+   * @param masterPort    master port
+   * @param clientIndex   ps agent index
    * @param needHeartBeat true means need startup heartbeat thread
-   * @param executor the machine learning executor reference
+   * @param executor      the machine learning executor reference
    */
   public PSAgent(Configuration conf, String masterIp, int masterPort, int clientIndex,
-      boolean needHeartBeat, Executor executor) {
+    boolean needHeartBeat, Executor executor) {
     this.needHeartBeat = needHeartBeat;
     this.conf = conf;
     this.executor = executor;
-    this.heartbeatIntervalMs =
-        conf.getInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL,
-            AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_INTERVAL);
+    this.heartbeatIntervalMs = conf.getInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL,
+      AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_INTERVAL);
     this.runningMode = initRunningMode(conf);
 
     this.masterLocation = new Location(masterIp, masterPort);
@@ -248,9 +296,7 @@ public class PSAgent {
   }
 
   private RunningMode initRunningMode(Configuration conf) {
-    String mode =
-        conf.get(AngelConf.ANGEL_RUNNING_MODE,
-            AngelConf.DEFAULT_ANGEL_RUNNING_MODE);
+    String mode = conf.get(AngelConf.ANGEL_RUNNING_MODE, AngelConf.DEFAULT_ANGEL_RUNNING_MODE);
 
     if (mode.equals(RunningMode.ANGEL_PS.toString())) {
       return RunningMode.ANGEL_PS;
@@ -262,7 +308,7 @@ public class PSAgent {
   public void initAndStart() throws Exception {
     // Init control connection manager
     controlConnectManager = TConnectionManager.getConnection(conf);
-    
+
     // Get ps locations from master and put them to the location cache.
     locationManager = new PSAgentLocationManager(PSAgentContext.get());
     locationManager.setMasterLocation(masterLocation);
@@ -299,37 +345,45 @@ public class PSAgent {
     });
     int size = psIds.size();
     locationManager.setPsIds(psIds.toArray(new ParameterServerId[0]));
-    for(int i = 0; i < size; i++) {
-      if(psIdToLocMap.containsKey(psIds.get(i))) {
+    for (int i = 0; i < size; i++) {
+      if (psIdToLocMap.containsKey(psIds.get(i))) {
         locationManager.setPsLocation(psIds.get(i), psIdToLocMap.get(psIds.get(i)));
       }
     }
 
     matrixTransClient = new MatrixTransportClient();
-    matrixClientAdapter = new MatrixClientAdapter();
-    opLogCache = new MatrixOpLogCache();
-
-    matrixStorageManager = new MatrixStorageManager();
+    userRequestAdapter = new UserRequestAdapter();
     matricesCache = new MatricesCache();
-    int staleness =
-        conf.getInt(AngelConf.ANGEL_STALENESS, AngelConf.DEFAULT_ANGEL_STALENESS);
-    consistencyController = new ConsistencyController(staleness);
-    consistencyController.init();
+
+    if (runningMode == RunningMode.ANGEL_PS_WORKER) {
+
+      opLogCache = new MatrixOpLogCache();
+
+      matrixStorageManager = new MatrixStorageManager();
+
+      int staleness = conf.getInt(AngelConf.ANGEL_STALENESS, AngelConf.DEFAULT_ANGEL_STALENESS);
+      consistencyController = new ConsistencyController(staleness);
+      consistencyController.init();
+    }
 
     psAgentInitFinishedFlag.set(true);
 
     // Start all services
     matrixTransClient.start();
-    matrixClientAdapter.start();
-    clockCache.start();
-    opLogCache.start();
-    matricesCache.start();   
+    userRequestAdapter.start();
+    matricesCache.start();
+
+    if (runningMode == RunningMode.ANGEL_PS_WORKER) {
+      clockCache.start();
+      opLogCache.start();
+
+    }
   }
 
   /**
    * Get matrix meta from master and refresh the local cache.
-   * 
-   * @throws ServiceException rpc failed
+   *
+   * @throws ServiceException     rpc failed
    * @throws InterruptedException interrupted while wait for rpc results
    */
   public void refreshMatrixInfo()
@@ -371,10 +425,10 @@ public class PSAgent {
         matricesCache = null;
       }
 
-      LOG.info("stop matrix client adapater");
-      if (matrixClientAdapter != null) {
-        matrixClientAdapter.stop();
-        matrixClientAdapter = null;
+      LOG.info("stop user request adapater");
+      if (userRequestAdapter != null) {
+        userRequestAdapter.stop();
+        userRequestAdapter = null;
       }
 
       LOG.info("stop rpc dispacher");
@@ -383,72 +437,10 @@ public class PSAgent {
         matrixTransClient = null;
       }
 
-      if(PSAgentContext.get() != null) {
+      if (PSAgentContext.get() != null) {
         PSAgentContext.get().clear();
       }
     }
-  }
-
-  public void reset() {
-    stopped.set(false);
-    psAgentInitFinishedFlag.set(false);
-    LOG.info("stop heartbeat thread!");
-    if (heartbeatThread != null) {
-      heartbeatThread.interrupt();
-      try {
-        heartbeatThread.join();
-      } catch (InterruptedException ie) {
-        LOG.warn("InterruptedException while stopping heartbeatThread:", ie);
-      }
-      heartbeatThread = null;
-    }
-
-    LOG.info("stop op log merger");
-    if (opLogCache != null) {
-      opLogCache.stop();
-      opLogCache = null;
-    }
-
-    LOG.info("stop clock cache");
-    if (clockCache != null) {
-      clockCache.stop();
-      clockCache = null;
-    }
-
-    LOG.info("stop matrix cache");
-    if (matricesCache != null) {
-      matricesCache.stop();
-      matricesCache = null;
-    }
-
-    LOG.info("stop matrix client adapater");
-    if (matrixClientAdapter != null) {
-      matrixClientAdapter.stop();
-      matrixClientAdapter = null;
-    }
-
-    LOG.info("stop rpc dispacher");
-    if (matrixTransClient != null) {
-      matrixTransClient.stop();
-      matrixTransClient = null;
-    }
-
-    controlConnectManager = null;
-    masterClient = null;
-    locationManager = null;
-    location = null;
-    id = -1;
-    psControlClientManager = null;
-    if(matrixMetaManager != null) {
-      matrixMetaManager.clear();
-      matrixMetaManager = null;
-    }
-
-    if(matrixStorageManager != null) {
-      matrixStorageManager.clear();
-      matrixStorageManager = null;
-    }
-    consistencyController = null;
   }
 
   protected void heartbeat() throws ServiceException {
@@ -482,7 +474,7 @@ public class PSAgent {
 
   /**
    * Get application configuration
-   * 
+   *
    * @return Configuration application configuration
    */
   public Configuration getConf() {
@@ -491,7 +483,7 @@ public class PSAgent {
 
   /**
    * Get master location
-   * 
+   *
    * @return Location master location
    */
   public Location getMasterLocation() {
@@ -500,7 +492,7 @@ public class PSAgent {
 
   /**
    * Get application id
-   * 
+   *
    * @return ApplicationId application id
    */
   public ApplicationId getAppId() {
@@ -509,7 +501,7 @@ public class PSAgent {
 
   /**
    * Get the user that submits the application
-   * 
+   *
    * @return String the user that submits the application
    */
   public String getUser() {
@@ -536,7 +528,7 @@ public class PSAgent {
 
   /**
    * Get ps agent location ip
-   * 
+   *
    * @return String ps agent location ip
    */
   public String getIp() {
@@ -562,7 +554,7 @@ public class PSAgent {
 
   /**
    * Notify run failed message to master
-   * 
+   *
    * @param errorMsg detail failed message
    */
   public void error(String errorMsg) {
@@ -579,7 +571,7 @@ public class PSAgent {
 
   /**
    * Get ps agent location
-   * 
+   *
    * @return Location ps agent location
    */
   public Location getLocation() {
@@ -588,7 +580,7 @@ public class PSAgent {
 
   /**
    * Get ps location cache
-   * 
+   *
    * @return LocationCache ps location cache
    */
   public PSAgentLocationManager getLocationManager() {
@@ -597,7 +589,7 @@ public class PSAgent {
 
   /**
    * Get matrix meta manager
-   * 
+   *
    * @return MatrixMetaManager matrix meta manager
    */
   public PSAgentMatrixMetaManager getMatrixMetaManager() {
@@ -606,7 +598,7 @@ public class PSAgent {
 
   /**
    * Get matrix update cache
-   * 
+   *
    * @return MatrixOpLogCache matrix update cache
    */
   public MatrixOpLogCache getOpLogCache() {
@@ -615,16 +607,67 @@ public class PSAgent {
 
   /**
    * Get rpc client to ps
-   * 
+   *
    * @return MatrixTransportClient rpc client to ps
    */
-  public MatrixTransportClient getMatrixClient() {
+  public MatrixTransportClient getMatrixTransportClient() {
     return matrixTransClient;
   }
 
   /**
+   * Get matrix client for rpc
+   *
+   * @param matrixId matrix id
+   * @return matrix client
+   */
+  public MatrixClient getMatrixClient(int matrixId) throws AngelException {
+    return getMatrixClient(matrixId, -1);
+  }
+
+  /**
+   * Get matrix client for rpc
+   *
+   * @param matrixId  matrix id
+   * @param taskIndex task id
+   * @return matrix client
+   */
+  public MatrixClient getMatrixClient(int matrixId, int taskIndex) throws AngelException {
+    try {
+      return MatrixClientFactory.get(matrixId, taskIndex);
+    } catch (Throwable e) {
+      throw new AngelException(e);
+    }
+  }
+
+
+  /**
+   * Get matrix client for rpc
+   *
+   * @param matrixName matrix name
+   * @return matrix client
+   */
+  public MatrixClient getMatrixClient(String matrixName) throws AngelException {
+    return getMatrixClient(matrixName, -1);
+  }
+
+  /**
+   * Get matrix client for rpc
+   *
+   * @param matrixName matrix name
+   * @param taskIndex  task id
+   * @return matrix client
+   */
+  public MatrixClient getMatrixClient(String matrixName, int taskIndex) throws AngelException {
+    try {
+      return MatrixClientFactory.get(matrixName, taskIndex);
+    } catch (Throwable e) {
+      throw new AngelException(e);
+    }
+  }
+
+  /**
    * Get heartbeat interval in milliseconds
-   * 
+   *
    * @return int heartbeat interval in milliseconds
    */
   public int getHeartbeatIntervalMs() {
@@ -633,7 +676,7 @@ public class PSAgent {
 
   /**
    * Get ps agent metrics
-   * 
+   *
    * @return Map<String, String> ps agent metrics
    */
   public Map<String, String> getMetrics() {
@@ -642,7 +685,7 @@ public class PSAgent {
 
   /**
    * Get SSP consistency controller
-   * 
+   *
    * @return ConsistencyController SSP consistency controller
    */
   public ConsistencyController getConsistencyController() {
@@ -651,7 +694,7 @@ public class PSAgent {
 
   /**
    * Get matrix clock cache
-   * 
+   *
    * @return ClockCache matrix clock cache
    */
   public ClockCache getClockCache() {
@@ -660,7 +703,7 @@ public class PSAgent {
 
   /**
    * Get matrix cache
-   * 
+   *
    * @return ClockCache matrix cache
    */
   public MatricesCache getMatricesCache() {
@@ -669,14 +712,13 @@ public class PSAgent {
 
   /**
    * Create a new matrix
-   * 
+   *
    * @param matrixContext matrix configuration
-   * @param timeOutMs maximun wait time in milliseconds
+   * @param timeOutMs     maximun wait time in milliseconds
    * @return MatrixMeta matrix meta
    * @throws AngelException exception come from master
    */
-  public void createMatrix(MatrixContext matrixContext, long timeOutMs)
-      throws AngelException {
+  public void createMatrix(MatrixContext matrixContext, long timeOutMs) throws AngelException {
     try {
       PSAgentContext.get().getMasterClient().createMatrix(matrixContext, timeOutMs);
     } catch (Throwable x) {
@@ -686,6 +728,7 @@ public class PSAgent {
 
   /**
    * Get Matrix meta
+   *
    * @param matrixName matrix name
    * @return
    */
@@ -703,7 +746,7 @@ public class PSAgent {
     removeCacheData(matrixId);
   }
 
-  private void removeCacheData(int matrixId){
+  private void removeCacheData(int matrixId) {
     matricesCache.remove(matrixId);
     matrixStorageManager.removeMatrix(matrixId);
     opLogCache.remove(matrixId);
@@ -717,7 +760,7 @@ public class PSAgent {
    */
   public void releaseMatricesUseName(List<String> matrixNames) throws AngelException {
     int size = matrixNames.size();
-    for(int i = 0; i < size; i++) {
+    for (int i = 0; i < size; i++) {
       removeLocalMatrix(matrixNames.get(i));
     }
 
@@ -730,7 +773,7 @@ public class PSAgent {
 
   /**
    * Release a matrix
-   * 
+   *
    * @param matrixName matrix name
    * @throws AngelException exception come from master
    */
@@ -752,9 +795,9 @@ public class PSAgent {
   public void releaseMatrices(List<Integer> matrixIds) throws AngelException {
     int size = matrixIds.size();
     List<String> matrixNames = new ArrayList<>(size);
-    for(int i = 0; i < size; i++) {
+    for (int i = 0; i < size; i++) {
       MatrixMeta meta = matrixMetaManager.getMatrixMeta(matrixIds.get(i));
-      if(meta == null) {
+      if (meta == null) {
         continue;
       }
       matrixNames.add(meta.getName());
@@ -771,7 +814,7 @@ public class PSAgent {
    */
   public void releaseMatrix(int matrixId) throws AngelException {
     MatrixMeta meta = matrixMetaManager.getMatrixMeta(matrixId);
-    if(meta == null) {
+    if (meta == null) {
       return;
     }
 
@@ -782,7 +825,7 @@ public class PSAgent {
    * Create a batch of matrices
    *
    * @param matrixContexts matrices configuration
-   * @param timeOutMs maximun wait time in milliseconds
+   * @param timeOutMs      maximun wait time in milliseconds
    * @throws AngelException exception come from master
    */
   public void createMatrices(List<MatrixContext> matrixContexts, long timeOutMs)
@@ -803,22 +846,6 @@ public class PSAgent {
   }
 
   /**
-   * Get matrix rpc client
-   * 
-   * @param matrixName matrix name
-   * @param taskIndex task index
-   * @throws AngelException matrix does not exist
-   */
-  public MatrixClient getMatrixClient(String matrixName, int taskIndex)
-      throws AngelException {
-    try {
-      return MatrixClientFactory.get(matrixName, taskIndex);
-    } catch (Throwable x) {
-      throw new AngelException(x);
-    }
-  }
-
-  /**
    * Get matrix storage manager
    *
    * @return MatrixStorageManager matrix storage manager
@@ -829,11 +856,11 @@ public class PSAgent {
 
   /**
    * Get application layer request adapter
-   * 
-   * @return MatrixClientAdapter application layer request adapter
+   *
+   * @return UserRequestAdapter application layer request adapter
    */
-  public MatrixClientAdapter getMatrixClientAdapter() {
-    return matrixClientAdapter;
+  public UserRequestAdapter getUserRequestAdapter() {
+    return userRequestAdapter;
   }
 
   /**
@@ -847,7 +874,7 @@ public class PSAgent {
 
   /**
    * Get the machine learning executor reference
-   * 
+   *
    * @return Executor the machine learning executor reference
    */
   public Executor getExecutor() {
@@ -856,6 +883,7 @@ public class PSAgent {
 
   /**
    * Get PSAgent ID
+   *
    * @return PSAgent ID
    */
   public int getId() {
@@ -864,6 +892,7 @@ public class PSAgent {
 
   /**
    * Get control connection manager
+   *
    * @return control connection manager
    */
   public TConnection getControlConnectManager() {
@@ -872,6 +901,7 @@ public class PSAgent {
 
   /**
    * Get PS control rpc client manager
+   *
    * @return PS control rpc client manager
    */
   public PSControlClientManager getPsControlClientManager() {

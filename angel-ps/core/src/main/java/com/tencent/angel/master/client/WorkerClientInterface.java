@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.client;
 
 import com.google.protobuf.ServiceException;
@@ -25,6 +26,7 @@ import com.google.protobuf.ServiceException;
 public interface WorkerClientInterface {
   /**
    * Get thread stack of worker attempt
+   *
    * @return thread stack
    * @throws ServiceException
    */

@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master;
 
 import com.tencent.angel.client.AngelClient;
@@ -62,9 +63,8 @@ public class AppTest {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
-  @Before
-  public void setup() throws Exception {
-    try{
+  @Before public void setup() throws Exception {
+    try {
       // set basic configuration keys
       Configuration conf = new Configuration();
       conf.setBoolean("mapred.mapper.new-api", true);
@@ -111,10 +111,8 @@ public class AppTest {
     }
   }
 
-  @SuppressWarnings("unchecked")
-  @Test
-  public void testGetJobReport() throws Exception {
-    try{
+  @SuppressWarnings("unchecked") @Test public void testGetJobReport() throws Exception {
+    try {
       AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
       Location masterLoc =
         LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMasterService()
@@ -141,10 +139,8 @@ public class AppTest {
       assertEquals(response.getJobReport().getJobState(), JobStateProto.J_RUNNING);
       assertEquals(response.getJobReport().getCurIteration(), jobIteration);
 
-      angelAppMaster
-        .getAppContext()
-        .getEventHandler()
-        .handle(new InternalErrorEvent(angelAppMaster.getAppContext().getApplicationId(), "failed"));
+      angelAppMaster.getAppContext().getEventHandler().handle(
+        new InternalErrorEvent(angelAppMaster.getAppContext().getApplicationId(), "failed"));
 
       Thread.sleep(5000);
 
@@ -192,9 +188,8 @@ public class AppTest {
     return response;
   }
 
-  @After
-  public void stop() throws Exception {
-    try{
+  @After public void stop() throws Exception {
+    try {
       LOG.info("stop local cluster");
       angelClient.stop();
     } catch (Exception x) {

@@ -15,21 +15,22 @@
  *
  */
 
+
 package com.tencent.angel.ml.matrix.psf.update.enhance;
 
-import com.tencent.angel.exception.WaitLockTimeOutException;
-import com.tencent.angel.ml.matrix.psf.common.Utils;
-import com.tencent.angel.ps.impl.PSContext;
-import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
-import com.tencent.angel.ps.impl.matrix.ServerPartition;
-import com.tencent.angel.ps.impl.matrix.ServerRow;
-import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
+import com.tencent.angel.ml.matrix.psf.Utils;
+import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
+import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
+import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.vector.ServerIntDoubleRow;
+import com.tencent.angel.ps.storage.vector.ServerLongDoubleRow;
+import com.tencent.angel.ps.storage.vector.ServerRow;
 
 /**
  * `MUpdateFunc` is a POF updater for multi rows in matrix.
  * Constructor's Parameters include int[] `rowIds`, which correspond to
  * ServerDenseDoubleRow[] `rows` in `doUpdate` interface.
- *
+ * <p>
  * That is the length of `rowIds` and `rows` is exactly the same, rows[i] is the content of
  * rowIds[i] row in matrix.
  */
@@ -42,9 +43,9 @@ public abstract class MUpdateFunc extends UpdateFunc {
     super(null);
   }
 
-  @Override
-  public void partitionUpdate(PartitionUpdateParam partParam) {
-    ServerPartition part = psContext.getMatrixStorageManager().getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
+  @Override public void partitionUpdate(PartitionUpdateParam partParam) {
+    ServerPartition part = psContext.getMatrixStorageManager()
+      .getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
 
     if (part != null) {
       MUpdateParam.MPartitionUpdateParam m = (MUpdateParam.MPartitionUpdateParam) partParam;
@@ -62,26 +63,27 @@ public abstract class MUpdateFunc extends UpdateFunc {
   private void update(ServerRow[] rows) {
     switch (rows[0].getRowType()) {
       case T_DOUBLE_DENSE:
-        ServerDenseDoubleRow[] denseRows = new ServerDenseDoubleRow[rows.length];
+        ServerIntDoubleRow[] denseRows = new ServerIntDoubleRow[rows.length];
         for (int i = 0; i < rows.length; i++) {
-          denseRows[i] = (ServerDenseDoubleRow) rows[i];
+          denseRows[i] = (ServerIntDoubleRow) rows[i];
         }
         doUpdate(denseRows);
         return;
       case T_DOUBLE_SPARSE_LONGKEY:
-        ServerSparseDoubleLongKeyRow[] sparseRows = new ServerSparseDoubleLongKeyRow[rows.length];
+        ServerLongDoubleRow[] sparseRows = new ServerLongDoubleRow[rows.length];
         for (int i = 0; i < rows.length; i++) {
-          sparseRows[i] = (ServerSparseDoubleLongKeyRow) rows[i];
+          sparseRows[i] = (ServerLongDoubleRow) rows[i];
         }
         doUpdate(sparseRows);
         return;
       default:
-        throw new RuntimeException("currently only supports T_DOUBLE_DENSE and T_DOUBLE_SPARSE_LONGKEY");
+        throw new RuntimeException(
+          "currently only supports T_DOUBLE_DENSE and T_DOUBLE_SPARSE_LONGKEY");
     }
   }
 
-  protected abstract void doUpdate(ServerDenseDoubleRow[] rows);
+  protected abstract void doUpdate(ServerIntDoubleRow[] rows);
 
-  protected abstract void doUpdate(ServerSparseDoubleLongKeyRow[] rows);
+  protected abstract void doUpdate(ServerLongDoubleRow[] rows);
 
 }

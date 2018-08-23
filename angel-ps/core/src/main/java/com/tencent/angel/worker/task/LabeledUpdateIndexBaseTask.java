@@ -15,12 +15,14 @@
  *
  */
 
+
 package com.tencent.angel.worker.task;
 
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.feature.LabeledData;
-import com.tencent.angel.ml.math.TAbstractVector;
-import com.tencent.angel.ml.math.vector.SparseDummyVector;
+import com.tencent.angel.ml.math2.storage.IntKeyVectorStorage;
+import com.tencent.angel.ml.math2.vector.IntDummyVector;
+import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.worker.storage.Reader;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -33,22 +35,21 @@ import java.io.IOException;
  * Support update index
  * </p>
  */
-public abstract class LabeledUpdateIndexBaseTask<KEYIN, VALUEIN> extends
-        BaseTask<KEYIN, VALUEIN, LabeledData> {
+public abstract class LabeledUpdateIndexBaseTask<KEYIN, VALUEIN>
+  extends BaseTask<KEYIN, VALUEIN, LabeledData> {
   private final boolean updateIndexEnable;
   private volatile IntOpenHashSet indexSet;
   private final MatrixMeta matrixMeta;
-  
+
   public LabeledUpdateIndexBaseTask(TaskContext taskContext, MatrixMeta matrixMeta)
-          throws IOException {
+    throws IOException {
     super(taskContext);
     this.matrixMeta = matrixMeta;
     updateIndexEnable = true;
     indexSet = new IntOpenHashSet();
   }
-  
-  @Override
-  public void preProcess(TaskContext taskContext) {
+
+  @Override public void preProcess(TaskContext taskContext) {
     try {
       Reader<KEYIN, VALUEIN> reader = taskContext.getReader();
       while (reader.nextKeyValue()) {
@@ -56,23 +57,29 @@ public abstract class LabeledUpdateIndexBaseTask<KEYIN, VALUEIN> extends
         if (out != null) {
           taskDataBlock.put(out);
           if (updateIndexEnable) {
-            TAbstractVector vector = out.getX();
-            if (vector instanceof SparseDummyVector) {
-              int[] indexes = ((SparseDummyVector) vector).getIndices();
-              for (int i = 0; i < indexes.length; i++) {
-                indexSet.add(indexes[i]);
-              }
+            Vector vector = out.getX();
+            int[] indexes;
+            if (vector instanceof IntDummyVector) {
+              indexes = ((IntDummyVector) vector).getIndices();
+            } else if (vector.getStorage() instanceof IntKeyVectorStorage) {
+              indexes = ((IntKeyVectorStorage) vector).getIndices();
+            } else {
+              throw new AngelException("");
+            }
+
+            for (int i = 0; i < indexes.length; i++) {
+              indexSet.add(indexes[i]);
             }
           }
         }
       }
-      
+
       taskDataBlock.flush();
     } catch (Exception e) {
       throw new AngelException("Pre-Process Error.", e);
     }
   }
-  
+
   /**
    * Is update index enable boolean.
    *
@@ -81,7 +88,7 @@ public abstract class LabeledUpdateIndexBaseTask<KEYIN, VALUEIN> extends
   public boolean isUpdateIndexEnable() {
     return updateIndexEnable;
   }
-  
+
   /**
    * Gets index set.
    *
@@ -90,7 +97,7 @@ public abstract class LabeledUpdateIndexBaseTask<KEYIN, VALUEIN> extends
   public IntOpenHashSet getIndexSet() {
     return indexSet;
   }
-  
+
   /**
    * Sets index set.
    *
@@ -99,7 +106,7 @@ public abstract class LabeledUpdateIndexBaseTask<KEYIN, VALUEIN> extends
   public void setIndexSet(IntOpenHashSet indexSet) {
     this.indexSet = indexSet;
   }
-  
+
   /**
    * Gets matrix meta.
    *

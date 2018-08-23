@@ -1,25 +1,21 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
  */
 
-/**
- * The container launch and launch result notify have been modified according to the specific
- * circumstances of Angel.
- */
+
 package com.tencent.angel.master.deploy.yarn;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -65,10 +61,10 @@ public class YarnContainerLauncher extends ContainerLauncher {
 
   private final ConcurrentHashMap<ContainerId, Container> containers;
   private final AMContext context;
-  protected ThreadPoolExecutor launcherPool;
-  
+  protected volatile ThreadPoolExecutor launcherPool;
+
   private int limitOnPoolSize;
-  private Thread eventHandlingThread;
+  private volatile Thread eventHandlingThread;
   protected final BlockingQueue<ContainerLauncherEvent> eventQueue;
   private final AtomicBoolean stopped;
   private ContainerManagementProtocolProxy cmProxy;
@@ -96,6 +92,7 @@ public class YarnContainerLauncher extends ContainerLauncher {
   private static enum ContainerState {
     PREP, FAILED, RUNNING, DONE, KILLED_BEFORE_LAUNCH
   }
+
 
   private class Container {
     private ContainerState state;
@@ -127,35 +124,34 @@ public class YarnContainerLauncher extends ContainerLauncher {
 
         proxy = getCMProxy(containerMgrAddress, containerId);
 
-        //build the start container request use launch context 
+        //build the start container request use launch context
         ContainerLaunchContext containerLaunchContext = event.getContainerLaunchContext();
         StartContainerRequest startRequest =
-            StartContainerRequest.newInstance(containerLaunchContext, event.getContainerToken());
+          StartContainerRequest.newInstance(containerLaunchContext, event.getContainerToken());
         List<StartContainerRequest> list = new ArrayList<StartContainerRequest>();
         list.add(startRequest);
         StartContainersRequest requestList = StartContainersRequest.newInstance(list);
-        
+
         //send the start request to Yarn nm
         StartContainersResponse response =
-            proxy.getContainerManagementProtocol().startContainers(requestList);
-        if (response.getFailedRequests() != null
-            && response.getFailedRequests().containsKey(containerId)) {
+          proxy.getContainerManagementProtocol().startContainers(requestList);
+        if (response.getFailedRequests() != null && response.getFailedRequests()
+          .containsKey(containerId)) {
           throw response.getFailedRequests().get(containerId).deSerialize();
         }
 
         //send the message that the container starts successfully to the corresponding component
         notifyContainerLaunchSuccess(event);
-        
+
         // after launching, send launched event to task attempt to move
-        // it from ASSIGNED to RUNNING state        
+        // it from ASSIGNED to RUNNING state
         this.state = ContainerState.RUNNING;
       } catch (Throwable t) {
         String message =
-            "Container launch failed for " + containerId + " : "
-                + StringUtils.stringifyException(t);
+          "Container launch failed for " + containerId + " : " + StringUtils.stringifyException(t);
         LOG.error(message);
         this.state = ContainerState.FAILED;
-        
+
         //send the message that the container starts failed to the corresponding component
         notifyContainerLaunchFailed(event, message);
       } finally {
@@ -169,11 +165,11 @@ public class YarnContainerLauncher extends ContainerLauncher {
     private void notifyContainerLaunchSuccess(ContainerRemoteLaunchEvent event) {
       Id id = event.getId();
       if (id instanceof PSAttemptId) {
-        context.getEventHandler().handle(
-            new PSAttemptEvent(PSAttemptEventType.PA_CONTAINER_LAUNCHED, (PSAttemptId) id));
+        context.getEventHandler()
+          .handle(new PSAttemptEvent(PSAttemptEventType.PA_CONTAINER_LAUNCHED, (PSAttemptId) id));
       } else if (id instanceof WorkerAttemptId) {
         context.getEventHandler().handle(
-            new WorkerAttemptEvent(WorkerAttemptEventType.CONTAINER_LAUNCHED, (WorkerAttemptId) id));
+          new WorkerAttemptEvent(WorkerAttemptEventType.CONTAINER_LAUNCHED, (WorkerAttemptId) id));
       }
     }
 
@@ -181,15 +177,16 @@ public class YarnContainerLauncher extends ContainerLauncher {
     private void notifyContainerLaunchFailed(ContainerRemoteLaunchEvent event, String message) {
       Id id = event.getId();
       if (id instanceof PSAttemptId) {
+        context.getEventHandler()
+          .handle(new PSAttemptDiagnosticsUpdateEvent(message, (PSAttemptId) id));
         context.getEventHandler().handle(
-            new PSAttemptDiagnosticsUpdateEvent(message, (PSAttemptId) id));
-        context.getEventHandler().handle(
-            new PSAttemptEvent(PSAttemptEventType.PA_CONTAINER_LAUNCH_FAILED, (PSAttemptId) id));
+          new PSAttemptEvent(PSAttemptEventType.PA_CONTAINER_LAUNCH_FAILED, (PSAttemptId) id));
       } else if (id instanceof WorkerAttemptId) {
+        context.getEventHandler()
+          .handle(new WorkerAttemptDiagnosticsUpdateEvent((WorkerAttemptId) id, message));
         context.getEventHandler().handle(
-            new WorkerAttemptDiagnosticsUpdateEvent((WorkerAttemptId) id, message));
-        context.getEventHandler().handle(
-            new WorkerAttemptEvent(WorkerAttemptEventType.CONTAINER_LAUNCH_FAILED, (WorkerAttemptId) id));
+          new WorkerAttemptEvent(WorkerAttemptEventType.CONTAINER_LAUNCH_FAILED,
+            (WorkerAttemptId) id));
       }
     }
 
@@ -209,16 +206,15 @@ public class YarnContainerLauncher extends ContainerLauncher {
           ids.add(this.containerId);
           StopContainersRequest request = StopContainersRequest.newInstance(ids);
           StopContainersResponse response =
-              proxy.getContainerManagementProtocol().stopContainers(request);
-          if (response.getFailedRequests() != null
-              && response.getFailedRequests().containsKey(this.containerId)) {
+            proxy.getContainerManagementProtocol().stopContainers(request);
+          if (response.getFailedRequests() != null && response.getFailedRequests()
+            .containsKey(this.containerId)) {
             throw response.getFailedRequests().get(this.containerId).deSerialize();
           }
           LOG.info("stop container success, containerMgrAddress:" + containerMgrAddress);
         } catch (Throwable t) {
-          String message =
-              "cleanup failed for container " + this.containerId + " : "
-                  + StringUtils.stringifyException(t);
+          String message = "cleanup failed for container " + this.containerId + " : " + StringUtils
+            .stringifyException(t);
           LOG.warn(message);
         } finally {
           if (proxy != null) {
@@ -238,12 +234,10 @@ public class YarnContainerLauncher extends ContainerLauncher {
     this.eventQueue = new LinkedBlockingQueue<ContainerLauncherEvent>();
   }
 
-  @Override
-  protected void serviceInit(Configuration conf) throws Exception {
+  @Override protected void serviceInit(Configuration conf) throws Exception {
     super.serviceInit(conf);
-    this.limitOnPoolSize =
-        conf.getInt(AngelConf.ANGEL_AM_CONTAINERLAUNCHER_THREAD_COUNT_LIMIT,
-            AngelConf.DEFAULT_ANGEL_AM_CONTAINERLAUNCHER_THREAD_COUNT_LIMIT);
+    this.limitOnPoolSize = conf.getInt(AngelConf.ANGEL_AM_CONTAINERLAUNCHER_THREAD_COUNT_LIMIT,
+      AngelConf.DEFAULT_ANGEL_AM_CONTAINERLAUNCHER_THREAD_COUNT_LIMIT);
     LOG.info("Upper limit on the thread pool size is " + this.limitOnPoolSize);
     cmProxy = new ContainerManagementProtocolProxy(conf);
   }
@@ -251,17 +245,14 @@ public class YarnContainerLauncher extends ContainerLauncher {
   protected void serviceStart() throws Exception {
 
     ThreadFactory tf =
-        new ThreadFactoryBuilder().setNameFormat("ContainerLauncher #%d").setDaemon(true).build();
+      new ThreadFactoryBuilder().setNameFormat("ContainerLauncher #%d").setDaemon(true).build();
 
     //start a thread pool to startup the container
-    launcherPool =
-        new ThreadPoolExecutor(INITIAL_POOL_SIZE, Integer.MAX_VALUE, 1, TimeUnit.HOURS,
-            new LinkedBlockingQueue<Runnable>(), tf);
-    
+    launcherPool = new ThreadPoolExecutor(INITIAL_POOL_SIZE, Integer.MAX_VALUE, 1, TimeUnit.HOURS,
+      new LinkedBlockingQueue<Runnable>(), tf);
+
     eventHandlingThread = new Thread() {
-      @SuppressWarnings("unchecked")
-      @Override
-      public void run() {
+      @SuppressWarnings("unchecked") @Override public void run() {
         YarnContainerLauncherEvent event = null;
         Set<String> allNodes = new HashSet<String>();
 
@@ -271,8 +262,8 @@ public class YarnContainerLauncher extends ContainerLauncher {
           } catch (InterruptedException e) {
             if (!stopped.get()) {
               LOG.fatal("yarn container launch event handler is interrupted. " + e);
-              context.getEventHandler().handle(
-                  new InternalErrorEvent(context.getApplicationId(), "yarn container launch event handler is interrupted. " + e.getMessage()));
+              context.getEventHandler().handle(new InternalErrorEvent(context.getApplicationId(),
+                "yarn container launch event handler is interrupted. " + e.getMessage()));
             }
             return;
           }
@@ -295,7 +286,7 @@ public class YarnContainerLauncher extends ContainerLauncher {
               // pool-size
               int newPoolSize = Math.min(limitOnPoolSize, idealPoolSize + INITIAL_POOL_SIZE);
               LOG.info("Setting ContainerLauncher pool size to " + newPoolSize
-                  + " as number-of-nodes to talk to is " + numNodes);
+                + " as number-of-nodes to talk to is " + numNodes);
               launcherPool.setCorePoolSize(newPoolSize);
             }
           }
@@ -328,11 +319,14 @@ public class YarnContainerLauncher extends ContainerLauncher {
     shutdownAllContainers();
     if (eventHandlingThread != null) {
       eventHandlingThread.interrupt();
+      eventHandlingThread = null;
     }
     if (launcherPool != null) {
       launcherPool.shutdownNow();
+      launcherPool = null;
     }
     super.serviceStop();
+    LOG.info("ContainerLauncher stopped");
   }
 
   protected EventProcessor createEventProcessor(YarnContainerLauncherEvent event) {
@@ -349,8 +343,7 @@ public class YarnContainerLauncher extends ContainerLauncher {
       this.event = event;
     }
 
-    @Override
-    public void run() {
+    @Override public void run() {
       LOG.info("Processing the event " + event.toString());
 
       ContainerId containerId = event.getContainerId();
@@ -370,8 +363,7 @@ public class YarnContainerLauncher extends ContainerLauncher {
     }
   }
 
-  @Override
-  public void handle(ContainerLauncherEvent event) {
+  @Override public void handle(ContainerLauncherEvent event) {
     try {
       eventQueue.put(event);
     } catch (InterruptedException e) {
@@ -380,7 +372,7 @@ public class YarnContainerLauncher extends ContainerLauncher {
   }
 
   public ContainerManagementProtocolProxy.ContainerManagementProtocolProxyData getCMProxy(
-      String containerMgrBindAddr, ContainerId containerId) throws IOException {
+    String containerMgrBindAddr, ContainerId containerId) throws IOException {
     return cmProxy.getProxy(containerMgrBindAddr, containerId);
   }
 

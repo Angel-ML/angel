@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master;
 
 import com.tencent.angel.AngelDeployMode;
@@ -33,6 +34,8 @@ import com.tencent.angel.master.deploy.local.LocalContainerAllocator;
 import com.tencent.angel.master.deploy.local.LocalContainerLauncher;
 import com.tencent.angel.master.deploy.yarn.YarnContainerAllocator;
 import com.tencent.angel.master.deploy.yarn.YarnContainerLauncher;
+import com.tencent.angel.master.matrix.committer.AMModelLoader;
+import com.tencent.angel.master.matrix.committer.AMModelSaver;
 import com.tencent.angel.master.matrixmeta.AMMatrixMetaManager;
 import com.tencent.angel.master.metrics.MetricsEventType;
 import com.tencent.angel.master.metrics.MetricsService;
@@ -99,59 +102,90 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Angel application master. It contains service modules: worker manager, parameter server manager,
  * container allocator, container launcher, task manager and event handler.
- * 
  */
 public class AngelApplicationMaster extends CompositeService {
 
   private static final Log LOG = LogFactory.getLog(AngelApplicationMaster.class);
   public static final int SHUTDOWN_HOOK_PRIORITY = 30;
 
-  /** application name */
+  /**
+   * application name
+   */
   private final String appName;
 
-  /** application configuration */
+  /**
+   * application configuration
+   */
   private final Configuration conf;
 
-  /** application attempt id */
+  /**
+   * application attempt id
+   */
   private final ApplicationAttemptId appAttemptId;
 
-  /** app start time */
+  /**
+   * app start time
+   */
   private final long startTime;
 
-  /** app submit time */
+  /**
+   * app submit time
+   */
   private final long appSubmitTime;
 
-  /** container id for angel application master */
+  /**
+   * container id for angel application master
+   */
   private final ContainerId containerId;
 
-  /** The host of the node manager where the angel applitaion master is located */
+  /**
+   * The host of the node manager where the angel applitaion master is located
+   */
   private final String nmHost;
 
-  /** The port of the node manager where the angel applitaion master is located */
+  /**
+   * The port of the node manager where the angel applitaion master is located
+   */
   private final int nmPort;
 
-  /** The web port of the node manager where the angel applitaion master is located */
+  /**
+   * The web port of the node manager where the angel applitaion master is located
+   */
   private final int nmHttpPort;
 
-  /** angel application master credentials */
+  /**
+   * angel application master credentials
+   */
   private final Credentials credentials;
 
-  /** application running context, it is used to share information between all service module */
+  /**
+   * application running context, it is used to share information between all service module
+   */
   private final AMContext appContext;
 
-  /** system clock */
+  /**
+   * system clock
+   */
   private final SystemClock clock;
 
-  /** event dispatcher */
+  /**
+   * event dispatcher
+   */
   private Dispatcher dispatcher;
 
-  /** container allocator, it used to apply running resource for workers and parameter servers */
+  /**
+   * container allocator, it used to apply running resource for workers and parameter servers
+   */
   private ContainerAllocator containerAllocator;
 
-  /** container allocator, it used to launch workers and parameter servers */
+  /**
+   * container allocator, it used to launch workers and parameter servers
+   */
   private ContainerLauncher containerLauncher;
 
-  /** parameter server manager */
+  /**
+   * parameter server manager
+   */
   private ParameterServerManager psManager;
 
   /**
@@ -160,50 +194,86 @@ public class AngelApplicationMaster extends CompositeService {
    */
   private volatile MasterService masterService;
 
-  /** matrix meta manager */
+  /**
+   * matrix meta manager
+   */
   private AMMatrixMetaManager matrixMetaManager;
 
-  /** parameter server location manager */
+  /**
+   * parameter server location manager
+   */
   private LocationManager locationManager;
 
-  /** worker manager */
+  /**
+   * worker manager
+   */
   private WorkerManager workerManager;
 
-  /** it use to split train data */
+  /**
+   * it use to split train data
+   */
   private DataSpliter dataSpliter;
 
-  /** angel application master state storage */
+  /**
+   * angel application master state storage
+   */
   private AppStateStorage appStateStorage;
 
-  /** angel application state */
+  /**
+   * angel application state
+   */
   private final App angelApp;
 
-  /** a web service for http access */
+  /**
+   * a web service for http access
+   */
   private WebApp webApp;
 
-  /** psagent manager */
+  /**
+   * psagent manager
+   */
   private PSAgentManager psAgentManager;
 
-  /** identifies whether the temporary resource is cleared */
+  /**
+   * identifies whether the temporary resource is cleared
+   */
   private boolean isCleared;
 
-  /** task manager */
+  /**
+   * task manager
+   */
   private AMTaskManager taskManager;
 
-  /** Algorithm indexes collector */
+  /**
+   * Algorithm indexes collector
+   */
   private MetricsService algoMetricsService;
 
   private final Lock lock;
 
-  /** Angel Client manager */
+  /**
+   * Angel Client manager
+   */
   private ClientManager clientManager;
 
-  /** Heartbeat monitor */
+  /**
+   * Heartbeat monitor
+   */
   private HeartbeatMonitor hbMonitor;
 
+  /**
+   * Model saver
+   */
+  private AMModelSaver modelSaver;
+
+  /**
+   * Model loader
+   */
+  private AMModelLoader modelLoader;
+
   public AngelApplicationMaster(Configuration conf, String appName,
-      ApplicationAttemptId applicationAttemptId, ContainerId containerId, String nmHost, int nmPort,
-      int nmHttpPort, long appSubmitTime, Credentials credentials)  {
+    ApplicationAttemptId applicationAttemptId, ContainerId containerId, String nmHost, int nmPort,
+    int nmHttpPort, long appSubmitTime, Credentials credentials) {
     super(AngelApplicationMaster.class.getName());
     this.conf = conf;
     this.appName = appName;
@@ -236,101 +306,80 @@ public class AngelApplicationMaster extends CompositeService {
       this.clientToAMTokenSecretManager = new ClientToAMTokenSecretManager(appAttemptId, null);
     }
 
-    @Override
-    public ApplicationAttemptId getApplicationAttemptId() {
+    @Override public ApplicationAttemptId getApplicationAttemptId() {
       return appAttemptId;
     }
 
-    @Override
-    public MasterService getMasterService() {
+    @Override public MasterService getMasterService() {
       return masterService;
     }
 
-    @Override
-    public ApplicationId getApplicationId() {
+    @Override public ApplicationId getApplicationId() {
       return appAttemptId.getApplicationId();
     }
 
-    @Override
-    public String getApplicationName() {
+    @Override public String getApplicationName() {
       return appName;
     }
 
-    @Override
-    public long getStartTime() {
+    @Override public long getStartTime() {
       return startTime;
     }
 
-    @SuppressWarnings("rawtypes")
-    @Override
-    public EventHandler getEventHandler() {
+    @SuppressWarnings("rawtypes") @Override public EventHandler getEventHandler() {
       return dispatcher.getEventHandler();
     }
 
-    @Override
-    public String getUser() {
+    @Override public String getUser() {
       return conf.get(AngelConf.USER_NAME);
     }
 
-    @Override
-    public Clock getClock() {
+    @Override public Clock getClock() {
       return clock;
     }
 
-    @Override
-    public ClientToAMTokenSecretManager getClientToAMTokenSecretManager() {
+    @Override public ClientToAMTokenSecretManager getClientToAMTokenSecretManager() {
       return clientToAMTokenSecretManager;
     }
 
-    @Override
-    public Credentials getCredentials() {
+    @Override public Credentials getCredentials() {
       return credentials;
     }
 
-    @Override
-    public ContainerAllocator getContainerAllocator() {
+    @Override public ContainerAllocator getContainerAllocator() {
       return containerAllocator;
     }
 
-    @Override
-    public ParameterServerManager getParameterServerManager() {
+    @Override public ParameterServerManager getParameterServerManager() {
       return psManager;
     }
 
-    @Override
-    public Dispatcher getDispatcher() {
+    @Override public Dispatcher getDispatcher() {
       return dispatcher;
     }
 
-    @Override
-    public App getApp() {
+    @Override public App getApp() {
       return angelApp;
     }
 
-    @Override
-    public Configuration getConf() {
+    @Override public Configuration getConf() {
       return conf;
     }
 
-    @Override
-    public WebApp getWebApp() {
+    @Override public WebApp getWebApp() {
       return webApp;
     }
 
-    @Override
-    public AMMatrixMetaManager getMatrixMetaManager() {
+    @Override public AMMatrixMetaManager getMatrixMetaManager() {
       return matrixMetaManager;
     }
 
-    @Override
-    public LocationManager getLocationManager() {
+    @Override public LocationManager getLocationManager() {
       return locationManager;
     }
 
-    @Override
-    public RunningMode getRunningMode() {
-      String mode = conf.get(AngelConf.ANGEL_RUNNING_MODE,
-          AngelConf.DEFAULT_ANGEL_RUNNING_MODE);
+    @Override public RunningMode getRunningMode() {
+      String mode = conf.get(AngelConf.ANGEL_RUNNING_MODE, AngelConf.DEFAULT_ANGEL_RUNNING_MODE);
       if (mode.equals(RunningMode.ANGEL_PS.toString())) {
         return RunningMode.ANGEL_PS;
       } else {
@@ -338,36 +387,33 @@ public class AngelApplicationMaster extends CompositeService {
       }
     }
 
-    @Override
-    public PSAgentManager getPSAgentManager() {
+    @Override public PSAgentManager getPSAgentManager() {
       return psAgentManager;
     }
 
-    @Override
-    public WorkerManager getWorkerManager() {
+    @Override public WorkerManager getWorkerManager() {
       return workerManager;
     }
 
-    @Override
-    public DataSpliter getDataSpliter() {
+    @Override public DataSpliter getDataSpliter() {
       return dataSpliter;
     }
 
-    @Override
-    public int getTotalIterationNum() {
+    @Override public int getTotalIterationNum() {
       return conf.getInt("ml.epoch.num", AngelConf.DEFAULT_ANGEL_TASK_ITERATION_NUMBER);
     }
 
-    @Override
-    public AMTaskManager getTaskManager() {
+    @Override public AMTaskManager getTaskManager() {
       return taskManager;
     }
 
-    @Override
-    public MetricsService getAlgoMetricsService() {return algoMetricsService; }
+    @Override public MetricsService getAlgoMetricsService() {
+      return algoMetricsService;
+    }
 
     @Override public int getPSReplicationNum() {
-      return conf.getInt(AngelConf.ANGEL_PS_HA_REPLICATION_NUMBER, AngelConf.DEFAULT_ANGEL_PS_HA_REPLICATION_NUMBER);
+      return conf.getInt(AngelConf.ANGEL_PS_HA_REPLICATION_NUMBER,
+        AngelConf.DEFAULT_ANGEL_PS_HA_REPLICATION_NUMBER);
     }
 
     @Override public ClientManager getClientManager() {
@@ -375,9 +421,10 @@ public class AngelApplicationMaster extends CompositeService {
     }
 
     @Override public int getYarnNMWebPort() {
-      String nmWebAddr = conf.get(YarnConfiguration.NM_WEBAPP_ADDRESS, YarnConfiguration.DEFAULT_NM_WEBAPP_ADDRESS);
-      String [] addrItems = nmWebAddr.split(":");
-      if(addrItems.length == 2) {
+      String nmWebAddr =
+        conf.get(YarnConfiguration.NM_WEBAPP_ADDRESS, YarnConfiguration.DEFAULT_NM_WEBAPP_ADDRESS);
+      String[] addrItems = nmWebAddr.split(":");
+      if (addrItems.length == 2) {
         try {
           return Integer.valueOf(addrItems[1]);
         } catch (Throwable x) {
@@ -389,27 +436,31 @@ public class AngelApplicationMaster extends CompositeService {
       }
     }
 
-    @Override
-    public int getAMAttemptTime() {
-      return conf.getInt(YarnConfiguration.RM_AM_MAX_ATTEMPTS,
-          YarnConfiguration.DEFAULT_RM_AM_MAX_ATTEMPTS);
+    @Override public AMModelSaver getModelSaver() {
+      return modelSaver;
     }
 
-    @Override
-    public AppStateStorage getAppStateStorage() {
+    @Override public AMModelLoader getModelLoader() {
+      return modelLoader;
+    }
+
+    @Override public int getAMAttemptTime() {
+      return conf
+        .getInt(YarnConfiguration.RM_AM_MAX_ATTEMPTS, YarnConfiguration.DEFAULT_RM_AM_MAX_ATTEMPTS);
+    }
+
+    @Override public AppStateStorage getAppStateStorage() {
       return appStateStorage;
     }
 
-    @Override
-    public boolean needClear() {
-      return !getApp().isShouldRetry() || appAttemptId.getAttemptId() >= getAMAttemptTime() || angelApp.isSuccess();
+    @Override public boolean needClear() {
+      return !getApp().isShouldRetry() || appAttemptId.getAttemptId() >= getAMAttemptTime()
+        || angelApp.isSuccess();
 
     }
 
-    @Override
-    public AngelDeployMode getDeployMode() {
-      String mode = conf.get(AngelConf.ANGEL_DEPLOY_MODE,
-          AngelConf.DEFAULT_ANGEL_DEPLOY_MODE);
+    @Override public AngelDeployMode getDeployMode() {
+      String mode = conf.get(AngelConf.ANGEL_DEPLOY_MODE, AngelConf.DEFAULT_ANGEL_DEPLOY_MODE);
       if (mode.equals(AngelDeployMode.LOCAL.toString())) {
         return AngelDeployMode.LOCAL;
       } else {
@@ -419,9 +470,9 @@ public class AngelApplicationMaster extends CompositeService {
   }
 
   public void clear() throws IOException {
-    boolean deleteSubmitDir =
-        appContext.getConf().getBoolean(AngelConf.ANGEL_JOB_REMOVE_STAGING_DIR_ENABLE,
-            AngelConf.DEFAULT_ANGEL_JOB_REMOVE_STAGING_DIR_ENABLE);
+    boolean deleteSubmitDir = appContext.getConf()
+      .getBoolean(AngelConf.ANGEL_JOB_REMOVE_STAGING_DIR_ENABLE,
+        AngelConf.DEFAULT_ANGEL_JOB_REMOVE_STAGING_DIR_ENABLE);
     if (deleteSubmitDir) {
       cleanupStagingDir();
     }
@@ -464,8 +515,7 @@ public class AngelApplicationMaster extends CompositeService {
     }
   }
 
-  @Override
-  public void serviceStop() throws Exception {
+  @Override public void serviceStop() throws Exception {
     super.serviceStop();
     AngelServiceLoader.stopService();
   }
@@ -522,8 +572,7 @@ public class AngelApplicationMaster extends CompositeService {
   }
 
   private void writeAppState() throws IllegalArgumentException, IOException {
-    String interalStatePath =
-        appContext.getConf().get(AngelConf.ANGEL_APP_SERILIZE_STATE_FILE);
+    String interalStatePath = appContext.getConf().get(AngelConf.ANGEL_APP_SERILIZE_STATE_FILE);
 
     LOG.info("start to write app state to file " + interalStatePath);
 
@@ -546,8 +595,7 @@ public class AngelApplicationMaster extends CompositeService {
     LOG.info("write app state over");
   }
 
-  @SuppressWarnings("resource")
-  public static void main(String[] args) {
+  @SuppressWarnings("resource") public static void main(String[] args) {
     AngelAppMasterShutdownHook hook = null;
     try {
       Thread.setDefaultUncaughtExceptionHandler(new YarnUncaughtExceptionHandler());
@@ -581,15 +629,13 @@ public class AngelApplicationMaster extends CompositeService {
 
       // Security framework already loaded the tokens into current UGI, just use
       // them
-      Credentials credentials =
-        UserGroupInformation.getCurrentUser().getCredentials();
+      Credentials credentials = UserGroupInformation.getCurrentUser().getCredentials();
       LOG.info("Executing with tokens:");
       for (Token<?> token : credentials.getAllTokens()) {
         LOG.info(token);
       }
 
-      UserGroupInformation appMasterUgi = UserGroupInformation
-        .createRemoteUser(jobUserName);
+      UserGroupInformation appMasterUgi = UserGroupInformation.createRemoteUser(jobUserName);
       appMasterUgi.addCredentials(credentials);
 
       // Now remove the AM->RM token so tasks don't have it
@@ -606,24 +652,24 @@ public class AngelApplicationMaster extends CompositeService {
       LOG.info("app name=" + appName);
       LOG.info("app attempt id=" + applicationAttemptId);
 
-      final AngelApplicationMaster appMaster = new AngelApplicationMaster(conf, appName,
-          applicationAttemptId, containerId, nodeHostString, Integer.parseInt(nodePortString),
-          Integer.parseInt(nodeHttpPortString), appSubmitTime, credentials);
+      final AngelApplicationMaster appMaster =
+        new AngelApplicationMaster(conf, appName, applicationAttemptId, containerId, nodeHostString,
+          Integer.parseInt(nodePortString), Integer.parseInt(nodeHttpPortString), appSubmitTime,
+          credentials);
 
       // add a shutdown hook
       hook = new AngelAppMasterShutdownHook(appMaster);
       ShutdownHookManager.get().addShutdownHook(hook, SHUTDOWN_HOOK_PRIORITY);
 
       appMasterUgi.doAs(new PrivilegedExceptionAction<Object>() {
-        @Override
-        public Object run() throws Exception {
+        @Override public Object run() throws Exception {
           appMaster.initAndStart();
           return null;
         }
       });
     } catch (Throwable t) {
       LOG.fatal("Error starting AppMaster", t);
-      if(hook != null) {
+      if (hook != null) {
         ShutdownHookManager.get().removeShutdownHook(hook);
       }
       System.exit(1);
@@ -728,9 +774,8 @@ public class AngelApplicationMaster extends CompositeService {
     switch (mode) {
       case ANGEL_PS_WORKER: {
         // a dummy data spliter is just for test now
-        boolean useDummyDataSpliter =
-            conf.getBoolean(AngelConf.ANGEL_AM_USE_DUMMY_DATASPLITER,
-                AngelConf.DEFAULT_ANGEL_AM_USE_DUMMY_DATASPLITER);
+        boolean useDummyDataSpliter = conf.getBoolean(AngelConf.ANGEL_AM_USE_DUMMY_DATASPLITER,
+          AngelConf.DEFAULT_ANGEL_AM_USE_DUMMY_DATASPLITER);
         if (useDummyDataSpliter) {
           dataSpliter = new DummyDataSpliter(appContext);
         } else {
@@ -765,6 +810,12 @@ public class AngelApplicationMaster extends CompositeService {
     dispatcher.register(AppEventType.class, angelApp);
     dispatcher.register(AppFinishEventType.class, new AppFinishEventHandler());
 
+    // Init model saver & loader
+    modelSaver = new AMModelSaver(appContext);
+    addIfService(modelSaver);
+    modelLoader = new AMModelLoader(appContext);
+    addIfService(modelLoader);
+
     hbMonitor = new HeartbeatMonitor(appContext);
     addIfService(hbMonitor);
 
@@ -774,8 +825,8 @@ public class AngelApplicationMaster extends CompositeService {
     // start a web service if use yarn deploy mode
     if (deployMode == AngelDeployMode.YARN) {
       try {
-        webApp = WebApps.$for("angel", AMContext.class, appContext).with(conf)
-            .start(new AngelWebApp());
+        webApp =
+          WebApps.$for("angel", AMContext.class, appContext).with(conf).start(new AngelWebApp());
         LOG.info("start webapp server success");
         LOG.info("webApp.port()=" + webApp.port());
       } catch (Exception e) {
@@ -799,8 +850,8 @@ public class AngelApplicationMaster extends CompositeService {
   }
 
   private void waitForAllPsRegisted() throws InterruptedException {
-    while(true) {
-      if(locationManager.isAllPsRegisted()) {
+    while (true) {
+      if (locationManager.isAllPsRegisted()) {
         return;
       }
       Thread.sleep(100);
@@ -808,8 +859,8 @@ public class AngelApplicationMaster extends CompositeService {
   }
 
   private void waitForAllMetricsInited() throws InterruptedException {
-    while(true) {
-      if(matrixMetaManager.isAllMatricesCreated()) {
+    while (true) {
+      if (matrixMetaManager.isAllMatricesCreated()) {
         return;
       }
       Thread.sleep(100);
@@ -889,7 +940,7 @@ public class AngelApplicationMaster extends CompositeService {
       }
     }
 
-    if(dataSpliter.getSplitNum() == 0) {
+    if (dataSpliter.getSplitNum() == 0) {
       throw new IOException("training data directory is empty");
     }
   }
@@ -928,61 +979,59 @@ public class AngelApplicationMaster extends CompositeService {
 
   public class WorkerAttemptEventHandler implements EventHandler<WorkerAttemptEvent> {
 
-    @Override
-    public void handle(WorkerAttemptEvent event) {
+    @Override public void handle(WorkerAttemptEvent event) {
       WorkerAttemptId workerAttemptId = event.getWorkerAttemptId();
 
       workerManager.getWorker(workerAttemptId.getWorkerId()).getWorkerAttempt(workerAttemptId)
-          .handle(event);
+        .handle(event);
     }
   }
 
+
   public class WorkerEventHandler implements EventHandler<AMWorkerEvent> {
 
-    @Override
-    public void handle(AMWorkerEvent event) {
+    @Override public void handle(AMWorkerEvent event) {
       workerManager.getWorker(event.getWorkerId()).handle(event);
     }
   }
 
+
   public class WorkerGroupEventHandler implements EventHandler<AMWorkerGroupEvent> {
 
-    @Override
-    public void handle(AMWorkerGroupEvent event) {
+    @Override public void handle(AMWorkerGroupEvent event) {
       workerManager.getWorkerGroup(event.getGroupId()).handle(event);
     }
   }
 
+
   public class ParameterServerEventHandler implements EventHandler<AMParameterServerEvent> {
 
-    @Override
-    public void handle(AMParameterServerEvent event) {
+    @Override public void handle(AMParameterServerEvent event) {
       ParameterServerId id = event.getPsId();
       AMParameterServer server = psManager.getParameterServer(id);
       server.handle(event);
     }
   }
 
+
   public class PSAttemptEventDispatcher implements EventHandler<PSAttemptEvent> {
 
-    @Override
-    public void handle(PSAttemptEvent event) {
+    @Override public void handle(PSAttemptEvent event) {
       PSAttemptId attemptId = event.getPSAttemptId();
       ParameterServerId id = attemptId.getPsId();
       psManager.getParameterServer(id).getPSAttempt(attemptId).handle(event);
     }
   }
 
+
   public class AppFinishEventHandler implements EventHandler<AppFinishEvent> {
-    @Override
-    public void handle(AppFinishEvent event) {
+    @Override public void handle(AppFinishEvent event) {
       switch (event.getType()) {
         case INTERNAL_ERROR_FINISH:
         case SUCCESS_FINISH:
         case KILL_FINISH: {
           new Thread() {
-            @Override
-            public void run() {
+            @Override public void run() {
               shutDownJob();
             }
           }.start();
@@ -990,6 +1039,7 @@ public class AngelApplicationMaster extends CompositeService {
       }
     }
   }
+
 
   static class AngelAppMasterShutdownHook implements Runnable {
     AngelApplicationMaster appMaster;

@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.ps.attempt;
 
 import com.tencent.angel.ps.PSAttemptId;
@@ -25,12 +26,15 @@ import java.util.Map;
  * Update the counters for ps attempt.
  */
 public class PSAttemptStateUpdateEvent extends PSAttemptEvent {
-  /**ps attempt counters*/
+  /**
+   * ps attempt counters
+   */
   private final Map<String, String> params;
 
   /**
    * Create a PSAttemptStateUpdateEvent
-   * @param id ps attempt id
+   *
+   * @param id     ps attempt id
    * @param params counters
    */
   public PSAttemptStateUpdateEvent(PSAttemptId id, Map<String, String> params) {
@@ -40,6 +44,7 @@ public class PSAttemptStateUpdateEvent extends PSAttemptEvent {
 
   /**
    * Get counters
+   *
    * @return counters
    */
   public Map<String, String> getParams() {

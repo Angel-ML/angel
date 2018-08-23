@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master;
 
 import com.tencent.angel.client.AngelClient;
@@ -26,35 +27,29 @@ import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.ipc.TConnectionManager;
 import com.tencent.angel.localcluster.LocalClusterContext;
-import com.tencent.angel.master.app.AppEvent;
-import com.tencent.angel.master.app.AppEventType;
 import com.tencent.angel.master.app.AppState;
 import com.tencent.angel.master.ps.ParameterServerManager;
 import com.tencent.angel.master.ps.attempt.PSAttempt;
 import com.tencent.angel.master.ps.attempt.PSAttemptStateInternal;
 import com.tencent.angel.master.ps.ps.AMParameterServer;
 import com.tencent.angel.master.ps.ps.AMParameterServerState;
-import com.tencent.angel.ml.math.vector.DenseIntVector;
+import com.tencent.angel.ml.math2.storage.IntIntDenseVectorStorage;
+import com.tencent.angel.ml.math2.vector.IntIntVector;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.protobuf.ProtobufUtil;
-import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.protobuf.generated.MLProtos.MatrixClock;
-import com.tencent.angel.protobuf.generated.MLProtos.MatrixStatus;
 import com.tencent.angel.protobuf.generated.MLProtos.Pair;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskClockRequest;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskIterationRequest;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.*;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerCommandProto;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerDoneRequest;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerDoneResponse;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
-import com.tencent.angel.ps.impl.ClockVectorManager;
-import com.tencent.angel.ps.impl.PSMatrixMetaManager;
-import com.tencent.angel.ps.impl.ParameterServer;
-import com.tencent.angel.ps.impl.matrix.ServerMatrix;
+import com.tencent.angel.ps.ParameterServer;
+import com.tencent.angel.ps.clock.ClockVectorManager;
+import com.tencent.angel.ps.meta.PSMatrixMetaManager;
+import com.tencent.angel.ps.storage.matrix.ServerMatrix;
 import com.tencent.angel.psagent.matrix.MatrixClient;
 import com.tencent.angel.psagent.task.TaskContext;
 import com.tencent.angel.worker.Worker;
@@ -96,8 +91,7 @@ public class PSManagerTest {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
-  @Before
-  public void setup() throws Exception {
+  @Before public void setup() throws Exception {
     try {
       // set basic configuration keys
       Configuration conf = new Configuration();
@@ -132,7 +126,6 @@ public class PSManagerTest {
       mMatrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       mMatrix.set(MatrixConf.MATRIX_HOGWILD, "true");
       mMatrix.set(MatrixConf.MATRIX_AVERAGE, "false");
-      mMatrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_INT");
       angelClient.addMatrix(mMatrix);
 
       MatrixContext mMatrix2 = new MatrixContext();
@@ -145,7 +138,6 @@ public class PSManagerTest {
       mMatrix2.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       mMatrix2.set(MatrixConf.MATRIX_HOGWILD, "false");
       mMatrix2.set(MatrixConf.MATRIX_AVERAGE, "false");
-      mMatrix2.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
       angelClient.addMatrix(mMatrix2);
 
       angelClient.startPSServer();
@@ -164,8 +156,7 @@ public class PSManagerTest {
     }
   }
 
-  @Test
-  public void testPSManager() throws  Exception {
+  @Test public void testPSManager() throws Exception {
     try {
       LOG.info("===========================testPSManager===============================");
       AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
@@ -189,8 +180,7 @@ public class PSManagerTest {
     }
   }
 
-  @Test
-  public void testPSReport() throws Exception {
+  @Test public void testPSReport() throws Exception {
     try {
       ParameterServer ps = LocalClusterContext.get().getPS(psAttempt0Id).getPS();
       Location masterLoc = ps.getMasterLocation();
@@ -207,7 +197,8 @@ public class PSManagerTest {
       builder.addMetrics(pairBuilder.build());
 
       MatrixReportProto.Builder matrixBuilder = MatrixReportProto.newBuilder();
-      ConcurrentHashMap<Integer, ServerMatrix> matrixIdMap = ps.getMatrixStorageManager().getMatrices();
+      ConcurrentHashMap<Integer, ServerMatrix> matrixIdMap =
+        ps.getMatrixStorageManager().getMatrices();
       for (Entry<Integer, ServerMatrix> matrixEntry : matrixIdMap.entrySet()) {
         builder.addMatrixReports((matrixBuilder.setMatrixId(matrixEntry.getKey())
           .setMatrixName(matrixEntry.getValue().getName())));
@@ -235,53 +226,11 @@ public class PSManagerTest {
     }
   }
 
-  @SuppressWarnings("unchecked")
-  @Test
-  public void testPSDone() throws Exception {
+  @Test public void testPSError() throws Exception {
     try {
-      AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
-      ParameterServer ps = LocalClusterContext.get().getPS(psAttempt0Id).getPS();
-      Location masterLoc = ps.getMasterLocation();
-      TConnection connection = TConnectionManager.getConnection(ps.getConf());
-      MasterProtocol master = connection.getMasterService(masterLoc.getIp(), masterLoc.getPort());
-
-      WorkerDoneRequest workerRequest =
-        WorkerDoneRequest.newBuilder()
-          .setWorkerAttemptId(ProtobufUtil.convertToIdProto(worker0Attempt0Id)).build();
-      WorkerDoneResponse workerResponse = master.workerDone(null, workerRequest);
-      assertEquals(workerResponse.getCommand(), WorkerCommandProto.W_SUCCESS);
-      Thread.sleep(5000);
-
-      angelAppMaster.getAppContext().getEventHandler().handle(new AppEvent(AppEventType.COMMIT));
-
-      PSDoneRequest request =
-        PSDoneRequest.newBuilder().setPsAttemptId(ProtobufUtil.convertToIdProto(psAttempt0Id))
-          .build();
-      master.psDone(null, request);
-
-      Thread.sleep(5000);
-
-      ParameterServerManager psManager = angelAppMaster.getAppContext().getParameterServerManager();
-      AMParameterServer amPs = psManager.getParameterServer(psId);
-      PSAttempt psAttempt = amPs.getPSAttempt(psAttempt0Id);
-      assertEquals(psAttempt.getInternalState(), PSAttemptStateInternal.SUCCESS);
-
-      assertTrue(amPs.getState() == AMParameterServerState.SUCCESS);
-      assertEquals(amPs.getNextAttemptNumber(), 1);
-      assertNull(amPs.getRunningAttemptId());
-      assertEquals(amPs.getSuccessAttemptId(), psAttempt0Id);
-      assertEquals(amPs.getPSAttempts().size(), 1);
-    } catch (Exception x) {
-      LOG.error("run testPSDone failed ", x);
-      throw x;
-    }
-  }
-
-  @Test
-  public void testPSError() throws Exception {
-    try {
-      int heartbeatInterval = LocalClusterContext.get().getConf().getInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS,
-        AngelConf.DEFAULT_ANGEL_PS_HEARTBEAT_INTERVAL_MS);
+      int heartbeatInterval = LocalClusterContext.get().getConf()
+        .getInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS,
+          AngelConf.DEFAULT_ANGEL_PS_HEARTBEAT_INTERVAL_MS);
       AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
       ParameterServerManager psManager = angelAppMaster.getAppContext().getParameterServerManager();
       AMParameterServer amPs = psManager.getParameterServer(psId);
@@ -306,8 +255,10 @@ public class PSManagerTest {
       int w1Clock = (task0w1Clock < task1w1Clock) ? task0w1Clock : task1w1Clock;
       int w2Clock = (task0w2Clock < task1w2Clock) ? task0w2Clock : task1w2Clock;
 
-      TaskContext task0Context = worker.getTaskManager().getRunningTask().get(task0Id).getTaskContext().getContext();
-      TaskContext task1Context = worker.getTaskManager().getRunningTask().get(task1Id).getTaskContext().getContext();
+      TaskContext task0Context =
+        worker.getTaskManager().getRunningTask().get(task0Id).getTaskContext().getContext();
+      TaskContext task1Context =
+        worker.getTaskManager().getRunningTask().get(task1Id).getTaskContext().getContext();
       task0Context.setMatrixClock(w1Id, w1Clock);
       task1Context.setMatrixClock(w1Id, w1Clock);
       task0Context.setMatrixClock(w2Id, w2Clock);
@@ -316,34 +267,22 @@ public class PSManagerTest {
         .setTaskId(ProtobufUtil.convertToIdProto(task0Id)).build());
       master.taskIteration(null, TaskIterationRequest.newBuilder().setIteration(task1Iteration)
         .setTaskId(ProtobufUtil.convertToIdProto(task1Id)).build());
-      master.taskClock(
-        null,
-        TaskClockRequest
-          .newBuilder()
-          .setTaskId(ProtobufUtil.convertToIdProto(task0Id))
-          .setMatrixClock(
-            MatrixClock.newBuilder().setMatrixId(w1Id).setClock(task0w1Clock).build()).build());
-      master.taskClock(
-        null,
-        TaskClockRequest
-          .newBuilder()
-          .setTaskId(ProtobufUtil.convertToIdProto(task0Id))
-          .setMatrixClock(
-            MatrixClock.newBuilder().setMatrixId(w2Id).setClock(task0w2Clock).build()).build());
-      master.taskClock(
-        null,
-        TaskClockRequest
-          .newBuilder()
-          .setTaskId(ProtobufUtil.convertToIdProto(task1Id))
-          .setMatrixClock(
-            MatrixClock.newBuilder().setMatrixId(w1Id).setClock(task1w1Clock).build()).build());
-      master.taskClock(
-        null,
-        TaskClockRequest
-          .newBuilder()
-          .setTaskId(ProtobufUtil.convertToIdProto(task1Id))
-          .setMatrixClock(
-            MatrixClock.newBuilder().setMatrixId(w2Id).setClock(task1w2Clock).build()).build());
+      master.taskClock(null,
+        TaskClockRequest.newBuilder().setTaskId(ProtobufUtil.convertToIdProto(task0Id))
+          .setMatrixClock(MatrixClock.newBuilder().setMatrixId(w1Id).setClock(task0w1Clock).build())
+          .build());
+      master.taskClock(null,
+        TaskClockRequest.newBuilder().setTaskId(ProtobufUtil.convertToIdProto(task0Id))
+          .setMatrixClock(MatrixClock.newBuilder().setMatrixId(w2Id).setClock(task0w2Clock).build())
+          .build());
+      master.taskClock(null,
+        TaskClockRequest.newBuilder().setTaskId(ProtobufUtil.convertToIdProto(task1Id))
+          .setMatrixClock(MatrixClock.newBuilder().setMatrixId(w1Id).setClock(task1w1Clock).build())
+          .build());
+      master.taskClock(null,
+        TaskClockRequest.newBuilder().setTaskId(ProtobufUtil.convertToIdProto(task1Id))
+          .setMatrixClock(MatrixClock.newBuilder().setMatrixId(w2Id).setClock(task1w2Clock).build())
+          .build());
 
       assertEquals(amPs.getMaxAttempts(), 4);
       PSAttemptId psAttempt1Id = new PSAttemptId(psId, 1);
@@ -381,17 +320,17 @@ public class PSManagerTest {
 
       int matrixW1Id = w1Task0Client.getMatrixId();
 
-      int [] delta = new int[100000];
-      for(int i = 0; i < 100000; i++) {
+      int[] delta = new int[100000];
+      for (int i = 0; i < 100000; i++) {
         delta[i] = 2;
       }
 
-      DenseIntVector deltaVec = new DenseIntVector(100000, delta);
+      IntIntVector deltaVec = new IntIntVector(100000, new IntIntDenseVectorStorage(delta));
       deltaVec.setMatrixId(matrixW1Id);
       deltaVec.setRowId(0);
       w1Task0Client.increment(deltaVec);
 
-      deltaVec = new DenseIntVector(100000, delta);
+      deltaVec = new IntIntVector(100000, new IntIntDenseVectorStorage(delta));
       deltaVec.setMatrixId(matrixW1Id);
       deltaVec.setRowId(0);
       w1Task1Client.increment(deltaVec);
@@ -400,12 +339,9 @@ public class PSManagerTest {
       w1Task1Client.clock().get();
       ps = LocalClusterContext.get().getPS(psAttempt1Id).getPS();
 
-      int snapshotInterval =
-        LocalClusterContext
-          .get()
-          .getConf()
-          .getInt(AngelConf.ANGEL_PS_BACKUP_INTERVAL_MS,
-            AngelConf.DEFAULT_ANGEL_PS_BACKUP_INTERVAL_MS);
+      int snapshotInterval = LocalClusterContext.get().getConf()
+        .getInt(AngelConf.ANGEL_PS_BACKUP_INTERVAL_MS,
+          AngelConf.DEFAULT_ANGEL_PS_BACKUP_INTERVAL_MS);
 
       Thread.sleep(snapshotInterval * 2);
 
@@ -435,7 +371,7 @@ public class PSManagerTest {
       ps = LocalClusterContext.get().getPS(psAttempt2Id).getPS();
       checkMatrixInfo(ps, w1Id, w2Id, w1Clock + 1, w2Clock);
 
-      assertEquals(sum((DenseIntVector) w1Task0Client.getRow(0)), 400000);
+      assertEquals(sum((IntIntVector) w1Task0Client.getRow(0)), 400000);
 
       // attempt1
       ps.stop(-1);
@@ -532,18 +468,17 @@ public class PSManagerTest {
     assertEquals(sw2.getPartitionMeta(1).getPartitionKey().getPartitionId(), 1);
     assertEquals(clockVectorManager.getPartClock(sw2.getId(), 1), w2Clock);
   }
-  
-  private int sum(DenseIntVector vec){
-    int [] values = vec.getValues();
+
+  private int sum(IntIntVector vec) {
+    int[] values = vec.getStorage().getValues();
     int sum = 0;
-    for(int i = 0; i < values.length; i++) {
+    for (int i = 0; i < values.length; i++) {
       sum += values[i];
     }
     return sum;
   }
 
-  @After
-  public void stop() throws AngelException {
+  @After public void stop() throws AngelException {
     try {
       LOG.info("stop local cluster");
       angelClient.stop();

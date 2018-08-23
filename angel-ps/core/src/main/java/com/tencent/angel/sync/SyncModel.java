@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.sync;
 
 public enum SyncModel {

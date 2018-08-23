@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.model.output.format;
 
 import com.tencent.angel.utils.StringUtils;
@@ -81,15 +82,16 @@ public class ModelFilesMeta {
 
   /**
    * Create a MatrixFilesMeta
-   * @param matrixId matrix id
+   *
+   * @param matrixId   matrix id
    * @param matrixName matrix name
-   * @param rowType row type
-   * @param row row number
-   * @param col cloumn number
-   * @param blockRow row number in a block
-   * @param blockCol column number in a block
-   * @param options other matrix parameters
-   * @param partMetas partition meta
+   * @param rowType    row type
+   * @param row        row number
+   * @param col        cloumn number
+   * @param blockRow   row number in a block
+   * @param blockCol   column number in a block
+   * @param options    other matrix parameters
+   * @param partMetas  partition meta
    */
   public ModelFilesMeta(int matrixId, String matrixName, int rowType, int row, long col,
     int blockRow, long blockCol, Map<String, String> options,
@@ -107,30 +109,32 @@ public class ModelFilesMeta {
 
   /**
    * Create a MatrixFilesMeta
-   * @param matrixId matrix id
+   *
+   * @param matrixId   matrix id
    * @param matrixName matrix name
-   * @param rowType row type
-   * @param row row number
-   * @param col cloumn number
-   * @param blockRow row number in a block
-   * @param blockCol column number in a block
-   * @param options other matrix parameters
+   * @param rowType    row type
+   * @param row        row number
+   * @param col        cloumn number
+   * @param blockRow   row number in a block
+   * @param blockCol   column number in a block
+   * @param options    other matrix parameters
    */
   public ModelFilesMeta(int matrixId, String matrixName, int rowType, int row, long col,
     int blockRow, long blockCol, Map<String, String> options) {
-    this(matrixId, matrixName, rowType, row, col, blockRow, blockCol, options, new ConcurrentSkipListMap<>());
+    this(matrixId, matrixName, rowType, row, col, blockRow, blockCol, options,
+      new ConcurrentSkipListMap<>());
   }
 
   /**
    * Create a empty MatrixFilesMeta
    */
   public ModelFilesMeta() {
-    this(-1, "", -1, -1, -1,
-      -1, -1, new HashMap<>(), new ConcurrentSkipListMap<>());
+    this(-1, "", -1, -1, -1, -1, -1, new HashMap<>(), new ConcurrentSkipListMap<>());
   }
 
   /**
    * Merge server matrix meta to this
+   *
    * @param meta server matrix meta
    */
   public void merge(PSModelFilesMeta meta) {
@@ -139,6 +143,7 @@ public class ModelFilesMeta {
 
   /**
    * Write matrix meta to output stream
+   *
    * @param output output stream
    * @throws IOException
    */
@@ -172,6 +177,7 @@ public class ModelFilesMeta {
 
   /**
    * Read matrix meta from input stream
+   *
    * @param input input stream
    * @throws IOException
    */
@@ -201,6 +207,7 @@ public class ModelFilesMeta {
 
   /**
    * Get matrix id
+   *
    * @return matrix id
    */
   public int getMatrixId() {
@@ -209,6 +216,7 @@ public class ModelFilesMeta {
 
   /**
    * Set matrix id
+   *
    * @param matrixId matrix id
    */
   public void setMatrixId(int matrixId) {
@@ -217,6 +225,7 @@ public class ModelFilesMeta {
 
   /**
    * Get row type
+   *
    * @return row type
    */
   public int getRowType() {
@@ -225,6 +234,7 @@ public class ModelFilesMeta {
 
   /**
    * Set row type
+   *
    * @param rowType row type
    */
   public void setRowType(int rowType) {
@@ -233,6 +243,7 @@ public class ModelFilesMeta {
 
   /**
    * Get row number of matrix
+   *
    * @return row number of matrix
    */
   public int getRow() {
@@ -241,6 +252,7 @@ public class ModelFilesMeta {
 
   /**
    * Set row number of matrix
+   *
    * @param row row number of matrix
    */
   public void setRow(int row) {
@@ -249,6 +261,7 @@ public class ModelFilesMeta {
 
   /**
    * Get row number in matrix block
+   *
    * @return row number in matrix block
    */
   public int getBlockRow() {
@@ -257,6 +270,7 @@ public class ModelFilesMeta {
 
   /**
    * Set row number in matrix block
+   *
    * @param blockRow row number in matrix block
    */
   public void setBlockRow(int blockRow) {
@@ -265,6 +279,7 @@ public class ModelFilesMeta {
 
   /**
    * Get column number of matrix
+   *
    * @return column number of matrix
    */
   public long getCol() {
@@ -273,6 +288,7 @@ public class ModelFilesMeta {
 
   /**
    * Set column number of matrix
+   *
    * @param col column number of matrix
    */
   public void setCol(long col) {
@@ -281,6 +297,7 @@ public class ModelFilesMeta {
 
   /**
    * Get column number in matrix block
+   *
    * @return column number in matrix block
    */
   public long getBlockCol() {
@@ -289,6 +306,7 @@ public class ModelFilesMeta {
 
   /**
    * Set column number in matrix block
+   *
    * @param blockCol column number in matrix block
    */
   public void setBlockCol(long blockCol) {
@@ -297,6 +315,7 @@ public class ModelFilesMeta {
 
   /**
    * Get matrix name
+   *
    * @return matrix name
    */
   public String getMatrixName() {
@@ -305,6 +324,7 @@ public class ModelFilesMeta {
 
   /**
    * Set matrix name
+   *
    * @param matrixName matrix name
    */
   public void setMatrixName(String matrixName) {
@@ -313,6 +333,7 @@ public class ModelFilesMeta {
 
   /**
    * Get matrix other parameters
+   *
    * @return matrix other parameters
    */
   public Map<String, String> getOptions() {
@@ -321,6 +342,7 @@ public class ModelFilesMeta {
 
   /**
    * Set matrix other parameters
+   *
    * @param options matrix other parameters
    */
   public void setOptions(Map<String, String> options) {
@@ -329,6 +351,7 @@ public class ModelFilesMeta {
 
   /**
    * Get matrix partition meta
+   *
    * @return matrix partition meta
    */
   public Map<Integer, ModelPartitionMeta> getPartMetas() {
@@ -337,6 +360,7 @@ public class ModelFilesMeta {
 
   /**
    * Get Model partition meta use part id
+   *
    * @param partId partition index
    * @return Model partition meta
    */
@@ -347,11 +371,12 @@ public class ModelFilesMeta {
   @Override public String toString() {
     return "MatrixFilesMeta{" + "matrixId=" + matrixId + ", rowType=" + rowType + ", row=" + row
       + ", blockRow=" + blockRow + ", col=" + col + ", blockCol=" + blockCol + ", matrixName='"
-      + matrixName + '\'' + ", options=[" + StringUtils.join(";", options) + "], partMetas=[" + partMetasString() + "]}";
+      + matrixName + '\'' + ", options=[" + StringUtils.join(";", options) + "], partMetas=["
+      + partMetasString() + "]}";
   }
 
   private String partMetasString() {
-    if(partMetas == null || partMetas.isEmpty()) {
+    if (partMetas == null || partMetas.isEmpty()) {
       return "";
     }
 

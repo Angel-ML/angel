@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.worker.task;
 
 import com.tencent.angel.common.Id;
@@ -38,9 +39,10 @@ public class TaskId extends Id {
 
   /**
    * Instantiates Task with 'idStr'
-   *<p>
-   *   'idStr' must match task_XXX
-   *</p>
+   * <p>
+   * 'idStr' must match task_XXX
+   * </p>
+   *
    * @param idStr the id str
    * @throws UnvalidIdStrException the unvalid id str exception
    */
@@ -51,20 +53,19 @@ public class TaskId extends Id {
 
     String[] idElemts = idStr.split(SEPARATOR);
     if (idElemts.length != 2 || !idElemts[0].equals(TASK)) {
-      throw new UnvalidIdStrException("unvalid id str " + idStr
-          + ", must be like this:" + TASK + SEPARATOR + "taskIndex");
+      throw new UnvalidIdStrException(
+        "unvalid id str " + idStr + ", must be like this:" + TASK + SEPARATOR + "taskIndex");
     }
 
     try {
       index = Integer.valueOf(idElemts[1]);
     } catch (Exception x) {
-      throw new UnvalidIdStrException("unvalid id str " + idStr
-          + ", must be like this:" + TASK + SEPARATOR + "taskIndex");
+      throw new UnvalidIdStrException(
+        "unvalid id str " + idStr + ", must be like this:" + TASK + SEPARATOR + "taskIndex");
     }
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return TASK + Id.SEPARATOR + super.toString();
   }
 }

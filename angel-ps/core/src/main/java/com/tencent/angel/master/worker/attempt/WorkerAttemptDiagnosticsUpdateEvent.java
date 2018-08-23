@@ -15,15 +15,15 @@
  *
  */
 
+
 package com.tencent.angel.master.worker.attempt;
 
 import com.tencent.angel.worker.WorkerAttemptId;
 
-public class WorkerAttemptDiagnosticsUpdateEvent extends WorkerAttemptEvent{
+public class WorkerAttemptDiagnosticsUpdateEvent extends WorkerAttemptEvent {
   private final String diagnostics;
-  
-  public WorkerAttemptDiagnosticsUpdateEvent(
-      WorkerAttemptId workerAttemptId, String diagnostics) {
+
+  public WorkerAttemptDiagnosticsUpdateEvent(WorkerAttemptId workerAttemptId, String diagnostics) {
     super(WorkerAttemptEventType.DIAGNOSTICS_UPDATE, workerAttemptId);
     this.diagnostics = diagnostics;
   }

@@ -25,15 +25,16 @@ import com.tencent.angel.ipc.TConnectionManager;
 import com.tencent.angel.master.MasterProtocol;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.PartitionLocation;
-import com.tencent.angel.ml.matrix.transport.PSLocation;
+import com.tencent.angel.model.PSMatricesLoadResult;
+import com.tencent.angel.model.PSMatricesSaveResult;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.protobuf.generated.MLProtos.MatrixClock;
-import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.*;
+import com.tencent.angel.ps.PSContext;
+import com.tencent.angel.ps.ParameterServer;
 import com.tencent.angel.ps.ParameterServerId;
-import com.tencent.angel.ps.impl.PSContext;
-import com.tencent.angel.ps.impl.ParameterServer;
+import com.tencent.angel.ps.server.data.PSLocation;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.apache.commons.logging.Log;
@@ -42,7 +43,8 @@ import org.apache.commons.logging.LogFactory;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Master RPC client
@@ -63,9 +65,10 @@ public class MasterClient {
 
   /**
    * Create MasterClient
+   *
    * @param context PS context
    */
-  public MasterClient(PSContext context){
+  public MasterClient(PSContext context) {
     this.context = context;
   }
 
@@ -94,34 +97,38 @@ public class MasterClient {
    * Stop
    */
   public void stop() {
-    if(connection != null) {
+    if (connection != null) {
       try {
         connection.close();
       } catch (IOException e) {
-        LOG.error("close connection falied " , e);
+        LOG.error("close connection falied ", e);
       }
     }
   }
 
   /**
    * Get task clocks for all matrices from Master
+   *
    * @return task clocks for all matrices from Master
    * @throws ServiceException
    */
   public Int2ObjectOpenHashMap<Int2IntOpenHashMap> getTaskMatrixClocks() throws ServiceException {
-    GetTaskMatrixClockResponse response = masterProxy.getTaskMatrixClocks(null,
-      GetTaskMatrixClockRequest.newBuilder().build());
-    Int2ObjectOpenHashMap<Int2IntOpenHashMap> taskIdToMatrixClocksMap = new Int2ObjectOpenHashMap<>(response.getTaskMatrixClocksCount());
+    GetTaskMatrixClockResponse response =
+      masterProxy.getTaskMatrixClocks(null, GetTaskMatrixClockRequest.newBuilder().build());
+    Int2ObjectOpenHashMap<Int2IntOpenHashMap> taskIdToMatrixClocksMap =
+      new Int2ObjectOpenHashMap<>(response.getTaskMatrixClocksCount());
 
     List<TaskMatrixClock> taskMatrixClocks = response.getTaskMatrixClocksList();
     int size = taskMatrixClocks.size();
     int matrixNum;
-    for(int i = 0; i < size; i++) {
-      Int2IntOpenHashMap matrixIdToClockMap = new Int2IntOpenHashMap(taskMatrixClocks.get(i).getMatrixClocksCount());
-      taskIdToMatrixClocksMap.put(taskMatrixClocks.get(i).getTaskId().getTaskIndex(), matrixIdToClockMap);
+    for (int i = 0; i < size; i++) {
+      Int2IntOpenHashMap matrixIdToClockMap =
+        new Int2IntOpenHashMap(taskMatrixClocks.get(i).getMatrixClocksCount());
+      taskIdToMatrixClocksMap
+        .put(taskMatrixClocks.get(i).getTaskId().getTaskIndex(), matrixIdToClockMap);
       List<MatrixClock> matrixClocks = taskMatrixClocks.get(i).getMatrixClocksList();
       matrixNum = matrixClocks.size();
-      for(int j = 0; j < matrixNum; j++) {
+      for (int j = 0; j < matrixNum; j++) {
         matrixIdToClockMap.put(matrixClocks.get(j).getMatrixId(), matrixClocks.get(j).getClock());
       }
     }
@@ -131,25 +138,29 @@ public class MasterClient {
 
   /**
    * Report PS run over successfully to Master
+   *
    * @throws ServiceException
    */
   public void done() throws ServiceException {
-    masterProxy.psDone(null, PSDoneRequest.newBuilder().setPsAttemptId(
-      ProtobufUtil.convertToIdProto(context.getPSAttemptId())).build());
+    masterProxy.psDone(null, PSDoneRequest.newBuilder()
+      .setPsAttemptId(ProtobufUtil.convertToIdProto(context.getPSAttemptId())).build());
   }
 
   /**
    * Report PS run failed to Master
+   *
    * @param errorLog failed message
    * @throws ServiceException
    */
   public void failed(String errorLog) throws ServiceException {
-    masterProxy.psError(null, PSErrorRequest.newBuilder().setPsAttemptId(
-      ProtobufUtil.convertToIdProto(context.getPSAttemptId())).setMsg(errorLog).build());
+    masterProxy.psError(null, PSErrorRequest.newBuilder()
+      .setPsAttemptId(ProtobufUtil.convertToIdProto(context.getPSAttemptId())).setMsg(errorLog)
+      .build());
   }
 
   /**
    * Register to Master
+   *
    * @throws IOException
    * @throws ServiceException
    */
@@ -157,7 +168,8 @@ public class MasterClient {
     PSRegisterRequest.Builder regBuilder = PSRegisterRequest.newBuilder();
     regBuilder.setPsAttemptId(ProtobufUtil.convertToIdProto(context.getPSAttemptId()));
     try {
-      Location location = new Location(InetAddress.getLocalHost().getHostAddress(), context.getPsService().getPort());
+      Location location =
+        new Location(InetAddress.getLocalHost().getHostAddress(), context.getPsService().getPort());
       regBuilder.setLocation(ProtobufUtil.convertLocation(location));
     } catch (UnknownHostException eop) {
       LOG.error("UnknownHostException: " + eop);
@@ -169,6 +181,7 @@ public class MasterClient {
 
   /**
    * Heartbeat to Master
+   *
    * @param request heartbeat message
    * @return heartbeat response
    * @throws ServiceException
@@ -179,6 +192,7 @@ public class MasterClient {
 
   /**
    * Get a ps location from master
+   *
    * @param serverId server id
    * @return PS location
    * @throws ServiceException
@@ -192,8 +206,9 @@ public class MasterClient {
 
   /**
    * Get the stored pss and the locations for a matrix partition
+   *
    * @param matrixId matrix id
-   * @param partId partition id
+   * @param partId   partition id
    * @return the stored pss and the locations
    * @throws ServiceException
    */
@@ -204,15 +219,17 @@ public class MasterClient {
 
     int size = psLocsProto.size();
     List<PSLocation> psLocs = new ArrayList<>(size);
-    for(int i = 0; i < size; i++) {
-      psLocs.add(new PSLocation(ProtobufUtil.convertToId(psLocsProto.get(i).getPsId()), ProtobufUtil.convertToLocation(psLocsProto.get(i))));
+    for (int i = 0; i < size; i++) {
+      psLocs.add(new PSLocation(ProtobufUtil.convertToId(psLocsProto.get(i).getPsId()),
+        ProtobufUtil.convertToLocation(psLocsProto.get(i))));
     }
     return new PartitionLocation(psLocs);
   }
 
   /**
    * Get the stored pss for a matrix partition
-   * @param matrixId matrix id
+   *
+   * @param matrixId    matrix id
    * @param partitionId partition id
    * @return the stored pss
    * @throws ServiceException
@@ -220,10 +237,11 @@ public class MasterClient {
   public List<ParameterServerId> getStoredPss(int matrixId, int partitionId)
     throws ServiceException {
     List<MLProtos.PSIdProto> psIdProtos = masterProxy.getStoredPss(null,
-      MLProtos.GetStoredPssRequest.newBuilder().setMatrixId(matrixId).setPartId(partitionId).build()).getPsIdsList();
+      MLProtos.GetStoredPssRequest.newBuilder().setMatrixId(matrixId).setPartId(partitionId)
+        .build()).getPsIdsList();
     int size = psIdProtos.size();
     List<ParameterServerId> psIds = new ArrayList<>(psIdProtos.size());
-    for(int i = 0; i < size; i++) {
+    for (int i = 0; i < size; i++) {
       psIds.add(ProtobufUtil.convertToId(psIdProtos.get(i)));
     }
     return psIds;
@@ -231,6 +249,7 @@ public class MasterClient {
 
   /**
    * Get current iteration
+   *
    * @return current iteration
    * @throws ServiceException
    */
@@ -240,21 +259,72 @@ public class MasterClient {
 
   /**
    * Get matrices meta for this ps
+   *
    * @return
    * @throws ServiceException
    * @throws ClassNotFoundException
    */
-  public List<MatrixMeta> getMatricesMeta() throws ServiceException,
-    ClassNotFoundException {
+  public List<MatrixMeta> getMatricesMeta() throws ServiceException, ClassNotFoundException {
     GetPSMatricesResponse response = masterProxy.getPSMatricesMeta(null,
-      GetPSMatricesMetaRequest.newBuilder().setPsId(ProtobufUtil.convertToIdProto(context.getPSAttemptId().getPsId())).build());
+      GetPSMatricesMetaRequest.newBuilder()
+        .setPsId(ProtobufUtil.convertToIdProto(context.getPSAttemptId().getPsId())).build());
     List<MLProtos.MatrixMetaProto> matricesMataProto = response.getMatricesMetaList();
     int size = matricesMataProto.size();
     List<MatrixMeta> matricesMeta = new ArrayList<>(size);
-    for(int i = 0; i < size; i++) {
+    for (int i = 0; i < size; i++) {
       matricesMeta.add(ProtobufUtil.convertToMatrixMeta(matricesMataProto.get(i)));
     }
 
     return matricesMeta;
+  }
+
+  /**
+   * Notify save result
+   *
+   * @param result save result
+   * @throws ServiceException
+   */
+  public void saveFinish(PSMatricesSaveResult result) throws ServiceException {
+    masterProxy.saveFinish(null, SaveFinishRequest.newBuilder()
+      .setPsAttemptId(ProtobufUtil.convertToIdProto(context.getPSAttemptId()))
+      .setResult(ProtobufUtil.convert(result)).build());
+  }
+
+  /**
+   * Notify load result
+   *
+   * @param result load result
+   * @throws ServiceException
+   */
+  public void loadFinish(PSMatricesLoadResult result) throws ServiceException {
+    masterProxy.loadFinish(null, LoadFinishRequest.newBuilder()
+      .setPsAttemptId(ProtobufUtil.convertToIdProto(context.getPSAttemptId()))
+      .setResult(ProtobufUtil.convert(result)).build());
+  }
+
+  /**
+   * Notify master save start
+   *
+   * @param requestId    save request id
+   * @param subRequestId save sub-request id
+   * @throws ServiceException
+   */
+  public void saveStart(int requestId, int subRequestId) throws ServiceException {
+    masterProxy.saveStart(null, SaveStartRequest.newBuilder()
+      .setPsAttemptId(ProtobufUtil.convertToIdProto(context.getPSAttemptId()))
+      .setRequestId(requestId).setSubRequestId(subRequestId).build());
+  }
+
+  /**
+   * Notify master load start
+   *
+   * @param requestId    load request id
+   * @param subRequestId load sub-request id
+   * @throws ServiceException
+   */
+  public void loadStart(int requestId, int subRequestId) throws ServiceException {
+    masterProxy.loadStart(null, LoadStartRequest.newBuilder()
+      .setPsAttemptId(ProtobufUtil.convertToIdProto(context.getPSAttemptId()))
+      .setRequestId(requestId).setSubRequestId(subRequestId).build());
   }
 }

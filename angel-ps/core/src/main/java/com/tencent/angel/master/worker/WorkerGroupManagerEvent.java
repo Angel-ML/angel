@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.worker;
 
 import com.tencent.angel.worker.WorkerGroupId;
@@ -22,13 +23,16 @@ import com.tencent.angel.worker.WorkerGroupId;
 /**
  * Worker group manager event.
  */
-public class WorkerGroupManagerEvent extends WorkerManagerEvent{
-  /**worker group id*/
+public class WorkerGroupManagerEvent extends WorkerManagerEvent {
+  /**
+   * worker group id
+   */
   private final WorkerGroupId workerGroupId;
 
   /**
    * Create a WorkerGroupManagerEvent
-   * @param type event type
+   *
+   * @param type          event type
    * @param workerGroupId worker group id
    */
   public WorkerGroupManagerEvent(WorkerManagerEventType type, WorkerGroupId workerGroupId) {
@@ -38,6 +42,7 @@ public class WorkerGroupManagerEvent extends WorkerManagerEvent{
 
   /**
    * Get worker group id
+   *
    * @return worker group id
    */
   public WorkerGroupId getWorkerGroupId() {

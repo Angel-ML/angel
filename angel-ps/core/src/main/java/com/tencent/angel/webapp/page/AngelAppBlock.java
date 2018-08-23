@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.webapp.page;
 
 import com.google.inject.Inject;
@@ -40,13 +41,11 @@ public class AngelAppBlock extends HtmlBlock {
 
   final AMContext amContext;
 
-  @Inject
-  AngelAppBlock(AMContext amctx) {
+  @Inject AngelAppBlock(AMContext amctx) {
     amContext = amctx;
   }
 
-  @Override
-  protected void render(Block html) {
+  @Override protected void render(Block html) {
 
     set(TITLE, join("Angel Application", amContext.getApplicationId()));
 
@@ -60,13 +59,12 @@ public class AngelAppBlock extends HtmlBlock {
     }
 
     info("Job Overview")._("Job Name:", amContext.getApplicationName())
-        ._("State:", app.getExternAppState().toString())
-        ._("Started:", new Date(app.getLaunchTime()))
-        ._("Elapsed:", StringUtils.formatTime(elaspedTs))
-        ._("Environment:", "nomeaning" == null ? "#" : "angel/EnvironmentPage",
-            "Runtime Information And Properties")
-        ._("Task Progress:", "nomeaning" == null ? "#" : "angel/ProgressPage", "progress")
-        ._("Master Threaddump:", "nomeaning" == null ? "#" : "angel/ExecutorsPage", "threaddump");
+      ._("State:", app.getExternAppState().toString())._("Started:", new Date(app.getLaunchTime()))
+      ._("Elapsed:", StringUtils.formatTime(elaspedTs))
+      ._("Environment:", "nomeaning" == null ? "#" : "angel/EnvironmentPage",
+        "Runtime Information And Properties")
+      ._("Task Progress:", "nomeaning" == null ? "#" : "angel/ProgressPage", "progress")
+      ._("Master Threaddump:", "nomeaning" == null ? "#" : "angel/ExecutorsPage", "threaddump");
 
 
 
@@ -74,7 +72,7 @@ public class AngelAppBlock extends HtmlBlock {
 
     TABLE<DIV<Hamlet>> table = div.table("#job");
     table.tr().th(_TH, "module").th(_TH, "new").th(_TH, "running").th(_TH, "failed")
-        .th(_TH, "killed").th(_TH, "success")._();
+      .th(_TH, "killed").th(_TH, "success")._();
 
     int newGroupNum = 0;
     int runningGroupNum = 0;
@@ -115,7 +113,7 @@ public class AngelAppBlock extends HtmlBlock {
     }
 
     for (AMParameterServer ps : amContext.getParameterServerManager().getParameterServerMap()
-        .values()) {
+      .values()) {
       for (PSAttempt psAttemp : ps.getPSAttempts().values()) {
         switch (psAttemp.getInternalState()) {
           case NEW:
@@ -143,17 +141,17 @@ public class AngelAppBlock extends HtmlBlock {
     }
 
     table.tr().td("workergroups").td()
-        .a(url("angel/workerGroupsPage", "NEW"), String.valueOf(newGroupNum))._().td()
-        .a(url("angel/workerGroupsPage", "RUNNING"), String.valueOf(runningGroupNum))._().td()
-        .a(url("angel/workerGroupsPage", "FAILED"), String.valueOf(failedGroupNum))._().td()
-        .a(url("angel/workerGroupsPage", "KILLED"), String.valueOf(killedGroupNum))._().td()
-        .a(url("angel/workerGroupsPage", "SUCCESS"), String.valueOf(successGroupNum))._()._().tr()
-        .td("parameterservers").td()
-        .a(url("angel/parameterServersPage", "NEW"), String.valueOf(newPSNum))._().td()
-        .a(url("angel/parameterServersPage", "RUNNING"), String.valueOf(runningPSNum))._().td()
-        .a(url("angel/parameterServersPage", "FAILED"), String.valueOf(failedPSNum))._().td()
-        .a(url("angel/parameterServersPage", "KILLED"), String.valueOf(killedPSNum))._().td()
-        .a(url("angel/parameterServersPage", "SUCCESS"), String.valueOf(successPSNum))._()._();
+      .a(url("angel/workerGroupsPage", "NEW"), String.valueOf(newGroupNum))._().td()
+      .a(url("angel/workerGroupsPage", "RUNNING"), String.valueOf(runningGroupNum))._().td()
+      .a(url("angel/workerGroupsPage", "FAILED"), String.valueOf(failedGroupNum))._().td()
+      .a(url("angel/workerGroupsPage", "KILLED"), String.valueOf(killedGroupNum))._().td()
+      .a(url("angel/workerGroupsPage", "SUCCESS"), String.valueOf(successGroupNum))._()._().tr()
+      .td("parameterservers").td()
+      .a(url("angel/parameterServersPage", "NEW"), String.valueOf(newPSNum))._().td()
+      .a(url("angel/parameterServersPage", "RUNNING"), String.valueOf(runningPSNum))._().td()
+      .a(url("angel/parameterServersPage", "FAILED"), String.valueOf(failedPSNum))._().td()
+      .a(url("angel/parameterServersPage", "KILLED"), String.valueOf(killedPSNum))._().td()
+      .a(url("angel/parameterServersPage", "SUCCESS"), String.valueOf(successPSNum))._()._();
 
     table._();
     div._();

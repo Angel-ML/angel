@@ -15,52 +15,14 @@
  *
  */
 
+
 package com.tencent.angel.spark.models.matrix
 
-import com.tencent.angel.ml.matrix.MatrixMeta
-import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.linalg.SparseVector
-import com.tencent.angel.spark.models.vector.SparsePSVector
+import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.matrix.RowType.T_DOUBLE_SPARSE_LONGKEY
 
 class SparsePSMatrix(
-    id: Int,
-    rows: Int,
-    columns: Long) extends PSMatrix(id, rows, columns) {
-  /**
-   * Update specific elements in Matrix.
-    *
-    * @param pairs is a Array of Tuples[rowId, colsId, value]
-   */
-  def push(pairs: Array[(Int, Long, Double)]): Unit = {
-    psClient.matrixOps.push(this, pairs)
-  }
-
-  def pull(): Array[(Int, Long, Double)] = ???
-
-
-  def pull(rowId: Int): SparseVector = {
-    psClient.sparseRowOps.pull(getRow(rowId))
-  }
-
-  def increment(pairs: Array[(Int, Long, Double)]): Unit = {
-    psClient.matrixOps.increment(this, pairs)
-  }
-
-  private def getRow(rowId: Int): SparsePSVector = {
-    new SparsePSVector(id, rowId, columns)
-  }
-}
-
-object SparsePSMatrix {
-  val psContext = PSContext.instance()
-
-  def apply(rows: Int, cols: Long, range: Long): SparsePSMatrix = {
-    val matrixMeta = psContext.createSparseMatrix(rows, cols, range, -1, -1)
-    new SparsePSMatrix(matrixMeta.getId, rows, cols)
-  }
-
-  def apply(rows: Int, cols: Long): SparsePSMatrix = {
-    val matrixMeta = psContext.createSparseMatrix(rows, cols, cols, -1, -1)
-    new SparsePSMatrix(matrixMeta.getId, rows, cols)
-  }
-}
+                      override val id: Int,
+                      override val rows: Int,
+                      override val columns: Long,
+                      override val rowType: RowType = T_DOUBLE_SPARSE_LONGKEY) extends PSMatrix

@@ -14,6 +14,8 @@
  * the License.
  *
  */
+
+
 package com.tencent.angel.master.psagent;
 
 import com.tencent.angel.common.location.Location;
@@ -34,13 +36,19 @@ public class PSAgentManager {
   private static final Log LOG = LogFactory.getLog(PSAgentManager.class);
   private final AMContext context;
 
-  /**psagent attempt id to last heartbeat timestamp map*/
+  /**
+   * psagent attempt id to last heartbeat timestamp map
+   */
   private final ConcurrentHashMap<Integer, Long> psAgentLastHeartbeatTS;
 
-  /**psagent attempt id to location map*/
+  /**
+   * psagent attempt id to location map
+   */
   private final ConcurrentHashMap<Integer, Location> psAgentToLocTS;
 
-  /**psagent heartbeat timeout value in millisecond*/
+  /**
+   * psagent heartbeat timeout value in millisecond
+   */
   private final long psAgentTimeOutMS;
 
   private final AtomicInteger idGen = new AtomicInteger(0);
@@ -49,15 +57,15 @@ public class PSAgentManager {
     this.context = context;
     psAgentLastHeartbeatTS = new ConcurrentHashMap<>();
     psAgentToLocTS = new ConcurrentHashMap<>();
-    psAgentTimeOutMS =
-      context.getConf().getLong(AngelConf.ANGEL_PSAGENT_HEARTBEAT_TIMEOUT_MS,
-        AngelConf.DEFAULT_ANGEL_PSAGENT_HEARTBEAT_TIMEOUT_MS);
+    psAgentTimeOutMS = context.getConf().getLong(AngelConf.ANGEL_PSAGENT_HEARTBEAT_TIMEOUT_MS,
+      AngelConf.DEFAULT_ANGEL_PSAGENT_HEARTBEAT_TIMEOUT_MS);
   }
 
   /**
    * PSAgent register
+   *
    * @param psAgentId psAgent id
-   * @param loc PSAgent location
+   * @param loc       PSAgent location
    */
   public void register(int psAgentId, Location loc) {
     LOG.info("PSAgent " + psAgentId + " is registered in monitor!");
@@ -67,6 +75,7 @@ public class PSAgentManager {
 
   /**
    * PSAgent unregister
+   *
    * @param psAgentId psagent id
    */
   public void unRegister(int psAgentId) {
@@ -93,6 +102,7 @@ public class PSAgentManager {
 
   /**
    * Generate a new psagent id
+   *
    * @return a new psagent id
    */
   public int getId() {

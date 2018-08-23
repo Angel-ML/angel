@@ -59,6 +59,7 @@ message WorkerReportResponse {
 message WorkerRegisterRequest{
   required WorkerAttemptIdProto workerAttemptId = 1;
   required LocationProto location = 2;
+  required int32 psAgentId = 3;
 }
 
 message WorkerRegisterResponse{

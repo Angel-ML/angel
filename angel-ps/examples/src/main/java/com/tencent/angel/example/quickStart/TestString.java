@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.example.quickStart;
 
 //import jdk.nashorn.internal.runtime.regexp.joni.Config;
@@ -27,11 +28,11 @@ import org.apache.hadoop.yarn.util.Apps;
  * Created by payniexiao on 2017/8/21.
  */
 public class TestString {
-  public static void main(String [] args) {
-    String [] paras = {};
+  public static void main(String[] args) {
+    String[] paras = {};
     //paras[1] = "abc";
     //paras[2] = "123";
-    for(String n:paras) {
+    for (String n : paras) {
       System.out.println(n);
     }
 
@@ -40,7 +41,8 @@ public class TestString {
     // Add standard Hadoop classes
     for (String c : conf.getStrings(YarnConfiguration.YARN_APPLICATION_CLASSPATH,
       YarnConfiguration.DEFAULT_YARN_APPLICATION_CLASSPATH)) {
-      System.out.println(c);;
+      System.out.println(c);
+      ;
     }
   }
 }

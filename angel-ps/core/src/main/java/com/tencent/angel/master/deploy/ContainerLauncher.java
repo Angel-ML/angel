@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.deploy;
 
 import org.apache.hadoop.service.AbstractService;
@@ -23,8 +24,8 @@ import org.apache.hadoop.yarn.event.EventHandler;
 /**
  * Base class of container launcher.
  */
-public abstract class ContainerLauncher extends AbstractService implements
-    EventHandler<ContainerLauncherEvent> {
+public abstract class ContainerLauncher extends AbstractService
+  implements EventHandler<ContainerLauncherEvent> {
 
   public ContainerLauncher(String name) {
     super(name);

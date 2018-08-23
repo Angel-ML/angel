@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.worker;
 
 import com.tencent.angel.conf.AngelConf;
@@ -60,98 +61,124 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
   private static final Log LOG = LogFactory.getLog(WorkerManager.class);
 
   private final AMContext context;
-  
-  /**the amount of resources requested for each worker*/
+
+  /**
+   * the amount of resources requested for each worker
+   */
   private final Resource workerResource;
-  
-  /**the resource priority for worker*/
+
+  /**
+   * the resource priority for worker
+   */
   private final Priority PRIORITY_WORKER;
 
-  /**worker number in a worker group*/
+  /**
+   * worker number in a worker group
+   */
   private final int workersInGroup;
-  
-  /**task number in each worker*/
+
+  /**
+   * task number in each worker
+   */
   private final int taskNumberInEachWorker;
-  
-  /**tolerate of the failure worker group ratio*/
+
+  /**
+   * tolerate of the failure worker group ratio
+   */
   private final double tolerateFailedGroup;
-  
-  /**actual worker group number*/
+
+  /**
+   * actual worker group number
+   */
   private volatile int workergroupNumber;
-  
-  /**actual total task number in application*/
+
+  /**
+   * actual total task number in application
+   */
   private volatile int totalTaskNumber;
 
-  /**worker group id to worker group map*/
+  /**
+   * worker group id to worker group map
+   */
   private final Map<WorkerGroupId, AMWorkerGroup> workerGroupMap;
-  
-  /**worker id to the worker group which the worker belongs to map*/
+
+  /**
+   * worker id to the worker group which the worker belongs to map
+   */
   private final Map<WorkerId, AMWorkerGroup> findWorkerGroupMap;
-  
-  /**worker id to worker map*/
+
+  /**
+   * worker id to worker map
+   */
   private final Map<WorkerId, AMWorker> workersMap;
-  
-  /**task id to the worker which the task belongs to map*/
+
+  /**
+   * task id to the worker which the task belongs to map
+   */
   private final Map<TaskId, AMWorker> taskIdToWorkerMap;
-  
-  /**success worker group id set*/
+
+  /**
+   * success worker group id set
+   */
   private final Set<WorkerGroupId> successGroups;
-  
-  /**killed worker group id set*/
+
+  /**
+   * killed worker group id set
+   */
   private final Set<WorkerGroupId> killedGroups;
-  
-  /**failed worker group id set*/
+
+  /**
+   * failed worker group id set
+   */
   private final Set<WorkerGroupId> failedGroups;
 
-  /**worker attempt id to last heartbeat timestamp map*/
-  private final ConcurrentHashMap<WorkerAttemptId, Long> workerLastHeartbeatTS = new ConcurrentHashMap<>();
-  /**worker timeout value in millisecond*/
+  /**
+   * worker attempt id to last heartbeat timestamp map
+   */
+  private final ConcurrentHashMap<WorkerAttemptId, Long> workerLastHeartbeatTS =
+    new ConcurrentHashMap<>();
+  /**
+   * worker timeout value in millisecond
+   */
   private final long workerTimeOutMS;
-  
+
   private final Lock readLock;
   private final Lock writeLock;
-  
+
   private boolean isInited = false;
 
   public WorkerManager(AMContext context) {
     this.context = context;
-    
+
     ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     readLock = readWriteLock.readLock();
     writeLock = readWriteLock.writeLock();
 
     Configuration conf = context.getConf();
-    workersInGroup =
-        conf.getInt(AngelConf.ANGEL_WORKERGROUP_WORKER_NUMBER,
-            AngelConf.DEFAULT_ANGEL_WORKERGROUP_WORKER_NUMBER);
+    workersInGroup = conf.getInt(AngelConf.ANGEL_WORKERGROUP_WORKER_NUMBER,
+      AngelConf.DEFAULT_ANGEL_WORKERGROUP_WORKER_NUMBER);
 
     taskNumberInEachWorker =
-        conf.getInt(AngelConf.ANGEL_WORKER_TASK_NUMBER,
-            AngelConf.DEFAULT_ANGEL_WORKER_TASK_NUMBER);
+      conf.getInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, AngelConf.DEFAULT_ANGEL_WORKER_TASK_NUMBER);
 
-    tolerateFailedGroup =
-        conf.getDouble(AngelConf.ANGEL_WORKERGROUP_FAILED_TOLERATE, conf.getDouble(
-            AngelConf.ANGEL_TASK_ERROR_TOLERATE,
-            AngelConf.DEFAULT_ANGEL_TASK_ERROR_TOLERATE));
+    tolerateFailedGroup = conf.getDouble(AngelConf.ANGEL_WORKERGROUP_FAILED_TOLERATE, conf
+      .getDouble(AngelConf.ANGEL_TASK_ERROR_TOLERATE, AngelConf.DEFAULT_ANGEL_TASK_ERROR_TOLERATE));
 
     int workerMemory =
-        conf.getInt(AngelConf.ANGEL_WORKER_MEMORY_GB,
-            AngelConf.DEFAULT_ANGEL_WORKER_MEMORY_GB) * 1024;
+      conf.getInt(AngelConf.ANGEL_WORKER_MEMORY_GB, AngelConf.DEFAULT_ANGEL_WORKER_MEMORY_GB)
+        * 1024;
     int workerVcores =
-        conf.getInt(AngelConf.ANGEL_WORKER_CPU_VCORES,
-            AngelConf.DEFAULT_ANGEL_WORKER_CPU_VCORES);
+      conf.getInt(AngelConf.ANGEL_WORKER_CPU_VCORES, AngelConf.DEFAULT_ANGEL_WORKER_CPU_VCORES);
 
     int workerPriority =
-        conf.getInt(AngelConf.ANGEL_WORKER_PRIORITY,
-            AngelConf.DEFAULT_ANGEL_WORKER_PRIORITY);
+      conf.getInt(AngelConf.ANGEL_WORKER_PRIORITY, AngelConf.DEFAULT_ANGEL_WORKER_PRIORITY);
 
-    workerTimeOutMS =
-      conf.getLong(AngelConf.ANGEL_WORKER_HEARTBEAT_TIMEOUT_MS,
-        AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_TIMEOUT_MS);
+    workerTimeOutMS = conf.getLong(AngelConf.ANGEL_WORKER_HEARTBEAT_TIMEOUT_MS,
+      AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_TIMEOUT_MS);
 
     workerResource = Resource.newInstance(workerMemory, workerVcores);
     PRIORITY_WORKER =
-        RecordFactoryProvider.getRecordFactory(null).newRecordInstance(Priority.class);
+      RecordFactoryProvider.getRecordFactory(null).newRecordInstance(Priority.class);
     PRIORITY_WORKER.setPriority(workerPriority);
 
     workerGroupMap = new HashMap<WorkerGroupId, AMWorkerGroup>();
@@ -164,18 +191,19 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
   }
 
   public AMWorkerGroup getWorkGroup(WorkerId workerId) {
-    try{
+    try {
       readLock.lock();
       return findWorkerGroupMap.get(workerId);
     } finally {
       readLock.unlock();
-    } 
+    }
   }
 
   public Map<WorkerGroupId, AMWorkerGroup> getWorkerGroupMap() {
-    try{
+    try {
       readLock.lock();
-      Map<WorkerGroupId, AMWorkerGroup> clonedMap = new HashMap<WorkerGroupId, AMWorkerGroup>(workerGroupMap.size());
+      Map<WorkerGroupId, AMWorkerGroup> clonedMap =
+        new HashMap<WorkerGroupId, AMWorkerGroup>(workerGroupMap.size());
       clonedMap.putAll(workerGroupMap);
       return clonedMap;
     } finally {
@@ -183,27 +211,25 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
     }
   }
 
-  @Override
-  public void handle(WorkerManagerEvent event) {
-    try{
+  @Override public void handle(WorkerManagerEvent event) {
+    try {
       writeLock.lock();
       handleEvent(event);
     } finally {
       writeLock.unlock();
     }
   }
-  
-  @SuppressWarnings("unchecked")
-  private void handleEvent(WorkerManagerEvent event){
+
+  @SuppressWarnings("unchecked") private void handleEvent(WorkerManagerEvent event) {
     switch (event.getType()) {
       case WORKERGROUP_DONE: {
         WorkerGroupManagerEvent workerGroupEvent = (WorkerGroupManagerEvent) event;
         //add this worker group to the success set
         successGroups.add(workerGroupEvent.getWorkerGroupId());
-        
+
         //check if all worker group run over
         if (checkISAllGroupEnd()) {
-          LOG.info("now all WorkerGroups are finished!");         
+          LOG.info("now all WorkerGroups are finished!");
           context.getEventHandler().handle(new AppEvent(AppEventType.EXECUTE_SUCESS));
         }
         break;
@@ -213,11 +239,12 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
         WorkerGroupManagerEvent workerGroupEvent = (WorkerGroupManagerEvent) event;
         //add this worker group to the failed set
         failedGroups.add(workerGroupEvent.getWorkerGroupId());
-        
+
         //check if too many worker groups are failed or killed
         if (checkISOverTolerate()) {
           //notify a run failed event
-          context.getEventHandler().handle(new InternalErrorEvent(context.getApplicationId(), getDetailWorkerExitMessage()));
+          context.getEventHandler().handle(
+            new InternalErrorEvent(context.getApplicationId(), getDetailWorkerExitMessage()));
         }
         break;
       }
@@ -226,11 +253,12 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
         WorkerGroupManagerEvent workerGroupEvent = (WorkerGroupManagerEvent) event;
         //add this worker group to the failed set
         killedGroups.add(workerGroupEvent.getWorkerGroupId());
-        
+
         //check if too many worker groups are failed or killed
         if (checkISOverTolerate()) {
           //notify a run failed event
-          context.getEventHandler().handle(new InternalErrorEvent(context.getApplicationId(), getDetailWorkerExitMessage()));
+          context.getEventHandler().handle(
+            new InternalErrorEvent(context.getApplicationId(), getDetailWorkerExitMessage()));
         }
         break;
       }
@@ -273,7 +301,7 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
    */
   public void startAllWorker() {
     LOG.info("to start all workers.....");
-    try{
+    try {
       writeLock.lock();
       initWorkers();
       for (int i = 0; i < workerGroupMap.size(); i++) {
@@ -282,13 +310,13 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
           worker.handle(new AMWorkerEvent(AMWorkerEventType.SCHEDULE, worker.getId()));
         }
       }
-      
+
       isInited = true;
     } finally {
       writeLock.unlock();
     }
   }
-  
+
   public void adjustTaskNumber(int splitNum) {
     //calculate the actual number of worker groups and the total number of tasks based on the number of data split
     int estimatedGroupNum = (splitNum + taskNumberInEachWorker - 1) / taskNumberInEachWorker;
@@ -302,7 +330,7 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
 
   private void initWorkers() {
     int base = 0;
-    //init all tasks , workers and worker groups and put them to the corresponding maps 
+    //init all tasks , workers and worker groups and put them to the corresponding maps
     for (int i = 0; i < workergroupNumber; i++) {
       Map<WorkerId, AMWorker> workers = new HashMap<WorkerId, AMWorker>();
       WorkerId leader = null;
@@ -328,7 +356,7 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
       AMWorkerGroup group = new AMWorkerGroup(groupId, context, workers, leader, i);
       for (WorkerId id : workers.keySet()) {
         findWorkerGroupMap.put(id, group);
-        for(TaskId taskId:workers.get(id).getTaskIds()){
+        for (TaskId taskId : workers.get(id).getTaskIds()) {
           taskIdToWorkerMap.put(taskId, workers.get(id));
         }
       }
@@ -340,8 +368,8 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
   }
 
   private boolean checkISOverTolerate() {
-    return tolerateFailedGroup <= (double) (failedGroups.size() + killedGroups.size())
-        / workergroupNumber;
+    return tolerateFailedGroup
+      <= (double) (failedGroups.size() + killedGroups.size()) / workergroupNumber;
   }
 
   private boolean checkISAllGroupEnd() {
@@ -350,25 +378,27 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
 
   /**
    * get worker use worker id
+   *
    * @param workerId worker id
    * @return AMWorker worker
    */
   public AMWorker getWorker(WorkerId workerId) {
-    try{
+    try {
       readLock.lock();
       return workersMap.get(workerId);
     } finally {
       readLock.unlock();
-    }    
+    }
   }
 
   /**
    * get worker group use worker group id
+   *
    * @param workerGroupId worker group id
    * @return AMWorkerGroup worker group
    */
   public AMWorkerGroup getWorkerGroup(WorkerGroupId workerGroupId) {
-    try{
+    try {
       readLock.lock();
       return workerGroupMap.get(workerGroupId);
     } finally {
@@ -378,63 +408,68 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
 
   /**
    * get the worker group which contains the specified worker id
+   *
    * @param workerId worker id
    * @return AMWorkerGroup the worker group which contains the specified worker id
    */
   public AMWorkerGroup getWorkerGroup(WorkerId workerId) {
-    try{
+    try {
       readLock.lock();
       return findWorkerGroupMap.get(workerId);
     } finally {
       readLock.unlock();
-    }   
+    }
   }
 
   /**
    * get actual total task number
+   *
    * @return int actual total task number
    */
   public int getTotalTaskNumber() {
-    try{
+    try {
       readLock.lock();
       return totalTaskNumber;
     } finally {
       readLock.unlock();
-    } 
+    }
   }
 
   /**
    * get actual worker group number
+   *
    * @return int actual worker group number
    */
   public int getWorkerGroupNumber() {
-    try{
+    try {
       readLock.lock();
       return workergroupNumber;
     } finally {
       readLock.unlock();
-    } 
+    }
   }
 
   /**
    * get worker number
+   *
    * @return int worker number
    */
   public int getWorkerNumber() {
-    try{
+    try {
       readLock.lock();
       return workersMap.size();
     } finally {
       readLock.unlock();
-    }    
+    }
   }
-  
+
   /**
    * get the number of worker groups that are not finish
+   *
    * @return int the number of worker groups that are not finish
    */
   public int getActiveWorkerGroupNumber() {
-    try{
+    try {
       readLock.lock();
       int number = 0;
       for (Entry<WorkerGroupId, AMWorkerGroup> entry : workerGroupMap.entrySet()) {
@@ -450,10 +485,11 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
 
   /**
    * get the number of workers that are not finish
+   *
    * @return int the number of workers that are not finish
    */
   public int getActiveWorkerNumber() {
-    try{
+    try {
       readLock.lock();
       int number = 0;
       for (Entry<WorkerId, AMWorker> entry : workersMap.entrySet()) {
@@ -466,24 +502,26 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
       readLock.unlock();
     }
   }
-  
+
   /**
    * get the active task number
-   * @return int the active task number 
+   *
+   * @return int the active task number
    */
   public int getActiveTaskNum() {
-    try{
+    try {
       readLock.lock();
       //just return the total task number now
       //TODO
       return totalTaskNumber;
     } finally {
       readLock.unlock();
-    } 
+    }
   }
 
   /**
    * get the worker resource quota
+   *
    * @return Resource the worker resource quota
    */
   public Resource getWorkerResource() {
@@ -492,27 +530,29 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
 
   /**
    * get the worker resource priority
+   *
    * @return Resource the worker resource priority
    */
   public Priority getWorkerPriority() {
     return PRIORITY_WORKER;
   }
-  
+
   /**
    * get the iteration number of the slowest worker
+   *
    * @return int the iteration number of the slowest worker
    */
   public int getMinIteration() {
     int minIteration = Integer.MAX_VALUE;
-    try{
+    try {
       readLock.lock();
-      if(!isInited) {
+      if (!isInited) {
         return 0;
       }
-      
-      for(AMWorkerGroup group:workerGroupMap.values()){
+
+      for (AMWorkerGroup group : workerGroupMap.values()) {
         int groupMinIteration = group.getMinIteration();
-        if(groupMinIteration < minIteration){
+        if (groupMinIteration < minIteration) {
           minIteration = groupMinIteration;
         }
       }
@@ -524,6 +564,7 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
 
   /**
    * get the worker which contains specified task
+   *
    * @return AMWorker the worker which contains specified task
    */
   public AMWorker getWorker(TaskId taskId) {
@@ -532,7 +573,8 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
 
   public void checkHBTimeOut() {
     //check whether worker heartbeat timeout
-    Iterator<Map.Entry<WorkerAttemptId, Long>> workerIt = workerLastHeartbeatTS.entrySet().iterator();
+    Iterator<Map.Entry<WorkerAttemptId, Long>> workerIt =
+      workerLastHeartbeatTS.entrySet().iterator();
     long currentTs = System.currentTimeMillis();
     while (workerIt.hasNext()) {
       Entry<WorkerAttemptId, Long> workerEntry = workerIt.next();
@@ -541,8 +583,8 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
         context.getEventHandler().handle(
           new WorkerAttemptDiagnosticsUpdateEvent(workerEntry.getKey(), "heartbeat timeout"));
 
-        context.getEventHandler().handle(
-          new WorkerAttemptEvent(WorkerAttemptEventType.ERROR, workerEntry.getKey()));
+        context.getEventHandler()
+          .handle(new WorkerAttemptEvent(WorkerAttemptEventType.ERROR, workerEntry.getKey()));
         workerIt.remove();
       }
     }
@@ -550,6 +592,7 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
 
   /**
    * remove worker attempt from monitor set
+   *
    * @param workerAttemptId worker attempt id
    */
   public void unRegister(WorkerAttemptId workerAttemptId) {
@@ -559,6 +602,7 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
 
   /**
    * add worker attempt to monitor set
+   *
    * @param workerAttemptId worker attempt id
    */
   public void register(WorkerAttemptId workerAttemptId) {
@@ -568,6 +612,7 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
 
   /**
    * Check is a Worker alive
+   *
    * @param workerAttemptId Worker attempt id
    * @return true mean alive
    */
@@ -577,6 +622,7 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
 
   /**
    * Update Worker lastest heartbeat timestamp
+   *
    * @param workerAttemptId Worker attempt id
    */
   public void alive(WorkerAttemptId workerAttemptId) {
@@ -585,6 +631,7 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
 
   /**
    * Check is there worker group run success
+   *
    * @return true means some workergroups have run success
    */
   public boolean isThereWorkerGroupSuccess() {
@@ -593,6 +640,7 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
 
   /**
    * Get success worker group number
+   *
    * @return success worker group number
    */
   public int getSuccessWorkerGroupNum() {

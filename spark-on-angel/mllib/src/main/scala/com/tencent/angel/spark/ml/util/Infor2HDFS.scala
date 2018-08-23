@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.spark.ml.util
 
 
@@ -73,11 +74,11 @@ object Infor2HDFS extends Serializable {
 
     val modelStream = fs.create(outputPath, true)
 
-    messages.foreach{str =>
+    messages.foreach { str =>
       // save the model to hdfs
-        modelStream.write(str.getBytes)
-        modelStream.writeBytes("\n")
-      }
+      modelStream.write(str.getBytes)
+      modelStream.writeBytes("\n")
+    }
     modelStream.hflush()
 
     close(modelStream)

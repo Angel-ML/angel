@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.psagent.clock;
 
 import com.tencent.angel.PartitionKey;
@@ -28,16 +29,20 @@ import java.util.concurrent.ConcurrentHashMap;
  * The partition clocks cache for a matrix
  */
 public class MatrixClockCache {
-  /**matrix id*/
+  /**
+   * matrix id
+   */
   private final int matrixId;
-  
-  /**matrix partition key to clock map*/
+
+  /**
+   * matrix partition key to clock map
+   */
   private final ConcurrentHashMap<PartitionKey, Integer> partitionClockMap;
 
   /**
    * Create a new MatrixClockCache instance.
    *
-   * @param matrixId matrix id
+   * @param matrixId   matrix id
    * @param partitions matrix partitions
    */
   public MatrixClockCache(int matrixId, List<PartitionKey> partitions) {
@@ -60,7 +65,7 @@ public class MatrixClockCache {
 
   /**
    * Get minimal clock of the given partitions
-   * 
+   *
    * @param parts partitions
    * @return int minimal clock of the given partitions
    */
@@ -80,7 +85,7 @@ public class MatrixClockCache {
 
   /**
    * Get a partition clock
-   * 
+   *
    * @param partKey partition key
    * @return int clock
    */
@@ -94,9 +99,9 @@ public class MatrixClockCache {
 
   /**
    * Update clock of a partition
-   * 
+   *
    * @param partKey partition key
-   * @param clock clock value
+   * @param clock   clock value
    */
   public void update(PartitionKey partKey, int clock) {
     partitionClockMap.put(partKey, clock);
@@ -104,12 +109,13 @@ public class MatrixClockCache {
 
   /**
    * Get minimal clock of the given row
-   * 
+   *
    * @param rowIndex row index
    * @return int minimal clock of the given row
    */
   public int getClock(int rowIndex) {
-    return getMinClock(PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId, rowIndex));
+    return getMinClock(
+      PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId, rowIndex));
   }
 
   /**

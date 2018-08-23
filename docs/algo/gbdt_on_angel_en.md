@@ -88,30 +88,26 @@ Overall, Angel PS's advantage as stated above is demonstrated by GBDT's performa
 ### Parameters
 
 * Algorithm Parameters  
-	* ml.gbdt.tree.num: number of trees
-	* ml.gbdt.tree.depth: maximum tree depth
-	* ml.gbdt.split.num: maximum size of grad/hess histograms for each feature
-	* ml.learn.rate: learning rate
-	* ml.validate.ratio: proportion of data used for validation (no validation when set to 0)
-	* ml.gbdt.sample.ratio: proportion of features selected for training; default is 1
-	* ml.gbdt.server.split: if true, use two-stage tree splitting; default is true
-	* ml.compress.bytes: low-precision compression; the size of each floating point can set to [1,8]
+	* ml.gbdt.tree.num：number of trees
+	* ml.gbdt.tree.depth：maximum tree depth
+	* ml.gbdt.split.num：maximum size of grad/hess histograms for each feature
+	* ml.learn.rate：learning rate
+	* ml.validate.ratio：proportion of data used for validation (no validation when set to 0)
 
 * I/O Parameters
-	* angel.train.data.path: input path for train
-	* angel.predict.data.path: input path for predict
-	* ml.feature.index.range: number of features
-	* ml.model.size: the size of model. for some sparse model, there are features that all samples are zero at those indices (invalidate indices). ml.model.size = ml.feature.index.range - number of invalidate indices
-	* ml.data.type: [Angel Data Format](data_format_en.md), can be "dummy" or "libsvm"
-	* angel.save.model.path: save path for trained model
-    * angel.predict.out.path: output path for predict
-	* angel.log.path: save path for the log
+	* angel.train.data.path：input path for train
+	* angel.predict.data.path：input path for predict
+	* ml.feature.num：number of features
+	* ml.data.type：[Angel Data Format](data_format_en.md), can be "dummy" or "libsvm"
+	* angel.save.model.path：save path for trained model
+    * angel.predict.out.path：output path for predict
+	* angel.log.path：save path for the log
 
 * Resource Parameters
-	* angel.workergroup.number: number of workers
-	* angel.worker.memory.gb: worker's memory requested in G
-	* angel.worker.task.number: number of tasks on each worker; default is 1
-	* angel.ps.number: number of PS
+	* angel.workergroup.number：number of workers
+	* angel.worker.memory.gb：worker's memory requested in G
+	* angel.worker.task.number：number of tasks on each worker, default is 1
+	* angel.ps.number：number of PS
 	* angel.ps.memory.gb: PS's memory requested in G
 
 ### Performance
@@ -120,10 +116,10 @@ We compare Angel and XGBoost using Tencent's internal data:
 
 * Training data
 
-|   Data Set  | Data Set Size | Sample Size | Sample Dimension (Number of Features) |          Task         |
-|:-----------:|:-------------:|:-----------:|:-------------------------------------:|:---------------------:|
-| UserGender1 |      24GB     |    12.5M    |                 2.57K                 | binary classification |
-| UserGender2 |     145GB     |     120M    |                  330K                 | binary classification |
+| Data Set | Data Set Size | Sample Size  | Sample Dimension (Number of Features) | Task |
+|:------:|:----------:|:--------:|:--------:|:-------:|
+| UserGender1  |    24GB    |   12.5M  |   2.57K   | binary classification |
+| UserGender2  |    145GB    |   120M  |   330K   | binary classification |
 
 Task is to classify user's gender. The dataset **UserGender1** is 24GB，including 12.5M training samples, each of which has 2570 features. **UserGender2** is 145GB, including 120M samples, each of which has 330K features. Both data sets are sparse. 
 

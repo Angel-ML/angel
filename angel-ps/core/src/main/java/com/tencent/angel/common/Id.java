@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.common;
 
 import org.apache.hadoop.classification.InterfaceAudience;
@@ -26,36 +27,37 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 
-@InterfaceAudience.Public
-@InterfaceStability.Stable
-public abstract class Id implements WritableComparable<Id>{
+@InterfaceAudience.Public @InterfaceStability.Stable public abstract class Id
+  implements WritableComparable<Id> {
   public static final String SEPARATOR = "_";
   protected int index;
 
-  /** constructs an ID object from the given int */
+  /**
+   * constructs an ID object from the given int
+   */
   public Id(int index) {
     this.index = index;
   }
 
-  protected Id() {}
+  protected Id() {
+  }
 
-  /** returns the int which represents the identifier */
+  /**
+   * returns the int which represents the identifier
+   */
   public int getIndex() {
     return index;
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return String.valueOf(index);
   }
 
-  @Override
-  public int hashCode() {
+  @Override public int hashCode() {
     return index;
   }
 
-  @Override
-  public boolean equals(Object o) {
+  @Override public boolean equals(Object o) {
     if (this == o)
       return true;
     if (o == null)
@@ -67,7 +69,9 @@ public abstract class Id implements WritableComparable<Id>{
       return false;
   }
 
-  /** Compare IDs by associated numbers */
+  /**
+   * Compare IDs by associated numbers
+   */
   public int compareTo(Id that) {
     return this.index - that.index;
   }

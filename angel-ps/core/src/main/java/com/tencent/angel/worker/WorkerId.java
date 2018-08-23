@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.worker;
 
 import com.tencent.angel.common.Id;
@@ -40,9 +41,10 @@ public class WorkerId extends Id {
 
   /**
    * Instantiates a new Worker id with 'idStr'
-   *<p>
-   *   'idStr' must match <code>Worker_XXX_XXX</code>
-   *</p>
+   * <p>
+   * 'idStr' must match <code>Worker_XXX_XXX</code>
+   * </p>
+   *
    * @param idStr the id str
    * @throws UnvalidIdStrException the unvalid id str exception
    */
@@ -53,17 +55,18 @@ public class WorkerId extends Id {
 
     String[] idElemts = idStr.split(SEPARATOR);
     if (idElemts.length != 3 || !idElemts[0].equals(WORKER)) {
-      throw new UnvalidIdStrException("unvalid id str " + idStr + ", must be like this:" + WORKER
-          + SEPARATOR + "workerGroupIndex" + SEPARATOR + "workerIndex");
+      throw new UnvalidIdStrException(
+        "unvalid id str " + idStr + ", must be like this:" + WORKER + SEPARATOR + "workerGroupIndex"
+          + SEPARATOR + "workerIndex");
     }
 
     try {
       workerGroupId = new WorkerGroupId(Integer.valueOf(idElemts[1]));
       index = Integer.valueOf(idElemts[2]);
     } catch (Exception x) {
-      throw new UnvalidIdStrException("unvalid id str " + idStr + " " + x.getMessage()
-          + ", must be like this:" + WORKER + SEPARATOR + "workerGroupIndex" + SEPARATOR
-          + "workerIndex");
+      throw new UnvalidIdStrException(
+        "unvalid id str " + idStr + " " + x.getMessage() + ", must be like this:" + WORKER
+          + SEPARATOR + "workerGroupIndex" + SEPARATOR + "workerIndex");
     }
   }
 
@@ -78,24 +81,21 @@ public class WorkerId extends Id {
 
   protected StringBuilder appendTo(StringBuilder builder) {
     return builder.append(SEPARATOR).append(workerGroupId.getIndex()).append(SEPARATOR)
-        .append(index);
+      .append(index);
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return appendTo(new StringBuilder(WORKER)).toString();
   }
 
-  @Override
-  public int hashCode() {
+  @Override public int hashCode() {
     final int prime = 31;
     int result = super.hashCode();
     result = prime * result + ((workerGroupId == null) ? 0 : workerGroupId.hashCode());
     return result;
   }
 
-  @Override
-  public boolean equals(Object obj) {
+  @Override public boolean equals(Object obj) {
     if (this == obj)
       return true;
     if (!super.equals(obj))

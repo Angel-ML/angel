@@ -1,34 +1,13 @@
 # Spark on Angel 快速入门
 
-Spark on Angel同时支持YARN和Local两种运行模型，从而方便用户在本地调试程序。Spark on Angel的任务本质上是一个Spark的Application，但是多了一个附属的Application。在任务成功提交后，集群上将会出现两个独立的Application，一个是Spark Application， 一个是Angel-PS Application。两个Application不关联，一个Spark on Angel的作业删除，需要用户或者外部系统同时Kill两个。
-
 ## 部署流程
+- 安装Spark运行环境
+- 解压angel-\<version\>-bin.zip
+- 将解压后的angel-\<version\>-bin目录上传到HDFS路径
+- 配置angel-\<version\>-bin/bin/spark-on-angl-env.sh下的SPARK_HOME, ANGEL_HOME, ANGEL_HDFS_HOME三个环境变量
 
-1. **安装Spark**
-2. **安装Angel**
-	1. 解压angel-\<version\>-bin.zip
-	2. 配置angel-\<version\>-bin/bin/spark-on-angl-env.sh下的`SPARK_HOME`, `ANGEL_HOME`, `ANGEL_HDFS_HOME`三个环境变量
-	3. 将解压后的angel-\<version\>-bin目录上传到HDFS路径
-
-3. 配置环境变量
-
-	- 需要导入环境脚本：source ./spark-on-angel-env.sh
-	- 要配置好Jar包位置：spark.ps.jars=\$SONA_ANGEL_JARS和--jars \$SONA_SPARK_JARS
-
-## 提交任务
-
-完成Spark on Angel的程序编写打包后，可以通过spark-submit的脚本提交任务。不过，有以下几个需要注意的地方：
-
-
-## 运行Example（BreezeSGD）
-
-```bash
-#! /bin/bash
-- cd angel-<version>-bin/bin; 
-- ./SONA-example
-```
-
-脚本内容如下：
+## 运行example
+- cd angel-<version>-bin/bin; ./SONA-example
 
 ```bash
 #! /bin/bash
@@ -39,7 +18,7 @@ $SPARK_HOME/bin/spark-submit \
     --conf spark.ps.instances=10 \
     --conf spark.ps.cores=2 \
     --conf spark.ps.memory=6g \
-    --queue g_teg_angel-offline \
+    --queue g_teg_angel.g_teg_angel-offline \
     --jars $SONA_SPARK_JARS \
     --name "BreezeSGD-spark-on-angel" \
     --driver-memory 10g \
@@ -50,34 +29,45 @@ $SPARK_HOME/bin/spark-submit \
     ./../lib/spark-on-angel-examples-${ANGEL_VERSION}.jar
 ```
 
-> 注意要指定Angel PS的资源参数：spark.ps.instance，spark.ps.cores，spark.ps.memory
+## 提交Spark on Angel任务
+Spark on Angel的任务本质上是一个Spark的Application，完成Spark on Angel的程序编写打包后，通过spark-submit的脚本提交任务。
+不过，Spark on Angel提交的脚本有以下几个不同的地方：
+- source ./spark-on-angel-env.sh
+- 配置spark.ps.jars=$SONA_ANGEL_JARS和--jars $SONA_SPARK_JARS
+- spark.ps.instance，spark.ps.cores，spark.ps.memory是配置Angel PS的资源参数
 
+任务成功提交后，YARN将会出现两个Application，一个是Spark Application， 一个是Angel-PS Application。
 
-##  最简版本的LR
+## 支持运行模式
+同时支持YARN和Local两种运行模型，方便用户在本地调试程序
 
-[完整代码](https://github.com/Tencent/angel/blob/branch-1.3.0/spark-on-angel/examples/src/main/scala/com/tencent/angel/spark/examples/ml/AngelLR.scala)
+## Example Code: Gradient Descent的Angel PS实现
 
-```scala
-   PSContext.getOrCreate(sc)
+下面是一个简单版本的Gradient Descent的PS实现
+```java
+val w = PSVector.dense(dim)
+val sc = SparkSession.builder().getOrCreate().sparkContext
 
-   val psW = PSVector.dense(dim)
-   val psG = PSVector.duplicate(psW)
+for (i <- 1 to ITERATIONS) {
+ val bcW = sc.broadcast(w.pull())
+ val totalG = PSVector.duplicate(w)
 
-   println("Initial psW: " + psW.dimension)
+ val tempRDD = trainData.mapPartitions { iter =>
+   val breezeW = new DenseVector(bcW.value)
 
-   for (i <- 1 to ITERATIONS) {
-     println("On iteration " + i)
+   val subG = iter.map { case (feat, label) =>
+     val brzData = new DenseVector[Double](feat.toArray)
+     val margin: Double = -1.0 * breezeW.dot(brzData)
+     val gradientMultiplier = (1.0 / (1.0 + math.exp(margin))) - label
+     val gradient = brzData * gradientMultiplier
+     gradient
+   }.reduce(_ + _)
+   totalG.increment(subG.toArray)
+   Iterator.empty
+ }
+ tempRDD.count()
+ w.toBreeze -= (totalG.toBreeze :* (1.0 / sampleNum))
+}
 
-     val localW = new DenseVector(psW.pull())
-
-     trainData.map { case (x, label) =>
-       val g = -label * (1 - 1.0 / (1.0 + math.exp(-label * localW.dot(x)))) * x
-       psG.increment(g.toArray)
-     }.count()
-
-     psW.toBreeze -= (psG.toBreeze :* (1.0 / sampleNum))
-     psG.zero()
-    }
-
-   println(s"Final psW: ${psW.pull().mkString(" ")}")
+println(s"w: ${w.pull().mkString(" ")}")
 ```

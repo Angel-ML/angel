@@ -15,12 +15,12 @@
  *
  */
 
+
 package com.tencent.angel.localcluster;
 
 import com.tencent.angel.common.location.Location;
 import com.tencent.angel.ps.PSAttemptId;
-import com.tencent.angel.ps.impl.PSContext;
-import com.tencent.angel.ps.impl.ParameterServer;
+import com.tencent.angel.ps.ParameterServer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -30,38 +30,42 @@ import org.apache.hadoop.conf.Configuration;
  */
 public class LocalPS extends Thread {
   private static final Log LOG = LogFactory.getLog(LocalPS.class);
-  /**ps*/
+  /**
+   * ps
+   */
   private final ParameterServer ps;
-  
+
   /**
    * Create a local ps
-   * @param psAttemptId ps attempt id
+   *
+   * @param psAttemptId    ps attempt id
    * @param masterLocation master location
-   * @param conf cluster configuration
+   * @param conf           cluster configuration
    */
   public LocalPS(PSAttemptId psAttemptId, Location masterLocation, Configuration conf) {
-    ps = new ParameterServer(psAttemptId.getPsId().getIndex(), psAttemptId.getIndex(), masterLocation.getIp(), masterLocation.getPort(), conf);
+    ps = new ParameterServer(psAttemptId.getPsId().getIndex(), psAttemptId.getIndex(),
+      masterLocation.getIp(), masterLocation.getPort(), conf);
   }
 
-  @Override
-  public void run() {
+  @Override public void run() {
     try {
       ps.initialize();
       ps.start();
     } catch (Exception e) {
       LOG.fatal("ps " + ps.getPSAttemptId() + " start failed.", e);
       ps.failed(e.getMessage());
-    }   
+    }
   }
 
   /**
    * Get ps
+   *
    * @return ps
    */
   public ParameterServer getPS() {
     return ps;
   }
-  
+
   /**
    * Exit
    */

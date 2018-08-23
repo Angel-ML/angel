@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.webapp.page;
 
 import com.google.inject.Inject;
@@ -36,14 +37,12 @@ public class WorkerThreadStackBlock extends HtmlBlock {
   final AMContext amContext;
   private static final Log LOG = LogFactory.getLog(ParameterServerThreadStackBlock.class);
 
-  @Inject
-  WorkerThreadStackBlock(AMContext amctx) {
+  @Inject WorkerThreadStackBlock(AMContext amctx) {
     amContext = amctx;
     amContext.getParameterServerManager();
   }
 
-  @Override
-  protected void render(Block html) {
+  @Override protected void render(Block html) {
     set(TITLE, join("Angel WorkerThreadStack ", $(WORKER_ATTEMPT_ID)));
 
     try {

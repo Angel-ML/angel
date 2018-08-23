@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.task;
 
 public enum AMTaskState {

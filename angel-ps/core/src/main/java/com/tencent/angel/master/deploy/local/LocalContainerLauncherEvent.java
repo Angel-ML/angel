@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.deploy.local;
 
 import com.tencent.angel.common.Id;
@@ -28,7 +29,8 @@ public class LocalContainerLauncherEvent extends ContainerLauncherEvent {
 
   /**
    * Create a LocalContainerLauncherEvent
-   * @param type event type
+   *
+   * @param type   event type
    * @param taskId the task which the container is allocated to
    */
   public LocalContainerLauncherEvent(ContainerLauncherEventType type, Id taskId) {

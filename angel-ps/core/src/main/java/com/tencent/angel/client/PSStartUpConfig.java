@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.client;
 
 import java.util.Map;
@@ -30,7 +31,7 @@ public class PSStartUpConfig {
   private Map<String, String> config;
 
   public PSStartUpConfig(int psNum, int psMemoryInMB, int psVcoreNum, int psAgentNum,
-      int psAgentMemoryInMB, int psAgentVcoreNum, Map<String, String> config) {
+    int psAgentMemoryInMB, int psAgentVcoreNum, Map<String, String> config) {
     this.psNum = psNum;
     this.psMemoryInMB = psMemoryInMB;
     this.psVcoreNum = psVcoreNum;
@@ -96,11 +97,10 @@ public class PSStartUpConfig {
     this.config = config;
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "PSStartUpConfig [psNum=" + psNum + ", psMemoryInMB=" + psMemoryInMB + ", psVcoreNum="
-        + psVcoreNum + ", psAgentNum=" + psAgentNum + ", psAgentMemoryInMB=" + psAgentMemoryInMB
-        + ", psAgentVcoreNum=" + psAgentVcoreNum + ", config=" + mapToString(config) + "]";
+      + psVcoreNum + ", psAgentNum=" + psAgentNum + ", psAgentMemoryInMB=" + psAgentMemoryInMB
+      + ", psAgentVcoreNum=" + psAgentVcoreNum + ", config=" + mapToString(config) + "]";
   }
 
   private String mapToString(Map<String, String> config) {

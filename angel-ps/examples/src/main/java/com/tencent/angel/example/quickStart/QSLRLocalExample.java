@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -14,11 +14,12 @@
  * the License.
  *
  */
+
+
 package com.tencent.angel.example.quickStart;
 
-
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.conf.MLConf;
+import com.tencent.angel.ml.core.conf.MLConf;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
@@ -69,7 +70,7 @@ public class QSLRLocalExample {
     conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
     conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
     conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
-    conf.set(MLConf.ML_LR_REG_L2(), String.valueOf(reg));
+    conf.set(MLConf.ML_REG_L2(), String.valueOf(reg));
 
     // Set input data path
     conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
@@ -83,8 +84,8 @@ public class QSLRLocalExample {
 
   public static void main(String[] args) {
     Configuration conf = setConf();
-    QSLRRunner runner = new QSLRRunner();
-    runner.train(conf);
+    //QSLRRunner runner = new QSLRRunner();
+    //runner.train(conf);
   }
 
 }

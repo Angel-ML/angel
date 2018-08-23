@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.webapp.page;
 
 import com.google.inject.Inject;
@@ -33,17 +34,16 @@ import static org.apache.hadoop.yarn.webapp.view.JQueryUI._TH;
 // import org.apache.hadoop.conf.Configuration;
 // import java.lang.reflect.Field;
 
+
 public class EnvironmentBlock extends HtmlBlock {
   final AMContext amContext;
 
-  @Inject
-  EnvironmentBlock(AMContext amctx) {
+  @Inject EnvironmentBlock(AMContext amctx) {
     amContext = amctx;
   }
 
 
-  @Override
-  protected void render(Block html) {
+  @Override protected void render(Block html) {
     set(TITLE, join("Angel Environment"));
     html.h1("Runtime Information");
 
@@ -56,8 +56,8 @@ public class EnvironmentBlock extends HtmlBlock {
     String JavaVersion = System.getProperty("java.version");
     run_info_table.tr().th(_TH, "NAME").th(_TH, "VALUE")._();
     run_info_table.tr().td("UsrHome").td(UsrHome)._().tr().td("UsrDir").td(UsrDir)._().tr()
-        .td("UsrName").td(UsrName)._().tr().td("JavaHome").td(JavaHome)._().tr().td("OsNmae")
-        .td(OsNmae)._().tr().td("JavaVersion").td(JavaVersion)._();
+      .td("UsrName").td(UsrName)._().tr().td("JavaHome").td(JavaHome)._().tr().td("OsNmae")
+      .td(OsNmae)._().tr().td("JavaVersion").td(JavaVersion)._();
     run_info_table._();
     html.h1("    ");
 
@@ -73,23 +73,23 @@ public class EnvironmentBlock extends HtmlBlock {
     while (propertiesSortedKeys.hasNext()) {
       key = propertiesSortedKeys.next();
       angel_properties_table.tr().td(String.valueOf(key))
-          .td((String) propertiesConfiguration.get(key))._();
+        .td((String) propertiesConfiguration.get(key))._();
     }
     angel_properties_table._();
     html.h1("    ");
 
 
     TBODY<TABLE<Hamlet>> tbody =
-        html.h1("System Properties").table("#jobs").thead().tr().th(_TH, "NAME").th(_TH, "VALUE")
-            ._()._().tbody();
+      html.h1("System Properties").table("#jobs").thead().tr().th(_TH, "NAME").th(_TH, "VALUE")._()
+        ._().tbody();
     Properties properties = System.getProperties();
     String propertiesName;
     String propertiesValue;
-    for (Iterator<?> names = (Iterator<?>) properties.propertyNames(); names.hasNext();) {
+    for (Iterator<?> names = (Iterator<?>) properties.propertyNames(); names.hasNext(); ) {
       propertiesName = (String) names.next();
       propertiesValue = properties.getProperty(propertiesName);
       tbody.tr().td(propertiesName).td(propertiesValue).td().span().$title(propertiesName)._()._()
-          .td().span().$title(propertiesValue)._()._()._();
+        .td().span().$title(propertiesValue)._()._()._();
     }
     tbody._()._();
 

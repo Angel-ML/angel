@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.deploy.yarn;
 
 import com.tencent.angel.common.Id;
@@ -26,21 +27,25 @@ import org.apache.hadoop.yarn.api.records.Priority;
  * Yarn container allocator event.
  */
 public class YarnContainerAllocatorEvent extends ContainerAllocatorEvent {
-  /**resource priority*/
+  /**
+   * resource priority
+   */
   private final Priority priority;
-  
+
   /**
    * Create a YarnContainerAllocatorEvent
-   * @param id task id
+   *
+   * @param id   task id
    * @param type event type
    */
   public YarnContainerAllocatorEvent(Id id, ContainerAllocatorEventType type, Priority priority) {
     super(type, id);
     this.priority = priority;
   }
-  
+
   /**
    * Get resource priority
+   *
    * @return resource priority
    */
   public Priority getPriority() {

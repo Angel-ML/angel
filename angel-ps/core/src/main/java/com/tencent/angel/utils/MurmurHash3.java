@@ -14,6 +14,8 @@
  * the License.
  *
  */
+
+
 package com.tencent.angel.utils;
 
 /**
@@ -21,7 +23,9 @@ package com.tencent.angel.utils;
  */
 public class MurmurHash3 {
 
-  /** Returns the MurmurHash3_x86_32 hash. */
+  /**
+   * Returns the MurmurHash3_x86_32 hash.
+   */
   public static int murmurhash3_x86_32(byte[] data, int offset, int len, int seed) {
 
     final int c1 = 0xcc9e2d51;
@@ -33,8 +37,8 @@ public class MurmurHash3 {
     for (int i = offset; i < roundedEnd; i += 4) {
       // little endian load order
       int k1 =
-          (data[i] & 0xff) | ((data[i + 1] & 0xff) << 8) | ((data[i + 2] & 0xff) << 16)
-              | (data[i + 3] << 24);
+        (data[i] & 0xff) | ((data[i + 1] & 0xff) << 8) | ((data[i + 2] & 0xff) << 16) | (data[i + 3]
+          << 24);
       k1 *= c1;
       k1 = (k1 << 15) | (k1 >>> 17); // ROTL32(k1,15);
       k1 *= c2;
@@ -140,7 +144,7 @@ public class MurmurHash3 {
 
   private static int getBlock32(byte[] data, int i) {
     return unsignedByte(data[i]) | unsignedByte(data[i + 1]) << 8 | unsignedByte(data[i + 2]) << 16
-        | unsignedByte(data[i + 3]) << 24;
+      | unsignedByte(data[i + 3]) << 24;
   }
 
   private static long getBlock64(byte[] data, int i) {

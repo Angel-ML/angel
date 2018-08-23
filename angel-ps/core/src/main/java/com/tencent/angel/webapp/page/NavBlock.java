@@ -15,13 +15,13 @@
  *
  */
 
+
 package com.tencent.angel.webapp.page;
 
 import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
 
 public class NavBlock extends HtmlBlock {
-  @Override
-  protected void render(Block html) {
+  @Override protected void render(Block html) {
 
   }
 }

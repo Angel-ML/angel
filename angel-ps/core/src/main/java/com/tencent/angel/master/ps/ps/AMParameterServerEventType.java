@@ -15,27 +15,40 @@
  *
  */
 
+
 package com.tencent.angel.master.ps.ps;
 
 /**
  * PS event type.
  */
 public enum AMParameterServerEventType {
-  /**start a ps attempt*/
-  PS_SCHEDULE,  
-  
-  /**ps attempt is launched*/
-  PS_ATTEMPT_LAUNCHED, 
-  
-  /**ps attempt failed*/
-  PS_ATTEMPT_FAILED, 
-  
-  /**ps attempt is killed*/
-  PS_ATTEMPT_KILLED, 
-  
-  /**ps attempt run successfully*/
+  /**
+   * start a ps attempt
+   */
+  PS_SCHEDULE,
+
+  /**
+   * ps attempt is launched
+   */
+  PS_ATTEMPT_LAUNCHED,
+
+  /**
+   * ps attempt failed
+   */
+  PS_ATTEMPT_FAILED,
+
+  /**
+   * ps attempt is killed
+   */
+  PS_ATTEMPT_KILLED,
+
+  /**
+   * ps attempt run successfully
+   */
   PS_ATTEMPT_SUCCESS,
-  
-  /**receive a kill command*/
+
+  /**
+   * receive a kill command
+   */
   PS_KILL
 }

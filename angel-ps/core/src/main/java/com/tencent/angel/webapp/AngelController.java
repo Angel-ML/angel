@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.webapp;
 
 import com.google.inject.Inject;
@@ -26,14 +27,12 @@ public class AngelController extends Controller implements AngelParams {
   protected final AMContext appContext;
 
   // The app injection is optional
-  @Inject
-  AngelController(AMContext appCtx, RequestContext ctx) {
+  @Inject AngelController(AMContext appCtx, RequestContext ctx) {
     super(ctx);
     this.appContext = appCtx;
   }
 
-  @Override
-  public void index() {
+  @Override public void index() {
     render(AngelAppPage.class);
     // renderText("hello world");
   }

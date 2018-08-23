@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.ml.metric
 
 import com.tencent.angel.exception.AngelException
@@ -27,8 +28,8 @@ class GlobalMetrics(ctx: TaskContext) {
   val metricsTable = mutable.Map[String, Metric]()
 
   def metric(metricName: String, metricValue: Double) = {
-    val metric:Option[Metric] = metricsTable.get(metricName)
-    if(metric.isDefined) {
+    val metric: Option[Metric] = metricsTable.get(metricName)
+    if (metric.isDefined) {
       metric.get.setValue(metricValue)
     } else {
       throw new AngelException(s"Can not find metric $metricName in metrics table, " + s"you must register it use addMetrics first")

@@ -47,7 +47,7 @@ GBDT的流程包括几大步骤
 2. **创建决策树：** Worker创建新的树，进行一些初始化的工作，包括初始化树结构、计算训练数据的一阶和二阶梯度、初始化一个待处理树节点的队列、将树的根节点加入队列。
 3. **寻找最佳分裂点 & 分裂树节点：**（下文单独讲）
 4. **计算合并叶子节点的预测值：** Worker计算出叶子节点的预测值，推送给PS。
-5. **完成一颗决策树，重新开始第二步。**
+5. **完成一颗决策树，重新开始第二步。** 
 
 反复调用这几个步骤，直到完成所有树的建立，如果训练完所有决策树，计算并输出性能指标（准确率、误差等），输出训练模型。
 
@@ -79,36 +79,43 @@ GBDT的流程包括几大步骤
 
 ## 4. 运行 & 性能
 
-###  输入格式
-* ml.feature.index.range：特征向量的维度
-* ml.data.type：支持"dummy"、"libsvm"两种数据格式，具体参考:[Angel数据格式](data_format.md)
+### 输入格式
 
+数据的格式通过“ml.data.type”参数设置；数据特征的个数，即训练数据的维度通过参数“ml.feature.num”设置。
+
+GBDT on Angel支持“libsvm”、“dummy”两种数据格式，分别如下所示：
+
+* **dummy格式**
+
+每行文本表示一个样本，每个样本的格式为"y index1 index2 index3 ..."。其中：index特征的ID；训练数据的y为样本的类别，可以取1、-1两个值；预测数据的y为样本的ID值。比如，属于正类的样本[2.0, 3.1, 0.0, 0.0, -1, 2.2]的文本表示为“1 0 1 4 5”，其中“1”为类别，“0 1 4 5”表示特征向量的第0、1、4、5个维度的值不为0。同理，属于负类的样本[2.0, 0.0, 0.1, 0.0, 0.0, 0.0]被表示为“-1 0 2”。
+
+ * **libsvm格式**
+
+每行文本表示一个样本，每个样本的格式为"y index1:value1 index2:value1 index3:value3 ..."。其中：index为特征的ID,value为对应的特征值；训练数据的y为样本的类别，可以取1、-1两个值；预测数据的y为样本的ID值。比如，属于正类的样本[2.0, 3.1, 0.0, 0.0, -1, 2.2]的文本表示为“1 0:2.0 1:3.1 4:-1 5:2.2”，其中“1”为类别，"0:2.0"表示第0个特征的值为2.0。同理，属于负类的样本[2.0, 0.0, 0.1, 0.0, 0.0, 0.0]被表示为“-1 0:2.0 2：0.1”。
 
 ### 参数
 
-* **算法参数**
-	* ml.gbdt.task.type：任务类型，classification或者regression
-	* ml.gbdt.tree.num：树的数量
+* 算法参数  
+	* ml.gbdt.tree.num：树的最大数量
 	* ml.gbdt.tree.depth：树的最大高度
 	* ml.gbdt.split.num：每个特征的梯度直方图的大小
 	* ml.learn.rate：学习速率
-	* ml.data.validate.ratio：每次validation的样本比率，设为0时不做validation
+	* ml.validate.ratio：每次validation的样本比率，设为0时不做validation
 	* ml.gbdt.sample.ratio：特征下采样的比率，默认为1
 	* ml.gbdt.server.split：两阶段分裂算法开关，默认为true
 	* ml.compress.bytes：低精度压缩，每个浮点数的大小，可设为[1,8]
 
-
-* **输入输出参数**
+* 输入输出参数
 	* angel.train.data.path：训练数据的输入路径
 	* angel.predict.data.path：预测数据的输入路径
-	* ml.feature.index.range：数据的特征个数
-	* ml.gbdt.cate.feat：离散特征，"特征id:特征数量"的格式，以逗号分隔，例如"0:2,1:3"。设为"none"表示没有离散特征，设为"all"表示全部为离散特征。
+	* ml.feature.num：数据的特征个数
+	* ml.feature.nnz：数据的非零特征个数
 	* ml.data.type：数据格式，支持"dummy"、"libsvm"
 	* angel.save.model.path：训练完成后，模型的保存路径
 	* angel.predict.out.path：预测结果的保存路径
 	* angel.log.path：日志文件的保存路径
 
-* **资源参数**
+* 资源参数
 	* angel.workergroup.number：Worker个数
 	* angel.worker.memory.mb：Worker申请内存大小
 	* angel.worker.task.number：每个Worker上的task的个数，默认为1
@@ -123,10 +130,10 @@ angel-submit \
     -Dangel.worker.log.level=INFO \
     -Dangel.app.submit.class=com.tencent.angel.ml.GBDT.GBDTRunner  \
     -Daction.type=train \
-    -Dml.data.type=libsvm \
-    -Dml.data.validate.ratio=0.1 \
-    -Dml.feature.index.range=10000 \
-	-Dml.gbdt.cate.feat=none \
+    -Dangel.ml.data.type=libsvm \
+    -Dml.validate.ratio=0.1 \
+    -Dml.feature.num=10000 \
+	-Dml.feature.nnz=100 \
 	-Dml.gbdt.tree.num=20 \
 	-Dml.gbdt.tree.depth=7 \
 	-Dml.gbdt.split.num=10 \
@@ -152,9 +159,10 @@ angel-submit \
     -Dangel.worker.log.level=INFO \
     -Dangel.app.submit.class=com.tencent.angel.ml.GBDT.GBDTRunner  \
     -Daction.type=predict \
-    -Dml.data.type=libsvm \
-    -Dml.data.validate.ratio=0.1 \
-    -Dml.feature.index.range=10000 \
+    -Dangel.ml.data.type=libsvm \
+    -Dml.validate.ratio=0.1 \
+    -Dml.feature.num=10000 \
+	-Dml.feature.nnz=100 \
 	-Dml.gbdt.tree.num=20 \
 	-Dml.gbdt.tree.depth=7 \
 	-Dml.gbdt.sample.ratio=1.0 \
@@ -202,12 +210,12 @@ angel-submit \
 	  * 工作节点数据：50
 	  * 参数服务器数量：10
 	  * 每个工作节点内存：2GB(UserGender1)、10GB(UserGender2)
-	  
-* **实验结果**
 
-	| 系统   | 数据集      | 训练总时间 |每棵树时间| 测试集误差 |
-	|:------:|:-----------:|:----------:|:--------:|:----------:|
-	| XGBoost| UserGender1 | 36min 48s  |  110s    |  0.155008  |
-	| Angel  | UserGender1 | 25min 22s  |   76s    |  0.154160  |
-	| XGBoost| UserGender2 | 2h 25min   |  435s    |  0.232039  |
-	| Angel  | UserGender2 | 58min 39s  |  175s    |  0.243316  |
+### **实验结果**
+
+| 系统   | 数据集      | 训练总时间 |每棵树时间| 测试集误差 |
+|:------:|:-----------:|:----------:|:--------:|:----------:|
+| XGBoost| UserGender1 | 36min 48s  |  110s    |  0.155008  |
+| Angel  | UserGender1 | 25min 22s  |   76s    |  0.154160  |
+| XGBoost| UserGender2 | 2h 25min   |  435s    |  0.232039  |
+| Angel  | UserGender2 | 58min 39s  |  175s    |  0.243316  |

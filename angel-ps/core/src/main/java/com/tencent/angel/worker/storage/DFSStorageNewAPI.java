@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.worker.storage;
 
 import com.tencent.angel.conf.AngelConf;
@@ -33,7 +34,7 @@ import java.io.IOException;
 /**
  * use new mr2 api
  *
- * @param <KEY> key type
+ * @param <KEY>   key type
  * @param <VALUE> value type
  */
 public class DFSStorageNewAPI<KEY, VALUE> {
@@ -49,25 +50,22 @@ public class DFSStorageNewAPI<KEY, VALUE> {
     return split;
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  public void initReader() throws IOException {
+  @SuppressWarnings({"rawtypes", "unchecked"}) public void initReader() throws IOException {
     try {
       Configuration conf = WorkerContext.get().getConf();
       String inputFormatClassName =
-          conf.get(AngelConf.ANGEL_INPUTFORMAT_CLASS,
-              AngelConf.DEFAULT_ANGEL_INPUTFORMAT_CLASS);
+        conf.get(AngelConf.ANGEL_INPUTFORMAT_CLASS, AngelConf.DEFAULT_ANGEL_INPUTFORMAT_CLASS);
 
       Class<? extends org.apache.hadoop.mapreduce.InputFormat> inputFormatClass =
-          (Class<? extends org.apache.hadoop.mapreduce.InputFormat>) Class
-              .forName(inputFormatClassName);
+        (Class<? extends org.apache.hadoop.mapreduce.InputFormat>) Class
+          .forName(inputFormatClassName);
 
       org.apache.hadoop.mapreduce.InputFormat inputFormat =
-          ReflectionUtils.newInstance(inputFormatClass,
-              new JobConf(conf));
+        ReflectionUtils.newInstance(inputFormatClass, new JobConf(conf));
 
       MRTaskContext taskContext = new MRTaskContext(conf);
       org.apache.hadoop.mapreduce.RecordReader<KEY, VALUE> recordReader =
-          inputFormat.createRecordReader(split, taskContext);
+        inputFormat.createRecordReader(split, taskContext);
 
       recordReader.initialize(split, taskContext);
       setReader(new DFSReaderNewAPI(recordReader));
@@ -92,34 +90,28 @@ public class DFSStorageNewAPI<KEY, VALUE> {
       this.innerReader = reader;
     }
 
-    @Override
-    public boolean nextKeyValue() throws IOException, InterruptedException {
+    @Override public boolean nextKeyValue() throws IOException, InterruptedException {
       return innerReader.nextKeyValue();
     }
 
-    @Override
-    public KEY getCurrentKey() throws IOException, InterruptedException {
+    @Override public KEY getCurrentKey() throws IOException, InterruptedException {
       return innerReader.getCurrentKey();
     }
 
-    @Override
-    public VALUE getCurrentValue() throws IOException, InterruptedException {
+    @Override public VALUE getCurrentValue() throws IOException, InterruptedException {
       return innerReader.getCurrentValue();
     }
 
-    @Override
-    public void reset() throws IOException {
+    @Override public void reset() throws IOException {
       innerReader.close();
       initReader();
     }
 
-    @Override
-    public void close() throws IOException {
+    @Override public void close() throws IOException {
       innerReader.close();
     }
 
-    @Override
-    public float getProgress() {
+    @Override public float getProgress() {
       try {
         return innerReader.getProgress();
       } catch (IOException | InterruptedException e) {

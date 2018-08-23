@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.localcluster;
 
 import com.tencent.angel.common.location.Location;
@@ -34,21 +35,21 @@ public class LocalWorker extends Thread {
 
   /**
    * Create a local worker
-   * @param conf cluster configuration
-   * @param appId application id
-   * @param user submit user name
+   *
+   * @param conf            cluster configuration
+   * @param appId           application id
+   * @param user            submit user name
    * @param workerAttemptId worker attempt id
-   * @param masterLocation the location of master
-   * @param initMinClock the start clock value
-   * @param isLeader the worker is the leader of the workergroup or not
+   * @param masterLocation  the location of master
+   * @param initMinClock    the start clock value
+   * @param isLeader        the worker is the leader of the workergroup or not
    */
   public LocalWorker(Configuration conf, ApplicationId appId, String user,
-      WorkerAttemptId workerAttemptId, Location masterLocation, int initMinClock, boolean isLeader) {
+    WorkerAttemptId workerAttemptId, Location masterLocation, int initMinClock, boolean isLeader) {
     worker = new Worker(conf, appId, user, workerAttemptId, masterLocation, 0, false);
   }
 
-  @Override
-  public void run() {
+  @Override public void run() {
     try {
       worker.initAndStart();
     } catch (Exception e) {
@@ -59,16 +60,17 @@ public class LocalWorker extends Thread {
 
   /**
    * Get worker
+   *
    * @return worker
    */
   public Worker getWorker() {
     return worker;
   }
-  
+
   /**
    * Exit
    */
-  public void exit(){
+  public void exit() {
     worker.stop();
     interrupt();
   }

@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.matrixmeta;
 
 import com.tencent.angel.PartitionKey;
@@ -23,15 +24,15 @@ import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.ml.matrix.*;
-import com.tencent.angel.ml.matrix.transport.PSLocation;
 import com.tencent.angel.model.output.format.ModelFilesConstent;
 import com.tencent.angel.model.output.format.ModelFilesMeta;
 import com.tencent.angel.model.output.format.ModelPartitionMeta;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.ps.ParameterServerId;
-import com.tencent.angel.ps.Partitioner;
-import com.tencent.angel.ps.impl.matrix.PartitionState;
-import com.tencent.angel.ps.recovery.ha.RecoverPartKey;
+import com.tencent.angel.ps.ha.RecoverPartKey;
+import com.tencent.angel.ps.server.data.PSLocation;
+import com.tencent.angel.ps.storage.matrix.PartitionState;
+import com.tencent.angel.ps.storage.partitioner.Partitioner;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 
 import org.apache.commons.logging.Log;
@@ -59,23 +60,33 @@ public class AMMatrixMetaManager {
   private static final Log LOG = LogFactory.getLog(AMMatrixMetaManager.class);
   private final AMContext context;
 
-  /** Matrix meta manager */
+  /**
+   * Matrix meta manager
+   */
   private final MatrixMetaManager matrixMetaManager;
 
-  /** inverted index, psId--->Map( matrixId---->List<PartitionMeta>), used for PS */
+  /**
+   * inverted index, psId--->Map( matrixId---->List<PartitionMeta>), used for PS
+   */
   private final Map<ParameterServerId, Map<Integer, MatrixMeta>> matrixPartitionsOnPS;
-  
-  /** ps id to matrices on this ps map */
+
+  /**
+   * ps id to matrices on this ps map
+   */
   private final Map<ParameterServerId, Set<Integer>> psIdToMatrixIdsMap;
 
-  /**matrix id to psId which has build partitions of this matrix map, use to add matrix */
+  /**
+   * matrix id to psId which has build partitions of this matrix map, use to add matrix
+   */
   private final Map<Integer, Set<ParameterServerId>> matrixIdToPSSetMap;
 
   private final Map<ParameterServerId, Set<RecoverPartKey>> psIdToRecoverPartsMap;
 
-  /**matrix id generator*/
+  /**
+   * matrix id generator
+   */
   private int maxMatrixId = 0;
-  
+
   private final Lock readLock;
   private final Lock writeLock;
 
@@ -90,11 +101,15 @@ public class AMMatrixMetaManager {
     ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     readLock = readWriteLock.readLock();
     writeLock = readWriteLock.writeLock();
+
+    // Add one sync matrix
+    // addSyncMatrix();
   }
 
-  
+
   /**
    * Get matrix meta use matrix name
+   *
    * @param matrixName matrix name
    * @return MatrixMeta matrix meta proto of the matrix, if not found, just return null
    */
@@ -104,6 +119,7 @@ public class AMMatrixMetaManager {
 
   /**
    * Get matrix meta use matrix id
+   *
    * @param matrixId matrix id
    * @return MatrixMeta matrix meta proto of the matrix
    */
@@ -113,6 +129,7 @@ public class AMMatrixMetaManager {
 
   /**
    * get partitions of a specific parameter server hold
+   *
    * @param psId, parameter server id
    * @return List<MatrixPartition> the partitions of the parameter server hold
    */
@@ -120,7 +137,7 @@ public class AMMatrixMetaManager {
     try {
       readLock.lock();
       Map<Integer, MatrixMeta> metaInPS = matrixPartitionsOnPS.get(psId);
-      if(metaInPS == null) {
+      if (metaInPS == null) {
         return new HashMap<>();
       } else {
         return new HashMap<>(metaInPS);
@@ -132,8 +149,9 @@ public class AMMatrixMetaManager {
 
   /**
    * Create matrices
+   *
    * @param matrixContexts matrices meta
-   * @throws InvalidParameterException 
+   * @throws InvalidParameterException
    */
   public void createMatrices(List<MatrixContext> matrixContexts) throws Exception {
     int size = matrixContexts.size();
@@ -144,13 +162,15 @@ public class AMMatrixMetaManager {
 
   /**
    * Create a new matrix
+   *
    * @param matrixContext matrix context
    * @throws InvalidParameterException
    */
   public void createMatrix(MatrixContext matrixContext) throws Exception {
     // Check whether the matrix name conflicts with the existing matrix names, the matrix name must be only
     if (matrixMetaManager.exists(matrixContext.getName())) {
-      String errorMsg = "build matrix failed. matrix name " + matrixContext.getName() + " has exist, you must choose a new one";
+      String errorMsg = "build matrix failed. matrix name " + matrixContext.getName()
+        + " has exist, you must choose a new one";
       LOG.error(errorMsg);
       throw new InvalidParameterException(errorMsg);
     }
@@ -206,7 +226,7 @@ public class AMMatrixMetaManager {
 
     int size = partitions.size();
     Map<Integer, PartitionMeta> partIdToMetaMap = new HashMap<>(size);
-    for(int i = 0; i < size; i++) {
+    for (int i = 0; i < size; i++) {
       partIdToMetaMap.put(partitions.get(i).getPartId(), partitions.get(i));
     }
     MatrixMeta meta = new MatrixMeta(matrixContext, partIdToMetaMap);
@@ -221,14 +241,16 @@ public class AMMatrixMetaManager {
    * @return matrix partitions
    * @throws IOException the io exception
    */
-  private List<PartitionMeta> loadPartitionInfoFromHDFS(String path, MatrixContext matrixContext, Configuration conf) throws IOException {
-    Path meteFilePath = new Path(new Path(path, matrixContext.getName()), ModelFilesConstent.modelMetaFileName);
+  private List<PartitionMeta> loadPartitionInfoFromHDFS(String path, MatrixContext matrixContext,
+    Configuration conf) throws IOException {
+    Path meteFilePath =
+      new Path(new Path(path, matrixContext.getName()), ModelFilesConstent.modelMetaFileName);
     ModelFilesMeta meta = new ModelFilesMeta();
 
-    FileSystem fs  = meteFilePath.getFileSystem(conf);
+    FileSystem fs = meteFilePath.getFileSystem(conf);
     LOG.info("Load matrix meta for matrix " + matrixContext.getName());
 
-    if(!fs.exists(meteFilePath)) {
+    if (!fs.exists(meteFilePath)) {
       throw new IOException("matrix meta file does not exist ");
     }
 
@@ -247,16 +269,18 @@ public class AMMatrixMetaManager {
       writeLock.unlock();
     }
 
-    for(Map.Entry<Integer, ModelPartitionMeta> partMetaEntry:partMetas.entrySet()) {
-      matrixPartitions.add(new PartitionMeta(matrixId, partMetaEntry.getKey(), partMetaEntry.getValue().getStartRow(),
-        partMetaEntry.getValue().getEndRow(), partMetaEntry.getValue().getStartCol(), partMetaEntry.getValue().getEndCol()));
+    for (Map.Entry<Integer, ModelPartitionMeta> partMetaEntry : partMetas.entrySet()) {
+      matrixPartitions.add(
+        new PartitionMeta(matrixId, partMetaEntry.getKey(), partMetaEntry.getValue().getStartRow(),
+          partMetaEntry.getValue().getEndRow(), partMetaEntry.getValue().getStartCol(),
+          partMetaEntry.getValue().getEndCol()));
     }
     return matrixPartitions;
   }
 
   private void assignPSForPartitions(Partitioner partitioner, List<PartitionMeta> partitions) {
     int partNum = partitions.size();
-    for(int i =0; i < partNum; i++) {
+    for (int i = 0; i < partNum; i++) {
       int psIndex = partitioner.assignPartToServer(partitions.get(i).getPartId());
       ParameterServerId psId = new ParameterServerId(psIndex);
       partitions.get(i).addReplicationPS(psId);
@@ -267,69 +291,72 @@ public class AMMatrixMetaManager {
   private void assignReplicationSlaves(List<PartitionMeta> partitions) {
     int replicationNum = context.getConf().getInt(AngelConf.ANGEL_PS_HA_REPLICATION_NUMBER,
       AngelConf.DEFAULT_ANGEL_PS_HA_REPLICATION_NUMBER);
-    if(replicationNum <= 1) {
+    if (replicationNum <= 1) {
       return;
     }
 
-    int psNum = context.getConf().getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER);
+    int psNum =
+      context.getConf().getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER);
     int size = partitions.size();
-    for(int i = 0; i < size; i++) {
+    for (int i = 0; i < size; i++) {
       assignReplicationSlaves(partitions.get(i), replicationNum - 1, psNum);
     }
   }
 
   private void assignReplicationSlaves(PartitionMeta partition, int slaveNum, int psNum) {
     int psIndex = partition.getMasterPs().getIndex();
-    for(int i = 0; i < slaveNum; i++) {
+    for (int i = 0; i < slaveNum; i++) {
       partition.addReplicationPS(new ParameterServerId((psIndex + i + 1) % psNum));
     }
   }
 
   /**
-   * dispatch matrix partitions to parameter servers 
-   * @param matrixMeta  matrix meta proto
+   * dispatch matrix partitions to parameter servers
+   *
+   * @param matrixMeta matrix meta proto
    */
   private void buildPSMatrixMeta(MatrixMeta matrixMeta) {
     Map<Integer, PartitionMeta> partMetas = matrixMeta.getPartitionMetas();
     int matrixId = matrixMeta.getId();
-    Set<ParameterServerId> psIdSet =  matrixIdToPSSetMap.get(matrixId);
-    if(psIdSet == null) {
+    Set<ParameterServerId> psIdSet = matrixIdToPSSetMap.get(matrixId);
+    if (psIdSet == null) {
       psIdSet = new HashSet<>();
       matrixIdToPSSetMap.put(matrixId, psIdSet);
     }
 
-    for(Entry<Integer, PartitionMeta> partEntry : partMetas.entrySet()) {
+    for (Entry<Integer, PartitionMeta> partEntry : partMetas.entrySet()) {
       List<ParameterServerId> psList = partEntry.getValue().getPss();
       int size = psList.size();
-      for(int i = 0; i < size; i++) {
+      for (int i = 0; i < size; i++) {
         ParameterServerId psId = psList.get(i);
         Map<Integer, MatrixMeta> psMatrixIdToMetaMap = matrixPartitionsOnPS.get(psId);
-        if(psMatrixIdToMetaMap == null) {
+        if (psMatrixIdToMetaMap == null) {
           psMatrixIdToMetaMap = new HashMap<>();
           matrixPartitionsOnPS.put(psId, psMatrixIdToMetaMap);
         }
 
         MatrixMeta psMatrixMeta = psMatrixIdToMetaMap.get(matrixId);
-        if(psMatrixMeta == null) {
+        if (psMatrixMeta == null) {
           psMatrixMeta = new MatrixMeta(matrixMeta.getMatrixContext());
           psMatrixIdToMetaMap.put(matrixId, psMatrixMeta);
         }
 
-        psMatrixMeta.addPartitionMeta(partEntry.getKey(), new PartitionMeta(
-          partEntry.getValue().getPartitionKey(), new ArrayList<>(partEntry.getValue().getPss())));
+        psMatrixMeta.addPartitionMeta(partEntry.getKey(),
+          new PartitionMeta(partEntry.getValue().getPartitionKey(),
+            new ArrayList<>(partEntry.getValue().getPss())));
 
         psIdSet.add(psId);
       }
     }
 
-    for(Entry<ParameterServerId, Map<Integer, MatrixMeta>> psEntry : matrixPartitionsOnPS.entrySet()) {
-      LOG.info("ps id = " + psEntry.getKey());
-      Map<Integer, MatrixMeta> matrixIdToMetaMap = psEntry.getValue();
-      for(Entry<Integer, MatrixMeta> metaEntry : matrixIdToMetaMap.entrySet()) {
-        LOG.info("matrix id = " + metaEntry.getKey());
-        LOG.info("matrix partitons number = " + metaEntry.getValue().getPartitionMetas().size());
-      }
-    }
+    //    for(Entry<ParameterServerId, Map<Integer, MatrixMeta>> psEntry : matrixPartitionsOnPS.entrySet()) {
+    //      LOG.info("ps id = " + psEntry.getKey());
+    //      Map<Integer, MatrixMeta> matrixIdToMetaMap = psEntry.getValue();
+    //      for(Entry<Integer, MatrixMeta> metaEntry : matrixIdToMetaMap.entrySet()) {
+    //        LOG.info("matrix id = " + metaEntry.getKey());
+    //        LOG.info("matrix partitons number = " + metaEntry.getValue().getPartitionMetas().size());
+    //      }
+    //    }
   }
 
   private void updateMaxMatrixId(int id) {
@@ -341,15 +368,16 @@ public class AMMatrixMetaManager {
 
   /**
    * compare the matrix meta on the master and the matrix meta on ps to find the matrix this parameter server needs to create and delete
-   * @param matrixReports parameter server matrix report, include the matrix ids this parameter server hold.
-   * @param needCreateMatrixes use to return the matrix partitions this parameter server need to build
+   *
+   * @param matrixReports       parameter server matrix report, include the matrix ids this parameter server hold.
+   * @param needCreateMatrixes  use to return the matrix partitions this parameter server need to build
    * @param needReleaseMatrixes use to return the matrix ids this parameter server need to remove
-   * @param needRecoverParts need recover partitions
-   * @param psId parameter server id
-  */
-  public void syncMatrixInfos(List<MatrixReport> matrixReports,
-    List<MatrixMeta> needCreateMatrixes, List<Integer> needReleaseMatrixes,
-    List<RecoverPartKey> needRecoverParts, ParameterServerId psId) {
+   * @param needRecoverParts    need recover partitions
+   * @param psId                parameter server id
+   */
+  public void syncMatrixInfos(List<MatrixReport> matrixReports, List<MatrixMeta> needCreateMatrixes,
+    List<Integer> needReleaseMatrixes, List<RecoverPartKey> needRecoverParts,
+    ParameterServerId psId) {
 
     //get matrix ids in the parameter server report
     IntOpenHashSet matrixInPS = new IntOpenHashSet();
@@ -361,7 +389,7 @@ public class AMMatrixMetaManager {
     handleMatrixReports(psId, matrixReports);
 
     Set<RecoverPartKey> parts = getAndRemoveNeedRecoverParts(psId);
-    if(parts != null) {
+    if (parts != null) {
       needRecoverParts.addAll(parts);
     }
 
@@ -372,15 +400,15 @@ public class AMMatrixMetaManager {
 
   private void handleMatrixReports(ParameterServerId psId, List<MatrixReport> matrixReports) {
     int size = matrixReports.size();
-    for(int i = 0; i < size; i++) {
+    for (int i = 0; i < size; i++) {
       handleMatrixReport(psId, matrixReports.get(i));
     }
   }
 
   private void handleMatrixReport(ParameterServerId psId, MatrixReport matrixReport) {
     int size = matrixReport.partReports.size();
-    if(size > 0) {
-      for(int i = 0; i< size; i++) {
+    if (size > 0) {
+      for (int i = 0; i < size; i++) {
         handlePartReport(psId, matrixReport.matrixId, matrixReport.partReports.get(i));
       }
     }
@@ -388,19 +416,22 @@ public class AMMatrixMetaManager {
 
   private void handlePartReport(ParameterServerId psId, int matrixId, PartReport partReport) {
     ParameterServerId master = matrixMetaManager.getMasterPs(matrixId, partReport.partId);
-    if(!psId.equals(master)) {
+    if (!psId.equals(master)) {
       MatrixMeta matrixMeta = matrixMetaManager.getMatrixMeta(matrixId);
-      if(matrixMeta == null) {
+      if (matrixMeta == null) {
         return;
       }
       matrixMeta.getPartitionMeta(partReport.partId).addReplicationPS(psId);
-      if(partReport.state == PartitionState.INITIALIZING) {
+      if (partReport.state == PartitionState.INITIALIZING) {
         addNeedRecoverPart(master, new RecoverPartKey(new PartitionKey(matrixId, partReport.partId),
           new PSLocation(psId, context.getLocationManager().getPsLocation(psId))));
       } else if (partReport.state == PartitionState.READ_AND_WRITE) {
-        ParameterServerId orignalMaster = matrixPartitionsOnPS.get(psId).get(matrixId).getPartitionMeta(partReport.partId).getMasterPs();
-        if(orignalMaster.equals(psId)) {
-          matrixMetaManager.getMatrixMeta(matrixId).getPartitionMeta(partReport.partId).makePsToMaster(psId);
+        ParameterServerId orignalMaster =
+          matrixPartitionsOnPS.get(psId).get(matrixId).getPartitionMeta(partReport.partId)
+            .getMasterPs();
+        if (orignalMaster.equals(psId)) {
+          matrixMetaManager.getMatrixMeta(matrixId).getPartitionMeta(partReport.partId)
+            .makePsToMaster(psId);
         }
       }
     }
@@ -410,7 +441,7 @@ public class AMMatrixMetaManager {
     try {
       writeLock.lock();
       Set<RecoverPartKey> needRecoverParts = psIdToRecoverPartsMap.get(master);
-      if(needRecoverParts == null) {
+      if (needRecoverParts == null) {
         needRecoverParts = new HashSet<>();
         psIdToRecoverPartsMap.put(master, needRecoverParts);
       }
@@ -430,7 +461,8 @@ public class AMMatrixMetaManager {
   }
 
   private void getPSNeedUpdateMatrix(Set<Integer> matrixIdInPSSet,
-      List<MatrixMeta> needCreateMatrixes, List<Integer> needReleaseMatrixes, ParameterServerId psId) {
+    List<MatrixMeta> needCreateMatrixes, List<Integer> needReleaseMatrixes,
+    ParameterServerId psId) {
     try {
       readLock.lock();
       Map<Integer, MatrixMeta> matrixIdToPSMetaMap = matrixPartitionsOnPS.get(psId);
@@ -450,8 +482,8 @@ public class AMMatrixMetaManager {
 
       //if a matrix exists on master but not exist on parameter server, this parameter server need build it.
       for (Entry<Integer, MatrixMeta> psMatrixEntry : matrixIdToPSMetaMap.entrySet()) {
-        LOG.debug("matrix in master " + psMatrixEntry.getKey() + ", "
-            + psMatrixEntry.getValue().getName());
+        LOG.debug(
+          "matrix in master " + psMatrixEntry.getKey() + ", " + psMatrixEntry.getValue().getName());
         if (!matrixIdInPSSet.contains(psMatrixEntry.getKey())) {
           needCreateMatrixes.add(psMatrixEntry.getValue());
         }
@@ -460,9 +492,10 @@ public class AMMatrixMetaManager {
       readLock.unlock();
     }
   }
-  
+
   /**
    * Update the matrices on the PS
+   *
    * @param psId
    * @param matrixReports
    */
@@ -470,13 +503,13 @@ public class AMMatrixMetaManager {
     try {
       writeLock.lock();
       Set<Integer> matrixIdSet = psIdToMatrixIdsMap.get(psId);
-      if(matrixIdSet == null) {
+      if (matrixIdSet == null) {
         matrixIdSet = new HashSet();
         psIdToMatrixIdsMap.put(psId, matrixIdSet);
       }
-      
+
       int size = matrixReports.size();
-      for(int i = 0; i < size; i++) {
+      for (int i = 0; i < size; i++) {
         matrixIdSet.add(matrixReports.get(i).matrixId);
       }
     } finally {
@@ -486,6 +519,7 @@ public class AMMatrixMetaManager {
 
   /**
    * Release a matrix. just release matrix meta on master
+   *
    * @param matrixId the matrix need release
    */
   public void releaseMatrix(int matrixId) {
@@ -504,13 +538,14 @@ public class AMMatrixMetaManager {
 
   /**
    * Release a matrix. just release matrix meta on master
+   *
    * @param matrixName the matrix need release
    */
   public void releaseMatrix(String matrixName) {
     try {
       writeLock.lock();
       int matrixId = matrixMetaManager.getMatrixId(matrixName);
-      if(matrixId < 0) {
+      if (matrixId < 0) {
         return;
       }
 
@@ -527,24 +562,26 @@ public class AMMatrixMetaManager {
 
   /**
    * write matrix meta protos to output stream
+   *
    * @param output output stream
    * @throws IOException
    */
   public void serialize(FSDataOutputStream output) throws IOException {
     Map<Integer, MatrixMeta> matrices = matrixMetaManager.getMatrixMetas();
-    for(MatrixMeta meta : matrices.values()) {
+    for (MatrixMeta meta : matrices.values()) {
       ProtobufUtil.convertToMatrixMetaProto(meta).writeDelimitedTo(output);
     }
   }
-  
+
   /**
    * read matrix meta protos from input stream
+   *
    * @param input input stream
    * @throws IOException, InvalidParameterException
    */
   public void deserialize(FSDataInputStream input)
     throws IOException, InvalidParameterException, ClassNotFoundException {
-    while(input.available() > 0) {
+    while (input.available() > 0) {
       MatrixMeta meta = ProtobufUtil.convertToMatrixMeta(ProtobufUtil.loadMatrixMetaProto(input));
       matrixMetaManager.addMatrix(meta);
       try {
@@ -558,6 +595,7 @@ public class AMMatrixMetaManager {
 
   /**
    * Get ps ids which contains the matrix
+   *
    * @param matrixId matrix id
    * @return ps id set
    */
@@ -567,24 +605,26 @@ public class AMMatrixMetaManager {
 
   /**
    * Get master ps ids which contains the matrix
+   *
    * @param matrixId matrix id
    * @return ps id set
    */
   public Set<ParameterServerId> getMasterPsIds(int matrixId) {
     Set<ParameterServerId> psSet = new HashSet<>();
-    Map<Integer, PartitionMeta> partMetas = matrixMetaManager.getMatrixMeta(matrixId).getPartitionMetas();
-    for(PartitionMeta partMeta : partMetas.values()) {
+    Map<Integer, PartitionMeta> partMetas =
+      matrixMetaManager.getMatrixMeta(matrixId).getPartitionMetas();
+    for (PartitionMeta partMeta : partMetas.values()) {
       psSet.add(partMeta.getMasterPs());
     }
     return psSet;
   }
 
-  public Map<Integer,MatrixMeta> getMatrixMetas() {
+  public Map<Integer, MatrixMeta> getMatrixMetas() {
     return matrixMetaManager.getMatrixMetas();
   }
 
   public boolean isCreated(String matrixName) {
-    if(!matrixMetaManager.exists(matrixName)) {
+    if (!matrixMetaManager.exists(matrixName)) {
       return false;
     }
     return isCreated(matrixMetaManager.getMatrixId(matrixName));
@@ -595,7 +635,7 @@ public class AMMatrixMetaManager {
 
     try {
       readLock.lock();
-      if(!matrixMetaManager.exists(matrixId)) {
+      if (!matrixMetaManager.exists(matrixId)) {
         return false;
       }
 
@@ -607,8 +647,8 @@ public class AMMatrixMetaManager {
 
       inited = true;
       for (ParameterServerId psId : psIdSet) {
-        if (!psIdToMatrixIdsMap.containsKey(psId)
-          || !psIdToMatrixIdsMap.get(psId).contains(matrixId)) {
+        if (!psIdToMatrixIdsMap.containsKey(psId) || !psIdToMatrixIdsMap.get(psId)
+          .contains(matrixId)) {
           inited = false;
           break;
         }
@@ -628,9 +668,9 @@ public class AMMatrixMetaManager {
     boolean isCreated = true;
     try {
       readLock.lock();
-      for(int matrixId : matrixMetaManager.getMatrixMetas().keySet()) {
+      for (int matrixId : matrixMetaManager.getMatrixMetas().keySet()) {
         isCreated = isCreated && isCreated(matrixId);
-        if(!isCreated) {
+        if (!isCreated) {
           break;
         }
       }
@@ -647,17 +687,17 @@ public class AMMatrixMetaManager {
 
   public void psRecovered(ParameterServerId psId) {
     Map<Integer, MatrixMeta> matrixIdToMetaMap = matrixPartitionsOnPS.get(psId);
-    if(matrixIdToMetaMap == null) {
+    if (matrixIdToMetaMap == null) {
       return;
     }
 
-    for(MatrixMeta meta : matrixIdToMetaMap.values()) {
+    for (MatrixMeta meta : matrixIdToMetaMap.values()) {
       Map<Integer, PartitionMeta> partMetas = meta.getPartitionMetas();
-      if(partMetas == null) {
+      if (partMetas == null) {
         continue;
       }
 
-      for(PartitionMeta partMeta : partMetas.values()) {
+      for (PartitionMeta partMeta : partMetas.values()) {
         matrixMetaManager.addPs(meta.getId(), partMeta.getPartId(), psId);
       }
     }
@@ -666,12 +706,32 @@ public class AMMatrixMetaManager {
   public List<Integer> getMasterPartsInPS(int matrixId, ParameterServerId psId) {
     List<Integer> needSavePartInPS = new ArrayList<>();
     MatrixMeta matrixMeta = matrixMetaManager.getMatrixMeta(matrixId);
-    for(PartitionMeta partMeta : matrixMeta.getPartitionMetas().values()) {
-      if(psId.equals(partMeta.getMasterPs())) {
+    for (PartitionMeta partMeta : matrixMeta.getPartitionMetas().values()) {
+      if (psId.equals(partMeta.getMasterPs())) {
         needSavePartInPS.add(partMeta.getPartId());
       }
     }
 
     return needSavePartInPS;
+  }
+
+  /**
+   * Check a matrix exist or not
+   *
+   * @param matrixName matrix name
+   * @return true means exist
+   */
+  public boolean exist(String matrixName) {
+    return matrixMetaManager.exists(matrixName);
+  }
+
+
+  private void addSyncMatrix() {
+    MatrixContext syncMatrix = new MatrixContext("sync_1", 1, 1);
+    try {
+      createMatrix(syncMatrix);
+    } catch (Exception e) {
+      LOG.error("Create sync matrix failed", e);
+    }
   }
 }

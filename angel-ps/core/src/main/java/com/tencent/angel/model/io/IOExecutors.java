@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.model.io;
 
 import org.apache.commons.logging.Log;
@@ -54,15 +55,18 @@ public class IOExecutors {
 
   /**
    * Execute a task
+   *
    * @param task a implementation of Runnable
    */
-  public void execute(Runnable task) { pool.execute(task);}
+  public void execute(Runnable task) {
+    pool.execute(task);
+  }
 
   /**
    * Shut down all workers
    */
   public void shutdown() {
-    if(pool != null) {
+    if (pool != null) {
       pool.shutdownNow();
       pool = null;
     }

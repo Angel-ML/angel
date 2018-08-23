@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.data;
 
 import com.tencent.angel.conf.AngelConf;
@@ -30,20 +31,16 @@ public class DummyDataSpliter extends DataSpliter {
     super(context);
   }
 
-  @Override
-  public int getSplitNum() {
+  @Override public int getSplitNum() {
     Configuration conf = context.getConf();
     int workergroupNumber =
-        conf.getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER,
-            AngelConf.DEFAULT_ANGEL_WORKERGROUP_NUMBER);
+      conf.getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, AngelConf.DEFAULT_ANGEL_WORKERGROUP_NUMBER);
     int taskNumInWorker =
-        conf.getInt(AngelConf.ANGEL_WORKER_TASK_NUMBER,
-            AngelConf.DEFAULT_ANGEL_WORKER_TASK_NUMBER);
+      conf.getInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, AngelConf.DEFAULT_ANGEL_WORKER_TASK_NUMBER);
     return workergroupNumber * taskNumInWorker;
   }
 
-  @Override
-  public String[] getSplitLocations(int index) {
+  @Override public String[] getSplitLocations(int index) {
     return new String[0];
   }
 }

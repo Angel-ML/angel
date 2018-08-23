@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.api.python;
 
 import com.tencent.angel.conf.AngelConf;
@@ -31,8 +32,10 @@ import java.util.Properties;
 
 public class PythonUtils {
   private static final Log LOG = LogFactory.getLog(PythonRunner.class);
+
   /**
    * Get the python PYTHONPATH for pyAngel, either from ANGEL_HOME, or added jar.
+   *
    * @return
    */
   public static String getAngelPythonPath() {
@@ -42,10 +45,10 @@ public class PythonUtils {
     pythonPath.add(String.join(File.separator, angelHome, "lib", "pyangel.zip"));
     pythonPath.add(String.join(File.separator, angelHome, "python", ""));
     pythonPath.add(AngelConf.create().get(AngelConf.ANGEL_JOB_LIBJARS));
-  
+
     return String.join(File.pathSeparator, pythonPath);
   }
-  
+
   /**
    * Convert a java.util.Map of properties to a org.apache.hadoop.conf.Configuration
    */
@@ -53,7 +56,7 @@ public class PythonUtils {
     Configuration conf = new Configuration();
     return addMapToConf(map, conf);
   }
-  
+
   public static Configuration addMapToConf(Map<String, Object> map, Configuration conf) {
     for (String key : map.keySet()) {
       // To-DO: add other ways to justify different value types

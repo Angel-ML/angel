@@ -15,9 +15,10 @@
  *
  */
 
+
 package com.tencent.angel.ml.matrix;
 
-import com.tencent.angel.ps.impl.matrix.PartitionState;
+import com.tencent.angel.ps.storage.matrix.PartitionState;
 
 /**
  * Matrix partition report
@@ -35,10 +36,11 @@ public class PartReport {
 
   /**
    * Create the matrix state
+   *
    * @param partId partition id
-   * @param state partition state
+   * @param state  partition state
    */
-  public PartReport(int partId, PartitionState state){
+  public PartReport(int partId, PartitionState state) {
     this.partId = partId;
     this.state = state;
   }

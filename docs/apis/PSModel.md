@@ -14,8 +14,6 @@ PSModel中包含了**MatrixContext，MatrixClient，TaskContext**这3个核心�
 	* getRow
 	* getRows
 	* get(func: GetFunc)
-	* getRowWithIndex
-	* getRowWithLongIndex
 	
 2. **[push型](#2-push型)**
 	* increment
@@ -97,46 +95,6 @@ PSModel中包含了**MatrixContext，MatrixClient，TaskContext**这3个核心�
 	- 参数：
 		- func: GetFunc get类型的psf函数。psf函数是Angel提供的一种参数服务器功能扩展接口
 	- 返回值：GetResult：psf get函数返回结果
-	
-	
-* **getRowWithIndex**
-
-	- 定义：```def getRowWithIndex(rowIndex: Int, index: Array[Int]): TVector```
-	- 功能：获取模型指定行的指定index对应的部分，用于32 bit的模型
-	- 参数：
-		- rowIndex: 行号
-		- index: 列下标数组
-	- 返回值：TVector：一个稀疏类型的向量
-	
-	
-* **getRowWithLongIndex**
-
-	- 定义：```def getRowWithLongIndex(rowIndex: Int, index: Array[Long]): TVector```
-	- 功能：获取模型指定行的指定index对应的部分， 用于64 bit的模型
-	- 参数：
-		- rowIndex: 行号
-		- index: 列下标数组
-	- 返回值：TVector：一个稀疏类型的向量
-
-
-* **getRowWithIndex**
-
-	- 定义：```def getRowWithIndex(rowIndex: Int, index: Array[Int]): TVector```
-	- 功能：获取模型指定行的指定index对应的部分，用于32 bit的模型
-	- 参数：
-		- rowIndex: 行号
-		- index: 列下标数组
-	- 返回值：TVector：一个稀疏类型的向量
-	
-	
-* **getRowWithLongIndex**
-
-	- 定义：```def getRowWithLongIndex(rowIndex: Int, index: Array[Long]): TVector```
-	- 功能：获取模型指定行的指定index对应的部分， 用于64 bit的模型
-	- 参数：
-		- rowIndex: 行号
-		- index: 列下标数组
-	- 返回值：TVector：一个稀疏类型的向量
 
 
 ### 2. push型
@@ -212,10 +170,10 @@ PSModel中包含了**MatrixContext，MatrixClient，TaskContext**这3个核心�
 
 * **setRowType**
 
-	- 定义：```def setRowType(rowType: MLProtos.RowType)```
+	- 定义：```def setRowType(rowType: RowType)```
 	- 功能：设置矩阵行向量的元素类型和存储方式，可以根据模型特点和稀疏程度来设置该参数。目前Angel支持的矩阵元素类型有int, float和double；存储方式有稀疏和稠密
 	- 参数：
-		- rowType: MLProtos.RowType 
+		- rowType: RowType
 		目前支持矩阵行向量的元素类型和存储方式有：
 		
 			* **T\_DOUBLE\_SPARSE**：表示稀疏double型

@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.worker.attempt;
 
 import com.tencent.angel.common.location.Location;
@@ -23,14 +24,17 @@ import com.tencent.angel.worker.WorkerAttemptId;
 /**
  * Worker attempt register to master.
  */
-public class WorkerAttemptRegisterEvent extends WorkerAttemptEvent{
-  /**the address of host on which the worker attempt is running on*/
+public class WorkerAttemptRegisterEvent extends WorkerAttemptEvent {
+  /**
+   * the address of host on which the worker attempt is running on
+   */
   private final Location location;
 
   /**
    * Create a WorkerAttemptRegisterEvent
+   *
    * @param workerAttemptId worker attempt id
-   * @param location worker attempt location
+   * @param location        worker attempt location
    */
   public WorkerAttemptRegisterEvent(WorkerAttemptId workerAttemptId, Location location) {
     super(WorkerAttemptEventType.REGISTER, workerAttemptId);
@@ -39,6 +43,7 @@ public class WorkerAttemptRegisterEvent extends WorkerAttemptEvent{
 
   /**
    * Get worker attempt location
+   *
    * @return worker attempt location
    */
   public Location getLocation() {

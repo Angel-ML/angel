@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
 import com.tencent.angel.ml.matrix.RowType;
@@ -24,42 +25,44 @@ import io.netty.buffer.ByteBuf;
  * Row split of dense double float update.
  */
 public class DenseFloatRowUpdateSplit extends RowUpdateSplit {
+  /**
+   * values of row
+   */
+  private final float[] values;
 
-  /** values of row */
-  private final float [] values;
+  private boolean needFilter;
 
   /**
    * Create a new dense float row split update
    *
-   * @param start start position
-   * @param end end position
+   * @param start  start position
+   * @param end    end position
    * @param values values of row update
    */
-  public DenseFloatRowUpdateSplit(int rowIndex, int start, int end, float [] values) {
+  public DenseFloatRowUpdateSplit(int rowIndex, int start, int end, float[] values) {
     super(rowIndex, RowType.T_FLOAT_DENSE, start, end);
     this.values = values;
   }
 
+
   /**
    * Get values of row update
-   * 
+   *
    * @return float[] values of row update
    */
   public float[] getValues() {
     return values;
   }
 
-  @Override
-  public void serialize(ByteBuf buf) {
+  @Override public void serialize(ByteBuf buf) {
     super.serialize(buf);
-    buf.writeInt((int)(end - start));
-    for (int i = (int)start; i < end; i++) {
+    buf.writeInt(end - start);
+    for (int i = start; i < end; i++) {
       buf.writeFloat(values[i]);
     }
   }
 
-  @Override
-  public int bufferLen() {
-    return super.bufferLen() + (int)size() * 4;
+  @Override public int bufferLen() {
+    return 4 + super.bufferLen() + (end - start) * 4;
   }
 }

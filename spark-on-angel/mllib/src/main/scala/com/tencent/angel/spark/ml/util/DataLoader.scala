@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.spark.ml.util
 
 import scala.collection.mutable.ArrayBuffer
@@ -26,27 +27,27 @@ import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 
 /**
- * DataLoader loads DataFrame from HDFS/LOCAL, each line of file is split by space character.
- *
- */
+  * DataLoader loads DataFrame from HDFS/LOCAL, each line of file is split by space character.
+  *
+  */
 object DataLoader {
 
   /**
-   * one-hot sparse data format
-   *
-   * labeled data
-   * 1,22,307,123
-   * 0,323,333,723
-   *
-   * unlabeled data
-   * id1,23,34,243
-   * id2,33,221,233
-   *
-   */
+    * one-hot sparse data format
+    *
+    * labeled data
+    * 1,22,307,123
+    * 0,323,333,723
+    *
+    * unlabeled data
+    * id1,23,34,243
+    * id2,33,221,233
+    *
+    */
   def loadOneHotInstance(
-      input: String,
-      partitionNum: Int,
-      sampleRate: Double) : DataFrame = {
+                          input: String,
+                          partitionNum: Int,
+                          sampleRate: Double): DataFrame = {
     val spark = SparkSession.builder().getOrCreate()
 
     val instances = spark.sparkContext.textFile(input)
@@ -98,9 +99,9 @@ object DataLoader {
   }
 
   def loadDense(
-      input: String,
-      partitionNum: Int,
-      sampleRate: Double): DataFrame = {
+                 input: String,
+                 partitionNum: Int,
+                 sampleRate: Double): DataFrame = {
     val spark = SparkSession.builder().getOrCreate()
 
 
@@ -121,10 +122,10 @@ object DataLoader {
   }
 
   def loadLibsvm(
-      input: String,
-      partitionNum: Int,
-      sampleRate: Double,
-      dim: Int): RDD[(Double, Vector)] = {
+                  input: String,
+                  partitionNum: Int,
+                  sampleRate: Double,
+                  dim: Int): RDD[(Double, Vector)] = {
     val spark = SparkSession.builder().getOrCreate()
 
     val withReplacement = false
@@ -165,7 +166,7 @@ object DataLoader {
       val indicesLength = indices.length
       while (i < indicesLength) {
         val current = indices(i)
-        require(current > previous, "indices should be one-based and in ascending order" )
+        require(current > previous, "indices should be one-based and in ascending order")
         previous = current
         i += 1
       }
@@ -256,13 +257,81 @@ object DataLoader {
     val labelFeature = dataStr.split(SPLIT_SEPARATOR)
 
     val featureStyled = labelFeature.tail
-      .map {_.split(":")}
+      .map {
+        _.split(":")
+      }
       .filter(x => x.length == 2)
-      .map{featInfor =>
+      .map { featInfor =>
         (featInfor(0).toLong, featInfor(1).toDouble)
       }
 
     (featureStyled, labelFeature(0).toDouble)
+  }
+
+  /**
+    * load data for ffm,the input data type is:
+    * label field1:featId1:val1 field2:featId2:val2 ...
+    * note: the index for ffm is continuous encoding
+    *
+    * @param input
+    * @param partitionNum
+    * @param sampleRate
+    * @return (RDD(Array(fId, value), label), dim, globalMapChart)
+    *         note: globalMapchart is Map(featureId: field)
+    */
+
+  def loadFFMLibSVM(input: String,
+                    partitionNum: Int,
+                    sampleRate: Double,
+                    dim: Long): (RDD[(Array[(Long, Double)], Double)], Long, Map[Long, Int]) = {
+
+    val spark = SparkSession.builder().getOrCreate()
+
+    val featAndLabelRdd = spark.sparkContext.textFile(input)
+      .sample(false, sampleRate)
+      .repartition(partitionNum)
+      .map(line => line.trim)
+      .filter(_.nonEmpty)
+      .map { dataStr =>
+
+        val labelFeature = dataStr.split(" ")
+
+        val feature = labelFeature.tail.map { fieIdVal =>
+
+          val fidIdValArr = fieIdVal.split(":")
+
+          (fidIdValArr(0).toInt, fidIdValArr(1).toLong, fidIdValArr(2).toDouble)
+        }
+
+        (feature, labelFeature(0).toDouble)
+      }
+
+    // get the dim of feature
+    val d = if (dim > 0) {
+      dim
+    } else {
+      featAndLabelRdd.flatMap(x => x._1.map(its => its._2)).reduce(math.max) + 1
+    }
+
+    // get the Map: feature to field
+    var globalChart = Map[Long, Int]()
+    val feat2FieldChart = featAndLabelRdd.mapPartitions { iter =>
+
+      var partitionMap = Map[Long, Int]()
+      iter.foreach { case (feature, label) =>
+
+        val tempMap = feature.map(x => (x._2, x._1)).toMap
+        partitionMap ++= tempMap
+      }
+
+      Iterator(partitionMap)
+    }.collect()
+
+    feat2FieldChart.foreach { x => globalChart ++= x }
+
+    // just return Array(featId, featVal), label
+    val instancesRdd = featAndLabelRdd.map { case (feat, label) => (feat.map(x => (x._2, x._3)), label) }
+    (instancesRdd, d, globalChart)
   }
 
 }

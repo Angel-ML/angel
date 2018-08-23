@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.utils;
 
 import org.ehcache.sizeof.SizeOf;
@@ -24,6 +25,7 @@ import org.ehcache.sizeof.SizeOf;
  */
 public class MemoryUtils {
   private final static SizeOf sizeOf = SizeOf.newInstance();
+
   public static long estimateMemorySize(Object obj) {
     return sizeOf.deepSizeOf(obj);
   }

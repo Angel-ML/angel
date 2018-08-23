@@ -15,32 +15,33 @@
  *
  */
 
+
 package com.tencent.angel.spark.context
 
 import org.apache.spark.SparkException
 import sun.misc.Cleaner
 
-import com.tencent.angel.spark.models.vector.VectorType.VectorType
-import com.tencent.angel.spark.models.vector.cache.PullMan
-import com.tencent.angel.spark.models.vector.{DensePSVector, PSVector, SparsePSVector, VectorType}
+import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.spark.models.vector.{DensePSVector, PSVector, SparsePSVector, VectorCacheManager}
+import com.tencent.angel.spark.util.RowTypeImplicit._
 
 /**
- * PSVectorPool delegate a memory space on PS servers,
- * which hold `capacity` number vectors with `numDimensions` dimension.
- * The dimension of PSVectors in one PSVectorPool is the same.
- *
- * A PSVectorPool is like a Angel Matrix.
- *
- * @param id PSVectorPool unique id
- * @param dimension Dimension of vectors
- * @param capacity Capacity of pool
- */
+  * PSVectorPool delegate a memory space on PS servers,
+  * which hold `capacity` number vectors with `numDimensions` dimension.
+  * The dimension of PSVectors in one PSVectorPool is the same.
+  *
+  * A PSVectorPool is like a Angel Matrix.
+  *
+  * @param id        PSVectorPool unique id
+  * @param dimension Dimension of vectors
+  * @param capacity  Capacity of pool
+  */
 
 private[spark] class PSVectorPool(
-    val id: Int,
-    val dimension: Long,
-    val capacity: Int,
-    val vType: VectorType) {
+                                   val id: Int,
+                                   val dimension: Long,
+                                   val capacity: Int,
+                                   val rowType: RowType) {
 
   val cleaners = new java.util.WeakHashMap[PSVector, Cleaner]
   val bitSet = new java.util.BitSet(capacity)
@@ -66,7 +67,7 @@ private[spark] class PSVectorPool(
 
     // Try again
     tryOnce match {
-      case Some(toReturn) => return toReturn
+      case Some(toReturn) => toReturn
       case None => throw new SparkException("This vector pool is full!")
     }
 
@@ -85,12 +86,9 @@ private[spark] class PSVectorPool(
   }
 
   private def doCreateOne(index: Int): PSVector = {
-    val vector = if (vType == VectorType.SPARSE) {
-      new SparsePSVector(id, index, dimension)
-    } else {
-      new DensePSVector(id, index, dimension)
-    }
-    val task = new CleanTask(this.id, index)
+    val vector = if (rowType.isSparse) new SparsePSVector(id, index, dimension, rowType) else
+      new DensePSVector(id, index, dimension, rowType)
+    val task = new CleanTask(id, index)
     cleaners.put(vector, Cleaner.create(vector, task))
     vector
   }
@@ -101,7 +99,8 @@ private[spark] class PSVectorPool(
         bitSet.clear(index)
         size -= 1
       }
-      PullMan.autoRelease(poolId, index)
+      // release cache
+      VectorCacheManager.autoRelease(poolId, index)
     }
   }
 
@@ -112,19 +111,6 @@ private[spark] class PSVectorPool(
   private[spark] def destroy(): Unit = {
     destroyed = true
   }
-
-  /**
-    * Make sure dimension compatible
-    */
-  private def assertCompatible(other: Array[Double]): Unit = {
-    if (this.dimension != other.length) {
-      throw new SparkException(s"The target array's dimension " +
-        s"does not match this vector pool! \n" +
-        s"pool dimension is $dimension," +
-        s"but target array's dimension is ${other.length}")
-    }
-  }
-
 }
 
 object PSVectorPool {

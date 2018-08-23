@@ -14,4 +14,4 @@ First, configure HADOOP_HOME and JAVA_HOME, and unzip Angel distribution package
 
 Once the distribution package is unzipped, find the `bin` directory under the root, and that's where all the submit scripts are located. An example running simple logistic regression can be found at:
 
-```./angel-example com.tencent.angel.example.ml.SGDLRLocalExample```
+```./angel-example com.tencent.angel.example.ml.LogisticRegLocalExample```

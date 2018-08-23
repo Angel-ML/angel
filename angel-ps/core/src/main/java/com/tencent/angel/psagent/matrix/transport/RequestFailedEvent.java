@@ -15,22 +15,25 @@
  *
  */
 
+
 package com.tencent.angel.psagent.matrix.transport;
 
-import com.tencent.angel.ml.matrix.transport.Request;
-import com.tencent.angel.ml.matrix.transport.ResponseType;
+import com.tencent.angel.ps.server.data.request.Request;
+import com.tencent.angel.ps.server.data.response.ResponseType;
 
 public class RequestFailedEvent extends RequestDispatchEvent {
 
   private final ResponseType failedType;
   private final String failedLog;
+
   /**
    * Create a new RequestDispatchEvent.
    *
    * @param type    event type
    * @param request rpc request
    */
-  public RequestFailedEvent(EventType type, Request request, ResponseType failedType, String failedLog) {
+  public RequestFailedEvent(EventType type, Request request, ResponseType failedType,
+    String failedLog) {
     super(type, request);
     this.failedType = failedType;
     this.failedLog = failedLog;

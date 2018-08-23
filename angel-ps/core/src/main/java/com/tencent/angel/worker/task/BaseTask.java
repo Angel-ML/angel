@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.worker.task;
 
 import com.tencent.angel.conf.AngelConf;
@@ -25,24 +26,26 @@ import org.apache.hadoop.conf.Configuration;
 /**
  * Base for task.
  * <p>
- *   The realization define at implementation and will invoke by {@link Task}
- *   The train data was read fully to {@link DataBlock} at pre-process as default.
- *   <ol>
- *   <li>
- *     Normally communicate with {@link com.tencent.angel.ps.impl.ParameterServer}
- *     do pull or push data(see more detail {@link com.tencent.angel.psagent.matrix.transport.MatrixTransportClient}).
- *   </li>
- *   <li>
- *     The train data read by {@link TaskContext#getReader()}
- *   </li>
+ * The realization define at implementation and will invoke by {@link Task}
+ * The train data was read fully to {@link DataBlock} at pre-process as default.
+ * <ol>
+ * <li>
+ * Normally communicate with {@link com.tencent.angel.ps.impl.ParameterServer}
+ * do pull or push data(see more detail {@link com.tencent.angel.psagent.matrix.transport.MatrixTransportClient}).
+ * </li>
+ * <li>
+ * The train data read by {@link TaskContext#getReader()}
+ * </li>
  * </ol>
  * </p>
+ *
  * @see Task
  * @see com.tencent.angel.worker.Worker
  * @see TaskContext
  * @see com.tencent.angel.psagent.PSAgentContext
  */
-public abstract class BaseTask<KEY_IN, VALUE_IN, VALUE_OUT> implements BaseTaskInterface<KEY_IN, VALUE_IN, VALUE_OUT> {
+public abstract class BaseTask<KEY_IN, VALUE_IN, VALUE_OUT>
+  implements BaseTaskInterface<KEY_IN, VALUE_IN, VALUE_OUT> {
   protected Configuration conf;
 
   /**
@@ -51,9 +54,8 @@ public abstract class BaseTask<KEY_IN, VALUE_IN, VALUE_OUT> implements BaseTaskI
   protected final DataBlock<VALUE_OUT> taskDataBlock;
 
   public BaseTask(TaskContext taskContext) {
-    String storageLevel =
-        taskContext.getConf().get(AngelConf.ANGEL_TASK_DATA_STORAGE_LEVEL,
-                AngelConf.DEFAULT_ANGEL_TASK_DATA_STORAGE_LEVEL);
+    String storageLevel = taskContext.getConf().get(AngelConf.ANGEL_TASK_DATA_STORAGE_LEVEL,
+      AngelConf.DEFAULT_ANGEL_TASK_DATA_STORAGE_LEVEL);
 
     if (storageLevel.equals("memory")) {
       taskDataBlock = new MemoryDataBlock<VALUE_OUT>(-1);
@@ -71,16 +73,14 @@ public abstract class BaseTask<KEY_IN, VALUE_IN, VALUE_OUT> implements BaseTaskI
   /**
    * Parse each sample into a labeled data, of which X is the feature weight vector, Y is label.
    */
-  @Override
-  public abstract VALUE_OUT parse(KEY_IN key, VALUE_IN value);
+  @Override public abstract VALUE_OUT parse(KEY_IN key, VALUE_IN value);
 
   /**
    * Preprocess the dataset, parse each data into a labeled data first, and put into training
    * data storage and validation data storage seperately then.
    */
 
-  @Override
-  public void preProcess(TaskContext taskContext) {
+  @Override public void preProcess(TaskContext taskContext) {
     try {
       Reader<KEY_IN, VALUE_IN> reader = taskContext.getReader();
       while (reader.nextKeyValue()) {
@@ -91,11 +91,10 @@ public abstract class BaseTask<KEY_IN, VALUE_IN, VALUE_OUT> implements BaseTaskI
       }
 
       taskDataBlock.flush();
-    } catch (Exception e){
+    } catch (Exception e) {
       throw new AngelException("Pre-Process Error.", e);
     }
   }
 
-  @Override
-  public abstract void run(TaskContext taskContext) throws AngelException;
+  @Override public abstract void run(TaskContext taskContext) throws AngelException;
 }

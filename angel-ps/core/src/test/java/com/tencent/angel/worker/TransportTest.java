@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.worker;
 
 
@@ -25,15 +26,15 @@ import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.localcluster.LocalClusterContext;
 import com.tencent.angel.master.DummyTask;
 import com.tencent.angel.master.MasterServiceTest;
-import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.ml.math.matrix.DenseDoubleMatrix;
-import com.tencent.angel.ml.math.matrix.DenseIntMatrix;
-import com.tencent.angel.ml.math.vector.DenseFloatVector;
-import com.tencent.angel.ml.math.vector.DenseDoubleVector;
-import com.tencent.angel.ml.math.vector.DenseIntVector;
+import com.tencent.angel.ml.math2.matrix.RBIntDoubleMatrix;
+import com.tencent.angel.ml.math2.matrix.RBIntIntMatrix;
+import com.tencent.angel.ml.math2.storage.*;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
+import com.tencent.angel.ml.math2.vector.IntFloatVector;
+import com.tencent.angel.ml.math2.vector.IntIntVector;
+import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.RowType;
-import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.psagent.matrix.MatrixClient;
@@ -59,8 +60,7 @@ import java.util.Random;
 
 import static org.junit.Assert.assertArrayEquals;
 
-@RunWith(MockitoJUnitRunner.class)
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@RunWith(MockitoJUnitRunner.class) @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class TransportTest {
   private static final Log LOG = LogFactory.getLog(MasterServiceTest.class);
   private static final String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
@@ -91,8 +91,7 @@ public class TransportTest {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
-  @BeforeClass
-  public static void setup() throws Exception {
+  @BeforeClass public static void setup() throws Exception {
     try {
       // Set basic configuration keys
       Configuration conf = new Configuration();
@@ -126,7 +125,6 @@ public class TransportTest {
       matrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       matrix.set(MatrixConf.MATRIX_HOGWILD, "false");
       matrix.set(MatrixConf.MATRIX_AVERAGE, "false");
-      matrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
       angelClient.addMatrix(matrix);
 
 
@@ -140,7 +138,6 @@ public class TransportTest {
       matrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       matrix.set(MatrixConf.MATRIX_HOGWILD, "false");
       matrix.set(MatrixConf.MATRIX_AVERAGE, "false");
-      matrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
       angelClient.addMatrix(matrix);
 
       matrix = new MatrixContext();
@@ -153,7 +150,6 @@ public class TransportTest {
       matrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       matrix.set(MatrixConf.MATRIX_HOGWILD, "false");
       matrix.set(MatrixConf.MATRIX_AVERAGE, "false");
-      matrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_INT");
       angelClient.addMatrix(matrix);
 
       matrix = new MatrixContext();
@@ -166,7 +162,6 @@ public class TransportTest {
       matrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       matrix.set(MatrixConf.MATRIX_HOGWILD, "false");
       matrix.set(MatrixConf.MATRIX_AVERAGE, "false");
-      matrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_INT");
       angelClient.addMatrix(matrix);
 
       matrix = new MatrixContext();
@@ -179,7 +174,6 @@ public class TransportTest {
       matrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       matrix.set(MatrixConf.MATRIX_HOGWILD, "false");
       matrix.set(MatrixConf.MATRIX_AVERAGE, "false");
-      matrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_FLOAT");
       angelClient.addMatrix(matrix);
 
       angelClient.startPSServer();
@@ -197,18 +191,17 @@ public class TransportTest {
     }
   }
 
-  @Test
-  public void testGetDenseDoubleMatrix() throws Exception {
+  @Test public void testGetDenseDoubleMatrix() throws Exception {
     try {
       Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
       MatrixClient mat = worker.getPSAgent().getMatrixClient("dense_double_mat", 0);
 
       for (int rowId = 0; rowId < ddRow; rowId += 5) {
-        DenseDoubleVector row = (DenseDoubleVector) mat.getRow(rowId);
-        DenseDoubleVector expect = new DenseDoubleVector(ddCol);
-        assertArrayEquals(row.getValues(), expect.getValues(), 0.0);
+        IntDoubleVector row = (IntDoubleVector) mat.getRow(rowId);
+        IntDoubleVector expect = new IntDoubleVector(ddCol, new IntDoubleDenseVectorStorage(ddCol));
+        assertArrayEquals(row.getStorage().getValues(), expect.getStorage().getValues(), 0.0);
 
-        DenseDoubleVector update = new DenseDoubleVector(ddCol);
+        IntDoubleVector update = new IntDoubleVector(ddCol, new IntDoubleDenseVectorStorage(ddCol));
         update.setMatrixId(mat.getMatrixId());
         update.setRowId(rowId);
         Random rand = new Random(System.currentTimeMillis());
@@ -217,20 +210,20 @@ public class TransportTest {
         mat.increment(update);
         mat.clock().get();
 
-        row = (DenseDoubleVector) mat.getRow(rowId);
-        expect.plusBy(update);
-        assertArrayEquals(expect.getValues(), row.getValues(), 0.0);
+        row = (IntDoubleVector) mat.getRow(rowId);
+        expect.iadd(update);
+        assertArrayEquals(expect.getStorage().getValues(), row.getStorage().getValues(), 0.0);
 
-        update = new DenseDoubleVector(ddCol);
+        update = new IntDoubleVector(ddCol, new IntDoubleDenseVectorStorage(ddCol));
         update.setMatrixId(mat.getMatrixId());
         update.setRowId(rowId);
         for (int i = 0; i < ddCol; i += 3)
           update.set(i, rand.nextDouble());
         mat.increment(update);
         mat.clock().get();
-        row = (DenseDoubleVector) mat.getRow(rowId);
-        expect.plusBy(update);
-        assertArrayEquals(expect.getValues(), row.getValues(), 0.0);
+        row = (IntDoubleVector) mat.getRow(rowId);
+        expect.iadd(update);
+        assertArrayEquals(expect.getStorage().getValues(), row.getStorage().getValues(), 0.0);
       }
     } catch (Exception x) {
       LOG.error("run testGetDenseDoubleMatrix failed ", x);
@@ -238,51 +231,55 @@ public class TransportTest {
     }
   }
 
-  @Test
-  public void testGetFlowDenseDoubleMatrix() throws Exception {
+  @Test public void testGetFlowDenseDoubleMatrix() throws Exception {
     try {
       Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
       MatrixClient mat = worker.getPSAgent().getMatrixClient("dense_double_mat_1", 0);
 
-      double [][] data = new double[ddRow][ddCol];
-      DenseDoubleMatrix expect = new DenseDoubleMatrix(ddRow, ddCol, data);
+      IntDoubleVector[] rows = new IntDoubleVector[ddRow];
+      for (int i = 0; i < ddRow; i++) {
+        rows[i] = new IntDoubleVector(ddCol, new IntDoubleDenseVectorStorage(ddCol));
+      }
+      RBIntDoubleMatrix expect = new RBIntDoubleMatrix(ddRow, ddCol, rows);
 
       RowIndex rowIndex = new RowIndex();
-      for (int i = 0; i < ddRow; i ++)
+      for (int i = 0; i < ddRow; i++)
         rowIndex.addRowId(i);
 
       GetRowsResult result = mat.getRowsFlow(rowIndex, ddRow / 2);
 
-      TVector row;
+      Vector row;
       while ((row = result.take()) != null) {
         LOG.info("===========get row index=" + row.getRowId());
-        assertArrayEquals(((DenseDoubleVector)expect.getRow(row.getRowId())).getValues(), ((DenseDoubleVector) row).getValues(), 0.0);
+        assertArrayEquals((expect.getRow(row.getRowId())).getStorage().getValues(),
+          ((IntDoubleVector) row).getStorage().getValues(), 0.0);
       }
 
       Random rand = new Random(System.currentTimeMillis());
-      for (int rowId = 0; rowId < ddRow; rowId ++) {
-        DenseDoubleVector update = new DenseDoubleVector(ddCol);
+      for (int rowId = 0; rowId < ddRow; rowId++) {
+        IntDoubleVector update = new IntDoubleVector(ddCol, new IntDoubleDenseVectorStorage(ddCol));
 
         for (int j = 0; j < ddCol; j += 3)
           update.set(j, rand.nextDouble());
 
         mat.increment(rowId, update);
-        expect.getRow(rowId).plusBy(update);
+        expect.getRow(rowId).iadd(update);
       }
 
       mat.clock().get();
 
       rowIndex = new RowIndex();
-      for (int i = 0; i < ddRow; i ++)
+      for (int i = 0; i < ddRow; i++)
         rowIndex.addRowId(i);
       result = mat.getRowsFlow(rowIndex, 2);
 
       while ((row = result.take()) != null) {
-        assertArrayEquals(((DenseDoubleVector)expect.getRow(row.getRowId())).getValues(), ((DenseDoubleVector) row).getValues(), 0.0);
+        assertArrayEquals((expect.getRow(row.getRowId())).getStorage().getValues(),
+          ((IntDoubleVector) row).getStorage().getValues(), 0.0);
       }
 
       rowIndex = new RowIndex();
-      for (int i = 0; i < ddRow; i ++)
+      for (int i = 0; i < ddRow; i++)
         rowIndex.addRowId(i);
       result = mat.getRowsFlow(rowIndex, 2);
 
@@ -294,7 +291,8 @@ public class TransportTest {
         if (row == null)
           continue;
 
-        assertArrayEquals(((DenseDoubleVector)expect.getRow(row.getRowId())).getValues(), ((DenseDoubleVector) row).getValues(), 0.0);
+        assertArrayEquals((expect.getRow(row.getRowId())).getStorage().getValues(),
+          ((IntDoubleVector) row).getStorage().getValues(), 0.0);
       }
     } catch (Exception x) {
       LOG.error("run testGetFlowDenseDoubleMatrix failed ", x);
@@ -302,8 +300,7 @@ public class TransportTest {
     }
   }
 
-  @Test
-  public void testGetDenseFloatMatrix() throws Exception {
+  @Test public void testGetDenseFloatMatrix() throws Exception {
     try {
       Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
       MatrixClient mat = worker.getPSAgent().getMatrixClient("dense_float_mat", 0);
@@ -311,12 +308,12 @@ public class TransportTest {
       Random rand = new Random(System.currentTimeMillis());
       for (int rowId = 0; rowId < dfRow; rowId += (rand.nextInt(4) + 1)) {
         LOG.info("=================get row " + rowId);
-        DenseFloatVector getRow = (DenseFloatVector) mat.getRow(rowId);
-        DenseFloatVector expect = new DenseFloatVector(dfCol);
-        assertArrayEquals(getRow.getValues(), expect.getValues(), 0.0F);
+        IntFloatVector getRow = (IntFloatVector) mat.getRow(rowId);
+        IntFloatVector expect = new IntFloatVector(dfCol, new IntFloatDenseVectorStorage(dfCol));
+        assertArrayEquals(getRow.getStorage().getValues(), expect.getStorage().getValues(), 0.0F);
 
 
-        DenseFloatVector update = new DenseFloatVector(dfCol);
+        IntFloatVector update = new IntFloatVector(dfCol, new IntFloatDenseVectorStorage(dfCol));
         update.setRowId(rowId);
 
         for (int i = 0; i < ddCol; i += 2)
@@ -324,20 +321,20 @@ public class TransportTest {
         mat.increment(update);
         mat.clock().get();
 
-        DenseFloatVector row = (DenseFloatVector) mat.getRow(rowId);
-        expect.plusBy(update);
-        assertArrayEquals(expect.getValues(), row.getValues(), 0.0F);
+        IntFloatVector row = (IntFloatVector) mat.getRow(rowId);
+        expect.iadd(update);
+        assertArrayEquals(expect.getStorage().getValues(), row.getStorage().getValues(), 0.0F);
 
-        update = new DenseFloatVector(ddCol);
+        update = new IntFloatVector(dfCol, new IntFloatDenseVectorStorage(dfCol));
         update.setRowId(rowId);
         for (int i = 0; i < ddCol; i += 3)
           update.set(i, rand.nextFloat());
         mat.increment(update);
         mat.clock().get();
-        row = (DenseFloatVector) mat.getRow(rowId);
+        row = (IntFloatVector) mat.getRow(rowId);
 
-        expect.plusBy(update);
-        assertArrayEquals(expect.getValues(), row.getValues(), 0.0F);
+        expect.iadd(update);
+        assertArrayEquals(expect.getStorage().getValues(), row.getStorage().getValues(), 0.0F);
       }
     } catch (Exception x) {
       LOG.error("run testGetDenseFloatMatrix failed ", x);
@@ -345,19 +342,18 @@ public class TransportTest {
     }
   }
 
-  @Test
-  public void testGetDenseIntMatrix() throws Exception {
+  @Test public void testGetDenseIntMatrix() throws Exception {
     try {
       Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
       MatrixClient mat = worker.getPSAgent().getMatrixClient("dense_int_mat", 0);
 
       Random rand = new Random(System.currentTimeMillis());
-      for (int rowId = 0; rowId < diRow; rowId += rand.nextInt(5)+1) {
-        DenseIntVector row = (DenseIntVector) mat.getRow(rowId);
-        DenseIntVector expect = new DenseIntVector(diCol);
-        assertArrayEquals(row.getValues(), expect.getValues());
+      for (int rowId = 0; rowId < diRow; rowId += rand.nextInt(5) + 1) {
+        IntIntVector row = (IntIntVector) mat.getRow(rowId);
+        IntIntVector expect = new IntIntVector(diCol, new IntIntDenseVectorStorage(diCol));
+        assertArrayEquals(row.getStorage().getValues(), expect.getStorage().getValues());
 
-        DenseIntVector update = new DenseIntVector(diCol);
+        IntIntVector update = new IntIntVector(diCol, new IntIntDenseVectorStorage(diCol));
         update.setRowId(rowId);
 
         for (int i = 0; i < ddCol; i += 2)
@@ -365,19 +361,19 @@ public class TransportTest {
         mat.increment(update);
         mat.clock().get();
 
-        row = (DenseIntVector) mat.getRow(rowId);
-        expect.plusBy(update);
-        assertArrayEquals(expect.getValues(), row.getValues());
+        row = (IntIntVector) mat.getRow(rowId);
+        expect.iadd(update);
+        assertArrayEquals(expect.getStorage().getValues(), row.getStorage().getValues());
 
-        update = new DenseIntVector(diCol);
+        update = new IntIntVector(diCol, new IntIntDenseVectorStorage(diCol));
         update.setRowId(rowId);
         for (int i = 0; i < diCol; i += 3)
           update.set(i, rand.nextInt());
         mat.increment(update);
         mat.clock().get();
-        row = (DenseIntVector) mat.getRow(rowId);
-        expect.plusBy(update);
-        assertArrayEquals(expect.getValues(), row.getValues());
+        row = (IntIntVector) mat.getRow(rowId);
+        expect.iadd(update);
+        assertArrayEquals(expect.getStorage().getValues(), row.getStorage().getValues());
       }
     } catch (Exception x) {
       LOG.error("run testGetDenseIntMatrix failed ", x);
@@ -385,50 +381,62 @@ public class TransportTest {
     }
   }
 
-  @Test
-  public void testGetFlowDenseIntMatrix() throws Exception {
+  @Test public void testGetFlowDenseIntMatrix() throws Exception {
     try {
       Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
       MatrixClient mat = worker.getPSAgent().getMatrixClient("dense_int_mat_1", 0);
 
-      DenseIntMatrix expect = new DenseIntMatrix(diRow, diCol);
+      IntIntVector[] rows = new IntIntVector[diRow];
+      for (int i = 0; i < rows.length; i++) {
+        rows[i] = new IntIntVector(diCol, new IntIntDenseVectorStorage(diCol));
+      }
+      RBIntIntMatrix expect = new RBIntIntMatrix(diRow, -1, rows);
+      //DenseIntMatrix expect = new DenseIntMatrix(diRow, diCol);
 
       RowIndex rowIndex = new RowIndex();
-      for (int i = 0; i < diRow; i ++)
+      for (int i = 0; i < diRow; i++) {
         rowIndex.addRowId(i);
+      }
+
 
       GetRowsResult result = mat.getRowsFlow(rowIndex, diRow / 2);
 
-      TVector row;
+      Vector row;
       while ((row = result.take()) != null) {
-        assertArrayEquals(((DenseIntVector)expect.getRow(row.getRowId())).getValues(), ((DenseIntVector) row).getValues());
+        LOG.info("rowId=" + row.getRowId());
+        ((IntIntVector) expect.getRow(row.getRowId())).getStorage().getValues();
+        ((IntIntVector) row).getStorage().getValues();
+
+        assertArrayEquals(((IntIntVector) expect.getRow(row.getRowId())).getStorage().getValues(),
+          ((IntIntVector) row).getStorage().getValues());
       }
 
       Random rand = new Random(System.currentTimeMillis());
-      for (int rowId = 0; rowId < diRow; rowId ++) {
-        DenseIntVector update = new DenseIntVector(diCol);
+      for (int rowId = 0; rowId < diRow; rowId++) {
+        IntIntVector update = new IntIntVector(diCol, new IntIntDenseVectorStorage(diCol));
 
         for (int j = 0; j < ddCol; j += 3)
           update.set(j, rand.nextInt());
 
         mat.increment(rowId, update);
-        expect.getRow(rowId).plusBy(update);
+        expect.getRow(rowId).iadd(update);
       }
 
       mat.clock().get();
 
       rowIndex = new RowIndex();
-      for (int i = 0; i < ddRow; i ++)
+      for (int i = 0; i < ddRow; i++)
         rowIndex.addRowId(i);
       result = mat.getRowsFlow(rowIndex, 2);
 
       while ((row = result.take()) != null) {
-        assertArrayEquals(((DenseIntVector)expect.getRow(row.getRowId())).getValues(), ((DenseIntVector) row).getValues());
+        assertArrayEquals(((IntIntVector) expect.getRow(row.getRowId())).getStorage().getValues(),
+          ((IntIntVector) row).getStorage().getValues());
       }
 
 
       rowIndex = new RowIndex();
-      for (int i = 0; i < ddRow; i ++)
+      for (int i = 0; i < ddRow; i++)
         rowIndex.addRowId(i);
       result = mat.getRowsFlow(rowIndex, 2);
 
@@ -440,7 +448,8 @@ public class TransportTest {
         if (row == null)
           continue;
 
-        assertArrayEquals(((DenseIntVector)expect.getRow(row.getRowId())).getValues(), ((DenseIntVector) row).getValues());
+        assertArrayEquals(((IntIntVector) expect.getRow(row.getRowId())).getStorage().getValues(),
+          ((IntIntVector) row).getStorage().getValues());
       }
     } catch (Exception x) {
       LOG.error("run testGetFlowDenseIntMatrix failed ", x);
@@ -448,8 +457,7 @@ public class TransportTest {
     }
   }
 
-  @AfterClass
-  public static void stop() throws IOException{
+  @AfterClass public static void stop() throws IOException {
     try {
       LOG.info("stop local cluster");
       angelClient.stop();
