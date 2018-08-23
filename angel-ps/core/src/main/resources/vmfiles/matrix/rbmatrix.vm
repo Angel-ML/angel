@@ -1,0 +1,361 @@
+package com.tencent.angel.ml.math2.matrix;
+
+import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.ml.math2.MFactory;
+import com.tencent.angel.ml.math2.VFactory;
+import com.tencent.angel.ml.math2.StorageType;
+import com.tencent.angel.ml.math2.storage.*;
+import com.tencent.angel.ml.math2.ufuncs.executor.*;
+import com.tencent.angel.ml.math2.ufuncs.expression.*;
+import com.tencent.angel.ml.math2.vector.*;
+
+public class RB${comp}${itype}${dtype}Matrix extends RowBasedMatrix<${comp}${itype}${dtype}Vector> {
+#if ( ${comp} == "" )
+    public RB${comp}${itype}${dtype}Matrix(int matrixId, int clock, ${comp}${itype}${dtype}Vector [ ] rows) {
+        super(matrixId, clock, rows[0].getDim(), rows);
+    }
+
+    public RB${comp}${itype}${dtype}Matrix(${comp}${itype}${dtype}Vector [ ] rows) {
+        this(0, 0, rows);
+    }
+
+    public RB${itype}${dtype}Matrix(int matrixId, int clock, int numRows, $itype.toLowerCase() numCols) {
+        ${itype}${dtype}Vector [ ] rows = new ${itype}${dtype}Vector[numRows];
+        this.matrixId = matrixId;
+        this.clock = clock;
+        this.cols = numCols;
+        this.rows = rows;
+    }
+
+    public RB${itype}${dtype}Matrix(int numRows, $itype.toLowerCase() numCols) {
+        this(0, 0, numRows, numCols);
+    }
+#else
+    private $itype.toLowerCase() subDim;
+
+    public RB${comp}${itype}${dtype}Matrix(int matrixId, int clock, ${comp}${itype}${dtype}Vector [ ] rows) {
+        super(matrixId, clock, rows[0].getDim(), rows);
+        assert null != rows[0];
+        subDim = rows[0].getDim();
+    }
+
+    public RB${comp}${itype}${dtype}Matrix(${comp}${itype}${dtype}Vector [ ] rows) {
+        this(0, 0, rows);
+    }
+
+    public RB${comp}${itype}${dtype}Matrix(int matrixId, int clock, int numRows, $itype.toLowerCase() numCols, $itype.toLowerCase() subDim) {
+        super(matrixId, clock, numCols, new ${comp}${itype}${dtype}Vector[numRows]);
+        this.subDim = subDim;
+    }
+
+    public RB${comp}${itype}${dtype}Matrix(int numRows, $itype.toLowerCase() numCols, $itype.toLowerCase() subDim) {
+        this(0, 0, numRows, numCols,  subDim);
+    }
+
+    public $itype.toLowerCase() getSubDim() {
+        return subDim;
+    }
+
+    public void setSubDim($itype.toLowerCase() subDim) {
+        this.subDim = subDim;
+    }
+#end
+
+    public double get(int i, $itype.toLowerCase() j) {
+        if (null == rows[i]) {
+            initEmpty(i);
+            return 0;
+        } else {
+            return rows[i].get(j);
+        }
+    }
+
+    public void set(int i, $itype.toLowerCase() j, $dtype.toLowerCase() value) {
+        if (null == rows[i]) initEmpty(i);
+        rows[i].set(j, value);
+    }
+
+    @Override
+    public Vector diag() {
+        $dtype.toLowerCase() [ ] resArr = new $dtype.toLowerCase() [rows.length];
+        for (int i=0; i < rows.length; i++) {
+            if (null == rows[i]) {
+                resArr[i] = 0;
+            } else {
+                resArr[i] = rows[i].get(i);
+            }
+        }
+
+        Int${dtype}DenseVectorStorage storage = new Int${dtype}DenseVectorStorage(resArr);
+        return new Int${dtype}Vector(getMatrixId(), 0, getClock(), resArr.length, storage);
+    }
+
+    @Override
+    public RowBasedMatrix calulate(int rowId, Vector other, Binary op) {
+        assert other != null;
+        RB${comp}${itype}${dtype}Matrix res;
+        if (op.isInplace()) {
+            res = this;
+        } else {
+#if (${comp} =="")
+            res = new RB${itype}${dtype}Matrix(matrixId, clock, rows.length, ($itype.toLowerCase()) cols);
+#else
+            res = new RBComp${itype}${dtype}Matrix(matrixId, clock, rows.length, ($itype.toLowerCase()) cols, subDim);
+#end
+        }
+
+        if (null == rows[rowId]) initEmpty(rowId);
+
+        if (op.isInplace()) {
+            BinaryExecutor.apply(rows[rowId], other, op);
+        } else {
+            for (int i = 0; i < rows.length; i++) {
+                if (i == rowId) {
+                    res.setRow(rowId, (${comp}${itype}${dtype}Vector) BinaryExecutor.apply(rows[rowId], other, op));
+                } else if (rows[i] != null){
+                    res.setRow(rowId, rows[i].copy());
+                }
+            }
+        }
+
+        return res;
+    }
+
+    @Override
+    public RowBasedMatrix calulate(Vector other, Binary op) {
+        assert other != null;
+        RB${comp}${itype}${dtype}Matrix res;
+        if (op.isInplace()) {
+            res = this;
+        } else {
+#if (${comp} =="")
+            res = new RB${itype}${dtype}Matrix(matrixId, clock, rows.length, ($itype.toLowerCase()) cols);
+#else
+            res = new RBComp${itype}${dtype}Matrix(matrixId, clock, rows.length, ($itype.toLowerCase()) cols, subDim);
+#end
+        }
+        if (op.isInplace()) {
+            for (int rowId=0; rowId < rows.length; rowId++) {
+                if (null == rows[rowId]) initEmpty(rowId);
+                BinaryExecutor.apply(rows[rowId], other, op);
+            }
+        } else {
+            for (int rowId=0; rowId < rows.length; rowId++) {
+                if (null == rows[rowId]) initEmpty(rowId);
+                res.setRow(rowId, (${comp}${itype}${dtype}Vector) BinaryExecutor.apply(rows[rowId], other, op));
+            }
+        }
+        return res;
+    }
+
+    @Override
+    public RowBasedMatrix calulate(Matrix other, Binary op) {
+        assert other instanceof RowBasedMatrix;
+
+        if (op.isInplace()) {
+            for (int i=0; i< rows.length; i++) {
+                if (null == rows[i]) initEmpty(i);
+                if (null == ((RowBasedMatrix) other).rows[i]) ((RowBasedMatrix) other).initEmpty(i);
+                BinaryExecutor.apply(rows[i], ((RowBasedMatrix) other).rows[i], op);
+            }
+            return this;
+        } else {
+            ${comp}${itype}${dtype}Vector [ ] outRows = new ${comp}${itype}${dtype}Vector[rows.length];
+            for (int i = 0; i < rows.length; i++) {
+                if (null == rows[i]) initEmpty(i);
+                if (null == ((RowBasedMatrix) other).rows[i]) ((RowBasedMatrix) other).initEmpty(i);
+                outRows[i] = (${comp}${itype}${dtype}Vector) BinaryExecutor.apply(rows[i], ((RowBasedMatrix) other).rows[i], op);
+            }
+            return new RB${comp}${itype}${dtype}Matrix(matrixId, clock, outRows);
+        }
+    }
+
+    @Override
+    public RowBasedMatrix calulate(Unary op) {
+        if (op.isInplace()) {
+            for (Vector vec: rows) {
+                UnaryExecutor.apply(vec, op);
+            }
+            return this;
+        } else {
+            ${comp}${itype}${dtype}Vector [ ] outRows = new ${comp}${itype}${dtype}Vector[rows.length];
+            for (int i = 0; i < rows.length; i++) {
+                if (null == rows[i]) initEmpty(i);
+                outRows[i] = (${comp}${itype}${dtype}Vector) UnaryExecutor.apply(rows[i], op);
+            }
+            return new RB${comp}${itype}${dtype}Matrix(matrixId, clock, outRows);
+        }
+    }
+
+    @Override
+    public void setRow(int idx, ${comp}${itype}${dtype}Vector v) {
+        assert cols == v.getDim();
+        rows[idx] = v;
+    }
+
+    @Override
+    public void setRows(${comp}${itype}${dtype}Vector [ ] rows) {
+        for (${comp}${itype}${dtype}Vector v:rows) {
+            assert cols == v.getDim();
+        }
+        this.rows = rows;
+    }
+
+#if ( ${comp} == "" )
+    @Override
+    public void initEmpty(int idx) {
+        if (null == rows[idx]){
+            ${itype}${dtype}SparseVectorStorage storage = new ${itype}${dtype}SparseVectorStorage(($itype.toLowerCase())getDim());
+            rows[idx] = new ${itype}${dtype}Vector(matrixId, idx, clock, ($itype.toLowerCase())getDim(), storage);
+        }
+    }
+#else
+    @Override
+    public void initEmpty(int idx){
+        int numComp = (int)((getDim() + subDim - 1) / subDim);
+
+        if (null == rows[idx]) {
+            ${itype}${dtype}Vector[] tmpParts = new ${itype}${dtype}Vector[numComp];
+            for (int i=0; i< numComp; i++) {
+                ${itype}${dtype}SparseVectorStorage storage = new ${itype}${dtype}SparseVectorStorage(subDim);
+                tmpParts[i] = new ${itype}${dtype}Vector(matrixId, idx, clock, ($itype.toLowerCase())getDim(), storage);
+            }
+            ${comp}${itype}${dtype}Vector tmpVect = new ${comp}${itype}${dtype}Vector(matrixId, idx, clock, ($itype.toLowerCase())getDim(), tmpParts, subDim);
+            rows[idx] = tmpVect;
+        }
+    }
+#end
+
+    @Override
+    public double min(){
+        double minVal = Double.MAX_VALUE;
+        for(${comp}${itype}${dtype}Vector ele: rows) {
+            if (null != ele) {
+                double rowMin = ele.min();
+                if (rowMin < minVal){
+                    minVal = rowMin;
+                }
+            }
+        }
+
+        if (minVal == Double.MAX_VALUE) {
+            minVal = Double.NaN;
+        }
+
+        return minVal;
+    }
+
+    @Override
+    public Vector min(int axis) {
+        assert axis==1;
+        double[] minArr = new double[rows.length];
+        for (int i=0; i< rows.length; i++) {
+            if (rows[i] != null) {
+                minArr[i] = rows[i].min();
+            } else {
+                minArr[i] = Double.NaN;
+            }
+
+        }
+        return VFactory.denseDoubleVector(matrixId, 0, clock, minArr);
+    }
+
+    @Override
+    public Vector max(int axis) {
+        assert axis==1;
+        double[] maxArr = new double[rows.length];
+        for (int i=0; i< rows.length; i++) {
+            if (rows[i] != null) {
+                maxArr[i] = rows[i].max();
+            } else {
+                maxArr[i] = Double.NaN;
+            }
+
+        }
+        return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
+    }
+
+    @Override
+    public double max(){
+        double maxVal = Double.MIN_VALUE;
+        for(${comp}${itype}${dtype}Vector ele: rows) {
+            if (null != ele) {
+                double rowMin = ele.min();
+                if (rowMin > maxVal){
+                    maxVal = rowMin;
+                }
+            }
+        }
+
+        if (maxVal == Double.MIN_VALUE) {
+            maxVal = Double.NaN;
+        }
+
+        return maxVal;
+    }
+
+    @Override
+    public Vector sum(int axis) {
+        assert axis==1;
+        double[] maxArr = new double[rows.length];
+        for (int i=0; i< rows.length; i++) {
+            if (rows[i] != null) {
+                maxArr[i] = rows[i].sum();
+            } else {
+                maxArr[i] = Double.NaN;
+            }
+        }
+        return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
+    }
+
+    @Override
+    public Vector average(int axis) {
+        assert axis==1;
+        double[] maxArr = new double[rows.length];
+        for (int i=0; i< rows.length; i++) {
+            if (rows[i] != null) {
+                maxArr[i] = rows[i].average();
+            } else {
+                maxArr[i] = Double.NaN;
+            }
+        }
+        return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
+    }
+
+    @Override
+    public Vector std(int axis) {
+        assert axis==1;
+        double[] maxArr = new double[rows.length];
+        for (int i=0; i< rows.length; i++) {
+            if (rows[i] != null) {
+                maxArr[i] = rows[i].std();
+            } else {
+                maxArr[i] = Double.NaN;
+            }
+        }
+        return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
+    }
+
+    @Override
+    public Vector norm(int axis) {
+        assert axis==1;
+        double[] maxArr = new double[rows.length];
+        for (int i=0; i< rows.length; i++) {
+            if (rows[i] != null) {
+                maxArr[i] = rows[i].norm();
+            } else {
+                maxArr[i] = Double.NaN;
+            }
+        }
+        return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
+    }
+
+@Override
+    public Matrix copy() {
+        ${comp}${itype}${dtype}Vector [ ] newRows = new ${comp}${itype}${dtype}Vector [rows.length];
+        for (int i=0; i < rows.length; i++){
+            newRows[i] = rows[i].copy();
+        }
+        return new RB${comp}${itype}${dtype}Matrix(matrixId, clock, newRows);
+    }
+}

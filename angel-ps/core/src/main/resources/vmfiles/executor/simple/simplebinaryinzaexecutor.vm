@@ -1,0 +1,335 @@
+#set ($len = $dtypes.size() - 1)
+package com.tencent.angel.ml.math2.ufuncs.executor.simple;
+
+import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.ml.math2.storage.*;
+import com.tencent.angel.ml.math2.ufuncs.expression.Binary;
+import com.tencent.angel.ml.math2.vector.*;
+import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.fastutil.longs.*;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import com.tencent.angel.ml.math2.utils.ArrayCopy;
+import com.tencent.angel.ml.math2.utils.Constant;
+
+public class SimpleBinaryInZAExecutor {
+    public static Vector apply(Vector v1, Vector v2, Binary op) {
+        if (v1 instanceof IntDoubleVector && v2 instanceof IntDoubleVector) {
+            return apply((IntDoubleVector) v1, (IntDoubleVector) v2, op);
+        } else if (v1 instanceof IntDoubleVector && v2 instanceof IntFloatVector) {
+            return apply((IntDoubleVector) v1, (IntFloatVector) v2, op);
+        } else if (v1 instanceof IntDoubleVector && v2 instanceof IntLongVector) {
+            return apply((IntDoubleVector) v1, (IntLongVector) v2, op);
+        } else if (v1 instanceof IntDoubleVector && v2 instanceof IntIntVector) {
+            return apply((IntDoubleVector) v1, (IntIntVector) v2, op);
+        } else if (v1 instanceof IntDoubleVector && v2 instanceof IntDummyVector) {
+            return apply((IntDoubleVector) v1, (IntDummyVector) v2, op);
+        } else if (v1 instanceof IntFloatVector && v2 instanceof IntFloatVector) {
+            return apply((IntFloatVector) v1, (IntFloatVector) v2, op);
+        } else if (v1 instanceof IntFloatVector && v2 instanceof IntLongVector) {
+            return apply((IntFloatVector) v1, (IntLongVector) v2, op);
+        } else if (v1 instanceof IntFloatVector && v2 instanceof IntIntVector) {
+            return apply((IntFloatVector) v1, (IntIntVector) v2, op);
+        } else if (v1 instanceof IntFloatVector && v2 instanceof IntDummyVector) {
+            return apply((IntFloatVector) v1, (IntDummyVector) v2, op);
+        } else if (v1 instanceof IntLongVector && v2 instanceof IntLongVector) {
+            return apply((IntLongVector) v1, (IntLongVector) v2, op);
+        } else if (v1 instanceof IntLongVector && v2 instanceof IntIntVector) {
+            return apply((IntLongVector) v1, (IntIntVector) v2, op);
+        } else if (v1 instanceof IntLongVector && v2 instanceof IntDummyVector) {
+            return apply((IntLongVector) v1, (IntDummyVector) v2, op);
+        } else if (v1 instanceof IntIntVector && v2 instanceof IntIntVector) {
+            return apply((IntIntVector) v1, (IntIntVector) v2, op);
+        } else if (v1 instanceof IntIntVector && v2 instanceof IntDummyVector) {
+            return apply((IntIntVector) v1, (IntDummyVector) v2, op);
+        } else if (v1 instanceof LongDoubleVector && v2 instanceof LongDoubleVector) {
+            return apply((LongDoubleVector) v1, (LongDoubleVector) v2, op);
+        } else if (v1 instanceof LongDoubleVector && v2 instanceof LongFloatVector) {
+            return apply((LongDoubleVector) v1, (LongFloatVector) v2, op);
+        } else if (v1 instanceof LongDoubleVector && v2 instanceof LongLongVector) {
+            return apply((LongDoubleVector) v1, (LongLongVector) v2, op);
+        } else if (v1 instanceof LongDoubleVector && v2 instanceof LongIntVector) {
+            return apply((LongDoubleVector) v1, (LongIntVector) v2, op);
+        } else if (v1 instanceof LongDoubleVector && v2 instanceof LongDummyVector) {
+            return apply((LongDoubleVector) v1, (LongDummyVector) v2, op);
+        } else if (v1 instanceof LongFloatVector && v2 instanceof LongFloatVector) {
+            return apply((LongFloatVector) v1, (LongFloatVector) v2, op);
+        } else if (v1 instanceof LongFloatVector && v2 instanceof LongLongVector) {
+            return apply((LongFloatVector) v1, (LongLongVector) v2, op);
+        } else if (v1 instanceof LongFloatVector && v2 instanceof LongIntVector) {
+            return apply((LongFloatVector) v1, (LongIntVector) v2, op);
+        } else if (v1 instanceof LongFloatVector && v2 instanceof LongDummyVector) {
+            return apply((LongFloatVector) v1, (LongDummyVector) v2, op);
+        } else if (v1 instanceof LongLongVector && v2 instanceof LongLongVector) {
+            return apply((LongLongVector) v1, (LongLongVector) v2, op);
+        } else if (v1 instanceof LongLongVector && v2 instanceof LongIntVector) {
+            return apply((LongLongVector) v1, (LongIntVector) v2, op);
+        } else if (v1 instanceof LongLongVector && v2 instanceof LongDummyVector) {
+            return apply((LongLongVector) v1, (LongDummyVector) v2, op);
+        } else if (v1 instanceof LongIntVector && v2 instanceof LongIntVector) {
+            return apply((LongIntVector) v1, (LongIntVector) v2, op);
+        } else if (v1 instanceof LongIntVector && v2 instanceof LongDummyVector) {
+            return apply((LongIntVector) v1, (LongDummyVector) v2, op);
+        } else {
+            throw new AngelException("Vector type is not support!");
+        }
+    }
+
+#foreach ($itype in $itypes)
+#foreach ($idx1 in [0..$len])
+#set ($dtype1 = $dtypes.get($idx1))
+#foreach ($idx2 in [$idx1..$len])
+#set ($dtype2 = $dtypes.get($idx2))
+    private static Vector apply(${itype}${dtype1}Vector v1, ${itype}${dtype2}Vector v2, Binary op) {
+#if ($itype == "Int")
+        if (v1.isDense() && v2.isDense()) {
+            $dtype1.toLowerCase() [ ] v1Values = v1.getStorage().getValues();
+            $dtype2.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
+            for (int idx = 0; idx < v1Values.length; idx++) {
+                v1Values[idx] = op.apply(v1Values[idx], v2Values[idx]);
+            }
+        } else if (v1.isDense() && v2.isSparse()) {
+            $dtype1.toLowerCase() [ ] v1Values = v1.getStorage().getValues();
+            if (v2.size() < Constant.sparseDenseStorageThreshold * v2.getDim() || v1.getDim() < Constant.denseStorageThreshold) {
+                // slower but memory efficient, for small vector only
+                ${itype}${dtype2}VectorStorage v2storage = v2.getStorage();
+                for (int i=0; i < v1Values.length; i++){
+                    if (v2storage.hasKey(i)){
+                        v1Values[i] = op.apply(v1Values[i], v2.get(i));
+                    } else {
+                        v1Values[i] = 0;
+                    }
+                }
+            } else { // faster but not memory efficient
+                ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptyDense();
+                $dtype1.toLowerCase() [ ] newValues = newStorage.getValues();
+                ObjectIterator<${itype}2${dtype2}Map.Entry> iter = v2.getStorage().entryIterator();
+                while (iter.hasNext()) {
+                    ${itype}2${dtype2}Map.Entry entry = iter.next();
+                    $itype.toLowerCase() idx = entry.get${itype}Key();
+                    newValues[idx] = op.apply(v1Values[idx], entry.get${dtype2}Value());
+                }
+                v1.setStorage(newStorage);
+            }
+        } else if (v1.isDense() && v2.isSorted()) {
+            $dtype1.toLowerCase() [ ] v1Values = v1.getStorage().getValues();
+            if (v2.size() < Constant.sparseDenseStorageThreshold * v2.getDim() || v1.getDim() < Constant.denseStorageThreshold) {
+                // slower but memory efficient, for small vector only
+                ${itype}${dtype2}VectorStorage v2storage = v2.getStorage();
+                for (int i=0; i < v1Values.length; i++){
+                    if (v2storage.hasKey(i)){
+                        v1Values[i] = op.apply(v1Values[i], v2.get(i));
+                    } else {
+                        v1Values[i] = 0;
+                    }
+                }
+            } else { // faster but not memory efficient
+                ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptyDense();
+                $dtype1.toLowerCase() [ ] newValues = newStorage.getValues();
+                $itype.toLowerCase() [ ] v2Indices = v2.getStorage().getIndices();
+                $dtype2.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
+                $itype.toLowerCase() size = v2.size();
+                for (int i=0; i < size; i++) {
+                    int idx = v2Indices[i];
+                    newValues[idx] = op.apply(v1Values[idx], v2Values[i]);
+                }
+                v1.setStorage(newStorage);
+            }
+        } else if (v1.isSparse() && v2.isDense()) {
+            ObjectIterator<${itype}2${dtype1}Map.Entry> iter = v1.getStorage().entryIterator();
+            $dtype2.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
+            while (iter.hasNext()) {
+                ${itype}2${dtype1}Map.Entry entry = iter.next();
+                $itype.toLowerCase() idx = entry.get${itype}Key();
+                entry.setValue(op.apply(entry.get${dtype1}Value(), v2Values[idx]));
+            }
+        } else if (v1.isSorted() && v2.isDense()) {
+            $itype.toLowerCase() [ ] v1Indices = v1.getStorage().getIndices();
+            $dtype1.toLowerCase() [ ] v1Values = v1.getStorage().getValues();
+            $dtype2.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
+            $itype.toLowerCase() size = v1.size();
+            for (int i=0; i < size; i++) {
+                v1Values[i] = op.apply(v1Values[i], v2Values[v1Indices[i]]);
+            }
+        } else if (v1.isSparse() && !v2.isDense()) {
+#else
+        if (v1.isSparse() && !v2.isDense()) {
+#end
+            ObjectIterator<${itype}2${dtype1}Map.Entry> iter = v1.getStorage().entryIterator();
+            ${itype}${dtype2}VectorStorage v2storage = v2.getStorage();
+            while (iter.hasNext()) {
+                ${itype}2${dtype1}Map.Entry entry = iter.next();
+                $itype.toLowerCase() idx = entry.get${itype}Key();
+                if (v2storage.hasKey(idx)) {
+                    entry.setValue(op.apply(entry.get${dtype1}Value(), v2.get(idx)));
+                } else {
+                    iter.remove();
+                }
+            }
+        } else if (v1.isSorted() && v2.isSparse()) {
+            $itype.toLowerCase() [ ] v1Indices = v1.getStorage().getIndices();
+            $dtype1.toLowerCase() [ ] v1Values = v1.getStorage().getValues();
+            ${itype}${dtype2}VectorStorage storage = v2.getStorage();
+            $itype.toLowerCase() size = v1.size();
+            for (int i=0; i < size; i++) {
+                $itype.toLowerCase() idx = v1Indices[i];
+                if (storage.hasKey(idx)) {
+                    v1Values[i] = op.apply(v1Values[i], v2.get(idx));
+                } else {
+                    v1Values[i] = 0;
+                }
+            }
+        } else if (v1.isSorted() && v2.isSorted()) {
+            int v1Pointor = 0;
+            int v2Pointor = 0;
+            $itype.toLowerCase() size1 = v1.size();
+            $itype.toLowerCase() size2 = v2.size();
+
+            $itype.toLowerCase() [ ] v1Indices = v1.getStorage().getIndices();
+            $dtype1.toLowerCase() [ ] v1Values = v1.getStorage().getValues();
+            $itype.toLowerCase() [ ] v2Indices = v2.getStorage().getIndices();
+            $dtype2.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
+
+            while (v1Pointor < size1 && v2Pointor < size2) {
+                if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+                    v1Values[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+                    v1Pointor++;
+                    v2Pointor++;
+                } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+                    v1Values[v1Pointor] = 0;
+                    v1Pointor++;
+                } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+                    v2Pointor++;
+                }
+            }
+        } else {
+            throw new AngelException("The operation is not support!");
+        }
+
+        return v1;
+    }
+
+#end
+#end
+#end
+
+
+#foreach (${itype} in ${itypes})
+#foreach (${dtype1} in ${dtypes})
+    public static Vector apply(${itype}${dtype1}Vector v1, ${itype}DummyVector v2, Binary op) {
+#if ($itype == "Int")
+        if (v1.isDense()) {
+            if (op.isKeepStorage()) {
+                ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptyDense();
+                $dtype1.toLowerCase() [ ] resValues = newStorage.getValues();
+
+                $dtype1.toLowerCase() [ ] v1Values = v1.getStorage().getValues();
+                $itype.toLowerCase() [ ] v2Indices = v2.getIndices();
+                for (int idx : v2Indices) {
+                    resValues[idx] = op.apply(v1Values[idx], 1);
+                }
+                v1.setStorage(newStorage);
+            } else {
+                $itype.toLowerCase() [ ] resIndices = ArrayCopy.copy(v2.getIndices());
+                $dtype1.toLowerCase() [ ] resValues = new $dtype1.toLowerCase() [resIndices.length];
+
+                $dtype1.toLowerCase() [ ] v1Values = v1.getStorage().getValues();
+                $itype.toLowerCase() [ ] v2Indices = v2.getIndices();
+                int i = 0;
+                for (int idx : v2Indices) {
+                    resValues[i] = op.apply(v1Values[idx], 1);
+                    i++;
+                }
+
+                ${itype}${dtype1}SortedVectorStorage newStorage = new ${itype}${dtype1}SortedVectorStorage(
+                        v1.getDim(), (int)v2.size(), resIndices, resValues);
+                v1.setStorage(newStorage);
+            }
+        } else if (v1.isSparse()) {
+#else
+        if (v1.isSparse()) {
+#end
+#if ($itype == "Int")
+            if (v1.size() > v2.size() && !op.isKeepStorage()) {
+                $itype.toLowerCase() [ ] resIndices = ArrayCopy.copy(v2.getIndices());
+                $dtype1.toLowerCase() [ ] resValues = new $dtype1.toLowerCase() [resIndices.length];
+                $itype.toLowerCase() size = v2.size();
+                for (int i=0; i < size; i++) {
+                    int idx = resIndices[i];
+                    if (v1.getStorage().hasKey(idx)) {
+                        resValues[i] = op.apply(v1.get(idx), 1);
+                    }
+                }
+
+                ${itype}${dtype1}SortedVectorStorage newStorage = new ${itype}${dtype1}SortedVectorStorage(
+                        v1.getDim(), (int)v2.size(), resIndices, resValues);
+                v1.setStorage(newStorage);
+            } else {
+#end
+                ObjectIterator<${itype}2${dtype1}Map.Entry> iter = v1.getStorage().entryIterator();
+                while(iter.hasNext()) {
+                    ${itype}2${dtype1}Map.Entry entry = iter.next();
+                    $itype.toLowerCase() idx = entry.get${itype}Key();
+                    if (v2.hasKey(idx)) {
+                        entry.setValue(op.apply(v1.get(idx), 1));
+                    } else {
+                        iter.remove();
+                    }
+                }
+#if ($itype == "Int")
+            }
+#end
+        } else { // sorted
+            int v1Pointor = 0;
+            int v2Pointor = 0;
+#if ($itype == "Int")
+            if (v1.size() < v2.size()) {
+#end
+                $itype.toLowerCase() [ ] v1Indices = v1.getStorage().getIndices();
+                $dtype1.toLowerCase() [ ] v1Values = v1.getStorage().getValues();
+                $itype.toLowerCase() [ ] v2Indices = v2.getIndices();
+
+                while (v1Pointor < v1.size() && v2Pointor < v2.size()) {
+                    if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+                        v1Values[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
+                        v1Pointor++;
+                        v2Pointor++;
+                    } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+                        v1Values[v1Pointor] = 0;
+                        v1Pointor++;
+                    } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+                        v2Pointor++;
+                    }
+                }
+#if ($itype == "Int")
+            } else {
+                $itype.toLowerCase() [ ] resIndices = ArrayCopy.copy(v2.getIndices());
+                $dtype1.toLowerCase() [ ] resValues = new $dtype1.toLowerCase() [resIndices.length];
+                $itype.toLowerCase() [ ] v1Indices = v1.getStorage().getIndices();
+                $dtype1.toLowerCase() [ ] v1Values = v1.getStorage().getValues();
+
+                while (v1Pointor < v1.size() && v2Pointor < v2.size()) {
+                    if (resIndices[v1Pointor] == v1Indices[v2Pointor]) {
+                        resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
+                        v1Pointor++;
+                        v2Pointor++;
+                    } else if (resIndices[v1Pointor] < v1Indices[v2Pointor]) {
+                        v1Pointor++;
+                    } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+                        v2Pointor++;
+                    }
+                }
+
+                ${itype}${dtype1}SortedVectorStorage newStorage = new ${itype}${dtype1}SortedVectorStorage(
+                        v1.getDim(), (int)v2.size(), resIndices, resValues);
+                v1.setStorage(newStorage);
+            }
+#end
+        }
+
+        return v1;
+    }
+
+#end
+#end
+
+}

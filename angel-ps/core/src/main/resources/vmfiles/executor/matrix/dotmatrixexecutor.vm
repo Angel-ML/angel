@@ -1,0 +1,698 @@
+package com.tencent.angel.ml.math2.ufuncs.executor.matrix;
+
+import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.ml.math2.MFactory;
+import com.tencent.angel.ml.math2.VFactory;
+import com.tencent.angel.ml.math2.matrix.*;
+import com.tencent.angel.ml.math2.storage.*;
+import com.tencent.angel.ml.math2.vector.*;
+import com.github.fommil.netlib.BLAS;
+import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import com.tencent.angel.ml.math2.utils.ArrayCopy;
+
+public class DotMatrixExecutor {
+    private static BLAS blas = BLAS.getInstance();
+
+    public static Vector apply(Matrix mat, boolean trans, Vector v) {
+        if (mat instanceof BlasDoubleMatrix && v instanceof IntDoubleVector) {
+            return apply((BlasDoubleMatrix) mat, trans, (IntDoubleVector) v);
+        } else if (mat instanceof BlasDoubleMatrix && v instanceof IntFloatVector) {
+            return apply((BlasDoubleMatrix) mat, trans, (IntFloatVector) v);
+        } else if (mat instanceof BlasDoubleMatrix && v instanceof IntLongVector) {
+            return apply((BlasDoubleMatrix) mat, trans, (IntLongVector) v);
+        } else if (mat instanceof BlasDoubleMatrix && v instanceof IntIntVector) {
+            return apply((BlasDoubleMatrix) mat, trans, (IntIntVector) v);
+        } else if (mat instanceof BlasDoubleMatrix && v instanceof IntDummyVector) {
+            return apply((BlasDoubleMatrix) mat, trans, (IntDummyVector) v);
+        } else if (mat instanceof BlasFloatMatrix && v instanceof IntFloatVector) {
+            return apply((BlasFloatMatrix) mat, trans, (IntFloatVector) v);
+        } else if (mat instanceof BlasFloatMatrix && v instanceof IntLongVector) {
+            return apply((BlasFloatMatrix) mat, trans, (IntLongVector) v);
+        } else if (mat instanceof BlasFloatMatrix && v instanceof IntIntVector) {
+            return apply((BlasFloatMatrix) mat, trans, (IntIntVector) v);
+        } else if (mat instanceof BlasFloatMatrix && v instanceof IntDummyVector) {
+            return apply((BlasFloatMatrix) mat, trans, (IntDummyVector) v);
+        } else if (mat instanceof RowBasedMatrix) {
+            if (trans) {
+                return ((RowBasedMatrix) mat).transDot(v);
+            } else {
+                return mat.dot(v);
+            }
+        } else {
+            throw new AngelException("the operation is not supported!");
+        }
+    }
+
+#foreach ($dtype1 in $dtypes1)
+    private static Vector apply(Blas${dtype1}Matrix mat, boolean trans, IntDummyVector v) {
+        int m = mat.getNumRows(), n = mat.getNumCols();
+        $dtype1.toLowerCase() [ ] resArr;
+        if (trans) {
+            assert m == v.getDim();
+            resArr = new $dtype1.toLowerCase() [n];
+        } else {
+            assert n == v.getDim();
+            resArr = new $dtype1.toLowerCase() [m];
+        }
+
+        int r = mat.getNumRows(), c = mat.getNumCols();
+        $dtype1.toLowerCase() [ ] data = mat.getData();
+
+        if (trans) {
+            for (int j=0; j< c; j++) {
+                int [ ] idxs = v.getIndices();
+                for (int i: idxs) {
+                    resArr[j] += data[i*c+j];
+                }
+            }
+        } else {
+            for (int i=0; i< r; i++) {
+                int [ ] idxs = v.getIndices();
+                for (int j:idxs) {
+                    resArr[i] += data[i*c+j];
+                }
+            }
+        }
+
+        Int${dtype1}DenseVectorStorage storage = new Int${dtype1}DenseVectorStorage(resArr);
+        return new Int${dtype1}Vector(v.getMatrixId(), v.getClock(), 0, resArr.length, storage);
+    }
+
+#foreach ($dtype2 in $dtypes2)
+#if ($dtype1 != "Float" || $dtype2 != "Double")
+    private static Vector apply(Blas${dtype1}Matrix mat, boolean trans, Int${dtype2}Vector v) {
+        int m = mat.getNumRows(), n = mat.getNumCols();
+        $dtype1.toLowerCase()  [ ] resArr;
+        if (trans) {
+            assert m == v.getDim();
+            resArr = new $dtype1.toLowerCase() [n];
+        } else {
+            assert n == v.getDim();
+            resArr = new $dtype1.toLowerCase() [m];
+        }
+
+        int r = mat.getNumRows(), c = mat.getNumCols();
+        $dtype1.toLowerCase() [ ] data = mat.getData();
+        if (v.isDense()) {
+#if ( ${dtype1} == "Double" )
+#if ( ${dtype2} != "Double" )
+            double [] tempArray = ArrayCopy.copy(v.getStorage().getValues(), new double[v.getDim()]);
+#else
+            double [] tempArray = v.getStorage().getValues();
+#end
+#else
+#if ( ${dtype2} != "Float" )
+            float [] tempArray = ArrayCopy.copy(v.getStorage().getValues(), new float[v.getDim()]);
+#else
+            float [] tempArray = v.getStorage().getValues();
+#end
+#end
+            if (trans) {
+#if ( ${dtype1} == "Double")
+                blas.dgemv("N", c, r, 1.0, data, c, tempArray, 1, 0.0, resArr, 1);
+            } else {
+                blas.dgemv("T", c, r, 1.0, data, c, tempArray, 1, 0.0, resArr, 1);
+#else
+                blas.sgemv("N", c, r, 1.0f, data, c, tempArray, 1, 0.0f, resArr, 1);
+            } else {
+                blas.sgemv("T", c, r, 1.0f, data, c, tempArray, 1, 0.0f, resArr, 1);
+#end
+            }
+        } else if (v.isSparse()) {
+            if (trans) {
+                for (int j=0; j < c; j++) {
+                    ObjectIterator<Int2${dtype2}Map.Entry> iter = v.getStorage().entryIterator();
+                    while (iter.hasNext()) {
+                        Int2${dtype2}Map.Entry entry = iter.next();
+                        int i = entry.getIntKey();
+                        resArr[j] += data[i*c+j] * entry.get${dtype2}Value();
+                    }
+                }
+            } else {
+                for (int i=0; i< r; i++) {
+                    ObjectIterator<Int2${dtype2}Map.Entry> iter = v.getStorage().entryIterator();
+                    while (iter.hasNext()) {
+                        Int2${dtype2}Map.Entry entry = iter.next();
+                        int j = entry.getIntKey();
+                        resArr[i] += data[i*c+j] * entry.get${dtype2}Value();
+                    }
+                }
+            }
+        } else { // sorted
+            if (trans) {
+                for (int j=0; j< r; j++) {
+                    int [ ] idxs = v.getStorage().getIndices();
+                    $dtype2.toLowerCase() [ ] vals = v.getStorage().getValues();
+                    for (int k=0; k< idxs.length; k++) {
+                        resArr[j] += data[idxs[k]*c+j] * vals[k];
+                    }
+                }
+            } else {
+                for (int i=0; i< r; i++) {
+                    int [ ] idxs = v.getStorage().getIndices();
+                    $dtype2.toLowerCase()  [ ] vals = v.getStorage().getValues();
+                    for (int k=0; k< idxs.length; k++) {
+                        resArr[i] += data[i*c+idxs[k]] * vals[k];
+                    }
+                }
+            }
+        }
+
+        Int${dtype1}DenseVectorStorage storage = new Int${dtype1}DenseVectorStorage(resArr);
+        return new Int${dtype1}Vector(v.getMatrixId(), v.getClock(), 0, resArr.length, storage);
+    }
+
+#end
+#end
+#end
+
+    public static Matrix apply(Matrix mat1, boolean trans1, Matrix mat2, boolean trans2) {
+        if (mat1 instanceof BlasDoubleMatrix && mat2 instanceof BlasDoubleMatrix) {
+            return apply((BlasDoubleMatrix) mat1, trans1, (BlasDoubleMatrix) mat2, trans2);
+        } else if (mat1 instanceof BlasFloatMatrix && mat2 instanceof BlasFloatMatrix) {
+            return apply((BlasFloatMatrix) mat1, trans1, (BlasFloatMatrix) mat2, trans2);
+        } else if (mat1 instanceof BlasDoubleMatrix && mat2 instanceof RBCompIntDoubleMatrix) {
+            return apply((BlasDoubleMatrix) mat1, trans1, (RBCompIntDoubleMatrix) mat2, trans2);
+        } else if (mat1 instanceof BlasFloatMatrix && mat2 instanceof RBCompIntFloatMatrix) {
+            return apply((BlasFloatMatrix) mat1, trans1, (RBCompIntFloatMatrix) mat2, trans2);
+        } if (mat1 instanceof RBCompIntDoubleMatrix && mat2 instanceof BlasDoubleMatrix) {
+            return apply((RBCompIntDoubleMatrix) mat1, trans1, (BlasDoubleMatrix) mat2, trans2);
+        } else if (mat1 instanceof RBCompIntFloatMatrix && mat2 instanceof BlasFloatMatrix) {
+            return apply((RBCompIntFloatMatrix) mat1, trans1, (BlasFloatMatrix) mat2, trans2);
+        } else if (mat1 instanceof RowBasedMatrix && mat2 instanceof RowBasedMatrix) {
+            assert !trans1 && !trans2;
+            return mat1.dot(mat1);
+        } else {
+            throw new AngelException("the operation is not supported!");
+        }
+    }
+
+
+    private static Matrix apply(BlasDoubleMatrix mat1, boolean trans1, BlasDoubleMatrix mat2, boolean trans2) {
+        double alpha = 1.0, beta = 0.0;
+        double [ ] resBlas;
+
+        int m = mat1.getNumRows(), n = mat1.getNumCols();
+        int p = mat2.getNumRows(), q = mat2.getNumCols();
+
+        if (trans1 && trans2) { // M1^T * M2^T
+            assert m == q;
+            resBlas = new double[n*p];
+
+            blas.dgemm("T", "T", p, n, m, alpha, mat2.getData(), q, mat1.getData(), n, beta, resBlas, p);
+
+            return new BlasDoubleMatrix(mat1.getMatrixId(), mat1.getClock(), n, p, resBlas);
+        } else if (!trans1 && trans2) { // M1 * M2^T
+            assert n == q;
+            resBlas = new double[m*p];
+
+            blas.dgemm("T", "N", p, m, n, alpha, mat2.getData(), q, mat1.getData(), n, beta, resBlas, p);
+
+            return new BlasDoubleMatrix(mat1.getMatrixId(), mat1.getClock(), m, p, resBlas);
+        } else if (trans1 && !trans2) { // M1^T * M2
+            assert m == p;
+            resBlas = new double[n*q];
+
+            blas.dgemm("N", "T", q, n, m, alpha, mat2.getData(), q, mat1.getData(), n, beta, resBlas, q);
+
+            return new BlasDoubleMatrix(mat1.getMatrixId(), mat1.getClock(), n, q, resBlas);
+        } else { // M1 * M2
+            assert n == p;
+            resBlas = new double[m*q];
+
+            blas.dgemm("N", "N", q, m, n, alpha, mat2.getData(), q, mat1.getData(), n, beta, resBlas, q);
+
+            return new BlasDoubleMatrix(mat1.getMatrixId(), mat1.getClock(), m, q, resBlas);
+        }
+    }
+
+    private static Matrix apply(BlasFloatMatrix mat1, boolean trans1, BlasFloatMatrix mat2, boolean trans2) {
+        float alpha = 1.0f, beta = 0.0f;
+        float [ ] resBlas;
+
+        int m = mat1.getNumRows(), n = mat1.getNumCols();
+        int p = mat2.getNumRows(), q = mat2.getNumCols();
+
+        if (trans1 && trans2) { // M1^T * M2^T
+            assert m == q;
+            resBlas = new float[n*p];
+
+            blas.sgemm("T", "T", p, n, m, alpha, mat2.getData(), q, mat1.getData(), n, beta, resBlas, p);
+
+            return new BlasFloatMatrix(mat1.getMatrixId(), mat1.getClock(), n, p, resBlas);
+        } else if (!trans1 && trans2) { // M1 * M2^T
+            assert n == q;
+            resBlas = new float[m*p];
+
+            blas.sgemm("T", "N", p, m, n, alpha, mat2.getData(), q, mat1.getData(), n, beta, resBlas, p);
+
+            return new BlasFloatMatrix(mat1.getMatrixId(), mat1.getClock(), m, p, resBlas);
+        } else if (trans1 && !trans2) { // M1^T * M2
+            assert m == p;
+            resBlas = new float[n*q];
+
+            blas.sgemm("N", "T", q, n, m, alpha, mat2.getData(), q, mat1.getData(), n, beta, resBlas, q);
+
+            return new BlasFloatMatrix(mat1.getMatrixId(), mat1.getClock(), n, q, resBlas);
+        } else { // M1 * M2
+            assert n == p;
+            resBlas = new float[m*q];
+
+            blas.sgemm("N", "N", q, m, n, alpha, mat2.getData(), q, mat1.getData(), n, beta, resBlas, q);
+
+            return new BlasFloatMatrix(mat1.getMatrixId(), mat1.getClock(), m, q, resBlas);
+        }
+    }
+
+#foreach ($dtype in $dtypes1)
+    private static Matrix apply(Blas${dtype}Matrix mat1, boolean trans1, RBCompInt${dtype}Matrix mat2, boolean trans2) {
+#if ($dtype == "Double")
+        $dtype.toLowerCase() alpha = 1.0, beta = 0.0;
+#else
+        $dtype.toLowerCase() alpha = 1.0f, beta = 0.0f;
+#end
+        int m = mat1.getNumRows(), n= mat1.getNumCols();
+        int p = mat2.getNumRows(), q = (int)mat2.getDim();
+
+        $dtype.toLowerCase() [ ] resBlas;
+        int dim = (int) mat2.getDim();
+        int subDim = mat2.getSubDim();
+        int resNumRows, resDim;
+        CompInt${dtype}Vector[] rows = mat2.getRows();
+        CompInt${dtype}Vector[] resRows;
+
+        $dtype.toLowerCase() [] mat2Data = new $dtype.toLowerCase() [rows.length * dim];
+        int rowId = 0;
+        for (CompInt${dtype}Vector row: rows) {
+            Int${dtype}Vector[] partitions = row.getPartitions();
+            int partId = 0;
+            for (Int${dtype}Vector part: partitions){
+                assert part.isDense();
+                $dtype.toLowerCase() [] src = part.getStorage().getValues();
+                System.arraycopy(src, 0, mat2Data, rowId * dim + partId * subDim, src.length);
+                partId += 1;
+            }
+            rowId += 1;
+        }
+
+        if (trans1 && trans2){// M1^T * M2^T
+            throw new AngelException("RBMatrix is not support to transpose");
+        } else if (!trans1 && trans2){// M1 * M2^T
+            throw new AngelException("RBMatrix is not support to transpose");
+        } else if (trans1 && !trans2){// M1^T * M2
+            assert m == p;
+            resBlas = new $dtype.toLowerCase() [n*q];
+            resNumRows = n;
+            resDim = q;
+#if ($dtype == "Double")
+            blas.dgemm("N", "T", q, n, m, alpha, mat2Data, q,  mat1.getData(), n, beta, resBlas, q);
+#else
+            blas.sgemm("N", "T", q, n, m, alpha, mat2Data, q,  mat1.getData(), n, beta, resBlas, q);
+#end
+
+        } else{ // M1 * M2
+            assert n == p;
+            resBlas = new $dtype.toLowerCase() [m*q];
+            resNumRows = m;
+            resDim = q;
+#if ($dtype == "Double")
+            blas.dgemm("N", "N", q, m, n, alpha, mat2Data, q, mat1.getData(), n, beta, resBlas, q);
+#else
+            blas.sgemm("N", "N", q, m, n, alpha, mat2Data, q, mat1.getData(), n, beta, resBlas, q);
+#end
+        }
+
+        int numComp = (resDim + subDim - 1) / subDim;
+        resRows = new CompInt${dtype}Vector[resNumRows];
+        for (int row=0; row<resNumRows; row++) {
+            Int${dtype}Vector[] parts = new Int${dtype}Vector[numComp];
+            for (int i = 0; i < numComp; i++) {
+                int thisSubDim;
+                if ((i + 1) * subDim > resDim) {
+                    thisSubDim = dim - i * subDim;
+                } else {
+                    thisSubDim = subDim;
+                }
+
+                $dtype.toLowerCase() [] part = new $dtype.toLowerCase() [thisSubDim];
+                System.arraycopy(resBlas, row*dim+i*subDim, part, 0, thisSubDim);
+                parts[i] = VFactory.dense${dtype}Vector(part);
+            }
+            resRows[row] = VFactory.compInt${dtype}Vector(resDim, parts);
+        }
+
+        return MFactory.rbCompInt${dtype}Matrix(resRows);
+    }
+
+#end
+
+#foreach ($dtype in $dtypes1)
+    private static Matrix apply(RBCompInt${dtype}Matrix mat1, boolean trans1, Blas${dtype}Matrix mat2, boolean trans2) {
+#if ($dtype == "Double")
+        $dtype.toLowerCase() alpha = 1.0, beta = 0.0;
+#else
+        $dtype.toLowerCase() alpha = 1.0f, beta = 0.0f;
+#end
+        int m = mat1.getNumRows(), n= (int)mat1.getDim();
+        int p = mat2.getNumRows(), q = mat2.getNumCols();
+        $dtype.toLowerCase() [ ] resBlas;
+        int dim = (int) mat1.getDim();
+        int subDim = mat1.getSubDim();
+        CompInt${dtype}Vector[] rows = mat1.getRows();
+
+        $dtype.toLowerCase() [] mat1Data = new $dtype.toLowerCase() [rows.length * dim];
+        int rowId = 0;
+        for (CompInt${dtype}Vector row: rows) {
+            Int${dtype}Vector[] partitions = row.getPartitions();
+            int partId = 0;
+            for (Int${dtype}Vector part: partitions){
+                assert part.isDense();
+                $dtype.toLowerCase() [] src = part.getStorage().getValues();
+                System.arraycopy(src, 0, mat1Data, rowId * dim + partId * subDim, src.length);
+                partId += 1;
+            }
+            rowId += 1;
+        }
+
+        if (trans1 && trans2){ // M1^T * M2^T
+            assert m == q;
+            resBlas = new $dtype.toLowerCase() [n*p];
+#if ($dtype == "Double")
+            blas.dgemm("T", "T", p, n, m, alpha, mat2.getData(), q, mat1Data, n, beta, resBlas, p);
+#else
+            blas.sgemm("T", "T", p, n, m, alpha, mat2.getData(), q, mat1Data, n, beta, resBlas, p);
+#end
+
+            return new Blas${dtype}Matrix(mat1.getMatrixId(), mat1.getClock(), n, p, resBlas);
+        }else if (trans1 && !trans2){// M1^T * M2
+            assert m == p;
+            resBlas = new $dtype.toLowerCase() [n*q];
+#if ($dtype == "Double")
+            blas.dgemm("N", "T", q, n, m, alpha, mat2.getData(), q, mat1Data, n, beta, resBlas, q);
+#else
+            blas.sgemm("N", "T", q, n, m, alpha, mat2.getData(), q, mat1Data, n, beta, resBlas, q);
+#end
+
+            return new Blas${dtype}Matrix(mat1.getMatrixId(), mat1.getClock(), n, q, resBlas);
+        }else if (!trans1 && trans2){// M1 * M2^T
+            assert n == q;
+            resBlas = new $dtype.toLowerCase() [m*p];
+#if ($dtype == "Double")
+            blas.dgemm("T", "N", p, m, n, alpha, mat2.getData(), q, mat1Data, n, beta, resBlas, p);
+#else
+            blas.sgemm("T", "N", p, m, n, alpha, mat2.getData(), q, mat1Data, n, beta, resBlas, p);
+#end
+
+            return new Blas${dtype}Matrix(mat1.getMatrixId(), mat1.getClock(), m, p, resBlas);
+        }else{ // M1 * M2
+            assert n == p;
+            resBlas = new $dtype.toLowerCase() [m*q];
+#if ($dtype == "Double")
+            blas.dgemm("N", "N", q, m, n, alpha, mat2.getData(), q, mat1Data, n, beta, resBlas, q);
+#else
+            blas.sgemm("N", "N", q, m, n, alpha, mat2.getData(), q, mat1Data, n, beta, resBlas, q);
+#end
+
+            return new Blas${dtype}Matrix(mat1.getMatrixId(), mat1.getClock(), m, q, resBlas);
+        }
+    }
+
+#end
+
+    public static double apply(Matrix mat, Vector v1){
+        if (mat instanceof BlasMatrix){
+            assert ((BlasMatrix) mat).getNumRows() == ((BlasMatrix) mat).getNumCols();
+            return DotMatrixExecutor.apply(mat, true, v1).dot(v1);
+        } else {
+            return mat.dot(v1).dot(v1);
+        }
+    }
+
+    public static double apply(Matrix mat, Vector v1, Vector v2){
+        if (mat instanceof BlasMatrix) {
+            if (!v2.isDense()) {
+                return DotMatrixExecutor.apply(mat, false, v2).dot(v1);
+            } else {
+                return DotMatrixExecutor.apply(mat, true, v1).dot(v2);
+            }
+        } else {
+            return mat.dot(v2).dot(v1);
+        }
+    }
+
+    public static Matrix apply(Matrix mat, double alpha, Vector v1, Vector v2){
+        assert mat instanceof BlasMatrix;
+        if (mat instanceof BlasDoubleMatrix && v1 instanceof IntDoubleVector && v2 instanceof IntDoubleVector) {
+            return apply((BlasDoubleMatrix)mat, alpha, (IntDoubleVector) v1, (IntDoubleVector) v2);
+        }else if (mat instanceof BlasDoubleMatrix && v1 instanceof IntDummyVector && v2 instanceof IntDoubleVector) {
+            return apply((BlasDoubleMatrix)mat, alpha, (IntDummyVector) v1, (IntDoubleVector) v2);
+        } else if (mat instanceof BlasDoubleMatrix && v1 instanceof IntDoubleVector && v2 instanceof IntDummyVector) {
+            return apply((BlasDoubleMatrix)mat, alpha, (IntDoubleVector) v1, (IntDummyVector) v2);
+        } else if (mat instanceof BlasDoubleMatrix && v1 instanceof IntDummyVector && v2 instanceof IntDummyVector) {
+            return apply((BlasDoubleMatrix)mat, alpha, (IntDummyVector) v1, (IntDummyVector) v2);
+        } else if (mat instanceof BlasFloatMatrix && v1 instanceof IntFloatVector && v2 instanceof IntFloatVector){
+            return apply((BlasFloatMatrix)mat, (float)alpha, (IntFloatVector) v1, (IntFloatVector) v2);
+        } else if (mat instanceof BlasFloatMatrix && v1 instanceof IntDummyVector && v2 instanceof IntFloatVector){
+            return apply((BlasFloatMatrix)mat, (float)alpha, (IntDummyVector) v1, (IntFloatVector) v2);
+        } else if (mat instanceof BlasFloatMatrix && v1 instanceof IntFloatVector && v2 instanceof IntDummyVector){
+            return apply((BlasFloatMatrix)mat, (float)alpha, (IntFloatVector) v1, (IntDummyVector) v2);
+        } else if (mat instanceof BlasFloatMatrix && v1 instanceof IntDummyVector && v2 instanceof IntDummyVector){
+            return apply((BlasFloatMatrix)mat, (float)alpha, (IntDummyVector) v1, (IntDummyVector) v2);
+        } else {
+            throw new AngelException("The operation is not supported!");
+        }
+    }
+
+#foreach( $dtype in $dtypes1)
+    private static Matrix apply(Blas${dtype}Matrix mat, $dtype.toLowerCase() alpha, Int${dtype}Vector v1, Int${dtype}Vector v2) {
+        $dtype.toLowerCase() [ ] data = mat.getData();
+        int m = mat.getNumRows(), n = mat.getNumCols();
+        assert (m == v1.getDim() && n == v2.getDim());
+
+        if (v1.isDense() && v2.isDense()) {
+            $dtype.toLowerCase() [ ] v1Value = v1.getStorage().getValues();
+            $dtype.toLowerCase() [ ] v2Value = v2.getStorage().getValues();
+#if ($dtype == "Double")
+            // dger(int m, int n, double alpha, double [ ] x, int incx, double [ ] y, int incy, double [ ] a, int lda)
+            blas.dger(n, m, alpha, v2Value, 1, v1Value, 1, data, n);
+#else
+            // sger(int m, int n, double alpha, double [ ] x, int incx, double [ ] y, int incy, double [ ] a, int lda)
+            blas.sger(n, m, alpha, v2Value, 1, v1Value, 1, data, n);
+#end
+            mat.setData(data);
+        } else if (v1.isDense() && v2.isSparse()) {
+            $dtype.toLowerCase() [ ] v1Values = v1.getStorage().getValues();
+            for(int i=0; i< m; i++) { // row
+                ObjectIterator<Int2${dtype}Map.Entry> iter = v2.getStorage().entryIterator();
+                while(iter.hasNext()) {
+                    Int2${dtype}Map.Entry entry = iter.next();
+                    int j = entry.getIntKey(); // col
+                    data[i*n+j] += alpha * v1Values[i] * entry.get${dtype}Value();
+                }
+            }
+        } else if (v1.isDense() && v2.isSorted()) {
+            $dtype.toLowerCase() [ ] v1Values = v1.getStorage().getValues();
+            int size = v2.size();
+            for(int i=0; i< m; i++) { // row
+                int [ ] v2Idxs = v2.getStorage().getIndices();
+                $dtype.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
+                for (int k=0; k< size; k++) {
+                    int j = v2Idxs[k]; // col
+                    data[i*n+j] += alpha * v1Values[i] * v2Values[k];
+                }
+            }
+        } else if (v1.isSparse() && v2.isDense()) {
+            $dtype.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
+            ObjectIterator<Int2${dtype}Map.Entry> iter = v1.getStorage().entryIterator();
+            while(iter.hasNext()) {
+                Int2${dtype}Map.Entry entry = iter.next();
+                int i = entry.getIntKey(); // row
+                for (int j=0; j< n; j++) {
+                    data[i*n+j] += alpha * entry.get${dtype}Value() * v2Values[j];
+                }
+            }
+        } else if (v1.isSparse() && v2.isSparse()) {
+            ObjectIterator<Int2${dtype}Map.Entry> outer = v1.getStorage().entryIterator();
+            while(outer.hasNext()) {
+                Int2${dtype}Map.Entry entry1 = outer.next();
+                int i = entry1.getIntKey(); // row
+                ObjectIterator<Int2${dtype}Map.Entry> inner = v2.getStorage().entryIterator();
+                while(inner.hasNext()) {
+                    Int2${dtype}Map.Entry entry2 = inner.next();
+                    int j = entry2.getIntKey(); // col
+                    data[i*n+j] += alpha * entry1.get${dtype}Value() * entry2.get${dtype}Value();
+                }
+            }
+        } else if (v1.isSparse() && v2.isSorted()) {
+            int [ ] v2Idxs = v2.getStorage().getIndices();
+            $dtype.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
+            ObjectIterator<Int2${dtype}Map.Entry> iter = v1.getStorage().entryIterator();
+            int size = v2.size();
+            while(iter.hasNext()) {
+                Int2${dtype}Map.Entry entry = iter.next();
+                int i = entry.getIntKey(); // row
+                for (int k=0; k< size; k++) {
+                    int j = v2Idxs[k]; // col
+                    data[i*n+j] += alpha * entry.get${dtype}Value() * v2Values[k];
+                }
+            }
+        } else if (v1.isSorted() && v2.isDense()) {
+            int [ ] v1Idxs = v1.getStorage().getIndices();
+            $dtype.toLowerCase() [ ] v1Values = v1.getStorage().getValues();
+            $dtype.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
+            int size = v1.size();
+            for (int k=0; k< size; k++) {
+                int i = v1Idxs[k];
+                for (int j=0; j< n; j++) {
+                    data[i*n+j] += alpha * v1Values[k] * v2Values[j];
+                }
+            }
+        } else if (v1.isSorted() && v2.isSparse()) {
+            int [ ] v1Idxs = v1.getStorage().getIndices();
+            $dtype.toLowerCase() [ ] v1Values = v1.getStorage().getValues();
+            int size = v1.size();
+            for (int k=0; k< size; k++) {
+                int i = v1Idxs[k];
+                ObjectIterator<Int2${dtype}Map.Entry> iter = v2.getStorage().entryIterator();
+                while (iter.hasNext()) {
+                    Int2${dtype}Map.Entry entry = iter.next();
+                    int j = entry.getIntKey();
+                    data[i*n+j] += alpha * v1Values[k] * entry.get${dtype}Value();
+                }
+            }
+        } else if (v1.isSorted() && v2.isSorted()) {
+            int [ ] v1Idxs = v1.getStorage().getIndices();
+            $dtype.toLowerCase() [ ] v1Values = v1.getStorage().getValues();
+            int [ ] v2Idxs = v2.getStorage().getIndices();
+            $dtype.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
+            int size1 = v1.size();
+            int size2 = v2.size();
+            for (int k=0; k< size1; k++) {
+                int i = v1Idxs[k];
+                for (int t=0; t< size2; t++) {
+                    int j = v2Idxs[t];
+                    data[i*n+j] += alpha * v1Values[k] * v2Values[t];
+                }
+            }
+        } else {
+            throw new AngelException("The operation is not supported!");
+        }
+
+        return mat;
+    }
+
+    private static Matrix apply(Blas${dtype}Matrix mat, $dtype.toLowerCase() alpha, IntDummyVector v1, Int${dtype}Vector v2) {
+        $dtype.toLowerCase() [ ] data = mat.getData();
+        int m = mat.getNumRows(), n = mat.getNumCols();
+        assert (m == v1.getDim() && n == v2.getDim());
+
+        if (v2.isDense()) {
+            int [ ] v1Idxs = v1.getIndices();
+            $dtype.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
+            int size = v1.size();
+            for (int k=0; k< size; k++) {
+                int i = v1Idxs[k];
+                for (int j=0; j< n; j++) {
+                    data[i*n+j] += alpha * v2Values[j];
+                }
+            }
+        } else if (v2.isSparse()) {
+            int [ ] v1Idxs = v1.getIndices();
+            int size = v1.size();
+            for (int k=0; k< size; k++) {
+                int i = v1Idxs[k];
+                ObjectIterator<Int2${dtype}Map.Entry> iter = v2.getStorage().entryIterator();
+                while (iter.hasNext()) {
+                    Int2${dtype}Map.Entry entry = iter.next();
+                    int j = entry.getIntKey();
+                    data[i*n+j] += alpha * entry.get${dtype}Value();
+                }
+            }
+        } else if (v2.isSorted()) {
+            int [ ] v1Idxs = v1.getIndices();
+            int [ ] v2Idxs = v2.getStorage().getIndices();
+            $dtype.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
+            int size1 = v1.size();
+            int size2 = v2.size();
+            for (int k=0; k< size1; k++) {
+                int i = v1Idxs[k];
+                for (int t=0; t< size2; t++) {
+                    int j = v2Idxs[t];
+                    data[i*n+j] += alpha * v2Values[t];
+                }
+            }
+        } else {
+            throw new AngelException("The operation is not supported!");
+        }
+
+        return mat;
+    }
+
+    private static Matrix apply(Blas${dtype}Matrix mat, $dtype.toLowerCase() alpha, Int${dtype}Vector v1, IntDummyVector v2) {
+        $dtype.toLowerCase() [ ] data = mat.getData();
+        int m = mat.getNumRows(), n = mat.getNumCols();
+        assert (m == v1.getDim() && n == v2.getDim());
+
+        if (v1.isDense()) {
+            $dtype.toLowerCase() [ ] v1Values = v1.getStorage().getValues();
+            int size = v2.size();
+            for(int i=0; i< m; i++) { // row
+                int [ ] v2Idxs = v2.getIndices();
+                for (int k=0; k< size; k++) {
+                    int j = v2Idxs[k]; // col
+                    data[i*n+j] += alpha * v1Values[i];
+                }
+            }
+        } else if (v1.isSparse()) {
+            int [ ] v2Idxs = v2.getIndices();
+            ObjectIterator<Int2${dtype}Map.Entry> iter = v1.getStorage().entryIterator();
+            int size = v2.size();
+            while(iter.hasNext()) {
+                Int2${dtype}Map.Entry entry = iter.next();
+                int i = entry.getIntKey(); // row
+                for (int k=0; k< size; k++) {
+                    int j = v2Idxs[k]; // col
+                    data[i*n+j] += alpha * entry.get${dtype}Value();
+                }
+            }
+        } else {
+            int [ ] v1Idxs = v1.getStorage().getIndices();
+            $dtype.toLowerCase() [ ] v1Values = v1.getStorage().getValues();
+            int [ ] v2Idxs = v2.getIndices();
+            int size1 = v1.size();
+            int size2 = v2.size();
+            for (int k=0; k< size1; k++) {
+                int i = v1Idxs[k];
+                for (int t=0; t< size2; t++) {
+                    int j = v2Idxs[t];
+                    data[i*n+j] += alpha * v1Values[k];
+                }
+            }
+        }
+
+        return mat;
+    }
+
+    private static Matrix apply(Blas${dtype}Matrix mat, $dtype.toLowerCase() alpha, IntDummyVector v1, IntDummyVector v2) {
+        $dtype.toLowerCase() [ ] data = mat.getData();
+        int m = mat.getNumRows(), n = mat.getNumCols();
+        assert (m == v1.getDim() && n == v2.getDim());
+
+        int [ ] v1Idxs = v1.getIndices();
+        int [ ] v2Idxs = v2.getIndices();
+        int size1 = v1.size();
+        int size2 = v2.size();
+        for (int k=0; k< size1; k++) {
+            int i = v1Idxs[k];
+            for (int t = 0; t < size2; t++) {
+                int j = v2Idxs[t];
+                data[i * n + j] += alpha;
+            }
+        }
+
+        return mat;
+    }
+
+#end
+}

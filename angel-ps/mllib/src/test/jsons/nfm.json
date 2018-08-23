@@ -1,0 +1,74 @@
+{
+  "data": {
+    "format": "dummy",
+    "indexrange": 148,
+    "numfield": 13,
+    "validateratio": 0.1
+  },
+  "model": {
+    "modeltype": "T_FLOAT_SPARSE_LONGKEY",
+    "modelsize": 148
+  },
+  "train": {
+    "epoch": 10,
+    "numupdateperepoch": 10,
+    "lr": 0.01,
+    "decay": 0.1
+  },
+  "default_optimizer": "Momentum",
+  "layers": [
+    {
+      "name": "wide",
+      "type": "sparseinputlayer",
+      "outputdim": 1,
+      "transfunc": "identity"
+    },
+    {
+      "name": "embedding",
+      "type": "embedding",
+      "numfactors": 8,
+      "outputdim": 104,
+      "optimizer": {
+        "type": "momentum",
+        "momentum": 0.9,
+        "reg2": 0.01
+      }
+    },
+    {
+      "name": "biinteractioncross",
+      "type": "BiInteractionCross",
+      "outputdim": 8,
+      "inputlayer": "embedding"
+    },
+    {
+      "name": "fclayer",
+      "type": "FCLayer",
+      "outputdims": [
+        50,
+        50,
+        1
+      ],
+      "transfuncs": [
+        "relu",
+        "relu",
+        "identity"
+      ],
+      "inputlayer": "biinteractioncross"
+    },
+    {
+      "name": "sumPooling",
+      "type": "SumPooling",
+      "outputdim": 1,
+      "inputlayers": [
+        "wide",
+        "fclayer"
+      ]
+    },
+    {
+      "name": "simplelosslayer",
+      "type": "simplelosslayer",
+      "lossfunc": "logloss",
+      "inputlayer": "sumPooling"
+    }
+  ]
+}

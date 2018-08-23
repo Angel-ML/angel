@@ -1,0 +1,135 @@
+#set ($len = $dtypes.size() - 1)
+package com.tencent.angel.ml.math2.ufuncs.executor.comp;
+
+import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.ml.math2.ufuncs.executor.DotExecutor;
+import com.tencent.angel.ml.math2.utils.ForkJoinUtils;
+import com.tencent.angel.ml.math2.vector.*;
+
+import java.util.concurrent.*;
+
+
+public class CompDotExecutor {
+    private static ForkJoinPool pool = ForkJoinUtils.getPool();
+    private static final int THREADS = ForkJoinUtils.getNCores();
+
+
+    public static double apply(ComponentVector v1, ComponentVector v2) {
+        CompDotExe task = new CompDotExe(v1, v2, 0, v1.getNumPartitions()-1);
+        Future<Double> result = pool.submit(task);
+
+        try {
+            return result.get();
+        } catch (InterruptedException|ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        return Double.NaN;
+    }
+
+    private static class CompDotExe extends RecursiveTask<Double> {
+        private int start, end, threshold;
+        private ComponentVector v1, v2;
+
+        public CompDotExe(ComponentVector v1, ComponentVector v2, int start, int end) {
+            assert v1 != null && v2 != null;
+            this.start = start;
+            this.end = end;
+            this.threshold = (v1.getNumPartitions() + THREADS -1) / THREADS;
+            this.v1 = v1;
+            this.v2 = v2;
+        }
+
+
+        @Override
+        protected Double compute() {
+            double dot = Double.NaN;
+            boolean canCompute = (end - start) < threshold;
+
+            if (canCompute) {
+                if (v1 instanceof CompIntDoubleVector && v2 instanceof CompIntDoubleVector) {
+                    dot =  apply((CompIntDoubleVector) v1, (CompIntDoubleVector) v2, start, end);
+                } else if (v1 instanceof CompIntDoubleVector && v2 instanceof CompIntFloatVector) {
+                    dot =  apply((CompIntDoubleVector) v1, (CompIntFloatVector) v2, start, end);
+                } else if (v1 instanceof CompIntDoubleVector && v2 instanceof CompIntLongVector) {
+                    dot =  apply((CompIntDoubleVector) v1, (CompIntLongVector) v2, start, end);
+                } else if (v1 instanceof CompIntDoubleVector && v2 instanceof CompIntIntVector) {
+                    dot =  apply((CompIntDoubleVector) v1, (CompIntIntVector) v2, start, end);
+                } else if (v1 instanceof CompIntFloatVector && v2 instanceof CompIntFloatVector) {
+                    dot =  apply((CompIntFloatVector) v1, (CompIntFloatVector) v2, start, end);
+                } else if (v1 instanceof CompIntFloatVector && v2 instanceof CompIntLongVector) {
+                    dot =  apply((CompIntFloatVector) v1, (CompIntLongVector) v2, start, end);
+                } else if (v1 instanceof CompIntFloatVector && v2 instanceof CompIntIntVector) {
+                    dot =  apply((CompIntFloatVector) v1, (CompIntIntVector) v2, start, end);
+                } else if (v1 instanceof CompIntLongVector && v2 instanceof CompIntLongVector) {
+                    dot =  apply((CompIntLongVector) v1, (CompIntLongVector) v2, start, end);
+                } else if (v1 instanceof CompIntLongVector && v2 instanceof CompIntIntVector) {
+                    dot =  apply((CompIntLongVector) v1, (CompIntIntVector) v2, start, end);
+                } else if (v1 instanceof CompIntIntVector && v2 instanceof CompIntIntVector) {
+                    dot =  apply((CompIntIntVector) v1, (CompIntIntVector) v2, start, end);
+                } else if (v1 instanceof CompLongDoubleVector && v2 instanceof CompLongDoubleVector) {
+                    dot =  apply((CompLongDoubleVector) v1, (CompLongDoubleVector) v2, start, end);
+                } else if (v1 instanceof CompLongDoubleVector && v2 instanceof CompLongFloatVector) {
+                    dot =  apply((CompLongDoubleVector) v1, (CompLongFloatVector) v2, start, end);
+                } else if (v1 instanceof CompLongDoubleVector && v2 instanceof CompLongLongVector) {
+                    dot =  apply((CompLongDoubleVector) v1, (CompLongLongVector) v2, start, end);
+                } else if (v1 instanceof CompLongDoubleVector && v2 instanceof CompLongIntVector) {
+                    dot =  apply((CompLongDoubleVector) v1, (CompLongIntVector) v2, start, end);
+                } else if (v1 instanceof CompLongFloatVector && v2 instanceof CompLongFloatVector) {
+                    dot = apply((CompLongFloatVector) v1, (CompLongFloatVector) v2, start, end);
+                } else if (v1 instanceof CompLongFloatVector && v2 instanceof CompLongLongVector) {
+                    dot =  apply((CompLongFloatVector) v1, (CompLongLongVector) v2, start, end);
+                } else if (v1 instanceof CompLongFloatVector && v2 instanceof CompLongIntVector) {
+                    dot =  apply((CompLongFloatVector) v1, (CompLongIntVector) v2, start, end);
+                } else if (v1 instanceof CompLongLongVector && v2 instanceof CompLongLongVector) {
+                    dot =  apply((CompLongLongVector) v1, (CompLongLongVector) v2, start, end);
+                } else if (v1 instanceof CompLongLongVector && v2 instanceof CompLongIntVector) {
+                    dot =  apply((CompLongLongVector) v1, (CompLongIntVector) v2, start, end);
+                } else if (v1 instanceof CompLongIntVector && v2 instanceof CompLongIntVector) {
+                    dot =  apply((CompLongIntVector) v1, (CompLongIntVector) v2, start, end);
+                } else {
+                    throw new AngelException("The operation is not support!");
+                }
+            } else {
+                int middle = (start + end) >> 1;
+
+                CompDotExe left = new CompDotExe(v1, v2, start, middle);
+                CompDotExe right = new CompDotExe(v1, v2, middle+1, end);
+
+                left.fork();
+                right.fork();
+
+                double leftRes = left.join();
+                double rightRes = right.join();
+
+                dot = leftRes + rightRes;
+            }
+
+            return dot;
+        }
+    }
+
+#foreach ($itype in $itypes)
+#foreach ($idx1 in [0..$len])
+#set ($dtype1 = $dtypes.get($idx1))
+#foreach ($idx2 in [$idx1..$len])
+#set ($dtype2 = $dtypes.get($idx2))
+    private static double apply(Comp${itype}${dtype1}Vector v1, Comp${itype}${dtype2}Vector v2, int start, int end) {
+        double dot = 0.0;
+        if (v1.isCompatable(v2)) {
+            ${itype}${dtype1}Vector[] v1Parts = v1.getPartitions();
+            ${itype}${dtype2}Vector[] v2Parts = v2.getPartitions();
+            for (int i = start; i <= end; i++) {
+                dot += DotExecutor.apply(v1Parts[i], v2Parts[i]);
+            }
+
+            return dot;
+        } else {
+            throw new AngelException("Operation is not support!");
+        }
+    }
+
+#end
+#end
+#end
+}
