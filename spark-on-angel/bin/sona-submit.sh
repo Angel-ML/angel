@@ -7,8 +7,8 @@
 # 4. set the following variables, ANGEL_HOME, ANGEL_HDFS_HOME, ANGEL_VERSION
 
 export ANGEL_VERSION=2.0.0-SNAPSHOT
-export ANGEL_HOME=/data/tesla/angel/angel
-export ANGEL_HDFS_HOME=hdfs://tl-nn-tdw.tencent-distribute.com:54310/user/spark-on-angel/angel-${ANGEL_VERSION}-bin
+export ANGEL_HOME=""
+export ANGEL_HDFS_HOME=""
 
 
 scala_jar=scala-library-2.11.8.jar
