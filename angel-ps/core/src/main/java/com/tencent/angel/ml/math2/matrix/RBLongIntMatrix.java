@@ -28,6 +28,10 @@ import com.tencent.angel.ml.math2.ufuncs.expression.*;
 import com.tencent.angel.ml.math2.vector.*;
 
 public class RBLongIntMatrix extends RowBasedMatrix<LongIntVector> {
+  public RBLongIntMatrix() {
+    super();
+  }
+
   public RBLongIntMatrix(int matrixId, int clock, LongIntVector[] rows) {
     super(matrixId, clock, rows[0].getDim(), rows);
   }

@@ -462,7 +462,7 @@ public class IndexGetTest {
 
     LongDoubleVector row = (LongDoubleVector) ((GetRowResult) client1.get(func)).getRow();
     for (long id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertTrue(row.get(id) == deltaVec.get(id));
     }
 
@@ -497,7 +497,7 @@ public class IndexGetTest {
       (RowBasedMatrix<CompLongDoubleVector>) opLog.getMatrix();
     CompLongDoubleVector mergedRow = matrix.getRow(0);
     for (long id : index) {
-      System.out.println("id=" + id + ", value=" + mergedRow.get(id));
+      //System.out.println("id=" + id + ", value=" + mergedRow.get(id));
       Assert.assertEquals(mergedRow.get(id), deltaVec.get(id), 0.0000000001);
     }
 
@@ -507,7 +507,7 @@ public class IndexGetTest {
 
     CompLongDoubleVector row = (CompLongDoubleVector) ((GetRowResult) client1.get(func)).getRow();
     for (long id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertEquals(row.get(id), deltaVec.get(id), 0.0000000001);
     }
 
@@ -535,7 +535,7 @@ public class IndexGetTest {
 
     LongFloatVector row = (LongFloatVector) ((GetRowResult) client1.get(func)).getRow();
     for (long id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertTrue(row.get(id) == deltaVec.get(id));
     }
 
@@ -569,7 +569,7 @@ public class IndexGetTest {
       (RowBasedMatrix<CompLongFloatVector>) opLog.getMatrix();
     CompLongFloatVector mergedRow = matrix.getRow(0);
     for (long id : index) {
-      System.out.println("id=" + id + ", value=" + mergedRow.get(id));
+      //System.out.println("id=" + id + ", value=" + mergedRow.get(id));
       Assert.assertEquals(mergedRow.get(id), deltaVec.get(id), 0.0000000001);
     }
 
@@ -579,7 +579,7 @@ public class IndexGetTest {
 
     CompLongFloatVector row = (CompLongFloatVector) ((GetRowResult) client1.get(func)).getRow();
     for (long id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertEquals(row.get(id), deltaVec.get(id), 0.0000000001);
     }
 
@@ -607,7 +607,7 @@ public class IndexGetTest {
 
     LongLongVector row = (LongLongVector) ((GetRowResult) client1.get(func)).getRow();
     for (long id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertTrue(row.get(id) == deltaVec.get(id));
     }
 
@@ -641,7 +641,7 @@ public class IndexGetTest {
       (RowBasedMatrix<CompLongLongVector>) opLog.getMatrix();
     CompLongLongVector mergedRow = matrix.getRow(0);
     for (long id : index) {
-      System.out.println("id=" + id + ", value=" + mergedRow.get(id));
+      //System.out.println("id=" + id + ", value=" + mergedRow.get(id));
       Assert.assertEquals(mergedRow.get(id), deltaVec.get(id), 0.0000000001);
     }
 
@@ -651,7 +651,7 @@ public class IndexGetTest {
 
     CompLongLongVector row = (CompLongLongVector) ((GetRowResult) client1.get(func)).getRow();
     for (long id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertEquals(row.get(id), deltaVec.get(id), 0.0000000001);
     }
 
@@ -678,7 +678,7 @@ public class IndexGetTest {
 
     LongIntVector row = (LongIntVector) ((GetRowResult) client1.get(func)).getRow();
     for (long id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertTrue(row.get(id) == deltaVec.get(id));
     }
 
@@ -712,7 +712,7 @@ public class IndexGetTest {
       (RowBasedMatrix<CompLongIntVector>) opLog.getMatrix();
     CompLongIntVector mergedRow = matrix.getRow(0);
     for (long id : index) {
-      System.out.println("id=" + id + ", value=" + mergedRow.get(id));
+      //System.out.println("id=" + id + ", value=" + mergedRow.get(id));
       Assert.assertEquals(mergedRow.get(id), deltaVec.get(id), 0.0000000001);
     }
 
@@ -722,7 +722,7 @@ public class IndexGetTest {
 
     CompLongIntVector row = (CompLongIntVector) ((GetRowResult) client1.get(func)).getRow();
     for (long id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertEquals(row.get(id), deltaVec.get(id), 0.0000000001);
     }
 
@@ -780,7 +780,7 @@ public class IndexGetTest {
 
     IntDoubleVector row = (IntDoubleVector) ((GetRowResult) client1.get(func)).getRow();
     for (int id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertTrue(row.get(id) == deltaVec.get(id));
     }
 
@@ -849,7 +849,7 @@ public class IndexGetTest {
 
     CompIntDoubleVector row = (CompIntDoubleVector) ((GetRowResult) client1.get(func)).getRow();
     for (int id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertTrue(row.get(id) == deltaVec.get(id));
     }
 
@@ -905,7 +905,7 @@ public class IndexGetTest {
 
     IntFloatVector row = (IntFloatVector) ((GetRowResult) client1.get(func)).getRow();
     for (int id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       assertEquals(row.get(id), deltaVec.get(id), 0.000001);
     }
 
@@ -975,7 +975,7 @@ public class IndexGetTest {
 
     CompIntFloatVector row = (CompIntFloatVector) ((GetRowResult) client1.get(func)).getRow();
     for (int id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertEquals(row.get(id), deltaVec.get(id), 0.000000001);
     }
 
@@ -1031,7 +1031,7 @@ public class IndexGetTest {
 
     IntIntVector row = (IntIntVector) ((GetRowResult) client1.get(func)).getRow();
     for (int id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertTrue(row.get(id) == deltaVec.get(id));
     }
 
@@ -1158,7 +1158,7 @@ public class IndexGetTest {
     IndexGet func = new IndexGet(new IndexGetParam(matrixW1Id, 0, index));
     IntLongVector row = (IntLongVector) ((GetRowResult) client1.get(func)).getRow();
     for (int id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertEquals(row.get(id), deltaVec.get(id));
     }
     Assert.assertTrue(index.length == row.size());
@@ -1189,7 +1189,7 @@ public class IndexGetTest {
 
     IntLongVector row = (IntLongVector) ((GetRowResult) client1.get(func)).getRow();
     for (int id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertTrue(row.get(id) == deltaVec.get(id));
     }
 
@@ -1224,7 +1224,7 @@ public class IndexGetTest {
 
     CompIntIntVector row = (CompIntIntVector) ((GetRowResult) client1.get(func)).getRow();
     for (int id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertTrue(row.get(id) == deltaVec.get(id));
     }
 

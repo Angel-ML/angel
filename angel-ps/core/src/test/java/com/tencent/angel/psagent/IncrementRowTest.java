@@ -454,7 +454,7 @@ public class IncrementRowTest {
 
     LongDoubleVector row = (LongDoubleVector) client1.getRow(0);
     for (long id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertTrue(row.get(id) == deltaVec.get(id));
     }
 
@@ -486,7 +486,7 @@ public class IncrementRowTest {
 
     CompLongDoubleVector row = (CompLongDoubleVector) client1.getRow(0);
     for (long id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertEquals(row.get(id), deltaVec.get(id), 0.0000000001);
     }
 
@@ -512,7 +512,7 @@ public class IncrementRowTest {
 
     LongFloatVector row = (LongFloatVector) client1.getRow(0);
     for (long id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertTrue(row.get(id) == deltaVec.get(id));
     }
 
@@ -543,7 +543,7 @@ public class IncrementRowTest {
 
     CompLongFloatVector row = (CompLongFloatVector) client1.getRow(0);
     for (long id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertEquals(row.get(id), deltaVec.get(id), 0.0000000001);
     }
 
@@ -568,7 +568,7 @@ public class IncrementRowTest {
 
     LongLongVector row = (LongLongVector) client1.getRow(0);
     for (long id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertEquals(row.get(id), deltaVec.get(id));
     }
 
@@ -599,7 +599,7 @@ public class IncrementRowTest {
 
     CompLongLongVector row = (CompLongLongVector) client1.getRow(0);
     for (long id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertEquals(row.get(id), deltaVec.get(id), 0.0000000001);
     }
 
@@ -623,7 +623,7 @@ public class IncrementRowTest {
 
     LongIntVector row = (LongIntVector) client1.getRow(0);
     for (long id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertTrue(row.get(id) == deltaVec.get(id));
     }
 
@@ -654,7 +654,7 @@ public class IncrementRowTest {
 
     CompLongIntVector row = (CompLongIntVector) client1.getRow(0);
     for (long id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertEquals(row.get(id), deltaVec.get(id), 0.0000000001);
     }
 
@@ -706,7 +706,7 @@ public class IncrementRowTest {
 
     IntDoubleVector row = (IntDoubleVector) client1.getRow(0);
     for (int id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertTrue(row.get(id) == deltaVec.get(id));
     }
 
@@ -770,7 +770,7 @@ public class IncrementRowTest {
 
     CompIntDoubleVector row = (CompIntDoubleVector) client1.getRow(0);
     for (int id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertTrue(row.get(id) == deltaVec.get(id));
     }
 
@@ -821,7 +821,7 @@ public class IncrementRowTest {
 
     IntFloatVector row = (IntFloatVector) client1.getRow(0);
     for (int id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       assertEquals(row.get(id), deltaVec.get(id), 0.000001);
     }
 
@@ -886,7 +886,7 @@ public class IncrementRowTest {
 
     CompIntFloatVector row = (CompIntFloatVector) client1.getRow(0);
     for (int id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertEquals(row.get(id), deltaVec.get(id), 0.000000001);
     }
 
@@ -937,7 +937,7 @@ public class IncrementRowTest {
 
     IntIntVector row = (IntIntVector) client1.getRow(0);
     for (int id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertTrue(row.get(id) == deltaVec.get(id));
     }
 
@@ -1055,7 +1055,7 @@ public class IncrementRowTest {
 
     IntLongVector row = (IntLongVector) client1.getRow(0);
     for (int id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertEquals(row.get(id), deltaVec.get(id));
     }
     Assert.assertTrue(feaNum == row.size());
@@ -1083,7 +1083,7 @@ public class IncrementRowTest {
 
     IntLongVector row = (IntLongVector) client1.getRow(0);
     for (int id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertTrue(row.get(id) == deltaVec.get(id));
     }
 
@@ -1115,7 +1115,7 @@ public class IncrementRowTest {
 
     CompIntIntVector row = (CompIntIntVector) client1.getRow(0);
     for (int id : index) {
-      System.out.println("id=" + id + ", value=" + row.get(id));
+      //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertTrue(row.get(id) == deltaVec.get(id));
     }
 

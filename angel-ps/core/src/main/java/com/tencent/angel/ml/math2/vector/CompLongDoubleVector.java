@@ -27,6 +27,10 @@ public class CompLongDoubleVector extends DoubleVector implements LongKeyVector,
   private long dim;
   private long subDim;
 
+  public CompLongDoubleVector() {
+    super();
+  }
+
   public CompLongDoubleVector(int matrixId, int rowId, int clock, long dim,
     LongDoubleVector[] partitions, long subDim) {
     setMatrixId(matrixId);

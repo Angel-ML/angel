@@ -28,6 +28,10 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
 public class BlasDoubleMatrix extends BlasMatrix {
   private double[] data;
 
+  public BlasDoubleMatrix() {
+    super();
+  }
+
   public BlasDoubleMatrix(int matrixId, int clock, int numRows, int numCols, double[] data) {
     this.matrixId = matrixId;
     this.clock = clock;

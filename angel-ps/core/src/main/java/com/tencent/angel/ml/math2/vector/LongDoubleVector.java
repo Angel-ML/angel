@@ -41,6 +41,10 @@ public class LongDoubleVector extends DoubleVector implements LongKeyVector, Sim
     this.dim = dim;
   }
 
+  public LongDoubleVector() {
+    super();
+  }
+
   public LongDoubleVector(int matrixId, int rowId, int clock, long dim,
     LongDoubleVectorStorage storage) {
     this.matrixId = matrixId;

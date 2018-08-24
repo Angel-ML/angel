@@ -41,6 +41,10 @@ public class IntDoubleVector extends DoubleVector implements IntKeyVector, Simpl
     this.dim = dim;
   }
 
+  public IntDoubleVector() {
+    super();
+  }
+
   public IntDoubleVector(int matrixId, int rowId, int clock, int dim,
     IntDoubleVectorStorage storage) {
     this.matrixId = matrixId;

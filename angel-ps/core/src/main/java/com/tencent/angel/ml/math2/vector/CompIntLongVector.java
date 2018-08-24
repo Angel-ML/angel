@@ -27,6 +27,10 @@ public class CompIntLongVector extends LongVector implements IntKeyVector, Compo
   private int dim;
   private int subDim;
 
+  public CompIntLongVector() {
+    super();
+  }
+
   public CompIntLongVector(int matrixId, int rowId, int clock, int dim, IntLongVector[] partitions,
     int subDim) {
     setMatrixId(matrixId);

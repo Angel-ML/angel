@@ -9,6 +9,10 @@ public class Comp${itype}${dtype}Vector extends ${dtype}Vector implements ${ityp
     private $itype.toLowerCase() dim;
     private $itype.toLowerCase() subDim;
 
+    public Comp${itype}${dtype}Vector() {
+        super();
+    }
+
     public Comp${itype}${dtype}Vector(int matrixId, int rowId, int clock, $itype.toLowerCase() dim, ${itype}${dtype}Vector [ ] partitions, $itype.toLowerCase() subDim) {
         setMatrixId(matrixId);
         setRowId(rowId);

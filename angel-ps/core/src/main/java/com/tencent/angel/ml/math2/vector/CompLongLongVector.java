@@ -27,6 +27,10 @@ public class CompLongLongVector extends LongVector implements LongKeyVector, Com
   private long dim;
   private long subDim;
 
+  public CompLongLongVector() {
+    super();
+  }
+
   public CompLongLongVector(int matrixId, int rowId, int clock, long dim,
     LongLongVector[] partitions, long subDim) {
     setMatrixId(matrixId);

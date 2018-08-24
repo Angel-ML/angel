@@ -27,6 +27,9 @@ import com.tencent.angel.ml.math2.vector.*;
 public abstract class BlasMatrix extends Matrix {
   protected int numRows, numCols;
 
+  public BlasMatrix() {
+  }
+
   public abstract Vector getRow(int idx);
 
   public abstract Vector getCol(int idx);

@@ -27,6 +27,10 @@ public class CompIntIntVector extends IntVector implements IntKeyVector, Compone
   private int dim;
   private int subDim;
 
+  public CompIntIntVector() {
+    super();
+  }
+
   public CompIntIntVector(int matrixId, int rowId, int clock, int dim, IntIntVector[] partitions,
     int subDim) {
     setMatrixId(matrixId);

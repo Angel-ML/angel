@@ -27,6 +27,10 @@ public class CompIntFloatVector extends FloatVector implements IntKeyVector, Com
   private int dim;
   private int subDim;
 
+  public CompIntFloatVector() {
+    super();
+  }
+
   public CompIntFloatVector(int matrixId, int rowId, int clock, int dim,
     IntFloatVector[] partitions, int subDim) {
     setMatrixId(matrixId);
@@ -43,6 +47,7 @@ public class CompIntFloatVector extends FloatVector implements IntKeyVector, Com
     } else {
       this.subDim = subDim;
     }
+
   }
 
   public CompIntFloatVector(int dim, IntFloatVector[] partitions, int subDim) {

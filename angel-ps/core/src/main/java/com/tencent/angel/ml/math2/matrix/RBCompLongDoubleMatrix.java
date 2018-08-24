@@ -30,6 +30,10 @@ import com.tencent.angel.ml.math2.vector.*;
 public class RBCompLongDoubleMatrix extends RowBasedMatrix<CompLongDoubleVector> {
   private long subDim;
 
+  public RBCompLongDoubleMatrix() {
+    super();
+  }
+
   public RBCompLongDoubleMatrix(int matrixId, int clock, CompLongDoubleVector[] rows) {
     super(matrixId, clock, rows[0].getDim(), rows);
     assert null != rows[0];

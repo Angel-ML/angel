@@ -41,6 +41,10 @@ public class LongLongVector extends LongVector implements LongKeyVector, SimpleV
     this.dim = dim;
   }
 
+  public LongLongVector() {
+    super();
+  }
+
   public LongLongVector(int matrixId, int rowId, int clock, long dim,
     LongLongVectorStorage storage) {
     this.matrixId = matrixId;

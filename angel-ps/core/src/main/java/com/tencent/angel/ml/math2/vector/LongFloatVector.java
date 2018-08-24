@@ -41,6 +41,10 @@ public class LongFloatVector extends FloatVector implements LongKeyVector, Simpl
     this.dim = dim;
   }
 
+  public LongFloatVector() {
+    super();
+  }
+
   public LongFloatVector(int matrixId, int rowId, int clock, long dim,
     LongFloatVectorStorage storage) {
     this.matrixId = matrixId;

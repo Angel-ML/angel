@@ -30,6 +30,10 @@ public class LongDummyVector extends Vector implements LongKeyVector, SimpleVect
   private long dim;
   private long[] indices;
 
+  public LongDummyVector() {
+    super();
+  }
+
   public LongDummyVector(int matrixId, int rowId, int clock, long dim, long[] values) {
     this.matrixId = matrixId;
     this.rowId = rowId;

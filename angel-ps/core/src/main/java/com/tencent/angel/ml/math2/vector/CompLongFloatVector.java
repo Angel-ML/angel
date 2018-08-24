@@ -27,6 +27,10 @@ public class CompLongFloatVector extends FloatVector implements LongKeyVector, C
   private long dim;
   private long subDim;
 
+  public CompLongFloatVector() {
+    super();
+  }
+
   public CompLongFloatVector(int matrixId, int rowId, int clock, long dim,
     LongFloatVector[] partitions, long subDim) {
     setMatrixId(matrixId);

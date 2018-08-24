@@ -30,6 +30,10 @@ public class IntDummyVector extends Vector implements IntKeyVector, SimpleVector
   private int dim;
   private int[] indices;
 
+  public IntDummyVector() {
+    super();
+  }
+
   public IntDummyVector(int matrixId, int rowId, int clock, int dim, int[] values) {
     this.matrixId = matrixId;
     this.rowId = rowId;

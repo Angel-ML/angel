@@ -41,6 +41,10 @@ public class IntIntVector extends IntVector implements IntKeyVector, SimpleVecto
     this.dim = dim;
   }
 
+  public IntIntVector() {
+    super();
+  }
+
   public IntIntVector(int matrixId, int rowId, int clock, int dim, IntIntVectorStorage storage) {
     this.matrixId = matrixId;
     this.rowId = rowId;

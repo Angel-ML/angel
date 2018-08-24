@@ -41,6 +41,10 @@ public class IntFloatVector extends FloatVector implements IntKeyVector, SimpleV
     this.dim = dim;
   }
 
+  public IntFloatVector() {
+    super();
+  }
+
   public IntFloatVector(int matrixId, int rowId, int clock, int dim,
     IntFloatVectorStorage storage) {
     this.matrixId = matrixId;

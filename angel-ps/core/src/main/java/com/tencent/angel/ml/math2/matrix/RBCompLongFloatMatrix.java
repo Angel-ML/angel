@@ -30,6 +30,10 @@ import com.tencent.angel.ml.math2.vector.*;
 public class RBCompLongFloatMatrix extends RowBasedMatrix<CompLongFloatVector> {
   private long subDim;
 
+  public RBCompLongFloatMatrix() {
+    super();
+  }
+
   public RBCompLongFloatMatrix(int matrixId, int clock, CompLongFloatVector[] rows) {
     super(matrixId, clock, rows[0].getDim(), rows);
     assert null != rows[0];
