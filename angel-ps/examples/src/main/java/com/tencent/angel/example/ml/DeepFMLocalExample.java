@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -19,9 +19,8 @@
 package com.tencent.angel.example.ml;
 
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.clustering.kmeans.KMeansRunner;
 import com.tencent.angel.ml.core.conf.MLConf;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -32,13 +31,14 @@ import org.apache.log4j.PropertyConfigurator;
 import java.io.File;
 import java.util.Scanner;
 
-public class KMeansLocalExample {
+public class DeepFMLocalExample {
 
-  private static final Log LOG = LogFactory.getLog(GBDTLocalExample.class);
+  private static final Log LOG = LogFactory.getLog(DeepFMLocalExample.class);
 
   private Configuration conf = new Configuration();
 
   private static boolean inPackage = false;
+  private static String CLASSBASE = "com.tencent.angel.ml.classification.";
 
   static {
     File confFile = new File("../conf/log4j.properties");
@@ -57,68 +57,60 @@ public class KMeansLocalExample {
 
     // Dataset
     if (inPackage) {
-      trainInput = "../data/usps/usps_256d_train.libsvm";
-      predictInput = "../data/usps/usps_256d_test.libsvm";
+      trainInput = "../data/census/census_148d_train.dummy";
+      predictInput = "../data/census/census_148d_train.dummy";
     } else {
-      trainInput = "data/usps/usps_256d_train.libsvm";
-      predictInput = "data/usps/usps_256d_test.libsvm";
+      trainInput = "data/census/census_148d_train.dummy";
+      predictInput = "data/census/census_148d_train.dummy";
     }
-
-    // Data format
-    String dataType = "libsvm";
-    // Model type
-    String modelType = String.valueOf(RowType.T_DOUBLE_SPARSE);
-
-    // Cluster center number
-    int centerNum = 10;
-    // Feature number of train data
-    long featureNum = 256;
-    // Total iteration number
-    int epochNum = 50;
-    // Sample ratio per mini-batch
-    double spratio = 1.0;
-    // C
-    double c = 0.5;
 
     // Set file system
     String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
     String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
 
+    // Set basic configuration keys
     conf.setBoolean("mapred.mapper.new-api", true);
     conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
     conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 50);
 
-    // Use local deploy mode and data format
+    // Use local deploy mode
     conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
-    conf.set(MLConf.ML_DATA_INPUT_FORMAT(), String.valueOf(dataType));
 
     // Set data path
     conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
     if (mode == 1) {  // train mode
       conf.set(AngelConf.ANGEL_ACTION_TYPE, "train");
       conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, trainInput);
-      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/kmeans");
-    } else if (mode == 2) {  // predict mode
+      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/DeepFM");
+    } else if (mode == 2) { // incTrain mode
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, "inctrain");
+      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, trainInput);
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/DeepFM");
+      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/DeepFM-inc");
+    } else if (mode == 3) {  // predict mode
       conf.set(AngelConf.ANGEL_ACTION_TYPE, "predict");
       conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, predictInput);
-      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/kmeans");
-      conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/predict/kmeans");
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/DeepFM");
+      conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/predict/DeepFM");
     }
     conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
 
-    // Set angel resource, #worker, #task, #PS
+    // Set angel resource parameters #worker, #task, #PS
     conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
     conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
     conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
-    //set Kmeans algorithm parameters #cluster #feature #epoch
-    conf.set(MLConf.ML_MODEL_TYPE(), modelType);
-    conf.set(MLConf.KMEANS_CENTER_NUM(), String.valueOf(centerNum));
-    conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
-    conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
-    conf.set(MLConf.KMEANS_SAMPLE_RATIO_PERBATCH(), String.valueOf(spratio));
-    conf.set(MLConf.KMEANS_C(), String.valueOf(c));
+    // Set DeepFM algorithm parameters
+    String angelConfFile = null;
+    if (inPackage) {
+      angelConfFile = "../examples/src/jsons/deepfm.json";
+    } else {
+      angelConfFile = "angel-ps/examples/src/jsons/deepfm.json";
+    }
+    conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
 
+    // Set model class
+    conf.set(MLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "DeepFM");
   }
 
   public void train() {
@@ -126,32 +118,48 @@ public class KMeansLocalExample {
     try {
       setConf(1);
 
-      KMeansRunner runner = new KMeansRunner();
+      GraphRunner runner = new GraphRunner();
       runner.train(conf);
     } catch (Exception e) {
-      LOG.error("run KMeansLocalExample:train failed.", e);
+      LOG.error("run DeepFMLocalExample:train failed.", e);
       throw e;
     }
 
   }
 
-  public void predict() {
+
+  public void incTrain() {
 
     try {
       setConf(2);
 
-      KMeansRunner runner = new KMeansRunner();
+      GraphRunner runner = new GraphRunner();
+      runner.train(conf);
+    } catch (Exception e) {
+      LOG.error("run DeepFMLocalExample:incTrain failed.", e);
+      throw e;
+    }
+
+  }
+
+
+  public void predict() {
+
+    try {
+      setConf(3);
+
+      GraphRunner runner = new GraphRunner();
       runner.predict(conf);
     } catch (Exception e) {
-      LOG.error("run KMeansLocalExample:predict failed.", e);
+      LOG.error("run DeepFMLocalExample:predict failed.", e);
       throw e;
     }
   }
 
-  public static void main(String[] args) {
-    KMeansLocalExample example = new KMeansLocalExample();
+  public static void main(String[] args) throws Exception {
+    DeepFMLocalExample example = new DeepFMLocalExample();
     Scanner scanner = new Scanner(System.in);
-    System.out.println("1-train 2-predict");
+    System.out.println("1-train 2-incTrain 3-predict");
     System.out.println("Please input the mode:");
     int mode = scanner.nextInt();
     switch (mode) {
@@ -159,11 +167,13 @@ public class KMeansLocalExample {
         example.train();
         break;
       case 2:
+        example.incTrain();
+        break;
+      case 3:
         example.predict();
         break;
     }
 
     System.exit(0);
   }
-
 }

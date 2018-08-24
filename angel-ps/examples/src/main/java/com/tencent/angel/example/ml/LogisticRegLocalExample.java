@@ -29,6 +29,7 @@ import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
 import org.apache.log4j.PropertyConfigurator;
 
+import java.io.File;
 import java.util.Scanner;
 
 public class LogisticRegLocalExample {
@@ -36,17 +37,33 @@ public class LogisticRegLocalExample {
   private static final Log LOG = LogFactory.getLog(LogisticRegLocalExample.class);
 
   private Configuration conf = new Configuration();
+
+  private static boolean inPackage = false;
   private static String CLASSBASE = "com.tencent.angel.ml.classification.";
 
   static {
-    PropertyConfigurator.configure("../angel-ps/conf/log4j.properties");
+    File confFile = new File("../conf/log4j.properties");
+    if (confFile.exists()) {
+      PropertyConfigurator.configure("../conf/log4j.properties");
+      inPackage = true;
+    } else {
+      PropertyConfigurator.configure("angel-ps/conf/log4j.properties");
+    }
   }
 
   public void setConf(int mode) {
 
+    String trainInput = "";
+    String predictInput = "";
+
     // Dataset
-    String trainInput = "../data/a9a/a9a_123d_train.dummy";
-    String predictInput = "../data/a9a/a9a_123d_test.dummy";
+    if (inPackage) {
+      trainInput = "../data/a9a/a9a_123d_train.dummy";
+      predictInput = "../data/a9a/a9a_123d_test.dummy";
+    } else {
+      trainInput = "data/a9a/a9a_123d_train.dummy";
+      predictInput = "data/a9a/a9a_123d_test.dummy";
+    }
 
     // Data format, libsvm or dummy
     String dataType = "dummy";

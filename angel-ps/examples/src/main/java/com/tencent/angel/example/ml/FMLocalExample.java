@@ -30,6 +30,7 @@ import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
 import org.apache.log4j.PropertyConfigurator;
 
+import java.io.File;
 import java.util.Scanner;
 
 public class FMLocalExample {
@@ -37,17 +38,33 @@ public class FMLocalExample {
   private static final Log LOG = LogFactory.getLog(FMLocalExample.class);
 
   private Configuration conf = new Configuration();
+
+  private static boolean inPackage = false;
   private static String CLASSBASE = "com.tencent.angel.ml.classification.";
 
   static {
-    PropertyConfigurator.configure("../angel-ps/conf/log4j.properties");
+    File confFile = new File("../conf/log4j.properties");
+    if (confFile.exists()) {
+      PropertyConfigurator.configure("../conf/log4j.properties");
+      inPackage = true;
+    } else {
+      PropertyConfigurator.configure("angel-ps/conf/log4j.properties");
+    }
   }
 
   public void setConf(int mode) {
 
+    String trainInput = "";
+    String predictInput = "";
+
     // Dataset
-    String trainInput = "../data/a9a/a9a_123d_train.libsvm";
-    String predictInput = "../data/a9a/a9a_123d_train.libsvm";
+    if (inPackage) {
+      trainInput = "../data/a9a/a9a_123d_train.libsvm";
+      predictInput = "../data/a9a/a9a_123d_train.libsvm";
+    } else {
+      trainInput = "data/a9a/a9a_123d_train.libsvm";
+      predictInput = "data/a9a/a9a_123d_train.libsvm";
+    }
 
     // Data format, libsvm or dummy
     String dataType = "libsvm";
@@ -105,7 +122,7 @@ public class FMLocalExample {
     conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
     conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
-    // Set LR algorithm parameters
+    // Set FM algorithm parameters
     conf.set(MLConf.ML_MODEL_TYPE(), modelType);
     conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
     conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
@@ -183,5 +200,4 @@ public class FMLocalExample {
 
     System.exit(0);
   }
-
 }
