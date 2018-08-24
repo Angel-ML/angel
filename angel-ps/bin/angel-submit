@@ -13,7 +13,7 @@
 # or implied. See the License for the specific language governing permissions and limitations under
 # the License.
 
-export ANGEL_VERSION=2.2.0-SNAPSHOT
+export ANGEL_VERSION=2.0.0-SNAPSHOT
 export PATH=${JAVA_HOME}/bin:$PATH
 
 if [ "${HADOOP_HOME}" = "" ]; then
