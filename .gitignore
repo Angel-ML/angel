@@ -13,7 +13,6 @@
 .project
 .scala_dependencies
 .settings
-/lib/
 *.class
 angel-ps/core/target/
 angel-ps/psf/target/
