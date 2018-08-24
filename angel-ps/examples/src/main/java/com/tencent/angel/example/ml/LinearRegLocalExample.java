@@ -30,6 +30,7 @@ import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
 import org.apache.log4j.PropertyConfigurator;
 
+import java.io.File;
 import java.util.Scanner;
 
 public class LinearRegLocalExample {
@@ -37,17 +38,33 @@ public class LinearRegLocalExample {
   private static final Log LOG = LogFactory.getLog(LinearRegLocalExample.class);
 
   private Configuration conf = new Configuration();
+
+  private static boolean inPackage = false;
   private static String CLASSBASE = "com.tencent.angel.ml.regression.";
 
   static {
-    PropertyConfigurator.configure("../angel-ps/conf/log4j.properties");
+    File confFile = new File("../conf/log4j.properties");
+    if (confFile.exists()) {
+      PropertyConfigurator.configure("../conf/log4j.properties");
+      inPackage = true;
+    } else {
+      PropertyConfigurator.configure("angel-ps/conf/log4j.properties");
+    }
   }
 
   public void setConf(int mode) {
 
+    String trainInput = "";
+    String predictInput = "";
+
     // Dataset
-    String trainInput = "../data/abalone/abalone_8d_train.libsvm";
-    String predictInput = "../data/abalone/abalone_8d_train.libsvm";
+    if (inPackage) {
+      trainInput = "../data/abalone/abalone_8d_train.libsvm";
+      predictInput = "../data/abalone/abalone_8d_train.libsvm";
+    } else {
+      trainInput = "data/abalone/abalone_8d_train.libsvm";
+      predictInput = "data/abalone/abalone_8d_train.libsvm";
+    }
 
     // Data format, libsvm or dummy
     String dataType = "libsvm";

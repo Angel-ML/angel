@@ -29,6 +29,7 @@ import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
 import org.apache.log4j.PropertyConfigurator;
 
+import java.io.File;
 import java.util.Scanner;
 
 public class KMeansLocalExample {
@@ -37,15 +38,31 @@ public class KMeansLocalExample {
 
   private Configuration conf = new Configuration();
 
+  private static boolean inPackage = false;
+
   static {
-    PropertyConfigurator.configure("../angel-ps/conf/log4j.properties");
+    File confFile = new File("../conf/log4j.properties");
+    if (confFile.exists()) {
+      PropertyConfigurator.configure("../conf/log4j.properties");
+      inPackage = true;
+    } else {
+      PropertyConfigurator.configure("angel-ps/conf/log4j.properties");
+    }
   }
 
   public void setConf(int mode) {
 
+    String trainInput = "";
+    String predictInput = "";
+
     // Dataset
-    String trainInput = "../data/usps/usps_256d_train.libsvm";
-    String predictInput = "../data/usps/usps_256d_test.libsvm";
+    if (inPackage) {
+      trainInput = "../data/usps/usps_256d_train.libsvm";
+      predictInput = "../data/usps/usps_256d_test.libsvm";
+    } else {
+      trainInput = "data/usps/usps_256d_train.libsvm";
+      predictInput = "data/usps/usps_256d_test.libsvm";
+    }
 
     // Data format
     String dataType = "libsvm";
