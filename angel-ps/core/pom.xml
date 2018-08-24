@@ -42,11 +42,11 @@
             <artifactId>arpack_combined_all</artifactId>
             <version>0.1</version>
         </dependency-->
-        <dependency>
+        <!--dependency>
             <groupId>org.netlib</groupId>
             <artifactId>blas</artifactId>
             <version>0.8</version>
-        </dependency>
+        </dependency-->
         <dependency>
             <groupId>com.github.fommil.netlib</groupId>
             <artifactId>all</artifactId>
