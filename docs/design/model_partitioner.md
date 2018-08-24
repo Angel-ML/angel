@@ -6,7 +6,11 @@
 
 模型的划分方式是一个参数服务器设计中，非常值得关注的通用性工程问题，不同的划分方式可能导致计算性能上的差异。一个好的模型划分，应该考虑如下的方面：
 
-* 保证PS负载均衡* 降低PS单点性能瓶颈* 关联的数据在同一个PS上但是在实际应用中，各个算法，或者一个算法的各种实现，对划分方式要求都不一样。因此，Angel既提供了默认划分算法用来满足一般的划分需求，也提供了自定义划分的功能，来满足特殊的需求。
+* 保证PS负载均衡
+* 降低PS单点性能瓶颈
+* 关联的数据在同一个PS上
+
+但是在实际应用中，各个算法，或者一个算法的各种实现，对划分方式要求都不一样。因此，Angel既提供了默认划分算法用来满足一般的划分需求，也提供了自定义划分的功能，来满足特殊的需求。
 
 ## 整体设计
 
@@ -18,50 +22,20 @@ Angel的模型分区，整体设计如下：
 需要注意的是：
 
 1. 对于用户来说，入口类是PSModel，尽量通过它操作
-2. 默认的分区类为PSPartitioner，但是它可以被替换
+2. 默认的模型分区算法类RangePartitioner，但是它可以被替换
 3. 分区（Partition）是最小的单位，每个分区对应着PSServer上具体的Model Shard
 
-PSServer会在Load Model阶段，根据传入的Partitioner进行Model Shard的初始化。因此Model Partitioner的设计，和运行时的真实模型数据，会影响PS Server上的模型分布和行为。
-## 默认的模型分区（PSPartitioner）
+PSServer会在Load Model阶段，根据传入的Partitioner进行Model Shard的初始化。因此Model Partitioner的设计，和运行时的真实模型数据，会影响PS Server上的模型分布和行为。
 
+## 默认的模型分区（RangePartitioner）
+
+RangePartitioner使用模型的index下标范围来划分模型：即将模型的index范围切分成一个个不重合的区间，这样做的好处是在划分应用层请求时可以快速的计算出需要的模型部分落在哪个区间上。
 在Angel中，模型使用Martrix来表示。当应用程序没有指定Martrix划分参数或者方法时，Angel将使用默认的划分算法。默认的划分算法遵循以下几个原则：
 
  - 尽量将一个模型平均分配到所有PS节点上
  - 对于非常小的模型，将它们尽量放在一个PS节点上
  - 对于多行的模型，尽量将同一行放在一个PS节点上
 
-
-### 分区(Partition)大小
-
-由于Angel底层的部分RPC接口，是以`矩阵分区`为单位来操作的，为了避免消息过大，Angel设置了一个最大消息限制100MB（可通过参数`angel.netty.matrixtransfer.max.message.size` 配置）所以一般矩阵分区占用存储空间不要超过这个限制值。
-
-所以，Angel一般推荐的单个分区大小为10MB-40MB，以分区大小40MB为例，大概可以容纳40 * 10^6 / 8 = 5,000,000个Double型元素。因此，默认的分区算法，以5,000,000这个值为默认阈值。
-
-
-### 默认分区算法
-
-假定row为整个矩阵的行数，col为整个矩阵的列数，serverNum为PS个数。
-
- - **当矩阵行数大于等于PS个数**
-
-```Scala
-# 分区块行数
-blockRow = Math.min(row / serverNum, Math.max(1, 5000000 / col))
-# 分区块列数
-blockCol = Math.min(5000000 / blockRow, col)
-```
-
- - **当矩阵行数小于PS个数时**
-
-```Scala
-# 分区块行数
-blockRow = row
-# 分区块列数
-blockCol = Math.min(5000000 / blockRow, Math.max(100, col / serverNum))`
-```
-
-按照默认的分区算法，假设serverNum = 4，下图是几个典型的模型，它们的矩阵分区情况：
-	![][1]
 	
 ## 自定义的模型分区
 

@@ -32,11 +32,14 @@ Spark-On-Angel is lightweight due to Angel's interface design. The core modules 
 	* PSModelPool corresponds to a matrix on Angel PS, responsible for requesting, retrieving, and destructing PSVector 
 
 * **PSVector/PSVetorProxy**
-	* PSVectorRemotePSVector and BreezePSVector are encapsulated with PSVector's operations under different scenarios
+	* RemotePSVector and BreezePSVector are encapsulated with PSVector's operations under different scenarios
 		* `RemotePSVector` provides operations between PSVector and local value, including pull, push, increment
 		* `BreezePSVector` provides operations between PSVector and PSVector, including most algebraic operations
 	* PSVectorProxy is PSVector's proxy that points to a PSVector on Angel PS
-
+	
+* **PSMatrix**
+	* Including DensePSMatrix and SparsePSMatrix
+	* Construction and destruction of PSMatrix: Use ```PSMatrix.dense(rows: Int, cols: Int)``` to construct a PSMatrix. When the Matrix is not needed, call ```destroy``` to destruct it manually
 
 
 ## 3. Execution Process

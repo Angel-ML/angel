@@ -4,7 +4,6 @@
 
 ## 1. 运行环境准备
 
-* Hadoop >=  2.2.0
 * Java >= 1.8
 * Angel发布包 angel-\<version\>-bin.zip
 
@@ -14,4 +13,4 @@
 
 发布包解压后，在根目录下有一个bin目录，提交任务相关的脚本都放在该目录下。例如运行简单的逻辑回归的例子：
 
-```./angel-example com.tencent.angel.example.ml.LogisticRegLocalExample```
+```./angel-example com.tencent.angel.example.ml.SGDLRLocalExample```

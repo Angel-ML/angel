@@ -1,10 +1,10 @@
 # Matrix Factorization
 
-> Matrix Factorizaiton is a commonly used method in recommender systems, which decomposes the user-item matrix into a product of the user matrix and item matrix.
+> Matrix Factorization is a commonly used method in recommender systems, which decomposes the user-item matrix into a product of the user matrix and item matrix.
 
 ## 1. Introduction
 
-Matrix Factorizaiton is a commonly used method in recommender systems, which decomposes the user-item matrix into a product of the user matrix and item matrix.
+Matrix Factorization is a commonly used method in recommender systems, which decomposes the user-item matrix into a product of the user matrix and item matrix.
 
 The user-item rating matrix (abbreviated as rating matrix) is a representation of data for recommender systems, where each row in the matrix corresponds to a user, each column corresponds to an item, and each element corresponds to the user's rating for that item (shown in the figure below). Usually, any single user is likely to have rated only a small subset of a large number of items, thus the rating matrix is sparse (i.e. most elements are zero). MF algorithm factorizes this sparse matrix into the feature-user matrix (the user matrix), and the feature-item matrix (the item matrix).
  
@@ -16,7 +16,7 @@ Assuming there are M users and N items in the data. We denote the M×N rating ma
 ![](../img/MF_UV.png)
 
 
-## Gradient Descent Matrix Factorizaion
+## Gradient Descent Matrix Factorization
 
 The error between the predicted value of user i's explicit rating for item j (y_{ij}) and the true value is denoted by e_{ij}, i.e. e_{ij}=y{ij}-u_i \cdot v_j. The goal of MF algorithm is to minimize the discrepancy of the predicted ratings from the true ratings:
 
@@ -85,7 +85,7 @@ A row contains all ratings from a user, as shown below:
 * IO Parameters
   * angel.train.data.path: input path
   * angel.save.modelPath: save path for the item matrix
-  * angel.ml.mf.usermodel.output: save path for the user matrix
+  * ml.mf.user.model.output.path: save path for the user matrix
   * angel.log.path: save path for the log
 * Algorithm Parameters
   * ml.mf.rank：dimension of user/item feature vectors
@@ -99,23 +99,23 @@ A row contains all ratings from a user, as shown below:
 
 ```
 ./bin/angel-submit \
---angel.app.submit.class com.tencent.angel.ml.matrixfactorization.MatrixFactorizationRunner \
---action.type train \
---angel.train.data.path $input_path \
---angel.save.model.path $model_path \
---angel.ml.mf.usermodel.output $usermodelpath \
---angel.log.path $logpath \
---angel.worker.memory.mb 10000 \
---angel.ps.memory.mb 8000 \
---angel.worker.task.number 1 \
---angel.ps.number 2 \
---angel.workergroup.number 5 \
---ml.mf.item.num 17771 \
---ml.mf.row.batch.num 3 \
---ml.mf.rank 200 \
---ml.epoch.num 5 \
---ml.mf.lambda 0.01 \
---ml.mf.eta 0.00005 \
+  --angel.app.submit.class com.tencent.angel.ml.matrixfactorization.MatrixFactorizationRunner \
+  --action.type train \
+  --angel.train.data.path $input_path \
+  --angel.save.model.path $model_path \
+  --ml.mf.user.model.output.path $usermodelpath \
+  --angel.log.path $logpath \
+  --angel.worker.memory.mb 10000 \
+  --angel.ps.memory.mb 8000 \
+  --angel.worker.task.number 1 \
+  --angel.ps.number 2 \
+  --angel.workergroup.number 5 \
+  --ml.mf.item.num 17771 \
+  --ml.mf.row.batch.num 3 \
+  --ml.mf.rank 200 \
+  --ml.epoch.num 5 \
+  --ml.mf.lambda 0.01 \
+  --ml.mf.eta 0.00005 \
 ```
 
 ### Performance

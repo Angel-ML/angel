@@ -12,11 +12,24 @@ Angel的模型文件，默认设计如下：
 * 多个模型文件，每个模型文件保存了一个或者多个模型分区的数据
  
 ## 转换命令
+目前Angel 支持两种转换工具启动模式：**客户端模式**和**Angel任务模式**。
+客户端模式就是直接在运行脚本的机器上（一般是用来提交任务的客户端机器）执行转换任务; Angel任务模式是指启动一个Angel Yarn Job，以Angel的Worker为容器来执行转换程序。一般情况下， 推荐使用客户端模式，使用简单，但是由于模型转换过程中需要消耗CPU和网络IO资源（尤其是模型非常大的情况下），因此如果客户端资源比较少，可以使用Angel任务模式。
 
 提交Angel的ModelConverter任务的命令如下：
 
+### 客户端模式
+
 ```bsh
 ./bin/angel-model-mergeconvert \
+--angel.load.model.path ${anywhere} \
+--angel.save.model.path ${anywhere} \
+--angel.modelconverts.model.names ${models} \
+--angel.modelconverts.serde.class ${SerdeClass}
+```
+### Angel任务模式
+```bsh
+./bin/angel-submit \
+--angel.app.submit.class com.tencent.angel.ml.toolkits.modelconverter.ModelMergeAndConverterRunner \
 --angel.load.model.path ${anywhere} \
 --angel.save.model.path ${anywhere} \
 --angel.modelconverts.model.names ${models} \
@@ -32,6 +45,7 @@ Angel的模型文件，默认设计如下：
       需要转换的模型名称列表，可以指定多个模型名，用“,”分隔。**这个参数不是必须的，当不指定这个参数时，会转换指定输入路径下所有的模型**
     * angel.modelconverts.serde.class    
       模型输出行序列化格式。**这个参数不是必须的，当不指定这个参数时，使用默认的行格式，即“index:value”形式**
+	* angel.app.submit.class Angel任务启动入口，配置为com.tencent.angel.ml.toolkits.modelconverter.ModelMergeAndConverterRunner
 
 ### 转换后文件格式说明
 

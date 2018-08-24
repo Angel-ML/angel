@@ -2,70 +2,72 @@
 
 ---
 
-> Before Angel application finishes, any PSModel will be saved in binary format for enhancing speed and saving space. Understanding that some users may need to have the PSModels saved in plaintext format, we created ModelConverter class to parse the PSModel binary file to plaintext.
+> When Angel application is complete, any PSModel will be saved in binary format for enhancing speed and saving space. Understanding that some users may need to have the PSModels saved in plaintext format, we created ModelConverter class to parse the PSModel binary file to plaintext.
 
-## Format of the Model File Before Convertion
+## Format Before Conversion (Binary)
 
-Angel's model files have the following default designs:
+Before conversion, Angel's binary model file has the following default design:
 
-* Each partition is saved as a file under the name partitionID
-* All the partitions of a PSModel are saved to the same directory; the name of the directory is the same as the modelName field of PSModel
+* Each model has a source file "meta" that holds information of the model parameters and partitions, as well as indexing information for each partition
+* There are multiple model files where each file holds data of one or more model partitions
 
+## Format After Conversion (Plaintext)
 
-## Convertion Command
+After conversion, Angel's plaintext model file has the following default design:
 
-The ModelConverter job can be submitted using the following command:
+* A model is saved in units of partitions, where each output file may contain one or more partitions; the correspondence of the partitions to the output file is the same as to the original binary file
+* Format of the converted file is shown below. Mark "rowIndex=xxx" at the beginning of each row, followed by a sequence of key:value pairs, where key and value are the column index and value in the corresponding row. **Please note that a row may be divided to multiple partitions, thus a complete row may be stored as multiple segments in multiple files**
 
-```bsh
-./bin/angel-submit \
--- action.type train \
--- angel.app.submit.class com.tencent.angel.ml.toolkits.modelconverter.ModelConverterRunner \
--- ml.model.in.path ${modelInPath}
--- ml.model.name ${PSModelName}
--- ml.model.out.path ${modelOutPath} \
--- ml.model.convert.thread.count ${threadCount} \
--- angel.save.model.path ${anywhere} \
--- angel.workergroup.number 1 \
--- angel.worker.memory.mb 1000  \
--- angel.worker.task.number 1 \
--- angel.ps.number 1 \
--- angel.ps.memory.mb 500 \
--- angel.job.name ${jobname}
 ```
-
-* **Parameters**
-
-* **ml.model.in.path** 
-	* Model input path, corresponding to the specified `ml.model.out.path`
-
-* **ml.model.name** 
-	* Name of the model to be parsed (PSModel.modelName)
-
-* **ml.model.out.path** 
-	* Output path of the model after being parsed into plaintext
-
-* **angel.save.model.path** 
-	* A save path must be set for this parameter when submitting an Angel application, but the value will be emptied, and there will be no output when the application is completed.
-
-* **angel.workergroup.number** 
-	* Recommended value is 1 for this parameter; model parsing is done by one worker by default
-
-* **angel.worker.task.number**
-	* Recommended value is 1; model parsing is done with one task by default
-
-* **ml.model.convert.thread.count** 
-	* Number of threads for model converting
-
-### **Format of the converted file**
-
-* Angel model is saved in units of partitions, where each partition is saved as one file under the name partitionID. Each converted model file correpsonds to a model partition.
-* In the following: the two values in the first row are `rowID` and `clock`, respectively; each row from the second line shows a key:value pair of the model 
-
- ```
-0, 10 	
+rowIndex=0
 0:-0.004235138405748639
 1:-0.003367253227582031
 3:-0.003988846053264014
 6:0.001803243020660425
 8:1.9413353447408782E-4
 ```
+
+## Converter
+
+Currently, Angel supports two converter modes: **stand-alone mode** and **distributed mode**. 
+
+### 1. Stand-alone Mode
+
+Conversion is done on the machine that runs the script (typically, the gateway machine that is used to submit the Angel job). In general, this mode is easy to use thus is recommended. The submit command is shown below:
+
+```bsh
+./bin/angel-model-convert \
+--angel.load.model.path ${hdfs_path} \
+--angel.save.model.path ${hdfs_path} \
+--angel.modelconverts.model.names ${models} \
+--angel.modelconverts.serde.class ${SerdeClass}
+```
+
+### 2. Distributed Mode
+
+Even though the stand-alone mode is easy to use, it is subject to the gateway machine's resource and can have poor performance due to the consumption of CPU and network IO, especially when the model is large. The distributed mode is provided to address this issue.
+
+The distributed mode starts an Angel job under the Yarn mode, where conversion is done within the worker, taking advantage of Angel's distributed processing capability. This mode puts only small pressure on the gateway machine and improves speed. The submit command is shown below: 
+
+```bsh
+./bin/angel-submit \
+--angel.app.submit.class com.tencent.angel.ml.toolkits.modelconverter.ModelConverterRunner \
+--angel.load.model.path ${hdfs_path} \
+--angel.save.model.path ${hdfs_path} \
+--angel.modelconverts.model.names ${models} \
+--angel.modelconverts.serde.class ${SerdeClass}
+```
+
+**Parameters:**
+
+* angel.load.model.path  
+	* Model input path, i.e. the save path for model in its original binary format (**this path does not need to include the matrix name**)
+* angel.save.model.path   
+	* Save path for converted model in text format
+* angel.modelconverts.model.names   
+	* List of names of models that need to be converted; can specify multiple model names separated by ","
+	* **Note**: this parameter is not required; when unspecified, all models under the specified input path will be converted
+* angel.modelconverts.serde.class
+	* Serialization format of the model output lines
+	* **Note**: this parameter is not required; when unspecified, the default line format is "index:value"
+

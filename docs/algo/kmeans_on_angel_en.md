@@ -41,7 +41,7 @@ KMeans on Angel algorithm:
 * IO Parameters
   * angel.train.data.path: input path for train
   * angel.predict.data.path：input path for predict
-  * ml.feature.num: number of features
+  * ml.feature.index.range: number of features
   * ml.data.type: [Angel Data Format](data_format_en.md), can be "dummy" or "libsvm"
   * angel.save.model.path: save path for trained model
   *	angel.predict.out.path：output path for predict
