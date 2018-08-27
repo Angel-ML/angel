@@ -1085,7 +1085,7 @@ public class AngelConf extends Configuration {
    */
   public static final String ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS =
     ANGEL_PSAGENT_PREFIX + "cache.sync.timeinterval.ms";
-  public static final int DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS = 1000;
+  public static final int DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS = 200;
 
   /**
    * The matrix caches synchronization policy
