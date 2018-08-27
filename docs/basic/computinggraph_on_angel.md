@@ -100,10 +100,10 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
  }
 ```
 edge有两大类:
-- inputLayer: 这类节点的输入是数据, AngelGraph中存储这类节点是方便返向计算, 只要依次调用inputlayer的`calBackward`. 为了加入inputLayer, Angel要求所有的inputLayer中都调用AngelGraph的addInput方法将自已加入AngelGraph中. 事实上, 在InputLayer的基类中已完成这一操作, 用户新增inputLayer不必关心这一点
+- inputLayer: 这类节点的输入是数据, AngelGraph中存储这类节点是方便反向计算, 只要依次调用inputlayer的`calBackward`. 为了加入inputLayer, Angel要求所有的inputLayer中都调用AngelGraph的addInput方法将自已加入AngelGraph中. 事实上, 在InputLayer的基类中已完成这一操作, 用户新增inputLayer不必关心这一点
 - lossLayer: 目前Angel不支持多任务学习, 所以只有一个lossLayer, 这类节点主要方便前向计算, 只要调用它的`predict`或`calOutput`即可. 由于losslayer是linearlayer的子类, 所以用户自定义lossLayer可手动调用`setOutput(layer: LossLayer)`, 但用户新增losslayer的机会不多, 更多的是增加lossfunc.
 
-有了inputLayers, lossLayer后, 从AngelGraph中遍历图十分方便, 正向计算只要调用losslayer的`predict`方法, 返向计算只要调用inputlayer的`calBackward`. 但是梯度计算, 参数更新不方便, 为了方便参数更新, AngelGraph中增加了一个trainableLayer的变用, 用以保存带参数的层.
+有了inputLayers, lossLayer后, 从AngelGraph中遍历图十分方便, 正向计算只要调用losslayer的`predict`方法, 反向计算只要调用inputlayer的`calBackward`. 但是梯度计算, 参数更新不方便, 为了方便参数更新, AngelGraph中增加了一个trainableLayer的变量, 用以保存带参数的层.
 
 ## 2.3 数据入口PlaceHolder
 通过layer的input/consumer构建起了图的边(节点的关系), 在AngelGraph中保存特殊节点(inputlayer/losslayer/trainablelayer)方便前向与后向计算与参数更新. 最后数据是怎样输入的呢? -- 通过PlaceHolder
