@@ -13,7 +13,7 @@ SGD的更新公式如下:
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}\bold{x}_{t+1}=\bold{x}_t-\eta\Delta\bold{x}_t)
 
-其中, $\eta$是学习率. 使用SGD可以带![](http://latex.codecogs.com/png.latex?L_1,L_2)正则, 实际优化采用的是PGD(proximal gradient descent). 
+其中, ![](http://latex.codecogs.com/png.latex?\eta)是学习率. 使用SGD可以带![](http://latex.codecogs.com/png.latex?L_1,L_2)正则, 实际优化采用的是PGD(proximal gradient descent). 
 
 json方式表达有两种, 如下:
 ```json
