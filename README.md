@@ -36,32 +36,43 @@
 * [Angel编程手册](./docs/programmers_guide/angel_programing_guide.md)
 * [Spark on Angel编程手册](./docs/programmers_guide/spark_on_angel_programing_guide.md)
 
+## Deep Learning Architexture
+* [Angel中的计算图](./docs/basic/computinggraph_on_angel.md)
+* [Angel中的层](./docs/basic/layers_on_angel.md)
+* [Angel中优化器](./docs/basic/optimizer_on_angel.md)
+* [Angel中的损失函数](./docs/basic/lossfunc_on_angel.md)
+* [Angel中的传输函数](./docs/basic/transfunc_on_angel.md)
 
 ## Quick Start
 * [Angel入门](./docs/tutorials/angel_ps_quick_start.md)
 * [Spark on Angel入门](./docs/tutorials/spark_on_angel_quick_start.md)
-* [PyAngel入门](./docs/tutorials/pyangel_quick_start.md)
+* [Angel Json配置](./docs/basic/json_conf.md)
 
 ## Algorithm
 
 * **Angel**
-	* [Logistic Regression](./docs/algo/lr_on_angel.md) ([ADMM](./docs/algo/admm_lr_on_angel.md))
-	* [Large Scale Piece-wise Linear Model/Mix Logistic Regression](./docs/algo/mlr_on_angel.md)
-	* [Factorization Machine](./docs/algo/fm_on_angel.md)
-	* [Matrix Factorization](./docs/algo/mf_on_angel.md)
-	* [SVM](./docs/algo/svm_on_angel.md)
-	* [KMeans](./docs/algo/kmeans_on_angel.md)
-	* [GBDT](./docs/algo/gbdt_on_angel.md)
-	* [LDA\*](./docs/algo/lda_on_angel.md) ([WrapLDA](./docs/algo/wrap_lda_on_angel.md))
-
+	* **Traditional Machine Learning Methods**
+		* [Logistic Regression(LR)](./docs/algo/lr_on_angel.md)
+		* [Support Vector Machine(SVM)](./docs/algo/svm_on_angel.md)
+		* [Factorization Machine(FM)](./docs/algo/fm_on_angel.md)
+		* [KMeans](./docs/algo/kmeans_on_angel.md)
+		* [GBDT](./docs/algo/gbdt_on_angel.md)
+		* [LDA\*](./docs/algo/lda_on_angel.md) ([WrapLDA](./docs/algo/wrap_lda_on_angel.md))
+	* **Deep Learning Methods**
+		* [Deep Neural Network(DNN)](./docs/algo/dnn_on_angel.md)
+		* [Mix Logistic Regression(MLR)](./docs/algo/mlr_on_angel.md)
+		* [Deep And Wide(DAW)](./docs/algo/daw_on_angel.md)
+		* [Deep Factorization Machine(DeepFM)](./docs/algo/deepfm_on_angel.md)
+		* [Neural Factorization Machine(NFM)](./docs/algo/nfm_on_angel.md)
+		* [Product Neural Network(PNN)](./docs/algo/pnn_on_angel.md)
+		
 * **Spark on Angel**
-	* [Logistic Regression](./docs/algo/sona/lr_sona.md)
-	* [Sparse LR with FTRL](./docs/algo/sona/sparselr_ftrl.md)
-	* [GBDT](./docs/algo/sona/gbdt_sona.md)
-	* [KMeans](.docs/algo/sona/kmeans_sona.md)
-
-* **在线学习(Online Learning)**
-	* [FTRL](./docs/algo/ftrl_lr_spark.md)
+	* **Online Learning**
+		* [FTRL](./docs/algo/ftrl_lr_spark.md)
+	* **Offline Learning**
+		* [Logistic Regression(LR)](./docs/algo/sona/lr_sona.md)
+		* [Word2Vec]()
+		* [LINE]()
 
 
 ## Deployment

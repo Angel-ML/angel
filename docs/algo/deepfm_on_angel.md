@@ -2,7 +2,7 @@
 
 ## 1. 算法介绍
 DeepFM算法是在FM(Factorization machine)的基础上加入深度层构成. 与PNN, NFM算法相比, 它保留了FM的二阶隐式特征交叉同仅用深度网络来获取高阶特征交叉. 其构架如下:
-
+![DNN](../img/DeepFM.PNG)
 
 ### 1.1 Embedding与BiInnerSumCross层的说明
 与传统的FM实现不同, 这里采用Embedding与BiInnerSumCross结合的方式实现二介隐式交叉, 传统的FM二次交叉项的表达式如下:
