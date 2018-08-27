@@ -48,6 +48,8 @@ We welcome everyone interested in machine learning to contribute code, create is
 * [GBDT](./docs/algo/gbdt_on_angel_en.md)
 * [LDA](./docs/algo/lda_on_angel_en.md)
 * [LR (Spark on Angel)](./docs/algo/spark_on_angel_optimizer_en.md)
+* [Linear Regression](./docs/algo/linear_on_angel_en.md)
+* [Robust Regression](./docs/algo/robust_on_angel_en.md)
 
 ## Deployment
 
