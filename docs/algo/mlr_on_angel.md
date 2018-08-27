@@ -5,7 +5,7 @@ MLR是一个分区域的线性模型，广泛应用于广告ctr预估。MLR采�
 MLR算法有三个明显的优点：
 1. 非线性：选择足够多的划分区域，MLR算法可以拟合任意复杂的非线性函数。
 2. 扩展性：与LR算法相似，MLR算法对海量样本，超高维度模型都有很好的扩展性。
-3. 稀疏性：带![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20L_1)，![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20L_{2,1})正则项的MLR算法可以得到很好的稀疏性
+3. 稀疏性：带![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20L_1),![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20L_{2,1})正则项的MLR算法可以得到很好的稀疏性
 
 ### 公式
 

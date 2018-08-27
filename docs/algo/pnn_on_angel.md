@@ -3,19 +3,15 @@
 ## 1. 算法介绍
 FNN(Product-Based Neural Networks)算法是在Embedding的基础上, 对Embedding
 的结果进行两两内积或外积, 然后将内/外积结果与原始的Embedding结果拼接起来, 输入DNN进一步提取高阶特特交叉. 值得注意的是, PNN并没有放弃一阶特征, 最后将一阶特征与高阶特征组合起来进行预测, 其构架如下:
-![DNN](../img/PNN.PNG)
+![PNN](../img/PNN.PNG)
 
 注: 目前Angel只实现了内积形式的PNN.
 
 ### 1.1 BiInnerCross层的说明
 在实现中, 用Embedding的方式存储$\bold{v}_i$, 调用Embedding的`calOutput`后, 将$x_i\bold{v}_i$计算后一起输出, 所以一个样本的Embedding output结果为:
-$$
-(x_1\bold{v}_1,  x_2\bold{v}_2, x_3\bold{v}_3, \cdots, x_k\bold{v}_k) = (\bold{u}_1, \bold{u}_2, \bold{u}_3, \cdots, \bold{u}_k)
-$$
+![model](http://latex.codecogs.com/png.latex?\dpi{150}(x_1\bold{v}_1,x_2\bold{v}_2,x_3\bold{v}_3,\cdots,x_k\bold{v}_k)=(\bold{u}_1,\bold{u}_2,\bold{u}_3,\cdots,\bold{u}_k))
 对Embedding特征两两做内积有:
-$$
-(\bold{u}_1^T\bold{u}_2, \bold{u}_1^T\bold{u}_3, \bold{u}_1^T\bold{u}_4, \cdots, \bold{u}_{k-1}^T\bold{u}_k)
-$$
+![model](http://latex.codecogs.com/png.latex?\dpi{150}(\bold{u}_1^T\bold{u}_2,\bold{u}_1^T\bold{u}_3,\bold{u}_1^T\bold{u}_4,\cdots,\bold{u}_{k-1}^T\bold{u}_k))
 
 以上即是BiInnerCross的前向计算方式, 用Scala代码实现为:
 ```scala
@@ -36,6 +32,7 @@ BiInnerCross与BiInnerSumCross的区别在于后者将两两内积的结果加�
 
 ### 1.2 其它层说明
 - SparseInputLayer: 稀疏数据与输入层, 对稀疏高维数据做了特别优化, 本质上是一个FCLayer
+- Embedding: 隐式嵌入层, 如果特征非one-hot, 则乘以特征值
 - FCLayer: DNN中最常见的层, 线性变换后接传递函数
 - SumPooling: 将多个输入的数据做element-wise的加和, 要求输入具本相同的shape
 - SimpleLossLayer: 损失层, 可以指定不同的损失函数

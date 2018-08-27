@@ -8,10 +8,10 @@ Angel中有丰富的损失函数, 可分为两类
 分类损失函数如下表所示:
 名称|表达式|描述
 ---|---|---
-CrossEntoryLoss| $-\sum_i y_i\log p_i(x)$ | 用于分类, 逻辑回归是一种特例, 也可以用于多分类Softmax, 它要求输入是概率$p_i(x)$, 而不是$f(x)$
-LogLoss| $\log(1+e^{-yf(x)})$ | 用于分类, 是逻辑回归的损失函数, 可以看成是CrossEntoryLoss函数的一种特列, 用Sigmoid的方式具体化了$p_i(x)$
-SoftmaxLoss| $-\sum_iI(y=i)\log\frac{x^{x_i}}{\sum_j e^{x_j}}$ | 它是CrossEntoryLoss的特殊形式, 用Softmax的方式具体化了$p_i(x)$
-HingeLoss| $\max(0, 1-yf(x))$ | SVM的损失函数
+CrossEntoryLoss| ![](http://latex.codecogs.com/png.latex?-\sum_iy_i\log{p_i(x)}) | 用于分类, 逻辑回归是一种特例, 也可以用于多分类Softmax, 它要求输入是概率![](http://latex.codecogs.com/png.latex?p_i(x)), 而不是![](http://latex.codecogs.com/png.latex?f(x))
+LogLoss| ![](http://latex.codecogs.com/png.latex?\log{\(1+e^{-yf(x)}\)}) | 用于分类, 是逻辑回归的损失函数, 可以看成是CrossEntoryLoss函数的一种特列, 用Sigmoid的方式具体化了![](http://latex.codecogs.com/png.latex?p_i(x))
+SoftmaxLoss| ![](http://latex.codecogs.com/png.latex?-\sum_iI(y=i)\log\frac{x^{x_i}}{\sum_je^{x_j}}) | 它是CrossEntoryLoss的特殊形式, 用Softmax的方式具体化了![](http://latex.codecogs.com/png.latex?p_i(x))
+HingeLoss| ![](http://latex.codecogs.com/png.latex?\max{\(0,1-yf(x)\)}) | SVM的损失函数
 
 用图形化表示如下:
 ![分类损失函数](../img/classifcationloss.png)
@@ -19,8 +19,8 @@ HingeLoss| $\max(0, 1-yf(x))$ | SVM的损失函数
 回归损失函数如下表所示:
 名称|表达式|描述
 ---|---|---
-L2Loss | $\|y - f(x)\|_2^2$ | 用于回归, 是最小二乘回归的损失函数
-HuberLoss | $\left\{\begin{array}{ll}\delta\cdot(abs(x) - \frac{\delta}{2}), & abs(x) > \delta \\ \frac{1}{2} x^2, & abs(x) \le \delta\end{array}\right.$ | 用于回归, 它在0附近用二次函数, 在其它地方用一次函数, 解决了绝对值函数在0附近不可导的问题, 用Huber损失得到的模型较为橹棒
+L2Loss | ![](http://latex.codecogs.com/png.latex?\|y-f(x)\|_2^2) | 用于回归, 是最小二乘回归的损失函数
+HuberLoss | ![](http://latex.codecogs.com/png.latex?\left\\{\begin{array}{ll}\delta\cdot\(abs(x)-\frac{\delta}{2}\),&abs(x)>\delta\\\\\frac{1}{2}x^2,&abs(x)\le\delta\end{array}\right.) | 用于回归, 它在0附近用二次函数, 在其它地方用一次函数, 解决了绝对值函数在0附近不可导的问题, 用Huber损失得到的模型较为橹棒
 
 用图形化表示如下:
 ![回归损失函数](../img/regressionloss.png)

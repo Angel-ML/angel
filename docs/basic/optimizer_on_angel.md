@@ -10,10 +10,8 @@
 
 ## 1. SGD
 SGD的更新公式如下:
-$$
-\bold{x}_{t+1} = \bold{x}_t - \eta \Delta\bold{x}_t
-$$
-其中, $\eta$是学习率. 使用SGD可以带$L_1, L_2$正则, 实际优化采用的是PGD(proximal gradient descent). 
+![model](http://latex.codecogs.com/png.latex?\dpi{150}\bold{x}_{t+1}=\bold{x}_t-\eta\Delta\bold{x}_t)
+其中, $\eta$是学习率. 使用SGD可以带![](http://latex.codecogs.com/png.latex?L_1,L_2)正则, 实际优化采用的是PGD(proximal gradient descent). 
 
 json方式表达有两种, 如下:
 ```json
@@ -28,10 +26,8 @@ json方式表达有两种, 如下:
 
 ## 2. Momentum
 Momentum的更新公式如下:
-$$
-\bold{v}_t = \gamma \bold{v}_{t-1} + \eta \Delta\bold{x}_t, \bold{x}_{t+1} = \bold{x}_t - \bold{v}_t
-$$
-其中, $\gamma$是动量因子, $\eta$是学习率. 另外, Momentum也是可以带$L_2$正则的. Angel中默认的最优化方法为Momentum.
+![model](http://latex.codecogs.com/png.latex?\dpi{150}\bold{v}_t=\gamma\bold{v}_{t-1}+\eta\Delta\bold{x}_t,\bold{x}_{t+1}=\bold{x}_t-\bold{v}_t)
+其中, ![](http://latex.codecogs.com/png.latex?\gamma)是动量因子, ![](http://latex.codecogs.com/png.latex?\eta)是学习率. 另外, Momentum也是可以带![](http://latex.codecogs.com/png.latex?L_2)正则的. Angel中默认的最优化方法为Momentum.
 
 json方式表达有两种, 如下:
 ```json
@@ -46,18 +42,11 @@ json方式表达有两种, 如下:
 
 ## 3. Adam
 Adam是一种效果较好的最优化方法, 更新公式为:
-$$
-\begin{array}{ll}
-\bold{m}_t &= \beta \bold{m}_{t-1} + (1-\beta) \Delta\bold{x}_t \\
-\bold{v}_t &= \gamma \bold{v}_{t-1} + (1-\gamma) \Delta\bold{x}^2_t \\
-\bold{v}_t &= \gamma \bold{v}_{t-1} + \eta\frac{\sqrt{1-\gamma^t}}{1-\beta^t} \frac{\bold{m}_t}{\sqrt{\bold{v}_t} + \epsilon} \\
-\end{array}
-$$
-其中, $\bold{m}_t$是梯度$\bold{x}_t$的指数平滑, 即动量,  $\bold{v}_t$是梯度$\bold{x}^2_t$的指数平滑, 可以看作Hessian的对角近似. 默认情况下$\beta=0.9, \gamma=0.99$, 记
-$$
-f(t) = \frac{\sqrt{1-\gamma^t}}{1-\beta^t}
-$$
-则$f(t)$是一个初值为1, 极限为1的函数, 中间过程先减后增, 如下图所示:
+![model](http://latex.codecogs.com/png.latex?\dpi{150}\begin{array}{ll}\bold{m}_t&=\beta\bold{m}_{t-1}+(1-\beta)\Delta\bold{x}_t\\\\\\bold{v}_t&=\gamma\bold{v}_{t-1}+(1-\gamma)\Delta\bold{x}^2_t\\\\\bold{x}_t&=\gamma\bold{x}_{t-1}-\eta\frac{\sqrt{1-\gamma^t}}{1-\beta^t}\frac{\bold{m}_t}{\sqrt{\bold{v}_t}+\epsilon}\\%20\end{array})
+
+其中, ![](http://latex.codecogs.com/png.latex?\bold{m}_t)是梯度![](http://latex.codecogs.com/png.latex?\bold{x}_t)的指数平滑, 即动量,  ![](http://latex.codecogs.com/png.latex?\bold{v}_t)是梯度![](http://latex.codecogs.com/png.latex?\bold{x}^2_t)的指数平滑, 可以看作Hessian的对角近似. 默认情况下![](http://latex.codecogs.com/png.latex?\beta=0.9,\gamma=0.99), 记
+![model](http://latex.codecogs.com/png.latex?\dpi{150}f(t)=\frac{\sqrt{1-\gamma^t}}{1-\beta^t})
+则![](http://latex.codecogs.com/png.latex?f(t))是一个初值为1, 极限为1的函数, 中间过程先减后增, 如下图所示:
 ![adam系数](../img/adam_coeff.png)
 
 即在优化的初始阶段, 梯度较大, 适当地减小学习率, 让梯度下降缓和平滑; 在优化的最后阶段, 梯度很小, 适当地增加学习率有助于跳出局部最优.

@@ -3,21 +3,13 @@
 ## 1. 算法介绍
 NFM(Neural Factorization Machines)算法是在Embedding的基础上, 对Embedding
 的结果进行两两对应元素乘积, 然后相加, 得到一个与Embedding同维的向量, 然后输入DNN进一步提取高阶特特交叉. 值得注意的是, NFM也没有放弃一阶特征, 最后将一阶特征与高阶特征组合起来进行预测, 其构架如下:
-![DNN](../img/NFM.PNG)
+![NFM](../img/NFM.PNG)
 
 ### 1.1 BiInteractionCross层的说明
-在实现中, 用Embedding的方式存储$\bold{v}_i$, 调用Embedding的`calOutput`后, 将$x_i\bold{v}_i$计算后一起输出, 所以一个样本的Embedding output结果为:
-$$
-(x_1\bold{v}_1,  x_2\bold{v}_2, x_3\bold{v}_3, \cdots, x_k\bold{v}_k) = (\bold{u}_1, \bold{u}_2, \bold{u}_3, \cdots, \bold{u}_k)
-$$
+在实现中, 用Embedding的方式存储![](http://latex.codecogs.com/png.latex?\bold{v}_i), 调用Embedding的`calOutput`后, 将![](http://latex.codecogs.com/png.latex?x_i\bold{v}_i)计算后一起输出, 所以一个样本的Embedding output结果为:
+![model](http://latex.codecogs.com/png.latex?\dpi{150}(x_1\bold{v}_1,x_2\bold{v}_2,x_3\bold{v}_3,\cdots,x_k\bold{v}_k)=(\bold{u}_1,\bold{u}_2,\bold{u}_3,\cdots,\bold{u}_k))
 BiInteractionCross的计算公式如下:
-$$
-\begin{array}{ll}
-\sum_i\sum_{j=i+1} \bold{u}_i \otimes \bold{u}_j &= \frac{1}{2} (\sum_i\sum_j \bold{u}_i \otimes \bold{u}_j - \sum_i \bold{u}_i^2) \\\\
-&= \frac{1}{2} (\sum_i \bold{u}_i) \otimes (\sum_j \bold{u}_j) - \sum_i \bold{u}_i^2 \\\\
-&= \frac{1}{2} [(\sum_i \bold{u}_i)^2 - \sum_i \bold{u}_i^2]
-\end{array}
-$$
+![model](http://latex.codecogs.com/png.latex?\dpi{150}\begin{array}{ll}\sum_i\sum_{j=i+1}\bold{u}_i\otimes\bold{u}_j&=\frac{1}{2}(\sum_i\sum_j\bold{u}_i\otimes\bold{u}_j-\sum_i\bold{u}_i^2)\\\\&=\frac{1}{2}(\sum_i\bold{u}_i)\otimes(\sum_j\bold{u}_j)-\sum_i\bold{u}_i^2\\\\&=\frac{1}{2}[(\sum_i\bold{u}_i)^2-\sum_i\bold{u}_i^2]\end{array})
 用Scala代码实现为:
 ```scala
 (0 until batchSize).foreach { row =>
@@ -35,6 +27,7 @@ $$
 
 ### 1.2 其它层说明
 - SparseInputLayer: 稀疏数据与输入层, 对稀疏高维数据做了特别优化, 本质上是一个FCLayer
+- Embedding: 隐式嵌入层, 如果特征非one-hot, 则乘以特征值
 - FCLayer: DNN中最常见的层, 线性变换后接传递函数
 - SumPooling: 将多个输入的数据做element-wise的加和, 要求输入具本相同的shape
 - SimpleLossLayer: 损失层, 可以指定不同的损失函数

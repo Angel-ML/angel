@@ -3,11 +3,11 @@
 ## 1. Angel中的传递函数有:
 名称| 表达式| 说明
 ---|---|---
-Sigmoid | $\frac{1}{1+e^{-x}}$ | 将任意实数变成概率
-tanh | $\frac{e^{x} - e^{-x}}{e^{x} + e^{-x}}$ | 将任意实数变成-1到1之间的数
-relu | $\max(0, x)$ | 丢弃负的部分
-dropout | $rand() \lt \eta$ | 随机置0
-identity| $x$ | 原样输出
+Sigmoid | ![](http://latex.codecogs.com/png.latex?\frac{1}{1+e^{-x}}) | 将任意实数变成概率
+tanh | ![](http://latex.codecogs.com/png.latex?\frac{e^{x}-e^{-x}}{e^{x}+e^{-x}}) | 将任意实数变成-1到1之间的数
+relu | ![](http://latex.codecogs.com/png.latex?\max(0,x)) | 丢弃负的部分
+dropout | ![](http://latex.codecogs.com/png.latex?rand()%20<%20\eta) | 随机置0
+identity| ![](http://latex.codecogs.com/png.latex?x) | 原样输出
 
 下图给出了一些常用的传递函数(部分Angel)中没有供:
 ![传递函数](../img/active_funcs.png)

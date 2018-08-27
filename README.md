@@ -55,6 +55,8 @@
 		* [Logistic Regression(LR)](./docs/algo/lr_on_angel.md)
 		* [Support Vector Machine(SVM)](./docs/algo/svm_on_angel.md)
 		* [Factorization Machine(FM)](./docs/algo/fm_on_angel.md)
+		* [Linear Regression](./docs/algo/linear_on_angel.md)
+		* [Robust Regression](./docs/algo/robust_on_angel.md)
 		* [KMeans](./docs/algo/kmeans_on_angel.md)
 		* [GBDT](./docs/algo/gbdt_on_angel.md)
 		* [LDA\*](./docs/algo/lda_on_angel.md) ([WrapLDA](./docs/algo/wrap_lda_on_angel.md))
@@ -70,8 +72,8 @@
 		* [FTRL](./docs/algo/ftrl_lr_spark.md)
 	* **Offline Learning**
 		* [Logistic Regression(LR)](./docs/algo/sona/lr_sona.md)
-		* [Word2Vec]()
-		* [LINE]()
+		* [Word2Vec](./docs/sona/word2vec_sona.md)
+		* [LINE](./docs/sona/line_sona.md)
 
 
 ## Deployment
