@@ -21,10 +21,10 @@ The TSC may add additional members to the TSC by a 2/3 majority vote.
 
 ### TSC Current Members
 
-- [paynie](https://github.com/paynie) - **Paynie Xiao** <[payniexiao@tencent.com](payniexiao@tencent.com) >
-- [fitzwang](https://github.com/wangcaihua) - **Fitz Wang** <[fitzwang@tencent.com](fitzwang@tencent.com) >
-- [leleyu](https://github.com/leleyu)- **Lele Yu** <[leleyu@tencent.com](leleyu@tencent.com) >
-- [lbluesjjw](https://github.com/bluesjjw)- **Jeremy Jiang** <[jeremyjiang@tencent.com](leleyu@tencent.com) >
+- [paynie](https://github.com/paynie) - **Paynie Xiao** <[cswjsxs2005@gmail.com](cswjsxs2005@gmail.com) >
+- [fitzwang](https://github.com/wangcaihua) - **Fitz Wang** <[fitzwang.ml@gmail.com](fitzwang.ml@gmail.com) >
+- [leleyu](https://github.com/leleyu)- **Lele Yu** <[yulele214@gmail.com](yulele214@gmail.com) >
+- [lbluesjjw](https://github.com/bluesjjw)- **Jeremy Jiang** <[blue.jwjiang@gmail.com](blue.jwjiang@gmail.com) >
  
 ### TSC Meeting
 
@@ -43,10 +43,13 @@ One may become a Committer by a majority approval of the existing Committers. A 
 Committers should be familiar with the guidelines for new contributors in [CONTRIBUTING.md](https://github.com/Tencent/angel/blob/master/CONTRIBUTING.md).
 
 ### Committer Members
-- [paynie](https://github.com/paynie) - **Paynie Xiao** <[payniexiao@tencent.com](payniexiao@tencent.com) >
-- [fitzwang](https://github.com/wangcaihua) - **Fitz Wang** <[fitzwang@tencent.com](fitzwang@tencent.com) >
-- [leleyu](https://github.com/leleyu)- **Lele Yu** <[leleyu@tencent.com](leleyu@tencent.com) >
-- [lbluesjjw](https://github.com/bluesjjw)- **Jeremy Jiang** <[jeremyjiang@tencent.com](leleyu@tencent.com) >
+- [paynie](https://github.com/paynie) - **Paynie Xiao** <[cswjsxs2005@gmail.com](cswjsxs2005@gmail.com) >
+- [fitzwang](https://github.com/wangcaihua) - **Fitz Wang** <[fitzwang.ml@gmail.com](fitzwang.ml@gmail.com) >
+- [leleyu](https://github.com/leleyu)- **Lele Yu** <[yulele214@gmail.com](yulele214@gmail.com) >
+- [lbluesjjw](https://github.com/bluesjjw)- **Jeremy Jiang** <[blue.jwjiang@gmail.com](blue.jwjiang@gmail.com) >
+- [luxin0123](https://github.com/luxin0123) - **Ally Lu** <[allylu@tencent.com](allylu@tencent.com) >
+- [weiwee](https://github.com/weiwee) - **Wenbin Wei** <[wbwmat@gmail.com](wbwmat@gmail.com) >
+- [rachelsunrh](https://github.com/rachelsunrh)- **Rachel Sun** <[rachelsunrh@gmail.com](rachelsunrh@gmail.com) >
 
 
 
