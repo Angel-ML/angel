@@ -27,7 +27,6 @@ To write a Spark on Angel application, in addition to the Spark dependency, you 
 The corresponding import and implicit conversion:
 
 ```scala
-  import com.tencent.angel.spark._
   import com.tencent.angel.spark.PSContext
 ```
 
@@ -51,107 +50,91 @@ val context = PSContext.getOrCreate(spark.sparkContext)
 In Angel PS, all operations on the driver side are encapsulated into PSContext. The interfaces for initializing and stopping PS Server are similar as SparkSession/sparkContext for Spark.
 
 ```scala
+val context = PSContext.getOrCreate(spark.sparkContext)
+val context = PSContext.instance()
 // Stop PSContext
 PSContext.stop()
 ```
 
-## PSModelPool
-
-Compared to Angel's PSModel, Spark on Angel's core abstraction, PSModelPool，contains some more subtle adjustments for it to better interact with Spark. It is worth noting that:
-
-> On PSServer, Angel client and Spark on Angel client are treated equally
-
-
-
-In Angel PS, PS ModelPool is essentially a matrix with number of rows as `capacity` and number of columns as `dim`. One can create multiple PSModelPool of different sizes in one application. In Spark on Angel, PSModelPool is the counterpart of PSModel for Angel.
-
-* Creating ModelPool
-
-```scala
-val pool = context.createModelPool(dim, capacity)
-```
-
-* Destroying ModelPool
-
-```scala
-context.destroyModelPool(pool)
-```
-
-
-### PSVectorProxy
-
-PSModelPool can create PSVector. A PSVector must have exactly `dim` dimensions in order to be stored and managed by PSModelPool with `dim` columns.
-
-PSVectorProxy is the proxy for PSVector (including BreezePSVector and RemotePSVector), pointing to a PSVector on Angel PS.
-
-
-```scala
-// Create a PSVector that must have the same dimension as the pool
-val arrayProxy = pool.createModel(array)
-// Create a PSVector whose element on each dimension is value
-val valueProxy = pool.createModel(value)
-// Create PSVector
-val zeroProxy = pool.createZero()
-// Create a random PSVector with each element uniformly distributed 
-val uniformProxy = pool.createRandomUniform(0.0, 1.0)
-// Create a random PS Vector with each element normally distributed
-val normalProxy = pool.createRandomNormal(0.0, 1.0)
-```
-
-You can either manually delete PSVectorProxy (in this way, the deleted PSVectorProxy can't be reused), or let the system automatically close it.
-
-```scala
-pool.delete(vectorProxy)
-```
 
 ### PSVector
 
-BreezePSVector and RemotePSVector are both subclasses of PSVector that encapsulate PSVector operations for different scenarios.
+PSVector is a subclass of PSModel, while PSVector has four different implementations of DensePSVector/SparsePSVector and BreezePSVector/CachedPSVector. DensePSVector or SparsePSVector is a PSVector of two different data formats, and BreezePSVector or CachedPSVector is a PSVector with two different functions.
 
-- **RemotePSVector**
-  
-RemotePSVector encapsulates operations between PSVector and local Array
+
+Before introducing PSVector, you need to understand the concept of PSVectorPool first. PSVectorPool is not explicitly exposed in the programming interface of Spark on Angel, but understand its concept might be help for better programming.  
+
+- PSVectorPool
+  PSVectorPool is essentially a matrix on Angel PS, the number of matrix columns is `dim`, and the number of rows is `capacity`.
+  PSVectorPool is responsible for PSVector application and automatic recycling. Automatically recycles GC functions similar to Java. PSVector objects do not need to be manually deleted after use.
+  The dimensions of the PSVector in the same PSVectorPool are `dim`, and the PSVector in the same pool can be used for operations.
+
+- PSVector application and initialization
+  When PSVector is applied for the first time, it must be applied through the dose/sparse method in the associated object of PSVector.
+  The dense/sparse method creates a PSVectorPool, so you need to pass in the dimension and capacity parameters.
+
+  Through the duplicate method, you can apply for a PSVector with the same psVector object as the Pool.
 
 ```scala
-  // Pull PSVector to local
-  val localArray = remoteVector.pull()
-  // Push local array to Angel PS
-  remoteVector.push(localArray)
-  // Increment local Array to PSVector on Angel PS
-  remoteVector.increment(localArray)
+    val dVector = PSVector.dense(dim, capacity)
+    val sVector = PSVector.sparse(dim, capacity)
 
-  // Find the maximum/minimum number of each dimension for local array and PSVector
-  remoteVector.mergeMax(localArray)
-  remoteVector.mergeMin(localArray)
+    val samePoolVector = PSVector.duplicate(dVector)
+
+    dVector.fill(1.0)
+    dVector.randomUniform(-1.0, 1.0)
+    dVector.randomNormal(0.0, 1.0)
 ```
 
 - **BreezePSVector**
 
-BreezePSVector encapsulates operations between PSVectors in PSModelPool, including the commonly used math operations and blas operations. BreezePSVector implements the internal NumbericOps for Breeze, thus supports operations such as `+`,  `-`, `*`
+- DensePSVector VS. SparsePSVector
+  As the name suggests, DensePSVector and SparsePSVector are PSVectors designed for dense and sparse data formats.
+
+- BreezePSVector VS. CachedPSVector
+  BreezePSVector and CachedPSVector are PSVector decoration classes that encapsulate different computing functions.
+
+  BreezePSVector is oriented to the Breeze algorithm library and encapsulates the operations between PSVectors in the same PSVectorPool. Including common math and blas operations, BreezePSVector implements the NumbericOps operation inside Breeze, so BreezePSVector supports operations such as +, -, *
+
+   ```scala
+    val brzVector1 = brzVector2 :* 2.0 + brzVector3
+  ```
+  You can also explicitly call the operations in Breeze.math and Breeze.blas.
+
+  CachedPSVector provides Cache functionality for Pull, increment/mergeMax/mergeMin, reducing the number of interactions between these operations and PS.
+  For example, pullWithCache will add the copied Vector cache to the local, and the next time the Pull is the same Vector, the cached Vector will be read directly;
+  The incrementWithCache will aggregate the multiple increment operations locally, and finally the result of the local aggregation will be incremented to the PSVector through the flush operation.
+
+  ```scala
+  val cacheVector = PSVector.dense(dim).toCache
+  rdd.map { case (label , feature) =>
+      // 并没有立即更新psVector
+    	cacheVector.increment(feature)
+  }
+  // flushIncrement会将所有executor上的缓存的cacheVector的increment结果，累加到cacheVector
+  cacheVector.flushIncrement
+  ```
+
+## 5. PSMatrix
+PSMatrix is ​​a matrix on Angel PS with two implementations, DensePSMatrix and SparsePSMatrix.
+
+- PSMatrix creation and destruction
+PSMatrix requests the corresponding matrix through the dense/sparse method in the companion object.
+PSVector will have PSVectorPool to automatically recycle and destroy useless PSVector, while PSMatrix needs to manually call destroy method to destroy matrix on PS.
+
+If you need to specify the partition parameters of PSMatrix, specify the size of each partition block by rowsInBlock/colsInBlock.
 
 ```scala
-  val brzVector1 = (brzVector2 :* 2) + brzVector3
+  // create, initialize
+  Val dMatrix = DensePSMatrix.dense(rows, cols, rowsInBlock, colsInBlock)
+  Val sMatrix = SparsePSMatrix.sparse(rows, cols)
+
+  dMatrix.destroy()
+
+  // Pull/Push operation
+  Val vector = dMatrix.pull(rowId)
+  dMatrix.push(rowId, vector)
 ```
-
-One can also explicitly call Breeze.math and Breeze.blas
-
-- **Conversion**
-
-
-```scala
-  // PSVectorProxy to BreezePSVector, RemotePSVector
-  val brzVector = vectorProxy.mkBreeze()
-  val remoteVector = vectorProxy.mkRemote()
-
-  // BreezePSVector, RemotePSVector to PSVectorProxy
-  val vectorProxy = brzVector.proxy
-  val vectorProxy = remoteVector.proxy
-
-  // Conversion between BreezePSVector and RemotePSVector
-  val remoteVector = brzVector.toRemote()
-  val brzVector = remoteVector.toBreeze()
-```
-
 ## psFunc
 
 - Spark on Angel supports psFunc just like Angel does, with even more powerful functional-programming features. psFunc inherits interfaces such as MapFunc and MapWithIndex to implement user-defined PSVector operations.
@@ -164,63 +147,81 @@ val result = brzVector.zipMap(func)
 `func` above must inherit MapFunc and MapWithIndexFunc, and implement user-defined logic and serializable interface.
 
 
-## Sample Code
+```scala
+class MulScalar(scalar: Double, inplace: Boolean = false) extends MapFunc {
+  def this() = this(false)
 
-1. **Updating PSVector**
+  setInplace(inplace)
 
-	Increment all features in RDD[(label, feature)] to PSVector.
+  override def isOrigin: Boolean = true
+
+  override def apply(elem: Double): Double = elem * scalar
+
+  override def apply(elem: Float): Float = (elem * scalar).toFloat
+
+  override def apply(elem: Long): Long = (elem * scalar).toLong
+
+  override def apply(elem: Int): Int = (elem * scalar).toInt
+
+  override def bufferLen(): Int = 9
+
+  override def serialize(buf: ByteBuf): Unit = {
+    buf.writeBoolean(inplace)
+    buf.writeDouble(scalar)
+
+  override def deserialize(buf: ByteBuf): Unit = {
+    super.setInplace(buf.readBoolean())
+    this.scalar = buf.readDouble()
+  }
+}
+```
+
+## examples
 
 
-	```Scala
-	val dim = 10
-	val poolCapacity = 40
+- Example 1： update for PSVector
 
-	val context = PSContext.getOrCreate()
-	val pool = context.createModelPool(dim, poolCapacity)
-	val psProxy = pool.zero()
+aggregate features in RDD[(label, feature)] to PSVector:
 
-	rdd.foreach { case (label , feature) =>
-	  psProxy.mkRemote.increment(feature)
-		}
+```scala
+val dim = 10
+val capacity = 40
 
-	println("feature sum:" + psProxy.pull())
-	```
+val psVector = PSVector.dense(dim, capacity).toCache
 
-2. **Implementing Gradient Descent**
+rdd.foreach { case (label , feature) =>
+  psVector.increment(feature)
+}
+psVector.flushIncrement
 
-	Simplest implementation of Gradient Descent in Spark on Angel:
+println("feature sum:" + psVector.pull.asInstanceOf[IntDoubleVector].getStorage.getValues.mkString(" "))
+```
 
-	```Scala
-	val context = PSContext.getOrCreate()
-	val pool = context.createModelPool(dim, poolCapacity)
-	val w = pool.createModel(initWeights)
-	val gradient = pool.zeros()
+- Example 2： implements for Gradient Descent
 
-	for (i <- 1 to ITERATIONS) {
-	  val totalG = gradient.mkRemote()
+a simple version of Gradient Descent implemented by ps:
 
-	  val nothing = points.mapPartitions { iter =>
-	    val brzW = new DenseVector(w.mkRemote.pull())
+```scala
 
-	    val subG = iter.map { p =>
-	      p.x * (1 / (1 + math.exp(-p.y * brzW.dot(p.x))) - 1) * p.y
-	    }.reduce(_ + _)
+val w = PSVector.dense(dim).fill(initWeights)
 
-	    totalG.incrementAndFlush(subG.toArray)
-	    Iterator.empty
-	  }
-	  nothing.count()
+for (i <- 1 to ITERATIONS) {
+  val gradient = PSVector.duplicate(w)
 
-	  w.mkBreeze += -1.0 * gradent.mkBreeze
-	  gradient.mkRemote.fill(0.0)
-	}
+  val nothing = instance.mapPartitions { iter =>
+    val brzW = w.pull()
 
-	println("feature sum:" + w.mkRemote.pull())
+    val subG = iter.map { case (label, feature) =>
+      feature.mul((1 / (1 + math.exp(-label * brzW.dot(feature))) - 1) * label)
+    }.reduce(_ add _)
 
-	gradient.delete()
-	w.delete()
-	```
-	
-3. **More Sample Code**
+    gradient.increment(subG)
+    Iterator.empty
+  }
+  nothing.count()
 
-	* 
+  w.toBreeze :+= gradent.toBreeze *:* -1.0
+}
+
+println("w:" + w.pull().asInstanceOf[IntDoubleVector].getStorage.getValues.mkString(" "))
+```

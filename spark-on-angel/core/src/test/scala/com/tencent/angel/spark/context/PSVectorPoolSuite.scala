@@ -47,7 +47,7 @@ class PSVectorPoolSuite extends PSFunSuite with SharedPSContext {
     }
 
     try {
-      (0 until capacity - releaseNum).foreach { i =>
+      (0 until capacity - releaseNum).foreach { _ =>
         pool.allocate()
       }
     } catch {
@@ -72,7 +72,7 @@ class PSVectorPoolSuite extends PSFunSuite with SharedPSContext {
       vectorArray(i) = PSVector.duplicate(vectorArray(0))
     }
 
-    vectorArray.foreach { v =>
+    vectorArray.foreach { _ =>
       //      v.toCache.pullFromCache()
       //      v.toCache.incrementWithCache(Array.fill(dim)(1.0))
       //      v.toBreeze :+= 0.1
@@ -80,7 +80,7 @@ class PSVectorPoolSuite extends PSFunSuite with SharedPSContext {
 
     VectorCacheManager.flushAll()
 
-    vectorArray.foreach { v =>
+    vectorArray.foreach { _ =>
       //      assert(v.pull().sameElements(Array.fill(dim)(1.1)))
     }
 
@@ -88,6 +88,6 @@ class PSVectorPoolSuite extends PSFunSuite with SharedPSContext {
       vectorArray(i) = null
     }
 
-    val newVector = PSVector.duplicate(vectorArray(0))
+    PSVector.duplicate(vectorArray(0))
   }
 }

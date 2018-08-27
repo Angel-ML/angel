@@ -65,7 +65,6 @@
 		* [Deep Factorization Machine(DeepFM)](./docs/algo/deepfm_on_angel.md)
 		* [Neural Factorization Machine(NFM)](./docs/algo/nfm_on_angel.md)
 		* [Product Neural Network(PNN)](./docs/algo/pnn_on_angel.md)
-		
 * **Spark on Angel**
 	* **Online Learning**
 		* [FTRL](./docs/algo/ftrl_lr_spark.md)

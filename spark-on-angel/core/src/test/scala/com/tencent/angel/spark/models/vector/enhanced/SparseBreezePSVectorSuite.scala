@@ -18,20 +18,19 @@
 
 package com.tencent.angel.spark.models.vector.enhanced
 
+import scala.language.implicitConversions
 import scala.util.Random
+
+import org.scalactic.TolerantNumerics
 
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import com.tencent.angel.ml.math2.vector.LongDoubleVector
 import com.tencent.angel.spark.context.PSContext
+import com.tencent.angel.spark.models.CompatibleImplicit._
 import com.tencent.angel.spark.models.vector.{PSVector, SparsePSVector}
 import com.tencent.angel.spark.{PSFunSuite, SharedPSContext}
-import com.tencent.angel.spark.models.CompatibleImplicit._
-import scala.language.implicitConversions
 
-import org.scalactic.TolerantNumerics
-
-import com.tencent.angel.exception.AngelException
 
 class SparseBreezePSVectorSuite extends PSFunSuite with SharedPSContext {
 
@@ -60,23 +59,13 @@ class SparseBreezePSVectorSuite extends PSFunSuite with SharedPSContext {
   override def beforeEach(): Unit = {
     super.beforeEach()
     _brzVector1 = PSVector.duplicate(_psVector).toBreeze
-    _localVector1 = _brzVector1.pull.asInstanceOf[LongDoubleVector]
+    _localVector1 = _brzVector1.pull().asInstanceOf[LongDoubleVector]
     _brzVector2 = PSVector.duplicate(_psVector).toBreeze
     _brzVector2.push(randomSparseVector(dim))
-    _localVector2 = _brzVector2.pull.asInstanceOf[LongDoubleVector]
+    _localVector2 = _brzVector2.pull().asInstanceOf[LongDoubleVector]
     _brzVector3 = PSVector.duplicate(_psVector).toBreeze
     _brzVector3.toSparse.push(randomSparseVector(dim))
-    _localVector3 = _brzVector3.pull.asInstanceOf[LongDoubleVector]
-  }
-
-  override def afterEach(): Unit = {
-    _brzVector1 = null
-    _brzVector2 = null
-    _brzVector3 = null
-    _localVector1 = null
-    _localVector2 = null
-    _localVector3 = null
-    super.afterEach()
+    _localVector3 = _brzVector3.pull().asInstanceOf[LongDoubleVector]
   }
 
   def randomSparseVector(dim: Long): LongDoubleVector = {
@@ -91,14 +80,24 @@ class SparseBreezePSVectorSuite extends PSFunSuite with SharedPSContext {
     VFactory.sparseLongKeyDoubleVector(dim, keys, values)
   }
 
+  override def afterEach(): Unit = {
+    _brzVector1 = null
+    _brzVector2 = null
+    _brzVector3 = null
+    _localVector1 = null
+    _localVector2 = null
+    _localVector3 = null
+    super.afterEach()
+  }
+
   def assertSameElement(brzVector1: BreezePSVector, brzVector2: BreezePSVector): Unit = {
-    val local1 = brzVector1.pull.asInstanceOf[LongDoubleVector]
-    val local2 = brzVector2.pull.asInstanceOf[LongDoubleVector]
+    val local1 = brzVector1.pull().asInstanceOf[LongDoubleVector]
+    val local2 = brzVector2.pull().asInstanceOf[LongDoubleVector]
     assertSameElement(local1, local2)
   }
 
   def assertSameElement(brzVector: BreezePSVector, local: LongDoubleVector): Unit = {
-    brzVector.pull match {
+    brzVector.pull() match {
       case sv: LongDoubleVector => assertSameElement(sv, local)
       case _ => assert(false)
     }
@@ -186,9 +185,12 @@ class SparseBreezePSVectorSuite extends PSFunSuite with SharedPSContext {
   }
 
   test("canAddS") {
-    _brzVector1 = _brzVector2 + 1.0
-    _localVector1 = _localVector2 + newSparseVector(dim, 1.0)
-    assertSameElement(_brzVector1, _localVector1)
+    val thrown = intercept[Exception] {
+      _brzVector1 = _brzVector2 + 1.0
+      _localVector1 = _localVector2 + newSparseVector(dim, 1.0)
+      assertSameElement(_brzVector1, _localVector1)
+    }
+    assert(thrown.getMessage === "not support for sparse ps vector")
   }
 
   /** Sub **/
@@ -205,15 +207,21 @@ class SparseBreezePSVectorSuite extends PSFunSuite with SharedPSContext {
   }
 
   test("canSubIntoS") {
-    _brzVector2 -= 1.0
-    _localVector2 -= newSparseVector(dim, 1.0)
-    assertSameElement(_brzVector2, _localVector2)
+    val thrown = intercept[Exception] {
+      _brzVector2 -= 1.0
+      _localVector2 -= newSparseVector(dim, 1.0)
+      assertSameElement(_brzVector2, _localVector2)
+    }
+    assert(thrown.getMessage === "not support for sparse ps vector")
   }
 
   test("canSubS") {
-    _brzVector1 = _brzVector2 - 1.0
-    _localVector1 = _localVector2 - newSparseVector(dim, 1.0)
-    assertSameElement(_brzVector1, _localVector1)
+    val thrown = intercept[Exception] {
+      _brzVector1 = _brzVector2 - 1.0
+      _localVector1 = _localVector2 - newSparseVector(dim, 1.0)
+      assertSameElement(_brzVector1, _localVector1)
+    }
+    assert(thrown.getMessage === "not support for sparse ps vector")
   }
 
   /** Mul **/
@@ -224,7 +232,7 @@ class SparseBreezePSVectorSuite extends PSFunSuite with SharedPSContext {
   }
 
   test("canMul") {
-    _brzVector1 = _brzVector2 *:* _brzVector3
+    _brzVector1 = _brzVector2 :* _brzVector3
     _localVector1 = _localVector2 * _localVector3
     assertSameElement(_brzVector1, _localVector1)
   }
@@ -233,12 +241,14 @@ class SparseBreezePSVectorSuite extends PSFunSuite with SharedPSContext {
     _brzVector2 *= 0.2
     _localVector2 *= newSparseVector(dim, 0.2)
     assertSameElement(_brzVector2, _localVector2)
+
   }
 
   test("canMulS") {
-    _brzVector1 = _brzVector2 *:* 0.2
+    _brzVector1 = _brzVector2 :* 0.2
     _localVector1 = _localVector2 * newSparseVector(dim, 0.2)
     assertSameElement(_brzVector1, _localVector1)
+
   }
 
   test("negFromScale") {
@@ -255,7 +265,7 @@ class SparseBreezePSVectorSuite extends PSFunSuite with SharedPSContext {
   }
 
   test("canDiv") {
-    _brzVector1 = _brzVector2 /:/ _brzVector3
+    _brzVector1 = _brzVector2 :/ _brzVector3
     _localVector1 = _localVector2 / _localVector3
     assertSameElement(_brzVector1, _localVector1)
   }
@@ -267,7 +277,7 @@ class SparseBreezePSVectorSuite extends PSFunSuite with SharedPSContext {
   }
 
   test("canDivS") {
-    _brzVector1 = _brzVector2 /:/ 0.2
+    _brzVector1 = _brzVector2 :/ 0.2
     _localVector1 = _localVector2 / newSparseVector(dim, 0.2)
     assertSameElement(_brzVector1, _localVector1)
   }
@@ -304,9 +314,9 @@ class SparseBreezePSVectorSuite extends PSFunSuite with SharedPSContext {
   }
 
   /**
-    * math operations
-    * Only called on driver
-    */
+   * math operations
+   * Only called on driver
+   */
 
   import BreezePSVector.math
 
@@ -340,38 +350,54 @@ class SparseBreezePSVectorSuite extends PSFunSuite with SharedPSContext {
   }
 
   test("math.exp") {
-    val brzExp = math.exp(_brzVector2)
-    val result = elementWiseOps(_localVector2, scala.math.exp)
+    val thrown = intercept[Exception] {
+      val brzExp = math.exp(_brzVector2)
+      val result = elementWiseOps(_localVector2, scala.math.exp)
 
-    assertSameElement(brzExp, result)
+      assertSameElement(brzExp, result)
+    }
+    assert(thrown.getMessage === "not support for sparse ps vector")
   }
 
   test("math.expm1") {
-    val brzExpm1 = math.expm1(_brzVector2)
-    val result = elementWiseOps(_localVector2, scala.math.expm1)
+    val thrown = intercept[Exception] {
+      val brzExpm1 = math.expm1(_brzVector2)
+      val result = elementWiseOps(_localVector2, scala.math.expm1)
 
-    assertSameElement(brzExpm1, result)
+      assertSameElement(brzExpm1, result)
+    }
+
+    assert(thrown.getMessage === "not support for sparse ps vector")
   }
 
   test("math.log") {
-    val brzLog = math.log(_brzVector2)
-    val result = elementWiseOps(_localVector2, scala.math.log)
+    val thrown = intercept[Exception] {
+      val brzLog = math.log(_brzVector2)
+      val result = elementWiseOps(_localVector2, scala.math.log)
 
-    assertSameElement(brzLog, result)
+      assertSameElement(brzLog, result)
+    }
+    assert(thrown.getMessage === "not support for sparse ps vector")
   }
 
   test("math.log1p") {
-    val brzLog1p = math.log1p(_brzVector2)
-    val result = elementWiseOps(_localVector2, scala.math.log1p)
+    val thrown = intercept[Exception] {
+      val brzLog1p = math.log1p(_brzVector2)
+      val result = elementWiseOps(_localVector2, scala.math.log1p)
 
-    assertSameElement(brzLog1p, result)
+      assertSameElement(brzLog1p, result)
+    }
+    assert(thrown.getMessage === "not support for sparse ps vector")
   }
 
   test("math.log10") {
-    val brzLog10 = math.log10(_brzVector2)
-    val result = elementWiseOps(_localVector2, scala.math.log10)
+    val thrown = intercept[Exception] {
+      val brzLog10 = math.log10(_brzVector2)
+      val result = elementWiseOps(_localVector2, scala.math.log10)
 
-    assertSameElement(brzLog10, result)
+      assertSameElement(brzLog10, result)
+    }
+    assert(thrown.getMessage === "not support for sparse ps vector")
   }
 
   test("math.ceil") {
@@ -438,38 +464,53 @@ class SparseBreezePSVectorSuite extends PSFunSuite with SharedPSContext {
   }
 
   test("math.expInto") {
-    math.expInto(_brzVector2)
-    val result = elementWiseOps(_localVector2, scala.math.exp)
+    val thrown = intercept[Exception] {
+      math.expInto(_brzVector2)
+      val result = elementWiseOps(_localVector2, scala.math.exp)
 
-    assertSameElement(_brzVector2, result)
+      assertSameElement(_brzVector2, result)
+    }
+    assert(thrown.getMessage === "not support for sparse ps vector")
   }
 
   test("math.expm1Into") {
-    math.expm1Into(_brzVector2)
-    val result = elementWiseOps(_localVector2, scala.math.expm1)
+    val thrown = intercept[Exception] {
+      math.expm1Into(_brzVector2)
+      val result = elementWiseOps(_localVector2, scala.math.expm1)
 
-    assertSameElement(_brzVector2, result)
+      assertSameElement(_brzVector2, result)
+    }
+    assert(thrown.getMessage === "not support for sparse ps vector")
   }
 
   test("math.logInto") {
-    math.logInto(_brzVector2)
-    val result = elementWiseOps(_localVector2, scala.math.log)
+    val thrown = intercept[Exception] {
+      math.logInto(_brzVector2)
+      val result = elementWiseOps(_localVector2, scala.math.log)
 
-    assertSameElement(_brzVector2, result)
+      assertSameElement(_brzVector2, result)
+    }
+    assert(thrown.getMessage === "not support for sparse ps vector")
   }
 
   test("math.log1pInto") {
-    math.log1pInto(_brzVector2)
-    val result = elementWiseOps(_localVector2, scala.math.log1p)
+    val thrown = intercept[Exception] {
+      math.log1pInto(_brzVector2)
+      val result = elementWiseOps(_localVector2, scala.math.log1p)
 
-    assertSameElement(_brzVector2, result)
+      assertSameElement(_brzVector2, result)
+    }
+    assert(thrown.getMessage === "not support for sparse ps vector")
   }
 
   test("math.log10Into") {
-    math.log10Into(_brzVector2)
-    val result = elementWiseOps(_localVector2, scala.math.log10)
+    val thrown = intercept[Exception] {
+      math.log10Into(_brzVector2)
+      val result = elementWiseOps(_localVector2, scala.math.log10)
 
-    assertSameElement(_brzVector2, result)
+      assertSameElement(_brzVector2, result)
+    }
+    assert(thrown.getMessage === "not support for sparse ps vector")
   }
 
   test("math.ceilInto") {
@@ -561,22 +602,23 @@ class SparseBreezePSVectorSuite extends PSFunSuite with SharedPSContext {
     assert(psMin === localMin)
   }
 
-  def elementWiseOps(sv1: LongDoubleVector, sv2: LongDoubleVector, comb: (Double, Double) => Double): LongDoubleVector = {
+  def elementWiseOps(sv1: LongDoubleVector,
+      sv2: LongDoubleVector,
+      comb: (Double, Double) => Double): LongDoubleVector = {
     assert(sv1.getDim == sv2.getDim)
     val keySet = (sv1.getStorage.getIndices.toSet ++ sv2.getStorage.getIndices).toArray
-    val result = new Array[Double](keySet.length)
     VFactory.sparseLongKeyDoubleVector(sv1.getDim, keySet, keySet.map(k => comb(sv1.get(k), sv2.get(k))))
+  }
+
+  def elementWiseAggr(sv: LongDoubleVector, seq: Double => Double, comb: (Double, Double) => Double): Double = {
+    val temp = elementWiseOps(sv, seq)
+    temp.getStorage.getValues.reduce(comb)
   }
 
   def elementWiseOps(sv: LongDoubleVector, ops: Double => Double): LongDoubleVector = {
     val dim = sv.getDim
     val keys = (0L until dim).toArray
     VFactory.sparseLongKeyDoubleVector(dim, keys, keys.map(k => ops(sv.get(k))))
-  }
-
-  def elementWiseAggr(sv: LongDoubleVector, seq: Double => Double, comb: (Double, Double) => Double): Double = {
-    val temp = elementWiseOps(sv, seq)
-    temp.getStorage.getValues.reduce(comb)
   }
 
   def compare(sv1: LongDoubleVector, sv2: LongDoubleVector, comb: (Double, Double) => Double): LongDoubleVector = {

@@ -51,11 +51,11 @@ class BreezePSVectorSuite extends PSFunSuite with SharedPSContext {
   override def beforeEach(): Unit = {
     super.beforeEach()
     _brzVector1 = PSVector.duplicate(_psVector).toBreeze
-    _localVector1 = _brzVector1.pull.asInstanceOf[IntDoubleVector]
+    _localVector1 = _brzVector1.pull().asInstanceOf[IntDoubleVector]
     _brzVector2 = PSVector.duplicate(_psVector).randomUniform(1.0, 2.0).toBreeze
-    _localVector2 = _brzVector2.pull.asInstanceOf[IntDoubleVector]
+    _localVector2 = _brzVector2.pull().asInstanceOf[IntDoubleVector]
     _brzVector3 = PSVector.duplicate(_psVector).randomNormal(0.0, 1.0).toBreeze
-    _localVector3 = _brzVector3.pull.asInstanceOf[IntDoubleVector]
+    _localVector3 = _brzVector3.pull().asInstanceOf[IntDoubleVector]
   }
 
   override def afterEach(): Unit = {
@@ -69,7 +69,7 @@ class BreezePSVectorSuite extends PSFunSuite with SharedPSContext {
   }
 
   def assertSameElement(brzVector: BreezePSVector, local: IndexedSeq[Double]): Unit = {
-    brzVector.pull match {
+    brzVector.pull() match {
       case dv: IntDoubleVector => assert(dv.getStorage.getValues.sameElements(local))
       case _ => assert(false)
     }
@@ -79,7 +79,7 @@ class BreezePSVectorSuite extends PSFunSuite with SharedPSContext {
   test("canCreateZerosLike") {
     val zeroBrz = BreezePSVector.canCreateZerosLike(_brzVector2)
 
-    assert(zeroBrz.pull.asInstanceOf[IntDoubleVector].getStorage.getValues.sameElements(Array.ofDim[Double](dim)))
+    assert(zeroBrz.pull().asInstanceOf[IntDoubleVector].getStorage.getValues.sameElements(Array.ofDim[Double](dim)))
     zeroBrz.delete()
   }
 
@@ -181,7 +181,7 @@ class BreezePSVectorSuite extends PSFunSuite with SharedPSContext {
   }
 
   test("canMul") {
-    _brzVector1 = _brzVector2 *:* _brzVector3
+    _brzVector1 = _brzVector2 :* _brzVector3
 
     val result: Array[Double] = _localVector2.getStorage.getValues.indices.map(i =>
       _localVector2.get(i) * _localVector3.get(i)
@@ -197,7 +197,7 @@ class BreezePSVectorSuite extends PSFunSuite with SharedPSContext {
   }
 
   test("canMulS") {
-    _brzVector1 = _brzVector2 *:* 0.2
+    _brzVector1 = _brzVector2 :* 0.2
 
     val result = _localVector2.getStorage.getValues.map(_ * 0.2)
     assertSameElement(_brzVector1, result)
@@ -219,7 +219,7 @@ class BreezePSVectorSuite extends PSFunSuite with SharedPSContext {
   }
 
   test("canDiv") {
-    _brzVector1 = _brzVector2 /:/ _brzVector3
+    _brzVector1 = _brzVector2 :/ _brzVector3
 
     val result = _localVector2.getStorage.getValues.indices.map(i => _localVector2.get(i) / _localVector3.get(i))
     assertSameElement(_brzVector1, result)
@@ -233,7 +233,7 @@ class BreezePSVectorSuite extends PSFunSuite with SharedPSContext {
   }
 
   test("canDivS") {
-    _brzVector1 = _brzVector2 /:/ 0.2
+    _brzVector1 = _brzVector2 :/ 0.2
 
     val result = _localVector2.getStorage.getValues.map(_ / 0.2)
     assertSameElement(_brzVector1, result)
@@ -305,7 +305,7 @@ class BreezePSVectorSuite extends PSFunSuite with SharedPSContext {
   }
 
   test("math.sqrt") {
-    val brzSqrt = math.sqrt(_brzVector2 +:+ 1.0)
+    val brzSqrt = math.sqrt(_brzVector2 :+ 1.0)
     val sqrt = _localVector2.getStorage.getValues.map(x => scala.math.sqrt(x + 1.0))
 
     assertSameElement(brzSqrt, sqrt)

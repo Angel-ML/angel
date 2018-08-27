@@ -25,7 +25,7 @@ object Utils {
   def assertSameElement(vector: Vector, local: Array[Double]): Unit = {
     vector match {
       case dv: IntDoubleVector => dv.getStorage.getValues.sameElements(local)
-      case sv: LongDoubleVector => assert(false)
+      case _: LongDoubleVector => assert(false)
     }
   }
 }

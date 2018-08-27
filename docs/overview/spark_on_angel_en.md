@@ -28,35 +28,35 @@ Spark-On-Angel is lightweight due to Angel's interface design. The core modules 
 	* responsible for direct operations between PSVector and local value, including pull, push, and increment, as well as operations between PSVector and PSVector, including most algebraic operations; supporting PSF ( user-defined PS functions）
 	* all PSClient operations are encapsulated into RemotePSVector and BreezePSVector
 
-* **PSModelPool**
-	* PSModelPool corresponds to a matrix on Angel PS, responsible for requesting, retrieving, and destructing PSVector 
+* **PSModel**
+* PSModel is the general name of PSVector/PSMatrix on PS server, including PSClient object
+* PSModel is the parent class of PSVector and PSMatrix
 
-* **PSVector/PSVetorProxy**
-	* RemotePSVector and BreezePSVector are encapsulated with PSVector's operations under different scenarios
-		* `RemotePSVector` provides operations between PSVector and local value, including pull, push, increment
-		* `BreezePSVector` provides operations between PSVector and PSVector, including most algebraic operations
-	* PSVectorProxy is PSVector's proxy that points to a PSVector on Angel PS
-	
+* **PSVector**
+* Includes DensePSVecotr and SparsePSVector
+* PSVector application: Applying PSVector via `PSVector.dense(dim: Int, capacity: Int = 50, rowType:RowType.T_DENSE_DOUBLE) will create a dimension of `dim` with a capacity of `capacity` and a type of `Double `VectorPool, two PSVectors in the same VectorPool can do the operation.
+Apply a PSVector with the same VectorPool as `psVector` via `PSVector.duplicate(psVector)`.
+* PSVector has two decorations: `BreezePSVector` and `CachedPSVector`, `BreezePSVector` to enable PSVector to support Vector operations in the Breeze algorithm library. The `CachedPSVector` supports the buffering of the PSVector in the Pull/Push process.
+
 * **PSMatrix**
-	* Including DensePSMatrix and SparsePSMatrix
-	* Construction and destruction of PSMatrix: Use ```PSMatrix.dense(rows: Int, cols: Int)``` to construct a PSMatrix. When the Matrix is not needed, call ```destroy``` to destruct it manually
+* Includes DensePSMatrix and SparsePSMatrix
+* PSMatrix creation and destruction: created by `PSMatrix.dense(rows: Int, cols: Int)`, after PSMatrix is ​​no longer used, you need to manually call `destory` to destroy the Matrix.
 
-
-## 3. Execution Process
-
-A sample code of Spark on Angel looks like this:
+The simple code to use Spark on Angel is as follows:
 
 ```Scala
 
-val psContext = PSContext.getOrCreate(spark.sparkContext)
-val pool = psContext.createModelPool(dim, capacity)
-val psVector = pool.createModel(0.0)
+PSContext.getOrCreate(spark.sparkContext)
+val psVector = PSVector.dense(dim, capacity)
 rdd.map { case (label , feature) =>
-  	psVector.increment(feature)
-  	...
+    psVector.increment(feature)
+    ...
 }
-println("feature sum size:" + psVector.mkRemote.size())
+println("feature sum:" + psVector.pull.mkString(" "))
 ```
+
+
+## 3. Execution Process
 
 Spark on Angel is essentially a Spark application. When Spark is started, the driver starts up Angel PS using Angel PS interface, and when necessary, encapsulates part of the data into PSVector to be managed by PS node. Therefore, the execution process of Spark on Angel is similar to that of Spark. 
 
@@ -66,19 +66,12 @@ Driver has an added action of starting up and managing PS node:
 
 - starting up SparkSession
 - starting up PSContext
-- creating PSModelPool
-- requesting PSVector
+- creating PSVector/PSMatrix
 - executing the logic 
 - stopping PSContext and SparkSession
 
 **Spark executor's new execution process:**
 
-Spark executor sends request of operations of PSVector to PS Server, when needed, by calling the transformation method 
-
-- starting up PSContext
-- executing tasks assigned by the driver
-
-> It's worth noting that there is no need to modify Spark's any core source code in this process
 
 ## 4. Seamless Switch to MLLib
 
@@ -115,13 +108,11 @@ def runOWLQN(trainData: RDD[(Vector, Double)], dim: Int, m: Int, maxIter: Int): 
 
 def runOWLQN(trainData: RDD[(Vector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
 
-    val pool = PSContext.createModelPool(dim, 20)
-
-    val initWeightPS = pool.createZero().mkBreeze()
-    val l1regPS =  pool.createZero().mkBreeze()
+    val initWeightPS = PSVector.dense(dim, 20).toBreeze()
+    val l1regPS = PSVector.duplicate(initWeightPS.component).zero().toBreeze
 
     val owlqn = new OWLQN(maxIter, m, l1regPS, tol)
-    val states = owlqn.iterations(CostFunc(trainData), initWeightPS)
+    val states = owlqn.iterations(PSCostFunc(trainData), initWeightPS)
     ………
 
 ｝
@@ -129,8 +120,3 @@ def runOWLQN(trainData: RDD[(Vector, Double)], dim: Int, m: Int, maxIter: Int): 
 
 There is only a small, non-invasive modification to the original RDD, friendly to the overall Spark framework and other integration and upgrading.
 
-## Performance
-
-Transferring algorithms from Spark to Spark on Angel results in a noticeable gain in performance, and details can be found in [LR(Spark on Angel)](../algo/spark_on_angel_optimizer_en.md). 
-
-It is worth noting that even though the transparent replacement trick is versatile and incurs only a small workload, the best performance is still only achievable by implementing the algorithm on top of PS that is specific to Angel (at least, you get rid of the PSAgent layer). 
