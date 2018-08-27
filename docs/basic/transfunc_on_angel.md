@@ -9,7 +9,7 @@ relu | ![](http://latex.codecogs.com/png.latex?\max(0,x)) | 丢弃负的部分
 dropout | ![](http://latex.codecogs.com/png.latex?rand()%20<%20\eta) | 随机置0
 identity| ![](http://latex.codecogs.com/png.latex?x) | 原样输出
 
-下图给出了一些常用的传递函数(部分Angel)中没有供:
+下图给出了一些常用的传递函数(部分Angel中没有提供):
 ![传递函数](../img/active_funcs.png)
 
 ## 2. 传递函数的json表示
