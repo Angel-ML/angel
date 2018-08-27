@@ -11,7 +11,7 @@
 
 **Angel**的核心设计理念围绕**模型**。它将高维度的大模型合理切分到多个参数服务器节点，并通过高效的**模型更新接口和运算函数**，以及灵活的**同步协议**，轻松实现各种高效的机器学习算法。
 
-**Angel**基于**Java**和**Scala**开发，能在社区的**Yarn**上直接调度运行，并基于**PS Service**，支持**Spark on Angel**，未来将会支持图计算和深度学习框架集成。
+**Angel**基于**Java**和**Scala**开发，能在社区的**Yarn**上直接调度运行，并基于**PS Service**，支持**Spark on Angel**，集成了部分图计算和深度学习算法。
 
 欢迎对机器学习有兴趣的同仁一起贡献代码，提交Issues或者Pull Requests。请先查阅: [Angel Contribution Guide](https://github.com/Tencent/angel/blob/master/CONTRIBUTING.md)
 
