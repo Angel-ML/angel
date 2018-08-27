@@ -3,7 +3,8 @@
 ## 1. 算法介绍
 FNN(Product-Based Neural Networks)算法是在Embedding的基础上, 对Embedding
 的结果进行两两内积或外积, 然后将内/外积结果与原始的Embedding结果拼接起来, 输入DNN进一步提取高阶特特交叉. 值得注意的是, PNN并没有放弃一阶特征, 最后将一阶特征与高阶特征组合起来进行预测, 其构架如下:
-![PNN](../img/PNN.PNG)
+
+![PNN](../img/pnn.png)
 
 注: 目前Angel只实现了内积形式的PNN.
 

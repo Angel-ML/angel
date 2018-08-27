@@ -25,6 +25,7 @@ L2Loss | ![](http://latex.codecogs.com/png.latex?\|y-f(x)\|_2^2) | 用于回归,
 HuberLoss | ![](http://latex.codecogs.com/png.latex?\left\\{\begin{array}{ll}\delta\cdot\(abs(x)-\frac{\delta}{2}\),&abs(x)>\delta\\\\\frac{1}{2}x^2,&abs(x)\le\delta\end{array}\right.) | 用于回归, 它在0附近用二次函数, 在其它地方用一次函数, 解决了绝对值函数在0附近不可导的问题, 用Huber损失得到的模型较为橹棒
 
 用图形化表示如下:
+
 ![回归损失函数](../img/regressionloss.png)
 
 ## 2. Angel中Loss的实现

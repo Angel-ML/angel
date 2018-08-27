@@ -3,6 +3,7 @@
 ## 1. 算法介绍
 NFM(Neural Factorization Machines)算法是在Embedding的基础上, 对Embedding
 的结果进行两两对应元素乘积, 然后相加, 得到一个与Embedding同维的向量, 然后输入DNN进一步提取高阶特特交叉. 值得注意的是, NFM也没有放弃一阶特征, 最后将一阶特征与高阶特征组合起来进行预测, 其构架如下:
+
 ![NFM](../img/NFM.PNG)
 
 ### 1.1 BiInteractionCross层的说明
