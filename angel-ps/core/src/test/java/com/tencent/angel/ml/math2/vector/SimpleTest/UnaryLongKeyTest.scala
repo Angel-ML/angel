@@ -26,7 +26,7 @@ import breeze.numerics._
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import com.tencent.angel.ml.math2.vector.{IntDummyVector, LongDummyVector, Vector}
-import org.junit.Test
+import org.junit.{Before, BeforeClass, Test}
 import org.scalatest.FunSuite
 
 object UnaryLongKeyTest {
@@ -56,6 +56,7 @@ object UnaryLongKeyTest {
   val times = 500
   var start1, stop1, cost1, start2, stop2, cost2 = 0L
 
+  @BeforeClass
   def init(): Unit = {
     val rand = new util.Random()
     val set = new util.HashSet[Int]()
@@ -130,240 +131,40 @@ class UnaryLongKeyTest {
 
   @Test
   def powTest() {
-    //sparse cost
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      Ufuncs.pow(llist.get(0), 2.0)
-      Ufuncs.pow(llist.get(2), 2.0f)
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      pow(sparse1, 2.0)
-      pow(sparse2, 2.0f)
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel sparse pow:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
-    //sorted cost
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      Ufuncs.pow(llist.get(1), 2.0)
-      Ufuncs.pow(llist.get(3), 2.0f)
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      pow(sorted1, 2.0)
-      pow(sorted2, 2.0f)
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel sorted pow:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
-    println(s"${llist.get(0).getClass.getSimpleName}: ${getFlag(llist.get(0))} pow ${llist.get(0).getClass.getSimpleName}: ${getFlag(llist.get(0))} is ${Ufuncs.pow(llist.get(0), 2.0).sum()}, and breeze is ${sum(pow(sparse1, 2.0))}")
-    println(s"${llist.get(1).getClass.getSimpleName}: ${getFlag(llist.get(1))} pow ${llist.get(1).getClass.getSimpleName}: ${getFlag(llist.get(1))} is ${Ufuncs.pow(llist.get(1), 2.0).sum()}, and breeze is ${sum(pow(sorted1, 2.0))}")
-    println(s"${llist.get(2).getClass.getSimpleName}: ${getFlag(llist.get(2))} pow ${llist.get(2).getClass.getSimpleName}: ${getFlag(llist.get(2))} is ${Ufuncs.pow(llist.get(2), 2.0f).sum()}, and breeze is ${sum(pow(sparse2, 2.0f))}")
-    println(s"${llist.get(3).getClass.getSimpleName}: ${getFlag(llist.get(3))} pow ${llist.get(3).getClass.getSimpleName}: ${getFlag(llist.get(3))} is ${Ufuncs.pow(llist.get(3), 2.0f).sum()}, and breeze is ${sum(pow(sorted2, 2.0f))}")
-
 
     assert(abs(Ufuncs.pow(llist.get(0), 2.0).sum() - sum(pow(sparse1, 2.0))) < 1.0E-8)
     assert(abs(Ufuncs.pow(llist.get(1), 2.0).sum() - sum(pow(sorted1, 2.0))) < 1.0E-8)
     assert(abs(Ufuncs.pow(llist.get(2), 2.0f).sum() - sum(pow(sparse2, 2.0f))) < 1.0E-3)
     assert(abs(Ufuncs.pow(llist.get(3), 2.0f).sum() - sum(pow(sorted2, 2.0f))) < 1.0E-3)
-
-
-    val isparse1 = Ufuncs.ipow(llist.get(0), 2.0)
-    val isorted1 = Ufuncs.ipow(llist.get(1), 2.0)
-    val isparse2 = Ufuncs.ipow(llist.get(2), 2.0f)
-    val isorted2 = Ufuncs.ipow(llist.get(3), 2.0f)
-
-    assert((llist.get(0)).sum() == (isparse1).sum())
-    assert((llist.get(1)).sum() == (isorted1).sum())
-    assert((llist.get(2)).sum() == (isparse2).sum())
-    assert((llist.get(3)).sum() == (isorted2).sum())
-
   }
 
   @Test
   def sqrtTest() {
-    //sparse cost
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      Ufuncs.sqrt(llist.get(0))
-      Ufuncs.sqrt(llist.get(2))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      sqrt(sparse1)
-      sqrt(sparse2)
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel sparse sqrt:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
-    //sorted cost
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      Ufuncs.sqrt(llist.get(1))
-      Ufuncs.sqrt(llist.get(3))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      sqrt(sorted1)
-      sqrt(sorted2)
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel sorted sqrt:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
-    println(s"${llist.get(0).getClass.getSimpleName}: ${getFlag(llist.get(0))} sqrt ${llist.get(0).getClass.getSimpleName}: ${getFlag(llist.get(0))} is ${Ufuncs.sqrt(llist.get(0)).sum()}, and breeze is ${sum(sqrt(sparse1))}")
-    println(s"${llist.get(1).getClass.getSimpleName}: ${getFlag(llist.get(1))} sqrt ${llist.get(1).getClass.getSimpleName}: ${getFlag(llist.get(1))} is ${Ufuncs.sqrt(llist.get(1)).sum()}, and breeze is ${sum(sqrt(sorted1))}")
-    println(s"${llist.get(2).getClass.getSimpleName}: ${getFlag(llist.get(2))} sqrt ${llist.get(2).getClass.getSimpleName}: ${getFlag(llist.get(2))} is ${Ufuncs.sqrt(llist.get(2)).sum()}, and breeze is ${sum(sqrt(sparse2))}")
-    println(s"${llist.get(3).getClass.getSimpleName}: ${getFlag(llist.get(3))} sqrt ${llist.get(3).getClass.getSimpleName}: ${getFlag(llist.get(3))} is ${Ufuncs.sqrt(llist.get(3)).sum()}, and breeze is ${sum(sqrt(sorted2))}")
-
-
     assert(abs(Ufuncs.sqrt(llist.get(0)).sum() - sum(sqrt(sparse1))) < 1.0E-8)
     assert(Ufuncs.sqrt(llist.get(1)).sum() == sum(sqrt(sorted1)))
     assert(abs(Ufuncs.sqrt(llist.get(2)).sum() - sum(sqrt(sparse2))) < 1.0E-3)
     assert(abs(Ufuncs.sqrt(llist.get(3)).sum() - sum(sqrt(sorted2))) < 1.0E-3)
 
-    val isparse1 = Ufuncs.isqrt(llist.get(0))
-    val isorted1 = Ufuncs.isqrt(llist.get(1))
-    val isparse2 = Ufuncs.isqrt(llist.get(2))
-    val isorted2 = Ufuncs.isqrt(llist.get(3))
 
-    assert((llist.get(0)).sum() == (isparse1).sum())
-    assert((llist.get(1)).sum() == (isorted1).sum())
-    assert((llist.get(2)).sum() == (isparse2).sum())
-    assert((llist.get(3)).sum() == (isorted2).sum())
 
   }
 
   @Test
   def smulTest() {
-    //sparse cost
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      Ufuncs.smul(llist.get(0), 0.5)
-      Ufuncs.smul(llist.get(2), 0.5f)
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      sparse1 :* 0.5
-      sparse2 :* 0.5f
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel sparse smul:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
-    //sorted cost
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      Ufuncs.smul(llist.get(1), 0.5)
-      Ufuncs.smul(llist.get(3), 0.5f)
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      sorted1 :* 0.5
-      sorted2 :* 0.5f
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel sorted smul:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
-    println(s"${llist.get(0).getClass.getSimpleName}: ${getFlag(llist.get(0))} smul ${llist.get(0).getClass.getSimpleName}: ${getFlag(llist.get(0))} is ${Ufuncs.smul(llist.get(0), 0.5).sum()}, and breeze is ${sum(sparse1 :* 0.5)}")
-    println(s"${llist.get(1).getClass.getSimpleName}: ${getFlag(llist.get(1))} smul ${llist.get(1).getClass.getSimpleName}: ${getFlag(llist.get(1))} is ${Ufuncs.smul(llist.get(1), 0.5).sum()}, and breeze is ${sum(sorted1 :* 0.5)}")
-    println(s"${llist.get(2).getClass.getSimpleName}: ${getFlag(llist.get(2))} smul ${llist.get(2).getClass.getSimpleName}: ${getFlag(llist.get(2))} is ${Ufuncs.smul(llist.get(2), 0.5f).sum()}, and breeze is ${sum(sparse2 :* 0.5f)}")
-    println(s"${llist.get(3).getClass.getSimpleName}: ${getFlag(llist.get(3))} smul ${llist.get(3).getClass.getSimpleName}: ${getFlag(llist.get(3))} is ${Ufuncs.smul(llist.get(3), 0.5f).sum()}, and breeze is ${sum(sorted2 :* 0.5f)}")
-
     assert(abs(Ufuncs.smul(llist.get(0), 0.5).sum() - sum(sparse1 :* 0.5)) < 1.0E-8)
     assert(Ufuncs.smul(llist.get(1), 0.5).sum() == sum(sorted1 :* 0.5))
     assert(abs(Ufuncs.smul(llist.get(2), 0.5f).sum() - sum(sparse2 :* 0.5f)) < 1.0E-3)
     assert(abs(Ufuncs.smul(llist.get(3), 0.5f).sum() - sum(sorted2 :* 0.5f)) < 1.0E-3)
-
-    val isparse1 = Ufuncs.ismul(llist.get(0), 0.5)
-    val isorted1 = Ufuncs.ismul(llist.get(1), 0.5)
-    val isparse2 = Ufuncs.ismul(llist.get(2), 0.5f)
-    val isorted2 = Ufuncs.ismul(llist.get(3), 0.5f)
-
-    assert((llist.get(0)).sum() == (isparse1).sum())
-    assert((llist.get(1)).sum() == (isorted1).sum())
-    assert((llist.get(2)).sum() == (isparse2).sum())
-    assert((llist.get(3)).sum() == (isorted2).sum())
 
   }
 
   @Test
   def sdivTest() {
 
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      Ufuncs.sdiv(llist.get(0), 0.5)
-      Ufuncs.sdiv(llist.get(2), 0.5f)
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      sparse1 :/ 0.5
-      sparse2 :/ 0.5f
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel sparse sdiv:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      Ufuncs.sdiv(llist.get(1), 0.5)
-      Ufuncs.sdiv(llist.get(3), 0.5f)
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      sorted1 :/ 0.5
-      sorted2 :/ 0.5f
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel sorted sdiv:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
-
-    println(s"${llist.get(0).getClass.getSimpleName}: ${getFlag(llist.get(0))} sdiv ${llist.get(0).getClass.getSimpleName}: ${getFlag(llist.get(0))} is ${Ufuncs.sdiv(llist.get(0), 0.5).sum()}, and breeze is ${sum(sparse1 :/ 0.5)}")
-    println(s"${llist.get(1).getClass.getSimpleName}: ${getFlag(llist.get(1))} sdiv ${llist.get(1).getClass.getSimpleName}: ${getFlag(llist.get(1))} is ${Ufuncs.sdiv(llist.get(1), 0.5).sum()}, and breeze is ${sum(sorted1 :/ 0.5)}")
-    println(s"${llist.get(2).getClass.getSimpleName}: ${getFlag(llist.get(2))} sdiv ${llist.get(2).getClass.getSimpleName}: ${getFlag(llist.get(2))} is ${Ufuncs.sdiv(llist.get(2), 0.5f).sum()}, and breeze is ${sum(sparse2 :/ 0.5f)}")
-    println(s"${llist.get(3).getClass.getSimpleName}: ${getFlag(llist.get(3))} sdiv ${llist.get(3).getClass.getSimpleName}: ${getFlag(llist.get(3))} is ${Ufuncs.sdiv(llist.get(3), 0.5f).sum()}, and breeze is ${sum(sorted2 :/ 0.5f)}")
-
     assert(abs(Ufuncs.sdiv(llist.get(0), 0.5).sum() - sum(sparse1 :/ 0.5)) < 1.0E-8)
     assert(Ufuncs.sdiv(llist.get(1), 0.5).sum() == sum(sorted1 :/ 0.5))
     assert(abs(Ufuncs.sdiv(llist.get(2), 0.5f).sum() - sum(sparse2 :/ 0.5f)) < 1.0E-2)
     assert(abs(Ufuncs.sdiv(llist.get(3), 0.5f).sum() - sum(sorted2 :/ 0.5f)) < 1.0E-3)
-
-    val isparse1 = Ufuncs.isdiv(llist.get(0), 0.5)
-    val isorted1 = Ufuncs.isdiv(llist.get(1), 0.5)
-    val isparse2 = Ufuncs.isdiv(llist.get(2), 0.5f)
-    val isorted2 = Ufuncs.isdiv(llist.get(3), 0.5f)
-
-    assert((llist.get(0)).sum() == (isparse1).sum())
-    assert((llist.get(1)).sum() == (isorted1).sum())
-    assert((llist.get(2)).sum() == (isparse2).sum())
-    assert((llist.get(3)).sum() == (isorted2).sum())
 
   }
 

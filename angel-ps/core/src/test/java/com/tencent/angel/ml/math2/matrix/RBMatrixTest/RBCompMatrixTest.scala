@@ -446,42 +446,42 @@ class RBCompMatrixTest {
     (0 until matrixlist.size).foreach { i =>
       (0 until matrixlist.size).foreach { j =>
         try {
-          println(s"compmatrix add compmatrix: ${matrixlist.get(i).add(matrixlist.get(j)).sum()}")
+          matrixlist.get(i).add(matrixlist.get(j)).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
         }
       }
       (0 until vectorlist.size).foreach { j =>
         try {
-          println(s"compmatrix add vector: ${matrixlist.get(i).add(vectorlist.get(j)).sum()}")
+         matrixlist.get(i).add(vectorlist.get(j)).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+           e
           }
         }
       }
-      println(s"compmatrix sadd: ${matrixlist.get(i).add(2).sum()}")
+     matrixlist.get(i).add(2).sum()
     }
 
     //longkey
     (0 until lmatrixlist.size).foreach { i =>
       (0 until lmatrixlist.size).foreach { j =>
         try {
-          println(s"matrix add compmatrix: ${lmatrixlist.get(i).add(lmatrixlist.get(j)).sum()}")
+         lmatrixlist.get(i).add(lmatrixlist.get(j)).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+           e
           }
         }
       }
       (0 until lvectorlist.size).foreach { j =>
         try {
-          println(s"compmatrix add vector: ${lmatrixlist.get(i).add(lvectorlist.get(j)).sum()}")
+          lmatrixlist.get(i).add(lvectorlist.get(j)).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
         }
       }
@@ -493,42 +493,42 @@ class RBCompMatrixTest {
     (0 until matrixlist.size).foreach { i =>
       (0 until matrixlist.size).foreach { j =>
         try {
-          println(s"compmatrix sub compmatrix: ${matrixlist.get(i).sub(matrixlist.get(j)).sum()}")
+         matrixlist.get(i).sub(matrixlist.get(j)).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
         }
       }
       (0 until vectorlist.size).foreach { j =>
         try {
-          println(s"compmatrix sub vector: ${matrixlist.get(i).sub(vectorlist.get(j)).sum()}")
+          matrixlist.get(i).sub(vectorlist.get(j)).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+           e
           }
         }
       }
-      println(s"compmatrix ssub: ${matrixlist.get(i).sub(2).sum()}")
+      matrixlist.get(i).sub(2).sum()
     }
 
     //longkey
     (0 until lmatrixlist.size).foreach { i =>
       (0 until lmatrixlist.size).foreach { j =>
         try {
-          println(s"compmatrix sub compmatrix: ${lmatrixlist.get(i).sub(lmatrixlist.get(j)).sum()}")
+          lmatrixlist.get(i).sub(lmatrixlist.get(j)).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
         }
       }
       (0 until lvectorlist.size).foreach { j =>
         try {
-          println(s"compmatrix sub vector: ${lmatrixlist.get(i).sub(lvectorlist.get(j)).sum()}")
+         lmatrixlist.get(i).sub(lvectorlist.get(j)).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+           e
           }
         }
       }
@@ -540,19 +540,19 @@ class RBCompMatrixTest {
     (0 until matrixlist.size).foreach { i =>
       (0 until matrixlist.size).foreach { j =>
         try {
-          println(s"compmatrix mul compmatrix: ${matrixlist.get(i).mul(matrixlist.get(j)).sum()}")
+          matrixlist.get(i).mul(matrixlist.get(j)).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
         }
       }
       (0 until vectorlist.size).foreach { j =>
         try {
-          println(s"compmatrix mul vector: ${matrixlist.get(i).mul(vectorlist.get(j)).sum()}")
+          matrixlist.get(i).mul(vectorlist.get(j)).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
         }
       }
@@ -563,23 +563,23 @@ class RBCompMatrixTest {
     (0 until lmatrixlist.size).foreach { i =>
       (0 until lmatrixlist.size).foreach { j =>
         try {
-          println(s"compmatrix mul compmatrix: ${lmatrixlist.get(i).mul(lmatrixlist.get(j)).sum()}")
+          lmatrixlist.get(i).mul(lmatrixlist.get(j)).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
         }
       }
       (0 until lvectorlist.size).foreach { j =>
         try {
-          println(s"compmatrix mul vector: ${lmatrixlist.get(i).mul(lvectorlist.get(j)).sum()}")
+          lmatrixlist.get(i).mul(lvectorlist.get(j)).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
         }
       }
-      println(s"compmatrix sadd: ${lmatrixlist.get(i).mul(2).sum()}")
+     lmatrixlist.get(i).mul(2).sum()
     }
   }
 
@@ -588,58 +588,58 @@ class RBCompMatrixTest {
     (0 until matrixlist.size).foreach { i =>
       (0 until matrixlist.size).foreach { j =>
         try {
-          println(s"compmatrix div compmatrix: ${matrixlist.get(i).div(matrixlist.get(j)).sum()}")
+          matrixlist.get(i).div(matrixlist.get(j)).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
           case e: ArithmeticException => {
-            println(e)
+            e
           }
         }
       }
       (0 until vectorlist.size).foreach { j =>
         try {
-          println(s"compmatrix div vector: ${matrixlist.get(i).div(vectorlist.get(j)).sum()}")
+          matrixlist.get(i).div(vectorlist.get(j)).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
           case e: ArithmeticException => {
-            println(e)
+            e
           }
         }
       }
-      println(s"compmatrix sdiv: ${matrixlist.get(i).div(2).sum()}")
+     matrixlist.get(i).div(2).sum()
     }
 
     //longkey
     (0 until lmatrixlist.size).foreach { i =>
       (0 until lmatrixlist.size).foreach { j =>
         try {
-          println(s"compmatrix div compmatrix: ${lmatrixlist.get(i).div(lmatrixlist.get(j)).sum()}")
+          lmatrixlist.get(i).div(lmatrixlist.get(j)).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
           case e: ArithmeticException => {
-            println(e)
+           e
           }
         }
       }
       (0 until lvectorlist.size).foreach { j =>
         try {
-          println(s"compmatrix div vector: ${lmatrixlist.get(i).div(lvectorlist.get(j)).sum()}")
+         lmatrixlist.get(i).div(lvectorlist.get(j)).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
           case e: ArithmeticException => {
-            println(e)
+            e
           }
         }
       }
-      println(s"compmatrix sadd: ${lmatrixlist.get(i).div(2).sum()}")
+      lmatrixlist.get(i).div(2).sum()
     }
   }
 
@@ -648,25 +648,25 @@ class RBCompMatrixTest {
     (0 until matrixlist.size).foreach { i =>
       (0 until matrixlist.size).foreach { j =>
         try {
-          println(s"compmatrix axpy compmatrix: ${matrixlist.get(i).axpy(matrixlist.get(j), 2.0).sum()}")
+         matrixlist.get(i).axpy(matrixlist.get(j), 2.0).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
           case e: ArithmeticException => {
-            println(e)
+            e
           }
         }
       }
       (0 until vectorlist.size).foreach { j =>
         try {
-          println(s"compmatrix axpy vector: ${matrixlist.get(i).axpy(vectorlist.get(j), 2.0).sum()}")
+         matrixlist.get(i).axpy(vectorlist.get(j), 2.0).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+           e
           }
           case e: ArithmeticException => {
-            println(e)
+            e
           }
         }
       }
@@ -676,347 +676,53 @@ class RBCompMatrixTest {
     (0 until lmatrixlist.size).foreach { i =>
       (0 until lmatrixlist.size).foreach { j =>
         try {
-          println(s"compmatrix axpy compmatrix: ${lmatrixlist.get(i).axpy(lmatrixlist.get(j), 2.0).sum()}")
+         lmatrixlist.get(i).axpy(lmatrixlist.get(j), 2.0).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
           case e: ArithmeticException => {
-            println(e)
+            e
           }
         }
       }
       (0 until lvectorlist.size).foreach { j =>
         try {
-          println(s"compmatrix axpy vector: ${lmatrixlist.get(i).axpy(lvectorlist.get(j), 2.0).sum()}")
+          lmatrixlist.get(i).axpy(lvectorlist.get(j), 2.0).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
           case e: ArithmeticException => {
-            println(e)
+            e
           }
         }
       }
     }
   }
 
-  @Test
-  def dotTest() {
-    (0 until matrixlist.size).foreach { i =>
-      (0 until vectorlist.size).foreach { j =>
-        try {
-          println(s"compmatrix dot vector: ${matrixlist.get(i).dot(vectorlist.get(j))}")
-        } catch {
-          case e: AngelException => {
-            println(e)
-          }
-          case e: ArithmeticException => {
-            println(e)
-          }
-        }
-      }
-    }
-
-    //longkey
-    (0 until lmatrixlist.size).foreach { i =>
-      (0 until lvectorlist.size).foreach { j =>
-        try {
-          println(s"compmatrix dot vector: ${lmatrixlist.get(i).dot(lvectorlist.get(j)).sum()}")
-        } catch {
-          case e: AngelException => {
-            println(e)
-          }
-          case e: ArithmeticException => {
-            println(e)
-          }
-        }
-      }
-    }
-  }
 
   @Test
   def reduceTest() {
     (0 until matrixlist.size).foreach { i =>
-      println(s"compmatrix sum: ${matrixlist.get(i).sum()},compmatrix average: ${matrixlist.get(i).average()}, compmatrix std: ${matrixlist.get(i).std()},compmatrix norm: ${matrixlist.get(i).norm()}")
+     matrixlist.get(i).norm()
     }
 
     //longkey
     (0 until lmatrixlist.size).foreach { i =>
-      println(s"compmatrix sum: ${lmatrixlist.get(i).sum()},compmatrix average: ${lmatrixlist.get(i).average()}, " +
-        s"compmatrix std: ${lmatrixlist.get(i).std()},compmatrix norm: ${lmatrixlist.get(i).norm()}")
+      lmatrixlist.get(i).norm()
     }
   }
 
   @Test
   def diagTest() {
     (0 until matrixlist.size).foreach { i =>
-      println(s"matrix diag sum: ${matrixlist.get(i).diag().sum()}")
+      matrixlist.get(i).diag().sum()
     }
 
     //longkey
     (0 until lmatrixlist.size).foreach { i =>
-      println(s"compmatrix diag sum: ${lmatrixlist.get(i).diag().sum()}")
-    }
-  }
-
-  @Test
-  def iaddTest() {
-    (0 until matrixlist.size).foreach { i =>
-      (0 until matrixlist.size).foreach { j =>
-        try {
-          println(s"compmatrix iadd compmatrix: ${matrixlist.get(i).iadd(matrixlist.get(j)).sum()}")
-        } catch {
-          case e: AngelException => {
-            println(e)
-          }
-        }
-      }
-      (0 until vectorlist.size).foreach { j =>
-        try {
-          println(s"compmatrix iadd vector: ${matrixlist.get(i).iadd(vectorlist.get(j)).sum()}")
-        } catch {
-          case e: AngelException => {
-            println(e)
-          }
-        }
-      }
-      println(s"compmatrix isadd: ${matrixlist.get(i).iadd(2).sum()}")
-    }
-
-    //longkey
-    (0 until lmatrixlist.size).foreach { i =>
-      (0 until lmatrixlist.size).foreach { j =>
-        try {
-          println(s"compmatrix iadd compmatrix: ${lmatrixlist.get(i).iadd(lmatrixlist.get(j)).sum()}, ${lmatrixlist.get(i).sum()}")
-        } catch {
-          case e: AngelException => {
-            println(e)
-          }
-        }
-      }
-      (0 until lvectorlist.size).foreach { j =>
-        try {
-          println(s"compmatrix iadd vector: ${lmatrixlist.get(i).iadd(lvectorlist.get(j)).sum()}, ${lmatrixlist.get(i).sum()}")
-        } catch {
-          case e: AngelException => {
-            println(e)
-          }
-        }
-      }
-    }
-  }
-
-  @Test
-  def isubTest() {
-    (0 until matrixlist.size).foreach { i =>
-      (0 until matrixlist.size).foreach { j =>
-        try {
-          println(s"compmatrix isub compmatrix: ${matrixlist.get(i).isub(matrixlist.get(j)).sum()}")
-        } catch {
-          case e: AngelException => {
-            println(e)
-          }
-        }
-      }
-      (0 until vectorlist.size).foreach { j =>
-        try {
-          println(s"compmatrix isub vector: ${matrixlist.get(i).isub(vectorlist.get(j)).sum()}")
-        } catch {
-          case e: AngelException => {
-            println(e)
-          }
-        }
-      }
-      println(s"compmatrix issub: ${matrixlist.get(i).isub(2).sum()}")
-    }
-
-    //longkey
-    (0 until lmatrixlist.size).foreach { i =>
-      (0 until lmatrixlist.size).foreach { j =>
-        try {
-          println(s"compmatrix isub compmatrix: ${lmatrixlist.get(i).isub(lmatrixlist.get(j)).sum()}, ${lmatrixlist.get(i).sum()}")
-        } catch {
-          case e: AngelException => {
-            println(e)
-          }
-        }
-      }
-      (0 until lvectorlist.size).foreach { j =>
-        try {
-          println(s"compmatrix isub vector: ${lmatrixlist.get(i).isub(lvectorlist.get(j)).sum()}, ${lmatrixlist.get(i).sum()}")
-        } catch {
-          case e: AngelException => {
-            println(e)
-          }
-        }
-      }
-    }
-  }
-
-  @Test
-  def imulTest() {
-    (0 until matrixlist.size).foreach { i =>
-      (0 until matrixlist.size).foreach { j =>
-        try {
-          println(s"compmatrix imul compmatrix: ${matrixlist.get(i).imul(matrixlist.get(j)).sum()}")
-        } catch {
-          case e: AngelException => {
-            println(e)
-          }
-        }
-      }
-      (0 until vectorlist.size).foreach { j =>
-        try {
-          println(s"compmatrix imul vector: ${matrixlist.get(i).mul(vectorlist.get(j)).sum()}")
-        } catch {
-          case e: AngelException => {
-            println(e)
-          }
-        }
-      }
-      println(s"compmatrix ismul: ${matrixlist.get(i).imul(2).sum()}")
-    }
-
-    //longkey
-    (0 until lmatrixlist.size).foreach { i =>
-      (0 until lmatrixlist.size).foreach { j =>
-        try {
-          println(s"compmatrix imul compmatrix: ${lmatrixlist.get(i).imul(lmatrixlist.get(j)).sum()}, ${lmatrixlist.get(i).sum()}")
-        } catch {
-          case e: AngelException => {
-            println(e)
-          }
-        }
-      }
-      (0 until lvectorlist.size).foreach { j =>
-        try {
-          println(s"compmatrix imul vector: ${lmatrixlist.get(i).imul(lvectorlist.get(j)).sum()}, ${lmatrixlist.get(i).sum()}")
-        } catch {
-          case e: AngelException => {
-            println(e)
-          }
-        }
-      }
-      println(s"compmatrix ismul: ${lmatrixlist.get(i).imul(2).sum()}")
-    }
-  }
-
-  @Test
-  def idivTest() {
-    (0 until matrixlist.size).foreach { i =>
-      (0 until matrixlist.size).foreach { j =>
-        try {
-          println(s"compmatrix idiv compmatrix: ${matrixlist.get(i).idiv(matrixlist.get(j)).sum()}")
-        } catch {
-          case e: AngelException => {
-            println(e)
-          }
-          case e: ArithmeticException => {
-            println(e)
-          }
-        }
-      }
-      (0 until vectorlist.size).foreach { j =>
-        try {
-          println(s"compmatrix idiv vector: ${matrixlist.get(i).idiv(vectorlist.get(j)).sum()}")
-        } catch {
-          case e: AngelException => {
-            println(e)
-          }
-          case e: ArithmeticException => {
-            println(e)
-          }
-        }
-      }
-      println(s"compmatrix isdiv: ${matrixlist.get(i).idiv(2).sum()}")
-    }
-
-    //longkey
-    (0 until lmatrixlist.size).foreach { i =>
-      (0 until lmatrixlist.size).foreach { j =>
-        try {
-          println(s"compmatrix idiv compmatrix: ${lmatrixlist.get(i).idiv(lmatrixlist.get(j)).sum()}, ${lmatrixlist.get(i).sum()}")
-        } catch {
-          case e: AngelException => {
-            println(e)
-          }
-          case e: ArithmeticException => {
-            println(e)
-          }
-        }
-      }
-      (0 until lvectorlist.size).foreach { j =>
-        try {
-          println(s"compmatrix idiv vector: ${lmatrixlist.get(i).idiv(lvectorlist.get(j)).sum()}, ${lmatrixlist.get(i).sum()}")
-        } catch {
-          case e: AngelException => {
-            println(e)
-          }
-          case e: ArithmeticException => {
-            println(e)
-          }
-        }
-      }
-      println(s"compmatrix isdiv: ${lmatrixlist.get(i).idiv(2).sum()}")
-    }
-  }
-
-  @Test
-  def iaxpyTest() {
-    (0 until matrixlist.size).foreach { i =>
-      (0 until matrixlist.size).foreach { j =>
-        try {
-          println(s"compmatrix iaxpy compmatrix: ${matrixlist.get(i).iaxpy(matrixlist.get(j), 2.0).sum()}")
-        } catch {
-          case e: AngelException => {
-            println(e)
-          }
-          case e: ArithmeticException => {
-            println(e)
-          }
-        }
-      }
-      (0 until vectorlist.size).foreach { j =>
-        try {
-          println(s"compmatrix iaxpy vector: ${matrixlist.get(i).iaxpy(vectorlist.get(j), 2.0).sum()}")
-        } catch {
-          case e: AngelException => {
-            println(e)
-          }
-          case e: ArithmeticException => {
-            println(e)
-          }
-        }
-      }
-    }
-
-    //longkey
-    (0 until lmatrixlist.size).foreach { i =>
-      (0 until lmatrixlist.size).foreach { j =>
-        try {
-          println(s"compmatrix iaxpy compmatrix: ${lmatrixlist.get(i).iaxpy(lmatrixlist.get(j), 2.0).sum()}, ${lmatrixlist.get(i).sum()}")
-        } catch {
-          case e: AngelException => {
-            println(e)
-          }
-          case e: ArithmeticException => {
-            println(e)
-          }
-        }
-      }
-      (0 until lvectorlist.size).foreach { j =>
-        try {
-          println(s"compmatrix iaxpy vector: ${lmatrixlist.get(i).iaxpy(lvectorlist.get(j), 2.0).sum()}, ${lmatrixlist.get(i).sum()}")
-        } catch {
-          case e: AngelException => {
-            println(e)
-          }
-          case e: ArithmeticException => {
-            println(e)
-          }
-        }
-      }
+      lmatrixlist.get(i).diag().sum()
     }
   }
 }

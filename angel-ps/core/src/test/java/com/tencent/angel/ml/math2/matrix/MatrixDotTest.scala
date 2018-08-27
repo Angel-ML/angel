@@ -241,12 +241,5 @@ class MatrixDotTest extends FunSuite {
     println(Ufuncs.dot(densematrix3, true, matrixlist.get(0), false).sum())
     println(Ufuncs.dot(densematrix4, true, matrixlist.get(1), false).sum())
 
-    println("blasmatrix dot rbmatrix FT")
-    println(Ufuncs.dot(densematrix3, false, matrixlist.get(0), true).sum())
-    println(Ufuncs.dot(densematrix4, false, matrixlist.get(1), true).sum())
-
-    println("blasmatrix dot rbmatrix TT")
-    println(Ufuncs.dot(densematrix1, true, matrixlist.get(0), true).sum())
-    println(Ufuncs.dot(densematrix2, true, matrixlist.get(1), true).sum())
   }
 }
