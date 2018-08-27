@@ -1,6 +1,6 @@
 # Angel中的层
 
-Angel中的大部分算法都是基于[计算图](./computinggraph_on_angel.md)的, 图中的节点为层(layer). 按层的拓朴结构可分为三类:
+Angel中的大部分算法都是基于[计算图](./computinggraph_on_angel.md)的, 图中的节点为层(layer). 按层的拓扑结构可分为三类:
 - edge: 边缘节点, 只在输入或输出的层, 如输入层与损失层
     - 输入层: 主要有DenseInputLayer, SparseInputLayer, Embedding
     - 损失层: 主要用SimpleLossLayer, SoftmaxLossLayer
@@ -59,7 +59,7 @@ class SparseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
 ```
 它的主要特点为:
 - 接收稀疏输入, 维度可以非常高, 达万亿
-- 内部参数用RowedMatrix存储, 每行都是一个稀疏向量, 计算用Angel内部数学库
+- 内部参数用RowBasedMatrix存储, 每行都是一个稀疏向量, 计算用Angel内部数学库
 - 需要指定outputDim, 可以指定传输函数和优化器
 
 完成的计算用公式表达为:
@@ -84,8 +84,8 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
   extends InputLayer(name, outputDim)(graph) with Trainable
 ```
 除于name与optimizer这两个参数据外, Embedding的其它两个参数如下:
-- outputDim: 是指lookup的输出, Angel的Embedding目前假设每个样本都具的相同的field数目, 每个field都是One-hot的. 第一个条作在大部分情况下都成立, 但是第二个条件较为严格, 有些情况下并不成立, 以后会放宽这一限制
-- numFactors: 上指Embedding向量的维数. 关于Embedding矩阵的大小是这样获得的: 系统中存有输入数据的维数, 这个维数被获取后成为Embedding矩阵的列数, 而numFactors就是Embedding矩阵的行数(注: 虽然内部实现上有点不同, 但这样理解是可以的)
+- outputDim: 指lookup的输出, Angel的Embedding目前假设每个样本都具的相同的field数目, 每个field都是One-hot的. 第一个条件在大部分情况下都成立, 但是第二个条件较为严格, 有些情况下并不成立, 以后会放宽这一限制
+- numFactors: 指Embedding向量的维数. 关于Embedding矩阵的大小是这样获得的: 系统中存有输入数据的维数, 这个维数被获取后成为Embedding矩阵的列数, 而numFactors就是Embedding矩阵的行数(注: 虽然内部实现上有点不同, 但这样理解是可以的)
 
 Embedding在抽象意义上是一张表, 并提供查表的方法(lookup/calOutput). Angel的Embedding的特别之处在于查完表后还允许有一些运算, 所以包括两个步骤:
 - 查表: 根据索引, 到表中查出相应的列
