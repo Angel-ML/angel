@@ -181,7 +181,7 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}f(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k)=\sum_i^k\sum_{j=i+1}^k\bold{u}_i^T\bold{u}_j)
 
-其中![](http://latex.codecogs.com/png.latex?(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k))是Embedding的输出结果. 具本而言是Embedding结果做两两内积, 再加和. 因此BiInnerSumCross没有参数, 是untrainable的, 输出维度为1.
+其中![](http://latex.codecogs.com/png.latex?(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k))是Embedding的输出结果. 具体而言是Embedding结果做两两内积, 再求和. 因此BiInnerSumCross没有参数, 是untrainable的, 输出维度为1.
 
 构造函数如下:
 ```scala
@@ -205,7 +205,7 @@ json参数例子如下:
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}f(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k)=(\bold{u}_1^T\bold{u}_2,\bold{u}_1^T\bold{u}_3,\bold{u}_1^T\bold{u}_4,\cdots,\bold{u}_{k-1}^T\bold{u}_k))
 
-其中![](http://latex.codecogs.com/png.latex?(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k))是Embedding的输出结果. 具本而言是Embedding结果做两两内积, 因此输出的维度为![](http://latex.codecogs.com/png.latex?\dpi{60}C_k^2=\frac{k(k-1)}{2}). 由此可见, BiInnerCross也是没有参数, 是untrainable的, 输出维度为![](http://latex.codecogs.com/png.latex?\dpi{80}C_k^2).
+其中![](http://latex.codecogs.com/png.latex?(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k))是Embedding的输出结果. 具体而言是Embedding结果做两两内积, 因此输出的维度为![](http://latex.codecogs.com/png.latex?\dpi{60}C_k^2=\frac{k(k-1)}{2}). 由此可见, BiInnerCross也是没有参数, 是untrainable的, 输出维度为![](http://latex.codecogs.com/png.latex?\dpi{80}C_k^2).
 
 构造函数如下:
 ```scala
