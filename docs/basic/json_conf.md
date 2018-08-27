@@ -141,7 +141,7 @@ decay |ml.learn.decay| 学习率衰减因子
 ## 5. 网络中的层
 Angel中的深度学习算法都表示为一个AngelGraph, 而AngelGraph中的节点就是层(Layer). 按层的拓朴结构可分为三类:
 - edge: 边缘节点, 只在输入或输出的层, 如输入层与损失层
-- linear: 有且仅的一个输入与一个输出的层
+- linear: 有且仅有一个输入与一个输出的层
 - join: 有两个或多个输入, 一个输出的层
 
 注: 虽然Angel的层可以有多个输入, 但最多只有一个输入. 一个层的输出可以作为多个层的输入, 即输出可以"重复消费".
@@ -166,7 +166,7 @@ Angel中的深度学习算法都表示为一个AngelGraph, 而AngelGraph中的�
 - 除Loss层外, 其它层都有输出, 但Angel中不用显式指出, 因为指定了输入关系就同时指定了输出关系. 但是要显式地指出输出的维度:
     + outputdim: 输出的维度
 - 对于trainable层, 由于它有参数, 所以可以指定优化器, 以"optimizer"为key. 其值与"default_optimizer"的一样
-- 对于某些层, 如DenseInputLayer, SparseInputLayer, FCLayer它们还可以的传递函数, 以"transfunc"为key, 其直与"default_tansfunc"的一样
+- 对于某些层, 如DenseInputLayer, SparseInputLayer, FCLayer它们还可以有传递函数, 以"transfunc"为key, 其值与"default_tansfunc"的一样
 - 对于loss层, 有"lossfunc", 用于指定损失函数
 
 下面是一个DeepFM的类子:

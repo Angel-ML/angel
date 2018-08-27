@@ -73,7 +73,7 @@ json方式表达有两种, 如下:
 ## 4. FTRL
 FTRL是一种在线学习算法, 它的目标是优化regret bound, 在一定的学习率衰减条件下, 可以证明它是有效的.
 
-FTRL的另一个特点是可以特到非常稀疏的解, 表现上比PGD(proximal gradient descent)好, 也优于其它在线学习算法, 如FOBOS, RDA等.
+FTRL的另一个特点是可以得到非常稀疏的解, 表现上比PGD(proximal gradient descent)好, 也优于其它在线学习算法, 如FOBOS, RDA等.
 
 FTRL的算法流程如下:
 
