@@ -1,12 +1,12 @@
 # DeepFM
 
 ## 1. 算法介绍
-DeepFM算法是在FM(Factorization machine)的基础上加入深度层构成. 与PNN, NFM算法相比, 它保留了FM的二阶隐式特征交叉同仅用深度网络来获取高阶特征交叉. 其构架如下:
+DeepFM算法是在FM(Factorization machine)的基础上加入深度层构成. 与PNN, NFM算法相比, 它保留了FM的二阶隐式特征交叉的同时又用深度网络来获取高阶特征交叉. 其构架如下:
 
 ![DeepFM](../img/DeepFM.PNG)
 
 ### 1.1 Embedding与BiInnerSumCross层的说明
-与传统的FM实现不同, 这里采用Embedding与BiInnerSumCross结合的方式实现二介隐式交叉, 传统的FM二次交叉项的表达式如下:
+与传统的FM实现不同, 这里采用Embedding与BiInnerSumCross结合的方式实现二阶隐式交叉, 传统的FM二次交叉项的表达式如下:
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}\sum_i\sum_{j=i+1}\bold{v}_i^T\bold{v}_jx_ix_j=\frac{1}{2}\(\sum_i\sum_j(x_i\bold{v}_i)^T(x_j\bold{v}_j)-\sum_i(x_i\bold{v}_i)^T(x_i\bold{v}_i)\))
 
@@ -35,7 +35,7 @@ val sumVector = VFactory.denseDoubleVector(mat.getSubDim)
 ```
 
 ### 1.2 其它层说明
-- SparseInputLayer: 稀疏数据与输入层, 对稀疏高维数据做了特别优化, 本质上是一个FCLayer
+- SparseInputLayer: 稀疏数据输入层, 对稀疏高维数据做了特别优化, 本质上是一个FCLayer
 - FCLayer: DNN中最常见的层, 线性变换后接传递函数
 - SumPooling: 将多个输入的数据做element-wise的加和, 要求输入具本相同的shape
 - SimpleLossLayer: 损失层, 可以指定不同的损失函数
