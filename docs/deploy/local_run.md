@@ -13,4 +13,4 @@
 
 发布包解压后，在根目录下有一个bin目录，提交任务相关的脚本都放在该目录下。例如运行简单的逻辑回归的例子：
 
-```./angel-example com.tencent.angel.example.ml.SGDLRLocalExample```
+```./angel-example com.tencent.angel.example.ml.LogisticRegLocalExample```

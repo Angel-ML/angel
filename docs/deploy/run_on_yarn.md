@@ -43,11 +43,12 @@ Angel的分布式Yarn运行模式需要的环境，其实也非常简单：
 	
 		```bsh
 		./angel-submit \
-			--angel.app.submit.class "com.tencent.angel.ml.classification.lr.LRRunner"\
+		        --angel.app.submit.class com.tencent.angel.ml.core.graphsubmit.GraphRunner \
 			--angel.train.data.path "hdfs://my-nn:54310/test/lr_data" \
 			--angel.log.path "hdfs://my-nn:54310/test/log" \
 			--angel.save.model.path "hdfs://my-nn:54310/test/model" \
 			--action.type train \
+			--ml.model.class.name com.tencent.angel.ml.classification.LogisticRegression \
 			--ml.epoch.num 10 \
 			--ml.data.type libsvm \
 			--ml.feature.index.range 1024 \
@@ -63,10 +64,11 @@ Angel的分布式Yarn运行模式需要的环境，其实也非常简单：
 	| 名称    | 含义  |
 	| --- | --- |
 	| action.type  | 计算类型，目前支持"train"和"predict"两种，分别表示模型训练和预测    |
-	| angel.app.submit.class | 算法运行类，每个算法都对应一个运行类|
+	| angel.app.submit.class | 算法运行类|
 	| angel.train.data.path | 训练数据输入路径 |
 	| angel.log.path | 算法指标日志输出路径 |
 	| angel.save.model.path | 模型保存路径 |
+	| ml.model.class.name | 模型类型 |
 	| ml.epoch.num | epoch 个数 |
 	| ml.data.type | 训练数据格式，默认支持两种格式libsvm和dummy |
 	| ml.feature.index.range | 模型index范围 |
