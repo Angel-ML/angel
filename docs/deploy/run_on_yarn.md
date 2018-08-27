@@ -43,12 +43,12 @@ Angel的分布式Yarn运行模式需要的环境，其实也非常简单：
 	
 		```bsh
 		./angel-submit \
-		        --angel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner \
+		        --angel.app.submit.class com.tencent.angel.ml.core.graphsubmit.GraphRunner \
 			--angel.train.data.path "hdfs://my-nn:54310/test/lr_data" \
 			--angel.log.path "hdfs://my-nn:54310/test/log" \
 			--angel.save.model.path "hdfs://my-nn:54310/test/model" \
 			--action.type train \
-			--ml.model.class.name=com.tencent.angel.ml.classification.LogisticRegression \
+			--ml.model.class.name com.tencent.angel.ml.classification.LogisticRegression \
 			--ml.epoch.num 10 \
 			--ml.data.type libsvm \
 			--ml.feature.index.range 1024 \
