@@ -36,6 +36,7 @@ class DenseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overri
 - 需要指定outputDim, 可以指定传输函数和优化器
 
 完成的计算用公式表达为:
+
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}f(x)=tranfunc(x\bold{w}+bias))
 
 一种典型的json表达为:
@@ -62,6 +63,7 @@ class SparseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
 - 需要指定outputDim, 可以指定传输函数和优化器
 
 完成的计算用公式表达为:
+
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}f(x)=tranfunc(x\bold{w}+bias))
 
 一种典型的json表达为:
@@ -90,9 +92,10 @@ Embedding在抽象意义上是一张表, 并提供查表的方法(lookup/calOutp
 - 计算组装: 有时数据不是one-hot, 要将查得的向量乘以一个值
 
 下面展示了one-hot, 与非带数值情况下embedding的输出结果:
-![model](http://latex.codecogs.com/png.latex?\dpi{150}(1,5,40,\cdots,10000)\rightarrow(\bold{v}_1,\bold{v}_5,\bold{v}_{40},\cdots,\bold{v}_{10000}))
 
-![model](http://latex.codecogs.com/png.latex?\dpi{150}(1:0.3,5:0.7,40:1.9,\cdots,10000:3.2)\rightarrow(0.3\bold{v}_1,0.7\bold{v}_5,1.9\bold{v}_{40},\cdots,3.2\bold{v}_{10000}))
+![model](http://latex.codecogs.com/png.latex?\dpi{120}(1,5,40,\cdots,10000)\rightarrow(\bold{v}_1,\bold{v}_5,\bold{v}_{40},\cdots,\bold{v}_{10000}))
+
+![model](http://latex.codecogs.com/png.latex?\dpi{120}(1:0.3,5:0.7,40:1.9,\cdots,10000:3.2)\rightarrow(0.3\bold{v}_1,0.7\bold{v}_5,1.9\bold{v}_{40},\cdots,3.2\bold{v}_{10000}))
 
 一种典型的json表达为:
 ```json
@@ -114,6 +117,7 @@ Embedding在抽象意义上是一张表, 并提供查表的方法(lookup/calOutp
 
 ### 2.1 FCLayer
 FCLayer层是DNN中最常见的层, 其计算可用下面的公式表达:
+
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}f(x)=tranfunc(x\bold{w}+bias))
 
 在Angel中的构造函数如下:
@@ -174,7 +178,9 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
 
 ### 2.2 BiInnerSumCross
 特征交叉层, 计算公式如下:
+
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}f(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k)=\sum_i^k\sum_{j=i+1}^k\bold{u}_i^T\bold{u}_j)
+
 其中![](http://latex.codecogs.com/png.latex?(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k))是Embedding的输出结果. 具本而言是Embedding结果做两两内积, 再加和. 因此BiInnerSumCross没有参数, 是untrainable的, 输出维度为1.
 
 构造函数如下:
@@ -196,8 +202,10 @@ json参数例子如下:
 
 ### 2.3 BiInnerCross
 特征交叉层, 计算公式如下:
+
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}f(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k)=(\bold{u}_1^T\bold{u}_2,\bold{u}_1^T\bold{u}_3,\bold{u}_1^T\bold{u}_4,\cdots,\bold{u}_{k-1}^T\bold{u}_k))
-其中![](http://latex.codecogs.com/png.latex?(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k))是Embedding的输出结果. 具本而言是Embedding结果做两两内积, 因此输出的维度为![](http://latex.codecogs.com/png.latex?C_k^2=\frac{k(k-1)}{2}). 由此可见, BiInnerCross也是没有参数, 是untrainable的, 输出维度为![](http://latex.codecogs.com/png.latex?C_k^2).
+
+其中![](http://latex.codecogs.com/png.latex?(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k))是Embedding的输出结果. 具本而言是Embedding结果做两两内积, 因此输出的维度为![](http://latex.codecogs.com/png.latex?\dpi{60}C_k^2=\frac{k(k-1)}{2}). 由此可见, BiInnerCross也是没有参数, 是untrainable的, 输出维度为![](http://latex.codecogs.com/png.latex?\dpi{80}C_k^2).
 
 构造函数如下:
 ```scala
@@ -217,6 +225,7 @@ json参数例子如下:
 
 ### 2.4 BiInteactionCross
 特征交叉层, 计算公式如下:
+
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}f(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k)=\sum_i^k\sum_{j=i+1}^k\bold{u}_i\otimes\bold{u}_j)
 
 其中![](http://latex.codecogs.com/png.latex?(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k))是Embedding的输出结果. 具本而言是Embedding结果做两两对应元素积![](http://latex.codecogs.com/png.latex?\bold{u}_i\otimes\bold{u}_j), 再相和, 因此输出的维度为与![](http://latex.codecogs.com/png.latex?\bold{u}_k)相同, 与输入数据的维度元关. 由此可见, BiInteactionCross也是没有参数, 是untrainable的.

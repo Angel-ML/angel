@@ -72,8 +72,8 @@
 		* [FTRL](./docs/algo/ftrl_lr_spark.md)
 	* **Offline Learning**
 		* [Logistic Regression(LR)](./docs/algo/sona/lr_sona.md)
-		* [Word2Vec](./docs/sona/word2vec_sona.md)
-		* [LINE](./docs/sona/line_sona.md)
+		* [Word2Vec](./docs/algo/sona/word2vec_sona.md)
+		* [LINE](./docs/algo/sona/line_sona.md)
 
 
 ## Deployment

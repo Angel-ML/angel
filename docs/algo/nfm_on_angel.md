@@ -7,9 +7,13 @@ NFM(Neural Factorization Machines)算法是在Embedding的基础上, 对Embeddin
 
 ### 1.1 BiInteractionCross层的说明
 在实现中, 用Embedding的方式存储![](http://latex.codecogs.com/png.latex?\bold{v}_i), 调用Embedding的`calOutput`后, 将![](http://latex.codecogs.com/png.latex?x_i\bold{v}_i)计算后一起输出, 所以一个样本的Embedding output结果为:
+
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}(x_1\bold{v}_1,x_2\bold{v}_2,x_3\bold{v}_3,\cdots,x_k\bold{v}_k)=(\bold{u}_1,\bold{u}_2,\bold{u}_3,\cdots,\bold{u}_k))
+
 BiInteractionCross的计算公式如下:
+
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}\begin{array}{ll}\sum_i\sum_{j=i+1}\bold{u}_i\otimes\bold{u}_j&=\frac{1}{2}(\sum_i\sum_j\bold{u}_i\otimes\bold{u}_j-\sum_i\bold{u}_i^2)\\\\&=\frac{1}{2}(\sum_i\bold{u}_i)\otimes(\sum_j\bold{u}_j)-\sum_i\bold{u}_i^2\\\\&=\frac{1}{2}[(\sum_i\bold{u}_i)^2-\sum_i\bold{u}_i^2]\end{array})
+
 用Scala代码实现为:
 ```scala
 (0 until batchSize).foreach { row =>

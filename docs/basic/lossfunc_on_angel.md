@@ -6,6 +6,7 @@ Angel中有丰富的损失函数, 可分为两类
 - 回归损失函数
 
 分类损失函数如下表所示:
+
 名称|表达式|描述
 ---|---|---
 CrossEntoryLoss| ![](http://latex.codecogs.com/png.latex?-\sum_iy_i\log{p_i(x)}) | 用于分类, 逻辑回归是一种特例, 也可以用于多分类Softmax, 它要求输入是概率![](http://latex.codecogs.com/png.latex?p_i(x)), 而不是![](http://latex.codecogs.com/png.latex?f(x))
@@ -14,6 +15,7 @@ SoftmaxLoss| ![](http://latex.codecogs.com/png.latex?-\sum_iI(y=i)\log\frac{x^{x
 HingeLoss| ![](http://latex.codecogs.com/png.latex?\max{\(0,1-yf(x)\)}) | SVM的损失函数
 
 用图形化表示如下:
+
 ![分类损失函数](../img/classifcationloss.png)
 
 回归损失函数如下表所示:

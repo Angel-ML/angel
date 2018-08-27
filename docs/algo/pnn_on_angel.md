@@ -9,8 +9,11 @@ FNN(Product-Based Neural Networks)算法是在Embedding的基础上, 对Embeddin
 
 ### 1.1 BiInnerCross层的说明
 在实现中, 用Embedding的方式存储$\bold{v}_i$, 调用Embedding的`calOutput`后, 将$x_i\bold{v}_i$计算后一起输出, 所以一个样本的Embedding output结果为:
+
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}(x_1\bold{v}_1,x_2\bold{v}_2,x_3\bold{v}_3,\cdots,x_k\bold{v}_k)=(\bold{u}_1,\bold{u}_2,\bold{u}_3,\cdots,\bold{u}_k))
+
 对Embedding特征两两做内积有:
+
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}(\bold{u}_1^T\bold{u}_2,\bold{u}_1^T\bold{u}_3,\bold{u}_1^T\bold{u}_4,\cdots,\bold{u}_{k-1}^T\bold{u}_k))
 
 以上即是BiInnerCross的前向计算方式, 用Scala代码实现为:
@@ -28,7 +31,7 @@ FNN(Product-Based Neural Networks)算法是在Embedding的基础上, 对Embeddin
     }
 }
 ```
-BiInnerCross与BiInnerSumCross的区别在于后者将两两内积的结果加和起来输出为一个标向, 前者没有加和起来, 输出是一个向量. 对于BiInnerCross, 输出的维数为$C_k^2$, $k$为field的个数, 与Embedding向量的维数无关.
+BiInnerCross与BiInnerSumCross的区别在于后者将两两内积的结果加和起来输出为一个标向, 前者没有加和起来, 输出是一个向量. 对于BiInnerCross, 输出的维数为![](http://latex.codecogs.com/png.latex?\dpi{80}C_k^2,k)为field的个数, 与Embedding向量的维数无关.
 
 ### 1.2 其它层说明
 - SparseInputLayer: 稀疏数据与输入层, 对稀疏高维数据做了特别优化, 本质上是一个FCLayer

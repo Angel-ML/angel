@@ -6,12 +6,17 @@ DeepFM算法是在FM(Factorization machine)的基础上加入深度层构成. �
 
 ### 1.1 Embedding与BiInnerSumCross层的说明
 与传统的FM实现不同, 这里采用Embedding与BiInnerSumCross结合的方式实现二介隐式交叉, 传统的FM二次交叉项的表达式如下:
+
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}\sum_i\sum_{j=i+1}\bold{v}_i^T\bold{v}_jx_ix_j=\frac{1}{2}\(\sum_i\sum_j(x_i\bold{v}_i)^T(x_j\bold{v}_j)-\sum_i(x_i\bold{v}_i)^T(x_i\bold{v}_i)\))
 
 在实现中, 用Embedding的方式存储![](http://latex.codecogs.com/png.latex?\bold{v}_i), 调用Embedding的`calOutput`后, 将![](http://latex.codecogs.com/png.latex?x_i\bold{v}_i)计算后一起输出, 所以一个样本的Embedding output结果为:
+
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}(x_1\bold{v}_1,x_2\bold{v}_2,x_3\bold{v}_3,\cdots,x_k\bold{v}_k)=(\bold{u}_1,\bold{u}_2,\bold{u}_3,\cdots,\bold{u}_k))
+
 原始的二次交叉项的结为可重新表达为:
+
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}\sum_i\sum_{j=i+1}\bold{v}_i^T\bold{v}_jx_ix_j=\frac{1}{2}\((\sum_i\bold{u}_i)^T(\sum_j\bold{u}_j)-\sum_i\bold{u}_i^T\bold{u}_i\))
+
 以上即是BiInnerSumCross的前向计算公式, 用Scala代码实现为:
 ```scala
 val sumVector = VFactory.denseDoubleVector(mat.getSubDim)
