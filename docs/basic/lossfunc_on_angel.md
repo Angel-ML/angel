@@ -18,7 +18,8 @@ HingeLoss| ![](http://latex.codecogs.com/png.latex?\max{\(0,1-yf(x)\)}) | SVM的
 
 ![分类损失函数](../img/classifcationloss.png)
 
-回归损失函数如下表所示:
+回归损失函数如下表所示
+
 名称|表达式|描述
 ---|---|---
 L2Loss | ![](http://latex.codecogs.com/png.latex?\|y-f(x)\|_2^2) | 用于回归, 是最小二乘回归的损失函数
