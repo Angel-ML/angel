@@ -69,54 +69,54 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Robust Re
 	```java
 	./bin/angel-submit \
         --action.type=train \
-		--angel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner \
-		--ml.model.class.name=com.tencent.angel.ml.regression.RobustRegression \
-		--angel.train.data.path=$input_path \
-		--angel.save.model.path=$model_path \
-		--angel.log.path=$log_path \
-		--ml.model.is.classification=false \
+        --angel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner \
+        --ml.model.class.name=com.tencent.angel.ml.regression.RobustRegression \
+        --angel.train.data.path=$input_path \
+        --angel.save.model.path=$model_path \
+        --angel.log.path=$log_path \
+        --ml.model.is.classification=false \
         --ml.robustregression.loss.delta=1.0 \
-		--ml.epoch.num=10 \
-		--ml.feature.index.range=150361 \
-		--ml.data.validate.ratio=0.1 \
-		--ml.learn.rate=0.1 \
-		--ml.learn.decay=1 \
-		--ml.reg.l2=0.001 \
+        --ml.epoch.num=10 \
+        --ml.feature.index.range=150361 \
+        --ml.data.validate.ratio=0.1 \
+        --ml.learn.rate=0.1 \
+        --ml.learn.decay=1 \
+        --ml.reg.l2=0.001 \
         --ml.data.type=libsvm \
-		--ml.model.type=T_FLOAT_DENSE \
-		--ml.num.update.per.epoch=10 \
-		--ml.worker.thread.num=4 \
-		--angel.workergroup.number=2 \
-		--angel.worker.memory.mb=5000 \
-		--angel.worker.task.number=1 \
-		--angel.ps.number=2 \
-		--angel.ps.memory.mb=5000 \
-		--angel.job.name=robustReg_network \
-		--angel.output.path.deleteonexist=true \
+        --ml.model.type=T_FLOAT_DENSE \
+        --ml.num.update.per.epoch=10 \
+        --ml.worker.thread.num=4 \
+        --angel.workergroup.number=2 \
+        --angel.worker.memory.mb=5000 \
+        --angel.worker.task.number=1 \
+        --angel.ps.number=2 \
+        --angel.ps.memory.mb=5000 \
+        --angel.job.name=robustReg_network \
+        --angel.output.path.deleteonexist=true \
 	```
 
 	*向Yarn集群提交RobustRegression算法预测任务:
 
 	```java
 	./bin/angel-submit \
-		--action.type=predict \
-		--angel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner \
-		--ml.model.class.name=com.tencent.angel.ml.regression.RobustRegression \
-		--angel.predict.data.path=$input_path \
-		--angel.load.model.path=$model_path \
-		--angel.predict.out.path=$predict_path \
-		--angel.log.path=$log_path \
-		--ml.feature.index.range=150361 \
-        --ml.data.type=libsvm \
-		--ml.model.type=T_FLOAT_DENSE \
-		--ml.worker.thread.num=4 \
-		--angel.workergroup.number=2 \
-		--angel.worker.memory.mb=5000 \
-		--angel.worker.task.number=1 \
-		--angel.ps.number=2 \
-		--angel.ps.memory.mb=5000 \
-		--angel.job.name=robustReg_network \
-		--angel.output.path.deleteonexist=true \
+	    --action.type=predict \
+	    --angel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner \
+	    --ml.model.class.name=com.tencent.angel.ml.regression.RobustRegression \
+	    --angel.predict.data.path=$input_path \
+	    --angel.load.model.path=$model_path \
+	    --angel.predict.out.path=$predict_path \
+	    --angel.log.path=$log_path \
+	    --ml.feature.index.range=150361 \
+	    --ml.data.type=libsvm \
+	    --ml.model.type=T_FLOAT_DENSE \
+	    --ml.worker.thread.num=4 \
+	    --angel.workergroup.number=2 \
+	    --angel.worker.memory.mb=5000 \
+	    --angel.worker.task.number=1 \
+	    --angel.ps.number=2 \
+	    --angel.ps.memory.mb=5000 \
+	    --angel.job.name=robustReg_network \
+	    --angel.output.path.deleteonexist=true \
 	```
 
 ### 性能

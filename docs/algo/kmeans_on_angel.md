@@ -76,7 +76,7 @@ KMeans on Angel的算法流程如下图所示：
         --ml.data.type=libsvm \
         --ml.model.type=T_DOUBLE_DENSE \
         --ml.kmeans.center.num=10 \
-		--ml.kmeans.c=0.15 \
+        --ml.kmeans.c=0.15 \
         --ml.epoch.num=100 \
         --ml.feature.index.range=3072 \
         --angel.workergroup.number=4 \
