@@ -2,14 +2,14 @@
 
 ## 1. 算法介绍
 FNN(Product-Based Neural Networks)算法是在Embedding的基础上, 对Embedding
-的结果进行两两内积或外积, 然后将内/外积结果与原始的Embedding结果拼接起来, 输入DNN进一步提取高阶特特交叉. 值得注意的是, PNN并没有放弃一阶特征, 最后将一阶特征与高阶特征组合起来进行预测, 其构架如下:
+的结果进行两两内积或外积, 然后将内/外积结果与原始的Embedding结果拼接起来输入DNN进一步提取高阶特特交叉. 值得注意的是, PNN并没有放弃一阶特征, 最后将一阶特征与高阶特征组合起来进行预测, 其构架如下:
 
 ![PNN](../img/pnn.png)
 
 注: 目前Angel只实现了内积形式的PNN.
 
 ### 1.1 BiInnerCross层的说明
-在实现中, 用Embedding的方式存储$\bold{v}_i$, 调用Embedding的`calOutput`后, 将$x_i\bold{v}_i$计算后一起输出, 所以一个样本的Embedding output结果为:
+在实现中, 用Embedding的方式存储![](http://latex.codecogs.com/png.latex?\bold{v}_i), 调用Embedding的`calOutput`后, 将![](http://latex.codecogs.com/png.latex?x_i\bold{v}_i)计算后一起输出, 所以一个样本的Embedding output结果为:
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}(x_1\bold{v}_1,x_2\bold{v}_2,x_3\bold{v}_3,\cdots,x_k\bold{v}_k)=(\bold{u}_1,\bold{u}_2,\bold{u}_3,\cdots,\bold{u}_k))
 
@@ -32,10 +32,10 @@ FNN(Product-Based Neural Networks)算法是在Embedding的基础上, 对Embeddin
     }
 }
 ```
-BiInnerCross与BiInnerSumCross的区别在于后者将两两内积的结果加和起来输出为一个标向, 前者没有加和起来, 输出是一个向量. 对于BiInnerCross, 输出的维数为![](http://latex.codecogs.com/png.latex?\dpi{80}C_k^2,k)为field的个数, 与Embedding向量的维数无关.
+BiInnerCross与BiInnerSumCross的区别在于后者将两两内积的结果加和起来输出为一个标量, 前者没有加和起来, 输出是一个向量. 对于BiInnerCross, 输出的维数为![](http://latex.codecogs.com/png.latex?\dpi{80}C_k^2,k)为field的个数, 与Embedding向量的维数无关.
 
 ### 1.2 其它层说明
-- SparseInputLayer: 稀疏数据与输入层, 对稀疏高维数据做了特别优化, 本质上是一个FCLayer
+- SparseInputLayer: 稀疏数据输入层, 对稀疏高维数据做了特别优化, 本质上是一个FCLayer
 - Embedding: 隐式嵌入层, 如果特征非one-hot, 则乘以特征值
 - FCLayer: DNN中最常见的层, 线性变换后接传递函数
 - SumPooling: 将多个输入的数据做element-wise的加和, 要求输入具本相同的shape
