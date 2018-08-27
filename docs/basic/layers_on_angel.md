@@ -228,7 +228,7 @@ json参数例子如下:
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}f(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k)=\sum_i^k\sum_{j=i+1}^k\bold{u}_i\otimes\bold{u}_j)
 
-其中![](http://latex.codecogs.com/png.latex?(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k))是Embedding的输出结果. 具本而言是Embedding结果做两两对应元素积![](http://latex.codecogs.com/png.latex?\bold{u}_i\otimes\bold{u}_j), 再相和, 因此输出的维度为与![](http://latex.codecogs.com/png.latex?\bold{u}_k)相同, 与输入数据的维度元关. 由此可见, BiInteactionCross也是没有参数, 是untrainable的.
+其中![](http://latex.codecogs.com/png.latex?(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k))是Embedding的输出结果. 具体而言是Embedding结果做两两对应元素积![](http://latex.codecogs.com/png.latex?\bold{u}_i\otimes\bold{u}_j), 再相和, 因此输出的维度为与![](http://latex.codecogs.com/png.latex?\bold{u}_k)相同, 与输入数据的维度元关. 由此可见, BiInteactionCross也是没有参数, 是untrainable的.
 
 构造函数如下:
 ```scala
@@ -247,13 +247,13 @@ json参数例子如下:
 ```
 ## 3. Join层
 join层是指有多个输入一个输出的层, 主要有:
-- ConcatLayer: 将多个输入水不拼拉起来, 输入一个Dense矩阵
+- ConcatLayer: 将多个输入拼接起来, 输出一个Dense矩阵
 - SumPooling: 将输入元素对应相加后输出
 - MulPooling: 将输入元素对应相乘后输出
-- DotPooling: 先将对应元素相乘, 然后按行相加, 输入n行一列的矩阵
+- DotPooling: 先将对应元素相乘, 然后按行相加, 输出n行一列的矩阵
 
 ### 3.1 ConcatLayer
-将多个输入水不拼拉起来, 输入一个Dense矩阵, 构造函数如下:
+将多个输入拼接起来, 输入一个Dense矩阵, 构造函数如下:
 ```scala
 class ConcatLayer(name: String, outputDim: Int, inputLayers: Array[Layer])(implicit graph: AngelGraph)
   extends JoinLayer(name, outputDim, inputLayers)(graph)
@@ -274,7 +274,7 @@ json参数例子如下:
 有多个输入层, 用inputlayers, 以列表的形式指定.
 
 ### 3.2 SumPoolingLayer
-将输入元素对应相加后输出, 输入一个Dense矩阵, 构造函数如下:
+将输入元素对应相加后输出, 输出一个Dense矩阵, 构造函数如下:
 ```scala
 class SumPooling(name: String, outputDim: Int, inputLayers: Array[Layer])(implicit graph: AngelGraph)
   extends JoinLayer(name, outputDim, inputLayers)(graph)
@@ -295,7 +295,7 @@ json参数例子如下:
 有多个输入层, 用inputlayers, 以列表的形式指定.
 
 ### 3.3 MulPoolingLayer
-将输入元素对应相乘后输出, 输入一个Dense矩阵, 构造函数如下:
+将输入元素对应相乘后输出, 输出一个Dense矩阵, 构造函数如下:
 ```scala
 class MulPooling(name: String, outputDim: Int, inputLayers: Array[Layer])(implicit graph: AngelGraph)
   extends JoinLayer(name, outputDim, inputLayers)(graph)
@@ -316,7 +316,7 @@ json参数例子如下:
 有多个输入层, 用inputlayers, 以列表的形式指定.
 
 ### 3.4 DotPoolingLayer
-先将对应元素相乘, 然后按行相加, 输入n行一列的矩阵, 构造函数如下:
+先将对应元素相乘, 然后按行相加, 输出n行一列的矩阵, 构造函数如下:
 ```scala
 class DotPooling(name: String, outputDim: Int, inputLayers: Array[Layer])(implicit graph: AngelGraph)
   extends JoinLayer(name, outputDim, inputLayers)(graph)
@@ -337,7 +337,7 @@ json参数例子如下:
 有多个输入层, 用inputlayers, 以列表的形式指定.
 
 ## 4. 损失层
-在网络的最上层, 只有输入层, 没有输出层, 用于计算损失. 关于损迭函数, 请参考[Angel中的损失函数](./lossfunc_on_angel.md)
+在网络的最上层, 只有输入层, 没有输出层, 用于计算损失. 关于损失函数, 请参考[Angel中的损失函数](./lossfunc_on_angel.md)
 
 ### 4.1 SimpleLossLayer
 SimpleLossLayer的构造函数如下:
