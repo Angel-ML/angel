@@ -53,13 +53,13 @@ class DensePSVectorSuite extends PSFunSuite with SharedPSContext {
 
   test("fill with array") {
     val rand = new Random()
-    val localArray = (0 until dim).toArray.map { i =>
+    val localArray = (0 until dim).toArray.map { _ =>
       rand.nextDouble()
     }
     val local = new IntDoubleVector(0, 0, 0, dim, new IntDoubleDenseVectorStorage(localArray))
     val dVector = PSVector.duplicate(_psVector).push(local)
 
-    val remoteArray = dVector.pull.asInstanceOf[IntDoubleVector]
+    val remoteArray = dVector.pull().asInstanceOf[IntDoubleVector]
 
     (0 until dim).foreach { index =>
       assert(math.abs(remoteArray.get(index) - localArray(index)) < 1e-6)
@@ -70,7 +70,7 @@ class DensePSVectorSuite extends PSFunSuite with SharedPSContext {
     val dVector = PSVector.duplicate(_psVector).randomUniform(0.0, 1.0)
 
     var isCorrect = true
-    dVector.pull.asInstanceOf[IntDoubleVector].getStorage.getValues.foreach(x => if (x < 0.0 || x > 1.0) isCorrect = false)
+    dVector.pull().asInstanceOf[IntDoubleVector].getStorage.getValues.foreach(x => if (x < 0.0 || x > 1.0) isCorrect = false)
     assert(isCorrect)
   }
 

@@ -30,7 +30,6 @@ class SparseMatrixSuite extends PSFunSuite with SharedPSContext {
 
   private val rows = 10
   private val cols = 10
-  private val zeroArray = Array.fill(cols)(0.0)
 
   override def beforeAll(): Unit = {
     super.beforeAll()
@@ -44,9 +43,9 @@ class SparseMatrixSuite extends PSFunSuite with SharedPSContext {
     val points = new ArrayBuffer[(Int, Long, Double)]()
 
     val pairSet = new mutable.HashSet[(Int, Long)]()
-    (0 until rows / 2).foreach { i =>
+    (0 until rows / 2).foreach { _ =>
       val rowId = rand.nextInt(rows)
-      (0 until cols / 2).foreach { j =>
+      (0 until cols / 2).foreach { _ =>
         val colId = rand.nextInt(cols)
         if (!pairSet.contains(Tuple2(rowId, colId))) {
           pairSet.add(Tuple2(rowId, colId))

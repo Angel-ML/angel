@@ -33,7 +33,6 @@ class PSMatrixSuite extends PSFunSuite with SharedPSContext {
 
   private val rows = 10
   private val cols = 10
-  private val dim = 21
 
   test("init Dense Matrix") {
     val mat = PSMatrix.dense(rows, cols)
@@ -51,7 +50,7 @@ class PSMatrixSuite extends PSFunSuite with SharedPSContext {
   test("Push array") {
     val mat = PSMatrix.dense(rows, cols)
     val rand = new Random()
-    val array = (0 until cols).toArray.map(x => rand.nextDouble())
+    val array = (0 until cols).toArray.map(_ => rand.nextDouble())
 
     val randRow = rand.nextInt(rows)
     mat.push(VFactory.denseDoubleVector(mat.id, randRow, 0, array))
