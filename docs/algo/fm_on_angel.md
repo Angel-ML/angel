@@ -28,6 +28,10 @@ FM算法的模型由两部分组成，分别是wide和embedding，其中wide就�
     Angel实现了用梯度下降方法优化，迭代得训练FM模型，每次迭代worker和PS上的逻辑如下：       
     * worker：每次迭代从PS上拉取wide和embedding矩阵到本地，计算出对应的梯度更新值，push到PS
     * PS：PS汇总所有worker推送的梯度更新值，取平均，通过优化器计算新的wide和embedding模型并进行更新
+    
+* FM预测结果：
+    * 格式：rowID,pred,prob,label
+    * 说明：rowID表示样本所在的行ID，从0开始计数；pred:样本的预测结果值；prob:样本相对该预测结果的概率；label:预测样本被分到的类别
 
 ## 3. 运行和性能
 * 数据格式
