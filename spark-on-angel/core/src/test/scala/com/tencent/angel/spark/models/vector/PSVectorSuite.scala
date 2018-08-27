@@ -51,7 +51,7 @@ class PSVectorSuite extends PSFunSuite with SharedPSContext {
   test("toBreeze") {
     val brzVector = _psVector.toBreeze
 
-    Utils.assertSameElement(brzVector.pull, _psVector.pull.asInstanceOf[IntDoubleVector].getStorage.getValues)
+    Utils.assertSameElement(brzVector.pull(), _psVector.pull().asInstanceOf[IntDoubleVector].getStorage.getValues)
   }
 
   test("delete") {
