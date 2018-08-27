@@ -1,11 +1,11 @@
 # Deep And Wide
 
 ## 1. 算法介绍
-Deep and Wide算法是在Embedding的结果直接输入DNN进一步提取高阶特特交叉, 最后将一阶特征与高阶特征组合起来进行预测, 其构架如下:
+Deep and Wide算法是将Embedding的结果直接输入DNN进一步提取高阶特特交叉, 最后将一阶特征与高阶特征组合起来进行预测, 其构架如下:
 ![DNN](../img/DAW.PNG)
 
 ### 1.1 Deep and Wide中的层
-- SparseInputLayer: 稀疏数据与输入层, 对稀疏高维数据做了特别优化, 本质上是一个FCLayer
+- SparseInputLayer: 稀疏数据输入层, 对稀疏高维数据做了特别优化, 本质上是一个FCLayer
 - Embedding: 隐式嵌入层, 如果特征非one-hot, 则乘以特征值
 - FCLayer: DNN中最常见的层, 线性变换后接传递函数
 - SumPooling: 将多个输入的数据做element-wise的加和, 要求输入具本相同的shape

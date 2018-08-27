@@ -31,7 +31,7 @@ BiInteractionCross的计算公式如下:
 ```
 
 ### 1.2 其它层说明
-- SparseInputLayer: 稀疏数据与输入层, 对稀疏高维数据做了特别优化, 本质上是一个FCLayer
+- SparseInputLayer: 稀疏数据输入层, 对稀疏高维数据做了特别优化, 本质上是一个FCLayer
 - Embedding: 隐式嵌入层, 如果特征非one-hot, 则乘以特征值
 - FCLayer: DNN中最常见的层, 线性变换后接传递函数
 - SumPooling: 将多个输入的数据做element-wise的加和, 要求输入具本相同的shape
@@ -60,7 +60,7 @@ BiInteractionCross的计算公式如下:
 
 ## 2. 运行与性能
 ### 2.1 Json配置文件说明
-DeepFM的参数较多, 需要用Json配置文件的方式指定(关于Json配置文件的完整说明请参考[Json说明]()), 一个典型的例子如下:
+NFM的参数较多, 需要用Json配置文件的方式指定(关于Json配置文件的完整说明请参考[Json说明]()), 一个典型的例子如下:
 ```json
 {
   "data": {

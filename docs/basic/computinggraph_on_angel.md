@@ -1,10 +1,10 @@
 # Angel 中的计算图
 
 ## 1. 什么是计算图
-计算图是主流深度学习框架普遍采用的, 如Tensorflow, Cafe, PyTorch和Mxnet等. 事实上, Spark这样的大数据处理工具也是用计算图来调度任务的. 为了更好地支持深度学习算法, Angel也支持了计算图框架. 与Tensorflow等相比, Angel的计算图更轻量, 主要表现在:
-- **粗粒度**: Angel的计算图中的`节点`是层(layer), 而不是`操作`(operator). Tensorflow等使用`操作`作为图中的结点, 十分灵活, 适合二次开发(封装), 但也给机器学习算发开发者带来更陡的学习曲线与更大的工作量, 因此老版本的Tensorflow也一直被诟病"API太底层,开发效率低", 在最近的Tensorflow版本才提供基于层(layer)的高及API. 鉴于这一点, Angel只提供粗粒度的计算图.
-- **特征交叉**: 对于推荐系统相关算法, 特征Embedding后往往要通过一些交叉(**注**:这里与特征交叉与特征工程中的人工交叉不同, 这里的特征交叉是通过通Embedding的输出做特定的操作)处理后再输入DNN. 这些特征交叉在Tensorflow, Cafe, Torch等上实现比较繁锁, 在Angel上则直接提供了这种特征交叉层.
-- **自动生成网络**: Angel可以读取Json文件生成深度网络. 这一点是借鉴的Cafe, 用户可以不编写代码而生成自已的网络, 大大地减轻工作量.
+计算图是主流深度学习框架普遍采用的, 如Tensorflow, Caffe, PyTorch和Mxnet等. 事实上, Spark这样的大数据处理工具也是用计算图来调度任务的. 为了更好地支持深度学习算法, Angel也支持了计算图框架. 与Tensorflow等相比, Angel的计算图更轻量, 主要表现在:
+- **粗粒度**: Angel的计算图中的`节点`是层(layer), 而不是`操作`(operator). Tensorflow等使用`操作`作为图中的结点, 十分灵活, 适合二次开发(封装), 但也给机器学习算发开发者带来更陡的学习曲线与更大的工作量, 因此老版本的Tensorflow也一直被诟病"API太底层,开发效率低", 在最近的Tensorflow版本才提供基于层(layer)的高级API. 鉴于这一点, Angel只提供粗粒度的计算图.
+- **特征交叉**: 对于推荐系统相关算法, 特征Embedding后往往要通过一些交叉(**注**:这里的特征交叉与特征工程中的人工交叉不同, 这里的特征交叉是通过Embedding的输出做特定的操作)处理后再输入DNN. 这些特征交叉在Tensorflow, Caffe, Torch等上实现比较繁锁, 在Angel上则直接提供了这种特征交叉层.
+- **自动生成网络**: Angel可以读取Json文件生成深度网络. 这一点是借鉴的Caffe, 用户可以不编写代码而生成自已的网络, 大大地减轻工作量.
 
 需要指出的是, Angel目前不支持CNN, RNN等, 只关注推荐领域的常用算法.
 
@@ -36,7 +36,7 @@ abstract class Layer(val name: String, val outputDim: Int)(implicit val graph: A
 - status: Angel计算图中的节点是有状态的, 用一个状态机来处理, 具体在下一节中讲述
 - input: 用以记录本节点/层有输入, 用一个ListBuffer表示, 一个层可以有多个输入层, 可多次调用addInput(layer: Layer)加入
 - outputDim: 在Angel中最多只能有一个输出, outputDim用于指定输出的维度
-- consumer: 层虽然只在一个输出, 但输出结点可以被多次消费, 因此用ListBuffer表示. 在构建图时调用input层的addConsumer(layer: Layer)告诉输出层哪些层消费了它
+- consumer: 层虽然只有一个输出, 但输出结点可以被多次消费, 因此用ListBuffer表示. 在构建图时调用input层的addConsumer(layer: Layer)告诉输出层哪些层消费了它
 
 事实上, 构建图的具体操作在inputlayer/linearlayer/joinlayer的基类中已完成, 用户自定义layer不必关心, 如下:
 ```scala
@@ -100,15 +100,17 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
  }
 ```
 edge有两大类:
-- inputLayer: 这类节点的输入是数据, AngelGraph中存储这类节点是方便返向计算, 只要依次调用inputlayer的`calBackward`. 为了加入inputLayer, Angel要求所有的inputLayer中都调用AngelGraph的addInput方法将自已加入AngelGraph中. 事实上, 在InputLayer的基类中已完成这一操作, 用户新增inputLayer不必关心这一点
+- inputLayer: 这类节点的输入是数据, AngelGraph中存储这类节点是方便反向计算, 只要依次调用inputlayer的`calBackward`. 为了加入inputLayer, Angel要求所有的inputLayer中都调用AngelGraph的addInput方法将自已加入AngelGraph中. 事实上, 在InputLayer的基类中已完成这一操作, 用户新增inputLayer不必关心这一点
 - lossLayer: 目前Angel不支持多任务学习, 所以只有一个lossLayer, 这类节点主要方便前向计算, 只要调用它的`predict`或`calOutput`即可. 由于losslayer是linearlayer的子类, 所以用户自定义lossLayer可手动调用`setOutput(layer: LossLayer)`, 但用户新增losslayer的机会不多, 更多的是增加lossfunc.
 
-有了inputLayers, lossLayer后, 从AngelGraph中遍历图十分方便, 正向计算只要调用losslayer的`predict`方法, 返向计算只要调用inputlayer的`calBackward`. 但是梯度计算, 参数更新不方便, 为了方便参数更新, AngelGraph中增加了一个trainableLayer的变用, 用以保存带参数的层.
+
+有了inputLayers, lossLayer后, 从AngelGraph中遍历图十分方便, 正向计算只要调用losslayer的`predict`方法, 反向计算只要调用inputlayer的`calBackward`. 但是梯度计算, 参数更新不方便, 为了方便参数更新, AngelGraph中增加了一个trainableLayer的变量, 用以保存带参数的层.
+
 
 ## 2.3 数据入口PlaceHolder
 通过layer的input/consumer构建起了图的边(节点的关系), 在AngelGraph中保存特殊节点(inputlayer/losslayer/trainablelayer)方便前向与后向计算与参数更新. 最后数据是怎样输入的呢? -- 通过PlaceHolder
 
-Angel中的PlaceHolder在构建AngelGraph中传给Graph, 而Graph又作为隐式参数传给Layer, 所以在所有的Layer中都可以方问placeholder(即数据).
+Angel中的PlaceHolder在构建AngelGraph中传给Graph, 而Graph又作为隐式参数传给Layer, 所以在所有的Layer中都可以访问placeholder(即数据).
 
 目前, Angel中只允许有一个PlaceHolder, 以后会去除这一限制, 允许多种数据输入. PlaceHolder只存放一个mini-batch的数据, 主要方法如下:
 ```scala
@@ -121,7 +123,7 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
     def getIndices: Vector
 }
 ```
-通过`feedData`, 将Array[LabeledData]类型的数据给placeholder后, 即可以从其中获得:
+通过`feedData`, 将Array[LabeledData]类型的数据给placeholder后, 便可以从其中获得:
 - 特征
 - 特征维度
 - 标签
@@ -139,9 +141,10 @@ Angel的状态机有如下几个状态:
 - Forward: 这一状态表示前向计算已完成
 - Backward: 这一状态表示后向计算已完成, 但还没有计算参数的梯度
 - Gradient: 这一状态表示梯度已计算完成, 并且梯度已推送到PS上了
-- Update: 这一状态表示梯度更新已完成
+- Update: 这一状态表示模型更新已完成
 
 这些状态是依次进行的, 如下图所示:
+
 ![状态机](../img/status.png)
 
 状态机的引入主要是保证运算的顺序进行, 减少重复计算. 例如有多个层消费同一层的输出, 在计算时, 可以根所据状态进行判断, 只要计算一次. 状态机在代码中的体现为:
@@ -225,7 +228,7 @@ def trainOneEpoch(epoch: Int, iter: Iterator[Array[LabeledData]], numBatch: Int)
 ```
 步骤如下:
 - feedData: 这个过程会将Graph的状态设为Null
-- 拉取参数: 会根据数据, 只拉取当前mini-batch计算所需要的参数, 所以Angel可以训练非常高的模型
+- 拉取参数: 会根据数据, 只拉取当前mini-batch计算所需要的参数, 所以Angel可以训练非常高维的模型
 - 前向计算: 从Losslayer开始, 级联地调用它的inputlayer的`calOutput`方法, 依次计算output, 计算完后将它的状态设为`forward`. 对于状态已是`forward`的情况, 则直接返回上一次计算的结果, 这样避免重复计算
 - 后向计算: 依次调用Graph的inputlayer, 这样会级联调用第一层的`CalGradOutput`方法, 完成后向计算. 计算完后将它的状态设为`backward`. 对于状态已是`backward`的情况, 则直接返回上一次计算的结果, 这样避免重复计算
 - 梯度计算与更新: 计算`backward`只计算了网络结点的梯度, 并没有计算参数的梯度. 这一步计算参数的梯度, 只需调用`trainable`的`pushGradient`即可. 这个方法会先计算梯度, 然后再将梯度推送到PS上, 最后将状态设为`gradient`

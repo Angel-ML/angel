@@ -1,7 +1,7 @@
 # Angel中的优化器
 
 机器学习的优化方法多种多样, 但在大数据场景下, 使用最多的还是基于SGD的一系列方法. 在Angel中目前只实现了少量的最优化方法, 如下:
-- 其于随机梯度下降的方法
+- 基于随机梯度下降的方法
     - SDG: 这里指mini-batch SGD (小批量随机梯度下降)
     - Momentum: 带动量的SGD
     - Adam: 带动量与对角Hessian近似的SGD
@@ -13,7 +13,7 @@ SGD的更新公式如下:
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}\bold{x}_{t+1}=\bold{x}_t-\eta\Delta\bold{x}_t)
 
-其中, $\eta$是学习率. 使用SGD可以带![](http://latex.codecogs.com/png.latex?L_1,L_2)正则, 实际优化采用的是PGD(proximal gradient descent). 
+其中, ![](http://latex.codecogs.com/png.latex?\eta)是学习率. 使用SGD可以带![](http://latex.codecogs.com/png.latex?L_1,L_2)正则, 实际优化采用的是PGD(proximal gradient descent). 
 
 json方式表达有两种, 如下:
 ```json
@@ -73,7 +73,7 @@ json方式表达有两种, 如下:
 ## 4. FTRL
 FTRL是一种在线学习算法, 它的目标是优化regret bound, 在一定的学习率衰减条件下, 可以证明它是有效的.
 
-FTRL的另一个特点是可以特到非常稀疏的解, 表现上比PGD(proximal gradient descent)好, 也优于其它在线学习算法, 如FOBOS, RDA等.
+FTRL的另一个特点是可以得到非常稀疏的解, 表现上比PGD(proximal gradient descent)好, 也优于其它在线学习算法, 如FOBOS, RDA等.
 
 FTRL的算法流程如下:
 
