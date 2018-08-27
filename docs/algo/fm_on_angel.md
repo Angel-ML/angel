@@ -31,7 +31,7 @@ FM算法的模型由两部分组成，分别是wide和embedding，其中wide就�
     
 * FM预测结果：
     * 格式：rowID,pred,prob,label
-    * 说明：rowID表示样本所在的行ID，从0开始计数；pred:样本的预测结果值；prob:样本相对该预测结果的概率；label:预测样本被分到的类别
+    * 说明：rowID表示样本所在的行ID，从0开始计数；pred:样本的预测结果值；prob:样本相对该预测结果的概率；label:预测样本被分到的类别，当预测结果值pred大于0时，label为1，小于0为-1
 
 ## 3. 运行和性能
 * 数据格式
