@@ -181,7 +181,7 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}f(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k)=\sum_i^k\sum_{j=i+1}^k\bold{u}_i^T\bold{u}_j)
 
-其中![](http://latex.codecogs.com/png.latex?(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k))是Embedding的输出结果. 具体而言是Embedding结果做两两内积, 再加和. 因此BiInnerSumCross没有参数, 是untrainable的, 输出维度为1.
+其中![](http://latex.codecogs.com/png.latex?(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k))是Embedding的输出结果. 具体而言是Embedding结果做两两内积, 再求和. 因此BiInnerSumCross没有参数, 是untrainable的, 输出维度为1.
 
 构造函数如下:
 ```scala

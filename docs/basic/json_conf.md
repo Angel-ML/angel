@@ -8,7 +8,7 @@
     + Deep and Wide
 - 类似于Cafe, 可以用Json自定义新的网络
 
-用Json文件可配置的主要有:
+可用Json文件配置的参数主要有:
 - 数据相关参数
 - 模型相关参数
 - 训练相关参数
@@ -32,16 +32,17 @@
 }
 ```
 下面对照说明:
+
 Json key | 对应配置项 | 说明
 ---|---|---
 format | ml.data.type | 输入数据的格式, 有dense, dummy, libsvm三种选择, 默认为dummy
 indexrange | ml.feature.index.range | 特征维度
-numfield | ml.fm.field.num | 输入数据的域的数目. 虽然特征交叉能生成非常高维的数据, 对于一些数据集, 每个样本域的数目是一定的
+numfield | ml.fm.field.num | 输入数据中域的数目. 虽然特征交叉能生成非常高维的数据, 对于一些数据集, 每个样本域的数目是一定的
 validateratio | ml.data.validate.ratio | Angel会将输入数据划分成训练集与验证集, 这个参数就是用于指定验证集的比例. 注:所有的验证集匀存于内存, 当数据量特别大时, 可能会OOM
 sampleratio | ml.batch.sample.ratio | 这个参数是Spark on Angel专用的, Spark用采样的方式生成mini-batch, 这个参数用于指定采样率
-useShuffle | ml.data.use.shuffle | 是否在每个epoch前shuffle数据. 注: 当数据量大时, 这一操作非常影响性能, 请选择使用. 默认为false, 不用shuffle.
+useShuffle | ml.data.use.shuffle | 是否在每个epoch前shuffle数据. 注: 当数据量大时, 这一操作非常影响性能, 请慎重使用. 默认为false, 不用shuffle.
 transLabel | ml.data.trans.label | 对于二分类, Angel要求标签为(+1, -1), 如果数据集的标簦是(0, 1)则可以用这一参数进行转换, 默认关闭
-posnegratio | ml.data.posneg.ratio | Angel也支持采样生成mini-batch, 但方式与Sparkg不同, Angel先将数据集的正负例分开, 然后分别按比例从正例, 负例中抽样生成mini-batch, posnegratio就是控制mini-batch中正负样本比例的. 这个参数对不平衡数据集的训练有帮助.  posnegratio默认为-1, 表示不进行采样
+posnegratio | ml.data.posneg.ratio | Angel也支持采样生成mini-batch, 但方式与Spark不同, Angel先将数据集的正负例分开, 然后分别按比例从正例, 负例中抽样生成mini-batch, posnegratio就是控制mini-batch中正负样本比例的. 这个参数对不平衡数据集的训有帮助.  posnegratio默认为-1, 表示不进行采样
 
 注: 除了indexrange外, 其它参数都有默认值, 因此都是可选的.
 
@@ -56,12 +57,13 @@ posnegratio | ml.data.posneg.ratio | Angel也支持采样生成mini-batch, 但�
 }
 ```
 下面对照说明:
+
 Json key | 对应配置项 | 说明
 ---|---|---
 loadPath | angel.load.model.path | 模型加载路径
 savePath | angel.save.model.path | 模型保存路径
 modeltype | ml.model.type | 模型类型, 指输入层参数在PS上的类型(数据与存储), 同时它也会决定非输入层的数据类型(非输入层的存储类型为dense)
-modelsize | ml.model.size | 对于整个数据集, 在某些维度上没有数据, 特征维度与模型维度不一致. 模型维度是`有效`数据维度
+modelsize | ml.model.size | 对于整个数据集, 在某些维度上可能没有数据, 特征维度与模型维度不一致. 模型维度是`有效`数据维度
 
 常用的modeltype有:
 - T_DOUBLE_DENSE
@@ -77,22 +79,24 @@ modelsize | ml.model.size | 对于整个数据集, 在某些维度上没有数�
 "train": {
     "epoch": 10,
     "numupdateperepoch": 10,
+    "batchsize": 1024,
     "lr": 0.5,
     "decay": 0.01
 }
 ```
 下面对照说明:
+
 Json key | 对应配置项 | 说明
 ---|---|---
 epoch| ml.epoch.num | 迭代轮数
-numupdateperepoch | ml.num.update.per.epoch | 每轮迭代中更新参数的次数
+numupdateperepoch | ml.num.update.per.epoch | 这个参数只对Angel有用, 指每轮迭代中更新参数据的次数
+batchsize |ml.minibatch.size | 这个参数只对Spark On Angel有用, 指mini-batch的大小
 lr |ml.learn.rate | 学习率
 decay |ml.learn.decay| 学习率衰减因子
 
 其中有:
-$$
-lr_{epoch} = \max(\frac{lr}{\sqrt{1.0 + decay * epoch}}, \frac{lr}{5}) 
-$$
+
+![model](http://latex.codecogs.com/png.latex?\dpi{150}lr_{epoch}=\max(\frac{lr}{\sqrt{1.0+decay*epoch}},\frac{lr}{5}))
 
 ## 4. 默认优化器, 传输函数, 损失函数
 - Angel允许不同的可训练层使用不同的优化器, 如deep and wide模型中, wide部分使用FTRL, 而deep部分使用Adam. 
@@ -140,7 +144,7 @@ Angel中的深度学习算法都表示为一个AngelGraph, 而AngelGraph中的�
 - linear: 有且仅有一个输入与一个输出的层
 - join: 有两个或多个输入, 一个输出的层
 
-注: 虽然Angel的层可以有多个输入层, 但最多只有一个输入层. 一个层的输出可以作为多个层的输入, 即输出可以"重复消费".
+注: 虽然Angel的层可以有多个输入, 但最多只有一个输入. 一个层的输出可以作为多个层的输入, 即输出可以"重复消费".
 
 在Json中, 所有与层相关的参数都放在一个列表中, 如下:
 ```json
@@ -157,7 +161,7 @@ Angel中的深度学习算法都表示为一个AngelGraph, 而AngelGraph中的�
     + name: 是layer的唯一标识, 因此不能重复
     + type: 是layer的类型, 实际是就是Layer对应的`类名`
 - 除了输入层(DenseInputLayer, SparseInputLayer, Embedding)外, 其它层都有"inputlayer"这个参数, 对于join layer, 它有多个输入, 所以它的输入用"inputlayers"指定:
-    + inputlayer: 对于linear或loss层要指定, 其中inputlayer不要指定. 其值是输入层的name
+    + inputlayer: 对于linear或loss层要指定, inputlayer值是输入层的name
     + inputlayers: 对于join层要指定, 用一个列表表示, 其值是输入层的name
 - 除Loss层外, 其它层都有输出, 但Angel中不用显式指出, 因为指定了输入关系就同时指定了输出关系. 但是要显式地指出输出的维度:
     + outputdim: 输出的维度
