@@ -43,7 +43,7 @@ Angel的分布式Yarn运行模式需要的环境，其实也非常简单：
 	
 		```bsh
 		./angel-submit \
-                        --angel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner \
+		        --angel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner \
 			--angel.train.data.path "hdfs://my-nn:54310/test/lr_data" \
 			--angel.log.path "hdfs://my-nn:54310/test/log" \
 			--angel.save.model.path "hdfs://my-nn:54310/test/model" \
