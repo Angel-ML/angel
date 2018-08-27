@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.psagent;
 
 import com.tencent.angel.common.Id;
@@ -35,21 +36,18 @@ public class PSAgentAttemptId extends Id {
     return psAgentId.appendTo(builder).append(SEPARATOR).append(index);
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return appendTo(new StringBuilder(PSAGENTATTEMPT)).toString();
   }
 
-  @Override
-  public int hashCode() {
+  @Override public int hashCode() {
     final int prime = 31;
     int result = super.hashCode();
     result = prime * result + ((psAgentId == null) ? 0 : psAgentId.hashCode());
     return result;
   }
 
-  @Override
-  public boolean equals(Object obj) {
+  @Override public boolean equals(Object obj) {
     if (this == obj)
       return true;
     if (!super.equals(obj))

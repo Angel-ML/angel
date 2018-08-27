@@ -15,77 +15,87 @@
  *
  */
 
+
 package com.tencent.angel.ml.svm;
 
-import com.tencent.angel.client.AngelClient;
-import com.tencent.angel.client.AngelClientFactory;
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.classification.svm.SVMRunner;
-import com.tencent.angel.ml.conf.MLConf;
+import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
+import com.tencent.angel.ml.matrix.RowType;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.LocalFileSystem;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
 import org.apache.log4j.PropertyConfigurator;
 import org.junit.Before;
 import org.junit.Test;
 
+/**
+ * Gradient descent LR UT.
+ */
 public class SVMTest {
-
-  private static final Log LOG = LogFactory.getLog(SVMTest.class);
-
   private Configuration conf = new Configuration();
-  String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
-  String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
+  private static final Log LOG = LogFactory.getLog(SVMTest.class);
+  private static String LOCAL_FS = FileSystem.DEFAULT_FS;
+  private static String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
 
   static {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
-  @Before public void setup() throws Exception {
+  /**
+   * set parameter values of conf
+   */
+  @Before public void setConf() throws Exception {
     try {
       // Feature number of train data
-      int featureNum = 124;
+      int featureNum = 300;
       // Total iteration number
-      int epochNum = 5;
-      // Validation Ratio
+      int epochNum = 50;
+      // Validation sample Ratio
       double vRatio = 0.1;
-      // Data format
-      String dataFmt = "libsvm";
-      // Train batch number per epoch.
-      double spRatio = 0.65;
+      // Data format, libsvm or dummy
+      String dataFmt = "dense";
+      // Model type
+      String modelType = String.valueOf(RowType.T_DOUBLE_DENSE);
 
       // Learning rate
-      double learnRate = 0.1;
+      double learnRate = 0.01;
       // Decay of learning rate
-      double decay = 0.01;
+      double decay = 0.001;
       // Regularization coefficient
-      double reg = 0.001;
+      double reg = 0.002;
+
+      // Set local deploy mode
+      conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
 
       // Set basic configuration keys
       conf.setBoolean("mapred.mapper.new-api", true);
+      conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
       conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
+      conf.set(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, "true");
       conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 100);
 
       // Set data format
       conf.set(MLConf.ML_DATA_INPUT_FORMAT(), dataFmt);
-
-      // Use local deploy mode
-      conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
 
       //set angel resource parameters #worker, #task, #PS
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
       conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
-      //set sgd SVM algorithm parameters
+      //set sgd LR algorithm parameters #feature #epoch
+      conf.set(MLConf.ML_MODEL_TYPE(), modelType);
       conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
       conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
-      conf.set(MLConf.ML_BATCH_SAMPLE_RATIO(), String.valueOf(spRatio));
       conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
       conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
       conf.set(MLConf.ML_LEARN_DECAY(), String.valueOf(decay));
-      conf.set(MLConf.ML_LR_REG_L2(), String.valueOf(reg));
+      conf.set(MLConf.ML_REG_L2(), String.valueOf(reg));
+      conf.setLong(MLConf.ML_MODEL_SIZE(), featureNum);
+      conf.set(MLConf.ML_MODEL_CLASS_NAME(),
+        "com.tencent.angel.ml.classification.SupportVectorMachine");
     } catch (Exception x) {
       LOG.error("setup failed ", x);
       throw x;
@@ -93,26 +103,26 @@ public class SVMTest {
   }
 
   @Test public void testSVM() throws Exception {
-    trainOnLocalClusterTest();
-    incLearnTest();
+    trainTest();
+    predictTest();
   }
 
-  private void trainOnLocalClusterTest() throws Exception {
+  private void trainTest() throws Exception {
     try {
-      // set input, output path
-      String inputPath = "./src/test/data/lr/a9a.train";
-      String logPath = "./src/test/log";
+      String inputPath = "../../data/w6a/w6a_300d_train.dense";
+      String savePath = LOCAL_FS + TMP_PATH + "/SVM";
+      String logPath = LOCAL_FS + TMP_PATH + "/SVMlog";
 
+      // Set trainning data path
       conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
       // Set save model path
-      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/SVMModel");
-      // Set actionType train
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
+      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, savePath);
       // Set log path
       conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
+      // Set actionType train
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
 
-      // Submit LR Train Task
-      SVMRunner runner = new SVMRunner();
+      GraphRunner runner = new GraphRunner();
       runner.train(conf);
     } catch (Exception x) {
       LOG.error("run trainOnLocalClusterTest failed ", x);
@@ -120,29 +130,31 @@ public class SVMTest {
     }
   }
 
-  private void incLearnTest() throws Exception {
+  private void predictTest() throws Exception {
     try {
-      String inputPath = "./src/test/data/lr/a9a.train";
-      String logPath = "./src/test/log";
+      String inputPath = "../../data/w6a/w6a_300d_test.libsvm";
+      String loadPath = LOCAL_FS + TMP_PATH + "/SVM";
+      String predictPath = LOCAL_FS + TMP_PATH + "/predict";
+
+      conf.set(MLConf.ML_DATA_INPUT_FORMAT(), "libsvm");
 
       // Set trainning data path
-      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
+      conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, inputPath);
+
       // Set load model path
-      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/SVMModel");
-      // Set save model path
-      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/newSVMModel");
-      // Set actionType incremental train
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_INC_TRAIN());
-      // Set log path
-      conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
-      SVMRunner runner = new SVMRunner();
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, loadPath);
 
-      runner.train(conf);
+      // Set predict result path
+      conf.set(AngelConf.ANGEL_PREDICT_PATH, predictPath);
 
-      AngelClient angelClient = AngelClientFactory.get(conf);
-      angelClient.stop();
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT());
+
+
+      GraphRunner runner = new GraphRunner();
+
+      runner.predict(conf);
     } catch (Exception x) {
-      LOG.error("run incLearnTest failed ", x);
+      LOG.error("run predictTest failed ", x);
       throw x;
     }
   }

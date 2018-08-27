@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.app;
 
 import org.apache.commons.logging.Log;
@@ -26,26 +27,32 @@ import org.apache.hadoop.yarn.api.records.ApplicationId;
  */
 public class InternalErrorEvent extends AppEvent {
   private static final Log LOG = LogFactory.getLog(InternalErrorEvent.class);
-  
-  /**details failed message*/
+
+  /**
+   * details failed message
+   */
   private final String errorMsg;
-  
-  /**Is the application will retry?*/
+
+  /**
+   * Is the application will retry?
+   */
   private final boolean shouldRetry;
 
   /**
    * Create a InternalErrorEvent
-   * @param id application id
+   *
+   * @param id       application id
    * @param errorMsg detailed failed message
    */
   public InternalErrorEvent(ApplicationId id, String errorMsg) {
     this(id, errorMsg, false);
   }
-  
+
   /**
    * Create a InternalErrorEvent
-   * @param id application id
-   * @param errorMsg detailed failed message
+   *
+   * @param id          application id
+   * @param errorMsg    detailed failed message
    * @param shouldRetry is the application will retry
    */
   public InternalErrorEvent(ApplicationId id, String errorMsg, boolean shouldRetry) {
@@ -57,19 +64,20 @@ public class InternalErrorEvent extends AppEvent {
 
   /**
    * Get failed message
+   *
    * @return failed message
    */
   public String getErrorMsg() {
     return errorMsg;
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "InternalErrorEvent [errorMsg=" + errorMsg + ", getType()=" + getType() + "]";
   }
 
   /**
    * Is the application will retry
+   *
    * @return true means retry later
    */
   public boolean isShouldRetry() {

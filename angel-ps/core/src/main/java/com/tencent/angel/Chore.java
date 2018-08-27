@@ -1,21 +1,20 @@
-/**
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
  *
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
  */
+
 
 package com.tencent.angel;
 
@@ -29,7 +28,7 @@ import org.slf4j.LoggerFactory;
  * abstract class provides while loop and sleeping facility. If an unhandled exception, the threads
  * exit is logged. Implementers just need to add checking if there is work to be done and if so, do
  * it. Its the base of most of the chore threads in hbase.
- * 
+ * <p>
  * <p>
  * Don't subclass Chore if the task relies on being woken up for something to do, such as an entry
  * being added to a queue, etc.
@@ -40,10 +39,10 @@ public abstract class Chore extends HasThread {
   protected final Stoppable stopper;
 
   /**
-   * @param p Period at which we should run. Will be adjusted appropriately should we find work and
-   *        it takes time to complete.
+   * @param p       Period at which we should run. Will be adjusted appropriately should we find work and
+   *                it takes time to complete.
    * @param stopper When {@link Stoppable#isStopped()} is true, this thread will cleanup and exit
-   *        cleanly.
+   *                cleanly.
    */
   public Chore(String name, final int p, final Stoppable stopper) {
     super(name);
@@ -54,8 +53,7 @@ public abstract class Chore extends HasThread {
   /**
    * @see java.lang.Thread#run()
    */
-  @Override
-  public void run() {
+  @Override public void run() {
     try {
       boolean initialChoreComplete = false;
       while (!this.stopper.isStopped()) {
@@ -99,7 +97,7 @@ public abstract class Chore extends HasThread {
 
   /**
    * Override to run a task before we start looping.
-   * 
+   *
    * @return true if initial chore was successful
    */
   protected boolean initialChore() {
@@ -122,5 +120,6 @@ public abstract class Chore extends HasThread {
   /**
    * Called when the chore has completed, allowing subclasses to cleanup any extra overhead
    */
-  protected void cleanup() {}
+  protected void cleanup() {
+  }
 }

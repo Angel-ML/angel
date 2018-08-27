@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.psagent.task;
 
 import com.google.protobuf.ServiceException;
@@ -46,26 +47,39 @@ public class TaskContext {
   // task index, it must be unique for whole application
   private final int index;
 
-  /** Matrix storage for task */
+  /**
+   * Matrix storage for task
+   */
   private final MatrixStorageManager matrixStorage;
 
-  /** Current epoch number */
+  /**
+   * Current epoch number
+   */
   private final AtomicInteger epoch;
 
-  /** Update the matrix clock to Master synchronously */
+  /**
+   * Update the matrix clock to Master synchronously
+   */
   private final boolean syncClockEnable;
 
-  /** Task current epoch running progress */
+  /**
+   * Task current epoch running progress
+   */
   private volatile float progress;
 
-  /** Task system metrics */
+  /**
+   * Task system metrics
+   */
   private final Map<String, AtomicLong> metrics;
 
-  /** Task algorithm metrics*/
+  /**
+   * Task algorithm metrics
+   */
   private final Map<String, Metric> algoMetrics;
 
   /**
    * Create a TaskContext
+   *
    * @param index task index
    */
   public TaskContext(int index) {
@@ -76,16 +90,14 @@ public class TaskContext {
     this.metrics = new ConcurrentHashMap<>();
     this.algoMetrics = new ConcurrentHashMap<>();
 
-    syncClockEnable =
-        PSAgentContext
-            .get()
-            .getConf()
-            .getBoolean(AngelConf.ANGEL_PSAGENT_SYNC_CLOCK_ENABLE,
-                AngelConf.DEFAULT_ANGEL_PSAGENT_SYNC_CLOCK_ENABLE);
+    syncClockEnable = PSAgentContext.get().getConf()
+      .getBoolean(AngelConf.ANGEL_PSAGENT_SYNC_CLOCK_ENABLE,
+        AngelConf.DEFAULT_ANGEL_PSAGENT_SYNC_CLOCK_ENABLE);
   }
 
   /**
    * Get task index
+   *
    * @return task index
    */
   public int getIndex() {
@@ -94,6 +106,7 @@ public class TaskContext {
 
   /**
    * Get the clock value of a matrix
+   *
    * @param matrixId matrix id
    * @return clock value
    */
@@ -106,6 +119,7 @@ public class TaskContext {
 
   /**
    * Get the clock value of a matrix
+   *
    * @param matrixId matrix id
    * @return clock value
    */
@@ -115,9 +129,9 @@ public class TaskContext {
     int size = pkeys.size();
     int clock = Integer.MAX_VALUE;
     int partClock = 0;
-    for(int i = 0; i < size; i++) {
+    for (int i = 0; i < size; i++) {
       partClock = clockCache.getClock(matrixId, pkeys.get(i));
-      if(partClock < clock) {
+      if (partClock < clock) {
         clock = partClock;
       }
     }
@@ -135,12 +149,9 @@ public class TaskContext {
     ClockCache clockCache = PSAgentContext.get().getClockCache();
     List<PartitionKey> pkeys = PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
 
-    int syncTimeIntervalMS =
-      PSAgentContext
-        .get()
-        .getConf()
-        .getInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS,
-          AngelConf.DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS);
+    int syncTimeIntervalMS = PSAgentContext.get().getConf()
+      .getInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS,
+        AngelConf.DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS);
 
     while (true) {
       boolean sync = true;
@@ -165,13 +176,13 @@ public class TaskContext {
    * @throws InterruptedException
    */
   public void globalSync() throws InterruptedException {
-    for (Integer matId: getMatrixClocks().keySet())
+    for (Integer matId : getMatrixClocks().keySet())
       globalSync(matId);
   }
 
-  @Override
-  public String toString() {
-    return super.toString() + "TaskContext [index=" + index + ", matrix clocks=" + printMatrixClocks() + "]";
+  @Override public String toString() {
+    return super.toString() + "TaskContext [index=" + index + ", matrix clocks="
+      + printMatrixClocks() + "]";
   }
 
   private String printMatrixClocks() {
@@ -191,6 +202,7 @@ public class TaskContext {
 
   /**
    * Increase the clock value of the matrix
+   *
    * @param matrixId matrix id
    */
   public void increaseMatrixClock(int matrixId) {
@@ -202,6 +214,7 @@ public class TaskContext {
 
   /**
    * Get the matrix storage manager for this task
+   *
    * @return matrix storage manager
    */
   public MatrixStorageManager getMatrixStorage() {
@@ -210,6 +223,7 @@ public class TaskContext {
 
   /**
    * Get Task current epoch number
+   *
    * @return current epoch number
    */
   public int getEpoch() {
@@ -218,11 +232,12 @@ public class TaskContext {
 
   /**
    * Increase epoch number
+   *
    * @throws ServiceException
    */
   public void increaseEpoch() throws ServiceException {
     int iterationValue = epoch.incrementAndGet();
-    if(syncClockEnable){
+    if (syncClockEnable) {
       PSAgentContext.get().getMasterClient().setAlgoMetrics(index, algoMetrics);
       PSAgentContext.get().getMasterClient().taskIteration(index, iterationValue);
     }
@@ -230,31 +245,34 @@ public class TaskContext {
 
   /**
    * Set the epoch number
+   *
    * @param iterationValue epoch number
    */
-  public void setEpoch(int iterationValue){
+  public void setEpoch(int iterationValue) {
     epoch.set(iterationValue);
   }
 
   /**
    * Set matrix clock value
-   * @param matrixId matrix id
+   *
+   * @param matrixId   matrix id
    * @param clockValue clock value
    */
-  public void setMatrixClock(int matrixId, int clockValue){
+  public void setMatrixClock(int matrixId, int clockValue) {
     AtomicInteger clock = matrixIdToClockMap.get(matrixId);
-    if(clock == null){
+    if (clock == null) {
       clock = matrixIdToClockMap.putIfAbsent(matrixId, new AtomicInteger(clockValue));
-      if(clock == null){
+      if (clock == null) {
         clock = matrixIdToClockMap.get(matrixId);
       }
     }
-    
+
     clock.set(clockValue);
   }
 
   /**
    * Get matrix clocks
+   *
    * @return matrix clocks
    */
   public Map<Integer, AtomicInteger> getMatrixClocks() {
@@ -263,6 +281,7 @@ public class TaskContext {
 
   /**
    * Set task running progress in current epoch
+   *
    * @param progress task running progress in current epoch
    */
   public void setProgress(float progress) {
@@ -271,6 +290,7 @@ public class TaskContext {
 
   /**
    * Get task running progress in current epoch
+   *
    * @return progress
    */
   public float getProgress() {
@@ -279,6 +299,7 @@ public class TaskContext {
 
   /**
    * Update calculate profiling counters
+   *
    * @param sampleNum calculate sample number
    * @param useTimeMs the time use to calculate the samples
    */
@@ -289,14 +310,15 @@ public class TaskContext {
 
   /**
    * Increment the counter
+   *
    * @param counterName counter name
    * @param updateValue increment value
    */
   public void updateCounter(String counterName, int updateValue) {
     AtomicLong counter = metrics.get(counterName);
-    if(counter == null) {
+    if (counter == null) {
       counter = metrics.putIfAbsent(counterName, new AtomicLong(0));
-      if(counter == null) {
+      if (counter == null) {
         counter = metrics.get(counterName);
       }
     }
@@ -305,27 +327,29 @@ public class TaskContext {
 
   /**
    * Update the counter
+   *
    * @param counterName counter name
    * @param updateValue new counter value
    */
   public void setCounter(String counterName, int updateValue) {
     AtomicLong counter = metrics.get(counterName);
-    if(counter == null) {
+    if (counter == null) {
       counter = metrics.putIfAbsent(counterName, new AtomicLong(0));
-      if(counter == null) {
+      if (counter == null) {
         counter = metrics.get(counterName);
       }
     }
     counter.set(updateValue);
   }
 
-  public Map<String,AtomicLong> getMetrics() {
+  public Map<String, AtomicLong> getMetrics() {
     return metrics;
   }
 
   /**
    * Add a algorithm metric
-   * @param name metric name
+   *
+   * @param name   metric name
    * @param metric metric dependency values
    */
   public void addAlgoMetric(String name, Metric metric) {

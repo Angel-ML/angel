@@ -15,11 +15,14 @@
  *
  */
 
+
 package com.tencent.angel.ml.matrix.psf.update.enhance;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.common.Serialize;
-import com.tencent.angel.ml.matrix.psf.common.Utils;
+import com.tencent.angel.ml.matrix.psf.Utils;
+import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
+import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
 import com.tencent.angel.psagent.PSAgentContext;
 import io.netty.buffer.ByteBuf;
 
@@ -41,14 +44,12 @@ public class MFUpdateParam extends UpdateParam {
     this.func = func;
   }
 
-  @Override
-  public List<PartitionUpdateParam> split() {
-    List<PartitionKey> partList = PSAgentContext.get()
-        .getMatrixMetaManager()
-        .getPartitions(matrixId);
+  @Override public List<PartitionUpdateParam> split() {
+    List<PartitionKey> partList =
+      PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
 
     int size = partList.size();
-    List<PartitionUpdateParam> partParams = new ArrayList<PartitionUpdateParam>(size);
+    List<PartitionUpdateParam> partParams = new ArrayList<>(size);
     for (PartitionKey part : partList) {
       if (Utils.withinPart(part, rowIds)) {
         partParams.add(new MFPartitionUpdateParam(matrixId, part, rowIds, func));
@@ -65,7 +66,8 @@ public class MFUpdateParam extends UpdateParam {
     private int[] rowIds;
     private Serialize func;
 
-    public MFPartitionUpdateParam(int matrixId, PartitionKey partKey, int[] rowIds, Serialize func) {
+    public MFPartitionUpdateParam(int matrixId, PartitionKey partKey, int[] rowIds,
+      Serialize func) {
       super(matrixId, partKey, false);
       this.rowIds = rowIds;
       this.func = func;
@@ -75,8 +77,7 @@ public class MFUpdateParam extends UpdateParam {
       super();
     }
 
-    @Override
-    public void serialize(ByteBuf buf) {
+    @Override public void serialize(ByteBuf buf) {
       super.serialize(buf);
       buf.writeInt(rowIds.length);
       for (int rowId : rowIds) {
@@ -89,8 +90,7 @@ public class MFUpdateParam extends UpdateParam {
       func.serialize(buf);
     }
 
-    @Override
-    public void deserialize(ByteBuf buf) {
+    @Override public void deserialize(ByteBuf buf) {
       super.deserialize(buf);
       int rowIdNum = buf.readInt();
       int[] rowIds = new int[rowIdNum];
@@ -110,10 +110,9 @@ public class MFUpdateParam extends UpdateParam {
       this.func.deserialize(buf);
     }
 
-    @Override
-    public int bufferLen() {
-      return super.bufferLen() + (4 + rowIds.length * 4)
-          + (4 + func.getClass().getName().getBytes().length + func.bufferLen());
+    @Override public int bufferLen() {
+      return super.bufferLen() + (4 + rowIds.length * 4) + (4 + func.getClass().getName()
+        .getBytes().length + func.bufferLen());
     }
 
     public int[] getRowIds() {
@@ -124,10 +123,9 @@ public class MFUpdateParam extends UpdateParam {
       return this.func;
     }
 
-    @Override
-    public String toString() {
-      return "MFPartitionUpdateParam rowIds=" + Arrays.toString(rowIds) + ", func=" +
-          func.getClass().getName() + ", toString()=" + super.toString() + "]";
+    @Override public String toString() {
+      return "MFPartitionUpdateParam rowIds=" + Arrays.toString(rowIds) + ", func=" + func
+        .getClass().getName() + ", toString()=" + super.toString() + "]";
     }
 
   }

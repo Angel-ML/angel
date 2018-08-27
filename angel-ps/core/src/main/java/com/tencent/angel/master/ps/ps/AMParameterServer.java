@@ -15,9 +15,9 @@
  *
  */
 
+
 package com.tencent.angel.master.ps.ps;
 
-import com.tencent.angel.common.location.Location;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.ps.ParameterServerManagerEvent;
@@ -25,9 +25,9 @@ import com.tencent.angel.master.ps.ParameterServerManagerEventType;
 import com.tencent.angel.master.ps.attempt.PSAttempt;
 import com.tencent.angel.master.ps.attempt.PSAttemptEvent;
 import com.tencent.angel.master.ps.attempt.PSAttemptEventType;
-import com.tencent.angel.ml.matrix.transport.PSLocation;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
+import com.tencent.angel.ps.server.data.PSLocation;
 import com.tencent.angel.utils.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -49,105 +49,119 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
   private static final Log LOG = LogFactory.getLog(AMParameterServer.class);
-  
-  /**ps id*/
+
+  /**
+   * ps id
+   */
   private final ParameterServerId id;
   private final AMContext context;
   private final Lock readLock;
   private final Lock writeLock;
-  
-  /**ps attempt id to ps attempt manager unit map*/
+
+  /**
+   * ps attempt id to ps attempt manager unit map
+   */
   private Map<PSAttemptId, PSAttempt> attempts;
-  
-  /**running ps attempt id*/
+
+  /**
+   * running ps attempt id
+   */
   private PSAttemptId runningPSAttemptId;
-  
-  /**failed ps attempt ids */
+
+  /**
+   * failed ps attempt ids
+   */
   private Set<PSAttemptId> failedAttempts;
-  
-  /**success ps attempt id*/
+
+  /**
+   * success ps attempt id
+   */
   private PSAttemptId successAttemptId;
-  
-  /**next ps attempt index*/
+
+  /**
+   * next ps attempt index
+   */
   private int nextAttemptNumber = 0;
-  
-  /**max attempt number for a ps*/
+
+  /**
+   * max attempt number for a ps
+   */
   private final int maxAttempts;
-  
-  /**ps diagnostics*/
+
+  /**
+   * ps diagnostics
+   */
   private final List<String> diagnostics = new ArrayList<String>();
 
   /**schedule timestamp of the ps*/
   //private long scheduledTime;
-  
-  /**expected machine ip which ps running on*/
+
+  /**
+   * expected machine ip which ps running on
+   */
   private final String ip;
 
   private static final PSDoneTransition PS_DONE_TRANSITION = new PSDoneTransition();
 
-  protected static final StateMachineFactory<AMParameterServer, AMParameterServerState, AMParameterServerEventType, AMParameterServerEvent> stateMachineFactory =
-      new StateMachineFactory<AMParameterServer, AMParameterServerState, AMParameterServerEventType, AMParameterServerEvent>(
-          AMParameterServerState.NEW)
+  protected static final StateMachineFactory<AMParameterServer, AMParameterServerState, AMParameterServerEventType, AMParameterServerEvent>
+    stateMachineFactory =
+    new StateMachineFactory<AMParameterServer, AMParameterServerState, AMParameterServerEventType, AMParameterServerEvent>(
+      AMParameterServerState.NEW)
 
-          // Transitions from the NEW state.
-          .addTransition(AMParameterServerState.NEW, AMParameterServerState.SCHEDULED,
-              AMParameterServerEventType.PS_SCHEDULE, new ScheduleTransition())
+      // Transitions from the NEW state.
+      .addTransition(AMParameterServerState.NEW, AMParameterServerState.SCHEDULED,
+        AMParameterServerEventType.PS_SCHEDULE, new ScheduleTransition())
 
-          .addTransition(AMParameterServerState.NEW, AMParameterServerState.KILLED,
-              AMParameterServerEventType.PS_KILL, new KillNewTransition())
+      .addTransition(AMParameterServerState.NEW, AMParameterServerState.KILLED,
+        AMParameterServerEventType.PS_KILL, new KillNewTransition())
 
-          // Transitions from the SCHEDULED state.
-          .addTransition(AMParameterServerState.SCHEDULED, AMParameterServerState.RUNNING,
-              AMParameterServerEventType.PS_ATTEMPT_LAUNCHED, new LaunchedTransition())
+      // Transitions from the SCHEDULED state.
+      .addTransition(AMParameterServerState.SCHEDULED, AMParameterServerState.RUNNING,
+        AMParameterServerEventType.PS_ATTEMPT_LAUNCHED, new LaunchedTransition())
 
-          .addTransition(AMParameterServerState.SCHEDULED, AMParameterServerState.KILLED,
-              AMParameterServerEventType.PS_KILL, new KillTransition())
-          .addTransition(AMParameterServerState.SCHEDULED,
-              EnumSet.of(AMParameterServerState.SCHEDULED, AMParameterServerState.FAILED),
-              AMParameterServerEventType.PS_ATTEMPT_FAILED, new AttemptFailedTransition())
-          .addTransition(AMParameterServerState.SCHEDULED, 
-              EnumSet.of(AMParameterServerState.SCHEDULED, AMParameterServerState.KILLED),
-              AMParameterServerEventType.PS_ATTEMPT_KILLED, new AttemptKilledTransition())
+      .addTransition(AMParameterServerState.SCHEDULED, AMParameterServerState.KILLED,
+        AMParameterServerEventType.PS_KILL, new KillTransition())
+      .addTransition(AMParameterServerState.SCHEDULED,
+        EnumSet.of(AMParameterServerState.SCHEDULED, AMParameterServerState.FAILED),
+        AMParameterServerEventType.PS_ATTEMPT_FAILED, new AttemptFailedTransition())
+      .addTransition(AMParameterServerState.SCHEDULED,
+        EnumSet.of(AMParameterServerState.SCHEDULED, AMParameterServerState.KILLED),
+        AMParameterServerEventType.PS_ATTEMPT_KILLED, new AttemptKilledTransition())
 
-          // Transitions from the RUNNING state.
-          .addTransition(AMParameterServerState.RUNNING, AMParameterServerState.SUCCESS,
-              AMParameterServerEventType.PS_ATTEMPT_SUCCESS, PS_DONE_TRANSITION)
-          .addTransition(AMParameterServerState.RUNNING, AMParameterServerState.KILLED,
-              AMParameterServerEventType.PS_KILL, new KillTransition())
-          .addTransition(AMParameterServerState.RUNNING, 
-              EnumSet.of(AMParameterServerState.RUNNING, AMParameterServerState.KILLED),
-              AMParameterServerEventType.PS_ATTEMPT_KILLED, new AttemptKilledTransition())
-          .addTransition(AMParameterServerState.RUNNING,
-              EnumSet.of(AMParameterServerState.RUNNING, AMParameterServerState.FAILED),
-              AMParameterServerEventType.PS_ATTEMPT_FAILED, new AttemptFailedTransition())
-          // another attempt launched,
-          .addTransition(AMParameterServerState.RUNNING, AMParameterServerState.RUNNING,
-              AMParameterServerEventType.PS_ATTEMPT_LAUNCHED)
+      // Transitions from the RUNNING state.
+      .addTransition(AMParameterServerState.RUNNING, AMParameterServerState.SUCCESS,
+        AMParameterServerEventType.PS_ATTEMPT_SUCCESS, PS_DONE_TRANSITION)
+      .addTransition(AMParameterServerState.RUNNING, AMParameterServerState.KILLED,
+        AMParameterServerEventType.PS_KILL, new KillTransition())
+      .addTransition(AMParameterServerState.RUNNING,
+        EnumSet.of(AMParameterServerState.RUNNING, AMParameterServerState.KILLED),
+        AMParameterServerEventType.PS_ATTEMPT_KILLED, new AttemptKilledTransition())
+      .addTransition(AMParameterServerState.RUNNING,
+        EnumSet.of(AMParameterServerState.RUNNING, AMParameterServerState.FAILED),
+        AMParameterServerEventType.PS_ATTEMPT_FAILED, new AttemptFailedTransition())
+      // another attempt launched,
+      .addTransition(AMParameterServerState.RUNNING, AMParameterServerState.RUNNING,
+        AMParameterServerEventType.PS_ATTEMPT_LAUNCHED)
 
-          // Transitions from the SUCCEEDED state
-          .addTransition(AMParameterServerState.SUCCESS, AMParameterServerState.SUCCESS,
-              EnumSet.of(AMParameterServerEventType.PS_KILL))
+      // Transitions from the SUCCEEDED state
+      .addTransition(AMParameterServerState.SUCCESS, AMParameterServerState.SUCCESS,
+        EnumSet.of(AMParameterServerEventType.PS_KILL))
 
-          // Transitions from the KILLED state
-          .addTransition(
-              AMParameterServerState.KILLED,
-              AMParameterServerState.KILLED,
-              EnumSet.of(AMParameterServerEventType.PS_KILL,
-                  AMParameterServerEventType.PS_ATTEMPT_KILLED,
-                  AMParameterServerEventType.PS_ATTEMPT_FAILED,
-                  AMParameterServerEventType.PS_ATTEMPT_SUCCESS,
-                  AMParameterServerEventType.PS_ATTEMPT_LAUNCHED))
+      // Transitions from the KILLED state
+      .addTransition(AMParameterServerState.KILLED, AMParameterServerState.KILLED, EnumSet
+        .of(AMParameterServerEventType.PS_KILL, AMParameterServerEventType.PS_ATTEMPT_KILLED,
+          AMParameterServerEventType.PS_ATTEMPT_FAILED,
+          AMParameterServerEventType.PS_ATTEMPT_SUCCESS,
+          AMParameterServerEventType.PS_ATTEMPT_LAUNCHED))
 
-          // Transitions from the FAILED state
-          .addTransition(
-              AMParameterServerState.FAILED,
-              AMParameterServerState.FAILED,
-              EnumSet.of(AMParameterServerEventType.PS_KILL,
-                  AMParameterServerEventType.PS_ATTEMPT_KILLED))
+      // Transitions from the FAILED state
+      .addTransition(AMParameterServerState.FAILED, AMParameterServerState.FAILED, EnumSet
+        .of(AMParameterServerEventType.PS_KILL, AMParameterServerEventType.PS_ATTEMPT_KILLED))
 
-          .installTopology();
+      .installTopology();
 
-  private final StateMachine<AMParameterServerState, AMParameterServerEventType, AMParameterServerEvent> stateMachine;
+  private final StateMachine<AMParameterServerState, AMParameterServerEventType, AMParameterServerEvent>
+    stateMachine;
 
   public AMParameterServer(ParameterServerId id, AMContext context) {
     this(null, id, context);
@@ -164,19 +178,19 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
     attempts = new HashMap<PSAttemptId, PSAttempt>(2);
     this.failedAttempts = new HashSet<PSAttemptId>(2);
     maxAttempts =
-        context.getConf().getInt(AngelConf.ANGEL_PS_MAX_ATTEMPTS,
-            AngelConf.DEFAULT_PS_MAX_ATTEMPTS);
+      context.getConf().getInt(AngelConf.ANGEL_PS_MAX_ATTEMPTS, AngelConf.DEFAULT_PS_MAX_ATTEMPTS);
   }
 
   public void restart(PSLocation psLoc) {
-    if(runningPSAttemptId != null && psLoc.loc.equals(context.getLocationManager().getPsLocation(psLoc.psId))) {
-      getContext().getEventHandler().handle(
-        new PSAttemptEvent(PSAttemptEventType.PA_FAILMSG, runningPSAttemptId));
+    if (runningPSAttemptId != null && psLoc.loc
+      .equals(context.getLocationManager().getPsLocation(psLoc.psId))) {
+      getContext().getEventHandler()
+        .handle(new PSAttemptEvent(PSAttemptEventType.PA_FAILMSG, runningPSAttemptId));
     }
   }
 
-  private static class ScheduleTransition implements
-      SingleArcTransition<AMParameterServer, AMParameterServerEvent> {
+  private static class ScheduleTransition
+    implements SingleArcTransition<AMParameterServer, AMParameterServerEvent> {
     @Override
     public void transition(AMParameterServer parameterServer, AMParameterServerEvent event) {
       LOG.info("schedule ps server, psId: " + parameterServer.getId());
@@ -184,12 +198,12 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
     }
   }
 
+
   private static class AttemptFailedTransition implements
-      MultipleArcTransition<AMParameterServer, AMParameterServerEvent, AMParameterServerState> {
-    @SuppressWarnings("unchecked")
-    @Override
+    MultipleArcTransition<AMParameterServer, AMParameterServerEvent, AMParameterServerState> {
+    @SuppressWarnings("unchecked") @Override
     public AMParameterServerState transition(AMParameterServer parameterServer,
-        AMParameterServerEvent event) {
+      AMParameterServerEvent event) {
       PSAttemptId psAttemptId = ((PSPAttemptEvent) event).getPSAttemptId();
       parameterServer.failedAttempts.add(psAttemptId);
       if (parameterServer.runningPSAttemptId == psAttemptId) {
@@ -199,7 +213,7 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
       // add diagnostic
       StringBuilder psDiagnostic = new StringBuilder();
       psDiagnostic.append(psAttemptId.toString()).append(" failed due to: ")
-          .append(StringUtils.join("\n", parameterServer.attempts.get(psAttemptId).getDiagnostics()));
+        .append(StringUtils.join("\n", parameterServer.attempts.get(psAttemptId).getDiagnostics()));
       if (LOG.isDebugEnabled()) {
         LOG.debug(psAttemptId + "failed due to:" + psDiagnostic.toString());
       }
@@ -210,7 +224,7 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
         // Refresh ps location & matrix meta
         LOG.info("PS " + parameterServer.getId() + " failed, modify location and metadata");
         parameterServer.context.getLocationManager().setPsLocation(psAttemptId.getPsId(), null);
-        if(parameterServer.context.getPSReplicationNum() > 1) {
+        if (parameterServer.context.getPSReplicationNum() > 1) {
           parameterServer.context.getMatrixMetaManager().psFailed(psAttemptId.getPsId());
         }
 
@@ -219,19 +233,15 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
         return parameterServer.stateMachine.getCurrentState();
       } else {
         //notify ps manager
-        parameterServer
-            .getContext()
-            .getEventHandler()
-            .handle(
-                new ParameterServerManagerEvent(
-                    ParameterServerManagerEventType.PARAMETERSERVER_FAILED, parameterServer.getId()));
+        parameterServer.getContext().getEventHandler().handle(
+          new ParameterServerManagerEvent(ParameterServerManagerEventType.PARAMETERSERVER_FAILED,
+            parameterServer.getId()));
         return AMParameterServerState.FAILED;
       }
     }
   }
 
-  @SuppressWarnings("unchecked")
-  private void addAndScheduleAttempt() {
+  @SuppressWarnings("unchecked") private void addAndScheduleAttempt() {
     PSAttempt attempt = null;
     writeLock.lock();
     try {
@@ -243,8 +253,8 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
       writeLock.unlock();
     }
     //getContext().getLocationManager().setPsLocation(id, null);
-    getContext().getEventHandler().handle(
-        new PSAttemptEvent(PSAttemptEventType.PA_SCHEDULE, attempt.getId()));
+    getContext().getEventHandler()
+      .handle(new PSAttemptEvent(PSAttemptEventType.PA_SCHEDULE, attempt.getId()));
   }
 
   private PSAttempt createPSAttempt() {
@@ -253,58 +263,52 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
     return attempt;
   }
 
-  private static class LaunchedTransition implements
-      SingleArcTransition<AMParameterServer, AMParameterServerEvent> {
+  private static class LaunchedTransition
+    implements SingleArcTransition<AMParameterServer, AMParameterServerEvent> {
     @Override
     public void transition(AMParameterServer parameterServer, AMParameterServerEvent event) {
       parameterServer.runningPSAttemptId = ((PSPAttemptEvent) event).getPSAttemptId();
     }
   }
 
-  private static class KillNewTransition implements
-      SingleArcTransition<AMParameterServer, AMParameterServerEvent> {
-    @SuppressWarnings("unchecked")
-    @Override
+
+  private static class KillNewTransition
+    implements SingleArcTransition<AMParameterServer, AMParameterServerEvent> {
+    @SuppressWarnings("unchecked") @Override
     public void transition(AMParameterServer parameterServer, AMParameterServerEvent event) {
-      parameterServer
-          .getContext()
-          .getEventHandler()
-          .handle(
-              new ParameterServerManagerEvent(ParameterServerManagerEventType.PARAMETERSERVER_KILLED,
-                  parameterServer.getId()));
+      parameterServer.getContext().getEventHandler().handle(
+        new ParameterServerManagerEvent(ParameterServerManagerEventType.PARAMETERSERVER_KILLED,
+          parameterServer.getId()));
     }
   }
 
-  private static class KillTransition implements
-      SingleArcTransition<AMParameterServer, AMParameterServerEvent> {
-    @SuppressWarnings("unchecked")
-    @Override
+
+  private static class KillTransition
+    implements SingleArcTransition<AMParameterServer, AMParameterServerEvent> {
+    @SuppressWarnings("unchecked") @Override
     public void transition(AMParameterServer parameterServer, AMParameterServerEvent event) {
       StringBuilder psdiaggostic = new StringBuilder();
       psdiaggostic.append("ps is killed by user, psId: ")
-          .append(parameterServer.getId().toString());
+        .append(parameterServer.getId().toString());
       parameterServer.diagnostics.add(psdiaggostic.toString());
       for (PSAttempt attempt : parameterServer.attempts.values()) {
         if (attempt != null && !attempt.isFinished()) {
           parameterServer.getContext().getEventHandler()
-              .handle(new PSAttemptEvent(PSAttemptEventType.PA_KILL, attempt.getId()));
+            .handle(new PSAttemptEvent(PSAttemptEventType.PA_KILL, attempt.getId()));
         }
       }
-      parameterServer
-          .getContext()
-          .getEventHandler()
-          .handle(
-              new ParameterServerManagerEvent(ParameterServerManagerEventType.PARAMETERSERVER_KILLED,
-                  parameterServer.getId()));
+      parameterServer.getContext().getEventHandler().handle(
+        new ParameterServerManagerEvent(ParameterServerManagerEventType.PARAMETERSERVER_KILLED,
+          parameterServer.getId()));
     }
   }
 
+
   private static class AttemptKilledTransition implements
-      MultipleArcTransition<AMParameterServer, AMParameterServerEvent, AMParameterServerState> {
-    @SuppressWarnings("unchecked")
-    @Override
+    MultipleArcTransition<AMParameterServer, AMParameterServerEvent, AMParameterServerState> {
+    @SuppressWarnings("unchecked") @Override
     public AMParameterServerState transition(AMParameterServer parameterServer,
-        AMParameterServerEvent event) {
+      AMParameterServerEvent event) {
       PSAttemptId psAttemptId = ((PSPAttemptEvent) event).getPSAttemptId();
       parameterServer.failedAttempts.add(psAttemptId);
       if (parameterServer.runningPSAttemptId == psAttemptId) {
@@ -314,7 +318,7 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
       // add diagnostic
       StringBuilder psDiagnostic = new StringBuilder();
       psDiagnostic.append(psAttemptId.toString()).append(" failed due to: ")
-          .append(StringUtils.join("\n", parameterServer.attempts.get(psAttemptId).getDiagnostics()));
+        .append(StringUtils.join("\n", parameterServer.attempts.get(psAttemptId).getDiagnostics()));
       if (LOG.isDebugEnabled()) {
         LOG.debug(psAttemptId + "failed due to:" + psDiagnostic.toString());
       }
@@ -327,37 +331,30 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
         return parameterServer.stateMachine.getCurrentState();
       } else {
         // notify ps manager
-        parameterServer
-            .getContext()
-            .getEventHandler()
-            .handle(
-                new ParameterServerManagerEvent(
-                    ParameterServerManagerEventType.PARAMETERSERVER_KILLED, parameterServer.getId()));
+        parameterServer.getContext().getEventHandler().handle(
+          new ParameterServerManagerEvent(ParameterServerManagerEventType.PARAMETERSERVER_KILLED,
+            parameterServer.getId()));
         return AMParameterServerState.KILLED;
       }
     }
   }
 
-  private static class PSDoneTransition implements
-      SingleArcTransition<AMParameterServer, AMParameterServerEvent> {
 
-    @SuppressWarnings("unchecked")
-    @Override
+  private static class PSDoneTransition
+    implements SingleArcTransition<AMParameterServer, AMParameterServerEvent> {
+
+    @SuppressWarnings("unchecked") @Override
     public void transition(AMParameterServer parameterServer, AMParameterServerEvent event) {
       PSAttemptId attemptId = ((PSPAttemptEvent) event).getPSAttemptId();
       parameterServer.successAttemptId = attemptId;
       parameterServer.runningPSAttemptId = null;
-      parameterServer
-          .getContext()
-          .getEventHandler()
-          .handle(
-              new ParameterServerManagerEvent(ParameterServerManagerEventType.PARAMETERSERVER_DONE,
-                  parameterServer.getId()));
+      parameterServer.getContext().getEventHandler().handle(
+        new ParameterServerManagerEvent(ParameterServerManagerEventType.PARAMETERSERVER_DONE,
+          parameterServer.getId()));
     }
   }
 
-  @Override
-  public void handle(AMParameterServerEvent event) {
+  @Override public void handle(AMParameterServerEvent event) {
     LOG.debug("Processing " + event.getPsId() + " of type " + event.getType());
     writeLock.lock();
     try {
@@ -368,8 +365,8 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
 
       }
       if (oldState != getState()) {
-        LOG.info(event.getPsId() + " AMParameterServer Transitioned from " + oldState
-            + " to " + getState());
+        LOG.info(event.getPsId() + " AMParameterServer Transitioned from " + oldState + " to "
+          + getState());
       }
     } finally {
       writeLock.unlock();
@@ -378,6 +375,7 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
 
   /**
    * get ps state
+   *
    * @return AMParameterServerState ps state
    */
   public AMParameterServerState getState() {
@@ -395,6 +393,7 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
 
   /**
    * get ps id
+   *
    * @return ParameterServerId ps id
    */
   public ParameterServerId getId() {
@@ -403,10 +402,11 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
 
   /**
    * get ps diagnostics
+   *
    * @return List<String> ps diagnostics
    */
   public List<String> getDiagnostics() {
-    try{
+    try {
       readLock.lock();
       List<String> cloneDiagnostics = new ArrayList<String>(diagnostics.size());
       cloneDiagnostics.addAll(diagnostics);
@@ -418,6 +418,7 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
 
   /**
    * get ps attempt use attempt id
+   *
    * @param psAttemptId ps attempt id
    * @return PSAttempt ps attempt
    */
@@ -434,6 +435,7 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
 
   /**
    * get ps attempt id to ps attempt map
+   *
    * @return Map<PSAttemptId, PSAttempt> ps attempt id to ps attempt map
    */
   public Map<PSAttemptId, PSAttempt> getPSAttempts() {
@@ -452,49 +454,53 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
 
   /**
    * get next attempt index
+   *
    * @return int next attempt index
    */
   public int getNextAttemptNumber() {
-    try{
+    try {
       readLock.lock();
       return nextAttemptNumber;
     } finally {
       readLock.unlock();
-    }    
+    }
   }
 
   /**
    * set next attempt index
+   *
    * @param nextAttemptNumber next attempt index
    */
   public void setNextAttemptNumber(int nextAttemptNumber) {
-    try{
+    try {
       writeLock.lock();
       this.nextAttemptNumber = nextAttemptNumber;
     } finally {
       writeLock.unlock();
-    }    
+    }
   }
 
   /**
    * get id of success ps attempt
+   *
    * @return PSAttemptId id of success ps attempt
    */
   public PSAttemptId getSuccessAttemptId() {
-    try{
+    try {
       readLock.lock();
       return successAttemptId;
     } finally {
       readLock.unlock();
-    }     
+    }
   }
 
   /**
    * get id of running ps attempt
+   *
    * @return PSAttemptId id of running ps attempt
    */
   public PSAttemptId getRunningAttemptId() {
-    try{
+    try {
       readLock.lock();
       return runningPSAttemptId;
     } finally {
@@ -504,6 +510,7 @@ public class AMParameterServer implements EventHandler<AMParameterServerEvent> {
 
   /**
    * get max attempt number
+   *
    * @return int max attempt number
    */
   public int getMaxAttempts() {

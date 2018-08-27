@@ -15,9 +15,10 @@
  *
  */
 
+
 package com.tencent.angel.spark.ml.psf;
 
-import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.Zip2MapWithIndexFunc;
+import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.func.Zip2MapWithIndexFunc;
 import io.netty.buffer.ByteBuf;
 
 public class FTRLWUpdater implements Zip2MapWithIndexFunc {
@@ -40,19 +41,18 @@ public class FTRLWUpdater implements Zip2MapWithIndexFunc {
     this.skipIndex = skipIndex;
   }
 
-  @Override
-  public double call(long index, double zVal, double nVal) {
+  @Override public double call(long index, double zVal, double nVal) {
     if (index == skipIndex) {
-       return -1.0 * alpha * zVal / (beta + Math.sqrt(nVal));
-    } else if (Math.abs(zVal) > lambda1){
-      return (-1) * (1.0 / (lambda2 + (beta + Math.sqrt(nVal)) / alpha)) * (zVal - Math.signum(zVal) * lambda1);
-    } else{
+      return -1.0 * alpha * zVal / (beta + Math.sqrt(nVal));
+    } else if (Math.abs(zVal) > lambda1) {
+      return (-1) * (1.0 / (lambda2 + (beta + Math.sqrt(nVal)) / alpha)) * (zVal
+        - Math.signum(zVal) * lambda1);
+    } else {
       return 0.0;
     }
   }
 
-  @Override
-  public void serialize(ByteBuf buf) {
+  @Override public void serialize(ByteBuf buf) {
     buf.writeDouble(alpha);
     buf.writeDouble(beta);
     buf.writeDouble(lambda1);
@@ -60,8 +60,7 @@ public class FTRLWUpdater implements Zip2MapWithIndexFunc {
     buf.writeLong(skipIndex);
   }
 
-  @Override
-  public void deserialize(ByteBuf buf) {
+  @Override public void deserialize(ByteBuf buf) {
     alpha = buf.readDouble();
     beta = buf.readDouble();
     lambda1 = buf.readDouble();
@@ -69,8 +68,7 @@ public class FTRLWUpdater implements Zip2MapWithIndexFunc {
     skipIndex = buf.readLong();
   }
 
-  @Override
-  public int bufferLen() {
+  @Override public int bufferLen() {
     return 5 * 8;
   }
 

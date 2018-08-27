@@ -15,11 +15,19 @@
  *
  */
 
+
 package com.tencent.angel.spark.models.matrix
 
 import scala.util.Random
 
+import com.tencent.angel.exception.AngelException
+import com.tencent.angel.ml.math2.VFactory
+import com.tencent.angel.ml.math2.matrix.Matrix
+import com.tencent.angel.ml.math2.ufuncs.Ufuncs
+import com.tencent.angel.ml.math2.vector.{IntDoubleVector, LongDoubleVector, Vector}
+import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.spark.{PSFunSuite, SharedPSContext}
+import PSMatrixSuite._
 
 class PSMatrixSuite extends PSFunSuite with SharedPSContext {
 
@@ -46,7 +54,7 @@ class PSMatrixSuite extends PSFunSuite with SharedPSContext {
     val array = (0 until cols).toArray.map(x => rand.nextDouble())
 
     val randRow = rand.nextInt(rows)
-    mat.push(randRow, array)
+    mat.push(VFactory.denseDoubleVector(mat.id, randRow, 0, array))
 
     val result = mat.pull()
 
@@ -61,14 +69,11 @@ class PSMatrixSuite extends PSFunSuite with SharedPSContext {
   }
 
   test("Pull row") {
-    val mat = DensePSMatrix.rand(rows, cols)
-
+    val mat = PSMatrix.rand(rows, cols)
     val totalMat = mat.pull()
-
     val rand = new Random()
     val randRow = rand.nextInt(rows)
     val oneRow = mat.pull(randRow)
-
     assert(oneRow.sameElements(totalMat(randRow)))
     mat.destroy()
   }
@@ -76,17 +81,65 @@ class PSMatrixSuite extends PSFunSuite with SharedPSContext {
   test("increment") {
     val mat = PSMatrix.dense(rows, cols)
     val rand = new Random()
-    val firstArray = (0 until cols).toArray.map(x => rand.nextDouble())
-    val secondArray = (0 until cols).toArray.map(x => rand.nextGaussian())
+    val firstArray = (0 until cols).toArray.map(_ => rand.nextDouble())
+    val secondArray = (0 until cols).toArray.map(_ => rand.nextGaussian())
 
     val rowId = rand.nextInt(rows)
-    mat.increment(rowId, firstArray)
+    mat.increment(VFactory.denseDoubleVector(mat.id, rowId, 0, firstArray))
     assert(mat.pull(rowId).sameElements(firstArray))
 
-    mat.increment(rowId, secondArray)
-    val sum = (0 until cols).toArray.map(i => firstArray(i) + secondArray(i))
-    assert(sum.sameElements(mat.pull(rowId)))
+    mat.increment(VFactory.denseDoubleVector(mat.id, rowId, 0, secondArray))
+    val sum = Array.tabulate(cols)(i => firstArray(i) + secondArray(i))
+    assert(mat.pull(rowId).sameElements(sum))
 
     mat.destroy()
   }
+}
+
+object PSMatrixSuite {
+
+  class MatrixImplicit(mat: Matrix) {
+    def apply(i: Int): Array[Double] = mat.getRow(i).asInstanceOf[IntDoubleVector].getStorage.getValues
+  }
+
+  implicit def toMatrixImplicit(mat: Matrix): MatrixImplicit = new MatrixImplicit(mat)
+
+  class VectorImplicit(val v: Vector) {
+    def +(other: Vector): Vector = Ufuncs.add(v, other)
+
+    def +(other: LongDoubleVector): LongDoubleVector = Ufuncs.add(v, other).asInstanceOf[LongDoubleVector]
+
+    def -(other: LongDoubleVector): LongDoubleVector = Ufuncs.sub(v, other).asInstanceOf[LongDoubleVector]
+
+    def *(other: LongDoubleVector): LongDoubleVector = Ufuncs.mul(v, other).asInstanceOf[LongDoubleVector]
+
+    def /(other: LongDoubleVector): LongDoubleVector = Ufuncs.div(v, other).asInstanceOf[LongDoubleVector]
+
+    def +=(other: Vector): Unit = Ufuncs.iadd(v, other)
+
+    def -=(other: Vector): Unit = Ufuncs.isub(v, other)
+
+    def /=(other: Vector): Unit = Ufuncs.idiv(v, other)
+
+    def *=(other: Vector): Unit = Ufuncs.imul(v, other)
+
+    def sameElements(other: Array[Double]): Boolean = {
+      v.getType match {
+        case RowType.T_DOUBLE_DENSE =>
+          v.asInstanceOf[IntDoubleVector].getStorage.getValues.sameElements(other)
+        case RowType.T_DOUBLE_SPARSE_LONGKEY =>
+          val storage = v.asInstanceOf[LongDoubleVector].getStorage
+          val indices = storage.getIndices.sorted
+          indices.min == 0 && indices.max == other.length - 1 && storage.get(indices).sameElements(other)
+        case _ => throw new AngelException("not supported")
+      }
+    }
+
+    def apply(col: Long): Double = v match {
+      case dense: IntDoubleVector => dense.get(col.toInt)
+      case sparse: LongDoubleVector => sparse.get(col)
+    }
+  }
+
+  implicit def toVectorImplicit(v: Vector): VectorImplicit = new VectorImplicit(v)
 }

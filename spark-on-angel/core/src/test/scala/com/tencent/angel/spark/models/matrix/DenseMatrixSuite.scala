@@ -15,10 +15,14 @@
  *
  */
 
+
 package com.tencent.angel.spark.models.matrix
 
-import scala.util.Random
+import java.util.Random
 
+import com.tencent.angel.ml.math2.{MFactory, VFactory}
+import com.tencent.angel.spark.models.CompatibleImplicit._
+import com.tencent.angel.ml.math2.vector.IntDoubleVector
 import com.tencent.angel.spark.{PSFunSuite, SharedPSContext}
 
 class DenseMatrixSuite extends PSFunSuite with SharedPSContext {
@@ -34,16 +38,16 @@ class DenseMatrixSuite extends PSFunSuite with SharedPSContext {
   }
 
   test("init zero") {
-    val mat = DensePSMatrix.zero(rows, cols)
+    val mat = PSMatrix.zero(rows, cols)
     val result = mat.pull()
-    (0 until rows).foreach {i =>
+    (0 until rows).foreach { i =>
       assert(result(i).sameElements(zeroArray))
     }
     mat.destroy()
   }
 
   test("random matrix") {
-    val mat = DensePSMatrix.rand(rows, cols)
+    val mat = PSMatrix.rand(rows, cols)
     val result = mat.pull()
 
     (0 until rows).foreach { i =>
@@ -55,7 +59,7 @@ class DenseMatrixSuite extends PSFunSuite with SharedPSContext {
   }
 
   test("eye matrix") {
-    val mat = DensePSMatrix.eye(dim)
+    val mat = PSMatrix.eye(dim)
     val result = mat.pull()
 
     (0 until dim).foreach { i =>
@@ -73,7 +77,7 @@ class DenseMatrixSuite extends PSFunSuite with SharedPSContext {
   test("init diag matrix") {
     val rand = new Random(41)
     val diag = (0 until dim).toArray.map(_ => rand.nextDouble())
-    val diagMatrix = DensePSMatrix.diag(diag)
+    val diagMatrix = PSMatrix.diag(diag)
 
     val result = diagMatrix.pull()
 
@@ -90,7 +94,7 @@ class DenseMatrixSuite extends PSFunSuite with SharedPSContext {
   }
 
   test("fill matrix") {
-    val mat = DensePSMatrix.fill(rows, cols, 3.14)
+    val mat = PSMatrix.fill(rows, cols, 3.14)
     val result = mat.pull()
     val expectedArray = Array.fill(cols)(3.14)
     (0 until rows).foreach { i =>
@@ -101,14 +105,12 @@ class DenseMatrixSuite extends PSFunSuite with SharedPSContext {
 
   test("push") {
     val rand = new Random()
-    val localMat = (0 until rows).toArray.map { i =>
-      (0 until cols).toArray.map { j =>
-        rand.nextDouble()
-      }
-    }
-    val mat = DensePSMatrix(rows, cols)
+    val data = (0 until rows).flatMap(_ => (0 until cols).map(_ => rand.nextDouble())).toArray
+    val localMat = MFactory.denseDoubleMatrix(rows, cols, data)
+    val mat = PSMatrix.dense(rows, cols)
     mat.push(localMat)
-
+    Thread.sleep(5000)
+    //@Todo: ?????
     val result = mat.pull()
     (0 until rows).foreach { i =>
       assert(result(i).sameElements(localMat(i)))
@@ -118,14 +120,11 @@ class DenseMatrixSuite extends PSFunSuite with SharedPSContext {
 
   test("increment") {
     val rand = new Random()
-    val localMat = (0 until rows).toArray.map { i =>
-      (0 until cols).toArray.map { j =>
-        rand.nextDouble()
-      }
-    }
-    val mat = DensePSMatrix.rand(rows, cols)
+    val mat = PSMatrix.rand(rows, cols)
+    val data = (0 until rows).toArray.map(i =>
+      VFactory.denseDoubleVector(mat.id, i, 0, (0 until cols).map(_ => rand.nextDouble()).toArray))
     val randMat = mat.pull()
-
+    val localMat = MFactory.rbIntDoubleMatrix(rows, cols, data)
     mat.increment(localMat)
 
     val sum = mat.pull()
@@ -140,22 +139,21 @@ class DenseMatrixSuite extends PSFunSuite with SharedPSContext {
   test("pull with rows") {
     val rand = new Random(41)
     val diag = (0 until dim).toArray.map(_ => rand.nextDouble())
-    val diagMatrix = DensePSMatrix.diag(diag)
+    val diagMatrix = PSMatrix.diag(diag)
 
-    val selectRows = Array(0, dim / 2, dim / 3,dim - 1)
+    val selectRows = Array(0, dim / 2, dim / 3, dim - 1)
 
     val result = diagMatrix.pull(selectRows)
 
-    result.foreach { case (index, row) =>
-       row.zipWithIndex.foreach { case (value, id) =>
-          if (id != index) {
-            assert(value == 0.0)
-          } else {
-            assert(row(index) == diag(index))
-          }
-       }
+    result.zipWithIndex.foreach { case (row: IntDoubleVector, index) =>
+      row.getStorage.getValues.zipWithIndex.foreach { case (value, id) =>
+        if (id != index) {
+          assert(value == 0.0)
+        } else {
+          assert(row.getStorage.get(index) == diag(index))
+        }
+      }
     }
 
   }
-
 }

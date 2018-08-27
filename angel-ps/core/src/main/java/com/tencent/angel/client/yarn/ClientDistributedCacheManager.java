@@ -1,24 +1,20 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
  */
 
-/**
- * Remove some unused methods which are not used in Angel.
- */
 
 package com.tencent.angel.client.yarn;
 
@@ -41,8 +37,8 @@ import java.util.Map;
 public class ClientDistributedCacheManager {
 
   public void addResource(FileSystem fs, Configuration conf, Path destPath,
-      Map<String, LocalResource> localResources, LocalResourceType resourceType, String link,
-      Map<URI, FileStatus> statCache, boolean appMasterOnly) throws IOException {
+    Map<String, LocalResource> localResources, LocalResourceType resourceType, String link,
+    Map<URI, FileStatus> statCache, boolean appMasterOnly) throws IOException {
 
     FileStatus destStatus = fs.getFileStatus(destPath);
     LocalResource amJarRsrc = Records.newRecord(LocalResource.class);
@@ -61,7 +57,7 @@ public class ClientDistributedCacheManager {
   }
 
   public LocalResourceVisibility getVisibility(Configuration conf, URI uri,
-      Map<URI, FileStatus> statCache) throws IOException {
+    Map<URI, FileStatus> statCache) throws IOException {
     if (isPublic(conf, uri, statCache)) {
       return LocalResourceVisibility.PUBLIC;
     } else {
@@ -70,7 +66,7 @@ public class ClientDistributedCacheManager {
   }
 
   public boolean isPublic(Configuration conf, URI uri, Map<URI, FileStatus> statCache)
-      throws IOException {
+    throws IOException {
     FileSystem fs = FileSystem.get(uri, conf);
     Path current = new Path(uri.getPath());
     // the leaf level file should be readable by others
@@ -81,7 +77,7 @@ public class ClientDistributedCacheManager {
   }
 
   public boolean ancestorsHaveExecutePermissions(FileSystem fs, Path path,
-      Map<URI, FileStatus> statCache) throws IOException {
+    Map<URI, FileStatus> statCache) throws IOException {
     Path current = path;
     while (current != null) {
       // the subdirs in the path should have execute permissions for
@@ -97,12 +93,12 @@ public class ClientDistributedCacheManager {
   /**
    * Checks for a given path whether the Other permissions on it imply the permission in the passed
    * FsAction
-   * 
+   *
    * @return true if the path in the uri is visible to all, false otherwise
    * @throws IOException
    */
   public boolean checkPermissionOfOther(FileSystem fs, Path path, FsAction action,
-      Map<URI, FileStatus> statCache) throws IOException {
+    Map<URI, FileStatus> statCache) throws IOException {
     FileStatus status = getFileStatus(fs, path.toUri(), statCache);
     FsPermission perms = status.getPermission();
     FsAction otherAction = perms.getOtherAction();
@@ -110,7 +106,7 @@ public class ClientDistributedCacheManager {
   }
 
   public FileStatus getFileStatus(FileSystem fs, URI uri, Map<URI, FileStatus> statCache)
-      throws IOException {
+    throws IOException {
     FileStatus fstat = statCache.get(uri);
     if (fstat == null) {
       fstat = fs.getFileStatus(new Path(uri));

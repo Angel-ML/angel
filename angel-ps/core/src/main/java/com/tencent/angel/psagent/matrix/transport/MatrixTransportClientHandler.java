@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.psagent.matrix.transport;
 
 import com.tencent.angel.utils.StringUtils;
@@ -32,10 +33,14 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class MatrixTransportClientHandler extends ChannelInboundHandlerAdapter {
   private static final Log LOG = LogFactory.getLog(MatrixTransportClientHandler.class);
-  /**rpc response queue*/
+  /**
+   * rpc response queue
+   */
   private final LinkedBlockingQueue<ByteBuf> msgQueue;
-  
-  /**rpc dispatch event queue*/
+
+  /**
+   * rpc dispatch event queue
+   */
   private final LinkedBlockingQueue<DispatcherEvent> dispatchMessageQueue;
 
   private final RPCContext rpcContext;
@@ -43,22 +48,21 @@ public class MatrixTransportClientHandler extends ChannelInboundHandlerAdapter {
   /**
    * Create a new MatrixTransportClientHandler.
    *
-   * @param msgQueue rpc response queue
+   * @param msgQueue             rpc response queue
    * @param dispatchMessageQueue rpc dispatch event queue
    */
   public MatrixTransportClientHandler(LinkedBlockingQueue<ByteBuf> msgQueue,
-      LinkedBlockingQueue<DispatcherEvent> dispatchMessageQueue, RPCContext rpcContext) {
+    LinkedBlockingQueue<DispatcherEvent> dispatchMessageQueue, RPCContext rpcContext) {
     this.msgQueue = msgQueue;
     this.dispatchMessageQueue = dispatchMessageQueue;
     this.rpcContext = rpcContext;
   }
 
-  @Override
-  public void channelActive(ChannelHandlerContext ctx) {}
+  @Override public void channelActive(ChannelHandlerContext ctx) {
+  }
 
-  @Override
-  public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-    LOG.error("channel " + ctx.channel() + " inactive");
+  @Override public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+    //    LOG.error("channel " + ctx.channel() + " inactive");
     notifyChannelClosed(ctx.channel());
   }
 
@@ -66,10 +70,9 @@ public class MatrixTransportClientHandler extends ChannelInboundHandlerAdapter {
     dispatchMessageQueue.put(new ChannelClosedEvent(ch));
   }
 
-  @Override
-  public void channelRead(ChannelHandlerContext ctx, Object msg) {
+  @Override public void channelRead(ChannelHandlerContext ctx, Object msg) {
     //LOG.debug("receive a message " + ((ByteBuf) msg).readableBytes());
-    if(LOG.isDebugEnabled()) {
+    if (LOG.isDebugEnabled()) {
       int seqId = ((ByteBuf) msg).readInt();
       LOG.debug("receive result of seqId=" + seqId);
       ((ByteBuf) msg).resetReaderIndex();
@@ -78,15 +81,14 @@ public class MatrixTransportClientHandler extends ChannelInboundHandlerAdapter {
     try {
       msgQueue.put((ByteBuf) msg);
     } catch (InterruptedException e) {
-      LOG.error("put response message queue failed ", e);
+      //      LOG.error("put response message queue failed ", e);
     }
   }
 
-  @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, Throwable x) {
+  @Override public void exceptionCaught(ChannelHandlerContext ctx, Throwable x) {
     LOG.info("exceptin happened ", x);
     String errorMsg = StringUtils.stringifyException(x);
-    if(x instanceof OutOfMemoryError || (errorMsg.contains("MemoryError"))) {
+    if (x instanceof OutOfMemoryError || (errorMsg.contains("MemoryError"))) {
       rpcContext.oom();
     } else {
       ctx.close();

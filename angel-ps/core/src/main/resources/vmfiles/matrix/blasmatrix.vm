@@ -1,0 +1,523 @@
+package com.tencent.angel.ml.math2.matrix;
+
+import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.ml.math2.storage.*;
+import com.tencent.angel.ml.math2.vector.*;
+import com.tencent.angel.ml.math2.VFactory;
+import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
+
+public class Blas${dtype}Matrix extends BlasMatrix {
+    private $dtype.toLowerCase() [ ] data;
+
+    public Blas${dtype}Matrix(int matrixId, int clock, int numRows, int numCols, $dtype.toLowerCase() [ ] data) {
+        this.matrixId = matrixId;
+        this.clock = clock;
+        this.numRows = numRows;
+        this.numCols = numCols;
+        this.data = data;
+    }
+
+    public Blas${dtype}Matrix(int numRows, int numCols, $dtype.toLowerCase() [ ] data) {
+        this(0, 0, numRows, numCols, data);
+    }
+    
+    public $dtype.toLowerCase() [ ] getData() {
+        return data;
+    }
+
+    public void setData($dtype.toLowerCase() [ ] data) {
+        this.data = data;
+    }
+
+    @Override
+    public double min() {
+        double minVal = ${dtype}.MAX_VALUE;
+        for (int k=0; k < numRows*numCols; k++) {
+            if (data[k] < minVal) {
+                minVal = data[k];
+            }
+        }
+
+        return minVal;
+    }
+
+    @Override
+    public Vector min(int axis) {
+        // axis = 0: on rows
+        // axis = 1: on cols
+        assert (axis ==0 || axis == 1);
+        $dtype.toLowerCase() [ ] rdVec = null;
+        switch (axis) {
+            case 0:  // on row
+                rdVec = new $dtype.toLowerCase() [numCols];
+                for (int j=0; j < numCols; j++) {
+                    rdVec[j] = ${dtype}.MAX_VALUE;
+                }
+                
+                for (int i=0; i < numRows; i++){
+                    for (int j=0; j < numCols; j++) {
+                        if (data[i*numCols + j] < rdVec[j]){
+                            rdVec[j] = data[i*numCols + j];
+                        }                         
+                    }
+                }
+                break;
+            case 1:
+                rdVec = new $dtype.toLowerCase() [numRows];
+                for (int i=0; i < numRows; i++){
+                    rdVec[i] = ${dtype}.MAX_VALUE;
+                }
+                
+                for (int i=0; i < numRows; i++){
+                    for (int j=0; j < numCols; j++) {
+                        if (data[i*numCols + j] < rdVec[i]) {
+                            rdVec[i] = data[i*numCols + j];
+                        }                        
+                    }
+                }
+                break;
+        }
+
+        return VFactory.dense${dtype}Vector(matrixId, 0, clock, rdVec);
+    }
+
+    @Override
+    public double max() {
+        double maxVal = ${dtype}.MIN_VALUE;
+        for (int k=0; k < numRows*numCols; k++) {
+            if (data[k] > maxVal) {
+                maxVal = data[k];
+            }
+        }
+
+        return maxVal;
+    }
+
+    @Override
+    public Vector max(int axis) {
+        // axis = 0: on rows
+        // axis = 1: on cols
+        assert (axis ==0 || axis == 1);
+        $dtype.toLowerCase() [ ] rdVec = null;
+        switch (axis) {
+            case 0:  // on row
+                rdVec = new $dtype.toLowerCase() [numCols];
+                for (int j=0; j < numCols; j++) {
+                    rdVec[j] = ${dtype}.MIN_VALUE;
+                }
+
+                for (int i=0; i < numRows; i++){
+                    for (int j=0; j < numCols; j++) {
+                        if (data[i*numCols + j] > rdVec[j]){
+                            rdVec[j] = data[i*numCols + j];
+                        }
+                    }
+                }
+                break;
+            case 1:
+                rdVec = new $dtype.toLowerCase() [numRows];
+                for (int i=0; i < numRows; i++){
+                    rdVec[i] = ${dtype}.MIN_VALUE;
+                }
+
+                for (int i=0; i < numRows; i++){
+                    for (int j=0; j < numCols; j++) {
+                        if (data[i*numCols + j] > rdVec[i]) {
+                            rdVec[i] = data[i*numCols + j];
+                        }
+                    }
+                }
+                break;
+        }
+
+        return VFactory.dense${dtype}Vector(matrixId, 0, clock, rdVec);
+    }
+
+    public Vector argmax(int axis) {
+            // axis = 0: on rows
+            // axis = 1: on cols
+            assert (axis ==0 || axis == 1);
+            $dtype.toLowerCase() [ ] rdVec = null;
+            $dtype.toLowerCase() [ ] idxVec = null;
+            switch (axis) {
+                case 0:  // on row
+                    rdVec = new $dtype.toLowerCase() [numCols];
+                    idxVec = new $dtype.toLowerCase() [numCols];
+                    for (int j=0; j < numCols; j++) {
+                        rdVec[j] = ${dtype}.MIN_VALUE;
+                        idxVec[j] = -1;
+                    }
+
+                    for (int i=0; i < numRows; i++){
+                        for (int j=0; j < numCols; j++) {
+                            if (data[i*numCols + j] > rdVec[j]){
+                                rdVec[j] = data[i*numCols + j];
+                                idxVec[j] = i;
+                            }
+                        }
+                    }
+                    break;
+                case 1:
+                    rdVec = new $dtype.toLowerCase() [numRows];
+                    idxVec = new $dtype.toLowerCase() [numRows];
+                    for (int i=0; i < numRows; i++){
+                        rdVec[i] = ${dtype}.MIN_VALUE;
+                        idxVec[i] = -1;
+                    }
+
+                    for (int i=0; i < numRows; i++){
+                        for (int j=0; j < numCols; j++) {
+                            if (data[i*numCols + j] > rdVec[i]) {
+                                rdVec[i] = data[i*numCols + j];
+                                idxVec[i] = j;
+                            }
+                        }
+                    }
+                    break;
+            }
+
+            return VFactory.denseIntVector(matrixId, 0, clock, idxVec);
+        }
+
+    @Override
+    public double sum() {
+        double res = 0.0;
+        for ($dtype.toLowerCase() value: data) {
+            res += value;
+        }
+        return res;
+    }
+
+    @Override
+    public Vector sum(int axis) {
+        // axis = 0: on rows
+        // axis = 1: on cols
+        assert (axis ==0 || axis == 1);
+        $dtype.toLowerCase() [ ] rdVec = null;
+        switch (axis) {
+            case 0:  // on row
+                rdVec = new  $dtype.toLowerCase() [numCols];
+                for (int i=0; i < numRows; i++){
+                    for (int j=0; j < numCols; j++) {
+                        rdVec[j] += data[i*numCols + j];
+                    }
+                }
+                break;
+            case 1:
+                rdVec = new  $dtype.toLowerCase() [numRows];
+                for (int i=0; i < numRows; i++){
+                    for (int j=0; j < numCols; j++) {
+                        rdVec[i] += data[i*numCols + j];
+                    }
+                }
+                break;
+        }
+
+        return VFactory.dense${dtype}Vector(matrixId, 0, clock, rdVec);
+    }
+
+    @Override
+    public double std() {
+        double sum1 = 0.0, sum2 = 0.0;
+        for ($dtype.toLowerCase() value: data) {
+            sum1 += value;
+            sum2 += value * sum1;
+        }
+
+        sum1 /= numRows* numCols;
+        sum2 /= numRows* numCols;
+        return Math.sqrt(sum2 - sum1 * sum1);
+    }
+
+    @Override
+    public Vector std(int axis) {
+            // axis = 0: on rows
+            // axis = 1: on cols
+            assert (axis ==0 || axis == 1);
+            $dtype.toLowerCase() [ ] rdVec = null;
+            $dtype.toLowerCase() [ ] rdVec2 = null;
+            switch (axis) {
+                case 0:  // on row
+                    rdVec = new $dtype.toLowerCase() [numCols];
+                    rdVec2 = new $dtype.toLowerCase() [numCols];
+                    for (int i=0; i < numRows; i++){
+                        for (int j=0; j < numCols; j++) {
+                            $dtype.toLowerCase() value = data[i*numCols + j];
+                            rdVec[j] += value;
+                            rdVec2[j] += value * value;
+                        }
+                    }
+
+                    for (int j=0; j < numCols; j++) {
+                        $dtype.toLowerCase() avg1 = rdVec[j] / numRows;
+                        $dtype.toLowerCase() avg2 =  rdVec2[j] / numRows;
+                        rdVec[j] = ($dtype.toLowerCase()) Math.sqrt(avg2 - avg1 * avg1);
+                    }
+                    break;
+                case 1:
+                    rdVec = new $dtype.toLowerCase() [numRows];
+                    rdVec2 = new $dtype.toLowerCase() [numRows];
+                    for (int i=0; i < numRows; i++){
+                        for (int j=0; j < numCols; j++) {
+                            $dtype.toLowerCase() value = data[i*numCols + j];
+                            rdVec[j] += value;
+                            rdVec2[j] += value * value;
+                        }
+                    }
+
+                    for (int i=0; i < numRows; i++){
+                        $dtype.toLowerCase() avg1 = rdVec[i] / numCols;
+                        $dtype.toLowerCase() avg2 =  rdVec2[i] / numCols;
+                        rdVec[i] = ($dtype.toLowerCase())Math.sqrt(avg2 - avg1 * avg1);
+                    }
+                    break;
+            }
+
+            return VFactory.dense${dtype}Vector(matrixId, 0, clock, rdVec);
+        }
+
+    @Override
+    public double average() {
+        return sum()/(numRows* numCols);
+    }
+
+    @Override
+    public Vector average(int axis) {
+        assert (axis ==0 || axis == 1);
+        Vector res = null;
+        switch (axis) {
+            case 0:
+                res = sum(axis).idiv(numRows);
+                break;
+            case 1:
+                res = sum(axis).idiv(numCols);
+                break;
+        }
+
+        return res;
+    }
+
+    @Override
+    public double norm() {
+        double res = 0.0;
+        for ($dtype.toLowerCase() value: data) {
+            res += value * value;
+        }
+        return Math.sqrt(res);
+    }
+
+    @Override
+    public Vector norm(int axis) {
+        // axis = 0: on rows
+        // axis = 1: on cols
+        assert (axis ==0 || axis == 1);
+        $dtype.toLowerCase() [ ] rdVec = null;
+        switch (axis) {
+            case 0:  // on row
+                rdVec = new $dtype.toLowerCase() [numCols];
+                for (int i=0; i < numRows; i++){
+                    for (int j=0; j < numCols; j++) {
+                        $dtype.toLowerCase() value = data[i*numCols + j];
+                        rdVec[j] += value * value;
+                    }
+                }
+
+                for (int j=0; j < numCols; j++) {
+                    rdVec[j] = ($dtype.toLowerCase())Math.sqrt(rdVec[j]);
+                }
+                break;
+            case 1:
+                rdVec = new $dtype.toLowerCase() [numRows];
+                for (int i=0; i < numRows; i++){
+                    for (int j=0; j < numCols; j++) {
+                        $dtype.toLowerCase() value = data[i*numCols + j];
+                        rdVec[i] += value * value;
+                    }
+                }
+
+                for (int i=0; i < numRows; i++){
+                    rdVec[i] = ($dtype.toLowerCase())Math.sqrt(rdVec[i]);
+                }
+                break;
+        }
+
+        return VFactory.dense${dtype}Vector(matrixId, 0, clock, rdVec);
+    }
+
+    @Override
+    public Vector diag() {
+        int numDiag = Math.min(numRows, numCols);
+        $dtype.toLowerCase() [ ] resArr = new $dtype.toLowerCase() [numDiag];
+        for (int i=0; i < numDiag; i++) {
+            resArr[i] = data[i*numRows+i];
+        }
+
+        Int${dtype}DenseVectorStorage storage = new Int${dtype}DenseVectorStorage(resArr);
+        return new Int${dtype}Vector(getMatrixId(), 0, getClock(), resArr.length, storage);
+    }
+
+    @Override
+    public void clear() {
+        for (int i =0; i< numCols * numRows; i++) {
+            data[i] = 0;
+        }
+
+        matrixId = 0;
+        clock = 0;
+        numRows = 0;
+        numCols = 0;
+    }
+
+    @Override
+    public Matrix copy() {
+        $dtype.toLowerCase() [ ] newdata = new $dtype.toLowerCase() [numCols*numRows];
+        System.arraycopy(data, 0, newdata, 0, numCols*numRows);
+        return new Blas${dtype}Matrix(matrixId, clock, numRows, numCols, newdata);
+    }
+
+    public Matrix clone() {
+        $dtype.toLowerCase() [ ] newdata = new $dtype.toLowerCase() [numCols*numRows];
+        System.arraycopy(data, 0, newdata, 0, numCols*numRows);
+        return new Blas${dtype}Matrix(matrixId, clock, numRows, numCols, newdata);
+    }
+
+    public $dtype.toLowerCase() get(int i, int j) {
+        return data[i*numCols+j];
+    }
+
+    public void set(int i, int j, $dtype.toLowerCase() value) {
+        data[i*numCols+j] = value;
+    }
+
+    public Vector getRow(int i) {
+        $dtype.toLowerCase() [ ] row = new $dtype.toLowerCase() [numCols];
+        System.arraycopy(data, i*numCols, row, 0, numCols);
+
+        Int${dtype}DenseVectorStorage storage = new Int${dtype}DenseVectorStorage(row);
+        return new Int${dtype}Vector(getMatrixId(), i, getClock(), numCols, storage);
+    }
+
+    public Vector getCol(int j) {
+        $dtype.toLowerCase() [ ] col = new $dtype.toLowerCase() [numRows];
+
+        for(int i=0; i< numRows; i++) {
+            col[i] = data[i*numCols + j];
+        }
+
+        Int${dtype}DenseVectorStorage storage = new Int${dtype}DenseVectorStorage(col);
+        return new Int${dtype}Vector(getMatrixId(), getClock(), 0, numRows, storage);
+    }
+
+    public Matrix setRow(int i, Vector v) {
+#foreach (${dtype1} in ${dtypes})
+#if(${dtype} != "Float" || ${dtype1} != "Double")
+#if (${dtype} == ${dtype1})
+        if (v instanceof Int${dtype1}Vector) {
+#else
+        } else if (v instanceof Int${dtype1}Vector) {
+#end
+            $dtype1.toLowerCase() [ ] rowData;
+            if (v.isDense()) {
+                rowData = ((Int${dtype1}Vector) v).getStorage().getValues();
+            } else if (v.isSparse()) {
+                rowData = new $dtype1.toLowerCase() [numCols];
+                ObjectIterator<Int2${dtype1}Map.Entry> iter = ((Int${dtype1}Vector) v).getStorage().entryIterator();
+                while (iter.hasNext()) {
+                    Int2${dtype1}Map.Entry entry = iter.next();
+                    int j = entry.getIntKey();
+                    rowData[j] = entry.get${dtype1}Value();
+                }
+            } else { // sorted
+                rowData = new $dtype1.toLowerCase() [numCols];
+                int [ ] idxs = ((Int${dtype1}Vector) v).getStorage().getIndices();
+                $dtype1.toLowerCase() [ ] values = ((Int${dtype1}Vector) v).getStorage().getValues();
+                int size = ((Int${dtype1}Vector) v).size();
+                for (int k=0; k< size; k++){
+                    int j = idxs[k];
+                    rowData[j] = values[k];
+                }
+            }
+
+#if (${dtype} == ${dtype1})
+            System.arraycopy(rowData, 0, data, i*numCols, numCols);
+#else
+            for(int j=0; j< numCols; j++) {
+                data[i*numCols+j] = rowData[j];
+            }
+#end
+#end
+#end
+        } else if (v instanceof IntDummyVector) {
+            int [ ] rowData = new int[numCols];
+            int [ ] idxs = ((IntDummyVector) v).getIndices();
+            int size = ((IntDummyVector) v).size();
+            for (int k=0; k< size; k++){
+                int j = idxs[k];
+                rowData[j] = 1;
+            }
+
+            for(int j=0; j< numCols; j++) {
+                data[i*numCols+j] = rowData[j];
+            }
+        } else {
+            throw new AngelException("The operation is not supported!");
+        }
+
+        return this;
+    }
+
+    public Matrix setCol(int i, Vector v) {
+#foreach (${dtype1} in ${dtypes})
+#if(${dtype} != "Float" || ${dtype1} != "Double")
+#if (${dtype} == ${dtype1})
+        if (v instanceof Int${dtype1}Vector) {
+#else
+        } else if (v instanceof Int${dtype1}Vector) {
+#end
+            $dtype1.toLowerCase() [ ] rowData;
+            if (v.isDense()) {
+                rowData = ((Int${dtype1}Vector) v).getStorage().getValues();
+            } else if (v.isSparse()) {
+                rowData = new $dtype1.toLowerCase() [numRows];
+                ObjectIterator<Int2${dtype1}Map.Entry> iter = ((Int${dtype1}Vector) v).getStorage().entryIterator();
+                while (iter.hasNext()) {
+                    Int2${dtype1}Map.Entry entry = iter.next();
+                    int j = entry.getIntKey();
+                    rowData[j] = entry.get${dtype1}Value();
+                }
+            } else { // sorted
+                rowData = new $dtype1.toLowerCase() [numRows];
+                int [ ] idxs = ((Int${dtype1}Vector) v).getStorage().getIndices();
+                $dtype1.toLowerCase() [ ] values = ((Int${dtype1}Vector) v).getStorage().getValues();
+                int size = ((Int${dtype1}Vector) v).size();
+                for (int k=0; k< size; k++){
+                    int j = idxs[k];
+                    rowData[j] = values[k];
+                }
+            }
+
+            for(int j=0; j< numRows; j++) {
+                data[j*numCols+i] = rowData[j];
+            }
+#end
+#end
+        } else if (v instanceof IntDummyVector) {
+            int [ ] rowData = new int[numRows];
+            int [ ] idxs = ((IntDummyVector) v).getIndices();
+            int size = ((IntDummyVector) v).size();
+            for (int k=0; k< size; k++){
+                int j = idxs[k];
+                rowData[j] = 1;
+            }
+
+            for(int j=0; j< numRows; j++) {
+                data[j*numCols+i] = rowData[j];
+            }
+        } else {
+            throw new AngelException("The operation is not supported!");
+        }
+
+        return this;
+    }
+}

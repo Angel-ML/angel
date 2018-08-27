@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.ml.metrics
 
 /**
@@ -25,22 +26,25 @@ trait Metric {
 
   /**
     * Set metric calculate dependency counters
+    *
     * @param values dependency counter values
     */
-  def setValues(values:Double*)
+  def setValues(values: Double*)
 
   /**
     * Merge dependency counters
+    *
     * @param other
     * @return
     */
-  def merge(other:Metric) : Metric
+  def merge(other: Metric): Metric
 
   /**
     * Use counters calculate metric
+    *
     * @return metric value
     */
-  def calculate : Double
+  def calculate: Double
 
   def toString: String
 }

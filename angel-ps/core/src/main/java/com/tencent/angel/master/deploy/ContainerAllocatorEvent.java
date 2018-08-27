@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.deploy;
 
 import com.tencent.angel.common.Id;
@@ -24,13 +25,15 @@ import org.apache.hadoop.yarn.event.AbstractEvent;
  * Base class for container allocator event.
  */
 public abstract class ContainerAllocatorEvent extends AbstractEvent<ContainerAllocatorEventType> {
-  /** the task that the container is allocated to or deallocated from */
+  /**
+   * the task that the container is allocated to or deallocated from
+   */
   private final Id taskId;
 
   /**
    * Create a ContainerAllocatorEvent
-   * 
-   * @param type event type
+   *
+   * @param type   event type
    * @param taskId task id
    */
   public ContainerAllocatorEvent(ContainerAllocatorEventType type, Id taskId) {
@@ -40,23 +43,21 @@ public abstract class ContainerAllocatorEvent extends AbstractEvent<ContainerAll
 
   /**
    * Get task id
-   * 
+   *
    * @return task id
    */
   public Id getTaskId() {
     return taskId;
   }
 
-  @Override
-  public int hashCode() {
+  @Override public int hashCode() {
     final int prime = 31;
     int result = 1;
     result = prime * result + ((taskId == null) ? 0 : taskId.hashCode());
     return result;
   }
 
-  @Override
-  public boolean equals(Object obj) {
+  @Override public boolean equals(Object obj) {
     if (this == obj)
       return true;
     if (obj == null)
@@ -72,8 +73,7 @@ public abstract class ContainerAllocatorEvent extends AbstractEvent<ContainerAll
     return true;
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "ContainerAllocatorEvent [taskId=" + taskId + "]";
   }
 }

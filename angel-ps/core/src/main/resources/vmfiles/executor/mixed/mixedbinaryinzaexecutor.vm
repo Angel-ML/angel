@@ -1,0 +1,275 @@
+#set ($len = $dtypes.size() - 1)
+package com.tencent.angel.ml.math2.ufuncs.executor.mixed;
+
+import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.ml.math2.storage.*;
+import com.tencent.angel.ml.math2.ufuncs.expression.Binary;
+import com.tencent.angel.ml.math2.vector.*;
+import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.fastutil.longs.*;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
+
+public class MixedBinaryInZAExecutor {
+    public static Vector apply(ComponentVector v1, Vector v2, Binary op) {
+        if (v1 instanceof CompIntDoubleVector && v2 instanceof IntDoubleVector) {
+            return apply((CompIntDoubleVector) v1, (IntDoubleVector) v2, op);
+        } else if (v1 instanceof CompIntDoubleVector && v2 instanceof IntFloatVector) {
+            return apply((CompIntDoubleVector) v1, (IntFloatVector) v2, op);
+        } else if (v1 instanceof CompIntDoubleVector && v2 instanceof IntLongVector) {
+            return apply((CompIntDoubleVector) v1, (IntLongVector) v2, op);
+        } else if (v1 instanceof CompIntDoubleVector && v2 instanceof IntIntVector) {
+            return apply((CompIntDoubleVector) v1, (IntIntVector) v2, op);
+        } else if (v1 instanceof CompIntDoubleVector && v2 instanceof IntDummyVector) {
+            return apply((CompIntDoubleVector) v1, (IntDummyVector) v2, op);
+        } else if (v1 instanceof CompIntFloatVector && v2 instanceof IntFloatVector) {
+            return apply((CompIntFloatVector) v1, (IntFloatVector) v2, op);
+        } else if (v1 instanceof CompIntFloatVector && v2 instanceof IntLongVector) {
+            return apply((CompIntFloatVector) v1, (IntLongVector) v2, op);
+        } else if (v1 instanceof CompIntFloatVector && v2 instanceof IntIntVector) {
+            return apply((CompIntFloatVector) v1, (IntIntVector) v2, op);
+        } else if (v1 instanceof CompIntFloatVector && v2 instanceof IntDummyVector) {
+            return apply((CompIntFloatVector) v1, (IntDummyVector) v2, op);
+        } else if (v1 instanceof CompIntLongVector && v2 instanceof IntLongVector) {
+            return apply((CompIntLongVector) v1, (IntLongVector) v2, op);
+        } else if (v1 instanceof CompIntLongVector && v2 instanceof IntIntVector) {
+            return apply((CompIntLongVector) v1, (IntIntVector) v2, op);
+        } else if (v1 instanceof CompIntLongVector && v2 instanceof IntDummyVector) {
+            return apply((CompIntLongVector) v1, (IntDummyVector) v2, op);
+        } else if (v1 instanceof CompIntIntVector && v2 instanceof IntIntVector) {
+            return apply((CompIntIntVector) v1, (IntIntVector) v2, op);
+        } else if (v1 instanceof CompIntIntVector && v2 instanceof IntDummyVector) {
+            return apply((CompIntIntVector) v1, (IntDummyVector) v2, op);
+        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof LongDoubleVector) {
+            return apply((CompLongDoubleVector) v1, (LongDoubleVector) v2, op);
+        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof LongFloatVector) {
+            return apply((CompLongDoubleVector) v1, (LongFloatVector) v2, op);
+        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof LongLongVector) {
+            return apply((CompLongDoubleVector) v1, (LongLongVector) v2, op);
+        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof LongIntVector) {
+            return apply((CompLongDoubleVector) v1, (LongIntVector) v2, op);
+        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof LongDummyVector) {
+            return apply((CompLongDoubleVector) v1, (LongDummyVector) v2, op);
+        } else if (v1 instanceof CompLongFloatVector && v2 instanceof LongFloatVector) {
+            return apply((CompLongFloatVector) v1, (LongFloatVector) v2, op);
+        } else if (v1 instanceof CompLongFloatVector && v2 instanceof LongLongVector) {
+            return apply((CompLongFloatVector) v1, (LongLongVector) v2, op);
+        } else if (v1 instanceof CompLongFloatVector && v2 instanceof LongIntVector) {
+            return apply((CompLongFloatVector) v1, (LongIntVector) v2, op);
+        } else if (v1 instanceof CompLongFloatVector && v2 instanceof LongDummyVector) {
+            return apply((CompLongFloatVector) v1, (LongDummyVector) v2, op);
+        } else if (v1 instanceof CompLongLongVector && v2 instanceof LongLongVector) {
+            return apply((CompLongLongVector) v1, (LongLongVector) v2, op);
+        } else if (v1 instanceof CompLongLongVector && v2 instanceof LongIntVector) {
+            return apply((CompLongLongVector) v1, (LongIntVector) v2, op);
+        } else if (v1 instanceof CompLongLongVector && v2 instanceof LongDummyVector) {
+            return apply((CompLongLongVector) v1, (LongDummyVector) v2, op);
+        } else if (v1 instanceof CompLongIntVector && v2 instanceof LongIntVector) {
+            return apply((CompLongIntVector) v1, (LongIntVector) v2, op);
+        } else if (v1 instanceof CompLongIntVector && v2 instanceof LongDummyVector) {
+            return apply((CompLongIntVector) v1, (LongDummyVector) v2, op);
+        } else {
+            throw new AngelException("Vector type is not support!");
+        }
+    }
+
+#foreach ($itype in $itypes)
+#foreach ($idx1 in [0..$len])
+#set ($dtype1 = $dtypes.get($idx1))
+
+    private static Vector apply(Comp${itype}${dtype1}Vector v1, ${itype}DummyVector v2, Binary op) {
+        ${itype}${dtype1}Vector [ ] parts = v1.getPartitions();
+        ${itype}${dtype1}Vector [ ] resParts = new ${itype}${dtype1}Vector[parts.length];
+        for (int i = 0; i < parts.length; i++) {
+            ${itype}${dtype1}Vector part = parts[i];
+            resParts[i] = new ${itype}${dtype1}Vector(
+                    part.getMatrixId(), part.getRowId(), part.getClock(), part.getDim(),
+                    part.getStorage().emptySparse()
+            );
+        }
+
+        $itype.toLowerCase() subDim = (v1.getDim() + v1.getNumPartitions() - 1) / v1.getNumPartitions();
+        $itype.toLowerCase() [ ] v2Indices = v2.getIndices();
+        for (int i = 0; i < v2Indices.length; i++) {
+            $itype.toLowerCase() idx = v2Indices[i];
+            int pidx = (int)(idx / subDim);
+            $itype.toLowerCase() subidx = idx % subDim;
+            if (parts[pidx].hasKey(subidx)) {
+                resParts[pidx].set(subidx, op.apply(parts[pidx].get(subidx), 1));
+            }
+        }
+
+        v1.setPartitions(resParts);
+        return v1;
+    }
+
+#foreach ($idx2 in [$idx1..$len])
+#set ($dtype2 = $dtypes.get($idx2))
+    private static Vector apply(Comp${itype}${dtype1}Vector v1, ${itype}${dtype2}Vector v2, Binary op) {
+        ${itype}${dtype1}Vector [ ] parts = v1.getPartitions();
+#if ($itype == "Int")
+        if (v2.isDense()) {
+            $itype.toLowerCase() base = 0;
+            $dtype2.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
+            for (int i = 0; i < parts.length; i++) {
+                ${itype}${dtype1}Vector part = parts[i];
+                if (part.isDense()) {
+                    $dtype1.toLowerCase() [ ] artValues = part.getStorage().getValues();
+                    for (int j = 0; j < artValues.length; j++) {
+                        artValues[j] = op.apply(artValues[j], v2Values[base + j]);
+                    }
+                } else if (part.isSparse()) {
+                    ObjectIterator<${itype}2${dtype1}Map.Entry> iter = part.getStorage().entryIterator();
+                    while (iter.hasNext()) {
+                        ${itype}2${dtype1}Map.Entry entry = iter.next();
+                        $itype.toLowerCase() idx = entry.get${itype}Key() + base;
+                        entry.setValue(op.apply(entry.get${dtype1}Value(), v2Values[idx]));
+                    }
+                } else { // sorted
+                    $itype.toLowerCase() [ ] partIndices = part.getStorage().getIndices();
+                    $dtype1.toLowerCase() [ ] partValues = part.getStorage().getValues();
+                    for (int j = 0; j < partIndices.length; j++) {
+                        $itype.toLowerCase() idx = partIndices[j] + base;
+                        partValues[j] = op.apply(partValues[j], v2Values[idx]);
+                    }
+                }
+                base += part.getDim();
+            }
+        } else if (v2.isSparse()) {
+#else
+        if (v2.isSparse()) {
+#end
+            ObjectIterator<${itype}2${dtype2}Map.Entry> iter = v2.getStorage().entryIterator();
+            ${itype}${dtype1}Vector [ ] resParts;
+            if (v1.size() > v2.size()) {
+                resParts = new ${itype}${dtype1}Vector[parts.length];
+                for (int i = 0; i < parts.length; i++) {
+                    ${itype}${dtype1}Vector part = parts[i];
+                    resParts[i] = new ${itype}${dtype1}Vector(
+                            part.getMatrixId(), part.getRowId(), part.getClock(), part.getDim(),
+                            part.getStorage().emptySparse()
+                    );
+                }
+
+                $itype.toLowerCase() subDim = (v1.getDim() + v1.getNumPartitions() - 1) / v1.getNumPartitions();
+                while (iter.hasNext()) {
+                    ${itype}2${dtype2}Map.Entry entry = iter.next();
+                    $itype.toLowerCase() idx = entry.get${itype}Key();
+                    int pidx = (int) (idx / subDim);
+                    $itype.toLowerCase() subidx = idx % subDim;
+                    if (parts[pidx].hasKey(subidx)) {
+                        resParts[pidx].set(subidx, op.apply(parts[pidx].get(subidx), entry.get${dtype2}Value()));
+                    }
+                }
+
+                v1.setPartitions(resParts);
+            } else {
+                $itype.toLowerCase() base = 0;
+                for (${itype}${dtype1}Vector part : parts) {
+                    if (part.isDense()) {
+                        $dtype1.toLowerCase() [ ] partValues = part.getStorage().getValues();
+                        for (int i = 0; i < partValues.length; i++) {
+                            if (v2.hasKey(i + base)) {
+                                partValues[i] = op.apply(partValues[i], v2.get(i + base));
+                            } else {
+                                partValues[i] = 0;
+                            }
+                        }
+                    } else if (part.isSparse()) {
+                        ObjectIterator<${itype}2${dtype1}Map.Entry> piter = part.getStorage().entryIterator();
+                        while (piter.hasNext()) {
+                            ${itype}2${dtype1}Map.Entry entry = piter.next();
+                            $itype.toLowerCase() idx = entry.get${itype}Key() + base;
+                            if (v2.hasKey(idx)) {
+                                entry.setValue(op.apply(entry.get${dtype1}Value(), v2.get(idx)));
+                            } else {
+                                piter.remove();
+                            }
+                        }
+                    } else { // sorted
+                        $itype.toLowerCase() [ ] partIndices = part.getStorage().getIndices();
+                        $dtype1.toLowerCase() [ ] partValues = part.getStorage().getValues();
+                        for (int i = 0; i < partIndices.length; i++) {
+                            $itype.toLowerCase() idx = partIndices[i] + base;
+                            if (v2.hasKey(idx)) {
+                                partValues[i] = op.apply(partValues[i], v2.get(idx));
+                            } else {
+                                partValues[i] = 0;
+                            }
+                        }
+                    }
+                    base += part.getDim();
+                }
+            }
+        } else { // sorted
+            if (v1.size() > v2.size()) {
+                ${itype}${dtype1}Vector [ ] resParts = new ${itype}${dtype1}Vector[parts.length];
+                for (int i = 0; i < parts.length; i++) {
+                    ${itype}${dtype1}Vector part = parts[i];
+                    resParts[i] = new ${itype}${dtype1}Vector(
+                            part.getMatrixId(), part.getRowId(), part.getClock(), part.getDim(),
+                            part.getStorage().emptySparse()
+                    );
+                }
+
+                $itype.toLowerCase() subDim = (v1.getDim() + v1.getNumPartitions() - 1) / v1.getNumPartitions();
+                $itype.toLowerCase() [ ] v2Indices = v2.getStorage().getIndices();
+                $dtype2.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
+                for (int i = 0; i < v2Indices.length; i++) {
+                    $itype.toLowerCase() idx = v2Indices[i];
+                    int pidx = (int) (idx / subDim);
+                    $itype.toLowerCase() subidx = idx % subDim;
+                    if (parts[pidx].hasKey(subidx)) {
+                        resParts[pidx].set(subidx, op.apply(parts[pidx].get(subidx), v2Values[i]));
+                    }
+                }
+
+                v1.setPartitions(resParts);
+            } else {
+                $itype.toLowerCase() base = 0;
+                for (${itype}${dtype1}Vector part : parts) {
+                    if (part.isDense()) {
+                        $dtype1.toLowerCase() [ ] partValues = part.getStorage().getValues();
+                        for (int i = 0; i < partValues.length; i++) {
+                            if (v2.hasKey(i + base)) {
+                                partValues[i] = op.apply(partValues[i], v2.get(i + base));
+                            } else {
+                                partValues[i] = 0;
+                            }
+                        }
+                    } else if (part.isSparse()) {
+                        ObjectIterator<${itype}2${dtype1}Map.Entry> piter = part.getStorage().entryIterator();
+                        while (piter.hasNext()) {
+                            ${itype}2${dtype1}Map.Entry entry = piter.next();
+                            $itype.toLowerCase() idx = entry.get${itype}Key() + base;
+                            if (v2.hasKey(idx)) {
+                                entry.setValue(op.apply(entry.get${dtype1}Value(), v2.get(idx)));
+                            } else {
+                                piter.remove();
+                            }
+                        }
+                    } else { // sorted
+                        $itype.toLowerCase() [ ] partIndices = part.getStorage().getIndices();
+                        $dtype1.toLowerCase() [ ] partValues = part.getStorage().getValues();
+                        for (int i = 0; i < partIndices.length; i++) {
+                            $itype.toLowerCase() idx = partIndices[i] + base;
+                            if (v2.hasKey(idx)) {
+                                partValues[i] = op.apply(partValues[i], v2.get(idx));
+                            } else {
+                                partValues[i] = 0;
+                            }
+                        }
+                    }
+
+                    base += part.getDim();
+                }
+            }
+        }
+
+        return  v1;
+    }
+
+#end
+#end
+#end
+
+}

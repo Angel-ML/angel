@@ -1,0 +1,33 @@
+{
+  "data": {
+    "format": "libsvm",
+    "indexrange": 123,
+    "validateratio": 0.1,
+    "sampleratio": 1.0
+  },
+  "train": {
+    "epoch": 500,
+    "lr": 0.5
+  },
+  "model": {
+    "modeltype": "T_FLOAT_DENSE"
+  },
+  "default_optimizer": {
+    "type": "adam",
+    "reg2": 0.01
+  },
+  "layers": [
+    {
+      "name": "wide",
+      "type": "sparseinputlayer",
+      "outputdim": 1,
+      "transfunc": "identity"
+    },
+    {
+      "name": "simplelosslayer",
+      "type": "simplelosslayer",
+      "lossfunc": "logloss",
+      "inputlayer": "wide"
+    }
+  ]
+}

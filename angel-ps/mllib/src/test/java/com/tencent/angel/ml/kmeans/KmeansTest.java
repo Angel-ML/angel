@@ -15,11 +15,13 @@
  *
  */
 
+
 package com.tencent.angel.ml.kmeans;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.clustering.kmeans.KMeansRunner;
-import com.tencent.angel.ml.conf.MLConf;
+import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.matrix.RowType;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -34,7 +36,8 @@ public class KmeansTest {
   private Configuration conf = new Configuration();
   private static final String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
   private static final String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
-  private static final String inputPath = "./src/test/data/clustering/iris";
+  private static final String TrainInputPath = "../../data/usps/usps_256d_train.libsvm";
+  private static final String PredictInputPath = "../../data/usps/usps_256d_test.libsvm";
 
   static {
     PropertyConfigurator.configure("../conf/log4j.properties");
@@ -43,17 +46,17 @@ public class KmeansTest {
   @Before public void setup() throws Exception {
     try {
       String dataFmt = "libsvm";
-
+      String modelType = String.valueOf(RowType.T_DOUBLE_SPARSE);
       // Cluster center number
-      int centerNum = 3;
+      int centerNum = 10;
       // Feature number of train data
-      int featureNum = 4;
+      long featureNum = 256;
       // Total iteration number
-      int epochNum = 5;
+      int epochNum = 50;
       // Sample ratio per mini-batch
       double spratio = 1.0;
       // C
-      double c = 0.15;
+      double c = 0.5;
 
       // Set local deploy mode
       conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
@@ -74,29 +77,25 @@ public class KmeansTest {
       conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
       conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
       conf.set(MLConf.KMEANS_SAMPLE_RATIO_PERBATCH(), String.valueOf(spratio));
-      conf.set(MLConf.kMEANS_C(), String.valueOf(c));
+      conf.set(MLConf.KMEANS_C(), String.valueOf(c));
 
       // Set data format
       conf.set(MLConf.ML_DATA_INPUT_FORMAT(), dataFmt);
+      conf.set(MLConf.ML_MODEL_TYPE(), modelType);
     } catch (Exception x) {
       LOG.error("setup failed ", x);
       throw x;
     }
   }
 
-  @Test public void testKMeans() throws Exception {
-    trainOnLocalClusterTest();
-    predictOnLocalClusterTest();
-  }
-
-  private void trainOnLocalClusterTest() throws Exception {
+  private void trainTest() {
     try {
       // Set trainning data path
-      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
+      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, TrainInputPath);
       // Set save model path
-      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model");
-      // Set log sava path
-      conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/kmeansLog/log");
+      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/Kmeans");
+      // Set log save path
+      conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log/Kmeans/trainLog");
       // Set actionType train
       conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
 
@@ -108,14 +107,15 @@ public class KmeansTest {
     }
   }
 
-  private void predictOnLocalClusterTest() throws Exception {
+  private void predictTest() {
     try {
-      // Set trainning data path
-      conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, inputPath);
+      // Set testing data path
+      conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, PredictInputPath);
       // Set load model path
-      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model");
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/Kmeans");
+      conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "log/Kmeans/predictLog");
       // Set predict result path
-      conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/predict");
+      conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/predict/Kmeans");
       // Set actionType prediction
       conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT());
 
@@ -125,5 +125,11 @@ public class KmeansTest {
       LOG.error("run predictOnLocalClusterTest failed ", x);
       throw x;
     }
+  }
+
+  @Test public void testKMeans() throws Exception {
+    setup();
+    trainTest();
+    //        predictTest();
   }
 }

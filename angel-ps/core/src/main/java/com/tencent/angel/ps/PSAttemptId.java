@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.ps;
 
 import com.tencent.angel.common.Id;
@@ -41,29 +42,32 @@ public class PSAttemptId extends Id {
 
   /**
    * Create a new Ps attempt id.
-   *<p>
-   *   'idStr' must match PSAttempt_XXX_XXX
-   *</p>
+   * <p>
+   * 'idStr' must match PSAttempt_XXX_XXX
+   * </p>
+   *
    * @param idStr the id str
    * @throws UnvalidIdStrException the unvalid id str exception
    */
-  public PSAttemptId(String idStr) throws UnvalidIdStrException{
+  public PSAttemptId(String idStr) throws UnvalidIdStrException {
     if (idStr == null) {
       throw new UnvalidIdStrException("id str can not be null");
     }
 
     String[] idElemts = idStr.split(SEPARATOR);
     if (idElemts.length != 3 || !idElemts[0].equals(PSATTEMPT)) {
-      throw new UnvalidIdStrException("unvalid id str " + idStr + ", must be like this:" + PSATTEMPT
-          + SEPARATOR + "psIndex" + SEPARATOR + "attemptIndex");
+      throw new UnvalidIdStrException(
+        "unvalid id str " + idStr + ", must be like this:" + PSATTEMPT + SEPARATOR + "psIndex"
+          + SEPARATOR + "attemptIndex");
     }
 
     try {
       psId = new ParameterServerId(Integer.valueOf(idElemts[1]));
       index = Integer.valueOf(idElemts[2]);
     } catch (Exception x) {
-      throw new UnvalidIdStrException("unvalid id str " + idStr + ", must be like this:" + PSATTEMPT
-          + SEPARATOR + "psIndex" + SEPARATOR + "attemptIndex");
+      throw new UnvalidIdStrException(
+        "unvalid id str " + idStr + ", must be like this:" + PSATTEMPT + SEPARATOR + "psIndex"
+          + SEPARATOR + "attemptIndex");
     }
   }
 
@@ -86,21 +90,18 @@ public class PSAttemptId extends Id {
     return psId.appendTo(builder).append(SEPARATOR).append(index);
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return appendTo(new StringBuilder(PSATTEMPT)).toString();
   }
-  
-  @Override
-  public int hashCode() {
+
+  @Override public int hashCode() {
     final int prime = 31;
     int result = super.hashCode();
     result = prime * result + ((psId == null) ? 0 : psId.hashCode());
     return result;
   }
 
-  @Override
-  public boolean equals(Object obj) {
+  @Override public boolean equals(Object obj) {
     if (this == obj)
       return true;
     if (!super.equals(obj))

@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.ml.model
 
 import java.util.{HashMap, Map}
@@ -38,7 +39,8 @@ import scala.collection.JavaConversions._
 
 abstract class MLModel(conf: Configuration, _ctx: TaskContext = null) {
 
-  implicit def ctx : TaskContext = _ctx
+  implicit def ctx: TaskContext = _ctx
+
   private val psModels: Map[String, PSModel] = new HashMap[String, PSModel]
 
   /**
@@ -63,10 +65,10 @@ abstract class MLModel(conf: Configuration, _ctx: TaskContext = null) {
   /**
     * Add a new PSModel
     *
-    * @param name PSModel name
+    * @param name    PSModel name
     * @param psModel PSModel
     */
-  def addPSModel(name: String, psModel: PSModel):this.type={
+  def addPSModel(name: String, psModel: PSModel): this.type = {
     psModels.put(name, psModel)
     this
   }
@@ -76,7 +78,7 @@ abstract class MLModel(conf: Configuration, _ctx: TaskContext = null) {
     *
     * @param psModel PSModel
     */
-  def addPSModel(psModel: PSModel):this.type = {
+  def addPSModel(psModel: PSModel): this.type = {
     psModels.put(psModel.modelName, psModel)
     this
   }
@@ -94,10 +96,10 @@ abstract class MLModel(conf: Configuration, _ctx: TaskContext = null) {
     *
     * @param conf Application configuration
     */
-  def setSavePath(conf: Configuration): this.type ={
+  def setSavePath(conf: Configuration): this.type = {
     val path = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH)
     if (path != null)
-      psModels.values().foreach {case model: PSModel =>
+      psModels.values().foreach { case model: PSModel =>
         if (model.needSave) model.setSavePath(path)
       }
     this
@@ -108,14 +110,13 @@ abstract class MLModel(conf: Configuration, _ctx: TaskContext = null) {
     *
     * @param conf Application configuration
     */
-  def setLoadPath(conf: Configuration): this.type ={
+  def setLoadPath(conf: Configuration): this.type = {
     val path = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH)
     if (path != null)
-      psModels.values().foreach {case model: PSModel =>
+      psModels.values().foreach { case model: PSModel =>
         if (model.needSave) model.setLoadPath(path)
       }
     this
   }
-
 
 }

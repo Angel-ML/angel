@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master;
 
 import com.tencent.angel.client.AngelClient;
@@ -34,6 +35,7 @@ import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.protobuf.generated.MLProtos.LocationProto;
 import com.tencent.angel.protobuf.generated.MLProtos.Pair;
+import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos;
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.*;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
@@ -58,8 +60,7 @@ import java.util.Map;
 
 import static org.junit.Assert.*;
 
-@RunWith(MockitoJUnitRunner.class)
-public class MasterServiceTest {
+@RunWith(MockitoJUnitRunner.class) public class MasterServiceTest {
   private static final Log LOG = LogFactory.getLog(MasterServiceTest.class);
   private static final String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
   private static final String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
@@ -77,9 +78,8 @@ public class MasterServiceTest {
   }
 
 
-  @Before
-  public void setup() throws Exception {
-    try{
+  @Before public void setup() throws Exception {
+    try {
       // set basic configuration keys
       Configuration conf = new Configuration();
       conf.setBoolean("mapred.mapper.new-api", true);
@@ -144,9 +144,8 @@ public class MasterServiceTest {
     }
   }
 
-  @Test
-  public void testMasterService() throws Exception {
-    try{
+  @Test public void testMasterService() throws Exception {
+    try {
       LOG.info("===========================testMasterService===============================");
       Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
       Location masterLoc =
@@ -155,11 +154,15 @@ public class MasterServiceTest {
       TConnection connection = TConnectionManager.getConnection(worker.getConf());
       MasterProtocol master = connection.getMasterService(masterLoc.getIp(), masterLoc.getPort());
 
+      int psAgentId = master
+        .getPSAgentId(null, PSAgentMasterServiceProtos.GetPSAgentIdRequest.getDefaultInstance())
+        .getPsAgentId();
+
       // worker register
       WorkerAttemptId worker1Attempt0Id =
         new WorkerAttemptId(new WorkerId(new WorkerGroupId(1), 0), 0);
       WorkerRegisterRequest registeRequest =
-        WorkerRegisterRequest.newBuilder()
+        WorkerRegisterRequest.newBuilder().setPsAgentId(psAgentId)
           .setWorkerAttemptId(ProtobufUtil.convertToIdProto(worker1Attempt0Id))
           .setLocation(LocationProto.newBuilder().setIp("10.10.10.10").setPort(10000).build())
           .build();
@@ -207,8 +210,8 @@ public class MasterServiceTest {
 
       AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
       WorkerAttempt worker0Attempt =
-        angelAppMaster.getAppContext().getWorkerManager()
-          .getWorker(worker0Attempt0Id.getWorkerId()).getWorkerAttempt(worker0Attempt0Id);
+        angelAppMaster.getAppContext().getWorkerManager().getWorker(worker0Attempt0Id.getWorkerId())
+          .getWorkerAttempt(worker0Attempt0Id);
       assertTrue(worker0Attempt != null);
       Map<String, String> workerMetrics = worker0Attempt.getMetrics();
       String valueForWorkerKey1 = workerMetrics.get("worker_key1");
@@ -241,12 +244,11 @@ public class MasterServiceTest {
       assertEquals(task1.getProgress(), 0.30f, 0.000001);
     } catch (Exception x) {
       LOG.error("run testMasterService failed ", x);
-      throw  x;
+      throw x;
     }
   }
 
-  @After
-  public void stop() throws Exception {
+  @After public void stop() throws Exception {
     try {
       LOG.info("stop local cluster");
       angelClient.stop();

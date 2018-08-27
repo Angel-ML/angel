@@ -1,0 +1,245 @@
+#set ($len = $dtypes.size() - 1)
+package com.tencent.angel.ml.math2.ufuncs.executor.mixed;
+
+import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.ml.math2.storage.*;
+import com.tencent.angel.ml.math2.ufuncs.expression.Binary;
+import com.tencent.angel.ml.math2.vector.*;
+import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.fastutil.longs.*;
+import com.tencent.angel.ml.math2.utils.Constant;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
+
+public class MixedBinaryInAllExecutor {
+    public static Vector apply(ComponentVector v1, Vector v2, Binary op) {
+        if (v1 instanceof CompIntDoubleVector && v2 instanceof IntDoubleVector) {
+            return apply((CompIntDoubleVector) v1, (IntDoubleVector) v2, op);
+        } else if (v1 instanceof CompIntDoubleVector && v2 instanceof IntFloatVector) {
+            return apply((CompIntDoubleVector) v1, (IntFloatVector) v2, op);
+        } else if (v1 instanceof CompIntDoubleVector && v2 instanceof IntLongVector) {
+            return apply((CompIntDoubleVector) v1, (IntLongVector) v2, op);
+        } else if (v1 instanceof CompIntDoubleVector && v2 instanceof IntIntVector) {
+            return apply((CompIntDoubleVector) v1, (IntIntVector) v2, op);
+        } else if (v1 instanceof CompIntDoubleVector && v2 instanceof IntDummyVector) {
+            return apply((CompIntDoubleVector) v1, (IntDummyVector) v2, op);
+        } else if (v1 instanceof CompIntFloatVector && v2 instanceof IntFloatVector) {
+            return apply((CompIntFloatVector) v1, (IntFloatVector) v2, op);
+        } else if (v1 instanceof CompIntFloatVector && v2 instanceof IntLongVector) {
+            return apply((CompIntFloatVector) v1, (IntLongVector) v2, op);
+        } else if (v1 instanceof CompIntFloatVector && v2 instanceof IntIntVector) {
+            return apply((CompIntFloatVector) v1, (IntIntVector) v2, op);
+        } else if (v1 instanceof CompIntFloatVector && v2 instanceof IntDummyVector) {
+            return apply((CompIntFloatVector) v1, (IntDummyVector) v2, op);
+        } else if (v1 instanceof CompIntLongVector && v2 instanceof IntLongVector) {
+            return apply((CompIntLongVector) v1, (IntLongVector) v2, op);
+        } else if (v1 instanceof CompIntLongVector && v2 instanceof IntIntVector) {
+            return apply((CompIntLongVector) v1, (IntIntVector) v2, op);
+        } else if (v1 instanceof CompIntLongVector && v2 instanceof IntDummyVector) {
+            return apply((CompIntLongVector) v1, (IntDummyVector) v2, op);
+        } else if (v1 instanceof CompIntIntVector && v2 instanceof IntIntVector) {
+            return apply((CompIntIntVector) v1, (IntIntVector) v2, op);
+        } else if (v1 instanceof CompIntIntVector && v2 instanceof IntDummyVector) {
+            return apply((CompIntIntVector) v1, (IntDummyVector) v2, op);
+        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof LongDoubleVector) {
+            return apply((CompLongDoubleVector) v1, (LongDoubleVector) v2, op);
+        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof LongFloatVector) {
+            return apply((CompLongDoubleVector) v1, (LongFloatVector) v2, op);
+        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof LongLongVector) {
+            return apply((CompLongDoubleVector) v1, (LongLongVector) v2, op);
+        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof LongIntVector) {
+            return apply((CompLongDoubleVector) v1, (LongIntVector) v2, op);
+        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof LongDummyVector) {
+            return apply((CompLongDoubleVector) v1, (LongDummyVector) v2, op);
+        } else if (v1 instanceof CompLongFloatVector && v2 instanceof LongFloatVector) {
+            return apply((CompLongFloatVector) v1, (LongFloatVector) v2, op);
+        } else if (v1 instanceof CompLongFloatVector && v2 instanceof LongLongVector) {
+            return apply((CompLongFloatVector) v1, (LongLongVector) v2, op);
+        } else if (v1 instanceof CompLongFloatVector && v2 instanceof LongIntVector) {
+            return apply((CompLongFloatVector) v1, (LongIntVector) v2, op);
+        } else if (v1 instanceof CompLongFloatVector && v2 instanceof LongDummyVector) {
+            return apply((CompLongFloatVector) v1, (LongDummyVector) v2, op);
+        } else if (v1 instanceof CompLongLongVector && v2 instanceof LongLongVector) {
+            return apply((CompLongLongVector) v1, (LongLongVector) v2, op);
+        } else if (v1 instanceof CompLongLongVector && v2 instanceof LongIntVector) {
+            return apply((CompLongLongVector) v1, (LongIntVector) v2, op);
+        } else if (v1 instanceof CompLongLongVector && v2 instanceof LongDummyVector) {
+            return apply((CompLongLongVector) v1, (LongDummyVector) v2, op);
+        } else if (v1 instanceof CompLongIntVector && v2 instanceof LongIntVector) {
+            return apply((CompLongIntVector) v1, (LongIntVector) v2, op);
+        } else if (v1 instanceof CompLongIntVector && v2 instanceof LongDummyVector) {
+            return apply((CompLongIntVector) v1, (LongDummyVector) v2, op);
+        } else {
+            throw new AngelException("Vector type is not support!");
+        }
+    }
+
+
+#foreach ($itype in $itypes)
+#foreach ($idx1 in [0..$len])
+#set ($dtype1 = $dtypes.get($idx1))
+
+    private static Vector apply(Comp${itype}${dtype1}Vector v1, ${itype}DummyVector v2, Binary op) {
+        int k = 0;
+        ${itype}${dtype1}Vector [ ] parts = v1.getPartitions();
+        for(${itype}${dtype1}Vector part:parts) {
+            if (part.isDense() || part.isSparse()){
+                parts[k] = part.copy();
+            } else { // sorted
+                ${itype}${dtype1}SparseVectorStorage sto = new ${itype}${dtype1}SparseVectorStorage(part.getDim(),
+                        part.getStorage().getIndices(),
+                        part.getStorage().getValues());
+                parts[k] = new ${itype}${dtype1}Vector(part.getMatrixId(), part.getRowId(), part.getClock(), part.getDim(), sto);
+            }
+            k++;
+        }
+
+        if (v2.isSparse()){
+            $itype.toLowerCase() subDim = (v1.getDim() + v1.getNumPartitions() - 1) / v1.getNumPartitions();
+
+            for (int i = 0; i < v1.getDim(); i++){
+                int pidx = (int) (i / subDim);
+                $itype.toLowerCase() subidx = i % subDim;
+                parts[pidx].set(subidx, op.apply(parts[pidx].get(subidx), v2.get(i)));
+            }
+        } else { // sorted
+            $itype.toLowerCase() subDim = (v1.getDim() + v1.getNumPartitions() - 1) / v1.getNumPartitions();
+
+            for (int i = 0; i < v1.getDim(); i++){
+                int pidx = (int) (i / subDim);
+                $itype.toLowerCase() subidx = i % subDim;
+                parts[pidx].set(subidx, op.apply(parts[pidx].get(subidx), v2.get(i)));
+            }
+        }
+
+        return v1;
+    }
+
+
+#foreach ($idx2 in [$idx1..$len])
+#set ($dtype2 = $dtypes.get($idx2))
+    private static Vector apply(Comp${itype}${dtype1}Vector v1, ${itype}${dtype2}Vector v2, Binary op) {
+        ${itype}${dtype1}Vector [ ] parts = v1.getPartitions();
+#if ($itype == "Int")
+        if(v2.isDense()) {
+            $dtype2.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
+            $itype.toLowerCase() base = 0, k = 0;
+            for(${itype}${dtype1}Vector part:parts) {
+                if (part.isDense()) {
+                    $dtype1.toLowerCase() [ ] partValue = part.getStorage().getValues();
+                    for(int i=0; i<partValue.length; i++){
+                        $itype.toLowerCase() idx = i + base;
+                        partValue[i] = op.apply(partValue[i], v2Values[idx]);
+                    }
+                } else if (part.isSparse()) {
+                    ${itype}${dtype1}VectorStorage sto = part.getStorage().emptyDense();
+                    $dtype1.toLowerCase() [ ] newValues = sto.getValues();
+                    if (part.size() < Constant.denseLoopThreshold * part.getDim()) {
+                        for (int i = 0; i < part.getDim(); i++) {
+                            newValues[i] = op.apply(0, v2Values[i+base]);
+                        }
+                        ObjectIterator<${itype}2${dtype1}Map.Entry> iter = part.getStorage().entryIterator();
+                        while (iter.hasNext()) {
+                            ${itype}2${dtype1}Map.Entry entry = iter.next();
+                            $itype.toLowerCase() idx = entry.get${itype}Key();
+                            newValues[idx] = op.apply(entry.get${dtype1}Value(), v2Values[idx+ base]);
+                        }
+                    } else {
+                        for (int i = 0; i < newValues.length; i++) {
+                            if (part.getStorage().hasKey(i)) {
+                                newValues[i] = op.apply(part.get(i), v2Values[i+base]);
+                            } else {
+                                newValues[i] = op.apply(0, v2Values[i+base]);
+                            }
+                        }
+                    }
+                    parts[k] = new ${itype}${dtype1}Vector(part.getMatrixId(), part.getRowId(), part.getClock(), part.getDim(), sto);
+                } else { // sorted
+                    ${itype}${dtype1}VectorStorage sto = part.getStorage().emptyDense();
+                    $dtype1.toLowerCase() [ ] newValues = sto.getValues();
+                    if (part.size() < Constant.denseLoopThreshold * part.getDim()) {
+                        $itype.toLowerCase() [ ] partIndices = part.getStorage().getIndices();
+                        $dtype1.toLowerCase() [ ] partValues = part.getStorage().getValues();
+                        for (int i = 0; i < part.getDim(); i++) {
+                            newValues[i] = op.apply(0, v2Values[i+base]);
+                        }
+
+                        int size = part.size();
+                        for (int i = 0; i < size; i++) {
+                            $itype.toLowerCase() idx = partIndices[i];
+                            newValues[idx] = op.apply(partValues[i], v2Values[idx+base]);
+                        }
+                    } else {
+                        ${itype}${dtype1}VectorStorage partStorage = part.getStorage();
+                        for (int i = 0; i < newValues.length; i++) {
+                            if (partStorage.hasKey(i)) {
+                                newValues[i] = op.apply(partStorage.get(i), v2Values[i+base]);
+                            } else {
+                                newValues[i] = op.apply(0, v2Values[i+base]);
+                            }
+                        }
+                    }
+                    parts[k] = new ${itype}${dtype1}Vector(part.getMatrixId(), part.getRowId(), part.getClock(), part.getDim(), sto);
+                }
+
+                base += part.getDim();
+                k++;
+            }
+        } else if (v2.isSparse()) {
+#else
+        if (v2.isSparse()) {
+#end
+            int k = 0;
+            for(${itype}${dtype1}Vector part:parts) {
+                if (part.isSorted()){
+                    ${itype}${dtype1}SparseVectorStorage sto = new ${itype}${dtype1}SparseVectorStorage(part.getDim(),
+                            part.getStorage().getIndices(),
+                            part.getStorage().getValues());
+                    parts[k] = new ${itype}${dtype1}Vector(part.getMatrixId(), part.getRowId(), part.getClock(), part.getDim(), sto);
+                }
+                k++;
+            }
+
+            $itype.toLowerCase() subDim = (v1.getDim() + v1.getNumPartitions() - 1) / v1.getNumPartitions();
+
+            for (int i = 0; i < v1.getDim(); i++){
+                int pidx = (int) (i / subDim);
+                $itype.toLowerCase() subidx = i % subDim;
+
+                if  (v2.getStorage().hasKey(i)){
+                    parts[pidx].set(subidx, op.apply(parts[pidx].get(subidx), v2.get(i)));
+                }else{
+                    parts[pidx].set(subidx, op.apply(parts[pidx].get(subidx), 0));
+                }
+            }
+        } else { // sorted
+            int k = 0;
+            for(${itype}${dtype1}Vector part:parts) {
+                if (part.isSorted()){
+                    ${itype}${dtype1}SparseVectorStorage sto = new ${itype}${dtype1}SparseVectorStorage(part.getDim(),
+                            part.getStorage().getIndices(),
+                            part.getStorage().getValues());
+                    parts[k] = new ${itype}${dtype1}Vector(part.getMatrixId(), part.getRowId(), part.getClock(), part.getDim(), sto);
+                }
+                k++;
+            }
+
+            $itype.toLowerCase() subDim = (v1.getDim() + v1.getNumPartitions() - 1) / v1.getNumPartitions();
+            for (int i = 0; i < v1.getDim(); i++){
+                int pidx = (int) (i / subDim);
+                $itype.toLowerCase() subidx = i % subDim;
+
+                if  (v2.getStorage().hasKey(i)){
+                    parts[pidx].set(subidx, op.apply(parts[pidx].get(subidx), v2.get(i)));
+                }else{
+                    parts[pidx].set(subidx, op.apply(parts[pidx].get(subidx), 0));
+                }
+            }
+        }
+
+        return v1;
+    }
+
+#end
+#end
+#end
+}

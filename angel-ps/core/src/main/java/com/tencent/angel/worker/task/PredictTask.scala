@@ -14,6 +14,8 @@
  * the License.
  *
  */
+
+
 package com.tencent.angel.worker.task
 
 import java.io.IOException
@@ -25,20 +27,20 @@ import com.tencent.angel.utils.HdfsUtil
 import com.tencent.angel.worker.storage.DataBlock
 
 abstract class PredictTask[KEYIN, VALUEIN](ctx: TaskContext)
-        extends BaseTask[KEYIN, VALUEIN, LabeledData](ctx) {
-  
+  extends BaseTask[KEYIN, VALUEIN, LabeledData](ctx) {
+
   @throws(classOf[AngelException])
   final def run(taskContext: TaskContext) {
     this.predict(taskContext)
   }
-  
+
   def predict(taskContext: TaskContext)
-  
+
   @throws(classOf[IOException])
   protected final def predict(
-      taskContext: TaskContext,
-      model: MLModel,
-      dataBlock: DataBlock[LabeledData]) {
+                               taskContext: TaskContext,
+                               model: MLModel,
+                               dataBlock: DataBlock[LabeledData]) {
     val predictResult = model.predict(dataBlock)
     HdfsUtil.writeStorage(predictResult, taskContext)
   }

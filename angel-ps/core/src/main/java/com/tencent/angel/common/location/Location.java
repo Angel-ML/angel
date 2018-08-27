@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.common.location;
 
 import com.tencent.angel.common.Serialize;
@@ -23,15 +24,20 @@ import com.tencent.angel.common.Serialize;
  * Location of Angel Master/PS/Worker.
  */
 public class Location {
-  /**ip address*/
+  /**
+   * ip address
+   */
   private final String ip;
-  
-  /**listening port*/
+
+  /**
+   * listening port
+   */
   private final int port;
 
   /**
    * Create a new location
-   * @param ip ip address
+   *
+   * @param ip   ip address
    * @param port listening port
    */
   public Location(String ip, int port) {
@@ -41,6 +47,7 @@ public class Location {
 
   /**
    * Get ip
+   *
    * @return ip
    */
   public String getIp() {
@@ -49,19 +56,18 @@ public class Location {
 
   /**
    * Get listening port
+   *
    * @return listening port
    */
   public int getPort() {
     return port;
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "(" + ip + ":" + port + ")";
   }
 
-  @Override
-  public int hashCode() {
+  @Override public int hashCode() {
     final int prime = 31;
     int result = 1;
     result = prime * result + ((ip == null) ? 0 : ip.hashCode());
@@ -69,8 +75,7 @@ public class Location {
     return result;
   }
 
-  @Override
-  public boolean equals(Object obj) {
+  @Override public boolean equals(Object obj) {
     if (this == obj)
       return true;
     if (obj == null)

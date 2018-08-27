@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.psagent;
 
 import com.google.protobuf.ServiceException;
@@ -25,13 +26,12 @@ import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.localcluster.LocalClusterContext;
-import com.tencent.angel.ml.math.TVector;
-import com.tencent.angel.ml.math.vector.DenseIntVector;
+import com.tencent.angel.ml.math2.VFactory;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
+import com.tencent.angel.ml.math2.vector.IntIntVector;
+import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.RowType;
-import com.tencent.angel.ml.matrix.psf.get.multi.GetRowsFunc;
-import com.tencent.angel.ml.matrix.psf.get.multi.GetRowsParam;
-import com.tencent.angel.ml.matrix.psf.get.multi.GetRowsResult;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.psagent.matrix.MatrixClient;
@@ -50,11 +50,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
+
+import static org.junit.Assert.*;
 
 public class MatrixOpLogTest {
   private static final Log LOG = LogFactory.getLog(MatrixOpLogTest.class);
@@ -70,8 +69,7 @@ public class MatrixOpLogTest {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
-  @Before
-  public void setup() throws Exception {
+  @Before public void setup() throws Exception {
     // set basic configuration keys
     Configuration conf = new Configuration();
     conf.setBoolean("mapred.mapper.new-api", true);
@@ -88,7 +86,7 @@ public class MatrixOpLogTest {
 
     conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
     conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
-    conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 2);
+    conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
 
     // get a angel client
     angelClient = AngelClientFactory.get(conf);
@@ -104,8 +102,20 @@ public class MatrixOpLogTest {
     mMatrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
     mMatrix.set(MatrixConf.MATRIX_HOGWILD, "true");
     mMatrix.set(MatrixConf.MATRIX_AVERAGE, "false");
-    mMatrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_INT");
     angelClient.addMatrix(mMatrix);
+
+    // add matrix
+    MatrixContext mMatrix2 = new MatrixContext();
+    mMatrix2.setName("w2");
+    mMatrix2.setRowNum(1);
+    mMatrix2.setColNum(100000);
+    mMatrix2.setMaxRowNumInBlock(1);
+    mMatrix2.setMaxColNumInBlock(50000);
+    mMatrix2.setRowType(RowType.T_DOUBLE_DENSE);
+    mMatrix2.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
+    mMatrix2.set(MatrixConf.MATRIX_HOGWILD, "true");
+    mMatrix2.set(MatrixConf.MATRIX_AVERAGE, "false");
+    angelClient.addMatrix(mMatrix2);
 
     angelClient.startPSServer();
     angelClient.run();
@@ -117,6 +127,7 @@ public class MatrixOpLogTest {
     workerAttempt0Id = new WorkerAttemptId(workerId, 0);
   }
 
+  /*
   @Test
   public void testUDF() throws ServiceException, IOException, InvalidParameterException,
     AngelException, InterruptedException, ExecutionException {
@@ -142,19 +153,19 @@ public class MatrixOpLogTest {
 
     int index = 0;
     while(index++ < 10) {
-      Map<Integer, TVector> rows = ((GetRowsResult) w1Task0Client.get(func)).getRows();
-      for(Entry<Integer, TVector> rowEntry:rows.entrySet()) {
-        LOG.info("index " + rowEntry.getKey() + " sum of w1 = " + sum((DenseIntVector) rowEntry.getValue()));
+      Map<Integer, Vector> rows = ((GetRowsResult) w1Task0Client.get(func)).getRows();
+      for(Entry<Integer, Vector> rowEntry:rows.entrySet()) {
+        LOG.info("index " + rowEntry.getKey() + " sum of w1 = " + sum((IntIntVector) rowEntry.getValue()));
       }
 
       for(int i = 0; i < 100; i++) {
-        DenseIntVector deltaVec = new DenseIntVector(100000, delta);
+        IntIntVector deltaVec = new IntIntVector(100000, new IntIntDenseVectorStorage(delta));
         deltaVec.setMatrixId(matrixW1Id);
         deltaVec.setRowId(i);
 
         w1Task0Client.increment(deltaVec);
 
-        deltaVec = new DenseIntVector(100000, delta);
+        deltaVec = new IntIntVector(100000, new IntIntDenseVectorStorage(delta));
         deltaVec.setMatrixId(matrixW1Id);
         deltaVec.setRowId(i);
         w1Task1Client.increment(deltaVec);
@@ -163,19 +174,44 @@ public class MatrixOpLogTest {
       w1Task0Client.clock().get();
       w1Task1Client.clock().get();
     }
+  }*/
+
+  @Test public void testGetRow()
+    throws ServiceException, IOException, InvalidParameterException, AngelException,
+    InterruptedException, ExecutionException {
+    Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
+    MatrixClient w2Task0Client = worker.getPSAgent().getMatrixClient("w2", 0);
+    int matrixW2Id = w2Task0Client.getMatrixId();
+
+    double[] delta = new double[100000];
+    Random r = new Random();
+    for (int i = 0; i < delta.length; i++) {
+      delta[i] = r.nextDouble();
+    }
+
+    Vector deltaVec = VFactory.denseDoubleVector(delta);
+    deltaVec.setRowId(0);
+    deltaVec.setMatrixId(matrixW2Id);
+    w2Task0Client.increment(deltaVec);
+    w2Task0Client.clock().get();
+
+    IntDoubleVector row = (IntDoubleVector) w2Task0Client.getRow(0);
+    double[] values = row.getStorage().getValues();
+    for (int i = 0; i < 100000; i++) {
+      assertEquals(delta[i], values[i], 0.0000001);
+    }
   }
 
-  private int sum(DenseIntVector vec){
-    int [] values = vec.getValues();
+  private int sum(IntIntVector vec) {
+    int[] values = vec.getStorage().getValues();
     int sum = 0;
-    for(int i = 0; i < values.length; i++) {
+    for (int i = 0; i < values.length; i++) {
       sum += values[i];
     }
     return sum;
   }
 
-  @After
-  public void stop() throws AngelException {
+  @After public void stop() throws AngelException {
     LOG.info("stop local cluster");
     angelClient.stop();
   }

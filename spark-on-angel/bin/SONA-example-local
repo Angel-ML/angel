@@ -1,9 +1,22 @@
 #!/bin/bash
 
-source ./spark-on-angel-env.sh
+export PATH=$JAVA_HOME/bin:$PATH
 
-$SPARK_HOME/bin/spark-submit \
-    --jars $SONA_SPARK_JARS \
-    --name "BreezeSGD-spark-on-angel" \
-    --class com.tencent.angel.spark.examples.ml.BreezeSGD \
-    ./../lib/spark-on-angel-examples-${ANGEL_VERSION}.jar
+bin=`which $0`
+bin=`dirname ${bin}`
+bin=`cd "$bin"; pwd`
+
+lib="$bin"/../lib
+
+export ANGEL_HOME="$bin/../"
+
+for f in "$lib"/*.jar; do
+    if [ "$CLASSPATH" ]; then
+        export CLASSPATH=$CLASSPATH:$f
+    else
+        export CLASSPATH=$f
+    fi
+done
+
+export CLASSPATH=$CLASSPATH
+java $1 $@

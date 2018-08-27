@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.localcluster;
 
 import com.tencent.angel.ps.PSAttemptId;
@@ -34,18 +35,25 @@ import java.util.UUID;
  */
 public class LocalCluster {
   private static final Log LOG = LogFactory.getLog(LocalCluster.class);
-  /**local resource manager*/
+  /**
+   * local resource manager
+   */
   private final LocalResourceManager localRM;
-  
-  /**application id*/
+
+  /**
+   * application id
+   */
   private final ApplicationId appId;
-  
-  /**cluster id*/
+
+  /**
+   * cluster id
+   */
   private final UUID id;
-  
+
   /**
    * Create a new LocalCluster
-   * @param conf cluster application
+   *
+   * @param conf  cluster application
    * @param appId
    */
   public LocalCluster(Configuration conf, ApplicationId appId) {
@@ -54,51 +62,54 @@ public class LocalCluster {
     id = UUID.randomUUID();
     LocalClusterContext.get().setLocalCluster(this);
   }
-  
+
   /**
    * Start the cluster
+   *
    * @throws IOException
    */
-  public void start() throws IOException{
+  public void start() throws IOException {
     LOG.info("start local cluster " + id);
     localRM.start();
     localRM.allocateMaster(appId);
   }
-  
+
   /**
    * Stop the cluster
    */
-  public void stop(){
+  public void stop() {
     LOG.info("stop the cluster " + id);
     Map<WorkerAttemptId, LocalWorker> localWorkers = LocalClusterContext.get().getIdToWorkerMap();
-    for(LocalWorker localWorker:localWorkers.values()) {
+    for (LocalWorker localWorker : localWorkers.values()) {
       localWorker.exit();
     }
-    
+
     Map<PSAttemptId, LocalPS> localPSs = LocalClusterContext.get().getIdToPSMap();
-    for(LocalPS localPS:localPSs.values()) {
+    for (LocalPS localPS : localPSs.values()) {
       localPS.exit();
     }
-    
+
     LocalMaster master = LocalClusterContext.get().getMaster();
-    if(master != null) {
+    if (master != null) {
       master.exit();
     }
-    
+
     localRM.stop();
 
     try {
       Thread.sleep(2000);
     } catch (InterruptedException e) {
     }
-    LOG.info("=============================================stop cluster over=======================================");
+    LOG.info(
+      "=============================================stop cluster over=======================================");
   }
 
   /**
    * Get local resource manager
+   *
    * @return local resource manager
    */
   public LocalResourceManager getLocalRM() {
     return localRM;
-  } 
+  }
 }

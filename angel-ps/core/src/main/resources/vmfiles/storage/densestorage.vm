@@ -1,0 +1,287 @@
+package com.tencent.angel.ml.math2.storage;
+
+import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.ArrayCopy;
+
+import java.util.Arrays;
+import java.util.Random;
+import java.util.HashSet;
+
+public class ${itype}${dtype}DenseVectorStorage implements ${itype}${dtype}VectorStorage {
+    private $dtype.toLowerCase() [ ] values;
+    private byte flag; // 001: dense; 010: sparse; 100: sorted
+    private $itype.toLowerCase() dim;
+
+    public ${itype}${dtype}DenseVectorStorage($dtype.toLowerCase() [ ] values) {
+        this.flag = 1;
+        this.dim = values.length;
+        this.values = values;
+    }
+
+    public ${itype}${dtype}DenseVectorStorage($itype.toLowerCase() dim) {
+        this(new $dtype.toLowerCase() [dim]);
+    }
+
+    @Override
+    public $dtype.toLowerCase() get($itype.toLowerCase() idx) {
+        return values[idx];
+    }
+
+    @Override
+    public void set($itype.toLowerCase() idx, $dtype.toLowerCase() value) {
+        values[idx] = value;
+    }
+
+    @Override
+    public $dtype.toLowerCase() [] getValues(){ return values; }
+
+    @Override
+    public ${itype}${dtype}VectorStorage clone() {
+        return new ${itype}${dtype}DenseVectorStorage(ArrayCopy.copy(values));
+    }
+
+    @Override
+    public ${itype}${dtype}VectorStorage copy(){
+        return new ${itype}${dtype}DenseVectorStorage(ArrayCopy.copy(values));
+    }
+
+#if ($itype == "Int")
+    @Override
+    public Int${dtype}VectorStorage oneLikeDense() {
+        $dtype.toLowerCase() [ ] oneLikeValues = new $dtype.toLowerCase() [dim];
+        for (int i=0; i<dim; i++){
+            oneLikeValues[i] = 1;
+        }
+        return new Int${dtype}DenseVectorStorage(oneLikeValues);
+    }
+#end
+
+    @Override
+    public Int${dtype}VectorStorage oneLikeSparse() {
+        int capacity = Math.max(128, (int)(dim/1000));
+        $dtype.toLowerCase() [ ] oneLikeValues = new $dtype.toLowerCase() [capacity];
+        int [ ] indices = new int [capacity];
+        HashSet set = new HashSet<Integer>();
+        Random rand = new Random();
+        int j = 0;
+        while (set.size() < capacity){
+            int idx = rand.nextInt(dim);
+            if (!set.contains(idx)) {
+                indices[j] = idx;
+                set.add(idx);
+                j++;
+            }
+        }
+        for (int i=0; i<capacity; i++){
+            oneLikeValues[i] = 1;
+        }
+        return new Int${dtype}SparseVectorStorage(dim, indices, oneLikeValues);
+    }
+
+    @Override
+    public Int${dtype}VectorStorage oneLikeSorted() {
+        int capacity = Math.max(128, (int)(dim/1000));
+        $dtype.toLowerCase() [ ] oneLikeValues = new $dtype.toLowerCase() [capacity];
+        int [ ] indices = new int [capacity];
+        HashSet set = new HashSet<Integer>();
+        Random rand = new Random();
+        int j = 0;
+        while (set.size() < capacity){
+            int idx = rand.nextInt(dim);
+            if (!set.contains(idx)) {
+                indices[j] = idx;
+                set.add(idx);
+                j++;
+            }
+        }
+        Arrays.sort(indices);
+        for (int i=0; i<capacity; i++){
+            oneLikeValues[i] = 1;
+        }
+        return new Int${dtype}SparseVectorStorage(dim, indices, oneLikeValues);
+    }
+
+    @Override
+    public Int${dtype}VectorStorage oneLikeDense(int dim) {
+        $dtype.toLowerCase() [ ] oneLikeValues = new $dtype.toLowerCase() [dim];
+        for (int i=0; i<dim; i++){
+            oneLikeValues[i] = 1;
+        }
+        return new Int${dtype}DenseVectorStorage(oneLikeValues);
+    }
+
+    @Override
+    public Int${dtype}VectorStorage oneLikeSparse(int dim, int capacity) {
+        $dtype.toLowerCase() [ ] oneLikeValues = new $dtype.toLowerCase() [capacity];
+        int [ ] indices = new int [capacity];
+        HashSet set = new HashSet<Integer>();
+        Random rand = new Random();
+        int j = 0;
+        while (set.size() < capacity){
+            int idx = rand.nextInt(dim);
+            if (!set.contains(idx)) {
+                indices[j] = idx;
+                set.add(idx);
+                j++;
+            }
+        }
+        for (int i=0; i<capacity; i++){
+            oneLikeValues[i] = 1;
+        }
+        return new Int${dtype}SparseVectorStorage(dim, indices, oneLikeValues);
+    }
+
+    @Override
+    public Int${dtype}VectorStorage oneLikeSorted(int dim, int capacity) {
+        $dtype.toLowerCase() [ ] oneLikeValues = new $dtype.toLowerCase() [capacity];
+        int [ ] indices = new int [capacity];
+        HashSet set = new HashSet<Integer>();
+        Random rand = new Random();
+        int j = 0;
+        while (set.size() < capacity){
+            int idx = rand.nextInt(dim);
+            if (!set.contains(idx)) {
+                indices[j] = idx;
+                set.add(idx);
+                j++;
+            }
+        }
+        Arrays.sort(indices);
+        for (int i=0; i<capacity; i++){
+            oneLikeValues[i] = 1;
+        }
+        return new Int${dtype}SparseVectorStorage(dim, indices, oneLikeValues);
+    }
+
+    @Override
+    public Int${dtype}VectorStorage oneLikeSparse(int capacity) {
+        $dtype.toLowerCase() [ ] oneLikeValues = new $dtype.toLowerCase() [capacity];
+        int [ ] indices = new int [capacity];
+        HashSet set = new HashSet<Integer>();
+        Random rand = new Random();
+        int j = 0;
+        while (set.size() < capacity){
+            int idx = rand.nextInt(dim);
+            if (!set.contains(idx)) {
+                indices[j] = idx;
+                set.add(idx);
+                j++;
+            }
+        }
+        for (int i=0; i<capacity; i++){
+            oneLikeValues[i] = 1;
+        }
+        return new Int${dtype}SparseVectorStorage(dim, indices, oneLikeValues);
+    }
+
+    @Override
+    public Int${dtype}VectorStorage oneLikeSorted(int capacity) {
+        $dtype.toLowerCase() [ ] oneLikeValues = new $dtype.toLowerCase() [capacity];
+        int [ ] indices = new int [capacity];
+        HashSet set = new HashSet<Integer>();
+        Random rand = new Random();
+        int j = 0;
+        while (set.size() < capacity){
+            int idx = rand.nextInt(dim);
+            if (!set.contains(idx)) {
+                indices[j] = idx;
+                set.add(idx);
+                j++;
+            }
+        }
+        Arrays.sort(indices);
+        for (int i=0; i<capacity; i++){
+            oneLikeValues[i] = 1;
+        }
+        return new Int${dtype}SparseVectorStorage(dim, indices, oneLikeValues);
+    }
+
+#if ($itype == "Int")
+    @Override
+    public ${itype}${dtype}VectorStorage emptyDense() {
+        return new ${itype}${dtype}DenseVectorStorage(dim);
+    }
+#end
+
+    @Override
+    public ${itype}${dtype}VectorStorage emptySparse() {
+        return new ${itype}${dtype}SparseVectorStorage(dim, Math.max(128, (int)(dim/1000)));
+    }
+
+    @Override
+    public ${itype}${dtype}VectorStorage emptySorted() {
+        return new ${itype}${dtype}SortedVectorStorage(dim, Math.max(128, (int)(dim/1000)));
+    }
+
+#if ($itype == "Int")
+    @Override
+    public ${itype}${dtype}VectorStorage emptyDense(int length) {
+        return new ${itype}${dtype}DenseVectorStorage(length);
+    }
+#end
+
+    @Override
+    public ${itype}${dtype}VectorStorage emptySparse($itype.toLowerCase() dim, int capacity) {
+        return new ${itype}${dtype}SparseVectorStorage(dim, capacity);
+    }
+
+    @Override
+    public ${itype}${dtype}VectorStorage emptySorted($itype.toLowerCase() dim, int capacity) {
+        return new ${itype}${dtype}SortedVectorStorage(dim, capacity);
+    }
+
+    @Override
+    public ${itype}${dtype}VectorStorage emptySparse(int capacity) {
+        return new ${itype}${dtype}SparseVectorStorage(dim, capacity);
+    }
+
+    @Override
+    public ${itype}${dtype}VectorStorage emptySorted(int capacity) {
+        return new ${itype}${dtype}SortedVectorStorage(dim, capacity);
+    }
+
+    @Override
+    public int size() {
+        return values.length;
+    }
+
+    @Override
+    public boolean hasKey($itype.toLowerCase() key) {
+        return (key >= 0 && key < values.length);
+    }
+
+    @Override
+    public RowType getType() {
+#if (${itype} == "Long")
+        return RowType.T_$dtype.toUpperCase()_DENSE_LONGKEY;
+#else
+        return RowType.T_$dtype.toUpperCase()_DENSE;
+#end
+    }
+
+    @Override
+    public boolean isDense() {
+        return flag == 1;
+    }
+
+    @Override
+    public boolean isSparse() {
+        return flag == 2;
+    }
+
+    @Override
+    public boolean isSorted() {
+        return flag == 4;
+    }
+
+    @Override
+    public void clear() {
+#if ( $dtype == "Float" )
+         for (int i = 0; i < values.length; i++) {
+             values[i] = 0;
+         }
+#else
+        Arrays.parallelSetAll(values, (int value) -> 0 );
+#end
+    }
+}

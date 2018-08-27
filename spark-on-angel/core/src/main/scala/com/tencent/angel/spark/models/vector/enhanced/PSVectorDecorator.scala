@@ -15,9 +15,11 @@
  *
  */
 
+
 package com.tencent.angel.spark.models.vector.enhanced
 
 import com.tencent.angel.spark.models.vector.{ConcretePSVector, PSVector}
 
 abstract class PSVectorDecorator(val component: ConcretePSVector) extends PSVector {
+
 }

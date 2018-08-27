@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
 import com.tencent.angel.psagent.task.TaskContext;
@@ -48,10 +49,9 @@ public class OpLogMessage {
     return seqId;
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "OpLogMessage [matrixId=" + matrixId + ", type=" + type + ", context=" + context
-        + ", seqId=" + seqId + "]";
+      + ", seqId=" + seqId + "]";
   }
 
   public int getSeqId() {

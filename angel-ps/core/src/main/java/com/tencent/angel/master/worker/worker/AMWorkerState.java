@@ -15,23 +15,30 @@
  *
  */
 
+
 package com.tencent.angel.master.worker.worker;
 
 /**
  * Worker states.
  */
 public enum AMWorkerState {
-  NEW,
-  SCHEDULED,
-  /**a attempt of worker is running now*/
+  NEW, SCHEDULED, /**
+   * a attempt of worker is running now
+   */
   RUNNING,
 
-  /**all attempts are failed*/
+  /**
+   * all attempts are failed
+   */
   FAILED,
 
-  /**killed*/
+  /**
+   * killed
+   */
   KILLED,
 
-  /**a attempt of worker is success*/
+  /**
+   * a attempt of worker is success
+   */
   SUCCESS
 }

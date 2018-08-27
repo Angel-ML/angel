@@ -15,32 +15,44 @@
  *
  */
 
+
 package com.tencent.angel.psagent.matrix.transport.adapter;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Sub-request results cache.
  */
-public class PartitionResponseCache {
+public class PartitionResponseCache<T> {
   private static final Log LOG = LogFactory.getLog(PartitionResponseCache.class);
 
-  /** sub-requests number */
-  private final int totalRequestNum;
+  /**
+   * sub-requests number
+   */
+  protected final int totalRequestNum;
 
-  /** received results number */
-  private final AtomicInteger receivedResponseNum;
+  /**
+   * Sub responses
+   */
+  private final List<T> subResponses;
 
-  /** the counter for the sub-requests which results are not received */
-  private final CountDownLatch counter;
+  /**
+   * Sub responses read position
+   */
+  private int readPos;
 
-  /** the sub-requests are being merged */
-  private final AtomicBoolean isMerging;
+  /**
+   * Sub responses write position
+   */
+  private int writePos;
+
+  protected final Lock lock;
 
   /**
    * Create a new PartitionResponseCache.
@@ -48,55 +60,54 @@ public class PartitionResponseCache {
    * @param totalRequestNum sub-requests number
    */
   public PartitionResponseCache(int totalRequestNum) {
+    this(totalRequestNum, totalRequestNum);
+  }
+
+  /**
+   * Create a new PartitionResponseCache.
+   *
+   * @param totalRequestNum sub-requests number
+   */
+  public PartitionResponseCache(int totalRequestNum, int capacity) {
     this.totalRequestNum = totalRequestNum;
-    receivedResponseNum = new AtomicInteger(0);
-    counter = new CountDownLatch(totalRequestNum);
-    isMerging = new AtomicBoolean(false);
+    subResponses = new ArrayList<T>(capacity);
+    readPos = 0;
+    writePos = 0;
+    lock = new ReentrantLock();
   }
 
   /**
-   * Update the received results number.
-   * 
-   * @param partId the partition index of the sub-request
+   * Receive a sub-response
+   *
+   * @param subResponse
    */
-  public void updateReceivedResponse(int partId) {
-    receivedResponseNum.incrementAndGet();
-    counter.countDown();
-    LOG.debug("receivedResponseNum=" + receivedResponseNum.get() + ", totalRequestNum="
-        + totalRequestNum + ", counter=" + counter.getCount());
-  }
-
-  /**
-   * Update the received results number.
-   */
-  public void updateReceivedResponse() {
-    receivedResponseNum.incrementAndGet();
-    counter.countDown();
-    LOG.debug("receivedResponseNum=" + receivedResponseNum.get() + ", totalRequestNum="
-        + totalRequestNum + ", counter=" + counter.getCount());
+  public void addSubResponse(T subResponse) {
+    try {
+      lock.lock();
+      subResponses.add(subResponse);
+      writePos++;
+    } finally {
+      lock.unlock();
+    }
   }
 
   /**
    * Check if all results are received.
-   * 
+   *
    * @return boolean true means all results are received
    */
   public boolean isReceivedOver() {
-    return receivedResponseNum.get() >= totalRequestNum;
-  }
-
-  /**
-   * Wait until all results are received.
-   * 
-   * @throws InterruptedException interrupted while waiting
-   */
-  public void waitForReceivedOver() throws InterruptedException {
-    counter.await();
+    try {
+      lock.lock();
+      return subResponses.size() >= totalRequestNum;
+    } finally {
+      lock.unlock();
+    }
   }
 
   /**
    * Get the sub-requests number.
-   * 
+   *
    * @return int the sub-requests number
    */
   public int getTotalRequestNum() {
@@ -105,43 +116,87 @@ public class PartitionResponseCache {
 
   /**
    * Get the received results number.
-   * 
+   *
    * @return int the received results number
    */
   public int getReceivedResponseNum() {
-    return receivedResponseNum.get();
+    try {
+      lock.lock();
+      return subResponses.size();
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  /**
+   * Can merge sub-response now
+   *
+   * @return true means can merge now
+   */
+  public boolean canMerge() {
+    return isReceivedOver();
+  }
+
+  /**
+   * Get sub responses, it is lock free, you should call isReceivedOver before call it
+   *
+   * @return sub responses
+   */
+  public List<T> getSubResponses() {
+    return subResponses;
+  }
+
+  /**
+   * Get next sub response
+   *
+   * @return next sub response, null means it not ready or get all sub responses already
+   */
+  public T readNextSubResponse() {
+    while (true) {
+      try {
+        lock.lock();
+        if (writePos > readPos) {
+          T ret = subResponses.get(readPos);
+          readPos++;
+          return ret;
+        } else if ((readPos == writePos) && (writePos == totalRequestNum)) {
+          return null;
+        }
+      } finally {
+        lock.unlock();
+      }
+
+      try {
+        Thread.sleep(5);
+      } catch (InterruptedException e) {
+
+      }
+    }
+  }
+
+  /**
+   * Reset read position
+   */
+  public void reset() {
+    try {
+      lock.lock();
+      readPos = 0;
+    } finally {
+      lock.unlock();
+    }
   }
 
   /**
    * Get the request progress.
-   * 
+   *
    * @return double the request progress
    */
   public double getProgress() {
     return ((double) getReceivedResponseNum()) / getTotalRequestNum();
   }
 
-  /**
-   * Set the merging mark.
-   * 
-   * @param merging true means the sub-request results are being merged now
-   */
-  public void setIsMerging(boolean merging) {
-    isMerging.set(merging);
-  }
-
-  /**
-   * Get the merging mark.
-   * 
-   * @return boolean true means the sub-request results are being merged now
-   */
-  public boolean getIsMerging() {
-    return isMerging.get();
-  }
-
-  @Override
-  public String toString() {
-    return "PartitionResponseCache [totalRequestNum=" + totalRequestNum + ", receivedResponseNum="
-        + receivedResponseNum + ", counter=" + counter + "]";
+  @Override public String toString() {
+    return "PartitionResponseCache{" + "totalRequestNum=" + totalRequestNum + ", subResponses="
+      + subResponses.size() + ", readPos=" + readPos + ", writePos=" + writePos + '}';
   }
 }

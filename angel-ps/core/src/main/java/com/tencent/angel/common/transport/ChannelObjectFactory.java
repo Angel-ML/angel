@@ -15,13 +15,16 @@
  *
  */
 
+
 package com.tencent.angel.common.transport;
 
 import com.tencent.angel.common.location.Location;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+
 import java.util.concurrent.TimeoutException;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.pool.PoolableObjectFactory;
@@ -45,7 +48,7 @@ public class ChannelObjectFactory implements PoolableObjectFactory<Channel> {
   /**
    * Create a new ChannelObjectFactory.
    *
-   * @param loc server address
+   * @param loc       server address
    * @param bootstrap netty client bootstrap
    */
   public ChannelObjectFactory(Location loc, Bootstrap bootstrap) {
@@ -53,20 +56,16 @@ public class ChannelObjectFactory implements PoolableObjectFactory<Channel> {
     this.bootstrap = bootstrap;
   }
 
-  @Override
-  public void activateObject(Channel channel) throws Exception {
+  @Override public void activateObject(Channel channel) throws Exception {
 
   }
 
-  @Override
-  public void destroyObject(Channel channel) throws Exception {
+  @Override public void destroyObject(Channel channel) throws Exception {
     channel.close();
   }
 
-  @Override
-  public Channel makeObject() throws Exception {
-    ChannelFuture connectFuture =
-        bootstrap.connect(loc.getIp(), loc.getPort());
+  @Override public Channel makeObject() throws Exception {
+    ChannelFuture connectFuture = bootstrap.connect(loc.getIp(), loc.getPort());
     int ticks = 10000;
     while (ticks-- > 0) {
       if (connectFuture.isDone()) {
@@ -82,13 +81,11 @@ public class ChannelObjectFactory implements PoolableObjectFactory<Channel> {
     }
   }
 
-  @Override
-  public void passivateObject(Channel channel) throws Exception {
+  @Override public void passivateObject(Channel channel) throws Exception {
 
   }
 
-  @Override
-  public boolean validateObject(Channel channel) {
+  @Override public boolean validateObject(Channel channel) {
     return channel.isOpen();
   }
 }

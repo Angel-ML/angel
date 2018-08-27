@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.client;
 
 import com.tencent.angel.common.location.Location;
@@ -24,28 +25,31 @@ import org.apache.hadoop.conf.Configuration;
  * Angel application running context.
  */
 public class AngelContext {
-  /**master location*/
-  private final Location masterLocation;
-  
-  /**application configuration*/
-  private final Configuration conf;
-  
   /**
-   * 
+   * master location
+   */
+  private final Location masterLocation;
+
+  /**
+   * application configuration
+   */
+  private final Configuration conf;
+
+  /**
    * Create a new AngelContext.
    *
    * @param masterLocation master location
-   * @param conf application configuration
+   * @param conf           application configuration
    */
-  public AngelContext(Location masterLocation, Configuration conf){
+  public AngelContext(Location masterLocation, Configuration conf) {
     this.masterLocation = masterLocation;
     this.conf = conf;
   }
 
   /**
    * Get application configuration.
-   * 
-   * @return  Configuration application configuration
+   *
+   * @return Configuration application configuration
    */
   public Configuration getConf() {
     return conf;
@@ -53,7 +57,7 @@ public class AngelContext {
 
   /**
    * Get the location of the application master.
-   * 
+   *
    * @return Location the location of the application master
    */
   public Location getMasterLocation() {

@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.slowcheck;
 
 /**
@@ -24,5 +25,6 @@ public abstract class CheckPolicy implements CheckPolicyInterface {
   /**
    * Create a CheckPolicy
    */
-  public CheckPolicy() {}
+  public CheckPolicy() {
+  }
 }

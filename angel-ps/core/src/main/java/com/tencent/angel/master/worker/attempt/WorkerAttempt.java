@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.worker.attempt;
 
 import com.tencent.angel.AngelDeployMode;
@@ -66,37 +67,54 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
 
   private static final Log LOG = LogFactory.getLog(WorkerAttempt.class);
-  /** worker attempt id */
+  /**
+   * worker attempt id
+   */
   private final WorkerAttemptId id;
   private final AMContext context;
   private final Lock readLock;
   private final Lock writeLock;
 
-  /** task ids which this worker contains */
+  /**
+   * task ids which this worker contains
+   */
   private final List<TaskId> taskIds;
 
-  /** worker attempt metrics */
+  /**
+   * worker attempt metrics
+   */
   private final Map<String, String> metrics;
 
-  /** worker attempt running address(ip and port) */
+  /**
+   * worker attempt running address(ip and port)
+   */
   private Location location;
 
-  /** container allocated for this worker attempt */
+  /**
+   * container allocated for this worker attempt
+   */
   private Container container;
 
-  /** worker attempt launch time */
+  /**
+   * worker attempt launch time
+   */
   private long launchTime;
 
-  /** worker attempt finish time */
+  /**
+   * worker attempt finish time
+   */
   private long finishTime;
 
-  /** worker attempt diagnostics */
+  /**
+   * worker attempt diagnostics
+   */
   private final List<String> diagnostics;
 
-  private final StateMachine<WorkerAttemptState, WorkerAttemptEventType, WorkerAttemptEvent> stateMachine;
+  private final StateMachine<WorkerAttemptState, WorkerAttemptEventType, WorkerAttemptEvent>
+    stateMachine;
 
-  public WorkerAttempt(WorkerId workerId, int attemptIndex, AMContext context,
-      List<TaskId> taskIds, WorkerAttempt workerAttempt) {
+  public WorkerAttempt(WorkerId workerId, int attemptIndex, AMContext context, List<TaskId> taskIds,
+    WorkerAttempt workerAttempt) {
     this.context = context;
     this.id = new WorkerAttemptId(workerId, attemptIndex);
     ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
@@ -128,172 +146,163 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
   }
 
   private static final DiagnosticUpdaterTransition DIAGNOSTIC_UPDATE_TRANSITION =
-      new DiagnosticUpdaterTransition();
+    new DiagnosticUpdaterTransition();
 
   private static final WorkerAttemptNewFailedTransition NEW_FAILED_TRANSITION =
-      new WorkerAttemptNewFailedTransition();
+    new WorkerAttemptNewFailedTransition();
   private static final WorkerAttemptNewKilledTransition NEW_KILLED_TRANSITION =
-      new WorkerAttemptNewKilledTransition();
+    new WorkerAttemptNewKilledTransition();
 
   private static final WorkerAttemptAssignedFailedTransition ASSIGNED_FAILED_TRANSITION =
-      new WorkerAttemptAssignedFailedTransition();
+    new WorkerAttemptAssignedFailedTransition();
   private static final WorkerAttemptAssignedKilledTransition ASSIGNED_KILLED_TRANSITION =
-      new WorkerAttemptAssignedKilledTransition();
+    new WorkerAttemptAssignedKilledTransition();
 
   private static final WorkerAttemptRunningFailedTransition RUNNING_FAILED_TRANSITION =
-      new WorkerAttemptRunningFailedTransition();
+    new WorkerAttemptRunningFailedTransition();
   private static final WorkerAttemptRunningKilledTransition RUNNING_KILLED_TRANSITION =
-      new WorkerAttemptRunningKilledTransition();
+    new WorkerAttemptRunningKilledTransition();
 
   private static final WorkerAttemptDoneTransition DONE_TRANSITION =
-      new WorkerAttemptDoneTransition();
+    new WorkerAttemptDoneTransition();
 
-  protected static final StateMachineFactory<WorkerAttempt, WorkerAttemptState, WorkerAttemptEventType, WorkerAttemptEvent> stateMachineFactory =
-      new StateMachineFactory<WorkerAttempt, WorkerAttemptState, WorkerAttemptEventType, WorkerAttemptEvent>(
-          WorkerAttemptState.NEW)
+  protected static final StateMachineFactory<WorkerAttempt, WorkerAttemptState, WorkerAttemptEventType, WorkerAttemptEvent>
+    stateMachineFactory =
+    new StateMachineFactory<WorkerAttempt, WorkerAttemptState, WorkerAttemptEventType, WorkerAttemptEvent>(
+      WorkerAttemptState.NEW)
 
-          // from NEW state
-          .addTransition(WorkerAttemptState.NEW, WorkerAttemptState.SCHEDULED,
-              WorkerAttemptEventType.SCHEDULE, new RequestContainerTransition())
-          .addTransition(WorkerAttemptState.NEW, WorkerAttemptState.KILLED,
-              WorkerAttemptEventType.KILL, NEW_KILLED_TRANSITION)
-          .addTransition(WorkerAttemptState.NEW, WorkerAttemptState.FAILED,
-              WorkerAttemptEventType.ERROR, NEW_FAILED_TRANSITION)
-          .addTransition(WorkerAttemptState.NEW, WorkerAttemptState.NEW,
-              WorkerAttemptEventType.DIAGNOSTICS_UPDATE, DIAGNOSTIC_UPDATE_TRANSITION)
+      // from NEW state
+      .addTransition(WorkerAttemptState.NEW, WorkerAttemptState.SCHEDULED,
+        WorkerAttemptEventType.SCHEDULE, new RequestContainerTransition())
+      .addTransition(WorkerAttemptState.NEW, WorkerAttemptState.KILLED, WorkerAttemptEventType.KILL,
+        NEW_KILLED_TRANSITION).addTransition(WorkerAttemptState.NEW, WorkerAttemptState.FAILED,
+      WorkerAttemptEventType.ERROR, NEW_FAILED_TRANSITION)
+      .addTransition(WorkerAttemptState.NEW, WorkerAttemptState.NEW,
+        WorkerAttemptEventType.DIAGNOSTICS_UPDATE, DIAGNOSTIC_UPDATE_TRANSITION)
 
-          // from SCHEDULED state
-          .addTransition(WorkerAttemptState.SCHEDULED, WorkerAttemptState.ASSIGNED,
-              WorkerAttemptEventType.CONTAINER_ASSIGN, new AssignContainerTransition())
-          .addTransition(WorkerAttemptState.SCHEDULED, WorkerAttemptState.FAILED,
-              WorkerAttemptEventType.ERROR, ASSIGNED_FAILED_TRANSITION)
-          .addTransition(WorkerAttemptState.SCHEDULED, WorkerAttemptState.KILLED,
-              WorkerAttemptEventType.KILL, ASSIGNED_KILLED_TRANSITION)
-          .addTransition(WorkerAttemptState.SCHEDULED, WorkerAttemptState.SCHEDULED,
-              WorkerAttemptEventType.DIAGNOSTICS_UPDATE, DIAGNOSTIC_UPDATE_TRANSITION)
+      // from SCHEDULED state
+      .addTransition(WorkerAttemptState.SCHEDULED, WorkerAttemptState.ASSIGNED,
+        WorkerAttemptEventType.CONTAINER_ASSIGN, new AssignContainerTransition())
+      .addTransition(WorkerAttemptState.SCHEDULED, WorkerAttemptState.FAILED,
+        WorkerAttemptEventType.ERROR, ASSIGNED_FAILED_TRANSITION)
+      .addTransition(WorkerAttemptState.SCHEDULED, WorkerAttemptState.KILLED,
+        WorkerAttemptEventType.KILL, ASSIGNED_KILLED_TRANSITION)
+      .addTransition(WorkerAttemptState.SCHEDULED, WorkerAttemptState.SCHEDULED,
+        WorkerAttemptEventType.DIAGNOSTICS_UPDATE, DIAGNOSTIC_UPDATE_TRANSITION)
 
-          .addTransition(WorkerAttemptState.ASSIGNED, WorkerAttemptState.LAUNCHED,
-              WorkerAttemptEventType.CONTAINER_LAUNCHED, new ContainerLaunchedTransition())
-          .addTransition(
-              WorkerAttemptState.ASSIGNED,
-              WorkerAttemptState.FAILED,
-              EnumSet.of(WorkerAttemptEventType.CONTAINER_LAUNCH_FAILED,
-                  WorkerAttemptEventType.ERROR), ASSIGNED_FAILED_TRANSITION)
-          .addTransition(WorkerAttemptState.ASSIGNED, WorkerAttemptState.KILLED,
-              WorkerAttemptEventType.KILL, ASSIGNED_KILLED_TRANSITION)
-          .addTransition(WorkerAttemptState.ASSIGNED, WorkerAttemptState.ASSIGNED,
-              WorkerAttemptEventType.DIAGNOSTICS_UPDATE, DIAGNOSTIC_UPDATE_TRANSITION)
+      .addTransition(WorkerAttemptState.ASSIGNED, WorkerAttemptState.LAUNCHED,
+        WorkerAttemptEventType.CONTAINER_LAUNCHED, new ContainerLaunchedTransition())
+      .addTransition(WorkerAttemptState.ASSIGNED, WorkerAttemptState.FAILED,
+        EnumSet.of(WorkerAttemptEventType.CONTAINER_LAUNCH_FAILED, WorkerAttemptEventType.ERROR),
+        ASSIGNED_FAILED_TRANSITION)
+      .addTransition(WorkerAttemptState.ASSIGNED, WorkerAttemptState.KILLED,
+        WorkerAttemptEventType.KILL, ASSIGNED_KILLED_TRANSITION)
+      .addTransition(WorkerAttemptState.ASSIGNED, WorkerAttemptState.ASSIGNED,
+        WorkerAttemptEventType.DIAGNOSTICS_UPDATE, DIAGNOSTIC_UPDATE_TRANSITION)
 
-          .addTransition(WorkerAttemptState.LAUNCHED, WorkerAttemptState.RUNNING,
-              WorkerAttemptEventType.REGISTER, new RegisterTransition())
-          .addTransition(WorkerAttemptState.LAUNCHED, WorkerAttemptState.FAILED,
-              EnumSet.of(WorkerAttemptEventType.ERROR, WorkerAttemptEventType.CONTAINER_COMPLETE),
-              RUNNING_FAILED_TRANSITION)
-          .addTransition(WorkerAttemptState.LAUNCHED, WorkerAttemptState.KILLED,
-              WorkerAttemptEventType.KILL, RUNNING_KILLED_TRANSITION)
-          .addTransition(WorkerAttemptState.LAUNCHED, WorkerAttemptState.LAUNCHED,
-              WorkerAttemptEventType.DIAGNOSTICS_UPDATE, DIAGNOSTIC_UPDATE_TRANSITION)
+      .addTransition(WorkerAttemptState.LAUNCHED, WorkerAttemptState.RUNNING,
+        WorkerAttemptEventType.REGISTER, new RegisterTransition())
+      .addTransition(WorkerAttemptState.LAUNCHED, WorkerAttemptState.FAILED,
+        EnumSet.of(WorkerAttemptEventType.ERROR, WorkerAttemptEventType.CONTAINER_COMPLETE),
+        RUNNING_FAILED_TRANSITION)
+      .addTransition(WorkerAttemptState.LAUNCHED, WorkerAttemptState.KILLED,
+        WorkerAttemptEventType.KILL, RUNNING_KILLED_TRANSITION)
+      .addTransition(WorkerAttemptState.LAUNCHED, WorkerAttemptState.LAUNCHED,
+        WorkerAttemptEventType.DIAGNOSTICS_UPDATE, DIAGNOSTIC_UPDATE_TRANSITION)
 
-          .addTransition(WorkerAttemptState.RUNNING, WorkerAttemptState.RUNNING,
-              WorkerAttemptEventType.REGISTER)
-          .addTransition(WorkerAttemptState.RUNNING, WorkerAttemptState.RUNNING,
-              WorkerAttemptEventType.UPDATE_STATE, new StateUpdateTransition())
-          .addTransition(WorkerAttemptState.RUNNING, WorkerAttemptState.FAILED,
-              EnumSet.of(WorkerAttemptEventType.ERROR, WorkerAttemptEventType.CONTAINER_COMPLETE),
-              RUNNING_FAILED_TRANSITION)
-          .addTransition(WorkerAttemptState.RUNNING, WorkerAttemptState.KILLED,
-              WorkerAttemptEventType.KILL, RUNNING_KILLED_TRANSITION)
-          .addTransition(WorkerAttemptState.RUNNING, WorkerAttemptState.SUCCESS,
-              WorkerAttemptEventType.DONE, DONE_TRANSITION)
-          .addTransition(WorkerAttemptState.RUNNING, WorkerAttemptState.RUNNING,
-              WorkerAttemptEventType.DIAGNOSTICS_UPDATE, DIAGNOSTIC_UPDATE_TRANSITION)
+      .addTransition(WorkerAttemptState.RUNNING, WorkerAttemptState.RUNNING,
+        WorkerAttemptEventType.REGISTER)
+      .addTransition(WorkerAttemptState.RUNNING, WorkerAttemptState.RUNNING,
+        WorkerAttemptEventType.UPDATE_STATE, new StateUpdateTransition())
+      .addTransition(WorkerAttemptState.RUNNING, WorkerAttemptState.FAILED,
+        EnumSet.of(WorkerAttemptEventType.ERROR, WorkerAttemptEventType.CONTAINER_COMPLETE),
+        RUNNING_FAILED_TRANSITION)
+      .addTransition(WorkerAttemptState.RUNNING, WorkerAttemptState.KILLED,
+        WorkerAttemptEventType.KILL, RUNNING_KILLED_TRANSITION)
+      .addTransition(WorkerAttemptState.RUNNING, WorkerAttemptState.SUCCESS,
+        WorkerAttemptEventType.DONE, DONE_TRANSITION)
+      .addTransition(WorkerAttemptState.RUNNING, WorkerAttemptState.RUNNING,
+        WorkerAttemptEventType.DIAGNOSTICS_UPDATE, DIAGNOSTIC_UPDATE_TRANSITION)
 
-          .addTransition(
-              WorkerAttemptState.KILLED,
-              WorkerAttemptState.KILLED,
-              EnumSet.of(WorkerAttemptEventType.KILL, WorkerAttemptEventType.REGISTER,
-                  WorkerAttemptEventType.UNREGISTER, WorkerAttemptEventType.CONTAINER_ASSIGN,
-                  WorkerAttemptEventType.UPDATE_STATE, WorkerAttemptEventType.DONE,
-                  WorkerAttemptEventType.COMMIT_FAILED, WorkerAttemptEventType.ERROR,
-                  WorkerAttemptEventType.CONTAINER_COMPLETE))
-          .addTransition(WorkerAttemptState.KILLED, WorkerAttemptState.KILLED,
-              WorkerAttemptEventType.DIAGNOSTICS_UPDATE, DIAGNOSTIC_UPDATE_TRANSITION)
+      .addTransition(WorkerAttemptState.KILLED, WorkerAttemptState.KILLED, EnumSet
+        .of(WorkerAttemptEventType.KILL, WorkerAttemptEventType.REGISTER,
+          WorkerAttemptEventType.UNREGISTER, WorkerAttemptEventType.CONTAINER_ASSIGN,
+          WorkerAttemptEventType.UPDATE_STATE, WorkerAttemptEventType.DONE,
+          WorkerAttemptEventType.COMMIT_FAILED, WorkerAttemptEventType.ERROR,
+          WorkerAttemptEventType.CONTAINER_COMPLETE))
+      .addTransition(WorkerAttemptState.KILLED, WorkerAttemptState.KILLED,
+        WorkerAttemptEventType.DIAGNOSTICS_UPDATE, DIAGNOSTIC_UPDATE_TRANSITION)
 
-          .addTransition(
-              WorkerAttemptState.FAILED,
-              WorkerAttemptState.FAILED,
-              EnumSet.of(WorkerAttemptEventType.KILL, WorkerAttemptEventType.REGISTER,
-                  WorkerAttemptEventType.SCHEDULE, WorkerAttemptEventType.UNREGISTER,
-                  WorkerAttemptEventType.CONTAINER_ASSIGN, WorkerAttemptEventType.DONE,
-                  WorkerAttemptEventType.UPDATE_STATE, WorkerAttemptEventType.COMMIT_FAILED,
-                  WorkerAttemptEventType.ERROR, WorkerAttemptEventType.CONTAINER_COMPLETE))
-          .addTransition(WorkerAttemptState.FAILED, WorkerAttemptState.FAILED,
-              WorkerAttemptEventType.DIAGNOSTICS_UPDATE, DIAGNOSTIC_UPDATE_TRANSITION)
+      .addTransition(WorkerAttemptState.FAILED, WorkerAttemptState.FAILED, EnumSet
+        .of(WorkerAttemptEventType.KILL, WorkerAttemptEventType.REGISTER,
+          WorkerAttemptEventType.SCHEDULE, WorkerAttemptEventType.UNREGISTER,
+          WorkerAttemptEventType.CONTAINER_ASSIGN, WorkerAttemptEventType.DONE,
+          WorkerAttemptEventType.UPDATE_STATE, WorkerAttemptEventType.COMMIT_FAILED,
+          WorkerAttemptEventType.ERROR, WorkerAttemptEventType.CONTAINER_COMPLETE))
+      .addTransition(WorkerAttemptState.FAILED, WorkerAttemptState.FAILED,
+        WorkerAttemptEventType.DIAGNOSTICS_UPDATE, DIAGNOSTIC_UPDATE_TRANSITION)
 
-          .addTransition(
-              WorkerAttemptState.SUCCESS,
-              WorkerAttemptState.SUCCESS,
-              EnumSet.of(WorkerAttemptEventType.KILL, WorkerAttemptEventType.REGISTER,
-                  WorkerAttemptEventType.SCHEDULE, WorkerAttemptEventType.UNREGISTER,
-                  WorkerAttemptEventType.CONTAINER_ASSIGN, WorkerAttemptEventType.UPDATE_STATE,
-                  WorkerAttemptEventType.DONE, WorkerAttemptEventType.COMMIT_FAILED,
-                  WorkerAttemptEventType.ERROR, WorkerAttemptEventType.CONTAINER_COMPLETE))
-          .addTransition(WorkerAttemptState.SUCCESS, WorkerAttemptState.SUCCESS,
-              WorkerAttemptEventType.DIAGNOSTICS_UPDATE, DIAGNOSTIC_UPDATE_TRANSITION);
+      .addTransition(WorkerAttemptState.SUCCESS, WorkerAttemptState.SUCCESS, EnumSet
+        .of(WorkerAttemptEventType.KILL, WorkerAttemptEventType.REGISTER,
+          WorkerAttemptEventType.SCHEDULE, WorkerAttemptEventType.UNREGISTER,
+          WorkerAttemptEventType.CONTAINER_ASSIGN, WorkerAttemptEventType.UPDATE_STATE,
+          WorkerAttemptEventType.DONE, WorkerAttemptEventType.COMMIT_FAILED,
+          WorkerAttemptEventType.ERROR, WorkerAttemptEventType.CONTAINER_COMPLETE))
+      .addTransition(WorkerAttemptState.SUCCESS, WorkerAttemptState.SUCCESS,
+        WorkerAttemptEventType.DIAGNOSTICS_UPDATE, DIAGNOSTIC_UPDATE_TRANSITION);
 
-  private static class DiagnosticUpdaterTransition implements
-      SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
-    @Override
-    public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
+
+  private static class DiagnosticUpdaterTransition
+    implements SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
+    @Override public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
       WorkerAttemptDiagnosticsUpdateEvent diagEvent = (WorkerAttemptDiagnosticsUpdateEvent) event;
       LOG.info("Diagnostics report from " + attempt.getId() + ": " + diagEvent.getDiagnostics());
       attempt.diagnostics.add(diagEvent.getDiagnostics());
     }
   }
 
-  private static class RequestContainerTransition implements
-      SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
-    @SuppressWarnings("unchecked")
-    @Override
+
+  private static class RequestContainerTransition
+    implements SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
+    @SuppressWarnings("unchecked") @Override
     public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
       // get data splits location for data locality
       AMWorkerGroup workerGroup =
-          attempt.context.getWorkerManager().getWorkerGroup(attempt.getId().getWorkerId());
+        attempt.context.getWorkerManager().getWorkerGroup(attempt.getId().getWorkerId());
       String[] hosts =
-          attempt.context.getDataSpliter().getSplitLocations(workerGroup.getSplitIndex());
+        attempt.context.getDataSpliter().getSplitLocations(workerGroup.getSplitIndex());
 
-      LOG.info("allocate worker attempt resource, worker attempt id = " + attempt.getId()
-          + ", resource = " + attempt.getContext().getWorkerManager().getWorkerResource()
-          + ", priority = " + attempt.getContext().getWorkerManager().getWorkerPriority()
-          + ", hosts = " + StringUtils.arrayToString(hosts));
+      LOG.info(
+        "allocate worker attempt resource, worker attempt id = " + attempt.getId() + ", resource = "
+          + attempt.getContext().getWorkerManager().getWorkerResource() + ", priority = " + attempt
+          .getContext().getWorkerManager().getWorkerPriority() + ", hosts = " + StringUtils
+          .arrayToString(hosts));
 
       // reqeuest resource:send a resource request to the resource allocator
       AngelDeployMode deployMode = attempt.getContext().getDeployMode();
       ContainerAllocatorEvent allocatorEvent = null;
 
       if (deployMode == AngelDeployMode.LOCAL) {
-        allocatorEvent =
-            new LocalContainerAllocatorEvent(ContainerAllocatorEventType.CONTAINER_REQ,
-                attempt.getId());
+        allocatorEvent = new LocalContainerAllocatorEvent(ContainerAllocatorEventType.CONTAINER_REQ,
+          attempt.getId());
 
       } else {
-        allocatorEvent =
-            new YarnContainerRequestEvent(attempt.getId(), attempt.getContext().getWorkerManager()
-                .getWorkerResource(), attempt.getContext().getWorkerManager().getWorkerPriority(),
-                hosts);
+        allocatorEvent = new YarnContainerRequestEvent(attempt.getId(),
+          attempt.getContext().getWorkerManager().getWorkerResource(),
+          attempt.getContext().getWorkerManager().getWorkerPriority(), hosts);
       }
       attempt.getContext().getEventHandler().handle(allocatorEvent);
     }
   }
 
-  private static class AssignContainerTransition implements
-      SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
 
-    @SuppressWarnings("unchecked")
-    @Override
+  private static class AssignContainerTransition
+    implements SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
+
+    @SuppressWarnings("unchecked") @Override
     public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
       WorkerAttemptContainerAssignedEvent assignedEvent =
-          (WorkerAttemptContainerAssignedEvent) event;
+        (WorkerAttemptContainerAssignedEvent) event;
       WorkerAttemptId attemptId = attempt.getId();
       attempt.container = assignedEvent.getContainer();
 
@@ -303,48 +312,47 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
 
       if (deployMode == AngelDeployMode.LOCAL) {
         launchEvent =
-            new LocalContainerLauncherEvent(ContainerLauncherEventType.CONTAINER_REMOTE_LAUNCH,
-                attempt.getId());
+          new LocalContainerLauncherEvent(ContainerLauncherEventType.CONTAINER_REMOTE_LAUNCH,
+            attempt.getId());
       } else {
-        ContainerLaunchContext launchContext =
-            ContainerContextUtils.createContainerLaunchContext(attempt.getContext()
-                .getContainerAllocator().getApplicationACLs(), attempt.getContext().getConf(),
-                attemptId, 0, attempt.getContext().getApplicationId(), attempt.getContext()
-                    .getMasterService(), attempt.getContext().getCredentials());
+        ContainerLaunchContext launchContext = ContainerContextUtils.createContainerLaunchContext(
+          attempt.getContext().getContainerAllocator().getApplicationACLs(),
+          attempt.getContext().getConf(), attemptId, 0, attempt.getContext().getApplicationId(),
+          attempt.getContext().getMasterService(), attempt.getContext().getCredentials());
 
         launchEvent =
-            new ContainerRemoteLaunchEvent(attemptId, launchContext, assignedEvent.getContainer());
+          new ContainerRemoteLaunchEvent(attemptId, launchContext, assignedEvent.getContainer());
       }
 
       attempt.getContext().getEventHandler().handle(launchEvent);
     }
   }
 
-  private static class WorkerAttemptNewFailedTransition implements
-      SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
 
-    @Override
-    public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
+  private static class WorkerAttemptNewFailedTransition
+    implements SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
+
+    @Override public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
       // notify failed message to the worker
       attempt.notifyWorkerAttemptFailed();
     }
   }
 
-  private static class WorkerAttemptNewKilledTransition implements
-      SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
 
-    @Override
-    public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
+  private static class WorkerAttemptNewKilledTransition
+    implements SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
+
+    @Override public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
       // notify killed message to the worker
       attempt.notifyWorkerAttemptKilled();
     }
   }
 
-  private static class WorkerAttemptAssignedFailedTransition implements
-      SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
 
-    @Override
-    public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
+  private static class WorkerAttemptAssignedFailedTransition
+    implements SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
+
+    @Override public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
       // release the allocated container
       attempt.deallocContainer();
       // notify failed message to the worker
@@ -354,11 +362,11 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
     }
   }
 
-  private static class WorkerAttemptAssignedKilledTransition implements
-      SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
 
-    @Override
-    public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
+  private static class WorkerAttemptAssignedKilledTransition
+    implements SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
+
+    @Override public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
       // release the allocated container
       attempt.deallocContainer();
       // notify killed message to the worker
@@ -368,11 +376,11 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
     }
   }
 
-  private static class WorkerAttemptRunningFailedTransition implements
-      SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
 
-    @Override
-    public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
+  private static class WorkerAttemptRunningFailedTransition
+    implements SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
+
+    @Override public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
       // clean the container
       attempt.cleanContainer();
       // notify failed message to the worker
@@ -384,11 +392,11 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
     }
   }
 
-  private static class WorkerAttemptRunningKilledTransition implements
-      SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
 
-    @Override
-    public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
+  private static class WorkerAttemptRunningKilledTransition
+    implements SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
+
+    @Override public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
       // clean the container
       attempt.cleanContainer();
       // notify killed message to the worker
@@ -400,25 +408,25 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
     }
   }
 
-  private static class ContainerLaunchedTransition implements
-      SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
-    @Override
-    public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
+
+  private static class ContainerLaunchedTransition
+    implements SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
+    @Override public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
       LOG.info("add " + attempt.getId() + " to monitor!");
       // if the worker attempt launch successfully, add it to heartbeat timeout listening list
       attempt.getContext().getWorkerManager().register(attempt.getId());
     }
   }
 
-  private static class RegisterTransition implements
-      SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
-    @Override
-    public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
+
+  private static class RegisterTransition
+    implements SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
+    @Override public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
       WorkerAttemptRegisterEvent rEvent = (WorkerAttemptRegisterEvent) event;
       // set worker attempt location
       attempt.location = rEvent.getLocation();
-      LOG.info("worker attempt: " + attempt.getId() + " is registering, location = "
-          + rEvent.getLocation());
+      LOG.info("worker attempt: " + attempt.getId() + " is registering, location = " + rEvent
+        .getLocation());
       // notify the register message to the worker
       attempt.notifyWorkerAttemptRegisted();
       // record the launch time
@@ -426,11 +434,11 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
     }
   }
 
-  private static class StateUpdateTransition implements
-      SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
 
-    @Override
-    public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
+  private static class StateUpdateTransition
+    implements SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
+
+    @Override public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
       WorkerAttemptStateUpdateEvent updateEvent = (WorkerAttemptStateUpdateEvent) event;
       WorkerReportRequest report = updateEvent.getReport();
 
@@ -444,18 +452,17 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
       int size = taskReports.size();
       for (int i = 0; i < size; i++) {
         TaskStateProto taskState = taskReports.get(i);
-        AMTask task =
-            attempt.getContext().getTaskManager()
-                .getTask(ProtobufUtil.convertToId(taskState.getTaskId()));
+        AMTask task = attempt.getContext().getTaskManager()
+          .getTask(ProtobufUtil.convertToId(taskState.getTaskId()));
         task.updateTaskState(taskState);
       }
     }
   }
 
-  private static class WorkerAttemptDoneTransition implements
-      SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
-    @Override
-    public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
+
+  private static class WorkerAttemptDoneTransition
+    implements SingleArcTransition<WorkerAttempt, WorkerAttemptEvent> {
+    @Override public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
       // clean the container
       attempt.cleanContainer();
       // notify the worker attempt run successfully message to the worker
@@ -465,62 +472,55 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
     }
   }
 
-  @SuppressWarnings("unchecked")
-  private void cleanContainer() {
+  @SuppressWarnings("unchecked") private void cleanContainer() {
     AngelDeployMode deployMode = context.getDeployMode();
     ContainerLauncherEvent launchEvent = null;
 
     if (deployMode == AngelDeployMode.LOCAL) {
       launchEvent =
-          new LocalContainerLauncherEvent(ContainerLauncherEventType.CONTAINER_REMOTE_CLEANUP, id);
+        new LocalContainerLauncherEvent(ContainerLauncherEventType.CONTAINER_REMOTE_CLEANUP, id);
     } else {
-      launchEvent =
-          new YarnContainerLauncherEvent(id, container.getId(), StringInterner.weakIntern(container
-              .getNodeId().toString()), container.getContainerToken(),
-              ContainerLauncherEventType.CONTAINER_REMOTE_CLEANUP);
+      launchEvent = new YarnContainerLauncherEvent(id, container.getId(),
+        StringInterner.weakIntern(container.getNodeId().toString()), container.getContainerToken(),
+        ContainerLauncherEventType.CONTAINER_REMOTE_CLEANUP);
     }
     context.getEventHandler().handle(launchEvent);
   }
 
-  @SuppressWarnings("unchecked")
-  private void deallocContainer() {
+  @SuppressWarnings("unchecked") private void deallocContainer() {
     LOG.info("release container:" + container);
     AngelDeployMode deployMode = context.getDeployMode();
     ContainerAllocatorEvent allocatorEvent = null;
 
     if (deployMode == AngelDeployMode.LOCAL) {
       allocatorEvent =
-          new LocalContainerAllocatorEvent(ContainerAllocatorEventType.CONTAINER_DEALLOCATE, id);
+        new LocalContainerAllocatorEvent(ContainerAllocatorEventType.CONTAINER_DEALLOCATE, id);
     } else {
       allocatorEvent =
-          new YarnContainerAllocatorEvent(id, ContainerAllocatorEventType.CONTAINER_DEALLOCATE,
-              context.getWorkerManager().getWorkerPriority());
+        new YarnContainerAllocatorEvent(id, ContainerAllocatorEventType.CONTAINER_DEALLOCATE,
+          context.getWorkerManager().getWorkerPriority());
     }
     context.getEventHandler().handle(allocatorEvent);
   }
 
-  @SuppressWarnings("unchecked")
-  private void notifyWorkerAttemptFailed() {
-    context.getEventHandler().handle(
-        new WorkerFromAttemptEvent(AMWorkerEventType.WORKER_ATTEMPT_FAILED, id));
+  @SuppressWarnings("unchecked") private void notifyWorkerAttemptFailed() {
+    context.getEventHandler()
+      .handle(new WorkerFromAttemptEvent(AMWorkerEventType.WORKER_ATTEMPT_FAILED, id));
   }
 
-  @SuppressWarnings("unchecked")
-  private void notifyWorkerAttemptKilled() {
-    context.getEventHandler().handle(
-        new WorkerFromAttemptEvent(AMWorkerEventType.WORKER_ATTEMPT_KILLED, id));
+  @SuppressWarnings("unchecked") private void notifyWorkerAttemptKilled() {
+    context.getEventHandler()
+      .handle(new WorkerFromAttemptEvent(AMWorkerEventType.WORKER_ATTEMPT_KILLED, id));
   }
 
-  @SuppressWarnings("unchecked")
-  private void notifyWorkerAttemptRegisted() {
-    context.getEventHandler().handle(
-        new WorkerFromAttemptEvent(AMWorkerEventType.WORKER_ATTEMPT_REGISTED, id));
+  @SuppressWarnings("unchecked") private void notifyWorkerAttemptRegisted() {
+    context.getEventHandler()
+      .handle(new WorkerFromAttemptEvent(AMWorkerEventType.WORKER_ATTEMPT_REGISTED, id));
   }
 
-  @SuppressWarnings("unchecked")
-  private void notifyWorkerAttemptDone() {
-    context.getEventHandler().handle(
-        new WorkerFromAttemptEvent(AMWorkerEventType.WORKER_ATTEMPT_SUCCESS, id));
+  @SuppressWarnings("unchecked") private void notifyWorkerAttemptDone() {
+    context.getEventHandler()
+      .handle(new WorkerFromAttemptEvent(AMWorkerEventType.WORKER_ATTEMPT_SUCCESS, id));
   }
 
   private void setFinishTime() {
@@ -533,8 +533,7 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
     launchTime = context.getClock().getTime();
   }
 
-  @Override
-  public void handle(WorkerAttemptEvent event) {
+  @Override public void handle(WorkerAttemptEvent event) {
     LOG.debug("Processing " + event.getWorkerAttemptId() + " of type " + event.getType());
 
     writeLock.lock();
@@ -547,7 +546,7 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
       }
       if (oldState != getState()) {
         LOG.info(event.getWorkerAttemptId() + " psserver Transitioned from " + oldState + " to "
-            + getState());
+          + getState());
       }
     } finally {
       writeLock.unlock();
@@ -556,7 +555,7 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
 
   /**
    * get worker attempt metrics
-   * 
+   *
    * @return Map<String, String> worker attempt metrics
    */
   public Map<String, String> getMetrics() {
@@ -572,7 +571,7 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
 
   /**
    * get the container allocated for this worker attempt
-   * 
+   *
    * @return Container the container allocated for this worker attempt
    */
   public Container getContainer() {
@@ -586,7 +585,7 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
 
   /**
    * get the worker attempt id
-   * 
+   *
    * @return WorkerAttemptId the worker attempt id
    */
   public WorkerAttemptId getId() {
@@ -599,7 +598,7 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
 
   /**
    * get the worker attempt state
-   * 
+   *
    * @return WorkerAttemptState the worker attempt state
    */
   public WorkerAttemptState getState() {
@@ -613,7 +612,7 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
 
   /**
    * get the tasks running on this worker attempt
-   * 
+   *
    * @return Map<TaskId, AMTask> the tasks running on this worker attempt
    */
   public Map<TaskId, AMTask> getTaskMap() {
@@ -627,7 +626,7 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
 
   /**
    * get the worker attempt launch time
-   * 
+   *
    * @return long the worker attempt launch time
    */
   public long getLaunchTime() {
@@ -642,7 +641,7 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
 
   /**
    * get the worker attempt finish time
-   * 
+   *
    * @return long the worker attempt finish time
    */
   public long getFinishTime() {
@@ -656,7 +655,7 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
 
   /**
    * get the worker attempt location
-   * 
+   *
    * @return Location the worker attempt location
    */
   public Location getLocation() {
@@ -670,7 +669,7 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
 
   /**
    * get the worker attempt diagnostics
-   * 
+   *
    * @return List<String> the worker attempt diagnostics
    */
   public List<String> getDiagnostics() {
@@ -686,14 +685,15 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
 
   /**
    * check if the worker attempt run over
-   * 
+   *
    * @return boolean
    */
   public boolean isFinished() {
     try {
       readLock.lock();
       WorkerAttemptState state = stateMachine.getCurrentState();
-      return (state == WorkerAttemptState.SUCCESS || state == WorkerAttemptState.FAILED || state == WorkerAttemptState.KILLED);
+      return (state == WorkerAttemptState.SUCCESS || state == WorkerAttemptState.FAILED
+        || state == WorkerAttemptState.KILLED);
     } finally {
       readLock.unlock();
     }
@@ -701,7 +701,7 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
 
   /**
    * get the web address of the node the attempt is running on
-   * 
+   *
    * @return String the web address of the node the attempt is running on
    */
   public String getNodeHttpAddr() {
@@ -719,7 +719,7 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
 
   /**
    * get the container id string
-   * 
+   *
    * @return String the container id string
    */
   public String getContainerIdStr() {
@@ -741,7 +741,7 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
 
   /**
    * get the minimal iteration values in all the tasks contained in this worker attempt
-   * 
+   *
    * @return int the minimal iteration values in all the tasks contained in this worker attempt
    */
   public int getMinIteration() {
@@ -759,14 +759,15 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
 
   /**
    * Get worker attempt log url
+   *
    * @return worker log url
    */
   public String getLogUrl() {
-    if(location == null || container == null) {
+    if (location == null || container == null) {
       return "";
     } else {
-      return "http://" + location.getIp() + ":" + context.getYarnNMWebPort() + "/node/containerlogs/"
-        + container.getId() + "/angel/syslog/?start=0";
+      return "http://" + location.getIp() + ":" + context.getYarnNMWebPort()
+        + "/node/containerlogs/" + container.getId() + "/angel/syslog/?start=0";
     }
   }
 }

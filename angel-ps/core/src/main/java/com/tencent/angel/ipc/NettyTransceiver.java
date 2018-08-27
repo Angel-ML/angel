@@ -1,24 +1,21 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
  */
 
-/**
- * Modify close method to fix Angel client exit problem.
- */
+
 package com.tencent.angel.ipc;
 
 import com.google.protobuf.Message;
@@ -62,7 +59,7 @@ public class NettyTransceiver extends Transceiver {
 
   private final AtomicInteger serialGenerator = new AtomicInteger(0);
   private final Map<Integer, Callback<List<ByteBuffer>>> requests =
-          new ConcurrentHashMap<Integer, Callback<List<ByteBuffer>>>();
+    new ConcurrentHashMap<Integer, Callback<List<ByteBuffer>>>();
 
   private final int connectTimeoutMillis;
   private final Bootstrap bootstrap;
@@ -76,40 +73,29 @@ public class NettyTransceiver extends Transceiver {
   private volatile int refCount = 1;
   private Configuration conf;
 
-  public NettyTransceiver(
-          Configuration conf,
-          InetSocketAddress addr,
-          EventLoopGroup workerGroup,
-          PooledByteBufAllocator pooledAllocator,
-          Class<? extends Channel> socketChannelClass,
-          int connectTimeoutMillis) throws IOException {
+  public NettyTransceiver(Configuration conf, InetSocketAddress addr, EventLoopGroup workerGroup,
+    PooledByteBufAllocator pooledAllocator, Class<? extends Channel> socketChannelClass,
+    int connectTimeoutMillis) throws IOException {
     this.conf = conf;
     this.connectTimeoutMillis = connectTimeoutMillis;
 
     bootstrap = new Bootstrap();
-    bootstrap
-            .group(workerGroup)
-            .channel(socketChannelClass)
-            // Disable Nagle's Algorithm since we don't want packets to wait
-            .option(ChannelOption.TCP_NODELAY, true)
-            .option(ChannelOption.SO_KEEPALIVE, true)
-            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeoutMillis)
-            .option(ChannelOption.ALLOCATOR, pooledAllocator);
+    bootstrap.group(workerGroup).channel(socketChannelClass)
+      // Disable Nagle's Algorithm since we don't want packets to wait
+      .option(ChannelOption.TCP_NODELAY, true).option(ChannelOption.SO_KEEPALIVE, true)
+      .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeoutMillis)
+      .option(ChannelOption.ALLOCATOR, pooledAllocator);
 
     // Configure the event pipeline factory.
     bootstrap.handler(new ChannelInitializer<SocketChannel>() {
-      @Override
-      protected void initChannel(SocketChannel ch) throws Exception {
-        ch.pipeline()
-                .addLast("encoder", NettyFrameEncoder.INSTANCE)
-                .addLast("frameDecoder", NettyUtils.createFrameDecoder())
-                .addLast("decoder", NettyFrameDecoder.INSTANCE)
-                .addLast(
-                        "readTimeout",
-                        new ReadTimeoutHandler(NettyTransceiver.this.conf.getInt(
-                                AngelConf.CONNECTION_READ_TIMEOUT_SEC,
-                                AngelConf.DEFAULT_CONNECTION_READ_TIMEOUT_SEC)))
-                .addLast("handler", new MLClientMLHandler());
+      @Override protected void initChannel(SocketChannel ch) throws Exception {
+        ch.pipeline().addLast("encoder", NettyFrameEncoder.INSTANCE)
+          .addLast("frameDecoder", NettyUtils.createFrameDecoder())
+          .addLast("decoder", NettyFrameDecoder.INSTANCE).addLast("readTimeout",
+          new ReadTimeoutHandler(NettyTransceiver.this.conf
+            .getInt(AngelConf.CONNECTION_READ_TIMEOUT_SEC,
+              AngelConf.DEFAULT_CONNECTION_READ_TIMEOUT_SEC)))
+          .addLast("handler", new MLClientMLHandler());
       }
     });
     remoteAddr = addr;
@@ -176,17 +162,14 @@ public class NettyTransceiver extends Transceiver {
   /**
    * Closes the connection to the remote peer if connected.
    *
-   * @param awaitCompletion if true, will block until the close has completed.
+   * @param awaitCompletion       if true, will block until the close has completed.
    * @param cancelPendingRequests if true, will drain the requests map and send an IOException to
-   *        all Callbacks.
-   * @param cause if non-null and cancelPendingRequests is true, this Throwable will be passed to
-   *        all Callbacks.
+   *                              all Callbacks.
+   * @param cause                 if non-null and cancelPendingRequests is true, this Throwable will be passed to
+   *                              all Callbacks.
    */
-  private synchronized void disconnect(
-          Channel channel,
-          boolean awaitCompletion,
-          boolean cancelPendingRequests,
-          Throwable cause) {
+  private synchronized void disconnect(Channel channel, boolean awaitCompletion,
+    boolean cancelPendingRequests, Throwable cause) {
     if (LOG.isDebugEnabled()) {
       LOG.debug("disconnecting channel: " + channel);
     }
@@ -206,7 +189,7 @@ public class NettyTransceiver extends Transceiver {
     if (channel != null) {
       if (cause != null) {
         LOG.debug("Disconnect {} due to {}", channel,
-                cause.getClass().getName() + cause.getMessage());
+          cause.getClass().getName() + cause.getMessage());
       } else {
         if (LOG.isDebugEnabled()) {
           LOG.debug("Disconnect {}", this.channel);
@@ -229,8 +212,8 @@ public class NettyTransceiver extends Transceiver {
         LOG.debug("Removing " + requestsToCancel.size() + " pending request(s).");
       }
       for (Callback<List<ByteBuffer>> request : requestsToCancel.values()) {
-        request.handleError(cause != null ? cause : new IOException(getClass().getSimpleName()
-                + " closed"));
+        request.handleError(
+          cause != null ? cause : new IOException(getClass().getSimpleName() + " closed"));
       }
     }
 
@@ -246,16 +229,14 @@ public class NettyTransceiver extends Transceiver {
   /**
    * Netty channels are thread-safe, so there is no need to acquire locks. This method is a no-op.
    */
-  @Override
-  public void lockChannel() {
+  @Override public void lockChannel() {
 
   }
 
   /**
    * Netty channels are thread-safe, so there is no need to acquire locks. This method is a no-op.
    */
-  @Override
-  public void unlockChannel() {
+  @Override public void unlockChannel() {
 
   }
 
@@ -279,8 +260,7 @@ public class NettyTransceiver extends Transceiver {
     }
   }
 
-  @Override
-  public String getRemoteName() throws IOException {
+  @Override public String getRemoteName() throws IOException {
     return NettyUtils.getRemoteAddress(getChannel());
   }
 
@@ -291,7 +271,7 @@ public class NettyTransceiver extends Transceiver {
    * remote code threw an exception.
    */
   public Message call(RpcRequestBody requestBody, Class<? extends VersionedProtocol> protocol,
-                      int rpcTimeout, Callback<Message> callback) throws Exception {
+    int rpcTimeout, Callback<Message> callback) throws Exception {
     ConnectionHeader.Builder builder = ConnectionHeader.newBuilder();
     builder.setProtocol(protocol == null ? "" : protocol.getName());
     ConnectionHeader connectionHeader = builder.build();
@@ -309,16 +289,18 @@ public class NettyTransceiver extends Transceiver {
       LOG.debug("send message, " + requestBody.getMethodName() + " , channel: " + channel);
     }
 
-    transceive(bbo.getBufferList(), new TransceiverCallback<Message>(requestBody, protocol, future));
+    transceive(bbo.getBufferList(),
+      new TransceiverCallback<Message>(requestBody, protocol, future));
 
     if (callback == null) {
       try {
-        return future.get(conf.getLong(AngelConf.ANGEL_READ_TIMEOUT_SEC,
-                AngelConf.DEFAULT_ANGEL_READ_TIMEOUT_SEC), TimeUnit.SECONDS);
+        return future.get(
+          conf.getLong(AngelConf.ANGEL_READ_TIMEOUT_SEC, AngelConf.DEFAULT_ANGEL_READ_TIMEOUT_SEC),
+          TimeUnit.SECONDS);
       } catch (java.util.concurrent.TimeoutException e) {
         if (LOG.isDebugEnabled()) {
-          LOG.debug("timeout for: send message, " + requestBody.getMethodName() + " , channel: "
-                  + channel);
+          LOG.debug(
+            "timeout for: send message, " + requestBody.getMethodName() + " , channel: " + channel);
         }
         disconnect(this.channel, true, true, e);
         throw e;
@@ -330,8 +312,7 @@ public class NettyTransceiver extends Transceiver {
   /**
    * Override as non-synchronized method because the method is thread safe.
    */
-  @Override
-  public List<ByteBuffer> transceive(List<ByteBuffer> request) throws IOException {
+  @Override public List<ByteBuffer> transceive(List<ByteBuffer> request) throws IOException {
     try {
       CallFuture<List<ByteBuffer>> transceiverFuture = new CallFuture<List<ByteBuffer>>();
       transceive(request, transceiverFuture);
@@ -345,8 +326,7 @@ public class NettyTransceiver extends Transceiver {
     }
   }
 
-  @Override
-  public void transceive(List<ByteBuffer> request, Callback<List<ByteBuffer>> callback) {
+  @Override public void transceive(List<ByteBuffer> request, Callback<List<ByteBuffer>> callback) {
     int serial = serialGenerator.incrementAndGet();
     try {
       NettyDataPack dataPack = new NettyDataPack(serial, request);
@@ -365,14 +345,12 @@ public class NettyTransceiver extends Transceiver {
     }
   }
 
-  @Override
-  public void writeBuffers(List<ByteBuffer> buffers) throws IOException {
+  @Override public void writeBuffers(List<ByteBuffer> buffers) throws IOException {
     NettyDataPack dataPack = new NettyDataPack(serialGenerator.incrementAndGet(), buffers);
     NettyDataPack.writeDataPack(getChannel(), dataPack);
   }
 
-  @Override
-  public List<ByteBuffer> readBuffers() throws IOException {
+  @Override public List<ByteBuffer> readBuffers() throws IOException {
     throw new UnsupportedOperationException();
   }
 
@@ -387,14 +365,13 @@ public class NettyTransceiver extends Transceiver {
      * @param callback the callback to set.
      */
     public TransceiverCallback(RpcRequestBody requestBody,
-                               Class<? extends VersionedProtocol> protocol, Callback<T> callback) {
+      Class<? extends VersionedProtocol> protocol, Callback<T> callback) {
       this.requestBody = requestBody;
       this.protocol = protocol;
       this.callback = callback;
     }
 
-    @Override
-    @SuppressWarnings("unchecked")
+    @Override @SuppressWarnings("unchecked")
     public void handleResult(List<ByteBuffer> responseBytes) {
       ByteBufferInputStream in = new ByteBufferInputStream(responseBytes);
       try {
@@ -415,9 +392,8 @@ public class NettyTransceiver extends Transceiver {
         if (status == Status.SUCCESS) {
           Message rpcResponseType;
           try {
-            rpcResponseType =
-                    ProtobufRpcEngine.Invoker.getReturnProtoType(ProtobufRpcEngine.Server.getMethod(
-                            protocol, requestBody.getMethodName()));
+            rpcResponseType = ProtobufRpcEngine.Invoker.getReturnProtoType(
+              ProtobufRpcEngine.Server.getMethod(protocol, requestBody.getMethodName()));
           } catch (Exception e) {
             throw new RuntimeException(e); // local exception
           }
@@ -452,19 +428,18 @@ public class NettyTransceiver extends Transceiver {
       }
     }
 
-    @Override
-    public void handleError(Throwable error) {
+    @Override public void handleError(Throwable error) {
       callback.handleError(error);
     }
   }
+
 
   /**
    * ML client handler for the Netty transport
    */
   class MLClientMLHandler extends ChannelInboundHandlerAdapter {
 
-    @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+    @Override public void channelInactive(ChannelHandlerContext ctx) throws Exception {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Remote peer " + remoteAddr + " closed channel: " + ctx.channel());
       }
@@ -472,16 +447,15 @@ public class NettyTransceiver extends Transceiver {
       super.channelInactive(ctx);
     }
 
-    @Override
-    public void channelRead(ChannelHandlerContext ctx, Object request) throws Exception {
+    @Override public void channelRead(ChannelHandlerContext ctx, Object request) throws Exception {
       if (!(request instanceof NettyDataPack)) {
         ctx.fireChannelRead(request);
         return;
       }
       NettyDataPack dataPack = (NettyDataPack) request;
       if (LOG.isDebugEnabled()) {
-        LOG.debug("messageReceived, serail: " + dataPack.getSerial() + ", channel: "
-                + ctx.channel());
+        LOG.debug(
+          "messageReceived, serail: " + dataPack.getSerial() + ", channel: " + ctx.channel());
       }
 
       // LOG.info("method " + dataPack.getSerial() + " received ts = " +
@@ -489,8 +463,9 @@ public class NettyTransceiver extends Transceiver {
 
       Callback<List<ByteBuffer>> callback = requests.get(dataPack.getSerial());
       if (callback == null) {
-        LOG.error("Missing previous call info, serail: " + dataPack.getSerial() + ", channel: "
-                + ctx.channel());
+        LOG.error(
+          "Missing previous call info, serail: " + dataPack.getSerial() + ", channel: " + ctx
+            .channel());
         throw new RuntimeException("Missing previous call info");
       }
       try {
@@ -500,8 +475,8 @@ public class NettyTransceiver extends Transceiver {
       }
     }
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    @Override public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+      throws Exception {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Netty Transceiver error." + "channel: " + ctx.channel(), cause);
       }
@@ -539,13 +514,11 @@ public class NettyTransceiver extends Transceiver {
     return remoteAddr;
   }
 
-  @Override
-  public Configuration getConf() {
+  @Override public Configuration getConf() {
     return this.conf;
   }
 
-  @Override
-  public void setConf(Configuration conf) {
+  @Override public void setConf(Configuration conf) {
     this.conf = conf;
   }
 }

@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.spark
 
 import org.apache.spark.sql.SparkSession
@@ -24,9 +25,9 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
 import com.tencent.angel.spark.context.PSContext
 
 /**
- * Shares a local `SparkSession and PSClient`
- * between all tests in a suite and closes it at the end
- */
+  * Shares a local `SparkSession and PSClient`
+  * between all tests in a suite and closes it at the end
+  */
 trait SharedPSContext extends BeforeAndAfterAll with BeforeAndAfterEach {
   self: Suite =>
 
@@ -67,7 +68,7 @@ trait SharedPSContext extends BeforeAndAfterAll with BeforeAndAfterEach {
 
   override def afterAll() {
     try {
-      PSContext.stop()
+      PSContext.stop() //Todo： aa
       _spark.stop()
       _spark = null
     } finally {

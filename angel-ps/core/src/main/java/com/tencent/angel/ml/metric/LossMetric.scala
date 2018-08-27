@@ -15,10 +15,11 @@
  *
  */
 
+
 package com.tencent.angel.ml.metric
 
 
-class LossMetric(var sampleNum:Int) extends Metric {
+class LossMetric(var sampleNum: Int) extends Metric {
   var loss: Double = 0.0
 
   override def merge(other: this.type): this.type = {
@@ -37,8 +38,8 @@ class LossMetric(var sampleNum:Int) extends Metric {
 
 }
 
-object LossMetric{
-  def apply(sampleNum:Int):Metric = {
+object LossMetric {
+  def apply(sampleNum: Int): Metric = {
     new LossMetric(sampleNum)
   }
 }

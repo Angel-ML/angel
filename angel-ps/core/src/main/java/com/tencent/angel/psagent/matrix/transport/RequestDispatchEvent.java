@@ -15,21 +15,24 @@
  *
  */
 
+
 package com.tencent.angel.psagent.matrix.transport;
 
-import com.tencent.angel.ml.matrix.transport.Request;
+import com.tencent.angel.ps.server.data.request.Request;
 
 /**
  * PS RPC request dispatch event.
  */
 public class RequestDispatchEvent extends DispatcherEvent {
-  /**PS RPC request*/
+  /**
+   * PS RPC request
+   */
   private final Request request;
 
   /**
    * Create a new RequestDispatchEvent.
    *
-   * @param type event type
+   * @param type    event type
    * @param request rpc request
    */
   public RequestDispatchEvent(EventType type, Request request) {
@@ -39,7 +42,7 @@ public class RequestDispatchEvent extends DispatcherEvent {
 
   /**
    * Get the request.
-   * 
+   *
    * @return Request the request
    */
   public Request getRequest() {

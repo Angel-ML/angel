@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.psagent;
 
 import com.tencent.angel.common.Id;
@@ -33,8 +34,7 @@ public class PSAgentId extends Id {
     return builder.append(SEPARATOR).append(index);
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return appendTo(new StringBuilder(PSAGENT)).toString();
   }
 }

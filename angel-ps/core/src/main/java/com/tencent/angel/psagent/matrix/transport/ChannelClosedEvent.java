@@ -15,14 +15,18 @@
  *
  */
 
+
 package com.tencent.angel.psagent.matrix.transport;
 
 import io.netty.channel.Channel;
+
 /**
  * Close channel event.
  */
 public class ChannelClosedEvent extends DispatcherEvent {
-  /**the channel need to be closed*/
+  /**
+   * the channel need to be closed
+   */
   private final Channel channel;
 
   /**
@@ -37,7 +41,7 @@ public class ChannelClosedEvent extends DispatcherEvent {
 
   /**
    * Get the channel need to be closed.
-   * 
+   *
    * @return Channel the channel need to be closed
    */
   public Channel getChannel() {

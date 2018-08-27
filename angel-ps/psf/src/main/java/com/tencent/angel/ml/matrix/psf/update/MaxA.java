@@ -15,45 +15,42 @@
  *
  */
 
+
 package com.tencent.angel.ml.matrix.psf.update;
 
+import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.psf.update.enhance.VAUpdateFunc;
-import com.tencent.angel.ps.impl.matrix.ServerDenseDoubleRow;
-import com.tencent.angel.ps.impl.matrix.ServerSparseDoubleLongKeyRow;
-import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
-
-import java.nio.DoubleBuffer;
-import java.util.Map;
+import com.tencent.angel.ps.storage.vector.ServerIntDoubleRow;
+import com.tencent.angel.ps.storage.vector.ServerLongDoubleRow;
 
 /**
  * `MaxA` is find the maximum value of each element in `rowId` row and `other`
  */
 public class MaxA extends VAUpdateFunc {
 
-  public MaxA(int matrixId, int rowId, double[] other) {
-    super(matrixId, rowId, other);
+  public MaxA(int matrixId, int rowId, Vector other) {
+    //todo: implements
+    super();
   }
 
   public MaxA() {
     super();
   }
 
-  @Override
-  protected void doUpdate(ServerDenseDoubleRow row, double[] other) {
-    row.tryToLockWrite();
+  @Override protected void doUpdate(ServerIntDoubleRow row, double[] other) {
+    row.startWrite();
     try {
-      DoubleBuffer data = row.getData();
+      double[] values = row.getValues();
       int size = row.size();
       for (int i = 0; i < size; i++) {
-        data.put(i, Math.max(data.get(i), other[i]));
+        values[i] = Math.max(values[i], other[i]);
       }
     } finally {
-      row.unlockWrite();
+      row.endWrite();
     }
   }
 
-  @Override
-  protected void doUpdate(ServerSparseDoubleLongKeyRow rows, double[] other) {
+  @Override protected void doUpdate(ServerLongDoubleRow rows, double[] other) {
     throw new RuntimeException("MaxA PSF can not support sparse type rows");
   }
 

@@ -4,7 +4,6 @@
 *.ipr
 *.iws
 *.swp
-*.pyc
 *~
 .DS_Store
 .cache
@@ -14,7 +13,6 @@
 .project
 .scala_dependencies
 .settings
-/lib/
 *.class
 angel-ps/core/target/
 angel-ps/psf/target/
@@ -22,7 +20,6 @@ angel-ps/examples/target/
 angel-ps/jarvis/target/
 angel-ps/tools/target/
 angel-ps/mllib/target/
-angel-ps/jarvis/target/
 angel-ps/tools/target/
 angel-ps/serving/target/
 angel-ps/target/
@@ -40,5 +37,6 @@ spark-on-angel/core/log/
 spark-on-angel/examples/log/
 spark-on-angel/mllib/log/
 spark-on-angel/log/
-
+angel-ps/core/velocity.*
+angel-ps/core/src/main/java/com/tencent/angel/ml/math2/velocity
 

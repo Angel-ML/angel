@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.model.output.format;
 
 import java.io.DataInputStream;
@@ -47,6 +48,7 @@ public class PSModelFilesMeta {
 
   /**
    * Create a empty ServerMatrixFilesMeta for a matrix
+   *
    * @param matrixId matrix id
    */
   public PSModelFilesMeta(int matrixId) {
@@ -55,7 +57,8 @@ public class PSModelFilesMeta {
 
   /**
    * Create a  ServerMatrixFilesMeta for a matrix
-   * @param matrixId matrix id
+   *
+   * @param matrixId  matrix id
    * @param partMetas partition meta
    */
   public PSModelFilesMeta(int matrixId, Map<Integer, ModelPartitionMeta> partMetas) {
@@ -65,6 +68,7 @@ public class PSModelFilesMeta {
 
   /**
    * Get all partitions meta
+   *
    * @return all partitions meta
    */
   public Map<Integer, ModelPartitionMeta> getPartMetas() {
@@ -73,8 +77,9 @@ public class PSModelFilesMeta {
 
   /**
    * Add partition meta
+   *
    * @param partId partition id
-   * @param meta partition meta
+   * @param meta   partition meta
    */
   public void addPartitionMeta(int partId, ModelPartitionMeta meta) {
     partMetas.put(partId, meta);
@@ -82,15 +87,17 @@ public class PSModelFilesMeta {
 
   /**
    * Get a partition meta
+   *
    * @param partId partition index
    * @return partition meta
    */
-  public ModelPartitionMeta getPartitionMeta(int partId){
+  public ModelPartitionMeta getPartitionMeta(int partId) {
     return partMetas.get(partId);
   }
 
   /**
    * Write server matrix meta to output stream
+   *
    * @param output output stream
    * @throws IOException
    */
@@ -98,13 +105,14 @@ public class PSModelFilesMeta {
     output.writeInt(matrixId);
     int size = partMetas.size();
     output.writeInt(size);
-    for(Map.Entry<Integer, ModelPartitionMeta> partEntry : partMetas.entrySet()) {
+    for (Map.Entry<Integer, ModelPartitionMeta> partEntry : partMetas.entrySet()) {
       partEntry.getValue().write(output);
     }
   }
 
   /**
    * Read server matrix meta from input stream
+   *
    * @param input input stream
    * @throws IOException
    */
@@ -112,7 +120,7 @@ public class PSModelFilesMeta {
     matrixId = input.readInt();
     int size = input.readInt();
     partMetas = new HashMap<>(size);
-    for(int i = 0; i < size; i++) {
+    for (int i = 0; i < size; i++) {
       ModelPartitionMeta partMeta = new ModelPartitionMeta();
       partMeta.read(input);
       partMetas.put(partMeta.getPartId(), partMeta);
@@ -124,7 +132,7 @@ public class PSModelFilesMeta {
   }
 
   private String partMetasString() {
-    if(partMetas == null || partMetas.isEmpty()) {
+    if (partMetas == null || partMetas.isEmpty()) {
       return "";
     }
 

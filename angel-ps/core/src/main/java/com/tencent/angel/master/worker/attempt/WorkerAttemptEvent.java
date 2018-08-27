@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.worker.attempt;
 
 import com.tencent.angel.worker.WorkerAttemptId;
@@ -23,13 +24,16 @@ import org.apache.hadoop.yarn.event.AbstractEvent;
 /**
  * Base class of worker attempt event.
  */
-public class WorkerAttemptEvent extends AbstractEvent<WorkerAttemptEventType>{
-  /**worker attempt id*/
+public class WorkerAttemptEvent extends AbstractEvent<WorkerAttemptEventType> {
+  /**
+   * worker attempt id
+   */
   private final WorkerAttemptId workerAttemptId;
 
   /**
    * Create a WorkerAttemptEvent
-   * @param type event type
+   *
+   * @param type            event type
    * @param workerAttemptId worker attempt id
    */
   public WorkerAttemptEvent(WorkerAttemptEventType type, WorkerAttemptId workerAttemptId) {
@@ -39,6 +43,7 @@ public class WorkerAttemptEvent extends AbstractEvent<WorkerAttemptEventType>{
 
   /**
    * Get worker attempt id
+   *
    * @return worker attempt id
    */
   public WorkerAttemptId getWorkerAttemptId() {

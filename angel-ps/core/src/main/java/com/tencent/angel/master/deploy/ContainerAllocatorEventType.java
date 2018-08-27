@@ -15,15 +15,20 @@
  *
  */
 
+
 package com.tencent.angel.master.deploy;
 
 /**
  * Container allocator event type.
  */
 public enum ContainerAllocatorEventType {
-  /** Need a container */
+  /**
+   * Need a container
+   */
   CONTAINER_REQ,
 
-  /** release a container */
+  /**
+   * release a container
+   */
   CONTAINER_DEALLOCATE,
 }

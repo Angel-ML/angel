@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.ml.matrix.psf.aggr.enhance;
 
 import com.tencent.angel.PartitionKey;
@@ -46,22 +47,19 @@ public class BinaryAggrParam extends GetParam {
       super();
     }
 
-    @Override
-    public void serialize(ByteBuf buf) {
+    @Override public void serialize(ByteBuf buf) {
       super.serialize(buf);
       buf.writeInt(rowId1);
       buf.writeInt(rowId2);
     }
 
-    @Override
-    public void deserialize(ByteBuf buf) {
+    @Override public void deserialize(ByteBuf buf) {
       super.deserialize(buf);
       rowId1 = buf.readInt();
       rowId2 = buf.readInt();
     }
 
-    @Override
-    public int bufferLen() {
+    @Override public int bufferLen() {
       return super.bufferLen() + 8;
     }
 
@@ -74,6 +72,7 @@ public class BinaryAggrParam extends GetParam {
     }
   }
 
+
   private final int rowId1;
   private final int rowId2;
 
@@ -83,10 +82,8 @@ public class BinaryAggrParam extends GetParam {
     this.rowId2 = rowId2;
   }
 
-  @Override
-  public List<PartitionGetParam> split() {
-    List<PartitionKey> parts =
-        PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
+  @Override public List<PartitionGetParam> split() {
+    List<PartitionKey> parts = PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
     int size = parts.size();
 
     List<PartitionGetParam> partParams = new ArrayList<PartitionGetParam>(size);

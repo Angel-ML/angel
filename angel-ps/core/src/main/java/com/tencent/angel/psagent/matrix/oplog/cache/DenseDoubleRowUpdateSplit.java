@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
 import com.tencent.angel.ml.matrix.RowType;
@@ -24,15 +25,16 @@ import io.netty.buffer.ByteBuf;
  * Row split of dense double row update.
  */
 public class DenseDoubleRowUpdateSplit extends RowUpdateSplit {
-
-  /** values of row */
+  /**
+   * values of row
+   */
   private final double[] values;
 
   /**
    * Create a new dense double row split update
    *
-   * @param start start position
-   * @param end end position
+   * @param start  start position
+   * @param end    end position
    * @param values values of row update
    */
   public DenseDoubleRowUpdateSplit(int rowIndex, int start, int end, double[] values) {
@@ -42,25 +44,22 @@ public class DenseDoubleRowUpdateSplit extends RowUpdateSplit {
 
   /**
    * Get values of row update
-   * 
+   *
    * @return double[] values of row update
    */
   public double[] getValues() {
     return values;
   }
 
-  @Override
-  public void serialize(ByteBuf buf) {
+  @Override public void serialize(ByteBuf buf) {
     super.serialize(buf);
-    buf.writeInt((int)(end - start));
-    LOG.debug("double size = " + (end - start));
-    for (int i = (int)start; i < end; i++) {
+    buf.writeInt(end - start);
+    for (int i = start; i < end; i++) {
       buf.writeDouble(values[i]);
     }
   }
 
-  @Override
-  public int bufferLen() {
-    return super.bufferLen() + (int)size() * 8;
+  @Override public int bufferLen() {
+    return 4 + super.bufferLen() + (end - start) * 8;
   }
 }

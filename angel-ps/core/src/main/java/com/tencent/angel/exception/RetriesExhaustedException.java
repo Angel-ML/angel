@@ -1,18 +1,20 @@
-/**
- * Copyright 2010 The Apache Software Foundation
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
  */
+
 
 package com.tencent.angel.exception;
 
@@ -49,37 +51,37 @@ public class RetriesExhaustedException extends IOException {
       this.extras = extras;
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return new Date(this.when).toString() + ", " + extras + ", " + t.toString();
     }
   }
 
   /**
    * Create a new RetriesExhaustedException from the list of prior failures.
-   * 
+   *
    * @param callableVitals Details from the {@link ServerCallable} we were using when we got this
-   *        exception.
-   * @param numTries The number of tries we made
-   * @param exceptions List of exceptions that failed before giving up
+   *                       exception.
+   * @param numTries       The number of tries we made
+   * @param exceptions     List of exceptions that failed before giving up
    */
   public RetriesExhaustedException(final String callableVitals, int numTries,
-      List<Throwable> exceptions) {
+    List<Throwable> exceptions) {
     super(getMessage(callableVitals, numTries, exceptions));
   }
 
   /**
    * Create a new RetriesExhaustedException from the list of prior failures.
-   * 
+   *
    * @param numTries
    * @param exceptions List of exceptions that failed before giving up
    */
   public RetriesExhaustedException(final int numTries,
-      final List<ThrowableWithExtraContext> exceptions) {
+    final List<ThrowableWithExtraContext> exceptions) {
     super(getMessage(numTries, exceptions));
   }
 
-  private static String getMessage(String callableVitals, int numTries, List<Throwable> exceptions) {
+  private static String getMessage(String callableVitals, int numTries,
+    List<Throwable> exceptions) {
     StringBuilder buffer = new StringBuilder("Failed contacting ");
     buffer.append(callableVitals);
     buffer.append(" after ");
@@ -93,7 +95,7 @@ public class RetriesExhaustedException extends IOException {
   }
 
   private static String getMessage(final int numTries,
-      final List<ThrowableWithExtraContext> exceptions) {
+    final List<ThrowableWithExtraContext> exceptions) {
     StringBuilder buffer = new StringBuilder("Failed after attempts=");
     buffer.append(numTries + 1);
     buffer.append(", exceptions:\n");

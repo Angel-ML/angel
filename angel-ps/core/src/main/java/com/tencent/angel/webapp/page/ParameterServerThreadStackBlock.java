@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.webapp.page;
 
 import com.google.inject.Inject;
@@ -37,14 +38,12 @@ public class ParameterServerThreadStackBlock extends HtmlBlock {
   final AMContext amContext;
   private static final Log LOG = LogFactory.getLog(ParameterServerThreadStackBlock.class);
 
-  @Inject
-  ParameterServerThreadStackBlock(AMContext amctx) {
+  @Inject ParameterServerThreadStackBlock(AMContext amctx) {
     amContext = amctx;
     amContext.getParameterServerManager();
   }
 
-  @Override
-  protected void render(Block html) {
+  @Override protected void render(Block html) {
     set(TITLE, join("Angel ParameterServerThread ", $(PSATTEMPT_ID)));
     PSAttemptId psAttempttId = null;
     try {

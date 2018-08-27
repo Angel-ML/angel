@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.deploy;
 
 import com.tencent.angel.common.Id;
@@ -24,14 +25,16 @@ import org.apache.hadoop.yarn.event.AbstractEvent;
  * Base class of container launcher event.
  */
 public abstract class ContainerLauncherEvent extends AbstractEvent<ContainerLauncherEventType> {
-  /** the task the container is allocated to */
+  /**
+   * the task the container is allocated to
+   */
   private final Id id;
 
   /**
    * Create a container launch event
-   * 
+   *
    * @param type event type
-   * @param id task id
+   * @param id   task id
    */
   public ContainerLauncherEvent(ContainerLauncherEventType type, Id id) {
     super(type);
@@ -40,23 +43,21 @@ public abstract class ContainerLauncherEvent extends AbstractEvent<ContainerLaun
 
   /**
    * Get task id
-   * 
+   *
    * @return task id
    */
   public Id getId() {
     return id;
   }
 
-  @Override
-  public int hashCode() {
+  @Override public int hashCode() {
     final int prime = 31;
     int result = 1;
     result = prime * result + ((id == null) ? 0 : id.hashCode());
     return result;
   }
 
-  @Override
-  public boolean equals(Object obj) {
+  @Override public boolean equals(Object obj) {
     if (this == obj)
       return true;
     if (obj == null)
@@ -72,8 +73,7 @@ public abstract class ContainerLauncherEvent extends AbstractEvent<ContainerLaun
     return true;
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "ContainerLauncherEvent [id=" + id + "]";
   }
 

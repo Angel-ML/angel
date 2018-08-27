@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.webapp.page;
 
 import com.google.inject.Inject;
@@ -34,17 +35,15 @@ import static org.apache.hadoop.yarn.webapp.view.JQueryUI._TH;
 public class ExecutorsBlock extends HtmlBlock {
   final AMContext amContext;
 
-  @Inject
-  ExecutorsBlock(AMContext amctx) {
+  @Inject ExecutorsBlock(AMContext amctx) {
     amContext = amctx;
   }
 
-  @Override
-  protected void render(Block html) {
+  @Override protected void render(Block html) {
     set(TITLE, join("Angel ExecutorsBlock"));
     TBODY<TABLE<Hamlet>> tbody =
-        html.h1("ExecutorsBlock").table("#jobs").thead().tr().th(_TH, "id").th(_TH, "name")
-            .th(_TH, "state").th(_TH, "stacktrace")._()._().tbody();
+      html.h1("ExecutorsBlock").table("#jobs").thead().tr().th(_TH, "id").th(_TH, "name")
+        .th(_TH, "state").th(_TH, "stacktrace")._()._().tbody();
 
     ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
     ThreadInfo[] threadInfo = threadMXBean.dumpAllThreads(true, true);
@@ -56,7 +55,7 @@ public class ExecutorsBlock extends HtmlBlock {
         stackTraceString.append(s.toString()).append("\n");
       }
       tbody.tr().td(String.valueOf(t.getThreadId())).td(String.valueOf(t.getThreadName()))
-          .td(String.valueOf(t.getThreadState())).td(String.valueOf(stackTraceString.toString()))._();
+        .td(String.valueOf(t.getThreadState())).td(String.valueOf(stackTraceString.toString()))._();
     }
     tbody._()._();
 

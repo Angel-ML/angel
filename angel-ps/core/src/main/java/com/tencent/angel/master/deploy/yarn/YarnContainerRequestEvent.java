@@ -14,6 +14,8 @@
  * the License.
  *
  */
+
+
 package com.tencent.angel.master.deploy.yarn;
 
 import com.tencent.angel.common.Id;
@@ -27,40 +29,45 @@ import java.util.Arrays;
  * Request a container event. It contains resource context.
  */
 public class YarnContainerRequestEvent extends YarnContainerAllocatorEvent {
-  /**container resource quota*/
+  /**
+   * container resource quota
+   */
   private final Resource resource;
-  
-  /**the expected host addresses, it used to local calculation*/
+
+  /**
+   * the expected host addresses, it used to local calculation
+   */
   private final String[] hosts;
-  
+
   /**
    * Create a YarnContainerRequestEvent
-   * @param id task id
-   * @param resouce container resource quota 
+   *
+   * @param id       task id
+   * @param resouce  container resource quota
    * @param priority resource priority
    */
-  public YarnContainerRequestEvent(Id id, Resource resouce,
-      Priority priority) {
+  public YarnContainerRequestEvent(Id id, Resource resouce, Priority priority) {
     this(id, resouce, priority, null);
   }
 
   /**
    * Create a YarnContainerRequestEvent
-   * @param id task id
-   * @param resouce container resource quota 
+   *
+   * @param id       task id
+   * @param resouce  container resource quota
    * @param priority resource priority
-   * @param hosts the expected host addresses
+   * @param hosts    the expected host addresses
    */
-  public YarnContainerRequestEvent(Id id, Resource resouce,
-      Priority priority, String[] hosts) {
+  public YarnContainerRequestEvent(Id id, Resource resouce, Priority priority, String[] hosts) {
     super(id, ContainerAllocatorEventType.CONTAINER_REQ, priority);
     this.resource = resouce;
     this.hosts = hosts;
   }
-  
+
   /**
-   * Get container resource quota 
-   * @return container resource quota 
+   * Get container resource quota
+   *
+   * @return container resource quota
    */
   public Resource getResource() {
     return resource;
@@ -68,14 +75,15 @@ public class YarnContainerRequestEvent extends YarnContainerAllocatorEvent {
 
   /**
    * Get the expected host addresses
+   *
    * @return the expected host addresses
    */
   public String[] getHosts() {
     return hosts;
   }
 
-  @Override
-  public String toString() {
-    return "YarnContainerRequestEvent [resource=" + resource + ", hosts=" + Arrays.toString(hosts) + ", toString()=" + super.toString() + "]";
+  @Override public String toString() {
+    return "YarnContainerRequestEvent [resource=" + resource + ", hosts=" + Arrays.toString(hosts)
+      + ", toString()=" + super.toString() + "]";
   }
 }

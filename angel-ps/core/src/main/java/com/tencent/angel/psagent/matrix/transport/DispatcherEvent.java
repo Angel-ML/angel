@@ -15,20 +15,22 @@
  *
  */
 
+
 package com.tencent.angel.psagent.matrix.transport;
 
 
 enum EventType {
-  START_GET, GET_SUCCESS, GET_FAILED, GET_NOTREADY, START_PUT, PUT_SUCCESS, PUT_FAILED,
-  ACTIVE_FAILED_TASK, END, PERIOD_CHECK, REFRESH_SERVER_LOCATION_SUCCESS,
-  REFRESH_SERVER_LOCATION_FAILED, CHANNEL_CLOSED, SERVER_FAILED, SERVER_NORMAL, OOM
+  START_GET, GET_SUCCESS, GET_FAILED, GET_NOTREADY, START_PUT, PUT_SUCCESS, PUT_FAILED, ACTIVE_FAILED_TASK, END, PERIOD_CHECK, REFRESH_SERVER_LOCATION_SUCCESS, REFRESH_SERVER_LOCATION_FAILED, CHANNEL_CLOSED, SERVER_FAILED, SERVER_NORMAL, OOM
 };
+
 
 /**
  * PS RPC dispatch event.
  */
 public class DispatcherEvent {
-  /** event type*/
+  /**
+   * event type
+   */
   private final EventType type;
 
   /**
@@ -42,15 +44,14 @@ public class DispatcherEvent {
 
   /**
    * Get event type.
-   * 
+   *
    * @return EventType event type
    */
   public EventType getType() {
     return type;
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "DispatcherEvent [type=" + type + "]";
   }
 }

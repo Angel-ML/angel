@@ -15,99 +15,79 @@
  *
  */
 
+
 package com.tencent.angel.ml.matrix;
 
 /**
  * Model row type
  */
 public enum RowType {
-  /**
-   * Sparse double: the element type is "double"; the index is in [0, dimension) (dimension is a positive integer, the range of dimension is [1, Integer.MAX_VALUE])
-   */
-  T_DOUBLE_SPARSE(0, RowType.T_DOUBLE_SPARSE_VALUE),
 
-  /**
-   * Dense double: the element type is "double"; the index is in [0, dimension) (dimension is a positive integer, the range of dimension is [1, Integer.MAX_VALUE])
-   */
-  T_DOUBLE_DENSE(1, RowType.T_DOUBLE_DENSE_VALUE),
+  T_DOUBLE_DENSE(0, RowType.T_DOUBLE_DENSE_VALUE), T_DOUBLE_DENSE_COMPONENT(1,
+    RowType.T_DOUBLE_DENSE_COMPONENT_VALUE), T_DOUBLE_DENSE_LONGKEY_COMPONENT(2,
+    RowType.T_DOUBLE_DENSE_LONGKEY_COMPONENT_VALUE), T_DOUBLE_SPARSE(3,
+    RowType.T_DOUBLE_SPARSE_VALUE), T_DOUBLE_SPARSE_COMPONENT(4,
+    RowType.T_DOUBLE_SPARSE_COMPONENT_VALUE), T_DOUBLE_SPARSE_LONGKEY(5,
+    RowType.T_DOUBLE_SPARSE_LONGKEY_VALUE), T_DOUBLE_SPARSE_LONGKEY_COMPONENT(6,
+    RowType.T_DOUBLE_SPARSE_LONGKEY_COMPONENT_VALUE),
 
-  /**
-   * Sparse int: the element type is "int"; the index is in [0, dimension) (dimension is a positive integer, the range of dimension is [1, Integer.MAX_VALUE])
-   */
-  T_INT_SPARSE(2, RowType.T_INT_SPARSE_VALUE),
+  T_FLOAT_DENSE(7, RowType.T_FLOAT_DENSE_VALUE), T_FLOAT_DENSE_COMPONENT(8,
+    RowType.T_FLOAT_DENSE_COMPONENT_VALUE), T_FLOAT_DENSE_LONGKEY_COMPONENT(9,
+    RowType.T_FLOAT_DENSE_LONGKEY_COMPONENT_VALUE), T_FLOAT_SPARSE(10,
+    RowType.T_FLOAT_SPARSE_VALUE), T_FLOAT_SPARSE_COMPONENT(11,
+    RowType.T_FLOAT_SPARSE_COMPONENT_VALUE), T_FLOAT_SPARSE_LONGKEY(12,
+    RowType.T_FLOAT_SPARSE_LONGKEY_VALUE), T_FLOAT_SPARSE_LONGKEY_COMPONENT(13,
+    RowType.T_FLOAT_SPARSE_LONGKEY_COMPONENT_VALUE),
 
-  /**
-   * Dense int: the element type is "int", the index is in [0, dimension) (dimension is a positive integer, the range of dimension is [1, Integer.MAX_VALUE])
-   */
-  T_INT_DENSE(3, RowType.T_INT_DENSE_VALUE),
+  T_LONG_DENSE(14, RowType.T_LONG_DENSE_VALUE), T_LONG_DENSE_COMPONENT(15,
+    RowType.T_LONG_DENSE_COMPONENT_VALUE), T_LONG_DENSE_LONGKEY_COMPONENT(16,
+    RowType.T_LONG_DENSE_LONGKEY_COMPONENT_VALUE), T_LONG_SPARSE(17,
+    RowType.T_LONG_SPARSE_VALUE), T_LONG_SPARSE_COMPONENT(18,
+    RowType.T_LONG_SPARSE_COMPONENT_VALUE), T_LONG_SPARSE_LONGKEY(19,
+    RowType.T_LONG_SPARSE_LONGKEY_VALUE), T_LONG_SPARSE_LONGKEY_COMPONENT(20,
+    RowType.T_LONG_SPARSE_LONGKEY_COMPONENT_VALUE),
 
-  /**
-   * Adaptive int type, it can be transfer between "T_INT_SPARSE" and "T_INT_DENSE" as the most effective memory usage
-   */
-  T_INT_ARBITRARY(4, RowType.T_INT_ARBITRARY_VALUE),
+  T_INT_DENSE(21, RowType.T_INT_DENSE_VALUE), T_INT_DENSE_COMPONENT(22,
+    RowType.T_INT_DENSE_COMPONENT_VALUE), T_INT_DENSE_LONGKEY_COMPONENT(23,
+    RowType.T_INT_DENSE_LONGKEY_COMPONENT_VALUE), T_INT_SPARSE(24,
+    RowType.T_INT_SPARSE_VALUE), T_INT_SPARSE_COMPONENT(25,
+    RowType.T_INT_SPARSE_COMPONENT_VALUE), T_INT_SPARSE_LONGKEY(26,
+    RowType.T_INT_SPARSE_LONGKEY_VALUE), T_INT_SPARSE_LONGKEY_COMPONENT(27,
+    RowType.T_INT_SPARSE_LONGKEY_COMPONENT_VALUE),
 
-  /**
-   * Dense float: the element type is "float"; the index is in [0, dimension) (dimension is a positive integer, the range of dimension is [1, Integer.MAX_VALUE])
-   */
-  T_FLOAT_DENSE(5, RowType.T_FLOAT_DENSE_VALUE),
-
-  /**
-   * Sparse float: the element type is "float"; the index is in [0, dimension) (dimension is a positive integer, the range of dimension is [1, Integer.MAX_VALUE])
-   */
-  T_FLOAT_SPARSE(6, RowType.T_FLOAT_SPARSE_VALUE),
+  T_INT_ARBITRARY(28, RowType.T_INT_ARBITRARY_VALUE);
 
 
-  /**
-   * Sparse double with long type index: the element type is "double";
-   * if the row dimension is in [1, Long.MAX_VALUE], the index is in [0, dimension)
-   * if the row dimension is -1, the index is in [Long.MIN_VALUE, Long.MAX_VALUE]
-   */
-  T_DOUBLE_SPARSE_LONGKEY(7, RowType.T_DOUBLE_SPARSE_LONGKEY_VALUE),
-
-  /**
-   * Sparse double: the element type is "double"; the index is in [0, dimension) (dimension is a positive integer, the range of dimension is [1, Integer.MAX_VALUE])
-   * This vector is contains of a batch of "T_DOUBLE_SPARSE" vectors and can be do parallel computing, so if the number of non-zero values of sparse vector is big, you can try it
-   */
-  T_DOUBLE_SPARSE_COMPONENT(8, RowType.T_DOUBLE_SPARSE_COMPONENT_VALUE),
-
-  /**
-   * Sparse float: the element type is "float"; the index is in [0, dimension) (dimension is a positive integer, the range of dimension is [1, Integer.MAX_VALUE])
-   * This vector is contains of a batch of "T_FLOAT_SPARSE" vectors and can be do parallel computing, so if the number of non-zero values of sparse vector is big, you can try it
-   */
-  T_FLOAT_SPARSE_COMPONENT(9, RowType.T_FLOAT_SPARSE_COMPONENT_VALUE),
-
-  /**
-   * Sparse int: the element type is "int"; the index is in [0, dimension) (dimension is a positive integer, the range of dimension is [1, Integer.MAX_VALUE])
-   * This vector is contains of a batch of "T_INT_SPARSE" vectors and can be do parallel computing, so if the number of non-zero values of sparse vector is big, you can try it
-   */
-  T_INT_SPARSE_COMPONENT(10, RowType.T_INT_SPARSE_COMPONENT_VALUE),
-
-  /**
-   * Sparse int: the element type is "double"; the index is same as "T_DOUBLE_SPARSE_LONGKEY"
-   * This vector is contains of a batch of "T_DOUBLE_SPARSE_LONGKEY" vectors and can be do parallel computing, so if the number of non-zero values of sparse vector is big, you can try it
-   */
-  T_DOUBLE_SPARSE_LONGKEY_COMPONENT(11, RowType.T_DOUBLE_SPARSE_LONGKEY_COMPONENT_VALUE),
-
-  /**
-   * Sparse float: the element type is "float"; the index is same as "T_FLOAT_SPARSE_LONGKEY"
-   * This vector is contains of a batch of "T_FLOAT_SPARSE_LONGKEY" vectors and can be do parallel computing, so if the number of non-zero values of sparse vector is big, you can try it
-   */
-  T_FLOAT_SPARSE_LONGKEY(12, RowType.T_FLOAT_SPARSE_LONGKEY_VALUE);
-
-  public static final int T_DOUBLE_SPARSE_VALUE = 1;
-  public static final int T_DOUBLE_DENSE_VALUE = 2;
-  public static final int T_INT_SPARSE_VALUE = 3;
-  public static final int T_INT_DENSE_VALUE = 4;
-  public static final int T_INT_ARBITRARY_VALUE = 5;
-  public static final int T_FLOAT_DENSE_VALUE = 6;
-  public static final int T_FLOAT_SPARSE_VALUE = 7;
-  public static final int T_DOUBLE_SPARSE_LONGKEY_VALUE = 8;
-  public static final int T_DOUBLE_SPARSE_COMPONENT_VALUE = 9;
-  public static final int T_FLOAT_SPARSE_COMPONENT_VALUE = 10;
-  public static final int T_INT_SPARSE_COMPONENT_VALUE = 11;
-  public static final int T_DOUBLE_SPARSE_LONGKEY_COMPONENT_VALUE = 12;
-  public static final int T_FLOAT_SPARSE_LONGKEY_VALUE = 13;
-  public static final int T_INVALID_VALUE = 14;
+  public static final int T_DOUBLE_DENSE_VALUE = 0;
+  public static final int T_DOUBLE_DENSE_COMPONENT_VALUE = 1;
+  public static final int T_DOUBLE_DENSE_LONGKEY_COMPONENT_VALUE = 2;
+  public static final int T_DOUBLE_SPARSE_VALUE = 3;
+  public static final int T_DOUBLE_SPARSE_COMPONENT_VALUE = 4;
+  public static final int T_DOUBLE_SPARSE_LONGKEY_VALUE = 5;
+  public static final int T_DOUBLE_SPARSE_LONGKEY_COMPONENT_VALUE = 6;
+  public static final int T_FLOAT_DENSE_VALUE = 7;
+  public static final int T_FLOAT_DENSE_COMPONENT_VALUE = 8;
+  public static final int T_FLOAT_DENSE_LONGKEY_COMPONENT_VALUE = 9;
+  public static final int T_FLOAT_SPARSE_VALUE = 10;
+  public static final int T_FLOAT_SPARSE_COMPONENT_VALUE = 11;
+  public static final int T_FLOAT_SPARSE_LONGKEY_VALUE = 12;
+  public static final int T_FLOAT_SPARSE_LONGKEY_COMPONENT_VALUE = 13;
+  public static final int T_LONG_DENSE_VALUE = 14;
+  public static final int T_LONG_DENSE_COMPONENT_VALUE = 15;
+  public static final int T_LONG_DENSE_LONGKEY_COMPONENT_VALUE = 16;
+  public static final int T_LONG_SPARSE_VALUE = 17;
+  public static final int T_LONG_SPARSE_COMPONENT_VALUE = 18;
+  public static final int T_LONG_SPARSE_LONGKEY_VALUE = 19;
+  public static final int T_LONG_SPARSE_LONGKEY_COMPONENT_VALUE = 20;
+  public static final int T_INT_DENSE_VALUE = 21;
+  public static final int T_INT_DENSE_COMPONENT_VALUE = 22;
+  public static final int T_INT_DENSE_LONGKEY_COMPONENT_VALUE = 23;
+  public static final int T_INT_SPARSE_VALUE = 24;
+  public static final int T_INT_SPARSE_COMPONENT_VALUE = 25;
+  public static final int T_INT_SPARSE_LONGKEY_VALUE = 26;
+  public static final int T_INT_SPARSE_LONGKEY_COMPONENT_VALUE = 27;
+  public static final int T_INT_ARBITRARY_VALUE = 28;
+  public static final int T_INVALID_VALUE = 29;
 
   public final int getNumber() {
     return value;
@@ -115,32 +95,64 @@ public enum RowType {
 
   public static RowType valueOf(int value) {
     switch (value) {
-      case T_DOUBLE_SPARSE_VALUE:
-        return T_DOUBLE_SPARSE;
       case T_DOUBLE_DENSE_VALUE:
         return T_DOUBLE_DENSE;
-      case T_INT_SPARSE_VALUE:
-        return T_INT_SPARSE;
-      case T_INT_DENSE_VALUE:
-        return T_INT_DENSE;
-      case T_INT_ARBITRARY_VALUE:
-        return T_INT_ARBITRARY;
-      case T_FLOAT_DENSE_VALUE:
-        return T_FLOAT_DENSE;
-      case T_FLOAT_SPARSE_VALUE:
-        return T_FLOAT_SPARSE;
-      case T_DOUBLE_SPARSE_LONGKEY_VALUE:
-        return T_DOUBLE_SPARSE_LONGKEY;
+      case T_DOUBLE_DENSE_COMPONENT_VALUE:
+        return T_DOUBLE_DENSE_COMPONENT;
+      case T_DOUBLE_DENSE_LONGKEY_COMPONENT_VALUE:
+        return T_DOUBLE_DENSE_LONGKEY_COMPONENT;
+      case T_DOUBLE_SPARSE_VALUE:
+        return T_DOUBLE_SPARSE;
       case T_DOUBLE_SPARSE_COMPONENT_VALUE:
         return T_DOUBLE_SPARSE_COMPONENT;
-      case T_FLOAT_SPARSE_COMPONENT_VALUE:
-        return T_FLOAT_SPARSE_COMPONENT;
-      case T_INT_SPARSE_COMPONENT_VALUE:
-        return T_INT_SPARSE_COMPONENT;
+      case T_DOUBLE_SPARSE_LONGKEY_VALUE:
+        return T_DOUBLE_SPARSE_LONGKEY;
       case T_DOUBLE_SPARSE_LONGKEY_COMPONENT_VALUE:
         return T_DOUBLE_SPARSE_LONGKEY_COMPONENT;
+      case T_FLOAT_DENSE_VALUE:
+        return T_FLOAT_DENSE;
+      case T_FLOAT_DENSE_COMPONENT_VALUE:
+        return T_FLOAT_DENSE_COMPONENT;
+      case T_FLOAT_DENSE_LONGKEY_COMPONENT_VALUE:
+        return T_FLOAT_DENSE_LONGKEY_COMPONENT;
+      case T_FLOAT_SPARSE_VALUE:
+        return T_FLOAT_SPARSE;
+      case T_FLOAT_SPARSE_COMPONENT_VALUE:
+        return T_FLOAT_SPARSE_COMPONENT;
       case T_FLOAT_SPARSE_LONGKEY_VALUE:
         return T_FLOAT_SPARSE_LONGKEY;
+      case T_FLOAT_SPARSE_LONGKEY_COMPONENT_VALUE:
+        return T_FLOAT_SPARSE_LONGKEY_COMPONENT;
+      case T_LONG_DENSE_VALUE:
+        return T_LONG_DENSE;
+      case T_LONG_DENSE_COMPONENT_VALUE:
+        return T_LONG_DENSE_COMPONENT;
+      case T_LONG_DENSE_LONGKEY_COMPONENT_VALUE:
+        return T_LONG_DENSE_LONGKEY_COMPONENT;
+      case T_LONG_SPARSE_VALUE:
+        return T_LONG_SPARSE;
+      case T_LONG_SPARSE_COMPONENT_VALUE:
+        return T_LONG_SPARSE_COMPONENT;
+      case T_LONG_SPARSE_LONGKEY_VALUE:
+        return T_LONG_SPARSE_LONGKEY;
+      case T_LONG_SPARSE_LONGKEY_COMPONENT_VALUE:
+        return T_LONG_SPARSE_LONGKEY_COMPONENT;
+      case T_INT_DENSE_VALUE:
+        return T_INT_DENSE;
+      case T_INT_DENSE_COMPONENT_VALUE:
+        return T_INT_DENSE_COMPONENT;
+      case T_INT_DENSE_LONGKEY_COMPONENT_VALUE:
+        return T_INT_DENSE_LONGKEY_COMPONENT;
+      case T_INT_SPARSE_VALUE:
+        return T_INT_SPARSE;
+      case T_INT_SPARSE_COMPONENT_VALUE:
+        return T_INT_SPARSE_COMPONENT;
+      case T_INT_SPARSE_LONGKEY_VALUE:
+        return T_INT_SPARSE_LONGKEY;
+      case T_INT_SPARSE_LONGKEY_COMPONENT_VALUE:
+        return T_INT_SPARSE_LONGKEY_COMPONENT;
+      case T_INT_ARBITRARY_VALUE:
+        return T_INT_ARBITRARY;
       default:
         return null;
     }

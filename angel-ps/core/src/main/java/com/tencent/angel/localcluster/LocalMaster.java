@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.localcluster;
 
 import com.tencent.angel.conf.AngelConf;
@@ -32,20 +33,26 @@ import java.io.IOException;
  */
 public class LocalMaster extends Thread {
   private static final Log LOG = LogFactory.getLog(LocalMaster.class);
-  
-  /**Angel Application master*/
+
+  /**
+   * Angel Application master
+   */
   private final AngelApplicationMaster appMaster;
-  
-  /**Master attempt id*/
+
+  /**
+   * Master attempt id
+   */
   private final ApplicationAttemptId appAttemptId;
-  
+
   /**
    * Create a new LocalMaster
+   *
    * @param appAttemptId
    * @throws IllegalArgumentException
    * @throws IOException
    */
-  public LocalMaster(ApplicationAttemptId appAttemptId) throws IllegalArgumentException, IOException {
+  public LocalMaster(ApplicationAttemptId appAttemptId)
+    throws IllegalArgumentException, IOException {
     this.appAttemptId = appAttemptId;
     LocalClusterContext clusterContext = LocalClusterContext.get();
     Configuration conf = clusterContext.getConf();
@@ -53,13 +60,12 @@ public class LocalMaster extends Thread {
     String appName = conf.get(AngelConf.ANGEL_JOB_NAME, "local-test");
 
     appMaster =
-        new AngelApplicationMaster(conf, appName, appAttemptId,
-            clusterContext.getContainerId(), clusterContext.getLocalHost(),
-            clusterContext.getPort(), clusterContext.getHttpPort(), System.currentTimeMillis(), new Credentials());
+      new AngelApplicationMaster(conf, appName, appAttemptId, clusterContext.getContainerId(),
+        clusterContext.getLocalHost(), clusterContext.getPort(), clusterContext.getHttpPort(),
+        System.currentTimeMillis(), new Credentials());
   }
-  
-  @Override
-  public void run() {
+
+  @Override public void run() {
     try {
       appMaster.initAndStart();
     } catch (Exception e) {
@@ -70,6 +76,7 @@ public class LocalMaster extends Thread {
 
   /**
    * Get Angel Application Master
+   *
    * @return Angel Application Master
    */
   public AngelApplicationMaster getAppMaster() {

@@ -14,44 +14,34 @@
  * the License.
  *
  */
+
+
 package com.tencent.angel.ml.feature;
 
-import com.tencent.angel.ml.math.TAbstractVector;
-import com.tencent.angel.ml.math.TVector;
+import com.tencent.angel.ml.math2.vector.Vector;
 
 /**
  * training data with label
- *
  */
 public class LabeledData {
 
-  private TVector x;
+  private Vector x;
   private double y;
-  private double y1;
 
-  private double score;
-
-  /**
-   * @param x
-   * @param y
-   */
-  public LabeledData(TVector x, double y) {
-    super();
+  public LabeledData(Vector x, double y) {
     this.x = x;
     this.y = y;
   }
 
   public LabeledData() {
-    super();
-    x = null;
-    y = 0;
+    this(null, 0);
   }
 
-  public TVector getX() {
+  public Vector getX() {
     return x;
   }
 
-  public void setX(TVector x) {
+  public void setX(Vector x) {
     this.x = x;
   }
 
@@ -61,21 +51,5 @@ public class LabeledData {
 
   public void setY(double y) {
     this.y = y;
-  }
-
-  public void setY1(double y1) {
-    this.y1 = y1;
-  }
-
-  public double getY1() {
-    return y1;
-  }
-
-  public double getScore() {
-    return score;
-  }
-
-  public void setScore(double score) {
-    this.score = score;
   }
 }

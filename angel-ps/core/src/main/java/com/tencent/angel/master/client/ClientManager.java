@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.client;
 
 import com.tencent.angel.common.location.Location;
@@ -60,8 +61,8 @@ public class ClientManager {
     this.context = context;
     clientToLastHBTsMap = new ConcurrentHashMap<>();
     clientIdToLocMap = new ConcurrentHashMap<>();
-    clientTimeoutMS =
-      context.getConf().getLong(AngelConf.ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS,
+    clientTimeoutMS = context.getConf()
+      .getLong(AngelConf.ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS,
         AngelConf.DEFAULT_ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS);
   }
 
@@ -73,7 +74,7 @@ public class ClientManager {
     boolean isTimeOut = false;
     Map.Entry<Integer, Long> clientEntry;
     long currentTs = System.currentTimeMillis();
-    while(clientIt.hasNext()) {
+    while (clientIt.hasNext()) {
       clientEntry = clientIt.next();
       if (currentTs - clientEntry.getValue() > clientTimeoutMS) {
         LOG.error("Client " + clientEntry.getKey() + " heartbeat timeout");
@@ -82,7 +83,7 @@ public class ClientManager {
       }
     }
 
-    if(isTimeOut && clientToLastHBTsMap.isEmpty()) {
+    if (isTimeOut && clientToLastHBTsMap.isEmpty()) {
       LOG.error("All client timeout, just exit the application");
       context.getMasterService().stop(1);
     }
@@ -90,6 +91,7 @@ public class ClientManager {
 
   /**
    * Is a client alive
+   *
    * @param clientId client id
    * @return true means alive
    */
@@ -99,6 +101,7 @@ public class ClientManager {
 
   /**
    * Update the heartbeat timestamp for a client
+   *
    * @param clientId client id
    */
   public void alive(int clientId) {
@@ -107,6 +110,7 @@ public class ClientManager {
 
   /**
    * Client register
+   *
    * @param clientId client id
    */
   public void register(int clientId) {
@@ -115,6 +119,7 @@ public class ClientManager {
 
   /**
    * Client unregister
+   *
    * @param clientId client id
    */
   public void unRegister(int clientId) {
@@ -123,6 +128,7 @@ public class ClientManager {
 
   /**
    * Generate a new client id
+   *
    * @return a new client id
    */
   public int getId() {

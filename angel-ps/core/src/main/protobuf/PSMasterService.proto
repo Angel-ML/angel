@@ -37,7 +37,21 @@ message PSReportRequest {
 message MatrixReportProto{
   required int32 matrixId = 1;
   required string matrixName = 2;
-  repeated PartReportProto partReports = 4;
+  repeated PartReportProto partReports = 3;
+}
+
+message PSMatricesSaveResultProto {
+  required int32 requestId = 1;
+  required int32 subRequestId = 2;
+  required int32 saveState = 3;
+  optional string failedLog = 4;
+}
+
+message PSMatricesLoadResultProto {
+  required int32 requestId = 1;
+  required int32 subRequestId = 2;
+  required int32 loadState = 3;
+  optional string failedLog = 4;
 }
 
 message PartReportProto {
@@ -58,14 +72,38 @@ message PSReportResponse {
   required PSCommandProto psCommand = 1 [default = PSCOMMAND_OK];
   repeated MatrixMetaProto needCreateMatrices = 2;
   repeated int32 needReleaseMatrixIds = 3;
-  repeated NeedSaveMatrixProto needSaveMatrices = 4;
-  repeated RecoverPartKeyProto needRecoverParts = 5;
-  optional ExecuteUnitDesc executeUnitDesc = 6;
+  optional int32 savingRequest = 4;
+  optional int32 loadingRequest = 5;
+  optional PSMatricesSaveContextProto needSaveMatrices = 6;
+  optional PSMatricesLoadContextProto needLoadMatrices = 7;
+  repeated RecoverPartKeyProto needRecoverParts = 8;
+  optional ExecuteUnitDesc executeUnitDesc = 9;
 }
 
-message NeedSaveMatrixProto {
+message PSMatricesSaveContextProto {
+  required int32 requestId = 1;
+  required int32 subRequestId = 2;
+  required string savaPath = 3;
+  repeated PSMatrixSaveContextProto subSaveContexts = 4;
+}
+
+message PSMatrixSaveContextProto {
   required int32 matrixId = 1;
   repeated int32 partIds = 2;
+  repeated int32 rowIndexes = 3;
+}
+
+message PSMatricesLoadContextProto {
+  required int32 requestId = 1;
+  required int32 subRequestId = 2;
+  optional string loadPath = 3;
+  repeated PSMatrixLoadContextProto subLoadContexts = 4;
+}
+
+message PSMatrixLoadContextProto {
+  required int32 matrixId = 1;
+  repeated int32 partIds = 2;
+  optional string loadPath = 3;
 }
 
 message RecoverPartKeyProto {
@@ -143,6 +181,44 @@ message GetPSMatricesResponse {
   repeated MatrixMetaProto matricesMeta = 1;
 }
 
+message SaveFinishRequest {
+  required PSAttemptIdProto psAttemptId = 1;
+  required PSMatricesSaveResultProto result = 2;
+}
+
+message SaveFinishResponse {
+
+}
+
+message LoadFinishRequest {
+  required PSAttemptIdProto psAttemptId = 1;
+  required PSMatricesLoadResultProto result = 2;
+}
+
+message LoadFinishResponse {
+
+}
+
+message SaveStartRequest {
+  required PSAttemptIdProto psAttemptId = 1;
+  required int32 requestId = 2;
+  required int32 subRequestId = 3;
+}
+
+message SaveStartResponse {
+
+}
+
+message LoadStartRequest {
+  required PSAttemptIdProto psAttemptId = 1;
+  required int32 requestId = 2;
+  required int32 subRequestId = 3;
+}
+
+message LoadStartResponse {
+
+}
+
 service PSMasterService {
   rpc psRegister(PSRegisterRequest) returns (PSRegisterResponse);
   rpc psReport(PSReportRequest) returns (PSReportResponse);
@@ -155,4 +231,8 @@ service PSMasterService {
   rpc getPartLocation(GetPartLocationRequest) returns (GetPartLocationResponse);
   rpc getIteration(GetIterationRequest) returns (GetIterationResponse);
   rpc getPSMatricesMeta(GetPSMatricesMetaRequest) returns (GetPSMatricesResponse);
+  rpc saveFinish(SaveFinishRequest) returns (SaveFinishResponse);
+  rpc loadFinish(LoadFinishRequest) returns (LoadFinishResponse);
+  rpc saveStart(SaveStartRequest) returns (SaveStartResponse);
+  rpc loadStart(LoadStartRequest) returns (LoadStartResponse);
 }

@@ -1,25 +1,20 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
  */
 
-/**
- * The container request and assign have been modified according to the specific
- * circumstances of Angel.
- */
 
 package com.tencent.angel.master.deploy.yarn;
 
@@ -78,79 +73,123 @@ public class YarnContainerAllocator extends ContainerAllocator {
   private static final Log LOG = LogFactory.getLog(ContainerAllocator.class);
 
   private final AMContext context;
-  
-  /**stop service or not*/
-  private final AtomicBoolean stopped;
-  
-  /**event handler thread.*/
-  private Thread eventHandlingThread;
-  
-  /**event queue*/
-  BlockingQueue<ContainerAllocatorEvent> eventQueue =
-      new LinkedBlockingQueue<ContainerAllocatorEvent>();
 
-  /**Request record factory*/
+  /**
+   * stop service or not
+   */
+  private final AtomicBoolean stopped;
+
+  /**
+   * event handler thread.
+   */
+  private volatile Thread eventHandlingThread;
+
+  /**
+   * event queue
+   */
+  BlockingQueue<ContainerAllocatorEvent> eventQueue =
+    new LinkedBlockingQueue<ContainerAllocatorEvent>();
+
+  /**
+   * Request record factory
+   */
   private final RecordFactory recordFactory;
-  
-  /**last response id from RM*/
+
+  /**
+   * last response id from RM
+   */
   private int lastResponseId;
-  
-  /**the timestamp of last heartbeat*/
+
+  /**
+   * the timestamp of last heartbeat
+   */
   private long lastHeartbeatTime;
 
-  /**rm communication proxy*/
+  /**
+   * rm communication proxy
+   */
   private ApplicationMasterProtocol amRmProtocol;
-  
-  /**heartbeat thread*/
-  private Thread allocatorThread;
-  
-  /**heartbeat interval*/
+
+  /**
+   * heartbeat thread
+   */
+  private volatile Thread allocatorThread;
+
+  /**
+   * heartbeat interval
+   */
   private int rmPollInterval;
 
-  /**whether to successfully unregister from the Yarn RM*/
+  /**
+   * whether to successfully unregister from the Yarn RM
+   */
   protected AtomicBoolean successfullyUnregistered = new AtomicBoolean(false);
 
-  /**resource request table*/
+  /**
+   * resource request table
+   */
   private final Set<ResourceRequest> ask = new TreeSet<ResourceRequest>(
-      new org.apache.hadoop.yarn.api.records.ResourceRequest.ResourceRequestComparator());
-  
-  /**need release container id set*/
+    new org.apache.hadoop.yarn.api.records.ResourceRequest.ResourceRequestComparator());
+
+  /**
+   * need release container id set
+   */
   private final Set<ContainerId> release = new TreeSet<ContainerId>();
 
-  /**resource priority->Map(Module Id->container request), used to save each worker or ps resource request */
+  /**
+   * resource priority->Map(Module Id->container request), used to save each worker or ps resource request
+   */
   private final Map<Priority, Map<Id, ContainerRequest>> idToRequestMaps =
-      new HashMap<Priority, Map<Id, ContainerRequest>>();
-  
-  /**resource priority->Map(host->Module Ids), used to save components that are intended to be started on the host*/
+    new HashMap<Priority, Map<Id, ContainerRequest>>();
+
+  /**
+   * resource priority->Map(host->Module Ids), used to save components that are intended to be started on the host
+   */
   private final Map<Priority, Map<String, LinkedList<Id>>> hostToIDListMaps =
-      new HashMap<Priority, Map<String, LinkedList<Id>>>();
-  
-  /**resource priority->Map(rack->Module Ids), used to save components that are intended to be started on the rack*/
+    new HashMap<Priority, Map<String, LinkedList<Id>>>();
+
+  /**
+   * resource priority->Map(rack->Module Ids), used to save components that are intended to be started on the rack
+   */
   private final Map<Priority, Map<String, LinkedList<Id>>> rackToIDListMaps =
-      new HashMap<Priority, Map<String, LinkedList<Id>>>();
+    new HashMap<Priority, Map<String, LinkedList<Id>>>();
 
-  /**resource priority->Map(host->Map(resource->resource request)), used to save the resource request to each host*/
+  /**
+   * resource priority->Map(host->Map(resource->resource request)), used to save the resource request to each host
+   */
   private final Map<Priority, Map<String, Map<Resource, ResourceRequest>>> remoteRequestsTable =
-      new TreeMap<Priority, Map<String, Map<Resource, ResourceRequest>>>();
+    new TreeMap<Priority, Map<String, Map<Resource, ResourceRequest>>>();
 
-  /**statistics the number of containers assigned*/
+  /**
+   * statistics the number of containers assigned
+   */
   private int containersAllocated;
-  
-  /**statistics the number of containers released*/
+
+  /**
+   * statistics the number of containers released
+   */
   private int containersReleased;
-  
-  /**statistics the number of containers which are host data local*/
+
+  /**
+   * statistics the number of containers which are host data local
+   */
   private int hostLocalAssigned;
-  
-  /**statistics the number of containers which are rack data local*/
+
+  /**
+   * statistics the number of containers which are rack data local
+   */
   private int rackLocalAssigned;
-  
-  /**container id to module id map*/
+
+  /**
+   * container id to module id map
+   */
   private final Map<ContainerId, Id> assignedContainerToIDMap = new HashMap<ContainerId, Id>();
-  
-  /**module id to container id map*/
+
+  /**
+   * module id to container id map
+   */
   private final Map<Id, Container> idToContainerMap = new HashMap<Id, Container>();
-  
+
   private Map<ApplicationAccessType, String> applicationACLs;
   private final Lock readLock;
   private final Lock writeLock;
@@ -165,68 +204,54 @@ public class YarnContainerAllocator extends ContainerAllocator {
     writeLock = readWriteLock.writeLock();
   }
 
-  @Override
-  protected void serviceStart() throws Exception {
+  @Override protected void serviceStart() throws Exception {
     startEventHandlerThread();
     startRMComminicatorThread();
     super.serviceStart();
   }
 
-  @Override
-  protected void serviceInit(Configuration conf) throws Exception {
+  @Override protected void serviceInit(Configuration conf) throws Exception {
     this.amRmProtocol = ClientRMProxy.createRMProxy(getConfig(), ApplicationMasterProtocol.class);
-    this.rmPollInterval =
-        conf.getInt(AngelConf.ANGEL_AM_HEARTBEAT_INTERVAL_MS,
-            AngelConf.DEFAULT_ANGEL_AM_HEARTBEAT_INTERVAL_MS);
+    this.rmPollInterval = conf.getInt(AngelConf.ANGEL_AM_HEARTBEAT_INTERVAL_MS,
+      AngelConf.DEFAULT_ANGEL_AM_HEARTBEAT_INTERVAL_MS);
     RackResolver.init(conf);
     super.serviceInit(conf);
   }
 
-  @Override
-  protected void serviceStop() throws Exception {
+  @Override protected void serviceStop() throws Exception {
     if (stopped.getAndSet(true)) {
       return;
     }
     if (eventHandlingThread != null) {
       eventHandlingThread.interrupt();
-      try {
-        eventHandlingThread.join();
-      } catch (InterruptedException ie) {
-        LOG.warn("InterruptedException while stopping");
-      }
+      eventHandlingThread = null;
     }
 
     if (allocatorThread != null) {
       allocatorThread.interrupt();
-      try {
-        allocatorThread.join();
-      } catch (InterruptedException ie) {
-        LOG.warn("InterruptedException while stopping");
-      }
+      allocatorThread = null;
     }
 
     //If we need Yarn to restart a new application master, we should not unregister from Yarn RM
-    if(context.needClear()) {
+    if (context.needClear()) {
       unregister();
     }
-    
+
     super.serviceStop();
     LOG.info("ContainerAllocator service stop!");
   }
 
   private void startRMComminicatorThread() {
     allocatorThread = new Thread(new Runnable() {
-      @SuppressWarnings("unchecked")
-      @Override
-      public void run() {
+      @SuppressWarnings("unchecked") @Override public void run() {
         //register to Yarn RM
         try {
           register();
           LOG.info("register to rm success");
         } catch (Exception e) {
           LOG.fatal("register am to rm failed. " + e);
-          context.getEventHandler().handle(
-              new InternalErrorEvent(context.getApplicationId(), "register am to rm failed. " + e.getMessage()));
+          context.getEventHandler().handle(new InternalErrorEvent(context.getApplicationId(),
+            "register am to rm failed. " + e.getMessage()));
           return;
         }
 
@@ -239,25 +264,25 @@ public class YarnContainerAllocator extends ContainerAllocator {
             } catch (YarnRuntimeException e) {
               //catch YarnRuntimeException, we should exit and need not retry
               LOG.fatal("send heartbeat to rm failed. " + e);
-              context.getEventHandler().handle(
-                  new InternalErrorEvent(context.getApplicationId(), "send heartbeat to rm failed. " + e.getMessage(), false));
+              context.getEventHandler().handle(new InternalErrorEvent(context.getApplicationId(),
+                "send heartbeat to rm failed. " + e.getMessage(), false));
               return;
             } catch (Exception e) {
               LOG.error("send heartbeat to rm failed. ", e);
               continue;
             }
 
-            try{
+            try {
               writeLock.lock();
               lastHeartbeatTime = context.getClock().getTime();
             } finally {
               writeLock.unlock();
-            }            
+            }
           } catch (InterruptedException e) {
             if (!stopped.get()) {
               LOG.fatal("allocator thread interrupted. ", e);
-              context.getEventHandler().handle(
-                  new InternalErrorEvent(context.getApplicationId(), "allocator thread interrupted. " + e.getMessage()));
+              context.getEventHandler().handle(new InternalErrorEvent(context.getApplicationId(),
+                "allocator thread interrupted. " + e.getMessage()));
             }
             return;
           }
@@ -272,17 +297,16 @@ public class YarnContainerAllocator extends ContainerAllocator {
     try {
       writeLock.lock();
       ResourceBlacklistRequest blacklistRequest =
-          ResourceBlacklistRequest.newInstance(new ArrayList<String>(),
-              new ArrayList<String>());
-      
-      for(ResourceRequest request : ask) {
+        ResourceBlacklistRequest.newInstance(new ArrayList<String>(), new ArrayList<String>());
+
+      for (ResourceRequest request : ask) {
         LOG.info("ask request=" + request);
       }
-      
+
       //build heartbeat request
-      AllocateRequest allocateRequest =
-          AllocateRequest.newInstance(lastResponseId, 0.5f, new ArrayList<ResourceRequest>(ask),
-              new ArrayList<ContainerId>(release), blacklistRequest);
+      AllocateRequest allocateRequest = AllocateRequest
+        .newInstance(lastResponseId, 0.5f, new ArrayList<ResourceRequest>(ask),
+          new ArrayList<ContainerId>(release), blacklistRequest);
 
       LOG.debug("heartbeat, allocateRequest = " + allocateRequest.toString());
 
@@ -303,8 +327,9 @@ public class YarnContainerAllocator extends ContainerAllocator {
           case AM_SHUTDOWN:
             // This can happen if the RM has been restarted. If it is in that state,
             // this application must clean itself up.
-            throw new YarnRuntimeException("Resource Manager doesn't recognize AttemptId: "
-                + this.context.getApplicationAttemptId());
+            throw new YarnRuntimeException(
+              "Resource Manager doesn't recognize AttemptId: " + this.context
+                .getApplicationAttemptId());
           default:
             String msg = "Unhandled value of AMCommand: " + allocateResponse.getAMCommand();
             LOG.error(msg);
@@ -351,24 +376,25 @@ public class YarnContainerAllocator extends ContainerAllocator {
       } else {
         assignedContainerToIDMap.remove(cont.getContainerId());
         idToContainerMap.remove(id);
-        
+
         //dispatch container exit message to corresponding components
         String diagnostics = StringInterner.weakIntern(cont.getDiagnostics());
         if (id instanceof PSAttemptId) {
-          context.getEventHandler().handle(
-              new PSAttemptDiagnosticsUpdateEvent(diagnostics, (PSAttemptId) id));
+          context.getEventHandler()
+            .handle(new PSAttemptDiagnosticsUpdateEvent(diagnostics, (PSAttemptId) id));
           context.getEventHandler().handle(createContainerFinishedEvent(cont, (PSAttemptId) id));
-        } else if(id instanceof WorkerAttemptId){
-          context.getEventHandler().handle(
-              new WorkerAttemptDiagnosticsUpdateEvent((WorkerAttemptId) id, diagnostics));
-          context.getEventHandler().handle(
-              createContainerFinishedEvent(cont, (WorkerAttemptId) id));
+        } else if (id instanceof WorkerAttemptId) {
+          context.getEventHandler()
+            .handle(new WorkerAttemptDiagnosticsUpdateEvent((WorkerAttemptId) id, diagnostics));
+          context.getEventHandler()
+            .handle(createContainerFinishedEvent(cont, (WorkerAttemptId) id));
         }
       }
     }
   }
 
-  private PSAttemptEvent createContainerFinishedEvent(ContainerStatus cont, PSAttemptId psAttemptId) {
+  private PSAttemptEvent createContainerFinishedEvent(ContainerStatus cont,
+    PSAttemptId psAttemptId) {
     if (cont.getExitStatus() == ContainerExitStatus.ABORTED) {
       // killed by framework
       return new PSAttemptEvent(PSAttemptEventType.PA_KILL, psAttemptId);
@@ -376,15 +402,14 @@ public class YarnContainerAllocator extends ContainerAllocator {
       return new PSAttemptEvent(PSAttemptEventType.PA_CONTAINER_COMPLETE, psAttemptId);
     }
   }
-   
+
   private WorkerAttemptEvent createContainerFinishedEvent(ContainerStatus cont,
-      WorkerAttemptId attemptId) {
+    WorkerAttemptId attemptId) {
     if (cont.getExitStatus() == ContainerExitStatus.ABORTED) {
       // killed by framework
       return new WorkerAttemptEvent(WorkerAttemptEventType.KILL, attemptId);
     } else {
-      return new WorkerAttemptEvent(WorkerAttemptEventType.CONTAINER_COMPLETE,
-          attemptId);
+      return new WorkerAttemptEvent(WorkerAttemptEventType.CONTAINER_COMPLETE, attemptId);
     }
   }
 
@@ -398,7 +423,7 @@ public class YarnContainerAllocator extends ContainerAllocator {
 
   private void register() throws YarnException, IOException {
     RegisterApplicationMasterRequest request =
-        recordFactory.newRecordInstance(RegisterApplicationMasterRequest.class);
+      recordFactory.newRecordInstance(RegisterApplicationMasterRequest.class);
 
     InetSocketAddress bindAddress = context.getMasterService().getRPCListenAddr();
     if (bindAddress == null) {
@@ -406,8 +431,8 @@ public class YarnContainerAllocator extends ContainerAllocator {
     }
     request.setHost(bindAddress.getAddress().getHostAddress());
     request.setRpcPort(bindAddress.getPort());
-    request.setTrackingUrl("http://" + bindAddress.getAddress().getHostAddress() + ":"
-        + context.getWebApp().port());
+    request.setTrackingUrl(
+      "http://" + bindAddress.getAddress().getHostAddress() + ":" + context.getWebApp().port());
 
     RegisterApplicationMasterResponse response = amRmProtocol.registerApplicationMaster(request);
 
@@ -426,8 +451,8 @@ public class YarnContainerAllocator extends ContainerAllocator {
     }
   }
 
-  @VisibleForTesting
-  protected void doUnregistration() throws YarnException, IOException, InterruptedException {
+  @VisibleForTesting protected void doUnregistration()
+    throws YarnException, IOException, InterruptedException {
     FinalApplicationStatus finishState = FinalApplicationStatus.UNDEFINED;
     App app = context.getApp();
 
@@ -440,7 +465,7 @@ public class YarnContainerAllocator extends ContainerAllocator {
     } else if (appState == AppState.FAILED) {
       finishState = FinalApplicationStatus.FAILED;
     }
-    
+
     //build application diagnostics
     StringBuilder sb = new StringBuilder();
     for (String s : app.getDiagnostics()) {
@@ -450,11 +475,11 @@ public class YarnContainerAllocator extends ContainerAllocator {
 
     //TODO:add a job history for angel
     String historyUrl = "angel does not have history url now";
-    
+
     //build unregister request
     FinishApplicationMasterRequest request =
-        FinishApplicationMasterRequest.newInstance(finishState, sb.toString(), historyUrl);
-    
+      FinishApplicationMasterRequest.newInstance(finishState, sb.toString(), historyUrl);
+
     //send unregister request to rm
     while (true) {
       try {
@@ -478,8 +503,7 @@ public class YarnContainerAllocator extends ContainerAllocator {
     return successfullyUnregistered.get();
   }
 
-  @Override
-  public void handle(ContainerAllocatorEvent event) {
+  @Override public void handle(ContainerAllocatorEvent event) {
     try {
       eventQueue.put(event);
     } catch (InterruptedException e) {
@@ -491,14 +515,14 @@ public class YarnContainerAllocator extends ContainerAllocator {
     try {
       writeLock.lock();
       switch (event.getType()) {
-        case CONTAINER_REQ: 
+        case CONTAINER_REQ:
           requestContainer((YarnContainerRequestEvent) event);
           break;
 
         case CONTAINER_DEALLOCATE:
           deallocateContainer(event);
           break;
-          
+
         default:
           break;
       }
@@ -536,17 +560,15 @@ public class YarnContainerAllocator extends ContainerAllocator {
     }
 
     ContainerRequest newRequest =
-        new ContainerRequest(event.getTaskId(), event.getResource(), hosts, racks == null ? null
-            : racks.toArray(new String[0]), event.getPriority());
+      new ContainerRequest(event.getTaskId(), event.getResource(), hosts,
+        racks == null ? null : racks.toArray(new String[0]), event.getPriority());
 
     addResourceRequest(event.getTaskId(), newRequest);
   }
 
   private void startEventHandlerThread() {
     this.eventHandlingThread = new Thread() {
-      @SuppressWarnings("unchecked")
-      @Override
-      public void run() {
+      @SuppressWarnings("unchecked") @Override public void run() {
 
         YarnContainerAllocatorEvent event;
 
@@ -556,8 +578,8 @@ public class YarnContainerAllocator extends ContainerAllocator {
           } catch (InterruptedException e) {
             if (!stopped.get()) {
               LOG.fatal("yarn allocator event handler is interrupted. ", e);
-              context.getEventHandler().handle(
-                  new InternalErrorEvent(context.getApplicationId(), "yarn allocator event handler is interrupted. " + e.getMessage()));
+              context.getEventHandler().handle(new InternalErrorEvent(context.getApplicationId(),
+                "yarn allocator event handler is interrupted. " + e.getMessage()));
             }
             return;
           }
@@ -565,12 +587,12 @@ public class YarnContainerAllocator extends ContainerAllocator {
           try {
             handleEvent(event);
           } catch (Throwable t) {
-            LOG.fatal("Error in handling event type " + event.getType()
-                + " to the ContainreAllocator", t);
+            LOG.fatal(
+              "Error in handling event type " + event.getType() + " to the ContainreAllocator", t);
 
-            context.getEventHandler().handle(
-                new InternalErrorEvent(context.getApplicationId(),"Error in handling event type " + event.getType()
-                    + " to the ContainreAllocator" + t.getMessage()));
+            context.getEventHandler().handle(new InternalErrorEvent(context.getApplicationId(),
+              "Error in handling event type " + event.getType() + " to the ContainreAllocator" + t
+                .getMessage()));
             return;
           }
         }
@@ -599,7 +621,7 @@ public class YarnContainerAllocator extends ContainerAllocator {
           idList = new LinkedList<Id>();
           hostToIDListMap.put(host, idList);
         }
-        idList.add(id);         
+        idList.add(id);
         addResourceRequest(request.priority, host, request.capability);
       }
     }
@@ -627,7 +649,7 @@ public class YarnContainerAllocator extends ContainerAllocator {
 
   private void addResourceRequest(Priority priority, String resourceName, Resource capability) {
     Map<String, Map<Resource, ResourceRequest>> remoteRequests =
-        this.remoteRequestsTable.get(priority);
+      this.remoteRequestsTable.get(priority);
     if (remoteRequests == null) {
       remoteRequests = new HashMap<String, Map<Resource, ResourceRequest>>();
       this.remoteRequestsTable.put(priority, remoteRequests);
@@ -654,9 +676,10 @@ public class YarnContainerAllocator extends ContainerAllocator {
     // Note this down for next interaction with ResourceManager
     addResourceRequestToAsk(remoteRequest);
     if (LOG.isDebugEnabled()) {
-      LOG.debug("addResourceRequest:" + " applicationId=" + context.getApplicationId()
-          + " priority=" + priority.getPriority() + " resourceName=" + resourceName
-          + " numContainers=" + remoteRequest.getNumContainers() + " #asks=" + ask.size());
+      LOG.debug(
+        "addResourceRequest:" + " applicationId=" + context.getApplicationId() + " priority="
+          + priority.getPriority() + " resourceName=" + resourceName + " numContainers="
+          + remoteRequest.getNumContainers() + " #asks=" + ask.size());
     }
   }
 
@@ -669,21 +692,22 @@ public class YarnContainerAllocator extends ContainerAllocator {
 
   private void decResourceRequest(Priority priority, String resourceName, Resource capability) {
     Map<String, Map<Resource, ResourceRequest>> remoteRequests =
-        this.remoteRequestsTable.get(priority);
+      this.remoteRequestsTable.get(priority);
     Map<Resource, ResourceRequest> reqMap = remoteRequests.get(resourceName);
     if (reqMap == null) {
       if (LOG.isDebugEnabled()) {
-        LOG.debug("Not decrementing resource as " + resourceName
-            + " is not present in request table");
+        LOG.debug(
+          "Not decrementing resource as " + resourceName + " is not present in request table");
       }
       return;
     }
     ResourceRequest remoteRequest = reqMap.get(capability);
 
     if (LOG.isDebugEnabled()) {
-      LOG.debug("BEFORE decResourceRequest:" + " applicationId=" + context.getApplicationId()
-          + " priority=" + priority.getPriority() + " resourceName=" + resourceName
-          + " numContainers=" + remoteRequest.getNumContainers() + " #asks=" + ask.size());
+      LOG.debug(
+        "BEFORE decResourceRequest:" + " applicationId=" + context.getApplicationId() + " priority="
+          + priority.getPriority() + " resourceName=" + resourceName + " numContainers="
+          + remoteRequest.getNumContainers() + " #asks=" + ask.size());
     }
 
     if (remoteRequest.getNumContainers() > 0) {
@@ -707,9 +731,10 @@ public class YarnContainerAllocator extends ContainerAllocator {
     addResourceRequestToAsk(remoteRequest);
 
     if (LOG.isDebugEnabled()) {
-      LOG.info("AFTER decResourceRequest:" + " applicationId=" + context.getApplicationId()
-          + " priority=" + priority.getPriority() + " resourceName=" + resourceName
-          + " numContainers=" + remoteRequest.getNumContainers() + " #asks=" + ask.size());
+      LOG.info(
+        "AFTER decResourceRequest:" + " applicationId=" + context.getApplicationId() + " priority="
+          + priority.getPriority() + " resourceName=" + resourceName + " numContainers="
+          + remoteRequest.getNumContainers() + " #asks=" + ask.size());
     }
   }
 
@@ -752,7 +777,7 @@ public class YarnContainerAllocator extends ContainerAllocator {
       Map<String, LinkedList<Id>> hostToIDListMap = hostToIDListMaps.get(allocated.getPriority());
       Map<Id, ContainerRequest> idToRequestMap = idToRequestMaps.get(allocated.getPriority());
       if (hostToIDListMap == null || hostToIDListMap.isEmpty() || idToRequestMap == null
-          || idToRequestMap.isEmpty()) {
+        || idToRequestMap.isEmpty()) {
         continue;
       }
 
@@ -782,7 +807,7 @@ public class YarnContainerAllocator extends ContainerAllocator {
       Map<String, LinkedList<Id>> rackToIDListMap = rackToIDListMaps.get(allocated.getPriority());
       Map<Id, ContainerRequest> idToRequestMap = idToRequestMaps.get(allocated.getPriority());
       if (rackToIDListMap == null || rackToIDListMap.isEmpty() || idToRequestMap == null
-          || idToRequestMap.isEmpty()) {
+        || idToRequestMap.isEmpty()) {
         continue;
       }
 
@@ -810,7 +835,7 @@ public class YarnContainerAllocator extends ContainerAllocator {
     while (it.hasNext()) {
       Container allocated = it.next();
       Map<Id, ContainerRequest> idToRequestMap = idToRequestMaps.get(allocated.getPriority());
-      if(idToRequestMap == null || idToRequestMap.isEmpty()) {
+      if (idToRequestMap == null || idToRequestMap.isEmpty()) {
         continue;
       }
       Id tId = idToRequestMap.keySet().iterator().next();
@@ -830,18 +855,18 @@ public class YarnContainerAllocator extends ContainerAllocator {
 
     // send the container-assigned event to task attempt
     if (assigned.id instanceof PSAttemptId) {
-      context.getEventHandler().handle(
-          new PSAttemptContainerAssignedEvent((PSAttemptId) assigned.id, allocated));
+      context.getEventHandler()
+        .handle(new PSAttemptContainerAssignedEvent((PSAttemptId) assigned.id, allocated));
     } else if (assigned.id instanceof WorkerAttemptId) {
-      context.getEventHandler().handle(
-          new WorkerAttemptContainerAssignedEvent((WorkerAttemptId) assigned.id, allocated));
+      context.getEventHandler()
+        .handle(new WorkerAttemptContainerAssignedEvent((WorkerAttemptId) assigned.id, allocated));
     }
 
     assignedContainerToIDMap.put(allocated.getId(), assigned.id);
     idToContainerMap.put(assigned.id, allocated);
 
     LOG.info("Assigned container (" + allocated + ") " + " to task " + assigned.id + " on node "
-        + allocated.getNodeId().toString());
+      + allocated.getNodeId().toString());
   }
 
   public Map<ApplicationAccessType, String> getApplicationACLs() {

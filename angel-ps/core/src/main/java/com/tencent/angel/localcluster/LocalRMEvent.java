@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.localcluster;
 
 import org.apache.hadoop.yarn.api.records.ApplicationId;
@@ -23,16 +24,21 @@ import org.apache.hadoop.yarn.api.records.ApplicationId;
  * Local resource manager event.
  */
 public class LocalRMEvent {
-  /**application id*/
+  /**
+   * application id
+   */
   private final ApplicationId appId;
-  
-  /**event type*/
+
+  /**
+   * event type
+   */
   private final LocalRMEventType type;
-  
+
   /**
    * Create a LocalRMEvent
+   *
    * @param appId application id
-   * @param type event type
+   * @param type  event type
    */
   public LocalRMEvent(ApplicationId appId, LocalRMEventType type) {
     this.appId = appId;
@@ -41,6 +47,7 @@ public class LocalRMEvent {
 
   /**
    * Get application id
+   *
    * @return application id
    */
   public ApplicationId getAppId() {
@@ -49,14 +56,14 @@ public class LocalRMEvent {
 
   /**
    * Get event type
+   *
    * @return event type
    */
   public LocalRMEventType getType() {
     return type;
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "LocalRMEvent [appId=" + appId + ", type=" + type + "]";
   }
 }

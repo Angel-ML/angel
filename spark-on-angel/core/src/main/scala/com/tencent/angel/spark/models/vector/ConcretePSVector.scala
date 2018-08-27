@@ -15,13 +15,14 @@
  *
  */
 
+
 package com.tencent.angel.spark.models.vector
 
 /**
- * ConcretePSVector is a super class of DensePSVector and SparsePSVector, which tries to differ
- * PSVectorDecorator (who includes BreezePSVector and CachePSVector) from DensePSVector and
- * SparsePSVector.
- */
+  * ConcretePSVector is a super class of DensePSVector and SparsePSVector, which tries to differ
+  * PSVectorDecorator (who includes BreezePSVector and CachePSVector) from DensePSVector and
+  * SparsePSVector.
+  */
 
 abstract class ConcretePSVector extends PSVector {
 

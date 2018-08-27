@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.utils;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -28,11 +29,12 @@ import java.io.ByteArrayOutputStream;
 
 public class KryoUtils {
   private static ThreadLocal<Kryo> kryos = new ThreadLocal<Kryo>();
-  private static ThreadLocal<KryoReflectionFactorySupport> kryoRefs = new ThreadLocal<KryoReflectionFactorySupport>();
+  private static ThreadLocal<KryoReflectionFactorySupport> kryoRefs =
+    new ThreadLocal<KryoReflectionFactorySupport>();
 
-  private static Kryo getKryo(){
+  private static Kryo getKryo() {
     Kryo kryo = kryos.get();
-    if(kryo == null) {
+    if (kryo == null) {
       kryo = new Kryo();
       kryos.set(kryo);
     }
@@ -40,9 +42,9 @@ public class KryoUtils {
     return kryo;
   }
 
-  private static KryoReflectionFactorySupport getKryoRef(){
+  private static KryoReflectionFactorySupport getKryoRef() {
     KryoReflectionFactorySupport kryoRef = kryoRefs.get();
-    if(kryoRef == null) {
+    if (kryoRef == null) {
       kryoRef = new KryoReflectionFactorySupport();
       kryoRefs.set(kryoRef);
     }
@@ -60,10 +62,10 @@ public class KryoUtils {
     return baos.toByteArray();
   }
 
-  public static Metric deserializeAlgoMetric(byte [] data) {
+  public static Metric deserializeAlgoMetric(byte[] data) {
     ByteArrayInputStream bais = new ByteArrayInputStream(data);
     Input input = new Input(bais);
     KryoReflectionFactorySupport kryoRef = getKryoRef();
-    return ((Metric)kryoRef.readClassAndObject(input));
+    return ((Metric) kryoRef.readClassAndObject(input));
   }
 }

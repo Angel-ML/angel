@@ -15,14 +15,14 @@
  *
  */
 
+
 package com.tencent.angel.utils;
 
 import com.tencent.angel.AppSubmitter;
 import org.apache.hadoop.conf.Configuration;
 
 public class DefaultAppSubmitter implements AppSubmitter {
-  @Override
-  public void submit(Configuration conf) throws Exception {
+  @Override public void submit(Configuration conf) throws Exception {
 
   }
 }

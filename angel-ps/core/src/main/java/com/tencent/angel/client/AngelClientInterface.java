@@ -15,12 +15,17 @@
  *
  */
 
+
 package com.tencent.angel.client;
 
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.model.MLModel;
+import com.tencent.angel.model.ModelLoadContext;
+import com.tencent.angel.model.ModelSaveContext;
 import com.tencent.angel.worker.task.BaseTask;
+
+import java.util.List;
 
 /**
  * Angel client interface. It defines application control operations from angel client.
@@ -36,19 +41,41 @@ public interface AngelClientInterface {
   void addMatrix(MatrixContext mContext) throws AngelException;
 
   /**
+   * Add a new matrix.
+   *
+   * @throws AngelException
+   */
+  void createMatrices() throws AngelException;
+
+  /**
+   * Add a new matrix.
+   *
+   * @throws AngelException
+   */
+  void createMatrices(List<MatrixContext> contexts) throws AngelException;
+
+  /**
    * Submit application.
-   * 
+   *
    * @throws AngelException
    */
   void startPSServer() throws AngelException;
 
   /**
    * Load the model from files.
-   * 
+   *
    * @param model model
    * @throws AngelException
    */
   void loadModel(MLModel model) throws AngelException;
+
+  /**
+   * Load the model from files
+   *
+   * @param context model load context
+   * @throws AngelException
+   */
+  void load(ModelLoadContext context) throws AngelException;
 
   /**
    * Accept specified task and start
@@ -56,36 +83,44 @@ public interface AngelClientInterface {
    * @param taskClass
    * @throws AngelException
    */
-  void runTask(@SuppressWarnings("rawtypes") Class<? extends BaseTask> taskClass) throws AngelException;
+  void runTask(@SuppressWarnings("rawtypes") Class<? extends BaseTask> taskClass)
+    throws AngelException;
 
   /**
    * Startup workers and start to execute tasks.
-   *
+   * <p>
    * Use #runTask instead
    *
    * @throws AngelException
    */
-  @Deprecated
-  void run() throws AngelException;
+  @Deprecated void run() throws AngelException;
 
   /**
    * Wait until all the tasks are done.
-   * 
+   *
    * @throws AngelException
    */
   void waitForCompletion() throws AngelException;
 
   /**
    * Write the model to files.
-   * 
+   *
    * @param model model need to write to files.
    * @throws AngelException
    */
   void saveModel(MLModel model) throws AngelException;
 
   /**
+   * Save the model to files
+   *
+   * @param context model save context
+   * @throws AngelException
+   */
+  void save(ModelSaveContext context) throws AngelException;
+
+  /**
    * Stop the whole application.
-   * 
+   *
    * @throws AngelException stop failed
    */
   void stop() throws AngelException;
@@ -97,4 +132,18 @@ public interface AngelClientInterface {
    * @throws AngelException stop failed
    */
   void stop(int stateCode) throws AngelException;
+
+  /**
+   * Kill the application
+   *
+   * @throws AngelException
+   */
+  void kill() throws AngelException;
+
+  /**
+   * Clean thre resource
+   *
+   * @throws AngelException
+   */
+  void close() throws AngelException;
 }

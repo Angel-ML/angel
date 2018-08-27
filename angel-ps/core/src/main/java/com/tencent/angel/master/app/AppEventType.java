@@ -15,21 +15,27 @@
  *
  */
 
+
 package com.tencent.angel.master.app;
 
 public enum AppEventType {
-  /** init the application */
-  INIT,
-  /** start tasks */
-  START,
-  /** kill the applicaion */
-  KILL,
-  /** some error happened */
-  INTERNAL_ERROR,
-  /** tasks are successful */
-  EXECUTE_SUCESS,
-  /** write the matrices to file */
-  COMMIT,
-  /** application run successfully */
+  /**
+   * init the application
+   */
+  INIT, /**
+   * start tasks
+   */
+  START, /**
+   * kill the applicaion
+   */
+  KILL, /**
+   * some error happened
+   */
+  INTERNAL_ERROR, /**
+   * tasks are successful
+   */
+  EXECUTE_SUCESS, /**
+   * write the matrices to file
+   */
   SUCCESS
 }

@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.spark.rdd
 
 import scala.language.implicitConversions
@@ -22,26 +23,26 @@ import scala.reflect.ClassTag
 
 import org.apache.spark.rdd.RDD
 
-import com.tencent.angel.spark.models.vector.cache.PushMan
+import com.tencent.angel.spark.models.vector.VectorCacheManager
 
 class RDDPSFunctions[T: ClassTag](self: RDD[T]) extends Serializable {
 
   /**
-   * psAggregate is similar to RDD.aggregate, you can update the PSVector in `seqOp` at the same
-   * time of aggregation.
-   *
-   * @param zeroValue the initial value
-   * @param seqOp an operator used to accumulate results within a partition
-   * @param combOp an associative operator used to combine results from different partitions
-   */
+    * psAggregate is similar to RDD.aggregate, you can update the PSVector in `seqOp` at the same
+    * time of aggregation.
+    *
+    * @param zeroValue the initial value
+    * @param seqOp     an operator used to accumulate results within a partition
+    * @param combOp    an associative operator used to combine results from different partitions
+    */
   def psAggregate[U: ClassTag](zeroValue: U)(
-      seqOp: (U, T) => U,
-      combOp: (U, U) => U): U = {
+    seqOp: (U, T) => U,
+    combOp: (U, U) => U): U = {
     val res = self.mapPartitions { iter =>
       val result = iter.foldLeft(zeroValue)(seqOp)
       Iterator(result)
     }.reduce(combOp)
-    PushMan.flushAll()
+    VectorCacheManager.flushAll()
     res
   }
 
@@ -50,7 +51,7 @@ class RDDPSFunctions[T: ClassTag](self: RDD[T]) extends Serializable {
       val result = iter.foldLeft(zeroValue)(seqOp)
       Iterator(result)
     }.collect().head
-    PushMan.flushAll()
+    VectorCacheManager.flushAll()
     res
   }
 

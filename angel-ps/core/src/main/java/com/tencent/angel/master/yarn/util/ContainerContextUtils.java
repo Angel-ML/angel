@@ -1,24 +1,20 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
  */
 
-/**
- * Container environment variables are modified to satisfy Angel worker/ps.
- */
 
 package com.tencent.angel.master.yarn.util;
 
@@ -56,26 +52,25 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class ContainerContextUtils {
   private static final Log LOG = LogFactory.getLog(ContainerContextUtils.class);
-  
+
   private static String initialClasspath = null;
   private static String initialAppClasspath = null;
   private static final Object classpathLock = new Object();
   private static final AtomicBoolean initialClasspathFlag = new AtomicBoolean();
-  
+
   private static final Object commonContainerSpecLock = new Object();
   private static ContainerLaunchContext commonContainerSpec = null;
-  
-  public
-  static ContainerLaunchContext createContainerLaunchContext(
-      Map<ApplicationAccessType, String> applicationACLs, Configuration conf, WorkerAttemptId workerAttemptId,
-      int initMinClock, final ApplicationId appid,
-      MasterService masterService, Credentials credentials) {
+
+  public static ContainerLaunchContext createContainerLaunchContext(
+    Map<ApplicationAccessType, String> applicationACLs, Configuration conf,
+    WorkerAttemptId workerAttemptId, int initMinClock, final ApplicationId appid,
+    MasterService masterService, Credentials credentials) {
 
     synchronized (commonContainerSpecLock) {
       if (commonContainerSpec == null) {
         commonContainerSpec =
-            createCommonContainerLaunchContext(masterService, applicationACLs, conf,
-                appid, credentials);
+          createCommonContainerLaunchContext(masterService, applicationACLs, conf, appid,
+            credentials);
       }
     }
 
@@ -83,16 +78,15 @@ public class ContainerContextUtils {
     Map<String, String> myEnv = new HashMap<String, String>(env.size());
     myEnv.putAll(env);
     Apps.addToEnvironment(myEnv, AngelEnvironment.WORKER_ID.name(),
-        Integer.toString(workerAttemptId.getWorkerId().getIndex()));
+      Integer.toString(workerAttemptId.getWorkerId().getIndex()));
     Apps.addToEnvironment(myEnv, AngelEnvironment.WORKER_ATTEMPT_ID.name(),
-        Integer.toString(workerAttemptId.getIndex()));
+      Integer.toString(workerAttemptId.getIndex()));
     Apps.addToEnvironment(myEnv, AngelEnvironment.WORKER_GROUP_ID.name(),
-        Integer.toString(workerAttemptId.getWorkerId().getWorkerGroupId().getIndex()));
+      Integer.toString(workerAttemptId.getWorkerId().getWorkerGroupId().getIndex()));
     Apps.addToEnvironment(myEnv, AngelEnvironment.INIT_MIN_CLOCK.name(),
-        Integer.toString(initMinClock));
-    Apps.addToEnvironment(myEnv, AngelEnvironment.ANGEL_USER_TASK.name(), conf.get(
-        AngelConf.ANGEL_TASK_USER_TASKCLASS,
-        AngelConf.DEFAULT_ANGEL_TASK_USER_TASKCLASS));
+      Integer.toString(initMinClock));
+    Apps.addToEnvironment(myEnv, AngelEnvironment.ANGEL_USER_TASK.name(),
+      conf.get(AngelConf.ANGEL_TASK_USER_TASKCLASS, AngelConf.DEFAULT_ANGEL_TASK_USER_TASKCLASS));
 
     WorkerJVM.setVMEnv(myEnv, conf);
 
@@ -106,16 +100,16 @@ public class ContainerContextUtils {
     }
 
     // Construct the actual Container
-    ContainerLaunchContext container =
-        ContainerLaunchContext.newInstance(commonContainerSpec.getLocalResources(), myEnv,
-            commands, myServiceData, commonContainerSpec.getTokens().duplicate(), applicationACLs);
+    ContainerLaunchContext container = ContainerLaunchContext
+      .newInstance(commonContainerSpec.getLocalResources(), myEnv, commands, myServiceData,
+        commonContainerSpec.getTokens().duplicate(), applicationACLs);
 
     return container;
   }
 
   private static ContainerLaunchContext createCommonContainerLaunchContext(
-      MasterService masterService, Map<ApplicationAccessType, String> applicationACLs,
-      Configuration conf, final ApplicationId appid, Credentials credentials) {
+    MasterService masterService, Map<ApplicationAccessType, String> applicationACLs,
+    Configuration conf, final ApplicationId appid, Credentials credentials) {
 
     // Application resources
     Map<String, LocalResource> localResources = new HashMap<String, LocalResource>();
@@ -134,22 +128,21 @@ public class ContainerContextUtils {
       // Set up JobConf to be localized properly on the remote NM.
       Path remoteJobSubmitDir = new Path(conf.get(AngelConf.ANGEL_JOB_DIR));
       Path remoteJobConfPath = new Path(remoteJobSubmitDir, AngelConf.ANGEL_JOB_CONF_FILE);
-      localResources.put(
-          AngelConf.ANGEL_JOB_CONF_FILE,
-          createLocalResource(remoteFS, remoteJobConfPath, LocalResourceType.FILE,
-              LocalResourceVisibility.APPLICATION));
-      LOG.info("The job-conf file on the remote FS is " + remoteJobConfPath.toUri().toASCIIString());
+      localResources.put(AngelConf.ANGEL_JOB_CONF_FILE,
+        createLocalResource(remoteFS, remoteJobConfPath, LocalResourceType.FILE,
+          LocalResourceVisibility.APPLICATION));
+      LOG
+        .info("The job-conf file on the remote FS is " + remoteJobConfPath.toUri().toASCIIString());
 
-      LOG.info("actual workergroup number:"
-          + conf.get(AngelConf.ANGEL_WORKERGROUP_ACTUAL_NUM));
+      LOG.info("actual workergroup number:" + conf.get(AngelConf.ANGEL_WORKERGROUP_ACTUAL_NUM));
       LOG.info("actual task number:" + conf.get(AngelConf.ANGEL_TASK_ACTUAL_NUM));
 
       // Setup DistributedCache
       AngelApps.setupDistributedCache(conf, localResources);
 
       // Setup up task credentials buffer
-      LOG.info("Adding #" + credentials.numberOfTokens() + " tokens and #"
-          + credentials.numberOfSecretKeys() + " secret keys for NM use for launching container");
+      LOG.info("Adding #" + credentials.numberOfTokens() + " tokens and #" + credentials
+        .numberOfSecretKeys() + " secret keys for NM use for launching container");
 
       Credentials taskCredentials = new Credentials(credentials);
 
@@ -161,26 +154,26 @@ public class ContainerContextUtils {
       LOG.info("Size of containertokens_dob is " + taskCredentials.numberOfTokens());
       taskCredentials.writeTokenStorageToStream(containerTokens_dob);
       taskCredentialsBuffer =
-          ByteBuffer.wrap(containerTokens_dob.getData(), 0, containerTokens_dob.getLength());
+        ByteBuffer.wrap(containerTokens_dob.getData(), 0, containerTokens_dob.getLength());
       containerTokens_dob.close();
 
       InetSocketAddress listenAddr = NetUtils.getRealLocalAddr(masterService.getRPCListenAddr());
-      Apps.addToEnvironment(environment, AngelEnvironment.LISTEN_ADDR.name(), listenAddr
-          .getAddress().getHostAddress());
+      Apps.addToEnvironment(environment, AngelEnvironment.LISTEN_ADDR.name(),
+        listenAddr.getAddress().getHostAddress());
 
       Apps.addToEnvironment(environment, AngelEnvironment.LISTEN_PORT.name(),
-          String.valueOf(listenAddr.getPort()));
+        String.valueOf(listenAddr.getPort()));
 
       String workerGroupNumStr = conf.get(AngelConf.ANGEL_WORKERGROUP_ACTUAL_NUM);
-      if(workerGroupNumStr != null) {
+      if (workerGroupNumStr != null) {
         Apps.addToEnvironment(environment, AngelEnvironment.WORKERGROUP_NUMBER.name(),
-            conf.get(AngelConf.ANGEL_WORKERGROUP_ACTUAL_NUM));
+          conf.get(AngelConf.ANGEL_WORKERGROUP_ACTUAL_NUM));
       }
 
       String taskNumStr = conf.get(AngelConf.ANGEL_TASK_ACTUAL_NUM);
-      if(taskNumStr != null){
+      if (taskNumStr != null) {
         Apps.addToEnvironment(environment, AngelEnvironment.TASK_NUMBER.name(),
-            conf.get(AngelConf.ANGEL_TASK_ACTUAL_NUM));
+          conf.get(AngelConf.ANGEL_TASK_ACTUAL_NUM));
       }
 
       Apps.addToEnvironment(environment, Environment.CLASSPATH.name(), getInitialClasspath(conf));
@@ -198,24 +191,23 @@ public class ContainerContextUtils {
     // Construct the actual Container
     // The null fields are per-container and will be constructed for each
     // container separately.
-    ContainerLaunchContext container =
-        ContainerLaunchContext.newInstance(localResources, environment, null, serviceData,
-            taskCredentialsBuffer, applicationACLs);
+    ContainerLaunchContext container = ContainerLaunchContext
+      .newInstance(localResources, environment, null, serviceData, taskCredentialsBuffer,
+        applicationACLs);
 
     return container;
   }
 
   @SuppressWarnings("deprecation")
   public static ContainerLaunchContext createContainerLaunchContext(
-      Map<ApplicationAccessType, String> applicationACLs, Configuration conf,
-      PSAttemptId psAttemptId, final ApplicationId appid, MasterService masterService,
-      Credentials credentials) {
+    Map<ApplicationAccessType, String> applicationACLs, Configuration conf, PSAttemptId psAttemptId,
+    final ApplicationId appid, MasterService masterService, Credentials credentials) {
 
     synchronized (commonContainerSpecLock) {
       if (commonContainerSpec == null) {
         commonContainerSpec =
-            createCommonContainerLaunchContext(masterService, applicationACLs, conf,
-                appid, credentials);
+          createCommonContainerLaunchContext(masterService, applicationACLs, conf, appid,
+            credentials);
       }
     }
 
@@ -224,9 +216,9 @@ public class ContainerContextUtils {
     myEnv.putAll(env);
 
     Apps.addToEnvironment(myEnv, AngelEnvironment.PARAMETERSERVER_ID.name(),
-        Integer.toString(psAttemptId.getPsId().getIndex()));
+      Integer.toString(psAttemptId.getPsId().getIndex()));
     Apps.addToEnvironment(myEnv, AngelEnvironment.PS_ATTEMPT_ID.name(),
-        Integer.toString(psAttemptId.getIndex()));
+      Integer.toString(psAttemptId.getIndex()));
 
     ParameterServerJVM.setVMEnv(myEnv, conf);
 
@@ -240,22 +232,22 @@ public class ContainerContextUtils {
     }
 
     // Construct the actual Container
-    ContainerLaunchContext container =
-        ContainerLaunchContext.newInstance(commonContainerSpec.getLocalResources(), myEnv,
-            commands, myServiceData, commonContainerSpec.getTokens().duplicate(), applicationACLs);
+    ContainerLaunchContext container = ContainerLaunchContext
+      .newInstance(commonContainerSpec.getLocalResources(), myEnv, commands, myServiceData,
+        commonContainerSpec.getTokens().duplicate(), applicationACLs);
 
     return container;
   }
- 
-  private static LocalResource createLocalResource(FileSystem fc, Path file,
-      LocalResourceType type, LocalResourceVisibility visibility) throws IOException {
+
+  private static LocalResource createLocalResource(FileSystem fc, Path file, LocalResourceType type,
+    LocalResourceVisibility visibility) throws IOException {
     FileStatus fstat = fc.getFileStatus(file);
     URL resourceURL = ConverterUtils.getYarnUrlFromPath(fc.resolvePath(fstat.getPath()));
     long resourceSize = fstat.getLen();
     long resourceModificationTime = fstat.getModificationTime();
 
-    return LocalResource.newInstance(resourceURL, type, visibility, resourceSize,
-        resourceModificationTime);
+    return LocalResource
+      .newInstance(resourceURL, type, visibility, resourceSize, resourceModificationTime);
   }
 
   private static String getInitialClasspath(Configuration conf) throws IOException {

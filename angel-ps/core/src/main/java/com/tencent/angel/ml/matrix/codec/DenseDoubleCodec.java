@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.ml.matrix.codec;
 
 import com.tencent.angel.common.Serialize;

@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.localcluster;
 
 public enum LocalRMEventType {

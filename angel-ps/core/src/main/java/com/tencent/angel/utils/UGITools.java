@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.utils;
 
 import org.apache.commons.logging.Log;
@@ -33,9 +34,9 @@ public class UGITools {
   private static final Log LOG = LogFactory.getLog(UGITools.class);
   final static public String UGI_PROPERTY_NAME = "hadoop.job.ugi";
 
-  public static UserGroupInformation getCurrentUser(Configuration conf) throws IOException,
-      ClassNotFoundException, NoSuchFieldException, SecurityException, InstantiationException,
-      IllegalAccessException {
+  public static UserGroupInformation getCurrentUser(Configuration conf)
+    throws IOException, ClassNotFoundException, NoSuchFieldException, SecurityException,
+    InstantiationException, IllegalAccessException {
     String[] ugiStrs = conf.getStrings(UGI_PROPERTY_NAME);
     if (ugiStrs == null) {
       LOG.info("UGI_PROPERTY_NAME is null ");
@@ -60,9 +61,10 @@ public class UGITools {
     }
   }
 
-  public static void main(String[] args) throws ClassNotFoundException, InstantiationException,
-      IllegalAccessException, NoSuchFieldException, SecurityException, IllegalArgumentException,
-      InvocationTargetException, NoSuchMethodException, IOException {
+  public static void main(String[] args)
+    throws ClassNotFoundException, InstantiationException, IllegalAccessException,
+    NoSuchFieldException, SecurityException, IllegalArgumentException, InvocationTargetException,
+    NoSuchMethodException, IOException {
     Configuration conf = new Configuration();
     conf.set(UGI_PROPERTY_NAME, "abc:123456");
     UserGroupInformation ugi = getCurrentUser(conf);

@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.worker.task;
 
 import com.tencent.angel.exception.AngelException;
@@ -25,7 +26,6 @@ import com.tencent.angel.exception.AngelException;
  * @param <KEYIN>    the key type
  * @param <VALUEIN>  the value type
  * @param <VALUEOUT> the parsed value type
- *
  */
 public interface BaseTaskInterface<KEYIN, VALUEIN, VALUEOUT> {
   /**

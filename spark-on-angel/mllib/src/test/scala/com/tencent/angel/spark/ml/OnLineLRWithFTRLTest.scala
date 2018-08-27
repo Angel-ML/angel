@@ -1,3 +1,21 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
+
 package com.tencent.angel.spark.ml
 
 import java.util.Random
@@ -6,12 +24,10 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
-
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.linalg.SparseVector
-import com.tencent.angel.spark.ml.online_learning.FTRLRunner
-import com.tencent.angel.spark.ml.optimize.FTRLWithVRG
+import com.tencent.angel.spark.ml.online_learning.{FTRLRunner, FTRLWithVRG}
 import com.tencent.angel.spark.ml.util.Infor2HDFS
+import com.tencent.angel.ml.math2.VFactory
 
 object OnLineLRWithFTRLTest {
 
@@ -48,7 +64,7 @@ object OnLineLRWithFTRLTest {
 
       featureDS.print()
 
-      val initW = new SparseVector(dim, Array((1l, 0.1), (2l, 0.2)))
+      val initW = VFactory.sparseLongKeyDoubleVector(dim, Array(1L, 2L), Array(0.1, 0.2))
       FTRLRunner.train(ftrlVRG, initW, featureDS, dim, partitionNum, modelSavePath, batch2Save, true)
       // start to create the job
       ssc.start()
@@ -84,8 +100,8 @@ object OnLineLRWithFTRLTest {
   }
 
   def randomInit(dim: Long): Map[Long, Double] = {
-    val selectNum = if(dim < 10) dim.toInt else 10
-    val dimReFact = if(dim <= Int.MaxValue ) dim.toInt else Int.MaxValue
+    val selectNum = if (dim < 10) dim.toInt else 10
+    val dimReFact = if (dim <= Int.MaxValue) dim.toInt else Int.MaxValue
     var resultRandom: Map[Long, Double] = Map()
     val randGene = new Random()
 

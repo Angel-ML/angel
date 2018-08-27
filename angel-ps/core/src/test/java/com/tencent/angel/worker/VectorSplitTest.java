@@ -15,10 +15,13 @@
  *
  */
 
+
 package com.tencent.angel.worker;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.math.vector.*;
+import com.tencent.angel.ml.math2.storage.*;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
+import com.tencent.angel.ml.math2.vector.IntIntVector;
 import com.tencent.angel.psagent.matrix.oplog.cache.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -37,25 +40,23 @@ import java.util.*;
 import static org.mockito.Mockito.*;
 
 
-@RunWith(MockitoJUnitRunner.class)
-public class VectorSplitTest {
+@RunWith(MockitoJUnitRunner.class) public class VectorSplitTest {
 
   private final static Log LOG = LogFactory.getLog(VectorSplitTest.class);
-  
+
   static {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
-  @BeforeClass
-  public static void beforeClass() {
+  @BeforeClass public static void beforeClass() {
 
   }
 
-  @Test
-  public void sparseSortedVectorSplit() {
+  @Test public void sparseSortedVectorSplit() {
     int[] offsets = {0, 2, 4, 6, 8};
     double[] values = {0.0, 2.0, 4.0, 6.0, 8.0};
-    SparseDoubleSortedVector vector = new SparseDoubleSortedVector(10, offsets, values);
+    IntDoubleVector vector =
+      new IntDoubleVector(10, new IntDoubleSortedVectorStorage(10, offsets, values));
     vector.setRowId(0);
 
     PartitionKey key1 = new PartitionKey(0, 0, 0, 0, 1, 5);
@@ -78,9 +79,9 @@ public class VectorSplitTest {
 
 
     Assert.assertArrayEquals(offset1,
-        Arrays.copyOfRange(split1.getOffsets(), (int)split1.getStart(), (int)split1.getEnd()));
+      Arrays.copyOfRange(split1.getOffsets(), (int) split1.getStart(), (int) split1.getEnd()));
     for (int i = 0; i < split1.size(); i++) {
-      Assert.assertEquals(values1[i], split1.getValues()[(int)split1.getStart() + i], 0.0);
+      Assert.assertEquals(values1[i], split1.getValues()[(int) split1.getStart() + i], 0.0);
     }
 
     int[] offset2 = {6, 8};
@@ -93,18 +94,17 @@ public class VectorSplitTest {
 
 
     Assert.assertArrayEquals(offset2,
-        Arrays.copyOfRange(split2.getOffsets(), (int)split2.getStart(), (int)split2.getEnd()));
+      Arrays.copyOfRange(split2.getOffsets(), (int) split2.getStart(), (int) split2.getEnd()));
     for (int i = 0; i < split2.size(); i++) {
-      Assert.assertEquals(values2[i], split2.getValues()[(int)split2.getStart() + i], 0.0);
+      Assert.assertEquals(values2[i], split2.getValues()[(int) split2.getStart() + i], 0.0);
     }
 
     LOG.info("Pass sparseSortedVectorSplit Test");
   }
 
-  @Test
-  public void denseVectorSplit() {
+  @Test public void denseVectorSplit() {
     double[] values = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
-    DenseDoubleVector vector = new DenseDoubleVector(10, values);
+    IntDoubleVector vector = new IntDoubleVector(10, new IntDoubleDenseVectorStorage(values));
     vector.setRowId(0);
 
     PartitionKey key1 = new PartitionKey(0, 0, 0, 0, 1, 5);
@@ -125,7 +125,7 @@ public class VectorSplitTest {
     Assert.assertEquals(5, split1.getEnd());
 
     for (int i = 0; i < split1.size(); i++) {
-      Assert.assertEquals(values1[i], split1.getValues()[(int)split1.getStart() + i], 0.0);
+      Assert.assertEquals(values1[i], split1.getValues()[(int) split1.getStart() + i], 0.0);
     }
 
     double[] values2 = {5.0, 6.0, 7.0, 8.0, 9.0};
@@ -137,16 +137,15 @@ public class VectorSplitTest {
 
 
     for (int i = 0; i < split2.size(); i++) {
-      Assert.assertEquals(values2[i], split2.getValues()[(int)split2.getStart() + i], 0.0);
+      Assert.assertEquals(values2[i], split2.getValues()[(int) split2.getStart() + i], 0.0);
     }
 
     LOG.info("Pass denseVectorSplit Test");
   }
 
-  @Test
-  public void denseIntVectorSplit() {
+  @Test public void denseIntVectorSplit() {
     int[] values = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    DenseIntVector vector = new DenseIntVector(10, values);
+    IntIntVector vector = new IntIntVector(10, new IntIntDenseVectorStorage(values));
     vector.setRowId(0);
 
     PartitionKey key1 = new PartitionKey(0, 0, 0, 0, 1, 5);
@@ -167,7 +166,7 @@ public class VectorSplitTest {
     Assert.assertEquals(5, split1.getEnd());
 
     for (int i = 0; i < split1.size(); i++) {
-      Assert.assertEquals(values1[i], split1.getValues()[(int)split1.getStart() + i]);
+      Assert.assertEquals(values1[i], split1.getValues()[(int) split1.getStart() + i]);
     }
 
     int[] values2 = {5, 6, 7, 8, 9};
@@ -179,17 +178,17 @@ public class VectorSplitTest {
 
 
     for (int i = 0; i < split2.size(); i++) {
-      Assert.assertEquals(values2[i], split2.getValues()[(int)split2.getStart() + i]);
+      Assert.assertEquals(values2[i], split2.getValues()[(int) split2.getStart() + i]);
     }
 
     LOG.info("Pass denseIntVectorSplit Test");
   }
 
-  @Test
-  public void sparseHashMapVectorSplit() {
+  @Test public void sparseHashMapVectorSplit() {
     int[] offsets = {0, 2, 4, 6, 8};
     double[] values = {0.0, 2.0, 4.0, 6.0, 8.0};
-    SparseDoubleVector vector = new SparseDoubleVector(10, offsets, values);
+    IntDoubleVector vector =
+      new IntDoubleVector(10, new IntDoubleSparseVectorStorage(10, offsets, values));
     vector.setRowId(0);
 
     PartitionKey key1 = new PartitionKey(0, 0, 0, 0, 1, 5);
@@ -204,7 +203,7 @@ public class VectorSplitTest {
 
     int[] offset1 = {0, 2, 4};
     double[] values1 = {0.0, 2.0, 4.0};
-    SparseDoubleRowUpdateSplit split1 = (SparseDoubleRowUpdateSplit)splits.get(key1);
+    SparseDoubleRowUpdateSplit split1 = (SparseDoubleRowUpdateSplit) splits.get(key1);
     Assert.assertNotNull(split1);
     Assert.assertEquals(2, splits.get(key2).size());
     Assert.assertEquals(offset1.length, split1.size());
@@ -213,9 +212,9 @@ public class VectorSplitTest {
 
 
     Assert.assertArrayEquals(offset1,
-        Arrays.copyOfRange(split1.getOffsets(), (int)split1.getStart(), (int)split1.getEnd()));
+      Arrays.copyOfRange(split1.getOffsets(), (int) split1.getStart(), (int) split1.getEnd()));
     for (int i = 0; i < split1.size(); i++) {
-      Assert.assertEquals(values1[i], split1.getValues()[(int)split1.getStart() + i], 0.0);
+      Assert.assertEquals(values1[i], split1.getValues()[(int) split1.getStart() + i], 0.0);
     }
 
     int[] offset2 = {6, 8};
@@ -228,19 +227,18 @@ public class VectorSplitTest {
 
 
     Assert.assertArrayEquals(offset2,
-        Arrays.copyOfRange(split2.getOffsets(), (int)split2.getStart(), (int)split2.getEnd()));
+      Arrays.copyOfRange(split2.getOffsets(), (int) split2.getStart(), (int) split2.getEnd()));
     for (int i = 0; i < split2.size(); i++) {
-      Assert.assertEquals(values2[i], split2.getValues()[(int)split2.getStart() + i], 0.0);
+      Assert.assertEquals(values2[i], split2.getValues()[(int) split2.getStart() + i], 0.0);
     }
 
     LOG.info("Pass sparseHashMapVector split Test");
   }
 
-  @Test
-  public void sparseIntVectorSplit() {
+  @Test public void sparseIntVectorSplit() {
     int[] offsets = {0, 2, 4, 6, 8};
     int[] values = {0, 2, 4, 6, 8};
-    SparseIntVector vector = new SparseIntVector(10, offsets, values);
+    IntIntVector vector = new IntIntVector(10, new IntIntSparseVectorStorage(10, offsets, values));
     vector.setRowId(0);
 
     PartitionKey key1 = new PartitionKey(0, 0, 0, 0, 1, 5);
@@ -255,7 +253,7 @@ public class VectorSplitTest {
 
     int[] offset1 = {0, 2, 4};
     int[] values1 = {0, 2, 4};
-    SparseIntRowUpdateSplit split1 = (SparseIntRowUpdateSplit)splits.get(key1);
+    SparseIntRowUpdateSplit split1 = (SparseIntRowUpdateSplit) splits.get(key1);
     Assert.assertNotNull(split1);
     Assert.assertEquals(offset1.length, split1.size());
     Assert.assertEquals(0, split1.getStart());
@@ -263,14 +261,14 @@ public class VectorSplitTest {
 
 
     Assert.assertArrayEquals(offset1,
-        Arrays.copyOfRange(split1.getOffsets(), (int)split1.getStart(), (int)split1.getEnd()));
+      Arrays.copyOfRange(split1.getOffsets(), (int) split1.getStart(), (int) split1.getEnd()));
     for (int i = 0; i < split1.size(); i++) {
-      Assert.assertEquals(values1[i], split1.getValues()[(int)split1.getStart() + i], 0.0);
+      Assert.assertEquals(values1[i], split1.getValues()[(int) split1.getStart() + i], 0.0);
     }
 
     int[] offset2 = {6, 8};
     int[] values2 = {6, 8};
-    SparseIntRowUpdateSplit split2 = (SparseIntRowUpdateSplit)splits.get(key2);
+    SparseIntRowUpdateSplit split2 = (SparseIntRowUpdateSplit) splits.get(key2);
     Assert.assertNotNull(split2);
     Assert.assertEquals(offset2.length, split2.size());
     Assert.assertEquals(3, split2.getStart());
@@ -278,16 +276,15 @@ public class VectorSplitTest {
 
 
     Assert.assertArrayEquals(offset2,
-        Arrays.copyOfRange(split2.getOffsets(), (int)split2.getStart(), (int)split2.getEnd()));
+      Arrays.copyOfRange(split2.getOffsets(), (int) split2.getStart(), (int) split2.getEnd()));
     for (int i = 0; i < split2.size(); i++) {
-      Assert.assertEquals(values2[i], split2.getValues()[(int)split2.getStart() + i], 0.0);
+      Assert.assertEquals(values2[i], split2.getValues()[(int) split2.getStart() + i], 0.0);
     }
 
     LOG.info("Pass sparseIntVector split Test");
   }
 
-  @Test
-  public void mockitoTest() {
+  @Test public void mockitoTest() {
     List list = mock(List.class);
 
     // using mock object
@@ -355,8 +352,7 @@ public class VectorSplitTest {
 
     List mockAnswer = mock(List.class);
     when(mockAnswer.get(anyInt())).thenAnswer(new Answer<String>() {
-      @Override
-      public String answer(InvocationOnMock invocation) throws Throwable {
+      @Override public String answer(InvocationOnMock invocation) throws Throwable {
         Object[] args = invocation.getArguments();
         int index = (int) args[0];
         return String.valueOf(index);

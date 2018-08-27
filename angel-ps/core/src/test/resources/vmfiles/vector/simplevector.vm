@@ -1,0 +1,393 @@
+package com.tencent.angel.ml.math2.vector;
+
+import com.tencent.angel.ml.math2.storage.*;
+import it.unimi.dsi.fastutil.$itype.toLowerCase()s.*;
+import it.unimi.dsi.fastutil.$dtype.toLowerCase()s.*;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import org.apache.commons.lang.ArrayUtils;
+import java.lang.Math;
+
+public class ${itype}${dtype}Vector extends ${dtype}Vector implements ${itype}KeyVector, SimpleVector {
+    private $itype.toLowerCase() dim;
+
+    public $itype.toLowerCase() getDim() {
+        return dim;
+    }
+
+    public long dim() {
+        return (long)getDim();
+    }
+
+    public void setDim($itype.toLowerCase() dim) {
+        this.dim = dim;
+    }
+
+    public ${itype}${dtype}Vector() {
+        super();
+    }
+
+    public ${itype}${dtype}Vector(int matrixId, int rowId, int clock, $itype.toLowerCase() dim, ${itype}${dtype}VectorStorage storage) {
+        this.matrixId = matrixId;
+        this.rowId = rowId;
+        this.clock = clock;
+        this.dim = dim;
+        this.storage = storage;
+    }
+
+    public ${itype}${dtype}Vector($itype.toLowerCase() dim, ${itype}${dtype}VectorStorage storage) {
+        this(0, 0, 0, dim, storage);
+    }
+
+    public $dtype.toLowerCase() get($itype.toLowerCase() idx) {
+        return ((${itype}${dtype}VectorStorage)storage).get(idx);
+    }
+
+    public $dtype.toLowerCase() [ ] get($itype.toLowerCase() [ ] idxs) {
+        return ((${itype}${dtype}VectorStorage)storage).get(idxs);
+    }
+
+    public void set($itype.toLowerCase() idx, $dtype.toLowerCase() value) {
+        ((${itype}${dtype}VectorStorage)storage).set(idx, value);
+    }
+
+    public $dtype.toLowerCase() max() {
+        ${itype}${dtype}VectorStorage idstorage = (${itype}${dtype}VectorStorage)storage;
+        if (idstorage.size() == 0) return 0;
+#if ( ${dtype} == "Int" )
+        $dtype.toLowerCase() maxval = Integer.MIN_VALUE;
+#else
+        $dtype.toLowerCase() maxval = ${dtype}.MIN_VALUE;
+#end
+        if (idstorage.isSparse()) {
+            ${dtype}Iterator iter = idstorage.valueIterator();
+            while(iter.hasNext()){
+                $dtype.toLowerCase() val = iter.next${dtype}();
+                if (val > maxval) {
+                    maxval = val;
+                }
+            }
+        } else {
+            for ($dtype.toLowerCase() val: idstorage.getValues()){
+                if (val > maxval) {
+                    maxval = val;
+                }
+            }
+        }
+        return maxval;
+    }
+
+    public $dtype.toLowerCase() min() {
+        ${itype}${dtype}VectorStorage idstorage = (${itype}${dtype}VectorStorage)storage;
+        if (idstorage.size() == 0) return 0;
+#if ( ${dtype} == "Int" )
+        $dtype.toLowerCase() minval = Integer.MAX_VALUE;
+#else
+        $dtype.toLowerCase() minval = ${dtype}.MAX_VALUE;
+#end
+        if (idstorage.isSparse()) {
+            ${dtype}Iterator iter = idstorage.valueIterator();
+            while(iter.hasNext()){
+                $dtype.toLowerCase() val = iter.next${dtype}();
+                if (val < minval) {
+                    minval = val;
+                }
+            }
+        } else {
+            for ($dtype.toLowerCase() val: idstorage.getValues()){
+                if (val < minval) {
+                    minval = val;
+                }
+            }
+        }
+        return minval;
+    }
+
+    public $itype.toLowerCase() argmax() {
+        ${itype}${dtype}VectorStorage idstorage = (${itype}${dtype}VectorStorage)storage;
+        if (idstorage.size() == 0) return -1;
+#if ( ${dtype} == "Int" )
+        $dtype.toLowerCase() maxval = Integer.MIN_VALUE;
+#else
+        $dtype.toLowerCase() maxval = ${dtype}.MIN_VALUE;
+#end
+        $itype.toLowerCase() maxidx = -1;
+#if (${itype} == "Int")
+        if (idstorage.isDense()){
+            $dtype.toLowerCase() [ ] val = idstorage.getValues();
+            $itype.toLowerCase() length = val.length;
+            for (int idx=0; idx < length; idx++){
+                if (val[idx] > maxval) {
+                    maxval = val[idx];
+                    maxidx = idx;
+                }
+            }
+        }else if (idstorage.isSparse()) {
+#else
+        if (idstorage.isSparse()) {
+#end
+            ObjectIterator<${itype}2${dtype}Map.Entry> iter = idstorage.entryIterator();
+            while(iter.hasNext()){
+                ${itype}2${dtype}Map.Entry entry = iter.next();
+                $itype.toLowerCase() idx = entry.get${itype}Key();
+                $dtype.toLowerCase() val = entry.get${dtype}Value();
+                if (val > maxval) {
+                    maxval = val;
+                    maxidx = idx;
+                }
+            }
+        } else {
+            $itype.toLowerCase() [ ] indices = idstorage.getIndices();
+            $dtype.toLowerCase() [ ] val = idstorage.getValues();
+            $itype.toLowerCase() size = idstorage.size();
+            for (int i=0; i < size; i++) {
+                $itype.toLowerCase() idx = indices[i];
+                if (val[i] > maxval){
+                    maxval = val[i];
+                    maxidx = idx;
+                }
+            }
+        }
+        return maxidx;
+    }
+
+    public $itype.toLowerCase() argmin() {
+            ${itype}${dtype}VectorStorage idstorage = (${itype}${dtype}VectorStorage)storage;
+            if (idstorage.size() == 0) return -1;
+    #if ( ${dtype} == "Int" )
+            $dtype.toLowerCase() minval = Integer.MAX_VALUE;
+    #else
+            $dtype.toLowerCase() minval = ${dtype}.MAX_VALUE;
+    #end
+            $itype.toLowerCase() minidx = -1;
+    #if (${itype} == "Int")
+            if (idstorage.isDense()){
+                $dtype.toLowerCase() [ ] val = idstorage.getValues();
+                $itype.toLowerCase() length = val.length;
+                for (int idx=0; idx < length; idx++){
+                    if (val[idx] < minval) {
+                        minval = val[idx];
+                        minidx = idx;
+                    }
+                }
+            }else if (idstorage.isSparse()) {
+    #else
+            if (idstorage.isSparse()) {
+    #end
+                ObjectIterator<${itype}2${dtype}Map.Entry> iter = idstorage.entryIterator();
+                while(iter.hasNext()){
+                    ${itype}2${dtype}Map.Entry entry = iter.next();
+                    $itype.toLowerCase() idx = entry.get${itype}Key();
+                    $dtype.toLowerCase() val = entry.get${dtype}Value();
+                    if (val < minval) {
+                        minval = val;
+                        minidx = idx;
+                    }
+                }
+            } else {
+                $itype.toLowerCase() [ ] indices = idstorage.getIndices();
+                $dtype.toLowerCase() [ ] val = idstorage.getValues();
+                $itype.toLowerCase() size = idstorage.size();
+                for (int i=0; i < size; i++) {
+                    $itype.toLowerCase() idx = indices[i];
+                    if (val[i] < minval){
+                        minval = val[i];
+                        minidx = idx;
+                    }
+                }
+            }
+            return minidx;
+        }
+
+    public double std() {
+        ${itype}${dtype}VectorStorage dstorage = (${itype}${dtype}VectorStorage)storage;
+        if (dstorage.size() == 0) return 0;
+        double sumval = 0.0;
+        double sumval2 = 0.0;
+        if (dstorage.isSparse()) {
+            ${dtype}Iterator iter = dstorage.valueIterator();
+            while(iter.hasNext()){
+                double val = iter.next${dtype}();
+                sumval += val;
+                sumval2 += val*val;
+            }
+        } else {
+            for (double val: dstorage.getValues()){
+                sumval += val;
+                sumval2 += val*val;
+            }
+        }
+        sumval /= getDim();
+        sumval2 /= getDim();
+        return Math.sqrt(sumval2-sumval*sumval);
+    }
+
+    public double average() {
+        ${itype}${dtype}VectorStorage dstorage = (${itype}${dtype}VectorStorage)storage;
+        if (dstorage.size() == 0) return 0;
+        double sumval = 0.0;
+        if (dstorage.isSparse()) {
+            ${dtype}Iterator iter = dstorage.valueIterator();
+            while(iter.hasNext()){
+                sumval += iter.next${dtype}();
+            }
+        } else {
+            for (double val: dstorage.getValues()){
+                sumval += val;
+            }
+        }
+
+        sumval /= getDim();
+        return sumval;
+    }
+
+    public $itype.toLowerCase() size() {
+        return ((${itype}${dtype}VectorStorage)storage).size();
+    }
+
+    public $itype.toLowerCase() numZeros() {
+        $itype${dtype}VectorStorage dstorage = ($itype${dtype}VectorStorage)storage;
+        if (dstorage.size() == 0) return ($itype.toLowerCase())dim;
+        $itype.toLowerCase() numZero = 0;
+        if (dstorage.isSparse()) {
+            ${dtype}Iterator iter = dstorage.valueIterator();
+            while(iter.hasNext()){
+                if (iter.next${dtype}() != 0) {
+                    numZero += 1;
+                }
+            }
+        } else {
+            for ($dtype.toLowerCase() val: dstorage.getValues()){
+                if (val != 0) {
+                    numZero += 1;
+                }
+            }
+        }
+        return ($itype.toLowerCase())getDim() - numZero;
+    }
+
+    public ${itype}${dtype}Vector clone() {
+        return new ${itype}${dtype}Vector(matrixId, rowId, clock, dim,
+                ((${itype}${dtype}VectorStorage)storage).clone());
+    }
+
+    @Override
+    public ${itype}${dtype}Vector copy() {
+        return new ${itype}${dtype}Vector(matrixId, rowId, clock, dim,
+                ((${itype}${dtype}VectorStorage)storage).copy());
+    }
+
+    @Override
+    public ${itype}${dtype}VectorStorage getStorage(){
+        return (${itype}${dtype}VectorStorage)storage;
+    }
+
+    @Override
+    public boolean hasKey($itype.toLowerCase() idx) {
+        return getStorage().hasKey(idx);
+    }
+
+    @Override
+    public Vector filter(double threshold) {
+        ${itype}${dtype}SparseVectorStorage newStorage = new ${itype}${dtype}SparseVectorStorage(size());
+
+        if (storage.isDense()) {
+            $dtype.toLowerCase() [ ] values = ((${itype}${dtype}VectorStorage)storage).getValues();
+            for( int i=0; i < values.length; i++) {
+                if (Math.abs(values[i]) >= threshold) {
+                    newStorage.set(i, values[i]);
+                }
+            }
+         } else if (storage.isSparse()) {
+            ObjectIterator<${itype}2${dtype}Map.Entry> iter = ((${itype}${dtype}VectorStorage) storage).entryIterator();
+            while (iter.hasNext()) {
+                ${itype}2${dtype}Map.Entry entry = iter.next();
+                $dtype.toLowerCase() value = entry.get${dtype}Value();
+                if (Math.abs(value) >= threshold) {
+                    newStorage.set(entry.get${itype}Key(), value);
+                }
+            }
+        } else {
+            $itype.toLowerCase() [ ] indices = ((${itype}${dtype}VectorStorage) storage).getIndices();
+            $dtype.toLowerCase() [ ] values = ((${itype}${dtype}VectorStorage) storage).getValues();
+
+            $itype.toLowerCase() size = ((${itype}${dtype}VectorStorage) storage).size();
+            for (int k=0; k< size; k++) {
+                if (Math.abs(values[k]) >= threshold) {
+                    newStorage.set(indices[k], values[k]);
+                }
+            }
+        }
+
+        return new ${itype}${dtype}Vector(matrixId, rowId, clock, getDim(), newStorage);
+    }
+
+    @Override
+    public Vector ifilter(double threshold) {
+
+        if (storage.isDense()) {
+            $dtype.toLowerCase() [ ] values = ((${itype}${dtype}VectorStorage)storage).getValues();
+            for( int i=0; i < values.length; i++) {
+                if (Math.abs(values[i]) <= threshold) {
+                    values[i] = 0;
+                }
+            }
+         } else if (storage.isSparse()) {
+            ObjectIterator<${itype}2${dtype}Map.Entry> iter = ((${itype}${dtype}VectorStorage) storage).entryIterator();
+            while (iter.hasNext()) {
+                ${itype}2${dtype}Map.Entry entry = iter.next();
+                $dtype.toLowerCase() value = entry.get${dtype}Value();
+                if (Math.abs(value) <= threshold) {
+                    iter.remove();
+                }
+            }
+        } else {
+            $itype.toLowerCase() [ ] indices = ((${itype}${dtype}VectorStorage) storage).getIndices();
+            $dtype.toLowerCase() [ ] values = ((${itype}${dtype}VectorStorage) storage).getValues();
+
+            $itype.toLowerCase() size = ((${itype}${dtype}VectorStorage) storage).size();
+            for (int k=0; k< size; k++) {
+                if (Math.abs(values[k]) <= threshold) {
+                    values = ArrayUtils.remove(values, k);
+                    indices = ArrayUtils.remove(indices, k);
+                }
+            }
+        }
+
+        return new ${itype}${dtype}Vector(matrixId, rowId, clock, getDim(), (${itype}${dtype}VectorStorage) storage);
+    }
+
+    @Override
+    public Vector filterUp(double threshold) {
+        ${itype}${dtype}SparseVectorStorage newStorage = new ${itype}${dtype}SparseVectorStorage(size());
+
+        if (storage.isDense()) {
+            $dtype.toLowerCase() [ ] values = ((${itype}${dtype}VectorStorage)storage).getValues();
+            for( int i=0; i < values.length; i++) {
+                if (values[i] >= threshold) {
+                    newStorage.set(i, values[i]);
+                }
+            }
+         } else if (storage.isSparse()) {
+            ObjectIterator<${itype}2${dtype}Map.Entry> iter = ((${itype}${dtype}VectorStorage) storage).entryIterator();
+            while (iter.hasNext()) {
+                ${itype}2${dtype}Map.Entry entry = iter.next();
+                $dtype.toLowerCase() value = entry.get${dtype}Value();
+                if (value >= threshold) {
+                    newStorage.set(entry.get${itype}Key(), value);
+                }
+            }
+        } else {
+            $itype.toLowerCase() [ ] indices = ((${itype}${dtype}VectorStorage) storage).getIndices();
+            $dtype.toLowerCase() [ ] values = ((${itype}${dtype}VectorStorage) storage).getValues();
+
+            $itype.toLowerCase() size = ((${itype}${dtype}VectorStorage) storage).size();
+            for (int k=0; k< size; k++) {
+                if (values[k] >= threshold) {
+                    newStorage.set(indices[k], values[k]);
+                }
+            }
+        }
+
+        return new ${itype}${dtype}Vector(matrixId, rowId, clock, getDim(), newStorage);
+    }
+}

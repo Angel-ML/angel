@@ -15,16 +15,17 @@
  *
  */
 
+
 package com.tencent.angel.ml.matrix.codec;
 
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public class DefaultDenseDoubleCodec implements DenseDoubleCodec{
+public class DefaultDenseDoubleCodec implements DenseDoubleCodec {
   protected final static Log LOG = LogFactory.getLog(DefaultDenseDoubleCodec.class);
-  @Override
-  public void encode(ByteBuf outBuf, double[] values, int startPos, int length) {
+
+  @Override public void encode(ByteBuf outBuf, double[] values, int startPos, int length) {
     outBuf.writeInt(length);
     LOG.debug("double size = " + length);
     int end = startPos + length;
@@ -33,26 +34,22 @@ public class DefaultDenseDoubleCodec implements DenseDoubleCodec{
     }
   }
 
-  @Override
-  public void decode(ByteBuf inBuf, double[] data, int startPos, int len) {
+  @Override public void decode(ByteBuf inBuf, double[] data, int startPos, int len) {
     int length = inBuf.readInt();
-    for(int i = 0; i < length; i++){
-      data[i+startPos] = inBuf.readDouble();
+    for (int i = 0; i < length; i++) {
+      data[i + startPos] = inBuf.readDouble();
     }
   }
 
-  @Override
-  public void serialize(ByteBuf buf) {
+  @Override public void serialize(ByteBuf buf) {
 
   }
 
-  @Override
-  public void deserialize(ByteBuf buf) {
-    
+  @Override public void deserialize(ByteBuf buf) {
+
   }
 
-  @Override
-  public int bufferLen() {
+  @Override public int bufferLen() {
     return 0;
   }
 

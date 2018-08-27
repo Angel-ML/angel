@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.tools;
 
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -26,7 +27,7 @@ import java.io.IOException;
  */
 public class TextModelLineConvert implements ModelLineConvert {
   private final String seperator;
-  
+
   public TextModelLineConvert() {
     seperator = ":";
   }
@@ -35,8 +36,8 @@ public class TextModelLineConvert implements ModelLineConvert {
     this.seperator = seperator;
   }
 
-  @Override public void convertRowIndex(FSDataOutputStream output, int rowIndex) throws
-    IOException {
+  @Override public void convertRowIndex(FSDataOutputStream output, int rowIndex)
+    throws IOException {
     output.writeBytes("rowindex=" + rowIndex + "\n");
   }
 

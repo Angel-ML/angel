@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master;
 
 import com.tencent.angel.exception.AngelException;
@@ -30,13 +31,11 @@ public class DummyTask extends BaseTask<Long, Long, Long> {
     // TODO Auto-generated constructor stub
   }
 
-  @Override
-  public Long parse(Long key, Long value) {
+  @Override public Long parse(Long key, Long value) {
     return null;
   }
 
-  @Override
-  public void run(TaskContext taskContext) throws AngelException {
+  @Override public void run(TaskContext taskContext) throws AngelException {
     try {
       while (true) {
         Thread.sleep(10000);
@@ -47,8 +46,7 @@ public class DummyTask extends BaseTask<Long, Long, Long> {
 
   }
 
-  @Override
-  public void preProcess(TaskContext taskContext) {
+  @Override public void preProcess(TaskContext taskContext) {
 
   }
 

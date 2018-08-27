@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.spark.ml.util
 
 import scala.collection.mutable.ArrayBuffer
@@ -24,9 +25,9 @@ import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.sql.{DataFrame, Row}
 
 /**
- * DataSaver saves DataFrame to HDFS/LOCAL, all fields in DataFrame connect with a space
- *
- */
+  * DataSaver saves DataFrame to HDFS/LOCAL, all fields in DataFrame connect with a space
+  *
+  */
 object DataSaver {
   def save(df: DataFrame, path: String): Unit = {
     df.printSchema()
@@ -55,7 +56,9 @@ object DataSaver {
       } else if (row.get(i) == null) {
         result += "null"
       } else {
-        val item = row.get(i) match {case x: java.lang.Object => x.toString}
+        val item = row.get(i) match {
+          case x: java.lang.Object => x.toString
+        }
         result += item
       }
     }

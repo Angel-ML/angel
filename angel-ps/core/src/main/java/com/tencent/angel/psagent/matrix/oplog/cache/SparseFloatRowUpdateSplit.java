@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
 import com.tencent.angel.ml.matrix.RowType;
@@ -24,21 +25,27 @@ import io.netty.buffer.ByteBuf;
  * Row split of sparse float row update
  */
 public class SparseFloatRowUpdateSplit extends RowUpdateSplit {
-  /**indexes*/
+  /**
+   * indexes
+   */
   private int[] offsets;
-  
-  /** values of row */
+
+  /**
+   * values of row
+   */
   private float[] values;
+
 
   /**
    * Create a new sparse float row split update
    *
-   * @param start start position
-   * @param end end position
+   * @param start   start position
+   * @param end     end position
    * @param offsets values indexes
-   * @param values values of row update
+   * @param values  values of row update
    */
-  public SparseFloatRowUpdateSplit(int rowIndex, int start, int end, int[] offsets, float[] values) {
+  public SparseFloatRowUpdateSplit(int rowIndex, int start, int end, int[] offsets,
+    float[] values) {
     super(rowIndex, RowType.T_FLOAT_SPARSE, start, end);
     this.offsets = offsets;
     this.values = values;
@@ -46,7 +53,7 @@ public class SparseFloatRowUpdateSplit extends RowUpdateSplit {
 
   /**
    * Get indexes of row values
-   * 
+   *
    * @return int[] indexes of row values
    */
   public int[] getOffsets() {
@@ -55,26 +62,55 @@ public class SparseFloatRowUpdateSplit extends RowUpdateSplit {
 
   /**
    * Get row values
-   * 
+   *
    * @return float[] row values
    */
   public float[] getValues() {
     return values;
   }
 
-  @Override
-  public void serialize(ByteBuf buf) {
+  @Override public void serialize(ByteBuf buf) {
     super.serialize(buf);
-    buf.writeInt(end - start);
-    LOG.debug("double size = " + (end - start));
-    for (int i = start; i < end; i++) {
-      buf.writeInt(offsets[i]);
-      buf.writeFloat(values[i]);
+    int startCol = (int) splitContext.getPartKey().getStartCol();
+    if (splitContext.isEnableFilter()) {
+      float filterValue = (float) splitContext.getFilterThreshold();
+      int position = buf.writerIndex();
+      buf.writeInt(0);
+      int needUpdateItemNum = 0;
+      for (int i = start; i < end; i++) {
+        if (Math.abs(values[i]) > filterValue) {
+          buf.writeInt(offsets[i] - startCol);
+          buf.writeFloat(values[i]);
+          needUpdateItemNum++;
+        }
+      }
+      buf.setInt(position, needUpdateItemNum);
+    } else {
+      buf.writeInt(end - start);
+      for (int i = start; i < end; i++) {
+        buf.writeInt(offsets[i] - startCol);
+        buf.writeFloat(values[i]);
+      }
     }
   }
 
-  @Override
-  public int bufferLen() {
-    return 4 + super.bufferLen() + (end - start) * 8;
+  private int getNeedUpdateItemNum() {
+    int needUpdateItemNum = 0;
+    float filterValue = (float) splitContext.getFilterThreshold();
+    for (int i = start; i < end; i++) {
+      if (Math.abs(values[i]) > filterValue) {
+        needUpdateItemNum++;
+      }
+    }
+    return needUpdateItemNum;
+  }
+
+
+  @Override public int bufferLen() {
+    if (splitContext.isEnableFilter()) {
+      return 4 + super.bufferLen() + getNeedUpdateItemNum() * 8;
+    } else {
+      return 4 + super.bufferLen() + (end - start) * 8;
+    }
   }
 }

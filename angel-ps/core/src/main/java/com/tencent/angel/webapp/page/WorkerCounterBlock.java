@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.webapp.page;
 
 import com.google.inject.Inject;
@@ -34,21 +35,19 @@ import static org.apache.hadoop.yarn.webapp.view.JQueryUI._TH;
 public class WorkerCounterBlock extends HtmlBlock {
   final AMContext amContext;
 
-  @Inject
-  WorkerCounterBlock(AMContext amctx) {
+  @Inject WorkerCounterBlock(AMContext amctx) {
     amContext = amctx;
   }
 
-  @Override
-  protected void render(Block html) {
+  @Override protected void render(Block html) {
     set(TITLE, join("Angel WorkerCounterBlock", $(WORKER_ATTEMPT_ID)));
 
     try {
       WorkerAttemptId workerAttemptId = new WorkerAttemptId($(WORKER_ATTEMPT_ID));
 
       Map<String, String> metricsMap =
-          amContext.getWorkerManager().getWorker(workerAttemptId.getWorkerId())
-              .getWorkerAttempt(workerAttemptId).getMetrics();
+        amContext.getWorkerManager().getWorker(workerAttemptId.getWorkerId())
+          .getWorkerAttempt(workerAttemptId).getMetrics();
       TABLE<Hamlet> worker_metrics_table = html.table();
       html.h6($(WORKER_ATTEMPT_ID));
 

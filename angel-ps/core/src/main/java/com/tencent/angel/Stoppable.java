@@ -14,6 +14,8 @@
  * the License.
  *
  */
+
+
 package com.tencent.angel;
 
 /**
@@ -22,7 +24,7 @@ package com.tencent.angel;
 public interface Stoppable {
   /**
    * Stop this service.
-   * 
+   *
    * @param why Why we're stopping.
    */
   public void stop(String why);

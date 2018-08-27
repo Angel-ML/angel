@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.ml.matrix;
 
 import com.tencent.angel.PartitionKey;
@@ -45,19 +46,22 @@ public class PartitionMeta {
 
   /**
    * Create a PartitionMeta
+   *
    * @param matrixId matrix id
-   * @param partId partition id
+   * @param partId   partition id
    * @param startRow start row index
-   * @param endRow end row index
+   * @param endRow   end row index
    * @param startCol start column index
-   * @param endCol end column index
+   * @param endCol   end column index
    */
-  public PartitionMeta(int matrixId, int partId, int startRow, int endRow, long startCol, long endCol) {
+  public PartitionMeta(int matrixId, int partId, int startRow, int endRow, long startCol,
+    long endCol) {
     this(matrixId, partId, startRow, endRow, startCol, endCol, new ArrayList<>());
   }
 
   /**
    * Create a PartitionMeta
+   *
    * @param partitionKey partition basic information
    */
   public PartitionMeta(PartitionKey partitionKey) {
@@ -66,8 +70,9 @@ public class PartitionMeta {
 
   /**
    * Create a PartitionMeta
+   *
    * @param partitionKey partition basic information
-   * @param storedPs the ParameterServers this partition is stored
+   * @param storedPs     the ParameterServers this partition is stored
    */
   public PartitionMeta(PartitionKey partitionKey, List<ParameterServerId> storedPs) {
     this.partitionKey = partitionKey;
@@ -77,16 +82,17 @@ public class PartitionMeta {
 
   /**
    * Create a PartitionMeta
+   *
    * @param matrixId matrix id
-   * @param partId partition id
+   * @param partId   partition id
    * @param startRow start row index
-   * @param endRow end row index
+   * @param endRow   end row index
    * @param startCol start column index
-   * @param endCol end column index
+   * @param endCol   end column index
    * @param storedPs the ParameterServers this partition is stored
    */
-  public PartitionMeta(int matrixId, int partId, int startRow, int endRow, long startCol, long endCol,
-    List<ParameterServerId> storedPs) {
+  public PartitionMeta(int matrixId, int partId, int startRow, int endRow, long startCol,
+    long endCol, List<ParameterServerId> storedPs) {
     this.partitionKey = new PartitionKey(partId, matrixId, startRow, startCol, endRow, endCol);
     this.storedPs = storedPs;
     this.lock = new ReentrantReadWriteLock();
@@ -94,6 +100,7 @@ public class PartitionMeta {
 
   /**
    * Get the Master ParameterServer for this partition
+   *
    * @return the Master ParameterServer for this partition
    */
   public ParameterServerId getMasterPs() {
@@ -111,6 +118,7 @@ public class PartitionMeta {
 
   /**
    * Remove a ParameterServer which this partition is stored on
+   *
    * @param psId ParameterServer id
    */
   public void removePs(ParameterServerId psId) {
@@ -130,6 +138,7 @@ public class PartitionMeta {
 
   /**
    * Make a ParameterServer to the Master ParameterServer
+   *
    * @param psId ParameterServer id
    */
   public void makePsToMaster(ParameterServerId psId) {
@@ -154,6 +163,7 @@ public class PartitionMeta {
 
   /**
    * Get the partition id
+   *
    * @return the partition id
    */
   public int getPartId() {
@@ -162,6 +172,7 @@ public class PartitionMeta {
 
   /**
    * Get the start row index
+   *
    * @return the start row index
    */
   public int getStartRow() {
@@ -170,6 +181,7 @@ public class PartitionMeta {
 
   /**
    * Get the end row index
+   *
    * @return the end row index
    */
   public int getEndRow() {
@@ -178,6 +190,7 @@ public class PartitionMeta {
 
   /**
    * Get the start column index
+   *
    * @return the start column index
    */
   public long getStartCol() {
@@ -186,6 +199,7 @@ public class PartitionMeta {
 
   /**
    * Get the end column index
+   *
    * @return the end column index
    */
   public long getEndCol() {
@@ -194,6 +208,7 @@ public class PartitionMeta {
 
   /**
    * Get the stored ParameterServers
+   *
    * @return the stored ParameterServers
    */
   public List<ParameterServerId> getPss() {
@@ -207,6 +222,7 @@ public class PartitionMeta {
 
   /**
    * Add a PS which a partitin replication stored in
+   *
    * @param psId ParameterServer id
    */
   public void addReplicationPS(ParameterServerId psId) {
@@ -215,14 +231,14 @@ public class PartitionMeta {
 
       int size = storedPs.size();
       boolean found = false;
-      for(int i = 0; i < size; i++) {
-        if(storedPs.get(i).equals(psId)) {
+      for (int i = 0; i < size; i++) {
+        if (storedPs.get(i).equals(psId)) {
           found = true;
           break;
         }
       }
 
-      if(!found) {
+      if (!found) {
         storedPs.add(psId);
       }
     } finally {
@@ -232,19 +248,19 @@ public class PartitionMeta {
 
   /**
    * Get partition base information
+   *
    * @return partition base information
    */
   public PartitionKey getPartitionKey() {
     return partitionKey;
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("partition meta:").append(partitionKey).append("\n");
     sb.append("stored pss:");
     int size = storedPs.size();
-    for(int i = 0; i < size; i++) {
+    for (int i = 0; i < size; i++) {
       sb.append(storedPs.get(i)).append(",");
     }
     sb.append("\n");
@@ -254,6 +270,7 @@ public class PartitionMeta {
 
   /**
    * Set stored pss
+   *
    * @param psIds ps ids
    */
   public void setPss(List<ParameterServerId> psIds) {
@@ -263,5 +280,15 @@ public class PartitionMeta {
     } finally {
       lock.writeLock().unlock();
     }
+  }
+
+  /**
+   * Is partition contain the row
+   *
+   * @param rowIndex row index
+   * @return true means contain this row
+   */
+  public boolean contain(int rowIndex) {
+    return rowIndex >= partitionKey.getStartRow() && rowIndex < partitionKey.getEndRow();
   }
 }

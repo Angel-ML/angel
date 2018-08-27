@@ -1,0 +1,238 @@
+package com.tencent.angel.ml.math2.vector;
+
+import com.tencent.angel.ml.math2.ufuncs.executor.comp.CompReduceExecutor;
+import com.tencent.angel.ml.matrix.RowType;
+
+public class Comp${itype}${dtype}Vector extends ${dtype}Vector implements ${itype}KeyVector, ComponentVector {
+    private ${itype}${dtype}Vector [ ] partitions;
+    private int numPartitions;
+    private $itype.toLowerCase() dim;
+    private $itype.toLowerCase() subDim;
+
+    public Comp${itype}${dtype}Vector() {
+        super();
+    }
+
+    public Comp${itype}${dtype}Vector(int matrixId, int rowId, int clock, $itype.toLowerCase() dim, ${itype}${dtype}Vector [ ] partitions, $itype.toLowerCase() subDim) {
+        setMatrixId(matrixId);
+        setRowId(rowId);
+        setClock(clock);
+        setStorage(null);
+        this.partitions = partitions;
+        this.numPartitions = partitions.length;
+        this.dim = dim;
+        if (dim < 0){
+            this.subDim = partitions[0].getDim();
+        } else if (subDim == -1) {
+            this.subDim = (dim + partitions.length -1)/partitions.length;
+        } else {
+            this.subDim = subDim;
+        }
+
+    }
+
+    public Comp${itype}${dtype}Vector($itype.toLowerCase() dim, ${itype}${dtype}Vector [ ] partitions, $itype.toLowerCase() subDim) {
+        this(0, 0, 0, dim, partitions, subDim);
+    }
+
+    public Comp${itype}${dtype}Vector(int matrixId, int rowId, int clock, $itype.toLowerCase() dim, ${itype}${dtype}Vector [ ] partitions) {
+        this(matrixId, rowId, clock, dim, partitions, -1);
+    }
+
+    public Comp${itype}${dtype}Vector($itype.toLowerCase() dim, ${itype}${dtype}Vector [ ] partitions) {
+        this(0, 0, 0, dim, partitions);
+    }
+
+    public Comp${itype}${dtype}Vector(int matrixId, int rowId, int clock, $itype.toLowerCase() dim, $itype.toLowerCase() subDim) {
+        assert subDim != -1;
+
+        setMatrixId(matrixId);
+        setRowId(rowId);
+        setClock(clock);
+        setStorage(null);
+        this.numPartitions = (int)((dim + subDim - 1) / subDim);
+        this.partitions = new ${itype}${dtype}Vector[numPartitions];
+        this.dim = dim;
+        this.subDim = subDim;
+    }
+
+    public Comp${itype}${dtype}Vector($itype.toLowerCase() dim, $itype.toLowerCase() subDim) {
+        this(0, 0, 0, dim, subDim);
+    }
+
+    public void setPartitions(${itype}${dtype}Vector[] partitions) {
+        assert partitions.length == this.partitions.length;
+        this.partitions = partitions;
+    }
+
+    @Override
+    public int getNumPartitions() {
+        return numPartitions;
+    }
+
+    public $itype.toLowerCase() getDim() {
+        return dim;
+    }
+
+    public long dim() {
+        return (long)getDim();
+    }
+
+    public $itype.toLowerCase() getSubDim() {
+        return subDim;
+    }
+
+    public void setSubDim($itype.toLowerCase() subDim) {
+        assert subDim > 0;
+        this.subDim = subDim;
+    }
+
+    public boolean isCompatable(ComponentVector other) {
+        if (getTypeIndex() >= other.getTypeIndex() && numPartitions == other.getNumPartitions()) {
+            if (other instanceof IntKeyVector) {
+                return dim == ((IntKeyVector)other).getDim();
+            } else {
+                return dim == ((LongKeyVector)other).getDim();
+            }
+        } else {
+            return false;
+        }
+    }
+
+    public $dtype.toLowerCase() get($itype.toLowerCase() idx) {
+        int partIdx = (int)(idx / subDim);
+        $itype.toLowerCase() subIdx = idx % subDim;
+        return partitions[partIdx].get(subIdx);
+    }
+
+    @Override
+    public boolean hasKey($itype.toLowerCase() idx) {
+        int partIdx = (int)(idx / subDim);
+        return partitions[partIdx].hasKey(idx);
+    }
+
+    public void set($itype.toLowerCase() idx, $dtype.toLowerCase() value){
+        int partIdx = (int)(idx / subDim);
+        $itype.toLowerCase() subIdx = idx % subDim;
+        partitions[partIdx].set(subIdx, value);
+    }
+
+    public ${itype}${dtype}Vector [ ] getPartitions() {
+        return partitions;
+    }
+
+    public $dtype.toLowerCase() max() {
+        return ($dtype.toLowerCase()) CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Max);
+    }
+
+    public $dtype.toLowerCase() min() {
+        return ($dtype.toLowerCase()) CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Min);
+    }
+
+    public double sum() {
+        return CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Sum);
+    }
+
+    public double average() {
+        return CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Avg);
+    }
+
+    public double std() {
+        return CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Std);
+    }
+
+    public double norm() {
+        return CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Norm);
+    }
+
+    @Override
+    public $itype.toLowerCase() numZeros() {
+        return ($itype.toLowerCase()) CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Numzeros);
+    }
+
+    public $itype.toLowerCase() size() {
+        return ($itype.toLowerCase()) CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Size);
+    }
+
+    public void clear() {
+        matrixId = 0;
+        rowId = 0;
+        clock = 0;
+        dim = 0;
+        for (${itype}${dtype}Vector part: partitions) {
+            part.clear();
+        }
+    }
+
+    @Override
+    public Comp${itype}${dtype}Vector clone() {
+        ${itype}${dtype}Vector [ ] newPartitions = new ${itype}${dtype}Vector[partitions.length];
+        for (int i=0; i< partitions.length; i++) {
+            newPartitions[i] = partitions[i].clone();
+        }
+        return new Comp${itype}${dtype}Vector(getMatrixId(), getRowId(), getClock(), ($itype.toLowerCase())getDim(), newPartitions, subDim);
+    }
+
+    @Override
+    public Comp${itype}${dtype}Vector copy() {
+        ${itype}${dtype}Vector [ ] newPartitions = new ${itype}${dtype}Vector[partitions.length];
+        for (int i=0; i< partitions.length; i++) {
+            newPartitions[i] = partitions[i].copy();
+        }
+        return new Comp${itype}${dtype}Vector(getMatrixId(), getRowId(), getClock(), ($itype.toLowerCase())getDim(), newPartitions, subDim);
+    }
+
+    @Override
+    public int getTypeIndex() {
+#if ($dtype == "Double")
+        return 4;
+#elseif ($dtype == "Float")
+        return 3;
+#elseif ($dtype == "Long")
+        return 2;
+#elseif ($dtype == "Int")
+        return 1;
+#else
+        return 0;
+#end
+    }
+
+    @Override
+    public RowType getType() {
+#if ($itype == "Int")
+        return RowType.T_$dtype.toUpperCase()_SPARSE_COMPONENT;
+#else
+        return RowType.T_$dtype.toUpperCase()_SPARSE_LONGKEY_COMPONENT;
+#end
+    }
+
+    @Override
+    public Vector filter(double threshold) {
+        ${itype}${dtype}Vector [ ] newPartitions = new ${itype}${dtype}Vector[partitions.length];
+        for (int i =0; i < partitions.length; i++) {
+            newPartitions[i] = (${itype}${dtype}Vector) partitions[i].filter(threshold);
+        }
+
+        return new Comp${itype}${dtype}Vector(matrixId, rowId, clock, dim, newPartitions, subDim);
+    }
+
+    @Override
+    public Vector ifilter(double threshold) {
+        ${itype}${dtype}Vector [ ] newPartitions = new ${itype}${dtype}Vector[partitions.length];
+        for (int i =0; i < partitions.length; i++) {
+            newPartitions[i] = (${itype}${dtype}Vector) partitions[i].ifilter(threshold);
+        }
+
+        return new Comp${itype}${dtype}Vector(matrixId, rowId, clock, dim, newPartitions, subDim);
+    }
+
+    @Override
+    public Vector filterUp(double threshold) {
+        ${itype}${dtype}Vector [ ] newPartitions = new ${itype}${dtype}Vector[partitions.length];
+        for (int i =0; i < partitions.length; i++) {
+            newPartitions[i] = (${itype}${dtype}Vector) partitions[i].filterUp(threshold);
+        }
+
+        return new Comp${itype}${dtype}Vector(matrixId, rowId, clock, dim, newPartitions, subDim);
+    }
+}

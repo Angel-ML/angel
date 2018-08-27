@@ -1,24 +1,20 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
  */
 
-/**
- * Add some methods for Angel.
- */
 
 package com.tencent.angel.utils;
 
@@ -143,8 +139,7 @@ public class StringUtils {
       try {
         uris[i] = new URI(str[i]);
       } catch (URISyntaxException ur) {
-        System.out.println("Exception in specified URI's " +
-            stringifyException(ur));
+        System.out.println("Exception in specified URI's " + stringifyException(ur));
 
         uris[i] = null;
       }
@@ -191,13 +186,12 @@ public class StringUtils {
   }
 
   public static String getFormattedTimeWithDiff(DateFormat dateFormat, long finishTime,
-      long startTime) {
+    long startTime) {
     StringBuilder buf = new StringBuilder();
     if (0L != finishTime) {
       buf.append(dateFormat.format(new Date(finishTime)));
       if (0L != startTime) {
-        buf.append(" (" + formatTimeDiff(finishTime, startTime) +
-            ")");
+        buf.append(" (" + formatTimeDiff(finishTime, startTime) + ")");
       }
     }
     return buf.toString();
@@ -252,7 +246,7 @@ public class StringUtils {
   }
 
   public static int findNext(String str, char separator, char escapeChar, int start,
-      StringBuilder split) {
+    StringBuilder split) {
     int numPreEscapes = 0;
     for (int i = start; i < str.length(); i++) {
       char curChar = str.charAt(i);
@@ -320,16 +314,16 @@ public class StringUtils {
       char curChar = str.charAt(i);
       if (hasPreEscape) {
         if ((curChar != escapeChar) && (!hasChar(charsToEscape, curChar))) {
-          throw new IllegalArgumentException("Illegal escaped string " +
-              str + " unescaped " + escapeChar + " at " + (i - 1));
+          throw new IllegalArgumentException(
+            "Illegal escaped string " + str + " unescaped " + escapeChar + " at " + (i - 1));
         }
 
         result.append(curChar);
         hasPreEscape = false;
       } else {
         if (hasChar(charsToEscape, curChar)) {
-          throw new IllegalArgumentException("Illegal escaped string " +
-              str + " unescaped " + curChar + " at " + i);
+          throw new IllegalArgumentException(
+            "Illegal escaped string " + str + " unescaped " + curChar + " at " + i);
         }
         if (curChar == escapeChar)
           hasPreEscape = true;
@@ -339,8 +333,8 @@ public class StringUtils {
       }
     }
     if (hasPreEscape) {
-      throw new IllegalArgumentException("Illegal escaped string " +
-          str + ", not expecting " + escapeChar + " in the end.");
+      throw new IllegalArgumentException(
+        "Illegal escaped string " + str + ", not expecting " + escapeChar + " in the end.");
     }
 
     return result.toString();
@@ -500,9 +494,10 @@ public class StringUtils {
     oneDecimal = new DecimalFormat("0.0");
   }
 
+
   public static enum TraditionalBinaryPrefix {
     KILO(1024L), MEGA(KILO.value << 10), GIGA(MEGA.value << 10), TERA(GIGA.value << 10), PETA(
-        TERA.value << 10), EXA(PETA.value << 10);
+      TERA.value << 10), EXA(PETA.value << 10);
 
     public final long value;
     public final char symbol;
@@ -553,7 +548,7 @@ public class StringUtils {
   }
 
   public static String join(CharSequence separator, Map<String, String> kvMap) {
-    if(kvMap == null || kvMap.isEmpty()) {
+    if (kvMap == null || kvMap.isEmpty()) {
       return "";
     }
 

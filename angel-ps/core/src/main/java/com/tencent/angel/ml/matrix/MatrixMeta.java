@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.ml.matrix;
 
 import com.tencent.angel.conf.MatrixConf;
@@ -38,6 +39,7 @@ public class MatrixMeta {
 
   /**
    * Create a MatrixMeta
+   *
    * @param mContext matrix context
    */
   public MatrixMeta(MatrixContext mContext) {
@@ -46,7 +48,8 @@ public class MatrixMeta {
 
   /**
    * Create a MatrixMeta
-   * @param matrixContext matrix context
+   *
+   * @param matrixContext  matrix context
    * @param partitionMetas matrix partitions meta
    */
   public MatrixMeta(MatrixContext matrixContext, Map<Integer, PartitionMeta> partitionMetas) {
@@ -83,9 +86,12 @@ public class MatrixMeta {
 
   /**
    * Get number of non-zero elements
+   *
    * @return number of non-zero elements
    */
-  public long getValidIndexNum() { return matrixContext.getValidIndexNum(); }
+  public long getValidIndexNum() {
+    return matrixContext.getValidIndexNum();
+  }
 
   /**
    * Gets name.
@@ -121,7 +127,7 @@ public class MatrixMeta {
   /**
    * Gets attribute.
    *
-   * @param key   the key
+   * @param key the key
    * @return the attribute
    */
   public String getAttribute(String key) {
@@ -134,8 +140,7 @@ public class MatrixMeta {
    * @return the result
    */
   public boolean isAverage() {
-    String average =
-        getAttribute(MatrixConf.MATRIX_AVERAGE, MatrixConf.DEFAULT_MATRIX_AVERAGE);
+    String average = getAttribute(MatrixConf.MATRIX_AVERAGE, MatrixConf.DEFAULT_MATRIX_AVERAGE);
     return Boolean.parseBoolean(average);
   }
 
@@ -145,8 +150,7 @@ public class MatrixMeta {
    * @return the result
    */
   public boolean isHogwild() {
-    String hogwild =
-        getAttribute(MatrixConf.MATRIX_HOGWILD, MatrixConf.DEFAULT_MATRIX_HOGWILD);
+    String hogwild = getAttribute(MatrixConf.MATRIX_HOGWILD, MatrixConf.DEFAULT_MATRIX_HOGWILD);
     return Boolean.parseBoolean(hogwild);
   }
 
@@ -161,6 +165,7 @@ public class MatrixMeta {
 
   /**
    * Get partitions meta
+   *
    * @return all partitions meta
    */
   public Map<Integer, PartitionMeta> getPartitionMetas() {
@@ -169,6 +174,7 @@ public class MatrixMeta {
 
   /**
    * Get matrix context
+   *
    * @return matrix context
    */
   public MatrixContext getMatrixContext() {
@@ -177,7 +183,8 @@ public class MatrixMeta {
 
   /**
    * Add meta for a partition
-   * @param id partition id
+   *
+   * @param id   partition id
    * @param meta partition meta
    */
   public void addPartitionMeta(int id, PartitionMeta meta) {
@@ -186,6 +193,7 @@ public class MatrixMeta {
 
   /**
    * Get meta for a partition
+   *
    * @param partId partition id
    * @return partition meta
    */
@@ -195,12 +203,13 @@ public class MatrixMeta {
 
   /**
    * Get the stored pss for a partition
+   *
    * @param partId partition id
    * @return the stored pss
    */
   public List<ParameterServerId> getPss(int partId) {
     PartitionMeta partitionMeta = partitionMetas.get(partId);
-    if(partitionMeta == null) {
+    if (partitionMeta == null) {
       return null;
     }
     return partitionMeta.getPss();
@@ -208,12 +217,13 @@ public class MatrixMeta {
 
   /**
    * Set the stored pss for a partition
+   *
    * @param partId partition id
-   * @param psIds the stored pss
+   * @param psIds  the stored pss
    */
   public void setPss(int partId, List<ParameterServerId> psIds) {
     PartitionMeta partitionMeta = partitionMetas.get(partId);
-    if(partitionMeta == null) {
+    if (partitionMeta == null) {
       return;
     }
     partitionMeta.setPss(psIds);
@@ -221,12 +231,13 @@ public class MatrixMeta {
 
   /**
    * Get the master stored ps for the partition
+   *
    * @param partId partition id
    * @return the master stored ps
    */
   public ParameterServerId getMasterPs(int partId) {
     PartitionMeta partitionMeta = partitionMetas.get(partId);
-    if(partitionMeta == null) {
+    if (partitionMeta == null) {
       return null;
     }
     return partitionMeta.getMasterPs();
@@ -234,6 +245,7 @@ public class MatrixMeta {
 
   /**
    * Get matrix attributes
+   *
    * @return matrix attributes
    */
   public Map<String, String> getAttributes() {
@@ -242,6 +254,7 @@ public class MatrixMeta {
 
   /**
    * Get the block row number for the matrix
+   *
    * @return the block row number for the matrix
    */
   public int getBlockRowNum() {
@@ -250,23 +263,24 @@ public class MatrixMeta {
 
   /**
    * Get the block column number for the matrix
+   *
    * @return the block column number for the matrix
    */
   public long getBlockColNum() {
     return matrixContext.getMaxColNumInBlock();
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("MatrixContext:").append(matrixContext).append("\n");
     sb.append("partitions:").append("\n");
     List<PartitionMeta> parts = new ArrayList<>(partitionMetas.values());
-    parts.sort((PartitionMeta p1, PartitionMeta p2)-> p1.getPartId() - p2.getPartId());
+    parts.sort((PartitionMeta p1, PartitionMeta p2) -> p1.getPartId() - p2.getPartId());
     int size = parts.size();
     sb.append("total partitoin number:" + size).append("\n");
-    for(int i = 0; i < size; i++) {
-      sb.append("partition ").append(parts.get(i).getPartId()).append(":").append(parts.get(i)).append("\n");
+    for (int i = 0; i < size; i++) {
+      sb.append("partition ").append(parts.get(i).getPartId()).append(":").append(parts.get(i))
+        .append("\n");
     }
 
     return sb.toString();
@@ -274,22 +288,24 @@ public class MatrixMeta {
 
   /**
    * Remove the stored ps for all partitions
+   *
    * @param psId ps id
    */
   public void removePs(ParameterServerId psId) {
-    for(PartitionMeta partMeta : partitionMetas.values()) {
+    for (PartitionMeta partMeta : partitionMetas.values()) {
       partMeta.removePs(psId);
     }
   }
 
   /**
    * Add the stored ps for the partition
+   *
    * @param partId partition id
-   * @param psId ps id
+   * @param psId   ps id
    */
   public void addPs(int partId, ParameterServerId psId) {
     PartitionMeta partitionMeta = partitionMetas.get(partId);
-    if(partitionMeta == null) {
+    if (partitionMeta == null) {
       return;
     }
     partitionMeta.addReplicationPS(psId);
@@ -297,6 +313,7 @@ public class MatrixMeta {
 
   /**
    * Get estimate sparsity
+   *
    * @return estimate sparsity
    */
   public double getEstSparsity() {

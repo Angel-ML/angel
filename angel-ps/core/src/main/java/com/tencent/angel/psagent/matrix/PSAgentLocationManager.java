@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.psagent.matrix;
 
 import com.google.protobuf.ServiceException;
@@ -41,6 +42,7 @@ public class PSAgentLocationManager {
 
   /**
    * Create a PSAgentLocationManager
+   *
    * @param context PSAgent context
    */
   public PSAgentLocationManager(PSAgentContext context) {
@@ -50,6 +52,7 @@ public class PSAgentLocationManager {
 
   /**
    * Get PS location
+   *
    * @param psId ps id
    * @return PS location
    */
@@ -59,13 +62,14 @@ public class PSAgentLocationManager {
 
   /**
    * Get PS location
+   *
    * @param psId ps id
    * @param sync true means get from Master, false means just get from local cache
    * @return ps location
    * @throws ServiceException
    */
   public Location getPsLocation(ParameterServerId psId, boolean sync) throws ServiceException {
-    if(!sync) {
+    if (!sync) {
       return locationManager.getPsLocation(psId);
     } else {
       Location location = context.getMasterClient().getPSLocation(psId);
@@ -76,6 +80,7 @@ public class PSAgentLocationManager {
 
   /**
    * Set Master location
+   *
    * @param location Master location
    */
   public void setMasterLocation(Location location) {
@@ -84,6 +89,7 @@ public class PSAgentLocationManager {
 
   /**
    * Set all PS ids
+   *
    * @param psIds all PS ids
    */
   public void setPsIds(ParameterServerId[] psIds) {
@@ -92,7 +98,8 @@ public class PSAgentLocationManager {
 
   /**
    * Set PS location
-   * @param psId PS id
+   *
+   * @param psId     PS id
    * @param location PS location
    */
   public void setPsLocation(ParameterServerId psId, Location location) {
@@ -101,6 +108,7 @@ public class PSAgentLocationManager {
 
   /**
    * Get Master location
+   *
    * @return Master location
    */
   public Location getMasterLocation() {
@@ -109,6 +117,7 @@ public class PSAgentLocationManager {
 
   /**
    * Get all PS ids
+   *
    * @return all PS ids
    */
   public ParameterServerId[] getPsIds() {
@@ -117,13 +126,14 @@ public class PSAgentLocationManager {
 
   /**
    * Lookup ps id use location
+   *
    * @param loc ps location
    * @return ps id
    */
   public ParameterServerId getPsId(Location loc) {
     Map<ParameterServerId, Location> locations = locationManager.getPsLocations();
-    for(Map.Entry<ParameterServerId, Location> locEntry : locations.entrySet()) {
-      if(loc.equals(locEntry.getValue())) {
+    for (Map.Entry<ParameterServerId, Location> locEntry : locations.entrySet()) {
+      if (loc.equals(locEntry.getValue())) {
         return locEntry.getKey();
       }
     }

@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master;
 
 import com.tencent.angel.ipc.VersionedProtocol;
@@ -24,7 +25,7 @@ import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSMasterServic
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerMasterService;
 
 public interface MasterProtocol extends VersionedProtocol, PSMasterService.BlockingInterface,
-    PSAgentMasterService.BlockingInterface, WorkerMasterService.BlockingInterface,
-    ClientMasterService.BlockingInterface {
+  PSAgentMasterService.BlockingInterface, WorkerMasterService.BlockingInterface,
+  ClientMasterService.BlockingInterface {
   static long VERSION = 0L;
 }

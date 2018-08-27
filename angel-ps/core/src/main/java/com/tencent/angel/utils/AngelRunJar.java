@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.utils;
 
 import com.tencent.angel.AppSubmitter;
@@ -35,7 +36,7 @@ public class AngelRunJar {
   private static final String angelSysConfFile = "angel-site.xml";
 
   public static void main(String[] args) {
-    try{
+    try {
       submit(ConfUtils.initConf(args));
     } catch (Exception x) {
       LOG.fatal("submit job failed ", x);

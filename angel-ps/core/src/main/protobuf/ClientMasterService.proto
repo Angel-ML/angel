@@ -96,13 +96,39 @@ message StartResponse {
 }
 
 message SaveRequest {
-  repeated string matrixNames = 2;
+  required ModelSaveContextProto saveContext = 1;
+}
+
+message MatrixSaveContextProto {
+  required string matrixName = 1;
+  repeated int32 rowIndexes = 2;
+}
+
+message ModelSaveContextProto {
+  required string savePath = 1;
+  repeated MatrixSaveContextProto matrixContextes = 2;
 }
 
 message SaveResponse {
-
+  required int32 requestId = 1;
 }
 
+message LoadRequest {
+  required ModelLoadContextProto loadContext = 1;
+}
+
+message MatrixLoadContextProto {
+  required string matrixName = 1;
+}
+
+message ModelLoadContextProto {
+  required string loadPath = 1;
+  repeated MatrixLoadContextProto matrixContextes = 2;
+}
+
+message LoadResponse {
+  required int32 requestId = 1;
+}
 
 message SetParamsRequest {
   repeated Pair kvs = 1;
@@ -152,16 +178,37 @@ message ClientRegisterResponse {
 
 }
 
+message CheckModelSavedRequest {
+  required int32 requestId = 1;
+}
+
+message CheckModelSavedResponse {
+  required int32 status = 1;
+  optional string log = 2;
+}
+
+message CheckModelLoadedRequest {
+  required int32 requestId = 1;
+}
+
+message CheckModelLoadedResponse {
+  required int32 status = 1;
+  optional string log = 2;
+}
+
 service ClientMasterService {
   rpc start(StartRequest) returns (StartResponse);
   rpc getAllPSLocation(GetAllPSLocationRequest) returns (GetAllPSLocationResponse);
   rpc save(SaveRequest) returns (SaveResponse);
+  rpc load(LoadRequest) returns (LoadResponse);
   rpc stop(StopRequest) returns (StopResponse);
   rpc ping(PingRequest) returns (PingResponse);
   rpc getJobReport(GetJobReportRequest) returns (GetJobReportResponse);
   rpc getWorkerLogDir(GetWorkerLogDirRequest) returns (GetWorkerLogDirResponse);
   rpc createMatrices(CreateMatricesRequest) returns (CreateMatricesResponse);
   rpc checkMatricesCreated(CheckMatricesCreatedRequest) returns (CheckMatricesCreatedResponse);
+  rpc checkModelSaved(CheckModelSavedRequest) returns (CheckModelSavedResponse);
+  rpc checkModelLoaded(CheckModelLoadedRequest) returns (CheckModelLoadedResponse);
   rpc setParams(SetParamsRequest) returns (SetParamsResponse);
   rpc getClientId(GetClientIdRequest) returns (GetClientIdResponse);
   rpc keepAlive(KeepAliveRequest) returns (KeepAliveResponse);

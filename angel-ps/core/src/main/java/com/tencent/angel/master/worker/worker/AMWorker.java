@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.worker.worker;
 
 import com.tencent.angel.conf.AngelConf;
@@ -50,43 +51,65 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class AMWorker implements EventHandler<AMWorkerEvent> {
 
   private static final Log LOG = LogFactory.getLog(AMWorker.class);
-  
-  /**worker id*/
+
+  /**
+   * worker id
+   */
   private final WorkerId id;
   private final AMContext context;
   private final Lock readLock;
   private final Lock writeLock;
-  
-  /**task ids which this worker contains*/
+
+  /**
+   * task ids which this worker contains
+   */
   private final List<TaskId> taskIds;
-  
-  /**worker metrics*/
+
+  /**
+   * worker metrics
+   */
   private final Map<String, String> metrics;
-  
-  /**worker attempt id to worker attempt map*/
+
+  /**
+   * worker attempt id to worker attempt map
+   */
   private final Map<WorkerAttemptId, WorkerAttempt> attempts;
-  
-  /**running worker attempt id*/
+
+  /**
+   * running worker attempt id
+   */
   private WorkerAttemptId runningAttemptId;
-  
-  /**last run attempt id*/
+
+  /**
+   * last run attempt id
+   */
   private WorkerAttemptId lastAttemptId;
-  
-  /**failed worker atttempts*/
+
+  /**
+   * failed worker atttempts
+   */
   private final Set<WorkerAttemptId> failedAttempts;
-  
-  /**success worker attempt id*/
+
+  /**
+   * success worker attempt id
+   */
   private WorkerAttemptId successAttemptId;
-  
-  /**next worker attempt index*/
+
+  /**
+   * next worker attempt index
+   */
   private int nextAttemptNumber = 0;
-  
-  /**the maximum number of attempts allowed*/
+
+  /**
+   * the maximum number of attempts allowed
+   */
   private final int maxAttempts;
-  
+
   private final StateMachine<AMWorkerState, AMWorkerEventType, AMWorkerEvent> stateMachine;
-  
-  /**worker diagnostics*/
+
+  /**
+   * worker diagnostics
+   */
   private final List<String> diagnostics;
 
   public AMWorker(WorkerId id, AMContext context, List<TaskId> taskIds) {
@@ -99,141 +122,97 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
     writeLock = readWriteLock.writeLock();
     stateMachine = stateMachineFactory.make(this);
     metrics = new HashMap<String, String>();
-    diagnostics = new ArrayList<String>();    
+    diagnostics = new ArrayList<String>();
     attempts = new HashMap<WorkerAttemptId, WorkerAttempt>();
     failedAttempts = new HashSet<WorkerAttemptId>();
-    
-    maxAttempts =
-        context.getConf().getInt(AngelConf.ANGEL_WORKER_MAX_ATTEMPTS,
-            AngelConf.DEFAULT_WORKER_MAX_ATTEMPTS);
+
+    maxAttempts = context.getConf()
+      .getInt(AngelConf.ANGEL_WORKER_MAX_ATTEMPTS, AngelConf.DEFAULT_WORKER_MAX_ATTEMPTS);
   }
 
   private static final KillNewWorkertTransition KILL_NEW_TRANSITION =
-      new KillNewWorkertTransition();
+    new KillNewWorkertTransition();
 
-  private static final WorkerAttemptDoneTransition ATTEMPT_DONE_TRANSITION = new WorkerAttemptDoneTransition();
+  private static final WorkerAttemptDoneTransition ATTEMPT_DONE_TRANSITION =
+    new WorkerAttemptDoneTransition();
 
   private static final WorkerAssignedKilledTransition ASSIGNED_KILLED_TRANSITION =
-      new WorkerAssignedKilledTransition();
-  
+    new WorkerAssignedKilledTransition();
+
   private static final WorkerAttemptFailedTransition ATTEMPT_FAILED_TRANSITION =
-      new WorkerAttemptFailedTransition();
-  
+    new WorkerAttemptFailedTransition();
+
   private static final WorkerAttemptKilledTransition ATTEMPT_KILLED_TRANSITION =
-      new WorkerAttemptKilledTransition();
+    new WorkerAttemptKilledTransition();
 
-  protected static final StateMachineFactory<AMWorker, AMWorkerState, AMWorkerEventType, AMWorkerEvent> stateMachineFactory =
-      new StateMachineFactory<AMWorker, AMWorkerState, AMWorkerEventType, AMWorkerEvent>(
-          AMWorkerState.NEW)                    
-          .addTransition(AMWorkerState.NEW, 
-              AMWorkerState.SCHEDULED, 
-              AMWorkerEventType.SCHEDULE,
-              new ScheduleTransation())
-          .addTransition(AMWorkerState.NEW, 
-              AMWorkerState.KILLED, 
-              AMWorkerEventType.KILL,
-              KILL_NEW_TRANSITION)
+  protected static final StateMachineFactory<AMWorker, AMWorkerState, AMWorkerEventType, AMWorkerEvent>
+    stateMachineFactory =
+    new StateMachineFactory<AMWorker, AMWorkerState, AMWorkerEventType, AMWorkerEvent>(
+      AMWorkerState.NEW)
+      .addTransition(AMWorkerState.NEW, AMWorkerState.SCHEDULED, AMWorkerEventType.SCHEDULE,
+        new ScheduleTransation())
+      .addTransition(AMWorkerState.NEW, AMWorkerState.KILLED, AMWorkerEventType.KILL,
+        KILL_NEW_TRANSITION)
 
-          .addTransition(
-              AMWorkerState.SCHEDULED, 
-              AMWorkerState.RUNNING,
-              AMWorkerEventType.WORKER_ATTEMPT_REGISTED, 
-              new RegisterTransition())
-          .addTransition(
-              AMWorkerState.SCHEDULED, 
-              EnumSet.of(AMWorkerState.SCHEDULED, AMWorkerState.FAILED),
-              AMWorkerEventType.WORKER_ATTEMPT_FAILED,
-              ATTEMPT_FAILED_TRANSITION)
-          .addTransition(
-              AMWorkerState.SCHEDULED, 
-              AMWorkerState.KILLED, 
-              AMWorkerEventType.KILL,
-              ASSIGNED_KILLED_TRANSITION)
+      .addTransition(AMWorkerState.SCHEDULED, AMWorkerState.RUNNING,
+        AMWorkerEventType.WORKER_ATTEMPT_REGISTED, new RegisterTransition())
+      .addTransition(AMWorkerState.SCHEDULED,
+        EnumSet.of(AMWorkerState.SCHEDULED, AMWorkerState.FAILED),
+        AMWorkerEventType.WORKER_ATTEMPT_FAILED, ATTEMPT_FAILED_TRANSITION)
+      .addTransition(AMWorkerState.SCHEDULED, AMWorkerState.KILLED, AMWorkerEventType.KILL,
+        ASSIGNED_KILLED_TRANSITION)
 
-          .addTransition(
-              AMWorkerState.RUNNING, 
-              AMWorkerState.SUCCESS, 
-              AMWorkerEventType.WORKER_ATTEMPT_SUCCESS,
-              ATTEMPT_DONE_TRANSITION)             
-          .addTransition(
-              AMWorkerState.RUNNING, 
-              EnumSet.of(AMWorkerState.SCHEDULED, AMWorkerState.FAILED),
-              AMWorkerEventType.WORKER_ATTEMPT_KILLED,
-              ATTEMPT_KILLED_TRANSITION)
-          .addTransition(
-              AMWorkerState.RUNNING, 
-              EnumSet.of(AMWorkerState.FAILED, AMWorkerState.RUNNING),
-              AMWorkerEventType.WORKER_ATTEMPT_FAILED,
-              ATTEMPT_FAILED_TRANSITION)
-          .addTransition(
-              AMWorkerState.RUNNING, 
-              AMWorkerState.KILLED,
-              AMWorkerEventType.KILL,
-              ASSIGNED_KILLED_TRANSITION)
+      .addTransition(AMWorkerState.RUNNING, AMWorkerState.SUCCESS,
+        AMWorkerEventType.WORKER_ATTEMPT_SUCCESS, ATTEMPT_DONE_TRANSITION)
+      .addTransition(AMWorkerState.RUNNING,
+        EnumSet.of(AMWorkerState.SCHEDULED, AMWorkerState.FAILED),
+        AMWorkerEventType.WORKER_ATTEMPT_KILLED, ATTEMPT_KILLED_TRANSITION)
+      .addTransition(AMWorkerState.RUNNING, EnumSet.of(AMWorkerState.FAILED, AMWorkerState.RUNNING),
+        AMWorkerEventType.WORKER_ATTEMPT_FAILED, ATTEMPT_FAILED_TRANSITION)
+      .addTransition(AMWorkerState.RUNNING, AMWorkerState.KILLED, AMWorkerEventType.KILL,
+        ASSIGNED_KILLED_TRANSITION)
 
-          .addTransition(
-              AMWorkerState.KILLED,
-              AMWorkerState.KILLED,
-              EnumSet.of(
-                  AMWorkerEventType.INIT, 
-                  AMWorkerEventType.KILL, 
-                  AMWorkerEventType.SCHEDULE,
-                  AMWorkerEventType.WORKER_ATTEMPT_FAILED,
-                  AMWorkerEventType.WORKER_ATTEMPT_KILLED,
-                  AMWorkerEventType.WORKER_ATTEMPT_REGISTED,
-                  AMWorkerEventType.WORKER_ATTEMPT_SUCCESS))
+      .addTransition(AMWorkerState.KILLED, AMWorkerState.KILLED, EnumSet
+        .of(AMWorkerEventType.INIT, AMWorkerEventType.KILL, AMWorkerEventType.SCHEDULE,
+          AMWorkerEventType.WORKER_ATTEMPT_FAILED, AMWorkerEventType.WORKER_ATTEMPT_KILLED,
+          AMWorkerEventType.WORKER_ATTEMPT_REGISTED, AMWorkerEventType.WORKER_ATTEMPT_SUCCESS))
 
-          .addTransition(
-              AMWorkerState.FAILED,
-              AMWorkerState.FAILED,
-              EnumSet.of(
-                  AMWorkerEventType.INIT, 
-                  AMWorkerEventType.KILL, 
-                  AMWorkerEventType.SCHEDULE,
-                  AMWorkerEventType.WORKER_ATTEMPT_FAILED,
-                  AMWorkerEventType.WORKER_ATTEMPT_KILLED,
-                  AMWorkerEventType.WORKER_ATTEMPT_REGISTED,
-                  AMWorkerEventType.WORKER_ATTEMPT_SUCCESS))
+      .addTransition(AMWorkerState.FAILED, AMWorkerState.FAILED, EnumSet
+        .of(AMWorkerEventType.INIT, AMWorkerEventType.KILL, AMWorkerEventType.SCHEDULE,
+          AMWorkerEventType.WORKER_ATTEMPT_FAILED, AMWorkerEventType.WORKER_ATTEMPT_KILLED,
+          AMWorkerEventType.WORKER_ATTEMPT_REGISTED, AMWorkerEventType.WORKER_ATTEMPT_SUCCESS))
 
-          .addTransition(
-              AMWorkerState.SUCCESS,
-              AMWorkerState.SUCCESS,
-              EnumSet.of(
-                  AMWorkerEventType.INIT, 
-                  AMWorkerEventType.KILL, 
-                  AMWorkerEventType.SCHEDULE,
-                  AMWorkerEventType.WORKER_ATTEMPT_FAILED,
-                  AMWorkerEventType.WORKER_ATTEMPT_KILLED,
-                  AMWorkerEventType.WORKER_ATTEMPT_REGISTED,
-                  AMWorkerEventType.WORKER_ATTEMPT_SUCCESS));
+      .addTransition(AMWorkerState.SUCCESS, AMWorkerState.SUCCESS, EnumSet
+        .of(AMWorkerEventType.INIT, AMWorkerEventType.KILL, AMWorkerEventType.SCHEDULE,
+          AMWorkerEventType.WORKER_ATTEMPT_FAILED, AMWorkerEventType.WORKER_ATTEMPT_KILLED,
+          AMWorkerEventType.WORKER_ATTEMPT_REGISTED, AMWorkerEventType.WORKER_ATTEMPT_SUCCESS));
+
 
   static class ScheduleTransation implements SingleArcTransition<AMWorker, AMWorkerEvent> {
-    @Override
-    public void transition(AMWorker worker, AMWorkerEvent event) {
+    @Override public void transition(AMWorker worker, AMWorkerEvent event) {
       LOG.info("schedule worker, workerId = " + worker.getId());
       worker.addAndScheduleAttempt();
     }
   }
 
-  private static class KillNewWorkertTransition implements
-      SingleArcTransition<AMWorker, AMWorkerEvent> {
 
-    @Override
-    public void transition(AMWorker worker, AMWorkerEvent event) {
+  private static class KillNewWorkertTransition
+    implements SingleArcTransition<AMWorker, AMWorkerEvent> {
+
+    @Override public void transition(AMWorker worker, AMWorkerEvent event) {
       worker.notifyWorkerKilled();
     }
   }
 
-  @SuppressWarnings("unchecked")
-  private void addAndScheduleAttempt() {
+  @SuppressWarnings("unchecked") private void addAndScheduleAttempt() {
     WorkerAttempt attempt = null;
     writeLock.lock();
     try {
       //init a worker attempt for the worker
       attempt = createWorkerAttempt();
-      for(TaskId taskId:taskIds) {
+      for (TaskId taskId : taskIds) {
         AMTask task = context.getTaskManager().getTask(taskId);
-        if(task != null) {
+        if (task != null) {
           task.resetCounters();
         }
       }
@@ -247,18 +226,19 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
     }
 
     //schedule the worker attempt
-    context.getEventHandler().handle(
-        new WorkerAttemptEvent(WorkerAttemptEventType.SCHEDULE, attempt.getId()));
+    context.getEventHandler()
+      .handle(new WorkerAttemptEvent(WorkerAttemptEventType.SCHEDULE, attempt.getId()));
   }
 
   private WorkerAttempt createWorkerAttempt() {
     WorkerAttempt attempt = null;
-    if(lastAttemptId != null){
-      attempt = new WorkerAttempt(id, nextAttemptNumber, context, taskIds, attempts.get(lastAttemptId));
+    if (lastAttemptId != null) {
+      attempt =
+        new WorkerAttempt(id, nextAttemptNumber, context, taskIds, attempts.get(lastAttemptId));
     } else {
       attempt = new WorkerAttempt(id, nextAttemptNumber, context, taskIds, null);
     }
-    
+
     nextAttemptNumber++;
     return attempt;
   }
@@ -267,11 +247,9 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
     return context;
   }
 
-  private static class WorkerAttemptFailedTransition implements
-      MultipleArcTransition<AMWorker, AMWorkerEvent, AMWorkerState> {
-    @Override
-    public AMWorkerState transition(AMWorker worker,
-        AMWorkerEvent event) {
+  private static class WorkerAttemptFailedTransition
+    implements MultipleArcTransition<AMWorker, AMWorkerEvent, AMWorkerState> {
+    @Override public AMWorkerState transition(AMWorker worker, AMWorkerEvent event) {
       WorkerAttemptId workerAttemptId = ((WorkerFromAttemptEvent) event).getWorkerAttemptId();
       worker.failedAttempts.add(workerAttemptId);
       if (worker.runningAttemptId == workerAttemptId) {
@@ -281,10 +259,11 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
       // add diagnostic
       StringBuilder diagnostic = new StringBuilder();
       diagnostic.append(workerAttemptId.toString()).append(" failed due to: ");
-      diagnostic.append(StringUtils.join("\n", worker.attempts.get(workerAttemptId).getDiagnostics()));
+      diagnostic
+        .append(StringUtils.join("\n", worker.attempts.get(workerAttemptId).getDiagnostics()));
       diagnostic.append(" Detail Worker Log URL:");
       diagnostic.append(worker.attempts.get(workerAttemptId).getLogUrl());
-          
+
       if (LOG.isDebugEnabled()) {
         LOG.debug(workerAttemptId + "failed due to:" + diagnostic.toString());
       }
@@ -302,12 +281,12 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
       }
     }
   }
-  
-  private static class WorkerAttemptKilledTransition implements
-      MultipleArcTransition<AMWorker, AMWorkerEvent, AMWorkerState> {
 
-    @Override
-    public AMWorkerState transition(AMWorker worker, AMWorkerEvent event) {
+
+  private static class WorkerAttemptKilledTransition
+    implements MultipleArcTransition<AMWorker, AMWorkerEvent, AMWorkerState> {
+
+    @Override public AMWorkerState transition(AMWorker worker, AMWorkerEvent event) {
       WorkerAttemptId workerAttemptId = ((WorkerFromAttemptEvent) event).getWorkerAttemptId();
       worker.failedAttempts.add(workerAttemptId);
       if (worker.runningAttemptId == workerAttemptId) {
@@ -317,8 +296,8 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
       // add diagnostic
       StringBuilder diagnostic = new StringBuilder();
       diagnostic.append(workerAttemptId.toString()).append(" failed due to: ");
-      diagnostic.append(StringUtils.join("\n", worker.attempts.get(workerAttemptId)
-          .getDiagnostics()));
+      diagnostic
+        .append(StringUtils.join("\n", worker.attempts.get(workerAttemptId).getDiagnostics()));
       diagnostic.append(" Detail Worker Log URL:");
       diagnostic.append(worker.attempts.get(workerAttemptId).getLogUrl());
 
@@ -339,39 +318,39 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
       }
     }
   }
-  
+
+
   private static class RegisterTransition implements SingleArcTransition<AMWorker, AMWorkerEvent> {
-    @Override
-    public void transition(AMWorker worker, AMWorkerEvent event) {
+    @Override public void transition(AMWorker worker, AMWorkerEvent event) {
       worker.notifyWorkerRegisted();
     }
   }
 
-  private static class WorkerAssignedKilledTransition implements
-      SingleArcTransition<AMWorker, AMWorkerEvent> {
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public void transition(AMWorker worker, AMWorkerEvent event) {     
+  private static class WorkerAssignedKilledTransition
+    implements SingleArcTransition<AMWorker, AMWorkerEvent> {
+
+    @SuppressWarnings("unchecked") @Override
+    public void transition(AMWorker worker, AMWorkerEvent event) {
       StringBuilder diaggostic = new StringBuilder();
-      diaggostic.append("worker is killed by user, workerId: ")
-          .append(worker.getId().toString());
+      diaggostic.append("worker is killed by user, workerId: ").append(worker.getId().toString());
       worker.diagnostics.add(diaggostic.toString());
-      
+
       for (WorkerAttempt attempt : worker.attempts.values()) {
         if (attempt != null && !attempt.isFinished()) {
           worker.context.getEventHandler()
-              .handle(new WorkerAttemptEvent(WorkerAttemptEventType.KILL, attempt.getId()));
+            .handle(new WorkerAttemptEvent(WorkerAttemptEventType.KILL, attempt.getId()));
         }
       }
-      
+
       worker.notifyWorkerKilled();
     }
   }
 
-  private static class WorkerAttemptDoneTransition implements SingleArcTransition<AMWorker, AMWorkerEvent> {
-    @Override
-    public void transition(AMWorker worker, AMWorkerEvent event) {
+
+  private static class WorkerAttemptDoneTransition
+    implements SingleArcTransition<AMWorker, AMWorkerEvent> {
+    @Override public void transition(AMWorker worker, AMWorkerEvent event) {
       WorkerAttemptId attemptId = ((WorkerFromAttemptEvent) event).getWorkerAttemptId();
       worker.successAttemptId = attemptId;
       worker.runningAttemptId = null;
@@ -379,22 +358,19 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
     }
   }
 
-  @SuppressWarnings("unchecked")
-  private void notifyWorkerSuccess() {
+  @SuppressWarnings("unchecked") private void notifyWorkerSuccess() {
     context.getEventHandler().handle(
-        new WorkerGroupFromWorkerEvent(AMWorkerGroupEventType.WORKER_DONE, context
-            .getWorkerManager().getWorkGroup(id).getId(), id));
+      new WorkerGroupFromWorkerEvent(AMWorkerGroupEventType.WORKER_DONE,
+        context.getWorkerManager().getWorkGroup(id).getId(), id));
   }
 
-  @SuppressWarnings("unchecked")
-  private void notifyWorkerRegisted() {
+  @SuppressWarnings("unchecked") private void notifyWorkerRegisted() {
     context.getEventHandler().handle(
-        new WorkerGroupFromWorkerEvent(AMWorkerGroupEventType.WORKER_REGISTED, context
-            .getWorkerManager().getWorkGroup(id).getId(), id));
+      new WorkerGroupFromWorkerEvent(AMWorkerGroupEventType.WORKER_REGISTED,
+        context.getWorkerManager().getWorkGroup(id).getId(), id));
   }
 
-  @SuppressWarnings("unchecked")
-  private void notifyWorkerFailed() {
+  @SuppressWarnings("unchecked") private void notifyWorkerFailed() {
     StringBuilder sb = new StringBuilder();
     sb.append(id).append(" failed. ");
     int size = diagnostics.size();
@@ -402,19 +378,18 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
       sb.append("No more detail message.");
     } else {
       sb.append(StringUtils.join("\n", diagnostics));
-    }  
+    }
 
     context.getEventHandler().handle(
-        new WorkerGroupDiagnosticsUpdateEvent(context.getWorkerManager().getWorkerGroup(id)
-            .getId(), sb.toString()));
+      new WorkerGroupDiagnosticsUpdateEvent(context.getWorkerManager().getWorkerGroup(id).getId(),
+        sb.toString()));
 
     context.getEventHandler().handle(
-        new WorkerGroupFromWorkerEvent(AMWorkerGroupEventType.WORKER_ERROR, context.getWorkerManager()
-            .getWorkerGroup(id).getId(), id));
+      new WorkerGroupFromWorkerEvent(AMWorkerGroupEventType.WORKER_ERROR,
+        context.getWorkerManager().getWorkerGroup(id).getId(), id));
   }
 
-  @SuppressWarnings("unchecked")
-  private void notifyWorkerKilled() {
+  @SuppressWarnings("unchecked") private void notifyWorkerKilled() {
     StringBuilder sb = new StringBuilder();
     sb.append(id).append(" killed. ");
     int size = diagnostics.size();
@@ -422,15 +397,15 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
       sb.append("No more detail message.");
     } else {
       sb.append(StringUtils.join("\n", diagnostics));
-    } 
+    }
 
     context.getEventHandler().handle(
-        new WorkerGroupDiagnosticsUpdateEvent(context.getWorkerManager().getWorkerGroup(id)
-            .getId(), sb.toString()));
+      new WorkerGroupDiagnosticsUpdateEvent(context.getWorkerManager().getWorkerGroup(id).getId(),
+        sb.toString()));
 
     context.getEventHandler().handle(
-        new WorkerGroupFromWorkerEvent(AMWorkerGroupEventType.WORKER_KILL, context.getWorkerManager()
-            .getWorkerGroup(id).getId(), id));
+      new WorkerGroupFromWorkerEvent(AMWorkerGroupEventType.WORKER_KILL,
+        context.getWorkerManager().getWorkerGroup(id).getId(), id));
   }
 
   public void handle(AMWorkerEvent event) {
@@ -444,8 +419,7 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
 
       }
       if (oldState != getState()) {
-        LOG.info(event.getWorkerId() + " Transitioned from " + oldState + " to "
-            + getState());
+        LOG.info(event.getWorkerId() + " Transitioned from " + oldState + " to " + getState());
       }
     } finally {
       writeLock.unlock();
@@ -454,9 +428,10 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
 
   /**
    * get worker state
+   *
    * @return AMWorkerState worker state
    */
-  public AMWorkerState getState() { 
+  public AMWorkerState getState() {
     try {
       readLock.lock();
       return stateMachine.getCurrentState();
@@ -464,9 +439,10 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
       readLock.unlock();
     }
   }
-  
+
   /**
    * get worker id
+   *
    * @return WorkerId worker id
    */
   public WorkerId getId() {
@@ -475,40 +451,44 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
 
   /**
    * check if the worker is running over
+   *
    * @return boolean
    */
-  public boolean isFinished() {     
+  public boolean isFinished() {
     try {
-      readLock.lock();   
+      readLock.lock();
       AMWorkerState state = stateMachine.getCurrentState();
-      return (state == AMWorkerState.SUCCESS || state == AMWorkerState.FAILED || state == AMWorkerState.KILLED);
+      return (state == AMWorkerState.SUCCESS || state == AMWorkerState.FAILED
+        || state == AMWorkerState.KILLED);
     } finally {
       readLock.unlock();
     }
   }
-  
+
   /**
    * get the running worker attempt id
+   *
    * @return WorkerAttemptId the running worker attempt id
    */
-  public WorkerAttemptId getRunningAttemptId() {  
+  public WorkerAttemptId getRunningAttemptId() {
     try {
       readLock.lock();
       return runningAttemptId;
     } finally {
       readLock.unlock();
-    } 
+    }
   }
-  
-  
+
+
   /**
    * get the running worker attempt
+   *
    * @return WorkerAttemptId the running worker attempt
    */
   public WorkerAttempt getRunningAttempt() {
     try {
       readLock.lock();
-      if(runningAttemptId != null){
+      if (runningAttemptId != null) {
         return attempts.get(runningAttemptId);
       } else {
         return null;
@@ -520,6 +500,7 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
 
   /**
    * get the success worker attempt id
+   *
    * @return WorkerAttemptId the success worker attempt id
    */
   public WorkerAttemptId getSuccessAttemptId() {
@@ -528,27 +509,29 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
       return successAttemptId;
     } finally {
       readLock.unlock();
-    }  
+    }
   }
 
   /**
    * get the next worker attempt index for this worker
+   *
    * @return the next worker attempt index for this worker
    */
-  public int getNextAttemptNumber() {   
+  public int getNextAttemptNumber() {
     try {
       readLock.lock();
       return nextAttemptNumber;
     } finally {
       readLock.unlock();
-    }  
+    }
   }
 
   /**
    * get the worker metrics
+   *
    * @return Map<String, String> the worker metrics
    */
-  public Map<String, String> getMetrics() {  
+  public Map<String, String> getMetrics() {
     try {
       readLock.lock();
       Map<String, String> cloneMetrics = new HashMap<String, String>();
@@ -556,17 +539,19 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
       return cloneMetrics;
     } finally {
       readLock.unlock();
-    } 
+    }
   }
 
   /**
    * get all attempts for this worker
+   *
    * @return Map<WorkerAttemptId, WorkerAttempt> all attempts for this worker
    */
   public Map<WorkerAttemptId, WorkerAttempt> getAttempts() {
     try {
       readLock.lock();
-      Map<WorkerAttemptId, WorkerAttempt> cloneAttempts = new HashMap<WorkerAttemptId, WorkerAttempt>(attempts.size());
+      Map<WorkerAttemptId, WorkerAttempt> cloneAttempts =
+        new HashMap<WorkerAttemptId, WorkerAttempt>(attempts.size());
       cloneAttempts.putAll(attempts);
       return cloneAttempts;
     } finally {
@@ -576,12 +561,14 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
 
   /**
    * get the failed attempt id set for this worker
+   *
    * @return Set<WorkerAttemptId> the failed attempt id set for this worker
    */
   public Set<WorkerAttemptId> getFailedAttempts() {
     try {
       readLock.lock();
-      Set<WorkerAttemptId> cloneFailedAttempts = new HashSet<WorkerAttemptId>(failedAttempts.size());
+      Set<WorkerAttemptId> cloneFailedAttempts =
+        new HashSet<WorkerAttemptId>(failedAttempts.size());
       cloneFailedAttempts.addAll(failedAttempts);
       return cloneFailedAttempts;
     } finally {
@@ -591,6 +578,7 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
 
   /**
    * get the maximum number of attempts allowed
+   *
    * @return int the maximum number of attempts allowed
    */
   public int getMaxAttempts() {
@@ -599,9 +587,10 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
 
   /**
    * get the worker diagnostics
+   *
    * @return List<String> the worker diagnostics
    */
-  public List<String> getDiagnostics() { 
+  public List<String> getDiagnostics() {
     try {
       readLock.lock();
       List<String> cloneDiagnostics = new ArrayList<String>(diagnostics.size());
@@ -614,6 +603,7 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
 
   /**
    * get the task ids which the worker contains
+   *
    * @return List<TaskId> the task ids which the worker contains
    */
   public List<TaskId> getTaskIds() {
@@ -622,6 +612,7 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
 
   /**
    * get worker attempt use worker attempt id
+   *
    * @param workerAttemptId worker attempt id
    * @return WorkerAttempt worker attempt that has specified id
    */
@@ -636,20 +627,21 @@ public class AMWorker implements EventHandler<AMWorkerEvent> {
 
   /**
    * get the minimal iteration values in all the tasks contained in this worker
+   *
    * @return int the minimal iteration values in all the tasks contained in this worker
    */
   public int getMinIteration() {
     try {
       readLock.lock();
-      if(runningAttemptId != null){
+      if (runningAttemptId != null) {
         return attempts.get(runningAttemptId).getMinIteration();
       } else {
-        if(attempts.isEmpty()){
+        if (attempts.isEmpty()) {
           return 0;
         } else {
           int minIteration = 0;
-          for(WorkerAttempt workerAttempt:attempts.values()){
-            if(workerAttempt.getMinIteration() > minIteration){
+          for (WorkerAttempt workerAttempt : attempts.values()) {
+            if (workerAttempt.getMinIteration() > minIteration) {
               minIteration = workerAttempt.getMinIteration();
             }
           }

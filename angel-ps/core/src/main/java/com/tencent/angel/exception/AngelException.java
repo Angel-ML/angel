@@ -15,13 +15,15 @@
  *
  */
 
+
 package com.tencent.angel.exception;
 
 
 public class AngelException extends RuntimeException {
   private static final long serialVersionUID = 1L;
 
-  public AngelException() {}
+  public AngelException() {
+  }
 
   public AngelException(String message) {
     super(message);

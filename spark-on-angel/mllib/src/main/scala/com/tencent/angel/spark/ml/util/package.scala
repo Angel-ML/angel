@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.spark.ml
 
 import org.apache.spark.mllib.linalg.VectorUDT
@@ -57,7 +58,7 @@ package object util {
   object ActionType {
     val TRAIN = "train"
     val PREDICT = "predict"
-    val SERVING= "serving"
+    val SERVING = "serving"
   }
 
   object ParamKeys {

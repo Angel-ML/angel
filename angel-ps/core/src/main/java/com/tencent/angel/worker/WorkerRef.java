@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.worker;
 
 import com.tencent.angel.common.location.Location;
@@ -40,18 +41,20 @@ public class WorkerRef {
   private final Location location;
   private final Map<TaskId, TaskContext> taskIdToContextMap;
 
-  public WorkerRef(WorkerAttemptIdProto workerIdProto, LocationProto location, List<TaskMetaInfoProto> tasks) {
+  public WorkerRef(WorkerAttemptIdProto workerIdProto, LocationProto location,
+    List<TaskMetaInfoProto> tasks) {
     this.workerAttemptId = ProtobufUtil.convertToId(workerIdProto);
     this.location = new Location(location.getIp(), location.getPort());
-    
+
     int size = tasks.size();
     this.taskIdToContextMap = new HashMap<TaskId, TaskContext>(size);
-    
+
     TaskMetaInfoProto taskMeta = null;
     for (int i = 0; i < size; i++) {
       taskMeta = tasks.get(i);
       LOG.debug("taskMeta=" + taskMeta);
-      taskIdToContextMap.put(ProtobufUtil.convertToId(tasks.get(i).getTaskId()), new TaskContext(taskMeta));
+      taskIdToContextMap
+        .put(ProtobufUtil.convertToId(tasks.get(i).getTaskId()), new TaskContext(taskMeta));
     }
   }
 

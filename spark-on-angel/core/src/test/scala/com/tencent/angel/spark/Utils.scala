@@ -15,16 +15,17 @@
  *
  */
 
+
 package com.tencent.angel.spark
 
-import com.tencent.angel.spark.linalg.{Vector, DenseVector, SparseVector}
+import com.tencent.angel.ml.math2.vector.{IntDoubleVector, LongDoubleVector, Vector}
 
 object Utils {
 
   def assertSameElement(vector: Vector, local: Array[Double]): Unit = {
     vector match {
-      case dv: DenseVector => dv.values.sameElements(local)
-      case sv: SparseVector => assert(false)
+      case dv: IntDoubleVector => dv.getStorage.getValues.sameElements(local)
+      case sv: LongDoubleVector => assert(false)
     }
   }
 }

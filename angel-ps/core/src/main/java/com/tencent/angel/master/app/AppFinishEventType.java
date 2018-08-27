@@ -15,18 +15,25 @@
  *
  */
 
+
 package com.tencent.angel.master.app;
 
 /**
  * Application finish event type.
  */
 public enum AppFinishEventType {
-  /**run failed*/
-  INTERNAL_ERROR_FINISH, 
-  
-  /**run success*/
+  /**
+   * run failed
+   */
+  INTERNAL_ERROR_FINISH,
+
+  /**
+   * run success
+   */
   SUCCESS_FINISH,
-  
-  /**killed*/
+
+  /**
+   * killed
+   */
   KILL_FINISH
 }

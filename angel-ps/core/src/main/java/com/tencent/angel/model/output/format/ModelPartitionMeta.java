@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.model.output.format;
 
 import org.apache.commons.logging.Log;
@@ -80,7 +81,7 @@ public class ModelPartitionMeta {
   /**
    * rows offset
    */
-  private Map<Integer,RowOffset> rowMetas;
+  private Map<Integer, RowOffset> rowMetas;
 
   /**
    * Create a empty PartitionMeta
@@ -91,17 +92,19 @@ public class ModelPartitionMeta {
 
   /**
    * Create a PartitionMeta
-   * @param partId partition index
+   *
+   * @param partId   partition index
    * @param startRow partition start row index
-   * @param endRow partition end row index
+   * @param endRow   partition end row index
    * @param startCol partition start column index
-   * @param endCol partition end column index
-   * @param nnz Non-zero element number in this partition
+   * @param endCol   partition end column index
+   * @param nnz      Non-zero element number in this partition
    * @param fileName The file name to which the partition is written
-   * @param offset The start position for this partition in the file
-   * @param length total write bytes
+   * @param offset   The start position for this partition in the file
+   * @param length   total write bytes
    */
-  public ModelPartitionMeta(int partId, int startRow, int endRow, long startCol, long endCol, long nnz, String fileName, long offset, long length) {
+  public ModelPartitionMeta(int partId, int startRow, int endRow, long startCol, long endCol,
+    long nnz, String fileName, long offset, long length) {
     this.partId = partId;
     this.startRow = startRow;
     this.endRow = endRow;
@@ -116,6 +119,7 @@ public class ModelPartitionMeta {
 
   /**
    * Write the partition meta to the stream
+   *
    * @param output output stream
    * @throws IOException
    */
@@ -129,9 +133,9 @@ public class ModelPartitionMeta {
     output.writeUTF(fileName);
     output.writeLong(offset);
     output.writeLong(length);
-    if(!rowMetas.isEmpty()){
+    if (!rowMetas.isEmpty()) {
       output.writeInt(rowMetas.size());
-      for(RowOffset meta:rowMetas.values()){
+      for (RowOffset meta : rowMetas.values()) {
         output.writeInt(meta.rowId);
         output.writeLong(meta.offset);
       }
@@ -142,6 +146,7 @@ public class ModelPartitionMeta {
 
   /**
    * Read partition meta from input stream
+   *
    * @param input
    * @throws IOException
    */
@@ -158,7 +163,7 @@ public class ModelPartitionMeta {
     rowMetas = new HashMap<>();
 
     int rowIndexNum = input.readInt();
-    for(int i = 0; i < rowIndexNum; i++) {
+    for (int i = 0; i < rowIndexNum; i++) {
       RowOffset rowOffset = new RowOffset(input.readInt(), input.readLong());
       rowMetas.put(rowOffset.rowId, rowOffset);
     }
@@ -166,6 +171,7 @@ public class ModelPartitionMeta {
 
   /**
    * Get partition id
+   *
    * @return partition id
    */
   public int getPartId() {
@@ -174,6 +180,7 @@ public class ModelPartitionMeta {
 
   /**
    * Set partition id
+   *
    * @param partId partition id
    */
   public void setPartId(int partId) {
@@ -182,6 +189,7 @@ public class ModelPartitionMeta {
 
   /**
    * Get start row index of partition
+   *
    * @return start row index of partition
    */
   public int getStartRow() {
@@ -190,6 +198,7 @@ public class ModelPartitionMeta {
 
   /**
    * Set start row index of partition
+   *
    * @param startRow start row index of partition
    */
   public void setStartRow(int startRow) {
@@ -198,6 +207,7 @@ public class ModelPartitionMeta {
 
   /**
    * Get end row index of partition
+   *
    * @return end row index of partition
    */
   public int getEndRow() {
@@ -206,6 +216,7 @@ public class ModelPartitionMeta {
 
   /**
    * Set end row index of partition
+   *
    * @param endRow end row index of partition
    */
   public void setEndRow(int endRow) {
@@ -214,6 +225,7 @@ public class ModelPartitionMeta {
 
   /**
    * Get start column index of partition
+   *
    * @return start column index of partition
    */
   public long getStartCol() {
@@ -222,6 +234,7 @@ public class ModelPartitionMeta {
 
   /**
    * Set start column index of partition
+   *
    * @param startCol start column index of partition
    */
   public void setStartCol(long startCol) {
@@ -230,6 +243,7 @@ public class ModelPartitionMeta {
 
   /**
    * Get end column index of partition
+   *
    * @return end column index of partition
    */
   public long getEndCol() {
@@ -238,6 +252,7 @@ public class ModelPartitionMeta {
 
   /**
    * Set end column index of partition
+   *
    * @param endCol end column index of partition
    */
   public void setEndCol(long endCol) {
@@ -246,6 +261,7 @@ public class ModelPartitionMeta {
 
   /**
    * Get non-zero element number of partition
+   *
    * @return non-zero element number of partition
    */
   public long getNnz() {
@@ -254,6 +270,7 @@ public class ModelPartitionMeta {
 
   /**
    * Set non-zero element number of partition
+   *
    * @param nnz non-zero element number of partition
    */
   public void setNnz(int nnz) {
@@ -262,6 +279,7 @@ public class ModelPartitionMeta {
 
   /**
    * Get the name of file which the partition is written to
+   *
    * @return file name
    */
   public String getFileName() {
@@ -270,6 +288,7 @@ public class ModelPartitionMeta {
 
   /**
    * Set the name of file which the partition is written to
+   *
    * @param fileName file name
    */
   public void setFileName(String fileName) {
@@ -278,6 +297,7 @@ public class ModelPartitionMeta {
 
   /**
    * Get the start position of partition in file
+   *
    * @return start position
    */
   public long getOffset() {
@@ -286,6 +306,7 @@ public class ModelPartitionMeta {
 
   /**
    * Set the start position of partition in file
+   *
    * @param offset start position
    */
   public void setOffset(long offset) {
@@ -312,6 +333,7 @@ public class ModelPartitionMeta {
 
   /**
    * Set non-zero element number
+   *
    * @param nnz
    */
   public void setNnz(long nnz) {
@@ -320,6 +342,7 @@ public class ModelPartitionMeta {
 
   /**
    * Get written len
+   *
    * @return Written length
    */
   public long getLength() {
@@ -328,6 +351,7 @@ public class ModelPartitionMeta {
 
   /**
    * Set Written length
+   *
    * @param length Written length
    */
   public void setLength(long length) {

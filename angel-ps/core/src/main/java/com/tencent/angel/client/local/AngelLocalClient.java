@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.client.local;
 
 import com.google.protobuf.ServiceException;
@@ -39,14 +40,17 @@ import java.util.Random;
  */
 public class AngelLocalClient extends AngelClient {
   private static final Log LOG = LogFactory.getLog(AngelLocalClient.class);
-  /**application id*/
+  /**
+   * application id
+   */
   private final ApplicationId appId;
-  
-  /**local cluster*/
+
+  /**
+   * local cluster
+   */
   private LocalCluster cluster;
 
   /**
-   * 
    * Create a new AngelLocalClient.
    *
    * @param conf application configuration
@@ -55,35 +59,35 @@ public class AngelLocalClient extends AngelClient {
     super(conf);
     this.appId = ApplicationId.newInstance(System.currentTimeMillis(), new Random().nextInt());
   }
-  
-  private void initLocalClusterContext() {  
+
+  private void initLocalClusterContext() {
     LocalClusterContext localClusterContext = LocalClusterContext.get();
     localClusterContext.setConf(conf);
     localClusterContext.setLocalHost("127.0.0.1");
     localClusterContext.setPort(9999);
     localClusterContext.setHttpPort(8888);
-    localClusterContext.setAppId(appId);  
+    localClusterContext.setAppId(appId);
   }
-  
-  @Override
-  protected void updateMaster(int maxWaitSeconds) throws Exception {
+
+  @Override protected void updateMaster(int maxWaitSeconds) throws Exception {
     int tryTime = 0;
     TConnection connection = TConnectionManager.getConnection(conf);
     while (tryTime < maxWaitSeconds) {
       LocalMaster localMaster = LocalClusterContext.get().getMaster();
-      if(localMaster == null || localMaster.getAppMaster().getAppContext().getMasterService() == null) {
+      if (localMaster == null
+        || localMaster.getAppMaster().getAppContext().getMasterService() == null) {
         Thread.sleep(1000);
         tryTime++;
         continue;
       }
-      
+
       masterLocation = localMaster.getAppMaster().getAppContext().getMasterService().getLocation();
-      if(masterLocation == null) {
+      if (masterLocation == null) {
         Thread.sleep(1000);
         tryTime++;
         continue;
       }
-      
+
       try {
         LOG.info("start to create rpc client to am");
         master = connection.getMasterService(masterLocation.getIp(), masterLocation.getPort());
@@ -96,38 +100,37 @@ public class AngelLocalClient extends AngelClient {
     }
   }
 
-  @Override
-  public void stop() throws AngelException{
-    super.stop();
-    if(cluster != null) {
+  @Override public void close() throws AngelException {
+    if (cluster != null) {
       cluster.stop();
     }
-    close();
     cleanLocalClusterContext();
   }
-  
+
+  @Override public void kill() throws AngelException {
+
+  }
+
   private void cleanLocalClusterContext() {
     LocalClusterContext.get().clear();
   }
 
-  @Override
-  protected String getAppId() {
+  @Override protected String getAppId() {
     return appId.toString();
   }
-  
-  @Override
-  public void startPSServer() throws AngelException {
-    try{
+
+  @Override public void startPSServer() throws AngelException {
+    try {
       setUser();
       setLocalAddr();
-      
+
       conf.set("hadoop.http.filter.initializers",
-          "org.apache.hadoop.yarn.server.webproxy.amfilter.AmFilterInitializer");
+        "org.apache.hadoop.yarn.server.webproxy.amfilter.AmFilterInitializer");
 
       setInputDirectory();
       setOutputDirectory();
       initLocalClusterContext();
-      
+
       cluster = new LocalCluster(conf, appId);
       cluster.start();
       updateMaster(Integer.MAX_VALUE);

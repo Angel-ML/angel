@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master;
 
 import com.tencent.angel.PartitionKey;
@@ -31,8 +32,10 @@ import com.tencent.angel.master.app.InternalErrorEvent;
 import com.tencent.angel.master.ps.ParameterServerManager;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.RowType;
-import com.tencent.angel.ps.impl.ClockVectorManager;
-import com.tencent.angel.ps.impl.MatrixStorageManager;
+import com.tencent.angel.ps.ParameterServer;
+import com.tencent.angel.ps.clock.ClockVectorManager;
+import com.tencent.angel.ps.storage.MatrixStorageManager;
+import com.tencent.angel.ps.storage.matrix.ServerMatrix;
 import com.tencent.angel.worker.task.TaskContext;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos;
@@ -41,8 +44,6 @@ import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskClock
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskIterationRequest;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
-import com.tencent.angel.ps.impl.ParameterServer;
-import com.tencent.angel.ps.impl.matrix.ServerMatrix;
 import com.tencent.angel.worker.Worker;
 import com.tencent.angel.worker.WorkerAttemptId;
 import com.tencent.angel.worker.WorkerGroupId;
@@ -82,9 +83,8 @@ public class MasterRecoverTest {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
-  @Before
-  public void setup() throws Exception {
-    try{
+  @Before public void setup() throws Exception {
+    try {
       // set basic configuration keys
       Configuration conf = new Configuration();
       conf.setBoolean("mapred.mapper.new-api", true);
@@ -149,18 +149,17 @@ public class MasterRecoverTest {
     }
   }
 
-  @SuppressWarnings("unchecked")
-  @Test
-  public void testMasterRecover() throws Exception {
-    try{
+  @SuppressWarnings("unchecked") @Test public void testMasterRecover() throws Exception {
+    try {
       ApplicationAttemptId appAttempt1Id =
         ApplicationAttemptId.newInstance(LocalClusterContext.get().getAppId(), 1);
       ApplicationAttemptId appAttempt2Id =
         ApplicationAttemptId.newInstance(LocalClusterContext.get().getAppId(), 2);
 
       AngelApplicationMaster angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
-      LOG.info("angelAppMaster.getAppContext().getApplicationAttemptId()="
-        + angelAppMaster.getAppContext().getApplicationAttemptId());
+      LOG.info(
+        "angelAppMaster.getAppContext().getApplicationAttemptId()=" + angelAppMaster.getAppContext()
+          .getApplicationAttemptId());
       assertEquals(angelAppMaster.getAppContext().getApplicationAttemptId(), appAttempt1Id);
 
       ParameterServerManager psManager = angelAppMaster.getAppContext().getParameterServerManager();
@@ -187,54 +186,36 @@ public class MasterRecoverTest {
         .setTaskId(ProtobufUtil.convertToIdProto(task0Id)).build());
       master.taskIteration(null, TaskIterationRequest.newBuilder().setIteration(task1Iteration)
         .setTaskId(ProtobufUtil.convertToIdProto(task1Id)).build());
-      master.taskClock(
-        null,
-        TaskClockRequest
-          .newBuilder()
-          .setTaskId(ProtobufUtil.convertToIdProto(task0Id))
-          .setMatrixClock(
-            MatrixClock.newBuilder().setMatrixId(w1Id).setClock(task0w1Clock).build()).build());
-      master.taskClock(
-        null,
-        TaskClockRequest
-          .newBuilder()
-          .setTaskId(ProtobufUtil.convertToIdProto(task0Id))
-          .setMatrixClock(
-            MatrixClock.newBuilder().setMatrixId(w2Id).setClock(task0w2Clock).build()).build());
-      master.taskClock(
-        null,
-        TaskClockRequest
-          .newBuilder()
-          .setTaskId(ProtobufUtil.convertToIdProto(task1Id))
-          .setMatrixClock(
-            MatrixClock.newBuilder().setMatrixId(w1Id).setClock(task1w1Clock).build()).build());
-      master.taskClock(
-        null,
-        TaskClockRequest
-          .newBuilder()
-          .setTaskId(ProtobufUtil.convertToIdProto(task1Id))
-          .setMatrixClock(
-            MatrixClock.newBuilder().setMatrixId(w2Id).setClock(task1w2Clock).build()).build());
+      master.taskClock(null,
+        TaskClockRequest.newBuilder().setTaskId(ProtobufUtil.convertToIdProto(task0Id))
+          .setMatrixClock(MatrixClock.newBuilder().setMatrixId(w1Id).setClock(task0w1Clock).build())
+          .build());
+      master.taskClock(null,
+        TaskClockRequest.newBuilder().setTaskId(ProtobufUtil.convertToIdProto(task0Id))
+          .setMatrixClock(MatrixClock.newBuilder().setMatrixId(w2Id).setClock(task0w2Clock).build())
+          .build());
+      master.taskClock(null,
+        TaskClockRequest.newBuilder().setTaskId(ProtobufUtil.convertToIdProto(task1Id))
+          .setMatrixClock(MatrixClock.newBuilder().setMatrixId(w1Id).setClock(task1w1Clock).build())
+          .build());
+      master.taskClock(null,
+        TaskClockRequest.newBuilder().setTaskId(ProtobufUtil.convertToIdProto(task1Id))
+          .setMatrixClock(MatrixClock.newBuilder().setMatrixId(w2Id).setClock(task1w2Clock).build())
+          .build());
 
-      int writeIntervalMS =
-        LocalClusterContext
-          .get()
-          .getConf()
-          .getInt(AngelConf.ANGEL_AM_WRITE_STATE_INTERVAL_MS,
-            AngelConf.DEFAULT_ANGEL_AM_WRITE_STATE_INTERVAL_MS);
+      int writeIntervalMS = LocalClusterContext.get().getConf()
+        .getInt(AngelConf.ANGEL_AM_WRITE_STATE_INTERVAL_MS,
+          AngelConf.DEFAULT_ANGEL_AM_WRITE_STATE_INTERVAL_MS);
       Thread.sleep(writeIntervalMS * 2);
-      angelAppMaster
-        .getAppContext()
-        .getEventHandler()
-        .handle(
-          new InternalErrorEvent(angelAppMaster.getAppContext().getApplicationId(), "failed",
-            true));
+      angelAppMaster.getAppContext().getEventHandler().handle(
+        new InternalErrorEvent(angelAppMaster.getAppContext().getApplicationId(), "failed", true));
 
       Thread.sleep(15000);
       angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
       assertEquals(angelAppMaster.getAppContext().getApp().getExternAppState(), AppState.RUNNING);
-      LOG.info("angelAppMaster.getAppContext().getApplicationAttemptId()="
-        + angelAppMaster.getAppContext().getApplicationAttemptId());
+      LOG.info(
+        "angelAppMaster.getAppContext().getApplicationAttemptId()=" + angelAppMaster.getAppContext()
+          .getApplicationAttemptId());
       assertEquals(angelAppMaster.getAppContext().getApplicationAttemptId(), appAttempt2Id);
 
       PartitionKey w1Part0Key = new PartitionKey(0, w1Id, 0, 0, 1, 50000);
@@ -245,7 +226,9 @@ public class MasterRecoverTest {
       Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
       LOG.info("worker=" + worker);
       LOG.info("worker.getTaskManager()=" + worker.getTaskManager());
-      LOG.info("worker.getTaskManager().getRunningTask()=" + worker.getTaskManager().getRunningTask().size());
+      LOG.info(
+        "worker.getTaskManager().getRunningTask()=" + worker.getTaskManager().getRunningTask()
+          .size());
 
       TaskContext task0Context =
         worker.getTaskManager().getRunningTask().get(task0Id).getTaskContext();
@@ -271,12 +254,8 @@ public class MasterRecoverTest {
       ps = LocalClusterContext.get().getPS(psAttempt0Id).getPS();
       checkMatrixInfo(ps, w1Id, w2Id, w1Clock, w2Clock);
 
-      angelAppMaster
-        .getAppContext()
-        .getEventHandler()
-        .handle(
-          new InternalErrorEvent(angelAppMaster.getAppContext().getApplicationId(), "failed",
-            true));
+      angelAppMaster.getAppContext().getEventHandler().handle(
+        new InternalErrorEvent(angelAppMaster.getAppContext().getApplicationId(), "failed", true));
       Thread.sleep(15000);
       angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
       assertEquals(angelAppMaster.getAppContext().getApplicationAttemptId(), appAttempt2Id);
@@ -330,9 +309,8 @@ public class MasterRecoverTest {
     assertEquals(clockVectorManager.getPartClock(sw2.getId(), 1), w2Clock);
   }
 
-  @After
-  public void stop() throws Exception {
-    try{
+  @After public void stop() throws Exception {
+    try {
       LOG.info("stop local cluster");
       angelClient.stop();
     } catch (Exception x) {

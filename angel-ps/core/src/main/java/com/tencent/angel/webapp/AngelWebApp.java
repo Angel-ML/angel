@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.webapp;
 
 import org.apache.hadoop.mapreduce.v2.app.webapp.JAXBContextResolver;
@@ -25,32 +26,31 @@ import static org.apache.hadoop.yarn.util.StringHelper.pajoin;
 
 public class AngelWebApp extends WebApp implements AngelParams {
 
-  @Override
-  public void setup() {
+  @Override public void setup() {
     bind(JAXBContextResolver.class);
     bind(GenericExceptionHandler.class);
     route("/", AngelController.class);
     route("/angel", AngelController.class);
 
     route(pajoin("/angel/workerGroupsPage", WORKERGROUP_STATE), AngelController.class,
-        "workerGroupsPage");
+      "workerGroupsPage");
 
     route(pajoin("/angel/parameterServersPage", PARAMETERSERVER_STATE), AngelController.class,
-        "parameterServersPage");
+      "parameterServersPage");
 
     route(pajoin("/angel/workerGroupPage", WORKERGROUP_ID), AngelController.class,
-        "workerGroupPage");
+      "workerGroupPage");
 
     route(pajoin("/angel/workerPage", WORKER_ATTEMPT_ID), AngelController.class, "workerPage");
 
     route(pajoin("/angel/parameterServerThreadStackPage", PSATTEMPT_ID), AngelController.class,
-        "parameterServerThreadStackPage");
+      "parameterServerThreadStackPage");
 
     route(pajoin("/angel/workerThreadStackPage", WORKER_ATTEMPT_ID), AngelController.class,
-        "workerThreadStackPage");
+      "workerThreadStackPage");
 
     route(pajoin("/angel/workerCounterPage", WORKER_ATTEMPT_ID), AngelController.class,
-        "workerCounterPage");
+      "workerCounterPage");
 
     route(pajoin("/angel/taskCountersPage", TASK_ID), AngelController.class, "taskCountersPage");
 

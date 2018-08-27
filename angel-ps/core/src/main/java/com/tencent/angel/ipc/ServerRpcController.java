@@ -1,20 +1,20 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
  */
+
 
 package com.tencent.angel.ipc;
 
@@ -28,20 +28,20 @@ import java.io.IOException;
  * Used for server-side protobuf RPC service invocations. This handler allows invocation exceptions
  * to easily be passed through to the RPC server from coprocessor
  * {@link com.google.protobuf.Service} implementations.
- * 
+ * <p>
  * <p>
  * When implementing {@link com.google.protobuf.Service} defined methods, coprocessor endpoints can
  * use the following pattern to pass exceptions back to the RPC client: <code>
  * public void myMethod(RpcController controller, MyRequest request, RpcCallback<MyResponse> done) {
- *   MyResponse response = null;
- *   try {
- *     // do processing
- *     response = MyResponse.getDefaultInstance();  // or use a new builder to populate the response
- *   } catch (IOException ioe) {
- *     // pass exception back up
- *     ResponseConverter.setControllerException(controller, ioe);
- *   }
- *   done.run(response);
+ * MyResponse response = null;
+ * try {
+ * // do processing
+ * response = MyResponse.getDefaultInstance();  // or use a new builder to populate the response
+ * } catch (IOException ioe) {
+ * // pass exception back up
+ * ResponseConverter.setControllerException(controller, ioe);
+ * }
+ * done.run(response);
  * }
  * </code>
  * </p>
@@ -57,45 +57,38 @@ public class ServerRpcController implements RpcController {
   private IOException serviceException;
   private String errorMessage;
 
-  @Override
-  public void reset() {
+  @Override public void reset() {
     serviceException = null;
     errorMessage = null;
   }
 
-  @Override
-  public boolean failed() {
+  @Override public boolean failed() {
     return (failedOnException() || errorMessage != null);
   }
 
-  @Override
-  public String errorText() {
+  @Override public String errorText() {
     return errorMessage;
   }
 
-  @Override
-  public void startCancel() {
+  @Override public void startCancel() {
     // not implemented
   }
 
-  @Override
-  public void setFailed(String message) {
+  @Override public void setFailed(String message) {
     errorMessage = message;
   }
 
-  @Override
-  public boolean isCanceled() {
+  @Override public boolean isCanceled() {
     return false;
   }
 
-  @Override
-  public void notifyOnCancel(RpcCallback<Object> objectRpcCallback) {
+  @Override public void notifyOnCancel(RpcCallback<Object> objectRpcCallback) {
     // not implemented
   }
 
   /**
    * Sets an exception to be communicated back to the {@link com.google.protobuf.Service} client.
-   * 
+   *
    * @param ioe the exception encountered during execution of the service method
    */
   public void setFailedOn(IOException ioe) {

@@ -1,0 +1,21 @@
+{
+  "default_optimizer": {
+    "type": "momentum",
+    "momentum": 0.9,
+    "reg2": 0.01
+  },
+  "layers": [
+    {
+      "name": "wide",
+      "type": "sparseinputlayer",
+      "outputdim": 2,
+      "transfunc": "identity"
+    },
+    {
+      "name": "softmaxlosslayer",
+      "type": "softmaxlosslayer",
+      "lossfunc": "softmax",
+      "inputlayer": "wide"
+    }
+  ]
+}

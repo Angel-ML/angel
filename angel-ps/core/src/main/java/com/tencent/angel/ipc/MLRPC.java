@@ -1,24 +1,21 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
  */
 
-/**
- * Add shutDown method to fix Angel client exit problem.
- */
+
 package com.tencent.angel.ipc;
 
 import com.tencent.angel.exception.RetriesExhaustedException;
@@ -40,8 +37,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-@SuppressWarnings("rawtypes")
-public class MLRPC {
+@SuppressWarnings("rawtypes") public class MLRPC {
 
   protected static final Logger LOG = LoggerFactory.getLogger(MLRPC.class);
 
@@ -58,12 +54,14 @@ public class MLRPC {
   // cache of RpcEngines by protocol
   private static final Map<Class, RpcEngine> PROTOCOL_ENGINES = new HashMap<Class, RpcEngine>();
 
-  /** Construct a server for a protocol implementation instance. */
-  @SuppressWarnings("unchecked")
-  public static RpcServer getServer(Class protocol, final Object instance, final Class<?>[] ifaces,
-      String bindAddress, int port, Configuration conf) throws IOException {
-    return getProtocolEngine(protocol, conf).getServer(protocol, instance, ifaces, bindAddress,
-        port, conf);
+  /**
+   * Construct a server for a protocol implementation instance.
+   */
+  @SuppressWarnings("unchecked") public static RpcServer getServer(Class protocol,
+    final Object instance, final Class<?>[] ifaces, String bindAddress, int port,
+    Configuration conf) throws IOException {
+    return getProtocolEngine(protocol, conf)
+      .getServer(protocol, instance, ifaces, bindAddress, port, conf);
   }
 
   // return the RpcEngine configured to handle a protocol
@@ -84,67 +82,65 @@ public class MLRPC {
   /**
    * Construct a client-side proxy object that implements the named protocol, talking to a server at
    * the named address.
-   * 
-   * @param protocol interface
+   *
+   * @param protocol      interface
    * @param clientVersion version we are expecting
-   * @param addr remote address
-   * @param conf configuration
-   * @param factory socket factory
-   * @param rpcTimeout timeout for each RPC
+   * @param addr          remote address
+   * @param conf          configuration
+   * @param factory       socket factory
+   * @param rpcTimeout    timeout for each RPC
    * @return proxy
    * @throws java.io.IOException e
    */
   public static VersionedProtocol getProxy(Class<? extends VersionedProtocol> protocol,
-      long clientVersion, InetSocketAddress addr, Configuration conf, SocketFactory factory,
-      int rpcTimeout, List<String> addrList4Failover) throws IOException {
+    long clientVersion, InetSocketAddress addr, Configuration conf, SocketFactory factory,
+    int rpcTimeout, List<String> addrList4Failover) throws IOException {
     RpcEngine engine = getProtocolEngine(protocol, conf);
     VersionedProtocol proxy =
-        engine
-            .getProxy(protocol, clientVersion, addr, conf, factory, rpcTimeout, addrList4Failover);
+      engine.getProxy(protocol, clientVersion, addr, conf, factory, rpcTimeout, addrList4Failover);
     return proxy;
   }
 
   /**
    * Construct a client-side proxy object with the default SocketFactory
-   * 
-   * @param protocol interface
+   *
+   * @param protocol      interface
    * @param clientVersion version we are expecting
-   * @param addr remote address
-   * @param conf configuration
-   * @param rpcTimeout timeout for each RPC
+   * @param addr          remote address
+   * @param conf          configuration
+   * @param rpcTimeout    timeout for each RPC
    * @return a proxy instance
    * @throws java.io.IOException e
    */
   public static VersionedProtocol getProxy(Class<? extends VersionedProtocol> protocol,
-      long clientVersion, InetSocketAddress addr, Configuration conf, int rpcTimeout,
-      List<String> addrList4Failover) throws IOException {
+    long clientVersion, InetSocketAddress addr, Configuration conf, int rpcTimeout,
+    List<String> addrList4Failover) throws IOException {
 
     return getProxy(protocol, clientVersion, addr, conf, NetUtils.getDefaultSocketFactory(conf),
-        rpcTimeout, addrList4Failover);
+      rpcTimeout, addrList4Failover);
   }
 
   static long getProtocolVersion(Class<? extends VersionedProtocol> protocol)
-      throws NoSuchFieldException, IllegalAccessException {
+    throws NoSuchFieldException, IllegalAccessException {
     Field versionField = protocol.getField("VERSION");
     versionField.setAccessible(true);
     return versionField.getLong(protocol);
   }
 
   /**
-   * @param protocol protocol interface
+   * @param protocol      protocol interface
    * @param clientVersion which client version we expect
-   * @param addr address of remote service
-   * @param conf configuration
-   * @param maxAttempts max attempts
-   * @param rpcTimeout timeout for each RPC
-   * @param timeout timeout in milliseconds
+   * @param addr          address of remote service
+   * @param conf          configuration
+   * @param maxAttempts   max attempts
+   * @param rpcTimeout    timeout for each RPC
+   * @param timeout       timeout in milliseconds
    * @return proxy
    * @throws java.io.IOException e
    */
-  @SuppressWarnings("unchecked")
-  public static VersionedProtocol waitForProxy(Class protocol, long clientVersion,
-      InetSocketAddress addr, Configuration conf, int maxAttempts, int rpcTimeout, long timeout,
-      List<String> addrList4Failover) throws IOException {
+  @SuppressWarnings("unchecked") public static VersionedProtocol waitForProxy(Class protocol,
+    long clientVersion, InetSocketAddress addr, Configuration conf, int maxAttempts, int rpcTimeout,
+    long timeout, List<String> addrList4Failover) throws IOException {
     long startTime = System.currentTimeMillis();
     IOException ioe;
     int reconnectAttempts = 0;
@@ -190,20 +186,21 @@ public class MLRPC {
   }
 
   /**
-   * @param retries current retried times.
+   * @param retries    current retried times.
    * @param maxAttmpts max attempts
-   * @param protocol protocol interface
-   * @param addr address of remote service
-   * @param ce ConnectException
+   * @param protocol   protocol interface
+   * @param addr       address of remote service
+   * @param ce         ConnectException
    * @throws RetriesExhaustedException
    */
   private static void handleConnectionException(int retries, int maxAttmpts, Class<?> protocol,
-      InetSocketAddress addr, ConnectException ce) throws RetriesExhaustedException {
+    InetSocketAddress addr, ConnectException ce) throws RetriesExhaustedException {
     if (maxAttmpts >= 0 && retries >= maxAttmpts) {
-      LOG.info("Server at " + addr + " could not be reached after " + maxAttmpts
-          + " tries, giving up.");
-      throw new RetriesExhaustedException("Failed setting up proxy " + protocol + " to "
-          + addr.toString() + " after attempts=" + maxAttmpts, ce);
+      LOG.info(
+        "Server at " + addr + " could not be reached after " + maxAttmpts + " tries, giving up.");
+      throw new RetriesExhaustedException(
+        "Failed setting up proxy " + protocol + " to " + addr.toString() + " after attempts="
+          + maxAttmpts, ce);
     }
   }
 
@@ -224,7 +221,7 @@ public class MLRPC {
    */
   public static synchronized void shutDown() {
     Iterator<Map.Entry<Class, RpcEngine>> iter = PROXY_ENGINES.entrySet().iterator();
-    while(iter.hasNext()) {
+    while (iter.hasNext()) {
       iter.next().getValue().shutDown();
       iter.remove();
     }

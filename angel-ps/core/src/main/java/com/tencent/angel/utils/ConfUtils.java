@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.utils;
 
 import com.tencent.angel.conf.AngelConf;
@@ -38,7 +39,7 @@ public class ConfUtils {
   private static final Log LOG = LogFactory.getLog(AngelRunJar.class);
   private static final String angelSysConfFile = "angel-site.xml";
 
-  public static Configuration initConf(String [] cmdArgs) throws Exception {
+  public static Configuration initConf(String[] cmdArgs) throws Exception {
     // Parse cmd parameters
     Map<String, String> cmdConfMap = parseArgs(cmdArgs);
 
@@ -65,28 +66,34 @@ public class ConfUtils {
     // load user configuration:
     // load user config file
     String jobConfFile = cmdConfMap.get(AngelConf.ANGEL_APP_CONFIG_FILE);
-    if(jobConfFile != null) {
+    if (jobConfFile != null) {
       LOG.info("user app config file " + jobConfFile);
       conf.addResource(new Path(jobConfFile));
     } else {
       jobConfFile = conf.get(AngelConf.ANGEL_APP_CONFIG_FILE);
-      if(jobConfFile != null) {
+      if (jobConfFile != null) {
         LOG.info("user app config file " + jobConfFile);
         conf.addResource(new Path(jobConfFile));
       }
     }
 
     // load command line parameters
-    if(cmdConfMap != null && !cmdConfMap.isEmpty()) {
-      for(Map.Entry<String, String> entry : cmdConfMap.entrySet()) {
+    if (cmdConfMap != null && !cmdConfMap.isEmpty()) {
+      for (Map.Entry<String, String> entry : cmdConfMap.entrySet()) {
         conf.set(entry.getKey(), entry.getValue());
       }
     }
 
     // load user job resource files
     String userResourceFiles = conf.get(AngelConf.ANGEL_APP_USER_RESOURCE_FILES);
-    if(userResourceFiles != null) {
+    if (userResourceFiles != null) {
       addResourceFiles(conf, userResourceFiles);
+    }
+
+    // load ml conf file for graph based algorithm
+    String mlConfFiles = conf.get(AngelConf.ANGEL_ML_CONF);
+    if (mlConfFiles != null && mlConfFiles.length() != 0) {
+      addResourceFiles(conf, mlConfFiles);
     }
 
     // load user job jar if it exist

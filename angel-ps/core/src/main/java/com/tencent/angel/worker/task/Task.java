@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.worker.task;
 
 import com.tencent.angel.conf.AngelConf;
@@ -33,7 +34,6 @@ import java.util.List;
 /**
  * Task is the calculation unit of Angel Application, run on {@link com.tencent.angel.worker.Worker} at background as Thread.
  * And will reflect to invoke user special task which inherited by {@link BaseTask}({@link AngelConf#ANGEL_TASK_USER_TASKCLASS})
- *
  */
 public class Task extends Thread {
   private static final Log LOG = LogFactory.getLog(Task.class);
@@ -42,8 +42,7 @@ public class Task extends Thread {
   private volatile TaskState state;
   final List<String> diagnostics;
 
-  @SuppressWarnings("rawtypes")
-  private volatile BaseTask userTask;
+  @SuppressWarnings("rawtypes") private volatile BaseTask userTask;
 
   final TaskContext taskContext;
 
@@ -54,20 +53,18 @@ public class Task extends Thread {
     setState(TaskState.NEW);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  @Override
-  public void run() {
+  @SuppressWarnings({"unchecked", "rawtypes"}) @Override public void run() {
     Configuration conf = WorkerContext.get().getConf();
 
     LOG.info("task " + taskId + " is running.");
     try {
-      userTaskClass =
-          conf.getClassByName(conf.get(AngelConf.ANGEL_TASK_USER_TASKCLASS,
-              AngelConf.DEFAULT_ANGEL_TASK_USER_TASKCLASS));
-      LOG.info("userTaskClass = " + userTaskClass + " task index = " + taskContext.getTaskIndex() + ", name = " + this.getName());
+      userTaskClass = conf.getClassByName(
+        conf.get(AngelConf.ANGEL_TASK_USER_TASKCLASS, AngelConf.DEFAULT_ANGEL_TASK_USER_TASKCLASS));
+      LOG.info("userTaskClass = " + userTaskClass + " task index = " + taskContext.getTaskIndex()
+        + ", name = " + this.getName());
 
       BaseTask userTask = newBaseTask(userTaskClass);
-      this.userTask =  userTask;
+      this.userTask = userTask;
       runUser(userTask);
     } catch (Throwable e) {
       LOG.error("task runner error ", e);
@@ -78,17 +75,16 @@ public class Task extends Thread {
     taskExit();
   }
 
-  @SuppressWarnings("rawtypes")
-  private BaseTask newBaseTask(Class<?> userTask) throws NoSuchMethodException, SecurityException,
-      InstantiationException, IllegalAccessException, IllegalArgumentException,
-      InvocationTargetException {
-      Constructor<?> meth = userTask.getDeclaredConstructor(TaskContext.class);
-      meth.setAccessible(true);
-      return (BaseTask) meth.newInstance(taskContext);
+  @SuppressWarnings("rawtypes") private BaseTask newBaseTask(Class<?> userTask)
+    throws NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException,
+    IllegalArgumentException, InvocationTargetException {
+    Constructor<?> meth = userTask.getDeclaredConstructor(TaskContext.class);
+    meth.setAccessible(true);
+    return (BaseTask) meth.newInstance(taskContext);
   }
 
   private <KEY, VALUE, VALUEOUT> void runUser(BaseTask<KEY, VALUE, VALUEOUT> userTask)
-      throws Exception {
+    throws Exception {
     setState(TaskState.PREPROCESSING);
     userTask.preProcess(taskContext);
     setState(TaskState.RUNNING);
@@ -99,8 +95,7 @@ public class Task extends Thread {
     setState(TaskState.SUCCESS);
   }
 
-  @SuppressWarnings("unused")
-  private <KEY, VALUE> void combineUpdateIndex() {
+  @SuppressWarnings("unused") private <KEY, VALUE> void combineUpdateIndex() {
     TaskManager manager = WorkerContext.get().getTaskManager();
     if (manager.isAllTaskRunning()) {
       manager.combineUpdateIndex();
@@ -109,16 +104,17 @@ public class Task extends Thread {
 
   private void taskExit() {
     TaskManager manager = WorkerContext.get().getTaskManager();
-    if ((manager != null) && manager.isAllTaskExit()) {
-      if (manager.isAllTaskSuccess()) {
-        WorkerContext.get().getWorker().workerDone();
-      } else {
+    if (manager != null) {
+      if (manager.isTaskFailed()) {
         WorkerContext.get().getWorker().workerError(manager.getDiagnostics());
+      } else if (manager.isAllTaskSuccess()) {
+        WorkerContext.get().getWorker().workerDone();
       }
     }
   }
 
-  private void commit() {}
+  private void commit() {
+  }
 
   /**
    * Gets task context.
@@ -162,8 +158,8 @@ public class Task extends Thread {
    * @return the diagnostics
    */
   public String getDiagnostics() {
-    return "taskid=" + taskId + ", state=" + state + ", diagnostics="
-        + Arrays.toString(diagnostics.toArray(new String[0]));
+    return "taskid=" + taskId + ", state=" + state + ", diagnostics=" + Arrays
+      .toString(diagnostics.toArray(new String[0]));
   }
 
   /**
@@ -171,8 +167,7 @@ public class Task extends Thread {
    *
    * @return the user task
    */
-  @SuppressWarnings("rawtypes")
-  public BaseTask getUserTask() {
+  @SuppressWarnings("rawtypes") public BaseTask getUserTask() {
     return userTask;
   }
 

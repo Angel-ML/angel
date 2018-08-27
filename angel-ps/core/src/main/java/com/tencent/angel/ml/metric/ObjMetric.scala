@@ -15,12 +15,13 @@
  *
  */
 
+
 package com.tencent.angel.ml.metric
 
 class ObjMetric extends Metric {
   var globalObj: Double = 0.0
 
-  override def merge(other: this.type ): this.type = {
+  override def merge(other: this.type): this.type = {
     this.globalObj += other.globalObj
     this
   }
@@ -34,8 +35,8 @@ class ObjMetric extends Metric {
   }
 }
 
-object ObjMetric{
-  def apply():Metric = {
+object ObjMetric {
+  def apply(): Metric = {
     new ObjMetric()
   }
 }

@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.ml.matrix.psf.aggr.enhance;
 
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
@@ -31,20 +32,18 @@ public class ScalarPartitionAggrResult extends PartitionGetResult {
     this.result = result;
   }
 
-  public ScalarPartitionAggrResult() {}
+  public ScalarPartitionAggrResult() {
+  }
 
-  @Override
-  public void serialize(ByteBuf buf) {
+  @Override public void serialize(ByteBuf buf) {
     buf.writeDouble(result);
   }
 
-  @Override
-  public void deserialize(ByteBuf buf) {
+  @Override public void deserialize(ByteBuf buf) {
     result = buf.readDouble();
   }
 
-  @Override
-  public int bufferLen() {
+  @Override public int bufferLen() {
     return 8;
   }
 }

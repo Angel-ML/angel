@@ -1,21 +1,20 @@
-/**
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
  *
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
  */
+
 
 package com.tencent.angel.io;
 
@@ -32,17 +31,18 @@ public class Addressing {
    * @param hostAndPort Formatted as <code>&lt;hostname> ':' &lt;port></code>
    * @return An InetSocketInstance
    */
-  public static InetSocketAddress createInetSocketAddressFromHostAndPortStr(final String hostAndPort) {
+  public static InetSocketAddress createInetSocketAddressFromHostAndPortStr(
+    final String hostAndPort) {
     return new InetSocketAddress(parseHostname(hostAndPort), parsePort(hostAndPort));
   }
 
   /**
    * @param hostname Server hostname
-   * @param port Server port
+   * @param port     Server port
    * @return Returns a concatenation of <code>hostname</code> and <code>port</code> in following
-   *         form: <code>&lt;hostname> ':' &lt;port></code>. For example, if hostname is
-   *         <code>example.org</code> and port is 1234, this method will return
-   *         <code>example.org:1234</code>
+   * form: <code>&lt;hostname> ':' &lt;port></code>. For example, if hostname is
+   * <code>example.org</code> and port is 1234, this method will return
+   * <code>example.org:1234</code>
    */
   public static String createHostAndPortStr(final String hostname, final int port) {
     return hostname + HOSTNAME_PORT_SEPARATOR + port;

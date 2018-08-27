@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.webapp.page;
 
 import com.google.inject.Inject;
@@ -29,13 +30,11 @@ import static org.apache.hadoop.yarn.util.StringHelper.join;
 public class TaskCountersBlock extends HtmlBlock {
   final AMContext amContext;
 
-  @Inject
-  TaskCountersBlock(AMContext amctx) {
+  @Inject TaskCountersBlock(AMContext amctx) {
     amContext = amctx;
   }
 
-  @Override
-  protected void render(Block html) {
+  @Override protected void render(Block html) {
     set(TITLE, join("Angel TaskCountersBlock", $(TASK_ID)));
     String taskIdSr = $(TASK_ID);
     html.h1(taskIdSr);
@@ -43,7 +42,7 @@ public class TaskCountersBlock extends HtmlBlock {
     try {
       TaskId taskId = new TaskId(taskIdSr);
       String taskCounters =
-          amContext.getTaskManager().getTask(taskId).getMetrics().get("taskCounters");
+        amContext.getTaskManager().getTask(taskId).getMetrics().get("taskCounters");
       html.pre()._(taskCounters)._();
     } catch (UnvalidIdStrException e) {
       LOG.error("unvalid id string ", e);

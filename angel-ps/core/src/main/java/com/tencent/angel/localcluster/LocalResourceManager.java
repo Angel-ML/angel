@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.localcluster;
 
 import com.tencent.angel.exception.InvalidParameterException;
@@ -38,22 +39,32 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class LocalResourceManager {
   private static final Log LOG = LogFactory.getLog(LocalResourceManager.class);
-  
-  /**master attempt indexes*/
+
+  /**
+   * master attempt indexes
+   */
   private final Map<ApplicationId, Integer> appIdToAttemptIndexMap;
-  
-  /**event queue*/
+
+  /**
+   * event queue
+   */
   private final LinkedBlockingQueue<LocalRMEvent> eventQueue;
-  
-  /**Is stop the event handler*/
+
+  /**
+   * Is stop the event handler
+   */
   private final AtomicBoolean stopped;
-  
-  /**master maximum attempt number*/
+
+  /**
+   * master maximum attempt number
+   */
   private final int maxAttemptNum;
-  
-  /**event handler*/
+
+  /**
+   * event handler
+   */
   private Thread handler;
-  
+
   /**
    * Create a local resource manager
    */
@@ -61,21 +72,21 @@ public class LocalResourceManager {
     appIdToAttemptIndexMap = new HashMap<ApplicationId, Integer>();
     eventQueue = new LinkedBlockingQueue<LocalRMEvent>();
     stopped = new AtomicBoolean(false);
-    maxAttemptNum = conf.getInt(YarnConfiguration.RM_AM_MAX_ATTEMPTS, YarnConfiguration.DEFAULT_RM_AM_MAX_ATTEMPTS);
+    maxAttemptNum = conf
+      .getInt(YarnConfiguration.RM_AM_MAX_ATTEMPTS, YarnConfiguration.DEFAULT_RM_AM_MAX_ATTEMPTS);
   }
-  
+
   /**
    * Event handler thread.
    */
   private class Handler extends Thread {
-    @Override
-    public void run() {
-      while(!stopped.get() && !Thread.interrupted()) {
+    @Override public void run() {
+      while (!stopped.get() && !Thread.interrupted()) {
         LocalRMEvent event = null;
         try {
           event = eventQueue.take();
           LOG.info("local rm handle a event " + event);
-          switch(event.getType()) {
+          switch (event.getType()) {
             case ALLOCATE:
             case FAILED:
               allocate(event);
@@ -83,50 +94,50 @@ public class LocalResourceManager {
           }
         } catch (InterruptedException e) {
           LOG.warn("event handler is interrupted");
-        }
-        catch(IOException | InvalidParameterException e){
+        } catch (IOException | InvalidParameterException e) {
           LOG.error("handle event " + event + " failed.", e);
         }
       }
     }
   }
-  
+
   private void allocate(LocalRMEvent event) throws IOException, InvalidParameterException {
     ApplicationId appId = event.getAppId();
     int attemptIndex;
-    if(appIdToAttemptIndexMap.containsKey(appId)) {
-      attemptIndex = appIdToAttemptIndexMap.get(appId);     
+    if (appIdToAttemptIndexMap.containsKey(appId)) {
+      attemptIndex = appIdToAttemptIndexMap.get(appId);
     } else {
       attemptIndex = 1;
     }
-    
+
     appIdToAttemptIndexMap.put(appId, attemptIndex + 1);
-    
-    if(attemptIndex > maxAttemptNum) {
+
+    if (attemptIndex > maxAttemptNum) {
       return;
     }
     LocalClusterContext.get().setMaster(null);
     stopWorkerAndPS();
-    
+
     LocalMaster master = new LocalMaster(ApplicationAttemptId.newInstance(appId, attemptIndex));
     master.start();
     LocalClusterContext.get().setMaster(master);
   }
-  
+
   private void stopWorkerAndPS() {
     Map<WorkerAttemptId, LocalWorker> localWorkers = LocalClusterContext.get().getIdToWorkerMap();
-    for(LocalWorker localWorker:localWorkers.values()) {
+    for (LocalWorker localWorker : localWorkers.values()) {
       localWorker.exit();
     }
-    
+
     Map<PSAttemptId, LocalPS> localPSs = LocalClusterContext.get().getIdToPSMap();
-    for(LocalPS localPS:localPSs.values()) {
+    for (LocalPS localPS : localPSs.values()) {
       localPS.exit();
     }
   }
-  
+
   /**
    * Allocate a master
+   *
    * @param appId application id
    */
   public void allocateMaster(ApplicationId appId) {
@@ -136,9 +147,10 @@ public class LocalResourceManager {
       LOG.warn("waiting for add element to queue interupted.");
     }
   }
- 
+
   /**
    * Master exit
+   *
    * @param appId application id
    */
   public void masterExited(ApplicationId appId) {
@@ -148,7 +160,7 @@ public class LocalResourceManager {
       LOG.warn("waiting for add element to queue interupted.");
     }
   }
-  
+
   /**
    * Start event handler
    */
@@ -157,14 +169,14 @@ public class LocalResourceManager {
     handler.setName("local-rm-handler");
     handler.start();
   }
-  
+
   /**
    * Stop event hanlder
    */
   public void stop() {
     stopped.set(true);
     handler.interrupt();
-    
+
     try {
       handler.join();
     } catch (InterruptedException ie) {

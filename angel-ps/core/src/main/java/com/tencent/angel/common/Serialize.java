@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.common;
 
 import io.netty.buffer.ByteBuf;
@@ -25,21 +26,21 @@ import io.netty.buffer.ByteBuf;
 public interface Serialize {
   /**
    * Serialize object to the Netty ByteBuf.
-   * 
+   *
    * @param buf the Netty ByteBuf
    */
   void serialize(ByteBuf buf);
 
   /**
    * Deserialize object from the Netty ByteBuf.
-   * 
+   *
    * @param buf the Netty ByteBuf
    */
   void deserialize(ByteBuf buf);
 
   /**
    * Estimate serialized data size of the object, it used to ByteBuf allocation.
-   * 
+   *
    * @return int serialized data size of the object
    */
   int bufferLen();

@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.worker;
 
 import com.google.protobuf.ServiceException;
@@ -40,6 +41,7 @@ import com.tencent.angel.worker.task.TaskManager;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hdfs.web.JsonUtil;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
@@ -48,6 +50,9 @@ import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -60,8 +65,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 /**
  * Angel Worker,it run a group of {@link Task} backed by a thread-pool.
  * The Information is shared by {@link WorkerContext}.
- *@see PSAgent
  *
+ * @see PSAgent
  */
 public class Worker implements Executor {
 
@@ -129,8 +134,7 @@ public class Worker implements Executor {
    * @param isLeader        the is leader
    */
   public Worker(Configuration conf, ApplicationId appId, String user,
-      WorkerAttemptId workerAttemptId, Location masterLocation, int initMinClock,
-      boolean isLeader) {
+    WorkerAttemptId workerAttemptId, Location masterLocation, int initMinClock, boolean isLeader) {
     this.conf = conf;
     this.stopped = new AtomicBoolean(false);
     this.workerInitFinishedFlag = new AtomicBoolean(false);
@@ -188,10 +192,9 @@ public class Worker implements Executor {
 
     // set localDir with enviroment set by nm.
     String[] localSysDirs =
-        StringUtils.getTrimmedStrings(System.getenv(Environment.LOCAL_DIRS.name()));
+      StringUtils.getTrimmedStrings(System.getenv(Environment.LOCAL_DIRS.name()));
     conf.setStrings(AngelConf.LOCAL_DIR, localSysDirs);
-    LOG.info(
-        AngelConf.LOCAL_DIR + " for child: " + conf.get(AngelConf.LOCAL_DIR));
+    LOG.info(AngelConf.LOCAL_DIR + " for child: " + conf.get(AngelConf.LOCAL_DIR));
     int workerGroupIndex = Integer.parseInt(System.getenv(AngelEnvironment.WORKER_GROUP_ID.name()));
     int workerIndex = Integer.parseInt(System.getenv(AngelEnvironment.WORKER_ID.name()));
     int attemptIndex = Integer.parseInt(System.getenv(AngelEnvironment.WORKER_ATTEMPT_ID.name()));
@@ -201,16 +204,14 @@ public class Worker implements Executor {
     WorkerAttemptId workerAttemptId = new WorkerAttemptId(workerId, attemptIndex);
 
     conf.set(AngelConf.ANGEL_WORKERGROUP_ACTUAL_NUM,
-        System.getenv(AngelEnvironment.WORKERGROUP_NUMBER.name()));
+      System.getenv(AngelEnvironment.WORKERGROUP_NUMBER.name()));
 
-    conf.set(AngelConf.ANGEL_TASK_ACTUAL_NUM,
-        System.getenv(AngelEnvironment.TASK_NUMBER.name()));
-    
+    conf.set(AngelConf.ANGEL_TASK_ACTUAL_NUM, System.getenv(AngelEnvironment.TASK_NUMBER.name()));
+
     conf.set(AngelConf.ANGEL_TASK_USER_TASKCLASS,
-        System.getenv(AngelEnvironment.ANGEL_USER_TASK.name()));
+      System.getenv(AngelEnvironment.ANGEL_USER_TASK.name()));
 
-    LOG.info(
-        "actual workergroup number:" + conf.get(AngelConf.ANGEL_WORKERGROUP_ACTUAL_NUM));
+    LOG.info("actual workergroup number:" + conf.get(AngelConf.ANGEL_WORKERGROUP_ACTUAL_NUM));
     LOG.info("actual task number:" + conf.get(AngelConf.ANGEL_TASK_ACTUAL_NUM));
 
     // get master location
@@ -219,8 +220,8 @@ public class Worker implements Executor {
     Location masterLocation = new Location(masterAddr, Integer.valueOf(portStr));
 
     String startClock = System.getenv(AngelEnvironment.INIT_MIN_CLOCK.name());
-    Worker worker = new Worker(AngelConf.clone(conf), appId, user, workerAttemptId,
-        masterLocation, Integer.valueOf(startClock), false);
+    Worker worker = new Worker(AngelConf.clone(conf), appId, user, workerAttemptId, masterLocation,
+      Integer.valueOf(startClock), false);
 
     try {
       worker.initAndStart();
@@ -240,7 +241,7 @@ public class Worker implements Executor {
     LOG.info("Init and start worker");
 
     psAgent = new PSAgent(conf, masterLocation.getIp(), masterLocation.getPort(),
-        workerAttemptId.getWorkerId().getIndex(), false, this);
+      workerAttemptId.getWorkerId().getIndex(), false, this);
     dataBlockManager = new DataBlockManager();
     taskManager = new TaskManager();
 
@@ -271,17 +272,16 @@ public class Worker implements Executor {
     LOG.info("Init and start task manager and all task");
     taskManager.init();
     taskManager.startAllTasks(
-        workerGroup.getWorkerRef(workerAttemptId.getWorkerId()).getTaskIdToContextMap());
+      workerGroup.getWorkerRef(workerAttemptId.getWorkerId()).getTaskIdToContextMap());
     workerInitFinishedFlag.set(true);
   }
 
   private void startHeartbeatThread() {
     final int heartbeatInterval = conf.getInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL,
-        AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_INTERVAL);
+      AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_INTERVAL);
 
     heartbeatThread = new Thread(new Runnable() {
-      @Override
-      public void run() {
+      @Override public void run() {
         try {
           register();
         } catch (Exception x) {
@@ -300,7 +300,7 @@ public class Worker implements Executor {
           }
 
           try {
-            if(!stopped.get()) {
+            if (!stopped.get()) {
               heartbeat();
             }
           } catch (YarnRuntimeException e) {
@@ -349,22 +349,23 @@ public class Worker implements Executor {
         case W_SHUTDOWN:
           // if worker timeout, it may be knocked off.
           LOG.fatal("received SHUTDOWN command from am! to exit......");
-          if(!stopped.get()) {
+          if (!stopped.get()) {
             System.exit(-1);
           }
           break;
         default:
           int activeTaskNum = response.getActiveTaskNum();
           if (activeTaskNum < getActiveTaskNum()) {
-            LOG.warn("Received message that activeTaskNum is changed! oldTaskNum: "
-                + getActiveTaskNum() + ", newTaskNum: " + activeTaskNum);
+            LOG.warn(
+              "Received message that activeTaskNum is changed! oldTaskNum: " + getActiveTaskNum()
+                + ", newTaskNum: " + activeTaskNum);
             setActiveTaskNum(activeTaskNum);
           }
           // SUCCESS, do nothing
       }
       // heartbeatFailedTime = 0;
     } catch (Exception netException) {
-      if(!stopped.get()) {
+      if (!stopped.get()) {
         LOG.error("report to appmaster failed, err: ", netException);
       }
     }
@@ -383,7 +384,6 @@ public class Worker implements Executor {
 
   /**
    * Notify Master worker is done.
-   *
    */
   public void workerDone() {
     if (exitedFlag.compareAndSet(false, true)) {
@@ -412,7 +412,7 @@ public class Worker implements Executor {
   public void workerError(String msg) {
     if (exitedFlag.compareAndSet(false, true)) {
       try {
-        if(masterClient != null) {
+        if (masterClient != null) {
           masterClient.workerError(msg);
           LOG.info("worker failed message : " + msg + ", send it to appmaster success");
           masterClient = null;
@@ -599,18 +599,15 @@ public class Worker implements Executor {
     return psAgent;
   }
 
-  @Override
-  public void error(String msg) {
+  @Override public void error(String msg) {
     workerError(msg);
   }
 
-  @Override
-  public void done() {
+  @Override public void done() {
     workerDone();
   }
 
-  @Override
-  public int getTaskNum() {
+  @Override public int getTaskNum() {
     return workerGroup.getWorkerRef(workerAttemptId.getWorkerId()).getTaskNum();
   }
 
@@ -661,7 +658,7 @@ public class Worker implements Executor {
   }
 
   /**
-   *Is Worker Initialized
+   * Is Worker Initialized
    *
    * @return true if Worker initialization Finished,else false
    */

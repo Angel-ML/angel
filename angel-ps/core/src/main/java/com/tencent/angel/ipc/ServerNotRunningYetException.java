@@ -16,7 +16,6 @@
  */
 
 
-
 package com.tencent.angel.ipc;
 
 import java.io.IOException;

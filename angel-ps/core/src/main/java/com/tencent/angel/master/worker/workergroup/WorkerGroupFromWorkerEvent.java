@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.worker.workergroup;
 
 import com.tencent.angel.worker.WorkerGroupId;
@@ -23,23 +24,28 @@ import com.tencent.angel.worker.WorkerId;
 /**
  * Worker group events come from the workers in worker group.
  */
-public class WorkerGroupFromWorkerEvent extends AMWorkerGroupEvent{
-  /**worker id*/
+public class WorkerGroupFromWorkerEvent extends AMWorkerGroupEvent {
+  /**
+   * worker id
+   */
   private final WorkerId workerId;
 
   /**
    * Create a WorkerGroupFromWorkerEvent
-   * @param type event type
-   * @param groupId worker group id
+   *
+   * @param type     event type
+   * @param groupId  worker group id
    * @param workerId worker id
    */
-  public WorkerGroupFromWorkerEvent(AMWorkerGroupEventType type, WorkerGroupId groupId, WorkerId workerId) {
+  public WorkerGroupFromWorkerEvent(AMWorkerGroupEventType type, WorkerGroupId groupId,
+    WorkerId workerId) {
     super(type, groupId);
     this.workerId = workerId;
   }
 
   /**
    * Get worker id
+   *
    * @return worker id
    */
   public WorkerId getWorkerId() {

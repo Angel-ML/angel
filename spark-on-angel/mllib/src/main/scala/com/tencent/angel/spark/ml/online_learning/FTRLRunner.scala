@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.spark.ml.online_learning
 
 import java.util.Random
@@ -23,13 +24,14 @@ import org.apache.spark.streaming.dstream.DStream
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
-
+import com.tencent.angel.ml.math2.VFactory
+import com.tencent.angel.ml.math2.vector.{LongDoubleVector, LongDummyVector, Vector}
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.linalg.{BLAS, OneHotVector, SparseVector, Vector}
-import com.tencent.angel.spark.ml.classification.SparseLRModel
-import com.tencent.angel.spark.ml.optimize.{FTRL, FTRLWithVRG}
+//import com.tencent.angel.spark.ml.classification.SparseLRModel
+import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.util._
 import com.tencent.angel.spark.models.vector.{PSVector, SparsePSVector}
+import com.tencent.angel.spark.util.PSVectorImplicit._
 
 /**
   * this module is to run sparse lr with ftrl or ftrl_vrg,
@@ -118,8 +120,8 @@ object FTRLRunner {
         if (isIncrementLearn) {
           println("this is increment learning")
           val ZNModel = incLearnZNModel(sc, modelPath)
-          zPS.increment(new SparseVector(dim, ZNModel._1))
-          nPS.increment(new SparseVector(dim, ZNModel._2))
+          zPS.increment(dim, ZNModel._1)
+          nPS.increment(dim, ZNModel._2)
         }
 
         val ftrl = new FTRL(lambda1, lambda2, alpha, beta)
@@ -132,17 +134,18 @@ object FTRLRunner {
         val zPS: SparsePSVector = PSVector.sparse(dim)
         val nPS: SparsePSVector = PSVector.duplicate(zPS)
         val vPS: SparsePSVector = PSVector.duplicate(zPS)
-        var initW: SparseVector = null
+        var initW: LongDoubleVector = null
 
         // increment learn from original model or just init the w and z model
         if (isIncrementLearn) {
           println("this is increment learning")
           val ZNVWModel = incLearnZNVWModel(sc, modelPath)
-          zPS.increment(new SparseVector(dim, ZNVWModel._1))
-          nPS.increment(new SparseVector(dim, ZNVWModel._2))
-          vPS.increment(new SparseVector(dim, ZNVWModel._3))
+          zPS.increment(dim, ZNVWModel._1)
+          nPS.increment(dim, ZNVWModel._2)
+          vPS.increment(dim, ZNVWModel._3)
 
-          initW = new SparseVector(dim, ZNVWModel._4)
+          val (k, v) = ZNVWModel._4.unzip
+          initW = VFactory.sparseLongKeyDoubleVector(dim, k, v)
 
         } else {
           // randomly initialize the w and z model
@@ -152,23 +155,24 @@ object FTRLRunner {
           println("random w is:" + randomW.mkString(SPACE_SPLITER))
           println("random z is:" + initZInc.mkString(SPACE_SPLITER))
 
-          initW = new SparseVector(dim, randomW)
-          zPS.increment(new SparseVector(dim, initZInc))
+          val (k, v) = randomW.unzip
+          initW = VFactory.sparseLongKeyDoubleVector(dim, k, v)
+          zPS.increment(dim, initZInc)
         }
 
         val ftrlVRG = new FTRLWithVRG(lambda1, lambda2, alpha, beta, rho1, rho2)
         ftrlVRG.initPSModel(dim)
 
         train(ftrlVRG, initW, featureDS, dim, partitionNum, modelPath, batch2Save, isOneHot)
-      }
-      // start to create the job
-      ssc.start()
-      // await for application stop
-      ssc.awaitTermination()
+    }
+    // start to create the job
+    ssc.start()
+    // await for application stop
+    ssc.awaitTermination()
   }
 
   // parse the z and n model
-  def incLearnZNModel(sc:SparkContext,
+  def incLearnZNModel(sc: SparkContext,
                       modelPath: String): (Array[(Long, Double)], Array[(Long, Double)]) = {
 
     val modelStr = sc.textFile(modelPath).collect()
@@ -180,7 +184,7 @@ object FTRLRunner {
 
   }
 
-  def incLearnZNVWModel(sc:SparkContext,
+  def incLearnZNVWModel(sc: SparkContext,
                         modelPath: String): (Array[(Long, Double)], Array[(Long, Double)], Array[(Long, Double)], Array[(Long, Double)]) = {
 
     val modelStr = sc.textFile(modelPath).collect()
@@ -194,11 +198,11 @@ object FTRLRunner {
   }
 
 
-  def sparseModel(modelStr:Array[String], flag: String):Array[(Long, Double)] = {
+  def sparseModel(modelStr: Array[String], flag: String): Array[(Long, Double)] = {
     modelStr.filter(str => str.contains(flag))(0)
       .split(SPACE_SPLITER)
       .tail
-      .map{idVal =>
+      .map { idVal =>
         val idValArr = idVal.split(":")
         (idValArr(0).toLong, idValArr(1).toDouble)
       }
@@ -207,12 +211,12 @@ object FTRLRunner {
   // randomly initialize the model according to the dim
   // inorder to keep the sparse,just init 10 feature at most
   def randomInit(dim: Long): Map[Long, Double] = {
-    val selectNum = if(dim < 10) dim.toInt else 10
-    val dimReFact = if(dim <= Int.MaxValue ) dim.toInt else Int.MaxValue
+    val selectNum = if (dim < 10) dim.toInt else 10
+    val dimReFact = if (dim <= Int.MaxValue) dim.toInt else Int.MaxValue
     var resultRandom: Map[Long, Double] = Map()
     val randGene = new Random()
 
-    (0 until selectNum).foreach { i =>
+    (0 until selectNum).foreach { _ =>
       val randomId = randGene.nextInt(dimReFact - 1).toLong
       val randomVal = 10 * randGene.nextDouble() + 1.0
 
@@ -229,26 +233,26 @@ object FTRLRunner {
             partitionNum: Int,
             modelPath: String,
             batch2Save: Int,
-            isOneHot: Boolean) = {
+            isOneHot: Boolean): Unit = {
 
     var numBatch = 0
     featureDS.foreachRDD { labelFeatRdd =>
 
       numBatch += 1
       var is2Save = false
-      if(batch2Save != 0 && numBatch % batch2Save == 0 ){
+      if (batch2Save != 0 && numBatch % batch2Save == 0) {
         is2Save = true
       }
 
       val aveLossRdd = labelFeatRdd.repartition(partitionNum)
-        .mapPartitions{ dataIter =>
+        .mapPartitions { dataIter =>
           val dataCollects = dataIter.toArray
 
-          if(dataCollects.length != 0){
+          if (dataCollects.length != 0) {
             val dataVector = dataCollects.map(x => parseData(x, dim, isOneHot))
             val batchAveLoss = ftrl.optimize(dataVector, calcGradientLoss)
             Iterator(batchAveLoss)
-          }else{
+          } else {
             Iterator()
           }
         }
@@ -256,7 +260,7 @@ object FTRLRunner {
       val globalAveLoss = aveLossRdd.collect
 
       // save the information to hdfs for persistence
-      if(globalAveLoss.length != 0){
+      if (globalAveLoss.length != 0) {
 
         val globalLoss = globalAveLoss.sum / globalAveLoss.length
 
@@ -264,7 +268,7 @@ object FTRLRunner {
         Infor2HDFS.saveLog2HDFS(globalLoss.toString)
       }
 
-      if(is2Save){
+      if (is2Save) {
         val wModel = SparseLRModel(ftrl.weight)
         println(s"batch: $numBatch model info: ${wModel.simpleInfo}")
         wModel.save(modelPath)
@@ -274,13 +278,13 @@ object FTRLRunner {
 
   // train by ftrl_VRG
   def train(ftrlVRG: FTRLWithVRG,
-            initW: SparseVector,
+            initW: LongDoubleVector,
             featureDS: DStream[String],
             dim: Long,
             partitionNum: Int,
             modelPath: String,
             batch2Save: Int,
-            isOneHot: Boolean) = {
+            isOneHot: Boolean): Unit = {
 
     var localW = initW
     var numBatch = 0
@@ -288,29 +292,29 @@ object FTRLRunner {
 
       numBatch += 1
       var is2Save = false
-      if(batch2Save != 0 && numBatch % batch2Save == 0 ){
+      if (batch2Save != 0 && numBatch % batch2Save == 0) {
         is2Save = true
       }
 
       val aveLossRdd = labelFeatRdd.repartition(partitionNum)
-        .mapPartitions{ dataIter =>
+        .mapPartitions { dataIter =>
 
           val dataCollects = dataIter.toArray
-          if(dataCollects.length != 0){
+          if (dataCollects.length != 0) {
 
             val dataVector = dataCollects.map(x => parseData(x, dim, isOneHot))
             val wAndLoss = ftrlVRG.optimize(dataVector, localW, calcGradientLoss)
             localW = wAndLoss._1
 
             Iterator(wAndLoss._2)
-          }else{
+          } else {
             Iterator()
           }
         }
 
       val globalAveLoss = aveLossRdd.collect
 
-      if(globalAveLoss.length != 0){
+      if (globalAveLoss.length != 0) {
 
         val globalLoss = globalAveLoss.sum / globalAveLoss.length
 
@@ -318,7 +322,7 @@ object FTRLRunner {
         Infor2HDFS.saveLog2HDFS(globalLoss.toString)
       }
 
-      if(is2Save){
+      if (is2Save) {
         val wModel = SparseLRModel(ftrlVRG.weight)
         println(s"batch: $numBatch model info: ${wModel.simpleInfo}")
         wModel.save(modelPath)
@@ -328,27 +332,27 @@ object FTRLRunner {
 
   def parseData(dataStr: String, dim: Long, isOneHot: Boolean): (Vector, Double) = {
 
-    if(!isOneHot) {
+    if (!isOneHot) {
 
       // SparseVector
       val (feature, label) = DataLoader.transform2Sparse(dataStr)
-      val featAddInter =  Array((0L, 1.0)) ++ feature
-      val featV: Vector = new SparseVector(dim.toLong, featAddInter)
+      val featAddInter = Array((0L, 1.0)) ++ feature
+      val (k, v) = featAddInter.unzip
+      val featV = VFactory.sparseLongKeyDoubleVector(dim.toLong, k, v)
 
       (featV, label)
     } else {
       // OneHotVector
       val (feature, label) = DataLoader.transform2OneHot(dataStr)
       val featAddInter = 0L +: feature
-      val featV: Vector = new OneHotVector(dim.toLong, featAddInter)
+      val featV: Vector = VFactory.longDummyVector(dim.toLong, featAddInter)
 
       (featV, label)
     }
-
   }
 
-  private def calcLoss(w: SparseVector, label: Double, feature: Vector): Double = {
-    val margin = -1 * BLAS.dot(w, feature)
+  private def calcLoss(w: LongDoubleVector, label: Double, feature: Vector): Double = {
+    val margin = -w.dot(feature)
     val loss = if (label > 0) {
       math.log1p(math.exp(margin))
     } else {
@@ -357,11 +361,10 @@ object FTRLRunner {
     loss
   }
 
-  private def calcGradientLoss(w: SparseVector, label: Double, feature: Vector): (SparseVector, Double) = {
-    val margin = -1 * BLAS.dot(w, feature)
+  private def calcGradientLoss(w: LongDoubleVector, label: Double, feature: Vector): (LongDoubleVector, Double) = {
+    val margin = -w.dot(feature)
     val gradientMultiplier = 1.0 / (1.0 + math.exp(margin)) - label
-    val grad = new SparseVector(w.length)
-    BLAS.axpy(gradientMultiplier, feature, grad)
+    val grad = feature.mul(gradientMultiplier).asInstanceOf[LongDoubleVector]
 
     val loss = if (label > 0) {
       math.log1p(math.exp(margin))

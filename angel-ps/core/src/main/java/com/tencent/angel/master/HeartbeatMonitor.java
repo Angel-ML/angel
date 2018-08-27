@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master;
 
 import com.tencent.angel.master.app.AMContext;
@@ -28,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Heart monitor for all modules
  */
-public class HeartbeatMonitor extends AbstractService{
+public class HeartbeatMonitor extends AbstractService {
   private static final Log LOG = LogFactory.getLog(HeartbeatMonitor.class);
   private final AMContext context;
   private final AtomicBoolean stopped = new AtomicBoolean(false);
@@ -36,7 +37,7 @@ public class HeartbeatMonitor extends AbstractService{
   /**
    * Heartbeat timeout checker
    */
-  private Thread timeOutChecker;
+  private volatile Thread timeOutChecker;
 
   /**
    * Construct the service.
@@ -46,12 +47,9 @@ public class HeartbeatMonitor extends AbstractService{
     this.context = context;
   }
 
-  @Override
-  protected void serviceStart() throws Exception {
+  @Override protected void serviceStart() throws Exception {
     timeOutChecker = new Thread(new Runnable() {
-      @SuppressWarnings("unchecked")
-      @Override
-      public void run() {
+      @SuppressWarnings("unchecked") @Override public void run() {
         while (!stopped.get() && !Thread.currentThread().isInterrupted()) {
           try {
             Thread.sleep(1000);
@@ -60,22 +58,22 @@ public class HeartbeatMonitor extends AbstractService{
           }
 
           // Check Workers
-          if(context.getWorkerManager() != null) {
+          if (context.getWorkerManager() != null) {
             context.getWorkerManager().checkHBTimeOut();
           }
 
           // Check PSS
-          if(context.getParameterServerManager() != null) {
+          if (context.getParameterServerManager() != null) {
             context.getParameterServerManager().checkHBTimeOut();
           }
 
           // Check Clients
-          if(context.getClientManager() != null) {
+          if (context.getClientManager() != null) {
             context.getClientManager().checkHBTimeOut();
           }
 
           // Check PS Clients
-          if(context.getPSAgentManager() != null) {
+          if (context.getPSAgentManager() != null) {
             context.getPSAgentManager().checkHBTimeOut();
           }
         }
@@ -85,23 +83,20 @@ public class HeartbeatMonitor extends AbstractService{
     timeOutChecker.start();
   }
 
-  @Override
-  protected void serviceInit(Configuration conf) throws Exception {
+  @Override protected void serviceInit(Configuration conf) throws Exception {
     super.serviceInit(conf);
   }
 
-  @Override
-  protected void serviceStop() throws Exception {
+  @Override protected void serviceStop() throws Exception {
     if (stopped.getAndSet(true)) {
       return;
     }
     if (timeOutChecker != null) {
       timeOutChecker.interrupt();
-      try {
-        timeOutChecker.join();
-      } catch (InterruptedException ie) {
-        LOG.warn("Heartbeat Timeout checker interrupted while stopping");
-      }
+      timeOutChecker = null;
     }
+
+    super.serviceStop();
+    LOG.info("Heartbeat monitor stopped");
   }
 }

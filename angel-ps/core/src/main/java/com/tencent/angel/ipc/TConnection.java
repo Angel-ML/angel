@@ -15,12 +15,15 @@
  *
  */
 
+
 package com.tencent.angel.ipc;
 
 import com.tencent.angel.master.MasterProtocol;
-import com.tencent.angel.ps.impl.PSProtocol;
+import com.tencent.angel.ps.server.control.PSProtocol;
 import com.tencent.angel.worker.WorkerProtocol;
+
 import java.util.List;
+
 import org.apache.hadoop.conf.Configuration;
 
 import java.io.Closeable;
@@ -28,12 +31,12 @@ import java.io.IOException;
 
 /**
  * {@link com.tencent.angel.ipc.TConnectionManager} manages instances of this class.
- * 
+ * <p>
  * <p>
  * TConnection instances can be shared. Sharing is usually what you want because rather than each
  * TConnection instance having to do its own cache of partition locations. Sharing makes cleanup of
  * TConnections awkward. See {@link TConnectionManager} for cleanup discussion.
- * 
+ *
  * @see com.tencent.angel.ipc.TConnectionManager
  */
 public interface TConnection extends Closeable {
@@ -50,8 +53,9 @@ public interface TConnection extends Closeable {
 
   /**
    * Get ps rpc client with sync mode.
+   *
    * @param hostname ps host name
-   * @param port ps listening port
+   * @param port     ps listening port
    * @return ps rpc client
    * @throws IOException
    */
@@ -59,8 +63,9 @@ public interface TConnection extends Closeable {
 
   /**
    * Get ps rpc client with async mode.
+   *
    * @param hostname ps host name
-   * @param port ps listening port
+   * @param port     ps listening port
    * @return ps rpc client
    * @throws IOException
    */
@@ -68,8 +73,9 @@ public interface TConnection extends Closeable {
 
   /**
    * Get worker rpc client with sync mode.
+   *
    * @param hostname worker host name
-   * @param port worker listening port
+   * @param port     worker listening port
    * @return worker rpc client
    * @throws IOException
    */
@@ -77,8 +83,9 @@ public interface TConnection extends Closeable {
 
   /**
    * Get master rpc client with sync mode.
+   *
    * @param hostname master host name
-   * @param port master listening port
+   * @param port     master listening port
    * @return master rpc client
    * @throws IOException
    */
@@ -86,6 +93,6 @@ public interface TConnection extends Closeable {
 
 
   VersionedProtocol getProtocol(final String hostname, final int port,
-      final Class<? extends VersionedProtocol> protocolClass, final long version,
-      List<String> addrList4Failover) throws IOException ;
+    final Class<? extends VersionedProtocol> protocolClass, final long version,
+    List<String> addrList4Failover) throws IOException;
 }

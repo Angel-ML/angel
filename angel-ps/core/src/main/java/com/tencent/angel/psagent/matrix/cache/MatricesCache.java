@@ -15,12 +15,13 @@
  *
  */
 
+
 package com.tencent.angel.psagent.matrix.cache;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ps.impl.matrix.ServerPartition;
-import com.tencent.angel.ps.impl.matrix.ServerRow;
+import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.psagent.PSAgentContext;
 
 import java.util.List;
@@ -31,19 +32,29 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Matrix cache manager. It managers a matrix cache {@link MatrixCache} for every matrix.
  */
 public class MatricesCache {
-  /**matrix id to matrix cache map*/
+  /**
+   * matrix id to matrix cache map
+   */
   private final ConcurrentHashMap<Integer, MatrixCache> matricesCacheMap;
-  
-  /**matrices cache sync thread*/
+
+  /**
+   * matrices cache sync thread
+   */
   private Syncer syncer;
-  
-  /**cache sync time interval in milliseconds*/
+
+  /**
+   * cache sync time interval in milliseconds
+   */
   private int syncTimeIntervalMS;
-  
-  /**stop syncer or not*/
+
+  /**
+   * stop syncer or not
+   */
   private final AtomicBoolean stopped;
-  
-  /**cache sync policy*/
+
+  /**
+   * cache sync policy
+   */
   private SyncPolicy syncPolicy;
 
   /**
@@ -56,6 +67,7 @@ public class MatricesCache {
 
   /**
    * Remove cache data for a matrix
+   *
    * @param matrixId
    */
   public void remove(int matrixId) {
@@ -66,8 +78,7 @@ public class MatricesCache {
    * Matrices cache sync thread.
    */
   class Syncer extends Thread {
-    @Override
-    public void run() {
+    @Override public void run() {
       while (!stopped.get() && !Thread.interrupted()) {
         syncPolicy.sync(PSAgentContext.get().getMatricesCache());
         try {
@@ -81,24 +92,19 @@ public class MatricesCache {
 
   /**
    * Startup cache sync thread.
-   * 
+   *
    * @throws InstantiationException create a instance of sync policy class failed
    * @throws IllegalAccessException create a instance of sync policy class failed
    * @throws ClassNotFoundException sync policy class is not found
    */
-  public void start() throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-    syncTimeIntervalMS =
-        PSAgentContext
-            .get()
-            .getConf()
-            .getInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS,
-                AngelConf.DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS);
-    String syncPolicyClass =
-        PSAgentContext
-            .get()
-            .getConf()
-            .get(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_POLICY_CLASS,
-                AngelConf.DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_POLICY_CLASS);
+  public void start()
+    throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+    syncTimeIntervalMS = PSAgentContext.get().getConf()
+      .getInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS,
+        AngelConf.DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS);
+    String syncPolicyClass = PSAgentContext.get().getConf()
+      .get(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_POLICY_CLASS,
+        AngelConf.DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_POLICY_CLASS);
     syncPolicy = (SyncPolicy) Class.forName(syncPolicyClass).newInstance();
 
     syncer = new Syncer();
@@ -110,7 +116,7 @@ public class MatricesCache {
    * Stop matrices cache sync thread.
    */
   public void stop() {
-    if(!stopped.getAndSet(true)){
+    if (!stopped.getAndSet(true)) {
       if (syncer != null) {
         syncer.interrupt();
         syncer = null;
@@ -122,9 +128,9 @@ public class MatricesCache {
 
   /**
    * Get a row split from cache
-   * 
+   *
    * @param matrixId matrix id
-   * @param partKey partition key
+   * @param partKey  partition key
    * @param rowIndex row index
    * @return row split
    */
@@ -138,9 +144,9 @@ public class MatricesCache {
 
   /**
    * Get a matrix partition from cache
-   * 
+   *
    * @param matrixId matrix id
-   * @param partKey partition key
+   * @param partKey  partition key
    * @return matrix partition
    */
   public ServerPartition getPartition(int matrixId, PartitionKey partKey) {
@@ -153,13 +159,14 @@ public class MatricesCache {
 
   /**
    * Get a batch of row splits that belong to a matrix partition
-   * 
-   * @param matrixId matrix id
-   * @param partKey partition key
+   *
+   * @param matrixId   matrix id
+   * @param partKey    partition key
    * @param rowIndexes row indexes
    * @return a batch of row splits
    */
-  public List<ServerRow> getRowsSplit(int matrixId, PartitionKey partKey, List<Integer> rowIndexes) {
+  public List<ServerRow> getRowsSplit(int matrixId, PartitionKey partKey,
+    List<Integer> rowIndexes) {
     MatrixCache matrixCache = matricesCacheMap.get(matrixId);
     if (matrixCache == null) {
       return null;
@@ -170,12 +177,12 @@ public class MatricesCache {
   public ConcurrentHashMap<Integer, MatrixCache> getMatricesCacheMap() {
     return matricesCacheMap;
   }
-  
+
   /**
    * Get a matrix cache
-   * 
+   *
    * @param matrixId matrix id
-   * @return  the cache of the matrix
+   * @return the cache of the matrix
    */
   public MatrixCache getMatrixCache(int matrixId) {
     return matricesCacheMap.get(matrixId);
@@ -183,10 +190,10 @@ public class MatricesCache {
 
   /**
    * Update a matrix partition in the cache
-   * 
+   *
    * @param matrixId matrix id
-   * @param partKey partition key
-   * @param part matrix partition
+   * @param partKey  partition key
+   * @param part     matrix partition
    */
   public void update(int matrixId, PartitionKey partKey, ServerPartition part) {
     MatrixCache matrixCache = matricesCacheMap.get(matrixId);
@@ -200,9 +207,9 @@ public class MatricesCache {
 
   /**
    * Update a row split in the cache
-   * 
+   *
    * @param matrixId matrix id
-   * @param partKey partition key
+   * @param partKey  partition key
    * @param rowSplit row split
    */
   public void update(int matrixId, PartitionKey partKey, ServerRow rowSplit) {
@@ -217,9 +224,9 @@ public class MatricesCache {
 
   /**
    * Update a batch row splits in the cache
-   * 
-   * @param matrixId matrix id
-   * @param partKey partition key
+   *
+   * @param matrixId  matrix id
+   * @param partKey   partition key
    * @param rowsSplit a batch row splits
    */
   public void update(int matrixId, PartitionKey partKey, List<ServerRow> rowsSplit) {
@@ -231,32 +238,32 @@ public class MatricesCache {
 
     matrixCache.update(partKey, rowsSplit);
   }
-  
+
   /**
    * Clean whole cache.
    */
   public void clear() {
     matricesCacheMap.clear();
   }
-  
+
   /**
    * Clean a matrix from cache
-   * 
+   *
    * @param matrixId matrix id
    */
   public void clear(int matrixId) {
     matricesCacheMap.remove(matrixId);
   }
-  
+
   /**
    * Clean a matrix partition from cache
-   * 
-   * @param matrixId matrix id
+   *
+   * @param matrixId     matrix id
    * @param partitionKey partition key
    */
   public void clear(int matrixId, PartitionKey partitionKey) {
     MatrixCache cache = matricesCacheMap.get(matrixId);
-    if(cache != null) {
+    if (cache != null) {
       cache.clear(partitionKey);
     }
   }

@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.worker;
 
 import com.tencent.angel.common.Id;
@@ -50,20 +51,21 @@ public class WorkerGroupId extends Id {
 
     String[] idElemts = idStr.split(SEPARATOR);
     if (idElemts.length != 2 || !idElemts[0].equals(WORKERGROUP)) {
-      throw new UnvalidIdStrException("unvalid id str " + idStr
-          + ", must be like this:" + WORKERGROUP + SEPARATOR + "workerGroupIndex");
+      throw new UnvalidIdStrException(
+        "unvalid id str " + idStr + ", must be like this:" + WORKERGROUP + SEPARATOR
+          + "workerGroupIndex");
     }
 
     try {
       index = Integer.valueOf(idElemts[1]);
     } catch (Exception x) {
-      throw new UnvalidIdStrException("unvalid id str " + idStr
-          + ", must be like this:" + WORKERGROUP + SEPARATOR + "workerGroupIndex");
+      throw new UnvalidIdStrException(
+        "unvalid id str " + idStr + ", must be like this:" + WORKERGROUP + SEPARATOR
+          + "workerGroupIndex");
     }
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return WORKERGROUP + Id.SEPARATOR + super.toString();
   }
 }

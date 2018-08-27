@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.deploy.local;
 
 import com.tencent.angel.common.Id;
@@ -32,11 +33,14 @@ import com.tencent.angel.worker.WorkerAttemptId;
  * Local container allocator.
  */
 public class LocalContainerAllocator extends ContainerAllocator {
-  /**master context*/
+  /**
+   * master context
+   */
   private final AMContext context;
-  
+
   /**
    * Create a LocalContainerAllocator
+   *
    * @param context master context
    */
   public LocalContainerAllocator(AMContext context) {
@@ -44,8 +48,7 @@ public class LocalContainerAllocator extends ContainerAllocator {
     this.context = context;
   }
 
-  @Override
-  public void handle(ContainerAllocatorEvent event) {
+  @Override public void handle(ContainerAllocatorEvent event) {
     switch (event.getType()) {
       case CONTAINER_REQ:
         requestContainer(event);
@@ -54,7 +57,7 @@ public class LocalContainerAllocator extends ContainerAllocator {
       case CONTAINER_DEALLOCATE:
         deallocateContainer(event);
         break;
-        
+
       default:
         break;
     }
@@ -64,28 +67,26 @@ public class LocalContainerAllocator extends ContainerAllocator {
 
   }
 
-  @SuppressWarnings("unchecked")
-  private void requestContainer(ContainerAllocatorEvent event) {
+  @SuppressWarnings("unchecked") private void requestContainer(ContainerAllocatorEvent event) {
     LocalContainer allocated = new LocalContainer();
     Id id = event.getTaskId();
     if (id instanceof PSAttemptId) {
-      context.getEventHandler().handle(
-          new PSAttemptContainerAssignedEvent((PSAttemptId) id, allocated));
+      context.getEventHandler()
+        .handle(new PSAttemptContainerAssignedEvent((PSAttemptId) id, allocated));
     } else if (id instanceof WorkerAttemptId) {
-      context.getEventHandler().handle(
-          new WorkerAttemptContainerAssignedEvent((WorkerAttemptId) id, allocated));
+      context.getEventHandler()
+        .handle(new WorkerAttemptContainerAssignedEvent((WorkerAttemptId) id, allocated));
     }
-  }  
-  
-  @Override
-  protected void serviceStop() throws Exception {
-    if(!context.needClear()) {
+  }
+
+  @Override protected void serviceStop() throws Exception {
+    if (!context.needClear()) {
       LocalCluster cluster = LocalClusterContext.get().getLocalCluster();
-      if(cluster != null) {
+      if (cluster != null) {
         cluster.getLocalRM().masterExited(context.getApplicationId());
       }
     }
-    
+
     super.serviceStop();
   }
 }

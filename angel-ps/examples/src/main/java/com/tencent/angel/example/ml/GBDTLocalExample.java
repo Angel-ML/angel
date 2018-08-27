@@ -15,13 +15,12 @@
  *
  */
 
+
 package com.tencent.angel.example.ml;
 
-import com.tencent.angel.client.AngelClient;
-import com.tencent.angel.client.AngelClientFactory;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.GBDT.GBDTRunner;
-import com.tencent.angel.ml.conf.MLConf;
+import com.tencent.angel.ml.core.conf.MLConf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -29,8 +28,9 @@ import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
 import org.apache.log4j.PropertyConfigurator;
 
-import java.io.IOException;
+import java.io.File;
 import java.util.Scanner;
+
 
 public class GBDTLocalExample {
 
@@ -38,17 +38,36 @@ public class GBDTLocalExample {
 
   private Configuration conf = new Configuration();
 
+  private static boolean inPackage = false;
+
   static {
-    PropertyConfigurator.configure("../conf/log4j.properties");
+    File confFile = new File("../conf/log4j.properties");
+    if (confFile.exists()) {
+      PropertyConfigurator.configure("../conf/log4j.properties");
+      inPackage = true;
+    } else {
+      PropertyConfigurator.configure("angel-ps/conf/log4j.properties");
+    }
   }
 
-  public void setConf() {
-    String inputPath = "../data/exampledata/GBDTLocalExampleData/agaricus.txt.train";
+  public void setConf(int mode) {
+    String trainInput = "";
+    String predictInput = "";
+
+    // Dataset
+    if (inPackage) {
+      trainInput = "../data/agaricus/agaricus_127d_train.libsvm";
+      predictInput = "../data/agaricus/agaricus_127d_test.libsvm";
+    } else {
+      trainInput = "data/agaricus/agaricus_127d_train.libsvm";
+      predictInput = "data/agaricus/agaricus_127d_test.libsvm";
+    }
+
+    // Data format
+    String dataType = "libsvm";
 
     // Feature number of train data
     int featureNum = 127;
-    // Number of nonzero features
-    int featureNzz = 25;
     // Tree number
     int treeNum = 2;
     // Tree depth
@@ -57,71 +76,81 @@ public class GBDTLocalExample {
     int splitNum = 10;
     // Feature sample ratio
     double sampleRatio = 1.0;
-
-    // Data format
-    String dataFmt = "libsvm";
-
+    // Ratio of validation
+    double validateRatio = 0.1;
     // Learning rate
     double learnRate = 0.01;
 
-    // Set basic configuration keys
+    // Set file system
     String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
     String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
 
     conf.setBoolean("mapred.mapper.new-api", true);
     conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
+    conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 50);
 
     // Use local deploy mode and data format
     conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
-    conf.set(MLConf.ML_DATA_INPUT_FORMAT(), String.valueOf(dataFmt));
+    conf.set(MLConf.ML_DATA_INPUT_FORMAT(), String.valueOf(dataType));
 
-    // set input, output path
+    // Set data path
     conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
-    conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
-    conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/out");
+    if (mode == 1) {  // train mode
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, "train");
+      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, trainInput);
+      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/gbdt");
+    } else if (mode == 2) {  // predict mode
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, "predict");
+      conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, predictInput);
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/gbdt");
+      conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/predict/gbdt");
+    }
     conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
 
-    // set angel resource parameters #worker, #task, #PS
+    // Set angel resource, #worker, #task, #PS
     conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
     conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
     conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
     // Set GBDT algorithm parameters
     conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
-    conf.set(MLConf.ML_MODEL_SIZE(), String.valueOf(featureNzz));
     conf.set(MLConf.ML_GBDT_TREE_NUM(), String.valueOf(treeNum));
     conf.set(MLConf.ML_GBDT_TREE_DEPTH(), String.valueOf(treeDepth));
     conf.set(MLConf.ML_GBDT_SPLIT_NUM(), String.valueOf(splitNum));
+    conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(validateRatio));
     conf.set(MLConf.ML_GBDT_SAMPLE_RATIO(), String.valueOf(sampleRatio));
     conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
+
   }
 
-  public void train() throws Exception {
-    setConf();
+  public void train() {
 
-    GBDTRunner runner = new GBDTRunner();
-    runner.train(conf);
+    try {
+      setConf(1);
 
-    AngelClient angelClient = AngelClientFactory.get(conf);
-    angelClient.stop();
+      GBDTRunner runner = new GBDTRunner();
+      runner.train(conf);
+    } catch (Exception e) {
+      LOG.error("run GBDTLocalExample:train failed.", e);
+      throw e;
+    }
+
   }
 
-  public void predict() throws IOException {
-    setConf();
-    // Load Model from HDFS.
-    String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
-    conf.set("gbdt.split.feature", TMP_PATH + "/out/xxx");
-    conf.set("gbdt.split.value", TMP_PATH + "/out/xxx");
+  public void predict() {
 
-    GBDTRunner runner = new GBDTRunner();
+    try {
+      setConf(2);
 
-    runner.predict(conf);
-
-    AngelClient angelClient = AngelClientFactory.get(conf);
-    angelClient.stop();
+      GBDTRunner runner = new GBDTRunner();
+      runner.predict(conf);
+    } catch (Exception e) {
+      LOG.error("run GBDTLocalExample:predict failed.", e);
+      throw e;
+    }
   }
 
-  public static void main(String[] args) throws Exception {
+  public static void main(String[] args) {
     GBDTLocalExample example = new GBDTLocalExample();
     Scanner scanner = new Scanner(System.in);
     System.out.println("1-train 2-predict");

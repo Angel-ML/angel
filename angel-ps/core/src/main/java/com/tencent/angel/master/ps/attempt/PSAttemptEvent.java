@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.ps.attempt;
 
 import com.tencent.angel.ps.PSAttemptId;
@@ -24,13 +25,16 @@ import org.apache.hadoop.yarn.event.AbstractEvent;
  * Base class of ps attempt event.
  */
 public class PSAttemptEvent extends AbstractEvent<PSAttemptEventType> {
-  /**ps attempt id*/
+  /**
+   * ps attempt id
+   */
   private final PSAttemptId psAttemptId;
 
   /**
    * Create a PSAttemptEvent
+   *
    * @param type event type
-   * @param id ps attempt id
+   * @param id   ps attempt id
    */
   public PSAttemptEvent(PSAttemptEventType type, PSAttemptId id) {
     super(type);
@@ -39,6 +43,7 @@ public class PSAttemptEvent extends AbstractEvent<PSAttemptEventType> {
 
   /**
    * Get ps attempt id
+   *
    * @return ps attempt id
    */
   public PSAttemptId getPSAttemptId() {

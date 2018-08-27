@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.utils;
 
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.SplitInfoProto;
@@ -38,24 +39,24 @@ public class SerdeUtils {
   private static SerializationFactory factory;
 
   public static SplitClassification deSerilizeSplitProtos(List<SplitInfoProto> splitInfoList,
-      Configuration conf) throws ClassNotFoundException, IOException {
+    Configuration conf) throws ClassNotFoundException, IOException {
     boolean isUseNewAPI = conf.getBoolean("mapred.mapper.new-api", false);
     if (isUseNewAPI) {
       List<org.apache.hadoop.mapreduce.InputSplit> splitList =
-          new ArrayList<org.apache.hadoop.mapreduce.InputSplit>();
+        new ArrayList<org.apache.hadoop.mapreduce.InputSplit>();
       for (SplitInfoProto splitInfo : splitInfoList) {
-        splitList.add(deSerilizeNewSplit(splitInfo.getSplitClass(), splitInfo.getSplit()
-            .toByteArray(), conf));
+        splitList.add(
+          deSerilizeNewSplit(splitInfo.getSplitClass(), splitInfo.getSplit().toByteArray(), conf));
       }
 
       SplitClassification splits = new SplitClassification(null, splitList, true);
       return splits;
     } else {
       List<org.apache.hadoop.mapred.InputSplit> splitList =
-          new ArrayList<org.apache.hadoop.mapred.InputSplit>();
+        new ArrayList<org.apache.hadoop.mapred.InputSplit>();
       for (SplitInfoProto splitInfo : splitInfoList) {
-        splitList.add(deSerilizeOldSplit(splitInfo.getSplitClass(), splitInfo.getSplit()
-            .toByteArray(), conf));
+        splitList.add(
+          deSerilizeOldSplit(splitInfo.getSplitClass(), splitInfo.getSplit().toByteArray(), conf));
       }
 
       SplitClassification splits = new SplitClassification(splitList, null, true);
@@ -66,7 +67,7 @@ public class SerdeUtils {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   public static SplitInfo serilizeSplit(org.apache.hadoop.mapreduce.InputSplit split,
-      Configuration conf) throws IOException {
+    Configuration conf) throws IOException {
     if (factory == null) {
       factory = new SerializationFactory(conf);
     }
@@ -85,7 +86,7 @@ public class SerdeUtils {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   public static SplitInfo serilizeSplit(org.apache.hadoop.mapred.InputSplit split,
-      Configuration conf) throws IOException {
+    Configuration conf) throws IOException {
     if (factory == null) {
       factory = new SerializationFactory(conf);
     }
@@ -103,7 +104,7 @@ public class SerdeUtils {
   }
 
   public static List<SplitInfo> serilizeSplits(SplitClassification splits, Configuration conf)
-      throws IOException {
+    throws IOException {
 
     List<SplitInfo> splitInfoList = new ArrayList<SplitInfo>();
     if (splits.isUseNewAPI()) {
@@ -123,7 +124,7 @@ public class SerdeUtils {
 
   @SuppressWarnings("unchecked")
   public static org.apache.hadoop.mapreduce.InputSplit deSerilizeNewSplit(SplitInfo splitInfo,
-      Configuration conf) throws IOException, ClassNotFoundException {
+    Configuration conf) throws IOException, ClassNotFoundException {
     if (factory == null) {
       factory = new SerializationFactory(conf);
     }
@@ -131,9 +132,9 @@ public class SerdeUtils {
     ByteArrayInputStream in = null;
 
     try {
-      Deserializer<? extends org.apache.hadoop.mapreduce.InputSplit> deSerializer =
-          factory.getDeserializer((Class<? extends org.apache.hadoop.mapreduce.InputSplit>) Class
-              .forName(splitInfo.getSplitClass()));
+      Deserializer<? extends org.apache.hadoop.mapreduce.InputSplit> deSerializer = factory
+        .getDeserializer((Class<? extends org.apache.hadoop.mapreduce.InputSplit>) Class
+          .forName(splitInfo.getSplitClass()));
       in = new ByteArrayInputStream(splitInfo.getSplit());
       deSerializer.open(in);
       return deSerializer.deserialize(null);
@@ -147,7 +148,7 @@ public class SerdeUtils {
 
   @SuppressWarnings("unchecked")
   public static org.apache.hadoop.mapred.InputSplit deSerilizeOldSplit(SplitInfo splitInfo,
-      Configuration conf) throws ClassNotFoundException, IOException {
+    Configuration conf) throws ClassNotFoundException, IOException {
     if (factory == null) {
       factory = new SerializationFactory(conf);
     }
@@ -155,9 +156,9 @@ public class SerdeUtils {
     ByteArrayInputStream in = null;
 
     try {
-      Deserializer<? extends org.apache.hadoop.mapred.InputSplit> deSerializer =
-          factory.getDeserializer((Class<? extends org.apache.hadoop.mapred.InputSplit>) Class
-              .forName(splitInfo.getSplitClass()));
+      Deserializer<? extends org.apache.hadoop.mapred.InputSplit> deSerializer = factory
+        .getDeserializer((Class<? extends org.apache.hadoop.mapred.InputSplit>) Class
+          .forName(splitInfo.getSplitClass()));
       in = new ByteArrayInputStream(splitInfo.getSplit());
       deSerializer.open(in);
       return deSerializer.deserialize(null);
@@ -169,11 +170,11 @@ public class SerdeUtils {
   }
 
   public static SplitClassification deSerilizeSplits(List<SplitInfo> splitInfoList,
-      Configuration conf) throws ClassNotFoundException, IOException {
+    Configuration conf) throws ClassNotFoundException, IOException {
     boolean isUseNewAPI = conf.getBoolean("mapred.mapper.new-api", false);
     if (isUseNewAPI) {
       List<org.apache.hadoop.mapreduce.InputSplit> splitList =
-          new ArrayList<org.apache.hadoop.mapreduce.InputSplit>();
+        new ArrayList<org.apache.hadoop.mapreduce.InputSplit>();
       for (SplitInfo splitInfo : splitInfoList) {
         splitList.add(deSerilizeNewSplit(splitInfo, conf));
       }
@@ -182,7 +183,7 @@ public class SerdeUtils {
       return splits;
     } else {
       List<org.apache.hadoop.mapred.InputSplit> splitList =
-          new ArrayList<org.apache.hadoop.mapred.InputSplit>();
+        new ArrayList<org.apache.hadoop.mapred.InputSplit>();
       for (SplitInfo splitInfo : splitInfoList) {
         splitList.add(deSerilizeOldSplit(splitInfo, conf));
       }
@@ -194,7 +195,7 @@ public class SerdeUtils {
 
   @SuppressWarnings("unchecked")
   public static org.apache.hadoop.mapreduce.InputSplit deSerilizeNewSplit(String className,
-      byte[] data, Configuration conf) throws IOException, ClassNotFoundException {
+    byte[] data, Configuration conf) throws IOException, ClassNotFoundException {
     if (factory == null) {
       factory = new SerializationFactory(conf);
     }
@@ -202,9 +203,9 @@ public class SerdeUtils {
     ByteArrayInputStream in = null;
 
     try {
-      Deserializer<? extends org.apache.hadoop.mapreduce.InputSplit> deSerializer =
-          factory.getDeserializer((Class<? extends org.apache.hadoop.mapreduce.InputSplit>) Class
-              .forName(className));
+      Deserializer<? extends org.apache.hadoop.mapreduce.InputSplit> deSerializer = factory
+        .getDeserializer(
+          (Class<? extends org.apache.hadoop.mapreduce.InputSplit>) Class.forName(className));
       in = new ByteArrayInputStream(data);
       deSerializer.open(in);
       return deSerializer.deserialize(null);
@@ -218,7 +219,7 @@ public class SerdeUtils {
 
   @SuppressWarnings("unchecked")
   public static org.apache.hadoop.mapred.InputSplit deSerilizeOldSplit(String className,
-      byte[] data, Configuration conf) throws ClassNotFoundException, IOException {
+    byte[] data, Configuration conf) throws ClassNotFoundException, IOException {
     if (factory == null) {
       factory = new SerializationFactory(conf);
     }
@@ -226,9 +227,9 @@ public class SerdeUtils {
     ByteArrayInputStream in = null;
 
     try {
-      Deserializer<? extends org.apache.hadoop.mapred.InputSplit> deSerializer =
-          factory.getDeserializer((Class<? extends org.apache.hadoop.mapred.InputSplit>) Class
-              .forName(className));
+      Deserializer<? extends org.apache.hadoop.mapred.InputSplit> deSerializer = factory
+        .getDeserializer(
+          (Class<? extends org.apache.hadoop.mapred.InputSplit>) Class.forName(className));
       in = new ByteArrayInputStream(data);
       deSerializer.open(in);
       return deSerializer.deserialize(null);

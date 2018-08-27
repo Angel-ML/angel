@@ -15,58 +15,50 @@
  *
  */
 
+
 package com.tencent.angel.psagent.matrix.transport.adapter;
 
 /**
  * Get rows use pipeline mode request.
  */
 public class GetRowsFlowRequest extends UserRequest {
-  /** row indexes */
+  /**
+   * row indexes
+   */
   private final RowIndex index;
 
   /**
-   * 
+   * Local matrix clock
+   */
+  private final int clock;
+
+  /**
    * Create a new GetRowsFlowRequest.
    *
    * @param index row indexes
    * @param clock clock value
    */
   public GetRowsFlowRequest(RowIndex index, int clock) {
-    super(UserRequestType.GET_ROWS, clock);
+    super(UserRequestType.GET_ROWS);
     this.index = index;
+    this.clock = clock;
   }
 
   /**
    * Get row indexes
-   * 
+   *
    * @return RowIndex row indexes
    */
   public RowIndex getIndex() {
     return index;
   }
 
-  @Override
-  public int hashCode() {
-    final int prime = 31;
-    int result = super.hashCode();
-    result = prime * result + ((index == null) ? 0 : index.hashCode());
-    return result;
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj)
-      return true;
-    if (!super.equals(obj))
-      return false;
-    if (getClass() != obj.getClass())
-      return false;
-    GetRowsFlowRequest other = (GetRowsFlowRequest) obj;
-    if (index == null) {
-      if (other.index != null)
-        return false;
-    } else if (!index.equals(other.index))
-      return false;
-    return true;
+  /**
+   * Get matrix clock
+   *
+   * @return matrix clock
+   */
+  public int getClock() {
+    return clock;
   }
 }

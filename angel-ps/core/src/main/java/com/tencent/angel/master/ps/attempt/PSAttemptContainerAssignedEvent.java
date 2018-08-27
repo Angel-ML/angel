@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.ps.attempt;
 
 import com.tencent.angel.ps.PSAttemptId;
@@ -24,12 +25,15 @@ import org.apache.hadoop.yarn.api.records.Container;
  * Assign a container for a ps.
  */
 public class PSAttemptContainerAssignedEvent extends PSAttemptEvent {
-  /**the container allocated for the ps attempt*/
+  /**
+   * the container allocated for the ps attempt
+   */
   private final Container container;
 
   /**
    * Create a PSAttemptContainerAssignedEvent
-   * @param id ps attempt id
+   *
+   * @param id        ps attempt id
    * @param container container
    */
   public PSAttemptContainerAssignedEvent(PSAttemptId id, Container container) {
@@ -39,6 +43,7 @@ public class PSAttemptContainerAssignedEvent extends PSAttemptEvent {
 
   /**
    * Get container
+   *
    * @return container
    */
   public Container getContainer() {

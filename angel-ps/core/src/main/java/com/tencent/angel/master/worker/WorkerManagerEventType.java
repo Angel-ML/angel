@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.master.worker;
 
 public enum WorkerManagerEventType {

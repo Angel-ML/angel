@@ -15,18 +15,11 @@
  *
  */
 
+
 package com.tencent.angel.psagent.matrix.cache;
 
-import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ps.impl.matrix.ServerPartition;
-import com.tencent.angel.psagent.PSAgentContext;
-import com.tencent.angel.psagent.clock.ClockCache;
-import com.tencent.angel.psagent.matrix.transport.MatrixTransportClient;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Cache sync policy using matrix partition clock, it will pre-fetch a matrix partition from ps if
@@ -35,13 +28,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PartitionClockPolicy implements SyncPolicy {
   private static final Log LOG = LogFactory.getLog(PartitionClockPolicy.class);
 
-  @Override
-  public void sync(MatricesCache cache) {
+  @Override public void sync(MatricesCache cache) {
     /*ClockCache clockCache = PSAgentContext.get().getClockCache();
     MatrixTransportClient matrixClient = PSAgentContext.get().getMatrixTransportClient();
     ConcurrentHashMap<Integer, MatrixCache> matrixCacheMap = cache.getMatricesCacheMap();
     PartitionKey partKey = null;
-    
+
     for (Entry<Integer, MatrixCache> matrixCacheEntry : matrixCacheMap.entrySet()) {
       ConcurrentHashMap<PartitionKey, ServerPartition> partitionCacheMap =
           matrixCacheEntry.getValue().getPartitionCacheMap();
@@ -50,7 +42,7 @@ public class PartitionClockPolicy implements SyncPolicy {
         partKey = partitionCacheEntry.getKey();
         int cachedClock =
             clockCache.getClock(matrixCacheEntry.getKey(), partKey);
-        
+
         if (partitionCacheEntry.getValue().getClock() < cachedClock) {
           LOG.debug("start to prefetch partition " + partKey + " now");
           try {
@@ -58,7 +50,7 @@ public class PartitionClockPolicy implements SyncPolicy {
               matrixClient.getRowSplit(partKey, partKey.getStartRow(), cachedClock);
             }else{
               matrixClient.getPart(partKey, cachedClock);
-            }       
+            }
           } catch (Exception e) {
             LOG.error("get partition " + partKey + " failed, ", e);
           }
