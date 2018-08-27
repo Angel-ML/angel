@@ -139,7 +139,7 @@ Angel的状态机有如下几个状态:
 - Forward: 这一状态表示前向计算已完成
 - Backward: 这一状态表示后向计算已完成, 但还没有计算参数的梯度
 - Gradient: 这一状态表示梯度已计算完成, 并且梯度已推送到PS上了
-- Update: 这一状态表示梯度更新已完成
+- Update: 这一状态表示模型更新已完成
 
 这些状态是依次进行的, 如下图所示:
 ![状态机](../img/status.png)
@@ -225,7 +225,7 @@ def trainOneEpoch(epoch: Int, iter: Iterator[Array[LabeledData]], numBatch: Int)
 ```
 步骤如下:
 - feedData: 这个过程会将Graph的状态设为Null
-- 拉取参数: 会根据数据, 只拉取当前mini-batch计算所需要的参数, 所以Angel可以训练非常高的模型
+- 拉取参数: 会根据数据, 只拉取当前mini-batch计算所需要的参数, 所以Angel可以训练非常高维的模型
 - 前向计算: 从Losslayer开始, 级联地调用它的inputlayer的`calOutput`方法, 依次计算output, 计算完后将它的状态设为`forward`. 对于状态已是`forward`的情况, 则直接返回上一次计算的结果, 这样避免重复计算
 - 后向计算: 依次调用Graph的inputlayer, 这样会级联调用第一层的`CalGradOutput`方法, 完成后向计算. 计算完后将它的状态设为`backward`. 对于状态已是`backward`的情况, 则直接返回上一次计算的结果, 这样避免重复计算
 - 梯度计算与更新: 计算`backward`只计算了网络结点的梯度, 并没有计算参数的梯度. 这一步计算参数的梯度, 只需调用`trainable`的`pushGradient`即可. 这个方法会先计算梯度, 然后再将梯度推送到PS上, 最后将状态设为`gradient`
