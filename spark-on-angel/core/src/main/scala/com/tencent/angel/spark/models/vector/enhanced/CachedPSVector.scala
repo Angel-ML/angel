@@ -58,7 +58,7 @@ private[spark] class CachedPSVector(component: ConcretePSVector) extends PSVecto
     * Increment a local vector to cache
     */
   def increment(delta: Vector, cacheId: Int = 0): Unit = {
-    aggregateCache(delta, cacheId, VectorCacheManager.MIN)
+    aggregateCache(delta, cacheId, VectorCacheManager.INCREMENT)
   }
 
   /**
@@ -78,7 +78,7 @@ private[spark] class CachedPSVector(component: ConcretePSVector) extends PSVecto
     * @param cacheId cacheId to distinguish different caches
     */
   def min(vector: Vector, cacheId: Int = 0): Unit = {
-    aggregateCache(vector, cacheId, VectorCacheManager.INCREMENT)
+    aggregateCache(vector, cacheId, VectorCacheManager.MIN)
   }
 
   def aggregateCache(vector: Vector,
