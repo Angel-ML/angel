@@ -22,61 +22,64 @@ FM可以被用于一系列的预测任务，比如说：
 
 ## 2. FM on Angel
 * FM算法模型
-FM算法的模型是三个存储在PS上的矩阵，矩阵元信息分别如下：        
-    * b：偏置项，1×1 维的矩阵。
-    * w：线性项，1×N 维的矩阵，N为特征个数。
-    * v: 因子项，N×k 维的矩阵，N为特征个数，k为因子个数，即每个特征抽象的向量的维度。
+FM算法的模型由两部分组成，分别是wide和embedding，其中wide就是典型的线性模型。最后的输出结果为wide和embedding两部分之和。
 
 * FM训练过程
     Angel实现了用梯度下降方法优化，迭代得训练FM模型，每次迭代worker和PS上的逻辑如下：       
-    * worker：每次迭代从PS上拉取b, w, v三个矩阵到本地，计算出对应的梯度更新值，push到PS。
-    * PS：PS汇总所有worker推送的模型更新值，取平均，更新PS模型。
+    * worker：每次迭代从PS上拉取wide和embedding矩阵到本地，计算出对应的梯度更新值，push到PS
+    * PS：PS汇总所有worker推送的梯度更新值，取平均，通过优化器计算新的wide和embedding模型并进行更新
 
 ## 3. 运行和性能
 * 数据格式
-    FM算法的训练数据格式为libsvm，其中第一个数值为真实值，后面的数值为“特征ID:特征值”
+    支持libsvm和dummy两种数据格式，其中libsvm格式举例如下:
     ```
     1 1:1 214:1 233:1 234:1
     ```
+    
+    dummy数据格式为:
+    
+    ```
+    1 1 214 233 234
+    ```
+
 * 参数说明            
-  * ml.feature.index.range：数据特征个数
-  * ml.model.size: 模型大小, 对于一些稀疏模型, 存在一些无效维度, 即所有样本要这一维度上的取值匀为0. ml.model.size = ml.feature.index.range - number of invalidate indices
-  * ml.data.type：训练数据格式，支持libsvm和dummy两种格式
-  * action.type：任务类型，可以选择train，inctrain和predict三种类型，分别代表训练，增量训练和预测
-  * ml.num.update.per.epoch: 每个epoch中更新参数的次数
-  * ml.epoch.num：训练迭代次数            
-  * ml.learn.rate：学习速率          
-  * ml.fm.learn.type：学习类型, 可以是分类或回归(取值为:"c"或"r")
-  * ml.fm.rank：秩, V矩阵的列数
-  * ml.fm.reg.l1.w：线性项L1正则化系数
-  * ml.fm.reg.l1.v：因子项L1正则化系数
-  * ml.fm.reg.l2.w: 线性项L2正则化系数
-  * ml.fm.reg.l2.v: 因子项L2正则化系数
+    * ml.epoch.num：迭代轮数
+    * ml.feature.index.range:特征索引范围
+    * ml.feature.num：特征维数
+    * ml.data.validate.ratio：验证集采样率
+    * ml.data.type：数据类型，分“libsvm”和“dummy”两种
+    * ml.learn.rate：学习率
+    * ml.learn.decay：学习率衰减系数
+    * ml.reg.l2:l2正则项系数
+    * action.type：任务类型，训练用"train",预测用"predict"
+    * ml.fm.field.num:输入数据领域(field)的个数
+    * ml.fm.rank:embedding中vector的长度
+    * ml.sparseinputlayer.optimizer：优化器类型，可选“adam”,"ftrl"和“momentum”
   
 * 提交命令
     可以通过下面的命令提交FM算法：
 ```java
 ../../bin/angel-submit \
-    --action.type train \
-    --angel.app.submit.class com.tencent.angel.ml.factorizationmachines.FMRunner  \
-    --angel.train.data.path $input_path \
-    --angel.save.model.path $model_path \
-    --ml.feature.index.range $featureNum \
-    --action.type $action_type \
-    --ml.data.type $data_type \
-    --ml.epoch.num $epochNum \
-    --ml.num.update.per.epoch $batchNum \
-    --ml.learn.rate $learnRate \
-    --ml.fm.learn.type $learnType \
-    --ml.fm.rank $rank \
-    --ml.num.update.per.epoch $ \
-    --ml.fm.reg.l1.w $reg1 \
-    --ml.fm.reg.l1.v $reg2 \
-    --angel.workergroup.number $workerNumber \
-    --angel.worker.memory.mb $workerMemory  \
-    --angel.worker.task.number $taskNumber \
-    --angel.task.data.storage.level $storageLevel \
-    --angel.task.memorystorage.max.mb $taskMemory \
-    --angel.ps.number $PSNumber \
-    --angel.ps.memory.mb $PSMemory \
+    -Dml.epoch.num=20 \
+    -Dangel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner \
+    -Dml.model.class.name=com.tencent.angel.ml.classification.FactorizationMachines \
+    -Dml.feature.index.range=$featureNum \
+    -Dml.feature.num=$featureNum \
+    -Dml.data.validate.ratio=0.1 \ 
+    -Dml.data.type=libsvm \
+    -Dml.learn.rate=0.1 \
+    -Dml.learn.decay=0.5 \
+    -Dml.reg.l2=0.03 \
+    -Daction.type=train \
+    -Dml.fm.field.num=11 \
+    -Dml.fm.rank=8 \
+    -Dml.sparseinputlayer.optimizer=ftrl \
+    -Dangel.train.data.path=$input_path \
+    -Dangel.workergroup.number=20 \
+    -Dangel.worker.memory.mb=20000 \
+    -Dangel.worker.task.number=1 \
+    -Dangel.ps.number=20 \
+    -Dangel.ps.memory.mb=10000 \
+    -Dangel.task.data.storage.level=memory \
+    -Dangel.job.name=angel_l1
 ```
