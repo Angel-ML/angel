@@ -5,7 +5,7 @@ Spark on Angel的算法实现与纯Spark的实现非常接近，因此大部分�
 
 该版本的Spark on Angel是基于Spark 2.1.0和Scala 2.11.8，因此建议大家在该环境下开发。
 
-开发者接触到的类主要有PSContext，PSModelPool，PSVectorProxy，BreezePSVector/RemotePSVector。目前我们的编程接口以Scala为主，下面我们都将已Scala的编程方式介绍Spark on Angel的编程接口。
+开发者接触到的类主要有PSContext，PSVectorPool，CachePSVector，BreezePSVector。 目前我们的编程接口以Scala为主，下面我们都将以Scala的编程方式介绍Spark on Angel的编程接口。
 
 ## 1. Spark on Angel的引入
 - Maven工程的pom依赖
@@ -117,7 +117,7 @@ PSVector是PSModel的子类，同时PSVector有DensePSVector/SparsePSVector和Br
   val cacheVector = PSVector.dense(dim).toCache
   rdd.map { case (label , feature) =>
       // 并没有立即更新psVector
-    	cacheVector.incrementWithCache(feature)
+    	cacheVector.increment(feature)
   }
   // flushIncrement会将所有executor上的缓存的cacheVector的increment结果，累加到cacheVector
   cacheVector.flushIncrement
@@ -140,8 +140,8 @@ PSVector会有PSVectorPool自动回收、销毁无用的PSVector，而PSMatrix�
   dMatrix.destroy()
 
   // Pull/Push操作
-  val array = dMatrix.pull(rowId)
-  dMatrix.push(rowId, array)
+  val vector = dMatrix.pull(rowId)
+  dMatrix.push(rowId, vector)
 ```
 
 ### 6. 支持自定义的PS function
@@ -155,36 +155,32 @@ val result = brzVector.zipMap(func)
 ```
 以上的func必须继承MapFunc、MapWithIndexFunc，并实现用户自定义的逻辑和函数序列化接口。
 
-```java
-public class MulScalar implements MapFunc {
-  private double multiplier;
-  public MulScalar(double multiplier) {
-    this.multiplier = multiplier;
-  }
+```scala
+class MulScalar(scalar: Double, inplace: Boolean = false) extends MapFunc {
+  def this() = this(false)
 
-  public MulScalar() {
-  }
+  setInplace(inplace)
 
-  @Override
-  public double call(double value) {
-    return value * multiplier;
-  }
+  override def isOrigin: Boolean = true
 
-  @Override
-  public void serialize(ByteBuf buf) {
-    buf.writeDouble(multiplier);
-  }
+  override def apply(elem: Double): Double = elem * scalar
 
-  @Override
-  public void deserialize(ByteBuf buf) {
-    multiplier = buf.readDouble();
-  }
+  override def apply(elem: Float): Float = (elem * scalar).toFloat
 
-  @Override
-  public int bufferLen() {
-    return 8;
-  }
+  override def apply(elem: Long): Long = (elem * scalar).toLong
 
+  override def apply(elem: Int): Int = (elem * scalar).toInt
+
+  override def bufferLen(): Int = 9
+
+  override def serialize(buf: ByteBuf): Unit = {
+    buf.writeBoolean(inplace)
+    buf.writeDouble(scalar)
+
+  override def deserialize(buf: ByteBuf): Unit = {
+    super.setInplace(buf.readBoolean())
+    this.scalar = buf.readDouble()
+  }
 }
 ```
 
@@ -201,11 +197,11 @@ val capacity = 40
 val psVector = PSVector.dense(dim, capacity).toCache
 
 rdd.foreach { case (label , feature) =>
-  psProxy.incrementWithCache(feature)
+  psVector.increment(feature)
 }
 psVector.flushIncrement
 
-println("feature sum:" + psVector.pull().mkString(" "))
+println("feature sum:" + psVector.pull.asInstanceOf[IntDoubleVector].getStorage.getValues.mkString(" "))
 ```
 
 - Example 2： Gradient Descent实现
@@ -221,19 +217,19 @@ for (i <- 1 to ITERATIONS) {
   val gradient = PSVector.duplicate(w)
 
   val nothing = instance.mapPartitions { iter =>
-    val brzW = new DenseVector(w.pull())
+    val brzW = w.pull()
 
     val subG = iter.map { case (label, feature) =>
-      feature * (1 / (1 + math.exp(-label * brzW.dot(feature))) - 1) * label
-    }.reduce(_ + _)
+      feature.mul((1 / (1 + math.exp(-label * brzW.dot(feature))) - 1) * label)
+    }.reduce(_ add _)
 
-    gradient.increment(subG.toArray)
+    gradient.increment(subG)
     Iterator.empty
   }
   nothing.count()
 
-  w.toBreeze :+= gradent.toBreeze :* -1.0
+  w.toBreeze :+= gradent.toBreeze *:* -1.0
 }
 
-println("w:" + w.pull().mkString(" "))
+println("w:" + w.pull().asInstanceOf[IntDoubleVector].getStorage.getValues.mkString(" "))
 ```

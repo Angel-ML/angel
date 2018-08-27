@@ -51,26 +51,24 @@ $SPARK_HOME/bin/spark-submit \
 [Complete Code](https://github.com/Tencent/angel/blob/branch-1.3.0/spark-on-angel/examples/src/main/scala/com/tencent/angel/spark/examples/ml/AngelLR.scala)
 
 ```scala
-   PSContext.getOrCreate(sc)
+PSContext.getOrCreate(sc)
 
-   val psW = PSVector.dense(dim)
-   val psG = PSVector.duplicate(psW)
+val psW = PSVector.dense(dim) // weights
+val psG = PSVector.duplicate(psW) // gradients of weights
 
-   println("Initial psW: " + psW.dimension)
+println("Initial psW: " + psW.dimension)
+  
+for (i <- 1 to ITERATIONS) {
+  println("On iteration " + i)
+  val localW = psW.pull()
+  trainData.map { case (x, label) =>
+    val g = x.mul(-label * (1 - 1.0 / (1.0 + math.exp(-label * localW.dot(x)))))
+    psG.increment(g)
+  }.count()
 
-   for (i <- 1 to ITERATIONS) {
-     println("On iteration " + i)
+  psW.toBreeze -= (psG.toBreeze *:* (1.0 / sampleNum))
+  psG.reset
+}
 
-     val localW = new DenseVector(psW.pull())
-
-     trainData.map { case (x, label) =>
-       val g = -label * (1 - 1.0 / (1.0 + math.exp(-label * localW.dot(x)))) * x
-       psG.increment(g.toArray)
-     }.count()
-
-     psW.toBreeze -= (psG.toBreeze :* (1.0 / sampleNum))
-     psG.zero()
-    }
-
-   println(s"Final psW: ${psW.pull().mkString(" ")}")
+println(s"Final psW: ${psW.pull().asInstanceOf[IntDoubleVector].getStorage.getValues.mkString(" ")}")
 ```
