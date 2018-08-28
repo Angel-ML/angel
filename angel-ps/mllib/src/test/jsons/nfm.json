@@ -10,10 +10,10 @@
     "modelsize": 148
   },
   "train": {
-    "epoch": 10,
+    "epoch": 50,
     "numupdateperepoch": 10,
-    "lr": 0.01,
-    "decay": 0.1
+    "lr": 1.0,
+    "decay": 0.01
   },
   "default_optimizer": "Momentum",
   "layers": [
