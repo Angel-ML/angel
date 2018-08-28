@@ -24,11 +24,12 @@ public class Max extends Binary {
   public Max(boolean inplace) {
     setInplace(inplace);
     setKeepStorage(Constant.keepStorage);
+    setCompare(Constant.isCompare);
   }
 
 
   @Override public OpType getOpType() {
-    return OpType.UNION;
+    return OpType.ALL;
   }
 
   @Override public double apply(double ele1, double ele2) {

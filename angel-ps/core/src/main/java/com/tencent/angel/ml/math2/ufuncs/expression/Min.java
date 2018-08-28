@@ -24,11 +24,12 @@ public class Min extends Binary {
   public Min(boolean inplace) {
     setInplace(inplace);
     setKeepStorage(Constant.keepStorage);
+    setCompare(Constant.isCompare);
   }
 
 
   @Override public OpType getOpType() {
-    return OpType.UNION;
+    return OpType.ALL;
   }
 
   @Override public double apply(double ele1, double ele2) {
