@@ -49,7 +49,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
 
   val sharedConf: SharedConf = graph.conf
 
-  val modelType: RowType = SharedConf.denseModelType
+  val modelType: RowType = SharedConf.modelType
   val blockSize: Int = SharedConf.blockSize
 
   private val multiplier: Int = OptUtils.getOptMultiplier(optimizer)

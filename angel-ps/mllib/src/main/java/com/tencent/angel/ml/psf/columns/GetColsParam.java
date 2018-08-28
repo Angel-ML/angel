@@ -20,6 +20,7 @@ package com.tencent.angel.ml.psf.columns;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.math2.storage.VectorStorage;
+import com.tencent.angel.ml.math2.utils.ArrayCopy;
 import com.tencent.angel.ml.math2.vector.IntIntVector;
 import com.tencent.angel.ml.math2.vector.IntLongVector;
 import com.tencent.angel.ml.math2.vector.Vector;
@@ -54,21 +55,18 @@ public class GetColsParam extends GetParam {
     } else {
       int[] values = ((IntIntVector) cols).getStorage().getValues();
       this.cols = new long[values.length];
-      //      StringBuffer sb = new StringBuffer();
-      //      sb.append("GetColsParam values ");
-      for (int i = 0; i < values.length; i++) {
-        this.cols[i] = values[i];
-        //        sb.append(values[i] +" ");
-      }
-      //      LOG.error(sb.toString());
+      // StringBuffer sb = new StringBuffer();
+      // sb.append("GetColsParam values ");
+      ArrayCopy.copy(values, this.cols);
+      // LOG.error(sb.toString());
     }
 
-    //    StringBuffer sb = new StringBuffer();
-    //    sb.append("GetColsParams ");
-    //    for (int i = 0; i < this.cols.length; i ++) {
-    //      sb.append(this.cols[i] + " ");
-    //    }
-    //    LOG.error(sb.toString());
+    // StringBuffer sb = new StringBuffer();
+    // sb.append("GetColsParams ");
+    // for (int i = 0; i < this.cols.length; i ++) {
+    //    sb.append(this.cols[i] + " ");
+    // }
+    // LOG.error(sb.toString());
   }
 
   @Override public List<PartitionGetParam> split() {
@@ -77,9 +75,9 @@ public class GetColsParam extends GetParam {
     List<PartitionGetParam> params = new ArrayList<>();
     int start = 0, end = 0;
     // int sum = 0;
-    //    System.out.println("pkeys.size=" + pkeys.size());
+    // System.out.println("pkeys.size=" + pkeys.size());
 
-    //    params.add(new PartitionGetColsParam(matrixId, pkeys.get(0), rows, cols));
+    // params.add(new PartitionGetColsParam(matrixId, pkeys.get(0), rows, cols));
     for (PartitionKey pkey : pkeys) {
       long startCol = pkey.getStartCol();
       long endCol = pkey.getEndCol();
