@@ -254,7 +254,7 @@ class UneryCoverageTest {
         Ufuncs.exp(ilist.get(i))
       } catch {
         case e: AngelException => {
-          println(e)
+          e
         }
       }
     }
@@ -267,7 +267,7 @@ class UneryCoverageTest {
         Ufuncs.log(ilist.get(i))
       } catch {
         case e: AngelException => {
-          println(e)
+          e
         }
       }
     }
@@ -280,7 +280,7 @@ class UneryCoverageTest {
         Ufuncs.log1p(ilist.get(i))
       } catch {
         case e: AngelException => {
-          println(e)
+          e
         }
       }
     }
@@ -293,7 +293,7 @@ class UneryCoverageTest {
         TransFuncs.sigmoid(ilist.get(i))
       } catch {
         case e: AngelException => {
-          println(e)
+          e
         }
       }
     }
@@ -306,7 +306,7 @@ class UneryCoverageTest {
         Ufuncs.softthreshold(ilist.get(i), 2.0)
       } catch {
         case e: AngelException => {
-          println(e)
+          e
         }
       }
     }
@@ -319,7 +319,7 @@ class UneryCoverageTest {
         Ufuncs.sadd(ilist.get(i), 2.0)
       } catch {
         case e: AngelException => {
-          println(e)
+          e
         }
       }
     }
@@ -333,7 +333,7 @@ class UneryCoverageTest {
         Ufuncs.ssub(ilist.get(i), 2.0)
       } catch {
         case e: AngelException => {
-          println(e)
+          e
         }
       }
     }
@@ -346,7 +346,7 @@ class UneryCoverageTest {
         Ufuncs.pow(ilist.get(i), 2.0)
       } catch {
         case e: AngelException => {
-          println(e)
+          e
         }
       }
     }
@@ -355,7 +355,7 @@ class UneryCoverageTest {
         Ufuncs.pow(llist.get(i), 2.0)
       } catch {
         case e: AngelException => {
-          println(e)
+          e
         }
       }
     }
@@ -368,7 +368,7 @@ class UneryCoverageTest {
         Ufuncs.sqrt(ilist.get(i))
       } catch {
         case e: AngelException => {
-          println(e)
+         e
         }
       }
     }
@@ -377,7 +377,7 @@ class UneryCoverageTest {
         Ufuncs.sqrt(llist.get(i))
       } catch {
         case e: AngelException => {
-          println(e)
+          e
         }
       }
     }
@@ -390,7 +390,7 @@ class UneryCoverageTest {
         Ufuncs.smul(ilist.get(i), 2.0)
       } catch {
         case e: AngelException => {
-          println(e)
+          e
         }
       }
     }
@@ -399,7 +399,7 @@ class UneryCoverageTest {
         Ufuncs.smul(llist.get(i), 2.0)
       } catch {
         case e: AngelException => {
-          println(e)
+          e
         }
       }
     }
@@ -412,7 +412,7 @@ class UneryCoverageTest {
         Ufuncs.sdiv(ilist.get(i), 2.0)
       } catch {
         case e: AngelException => {
-          println(e)
+          e
         }
       }
     }
@@ -421,99 +421,9 @@ class UneryCoverageTest {
         Ufuncs.sdiv(llist.get(i), 2.0)
       } catch {
         case e: AngelException => {
-          println(e)
+         e
         }
       }
-    }
-  }
-
-  @Test
-  def iexpTest() {
-    (0 until slist.size()).foreach { i =>
-      assert(Ufuncs.iexp(slist.get(i)).sum() == slist.get(i).sum())
-    }
-  }
-
-  @Test
-  def ilogTest() {
-    (0 until slist.size()).foreach { i =>
-      assert(Ufuncs.ilog(slist.get(i)).sum() == slist.get(i).sum())
-    }
-  }
-
-  @Test
-  def ilog1pTest() {
-    (0 until slist.size()).foreach { i =>
-      assert(Ufuncs.ilog1p(slist.get(i)).sum() == slist.get(i).sum())
-    }
-  }
-
-  @Test
-  def isigmoidTest() {
-    (0 until slist.size()).foreach { i =>
-      assert(TransFuncs.isigmoid(slist.get(i)).sum() == slist.get(i).sum())
-    }
-  }
-
-  @Test
-  def isothresholdTest() {
-    (0 until slist.size()).foreach { i =>
-      assert(Ufuncs.isoftthreshold(slist.get(i), 2.0).sum() == slist.get(i).sum())
-    }
-  }
-
-  @Test
-  def isaddTest() {
-    (0 until slist.size()).foreach { i =>
-      assert(Ufuncs.isadd(slist.get(i), 2.0).sum() == slist.get(i).sum())
-    }
-  }
-
-  @Test
-  def issubTest() {
-    (0 until slist.size()).foreach { i =>
-      assert(Ufuncs.issub(slist.get(i), 2.0).sum() == slist.get(i).sum())
-    }
-  }
-
-  @Test
-  def ipowTest() {
-    (0 until slist.size()).foreach { i =>
-      assert(Ufuncs.ipow(slist.get(i), 2.0).sum() == slist.get(i).sum())
-    }
-    (0 until sllist.size()).foreach { i =>
-      assert(Ufuncs.ipow(sllist.get(i), 2.0).sum() == sllist.get(i).sum())
-    }
-  }
-
-  @Test
-  def isqrtTest() {
-    (0 until slist.size()).foreach { i =>
-      assert(Ufuncs.isqrt(slist.get(i)).sum() == slist.get(i).sum())
-    }
-    (0 until sllist.size()).foreach { i =>
-      assert(Ufuncs.isqrt(sllist.get(i)).sum() == sllist.get(i).sum())
-    }
-  }
-
-  @Test
-  def ismulTest() {
-    (0 until slist.size()).foreach { i =>
-      assert(Ufuncs.ismul(slist.get(i), 2.0).sum() == slist.get(i).sum())
-    }
-    (0 until sllist.size()).foreach { i =>
-      assert(Ufuncs.ismul(sllist.get(i), 2.0).sum() == sllist.get(i).sum())
-    }
-  }
-
-  @Test
-  def isdivTest() {
-    (0 until slist.size()).foreach { i =>
-      assert(Ufuncs.isdiv(slist.get(i), 2.0).sum() == slist.get(i).sum())
-    }
-
-    (0 until sllist.size()).foreach { i =>
-      assert(Ufuncs.isdiv(sllist.get(i), 2.0).sum() == sllist.get(i).sum())
     }
   }
 

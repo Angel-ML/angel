@@ -47,7 +47,7 @@ Committers should be familiar with the guidelines for new contributors in [CONT
 - [fitzwang](https://github.com/wangcaihua) - **Fitz Wang** <[fitzwang.ml@gmail.com](fitzwang.ml@gmail.com) >
 - [leleyu](https://github.com/leleyu)- **Lele Yu** <[yulele214@gmail.com](yulele214@gmail.com) >
 - [lbluesjjw](https://github.com/bluesjjw)- **Jeremy Jiang** <[blue.jwjiang@gmail.com](blue.jwjiang@gmail.com) >
-- [luxin0123](https://github.com/luxin0123) - **Ally Lu** <[allylu@tencent.com](allylu@tencent.com) >
+- [luxin0123](https://github.com/luxin0123) - **Ally Lu** <[luxin0123000@gmail.com](luxin0123000@gmail.com) >
 - [weiwee](https://github.com/weiwee) - **Wenbin Wei** <[wbwmat@gmail.com](wbwmat@gmail.com) >
 - [rachelsunrh](https://github.com/rachelsunrh)- **Rachel Sun** <[rachelsunrh@gmail.com](rachelsunrh@gmail.com) >
 

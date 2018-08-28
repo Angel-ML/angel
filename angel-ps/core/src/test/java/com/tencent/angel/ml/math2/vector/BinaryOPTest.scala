@@ -171,9 +171,6 @@ class BinaryOPTest {
         val v2 = list.get(j)
         if (v1.isDense | v1.isSparse) {
           val vsum = v1.add(v2)
-        } else {
-          // sorted | dummy
-          println("not support!")
         }
       }
     }
