@@ -172,6 +172,30 @@ public abstract class Vector extends MathObject implements Serializable {
     }
   }
 
+  public boolean hasKey(long key){
+    if (storage instanceof IntKeyVectorStorage) {
+      return ((IntKeyVectorStorage) storage).hasKey((int)key);
+    } else if (storage instanceof LongKeyVectorStorage) {
+      return ((LongKeyVectorStorage) storage).hasKey(key);
+    } else if (this instanceof IntKeyVector) {
+      return ((IntKeyVector) this).hasKey((int)key);
+    } else if (this instanceof LongKeyVector) {
+      return ((LongKeyVector) this).hasKey(key);
+    } else {
+      throw new NotImplementedException();
+    }
+  }
+
+  public long getNumZeros() {
+    if (this instanceof IntKeyVector) {
+      return (long) ((IntKeyVector) this).numZeros();
+    } else if (this instanceof LongKeyVector) {
+      return ((LongKeyVector) this).numZeros();
+    } else {
+      throw new NotImplementedException();
+    }
+  }
+
   public abstract Vector copy();
 
   public abstract long dim();

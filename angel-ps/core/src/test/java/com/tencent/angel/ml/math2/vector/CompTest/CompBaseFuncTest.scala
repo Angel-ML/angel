@@ -164,8 +164,10 @@ class CompBaseFuncTest {
     val list4 = Array(dense4, sparse4, sorted4)
     val comp4 = VFactory.compIntIntVector(dim * list4.length, list4)
 
-    println(comp1.asInstanceOf[Vector].getType, comp2.getType, comp3.getType, comp4.getType)
-    println(s"${comp1.asInstanceOf[Vector].getSize},${comp1.size()}")
+    println(comp1.asInstanceOf[Vector].getType, comp2.asInstanceOf[Vector].getType, comp3.asInstanceOf[Vector].getType,
+      comp4.asInstanceOf[Vector].getType)
+    println(s"${comp1.asInstanceOf[Vector].getSize},${comp1.size()},  ${comp1.asInstanceOf[Vector].getNumZeros}, " +
+      s"${comp1.asInstanceOf[Vector].hasKey(0)}, ${comp1.asInstanceOf[Vector].getType}")
     assert(comp1.getDim == dim * list1.length)
     assert(comp1.getNumPartitions == list1.length)
 
