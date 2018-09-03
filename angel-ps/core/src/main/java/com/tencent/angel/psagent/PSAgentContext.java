@@ -18,6 +18,7 @@
 
 package com.tencent.angel.psagent;
 
+import com.google.protobuf.ServiceException;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.RunningMode;
 import com.tencent.angel.common.location.Location;
@@ -377,6 +378,9 @@ public class PSAgentContext {
       .getInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS,
         AngelConf.DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS);
 
+    int checkMasterIntervalMs = syncTimeIntervalMS * 50;
+    long startTs = System.currentTimeMillis();
+
     while (true) {
       boolean sync = true;
       if (cache.getClock(matrixId, pkeys.get(0)) < clock) {
@@ -387,6 +391,18 @@ public class PSAgentContext {
         Thread.sleep(syncTimeIntervalMS);
       } else {
         break;
+      }
+
+      if (System.currentTimeMillis() - startTs > checkMasterIntervalMs) {
+        try {
+          if (PSAgentContext.get().getMasterClient().getSuccessWorkerGroupNum() >= 1) {
+            LOG.info("Some Worker run success, do not need wait");
+            return;
+          }
+        } catch (ServiceException e) {
+          LOG.error("getSuccessWorkerGroupNum from Master falied ", e);
+        }
+        startTs = System.currentTimeMillis();
       }
     }
   }
