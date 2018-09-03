@@ -94,12 +94,20 @@ public class UpdateColsFunc extends UpdateFunc {
     for (int c = 0; c < cols.length; c++)
       updates[c] = vector.getPartitions()[c].getStorage().getValues();
 
-    for (int c = 0; c < cols.length; c++) {
+    /*for (int c = 0; c < cols.length; c++) {
       int offset = (int) cols[c];
       for (int r = 0; r < rows.length; r++) {
         double v = doubles[r].get(offset);
         doubles[r].set(offset, v + updates[c][r]);
       }
+    }*/
+
+    for (int r = 0; r < rows.length; r++) {
+      doubles[r].startWrite();
+      for(int c = 0; c < cols.length; c++) {
+        doubles[r].set((int)cols[c], doubles[r].get((int)cols[c]) + updates[c][r]);
+      }
+      doubles[r].endWrite();
     }
   }
 
@@ -109,12 +117,20 @@ public class UpdateColsFunc extends UpdateFunc {
     for (int c = 0; c < cols.length; c++)
       updates[c] = vector.getPartitions()[c].getStorage().getValues();
 
-    for (int c = 0; c < cols.length; c++) {
+    /*for (int c = 0; c < cols.length; c++) {
       long offset = cols[c];
       for (int r = 0; r < rows.length; r++) {
         double v = doubles[r].get(offset);
         doubles[r].set(offset, v + updates[c][r]);
       }
+    }*/
+
+    for (int r = 0; r < rows.length; r++) {
+      doubles[r].startWrite();
+      for(int c = 0; c < cols.length; c++) {
+        doubles[r].set(cols[c], doubles[r].get(cols[c]) + updates[c][r]);
+      }
+      doubles[r].endWrite();
     }
   }
 
@@ -124,12 +140,20 @@ public class UpdateColsFunc extends UpdateFunc {
     for (int c = 0; c < cols.length; c++)
       updates[c] = vector.getPartitions()[c].getStorage().getValues();
 
-    for (int c = 0; c < cols.length; c++) {
+    /*for (int c = 0; c < cols.length; c++) {
       int offset = (int) cols[c];
       for (int r = 0; r < rows.length; r++) {
         float v = floats[r].get(offset);
         floats[r].set(offset, v + updates[c][r]);
       }
+    }*/
+
+    for (int r = 0; r < rows.length; r++) {
+      floats[r].startWrite();
+      for(int c = 0; c < cols.length; c++) {
+        floats[r].set((int)cols[c], floats[r].get((int)cols[c]) + updates[c][r]);
+      }
+      floats[r].endWrite();
     }
   }
 
@@ -139,12 +163,12 @@ public class UpdateColsFunc extends UpdateFunc {
     for (int c = 0; c < cols.length; c++)
       updates[c] = vector.getPartitions()[c].getStorage().getValues();
 
-    for (int c = 0; c < cols.length; c++) {
-      long offset = cols[c];
-      for (int r = 0; r < rows.length; r++) {
-        float v = floats[r].get(offset);
-        floats[r].set(offset, v + updates[c][r]);
+    for (int r = 0; r < rows.length; r++) {
+      floats[r].startWrite();
+      for(int c = 0; c < cols.length; c++) {
+        floats[r].set(cols[c], floats[r].get(cols[c]) + updates[c][r]);
       }
+      floats[r].endWrite();
     }
   }
 }
