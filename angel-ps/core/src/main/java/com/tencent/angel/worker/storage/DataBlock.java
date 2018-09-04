@@ -19,6 +19,8 @@
 package com.tencent.angel.worker.storage;
 
 import com.tencent.angel.exception.AngelException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
 
@@ -32,6 +34,7 @@ import java.io.IOException;
  * @param <VALUE> the value type
  */
 public abstract class DataBlock<VALUE> {
+  private static final Log LOG = LogFactory.getLog(DataBlock.class);
   /**
    * The Value class.
    */
@@ -40,12 +43,12 @@ public abstract class DataBlock<VALUE> {
   /**
    * The Read index.
    */
-  protected int readIndex;
+  protected volatile int readIndex;
 
   /**
    * The Write index.
    */
-  protected int writeIndex;
+  protected volatile int writeIndex;
 
   public DataBlock() {
     readIndex = 0;
