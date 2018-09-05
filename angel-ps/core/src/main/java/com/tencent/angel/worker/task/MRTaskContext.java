@@ -221,4 +221,8 @@ public class MRTaskContext implements TaskAttemptContext {
     return null;
   }
 
+  @Override public boolean userClassesTakesPrecedence() {
+    return true;
+  }
+
 }
