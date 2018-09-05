@@ -21,6 +21,7 @@ package com.tencent.angel.ml.math2.ufuncs.executor.simple;
 
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math2.storage.*;
+import com.tencent.angel.ml.math2.ufuncs.executor.StorageSwitch;
 import com.tencent.angel.ml.math2.ufuncs.expression.Binary;
 import com.tencent.angel.ml.math2.vector.*;
 import it.unimi.dsi.fastutil.ints.*;
@@ -97,15 +98,16 @@ public class SimpleBinaryInNonZAExecutor {
 #foreach ($idx2 in [$idx1..$len])
 #set ($dtype2 = $dtypes.get($idx2))
     public static Vector apply(${itype}${dtype1}Vector v1, ${itype}${dtype2}Vector v2, Binary op) {
+    	${itype}${dtype1}VectorStorage newStorage = StorageSwitch.apply(v1, v2, op);
 #if ($itype == "Int")
         if (v1.isDense() && v2.isDense()) {
-            $dtype1.toLowerCase() [ ] v1Values = v1.getStorage().getValues();
+            $dtype1.toLowerCase() [ ] v1Values = newStorage.getValues();
             $dtype2.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
             for (int idx = 0; idx < v1Values.length; idx++) {
                 v1Values[idx] = op.apply(v1Values[idx], v2Values[idx]);
             }
         } else if (v1.isDense() && v2.isSparse()) {
-            $dtype1.toLowerCase() [ ] v1Values = v1.getStorage().getValues();
+            $dtype1.toLowerCase() [ ] v1Values = newStorage.getValues();
             ObjectIterator<${itype}2${dtype2}Map.Entry> iter = v2.getStorage().entryIterator();
             while(iter.hasNext()) {
                 ${itype}2${dtype2}Map.Entry entry = iter.next();
@@ -113,7 +115,7 @@ public class SimpleBinaryInNonZAExecutor {
                 v1Values[idx] = op.apply(v1Values[idx], entry.get${dtype2}Value());
             }
         } else if (v1.isDense() && v2.isSorted()) {
-            $dtype1.toLowerCase() [ ] v1Values = v1.getStorage().getValues();
+            $dtype1.toLowerCase() [ ] v1Values = newStorage.getValues();
             $itype.toLowerCase() [ ] v2Indices = v2.getStorage().getIndices();
             $dtype2.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
             $itype.toLowerCase() size = v2.size();
@@ -125,7 +127,6 @@ public class SimpleBinaryInNonZAExecutor {
             if (op.isKeepStorage()) {
                 throw new AngelException("operation is not support!");
             } else {
-                ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptyDense();
                 $dtype1.toLowerCase() [ ] resValues = newStorage.getValues();
                 $dtype2.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
 
@@ -148,14 +149,11 @@ public class SimpleBinaryInNonZAExecutor {
                         }
                     }
                 }
-
-                v1.setStorage(newStorage);
             }
         } else if (v1.isSorted() && v2.isDense()) {
             if (op.isKeepStorage()) {
                 throw new AngelException("operation is not support!");
             } else {
-                ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptyDense();
                 $dtype1.toLowerCase() [ ] resValues = newStorage.getValues();
                 $dtype2.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
 
@@ -181,16 +179,14 @@ public class SimpleBinaryInNonZAExecutor {
                         }
                     }
                 }
-
-                v1.setStorage(newStorage);
             }
         } else if (v1.isSparse() && v2.isSparse()) {
 #else
         if (v1.isSparse() && v2.isSparse()) {
 #end
 #if ($itype == "Int")
-            if (!op.isKeepStorage() && ((v1.size() + v2.size())* Constant.intersectionCoeff > Constant.sparseDenseStorageThreshold * v1.getDim())) {
-                ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptyDense();
+            if (!op.isKeepStorage() && ((v1.size() + v2.size()) * Constant.intersectionCoeff
+            	> Constant.sparseDenseStorageThreshold * v1.getDim())) {
                 $dtype1.toLowerCase() [ ] resValues = newStorage.getValues();
                 ObjectIterator<${itype}2${dtype1}Map.Entry> iter1 = v1.getStorage().entryIterator();
                 while(iter1.hasNext()) {
@@ -205,8 +201,6 @@ public class SimpleBinaryInNonZAExecutor {
                     $itype.toLowerCase() idx = entry.get${itype}Key();
                     resValues[idx] = op.apply(resValues[idx], entry.get${dtype2}Value());
                 }
-
-                v1.setStorage(newStorage);
             } else {
 #end
                 // to avoid multi-rehash
@@ -217,11 +211,9 @@ public class SimpleBinaryInNonZAExecutor {
                     while(iter.hasNext()) {
                         ${itype}2${dtype2}Map.Entry entry = iter.next();
                         $itype.toLowerCase() idx = entry.get${itype}Key();
-                        v1.set(idx, op.apply(v1.get(idx), entry.get${dtype2}Value()));
+                        newStorage.set(idx, op.apply(v1.get(idx), entry.get${dtype2}Value()));
                     }
                 } else { // multi-rehash
-                    ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptySparse((int)(v1.size()+v2.size()));
-
                     ObjectIterator<${itype}2${dtype1}Map.Entry> iter1 = v1.getStorage().entryIterator();
                     while(iter1.hasNext()) {
                         ${itype}2${dtype1}Map.Entry entry = iter1.next();
@@ -235,15 +227,14 @@ public class SimpleBinaryInNonZAExecutor {
                         $itype.toLowerCase() idx = entry.get${itype}Key();
                         newStorage.set(idx, op.apply(v1.get(idx), entry.get${dtype2}Value()));
                     }
-                    v1.setStorage(newStorage);
                 }
 #if ($itype == "Int")
             }
 #end
         } else if (v1.isSparse() && v2.isSorted()) {
 #if ($itype == "Int")
-            if (!op.isKeepStorage() && ((v1.size() + v2.size())* Constant.intersectionCoeff > Constant.sparseDenseStorageThreshold * v1.getDim())) {
-                ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptyDense();
+            if (!op.isKeepStorage() && ((v1.size() + v2.size())* Constant.intersectionCoeff
+            	> Constant.sparseDenseStorageThreshold * v1.getDim())) {
                 $dtype1.toLowerCase() [ ] resValues = newStorage.getValues();
                 ObjectIterator<${itype}2${dtype1}Map.Entry> iter1 = v1.getStorage().entryIterator();
                 while(iter1.hasNext()) {
@@ -259,8 +250,6 @@ public class SimpleBinaryInNonZAExecutor {
                     $itype.toLowerCase() idx = v2Indices[i];
                     resValues[idx] = op.apply(resValues[idx], v2Values[i]);
                 }
-
-                v1.setStorage(newStorage);
             } else {
 #end
                 // to avoid multi-rehash
@@ -271,11 +260,9 @@ public class SimpleBinaryInNonZAExecutor {
                     $itype.toLowerCase() size = v2.size();
                     for (int i = 0; i < size; i++) {
                         $itype.toLowerCase() idx = v2Indices[i];
-                        v1.set(idx, op.apply(v1.get(idx), v2Values[i]));
+                        newStorage.set(idx, op.apply(v1.get(idx), v2Values[i]));
                     }
                 } else {
-                    ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptySparse((int)(v1.size()+v2.size()));
-
                     ObjectIterator<${itype}2${dtype1}Map.Entry> iter1 = v1.getStorage().entryIterator();
                     while(iter1.hasNext()) {
                         ${itype}2${dtype1}Map.Entry entry = iter1.next();
@@ -290,15 +277,14 @@ public class SimpleBinaryInNonZAExecutor {
                         $itype.toLowerCase() idx = v2Indices[i];
                         newStorage.set(idx, op.apply(v1.get(idx), v2Values[i]));
                     }
-                    v1.setStorage(newStorage);
                 }
 #if ($itype == "Int")
             }
 #end
         } else if (v1.isSorted() && v2.isSparse()) {
 #if ($itype == "Int")
-            if (!op.isKeepStorage() && ((v1.size() + v2.size())* Constant.intersectionCoeff > Constant.sortedDenseStorageThreshold * v1.getDim())) {
-                ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptyDense();
+            if (!op.isKeepStorage() && ((v1.size() + v2.size())* Constant.intersectionCoeff
+            	> Constant.sortedDenseStorageThreshold * v1.getDim())) {
                 $dtype1.toLowerCase() [ ] resValues = newStorage.getValues();
 
                 $itype.toLowerCase() [ ] v1Indices = v1.getStorage().getIndices();
@@ -315,21 +301,19 @@ public class SimpleBinaryInNonZAExecutor {
                     $itype.toLowerCase() idx = entry.get${itype}Key();
                     resValues[idx] = op.apply(resValues[idx], entry.get${dtype2}Value());
                 }
-
-                v1.setStorage(newStorage);
             } else {
 #end
                 $itype.toLowerCase() [ ] v1Indices = v1.getStorage().getIndices();
                 $itype.toLowerCase() [ ] idxiter = v2.getStorage().indexIterator().to${itype}Array();
 
-                $itype.toLowerCase() [ ] indices = new $itype.toLowerCase() [(int)(v1.size() + v2.size())];
+                $itype.toLowerCase() [ ] indices = newStorage.getIndices();
                 System.arraycopy(v1Indices, 0, indices, 0, (int)v1.size());
                 System.arraycopy(idxiter, 0, indices, (int)v1.size(), (int)v2.size());
 
                 ${itype}AVLTreeSet avl = new ${itype}AVLTreeSet(indices);
 
                 ${itype}BidirectionalIterator iter = avl.iterator();
-                $dtype1.toLowerCase() [ ] values = new $dtype1.toLowerCase() [(int)(v1.size() + v2.size())];
+                $dtype1.toLowerCase() [ ] values = new $dtype1.toLowerCase() [indices.length];
 
                 int i = 0;
                 while(iter.hasNext()) {
@@ -344,14 +328,11 @@ public class SimpleBinaryInNonZAExecutor {
                     i++;
                 }
 
-                ${itype}${dtype1}SortedVectorStorage newStorage = new ${itype}${dtype1}SortedVectorStorage(
-                        v1.getDim(), (int)avl.size() ,indices, values);
-                v1.setStorage(newStorage);
+                newStorage = new ${itype}${dtype1}SortedVectorStorage(v1.getDim(), (int)avl.size() ,indices, values);
 #if ($itype == "Int")
             }
 #end
         } else if (v1.isSorted() && v2.isSorted()) {
-            ${itype}${dtype1}VectorStorage newStorage;
             int v1Pointor = 0;
             int v2Pointor = 0;
             $itype.toLowerCase() size1 = v1.size();
@@ -363,8 +344,8 @@ public class SimpleBinaryInNonZAExecutor {
             $dtype2.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
 
 #if ($itype == "Int")
-            if (!op.isKeepStorage() && ((size1 + size2)* Constant.intersectionCoeff > Constant.sortedDenseStorageThreshold * v1.getDim())) {
-                newStorage = v1.getStorage().emptyDense();
+            if (!op.isKeepStorage() && ((size1 + size2) * Constant.intersectionCoeff
+            	> Constant.sortedDenseStorageThreshold * v1.getDim())) {
                 $dtype1.toLowerCase() [ ] resValues = newStorage.getValues();
 
                 while (v1Pointor < size1 && v2Pointor < size2) {
@@ -382,8 +363,8 @@ public class SimpleBinaryInNonZAExecutor {
                 }
             } else {
 #end
-                $itype.toLowerCase() [ ] resIndices = new $itype.toLowerCase() [(int)(v1.size() + v2.size())];
-                $dtype1.toLowerCase() [ ] resValues = new $dtype1.toLowerCase() [(int)(v1.size() + v2.size())];
+                $itype.toLowerCase() [ ] resIndices = newStorage.getIndices();
+                $dtype1.toLowerCase() [ ] resValues = newStorage.getValues();
                 int globalPointor = 0;
 
                 while (v1Pointor < size1 && v2Pointor < size2) {
@@ -409,11 +390,10 @@ public class SimpleBinaryInNonZAExecutor {
 #if ($itype == "Int")
             }
 #end
-
-            v1.setStorage(newStorage);
         } else {
             throw new AngelException("The operation is not support!");
         }
+ 		v1.setStorage(newStorage);
 
         return v1;
     }
@@ -426,10 +406,11 @@ public class SimpleBinaryInNonZAExecutor {
 #foreach (${itype} in ${itypes})
 #foreach (${dtype1} in ${dtypes})
     public static Vector apply(${itype}${dtype1}Vector v1, ${itype}DummyVector v2, Binary op) {
+    	${itype}${dtype1}VectorStorage newStorage = StorageSwitch.apply(v1, v2, op);
 #if ($itype == "Int")
         if (v1.isDense()) {
-            $dtype1.toLowerCase() [ ] v1Values = v1.getStorage().getValues();
-            $itype.toLowerCase() [ ] v2Indices = v2.getIndices();
+            $dtype1.toLowerCase() [] v1Values = newStorage.getValues();
+            $itype.toLowerCase() [] v2Indices = v2.getIndices();
             for($itype.toLowerCase() idx: v2Indices) {
                 v1Values[idx] = op.apply(v1Values[idx], 1);
             }
@@ -437,11 +418,11 @@ public class SimpleBinaryInNonZAExecutor {
 #else
         if (v1.isSparse()) {
 #end
-            $itype.toLowerCase() [ ] v2Indices = v2.getIndices();
+            $itype.toLowerCase() [] v2Indices = v2.getIndices();
 #if ($itype == "Int")
-            if (!op.isKeepStorage() && ((v1.size() + v2.size())* Constant.intersectionCoeff > Constant.sparseDenseStorageThreshold * v1.getDim())) {
-                ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptyDense();
-                $dtype1.toLowerCase() [ ] resValues = newStorage.getValues();
+            if (!op.isKeepStorage() && ((v1.size() + v2.size())* Constant.intersectionCoeff
+            	> Constant.sparseDenseStorageThreshold * v1.getDim())) {
+                $dtype1.toLowerCase() [] resValues = newStorage.getValues();
 
                 ObjectIterator<${itype}2${dtype1}Map.Entry> iter = v1.getStorage().entryIterator();
                 while(iter.hasNext()){
@@ -453,7 +434,6 @@ public class SimpleBinaryInNonZAExecutor {
                     resValues[idx] = op.apply(resValues[idx], 1);
                 }
 
-                v1.setStorage(newStorage);
             } else {
 #end
                 // to avoid multi-rehash
@@ -462,11 +442,9 @@ public class SimpleBinaryInNonZAExecutor {
                 if (v1.size() + v2.size() < 1.5 * capacity) {
                     for (int i = 0; i < size; i++) {
                         $itype.toLowerCase() idx = v2Indices[i];
-                        v1.set(idx, op.apply(v1.get(idx),1));
+                        newStorage.set(idx, op.apply(v1.get(idx),1));
                     }
                 } else {
-                    ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptySparse((int)(v1.size()+v2.size()));
-
                     ObjectIterator<${itype}2${dtype1}Map.Entry> iter1 = v1.getStorage().entryIterator();
                     while(iter1.hasNext()) {
                         ${itype}2${dtype1}Map.Entry entry = iter1.next();
@@ -478,21 +456,21 @@ public class SimpleBinaryInNonZAExecutor {
                         $itype.toLowerCase() idx = v2Indices[i];
                         newStorage.set(idx, op.apply(v1.get(idx),1));
                     }
-                    v1.setStorage(newStorage);
                 }
 #if ($itype == "Int")
             }
 #end
         } else { // sorted
-            $itype.toLowerCase() [ ] v1Indices = v1.getStorage().getIndices();
-            $itype.toLowerCase() [ ] v2Indices = v2.getIndices();
-            $itype.toLowerCase() size1 = v1.size();
-            $itype.toLowerCase() size2 = v2.size();
+            $itype.toLowerCase() [] v1Indices = v1.getStorage().getIndices();
+            $itype.toLowerCase() [] v2Indices = v2.getIndices();
+
 #if ($itype == "Int")
-            if (!op.isKeepStorage() && ((size1 + size2)* Constant.intersectionCoeff > Constant.sortedDenseStorageThreshold * v1.getDim())) {
-                $dtype1.toLowerCase() [ ] v1Values = v1.getStorage().getValues();
-                ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptyDense();
-                $dtype1.toLowerCase() [ ] resValues = newStorage.getValues();
+ 			$itype.toLowerCase() size1 = v1.size();
+            $itype.toLowerCase() size2 = v2.size();
+            if (!op.isKeepStorage() && ((size1 + size2)* Constant.intersectionCoeff
+            	> Constant.sortedDenseStorageThreshold * v1.getDim())) {
+                $dtype1.toLowerCase() [] v1Values = v1.getStorage().getValues();
+                $dtype1.toLowerCase() [] resValues = newStorage.getValues();
 
                 for (int i=0; i < size1; i++){
                     resValues[v1Indices[i]] = v1Values[i];
@@ -503,17 +481,16 @@ public class SimpleBinaryInNonZAExecutor {
                     resValues[idx] = op.apply(resValues[idx], 1);
                 }
 
-                v1.setStorage(newStorage);
             } else {
 #end
-                $itype.toLowerCase() [ ] indices = new $itype.toLowerCase() [(int)(v1.size() + v2.size())];
+                $itype.toLowerCase() [] indices = newStorage.getIndices();
                 System.arraycopy(v1Indices, 0, indices, 0, (int)v1.size());
                 System.arraycopy(v2Indices, 0, indices, (int)v1.size(), (int)v2.size());
                 ${itype}AVLTreeSet avl = new ${itype}AVLTreeSet(indices);
 
                 ${itype}BidirectionalIterator iter = avl.iterator();
                 for (int i = 0; i < indices.length; i++) indices[i] = 0;
-                $dtype1.toLowerCase() [ ] values = new $dtype1.toLowerCase() [indices.length];
+                $dtype1.toLowerCase() [] values = new $dtype1.toLowerCase() [indices.length];
                 int i = 0;
                 while (iter.hasNext()) {
                     $itype.toLowerCase() idx = iter.next${itype}();
@@ -527,12 +504,13 @@ public class SimpleBinaryInNonZAExecutor {
                     i++;
                 }
 
-                ${itype}${dtype1}SortedVectorStorage newStorage = new ${itype}${dtype1}SortedVectorStorage(v1.getDim(), avl.size(), indices, values);
-                v1.setStorage(newStorage);
+                newStorage = new ${itype}${dtype1}SortedVectorStorage(v1.getDim(), avl.size(), indices, values);
 #if ($itype == "Int")
             }
 #end
         }
+        v1.setStorage(newStorage);
+
         return v1;
     }
 

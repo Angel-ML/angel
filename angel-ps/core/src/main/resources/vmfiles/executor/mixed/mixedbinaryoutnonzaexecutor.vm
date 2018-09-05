@@ -21,6 +21,7 @@ package com.tencent.angel.ml.math2.ufuncs.executor.mixed;
 
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math2.storage.*;
+import com.tencent.angel.ml.math2.ufuncs.executor.StorageSwitch;
 import com.tencent.angel.ml.math2.ufuncs.expression.Binary;
 import com.tencent.angel.ml.math2.vector.*;
 import it.unimi.dsi.fastutil.ints.*;
@@ -96,23 +97,11 @@ public class MixedBinaryOutNonZAExecutor {
 #set ($dtype1 = $dtypes.get($idx1))
 
     private static Vector apply(Comp${itype}${dtype1}Vector v1, ${itype}DummyVector v2, Binary op) {
-        int k = 0;
-        ${itype}${dtype1}Vector [ ] parts = v1.getPartitions();
-        ${itype}${dtype1}Vector [ ] resParts = new ${itype}${dtype1}Vector[parts.length];
-        for(${itype}${dtype1}Vector part:parts) {
-            if (part.isDense() || part.isSparse()){
-                resParts[k] = part.copy();
-            } else { // sorted
-                ${itype}${dtype1}SparseVectorStorage sto = new ${itype}${dtype1}SparseVectorStorage(part.getDim(),
-                        part.getStorage().getIndices(),
-                        part.getStorage().getValues());
-                resParts[k] = new ${itype}${dtype1}Vector(part.getMatrixId(), part.getRowId(), part.getClock(), part.getDim(), sto);
-            }
-            k++;
-        }
+        ${itype}${dtype1}Vector [] parts = v1.getPartitions();
+        ${itype}${dtype1}Vector [] resParts = StorageSwitch.apply(v1, v2, op);
 
         $itype.toLowerCase() subDim = (v1.getDim() + v1.getNumPartitions() - 1) / v1.getNumPartitions();
-        $itype.toLowerCase() [ ] v2Indices = v2.getIndices();
+        $itype.toLowerCase() [] v2Indices = v2.getIndices();
         for (int i =0; i < v2Indices.length; i++) {
             $itype.toLowerCase() gidx = v2Indices[i];
             int pidx = (int) (gidx / subDim);
@@ -126,18 +115,17 @@ public class MixedBinaryOutNonZAExecutor {
 #foreach ($idx2 in [$idx1..$len])
 #set ($dtype2 = $dtypes.get($idx2))
     private static Vector apply(Comp${itype}${dtype1}Vector v1, ${itype}${dtype2}Vector v2, Binary op) {
-        ${itype}${dtype1}Vector [ ] parts = v1.getPartitions();
-        ${itype}${dtype1}Vector [ ] resParts = new ${itype}${dtype1}Vector[parts.length];
+        ${itype}${dtype1}Vector [] parts = v1.getPartitions();
+        ${itype}${dtype1}Vector [] resParts = StorageSwitch.apply(v1, v2, op);
 #if ($itype == "Int")
         if(v2.isDense()) {
-            $dtype2.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
+            $dtype2.toLowerCase() [] v2Values = v2.getStorage().getValues();
             $itype.toLowerCase() base = 0, k = 0;
             for(${itype}${dtype1}Vector part:parts) {
-                ${itype}${dtype1}VectorStorage newStorage = part.getStorage().emptyDense();
-                $dtype1.toLowerCase() [ ] newValues = newStorage.getValues();
+                $dtype1.toLowerCase() [] newValues = resParts[k].getStorage().getValues();
 
                 if (part.isDense()) {
-                    $dtype1.toLowerCase() [ ] partValue = part.getStorage().getValues();
+                    $dtype1.toLowerCase() [] partValue = part.getStorage().getValues();
                     for($itype.toLowerCase() i=0; i<partValue.length; i++){
                         $itype.toLowerCase() idx = i + base;
                         newValues[i] = op.apply(partValue[i], v2Values[idx]);
@@ -164,8 +152,8 @@ public class MixedBinaryOutNonZAExecutor {
                     }
                 } else { // sorted
                     if (part.size() < Constant.denseLoopThreshold * part.getDim()) {
-                        $itype.toLowerCase() [ ] partIndices = part.getStorage().getIndices();
-                        $dtype1.toLowerCase() [ ] partValues = part.getStorage().getValues();
+                        $itype.toLowerCase() [] partIndices = part.getStorage().getIndices();
+                        $dtype1.toLowerCase() [] partValues = part.getStorage().getValues();
                         for (int i = 0; i < part.getDim(); i++) {
                             newValues[i] = op.apply(0, v2Values[i+base]);
                         }
@@ -187,25 +175,11 @@ public class MixedBinaryOutNonZAExecutor {
                     }
                 }
 
-                resParts[k] = new ${itype}${dtype1}Vector(part.getMatrixId(), part.getRowId(), part.getClock(), part.getDim(), newStorage);
                 base += part.getDim();
                 k++;
             }
         } else {
 #end
-            int k = 0;
-            for(${itype}${dtype1}Vector part:parts) {
-                if (part.isDense() || part.isSparse()){
-                    resParts[k] = part.copy();
-                } else { // sorted
-                    ${itype}${dtype1}SparseVectorStorage sto = new ${itype}${dtype1}SparseVectorStorage(part.getDim(),
-                            part.getStorage().getIndices(),
-                            part.getStorage().getValues());
-                    resParts[k] = new ${itype}${dtype1}Vector(part.getMatrixId(), part.getRowId(), part.getClock(), part.getDim(), sto);
-                }
-                k++;
-            }
-
             if (v2.isSparse()){
                 $itype.toLowerCase() subDim = (v1.getDim() + v1.getNumPartitions() - 1) / v1.getNumPartitions();
                 ObjectIterator<${itype}2${dtype2}Map.Entry> iter = v2.getStorage().entryIterator();
@@ -214,17 +188,17 @@ public class MixedBinaryOutNonZAExecutor {
                     $itype.toLowerCase() gidx = entry.get${itype}Key();
                     int pidx = (int) (gidx / subDim);
                     $itype.toLowerCase() subidx = gidx % subDim;
-                    resParts[pidx].set(subidx, op.apply(resParts[pidx].get(subidx), entry.get${dtype2}Value()));
+                    resParts[pidx].set(subidx, op.apply(parts[pidx].get(subidx), entry.get${dtype2}Value()));
                 }
             } else { // sorted
                 $itype.toLowerCase() subDim = (v1.getDim() + v1.getNumPartitions() - 1) / v1.getNumPartitions();
-                $itype.toLowerCase() [ ] v2Indices = v2.getStorage().getIndices();
-                $dtype2.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
+                $itype.toLowerCase() [] v2Indices = v2.getStorage().getIndices();
+                $dtype2.toLowerCase() [] v2Values = v2.getStorage().getValues();
                 for (int i =0; i < v2Indices.length; i++) {
                     $itype.toLowerCase() gidx = v2Indices[i];
                     int pidx = (int) (gidx / subDim);
                     $itype.toLowerCase() subidx = gidx % subDim;
-                    resParts[pidx].set(subidx, op.apply(resParts[pidx].get(subidx), v2Values[i]));
+                    resParts[pidx].set(subidx, op.apply(parts[pidx].get(subidx), v2Values[i]));
                 }
             }
 #if ($itype == "Int")
@@ -237,5 +211,4 @@ public class MixedBinaryOutNonZAExecutor {
 #end
 #end
 #end
-
 }

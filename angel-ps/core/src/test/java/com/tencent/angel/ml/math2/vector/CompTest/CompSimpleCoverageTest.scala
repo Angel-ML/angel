@@ -27,7 +27,7 @@ import com.tencent.angel.ml.math2.vector.{CompIntDoubleVector, CompIntFloatVecto
 import org.junit.{BeforeClass, Test}
 import org.scalatest.FunSuite
 
-object CompSimpleCoverageTest {
+class CompSimpleCoverageTest extends FunSuite {
   val capacity: Int = 1500
   val dim: Int = capacity * 100
 
@@ -46,7 +46,7 @@ object CompSimpleCoverageTest {
   val densefloatValues: Array[Float] = new Array[Float](dim)
   val densedoubleValues: Array[Double] = new Array[Double](dim)
 
-  val capacity1: Int = 10000
+  val capacity1: Int = 120000
   val intrandIndices1: Array[Int] = new Array[Int](capacity1)
   val longrandIndices1: Array[Long] = new Array[Long](capacity1)
   val intsortedIndices1: Array[Int] = new Array[Int](capacity1)
@@ -89,7 +89,6 @@ object CompSimpleCoverageTest {
   val slist = new util.ArrayList[Vector]()
   val sllist = new util.ArrayList[Vector]()
 
-  @BeforeClass
   def init(): Unit = {
     val rand = new util.Random()
     val set = new util.HashSet[Int]()
@@ -539,111 +538,87 @@ object CompSimpleCoverageTest {
     sllist.add(lsimplesorted41)
     sllist.add(lsimplesorted42)
   }
-}
 
-class CompSimpleCoverageTest {
-  val capacity: Int = CompSimpleCoverageTest.capacity
-  val dim: Int = CompSimpleCoverageTest.dim
-
-  val intrandIndices: Array[Int] = CompSimpleCoverageTest.intrandIndices
-  val longrandIndices: Array[Long] = CompSimpleCoverageTest.longrandIndices
-  val intsortedIndices: Array[Int] = CompSimpleCoverageTest.intsortedIndices
-  val longsortedIndices: Array[Long] = CompSimpleCoverageTest.longsortedIndices
-
-  val intValues: Array[Int] = CompSimpleCoverageTest.intValues
-  val longValues: Array[Long] = CompSimpleCoverageTest.longValues
-  val floatValues: Array[Float] = CompSimpleCoverageTest.floatValues
-  val doubleValues: Array[Double] = CompSimpleCoverageTest.doubleValues
-
-  val denseintValues: Array[Int] = CompSimpleCoverageTest.denseintValues
-  val denselongValues: Array[Long] = CompSimpleCoverageTest.denselongValues
-  val densefloatValues: Array[Float] = CompSimpleCoverageTest.densefloatValues
-  val densedoubleValues: Array[Double] = CompSimpleCoverageTest.densedoubleValues
-
-  val capacity1: Int = CompSimpleCoverageTest.capacity1
-  val intrandIndices1: Array[Int] = CompSimpleCoverageTest.intrandIndices1
-  val longrandIndices1: Array[Long] = CompSimpleCoverageTest.longrandIndices1
-  val intsortedIndices1: Array[Int] = CompSimpleCoverageTest.intsortedIndices1
-  val longsortedIndices1: Array[Long] = CompSimpleCoverageTest.longsortedIndices1
-
-  val intValues1: Array[Int] = CompSimpleCoverageTest.intValues1
-  val longValues1: Array[Long] = CompSimpleCoverageTest.longValues1
-  val floatValues1: Array[Float] = CompSimpleCoverageTest.floatValues1
-  val doubleValues1: Array[Double] = CompSimpleCoverageTest.doubleValues1
-
-  val intrandIndices2: Array[Int] = CompSimpleCoverageTest.intrandIndices2
-  val intsortedIndices2: Array[Int] = CompSimpleCoverageTest.intsortedIndices2
-  val longrandIndices2: Array[Long] = CompSimpleCoverageTest.longrandIndices2
-  val longsortedIndices2: Array[Long] = CompSimpleCoverageTest.longsortedIndices2
-
-
-  val simpleintrandIndices: Array[Int] = CompSimpleCoverageTest.simpleintrandIndices
-  val simplelongrandIndices: Array[Long] = CompSimpleCoverageTest.simplelongrandIndices
-  val simpleintsortedIndices: Array[Int] = CompSimpleCoverageTest.simpleintsortedIndices
-  val simplelongsortedIndices: Array[Long] = CompSimpleCoverageTest.simplelongsortedIndices
-
-  val capacity2 = CompSimpleCoverageTest.capacity2
-  val simpleintrandIndices1: Array[Int] = CompSimpleCoverageTest.simpleintrandIndices1
-  val simplelongrandIndices1: Array[Long] = CompSimpleCoverageTest.simplelongrandIndices1
-  val simpleintsortedIndices1: Array[Int] = CompSimpleCoverageTest.simpleintsortedIndices1
-  val simplelongsortedIndices1: Array[Long] = CompSimpleCoverageTest.simplelongsortedIndices1
-
-
-  val ilist = CompSimpleCoverageTest.ilist
-  val llist = CompSimpleCoverageTest.llist
-  val slist = CompSimpleCoverageTest.slist
-  val sllist = CompSimpleCoverageTest.sllist
-
-  @Test
-  def CompAddsimpleTest() {
+  test ("CompAddsimpleTest") {
+    init()
     (0 until ilist.size()).foreach { i =>
       ((i / 3) * 6 until slist.size()).foreach { j =>
-       (ilist.get(i).add(slist.get(j))).sum()
+        try{
+          (ilist.get(i).add(slist.get(j))).sum()
+        }catch {
+          case e: AngelException =>
+            e
+        }
       }
     }
 
     //longkey
     (0 until llist.size()).foreach { i =>
       ((i / 3) * 6 until sllist.size()).foreach { j =>
-       (llist.get(i).add(sllist.get(j))).sum()
+        try {
+          (llist.get(i).add(sllist.get(j))).sum()
+        }catch {
+          case e: AngelException =>
+            e
+        }
       }
     }
   }
 
-  @Test
-  def CompSubsimpleTest() {
+  test ("CompSubsimpleTest") {
+    init()
     (0 until ilist.size()).foreach { i =>
       ((i / 3) * 6 until slist.size()).foreach { j =>
-        (ilist.get(i).sub(slist.get(j))).sum()
+        try{
+          (ilist.get(i).sub(slist.get(j))).sum()
+        }catch {
+          case e: AngelException =>
+            e
+        }
       }
     }
 
     //longkey
     (0 until llist.size()).foreach { i =>
       ((i / 3) * 6 until sllist.size()).foreach { j =>
-       (llist.get(i).sub(sllist.get(j))).sum()
+        try{
+          (llist.get(i).sub(sllist.get(j))).sum()
+        }catch {
+          case e:AngelException=>
+            e
+        }
       }
     }
   }
 
-  @Test
-  def CompMulsimpleTest() {
+  test ("CompMulsimpleTest") {
+    init()
     (0 until ilist.size()).foreach { i =>
       ((i / 3) * 6 until slist.size()).foreach { j =>
-        (ilist.get(i).mul(slist.get(j))).sum()
+        try {
+          (ilist.get(i).mul(slist.get(j))).sum()
+        }catch {
+          case e:AngelException=>
+            e
+        }
       }
     }
 
     //longkey
     (0 until llist.size()).foreach { i =>
       ((i / 3) * 6 until sllist.size()).foreach { j =>
-        (llist.get(i).mul(sllist.get(j))).sum()
+        try {
+          (llist.get(i).mul(sllist.get(j))).sum()
+        }catch {
+          case e:AngelException=>
+            e
+        }
       }
     }
   }
 
-  @Test
-  def CompDivsimpleTest() {
+  test ("CompDivsimpleTest") {
+    init()
     (0 until ilist.size()).foreach { i =>
       ((i / 3) * 6 until slist.size()).foreach { j =>
         try{
@@ -677,18 +652,29 @@ class CompSimpleCoverageTest {
     }
   }
 
-  @Test
-  def CompAxpysimpleTest() {
+  test ("CompAxpysimpleTest") {
+    init()
     (0 until ilist.size()).foreach { i =>
       ((i / 3) * 6 until slist.size()).foreach { j =>
-        (ilist.get(i).axpy(slist.get(j), 2.0)).sum()
+        try {
+          (ilist.get(i).axpy(slist.get(j), 2.0)).sum()
+        }catch {
+            case e:AngelException=>
+              e
+        }
       }
     }
 
     //longkey
     (0 until llist.size()).foreach { i =>
       ((i / 3) * 6 until sllist.size()).foreach { j =>
-        (llist.get(i).axpy(sllist.get(j), 2.0)).sum()
+        try {
+          (llist.get(i).axpy(sllist.get(j), 2.0)).sum()
+        }catch {
+          case e:AngelException=>
+            e
+        }
+
       }
     }
   }
