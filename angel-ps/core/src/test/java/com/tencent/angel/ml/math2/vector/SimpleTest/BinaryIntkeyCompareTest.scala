@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -16,20 +16,16 @@
  */
 
 
-package com.tencent.angel.ml.math2.vector
+package com.tencent.angel.ml.math2.vector.SimpleTest
 
 import java.util
 
-import scala.reflect.runtime.universe._
-import breeze.collection.mutable.{OpenAddressHashArray, SparseArray}
-import breeze.linalg.{DenseVector, HashVector, SparseVector}
 import com.tencent.angel.ml.math2.VFactory
-import org.junit.Test
+import com.tencent.angel.ml.math2.ufuncs.Ufuncs
+import com.tencent.angel.ml.math2.vector.Vector
+import org.junit.{BeforeClass, Test}
 
-import scala.collection.JavaConversions._
-
-class BinaryOPTest {
-
+object BinaryIntkeyCompareTest {
   val capacity: Int = 1000
   val dim: Int = capacity * 100
 
@@ -43,11 +39,18 @@ class BinaryOPTest {
   val floatValues: Array[Float] = new Array[Float](capacity)
   val doubleValues: Array[Double] = new Array[Double](capacity)
 
+
   val denseintValues: Array[Int] = new Array[Int](dim)
   val denselongValues: Array[Long] = new Array[Long](dim)
   val densefloatValues: Array[Float] = new Array[Float](dim)
   val densedoubleValues: Array[Double] = new Array[Double](dim)
 
+
+  val ilist = new util.ArrayList[Vector]()
+  val llist = new util.ArrayList[Vector]()
+
+
+  @BeforeClass
   def init(): Unit = {
     val rand = new util.Random()
     val set = new util.HashSet[Int]()
@@ -79,49 +82,48 @@ class BinaryOPTest {
     util.Arrays.sort(longsortedIndices)
 
     doubleValues.indices.foreach { i =>
-      doubleValues(i) = rand.nextDouble()
+      doubleValues(i) = 1
     }
 
     floatValues.indices.foreach { i =>
-      floatValues(i) = rand.nextFloat()
+      floatValues(i) = -1
     }
 
     longValues.indices.foreach { i =>
-      longValues(i) = rand.nextInt(100);
+      longValues(i) = rand.nextInt(10) + 1L
     }
 
     intValues.indices.foreach { i =>
-      intValues(i) = rand.nextInt(100)
+      intValues(i) = rand.nextInt(10) + 1
     }
 
-
     densedoubleValues.indices.foreach { i =>
-      densedoubleValues(i) = rand.nextDouble()
+      if (i%2==0){
+        densedoubleValues(i) = -1
+      }else{
+        densedoubleValues(i) = 0
+      }
+
+//      rand.nextDouble()
     }
 
     densefloatValues.indices.foreach { i =>
-      densefloatValues(i) = rand.nextFloat()
+      if (i%2==0){
+        densefloatValues(i) = 0
+      }else{
+        densefloatValues(i) = -1
+      }
+
+//        rand.nextFloat()
     }
 
     denselongValues.indices.foreach { i =>
-      denselongValues(i) = rand.nextInt(100)
+      denselongValues(i) = rand.nextInt(10) + 1L
     }
 
     denseintValues.indices.foreach { i =>
-      denseintValues(i) = rand.nextInt(100)
+      denseintValues(i) = rand.nextInt(10) + 1
     }
-  }
-
-  @Test def testall() {
-    init()
-    binaryIntKeyVector()
-    println("\n\n")
-    binaryLongKeyVector()
-    println()
-  }
-
-  def binaryIntKeyVector(): Unit = {
-    val ilist = new util.ArrayList[Vector]()
 
     ilist.add(VFactory.denseDoubleVector(densedoubleValues))
     ilist.add(VFactory.sparseDoubleVector(dim, intrandIndices, doubleValues))
@@ -138,41 +140,25 @@ class BinaryOPTest {
     ilist.add(VFactory.denseIntVector(denseintValues))
     ilist.add(VFactory.sparseIntVector(dim, intrandIndices, intValues))
     ilist.add(VFactory.sortedIntVector(dim, intsortedIndices, intValues))
-
     ilist.add(VFactory.intDummyVector(dim, intsortedIndices))
 
-    add(ilist)
+  }
+}
+
+class BinaryIntkeyCompareTest {
+  val ilist = BinaryIntkeyCompareTest.ilist
+
+  @Test
+  def min(): Unit ={
+    println(Ufuncs.min(ilist.get(0),ilist.get(3)).sum(),ilist.get(0).sum(),ilist.get(3).sum())
+    println(Ufuncs.min(ilist.get(1),ilist.get(4)).sum(),ilist.get(1).sum(),ilist.get(4).sum())
+    println(Ufuncs.min(ilist.get(2),ilist.get(5)).sum(),ilist.get(2).sum(),ilist.get(5).sum())
   }
 
-
-  def binaryLongKeyVector(): Unit = {
-    val llist = new util.ArrayList[Vector]()
-
-    llist.add(VFactory.sparseLongKeyDoubleVector(dim, longrandIndices, doubleValues))
-    llist.add(VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices, doubleValues))
-
-    llist.add(VFactory.sparseLongKeyFloatVector(dim, longrandIndices, floatValues))
-    llist.add(VFactory.sortedLongKeyFloatVector(dim, longsortedIndices, floatValues))
-
-    llist.add(VFactory.sparseLongKeyLongVector(dim, longrandIndices, longValues))
-    llist.add(VFactory.sortedLongKeyLongVector(dim, longsortedIndices, longValues))
-
-    llist.add(VFactory.sparseLongKeyIntVector(dim, longrandIndices, intValues))
-    llist.add(VFactory.sortedLongKeyIntVector(dim, longsortedIndices, intValues))
-
-    llist.add(VFactory.longDummyVector(dim, longsortedIndices))
-
-    add(llist)
-  }
-
-  def add(list: util.ArrayList[Vector]): Unit = {
-    list.toList.zipWithIndex.foreach { case (v1: Vector, i) =>
-      (i until list.size()).foreach { j =>
-        val v2 = list.get(j)
-        if (v1.isDense | v1.isSparse) {
-          val vsum = v1.add(v2)
-        }
-      }
-    }
+  @Test
+  def max(): Unit ={
+    println(Ufuncs.max(ilist.get(0),ilist.get(3)).sum(),ilist.get(0).sum(),ilist.get(3).sum())
+    println(Ufuncs.max(ilist.get(1),ilist.get(4)).sum(),ilist.get(1).sum(),ilist.get(4).sum())
+    println(Ufuncs.max(ilist.get(2),ilist.get(5)).sum(),ilist.get(2).sum(),ilist.get(5).sum())
   }
 }

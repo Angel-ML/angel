@@ -17,17 +17,18 @@ BiInteractionCross的计算公式如下:
 
 用Scala代码实现为:
 ```scala
-(0 until batchSize).foreach { row =>
-    val partitions = mat.getRow(row).getPartitions
+  val sum1Vector = VFactory.denseDoubleVector(outputDim)
+  val sum2Vector = VFactory.denseDoubleVector(outputDim)
+  (0 until batchSize).foreach { row =>
+      mat.getRow(row).getPartitions.foreach { vectorOuter =>
+      sum1Vector.iadd(vectorOuter)
+      sum2Vector.iadd(vectorOuter.mul(vectorOuter))
+    }
 
-    val sum1Vector = VectorUtils.emptyLike(partitions.head.asInstanceOf[Vector])
-    partitions.foreach { vectorOuter => sum1Vector.iadd(vectorOuter) }
-
-    val resVector = VectorUtils.emptyLike(partitions.head.asInstanceOf[Vector])
-    partitions.foreach { vectorOuter => resVector.iadd(vectorOuter.mul(sum1Vector.sub(vectorOuter))) }
-
-    blasMat.setRow(row, resVector.imul(0.5))
-}
+    blasMat.setRow(row, sum1Vector.imul(sum1Vector).isub(sum2Vector).imul(0.5))
+    sum1Vector.clear()
+    sum2Vector.clear()
+  }
 ```
 
 ### 1.2 其它层说明

@@ -566,7 +566,7 @@ public class AngelConf extends Configuration {
   public static final double DEFAULT_WORKERGROUP_FAILED_TOLERATE = 0.1;
 
   public static final String ANGEL_TASK_ERROR_TOLERATE = ANGEL_PREFIX + "task.error.tolerate";
-  public static final double DEFAULT_ANGEL_TASK_ERROR_TOLERATE = 0.01;
+  public static final double DEFAULT_ANGEL_TASK_ERROR_TOLERATE = 0.0;
 
   /**
    * The maximum number of times AppMaster can try.
@@ -1085,7 +1085,7 @@ public class AngelConf extends Configuration {
    */
   public static final String ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS =
     ANGEL_PSAGENT_PREFIX + "cache.sync.timeinterval.ms";
-  public static final int DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS = 1000;
+  public static final int DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS = 200;
 
   /**
    * The matrix caches synchronization policy

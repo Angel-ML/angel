@@ -59,7 +59,7 @@ public class FMTest {
       // Data format, libsvm or dummy
       String dataFmt = "libsvm";
       // Train batch number per epoch.
-      String modelType = String.valueOf(RowType.T_DOUBLE_SPARSE);
+      String modelType = String.valueOf(RowType.T_FLOAT_SPARSE_LONGKEY);
 
       // Learning rate
       double learnRate = 1.0;
@@ -87,7 +87,7 @@ public class FMTest {
 
       //set sgd FM algorithm parameters #feature #epoch
       conf.set(MLConf.ML_MODEL_TYPE(), modelType);
-      conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
+      conf.setLong(MLConf.ML_FEATURE_INDEX_RANGE(), Long.MAX_VALUE);
       conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
       conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
       conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));

@@ -49,14 +49,16 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
 
   val sharedConf: SharedConf = graph.conf
 
-  val modelType: RowType = SharedConf.denseModelType
+  val modelType: RowType = SharedConf.modelType
   val blockSize: Int = SharedConf.blockSize
 
   private val multiplier: Int = OptUtils.getOptMultiplier(optimizer)
-  private val indexRange: Int = SharedConf.indexRange.toInt
+  private val indexRange: Long = SharedConf.indexRange
   private val psRows: Int = multiplier * numFactors
+  private val validIndexNum = SharedConf.modelSize
 
   private val embedMatCtx = PSMatrixUtils.createPSMatrixCtx(s"${name}_embedding", psRows, indexRange, modelType)
+  embedMatCtx.setValidIndexNum(validIndexNum)
   graph.addMatrixCtx(embedMatCtx)
   lazy val matrixId: Int = PSMatrixUtils.getMatrixId(s"${name}_embedding")
 

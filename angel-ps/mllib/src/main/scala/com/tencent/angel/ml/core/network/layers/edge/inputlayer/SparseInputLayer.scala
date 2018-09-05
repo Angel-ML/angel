@@ -51,8 +51,10 @@ class SparseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
   private val multiplier = OptUtils.getOptMultiplier(optimizer)
   private val psRows: Int = outputDim * multiplier
   private val psCols = SharedConf.indexRange
+  private val validIndexNum = SharedConf.modelSize
 
   private val weightCtx = PSMatrixUtils.createPSMatrixCtx(s"${name}_weight", psRows, psCols, modelType)
+  weightCtx.setValidIndexNum(validIndexNum)
   private val biasCtx = PSMatrixUtils.createPSMatrixCtx(s"${name}_bias", 1, outputDim, SharedConf.denseModelType)
   graph.addMatrixCtx(weightCtx)
   graph.addMatrixCtx(biasCtx)
