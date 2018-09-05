@@ -29,7 +29,6 @@ import org.apache.spark.{SparkConf, SparkContext}
 
 object WideAndDeepTest {
 
-
   def main(args: Array[String]): Unit = {
     PropertyConfigurator.configure("angel-ps/conf/log4j.properties")
     val params = ArgsUtil.parse(args)
