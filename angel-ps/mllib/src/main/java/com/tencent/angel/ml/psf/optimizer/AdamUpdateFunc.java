@@ -73,12 +73,10 @@ public class AdamUpdateFunc extends OptMMUpdateFunc {
       OptFuncs.iexpsmoothing2(square, gradient, gamma);
 
       Vector delta = OptFuncs.adamdelta(velocity, square, powBeta, powGamma);
-      delta.imul(stepSize);
-      weight.isub(delta);
       if (regParam != 0.0) {
         weight.imul(1 - stepSize * regParam);
       }
-
+      weight.iaxpy(delta, -stepSize);
       gradient.clear();
     }
   }
