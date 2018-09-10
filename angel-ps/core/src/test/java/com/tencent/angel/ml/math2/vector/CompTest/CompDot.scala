@@ -545,7 +545,7 @@ object CompDot {
 }
 
 class CompDot {
-  val times = 5000
+  val times = 50
   var start1, stop1, cost1, start2, stop2, cost2 = 0L
 
   val ilist = CompDot.ilist
@@ -600,7 +600,7 @@ class CompDot {
           println(s"${ilist.get(i).getClass.getSimpleName} dot ${slist.get(j).getClass.getSimpleName}: ${getFlag(slist.get(j))} is ${(ilist.get(i).dot(slist.get(j)))}")
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
         }
       }
@@ -648,7 +648,7 @@ class CompDot {
     //longkey
     (0 until llist.size()).foreach { i =>
       ((i / 3) * 6 until sllist.size()).foreach { j =>
-        println(s"${llist.get(i).getClass.getSimpleName} dot ${sllist.get(j).getClass.getSimpleName}: ${getFlag(sllist.get(j))} is ${(llist.get(i).dot(sllist.get(j)))}")
+        llist.get(i).dot(sllist.get(j))
       }
     }
   }

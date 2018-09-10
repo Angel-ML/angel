@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -15,7 +15,6 @@
  *
  */
 
-
 package com.tencent.angel.spark.ml
 
 import com.tencent.angel.exception.AngelException
@@ -23,12 +22,11 @@ import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.utils.DataParser
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.ml.core._
-import com.tencent.angel.spark.ml.core.metric.Precision
+import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OfflineLearner}
 import org.apache.log4j.PropertyConfigurator
 import org.apache.spark.{SparkConf, SparkContext}
 
-object LRTest {
+object MixedLRTest {
 
   def main(args: Array[String]): Unit = {
     PropertyConfigurator.configure("angel-ps/conf/log4j.properties")
@@ -48,15 +46,16 @@ object LRTest {
     SharedConf.get().setDouble(MLConf.ML_VALIDATE_RATIO, 0.0)
     SharedConf.get().setDouble(MLConf.ML_REG_L2, 0.0)
     SharedConf.get().setDouble(MLConf.ML_BATCH_SAMPLE_RATIO, 0.2)
+    SharedConf.get().setInt(MLConf.ML_MLR_RANK, MLConf.DEFAULT_ML_MLR_RANK)
 
-    val className = "com.tencent.angel.spark.ml.classification.LogisticRegression"
+    val className = "com.tencent.angel.spark.ml.classification.MixedLogisticRegression"
     val model = GraphModel(className)
     val learner = new OfflineLearner()
 
     // load data
     val conf = new SparkConf()
     conf.setMaster("local")
-    conf.setAppName("LR Test")
+    conf.setAppName("MixedLR Test")
     conf.set("spark.ps.model", "LOCAL")
     conf.set("spark.ps.jars", "")
     conf.set("spark.ps.instances", "1")

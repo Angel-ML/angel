@@ -20,6 +20,7 @@ package com.tencent.angel.ml.math2.ufuncs.expression;
 
 public abstract class Binary extends Operation {
   private boolean keepStorage;
+  private boolean isCompare = false;
 
   public boolean isKeepStorage() {
     return keepStorage;
@@ -27,6 +28,14 @@ public abstract class Binary extends Operation {
 
   public void setKeepStorage(boolean keepStorage) {
     this.keepStorage = keepStorage;
+  }
+
+  public boolean isCompare() {
+    return isCompare;
+  }
+
+  public void setCompare(boolean isCompare) {
+    this.isCompare = isCompare;
   }
 
   public abstract OpType getOpType();

@@ -21,6 +21,7 @@ package com.tencent.angel.ml.math2.vector.CompTest
 import java.util
 
 import breeze.numerics.abs
+import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector._
 import org.junit.{BeforeClass, Test}
@@ -211,7 +212,7 @@ object CompCompBinaryIntkeyOPTest {
 class CompCompBinaryIntkeyOPTest {
   val list = CompCompBinaryIntkeyOPTest.list
 
-  val times = 5000
+  val times = 50
   var start1, stop1, cost1, start2, stop2, cost2 = 0L
 
   @Test
@@ -272,30 +273,27 @@ class CompCompBinaryIntkeyOPTest {
 
     (0 until list.size()).foreach { i =>
       (i until list.size()).foreach { j =>
-        println(s"comp1 sum: ${list.get(i).sum()}, comp2 sum: ${list.get(j).sum()}, comp1 mul comp2 sum: ${list.get(i).mul(list.get(j)).sum()}")
+        list.get(i).mul(list.get(j)).sum()
       }
     }
   }
 
   @Test
   def compVScompDivTest() {
-    //    start1 = System.currentTimeMillis()
-    //    (0 to times).foreach{ _ =>
-    //      list.get(0).div(list.get(0))
-    //      list.get(6).div(list.get(6))
-    //      list.get(12).div(list.get(12))
-    //      list.get(18).div(list.get(18))
-    //    }
-    //    stop1 = System.currentTimeMillis()
-    //    cost1 = stop1 - start1
-    //    println(s"angel comp vs comp intkey div:$cost1")
 
-    /**
-      * 无法检验具体结果是否正确
-      */
     (0 until list.size()).foreach { i =>
       (i until list.size()).foreach { j =>
-        println(s"comp1 sum: ${list.get(i).sum()}, comp2 sum: ${list.get(j).sum()}, comp1 mul comp2 sum: ${list.get(i).div(list.get(j)).sum()}")
+        try{
+         list.get(i).div(list.get(j)).sum()
+        }catch {
+          case e:ArithmeticException =>{
+            e
+          }
+          case e: AngelException => {
+            e
+          }
+        }
+
       }
     }
   }
@@ -316,53 +314,7 @@ class CompCompBinaryIntkeyOPTest {
 
     (0 until list.size()).foreach { i =>
       (i until list.size()).foreach { j =>
-        println(s"comp1 sum: ${list.get(i).sum()}, comp2 sum: ${list.get(j).sum()}, comp1 axpy comp2 sum: ${list.get(i).axpy(list.get(j), 2.0).sum()}")
         assert(abs(list.get(i).axpy(list.get(j), 2.0).sum() - (list.get(i).sum() + list.get(j).sum() * 2.0)) < 1.0E-3)
-      }
-    }
-  }
-
-  @Test
-  def compVScompIaddTest() {
-    (0 until list.size()).foreach { i =>
-      (i until list.size()).foreach { j =>
-        assert(abs(list.get(i).iadd(list.get(j)).sum() - (list.get(i).sum())) < 1.0E-8)
-      }
-    }
-  }
-
-  @Test
-  def compVScompIsubTest() {
-    (0 until list.size()).foreach { i =>
-      (i until list.size()).foreach { j =>
-        assert(abs(list.get(i).isub(list.get(j)).sum() - (list.get(i).sum())) < 1.0E-8)
-      }
-    }
-  }
-
-  @Test
-  def compVScompImulTest() {
-    (0 until list.size()).foreach { i =>
-      (i until list.size()).foreach { j =>
-        assert(list.get(i).imul(list.get(j)).sum() == (list.get(i).sum()))
-      }
-    }
-  }
-
-  //  @Test
-  //  def compVScompIdivTest(){
-  //    (0 until list.size()).foreach{ i =>
-  //      (i until list.size()).foreach{ j =>
-  //        assert(list.get(i).idiv(list.get(j)).sum().equals(list.get(i).sum()))
-  //      }
-  //    }
-  //  }
-
-  @Test
-  def compVScompIaxpyTest() {
-    (0 until list.size()).foreach { i =>
-      (i until list.size()).foreach { j =>
-        assert(list.get(i).iaxpy(list.get(j), 2.0).sum() == (list.get(i).sum()))
       }
     }
   }

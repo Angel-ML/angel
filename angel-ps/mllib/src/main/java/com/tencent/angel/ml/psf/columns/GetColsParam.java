@@ -19,7 +19,7 @@
 package com.tencent.angel.ml.psf.columns;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.math2.storage.VectorStorage;
+import com.tencent.angel.ml.math2.utils.ArrayCopy;
 import com.tencent.angel.ml.math2.vector.IntIntVector;
 import com.tencent.angel.ml.math2.vector.IntLongVector;
 import com.tencent.angel.ml.math2.vector.Vector;
@@ -30,7 +30,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class GetColsParam extends GetParam {
@@ -54,32 +53,15 @@ public class GetColsParam extends GetParam {
     } else {
       int[] values = ((IntIntVector) cols).getStorage().getValues();
       this.cols = new long[values.length];
-      //      StringBuffer sb = new StringBuffer();
-      //      sb.append("GetColsParam values ");
-      for (int i = 0; i < values.length; i++) {
-        this.cols[i] = values[i];
-        //        sb.append(values[i] +" ");
-      }
-      //      LOG.error(sb.toString());
+      ArrayCopy.copy(values, this.cols);
     }
-
-    //    StringBuffer sb = new StringBuffer();
-    //    sb.append("GetColsParams ");
-    //    for (int i = 0; i < this.cols.length; i ++) {
-    //      sb.append(this.cols[i] + " ");
-    //    }
-    //    LOG.error(sb.toString());
   }
 
   @Override public List<PartitionGetParam> split() {
     List<PartitionKey> pkeys = PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
-    // Arrays.sort(rows);
     List<PartitionGetParam> params = new ArrayList<>();
     int start = 0, end = 0;
-    // int sum = 0;
-    //    System.out.println("pkeys.size=" + pkeys.size());
 
-    //    params.add(new PartitionGetColsParam(matrixId, pkeys.get(0), rows, cols));
     for (PartitionKey pkey : pkeys) {
       long startCol = pkey.getStartCol();
       long endCol = pkey.getEndCol();
@@ -90,11 +72,8 @@ public class GetColsParam extends GetParam {
         System.arraycopy(cols, start, part, 0, end - start);
         params.add(new PartitionGetColsParam(matrixId, pkey, rows, part));
         start = end;
-        // sum += part.length;
       }
     }
-
-    // LOG.info("split length = " + sum + ", cols = " + cols.length);
     return params;
   }
 }

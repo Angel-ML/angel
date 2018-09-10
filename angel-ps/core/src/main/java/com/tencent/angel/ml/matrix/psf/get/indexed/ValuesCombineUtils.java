@@ -66,7 +66,7 @@ public class ValuesCombineUtils {
       float[] values = ((IndexPartGetFloatResult) part).getValues();
       for (int i = 0; i < indexes.length; i++) {
         if (i < 10) {
-          LOG.info("index " + indexes[i] + ", value " + values[i]);
+          LOG.debug("index " + indexes[i] + ", value " + values[i]);
         }
         vector.set(indexes[i], values[i]);
       }
@@ -109,7 +109,7 @@ public class ValuesCombineUtils {
       long[] values = ((IndexPartGetLongResult) part).getValues();
       for (int i = 0; i < indexes.length; i++) {
         if (i < 10) {
-          LOG.info("merge index = " + indexes[i] + ", value = " + values[i]);
+          LOG.debug("merge index = " + indexes[i] + ", value = " + values[i]);
         }
         vector.set(indexes[i], values[i]);
       }

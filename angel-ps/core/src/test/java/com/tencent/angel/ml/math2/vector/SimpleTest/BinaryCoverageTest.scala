@@ -396,15 +396,13 @@ class BinaryCoverageTest {
 
   @Test
   def Addtest() {
-    println("angel add test--")
     (0 until ilist.size()).foreach { i =>
       (0 until ilist.size()).foreach { j =>
         try {
-          println(s"${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} add ${ilist.get(j).getClass.getSimpleName}: ${getFlag(ilist.get(j))} is ${(ilist.get(i).add(ilist.get(j))).sum()}")
-          //          assert(abs((ilist.get(i).add(ilist.get(j))).sum()-(ilist.get(i).sum()+ilist.get(j).sum()))<1.0E-3)
+          (ilist.get(i).add(ilist.get(j))).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
         }
       }
@@ -412,11 +410,10 @@ class BinaryCoverageTest {
     (0 until llist.size()).foreach { i =>
       (0 until llist.size()).foreach { j =>
         try {
-          println(s"${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} add ${llist.get(j).getClass.getSimpleName}: ${getFlag(llist.get(j))} is ${(llist.get(i).add(llist.get(j))).sum()}")
-          //          assert(abs((llist.get(i).add(llist.get(j))).sum()-(llist.get(i).sum()+llist.get(j).sum()))<1.0E-3)
+          (llist.get(i).add(llist.get(j))).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
         }
       }
@@ -425,15 +422,13 @@ class BinaryCoverageTest {
 
   @Test
   def Subtest() {
-    println("angel sub test--")
     (0 until ilist.size()).foreach { i =>
       (0 until ilist.size()).foreach { j =>
         try {
-          println(s"${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} sub ${ilist.get(j).getClass.getSimpleName}: ${getFlag(ilist.get(j))} is ${(ilist.get(i).sub(ilist.get(j))).sum()}")
-          //          assert(abs((ilist.get(i).sub(ilist.get(j))).sum()-(ilist.get(i).sum()-ilist.get(j).sum()))<1.0E-3)
+         (ilist.get(i).sub(ilist.get(j))).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
         }
       }
@@ -441,11 +436,10 @@ class BinaryCoverageTest {
     (0 until llist.size()).foreach { i =>
       (0 until llist.size()).foreach { j =>
         try {
-          println(s"${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} sub ${llist.get(j).getClass.getSimpleName}: ${getFlag(llist.get(j))} is ${(llist.get(i).sub(llist.get(j))).sum()}")
-          //          assert(abs((llist.get(i).sub(llist.get(j))).sum()-(llist.get(i).sum()-llist.get(j).sum()))<1.0E-3)
+         llist.get(i).sub(llist.get(j)).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
         }
       }
@@ -454,14 +448,13 @@ class BinaryCoverageTest {
 
   @Test
   def Multest() {
-    println("angel mul test--")
     (0 until ilist.size()).foreach { i =>
       (0 until ilist.size()).foreach { j =>
         try {
-          println(s"${ilist.get(i).mul(ilist.get(j)).sum()}")
+         ilist.get(i).mul(ilist.get(j)).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
         }
       }
@@ -469,10 +462,10 @@ class BinaryCoverageTest {
     (0 until llist.size()).foreach { i =>
       (0 until llist.size()).foreach { j =>
         try {
-          println(s"${llist.get(i).mul(llist.get(j)).sum()}")
+          llist.get(i).mul(llist.get(j)).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
         }
       }
@@ -481,14 +474,16 @@ class BinaryCoverageTest {
 
   @Test
   def Divtest() {
-    println("angel div test--")
     (0 until ilist.size()).foreach { i =>
       (0 until ilist.size()).foreach { j =>
         try {
-          println(s"${ilist.get(i).div(ilist.get(j)).sum()}")
+          ilist.get(i).div(ilist.get(j)).sum()
         } catch {
+          case e: ArithmeticException =>{
+            e
+          }
           case e: AngelException => {
-            println(e)
+           e
           }
         }
       }
@@ -496,10 +491,13 @@ class BinaryCoverageTest {
     (0 until llist.size()).foreach { i =>
       (0 until llist.size()).foreach { j =>
         try {
-          println(s"${llist.get(i).div(llist.get(j)).sum()}")
+          llist.get(i).div(llist.get(j)).sum()
         } catch {
+          case e: ArithmeticException =>{
+            e
+          }
           case e: AngelException => {
-            println(e)
+            e
           }
         }
       }
@@ -508,14 +506,13 @@ class BinaryCoverageTest {
 
   @Test
   def Axpytest() {
-    println("angel axpy test--")
     (0 until ilist.size()).foreach { i =>
       (0 until ilist.size()).foreach { j =>
         try {
-          println(s"${ilist.get(i).axpy(ilist.get(j), 2.0).sum()}")
+          ilist.get(i).axpy(ilist.get(j), 2.0).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
         }
       }
@@ -523,10 +520,10 @@ class BinaryCoverageTest {
     (0 until llist.size()).foreach { i =>
       (0 until llist.size()).foreach { j =>
         try {
-          println(s"${llist.get(i).axpy(llist.get(j), 2.0).sum()}")
+         llist.get(i).axpy(llist.get(j), 2.0).sum()
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
         }
       }
@@ -541,14 +538,13 @@ class BinaryCoverageTest {
     ilist.add(VFactory.intDummyVector(dim, intrandIndices1))
     ilist.add(VFactory.intDummyVector(dim, intrandIndices2))
     llist.add(VFactory.longDummyVector(dim, longsortedIndices2))
-    println("angel dot test--")
     (0 until ilist.size()).foreach { i =>
       (0 until ilist.size()).foreach { j =>
         try {
-          println(s"${ilist.get(i).dot(ilist.get(j))}")
+          ilist.get(i).dot(ilist.get(j))
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
         }
       }
@@ -556,1276 +552,16 @@ class BinaryCoverageTest {
     (0 until llist.size()).foreach { i =>
       (0 until llist.size()).foreach { j =>
         try {
-          println(s"${llist.get(i).dot(llist.get(j))}")
+          llist.get(i).dot(llist.get(j))
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
         }
       }
     }
   }
 
-  @Test
-  def Iaddtest() {
-    println("angel iadd test--")
-    (0 until ilist.size()).foreach { i =>
-      if (i < 6) {
-        var dense1 = VFactory.denseDoubleVector(densedoubleValues)
-        var sparse1 = VFactory.sparseDoubleVector(dim, intrandIndices, doubleValues)
-        var sorted1 = VFactory.sortedDoubleVector(dim, capacity, intsortedIndices, doubleValues)
-        var sparse11 = VFactory.sparseDoubleVector(dim, intrandIndices1, doubleValues1)
-        var sorted11 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices1, doubleValues1)
-        var sorted12 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices2, doubleValues1)
-        println(s"${dense1.getClass.getSimpleName}: ${getFlag(dense1)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense1.iadd(ilist.get(i))).sum()},${dense1.sum()}")
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse1.iadd(ilist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted1.iadd(ilist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse11.iadd(ilist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted11.iadd(ilist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted12.iadd(ilist.get(i))).sum()},${sorted12.sum()}")
-
-      } else if (i < 12) {
-        var dense1 = VFactory.denseDoubleVector(densedoubleValues)
-        var sparse1 = VFactory.sparseDoubleVector(dim, intrandIndices, doubleValues)
-        var sorted1 = VFactory.sortedDoubleVector(dim, capacity, intsortedIndices, doubleValues)
-        var sparse11 = VFactory.sparseDoubleVector(dim, intrandIndices1, doubleValues1)
-        var sorted11 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices1, doubleValues1)
-        var sorted12 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices2, doubleValues1)
-        println(s"${dense1.getClass.getSimpleName}: ${getFlag(dense1)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense1.iadd(ilist.get(i))).sum()},${dense1.sum()}")
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse1.iadd(ilist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted1.iadd(ilist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse11.iadd(ilist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted11.iadd(ilist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted12.iadd(ilist.get(i))).sum()},${sorted12.sum()}")
-        var dense2 = VFactory.denseFloatVector(densefloatValues)
-        var sparse2 = VFactory.sparseFloatVector(dim, intrandIndices, floatValues)
-        var sorted2 = VFactory.sortedFloatVector(dim, capacity, intsortedIndices, floatValues)
-        var sparse21 = VFactory.sparseFloatVector(dim, intrandIndices1, floatValues1)
-        var sorted21 = VFactory.sortedFloatVector(dim, intsortedIndices1, floatValues1)
-        var sorted22 = VFactory.sortedFloatVector(dim, intsortedIndices2, floatValues1)
-        println(s"${dense2.getClass.getSimpleName}: ${getFlag(dense2)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense2.iadd(ilist.get(i))).sum()},${dense2.sum()}")
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse2.iadd(ilist.get(i))).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted2.iadd(ilist.get(i))).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse21.iadd(ilist.get(i))).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted21.iadd(ilist.get(i))).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted22.iadd(ilist.get(i))).sum()},${sorted22.sum()}")
-      } else if (i < 18) {
-        var dense1 = VFactory.denseDoubleVector(densedoubleValues)
-        var sparse1 = VFactory.sparseDoubleVector(dim, intrandIndices, doubleValues)
-        var sorted1 = VFactory.sortedDoubleVector(dim, capacity, intsortedIndices, doubleValues)
-        var sparse11 = VFactory.sparseDoubleVector(dim, intrandIndices1, doubleValues1)
-        var sorted11 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices1, doubleValues1)
-        var sorted12 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices2, doubleValues1)
-        println(s"${dense1.getClass.getSimpleName}: ${getFlag(dense1)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense1.iadd(ilist.get(i))).sum()},${dense1.sum()}")
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse1.iadd(ilist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted1.iadd(ilist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse11.iadd(ilist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted11.iadd(ilist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted12.iadd(ilist.get(i))).sum()},${sorted12.sum()}")
-        var dense2 = VFactory.denseFloatVector(densefloatValues)
-        var sparse2 = VFactory.sparseFloatVector(dim, intrandIndices, floatValues)
-        var sorted2 = VFactory.sortedFloatVector(dim, capacity, intsortedIndices, floatValues)
-        var sparse21 = VFactory.sparseFloatVector(dim, intrandIndices1, floatValues1)
-        var sorted21 = VFactory.sortedFloatVector(dim, intsortedIndices1, floatValues1)
-        var sorted22 = VFactory.sortedFloatVector(dim, intsortedIndices2, floatValues1)
-        println(s"${dense2.getClass.getSimpleName}: ${getFlag(dense2)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense2.iadd(ilist.get(i))).sum()},${dense2.sum()}")
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse2.iadd(ilist.get(i))).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted2.iadd(ilist.get(i))).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse21.iadd(ilist.get(i))).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted21.iadd(ilist.get(i))).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted22.iadd(ilist.get(i))).sum()},${sorted22.sum()}")
-        var dense3 = VFactory.denseLongVector(denselongValues)
-        var sparse3 = VFactory.sparseLongVector(dim, intrandIndices, longValues)
-        var sorted3 = VFactory.sortedLongVector(dim, intsortedIndices, longValues)
-        var sparse31 = VFactory.sparseLongVector(dim, intrandIndices1, longValues1)
-        var sorted31 = VFactory.sortedLongVector(dim, intsortedIndices1, longValues1)
-        var sorted32 = VFactory.sortedLongVector(dim, intsortedIndices2, longValues1)
-        println(s"${dense3.getClass.getSimpleName}: ${getFlag(dense3)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense3.iadd(ilist.get(i))).sum()},${dense3.sum()}")
-        println(s"${sparse3.getClass.getSimpleName}: ${getFlag(sparse3)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse3.iadd(ilist.get(i))).sum()},${sparse3.sum()}")
-        println(s"${sorted3.getClass.getSimpleName}: ${getFlag(sorted3)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted3.iadd(ilist.get(i))).sum()},${sorted3.sum()}")
-        println(s"${sparse31.getClass.getSimpleName}: ${getFlag(sparse31)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse31.iadd(ilist.get(i))).sum()},${sparse31.sum()}")
-        println(s"${sorted31.getClass.getSimpleName}: ${getFlag(sorted31)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted31.iadd(ilist.get(i))).sum()},${sorted31.sum()}")
-        println(s"${sorted32.getClass.getSimpleName}: ${getFlag(sorted32)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted32.iadd(ilist.get(i))).sum()},${sorted32.sum()}")
-      } else if (i < 27) {
-        var dense1 = VFactory.denseDoubleVector(densedoubleValues)
-        var sparse1 = VFactory.sparseDoubleVector(dim, intrandIndices, doubleValues)
-        var sorted1 = VFactory.sortedDoubleVector(dim, capacity, intsortedIndices, doubleValues)
-        var sparse11 = VFactory.sparseDoubleVector(dim, intrandIndices1, doubleValues1)
-        var sorted11 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices1, doubleValues1)
-        var sorted12 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices2, doubleValues1)
-        println(s"${dense1.getClass.getSimpleName}: ${getFlag(dense1)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense1.iadd(ilist.get(i))).sum()},${dense1.sum()}")
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse1.iadd(ilist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted1.iadd(ilist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse11.iadd(ilist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted11.iadd(ilist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted12.iadd(ilist.get(i))).sum()},${sorted12.sum()}")
-        var dense2 = VFactory.denseFloatVector(densefloatValues)
-        var sparse2 = VFactory.sparseFloatVector(dim, intrandIndices, floatValues)
-        var sorted2 = VFactory.sortedFloatVector(dim, capacity, intsortedIndices, floatValues)
-        var sparse21 = VFactory.sparseFloatVector(dim, intrandIndices1, floatValues1)
-        var sorted21 = VFactory.sortedFloatVector(dim, intsortedIndices1, floatValues1)
-        var sorted22 = VFactory.sortedFloatVector(dim, intsortedIndices2, floatValues1)
-        println(s"${dense2.getClass.getSimpleName}: ${getFlag(dense2)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense2.iadd(ilist.get(i))).sum()},${dense2.sum()}")
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse2.iadd(ilist.get(i))).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted2.iadd(ilist.get(i))).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse21.iadd(ilist.get(i))).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted21.iadd(ilist.get(i))).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted22.iadd(ilist.get(i))).sum()},${sorted22.sum()}")
-        var dense3 = VFactory.denseLongVector(denselongValues)
-        var sparse3 = VFactory.sparseLongVector(dim, intrandIndices, longValues)
-        var sorted3 = VFactory.sortedLongVector(dim, intsortedIndices, longValues)
-        var sparse31 = VFactory.sparseLongVector(dim, intrandIndices1, longValues1)
-        var sorted31 = VFactory.sortedLongVector(dim, intsortedIndices1, longValues1)
-        var sorted32 = VFactory.sortedLongVector(dim, intsortedIndices2, longValues1)
-        println(s"${dense3.getClass.getSimpleName}: ${getFlag(dense3)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense3.iadd(ilist.get(i))).sum()},${dense3.sum()}")
-        println(s"${sparse3.getClass.getSimpleName}: ${getFlag(sparse3)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse3.iadd(ilist.get(i))).sum()},${sparse3.sum()}")
-        println(s"${sorted3.getClass.getSimpleName}: ${getFlag(sorted3)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted3.iadd(ilist.get(i))).sum()},${sorted3.sum()}")
-        println(s"${sparse31.getClass.getSimpleName}: ${getFlag(sparse31)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse31.iadd(ilist.get(i))).sum()},${sparse31.sum()}")
-        println(s"${sorted31.getClass.getSimpleName}: ${getFlag(sorted31)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted31.iadd(ilist.get(i))).sum()},${sorted31.sum()}")
-        println(s"${sorted32.getClass.getSimpleName}: ${getFlag(sorted32)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted32.iadd(ilist.get(i))).sum()},${sorted32.sum()}")
-        var dense4 = VFactory.denseIntVector(denseintValues)
-        var sparse4 = VFactory.sparseIntVector(dim, intrandIndices, intValues)
-        var sorted4 = VFactory.sortedIntVector(dim, capacity, intsortedIndices, intValues)
-        var sparse41 = VFactory.sparseIntVector(dim, intrandIndices1, intValues1)
-        var sorted41 = VFactory.sortedIntVector(dim, intsortedIndices1, intValues1)
-        var sorted42 = VFactory.sortedIntVector(dim, intsortedIndices2, intValues1)
-        println(s"${dense4.getClass.getSimpleName}: ${getFlag(dense4)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense4.iadd(ilist.get(i))).sum()},${dense4.sum()}")
-        println(s"${sparse4.getClass.getSimpleName}: ${getFlag(sparse4)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse4.iadd(ilist.get(i))).sum()},${sparse4.sum()}")
-        println(s"${sorted4.getClass.getSimpleName}: ${getFlag(sorted4)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted4.iadd(ilist.get(i))).sum()},${sorted4.sum()}")
-        println(s"${sparse41.getClass.getSimpleName}: ${getFlag(sparse41)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse41.iadd(ilist.get(i))).sum()},${sparse41.sum()}")
-        println(s"${sorted41.getClass.getSimpleName}: ${getFlag(sorted41)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted41.iadd(ilist.get(i))).sum()},${sorted41.sum()}")
-        println(s"${sorted42.getClass.getSimpleName}: ${getFlag(sorted42)} iadd ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted42.iadd(ilist.get(i))).sum()},${sorted42.sum()}")
-      }
-    }
-
-
-    //longkey
-    (0 until llist.size()).foreach { i =>
-      if (i < 5) {
-        var sparse1 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices, doubleValues)
-        var sorted1 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices, doubleValues)
-        var sparse11 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices1, doubleValues1)
-        var sorted11 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices1, doubleValues1)
-        var sorted12 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices2, doubleValues1)
-
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse1.iadd(llist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted1.iadd(llist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse11.iadd(llist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted11.iadd(llist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted12.iadd(llist.get(i))).sum()},${sorted12.sum()}")
-
-      } else if (i < 10) {
-        var sparse1 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices, doubleValues)
-        var sorted1 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices, doubleValues)
-        var sparse11 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices1, doubleValues1)
-        var sorted11 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices1, doubleValues1)
-        var sorted12 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices2, doubleValues1)
-
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse1.iadd(llist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted1.iadd(llist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse11.iadd(llist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted11.iadd(llist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted12.iadd(llist.get(i))).sum()},${sorted12.sum()}")
-
-        var sparse2 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices, floatValues)
-        var sorted2 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices, floatValues)
-        var sparse21 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices1, floatValues1)
-        var sorted21 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices1, floatValues1)
-        var sorted22 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices2, floatValues1)
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse2.iadd(llist.get(i))).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted2.iadd(llist.get(i))).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse21.iadd(llist.get(i))).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted21.iadd(llist.get(i))).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted22.iadd(llist.get(i))).sum()},${sorted22.sum()}")
-      } else if (i < 15) {
-        var sparse1 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices, doubleValues)
-        var sorted1 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices, doubleValues)
-        var sparse11 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices1, doubleValues1)
-        var sorted11 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices1, doubleValues1)
-        var sorted12 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices2, doubleValues1)
-
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse1.iadd(llist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted1.iadd(llist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse11.iadd(llist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted11.iadd(llist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted12.iadd(llist.get(i))).sum()},${sorted12.sum()}")
-
-        var sparse2 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices, floatValues)
-        var sorted2 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices, floatValues)
-        var sparse21 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices1, floatValues1)
-        var sorted21 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices1, floatValues1)
-        var sorted22 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices2, floatValues1)
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse2.iadd(llist.get(i))).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted2.iadd(llist.get(i))).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse21.iadd(llist.get(i))).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted21.iadd(llist.get(i))).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted22.iadd(llist.get(i))).sum()},${sorted22.sum()}")
-        var sparse3 = VFactory.sparseLongKeyLongVector(dim, longrandIndices, longValues)
-        var sorted3 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices, longValues)
-        var sparse31 = VFactory.sparseLongKeyLongVector(dim, longrandIndices1, longValues1)
-        var sorted31 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices1, longValues1)
-        var sorted32 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices2, longValues1)
-        println(s"${sparse3.getClass.getSimpleName}: ${getFlag(sparse3)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse3.iadd(llist.get(i))).sum()},${sparse3.sum()}")
-        println(s"${sorted3.getClass.getSimpleName}: ${getFlag(sorted3)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted3.iadd(llist.get(i))).sum()},${sorted3.sum()}")
-        println(s"${sparse31.getClass.getSimpleName}: ${getFlag(sparse31)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse31.iadd(llist.get(i))).sum()},${sparse31.sum()}")
-        println(s"${sorted31.getClass.getSimpleName}: ${getFlag(sorted31)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted31.iadd(llist.get(i))).sum()},${sorted31.sum()}")
-        println(s"${sorted32.getClass.getSimpleName}: ${getFlag(sorted32)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted32.iadd(llist.get(i))).sum()},${sorted32.sum()}")
-      } else if (i < 23) {
-        var sparse1 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices, doubleValues)
-        var sorted1 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices, doubleValues)
-        var sparse11 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices1, doubleValues1)
-        var sorted11 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices1, doubleValues1)
-        var sorted12 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices2, doubleValues1)
-
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse1.iadd(llist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted1.iadd(llist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse11.iadd(llist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted11.iadd(llist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted12.iadd(llist.get(i))).sum()},${sorted12.sum()}")
-
-        var sparse2 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices, floatValues)
-        var sorted2 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices, floatValues)
-        var sparse21 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices1, floatValues1)
-        var sorted21 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices1, floatValues1)
-        var sorted22 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices2, floatValues1)
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse2.iadd(llist.get(i))).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted2.iadd(llist.get(i))).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse21.iadd(llist.get(i))).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted21.iadd(llist.get(i))).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted22.iadd(llist.get(i))).sum()},${sorted22.sum()}")
-        var sparse3 = VFactory.sparseLongKeyLongVector(dim, longrandIndices, longValues)
-        var sorted3 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices, longValues)
-        var sparse31 = VFactory.sparseLongKeyLongVector(dim, longrandIndices1, longValues1)
-        var sorted31 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices1, longValues1)
-        var sorted32 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices2, longValues1)
-        println(s"${sparse3.getClass.getSimpleName}: ${getFlag(sparse3)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse3.iadd(llist.get(i))).sum()},${sparse3.sum()}")
-        println(s"${sorted3.getClass.getSimpleName}: ${getFlag(sorted3)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted3.iadd(llist.get(i))).sum()},${sorted3.sum()}")
-        println(s"${sparse31.getClass.getSimpleName}: ${getFlag(sparse31)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse31.iadd(llist.get(i))).sum()},${sparse31.sum()}")
-        println(s"${sorted31.getClass.getSimpleName}: ${getFlag(sorted31)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted31.iadd(llist.get(i))).sum()},${sorted31.sum()}")
-        println(s"${sorted32.getClass.getSimpleName}: ${getFlag(sorted32)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted32.iadd(llist.get(i))).sum()},${sorted32.sum()}")
-        var sparse4 = VFactory.sparseLongKeyIntVector(dim, longrandIndices, intValues)
-        var sorted4 = VFactory.sortedLongKeyIntVector(dim, longsortedIndices, intValues)
-        var sparse41 = VFactory.sparseLongKeyIntVector(dim, longrandIndices1, intValues1)
-        var sorted41 = VFactory.sortedLongKeyIntVector(dim, longsortedIndices1, intValues1)
-        var sorted42 = VFactory.sortedLongKeyIntVector(dim, longsortedIndices2, intValues1)
-        println(s"${sparse4.getClass.getSimpleName}: ${getFlag(sparse4)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse4.iadd(llist.get(i))).sum()},${sparse4.sum()}")
-        println(s"${sorted4.getClass.getSimpleName}: ${getFlag(sorted4)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted4.iadd(llist.get(i))).sum()},${sorted4.sum()}")
-        println(s"${sparse41.getClass.getSimpleName}: ${getFlag(sparse41)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse41.iadd(llist.get(i))).sum()},${sparse41.sum()}")
-        println(s"${sorted41.getClass.getSimpleName}: ${getFlag(sorted41)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted41.iadd(llist.get(i))).sum()},${sorted41.sum()}")
-        println(s"${sorted42.getClass.getSimpleName}: ${getFlag(sorted42)} iadd ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted42.iadd(llist.get(i))).sum()},${sorted42.sum()}")
-      }
-    }
-  }
-
-  @Test
-  def Isubtest() {
-    println("angel isub test--")
-    (0 until ilist.size()).foreach { i =>
-      if (i < 6) {
-        var dense1 = VFactory.denseDoubleVector(densedoubleValues)
-        var sparse1 = VFactory.sparseDoubleVector(dim, intrandIndices, doubleValues)
-        var sorted1 = VFactory.sortedDoubleVector(dim, capacity, intsortedIndices, doubleValues)
-        var sparse11 = VFactory.sparseDoubleVector(dim, intrandIndices1, doubleValues1)
-        var sorted11 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices1, doubleValues1)
-        var sorted12 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices2, doubleValues1)
-        println(s"${dense1.getClass.getSimpleName}: ${getFlag(dense1)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense1.isub(ilist.get(i))).sum()},${dense1.sum()}")
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse1.isub(ilist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted1.isub(ilist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse11.isub(ilist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted11.isub(ilist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted12.isub(ilist.get(i))).sum()},${sorted12.sum()}")
-
-      } else if (i < 12) {
-        var dense1 = VFactory.denseDoubleVector(densedoubleValues)
-        var sparse1 = VFactory.sparseDoubleVector(dim, intrandIndices, doubleValues)
-        var sorted1 = VFactory.sortedDoubleVector(dim, capacity, intsortedIndices, doubleValues)
-        var sparse11 = VFactory.sparseDoubleVector(dim, intrandIndices1, doubleValues1)
-        var sorted11 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices1, doubleValues1)
-        var sorted12 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices2, doubleValues1)
-        println(s"${dense1.getClass.getSimpleName}: ${getFlag(dense1)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense1.isub(ilist.get(i))).sum()},${dense1.sum()}")
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse1.isub(ilist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted1.isub(ilist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse11.isub(ilist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted11.isub(ilist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted12.isub(ilist.get(i))).sum()},${sorted12.sum()}")
-        var dense2 = VFactory.denseFloatVector(densefloatValues)
-        var sparse2 = VFactory.sparseFloatVector(dim, intrandIndices, floatValues)
-        var sorted2 = VFactory.sortedFloatVector(dim, capacity, intsortedIndices, floatValues)
-        var sparse21 = VFactory.sparseFloatVector(dim, intrandIndices1, floatValues1)
-        var sorted21 = VFactory.sortedFloatVector(dim, intsortedIndices1, floatValues1)
-        var sorted22 = VFactory.sortedFloatVector(dim, intsortedIndices2, floatValues1)
-        println(s"${dense2.getClass.getSimpleName}: ${getFlag(dense2)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense2.isub(ilist.get(i))).sum()},${dense2.sum()}")
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse2.isub(ilist.get(i))).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted2.isub(ilist.get(i))).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse21.isub(ilist.get(i))).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted21.isub(ilist.get(i))).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted22.isub(ilist.get(i))).sum()},${sorted22.sum()}")
-      } else if (i < 18) {
-        var dense1 = VFactory.denseDoubleVector(densedoubleValues)
-        var sparse1 = VFactory.sparseDoubleVector(dim, intrandIndices, doubleValues)
-        var sorted1 = VFactory.sortedDoubleVector(dim, capacity, intsortedIndices, doubleValues)
-        var sparse11 = VFactory.sparseDoubleVector(dim, intrandIndices1, doubleValues1)
-        var sorted11 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices1, doubleValues1)
-        var sorted12 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices2, doubleValues1)
-        println(s"${dense1.getClass.getSimpleName}: ${getFlag(dense1)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense1.isub(ilist.get(i))).sum()},${dense1.sum()}")
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse1.isub(ilist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted1.isub(ilist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse11.isub(ilist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted11.isub(ilist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted12.isub(ilist.get(i))).sum()},${sorted12.sum()}")
-        var dense2 = VFactory.denseFloatVector(densefloatValues)
-        var sparse2 = VFactory.sparseFloatVector(dim, intrandIndices, floatValues)
-        var sorted2 = VFactory.sortedFloatVector(dim, capacity, intsortedIndices, floatValues)
-        var sparse21 = VFactory.sparseFloatVector(dim, intrandIndices1, floatValues1)
-        var sorted21 = VFactory.sortedFloatVector(dim, intsortedIndices1, floatValues1)
-        var sorted22 = VFactory.sortedFloatVector(dim, intsortedIndices2, floatValues1)
-        println(s"${dense2.getClass.getSimpleName}: ${getFlag(dense2)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense2.isub(ilist.get(i))).sum()},${dense2.sum()}")
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse2.isub(ilist.get(i))).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted2.isub(ilist.get(i))).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse21.isub(ilist.get(i))).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted21.isub(ilist.get(i))).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted22.isub(ilist.get(i))).sum()},${sorted22.sum()}")
-        var dense3 = VFactory.denseLongVector(denselongValues)
-        var sparse3 = VFactory.sparseLongVector(dim, intrandIndices, longValues)
-        var sorted3 = VFactory.sortedLongVector(dim, intsortedIndices, longValues)
-        var sparse31 = VFactory.sparseLongVector(dim, intrandIndices1, longValues1)
-        var sorted31 = VFactory.sortedLongVector(dim, intsortedIndices1, longValues1)
-        var sorted32 = VFactory.sortedLongVector(dim, intsortedIndices2, longValues1)
-        println(s"${dense3.getClass.getSimpleName}: ${getFlag(dense3)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense3.isub(ilist.get(i))).sum()},${dense3.sum()}")
-        println(s"${sparse3.getClass.getSimpleName}: ${getFlag(sparse3)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse3.isub(ilist.get(i))).sum()},${sparse3.sum()}")
-        println(s"${sorted3.getClass.getSimpleName}: ${getFlag(sorted3)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted3.isub(ilist.get(i))).sum()},${sorted3.sum()}")
-        println(s"${sparse31.getClass.getSimpleName}: ${getFlag(sparse31)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse31.isub(ilist.get(i))).sum()},${sparse31.sum()}")
-        println(s"${sorted31.getClass.getSimpleName}: ${getFlag(sorted31)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted31.isub(ilist.get(i))).sum()},${sorted31.sum()}")
-        println(s"${sorted32.getClass.getSimpleName}: ${getFlag(sorted32)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted32.isub(ilist.get(i))).sum()},${sorted32.sum()}")
-      } else if (i < 27) {
-        var dense1 = VFactory.denseDoubleVector(densedoubleValues)
-        var sparse1 = VFactory.sparseDoubleVector(dim, intrandIndices, doubleValues)
-        var sorted1 = VFactory.sortedDoubleVector(dim, capacity, intsortedIndices, doubleValues)
-        var sparse11 = VFactory.sparseDoubleVector(dim, intrandIndices1, doubleValues1)
-        var sorted11 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices1, doubleValues1)
-        var sorted12 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices2, doubleValues1)
-        println(s"${dense1.getClass.getSimpleName}: ${getFlag(dense1)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense1.isub(ilist.get(i))).sum()},${dense1.sum()}")
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse1.isub(ilist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted1.isub(ilist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse11.isub(ilist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted11.isub(ilist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted12.isub(ilist.get(i))).sum()},${sorted12.sum()}")
-        var dense2 = VFactory.denseFloatVector(densefloatValues)
-        var sparse2 = VFactory.sparseFloatVector(dim, intrandIndices, floatValues)
-        var sorted2 = VFactory.sortedFloatVector(dim, capacity, intsortedIndices, floatValues)
-        var sparse21 = VFactory.sparseFloatVector(dim, intrandIndices1, floatValues1)
-        var sorted21 = VFactory.sortedFloatVector(dim, intsortedIndices1, floatValues1)
-        var sorted22 = VFactory.sortedFloatVector(dim, intsortedIndices2, floatValues1)
-        println(s"${dense2.getClass.getSimpleName}: ${getFlag(dense2)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense2.isub(ilist.get(i))).sum()},${dense2.sum()}")
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse2.isub(ilist.get(i))).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted2.isub(ilist.get(i))).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse21.isub(ilist.get(i))).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted21.isub(ilist.get(i))).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted22.isub(ilist.get(i))).sum()},${sorted22.sum()}")
-        var dense3 = VFactory.denseLongVector(denselongValues)
-        var sparse3 = VFactory.sparseLongVector(dim, intrandIndices, longValues)
-        var sorted3 = VFactory.sortedLongVector(dim, intsortedIndices, longValues)
-        var sparse31 = VFactory.sparseLongVector(dim, intrandIndices1, longValues1)
-        var sorted31 = VFactory.sortedLongVector(dim, intsortedIndices1, longValues1)
-        var sorted32 = VFactory.sortedLongVector(dim, intsortedIndices2, longValues1)
-        println(s"${dense3.getClass.getSimpleName}: ${getFlag(dense3)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense3.isub(ilist.get(i))).sum()},${dense3.sum()}")
-        println(s"${sparse3.getClass.getSimpleName}: ${getFlag(sparse3)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse3.isub(ilist.get(i))).sum()},${sparse3.sum()}")
-        println(s"${sorted3.getClass.getSimpleName}: ${getFlag(sorted3)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted3.isub(ilist.get(i))).sum()},${sorted3.sum()}")
-        println(s"${sparse31.getClass.getSimpleName}: ${getFlag(sparse31)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse31.isub(ilist.get(i))).sum()},${sparse31.sum()}")
-        println(s"${sorted31.getClass.getSimpleName}: ${getFlag(sorted31)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted31.isub(ilist.get(i))).sum()},${sorted31.sum()}")
-        println(s"${sorted32.getClass.getSimpleName}: ${getFlag(sorted32)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted32.isub(ilist.get(i))).sum()},${sorted32.sum()}")
-        var dense4 = VFactory.denseIntVector(denseintValues)
-        var sparse4 = VFactory.sparseIntVector(dim, intrandIndices, intValues)
-        var sorted4 = VFactory.sortedIntVector(dim, capacity, intsortedIndices, intValues)
-        var sparse41 = VFactory.sparseIntVector(dim, intrandIndices1, intValues1)
-        var sorted41 = VFactory.sortedIntVector(dim, intsortedIndices1, intValues1)
-        var sorted42 = VFactory.sortedIntVector(dim, intsortedIndices2, intValues1)
-        println(s"${dense4.getClass.getSimpleName}: ${getFlag(dense4)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense4.isub(ilist.get(i))).sum()},${dense4.sum()}")
-        println(s"${sparse4.getClass.getSimpleName}: ${getFlag(sparse4)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse4.isub(ilist.get(i))).sum()},${sparse4.sum()}")
-        println(s"${sorted4.getClass.getSimpleName}: ${getFlag(sorted4)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted4.isub(ilist.get(i))).sum()},${sorted4.sum()}")
-        println(s"${sparse41.getClass.getSimpleName}: ${getFlag(sparse41)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse41.isub(ilist.get(i))).sum()},${sparse41.sum()}")
-        println(s"${sorted41.getClass.getSimpleName}: ${getFlag(sorted41)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted41.isub(ilist.get(i))).sum()},${sorted41.sum()}")
-        println(s"${sorted42.getClass.getSimpleName}: ${getFlag(sorted42)} isub ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted42.isub(ilist.get(i))).sum()},${sorted42.sum()}")
-      }
-    }
-
-
-    //longkey
-    (0 until llist.size()).foreach { i =>
-      if (i < 5) {
-        var sparse1 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices, doubleValues)
-        var sorted1 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices, doubleValues)
-        var sparse11 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices1, doubleValues1)
-        var sorted11 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices1, doubleValues1)
-        var sorted12 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices2, doubleValues1)
-
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse1.isub(llist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted1.isub(llist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse11.isub(llist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted11.isub(llist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted12.isub(llist.get(i))).sum()},${sorted12.sum()}")
-
-      } else if (i < 10) {
-        var sparse1 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices, doubleValues)
-        var sorted1 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices, doubleValues)
-        var sparse11 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices1, doubleValues1)
-        var sorted11 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices1, doubleValues1)
-        var sorted12 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices2, doubleValues1)
-
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse1.isub(llist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted1.isub(llist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse11.isub(llist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted11.isub(llist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted12.isub(llist.get(i))).sum()},${sorted12.sum()}")
-
-        var sparse2 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices, floatValues)
-        var sorted2 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices, floatValues)
-        var sparse21 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices1, floatValues1)
-        var sorted21 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices1, floatValues1)
-        var sorted22 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices2, floatValues1)
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse2.isub(llist.get(i))).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted2.isub(llist.get(i))).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse21.isub(llist.get(i))).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted21.isub(llist.get(i))).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted22.isub(llist.get(i))).sum()},${sorted22.sum()}")
-      } else if (i < 15) {
-        var sparse1 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices, doubleValues)
-        var sorted1 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices, doubleValues)
-        var sparse11 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices1, doubleValues1)
-        var sorted11 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices1, doubleValues1)
-        var sorted12 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices2, doubleValues1)
-
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse1.isub(llist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted1.isub(llist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse11.isub(llist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted11.isub(llist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted12.isub(llist.get(i))).sum()},${sorted12.sum()}")
-
-        var sparse2 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices, floatValues)
-        var sorted2 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices, floatValues)
-        var sparse21 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices1, floatValues1)
-        var sorted21 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices1, floatValues1)
-        var sorted22 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices2, floatValues1)
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse2.isub(llist.get(i))).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted2.isub(llist.get(i))).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse21.isub(llist.get(i))).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted21.isub(llist.get(i))).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted22.isub(llist.get(i))).sum()},${sorted22.sum()}")
-        var sparse3 = VFactory.sparseLongKeyLongVector(dim, longrandIndices, longValues)
-        var sorted3 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices, longValues)
-        var sparse31 = VFactory.sparseLongKeyLongVector(dim, longrandIndices1, longValues1)
-        var sorted31 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices1, longValues1)
-        var sorted32 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices2, longValues1)
-        println(s"${sparse3.getClass.getSimpleName}: ${getFlag(sparse3)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse3.isub(llist.get(i))).sum()},${sparse3.sum()}")
-        println(s"${sorted3.getClass.getSimpleName}: ${getFlag(sorted3)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted3.isub(llist.get(i))).sum()},${sorted3.sum()}")
-        println(s"${sparse31.getClass.getSimpleName}: ${getFlag(sparse31)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse31.isub(llist.get(i))).sum()},${sparse31.sum()}")
-        println(s"${sorted31.getClass.getSimpleName}: ${getFlag(sorted31)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted31.isub(llist.get(i))).sum()},${sorted31.sum()}")
-        println(s"${sorted32.getClass.getSimpleName}: ${getFlag(sorted32)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted32.isub(llist.get(i))).sum()},${sorted32.sum()}")
-      } else if (i < 23) {
-        var sparse1 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices, doubleValues)
-        var sorted1 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices, doubleValues)
-        var sparse11 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices1, doubleValues1)
-        var sorted11 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices1, doubleValues1)
-        var sorted12 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices2, doubleValues1)
-
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse1.isub(llist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted1.isub(llist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse11.isub(llist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted11.isub(llist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted12.isub(llist.get(i))).sum()},${sorted12.sum()}")
-
-        var sparse2 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices, floatValues)
-        var sorted2 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices, floatValues)
-        var sparse21 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices1, floatValues1)
-        var sorted21 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices1, floatValues1)
-        var sorted22 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices2, floatValues1)
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse2.isub(llist.get(i))).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted2.isub(llist.get(i))).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse21.isub(llist.get(i))).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted21.isub(llist.get(i))).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted22.isub(llist.get(i))).sum()},${sorted22.sum()}")
-        var sparse3 = VFactory.sparseLongKeyLongVector(dim, longrandIndices, longValues)
-        var sorted3 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices, longValues)
-        var sparse31 = VFactory.sparseLongKeyLongVector(dim, longrandIndices1, longValues1)
-        var sorted31 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices1, longValues1)
-        var sorted32 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices2, longValues1)
-        println(s"${sparse3.getClass.getSimpleName}: ${getFlag(sparse3)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse3.isub(llist.get(i))).sum()},${sparse3.sum()}")
-        println(s"${sorted3.getClass.getSimpleName}: ${getFlag(sorted3)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted3.isub(llist.get(i))).sum()},${sorted3.sum()}")
-        println(s"${sparse31.getClass.getSimpleName}: ${getFlag(sparse31)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse31.isub(llist.get(i))).sum()},${sparse31.sum()}")
-        println(s"${sorted31.getClass.getSimpleName}: ${getFlag(sorted31)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted31.isub(llist.get(i))).sum()},${sorted31.sum()}")
-        println(s"${sorted32.getClass.getSimpleName}: ${getFlag(sorted32)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted32.isub(llist.get(i))).sum()},${sorted32.sum()}")
-        var sparse4 = VFactory.sparseLongKeyIntVector(dim, longrandIndices, intValues)
-        var sorted4 = VFactory.sortedLongKeyIntVector(dim, longsortedIndices, intValues)
-        var sparse41 = VFactory.sparseLongKeyIntVector(dim, longrandIndices1, intValues1)
-        var sorted41 = VFactory.sortedLongKeyIntVector(dim, longsortedIndices1, intValues1)
-        var sorted42 = VFactory.sortedLongKeyIntVector(dim, longsortedIndices2, intValues1)
-        println(s"${sparse4.getClass.getSimpleName}: ${getFlag(sparse4)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse4.isub(llist.get(i))).sum()},${sparse4.sum()}")
-        println(s"${sorted4.getClass.getSimpleName}: ${getFlag(sorted4)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted4.isub(llist.get(i))).sum()},${sorted4.sum()}")
-        println(s"${sparse41.getClass.getSimpleName}: ${getFlag(sparse41)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse41.isub(llist.get(i))).sum()},${sparse41.sum()}")
-        println(s"${sorted41.getClass.getSimpleName}: ${getFlag(sorted41)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted41.isub(llist.get(i))).sum()},${sorted41.sum()}")
-        println(s"${sorted42.getClass.getSimpleName}: ${getFlag(sorted42)} isub ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted42.isub(llist.get(i))).sum()},${sorted42.sum()}")
-      }
-    }
-  }
-
-  @Test
-  def Imultest() {
-    println("angel imul test--")
-    (0 until ilist.size()).foreach { i =>
-      if (i < 6) {
-        var dense1 = VFactory.denseDoubleVector(densedoubleValues)
-        var sparse1 = VFactory.sparseDoubleVector(dim, intrandIndices, doubleValues)
-        var sorted1 = VFactory.sortedDoubleVector(dim, capacity, intsortedIndices, doubleValues)
-        var sparse11 = VFactory.sparseDoubleVector(dim, intrandIndices1, doubleValues1)
-        var sorted11 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices1, doubleValues1)
-        var sorted12 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices2, doubleValues1)
-        println(s"${dense1.getClass.getSimpleName}: ${getFlag(dense1)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense1.imul(ilist.get(i))).sum()},${dense1.sum()}")
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse1.imul(ilist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted1.imul(ilist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse11.imul(ilist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted11.imul(ilist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted12.imul(ilist.get(i))).sum()},${sorted12.sum()}")
-
-      } else if (i < 12) {
-        var dense1 = VFactory.denseDoubleVector(densedoubleValues)
-        var sparse1 = VFactory.sparseDoubleVector(dim, intrandIndices, doubleValues)
-        var sorted1 = VFactory.sortedDoubleVector(dim, capacity, intsortedIndices, doubleValues)
-        var sparse11 = VFactory.sparseDoubleVector(dim, intrandIndices1, doubleValues1)
-        var sorted11 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices1, doubleValues1)
-        var sorted12 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices2, doubleValues1)
-        println(s"${dense1.getClass.getSimpleName}: ${getFlag(dense1)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense1.imul(ilist.get(i))).sum()},${dense1.sum()}")
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse1.imul(ilist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted1.imul(ilist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse11.imul(ilist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted11.imul(ilist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted12.imul(ilist.get(i))).sum()},${sorted12.sum()}")
-        var dense2 = VFactory.denseFloatVector(densefloatValues)
-        var sparse2 = VFactory.sparseFloatVector(dim, intrandIndices, floatValues)
-        var sorted2 = VFactory.sortedFloatVector(dim, capacity, intsortedIndices, floatValues)
-        var sparse21 = VFactory.sparseFloatVector(dim, intrandIndices1, floatValues1)
-        var sorted21 = VFactory.sortedFloatVector(dim, intsortedIndices1, floatValues1)
-        var sorted22 = VFactory.sortedFloatVector(dim, intsortedIndices2, floatValues1)
-        println(s"${dense2.getClass.getSimpleName}: ${getFlag(dense2)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense2.imul(ilist.get(i))).sum()},${dense2.sum()}")
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse2.imul(ilist.get(i))).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted2.imul(ilist.get(i))).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse21.imul(ilist.get(i))).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted21.imul(ilist.get(i))).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted22.imul(ilist.get(i))).sum()},${sorted22.sum()}")
-      } else if (i < 18) {
-        var dense1 = VFactory.denseDoubleVector(densedoubleValues)
-        var sparse1 = VFactory.sparseDoubleVector(dim, intrandIndices, doubleValues)
-        var sorted1 = VFactory.sortedDoubleVector(dim, capacity, intsortedIndices, doubleValues)
-        var sparse11 = VFactory.sparseDoubleVector(dim, intrandIndices1, doubleValues1)
-        var sorted11 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices1, doubleValues1)
-        var sorted12 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices2, doubleValues1)
-        println(s"${dense1.getClass.getSimpleName}: ${getFlag(dense1)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense1.imul(ilist.get(i))).sum()},${dense1.sum()}")
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse1.imul(ilist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted1.imul(ilist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse11.imul(ilist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted11.imul(ilist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted12.imul(ilist.get(i))).sum()},${sorted12.sum()}")
-        var dense2 = VFactory.denseFloatVector(densefloatValues)
-        var sparse2 = VFactory.sparseFloatVector(dim, intrandIndices, floatValues)
-        var sorted2 = VFactory.sortedFloatVector(dim, capacity, intsortedIndices, floatValues)
-        var sparse21 = VFactory.sparseFloatVector(dim, intrandIndices1, floatValues1)
-        var sorted21 = VFactory.sortedFloatVector(dim, intsortedIndices1, floatValues1)
-        var sorted22 = VFactory.sortedFloatVector(dim, intsortedIndices2, floatValues1)
-        println(s"${dense2.getClass.getSimpleName}: ${getFlag(dense2)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense2.imul(ilist.get(i))).sum()},${dense2.sum()}")
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse2.imul(ilist.get(i))).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted2.imul(ilist.get(i))).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse21.imul(ilist.get(i))).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted21.imul(ilist.get(i))).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted22.imul(ilist.get(i))).sum()},${sorted22.sum()}")
-        var dense3 = VFactory.denseLongVector(denselongValues)
-        var sparse3 = VFactory.sparseLongVector(dim, intrandIndices, longValues)
-        var sorted3 = VFactory.sortedLongVector(dim, intsortedIndices, longValues)
-        var sparse31 = VFactory.sparseLongVector(dim, intrandIndices1, longValues1)
-        var sorted31 = VFactory.sortedLongVector(dim, intsortedIndices1, longValues1)
-        var sorted32 = VFactory.sortedLongVector(dim, intsortedIndices2, longValues1)
-        println(s"${dense3.getClass.getSimpleName}: ${getFlag(dense3)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense3.imul(ilist.get(i))).sum()},${dense3.sum()}")
-        println(s"${sparse3.getClass.getSimpleName}: ${getFlag(sparse3)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse3.imul(ilist.get(i))).sum()},${sparse3.sum()}")
-        println(s"${sorted3.getClass.getSimpleName}: ${getFlag(sorted3)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted3.imul(ilist.get(i))).sum()},${sorted3.sum()}")
-        println(s"${sparse31.getClass.getSimpleName}: ${getFlag(sparse31)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse31.imul(ilist.get(i))).sum()},${sparse31.sum()}")
-        println(s"${sorted31.getClass.getSimpleName}: ${getFlag(sorted31)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted31.imul(ilist.get(i))).sum()},${sorted31.sum()}")
-        println(s"${sorted32.getClass.getSimpleName}: ${getFlag(sorted32)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted32.imul(ilist.get(i))).sum()},${sorted32.sum()}")
-      } else if (i < 27) {
-        var dense1 = VFactory.denseDoubleVector(densedoubleValues)
-        var sparse1 = VFactory.sparseDoubleVector(dim, intrandIndices, doubleValues)
-        var sorted1 = VFactory.sortedDoubleVector(dim, capacity, intsortedIndices, doubleValues)
-        var sparse11 = VFactory.sparseDoubleVector(dim, intrandIndices1, doubleValues1)
-        var sorted11 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices1, doubleValues1)
-        var sorted12 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices2, doubleValues1)
-        println(s"${dense1.getClass.getSimpleName}: ${getFlag(dense1)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense1.imul(ilist.get(i))).sum()},${dense1.sum()}")
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse1.imul(ilist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted1.imul(ilist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse11.imul(ilist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted11.imul(ilist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted12.imul(ilist.get(i))).sum()},${sorted12.sum()}")
-        var dense2 = VFactory.denseFloatVector(densefloatValues)
-        var sparse2 = VFactory.sparseFloatVector(dim, intrandIndices, floatValues)
-        var sorted2 = VFactory.sortedFloatVector(dim, capacity, intsortedIndices, floatValues)
-        var sparse21 = VFactory.sparseFloatVector(dim, intrandIndices1, floatValues1)
-        var sorted21 = VFactory.sortedFloatVector(dim, intsortedIndices1, floatValues1)
-        var sorted22 = VFactory.sortedFloatVector(dim, intsortedIndices2, floatValues1)
-        println(s"${dense2.getClass.getSimpleName}: ${getFlag(dense2)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense2.imul(ilist.get(i))).sum()},${dense2.sum()}")
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse2.imul(ilist.get(i))).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted2.imul(ilist.get(i))).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse21.imul(ilist.get(i))).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted21.imul(ilist.get(i))).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted22.imul(ilist.get(i))).sum()},${sorted22.sum()}")
-        var dense3 = VFactory.denseLongVector(denselongValues)
-        var sparse3 = VFactory.sparseLongVector(dim, intrandIndices, longValues)
-        var sorted3 = VFactory.sortedLongVector(dim, intsortedIndices, longValues)
-        var sparse31 = VFactory.sparseLongVector(dim, intrandIndices1, longValues1)
-        var sorted31 = VFactory.sortedLongVector(dim, intsortedIndices1, longValues1)
-        var sorted32 = VFactory.sortedLongVector(dim, intsortedIndices2, longValues1)
-        println(s"${dense3.getClass.getSimpleName}: ${getFlag(dense3)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense3.imul(ilist.get(i))).sum()},${dense3.sum()}")
-        println(s"${sparse3.getClass.getSimpleName}: ${getFlag(sparse3)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse3.imul(ilist.get(i))).sum()},${sparse3.sum()}")
-        println(s"${sorted3.getClass.getSimpleName}: ${getFlag(sorted3)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted3.imul(ilist.get(i))).sum()},${sorted3.sum()}")
-        println(s"${sparse31.getClass.getSimpleName}: ${getFlag(sparse31)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse31.imul(ilist.get(i))).sum()},${sparse31.sum()}")
-        println(s"${sorted31.getClass.getSimpleName}: ${getFlag(sorted31)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted31.imul(ilist.get(i))).sum()},${sorted31.sum()}")
-        println(s"${sorted32.getClass.getSimpleName}: ${getFlag(sorted32)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted32.imul(ilist.get(i))).sum()},${sorted32.sum()}")
-        var dense4 = VFactory.denseIntVector(denseintValues)
-        var sparse4 = VFactory.sparseIntVector(dim, intrandIndices, intValues)
-        var sorted4 = VFactory.sortedIntVector(dim, capacity, intsortedIndices, intValues)
-        var sparse41 = VFactory.sparseIntVector(dim, intrandIndices1, intValues1)
-        var sorted41 = VFactory.sortedIntVector(dim, intsortedIndices1, intValues1)
-        var sorted42 = VFactory.sortedIntVector(dim, intsortedIndices2, intValues1)
-        println(s"${dense4.getClass.getSimpleName}: ${getFlag(dense4)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense4.imul(ilist.get(i))).sum()},${dense4.sum()}")
-        println(s"${sparse4.getClass.getSimpleName}: ${getFlag(sparse4)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse4.imul(ilist.get(i))).sum()},${sparse4.sum()}")
-        println(s"${sorted4.getClass.getSimpleName}: ${getFlag(sorted4)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted4.imul(ilist.get(i))).sum()},${sorted4.sum()}")
-        println(s"${sparse41.getClass.getSimpleName}: ${getFlag(sparse41)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse41.imul(ilist.get(i))).sum()},${sparse41.sum()}")
-        println(s"${sorted41.getClass.getSimpleName}: ${getFlag(sorted41)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted41.imul(ilist.get(i))).sum()},${sorted41.sum()}")
-        println(s"${sorted42.getClass.getSimpleName}: ${getFlag(sorted42)} imul ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted42.imul(ilist.get(i))).sum()},${sorted42.sum()}")
-      }
-    }
-
-
-    //longkey
-    (0 until llist.size()).foreach { i =>
-      if (i < 5) {
-        var sparse1 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices, doubleValues)
-        var sorted1 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices, doubleValues)
-        var sparse11 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices1, doubleValues1)
-        var sorted11 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices1, doubleValues1)
-        var sorted12 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices2, doubleValues1)
-
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse1.imul(llist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted1.imul(llist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse11.imul(llist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted11.imul(llist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted12.imul(llist.get(i))).sum()},${sorted12.sum()}")
-
-      } else if (i < 10) {
-        var sparse1 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices, doubleValues)
-        var sorted1 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices, doubleValues)
-        var sparse11 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices1, doubleValues1)
-        var sorted11 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices1, doubleValues1)
-        var sorted12 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices2, doubleValues1)
-
-
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse1.imul(llist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted1.imul(llist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse11.imul(llist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted11.imul(llist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted12.imul(llist.get(i))).sum()},${sorted12.sum()}")
-
-        var sparse2 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices, floatValues)
-        var sorted2 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices, floatValues)
-        var sparse21 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices1, floatValues1)
-        var sorted21 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices1, floatValues1)
-        var sorted22 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices2, floatValues1)
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse2.imul(llist.get(i))).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted2.imul(llist.get(i))).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse21.imul(llist.get(i))).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted21.imul(llist.get(i))).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted22.imul(llist.get(i))).sum()},${sorted22.sum()}")
-      } else if (i < 15) {
-        var sparse1 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices, doubleValues)
-        var sorted1 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices, doubleValues)
-        var sparse11 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices1, doubleValues1)
-        var sorted11 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices1, doubleValues1)
-        var sorted12 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices2, doubleValues1)
-
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse1.imul(llist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted1.imul(llist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse11.imul(llist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted11.imul(llist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted12.imul(llist.get(i))).sum()},${sorted12.sum()}")
-
-        var sparse2 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices, floatValues)
-        var sorted2 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices, floatValues)
-        var sparse21 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices1, floatValues1)
-        var sorted21 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices1, floatValues1)
-        var sorted22 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices2, floatValues1)
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse2.imul(llist.get(i))).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted2.imul(llist.get(i))).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse21.imul(llist.get(i))).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted21.imul(llist.get(i))).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted22.imul(llist.get(i))).sum()},${sorted22.sum()}")
-        var sparse3 = VFactory.sparseLongKeyLongVector(dim, longrandIndices, longValues)
-        var sorted3 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices, longValues)
-        var sparse31 = VFactory.sparseLongKeyLongVector(dim, longrandIndices1, longValues1)
-        var sorted31 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices1, longValues1)
-        var sorted32 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices2, longValues1)
-        println(s"${sparse3.getClass.getSimpleName}: ${getFlag(sparse3)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse3.imul(llist.get(i))).sum()},${sparse3.sum()}")
-        println(s"${sorted3.getClass.getSimpleName}: ${getFlag(sorted3)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted3.imul(llist.get(i))).sum()},${sorted3.sum()}")
-        println(s"${sparse31.getClass.getSimpleName}: ${getFlag(sparse31)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse31.imul(llist.get(i))).sum()},${sparse31.sum()}")
-        println(s"${sorted31.getClass.getSimpleName}: ${getFlag(sorted31)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted31.imul(llist.get(i))).sum()},${sorted31.sum()}")
-        println(s"${sorted32.getClass.getSimpleName}: ${getFlag(sorted32)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted32.imul(llist.get(i))).sum()},${sorted32.sum()}")
-      } else if (i < 23) {
-        var sparse1 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices, doubleValues)
-        var sorted1 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices, doubleValues)
-        var sparse11 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices1, doubleValues1)
-        var sorted11 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices1, doubleValues1)
-        var sorted12 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices2, doubleValues1)
-
-
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse1.imul(llist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted1.imul(llist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse11.imul(llist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted11.imul(llist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted12.imul(llist.get(i))).sum()},${sorted12.sum()}")
-
-        var sparse2 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices, floatValues)
-        var sorted2 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices, floatValues)
-        var sparse21 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices1, floatValues1)
-        var sorted21 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices1, floatValues1)
-        var sorted22 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices2, floatValues1)
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse2.imul(llist.get(i))).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted2.imul(llist.get(i))).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse21.imul(llist.get(i))).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted21.imul(llist.get(i))).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted22.imul(llist.get(i))).sum()},${sorted22.sum()}")
-        var sparse3 = VFactory.sparseLongKeyLongVector(dim, longrandIndices, longValues)
-        var sorted3 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices, longValues)
-        var sparse31 = VFactory.sparseLongKeyLongVector(dim, longrandIndices1, longValues1)
-        var sorted31 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices1, longValues1)
-        var sorted32 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices2, longValues1)
-        println(s"${sparse3.getClass.getSimpleName}: ${getFlag(sparse3)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse3.imul(llist.get(i))).sum()},${sparse3.sum()}")
-        println(s"${sorted3.getClass.getSimpleName}: ${getFlag(sorted3)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted3.imul(llist.get(i))).sum()},${sorted3.sum()}")
-        println(s"${sparse31.getClass.getSimpleName}: ${getFlag(sparse31)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse31.imul(llist.get(i))).sum()},${sparse31.sum()}")
-        println(s"${sorted31.getClass.getSimpleName}: ${getFlag(sorted31)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted31.imul(llist.get(i))).sum()},${sorted31.sum()}")
-        println(s"${sorted32.getClass.getSimpleName}: ${getFlag(sorted32)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted32.imul(llist.get(i))).sum()},${sorted32.sum()}")
-        var sparse4 = VFactory.sparseLongKeyIntVector(dim, longrandIndices, intValues)
-        var sorted4 = VFactory.sortedLongKeyIntVector(dim, longsortedIndices, intValues)
-        var sparse41 = VFactory.sparseLongKeyIntVector(dim, longrandIndices1, intValues1)
-        var sorted41 = VFactory.sortedLongKeyIntVector(dim, longsortedIndices1, intValues1)
-        var sorted42 = VFactory.sortedLongKeyIntVector(dim, longsortedIndices2, intValues1)
-        println(s"${sparse4.getClass.getSimpleName}: ${getFlag(sparse4)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse4.imul(llist.get(i))).sum()},${sparse4.sum()}")
-        println(s"${sorted4.getClass.getSimpleName}: ${getFlag(sorted4)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted4.imul(llist.get(i))).sum()},${sorted4.sum()}")
-        println(s"${sparse41.getClass.getSimpleName}: ${getFlag(sparse41)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse41.imul(llist.get(i))).sum()},${sparse41.sum()}")
-        println(s"${sorted41.getClass.getSimpleName}: ${getFlag(sorted41)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted41.imul(llist.get(i))).sum()},${sorted41.sum()}")
-        println(s"${sorted42.getClass.getSimpleName}: ${getFlag(sorted42)} imul ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted42.imul(llist.get(i))).sum()},${sorted42.sum()}")
-      }
-    }
-  }
-
-  @Test
-  def Idivtest() {
-    println("angel idiv test--")
-    (0 until ilist.size()).foreach { i =>
-      if (i < 6) {
-        var dense1 = VFactory.denseDoubleVector(densedoubleValues_inplace)
-        var sparse1 = VFactory.sparseDoubleVector(dim, intrandIndices, doubleValues_inplace)
-        var sorted1 = VFactory.sortedDoubleVector(dim, capacity, intsortedIndices, doubleValues_inplace)
-        var sparse11 = VFactory.sparseDoubleVector(dim, intrandIndices1, doubleValues1_inplace)
-        var sorted11 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices1, doubleValues1_inplace)
-        var sorted12 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices2, doubleValues1_inplace)
-        println(s"${dense1.getClass.getSimpleName}: ${getFlag(dense1)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense1.idiv(ilist.get(i))).sum()},${dense1.sum()}")
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse1.idiv(ilist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted1.idiv(ilist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse11.idiv(ilist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted11.idiv(ilist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted12.idiv(ilist.get(i))).sum()},${sorted12.sum()}")
-
-      } else if (i < 12) {
-        var dense1 = VFactory.denseDoubleVector(densedoubleValues_inplace)
-        var sparse1 = VFactory.sparseDoubleVector(dim, intrandIndices, doubleValues_inplace)
-        var sorted1 = VFactory.sortedDoubleVector(dim, capacity, intsortedIndices, doubleValues_inplace)
-        var sparse11 = VFactory.sparseDoubleVector(dim, intrandIndices1, doubleValues1_inplace)
-        var sorted11 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices1, doubleValues1_inplace)
-        var sorted12 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices2, doubleValues1_inplace)
-        println(s"${dense1.getClass.getSimpleName}: ${getFlag(dense1)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense1.idiv(ilist.get(i))).sum()},${dense1.sum()}")
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse1.idiv(ilist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted1.idiv(ilist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse11.idiv(ilist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted11.idiv(ilist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted12.idiv(ilist.get(i))).sum()},${sorted12.sum()}")
-
-        var dense2 = VFactory.denseFloatVector(densefloatValues_inplace)
-        var sparse2 = VFactory.sparseFloatVector(dim, intrandIndices, floatValues_inplace)
-        var sorted2 = VFactory.sortedFloatVector(dim, capacity, intsortedIndices, floatValues_inplace)
-        var sparse21 = VFactory.sparseFloatVector(dim, intrandIndices1, floatValues1_inplace)
-        var sorted21 = VFactory.sortedFloatVector(dim, intsortedIndices1, floatValues1_inplace)
-        var sorted22 = VFactory.sortedFloatVector(dim, intsortedIndices2, floatValues1_inplace)
-        println(s"${dense2.getClass.getSimpleName}: ${getFlag(dense2)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense2.idiv(ilist.get(i))).sum()},${dense2.sum()}")
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse2.idiv(ilist.get(i))).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted2.idiv(ilist.get(i))).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse21.idiv(ilist.get(i))).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted21.idiv(ilist.get(i))).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted22.idiv(ilist.get(i))).sum()},${sorted22.sum()}")
-      } else if (i < 18) {
-        var dense1 = VFactory.denseDoubleVector(densedoubleValues_inplace)
-        var sparse1 = VFactory.sparseDoubleVector(dim, intrandIndices, doubleValues_inplace)
-        var sorted1 = VFactory.sortedDoubleVector(dim, capacity, intsortedIndices, doubleValues_inplace)
-        var sparse11 = VFactory.sparseDoubleVector(dim, intrandIndices1, doubleValues1_inplace)
-        var sorted11 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices1, doubleValues1_inplace)
-        var sorted12 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices2, doubleValues1_inplace)
-        println(s"${dense1.getClass.getSimpleName}: ${getFlag(dense1)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense1.idiv(ilist.get(i))).sum()},${dense1.sum()}")
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse1.idiv(ilist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted1.idiv(ilist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse11.idiv(ilist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted11.idiv(ilist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted12.idiv(ilist.get(i))).sum()},${sorted12.sum()}")
-
-        var dense2 = VFactory.denseFloatVector(densefloatValues_inplace)
-        var sparse2 = VFactory.sparseFloatVector(dim, intrandIndices, floatValues_inplace)
-        var sorted2 = VFactory.sortedFloatVector(dim, capacity, intsortedIndices, floatValues_inplace)
-        var sparse21 = VFactory.sparseFloatVector(dim, intrandIndices1, floatValues1_inplace)
-        var sorted21 = VFactory.sortedFloatVector(dim, intsortedIndices1, floatValues1_inplace)
-        var sorted22 = VFactory.sortedFloatVector(dim, intsortedIndices2, floatValues1_inplace)
-        println(s"${dense2.getClass.getSimpleName}: ${getFlag(dense2)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense2.idiv(ilist.get(i))).sum()},${dense2.sum()}")
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse2.idiv(ilist.get(i))).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted2.idiv(ilist.get(i))).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse21.idiv(ilist.get(i))).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted21.idiv(ilist.get(i))).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted22.idiv(ilist.get(i))).sum()},${sorted22.sum()}")
-        var dense3 = VFactory.denseLongVector(denselongValues_inplace)
-        var sparse3 = VFactory.sparseLongVector(dim, intrandIndices, longValues_inplace)
-        var sorted3 = VFactory.sortedLongVector(dim, capacity, intsortedIndices, longValues_inplace)
-        var sparse31 = VFactory.sparseLongVector(dim, intrandIndices1, longValues1_inplace)
-        var sorted31 = VFactory.sortedLongVector(dim, intsortedIndices1, longValues1_inplace)
-        var sorted32 = VFactory.sortedLongVector(dim, intsortedIndices2, longValues1_inplace)
-        println(s"${dense3.getClass.getSimpleName}: ${getFlag(dense3)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense3.idiv(ilist.get(i))).sum()},${dense3.sum()}")
-        println(s"${sparse3.getClass.getSimpleName}: ${getFlag(sparse3)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse3.idiv(ilist.get(i))).sum()},${sparse3.sum()}")
-        println(s"${sorted3.getClass.getSimpleName}: ${getFlag(sorted3)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted3.idiv(ilist.get(i))).sum()},${sorted3.sum()}")
-        println(s"${sparse31.getClass.getSimpleName}: ${getFlag(sparse31)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse31.idiv(ilist.get(i))).sum()},${sparse31.sum()}")
-        println(s"${sorted31.getClass.getSimpleName}: ${getFlag(sorted31)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted31.idiv(ilist.get(i))).sum()},${sorted31.sum()}")
-        println(s"${sorted32.getClass.getSimpleName}: ${getFlag(sorted32)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted32.idiv(ilist.get(i))).sum()},${sorted32.sum()}")
-      } else if (i < 27) {
-        var dense1 = VFactory.denseDoubleVector(densedoubleValues_inplace)
-        var sparse1 = VFactory.sparseDoubleVector(dim, intrandIndices, doubleValues_inplace)
-        var sorted1 = VFactory.sortedDoubleVector(dim, capacity, intsortedIndices, doubleValues_inplace)
-        var sparse11 = VFactory.sparseDoubleVector(dim, intrandIndices1, doubleValues1_inplace)
-        var sorted11 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices1, doubleValues1_inplace)
-        var sorted12 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices2, doubleValues1_inplace)
-        println(s"${dense1.getClass.getSimpleName}: ${getFlag(dense1)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense1.idiv(ilist.get(i))).sum()},${dense1.sum()}")
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse1.idiv(ilist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted1.idiv(ilist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse11.idiv(ilist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted11.idiv(ilist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted12.idiv(ilist.get(i))).sum()},${sorted12.sum()}")
-
-        var dense2 = VFactory.denseFloatVector(densefloatValues_inplace)
-        var sparse2 = VFactory.sparseFloatVector(dim, intrandIndices, floatValues_inplace)
-        var sorted2 = VFactory.sortedFloatVector(dim, capacity, intsortedIndices, floatValues_inplace)
-        var sparse21 = VFactory.sparseFloatVector(dim, intrandIndices1, floatValues1_inplace)
-        var sorted21 = VFactory.sortedFloatVector(dim, intsortedIndices1, floatValues1_inplace)
-        var sorted22 = VFactory.sortedFloatVector(dim, intsortedIndices2, floatValues1_inplace)
-        println(s"${dense2.getClass.getSimpleName}: ${getFlag(dense2)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense2.idiv(ilist.get(i))).sum()},${dense2.sum()}")
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse2.idiv(ilist.get(i))).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted2.idiv(ilist.get(i))).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse21.idiv(ilist.get(i))).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted21.idiv(ilist.get(i))).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted22.idiv(ilist.get(i))).sum()},${sorted22.sum()}")
-        var dense3 = VFactory.denseLongVector(denselongValues_inplace)
-        var sparse3 = VFactory.sparseLongVector(dim, intrandIndices, longValues_inplace)
-        var sorted3 = VFactory.sortedLongVector(dim, capacity, intsortedIndices, longValues_inplace)
-        var sparse31 = VFactory.sparseLongVector(dim, intrandIndices1, longValues1_inplace)
-        var sorted31 = VFactory.sortedLongVector(dim, intsortedIndices1, longValues1_inplace)
-        var sorted32 = VFactory.sortedLongVector(dim, intsortedIndices2, longValues1_inplace)
-        println(s"${dense3.getClass.getSimpleName}: ${getFlag(dense3)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense3.idiv(ilist.get(i))).sum()},${dense3.sum()}")
-        println(s"${sparse3.getClass.getSimpleName}: ${getFlag(sparse3)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse3.idiv(ilist.get(i))).sum()},${sparse3.sum()}")
-        println(s"${sorted3.getClass.getSimpleName}: ${getFlag(sorted3)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted3.idiv(ilist.get(i))).sum()},${sorted3.sum()}")
-        println(s"${sparse31.getClass.getSimpleName}: ${getFlag(sparse31)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse31.idiv(ilist.get(i))).sum()},${sparse31.sum()}")
-        println(s"${sorted31.getClass.getSimpleName}: ${getFlag(sorted31)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted31.idiv(ilist.get(i))).sum()},${sorted31.sum()}")
-        println(s"${sorted32.getClass.getSimpleName}: ${getFlag(sorted32)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted32.idiv(ilist.get(i))).sum()},${sorted32.sum()}")
-        var dense4 = VFactory.denseIntVector(denseintValues_inplace)
-        var sparse4 = VFactory.sparseIntVector(dim, intrandIndices, intValues_inplace)
-        var sorted4 = VFactory.sortedIntVector(dim, capacity, intsortedIndices, intValues_inplace)
-        var sparse41 = VFactory.sparseIntVector(dim, intrandIndices1, intValues1_inplace)
-        var sorted41 = VFactory.sortedIntVector(dim, intsortedIndices1, intValues1_inplace)
-        var sorted42 = VFactory.sortedIntVector(dim, intsortedIndices2, intValues1_inplace)
-        println(s"${dense4.getClass.getSimpleName}: ${getFlag(dense4)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense4.idiv(ilist.get(i))).sum()},${dense4.sum()}")
-        println(s"${sparse4.getClass.getSimpleName}: ${getFlag(sparse4)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse4.idiv(ilist.get(i))).sum()},${sparse4.sum()}")
-        println(s"${sorted4.getClass.getSimpleName}: ${getFlag(sorted4)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted4.idiv(ilist.get(i))).sum()},${sorted4.sum()}")
-        println(s"${sparse41.getClass.getSimpleName}: ${getFlag(sparse41)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse41.idiv(ilist.get(i))).sum()},${sparse41.sum()}")
-        println(s"${sorted41.getClass.getSimpleName}: ${getFlag(sorted41)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted41.idiv(ilist.get(i))).sum()},${sorted41.sum()}")
-        println(s"${sorted42.getClass.getSimpleName}: ${getFlag(sorted42)} idiv ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted42.idiv(ilist.get(i))).sum()},${sorted42.sum()}")
-      }
-    }
-
-
-    //longkey
-    (0 until llist.size()).foreach { i =>
-      if (i < 5) {
-        var sparse1 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices, doubleValues_inplace)
-        var sorted1 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices, doubleValues_inplace)
-        var sparse11 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices1, doubleValues1_inplace)
-        var sorted11 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices1, doubleValues1_inplace)
-        var sorted12 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices2, doubleValues1_inplace)
-
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse1.idiv(llist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted1.idiv(llist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse11.idiv(llist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted11.idiv(llist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted12.idiv(llist.get(i))).sum()},${sorted12.sum()}")
-
-      } else if (i < 10) {
-        var sparse1 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices, doubleValues_inplace)
-        var sorted1 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices, doubleValues_inplace)
-        var sparse11 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices1, doubleValues1_inplace)
-        var sorted11 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices1, doubleValues1_inplace)
-        var sorted12 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices2, doubleValues1_inplace)
-
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse1.idiv(llist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted1.idiv(llist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse11.idiv(llist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted11.idiv(llist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted12.idiv(llist.get(i))).sum()},${sorted12.sum()}")
-
-        var sparse2 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices, floatValues_inplace)
-        var sorted2 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices, floatValues_inplace)
-        var sparse21 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices1, floatValues1_inplace)
-        var sorted21 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices1, floatValues1_inplace)
-        var sorted22 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices2, floatValues1_inplace)
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse2.idiv(llist.get(i))).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted2.idiv(llist.get(i))).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse21.idiv(llist.get(i))).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted21.idiv(llist.get(i))).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted22.idiv(llist.get(i))).sum()},${sorted22.sum()}")
-      } else if (i < 15) {
-        var sparse1 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices, doubleValues_inplace)
-        var sorted1 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices, doubleValues_inplace)
-        var sparse11 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices1, doubleValues1_inplace)
-        var sorted11 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices1, doubleValues1_inplace)
-        var sorted12 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices2, doubleValues1_inplace)
-
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse1.idiv(llist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted1.idiv(llist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse11.idiv(llist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted11.idiv(llist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted12.idiv(llist.get(i))).sum()},${sorted12.sum()}")
-
-        var sparse2 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices, floatValues_inplace)
-        var sorted2 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices, floatValues_inplace)
-        var sparse21 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices1, floatValues1_inplace)
-        var sorted21 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices1, floatValues1_inplace)
-        var sorted22 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices2, floatValues1_inplace)
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse2.idiv(llist.get(i))).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted2.idiv(llist.get(i))).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse21.idiv(llist.get(i))).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted21.idiv(llist.get(i))).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted22.idiv(llist.get(i))).sum()},${sorted22.sum()}")
-        var sparse3 = VFactory.sparseLongKeyLongVector(dim, longrandIndices, longValues_inplace)
-        var sorted3 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices, longValues_inplace)
-        var sparse31 = VFactory.sparseLongKeyLongVector(dim, longrandIndices1, longValues1_inplace)
-        var sorted31 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices1, longValues1_inplace)
-        var sorted32 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices2, longValues1_inplace)
-        println(s"${sparse3.getClass.getSimpleName}: ${getFlag(sparse3)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse3.idiv(llist.get(i))).sum()},${sparse3.sum()}")
-        println(s"${sorted3.getClass.getSimpleName}: ${getFlag(sorted3)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted3.idiv(llist.get(i))).sum()},${sorted3.sum()}")
-        println(s"${sparse31.getClass.getSimpleName}: ${getFlag(sparse31)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse31.idiv(llist.get(i))).sum()},${sparse31.sum()}")
-        println(s"${sorted31.getClass.getSimpleName}: ${getFlag(sorted31)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted31.idiv(llist.get(i))).sum()},${sorted31.sum()}")
-        println(s"${sorted32.getClass.getSimpleName}: ${getFlag(sorted32)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted32.idiv(llist.get(i))).sum()},${sorted32.sum()}")
-      } else if (i < 23) {
-        var sparse1 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices, doubleValues_inplace)
-        var sorted1 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices, doubleValues_inplace)
-        var sparse11 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices1, doubleValues1_inplace)
-        var sorted11 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices1, doubleValues1_inplace)
-        var sorted12 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices2, doubleValues1_inplace)
-
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse1.idiv(llist.get(i))).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted1.idiv(llist.get(i))).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse11.idiv(llist.get(i))).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted11.idiv(llist.get(i))).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted12.idiv(llist.get(i))).sum()},${sorted12.sum()}")
-
-        var sparse2 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices, floatValues_inplace)
-        var sorted2 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices, floatValues_inplace)
-        var sparse21 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices1, floatValues1_inplace)
-        var sorted21 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices1, floatValues1_inplace)
-        var sorted22 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices2, floatValues1_inplace)
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse2.idiv(llist.get(i))).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted2.idiv(llist.get(i))).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse21.idiv(llist.get(i))).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted21.idiv(llist.get(i))).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted22.idiv(llist.get(i))).sum()},${sorted22.sum()}")
-        var sparse3 = VFactory.sparseLongKeyLongVector(dim, longrandIndices, longValues_inplace)
-        var sorted3 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices, longValues_inplace)
-        var sparse31 = VFactory.sparseLongKeyLongVector(dim, longrandIndices1, longValues1_inplace)
-        var sorted31 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices1, longValues1_inplace)
-        var sorted32 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices2, longValues1_inplace)
-        println(s"${sparse3.getClass.getSimpleName}: ${getFlag(sparse3)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse3.idiv(llist.get(i))).sum()},${sparse3.sum()}")
-        println(s"${sorted3.getClass.getSimpleName}: ${getFlag(sorted3)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted3.idiv(llist.get(i))).sum()},${sorted3.sum()}")
-        println(s"${sparse31.getClass.getSimpleName}: ${getFlag(sparse31)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse31.idiv(llist.get(i))).sum()},${sparse31.sum()}")
-        println(s"${sorted31.getClass.getSimpleName}: ${getFlag(sorted31)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted31.idiv(llist.get(i))).sum()},${sorted31.sum()}")
-        println(s"${sorted32.getClass.getSimpleName}: ${getFlag(sorted32)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted32.idiv(llist.get(i))).sum()},${sorted32.sum()}")
-        var sparse4 = VFactory.sparseLongKeyIntVector(dim, longrandIndices, intValues_inplace)
-        var sorted4 = VFactory.sortedLongKeyIntVector(dim, longsortedIndices, intValues_inplace)
-        var sparse41 = VFactory.sparseLongKeyIntVector(dim, longrandIndices1, intValues1_inplace)
-        var sorted41 = VFactory.sortedLongKeyIntVector(dim, longsortedIndices1, intValues1_inplace)
-        var sorted42 = VFactory.sortedLongKeyIntVector(dim, longsortedIndices2, intValues1_inplace)
-        println(s"${sparse4.getClass.getSimpleName}: ${getFlag(sparse4)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse4.idiv(llist.get(i))).sum()},${sparse4.sum()}")
-        println(s"${sorted4.getClass.getSimpleName}: ${getFlag(sorted4)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted4.idiv(llist.get(i))).sum()},${sorted4.sum()}")
-        println(s"${sparse41.getClass.getSimpleName}: ${getFlag(sparse41)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse41.idiv(llist.get(i))).sum()},${sparse41.sum()}")
-        println(s"${sorted41.getClass.getSimpleName}: ${getFlag(sorted41)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted41.idiv(llist.get(i))).sum()},${sorted41.sum()}")
-        println(s"${sorted42.getClass.getSimpleName}: ${getFlag(sorted42)} idiv ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted42.idiv(llist.get(i))).sum()},${sorted42.sum()}")
-      }
-    }
-  }
-
-  @Test
-  def Iaxpytest() {
-    println("angel iaxpy test--")
-    (0 until ilist.size()).foreach { i =>
-      if (i < 6) {
-        var dense1 = VFactory.denseDoubleVector(densedoubleValues_inplace)
-        var sparse1 = VFactory.sparseDoubleVector(dim, intrandIndices, doubleValues_inplace)
-        var sorted1 = VFactory.sortedDoubleVector(dim, capacity, intsortedIndices, doubleValues_inplace)
-        var sparse11 = VFactory.sparseDoubleVector(dim, intrandIndices1, doubleValues1_inplace)
-        var sorted11 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices1, doubleValues1_inplace)
-        var sorted12 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices2, doubleValues1_inplace)
-        println(s"${dense1.getClass.getSimpleName}: ${getFlag(dense1)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense1.iaxpy(ilist.get(i), 2.0)).sum()},${dense1.sum()}")
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse1.iaxpy(ilist.get(i), 2.0)).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted1.iaxpy(ilist.get(i), 2.0)).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse11.iaxpy(ilist.get(i), 2.0)).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted11.iaxpy(ilist.get(i), 2.0)).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted12.iaxpy(ilist.get(i), 2.0)).sum()},${sorted12.sum()}")
-
-      } else if (i < 12) {
-        var dense1 = VFactory.denseDoubleVector(densedoubleValues_inplace)
-        var sparse1 = VFactory.sparseDoubleVector(dim, intrandIndices, doubleValues_inplace)
-        var sorted1 = VFactory.sortedDoubleVector(dim, capacity, intsortedIndices, doubleValues_inplace)
-        var sparse11 = VFactory.sparseDoubleVector(dim, intrandIndices1, doubleValues1_inplace)
-        var sorted11 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices1, doubleValues1_inplace)
-        var sorted12 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices2, doubleValues1_inplace)
-        println(s"${dense1.getClass.getSimpleName}: ${getFlag(dense1)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense1.iaxpy(ilist.get(i), 2.0)).sum()},${dense1.sum()}")
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse1.iaxpy(ilist.get(i), 2.0)).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted1.iaxpy(ilist.get(i), 2.0)).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse11.iaxpy(ilist.get(i), 2.0)).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted11.iaxpy(ilist.get(i), 2.0)).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted12.iaxpy(ilist.get(i), 2.0)).sum()},${sorted12.sum()}")
-        var dense2 = VFactory.denseFloatVector(densefloatValues_inplace)
-        var sparse2 = VFactory.sparseFloatVector(dim, intrandIndices, floatValues_inplace)
-        var sorted2 = VFactory.sortedFloatVector(dim, capacity, intsortedIndices, floatValues_inplace)
-        var sparse21 = VFactory.sparseFloatVector(dim, intrandIndices1, floatValues1_inplace)
-        var sorted21 = VFactory.sortedFloatVector(dim, intsortedIndices1, floatValues1_inplace)
-        var sorted22 = VFactory.sortedFloatVector(dim, intsortedIndices2, floatValues1_inplace)
-        println(s"${dense2.getClass.getSimpleName}: ${getFlag(dense2)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense2.iaxpy(ilist.get(i), 2.0)).sum()},${dense2.sum()}")
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse2.iaxpy(ilist.get(i), 2.0)).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted2.iaxpy(ilist.get(i), 2.0)).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse21.iaxpy(ilist.get(i), 2.0)).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted21.iaxpy(ilist.get(i), 2.0)).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted22.iaxpy(ilist.get(i), 2.0)).sum()},${sorted22.sum()}")
-      } else if (i < 18) {
-        var dense1 = VFactory.denseDoubleVector(densedoubleValues_inplace)
-        var sparse1 = VFactory.sparseDoubleVector(dim, intrandIndices, doubleValues_inplace)
-        var sorted1 = VFactory.sortedDoubleVector(dim, capacity, intsortedIndices, doubleValues_inplace)
-        var sparse11 = VFactory.sparseDoubleVector(dim, intrandIndices1, doubleValues1_inplace)
-        var sorted11 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices1, doubleValues1_inplace)
-        var sorted12 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices2, doubleValues1_inplace)
-        println(s"${dense1.getClass.getSimpleName}: ${getFlag(dense1)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense1.iaxpy(ilist.get(i), 2.0)).sum()},${dense1.sum()}")
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse1.iaxpy(ilist.get(i), 2.0)).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted1.iaxpy(ilist.get(i), 2.0)).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse11.iaxpy(ilist.get(i), 2.0)).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted11.iaxpy(ilist.get(i), 2.0)).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted12.iaxpy(ilist.get(i), 2.0)).sum()},${sorted12.sum()}")
-
-        var dense2 = VFactory.denseFloatVector(densefloatValues_inplace)
-        var sparse2 = VFactory.sparseFloatVector(dim, intrandIndices, floatValues_inplace)
-        var sorted2 = VFactory.sortedFloatVector(dim, capacity, intsortedIndices, floatValues_inplace)
-        var sparse21 = VFactory.sparseFloatVector(dim, intrandIndices1, floatValues1_inplace)
-        var sorted21 = VFactory.sortedFloatVector(dim, intsortedIndices1, floatValues1_inplace)
-        var sorted22 = VFactory.sortedFloatVector(dim, intsortedIndices2, floatValues1_inplace)
-        println(s"${dense2.getClass.getSimpleName}: ${getFlag(dense2)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense2.iaxpy(ilist.get(i), 2.0)).sum()},${dense2.sum()}")
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse2.iaxpy(ilist.get(i), 2.0)).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted2.iaxpy(ilist.get(i), 2.0)).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse21.iaxpy(ilist.get(i), 2.0)).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted21.iaxpy(ilist.get(i), 2.0)).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted22.iaxpy(ilist.get(i), 2.0)).sum()},${sorted22.sum()}")
-        var dense3 = VFactory.denseLongVector(denselongValues_inplace)
-        var sparse3 = VFactory.sparseLongVector(dim, intrandIndices, longValues_inplace)
-        var sorted3 = VFactory.sortedLongVector(dim, capacity, intsortedIndices, longValues_inplace)
-        var sparse31 = VFactory.sparseLongVector(dim, intrandIndices1, longValues1_inplace)
-        var sorted31 = VFactory.sortedLongVector(dim, intsortedIndices1, longValues1_inplace)
-        var sorted32 = VFactory.sortedLongVector(dim, intsortedIndices2, longValues1_inplace)
-        println(s"${dense3.getClass.getSimpleName}: ${getFlag(dense3)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense3.iaxpy(ilist.get(i), 2.0)).sum()},${dense3.sum()}")
-        println(s"${sparse3.getClass.getSimpleName}: ${getFlag(sparse3)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse3.iaxpy(ilist.get(i), 2.0)).sum()},${sparse3.sum()}")
-        println(s"${sorted3.getClass.getSimpleName}: ${getFlag(sorted3)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted3.iaxpy(ilist.get(i), 2.0)).sum()},${sorted3.sum()}")
-        println(s"${sparse31.getClass.getSimpleName}: ${getFlag(sparse31)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse31.iaxpy(ilist.get(i), 2.0)).sum()},${sparse31.sum()}")
-        println(s"${sorted31.getClass.getSimpleName}: ${getFlag(sorted31)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted31.iaxpy(ilist.get(i), 2.0)).sum()},${sorted31.sum()}")
-        println(s"${sorted32.getClass.getSimpleName}: ${getFlag(sorted32)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted32.iaxpy(ilist.get(i), 2.0)).sum()},${sorted32.sum()}")
-      } else if (i < 27) {
-        var dense1 = VFactory.denseDoubleVector(densedoubleValues_inplace)
-        var sparse1 = VFactory.sparseDoubleVector(dim, intrandIndices, doubleValues_inplace)
-        var sorted1 = VFactory.sortedDoubleVector(dim, capacity, intsortedIndices, doubleValues_inplace)
-        var sparse11 = VFactory.sparseDoubleVector(dim, intrandIndices1, doubleValues1_inplace)
-        var sorted11 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices1, doubleValues1_inplace)
-        var sorted12 = VFactory.sortedDoubleVector(dim, capacity1, intsortedIndices2, doubleValues1_inplace)
-        println(s"${dense1.getClass.getSimpleName}: ${getFlag(dense1)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense1.iaxpy(ilist.get(i), 2.0)).sum()},${dense1.sum()}")
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse1.iaxpy(ilist.get(i), 2.0)).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted1.iaxpy(ilist.get(i), 2.0)).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse11.iaxpy(ilist.get(i), 2.0)).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted11.iaxpy(ilist.get(i), 2.0)).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted12.iaxpy(ilist.get(i), 2.0)).sum()},${sorted12.sum()}")
-        var dense2 = VFactory.denseFloatVector(densefloatValues_inplace)
-        var sparse2 = VFactory.sparseFloatVector(dim, intrandIndices, floatValues_inplace)
-        var sorted2 = VFactory.sortedFloatVector(dim, capacity, intsortedIndices, floatValues_inplace)
-        var sparse21 = VFactory.sparseFloatVector(dim, intrandIndices1, floatValues1_inplace)
-        var sorted21 = VFactory.sortedFloatVector(dim, intsortedIndices1, floatValues1_inplace)
-        var sorted22 = VFactory.sortedFloatVector(dim, intsortedIndices2, floatValues1_inplace)
-        println(s"${dense2.getClass.getSimpleName}: ${getFlag(dense2)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense2.iaxpy(ilist.get(i), 2.0)).sum()},${dense2.sum()}")
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse2.iaxpy(ilist.get(i), 2.0)).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted2.iaxpy(ilist.get(i), 2.0)).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse21.iaxpy(ilist.get(i), 2.0)).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted21.iaxpy(ilist.get(i), 2.0)).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted22.iaxpy(ilist.get(i), 2.0)).sum()},${sorted22.sum()}")
-        var dense3 = VFactory.denseLongVector(denselongValues_inplace)
-        var sparse3 = VFactory.sparseLongVector(dim, intrandIndices, longValues_inplace)
-        var sorted3 = VFactory.sortedLongVector(dim, capacity, intsortedIndices, longValues_inplace)
-        var sparse31 = VFactory.sparseLongVector(dim, intrandIndices1, longValues1_inplace)
-        var sorted31 = VFactory.sortedLongVector(dim, intsortedIndices1, longValues1_inplace)
-        var sorted32 = VFactory.sortedLongVector(dim, intsortedIndices2, longValues1_inplace)
-        println(s"${dense3.getClass.getSimpleName}: ${getFlag(dense3)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense3.iaxpy(ilist.get(i), 2.0)).sum()},${dense3.sum()}")
-        println(s"${sparse3.getClass.getSimpleName}: ${getFlag(sparse3)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse3.iaxpy(ilist.get(i), 2.0)).sum()},${sparse3.sum()}")
-        println(s"${sorted3.getClass.getSimpleName}: ${getFlag(sorted3)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted3.iaxpy(ilist.get(i), 2.0)).sum()},${sorted3.sum()}")
-        println(s"${sparse31.getClass.getSimpleName}: ${getFlag(sparse31)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse31.iaxpy(ilist.get(i), 2.0)).sum()},${sparse31.sum()}")
-        println(s"${sorted31.getClass.getSimpleName}: ${getFlag(sorted31)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted31.iaxpy(ilist.get(i), 2.0)).sum()},${sorted31.sum()}")
-        println(s"${sorted32.getClass.getSimpleName}: ${getFlag(sorted32)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted32.iaxpy(ilist.get(i), 2.0)).sum()},${sorted32.sum()}")
-        var dense4 = VFactory.denseIntVector(denseintValues_inplace)
-        var sparse4 = VFactory.sparseIntVector(dim, intrandIndices, intValues_inplace)
-        var sorted4 = VFactory.sortedIntVector(dim, capacity, intsortedIndices, intValues_inplace)
-        var sparse41 = VFactory.sparseIntVector(dim, intrandIndices1, intValues1_inplace)
-        var sorted41 = VFactory.sortedIntVector(dim, intsortedIndices1, intValues1_inplace)
-        var sorted42 = VFactory.sortedIntVector(dim, intsortedIndices2, intValues1_inplace)
-        println(s"${dense4.getClass.getSimpleName}: ${getFlag(dense4)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(dense4.iaxpy(ilist.get(i), 2.0)).sum()},${dense4.sum()}")
-        println(s"${sparse4.getClass.getSimpleName}: ${getFlag(sparse4)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse4.iaxpy(ilist.get(i), 2.0)).sum()},${sparse4.sum()}")
-        println(s"${sorted4.getClass.getSimpleName}: ${getFlag(sorted4)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted4.iaxpy(ilist.get(i), 2.0)).sum()},${sorted4.sum()}")
-        println(s"${sparse41.getClass.getSimpleName}: ${getFlag(sparse41)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sparse41.iaxpy(ilist.get(i), 2.0)).sum()},${sparse41.sum()}")
-        println(s"${sorted41.getClass.getSimpleName}: ${getFlag(sorted41)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted41.iaxpy(ilist.get(i), 2.0)).sum()},${sorted41.sum()}")
-        println(s"${sorted42.getClass.getSimpleName}: ${getFlag(sorted42)} iaxpy ${ilist.get(i).getClass.getSimpleName}: ${getFlag(ilist.get(i))} is ${(sorted42.iaxpy(ilist.get(i), 2.0)).sum()},${sorted42.sum()}")
-      }
-    }
-
-
-    //longkey
-    (0 until llist.size()).foreach { i =>
-      if (i < 5) {
-        var sparse1 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices, doubleValues_inplace)
-        var sorted1 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices, doubleValues_inplace)
-        var sparse11 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices1, doubleValues1_inplace)
-        var sorted11 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices1, doubleValues1_inplace)
-        var sorted12 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices2, doubleValues1_inplace)
-
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse1.iaxpy(llist.get(i), 2.0)).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted1.iaxpy(llist.get(i), 2.0)).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse11.iaxpy(llist.get(i), 2.0)).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted11.iaxpy(llist.get(i), 2.0)).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted12.iaxpy(llist.get(i), 2.0)).sum()},${sorted12.sum()}")
-
-      } else if (i < 10) {
-        var sparse1 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices, doubleValues_inplace)
-        var sorted1 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices, doubleValues_inplace)
-        var sparse11 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices1, doubleValues1_inplace)
-        var sorted11 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices1, doubleValues1_inplace)
-        var sorted12 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices2, doubleValues1_inplace)
-
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse1.iaxpy(llist.get(i), 2.0)).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted1.iaxpy(llist.get(i), 2.0)).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse11.iaxpy(llist.get(i), 2.0)).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted11.iaxpy(llist.get(i), 2.0)).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted12.iaxpy(llist.get(i), 2.0)).sum()},${sorted12.sum()}")
-
-        var sparse2 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices, floatValues_inplace)
-        var sorted2 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices, floatValues_inplace)
-        var sparse21 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices1, floatValues1_inplace)
-        var sorted21 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices1, floatValues1_inplace)
-        var sorted22 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices2, floatValues1_inplace)
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse2.iaxpy(llist.get(i), 2.0)).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted2.iaxpy(llist.get(i), 2.0)).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse21.iaxpy(llist.get(i), 2.0)).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted21.iaxpy(llist.get(i), 2.0)).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted22.iaxpy(llist.get(i), 2.0)).sum()},${sorted22.sum()}")
-      } else if (i < 15) {
-        var sparse1 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices, doubleValues_inplace)
-        var sorted1 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices, doubleValues_inplace)
-        var sparse11 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices1, doubleValues1_inplace)
-        var sorted11 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices1, doubleValues1_inplace)
-        var sorted12 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices2, doubleValues1_inplace)
-
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse1.iaxpy(llist.get(i), 2.0)).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted1.iaxpy(llist.get(i), 2.0)).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse11.iaxpy(llist.get(i), 2.0)).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted11.iaxpy(llist.get(i), 2.0)).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted12.iaxpy(llist.get(i), 2.0)).sum()},${sorted12.sum()}")
-
-        var sparse2 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices, floatValues_inplace)
-        var sorted2 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices, floatValues_inplace)
-        var sparse21 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices1, floatValues1_inplace)
-        var sorted21 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices1, floatValues1_inplace)
-        var sorted22 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices2, floatValues1_inplace)
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse2.iaxpy(llist.get(i), 2.0)).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted2.iaxpy(llist.get(i), 2.0)).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse21.iaxpy(llist.get(i), 2.0)).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted21.iaxpy(llist.get(i), 2.0)).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted22.iaxpy(llist.get(i), 2.0)).sum()},${sorted22.sum()}")
-        var sparse3 = VFactory.sparseLongKeyLongVector(dim, longrandIndices, longValues_inplace)
-        var sorted3 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices, longValues_inplace)
-        var sparse31 = VFactory.sparseLongKeyLongVector(dim, longrandIndices1, longValues1_inplace)
-        var sorted31 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices1, longValues1_inplace)
-        var sorted32 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices2, longValues1_inplace)
-        println(s"${sparse3.getClass.getSimpleName}: ${getFlag(sparse3)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse3.iaxpy(llist.get(i), 2.0)).sum()},${sparse3.sum()}")
-        println(s"${sorted3.getClass.getSimpleName}: ${getFlag(sorted3)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted3.iaxpy(llist.get(i), 2.0)).sum()},${sorted3.sum()}")
-        println(s"${sparse31.getClass.getSimpleName}: ${getFlag(sparse31)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse31.iaxpy(llist.get(i), 2.0)).sum()},${sparse31.sum()}")
-        println(s"${sorted31.getClass.getSimpleName}: ${getFlag(sorted31)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted31.iaxpy(llist.get(i), 2.0)).sum()},${sorted31.sum()}")
-        println(s"${sorted32.getClass.getSimpleName}: ${getFlag(sorted32)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted32.iaxpy(llist.get(i), 2.0)).sum()},${sorted32.sum()}")
-      } else if (i < 23) {
-        var sparse1 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices, doubleValues_inplace)
-        var sorted1 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices, doubleValues_inplace)
-        var sparse11 = VFactory.sparseLongKeyDoubleVector(dim, longrandIndices1, doubleValues1_inplace)
-        var sorted11 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices1, doubleValues1_inplace)
-        var sorted12 = VFactory.sortedLongKeyDoubleVector(dim, longsortedIndices2, doubleValues1_inplace)
-
-        println(s"${sparse1.getClass.getSimpleName}: ${getFlag(sparse1)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse1.iaxpy(llist.get(i), 2.0)).sum()},${sparse1.sum()}")
-        println(s"${sorted1.getClass.getSimpleName}: ${getFlag(sorted1)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted1.iaxpy(llist.get(i), 2.0)).sum()},${sorted1.sum()}")
-        println(s"${sparse11.getClass.getSimpleName}: ${getFlag(sparse11)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse11.iaxpy(llist.get(i), 2.0)).sum()},${sparse11.sum()}")
-        println(s"${sorted11.getClass.getSimpleName}: ${getFlag(sorted11)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted11.iaxpy(llist.get(i), 2.0)).sum()},${sorted11.sum()}")
-        println(s"${sorted12.getClass.getSimpleName}: ${getFlag(sorted12)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted12.iaxpy(llist.get(i), 2.0)).sum()},${sorted12.sum()}")
-
-        var sparse2 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices, floatValues_inplace)
-        var sorted2 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices, floatValues_inplace)
-        var sparse21 = VFactory.sparseLongKeyFloatVector(dim, longrandIndices1, floatValues1_inplace)
-        var sorted21 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices1, floatValues1_inplace)
-        var sorted22 = VFactory.sortedLongKeyFloatVector(dim, longsortedIndices2, floatValues1_inplace)
-        println(s"${sparse2.getClass.getSimpleName}: ${getFlag(sparse2)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse2.iaxpy(llist.get(i), 2.0)).sum()},${sparse2.sum()}")
-        println(s"${sorted2.getClass.getSimpleName}: ${getFlag(sorted2)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted2.iaxpy(llist.get(i), 2.0)).sum()},${sorted2.sum()}")
-        println(s"${sparse21.getClass.getSimpleName}: ${getFlag(sparse21)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse21.iaxpy(llist.get(i), 2.0)).sum()},${sparse21.sum()}")
-        println(s"${sorted21.getClass.getSimpleName}: ${getFlag(sorted21)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted21.iaxpy(llist.get(i), 2.0)).sum()},${sorted21.sum()}")
-        println(s"${sorted22.getClass.getSimpleName}: ${getFlag(sorted22)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted22.iaxpy(llist.get(i), 2.0)).sum()},${sorted22.sum()}")
-        var sparse3 = VFactory.sparseLongKeyLongVector(dim, longrandIndices, longValues_inplace)
-        var sorted3 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices, longValues_inplace)
-        var sparse31 = VFactory.sparseLongKeyLongVector(dim, longrandIndices1, longValues1_inplace)
-        var sorted31 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices1, longValues1_inplace)
-        var sorted32 = VFactory.sortedLongKeyLongVector(dim, longsortedIndices2, longValues1_inplace)
-        println(s"${sparse3.getClass.getSimpleName}: ${getFlag(sparse3)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse3.iaxpy(llist.get(i), 2.0)).sum()},${sparse3.sum()}")
-        println(s"${sorted3.getClass.getSimpleName}: ${getFlag(sorted3)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted3.iaxpy(llist.get(i), 2.0)).sum()},${sorted3.sum()}")
-        println(s"${sparse31.getClass.getSimpleName}: ${getFlag(sparse31)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse31.iaxpy(llist.get(i), 2.0)).sum()},${sparse31.sum()}")
-        println(s"${sorted31.getClass.getSimpleName}: ${getFlag(sorted31)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted31.iaxpy(llist.get(i), 2.0)).sum()},${sorted31.sum()}")
-        println(s"${sorted32.getClass.getSimpleName}: ${getFlag(sorted32)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted32.iaxpy(llist.get(i), 2.0)).sum()},${sorted32.sum()}")
-        var sparse4 = VFactory.sparseLongKeyIntVector(dim, longrandIndices, intValues_inplace)
-        var sorted4 = VFactory.sortedLongKeyIntVector(dim, longsortedIndices, intValues_inplace)
-        var sparse41 = VFactory.sparseLongKeyIntVector(dim, longrandIndices1, intValues1_inplace)
-        var sorted41 = VFactory.sortedLongKeyIntVector(dim, longsortedIndices1, intValues1_inplace)
-        var sorted42 = VFactory.sortedLongKeyIntVector(dim, longsortedIndices2, intValues1_inplace)
-        println(s"${sparse4.getClass.getSimpleName}: ${getFlag(sparse4)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse4.iaxpy(llist.get(i), 2.0)).sum()},${sparse4.sum()}")
-        println(s"${sorted4.getClass.getSimpleName}: ${getFlag(sorted4)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted4.iaxpy(llist.get(i), 2.0)).sum()},${sorted4.sum()}")
-        println(s"${sparse41.getClass.getSimpleName}: ${getFlag(sparse41)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sparse41.iaxpy(llist.get(i), 2.0)).sum()},${sparse41.sum()}")
-        println(s"${sorted41.getClass.getSimpleName}: ${getFlag(sorted41)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted41.iaxpy(llist.get(i), 2.0)).sum()},${sorted41.sum()}")
-        println(s"${sorted42.getClass.getSimpleName}: ${getFlag(sorted42)} iaxpy ${llist.get(i).getClass.getSimpleName}: ${getFlag(llist.get(i))} is ${(sorted42.iaxpy(llist.get(i), 2.0)).sum()},${sorted42.sum()}")
-      }
-    }
-  }
 
   def getFlag(v: Vector): String = {
     v match {

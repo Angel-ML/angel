@@ -55,7 +55,7 @@ LR on Angel支持“dense”、“libsvm”、“dummy”三种数据格式。�
 * 参数说明            
 	* ml.epoch.num：迭代轮数
     * ml.feature.index.range:特征索引范围
-    * ml.feature.num：特征维数
+    * ml.model.size：特征维数
     * ml.data.validate.ratio：验证集采样率
     * ml.data.type：数据类型，分“libsvm”和“dummy”两种
     * ml.learn.rate：学习率
@@ -70,9 +70,9 @@ LR on Angel支持“dense”、“libsvm”、“dummy”三种数据格式。�
 ../../bin/angel-submit \
     -Dml.epoch.num=20 \
     -Dangel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner \
-    -Dml.model.class.name=com.tencent.angel.ml.classification.SoftmaxRegression \
+    -Dml.model.class.name=com.tencent.angel.ml.classification.LogisticRegression \
     -Dml.feature.index.range=$featureNum \
-    -Dml.feature.num=$featureNum \
+    -Dml.model.size=$featureNum \
     -Dml.data.validate.ratio=0.1 \ 
     -Dml.data.type=libsvm \
     -Dml.learn.rate=0.1 \

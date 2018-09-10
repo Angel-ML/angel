@@ -26,4 +26,5 @@ public class Constant {
   public static double denseLoopThreshold = 0.3;
   public static double denseStorageThreshold = Math.pow(2, 10);
   public static Boolean keepStorage = false;
+  public static Boolean isCompare = true;
 }

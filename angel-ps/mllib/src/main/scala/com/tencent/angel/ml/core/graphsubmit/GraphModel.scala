@@ -103,7 +103,10 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
       batchData(i % batchSize) = storage.loopingRead()
     }
 
-    val left = storage.size() % batchSize
+    var left = storage.size() % batchSize
+    if (left == 0 && storage.size() > 0) {
+      left = batchSize;
+    }
     if (left != 0) {
       val leftData = new Array[LabeledData](left)
       Array.copy(batchData, 0, leftData, 0, left)
