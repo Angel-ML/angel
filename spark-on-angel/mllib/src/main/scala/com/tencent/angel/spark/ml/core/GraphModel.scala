@@ -20,12 +20,13 @@ package com.tencent.angel.spark.ml.core
 
 
 import com.tencent.angel.conf.MatrixConf
-import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers.{AngelGraph, PlaceHolder, STATUS}
 import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.spark.context.AngelPSContext
+import com.tencent.angel.spark.ml.core.schedule.{StepSizeScheduler, WarmRestart}
 import org.json4s.JsonAST.JValue
 
 class GraphModel extends Serializable {
@@ -35,6 +36,9 @@ class GraphModel extends Serializable {
   var jsonAst: JValue = conf.getJson
   val stepSize: Double = SharedConf.learningRate
   val decay: Double = SharedConf.decay
+  val interval: Int = SharedConf.get().getInt(MLConf.ML_RESTART_INTERVALS)
+
+  val scheduler: StepSizeScheduler = new WarmRestart(stepSize, 0.0, interval)
 
   def ensureJsonAst(): Unit = {
     if (jsonAst == null) {
@@ -72,11 +76,12 @@ class GraphModel extends Serializable {
     graph.pushGradient()
   }
 
-  def update(iteration: Int = 0): Unit = {
-    val lr = stepSize / math.sqrt(1.0 + decay * iteration)
+  def update(iteration: Int = 0): Double = {
+    val lr = scheduler.next()
     graph.setLR(lr)
     graph.setState(_ => true, STATUS.Gradient)
     graph.update(iteration)
+    lr
   }
 
   def save(path: String): Unit = {
