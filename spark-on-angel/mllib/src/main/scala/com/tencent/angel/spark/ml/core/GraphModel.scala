@@ -38,7 +38,7 @@ class GraphModel extends Serializable {
   val decay: Double = SharedConf.decay
   val interval: Int = SharedConf.get().getInt(MLConf.ML_RESTART_INTERVALS)
 
-  val scheduler: StepSizeScheduler = new WarmRestart(stepSize, 0.0, interval)
+  val scheduler: StepSizeScheduler = new WarmRestart(stepSize, 0.0, interval, decay)
 
   def ensureJsonAst(): Unit = {
     if (jsonAst == null) {
