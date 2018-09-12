@@ -24,7 +24,7 @@ import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.examples.util.SparkUtils
 import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OfflineLearner}
-import com.tencent.angel.spark.ml.util.Features
+import com.tencent.angel.spark.ml.util.{Features, ModelSaver}
 import org.apache.spark.{SparkConf, SparkContext}
 
 object JsonRunner {
@@ -48,11 +48,12 @@ object JsonRunner {
       .map(f => parser.parse(f))
     PSContext.getOrCreate(sc)
 
-    val (matrixId, dim, newData) = Features.mapWithPS(data)
-    SharedConf.get().setLong(MLConf.ML_FEATURE_INDEX_RANGE, dim)
+    val (denseToSparseMatrixId, denseDim, sparseToDenseMatrixId, sparseDim, newData) = Features.featureSparseToDense(data)
+    SharedConf.get().setLong(MLConf.ML_FEATURE_INDEX_RANGE, denseDim)
 
     learner.train(newData, model)
-    //    model.save(output)
+
+    ModelSaver.save(output, model, denseToSparseMatrixId, denseDim)
   }
 
 }

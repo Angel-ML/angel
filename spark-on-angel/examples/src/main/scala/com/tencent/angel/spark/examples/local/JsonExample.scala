@@ -18,24 +18,28 @@
 
 package com.tencent.angel.spark.examples.local
 
-import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.utils.DataParser
 import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OfflineLearner}
+import com.tencent.angel.spark.ml.util.{Features, ModelLoader, ModelSaver}
 import org.apache.log4j.PropertyConfigurator
 import org.apache.spark.{SparkConf, SparkContext}
+import org.codehaus.jackson.JsonParser.Feature
 
 object JsonExample {
 
   def main(args: Array[String]): Unit = {
     PropertyConfigurator.configure("conf/log4j.properties")
     val params = ArgsUtil.parse(args)
-    val input = params.getOrElse("input", "data/census/census_148d_train.dummy")
+    val input = params.getOrElse("input", "data/census/census_148d_train.libsvm")
+    val output = params.getOrElse("output", "output/")
+    val modelPath = params.getOrElse("model", "model/")
+    val actionType = params.getOrElse("action.type", "train")
 
     SharedConf.addMap(params)
     JsonUtils.init()
-
 
     val model = new GraphModel
     val learner = new OfflineLearner
@@ -54,7 +58,23 @@ object JsonExample {
     val data = sc.textFile(input).repartition(1).map(f => parser.parse(f))
     PSContext.getOrCreate(sc)
 
-    learner.train(data, model)
+    // whatever, we first build the sparseToDense and denseToSparse index
+    // and change to feature index from sparse to dense
+    val (denseToSparseMatrixId, denseDim, sparseToDenseMatrixId, sparseDim, denseData) = Features.featureSparseToDense(data)
+    SharedConf.get().setLong(MLConf.ML_FEATURE_INDEX_RANGE, denseDim)
+
+    // initialize model
+    model.init(denseData.getNumPartitions)
+
+    actionType match {
+      case "train" =>
+        learner.train(denseData, model)
+        ModelSaver.save(output, model, denseToSparseMatrixId, denseDim)
+      case "incTrain" =>
+        ModelLoader.load(modelPath, model, sparseToDenseMatrixId, sparseDim)
+        learner.train(denseData, model)
+        ModelSaver.save(output, model, denseToSparseMatrixId, denseDim)
+    }
 
     PSContext.stop()
   }

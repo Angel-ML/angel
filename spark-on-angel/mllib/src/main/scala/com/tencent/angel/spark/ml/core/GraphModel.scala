@@ -76,12 +76,12 @@ class GraphModel extends Serializable {
     graph.pushGradient()
   }
 
-  def update(iteration: Int = 0): Double = {
+  def update(iteration: Int = 0): (Double, Boolean) = {
     val lr = scheduler.next()
     graph.setLR(lr)
     graph.setState(_ => true, STATUS.Gradient)
     graph.update(iteration)
-    lr
+    (lr, scheduler.isIntervalBoundary())
   }
 
   def save(path: String): Unit = {
