@@ -28,6 +28,11 @@ class Momentum(override val stepSize: Double, val momentum: Double = 0.9) extend
     PSAgentContext.get().getUserRequestAdapter.update(func)
   }
 
+  override def update(matrixId: Int, numFactors: Int, epoch: Int, sampleNum: Int): Unit ={
+    val func = new MomentumUpdateFunc(matrixId, numFactors, momentum, lr, regL2Param, sampleNum)
+    PSAgentContext.get().getUserRequestAdapter.update(func)
+  }
+
   override def toString: String = {
     s"Momentum momentum=$momentum lr=$lr regL2=$regL2Param"
   }

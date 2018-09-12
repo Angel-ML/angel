@@ -47,6 +47,10 @@ trait Optimizer extends Serializable {
   def getRegL2Param: Double = this.regL2Param
 
   def update(matrixId: Int, numFactors: Int, epoch: Int)
+
+  def update(matrixId: Int, numFactors: Int, epoch: Int, sampleNum: Int): Unit = {
+    update(matrixId, numFactors, epoch)
+  }
 }
 
 
