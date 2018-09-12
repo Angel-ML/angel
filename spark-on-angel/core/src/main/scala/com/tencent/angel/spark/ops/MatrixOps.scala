@@ -94,7 +94,7 @@ class MatrixOps {
     */
   def fill(mat: PSMatrix, value: Double): Unit = {
     mat.assertValid()
-    mat.psfUpdate(new FullFill(mat.id, value))
+    mat.psfUpdate(new FullFill(mat.id, value)).get()
   }
 
 
@@ -105,7 +105,7 @@ class MatrixOps {
   def fill(mat: PSMatrix, rows: Array[Int], value: Double): Unit = {
     mat.assertValid()
     rows.foreach { rId =>
-      mat.psfUpdate(new MapInPlace(mat.id, rId, new SetFunc(value)))
+      mat.psfUpdate(new MapInPlace(mat.id, rId, new SetFunc(value))).get()
     }
   }
 }
