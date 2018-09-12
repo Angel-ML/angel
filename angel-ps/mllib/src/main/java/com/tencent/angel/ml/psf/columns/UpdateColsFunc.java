@@ -105,7 +105,7 @@ public class UpdateColsFunc extends UpdateFunc {
     for (int r = 0; r < rows.length; r++) {
       doubles[r].startWrite();
       for(int c = 0; c < cols.length; c++) {
-        doubles[r].set((int)cols[c], doubles[r].get((int)cols[c]) + updates[c][r]);
+        doubles[r].set((int)cols[c], doubles[r].get((int) cols[c]) + updates[c][r]);
       }
       doubles[r].endWrite();
     }

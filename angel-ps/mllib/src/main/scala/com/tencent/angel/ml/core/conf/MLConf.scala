@@ -79,6 +79,8 @@ object MLConf {
   val DEFAULT_ML_LEARN_DECAY = 0.5
   val ML_NUM_UPDATE_PER_EPOCH = "ml.num.update.per.epoch"
   val DEFAULT_ML_NUM_UPDATE_PER_EPOCH = 10
+  val ML_RESTART_INTERVALS = "ml.restart.intervals"
+  val DEFAULT_ML_RESTART_INTERVALS = 10
 
   val ML_MINIBATCH_SIZE = "ml.minibatch.size"
   val DEFAULT_ML_MINIBATCH_SIZE = 128

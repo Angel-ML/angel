@@ -190,6 +190,10 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
     }
   }
 
+  override def refreshMatrix: Unit = {
+    psAgent.refreshMatrixInfo()
+  }
+
   def TOTAL_PS_CORES: Int = angelCtx.getConf.getInt(TOTAL_CORES, 2)
 
   def getMatrixClient(matrixId: Int): MatrixClient = {

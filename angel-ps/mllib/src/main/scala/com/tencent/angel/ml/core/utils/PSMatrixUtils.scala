@@ -54,9 +54,10 @@ object PSMatrixUtils {
     master.createMatrices(list, Long.MaxValue)
   }
 
-  def createPSMatrix(ctx: MatrixContext): Unit = {
+  def createPSMatrix(ctx: MatrixContext): Int = {
     val master = PSAgentContext.get().getMasterClient
     master.createMatrix(ctx, Long.MaxValue)
+    master.getMatrix(ctx.getName).getId
   }
 
   def getRow(matrixId: Int, rowId: Int): Vector = {
