@@ -34,7 +34,7 @@ object LRTest {
     PropertyConfigurator.configure("angel-ps/conf/log4j.properties")
     val params = ArgsUtil.parse(args)
 
-    val input = params.getOrElse("input", "./spark-on-angel/mllib/src/test/data/census.train")
+    val input = params.getOrElse("input", "data/a9a/a9a_123d_train.dummy")
     val actionType = params.getOrElse("actionType", "train")
 
     // build SharedConf with params

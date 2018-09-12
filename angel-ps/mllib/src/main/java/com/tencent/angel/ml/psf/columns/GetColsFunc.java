@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 
 public class GetColsFunc extends GetFunc {
-  Log LOG = LogFactory.getLog(GetColsFunc.class);
 
   public GetColsFunc(GetColsParam param) {
     super(param);
@@ -57,15 +56,16 @@ public class GetColsFunc extends GetFunc {
 
     ServerPartition partition = psContext.getMatrixStorageManager().getPart(matId, partitionId);
     Vector[] splits = new Vector[rows.length];
+    int offset = (int) partition.getPartitionKey().getStartCol();
     for (int i = 0; i < rows.length; i++) {
       splits[i] = partition.getRow(rows[i]).getSplit();
     }
-    Vector result = doGet(splits, cols, partition.getRowType());
+    Vector result = doGet(splits, cols, partition.getRowType(), offset);
 
     return new PartitionGetColsResult(rows, cols, result);
   }
 
-  private Vector doGet(Vector[] rows, long[] cols, RowType rowType) {
+  private Vector doGet(Vector[] rows, long[] cols, RowType rowType, int offset) {
     switch (rowType) {
       case T_DOUBLE_DENSE:
       case T_DOUBLE_SPARSE: {
@@ -74,7 +74,7 @@ public class GetColsFunc extends GetFunc {
         for (int i = 0; i < cols.length; i++) {
           vectors[i] = VFactory.denseDoubleVector(rows.length);
           for (int j = 0; j < rows.length; j++)
-            vectors[i].set(j, ((IntDoubleVector) rows[j]).get((int) cols[i]));
+            vectors[i].set(j, ((IntDoubleVector) rows[j]).get((int) cols[i] - offset));
         }
         return VFactory.compIntDoubleVector(cols.length, vectors, rows.length);
       }
@@ -84,7 +84,7 @@ public class GetColsFunc extends GetFunc {
         for (int i = 0; i < cols.length; i++) {
           vectors[i] = VFactory.denseDoubleVector(rows.length);
           for (int j = 0; j < rows.length; j++)
-            vectors[i].set(j, ((LongDoubleVector) rows[j]).get(cols[i]));
+            vectors[i].set(j, ((LongDoubleVector) rows[j]).get(cols[i] - offset));
         }
         return VFactory.compIntDoubleVector(cols.length, vectors, rows.length);
       }
@@ -95,7 +95,7 @@ public class GetColsFunc extends GetFunc {
         for (int i = 0; i < cols.length; i++) {
           vectors[i] = VFactory.denseFloatVector(rows.length);
           for (int j = 0; j < rows.length; j++)
-            vectors[i].set(j, ((IntFloatVector) rows[j]).get((int) cols[i]));
+            vectors[i].set(j, ((IntFloatVector) rows[j]).get((int) cols[i] - offset));
         }
         return VFactory.compIntFloatVector(cols.length, vectors, rows.length);
       }
@@ -105,7 +105,7 @@ public class GetColsFunc extends GetFunc {
         for (int i = 0; i < cols.length; i++) {
           vectors[i] = VFactory.denseFloatVector(rows.length);
           for (int j = 0; j < rows.length; j++)
-            vectors[i].set(j, ((LongFloatVector) rows[j]).get(cols[i]));
+            vectors[i].set(j, ((LongFloatVector) rows[j]).get(cols[i] - offset));
         }
         return VFactory.compIntFloatVector(cols.length, vectors, rows.length);
       }
