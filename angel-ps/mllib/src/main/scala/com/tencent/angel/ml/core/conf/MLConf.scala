@@ -95,6 +95,8 @@ object MLConf {
   val DEFAULT_ML_DENSEINPUTLAYER_OPTIMIZER: String = DEFAULT_ML_OPTIMIZER
   val ML_SPARSEINPUTLAYER_OPTIMIZER = "ml.sparseinputlayer.optimizer"
   val DEFAULT_ML_SPARSEINPUTLAYER_OPTIMIZER: String = DEFAULT_ML_OPTIMIZER
+  val ML_GRAD_SERVER_AVERAGE = "ml.grad.server.average"
+  val DEFAULT_ML_GRAD_AVERAGE_ON_SERVER = true
 
   // Momentum
   val ML_OPT_MOMENTUM_MOMENTUM = "ml.opt.momentum.momentum"

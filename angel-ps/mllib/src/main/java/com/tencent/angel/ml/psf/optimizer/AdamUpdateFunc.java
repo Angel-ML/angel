@@ -27,9 +27,17 @@ import com.tencent.angel.ps.storage.matrix.ServerPartition;
 
 public class AdamUpdateFunc extends OptMMUpdateFunc {
 
+  private int sampleNum = 1;
+
   public AdamUpdateFunc(int matId, int factor, double gamma, double epsilon, double beta, double lr,
     double regParam, double iteration) {
     super(matId, new int[] {factor}, new double[] {gamma, epsilon, beta, lr, regParam, iteration});
+  }
+
+  public AdamUpdateFunc(int matId, int factor, double gamma, double epsilon, double beta, double lr,
+                        double regParam, double iteration, int sampleNum) {
+    super(matId, new int[] {factor}, new double[] {gamma, epsilon, beta, lr, regParam, iteration});
+    this.sampleNum = sampleNum;
   }
 
   public AdamUpdateFunc() {
@@ -56,18 +64,20 @@ public class AdamUpdateFunc extends OptMMUpdateFunc {
   }
 
   private void update(ServerPartition partition, int offset, double gamma, double beta,
-    double epsilon, double stepSize, double regParam, double iteration) {
+                         double epsilon, double stepSize, double regParam, double iteration) {
     if (iteration == 0)
       iteration = 1;
     double powBeta = Math.pow(beta, iteration);
     double powGamma = Math.pow(gamma, iteration);
-
 
     for (int f = 0; f < offset; f++) {
       Vector weight = partition.getRow(f).getSplit();
       Vector velocity = partition.getRow(f + offset).getSplit();
       Vector square = partition.getRow(f + 2 * offset).getSplit();
       Vector gradient = partition.getRow(f + 3 * offset).getSplit();
+
+      if (sampleNum > 1)
+        gradient.idiv(sampleNum);
 
       OptFuncs.iexpsmoothing(velocity, gradient, beta);
       OptFuncs.iexpsmoothing2(square, gradient, gamma);
@@ -80,4 +90,5 @@ public class AdamUpdateFunc extends OptMMUpdateFunc {
       gradient.clear();
     }
   }
+
 }

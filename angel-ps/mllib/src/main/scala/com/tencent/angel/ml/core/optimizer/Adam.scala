@@ -35,6 +35,11 @@ class Adam(override val stepSize: Double,
     PSAgentContext.get().getUserRequestAdapter.update(func)
   }
 
+  override def update(matrixId: Int, numFactors: Int, epoch: Int, sampleNum: Int): Unit = {
+    val func = new AdamUpdateFunc(matrixId, numFactors, gamma, epsilon, beta, lr, regL2Param, epoch, sampleNum)
+    PSAgentContext.get().getUserRequestAdapter.update(func)
+  }
+
   override def toString: String = {
     s"Adam gamma=$gamma beta=$beta epsilon=$epsilon"
   }

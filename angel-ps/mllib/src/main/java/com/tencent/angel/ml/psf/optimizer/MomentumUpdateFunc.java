@@ -25,8 +25,15 @@ import com.tencent.angel.ps.storage.matrix.ServerPartition;
 
 public class MomentumUpdateFunc extends OptMMUpdateFunc {
 
+  private int sampleNum = 1;
+
   public MomentumUpdateFunc(int matId, int offset, double momentum, double lr, double regParam) {
     super(matId, new int[] {offset}, new double[] {momentum, lr, regParam});
+  }
+
+  public MomentumUpdateFunc(int matId, int offset, double momentum, double lr, double regParam, int sampleNum) {
+    super(matId, new int[] {offset}, new double[] {momentum, lr, regParam});
+    this.sampleNum = sampleNum;
   }
 
   public MomentumUpdateFunc(int matId, int offset, double momentum, double lr) {
@@ -51,6 +58,7 @@ public class MomentumUpdateFunc extends OptMMUpdateFunc {
     double regParam = scalars[2];
 
     update(part, offset, momentum, stepSize, regParam);
+
   }
 
   private void update(ServerPartition partition, int offset, double momentum, double stepSize,
@@ -59,6 +67,9 @@ public class MomentumUpdateFunc extends OptMMUpdateFunc {
       Vector weight = partition.getRow(f).getSplit();
       Vector velocity = partition.getRow(f + offset).getSplit();
       Vector gradient = partition.getRow(f + 2 * offset).getSplit();
+
+      if (sampleNum > 1)
+        gradient.idiv(sampleNum);
 
       velocity.imul(momentum).iaxpy(gradient, stepSize);
       if (regParam == 0.0) {
@@ -69,4 +80,5 @@ public class MomentumUpdateFunc extends OptMMUpdateFunc {
       gradient.clear();
     }
   }
+
 }
