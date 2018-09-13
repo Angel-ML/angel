@@ -91,7 +91,7 @@ angel.ps.log.level | INFO | PS日志输出级别，可配置的有DEBUG,INFO,WAR
     
 配置项名称 | 默认值 | 配置项含义
 ---------------- | --------------- | ---------------
-angel.psagent.cache.sync.timeinterval.ms | 5000 | PSAgent侧缓存更新时间间隔，单位为毫秒。为了实现矩阵参数预取功能，在PSAgent侧维护了一个矩阵参数的缓存，该缓存每隔一段时间和PS侧数据进行同步。
+angel.psagent.cache.sync.timeinterval.ms | 200 | PSAgent侧缓存更新时间间隔，单位为毫秒。为了实现矩阵参数预取功能，在PSAgent侧维护了一个矩阵参数的缓存，该缓存每隔一段时间和PS侧数据进行同步。
 angel.task.data.storage.level | memory_disk | Task预处理过的训练数据存储方式，可选的有memory,memory_disk和disk。memory表示将所有训练数据存储在内存中，如果内存足够大，建议使用这种方式；disk表示将所有训练数据存储在本地磁盘上；memory_disk则介于两者之间，可以支持一部分放在内存中，其余的放在本地磁盘。
 angel.task.memory.storage.max.mb | 1000 | 每一个task运行使用多大内存来存放训练数据，单位为MB。只有当storage level配置为memory_disk时该选项才起作用。
 
