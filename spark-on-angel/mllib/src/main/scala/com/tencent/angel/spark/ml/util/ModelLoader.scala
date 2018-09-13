@@ -3,8 +3,7 @@ package com.tencent.angel.spark.ml.util
 import com.tencent.angel.ml.core.network.layers.edge.inputlayer.{Embedding, SparseInputLayer}
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.math2.vector.IntIntVector
-import com.tencent.angel.ml.math2.vector.Vector
+import com.tencent.angel.ml.math2.vector.{IntFloatVector, IntIntVector, Vector}
 import com.tencent.angel.spark.ml.core.GraphModel
 import it.unimi.dsi.fastutil.ints.{IntArrayList, IntOpenHashSet}
 import org.apache.spark.SparkContext
@@ -13,7 +12,9 @@ import scala.collection.mutable.ArrayBuffer
 import java.util.{HashMap => JHashMap, Map => JMap}
 import java.lang.{Long => JLong}
 
-import com.tencent.angel.ml.psf.columns.{UpdateColsFunc, UpdateColsParam}
+import com.tencent.angel.exception.AngelException
+import com.tencent.angel.ml.math2.storage.{IntFloatDenseVectorStorage, IntIntDenseVectorStorage}
+import com.tencent.angel.ml.psf.columns._
 import com.tencent.angel.ps.server.data.request.UpdateOp
 import com.tencent.angel.psagent.PSAgentContext
 
@@ -22,15 +23,82 @@ object ModelLoader {
   def load(path: String,
            model: GraphModel,
            sparseToDenseMatrixId: Int,
-           sparseDim: Int): Unit = {
+           denseDim: Int): Unit = {
 
     model.graph.getTrainable.foreach { layer =>
       layer match {
         case l: SparseInputLayer =>
-          load(s"$path/${l.name}", l, sparseToDenseMatrixId, sparseDim)
+          load(s"$path/${l.name}", l, sparseToDenseMatrixId, denseDim)
         case l: Embedding =>
-          load(s"$path/${l.name}", l, sparseToDenseMatrixId, sparseDim)
+          load(s"$path/${l.name}", l, sparseToDenseMatrixId)
       }
+    }
+  }
+
+  def test(model: GraphModel,
+           denseToSparseMatrixId: Int,
+           denseDim: Int): Unit = {
+    model.graph.getTrainable.foreach { layer =>
+      layer match {
+        case l: SparseInputLayer =>
+          test(l, denseToSparseMatrixId, denseDim)
+        case l: Embedding =>
+          test(l, denseToSparseMatrixId, denseDim)
+      }
+    }
+  }
+
+  def test(layer: SparseInputLayer,
+           denseToSparseMatrixId: Int,
+           denseDim: Int): Unit = {
+    val weightId = layer.weightId
+    val biasId = layer.biasId
+
+
+    val denseToSparse = PSMatrixUtils.getRow(denseToSparseMatrixId, 0).asInstanceOf[IntIntVector]
+      .getStorage.asInstanceOf[IntIntDenseVectorStorage].getValues
+
+    val weight = PSMatrixUtils.getRow(weightId, 0).asInstanceOf[IntFloatVector]
+    val bias   = PSMatrixUtils.getRow(biasId, 0).asInstanceOf[IntFloatVector].get(0)
+
+    val weights = weight.getStorage.asInstanceOf[IntFloatDenseVectorStorage].getValues
+    println(s"bias=$bias")
+
+    val string = new ArrayBuffer[String]()
+    for (i <- 0 until weights.length) {
+      val feature = denseToSparse(i)
+      val value = weights(i)
+      string.append(s"$feature:$value")
+    }
+    println("weights")
+    println(string.mkString(" "))
+  }
+
+  def test(layer: Embedding,
+           denseToSparseMatrixId: Int,
+           denseDim: Int): Unit = {
+    val embeddingId = layer.matrixId
+    val numFactors = layer.numFactors
+
+    val denseToSparse = PSMatrixUtils.getRow(denseToSparseMatrixId, 0).asInstanceOf[IntIntVector]
+      .getStorage.asInstanceOf[IntIntDenseVectorStorage].getValues
+
+    val indices = VFactory.denseIntVector((0 until denseDim).toArray)
+
+    val rows = (0 until numFactors).toArray
+    val param = new GetColsParam(embeddingId, rows, indices)
+    val func  = new GetColsFunc(param)
+    val result = PSAgentContext.get().getUserRequestAdapter.get(func).asInstanceOf[GetColsResult]
+    val embedding = result.results
+
+    println(s"embedding")
+    val iter = embedding.entrySet().iterator()
+    while (iter.hasNext) {
+      val entry = iter.next()
+      val key = entry.getKey
+      val values = entry.getValue.getStorage.asInstanceOf[IntFloatDenseVectorStorage].getValues
+      val feature = denseToSparse(key.toInt)
+      println(s"$feature ${values.mkString(",")}")
     }
   }
 
@@ -38,6 +106,8 @@ object ModelLoader {
            layer: SparseInputLayer,
            sparseToDenseMatrixId: Int,
            denseDim: Int): Unit = {
+
+    println(s"loading layer ${layer.name} from path $path")
     val weightId = layer.weightId
     val biasId = layer.biasId
 
@@ -47,6 +117,7 @@ object ModelLoader {
       while (iter.hasNext) {
         val parts = iter.next().split(":")
         val (feature, value) = (parts(0).toInt, parts(1).toFloat)
+        keyValues.append((feature, value))
         set.add(feature)
       }
 
@@ -77,8 +148,9 @@ object ModelLoader {
 
   def load(path: String,
            layer: Embedding,
-           sparseToDenseMatrixId: Int,
-           sparseDim: Int): Unit = {
+           sparseToDenseMatrixId: Int): Unit = {
+    println(s"loading layer ${layer.name} from path $path")
+
     val embeddingId = layer.matrixId
     val numFactors  = layer.numFactors
 
@@ -101,16 +173,19 @@ object ModelLoader {
 
       // change feature index
       val update: JMap[JLong, Vector] = new JHashMap()
+      val embeddingIndices = new IntArrayList()
       val it = map.keySet().iterator()
       while (it.hasNext) {
         val feature = it.next()
         val key = sparseToDense.get(feature.toInt)
+        embeddingIndices.add(key)
         update.put(key.toLong, map.get(feature))
       }
 
       // update embedding
       val rows = (0 until numFactors).toArray
-      val param = new UpdateColsParam(embeddingId, rows, indices, update, UpdateOp.REPLACE)
+      val updateIndices = VFactory.denseIntVector(embeddingIndices.toIntArray())
+      val param = new UpdateColsParam(embeddingId, rows, updateIndices, update, UpdateOp.REPLACE)
       val func  = new UpdateColsFunc(param)
       PSAgentContext.get().getUserRequestAdapter.update(func).get()
 

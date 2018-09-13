@@ -63,10 +63,6 @@ class OfflineLearner {
     validate.count()
     data.unpersist()
 
-    train.mapPartitions({it =>
-      PSClient.instance().context.refreshMatrix
-      Iterator.single(0)}).count()
-
     val bModel = SparkContext.getOrCreate().broadcast(model)
 
     var (start, end) = (0L, 0L)
@@ -87,7 +83,7 @@ class OfflineLearner {
       reduceTime = end - start
 
       start = System.currentTimeMillis()
-      val (lr, boundary) = model.update(iteration)
+      val (lr, boundary) = model.update(iteration, batchSize)
       end = System.currentTimeMillis()
       updateTime = end - start
 

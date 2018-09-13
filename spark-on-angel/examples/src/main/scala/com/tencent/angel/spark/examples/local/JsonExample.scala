@@ -18,6 +18,8 @@
 
 package com.tencent.angel.spark.examples.local
 
+import com.tencent.angel.RunningMode
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.utils.DataParser
 import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
@@ -39,10 +41,9 @@ object JsonExample {
     val actionType = params.getOrElse("action.type", "train")
 
     SharedConf.addMap(params)
-    JsonUtils.init()
+    SharedConf.get().set(AngelConf.ANGEL_RUNNING_MODE, RunningMode.ANGEL_PS.toString)
 
-    val model = new GraphModel
-    val learner = new OfflineLearner
+    JsonUtils.init()
 
     // load data
     val conf = new SparkConf()
@@ -58,6 +59,9 @@ object JsonExample {
     val data = sc.textFile(input).repartition(1).map(f => parser.parse(f))
     PSContext.getOrCreate(sc)
 
+    val model = new GraphModel
+    val learner = new OfflineLearner
+
     // whatever, we first build the sparseToDense and denseToSparse index
     // and change to feature index from sparse to dense
     val (denseToSparseMatrixId, denseDim, sparseToDenseMatrixId, sparseDim, denseData) = Features.featureSparseToDense(data)
@@ -71,7 +75,7 @@ object JsonExample {
         learner.train(denseData, model)
         ModelSaver.save(output, model, denseToSparseMatrixId, denseDim)
       case "incTrain" =>
-        ModelLoader.load(modelPath, model, sparseToDenseMatrixId, sparseDim)
+        ModelLoader.load(modelPath, model, sparseToDenseMatrixId, denseDim)
         learner.train(denseData, model)
         ModelSaver.save(output, model, denseToSparseMatrixId, denseDim)
     }

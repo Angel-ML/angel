@@ -17,16 +17,14 @@
 
 package com.tencent.angel.spark.ml.util
 
-import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.math2.storage.{IntFloatSortedVectorStorage, IntKeyVectorStorage}
-import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector, IntIntVector}
+import com.tencent.angel.ml.math2.storage.{IntFloatSortedVectorStorage, IntFloatSparseVectorStorage, IntKeyVectorStorage}
+import com.tencent.angel.ml.math2.vector.IntIntVector
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.spark.client.PSClient
-import com.tencent.angel.spark.ml.core.GraphModel
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet
 import org.apache.spark.rdd.RDD
 
@@ -74,7 +72,7 @@ object Features {
     Iterator.single(0)
   }
 
-  def sparseToDenseOnePartition(iter: Iterator[LabeledData], matrixId: Int, dim: Int): Iterator[LabeledData] = {
+  def sparseToDenseOnePartition(iter: Iterator[LabeledData], matrixId: Int, denseDim: Int): Iterator[LabeledData] = {
     PSClient.instance()
     val set = new IntOpenHashSet()
     val samples = iter.toArray
@@ -84,19 +82,6 @@ object Features {
     val vector = PSMatrixUtils.getRowWithIndex(matrixId, 0, index).asInstanceOf[IntIntVector]
 
     val newData = samples.map { case point =>
-//      point.getX match {
-//        case v: IntFloatVector =>
-//          val indices = v.getStorage.getIndices.map(f => vector.get(f))
-//          val values = v.getStorage.getValues
-//          val x = VFactory.sparseFloatVector(dim, indices, values)
-//          new LabeledData(x, point.getY)
-//        case v: IntDoubleVector =>
-//          val indices = v.getStorage.getIndices.map(f => vector.get(f))
-//          val values = v.getStorage.getValues
-//          val x = VFactory.sparseDoubleVector(dim, indices, values)
-//          new LabeledData(x, point.getY)
-//      }
-
       point.getX.getStorage match {
         case s: IntFloatSortedVectorStorage =>
           val indices = s.getIndices
@@ -105,11 +90,13 @@ object Features {
             indices(i) = vector.get(indices(i))
             i += 1
           }
-          val x = VFactory.sortedFloatVector(dim, indices, s.getValues)
+          val x = VFactory.sortedFloatVector(denseDim, indices, s.getValues)
           new LabeledData(x, point.getY)
-
-        case _ =>
-          throw new AngelException("Only Sorted vector supported!")
+        case s: IntFloatSparseVectorStorage =>
+          val indices = s.getIndices.map(f => vector.get(f))
+          val values = s.getValues
+          val x = VFactory.sparseFloatVector(denseDim, indices, values)
+          new LabeledData(x, point.getY)
       }
     }
 

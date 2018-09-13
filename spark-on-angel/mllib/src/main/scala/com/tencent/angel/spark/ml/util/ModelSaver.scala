@@ -18,6 +18,7 @@ object ModelSaver {
            denseToSparseMatrixId: Int,
            denseDim: Int): Unit = {
 
+    println(s"saving model to path $path")
     // calculating sizes for each partition
     val numPartition = model.graph.taskNum
     val sizes = new Array[Int](numPartition)
