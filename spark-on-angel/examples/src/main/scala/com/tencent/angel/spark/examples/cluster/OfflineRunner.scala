@@ -53,7 +53,7 @@ object OfflineRunner {
 
     PSContext.getOrCreate(sc)
 
-    val (denseToSparseMatrixId, denseDim, newData) = Features.featureSparseToDense(data)
+    val (denseToSparseMatrixId, denseDim, sparseToDenseMatrixId, sparseDim, newData) = Features.featureSparseToDense(data)
     SharedConf.get().setLong(MLConf.ML_FEATURE_INDEX_RANGE, denseDim)
 
     actionType match {
