@@ -42,7 +42,7 @@ class Reset(param: ZeroParam) extends UpdateFunc(param) {
       partParam.asInstanceOf[ZeroPartitionParam].rowIds.par.foreach { rowId =>
         val row = part.getRow(rowId)
         if(row == null) {
-          return;
+          return
         }
         row.startWrite()
         row.reset()
@@ -55,9 +55,15 @@ class Reset(param: ZeroParam) extends UpdateFunc(param) {
 object Reset {
 
   class ZeroParam(matrixId: Int, rowIds: Array[Int]) extends UpdateParam(matrixId) {
-    override def split(): util.List[PartitionUpdateParam] =
-      PSAgentContext.get.getMatrixMetaManager
-        .getPartitions(matrixId).map(new ZeroPartitionParam(matrixId, _, rowIds))
+    override def split(): util.List[PartitionUpdateParam] = {
+      val partitionKeys = PSAgentContext.get.getMatrixMetaManager.getPartitions(matrixId)
+      partitionKeys.map(p =>
+        (p, rowIds.filter(rowId => p.getStartRow <= rowId && rowId < p.getEndRow))
+      ).filter(_._2.length > 0)
+        .map { case (p, ids) =>
+          new ZeroPartitionParam(matrixId, p, ids)
+        }
+    }
   }
 
   class ZeroPartitionParam(matrixId: Int, partKey: PartitionKey, var rowIds: Array[Int])

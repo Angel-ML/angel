@@ -25,7 +25,7 @@ import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
 import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.math2.vector.{LongDoubleVector, LongDummyVector, Vector}
+import com.tencent.angel.ml.math2.vector.{LongDoubleVector, Vector}
 import com.tencent.angel.spark.context.PSContext
 //import com.tencent.angel.spark.ml.classification.SparseLRModel
 import com.tencent.angel.spark.ml.core.ArgsUtil
@@ -34,10 +34,10 @@ import com.tencent.angel.spark.models.vector.{PSVector, SparsePSVector}
 import com.tencent.angel.spark.util.PSVectorImplicit._
 
 /**
-  * this module is to run sparse lr with ftrl or ftrl_vrg,
-  * the window for ftrlwithSVRG should be small for accurate,
-  * assume each batch is a sample
-  */
+ * this module is to run sparse lr with ftrl or ftrl_vrg,
+ * the window for ftrlwithSVRG should be small for accurate,
+ * assume each batch is a sample
+ */
 
 object FTRLRunner {
 
@@ -173,7 +173,7 @@ object FTRLRunner {
 
   // parse the z and n model
   def incLearnZNModel(sc: SparkContext,
-                      modelPath: String): (Array[(Long, Double)], Array[(Long, Double)]) = {
+      modelPath: String): (Array[(Long, Double)], Array[(Long, Double)]) = {
 
     val modelStr = sc.textFile(modelPath).collect()
 
@@ -185,7 +185,7 @@ object FTRLRunner {
   }
 
   def incLearnZNVWModel(sc: SparkContext,
-                        modelPath: String): (Array[(Long, Double)], Array[(Long, Double)], Array[(Long, Double)], Array[(Long, Double)]) = {
+      modelPath: String): (Array[(Long, Double)], Array[(Long, Double)], Array[(Long, Double)], Array[(Long, Double)]) = {
 
     val modelStr = sc.textFile(modelPath).collect()
 
@@ -228,12 +228,12 @@ object FTRLRunner {
 
   // train by ftrl
   def train(ftrl: FTRL,
-            featureDS: DStream[String],
-            dim: Long,
-            partitionNum: Int,
-            modelPath: String,
-            batch2Save: Int,
-            isOneHot: Boolean): Unit = {
+      featureDS: DStream[String],
+      dim: Long,
+      partitionNum: Int,
+      modelPath: String,
+      batch2Save: Int,
+      isOneHot: Boolean): Unit = {
 
     var numBatch = 0
     featureDS.foreachRDD { labelFeatRdd =>
@@ -278,13 +278,13 @@ object FTRLRunner {
 
   // train by ftrl_VRG
   def train(ftrlVRG: FTRLWithVRG,
-            initW: LongDoubleVector,
-            featureDS: DStream[String],
-            dim: Long,
-            partitionNum: Int,
-            modelPath: String,
-            batch2Save: Int,
-            isOneHot: Boolean): Unit = {
+      initW: LongDoubleVector,
+      featureDS: DStream[String],
+      dim: Long,
+      partitionNum: Int,
+      modelPath: String,
+      batch2Save: Int,
+      isOneHot: Boolean): Unit = {
 
     var localW = initW
     var numBatch = 0
