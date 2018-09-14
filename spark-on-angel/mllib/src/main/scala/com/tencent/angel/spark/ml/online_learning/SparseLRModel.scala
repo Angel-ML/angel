@@ -20,7 +20,7 @@ package com.tencent.angel.spark.ml.online_learning
 
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector.{LongDoubleVector, Vector}
-import com.tencent.angel.spark.models.vector.{PSVector, SparsePSVector, VectorCacheManager}
+import com.tencent.angel.spark.models.vector.{PSVector, VectorCacheManager}
 import org.apache.hadoop.fs.Path
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
@@ -49,7 +49,7 @@ case class SparseLRModel(w: PSVector) {
   }
 
   def save(modelPath: String): Unit = {
-    val localX = w.pull
+    val localX = w.pull()
     val keyValues = localX.asInstanceOf[LongDoubleVector].getStorage
     val iter = keyValues.entryIterator()
 
@@ -73,7 +73,7 @@ case class SparseLRModel(w: PSVector) {
   }
 
   def simpleInfo: String = {
-    val localW = w.pull.asInstanceOf[LongDoubleVector]
+    val localW = w.pull().asInstanceOf[LongDoubleVector]
     val nnz = localW.dim() - localW.numZeros()
     val wSparsity = nnz.toDouble / w.dimension
 
@@ -98,7 +98,7 @@ object SparseLRModel {
     val (key, value) = modelArray.unzip
     println(s"load data success, dim: $dim, model nnz: ${key.length}")
     val localX = VFactory.sparseLongKeyDoubleVector(dim, key, value)
-    val psX = PSVector.sparse(localX.dim(), 20)
+    val psX = PSVector.sparse(localX.dim())
     psX.push(localX)
     println(s"load model successfully")
     SparseLRModel(psX)
