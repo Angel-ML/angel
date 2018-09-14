@@ -70,7 +70,6 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
     val start = System.currentTimeMillis()
     status match {
       case STATUS.Forward =>
-        //        println(s"the status in Embedding($name)-calBackward is ${status.toString}")
         backward = gatherGrad()
         status = STATUS.Backward
       case _ =>
@@ -150,23 +149,21 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
                     i += 1
                   }
                 case s: IntFloatSparseVectorStorage =>
-                  val iterator = s.entryIterator()
                   var i = 0
-                  while (iterator.hasNext) {
-                    val entry = iterator.next()
-                    val key = entry.getIntKey
-                    val value = entry.getFloatValue
+                  val indices = s.getIndices
+                  while (i < indices.length) {
+                    val key = indices(i)
+                    val value = s.get(key)
                     val update = rows(idx).getPartitions()(i)
                     mergeUpdate(map, key, update, value)
                     i += 1
                   }
                 case s: LongFloatSparseVectorStorage =>
-                  val iterator = s.entryIterator()
                   var i = 0
-                  while (iterator.hasNext) {
-                    val entry = iterator.next()
-                    val key = entry.getLongKey
-                    val value = entry.getFloatValue
+                  val indices = s.getIndices
+                  while (i < indices.length) {
+                    val key = indices(i)
+                    val value = s.get(key)
                     val update = rows(idx).getPartitions()(i)
                     mergeUpdate(map, key, update, value)
                     i += 1
@@ -234,7 +231,6 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
       case _ =>
     }
     val end = System.currentTimeMillis()
-    //    LOG.error(s"Embedding push = ${end - start} ms")
   }
 
   override def update(epoch: Int, batchSize: Int): Unit = {
@@ -257,7 +253,6 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
           batchData.getRow(idx).getStorage match {
             case s: IntFloatSparseVectorStorage =>
               val index = s.getIndices
-              quickSort(index)
               VFactory.compIntFloatVector(
                 if (outputDim <= 0) outputDim else index.length * numFactors,
                 index.map { key =>
@@ -289,7 +284,6 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
               )
             case s: LongFloatSparseVectorStorage =>
               val index = s.getIndices
-              quickSort(index)
               VFactory.compIntFloatVector(
                 if (outputDim <= 0) outputDim else index.length * numFactors,
                 index.map { key =>
@@ -303,7 +297,6 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
                 })
             case s: IntDoubleSparseVectorStorage =>
               val index = s.getIndices
-              quickSort(index)
               VFactory.compIntDoubleVector(
                 if (outputDim <= 0) outputDim else index.length * numFactors,
                 index.map { key =>
@@ -317,7 +310,6 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
                 })
             case s: LongDoubleSparseVectorStorage =>
               val index = s.getIndices
-              quickSort(index)
               VFactory.compIntDoubleVector(
                 if (outputDim <= 0) outputDim else index.length * numFactors,
                 index.map { key =>
