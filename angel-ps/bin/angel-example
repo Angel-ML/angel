@@ -37,4 +37,4 @@ done
 #export CLASS="com.tencent.angel.utils.AngelRunJar"
 
 export CLASSPATH=$CLASSPATH
-java $1
+java $@

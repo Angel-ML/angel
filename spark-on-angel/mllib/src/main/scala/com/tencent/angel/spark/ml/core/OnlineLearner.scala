@@ -47,7 +47,7 @@ class OnlineLearner {
         Iterator.single((loss, samples.size))
       }.reduce((f1, f2) => (f1._1 + f2._1, f1._2 + f2._2))
 
-      model.update(numBatches)
+      model.update(numBatches, batchSize)
 
       LOG.error(s"batch[$numBatches] trainLoss=${lossSum / numTasks} batchSize=$batchSize")
     }

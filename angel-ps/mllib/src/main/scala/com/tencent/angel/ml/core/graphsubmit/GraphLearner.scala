@@ -70,7 +70,7 @@ class GraphLearner(modelClassName: String, ctx: TaskContext, idxsVector: Vector)
       PSAgentContext.get().barrier(ctx.getTaskId.getIndex)
       if (ctx.getTaskId.getIndex == 0) {
         // LOG.info("start to update ...")
-        graph.update(epoch * numBatch + batchCount) // update parameters on PS
+        graph.update(epoch * numBatch + batchCount, 1) // update parameters on PS
       }
       // waiting all gradient update finished
       // LOG.info("waiting for update barrier ...")

@@ -26,7 +26,7 @@ import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.spark.context.AngelPSContext
-import com.tencent.angel.spark.ml.core.schedule.{StepSizeScheduler, WarmRestart}
+import com.tencent.angel.spark.ml.core.schedule.{StandardDecay, StepSizeScheduler, WarmRestart}
 import org.json4s.JsonAST.JValue
 
 class GraphModel extends Serializable {
@@ -76,12 +76,12 @@ class GraphModel extends Serializable {
     graph.pushGradient()
   }
 
-  def update(iteration: Int = 0): Double = {
+  def update(iteration: Int, batchSize: Int): (Double, Boolean) = {
     val lr = scheduler.next()
     graph.setLR(lr)
     graph.setState(_ => true, STATUS.Gradient)
-    graph.update(iteration)
-    lr
+    graph.update(iteration, batchSize)
+    (lr, scheduler.isIntervalBoundary())
   }
 
   def save(path: String): Unit = {

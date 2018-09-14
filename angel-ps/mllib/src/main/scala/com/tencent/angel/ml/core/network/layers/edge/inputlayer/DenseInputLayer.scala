@@ -45,7 +45,6 @@ class DenseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overri
   graph.addTrainable(this)
 
   val sharedConf: SharedConf = graph.conf
-
   val modelType: RowType = SharedConf.denseModelType
   val blockSize: Int = SharedConf.blockSize
 
@@ -120,7 +119,7 @@ class DenseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overri
   }
 
   override def pushGradient(): Unit = {
-    val normal = graph.placeHolder.getBatchSize * graph.taskNum
+    val normal = OptUtils.getNormal(sharedConf, graph)
 
     status match {
       case STATUS.Backward =>
@@ -157,10 +156,10 @@ class DenseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overri
     }
   }
 
-  override def update(epoch: Int = 0): Unit = {
+  override def update(epoch: Int, batchSize: Int): Unit = {
     status match {
       case STATUS.Gradient =>
-        optimizer.update(weightId, 1, epoch)
+        optimizer.update(weightId, 1, epoch, batchSize)
         status = STATUS.Update
       case _ => throw new AngelException("STATUS Error, please calculate Gradient frist!")
     }
