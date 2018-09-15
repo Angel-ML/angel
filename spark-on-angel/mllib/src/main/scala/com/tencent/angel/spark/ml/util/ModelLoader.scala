@@ -18,6 +18,8 @@ import com.tencent.angel.ml.psf.columns._
 import com.tencent.angel.ps.server.data.request.UpdateOp
 import com.tencent.angel.psagent.PSAgentContext
 
+import scala.util.Sorting
+
 object ModelLoader {
 
   def load(path: String,
@@ -184,7 +186,9 @@ object ModelLoader {
 
       // update embedding
       val rows = (0 until numFactors).toArray
-      val updateIndices = VFactory.denseIntVector(embeddingIndices.toIntArray())
+      val updateIndicesValues = embeddingIndices.toIntArray()
+      Sorting.quickSort(updateIndicesValues)
+      val updateIndices = VFactory.denseIntVector(updateIndicesValues)
       val param = new UpdateColsParam(embeddingId, rows, updateIndices, update, UpdateOp.REPLACE)
       val func  = new UpdateColsFunc(param)
       PSAgentContext.get().getUserRequestAdapter.update(func).get()
