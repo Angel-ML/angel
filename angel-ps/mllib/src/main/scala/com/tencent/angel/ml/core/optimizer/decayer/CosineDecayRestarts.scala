@@ -3,6 +3,7 @@ package com.tencent.angel.ml.core.optimizer.decayer
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 
 class CosineDecayRestarts(eta: Double, alpha: Double = 0.001, tMul:Double=2.0, mMul:Double=1.0) extends StepSizeScheduler {
+  assert(tMul >= 1.0 && mMul <= 1.0)
   private var current: Int = 0
   private val interval: Int = SharedConf.get().getInt(MLConf.ML_DECAY_INTERVALS, 100)
 
