@@ -37,14 +37,14 @@ class OnlineLearner {
     var numBatches = 0
     stream.foreachRDD { data =>
       numBatches += 1
-      val (lossSum, batchSize) = data.mapPartitions { case iter =>
+      val (lossSum, batchSize) = data.mapPartitions { iter =>
         PSClient.instance()
         val model = bModel.value
         val samples = iter.toArray
         model.forward(samples)
         val loss = model.getLoss()
         model.backward()
-        Iterator.single((loss, samples.size))
+        Iterator.single((loss, samples.length))
       }.reduce((f1, f2) => (f1._1 + f2._1, f1._2 + f2._2))
 
       model.update(numBatches, batchSize)

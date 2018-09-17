@@ -15,12 +15,12 @@
  *
  */
 
-package com.tencent.angel.spark.ml.core.schedule
+package com.tencent.angel.ml.core.optimizer.decayer
 
 trait StepSizeScheduler extends Serializable {
 
   def next(): Double
 
-  def isIntervalBoundary(): Boolean
+  def isIntervalBoundary: Boolean = false
 
 }
