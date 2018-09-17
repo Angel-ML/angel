@@ -21,6 +21,7 @@ package com.tencent.angel.ml.core.graphsubmit
 import com.tencent.angel.ml.core.MLLearner
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers.AngelGraph
+import com.tencent.angel.ml.core.optimizer.decayer.{StepSizeScheduler, WarmRestarts}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.vector.{DoubleVector, IntKeyVector, LongKeyVector, Vector}
 import com.tencent.angel.ml.metric.LossMetric
@@ -44,6 +45,7 @@ class GraphLearner(modelClassName: String, ctx: TaskContext, idxsVector: Vector)
   val model: GraphModel = GraphModel(modelClassName, conf, ctx)
   model.buildNetwork()
   val graph: AngelGraph = model.graph
+  val ssScheduler: StepSizeScheduler = new WarmRestarts(lr0, lr0/100)
 
   def trainOneEpoch(epoch: Int, iter: Iterator[Array[LabeledData]], numBatch: Int): Double = {
     var batchCount: Int = 0
@@ -68,10 +70,12 @@ class GraphLearner(modelClassName: String, ctx: TaskContext, idxsVector: Vector)
 
       // LOG.info("waiting for push barrier ...")
       PSAgentContext.get().barrier(ctx.getTaskId.getIndex)
+      graph.setLR(ssScheduler.next())
       if (ctx.getTaskId.getIndex == 0) {
         // LOG.info("start to update ...")
         graph.update(epoch * numBatch + batchCount, 1) // update parameters on PS
       }
+
       // waiting all gradient update finished
       // LOG.info("waiting for update barrier ...")
       PSAgentContext.get().barrier(ctx.getTaskId.getIndex)
@@ -120,9 +124,6 @@ class GraphLearner(modelClassName: String, ctx: TaskContext, idxsVector: Vector)
     while (ctx.getEpoch < epochNum) {
       val epoch = ctx.getEpoch
       LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epoch start.")
-
-      val lr = Math.max(lr0 / Math.sqrt(1.0 + decay * epoch), lr0 / 5.0)
-      graph.setLR(lr)
 
       val iter = if (negTrainData == null) {
         getBathDataIterator(posTrainData, batchData, numBatch)
