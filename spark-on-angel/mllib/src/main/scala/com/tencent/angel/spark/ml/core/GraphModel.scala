@@ -26,7 +26,7 @@ import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.spark.context.AngelPSContext
-import com.tencent.angel.spark.ml.core.schedule.{StandardDecay, StepSizeScheduler, WarmRestart}
+import com.tencent.angel.ml.core.optimizer.decayer._
 import org.json4s.JsonAST.JValue
 
 class GraphModel extends Serializable {
@@ -35,10 +35,7 @@ class GraphModel extends Serializable {
   implicit val graph = new AngelGraph(new PlaceHolder())
   var jsonAst: JValue = conf.getJson
   val stepSize: Double = SharedConf.learningRate
-  val decay: Double = SharedConf.decay
-  val interval: Int = SharedConf.get().getInt(MLConf.ML_RESTART_INTERVALS)
-
-  val scheduler: StepSizeScheduler = new WarmRestart(stepSize, 0.0, interval, decay)
+  val scheduler: StepSizeScheduler = new WarmRestarts(stepSize, 0.0)
 
   def ensureJsonAst(): Unit = {
     if (jsonAst == null) {
@@ -81,13 +78,12 @@ class GraphModel extends Serializable {
     graph.setLR(lr)
     graph.setState(_ => true, STATUS.Gradient)
     graph.update(iteration, batchSize)
-    (lr, scheduler.isIntervalBoundary())
+    (lr, scheduler.isIntervalBoundary)
   }
 
   def save(path: String): Unit = {
     //TODO
     AngelPSContext.save(graph.getMatrixCtx(), path)
-
   }
 
   def load(path: String): Unit = {
