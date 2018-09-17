@@ -84,7 +84,7 @@ object ModelSaver {
 
     val biasPath = path + "/" + s"${layer.name}_bias"
     val bias = PSMatrixUtils.getRow(layer.biasId, 0).asInstanceOf[IntFloatVector].get(0)
-    SparkContext.getOrCreate().parallelize(Array(bias)).saveAsTextFile(biasPath)
+    SparkContext.getOrCreate().parallelize(Array(bias), 1).saveAsTextFile(biasPath)
   }
 
   def save(path: String,
