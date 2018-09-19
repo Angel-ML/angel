@@ -1215,6 +1215,7 @@ public class MasterService extends AbstractService implements MasterProtocol {
    */
   @Override public CheckMatricesCreatedResponse checkMatricesCreated(RpcController controller,
     CheckMatricesCreatedRequest request) throws ServiceException {
+    LOG.info("check matrix loaded request = " + request);
     List<String> names = request.getMatrixNamesList();
     CheckMatricesCreatedResponse.Builder builder = CheckMatricesCreatedResponse.newBuilder();
     int size = names.size();
@@ -1293,6 +1294,7 @@ public class MasterService extends AbstractService implements MasterProtocol {
 
   @Override public KeepAliveResponse keepAlive(RpcController controller, KeepAliveRequest request)
     throws ServiceException {
+    LOG.info("keep alive " + request);
     context.getClientManager().alive(request.getClientId());
     return KeepAliveResponse.getDefaultInstance();
   }

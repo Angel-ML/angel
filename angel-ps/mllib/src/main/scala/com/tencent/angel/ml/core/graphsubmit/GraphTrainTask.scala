@@ -71,7 +71,7 @@ class GraphTrainTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx
     val reader = taskContext.getReader
 
     idxsVector = if (needIndexs) {
-      val expected = Math.max(256, (SharedConf.indexRange / 10000).toInt)
+      val expected = Math.max(256, Math.min((SharedConf.indexRange / 10000).toInt, 10000000))
 
       SharedConf.keyType() match {
         case "int" =>

@@ -91,7 +91,7 @@ Embedding在抽象意义上是一张表, 并提供查表的方法(lookup/calOutp
 - 查表: 根据索引, 到表中查出相应的列
 - 计算组装: 有时数据不是one-hot, 要将查得的向量乘以一个值
 
-下面展示了one-hot, 与不带数值情况下embedding的输出结果:
+下面展示值为1(one-hot编码的结果, 用dummy格式表示)与值为浮点数(用libsvm格式表示)两种情况下稀疏向量embedding的结果:
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{120}(1,5,40,\cdots,10000)\rightarrow(\bold{v}_1,\bold{v}_5,\bold{v}_{40},\cdots,\bold{v}_{10000}))
 

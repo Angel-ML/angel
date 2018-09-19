@@ -74,7 +74,6 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
     val start = System.currentTimeMillis()
     status match {
       case STATUS.Null =>
-        //        println(s"the status in FCLayer($name)-calOutput is ${status.toString}")
         inputLayer match {
           case ipLayer: Embedding => // from embedding layer
             ipLayer.calOutput() match {
@@ -136,7 +135,7 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
   }
 
   override def pushGradient(): Unit = {
-    val normal = graph.placeHolder.getBatchSize * graph.taskNum
+    val normal = OptUtils.getNormal(sharedConf, graph)
     status match {
       case STATUS.Backward =>
         val weightGrad: Matrix = if (ipOutputCache != null) {
@@ -154,10 +153,10 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
     }
   }
 
-  override def update(epoch: Int): Unit = {
+  override def update(epoch: Int, batchSize: Int): Unit = {
     status match {
       case STATUS.Gradient =>
-        optimizer.update(weightId, 1, epoch)
+        optimizer.update(weightId, 1, epoch, batchSize)
         status = STATUS.Update
       case _ => throw new AngelException("STATUS Error, please calculate Gradient frist!")
     }

@@ -18,6 +18,7 @@
 
 package com.tencent.angel.ml.core.conf
 
+import com.tencent.angel.RunningMode
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.matrix.RowType
@@ -300,6 +301,24 @@ object SharedConf {
       case (key: String, value: String) if key.startsWith("angel.") || key.startsWith("ml.") =>
         sc(key) = value
       case _ =>
+    }
+  }
+
+  def addHadoopConf(conf: Configuration): Unit = {
+    get()
+    val iter = conf.iterator()
+    while (iter.hasNext) {
+      val entry = iter.next()
+      sc(entry.getKey) = entry.getValue
+    }
+  }
+
+  def runningModel(): RunningMode = {
+    get()
+
+    sc.get(AngelConf.ANGEL_RUNNING_MODE) match {
+      case "ANGEL_PS" => RunningMode.ANGEL_PS
+      case "ANGEL_PS_WORKER" => RunningMode.ANGEL_PS_WORKER
     }
   }
 

@@ -20,12 +20,14 @@ package com.tencent.angel.ps.storage.partitioner;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.matrix.PartitionMeta;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ColumnRangePartitioner extends RangePartitioner {
-
+  private static final Log LOG = LogFactory.getLog(ColumnRangePartitioner.class);
   @Override public List<PartitionMeta> getPartitions() {
     List<PartitionMeta> partitions = new ArrayList<>();
 
@@ -58,6 +60,7 @@ public class ColumnRangePartitioner extends RangePartitioner {
     long minValue = 0;
     long maxValue = col;
 
+    LOG.info("blockRow=" + blockRow + ", blockCol=" + blockCol);
 
     int startRow;
     int endRow;
@@ -75,6 +78,7 @@ public class ColumnRangePartitioner extends RangePartitioner {
       i = (i <= (row - blockRow)) ? (i + blockRow) : row;
     }
 
+    LOG.info("partitions number is " + partitions.size());
     return partitions;
   }
 

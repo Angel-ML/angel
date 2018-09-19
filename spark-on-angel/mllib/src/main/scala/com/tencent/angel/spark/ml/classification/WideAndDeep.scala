@@ -15,9 +15,37 @@
  *
  */
 
-
 package com.tencent.angel.spark.ml.classification
 
-class WideAndDeep {
+import com.tencent.angel.ml.core.network.layers.Layer
+import com.tencent.angel.ml.core.network.layers.edge.inputlayer.{Embedding, SparseInputLayer}
+import com.tencent.angel.ml.core.network.layers.edge.losslayer.SimpleLossLayer
+import com.tencent.angel.ml.core.network.layers.join.SumPooling
+import com.tencent.angel.ml.core.network.transfunc.Identity
+import com.tencent.angel.ml.core.optimizer.loss.LogLoss
+import com.tencent.angel.ml.core.utils.paramsutils.{EmbeddingParams, JsonUtils}
+import com.tencent.angel.spark.ml.core.GraphModel
+
+class WideAndDeep extends GraphModel{
+
+  override def network(): Unit = {
+    ensureJsonAst()
+
+    val wide = new SparseInputLayer("input", 1, new Identity(),
+      JsonUtils.getOptimizerByLayerType(jsonAst, "SparseInputLayer"))
+
+    val embeddingParams = JsonUtils.getLayerParamsByLayerType(jsonAst, "Embedding")
+      .asInstanceOf[EmbeddingParams]
+    val embedding = new Embedding("embedding", embeddingParams.outputDim, embeddingParams.numFactors,
+      embeddingParams.optimizer.build()
+    )
+
+    val hiddenLayer = JsonUtils.getFCLayer(jsonAst, embedding)
+
+    val join = new SumPooling("sumPooling", 1, Array[Layer](wide, hiddenLayer))
+
+    new SimpleLossLayer("simpleLossLayer", join, new LogLoss)
+
+  }
 
 }

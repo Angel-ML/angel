@@ -39,7 +39,7 @@ trait Trainable {
 
   def pushGradient(): Unit
 
-  def update(epoch: Int): Unit
+  def update(epoch: Int, batchSize: Int): Unit
 
   def init(taskId: Int, initIndexVector: Vector)
 

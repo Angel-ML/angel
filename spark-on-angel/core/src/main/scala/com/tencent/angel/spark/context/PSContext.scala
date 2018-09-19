@@ -48,6 +48,8 @@ abstract class PSContext {
   def destroyVector(vector: PSVector)
 
   def destroyVectorPool(vector: PSVector): Unit
+
+  def refreshMatrix: Unit
 }
 
 object PSContext {

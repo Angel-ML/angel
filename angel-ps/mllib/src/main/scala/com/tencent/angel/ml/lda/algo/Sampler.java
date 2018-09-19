@@ -89,93 +89,97 @@ public class Sampler {
     int we = pkey.getEndRow();
 
     Random rand = new Random(System.currentTimeMillis());
-
-    // allocate update maps
     Int2IntOpenHashMap[] updates = null;
-    if (update)
-      updates = new Int2IntOpenHashMap[we - ws];
-
-    float sum, u;
-    int idx;
-
-    for (int w = ws; w < we; w++) {
-
-      // Skip if no token for this word
-      if (data.ws[w + 1] - data.ws[w] == 0)
-        continue;
-
-      // Check whether error when fetching word-topic
-      if (!csr.read(wk))
-        throw new AngelException("some error happens");
-
-      // Build FTree for current word
-      buildFTree();
-
+    try {
+      // allocate update maps
       if (update)
-        updates[w - ws] = new Int2IntOpenHashMap();
+        updates = new Int2IntOpenHashMap[we - ws];
 
-      for (int wi = data.ws[w]; wi < data.ws[w + 1]; wi++) {
-        // current doc
-        int d = data.docs[wi];
-        // old topic assignment
-        int tt = data.topics[data.dindex[wi]];
+      float sum, u;
+      int idx;
 
-        // Check if error happens. if this happen, it's probably that failures happen to servers.
-        // We need to adjust the memory settings or network fetching parameters.
-        if (update && wk[tt] <= 0) {
-          LOG.error(String.format("Error wk[%d] = %d for word %d", tt, wk[tt], w));
+      for (int w = ws; w < we; w++) {
+
+        // Skip if no token for this word
+        if (data.ws[w + 1] - data.ws[w] == 0)
           continue;
-        }
 
-        // Update statistics if needed
-        if (update) {
-          wk[tt]--;
-          nk[tt]--;
-          tree.update(tt, (wk[tt] + beta) / (nk[tt] + vbeta));
-          updates[w - ws].addTo(tt, -1);
-        }
+        // Check whether error when fetching word-topic
+        if (!csr.read(wk))
+          throw new AngelException("some error happens");
 
-        // Calculate psum and sample new topic
-        synchronized (data.docIds[d]) {
+        // Build FTree for current word
+        buildFTree();
 
-          if (data.dks[d] == null)
-            sum = build(d, maxDoc, tree, tt);
-          else {
-            data.dks[d].dec(tt);
-            sum = build(data.dks[d]);
+        if (update)
+          updates[w - ws] = new Int2IntOpenHashMap();
+
+        for (int wi = data.ws[w]; wi < data.ws[w + 1]; wi++) {
+          // current doc
+          int d = data.docs[wi];
+          // old topic assignment
+          int tt = data.topics[data.dindex[wi]];
+
+          // Check if error happens. if this happen, it's probably that failures happen to servers.
+          // We need to adjust the memory settings or network fetching parameters.
+          if (update && wk[tt] <= 0) {
+            LOG.error(String.format("Error wk[%d] = %d for word %d", tt, wk[tt], w));
+            continue;
           }
 
-          u = rand.nextFloat() * (sum + alpha * tree.first());
+          // Update statistics if needed
+          if (update) {
+            wk[tt]--;
+            nk[tt]--;
+            tree.update(tt, (wk[tt] + beta) / (nk[tt] + vbeta));
+            updates[w - ws].addTo(tt, -1);
+          }
 
-          if (u < sum) {
-            u = rand.nextFloat() * sum;
-            if (data.dks[d] == null) {
-              int length = data.ds[d + 1] - data.ds[d];
-              idx = BinarySearch.binarySearch(maxDoc, u, 0, length - 1);
-              tt = data.topics[data.ds[d] + idx];
-            } else {
-              idx = BinarySearch.binarySearch(psum, u, 0, data.dks[d].size - 1);
-              tt = tidx[idx];
+          // Calculate psum and sample new topic
+          synchronized (data.docIds[d]) {
+
+            if (data.dks[d] == null)
+              sum = build(d, maxDoc, tree, tt);
+            else {
+              data.dks[d].dec(tt);
+              sum = build(data.dks[d]);
             }
-          } else
-            tt = tree.sample(rand.nextFloat() * tree.first());
 
-          if (data.dks[d] != null)
-            data.dks[d].inc(tt);
+            u = rand.nextFloat() * (sum + alpha * tree.first());
+
+            if (u < sum) {
+              u = rand.nextFloat() * sum;
+              if (data.dks[d] == null) {
+                int length = data.ds[d + 1] - data.ds[d];
+                idx = BinarySearch.binarySearch(maxDoc, u, 0, length - 1);
+                tt = data.topics[data.ds[d] + idx];
+              } else {
+                idx = BinarySearch.binarySearch(psum, u, 0, data.dks[d].size - 1);
+                tt = tidx[idx];
+              }
+            } else
+              tt = tree.sample(rand.nextFloat() * tree.first());
+
+            if (data.dks[d] != null)
+              data.dks[d].inc(tt);
+          }
+
+          // Update statistics if needed
+          if (update) {
+            wk[tt]++;
+            nk[tt]++;
+            tree.update(tt, (wk[tt] + beta) / (nk[tt] + vbeta));
+            updates[w - ws].addTo(tt, 1);
+          }
+
+          // Assign new topic
+          data.topics[data.dindex[wi]] = tt;
         }
-
-        // Update statistics if needed
-        if (update) {
-          wk[tt]++;
-          nk[tt]++;
-          tree.update(tt, (wk[tt] + beta) / (nk[tt] + vbeta));
-          updates[w - ws].addTo(tt, 1);
-        }
-
-        // Assign new topic
-        data.topics[data.dindex[wi]] = tt;
       }
+    } finally {
+      csr.clear();
     }
+
 
     Future<VoidResult> future = null;
     if (update) {

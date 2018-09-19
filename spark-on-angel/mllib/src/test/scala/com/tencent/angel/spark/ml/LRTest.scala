@@ -34,7 +34,7 @@ object LRTest {
     PropertyConfigurator.configure("angel-ps/conf/log4j.properties")
     val params = ArgsUtil.parse(args)
 
-    val input = params.getOrElse("input", "./spark-on-angel/mllib/src/test/data/census.train")
+    val input = params.getOrElse("input", "data/a9a/a9a_123d_train.dummy")
     val actionType = params.getOrElse("actionType", "train")
 
     // build SharedConf with params
@@ -48,7 +48,6 @@ object LRTest {
     SharedConf.get().setDouble(MLConf.ML_VALIDATE_RATIO, 0.0)
     SharedConf.get().setDouble(MLConf.ML_REG_L2, 0.0)
     SharedConf.get().setDouble(MLConf.ML_BATCH_SAMPLE_RATIO, 0.2)
-
 
     val className = "com.tencent.angel.spark.ml.classification.LogisticRegression"
     val model = GraphModel(className)

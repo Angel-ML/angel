@@ -51,8 +51,10 @@ class SparseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
   private val multiplier = OptUtils.getOptMultiplier(optimizer)
   private val psRows: Int = outputDim * multiplier
   private val psCols = SharedConf.indexRange
+  private val validIndexNum = SharedConf.modelSize
 
   private val weightCtx = PSMatrixUtils.createPSMatrixCtx(s"${name}_weight", psRows, psCols, modelType)
+  weightCtx.setValidIndexNum(validIndexNum)
   private val biasCtx = PSMatrixUtils.createPSMatrixCtx(s"${name}_bias", 1, outputDim, SharedConf.denseModelType)
   graph.addMatrixCtx(weightCtx)
   graph.addMatrixCtx(biasCtx)
@@ -118,16 +120,14 @@ class SparseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
 
   override def pullParams(): Unit = {
     // Note: weight is a row based matrix
-    //    LOG.error("Sparse Input Layer pull")
     val indices = graph.placeHolder.getIndices
     weight = PSMatrixUtils.getMatrixWithIndex(weightId, 0, outputDim, indices)
     bias = PSMatrixUtils.getRow(biasId, 0)
-
   }
 
   override def pushGradient(): Unit = {
     val start = System.currentTimeMillis()
-    val normal = graph.placeHolder.getBatchSize * graph.taskNum
+    val normal = OptUtils.getNormal(sharedConf, graph)
     val rowIds = new Array[Int](outputDim)
     val vectors = new Array[Vector](outputDim)
 
@@ -142,6 +142,18 @@ class SparseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
               graph.placeHolder.getFeats.transDot(backward.asInstanceOf[BlasFloatMatrix].getCol(rowId))
                 .idiv(normal)
           }
+
+//          var gradStr = ""
+//          (0 until 10).foreach{ col =>
+//            valueType match {
+//              case "double" =>
+//                gradStr += weightRowGrad.asInstanceOf[IntDoubleVector].get(col) + ","
+//              case "float" =>
+//                gradStr += weightRowGrad.asInstanceOf[IntFloatVector].get(col) + ","
+//            }
+//
+//          }
+//          LOG.info("gradient of " + graph.placeHolder.getBatchSize + " samples: " + gradStr)
 
           weightRowGrad.setMatrixId(weight.getMatrixId)
           weightRowGrad.setRowId(outputDim * (multiplier - 1) + rowId)
@@ -161,11 +173,11 @@ class SparseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
     //    println(s"pushGradient Time = ${end - start} ms")
   }
 
-  override def update(epoch: Int): Unit = {
+  override def update(epoch: Int, batchSize: Int): Unit = {
     val start = System.currentTimeMillis()
     status match {
       case STATUS.Gradient =>
-        optimizer.update(weightId, outputDim, epoch)
+        optimizer.update(weightId, outputDim, epoch, batchSize)
         status = STATUS.Update
       case _ => throw new AngelException("STATUS Error, please calculate Gradient first!")
     }

@@ -131,10 +131,7 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
           )
 
           val colIndex = temSet.toIntArray
-          //          LOG.error(s"PlaceHolder ${colIndex.mkString(" ")}")
           quickSort(colIndex)
-          //          LOG.error(s"PlaceHolder ${colIndex.mkString(" ")}")
-
           indices = VFactory.denseIntVector(colIndex)
         case "long" =>
           val temSet = new LongOpenHashSet()

@@ -88,7 +88,7 @@ public class IndexGetRowsTest {
   public static String SPARSE_LONG_LONG_MAT = "sparse_long_long_mat";
   public static String SPARSE_LONG_LONG_MAT_COMP = "sparse_long_long_mat_comp";
 
-  private static final Log LOG = LogFactory.getLog(IndexGetRowTest.class);
+  private static final Log LOG = LogFactory.getLog(IndexGetRowsTest.class);
   private static final String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
   private static final String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
   private AngelClient angelClient;
@@ -529,7 +529,7 @@ public class IndexGetRowsTest {
     Vector[] rows = client1.get(rowIds, index);
     for (int i = 0; i < rowNum; i++) {
       for (long id : index) {
-        LOG.info(
+        LOG.debug(
           "rows[" + i + "][" + id + "]=" + ((CompLongDoubleVector) rows[i]).get(id) + ", delta["
             + id + "]=" + deltaVec.get(id));
         Assert.assertEquals(((CompLongDoubleVector) rows[i]).get(id), deltaVec.get(id), zero);
