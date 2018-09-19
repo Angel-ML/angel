@@ -169,7 +169,6 @@ public abstract class AngelClient implements AngelClientInterface {
       while (!stopped.get() && !Thread.interrupted()) {
         try {
           Thread.sleep(hbIntervalMS);
-          LOG.info("client " + clientId + " keep alive");
           master.keepAlive(null, KeepAliveRequest.newBuilder().setClientId(clientId).build());
         } catch (Throwable e) {
           if (!stopped.get()) {
