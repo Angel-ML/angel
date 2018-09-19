@@ -15,23 +15,32 @@
  *
  */
 
-package com.tencent.angel.spark.ml.core.schedule
+package com.tencent.angel.ml.core.optimizer.decayer
 
-import org.apache.spark.SparkContext
+import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 
-class StandardDecay(eta: Double, decay: Double) extends StepSizeScheduler {
+class WarmRestarts(var etaMax: Double, etaMin: Double) extends StepSizeScheduler {
 
-  var current: Int = 0
-  val interval: Int = SparkContext.getOrCreate().getConf.getInt("spark.offline.evaluate", 100)
+  var current: Double = 0
+  var numRestart: Int = 0
+  val decay: Double = SharedConf.decay
+  var interval: Int = SharedConf.get().getInt(MLConf.ML_DECAY_INTERVALS, 100)
 
   override def next(): Double = {
     current += 1
-    return eta / math.sqrt(1.0 + decay * current)
+    val value = etaMin + 0.5 * (etaMax - etaMin) * (1 + math.cos(current / interval * math.Pi))
+    if (current == interval) {
+      current = 0
+      interval *= 2
+      numRestart += 1
+      etaMax = etaMax / math.sqrt(1.0 + numRestart * decay)
+    }
+
+    value
   }
 
-  override
-  def isIntervalBoundary(): Boolean = {
-    return current % interval == 0
+  override def isIntervalBoundary: Boolean = {
+    current == 0
   }
 
 }

@@ -113,16 +113,15 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
             assert(rows.length == graph.placeHolder.getBatchSize)
             val batchData: Matrix = graph.placeHolder.getFeats
             val batchSize = graph.placeHolder.getBatchSize
-            (0 until batchSize).map { idx =>
+            (0 until batchSize).foreach { idx =>
               batchData.getRow(idx) match {
                 case v: IntDoubleVector =>
-                  v.getStorage.getIndices.zip(rows(idx).getPartitions).map { case (f, update) =>
+                  v.getStorage.getIndices.zip(rows(idx).getPartitions).foreach{ case (f, update) =>
                     val value = v.get(f)
                     mergeUpdate(map, f, update, value)
                   }
-
                 case v: LongDoubleVector =>
-                  v.getStorage.getIndices.zip(rows(idx).getPartitions).map { case (f, update) =>
+                  v.getStorage.getIndices.zip(rows(idx).getPartitions).foreach { case (f, update) =>
                     val value = v.get(f)
                     mergeUpdate(map, f, update, value)
                   }
