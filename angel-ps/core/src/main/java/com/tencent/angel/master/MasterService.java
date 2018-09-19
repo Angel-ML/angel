@@ -1294,6 +1294,7 @@ public class MasterService extends AbstractService implements MasterProtocol {
 
   @Override public KeepAliveResponse keepAlive(RpcController controller, KeepAliveRequest request)
     throws ServiceException {
+    LOG.info("keep alive " + request);
     context.getClientManager().alive(request.getClientId());
     return KeepAliveResponse.getDefaultInstance();
   }
