@@ -79,9 +79,6 @@ class BinaryCoverageTest extends FunSuite {
   val doubleValues1_inplace: Array[Double] = new Array[Double](capacity1)
 
 
-  val times = 5000
-  var start1, stop1, cost1, start2, stop2, cost2 = 0L
-
   val ilist = new util.ArrayList[Vector]()
   val llist = new util.ArrayList[Vector]()
 

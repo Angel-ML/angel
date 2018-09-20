@@ -174,9 +174,6 @@ class UnaryIntKeyTest {
   val capacity: Int = UnaryIntKeyTest.capacity
   val dim: Int = UnaryIntKeyTest.dim
 
-  val times = 5000
-  var start1, stop1, cost1, start2, stop2, cost2 = 0L
-
   val ilist = UnaryIntKeyTest.ilist
 
   var sparse1 = UnaryIntKeyTest.sparse1

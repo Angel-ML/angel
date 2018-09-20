@@ -545,9 +545,6 @@ object CompDot {
 }
 
 class CompDot {
-  val times = 50
-  var start1, stop1, cost1, start2, stop2, cost2 = 0L
-
   val ilist = CompDot.ilist
   val llist = CompDot.llist
   val slist = CompDot.slist
@@ -555,43 +552,6 @@ class CompDot {
 
   @Test
   def compDotsimpleIntkeyTest() {
-    //comp vs dense
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      ilist.get(0).dot(slist.get(0))
-      ilist.get(3).dot(slist.get(6))
-      ilist.get(6).dot(slist.get(12))
-      ilist.get(9).dot(slist.get(18))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs dense intkey dot:$cost1")
-
-    //comp vs sparse
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      ilist.get(0).dot(slist.get(1))
-      ilist.get(3).dot(slist.get(7))
-      ilist.get(6).dot(slist.get(13))
-      ilist.get(9).dot(slist.get(19))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs sparse intkey dot:$cost1")
-
-    //comp vs sorted
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      ilist.get(0).dot(slist.get(2))
-      ilist.get(3).dot(slist.get(8))
-      ilist.get(6).dot(slist.get(14))
-      ilist.get(9).dot(slist.get(20))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs sorted intkey dot:$cost1")
-
-
     println("angel dot test--")
     (0 until ilist.size()).foreach { i =>
       ((i / 3) * 6 until slist.size()).foreach { j =>
@@ -609,42 +569,6 @@ class CompDot {
 
   @Test
   def compDotsimpleLongkeyTest() {
-    //comp vs dense
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      llist.get(0).dot(sllist.get(0))
-      llist.get(3).dot(sllist.get(5))
-      llist.get(6).dot(sllist.get(10))
-      llist.get(9).dot(sllist.get(15))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs dense longkey dot:$cost1")
-
-    //comp vs sparse
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      llist.get(0).dot(sllist.get(1))
-      llist.get(3).dot(sllist.get(6))
-      llist.get(6).dot(sllist.get(11))
-      llist.get(9).dot(sllist.get(16))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs sparse longkey dot:$cost1")
-
-    //comp vs sorted
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      llist.get(0).dot(sllist.get(2))
-      llist.get(3).dot(sllist.get(7))
-      llist.get(6).dot(sllist.get(13))
-      llist.get(9).dot(sllist.get(17))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs sorted longkey dot:$cost1")
-
     //longkey
     (0 until llist.size()).foreach { i =>
       ((i / 3) * 6 until sllist.size()).foreach { j =>

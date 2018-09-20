@@ -399,48 +399,9 @@ class CompSimpleBinaryIntkeyOPTest {
   var intintdummy2 = CompSimpleBinaryIntkeyOPTest.intintdummy2
   var intintdummy3 = CompSimpleBinaryIntkeyOPTest.intintdummy3
 
-  val times = 50
-  var start1, stop1, cost1, start2, stop2, cost2 = 0L
 
   @Test
   def compAddsimpleTest() {
-    //comp vs dense
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).add(slist.get(0))
-      list.get(1).add(slist.get(3))
-      list.get(2).add(slist.get(6))
-      list.get(3).add(slist.get(9))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs dense intkey add:$cost1")
-
-    //comp vs sparse
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).add(slist.get(1))
-      list.get(1).add(slist.get(4))
-      list.get(2).add(slist.get(7))
-      list.get(3).add(slist.get(10))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs sparse intkey add:$cost1")
-
-    //comp vs sorted
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).add(slist.get(2))
-      list.get(1).add(slist.get(5))
-      list.get(2).add(slist.get(8))
-      list.get(3).add(slist.get(11))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs sorted intkey add:$cost1")
-
-
     (0 until list.size()).foreach { i =>
       (i * 3 until slist.size()).foreach { j =>
         if (getFlag(slist.get(j)) != "dummy") {
@@ -454,42 +415,6 @@ class CompSimpleBinaryIntkeyOPTest {
 
   @Test
   def compSubsimpleTest() {
-    //comp vs dense
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).sub(slist.get(0))
-      list.get(1).sub(slist.get(3))
-      list.get(2).sub(slist.get(6))
-      list.get(3).sub(slist.get(9))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs dense intkey sub:$cost1")
-
-    //comp vs sparse
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).sub(slist.get(1))
-      list.get(1).sub(slist.get(4))
-      list.get(2).sub(slist.get(7))
-      list.get(3).sub(slist.get(10))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs sparse intkey sub:$cost1")
-
-    //comp vs sorted
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).sub(slist.get(2))
-      list.get(1).sub(slist.get(5))
-      list.get(2).sub(slist.get(8))
-      list.get(3).sub(slist.get(11))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs sorted intkey sub:$cost1")
-
     (0 until list.size()).foreach { i =>
       (i * 3 until slist.size()).foreach { j =>
         if (getFlag(slist.get(j)) != "dummy") {
@@ -503,43 +428,6 @@ class CompSimpleBinaryIntkeyOPTest {
 
   @Test
   def compMulsimpleTest() {
-    //comp vs dense
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).mul(slist.get(0))
-      list.get(1).mul(slist.get(3))
-      list.get(2).mul(slist.get(6))
-      list.get(3).mul(slist.get(9))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs dense intkey mul:$cost1")
-
-    //comp vs sparse
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).mul(slist.get(1))
-      list.get(1).mul(slist.get(4))
-      list.get(2).mul(slist.get(7))
-      list.get(3).mul(slist.get(10))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs sparse intkey mul:$cost1")
-
-    //comp vs sorted
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).mul(slist.get(2))
-      list.get(1).mul(slist.get(5))
-      list.get(2).mul(slist.get(8))
-      list.get(3).mul(slist.get(11))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs sorted intkey mul:$cost1")
-
-
     assert(abs(list.get(0).mul(intdummy).sum() - (sum(bdense1 :* doubleintdummy1) + sum(bsparse1 :* doubleintdummy2) + sum(bsorted1 :* doubleintdummy3))) < 1.0E-8)
     assert(abs(list.get(1).mul(intdummy).sum() - (sum(bdense2 :* floatintdummy1) + sum(bsparse2 :* floatintdummy2) + sum(bsorted2 :* floatintdummy3))) < 1.0E-3)
     assert(abs(list.get(2).mul(intdummy).sum() - (sum(bdense3 :* longintdummy1) + sum(bsparse3 :* longintdummy2) + sum(bsorted3 :* longintdummy3))) < 1.0E-8)
@@ -554,43 +442,6 @@ class CompSimpleBinaryIntkeyOPTest {
 
   @Test
   def compDivsimpleTest() {
-    //comp vs dense
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).div(slist.get(0))
-      list.get(1).div(slist.get(3))
-      list.get(2).div(slist.get(6))
-      list.get(3).div(slist.get(9))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs dense intkey div:$cost1")
-
-    //comp vs sparse
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).div(slist.get(1))
-      list.get(1).div(slist.get(4))
-      //      list.get(2).div(slist.get(7))
-      //      list.get(3).div(slist.get(10))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs sparse intkey div:$cost1")
-
-    //comp vs sorted
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).div(slist.get(2))
-      list.get(1).div(slist.get(5))
-      //      list.get(2).div(slist.get(8))
-      //      list.get(3).div(slist.get(11))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs sorted intkey div:$cost1")
-
-
     (0 until list.size()).foreach { i =>
       (i * 3 until slist.size()).foreach { j =>
         try{
@@ -609,42 +460,6 @@ class CompSimpleBinaryIntkeyOPTest {
 
   @Test
   def compAxpysimpleTest() {
-    //comp vs dense
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).axpy(slist.get(0), 2.0)
-      list.get(1).axpy(slist.get(3), 2.0)
-      list.get(2).axpy(slist.get(6), 2.0)
-      list.get(3).axpy(slist.get(9), 2.0)
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs dense intkey axpy:$cost1")
-
-    //comp vs sparse
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).axpy(slist.get(1), 2.0)
-      list.get(1).axpy(slist.get(4), 2.0)
-      list.get(2).axpy(slist.get(7), 2.0)
-      list.get(3).axpy(slist.get(10), 2.0)
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs sparse intkey axpy:$cost1")
-
-    //comp vs sorted
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).axpy(slist.get(2), 2.0)
-      list.get(1).axpy(slist.get(5), 2.0)
-      list.get(2).axpy(slist.get(8), 2.0)
-      list.get(3).axpy(slist.get(11), 2.0)
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs sorted intkey axpy:$cost1")
-
     (0 until list.size()).foreach { i =>
       (i * 3 until slist.size()).foreach { j =>
         if (getFlag(slist.get(j)) != "dummy") {

@@ -47,9 +47,6 @@ object DotCrossTest {
   val densefloatValues: Array[Float] = new Array[Float](dim)
   val densedoubleValues: Array[Double] = new Array[Double](dim)
 
-  val times = 5000
-  var start1, stop1, cost1, start2, stop2, cost2 = 0L
-
   val ilist = new util.ArrayList[Vector]()
 
   var dense1 = DenseVector[Double](densedoubleValues)
@@ -188,9 +185,6 @@ class DotCrossTest {
   val capacity: Int = DotCrossTest.capacity
   val dim: Int = DotCrossTest.capacity * 100
 
-  val times = 5000
-  var start1, stop1, cost1, start2, stop2, cost2 = 0L
-
   val ilist = DotCrossTest.ilist
 
   var sparse1 = DotCrossTest.sparse1
@@ -214,78 +208,16 @@ class DotCrossTest {
 
   @Test
   def CrossDottest() {
-    //dense cost
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      ilist.get(0).dot(ilist.get(0))
-      ilist.get(3).dot(ilist.get(3))
-      ilist.get(6).dot(ilist.get(6))
-      ilist.get(9).dot(ilist.get(9))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      dense1.dot(dense1)
-      dense2.dot(dense2)
-      dense3.dot(dense3)
-      dense4.dot(dense4)
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel dense add:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
 
     assert(abs(ilist.get(0).dot(ilist.get(0)) - dense1.dot(dense1)) < 1.0E-8)
     assert(abs(ilist.get(3).dot(ilist.get(3)) - dense2.dot(dense2)) < 1.0)
     assert(abs(ilist.get(6).dot(ilist.get(6)) - dense3.dot(dense3)) < 1.0E-8)
     assert(abs(ilist.get(9).dot(ilist.get(9)) - dense4.dot(dense4)) < 1.0E-8)
 
-    //sparse cost
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      ilist.get(1).dot(ilist.get(1))
-      ilist.get(4).dot(ilist.get(4))
-      ilist.get(7).dot(ilist.get(7))
-      ilist.get(10).dot(ilist.get(10))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      sparse1.dot(sparse1)
-      sparse2.dot(sparse2)
-      sparse3.dot(sparse3)
-      sparse4.dot(sparse4)
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel sparse add:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
     assert(abs(ilist.get(1).dot(ilist.get(1)) - sparse1.dot(sparse1)) < 1.0E-8)
     assert(abs(ilist.get(4).dot(ilist.get(4)) - sparse2.dot(sparse2)) < 1.0E-3)
     assert(abs(ilist.get(7).dot(ilist.get(7)) - sparse3.dot(sparse3)) < 1.0E-8)
     assert(abs(ilist.get(10).dot(ilist.get(10)) - sparse4.dot(sparse4)) < 1.0E-8)
-
-    //sorted cost
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      ilist.get(2).dot(ilist.get(2))
-      ilist.get(5).dot(ilist.get(5))
-      ilist.get(8).dot(ilist.get(8))
-      ilist.get(11).dot(ilist.get(11))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      sorted1.dot(sorted1)
-      sorted2.dot(sorted2)
-      sorted3.dot(sorted3)
-      sorted4.dot(sorted4)
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel sorted dot:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
 
     assert(abs(ilist.get(2).dot(ilist.get(2)) - sorted1.dot(sorted1)) < 1.0E-8)
     assert(abs(ilist.get(5).dot(ilist.get(5)) - sorted2.dot(sorted2)) < 1.0E-3)
@@ -296,28 +228,6 @@ class DotCrossTest {
 
     println("------------------------dense sparse-------------------------")
 
-
-    //dense sparse cost
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      ilist.get(0).dot(ilist.get(1))
-      ilist.get(3).dot(ilist.get(4))
-      ilist.get(6).dot(ilist.get(7))
-      ilist.get(9).dot(ilist.get(10))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      dense1.dot(sparse1)
-      dense2.dot(sparse2)
-      dense3.dot(sparse3)
-      dense4.dot(sparse4)
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel dense sparse dot:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
     assert(abs(ilist.get(0).dot(ilist.get(1)) - dense1.dot(sparse1)) < 1.0E-8)
     assert(abs(ilist.get(3).dot(ilist.get(4)) - dense2.dot(sparse2)) < 1.0E-3)
     assert(abs(ilist.get(6).dot(ilist.get(7)) - dense3.dot(sparse3)) < 1.0E-8)
@@ -326,54 +236,12 @@ class DotCrossTest {
 
     println("-------------------------------dense sorted-----------------------")
 
-    //dense sorted cost
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      ilist.get(0).dot(ilist.get(2))
-      ilist.get(3).dot(ilist.get(5))
-      ilist.get(6).dot(ilist.get(8))
-      ilist.get(9).dot(ilist.get(11))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      dense1.dot(sorted1)
-      dense2.dot(sorted2)
-      dense3.dot(sorted3)
-      dense4.dot(sorted4)
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel dense sorted dot:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
     assert(abs(ilist.get(0).dot(ilist.get(2)) - dense1.dot(sorted1)) < 1.0E-8)
     assert(abs(ilist.get(3).dot(ilist.get(5)) - dense2.dot(sorted2)) < 1.0E-3)
     assert(abs(ilist.get(6).dot(ilist.get(8)) - dense3.dot(sorted3)) < 1.0E-8)
     assert(abs(ilist.get(9).dot(ilist.get(11)) - dense4.dot(sorted4)) < 1.0E-8)
 
     println("------------------------sparse sorted------------------")
-
-    //sparse sorted  cost
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      ilist.get(1).dot(ilist.get(2))
-      ilist.get(4).dot(ilist.get(5))
-      ilist.get(7).dot(ilist.get(8))
-      ilist.get(10).dot(ilist.get(11))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      sparse1.dot(sorted1)
-      sparse2.dot(sorted2)
-      sparse3.dot(sorted3)
-      sparse4.dot(sorted4)
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel sparse sorted dot:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
 
     assert(abs(ilist.get(1).dot(ilist.get(2)) - sparse1.dot(sorted1)) < 1.0E-8)
     assert(abs(ilist.get(4).dot(ilist.get(5)) - sparse2.dot(sorted2)) < 1.0E-3)
@@ -382,117 +250,11 @@ class DotCrossTest {
 
     println("------------------dummy----------------------")
 
-    //dummy
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      ilist.get(12).dot(ilist.get(12))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      dummy1.dot(dummy1)
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel dummy dot:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
     assert(ilist.get(12).dot(ilist.get(12)) == dummy1.dot(dummy1))
-
-    //dummy dense
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      ilist.get(12).dot(ilist.get(9))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      dummy1.dot(dense4)
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel dummy dense dot:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      ilist.get(9).dot(ilist.get(12))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      dense4.dot(dummy1)
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel dense dummy dot:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
     assert(ilist.get(9).dot(ilist.get(12)) == dense4.dot(dummy1))
     assert(ilist.get(12).dot(ilist.get(9)) == dummy1.dot(dense4))
-
-
-    //dummy sorted
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      ilist.get(12).dot(ilist.get(10))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      dummy1.dot(sparse4)
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel dummy sorted dot:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      ilist.get(10).dot(ilist.get(12))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      sparse4.dot(dummy1)
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel sorted dummy dot:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
     assert(ilist.get(10).dot(ilist.get(12)) == sparse4.dot(dummy1))
     assert(ilist.get(12).dot(ilist.get(10)) == dummy1.dot(sparse4))
-
-
-    //dummy sorted
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      ilist.get(12).dot(ilist.get(11))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      dummy1.dot(sorted4)
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel dummy sorted dot:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      ilist.get(11).dot(ilist.get(12))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      sorted4.dot(dummy1)
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel sorted dummy dot:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
     assert(ilist.get(11).dot(ilist.get(12)) == sorted4.dot(dummy1))
     assert(ilist.get(12).dot(ilist.get(11)) == dummy1.dot(sorted4))
   }

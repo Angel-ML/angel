@@ -212,23 +212,8 @@ object CompCompBinaryIntkeyOPTest {
 class CompCompBinaryIntkeyOPTest {
   val list = CompCompBinaryIntkeyOPTest.list
 
-  val times = 50
-  var start1, stop1, cost1, start2, stop2, cost2 = 0L
-
   @Test
   def compVScompAddTest() {
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).add(list.get(0))
-      list.get(6).add(list.get(6))
-      list.get(12).add(list.get(12))
-      list.get(18).add(list.get(18))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs comp intkey add:$cost1")
-
-
     (0 until list.size()).foreach { i =>
       (i until list.size()).foreach { j =>
         assert(abs(list.get(i).add(list.get(j)).sum() - (list.get(i).sum() + list.get(j).sum())) < 1.0E-3)
@@ -238,18 +223,6 @@ class CompCompBinaryIntkeyOPTest {
 
   @Test
   def compVScompSubTest() {
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).sub(list.get(0))
-      list.get(6).sub(list.get(6))
-      list.get(12).sub(list.get(12))
-      list.get(18).sub(list.get(18))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs comp intkey sub:$cost1")
-
-
     (0 until list.size()).foreach { i =>
       (i until list.size()).foreach { j =>
         assert(abs(list.get(i).sub(list.get(j)).sum() - (list.get(i).sum() - list.get(j).sum())) < 1.0E-3)
@@ -259,18 +232,6 @@ class CompCompBinaryIntkeyOPTest {
 
   @Test
   def compVScompMulTest() {
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).mul(list.get(0))
-      list.get(6).mul(list.get(6))
-      list.get(12).mul(list.get(12))
-      list.get(18).mul(list.get(18))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs comp intkey mul:$cost1")
-
-
     (0 until list.size()).foreach { i =>
       (i until list.size()).foreach { j =>
         list.get(i).mul(list.get(j)).sum()
@@ -280,7 +241,6 @@ class CompCompBinaryIntkeyOPTest {
 
   @Test
   def compVScompDivTest() {
-
     (0 until list.size()).foreach { i =>
       (i until list.size()).foreach { j =>
         try{
@@ -293,25 +253,12 @@ class CompCompBinaryIntkeyOPTest {
             e
           }
         }
-
       }
     }
   }
 
   @Test
   def compVScompAxpyTest() {
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).axpy(list.get(0), 2.0)
-      list.get(6).axpy(list.get(6), 2.0)
-      list.get(12).axpy(list.get(12), 2.0)
-      list.get(18).axpy(list.get(18), 2.0)
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs comp intkey axpy:$cost1")
-
-
     (0 until list.size()).foreach { i =>
       (i until list.size()).foreach { j =>
         assert(abs(list.get(i).axpy(list.get(j), 2.0).sum() - (list.get(i).sum() + list.get(j).sum() * 2.0)) < 1.0E-3)
