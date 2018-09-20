@@ -189,12 +189,7 @@ class SparseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
     val valueType: String = SharedConf.valueType()
     val bound: Double = 0.00001 / graph.taskNum
 
-    if (indexVector == null) {
-      if (taskflag == 0) {
-        val randFunc = new RandomNormal(weightId, 0, outputDim, 0.0, bound)
-        PSAgentContext.get().getUserRequestAdapter.update(randFunc)
-      }
-    } else {
+    if (indexVector != null) {
       (indexVector, valueType) match {
         case (idx: IntIntVector, "double") =>
           (0 until outputDim).toArray.foreach { i =>
