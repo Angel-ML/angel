@@ -346,9 +346,11 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
 
   override def init(taskflag: Int, initIndexVector: Vector = null): Unit = {
     val bound: Double = 0.00001
-    if (taskflag == 0) {
-      val randFunc = new RandomNormal(matrixId, 0, numFactors, 0.0, bound)
-      PSAgentContext.get().getUserRequestAdapter.update(randFunc)
+    if (initIndexVector == null) {
+      if (taskflag == 0) {
+        val randFunc = new RandomNormal(matrixId, 0, numFactors, 0.0, bound)
+        PSAgentContext.get().getUserRequestAdapter.update(randFunc)
+      }
     }
   }
 
