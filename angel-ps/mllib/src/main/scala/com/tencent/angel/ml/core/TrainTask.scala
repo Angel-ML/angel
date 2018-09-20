@@ -56,7 +56,7 @@ abstract class TrainTask[KEYIN, VALUEIN](taskContext: TaskContext) extends BaseT
     val inputFormat = SharedConf.inputDataFormat
     val modelType = SharedConf.storageType
     (inputFormat, modelType) match {
-      case ("libsvm" | "dummy", "sparse" | "component_sparse") => true
+      case ("libsvm" | "dummy", "sparse" | "component_sparse") => false // true
       case ("dense", "libsvm" | "component_sparse") =>
         throw new AngelException("The input data is dense, but the model is sparse!")
       case _ => false
