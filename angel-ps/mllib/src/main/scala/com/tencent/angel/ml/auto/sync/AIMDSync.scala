@@ -16,7 +16,7 @@
  */
 
 
-package com.tencent.angel.ml.core.auto.sync
+package com.tencent.angel.ml.auto.sync
 
 class AIMDSync {
 

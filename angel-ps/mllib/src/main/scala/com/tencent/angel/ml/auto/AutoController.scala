@@ -16,7 +16,7 @@
  */
 
 
-package com.tencent.angel.ml.core.auto
+package com.tencent.angel.ml.auto
 
 abstract class AutoController {
 
