@@ -56,17 +56,12 @@ class OfflineLearner {
     val validate = splits(1)
 
     data.cache()
-
     train.cache()
     validate.cache()
 
     train.count()
     validate.count()
-
     data.unpersist()
-
-    // build network
-    model.init(train.getNumPartitions)
 
     val bModel = SparkContext.getOrCreate().broadcast(model)
 
@@ -88,20 +83,16 @@ class OfflineLearner {
       reduceTime = end - start
 
       start = System.currentTimeMillis()
-      model.update(iteration)
+      val (lr, boundary) = model.update(iteration, batchSize)
       end = System.currentTimeMillis()
       updateTime = end - start
 
       val loss = lossSum / model.graph.taskNum
 
-      println(s"batch[$iteration] batchSize=$batchSize trainLoss=$loss reduceTime=$reduceTime updateTime=$updateTime")
+      println(s"batch[$iteration] lr[$lr] batchSize[$batchSize] trainLoss=$loss reduceTime=$reduceTime")
 
-      val numEvaluate = SparkContext.getOrCreate().getConf.getInt("spark.offline.evaluate", 50)
-
-      if (iteration % numEvaluate == 0) {
-        val (trainAuc, trainPrecision) = evaluate(train, bModel)
-        val trainMetricLog = s"trainAuc=$trainAuc trainPrecision=$trainPrecision"
-        //        val trainMetricLog = ""
+      if (boundary) {
+        val trainMetricLog = ""
         var validateMetricLog = ""
         if (validationRatio > 0.0) {
           val (validateAuc, validatePrecision) = evaluate(validate, bModel)

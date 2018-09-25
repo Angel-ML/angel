@@ -18,6 +18,8 @@
 
 package com.tencent.angel.ml.core.network.layers.edge.inputlayer
 
+import java.util.concurrent.Future
+
 import com.tencent.angel.client.AngelClient
 import com.tencent.angel.conf.{AngelConf, MatrixConf}
 import com.tencent.angel.exception.AngelException
@@ -32,6 +34,7 @@ import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.transfunc.TransFunc
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
 import com.tencent.angel.ml.core.utils.{NetUtils, PSMatrixUtils}
+import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.model.{MatrixSaveContext, ModelSaveContext}
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
@@ -120,16 +123,14 @@ class SparseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
 
   override def pullParams(): Unit = {
     // Note: weight is a row based matrix
-    //    LOG.error("Sparse Input Layer pull")
     val indices = graph.placeHolder.getIndices
     weight = PSMatrixUtils.getMatrixWithIndex(weightId, 0, outputDim, indices)
     bias = PSMatrixUtils.getRow(biasId, 0)
-
   }
 
   override def pushGradient(): Unit = {
     val start = System.currentTimeMillis()
-    val normal = graph.placeHolder.getBatchSize * graph.taskNum
+    val normal = OptUtils.getNormal(sharedConf, graph)
     val rowIds = new Array[Int](outputDim)
     val vectors = new Array[Vector](outputDim)
 
@@ -144,6 +145,18 @@ class SparseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
               graph.placeHolder.getFeats.transDot(backward.asInstanceOf[BlasFloatMatrix].getCol(rowId))
                 .idiv(normal)
           }
+
+//          var gradStr = ""
+//          (0 until 10).foreach{ col =>
+//            valueType match {
+//              case "double" =>
+//                gradStr += weightRowGrad.asInstanceOf[IntDoubleVector].get(col) + ","
+//              case "float" =>
+//                gradStr += weightRowGrad.asInstanceOf[IntFloatVector].get(col) + ","
+//            }
+//
+//          }
+//          LOG.info("gradient of " + graph.placeHolder.getBatchSize + " samples: " + gradStr)
 
           weightRowGrad.setMatrixId(weight.getMatrixId)
           weightRowGrad.setRowId(outputDim * (multiplier - 1) + rowId)
@@ -163,28 +176,25 @@ class SparseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
     //    println(s"pushGradient Time = ${end - start} ms")
   }
 
-  override def update(epoch: Int): Unit = {
+  override def update(epoch: Int, batchSize: Int): Future[VoidResult] = {
     val start = System.currentTimeMillis()
+    var result:Future[VoidResult] = null
     status match {
       case STATUS.Gradient =>
-        optimizer.update(weightId, outputDim, epoch)
+        result = optimizer.update(weightId, outputDim, epoch, batchSize)
         status = STATUS.Update
       case _ => throw new AngelException("STATUS Error, please calculate Gradient first!")
     }
     val end = System.currentTimeMillis()
     //    println(s"update Time = ${end - start} ms")
+    result
   }
 
   override def init(taskflag: Int, indexVector: Vector): Unit = {
     val valueType: String = SharedConf.valueType()
     val bound: Double = 0.00001 / graph.taskNum
 
-    if (indexVector == null) {
-      if (taskflag == 0) {
-        val randFunc = new RandomNormal(weightId, 0, outputDim, 0.0, bound)
-        PSAgentContext.get().getUserRequestAdapter.update(randFunc)
-      }
-    } else {
+    if (indexVector != null) {
       (indexVector, valueType) match {
         case (idx: IntIntVector, "double") =>
           (0 until outputDim).toArray.foreach { i =>

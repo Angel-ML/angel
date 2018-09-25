@@ -21,6 +21,7 @@ package com.tencent.angel.ml.psf.columns;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
+import com.tencent.angel.ps.server.data.request.UpdateOp;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -32,13 +33,15 @@ public class PartitionUpdateColsParam extends PartitionUpdateParam {
   int[] rows;
   long[] cols;
   Vector vector;
+  UpdateOp op;
 
   public PartitionUpdateColsParam(int matId, PartitionKey pkey, int[] rows, long[] cols,
-    Vector vector) {
+    Vector vector, UpdateOp op) {
     super(matId, pkey, false);
     this.rows = rows;
     this.cols = cols;
     this.vector = vector;
+    this.op = op;
   }
 
   public PartitionUpdateColsParam() {
@@ -47,7 +50,7 @@ public class PartitionUpdateColsParam extends PartitionUpdateParam {
 
   @Override public void serialize(ByteBuf buf) {
     super.serialize(buf);
-
+    buf.writeInt(this.op.getOpId());
 
     buf.writeInt(rows.length);
     for (int i = 0; i < rows.length; i++)
@@ -58,6 +61,7 @@ public class PartitionUpdateColsParam extends PartitionUpdateParam {
 
   @Override public void deserialize(ByteBuf buf) {
     super.deserialize(buf);
+    this.op = UpdateOp.valueOf(buf.readInt());
 
     int nRows = buf.readInt();
     rows = new int[nRows];
