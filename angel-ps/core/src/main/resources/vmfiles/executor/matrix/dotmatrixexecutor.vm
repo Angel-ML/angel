@@ -194,7 +194,7 @@ public class DotMatrixExecutor {
             return apply((BlasDoubleMatrix) mat1, trans1, (RBCompIntDoubleMatrix) mat2, trans2);
         } else if (mat1 instanceof BlasFloatMatrix && mat2 instanceof RBCompIntFloatMatrix) {
             return apply((BlasFloatMatrix) mat1, trans1, (RBCompIntFloatMatrix) mat2, trans2);
-        } if (mat1 instanceof RBCompIntDoubleMatrix && mat2 instanceof BlasDoubleMatrix) {
+        } else if (mat1 instanceof RBCompIntDoubleMatrix && mat2 instanceof BlasDoubleMatrix) {
             return apply((RBCompIntDoubleMatrix) mat1, trans1, (BlasDoubleMatrix) mat2, trans2);
         } else if (mat1 instanceof RBCompIntFloatMatrix && mat2 instanceof BlasFloatMatrix) {
             return apply((RBCompIntFloatMatrix) mat1, trans1, (BlasFloatMatrix) mat2, trans2);

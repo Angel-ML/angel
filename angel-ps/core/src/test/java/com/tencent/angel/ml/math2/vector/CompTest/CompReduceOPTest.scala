@@ -46,9 +46,6 @@ object CompReduceOPTest {
   val densefloatValues: Array[Float] = new Array[Float](dim)
   val densedoubleValues: Array[Double] = new Array[Double](dim)
 
-  val times = 5000
-  var start1, stop1, cost1, start2, stop2, cost2 = 0L
-
   @BeforeClass
   def init(): Unit = {
     val rand = new util.Random()

@@ -323,7 +323,6 @@ class BinaryIntKeyOPTest {
 
   @Test
   def Divtest() {
-    init()
 
     println(ilist.get(0).div(ilist.get(0)).sum(), sum(dense1 :/ dense1))
     println(ilist.get(1).div(ilist.get(1)).sum(), sum(sparse1 :/ sparse1))

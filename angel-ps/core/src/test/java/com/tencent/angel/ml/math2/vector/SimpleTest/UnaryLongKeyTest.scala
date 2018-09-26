@@ -53,9 +53,6 @@ object UnaryLongKeyTest {
   var sorted2 = new SparseVector[Float](new SparseArray(intsortedIndices, floatValues, capacity, dim, default = 0.0F))
 
 
-  val times = 500
-  var start1, stop1, cost1, start2, stop2, cost2 = 0L
-
   @BeforeClass
   def init(): Unit = {
     val rand = new util.Random()
@@ -116,9 +113,6 @@ object UnaryLongKeyTest {
 class UnaryLongKeyTest {
   val capacity: Int = UnaryLongKeyTest.capacity
   val dim: Int = UnaryLongKeyTest.dim
-
-  val times = 5000
-  var start1, stop1, cost1, start2, stop2, cost2 = 0L
 
   val llist = UnaryLongKeyTest.llist
 

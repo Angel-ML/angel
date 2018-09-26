@@ -47,9 +47,6 @@ object DotOPTest {
   val densefloatValues: Array[Float] = new Array[Float](dim)
   val densedoubleValues: Array[Double] = new Array[Double](dim)
 
-  val times = 5000
-  var start1, stop1, cost1, start2, stop2, cost2 = 0L
-
   val ilist = new util.ArrayList[Vector]()
   val llist = new util.ArrayList[Vector]()
 
@@ -157,9 +154,6 @@ class DotOPTest {
   val capacity: Int = DotOPTest.capacity
   val dim: Int = DotOPTest.capacity * 100
 
-  val times = 5000
-  var start1, stop1, cost1, start2, stop2, cost2 = 0L
-
   val ilist = DotOPTest.ilist
   val llist = DotOPTest.llist
 
@@ -243,69 +237,6 @@ class DotOPTest {
     assert(abs(ilist.get(11).dot(ilist.get(11)) - sorted4.dot(sorted4)) < 1.0E-8)
     assert(abs(ilist.get(12).dot(ilist.get(12)) - intValues.length) < 1.0E-8)
 
-
-    //dense cost
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      ilist.get(0).dot(ilist.get(0))
-      ilist.get(3).dot(ilist.get(3))
-      ilist.get(6).dot(ilist.get(6))
-      ilist.get(9).dot(ilist.get(9))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      dense1.dot(dense1)
-      dense2.dot(dense2)
-      dense3.dot(dense3)
-      dense4.dot(dense4)
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel dense dot:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
-    //sparse cost
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      ilist.get(1).dot(ilist.get(1))
-      ilist.get(4).dot(ilist.get(4))
-      ilist.get(7).dot(ilist.get(7))
-      ilist.get(10).dot(ilist.get(10))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      hash1.dot(hash1)
-      hash2.dot(hash2)
-      hash3.dot(hash3)
-      hash4.dot(hash4)
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel sparse dot:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
-    //sorted cost
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      ilist.get(2).dot(ilist.get(2))
-      ilist.get(5).dot(ilist.get(5))
-      ilist.get(8).dot(ilist.get(8))
-      ilist.get(11).dot(ilist.get(11))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      sorted1.dot(sorted1)
-      sorted2.dot(sorted2)
-      sorted3.dot(sorted3)
-      sorted4.dot(sorted4)
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel sorted dot:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
   }
 
   @Test
@@ -360,47 +291,6 @@ class DotOPTest {
     assert(abs(llist.get(7).dot(llist.get(7)) - sorted4.dot(sorted4)) < 1.0E-8)
     assert(abs(llist.get(8).dot(llist.get(8)) - longValues.length) < 1.0E-8)
 
-    //sparse cost
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      llist.get(0).dot(llist.get(0))
-      llist.get(2).dot(llist.get(2))
-      llist.get(4).dot(llist.get(4))
-      llist.get(6).dot(llist.get(6))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      hash1.dot(hash1)
-      hash2.dot(hash2)
-      hash3.dot(hash3)
-      hash4.dot(hash4)
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel sparse dot:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
-    //sorted cost
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      llist.get(1).dot(llist.get(1))
-      llist.get(3).dot(llist.get(3))
-      llist.get(5).dot(llist.get(5))
-      llist.get(7).dot(llist.get(7))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      sorted1.dot(sorted1)
-      sorted2.dot(sorted2)
-      sorted3.dot(sorted3)
-      sorted4.dot(sorted4)
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel sorted dot:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
   }
 
 

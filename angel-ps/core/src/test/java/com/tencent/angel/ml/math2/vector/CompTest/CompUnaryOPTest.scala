@@ -206,174 +206,59 @@ class CompUnaryOPTest {
   val llist = CompUnaryOPTest.llist
   val sllist = CompUnaryOPTest.sllist
 
-  val times = 50
-  var start1, stop1, cost1, start2, stop2, cost2 = 0L
-
   @Test
   def expTest() {
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      Ufuncs.exp(list.get(0))
-      Ufuncs.exp(list.get(1))
-      Ufuncs.exp(list.get(2))
-      Ufuncs.exp(list.get(3))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp exp:$cost1")
-
     (0 until list.size()).foreach { i =>
       Ufuncs.exp(list.get(i))
-      //      (i*3 until slist.size()-2).foreach{ j =>
-      //        assert(abs(Ufuncs.exp(list.get(i)).sum() - (Ufuncs.exp(slist.get(j)).sum() + Ufuncs.exp(slist.get(j+1)).sum() + Ufuncs.exp(slist.get(j+2)).sum()))<1.0)
-      //      }
     }
   }
 
   @Test
   def logTest() {
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      Ufuncs.log(list.get(0))
-      Ufuncs.log(list.get(1))
-      Ufuncs.log(list.get(2))
-      Ufuncs.log(list.get(3))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp log:$cost1")
-
     (0 until list.size()).foreach { i =>
       Ufuncs.log(list.get(i))
-      //      (i*3 until slist.size()-2).foreach{ j =>
-      //        assert(Ufuncs.log(list.get(i)).sum() == Ufuncs.log(slist.get(j)).sum() + Ufuncs.log(slist.get(j+1)).sum() + Ufuncs.log(slist.get(j+2)).sum())
-      //      }
     }
   }
 
   @Test
   def log1pTest() {
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      Ufuncs.log1p(list.get(0))
-      Ufuncs.log1p(list.get(1))
-      Ufuncs.log1p(list.get(2))
-      Ufuncs.log1p(list.get(3))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp log1p:$cost1")
-
     (0 until list.size()).foreach { i =>
       Ufuncs.log1p(list.get(i))
-      //      (i*3 until slist.size()-2).foreach{ j =>
-      //        assert(Ufuncs.log1p(list.get(i)).sum() == Ufuncs.log1p(slist.get(j)).sum() + Ufuncs.log1p(slist.get(j+1)).sum() + Ufuncs.log1p(slist.get(j+2)).sum())
-      //      }
     }
   }
 
   @Test
   def sigmoidTest() {
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      TransFuncs.sigmoid(list.get(0))
-      TransFuncs.sigmoid(list.get(1))
-      TransFuncs.sigmoid(list.get(2))
-      TransFuncs.sigmoid(list.get(3))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp sigmoid:$cost1")
-
     (0 until list.size()).foreach { i =>
       TransFuncs.sigmoid(list.get(i))
-      //      (i*3 until slist.size()-2).foreach{ j =>
-      //        assert(Ufuncs.sigmoid(list.get(i)).sum() == Ufuncs.sigmoid(slist.get(j)).sum() + Ufuncs.sigmoid(slist.get(j+1)).sum() + Ufuncs.sigmoid(slist.get(j+2)).sum())
-      //      }
     }
   }
 
   @Test
   def softthresholdTest() {
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      Ufuncs.softthreshold(list.get(0), 2.0)
-      Ufuncs.softthreshold(list.get(1), 2.0)
-      Ufuncs.softthreshold(list.get(2), 2.0)
-      Ufuncs.softthreshold(list.get(3), 2.0)
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp softthreshold:$cost1")
-
     (0 until list.size()).foreach { i =>
       Ufuncs.softthreshold(list.get(i), 2.0)
-      //      (i*3 until slist.size()-2).foreach{ j =>
-      //        assert(Ufuncs.softthreshold(list.get(i), 2.0).sum() == Ufuncs.softthreshold(slist.get(j), 2.0).sum() + Ufuncs.softthreshold(slist.get(j+1), 2.0).sum() + Ufuncs.softthreshold(slist.get(j+2), 2.0).sum())
-      //      }
     }
   }
 
   @Test
   def saddTest() {
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      Ufuncs.sadd(list.get(0), 2.0)
-      Ufuncs.sadd(list.get(1), 2.0)
-      Ufuncs.sadd(list.get(2), 2.0)
-      Ufuncs.sadd(list.get(3), 2.0)
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp sadd:$cost1")
-
     (0 until list.size()).foreach { i =>
       Ufuncs.sadd(list.get(i), 2.0)
-      //      (i*3 until slist.size()-2).foreach{ j =>
-      //        assert(Ufuncs.sadd(list.get(i), 2.0).sum() == Ufuncs.sadd(slist.get(j), 2.0).sum() + Ufuncs.sadd(slist.get(j+1), 2.0).sum() + Ufuncs.sadd(slist.get(j+2), 2.0).sum())
-      //      }
     }
   }
 
   @Test
   def ssubTest() {
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      Ufuncs.ssub(list.get(0), 2.0)
-      Ufuncs.ssub(list.get(1), 2.0)
-      Ufuncs.ssub(list.get(2), 2.0)
-      Ufuncs.ssub(list.get(3), 2.0)
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp ssub:$cost1")
-
     (0 until list.size()).foreach { i =>
       Ufuncs.ssub(list.get(i), 2.0)
-      //      (i*3 until slist.size()-2).foreach{ j =>
-      //        assert(Ufuncs.ssub(list.get(i), 2.0).sum() == Ufuncs.ssub(slist.get(j), 2.0).sum() + Ufuncs.ssub(slist.get(j+1), 2.0).sum() + Ufuncs.ssub(slist.get(j+2), 2.0).sum())
-      //      }
     }
   }
 
   @Test
   def powTest() {
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      Ufuncs.pow(list.get(0), 2.0)
-      Ufuncs.pow(list.get(1), 2.0)
-      Ufuncs.pow(list.get(2), 2.0)
-      Ufuncs.pow(list.get(3), 2.0)
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp pow:$cost1")
-
     (0 until list.size()).foreach { i =>
       Ufuncs.pow(list.get(i), 2.0)
-      //      (i*3 until slist.size()-2).foreach{ j =>
-      //        assert(Ufuncs.pow(list.get(i), 2.0).sum() == Ufuncs.pow(slist.get(j), 2.0).sum() + Ufuncs.pow(slist.get(j+1), 2.0).sum() + Ufuncs.pow(slist.get(j+2), 2.0).sum())
-      //      }
     }
     (0 until llist.size()).foreach { i =>
       try {
@@ -388,22 +273,8 @@ class CompUnaryOPTest {
 
   @Test
   def sqrtTest() {
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      Ufuncs.sqrt(list.get(0))
-      Ufuncs.sqrt(list.get(1))
-      Ufuncs.sqrt(list.get(2))
-      Ufuncs.sqrt(list.get(3))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp sqrt:$cost1")
-
     (0 until list.size()).foreach { i =>
       Ufuncs.sqrt(list.get(i))
-      //      (i*3 until slist.size()-2).foreach{ j =>
-      //        assert(Ufuncs.sqrt(list.get(i)).sum() == Ufuncs.sqrt(slist.get(j)).sum() + Ufuncs.sqrt(slist.get(j+1)).sum() + Ufuncs.sqrt(slist.get(j+2)).sum())
-      //      }
     }
     (0 until llist.size()).foreach { i =>
       try {
@@ -418,23 +289,8 @@ class CompUnaryOPTest {
 
   @Test
   def smulTest() {
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      Ufuncs.smul(list.get(0), 2.0)
-      Ufuncs.smul(list.get(1), 2.0)
-      Ufuncs.smul(list.get(2), 2.0)
-      Ufuncs.smul(list.get(3), 2.0)
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp smul:$cost1")
-
     val tmp = (0 until list.size()).map { i =>
       Ufuncs.smul(list.get(i), 2.0)
-
-      //      (i*3 until slist.size()-2).foreach{ j =>
-      //        assert(Ufuncs.smul(list.get(i), 2.0).sum() == Ufuncs.smul(slist.get(j), 2.0).sum() + Ufuncs.smul(slist.get(j+1), 2.0).sum() + Ufuncs.smul(slist.get(j+2), 2.0).sum())
-      //      }
     }
 
     tmp.foreach(t => t.sum())
@@ -452,22 +308,8 @@ class CompUnaryOPTest {
 
   @Test
   def sdivTest() {
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      Ufuncs.sdiv(list.get(0), 2.0)
-      Ufuncs.sdiv(list.get(1), 2.0)
-      Ufuncs.sdiv(list.get(2), 2.0)
-      Ufuncs.sdiv(list.get(3), 2.0)
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp sdiv:$cost1")
-
     (0 until list.size()).foreach { i =>
       Ufuncs.sdiv(list.get(i), 2.0)
-      //      (i*3 until slist.size()-2).foreach{ j =>
-      //        assert(Ufuncs.sdiv(list.get(i), 2.0).sum() == Ufuncs.sdiv(slist.get(j), 2.0).sum() + Ufuncs.sdiv(slist.get(j+1), 2.0).sum() + Ufuncs.sdiv(slist.get(j+2), 2.0).sum())
-      //      }
     }
     (0 until llist.size()).foreach { i =>
       try {

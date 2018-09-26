@@ -21,6 +21,7 @@ package com.tencent.angel.ml.math2.ufuncs.executor.simple;
 
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math2.storage.*;
+import com.tencent.angel.ml.math2.ufuncs.executor.StorageSwitch;
 import com.tencent.angel.ml.math2.ufuncs.expression.Binary;
 import com.tencent.angel.ml.math2.vector.*;
 import it.unimi.dsi.fastutil.ints.*;
@@ -98,18 +99,16 @@ public class SimpleBinaryOutAllExecutor {
 #foreach ($idx2 in [$idx1..$len])
 #set ($dtype2 = $dtypes.get($idx2))
     public static Vector apply(${itype}${dtype1}Vector v1, ${itype}${dtype2}Vector v2, Binary op) {
-        ${itype}${dtype1}Vector res;
+        ${itype}${dtype1}VectorStorage newStorage = StorageSwitch.apply(v1, v2, op);
 #if (${itype} == "Int")
         if (v1.isDense() && v2.isDense()) {
-            res = v1.copy();
-            $dtype1.toLowerCase() [ ] resValues = res.getStorage().getValues();
+            $dtype1.toLowerCase() [ ] resValues = newStorage.getValues();
             $dtype2.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
             for ($itype.toLowerCase() idx = 0; idx < resValues.length; idx++) {
                 resValues[idx] = op.apply(resValues[idx], v2Values[idx]);
             }
         } else if (v1.isDense() && v2.isSparse()) {
-            res = v1.copy();
-            $dtype1.toLowerCase() [ ] resValues = res.getStorage().getValues();
+            $dtype1.toLowerCase() [ ] resValues = newStorage.getValues();
             if (v2.size() < Constant.denseLoopThreshold * v2.getDim()) {
                 for (int i = 0; i < resValues.length; i++) {
                     resValues[i] = op.apply(resValues[i], 0);
@@ -131,8 +130,7 @@ public class SimpleBinaryOutAllExecutor {
                 }
             }
         }else if (v1.isDense() && v2.isSorted()) {
-            res = v1.copy();
-            $dtype1.toLowerCase() [ ] resValues = res.getStorage().getValues();
+            $dtype1.toLowerCase() [ ] resValues =newStorage.getValues();
             if (v2.size() < Constant.denseLoopThreshold * v2.getDim()) {
                 $itype.toLowerCase() [ ] v2Indices = v2.getStorage().getIndices();
                 $dtype2.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
@@ -159,7 +157,6 @@ public class SimpleBinaryOutAllExecutor {
             if (op.isKeepStorage()) {
                 throw new AngelException("operation is not support!");
             } else {
-                ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptyDense();
                 $dtype1.toLowerCase() [ ] resValues = newStorage.getValues();
                 $dtype2.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
 
@@ -182,14 +179,11 @@ public class SimpleBinaryOutAllExecutor {
                         }
                     }
                 }
-
-                res = new ${itype}${dtype1}Vector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
             }
         } else if (v1.isSorted() && v2.isDense()) {
             if (op.isKeepStorage()) {
                 throw new AngelException("operation is not support!");
             } else {
-                ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptyDense();
                 $dtype1.toLowerCase() [ ] resValues = newStorage.getValues();
                 $dtype2.toLowerCase() [ ] v2Values = v2.getStorage().getValues();
 
@@ -215,8 +209,6 @@ public class SimpleBinaryOutAllExecutor {
                         }
                     }
                 }
-
-                res = new ${itype}${dtype1}Vector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
             }
         } else if (v1.isSparse() && v2.isSparse()) {
 #else
@@ -226,7 +218,6 @@ public class SimpleBinaryOutAllExecutor {
                 throw new AngelException("operation is not support!");
             } else {
 #if (${itype} == "Int")
-                ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptyDense();
                 $dtype1.toLowerCase() [ ] resValues = newStorage.getValues();
                 ObjectIterator<${itype}2${dtype1}Map.Entry> iter1 = v1.getStorage().entryIterator();
                 while (iter1.hasNext()) {
@@ -259,8 +250,6 @@ public class SimpleBinaryOutAllExecutor {
                 }
 #else
                 // multi-rehash
-                ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptySparse((int)(v1.getDim()));
-
                 ${itype}${dtype1}VectorStorage v1Storage = v1.getStorage();
                 ${itype}${dtype2}VectorStorage v2Storage = v2.getStorage();
                 for (int i = 0; i < v1.getDim(); i++) {
@@ -281,14 +270,12 @@ public class SimpleBinaryOutAllExecutor {
                     }
                 }
 #end
-                res = new ${itype}${dtype1}Vector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
             }
         } else if (v1.isSparse() && v2.isSorted()) {
             if (op.isKeepStorage()) {
                 throw new AngelException("operation is not support!");
             } else {
 #if (${itype} == "Int")
-                ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptyDense();
                 $dtype1.toLowerCase() [ ] resValues = newStorage.getValues();
                 ObjectIterator<${itype}2${dtype1}Map.Entry> iter1 = v1.getStorage().entryIterator();
                 while (iter1.hasNext()) {
@@ -322,8 +309,6 @@ public class SimpleBinaryOutAllExecutor {
                     }
                 }
 #else
-                ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptySparse((int)(v1.getDim()));
-
                 ${itype}${dtype1}VectorStorage v1Storage = v1.getStorage();
                 ${itype}${dtype2}VectorStorage v2Storage = v2.getStorage();
                 for (int i = 0; i < v1.getDim(); i++) {
@@ -344,14 +329,12 @@ public class SimpleBinaryOutAllExecutor {
                     }
                 }
 #end
-                res = new ${itype}${dtype1}Vector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
             }
         } else if (v1.isSorted() && v2.isSparse()) {
             if (op.isKeepStorage()) {
                 throw new AngelException("operation is not support!");
             } else {
 #if (${itype} == "Int")
-                ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptyDense();
                 $dtype1.toLowerCase() [ ] resValues = newStorage.getValues();
 
                 $itype.toLowerCase() [ ] v1Indices = v1.getStorage().getIndices();
@@ -385,8 +368,6 @@ public class SimpleBinaryOutAllExecutor {
                     }
                 }
 #else
-                ${itype}${dtype1}VectorStorage newStorage = new ${itype}${dtype1}SparseVectorStorage(v1.getDim());
-
                 ${itype}${dtype1}VectorStorage v1Storage = v1.getStorage();
                 ${itype}${dtype2}VectorStorage v2Storage = v2.getStorage();
                 for (int i = 0; i < v1.getDim(); i++) {
@@ -407,18 +388,15 @@ public class SimpleBinaryOutAllExecutor {
                     }
                 }
 #end
-                res = new ${itype}${dtype1}Vector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
             }
         } else if (v1.isSorted() && v2.isSorted()) {
             if (op.isKeepStorage()) {
                 throw new AngelException("operation is not support!");
             } else {
 #if (${itype} == "Int")
-                ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptyDense();
                 $dtype1.toLowerCase() [ ] resValues = newStorage.getValues();
 
 #else
-                ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptySorted((int)(v1.getDim()));
                 $itype.toLowerCase() [ ] resIndices = newStorage.getIndices();
                 $dtype1.toLowerCase() [ ] resValues = newStorage.getValues();
 
@@ -485,14 +463,12 @@ public class SimpleBinaryOutAllExecutor {
                     }
                 }
 #end
-
-                res = new ${itype}${dtype1}Vector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
             }
         } else {
             throw new AngelException("The operation is not support!");
         }
 
-        return res;
+        return new ${itype}${dtype1}Vector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
     }
 
 #end
@@ -502,12 +478,11 @@ public class SimpleBinaryOutAllExecutor {
 #foreach (${itype} in ${itypes})
 #foreach (${dtype1} in ${dtypes})
     public static Vector apply(${itype}${dtype1}Vector v1, ${itype}DummyVector v2, Binary op) {
-        ${itype}${dtype1}Vector res;
+        ${itype}${dtype1}VectorStorage newStorage = StorageSwitch.apply(v1, v2, op);
 
 #if (${itype} == "Int")
         if (v1.isDense()) {
-            res = v1.copy();
-            $dtype1.toLowerCase() [ ] resValues = res.getStorage().getValues();
+            $dtype1.toLowerCase() [ ] resValues = newStorage.getValues();
             for (int i=0; i < v1.getDim(); i++){
                 resValues[i] = op.apply(resValues[i], v2.get(i));
             }
@@ -519,7 +494,6 @@ public class SimpleBinaryOutAllExecutor {
                 throw new AngelException("operation is not support!");
             } else {
 #if (${itype} == "Int")
-                ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptyDense();
                 $dtype1.toLowerCase() [ ] resValues = newStorage.getValues();
                 ObjectIterator<${itype}2${dtype1}Map.Entry> iter1 = v1.getStorage().entryIterator();
                 while (iter1.hasNext()) {
@@ -533,8 +507,6 @@ public class SimpleBinaryOutAllExecutor {
                 }
 #else
                 // multi-rehash
-                ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptySparse((int)(v1.getDim()));
-
                 ${itype}${dtype1}VectorStorage v1Storage = v1.getStorage();
                 for (int i = 0; i < v1.getDim(); i++) {
                     if (v1Storage.hasKey(i)) {
@@ -550,14 +522,12 @@ public class SimpleBinaryOutAllExecutor {
                     }
                 }
 #end
-                res = new ${itype}${dtype1}Vector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
             }
         } else { // sorted
             if (op.isKeepStorage()) {
                 throw new AngelException("operation is not support!");
             } else {
 #if (${itype} == "Int")
-                ${itype}${dtype1}VectorStorage newStorage = v1.getStorage().emptyDense();
                 $dtype1.toLowerCase() [ ] resValues = newStorage.getValues();
 
                 $itype.toLowerCase() [ ] v1Indices = v1.getStorage().getIndices();
@@ -572,8 +542,6 @@ public class SimpleBinaryOutAllExecutor {
                      resValues[i] = op.apply(resValues[i], v2.get(i));
                  }
 #else
-                ${itype}${dtype1}VectorStorage newStorage = new ${itype}${dtype1}SparseVectorStorage(v1.getDim());
-
                 ${itype}${dtype1}VectorStorage v1Storage = v1.getStorage();
                 for (int i = 0; i < v1.getDim(); i++) {
                     if (v1Storage.hasKey(i)) {
@@ -589,11 +557,9 @@ public class SimpleBinaryOutAllExecutor {
                     }
                 }
 #end
-                res = new ${itype}${dtype1}Vector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
             }
         }
-
-        return res;
+        return new ${itype}${dtype1}Vector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
     }
 #end
 #end

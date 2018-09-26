@@ -23,9 +23,9 @@ import java.util
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector._
-import org.junit.{BeforeClass, Test}
+import org.scalatest.FunSuite
 
-object CompCompCoverageTest {
+class CompCompCoverageTest extends FunSuite {
   val matrixId = 0
   val rowId = 0
   val clock = 0
@@ -66,7 +66,6 @@ object CompCompCoverageTest {
   val list = new util.ArrayList[Vector]()
   val llist = new util.ArrayList[Vector]()
 
-  @BeforeClass
   def init(): Unit = {
     val rand = new util.Random()
     val set = new util.HashSet[Int]()
@@ -428,48 +427,9 @@ object CompCompCoverageTest {
     llist.add(lcomp41)
     llist.add(lcomp42)
   }
-}
 
-class CompCompCoverageTest {
-  val capacity: Int = CompCompCoverageTest.capacity
-  val dim: Int = CompCompCoverageTest.dim
-
-  val intrandIndices: Array[Int] = CompCompCoverageTest.intrandIndices
-  val longrandIndices: Array[Long] = CompCompCoverageTest.longrandIndices
-  val intsortedIndices: Array[Int] = CompCompCoverageTest.intsortedIndices
-  val longsortedIndices: Array[Long] = CompCompCoverageTest.longsortedIndices
-
-  val intValues: Array[Int] = CompCompCoverageTest.intValues
-  val longValues: Array[Long] = CompCompCoverageTest.longValues
-  val floatValues: Array[Float] = CompCompCoverageTest.floatValues
-  val doubleValues: Array[Double] = CompCompCoverageTest.doubleValues
-
-  val denseintValues: Array[Int] = CompCompCoverageTest.denseintValues
-  val denselongValues: Array[Long] = CompCompCoverageTest.denselongValues
-  val densefloatValues: Array[Float] = CompCompCoverageTest.densefloatValues
-  val densedoubleValues: Array[Double] = CompCompCoverageTest.densedoubleValues
-
-  val capacity1: Int = CompCompCoverageTest.capacity1
-  val intrandIndices1: Array[Int] = CompCompCoverageTest.intrandIndices1
-  val longrandIndices1: Array[Long] = CompCompCoverageTest.longrandIndices1
-  val intsortedIndices1: Array[Int] = CompCompCoverageTest.intsortedIndices1
-  val longsortedIndices1: Array[Long] = CompCompCoverageTest.longsortedIndices1
-
-  val intValues1: Array[Int] = CompCompCoverageTest.intValues1
-  val longValues1: Array[Long] = CompCompCoverageTest.longValues1
-  val floatValues1: Array[Float] = CompCompCoverageTest.floatValues1
-  val doubleValues1: Array[Double] = CompCompCoverageTest.doubleValues1
-
-  val intrandIndices2: Array[Int] = CompCompCoverageTest.intrandIndices2
-  val intsortedIndices2: Array[Int] = CompCompCoverageTest.intsortedIndices2
-  val longrandIndices2: Array[Long] = CompCompCoverageTest.longrandIndices2
-  val longsortedIndices2: Array[Long] = CompCompCoverageTest.longsortedIndices2
-
-  val list = CompCompCoverageTest.list
-  val llist = CompCompCoverageTest.llist
-
-  @Test
-  def compVScompAddTest() {
+  test ("compVScompAddTest") {
+    init()
     (0 until list.size()).foreach { i =>
       (0 until list.size()).foreach { j =>
         try {
@@ -494,8 +454,8 @@ class CompCompCoverageTest {
     }
   }
 
-  @Test
-  def compVScompSubTest() {
+  test ("compVScompSubTest") {
+    init()
     (0 until list.size()).foreach { i =>
       (0 until list.size()).foreach { j =>
         try {
@@ -520,8 +480,8 @@ class CompCompCoverageTest {
     }
   }
 
-  @Test
-  def compVScompMulTest() {
+  test ("compVScompMulTest") {
+    init()
     (0 until list.size()).foreach { i =>
       (0 until list.size()).foreach { j =>
         try {
@@ -546,8 +506,8 @@ class CompCompCoverageTest {
     }
   }
 
-  @Test
-  def compVScompDivTest() {
+  test ("compVScompDivTest") {
+    init()
     (0 until list.size()).foreach { i =>
       (0 until list.size()).foreach { j =>
         try {
@@ -578,8 +538,8 @@ class CompCompCoverageTest {
     }
   }
 
-  @Test
-  def compVScompAxpyTest() {
+  test ("compVScompAxpyTest") {
+    init()
     (0 until list.size()).foreach { i =>
       (0 until list.size()).foreach { j =>
         try {

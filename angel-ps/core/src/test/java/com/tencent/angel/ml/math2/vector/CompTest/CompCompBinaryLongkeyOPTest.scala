@@ -162,23 +162,8 @@ object CompCompBinaryLongkeyOPTest {
 class CompCompBinaryLongkeyOPTest {
   val list = CompCompBinaryLongkeyOPTest.list
 
-  val times = 50
-  var start1, stop1, cost1, start2, stop2, cost2 = 0L
-
   @Test
   def compVScompAddTest() {
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).add(list.get(0))
-      list.get(2).add(list.get(2))
-      list.get(4).add(list.get(4))
-      list.get(6).add(list.get(6))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs comp longkey add:$cost1")
-
-
     (0 until list.size()).foreach { i =>
       (i until list.size()).foreach { j =>
         assert(abs(list.get(i).add(list.get(j)).sum() - (list.get(i).sum() + list.get(j).sum())) < 1.0E-3)
@@ -188,18 +173,6 @@ class CompCompBinaryLongkeyOPTest {
 
   @Test
   def compVScompSubTest() {
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).sub(list.get(0))
-      list.get(2).sub(list.get(2))
-      list.get(4).sub(list.get(4))
-      list.get(6).sub(list.get(6))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs comp longkey sub:$cost1")
-
-
     (0 until list.size()).foreach { i =>
       (i until list.size()).foreach { j =>
         assert(abs(list.get(i).sub(list.get(j)).sum() - (list.get(i).sum() - list.get(j).sum())) < 1.0E-3)
@@ -209,18 +182,6 @@ class CompCompBinaryLongkeyOPTest {
 
   @Test
   def compVScompMulTest() {
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).mul(list.get(0))
-      list.get(2).mul(list.get(2))
-      list.get(4).mul(list.get(4))
-      list.get(6).mul(list.get(6))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs comp longkey mul:$cost1")
-
-
     (0 until list.size()).foreach { i =>
       (i until list.size()).foreach { j =>
        list.get(i).mul(list.get(j)).sum()
@@ -242,25 +203,12 @@ class CompCompBinaryLongkeyOPTest {
             e
           }
         }
-
       }
     }
   }
 
   @Test
   def compVScompAxpyTest() {
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).axpy(list.get(0), 2.0)
-      list.get(2).axpy(list.get(2), 2.0)
-      list.get(4).axpy(list.get(4), 2.0)
-      list.get(6).axpy(list.get(6), 2.0)
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs comp longkey axpy:$cost1")
-
-
     (0 until list.size()).foreach { i =>
       (i until list.size()).foreach { j =>
         assert(abs(list.get(i).axpy(list.get(j), 2.0).sum() - (list.get(i).sum() + list.get(j).sum() * 2.0)) < 1.0E-3)

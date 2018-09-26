@@ -53,9 +53,6 @@ object UneryCoverageTest {
   val slist = new util.ArrayList[Vector]()
   val sllist = new util.ArrayList[Vector]()
 
-  val times = 500
-  var start1, stop1, cost1, start2, stop2, cost2 = 0L
-
   var dense1 = DenseVector[Double](densedoubleValues)
   var sparse1 = new HashVector[Double](new OpenAddressHashArray[Double](dim))
   var sorted1 = new SparseVector[Double](new SparseArray(intsortedIndices, doubleValues, capacity, dim, 0.0))

@@ -226,36 +226,10 @@ class CompSimpleBinaryLongkeyOPTest {
   val slist = CompSimpleBinaryLongkeyOPTest.slist
   var longdummy = CompSimpleBinaryLongkeyOPTest.longdummy
 
-  val times = 50
-  var start1, stop1, cost1, start2, stop2, cost2 = 0L
+
 
   @Test
   def compAddsimpleTest() {
-    //comp vs sparse
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).add(slist.get(0))
-      list.get(1).add(slist.get(2))
-      list.get(2).add(slist.get(4))
-      list.get(3).add(slist.get(6))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs sparse longkey add:$cost1")
-
-    //comp vs sorted
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).add(slist.get(1))
-      list.get(1).add(slist.get(3))
-      list.get(2).add(slist.get(5))
-      list.get(3).add(slist.get(7))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs sorted longkey add:$cost1")
-
-
     (0 until list.size()).foreach { i =>
       (i * 2 until slist.size()).foreach { j =>
         if (getFlag(slist.get(j)) != "dummy") {
@@ -269,30 +243,6 @@ class CompSimpleBinaryLongkeyOPTest {
 
   @Test
   def compSubsimpleTest() {
-    //comp vs sparse
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).sub(slist.get(0))
-      list.get(1).sub(slist.get(2))
-      list.get(2).sub(slist.get(4))
-      list.get(3).sub(slist.get(6))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs sparse longkey sub:$cost1")
-
-    //comp vs sorted
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).sub(slist.get(1))
-      list.get(1).sub(slist.get(3))
-      list.get(2).sub(slist.get(5))
-      list.get(3).sub(slist.get(7))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs sorted longkey sub:$cost1")
-
     (0 until list.size()).foreach { i =>
       (i * 2 until slist.size()).foreach { j =>
         if (getFlag(slist.get(j)) != "dummy") {
@@ -306,30 +256,6 @@ class CompSimpleBinaryLongkeyOPTest {
 
   @Test
   def compMulsimpleTest() {
-    //comp vs sparse
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).mul(slist.get(0))
-      list.get(1).mul(slist.get(2))
-      list.get(2).mul(slist.get(4))
-      list.get(3).mul(slist.get(6))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs sparse longkey mul:$cost1")
-
-    //comp vs sorted
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).mul(slist.get(1))
-      list.get(1).mul(slist.get(3))
-      list.get(2).mul(slist.get(5))
-      list.get(3).mul(slist.get(7))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs sorted longkey mul:$cost1")
-
     (0 until list.size()).foreach { i =>
       (i * 2 until slist.size()).foreach { j =>
         println(s"${list.get(i).sum()}, ${slist.get(j).sum()}, ${list.get(i).mul(slist.get(j)).sum()}")
@@ -359,30 +285,6 @@ class CompSimpleBinaryLongkeyOPTest {
 
   @Test
   def compAxpysimpleTest() {
-    //comp vs sparse
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).axpy(slist.get(0), 2.0)
-      list.get(1).axpy(slist.get(2), 2.0)
-      list.get(2).axpy(slist.get(4), 2.0)
-      list.get(3).axpy(slist.get(6), 2.0)
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs sparse longkey axpy:$cost1")
-
-    //comp vs sorted
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      list.get(0).axpy(slist.get(1), 2.0)
-      list.get(1).axpy(slist.get(3), 2.0)
-      list.get(2).axpy(slist.get(5), 2.0)
-      list.get(3).axpy(slist.get(7), 2.0)
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    println(s"angel comp vs sorted longkey axpy:$cost1")
-
     (0 until list.size()).foreach { i =>
       (i * 2 until slist.size()).foreach { j =>
         assert(abs(list.get(i).axpy(slist.get(j), 2.0).sum() - (list.get(i).sum() + slist.get(j).sum() * 2)) < 1.0E-3)

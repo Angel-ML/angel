@@ -184,8 +184,10 @@ class BaseFuncTest {
 
     import scala.collection.JavaConversions._
     for (v <- list) {
-      println(s"size:${v.asInstanceOf[Vector].getSize}, ${v.size()}")
-      println(v.getType)
+      assert(v.asInstanceOf[Vector].getSize == v.size())
+      assert(v.asInstanceOf[Vector].getNumZeros == v.getNumZeros)
+      assert(v.asInstanceOf[Vector].hasKey(0) == v.hasKey(0))
+      assert(v.asInstanceOf[Vector].getType == v.getType)
       println(s"${sum(v.getStorage.oneLikeDense().getValues)}, ${sum(v.getStorage.oneLikeSparse().getValues)},${sum(v.getStorage.oneLikeSorted().getValues)}")
       println(s"${sum(v.getStorage.oneLikeDense(100).getValues)}, ${sum(v.getStorage.oneLikeSparse(100, 50).getValues)},${sum(v.getStorage.oneLikeSorted(100, 50).getValues)}")
       println(s"${sum(v.getStorage.oneLikeSparse(100).getValues)},${sum(v.getStorage.oneLikeSorted(100).getValues)}")
@@ -282,7 +284,10 @@ class BaseFuncTest {
 
     import scala.collection.JavaConversions._
     for (v <- list) {
-      println(v.getType)
+      assert(v.asInstanceOf[Vector].getSize == v.size())
+      assert(v.asInstanceOf[Vector].getNumZeros == v.getNumZeros)
+      assert(v.asInstanceOf[Vector].hasKey(0) == v.hasKey(0))
+      assert(v.asInstanceOf[Vector].getType == v.getType)
       println(s"${sum(v.getStorage.oneLikeDense().getValues)}, ${sum(v.getStorage.oneLikeSparse().getValues)},${sum(v.getStorage.oneLikeSorted().getValues)}")
       println(s"${sum(v.getStorage.oneLikeDense(100).getValues)}, ${sum(v.getStorage.oneLikeSparse(100, 50).getValues)},${sum(v.getStorage.oneLikeSorted(100, 50).getValues)}")
       println(s"${sum(v.getStorage.oneLikeSparse(100).getValues)},${sum(v.getStorage.oneLikeSorted(100).getValues)}")
@@ -379,7 +384,10 @@ class BaseFuncTest {
 
     import scala.collection.JavaConversions._
     for (v <- list) {
-      println(v.getType)
+      assert(v.asInstanceOf[Vector].getSize == v.size())
+      assert(v.asInstanceOf[Vector].getNumZeros == v.getNumZeros)
+      assert(v.asInstanceOf[Vector].hasKey(0) == v.hasKey(0))
+      assert(v.asInstanceOf[Vector].getType == v.getType)
       println(s"${sum(v.getStorage.oneLikeDense().getValues)}, ${sum(v.getStorage.oneLikeSparse().getValues)},${sum(v.getStorage.oneLikeSorted().getValues)}")
       println(s"${sum(v.getStorage.oneLikeDense(100).getValues)}, ${sum(v.getStorage.oneLikeSparse(100, 50).getValues)},${sum(v.getStorage.oneLikeSorted(100, 50).getValues)}")
       println(s"${sum(v.getStorage.oneLikeSparse(100).getValues)},${sum(v.getStorage.oneLikeSorted(100).getValues)}")
@@ -474,7 +482,10 @@ class BaseFuncTest {
 
     import scala.collection.JavaConversions._
     for (v <- list) {
-      println(v.getType)
+      assert(v.asInstanceOf[Vector].getSize == v.size())
+      assert(v.asInstanceOf[Vector].getNumZeros == v.getNumZeros)
+      assert(v.asInstanceOf[Vector].hasKey(0) == v.hasKey(0))
+      assert(v.asInstanceOf[Vector].getType == v.getType)
       println(s"${sum(v.getStorage.oneLikeDense().getValues)}, ${sum(v.getStorage.oneLikeSparse().getValues)},${sum(v.getStorage.oneLikeSorted().getValues)}")
       println(s"${sum(v.getStorage.oneLikeDense(100).getValues)}, ${sum(v.getStorage.oneLikeSparse(100, 50).getValues)},${sum(v.getStorage.oneLikeSorted(100, 50).getValues)}")
       println(s"${sum(v.getStorage.oneLikeSparse(100).getValues)},${sum(v.getStorage.oneLikeSorted(100).getValues)}")
@@ -535,7 +546,7 @@ class BaseFuncTest {
   }
 
   @Test
-  def testIntDummyVector() {
+  def IntDummyVector() {
     val list = new util.ArrayList[IntDummyVector]
 
     list.add(VFactory.intDummyVector(dim, intsortedIndices))
@@ -545,6 +556,10 @@ class BaseFuncTest {
 
     import scala.collection.JavaConversions._
     for (v <- list) {
+      assert(v.asInstanceOf[Vector].getSize == v.size())
+      assert(v.asInstanceOf[Vector].getNumZeros == v.getNumZeros)
+      assert(v.asInstanceOf[Vector].hasKey(0) == v.hasKey(0))
+      assert(v.asInstanceOf[Vector].getType == v.getType)
       println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       assert(v.numZeros == dim - size)
       assert(v.getDim == dim)
@@ -589,6 +604,10 @@ class BaseFuncTest {
 
     import scala.collection.JavaConversions._
     for (v <- list) {
+      assert(v.asInstanceOf[Vector].getSize == v.size())
+      assert(v.asInstanceOf[Vector].getNumZeros == v.getNumZeros)
+      assert(v.asInstanceOf[Vector].hasKey(0) == v.hasKey(0))
+      assert(v.asInstanceOf[Vector].getType == v.getType)
       println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       assert(v.numZeros == dim - size)
       assert(v.getDim == dim)
@@ -651,7 +670,10 @@ class BaseFuncTest {
 
     import scala.collection.JavaConversions._
     for (v <- list) {
-      println(v.getType)
+      assert(v.asInstanceOf[Vector].getSize == v.size())
+      assert(v.asInstanceOf[Vector].getNumZeros == v.getNumZeros)
+      assert(v.asInstanceOf[Vector].hasKey(0) == v.hasKey(0))
+      assert(v.asInstanceOf[Vector].getType == v.getType)
       println(s"${sum(v.getStorage.oneLikeSparse().getValues)},${sum(v.getStorage.oneLikeSorted().getValues)}")
       println(s"${sum(v.getStorage.oneLikeSparse(100, 50).getValues)},${sum(v.getStorage.oneLikeSorted(100, 50).getValues)}")
       println(s"${sum(v.getStorage.oneLikeSparse(100).getValues)},${sum(v.getStorage.oneLikeSorted(100).getValues)}")
@@ -741,7 +763,10 @@ class BaseFuncTest {
 
     import scala.collection.JavaConversions._
     for (v <- list) {
-      println(v.getType)
+      assert(v.asInstanceOf[Vector].getSize == v.size())
+      assert(v.asInstanceOf[Vector].getNumZeros == v.getNumZeros)
+      assert(v.asInstanceOf[Vector].hasKey(0) == v.hasKey(0))
+      assert(v.asInstanceOf[Vector].getType == v.getType)
       println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       assert(v.size == capacity)
       if (v.isDense) {
@@ -827,7 +852,10 @@ class BaseFuncTest {
 
     import scala.collection.JavaConversions._
     for (v <- list) {
-      println(v.getType)
+      assert(v.asInstanceOf[Vector].getSize == v.size())
+      assert(v.asInstanceOf[Vector].getNumZeros == v.getNumZeros)
+      assert(v.asInstanceOf[Vector].hasKey(0) == v.hasKey(0))
+      assert(v.asInstanceOf[Vector].getType == v.getType)
       println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       assert(v.size == capacity)
       if (v.isDense) {
@@ -913,7 +941,10 @@ class BaseFuncTest {
 
     import scala.collection.JavaConversions._
     for (v <- list) {
-      println(v.getType)
+      assert(v.asInstanceOf[Vector].getSize == v.size())
+      assert(v.asInstanceOf[Vector].getNumZeros == v.getNumZeros)
+      assert(v.asInstanceOf[Vector].hasKey(0) == v.hasKey(0))
+      assert(v.asInstanceOf[Vector].getType == v.getType)
       println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       assert(v.size == capacity)
       if (v.isDense) {

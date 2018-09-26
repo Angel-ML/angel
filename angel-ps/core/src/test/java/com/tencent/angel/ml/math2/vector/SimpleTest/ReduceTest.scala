@@ -139,8 +139,6 @@ class ReduceTest {
   val densefloatValues: Array[Float] = ReduceTest.densefloatValues
   val densedoubleValues: Array[Double] = ReduceTest.densedoubleValues
 
-  val times = 5000
-  var start1, stop1, cost1, start2, stop2, cost2 = 0L
 
   @Test
   def reduceIntDoubleVectortest() {

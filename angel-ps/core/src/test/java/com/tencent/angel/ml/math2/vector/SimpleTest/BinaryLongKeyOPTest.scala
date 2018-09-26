@@ -182,54 +182,8 @@ class BinaryLongKeyOPTest {
 
   var longdummy = BinaryLongKeyOPTest.longdummy
 
-  val times = 5000
-  var start1, stop1, cost1, start2, stop2, cost2 = 0L
-
   @Test
   def Addtest() {
-    //sparse cost
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      llist.get(0).add(llist.get(0))
-      llist.get(2).add(llist.get(2))
-      llist.get(4).add(llist.get(4))
-      llist.get(6).add(llist.get(6))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      sparse1 + sparse1
-      sparse2 + sparse2
-      sparse3 + sparse3
-      sparse4 + sparse4
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel sparse add:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
-    //sorted cost
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      llist.get(1).add(llist.get(1))
-      llist.get(3).add(llist.get(3))
-      llist.get(5).add(llist.get(5))
-      llist.get(7).add(llist.get(7))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      sorted1 + sorted1
-      sorted2 + sorted2
-      sorted3 + sorted3
-      sorted4 + sorted4
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel sorted add:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
-
     (0 until llist.size()).foreach { i =>
       (0 until llist.size()).foreach { j =>
         try {
@@ -259,49 +213,6 @@ class BinaryLongKeyOPTest {
 
   @Test
   def Subtest() {
-    //sparse cost
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      llist.get(0).sub(llist.get(0))
-      llist.get(2).sub(llist.get(2))
-      llist.get(4).sub(llist.get(4))
-      llist.get(6).sub(llist.get(6))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      sparse1 - sparse1
-      sparse2 - sparse2
-      sparse3 - sparse3
-      sparse4 - sparse4
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel sparse sub:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
-    //sorted cost
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      llist.get(1).sub(llist.get(1))
-      llist.get(3).sub(llist.get(3))
-      llist.get(5).sub(llist.get(5))
-      llist.get(7).sub(llist.get(7))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      sorted1 - sorted1
-      sorted2 - sorted2
-      sorted3 - sorted3
-      sorted4 - sorted4
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel sorted sub:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
-
     (0 until llist.size()).foreach { i =>
       (0 until llist.size()).foreach { j =>
         try {
@@ -330,49 +241,6 @@ class BinaryLongKeyOPTest {
 
   @Test
   def Multest() {
-    //sparse cost
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      llist.get(0).mul(llist.get(0))
-      llist.get(2).mul(llist.get(2))
-      llist.get(4).mul(llist.get(4))
-      llist.get(6).mul(llist.get(6))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      sparse1 :* sparse1
-      sparse2 :* sparse2
-      sparse3 :* sparse3
-      sparse4 :* sparse4
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel sparse mul:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
-    //sorted cost
-    start1 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      llist.get(1).mul(llist.get(1))
-      llist.get(3).mul(llist.get(3))
-      llist.get(5).mul(llist.get(5))
-      llist.get(7).mul(llist.get(7))
-    }
-    stop1 = System.currentTimeMillis()
-    cost1 = stop1 - start1
-    start2 = System.currentTimeMillis()
-    (0 to times).foreach { _ =>
-      sorted1 :* sorted1
-      sorted2 :* sorted2
-      sorted3 :* sorted3
-      sorted4 :* sorted4
-    }
-    stop2 = System.currentTimeMillis()
-    cost2 = stop2 - start2
-    println(s"angel sorted mul:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
-
-
     assert(abs((llist.get(0).mul(llist.get(0))).sum() - sum(sparse1 :* sparse1)) < 1.0E-8)
     assert(abs((llist.get(1).mul(llist.get(1))).sum() - sum(sorted1 :* sorted1)) < 1.0E-8)
     assert(abs((llist.get(2).mul(llist.get(2))).sum() - sum(sparse2 :* sparse2)) < 1.0E-3)

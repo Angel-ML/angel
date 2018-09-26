@@ -27,7 +27,7 @@ import org.junit.{BeforeClass, Test}
 import org.scalatest.FunSuite
 
 //1500,50000;1500,80000
-object BinaryCoverageTest {
+class BinaryCoverageTest extends FunSuite {
   val capacity: Int = 1500
   val dim: Int = capacity * 100
 
@@ -79,13 +79,9 @@ object BinaryCoverageTest {
   val doubleValues1_inplace: Array[Double] = new Array[Double](capacity1)
 
 
-  val times = 5000
-  var start1, stop1, cost1, start2, stop2, cost2 = 0L
-
   val ilist = new util.ArrayList[Vector]()
   val llist = new util.ArrayList[Vector]()
 
-  @BeforeClass
   def init(): Unit = {
     val rand = new util.Random()
     val set = new util.HashSet[Int]()
@@ -337,69 +333,13 @@ object BinaryCoverageTest {
     llist.add(VFactory.longDummyVector(dim, longsortedIndices1))
     llist.add(VFactory.longDummyVector(dim, longsortedIndices2))
   }
-}
 
-class BinaryCoverageTest {
-  val capacity: Int = BinaryCoverageTest.capacity
-  val dim: Int = BinaryCoverageTest.dim
-
-  val intrandIndices: Array[Int] = BinaryCoverageTest.intrandIndices
-  val longrandIndices: Array[Long] = BinaryCoverageTest.longrandIndices
-  val intsortedIndices: Array[Int] = BinaryCoverageTest.intsortedIndices
-  val longsortedIndices: Array[Long] = BinaryCoverageTest.longsortedIndices
-
-  val intValues: Array[Int] = BinaryCoverageTest.intValues
-  val longValues: Array[Long] = BinaryCoverageTest.longValues
-  val floatValues: Array[Float] = BinaryCoverageTest.floatValues
-  val doubleValues: Array[Double] = BinaryCoverageTest.doubleValues
-
-  val denseintValues: Array[Int] = BinaryCoverageTest.denseintValues
-  val denselongValues: Array[Long] = BinaryCoverageTest.denselongValues
-  val densefloatValues: Array[Float] = BinaryCoverageTest.densefloatValues
-  val densedoubleValues: Array[Double] = BinaryCoverageTest.densedoubleValues
-
-  val capacity1: Int = 80000
-  val intrandIndices1: Array[Int] = BinaryCoverageTest.intrandIndices1
-  val longrandIndices1: Array[Long] = BinaryCoverageTest.longrandIndices1
-  val intsortedIndices1: Array[Int] = BinaryCoverageTest.intsortedIndices1
-  val longsortedIndices1: Array[Long] = BinaryCoverageTest.longsortedIndices1
-
-  val intValues1: Array[Int] = BinaryCoverageTest.intValues1
-  val longValues1: Array[Long] = BinaryCoverageTest.longValues1
-  val floatValues1: Array[Float] = BinaryCoverageTest.floatValues1
-  val doubleValues1: Array[Double] = BinaryCoverageTest.doubleValues1
-
-  val intrandIndices2: Array[Int] = BinaryCoverageTest.intrandIndices2
-  val intsortedIndices2: Array[Int] = BinaryCoverageTest.intsortedIndices2
-  val longrandIndices2: Array[Long] = BinaryCoverageTest.longrandIndices2
-  val longsortedIndices2: Array[Long] = BinaryCoverageTest.longsortedIndices2
-
-
-  val intValues_inplace: Array[Int] = BinaryCoverageTest.intValues_inplace
-  val longValues_inplace: Array[Long] = BinaryCoverageTest.longValues_inplace
-  val floatValues_inplace: Array[Float] = BinaryCoverageTest.floatValues_inplace
-  val doubleValues_inplace: Array[Double] = BinaryCoverageTest.doubleValues_inplace
-
-  val denseintValues_inplace: Array[Int] = BinaryCoverageTest.denseintValues_inplace
-  val denselongValues_inplace: Array[Long] = BinaryCoverageTest.denselongValues_inplace
-  val densefloatValues_inplace: Array[Float] = BinaryCoverageTest.densefloatValues_inplace
-  val densedoubleValues_inplace: Array[Double] = BinaryCoverageTest.densedoubleValues_inplace
-
-  val intValues1_inplace: Array[Int] = BinaryCoverageTest.intValues1_inplace
-  val longValues1_inplace: Array[Long] = BinaryCoverageTest.longValues1_inplace
-  val floatValues1_inplace: Array[Float] = BinaryCoverageTest.floatValues1_inplace
-  val doubleValues1_inplace: Array[Double] = BinaryCoverageTest.doubleValues1_inplace
-
-
-  val ilist = BinaryCoverageTest.ilist
-  val llist = BinaryCoverageTest.llist
-
-  @Test
-  def Addtest() {
+  test("add test") {
+    init()
     (0 until ilist.size()).foreach { i =>
       (0 until ilist.size()).foreach { j =>
         try {
-          (ilist.get(i).add(ilist.get(j))).sum()
+          println((ilist.get(i).add(ilist.get(j))).sum())
         } catch {
           case e: AngelException => {
             e
@@ -420,8 +360,8 @@ class BinaryCoverageTest {
     }
   }
 
-  @Test
-  def Subtest() {
+  test("sub test") {
+    init()
     (0 until ilist.size()).foreach { i =>
       (0 until ilist.size()).foreach { j =>
         try {
@@ -446,8 +386,8 @@ class BinaryCoverageTest {
     }
   }
 
-  @Test
-  def Multest() {
+  test("mul test") {
+    init()
     (0 until ilist.size()).foreach { i =>
       (0 until ilist.size()).foreach { j =>
         try {
@@ -472,8 +412,8 @@ class BinaryCoverageTest {
     }
   }
 
-  @Test
-  def Divtest() {
+  test("div test") {
+    init()
     (0 until ilist.size()).foreach { i =>
       (0 until ilist.size()).foreach { j =>
         try {
@@ -504,8 +444,8 @@ class BinaryCoverageTest {
     }
   }
 
-  @Test
-  def Axpytest() {
+  test("axpy test") {
+    init()
     (0 until ilist.size()).foreach { i =>
       (0 until ilist.size()).foreach { j =>
         try {
@@ -530,8 +470,8 @@ class BinaryCoverageTest {
     }
   }
 
-  @Test
-  def Dottest() {
+  test("dot test") {
+    init()
     llist.add(VFactory.longDummyVector(dim, longsortedIndices))
     ilist.add(VFactory.intDummyVector(dim, intrandIndices))
     llist.add(VFactory.longDummyVector(dim, longsortedIndices1))
