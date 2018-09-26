@@ -19,6 +19,8 @@
 package com.tencent.angel.ml.core.network.layers.linear
 
 
+import java.util.concurrent.Future
+
 import com.tencent.angel.client.AngelClient
 import com.tencent.angel.conf.{AngelConf, MatrixConf}
 import com.tencent.angel.exception.AngelException
@@ -34,6 +36,7 @@ import com.tencent.angel.ml.core.network.layers.edge.inputlayer.Embedding
 import com.tencent.angel.ml.core.network.transfunc.TransFunc
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
+import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.model.{MatrixSaveContext, ModelSaveContext}
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
@@ -153,13 +156,15 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
     }
   }
 
-  override def update(epoch: Int, batchSize: Int): Unit = {
+  override def update(epoch: Int, batchSize: Int): Future[VoidResult] = {
+    var result:Future[VoidResult] = null
     status match {
       case STATUS.Gradient =>
-        optimizer.update(weightId, 1, epoch, batchSize)
+        result = optimizer.update(weightId, 1, epoch, batchSize)
         status = STATUS.Update
       case _ => throw new AngelException("STATUS Error, please calculate Gradient frist!")
     }
+    result
   }
 
   override def init(taskflag: Int, initIndexVector: Vector = null): Unit = {

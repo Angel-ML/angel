@@ -10,7 +10,7 @@
     "modelsize": 148
   },
   "train": {
-    "epoch": 50,
+    "epoch": 10,
     "numupdateperepoch": 10,
     "lr": 1.0,
     "decay": 0.01

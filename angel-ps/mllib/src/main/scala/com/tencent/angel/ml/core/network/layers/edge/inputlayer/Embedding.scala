@@ -19,6 +19,7 @@
 package com.tencent.angel.ml.core.network.layers.edge.inputlayer
 
 import java.lang.{Long => JLong}
+import java.util.concurrent.Future
 import java.util.{HashMap => JHashMap, Map => JMap}
 
 import com.tencent.angel.client.AngelClient
@@ -34,6 +35,7 @@ import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.{MFactory, VFactory}
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.matrix.psf.update.RandomNormal
+import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.psf.columns._
 import com.tencent.angel.model.{MatrixSaveContext, ModelSaveContext}
 import com.tencent.angel.psagent.PSAgentContext
@@ -232,13 +234,15 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
     val end = System.currentTimeMillis()
   }
 
-  override def update(epoch: Int, batchSize: Int): Unit = {
+  override def update(epoch: Int, batchSize: Int): Future[VoidResult] = {
+    var result:Future[VoidResult] = null
     status match {
       case STATUS.Gradient =>
-        optimizer.update(matrixId, numFactors, epoch, batchSize)
+        result = optimizer.update(matrixId, numFactors, epoch, batchSize)
         status = STATUS.Update
       case _ => print("STATUS Error, please calculate Gradient first!")
     }
+    result
   }
 
   override def calOutput(): Matrix = {
@@ -346,9 +350,11 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
 
   override def init(taskflag: Int, initIndexVector: Vector = null): Unit = {
     val bound: Double = 0.00001
-    if (taskflag == 0) {
-      val randFunc = new RandomNormal(matrixId, 0, numFactors, 0.0, bound)
-      PSAgentContext.get().getUserRequestAdapter.update(randFunc)
+    if (initIndexVector == null) {
+      if (taskflag == 0) {
+        val randFunc = new RandomNormal(matrixId, 0, numFactors, 0.0, bound)
+        PSAgentContext.get().getUserRequestAdapter.update(randFunc)
+      }
     }
   }
 
