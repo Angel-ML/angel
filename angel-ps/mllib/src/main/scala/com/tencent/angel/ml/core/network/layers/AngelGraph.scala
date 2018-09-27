@@ -151,13 +151,11 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
     timeStats.pushParamsTime += (System.currentTimeMillis() - start)
   }
 
-  def update(epoch: Int): Unit = {
+  def update(epoch: Int, batchSize: Int): Unit = {
     val start = System.currentTimeMillis()
-    val updateFuture = Future.sequence(trainableLayer.map { layer => Future {
-      layer.update(epoch)
-    }
-    })
-    Await.result(updateFuture, Duration.Inf)
+    val updateFuture = trainableLayer.map (layer => layer.update(epoch, batchSize))
+    //Await.result(updateFuture, Duration.Inf)
+    for(future <- updateFuture) future.get
     timeStats.updateTime += (System.currentTimeMillis() - start)
   }
 

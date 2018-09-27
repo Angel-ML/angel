@@ -20,12 +20,13 @@ package com.tencent.angel.spark.ml.core
 
 
 import com.tencent.angel.conf.MatrixConf
-import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers.{AngelGraph, PlaceHolder, STATUS}
 import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.spark.context.AngelPSContext
+import com.tencent.angel.ml.core.optimizer.decayer._
 import org.json4s.JsonAST.JValue
 
 class GraphModel extends Serializable {
@@ -34,7 +35,7 @@ class GraphModel extends Serializable {
   implicit val graph = new AngelGraph(new PlaceHolder())
   var jsonAst: JValue = conf.getJson
   val stepSize: Double = SharedConf.learningRate
-  val decay: Double = SharedConf.decay
+  val scheduler: StepSizeScheduler = new WarmRestarts(stepSize, 0.0)
 
   def ensureJsonAst(): Unit = {
     if (jsonAst == null) {
@@ -72,17 +73,17 @@ class GraphModel extends Serializable {
     graph.pushGradient()
   }
 
-  def update(iteration: Int = 0): Unit = {
-    val lr = stepSize / math.sqrt(1.0 + decay * iteration)
+  def update(iteration: Int, batchSize: Int): (Double, Boolean) = {
+    val lr = scheduler.next()
     graph.setLR(lr)
     graph.setState(_ => true, STATUS.Gradient)
-    graph.update(iteration)
+    graph.update(iteration, batchSize)
+    (lr, scheduler.isIntervalBoundary)
   }
 
   def save(path: String): Unit = {
     //TODO
     AngelPSContext.save(graph.getMatrixCtx(), path)
-
   }
 
   def load(path: String): Unit = {

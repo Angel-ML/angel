@@ -164,6 +164,7 @@ public abstract class AngelClient implements AngelClientInterface {
     clientId = master.getClientId(null, GetClientIdRequest.getDefaultInstance()).getClientId();
     master.clientRegister(null, ClientRegisterRequest.newBuilder().setClientId(clientId).build());
 
+    LOG.info("clientId=" + clientId);
     hbThread = new Thread(() -> {
       while (!stopped.get() && !Thread.interrupted()) {
         try {
@@ -171,7 +172,7 @@ public abstract class AngelClient implements AngelClientInterface {
           master.keepAlive(null, KeepAliveRequest.newBuilder().setClientId(clientId).build());
         } catch (Throwable e) {
           if (!stopped.get()) {
-            LOG.error("AngelClient " + clientId + " send heartbeat to Master failed");
+            LOG.error("AngelClient " + clientId + " send heartbeat to Master failed ", e);
           }
         }
       }

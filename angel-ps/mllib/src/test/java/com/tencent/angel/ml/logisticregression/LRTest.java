@@ -64,13 +64,13 @@ public class LRTest {
 
 
       // Learning rate
-      double learnRate = 0.5;
+      double learnRate = 1.0;
       // Decay of learning rate
-      double decay = 1;
+      double decay = 0.05;
       // Regularization coefficient
       double reg = 0.001;
       double posnegRatio = 0.1;
-      String optimizer = "Ftrl";
+      String optimizer = "Momentum";
 
       // Set local deploy mode
       conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");

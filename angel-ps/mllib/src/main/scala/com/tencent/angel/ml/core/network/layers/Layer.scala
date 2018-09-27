@@ -18,11 +18,14 @@
 
 package com.tencent.angel.ml.core.network.layers
 
+import java.util.concurrent.Future
+
 import com.google.gson.Gson
 import com.tencent.angel.client.AngelClient
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.core.optimizer.Optimizer
+import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.model.ModelSaveContext
 
 import scala.collection.mutable.ListBuffer
@@ -39,7 +42,7 @@ trait Trainable {
 
   def pushGradient(): Unit
 
-  def update(epoch: Int): Unit
+  def update(epoch: Int, batchSize: Int): Future[VoidResult]
 
   def init(taskId: Int, initIndexVector: Vector)
 

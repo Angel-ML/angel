@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GetColsParam extends GetParam {
-  Log LOG = LogFactory.getLog(GetColsParam.class);
 
   int[] rows;
   long[] cols;

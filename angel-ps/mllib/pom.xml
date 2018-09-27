@@ -60,11 +60,6 @@
           <artifactId>json4s-core_2.11</artifactId>
           <version>3.2.11</version>
         </dependency-->
-        <dependency>
-            <groupId>org.json4s</groupId>
-            <artifactId>json4s-jackson_2.11</artifactId>
-            <version>3.6.0</version>
-        </dependency>
         <!--dependency>
           <groupId>org.json4s</groupId>
           <artifactId>json4s-ast_2.11</artifactId>

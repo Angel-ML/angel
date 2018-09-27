@@ -1405,6 +1405,10 @@ public class MatrixTransportClient implements MatrixTransportInterface {
         LOG.info("remove channel " + channel + ", removeNum=" + removeNum);
 
         InetSocketAddress address = (InetSocketAddress) (channel.remoteAddress());
+        if(address == null) {
+          LOG.warn("channel " + channel + " remote address is null");
+          return;
+        }
         Location loc = new Location(address.getHostName(), address.getPort() - 1);
         ParameterServerId psId = PSAgentContext.get().getLocationManager().getPsId(loc);
         if (psId != null) {
