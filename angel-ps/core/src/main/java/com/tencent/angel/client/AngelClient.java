@@ -181,6 +181,10 @@ public abstract class AngelClient implements AngelClientInterface {
     hbThread.start();
   }
 
+  public Set<String> getMatricesName() {
+      return nameToMatrixMap.keySet();
+  }
+
   @Override public void run() throws AngelException {
     if (master == null) {
       throw new AngelException(

@@ -26,7 +26,7 @@ import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.ml.matrix.MatrixContext
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
-import com.tencent.angel.model.ModelSaveContext
+import com.tencent.angel.model.{MatrixLoadContext, ModelLoadContext, ModelSaveContext}
 import org.apache.commons.logging.{Log, LogFactory}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -172,6 +172,14 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
   def loadModel(client: AngelClient): Unit = {
     trainableLayer.foreach { layer => layer.loadParams(client) }
     client.createMatrices()
+    if(client.getConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH) != null && !client.getConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH).equals("")) {
+      val loadContext = new ModelLoadContext(client.getConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
+      client.getMatricesName.toArray().foreach { name =>
+        val mlc = new MatrixLoadContext(name.toString)
+        loadContext.addMatrix(mlc)
+      }
+      client.load(loadContext)
+    }
   }
 
   def loadModel(): Unit = {

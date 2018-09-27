@@ -662,12 +662,14 @@ public class ParameterServer {
       }
 
       // Check load path setting
+      /*
       if (inputPath == null) {
         String loadPathStr = matrixMetas.get(i).getAttribute(MatrixConf.MATRIX_LOAD_PATH);
         if (loadPathStr != null) {
           inputPath = new Path(loadPathStr);
         }
       }
+      */
 
       if (inputPath == null) {
         matrixLoadContexts.add(new PSMatrixLoadContext(matrixMetas.get(i).getId(), null,

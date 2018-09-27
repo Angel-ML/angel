@@ -236,7 +236,7 @@ public class AMModelLoader {
 
       receivedSubResult++;
       subResults.put(psId, subResult);
-      if (receivedSubResult > subResults.size()) {
+      if (receivedSubResult >= subResults.size()) {
         ModelLoadResult result = results.get(subResult.getRequestId());
         if (canCombine()) {
           result.setState(LoadState.SUCCESS);
