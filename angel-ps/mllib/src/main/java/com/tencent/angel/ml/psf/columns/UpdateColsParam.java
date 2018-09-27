@@ -27,6 +27,7 @@ import com.tencent.angel.ml.math2.vector.*;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
+import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.psagent.PSAgentContext;
 
 import java.util.*;
@@ -39,13 +40,19 @@ public class UpdateColsParam extends UpdateParam {
   int[] rows;
   private Vector cols;
   Map<Long, Vector> values;
+  UpdateOp op;
 
 
   public UpdateColsParam(int matId, int[] rows, Vector cols, Map<Long, Vector> values) {
+    this(matId, rows, cols, values, UpdateOp.PLUS);
+  }
+
+  public UpdateColsParam(int matId, int[] rows, Vector cols, Map<Long, Vector> values, UpdateOp op) {
     super(matId);
     this.rows = rows;
     this.cols = cols;
     this.values = values;
+    this.op = op;
   }
 
   @Override public List<PartitionUpdateParam> split() {
@@ -79,14 +86,14 @@ public class UpdateColsParam extends UpdateParam {
           for (int i = 0; i < part.length; i++)
             updates[i] = (IntDoubleVector) values.get(part[i]);
           params.add(new PartitionUpdateColsParam(matrixId, pkey, rows, part,
-            VFactory.compIntDoubleVector(rows.length, updates, part.length)));
+            VFactory.compIntDoubleVector(rows.length, updates, part.length), op));
         } else if (values.get(firstKey) instanceof IntFloatVector) {
 
           IntFloatVector[] updates = new IntFloatVector[part.length];
           for (int i = 0; i < part.length; i++)
             updates[i] = (IntFloatVector) values.get(part[i]);
           params.add(new PartitionUpdateColsParam(matrixId, pkey, rows, part,
-            VFactory.compIntFloatVector(rows.length, updates, part.length)));
+            VFactory.compIntFloatVector(rows.length, updates, part.length), op));
         } else {
           throw new AngelException("Update data type should be float or double!");
         }

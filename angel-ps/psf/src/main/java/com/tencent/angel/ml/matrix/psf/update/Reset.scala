@@ -19,16 +19,17 @@
 package com.tencent.angel.ml.matrix.psf.update
 
 import java.util
+
 import scala.collection.JavaConversions._
-
 import io.netty.buffer.ByteBuf
-
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.ml.matrix.psf.update.Reset.{ZeroParam, ZeroPartitionParam}
 import com.tencent.angel.ml.matrix.psf.update.base.{PartitionUpdateParam, UpdateFunc, UpdateParam}
 import com.tencent.angel.psagent.PSAgentContext
+import org.apache.commons.logging.{Log, LogFactory}
 
 class Reset(param: ZeroParam) extends UpdateFunc(param) {
+  val LOG: Log = LogFactory.getLog(classOf[Reset])
   def this() = this(null)
 
   def this(matrixId: Int, rowIds: Array[Int]) = this(new ZeroParam(matrixId, rowIds))
@@ -40,6 +41,9 @@ class Reset(param: ZeroParam) extends UpdateFunc(param) {
     if (part != null) {
       partParam.asInstanceOf[ZeroPartitionParam].rowIds.par.foreach { rowId =>
         val row = part.getRow(rowId)
+        if(row == null) {
+          return
+        }
         row.startWrite()
         row.reset()
         row.endWrite()
@@ -51,9 +55,15 @@ class Reset(param: ZeroParam) extends UpdateFunc(param) {
 object Reset {
 
   class ZeroParam(matrixId: Int, rowIds: Array[Int]) extends UpdateParam(matrixId) {
-    override def split(): util.List[PartitionUpdateParam] =
-      PSAgentContext.get.getMatrixMetaManager
-        .getPartitions(matrixId).map(new ZeroPartitionParam(matrixId, _, rowIds))
+    override def split(): util.List[PartitionUpdateParam] = {
+      val partitionKeys = PSAgentContext.get.getMatrixMetaManager.getPartitions(matrixId)
+      partitionKeys.map(p =>
+        (p, rowIds.filter(rowId => p.getStartRow <= rowId && rowId < p.getEndRow))
+      ).filter(_._2.length > 0)
+        .map { case (p, ids) =>
+          new ZeroPartitionParam(matrixId, p, ids)
+        }
+    }
   }
 
   class ZeroPartitionParam(matrixId: Int, partKey: PartitionKey, var rowIds: Array[Int])

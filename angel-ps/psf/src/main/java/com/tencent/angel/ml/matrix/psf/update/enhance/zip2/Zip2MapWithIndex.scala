@@ -27,16 +27,16 @@ import com.tencent.angel.ps.storage.vector._
 
 
 /**
-  * It is a Zip2MapWithIndex function which applies `Zip2MapWithIndexFunc` to `fromId1` and
-  * `fromId2` row and saves the result to `toId` row.
-  */
+ * It is a Zip2MapWithIndex function which applies `Zip2MapWithIndexFunc` to `fromId1` and
+ * `fromId2` row and saves the result to `toId` row.
+ */
 class Zip2MapWithIndex(matrixId: Int, fromId1: Int, fromId2: Int, toId: Int, func: Zip2MapWithIndexFunc)
   extends MFUpdateFunc(matrixId, Array(fromId1, fromId2, toId), func) {
   def this() = this(-1, -1, -1, -1, null)
 
   override def update(rows: Array[ServerRow], func: Serialize): Unit = {
     val mapper = func.asInstanceOf[Zip2MapWithIndexFunc]
-    rows(2) match {
+    val newSplit = rows(2) match {
       case toRow: ServerIntDoubleRow =>
         val from1 = rows(0).getSplit.asInstanceOf[IntDoubleVector]
         val from2 = rows(1).getSplit.asInstanceOf[IntDoubleVector]
@@ -46,7 +46,7 @@ class Zip2MapWithIndex(matrixId: Int, fromId1: Int, fromId2: Int, toId: Int, fun
         indices.foreach { i =>
           to.set(i, mapper.call(i + toRow.getStartCol, from1.get(i), from2.get(i)))
         }
-        toRow.setSplit(to)
+        to
 
       case toRow: ServerIntFloatRow =>
         val from1 = rows(0).getSplit.asInstanceOf[IntFloatVector]
@@ -58,6 +58,7 @@ class Zip2MapWithIndex(matrixId: Int, fromId1: Int, fromId2: Int, toId: Int, fun
           to.set(i, mapper.call(i + toRow.getStartCol, from1.get(i), from2.get(i)).toFloat)
         }
         toRow.setSplit(to)
+        to
 
       case toRow: ServerIntLongRow =>
         val from1 = rows(0).getSplit.asInstanceOf[IntLongVector]
@@ -69,6 +70,7 @@ class Zip2MapWithIndex(matrixId: Int, fromId1: Int, fromId2: Int, toId: Int, fun
           to.set(i, mapper.call(i + toRow.getStartCol, from1.get(i), from2.get(i)).toLong)
         }
         toRow.setSplit(to)
+        to
 
       case toRow: ServerIntIntRow =>
         val from1 = rows(0).getSplit.asInstanceOf[IntIntVector]
@@ -80,58 +82,57 @@ class Zip2MapWithIndex(matrixId: Int, fromId1: Int, fromId2: Int, toId: Int, fun
           to.set(i, mapper.call(i + toRow.getStartCol, from1.get(i), from2.get(i)).toInt)
         }
         toRow.setSplit(to)
+        to
 
       case toRow: ServerLongDoubleRow =>
         val from1 = rows(0).getSplit.asInstanceOf[LongDoubleVector]
         val from2 = rows(1).getSplit.asInstanceOf[LongDoubleVector]
         val to = VFactory.sparseLongKeyDoubleVector(from1.getDim)
         val startCol = rows(0).getStartCol
-        val iter = to.getStorage.entryIterator()
-        while (iter.hasNext) {
-          val entry = iter.next()
-          val key = entry.getLongKey
-          entry.setValue(mapper.call(key + startCol, from1.get(key), from2.get(key)))
+        val indices = (from1.getStorage.getIndices ++ from2.getStorage.getIndices).distinct
+        indices.foreach { i =>
+          to.set(i, mapper.call(i + startCol, from1.get(i), from2.get(i)))
         }
-        toRow.setSplit(to)
+        to
 
       case toRow: ServerLongFloatRow =>
         val from1 = rows(0).getSplit.asInstanceOf[LongFloatVector]
         val from2 = rows(1).getSplit.asInstanceOf[LongFloatVector]
         val to = VFactory.sparseLongKeyFloatVector(from1.getDim)
         val startCol = rows(0).getStartCol
-        val iter = to.getStorage.entryIterator()
-        while (iter.hasNext) {
-          val entry = iter.next()
-          val key = entry.getLongKey
-          entry.setValue(mapper.call(key + startCol, from1.get(key), from2.get(key)).toFloat)
+        val indices = (from1.getStorage.getIndices ++ from2.getStorage.getIndices).distinct
+        indices.foreach { i =>
+          to.set(i, mapper.call(i + startCol, from1.get(i), from2.get(i)).toFloat)
         }
-        toRow.setSplit(to)
+        to
 
       case toRow: ServerLongLongRow =>
         val from1 = rows(0).getSplit.asInstanceOf[LongLongVector]
         val from2 = rows(1).getSplit.asInstanceOf[LongLongVector]
         val to = VFactory.sparseLongKeyLongVector(from1.getDim)
         val startCol = rows(0).getStartCol
-        val iter = to.getStorage.entryIterator()
-        while (iter.hasNext) {
-          val entry = iter.next()
-          val key = entry.getLongKey
-          entry.setValue(mapper.call(key + startCol, from1.get(key), from2.get(key)).toLong)
+        val indices = (from1.getStorage.getIndices ++ from2.getStorage.getIndices).distinct
+        indices.foreach { i =>
+          to.set(i, mapper.call(i + startCol, from1.get(i), from2.get(i)).toLong)
         }
-        toRow.setSplit(to)
+        to
 
       case toRow: ServerLongIntRow =>
         val from1 = rows(0).getSplit.asInstanceOf[LongIntVector]
         val from2 = rows(1).getSplit.asInstanceOf[LongIntVector]
         val to = VFactory.sparseLongKeyIntVector(from1.getDim)
         val startCol = rows(0).getStartCol
-        val iter = to.getStorage.entryIterator()
-        while (iter.hasNext) {
-          val entry = iter.next()
-          val key = entry.getLongKey
-          entry.setValue(mapper.call(key + startCol, from1.get(key), from2.get(key)).toInt)
+        val indices = (from1.getStorage.getIndices ++ from2.getStorage.getIndices).distinct
+        indices.foreach { i =>
+          to.set(i, mapper.call(i + startCol, from1.get(i), from2.get(i)).toInt)
         }
-        toRow.setSplit(to)
+        to
+    }
+    try{
+      rows(2).startWrite()
+      rows(2).setSplit(newSplit)
+    }finally{
+      rows(2).endWrite()
     }
   }
 }

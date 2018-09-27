@@ -54,9 +54,10 @@ object PSMatrixUtils {
     master.createMatrices(list, Long.MaxValue)
   }
 
-  def createPSMatrix(ctx: MatrixContext): Unit = {
+  def createPSMatrix(ctx: MatrixContext): Int = {
     val master = PSAgentContext.get().getMasterClient
     master.createMatrix(ctx, Long.MaxValue)
+    master.getMatrix(ctx.getName).getId
   }
 
   def getRow(matrixId: Int, rowId: Int): Vector = {
@@ -260,4 +261,13 @@ object PSMatrixUtils {
   def incrementRows(matrixId: Int, rowIds: Array[Int], vectors: Array[Vector]): Unit = {
     PSAgentContext.get().getUserRequestAdapter.update(matrixId, rowIds, vectors, UpdateOp.PLUS).get()
   }
+
+  def updateRow(matrixId: Int, rowId: Int, vector: Vector): Unit = {
+    PSAgentContext.get().getUserRequestAdapter.update(matrixId, rowId, vector, UpdateOp.REPLACE).get()
+  }
+
+  def updateRows(matrixId: Int, rowIds: Array[Int], vectors: Array[Vector]): Unit = {
+    PSAgentContext.get().getUserRequestAdapter.update(matrixId, rowIds, vectors, UpdateOp.REPLACE).get()
+  }
+
 }

@@ -50,19 +50,19 @@
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-core_${scala.binary.version}</artifactId>
 			<version>${spark.version}</version>
-			<scope>${dist.deps.scope}</scope>
+			<!--<scope>${dist.deps.scope}</scope>-->
 		</dependency>
 		<dependency>
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-mllib_${scala.binary.version}</artifactId>
 			<version>${spark.version}</version>
-			<scope>${dist.deps.scope}</scope>
+			<!--<scope>${dist.deps.scope}</scope>-->
 		</dependency>
 		<dependency>
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-streaming-kafka-0-8_${scala.binary.version}</artifactId>
 			<version>${spark.version}</version>
-			<scope>${dist.deps.scope}</scope>
+			<!--<scope>${dist.deps.scope}</scope>-->
 		</dependency>
 		<dependency>
 			<groupId>com.tencent.angel</groupId>

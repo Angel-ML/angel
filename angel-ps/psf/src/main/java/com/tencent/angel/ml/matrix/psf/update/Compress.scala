@@ -39,27 +39,48 @@ class Compress(param: MMUpdateParam) extends MMUpdateFunc(param) {
       case r: ServerLongDoubleRow =>
         val newSplit = VectorUtils.emptyLike(r.getSplit).asInstanceOf[LongDoubleVector]
         r.getIter.foreach { entry =>
-          if (entry.getDoubleValue < defaultFilterLimit) newSplit.set(entry.getLongKey, entry.getDoubleValue)
+          if (math.abs(entry.getDoubleValue) > defaultFilterLimit) newSplit.set(entry.getLongKey, entry.getDoubleValue)
         }
-        r.setSplit(newSplit)
+        try {
+          r.startWrite()
+          r.setSplit(newSplit)
+        } finally {
+          r.endWrite()
+        }
+
       case r: ServerLongFloatRow =>
         val newSplit = VectorUtils.emptyLike(r.getSplit).asInstanceOf[LongDoubleVector]
         r.getIter.foreach { entry =>
-          if (entry.getFloatValue < defaultFilterLimit) newSplit.set(entry.getLongKey, entry.getFloatValue)
+          if (math.abs(entry.getFloatValue) > defaultFilterLimit) newSplit.set(entry.getLongKey, entry.getFloatValue)
         }
-        r.setSplit(newSplit)
+        try {
+          r.startWrite()
+          r.setSplit(newSplit)
+        } finally {
+          r.endWrite()
+        }
       case r: ServerLongLongRow =>
         val newSplit = VectorUtils.emptyLike(r.getSplit).asInstanceOf[LongDoubleVector]
         r.getIter.foreach { entry =>
-          if (entry.getLongValue < defaultFilterLimit) newSplit.set(entry.getLongKey, entry.getLongValue)
+          if (math.abs(entry.getLongValue) > defaultFilterLimit) newSplit.set(entry.getLongKey, entry.getLongValue)
         }
-        r.setSplit(newSplit)
+        try {
+          r.startWrite()
+          r.setSplit(newSplit)
+        } finally {
+          r.endWrite()
+        }
       case r: ServerLongIntRow =>
         val newSplit = VectorUtils.emptyLike(r.getSplit).asInstanceOf[LongDoubleVector]
         r.getIter.foreach { entry =>
-          if (entry.getIntValue < defaultFilterLimit) newSplit.set(entry.getLongKey, entry.getIntValue)
+          if (math.abs(entry.getIntValue) > defaultFilterLimit) newSplit.set(entry.getLongKey, entry.getIntValue)
         }
-        r.setSplit(newSplit)
+        try {
+          r.startWrite()
+          r.setSplit(newSplit)
+        } finally {
+          r.endWrite()
+        }
       case r => throw new AngelException(s"not implemented for ${r.getRowType}")
     }
   }

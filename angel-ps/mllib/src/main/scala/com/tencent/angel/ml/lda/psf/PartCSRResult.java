@@ -165,11 +165,14 @@ public class PartCSRResult extends PartitionGetResult {
       default:
         throw new AngelException("type mismatch");
     }
-
-    if (readerIdx == this.len) {
-      buf.release();
-    }
     return true;
   }
 
+  public void clear() {
+    try {
+      buf.release();
+    } catch (Throwable x) {
+
+    }
+  }
 }

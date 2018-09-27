@@ -10,7 +10,7 @@
     "modelsize": 300
   },
   "train": {
-    "epoch": 30,
+    "epoch": 10,
     "lr": 0.1,
     "decay": 0.001
   },

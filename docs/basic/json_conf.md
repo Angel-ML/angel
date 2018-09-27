@@ -26,8 +26,8 @@
     "numfield": 13,
     "validateratio": 0.1,
     "sampleratio": 0.2,
-    "useShuffle": true,
-    "transLabel": true,
+    "useshuffle": true,
+    "translabel": true,
     "posnegratio": 0.01
 }
 ```
@@ -40,8 +40,8 @@ indexrange | ml.feature.index.range | 特征维度
 numfield | ml.fm.field.num | 输入数据中域的数目. 虽然特征交叉能生成非常高维的数据, 对于一些数据集, 每个样本域的数目是一定的
 validateratio | ml.data.validate.ratio | Angel会将输入数据划分成训练集与验证集, 这个参数就是用于指定验证集的比例. 注:所有的验证集匀存于内存, 当数据量特别大时, 可能会OOM
 sampleratio | ml.batch.sample.ratio | 这个参数是Spark on Angel专用的, Spark用采样的方式生成mini-batch, 这个参数用于指定采样率
-useShuffle | ml.data.use.shuffle | 是否在每个epoch前shuffle数据. 注: 当数据量大时, 这一操作非常影响性能, 请慎重使用. 默认为false, 不用shuffle.
-transLabel | ml.data.trans.label | 对于二分类, Angel要求标签为(+1, -1), 如果数据集的标簦是(0, 1)则可以用这一参数进行转换, 默认关闭
+useshuffle | ml.data.use.shuffle | 是否在每个epoch前shuffle数据. 注: 当数据量大时, 这一操作非常影响性能, 请慎重使用. 默认为false, 不用shuffle.
+translabel | ml.data.trans.label | 对于二分类, Angel要求标签为(+1, -1), 如果数据集的标簦是(0, 1)则可以用这一参数进行转换, 默认关闭
 posnegratio | ml.data.posneg.ratio | Angel也支持采样生成mini-batch, 但方式与Spark不同, Angel先将数据集的正负例分开, 然后分别按比例从正例, 负例中抽样生成mini-batch, posnegratio就是控制mini-batch中正负样本比例的. 这个参数对不平衡数据集的训有帮助.  posnegratio默认为-1, 表示不进行采样
 
 注: 除了indexrange外, 其它参数都有默认值, 因此都是可选的.
@@ -60,8 +60,8 @@ posnegratio | ml.data.posneg.ratio | Angel也支持采样生成mini-batch, 但�
 
 Json key | 对应配置项 | 说明
 ---|---|---
-loadPath | angel.load.model.path | 模型加载路径
-savePath | angel.save.model.path | 模型保存路径
+loadpath | angel.load.model.path | 模型加载路径
+savepath | angel.save.model.path | 模型保存路径
 modeltype | ml.model.type | 模型类型, 指输入层参数在PS上的类型(数据与存储), 同时它也会决定非输入层的数据类型(非输入层的存储类型为dense)
 modelsize | ml.model.size | 对于整个数据集, 在某些维度上可能没有数据, 特征维度与模型维度不一致. 模型维度是`有效`数据维度
 

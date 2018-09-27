@@ -19,11 +19,12 @@
 package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.utils.DataParser
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.examples.util.SparkUtils
 import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OfflineLearner}
+import com.tencent.angel.spark.ml.util.Features
 import org.apache.spark.{SparkConf, SparkContext}
 
 object OfflineRunner {
@@ -52,11 +53,14 @@ object OfflineRunner {
 
     PSContext.getOrCreate(sc)
 
+    val (denseToSparseMatrixId, denseDim, sparseToDenseMatrixId, sparseDim, newData) = Features.featureSparseToDense(data)
+    SharedConf.get().setLong(MLConf.ML_FEATURE_INDEX_RANGE, denseDim)
+
     actionType match {
       case "train" =>
-        learner.train(data, model)
+        learner.train(newData, model)
       case "predict" =>
-        learner.predict(data, model)
+        learner.predict(newData, model)
       case _ =>
         throw new AngelException("actionType should be train or predict")
     }

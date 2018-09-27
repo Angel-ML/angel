@@ -7,7 +7,7 @@
     "sampleratio": 0.2
   },
   "train": {
-    "epoch": 100,
+    "epoch": 10,
     "lr": 0.8,
     "decay": 0.2
   },
