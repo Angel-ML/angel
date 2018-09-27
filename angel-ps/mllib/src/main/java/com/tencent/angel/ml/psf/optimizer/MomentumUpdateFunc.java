@@ -22,18 +22,17 @@ import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.enhance.MMUpdateParam;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class MomentumUpdateFunc extends OptMMUpdateFunc {
-
-  private int sampleNum = 1;
-
+  private static final Log LOG = LogFactory.getLog(MomentumUpdateFunc.class);
   public MomentumUpdateFunc(int matId, int offset, double momentum, double lr, double regParam) {
-    super(matId, new int[] {offset}, new double[] {momentum, lr, regParam});
+    super(matId, new int[] {offset}, new double[] {momentum, lr, regParam, 1});
   }
 
-  public MomentumUpdateFunc(int matId, int offset, double momentum, double lr, double regParam, int sampleNum) {
-    super(matId, new int[] {offset}, new double[] {momentum, lr, regParam});
-    this.sampleNum = sampleNum;
+  public MomentumUpdateFunc(int matId, int offset, double momentum, double lr, double regParam, int batchSize) {
+    super(matId, new int[] {offset}, new double[] {momentum, lr, regParam, batchSize});
   }
 
   public MomentumUpdateFunc(int matId, int offset, double momentum, double lr) {
@@ -56,28 +55,35 @@ public class MomentumUpdateFunc extends OptMMUpdateFunc {
     double momentum = scalars[0];
     double stepSize = scalars[1];
     double regParam = scalars[2];
+    double batchSize = scalars[3];
 
-    update(part, offset, momentum, stepSize, regParam);
+    update(part, offset, momentum, stepSize, regParam, batchSize);
 
   }
 
-  private void update(ServerPartition partition, int offset, double momentum, double stepSize,
-    double regParam) {
+  private void update(ServerPartition partition, int offset,
+                      double momentum, double stepSize,
+                      double regParam, double batchSize) {
     for (int f = 0; f < offset; f++) {
-      Vector weight = partition.getRow(f).getSplit();
-      Vector velocity = partition.getRow(f + offset).getSplit();
-      Vector gradient = partition.getRow(f + 2 * offset).getSplit();
+      try {
+        partition.getRow(f + 2 * offset).startWrite();
+        Vector weight = partition.getRow(f).getSplit();
+        Vector velocity = partition.getRow(f + offset).getSplit();
+        Vector gradient = partition.getRow(f + 2 * offset).getSplit();
 
-      if (sampleNum > 1)
-        gradient.idiv(sampleNum);
+        if (batchSize > 1)
+          gradient.idiv(batchSize);
 
-      velocity.imul(momentum).iaxpy(gradient, stepSize);
-      if (regParam == 0.0) {
-        weight.isub(velocity);
-      } else {
-        weight.imul(1 - stepSize * regParam).isub(velocity);
+        velocity.imul(momentum).iaxpy(gradient, stepSize);
+        if (regParam == 0.0) {
+          weight.isub(velocity);
+        } else {
+          weight.imul(1 - stepSize * regParam).isub(velocity);
+        }
+        gradient.clear();
+      } finally {
+        partition.getRow(f + 2 * offset).endWrite();
       }
-      gradient.clear();
     }
   }
 

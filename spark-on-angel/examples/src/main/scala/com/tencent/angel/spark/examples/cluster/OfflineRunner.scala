@@ -53,8 +53,8 @@ object OfflineRunner {
 
     PSContext.getOrCreate(sc)
 
-    val (matrixId, dim, newData) = Features.mapWithPS(data)
-    SharedConf.get().setLong(MLConf.ML_FEATURE_INDEX_RANGE, dim)
+    val (denseToSparseMatrixId, denseDim, sparseToDenseMatrixId, sparseDim, newData) = Features.featureSparseToDense(data)
+    SharedConf.get().setLong(MLConf.ML_FEATURE_INDEX_RANGE, denseDim)
 
     actionType match {
       case "train" =>

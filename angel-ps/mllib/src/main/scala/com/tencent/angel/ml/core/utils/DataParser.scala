@@ -136,7 +136,7 @@ case class LibSVMDataParser(splitter: String, featRange: Long, hasLabel: Boolean
         // y should be +1 or -1 when classification.
         splits.zipWithIndex.foreach { case (value: String, indx2: Int) =>
           val kv = value.trim.split(":")
-          keys(indx2) = kv(0).toInt - 1
+          keys(indx2) = kv(0).toInt -1
           vals(indx2) = kv(1).toFloat
         }
         VFactory.sparseFloatVector(featRange.toInt, keys, vals)
