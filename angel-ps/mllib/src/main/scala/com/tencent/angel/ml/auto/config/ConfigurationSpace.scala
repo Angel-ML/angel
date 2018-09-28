@@ -16,24 +16,22 @@
  */
 
 
-package com.tencent.angel.ml.auto.maximizer
+package com.tencent.angel.ml.auto.config
 
-import com.tencent.angel.ml.auto.acquisition.BaseAcquisition
-import com.tencent.angel.ml.math2.vector.Vector
+import com.tencent.angel.ml.auto.parameter.ParamSpace
 
-/**
-  * Abstract base class for acquisition maximization.
-  * @param acquisition : The acquisition function which will be maximized
-  */
-abstract class BaseMaximizer(acqFunc: BaseAcquisition) {
+class ConfigurationSpace(val name: String, var hyperDict: Map[String, ParamSpace]) {
 
-  /**
-    * Maximizes the given acquisition function.
-    *
-    * @param batchSize : Number of queried points.
-    * @return A set of points with highest acquisition value.
-    */
-  def maximize(batchSize: Int): Array[Vector]
+  def addParams(params: List[ParamSpace]): Unit = {
+    params.foreach(addParam)
+  }
 
-  def maximize: Vector
+  def addParam(param: ParamSpace): Unit = {
+    hyperDict += (param.name -> param)
+  }
+
+  def getParams: List[ParamSpace] = hyperDict.values.toList
+
+  def getParam(name: String): Option[ParamSpace] = hyperDict.get(name)
+
 }

@@ -19,13 +19,13 @@
 package com.tencent.angel.ml.auto.solver
 
 import com.tencent.angel.ml.auto.acquisition.BaseAcquisition
-import com.tencent.angel.ml.auto.maximizer.BaseMaximizer
+import com.tencent.angel.ml.auto.acquisition.optimizer.BaseOptimizer
 import com.tencent.angel.ml.auto.surrogate.BaseSurrogate
 import com.tencent.angel.ml.math2.vector.Vector
 
 import scala.collection.mutable.ArrayBuffer
 
-abstract class BaseSolver(surrogate: BaseSurrogate, acqFuc: BaseAcquisition, optimizer: BaseMaximizer, task: Runnable) {
+abstract class BaseSolver(surrogate: BaseSurrogate, acqFuc: BaseAcquisition, optimizer: BaseOptimizer, task: Runnable) {
 
   // Input data points, (N, D)
   var curX: ArrayBuffer[Vector]

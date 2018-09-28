@@ -45,7 +45,7 @@ class EI(override val surrogate: BaseSurrogate, val par: Double) extends BaseAcq
       (0.0, new IntDoubleVector(X.dim().toInt, new IntDoubleDenseVectorStorage()))
     } else {
       val z = (eta - pred._1 - par) / s
-      var norm: NormalDistribution  = new NormalDistribution
+      val norm: NormalDistribution  = new NormalDistribution
       val f = s * (z * norm.cumulativeProbability(z) + norm.density(z))
       (f, new IntDoubleVector(X.dim().toInt, new IntDoubleDenseVectorStorage()))
     }
