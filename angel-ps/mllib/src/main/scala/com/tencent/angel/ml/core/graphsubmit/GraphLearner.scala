@@ -81,7 +81,7 @@ class GraphLearner(modelClassName: String, ctx: TaskContext, idxsVector: Vector)
       PSAgentContext.get().barrier(ctx.getTaskId.getIndex)
       batchCount += 1
 
-      // LOG.info(s"epoch $epoch batch $batchCount is finished!")
+      LOG.info(s"epoch $epoch batch $batchCount is finished!")
     }
 
     loss

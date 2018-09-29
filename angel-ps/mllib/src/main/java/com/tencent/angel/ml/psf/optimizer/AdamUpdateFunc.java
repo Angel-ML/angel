@@ -80,20 +80,25 @@ public class AdamUpdateFunc extends OptMMUpdateFunc {
       Vector weight = partition.getRow(f).getSplit();
       Vector velocity = partition.getRow(f + offset).getSplit();
       Vector square = partition.getRow(f + 2 * offset).getSplit();
-      Vector gradient = partition.getRow(f + 3 * offset).getSplit();
+      try {
+        partition.getRow(f + 3 * offset).startWrite();
+        Vector gradient = partition.getRow(f + 3 * offset).getSplit();
 
-      if (batchSize > 1)
-        gradient.idiv(batchSize);
+        if (batchSize > 1)
+          gradient.idiv(batchSize);
 
-      OptFuncs.iexpsmoothing(velocity, gradient, beta);
-      OptFuncs.iexpsmoothing2(square, gradient, gamma);
+        OptFuncs.iexpsmoothing(velocity, gradient, beta);
+        OptFuncs.iexpsmoothing2(square, gradient, gamma);
 
-      Vector delta = OptFuncs.adamdelta(velocity, square, powBeta, powGamma);
-      if (regParam != 0.0) {
-        weight.imul(1 - stepSize * regParam);
+        Vector delta = OptFuncs.adamdelta(velocity, square, powBeta, powGamma);
+        if (regParam != 0.0) {
+          weight.imul(1 - stepSize * regParam);
+        }
+        weight.iaxpy(delta, -stepSize);
+        gradient.clear();
+      } finally {
+        partition.getRow(f + 3 * offset).endWrite();
       }
-      weight.iaxpy(delta, -stepSize);
-      gradient.clear();
     }
   }
 
