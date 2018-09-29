@@ -40,7 +40,7 @@
 		<module>angel-ps</module>
 		<module>spark-on-angel</module>
 		<module>dist</module>
-	</modules>
+    </modules>
 
   <description>A Flexible and Powerful Parameter Server for large-scale machine learning</description>
   <url>https://github.com/Tencent/angel</url>
