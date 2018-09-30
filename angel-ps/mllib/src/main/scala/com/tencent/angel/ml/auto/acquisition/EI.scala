@@ -19,8 +19,8 @@
 package com.tencent.angel.ml.auto.acquisition
 
 import com.tencent.angel.ml.auto.surrogate.BaseSurrogate
-import com.tencent.angel.ml.math2.storage.{IntDoubleDenseVectorStorage, IntDoubleVectorStorage}
-import com.tencent.angel.ml.math2.vector.{IntDoubleVector, Vector}
+import com.tencent.angel.ml.math2.storage.{IntDoubleDenseVectorStorage, IntDoubleVectorStorage, IntFloatDenseVectorStorage}
+import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector, Vector}
 import org.apache.commons.math3.distribution.NormalDistribution
 
 /**
@@ -29,25 +29,25 @@ import org.apache.commons.math3.distribution.NormalDistribution
   * @param par : Controls the balance between exploration and exploitation of the acquisition function, default=0.0
   *
  */
-class EI(override val surrogate: BaseSurrogate, val par: Double) extends BaseAcquisition(surrogate) {
+class EI(override val surrogate: BaseSurrogate, val par: Float) extends BaseAcquisition(surrogate) {
 
-  override def compute(X: Vector, derivative: Boolean = false): (Double, Vector) = {
+  override def compute(X: Vector, derivative: Boolean = false): (Float, Vector) = {
     val pred = surrogate.predict(X) // (mean, variance)
 
     // Use the best seen observation as incumbent
-    val eta: Double = surrogate.curBest._2
+    val eta: Float = surrogate.curBest._2
 
-    val s: Double = Math.sqrt(pred._2)
+    val s: Float = Math.sqrt(pred._2).toFloat
 
     if (s == 0) {
       // if std is zero, we have observed x on all instances
       // using a RF, std should be never exactly 0.0
-      (0.0, new IntDoubleVector(X.dim().toInt, new IntDoubleDenseVectorStorage()))
+      (0.0f, new IntFloatVector(X.dim().toInt, new IntFloatDenseVectorStorage()))
     } else {
       val z = (eta - pred._1 - par) / s
       val norm: NormalDistribution  = new NormalDistribution
       val f = s * (z * norm.cumulativeProbability(z) + norm.density(z))
-      (f, new IntDoubleVector(X.dim().toInt, new IntDoubleDenseVectorStorage()))
+      (f.toFloat, new IntFloatVector(X.dim().toInt, new IntFloatDenseVectorStorage()))
     }
   }
 }

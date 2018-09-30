@@ -21,26 +21,29 @@ package com.tencent.angel.ml.auto.acquisition.optimizer
 import com.tencent.angel.ml.auto.acquisition.BaseAcquisition
 import com.tencent.angel.ml.auto.config.{Configuration, ConfigurationSpace}
 
+import scala.util.Random
+
 /**
-  * Implementation of local search.
+  * Get candidate solutions via random sampling of configurations.
   *
   * @param acqFunc     : The acquisition function which will be maximized
   * @param configSpace : Configuration space of parameters
-  * @param epsilon     : In order to perform a local move one of the incumbent's neighbors needs at least an improvement higher than epsilon
-  * @param numIters    : Maximum number of iterations that the local search will perform
+  * @param seed
   */
-class LocalSearch(override val acqFunc: BaseAcquisition, override val configSpace: ConfigurationSpace,
-                  epsilon: String, numIters: Int)
-  extends BaseOptimizer(acqFunc, configSpace) {
+class RandomSearch(override val acqFunc: BaseAcquisition, override val configSpace: ConfigurationSpace,
+                   seed: Int = 100) extends BaseOptimizer(acqFunc, configSpace) {
 
-  /**
-    * Starts a local search from the given start point and quits if either the max number of steps is reached or
-    * no neighbor with an higher improvement was found
-    *
-    * @param numPoints : Number of queried points.
-    * @return A set of tuple(acquisition_value, Configuration).
-    */
-  override def maximize(numPoints: Int, sorted: Boolean = true): List[(Float, Configuration)] = ???
+  val rd = new Random(seed)
 
-  override def maximize: (Float, Configuration) = ???
+  override def maximize(numPoints: Int, sorted: Boolean = true): List[(Float, Configuration)] = {
+    val configs: List[Configuration] = configSpace.sampleConfig(numPoints)
+    if (sorted)
+      configs.map{config => (0.0f, config)}
+    else
+      configs.map{config => (acqFunc.compute(config.getVector)._1, config)}
+  }
+
+  override def maximize: (Float, Configuration) = {
+    maximize(1, false).head
+  }
 }

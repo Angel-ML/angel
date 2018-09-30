@@ -20,7 +20,7 @@ package com.tencent.angel.ml.auto.surrogate
 
 import com.tencent.angel.ml.math2.vector.Vector
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.ListBuffer
 
 /**
   * Abstract base class for surrogate model.
@@ -30,9 +30,9 @@ import scala.collection.mutable.ArrayBuffer
 abstract class BaseSurrogate(numFeats: Int, numParams: Int, minimize: Boolean) {
 
   // Input data points, (N, D)
-  var curX: ArrayBuffer[Vector]
+  var curX: ListBuffer[Vector]
   // Target value, (N, )
-  var curY: ArrayBuffer[Double]
+  var curY: ListBuffer[Float]
 
   /**
     * Train the surrogate on X and Y.
@@ -40,7 +40,7 @@ abstract class BaseSurrogate(numFeats: Int, numParams: Int, minimize: Boolean) {
     * @param X : (N, D), input data points.
     * @param Y : (N, 1), the corresponding target values.
     */
-  def train(X: Array[Vector], Y: Array[Double]): Unit
+  def train(X: List[Vector], Y: List[Float]): Unit
 
   /**
     * Update the surrogate with more X and Y.
@@ -48,7 +48,7 @@ abstract class BaseSurrogate(numFeats: Int, numParams: Int, minimize: Boolean) {
     * @param X
     * @param Y
     */
-  def update(X: Array[Vector], Y: Array[Double]): Unit
+  def update(X: List[Vector], Y: List[Float]): Unit
 
   /**
     * Predict means and variances for given X.
@@ -56,7 +56,7 @@ abstract class BaseSurrogate(numFeats: Int, numParams: Int, minimize: Boolean) {
     * @param X
     * @return tuples of (mean, variance)
     */
-  def predict(X: Array[Vector]): Array[(Double, Double)]
+  def predict(X: List[Vector]): List[(Float, Float)]
 
   /**
     * Predict means and variances for a single given X.
@@ -64,19 +64,19 @@ abstract class BaseSurrogate(numFeats: Int, numParams: Int, minimize: Boolean) {
     * @param X
     * @return a tuple of (mean, variance)
     */
-  def predict(X: Vector): (Double, Double)
+  def predict(X: Vector): (Float, Float)
 
 
-  def curBest: (Vector, Double) = {
+  def curBest: (Vector, Float) = {
     if (minimize) curMin else curMax
   }
 
-  def curMin: (Vector, Double) = {
+  def curMin: (Vector, Float) = {
     val minIdx: Int = curY.zipWithIndex.min._2
     (curX(minIdx), curY(minIdx))
   }
 
-  def curMax: (Vector, Double) = {
+  def curMax: (Vector, Float) = {
     val maxIdx: Int = curY.zipWithIndex.max._2
     (curX(maxIdx), curY(maxIdx))
   }

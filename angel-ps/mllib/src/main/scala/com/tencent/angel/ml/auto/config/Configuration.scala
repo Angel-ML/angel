@@ -16,22 +16,27 @@
  */
 
 
-package com.tencent.angel.ml.auto.acquisition
+package com.tencent.angel.ml.auto.config
 
-import com.tencent.angel.ml.auto.surrogate.BaseSurrogate
-import com.tencent.angel.ml.math2.vector.Vector
+import com.tencent.angel.ml.math2.vector.IntFloatVector
 
 /**
-  * Abstract base class for acquisition function
+  * A single configuration
+  *
+  * @param configSpace : The configuration space for this configuration
+  * @param vector      : A vector for efficient representation of configuration.
   */
-abstract class BaseAcquisition(val surrogate: BaseSurrogate) {
+class Configuration(configSpace: ConfigurationSpace, vector: IntFloatVector) {
 
-  /**
-    * Computes the acquisition value for a given point X
-    *
-    * @param X : (1, D), the input points where the acquisition function should be evaluated.
-    * @return (1, 1) Expected Improvement of X, (1, D) Derivative of Expected Improvement at X
-    */
-  def compute(X: Vector, derivative: Boolean = false): (Float, Vector)
+  def getVector: IntFloatVector = vector
 
+  def getValues: List[Float] = vector.getStorage.getValues.toList
+
+  def keys: List[String] = configSpace.param2Idx.keys.toList
+
+  def get(name: String): Float = get(configSpace.param2Idx.getOrElse(name, -1))
+
+  def get(idx: Int): Float = vector.get(idx)
+
+  def contains(name: String): Boolean = configSpace.param2Idx.contains(name)
 }

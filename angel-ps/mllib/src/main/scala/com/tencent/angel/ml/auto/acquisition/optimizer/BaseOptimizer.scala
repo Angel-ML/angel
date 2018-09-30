@@ -19,21 +19,22 @@
 package com.tencent.angel.ml.auto.acquisition.optimizer
 
 import com.tencent.angel.ml.auto.acquisition.BaseAcquisition
-import com.tencent.angel.ml.math2.vector.Vector
+import com.tencent.angel.ml.auto.config.{Configuration,ConfigurationSpace}
 
 /**
   * Abstract base class for acquisition maximization.
-  * @param acquisition : The acquisition function which will be maximized
+  * @param acqFunc     : The acquisition function which will be maximized
+  * @param configSpace : Configuration space of parameters
   */
-abstract class BaseOptimizer(acqFunc: BaseAcquisition) {
+abstract class BaseOptimizer(val acqFunc: BaseAcquisition, val configSpace: ConfigurationSpace) {
 
   /**
     * Maximizes the given acquisition function.
     *
-    * @param batchSize : Number of queried points.
-    * @return A set of points with highest acquisition value.
+    * @param numPoints : Number of queried points.
+    * @return A set of tuple(acquisition value, Configuration).
     */
-  def maximize(batchSize: Int): Array[Vector]
+  def maximize(numPoints: Int, sorted: Boolean = true): List[(Float, Configuration)]
 
-  def maximize: Vector
+  def maximize: (Float, Configuration)
 }

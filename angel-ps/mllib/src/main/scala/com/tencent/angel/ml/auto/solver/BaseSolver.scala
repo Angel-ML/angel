@@ -23,16 +23,16 @@ import com.tencent.angel.ml.auto.acquisition.optimizer.BaseOptimizer
 import com.tencent.angel.ml.auto.surrogate.BaseSurrogate
 import com.tencent.angel.ml.math2.vector.Vector
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 abstract class BaseSolver(surrogate: BaseSurrogate, acqFuc: BaseAcquisition, optimizer: BaseOptimizer, task: Runnable) {
 
   // Input data points, (N, D)
-  var curX: ArrayBuffer[Vector]
+  var curX: ListBuffer[Vector]
   // Target value, (N, )
-  var curY: ArrayBuffer[Double]
+  var curY: ListBuffer[Float]
 
-  def getObservations: (ArrayBuffer[Vector], ArrayBuffer[Double]) = (curX, curY)
+  def getObservations: (List[Vector], List[Float]) = (curX.toList, curY.toList)
 
   def getSurrogate: BaseSurrogate = surrogate
 
@@ -45,7 +45,7 @@ abstract class BaseSolver(surrogate: BaseSurrogate, acqFuc: BaseAcquisition, opt
     * @param Y       : Function values of the already evaluated points
     * @return Incumbent and function value of the incumbent
     */
-  def run(numIter: Int, X: Array[Vector], Y: Array[Double]): (Vector, Double)
+  def run(numIter: Int, X: List[Vector], Y: List[Float]): (Vector, Float)
 
   /**
     * Suggests a new point to evaluate.
@@ -54,5 +54,5 @@ abstract class BaseSolver(surrogate: BaseSurrogate, acqFuc: BaseAcquisition, opt
     * @param Y : Function values of the already evaluated points
     * @return Suggested point
     */
-  def chooseNext(X: Array[Vector], Y: Array[Double]): Vector
+  def chooseNext(X: List[Vector], Y: List[Float]): Vector
 }

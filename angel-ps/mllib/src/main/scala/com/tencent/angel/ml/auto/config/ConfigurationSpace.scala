@@ -19,19 +19,65 @@
 package com.tencent.angel.ml.auto.config
 
 import com.tencent.angel.ml.auto.parameter.ParamSpace
+import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage
+import com.tencent.angel.ml.math2.vector.IntFloatVector
+import org.apache.commons.logging.{Log, LogFactory}
 
-class ConfigurationSpace(val name: String, var hyperDict: Map[String, ParamSpace]) {
+import scala.collection.mutable.ListBuffer
 
-  def addParams(params: List[ParamSpace]): Unit = {
+class ConfigurationSpace(val name: String, var paramDict: Map[String, ParamSpace[Float]]) {
+  val LOG: Log = LogFactory.getLog(classOf[ConfigurationSpace])
+
+  var paramNum: Int = paramDict.size
+  var param2Idx: Map[String, Int] = paramDict.keys.zipWithIndex.toMap
+  var idx2Param: Map[Int, String] = param2Idx.map(_.swap)
+
+  def getParamNum: Int = paramNum
+
+  def addParams(params: List[ParamSpace[Float]]): Unit = {
     params.foreach(addParam)
   }
 
-  def addParam(param: ParamSpace): Unit = {
-    hyperDict += (param.name -> param)
+  def addParam(param: ParamSpace[Float]): Unit = {
+    if (!paramDict.contains(param.name)) {
+      paramDict += (param.name -> param)
+      paramNum += 1
+    }
   }
 
-  def getParams: List[ParamSpace] = hyperDict.values.toList
+  def getParams: List[ParamSpace[Float]] = paramDict.values.toList
 
-  def getParam(name: String): Option[ParamSpace] = hyperDict.get(name)
+  def getParamByName(name: String): Option[ParamSpace[Float]] = paramDict.get(name)
 
+  def getIdxByParam(name: String): Option[Int] = param2Idx.get(name)
+
+  def getParamByIdx(idx: Int): Option[ParamSpace[Float]] = paramDict.get(idx2Param.getOrElse(idx, "none"))
+
+  // TODO: Store historical configurations to avoid redundancy.
+  def sampleConfig(size: Int): List[Configuration] = {
+    var configs: ListBuffer[Configuration] = new ListBuffer[Configuration]
+
+    var missing: Int = 0
+    do {
+      missing = size - configs.length
+      val vectors: List[IntFloatVector] = List.fill(missing)(new IntFloatVector(paramNum, new IntFloatDenseVectorStorage(paramNum)))
+      param2Idx.foreach { case (paramName, paramIdx) =>
+        paramDict.get(paramName) match {
+          case Some(param) =>
+            param.sample(missing).zipWithIndex.foreach { case (f,i) =>
+                vectors(i).set(paramIdx, f)
+            }
+            vectors.filter(validConfig).foreach{ vec =>
+              configs += new Configuration(this, vec)
+            }
+          case None => LOG.info(s"Cannot find $paramName.")
+        }
+      }
+    } while(configs.length < size)
+
+    configs.toList
+  }
+
+  // TODO: Implement this func
+  def validConfig(vec: IntFloatVector): Boolean = true
 }

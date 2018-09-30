@@ -8,7 +8,8 @@ import scala.util.Random
   * @param name: Name of the parameter
   * @param values: List of all possible values
   */
-class DiscreteSpace[T](override val name: String, values: List[T], seed: Int = 100) extends ParamSpace(name) {
+class DiscreteSpace[T: Numeric](override val name: String, values: List[T], seed: Int = 100)
+  extends ParamSpace[T](name) {
 
   val rd = new Random(seed)
 
@@ -16,23 +17,21 @@ class DiscreteSpace[T](override val name: String, values: List[T], seed: Int = 1
 
   def numValues: Int = values.length
 
-  def toGridSearch: ParamSpace = this
+  def toGridSearch: ParamSpace[T] = this
 
-  def toRandomSpace: ParamSpace = this
+  def toRandomSpace: ParamSpace[T] = this
 
-  def sample(size: Int): List[T] = {
-    Random.shuffle(values).take(size)
-  }
+  override def sample(size: Int): List[T] = rd.shuffle(values).take(size)
 
-  override def toString: String = {
-    return s"DiscreteSpace[$name]: (${values mkString(",")})"
-  }
+  override def sample: T = values(rd.nextInt(numValues))
+
+  override def toString: String = s"DiscreteSpace[$name]: (${values mkString(",")})"
 }
 
 object DiscreteSpace {
 
   def main(args: Array[String]): Unit = {
-    val obj = new DiscreteSpace[Double]("test", List(1.0, 2.0, 3.0, 4.0, 5.0))
+    val obj = new DiscreteSpace[Float]("test", List(1.0f, 2.0f, 3.0f, 4.0f, 5.0f))
     println(obj.toString)
     println(obj.sample(2).toString())
   }
