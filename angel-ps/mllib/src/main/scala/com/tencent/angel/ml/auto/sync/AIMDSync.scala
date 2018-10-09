@@ -16,12 +16,8 @@
  */
 
 
-package com.tencent.angel.ml.core.auto
+package com.tencent.angel.ml.auto.sync
 
-abstract class AutoController {
-
-  def feed(): Unit
-
-  def next(): Any
+class AIMDSync {
 
 }
