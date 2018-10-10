@@ -30,6 +30,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.*;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.codehaus.jettison.json.JSONException;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -59,7 +60,7 @@ public class ModelConverter {
    * @throws IOException
    */
   public static void convert(Configuration conf, String modelInputDir, String modelOutputDir)
-    throws IOException {
+          throws IOException, JSONException {
     convert(conf, modelInputDir, modelOutputDir, new TextModelLineConvert());
   }
 
@@ -74,7 +75,7 @@ public class ModelConverter {
    * @throws IOException
    */
   public static void convert(Configuration conf, String modelInputDir, String modelOutputDir,
-    ModelLineConvert lineConvert) throws IOException {
+    ModelLineConvert lineConvert) throws IOException, JSONException {
     // Load model meta
     ModelFilesMeta meta = getMeta(modelInputDir, conf);
 
@@ -414,7 +415,7 @@ public class ModelConverter {
    * @return model meta
    * @throws IOException
    */
-  public static ModelFilesMeta getMeta(String modelDir, Configuration conf) throws IOException {
+  public static ModelFilesMeta getMeta(String modelDir, Configuration conf) throws IOException, JSONException {
     Path modelPath = new Path(modelDir);
     Path meteFilePath = new Path(modelPath, ModelFilesConstent.modelMetaFileName);
     ModelFilesMeta meta = new ModelFilesMeta();
@@ -423,7 +424,8 @@ public class ModelConverter {
       throw new IOException("matrix meta file does not exist ");
     }
     FSDataInputStream input = fs.open(meteFilePath);
-    meta.read(input);
+    //meta.read(input);
+    meta.readJson(input);
     input.close();
     return meta;
   }

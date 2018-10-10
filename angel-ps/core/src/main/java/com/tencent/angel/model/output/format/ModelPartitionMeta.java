@@ -20,11 +20,15 @@ package com.tencent.angel.model.output.format;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
+import org.netlib.lapack.Strti2;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -144,6 +148,28 @@ public class ModelPartitionMeta {
     }
   }
 
+  public JSONObject writeJson(DataOutputStream output) throws IOException, JSONException {
+    JSONObject jsonObject = new JSONObject();
+    jsonObject.put("partId", partId);
+    jsonObject.put("startRow", startRow);
+    jsonObject.put("endRow", endRow);
+    jsonObject.put("startCol", startCol);
+    jsonObject.put("endCol", endCol);
+    jsonObject.put("nnz", nnz);
+    jsonObject.put("fileName", fileName);
+    jsonObject.put("offset", offset);
+    jsonObject.put("length", length);
+    Map<Integer, JSONObject> rowJsonMap = new HashMap<>();
+    for(Map.Entry<Integer, RowOffset> rowOffsetEntry : rowMetas.entrySet()) {
+      JSONObject rowJsonObject = new JSONObject();
+      rowJsonObject.put("rowId", rowOffsetEntry.getValue().getRowId());
+      rowJsonObject.put("offset", rowOffsetEntry.getValue().getOffset());
+      rowJsonMap.put(rowOffsetEntry.getKey(), rowJsonObject);
+    }
+    jsonObject.put("rowMetas", rowJsonMap);
+    return jsonObject;
+  }
+
   /**
    * Read partition meta from input stream
    *
@@ -168,6 +194,27 @@ public class ModelPartitionMeta {
       rowMetas.put(rowOffset.rowId, rowOffset);
     }
   }
+
+    public void read(JSONObject jsonObject) throws IOException, JSONException {
+      partId = jsonObject.getInt("partId");
+      startRow = jsonObject.getInt("startRow");
+      endRow = jsonObject.getInt("endRow");
+      startCol = jsonObject.getLong("startCol");
+      endCol = jsonObject.getLong("endCol");
+      nnz = jsonObject.getLong("nnz");
+      fileName = jsonObject.getString("fileName");
+      offset = jsonObject.getLong("offset");
+      length = jsonObject.getLong("length");
+      JSONObject rowMetasJson = (JSONObject)jsonObject.get("rowMetas");
+      Iterator<String> rowKeys = rowMetasJson.keys();
+      String key;
+      while(rowKeys.hasNext()) {
+        key = rowKeys.next();
+        JSONObject jb = (JSONObject)rowMetasJson.get(key);
+        RowOffset rowOffset = new RowOffset(jb.getInt("rowId"), jb.getLong("offset"));
+        rowMetas.put(rowOffset.rowId, rowOffset);
+      }
+    }
 
   /**
    * Get partition id

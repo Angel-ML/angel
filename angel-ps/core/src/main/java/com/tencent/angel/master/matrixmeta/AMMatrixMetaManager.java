@@ -42,6 +42,7 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.codehaus.jettison.json.JSONException;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -201,8 +202,8 @@ public class AMMatrixMetaManager {
   }
 
   private MatrixMeta initMatrixMeta(MatrixContext matrixContext)
-    throws InvocationTargetException, NoSuchMethodException, InstantiationException,
-    IllegalAccessException, IOException {
+          throws InvocationTargetException, NoSuchMethodException, InstantiationException,
+          IllegalAccessException, IOException, JSONException {
 
     try {
       writeLock.lock();
@@ -242,7 +243,7 @@ public class AMMatrixMetaManager {
    * @throws IOException the io exception
    */
   private List<PartitionMeta> loadPartitionInfoFromHDFS(String path, MatrixContext matrixContext,
-    Configuration conf) throws IOException {
+    Configuration conf) throws IOException, JSONException {
     Path meteFilePath =
       new Path(new Path(path, matrixContext.getName()), ModelFilesConstent.modelMetaFileName);
     ModelFilesMeta meta = new ModelFilesMeta();
@@ -255,7 +256,8 @@ public class AMMatrixMetaManager {
     }
 
     FSDataInputStream input = fs.open(meteFilePath);
-    meta.read(input);
+    //meta.read(input);
+    meta.readJson(input);
     input.close();
 
     List<PartitionMeta> matrixPartitions = new ArrayList<>();

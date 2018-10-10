@@ -21,11 +21,14 @@ package com.tencent.angel.model.output.format;
 import com.tencent.angel.utils.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -175,6 +178,25 @@ public class ModelFilesMeta {
     }
   }
 
+  public void writeJson(DataOutputStream output) throws IOException, JSONException {
+    JSONObject jsonObject = new JSONObject();
+    jsonObject.put("matrixId", matrixId);
+    jsonObject.put("matrixName", matrixName);
+    jsonObject.put("rowType", rowType);
+    jsonObject.put("row", row);
+    jsonObject.put("col", col);
+    jsonObject.put("blockRow", blockRow);
+    jsonObject.put("blockCol", blockCol);
+    jsonObject.put("options", options);
+    Map<Integer, JSONObject> jsonMap = new ConcurrentSkipListMap<>();
+    for (Map.Entry<Integer, ModelPartitionMeta> partEntry : partMetas.entrySet()) {
+      JSONObject parJsonOnbect = partEntry.getValue().writeJson(output);
+      jsonMap.put(partEntry.getKey(), parJsonOnbect);
+    }
+    jsonObject.put("partMetas", jsonMap);
+    output.writeUTF(jsonObject.toString());
+  }
+
   /**
    * Read matrix meta from input stream
    *
@@ -201,6 +223,37 @@ public class ModelFilesMeta {
     for (int i = 0; i < partNum; i++) {
       ModelPartitionMeta partMeta = new ModelPartitionMeta();
       partMeta.read(input);
+      partMetas.put(partMeta.getPartId(), partMeta);
+    }
+  }
+
+  public void readJson(DataInputStream input) throws IOException, JSONException {
+    JSONObject jsonObject = new JSONObject(input.readUTF());
+    matrixId = jsonObject.getInt("matrixId");
+    matrixName = jsonObject.getString("matrixName");
+    rowType = jsonObject.getInt("rowType");
+    row = jsonObject.getInt("row");
+    col = jsonObject.getLong("col");
+    blockRow = jsonObject.getInt("blockRow");
+    blockCol = jsonObject.getLong("blockCol");
+    options = new HashMap<>();
+    JSONObject optObject = (JSONObject)jsonObject.get("options");
+    Iterator<String> optKeys = optObject.keys();
+    String key;
+    String value;
+    while(optKeys.hasNext()) {
+      key = optKeys.next();
+      value = optObject.getString(key);
+      options.put(key, value);
+    }
+    partMetas = new TreeMap<>();
+    JSONObject parObject = (JSONObject)jsonObject.get("partMetas");
+    Iterator<String> parKeys = parObject.keys();
+    while (parKeys.hasNext()) {
+      key = parKeys.next();
+      ModelPartitionMeta partMeta = new ModelPartitionMeta();
+      JSONObject jb = (JSONObject)parObject.get(key);
+      partMeta.read(jb);
       partMetas.put(partMeta.getPartId(), partMeta);
     }
   }

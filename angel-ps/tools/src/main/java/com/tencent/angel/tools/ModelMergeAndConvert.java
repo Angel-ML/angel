@@ -35,6 +35,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.*;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.log4j.PropertyConfigurator;
+import org.codehaus.jettison.json.JSONException;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -66,7 +67,7 @@ public class ModelMergeAndConvert {
    * @throws IOException
    */
   public static void convert(Configuration conf, String modelInputDir, String modelOutputDir,
-    ModelLineConvert lineConvert) throws IOException {
+    ModelLineConvert lineConvert) throws IOException, JSONException {
     // Load model meta
     ModelFilesMeta meta = getMeta(modelInputDir, conf);
 
@@ -76,7 +77,7 @@ public class ModelMergeAndConvert {
 
   private static void convertModel(Configuration conf, String modelInputDir,
     String convertedModelDir, ModelFilesMeta meta, ModelLineConvert lineConvert)
-    throws IOException {
+          throws IOException, JSONException {
     Path outputFile = new Path(convertedModelDir, dataFile);
     FileSystem fs = outputFile.getFileSystem(conf);
     FSDataOutputStream output = fs.create(outputFile);
@@ -130,7 +131,7 @@ public class ModelMergeAndConvert {
   }
 
   private static void convertDenseDoubleModel(Configuration conf, FSDataOutputStream output,
-    String modelInputDir, ModelLineConvert lineConvert) throws IOException {
+    String modelInputDir, ModelLineConvert lineConvert) throws IOException, JSONException {
     double[][] data = ModelLoader.loadToDoubleArrays(modelInputDir, conf);
     for (int i = 0; i < data.length; i++) {
       double[] row = data[i];
@@ -143,7 +144,7 @@ public class ModelMergeAndConvert {
   }
 
   private static void convertSparseDoubleModel(Configuration conf, FSDataOutputStream output,
-    String modelInputDir, ModelLineConvert lineConvert) throws IOException {
+    String modelInputDir, ModelLineConvert lineConvert) throws IOException, JSONException {
     Int2DoubleOpenHashMap[] data = ModelLoader.loadToDoubleMaps(modelInputDir, conf);
     for (int i = 0; i < data.length; i++) {
       Int2DoubleOpenHashMap row = data[i];
@@ -164,7 +165,7 @@ public class ModelMergeAndConvert {
   }
 
   private static void convertSparseDoubleLongKeyModel(Configuration conf, FSDataOutputStream output,
-    String modelInputDir, ModelLineConvert lineConvert) throws IOException {
+    String modelInputDir, ModelLineConvert lineConvert) throws IOException, JSONException {
     Long2DoubleOpenHashMap[] data = ModelLoader.loadToDoubleLongKeyMaps(modelInputDir, conf);
     for (int i = 0; i < data.length; i++) {
       Long2DoubleOpenHashMap row = data[i];
@@ -185,7 +186,7 @@ public class ModelMergeAndConvert {
   }
 
   private static void convertDenseFloatModel(Configuration conf, FSDataOutputStream output,
-    String modelInputDir, ModelLineConvert lineConvert) throws IOException {
+    String modelInputDir, ModelLineConvert lineConvert) throws IOException, JSONException {
     float[][] data = ModelLoader.loadToFloatArrays(modelInputDir, conf);
     for (int i = 0; i < data.length; i++) {
       float[] row = data[i];
@@ -198,7 +199,7 @@ public class ModelMergeAndConvert {
   }
 
   private static void convertSparseFloatModel(Configuration conf, FSDataOutputStream output,
-    String modelInputDir, ModelLineConvert lineConvert) throws IOException {
+    String modelInputDir, ModelLineConvert lineConvert) throws IOException, JSONException {
     Int2FloatOpenHashMap[] data = ModelLoader.loadToFloatMaps(modelInputDir, conf);
     for (int i = 0; i < data.length; i++) {
       Int2FloatOpenHashMap row = data[i];
@@ -219,7 +220,7 @@ public class ModelMergeAndConvert {
   }
 
   private static void convertDenseIntModel(Configuration conf, FSDataOutputStream output,
-    String modelInputDir, ModelLineConvert lineConvert) throws IOException {
+    String modelInputDir, ModelLineConvert lineConvert) throws IOException, JSONException {
     int[][] data = ModelLoader.loadToIntArrays(modelInputDir, conf);
     for (int i = 0; i < data.length; i++) {
       int[] row = data[i];
@@ -232,7 +233,7 @@ public class ModelMergeAndConvert {
   }
 
   private static void convertSparseIntModel(Configuration conf, FSDataOutputStream output,
-    String modelInputDir, ModelLineConvert lineConvert) throws IOException {
+    String modelInputDir, ModelLineConvert lineConvert) throws IOException, JSONException {
     Int2IntOpenHashMap[] data = ModelLoader.loadToIntMaps(modelInputDir, conf);
     for (int i = 0; i < data.length; i++) {
       Int2IntOpenHashMap row = data[i];
@@ -269,7 +270,7 @@ public class ModelMergeAndConvert {
    * @return model meta
    * @throws IOException
    */
-  public static ModelFilesMeta getMeta(String modelDir, Configuration conf) throws IOException {
+  public static ModelFilesMeta getMeta(String modelDir, Configuration conf) throws IOException, JSONException {
     Path modelPath = new Path(modelDir);
     Path meteFilePath = new Path(modelPath, ModelFilesConstent.modelMetaFileName);
     ModelFilesMeta meta = new ModelFilesMeta();
@@ -278,7 +279,8 @@ public class ModelMergeAndConvert {
       throw new IOException("matrix meta file does not exist ");
     }
     FSDataInputStream input = fs.open(meteFilePath);
-    meta.read(input);
+    //meta.read(input);
+    meta.readJson(input);
     input.close();
     return meta;
   }

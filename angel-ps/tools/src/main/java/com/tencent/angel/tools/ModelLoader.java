@@ -45,6 +45,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.codehaus.jettison.json.JSONException;
 
 /**
  * Model load tools
@@ -1042,7 +1043,7 @@ public class ModelLoader {
    * @param modelDir model save directory path
    * @return model meta
    */
-  public static ModelFilesMeta getMeta(String modelDir, Configuration conf) throws IOException {
+  public static ModelFilesMeta getMeta(String modelDir, Configuration conf) throws IOException, JSONException {
     Path modelPath = new Path(modelDir);
     Path meteFilePath = new Path(modelPath, ModelFilesConstent.modelMetaFileName);
     ModelFilesMeta meta = new ModelFilesMeta();
@@ -1051,7 +1052,8 @@ public class ModelLoader {
       throw new IOException("matrix meta file does not exist ");
     }
     FSDataInputStream input = fs.open(meteFilePath);
-    meta.read(input);
+    //meta.read(input);
+    meta.readJson(input);
     input.close();
     return meta;
   }
@@ -1063,7 +1065,7 @@ public class ModelLoader {
    * @return model data
    */
   public static double[][] loadToDoubleArrays(String modelDir, Configuration conf)
-    throws IOException {
+          throws IOException, JSONException {
     // Load model meta
     ModelFilesMeta meta = getMeta(modelDir, conf);
     RowType rowType = RowType.valueOf(meta.getRowType());
@@ -1087,7 +1089,7 @@ public class ModelLoader {
    * @return model data
    */
   public static Int2DoubleOpenHashMap[] loadToDoubleMaps(String modelDir, Configuration conf)
-    throws IOException {
+          throws IOException, JSONException {
     // Load model meta
     ModelFilesMeta meta = getMeta(modelDir, conf);
     RowType rowType = RowType.valueOf(meta.getRowType());
@@ -1111,7 +1113,7 @@ public class ModelLoader {
    * @return model data
    */
   public static float[][] loadToFloatArrays(String modelDir, Configuration conf)
-    throws IOException {
+          throws IOException, JSONException {
     // Load model meta
     ModelFilesMeta meta = getMeta(modelDir, conf);
     RowType rowType = RowType.valueOf(meta.getRowType());
@@ -1135,7 +1137,7 @@ public class ModelLoader {
    * @return model data
    */
   public static Int2FloatOpenHashMap[] loadToFloatMaps(String modelDir, Configuration conf)
-    throws IOException {
+          throws IOException, JSONException {
     // Load model meta
     ModelFilesMeta meta = getMeta(modelDir, conf);
     RowType rowType = RowType.valueOf(meta.getRowType());
@@ -1158,7 +1160,7 @@ public class ModelLoader {
    * @param modelDir model save directory path
    * @return model data
    */
-  public static int[][] loadToIntArrays(String modelDir, Configuration conf) throws IOException {
+  public static int[][] loadToIntArrays(String modelDir, Configuration conf) throws IOException, JSONException {
     // Load model meta
     ModelFilesMeta meta = getMeta(modelDir, conf);
     RowType rowType = RowType.valueOf(meta.getRowType());
@@ -1182,7 +1184,7 @@ public class ModelLoader {
    * @return model data
    */
   public static Int2IntOpenHashMap[] loadToIntMaps(String modelDir, Configuration conf)
-    throws IOException {
+          throws IOException, JSONException {
     // Load model meta
     ModelFilesMeta meta = getMeta(modelDir, conf);
     RowType rowType = RowType.valueOf(meta.getRowType());
@@ -1206,7 +1208,7 @@ public class ModelLoader {
    * @return model data
    */
   public static Long2DoubleOpenHashMap[] loadToDoubleLongKeyMaps(String modelDir,
-    Configuration conf) throws IOException {
+    Configuration conf) throws IOException, JSONException {
     // Load model meta
     ModelFilesMeta meta = getMeta(modelDir, conf);
     RowType rowType = RowType.valueOf(meta.getRowType());
@@ -1256,7 +1258,7 @@ public class ModelLoader {
     return sb.toString();
   }
 
-  public static void main(String[] args) throws IOException {
+  public static void main(String[] args) throws IOException, JSONException {
     final Configuration conf = new Configuration();
     // load hadoop configuration
     String hadoopHomePath = System.getenv("HADOOP_HOME");

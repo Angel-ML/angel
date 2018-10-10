@@ -35,6 +35,7 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.codehaus.jettison.json.JSONException;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -142,7 +143,7 @@ public class ServerMatrix {
    *
    * @throws IOException read files error
    */
-  public void load(MatrixMeta matrixMeta, Path path) throws IOException {
+  public void load(MatrixMeta matrixMeta, Path path) throws IOException, JSONException {
     if (path == null) {
       startServering();
       return;
@@ -164,7 +165,8 @@ public class ServerMatrix {
     if (fs.exists(metaFilePath)) {
       FSDataInputStream input = fs.open(metaFilePath);
       ModelFilesMeta matrixFilesMeta = new ModelFilesMeta();
-      matrixFilesMeta.read(input);
+      //matrixFilesMeta.read(input);
+      matrixFilesMeta.readJson(input);
       input.close();
 
       Map<Integer, ModelPartitionMeta> partIdToFileMetaMap = matrixFilesMeta.getPartMetas();

@@ -30,6 +30,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.codehaus.jettison.json.JSONException;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -405,7 +406,7 @@ public class MatrixContext implements Serializable {
    * @param conf
    * @throws IOException
    */
-  public void init(Configuration conf) throws IOException {
+  public void init(Configuration conf) throws IOException, JSONException {
     initPartitioner();
     check();
     String loadPath = attributes.get(MatrixConf.MATRIX_LOAD_PATH);
@@ -422,7 +423,7 @@ public class MatrixContext implements Serializable {
   }
 
   private void loadMatrixMetaFromFile(String name, String path, Configuration conf)
-    throws IOException {
+          throws IOException, JSONException {
     Path meteFilePath = new Path(new Path(path, name), ModelFilesConstent.modelMetaFileName);
     ModelFilesMeta meta = new ModelFilesMeta();
 
@@ -434,7 +435,8 @@ public class MatrixContext implements Serializable {
     }
 
     FSDataInputStream input = fs.open(meteFilePath);
-    meta.read(input);
+    //meta.read(input);
+    meta.readJson(input);
     input.close();
 
     rowNum = meta.getRow();

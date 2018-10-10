@@ -34,6 +34,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.codehaus.jettison.json.JSONException;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -335,7 +336,7 @@ public class MatrixStorageManager {
     }
   }
 
-  private void process(Object context, int index, ACTION action) throws IOException {
+  private void process(Object context, int index, ACTION action) throws IOException, JSONException {
     switch (action) {
       case LOAD: {
         PSMatricesLoadContext loadContext = (PSMatricesLoadContext) context;
@@ -356,7 +357,7 @@ public class MatrixStorageManager {
     }
   }
 
-  private void loadMatrix(Path loadPath, PSMatrixLoadContext loadContext) throws IOException {
+  private void loadMatrix(Path loadPath, PSMatrixLoadContext loadContext) throws IOException, JSONException {
     ServerMatrix matrix = context.getMatrixStorageManager().getMatrix(loadContext.getMatrixId());
     MatrixMeta matrixMeta = context.getMatrixMetaManager().getMatrixMeta(loadContext.getMatrixId());
     if (matrix != null) {

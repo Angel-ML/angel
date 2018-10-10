@@ -611,7 +611,8 @@ public class AMModelSaver extends AbstractService {
       Path metaFile = new Path(destPath, ModelFilesConstent.modelMetaFileName);
       Path tmpMetaFile = HdfsUtil.toTmpPath(metaFile);
       FSDataOutputStream metaOut = fs.create(tmpMetaFile);
-      filesMeta.write(metaOut);
+      //filesMeta.write(metaOut);
+      filesMeta.writeJson(metaOut);
       metaOut.flush();
       metaOut.close();
       HdfsUtil.rename(tmpMetaFile, metaFile, fs);
