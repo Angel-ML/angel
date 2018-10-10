@@ -16,27 +16,8 @@
  */
 
 
-package com.tencent.angel.psagent;
+package com.tencent.angel.ml.auto.sync
 
-import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
-import org.junit.Test;
+class AIMDSync {
 
-/**
- * Created by payniexiao on 2018/7/23.
- */
-public class MapTest {
-  public static int len = 1000000;
-
-  @Test public void testMap() {
-    int[] indices = new int[len];
-    double[] values = new double[len];
-    for (int i = 0; i < len; i++) {
-      indices[i] = i;
-      values[i] = i;
-    }
-
-    long ts = System.currentTimeMillis();
-    Int2DoubleOpenHashMap map = new Int2DoubleOpenHashMap(indices, values);
-    System.out.println("put use time = " + (System.currentTimeMillis() - ts));
-  }
 }
