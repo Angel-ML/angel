@@ -28,10 +28,7 @@ import com.tencent.angel.ps.ParameterServerId;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
@@ -321,16 +318,16 @@ public class AMModelLoader {
     }
 
     Map<Integer, PartitionMeta> partitions = meta.getPartitionMetas();
-    Map<ParameterServerId, List<Integer>> psIdToPartIdsMap = new HashMap<>();
+    Map<ParameterServerId, Set<Integer>> psIdToPartIdsMap = new HashMap<>();
 
     for (Map.Entry<Integer, PartitionMeta> partEntry : partitions.entrySet()) {
       ParameterServerId psId = partEntry.getValue().getMasterPs();
       if (psId == null) {
         throw new IllegalStateException("Can not get ps for partition " + partEntry.getKey());
       }
-      List partIds = psIdToPartIdsMap.get(psId);
+      Set partIds = psIdToPartIdsMap.get(psId);
       if (partIds == null) {
-        partIds = new ArrayList();
+        partIds = new HashSet();
         psIdToPartIdsMap.put(psId, partIds);
       }
       partIds.add(partEntry.getKey());
@@ -338,9 +335,15 @@ public class AMModelLoader {
 
     int matrixId = meta.getId();
     Map<ParameterServerId, PSMatrixLoadContext> ret = new HashMap<>(psIdToPartIdsMap.size());
-    for (Map.Entry<ParameterServerId, List<Integer>> entry : psIdToPartIdsMap.entrySet()) {
+    for (Map.Entry<ParameterServerId, Set<Integer>> entry : psIdToPartIdsMap.entrySet()) {
+      List<Integer> partIds = new ArrayList<>(entry.getValue());
+      partIds.sort(new Comparator<Integer>() {
+        @Override public int compare(Integer id1, Integer id2) {
+          return id1 - id2;
+        }
+      });
       PSMatrixLoadContext psMatrixLoadContext =
-        new PSMatrixLoadContext(matrixId, null, entry.getValue());
+        new PSMatrixLoadContext(matrixId, null, partIds);
       ret.put(entry.getKey(), psMatrixLoadContext);
     }
     return ret;

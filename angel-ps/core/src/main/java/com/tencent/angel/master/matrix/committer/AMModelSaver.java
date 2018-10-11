@@ -484,16 +484,16 @@ public class AMModelSaver extends AbstractService {
 
     Map<Integer, PartitionMeta> partitions = meta.getPartitionMetas();
     List<Integer> rowIndexes = matrixSaveContext.getRowIndexes();
-    Map<ParameterServerId, List<Integer>> psIdToPartIdsMap = new HashMap<>();
+    Map<ParameterServerId, Set<Integer>> psIdToPartIdsMap = new HashMap<>();
     if (rowIndexes == null || rowIndexes.isEmpty()) {
       for (Map.Entry<Integer, PartitionMeta> partEntry : partitions.entrySet()) {
         ParameterServerId psId = partEntry.getValue().getMasterPs();
         if (psId == null) {
           throw new IllegalStateException("Can not get ps for partition " + partEntry.getKey());
         }
-        List partIds = psIdToPartIdsMap.get(psId);
+        Set partIds = psIdToPartIdsMap.get(psId);
         if (partIds == null) {
-          partIds = new ArrayList();
+          partIds = new HashSet();
           psIdToPartIdsMap.put(psId, partIds);
         }
         partIds.add(partEntry.getKey());
@@ -509,9 +509,9 @@ public class AMModelSaver extends AbstractService {
           if (psId == null) {
             throw new IllegalStateException("Can not get ps for partition " + partEntry.getKey());
           }
-          List partIds = psIdToPartIdsMap.get(psId);
+          Set partIds = psIdToPartIdsMap.get(psId);
           if (partIds == null) {
-            partIds = new ArrayList();
+            partIds = new HashSet();
             psIdToPartIdsMap.put(psId, partIds);
           }
           partIds.add(partEntry.getKey());
@@ -521,9 +521,15 @@ public class AMModelSaver extends AbstractService {
 
     int matrixId = meta.getId();
     Map<ParameterServerId, PSMatrixSaveContext> ret = new HashMap<>(psIdToPartIdsMap.size());
-    for (Map.Entry<ParameterServerId, List<Integer>> entry : psIdToPartIdsMap.entrySet()) {
+    for (Map.Entry<ParameterServerId, Set<Integer>> entry : psIdToPartIdsMap.entrySet()) {
+      List<Integer> partIds = new ArrayList<>(entry.getValue());
+      partIds.sort(new Comparator<Integer>() {
+        @Override public int compare(Integer id1, Integer id2) {
+          return id1 - id2;
+        }
+      });
       PSMatrixSaveContext psMatrixSaveContext =
-        new PSMatrixSaveContext(matrixId, entry.getValue(), matrixSaveContext.getRowIndexes());
+        new PSMatrixSaveContext(matrixId, partIds, matrixSaveContext.getRowIndexes());
       ret.put(entry.getKey(), psMatrixSaveContext);
     }
     return ret;
