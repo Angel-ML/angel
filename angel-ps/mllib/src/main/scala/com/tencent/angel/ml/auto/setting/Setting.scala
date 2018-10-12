@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -16,12 +16,22 @@
  */
 
 
-package com.tencent.angel.ml.auto
+package com.tencent.angel.ml.auto.setting
 
-abstract class AutoController {
+class Setting {
+}
 
-  def feed(): Unit
+object Setting {
 
-  def next(): Any
+  var batchSize: Int = 1
 
+  var taskName: String = "com.tencent.angel.ml.auto.trail.TestRunner"
+
+  def setBatchSize(num: Int): Unit = {
+    batchSize = num
+  }
+
+  def setTaskName(name: String): Unit = {
+    taskName = name
+  }
 }

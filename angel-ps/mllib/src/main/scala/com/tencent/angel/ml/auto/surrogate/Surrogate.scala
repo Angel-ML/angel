@@ -18,21 +18,24 @@
 
 package com.tencent.angel.ml.auto.surrogate
 
-import com.tencent.angel.ml.math2.vector.Vector
+import com.tencent.angel.ml.math2.vector.IntFloatVector
 
 import scala.collection.mutable.ListBuffer
 
 /**
   * Abstract base class for surrogate model.
-  * @param numFeats  : Number of instance features
   * @param numParams : Number of parameters in a configuration
   */
-abstract class BaseSurrogate(numFeats: Int, numParams: Int, minimize: Boolean) {
-
+abstract class Surrogate(val numParams: Int, val minimize: Boolean = true) {
   // Input data points, (N, D)
-  var curX: ListBuffer[Vector]
+  var curX: ListBuffer[IntFloatVector] = new ListBuffer[IntFloatVector]()
   // Target value, (N, )
-  var curY: ListBuffer[Float]
+  var curY: ListBuffer[Float] = new ListBuffer[Float]()
+
+  /**
+    * Train the surrogate on curX and curY.
+    */
+  def train(): Unit
 
   /**
     * Train the surrogate on X and Y.
@@ -40,7 +43,13 @@ abstract class BaseSurrogate(numFeats: Int, numParams: Int, minimize: Boolean) {
     * @param X : (N, D), input data points.
     * @param Y : (N, 1), the corresponding target values.
     */
-  def train(X: List[Vector], Y: List[Float]): Unit
+  def train(X: List[IntFloatVector], Y: List[Float]): Unit = {
+    curX.clear
+    curY.clear
+    curX ++ X
+    curY ++ Y
+    train
+  }
 
   /**
     * Update the surrogate with more X and Y.
@@ -48,7 +57,17 @@ abstract class BaseSurrogate(numFeats: Int, numParams: Int, minimize: Boolean) {
     * @param X
     * @param Y
     */
-  def update(X: List[Vector], Y: List[Float]): Unit
+  def update(X: List[IntFloatVector], Y: List[Float]): Unit = {
+    curX ++ X
+    curY ++ Y
+    train
+  }
+
+  def update(X: IntFloatVector, y: Float): Unit = {
+    curX += X
+    curY += y
+    train
+  }
 
   /**
     * Predict means and variances for given X.
@@ -56,7 +75,9 @@ abstract class BaseSurrogate(numFeats: Int, numParams: Int, minimize: Boolean) {
     * @param X
     * @return tuples of (mean, variance)
     */
-  def predict(X: List[Vector]): List[(Float, Float)]
+  def predict(X: List[IntFloatVector]): List[(Float, Float)] = {
+    X.map(predict)
+  }
 
   /**
     * Predict means and variances for a single given X.
@@ -64,21 +85,19 @@ abstract class BaseSurrogate(numFeats: Int, numParams: Int, minimize: Boolean) {
     * @param X
     * @return a tuple of (mean, variance)
     */
-  def predict(X: Vector): (Float, Float)
+  def predict(X: IntFloatVector): (Float, Float)
 
-
-  def curBest: (Vector, Float) = {
+  def curBest: (IntFloatVector, Float) = {
     if (minimize) curMin else curMax
   }
 
-  def curMin: (Vector, Float) = {
+  def curMin: (IntFloatVector, Float) = {
     val minIdx: Int = curY.zipWithIndex.min._2
     (curX(minIdx), curY(minIdx))
   }
 
-  def curMax: (Vector, Float) = {
+  def curMax: (IntFloatVector, Float) = {
     val maxIdx: Int = curY.zipWithIndex.max._2
     (curX(maxIdx), curY(maxIdx))
   }
-
 }

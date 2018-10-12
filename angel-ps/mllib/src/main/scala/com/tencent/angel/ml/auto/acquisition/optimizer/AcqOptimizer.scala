@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ml.auto.acquisition.optimizer
 
-import com.tencent.angel.ml.auto.acquisition.BaseAcquisition
+import com.tencent.angel.ml.auto.acquisition.Acquisition
 import com.tencent.angel.ml.auto.config.{Configuration,ConfigurationSpace}
 
 /**
@@ -26,7 +26,7 @@ import com.tencent.angel.ml.auto.config.{Configuration,ConfigurationSpace}
   * @param acqFunc     : The acquisition function which will be maximized
   * @param configSpace : Configuration space of parameters
   */
-abstract class BaseOptimizer(val acqFunc: BaseAcquisition, val configSpace: ConfigurationSpace) {
+abstract class AcqOptimizer(val acqFunc: Acquisition, val configSpace: ConfigurationSpace) {
 
   /**
     * Maximizes the given acquisition function.

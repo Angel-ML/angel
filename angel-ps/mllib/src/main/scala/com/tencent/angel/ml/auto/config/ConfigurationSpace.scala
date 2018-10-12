@@ -25,7 +25,7 @@ import org.apache.commons.logging.{Log, LogFactory}
 
 import scala.collection.mutable.ListBuffer
 
-class ConfigurationSpace(val name: String, var paramDict: Map[String, ParamSpace[Float]]) {
+class ConfigurationSpace(val name: String, var paramDict: Map[String, ParamSpace[Float]] = Map()) {
   val LOG: Log = LogFactory.getLog(classOf[ConfigurationSpace])
 
   var paramNum: Int = paramDict.size

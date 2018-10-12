@@ -41,9 +41,22 @@
   <properties>
     <main.basedir>${project.parent.basedir}</main.basedir>
     <compile.scope>provided</compile.scope>
+    <spark.version>2.1.0</spark.version>
   </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-core_${scala.binary.version}</artifactId>
+      <version>${spark.version}</version>
+      <scope>${dist.deps.scope}</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-mllib_${scala.binary.version}</artifactId>
+      <version>${spark.version}</version>
+      <scope>${dist.deps.scope}</scope>
+    </dependency>
     <dependency>
       <groupId>com.yahoo.datasketches</groupId>
       <artifactId>sketches-core</artifactId>

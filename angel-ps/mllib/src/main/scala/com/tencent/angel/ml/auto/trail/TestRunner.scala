@@ -16,22 +16,14 @@
  */
 
 
-package com.tencent.angel.ml.auto.acquisition
+package com.tencent.angel.ml.auto.trail
 
-import com.tencent.angel.ml.auto.surrogate.BaseSurrogate
-import com.tencent.angel.ml.math2.vector.Vector
+import com.tencent.angel.ml.auto.config.Configuration
 
-/**
-  * Abstract base class for acquisition function
-  */
-abstract class BaseAcquisition(val surrogate: BaseSurrogate) {
+class TestRunner(config: Configuration) extends TrailRunner(config) {
 
-  /**
-    * Computes the acquisition value for a given point X
-    *
-    * @param X : (1, D), the input points where the acquisition function should be evaluated.
-    * @return (1, 1) Expected Improvement of X, (1, D) Derivative of Expected Improvement at X
-    */
-  def compute(X: Vector, derivative: Boolean = false): (Float, Vector)
+  override def call(): Float = {
+    config.getVector.dot(config.getVector).toFloat
+  }
 
 }

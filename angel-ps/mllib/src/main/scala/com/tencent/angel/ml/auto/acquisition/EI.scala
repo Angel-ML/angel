@@ -18,9 +18,9 @@
 
 package com.tencent.angel.ml.auto.acquisition
 
-import com.tencent.angel.ml.auto.surrogate.BaseSurrogate
-import com.tencent.angel.ml.math2.storage.{IntDoubleDenseVectorStorage, IntDoubleVectorStorage, IntFloatDenseVectorStorage}
-import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector, Vector}
+import com.tencent.angel.ml.auto.surrogate.Surrogate
+import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage
+import com.tencent.angel.ml.math2.vector.IntFloatVector
 import org.apache.commons.math3.distribution.NormalDistribution
 
 /**
@@ -29,9 +29,9 @@ import org.apache.commons.math3.distribution.NormalDistribution
   * @param par : Controls the balance between exploration and exploitation of the acquisition function, default=0.0
   *
  */
-class EI(override val surrogate: BaseSurrogate, val par: Float) extends BaseAcquisition(surrogate) {
+class EI(override val surrogate: Surrogate, val par: Float) extends Acquisition(surrogate) {
 
-  override def compute(X: Vector, derivative: Boolean = false): (Float, Vector) = {
+  override def compute(X: IntFloatVector, derivative: Boolean = false): (Float, IntFloatVector) = {
     val pred = surrogate.predict(X) // (mean, variance)
 
     // Use the best seen observation as incumbent

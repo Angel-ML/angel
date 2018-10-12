@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ml.auto.acquisition.optimizer
 
-import com.tencent.angel.ml.auto.acquisition.BaseAcquisition
+import com.tencent.angel.ml.auto.acquisition.Acquisition
 import com.tencent.angel.ml.auto.config.{Configuration, ConfigurationSpace}
 
 import scala.util.Random
@@ -30,8 +30,8 @@ import scala.util.Random
   * @param configSpace : Configuration space of parameters
   * @param seed
   */
-class RandomSearch(override val acqFunc: BaseAcquisition, override val configSpace: ConfigurationSpace,
-                   seed: Int = 100) extends BaseOptimizer(acqFunc, configSpace) {
+class RandomSearch(override val acqFunc: Acquisition, override val configSpace: ConfigurationSpace,
+                   seed: Int = 100) extends AcqOptimizer(acqFunc, configSpace) {
 
   val rd = new Random(seed)
 

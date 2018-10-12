@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ml.auto.acquisition.optimizer
 
-import com.tencent.angel.ml.auto.acquisition.BaseAcquisition
+import com.tencent.angel.ml.auto.acquisition.Acquisition
 import com.tencent.angel.ml.auto.config.{Configuration, ConfigurationSpace}
 
 /**
@@ -29,9 +29,9 @@ import com.tencent.angel.ml.auto.config.{Configuration, ConfigurationSpace}
   * @param epsilon     : In order to perform a local move one of the incumbent's neighbors needs at least an improvement higher than epsilon
   * @param numIters    : Maximum number of iterations that the local search will perform
   */
-class LocalSearch(override val acqFunc: BaseAcquisition, override val configSpace: ConfigurationSpace,
+class LocalSearch(override val acqFunc: Acquisition, override val configSpace: ConfigurationSpace,
                   epsilon: String, numIters: Int)
-  extends BaseOptimizer(acqFunc, configSpace) {
+  extends AcqOptimizer(acqFunc, configSpace) {
 
   /**
     * Starts a local search from the given start point and quits if either the max number of steps is reached or
