@@ -23,18 +23,18 @@ import com.tencent.angel.ps.storage.vector.ServerRow;
 import java.util.Iterator;
 import java.util.Map;
 
-public abstract class PartitionSource {
+public interface PartitionSource {
 
-  protected abstract void init(int rowNum);
+  void init(int rowNum);
 
-  protected abstract ServerRow getRow(int index);
+  ServerRow getRow(int index);
 
-  protected abstract void putRow(int index, ServerRow row);
+  void putRow(int index, ServerRow row);
 
-  protected abstract int rowNum();
+  int rowNum();
 
-  protected abstract boolean hasRow(int index);
+  boolean hasRow(int index);
 
-  protected abstract Iterator<Map.Entry<Integer, ServerRow>> iterator();
+  Iterator<Map.Entry<Integer, ServerRow>> iterator();
 
 }

@@ -178,12 +178,12 @@ public class SnapshotDumper {
         List<PSMatrixSaveContext> saveContexts = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
           MatrixMeta meta = context.getMatrixMetaManager().getMatrixMeta(ids.get(i));
-          saveContexts.add(new PSMatrixSaveContext(ids.get(i),
-            new ArrayList<Integer>(meta.getPartitionMetas().keySet()), null));
+          //saveContexts.add(new PSMatrixSaveContext(ids.get(i),
+          //  new ArrayList<Integer>(meta.getPartitionMetas().keySet()), null));
         }
 
-        context.getMatrixStorageManager()
-          .save(new PSMatricesSaveContext(-1, -1, tmpPath.toString(), saveContexts));
+        //context.getMatrixStorageManager()
+        //  .save(new PSMatricesSaveContext(-1, -1, tmpPath.toString(), saveContexts));
         HdfsUtil.rename(tmpPath, baseDirPath, fs);
       }
 

@@ -83,27 +83,30 @@ message PSReportResponse {
 message PSMatricesSaveContextProto {
   required int32 requestId = 1;
   required int32 subRequestId = 2;
-  required string savaPath = 3;
-  repeated PSMatrixSaveContextProto subSaveContexts = 4;
+  repeated PSMatrixSaveContextProto subSaveContexts = 3;
 }
 
 message PSMatrixSaveContextProto {
   required int32 matrixId = 1;
   repeated int32 partIds = 2;
   repeated int32 rowIndexes = 3;
+  required string savePath = 4;
+  required string formatClassName = 5;
+  required bool cloneFirst = 6;
+  required bool sortFirst = 7;
 }
 
 message PSMatricesLoadContextProto {
   required int32 requestId = 1;
   required int32 subRequestId = 2;
-  optional string loadPath = 3;
-  repeated PSMatrixLoadContextProto subLoadContexts = 4;
+  repeated PSMatrixLoadContextProto subLoadContexts = 3;
 }
 
 message PSMatrixLoadContextProto {
   required int32 matrixId = 1;
   repeated int32 partIds = 2;
-  optional string loadPath = 3;
+  required string loadPath = 3;
+  required string formatClassName = 4;
 }
 
 message RecoverPartKeyProto {

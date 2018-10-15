@@ -53,13 +53,13 @@ public class FMTest {
       // Feature number of train data
       int featureNum = 123;
       // Total iteration number
-      int epochNum = 20;
+      int epochNum = 5;
       // Validation sample Ratio
       double vRatio = 0.1;
       // Data format, libsvm or dummy
       String dataFmt = "libsvm";
       // Train batch number per epoch.
-      String modelType = String.valueOf(RowType.T_FLOAT_SPARSE_LONGKEY);
+      String modelType = String.valueOf(RowType.T_FLOAT_SPARSE);
 
       // Learning rate
       double learnRate = 1.0;
@@ -87,7 +87,7 @@ public class FMTest {
 
       //set sgd FM algorithm parameters #feature #epoch
       conf.set(MLConf.ML_MODEL_TYPE(), modelType);
-      conf.setLong(MLConf.ML_FEATURE_INDEX_RANGE(), Long.MAX_VALUE);
+      conf.setLong(MLConf.ML_FEATURE_INDEX_RANGE(), featureNum);
       conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
       conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
       conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
@@ -105,7 +105,7 @@ public class FMTest {
   @Test public void testFM() throws Exception {
     setConf();
     trainTest();
-    predictTest();
+    //predictTest();
   }
 
   private void trainTest() throws Exception {

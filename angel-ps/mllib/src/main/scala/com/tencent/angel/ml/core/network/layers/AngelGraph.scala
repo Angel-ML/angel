@@ -170,6 +170,7 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
   def loadModel(client: AngelClient): Unit = {
     trainableLayer.foreach { layer => layer.loadParams(client) }
     client.createMatrices()
+    client.load()
   }
 
   def loadModel(): Unit = {

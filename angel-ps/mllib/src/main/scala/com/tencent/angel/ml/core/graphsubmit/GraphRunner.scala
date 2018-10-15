@@ -84,6 +84,8 @@ class GraphRunner extends MLRunner {
       model.loadModel(client)
       client.runTask(classOf[GraphPredictTask])
       client.waitForCompletion()
+    } catch {
+      case x:Exception => LOG.error("predict failed ", x)
     } finally {
       client.stop(0)
     }

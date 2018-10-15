@@ -53,7 +53,7 @@ public class LRTest {
       // Feature number of train data
       int featureNum = 123;
       // Total iteration number
-      int epochNum = 20;
+      int epochNum = 5;
       // Validation sample Ratio
       double vRatio = 0.1;
       // Data format, libsvm or dummy
@@ -110,7 +110,7 @@ public class LRTest {
   @Test public void testLR() throws Exception {
     setConf();
     trainTest();
-    // predictTest();
+    predictTest();
   }
 
   private void trainTest() throws Exception {

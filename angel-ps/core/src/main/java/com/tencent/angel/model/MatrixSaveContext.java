@@ -18,6 +18,10 @@
 
 package com.tencent.angel.model;
 
+import com.tencent.angel.model.output.format.ColIdValueTextRowFormat;
+import com.tencent.angel.model.output.format.RowIdColIdValueBinaryRowFormat;
+import com.tencent.angel.model.output.format.RowIdColIdValueTextRowFormat;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,9 +35,25 @@ public class MatrixSaveContext {
   private final String matrixName;
 
   /**
+   * Matrix output format class name
+   */
+  private final String formatClassName;
+
+  /**
    * Need save matrix rows
    */
   private final List<Integer> rowIndexes;
+
+  private static final String defaultFormatClass = RowIdColIdValueTextRowFormat.class.getName();
+
+  /**
+   * Create a new MatrixSaveContext
+   *
+   * @param matrixName matrix name
+   */
+  public MatrixSaveContext(String matrixName, String formatClassName) {
+    this(matrixName, new ArrayList<>(), formatClassName);
+  }
 
   /**
    * Create a new MatrixSaveContext
@@ -41,8 +61,9 @@ public class MatrixSaveContext {
    * @param matrixName matrix name
    */
   public MatrixSaveContext(String matrixName) {
-    this(matrixName, new ArrayList<>());
+    this(matrixName, new ArrayList<>(), defaultFormatClass);
   }
+
 
   /**
    * Create a new MatrixSaveContext
@@ -50,9 +71,10 @@ public class MatrixSaveContext {
    * @param matrixName matrix name
    * @param rowIndexes need save matrix rows
    */
-  public MatrixSaveContext(String matrixName, List<Integer> rowIndexes) {
+  public MatrixSaveContext(String matrixName, List<Integer> rowIndexes, String formatClassName) {
     this.matrixName = matrixName;
     this.rowIndexes = rowIndexes;
+    this.formatClassName = formatClassName;
   }
 
   public void addIndex(int idx) {
@@ -81,5 +103,13 @@ public class MatrixSaveContext {
    */
   public List<Integer> getRowIndexes() {
     return rowIndexes;
+  }
+
+  /**
+   * Get matrix save format class
+   * @return matrix save format class
+   */
+  public String getFormatClassName() {
+    return formatClassName;
   }
 }

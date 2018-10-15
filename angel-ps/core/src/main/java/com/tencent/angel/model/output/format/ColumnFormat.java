@@ -1,0 +1,648 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
+package com.tencent.angel.model.output.format;
+
+import com.tencent.angel.ml.math2.storage.*;
+import com.tencent.angel.ml.math2.vector.*;
+import com.tencent.angel.model.PSMatrixLoadContext;
+import com.tencent.angel.model.PSMatrixSaveContext;
+import com.tencent.angel.ps.storage.matrix.PartitionSource;
+import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.vector.*;
+import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import it.unimi.dsi.fastutil.ints.Int2FloatMap;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2LongMap;
+import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
+import it.unimi.dsi.fastutil.longs.Long2FloatMap;
+import it.unimi.dsi.fastutil.longs.Long2IntMap;
+import it.unimi.dsi.fastutil.longs.Long2LongMap;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Column first format for matrix
+ */
+public abstract class ColumnFormat extends MatrixFormatImpl {
+  /**
+   * Write a matrix column to output stream
+   * @param col matrix column for int key float value matrix
+   * @param output output stream
+   * @throws IOException
+   */
+  public abstract void save(IntFloatsCol col, DataOutputStream output) throws IOException;
+
+  /**
+   * Write a matrix column to output stream
+   * @param col matrix column for int key double value matrix
+   * @param output output stream
+   * @throws IOException
+   */
+  public abstract void save(IntDoublesCol col, DataOutputStream output) throws IOException;
+
+  /**
+   * Write a matrix column to output stream
+   * @param col matrix column for int key int value matrix
+   * @param output output stream
+   * @throws IOException
+   */
+  public abstract void save(IntIntsCol col, DataOutputStream output) throws IOException;
+
+  /**
+   * Write a matrix column to output stream
+   * @param col matrix column for int key long value matrix
+   * @param output output stream
+   * @throws IOException
+   */
+  public abstract void save(IntLongsCol col, DataOutputStream output) throws IOException;
+
+  /**
+   * Write a matrix column to output stream
+   * @param col matrix column for long key float value matrix
+   * @param output output stream
+   * @throws IOException
+   */
+  public abstract void save(LongFloatsCol col, DataOutputStream output) throws IOException;
+
+  /**
+   * Write a matrix column to output stream
+   * @param col matrix column for long key float double matrix
+   * @param output output stream
+   * @throws IOException
+   */
+  public abstract void save(LongDoublesCol col, DataOutputStream output) throws IOException;
+
+  /**
+   * Write a matrix column to output stream
+   * @param col matrix column for long key int value matrix
+   * @param output output stream
+   * @throws IOException
+   */
+  public abstract void save(LongIntsCol col, DataOutputStream output) throws IOException;
+
+  /**
+   * Write a matrix column to output stream
+   * @param col matrix column for long key long value matrix
+   * @param output output stream
+   * @throws IOException
+   */
+  public abstract void save(LongLongsCol col, DataOutputStream output) throws IOException;
+
+  /**
+   * Read a matrix column to input stream
+   * @param col matrix column for int key float value matrix
+   * @param output input stream
+   * @throws IOException
+   */
+  public abstract void load(IntFloatsCol col, DataInputStream output) throws IOException;
+
+  /**
+   * Read a matrix column to input stream
+   * @param col matrix column for int key double value matrix
+   * @param output input stream
+   * @throws IOException
+   */
+  public abstract void load(IntDoublesCol col, DataInputStream output) throws IOException;
+
+  /**
+   * Read a matrix column to input stream
+   * @param col matrix column for int key int value matrix
+   * @param output input stream
+   * @throws IOException
+   */
+  public abstract void load(IntIntsCol col, DataInputStream output) throws IOException;
+
+  /**
+   * Read a matrix column to input stream
+   * @param col matrix column for int key long value matrix
+   * @param output input stream
+   * @throws IOException
+   */
+  public abstract void load(IntLongsCol col, DataInputStream output) throws IOException;
+
+  /**
+   * Read a matrix column to input stream
+   * @param col matrix column for long key float value matrix
+   * @param output input stream
+   * @throws IOException
+   */
+  public abstract void load(LongFloatsCol col, DataInputStream output) throws IOException;
+
+  /**
+   * Read a matrix column to input stream
+   * @param col matrix column for long key float value matrix
+   * @param output input stream
+   * @throws IOException
+   */
+  public abstract void load(LongDoublesCol col, DataInputStream output) throws IOException;
+
+  /**
+   * Read a matrix column to input stream
+   * @param col matrix column for long key int value matrix
+   * @param output input stream
+   * @throws IOException
+   */
+  public abstract void load(LongIntsCol col, DataInputStream output) throws IOException;
+
+  /**
+   * Read a matrix column to input stream
+   * @param col matrix column for long key long value matrix
+   * @param output input stream
+   * @throws IOException
+   */
+  public abstract void load(LongLongsCol col, DataInputStream output) throws IOException;
+
+
+  @Override public void save(ServerPartition part, MatrixPartitionMeta partMeta,
+    PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
+    List<Integer> rowIds = saveContext.getRowIndexes();
+    PartitionSource rows = part.getRows();
+    if (rowIds == null || rowIds.isEmpty()) {
+      Iterator<Map.Entry<Integer, ServerRow>> iter = part.getRows().iterator();
+      rowIds = new ArrayList<>();
+      while (iter.hasNext()) {
+        rowIds.add(iter.next().getKey());
+      }
+    } else {
+      rowIds = filter(part, rowIds);
+    }
+
+    int size = rowIds.size();
+    ServerRow [] rowList = new ServerRow[size];
+    for(int i = 0; i < size; i++) {
+      rowList[i] = rows.getRow(rowIds.get(i));
+    }
+
+
+    ServerRow row0 = rowList[0];
+
+    if(row0 instanceof ServerIntFloatRow) {
+      saveIntFloatRows(part, rowList, partMeta, saveContext, output);
+    } else if(row0 instanceof ServerIntDoubleRow) {
+      saveIntDoubleRows(part, rowList, partMeta, saveContext, output);
+    } else if(row0 instanceof ServerIntIntRow) {
+      saveIntIntRows(part, rowList, partMeta, saveContext, output);
+    } else if(row0 instanceof ServerIntLongRow) {
+      saveIntLongRows(part, rowList, partMeta, saveContext, output);
+    } else if(row0 instanceof ServerLongFloatRow) {
+      saveLongFloatRows(part, rowList, partMeta, saveContext, output);
+    } else if(row0 instanceof ServerLongDoubleRow) {
+      saveLongDoubleRows(part, rowList, partMeta, saveContext, output);
+    } else if(row0 instanceof ServerLongIntRow) {
+      saveLongIntRows(part, rowList, partMeta, saveContext, output);
+    } else if(row0 instanceof ServerLongLongRow) {
+      saveLongLongRows(part, rowList, partMeta, saveContext, output);
+    } else {
+      throw new UnsupportedOperationException("Unknown server row type " + row0.getClass().getName());
+    }
+  }
+
+  @Override public void load(ServerPartition part, MatrixPartitionMeta partMeta,
+    PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
+    Map<Integer, RowPartitionMeta> rowMetas = partMeta.getRowMetas();
+    int [] rowIds = new int[rowMetas.size()];
+    ServerRow [] rows = new ServerRow[rowMetas.size()];
+    int i = 0;
+    for(int rowId : rowMetas.keySet()) {
+      rowIds[i] = rowId;
+      rows[i] = part.getRow(rowId);
+      i++;
+    }
+
+    ServerRow row0 = part.getRow(rowIds[0]);
+    if(row0 instanceof ServerIntFloatRow) {
+      loadIntFloatRows(part, rows, partMeta, loadContext, input);
+    } else if(row0 instanceof ServerIntDoubleRow) {
+      loadIntDoubleRows(part, rows, partMeta, loadContext, input);
+    } else if(row0 instanceof ServerIntIntRow) {
+      loadIntIntRows(part, rows, partMeta, loadContext, input);
+    } else if(row0 instanceof ServerIntLongRow) {
+      loadIntLongRows(part, rows, partMeta, loadContext, input);
+    } else if(row0 instanceof ServerLongFloatRow) {
+      loadLongFloatRows(part, rows, partMeta, loadContext, input);
+    } else if(row0 instanceof ServerLongDoubleRow) {
+      loadLongDoubleRows(part, rows, partMeta, loadContext, input);
+    } else if(row0 instanceof ServerLongIntRow) {
+      loadLongIntRows(part, rows, partMeta, loadContext, input);
+    } else if(row0 instanceof ServerLongLongRow) {
+      loadLongLongRows(part, rows, partMeta, loadContext, input);
+    } else {
+      throw new UnsupportedOperationException("Unknown server row type " + row0.getClass().getName());
+    }
+  }
+
+  private void saveIntFloatRows(ServerPartition part, ServerRow [] rows, MatrixPartitionMeta partMeta,
+    PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
+    Vector vec = rows[0].getSplit();
+    //int size = rows.length;
+    int indexOffset = (int)part.getPartitionKey().getStartCol();
+    IntFloatVectorStorage storage = ((IntFloatVector) vec).getStorage();
+
+    IntFloatsCol col = new IntFloatsCol(0, new float[rows.length]);
+    if(storage.isDense()) {
+      int [] indices = storage.getIndices();
+      for(int i = 0; i < indices.length; i++) {
+        col.colId = indices[i] + indexOffset;
+        for(int j = 0; j < rows.length; j++) {
+          col.colElems[j] = ((ServerIntFloatRow)(rows[j])).get(col.colId);
+        }
+        save(col, output);
+      }
+    } else {
+      ObjectIterator<Int2FloatMap.Entry> iter = storage.entryIterator();
+      while(iter.hasNext()) {
+        col.colId = iter.next().getIntKey() + indexOffset;
+        for(int j = 0; j < rows.length; j++) {
+          col.colElems[j] = ((ServerIntFloatRow)(rows[j])).get(col.colId);
+        }
+        save(col, output);
+      }
+    }
+  }
+
+
+  private void saveIntDoubleRows(ServerPartition part, ServerRow [] rows, MatrixPartitionMeta partMeta,
+    PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
+    Vector vec = rows[0].getSplit();
+    //int size = rows.length;
+    int indexOffset = (int)part.getPartitionKey().getStartCol();
+    IntDoubleVectorStorage storage = ((IntDoubleVector) vec).getStorage();
+
+    IntDoublesCol col = new IntDoublesCol(0, new double[rows.length]);
+    if(storage.isDense()) {
+      int [] indices = storage.getIndices();
+      for(int i = 0; i < indices.length; i++) {
+        col.colId = indices[i] + indexOffset;
+        for(int j = 0; j < rows.length; j++) {
+          col.colElems[j] = ((ServerIntDoubleRow)(rows[j])).get(col.colId);
+        }
+        save(col, output);
+      }
+    } else {
+      ObjectIterator<Int2DoubleMap.Entry> iter = storage.entryIterator();
+      while(iter.hasNext()) {
+        col.colId = iter.next().getIntKey() + indexOffset;
+        for(int j = 0; j < rows.length; j++) {
+          col.colElems[j] = ((ServerIntDoubleRow)(rows[j])).get(col.colId);
+        }
+        save(col, output);
+      }
+    }
+  }
+
+  private void saveIntIntRows(ServerPartition part, ServerRow [] rows, MatrixPartitionMeta partMeta,
+    PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
+    Vector vec = rows[0].getSplit();
+    //int size = rows.size();
+    int indexOffset = (int)part.getPartitionKey().getStartCol();
+    IntIntVectorStorage storage = ((IntIntVector) vec).getStorage();
+
+    IntIntsCol col = new IntIntsCol(0, new int[rows.length]);
+    if(storage.isDense()) {
+      int [] indices = storage.getIndices();
+      for(int i = 0; i < indices.length; i++) {
+        col.colId = indices[i] + indexOffset;
+        for(int j = 0; j < rows.length; j++) {
+          col.colElems[j] = ((ServerIntIntRow)(rows[j])).get(col.colId);
+        }
+        save(col, output);
+      }
+    } else {
+      ObjectIterator<Int2IntMap.Entry> iter = storage.entryIterator();
+      while(iter.hasNext()) {
+        col.colId = iter.next().getIntKey() + indexOffset;
+        for(int j = 0; j < rows.length; j++) {
+          col.colElems[j] = ((ServerIntIntRow)(rows[j])).get(col.colId);
+        }
+        save(col, output);
+      }
+    }
+  }
+
+  private void saveIntLongRows(ServerPartition part, ServerRow [] rows, MatrixPartitionMeta partMeta,
+    PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
+    Vector vec = rows[0].getSplit();
+    //int size = rows.size();
+    int indexOffset = (int)part.getPartitionKey().getStartCol();
+    IntLongVectorStorage storage = ((IntLongVector) vec).getStorage();
+
+    IntLongsCol col = new IntLongsCol(0, new long[rows.length]);
+    if(storage.isDense()) {
+      int [] indices = storage.getIndices();
+      for(int i = 0; i < indices.length; i++) {
+        col.colId = indices[i] + indexOffset;
+        for(int j = 0; j < rows.length; j++) {
+          col.colElems[j] = ((ServerIntLongRow)(rows[j])).get(col.colId);
+        }
+        save(col, output);
+      }
+    } else {
+      ObjectIterator<Int2LongMap.Entry> iter = storage.entryIterator();
+      while(iter.hasNext()) {
+        col.colId = iter.next().getIntKey() + indexOffset;
+        for(int j = 0; j < rows.length; j++) {
+          col.colElems[j] = ((ServerIntLongRow)(rows[j])).get(col.colId);
+        }
+        save(col, output);
+      }
+    }
+  }
+
+  private void saveLongFloatRows(ServerPartition part, ServerRow [] rows, MatrixPartitionMeta partMeta,
+    PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
+    Vector vec = rows[0].getSplit();
+    //int size = rows.size();
+    long indexOffset = part.getPartitionKey().getStartCol();
+
+    LongFloatsCol col = new LongFloatsCol(0, new float[rows.length]);
+    if(vec instanceof IntFloatVector) {
+      IntFloatVectorStorage storage = ((IntFloatVector) vec).getStorage();
+      if(storage.isDense()) {
+        int [] indices = storage.getIndices();
+        for(int i = 0; i < indices.length; i++) {
+          col.colId = indices[i] + indexOffset;
+          for(int j = 0; j < rows.length; j++) {
+            col.colElems[j] = ((ServerLongFloatRow)(rows[j])).get(col.colId);
+          }
+          save(col, output);
+        }
+      } else {
+        ObjectIterator<Int2FloatMap.Entry> iter = storage.entryIterator();
+        while(iter.hasNext()) {
+          col.colId = iter.next().getIntKey() + indexOffset;
+          for(int j = 0; j < rows.length; j++) {
+            col.colElems[j] = ((ServerLongFloatRow)(rows[j])).get(col.colId);
+          }
+          save(col, output);
+        }
+      }
+    } else {
+      LongFloatVectorStorage storage = ((LongFloatVector) vec).getStorage();
+      ObjectIterator<Long2FloatMap.Entry> iter = storage.entryIterator();
+      while(iter.hasNext()) {
+        col.colId = iter.next().getLongKey() + indexOffset;
+        for(int j = 0; j < rows.length; j++) {
+          col.colElems[j] = ((ServerLongFloatRow)(rows[j])).get(col.colId);
+        }
+        save(col, output);
+      }
+    }
+  }
+
+  private void saveLongDoubleRows(ServerPartition part, ServerRow [] rows, MatrixPartitionMeta partMeta,
+    PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
+    Vector vec = rows[0].getSplit();
+    //int size = rows.size();
+    long indexOffset = part.getPartitionKey().getStartCol();
+
+    LongDoublesCol col = new LongDoublesCol(0, new double[rows.length]);
+    if(vec instanceof IntDoubleVector) {
+      IntDoubleVectorStorage storage = ((IntDoubleVector) vec).getStorage();
+      if(storage.isDense()) {
+        int [] indices = storage.getIndices();
+        for(int i = 0; i < indices.length; i++) {
+          col.colId = indices[i] + indexOffset;
+          for(int j = 0; j < rows.length; j++) {
+            col.colElems[j] = ((ServerLongDoubleRow)(rows[j])).get(col.colId);
+          }
+          save(col, output);
+        }
+      } else {
+        ObjectIterator<Int2DoubleMap.Entry> iter = storage.entryIterator();
+        while(iter.hasNext()) {
+          col.colId = iter.next().getIntKey() + indexOffset;
+          for(int j = 0; j < rows.length; j++) {
+            col.colElems[j] = ((ServerLongDoubleRow)(rows[j])).get(col.colId);
+          }
+          save(col, output);
+        }
+      }
+    } else {
+      LongDoubleVectorStorage storage = ((LongDoubleVector) vec).getStorage();
+      ObjectIterator<Long2DoubleMap.Entry> iter = storage.entryIterator();
+      while(iter.hasNext()) {
+        col.colId = iter.next().getLongKey() + indexOffset;
+        for(int j = 0; j < rows.length; j++) {
+          col.colElems[j] = ((ServerLongDoubleRow)(rows[j])).get(col.colId);
+        }
+        save(col, output);
+      }
+    }
+  }
+
+  private void saveLongIntRows(ServerPartition part, ServerRow [] rows, MatrixPartitionMeta partMeta,
+    PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
+    Vector vec = rows[0].getSplit();
+    //int size = rows.size();
+    long indexOffset = part.getPartitionKey().getStartCol();
+
+    LongIntsCol col = new LongIntsCol(0, new int[rows.length]);
+    if(vec instanceof IntIntVector) {
+      IntIntVectorStorage storage = ((IntIntVector) vec).getStorage();
+      if(storage.isDense()) {
+        int [] indices = storage.getIndices();
+        for(int i = 0; i < indices.length; i++) {
+          col.colId = indices[i] + indexOffset;
+          for(int j = 0; j < rows.length; j++) {
+            col.colElems[j] = ((ServerLongIntRow)(rows[j])).get(col.colId);
+          }
+          save(col, output);
+        }
+      } else {
+        ObjectIterator<Int2IntMap.Entry> iter = storage.entryIterator();
+        while(iter.hasNext()) {
+          col.colId = iter.next().getIntKey() + indexOffset;
+          for(int j = 0; j < rows.length; j++) {
+            col.colElems[j] = ((ServerLongIntRow)(rows[j])).get(col.colId);
+          }
+          save(col, output);
+        }
+      }
+    } else {
+      LongIntVectorStorage storage = ((LongIntVector) vec).getStorage();
+      ObjectIterator<Long2IntMap.Entry> iter = storage.entryIterator();
+      while(iter.hasNext()) {
+        col.colId = iter.next().getLongKey() + indexOffset;
+        for(int j = 0; j < rows.length; j++) {
+          col.colElems[j] = ((ServerLongIntRow)(rows[j])).get(col.colId);
+        }
+        save(col, output);
+      }
+    }
+  }
+
+  private void saveLongLongRows(ServerPartition part, ServerRow [] rows, MatrixPartitionMeta partMeta,
+    PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
+    Vector vec = rows[0].getSplit();
+    //int size = rows.size();
+    long indexOffset = part.getPartitionKey().getStartCol();
+
+    LongLongsCol col = new LongLongsCol(0, new long[rows.length]);
+    if(vec instanceof IntLongVector) {
+      IntLongVectorStorage storage = ((IntLongVector) vec).getStorage();
+      if(storage.isDense()) {
+        int [] indices = storage.getIndices();
+        for(int i = 0; i < indices.length; i++) {
+          col.colId = indices[i] + indexOffset;
+          for(int j = 0; j < rows.length; j++) {
+            col.colElems[j] = ((ServerLongLongRow)(rows[j])).get(col.colId);
+          }
+          save(col, output);
+        }
+      } else {
+        ObjectIterator<Int2LongMap.Entry> iter = storage.entryIterator();
+        while(iter.hasNext()) {
+          col.colId = iter.next().getIntKey() + indexOffset;
+          for(int j = 0; j < rows.length; j++) {
+            col.colElems[j] = ((ServerLongLongRow)(rows[j])).get(col.colId);
+          }
+          save(col, output);
+        }
+      }
+    } else {
+      LongLongVectorStorage storage = ((LongLongVector) vec).getStorage();
+      ObjectIterator<Long2LongMap.Entry> iter = storage.entryIterator();
+      while(iter.hasNext()) {
+        col.colId = iter.next().getLongKey() + indexOffset;
+        for(int j = 0; j < rows.length; j++) {
+          col.colElems[j] = ((ServerLongLongRow)(rows[j])).get(col.colId);
+        }
+        save(col, output);
+      }
+    }
+  }
+
+  private void loadIntFloatRows(ServerPartition part, ServerRow [] rows, MatrixPartitionMeta partMeta,
+    PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
+    int saveColNum = partMeta.getSaveColNum();
+    int saveElemNum = partMeta.getSaveColElemNum();
+    IntFloatsCol col = new IntFloatsCol(0, new float[saveElemNum]);
+
+    for(int i = 0; i < saveColNum; i++) {
+      load(col, input);
+      for(int j = 0; j < saveElemNum; j++) {
+        ((ServerIntFloatRow)rows[j]).set(col.colId, col.colElems[j]);
+      }
+    }
+  }
+
+  private void loadIntDoubleRows(ServerPartition part, ServerRow [] rows, MatrixPartitionMeta partMeta,
+    PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
+    int saveColNum = partMeta.getSaveColNum();
+    int saveElemNum = partMeta.getSaveColElemNum();
+    IntDoublesCol col = new IntDoublesCol(0, new double[saveElemNum]);
+
+    for(int i = 0; i < saveColNum; i++) {
+      load(col, input);
+      for(int j = 0; j < saveElemNum; j++) {
+        ((ServerIntDoubleRow)rows[j]).set(col.colId, col.colElems[j]);
+      }
+    }
+  }
+
+  private void loadIntIntRows(ServerPartition part, ServerRow [] rows, MatrixPartitionMeta partMeta,
+    PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
+    int saveColNum = partMeta.getSaveColNum();
+    int saveElemNum = partMeta.getSaveColElemNum();
+    IntIntsCol col = new IntIntsCol(0, new int[saveElemNum]);
+
+    for(int i = 0; i < saveColNum; i++) {
+      load(col, input);
+      for(int j = 0; j < saveElemNum; j++) {
+        ((ServerIntIntRow)rows[j]).set(col.colId, col.colElems[j]);
+      }
+    }
+  }
+
+  private void loadIntLongRows(ServerPartition part, ServerRow [] rows, MatrixPartitionMeta partMeta,
+    PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
+    int saveColNum = partMeta.getSaveColNum();
+    int saveElemNum = partMeta.getSaveColElemNum();
+    IntLongsCol col = new IntLongsCol(0, new long[saveElemNum]);
+
+    for(int i = 0; i < saveColNum; i++) {
+      load(col, input);
+      for(int j = 0; j < saveElemNum; j++) {
+        ((ServerIntLongRow)rows[j]).set(col.colId, col.colElems[j]);
+      }
+    }
+  }
+
+  private void loadLongFloatRows(ServerPartition part, ServerRow [] rows, MatrixPartitionMeta partMeta,
+    PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
+    int saveColNum = partMeta.getSaveColNum();
+    int saveElemNum = partMeta.getSaveColElemNum();
+    LongFloatsCol col = new LongFloatsCol(0, new float[saveElemNum]);
+
+    for(int i = 0; i < saveColNum; i++) {
+      load(col, input);
+      for(int j = 0; j < saveElemNum; j++) {
+        ((ServerLongFloatRow)rows[j]).set(col.colId, col.colElems[j]);
+      }
+    }
+  }
+
+  private void loadLongDoubleRows(ServerPartition part, ServerRow [] rows, MatrixPartitionMeta partMeta,
+    PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
+    int saveColNum = partMeta.getSaveColNum();
+    int saveElemNum = partMeta.getSaveColElemNum();
+    LongDoublesCol col = new LongDoublesCol(0, new double[saveElemNum]);
+
+    for(int i = 0; i < saveColNum; i++) {
+      load(col, input);
+      for(int j = 0; j < saveElemNum; j++) {
+        ((ServerLongDoubleRow)rows[j]).set(col.colId, col.colElems[j]);
+      }
+    }
+  }
+
+  private void loadLongIntRows(ServerPartition part, ServerRow [] rows, MatrixPartitionMeta partMeta,
+    PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
+    int saveColNum = partMeta.getSaveColNum();
+    int saveElemNum = partMeta.getSaveColElemNum();
+    LongIntsCol col = new LongIntsCol(0, new int[saveElemNum]);
+
+    for(int i = 0; i < saveColNum; i++) {
+      load(col, input);
+      for(int j = 0; j < saveElemNum; j++) {
+        ((ServerLongIntRow)rows[j]).set(col.colId, col.colElems[j]);
+      }
+    }
+  }
+
+  private void loadLongLongRows(ServerPartition part, ServerRow [] rows, MatrixPartitionMeta partMeta,
+    PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
+    int saveColNum = partMeta.getSaveColNum();
+    int saveElemNum = partMeta.getSaveColElemNum();
+    LongLongsCol col = new LongLongsCol(0, new long[saveElemNum]);
+
+    for(int i = 0; i < saveColNum; i++) {
+      load(col, input);
+      for(int j = 0; j < saveElemNum; j++) {
+        ((ServerLongLongRow)rows[j]).set(col.colId, col.colElems[j]);
+      }
+    }
+  }
+}
