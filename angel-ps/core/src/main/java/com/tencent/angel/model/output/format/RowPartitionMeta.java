@@ -44,15 +44,32 @@ public class RowPartitionMeta {
   private int elementNum;
 
   /**
+   * Save type: 0 dense, 1 sparse. just for SnapshotFormat now
+   */
+  private int saveType;
+
+  /**
+   * Create meta for row split
+   * @param rowId row split
+   * @param offset data offset in the saved file
+   * @param elementNum save element number
+   * @param saveType save type : 0 dense, 1 sparse
+   */
+  public RowPartitionMeta(int rowId, long offset, int elementNum, int saveType) {
+    this.rowId = rowId;
+    this.offset = offset;
+    this.elementNum = elementNum;
+    this.saveType = saveType;
+  }
+
+  /**
    * Create meta for row split
    * @param rowId row split
    * @param offset data offset in the saved file
    * @param elementNum save element number
    */
   public RowPartitionMeta(int rowId, long offset, int elementNum) {
-    this.rowId = rowId;
-    this.offset = offset;
-    this.elementNum = elementNum;
+    this(rowId, offset, elementNum, 0);
   }
 
   /**
@@ -64,6 +81,7 @@ public class RowPartitionMeta {
     output.writeInt(rowId);
     output.writeLong(offset);
     output.writeInt(elementNum);
+    output.writeInt(saveType);
   }
 
   /**
@@ -75,6 +93,7 @@ public class RowPartitionMeta {
     rowId = input.readInt();
     offset = input.readLong();
     elementNum = input.readInt();
+    saveType = input.readInt();
   }
 
   /**
@@ -87,6 +106,7 @@ public class RowPartitionMeta {
     rowJsonObject.put("rowId", rowId);
     rowJsonObject.put("offset", offset);
     rowJsonObject.put("elementNum", elementNum);
+    rowJsonObject.put("saveType", saveType);
   }
 
   /**
@@ -99,6 +119,7 @@ public class RowPartitionMeta {
     rowId = jsonObject.getInt("rowId");
     offset = jsonObject.getInt("offset");
     elementNum = jsonObject.getInt("elementNum");
+    saveType = jsonObject.getInt("saveType");
   }
 
   /**
@@ -148,6 +169,23 @@ public class RowPartitionMeta {
   public void setElementNum(int elementNum) {
     this.elementNum = elementNum;
   }
+
+  /**
+   * Get save type
+   * @return save type
+   */
+  public int getSaveType() {
+    return saveType;
+  }
+
+  /**
+   * Set save type
+   * @param saveType save type
+   */
+  public void setSaveType(int saveType) {
+    this.saveType = saveType;
+  }
+
 
   @Override public String toString() {
     return "RowPartitionMeta{" + "rowId=" + rowId + ", offset=" + offset + ", elementNum="
