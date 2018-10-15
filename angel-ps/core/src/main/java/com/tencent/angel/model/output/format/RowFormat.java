@@ -339,10 +339,14 @@ public abstract class RowFormat extends MatrixFormatImpl {
     DataOutputStream out) throws IOException {
     int startCol = (int) meta.getStartCol();
     IntFloatVector vector = (IntFloatVector) row.getSplit();
+    IntFloatElement element = new IntFloatElement();
     if (vector.isDense()) {
       float[] data = vector.getStorage().getValues();
       for (int i = 0; i < data.length; i++) {
-        save(new IntFloatElement(row.getRowId(), startCol + i, data[i]), out);
+        element.rowId = row.getRowId();
+        element.colId = startCol + i;
+        element.value = data[i];
+        save(element, out);
       }
     } else {
       if (saveContext.sortFirst()) {
@@ -350,15 +354,134 @@ public abstract class RowFormat extends MatrixFormatImpl {
         float[] values = vector.getStorage().getValues();
         Sort.quickSort(indices, values, 0, indices.length - 1);
         for (int i = 0; i < indices.length; i++) {
-          save(new IntFloatElement(row.getRowId(), indices[i] + startCol, values[i]), out);
+          element.rowId = row.getRowId();
+          element.colId = indices[i] + startCol;
+          element.value = values[i];
+          save(element, out);
         }
       } else {
         ObjectIterator<Int2FloatMap.Entry> iter = vector.getStorage().entryIterator();
         Int2FloatMap.Entry entry;
         while (iter.hasNext()) {
           entry = iter.next();
-          save(new IntFloatElement(row.getRowId(), entry.getIntKey() + startCol,
-            entry.getFloatValue()), out);
+          element.rowId = row.getRowId();
+          element.colId = entry.getIntKey() + startCol;
+          element.value = entry.getFloatValue();
+          save(element, out);
+        }
+      }
+    }
+  }
+
+  private void save(ServerIntDoubleRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
+    DataOutputStream out) throws IOException {
+    int startCol = (int) meta.getStartCol();
+    IntDoubleVector vector = (IntDoubleVector) row.getSplit();
+    IntDoubleElement element = new IntDoubleElement();
+    if (vector.isDense()) {
+      double[] data = vector.getStorage().getValues();
+      for (int i = 0; i < data.length; i++) {
+        element.rowId = row.getRowId();
+        element.colId = startCol + i;
+        element.value = data[i];
+        save(element, out);
+      }
+    } else {
+      if (saveContext.sortFirst()) {
+        int[] indices = vector.getStorage().getIndices();
+        double[] values = vector.getStorage().getValues();
+        Sort.quickSort(indices, values, 0, indices.length - 1);
+        for (int i = 0; i < indices.length; i++) {
+          element.rowId = row.getRowId();
+          element.colId = indices[i] + startCol;
+          element.value = values[i];
+          save(element, out);
+        }
+      } else {
+        ObjectIterator<Int2DoubleMap.Entry> iter = vector.getStorage().entryIterator();
+        Int2DoubleMap.Entry entry;
+        while (iter.hasNext()) {
+          entry = iter.next();
+          element.rowId = row.getRowId();
+          element.colId = entry.getIntKey() + startCol;
+          element.value = entry.getDoubleValue();
+          save(element, out);
+        }
+      }
+    }
+  }
+
+  private void save(ServerIntIntRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
+    DataOutputStream out) throws IOException {
+    int startCol = (int) meta.getStartCol();
+    IntIntVector vector = (IntIntVector) row.getSplit();
+    IntIntElement element = new IntIntElement();
+    if (vector.isDense()) {
+      int[] data = vector.getStorage().getValues();
+      for (int i = 0; i < data.length; i++) {
+        element.rowId = row.getRowId();
+        element.colId = startCol + i;
+        element.value = data[i];
+        save(element, out);
+      }
+    } else {
+      if (saveContext.sortFirst()) {
+        int[] indices = vector.getStorage().getIndices();
+        int[] values = vector.getStorage().getValues();
+        Sort.quickSort(indices, values, 0, indices.length - 1);
+        for (int i = 0; i < indices.length; i++) {
+          element.rowId = row.getRowId();
+          element.colId = indices[i] + startCol;
+          element.value = values[i];
+          save(element, out);
+        }
+      } else {
+        ObjectIterator<Int2IntMap.Entry> iter = vector.getStorage().entryIterator();
+        Int2IntMap.Entry entry;
+        while (iter.hasNext()) {
+          entry = iter.next();
+          element.rowId = row.getRowId();
+          element.colId = entry.getIntKey() + startCol;
+          element.value = entry.getIntValue();
+          save(element, out);
+        }
+      }
+    }
+  }
+
+  private void save(ServerIntLongRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
+    DataOutputStream out) throws IOException {
+    int startCol = (int) meta.getStartCol();
+    IntLongVector vector = (IntLongVector) row.getSplit();
+    IntLongElement element = new IntLongElement();
+    if (vector.isDense()) {
+      long[] data = vector.getStorage().getValues();
+      for (int i = 0; i < data.length; i++) {
+        element.rowId = row.getRowId();
+        element.colId = startCol + i;
+        element.value = data[i];
+        save(element, out);
+      }
+    } else {
+      if (saveContext.sortFirst()) {
+        int[] indices = vector.getStorage().getIndices();
+        long[] values = vector.getStorage().getValues();
+        Sort.quickSort(indices, values, 0, indices.length - 1);
+        for (int i = 0; i < indices.length; i++) {
+          element.rowId = row.getRowId();
+          element.colId = indices[i] + startCol;
+          element.value = values[i];
+          save(element, out);
+        }
+      } else {
+        ObjectIterator<Int2LongMap.Entry> iter = vector.getStorage().entryIterator();
+        Int2LongMap.Entry entry;
+        while (iter.hasNext()) {
+          entry = iter.next();
+          element.rowId = row.getRowId();
+          element.colId = entry.getIntKey() + startCol;
+          element.value = entry.getLongValue();
+          save(element, out);
         }
       }
     }
@@ -367,12 +490,16 @@ public abstract class RowFormat extends MatrixFormatImpl {
   private void save(ServerLongDoubleRow row, PSMatrixSaveContext saveContext,
     MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     long startCol = meta.getStartCol();
+    LongDoubleElement element = new LongDoubleElement();
     if (row.getSplit() instanceof IntDoubleVector) {
       IntDoubleVector vector = (IntDoubleVector) row.getSplit();
       if (vector.isDense()) {
         double[] data = vector.getStorage().getValues();
         for (int i = 0; i < data.length; i++) {
-          save(new LongDoubleElement(row.getRowId(), startCol + i, data[i]), out);
+          element.rowId = row.getRowId();
+          element.colId = startCol + i;
+          element.value = data[i];
+          save(element, out);
         }
       } else {
         if (saveContext.sortFirst()) {
@@ -380,15 +507,20 @@ public abstract class RowFormat extends MatrixFormatImpl {
           double[] values = vector.getStorage().getValues();
           Sort.quickSort(indices, values, 0, indices.length - 1);
           for (int i = 0; i < indices.length; i++) {
-            save(new LongDoubleElement(row.getRowId(), indices[i] + startCol, values[i]), out);
+            element.rowId = row.getRowId();
+            element.colId = indices[i] + startCol;
+            element.value = values[i];
+            save(element, out);
           }
         } else {
           ObjectIterator<Int2DoubleMap.Entry> iter = vector.getStorage().entryIterator();
           Int2DoubleMap.Entry entry;
           while (iter.hasNext()) {
             entry = iter.next();
-            save(new LongDoubleElement(row.getRowId(), entry.getIntKey() + startCol,
-              entry.getDoubleValue()), out);
+            element.rowId = row.getRowId();
+            element.colId = entry.getIntKey() + startCol;
+            element.value = entry.getDoubleValue();
+            save(element, out);
           }
         }
       }
@@ -399,74 +531,20 @@ public abstract class RowFormat extends MatrixFormatImpl {
         double[] values = vector.getStorage().getValues();
         Sort.quickSort(indices, values, 0, indices.length - 1);
         for (int i = 0; i < indices.length; i++) {
-          save(new LongDoubleElement(row.getRowId(), indices[i] + startCol, values[i]), out);
+          element.rowId = row.getRowId();
+          element.colId = indices[i] + startCol;
+          element.value = values[i];
+          save(element, out);
         }
       } else {
         ObjectIterator<Long2DoubleMap.Entry> iter = vector.getStorage().entryIterator();
         Long2DoubleMap.Entry entry;
         while (iter.hasNext()) {
           entry = iter.next();
-          save(new LongDoubleElement(row.getRowId(), entry.getLongKey() + startCol,
-            entry.getDoubleValue()), out);
-        }
-      }
-    }
-  }
-
-  private void save(ServerIntIntRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
-    DataOutputStream out) throws IOException {
-    int startCol = (int) meta.getStartCol();
-    IntIntVector vector = (IntIntVector) row.getSplit();
-    if (vector.isDense()) {
-      int[] data = vector.getStorage().getValues();
-      for (int i = 0; i < data.length; i++) {
-        save(new IntIntElement(row.getRowId(), startCol + i, data[i]), out);
-      }
-    } else {
-      if (saveContext.sortFirst()) {
-        int[] indices = vector.getStorage().getIndices();
-        int[] values = vector.getStorage().getValues();
-        Sort.quickSort(indices, values, 0, indices.length - 1);
-        for (int i = 0; i < indices.length; i++) {
-          save(new IntIntElement(row.getRowId(), indices[i] + startCol, values[i]), out);
-        }
-      } else {
-        ObjectIterator<Int2IntMap.Entry> iter = vector.getStorage().entryIterator();
-        Int2IntMap.Entry entry;
-        while (iter.hasNext()) {
-          entry = iter.next();
-          save(new IntIntElement(row.getRowId(), entry.getIntKey() + startCol, entry.getIntValue()),
-            out);
-        }
-      }
-    }
-  }
-
-  private void save(ServerIntLongRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
-    DataOutputStream out) throws IOException {
-    int startCol = (int) meta.getStartCol();
-    IntLongVector vector = (IntLongVector) row.getSplit();
-    if (vector.isDense()) {
-      long[] data = vector.getStorage().getValues();
-      for (int i = 0; i < data.length; i++) {
-        save(new IntLongElement(row.getRowId(), startCol + i, data[i]), out);
-      }
-    } else {
-      if (saveContext.sortFirst()) {
-        int[] indices = vector.getStorage().getIndices();
-        long[] values = vector.getStorage().getValues();
-        Sort.quickSort(indices, values, 0, indices.length - 1);
-        for (int i = 0; i < indices.length; i++) {
-          save(new IntLongElement(row.getRowId(), indices[i] + startCol, values[i]), out);
-        }
-      } else {
-        ObjectIterator<Int2LongMap.Entry> iter = vector.getStorage().entryIterator();
-        Int2LongMap.Entry entry;
-        while (iter.hasNext()) {
-          entry = iter.next();
-          save(
-            new IntLongElement(row.getRowId(), entry.getIntKey() + startCol, entry.getLongValue()),
-            out);
+          element.rowId = row.getRowId();
+          element.colId = entry.getLongKey() + startCol;
+          element.value = entry.getDoubleValue();
+          save(element, out);
         }
       }
     }
@@ -475,12 +553,16 @@ public abstract class RowFormat extends MatrixFormatImpl {
   private void save(ServerLongFloatRow row, PSMatrixSaveContext saveContext,
     MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     long startCol = meta.getStartCol();
+    LongFloatElement element = new LongFloatElement();
     if (row.getSplit() instanceof IntFloatVector) {
       IntFloatVector vector = (IntFloatVector) row.getSplit();
       if (vector.isDense()) {
         float[] data = vector.getStorage().getValues();
         for (int i = 0; i < data.length; i++) {
-          save(new LongFloatElement(row.getRowId(), startCol + i, data[i]), out);
+          element.rowId = row.getRowId();
+          element.colId = startCol + i;
+          element.value = data[i];
+          save(element, out);
         }
       } else {
         if (saveContext.sortFirst()) {
@@ -488,15 +570,20 @@ public abstract class RowFormat extends MatrixFormatImpl {
           float[] values = vector.getStorage().getValues();
           Sort.quickSort(indices, values, 0, indices.length - 1);
           for (int i = 0; i < indices.length; i++) {
-            save(new LongFloatElement(row.getRowId(), indices[i] + startCol, values[i]), out);
+            element.rowId = row.getRowId();
+            element.colId = indices[i] + startCol;
+            element.value = values[i];
+            save(element, out);
           }
         } else {
           ObjectIterator<Int2FloatMap.Entry> iter = vector.getStorage().entryIterator();
           Int2FloatMap.Entry entry;
           while (iter.hasNext()) {
             entry = iter.next();
-            save(new LongFloatElement(row.getRowId(), entry.getIntKey() + startCol,
-              entry.getFloatValue()), out);
+            element.rowId = row.getRowId();
+            element.colId = entry.getIntKey() + startCol;
+            element.value = entry.getFloatValue();
+            save(element, out);
           }
         }
       }
@@ -507,78 +594,39 @@ public abstract class RowFormat extends MatrixFormatImpl {
         float[] values = vector.getStorage().getValues();
         Sort.quickSort(indices, values, 0, indices.length - 1);
         for (int i = 0; i < indices.length; i++) {
-          save(new LongFloatElement(row.getRowId(), indices[i] + startCol, values[i]), out);
+          element.rowId = row.getRowId();
+          element.colId = indices[i] + startCol;
+          element.value = values[i];
+          save(element, out);
         }
       } else {
         ObjectIterator<Long2FloatMap.Entry> iter = vector.getStorage().entryIterator();
         Long2FloatMap.Entry entry;
         while (iter.hasNext()) {
           entry = iter.next();
-          save(new LongFloatElement(row.getRowId(), entry.getLongKey() + startCol,
-            entry.getFloatValue()), out);
+          element.rowId = row.getRowId();
+          element.colId = entry.getLongKey() + startCol;
+          element.value = entry.getFloatValue();
+          save(element, out);
         }
       }
     }
   }
 
-  private void save(ServerIntDoubleRow row, PSMatrixSaveContext saveContext,
-    MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
-    long startCol = meta.getStartCol();
-    if (row.getSplit() instanceof IntDoubleVector) {
-      IntDoubleVector vector = (IntDoubleVector) row.getSplit();
-      if (vector.isDense()) {
-        double[] data = vector.getStorage().getValues();
-        for (int i = 0; i < data.length; i++) {
-          save(new LongDoubleElement(row.getRowId(), startCol + i, data[i]), out);
-        }
-      } else {
-        if (saveContext.sortFirst()) {
-          int[] indices = vector.getStorage().getIndices();
-          double[] values = vector.getStorage().getValues();
-          Sort.quickSort(indices, values, 0, indices.length - 1);
-          for (int i = 0; i < indices.length; i++) {
-            save(new LongDoubleElement(row.getRowId(), indices[i] + startCol, values[i]), out);
-          }
-        } else {
-          ObjectIterator<Int2DoubleMap.Entry> iter = vector.getStorage().entryIterator();
-          Int2DoubleMap.Entry entry;
-          while (iter.hasNext()) {
-            entry = iter.next();
-            save(new LongDoubleElement(row.getRowId(), entry.getIntKey() + startCol,
-              entry.getDoubleValue()), out);
-          }
-        }
-      }
-    } else {
-      LongDoubleVector vector = (LongDoubleVector) row.getSplit();
-      if (saveContext.sortFirst()) {
-        long[] indices = vector.getStorage().getIndices();
-        double[] values = vector.getStorage().getValues();
-        Sort.quickSort(indices, values, 0, indices.length - 1);
-        for (int i = 0; i < indices.length; i++) {
-          save(new LongDoubleElement(row.getRowId(), indices[i] + startCol, values[i]), out);
-        }
-      } else {
-        ObjectIterator<Long2DoubleMap.Entry> iter = vector.getStorage().entryIterator();
-        Long2DoubleMap.Entry entry;
-        while (iter.hasNext()) {
-          entry = iter.next();
-          save(new LongDoubleElement(row.getRowId(), entry.getLongKey() + startCol,
-            entry.getDoubleValue()), out);
-        }
-      }
-    }
-  }
 
   private void save(ServerLongIntRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
     DataOutputStream out) throws IOException {
     long startCol = meta.getStartCol();
+    LongIntElement element = new LongIntElement();
     if (row.getSplit() instanceof IntIntVector) {
       IntIntVector vector = (IntIntVector) row.getSplit();
       if (vector.isDense()) {
         int[] data = vector.getStorage().getValues();
         for (int i = 0; i < data.length; i++) {
-          save(new LongIntElement(row.getRowId(), startCol + i, data[i]), out);
+          element.rowId = row.getRowId();
+          element.colId = startCol + i;
+          element.value = data[i];
+          save(element, out);
         }
       } else {
         if (saveContext.sortFirst()) {
@@ -586,16 +634,20 @@ public abstract class RowFormat extends MatrixFormatImpl {
           int[] values = vector.getStorage().getValues();
           Sort.quickSort(indices, values, 0, indices.length - 1);
           for (int i = 0; i < indices.length; i++) {
-            save(new LongIntElement(row.getRowId(), indices[i] + startCol, values[i]), out);
+            element.rowId = row.getRowId();
+            element.colId = indices[i] + startCol;
+            element.value = values[i];
+            save(element, out);
           }
         } else {
           ObjectIterator<Int2IntMap.Entry> iter = vector.getStorage().entryIterator();
           Int2IntMap.Entry entry;
           while (iter.hasNext()) {
             entry = iter.next();
-            save(
-              new LongIntElement(row.getRowId(), entry.getIntKey() + startCol, entry.getIntValue()),
-              out);
+            element.rowId = row.getRowId();
+            element.colId = entry.getIntKey() + startCol;
+            element.value = entry.getIntValue();
+            save(element, out);
           }
         }
       }
@@ -606,16 +658,20 @@ public abstract class RowFormat extends MatrixFormatImpl {
         int[] values = vector.getStorage().getValues();
         Sort.quickSort(indices, values, 0, indices.length - 1);
         for (int i = 0; i < indices.length; i++) {
-          save(new LongIntElement(row.getRowId(), indices[i] + startCol, values[i]), out);
+          element.rowId = row.getRowId();
+          element.colId = indices[i] + startCol;
+          element.value = values[i];
+          save(element, out);
         }
       } else {
         ObjectIterator<Long2IntMap.Entry> iter = vector.getStorage().entryIterator();
         Long2IntMap.Entry entry;
         while (iter.hasNext()) {
           entry = iter.next();
-          save(
-            new LongIntElement(row.getRowId(), entry.getLongKey() + startCol, entry.getIntValue()),
-            out);
+          element.rowId = row.getRowId();
+          element.colId = entry.getLongKey() + startCol;
+          element.value = entry.getIntValue();
+          save(element, out);;
         }
       }
     }
@@ -624,12 +680,16 @@ public abstract class RowFormat extends MatrixFormatImpl {
   private void save(ServerLongLongRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
     DataOutputStream out) throws IOException {
     long startCol = meta.getStartCol();
+    LongLongElement element = new LongLongElement();
     if (row.getSplit() instanceof IntLongVector) {
       IntLongVector vector = (IntLongVector) row.getSplit();
       if (vector.isDense()) {
         long[] data = vector.getStorage().getValues();
         for (int i = 0; i < data.length; i++) {
-          save(new LongLongElement(row.getRowId(), startCol + i, data[i]), out);
+          element.rowId = row.getRowId();
+          element.colId = startCol + i;
+          element.value = data[i];
+          save(element, out);
         }
       } else {
         if (saveContext.sortFirst()) {
@@ -637,15 +697,20 @@ public abstract class RowFormat extends MatrixFormatImpl {
           long[] values = vector.getStorage().getValues();
           Sort.quickSort(indices, values, 0, indices.length - 1);
           for (int i = 0; i < indices.length; i++) {
-            save(new LongLongElement(row.getRowId(), indices[i] + startCol, values[i]), out);
+            element.rowId = row.getRowId();
+            element.colId = indices[i] + startCol;
+            element.value = values[i];
+            save(element, out);
           }
         } else {
           ObjectIterator<Int2LongMap.Entry> iter = vector.getStorage().entryIterator();
           Int2LongMap.Entry entry;
           while (iter.hasNext()) {
             entry = iter.next();
-            save(new LongLongElement(row.getRowId(), entry.getIntKey() + startCol,
-              entry.getLongValue()), out);
+            element.rowId = row.getRowId();
+            element.colId = entry.getIntKey() + startCol;
+            element.value = entry.getLongValue();
+            save(element, out);
           }
         }
       }
@@ -656,15 +721,20 @@ public abstract class RowFormat extends MatrixFormatImpl {
         long[] values = vector.getStorage().getValues();
         Sort.quickSort(indices, values, 0, indices.length - 1);
         for (int i = 0; i < indices.length; i++) {
-          save(new LongLongElement(row.getRowId(), indices[i] + startCol, values[i]), out);
+          element.rowId = row.getRowId();
+          element.colId = indices[i] + startCol;
+          element.value = values[i];
+          save(element, out);
         }
       } else {
         ObjectIterator<Long2LongMap.Entry> iter = vector.getStorage().entryIterator();
         Long2LongMap.Entry entry;
         while (iter.hasNext()) {
           entry = iter.next();
-          save(new LongLongElement(row.getRowId(), entry.getLongKey() + startCol,
-            entry.getLongValue()), out);
+          element.rowId = row.getRowId();
+          element.colId = entry.getLongKey() + startCol;
+          element.value = entry.getLongValue();
+          save(element, out);;
         }
       }
     }
@@ -674,8 +744,8 @@ public abstract class RowFormat extends MatrixFormatImpl {
     DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
+    IntFloatElement element = new IntFloatElement();
     for (int i = 0; i < elemNum; i++) {
-      IntFloatElement element = new IntFloatElement();
       load(element, in);
       row.set(element.colId, element.value);
     }
@@ -685,8 +755,8 @@ public abstract class RowFormat extends MatrixFormatImpl {
     MatrixPartitionMeta meta, DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
+    IntDoubleElement element = new IntDoubleElement();
     for (int i = 0; i < elemNum; i++) {
-      IntDoubleElement element = new IntDoubleElement();
       load(element, in);
       row.set(element.colId, element.value);
     }
@@ -696,8 +766,8 @@ public abstract class RowFormat extends MatrixFormatImpl {
     DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
+    IntIntElement element = new IntIntElement();
     for (int i = 0; i < elemNum; i++) {
-      IntIntElement element = new IntIntElement();
       load(element, in);
       row.set(element.colId, element.value);
     }
@@ -707,8 +777,8 @@ public abstract class RowFormat extends MatrixFormatImpl {
     DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
+    IntLongElement element = new IntLongElement();
     for (int i = 0; i < elemNum; i++) {
-      IntLongElement element = new IntLongElement();
       load(element, in);
       row.set(element.colId, element.value);
     }
@@ -718,8 +788,8 @@ public abstract class RowFormat extends MatrixFormatImpl {
     MatrixPartitionMeta meta, DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
+    LongFloatElement element = new LongFloatElement();
     for (int i = 0; i < elemNum; i++) {
-      LongFloatElement element = new LongFloatElement();
       load(element, in);
       row.set(element.colId, element.value);
     }
@@ -729,8 +799,8 @@ public abstract class RowFormat extends MatrixFormatImpl {
     MatrixPartitionMeta meta, DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
+    LongDoubleElement element = new LongDoubleElement();
     for (int i = 0; i < elemNum; i++) {
-      LongDoubleElement element = new LongDoubleElement();
       load(element, in);
       row.set(element.colId, element.value);
     }
@@ -740,8 +810,8 @@ public abstract class RowFormat extends MatrixFormatImpl {
     DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
+    LongIntElement element = new LongIntElement();
     for (int i = 0; i < elemNum; i++) {
-      LongIntElement element = new LongIntElement();
       load(element, in);
       row.set(element.colId, element.value);
     }
@@ -751,8 +821,8 @@ public abstract class RowFormat extends MatrixFormatImpl {
     DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
+    LongLongElement element = new LongLongElement();
     for (int i = 0; i < elemNum; i++) {
-      LongLongElement element = new LongLongElement();
       load(element, in);
       row.set(element.colId, element.value);
     }
