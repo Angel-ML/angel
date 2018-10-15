@@ -71,7 +71,7 @@ class PartitionWrapper(val part: ServerPartition, val partDim: Int, val order: I
   private def getVector(nodeId: Int, isInputVector: Boolean): (Int, Int) = {
     val rowId = nodeId / nodePerRow
     val begin = if (isInputVector || order == 1) (nodeId % nodePerRow) * partDim * order else
-      (nodeId % nodePerRow) + partDim * order + partDim
+      (nodeId % nodePerRow) * partDim * order + partDim
     (rowId, begin)
   }
 }
