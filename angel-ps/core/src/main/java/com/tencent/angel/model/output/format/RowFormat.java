@@ -671,7 +671,7 @@ public abstract class RowFormat extends MatrixFormatImpl {
           element.rowId = row.getRowId();
           element.colId = entry.getLongKey() + startCol;
           element.value = entry.getIntValue();
-          save(element, out);;
+          save(element, out);
         }
       }
     }
@@ -734,7 +734,7 @@ public abstract class RowFormat extends MatrixFormatImpl {
           element.rowId = row.getRowId();
           element.colId = entry.getLongKey() + startCol;
           element.value = entry.getLongValue();
-          save(element, out);;
+          save(element, out);
         }
       }
     }
