@@ -335,8 +335,8 @@ public abstract class RowFormat extends MatrixFormatImpl {
     }
   }
 
-  private void save(ServerIntFloatRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
-    DataOutputStream out) throws IOException {
+  private void save(ServerIntFloatRow row, PSMatrixSaveContext saveContext,
+    MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     int startCol = (int) meta.getStartCol();
     IntFloatVector vector = (IntFloatVector) row.getSplit();
     IntFloatElement element = new IntFloatElement();
@@ -373,8 +373,8 @@ public abstract class RowFormat extends MatrixFormatImpl {
     }
   }
 
-  private void save(ServerIntDoubleRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
-    DataOutputStream out) throws IOException {
+  private void save(ServerIntDoubleRow row, PSMatrixSaveContext saveContext,
+    MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     int startCol = (int) meta.getStartCol();
     IntDoubleVector vector = (IntDoubleVector) row.getSplit();
     IntDoubleElement element = new IntDoubleElement();
@@ -677,8 +677,8 @@ public abstract class RowFormat extends MatrixFormatImpl {
     }
   }
 
-  private void save(ServerLongLongRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
-    DataOutputStream out) throws IOException {
+  private void save(ServerLongLongRow row, PSMatrixSaveContext saveContext,
+    MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     long startCol = meta.getStartCol();
     LongLongElement element = new LongLongElement();
     if (row.getSplit() instanceof IntLongVector) {
@@ -740,8 +740,8 @@ public abstract class RowFormat extends MatrixFormatImpl {
     }
   }
 
-  private void load(ServerIntFloatRow row, PSMatrixLoadContext loadContext, MatrixPartitionMeta meta,
-    DataInputStream in) throws IOException {
+  private void load(ServerIntFloatRow row, PSMatrixLoadContext loadContext,
+    MatrixPartitionMeta meta, DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
     IntFloatElement element = new IntFloatElement();
@@ -817,8 +817,8 @@ public abstract class RowFormat extends MatrixFormatImpl {
     }
   }
 
-  private void load(ServerLongLongRow row, PSMatrixLoadContext loadContext, MatrixPartitionMeta meta,
-    DataInputStream in) throws IOException {
+  private void load(ServerLongLongRow row, PSMatrixLoadContext loadContext,
+    MatrixPartitionMeta meta, DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
     LongLongElement element = new LongLongElement();

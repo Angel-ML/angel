@@ -32,6 +32,6 @@ public class IntFloatElement {
   }
 
   public IntFloatElement() {
-    this(0,0, 0.0f);
+    this(0, 0, 0.0f);
   }
 }

@@ -172,13 +172,15 @@ public class MatrixPartitionMeta {
     int rowIndexNum = input.readInt();
     rowMetas = new LinkedHashMap<>(rowIndexNum);
     for (int i = 0; i < rowIndexNum; i++) {
-      RowPartitionMeta rowMeta = new RowPartitionMeta(input.readInt(), input.readLong(), input.readInt());
+      RowPartitionMeta rowMeta =
+        new RowPartitionMeta(input.readInt(), input.readLong(), input.readInt());
       rowMetas.put(rowMeta.getRowId(), rowMeta);
     }
   }
 
   /**
    * Write matrix partition meta to a Json object
+   *
    * @return json object
    * @throws IOException
    * @throws JSONException
@@ -197,7 +199,7 @@ public class MatrixPartitionMeta {
     jsonObject.put("offset", offset);
     jsonObject.put("length", length);
     Map<Integer, JSONObject> rowJsonMap = new HashMap<>();
-    for(Map.Entry<Integer, RowPartitionMeta> rowMetaEntry : rowMetas.entrySet()) {
+    for (Map.Entry<Integer, RowPartitionMeta> rowMetaEntry : rowMetas.entrySet()) {
       JSONObject rowJsonObject = new JSONObject();
       rowMetaEntry.getValue().write(rowJsonObject);
       rowJsonMap.put(rowMetaEntry.getKey(), rowJsonObject);
@@ -218,12 +220,12 @@ public class MatrixPartitionMeta {
     fileName = jsonObject.getString("fileName");
     offset = jsonObject.getLong("offset");
     length = jsonObject.getLong("length");
-    JSONObject rowMetasJson = (JSONObject)jsonObject.get("rowMetas");
+    JSONObject rowMetasJson = (JSONObject) jsonObject.get("rowMetas");
     Iterator<String> rowKeys = rowMetasJson.keys();
     String key;
-    while(rowKeys.hasNext()) {
+    while (rowKeys.hasNext()) {
       key = rowKeys.next();
-      JSONObject jb = (JSONObject)rowMetasJson.get(key);
+      JSONObject jb = (JSONObject) rowMetasJson.get(key);
       RowPartitionMeta rowMeta = new RowPartitionMeta(-1, -1, -1);
       rowMeta.read(jb);
       rowMetas.put(rowMeta.getRowId(), rowMeta);
@@ -395,6 +397,7 @@ public class MatrixPartitionMeta {
 
   /**
    * Get row meta
+   *
    * @param rowId row id
    * @return row meta
    */
@@ -431,6 +434,7 @@ public class MatrixPartitionMeta {
 
   /**
    * Set the number of saved rows
+   *
    * @param saveRowNum the number of saved rows
    */
   public void setSaveRowNum(int saveRowNum) {
@@ -439,6 +443,7 @@ public class MatrixPartitionMeta {
 
   /**
    * Get saved row number
+   *
    * @return
    */
   public int getSaveRowNum() {
@@ -447,6 +452,7 @@ public class MatrixPartitionMeta {
 
   /**
    * Get save column number
+   *
    * @return save column number
    */
   public int getSaveColNum() {
@@ -455,6 +461,7 @@ public class MatrixPartitionMeta {
 
   /**
    * Set save column number
+   *
    * @param saveColNum save column number
    */
   public void setSaveColNum(int saveColNum) {
@@ -463,6 +470,7 @@ public class MatrixPartitionMeta {
 
   /**
    * Get element number for a column
+   *
    * @return element number for a column
    */
   public int getSaveColElemNum() {
@@ -471,6 +479,7 @@ public class MatrixPartitionMeta {
 
   /**
    * Get element number for a column
+   *
    * @param saveColElemNum element number for a column
    */
   public void setSaveColElemNum(int saveColElemNum) {

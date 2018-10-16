@@ -32,6 +32,6 @@ public class LongLongElement {
   }
 
   public LongLongElement() {
-    this(0,0,0);
+    this(0, 0, 0);
   }
 }

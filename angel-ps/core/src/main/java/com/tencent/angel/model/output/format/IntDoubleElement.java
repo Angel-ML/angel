@@ -32,6 +32,6 @@ public class IntDoubleElement {
   }
 
   public IntDoubleElement() {
-    this(0,0,0.0);
+    this(0, 0, 0.0);
   }
 }

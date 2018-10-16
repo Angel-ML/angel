@@ -24,61 +24,68 @@ import java.io.IOException;
 /**
  * Text format: row id + sep + column id + sep + elememt value
  */
-public class RowIdColIdValueTextRowFormat extends RowFormat{
+public class RowIdColIdValueTextRowFormat extends RowFormat {
   private String sep = ",";
-  @Override public void save(IntFloatElement element, DataOutputStream out)
-    throws IOException {
-    out.writeBytes(String.valueOf(element.rowId) + sep + String.valueOf(element.colId) + sep + String.valueOf(element.value) + "\n");
+
+  @Override public void save(IntFloatElement element, DataOutputStream out) throws IOException {
+    out.writeBytes(
+      String.valueOf(element.rowId) + sep + String.valueOf(element.colId) + sep + String
+        .valueOf(element.value) + "\n");
   }
 
-  @Override public void save(IntDoubleElement element, DataOutputStream out)
-    throws IOException {
-    out.writeBytes(String.valueOf(element.rowId) + sep + String.valueOf(element.colId) + sep + String.valueOf(element.value) + "\n");
+  @Override public void save(IntDoubleElement element, DataOutputStream out) throws IOException {
+    out.writeBytes(
+      String.valueOf(element.rowId) + sep + String.valueOf(element.colId) + sep + String
+        .valueOf(element.value) + "\n");
   }
 
-  @Override public void save(IntIntElement element, DataOutputStream out)
-    throws IOException {
-    out.writeBytes(String.valueOf(element.rowId) + sep + String.valueOf(element.colId) + sep + String.valueOf(element.value) + "\n");
+  @Override public void save(IntIntElement element, DataOutputStream out) throws IOException {
+    out.writeBytes(
+      String.valueOf(element.rowId) + sep + String.valueOf(element.colId) + sep + String
+        .valueOf(element.value) + "\n");
   }
 
-  @Override public void save(IntLongElement element, DataOutputStream out)
-    throws IOException {
-    out.writeBytes(String.valueOf(element.rowId) + sep + String.valueOf(element.colId) + sep + String.valueOf(element.value) + "\n");
+  @Override public void save(IntLongElement element, DataOutputStream out) throws IOException {
+    out.writeBytes(
+      String.valueOf(element.rowId) + sep + String.valueOf(element.colId) + sep + String
+        .valueOf(element.value) + "\n");
   }
 
-  @Override public void save(LongFloatElement element, DataOutputStream out)
-    throws IOException {
-    out.writeBytes(String.valueOf(element.rowId) + sep + String.valueOf(element.colId) + sep + String.valueOf(element.value) + "\n");
+  @Override public void save(LongFloatElement element, DataOutputStream out) throws IOException {
+    out.writeBytes(
+      String.valueOf(element.rowId) + sep + String.valueOf(element.colId) + sep + String
+        .valueOf(element.value) + "\n");
   }
 
-  @Override public void save(LongDoubleElement element, DataOutputStream out)
-    throws IOException {
-    out.writeBytes(String.valueOf(element.rowId) + sep + String.valueOf(element.colId) + sep + String.valueOf(element.value) + "\n");
+  @Override public void save(LongDoubleElement element, DataOutputStream out) throws IOException {
+    out.writeBytes(
+      String.valueOf(element.rowId) + sep + String.valueOf(element.colId) + sep + String
+        .valueOf(element.value) + "\n");
   }
 
-  @Override public void save(LongIntElement element, DataOutputStream out)
-    throws IOException {
-    out.writeBytes(String.valueOf(element.rowId) + sep + String.valueOf(element.colId) + sep + String.valueOf(element.value) + "\n");
+  @Override public void save(LongIntElement element, DataOutputStream out) throws IOException {
+    out.writeBytes(
+      String.valueOf(element.rowId) + sep + String.valueOf(element.colId) + sep + String
+        .valueOf(element.value) + "\n");
   }
 
-  @Override public void save(LongLongElement element, DataOutputStream out)
-    throws IOException {
-    out.writeBytes(String.valueOf(element.rowId) + sep + String.valueOf(element.colId) + sep + String.valueOf(element.value) + "\n");
+  @Override public void save(LongLongElement element, DataOutputStream out) throws IOException {
+    out.writeBytes(
+      String.valueOf(element.rowId) + sep + String.valueOf(element.colId) + sep + String
+        .valueOf(element.value) + "\n");
   }
 
-  @Override public void load(IntFloatElement element, DataInputStream in)
-    throws IOException {
+  @Override public void load(IntFloatElement element, DataInputStream in) throws IOException {
     String line = in.readLine();
-    String [] kv = line.split(sep);
+    String[] kv = line.split(sep);
     element.rowId = Integer.valueOf(kv[0]);
     element.colId = Integer.valueOf(kv[1]);
     element.value = Float.valueOf(kv[2]);
   }
 
-  @Override public void load(IntDoubleElement element, DataInputStream in)
-    throws IOException {
+  @Override public void load(IntDoubleElement element, DataInputStream in) throws IOException {
     String line = in.readLine();
-    String [] kv = line.split(sep);
+    String[] kv = line.split(sep);
     element.rowId = Integer.valueOf(kv[0]);
     element.colId = Integer.valueOf(kv[1]);
     element.value = Double.valueOf(kv[2]);
@@ -86,7 +93,7 @@ public class RowIdColIdValueTextRowFormat extends RowFormat{
 
   @Override public void load(IntIntElement element, DataInputStream in) throws IOException {
     String line = in.readLine();
-    String [] kv = line.split(sep);
+    String[] kv = line.split(sep);
     element.rowId = Integer.valueOf(kv[0]);
     element.colId = Integer.valueOf(kv[1]);
     element.value = Integer.valueOf(kv[2]);
@@ -94,25 +101,23 @@ public class RowIdColIdValueTextRowFormat extends RowFormat{
 
   @Override public void load(IntLongElement element, DataInputStream in) throws IOException {
     String line = in.readLine();
-    String [] kv = line.split(sep);
+    String[] kv = line.split(sep);
     element.rowId = Integer.valueOf(kv[0]);
     element.colId = Integer.valueOf(kv[1]);
     element.value = Long.valueOf(kv[2]);
   }
 
-  @Override public void load(LongFloatElement element, DataInputStream in)
-    throws IOException {
+  @Override public void load(LongFloatElement element, DataInputStream in) throws IOException {
     String line = in.readLine();
-    String [] kv = line.split(sep);
+    String[] kv = line.split(sep);
     element.rowId = Integer.valueOf(kv[0]);
     element.colId = Long.valueOf(kv[1]);
     element.value = Float.valueOf(kv[2]);
   }
 
-  @Override public void load(LongDoubleElement element, DataInputStream in)
-    throws IOException {
+  @Override public void load(LongDoubleElement element, DataInputStream in) throws IOException {
     String line = in.readLine();
-    String [] kv = line.split(sep);
+    String[] kv = line.split(sep);
     element.rowId = Integer.valueOf(kv[0]);
     element.colId = Long.valueOf(kv[1]);
     element.value = Double.valueOf(kv[2]);
@@ -120,16 +125,15 @@ public class RowIdColIdValueTextRowFormat extends RowFormat{
 
   @Override public void load(LongIntElement element, DataInputStream in) throws IOException {
     String line = in.readLine();
-    String [] kv = line.split(sep);
+    String[] kv = line.split(sep);
     element.rowId = Integer.valueOf(kv[0]);
     element.colId = Long.valueOf(kv[1]);
     element.value = Integer.valueOf(kv[2]);
   }
 
-  @Override public void load(LongLongElement element, DataInputStream in)
-    throws IOException {
+  @Override public void load(LongLongElement element, DataInputStream in) throws IOException {
     String line = in.readLine();
-    String [] kv = line.split(sep);
+    String[] kv = line.split(sep);
     element.rowId = Integer.valueOf(kv[0]);
     element.colId = Long.valueOf(kv[1]);
     element.value = Long.valueOf(kv[2]);

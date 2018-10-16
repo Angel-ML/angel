@@ -18,8 +18,6 @@
 
 package com.tencent.angel.model;
 
-import com.tencent.angel.model.output.format.ColIdValueTextRowFormat;
-import com.tencent.angel.model.output.format.RowIdColIdValueBinaryRowFormat;
 import com.tencent.angel.model.output.format.RowIdColIdValueTextRowFormat;
 
 import java.util.ArrayList;
@@ -70,6 +68,7 @@ public class MatrixSaveContext {
    *
    * @param matrixName matrix name
    * @param rowIndexes need save matrix rows
+   * @param formatClassName matrix save format class name
    */
   public MatrixSaveContext(String matrixName, List<Integer> rowIndexes, String formatClassName) {
     this.matrixName = matrixName;

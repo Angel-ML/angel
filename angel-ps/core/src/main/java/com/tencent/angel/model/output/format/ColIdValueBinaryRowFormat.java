@@ -25,62 +25,52 @@ import java.io.IOException;
  * Binary format: column id, element value
  */
 public class ColIdValueBinaryRowFormat extends RowFormat {
-  @Override public void save(IntFloatElement element, DataOutputStream out)
-    throws IOException {
+  @Override public void save(IntFloatElement element, DataOutputStream out) throws IOException {
     out.writeInt(element.colId);
     out.writeFloat(element.value);
   }
 
-  @Override public void save(IntDoubleElement element, DataOutputStream out)
-    throws IOException {
+  @Override public void save(IntDoubleElement element, DataOutputStream out) throws IOException {
     out.writeInt(element.colId);
     out.writeDouble(element.value);
   }
 
-  @Override public void save(IntIntElement element, DataOutputStream out)
-    throws IOException {
+  @Override public void save(IntIntElement element, DataOutputStream out) throws IOException {
     out.writeInt(element.colId);
     out.writeInt(element.value);
   }
 
-  @Override public void save(IntLongElement element, DataOutputStream out)
-    throws IOException {
+  @Override public void save(IntLongElement element, DataOutputStream out) throws IOException {
     out.writeInt(element.colId);
     out.writeLong(element.value);
   }
 
-  @Override public void save(LongFloatElement element, DataOutputStream out)
-    throws IOException {
+  @Override public void save(LongFloatElement element, DataOutputStream out) throws IOException {
     out.writeLong(element.colId);
     out.writeFloat(element.value);
   }
 
-  @Override public void save(LongDoubleElement element, DataOutputStream out)
-    throws IOException {
+  @Override public void save(LongDoubleElement element, DataOutputStream out) throws IOException {
     out.writeLong(element.colId);
     out.writeDouble(element.value);
   }
 
-  @Override public void save(LongIntElement element, DataOutputStream out)
-    throws IOException {
+  @Override public void save(LongIntElement element, DataOutputStream out) throws IOException {
     out.writeLong(element.colId);
     out.writeInt(element.value);
   }
 
-  @Override public void save(LongLongElement element, DataOutputStream out)
-    throws IOException {
+  @Override public void save(LongLongElement element, DataOutputStream out) throws IOException {
     out.writeLong(element.colId);
     out.writeLong(element.value);
   }
 
-  @Override public void load(IntFloatElement element, DataInputStream in)
-    throws IOException {
+  @Override public void load(IntFloatElement element, DataInputStream in) throws IOException {
     element.colId = in.readInt();
     element.value = in.readFloat();
   }
 
-  @Override public void load(IntDoubleElement element, DataInputStream in)
-    throws IOException {
+  @Override public void load(IntDoubleElement element, DataInputStream in) throws IOException {
     element.colId = in.readInt();
     element.value = in.readDouble();
   }
@@ -95,14 +85,12 @@ public class ColIdValueBinaryRowFormat extends RowFormat {
     element.value = in.readLong();
   }
 
-  @Override public void load(LongFloatElement element, DataInputStream in)
-    throws IOException {
+  @Override public void load(LongFloatElement element, DataInputStream in) throws IOException {
     element.colId = in.readLong();
     element.value = in.readFloat();
   }
 
-  @Override public void load(LongDoubleElement element, DataInputStream in)
-    throws IOException {
+  @Override public void load(LongDoubleElement element, DataInputStream in) throws IOException {
     element.colId = in.readLong();
     element.value = in.readDouble();
   }
@@ -112,8 +100,7 @@ public class ColIdValueBinaryRowFormat extends RowFormat {
     element.value = in.readInt();
   }
 
-  @Override public void load(LongLongElement element, DataInputStream in)
-    throws IOException {
+  @Override public void load(LongLongElement element, DataInputStream in) throws IOException {
     element.colId = in.readLong();
     element.value = in.readLong();
   }

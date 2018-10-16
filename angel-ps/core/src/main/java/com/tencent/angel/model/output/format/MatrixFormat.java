@@ -33,23 +33,28 @@ import java.io.IOException;
 public interface MatrixFormat {
   /**
    * Write the ServerMatrix to files
-   * @param matrix the ServerMatrix
+   *
+   * @param matrix      the ServerMatrix
    * @param saveContext save context
    * @throws IOException
    */
-  void save(ServerMatrix matrix, PSMatrixSaveContext saveContext, Configuration conf) throws IOException;
+  void save(ServerMatrix matrix, PSMatrixSaveContext saveContext, Configuration conf)
+    throws IOException;
 
   /**
    * Load the ServerMatrix from files
-   * @param matrix the ServerMatrix
+   *
+   * @param matrix      the ServerMatrix
    * @param loadContext load context
    * @throws IOException
    */
-  void load(ServerMatrix matrix, PSMatrixLoadContext loadContext, Configuration conf) throws IOException;
+  void load(ServerMatrix matrix, PSMatrixLoadContext loadContext, Configuration conf)
+    throws IOException;
 
   /**
    * Write the Matrix to files
-   * @param matrix the ServerMatrix
+   *
+   * @param matrix      the ServerMatrix
    * @param saveContext save context
    * @throws IOException
    */
@@ -57,7 +62,8 @@ public interface MatrixFormat {
 
   /**
    * Load the Matrix from files
-   * @param matrix the ServerMatrix
+   *
+   * @param matrix      the ServerMatrix
    * @param loadContext load context
    * @throws IOException
    */

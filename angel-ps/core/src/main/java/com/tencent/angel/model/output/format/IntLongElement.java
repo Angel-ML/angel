@@ -32,6 +32,6 @@ public class IntLongElement {
   }
 
   public IntLongElement() {
-    this(0,0,0);
+    this(0, 0, 0);
   }
 }

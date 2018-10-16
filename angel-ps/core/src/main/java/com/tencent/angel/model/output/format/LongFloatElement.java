@@ -32,6 +32,6 @@ public class LongFloatElement {
   }
 
   public LongFloatElement() {
-    this(0,0,0.0f);
+    this(0, 0, 0.0f);
   }
 }

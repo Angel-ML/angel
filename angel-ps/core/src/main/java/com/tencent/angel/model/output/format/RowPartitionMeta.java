@@ -50,10 +50,11 @@ public class RowPartitionMeta {
 
   /**
    * Create meta for row split
-   * @param rowId row split
-   * @param offset data offset in the saved file
+   *
+   * @param rowId      row split
+   * @param offset     data offset in the saved file
    * @param elementNum save element number
-   * @param saveType save type : 0 dense, 1 sparse
+   * @param saveType   save type : 0 dense, 1 sparse
    */
   public RowPartitionMeta(int rowId, long offset, int elementNum, int saveType) {
     this.rowId = rowId;
@@ -64,8 +65,9 @@ public class RowPartitionMeta {
 
   /**
    * Create meta for row split
-   * @param rowId row split
-   * @param offset data offset in the saved file
+   *
+   * @param rowId      row split
+   * @param offset     data offset in the saved file
    * @param elementNum save element number
    */
   public RowPartitionMeta(int rowId, long offset, int elementNum) {
@@ -74,6 +76,7 @@ public class RowPartitionMeta {
 
   /**
    * Write row split meta to output stream use binary format
+   *
    * @param output output stream
    * @throws IOException
    */
@@ -86,6 +89,7 @@ public class RowPartitionMeta {
 
   /**
    * Read row split meta from input stream use binary format
+   *
    * @param input input stream
    * @throws IOException
    */
@@ -98,6 +102,7 @@ public class RowPartitionMeta {
 
   /**
    * Write row split meta to a Json object
+   *
    * @return json object
    * @throws IOException
    * @throws JSONException
@@ -111,6 +116,7 @@ public class RowPartitionMeta {
 
   /**
    * Read row split meta from a Json object
+   *
    * @param jsonObject json object
    * @throws IOException
    * @throws JSONException
@@ -124,6 +130,7 @@ public class RowPartitionMeta {
 
   /**
    * Get the row id for the row split
+   *
    * @return row id
    */
   public int getRowId() {
@@ -132,7 +139,8 @@ public class RowPartitionMeta {
 
   /**
    * Set the row id for the row split
-   * @param  rowId row id
+   *
+   * @param rowId row id
    */
   public void setRowId(int rowId) {
     this.rowId = rowId;
@@ -140,6 +148,7 @@ public class RowPartitionMeta {
 
   /**
    * Get the data offset in the saved file for this row split
+   *
    * @return the data offset in the saved file for this row split
    */
   public long getOffset() {
@@ -148,6 +157,7 @@ public class RowPartitionMeta {
 
   /**
    * Set the data offset in the saved file for this row split
+   *
    * @param offset the data offset in the saved file for this row split
    */
   public void setOffset(long offset) {
@@ -156,6 +166,7 @@ public class RowPartitionMeta {
 
   /**
    * Get save element number
+   *
    * @return save element number
    */
   public int getElementNum() {
@@ -164,6 +175,7 @@ public class RowPartitionMeta {
 
   /**
    * Set save element number
+   *
    * @param elementNum save element number
    */
   public void setElementNum(int elementNum) {
@@ -172,6 +184,7 @@ public class RowPartitionMeta {
 
   /**
    * Get save type
+   *
    * @return save type
    */
   public int getSaveType() {
@@ -180,6 +193,7 @@ public class RowPartitionMeta {
 
   /**
    * Set save type
+   *
    * @param saveType save type
    */
   public void setSaveType(int saveType) {

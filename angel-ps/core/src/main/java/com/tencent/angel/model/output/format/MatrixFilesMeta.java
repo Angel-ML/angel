@@ -101,8 +101,8 @@ public class MatrixFilesMeta {
    * @param options    other matrix parameters
    * @param partMetas  partition meta
    */
-  public MatrixFilesMeta(int matrixId, String matrixName, String formatClassName, int rowType, int row, long col,
-    int blockRow, long blockCol, Map<String, String> options,
+  public MatrixFilesMeta(int matrixId, String matrixName, String formatClassName, int rowType,
+    int row, long col, int blockRow, long blockCol, Map<String, String> options,
     Map<Integer, MatrixPartitionMeta> partMetas) {
     this.matrixId = matrixId;
     this.matrixName = matrixName;
@@ -128,8 +128,8 @@ public class MatrixFilesMeta {
    * @param blockCol   column number in a block
    * @param options    other matrix parameters
    */
-  public MatrixFilesMeta(int matrixId, String matrixName, String formatClassName, int rowType, int row, long col,
-    int blockRow, long blockCol, Map<String, String> options) {
+  public MatrixFilesMeta(int matrixId, String matrixName, String formatClassName, int rowType,
+    int row, long col, int blockRow, long blockCol, Map<String, String> options) {
     this(matrixId, matrixName, formatClassName, rowType, row, col, blockRow, blockCol, options,
       new ConcurrentSkipListMap<>());
   }
@@ -243,22 +243,22 @@ public class MatrixFilesMeta {
       blockRow = jsonObject.getInt("blockRow");
       blockCol = jsonObject.getLong("blockCol");
       options = new HashMap<>();
-      JSONObject optObject = (JSONObject)jsonObject.get("options");
+      JSONObject optObject = (JSONObject) jsonObject.get("options");
       Iterator<String> optKeys = optObject.keys();
       String key;
       String value;
-      while(optKeys.hasNext()) {
+      while (optKeys.hasNext()) {
         key = optKeys.next();
         value = optObject.getString(key);
         options.put(key, value);
       }
       partMetas = new TreeMap<>();
-      JSONObject parObject = (JSONObject)jsonObject.get("partMetas");
+      JSONObject parObject = (JSONObject) jsonObject.get("partMetas");
       Iterator<String> parKeys = parObject.keys();
       while (parKeys.hasNext()) {
         key = parKeys.next();
         MatrixPartitionMeta partMeta = new MatrixPartitionMeta();
-        JSONObject jb = (JSONObject)parObject.get(key);
+        JSONObject jb = (JSONObject) parObject.get(key);
         partMeta.read(jb);
         partMetas.put(partMeta.getPartId(), partMeta);
       }
@@ -396,6 +396,7 @@ public class MatrixFilesMeta {
 
   /**
    * Get format class name
+   *
    * @return format class name
    */
   public String getFormatClassName() {
@@ -404,6 +405,7 @@ public class MatrixFilesMeta {
 
   /**
    * Set format class name
+   *
    * @param formatClassName format class name
    */
   public void setFormatClassName(String formatClassName) {

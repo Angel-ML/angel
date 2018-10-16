@@ -41,7 +41,7 @@ public class ModelFilesUtils {
 
   public static MatrixFormat initFormat(String formatClass) throws IOException {
     try {
-      return (MatrixFormat)Class.forName(formatClass).newInstance();
+      return (MatrixFormat) Class.forName(formatClass).newInstance();
     } catch (Throwable e) {
       throw new IOException(e);
     }
