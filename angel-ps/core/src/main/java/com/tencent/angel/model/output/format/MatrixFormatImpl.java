@@ -19,7 +19,11 @@ package com.tencent.angel.model.output.format;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.ml.math2.MFactory;
+import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.matrix.Matrix;
+import com.tencent.angel.ml.math2.matrix.RowBasedMatrix;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.model.MatrixLoadContext;
 import com.tencent.angel.model.MatrixSaveContext;
 import com.tencent.angel.model.PSMatrixLoadContext;
@@ -29,6 +33,9 @@ import com.tencent.angel.ps.storage.matrix.ServerMatrix;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.utils.HdfsUtil;
 import com.tencent.angel.utils.StringUtils;
+import it.unimi.dsi.fastutil.ints.Int2LongMap;
+import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -41,6 +48,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.Vector;
 import java.util.concurrent.RecursiveAction;
 
 /**
@@ -113,10 +121,17 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
     // Write the ps matrix meta to the meta file
     Path metaFile = new Path(matrixFilesPath, ModelFilesConstent.psModelMetaFileName);
     Path tmpMetaFile = HdfsUtil.toTmpPath(metaFile);
-    FSDataOutputStream metaOut = fs.create(tmpMetaFile);
-    psMatrixFilesMeta.write(metaOut);
-    metaOut.flush();
-    metaOut.close();
+    FSDataOutputStream metaOut = null;
+    try {
+      metaOut = fs.create(tmpMetaFile);
+      psMatrixFilesMeta.write(metaOut);
+      metaOut.flush();
+    } finally {
+      if(metaOut != null) {
+        metaOut.close();
+      }
+    }
+
     LOG.info("Rename from " + tmpMetaFile.toString() + " to " + metaFile);
     HdfsUtil.rename(tmpMetaFile, metaFile, fs);
   }
@@ -159,8 +174,13 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
       Path psMetaFilePath = new Path(matrixFilesPath, ModelFilesConstent.psModelMetaFileName);
       if (fs.exists(psMetaFilePath)) {
         FSDataInputStream input = fs.open(psMetaFilePath);
-        psMatrixFilesMeta.read(input);
-        input.close();
+        try {
+          psMatrixFilesMeta.read(input);
+        } catch (Throwable e) {
+          throw new IOException("Read meta failed ", e);
+        } finally {
+          input.close();
+        }
 
         Map<Integer, MatrixPartitionMeta> partIdToFileMetaMap = psMatrixFilesMeta.getPartMetas();
         for (int partId : partitionMaps.keySet()) {
@@ -212,18 +232,250 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
 
   @Override public void save(Matrix matrix, MatrixSaveContext saveContext, Configuration conf)
     throws IOException {
-
+    throw new UnsupportedOperationException("Unsupport now");
   }
 
-  @Override public void load(Matrix matrix, MatrixLoadContext loadContext, Configuration conf)
+  @Override public Matrix load(MatrixLoadContext loadContext, Configuration conf)
     throws IOException {
+    LOG.info("load matrix " + loadContext.getMatrixName() + " from path " + loadContext.getLoadPath());
+    Path matrixFilesPath = new Path(loadContext.getLoadPath());
+    FileSystem fs = matrixFilesPath.getFileSystem(conf);
+    if (!fs.exists(matrixFilesPath)) {
+      throw new IOException("Can not find matrix file path " + loadContext.getLoadPath());
+    }
 
+    // Read matrix meta from meta file
+    Path metaFilePath = new Path(matrixFilesPath, ModelFilesConstent.modelMetaFileName);
+    if(!fs.exists(matrixFilesPath)) {
+      throw new IOException("Can not find meta file for matrix " + loadContext.getMatrixName() + " on path " + loadContext.getLoadPath());
+    }
+    MatrixFilesMeta matrixFilesMeta;
+    FSDataInputStream input = fs.open(metaFilePath);
+    matrixFilesMeta = new MatrixFilesMeta();
+    List<MatrixPartitionMeta> partFileMetas = new ArrayList<>();
+    try {
+      matrixFilesMeta.read(input);
+    } catch (Throwable e) {
+      throw new IOException("Read meta failed ", e);
+    } finally {
+      input.close();
+    }
+    partFileMetas.addAll(matrixFilesMeta.getPartMetas().values());
+
+    // Sort partitions
+    Collections.sort(partFileMetas, new Comparator<MatrixPartitionMeta>() {
+      @Override public int compare(MatrixPartitionMeta p1, MatrixPartitionMeta p2) {
+        if (p1.getFileName().compareTo(p2.getFileName()) < 0) {
+          return -1;
+        } else if (p1.getFileName().compareTo(p2.getFileName()) > 0) {
+          return 1;
+        } else {
+          return (int) (p1.getOffset() - p2.getOffset());
+        }
+      }
+    });
+
+    int size = partFileMetas.size();
+    List<Integer> parts = new ArrayList<>(size);
+    for (int i = 0; i < size; i++) {
+      parts.add(partFileMetas.get(i).getPartId());
+    }
+
+    long offset;
+    String currentFileName = "";
+    Matrix matrix = initMatrix(matrixFilesMeta);
+
+    try {
+      for (MatrixPartitionMeta partMeta : partFileMetas) {
+        String fileName = partMeta.getFileName();
+        offset = partMeta.getOffset();
+        if (!fileName.equals(currentFileName)) {
+          currentFileName = fileName;
+          if (input != null) {
+            input.close();
+          }
+          input = fs.open(new Path(loadContext.getLoadPath(), currentFileName));
+        }
+        input.seek(offset);
+        load(matrix, partMeta, loadContext, input);
+      }
+    } catch (Throwable x) {
+      throw new IOException(x);
+    } finally {
+      if (input != null) {
+        input.close();
+      }
+    }
+
+    return matrix;
   }
+
+  public Matrix initMatrix(MatrixFilesMeta matrixFilesMeta) {
+    Map<Integer, MatrixPartitionMeta> partMetas = matrixFilesMeta.getPartMetas();
+    Int2LongOpenHashMap rowIdToElemNumMap = new Int2LongOpenHashMap();
+    for(MatrixPartitionMeta partMeta : partMetas.values()) {
+      Map<Integer, RowPartitionMeta> rowMetas = partMeta.getRowMetas();
+      for(Map.Entry<Integer, RowPartitionMeta> rowMetaEntry : rowMetas.entrySet()) {
+        rowIdToElemNumMap.addTo(rowMetaEntry.getKey(), rowMetaEntry.getValue().getElementNum());
+      }
+    }
+
+    RowType rowType = RowType.valueOf(matrixFilesMeta.getRowType());
+    RowBasedMatrix matrix = rbMatrix(rowType, matrixFilesMeta.getRow(), matrixFilesMeta.getCol());
+    ObjectIterator<Int2LongMap.Entry> iter = rowIdToElemNumMap.int2LongEntrySet().fastIterator();
+    Int2LongMap.Entry entry;
+    while(iter.hasNext()) {
+      entry = iter.next();
+      matrix.setRow(entry.getIntKey(), initRow(rowType, matrixFilesMeta.getCol(), entry.getLongValue()));
+    }
+
+    return rbMatrix(rowType, matrixFilesMeta.getRow(), matrixFilesMeta.getCol());
+  }
+
+  private static RowBasedMatrix rbMatrix(RowType rowType, int rowNum, long colNum) {
+    switch (rowType) {
+      case T_INT_DENSE:
+      case T_INT_SPARSE:
+      case T_INT_DENSE_COMPONENT:
+      case T_INT_SPARSE_COMPONENT:
+        return MFactory.rbIntIntMatrix(rowNum, (int) colNum);
+
+      case T_LONG_DENSE:
+      case T_LONG_SPARSE:
+      case T_LONG_DENSE_COMPONENT:
+      case T_LONG_SPARSE_COMPONENT:
+        return MFactory.rbIntLongMatrix(rowNum, (int) colNum);
+
+      case T_FLOAT_DENSE:
+      case T_FLOAT_SPARSE:
+      case T_FLOAT_DENSE_COMPONENT:
+      case T_FLOAT_SPARSE_COMPONENT:
+        return MFactory.rbIntFloatMatrix(rowNum, (int) colNum);
+
+      case T_DOUBLE_DENSE:
+      case T_DOUBLE_SPARSE:
+      case T_DOUBLE_DENSE_COMPONENT:
+      case T_DOUBLE_SPARSE_COMPONENT:
+        return MFactory.rbIntDoubleMatrix(rowNum, (int) colNum);
+
+      case T_INT_SPARSE_LONGKEY:
+      case T_INT_DENSE_LONGKEY_COMPONENT:
+      case T_INT_SPARSE_LONGKEY_COMPONENT:
+        return MFactory.rbLongIntMatrix(rowNum, (int) colNum);
+
+      case T_LONG_SPARSE_LONGKEY:
+      case T_LONG_DENSE_LONGKEY_COMPONENT:
+      case T_LONG_SPARSE_LONGKEY_COMPONENT:
+        return MFactory.rbLongLongMatrix(rowNum, (int) colNum);
+
+      case T_FLOAT_SPARSE_LONGKEY:
+      case T_FLOAT_DENSE_LONGKEY_COMPONENT:
+      case T_FLOAT_SPARSE_LONGKEY_COMPONENT:
+        return MFactory.rbLongFloatMatrix(rowNum, (int) colNum);
+
+      case T_DOUBLE_SPARSE_LONGKEY:
+      case T_DOUBLE_DENSE_LONGKEY_COMPONENT:
+      case T_DOUBLE_SPARSE_LONGKEY_COMPONENT:
+        return MFactory.rbLongDoubleMatrix(rowNum, (int) colNum);
+
+      default:
+        throw new UnsupportedOperationException("Unsupport row type " + rowType);
+    }
+  }
+
+  public static com.tencent.angel.ml.math2.vector.Vector initRow(RowType rowType, long dim, long estElemNum) {
+    com.tencent.angel.ml.math2.vector.Vector ret;
+    switch (rowType) {
+      case T_DOUBLE_SPARSE:
+      case T_DOUBLE_SPARSE_COMPONENT:
+        ret = VFactory.sparseDoubleVector((int) dim, (int)estElemNum);
+        break;
+
+      case T_DOUBLE_DENSE:
+      case T_DOUBLE_DENSE_COMPONENT:
+        ret = VFactory.denseDoubleVector((int) dim);
+        break;
+
+      case T_FLOAT_SPARSE:
+      case T_FLOAT_SPARSE_COMPONENT:
+        ret = VFactory.sparseFloatVector((int) dim, (int)estElemNum);
+        break;
+
+      case T_FLOAT_DENSE:
+      case T_FLOAT_DENSE_COMPONENT:
+        ret = VFactory.denseFloatVector((int) dim);
+        break;
+
+      case T_INT_SPARSE:
+      case T_INT_SPARSE_COMPONENT:
+        ret = VFactory.sparseIntVector((int) dim, (int) estElemNum);
+        break;
+
+      case T_INT_DENSE:
+      case T_INT_DENSE_COMPONENT:
+        ret = VFactory.denseIntVector((int) dim);
+        break;
+
+      case T_LONG_SPARSE:
+      case T_LONG_SPARSE_COMPONENT:
+        ret = VFactory.sparseLongVector((int) dim, (int) estElemNum);
+        break;
+
+      case T_LONG_DENSE:
+      case T_LONG_DENSE_COMPONENT:
+        ret = VFactory.denseLongVector((int) dim);
+        break;
+
+      case T_DOUBLE_SPARSE_LONGKEY:
+      case T_DOUBLE_SPARSE_LONGKEY_COMPONENT:
+        ret = VFactory.sparseLongKeyDoubleVector(dim, (int) estElemNum);
+        break;
+
+      case T_FLOAT_SPARSE_LONGKEY:
+      case T_FLOAT_SPARSE_LONGKEY_COMPONENT:
+        ret = VFactory.sparseLongKeyFloatVector(dim, (int) estElemNum);
+        break;
+
+      case T_INT_SPARSE_LONGKEY:
+      case T_INT_SPARSE_LONGKEY_COMPONENT:
+        ret = VFactory.sparseLongKeyIntVector(dim, (int) estElemNum);
+        break;
+
+      case T_LONG_SPARSE_LONGKEY:
+      case T_LONG_SPARSE_LONGKEY_COMPONENT:
+        ret = VFactory.sparseLongKeyLongVector(dim, (int) estElemNum);
+        break;
+
+      case T_DOUBLE_DENSE_LONGKEY_COMPONENT:
+        ret = VFactory.denseDoubleVector((int) dim);
+        break;
+
+      case T_FLOAT_DENSE_LONGKEY_COMPONENT:
+        ret = VFactory.denseFloatVector((int) dim);
+        break;
+
+      case T_INT_DENSE_LONGKEY_COMPONENT:
+        ret = VFactory.denseIntVector((int) dim);
+        break;
+
+      case T_LONG_DENSE_LONGKEY_COMPONENT:
+        ret = VFactory.denseLongVector((int) dim);
+        break;
+
+      default:
+        throw new UnsupportedOperationException(
+          "can not support " + rowType + " type row for ServerIntDoubleRow");
+    }
+
+    return ret;
+  }
+
+  public abstract void load(Matrix matrix, MatrixPartitionMeta partMeta, MatrixLoadContext loadContext, FSDataInputStream in)
+    throws IOException;
 
   enum ACTION {
     LOAD, SAVE
   }
-
 
   class PartitionDiskOp extends RecursiveAction {
     private final ServerMatrix matrix;
@@ -232,7 +484,7 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
     private final List<Integer> partIds;
     private final Object context;
     private final PSMatrixFilesMeta dataFilesMeta;
-    private final Vector<String> errorMsgs;
+    private final java.util.Vector<String> errorMsgs;
     private final int startPos;
     private final int endPos;
     private final ACTION action;

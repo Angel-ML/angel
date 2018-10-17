@@ -36,6 +36,7 @@ public interface MatrixFormat {
    *
    * @param matrix      the ServerMatrix
    * @param saveContext save context
+   * @param conf        system configuration
    * @throws IOException
    */
   void save(ServerMatrix matrix, PSMatrixSaveContext saveContext, Configuration conf)
@@ -46,6 +47,7 @@ public interface MatrixFormat {
    *
    * @param matrix      the ServerMatrix
    * @param loadContext load context
+   * @param conf        system configuration
    * @throws IOException
    */
   void load(ServerMatrix matrix, PSMatrixLoadContext loadContext, Configuration conf)
@@ -56,6 +58,7 @@ public interface MatrixFormat {
    *
    * @param matrix      the ServerMatrix
    * @param saveContext save context
+   * @param conf        system configuration
    * @throws IOException
    */
   void save(Matrix matrix, MatrixSaveContext saveContext, Configuration conf) throws IOException;
@@ -63,9 +66,10 @@ public interface MatrixFormat {
   /**
    * Load the Matrix from files
    *
-   * @param matrix      the ServerMatrix
    * @param loadContext load context
+   * @param conf        system configuration
+   * @return Matrix loaded matrix
    * @throws IOException
    */
-  void load(Matrix matrix, MatrixLoadContext loadContext, Configuration conf) throws IOException;
+  Matrix load(MatrixLoadContext loadContext, Configuration conf) throws IOException;
 }

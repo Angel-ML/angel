@@ -17,13 +17,17 @@
 
 package com.tencent.angel.model.output.format;
 
+import com.tencent.angel.ml.math2.matrix.Matrix;
 import com.tencent.angel.ml.math2.storage.*;
 import com.tencent.angel.ml.math2.vector.*;
+import com.tencent.angel.ml.math2.vector.Vector;
+import com.tencent.angel.model.MatrixLoadContext;
 import com.tencent.angel.model.PSMatrixLoadContext;
 import com.tencent.angel.model.PSMatrixSaveContext;
 import com.tencent.angel.ps.storage.matrix.PartitionSource;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.ps.storage.vector.*;
+import com.tencent.angel.utils.Sort;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
@@ -33,14 +37,12 @@ import it.unimi.dsi.fastutil.longs.Long2FloatMap;
 import it.unimi.dsi.fastutil.longs.Long2IntMap;
 import it.unimi.dsi.fastutil.longs.Long2LongMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import org.apache.hadoop.fs.FSDataInputStream;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Column first format for matrix
@@ -205,12 +207,18 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
       rowIds = filter(part, rowIds);
     }
 
+    rowIds.sort(new Comparator<Integer>() {
+      @Override public int compare(Integer id1, Integer id2) {
+        return id1 - id2;
+      }
+    });
     int size = rowIds.size();
     ServerRow[] rowList = new ServerRow[size];
     for (int i = 0; i < size; i++) {
       rowList[i] = rows.getRow(rowIds.get(i));
+      RowPartitionMeta rowMeta = new RowPartitionMeta(rowIds.get(i), -1, rowList[i].size());
+      partMeta.setRowMeta(rowMeta);
     }
-
 
     ServerRow row0 = rowList[0];
 
@@ -271,6 +279,12 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
     }
   }
 
+  @Override
+  public void load(Matrix matrix, MatrixPartitionMeta partMeta, MatrixLoadContext loadContext, FSDataInputStream in)
+    throws IOException {
+    throw new UnsupportedOperationException("Unsupport now");
+  }
+
   private void saveIntFloatRows(ServerPartition part, ServerRow[] rows,
     MatrixPartitionMeta partMeta, PSMatrixSaveContext saveContext, DataOutputStream output)
     throws IOException {
@@ -280,8 +294,12 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
     IntFloatVectorStorage storage = ((IntFloatVector) vec).getStorage();
 
     IntFloatsCol col = new IntFloatsCol(0, new float[rows.length]);
-    if (storage.isDense()) {
+    if (storage.isDense() || saveContext.sortFirst()) {
       int[] indices = storage.getIndices();
+      if(storage.isSparse() && saveContext.sortFirst()) {
+        Sort.quickSort(indices, 0, indices.length - 1);
+      }
+
       for (int i = 0; i < indices.length; i++) {
         col.colId = indices[i] + indexOffset;
         for (int j = 0; j < rows.length; j++) {
@@ -311,8 +329,12 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
     IntDoubleVectorStorage storage = ((IntDoubleVector) vec).getStorage();
 
     IntDoublesCol col = new IntDoublesCol(0, new double[rows.length]);
-    if (storage.isDense()) {
+    if (storage.isDense() || saveContext.sortFirst()) {
       int[] indices = storage.getIndices();
+      if(storage.isSparse() && saveContext.sortFirst()) {
+        Sort.quickSort(indices, 0, indices.length - 1);
+      }
+
       for (int i = 0; i < indices.length; i++) {
         col.colId = indices[i] + indexOffset;
         for (int j = 0; j < rows.length; j++) {
@@ -340,8 +362,12 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
     IntIntVectorStorage storage = ((IntIntVector) vec).getStorage();
 
     IntIntsCol col = new IntIntsCol(0, new int[rows.length]);
-    if (storage.isDense()) {
+    if (storage.isDense() || saveContext.sortFirst()) {
       int[] indices = storage.getIndices();
+      if(storage.isSparse() && saveContext.sortFirst()) {
+        Sort.quickSort(indices, 0, indices.length - 1);
+      }
+
       for (int i = 0; i < indices.length; i++) {
         col.colId = indices[i] + indexOffset;
         for (int j = 0; j < rows.length; j++) {
@@ -369,8 +395,12 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
     IntLongVectorStorage storage = ((IntLongVector) vec).getStorage();
 
     IntLongsCol col = new IntLongsCol(0, new long[rows.length]);
-    if (storage.isDense()) {
+    if (storage.isDense() || saveContext.sortFirst()) {
       int[] indices = storage.getIndices();
+      if(storage.isSparse() && saveContext.sortFirst()) {
+        Sort.quickSort(indices, 0, indices.length - 1);
+      }
+
       for (int i = 0; i < indices.length; i++) {
         col.colId = indices[i] + indexOffset;
         for (int j = 0; j < rows.length; j++) {
@@ -400,8 +430,12 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
     LongFloatsCol col = new LongFloatsCol(0, new float[rows.length]);
     if (vec instanceof IntFloatVector) {
       IntFloatVectorStorage storage = ((IntFloatVector) vec).getStorage();
-      if (storage.isDense()) {
+      if (storage.isDense() || saveContext.sortFirst()) {
         int[] indices = storage.getIndices();
+        if(storage.isSparse() && saveContext.sortFirst()) {
+          Sort.quickSort(indices, 0, indices.length - 1);
+        }
+
         for (int i = 0; i < indices.length; i++) {
           col.colId = indices[i] + indexOffset;
           for (int j = 0; j < rows.length; j++) {
@@ -421,13 +455,25 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
       }
     } else {
       LongFloatVectorStorage storage = ((LongFloatVector) vec).getStorage();
-      ObjectIterator<Long2FloatMap.Entry> iter = storage.entryIterator();
-      while (iter.hasNext()) {
-        col.colId = iter.next().getLongKey() + indexOffset;
-        for (int j = 0; j < rows.length; j++) {
-          col.colElems[j] = ((ServerLongFloatRow) (rows[j])).get(col.colId);
+      if(saveContext.sortFirst()) {
+        long [] indices = storage.getIndices();
+        Sort.quickSort(indices, 0, indices.length - 1);
+        for (int i = 0; i < indices.length; i++) {
+          col.colId = indices[i] + indexOffset;
+          for (int j = 0; j < rows.length; j++) {
+            col.colElems[j] = ((ServerLongFloatRow) (rows[j])).get(col.colId);
+          }
+          save(col, output);
         }
-        save(col, output);
+      } else {
+        ObjectIterator<Long2FloatMap.Entry> iter = storage.entryIterator();
+        while (iter.hasNext()) {
+          col.colId = iter.next().getLongKey() + indexOffset;
+          for (int j = 0; j < rows.length; j++) {
+            col.colElems[j] = ((ServerLongFloatRow) (rows[j])).get(col.colId);
+          }
+          save(col, output);
+        }
       }
     }
   }
@@ -442,8 +488,12 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
     LongDoublesCol col = new LongDoublesCol(0, new double[rows.length]);
     if (vec instanceof IntDoubleVector) {
       IntDoubleVectorStorage storage = ((IntDoubleVector) vec).getStorage();
-      if (storage.isDense()) {
+      if (storage.isDense() || saveContext.sortFirst()) {
         int[] indices = storage.getIndices();
+        if(storage.isSparse() && saveContext.sortFirst()) {
+          Sort.quickSort(indices, 0, indices.length - 1);
+        }
+
         for (int i = 0; i < indices.length; i++) {
           col.colId = indices[i] + indexOffset;
           for (int j = 0; j < rows.length; j++) {
@@ -463,13 +513,26 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
       }
     } else {
       LongDoubleVectorStorage storage = ((LongDoubleVector) vec).getStorage();
-      ObjectIterator<Long2DoubleMap.Entry> iter = storage.entryIterator();
-      while (iter.hasNext()) {
-        col.colId = iter.next().getLongKey() + indexOffset;
-        for (int j = 0; j < rows.length; j++) {
-          col.colElems[j] = ((ServerLongDoubleRow) (rows[j])).get(col.colId);
+      if(saveContext.sortFirst()) {
+        long[] indices = storage.getIndices();
+        Sort.quickSort(indices, 0, indices.length - 1);
+
+        for (int i = 0; i < indices.length; i++) {
+          col.colId = indices[i] + indexOffset;
+          for (int j = 0; j < rows.length; j++) {
+            col.colElems[j] = ((ServerLongDoubleRow) (rows[j])).get(col.colId);
+          }
+          save(col, output);
         }
-        save(col, output);
+      } else {
+        ObjectIterator<Long2DoubleMap.Entry> iter = storage.entryIterator();
+        while (iter.hasNext()) {
+          col.colId = iter.next().getLongKey() + indexOffset;
+          for (int j = 0; j < rows.length; j++) {
+            col.colElems[j] = ((ServerLongDoubleRow) (rows[j])).get(col.colId);
+          }
+          save(col, output);
+        }
       }
     }
   }
@@ -483,8 +546,12 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
     LongIntsCol col = new LongIntsCol(0, new int[rows.length]);
     if (vec instanceof IntIntVector) {
       IntIntVectorStorage storage = ((IntIntVector) vec).getStorage();
-      if (storage.isDense()) {
+      if (storage.isDense() || saveContext.sortFirst()) {
         int[] indices = storage.getIndices();
+        if(storage.isSparse() && saveContext.sortFirst()) {
+          Sort.quickSort(indices, 0, indices.length - 1);
+        }
+
         for (int i = 0; i < indices.length; i++) {
           col.colId = indices[i] + indexOffset;
           for (int j = 0; j < rows.length; j++) {
@@ -504,13 +571,26 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
       }
     } else {
       LongIntVectorStorage storage = ((LongIntVector) vec).getStorage();
-      ObjectIterator<Long2IntMap.Entry> iter = storage.entryIterator();
-      while (iter.hasNext()) {
-        col.colId = iter.next().getLongKey() + indexOffset;
-        for (int j = 0; j < rows.length; j++) {
-          col.colElems[j] = ((ServerLongIntRow) (rows[j])).get(col.colId);
+      if(saveContext.sortFirst()) {
+        long[] indices = storage.getIndices();
+        Sort.quickSort(indices, 0, indices.length - 1);
+
+        for (int i = 0; i < indices.length; i++) {
+          col.colId = indices[i] + indexOffset;
+          for (int j = 0; j < rows.length; j++) {
+            col.colElems[j] = ((ServerLongIntRow) (rows[j])).get(col.colId);
+          }
+          save(col, output);
         }
-        save(col, output);
+      } else {
+        ObjectIterator<Long2IntMap.Entry> iter = storage.entryIterator();
+        while (iter.hasNext()) {
+          col.colId = iter.next().getLongKey() + indexOffset;
+          for (int j = 0; j < rows.length; j++) {
+            col.colElems[j] = ((ServerLongIntRow) (rows[j])).get(col.colId);
+          }
+          save(col, output);
+        }
       }
     }
   }
@@ -525,8 +605,12 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
     LongLongsCol col = new LongLongsCol(0, new long[rows.length]);
     if (vec instanceof IntLongVector) {
       IntLongVectorStorage storage = ((IntLongVector) vec).getStorage();
-      if (storage.isDense()) {
+      if (storage.isDense() || saveContext.sortFirst()) {
         int[] indices = storage.getIndices();
+        if(storage.isSparse() && saveContext.sortFirst()) {
+          Sort.quickSort(indices, 0, indices.length - 1);
+        }
+
         for (int i = 0; i < indices.length; i++) {
           col.colId = indices[i] + indexOffset;
           for (int j = 0; j < rows.length; j++) {
@@ -546,13 +630,26 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
       }
     } else {
       LongLongVectorStorage storage = ((LongLongVector) vec).getStorage();
-      ObjectIterator<Long2LongMap.Entry> iter = storage.entryIterator();
-      while (iter.hasNext()) {
-        col.colId = iter.next().getLongKey() + indexOffset;
-        for (int j = 0; j < rows.length; j++) {
-          col.colElems[j] = ((ServerLongLongRow) (rows[j])).get(col.colId);
+      if(saveContext.sortFirst()) {
+        long[] indices = storage.getIndices();
+        Sort.quickSort(indices, 0, indices.length - 1);
+
+        for (int i = 0; i < indices.length; i++) {
+          col.colId = indices[i] + indexOffset;
+          for (int j = 0; j < rows.length; j++) {
+            col.colElems[j] = ((ServerLongLongRow) (rows[j])).get(col.colId);
+          }
+          save(col, output);
         }
-        save(col, output);
+      } else {
+        ObjectIterator<Long2LongMap.Entry> iter = storage.entryIterator();
+        while (iter.hasNext()) {
+          col.colId = iter.next().getLongKey() + indexOffset;
+          for (int j = 0; j < rows.length; j++) {
+            col.colElems[j] = ((ServerLongLongRow) (rows[j])).get(col.colId);
+          }
+          save(col, output);
+        }
       }
     }
   }
