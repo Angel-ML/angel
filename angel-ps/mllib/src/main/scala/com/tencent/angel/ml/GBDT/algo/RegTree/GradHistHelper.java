@@ -31,6 +31,8 @@ import com.tencent.angel.worker.WorkerContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.util.Arrays;
+
 public class GradHistHelper {
 
   private static final Log LOG = LogFactory.getLog(GradHistHelper.class);
@@ -369,7 +371,7 @@ public class GradHistHelper {
 
   private static int findFvaluePlace(float[] sketch, float fvalue, int start, int end) {
     // loop all the possible split value, start from split[0], the first item is the minimal feature value
-    assert fvalue >= sketch[start] && fvalue <= sketch[end];
+    //assert fvalue >= sketch[start] && fvalue <= sketch[end];
     int left = start;
     int right = end;
     int mid;

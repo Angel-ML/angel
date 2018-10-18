@@ -27,13 +27,6 @@ class GBDTRunner extends MLRunner {
 
   val LOG = LogFactory.getLog(classOf[GBDTRunner])
 
-  var featureNum: Int = 0
-  var featureNonzero: Int = 0
-  var maxTreeNum: Int = 0
-  var maxTreeDepth: Int = 0
-  var splitNum: Int = 0
-  var featureSampleRatio: Float = 0.0f
-
   override def train(conf: Configuration): Unit = {
 
     val client = AngelClientFactory.get(conf)
