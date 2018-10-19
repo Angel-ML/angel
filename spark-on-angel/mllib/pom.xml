@@ -52,26 +52,26 @@
     </dependency>
   </dependencies>
 
-  <!--<build>-->
-    <!--<plugins>-->
-      <!--<plugin>-->
-        <!--<artifactId>maven-jar-plugin</artifactId>-->
-        <!--<executions>-->
-          <!--<execution>-->
-            <!--<id>angel</id>-->
-            <!--<goals>-->
-              <!--<goal>jar</goal>-->
-            <!--</goals>-->
-            <!--<phase>package</phase>-->
-            <!--<configuration>-->
-              <!--<classifier>ps</classifier>-->
-              <!--<includes>-->
-                <!--<include>**/psf/**</include>-->
-              <!--</includes>-->
-            <!--</configuration>-->
-          <!--</execution>-->
-        <!--</executions>-->
-      <!--</plugin>-->
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>angel</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <phase>package</phase>
+            <configuration>
+              <classifier>ps</classifier>
+              <includes>
+                <include>**/psf/**</include>
+              </includes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
 
       <!--<plugin>-->
         <!--<groupId>org.apache.maven.plugins</groupId>-->
@@ -100,7 +100,7 @@
           <!--</execution>-->
         <!--</executions>-->
       <!--</plugin>-->
-    <!--</plugins>-->
-  <!--</build>-->
+    </plugins>
+  </build>
 
 </project>

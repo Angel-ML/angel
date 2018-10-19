@@ -116,14 +116,13 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
   }
 
 
-  def createMatrix(
-                    rows: Int,
-                    cols: Long,
-                    validIndexNum: Long,
-                    rowInBlock: Int,
-                    colInBlock: Long,
-                    rowType: RowType,
-                    partitionSource: String = classOf[PartitionSourceMap].getName): MatrixMeta = {
+  def createMatrix(rows: Int,
+                   cols: Long,
+                   validIndexNum: Long,
+                   rowInBlock: Int,
+                   colInBlock: Long,
+                   rowType: RowType,
+                   partitionSource: String = classOf[PartitionSourceMap].getName): MatrixMeta = {
     assertCallByDriver("The operation of creating a matrix can only be called on the driver side.")
     val mc = new MatrixContext(s"spark-$matrixCounter", rows, cols, validIndexNum,
       rowInBlock, colInBlock, rowType)
