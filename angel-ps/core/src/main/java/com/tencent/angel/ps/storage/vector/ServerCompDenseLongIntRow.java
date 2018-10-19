@@ -160,7 +160,7 @@ public class ServerCompDenseLongIntRow extends ServerRow {
    *
    * @return all element values
    */
-  public int[] getValues() {
+  private int[] getValues() {
     return intIntRow.getStorage().getValues();
   }
 
@@ -258,21 +258,6 @@ public class ServerCompDenseLongIntRow extends ServerRow {
         intIntRow.clone());
     } finally {
       endRead();
-    }
-  }
-
-  @Override protected void writeRow(DataOutputStream output) throws IOException {
-    int[] values = getValues();
-    for (int i = 0; i < values.length; i++) {
-      output.writeInt(values[i]);
-    }
-  }
-
-  @Override protected void readRow(DataInputStream input) throws IOException {
-    intIntRow = (IntIntVector) row;
-    int[] values = getValues();
-    for (int i = 0; i < size; i++) {
-      values[i] = input.readInt();
     }
   }
 

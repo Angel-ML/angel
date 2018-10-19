@@ -800,6 +800,17 @@ public class AngelConf extends Configuration {
   public static final String DEFAULT_ANGEL_PS_PARTITION_SOURCE_CLASS =
     PartitionSourceMap.class.getName();
 
+  public static final String ANGEL_PS_MAX_LOCK_WAITTIME_MS =
+    ANGEL_PS_PREFIX + "max.lock.waittime";
+  public static final int DEFAULT_ANGEL_PS_MAX_LOCK_WAITTIME_MS = 10000;
+
+  public static final String ANGEL_PS_USE_ADAPTIVE_STORAGE_ENABLE =
+    ANGEL_PS_PREFIX + "use.adaptive.storage.enable";
+  public static final boolean DEFAULT_ANGEL_PS_USE_ADAPTIVE_STORAGE_ENABLE = true;
+
+  public static final String ANGEL_PS_SPARSE_TO_DENSE_FACTOR =
+    ANGEL_PS_PREFIX + "sparse.to.dense.factor";
+  public static final float DEFAULT_ANGEL_PS_SPARSE_TO_DENSE_FACTOR = 0.25f;
 
   // ////////////////// IPC //////////////////////////
   /**

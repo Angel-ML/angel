@@ -20,10 +20,9 @@ package com.tencent.angel.spark.ml.psf.embedding
 
 import scala.collection.JavaConversions._
 import scala.util.Random
-
 import io.netty.buffer.ByteBuf
-
 import com.tencent.angel.PartitionKey
+import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage
 import com.tencent.angel.ml.matrix.psf.update.base.{PartitionUpdateParam, UpdateFunc, UpdateParam}
 import com.tencent.angel.ps.storage.matrix.ServerPartition
 import com.tencent.angel.ps.storage.vector.ServerIntFloatRow
@@ -53,7 +52,7 @@ class NEModelRandomize(param: RandomizeUpdateParam) extends UpdateFunc(param) {
     val rand = new Random(seed)
     (startRow until endRow).map(rowId => (rowId, rand.nextInt)).par.foreach { case (rowId, rowSeed) =>
       val rowRandom = new Random(rowSeed)
-      val data = part.getRow(rowId).asInstanceOf[ServerIntFloatRow].getValues
+      val data = part.getRow(rowId).getSplit.getStorage.asInstanceOf[IntFloatDenseVectorStorage].getValues
       if (order == 1)
         data.indices.foreach(data(_) = (rowRandom.nextFloat() - 0.5f) / dim)
       else {

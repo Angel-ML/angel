@@ -23,6 +23,7 @@ import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
+import com.tencent.angel.ps.storage.vector.func.FloatElemUpdateFunc;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
@@ -36,7 +37,7 @@ import java.io.IOException;
 /**
  * The row with "int" index type and "float" value type in PS
  */
-public class ServerIntFloatRow extends ServerRow {
+public class ServerIntFloatRow extends ServerFloatRow {
   private static final Log LOG = LogFactory.getLog(ServerIntFloatRow.class);
   /**
    * Just a view of "row" in ServerRow
@@ -171,7 +172,7 @@ public class ServerIntFloatRow extends ServerRow {
    *
    * @return all element values
    */
-  public float[] getValues() {
+  private float[] getValues() {
     return intFloatRow.getStorage().getValues();
   }
 
@@ -316,65 +317,6 @@ public class ServerIntFloatRow extends ServerRow {
     }
   }
 
-  @Override protected void writeRow(DataOutputStream output) throws IOException {
-    switch (rowType) {
-      case T_FLOAT_SPARSE:
-      case T_FLOAT_SPARSE_COMPONENT: {
-        output.writeInt(size());
-        if (isDense()) {
-          float[] values = getValues();
-          for (int i = 0; i < values.length; i++) {
-            output.writeInt(i);
-            output.writeFloat(values[i]);
-          }
-        } else {
-          ObjectIterator<Int2FloatMap.Entry> iter = getIter();
-          Int2FloatMap.Entry entry;
-          while (iter.hasNext()) {
-            entry = iter.next();
-            output.writeInt(entry.getIntKey());
-            output.writeFloat(entry.getFloatValue());
-          }
-        }
-        break;
-      }
-
-      case T_FLOAT_DENSE:
-      case T_FLOAT_DENSE_COMPONENT: {
-        if (isDense()) {
-          float[] values = getValues();
-          for (int i = 0; i < values.length; i++) {
-            output.writeFloat(values[i]);
-          }
-        } else {
-          int size = endColInt - startColInt;
-          for (int i = 0; i < size; i++) {
-            output.writeFloat(intFloatRow.get(i));
-          }
-        }
-        break;
-      }
-    }
-  }
-
-  @Override protected void readRow(DataInputStream input) throws IOException {
-    startColInt = (int) startCol;
-    endColInt = (int) endCol;
-    intFloatRow = (IntFloatVector) row;
-    if (intFloatRow.isDense()) {
-      float[] values = getValues();
-      size = (endColInt - startColInt);
-      for (int i = 0; i < size; i++) {
-        values[i] = input.readFloat();
-      }
-    } else {
-      size = input.readInt();
-      for (int i = 0; i < size; i++) {
-        intFloatRow.set(input.readInt(), input.readFloat());
-      }
-    }
-  }
-
   @Override public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out)
     throws IOException {
     if (indexType == IndexType.INT) {
@@ -389,5 +331,21 @@ public class ServerIntFloatRow extends ServerRow {
   @Override public void setSplit(Vector row) {
     super.setSplit(row);
     intFloatRow = (IntFloatVector) row;
+  }
+
+  @Override public void elemUpdate(FloatElemUpdateFunc func) {
+    if (isDense()) {
+      float[] values = getValues();
+      for (int i = 0; i < values.length; i++) {
+        values[i] = func.update();
+      }
+    } else {
+      ObjectIterator<Int2FloatMap.Entry> iter = getIter();
+      Int2FloatMap.Entry entry;
+      while (iter.hasNext()) {
+        entry = iter.next();
+        entry.setValue(func.update());
+      }
+    }
   }
 }

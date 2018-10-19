@@ -20,6 +20,7 @@ package com.tencent.angel.ml.lda.psf;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.ml.math2.storage.IntIntDenseVectorStorage;
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult;
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarPartitionAggrResult;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
@@ -86,7 +87,7 @@ public class LikelihoodFunc extends GetFunc {
     int len = (int) (row.getEndCol() - row.getStartCol());
     double ll = 0;
     if (row.isDense()) {
-      int[] values = row.getValues();
+      int[] values = ((IntIntDenseVectorStorage)(row.getSplit().getStorage())).getValues();
       for (int i = 0; i < len; i++) {
         if (values[i] > 0)
           ll += Gamma.logGamma(values[i] + beta) - lgammaBeta;

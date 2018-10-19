@@ -18,28 +18,22 @@
 
 package com.tencent.angel.ps.storage.vector;
 
-import com.tencent.angel.ml.math2.vector.LongDoubleVector;
-import com.tencent.angel.ml.math2.vector.Vector;
+import com.tencent.angel.ml.math2.vector.*;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
+import com.tencent.angel.ps.storage.vector.func.DoubleElemUpdateFunc;
 import io.netty.buffer.ByteBuf;
+import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 
 /**
  * The row with "long" index type and "double" value type in PS
  */
-public class ServerLongDoubleRow extends ServerRow {
-  /**
-   * Just a view of "row" in ServerRow
-   */
-  private LongDoubleVector longDoubleRow;
-
+public class ServerLongDoubleRow extends ServerDoubleRow {
   /**
    * Create a new ServerIntDoubleRow
    *
@@ -51,9 +45,8 @@ public class ServerLongDoubleRow extends ServerRow {
    * @param innerRow   the inner row
    */
   public ServerLongDoubleRow(int rowId, RowType rowType, long startCol, long endCol, int estElemNum,
-    LongDoubleVector innerRow) {
+    DoubleVector innerRow) {
     super(rowId, rowType, startCol, endCol, estElemNum, innerRow);
-    this.longDoubleRow = (LongDoubleVector) row;
   }
 
   /**
@@ -91,7 +84,11 @@ public class ServerLongDoubleRow extends ServerRow {
    * @return element value
    */
   public double get(long index) {
-    return longDoubleRow.get(index - startCol);
+    if(useIntKey) {
+      return ((IntDoubleVector) row).get((int)(index - startCol));
+    } else {
+      return ((LongDoubleVector) row).get(index - startCol);
+    }
   }
 
   /**
@@ -101,7 +98,11 @@ public class ServerLongDoubleRow extends ServerRow {
    * @param value element new value
    */
   public void set(long index, double value) {
-    longDoubleRow.set(index - startCol, value);
+    if(useIntKey) {
+      ((IntDoubleVector) row).set((int)(index - startCol), value);
+    } else {
+      ((LongDoubleVector) row).set(index - startCol, value);
+    }
   }
 
   /**
@@ -112,9 +113,16 @@ public class ServerLongDoubleRow extends ServerRow {
    */
   public double[] get(long[] indices) {
     double[] values = new double[indices.length];
-    for (int i = 0; i < indices.length; i++) {
-      values[i] = longDoubleRow.get(indices[i] - startCol);
+    if(useIntKey) {
+      for (int i = 0; i < indices.length; i++) {
+        values[i] = ((IntDoubleVector) row).get((int)(indices[i] - startCol));
+      }
+    } else {
+      for (int i = 0; i < indices.length; i++) {
+        values[i] = ((LongDoubleVector) row).get(indices[i] - startCol);
+      }
     }
+
     return values;
   }
 
@@ -126,8 +134,14 @@ public class ServerLongDoubleRow extends ServerRow {
    */
   public void set(long[] indices, double[] values) {
     assert indices.length == values.length;
-    for (int i = 0; i < indices.length; i++) {
-      longDoubleRow.set(indices[i] - startCol, values[i]);
+    if(useIntKey) {
+      for (int i = 0; i < indices.length; i++) {
+        ((IntDoubleVector) row).set((int)(indices[i] - startCol), values[i]);
+      }
+    } else {
+      for (int i = 0; i < indices.length; i++) {
+        ((LongDoubleVector) row).set(indices[i] - startCol, values[i]);
+      }
     }
   }
 
@@ -159,20 +173,13 @@ public class ServerLongDoubleRow extends ServerRow {
    *
    * @return all element values
    */
-  public double[] getValues() {
-    return longDoubleRow.getStorage().getValues();
+  private double[] getValues() {
+    if(useIntKey) {
+      return ((IntDoubleVector) row).getStorage().getValues();
+    } else {
+      return ((LongDoubleVector) row).getStorage().getValues();
+    }
   }
-
-  /**
-   * Get all element indices and values without lock, you must check the storage is sparse first use "isSparse";
-   * if you want use original indices, you must plus with "startCol" first
-   *
-   * @return all element values
-   */
-  public ObjectIterator<Long2DoubleMap.Entry> getIter() {
-    return longDoubleRow.getStorage().entryIterator();
-  }
-
 
   @Override public void update(RowType updateType, ByteBuf buf, UpdateOp op) {
     startWrite();
@@ -200,19 +207,36 @@ public class ServerLongDoubleRow extends ServerRow {
     buf.readDouble();
     int size = buf.readInt();
     if (op == UpdateOp.PLUS) {
-      for (int i = 0; i < size; i++) {
-        long index = buf.readLong();
-        longDoubleRow.set(index, longDoubleRow.get(index) + buf.readDouble());
+      if(useIntKey) {
+        for(int i = 0; i < size; i++) {
+          int index = (int)buf.readLong();
+          ((IntDoubleVector) row).set(index, ((IntDoubleVector) row).get(index) + buf.readDouble());
+        }
+      } else {
+        for(int i = 0; i < size; i++) {
+          long index = buf.readLong();
+          ((LongDoubleVector) row).set(index, ((LongDoubleVector) row).get(index) + buf.readDouble());
+        }
       }
     } else {
-      for (int i = 0; i < size; i++) {
-        longDoubleRow.set(buf.readLong(), buf.readDouble());
+      if(useIntKey) {
+        for(int i = 0; i < size; i++) {
+          ((IntDoubleVector) row).set((int)buf.readLong(), buf.readDouble());
+        }
+      } else {
+        for(int i = 0; i < size; i++) {
+          ((LongDoubleVector) row).set(buf.readLong(), buf.readDouble());
+        }
       }
     }
   }
 
   @Override public int size() {
-    return (int) longDoubleRow.size();
+    if(useIntKey) {
+      return ((IntFloatVector) row).size();
+    } else {
+      return (int)((LongFloatVector) row).size();
+    }
   }
 
   /**
@@ -223,11 +247,27 @@ public class ServerLongDoubleRow extends ServerRow {
   public void mergeTo(LongDoubleVector mergedRow) {
     startRead();
     try {
-      ObjectIterator<Long2DoubleMap.Entry> iter = getIter();
-      Long2DoubleMap.Entry entry;
-      while (iter.hasNext()) {
-        entry = iter.next();
-        mergedRow.set(entry.getLongKey() + startCol, entry.getDoubleValue());
+      if(isDense()) {
+        double[] values = getValues();
+        for (int i = 0; i < values.length; i++) {
+          mergedRow.set(i + startCol, values[i]);
+        }
+      } else {
+        if(useIntKey) {
+          ObjectIterator<Int2DoubleMap.Entry> iter = ((IntDoubleVector) row).getStorage().entryIterator();
+          Int2DoubleMap.Entry entry;
+          while (iter.hasNext()) {
+            entry = iter.next();
+            mergedRow.set(entry.getIntKey() + startCol, entry.getDoubleValue());
+          }
+        } else {
+          ObjectIterator<Long2DoubleMap.Entry> iter = ((LongDoubleVector) row).getStorage().entryIterator();
+          Long2DoubleMap.Entry entry;
+          while (iter.hasNext()) {
+            entry = iter.next();
+            mergedRow.set(entry.getLongKey() + startCol, entry.getDoubleValue());
+          }
+        }
       }
     } finally {
       endRead();
@@ -235,20 +275,41 @@ public class ServerLongDoubleRow extends ServerRow {
   }
 
   @Override protected void serializeRow(ByteBuf buf) {
-    if (isSparse()) {
-      ObjectIterator<Long2DoubleMap.Entry> iter = getIter();
-      Long2DoubleMap.Entry entry;
-      while (iter.hasNext()) {
-        entry = iter.next();
-        buf.writeLong(entry.getLongKey());
-        buf.writeDouble(entry.getDoubleValue());
+    if(isDense()) {
+      double[] values = getValues();
+      for (int i = 0; i < values.length; i++) {
+        buf.writeLong(i);
+        buf.writeDouble(values[i]);
+      }
+    } else {
+      if(useIntKey) {
+        ObjectIterator<Int2DoubleMap.Entry> iter = ((IntDoubleVector) row).getStorage().entryIterator();
+        Int2DoubleMap.Entry entry;
+        while (iter.hasNext()) {
+          entry = iter.next();
+          buf.writeLong(entry.getIntKey());
+          buf.writeDouble(entry.getDoubleValue());
+        }
+      } else {
+        ObjectIterator<Long2DoubleMap.Entry> iter = ((LongDoubleVector) row).getStorage().entryIterator();
+        Long2DoubleMap.Entry entry;
+        while (iter.hasNext()) {
+          entry = iter.next();
+          buf.writeLong(entry.getLongKey());
+          buf.writeDouble(entry.getDoubleValue());
+        }
       }
     }
   }
 
   @Override protected void deserializeRow(ByteBuf buf) {
-    longDoubleRow = (LongDoubleVector) row;
-    if (isSparse()) {
+    if(useIntKey) {
+      IntDoubleVector intDoubleRow = (IntDoubleVector) row;
+      for (int i = 0; i < size; i++) {
+        intDoubleRow.set((int)buf.readLong(), buf.readDouble());
+      }
+    } else {
+      LongDoubleVector longDoubleRow = (LongDoubleVector) row;
       for (int i = 0; i < size; i++) {
         longDoubleRow.set(buf.readLong(), buf.readDouble());
       }
@@ -262,33 +323,15 @@ public class ServerLongDoubleRow extends ServerRow {
   @Override public ServerRow clone() {
     startRead();
     try {
-      return new ServerLongDoubleRow(rowId, rowType, startCol, endCol, (int) estElemNum,
-        longDoubleRow.clone());
+      if(useIntKey) {
+        return new ServerLongDoubleRow(rowId, rowType, startCol, endCol, (int) estElemNum,
+          ((IntDoubleVector) row).clone());
+      } else {
+        return new ServerLongDoubleRow(rowId, rowType, startCol, endCol, (int) estElemNum,
+          ((LongDoubleVector) row).clone());
+      }
     } finally {
       endRead();
-    }
-  }
-
-  @Override protected void writeRow(DataOutputStream output) throws IOException {
-    if (isSparse()) {
-      output.writeInt(size());
-      ObjectIterator<Long2DoubleMap.Entry> iter = getIter();
-      Long2DoubleMap.Entry entry;
-      while (iter.hasNext()) {
-        entry = iter.next();
-        output.writeLong(entry.getLongKey());
-        output.writeDouble(entry.getDoubleValue());
-      }
-    }
-  }
-
-  @Override protected void readRow(DataInputStream input) throws IOException {
-    longDoubleRow = (LongDoubleVector) row;
-    if (isSparse()) {
-      int size = input.readInt();
-      for (int i = 0; i < size; i++) {
-        longDoubleRow.set(input.readLong(), input.readDouble());
-      }
     }
   }
 
@@ -316,6 +359,30 @@ public class ServerLongDoubleRow extends ServerRow {
 
   @Override public void setSplit(Vector row) {
     super.setSplit(row);
-    longDoubleRow = (LongDoubleVector) row;
+  }
+
+  @Override public void elemUpdate(DoubleElemUpdateFunc func) {
+    if(isDense()) {
+      double[] values = getValues();
+      for (int i = 0; i < values.length; i++) {
+        values[i] = func.update();
+      }
+    } else {
+      if(useIntKey) {
+        ObjectIterator<Int2DoubleMap.Entry> iter = ((IntDoubleVector) row).getStorage().entryIterator();
+        Int2DoubleMap.Entry entry;
+        while (iter.hasNext()) {
+          entry = iter.next();
+          entry.setValue(func.update());
+        }
+      } else {
+        ObjectIterator<Long2DoubleMap.Entry> iter = ((LongDoubleVector) row).getStorage().entryIterator();
+        Long2DoubleMap.Entry entry;
+        while (iter.hasNext()) {
+          entry = iter.next();
+          entry.setValue(func.update());
+        }
+      }
+    }
   }
 }

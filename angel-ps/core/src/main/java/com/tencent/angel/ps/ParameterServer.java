@@ -50,6 +50,7 @@ import com.tencent.angel.ps.server.data.PSFailedReport;
 import com.tencent.angel.ps.server.data.RunningContext;
 import com.tencent.angel.ps.server.data.WorkerPool;
 import com.tencent.angel.ps.storage.MatrixStorageManager;
+import com.tencent.angel.ps.storage.vector.ServerRow;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -443,6 +444,13 @@ public class ParameterServer {
    */
   public void initialize() throws IOException, InstantiationException, IllegalAccessException {
     LOG.info("Initialize a parameter server");
+    ServerRow.maxLockWaitTimeMs = conf.getInt(AngelConf.ANGEL_PS_MAX_LOCK_WAITTIME_MS,
+      AngelConf.DEFAULT_ANGEL_PS_MAX_LOCK_WAITTIME_MS);
+    ServerRow.useAdaptiveStorage = conf.getBoolean(AngelConf.ANGEL_PS_USE_ADAPTIVE_STORAGE_ENABLE,
+      AngelConf.DEFAULT_ANGEL_PS_USE_ADAPTIVE_STORAGE_ENABLE);
+    ServerRow.sparseToDenseFactor = conf.getFloat(AngelConf.ANGEL_PS_SPARSE_TO_DENSE_FACTOR,
+      AngelConf.DEFAULT_ANGEL_PS_SPARSE_TO_DENSE_FACTOR);
+
     locationManager = new PSLocationManager(context);
     locationManager.setMasterLocation(masterLocation);
 
@@ -647,7 +655,7 @@ public class ParameterServer {
     }
 
     // Recover PS from snapshot or load path
-    if(context.getPSAttemptId().getIndex() > 1) {
+    if (context.getPSAttemptId().getIndex() > 1) {
       int matrixNum = matrixMetas.size();
       List<PSMatrixLoadContext> matrixLoadContexts = new ArrayList<>(matrixMetas.size());
       SnapshotRecover recover = new SnapshotRecover(context);
@@ -675,7 +683,7 @@ public class ParameterServer {
         }
       }
 
-      if(!matrixLoadContexts.isEmpty()) {
+      if (!matrixLoadContexts.isEmpty()) {
         context.getIOExecutors().load(new PSMatricesLoadContext(-1, -1, matrixLoadContexts));
       }
     }

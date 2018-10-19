@@ -474,12 +474,12 @@ public class MatrixContext implements Serializable {
       if (colNum <= 0) {
         if (rowType == RowType.T_DOUBLE_SPARSE || rowType == RowType.T_FLOAT_SPARSE
           || rowType == RowType.T_LONG_SPARSE || rowType == RowType.T_INT_SPARSE) {
-          return (double) validIndexNum / rowNum / 2 / Integer.MAX_VALUE;
+          return (double) validIndexNum / 2 / Integer.MAX_VALUE;
         } else {
-          return (double) validIndexNum / rowNum / 2 / Long.MAX_VALUE;
+          return (double) validIndexNum / 2 / Long.MAX_VALUE;
         }
       } else {
-        return (double) validIndexNum / rowNum / colNum;
+        return (double) validIndexNum / colNum;
       }
     }
   }

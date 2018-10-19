@@ -76,6 +76,7 @@ public class FMTest {
       conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
       conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
       conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 100);
+      conf.setBoolean(AngelConf.ANGEL_PS_USE_ADAPTIVE_STORAGE_ENABLE, false);
 
       // Set data format
       conf.set(MLConf.ML_DATA_INPUT_FORMAT(), dataFmt);
@@ -87,7 +88,7 @@ public class FMTest {
 
       //set sgd FM algorithm parameters #feature #epoch
       conf.set(MLConf.ML_MODEL_TYPE(), modelType);
-      conf.setLong(MLConf.ML_FEATURE_INDEX_RANGE(), featureNum);
+      conf.setLong(MLConf.ML_FEATURE_INDEX_RANGE(), featureNum * 2);
       conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
       conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
       conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));

@@ -160,7 +160,7 @@ public class ServerCompDenseLongFloatRow extends ServerRow {
    *
    * @return all element values
    */
-  public float[] getValues() {
+  private float[] getValues() {
     return intFloatRow.getStorage().getValues();
   }
 
@@ -257,20 +257,6 @@ public class ServerCompDenseLongFloatRow extends ServerRow {
         intFloatRow.clone());
     } finally {
       endRead();
-    }
-  }
-
-  @Override protected void writeRow(DataOutputStream output) throws IOException {
-    float[] values = getValues();
-    for (int i = 0; i < values.length; i++) {
-      output.writeFloat(values[i]);
-    }
-  }
-
-  @Override protected void readRow(DataInputStream input) throws IOException {
-    intFloatRow = (IntFloatVector) row;
-    for (int i = 0; i < size; i++) {
-      intFloatRow.set(i, input.readFloat());
     }
   }
 

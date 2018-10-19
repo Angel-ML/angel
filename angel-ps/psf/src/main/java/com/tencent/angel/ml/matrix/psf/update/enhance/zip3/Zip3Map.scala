@@ -20,6 +20,7 @@ package com.tencent.angel.ml.matrix.psf.update.enhance.zip3
 
 import com.tencent.angel.common.Serialize
 import com.tencent.angel.exception.AngelException
+import com.tencent.angel.ml.math2.storage.{IntDoubleDenseVectorStorage, IntFloatDenseVectorStorage}
 import com.tencent.angel.ml.math2.vector.{LongDoubleVector, LongFloatVector}
 import com.tencent.angel.ml.matrix.psf.update.enhance.{MFUpdateFunc, MFUpdateParam}
 import com.tencent.angel.ps.storage.vector._
@@ -47,10 +48,10 @@ class Zip3Map(param: MFUpdateParam) extends MFUpdateFunc(param) {
 
   private def doUpdate(rows: Array[ServerIntDoubleRow], func: Serialize): Unit = {
     val mapper = func.asInstanceOf[Zip3MapFunc]
-    val from1 = rows(0).getValues
-    val from2 = rows(1).getValues
-    val from3 = rows(2).getValues
-    val to = rows(3).getValues
+    val from1 = rows(0).getSplit.getStorage.asInstanceOf[IntDoubleDenseVectorStorage].getValues
+    val from2 = rows(1).getSplit.getStorage.asInstanceOf[IntDoubleDenseVectorStorage].getValues
+    val from3 = rows(2).getSplit.getStorage.asInstanceOf[IntDoubleDenseVectorStorage].getValues
+    val to = rows(3).getSplit.getStorage.asInstanceOf[IntDoubleDenseVectorStorage].getValues
     val size = rows(0).size
     for (i <- 0 until size)
       to(i) = mapper.call(from1(i), from2(i), from3(i))
@@ -74,10 +75,10 @@ class Zip3Map(param: MFUpdateParam) extends MFUpdateFunc(param) {
 
   private def doUpdate(rows: Array[ServerIntFloatRow], func: Serialize): Unit = {
     val mapper = func.asInstanceOf[Zip3MapFunc]
-    val from1 = rows(0).getValues
-    val from2 = rows(1).getValues
-    val from3 = rows(2).getValues
-    val to = rows(3).getValues
+    val from1 = rows(0).getSplit.getStorage.asInstanceOf[IntFloatDenseVectorStorage].getValues
+    val from2 = rows(1).getSplit.getStorage.asInstanceOf[IntFloatDenseVectorStorage].getValues
+    val from3 = rows(2).getSplit.getStorage.asInstanceOf[IntFloatDenseVectorStorage].getValues
+    val to = rows(3).getSplit.getStorage.asInstanceOf[IntFloatDenseVectorStorage].getValues
     val size = rows(0).size
     for (i <- 0 until size)
       to(i) = mapper.call(from1(i), from2(i), from3(i)).toFloat
