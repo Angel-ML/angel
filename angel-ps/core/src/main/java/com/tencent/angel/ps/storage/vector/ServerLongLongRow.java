@@ -369,11 +369,11 @@ public class ServerLongLongRow extends ServerRow {
     if(func != null) {
       if (indexType == IndexType.INT) {
         for (int i = 0; i < indexSize; i++) {
-          out.writeLong(initAndGet(in.readInt()));
+          out.writeLong(initAndGet(in.readInt(), func));
         }
       } else {
         for (int i = 0; i < indexSize; i++) {
-          out.writeLong(initAndGet(in.readLong()));
+          out.writeLong(initAndGet(in.readLong(), func));
         }
       }
     } else {

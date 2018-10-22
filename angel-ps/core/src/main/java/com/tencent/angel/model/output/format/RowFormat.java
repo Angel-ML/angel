@@ -751,6 +751,7 @@ public abstract class RowFormat extends MatrixFormatImpl {
     int elemNum = rowMeta.getElementNum();
     IntFloatElement element = new IntFloatElement();
     for (int i = 0; i < elemNum; i++) {
+      element.colId = i + (int)row.getStartCol();
       load(element, in);
       row.set(element.colId, element.value);
     }
@@ -762,6 +763,7 @@ public abstract class RowFormat extends MatrixFormatImpl {
     int elemNum = rowMeta.getElementNum();
     IntDoubleElement element = new IntDoubleElement();
     for (int i = 0; i < elemNum; i++) {
+      element.colId = i + (int)row.getStartCol();
       load(element, in);
       row.set(element.colId, element.value);
     }
@@ -773,6 +775,7 @@ public abstract class RowFormat extends MatrixFormatImpl {
     int elemNum = rowMeta.getElementNum();
     IntIntElement element = new IntIntElement();
     for (int i = 0; i < elemNum; i++) {
+      element.colId = i + (int)row.getStartCol();
       load(element, in);
       row.set(element.colId, element.value);
     }
@@ -784,6 +787,7 @@ public abstract class RowFormat extends MatrixFormatImpl {
     int elemNum = rowMeta.getElementNum();
     IntLongElement element = new IntLongElement();
     for (int i = 0; i < elemNum; i++) {
+      element.colId = i + (int)row.getStartCol();
       load(element, in);
       row.set(element.colId, element.value);
     }
@@ -795,6 +799,7 @@ public abstract class RowFormat extends MatrixFormatImpl {
     int elemNum = rowMeta.getElementNum();
     LongFloatElement element = new LongFloatElement();
     for (int i = 0; i < elemNum; i++) {
+      element.colId = i + row.getStartCol();
       load(element, in);
       row.set(element.colId, element.value);
     }
@@ -806,6 +811,7 @@ public abstract class RowFormat extends MatrixFormatImpl {
     int elemNum = rowMeta.getElementNum();
     LongDoubleElement element = new LongDoubleElement();
     for (int i = 0; i < elemNum; i++) {
+      element.colId = i + row.getStartCol();
       load(element, in);
       row.set(element.colId, element.value);
     }
@@ -817,6 +823,7 @@ public abstract class RowFormat extends MatrixFormatImpl {
     int elemNum = rowMeta.getElementNum();
     LongIntElement element = new LongIntElement();
     for (int i = 0; i < elemNum; i++) {
+      element.colId = i + row.getStartCol();
       load(element, in);
       row.set(element.colId, element.value);
     }
@@ -828,6 +835,7 @@ public abstract class RowFormat extends MatrixFormatImpl {
     int elemNum = rowMeta.getElementNum();
     LongLongElement element = new LongLongElement();
     for (int i = 0; i < elemNum; i++) {
+      element.colId = i + row.getStartCol();
       load(element, in);
       row.set(element.colId, element.value);
     }
