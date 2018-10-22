@@ -22,13 +22,12 @@ import com.tencent.angel.ml.math2.vector.IntDoubleVector;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
+import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 
 /**
@@ -115,6 +114,15 @@ public class ServerCompDenseLongDoubleRow extends ServerRow {
       values[i] = intDoubleRow.get((int) (indices[i] - startCol));
     }
     return values;
+  }
+
+  /**
+   * Check the vector contains the index or not
+   * @param index element index
+   * @return true means exist
+   */
+  public boolean exist(long index) {
+    return intDoubleRow.getStorage().hasKey((int) (index - startCol));
   }
 
   /**
@@ -258,16 +266,38 @@ public class ServerCompDenseLongDoubleRow extends ServerRow {
     }
   }
 
-  @Override public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out)
+  @Override public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
     throws IOException {
-    if (indexType == IndexType.INT) {
-      for (int i = 0; i < indexSize; i++) {
-        out.writeDouble(get(in.readInt()));
+    if(func != null) {
+      if (indexType == IndexType.INT) {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeDouble(initAndGet(in.readInt(), func));
+        }
+      } else {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeDouble(initAndGet(in.readLong(), func));
+        }
       }
     } else {
-      for (int i = 0; i < indexSize; i++) {
-        out.writeDouble(get(in.readLong()));
+      if (indexType == IndexType.INT) {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeDouble(get(in.readInt()));
+        }
+      } else {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeDouble(get(in.readLong()));
+        }
       }
+    }
+  }
+
+  public double initAndGet(long index, InitFunc func) {
+    if(exist(index)) {
+      return get(index);
+    } else {
+      double value = func.action();
+      set(index, value);
+      return value;
     }
   }
 

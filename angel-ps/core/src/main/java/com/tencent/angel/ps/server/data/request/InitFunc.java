@@ -15,17 +15,10 @@
  *
  */
 
-package com.tencent.angel.ps.storage.vector;
+package com.tencent.angel.ps.server.data.request;
 
-import com.tencent.angel.ml.math2.vector.DoubleVector;
-import com.tencent.angel.ml.matrix.RowType;
-import com.tencent.angel.ps.storage.vector.func.DoubleElemUpdateFunc;
+import com.tencent.angel.common.Serialize;
 
-public abstract class ServerDoubleRow extends ServerRow {
-  public ServerDoubleRow(int rowId, RowType rowType, long startCol, long endCol, int estElemNum,
-    DoubleVector innerRow) {
-    super(rowId, rowType, startCol, endCol, estElemNum, innerRow);
-  }
-
-  public abstract void elemUpdate(DoubleElemUpdateFunc func);
+public interface InitFunc extends Serialize{
+  double action();
 }

@@ -23,6 +23,7 @@ import com.tencent.angel.ml.math2.vector.IntLongVector;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
+import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.func.LongElemUpdateFunc;
 import io.netty.buffer.ByteBuf;
@@ -320,14 +321,43 @@ public class ServerIntLongRow extends ServerLongRow {
     }
   }
 
-  @Override public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out)
+  /**
+   * Check the vector contains the index or not
+   * @param index element index
+   * @return true means exist
+   */
+  public boolean exist(int index) {
+    return intLongRow.getStorage().hasKey(index - startColInt);
+  }
+
+  public long initAndGet(int index, InitFunc func) {
+    if(exist(index)) {
+      return get(index);
+    } else {
+      long value = (long) func.action();
+      set(index, value);
+      return value;
+    }
+  }
+
+  @Override public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
     throws IOException {
-    if (indexType == IndexType.INT) {
-      for (int i = 0; i < indexSize; i++) {
-        out.writeLong(get(in.readInt()));
+    if(func != null) {
+      if (indexType == IndexType.INT) {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeLong(initAndGet(in.readInt(), func));
+        }
+      } else {
+        throw new IOException(this.getClass().getName() + " only support int type index now");
       }
     } else {
-      throw new IOException(this.getClass().getName() + " only support int type index now");
+      if (indexType == IndexType.INT) {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeLong(get(in.readInt()));
+        }
+      } else {
+        throw new IOException(this.getClass().getName() + " only support int type index now");
+      }
     }
   }
 

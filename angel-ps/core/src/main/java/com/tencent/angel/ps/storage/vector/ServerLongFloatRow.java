@@ -21,6 +21,7 @@ package com.tencent.angel.ps.storage.vector;
 import com.tencent.angel.ml.math2.vector.*;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
+import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.func.FloatElemUpdateFunc;
 import io.netty.buffer.ByteBuf;
@@ -341,15 +342,50 @@ public class ServerLongFloatRow extends ServerFloatRow {
     }
   }
 
-  @Override public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out)
+  /**
+   * Check the vector contains the index or not
+   * @param index element index
+   * @return true means exist
+   */
+  public boolean exist(long index) {
+    if(useIntKey) {
+      return ((IntFloatVector) row).getStorage().hasKey((int)(index - startCol));
+    } else {
+      return ((LongFloatVector) row).getStorage().hasKey(index - startCol);
+    }
+  }
+
+  public float initAndGet(long index, InitFunc func) {
+    if(exist(index)) {
+      return get(index);
+    } else {
+      float value = (float)func.action();
+      set(index, value);
+      return value;
+    }
+  }
+
+  @Override public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
     throws IOException {
-    if (indexType == IndexType.INT) {
-      for (int i = 0; i < indexSize; i++) {
-        out.writeFloat(get(in.readInt()));
+    if(func != null) {
+      if (indexType == IndexType.INT) {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeFloat(initAndGet(in.readInt(), func));
+        }
+      } else {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeFloat(initAndGet(in.readLong(), func));
+        }
       }
     } else {
-      for (int i = 0; i < indexSize; i++) {
-        out.writeFloat(get(in.readLong()));
+      if (indexType == IndexType.INT) {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeFloat(get(in.readInt()));
+        }
+      } else {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeFloat(get(in.readLong()));
+        }
       }
     }
   }

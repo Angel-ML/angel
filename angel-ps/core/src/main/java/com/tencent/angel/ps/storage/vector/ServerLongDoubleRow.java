@@ -21,6 +21,7 @@ package com.tencent.angel.ps.storage.vector;
 import com.tencent.angel.ml.math2.vector.*;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
+import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.func.DoubleElemUpdateFunc;
 import io.netty.buffer.ByteBuf;
@@ -233,9 +234,9 @@ public class ServerLongDoubleRow extends ServerDoubleRow {
 
   @Override public int size() {
     if(useIntKey) {
-      return ((IntFloatVector) row).size();
+      return ((IntDoubleVector) row).size();
     } else {
-      return (int)((LongFloatVector) row).size();
+      return (int)((LongDoubleVector) row).size();
     }
   }
 
@@ -335,15 +336,50 @@ public class ServerLongDoubleRow extends ServerDoubleRow {
     }
   }
 
-  @Override public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out)
+  /**
+   * Check the vector contains the index or not
+   * @param index element index
+   * @return true means exist
+   */
+  public boolean exist(long index) {
+    if(useIntKey) {
+      return ((IntDoubleVector) row).getStorage().hasKey((int)(index - startCol));
+    } else {
+      return ((LongDoubleVector) row).getStorage().hasKey(index - startCol);
+    }
+  }
+
+  public double initAndGet(long index, InitFunc func) {
+    if(exist(index)) {
+      return get(index);
+    } else {
+      double value = func.action();
+      set(index, value);
+      return value;
+    }
+  }
+
+  @Override public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
     throws IOException {
-    if (indexType == IndexType.INT) {
-      for (int i = 0; i < indexSize; i++) {
-        out.writeDouble(get(in.readInt()));
+    if(func != null) {
+      if (indexType == IndexType.INT) {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeDouble(initAndGet(in.readInt(), func));
+        }
+      } else {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeDouble(initAndGet(in.readLong(), func));
+        }
       }
     } else {
-      for (int i = 0; i < indexSize; i++) {
-        out.writeDouble(get(in.readLong()));
+      if (indexType == IndexType.INT) {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeDouble(get(in.readInt()));
+        }
+      } else {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeDouble(get(in.readLong()));
+        }
       }
     }
   }

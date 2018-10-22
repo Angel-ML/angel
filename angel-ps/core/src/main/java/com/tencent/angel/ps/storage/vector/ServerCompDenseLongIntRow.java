@@ -23,6 +23,7 @@ import com.tencent.angel.ml.math2.vector.IntIntVector;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
+import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
@@ -261,15 +262,47 @@ public class ServerCompDenseLongIntRow extends ServerRow {
     }
   }
 
-  @Override public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out)
-    throws IOException {
-    if (indexType == IndexType.INT) {
-      for (int i = 0; i < indexSize; i++) {
-        out.writeInt(get(in.readInt()));
-      }
+  /**
+   * Check the vector contains the index or not
+   * @param index element index
+   * @return true means exist
+   */
+  public boolean exist(long index) {
+    return intIntRow.getStorage().hasKey((int) (index - startCol));
+  }
+
+  public int initAndGet(long index, InitFunc func) {
+    if(exist(index)) {
+      return get(index);
     } else {
-      for (int i = 0; i < indexSize; i++) {
-        out.writeInt(get(in.readLong()));
+      int value = (int)func.action();
+      set(index, value);
+      return value;
+    }
+  }
+
+
+  @Override public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
+    throws IOException {
+    if(func != null) {
+      if (indexType == IndexType.INT) {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeInt(initAndGet(in.readInt(), func));
+        }
+      } else {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeInt(initAndGet(in.readLong(), func));
+        }
+      }
+    }  else {
+      if (indexType == IndexType.INT) {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeInt(get(in.readInt()));
+        }
+      } else {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeInt(get(in.readLong()));
+        }
       }
     }
   }

@@ -21,6 +21,7 @@ package com.tencent.angel.ps.storage.vector;
 import com.tencent.angel.ml.math2.vector.*;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
+import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2LongMap;
@@ -340,15 +341,50 @@ public class ServerLongLongRow extends ServerRow {
     }
   }
 
-  @Override public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out)
+  /**
+   * Check the vector contains the index or not
+   * @param index element index
+   * @return true means exist
+   */
+  public boolean exist(long index) {
+    if(useIntKey) {
+      return ((IntLongVector) row).getStorage().hasKey((int)(index - startCol));
+    } else {
+      return ((LongLongVector) row).getStorage().hasKey(index - startCol);
+    }
+  }
+
+  public long initAndGet(long index, InitFunc func) {
+    if(exist(index)) {
+      return get(index);
+    } else {
+      long value = (long)func.action();
+      set(index, value);
+      return value;
+    }
+  }
+
+  @Override public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
     throws IOException {
-    if (indexType == IndexType.INT) {
-      for (int i = 0; i < indexSize; i++) {
-        out.writeLong(get(in.readInt()));
+    if(func != null) {
+      if (indexType == IndexType.INT) {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeLong(initAndGet(in.readInt()));
+        }
+      } else {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeLong(initAndGet(in.readLong()));
+        }
       }
     } else {
-      for (int i = 0; i < indexSize; i++) {
-        out.writeLong(get(in.readLong()));
+      if (indexType == IndexType.INT) {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeLong(get(in.readInt()));
+        }
+      } else {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeLong(get(in.readLong()));
+        }
       }
     }
   }
