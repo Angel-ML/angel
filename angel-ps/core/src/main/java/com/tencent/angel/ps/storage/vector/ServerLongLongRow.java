@@ -195,8 +195,8 @@ public class ServerLongLongRow extends ServerRow {
     startWrite();
     try {
       switch (updateType) {
-        case T_FLOAT_SPARSE_LONGKEY:
-        case T_FLOAT_SPARSE_LONGKEY_COMPONENT:
+        case T_LONG_SPARSE_LONGKEY:
+        case T_LONG_SPARSE_LONGKEY_COMPONENT:
           updateUseSparse(buf, op);
           break;
 

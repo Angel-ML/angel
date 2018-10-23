@@ -186,8 +186,8 @@ public class ServerLongIntRow extends ServerIntRow {
     startWrite();
     try {
       switch (updateType) {
-        case T_DOUBLE_SPARSE_LONGKEY:
-        case T_DOUBLE_SPARSE_LONGKEY_COMPONENT:
+        case T_INT_SPARSE_LONGKEY:
+        case T_INT_SPARSE_LONGKEY_COMPONENT:
           updateUseSparse(buf, op);
           break;
 
@@ -232,9 +232,9 @@ public class ServerLongIntRow extends ServerIntRow {
 
   @Override public int size() {
     if(useIntKey) {
-      return ((IntFloatVector) row).size();
+      return ((IntIntVector) row).size();
     } else {
-      return (int)((LongFloatVector) row).size();
+      return (int)((LongIntVector) row).size();
     }
   }
 
