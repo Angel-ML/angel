@@ -330,8 +330,7 @@ public class AMModelLoader {
         input.close();
       }
     } else {
-      LOG.warn("can not find load path " + matrixPath);
-      return new HashMap<>();
+      throw new IOException("Can not find meta file " + metaFilePath);
     }
 
     AMMatrixMetaManager matrixMetaManager = context.getMatrixMetaManager();
