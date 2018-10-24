@@ -78,19 +78,19 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
       if (i != 0 && i % batchSize == 0) {
         graph.feedData(batchData)
         if (!pullFlag) {
-          graph.pullParams()
+          graph.pullParams(1)
           pullFlag = true
         } else {
           graph.getTrainable.foreach {
             case layer: Embedding =>
-              layer.pullParams()
+              layer.pullParams(1)
             case layer: SparseInputLayer =>
-              layer.pullParams()
+              layer.pullParams(1)
             case _ =>
           }
         }
 
-        val labels = graph.placeHolder.labels.getRow(0)
+        val labels = graph.placeHolder.labels.getCol(0)
         graph.predict() match {
           case mat: BlasDoubleMatrix =>
             (0 until mat.getNumRows).foreach { i =>
@@ -108,7 +108,7 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
 
     var left = storage.size() % batchSize
     if (left == 0 && storage.size() > 0) {
-      left = batchSize;
+      left = batchSize
     }
     if (left != 0) {
       val leftData = new Array[LabeledData](left)
@@ -116,25 +116,27 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
       graph.feedData(leftData)
       graph.getTrainable.foreach {
         case layer: Embedding =>
-          layer.pullParams()
+          layer.pullParams(1)
         case _ =>
       }
+
+      val labels = graph.placeHolder.labels.getCol(0)
       graph.predict() match {
         case mat: BlasDoubleMatrix =>
           (0 until mat.getNumRows).foreach { i =>
-            resData.put(GraphPredictResult(i, mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
+            resData.put(GraphPredictResult(VectorUtils.getFloat(labels, i).toLong, mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
           }
         case mat: BlasFloatMatrix =>
           (0 until mat.getNumRows).foreach { i =>
-            resData.put(GraphPredictResult(i, mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
+            resData.put(GraphPredictResult(VectorUtils.getFloat(labels, i).toLong, mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
           }
       }
     }
     resData
   }
 
-  def init(taskflag: Int, idxsVector: Vector): Unit = {
-    graph.init(taskflag, idxsVector)
+  def init(taskflag: Int): Unit = {
+    graph.init(taskflag)
   }
 
   def loadModel(client: AngelClient): Unit = {

@@ -34,7 +34,6 @@ import org.apache.hadoop.io.{LongWritable, Text}
 
 class GraphTrainTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
   val LOG: Log = LogFactory.getLog(classOf[GraphTrainTask])
-  var idxsVector: Vector = _
 
   private val valiRat = SharedConf.validateRatio
   private val posnegRatio: Double = SharedConf.posnegRatio()
@@ -50,7 +49,7 @@ class GraphTrainTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx
   val modelClassName: String = SharedConf.modelClassName
 
   override def train(ctx: TaskContext) {
-    val trainer = new GraphLearner(modelClassName, ctx, idxsVector)
+    val trainer = new GraphLearner(modelClassName, ctx)
     if (posnegRatio == -1) {
       trainer.train(taskDataBlock, validDataBlock)
     } else {
@@ -69,79 +68,28 @@ class GraphTrainTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx
     val vali = Math.ceil(1.0 / valiRat).toInt
 
     val reader = taskContext.getReader
-
-    idxsVector = if (needIndexs) {
-      val expected = Math.max(256, Math.min((SharedConf.indexRange / 10000).toInt, 10000000))
-
-      SharedConf.keyType() match {
-        case "int" =>
-          val idxs = new IntOpenHashSet(expected)
-          while (reader.nextKeyValue) {
-            val out = parse(reader.getCurrentKey, reader.getCurrentValue)
-            if (out != null) {
-              addIndexs(out.getX, idxs)
-
-              if (count % vali == 0)
-                validDataBlock.put(out)
-              else if (posnegRatio != -1) {
-                if (out.getY > 0) {
-                  posDataBlock.put(out)
-                } else {
-                  negDataBlock.put(out)
-                }
-              } else {
-                taskDataBlock.put(out)
-              }
-              count += 1
-            }
-          }
-          set2Vector(idxs)
-        case "long" =>
-          val idxs = new LongOpenHashSet(expected)
-          while (reader.nextKeyValue) {
-            val out = parse(reader.getCurrentKey, reader.getCurrentValue)
-            if (out != null) {
-              addIndexs(out.getX, idxs)
-
-              if (count % vali == 0) {
-                validDataBlock.put(out)
-              } else if (posnegRatio != -1) {
-                if (out.getY > 0) {
-                  posDataBlock.put(out)
-                } else {
-                  negDataBlock.put(out)
-                }
-              } else {
-                taskDataBlock.put(out)
-              }
-              count += 1
-            }
-          }
-          set2Vector(idxs)
-      }
-    } else {
-      while (reader.nextKeyValue) {
-        val out = parse(reader.getCurrentKey, reader.getCurrentValue)
-        if (out != null) {
-          if (count % vali == 0)
-            validDataBlock.put(out)
-          else if (posnegRatio != -1) {
-            if (out.getY > 0) {
-              posDataBlock.put(out)
-            } else {
-              negDataBlock.put(out)
-            }
+    while (reader.nextKeyValue) {
+      val out = parse(reader.getCurrentKey, reader.getCurrentValue)
+      if (out != null) {
+        if (count % vali == 0)
+          validDataBlock.put(out)
+        else if (posnegRatio != -1) {
+          if (out.getY > 0) {
+            posDataBlock.put(out)
           } else {
-            taskDataBlock.put(out)
+            negDataBlock.put(out)
           }
-          count += 1
+        } else {
+          taskDataBlock.put(out)
         }
+        count += 1
       }
 
       null.asInstanceOf[Vector]
     }
 
-    taskDataBlock.flush()
+    posDataBlock.flush()
+    negDataBlock.flush()
     validDataBlock.flush()
 
     val cost = System.currentTimeMillis() - start
