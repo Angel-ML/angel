@@ -322,7 +322,11 @@ public class ServerIntFloatRow extends ServerFloatRow {
    * @return true means exist
    */
   public boolean exist(int index) {
-    return intFloatRow.getStorage().hasKey(index - startColInt);
+    if(intFloatRow.isSparse()) {
+      return intFloatRow.getStorage().hasKey(index - startColInt);
+    } else {
+      return intFloatRow.get(index - startColInt) != 0.0f;
+    }
   }
 
   public float initAndGet(int index, InitFunc func) {

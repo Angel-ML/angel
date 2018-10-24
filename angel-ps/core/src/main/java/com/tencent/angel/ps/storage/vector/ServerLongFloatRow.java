@@ -349,9 +349,17 @@ public class ServerLongFloatRow extends ServerFloatRow {
    */
   public boolean exist(long index) {
     if(useIntKey) {
-      return ((IntFloatVector) row).getStorage().hasKey((int)(index - startCol));
+      if(row.isSparse()) {
+        return ((IntFloatVector) row).getStorage().hasKey((int)(index - startCol));
+      } else {
+        return ((IntFloatVector) row).getStorage().get((int)(index - startCol)) != 0.0f;
+      }
     } else {
-      return ((LongFloatVector) row).getStorage().hasKey(index - startCol);
+      if(row.isSparse()) {
+        return ((LongFloatVector) row).getStorage().hasKey(index - startCol);
+      } else {
+        return ((LongFloatVector) row).getStorage().get(index - startCol) != 0.0f;
+      }
     }
   }
 
