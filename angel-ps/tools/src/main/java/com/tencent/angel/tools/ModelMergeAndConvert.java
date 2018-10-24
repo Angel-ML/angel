@@ -20,8 +20,8 @@ package com.tencent.angel.tools;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.model.output.format.MatrixFilesMeta;
 import com.tencent.angel.model.output.format.ModelFilesConstent;
-import com.tencent.angel.model.output.format.ModelFilesMeta;
 import com.tencent.angel.utils.ConfUtils;
 import com.tencent.angel.utils.Sort;
 import com.tencent.angel.utils.UGITools;
@@ -68,14 +68,14 @@ public class ModelMergeAndConvert {
   public static void convert(Configuration conf, String modelInputDir, String modelOutputDir,
     ModelLineConvert lineConvert) throws IOException {
     // Load model meta
-    ModelFilesMeta meta = getMeta(modelInputDir, conf);
+    MatrixFilesMeta meta = getMeta(modelInputDir, conf);
 
     // Convert model
     convertModel(conf, modelInputDir, modelOutputDir, meta, lineConvert);
   }
 
   private static void convertModel(Configuration conf, String modelInputDir,
-    String convertedModelDir, ModelFilesMeta meta, ModelLineConvert lineConvert)
+    String convertedModelDir, MatrixFilesMeta meta, ModelLineConvert lineConvert)
     throws IOException {
     Path outputFile = new Path(convertedModelDir, dataFile);
     FileSystem fs = outputFile.getFileSystem(conf);
@@ -252,7 +252,7 @@ public class ModelMergeAndConvert {
     }
   }
 
-  private static void convertHeader(ModelFilesMeta meta, FSDataOutputStream output)
+  private static void convertHeader(MatrixFilesMeta meta, FSDataOutputStream output)
     throws IOException {
     LOG.info("model meta=" + meta);
     output.writeBytes("modelName=" + meta.getMatrixName() + "\n");
@@ -269,10 +269,10 @@ public class ModelMergeAndConvert {
    * @return model meta
    * @throws IOException
    */
-  public static ModelFilesMeta getMeta(String modelDir, Configuration conf) throws IOException {
+  public static MatrixFilesMeta getMeta(String modelDir, Configuration conf) throws IOException {
     Path modelPath = new Path(modelDir);
     Path meteFilePath = new Path(modelPath, ModelFilesConstent.modelMetaFileName);
-    ModelFilesMeta meta = new ModelFilesMeta();
+    MatrixFilesMeta meta = new MatrixFilesMeta();
     FileSystem fs = meteFilePath.getFileSystem(conf);
     if (!fs.exists(meteFilePath)) {
       throw new IOException("matrix meta file does not exist ");

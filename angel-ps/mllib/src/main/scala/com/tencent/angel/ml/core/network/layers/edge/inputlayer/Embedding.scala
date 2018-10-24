@@ -381,9 +381,10 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
   }
 
   override def saveParams(saveContext: ModelSaveContext): Unit = {
+    val outputFormat = SharedConf.embeddingLayerMatrixOutputFormat
     SharedConf.actionType().toLowerCase match {
       case "train" | "inctrain" =>
-        val embedMatMCS: MatrixSaveContext = new MatrixSaveContext(embedMatCtx.getName)
+        val embedMatMCS: MatrixSaveContext = new MatrixSaveContext(embedMatCtx.getName, outputFormat)
         embedMatMCS.addIndices((0 until numFactors).toArray)
         saveContext.addMatrix(embedMatMCS)
       case _ =>

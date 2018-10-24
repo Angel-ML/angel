@@ -21,17 +21,18 @@ package com.tencent.angel.ps.storage.vector;
 import com.tencent.angel.common.Serialize;
 import com.tencent.angel.exception.WaitLockTimeOutException;
 import com.tencent.angel.ml.math2.VFactory;
+import com.tencent.angel.ml.math2.vector.IntKeyVector;
+import com.tencent.angel.ml.math2.vector.IntVector;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
+import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.utils.StringUtils;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -51,8 +52,11 @@ public abstract class ServerRow implements Serialize {
   protected long estElemNum;
   protected int size;
   protected int rowVersion;
+  protected boolean useIntKey;
   protected final ReentrantReadWriteLock lock;
   public static volatile transient int maxLockWaitTimeMs = 10000;
+  public static volatile transient float sparseToDenseFactor = 0.2f;
+  public static volatile transient boolean useAdaptiveStorage = true;
 
   protected Vector row;
 
@@ -340,69 +344,7 @@ public abstract class ServerRow implements Serialize {
     lock.readLock().unlock();
   }
 
-  /////////////////////////////////////////////////////////////////////////////////////////////////
-  //////// disk io method, for model read/load
-  /////////////////////////////////////////////////////////////////////////////////////////////////
-
-  /**
-   * Write row to output stream
-   *
-   * @param output     the output stream
-   * @param cloneFirst clone this ServerRow before write it to output stream
-   * @throws IOException
-   */
-  public void writeTo(DataOutputStream output, boolean cloneFirst) throws IOException {
-    ServerRow writeRow;
-    if (cloneFirst) {
-      writeRow = clone();
-    } else {
-      writeRow = this;
-    }
-
-    writeRow.startRead();
-    try {
-      writeRow.writeRow(output);
-    } finally {
-      writeRow.endRead();
-    }
-  }
-
-  /**
-   * Write row to output stream
-   *
-   * @param output the output stream
-   * @throws IOException
-   */
-  public void writeTo(DataOutputStream output) throws IOException {
-    writeTo(output, false);
-  }
-
-  /**
-   * Read ServerRow from input stream
-   *
-   * @param input the input
-   * @throws IOException
-   */
-  public void readFrom(DataInputStream input) throws IOException {
-    startWrite();
-    try {
-      readRow(input);
-    } finally {
-      endWrite();
-    }
-  }
-
-  /**
-   * Write the inner row to output stream
-   *
-   * @param output output stream
-   * @throws IOException
-   */
-  protected abstract void writeRow(DataOutputStream output) throws IOException;
-
-  protected abstract void readRow(DataInputStream input) throws IOException;
-
-  public abstract void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out)
+  public abstract void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
     throws IOException;
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -456,12 +398,20 @@ public abstract class ServerRow implements Serialize {
       + startCol + ", rowVersion=" + rowVersion + "]";
   }
 
+  protected boolean useIntKey() {
+    return row instanceof IntVector;
+  }
+
   private Vector initRow(long startCol, long endCol, long estElemNum) {
     Vector ret;
     switch (rowType) {
       case T_DOUBLE_SPARSE:
       case T_DOUBLE_SPARSE_COMPONENT:
-        ret = VFactory.sparseDoubleVector((int) (endCol - startCol), (int) estElemNum);
+        if(useAdaptiveStorage && estElemNum > sparseToDenseFactor * (endCol - startCol)) {
+          ret = VFactory.denseDoubleVector((int) (endCol - startCol));
+        } else {
+          ret = VFactory.sparseDoubleVector((int) (endCol - startCol), (int) estElemNum);
+        }
         break;
 
       case T_DOUBLE_DENSE:
@@ -471,7 +421,11 @@ public abstract class ServerRow implements Serialize {
 
       case T_FLOAT_SPARSE:
       case T_FLOAT_SPARSE_COMPONENT:
-        ret = VFactory.sparseFloatVector((int) (endCol - startCol), (int) estElemNum);
+        if(useAdaptiveStorage && estElemNum > sparseToDenseFactor * (endCol - startCol)) {
+          ret = VFactory.denseFloatVector((int) (endCol - startCol));
+        } else {
+          ret = VFactory.sparseFloatVector((int) (endCol - startCol), (int) estElemNum);
+        }
         break;
 
       case T_FLOAT_DENSE:
@@ -481,7 +435,11 @@ public abstract class ServerRow implements Serialize {
 
       case T_INT_SPARSE:
       case T_INT_SPARSE_COMPONENT:
-        ret = VFactory.sparseIntVector((int) (endCol - startCol), (int) estElemNum);
+        if(useAdaptiveStorage && estElemNum > sparseToDenseFactor * (endCol - startCol)) {
+          ret = VFactory.denseIntVector((int) (endCol - startCol));
+        } else {
+          ret = VFactory.sparseIntVector((int) (endCol - startCol), (int) estElemNum);
+        }
         break;
 
       case T_INT_DENSE:
@@ -491,7 +449,11 @@ public abstract class ServerRow implements Serialize {
 
       case T_LONG_SPARSE:
       case T_LONG_SPARSE_COMPONENT:
-        ret = VFactory.sparseLongVector((int) (endCol - startCol), (int) estElemNum);
+        if(useAdaptiveStorage && estElemNum > sparseToDenseFactor * (endCol - startCol)) {
+          ret = VFactory.denseLongVector((int) (endCol - startCol));
+        } else {
+          ret = VFactory.sparseLongVector((int) (endCol - startCol), (int) estElemNum);
+        }
         break;
 
       case T_LONG_DENSE:
@@ -501,22 +463,54 @@ public abstract class ServerRow implements Serialize {
 
       case T_DOUBLE_SPARSE_LONGKEY:
       case T_DOUBLE_SPARSE_LONGKEY_COMPONENT:
-        ret = VFactory.sparseLongKeyDoubleVector(endCol - startCol, (int) estElemNum);
+        if(endCol - startCol < Integer.MAX_VALUE) {
+          if(estElemNum > sparseToDenseFactor * (endCol - startCol)) {
+            ret = VFactory.denseDoubleVector((int)(endCol - startCol));
+          } else {
+            ret = VFactory.sparseDoubleVector((int)(endCol - startCol), (int)estElemNum);
+          }
+        } else {
+          ret = VFactory.sparseLongKeyDoubleVector(endCol - startCol, (int) estElemNum);
+        }
         break;
 
       case T_FLOAT_SPARSE_LONGKEY:
       case T_FLOAT_SPARSE_LONGKEY_COMPONENT:
-        ret = VFactory.sparseLongKeyFloatVector(endCol - startCol, (int) estElemNum);
+        if(endCol - startCol < Integer.MAX_VALUE) {
+          if(estElemNum > sparseToDenseFactor * (endCol - startCol)) {
+            ret = VFactory.denseFloatVector((int)(endCol - startCol));
+          } else {
+            ret = VFactory.sparseFloatVector((int)(endCol - startCol), (int)estElemNum);
+          }
+        } else {
+          ret = VFactory.sparseLongKeyFloatVector(endCol - startCol, (int) estElemNum);
+        }
         break;
 
       case T_INT_SPARSE_LONGKEY:
       case T_INT_SPARSE_LONGKEY_COMPONENT:
-        ret = VFactory.sparseLongKeyIntVector(endCol - startCol, (int) estElemNum);
+        if(endCol - startCol < Integer.MAX_VALUE) {
+          if(estElemNum > sparseToDenseFactor * (endCol - startCol)) {
+            ret = VFactory.denseIntVector((int)(endCol - startCol));
+          } else {
+            ret = VFactory.sparseIntVector((int)(endCol - startCol), (int)estElemNum);
+          }
+        } else {
+          ret = VFactory.sparseLongKeyIntVector(endCol - startCol, (int) estElemNum);
+        }
         break;
 
       case T_LONG_SPARSE_LONGKEY:
       case T_LONG_SPARSE_LONGKEY_COMPONENT:
-        ret = VFactory.sparseLongKeyLongVector(endCol - startCol, (int) estElemNum);
+        if(endCol - startCol < Integer.MAX_VALUE) {
+          if(estElemNum > sparseToDenseFactor * (endCol - startCol)) {
+            ret = VFactory.denseLongVector((int)(endCol - startCol));
+          } else {
+            ret = VFactory.sparseLongVector((int)(endCol - startCol), (int)estElemNum);
+          }
+        } else {
+          ret = VFactory.sparseLongKeyLongVector(endCol - startCol, (int) estElemNum);
+        }
         break;
 
       case T_DOUBLE_DENSE_LONGKEY_COMPONENT:
@@ -539,7 +533,7 @@ public abstract class ServerRow implements Serialize {
         throw new UnsupportedOperationException(
           "can not support " + rowType + " type row for ServerIntDoubleRow");
     }
-
+    useIntKey = ret instanceof IntKeyVector;
     return ret;
   }
 }

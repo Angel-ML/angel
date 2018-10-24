@@ -205,10 +205,11 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
   }
 
   override def saveParams(saveContext: ModelSaveContext): Unit = {
+    val outputFormat = SharedConf.fcLayerMatrixOutputFormat
     SharedConf.actionType().toLowerCase match {
       case "train" | "inctrain" =>
-        val weightMCS: MatrixSaveContext = new MatrixSaveContext(weightCtx.getName)
-        val biasMCS: MatrixSaveContext = new MatrixSaveContext(biasCtx.getName)
+        val weightMCS: MatrixSaveContext = new MatrixSaveContext(weightCtx.getName, outputFormat)
+        val biasMCS: MatrixSaveContext = new MatrixSaveContext(biasCtx.getName, outputFormat)
         weightMCS.addIndex(0)
         saveContext.addMatrix(weightMCS)
         saveContext.addMatrix(biasMCS)
