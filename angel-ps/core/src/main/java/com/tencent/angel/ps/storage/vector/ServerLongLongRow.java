@@ -348,9 +348,17 @@ public class ServerLongLongRow extends ServerRow {
    */
   public boolean exist(long index) {
     if(useIntKey) {
-      return ((IntLongVector) row).getStorage().hasKey((int)(index - startCol));
+      if(row.isSparse()) {
+        return ((IntLongVector) row).getStorage().hasKey((int)(index - startCol));
+      } else {
+        return ((IntLongVector) row).getStorage().get((int)(index - startCol)) != 0;
+      }
     } else {
-      return ((LongLongVector) row).getStorage().hasKey(index - startCol);
+      if(row.isSparse()) {
+        return ((LongLongVector) row).getStorage().hasKey(index - startCol);
+      } else {
+        return ((LongLongVector) row).getStorage().get(index - startCol) != 0;
+      }
     }
   }
 

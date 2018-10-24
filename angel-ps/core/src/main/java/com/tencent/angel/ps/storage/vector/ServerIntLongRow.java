@@ -327,7 +327,11 @@ public class ServerIntLongRow extends ServerLongRow {
    * @return true means exist
    */
   public boolean exist(int index) {
-    return intLongRow.getStorage().hasKey(index - startColInt);
+    if(intLongRow.isSparse()) {
+      return intLongRow.getStorage().hasKey(index - startColInt);
+    } else {
+      return intLongRow.get(index - startColInt) != 0;
+    }
   }
 
   public long initAndGet(int index, InitFunc func) {

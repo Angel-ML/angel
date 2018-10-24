@@ -325,7 +325,11 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
    * @return true means exist
    */
   public boolean exist(int index) {
-    return intDoubleRow.getStorage().hasKey(index - startColInt);
+    if(intDoubleRow.isSparse()) {
+      return intDoubleRow.getStorage().hasKey(index - startColInt);
+    } else {
+      return intDoubleRow.get(index - startColInt) != 0.0;
+    }
   }
 
   public double initAndGet(int index, InitFunc func) {

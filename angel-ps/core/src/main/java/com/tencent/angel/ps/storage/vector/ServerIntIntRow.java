@@ -320,7 +320,11 @@ public class ServerIntIntRow extends ServerIntRow {
    * @return true means exist
    */
   public boolean exist(int index) {
-    return intIntRow.getStorage().hasKey(index - startColInt);
+    if(intIntRow.isSparse()) {
+      return intIntRow.getStorage().hasKey(index - startColInt);
+    } else {
+      return intIntRow.get(index - startColInt) != 0;
+    }
   }
 
   public int initAndGet(int index, InitFunc func) {
