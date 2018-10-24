@@ -191,6 +191,7 @@ public class PSAgentMatrixMetaManager {
     List<PartitionKey> rowParts = rowPartKeysCache.get(rowIndex);
     if (rowParts == null) {
       rowParts = getPartitionsFromMeta(matrixId, rowIndex);
+
       rowPartKeysCache.put(rowIndex, rowParts);
     }
 
@@ -209,7 +210,13 @@ public class PSAgentMatrixMetaManager {
     }
     partitionKeys.sort(new Comparator<PartitionKey>() {
       @Override public int compare(PartitionKey p1, PartitionKey p2) {
-        return (int) (p1.getStartCol() - p2.getEndCol());
+        if (p1.getStartCol() < p2.getStartCol()) {
+          return -1;
+        } else if (p1.getStartCol() > p2.getStartCol()) {
+          return 1;
+        } else {
+          return 0;
+        }
       }
     });
     return partitionKeys;
@@ -241,7 +248,7 @@ public class PSAgentMatrixMetaManager {
     partitionKeys.sort((PartitionKey p1, PartitionKey p2) -> {
       if (p1.getStartCol() < p2.getStartCol()) {
         return -1;
-      } else if (p1.getStartCol() < p2.getStartCol()) {
+      } else if (p1.getStartCol() > p2.getStartCol()) {
         return 1;
       } else {
         return 0;

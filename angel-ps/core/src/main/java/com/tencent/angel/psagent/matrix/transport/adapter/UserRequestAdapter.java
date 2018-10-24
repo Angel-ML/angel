@@ -1260,9 +1260,9 @@ public class UserRequestAdapter {
     HashMap<PartitionKey, IndicesView> ret = new HashMap<>();
 
     // Sort partition keys use start column index
-    Collections.sort(partKeys, (PartitionKey key1, PartitionKey key2) -> {
-      return key1.getStartCol() < key2.getStartCol() ? -1 : 1;
-    });
+    //Collections.sort(partKeys, (PartitionKey key1, PartitionKey key2) -> {
+    //  return key1.getStartCol() < key2.getStartCol() ? -1 : 1;
+    //});
 
     int ii = 0;
     int keyIndex = 0;
@@ -1292,9 +1292,9 @@ public class UserRequestAdapter {
     HashMap<PartitionKey, IndicesView> ret = new HashMap<>();
 
     // Sort partition keys use start column index
-    Collections.sort(partKeys, (PartitionKey key1, PartitionKey key2) -> {
-      return key1.getStartCol() < key2.getStartCol() ? -1 : 1;
-    });
+    //Collections.sort(partKeys, (PartitionKey key1, PartitionKey key2) -> {
+    //  return key1.getStartCol() < key2.getStartCol() ? -1 : 1;
+    //});
 
     int ii = 0;
     int keyIndex = 0;

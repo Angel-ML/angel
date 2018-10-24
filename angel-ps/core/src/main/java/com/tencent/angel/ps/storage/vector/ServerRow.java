@@ -462,7 +462,6 @@ public abstract class ServerRow implements Serialize {
         break;
 
       case T_DOUBLE_SPARSE_LONGKEY:
-      case T_DOUBLE_SPARSE_LONGKEY_COMPONENT:
         if(endCol - startCol < Integer.MAX_VALUE) {
           if(estElemNum > sparseToDenseFactor * (endCol - startCol)) {
             ret = VFactory.denseDoubleVector((int)(endCol - startCol));
@@ -474,8 +473,11 @@ public abstract class ServerRow implements Serialize {
         }
         break;
 
+      case T_DOUBLE_SPARSE_LONGKEY_COMPONENT:
+        ret = VFactory.sparseLongKeyDoubleVector(endCol - startCol, (int) estElemNum);
+        break;
+
       case T_FLOAT_SPARSE_LONGKEY:
-      case T_FLOAT_SPARSE_LONGKEY_COMPONENT:
         if(endCol - startCol < Integer.MAX_VALUE) {
           if(estElemNum > sparseToDenseFactor * (endCol - startCol)) {
             ret = VFactory.denseFloatVector((int)(endCol - startCol));
@@ -487,8 +489,11 @@ public abstract class ServerRow implements Serialize {
         }
         break;
 
+      case T_FLOAT_SPARSE_LONGKEY_COMPONENT:
+        ret = VFactory.sparseLongKeyFloatVector(endCol - startCol, (int) estElemNum);
+        break;
+
       case T_INT_SPARSE_LONGKEY:
-      case T_INT_SPARSE_LONGKEY_COMPONENT:
         if(endCol - startCol < Integer.MAX_VALUE) {
           if(estElemNum > sparseToDenseFactor * (endCol - startCol)) {
             ret = VFactory.denseIntVector((int)(endCol - startCol));
@@ -500,8 +505,11 @@ public abstract class ServerRow implements Serialize {
         }
         break;
 
+      case T_INT_SPARSE_LONGKEY_COMPONENT:
+        ret = VFactory.sparseLongKeyIntVector(endCol - startCol, (int) estElemNum);
+        break;
+
       case T_LONG_SPARSE_LONGKEY:
-      case T_LONG_SPARSE_LONGKEY_COMPONENT:
         if(endCol - startCol < Integer.MAX_VALUE) {
           if(estElemNum > sparseToDenseFactor * (endCol - startCol)) {
             ret = VFactory.denseLongVector((int)(endCol - startCol));
@@ -511,6 +519,10 @@ public abstract class ServerRow implements Serialize {
         } else {
           ret = VFactory.sparseLongKeyLongVector(endCol - startCol, (int) estElemNum);
         }
+        break;
+
+      case T_LONG_SPARSE_LONGKEY_COMPONENT:
+        ret = VFactory.sparseLongKeyLongVector(endCol - startCol, (int) estElemNum);
         break;
 
       case T_DOUBLE_DENSE_LONGKEY_COMPONENT:
