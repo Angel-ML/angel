@@ -28,6 +28,7 @@ import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.ml.core.network.layers.{AngelGraph, PlaceHolder}
 import com.tencent.angel.ml.core.optimizer.loss._
 import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
+import com.tencent.angel.ml.math2.utils.VectorUtils
 import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
@@ -88,14 +89,16 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
             case _ =>
           }
         }
+
+        val labels = graph.placeHolder.labels.getRow(0)
         graph.predict() match {
           case mat: BlasDoubleMatrix =>
             (0 until mat.getNumRows).foreach { i =>
-              resData.put(GraphPredictResult(i, mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
+              resData.put(GraphPredictResult(VectorUtils.getFloat(labels, i).toLong, mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
             }
           case mat: BlasFloatMatrix =>
             (0 until mat.getNumRows).foreach { i =>
-              resData.put(GraphPredictResult(i, mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
+              resData.put(GraphPredictResult(VectorUtils.getFloat(labels, i).toLong, mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
             }
         }
       }

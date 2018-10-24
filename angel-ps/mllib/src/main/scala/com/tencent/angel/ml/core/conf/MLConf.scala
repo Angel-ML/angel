@@ -65,7 +65,7 @@ object MLConf {
   val ML_MODEL_SIZE = "ml.model.size"
   val DEFAULT_ML_MODEL_SIZE = -1
   val ML_MODEL_TYPE = "ml.model.type"
-  val DEFAULT_ML_MODEL_TYPE = RowType.T_DOUBLE_DENSE.toString
+  val DEFAULT_ML_MODEL_TYPE = RowType.T_FLOAT_DENSE.toString
   val ML_MODEL_IS_CLASSIFICATION = "ml.model.is.classification"
   val DEFAULT_ML_MODEL_IS_CLASSIFICATION = true
 

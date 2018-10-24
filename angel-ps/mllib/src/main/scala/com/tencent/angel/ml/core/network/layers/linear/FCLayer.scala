@@ -171,7 +171,7 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
     val bound: Double = 0.00001
     if (taskflag == 0) {
       val randFunc = new RandomNormal(weightId, 0, 0.0, bound)
-      PSAgentContext.get().getUserRequestAdapter.update(randFunc)
+      PSAgentContext.get().getUserRequestAdapter.update(randFunc).get()
     }
   }
 

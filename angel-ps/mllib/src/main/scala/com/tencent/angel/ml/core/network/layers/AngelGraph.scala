@@ -160,11 +160,13 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
   }
 
   def init(taskId: Int = 0, idxsVector: Vector = null): Unit = {
-    val updateFuture = Future.sequence(trainableLayer.map { layer => Future {
-      layer.init(taskId, idxsVector)
-    }
-    })
-    Await.result(updateFuture, Duration.Inf)
+//    val updateFuture = Future.sequence(trainableLayer.map { layer => Future {
+//      layer.init(taskId, idxsVector)
+//    }
+//    })
+//    Await.result(updateFuture, Duration.Inf)
+    trainableLayer.foreach { layer => layer.init(taskId, idxsVector) }
+
   }
 
   def loadModel(client: AngelClient): Unit = {
