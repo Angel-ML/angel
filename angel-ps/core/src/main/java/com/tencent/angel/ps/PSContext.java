@@ -24,7 +24,7 @@ import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ps.client.MasterClient;
 import com.tencent.angel.ps.client.PSLocationManager;
 import com.tencent.angel.ps.clock.ClockVectorManager;
-import com.tencent.angel.ps.io.IOExecutors;
+import com.tencent.angel.ps.io.PSModelIOExecutor;
 import com.tencent.angel.ps.io.save.SnapshotDumper;
 import com.tencent.angel.ps.meta.PSMatrixMetaManager;
 import com.tencent.angel.ps.server.control.ParameterServerService;
@@ -172,8 +172,8 @@ public class PSContext {
    *
    * @return matrices load/save worker pool
    */
-  public IOExecutors getIOExecutors() {
-    return ps.getIOExecutors();
+  public PSModelIOExecutor getIOExecutors() {
+    return ps.getPSModelIOExecutor();
   }
 
   /**

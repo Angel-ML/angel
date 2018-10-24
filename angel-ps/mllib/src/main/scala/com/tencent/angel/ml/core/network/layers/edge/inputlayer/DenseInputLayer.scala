@@ -208,10 +208,11 @@ class DenseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overri
   }
 
   override def saveParams(saveContext: ModelSaveContext): Unit = {
+    val outputFormat = SharedConf.denseInputLayerMatrixOutputFormat
     SharedConf.actionType().toLowerCase match {
       case "train" | "inctrain" =>
-        val weightMCS: MatrixSaveContext = new MatrixSaveContext(weightCtx.getName)
-        val biasMCS: MatrixSaveContext = new MatrixSaveContext(biasCtx.getName)
+        val weightMCS: MatrixSaveContext = new MatrixSaveContext(weightCtx.getName, outputFormat)
+        val biasMCS: MatrixSaveContext = new MatrixSaveContext(biasCtx.getName, outputFormat)
         saveContext.addMatrix(weightMCS)
         saveContext.addMatrix(biasMCS)
       case _ =>

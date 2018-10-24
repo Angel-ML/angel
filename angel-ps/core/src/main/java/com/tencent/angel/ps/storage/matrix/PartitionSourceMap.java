@@ -24,7 +24,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class PartitionSourceMap extends PartitionSource {
+public class PartitionSourceMap implements PartitionSource {
   private ConcurrentHashMap<Integer, ServerRow> source;
 
   public PartitionSourceMap() {
@@ -34,23 +34,23 @@ public class PartitionSourceMap extends PartitionSource {
     source = new ConcurrentHashMap<>(rowNum);
   }
 
-  @Override protected ServerRow getRow(int index) {
+  @Override public ServerRow getRow(int index) {
     return source.get(index);
   }
 
-  @Override protected void putRow(int index, ServerRow row) {
+  @Override public void putRow(int index, ServerRow row) {
     source.put(index, row);
   }
 
-  @Override protected int rowNum() {
+  @Override public int rowNum() {
     return source.size();
   }
 
-  @Override protected boolean hasRow(int index) {
+  @Override public boolean hasRow(int index) {
     return source.containsKey(index);
   }
 
-  @Override protected Iterator<Map.Entry<Integer, ServerRow>> iterator() {
+  @Override public Iterator<Map.Entry<Integer, ServerRow>> iterator() {
     return source.entrySet().iterator();
   }
 }

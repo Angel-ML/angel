@@ -25,6 +25,7 @@ import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult;
+import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.transport.adapter.GetRowsResult;
@@ -163,6 +164,42 @@ public class MatrixClientImpl extends MatrixClient {
   @Override public Vector[] get(int[] rowIds, long[] indices) throws AngelException {
     try {
       return PSAgentContext.get().getUserRequestAdapter().get(matrixId, rowIds, indices).get();
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+  }
+
+  @Override public Vector initAndGet(int rowId, int[] indices, InitFunc func)
+    throws AngelException {
+    try {
+      return PSAgentContext.get().getUserRequestAdapter().get(matrixId, rowId, indices, func).get();
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+  }
+
+  @Override public Vector initAndGet(int rowId, long[] indices, InitFunc func)
+    throws AngelException {
+    try {
+      return PSAgentContext.get().getUserRequestAdapter().get(matrixId, rowId, indices, func).get();
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+  }
+
+  @Override public Vector[] initAndGet(int[] rowIds, int[] indices, InitFunc func)
+    throws AngelException {
+    try {
+      return PSAgentContext.get().getUserRequestAdapter().get(matrixId, rowIds, indices, func).get();
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+  }
+
+  @Override public Vector[] initAndGet(int[] rowIds, long[] indices, InitFunc func)
+    throws AngelException {
+    try {
+      return PSAgentContext.get().getUserRequestAdapter().get(matrixId, rowIds, indices, func).get();
     } catch (Throwable x) {
       throw new AngelException(x);
     }

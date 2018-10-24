@@ -21,6 +21,7 @@ package com.tencent.angel.ml.matrix.psf.update
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.matrix.psf.update.enhance.{MMUpdateFunc, MMUpdateParam}
 import com.tencent.angel.ps.storage.vector._
+import com.tencent.angel.ps.storage.vector.func._
 
 /**
   * Generate a random array for `rowId`, each element belongs to normal distribution N(mean, stddev)
@@ -38,54 +39,35 @@ class RandomNormal(param: MMUpdateParam) extends MMUpdateFunc(param) {
   override protected def update(rows: Array[ServerRow], scalars: Array[Double]): Unit = {
     val mean = scalars(0)
     val stdDev = scalars(1)
+    val rand = new util.Random(System.currentTimeMillis())
     rows.foreach {
-      case r: ServerIntDoubleRow =>
-        r.startWrite()
-        try {
-          RandomNormal.randomNormalFill[Double](mean, stdDev, r.getValues, v => v)
-        } finally {
-          r.endWrite()
-        }
-      case r: ServerIntFloatRow =>
-        r.startWrite()
-        try {
-          RandomNormal.randomNormalFill[Float](mean, stdDev, r.getValues, v => v.toFloat)
-        } finally {
-          r.endWrite()
-        }
-      case r: ServerIntLongRow =>
-        r.startWrite()
-        try {
-          RandomNormal.randomNormalFill[Long](mean, stdDev, r.getValues, v => v.toLong)
-        } finally {
-          r.endWrite()
-        }
+      case r: ServerDoubleRow =>
+        r.elemUpdate(new DoubleElemUpdateFunc {
+          override def update(): Double = {
+            stdDev * rand.nextGaussian() + mean
+          }
+        })
 
-      case r: ServerIntIntRow =>
-        r.startWrite()
-        try {
-          RandomNormal.randomNormalFill[Int](mean, stdDev, r.getValues, v => v.toInt)
-        } finally {
-          r.endWrite()
-        }
-      case r: ServerLongDoubleRow =>
-        val rand = new java.util.Random()
-        r.startWrite()
-        try {
-          val data = r.getValues
-          data.indices.par.foreach(data(_) = stdDev * rand.nextGaussian() + mean)
-        } finally {
-          r.endWrite()
-        }
-      case r: ServerLongFloatRow =>
-        val rand = new java.util.Random()
-        r.startWrite()
-        try {
-          val data = r.getValues
-          data.indices.par.foreach(data(_) = (stdDev * rand.nextGaussian() + mean).toFloat)
-        } finally {
-          r.endWrite()
-        }
+      case r: ServerFloatRow =>
+        r.elemUpdate(new FloatElemUpdateFunc {
+          override def update(): Float = {
+            (stdDev * rand.nextGaussian() + mean).toFloat
+          }
+        })
+
+      case r: ServerIntRow =>
+        r.elemUpdate(new IntElemUpdateFunc {
+          override def update(): Int = {
+            (stdDev * rand.nextGaussian() + mean).toInt
+          }
+        })
+
+      case r: ServerLongRow =>
+        r.elemUpdate(new LongElemUpdateFunc {
+          override def update(): Long = {
+            (stdDev * rand.nextGaussian() + mean).toLong
+          }
+        })
       case r => throw new AngelException(s"not implemented for ${r.getRowType}")
     }
   }

@@ -514,9 +514,15 @@ public class WorkerPool {
         result.serialize(resultBuf);
         resultBuf.writeInt(valueType.getTypeId());
         resultBuf.writeInt(size);
-        row.startRead();
-        row.indexGet(indexType, size, in, resultBuf);
-        row.endRead();
+        if(request.getFunc() == null) {
+          row.startRead();
+          row.indexGet(indexType, size, in, resultBuf, null);
+          row.endRead();
+        } else {
+          row.startWrite();
+          row.indexGet(indexType, size, in, resultBuf, request.getFunc());
+          row.endWrite();
+        }
         return resultBuf;
       } catch (Throwable x) {
         LOG.error("allocate result buffer for " + TransportMethod.INDEX_GET_ROW + " failed ", x);
@@ -571,9 +577,15 @@ public class WorkerPool {
           ServerRow row = context.getMatrixStorageManager()
             .getRow(request.getMatrixId(), rowIds.get(i), partKey.getPartitionId());
           resultBuf.writeInt(rowIds.get(i));
-          row.startRead();
-          row.indexGet(indexType, colNum, in, resultBuf);
-          row.endRead();
+          if(request.getFunc() == null) {
+            row.startRead();
+            row.indexGet(indexType, colNum, in, resultBuf, null);
+            row.endRead();
+          } else {
+            row.startWrite();
+            row.indexGet(indexType, colNum, in, resultBuf, request.getFunc());
+            row.endWrite();
+          }
         }
         return resultBuf;
       } catch (Throwable x) {
