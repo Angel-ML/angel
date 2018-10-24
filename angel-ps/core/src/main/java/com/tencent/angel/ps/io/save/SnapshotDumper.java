@@ -25,6 +25,7 @@ import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.model.PSMatricesSaveContext;
 import com.tencent.angel.model.PSMatrixSaveContext;
 import com.tencent.angel.model.output.format.ModelFilesConstent;
+import com.tencent.angel.model.output.format.SnapshotFormat;
 import com.tencent.angel.ps.PSContext;
 import com.tencent.angel.ps.client.MasterClient;
 import com.tencent.angel.ps.server.data.ServerState;
@@ -178,15 +179,15 @@ public class SnapshotDumper {
         List<PSMatrixSaveContext> saveContexts = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
           MatrixMeta meta = context.getMatrixMetaManager().getMatrixMeta(ids.get(i));
-          saveContexts.add(new PSMatrixSaveContext(ids.get(i),
-            new ArrayList<Integer>(meta.getPartitionMetas().keySet()), null));
+          saveContexts.add(
+            new PSMatrixSaveContext(ids.get(i), new ArrayList<>(meta.getPartitionMetas().keySet()),
+              null, SnapshotFormat.class.getName(), new Path(tmpPath, meta.getName()).toString(),
+              true, false));
         }
 
-        context.getMatrixStorageManager()
-          .save(new PSMatricesSaveContext(-1, -1, tmpPath.toString(), saveContexts));
+        context.getIOExecutors().save(new PSMatricesSaveContext(-1, -1, saveContexts));
         HdfsUtil.rename(tmpPath, baseDirPath, fs);
       }
-
     }
   }
 

@@ -19,23 +19,22 @@
 package com.tencent.angel.ps.storage.vector;
 
 import com.tencent.angel.ml.math2.vector.IntDoubleVector;
-import com.tencent.angel.ml.math2.vector.IntIntVector;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
+import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
+import com.tencent.angel.ps.storage.vector.func.DoubleElemUpdateFunc;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 
 /**
  * The row with "int" index type and "double" value type in PS
  */
-public class ServerIntDoubleRow extends ServerRow {
+public class ServerIntDoubleRow extends ServerDoubleRow {
   /**
    * Just a view of "row" in ServerRow
    */
@@ -171,7 +170,7 @@ public class ServerIntDoubleRow extends ServerRow {
    *
    * @return all element values
    */
-  public double[] getValues() {
+  private double[] getValues() {
     return intDoubleRow.getStorage().getValues();
   }
 
@@ -320,78 +319,64 @@ public class ServerIntDoubleRow extends ServerRow {
     }
   }
 
-  @Override protected void writeRow(DataOutputStream output) throws IOException {
-    switch (rowType) {
-      case T_DOUBLE_SPARSE:
-      case T_DOUBLE_SPARSE_COMPONENT: {
-        output.writeInt(size());
-        if (isDense()) {
-          double[] values = getValues();
-          for (int i = 0; i < values.length; i++) {
-            output.writeInt(i);
-            output.writeDouble(values[i]);
-          }
-        } else {
-          ObjectIterator<Int2DoubleMap.Entry> iter = getIter();
-          Int2DoubleMap.Entry entry;
-          while (iter.hasNext()) {
-            entry = iter.next();
-            output.writeInt(entry.getIntKey());
-            output.writeDouble(entry.getDoubleValue());
-          }
-        }
-        break;
-      }
-
-      case T_DOUBLE_DENSE:
-      case T_DOUBLE_DENSE_COMPONENT: {
-        if (isDense()) {
-          double[] values = getValues();
-          for (int i = 0; i < values.length; i++) {
-            output.writeDouble(values[i]);
-          }
-        } else {
-          int size = endColInt - startColInt;
-          for (int i = 0; i < size; i++) {
-            output.writeDouble(intDoubleRow.get(i));
-          }
-        }
-        break;
-      }
-    }
+  /**
+   * Check the vector contains the index or not
+   * @param index element index
+   * @return true means exist
+   */
+  public boolean exist(int index) {
+    return intDoubleRow.getStorage().hasKey(index - startColInt);
   }
 
-  @Override protected void readRow(DataInputStream input) throws IOException {
-    startColInt = (int) startCol;
-    endColInt = (int) endCol;
-    intDoubleRow = (IntDoubleVector) row;
-    int size = (endColInt - startColInt);
-    if (isDense()) {
-      double[] values = getValues();
-      for (int i = 0; i < size; i++) {
-        values[i] = input.readDouble();
-      }
+  public double initAndGet(int index, InitFunc func) {
+    if(exist(index)) {
+      return get(index);
     } else {
-      size = input.readInt();
-      for (int i = 0; i < size; i++) {
-        intDoubleRow.set(input.readInt(), input.readDouble());
-      }
+      double value = func.action();
+      set(index, value);
+      return value;
     }
   }
 
-  @Override public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out)
+  @Override public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
     throws IOException {
-    if (indexType == IndexType.INT) {
-      for (int i = 0; i < indexSize; i++) {
-        out.writeDouble(get(in.readInt()));
+    if(func != null) {
+      if (indexType == IndexType.INT) {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeDouble(initAndGet(in.readInt(), func));
+        }
+      } else {
+        throw new IOException(this.getClass().getName() + " only support int type index now");
       }
     } else {
-      throw new IOException(this.getClass().getName() + " only support int type index now");
+      if (indexType == IndexType.INT) {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeDouble(get(in.readInt()));
+        }
+      } else {
+        throw new IOException(this.getClass().getName() + " only support int type index now");
+      }
     }
   }
 
   @Override public void setSplit(Vector row) {
     super.setSplit(row);
     intDoubleRow = (IntDoubleVector) row;
+  }
+
+  public void elemUpdate(DoubleElemUpdateFunc func) {
+    if (isDense()) {
+      double[] values = getValues();
+      for(int i = 0; i < values.length; i++) {
+        values[i] = func.update();
+      }
+    } else {
+      ObjectIterator<Int2DoubleMap.Entry> iter = getIter();
+      Int2DoubleMap.Entry entry;
+      while (iter.hasNext()) {
+        entry = iter.next();
+        entry.setValue(func.update());
+      }
+    }
   }
 }

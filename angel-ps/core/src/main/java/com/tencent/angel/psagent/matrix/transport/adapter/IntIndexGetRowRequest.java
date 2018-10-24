@@ -19,6 +19,7 @@
 package com.tencent.angel.psagent.matrix.transport.adapter;
 
 import com.tencent.angel.ps.server.data.request.IndexType;
+import com.tencent.angel.ps.server.data.request.InitFunc;
 
 public class IntIndexGetRowRequest extends IndexGetRowRequest {
   private final int[] indices;
@@ -30,8 +31,8 @@ public class IntIndexGetRowRequest extends IndexGetRowRequest {
    * @param rowId
    * @param indices  element indices
    */
-  public IntIndexGetRowRequest(int matrixId, int rowId, int[] indices) {
-    super(matrixId, rowId);
+  public IntIndexGetRowRequest(int matrixId, int rowId, int[] indices, InitFunc func) {
+    super(matrixId, rowId, func);
     this.indices = indices;
   }
 

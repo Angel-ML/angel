@@ -25,9 +25,8 @@ import com.tencent.angel.ml.math2.vector.IntLongVector;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
+import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.psagent.PSAgentContext;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,23 +35,36 @@ public class GetColsParam extends GetParam {
 
   int[] rows;
   long[] cols;
+  InitFunc func;
 
-  public GetColsParam(int matId, int[] rows, long[] cols) {
+  public GetColsParam(int matId, int[] rows, long[] cols, InitFunc func) {
     super(matId);
     this.rows = rows;
     this.cols = cols;
+    this.func = func;
+  }
+
+  public GetColsParam(int matId, int[] rows, long[] cols) {
+    this(matId, rows, cols, null);
+  }
+
+  public GetColsParam(int matId, int[] rows, Vector cols, InitFunc func) {
+    this(matId, rows, getCols(cols), func);
   }
 
   public GetColsParam(int matId, int[] rows, Vector cols) {
-    super(matId);
-    this.rows = rows;
+    this(matId, rows, getCols(cols), null);
+  }
 
-    if (cols instanceof IntLongVector) {
-      this.cols = ((IntLongVector) cols).getStorage().getValues();
+  // TODO: optimize int key indices
+  static long [] getCols(Vector colVec) {
+    if (colVec instanceof IntLongVector) {
+      return ((IntLongVector) colVec).getStorage().getValues();
     } else {
-      int[] values = ((IntIntVector) cols).getStorage().getValues();
-      this.cols = new long[values.length];
-      ArrayCopy.copy(values, this.cols);
+      int[] values = ((IntIntVector) colVec).getStorage().getValues();
+      long [] cols = new long[values.length];
+      ArrayCopy.copy(values, cols);
+      return cols;
     }
   }
 
@@ -69,7 +81,7 @@ public class GetColsParam extends GetParam {
           end++;
         long[] part = new long[end - start];
         System.arraycopy(cols, start, part, 0, end - start);
-        params.add(new PartitionGetColsParam(matrixId, pkey, rows, part));
+        params.add(new PartitionGetColsParam(matrixId, pkey, rows, part, func));
         start = end;
       }
     }
