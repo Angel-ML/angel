@@ -517,7 +517,8 @@ public final class ProtobufUtil {
     for (PSMatrixSaveContextProto matrixProto : protos) {
       saveMatrices.add(
         new PSMatrixSaveContext(matrixProto.getMatrixId(), matrixProto.getPartIdsList(),
-          matrixProto.getRowIndexesList()));
+          matrixProto.getRowIndexesList(), matrixProto.getFormatClassName(),
+          matrixProto.getSavePath(), matrixProto.getCloneFirst(), matrixProto.getSortFirst()));
     }
     return saveMatrices;
   }
@@ -535,12 +536,15 @@ public final class ProtobufUtil {
 
   public static PSMatrixSaveContext convert(PSMatrixSaveContextProto proto) {
     return new PSMatrixSaveContext(proto.getMatrixId(), proto.getPartIdsList(),
-      proto.getRowIndexesList());
+      proto.getRowIndexesList(), proto.getFormatClassName(), proto.getSavePath(),
+      proto.getCloneFirst(), proto.getSortFirst());
   }
 
   public static PSMatrixSaveContextProto convert(PSMatrixSaveContext context) {
     return PSMatrixSaveContextProto.newBuilder().
       setMatrixId(context.getMatrixId()).addAllPartIds(context.getPartIds())
+      .setFormatClassName(context.getFormatClassName()).setSavePath(context.getSavePath())
+      .setCloneFirst(context.cloneFirst()).setSortFirst(context.sortFirst())
       .addAllRowIndexes(context.getRowIndexes()).build();
   }
 
@@ -593,6 +597,7 @@ public final class ProtobufUtil {
 
   public static MatrixSaveContextProto convert(MatrixSaveContext saveContext) {
     return MatrixSaveContextProto.newBuilder().setMatrixName(saveContext.getMatrixName())
+      .setFormatClassName(saveContext.getFormatClassName())
       .addAllRowIndexes(saveContext.getRowIndexes()).build();
   }
 
@@ -608,7 +613,7 @@ public final class ProtobufUtil {
 
   public static MatrixSaveContext convert(MatrixSaveContextProto matrixSaveContext) {
     return new MatrixSaveContext(matrixSaveContext.getMatrixName(),
-      matrixSaveContext.getRowIndexesList());
+      matrixSaveContext.getRowIndexesList(), matrixSaveContext.getFormatClassName());
   }
 
   public static PSMatricesSaveResult convert(PSMatricesSaveResultProto subResultProto) {
@@ -634,7 +639,7 @@ public final class ProtobufUtil {
   public static PSMatricesSaveContextProto convert(PSMatricesSaveContext subSaveRequest) {
     PSMatricesSaveContextProto.Builder matricesBuilder = PSMatricesSaveContextProto.newBuilder();
     matricesBuilder.setRequestId(subSaveRequest.getRequestId())
-      .setSubRequestId(subSaveRequest.getSubRequestId()).setSavaPath(subSaveRequest.getSavePath());
+      .setSubRequestId(subSaveRequest.getSubRequestId());
     List<PSMatrixSaveContext> matrixContexts = subSaveRequest.getMatrixSaveContexts();
     int size = matrixContexts.size();
     for (int i = 0; i < size; i++) {
@@ -646,10 +651,6 @@ public final class ProtobufUtil {
   public static PSMatricesLoadContextProto convert(PSMatricesLoadContext loadContext) {
     PSMatricesLoadContextProto.Builder builder = PSMatricesLoadContextProto.newBuilder();
     builder.setRequestId(loadContext.getRequestId()).setSubRequestId(loadContext.getSubRequestId());
-    if (loadContext.getLoadPath() != null) {
-      builder.setLoadPath(loadContext.getLoadPath());
-    }
-
     List<PSMatrixLoadContext> matrixContexts = loadContext.getMatrixLoadContexts();
     int size = matrixContexts.size();
     for (int i = 0; i < size; i++) {
@@ -661,10 +662,8 @@ public final class ProtobufUtil {
 
   public static PSMatrixLoadContextProto convert(PSMatrixLoadContext loadContext) {
     PSMatrixLoadContextProto.Builder builder = PSMatrixLoadContextProto.newBuilder();
-    builder.setMatrixId(loadContext.getMatrixId()).addAllPartIds(loadContext.getPartIds());
-    if (loadContext.getLoadPath() != null) {
-      builder.setLoadPath(loadContext.getLoadPath());
-    }
+    builder.setMatrixId(loadContext.getMatrixId()).addAllPartIds(loadContext.getPartIds())
+      .setLoadPath(loadContext.getLoadPath()).setFormatClassName(loadContext.getFormatClassName());
     return builder.build();
   }
 
@@ -677,23 +676,13 @@ public final class ProtobufUtil {
       matrixContexts.add(convert(matrixContextProtos.get(i)));
     }
 
-    if (loadContextProto.hasLoadPath()) {
-      return new PSMatricesLoadContext(loadContextProto.getRequestId(),
-        loadContextProto.getSubRequestId(), loadContextProto.getLoadPath(), matrixContexts);
-    } else {
-      return new PSMatricesLoadContext(loadContextProto.getRequestId(),
-        loadContextProto.getSubRequestId(), null, matrixContexts);
-    }
+    return new PSMatricesLoadContext(loadContextProto.getRequestId(),
+      loadContextProto.getSubRequestId(), matrixContexts);
   }
 
   public static PSMatrixLoadContext convert(PSMatrixLoadContextProto loadContextProto) {
-    if (loadContextProto.hasLoadPath()) {
-      return new PSMatrixLoadContext(loadContextProto.getMatrixId(), loadContextProto.getLoadPath(),
-        loadContextProto.getPartIdsList());
-    } else {
-      return new PSMatrixLoadContext(loadContextProto.getMatrixId(), null,
-        loadContextProto.getPartIdsList());
-    }
+    return new PSMatrixLoadContext(loadContextProto.getMatrixId(), loadContextProto.getLoadPath(),
+      loadContextProto.getPartIdsList(), loadContextProto.getFormatClassName());
   }
 
   public static PSMatricesLoadResultProto convert(PSMatricesLoadResult result) {
@@ -726,7 +715,7 @@ public final class ProtobufUtil {
     }
 
     return new PSMatricesSaveContext(saveContextProto.getRequestId(),
-      saveContextProto.getSubRequestId(), saveContextProto.getSavaPath(), matrixContexts);
+      saveContextProto.getSubRequestId(), matrixContexts);
   }
 
   public static MatrixLoadContextProto convert(MatrixLoadContext context) {

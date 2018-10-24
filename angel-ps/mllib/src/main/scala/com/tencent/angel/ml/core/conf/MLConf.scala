@@ -19,6 +19,7 @@
 package com.tencent.angel.ml.core.conf
 
 import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.model.output.format.{ColIdValueTextRowFormat, RowIdColIdValueTextRowFormat, TextColumnFormat}
 
 object MLConf {
 
@@ -95,6 +96,15 @@ object MLConf {
   val DEFAULT_ML_DENSEINPUTLAYER_OPTIMIZER: String = DEFAULT_ML_OPTIMIZER
   val ML_SPARSEINPUTLAYER_OPTIMIZER = "ml.sparseinputlayer.optimizer"
   val DEFAULT_ML_SPARSEINPUTLAYER_OPTIMIZER: String = DEFAULT_ML_OPTIMIZER
+
+  val ML_FCLAYER_MATRIX_OUTPUT_FORMAT = "ml.fclayer.matrix.output.format"
+  val DEFAULT_ML_FCLAYER_MATRIX_OUTPUT_FORMAT: String = classOf[RowIdColIdValueTextRowFormat].getCanonicalName
+  val ML_EMBEDDING_MATRIX_OUTPUT_FORMAT = "ml.embedding.matrix.output.format"
+  val DEFAULT_ML_EMBEDDING_MATRIX_OUTPUT_FORMAT: String = classOf[TextColumnFormat].getCanonicalName
+  val ML_DENSEINPUTLAYER_MATRIX_OUTPUT_FORMAT = "ml.denseinputlayer.matrix.output.format"
+  val DEFAULT_ML_DENSEINPUTLAYER_MATRIX_OUTPUT_FORMAT: String = classOf[ColIdValueTextRowFormat].getCanonicalName
+  val ML_SPARSEINPUTLAYER_MATRIX_OUTPUT_FORMAT = "ml.sparseinputlayer.matrix.output.format"
+  val DEFAULT_ML_SPARSEINPUTLAYER_MATRIX_OUTPUT_FORMAT: String = classOf[ColIdValueTextRowFormat].getCanonicalName
 
   // Momentum
   val ML_OPT_MOMENTUM_MOMENTUM = "ml.opt.momentum.momentum"

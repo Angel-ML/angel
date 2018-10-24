@@ -84,12 +84,12 @@ trait MLRunner extends AppSubmitter {
   def submit(conf: Configuration): Unit = {
     val actType = conf.get(AngelConf.ANGEL_ACTION_TYPE)
     actType match {
-      case MLConf.ANGEL_ML_TRAIN =>
+      case MLConf.ANGEL_ML_TRAIN | MLConf.ANGEL_ML_INC_TRAIN  =>
         train(conf)
       case MLConf.ANGEL_ML_PREDICT =>
         predict(conf)
       case _ =>
-        println("Error action type, should be train or predict")
+        println("Error action type, should be train or predict or inctrain")
         System.exit(1)
     }
   }

@@ -220,12 +220,12 @@ public abstract class AngelClient implements AngelClientInterface {
     }
 
     Map<String, PSModel> psModels = model.getPSModels();
-
     for (Map.Entry<String, PSModel> entry : psModels.entrySet()) {
       addMatrix(entry.getValue().getContext());
     }
 
     createMatrices();
+    load(psModels.keySet());
   }
 
   @SuppressWarnings("rawtypes") @Override public void saveModel(MLModel model)
@@ -691,6 +691,30 @@ public abstract class AngelClient implements AngelClientInterface {
       waitForMatricesCreated(matrixNames);
     } catch (Throwable x) {
       throw new AngelException(x);
+    }
+  }
+
+  public void load() {
+    load(nameToMatrixMap.keySet());
+  }
+
+  public void load(Set<String> matrixNames) {
+    // Check need load matrices
+    String loadPath = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH);
+    if(loadPath != null && !loadPath.isEmpty()) {
+      ModelLoadContext loadContext = new ModelLoadContext(loadPath);
+      int needLoadMatrixCount = 0;
+      for (String name : matrixNames) {
+        MatrixContext matrix = nameToMatrixMap.get(name);
+        if(matrix.getAttributes().get(MatrixConf.MATRIX_SAVE_PATH) != null) {
+          loadContext.addMatrix(new MatrixLoadContext(name));
+          needLoadMatrixCount++;
+        }
+      }
+
+      if(needLoadMatrixCount > 0) {
+        load(loadContext);
+      }
     }
   }
 
