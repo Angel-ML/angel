@@ -52,45 +52,45 @@ Angel2.0采用了用户自定义的模型格式。即可以根据实际需求定
 Angel提供了8中默认的模型输出格式：
 **ValueBinaryRowFormat**，**ColIdValueBinaryRowFormat**，**RowIdColIdValueBinaryRowFormat**，**ValueTextRowFormat**，**ColIdValueTextRowFormat**，**RowIdColIdValueTextRowFormat**，**BinaryColumnFormat和TextColumnFormat**。 下面分别介绍这8种格式。
 #### ValueBinaryRowFormat
-**说明**：二进制格式，只包含模型的值。这种格式只适合单行稠密的模型，由于数据文件中没有列号（特征索引），所以需要从模型元数据中获取索引范围。
-**形式**：|value|value|...|
+- **说明**：二进制格式，只包含模型的值。这种格式只适合单行稠密的模型，由于数据文件中没有列号（特征索引），所以需要从模型元数据中获取索引范围。
+- **格式**：|value|value|...|
 
 ####  ColIdValueBinaryRowFormat
-**说明**：二进制格式，包含特征索引和对应的值。这种格式适合单行模型，例如LR等。
-**形式**：|index|value|index|value|...|
+- **说明**：二进制格式，包含特征索引和对应的值。这种格式适合单行模型，例如LR等。
+- *格式**：|index|value|index|value|...|
 
 #### RowIdColIdValueBinaryRowFormat
-**说明**：二进制格式，包含模型的行号，特征索引和对应的值。这种格式可以表示多行模型。
-**格式**：|rowid|index|value|rowid|index|value|...|
+- **说明**：二进制格式，包含模型的行号，特征索引和对应的值。这种格式可以表示多行模型。
+- **格式**：|rowid|index|value|rowid|index|value|...|
 
 #### ValueTextRowFormat
-**说明**：文本格式，只包含模型的值，每个值是一个单独的行。与ValueBinaryRowFormat类似这种格式只适合单行稠密的模型，由于数据文件中没有列号（特征索引），所以需要充模型元数据中获取索引范围。
-**形式**：
+- **说明**：文本格式，只包含模型的值，每个值是一个单独的行。与ValueBinaryRowFormat类似这种格式只适合单行稠密的模型，由于数据文件中没有列号（特征索引），所以需要充模型元数据中获取索引范围。
+- **格式**：
 value
 value
 value
 
 #### ColIdValueTextRowFormat
-**说明**：文本格式，包含特征索引和对应的值，每一行是一个特征id和值的对，特征id和值之间的分隔符默认是逗号。这种格式适合单行模型，例如LR等。
-**形式**：
+- **说明**：文本格式，包含特征索引和对应的值，每一行是一个特征id和值的对，特征id和值之间的分隔符默认是逗号。这种格式适合单行模型，例如LR等。
+- **格式**：
 index,value
 index,value
 index,value
 
 #### RowIdColIdValueTextRowFormat
-**说明**：文本格式，包含行号，特征索引和对应的值，每一行是一个行号，特征id和值的对。行号，特征id和值之间的分隔符默认是逗号。这种格式可以表示多行模型。
-**格式**：
+- **说明**：文本格式，包含行号，特征索引和对应的值，每一行是一个行号，特征id和值的对。行号，特征id和值之间的分隔符默认是逗号。这种格式可以表示多行模型。
+- **格式**：
 rowid,index,value
 rowid,index,value
 rowid,index,value
 
 #### BinaryColumnFormat
-**说明**：二进制格式，这种格式是以列主序来输出一个矩阵，目前只用于Embedding相关的输出（例如DNN，FM等算法中的Embedding层）。模型格式为
-**格式**：|index|row1 value|row2 value|...|index|row1 value|row2 value|...|
+- **说明**：二进制格式，这种格式是以列主序来输出一个矩阵，目前只用于Embedding相关的输出（例如DNN，FM等算法中的Embedding层）。模型格式为
+- **格式**：|index|row1 value|row2 value|...|index|row1 value|row2 value|...|
 
 #### TextColumnFormat
-**说明**：文本格式，这种格式是以列主序来输出一个矩阵，目前只用于Embedding相关的输出（例如DNN，FM等算法中的Embedding层），每一个行是一个列。分隔符默认是逗号。
-**格式**：
+- **说明**：文本格式，这种格式是以列主序来输出一个矩阵，目前只用于Embedding相关的输出（例如DNN，FM等算法中的Embedding层），每一个行是一个列。分隔符默认是逗号。
+- **格式**：
 index,row1 value,row2 value,...
 index,row1 value,row2 value,...
 index,row1 value,row2 value,...
