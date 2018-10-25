@@ -40,61 +40,59 @@ abstract class NEModel(numNode: Int,
                        numPart: Int,
                        numNodesPerRow: Int = -1,
                        order: Int = 2,
-                       var seed: Int = Random.nextInt())
-  extends Serializable {
+                       var seed: Int = Random.nextInt()) extends Serializable {
+
+  // partDim is the dimensions for one node in each server partition
   val partDim: Int = dimension / numPart
   require(dimension % numPart == 0, "dimension must be times of numPart, (dimension % numPart == 0)")
+
+  // Create one ps matrix to hold the input vectors and the output vectors for all node
   val psMatrix: DensePSMatrix = createPSMatrix(partDim * order, numNode, numPart, numNodesPerRow)
   val matrixId: Int = psMatrix.id
+
   private val rand = new Random(seed)
+
   // initialize embeddings
   randomInitialize(rand.nextInt)
+  // create the negative sampling table on each server
   createNegativeSampleTable(numNode, rand.nextInt, 0)
 
-  def getDotPsf(data: NEDataSet, batchSeed: Int, ns: Int, window: Option[Int]): GetFunc
+  def getDotFunc(data: NEDataSet, batchSeed: Int, ns: Int, window: Option[Int]): GetFunc
 
-  def getAdjustPsf(data: NEDataSet, batchSeed: Int, ns: Int, grad: Array[Float], window: Option[Int]): UpdateFunc
+  def getAdjustFunc(data: NEDataSet, batchSeed: Int, ns: Int, grad: Array[Float], window: Option[Int]): UpdateFunc
 
-  def train(trainBatchesRDDIter: Iterator[RDD[NEDataSet]],
-            validBatchesOpt: Option[RDD[NEDataSet]],
-            ns: Int,
+  /**
+    * Main function for training embedding model
+    * @param trainBatches
+    * @param validate
+    * @param negative
+    * @param window
+    * @param numEpoch
+    * @param learningRate
+    * @param modelPath
+    * @param checkpointInterval
+    * @return
+    */
+  def train(trainBatches: Iterator[RDD[NEDataSet]],
+            validate: Option[RDD[NEDataSet]],
+            negative: Int,
             window: Option[Int],
             numEpoch: Int,
-            lr: Float,
+            learningRate: Float,
             modelPath: String,
-            modelCPInterval: Int,
-            logEveryBatchNum: Option[Double] = None): this.type = {
-    val r = new Random(rand.nextInt)
+            checkpointInterval: Int): Unit = {
+    val seeds = new Random(rand.nextInt)
     for (i <- 1 to numEpoch) {
-      val alpha = lr
-      val trainDataSet = trainBatchesRDDIter.next()
-      val trainMeanLoss = calcTrainingLoss {
-        trainDataSet.mapPartitions { batchIter =>
-          var batchCounter = 0
-          var percent = 1
-          batchIter.map { batch =>
-            logEveryBatchNum.foreach { logStep =>
-              if (batchCounter / logStep >= percent) {
-                logTime(s"epoch: $i, finished $percent%")
-                percent += 1
-              }
-              batchCounter += 1
-            }
-            miniBatchGD(batch, ns, r.nextInt(), alpha, window)
-          }
-        }
-      }
-      logTime(s"epoch: $i, train mean loss = $trainMeanLoss")
-      validBatchesOpt.foreach { validSet =>
-        val validMeanLoss = calcTrainingLoss {
-          validSet.map(batchEvaluation(_, r.nextInt(), ns, window))
-        }
-        logTime(s"epoch: $i, validate mean loss = $validMeanLoss")
-      }
-      // save
-      if (i % modelCPInterval == 0 || i == numEpoch) save(modelPath, i)
+      val alpha = learningRate
+      val trainDataSet = trainBatches.next()
+      val results = trainDataSet.mapPartitions(iterator =>
+        iterator.map(batch =>
+            miniBatchGD(batch, negative, seeds.nextInt(), alpha, window)
+          ))
+
+      val loss = results.map(f => f._1).sum()
+      logTime(s"epoch: $i, training loss = $loss")
     }
-    this
   }
 
   def save(modelPathRoot: String, epoch: Int): Unit = {
@@ -141,36 +139,44 @@ abstract class NEModel(numNode: Int,
     }
   }
 
-  private def calcTrainingLoss(loss: RDD[(Double, Long)]): Double = {
-    val (lossSum, dataSize) = loss.reduce { case ((lossSum1, batchSize1), (lossSum2, batchSize2)) =>
-      (lossSum1 + lossSum2, batchSize1 + batchSize2)
-    }
-    lossSum / dataSize
-  }
+  /**
+    * Stochastic Gradient Descent for one batch of training data
+    * @param data
+    * @param negative
+    * @param seed
+    * @param alpha
+    * @param window
+    * @return
+    */
+  private def miniBatchGD(data: NEDataSet,
+                          negative: Int,
+                          seed: Int,
+                          alpha: Float,
+                          window: Option[Int]): (Double, Long) = {
 
-  private def miniBatchGD(data: NEDataSet, ns: Int, seed: Int, alpha: Float, window: Option[Int]): (Double, Long) = {
     val batchSeed = new Random(seed).nextInt()
-    if (Random.nextDouble() > 0.001) {
-      val dotRet = psfGet(getDotPsf(data, batchSeed, ns, window)).asInstanceOf[NEDotResult].result
-      val loss = NEModel.doGrad(dotRet, ns, alpha)
-      pdfUpdate(getAdjustPsf(data, batchSeed, ns, dotRet, window))
-      (loss, dotRet.length.toLong)
-    } else {
-      // print some information for performance diagnosis
-      val beforeDot = System.currentTimeMillis()
-      val dotRet = psfGet(getDotPsf(data, batchSeed, ns, window)).asInstanceOf[NEDotResult].result
-      val beforeGrad = System.currentTimeMillis()
-      val loss = NEModel.doGrad(dotRet, ns, alpha)
-      val beforeAdjust = System.currentTimeMillis()
-      pdfUpdate(getAdjustPsf(data, batchSeed, ns, dotRet, window))
-      val finished = System.currentTimeMillis()
-      logTime(s"(dot, grad, adjust): (${beforeGrad - beforeDot}, ${beforeAdjust - beforeGrad}, ${finished - beforeAdjust})")
-      (loss, dotRet.length.toLong)
-    }
+
+    val beforeDot = System.currentTimeMillis()
+    val dotRet = psfGet(getDotFunc(data, batchSeed, negative, window)).asInstanceOf[NEDotResult].result
+
+    val beforeGrad = System.currentTimeMillis()
+    val loss = doGrad(dotRet, negative, alpha, None)
+
+    val beforeAdjust = System.currentTimeMillis()
+    psfUpdate(getAdjustFunc(data, batchSeed, negative, dotRet, window))
+
+    val finish = System.currentTimeMillis()
+
+    if (Random.nextDouble() < 0.01)
+      logTime(s"dotTime=${beforeGrad - beforeDot} " +
+        s"gradTime=${beforeAdjust - beforeGrad} " +
+        s"adjustTime=${finish - beforeAdjust}")
+
+    (loss, dotRet.length.toLong)
   }
 
   def batchEvaluation(data: NEDataSet, seed: Int, ns: Int, window: Option[Int]): (Double, Long) = {
-    psfGet(getDotPsf(data: NEDataSet, seed, ns, None)).asInstanceOf[NEDotResult].result
+    psfGet(getDotFunc(data: NEDataSet, seed, ns, None)).asInstanceOf[NEDotResult].result
       .foldLeft[(Double, Long)]((0.0, 0L)) { case ((s, i), v) =>
       val prob = FastSigmoid.sigmoid(v)
       val lo = if (i % (ns + 1) == 0) -FastSigmoid.log(prob) else -FastSigmoid.log(1 - prob)
@@ -180,17 +186,17 @@ abstract class NEModel(numNode: Int,
 
   private def randomInitialize(seed: Int): Unit = {
     val beforeRandomize = System.currentTimeMillis()
-    pdfUpdate(new NEModelRandomize(matrixId, dimension / numPart * order, dimension, order, seed))
+    psfUpdate(new NEModelRandomize(matrixId, dimension / numPart * order, dimension, order, seed))
     logTime(s"Model successfully Randomized", beforeRandomize)
   }
 
-  private def pdfUpdate(func: UpdateFunc): VoidResult = {
+  private def psfUpdate(func: UpdateFunc): VoidResult = {
     psMatrix.psfUpdate(func).get
   }
 
   private def createNegativeSampleTable(maxIndex: Int, seed: Int, version: Int) {
     val beforeTableInitialized = System.currentTimeMillis()
-    pdfUpdate(new NENSTableInitializer(matrixId, maxIndex, seed, version))
+    psfUpdate(new NENSTableInitializer(matrixId, maxIndex, seed, version))
     logTime(s"NegativeSampleTableInitialized", beforeTableInitialized)
   }
 
@@ -222,23 +228,24 @@ abstract class NEModel(numNode: Int,
 
     psMatrix
   }
-}
 
-object NEModel {
-  private def doGrad(dotRet: Array[Float], ns: Int, alpha: Float): Double = {
+  def doGrad(dots: Array[Float], negative: Int, alpha: Float, data: Option[NEDataSet]): Double = {
     var loss = 0.0
-    for (i <- dotRet.indices) {
-      val prob = FastSigmoid.sigmoid(dotRet(i))
-      if (i % (ns + 1) == 0) {
-        dotRet(i) = alpha * (1 - prob)
+    for (i <- dots.indices) {
+      val prob = FastSigmoid.sigmoid(dots(i))
+      if (i % (negative + 1) == 0) {
+        dots(i) = alpha * (1 - prob)
         loss -= FastSigmoid.log(prob)
       } else {
-        dotRet(i) = -alpha * FastSigmoid.sigmoid(dotRet(i))
+        dots(i) = -alpha * FastSigmoid.sigmoid(dots(i))
         loss -= FastSigmoid.log(1 - prob)
       }
     }
     loss
   }
+}
+
+object NEModel {
 
   private def logTime(msg: String, begin: Long = -1): Long = {
     val time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date)

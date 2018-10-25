@@ -89,6 +89,6 @@ object Word2Vec {
     w2vParam.setMaxIndex(numWords)
       .setNumRowDataSet(numDocs)
 
-    new Word2VecModel(w2vParam).train(trainDocs, w2vParam, validData)
+    new Word2VecModel(w2vParam).train(trainDocs, w2vParam)
   }
 }

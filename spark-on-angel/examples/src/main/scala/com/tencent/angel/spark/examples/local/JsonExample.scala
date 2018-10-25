@@ -28,7 +28,6 @@ import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OfflineLearner}
 import com.tencent.angel.spark.ml.util.{Features, ModelLoader, ModelSaver}
 import org.apache.log4j.PropertyConfigurator
 import org.apache.spark.{SparkConf, SparkContext}
-import org.codehaus.jackson.JsonParser.Feature
 
 object JsonExample {
 

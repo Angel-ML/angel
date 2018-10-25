@@ -31,7 +31,7 @@ class Param extends Serializable {
   var sampleRate: Float = _
   var numPSPart: Int = 1
   var modelPath: String = _
-  var modelCPInterval: Int = Int.MaxValue
+  var checkpointInterval: Int = Int.MaxValue
   var order: Int = _
   var nodesNumPerRow: Int = -1
   var numRowDataSet: Option[Long] = None
@@ -109,7 +109,7 @@ class Param extends Serializable {
 
   def setModelCPInterval(modelCPInterval: Int): this.type = {
     require(modelCPInterval > 0, s"model checkpoint interval > 0, $modelCPInterval given")
-    this.modelCPInterval = modelCPInterval
+    this.checkpointInterval = modelCPInterval
     this
   }
 

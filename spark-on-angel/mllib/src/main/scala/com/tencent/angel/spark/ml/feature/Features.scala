@@ -157,12 +157,12 @@ object Features {
       buildDenseToString(it,
         sparseDim,
         sparseToDenseMatrixId))
-      .count()
+        .collect()
 
     data.unpersist()
     featureWithIndex.unpersist()
 
-    (intCorpus, null)
+    (intCorpus, denseToString)
   }
 
 }

@@ -42,24 +42,23 @@ class LINEModel(numNode: Int,
   }
 
   def train(trainSet: RDD[(Int, Int)], params: Param, validSetOpt: Option[RDD[(Int, Int)]]): this.type = {
-    train(trainBatchesRDDIter = buildDataBatches(trainSet, params.batchSize),
-      validBatchesOpt = validSetOpt.map(_.mapPartitions(asLineBatch(_, params.batchSize))),
-      ns = params.negSample,
-      window = None,
-      numEpoch = params.numEpoch,
-      lr = params.learningRate,
-      modelPath = params.modelPath,
-      modelCPInterval = params.modelCPInterval,
-      logEveryBatchNum = params.numRowDataSet.map(_ / (100.0 * params.partitionNum * params.batchSize))
-    )
+    train(buildDataBatches(trainSet, params.batchSize),
+      validSetOpt.map(_.mapPartitions(asLineBatch(_, params.batchSize))),
+      params.negSample,
+      None,
+      params.numEpoch,
+      params.learningRate,
+      params.modelPath,
+      params.checkpointInterval)
+    this
   }
 
-  override def getDotPsf(data: NEDataSet, batchSeed: Int, ns: Int, window: Option[Int]): GetFunc = {
+  override def getDotFunc(data: NEDataSet, batchSeed: Int, ns: Int, window: Option[Int]): GetFunc = {
     val lineData = data.asInstanceOf[LINEDataSet]
     new Dot(matrixId, lineData.src, lineData.dst, batchSeed, ns, numNode, partDim, order)
   }
 
-  override def getAdjustPsf(data: NEDataSet, batchSeed: Int, ns: Int, grad: Array[Float], window: Option[Int])
+  override def getAdjustFunc(data: NEDataSet, batchSeed: Int, ns: Int, grad: Array[Float], window: Option[Int])
   : UpdateFunc = {
     val lineData = data.asInstanceOf[LINEDataSet]
     new Adjust(matrixId, lineData.src, lineData.dst, batchSeed, ns, numNode, partDim, grad, order)
