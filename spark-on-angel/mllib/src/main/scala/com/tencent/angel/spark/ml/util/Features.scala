@@ -24,9 +24,10 @@ import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.storage.{IntFloatSortedVectorStorage, IntFloatSparseVectorStorage, IntKeyVectorStorage}
 import com.tencent.angel.ml.math2.vector.IntIntVector
 import com.tencent.angel.ml.matrix.RowType
-import com.tencent.angel.spark.client.PSClient
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet
 import org.apache.spark.rdd.RDD
+
+import com.tencent.angel.spark.context.PSContext
 
 object Features {
 
@@ -47,7 +48,7 @@ object Features {
   def updateSparseToDense(iter: Iterator[(Int, Long)],
                           sparseToDenseMatrixId: Int,
                           sparseDim: Int): Iterator[Int] = {
-    PSClient.instance()
+    PSContext.instance()
     val update = VFactory.sparseIntVector(sparseDim)
     while (iter.hasNext) {
       val (feature, index) = iter.next()
@@ -61,7 +62,7 @@ object Features {
   def updateDenseToSparse(iter: Iterator[(Int, Long)],
                           denseToSparseMatrixId: Int,
                           denseDim: Int): Iterator[Int] = {
-    PSClient.instance()
+    PSContext.instance()
     val update = VFactory.sparseIntVector(denseDim)
     while (iter.hasNext) {
       val (feature, index) = iter.next()
@@ -73,7 +74,7 @@ object Features {
   }
 
   def sparseToDenseOnePartition(iter: Iterator[LabeledData], matrixId: Int, denseDim: Int): Iterator[LabeledData] = {
-    PSClient.instance()
+    PSContext.instance()
     val set = new IntOpenHashSet()
     val samples = iter.toArray
     samples.foreach(f => f.getX.getStorage.asInstanceOf[IntKeyVectorStorage]

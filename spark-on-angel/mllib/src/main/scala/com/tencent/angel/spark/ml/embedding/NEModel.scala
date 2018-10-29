@@ -33,7 +33,7 @@ import com.tencent.angel.spark.ml.embedding.NEModel._
 import com.tencent.angel.spark.ml.psf.embedding.NEDot.NEDotResult
 import com.tencent.angel.spark.ml.psf.embedding.NESlice.SliceResult
 import com.tencent.angel.spark.ml.psf.embedding.{NEModelRandomize, NENSTableInitializer, NESlice}
-import com.tencent.angel.spark.models.matrix.{DensePSMatrix, PSMatrix}
+import com.tencent.angel.spark.models.PSMatrix
 
 abstract class NEModel(numNode: Int,
                        dimension: Int,
@@ -44,7 +44,7 @@ abstract class NEModel(numNode: Int,
   extends Serializable {
   val partDim: Int = dimension / numPart
   require(dimension % numPart == 0, "dimension must be times of numPart, (dimension % numPart == 0)")
-  val psMatrix: DensePSMatrix = createPSMatrix(partDim * order, numNode, numPart, numNodesPerRow)
+  val psMatrix: PSMatrix = createPSMatrix(partDim * order, numNode, numPart, numNodesPerRow)
   val matrixId: Int = psMatrix.id
   private val rand = new Random(seed)
   // initialize embeddings
@@ -197,7 +197,7 @@ abstract class NEModel(numNode: Int,
   private def createPSMatrix(sizeOccupiedPerNode: Int,
                              numNode: Int,
                              numPart: Int,
-                             numNodesPerRow: Int = -1): DensePSMatrix = {
+                             numNodesPerRow: Int = -1): PSMatrix = {
     require(numNodesPerRow <= Int.MaxValue / sizeOccupiedPerNode,
       s"size exceed Int.MaxValue, $numNodesPerRow * $sizeOccupiedPerNode > ${Int.MaxValue}")
 

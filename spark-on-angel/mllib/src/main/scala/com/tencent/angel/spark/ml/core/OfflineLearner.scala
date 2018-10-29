@@ -20,11 +20,12 @@ package com.tencent.angel.spark.ml.core
 
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.spark.client.PSClient
 import com.tencent.angel.spark.ml.core.metric.{AUC, Precision}
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
+
+import com.tencent.angel.spark.context.PSContext
 
 
 class OfflineLearner {
@@ -72,7 +73,7 @@ class OfflineLearner {
       start = System.currentTimeMillis()
       val (lossSum, batchSize) = train.sample(false, fraction, 42 + iteration)
         .mapPartitions { case iter =>
-          PSClient.instance()
+          PSContext.instance()
           val samples = iter.toArray
           bModel.value.forward(samples)
           val loss = bModel.value.getLoss()
