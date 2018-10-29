@@ -89,7 +89,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
     val rows = (0 until numFactors).toArray
     val indices = graph.placeHolder.getIndices
 
-    val param = if (epoch == 0){
+    val param = if (epoch == 0) {
       val initFunc = new RandomNormalInitFunc(0.0, 0.00001)
       new GetColsParam(matrixId, rows, indices, initFunc)
     } else {

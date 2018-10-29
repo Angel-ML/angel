@@ -170,9 +170,9 @@ class DenseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overri
     result
   }
 
-  override def init(taskflag: Int): Unit = {
+  override def init(taskFlag: Int): Unit = {
     val bound: Double = 0.0001
-    if (taskflag == 0) {
+    if (taskFlag == 0) {
       val randFunc = new RandomNormal(weightId, 0, 0.0, bound)
       PSAgentContext.get().getUserRequestAdapter.update(randFunc).get()
     }

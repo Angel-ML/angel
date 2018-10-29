@@ -20,13 +20,13 @@ package com.tencent.angel.spark.ml.core
 
 
 import com.tencent.angel.conf.MatrixConf
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.layers.{AngelGraph, PlaceHolder, STATUS}
+import com.tencent.angel.ml.core.optimizer.decayer._
 import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.spark.context.AngelPSContext
-import com.tencent.angel.ml.core.optimizer.decayer._
 import org.json4s.JsonAST.JValue
 
 class GraphModel extends Serializable {
@@ -54,7 +54,7 @@ class GraphModel extends Serializable {
 
     graph.taskNum = taskNum
     graph.loadModel()
-    graph.init()
+//    graph.init()
     println(s"graph=\n$graph")
   }
 

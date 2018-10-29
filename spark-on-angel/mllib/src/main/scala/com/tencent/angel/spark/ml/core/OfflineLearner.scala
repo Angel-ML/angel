@@ -26,6 +26,8 @@ import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 
+import scala.util.Random
+
 
 class OfflineLearner {
 
@@ -33,11 +35,12 @@ class OfflineLearner {
   val conf = SharedConf.get()
 
   // Some params
-  var maxIteration: Int = conf.getInt(MLConf.ML_EPOCH_NUM)
+  var numEpoch: Int = conf.getInt(MLConf.ML_EPOCH_NUM)
   var fraction: Double = conf.getDouble(MLConf.ML_BATCH_SAMPLE_RATIO)
   var validationRatio: Double = conf.getDouble(MLConf.ML_VALIDATE_RATIO)
+  var batchSize: Int = conf.getInt(MLConf.ML_MINIBATCH_SIZE)
 
-  println(s"fraction=$fraction validateRatio=$validationRatio maxIteration=$maxIteration")
+  println(s"fraction=$fraction validateRatio=$validationRatio numEpoch=$numEpoch")
 
   def evaluate(data: RDD[LabeledData], bModel: Broadcast[GraphModel]): (Double, Double) = {
     val scores = data.mapPartitions { case iter =>
@@ -65,53 +68,92 @@ class OfflineLearner {
 
     val bModel = SparkContext.getOrCreate().broadcast(model)
 
-    var (start, end) = (0L, 0L)
-    var (reduceTime, updateTime) = (0L, 0L)
+    val manifold = OfflineLearner.buildManifold(train, fraction)
+    var numUpdate = 1
+    for (epoch <- 0 until numEpoch) {
 
-    for (iteration <- 1 to maxIteration) {
-      start = System.currentTimeMillis()
-      val (lossSum, batchSize) = train.sample(false, fraction, 42 + iteration)
-        .mapPartitions { case iter =>
+      val batchIterator = OfflineLearner.buildManifoldIterator(manifold, fraction)
+      while (batchIterator.hasNext) {
+        val (sumLoss, batchSize) = batchIterator.next().mapPartitions { case iter =>
           PSClient.instance()
-          val samples = iter.toArray
-          bModel.value.forward(0, samples)
+          val batch = iter.next()
+          bModel.value.forward(epoch, batch)
           val loss = bModel.value.getLoss()
           bModel.value.backward()
-          Iterator.single((loss, samples.size))
+          Iterator.single((loss, batch.length))
         }.reduce((f1, f2) => (f1._1 + f2._1, f1._2 + f2._2))
-      end = System.currentTimeMillis()
-      reduceTime = end - start
 
-      start = System.currentTimeMillis()
-      val (lr, boundary) = model.update(iteration, batchSize)
-      end = System.currentTimeMillis()
-      updateTime = end - start
-
-      val loss = lossSum / model.graph.taskNum
-
-      println(s"batch[$iteration] lr[$lr] batchSize[$batchSize] trainLoss=$loss reduceTime=$reduceTime")
-
-      if (boundary) {
-        val trainMetricLog = ""
-        var validateMetricLog = ""
-        if (validationRatio > 0.0) {
-          val (validateAuc, validatePrecision) = evaluate(validate, bModel)
-          validateMetricLog = s"validateAuc=$validateAuc validatePrecision=$validatePrecision"
+        val (lr, boundary) = model.update(numUpdate, batchSize)
+        val loss = sumLoss / model.graph.taskNum
+        println(s"epoch=[$epoch] lr[$lr] batchSize[$batchSize] trainLoss=$loss")
+        if (boundary) {
+          var validateMetricLog = ""
+          if (validationRatio > 0.0) {
+            val (validateAuc, validatePrecision) = evaluate(validate, bModel)
+            validateMetricLog = s"validateAuc=$validateAuc validatePrecision=$validatePrecision"
+          }
+          println(s"batch[$numUpdate] $validateMetricLog")
         }
-        println(s"batch[$iteration] $trainMetricLog $validateMetricLog")
+
+        numUpdate += 1
       }
     }
   }
 
   def predict(data: RDD[LabeledData], model: GraphModel): Unit = {
-    // build network
-    model.init(data.getNumPartitions)
-    val bModel = SparkContext.getOrCreate().broadcast(model)
-    data.mapPartitions { case iter =>
-      val model = bModel.value
-      val output = model.forward(1, iter.toArray)
-      Iterator.single(output)
-    }
+
   }
 
+}
+
+object OfflineLearner {
+
+  def buildManifold(data: RDD[LabeledData], fraction: Double): RDD[Array[LabeledData]] = {
+    val batchNum = (1.0 / fraction).toInt
+
+    def shuffleAndSplit(iterator: Iterator[LabeledData]): Iterator[Array[LabeledData]] = {
+      val samples = Random.shuffle(iterator).toArray
+      val sizes = Array.tabulate(batchNum)(_ => samples.length / batchNum)
+      val left = samples.length % batchNum
+      for (i <- 0 until left) sizes(i) += 1
+
+      var idx = 0
+      val manifold = new Array[Array[LabeledData]](batchNum)
+      for (a <- 0 until batchNum) {
+        manifold(a) = new Array[LabeledData](sizes(a))
+        for (b <- 0 until sizes(a)) {
+          manifold(a)(b) = samples(idx)
+          idx += 1
+        }
+      }
+      manifold.iterator
+    }
+
+    val manifold = data.mapPartitions(it => shuffleAndSplit(it))
+    manifold.cache()
+    manifold.count()
+    manifold
+  }
+
+  def skip(partitionId: Int, iterator: Iterator[Array[LabeledData]], skipNum: Int): Iterator[Array[LabeledData]] = {
+    (0 until skipNum).foreach(_ => iterator.next())
+    Iterator.single(iterator.next())
+  }
+
+  def buildManifoldIterator(manifold: RDD[Array[LabeledData]], fraction: Double): Iterator[RDD[Array[LabeledData]]] = {
+    val batchNum = (1.0 / fraction).toInt
+
+    new Iterator[RDD[Array[LabeledData]]] with Serializable {
+      var index = 0
+
+      override def hasNext(): Boolean = index < batchNum
+
+      override def next(): RDD[Array[LabeledData]] = {
+        val batch = manifold.mapPartitionsWithIndex((partitionId, it) => skip(partitionId, it, index), true)
+        index += 1
+        batch
+      }
+    }
+
+  }
 }

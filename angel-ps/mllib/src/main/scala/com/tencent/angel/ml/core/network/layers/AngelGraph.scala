@@ -136,17 +136,12 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
 
   def pullParams(epoch: Int): Unit = {
     val start = System.currentTimeMillis()
-    //    val pullFuture = Future.sequence(trainableLayer.map{ layer => Future { layer.pullParams() }})
-    //    Await.result(pullFuture, Duration.Inf)
     trainableLayer.foreach { layer => layer.pullParams(epoch: Int) }
-
     timeStats.pullParamsTime += (System.currentTimeMillis() - start)
   }
 
   def pushGradient(): Unit = {
     val start = System.currentTimeMillis()
-    //    val pushFuture = Future.sequence(trainableLayer.map{ layer => Future { layer.pushGradient() } })
-    //    Await.result(pushFuture, Duration.Inf)
     trainableLayer.foreach(layer => layer.pushGradient())
     timeStats.pushParamsTime += (System.currentTimeMillis() - start)
   }
@@ -154,7 +149,6 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
   def update(epoch: Int, batchSize: Int): Unit = {
     val start = System.currentTimeMillis()
     val updateFuture = trainableLayer.map (layer => layer.update(epoch, batchSize))
-    //Await.result(updateFuture, Duration.Inf)
     for(future <- updateFuture) future.get
     timeStats.updateTime += (System.currentTimeMillis() - start)
   }
