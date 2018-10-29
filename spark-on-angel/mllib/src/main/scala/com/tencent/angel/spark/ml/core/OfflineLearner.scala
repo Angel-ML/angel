@@ -136,6 +136,7 @@ object OfflineLearner {
   }
 
   def skip(partitionId: Int, iterator: Iterator[Array[LabeledData]], skipNum: Int): Iterator[Array[LabeledData]] = {
+    println(s"skipNum=$skipNum")
     (0 until skipNum).foreach(_ => iterator.next())
     Iterator.single(iterator.next())
   }
@@ -149,7 +150,7 @@ object OfflineLearner {
       override def hasNext(): Boolean = index < batchNum
 
       override def next(): RDD[Array[LabeledData]] = {
-        val batch = manifold.mapPartitionsWithIndex((partitionId, it) => skip(partitionId, it, index), true)
+        val batch = manifold.mapPartitionsWithIndex((partitionId, it) => skip(partitionId, it, index - 1), true)
         index += 1
         batch
       }
