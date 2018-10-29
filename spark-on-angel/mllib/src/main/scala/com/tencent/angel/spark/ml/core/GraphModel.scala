@@ -58,9 +58,9 @@ class GraphModel extends Serializable {
     println(s"graph=\n$graph")
   }
 
-  def forward(data: Array[LabeledData]): Matrix = {
+  def forward(epoch:Int, data: Array[LabeledData]): Matrix = {
     graph.feedData(data)
-    graph.pullParams()
+    graph.pullParams(epoch)
     graph.predict()
   }
 

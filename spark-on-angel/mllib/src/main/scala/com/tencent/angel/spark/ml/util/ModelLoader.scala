@@ -57,11 +57,11 @@ object ModelLoader {
     val biasId = layer.biasId
 
 
-    val denseToSparse = PSMatrixUtils.getRow(denseToSparseMatrixId, 0).asInstanceOf[IntIntVector]
+    val denseToSparse = PSMatrixUtils.getRow(0, denseToSparseMatrixId, 0).asInstanceOf[IntIntVector]
       .getStorage.asInstanceOf[IntIntDenseVectorStorage].getValues
 
-    val weight = PSMatrixUtils.getRow(weightId, 0).asInstanceOf[IntFloatVector]
-    val bias   = PSMatrixUtils.getRow(biasId, 0).asInstanceOf[IntFloatVector].get(0)
+    val weight = PSMatrixUtils.getRow(0, weightId, 0).asInstanceOf[IntFloatVector]
+    val bias   = PSMatrixUtils.getRow(0, biasId, 0).asInstanceOf[IntFloatVector].get(0)
 
     val weights = weight.getStorage.asInstanceOf[IntFloatDenseVectorStorage].getValues
     println(s"bias=$bias")
@@ -82,7 +82,7 @@ object ModelLoader {
     val embeddingId = layer.matrixId
     val numFactors = layer.numFactors
 
-    val denseToSparse = PSMatrixUtils.getRow(denseToSparseMatrixId, 0).asInstanceOf[IntIntVector]
+    val denseToSparse = PSMatrixUtils.getRow(0, denseToSparseMatrixId, 0).asInstanceOf[IntIntVector]
       .getStorage.asInstanceOf[IntIntDenseVectorStorage].getValues
 
     val indices = VFactory.denseIntVector((0 until denseDim).toArray)
@@ -125,7 +125,7 @@ object ModelLoader {
 
       val indices = VFactory.denseIntVector(set.toIntArray())
       // fetch sparseToDense index
-      val sparseToDense = PSMatrixUtils.getRowWithIndex(sparseToDenseMatrixId,
+      val sparseToDense = PSMatrixUtils.getRowWithIndex(0, sparseToDenseMatrixId,
         0, indices).asInstanceOf[IntIntVector]
 
       val update = VFactory.sparseFloatVector(denseDim)
@@ -170,7 +170,7 @@ object ModelLoader {
 
       // fetch sparseToDense vectors
       val indices = VFactory.denseIntVector(features.toIntArray())
-      val sparseToDense = PSMatrixUtils.getRowWithIndex(sparseToDenseMatrixId, 0, indices)
+      val sparseToDense = PSMatrixUtils.getRowWithIndex(0, sparseToDenseMatrixId, 0, indices)
         .asInstanceOf[IntIntVector]
 
       // change feature index

@@ -38,6 +38,7 @@ import com.tencent.angel.ml.matrix.psf.update.RandomNormal
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.psf.columns._
 import com.tencent.angel.model.{MatrixSaveContext, ModelSaveContext}
+import com.tencent.angel.ps.server.data.request.RandomNormalInitFunc
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
 
@@ -83,11 +84,18 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
     backward
   }
 
-  override def pullParams(): Unit = {
+  override def pullParams(epoch: Int): Unit = {
     val start = System.currentTimeMillis()
     val rows = (0 until numFactors).toArray
     val indices = graph.placeHolder.getIndices
-    val param = new GetColsParam(matrixId, rows, indices)
+
+    val param = if (epoch == 0){
+      val initFunc = new RandomNormalInitFunc(0.0, 0.00001)
+      new GetColsParam(matrixId, rows, indices, initFunc)
+    } else {
+      new GetColsParam(matrixId, rows, indices)
+    }
+
     val func = new GetColsFunc(param)
     val result = PSAgentContext.get.getUserRequestAdapter.get(func).asInstanceOf[GetColsResult]
     embeddings = result.results
@@ -118,7 +126,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
             (0 until batchSize).foreach { idx =>
               batchData.getRow(idx) match {
                 case v: IntDoubleVector =>
-                  v.getStorage.getIndices.zip(rows(idx).getPartitions).foreach{ case (f, update) =>
+                  v.getStorage.getIndices.zip(rows(idx).getPartitions).foreach { case (f, update) =>
                     val value = v.get(f)
                     mergeUpdate(map, f, update, value)
                   }
@@ -140,7 +148,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
               batchData.getRow(idx).getStorage match {
                 case s: IntFloatSortedVectorStorage =>
                   val values = s.getValues
-                  val index  = s.getIndices
+                  val index = s.getIndices
                   var i = 0
                   while (i < index.length) {
                     val key = index(i)
@@ -171,45 +179,45 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
                   }
               }
             }
-//            (0 until batchSize).map { idx =>
-//              batchData.getRow(idx) match {
-//                case v: IntFloatVector =>
-//                  v.getStorage.getIndices.zip(rows(idx).getPartitions).map { case (f, update) =>
-//                    val value = v.get(f)
-//                    if (!map.containsKey(f.toLong)) {
-//                      if (value == 1) {
-//                        map.put(f.toLong, update)
-//                      } else {
-//                        map.put(f.toLong, update.imul(value))
-//                      }
-//                    } else {
-//                      if (value == 1) {
-//                        map.get(f.toLong).iadd(update)
-//                      } else {
-//                        map.get(f.toLong).iadd(update.imul(v.get(f)))
-//                      }
-//                    }
-//                  }
-//
-//                case v: LongFloatVector =>
-//                  v.getStorage.getIndices.zip(rows(idx).getPartitions).map { case (f, update) =>
-//                    val value = v.get(f)
-//                    if (!map.containsKey(f)) {
-//                      if (value == 1) {
-//                        map.put(f, update)
-//                      } else {
-//                        map.put(f, update.imul(value))
-//                      }
-//                    } else {
-//                      if (value == 1) {
-//                        map.get(f).iadd(update)
-//                      } else {
-//                        map.get(f).iadd(update.imul(v.get(f)))
-//                      }
-//                    }
-//                  }
-//              }
-//            }
+          //            (0 until batchSize).map { idx =>
+          //              batchData.getRow(idx) match {
+          //                case v: IntFloatVector =>
+          //                  v.getStorage.getIndices.zip(rows(idx).getPartitions).map { case (f, update) =>
+          //                    val value = v.get(f)
+          //                    if (!map.containsKey(f.toLong)) {
+          //                      if (value == 1) {
+          //                        map.put(f.toLong, update)
+          //                      } else {
+          //                        map.put(f.toLong, update.imul(value))
+          //                      }
+          //                    } else {
+          //                      if (value == 1) {
+          //                        map.get(f.toLong).iadd(update)
+          //                      } else {
+          //                        map.get(f.toLong).iadd(update.imul(v.get(f)))
+          //                      }
+          //                    }
+          //                  }
+          //
+          //                case v: LongFloatVector =>
+          //                  v.getStorage.getIndices.zip(rows(idx).getPartitions).map { case (f, update) =>
+          //                    val value = v.get(f)
+          //                    if (!map.containsKey(f)) {
+          //                      if (value == 1) {
+          //                        map.put(f, update)
+          //                      } else {
+          //                        map.put(f, update.imul(value))
+          //                      }
+          //                    } else {
+          //                      if (value == 1) {
+          //                        map.get(f).iadd(update)
+          //                      } else {
+          //                        map.get(f).iadd(update.imul(v.get(f)))
+          //                      }
+          //                    }
+          //                  }
+          //              }
+          //            }
 
           case _ =>
         }
@@ -235,7 +243,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
   }
 
   override def update(epoch: Int, batchSize: Int): Future[VoidResult] = {
-    var result:Future[VoidResult] = null
+    var result: Future[VoidResult] = null
     status match {
       case STATUS.Gradient =>
         result = optimizer.update(matrixId, numFactors, epoch, batchSize)
@@ -348,12 +356,12 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
     forward
   }
 
-  override def init(taskflag: Int, initIndexVector: Vector = null): Unit = {
+  override def init(taskflag: Int): Unit = {
     val bound: Double = 0.00001
-    if (initIndexVector == null) {
+    if (indexRange == validIndexNum) {  // Dense
       if (taskflag == 0) {
         val randFunc = new RandomNormal(matrixId, 0, numFactors, 0.0, bound)
-        PSAgentContext.get().getUserRequestAdapter.update(randFunc)
+        PSAgentContext.get().getUserRequestAdapter.update(randFunc).get()
       }
     }
   }
