@@ -4,6 +4,7 @@ import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 
 public class CbowDotResult extends GetResult {
   private float[] values;
+
   public CbowDotResult(float[] values) {
     this.values = values;
   }

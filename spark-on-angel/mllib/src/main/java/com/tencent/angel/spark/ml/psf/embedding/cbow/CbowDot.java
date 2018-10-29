@@ -131,9 +131,10 @@ public class CbowDot extends GetFunc {
       for (PartitionGetResult result: partResults) {
         if (result instanceof CbowDotPartitionResult &&
           size != ((CbowDotPartitionResult) result).length)
-          throw new AngelException(String.format("length of dot values not same one is %d other is %d",
-            size,
-            ((CbowDotPartitionResult) result).length));
+          throw new AngelException(
+                  String.format("length of dot values not same one is %d other is %d",
+                          size,
+                          ((CbowDotPartitionResult) result).length));
       }
 
       // merge dot values from all partitions
