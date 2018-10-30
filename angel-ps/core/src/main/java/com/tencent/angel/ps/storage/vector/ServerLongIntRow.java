@@ -59,8 +59,7 @@ public class ServerLongIntRow extends ServerIntRow {
    * @param endCol     end position
    * @param estElemNum the estimate element number
    */
-  public ServerLongIntRow(int rowId, RowType rowType, long startCol, long endCol,
-    int estElemNum) {
+  public ServerLongIntRow(int rowId, RowType rowType, long startCol, long endCol, int estElemNum) {
     this(rowId, rowType, startCol, endCol, estElemNum, null);
   }
 
@@ -85,8 +84,8 @@ public class ServerLongIntRow extends ServerIntRow {
    * @return element value
    */
   public int get(long index) {
-    if(useIntKey) {
-      return ((IntIntVector) row).get((int)(index - startCol));
+    if (useIntKey) {
+      return ((IntIntVector) row).get((int) (index - startCol));
     } else {
       return ((LongIntVector) row).get(index - startCol);
     }
@@ -99,8 +98,8 @@ public class ServerLongIntRow extends ServerIntRow {
    * @param value element new value
    */
   public void set(long index, int value) {
-    if(useIntKey) {
-      ((IntIntVector) row).set((int)(index - startCol), value);
+    if (useIntKey) {
+      ((IntIntVector) row).set((int) (index - startCol), value);
     } else {
       ((LongIntVector) row).set(index - startCol, value);
     }
@@ -114,9 +113,9 @@ public class ServerLongIntRow extends ServerIntRow {
    */
   public int[] get(long[] indices) {
     int[] values = new int[indices.length];
-    if(useIntKey) {
+    if (useIntKey) {
       for (int i = 0; i < indices.length; i++) {
-        values[i] = ((IntIntVector) row).get((int)(indices[i] - startCol));
+        values[i] = ((IntIntVector) row).get((int) (indices[i] - startCol));
       }
     } else {
       for (int i = 0; i < indices.length; i++) {
@@ -135,9 +134,9 @@ public class ServerLongIntRow extends ServerIntRow {
    */
   public void set(long[] indices, int[] values) {
     assert indices.length == values.length;
-    if(useIntKey) {
+    if (useIntKey) {
       for (int i = 0; i < indices.length; i++) {
-        ((IntIntVector) row).set((int)(indices[i] - startCol), values[i]);
+        ((IntIntVector) row).set((int) (indices[i] - startCol), values[i]);
       }
     } else {
       for (int i = 0; i < indices.length; i++) {
@@ -175,7 +174,7 @@ public class ServerLongIntRow extends ServerIntRow {
    * @return all element values
    */
   private int[] getValues() {
-    if(useIntKey) {
+    if (useIntKey) {
       return ((IntIntVector) row).getStorage().getValues();
     } else {
       return ((LongIntVector) row).getStorage().getValues();
@@ -206,24 +205,24 @@ public class ServerLongIntRow extends ServerIntRow {
   private void updateUseSparse(ByteBuf buf, UpdateOp op) {
     int size = buf.readInt();
     if (op == UpdateOp.PLUS) {
-      if(useIntKey) {
-        for(int i = 0; i < size; i++) {
-          int index = (int)buf.readLong();
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          int index = (int) buf.readLong();
           ((IntIntVector) row).set(index, ((IntIntVector) row).get(index) + buf.readInt());
         }
       } else {
-        for(int i = 0; i < size; i++) {
+        for (int i = 0; i < size; i++) {
           long index = buf.readLong();
           ((LongIntVector) row).set(index, ((LongIntVector) row).get(index) + buf.readInt());
         }
       }
     } else {
-      if(useIntKey) {
-        for(int i = 0; i < size; i++) {
-          ((IntIntVector) row).set((int)buf.readLong(), buf.readInt());
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntIntVector) row).set((int) buf.readLong(), buf.readInt());
         }
       } else {
-        for(int i = 0; i < size; i++) {
+        for (int i = 0; i < size; i++) {
           ((LongIntVector) row).set(buf.readLong(), buf.readInt());
         }
       }
@@ -231,10 +230,10 @@ public class ServerLongIntRow extends ServerIntRow {
   }
 
   @Override public int size() {
-    if(useIntKey) {
+    if (useIntKey) {
       return ((IntIntVector) row).size();
     } else {
-      return (int)((LongIntVector) row).size();
+      return (int) ((LongIntVector) row).size();
     }
   }
 
@@ -246,13 +245,13 @@ public class ServerLongIntRow extends ServerIntRow {
   public void mergeTo(LongIntVector mergedRow) {
     startRead();
     try {
-      if(isDense()) {
+      if (isDense()) {
         int[] values = getValues();
         for (int i = 0; i < values.length; i++) {
           mergedRow.set(i + startCol, values[i]);
         }
       } else {
-        if(useIntKey) {
+        if (useIntKey) {
           ObjectIterator<Int2IntMap.Entry> iter = ((IntIntVector) row).getStorage().entryIterator();
           Int2IntMap.Entry entry;
           while (iter.hasNext()) {
@@ -260,7 +259,8 @@ public class ServerLongIntRow extends ServerIntRow {
             mergedRow.set(entry.getIntKey() + startCol, entry.getIntValue());
           }
         } else {
-          ObjectIterator<Long2IntMap.Entry> iter = ((LongIntVector) row).getStorage().entryIterator();
+          ObjectIterator<Long2IntMap.Entry> iter =
+            ((LongIntVector) row).getStorage().entryIterator();
           Long2IntMap.Entry entry;
           while (iter.hasNext()) {
             entry = iter.next();
@@ -274,38 +274,43 @@ public class ServerLongIntRow extends ServerIntRow {
   }
 
   @Override protected void serializeRow(ByteBuf buf) {
-    if(isDense()) {
-      int[] values = getValues();
-      for (int i = 0; i < values.length; i++) {
-        buf.writeLong(i);
-        buf.writeInt(values[i]);
-      }
-    } else {
-      if(useIntKey) {
+    if (useIntKeySerialize()) {
+      if (useDenseSerialize()) {
+        int[] values = getValues();
+        for (int i = 0; i < values.length; i++) {
+          buf.writeInt(values[i]);
+        }
+      } else {
         ObjectIterator<Int2IntMap.Entry> iter = ((IntIntVector) row).getStorage().entryIterator();
         Int2IntMap.Entry entry;
         while (iter.hasNext()) {
           entry = iter.next();
-          buf.writeLong(entry.getIntKey());
+          buf.writeInt(entry.getIntKey());
           buf.writeInt(entry.getIntValue());
         }
-      } else {
-        ObjectIterator<Long2IntMap.Entry> iter = ((LongIntVector) row).getStorage().entryIterator();
-        Long2IntMap.Entry entry;
-        while (iter.hasNext()) {
-          entry = iter.next();
-          buf.writeLong(entry.getLongKey());
-          buf.writeInt(entry.getIntValue());
-        }
+      }
+    } else {
+      ObjectIterator<Long2IntMap.Entry> iter = ((LongIntVector) row).getStorage().entryIterator();
+      Long2IntMap.Entry entry;
+      while (iter.hasNext()) {
+        entry = iter.next();
+        buf.writeLong(entry.getLongKey());
+        buf.writeInt(entry.getIntValue());
       }
     }
   }
 
   @Override protected void deserializeRow(ByteBuf buf) {
-    if(useIntKey) {
+    if (useIntKeySerialize()) {
       IntIntVector intIntRow = (IntIntVector) row;
-      for (int i = 0; i < size; i++) {
-        intIntRow.set((int)buf.readLong(), buf.readInt());
+      if (useDenseSerialize()) {
+        for (int i = 0; i < size; i++) {
+          intIntRow.set(i, buf.readInt());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          intIntRow.set(buf.readInt(), buf.readInt());
+        }
       }
     } else {
       LongIntVector longIntRow = (LongIntVector) row;
@@ -316,13 +321,21 @@ public class ServerLongIntRow extends ServerIntRow {
   }
 
   @Override protected int getRowSpace() {
-    return size() * 16;
+    if (useIntKeySerialize()) {
+      if (useDenseSerialize()) {
+        return size * 4;
+      } else {
+        return size * 8;
+      }
+    } else {
+      return size * 12;
+    }
   }
 
   @Override public ServerRow clone() {
     startRead();
     try {
-      if(useIntKey) {
+      if (useIntKey) {
         return new ServerLongIntRow(rowId, rowType, startCol, endCol, (int) estElemNum,
           ((IntIntVector) row).clone());
       } else {
@@ -336,18 +349,19 @@ public class ServerLongIntRow extends ServerIntRow {
 
   /**
    * Check the vector contains the index or not
+   *
    * @param index element index
    * @return true means exist
    */
   public boolean exist(long index) {
-    if(useIntKey) {
-      if(row.isSparse()) {
-        return ((IntIntVector) row).getStorage().hasKey((int)(index - startCol));
+    if (useIntKey) {
+      if (row.isSparse()) {
+        return ((IntIntVector) row).getStorage().hasKey((int) (index - startCol));
       } else {
-        return ((IntIntVector) row).getStorage().get((int)(index - startCol)) != 0;
+        return ((IntIntVector) row).getStorage().get((int) (index - startCol)) != 0;
       }
     } else {
-      if(row.isSparse()) {
+      if (row.isSparse()) {
         return ((LongIntVector) row).getStorage().hasKey(index - startCol);
       } else {
         return ((LongIntVector) row).getStorage().get(index - startCol) != 0;
@@ -356,18 +370,19 @@ public class ServerLongIntRow extends ServerIntRow {
   }
 
   public int initAndGet(long index, InitFunc func) {
-    if(exist(index)) {
+    if (exist(index)) {
       return get(index);
     } else {
-      int value = (int)func.action();
+      int value = (int) func.action();
       set(index, value);
       return value;
     }
   }
 
-  @Override public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
+  @Override
+  public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
     throws IOException {
-    if(func != null) {
+    if (func != null) {
       if (indexType == IndexType.INT) {
         for (int i = 0; i < indexSize; i++) {
           out.writeInt(initAndGet(in.readInt(), func));
@@ -395,13 +410,13 @@ public class ServerLongIntRow extends ServerIntRow {
   }
 
   @Override public void elemUpdate(IntElemUpdateFunc func) {
-    if(isDense()) {
+    if (isDense()) {
       int[] values = getValues();
       for (int i = 0; i < values.length; i++) {
         values[i] = func.update();
       }
     } else {
-      if(useIntKey) {
+      if (useIntKey) {
         ObjectIterator<Int2IntMap.Entry> iter = ((IntIntVector) row).getStorage().entryIterator();
         Int2IntMap.Entry entry;
         while (iter.hasNext()) {

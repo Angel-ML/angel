@@ -264,6 +264,7 @@ public class ServerCompDenseLongIntRow extends ServerRow {
 
   /**
    * Check the vector contains the index or not
+   *
    * @param index element index
    * @return true means exist
    */
@@ -272,19 +273,20 @@ public class ServerCompDenseLongIntRow extends ServerRow {
   }
 
   public int initAndGet(long index, InitFunc func) {
-    if(exist(index)) {
+    if (exist(index)) {
       return get(index);
     } else {
-      int value = (int)func.action();
+      int value = (int) func.action();
       set(index, value);
       return value;
     }
   }
 
 
-  @Override public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
+  @Override
+  public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
     throws IOException {
-    if(func != null) {
+    if (func != null) {
       if (indexType == IndexType.INT) {
         for (int i = 0; i < indexSize; i++) {
           out.writeInt(initAndGet(in.readInt(), func));
@@ -294,7 +296,7 @@ public class ServerCompDenseLongIntRow extends ServerRow {
           out.writeInt(initAndGet(in.readLong(), func));
         }
       }
-    }  else {
+    } else {
       if (indexType == IndexType.INT) {
         for (int i = 0; i < indexSize; i++) {
           out.writeInt(get(in.readInt()));
