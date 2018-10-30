@@ -23,9 +23,9 @@ import java.util
 import breeze.linalg.sum
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector._
-import org.junit.{BeforeClass, Test}
+import org.scalatest.FunSuite
 
-object BaseFuncTest {
+class BaseFuncTest extends FunSuite{
   val matrixId = 0
   val rowId = 0
   val clock = 0
@@ -50,7 +50,6 @@ object BaseFuncTest {
   val indexValues: Array[Int] = new Array[Int](capacity)
   val longIndexValues: Array[Long] = new Array[Long](capacity)
 
-  @BeforeClass
   def init(): Unit = {
     val rand = new util.Random()
     val set = new util.HashSet[Int]()
@@ -122,35 +121,9 @@ object BaseFuncTest {
       longIndexValues(i) = rand.nextInt(dim)
     }
   }
-}
 
-class BaseFuncTest {
-  val matrixId = BaseFuncTest.matrixId
-  val rowId = BaseFuncTest.rowId
-  val clock = BaseFuncTest.clock
-  val capacity: Int = BaseFuncTest.capacity
-  val dim: Int = BaseFuncTest.dim
-
-  val intrandIndices: Array[Int] = BaseFuncTest.intrandIndices
-  val longrandIndices: Array[Long] = BaseFuncTest.longrandIndices
-  val intsortedIndices: Array[Int] = BaseFuncTest.intsortedIndices
-  val longsortedIndices: Array[Long] = BaseFuncTest.longsortedIndices
-
-  val intValues: Array[Int] = BaseFuncTest.intValues
-  val longValues: Array[Long] = BaseFuncTest.longValues
-  val floatValues: Array[Float] = BaseFuncTest.floatValues
-  val doubleValues: Array[Double] = BaseFuncTest.doubleValues
-
-  val denseintValues: Array[Int] = BaseFuncTest.denseintValues
-  val denselongValues: Array[Long] = BaseFuncTest.denselongValues
-  val densefloatValues: Array[Float] = BaseFuncTest.densefloatValues
-  val densedoubleValues: Array[Double] = BaseFuncTest.densedoubleValues
-
-  val indexValues: Array[Int] = BaseFuncTest.indexValues
-  val longIndexValues: Array[Long] = BaseFuncTest.longIndexValues
-
-  @Test
-  def IntDoubleVectortest() {
+  test("IntDoubleVectortest") {
+    init()
     val zero_list = new util.ArrayList[IntDoubleVector]
     val list = new util.ArrayList[IntDoubleVector]
 
@@ -188,10 +161,6 @@ class BaseFuncTest {
       assert(v.asInstanceOf[Vector].getNumZeros == v.getNumZeros)
       assert(v.asInstanceOf[Vector].hasKey(0) == v.hasKey(0))
       assert(v.asInstanceOf[Vector].getType == v.getType)
-      println(s"${sum(v.getStorage.oneLikeDense().getValues)}, ${sum(v.getStorage.oneLikeSparse().getValues)},${sum(v.getStorage.oneLikeSorted().getValues)}")
-      println(s"${sum(v.getStorage.oneLikeDense(100).getValues)}, ${sum(v.getStorage.oneLikeSparse(100, 50).getValues)},${sum(v.getStorage.oneLikeSorted(100, 50).getValues)}")
-      println(s"${sum(v.getStorage.oneLikeSparse(100).getValues)},${sum(v.getStorage.oneLikeSorted(100).getValues)}")
-      println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       assert(v.size == capacity)
       if (v.isDense) {
         assert(v.numZeros == numzero)
@@ -213,7 +182,6 @@ class BaseFuncTest {
     }
 
     for (v <- zero_list) {
-      println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       if (v.isDense) {
         assert(v.numZeros == capacity)
         assert(v.getDim == capacity)
@@ -249,8 +217,8 @@ class BaseFuncTest {
     assert(v4.getDim != sdim)
   }
 
-  @Test
-  def IntFloatVectortest() {
+  test("IntFloatVectortest") {
+    init()
     val zero_list = new util.ArrayList[IntFloatVector]
     val list = new util.ArrayList[IntFloatVector]
 
@@ -288,10 +256,6 @@ class BaseFuncTest {
       assert(v.asInstanceOf[Vector].getNumZeros == v.getNumZeros)
       assert(v.asInstanceOf[Vector].hasKey(0) == v.hasKey(0))
       assert(v.asInstanceOf[Vector].getType == v.getType)
-      println(s"${sum(v.getStorage.oneLikeDense().getValues)}, ${sum(v.getStorage.oneLikeSparse().getValues)},${sum(v.getStorage.oneLikeSorted().getValues)}")
-      println(s"${sum(v.getStorage.oneLikeDense(100).getValues)}, ${sum(v.getStorage.oneLikeSparse(100, 50).getValues)},${sum(v.getStorage.oneLikeSorted(100, 50).getValues)}")
-      println(s"${sum(v.getStorage.oneLikeSparse(100).getValues)},${sum(v.getStorage.oneLikeSorted(100).getValues)}")
-      println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       assert(v.size == capacity)
       if (v.isDense) {
         assert(v.numZeros == numzero)
@@ -312,7 +276,6 @@ class BaseFuncTest {
       }
     }
     for (v <- zero_list) {
-      println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       if (v.isDense) {
         assert(v.numZeros == capacity)
         assert(v.getDim == capacity)
@@ -349,8 +312,8 @@ class BaseFuncTest {
     assert(v4.getDim != sdim)
   }
 
-  @Test
-  def IntLongVectortest() {
+  test("IntLongVectortest") {
+    init()
     val zero_list = new util.ArrayList[IntLongVector]
     val list = new util.ArrayList[IntLongVector]
 
@@ -388,10 +351,6 @@ class BaseFuncTest {
       assert(v.asInstanceOf[Vector].getNumZeros == v.getNumZeros)
       assert(v.asInstanceOf[Vector].hasKey(0) == v.hasKey(0))
       assert(v.asInstanceOf[Vector].getType == v.getType)
-      println(s"${sum(v.getStorage.oneLikeDense().getValues)}, ${sum(v.getStorage.oneLikeSparse().getValues)},${sum(v.getStorage.oneLikeSorted().getValues)}")
-      println(s"${sum(v.getStorage.oneLikeDense(100).getValues)}, ${sum(v.getStorage.oneLikeSparse(100, 50).getValues)},${sum(v.getStorage.oneLikeSorted(100, 50).getValues)}")
-      println(s"${sum(v.getStorage.oneLikeSparse(100).getValues)},${sum(v.getStorage.oneLikeSorted(100).getValues)}")
-      println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       assert(v.size == capacity)
       if (v.isDense) {
         assert(v.numZeros == numzero)
@@ -411,7 +370,6 @@ class BaseFuncTest {
       }
     }
     for (v <- zero_list) {
-      println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       if (v.isDense) {
         assert(v.numZeros == capacity)
         assert(v.getDim == capacity)
@@ -447,8 +405,8 @@ class BaseFuncTest {
     assert(v4.getDim != sdim)
   }
 
-  @Test
-  def IntIntVectortest() {
+  test("IntIntVectortest") {
+    init()
     val zero_list = new util.ArrayList[IntIntVector]
     val list = new util.ArrayList[IntIntVector]
 
@@ -486,10 +444,6 @@ class BaseFuncTest {
       assert(v.asInstanceOf[Vector].getNumZeros == v.getNumZeros)
       assert(v.asInstanceOf[Vector].hasKey(0) == v.hasKey(0))
       assert(v.asInstanceOf[Vector].getType == v.getType)
-      println(s"${sum(v.getStorage.oneLikeDense().getValues)}, ${sum(v.getStorage.oneLikeSparse().getValues)},${sum(v.getStorage.oneLikeSorted().getValues)}")
-      println(s"${sum(v.getStorage.oneLikeDense(100).getValues)}, ${sum(v.getStorage.oneLikeSparse(100, 50).getValues)},${sum(v.getStorage.oneLikeSorted(100, 50).getValues)}")
-      println(s"${sum(v.getStorage.oneLikeSparse(100).getValues)},${sum(v.getStorage.oneLikeSorted(100).getValues)}")
-      println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       assert(v.size == capacity)
       if (v.isDense) {
         assert(v.numZeros == numzero)
@@ -509,7 +463,6 @@ class BaseFuncTest {
       }
     }
     for (v <- zero_list) {
-      println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       if (v.isDense) {
         assert(v.numZeros == capacity)
         assert(v.getDim == capacity)
@@ -545,8 +498,8 @@ class BaseFuncTest {
     assert(v4.getDim != sdim)
   }
 
-  @Test
-  def IntDummyVector() {
+  test("IntDummyVector") {
+    init()
     val list = new util.ArrayList[IntDummyVector]
 
     list.add(VFactory.intDummyVector(dim, intsortedIndices))
@@ -560,7 +513,6 @@ class BaseFuncTest {
       assert(v.asInstanceOf[Vector].getNumZeros == v.getNumZeros)
       assert(v.asInstanceOf[Vector].hasKey(0) == v.hasKey(0))
       assert(v.asInstanceOf[Vector].getType == v.getType)
-      println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       assert(v.numZeros == dim - size)
       assert(v.getDim == dim)
       assert(v.size == size)
@@ -572,7 +524,7 @@ class BaseFuncTest {
         println(v.get(-1))
       } catch {
         case e: ArrayIndexOutOfBoundsException => {
-          println(e)
+          e
         }
       }
       try {
@@ -580,7 +532,7 @@ class BaseFuncTest {
         println(v.hasKey(-1))
       } catch {
         case e: ArrayIndexOutOfBoundsException => {
-          println(e)
+          e
         }
       }
       v.clear()
@@ -593,8 +545,8 @@ class BaseFuncTest {
 
   }
 
-  @Test
-  def LongDummyVectortest() {
+  test("LongDummyVectortest") {
+    init()
     val list = new util.ArrayList[LongDummyVector]
 
     list.add(VFactory.longDummyVector(dim, longsortedIndices))
@@ -608,7 +560,6 @@ class BaseFuncTest {
       assert(v.asInstanceOf[Vector].getNumZeros == v.getNumZeros)
       assert(v.asInstanceOf[Vector].hasKey(0) == v.hasKey(0))
       assert(v.asInstanceOf[Vector].getType == v.getType)
-      println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       assert(v.numZeros == dim - size)
       assert(v.getDim == dim)
       assert(v.size == size)
@@ -620,7 +571,7 @@ class BaseFuncTest {
         println(v.get(-1))
       } catch {
         case e: ArrayIndexOutOfBoundsException => {
-          println(e)
+          e
         }
       }
       try {
@@ -628,7 +579,7 @@ class BaseFuncTest {
         println(v.hasKey(-1))
       } catch {
         case e: ArrayIndexOutOfBoundsException => {
-          println(e)
+          e
         }
       }
       v.clear()
@@ -640,8 +591,8 @@ class BaseFuncTest {
     assert(v4.getDim != sdim)
   }
 
-  @Test
-  def LongDoubleVectortest() {
+  test("LongDoubleVectortest") {
+    init()
     val zero_list = new util.ArrayList[LongDoubleVector]
     val list = new util.ArrayList[LongDoubleVector]
 
@@ -674,10 +625,6 @@ class BaseFuncTest {
       assert(v.asInstanceOf[Vector].getNumZeros == v.getNumZeros)
       assert(v.asInstanceOf[Vector].hasKey(0) == v.hasKey(0))
       assert(v.asInstanceOf[Vector].getType == v.getType)
-      println(s"${sum(v.getStorage.oneLikeSparse().getValues)},${sum(v.getStorage.oneLikeSorted().getValues)}")
-      println(s"${sum(v.getStorage.oneLikeSparse(100, 50).getValues)},${sum(v.getStorage.oneLikeSorted(100, 50).getValues)}")
-      println(s"${sum(v.getStorage.oneLikeSparse(100).getValues)},${sum(v.getStorage.oneLikeSorted(100).getValues)}")
-      println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       assert(v.size == capacity)
       if (v.isDense) {
         assert(v.numZeros == numzero)
@@ -697,7 +644,6 @@ class BaseFuncTest {
       }
     }
     for (v <- zero_list) {
-      println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       if (v.isDense) {
         assert(v.numZeros == capacity)
         assert(v.getDim == capacity)
@@ -733,8 +679,8 @@ class BaseFuncTest {
     assert(v4.getDim != sdim)
   }
 
-  @Test
-  def LongFloatVectortest() {
+  test("LongFloatVectortest") {
+    init()
     val zero_list = new util.ArrayList[LongFloatVector]
     val list = new util.ArrayList[LongFloatVector]
 
@@ -767,7 +713,6 @@ class BaseFuncTest {
       assert(v.asInstanceOf[Vector].getNumZeros == v.getNumZeros)
       assert(v.asInstanceOf[Vector].hasKey(0) == v.hasKey(0))
       assert(v.asInstanceOf[Vector].getType == v.getType)
-      println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       assert(v.size == capacity)
       if (v.isDense) {
         assert(v.numZeros == numzero)
@@ -787,7 +732,6 @@ class BaseFuncTest {
       }
     }
     for (v <- zero_list) {
-      println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       if (v.isDense) {
         assert(v.numZeros == capacity)
         assert(v.getDim == capacity)
@@ -822,8 +766,8 @@ class BaseFuncTest {
     assert(v4.getDim != sdim)
   }
 
-  @Test
-  def LongLongVectortest() {
+  test("LongLongVectortest") {
+    init()
     val zero_list = new util.ArrayList[LongLongVector]
     val list = new util.ArrayList[LongLongVector]
 
@@ -856,7 +800,6 @@ class BaseFuncTest {
       assert(v.asInstanceOf[Vector].getNumZeros == v.getNumZeros)
       assert(v.asInstanceOf[Vector].hasKey(0) == v.hasKey(0))
       assert(v.asInstanceOf[Vector].getType == v.getType)
-      println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       assert(v.size == capacity)
       if (v.isDense) {
         assert(v.numZeros == numzero)
@@ -876,7 +819,6 @@ class BaseFuncTest {
       }
     }
     for (v <- zero_list) {
-      println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       if (v.isDense) {
         assert(v.numZeros == capacity)
         assert(v.getDim == capacity)
@@ -911,8 +853,8 @@ class BaseFuncTest {
     assert(v4.getDim != sdim)
   }
 
-  @Test
-  def LongIntVectortest() {
+  test("LongIntVectortest") {
+    init()
     val zero_list = new util.ArrayList[LongIntVector]
     val list = new util.ArrayList[LongIntVector]
 
@@ -945,7 +887,6 @@ class BaseFuncTest {
       assert(v.asInstanceOf[Vector].getNumZeros == v.getNumZeros)
       assert(v.asInstanceOf[Vector].hasKey(0) == v.hasKey(0))
       assert(v.asInstanceOf[Vector].getType == v.getType)
-      println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       assert(v.size == capacity)
       if (v.isDense) {
         assert(v.numZeros == numzero)
@@ -965,7 +906,6 @@ class BaseFuncTest {
       }
     }
     for (v <- zero_list) {
-      println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       if (v.isDense) {
         assert(v.numZeros == capacity)
         assert(v.getDim == capacity)

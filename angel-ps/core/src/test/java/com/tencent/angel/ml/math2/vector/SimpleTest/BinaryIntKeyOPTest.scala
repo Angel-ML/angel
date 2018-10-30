@@ -237,7 +237,7 @@ class BinaryIntKeyOPTest {
           }
         } catch {
           case e: AngelException => {
-           e
+            e
           }
         }
       }

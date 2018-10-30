@@ -70,6 +70,12 @@ public class IntDummyVector extends Vector implements IntKeyVector, SimpleVector
     return indices;
   }
 
+  public int[] getValues() {
+    int [] values = new int[indices.length];
+    Arrays.fill(values, 1);
+    return values;
+  }
+
   public int getDim() {
     return dim;
   }

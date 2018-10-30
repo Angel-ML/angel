@@ -23,9 +23,9 @@ import java.util
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import com.tencent.angel.ml.math2.vector.Vector
-import org.junit.{BeforeClass, Test}
+import org.scalatest.FunSuite
 
-object BinaryIntkeyCompareTest {
+class BinaryIntkeyCompareTest  extends FunSuite{
   val capacity: Int = 1000
   val dim: Int = capacity * 100
 
@@ -39,18 +39,14 @@ object BinaryIntkeyCompareTest {
   val floatValues: Array[Float] = new Array[Float](capacity)
   val doubleValues: Array[Double] = new Array[Double](capacity)
 
-
   val denseintValues: Array[Int] = new Array[Int](dim)
   val denselongValues: Array[Long] = new Array[Long](dim)
   val densefloatValues: Array[Float] = new Array[Float](dim)
   val densedoubleValues: Array[Double] = new Array[Double](dim)
 
-
   val ilist = new util.ArrayList[Vector]()
   val llist = new util.ArrayList[Vector]()
 
-
-  @BeforeClass
   def init(): Unit = {
     val rand = new util.Random()
     val set = new util.HashSet[Int]()
@@ -104,7 +100,7 @@ object BinaryIntkeyCompareTest {
         densedoubleValues(i) = 0
       }
 
-//      rand.nextDouble()
+      //      rand.nextDouble()
     }
 
     densefloatValues.indices.foreach { i =>
@@ -114,7 +110,7 @@ object BinaryIntkeyCompareTest {
         densefloatValues(i) = -1
       }
 
-//        rand.nextFloat()
+      //        rand.nextFloat()
     }
 
     denselongValues.indices.foreach { i =>
@@ -143,20 +139,15 @@ object BinaryIntkeyCompareTest {
     ilist.add(VFactory.intDummyVector(dim, intsortedIndices))
 
   }
-}
-
-class BinaryIntkeyCompareTest {
-  val ilist = BinaryIntkeyCompareTest.ilist
-
-  @Test
-  def min(): Unit ={
+  test("min"){
+    init()
     println(Ufuncs.min(ilist.get(0),ilist.get(3)).sum(),ilist.get(0).sum(),ilist.get(3).sum())
     println(Ufuncs.min(ilist.get(1),ilist.get(4)).sum(),ilist.get(1).sum(),ilist.get(4).sum())
     println(Ufuncs.min(ilist.get(2),ilist.get(5)).sum(),ilist.get(2).sum(),ilist.get(5).sum())
   }
 
-  @Test
-  def max(): Unit ={
+  test("max"){
+    init()
     println(Ufuncs.max(ilist.get(0),ilist.get(3)).sum(),ilist.get(0).sum(),ilist.get(3).sum())
     println(Ufuncs.max(ilist.get(1),ilist.get(4)).sum(),ilist.get(1).sum(),ilist.get(4).sum())
     println(Ufuncs.max(ilist.get(2),ilist.get(5)).sum(),ilist.get(2).sum(),ilist.get(5).sum())

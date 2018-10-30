@@ -167,27 +167,23 @@ class BlasMatrixBaseFunTest {
     //get,set
     val x = densematrix1.get(0, 0)
     densematrix1.set(0, 0, 10)
-    println(s"get(0,0): ${x}, set(0,0): ${densematrix1.get(0, 0)}")
 
     //getRow,setRow
     (0 until vlist.size()).foreach { i =>
       val vr = densematrix1.getRow(i)
       densematrix1.setRow(i, vlist.get(i))
-      println(s"getRow($i): ${vr.sum()}, setRow($i): ${densematrix1.getRow(i).sum()}, ${vlist.get(i).sum()}")
     }
 
     //getCol, setCol
     (0 until vlist.size()).foreach { i =>
       val vc = densematrix1.getCol(i)
       densematrix1.setCol(i, vlist.get(i))
-      println(s"getCol($i): ${vc.sum()}, setCol($i): ${densematrix1.getCol(i).sum()}, ${vlist.get(i).sum()}")
     }
 
     densematrix1.reshape(100, 10000)
     println(densematrix1.getNumRows, densematrix1.getNumCols)
 
     densematrix1.clear()
-    println(s"clear: ${densematrix1.sum()}")
   }
 
 
@@ -203,26 +199,22 @@ class BlasMatrixBaseFunTest {
     //get, set
     val x = densematrix2.get(0, 0)
     densematrix2.set(0, 0, 10)
-    println(s"get(0,0): ${x}, set(0,0): ${densematrix2.get(0, 0)}")
 
     //getRow, setRow
     (3 until vlist.size()).foreach { i =>
       val vr = densematrix2.getRow(i)
       densematrix2.setRow(i, vlist.get(i))
-      println(s"getRow($i): ${vr.sum()}, setRow($i): ${densematrix2.getRow(i).sum()}, ${vlist.get(i).sum()}")
     }
 
     //getCol, setCol
     (3 until vlist.size()).foreach { i =>
       val vc = densematrix2.getCol(i)
       densematrix2.setCol(i, vlist.get(i))
-      println(s"getCol($i): ${vc.sum()}, setCol($i): ${densematrix2.getCol(i).sum()}, ${vlist.get(i).sum()}")
     }
 
     densematrix2.reshape(100, 10000)
     println(densematrix2.getNumRows, densematrix2.getNumCols)
 
     densematrix2.clear()
-    println(s"clear: ${densematrix2.sum()}")
   }
 }

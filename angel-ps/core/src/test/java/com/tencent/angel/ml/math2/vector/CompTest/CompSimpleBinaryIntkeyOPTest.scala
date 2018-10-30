@@ -402,7 +402,11 @@ class CompSimpleBinaryIntkeyOPTest {
 
   @Test
   def compAddsimpleTest() {
-    (0 until list.size()).foreach { i =>
+
+    assert(abs(list.get(0).add(slist.get(0)).sum() - (list.get(0).sum() + slist.get(0).sum())) < 1.0E-3)
+    assert(abs(list.get(0).add(slist.get(1)).sum() - (list.get(0).sum() + slist.get(1).sum())) < 1.0E-3)
+    assert(abs(list.get(0).add(slist.get(2)).sum() - (list.get(0).sum() + slist.get(2).sum())) < 1.0E-3)
+    (0 until 3).foreach { i =>
       (i * 3 until slist.size()).foreach { j =>
         if (getFlag(slist.get(j)) != "dummy") {
           assert(abs(list.get(i).add(slist.get(j)).sum() - (list.get(i).sum() + slist.get(j).sum())) < 1.0E-3)
@@ -415,7 +419,7 @@ class CompSimpleBinaryIntkeyOPTest {
 
   @Test
   def compSubsimpleTest() {
-    (0 until list.size()).foreach { i =>
+    (0 until 3).foreach { i =>
       (i * 3 until slist.size()).foreach { j =>
         if (getFlag(slist.get(j)) != "dummy") {
           assert(abs(list.get(i).sub(slist.get(j)).sum() - (list.get(i).sum() - slist.get(j).sum())) < 1.0E-3)
@@ -433,7 +437,7 @@ class CompSimpleBinaryIntkeyOPTest {
     assert(abs(list.get(2).mul(intdummy).sum() - (sum(bdense3 :* longintdummy1) + sum(bsparse3 :* longintdummy2) + sum(bsorted3 :* longintdummy3))) < 1.0E-8)
     assert(abs(list.get(3).mul(intdummy).sum() - (sum(bdense4 :* intintdummy1) + sum(bsparse4 :* intintdummy2) + sum(bsorted4 :* intintdummy3))) < 1.0E-8)
 
-    (0 until list.size()).foreach { i =>
+    (0 until 3).foreach { i =>
       (i * 3 until slist.size()).foreach { j =>
        list.get(i).mul(slist.get(j)).sum()
       }
@@ -460,7 +464,7 @@ class CompSimpleBinaryIntkeyOPTest {
 
   @Test
   def compAxpysimpleTest() {
-    (0 until list.size()).foreach { i =>
+    (0 until 3).foreach { i =>
       (i * 3 until slist.size()).foreach { j =>
         if (getFlag(slist.get(j)) != "dummy") {
           assert(abs(list.get(i).axpy(slist.get(j), 2.0).sum() - (list.get(i).sum() + slist.get(j).sum() * 2)) < 1.0E-3)

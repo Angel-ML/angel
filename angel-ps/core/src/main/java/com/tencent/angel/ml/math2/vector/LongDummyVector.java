@@ -70,6 +70,12 @@ public class LongDummyVector extends Vector implements LongKeyVector, SimpleVect
     return indices;
   }
 
+  public int[] getValues() {
+    int [] values = new int[indices.length];
+    Arrays.fill(values, 1);
+    return values;
+  }
+
   public long getDim() {
     return dim;
   }

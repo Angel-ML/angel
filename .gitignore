@@ -39,4 +39,6 @@ spark-on-angel/mllib/log/
 spark-on-angel/log/
 angel-ps/core/velocity.*
 angel-ps/core/src/main/java/com/tencent/angel/ml/math2/velocity
+angel-ps/core/src/test/java/com/tencent/angel/ml/math2/vector/CompTest/*/
+angel-ps/core/src/test/java/com/tencent/angel/ml/math2/vector/SimpleTest/*/
 

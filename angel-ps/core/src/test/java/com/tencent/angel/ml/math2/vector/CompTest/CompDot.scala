@@ -552,12 +552,11 @@ class CompDot {
 
   @Test
   def compDotsimpleIntkeyTest() {
-    println("angel dot test--")
     (0 until ilist.size()).foreach { i =>
       ((i / 3) * 6 until slist.size()).foreach { j =>
         try {
-          println(s"${slist.get(j).getClass.getSimpleName} dot ${ilist.get(i).getClass.getSimpleName}: ${getFlag(slist.get(j))} is ${(slist.get(j).dot(ilist.get(i)))}")
-          println(s"${ilist.get(i).getClass.getSimpleName} dot ${slist.get(j).getClass.getSimpleName}: ${getFlag(slist.get(j))} is ${(ilist.get(i).dot(slist.get(j)))}")
+         slist.get(j).dot(ilist.get(i))
+          ilist.get(i).dot(slist.get(j))
         } catch {
           case e: AngelException => {
             e

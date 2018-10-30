@@ -23,7 +23,6 @@ import com.tencent.angel.ml.math2.ufuncs.executor.comp.*;
 import com.tencent.angel.ml.math2.ufuncs.executor.mixed.*;
 import com.tencent.angel.ml.math2.ufuncs.executor.simple.*;
 import com.tencent.angel.ml.math2.ufuncs.expression.Binary;
-import com.tencent.angel.ml.math2.ufuncs.expression.OpType;
 import com.tencent.angel.ml.math2.vector.*;
 
 public class BinaryExecutor {

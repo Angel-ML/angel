@@ -200,28 +200,12 @@ class DotOPTest {
           ilist.get(i).dot(ilist.get(j))
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
         }
 
       }
     }
-
-
-    println(s"${ilist.get(0).getClass.getSimpleName}: ${getFlag(ilist.get(0))} dot ${ilist.get(0).getClass.getSimpleName}: ${ilist.get(0).getClass.getSimpleName} is ${ilist.get(0).dot(ilist.get(0))}, and breeze is ${dense1.dot(dense1)}")
-    println(s"${ilist.get(1).getClass.getSimpleName}: ${getFlag(ilist.get(1))} dot ${ilist.get(1).getClass.getSimpleName}: ${ilist.get(1).getClass.getSimpleName} is ${ilist.get(1).dot(ilist.get(1))}, and breeze is ${hash1.dot(hash1)}")
-    println(s"${ilist.get(2).getClass.getSimpleName}: ${getFlag(ilist.get(2))} dot ${ilist.get(2).getClass.getSimpleName}: ${ilist.get(2).getClass.getSimpleName} is ${ilist.get(2).dot(ilist.get(2))}, and breeze is ${sorted1.dot(sorted1)}")
-    println(s"${ilist.get(3).getClass.getSimpleName}: ${getFlag(ilist.get(3))} dot ${ilist.get(3).getClass.getSimpleName}: ${ilist.get(3).getClass.getSimpleName} is ${ilist.get(3).dot(ilist.get(3))}, and breeze is ${dense2.dot(dense2)}")
-    println(s"${ilist.get(4).getClass.getSimpleName}: ${getFlag(ilist.get(4))} dot ${ilist.get(4).getClass.getSimpleName}: ${ilist.get(4).getClass.getSimpleName} is ${ilist.get(4).dot(ilist.get(4))}, and breeze is ${hash2.dot(hash2)}")
-    println(s"${ilist.get(5).getClass.getSimpleName}: ${getFlag(ilist.get(5))} dot ${ilist.get(5).getClass.getSimpleName}: ${ilist.get(5).getClass.getSimpleName} is ${ilist.get(5).dot(ilist.get(5))}, and breeze is ${sorted2.dot(sorted2)}")
-    println(s"${ilist.get(6).getClass.getSimpleName}: ${getFlag(ilist.get(6))} dot ${ilist.get(6).getClass.getSimpleName}: ${ilist.get(6).getClass.getSimpleName} is ${ilist.get(6).dot(ilist.get(6))}, and breeze is ${dense3.dot(dense3)}")
-    println(s"${ilist.get(7).getClass.getSimpleName}: ${getFlag(ilist.get(7))} dot ${ilist.get(7).getClass.getSimpleName}: ${ilist.get(7).getClass.getSimpleName} is ${ilist.get(7).dot(ilist.get(7))}, and breeze is ${hash3.dot(hash3)}")
-    println(s"${ilist.get(8).getClass.getSimpleName}: ${getFlag(ilist.get(8))} dot ${ilist.get(8).getClass.getSimpleName}: ${ilist.get(8).getClass.getSimpleName} is ${ilist.get(8).dot(ilist.get(8))}, and breeze is ${sorted3.dot(sorted3)}")
-    println(s"${ilist.get(9).getClass.getSimpleName}: ${getFlag(ilist.get(9))} dot ${ilist.get(9).getClass.getSimpleName}: ${ilist.get(9).getClass.getSimpleName} is ${ilist.get(9).dot(ilist.get(9))}, and breeze is ${dense4.dot(dense4)}")
-    println(s"${ilist.get(10).getClass.getSimpleName}: ${getFlag(ilist.get(10))} dot ${ilist.get(10).getClass.getSimpleName}: ${ilist.get(10).getClass.getSimpleName} is ${ilist.get(10).dot(ilist.get(10))}, and breeze is ${hash4.dot(hash4)}")
-    println(s"${ilist.get(11).getClass.getSimpleName}: ${getFlag(ilist.get(11))} dot ${ilist.get(11).getClass.getSimpleName}: ${ilist.get(11).getClass.getSimpleName} is ${ilist.get(11).dot(ilist.get(11))}, and breeze is ${sorted4.dot(sorted4)}")
-    println(s"${ilist.get(12).getClass.getSimpleName}: ${getFlag(ilist.get(12))} dot ${ilist.get(12).getClass.getSimpleName}: ${ilist.get(12).getClass.getSimpleName} is ${ilist.get(12).dot(ilist.get(12))}, and breeze is ${intValues.length}")
-
 
     assert(abs(ilist.get(0).dot(ilist.get(0)) - dense1.dot(dense1)) < 1.0E-8)
     assert(abs(ilist.get(1).dot(ilist.get(1)) - hash1.dot(hash1)) < 1.0E-8)
@@ -264,22 +248,11 @@ class DotOPTest {
           llist.get(i).dot(llist.get(j))
         } catch {
           case e: AngelException => {
-            println(e)
+           e
           }
         }
       }
     }
-
-    println(s"${llist.get(0).getClass.getSimpleName}: ${getFlag(llist.get(0))} dot ${llist.get(0).getClass.getSimpleName}: ${llist.get(0).getClass.getSimpleName} is ${llist.get(0).dot(llist.get(0))}, and breeze is ${hash1.dot(hash1)}")
-    println(s"${llist.get(1).getClass.getSimpleName}: ${getFlag(llist.get(1))} dot ${llist.get(1).getClass.getSimpleName}: ${llist.get(1).getClass.getSimpleName} is ${llist.get(1).dot(llist.get(1))}, and breeze is ${sorted1.dot(sorted1)}")
-    println(s"${llist.get(2).getClass.getSimpleName}: ${getFlag(llist.get(2))} dot ${llist.get(2).getClass.getSimpleName}: ${llist.get(2).getClass.getSimpleName} is ${llist.get(2).dot(llist.get(2))}, and breeze is ${hash2.dot(hash2)}")
-    println(s"${llist.get(3).getClass.getSimpleName}: ${getFlag(llist.get(3))} dot ${llist.get(3).getClass.getSimpleName}: ${llist.get(3).getClass.getSimpleName} is ${llist.get(3).dot(llist.get(3))}, and breeze is ${sorted2.dot(sorted2)}")
-    println(s"${llist.get(4).getClass.getSimpleName}: ${getFlag(llist.get(4))} dot ${llist.get(4).getClass.getSimpleName}: ${llist.get(4).getClass.getSimpleName} is ${llist.get(4).dot(llist.get(4))}, and breeze is ${hash3.dot(hash3)}")
-    println(s"${llist.get(5).getClass.getSimpleName}: ${getFlag(llist.get(5))} dot ${llist.get(5).getClass.getSimpleName}: ${llist.get(5).getClass.getSimpleName} is ${llist.get(5).dot(llist.get(5))}, and breeze is ${sorted3.dot(sorted3)}")
-    println(s"${llist.get(6).getClass.getSimpleName}: ${getFlag(llist.get(6))} dot ${llist.get(6).getClass.getSimpleName}: ${llist.get(6).getClass.getSimpleName} is ${llist.get(6).dot(llist.get(6))}, and breeze is ${hash4.dot(hash4)}")
-    println(s"${llist.get(7).getClass.getSimpleName}: ${getFlag(llist.get(7))} dot ${llist.get(7).getClass.getSimpleName}: ${llist.get(7).getClass.getSimpleName} is ${llist.get(7).dot(llist.get(7))}, and breeze is ${sorted4.dot(sorted4)}")
-    println(s"${llist.get(8).getClass.getSimpleName}: ${getFlag(llist.get(8))} dot ${llist.get(8).getClass.getSimpleName}: ${llist.get(8).getClass.getSimpleName} is ${llist.get(8).dot(llist.get(8))}, and breeze is ${longValues.length}")
-
 
     assert(abs(llist.get(0).dot(llist.get(0)) - hash1.dot(hash1)) < 1.0E-8)
     assert(abs(llist.get(1).dot(llist.get(1)) - sorted1.dot(sorted1)) < 1.0E-8)

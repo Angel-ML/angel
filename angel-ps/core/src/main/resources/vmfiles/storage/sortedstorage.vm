@@ -62,7 +62,7 @@ public class ${itype}${dtype}SortedVectorStorage implements ${itype}${dtype}Vect
         } else if (size == 0 || idx > indices[size - 1] || idx < indices[0]) {
             return 0;
         } else {
-            int i = Arrays.binarySearch(indices, idx);
+            int i = Arrays.binarySearch(indices, 0, size, idx);
             return i >= 0 ? values[i] : 0;
         }
     }
@@ -80,7 +80,7 @@ public class ${itype}${dtype}SortedVectorStorage implements ${itype}${dtype}Vect
         } else if (idx > indices[size - 1]) {
             point = size;
         } else {
-            point = Arrays.binarySearch(indices, idx);
+            point = Arrays.binarySearch(indices, 0, size, idx);
             if (point >= 0) {
                 values[point] = value;
                 return;
@@ -315,7 +315,7 @@ public class ${itype}${dtype}SortedVectorStorage implements ${itype}${dtype}Vect
     @Override
     public boolean hasKey($itype.toLowerCase()  key) {
         return (size != 0 && key <= indices[size - 1] && key >= indices[0] &&
-                Arrays.binarySearch(indices, key) > 0);
+                Arrays.binarySearch(indices, 0, size, key) > 0);
     }
 
     @Override

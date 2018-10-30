@@ -258,7 +258,7 @@ class CompSimpleBinaryLongkeyOPTest {
   def compMulsimpleTest() {
     (0 until list.size()).foreach { i =>
       (i * 2 until slist.size()).foreach { j =>
-        println(s"${list.get(i).sum()}, ${slist.get(j).sum()}, ${list.get(i).mul(slist.get(j)).sum()}")
+        list.get(i).mul(slist.get(j)).sum()
       }
       println()
     }
