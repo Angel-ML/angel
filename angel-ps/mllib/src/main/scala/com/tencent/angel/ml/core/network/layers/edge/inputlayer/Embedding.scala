@@ -28,7 +28,7 @@ import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
-import com.tencent.angel.ml.core.utils.PSMatrixUtils
+import com.tencent.angel.ml.core.utils.{NetUtils, PSMatrixUtils}
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.storage._
 import com.tencent.angel.ml.math2.vector._
@@ -358,11 +358,13 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
 
   override def init(taskflag: Int): Unit = {
     val bound: Double = 0.00001
-    if (indexRange == validIndexNum) {  // Dense
-      if (taskflag == 0) {
-        val randFunc = new RandomNormal(matrixId, 0, numFactors, 0.0, bound)
-        PSAgentContext.get().getUserRequestAdapter.update(randFunc).get()
-      }
+    NetUtils.storageType(modelType) match {
+      case "dense" | "component_dense" =>
+        if (taskflag == 0) {
+          val randFunc = new RandomNormal(matrixId, 0, numFactors, 0.0, bound)
+          PSAgentContext.get().getUserRequestAdapter.update(randFunc).get()
+        }
+      case _ =>
     }
   }
 
