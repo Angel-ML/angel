@@ -139,6 +139,10 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
     graph.init(taskflag)
   }
 
+  def createMatrices(client: AngelClient): Unit = {
+    graph.createMatrices(client)
+  }
+
   def loadModel(client: AngelClient): Unit = {
     graph.loadModel(client)
   }

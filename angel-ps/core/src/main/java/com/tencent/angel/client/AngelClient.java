@@ -205,7 +205,6 @@ public abstract class AngelClient implements AngelClientInterface {
     }
 
     try {
-      mContext.init(conf);
       nameToMatrixMap.put(mContext.getName(), mContext);
     } catch (Throwable x) {
       throw new AngelException(x);
@@ -264,8 +263,14 @@ public abstract class AngelClient implements AngelClientInterface {
   }
 
   @Override public void save(ModelSaveContext saveContext) throws AngelException {
+    if (saveContext.getMatricesContext().size() == 0 || saveContext.getSavePath() == null
+      || saveContext.getSavePath().isEmpty()) {
+      LOG.info("there is no matrices need save or save path is empty");
+      return;
+    }
+
     SaveRequest.Builder builder = SaveRequest.newBuilder();
-    int requestId = 0;
+    int requestId;
     try {
       requestId =
         master.save(null, builder.setSaveContext(ProtobufUtil.convert(saveContext)).build())
@@ -289,8 +294,14 @@ public abstract class AngelClient implements AngelClientInterface {
   }
 
   @Override public void load(ModelLoadContext loadContext) throws AngelException {
+    if (loadContext.getMatricesContext().size() == 0 || loadContext.getLoadPath() == null
+      || loadContext.getLoadPath().isEmpty()) {
+      LOG.info("there is no matrices need load or load path is empty");
+      return;
+    }
+
     LoadRequest.Builder builder = LoadRequest.newBuilder();
-    int requestId = 0;
+    int requestId;
     try {
       requestId =
         master.load(null, builder.setLoadContext(ProtobufUtil.convert(loadContext)).build())
@@ -672,8 +683,12 @@ public abstract class AngelClient implements AngelClientInterface {
 
   @Override public void createMatrices() throws AngelException {
     try {
-      master.createMatrices(null, ProtobufUtil
-        .buildCreateMatricesRequest(new ArrayList<MatrixContext>(nameToMatrixMap.values())));
+      for (MatrixContext context : nameToMatrixMap.values()) {
+        context.init(conf);
+      }
+
+      master.createMatrices(null,
+        ProtobufUtil.buildCreateMatricesRequest(new ArrayList<>(nameToMatrixMap.values())));
       List<String> matrixNames = new ArrayList<>(nameToMatrixMap.keySet());
       waitForMatricesCreated(matrixNames);
     } catch (Throwable x) {
@@ -683,6 +698,10 @@ public abstract class AngelClient implements AngelClientInterface {
 
   @Override public void createMatrices(List<MatrixContext> matrixContexts) throws AngelException {
     try {
+      for (MatrixContext context : matrixContexts) {
+        context.init(conf);
+      }
+
       master.createMatrices(null, ProtobufUtil.buildCreateMatricesRequest(matrixContexts));
       List<String> matrixNames = new ArrayList<>(matrixContexts.size());
       for (MatrixContext context : matrixContexts) {
@@ -701,18 +720,18 @@ public abstract class AngelClient implements AngelClientInterface {
   public void load(Set<String> matrixNames) {
     // Check need load matrices
     String loadPath = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH);
-    if(loadPath != null && !loadPath.isEmpty()) {
+    if (loadPath != null && !loadPath.isEmpty()) {
       ModelLoadContext loadContext = new ModelLoadContext(loadPath);
       int needLoadMatrixCount = 0;
       for (String name : matrixNames) {
         MatrixContext matrix = nameToMatrixMap.get(name);
-        if(matrix.getAttributes().get(MatrixConf.MATRIX_SAVE_PATH) != null) {
+        if (matrix.getAttributes().get(MatrixConf.MATRIX_LOAD_PATH) != null) {
           loadContext.addMatrix(new MatrixLoadContext(name));
           needLoadMatrixCount++;
         }
       }
 
-      if(needLoadMatrixCount > 0) {
+      if (needLoadMatrixCount > 0) {
         load(loadContext);
       }
     }
