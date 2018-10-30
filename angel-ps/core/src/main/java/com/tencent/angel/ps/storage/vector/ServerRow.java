@@ -417,7 +417,7 @@ public abstract class ServerRow implements Serialize {
   }
 
   @Override public int bufferLen() {
-    return 4 * 5 + 2 * 8 + getRowSpace();
+    return 4 * 6 + 2 * 8 + getRowSpace();
   }
 
   @Override public String toString() {
