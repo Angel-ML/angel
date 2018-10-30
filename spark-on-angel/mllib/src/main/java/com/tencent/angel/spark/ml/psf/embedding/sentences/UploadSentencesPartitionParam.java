@@ -10,7 +10,6 @@ public class UploadSentencesPartitionParam extends PartitionUpdateParam {
   boolean initialize;
   int numPartitions;
   int[][] sentences;
-  ByteBuf buf;
 
   public UploadSentencesPartitionParam(int matrixId,
                                        PartitionKey partKey,
