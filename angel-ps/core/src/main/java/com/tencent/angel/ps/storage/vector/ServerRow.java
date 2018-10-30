@@ -53,6 +53,15 @@ public abstract class ServerRow implements Serialize {
   protected int size;
   protected int rowVersion;
   protected boolean useIntKey;
+  /**
+   * Serialize type, 0 dense, 1 sparse
+   */
+  protected int serializeType = -1;
+
+  /**
+   * Serialize key type, 0 int, 1 long
+   */
+  protected int serializeKeyType = -1;
   protected final ReentrantReadWriteLock lock;
   public static volatile transient int maxLockWaitTimeMs = 10000;
   public static volatile transient float sparseToDenseFactor = 0.2f;
@@ -367,6 +376,8 @@ public abstract class ServerRow implements Serialize {
     buf.writeLong(endCol);
     buf.writeInt(rowVersion);
     buf.writeInt(size());
+    buf.writeInt(isDense() ? 0 : 1);
+    buf.writeInt(useIntKey ? 0 : 1);
   }
 
   @Override public void deserialize(ByteBuf buf) {
@@ -387,10 +398,26 @@ public abstract class ServerRow implements Serialize {
     endCol = buf.readLong();
     rowVersion = buf.readInt();
     size = buf.readInt();
+    serializeType = buf.readInt();
+    serializeKeyType = buf.readInt();
+  }
+
+  protected boolean useDenseSerialize() {
+    if(serializeType == -1) {
+      serializeType = isDense() ? 0 : 1;
+    }
+    return serializeType == 0;
+  }
+
+  protected boolean useIntKeySerialize() {
+    if(serializeKeyType == -1) {
+      serializeKeyType = useIntKey ? 0 : 1;
+    }
+    return serializeKeyType == 0;
   }
 
   @Override public int bufferLen() {
-    return 4 * 4 + 2 * 8 + getRowSpace();
+    return 4 * 5 + 2 * 8 + getRowSpace();
   }
 
   @Override public String toString() {

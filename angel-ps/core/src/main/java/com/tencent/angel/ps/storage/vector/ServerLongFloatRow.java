@@ -282,38 +282,43 @@ public class ServerLongFloatRow extends ServerFloatRow {
   }
 
   @Override protected void serializeRow(ByteBuf buf) {
-    if(isDense()) {
-      float[] values = getValues();
-      for (int i = 0; i < values.length; i++) {
-        buf.writeLong(i);
-        buf.writeFloat(values[i]);
-      }
-    } else {
-      if(useIntKey) {
+    if(useIntKeySerialize()) {
+      if(useDenseSerialize()) {
+        float[] values = getValues();
+        for (int i = 0; i < values.length; i++) {
+          buf.writeFloat(values[i]);
+        }
+      } else {
         ObjectIterator<Int2FloatMap.Entry> iter = ((IntFloatVector) row).getStorage().entryIterator();
         Int2FloatMap.Entry entry;
         while (iter.hasNext()) {
           entry = iter.next();
-          buf.writeLong(entry.getIntKey());
+          buf.writeInt(entry.getIntKey());
           buf.writeFloat(entry.getFloatValue());
         }
-      } else {
-        ObjectIterator<Long2FloatMap.Entry> iter = ((LongFloatVector) row).getStorage().entryIterator();
-        Long2FloatMap.Entry entry;
-        while (iter.hasNext()) {
-          entry = iter.next();
-          buf.writeLong(entry.getLongKey());
-          buf.writeFloat(entry.getFloatValue());
-        }
+      }
+    } else {
+      ObjectIterator<Long2FloatMap.Entry> iter = ((LongFloatVector) row).getStorage().entryIterator();
+      Long2FloatMap.Entry entry;
+      while (iter.hasNext()) {
+        entry = iter.next();
+        buf.writeLong(entry.getLongKey());
+        buf.writeFloat(entry.getFloatValue());
       }
     }
   }
 
   @Override protected void deserializeRow(ByteBuf buf) {
-    if(useIntKey) {
+    if(useIntKeySerialize()) {
       IntFloatVector IntFloatRow = (IntFloatVector) row;
-      for (int i = 0; i < size; i++) {
-        IntFloatRow.set((int)buf.readLong(), buf.readFloat());
+      if(useDenseSerialize()) {
+        for (int i = 0; i < size; i++) {
+          IntFloatRow.set(i, buf.readFloat());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          IntFloatRow.set(buf.readInt(), buf.readFloat());
+        }
       }
     } else {
       LongFloatVector longFloatRow = (LongFloatVector) row;
@@ -324,7 +329,15 @@ public class ServerLongFloatRow extends ServerFloatRow {
   }
 
   @Override protected int getRowSpace() {
-    return size() * 12;
+    if(useIntKeySerialize()) {
+      if(useDenseSerialize()) {
+        return size * 4;
+      } else {
+        return size * 8;
+      }
+    } else {
+      return size * 12;
+    }
   }
 
   @Override public ServerRow clone() {

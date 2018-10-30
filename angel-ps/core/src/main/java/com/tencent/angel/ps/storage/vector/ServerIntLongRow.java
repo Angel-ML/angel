@@ -270,7 +270,7 @@ public class ServerIntLongRow extends ServerLongRow {
   }
 
   @Override protected void serializeRow(ByteBuf buf) {
-    if (isDense()) {
+    if (useDenseSerialize()) {
       long[] values = getValues();
       for (int i = 0; i < values.length; i++) {
         buf.writeLong(values[i]);
@@ -291,10 +291,9 @@ public class ServerIntLongRow extends ServerLongRow {
     endColInt = (int) endCol;
     intLongRow = (IntLongVector) row;
 
-    if (isDense()) {
-      long[] values = getValues();
+    if (useDenseSerialize()) {
       for (int i = 0; i < size; i++) {
-        values[i] = buf.readLong();
+        intLongRow.set(i, buf.readLong());
       }
     } else {
       for (int i = 0; i < size; i++) {
@@ -304,7 +303,7 @@ public class ServerIntLongRow extends ServerLongRow {
   }
 
   @Override public int getRowSpace() {
-    if (isDense()) {
+    if (useDenseSerialize()) {
       return 8 * size();
     } else {
       return 12 * size();
