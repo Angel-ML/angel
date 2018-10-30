@@ -26,7 +26,7 @@ import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.spark.ml.psf.embedding.NENegativeSample;
-import com.tencent.angel.spark.ml.psf.embedding.ServerSentences;
+import com.tencent.angel.spark.ml.psf.embedding.ServerWrapper;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 
 import java.util.Arrays;
@@ -55,7 +55,10 @@ public class CbowDot extends GetFunc {
       int seed     = param.seed;
       int order    = 2;
 
-      int[][] sentences = ServerSentences.getSentences(param.partitionId);
+      // batch sentences
+      int[][] sentences = ServerWrapper.getSentencesWithPartitionId(param.partitionId);
+      // max index for node/word
+      int maxIndex = ServerWrapper.getMaxIndex();
 
       // compute number of nodes for one row
       int size = (int) (pkey.getEndCol() - pkey.getStartCol());
@@ -65,9 +68,10 @@ public class CbowDot extends GetFunc {
       float[] context = new float[partDim];
 
       ServerPartition partition = psContext.getMatrixStorageManager().getPart(pkey);
-      NENegativeSample sample = new NENegativeSample(-1, seed);
 
-      Random rand = new Random(seed);
+
+      Random windowSeed = new Random(seed);
+      Random negativeSeed = new Random(seed);
       FloatArrayList partialDots = new FloatArrayList();
       for (int s = 0; s < sentences.length; s ++) {
         int[] sen = sentences[s];
@@ -76,7 +80,7 @@ public class CbowDot extends GetFunc {
           // fill 0 for context vector
           Arrays.fill(context, 0);
           // window size
-          int b = rand.nextInt(window);
+          int b = windowSeed.nextInt(window);
           // Continuous bag-of-words Models
           int cw = 0;
 
@@ -103,7 +107,7 @@ public class CbowDot extends GetFunc {
             for (int d = 0; d < negative + 1; d ++) {
               if (d == 0) target = word;
               // We should guarantee here that the sample would not equal the ``word``
-              else target = sample.next(word);
+              else target = negativeSeed.nextInt(maxIndex);
 
               int rowId = target / numNodes;
               int colId = (target % numNodes) * partDim * order + partDim;

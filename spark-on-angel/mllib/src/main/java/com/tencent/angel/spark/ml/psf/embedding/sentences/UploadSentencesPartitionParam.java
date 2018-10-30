@@ -9,17 +9,20 @@ public class UploadSentencesPartitionParam extends PartitionUpdateParam {
   int partitionId;
   boolean initialize;
   int numPartitions;
+  int maxIndex;
   int[][] sentences;
 
   public UploadSentencesPartitionParam(int matrixId,
                                        PartitionKey partKey,
                                        int partitionId,
                                        int numPartitions,
+                                       int maxIndex,
                                        boolean initialize,
                                        int[][] sentences) {
     super(matrixId, partKey);
     this.partitionId = partitionId;
     this.numPartitions = numPartitions;
+    this.maxIndex = maxIndex;
     this.initialize = initialize;
     this.sentences = sentences;
   }
@@ -31,6 +34,7 @@ public class UploadSentencesPartitionParam extends PartitionUpdateParam {
     super.serialize(buf);
     buf.writeInt(partitionId);
     buf.writeInt(numPartitions);
+    buf.writeInt(maxIndex);
     buf.writeBoolean(initialize);
     buf.writeInt(sentences.length);
     for (int a = 0; a < sentences.length; a++) {
@@ -44,6 +48,7 @@ public class UploadSentencesPartitionParam extends PartitionUpdateParam {
     super.deserialize(buf);
     partitionId = buf.readInt();
     numPartitions = buf.readInt();
+    maxIndex = buf.readInt();
     initialize  = buf.readBoolean();
     int length = buf.readInt();
     sentences = new int[length][];

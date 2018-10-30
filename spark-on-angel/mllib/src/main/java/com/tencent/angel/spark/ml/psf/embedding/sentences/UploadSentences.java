@@ -2,7 +2,7 @@ package com.tencent.angel.spark.ml.psf.embedding.sentences;
 
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
-import com.tencent.angel.spark.ml.psf.embedding.ServerSentences;
+import com.tencent.angel.spark.ml.psf.embedding.ServerWrapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -22,12 +22,11 @@ public class UploadSentences extends UpdateFunc {
       UploadSentencesPartitionParam param = (UploadSentencesPartitionParam) partParam;
 
       if (param.initialize) {
-        ServerSentences.initialize(param.numPartitions);
-        LOG.info("initialize sentences with numPartition = " + param.numPartitions);
+        ServerWrapper.initialize(param.numPartitions);
+        ServerWrapper.setMaxIndex(param.maxIndex);
       }
 
-      ServerSentences.batches[param.partitionId] = param.sentences;
-      LOG.info("setting sentences with partitionId = " + param.partitionId);
+      ServerWrapper.setSentences(param.partitionId, param.sentences);
     }
   }
 }

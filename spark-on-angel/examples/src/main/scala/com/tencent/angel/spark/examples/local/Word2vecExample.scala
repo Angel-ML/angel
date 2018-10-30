@@ -52,7 +52,7 @@ object Word2vecExample {
     println(s"numDocs=$numDocs maxWordId=$maxWordId numTokens=$numTokens")
 
     val param = new Param()
-    param.setLearningRate(0.001f)
+    param.setLearningRate(0.005f)
     param.setEmbeddingDim(100)
     param.setWindowSize(10)
     param.setBatchSize(128)
@@ -66,6 +66,9 @@ object Word2vecExample {
 
     val model = new Word2VecModel(param)
     model.train(docs, param)
+
+    PSContext.stop()
+    sc.stop()
   }
 
 }

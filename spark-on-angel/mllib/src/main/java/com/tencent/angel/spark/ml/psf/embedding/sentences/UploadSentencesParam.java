@@ -4,25 +4,29 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
 import com.tencent.angel.psagent.PSAgentContext;
-import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class UploadSentencesParam extends UpdateParam {
+
   private int partitionId;
   private int numPartitions;
+  private int maxIndex;
   private boolean initialize;
   private int[][] sentences;
+
   public UploadSentencesParam(int matrixId,
                               int partitionId,
                               int numPartitions,
+                              int maxIndex,
                               boolean initialize,
                               int[][] sentences) {
     super(matrixId);
     this.partitionId = partitionId;
     this.numPartitions = numPartitions;
+    this.maxIndex    = maxIndex;
     this.initialize  = initialize;
     this.sentences   = sentences;
   }
@@ -43,6 +47,7 @@ public class UploadSentencesParam extends UpdateParam {
           pkey,
           partitionId,
           numPartitions,
+          maxIndex,
           initialize,
           sentences));
       }

@@ -6,7 +6,7 @@ import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.spark.ml.psf.embedding.NENegativeSample;
-import com.tencent.angel.spark.ml.psf.embedding.ServerSentences;
+import com.tencent.angel.spark.ml.psf.embedding.ServerWrapper;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -35,15 +35,16 @@ public class CbowAdjust extends UpdateFunc {
         int seed = param.seed;
         int order = 2;
 
-        int[][] sentences = ServerSentences.getSentences(param.partitionId);
+        int[][] sentences = ServerWrapper.getSentencesWithPartitionId(param.partitionId);
+        int maxIndex = ServerWrapper.getMaxIndex();
 
         // compute number of nodes for one row
         int size = (int) (pkey.getEndCol() - pkey.getStartCol());
         int numNodes = size / (partDim * order);
 
         ServerPartition partition = psContext.getMatrixStorageManager().getPart(pkey);
-        NENegativeSample sample = new NENegativeSample(-1, seed);
-        Random rand = new Random(seed);
+        Random windowSeed = new Random(seed);
+        Random negativeSeed = new Random(seed);
 
         int length = param.buf.readInt();
 
@@ -56,7 +57,7 @@ public class CbowAdjust extends UpdateFunc {
           for (int position = 0; position < sen.length; position++) {
             int word = sen[position];
             // window size
-            int b = rand.nextInt(window);
+            int b = windowSeed.nextInt(window);
             Arrays.fill(neu1, 0);
             Arrays.fill(neu1e, 0);
             int cw = 0;
@@ -79,7 +80,7 @@ public class CbowAdjust extends UpdateFunc {
               int target;
               for (int d = 0; d < negative + 1; d++) {
                 if (d == 0) target = word;
-                else target = sample.next(word);
+                else target = negativeSeed.nextInt(maxIndex);
                 float g = param.buf.readFloat();
                 length--;
 

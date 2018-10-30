@@ -79,7 +79,7 @@ class Word2VecModel(numNode: Int,
 
   def getUpload(batch: NEDataSet, initialize: Boolean, partitionId: Int, numPartitions: Int): UpdateFunc = {
     val sentences = batch.asInstanceOf[W2VDataSet].sentences
-    val param = new UploadSentencesParam(matrixId, partitionId, numPartitions, initialize, sentences)
+    val param = new UploadSentencesParam(matrixId, partitionId, numPartitions, numNode, initialize, sentences)
     new UploadSentences(param)
   }
 
