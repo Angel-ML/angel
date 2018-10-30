@@ -52,7 +52,7 @@ public class SVMTest {
       // Feature number of train data
       int featureNum = 300;
       // Total iteration number
-      int epochNum = 50;
+      int epochNum = 10;
       // Validation sample Ratio
       double vRatio = 0.1;
       // Data format, libsvm or dummy
