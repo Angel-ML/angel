@@ -322,11 +322,12 @@ public class ServerIntLongRow extends ServerLongRow {
 
   /**
    * Check the vector contains the index or not
+   *
    * @param index element index
    * @return true means exist
    */
   public boolean exist(int index) {
-    if(intLongRow.isSparse()) {
+    if (intLongRow.isSparse()) {
       return intLongRow.getStorage().hasKey(index - startColInt);
     } else {
       return intLongRow.get(index - startColInt) != 0;
@@ -334,7 +335,7 @@ public class ServerIntLongRow extends ServerLongRow {
   }
 
   public long initAndGet(int index, InitFunc func) {
-    if(exist(index)) {
+    if (exist(index)) {
       return get(index);
     } else {
       long value = (long) func.action();
@@ -343,9 +344,10 @@ public class ServerIntLongRow extends ServerLongRow {
     }
   }
 
-  @Override public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
+  @Override
+  public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
     throws IOException {
-    if(func != null) {
+    if (func != null) {
       if (indexType == IndexType.INT) {
         for (int i = 0; i < indexSize; i++) {
           out.writeLong(initAndGet(in.readInt(), func));

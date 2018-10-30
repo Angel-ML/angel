@@ -353,8 +353,8 @@ public abstract class ServerRow implements Serialize {
     lock.readLock().unlock();
   }
 
-  public abstract void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
-    throws IOException;
+  public abstract void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out,
+    InitFunc func) throws IOException;
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //////// network io method, for model transform
@@ -403,14 +403,14 @@ public abstract class ServerRow implements Serialize {
   }
 
   protected boolean useDenseSerialize() {
-    if(serializeType == -1) {
+    if (serializeType == -1) {
       serializeType = isDense() ? 0 : 1;
     }
     return serializeType == 0;
   }
 
   protected boolean useIntKeySerialize() {
-    if(serializeKeyType == -1) {
+    if (serializeKeyType == -1) {
       serializeKeyType = useIntKey ? 0 : 1;
     }
     return serializeKeyType == 0;
@@ -434,7 +434,7 @@ public abstract class ServerRow implements Serialize {
     switch (rowType) {
       case T_DOUBLE_SPARSE:
       case T_DOUBLE_SPARSE_COMPONENT:
-        if(useAdaptiveStorage && estElemNum > sparseToDenseFactor * (endCol - startCol)) {
+        if (useAdaptiveStorage && estElemNum > sparseToDenseFactor * (endCol - startCol)) {
           ret = VFactory.denseDoubleVector((int) (endCol - startCol));
         } else {
           ret = VFactory.sparseDoubleVector((int) (endCol - startCol), (int) estElemNum);
@@ -448,7 +448,7 @@ public abstract class ServerRow implements Serialize {
 
       case T_FLOAT_SPARSE:
       case T_FLOAT_SPARSE_COMPONENT:
-        if(useAdaptiveStorage && estElemNum > sparseToDenseFactor * (endCol - startCol)) {
+        if (useAdaptiveStorage && estElemNum > sparseToDenseFactor * (endCol - startCol)) {
           ret = VFactory.denseFloatVector((int) (endCol - startCol));
         } else {
           ret = VFactory.sparseFloatVector((int) (endCol - startCol), (int) estElemNum);
@@ -462,7 +462,7 @@ public abstract class ServerRow implements Serialize {
 
       case T_INT_SPARSE:
       case T_INT_SPARSE_COMPONENT:
-        if(useAdaptiveStorage && estElemNum > sparseToDenseFactor * (endCol - startCol)) {
+        if (useAdaptiveStorage && estElemNum > sparseToDenseFactor * (endCol - startCol)) {
           ret = VFactory.denseIntVector((int) (endCol - startCol));
         } else {
           ret = VFactory.sparseIntVector((int) (endCol - startCol), (int) estElemNum);
@@ -476,7 +476,7 @@ public abstract class ServerRow implements Serialize {
 
       case T_LONG_SPARSE:
       case T_LONG_SPARSE_COMPONENT:
-        if(useAdaptiveStorage && estElemNum > sparseToDenseFactor * (endCol - startCol)) {
+        if (useAdaptiveStorage && estElemNum > sparseToDenseFactor * (endCol - startCol)) {
           ret = VFactory.denseLongVector((int) (endCol - startCol));
         } else {
           ret = VFactory.sparseLongVector((int) (endCol - startCol), (int) estElemNum);
@@ -489,11 +489,11 @@ public abstract class ServerRow implements Serialize {
         break;
 
       case T_DOUBLE_SPARSE_LONGKEY:
-        if(endCol - startCol < Integer.MAX_VALUE) {
-          if(estElemNum > sparseToDenseFactor * (endCol - startCol)) {
-            ret = VFactory.denseDoubleVector((int)(endCol - startCol));
+        if (endCol - startCol < Integer.MAX_VALUE) {
+          if (estElemNum > sparseToDenseFactor * (endCol - startCol)) {
+            ret = VFactory.denseDoubleVector((int) (endCol - startCol));
           } else {
-            ret = VFactory.sparseDoubleVector((int)(endCol - startCol), (int)estElemNum);
+            ret = VFactory.sparseDoubleVector((int) (endCol - startCol), (int) estElemNum);
           }
         } else {
           ret = VFactory.sparseLongKeyDoubleVector(endCol - startCol, (int) estElemNum);
@@ -505,11 +505,11 @@ public abstract class ServerRow implements Serialize {
         break;
 
       case T_FLOAT_SPARSE_LONGKEY:
-        if(endCol - startCol < Integer.MAX_VALUE) {
-          if(estElemNum > sparseToDenseFactor * (endCol - startCol)) {
-            ret = VFactory.denseFloatVector((int)(endCol - startCol));
+        if (endCol - startCol < Integer.MAX_VALUE) {
+          if (estElemNum > sparseToDenseFactor * (endCol - startCol)) {
+            ret = VFactory.denseFloatVector((int) (endCol - startCol));
           } else {
-            ret = VFactory.sparseFloatVector((int)(endCol - startCol), (int)estElemNum);
+            ret = VFactory.sparseFloatVector((int) (endCol - startCol), (int) estElemNum);
           }
         } else {
           ret = VFactory.sparseLongKeyFloatVector(endCol - startCol, (int) estElemNum);
@@ -521,11 +521,11 @@ public abstract class ServerRow implements Serialize {
         break;
 
       case T_INT_SPARSE_LONGKEY:
-        if(endCol - startCol < Integer.MAX_VALUE) {
-          if(estElemNum > sparseToDenseFactor * (endCol - startCol)) {
-            ret = VFactory.denseIntVector((int)(endCol - startCol));
+        if (endCol - startCol < Integer.MAX_VALUE) {
+          if (estElemNum > sparseToDenseFactor * (endCol - startCol)) {
+            ret = VFactory.denseIntVector((int) (endCol - startCol));
           } else {
-            ret = VFactory.sparseIntVector((int)(endCol - startCol), (int)estElemNum);
+            ret = VFactory.sparseIntVector((int) (endCol - startCol), (int) estElemNum);
           }
         } else {
           ret = VFactory.sparseLongKeyIntVector(endCol - startCol, (int) estElemNum);
@@ -537,11 +537,11 @@ public abstract class ServerRow implements Serialize {
         break;
 
       case T_LONG_SPARSE_LONGKEY:
-        if(endCol - startCol < Integer.MAX_VALUE) {
-          if(estElemNum > sparseToDenseFactor * (endCol - startCol)) {
-            ret = VFactory.denseLongVector((int)(endCol - startCol));
+        if (endCol - startCol < Integer.MAX_VALUE) {
+          if (estElemNum > sparseToDenseFactor * (endCol - startCol)) {
+            ret = VFactory.denseLongVector((int) (endCol - startCol));
           } else {
-            ret = VFactory.sparseLongVector((int)(endCol - startCol), (int)estElemNum);
+            ret = VFactory.sparseLongVector((int) (endCol - startCol), (int) estElemNum);
           }
         } else {
           ret = VFactory.sparseLongKeyLongVector(endCol - startCol, (int) estElemNum);
