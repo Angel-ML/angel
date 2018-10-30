@@ -263,7 +263,8 @@ public abstract class AngelClient implements AngelClientInterface {
   }
 
   @Override public void save(ModelSaveContext saveContext) throws AngelException {
-    if(saveContext.getMatricesContext().size() == 0 || saveContext.getSavePath() == null || saveContext.getSavePath().isEmpty()) {
+    if (saveContext.getMatricesContext().size() == 0 || saveContext.getSavePath() == null
+      || saveContext.getSavePath().isEmpty()) {
       LOG.info("there is no matrices need save or save path is empty");
       return;
     }

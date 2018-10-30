@@ -155,22 +155,24 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
 
   def update(epoch: Int, batchSize: Int): Unit = {
     val start = System.currentTimeMillis()
-    val updateFuture = trainableLayer.map (layer => layer.update(epoch, batchSize))
+    val updateFuture = trainableLayer.map(layer => layer.update(epoch, batchSize))
     //Await.result(updateFuture, Duration.Inf)
-    for(future <- updateFuture) future.get
+    for (future <- updateFuture) future.get
     timeStats.updateTime += (System.currentTimeMillis() - start)
   }
 
   def init(taskId: Int = 0, idxsVector: Vector = null): Unit = {
-    val updateFuture = Future.sequence(trainableLayer.map { layer => Future {
-      layer.init(taskId, idxsVector)
-    }
+    val updateFuture = Future.sequence(trainableLayer.map { layer =>
+      Future {
+        layer.init(taskId, idxsVector)
+      }
     })
     Await.result(updateFuture, Duration.Inf)
   }
 
   /**
     * Create matrices contain in the model, this method is only used in Driver/Client
+    *
     * @param client Angel client
     */
   def createMatrices(client: AngelClient): Unit = {
@@ -181,6 +183,7 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
 
   /**
     * Load model from files, this method is only used in Driver/Client
+    *
     * @param client Angel client
     */
   def loadModel(client: AngelClient): Unit = {
@@ -198,6 +201,7 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
 
   /**
     * Save model to files, this method is only use in Driver/Client
+    *
     * @param client Angel client
     */
   def saveModel(client: AngelClient): Unit = {
