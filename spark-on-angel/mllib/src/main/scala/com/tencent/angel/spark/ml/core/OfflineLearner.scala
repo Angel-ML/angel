@@ -26,6 +26,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 
+import scala.reflect.ClassTag
 import scala.util.Random
 
 
@@ -38,7 +39,6 @@ class OfflineLearner {
   var numEpoch: Int = conf.getInt(MLConf.ML_EPOCH_NUM)
   var fraction: Double = conf.getDouble(MLConf.ML_BATCH_SAMPLE_RATIO)
   var validationRatio: Double = conf.getDouble(MLConf.ML_VALIDATE_RATIO)
-  var batchSize: Int = conf.getInt(MLConf.ML_MINIBATCH_SIZE)
 
   println(s"fraction=$fraction validateRatio=$validationRatio numEpoch=$numEpoch")
 
@@ -68,11 +68,12 @@ class OfflineLearner {
 
     val bModel = SparkContext.getOrCreate().broadcast(model)
 
-    val manifold = OfflineLearner.buildManifold(train, fraction)
+    val numSplits = (1.0 / fraction).toInt
+    val manifold = OfflineLearner.buildManifold(train, numSplits)
     var numUpdate = 1
-    for (epoch <- 0 until numEpoch) {
 
-      val batchIterator = OfflineLearner.buildManifoldIterator(manifold, fraction)
+    for (epoch <- 0 until numEpoch) {
+      val batchIterator = OfflineLearner.buildManifoldIterator(manifold, numSplits)
       while (batchIterator.hasNext) {
         val (sumLoss, batchSize) = batchIterator.next().mapPartitions { case iter =>
           PSClient.instance()
@@ -94,7 +95,6 @@ class OfflineLearner {
           }
           println(s"batch[$numUpdate] $validateMetricLog")
         }
-
         numUpdate += 1
       }
     }
@@ -108,19 +108,25 @@ class OfflineLearner {
 
 object OfflineLearner {
 
-  def buildManifold(data: RDD[LabeledData], fraction: Double): RDD[Array[LabeledData]] = {
-    val batchNum = (1.0 / fraction).toInt
-
-    def shuffleAndSplit(iterator: Iterator[LabeledData]): Iterator[Array[LabeledData]] = {
+  /**
+    * Build manifold view for a RDD. A manifold RDD is to split a RDD to multiple RDD.
+    * First, we shuffle the RDD and split it into several splits inside every partition.
+    * Then, we hold the manifold RDD into cache.
+    * @param data, RDD to be split
+    * @param numSplit, the number of splits
+    * @return
+    */
+  def buildManifold[T: ClassTag](data: RDD[T], numSplit: Int): RDD[Array[T]] = {
+    def shuffleAndSplit(iterator: Iterator[T]): Iterator[Array[T]] = {
       val samples = Random.shuffle(iterator).toArray
-      val sizes = Array.tabulate(batchNum)(_ => samples.length / batchNum)
-      val left = samples.length % batchNum
+      val sizes = Array.tabulate(numSplit)(_ => samples.length / numSplit)
+      val left = samples.length % numSplit
       for (i <- 0 until left) sizes(i) += 1
 
       var idx = 0
-      val manifold = new Array[Array[LabeledData]](batchNum)
-      for (a <- 0 until batchNum) {
-        manifold(a) = new Array[LabeledData](sizes(a))
+      val manifold = new Array[Array[T]](numSplit)
+      for (a <- 0 until numSplit) {
+        manifold(a) = new Array[T](sizes(a))
         for (b <- 0 until sizes(a)) {
           manifold(a)(b) = samples(idx)
           idx += 1
@@ -135,21 +141,26 @@ object OfflineLearner {
     manifold
   }
 
-  def skip(partitionId: Int, iterator: Iterator[Array[LabeledData]], skipNum: Int): Iterator[Array[LabeledData]] = {
-    println(s"skipNum=$skipNum")
-    (0 until skipNum).foreach(_ => iterator.next())
-    Iterator.single(iterator.next())
-  }
+  /**
+    * Return an iterator for the manifold RDD. Each element returned by the iterator is a RDD
+    * which contains a split for the manifold RDD.
+    * @param manifold, RDD to be split
+    * @param numSplit, number of splits to split the manifold RDD
+    * @return
+    */
+  def buildManifoldIterator[T: ClassTag](manifold: RDD[Array[T]], numSplit: Double): Iterator[RDD[Array[T]]] = {
 
-  def buildManifoldIterator(manifold: RDD[Array[LabeledData]], fraction: Double): Iterator[RDD[Array[LabeledData]]] = {
-    val batchNum = (1.0 / fraction).toInt
+    def skip[T](partitionId: Int, iterator: Iterator[Array[T]], skipNum: Int): Iterator[Array[T]] = {
+      (0 until skipNum).foreach(_ => iterator.next())
+      Iterator.single(iterator.next())
+    }
 
-    new Iterator[RDD[Array[LabeledData]]] with Serializable {
+    new Iterator[RDD[Array[T]]] with Serializable {
       var index = 0
 
-      override def hasNext(): Boolean = index < batchNum
+      override def hasNext(): Boolean = index < numSplit
 
-      override def next(): RDD[Array[LabeledData]] = {
+      override def next(): RDD[Array[T]] = {
         val batch = manifold.mapPartitionsWithIndex((partitionId, it) => skip(partitionId, it, index - 1), true)
         index += 1
         batch
