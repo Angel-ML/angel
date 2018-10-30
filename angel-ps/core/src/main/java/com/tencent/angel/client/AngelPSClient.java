@@ -20,10 +20,13 @@ package com.tencent.angel.client;
 
 import com.tencent.angel.RunningMode;
 import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.ml.matrix.MatrixContext;
+import com.tencent.angel.model.MatrixLoadContext;
 import com.tencent.angel.model.MatrixSaveContext;
+import com.tencent.angel.model.ModelLoadContext;
 import com.tencent.angel.model.ModelSaveContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -50,7 +53,7 @@ public class AngelPSClient {
     client = AngelClientFactory.get(conf);
   }
 
-  public AngelPSClient(Configuration conf) throws InvalidParameterException {
+  public AngelPSClient(Configuration conf) {
     this.conf = conf;
     client = AngelClientFactory.get(conf);
   }
@@ -140,6 +143,15 @@ public class AngelPSClient {
       saveContext.addMatrix(new MatrixSaveContext(matrixContext.getName()));
     saveContext.setSavePath(path);
     client.save(saveContext);
+  }
+
+  public void load(List<MatrixContext> matrices, String path) throws AngelException {
+    ModelLoadContext loadContext = new ModelLoadContext();
+    for (MatrixContext matrixContext: matrices) {
+      matrixContext.set(MatrixConf.MATRIX_LOAD_PATH, path);
+      loadContext.addMatrix(new MatrixLoadContext(matrixContext.getName(), path));
+    }
+    client.load(loadContext);
   }
 
   /**

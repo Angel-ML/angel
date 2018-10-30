@@ -53,7 +53,7 @@ class GraphModel extends Serializable {
     network()
 
     graph.taskNum = taskNum
-    graph.loadModel()
+    graph.createMatrices()
 //    graph.init()
     println(s"graph=\n$graph")
   }
@@ -82,13 +82,11 @@ class GraphModel extends Serializable {
   }
 
   def save(path: String): Unit = {
-    //TODO
     AngelPSContext.save(graph.getMatrixCtx(), path)
   }
 
   def load(path: String): Unit = {
-    //TODO
-    graph.getMatrixCtx().foreach(f => f.set(MatrixConf.MATRIX_LOAD_PATH, path))
+    AngelPSContext.load(graph.getMatrixCtx(), path)
   }
 
 }
