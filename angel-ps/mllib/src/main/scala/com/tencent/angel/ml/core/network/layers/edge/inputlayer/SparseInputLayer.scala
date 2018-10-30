@@ -121,11 +121,11 @@ class SparseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
     backward
   }
 
-  override def pullParams(): Unit = {
+  override def pullParams(epoch: Int): Unit = {
     // Note: weight is a row based matrix
     val indices = graph.placeHolder.getIndices
-    weight = PSMatrixUtils.getMatrixWithIndex(weightId, 0, outputDim, indices)
-    bias = PSMatrixUtils.getRow(biasId, 0)
+    weight = PSMatrixUtils.getMatrixWithIndex(epoch, weightId, 0, outputDim, indices)
+    bias = PSMatrixUtils.getRow(epoch, biasId, 0)
   }
 
   override def pushGradient(): Unit = {
@@ -190,43 +190,7 @@ class SparseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
     result
   }
 
-  override def init(taskflag: Int, indexVector: Vector): Unit = {
-    val valueType: String = SharedConf.valueType()
-    val bound: Double = 0.00001 / graph.taskNum
-
-    if (indexVector != null) {
-      (indexVector, valueType) match {
-        case (idx: IntIntVector, "double") =>
-          (0 until outputDim).toArray.foreach { i =>
-            val keys = idx.getStorage.getValues.clone()
-            val values = keys.map { _ => Math.random() * bound - bound / 2 }
-            val randomVector = VFactory.sortedDoubleVector(psCols.toInt, keys, values)
-            PSMatrixUtils.incrementRow(weightId, i, randomVector)
-          }
-        case (idx: IntIntVector, "float") =>
-          (0 until outputDim).toArray.foreach { i =>
-            val keys = idx.getStorage.getValues.clone()
-            val values = keys.map { _ => (Math.random() * bound - bound / 2).toFloat }
-            val randomVector = VFactory.sortedFloatVector(psCols.toInt, keys, values)
-            PSMatrixUtils.incrementRow(weightId, i, randomVector)
-          }
-        case (idx: IntLongVector, "double") =>
-          (0 until outputDim).toArray.foreach { i =>
-            val keys = idx.getStorage.getValues.clone()
-            val values = keys.map { _ => Math.random() * bound - bound / 2 }
-            val randomVector = VFactory.sortedLongKeyDoubleVector(psCols, keys.length, keys, values)
-            PSMatrixUtils.incrementRow(weightId, i, randomVector)
-          }
-        case (idx: IntLongVector, "float") =>
-          (0 until outputDim).toArray.foreach { i =>
-            val keys = idx.getStorage.getValues.clone()
-            val values = keys.map { _ => (Math.random() * bound - bound / 2).toFloat }
-            val randomVector = VFactory.sortedLongKeyFloatVector(psCols, keys.length, keys, values)
-            PSMatrixUtils.incrementRow(weightId, i, randomVector)
-          }
-      }
-    }
-  }
+  override def init(taskflag: Int): Unit = {}
 
   override def toString: String = {
     s"SparseInputLayer name=$name outputDim=$outputDim optimizer=$optimizer"

@@ -37,13 +37,13 @@ object STATUS extends Enumeration {
 trait Trainable {
   def optimizer: Optimizer
 
-  def pullParams(): Unit
+  def pullParams(epoch: Int): Unit
 
   def pushGradient(): Unit
 
   def update(epoch: Int, batchSize: Int): Future[VoidResult]
 
-  def init(taskId: Int, initIndexVector: Vector)
+  def init(taskId: Int)
 
   def loadParams(loadContext: ModelLoadContext): Unit
 

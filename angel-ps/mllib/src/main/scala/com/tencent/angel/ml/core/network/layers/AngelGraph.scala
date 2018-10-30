@@ -136,11 +136,11 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
     timeStats.backwardTime += (System.currentTimeMillis() - start)
   }
 
-  def pullParams(): Unit = {
+  def pullParams(epoch: Int): Unit = {
     val start = System.currentTimeMillis()
     //    val pullFuture = Future.sequence(trainableLayer.map{ layer => Future { layer.pullParams() }})
     //    Await.result(pullFuture, Duration.Inf)
-    trainableLayer.foreach { layer => layer.pullParams() }
+    trainableLayer.foreach { layer => layer.pullParams(epoch: Int) }
 
     timeStats.pullParamsTime += (System.currentTimeMillis() - start)
   }
@@ -161,13 +161,8 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
     timeStats.updateTime += (System.currentTimeMillis() - start)
   }
 
-  def init(taskId: Int = 0, idxsVector: Vector = null): Unit = {
-    val updateFuture = Future.sequence(trainableLayer.map { layer =>
-      Future {
-        layer.init(taskId, idxsVector)
-      }
-    })
-    Await.result(updateFuture, Duration.Inf)
+  def init(taskId: Int = 0): Unit = {
+    trainableLayer.foreach { layer => layer.init(taskId) }
   }
 
   /**

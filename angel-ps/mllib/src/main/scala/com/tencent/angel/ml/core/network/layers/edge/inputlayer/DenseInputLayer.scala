@@ -116,9 +116,9 @@ class DenseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overri
     backward
   }
 
-  override def pullParams(): Unit = {
-    weight = PSMatrixUtils.getRowAsMatrix(weightId, 0, inputDim, outputDim)
-    bias = PSMatrixUtils.getRow(biasId, 0)
+  override def pullParams(epoch: Int): Unit = {
+    weight = PSMatrixUtils.getRowAsMatrix(epoch, weightId, 0, inputDim, outputDim)
+    bias = PSMatrixUtils.getRow(epoch, biasId, 0)
   }
 
   override def pushGradient(): Unit = {
@@ -170,11 +170,11 @@ class DenseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overri
     result
   }
 
-  override def init(taskflag: Int, initIndexVector: Vector = null): Unit = {
-    val bound: Double = 0.00001
+  override def init(taskflag: Int): Unit = {
+    val bound: Double = 0.0001
     if (taskflag == 0) {
       val randFunc = new RandomNormal(weightId, 0, 0.0, bound)
-      PSAgentContext.get().getUserRequestAdapter.update(randFunc)
+      PSAgentContext.get().getUserRequestAdapter.update(randFunc).get()
     }
   }
 
