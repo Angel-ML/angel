@@ -21,9 +21,9 @@ package com.tencent.angel.ml.math2;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math2.storage.*;
 import com.tencent.angel.ml.math2.vector.*;
+import com.tencent.angel.ml.matrix.RowType;
 
 public class VFactory {
-
   public static IntDoubleVector denseDoubleVector(int matrixId, int rowId, int clock, int dim) {
     IntDoubleVectorStorage storage = new IntDoubleDenseVectorStorage(dim);
     return new IntDoubleVector(matrixId, rowId, clock, dim, storage);

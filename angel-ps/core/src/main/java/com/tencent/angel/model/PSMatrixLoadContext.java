@@ -18,6 +18,8 @@
 
 package com.tencent.angel.model;
 
+import com.tencent.angel.model.io.IOExecutors;
+
 import java.util.List;
 
 /**
@@ -40,6 +42,30 @@ public class PSMatrixLoadContext {
   private final List<Integer> partIds;
 
   /**
+   * Matrix output format class name
+   */
+  private volatile String formatClassName;
+
+  /**
+   * Save workers
+   */
+  private volatile IOExecutors workers;
+
+  /**
+   * Create a new PSMatrixLoadContext
+   *
+   * @param matrixId matrix id
+   * @param loadPath matrix save directory
+   * @param partIds  need load directory
+   */
+  public PSMatrixLoadContext(int matrixId, String loadPath, List<Integer> partIds, String formatClassName) {
+    this.matrixId = matrixId;
+    this.loadPath = loadPath;
+    this.partIds = partIds;
+    this.formatClassName = formatClassName;
+  }
+
+  /**
    * Create a new PSMatrixLoadContext
    *
    * @param matrixId matrix id
@@ -47,9 +73,7 @@ public class PSMatrixLoadContext {
    * @param partIds  need load directory
    */
   public PSMatrixLoadContext(int matrixId, String loadPath, List<Integer> partIds) {
-    this.matrixId = matrixId;
-    this.loadPath = loadPath;
-    this.partIds = partIds;
+    this(matrixId, loadPath, partIds, null);
   }
 
   /**
@@ -77,5 +101,37 @@ public class PSMatrixLoadContext {
    */
   public List<Integer> getPartIds() {
     return partIds;
+  }
+
+  /**
+   * Get output format class name
+   * @return output format class name
+   */
+  public String getFormatClassName() {
+    return formatClassName;
+  }
+
+  /**
+   * Set output format class name
+   * @param formatClassName output format class name
+   */
+  public void setFormatClassName(String formatClassName) {
+    this.formatClassName = formatClassName;
+  }
+
+  /**
+   * Get load workers
+   * @return load workers
+   */
+  public IOExecutors getWorkers() {
+    return workers;
+  }
+
+  /**
+   * Set load workers
+   * @param workers load workers
+   */
+  public void setWorkers(IOExecutors workers) {
+    this.workers = workers;
   }
 }

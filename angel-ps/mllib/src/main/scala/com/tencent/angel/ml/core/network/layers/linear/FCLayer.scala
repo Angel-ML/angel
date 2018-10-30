@@ -19,6 +19,8 @@
 package com.tencent.angel.ml.core.network.layers.linear
 
 
+import java.util.concurrent.Future
+
 import com.tencent.angel.client.AngelClient
 import com.tencent.angel.conf.{AngelConf, MatrixConf}
 import com.tencent.angel.exception.AngelException
@@ -34,6 +36,7 @@ import com.tencent.angel.ml.core.network.layers.edge.inputlayer.Embedding
 import com.tencent.angel.ml.core.network.transfunc.TransFunc
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
+import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.model.{MatrixSaveContext, ModelSaveContext}
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
@@ -129,9 +132,9 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
     gradOutput
   }
 
-  override def pullParams(): Unit = {
-    weight = PSMatrixUtils.getRowAsMatrix(weightId, 0, inputLayer.outputDim, outputDim)
-    bias = PSMatrixUtils.getRow(biasId, 0)
+  override def pullParams(epoch: Int): Unit = {
+    weight = PSMatrixUtils.getRowAsMatrix(epoch, weightId, 0, inputLayer.outputDim, outputDim)
+    bias = PSMatrixUtils.getRow(epoch, biasId, 0)
   }
 
   override def pushGradient(): Unit = {
@@ -153,20 +156,22 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
     }
   }
 
-  override def update(epoch: Int, batchSize: Int): Unit = {
+  override def update(epoch: Int, batchSize: Int): Future[VoidResult] = {
+    var result:Future[VoidResult] = null
     status match {
       case STATUS.Gradient =>
-        optimizer.update(weightId, 1, epoch, batchSize)
+        result = optimizer.update(weightId, 1, epoch, batchSize)
         status = STATUS.Update
       case _ => throw new AngelException("STATUS Error, please calculate Gradient frist!")
     }
+    result
   }
 
-  override def init(taskflag: Int, initIndexVector: Vector = null): Unit = {
-    val bound: Double = 0.00001
+  override def init(taskflag: Int): Unit = {
+    val bound: Double = 0.0001
     if (taskflag == 0) {
       val randFunc = new RandomNormal(weightId, 0, 0.0, bound)
-      PSAgentContext.get().getUserRequestAdapter.update(randFunc)
+      PSAgentContext.get().getUserRequestAdapter.update(randFunc).get()
     }
   }
 
@@ -200,10 +205,11 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
   }
 
   override def saveParams(saveContext: ModelSaveContext): Unit = {
+    val outputFormat = SharedConf.fcLayerMatrixOutputFormat
     SharedConf.actionType().toLowerCase match {
       case "train" | "inctrain" =>
-        val weightMCS: MatrixSaveContext = new MatrixSaveContext(weightCtx.getName)
-        val biasMCS: MatrixSaveContext = new MatrixSaveContext(biasCtx.getName)
+        val weightMCS: MatrixSaveContext = new MatrixSaveContext(weightCtx.getName, outputFormat)
+        val biasMCS: MatrixSaveContext = new MatrixSaveContext(biasCtx.getName, outputFormat)
         weightMCS.addIndex(0)
         saveContext.addMatrix(weightMCS)
         saveContext.addMatrix(biasMCS)

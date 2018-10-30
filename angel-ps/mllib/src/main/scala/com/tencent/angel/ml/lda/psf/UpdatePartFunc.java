@@ -19,6 +19,7 @@
 package com.tencent.angel.ml.lda.psf;
 
 import com.tencent.angel.PartitionKey;
+import com.tencent.angel.ml.math2.storage.IntIntDenseVectorStorage;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
@@ -69,7 +70,7 @@ public class UpdatePartFunc extends UpdateFunc {
   }
 
   public void updateDenseIntRow(ServerIntIntRow row, ByteBuf buf, int len) {
-    int[] values = row.getValues();
+    int[] values = ((IntIntDenseVectorStorage)(row.getSplit().getStorage())).getValues();
     for (int i = 0; i < len; i++) {
       int key = buf.readInt();
       int val = buf.readInt();

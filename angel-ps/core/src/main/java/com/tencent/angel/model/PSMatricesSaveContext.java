@@ -34,7 +34,6 @@ public class PSMatricesSaveContext {
    */
   private final int subRequestId;
 
-  private final String savePath;
   /**
    * Need save matrices
    */
@@ -45,14 +44,12 @@ public class PSMatricesSaveContext {
    *
    * @param requestId          global save request id
    * @param subRequestId       sub-save request id
-   * @param savePath           save path
    * @param matrixSaveContexts matrix save contexts
    */
-  public PSMatricesSaveContext(int requestId, int subRequestId, String savePath,
+  public PSMatricesSaveContext(int requestId, int subRequestId,
     List<PSMatrixSaveContext> matrixSaveContexts) {
     this.requestId = requestId;
     this.subRequestId = subRequestId;
-    this.savePath = savePath;
     this.matrixSaveContexts = matrixSaveContexts;
   }
 
@@ -83,12 +80,4 @@ public class PSMatricesSaveContext {
     return matrixSaveContexts;
   }
 
-  /**
-   * Get save path
-   *
-   * @return save path
-   */
-  public String getSavePath() {
-    return savePath;
-  }
 }

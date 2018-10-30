@@ -42,7 +42,7 @@ class OfflineLearner {
   def evaluate(data: RDD[LabeledData], bModel: Broadcast[GraphModel]): (Double, Double) = {
     val scores = data.mapPartitions { case iter =>
       val model = bModel.value
-      val output = model.forward(iter.toArray)
+      val output = model.forward(1, iter.toArray)
       Iterator.single((output, model.graph.placeHolder.getLabel))
     }
     (new AUC().cal(scores), new Precision().cal(scores))
@@ -74,7 +74,7 @@ class OfflineLearner {
         .mapPartitions { case iter =>
           PSClient.instance()
           val samples = iter.toArray
-          bModel.value.forward(samples)
+          bModel.value.forward(0, samples)
           val loss = bModel.value.getLoss()
           bModel.value.backward()
           Iterator.single((loss, samples.size))
@@ -109,7 +109,7 @@ class OfflineLearner {
     val bModel = SparkContext.getOrCreate().broadcast(model)
     data.mapPartitions { case iter =>
       val model = bModel.value
-      val output = model.forward(iter.toArray)
+      val output = model.forward(1, iter.toArray)
       Iterator.single(output)
     }
   }

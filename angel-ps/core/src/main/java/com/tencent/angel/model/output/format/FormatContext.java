@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -15,13 +15,28 @@
  *
  */
 
+package com.tencent.angel.model.output.format;
 
-package com.tencent.angel.ml.core.auto
+/**
+ * Matrix save format context
+ */
+public class FormatContext {
+  private String sep = ",";
+  private String format;
 
-abstract class AutoController {
+  public String getSep() {
+    return sep;
+  }
 
-  def feed(): Unit
+  public void setSep(String sep) {
+    this.sep = sep;
+  }
 
-  def next(): Any
+  public String getFormat() {
+    return format;
+  }
 
+  public void setFormat(String format) {
+    this.format = format;
+  }
 }

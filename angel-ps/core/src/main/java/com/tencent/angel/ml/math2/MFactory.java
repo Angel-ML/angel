@@ -21,6 +21,7 @@ package com.tencent.angel.ml.math2;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math2.matrix.*;
 import com.tencent.angel.ml.math2.vector.*;
+import com.tencent.angel.ml.matrix.RowType;
 
 public class MFactory {
   public static RBCompIntDoubleMatrix rbCompIntDoubleMatrix(int matrixId, int clock,

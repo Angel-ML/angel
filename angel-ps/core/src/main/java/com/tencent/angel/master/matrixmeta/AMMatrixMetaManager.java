@@ -25,8 +25,8 @@ import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.ml.matrix.*;
 import com.tencent.angel.model.output.format.ModelFilesConstent;
-import com.tencent.angel.model.output.format.ModelFilesMeta;
-import com.tencent.angel.model.output.format.ModelPartitionMeta;
+import com.tencent.angel.model.output.format.MatrixFilesMeta;
+import com.tencent.angel.model.output.format.MatrixPartitionMeta;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.ha.RecoverPartKey;
@@ -245,7 +245,7 @@ public class AMMatrixMetaManager {
     Configuration conf) throws IOException {
     Path meteFilePath =
       new Path(new Path(path, matrixContext.getName()), ModelFilesConstent.modelMetaFileName);
-    ModelFilesMeta meta = new ModelFilesMeta();
+    MatrixFilesMeta meta = new MatrixFilesMeta();
 
     FileSystem fs = meteFilePath.getFileSystem(conf);
     LOG.info("Load matrix meta for matrix " + matrixContext.getName());
@@ -255,11 +255,16 @@ public class AMMatrixMetaManager {
     }
 
     FSDataInputStream input = fs.open(meteFilePath);
-    meta.read(input);
-    input.close();
+    try {
+      meta.read(input);
+    } catch (Throwable e) {
+      throw new IOException("Read meta failed ", e);
+    } finally {
+      input.close();
+    }
 
     List<PartitionMeta> matrixPartitions = new ArrayList<>();
-    Map<Integer, ModelPartitionMeta> partMetas = meta.getPartMetas();
+    Map<Integer, MatrixPartitionMeta> partMetas = meta.getPartMetas();
 
     int matrixId = 0;
     try {
@@ -269,7 +274,7 @@ public class AMMatrixMetaManager {
       writeLock.unlock();
     }
 
-    for (Map.Entry<Integer, ModelPartitionMeta> partMetaEntry : partMetas.entrySet()) {
+    for (Map.Entry<Integer, MatrixPartitionMeta> partMetaEntry : partMetas.entrySet()) {
       matrixPartitions.add(
         new PartitionMeta(matrixId, partMetaEntry.getKey(), partMetaEntry.getValue().getStartRow(),
           partMetaEntry.getValue().getEndRow(), partMetaEntry.getValue().getStartCol(),

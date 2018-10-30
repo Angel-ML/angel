@@ -18,6 +18,8 @@
 
 package com.tencent.angel.ml.core.network.layers.edge.inputlayer
 
+import java.util.concurrent.Future
+
 import com.tencent.angel.client.AngelClient
 import com.tencent.angel.conf.{AngelConf, MatrixConf}
 import com.tencent.angel.exception.AngelException
@@ -32,6 +34,7 @@ import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.transfunc.TransFunc
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
 import com.tencent.angel.ml.core.utils.{NetUtils, PSMatrixUtils}
+import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.model.{MatrixSaveContext, ModelSaveContext}
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
@@ -118,11 +121,11 @@ class SparseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
     backward
   }
 
-  override def pullParams(): Unit = {
+  override def pullParams(epoch: Int): Unit = {
     // Note: weight is a row based matrix
     val indices = graph.placeHolder.getIndices
-    weight = PSMatrixUtils.getMatrixWithIndex(weightId, 0, outputDim, indices)
-    bias = PSMatrixUtils.getRow(biasId, 0)
+    weight = PSMatrixUtils.getMatrixWithIndex(epoch, weightId, 0, outputDim, indices)
+    bias = PSMatrixUtils.getRow(epoch, biasId, 0)
   }
 
   override def pushGradient(): Unit = {
@@ -173,55 +176,21 @@ class SparseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
     //    println(s"pushGradient Time = ${end - start} ms")
   }
 
-  override def update(epoch: Int, batchSize: Int): Unit = {
+  override def update(epoch: Int, batchSize: Int): Future[VoidResult] = {
     val start = System.currentTimeMillis()
+    var result:Future[VoidResult] = null
     status match {
       case STATUS.Gradient =>
-        optimizer.update(weightId, outputDim, epoch, batchSize)
+        result = optimizer.update(weightId, outputDim, epoch, batchSize)
         status = STATUS.Update
       case _ => throw new AngelException("STATUS Error, please calculate Gradient first!")
     }
     val end = System.currentTimeMillis()
     //    println(s"update Time = ${end - start} ms")
+    result
   }
 
-  override def init(taskflag: Int, indexVector: Vector): Unit = {
-    val valueType: String = SharedConf.valueType()
-    val bound: Double = 0.00001 / graph.taskNum
-
-    if (indexVector != null) {
-      (indexVector, valueType) match {
-        case (idx: IntIntVector, "double") =>
-          (0 until outputDim).toArray.foreach { i =>
-            val keys = idx.getStorage.getValues.clone()
-            val values = keys.map { _ => Math.random() * bound - bound / 2 }
-            val randomVector = VFactory.sortedDoubleVector(psCols.toInt, keys, values)
-            PSMatrixUtils.incrementRow(weightId, i, randomVector)
-          }
-        case (idx: IntIntVector, "float") =>
-          (0 until outputDim).toArray.foreach { i =>
-            val keys = idx.getStorage.getValues.clone()
-            val values = keys.map { _ => (Math.random() * bound - bound / 2).toFloat }
-            val randomVector = VFactory.sortedFloatVector(psCols.toInt, keys, values)
-            PSMatrixUtils.incrementRow(weightId, i, randomVector)
-          }
-        case (idx: IntLongVector, "double") =>
-          (0 until outputDim).toArray.foreach { i =>
-            val keys = idx.getStorage.getValues.clone()
-            val values = keys.map { _ => Math.random() * bound - bound / 2 }
-            val randomVector = VFactory.sortedLongKeyDoubleVector(psCols, keys.length, keys, values)
-            PSMatrixUtils.incrementRow(weightId, i, randomVector)
-          }
-        case (idx: IntLongVector, "float") =>
-          (0 until outputDim).toArray.foreach { i =>
-            val keys = idx.getStorage.getValues.clone()
-            val values = keys.map { _ => (Math.random() * bound - bound / 2).toFloat }
-            val randomVector = VFactory.sortedLongKeyFloatVector(psCols, keys.length, keys, values)
-            PSMatrixUtils.incrementRow(weightId, i, randomVector)
-          }
-      }
-    }
-  }
+  override def init(taskflag: Int): Unit = {}
 
   override def toString: String = {
     s"SparseInputLayer name=$name outputDim=$outputDim optimizer=$optimizer"
@@ -253,10 +222,11 @@ class SparseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
   }
 
   override def saveParams(saveContext: ModelSaveContext): Unit = {
+    val outputFormat = SharedConf.sparseInputLayerMatrixOutputFormat
     SharedConf.actionType().toLowerCase match {
       case "train" | "inctrain" =>
-        val weightMCS: MatrixSaveContext = new MatrixSaveContext(weightCtx.getName)
-        val biasMCS: MatrixSaveContext = new MatrixSaveContext(biasCtx.getName)
+        val weightMCS: MatrixSaveContext = new MatrixSaveContext(weightCtx.getName, outputFormat)
+        val biasMCS: MatrixSaveContext = new MatrixSaveContext(biasCtx.getName, outputFormat)
         weightMCS.addIndices((0 until outputDim).toArray)
         saveContext.addMatrix(weightMCS)
         saveContext.addMatrix(biasMCS)

@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -15,9 +15,17 @@
  *
  */
 
+package com.tencent.angel.model.output.format;
 
-package com.tencent.angel.ml.core.auto.sync
+/**
+ * Element values for a column for long key float value matrix
+ */
+public class LongFloatsCol {
+  public long colId;
+  public float[] colElems;
 
-class AIMDSync {
-
+  public LongFloatsCol(int colId, float[] colElems) {
+    this.colId = colId;
+    this.colElems = colElems;
+  }
 }

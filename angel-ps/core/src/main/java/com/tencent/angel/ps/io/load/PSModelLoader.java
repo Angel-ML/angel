@@ -16,11 +16,11 @@
  */
 
 
-package com.tencent.angel.ps.io.save;
+package com.tencent.angel.ps.io.load;
 
-import com.tencent.angel.model.PSMatricesSaveContext;
-import com.tencent.angel.model.PSMatricesSaveResult;
-import com.tencent.angel.model.SaveState;
+import com.tencent.angel.model.LoadState;
+import com.tencent.angel.model.PSMatricesLoadContext;
+import com.tencent.angel.model.PSMatricesLoadResult;
 import com.tencent.angel.model.io.IOExecutors;
 import com.tencent.angel.ps.PSContext;
 import com.tencent.angel.utils.StringUtils;
@@ -35,29 +35,29 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * PS matrix save manager
+ * PS matrix load manager
  */
-public class MatrixSaver {
-  private static final Log LOG = LogFactory.getLog(MatrixSaver.class);
+public class PSModelLoader {
+  private static final Log LOG = LogFactory.getLog(PSModelLoader.class);
   /**
-   * PS  context
+   * PS context
    */
   private final PSContext context;
   private final Lock readLock;
   private final Lock writeLock;
 
   /**
-   * Model save contexts
+   * Model load contexts
    */
-  private final Map<Integer, PSMatricesSaveContext> saveContexts;
+  private final Map<Integer, PSMatricesLoadContext> loadContexts;
 
   /**
-   * Save request id to result map
+   * Load request id to result map
    */
-  private final Map<Integer, PSMatricesSaveResult> results;
+  private final Map<Integer, PSMatricesLoadResult> results;
 
   /**
-   * Current saving request id
+   * Current loading request id
    */
   private int currentRequestId;
 
@@ -66,10 +66,11 @@ public class MatrixSaver {
    */
   private int lastRequestId;
 
+
   /**
-   * the dispatcher of save tasks
+   * the dispatcher of load tasks
    */
-  private Thread saveDispatchThread;
+  private Thread loadDispatchThread;
 
   /**
    * HDFS operation executor
@@ -82,13 +83,13 @@ public class MatrixSaver {
   private final AtomicBoolean stopped;
 
   /**
-   * Create a new MatrixSaver
+   * Create a new MatrixLoader
    *
    * @param context PS context
    */
-  public MatrixSaver(PSContext context) {
+  public PSModelLoader(PSContext context) {
     this.context = context;
-    saveContexts = new HashMap<>();
+    loadContexts = new HashMap<>();
     results = new HashMap<>();
     stopped = new AtomicBoolean(false);
     currentRequestId = -1;
@@ -98,51 +99,49 @@ public class MatrixSaver {
   }
 
   /**
-   * Save matrices
+   * Load matrices
    *
-   * @param saveContext save context
+   * @param loadContext load context
    */
-  public void save(PSMatricesSaveContext saveContext) {
+  public void load(PSMatricesLoadContext loadContext) {
     try {
-      context.getMaster().saveStart(saveContext.getRequestId(), saveContext.getSubRequestId());
+      context.getMaster().loadStart(loadContext.getRequestId(), loadContext.getSubRequestId());
     } catch (Throwable e) {
-      LOG.error("send save start message to master failed ", e);
+      LOG.error("send load start message to master failed ", e);
       return;
     }
-
     try {
       writeLock.lock();
-
-      if (saveContexts.containsKey(saveContext.getRequestId())) {
-        LOG.info("Save task " + saveContexts.get(saveContext.getRequestId()) + " is running");
+      if (loadContext.getRequestId() == currentRequestId) {
+        LOG.info("Load task " + loadContexts.get(currentRequestId) + " is running");
         return;
       }
 
       if (currentRequestId != -1) {
         LOG.warn(
-          "There is another save task now, just stop it " + saveContexts.get(currentRequestId));
+          "There is another load task now, just stop it " + loadContexts.get(currentRequestId));
         if (fileOpExecutor != null) {
           fileOpExecutor.shutdown();
         }
       }
-      currentRequestId = saveContext.getRequestId();
+      currentRequestId = loadContext.getRequestId();
       lastRequestId = currentRequestId;
-      saveContexts.put(currentRequestId, saveContext);
+      loadContexts.put(currentRequestId, loadContext);
       results.put(currentRequestId,
-        new PSMatricesSaveResult(currentRequestId, saveContext.getSubRequestId(),
-          SaveState.SAVING));
-      save(saveContext, results.get(currentRequestId));
+        new PSMatricesLoadResult(currentRequestId, loadContext.getSubRequestId(),
+          LoadState.LOADING));
+      load(loadContext, results.get(currentRequestId));
     } finally {
       writeLock.unlock();
     }
   }
 
   /**
-   * Get save result
+   * Get load result
    *
-   * @return save result
+   * @return load result
    */
-  public PSMatricesSaveResult getResult() {
+  public PSMatricesLoadResult getResult() {
     try {
       readLock.lock();
       if (currentRequestId > 0) {
@@ -157,50 +156,50 @@ public class MatrixSaver {
     }
   }
 
-  private void save(PSMatricesSaveContext saveContext, PSMatricesSaveResult saveResult) {
-    saveDispatchThread = new Thread(() -> {
+  private void load(PSMatricesLoadContext loadContext, PSMatricesLoadResult loadResult) {
+    loadDispatchThread = new Thread(() -> {
       try {
-        context.getMatrixStorageManager().save(saveContext);
-        saveSuccess(saveResult);
+        context.getIOExecutors().load(loadContext);
+        loadSuccess(loadResult);
       } catch (Throwable x) {
-        LOG.error("save task " + saveContext + " failed ", x);
-        saveFailed(saveResult,
-          "save task " + saveContext + " failed:" + StringUtils.stringifyException(x));
+        LOG.error("Load task " + loadContext + " failed ", x);
+        loadFailed(loadResult,
+          "Load task " + loadContext + " failed:" + StringUtils.stringifyException(x));
       }
     });
 
-    saveDispatchThread.setName("save-dispatcher");
-    saveDispatchThread.start();
+    loadDispatchThread.setName("load-dispatcher");
+    loadDispatchThread.start();
   }
 
-  private void saveFailed(PSMatricesSaveResult saveResult, String failedMsg) {
+  private void loadFailed(PSMatricesLoadResult loadResult, String failedMsg) {
     try {
       writeLock.lock();
-      saveResult.setState(SaveState.FAILED);
-      saveResult.setErrorMsg(failedMsg);
+      loadResult.setState(LoadState.FAILED);
+      loadResult.setErrorMsg(failedMsg);
       currentRequestId = -1;
     } finally {
       writeLock.unlock();
     }
 
-    sendResult(saveResult);
+    sendResult(loadResult);
   }
 
-  private void saveSuccess(PSMatricesSaveResult saveResult) {
+  private void loadSuccess(PSMatricesLoadResult loadResult) {
     try {
       writeLock.lock();
-      saveResult.setState(SaveState.SUCCESS);
+      loadResult.setState(LoadState.SUCCESS);
       currentRequestId = -1;
     } finally {
       writeLock.unlock();
     }
 
-    sendResult(saveResult);
+    sendResult(loadResult);
   }
 
-  private void sendResult(PSMatricesSaveResult saveResult) {
+  private void sendResult(PSMatricesLoadResult saveResult) {
     try {
-      context.getMaster().saveFinish(saveResult);
+      context.getMaster().loadFinish(saveResult);
     } catch (Throwable e) {
       LOG.error("report saving result failed ", e);
     }

@@ -35,12 +35,6 @@ public class PSMatricesLoadContext {
   private final int subRequestId;
 
   /**
-   * Model save path
-   */
-  private final String loadPath;
-
-
-  /**
    * Need load matrices
    */
   private final List<PSMatrixLoadContext> matrixLoadContexts;
@@ -52,11 +46,10 @@ public class PSMatricesLoadContext {
    * @param subRequestId       sub-load request id
    * @param matrixLoadContexts matrix load contexts
    */
-  public PSMatricesLoadContext(int requestId, int subRequestId, String loadPath,
+  public PSMatricesLoadContext(int requestId, int subRequestId,
     List<PSMatrixLoadContext> matrixLoadContexts) {
     this.requestId = requestId;
     this.subRequestId = subRequestId;
-    this.loadPath = loadPath;
     this.matrixLoadContexts = matrixLoadContexts;
   }
 
@@ -76,15 +69,6 @@ public class PSMatricesLoadContext {
    */
   public int getSubRequestId() {
     return subRequestId;
-  }
-
-  /**
-   * Get model save path
-   *
-   * @return model save path
-   */
-  public String getLoadPath() {
-    return loadPath;
   }
 
   /**

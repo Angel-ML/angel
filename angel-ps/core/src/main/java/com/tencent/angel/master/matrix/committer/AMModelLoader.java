@@ -24,20 +24,21 @@ import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.PartitionMeta;
 import com.tencent.angel.model.*;
 import com.tencent.angel.model.io.IOExecutors;
+import com.tencent.angel.model.output.format.MatrixFilesMeta;
+import com.tencent.angel.model.output.format.ModelFilesConstent;
 import com.tencent.angel.ps.ParameterServerId;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Model load manager
@@ -120,7 +121,7 @@ public class AMModelLoader {
     }
   }
 
-  public int load(ModelLoadContext loadContext) {
+  public int load(ModelLoadContext loadContext) throws IOException {
     try {
       lock.lock();
       if (isLoading()) {
@@ -236,7 +237,7 @@ public class AMModelLoader {
 
       receivedSubResult++;
       subResults.put(psId, subResult);
-      if (receivedSubResult > subResults.size()) {
+      if (receivedSubResult >= subResults.size()) {
         ModelLoadResult result = results.get(subResult.getRequestId());
         if (canCombine()) {
           result.setState(LoadState.SUCCESS);
@@ -285,12 +286,13 @@ public class AMModelLoader {
   }
 
   private Map<ParameterServerId, PSMatricesLoadContext> split(int requestId,
-    ModelLoadContext loadContext) {
+    ModelLoadContext loadContext) throws IOException {
     List<MatrixLoadContext> matricesContext = loadContext.getMatricesContext();
     Map<ParameterServerId, List<PSMatrixLoadContext>> psIdToContextsMap = new HashMap<>();
     int size = matricesContext.size();
     for (int i = 0; i < size; i++) {
-      Map<ParameterServerId, PSMatrixLoadContext> psIdToContextMap = split(matricesContext.get(i));
+      Map<ParameterServerId, PSMatrixLoadContext> psIdToContextMap =
+        split(matricesContext.get(i), loadContext);
       for (Map.Entry<ParameterServerId, PSMatrixLoadContext> matrixEntry : psIdToContextMap
         .entrySet()) {
         List<PSMatrixLoadContext> contexts = psIdToContextsMap.get(matrixEntry.getKey());
@@ -307,13 +309,30 @@ public class AMModelLoader {
     for (Map.Entry<ParameterServerId, List<PSMatrixLoadContext>> modelEntry : psIdToContextsMap
       .entrySet()) {
       ret.put(modelEntry.getKey(),
-        new PSMatricesLoadContext(requestId, subRequestId++, loadContext.getLoadPath(),
-          modelEntry.getValue()));
+        new PSMatricesLoadContext(requestId, subRequestId++, modelEntry.getValue()));
     }
     return ret;
   }
 
-  private Map<ParameterServerId, PSMatrixLoadContext> split(MatrixLoadContext matrixLoadContext) {
+  private Map<ParameterServerId, PSMatrixLoadContext> split(MatrixLoadContext matrixLoadContext,
+    ModelLoadContext modelLoadContext) throws IOException {
+    Path matrixPath = new Path(modelLoadContext.getLoadPath(), matrixLoadContext.getMatrixName());
+    Path metaFilePath = new Path(matrixPath, ModelFilesConstent.modelMetaFileName);
+    MatrixFilesMeta matrixFilesMeta = new MatrixFilesMeta();
+    FileSystem fs = metaFilePath.getFileSystem(context.getConf());
+    if (fs.exists(metaFilePath)) {
+      FSDataInputStream input = fs.open(metaFilePath);
+      try {
+        matrixFilesMeta.read(input);
+      } catch (Throwable e) {
+        throw new IOException("Read matrix meta failed ", e);
+      } finally {
+        input.close();
+      }
+    } else {
+      throw new IOException("Can not find meta file " + metaFilePath);
+    }
+
     AMMatrixMetaManager matrixMetaManager = context.getMatrixMetaManager();
     MatrixMeta meta = matrixMetaManager.getMatrix(matrixLoadContext.getMatrixName());
     if (meta == null) {
@@ -321,16 +340,16 @@ public class AMModelLoader {
     }
 
     Map<Integer, PartitionMeta> partitions = meta.getPartitionMetas();
-    Map<ParameterServerId, List<Integer>> psIdToPartIdsMap = new HashMap<>();
+    Map<ParameterServerId, Set<Integer>> psIdToPartIdsMap = new HashMap<>();
 
     for (Map.Entry<Integer, PartitionMeta> partEntry : partitions.entrySet()) {
       ParameterServerId psId = partEntry.getValue().getMasterPs();
       if (psId == null) {
         throw new IllegalStateException("Can not get ps for partition " + partEntry.getKey());
       }
-      List partIds = psIdToPartIdsMap.get(psId);
+      Set partIds = psIdToPartIdsMap.get(psId);
       if (partIds == null) {
-        partIds = new ArrayList();
+        partIds = new HashSet();
         psIdToPartIdsMap.put(psId, partIds);
       }
       partIds.add(partEntry.getKey());
@@ -338,9 +357,15 @@ public class AMModelLoader {
 
     int matrixId = meta.getId();
     Map<ParameterServerId, PSMatrixLoadContext> ret = new HashMap<>(psIdToPartIdsMap.size());
-    for (Map.Entry<ParameterServerId, List<Integer>> entry : psIdToPartIdsMap.entrySet()) {
+    for (Map.Entry<ParameterServerId, Set<Integer>> entry : psIdToPartIdsMap.entrySet()) {
+      List<Integer> partIds = new ArrayList<>(entry.getValue());
+      partIds.sort(new Comparator<Integer>() {
+        @Override public int compare(Integer id1, Integer id2) {
+          return id1 - id2;
+        }
+      });
       PSMatrixLoadContext psMatrixLoadContext =
-        new PSMatrixLoadContext(matrixId, null, entry.getValue());
+        new PSMatrixLoadContext(matrixId, matrixPath.toString(), partIds, matrixFilesMeta.getFormatClassName());
       ret.put(entry.getKey(), psMatrixLoadContext);
     }
     return ret;

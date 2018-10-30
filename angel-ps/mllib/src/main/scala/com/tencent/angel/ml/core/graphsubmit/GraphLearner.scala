@@ -32,7 +32,7 @@ import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.{Log, LogFactory}
 
-class GraphLearner(modelClassName: String, ctx: TaskContext, idxsVector: Vector) extends MLLearner(ctx) {
+class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(ctx) {
   val LOG: Log = LogFactory.getLog(classOf[GraphLearner])
 
   val epochNum: Int = SharedConf.epochNum
@@ -55,7 +55,7 @@ class GraphLearner(modelClassName: String, ctx: TaskContext, idxsVector: Vector)
       graph.feedData(iter.next())
 
       // LOG.info("start to pullParams ...")
-      graph.pullParams()
+      graph.pullParams(epoch)
 
       // LOG.info("calculate to forward ...")
       loss = graph.calLoss() // forward
@@ -81,7 +81,7 @@ class GraphLearner(modelClassName: String, ctx: TaskContext, idxsVector: Vector)
       PSAgentContext.get().barrier(ctx.getTaskId.getIndex)
       batchCount += 1
 
-      // LOG.info(s"epoch $epoch batch $batchCount is finished!")
+      LOG.info(s"epoch $epoch batch $batchCount is finished!")
     }
 
     loss
@@ -110,7 +110,7 @@ class GraphLearner(modelClassName: String, ctx: TaskContext, idxsVector: Vector)
     globalMetrics.addMetric(MLConf.TRAIN_LOSS, LossMetric(trainDataSize))
     globalMetrics.addMetric(MLConf.VALID_LOSS, LossMetric(validationData.size))
     graph.taskNum = ctx.getTotalTaskNum
-    model.init(ctx.getTaskId.getIndex, idxsVector)
+    model.init(ctx.getTaskId.getIndex)
     PSAgentContext.get().barrier(ctx.getTaskId.getIndex)
 
     val numBatch = SharedConf.numUpdatePerEpoch

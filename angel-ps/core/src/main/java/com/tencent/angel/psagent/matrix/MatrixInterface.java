@@ -25,6 +25,7 @@ import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult;
+import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.psagent.matrix.transport.adapter.GetRowsResult;
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex;
 
@@ -193,6 +194,50 @@ public interface MatrixInterface {
    * @throws AngelException
    */
   Vector[] get(int[] rowIds, long[] indices) throws AngelException;
+
+  /**
+   * Get elements of the row use int indices, if the element does not exist, it will be initialized first, the row type should has "int" type indices
+   *
+   * @param rowId   row id
+   * @param indices elements indices
+   * @param func    element initialization method
+   * @return the Vector use sparse storage, contains indices and values
+   * @throws AngelException
+   */
+  Vector initAndGet(int rowId, int[] indices, InitFunc func) throws AngelException;
+
+  /**
+   * Get elements of the row use long indices, if the element does not exist, it will be initialized first, the row type should has "int" type indices
+   *
+   * @param rowId   row id
+   * @param indices elements indices
+   * @param func    element initialization method
+   * @return the Vector use sparse storage, contains indices and values
+   * @throws AngelException
+   */
+  Vector initAndGet(int rowId, long[] indices, InitFunc func) throws AngelException;
+
+  /**
+   * Get elements of the rows use int indices, if the element does not exist, it will be initialized first, the row type should has "int" type indices
+   *
+   * @param rowIds  rows ids
+   * @param indices elements indices
+   * @param func    element initialization method
+   * @return the Vectors use sparse storage, contains indices and values
+   * @throws AngelException
+   */
+  Vector[] initAndGet(int[] rowIds, int[] indices, InitFunc func) throws AngelException;
+
+  /**
+   * Get elements of the rows use long indices, if the element does not exist, it will be initialized first, the row type should has "long" type indices
+   *
+   * @param rowIds  rows ids
+   * @param indices elements indices
+   * @param func    element initialization method
+   * @return the Vectors use sparse storage, contains indices and values
+   * @throws AngelException
+   */
+  Vector[] initAndGet(int[] rowIds, long[] indices, InitFunc func) throws AngelException;
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   /// PSF get/update, use can implement their own psf

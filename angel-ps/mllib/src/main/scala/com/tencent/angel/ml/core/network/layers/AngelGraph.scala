@@ -134,11 +134,11 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
     timeStats.backwardTime += (System.currentTimeMillis() - start)
   }
 
-  def pullParams(): Unit = {
+  def pullParams(epoch: Int): Unit = {
     val start = System.currentTimeMillis()
     //    val pullFuture = Future.sequence(trainableLayer.map{ layer => Future { layer.pullParams() }})
     //    Await.result(pullFuture, Duration.Inf)
-    trainableLayer.foreach { layer => layer.pullParams() }
+    trainableLayer.foreach { layer => layer.pullParams(epoch: Int) }
 
     timeStats.pullParamsTime += (System.currentTimeMillis() - start)
   }
@@ -153,25 +153,20 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
 
   def update(epoch: Int, batchSize: Int): Unit = {
     val start = System.currentTimeMillis()
-    val updateFuture = Future.sequence(trainableLayer.map { layer => Future {
-      layer.update(epoch, batchSize)
-    }
-    })
-    Await.result(updateFuture, Duration.Inf)
+    val updateFuture = trainableLayer.map (layer => layer.update(epoch, batchSize))
+    //Await.result(updateFuture, Duration.Inf)
+    for(future <- updateFuture) future.get
     timeStats.updateTime += (System.currentTimeMillis() - start)
   }
 
-  def init(taskId: Int = 0, idxsVector: Vector = null): Unit = {
-    val updateFuture = Future.sequence(trainableLayer.map { layer => Future {
-      layer.init(taskId, idxsVector)
-    }
-    })
-    Await.result(updateFuture, Duration.Inf)
+  def init(taskId: Int = 0): Unit = {
+    trainableLayer.foreach { layer => layer.init(taskId) }
   }
 
   def loadModel(client: AngelClient): Unit = {
     trainableLayer.foreach { layer => layer.loadParams(client) }
     client.createMatrices()
+    client.load()
   }
 
   def loadModel(): Unit = {

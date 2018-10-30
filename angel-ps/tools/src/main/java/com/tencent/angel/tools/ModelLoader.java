@@ -22,9 +22,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.model.output.format.ModelFilesConstent;
-import com.tencent.angel.model.output.format.ModelFilesMeta;
-import com.tencent.angel.model.output.format.ModelPartitionMeta;
-import com.tencent.angel.model.output.format.ModelPartitionMeta.RowOffset;
+import com.tencent.angel.model.output.format.MatrixFilesMeta;
+import com.tencent.angel.model.output.format.MatrixPartitionMeta;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
@@ -698,7 +697,7 @@ public class ModelLoader {
     /**
      * Model meta
      */
-    private final ModelFilesMeta meta;
+    private final MatrixFilesMeta meta;
     /**
      * Error logs
      */
@@ -725,7 +724,7 @@ public class ModelLoader {
      * @param endPos       ForkJoin end position
      */
     public LoadOp(Model model, FileSystem fs, Path matrixPath, List<Integer> partitionIds,
-      ModelFilesMeta meta, Vector<String> errorMsgs, int startPos, int endPos) {
+      MatrixFilesMeta meta, Vector<String> errorMsgs, int startPos, int endPos) {
       this.model = model;
       this.fs = fs;
       this.matrixPath = matrixPath;
@@ -760,13 +759,13 @@ public class ModelLoader {
   }
 
   private static void loadPartitions(Model model, Path matrixPath, FileSystem fs,
-    List<Integer> partitionIds, int startPos, int endPos, ModelFilesMeta meta) throws IOException {
+    List<Integer> partitionIds, int startPos, int endPos, MatrixFilesMeta meta) throws IOException {
 
     FSDataInputStream input = null;
     long offset = 0;
     String currentFileName = "";
     for (int i = startPos; i < endPos; i++) {
-      ModelPartitionMeta partMeta = meta.getPartMeta(partitionIds.get(i));
+      MatrixPartitionMeta partMeta = meta.getPartMeta(partitionIds.get(i));
       String fileName = partMeta.getFileName();
       offset = partMeta.getOffset();
       if (!fileName.equals(currentFileName)) {
@@ -787,7 +786,7 @@ public class ModelLoader {
   }
 
   private static void loadPartition(Model model, FSDataInputStream input,
-    ModelPartitionMeta partMeta) throws IOException {
+    MatrixPartitionMeta partMeta) throws IOException {
     switch (model.getRowType()) {
       case T_DOUBLE_SPARSE:
         loadSparseDoublePartition((SparseDoubleModel) model, input, partMeta);
@@ -823,7 +822,7 @@ public class ModelLoader {
   }
 
   private static void loadDenseDoublePartition(DenseDoubleModel model, FSDataInputStream input,
-    ModelPartitionMeta partMeta) throws IOException {
+    MatrixPartitionMeta partMeta) throws IOException {
     int rowNum = input.readInt();
     int startCol = (int) partMeta.getStartCol();
     int endCol = (int) partMeta.getEndCol();
@@ -839,9 +838,9 @@ public class ModelLoader {
   }
 
   public static double[] loadDenseDoubleRowFromPartition(FSDataInputStream input,
-    ModelPartitionMeta partMeta, int rowId) throws IOException {
-    RowOffset rowOffset = partMeta.getRowMetas().get(rowId);
-    input.seek(rowOffset.getOffset());
+    MatrixPartitionMeta partMeta, int rowId) throws IOException {
+    //RowOffset rowOffset = partMeta.getRowMetas().get(rowId);
+    //input.seek(rowOffset.getOffset());
     Preconditions.checkState(input.readInt() == rowId);
     int num = (int) (partMeta.getEndCol() - partMeta.getStartCol());
     double[] row = new double[num];
@@ -852,7 +851,7 @@ public class ModelLoader {
   }
 
   private static void loadSparseDoublePartition(SparseDoubleModel model, FSDataInputStream input,
-    ModelPartitionMeta partMeta) throws IOException {
+    MatrixPartitionMeta partMeta) throws IOException {
     int rowNum = input.readInt();
     int rowId = 0;
     int nnz = 0;
@@ -870,9 +869,9 @@ public class ModelLoader {
   }
 
   public static Int2DoubleOpenHashMap loadSparseDoubleRowFromPartition(FSDataInputStream input,
-    ModelPartitionMeta partMeta, int rowId) throws IOException {
-    RowOffset rowOffset = partMeta.getRowMetas().get(rowId);
-    input.seek(rowOffset.getOffset());
+    MatrixPartitionMeta partMeta, int rowId) throws IOException {
+    //RowOffset rowOffset = partMeta.getRowMetas().get(rowId);
+    //input.seek(rowOffset.getOffset());
     Preconditions.checkState(input.readInt() == rowId);
     int num = input.readInt();
     Int2DoubleOpenHashMap row = new Int2DoubleOpenHashMap();
@@ -883,7 +882,7 @@ public class ModelLoader {
   }
 
   private static void loadDenseFloatPartition(DenseFloatModel model, FSDataInputStream input,
-    ModelPartitionMeta partMeta) throws IOException {
+    MatrixPartitionMeta partMeta) throws IOException {
     int rowNum = input.readInt();
     int startCol = (int) partMeta.getStartCol();
     int endCol = (int) partMeta.getEndCol();
@@ -899,9 +898,9 @@ public class ModelLoader {
   }
 
   public static float[] loadDenseFloatRowFromPartition(FSDataInputStream input,
-    ModelPartitionMeta partMeta, int rowId) throws IOException {
-    RowOffset rowOffset = partMeta.getRowMetas().get(rowId);
-    input.seek(rowOffset.getOffset());
+    MatrixPartitionMeta partMeta, int rowId) throws IOException {
+    //RowOffset rowOffset = partMeta.getRowMetas().get(rowId);
+    //input.seek(rowOffset.getOffset());
     Preconditions.checkState(input.readInt() == rowId);
     int num = (int) (partMeta.getEndCol() - partMeta.getStartCol());
     float[] row = new float[num];
@@ -912,7 +911,7 @@ public class ModelLoader {
   }
 
   private static void loadSparseFloatPartition(SparseFloatModel model, FSDataInputStream input,
-    ModelPartitionMeta partMeta) throws IOException {
+    MatrixPartitionMeta partMeta) throws IOException {
     int rowNum = input.readInt();
     int rowId = 0;
     int nnz = 0;
@@ -930,9 +929,9 @@ public class ModelLoader {
   }
 
   public static Int2FloatOpenHashMap loadSparseFloatRowFromPartition(FSDataInputStream input,
-    ModelPartitionMeta partMeta, int rowId) throws IOException {
-    RowOffset rowOffset = partMeta.getRowMetas().get(rowId);
-    input.seek(rowOffset.getOffset());
+    MatrixPartitionMeta partMeta, int rowId) throws IOException {
+    //RowOffset rowOffset = partMeta.getRowMetas().get(rowId);
+    //input.seek(rowOffset.getOffset());
     Preconditions.checkState(input.readInt() == rowId);
     int num = input.readInt();
     Int2FloatOpenHashMap row = new Int2FloatOpenHashMap();
@@ -943,7 +942,7 @@ public class ModelLoader {
   }
 
   private static void loadDenseIntPartition(DenseIntModel model, FSDataInputStream input,
-    ModelPartitionMeta partMeta) throws IOException {
+    MatrixPartitionMeta partMeta) throws IOException {
     int rowNum = input.readInt();
     int startCol = (int) partMeta.getStartCol();
     int endCol = (int) partMeta.getEndCol();
@@ -959,9 +958,9 @@ public class ModelLoader {
   }
 
   public static int[] loadDenseIntRowFromPartition(FSDataInputStream input,
-    ModelPartitionMeta partMeta, int rowId) throws IOException {
-    RowOffset rowOffset = partMeta.getRowMetas().get(rowId);
-    input.seek(rowOffset.getOffset());
+    MatrixPartitionMeta partMeta, int rowId) throws IOException {
+    //RowOffset rowOffset = partMeta.getRowMetas().get(rowId);
+    //input.seek(rowOffset.getOffset());
     Preconditions.checkState(input.readInt() == rowId);
     int num = (int) (partMeta.getEndCol() - partMeta.getStartCol());
     int[] row = new int[num];
@@ -972,7 +971,7 @@ public class ModelLoader {
   }
 
   private static void loadSparseIntPartition(SparseIntModel model, FSDataInputStream input,
-    ModelPartitionMeta partMeta) throws IOException {
+    MatrixPartitionMeta partMeta) throws IOException {
     int rowNum = input.readInt();
     int rowId = 0;
     int nnz = 0;
@@ -991,9 +990,9 @@ public class ModelLoader {
   }
 
   public static Int2IntOpenHashMap loadSparseIntRowFromPartition(FSDataInputStream input,
-    ModelPartitionMeta partMeta, int rowId) throws IOException {
-    RowOffset rowOffset = partMeta.getRowMetas().get(rowId);
-    input.seek(rowOffset.getOffset());
+    MatrixPartitionMeta partMeta, int rowId) throws IOException {
+    //RowOffset rowOffset = partMeta.getRowMetas().get(rowId);
+    //input.seek(rowOffset.getOffset());
     Preconditions.checkState(input.readInt() == rowId);
     int num = input.readInt();
     Int2IntOpenHashMap row = new Int2IntOpenHashMap();
@@ -1004,7 +1003,7 @@ public class ModelLoader {
   }
 
   private static void loadSparseDoubleLongKeyPartition(SparseDoubleLongKeyModel model,
-    FSDataInputStream input, ModelPartitionMeta partMeta) throws IOException {
+    FSDataInputStream input, MatrixPartitionMeta partMeta) throws IOException {
     int rowNum = input.readInt();
     int rowId = 0;
     int nnz = 0;
@@ -1023,9 +1022,9 @@ public class ModelLoader {
   }
 
   public static Long2DoubleOpenHashMap loadSparseDoubleLongKeyRowFromPartition(
-    FSDataInputStream input, ModelPartitionMeta partMeta, int rowId) throws IOException {
-    RowOffset rowOffset = partMeta.getRowMetas().get(rowId);
-    input.seek(rowOffset.getOffset());
+    FSDataInputStream input, MatrixPartitionMeta partMeta, int rowId) throws IOException {
+    //RowOffset rowOffset = partMeta.getRowMetas().get(rowId);
+    //input.seek(rowOffset.getOffset());
     Preconditions.checkState(input.readInt() == rowId);
     int num = input.readInt();
     Long2DoubleOpenHashMap row = new Long2DoubleOpenHashMap();
@@ -1042,10 +1041,10 @@ public class ModelLoader {
    * @param modelDir model save directory path
    * @return model meta
    */
-  public static ModelFilesMeta getMeta(String modelDir, Configuration conf) throws IOException {
+  public static MatrixFilesMeta getMeta(String modelDir, Configuration conf) throws IOException {
     Path modelPath = new Path(modelDir);
     Path meteFilePath = new Path(modelPath, ModelFilesConstent.modelMetaFileName);
-    ModelFilesMeta meta = new ModelFilesMeta();
+    MatrixFilesMeta meta = new MatrixFilesMeta();
     FileSystem fs = meteFilePath.getFileSystem(conf);
     if (!fs.exists(meteFilePath)) {
       throw new IOException("matrix meta file does not exist ");
@@ -1065,7 +1064,7 @@ public class ModelLoader {
   public static double[][] loadToDoubleArrays(String modelDir, Configuration conf)
     throws IOException {
     // Load model meta
-    ModelFilesMeta meta = getMeta(modelDir, conf);
+    MatrixFilesMeta meta = getMeta(modelDir, conf);
     RowType rowType = RowType.valueOf(meta.getRowType());
 
     // Check row type
@@ -1089,7 +1088,7 @@ public class ModelLoader {
   public static Int2DoubleOpenHashMap[] loadToDoubleMaps(String modelDir, Configuration conf)
     throws IOException {
     // Load model meta
-    ModelFilesMeta meta = getMeta(modelDir, conf);
+    MatrixFilesMeta meta = getMeta(modelDir, conf);
     RowType rowType = RowType.valueOf(meta.getRowType());
 
     // Check row type
@@ -1113,7 +1112,7 @@ public class ModelLoader {
   public static float[][] loadToFloatArrays(String modelDir, Configuration conf)
     throws IOException {
     // Load model meta
-    ModelFilesMeta meta = getMeta(modelDir, conf);
+    MatrixFilesMeta meta = getMeta(modelDir, conf);
     RowType rowType = RowType.valueOf(meta.getRowType());
 
     // Check row type
@@ -1137,7 +1136,7 @@ public class ModelLoader {
   public static Int2FloatOpenHashMap[] loadToFloatMaps(String modelDir, Configuration conf)
     throws IOException {
     // Load model meta
-    ModelFilesMeta meta = getMeta(modelDir, conf);
+    MatrixFilesMeta meta = getMeta(modelDir, conf);
     RowType rowType = RowType.valueOf(meta.getRowType());
 
     // Check row type
@@ -1160,7 +1159,7 @@ public class ModelLoader {
    */
   public static int[][] loadToIntArrays(String modelDir, Configuration conf) throws IOException {
     // Load model meta
-    ModelFilesMeta meta = getMeta(modelDir, conf);
+    MatrixFilesMeta meta = getMeta(modelDir, conf);
     RowType rowType = RowType.valueOf(meta.getRowType());
 
     // Check row type
@@ -1184,7 +1183,7 @@ public class ModelLoader {
   public static Int2IntOpenHashMap[] loadToIntMaps(String modelDir, Configuration conf)
     throws IOException {
     // Load model meta
-    ModelFilesMeta meta = getMeta(modelDir, conf);
+    MatrixFilesMeta meta = getMeta(modelDir, conf);
     RowType rowType = RowType.valueOf(meta.getRowType());
 
     // Check row type
@@ -1208,7 +1207,7 @@ public class ModelLoader {
   public static Long2DoubleOpenHashMap[] loadToDoubleLongKeyMaps(String modelDir,
     Configuration conf) throws IOException {
     // Load model meta
-    ModelFilesMeta meta = getMeta(modelDir, conf);
+    MatrixFilesMeta meta = getMeta(modelDir, conf);
     RowType rowType = RowType.valueOf(meta.getRowType());
 
     // Check row type
@@ -1224,7 +1223,7 @@ public class ModelLoader {
     return model.getModel();
   }
 
-  private static void loadModel(String modelDir, Model model, ModelFilesMeta meta,
+  private static void loadModel(String modelDir, Model model, MatrixFilesMeta meta,
     Configuration conf) throws IOException {
     // Load model
     LOG.info("start to load model " + meta.getMatrixName() + " from " + modelDir);
