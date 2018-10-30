@@ -24,10 +24,8 @@ import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
-import com.tencent.angel.ml.matrix.psf.update.Reset
+import com.tencent.angel.ml.matrix.psf.update.{Fill, Reset}
 import com.tencent.angel.ml.matrix.psf.update.base.{UpdateFunc, VoidResult}
-import com.tencent.angel.ml.matrix.psf.update.enhance.map.MapInPlace
-import com.tencent.angel.ml.matrix.psf.update.enhance.map.func.{Set => SetFunc}
 import com.tencent.angel.psagent.matrix.{MatrixClient, MatrixClientFactory}
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.models.PSMatrix
@@ -152,9 +150,7 @@ class PSMatrixImpl(
   def fill(rows: Array[Int], values: Array[Double]): PSMatrix = {
     assert(rowType.isDense, "fill a sparse matrix is not supported")
     this.assertValid()
-    rows.indices.foreach { i =>
-      this.psfUpdate(new MapInPlace(id, rows(i), new SetFunc(values(i))))
-    }
+    this.psfUpdate(new Fill(id, rows, values))
     this
   }
 
