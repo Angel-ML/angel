@@ -35,7 +35,7 @@ import com.tencent.angel.ml.core.network.transfunc.TransFunc
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
 import com.tencent.angel.ml.core.utils.{NetUtils, PSMatrixUtils}
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
-import com.tencent.angel.model.{MatrixSaveContext, ModelSaveContext}
+import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
 
@@ -232,29 +232,25 @@ class SparseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
     s"SparseInputLayer name=$name outputDim=$outputDim optimizer=$optimizer"
   }
 
-  override def loadParams(client: AngelClient): Unit = {
+  override def loadParams(loadContext: ModelLoadContext): Unit = {
     SharedConf.actionType().toLowerCase match {
       case "train" =>
         weightCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
         biasCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
+
       case "inctrain" =>
         weightCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
         biasCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
         weightCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
         biasCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
 
-        weightCtx.init(client.getConf)
-        biasCtx.init(client.getConf)
       case "predict" =>
         weightCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
         biasCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
-
-        weightCtx.init(client.getConf)
-        biasCtx.init(client.getConf)
     }
 
-    client.addMatrix(weightCtx)
-    client.addMatrix(biasCtx)
+    loadContext.addMatrix(new MatrixLoadContext(weightCtx.getName))
+    loadContext.addMatrix(new MatrixLoadContext(biasCtx.getName))
   }
 
   override def saveParams(saveContext: ModelSaveContext): Unit = {

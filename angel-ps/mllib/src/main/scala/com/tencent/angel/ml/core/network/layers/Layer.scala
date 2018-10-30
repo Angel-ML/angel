@@ -21,12 +21,11 @@ package com.tencent.angel.ml.core.network.layers
 import java.util.concurrent.Future
 
 import com.google.gson.Gson
-import com.tencent.angel.client.AngelClient
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
-import com.tencent.angel.model.ModelSaveContext
+import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 
 import scala.collection.mutable.ListBuffer
 
@@ -46,7 +45,7 @@ trait Trainable {
 
   def init(taskId: Int, initIndexVector: Vector)
 
-  def loadParams(client: AngelClient): Unit
+  def loadParams(loadContext: ModelLoadContext): Unit
 
   def saveParams(saveContext: ModelSaveContext): Unit
 }
