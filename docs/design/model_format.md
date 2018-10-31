@@ -55,7 +55,7 @@ Angel提供了8中默认的模型输出格式：
 
 ####  ColIdValueBinaryRowFormat
 - **说明**：二进制格式，包含特征索引和对应的值。这种格式适合单行模型，例如LR等。
-- *格式**：|index|value|index|value|...|
+- **格式**：|index|value|index|value|...|
 
 #### RowIdColIdValueBinaryRowFormat
 - **说明**：二进制格式，包含模型的行号，特征索引和对应的值。这种格式可以表示多行模型。

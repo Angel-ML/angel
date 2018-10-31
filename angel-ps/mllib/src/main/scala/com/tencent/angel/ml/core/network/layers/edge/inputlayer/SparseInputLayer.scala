@@ -35,7 +35,7 @@ import com.tencent.angel.ml.core.network.transfunc.TransFunc
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
 import com.tencent.angel.ml.core.utils.{NetUtils, PSMatrixUtils}
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
-import com.tencent.angel.model.{MatrixSaveContext, ModelSaveContext}
+import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
 
@@ -121,11 +121,11 @@ class SparseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
     backward
   }
 
-  override def pullParams(): Unit = {
+  override def pullParams(epoch: Int): Unit = {
     // Note: weight is a row based matrix
     val indices = graph.placeHolder.getIndices
-    weight = PSMatrixUtils.getMatrixWithIndex(weightId, 0, outputDim, indices)
-    bias = PSMatrixUtils.getRow(biasId, 0)
+    weight = PSMatrixUtils.getMatrixWithIndex(epoch, weightId, 0, outputDim, indices)
+    bias = PSMatrixUtils.getRow(epoch, biasId, 0)
   }
 
   override def pushGradient(): Unit = {
@@ -190,71 +190,31 @@ class SparseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
     result
   }
 
-  override def init(taskflag: Int, indexVector: Vector): Unit = {
-    val valueType: String = SharedConf.valueType()
-    val bound: Double = 0.00001 / graph.taskNum
-
-    if (indexVector != null) {
-      (indexVector, valueType) match {
-        case (idx: IntIntVector, "double") =>
-          (0 until outputDim).toArray.foreach { i =>
-            val keys = idx.getStorage.getValues.clone()
-            val values = keys.map { _ => Math.random() * bound - bound / 2 }
-            val randomVector = VFactory.sortedDoubleVector(psCols.toInt, keys, values)
-            PSMatrixUtils.incrementRow(weightId, i, randomVector)
-          }
-        case (idx: IntIntVector, "float") =>
-          (0 until outputDim).toArray.foreach { i =>
-            val keys = idx.getStorage.getValues.clone()
-            val values = keys.map { _ => (Math.random() * bound - bound / 2).toFloat }
-            val randomVector = VFactory.sortedFloatVector(psCols.toInt, keys, values)
-            PSMatrixUtils.incrementRow(weightId, i, randomVector)
-          }
-        case (idx: IntLongVector, "double") =>
-          (0 until outputDim).toArray.foreach { i =>
-            val keys = idx.getStorage.getValues.clone()
-            val values = keys.map { _ => Math.random() * bound - bound / 2 }
-            val randomVector = VFactory.sortedLongKeyDoubleVector(psCols, keys.length, keys, values)
-            PSMatrixUtils.incrementRow(weightId, i, randomVector)
-          }
-        case (idx: IntLongVector, "float") =>
-          (0 until outputDim).toArray.foreach { i =>
-            val keys = idx.getStorage.getValues.clone()
-            val values = keys.map { _ => (Math.random() * bound - bound / 2).toFloat }
-            val randomVector = VFactory.sortedLongKeyFloatVector(psCols, keys.length, keys, values)
-            PSMatrixUtils.incrementRow(weightId, i, randomVector)
-          }
-      }
-    }
-  }
+  override def init(taskflag: Int): Unit = {}
 
   override def toString: String = {
     s"SparseInputLayer name=$name outputDim=$outputDim optimizer=$optimizer"
   }
 
-  override def loadParams(client: AngelClient): Unit = {
+  override def loadParams(loadContext: ModelLoadContext): Unit = {
     SharedConf.actionType().toLowerCase match {
       case "train" =>
         weightCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
         biasCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
+
       case "inctrain" =>
         weightCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
         biasCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
         weightCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
         biasCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
 
-        weightCtx.init(client.getConf)
-        biasCtx.init(client.getConf)
       case "predict" =>
         weightCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
         biasCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
-
-        weightCtx.init(client.getConf)
-        biasCtx.init(client.getConf)
     }
 
-    client.addMatrix(weightCtx)
-    client.addMatrix(biasCtx)
+    loadContext.addMatrix(new MatrixLoadContext(weightCtx.getName))
+    loadContext.addMatrix(new MatrixLoadContext(biasCtx.getName))
   }
 
   override def saveParams(saveContext: ModelSaveContext): Unit = {

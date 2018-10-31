@@ -80,7 +80,7 @@ object Features {
     samples.foreach(f => f.getX.getStorage.asInstanceOf[IntKeyVectorStorage]
       .getIndices.map(i => set.add(i)))
     val index = VFactory.denseIntVector(set.toIntArray())
-    val vector = PSMatrixUtils.getRowWithIndex(matrixId, 0, index).asInstanceOf[IntIntVector]
+    val vector = PSMatrixUtils.getRowWithIndex(0, matrixId, 0, index).asInstanceOf[IntIntVector]
 
     val newData = samples.map { case point =>
       point.getX.getStorage match {

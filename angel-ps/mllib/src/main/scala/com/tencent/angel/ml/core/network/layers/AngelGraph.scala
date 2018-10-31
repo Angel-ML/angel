@@ -18,6 +18,8 @@
 
 package com.tencent.angel.ml.core.network.layers
 
+import java.util
+
 import com.tencent.angel.client.AngelClient
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.conf.SharedConf
@@ -26,7 +28,7 @@ import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.ml.matrix.MatrixContext
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
-import com.tencent.angel.model.ModelSaveContext
+import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import org.apache.commons.logging.{Log, LogFactory}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -134,11 +136,11 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
     timeStats.backwardTime += (System.currentTimeMillis() - start)
   }
 
-  def pullParams(): Unit = {
+  def pullParams(epoch: Int): Unit = {
     val start = System.currentTimeMillis()
     //    val pullFuture = Future.sequence(trainableLayer.map{ layer => Future { layer.pullParams() }})
     //    Await.result(pullFuture, Duration.Inf)
-    trainableLayer.foreach { layer => layer.pullParams() }
+    trainableLayer.foreach { layer => layer.pullParams(epoch: Int) }
 
     timeStats.pullParamsTime += (System.currentTimeMillis() - start)
   }
@@ -153,39 +155,54 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
 
   def update(epoch: Int, batchSize: Int): Unit = {
     val start = System.currentTimeMillis()
-    val updateFuture = trainableLayer.map (layer => layer.update(epoch, batchSize))
+    val updateFuture = trainableLayer.map(layer => layer.update(epoch, batchSize))
     //Await.result(updateFuture, Duration.Inf)
-    for(future <- updateFuture) future.get
+    for (future <- updateFuture) future.get
     timeStats.updateTime += (System.currentTimeMillis() - start)
   }
 
-  def init(taskId: Int = 0, idxsVector: Vector = null): Unit = {
-    val updateFuture = Future.sequence(trainableLayer.map { layer => Future {
-      layer.init(taskId, idxsVector)
-    }
-    })
-    Await.result(updateFuture, Duration.Inf)
+  def init(taskId: Int = 0): Unit = {
+    trainableLayer.foreach { layer => layer.init(taskId) }
   }
 
+  /**
+    * Create matrices contain in the model, this method is only used in Driver/Client
+    *
+    * @param client Angel client
+    */
+  def createMatrices(client: AngelClient): Unit = {
+    val contexts = new util.ArrayList[MatrixContext](matrixCtxs.size)
+    matrixCtxs.foreach(context => contexts.add(context))
+    client.createMatrices(contexts)
+  }
+
+  /**
+    * Load model from files, this method is only used in Driver/Client
+    *
+    * @param client Angel client
+    */
   def loadModel(client: AngelClient): Unit = {
-    trainableLayer.foreach { layer => layer.loadParams(client) }
-    client.createMatrices()
-    client.load()
+    val loadContext = new ModelLoadContext(client.getConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
+    trainableLayer.foreach { layer => layer.loadParams(loadContext) }
+    client.load(loadContext)
   }
 
-  def loadModel(): Unit = {
+  /**
+    * Create matrices contain in the model, this method is only used in Worker/Executor
+    */
+  def createMatrices(): Unit = {
     PSMatrixUtils.createPSMatrix(matrixCtxs)
   }
 
+  /**
+    * Save model to files, this method is only use in Driver/Client
+    *
+    * @param client Angel client
+    */
   def saveModel(client: AngelClient): Unit = {
-    val saveContext = new ModelSaveContext
-    saveContext.setSavePath(client.getConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
+    val saveContext = new ModelSaveContext(client.getConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
     trainableLayer.foreach { layer => layer.saveParams(saveContext) }
     client.save(saveContext)
-  }
-
-  def saveModel(): Unit = {
-    val saveContext = new ModelSaveContext
   }
 
   def setLR(lr: Double): Unit = {

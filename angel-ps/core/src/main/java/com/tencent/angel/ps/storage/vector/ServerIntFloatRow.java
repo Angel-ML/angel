@@ -266,7 +266,7 @@ public class ServerIntFloatRow extends ServerFloatRow {
   }
 
   @Override protected void serializeRow(ByteBuf buf) {
-    if (isDense()) {
+    if (useDenseSerialize()) {
       float[] values = getValues();
       for (int i = 0; i < values.length; i++) {
         buf.writeFloat(values[i]);
@@ -286,10 +286,9 @@ public class ServerIntFloatRow extends ServerFloatRow {
     startColInt = (int) startCol;
     endColInt = (int) endCol;
     intFloatRow = (IntFloatVector) row;
-    if (intFloatRow.isDense()) {
-      float[] values = getValues();
+    if (useDenseSerialize()) {
       for (int i = 0; i < size; i++) {
-        values[i] = buf.readFloat();
+        intFloatRow.set(i, buf.readFloat());
       }
     } else {
       for (int i = 0; i < size; i++) {
@@ -299,7 +298,7 @@ public class ServerIntFloatRow extends ServerFloatRow {
   }
 
   @Override protected int getRowSpace() {
-    if (isDense()) {
+    if (useDenseSerialize()) {
       return 4 * size();
     } else {
       return 8 * size();
@@ -318,11 +317,12 @@ public class ServerIntFloatRow extends ServerFloatRow {
 
   /**
    * Check the vector contains the index or not
+   *
    * @param index element index
    * @return true means exist
    */
   public boolean exist(int index) {
-    if(intFloatRow.isSparse()) {
+    if (intFloatRow.isSparse()) {
       return intFloatRow.getStorage().hasKey(index - startColInt);
     } else {
       return intFloatRow.get(index - startColInt) != 0.0f;
@@ -330,7 +330,7 @@ public class ServerIntFloatRow extends ServerFloatRow {
   }
 
   public float initAndGet(int index, InitFunc func) {
-    if(exist(index)) {
+    if (exist(index)) {
       return get(index);
     } else {
       float value = (float) func.action();
@@ -339,9 +339,10 @@ public class ServerIntFloatRow extends ServerFloatRow {
     }
   }
 
-  @Override public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
+  @Override
+  public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
     throws IOException {
-    if(func != null) {
+    if (func != null) {
       if (indexType == IndexType.INT) {
         for (int i = 0; i < indexSize; i++) {
           out.writeFloat(initAndGet(in.readInt(), func));

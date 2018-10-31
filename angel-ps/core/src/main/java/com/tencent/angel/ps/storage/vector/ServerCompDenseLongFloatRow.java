@@ -263,6 +263,7 @@ public class ServerCompDenseLongFloatRow extends ServerRow {
 
   /**
    * Check the vector contains the index or not
+   *
    * @param index element index
    * @return true means exist
    */
@@ -271,18 +272,19 @@ public class ServerCompDenseLongFloatRow extends ServerRow {
   }
 
   public float initAndGet(long index, InitFunc func) {
-    if(exist(index)) {
+    if (exist(index)) {
       return get(index);
     } else {
-      float value = (float)func.action();
+      float value = (float) func.action();
       set(index, value);
       return value;
     }
   }
 
-  @Override public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
+  @Override
+  public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
     throws IOException {
-    if(func != null) {
+    if (func != null) {
       if (indexType == IndexType.INT) {
         for (int i = 0; i < indexSize; i++) {
           out.writeFloat(initAndGet(in.readInt(), func));

@@ -42,7 +42,7 @@ class OnlineLearner {
         PSContext.instance()
         val model = bModel.value
         val samples = iter.toArray
-        model.forward(samples)
+        model.forward(0, samples)
         val loss = model.getLoss()
         model.backward()
         Iterator.single((loss, samples.length))

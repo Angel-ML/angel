@@ -21,12 +21,11 @@ package com.tencent.angel.ml.core.network.layers
 import java.util.concurrent.Future
 
 import com.google.gson.Gson
-import com.tencent.angel.client.AngelClient
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
-import com.tencent.angel.model.ModelSaveContext
+import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 
 import scala.collection.mutable.ListBuffer
 
@@ -38,15 +37,15 @@ object STATUS extends Enumeration {
 trait Trainable {
   def optimizer: Optimizer
 
-  def pullParams(): Unit
+  def pullParams(epoch: Int): Unit
 
   def pushGradient(): Unit
 
   def update(epoch: Int, batchSize: Int): Future[VoidResult]
 
-  def init(taskId: Int, initIndexVector: Vector)
+  def init(taskId: Int)
 
-  def loadParams(client: AngelClient): Unit
+  def loadParams(loadContext: ModelLoadContext): Unit
 
   def saveParams(saveContext: ModelSaveContext): Unit
 }

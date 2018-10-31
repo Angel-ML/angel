@@ -31,6 +31,8 @@ import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.transport.adapter.GetRowsResult;
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Future;
 
 public class MatrixClientImpl extends MatrixClient {
@@ -240,6 +242,37 @@ public class MatrixClientImpl extends MatrixClient {
   @Override public GetRowsResult getRowsFlow(RowIndex index, int batchSize) throws AngelException {
     return getRowsFlow(index, batchSize, false);
   }
+
+  @Override public Vector[] getRows(int[] rowIds) throws AngelException {
+    return getRows(rowIds, rowIds.length);
+  }
+
+  @Override public Vector[] getRows(int[] rowIds, int batchSize) throws AngelException {
+    RowIndex rowIndex = new RowIndex(rowIds);
+    GetRowsResult result = getRowsFlow(rowIndex, batchSize);
+    Map<Integer, Vector> rowIdToRowMap = new HashMap<>(rowIds.length);
+    try {
+      Vector row;
+      while(true) {
+        row = result.take();
+        if(row == null) {
+          break;
+        } else {
+          rowIdToRowMap.put(row.getRowId(), row);
+        }
+      }
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+    Vector[] rows = new Vector[rowIds.length];
+    int i = 0;
+    for(int rowId : rowIds) {
+      rows[i++] = rowIdToRowMap.get(rowId);
+    }
+    return rows;
+  }
+
+
 
   @Override public GetRowsResult getRowsFlow(RowIndex index, int batchSize, boolean disableCache)
     throws AngelException {
