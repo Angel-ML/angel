@@ -114,10 +114,8 @@ class PSVectorImpl(val poolId: Int, val id: Int, val dimension: Long, val rowTyp
     this
   }
 
-//
-//
-
-
+  //
+  //
 
 
   private def vectorPoolClient: MatrixClient = {

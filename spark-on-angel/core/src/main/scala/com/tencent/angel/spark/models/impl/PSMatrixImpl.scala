@@ -17,15 +17,14 @@
 package com.tencent.angel.spark.models.impl
 
 import java.util.concurrent.Future
-import scala.collection.parallel.mutable.ParArray
 
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
-import com.tencent.angel.ml.matrix.psf.update.{Fill, Reset}
 import com.tencent.angel.ml.matrix.psf.update.base.{UpdateFunc, VoidResult}
+import com.tencent.angel.ml.matrix.psf.update.{Fill, Reset}
 import com.tencent.angel.psagent.matrix.{MatrixClient, MatrixClientFactory}
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.models.PSMatrix
@@ -45,7 +44,8 @@ class PSMatrixImpl(
   }
 
   override def pull(): Matrix = {
-    val rowArr = matrixClient.getRows(Array.range(0, rows))
+    val rowIds = Array.range(0, rows)
+    val rowArr = matrixClient.getRows(rowIds)
     PSMatrixUtils.createFromVectorArray(id, rowType, rowArr)
   }
 
@@ -69,9 +69,12 @@ class PSMatrixImpl(
     matrixClient.get(rowId, indexes)
   }
 
-  override def pull(rowIds: Array[Int]): Array[Vector] = {
+  override def pull(rowIds: Array[Int], batchSize: Int = -1): Array[Vector] = {
     require(rowIds.forall(rowId => rowId >= 0 && rowId < rows), "rowId out of range")
-    matrixClient.getRows(rowIds)
+    if (batchSize <= 0)
+      matrixClient.getRows(rowIds)
+    else
+      matrixClient.getRows(rowIds, batchSize)
   }
 
   override def pull(rowId: Int): Vector = matrixClient.getRow(rowId, true)

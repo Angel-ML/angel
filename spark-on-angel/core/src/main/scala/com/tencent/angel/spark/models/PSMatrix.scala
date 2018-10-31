@@ -57,7 +57,7 @@ abstract class PSMatrix extends PSModel {
 
   def pull(rowId: Int): Vector
 
-  def pull(rowIds: Array[Int]): Array[Vector]
+  def pull(rowIds: Array[Int], batchSize: Int = -1): Array[Vector]
 
 
   /*
