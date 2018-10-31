@@ -35,7 +35,7 @@ class LINEModel(numNode: Int,
                 numNodesPerRow: Int = -1,
                 order: Int = 2,
                 seed: Int = Random.nextInt)
-  extends NEModel(numNode, dimension, numPart, numNodesPerRow, order, seed) {
+  extends NEModel(numNode, dimension, numPart, numNodesPerRow, order, true, seed) {
 
   def this(param: Param) {
     this(param.maxIndex, param.embeddingDim, param.numPSPart, param.nodesNumPerRow, param.order, param.seed)

@@ -35,7 +35,7 @@ class Word2VecModel(numNode: Int,
                     numPart: Int,
                     numNodesPerRow: Int = -1,
                     seed: Int = Random.nextInt)
-  extends NEModel(numNode, dimension, numPart, numNodesPerRow, 2, seed) {
+  extends NEModel(numNode, dimension, numPart, numNodesPerRow, 2, false, seed) {
 
   def this(param: Param) {
     this(param.maxIndex, param.embeddingDim, param.numPSPart, param.nodesNumPerRow, param.seed)
@@ -45,36 +45,40 @@ class Word2VecModel(numNode: Int,
 
     val numPartitions = corpus.getNumPartitions
     println(s"numPartitions=$numPartitions")
-    def sgd(partitionId: Int, iterator: Iterator[NEDataSet], epoch: Int): Iterator[Double] = {
 
-      iterator.zipWithIndex.map { case (batch, index) =>
-        // upload sentences
-        val initialize = (epoch == 0) && (index == 0)
-        val upload = getUpload(batch, initialize, partitionId, numPartitions)
-        psMatrix.psfUpdate(upload).get()
+    def sgdForBatch(partitionId: Int, batch: NEDataSet, epoch: Int, index: Int): Double = {
+      // upload sentences
+      val initialize = (epoch == 0) && (index == 0)
+      val uploadFunc = getUpload(batch, initialize, partitionId, numPartitions)
+      psMatrix.psfUpdate(uploadFunc).get()
 
-        // dot
-        val dot = getDot(param.seed, param.negSample, Some(param.windowSize), partitionId)
-        val dots = psMatrix.psfGet(dot).asInstanceOf[CbowDotResult].getValues
-        val loss = doGrad(dots, param.negSample, param.learningRate, Some(batch))
+      // dot
+      val dotFunc = getDot(param.seed, param.negSample, Some(param.windowSize), partitionId)
+      val dots = psMatrix.psfGet(dotFunc).asInstanceOf[CbowDotResult].getValues
+      val loss = doGrad(dots, param.negSample, param.learningRate, Some(batch))
 
-        // adjust
-        val adjust = getAdjust(param.seed, param.negSample, dots, Some(param.windowSize), partitionId)
-        psMatrix.psfUpdate(adjust).get()
+      // adjust
+      val adjustFunc = getAdjust(param.seed, param.negSample, dots, Some(param.windowSize), partitionId)
+      psMatrix.psfUpdate(adjustFunc).get()
 
-        // return loss
-        loss
-      }
+      // return loss
+      loss
+    }
+
+    def sgdForPartition(partitionId: Int, iterator: Iterator[NEDataSet], epoch: Int): Iterator[Double] = {
+      iterator.zipWithIndex.map(batch => sgdForBatch(partitionId, batch._1, epoch, batch._2))
     }
 
     val iterator = buildDataBatches(corpus, param.batchSize)
+
     for (epoch <- 0 until param.numEpoch) {
       val data = iterator.next()
       val loss = data.mapPartitionsWithIndex(
-        (partitionId, it) => sgd(partitionId, it, epoch),
+        (partitionId, iterator) => sgdForPartition(partitionId, iterator, epoch),
         true).sum()
       println(s"epoch=$epoch loss=$loss")
     }
+
   }
 
   def getUpload(batch: NEDataSet, initialize: Boolean, partitionId: Int, numPartitions: Int): UpdateFunc = {

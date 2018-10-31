@@ -5,11 +5,10 @@ import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
-import com.tencent.angel.spark.ml.psf.embedding.NENegativeSample;
 import com.tencent.angel.spark.ml.psf.embedding.ServerWrapper;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 
-import java.util.Arrays;
-import java.util.Random;
+import java.util.*;
 
 public class CbowAdjust extends UpdateFunc {
 
@@ -52,6 +51,9 @@ public class CbowAdjust extends UpdateFunc {
         float[] neu1 = new float[partDim];
         float[] neu1e = new float[partDim];
 
+        Map<Integer, float[]> outputUpdates = new HashMap<>();
+        Map<Integer, float[]> inputUpdates  = new HashMap<>();
+
         for (int s = 0; s < sentences.length; s++) {
           int[] sen = sentences[s];
           for (int position = 0; position < sen.length; position++) {
@@ -79,8 +81,14 @@ public class CbowAdjust extends UpdateFunc {
             if (cw > 0) {
               int target;
               for (int d = 0; d < negative + 1; d++) {
+
                 if (d == 0) target = word;
-                else target = negativeSeed.nextInt(maxIndex);
+                else while (true){
+                  target = negativeSeed.nextInt(maxIndex);
+                  if (target == word) continue;
+                  else break;
+                }
+
                 float g = param.buf.readFloat();
                 length--;
 
@@ -91,7 +99,8 @@ public class CbowAdjust extends UpdateFunc {
                 // accumulate gradients for the input vectors
                 for (int c = 0; c < partDim; c++) neu1e[c] += g * values[c + col];
                 // update output vectors
-                for (int c = 0; c < partDim; c++) values[c + col] += g * neu1[c];
+//                for (int c = 0; c < partDim; c++) values[c + col] += g * neu1[c];
+                mergeUpdates(outputUpdates, target, neu1, g);
               }
 
               // update input vectors
@@ -101,14 +110,43 @@ public class CbowAdjust extends UpdateFunc {
                   if (c < 0) continue;
                   if (c >= sen.length) continue;
                   if (sen[c] == -1) continue;
-                  int row = sen[c] / numNodes;
-                  int col = (sen[c] % numNodes) * partDim * order;
-                  float[] values = ((IntFloatDenseVectorStorage) partition.getRow(row)
-                    .getSplit().getStorage()).getValues();
-                  for (c = 0; c < partDim; c++) values[c + col] += neu1e[c];
+//                  int row = sen[c] / numNodes;
+//                  int col = (sen[c] % numNodes) * partDim * order;
+//                  float[] values = ((IntFloatDenseVectorStorage) partition.getRow(row)
+//                    .getSplit().getStorage()).getValues();
+//                  for (c = 0; c < partDim; c++) values[c + col] += neu1e[c];
+                  mergeUpdates(inputUpdates, sen[c], neu1e, 1);
                 }
             }
           }
+        }
+
+        // conduct update
+
+        Iterator<Map.Entry<Integer, float[]>> iterator = inputUpdates.entrySet().iterator();
+        while (iterator.hasNext()) {
+          Map.Entry<Integer, float[]> entry = iterator.next();
+          int node = entry.getKey();
+          float[] update = entry.getValue();
+          int row = node / numNodes;
+          int col = (node % numNodes) * partDim * order;
+          float[] values = ((IntFloatDenseVectorStorage) partition.getRow(row)
+                  .getSplit().getStorage()).getValues();
+          for (int a = 0; a < partDim; a++) values[a + col] += update[a];
+
+        }
+
+        iterator = outputUpdates.entrySet().iterator();
+        while (iterator.hasNext()) {
+          Map.Entry<Integer, float[]> entry = iterator.next();
+          int node = entry.getKey();
+          float[] update = entry.getValue();
+          int row = node / numNodes;
+          int col = (node % numNodes) * partDim * order + partDim;
+          float[] values = ((IntFloatDenseVectorStorage) partition.getRow(row)
+                  .getSplit().getStorage()).getValues();
+          for (int a = 0; a < partDim; a++) values[a + col] += update[a];
+
         }
 
         assert length == 0;
@@ -116,6 +154,13 @@ public class CbowAdjust extends UpdateFunc {
         param.clear();
       }
     }
+  }
 
+  private void mergeUpdates(Map<Integer, float[]> bufferedUpdate, int node, float[] update, float g) {
+    if (!bufferedUpdate.containsKey(node))
+      bufferedUpdate.put(node, new float[update.length]);
+
+    float[] hold = bufferedUpdate.get(node);
+    for (int a = 0; a < hold.length; a++) hold[a] += update[a] * g;
   }
 }

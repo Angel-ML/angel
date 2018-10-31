@@ -32,13 +32,13 @@ object Word2vecExample {
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
 
-
     val conf = new SparkConf()
     val sc   = new SparkContext(conf)
 
     PSContext.getOrCreate(sc)
 
     val input = params.getOrElse("input", "")
+    val output = params.getOrElse("output", "")
     val embeddingDim = params.getOrElse("embedding", "10").toInt
     val numNegSamples = params.getOrElse("negative", "5").toInt
     val windowSize = params.getOrElse("window", "10").toInt
@@ -49,7 +49,7 @@ object Word2vecExample {
 
     val numExecutors = SparkUtils.getNumExecutors(conf)
 
-    val (corpus, _) = Features.corpusStringToInt(sc.textFile(input))
+    val (corpus, denseToString) = Features.corpusStringToInt(sc.textFile(input))
     val docs = SubSampling.sampling(corpus).repartition(numExecutors)
     docs.cache()
 
@@ -71,7 +71,12 @@ object Word2vecExample {
       .setMaxIndex(maxWordId)
       .setNumRowDataSet(numDocs)
 
-    new Word2VecModel(param).train(docs, param)
+    val model = new Word2VecModel(param)
+    model.train(docs, param)
+    model.save(output + "/embedding", 0)
+    denseToString.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "/mapping")
+    PSContext.stop()
+    sc.stop()
   }
 
 }

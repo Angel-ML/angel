@@ -40,7 +40,8 @@ object Word2vecExample {
     PSContext.getOrCreate(sc)
 
     val input = "data/text8/text8.split.head"
-    val (corpus, _) = Features.corpusStringToInt(sc.textFile(input))
+    val output = "model/"
+    val (corpus, denseToString) = Features.corpusStringToInt(sc.textFile(input))
     val docs = corpus.repartition(2)
     docs.cache()
 
@@ -66,6 +67,9 @@ object Word2vecExample {
 
     val model = new Word2VecModel(param)
     model.train(docs, param)
+
+//    model.save(output + "embedding", 0)
+    denseToString.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "mapping")
 
     PSContext.stop()
     sc.stop()

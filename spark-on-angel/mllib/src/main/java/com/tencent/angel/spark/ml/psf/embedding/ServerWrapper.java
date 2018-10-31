@@ -11,9 +11,13 @@ public class ServerWrapper {
   // @maxIndex: this variable contains the max index of node/word
   private static volatile int maxIndex = -1;
 
+  private static volatile int[] distinctTargetNum;
+
   public static synchronized void initialize(int numPartitions) {
-    if (sentences == null)
+    if (sentences == null) {
       sentences = new int[numPartitions][][];
+      distinctTargetNum = new int[numPartitions];
+    }
   }
 
   public static void setMaxIndex(int maxIndex) {
@@ -30,5 +34,13 @@ public class ServerWrapper {
 
   public static void setSentences(int partitionId, int[][] partitionSentences) {
     sentences[partitionId] = partitionSentences;
+  }
+
+  public static void setDistinctTargetNum(int partitionId, int number) {
+    distinctTargetNum[partitionId] = number;
+  }
+
+  public static int getDistinctTargetNum(int partitionId) {
+    return distinctTargetNum[partitionId];
   }
 }

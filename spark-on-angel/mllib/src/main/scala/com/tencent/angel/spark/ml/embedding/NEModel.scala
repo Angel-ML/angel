@@ -40,6 +40,7 @@ abstract class NEModel(numNode: Int,
                        numPart: Int,
                        numNodesPerRow: Int = -1,
                        order: Int = 2,
+                       useNegativeTable: Boolean = true,
                        var seed: Int = Random.nextInt()) extends Serializable {
 
   // partDim is the dimensions for one node in each server partition
@@ -55,7 +56,8 @@ abstract class NEModel(numNode: Int,
   // initialize embeddings
   randomInitialize(rand.nextInt)
   // create the negative sampling table on each server
-  createNegativeSampleTable(numNode, rand.nextInt, 0)
+  if (useNegativeTable)
+    createNegativeSampleTable(numNode, rand.nextInt, 0)
 
   def getDotFunc(data: NEDataSet, batchSeed: Int, ns: Int, window: Option[Int]): GetFunc
 

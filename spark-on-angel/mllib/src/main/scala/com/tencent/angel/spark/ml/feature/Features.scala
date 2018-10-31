@@ -5,7 +5,6 @@ import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector.LongIntVector
 import com.tencent.angel.ml.matrix.RowType
-import com.tencent.angel.spark.client.PSClient
 import com.tencent.angel.spark.context.PSContext
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet
 import org.apache.spark.rdd.RDD
@@ -28,7 +27,7 @@ object Features {
     * @param data: corpus data with strings
     * @return
     */
-  def corpusStringToInt(data: RDD[String]): (RDD[Array[Int]], Array[(Int, String)]) = {
+  def corpusStringToInt(data: RDD[String]): (RDD[Array[Int]], RDD[(Int, String)]) = {
     // cache data
     data.cache().count()
 
@@ -40,15 +39,15 @@ object Features {
 
     // Mapping each string with a hashcode ID, the hashcode is sparse
     // Now we use the default hashcode of string in Java.
-    val featureWithIndex = features.map(f => (f, MurmurHash3.stringHash(f)))
+    val featureWithIndex = features.map(f => (f, MurmurHash64.stringHash(f)))
     featureWithIndex.cache().count()
 
     println(s"feature count ${featureWithIndex.map(f => f._1).distinct().count()}")
     println(s"hashcode count ${featureWithIndex.map(f => f._2).distinct().count()}")
 
     // Now convert the sparse index to dense index, we use
-    val sparseDim: Long = featureWithIndex.map(f => f._2).max().toLong + 1
-    val denseIndices = featureWithIndex.map(f => f._2).zipWithIndex()
+    val sparseDim: Long = featureWithIndex.map(f => f._2).max() + 1
+    val denseIndices = featureWithIndex.map(f => f._2).zipWithIndex().map(f => (f._1, f._2 + 1))
     denseIndices.cache().count()
     // The dense dimension
     val denseDim = (denseIndices.map(f => f._2).max() + 1).toInt
@@ -61,7 +60,7 @@ object Features {
     val denseToSparseMatrixId = PSMatrixUtils.createPSMatrix(denseToSparse)
 
     // Function to initialize sparseToDenseMatrix and denseToSparseMatrix
-    def initializeSparseAndDenseMatrix(iterator: Iterator[(Int, Long)],
+    def initializeSparseAndDenseMatrix(iterator: Iterator[(Long, Long)],
                                        sparseDim: Long,
                                        sparseToDenseMatrixId: Int,
                                        denseDim: Int,
@@ -88,38 +87,40 @@ object Features {
                         sparseToDenseMatrixId: Int): Iterator[Array[Int]] = {
       PSContext.instance()
       val set = new LongOpenHashSet()
-      val corpus = new ArrayBuffer[Array[Int]]()
+      val corpus = new ArrayBuffer[Array[Long]]()
 
       while (iterator.hasNext) {
         val line = iterator.next()
         if (line != null && line.length > 0) {
           val strings = line.stripLineEnd.split(" ")
-          val ints = strings.map(s => MurmurHash3.stringHash(s))
-          corpus.append(ints)
-          ints.foreach(index => set.add(index))
+          val longs = strings.map(s => MurmurHash64.stringHash(s))
+          corpus.append(longs)
+          longs.foreach(index => set.add(index))
         }
       }
 
       val pullIndex = VFactory.denseLongVector(set.toLongArray())
-      val sparseToDenseIndex = PSMatrixUtils.getRowWithIndex(sparseToDenseMatrixId, 0, pullIndex)
+      val sparseToDenseIndex = PSMatrixUtils.getRowWithIndex(1, sparseToDenseMatrixId, 0, pullIndex)
         .asInstanceOf[LongIntVector]
 
       val size = corpus.size
       var i = 0
       while (i < size) {
-        val hashcodes = corpus(i)
+        val longs = corpus(i)
         var j = 0
-        while (j < hashcodes.length) {
-          hashcodes(j) = sparseToDenseIndex.get(hashcodes(j))
+        while (j < longs.length) {
+          val dense = sparseToDenseIndex.get(longs(j))
+          assert(dense != 0)
+          longs(j) = dense
           j += 1
         }
         i += 1
       }
 
-      corpus.iterator
+      corpus.map(f => f.map(k => k.toInt)).iterator
     }
 
-    def buildDenseToString(iterator: Iterator[(String, Int)],
+    def buildDenseToString(iterator: Iterator[(String, Long)],
                            sparseDim: Long,
                            sparseToDenseMatrixId: Int): Iterator[(Int, String)] = {
       val stringsWithInts = iterator.toArray
@@ -130,7 +131,7 @@ object Features {
         i += 1
       }
 
-      val sparseToDenseIndex = PSMatrixUtils.getRowWithIndex(sparseToDenseMatrixId, 0, VFactory.denseLongVector(indices))
+      val sparseToDenseIndex = PSMatrixUtils.getRowWithIndex(1, sparseToDenseMatrixId, 0, VFactory.denseLongVector(indices))
           .asInstanceOf[LongIntVector]
       stringsWithInts.map(f => (sparseToDenseIndex.get(f._2), f._1)).iterator
     }
@@ -157,8 +158,10 @@ object Features {
     val denseToString = featureWithIndex.mapPartitions(it =>
       buildDenseToString(it,
         sparseDim,
-        sparseToDenseMatrixId))
-        .collect()
+        sparseToDenseMatrixId)).sortBy(f => f._1)
+
+    denseToString.cache()
+    println(s"denseToString.size()=${denseToString.count()}")
 
     data.unpersist()
     featureWithIndex.unpersist()

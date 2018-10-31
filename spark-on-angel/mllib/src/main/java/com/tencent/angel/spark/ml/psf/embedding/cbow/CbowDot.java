@@ -28,6 +28,7 @@ import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.spark.ml.psf.embedding.NENegativeSample;
 import com.tencent.angel.spark.ml.psf.embedding.ServerWrapper;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 
 import java.util.Arrays;
 import java.util.List;
@@ -69,7 +70,6 @@ public class CbowDot extends GetFunc {
 
       ServerPartition partition = psContext.getMatrixStorageManager().getPart(pkey);
 
-
       Random windowSeed = new Random(seed);
       Random negativeSeed = new Random(seed);
       FloatArrayList partialDots = new FloatArrayList();
@@ -107,7 +107,11 @@ public class CbowDot extends GetFunc {
             for (int d = 0; d < negative + 1; d ++) {
               if (d == 0) target = word;
               // We should guarantee here that the sample would not equal the ``word``
-              else target = negativeSeed.nextInt(maxIndex);
+              else while (true) {
+                target = negativeSeed.nextInt(maxIndex);
+                if (target == word) continue;
+                else break;
+              }
 
               int rowId = target / numNodes;
               int colId = (target % numNodes) * partDim * order + partDim;
@@ -120,6 +124,7 @@ public class CbowDot extends GetFunc {
           }
         }
       }
+
       return new CbowDotPartitionResult(partialDots.toFloatArray());
     }
 
