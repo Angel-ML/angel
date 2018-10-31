@@ -74,7 +74,6 @@ class OfflineLearner {
       val batchIterator = OfflineLearner.buildManifoldIterator(manifold, numSplits)
       while (batchIterator.hasNext) {
         val (sumLoss, batchSize) = batchIterator.next().mapPartitions { case iter =>
-          PSClient.instance()
           val batch = iter.next()
           bModel.value.forward(epoch, batch)
           val loss = bModel.value.getLoss()
