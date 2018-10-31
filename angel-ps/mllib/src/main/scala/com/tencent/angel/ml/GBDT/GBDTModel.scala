@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -22,10 +22,9 @@ import java.text.DecimalFormat
 
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.GBDT.GBDTModel._
-import com.tencent.angel.ml.GBDT.algo.sketch.{HeapQuantileSketch, SketchUtils}
 import com.tencent.angel.ml.core.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntIntVector}
+import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector, IntIntVector}
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
@@ -192,7 +191,7 @@ class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
 
     (0 until dataSet.size).foreach { idx =>
       val instance = dataSet.read
-      val x: IntDoubleVector = instance.getX.asInstanceOf[IntDoubleVector]
+      val x: IntFloatVector = instance.getX.asInstanceOf[IntFloatVector]
       val y: Double = instance.getY
       var pred: Double = 0
 
