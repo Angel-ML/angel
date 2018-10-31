@@ -20,8 +20,7 @@ package com.tencent.angel.spark.ml.classification
 
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers.Layer
-import com.tencent.angel.ml.core.network.layers.edge.inputlayer.{Embedding, SparseInputLayer}
-import com.tencent.angel.ml.core.network.layers.edge.losslayer.SimpleLossLayer
+import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleLossLayer, SimpleInputLayer}
 import com.tencent.angel.ml.core.network.layers.join.SumPooling
 import com.tencent.angel.ml.core.network.layers.linear.{BiInnerSumCross, FCLayer}
 import com.tencent.angel.ml.core.network.transfunc.{Identity, Relu}
@@ -37,7 +36,7 @@ class DeepFM extends GraphModel {
 
   override
   def network(): Unit = {
-    val wide = new SparseInputLayer("input", 1, new Identity(), new Adam(lr))
+    val wide = new SimpleInputLayer("input", 1, new Identity(), new Adam(lr))
     val embedding = new Embedding("embedding", numFields * numFactors, numFactors, new Adam(lr))
     val innerSumCross = new BiInnerSumCross("innerSumPooling", embedding)
     val hidden1 = new FCLayer("hidden1", 80, embedding, new Relu, new Adam(lr))

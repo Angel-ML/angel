@@ -99,7 +99,7 @@ public class LRTest {
       conf.set(MLConf.ML_LEARN_DECAY(), String.valueOf(decay));
       conf.set(MLConf.ML_REG_L2(), String.valueOf(reg));
       conf.setLong(MLConf.ML_MODEL_SIZE(), 123);
-      conf.set(MLConf.ML_SPARSEINPUTLAYER_OPTIMIZER(), optimizer);
+      conf.set(MLConf.ML_INPUTLAYER_OPTIMIZER(), optimizer);
       // conf.setDouble(MLConf.ML_DATA_POSNEG_RATIO(), posnegRatio);
       conf.set(MLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "LogisticRegression");
     } catch (Exception x) {
