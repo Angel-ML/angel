@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -18,13 +18,90 @@
 
 package com.tencent.angel.spark.models
 
+import scala.util.Random
+
 import com.tencent.angel.exception.AngelException
+import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import com.tencent.angel.ml.math2.vector.{IntDoubleVector, LongDoubleVector, Vector}
 import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.spark.models.PSMatrixSuite._
+import com.tencent.angel.spark.{PSFunSuite, SharedPSContext}
 
-object CompatibleImplicit {
+class PSMatrixSuite extends PSFunSuite with SharedPSContext {
+
+  private val rows = 10
+  private val cols = 10
+
+  test("init Dense Matrix") {
+    val mat = PSMatrix.dense(rows, cols)
+    val result = mat.pull()
+
+    (0 until rows).foreach { i =>
+      (0 until cols).foreach { j =>
+        assert(result(i)(j) == 0.0)
+      }
+    }
+
+    mat.destroy()
+  }
+
+  test("Push array") {
+    val mat = PSMatrix.dense(rows, cols)
+    val rand = new Random()
+    val array = (0 until cols).toArray.map(x => rand.nextDouble())
+
+    val randRow = rand.nextInt(rows)
+    mat.push(VFactory.denseDoubleVector(mat.id, randRow, 0, array))
+
+    val result = mat.pull()
+
+    (0 until rows).foreach { i =>
+      if (i == randRow) {
+        assert(array.sameElements(result(i)))
+      } else {
+        assert(Array.fill(cols)(0.0).sameElements(result(i)))
+      }
+    }
+    mat.destroy()
+  }
+
+  test("Pull row") {
+    val mat = PSMatrix.rand(rows, cols)
+    val totalMat = mat.pull()
+    val rand = new Random()
+    val randRow = rand.nextInt(rows)
+    val oneRow = mat.pull(randRow)
+    assert(oneRow.sameElements(totalMat(randRow)))
+    mat.destroy()
+  }
+
+  test("increment") {
+    val mat = PSMatrix.dense(rows, cols)
+    val rand = new Random()
+    val firstArray = (0 until cols).toArray.map(_ => rand.nextDouble())
+    val secondArray = (0 until cols).toArray.map(_ => rand.nextGaussian())
+
+    val rowId = rand.nextInt(rows)
+    mat.increment(VFactory.denseDoubleVector(mat.id, rowId, 0, firstArray))
+    assert(mat.pull(rowId).sameElements(firstArray))
+
+    mat.increment(VFactory.denseDoubleVector(mat.id, rowId, 0, secondArray))
+    val sum = Array.tabulate(cols)(i => firstArray(i) + secondArray(i))
+    assert(mat.pull(rowId).sameElements(sum))
+
+    mat.destroy()
+  }
+}
+
+object PSMatrixSuite {
+
+  class MatrixImplicit(mat: Matrix) {
+    def apply(i: Int): Array[Double] = mat.getRow(i).asInstanceOf[IntDoubleVector].getStorage.getValues
+  }
+
+  implicit def toMatrixImplicit(mat: Matrix): MatrixImplicit = new MatrixImplicit(mat)
 
   class VectorImplicit(val v: Vector) {
     def +(other: Vector): Vector = Ufuncs.add(v, other)
@@ -64,10 +141,4 @@ object CompatibleImplicit {
   }
 
   implicit def toVectorImplicit(v: Vector): VectorImplicit = new VectorImplicit(v)
-
-  class MatrixImplicit(mat: Matrix) {
-    def apply(i: Int): Array[Double] = mat.getRow(i).asInstanceOf[IntDoubleVector].getStorage.getValues
-  }
-
-  implicit def toMatrixImplicit(mat: Matrix): MatrixImplicit = new MatrixImplicit(mat)
 }

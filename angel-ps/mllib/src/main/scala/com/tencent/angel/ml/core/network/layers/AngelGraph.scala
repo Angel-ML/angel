@@ -138,26 +138,20 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
 
   def pullParams(epoch: Int): Unit = {
     val start = System.currentTimeMillis()
-    //    val pullFuture = Future.sequence(trainableLayer.map{ layer => Future { layer.pullParams() }})
-    //    Await.result(pullFuture, Duration.Inf)
     trainableLayer.foreach { layer => layer.pullParams(epoch: Int) }
-
     timeStats.pullParamsTime += (System.currentTimeMillis() - start)
   }
 
   def pushGradient(): Unit = {
     val start = System.currentTimeMillis()
-    //    val pushFuture = Future.sequence(trainableLayer.map{ layer => Future { layer.pushGradient() } })
-    //    Await.result(pushFuture, Duration.Inf)
     trainableLayer.foreach(layer => layer.pushGradient())
     timeStats.pushParamsTime += (System.currentTimeMillis() - start)
   }
 
   def update(epoch: Int, batchSize: Int): Unit = {
     val start = System.currentTimeMillis()
-    val updateFuture = trainableLayer.map(layer => layer.update(epoch, batchSize))
-    //Await.result(updateFuture, Duration.Inf)
-    for (future <- updateFuture) future.get
+    val updateFuture = trainableLayer.map (layer => layer.update(epoch, batchSize))
+    for(future <- updateFuture) future.get
     timeStats.updateTime += (System.currentTimeMillis() - start)
   }
 
@@ -181,8 +175,8 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
     *
     * @param client Angel client
     */
-  def loadModel(client: AngelClient): Unit = {
-    val loadContext = new ModelLoadContext(client.getConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
+  def loadModel(client: AngelClient, path: String): Unit = {
+    val loadContext = new ModelLoadContext(path)
     trainableLayer.foreach { layer => layer.loadParams(loadContext) }
     client.load(loadContext)
   }
@@ -199,8 +193,8 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
     *
     * @param client Angel client
     */
-  def saveModel(client: AngelClient): Unit = {
-    val saveContext = new ModelSaveContext(client.getConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
+  def saveModel(client: AngelClient, path: String): Unit = {
+    val saveContext = new ModelSaveContext(path)
     trainableLayer.foreach { layer => layer.saveParams(saveContext) }
     client.save(saveContext)
   }

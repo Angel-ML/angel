@@ -56,11 +56,11 @@ object ModelSaver {
       val indices = VFactory.denseIntVector((start until end).toArray)
 
       // fetch denseToSparse index
-      val denseToSparse = PSMatrixUtils.getRowWithIndex(0, denseToSparseMatrixId, 0, indices)
+      val denseToSparse = PSMatrixUtils.getRowWithIndex(1, denseToSparseMatrixId, 0, indices)
         .asInstanceOf[IntIntVector]
 
       // fetch params
-      val weights = PSMatrixUtils.getRowWithIndex(0, weightId, 0, indices)
+      val weights = PSMatrixUtils.getRowWithIndex(1, weightId, 0, indices)
 
       val result = new Array[String](size)
       weights match {
@@ -100,7 +100,7 @@ object ModelSaver {
       val indices = VFactory.denseIntVector((start until end).toArray)
 
       // fetch denseToSparse index
-      val denseToSparse = PSMatrixUtils.getRowWithIndex(0, denseToSparseMatrixId, 0, indices)
+      val denseToSparse = PSMatrixUtils.getRowWithIndex(1, denseToSparseMatrixId, 0, indices)
         .asInstanceOf[IntIntVector]
 
       // fetch embedding vectors

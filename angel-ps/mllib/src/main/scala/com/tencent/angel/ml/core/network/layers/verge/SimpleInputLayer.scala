@@ -249,36 +249,16 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
   }
 
   override def loadParams(loadContext: ModelLoadContext): Unit = {
-    SharedConf.actionType().toLowerCase match {
-      case "train" =>
-        weightCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
-        biasCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
-
-      case "inctrain" =>
-        weightCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
-        biasCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
-        weightCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
-        biasCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
-
-      case "predict" =>
-        weightCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
-        biasCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
-    }
-
     loadContext.addMatrix(new MatrixLoadContext(weightCtx.getName))
     loadContext.addMatrix(new MatrixLoadContext(biasCtx.getName))
   }
 
   override def saveParams(saveContext: ModelSaveContext): Unit = {
     val outputFormat = SharedConf.sparseInputLayerMatrixOutputFormat
-    SharedConf.actionType().toLowerCase match {
-      case "train" | "inctrain" =>
-        val weightMCS: MatrixSaveContext = new MatrixSaveContext(weightCtx.getName, outputFormat)
-        val biasMCS: MatrixSaveContext = new MatrixSaveContext(biasCtx.getName, outputFormat)
-        weightMCS.addIndices((0 until outputDim).toArray)
-        saveContext.addMatrix(weightMCS)
-        saveContext.addMatrix(biasMCS)
-      case _ =>
-    }
+    val weightMCS: MatrixSaveContext = new MatrixSaveContext(weightCtx.getName, outputFormat)
+    val biasMCS: MatrixSaveContext = new MatrixSaveContext(biasCtx.getName, outputFormat)
+    weightMCS.addIndices((0 until outputDim).toArray)
+    saveContext.addMatrix(weightMCS)
+    saveContext.addMatrix(biasMCS)
   }
 }

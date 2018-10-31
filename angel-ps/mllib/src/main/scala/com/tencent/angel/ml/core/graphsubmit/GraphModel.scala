@@ -142,12 +142,12 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
     graph.createMatrices(client)
   }
 
-  def loadModel(client: AngelClient): Unit = {
-    graph.loadModel(client)
+  def loadModel(client: AngelClient, path: String): Unit = {
+    graph.loadModel(client, path)
   }
 
-  def saveModel(client: AngelClient): Unit = {
-    graph.saveModel(client)
+  def saveModel(client: AngelClient, path: String): Unit = {
+    graph.saveModel(client, path)
   }
 }
 

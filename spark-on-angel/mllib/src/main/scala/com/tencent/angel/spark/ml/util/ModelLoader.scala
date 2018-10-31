@@ -3,6 +3,9 @@ package com.tencent.angel.spark.ml.util
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector.{IntFloatVector, IntIntVector, Vector}
+import com.tencent.angel.ml.psf.columns._
+import com.tencent.angel.ps.server.data.request.UpdateOp
+import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.spark.ml.core.GraphModel
 import it.unimi.dsi.fastutil.ints.{IntArrayList, IntOpenHashSet}
 import org.apache.spark.SparkContext
@@ -125,7 +128,7 @@ object ModelLoader {
 
       val indices = VFactory.denseIntVector(set.toIntArray())
       // fetch sparseToDense index
-      val sparseToDense = PSMatrixUtils.getRowWithIndex(0, sparseToDenseMatrixId,
+      val sparseToDense = PSMatrixUtils.getRowWithIndex(1, sparseToDenseMatrixId,
         0, indices).asInstanceOf[IntIntVector]
 
       val update = VFactory.sparseFloatVector(denseDim)
@@ -170,7 +173,7 @@ object ModelLoader {
 
       // fetch sparseToDense vectors
       val indices = VFactory.denseIntVector(features.toIntArray())
-      val sparseToDense = PSMatrixUtils.getRowWithIndex(0, sparseToDenseMatrixId, 0, indices)
+      val sparseToDense = PSMatrixUtils.getRowWithIndex(1, sparseToDenseMatrixId, 0, indices)
         .asInstanceOf[IntIntVector]
 
       // change feature index

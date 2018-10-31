@@ -18,30 +18,30 @@
 
 package com.tencent.angel.spark.context
 
+import java.util
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{Map, mutable}
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.util.ShutdownHookManager
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.{SparkConf, SparkEnv, TaskContext}
-
 import com.tencent.angel.client.AngelContext
 import com.tencent.angel.common.location.Location
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.conf.AngelConf._
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.matrix.{MatrixContext, MatrixMeta, RowType}
+import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.ps.ParameterServer
 import com.tencent.angel.ps.storage.matrix.PartitionSourceMap
 import com.tencent.angel.psagent.PSAgent
 import com.tencent.angel.psagent.matrix.{MatrixClient, MatrixClientFactory}
-import com.tencent.angel.spark.models.matrix.PSMatrix
-import com.tencent.angel.spark.models.vector.PSVector
+import com.tencent.angel.spark.models.{PSMatrix, PSVector}
 import com.tencent.angel.spark.util.RowTypeImplicit._
 
 /**
@@ -139,23 +139,22 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
     * create a sparse long key matrix
     *
     * @param rows       matrix row num
-    * @param dim        dimension for each row
-    * @param range      long type range for each row
+    * @param cols        dimension for each row
+    * @param validIndexNum      long type range for each row
     *                   if range = -1, the range is (Long.MinValue, Long.MaxValue),
     *                   else range is [0, range), usually range will be set to Long.MaxValue.
     * @param rowInBlock row number for each block
     * @param colInBlock col number for each block
     * @return
     */
-  // @ TODO: dim??
   def createSparseMatrix(
                           rows: Int,
-                          range: Long,
-                          dim: Long,
+                          cols: Long,
+                          validIndexNum: Long,
                           rowInBlock: Int = -1,
                           colInBlock: Long = -1,
                           rowType: RowType = RowType.T_DOUBLE_SPARSE): MatrixMeta = {
-    createMatrix(rows, range, dim, rowInBlock, colInBlock, rowType)
+    createMatrix(rows, cols, validIndexNum, rowInBlock, colInBlock, rowType)
   }
 
   def duplicateVector(original: PSVector): PSVector = {
@@ -190,7 +189,7 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
     }
   }
 
-  override def refreshMatrix: Unit = {
+  override def refreshMatrix(): Unit = {
     psAgent.refreshMatrixInfo()
   }
 
@@ -264,10 +263,12 @@ private[spark] object AngelPSContext {
     }
   }
 
-  def save(matrices: Seq[MatrixContext], path: String): Unit = {
-    val list = new java.util.ArrayList[MatrixContext]
-    matrices.foreach(f => list.add(f))
-    angelClient.save(list, path)
+  def save(context: ModelSaveContext): Unit = {
+    angelClient.save(context)
+  }
+
+  def load(context: ModelLoadContext): Unit = {
+    angelClient.load(context)
   }
 
   //Start Angel
@@ -296,8 +297,7 @@ private[spark] object AngelPSContext {
 
     val psNum = conf.getInt("spark.ps.instances", 1)
     val psCores = conf.getInt("spark.ps.cores", 1)
-    val psMem = conf.getSizeAsMb("spark.ps.memory", "4g").toInt
-    val psHeap = psMem - 200
+    val psMem = conf.getSizeAsGb("spark.ps.memory", "4g").toInt
     val psOpts = conf.getOption("spark.ps.extraJavaOptions")
 
     val psJars = conf.get("spark.ps.jars", "")
@@ -332,7 +332,7 @@ private[spark] object AngelPSContext {
 
     hadoopConf.setInt(ANGEL_PS_NUMBER, psNum)
     hadoopConf.setInt(ANGEL_PS_CPU_VCORES, psCores)
-    hadoopConf.setInt(ANGEL_PS_MEMORY_MB, psMem)
+    hadoopConf.setInt(ANGEL_PS_MEMORY_GB, psMem)
     hadoopConf.setInt(TOTAL_CORES, psNum * psCores)
 
     hadoopConf.set(ANGEL_AM_LOG_LEVEL, psLogLevel)
