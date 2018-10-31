@@ -23,14 +23,14 @@ import com.tencent.angel.ml.auto.acquisition.{Acquisition, EI}
 import com.tencent.angel.ml.auto.config.ConfigurationSpace
 import com.tencent.angel.ml.auto.parameter.{ContinuousSpace, DiscreteSpace, ParamSpace}
 import com.tencent.angel.ml.auto.solver.{Solver, SolverWithTrail}
-import com.tencent.angel.ml.auto.surrogate.{Surrogate, RFSurrogate}
+import com.tencent.angel.ml.auto.surrogate.{RFSurrogate, Surrogate}
 import com.tencent.angel.ml.auto.trail.{TestTrail, Trail}
 import com.tencent.angel.ml.math2.vector.IntFloatVector
 
 object Example extends App {
 
   override def main(args: Array[String]): Unit = {
-    val param1: ParamSpace[Float] = new ContinuousSpace("param1", 0, 10, 10)
+    val param1: ParamSpace[Float] = new ContinuousSpace("param1", 0, 10, 11)
     val param2: ParamSpace[Float] = new DiscreteSpace[Float]("param2", List(0.0f, 1.0f, 3.0f, 5.0f))
     val cs: ConfigurationSpace = new ConfigurationSpace("cs")
     cs.addParam(param1)
@@ -41,7 +41,8 @@ object Example extends App {
     val solver: Solver = new Solver(cs, sur, acq, opt)
     val trail: Trail = new TestTrail()
     val runner: SolverWithTrail = new SolverWithTrail(solver, trail)
-    val result: (IntFloatVector, Float) = runner.run(10)
-    println(s"Best configuration ${result._1.getStorage.getValues}, best performance: ${result._2}")
+    val result: (IntFloatVector, Float) = runner.run(100)
+    sur.stop()
+    println(s"Best configuration ${result._1.getStorage.getValues.mkString(",")}, best performance: ${result._2}")
   }
 }

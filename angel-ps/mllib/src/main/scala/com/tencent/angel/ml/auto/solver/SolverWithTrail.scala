@@ -33,10 +33,9 @@ class SolverWithTrail(val solver: Solver, val trail: Trail) {
     * @return Incumbent and function value of the incumbent
     */
   def run(numIter: Int, X: List[Configuration] = Nil, Y: List[Float] = Nil): (IntFloatVector, Float) = {
-    if (X != Nil && Y != Nil && X.size == Y.size) {
-      solver.feed(X, Y)
-    }
+    if (X != Nil && Y != Nil && X.size == Y.size) solver.feed(X, Y)
     (0 until numIter).foreach{ iter =>
+      println(s"iteration $iter starts")
       val configs: List[Configuration] = solver.suggest
       val results: List[Float] = trail.evaluate(configs)
       solver.feed(configs, results)

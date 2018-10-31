@@ -24,8 +24,11 @@ import com.tencent.angel.ml.auto.config.{Configuration, ConfigurationSpace}
 import com.tencent.angel.ml.auto.setting.Setting
 import com.tencent.angel.ml.auto.surrogate.Surrogate
 import com.tencent.angel.ml.math2.vector.IntFloatVector
+import org.apache.commons.logging.{Log, LogFactory}
 
 class Solver(val cs: ConfigurationSpace, val surrogate: Surrogate, val acqFuc: Acquisition, val optimizer: AcqOptimizer) {
+
+  val LOG: Log = LogFactory.getLog(classOf[Solver])
 
   def getObservations: (List[IntFloatVector], List[Float]) = (surrogate.curX.toList, surrogate.curY.toList)
 
@@ -35,6 +38,7 @@ class Solver(val cs: ConfigurationSpace, val surrogate: Surrogate, val acqFuc: A
     * Suggests configurations to evaluate.
     */
   def suggest(): List[Configuration] = {
+    println(s"suggest configurations")
     optimizer.maximize(Setting.batchSize).map(_._2)
   }
 
@@ -44,6 +48,7 @@ class Solver(val cs: ConfigurationSpace, val surrogate: Surrogate, val acqFuc: A
     * @param Y: More evaluation result
     */
   def feed(configs: List[Configuration], Y: List[Float]): Unit = {
+    println(s"feed ${configs.size} configurations")
     surrogate.update(configs.map(_.getVector), Y)
   }
 

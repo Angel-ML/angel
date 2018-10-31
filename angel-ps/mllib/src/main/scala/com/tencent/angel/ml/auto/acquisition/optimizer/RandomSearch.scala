@@ -20,6 +20,7 @@ package com.tencent.angel.ml.auto.acquisition.optimizer
 
 import com.tencent.angel.ml.auto.acquisition.Acquisition
 import com.tencent.angel.ml.auto.config.{Configuration, ConfigurationSpace}
+import org.apache.commons.logging.{Log, LogFactory}
 
 import scala.util.Random
 
@@ -32,15 +33,18 @@ import scala.util.Random
   */
 class RandomSearch(override val acqFunc: Acquisition, override val configSpace: ConfigurationSpace,
                    seed: Int = 100) extends AcqOptimizer(acqFunc, configSpace) {
+  val LOG: Log = LogFactory.getLog(classOf[RandomSearch])
 
   val rd = new Random(seed)
 
   override def maximize(numPoints: Int, sorted: Boolean = true): List[(Float, Configuration)] = {
+    println(s"maximize RandomSearch")
     val configs: List[Configuration] = configSpace.sampleConfig(numPoints)
+    configs.foreach( config => println(s"sample a configuration: ${config.getVector.getStorage.getValues.mkString(",")}"))
     if (sorted)
-      configs.map{config => (0.0f, config)}
-    else
       configs.map{config => (acqFunc.compute(config.getVector)._1, config)}
+    else
+      configs.map{config => (0.0f, config)}
   }
 
   override def maximize: (Float, Configuration) = {

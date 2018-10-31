@@ -21,6 +21,7 @@ package com.tencent.angel.ml.auto.acquisition
 import com.tencent.angel.ml.auto.surrogate.Surrogate
 import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage
 import com.tencent.angel.ml.math2.vector.IntFloatVector
+import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.commons.math3.distribution.NormalDistribution
 
 /**
@@ -30,12 +31,14 @@ import org.apache.commons.math3.distribution.NormalDistribution
   *
  */
 class EI(override val surrogate: Surrogate, val par: Float) extends Acquisition(surrogate) {
+  val LOG: Log = LogFactory.getLog(classOf[Surrogate])
 
   override def compute(X: IntFloatVector, derivative: Boolean = false): (Float, IntFloatVector) = {
     val pred = surrogate.predict(X) // (mean, variance)
 
     // Use the best seen observation as incumbent
     val eta: Float = surrogate.curBest._2
+    println(s"best seen result: $eta")
 
     val s: Float = Math.sqrt(pred._2).toFloat
 
@@ -47,6 +50,7 @@ class EI(override val surrogate: Surrogate, val par: Float) extends Acquisition(
       val z = (eta - pred._1 - par) / s
       val norm: NormalDistribution  = new NormalDistribution
       val f = s * (z * norm.cumulativeProbability(z) + norm.density(z))
+      println(s"z: $z, f: $f")
       (f.toFloat, new IntFloatVector(X.dim().toInt, new IntFloatDenseVectorStorage()))
     }
   }

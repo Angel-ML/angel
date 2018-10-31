@@ -38,6 +38,7 @@ class ContinuousSpace(override val name: String, lower: Float, upper: Float, num
 
   val rd = new Random(seed)
   val values: List[Float] = calValues
+  println(s"values of continuous param: ${values.mkString(",")}")
 
   def calValues(): List[Float] = {
     var ret: ListBuffer[Float] = ListBuffer[Float]()
@@ -49,6 +50,7 @@ class ContinuousSpace(override val name: String, lower: Float, upper: Float, num
         }
       case _ => LOG.info(s"Distribution $distribution not supported")
     }
+
     ret.toList
   }
 

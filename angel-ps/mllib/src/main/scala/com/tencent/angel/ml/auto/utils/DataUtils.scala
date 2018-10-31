@@ -31,14 +31,14 @@ object DataUtils {
   }
 
   def parse(feature: IntFloatVector, label: Float): LabeledPoint = {
-    if (feature.numZeros() == feature.dim())
+    if (feature.isDense)
       LabeledPoint(label, Vectors.dense(feature.getStorage.getValues.map(x => x.toDouble)))
     else
-      LabeledPoint(label, Vectors.sparse(feature.numZeros, feature.getStorage.getIndices, feature.getStorage.getValues.map(x => x.toDouble)))
+      LabeledPoint(label, Vectors.sparse(feature.getDim, feature.getStorage.getIndices, feature.getStorage.getValues.map(x => x.toDouble)))
   }
 
   def parse(feature: IntFloatVector): Vector = {
-    if (feature.numZeros() == feature.dim())
+    if (feature.isDense)
       Vectors.dense(feature.getStorage.getValues.map(x => x.toDouble))
     else
       Vectors.sparse(feature.numZeros, feature.getStorage.getIndices, feature.getStorage.getValues.map{x => x.toDouble})

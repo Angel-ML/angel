@@ -19,6 +19,7 @@
 package com.tencent.angel.ml.auto.surrogate
 
 import com.tencent.angel.ml.math2.vector.IntFloatVector
+import org.apache.commons.logging.{Log, LogFactory}
 
 import scala.collection.mutable.ListBuffer
 
@@ -27,6 +28,8 @@ import scala.collection.mutable.ListBuffer
   * @param numParams : Number of parameters in a configuration
   */
 abstract class Surrogate(val numParams: Int, val minimize: Boolean = true) {
+  val LOG: Log = LogFactory.getLog(classOf[Surrogate])
+
   // Input data points, (N, D)
   var curX: ListBuffer[IntFloatVector] = new ListBuffer[IntFloatVector]()
   // Target value, (N, )
@@ -58,12 +61,18 @@ abstract class Surrogate(val numParams: Int, val minimize: Boolean = true) {
     * @param Y
     */
   def update(X: List[IntFloatVector], Y: List[Float]): Unit = {
-    curX ++ X
-    curY ++ Y
+    X.zip(Y).foreach( tuple => print(tuple._1, tuple._2) )
+    curX ++= X
+    curY ++= Y
     train
   }
 
+  def print(X: IntFloatVector, y: Float): Unit = {
+    println(s"update surrogate with X: ${X.getStorage.getValues.mkString(",")} and Y: $y")
+  }
+
   def update(X: IntFloatVector, y: Float): Unit = {
+    print(X, y)
     curX += X
     curY += y
     train
@@ -87,17 +96,25 @@ abstract class Surrogate(val numParams: Int, val minimize: Boolean = true) {
     */
   def predict(X: IntFloatVector): (Float, Float)
 
+  def stop(): Unit
+
   def curBest: (IntFloatVector, Float) = {
     if (minimize) curMin else curMax
   }
 
   def curMin: (IntFloatVector, Float) = {
-    val minIdx: Int = curY.zipWithIndex.min._2
-    (curX(minIdx), curY(minIdx))
+    if (curY.isEmpty) (null, Float.MaxValue)
+    else {
+      val minIdx: Int = curY.zipWithIndex.min._2
+      (curX(minIdx), curY(minIdx))
+    }
   }
 
   def curMax: (IntFloatVector, Float) = {
-    val maxIdx: Int = curY.zipWithIndex.max._2
-    (curX(maxIdx), curY(maxIdx))
+    if (curY.isEmpty) (null, Float.MinValue)
+    else {
+      val maxIdx: Int = curY.zipWithIndex.max._2
+      (curX(maxIdx), curY(maxIdx))
+    }
   }
 }

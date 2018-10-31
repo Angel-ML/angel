@@ -22,6 +22,8 @@ import com.tencent.angel.ml.auto.config.Configuration
 class TestTrail extends Trail {
 
   override def evaluate(config: Configuration): Float = {
-    config.getVector.dot(config.getVector).toFloat
+    val ret = config.getVector.dot(config.getVector).toFloat
+    println(s"evaluate ${config.getVector.getStorage.getValues.mkString(",")}, result $ret")
+    ret
   }
 }
