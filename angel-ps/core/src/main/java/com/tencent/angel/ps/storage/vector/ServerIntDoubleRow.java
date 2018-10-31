@@ -269,7 +269,7 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
   }
 
   @Override protected void serializeRow(ByteBuf buf) {
-    if (isDense()) {
+    if (useDenseSerialize()) {
       double[] values = getValues();
       for (int i = 0; i < values.length; i++) {
         buf.writeDouble(values[i]);
@@ -289,10 +289,9 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
     startColInt = (int) startCol;
     endColInt = (int) endCol;
     intDoubleRow = (IntDoubleVector) row;
-    if (isDense()) {
-      double[] values = getValues();
+    if (useDenseSerialize()) {
       for (int i = 0; i < size; i++) {
-        values[i] = buf.readDouble();
+        intDoubleRow.set(i, buf.readDouble());
       }
     } else {
       for (int i = 0; i < size; i++) {
@@ -302,7 +301,7 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
   }
 
   @Override protected int getRowSpace() {
-    if (isDense()) {
+    if (useDenseSerialize()) {
       return 8 * size();
     } else {
       return 12 * size();
@@ -321,11 +320,12 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
 
   /**
    * Check the vector contains the index or not
+   *
    * @param index element index
    * @return true means exist
    */
   public boolean exist(int index) {
-    if(intDoubleRow.isSparse()) {
+    if (intDoubleRow.isSparse()) {
       return intDoubleRow.getStorage().hasKey(index - startColInt);
     } else {
       return intDoubleRow.get(index - startColInt) != 0.0;
@@ -333,7 +333,7 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
   }
 
   public double initAndGet(int index, InitFunc func) {
-    if(exist(index)) {
+    if (exist(index)) {
       return get(index);
     } else {
       double value = func.action();
@@ -342,9 +342,10 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
     }
   }
 
-  @Override public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
+  @Override
+  public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
     throws IOException {
-    if(func != null) {
+    if (func != null) {
       if (indexType == IndexType.INT) {
         for (int i = 0; i < indexSize; i++) {
           out.writeDouble(initAndGet(in.readInt(), func));
@@ -371,7 +372,7 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
   public void elemUpdate(DoubleElemUpdateFunc func) {
     if (isDense()) {
       double[] values = getValues();
-      for(int i = 0; i < values.length; i++) {
+      for (int i = 0; i < values.length; i++) {
         values[i] = func.update();
       }
     } else {

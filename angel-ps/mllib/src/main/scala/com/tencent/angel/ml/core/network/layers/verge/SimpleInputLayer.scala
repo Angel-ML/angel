@@ -20,7 +20,6 @@ package com.tencent.angel.ml.core.network.layers.verge
 
 import java.util.concurrent.Future
 
-import com.tencent.angel.client.AngelClient
 import com.tencent.angel.conf.{AngelConf, MatrixConf}
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.SharedConf
@@ -36,7 +35,7 @@ import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.matrix.psf.update.RandomNormal
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
-import com.tencent.angel.model.{MatrixSaveContext, ModelSaveContext}
+import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
 
@@ -235,7 +234,6 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
       val bound = 0.0001
       (SharedConf.inputDataFormat, NetUtils.storageType(modelType)) match {
         case ("dense", "dense" | "component_dense") =>  // dense data, dense model
-          // outputDim * SharedConf.indexRange.toInt
           val randFunc = new RandomNormal(weightId, 0, 1, 0.0, bound)
           PSAgentContext.get().getUserRequestAdapter.update(randFunc).get()
         case ("libsvm" | "dummy", "dense" | "component_dense") => // sparse data, dense model
@@ -250,29 +248,25 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
     s"SimpleInputLayer name=$name outputDim=$outputDim optimizer=$optimizer"
   }
 
-  override def loadParams(client: AngelClient): Unit = {
+  override def loadParams(loadContext: ModelLoadContext): Unit = {
     SharedConf.actionType().toLowerCase match {
       case "train" =>
         weightCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
         biasCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
+
       case "inctrain" =>
         weightCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
         biasCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
         weightCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
         biasCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
 
-        weightCtx.init(client.getConf)
-        biasCtx.init(client.getConf)
       case "predict" =>
         weightCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
         biasCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
-
-        weightCtx.init(client.getConf)
-        biasCtx.init(client.getConf)
     }
 
-    client.addMatrix(weightCtx)
-    client.addMatrix(biasCtx)
+    loadContext.addMatrix(new MatrixLoadContext(weightCtx.getName))
+    loadContext.addMatrix(new MatrixLoadContext(biasCtx.getName))
   }
 
   override def saveParams(saveContext: ModelSaveContext): Unit = {

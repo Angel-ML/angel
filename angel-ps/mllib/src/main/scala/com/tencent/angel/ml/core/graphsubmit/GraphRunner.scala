@@ -53,6 +53,7 @@ class GraphRunner extends MLRunner {
 
     try {
       client.startPSServer()
+      model.createMatrices(client)
       model.loadModel(client)
       client.runTask(classOf[GraphTrainTask])
       client.waitForCompletion()
@@ -81,6 +82,7 @@ class GraphRunner extends MLRunner {
 
     try {
       client.startPSServer()
+      model.createMatrices(client)
       model.loadModel(client)
       client.runTask(classOf[GraphPredictTask])
       client.waitForCompletion()

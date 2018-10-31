@@ -22,7 +22,6 @@ import java.lang.{Long => JLong}
 import java.util.concurrent.Future
 import java.util.{HashMap => JHashMap, Map => JMap}
 
-import com.tencent.angel.client.AngelClient
 import com.tencent.angel.conf.{AngelConf, MatrixConf}
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.SharedConf
@@ -37,7 +36,7 @@ import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.matrix.psf.update.RandomNormal
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.psf.columns._
-import com.tencent.angel.model.{MatrixSaveContext, ModelSaveContext}
+import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.ps.server.data.request.RandomNormalInitFunc
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
@@ -370,22 +369,20 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
     s"Embedding name=$name outputDim=$outputDim optimizer=$optimizer"
   }
 
-  override def loadParams(client: AngelClient): Unit = {
+  override def loadParams(loadContext: ModelLoadContext): Unit = {
     SharedConf.actionType().toLowerCase match {
       case "train" =>
         embedMatCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
+
       case "inctrain" =>
         embedMatCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
         embedMatCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
 
-        embedMatCtx.init(client.getConf)
       case "predict" =>
         embedMatCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
-
-        embedMatCtx.init(client.getConf)
     }
 
-    client.addMatrix(embedMatCtx)
+    loadContext.addMatrix(new MatrixLoadContext(embedMatCtx.getName))
   }
 
   override def saveParams(saveContext: ModelSaveContext): Unit = {
