@@ -86,7 +86,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
     val rows = (0 until numFactors).toArray
     val indices = graph.placeHolder.getIndices
 
-    val param = if (epoch == 0){
+    val param = if (epoch == 0) {
       val initFunc = new RandomNormalInitFunc(0.0, 0.00001)
       new GetColsParam(matrixId, rows, indices, initFunc)
     } else {
@@ -368,29 +368,13 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
   }
 
   override def loadParams(loadContext: ModelLoadContext): Unit = {
-    SharedConf.actionType().toLowerCase match {
-      case "train" =>
-        embedMatCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
-
-      case "inctrain" =>
-        embedMatCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
-        embedMatCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
-
-      case "predict" =>
-        embedMatCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
-    }
-
     loadContext.addMatrix(new MatrixLoadContext(embedMatCtx.getName))
   }
 
   override def saveParams(saveContext: ModelSaveContext): Unit = {
     val outputFormat = SharedConf.embeddingLayerMatrixOutputFormat
-    SharedConf.actionType().toLowerCase match {
-      case "train" | "inctrain" =>
-        val embedMatMCS: MatrixSaveContext = new MatrixSaveContext(embedMatCtx.getName, outputFormat)
-        embedMatMCS.addIndices((0 until numFactors).toArray)
-        saveContext.addMatrix(embedMatMCS)
-      case _ =>
-    }
+    val embedMatMCS: MatrixSaveContext = new MatrixSaveContext(embedMatCtx.getName, outputFormat)
+    embedMatMCS.addIndices((0 until numFactors).toArray)
+    saveContext.addMatrix(embedMatMCS)
   }
 }

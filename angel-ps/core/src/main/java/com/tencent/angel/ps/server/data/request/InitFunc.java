@@ -19,6 +19,6 @@ package com.tencent.angel.ps.server.data.request;
 
 import com.tencent.angel.common.Serialize;
 
-public interface InitFunc extends Serialize{
+public interface InitFunc extends Serialize {
   double action();
 }
