@@ -20,10 +20,9 @@ package com.tencent.angel.ml.core.graphsubmit
 
 import com.tencent.angel.client.AngelClient
 import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.network.layers.edge.inputlayer.{Embedding, SparseInputLayer}
+import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix}
-import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.ml.core.network.layers.{AngelGraph, PlaceHolder}
 import com.tencent.angel.ml.core.optimizer.loss._
@@ -84,13 +83,13 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
           graph.getTrainable.foreach {
             case layer: Embedding =>
               layer.pullParams(1)
-            case layer: SparseInputLayer =>
+            case layer: SimpleInputLayer =>
               layer.pullParams(1)
             case _ =>
           }
         }
 
-        val labels = graph.placeHolder.labels.getCol(0)
+        val labels = graph.placeHolder.getLabel.getCol(0)
         graph.predict() match {
           case mat: BlasDoubleMatrix =>
             (0 until mat.getNumRows).foreach { i =>
@@ -120,7 +119,7 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
         case _ =>
       }
 
-      val labels = graph.placeHolder.labels.getCol(0)
+      val labels = graph.placeHolder.getLabel.getCol(0)
       graph.predict() match {
         case mat: BlasDoubleMatrix =>
           (0 until mat.getNumRows).foreach { i =>

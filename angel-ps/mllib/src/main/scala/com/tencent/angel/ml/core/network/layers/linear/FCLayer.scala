@@ -32,7 +32,7 @@ import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.matrix.psf.update.RandomNormal
 import com.tencent.angel.ml.core.network.layers._
-import com.tencent.angel.ml.core.network.layers.edge.inputlayer.Embedding
+import com.tencent.angel.ml.core.network.layers.verge.Embedding
 import com.tencent.angel.ml.core.network.transfunc.TransFunc
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
 import com.tencent.angel.ml.core.utils.PSMatrixUtils

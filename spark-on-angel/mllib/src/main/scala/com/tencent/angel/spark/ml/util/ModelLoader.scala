@@ -1,6 +1,5 @@
 package com.tencent.angel.spark.ml.util
 
-import com.tencent.angel.ml.core.network.layers.edge.inputlayer.{Embedding, SparseInputLayer}
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector.{IntFloatVector, IntIntVector, Vector}
@@ -13,6 +12,7 @@ import java.util.{HashMap => JHashMap, Map => JMap}
 import java.lang.{Long => JLong}
 
 import com.tencent.angel.exception.AngelException
+import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer}
 import com.tencent.angel.ml.math2.storage.{IntFloatDenseVectorStorage, IntIntDenseVectorStorage}
 import com.tencent.angel.ml.psf.columns._
 import com.tencent.angel.ps.server.data.request.UpdateOp
@@ -29,7 +29,7 @@ object ModelLoader {
 
     model.graph.getTrainable.foreach { layer =>
       layer match {
-        case l: SparseInputLayer =>
+        case l: SimpleInputLayer =>
           load(s"$path/${l.name}", l, sparseToDenseMatrixId, denseDim)
         case l: Embedding =>
           load(s"$path/${l.name}", l, sparseToDenseMatrixId)
@@ -42,7 +42,7 @@ object ModelLoader {
            denseDim: Int): Unit = {
     model.graph.getTrainable.foreach { layer =>
       layer match {
-        case l: SparseInputLayer =>
+        case l: SimpleInputLayer =>
           test(l, denseToSparseMatrixId, denseDim)
         case l: Embedding =>
           test(l, denseToSparseMatrixId, denseDim)
@@ -50,7 +50,7 @@ object ModelLoader {
     }
   }
 
-  def test(layer: SparseInputLayer,
+  def test(layer: SimpleInputLayer,
            denseToSparseMatrixId: Int,
            denseDim: Int): Unit = {
     val weightId = layer.weightId
@@ -105,7 +105,7 @@ object ModelLoader {
   }
 
   def load(path: String,
-           layer: SparseInputLayer,
+           layer: SimpleInputLayer,
            sparseToDenseMatrixId: Int,
            denseDim: Int): Unit = {
 

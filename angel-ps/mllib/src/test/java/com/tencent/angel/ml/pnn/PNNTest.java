@@ -82,7 +82,7 @@ public class PNNTest {
   @Test public void testPNN() throws Exception {
     setSystemConf();
     trainTest();
-    //predictTest();
+    predictTest();
   }
 
   private void trainTest() throws Exception {

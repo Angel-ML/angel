@@ -20,10 +20,9 @@ package com.tencent.angel.ml.classification
 
 import com.tencent.angel.ml.core.conf.MLConf
 import com.tencent.angel.ml.core.graphsubmit.GraphModel
-import com.tencent.angel.ml.core.network.layers.edge.inputlayer.{DenseInputLayer, SparseInputLayer}
-import com.tencent.angel.ml.core.network.layers.edge.losslayer.SimpleLossLayer
+import com.tencent.angel.ml.core.network.layers.verge.{SimpleInputLayer, SimpleLossLayer}
 import com.tencent.angel.ml.core.network.transfunc.Identity
-import com.tencent.angel.ml.core.optimizer.OptUtils
+import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
 import com.tencent.angel.ml.core.optimizer.loss.{HingeLoss, LossFunc}
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
@@ -34,18 +33,14 @@ import org.apache.hadoop.conf.Configuration
   */
 
 
-class SupportVectorMachine(conf: Configuration, _ctx: TaskContext = null)
-  extends GraphModel(conf, _ctx) {
+class SupportVectorMachine(conf: Configuration, _ctx: TaskContext = null) extends GraphModel(conf, _ctx) {
+  val ipOptName: String = sharedConf.get(MLConf.ML_INPUTLAYER_OPTIMIZER, MLConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
+  val optimizer: Optimizer = OptUtils.getOptimizer(ipOptName)
 
   override val lossFunc: LossFunc = new HingeLoss()
 
   override def buildNetwork(): Unit = {
-    val input = dataFormat match {
-      case "dense" => new DenseInputLayer("input", 1, new Identity(),
-        OptUtils.getOptimizer(sharedConf.get(MLConf.ML_DENSEINPUTLAYER_OPTIMIZER, MLConf.DEFAULT_ML_DENSEINPUTLAYER_OPTIMIZER)))
-      case _ => new SparseInputLayer("input", 1, new Identity(),
-        OptUtils.getOptimizer(sharedConf.get(MLConf.ML_SPARSEINPUTLAYER_OPTIMIZER, MLConf.DEFAULT_ML_SPARSEINPUTLAYER_OPTIMIZER)))
-    }
+    val input = new SimpleInputLayer("input", 1, new Identity(), optimizer)
     new SimpleLossLayer("simpleLossLayer", input, lossFunc)
   }
 }

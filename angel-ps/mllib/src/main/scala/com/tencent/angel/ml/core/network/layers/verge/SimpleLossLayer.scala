@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -16,16 +16,16 @@
  */
 
 
-package com.tencent.angel.ml.core.network.layers.edge.losslayer
+package com.tencent.angel.ml.core.network.layers.verge
 
-import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.optimizer.loss.LossFunc
+import com.tencent.angel.ml.math2.matrix._
 import org.apache.commons.logging.LogFactory
 
 
 class SimpleLossLayer(name: String, inputLayer: Layer, lossFunc: LossFunc)(
-  implicit graph: AngelGraph) extends LinearLayer(name, 1, inputLayer)(graph) with LossLayer {
+  implicit graph: AngelGraph) extends LinearLayer(name, -1, inputLayer)(graph) with LossLayer {
   val LOG = LogFactory.getLog(classOf[SimpleLossLayer])
   graph.setOutput(this)
 
@@ -37,7 +37,7 @@ class SimpleLossLayer(name: String, inputLayer: Layer, lossFunc: LossFunc)(
     val start = System.currentTimeMillis()
     status match {
       case STATUS.Forward =>
-        //        println(s"the status in SimpleLossLayer($name)-calGradOutput is ${status.toString}")
+        // println(s"the status in SimpleLossLayer($name)-calGradOutput is ${status.toString}")
         gradOutput = lossFunc.calGrad(output, graph)
         status = STATUS.Backward
       case _ =>
