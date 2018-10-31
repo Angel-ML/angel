@@ -40,6 +40,7 @@ import it.unimi.dsi.fastutil.longs.Long2LongMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 
@@ -53,6 +54,10 @@ import java.util.*;
  */
 public abstract class RowFormat extends MatrixFormatImpl {
   private final static Log LOG = LogFactory.getLog(RowFormat.class);
+
+  public RowFormat(Configuration conf) {
+    super(conf);
+  }
 
   /**
    * Save a (int, float) element

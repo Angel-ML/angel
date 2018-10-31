@@ -17,6 +17,8 @@
 
 package com.tencent.angel.model.output.format;
 
+import org.apache.hadoop.conf.Configuration;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -25,6 +27,10 @@ import java.io.IOException;
  * Binary format: row id, column id and elememt value
  */
 public class RowIdColIdValueBinaryRowFormat extends RowFormat {
+  public RowIdColIdValueBinaryRowFormat(Configuration conf) {
+    super(conf);
+  }
+
   @Override public void save(IntFloatElement element, DataOutputStream out) throws IOException {
     out.writeInt(element.rowId);
     out.writeInt(element.colId);

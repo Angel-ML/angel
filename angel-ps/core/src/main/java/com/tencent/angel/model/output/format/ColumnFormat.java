@@ -37,6 +37,7 @@ import it.unimi.dsi.fastutil.longs.Long2FloatMap;
 import it.unimi.dsi.fastutil.longs.Long2IntMap;
 import it.unimi.dsi.fastutil.longs.Long2LongMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 
 import java.io.DataInputStream;
@@ -48,6 +49,10 @@ import java.util.*;
  * Column first format for matrix
  */
 public abstract class ColumnFormat extends MatrixFormatImpl {
+  public ColumnFormat(Configuration conf) {
+    super(conf);
+  }
+
   /**
    * Write a matrix column to output stream
    *
