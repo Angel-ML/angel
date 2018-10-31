@@ -1,8 +1,6 @@
 # 模型存储格式
 Angel的模型是以矩阵为单位来保存的，每一个矩阵在模型保存路径下对应一个以矩阵名命名的文件夹，里面包含矩阵的元数据文件和数据文件。一个矩阵只有一个元数据文件，但是一般有多个数据文件，因为Angel的大部分算法模型都是从PS导出的。
 
-目前Angel暂时没有一个模型层级的元数据文件，但很快会加上。预计在2.1版本和Angel Serving一起发布。
-
 ## 元数据文件
 
 元数据采用JSON格式保存。矩阵元数据主要由矩阵特征，分区索引和行相关索引组成：分别由**MatrixFilesMeta**，**MatrixPartitionMeta**和**RowPartitionMeta**类来描述。
@@ -100,7 +98,7 @@ Angel的算法目前基本都是基于新的计算图框架来实现的，计算
 - **LR，线性回归，SVM**：默认的模型保存格式为ColIdValueTextRowFormat。
 - **GBDT**：RowIdColIdValueTextRowFormat
 - **FM**：线性部分使用的是ColIdValueTextRowFormat，Embedding使用的是Embedding层使用的是TextColumnFormat
-- **DeepFM, DNN，Wide And Deep，PNN，NFM等**：线性部分使用的是ColIdValueTextRowFormat，Embedding使用的是Embedding层使用的是TextColumnFormat，全连接部分使用的是RowIdColIdValueTextRowFormat
+- **DeepFM, DNN，Wide And Deep，PNN，NFM等**：线性部分使用的是ColIdValueTextRowFormat，Embedding层使用的是TextColumnFormat，全连接部分使用的是RowIdColIdValueTextRowFormat
 
 当然，如果你不想使用默认格式，可以通过参数配置模型输出格式：
 - ***ml.denseinputlayer.matrix.output.format***：DenseInputLayer使用的输出格式

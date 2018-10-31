@@ -18,15 +18,17 @@
 
 package com.tencent.angel.ml.matrix.psf.update
 
-import com.tencent.angel.ml.matrix.psf.update.enhance.FullUpdateFunc
+import com.tencent.angel.ml.matrix.psf.update.enhance.{FullUpdateFunc, FullUpdateParam}
 import com.tencent.angel.ps.storage.vector._
 import com.tencent.angel.ps.storage.vector.func.{DoubleElemUpdateFunc, FloatElemUpdateFunc, IntElemUpdateFunc, LongElemUpdateFunc}
 
 /**
   * Init a random matrix, whose value is a random value between 0.0 and 1.0.
   */
-class Random(matrixId: Int) extends FullUpdateFunc(matrixId, Array[Double]()) {
-  def this() = this(-1)
+class Random(param: FullUpdateParam) extends FullUpdateFunc(param) {
+  def this(matrixId:Int, low:Double, high:Double) = this(new FullUpdateParam(matrixId, Array(low, high)))
+
+  def this() = this(null)
 
   override def doUpdate(rows: Array[ServerIntDoubleRow],
                         values: Array[Double]): Unit = {

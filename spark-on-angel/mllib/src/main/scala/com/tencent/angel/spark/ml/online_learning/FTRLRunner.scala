@@ -24,14 +24,13 @@ import org.apache.spark.streaming.dstream.DStream
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
+
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector.{LongDoubleVector, Vector}
 import com.tencent.angel.spark.context.PSContext
-//import com.tencent.angel.spark.ml.classification.SparseLRModel
+import com.tencent.angel.spark.models.PSVector
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.util._
-import com.tencent.angel.spark.models.vector.{PSVector, SparsePSVector}
-import com.tencent.angel.spark.util.PSVectorImplicit._
 
 /**
  * this module is to run sparse lr with ftrl or ftrl_vrg,
@@ -114,14 +113,14 @@ object FTRLRunner {
 
     optMethod match {
       case FTRL =>
-        val zPS: SparsePSVector = PSVector.sparse(dim)
-        val nPS: SparsePSVector = PSVector.duplicate(zPS)
+        val zPS: PSVector = PSVector.sparse(dim)
+        val nPS: PSVector = PSVector.duplicate(zPS)
         // init the model
         if (isIncrementLearn) {
           println("this is increment learning")
           val ZNModel = incLearnZNModel(sc, modelPath)
-          zPS.increment(dim, ZNModel._1)
-          nPS.increment(dim, ZNModel._2)
+          zPS.increment(sparseVectorFromPairs(dim, ZNModel._1))
+          nPS.increment(sparseVectorFromPairs(dim, ZNModel._2))
         }
 
         val ftrl = new FTRL(lambda1, lambda2, alpha, beta)
@@ -131,18 +130,18 @@ object FTRLRunner {
 
       case FTRL_VRG =>
 
-        val zPS: SparsePSVector = PSVector.sparse(dim)
-        val nPS: SparsePSVector = PSVector.duplicate(zPS)
-        val vPS: SparsePSVector = PSVector.duplicate(zPS)
+        val zPS: PSVector = PSVector.sparse(dim)
+        val nPS: PSVector = PSVector.duplicate(zPS)
+        val vPS: PSVector = PSVector.duplicate(zPS)
         var initW: LongDoubleVector = null
 
         // increment learn from original model or just init the w and z model
         if (isIncrementLearn) {
           println("this is increment learning")
           val ZNVWModel = incLearnZNVWModel(sc, modelPath)
-          zPS.increment(dim, ZNVWModel._1)
-          nPS.increment(dim, ZNVWModel._2)
-          vPS.increment(dim, ZNVWModel._3)
+          zPS.increment(sparseVectorFromPairs(dim, ZNVWModel._1))
+          nPS.increment(sparseVectorFromPairs(dim, ZNVWModel._2))
+          vPS.increment(sparseVectorFromPairs(dim, ZNVWModel._3))
 
           val (k, v) = ZNVWModel._4.unzip
           initW = VFactory.sparseLongKeyDoubleVector(dim, k, v)
@@ -157,7 +156,7 @@ object FTRLRunner {
 
           val (k, v) = randomW.unzip
           initW = VFactory.sparseLongKeyDoubleVector(dim, k, v)
-          zPS.increment(dim, initZInc)
+          zPS.increment(sparseVectorFromPairs(dim, initZInc))
         }
 
         val ftrlVRG = new FTRLWithVRG(lambda1, lambda2, alpha, beta, rho1, rho2)
@@ -375,4 +374,8 @@ object FTRLRunner {
     (grad, loss)
   }
 
+  def sparseVectorFromPairs(dim: Long, pairs: Array[(Long, Double)]):Vector = {
+    val (index, value) = pairs.unzip
+    VFactory.sparseLongKeyDoubleVector(dim, index, value)
+  }
 }

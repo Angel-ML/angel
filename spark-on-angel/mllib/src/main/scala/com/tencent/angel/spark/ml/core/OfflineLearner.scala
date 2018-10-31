@@ -20,15 +20,13 @@ package com.tencent.angel.spark.ml.core
 
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.spark.client.PSClient
 import com.tencent.angel.spark.ml.core.metric.{AUC, Precision}
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
-
+import com.tencent.angel.spark.context.PSContext
 import scala.reflect.ClassTag
 import scala.util.Random
-
 
 class OfflineLearner {
 
