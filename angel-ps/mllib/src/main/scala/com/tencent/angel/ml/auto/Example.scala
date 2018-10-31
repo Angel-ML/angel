@@ -41,7 +41,7 @@ object Example extends App {
     val solver: Solver = new Solver(cs, sur, acq, opt)
     val trail: Trail = new TestTrail()
     val runner: SolverWithTrail = new SolverWithTrail(solver, trail)
-    val result: (IntFloatVector, Float) = runner.run(100)
+    val result: (IntFloatVector, Float) = runner.run(10)
     sur.stop()
     println(s"Best configuration ${result._1.getStorage.getValues.mkString(",")}, best performance: ${result._2}")
   }

@@ -38,7 +38,7 @@ class EI(override val surrogate: Surrogate, val par: Float) extends Acquisition(
 
     // Use the best seen observation as incumbent
     val eta: Float = surrogate.curBest._2
-    println(s"best seen result: $eta")
+    //println(s"best seen result: $eta")
 
     val s: Float = Math.sqrt(pred._2).toFloat
 
@@ -49,8 +49,10 @@ class EI(override val surrogate: Surrogate, val par: Float) extends Acquisition(
     } else {
       val z = (eta - pred._1 - par) / s
       val norm: NormalDistribution  = new NormalDistribution
-      val f = s * (z * norm.cumulativeProbability(z) + norm.density(z))
-      println(s"z: $z, f: $f")
+      val cdf: Double = norm.cumulativeProbability(z)
+      val pdf: Double = norm.density(z)
+      val f = s * (z * cdf + pdf)
+      println(s"cur best: $eta, z: $z, cdf: $cdf, pdf: $pdf, f: $f")
       (f.toFloat, new IntFloatVector(X.dim().toInt, new IntFloatDenseVectorStorage()))
     }
   }

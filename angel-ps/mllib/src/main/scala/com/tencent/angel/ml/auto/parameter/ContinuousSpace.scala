@@ -34,11 +34,9 @@ import scala.util.Random
   */
 class ContinuousSpace(override val name: String, lower: Float, upper: Float, num: Int,
                       distribution: Distribution.Value = Distribution.LINEAR, seed: Int = 100) extends ParamSpace[Float](name) {
-  val LOG: Log = LogFactory.getLog(classOf[ContinuousSpace])
 
   val rd = new Random(seed)
   val values: List[Float] = calValues
-  println(s"values of continuous param: ${values.mkString(",")}")
 
   def calValues(): List[Float] = {
     var ret: ListBuffer[Float] = ListBuffer[Float]()
@@ -48,7 +46,7 @@ class ContinuousSpace(override val name: String, lower: Float, upper: Float, num
         (0 until num).foreach { i =>
           ret += lower + i * interval
         }
-      case _ => LOG.info(s"Distribution $distribution not supported")
+      case _ => println(s"Distribution $distribution not supported")
     }
 
     ret.toList

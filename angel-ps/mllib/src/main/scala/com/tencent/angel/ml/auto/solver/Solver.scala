@@ -38,7 +38,7 @@ class Solver(val cs: ConfigurationSpace, val surrogate: Surrogate, val acqFuc: A
     * Suggests configurations to evaluate.
     */
   def suggest(): List[Configuration] = {
-    println(s"suggest configurations")
+    //println(s"suggest configurations")
     optimizer.maximize(Setting.batchSize).map(_._2)
   }
 
@@ -48,7 +48,7 @@ class Solver(val cs: ConfigurationSpace, val surrogate: Surrogate, val acqFuc: A
     * @param Y: More evaluation result
     */
   def feed(configs: List[Configuration], Y: List[Float]): Unit = {
-    println(s"feed ${configs.size} configurations")
+    //println(s"feed ${configs.size} configurations")
     surrogate.update(configs.map(_.getVector), Y)
   }
 

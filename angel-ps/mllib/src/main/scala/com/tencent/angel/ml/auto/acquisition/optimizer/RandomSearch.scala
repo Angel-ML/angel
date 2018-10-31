@@ -38,7 +38,7 @@ class RandomSearch(override val acqFunc: Acquisition, override val configSpace: 
   val rd = new Random(seed)
 
   override def maximize(numPoints: Int, sorted: Boolean = true): List[(Float, Configuration)] = {
-    println(s"maximize RandomSearch")
+    //println(s"maximize RandomSearch")
     val configs: List[Configuration] = configSpace.sampleConfig(numPoints)
     configs.foreach( config => println(s"sample a configuration: ${config.getVector.getStorage.getValues.mkString(",")}"))
     if (sorted)

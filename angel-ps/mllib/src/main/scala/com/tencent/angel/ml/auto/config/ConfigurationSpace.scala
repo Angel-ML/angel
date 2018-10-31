@@ -45,7 +45,7 @@ class ConfigurationSpace(val name: String, var paramDict: Map[String, ParamSpace
       idx2Param += (paramNum -> param.name)
       paramNum += 1
     }
-    println(s"add param ${param.name}, current param dict ${paramDict.keySet.mkString(",")}")
+    println(s"add param ${param.toString}, current params: ${paramDict.keySet.mkString(",")}")
   }
 
   def getParams: List[ParamSpace[Float]] = paramDict.values.toList
@@ -65,7 +65,6 @@ class ConfigurationSpace(val name: String, var paramDict: Map[String, ParamSpace
       missing = size - configs.length
       val vectors: List[IntFloatVector] = List.fill(missing)(new IntFloatVector(paramNum, new IntFloatDenseVectorStorage(paramNum)))
       param2Idx.foreach { case (paramName, paramIdx) =>
-        //println(s"sample $missing configuration for $paramName")
         paramDict.get(paramName) match {
           case Some(param) =>
             param.sample(missing).zipWithIndex.foreach { case (f,i) =>

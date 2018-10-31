@@ -43,12 +43,8 @@ class RFSurrogate(override val numParams: Int, override val minimize: Boolean = 
     boostingStrategy.treeStrategy.maxDepth = maxDepth
     boostingStrategy.treeStrategy.categoricalFeaturesInfo = Map[Int, Int]()
 
-    println(s"surrogate has ${curX.size} evaluations")
-
     if (curX.size < Math.pow(2, maxDepth - 1))
       return
-
-    //curX.zip(curY).foreach( tuple => print(tuple._1, tuple._2))
 
     val data = DataUtils.parse(sc, curX.toList, curY.toList)
 
