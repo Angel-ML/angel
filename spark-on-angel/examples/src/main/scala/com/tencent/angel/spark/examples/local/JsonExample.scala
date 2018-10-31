@@ -63,16 +63,17 @@ object JsonExample {
     val model = new GraphModel
     val learner = new OfflineLearner
 
-    // whatever, we first build the sparseToDense and denseToSparse index
-    // and change to feature index from sparse to dense
-//    val (denseToSparseMatrixId, denseDim, sparseToDenseMatrixId, sparseDim, denseData) = Features.featureSparseToDense(data)
-//    SharedConf.get().setLong(MLConf.ML_FEATURE_INDEX_RANGE, denseDim)
-
     // initialize model
     model.init(data.getNumPartitions)
+    // load model if there exists
+    model.load(modelPath)
+    // model training
     learner.train(data, model)
+    // save it
+    model.save(output)
 
     PSContext.stop()
+    sc.stop()
   }
 
 }

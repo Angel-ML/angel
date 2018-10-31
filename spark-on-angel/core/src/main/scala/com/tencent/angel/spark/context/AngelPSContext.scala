@@ -36,6 +36,7 @@ import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.conf.AngelConf._
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.matrix.{MatrixContext, MatrixMeta, RowType}
+import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.ps.ParameterServer
 import com.tencent.angel.ps.storage.matrix.PartitionSourceMap
 import com.tencent.angel.psagent.PSAgent
@@ -264,16 +265,12 @@ private[spark] object AngelPSContext {
     }
   }
 
-  def save(matrices: Seq[MatrixContext], path: String): Unit = {
-    val list = new java.util.ArrayList[MatrixContext]
-    matrices.foreach(f => list.add(f))
-    angelClient.save(list, path)
+  def save(context: ModelSaveContext): Unit = {
+    angelClient.save(context)
   }
 
-  def load(matrices: Seq[MatrixContext], path: String): Unit = {
-    val list = new util.ArrayList[MatrixContext]()
-    matrices.foreach(f => list.add(f))
-    angelClient.load(list, path)
+  def load(context: ModelLoadContext): Unit = {
+    angelClient.load(context)
   }
 
   //Start Angel

@@ -128,33 +128,6 @@ public class AngelPSClient {
   }
 
   /**
-   * Save given matrices
-   *
-   * @param matrixNames need to save matrix name list
-   * @throws AngelException
-   */
-  public void save(List<String> matrixNames) throws AngelException {
-    client.saveMatrices(matrixNames);
-  }
-
-  public void save(List<MatrixContext> matrices, String path) throws AngelException {
-    ModelSaveContext saveContext = new ModelSaveContext();
-    for (MatrixContext matrixContext : matrices)
-      saveContext.addMatrix(new MatrixSaveContext(matrixContext.getName()));
-    saveContext.setSavePath(path);
-    client.save(saveContext);
-  }
-
-  public void load(List<MatrixContext> matrices, String path) throws AngelException {
-    ModelLoadContext loadContext = new ModelLoadContext();
-    for (MatrixContext matrixContext: matrices) {
-      matrixContext.set(MatrixConf.MATRIX_LOAD_PATH, path);
-      loadContext.addMatrix(new MatrixLoadContext(matrixContext.getName(), path));
-    }
-    client.load(loadContext);
-  }
-
-  /**
    * Save model to hdfs
    *
    * @param saveContext model save context
@@ -162,6 +135,10 @@ public class AngelPSClient {
    */
   public void save(ModelSaveContext saveContext) throws AngelException {
     client.save(saveContext);
+  }
+
+  public void load(ModelLoadContext loadContext) {
+    client.load(loadContext);
   }
 
   /**

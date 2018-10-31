@@ -296,7 +296,10 @@ public abstract class AngelClient implements AngelClientInterface {
   @Override public void load(ModelLoadContext loadContext) throws AngelException {
     if (loadContext.getMatricesContext().size() == 0 || loadContext.getLoadPath() == null
       || loadContext.getLoadPath().isEmpty()) {
-      LOG.info("there is no matrices need load or load path is empty");
+      LOG.error("there is no matrices need load or load path is empty");
+      LOG.error(String.format("matrix context size=%d load path = %s",
+              loadContext.getMatricesContext().size(),
+              loadContext.getLoadPath()));
       return;
     }
 
@@ -318,6 +321,8 @@ public abstract class AngelClient implements AngelClientInterface {
         throw new AngelException("Interrupted as waiting app complete");
       }
     }
+
+    LOG.info("load model complete from path " + loadContext.getLoadPath());
 
     if (appFailedMessage != null) {
       throw new AngelException("app run failed, " + appFailedMessage);

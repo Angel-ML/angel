@@ -175,9 +175,9 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
     *
     * @param client Angel client
     */
-  def loadModel(client: AngelClient): Unit = {
-    val loadContext = new ModelLoadContext(client.getConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
-    trainableLayer.foreach { layer => layer.loadParams(loadContext) }
+  def loadModel(client: AngelClient, path: String): Unit = {
+    val loadContext = new ModelLoadContext(path)
+    trainableLayer.foreach { layer => layer.loadParams(loadContext, path) }
     client.load(loadContext)
   }
 
@@ -193,8 +193,8 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
     *
     * @param client Angel client
     */
-  def saveModel(client: AngelClient): Unit = {
-    val saveContext = new ModelSaveContext(client.getConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
+  def saveModel(client: AngelClient, path: String): Unit = {
+    val saveContext = new ModelSaveContext(path)
     trainableLayer.foreach { layer => layer.saveParams(saveContext) }
     client.save(saveContext)
   }

@@ -45,7 +45,7 @@ trait Trainable {
 
   def init(taskId: Int)
 
-  def loadParams(loadContext: ModelLoadContext): Unit
+  def loadParams(loadContext: ModelLoadContext, path: String): Unit
 
   def saveParams(saveContext: ModelSaveContext): Unit
 }

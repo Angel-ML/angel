@@ -367,30 +367,14 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
     s"Embedding name=$name outputDim=$outputDim optimizer=$optimizer"
   }
 
-  override def loadParams(loadContext: ModelLoadContext): Unit = {
-    SharedConf.actionType().toLowerCase match {
-      case "train" =>
-        embedMatCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
-
-      case "inctrain" =>
-        embedMatCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
-        embedMatCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
-
-      case "predict" =>
-        embedMatCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
-    }
-
-    loadContext.addMatrix(new MatrixLoadContext(embedMatCtx.getName))
+  override def loadParams(loadContext: ModelLoadContext, path: String): Unit = {
+    loadContext.addMatrix(new MatrixLoadContext(embedMatCtx.getName, path))
   }
 
   override def saveParams(saveContext: ModelSaveContext): Unit = {
     val outputFormat = SharedConf.embeddingLayerMatrixOutputFormat
-    SharedConf.actionType().toLowerCase match {
-      case "train" | "inctrain" =>
-        val embedMatMCS: MatrixSaveContext = new MatrixSaveContext(embedMatCtx.getName, outputFormat)
-        embedMatMCS.addIndices((0 until numFactors).toArray)
-        saveContext.addMatrix(embedMatMCS)
-      case _ =>
-    }
+    val embedMatMCS: MatrixSaveContext = new MatrixSaveContext(embedMatCtx.getName, outputFormat)
+    embedMatMCS.addIndices((0 until numFactors).toArray)
+    saveContext.addMatrix(embedMatMCS)
   }
 }

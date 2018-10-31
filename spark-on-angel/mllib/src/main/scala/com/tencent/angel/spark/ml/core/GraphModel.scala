@@ -26,6 +26,7 @@ import com.tencent.angel.ml.core.optimizer.decayer._
 import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.Matrix
+import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.spark.context.AngelPSContext
 import org.json4s.JsonAST.JValue
 
@@ -82,11 +83,15 @@ class GraphModel extends Serializable {
   }
 
   def save(path: String): Unit = {
-    AngelPSContext.save(graph.getMatrixCtx(), path)
+    val context = new ModelSaveContext(path)
+    graph.getTrainable.map(layer => layer.saveParams(context))
+    AngelPSContext.save(context)
   }
 
   def load(path: String): Unit = {
-    AngelPSContext.load(graph.getMatrixCtx(), path)
+    val context = new ModelLoadContext(path)
+    graph.getTrainable.map(layer => layer.loadParams(context, path))
+    AngelPSContext.load(context)
   }
 
 }
