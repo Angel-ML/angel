@@ -367,8 +367,8 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
     s"Embedding name=$name outputDim=$outputDim optimizer=$optimizer"
   }
 
-  override def loadParams(loadContext: ModelLoadContext, path: String): Unit = {
-    loadContext.addMatrix(new MatrixLoadContext(embedMatCtx.getName, path))
+  override def loadParams(loadContext: ModelLoadContext): Unit = {
+    loadContext.addMatrix(new MatrixLoadContext(embedMatCtx.getName))
   }
 
   override def saveParams(saveContext: ModelSaveContext): Unit = {

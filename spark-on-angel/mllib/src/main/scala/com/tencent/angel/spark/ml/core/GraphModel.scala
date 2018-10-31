@@ -90,7 +90,7 @@ class GraphModel extends Serializable {
 
   def load(path: String): Unit = {
     val context = new ModelLoadContext(path)
-    graph.getTrainable.map(layer => layer.loadParams(context, path))
+    graph.getTrainable.map(layer => layer.loadParams(context))
     AngelPSContext.load(context)
   }
 

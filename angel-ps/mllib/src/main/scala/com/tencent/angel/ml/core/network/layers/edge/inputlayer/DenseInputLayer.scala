@@ -182,9 +182,9 @@ class DenseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overri
     return s"DenseInputLayer name=${name} outputDim=$outputDim optimizer=${optimizer}"
   }
 
-  override def loadParams(loadContext : ModelLoadContext, path: String): Unit = {
-    loadContext.addMatrix(new MatrixLoadContext(weightCtx.getName, path))
-    loadContext.addMatrix(new MatrixLoadContext(biasCtx.getName, path))
+  override def loadParams(loadContext : ModelLoadContext): Unit = {
+    loadContext.addMatrix(new MatrixLoadContext(weightCtx.getName))
+    loadContext.addMatrix(new MatrixLoadContext(biasCtx.getName))
   }
 
   override def saveParams(saveContext: ModelSaveContext): Unit = {
