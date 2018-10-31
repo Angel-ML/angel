@@ -36,7 +36,7 @@ import com.tencent.angel.ml.core.network.transfunc.TransFunc
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
 import com.tencent.angel.ml.core.utils.{NetUtils, PSMatrixUtils}
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
-import com.tencent.angel.model.{MatrixSaveContext, ModelSaveContext}
+import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
 
@@ -116,9 +116,9 @@ class DenseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overri
     backward
   }
 
-  override def pullParams(): Unit = {
-    weight = PSMatrixUtils.getRowAsMatrix(weightId, 0, inputDim, outputDim)
-    bias = PSMatrixUtils.getRow(biasId, 0)
+  override def pullParams(epoch: Int): Unit = {
+    weight = PSMatrixUtils.getRowAsMatrix(epoch, weightId, 0, inputDim, outputDim)
+    bias = PSMatrixUtils.getRow(epoch, biasId, 0)
   }
 
   override def pushGradient(): Unit = {
@@ -170,11 +170,11 @@ class DenseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overri
     result
   }
 
-  override def init(taskflag: Int, initIndexVector: Vector = null): Unit = {
-    val bound: Double = 0.00001
-    if (taskflag == 0) {
+  override def init(taskFlag: Int): Unit = {
+    val bound: Double = 0.0001
+    if (taskFlag == 0) {
       val randFunc = new RandomNormal(weightId, 0, 0.0, bound)
-      PSAgentContext.get().getUserRequestAdapter.update(randFunc)
+      PSAgentContext.get().getUserRequestAdapter.update(randFunc).get()
     }
   }
 
@@ -182,41 +182,17 @@ class DenseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overri
     return s"DenseInputLayer name=${name} outputDim=$outputDim optimizer=${optimizer}"
   }
 
-  override def loadParams(client: AngelClient): Unit = {
-    SharedConf.actionType().toLowerCase match {
-      case "train" =>
-        weightCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
-        biasCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
-      case "inctrain" =>
-        weightCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
-        biasCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
-        weightCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
-        biasCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
-
-        weightCtx.init(client.getConf)
-        biasCtx.init(client.getConf)
-      case "predict" =>
-        weightCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
-        biasCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
-
-        weightCtx.init(client.getConf)
-        biasCtx.init(client.getConf)
-    }
-
-    client.addMatrix(weightCtx)
-    client.addMatrix(biasCtx)
+  override def loadParams(loadContext : ModelLoadContext): Unit = {
+    loadContext.addMatrix(new MatrixLoadContext(weightCtx.getName))
+    loadContext.addMatrix(new MatrixLoadContext(biasCtx.getName))
   }
 
   override def saveParams(saveContext: ModelSaveContext): Unit = {
     val outputFormat = SharedConf.denseInputLayerMatrixOutputFormat
-    SharedConf.actionType().toLowerCase match {
-      case "train" | "inctrain" =>
-        val weightMCS: MatrixSaveContext = new MatrixSaveContext(weightCtx.getName, outputFormat)
-        val biasMCS: MatrixSaveContext = new MatrixSaveContext(biasCtx.getName, outputFormat)
-        saveContext.addMatrix(weightMCS)
-        saveContext.addMatrix(biasMCS)
-      case _ =>
-    }
+    val weightMCS: MatrixSaveContext = new MatrixSaveContext(weightCtx.getName, outputFormat)
+    val biasMCS: MatrixSaveContext = new MatrixSaveContext(biasCtx.getName, outputFormat)
+    saveContext.addMatrix(weightMCS)
+    saveContext.addMatrix(biasMCS)
   }
 
 }

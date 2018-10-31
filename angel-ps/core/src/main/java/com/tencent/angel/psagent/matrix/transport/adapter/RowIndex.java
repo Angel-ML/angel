@@ -73,9 +73,17 @@ public class RowIndex {
 
   /**
    * Create a new RowIndex.
+   */
+  public RowIndex(int [] rowIds) {
+    this(0, new IntOpenHashSet(rowIds), null);
+  }
+
+
+  /**
+   * Create a new RowIndex.
    *
    * @param matrixId matrix id
-   * @param rowIdSet need fetch row index set
+   * @param parent need fetch row index set
    */
   public RowIndex(int matrixId, RowIndex parent) {
     this(matrixId, new IntOpenHashSet(), parent);

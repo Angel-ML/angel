@@ -20,32 +20,33 @@ package com.tencent.angel.spark.ml.online_learning
 
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector.{LongDoubleVector, Vector}
-import com.tencent.angel.spark.models.vector.{PSVector, VectorCacheManager}
 import org.apache.hadoop.fs.Path
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
+import com.tencent.angel.spark.models.PSVector
+
 case class SparseLRModel(w: PSVector) {
 
-  def sigmod(x: Double): Double = {
+  def sigmoid(x: Double): Double = {
     1.0 / (1.0 + math.exp(-x))
   }
 
   def predict(instances: RDD[(Long, Vector)]): RDD[(Long, Double)] = {
     val result = instances.mapPartitions { iter =>
-      val localX = w.toCache.pull()
+      val localX = w.pull()
       iter.map { case (id, feature) =>
         val margin = localX.dot(feature)
-        Tuple2(id, sigmod(margin))
+        Tuple2(id, sigmoid(margin))
       }
     }
-    VectorCacheManager.release(w)
+    //    VectorCacheManager.release(w)
     result
   }
 
   def predict(feat: Vector, localW: Vector): Double = {
     val score = localW.dot(feat)
-    sigmod(score)
+    sigmoid(score)
   }
 
   def save(modelPath: String): Unit = {

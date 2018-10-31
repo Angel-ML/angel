@@ -21,12 +21,13 @@ package com.tencent.angel.spark.ml.online_learning
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector.{LongDoubleVector, LongDummyVector, Vector}
 import com.tencent.angel.spark.ml.psf.FTRLWUpdater
-import com.tencent.angel.spark.models.vector.{PSVector, SparsePSVector}
+import com.tencent.angel.spark.models.PSVector
+import com.tencent.angel.spark.util.VectorUtils
 
 class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regularSkipFeatIndex: Long = 0) extends Serializable {
 
-  var zPS: SparsePSVector = _
-  var nPS: SparsePSVector = _
+  var zPS: PSVector = _
+  var nPS: PSVector = _
 
   def initPSModel(dim: Long): Unit = {
     zPS = PSVector.longKeySparse(dim, -1, 5)
@@ -34,7 +35,7 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
   }
 
   def optimize(batch: Array[(Vector, Double)],
-               costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)): Double = {
+      costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)): Double = {
 
     val dim = batch.head._1.dim()
     val featIds = batch.flatMap { case (v, _) =>
@@ -66,12 +67,12 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
   }
 
   def optimize(
-                feature: Vector,
-                label: Double,
-                localZ: LongDoubleVector,
-                localN: LongDoubleVector,
-                costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)
-              ): (LongDoubleVector, LongDoubleVector, Double) = {
+      feature: Vector,
+      label: Double,
+      localZ: LongDoubleVector,
+      localN: LongDoubleVector,
+      costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)
+  ): (LongDoubleVector, LongDoubleVector, Double) = {
 
     val featIndices = feature match {
       case longV: LongDoubleVector => longV.getStorage.getIndices
@@ -103,12 +104,11 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     (deltaZ, deltaN, loss)
   }
 
-  def weight: SparsePSVector = {
-    val wPS = zPS.toBreeze.zipMapWithIndex(nPS.toBreeze,
-      new FTRLWUpdater(alpha, beta, lambda1, lambda2, regularSkipFeatIndex))
-
-    wPS.toSparse.compress()
-    wPS.toSparse
+  def weight: PSVector = {
+    val wPS = PSVector.duplicate(zPS)
+    val func = new FTRLWUpdater(alpha, beta, lambda1, lambda2, regularSkipFeatIndex)
+    VectorUtils.zip2MapWithIndex(zPS, nPS, func, wPS)
+    VectorUtils.compress(wPS)
   }
 
   // b will be returned by the way of adding a
@@ -117,13 +117,13 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
   }
 
   def updateWeight(
-                    fId: Long,
-                    zOnId: Double,
-                    nOnId: Double,
-                    alpha: Double,
-                    beta: Double,
-                    lambda1: Double,
-                    lambda2: Double): Double = {
+      fId: Long,
+      zOnId: Double,
+      nOnId: Double,
+      alpha: Double,
+      beta: Double,
+      lambda1: Double,
+      lambda2: Double): Double = {
     if (fId == regularSkipFeatIndex) {
       -1.0 * alpha * zOnId / (beta + Math.sqrt(nOnId))
     } else if (Math.abs(zOnId) <= lambda1) {

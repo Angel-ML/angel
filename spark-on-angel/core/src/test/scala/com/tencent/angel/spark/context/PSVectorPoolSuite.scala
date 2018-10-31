@@ -19,7 +19,7 @@
 package com.tencent.angel.spark.context
 
 import com.tencent.angel.ml.matrix.RowType
-import com.tencent.angel.spark.models.vector.{PSVector, VectorCacheManager}
+import com.tencent.angel.spark.models.PSVector
 import com.tencent.angel.spark.{PSFunSuite, SharedPSContext}
 
 class PSVectorPoolSuite extends PSFunSuite with SharedPSContext {
@@ -47,7 +47,7 @@ class PSVectorPoolSuite extends PSFunSuite with SharedPSContext {
     }
 
     try {
-      (0 until capacity - releaseNum).foreach { _ =>
+      (0 until capacity - releaseNum).foreach { i =>
         pool.allocate()
       }
     } catch {
@@ -59,35 +59,5 @@ class PSVectorPoolSuite extends PSFunSuite with SharedPSContext {
     proxys.slice(releaseNum, capacity).foreach { key =>
       pool.delete(key)
     }
-  }
-
-  test("auto release") {
-    val dim = 10
-    val capacity = 10
-
-    val vectorArray = new Array[PSVector](capacity)
-    vectorArray(0) = PSVector.dense(dim, capacity)
-
-    (1 until capacity).foreach { i =>
-      vectorArray(i) = PSVector.duplicate(vectorArray(0))
-    }
-
-    vectorArray.foreach { _ =>
-      //      v.toCache.pullFromCache()
-      //      v.toCache.incrementWithCache(Array.fill(dim)(1.0))
-      //      v.toBreeze :+= 0.1
-    }
-
-    VectorCacheManager.flushAll()
-
-    vectorArray.foreach { _ =>
-      //      assert(v.pull().sameElements(Array.fill(dim)(1.1)))
-    }
-
-    (capacity / 2 until capacity).foreach { i =>
-      vectorArray(i) = null
-    }
-
-    PSVector.duplicate(vectorArray(0))
   }
 }

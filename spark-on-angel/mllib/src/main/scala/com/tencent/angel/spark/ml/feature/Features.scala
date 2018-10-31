@@ -6,6 +6,7 @@ import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector.LongIntVector
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.spark.client.PSClient
+import com.tencent.angel.spark.context.PSContext
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet
 import org.apache.spark.rdd.RDD
 
@@ -65,7 +66,7 @@ object Features {
                                        sparseToDenseMatrixId: Int,
                                        denseDim: Int,
                                        denseToSparseMatrixId: Int): Iterator[Int] = {
-      PSClient.instance()
+      PSContext.instance()
 
       // Initialize sparseToDense and denseToDense matrix
       val sparseToDenseUpdate = VFactory.sparseLongKeyIntVector(sparseDim)
@@ -85,7 +86,7 @@ object Features {
     // Function to convert corpus data from strings to int IDs.
     def doSparseToDense(iterator: Iterator[String],
                         sparseToDenseMatrixId: Int): Iterator[Array[Int]] = {
-      PSClient.instance()
+      PSContext.instance()
       val set = new LongOpenHashSet()
       val corpus = new ArrayBuffer[Array[Int]]()
 

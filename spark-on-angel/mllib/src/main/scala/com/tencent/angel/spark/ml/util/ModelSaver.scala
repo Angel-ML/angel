@@ -56,11 +56,11 @@ object ModelSaver {
       val indices = VFactory.denseIntVector((start until end).toArray)
 
       // fetch denseToSparse index
-      val denseToSparse = PSMatrixUtils.getRowWithIndex(denseToSparseMatrixId, 0, indices)
+      val denseToSparse = PSMatrixUtils.getRowWithIndex(1, denseToSparseMatrixId, 0, indices)
         .asInstanceOf[IntIntVector]
 
       // fetch params
-      val weights = PSMatrixUtils.getRowWithIndex(weightId, 0, indices)
+      val weights = PSMatrixUtils.getRowWithIndex(1, weightId, 0, indices)
 
       val result = new Array[String](size)
       weights match {
@@ -83,7 +83,7 @@ object ModelSaver {
       .saveAsTextFile(weightsPath)
 
     val biasPath = path + "/" + s"${layer.name}_bias"
-    val bias = PSMatrixUtils.getRow(layer.biasId, 0).asInstanceOf[IntFloatVector].get(0)
+    val bias = PSMatrixUtils.getRow(0, layer.biasId, 0).asInstanceOf[IntFloatVector].get(0)
     SparkContext.getOrCreate().parallelize(Array(bias), 1).saveAsTextFile(biasPath)
   }
 
@@ -100,7 +100,7 @@ object ModelSaver {
       val indices = VFactory.denseIntVector((start until end).toArray)
 
       // fetch denseToSparse index
-      val denseToSparse = PSMatrixUtils.getRowWithIndex(denseToSparseMatrixId, 0, indices)
+      val denseToSparse = PSMatrixUtils.getRowWithIndex(1, denseToSparseMatrixId, 0, indices)
         .asInstanceOf[IntIntVector]
 
       // fetch embedding vectors
