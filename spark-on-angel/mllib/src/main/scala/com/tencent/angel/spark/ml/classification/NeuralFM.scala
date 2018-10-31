@@ -2,8 +2,7 @@ package com.tencent.angel.spark.ml.classification
 
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers.Layer
-import com.tencent.angel.ml.core.network.layers.edge.inputlayer.{Embedding, SparseInputLayer}
-import com.tencent.angel.ml.core.network.layers.edge.losslayer.SimpleLossLayer
+import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleLossLayer, SimpleInputLayer}
 import com.tencent.angel.ml.core.network.layers.join.SumPooling
 import com.tencent.angel.ml.core.network.layers.linear.BiInteractionCross
 import com.tencent.angel.ml.core.network.transfunc.Identity
@@ -18,7 +17,7 @@ class NeuralFM extends GraphModel {
   override def network(): Unit = {
     ensureJsonAst()
 
-    val wide = new SparseInputLayer("input", 1, new Identity(),
+    val wide = new SimpleInputLayer("input", 1, new Identity(),
       JsonUtils.getOptimizerByLayerType(jsonAst, "SparseInputLayer"))
 
     val embeddingParams = JsonUtils.getLayerParamsByLayerType(jsonAst, "Embedding")
