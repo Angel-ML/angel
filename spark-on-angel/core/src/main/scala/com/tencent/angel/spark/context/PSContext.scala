@@ -20,9 +20,10 @@ package com.tencent.angel.spark.context
 
 import com.tencent.angel.AngelDeployMode
 import com.tencent.angel.ml.matrix.{MatrixMeta, RowType}
-import com.tencent.angel.spark.models.vector.PSVector
 import org.apache.spark._
 import scala.collection.Map
+
+import com.tencent.angel.spark.models.PSVector
 
 
 abstract class PSContext {
@@ -49,7 +50,7 @@ abstract class PSContext {
 
   def destroyVectorPool(vector: PSVector): Unit
 
-  def refreshMatrix: Unit
+  def refreshMatrix(): Unit
 }
 
 object PSContext {
@@ -114,7 +115,7 @@ object PSContext {
     }
   }
 
-  private[spark] def getTaskId(): Int = {
+  private[spark] def getTaskId: Int = {
     val tc = TaskContext.get()
     if (tc == null) -1 else tc.partitionId()
   }

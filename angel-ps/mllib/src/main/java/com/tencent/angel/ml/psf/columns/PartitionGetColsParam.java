@@ -43,7 +43,7 @@ public class PartitionGetColsParam extends PartitionGetParam {
   @Override public void serialize(ByteBuf buf) {
     super.serialize(buf);
     buf.writeBoolean(func != null);
-    if(func != null) {
+    if (func != null) {
       byte[] data = func.getClass().getName().getBytes();
       buf.writeInt(data.length);
       buf.writeBytes(data);
@@ -61,7 +61,7 @@ public class PartitionGetColsParam extends PartitionGetParam {
   @Override public void deserialize(ByteBuf buf) {
     super.deserialize(buf);
     boolean useInitFunc = buf.readBoolean();
-    if(useInitFunc) {
+    if (useInitFunc) {
       int size = buf.readInt();
       byte[] data = new byte[size];
       buf.readBytes(data);

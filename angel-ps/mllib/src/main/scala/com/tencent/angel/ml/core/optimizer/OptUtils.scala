@@ -18,7 +18,6 @@
 
 package com.tencent.angel.ml.core.optimizer
 
-import com.tencent.angel.RunningMode
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers.AngelGraph

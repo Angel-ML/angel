@@ -15,7 +15,6 @@
  *
  */
 
-
 package com.tencent.angel.ml.psf.columns;
 
 import com.tencent.angel.PartitionKey;

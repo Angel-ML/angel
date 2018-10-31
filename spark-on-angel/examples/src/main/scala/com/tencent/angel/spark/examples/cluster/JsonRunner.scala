@@ -24,7 +24,6 @@ import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.utils.DataParser
 import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
-import com.tencent.angel.spark.client.PSClient
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.examples.util.SparkUtils
 import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OfflineLearner}
@@ -69,7 +68,7 @@ object JsonRunner {
     model.init(denseData.getNumPartitions)
 
     denseData.mapPartitions({it =>
-      PSClient.instance().context.refreshMatrix
+      PSContext.instance().refreshMatrix()
       Iterator.single(0)}).count()
 
     actionType match {
