@@ -45,7 +45,7 @@ class PSMatrixImpl(
   }
 
   override def pull(): Matrix = {
-    val rowArr = ParArray.tabulate(rows)(matrixClient.getRow(_, true)).toArray
+    val rowArr = matrixClient.getRows(Array.range(0, rows))
     PSMatrixUtils.createFromVectorArray(id, rowType, rowArr)
   }
 
@@ -70,7 +70,8 @@ class PSMatrixImpl(
   }
 
   override def pull(rowIds: Array[Int]): Array[Vector] = {
-    rowIds.indices.par.map(rowId => pull(rowId)).toArray
+    require(rowIds.forall(rowId => rowId >= 0 && rowId < rows), "rowId out of range")
+    matrixClient.getRows(rowIds)
   }
 
   override def pull(rowId: Int): Vector = matrixClient.getRow(rowId, true)
