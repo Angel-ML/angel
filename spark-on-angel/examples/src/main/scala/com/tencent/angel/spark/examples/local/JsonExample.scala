@@ -55,6 +55,7 @@ object JsonExample {
     conf.set("spark.ps.cores", "1")
 
     val sc = new SparkContext(conf)
+    sc.setLogLevel("ERROR")
     val parser = DataParser(SharedConf.get())
     val data = sc.textFile(input).repartition(1).map(f => parser.parse(f))
     PSContext.getOrCreate(sc)
@@ -62,25 +63,17 @@ object JsonExample {
     val model = new GraphModel
     val learner = new OfflineLearner
 
-    // whatever, we first build the sparseToDense and denseToSparse index
-    // and change to feature index from sparse to dense
-    val (denseToSparseMatrixId, denseDim, sparseToDenseMatrixId, sparseDim, denseData) = Features.featureSparseToDense(data)
-    SharedConf.get().setLong(MLConf.ML_FEATURE_INDEX_RANGE, denseDim)
-
     // initialize model
-    model.init(denseData.getNumPartitions)
-
-    actionType match {
-      case "train" =>
-        learner.train(denseData, model)
-        ModelSaver.save(output, model, denseToSparseMatrixId, denseDim)
-      case "incTrain" =>
-        ModelLoader.load(modelPath, model, sparseToDenseMatrixId, denseDim)
-        learner.train(denseData, model)
-        ModelSaver.save(output, model, denseToSparseMatrixId, denseDim)
-    }
+    model.init(data.getNumPartitions)
+    // load model if there exists
+    model.load(modelPath)
+    // model training
+    learner.train(data, model)
+    // save it
+    model.save(output)
 
     PSContext.stop()
+    sc.stop()
   }
 
 }

@@ -156,7 +156,7 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
   }
 
   override def update(epoch: Int, batchSize: Int): Future[VoidResult] = {
-    var result:Future[VoidResult] = null
+    var result: Future[VoidResult] = null
     status match {
       case STATUS.Gradient =>
         result = optimizer.update(weightId, 1, epoch, batchSize)
@@ -179,37 +179,17 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
   }
 
   override def loadParams(loadContext: ModelLoadContext): Unit = {
-    SharedConf.actionType().toLowerCase match {
-      case "train" =>
-        weightCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
-        biasCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
-
-      case "inctrain" =>
-        weightCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
-        biasCtx.set(MatrixConf.MATRIX_SAVE_PATH, sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH))
-        weightCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
-        biasCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
-
-
-      case "predict" =>
-        weightCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
-        biasCtx.set(MatrixConf.MATRIX_LOAD_PATH, sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH))
-    }
-
     loadContext.addMatrix(new MatrixLoadContext(weightCtx.getName))
     loadContext.addMatrix(new MatrixLoadContext(biasCtx.getName))
   }
 
   override def saveParams(saveContext: ModelSaveContext): Unit = {
     val outputFormat = SharedConf.fcLayerMatrixOutputFormat
-    SharedConf.actionType().toLowerCase match {
-      case "train" | "inctrain" =>
-        val weightMCS: MatrixSaveContext = new MatrixSaveContext(weightCtx.getName, outputFormat)
-        val biasMCS: MatrixSaveContext = new MatrixSaveContext(biasCtx.getName, outputFormat)
-        weightMCS.addIndex(0)
-        saveContext.addMatrix(weightMCS)
-        saveContext.addMatrix(biasMCS)
-      case _ =>
-    }
+    val weightMCS: MatrixSaveContext = new MatrixSaveContext(weightCtx.getName, outputFormat)
+    val biasMCS: MatrixSaveContext = new MatrixSaveContext(biasCtx.getName, outputFormat)
+    weightMCS.addIndex(0)
+    saveContext.addMatrix(weightMCS)
+    saveContext.addMatrix(biasMCS)
+
   }
 }
