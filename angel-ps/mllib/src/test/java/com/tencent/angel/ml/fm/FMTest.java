@@ -106,7 +106,7 @@ public class FMTest {
   @Test public void testFM() throws Exception {
     setConf();
     trainTest();
-    //predictTest();
+    predictTest();
   }
 
   private void trainTest() throws Exception {
