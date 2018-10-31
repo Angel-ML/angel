@@ -91,7 +91,7 @@ public class GradHistHelper {
         }
         // 3.4.3. find the position of feature value in a histogram
         // the search area in the sketch is [fid * #splitNum, (fid+1) * #splitNum - 1]
-        int start = fPos * splitNum;
+        int start = fid * splitNum;
         int end;  // inclusive
         if (this.controller.cateFeatNum.containsKey(fid)) {
           end = start + this.controller.cateFeatNum.get(fid) - 1;
