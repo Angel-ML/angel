@@ -17,6 +17,8 @@
 
 package com.tencent.angel.model.output.format;
 
+import org.apache.hadoop.conf.Configuration;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -25,6 +27,10 @@ import java.io.IOException;
  * Binary format: column id, column values
  */
 public class BinaryColumnFormat extends ColumnFormat {
+  public BinaryColumnFormat(Configuration conf) {
+    super(conf);
+  }
+
   @Override public void save(IntFloatsCol col, DataOutputStream output) throws IOException {
     output.writeInt(col.colId);
     for (float value : col.colElems) {

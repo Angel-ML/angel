@@ -56,6 +56,11 @@ import java.util.concurrent.RecursiveAction;
  */
 public abstract class MatrixFormatImpl implements MatrixFormat {
   private final static Log LOG = LogFactory.getLog(RowFormat.class);
+  protected final Configuration conf;
+
+  public MatrixFormatImpl(Configuration conf) {
+    this.conf = conf;
+  }
 
   /**
    * Save a matrix partition

@@ -158,7 +158,7 @@ public class PSModelIOExecutor {
 
     ServerMatrix matrix = context.getMatrixStorageManager().getMatrix(loadContext.getMatrixId());
     if (matrix != null) {
-      MatrixFormat format = ModelFilesUtils.initFormat(loadContext.getFormatClassName());
+      MatrixFormat format = ModelFilesUtils.initFormat(loadContext.getFormatClassName(), context.getConf());
       format.load(matrix, loadContext, context.getConf());
     }
   }
@@ -167,7 +167,7 @@ public class PSModelIOExecutor {
     saveContext.setWorkers(workers);
     ServerMatrix matrix = context.getMatrixStorageManager().getMatrix(saveContext.getMatrixId());
     if (matrix != null) {
-      MatrixFormat format = ModelFilesUtils.initFormat(saveContext.getFormatClassName());
+      MatrixFormat format = ModelFilesUtils.initFormat(saveContext.getFormatClassName(), context.getConf());
       format.save(matrix, saveContext, context.getConf());
     }
   }
