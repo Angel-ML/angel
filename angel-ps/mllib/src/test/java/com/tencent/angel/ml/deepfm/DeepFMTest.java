@@ -82,6 +82,7 @@ public class DeepFMTest {
   @Test public void testDeepFM() throws Exception {
     setSystemConf();
     trainTest();
+    incTrainTest();
     predictTest();
   }
 
@@ -92,6 +93,25 @@ public class DeepFMTest {
 
       // Set actionType train
       conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
+
+      GraphRunner runner = new GraphRunner();
+      runner.train(conf);
+    } catch (Exception x) {
+      LOG.error("run trainOnLocalClusterTest failed ", x);
+      throw x;
+    }
+  }
+
+  private void incTrainTest() throws Exception {
+    try {
+      String inputPath = "../../data/census/census_148d_train.dummy";
+      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
+
+      // Set actionType train
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
+
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/deepFM");
+      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/deepFM_new");
 
       GraphRunner runner = new GraphRunner();
       runner.train(conf);
