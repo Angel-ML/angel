@@ -1215,7 +1215,7 @@ public class MasterService extends AbstractService implements MasterProtocol {
    */
   @Override public CheckMatricesCreatedResponse checkMatricesCreated(RpcController controller,
     CheckMatricesCreatedRequest request) throws ServiceException {
-    LOG.info("check matrix loaded request = " + request);
+    LOG.info("check matrix created request = " + request);
     List<String> names = request.getMatrixNamesList();
     CheckMatricesCreatedResponse.Builder builder = CheckMatricesCreatedResponse.newBuilder();
     int size = names.size();
