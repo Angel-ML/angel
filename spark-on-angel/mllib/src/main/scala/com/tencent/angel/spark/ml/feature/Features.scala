@@ -11,7 +11,8 @@ import org.apache.spark.rdd.RDD
 
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.Map
-import scala.util.hashing.MurmurHash3
+import java.util.{HashMap => JHashMap}
+import java.util.{HashSet => JHashSet}
 
 /**
   * This class provide some feature pre-processing utils for input data.
@@ -20,6 +21,66 @@ object Features {
 
   def libSVMStringToIndex(data: RDD[String]): (RDD[LabeledData], Map[String, Int]) = {
     null
+  }
+
+
+  def corpusStringToInt2(data: RDD[String]): (RDD[Array[Int]], RDD[(Int, String)]) = {
+    // cache data
+    data.cache()
+
+    // All distinct strings
+    val strings = data.filter(f => f != null && f.length > 0)
+      .map(f => f.stripLineEnd.split(" ")).flatMap(f => f)
+      .map(t => (t, 1)).reduceByKey(_ + _).map(f => f._1)
+
+    val stringsWithIndex = strings.zipWithIndex().cache()
+
+
+    def buildRoutingTable(index: Int, iterator: Iterator[String]): Iterator[(String, Int)] = {
+      val set = new JHashSet[String]()
+      while (iterator.hasNext) {
+        val line = iterator.next()
+        if (line != null && line.length > 0) {
+          for (word <- line.stripLineEnd.split(" ")) {
+            set.add(word)
+          }
+        }
+      }
+
+      val it = set.iterator()
+      val result = new ArrayBuffer[(String, Int)]()
+      while (it.hasNext) {
+        result.append((it.next(), index))
+      }
+
+      result.iterator
+    }
+
+    val routingTable = data.mapPartitionsWithIndex((partId, iterator) =>
+      buildRoutingTable(partId, iterator),
+      true)
+
+    val partIndex = routingTable.join(stringsWithIndex).map { case (str, (partId, index)) =>
+      (partId, (str, index))
+    }.groupByKey(data.getNumPartitions)
+
+    def attachPartitionId(index: Int, iterator: Iterator[String]): Iterator[(Int, Array[String])] = {
+      Iterator.single((index, iterator.toArray))
+    }
+
+    val ints = data.mapPartitionsWithIndex((partId, iterator) =>
+      attachPartitionId(partId, iterator),
+      true).join(partIndex).map { case (_, (sentences, mapping)) =>
+        val map = new JHashMap[String, Long]()
+        for ((string, index) <- mapping) {
+          map.put(string, index)
+        }
+
+        sentences.filter(f => f != null && f.length > 0).map { case line =>
+          line.stripLineEnd.split(" ").map(s => map.get(s).toInt)
+        }}.flatMap(f => f)
+
+    (ints, stringsWithIndex.map(f => (f._2.toInt, f._1)))
   }
 
   /**
@@ -40,6 +101,8 @@ object Features {
     // Mapping each string with a hashcode ID, the hashcode is sparse
     // Now we use the default hashcode of string in Java.
     val featureWithIndex = features.map(f => (f, MurmurHash64.stringHash(f)))
+
+//    val featureWithIndex = features.zipWithIndex().map(f => (f._1, f._2.toInt))
     featureWithIndex.cache().count()
 
     println(s"feature count ${featureWithIndex.map(f => f._1).distinct().count()}")
@@ -51,6 +114,8 @@ object Features {
     denseIndices.cache().count()
     // The dense dimension
     val denseDim = (denseIndices.map(f => f._2).max() + 1).toInt
+
+    println(s"sparseDim=$sparseDim denseDim=$denseDim")
 
     // Create an index matrix on servers to mapping from sparse index to dense index
     val sparseToDense = PSMatrixUtils.createPSMatrixCtx("sparseToDense", 1, sparseDim, RowType.T_INT_SPARSE_LONGKEY)

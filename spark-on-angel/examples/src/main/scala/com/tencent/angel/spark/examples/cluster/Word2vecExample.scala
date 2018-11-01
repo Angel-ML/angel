@@ -35,7 +35,7 @@ object Word2vecExample {
     val conf = new SparkConf()
     val sc   = new SparkContext(conf)
 
-    PSContext.getOrCreate(sc)
+//    PSContext.getOrCreate(sc)
 
     val input = params.getOrElse("input", "")
     val output = params.getOrElse("output", "")
@@ -49,14 +49,20 @@ object Word2vecExample {
 
     val numExecutors = SparkUtils.getNumExecutors(conf)
 
-    val (corpus, denseToString) = Features.corpusStringToInt(sc.textFile(input))
-    val docs = SubSampling.sampling(corpus).repartition(numExecutors)
+    val (corpus, denseToString) = Features.corpusStringToInt2(sc.textFile(input))
+
+
+    val docs = corpus.repartition(numExecutors)
     docs.cache()
 
     val numDocs = docs.count()
     val maxWordId = docs.map(_.max).max().toLong + 1
     val numTokens = docs.map(_.length).sum().toLong
     println(s"numDocs=$numDocs maxWordId=$maxWordId numTokens=$numTokens")
+
+//    corpus.map(f => f.mkString(" ")).saveAsTextFile(output + "/corpus_ints")
+//    denseToString.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "/mapping")
+
 
     val param = new Param()
       .setLearningRate(stepSize)
@@ -75,6 +81,7 @@ object Word2vecExample {
     model.train(docs, param)
     model.save(output + "/embedding", 0)
     denseToString.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "/mapping")
+
     PSContext.stop()
     sc.stop()
   }

@@ -146,7 +146,6 @@ public class CbowAdjust extends UpdateFunc {
           float[] values = ((IntFloatDenseVectorStorage) partition.getRow(row)
                   .getSplit().getStorage()).getValues();
           for (int a = 0; a < partDim; a++) values[a + col] += update[a];
-
         }
 
         assert length == 0;
