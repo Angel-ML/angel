@@ -1,7 +1,7 @@
 package com.tencent.angel.spark.ml.util
 
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.core.network.layers.edge.inputlayer.{Embedding, SparseInputLayer}
+import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer}
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.matrix.{RBIntDoubleMatrix, RBIntFloatMatrix}
@@ -35,7 +35,7 @@ object ModelSaver {
 
     model.graph.getTrainable.foreach { layer =>
       layer match {
-        case l: SparseInputLayer =>
+        case l: SimpleInputLayer =>
           save(s"$path/${l.name}", l, denseToSparseMatrixId, offsets)
         case l: Embedding =>
           save(s"$path/${l.name}", l, denseToSparseMatrixId, offsets)
@@ -44,7 +44,7 @@ object ModelSaver {
   }
 
   def save(path: String,
-           layer: SparseInputLayer,
+           layer: SimpleInputLayer,
            denseToSparseMatrixId: Int,
            offsets: Array[(Int, Int)]): Unit = {
 

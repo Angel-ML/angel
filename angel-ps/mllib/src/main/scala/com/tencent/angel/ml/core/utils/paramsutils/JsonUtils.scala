@@ -104,7 +104,7 @@ object JsonUtils {
       case layerList: JArray => layerList.arr.map { layer =>
         val layerParams = LayerParams(layer, defaultLoss, defaultTrans, defaultOpt)
         layerParams.layerType.trim.toLowerCase match {
-          case `simpleLoss` | `softmaxLoss` =>
+          case `simpleLoss` =>
             lossLayer = layerParams
           case _ =>
         }

@@ -325,15 +325,8 @@ object SharedConf {
   def sparseInputLayerMatrixOutputFormat: String = {
     get()
 
-    sc.get(MLConf.ML_SPARSEINPUTLAYER_MATRIX_OUTPUT_FORMAT, MLConf.DEFAULT_ML_SPARSEINPUTLAYER_MATRIX_OUTPUT_FORMAT)
+    sc.get(MLConf.ML_SIMPLEINPUTLAYER_MATRIX_OUTPUT_FORMAT, MLConf.DEFAULT_ML_SIMPLEINPUTLAYER_MATRIX_OUTPUT_FORMAT)
   }
-
-  def denseInputLayerMatrixOutputFormat: String = {
-    get()
-
-    sc.get(MLConf.ML_DENSEINPUTLAYER_MATRIX_OUTPUT_FORMAT, MLConf.DEFAULT_ML_DENSEINPUTLAYER_MATRIX_OUTPUT_FORMAT)
-  }
-
 
   def fcLayerMatrixOutputFormat: String = {
     get()

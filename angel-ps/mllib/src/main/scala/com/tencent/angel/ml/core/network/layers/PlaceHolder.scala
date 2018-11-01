@@ -37,10 +37,10 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
 
   def this() = this(SharedConf.get())
 
-  var data: Array[LabeledData] = _
-  var feats: Matrix = _
-  var labels: Matrix = _
-  var indices: Vector = _
+  private var data: Array[LabeledData] = _
+  private var feats: Matrix = _
+  private var labels: Matrix = _
+  private var indices: Vector = _
 
   var isFeed: Boolean = false
 

@@ -82,7 +82,7 @@ public class NFMTest {
   @Test public void testNFM() throws Exception {
     setSystemConf();
     trainTest();
-    // predictTest();
+    predictTest();
   }
 
   private void trainTest() throws Exception {
