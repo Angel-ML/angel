@@ -55,7 +55,7 @@ class GraphModel extends Serializable {
 
     graph.taskNum = taskNum
     graph.createMatrices()
-//    graph.init()
+    graph.init()
     println(s"graph=\n$graph")
   }
 

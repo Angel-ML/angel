@@ -59,31 +59,35 @@ object JsonRunner {
     val model = new GraphModel
     val learner = new OfflineLearner
 
-    // first, build sparseToDense and denseToSparse index
-    // and change the feature index from sparse to dense
-    val (denseToSparseMatrixId, denseDim, sparseToDenseMatrixId, sparseDim, denseData) = Features.featureSparseToDense(data)
-    SharedConf.get().setLong(MLConf.ML_FEATURE_INDEX_RANGE, denseDim)
-
     // init model here
-    model.init(denseData.getNumPartitions)
+    model.init(data.getNumPartitions)
 
-    denseData.mapPartitions({it =>
+    data.mapPartitions({_ =>
       PSContext.instance().refreshMatrix()
       Iterator.single(0)}).count()
 
     actionType match {
-      case "train" =>
-        learner.train(denseData, model)
-      case "incTrain" =>
+      case MLConf.ANGEL_ML_TRAIN =>
+        learner.train(data, model)
+        if (output.length > 0) model.save(output)
+
+      case MLConf.ANGEL_ML_INC_TRAIN =>
         if (modelPath.length == 0)
           throw new AngelException("Should set model path for increment training!")
 
-        ModelLoader.load(modelPath, model, sparseToDenseMatrixId, denseDim)
-        learner.train(denseData, model)
-    }
+        model.load(modelPath)
+        learner.train(data, model)
+        if (output.length > 0) model.save(output)
 
-    if (output.length > 0)
-      ModelSaver.save(output, model, denseToSparseMatrixId, denseDim)
+      case MLConf.ANGEL_ML_PREDICT =>
+        if (modelPath.length == 0)
+          throw new AngelException("Should set model path for increment training!")
+
+        model.load(modelPath)
+        val predict = learner.predict(data, model)
+        if (output.length > 0)
+          predict.map(f => s"${f._1} ${f._2}").saveAsTextFile(output)
+    }
   }
 
 }

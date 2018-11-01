@@ -20,11 +20,14 @@ package com.tencent.angel.spark.ml.core
 
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix}
+import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector}
+import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.metric.{AUC, Precision}
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
-import com.tencent.angel.spark.context.PSContext
+
 import scala.reflect.ClassTag
 import scala.util.Random
 
@@ -98,8 +101,31 @@ class OfflineLearner {
     }
   }
 
-  def predict(data: RDD[LabeledData], model: GraphModel): Unit = {
+  /**
+    * Predict the output with a RDD with data and a trained model
+    * @param data: examples to be predicted
+    * @param model: a trained model
+    * @return RDD[(label, predict value)], the label is the ``label`` field in the
+    *         libsvm format. We can place the data ID in this field when doing
+    *         predicting.
+    */
+  def predict(data: RDD[LabeledData], model: GraphModel): RDD[(Double, Double)] = {
+    val bModel = SparkContext.getOrCreate().broadcast(model)
+    val scores = data.mapPartitions { case iterator =>
+      val samples = iterator.toArray
+      val output  = bModel.value.forward(1, samples)
 
+      val labels = bModel.value.graph.placeHolder.labels.getCol(0)
+
+      (labels, output) match {
+        case (l: IntDoubleVector, mat: BlasDoubleMatrix) =>
+          (0 until mat.getNumRows).map(idx => (l.get(idx), mat.get(idx, 2))).iterator
+        case (l: IntFloatVector,  mat: BlasFloatMatrix) =>
+          (0 until mat.getNumRows).map(idx => (l.get(idx).toDouble, mat.get(idx, 2).toDouble)).iterator
+      }
+    }
+
+    scores
   }
 
 }
