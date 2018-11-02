@@ -23,7 +23,7 @@ import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.embedding.NEModel.NEDataSet
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel.{W2VDataSet, buildDataBatches}
-import com.tencent.angel.spark.ml.embedding.{FastSigmoid, NEModel, Param, Sigmoid}
+import com.tencent.angel.spark.ml.embedding.{NEModel, Param, Sigmoid}
 import com.tencent.angel.spark.ml.psf.embedding.cbow._
 import com.tencent.angel.spark.ml.psf.embedding.sentences.{UploadSentences, UploadSentencesParam}
 import org.apache.spark.rdd.RDD
@@ -45,7 +45,6 @@ class Word2VecModel(numNode: Int,
   def train(corpus: RDD[Array[Int]], param: Param): Unit = {
 
     val numPartitions = corpus.getNumPartitions
-    println(s"numPartitions=$numPartitions")
 
     def sgdForBatch(partitionId: Int,
                     batch: NEDataSet,
@@ -88,7 +87,12 @@ class Word2VecModel(numNode: Int,
 
     def sgdForPartition(partitionId: Int, iterator: Iterator[NEDataSet], epoch: Int): Iterator[(Double, Array[Long])] = {
       PSContext.instance()
-      iterator.zipWithIndex.map(batch => sgdForBatch(partitionId, batch._1, epoch, batch._2))
+      var numBatch = 0
+      iterator.zipWithIndex.map { case batch =>
+        numBatch += 1
+        if (numBatch % 1000 == 0)
+          println(s"finish batch $numBatch")
+        sgdForBatch(partitionId, batch._1, epoch, batch._2)}
     }
 
     val iterator = buildDataBatches(corpus, param.batchSize)

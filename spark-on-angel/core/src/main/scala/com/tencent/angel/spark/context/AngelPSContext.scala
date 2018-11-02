@@ -351,8 +351,7 @@ private[spark] object AngelPSContext {
 
     // Some other settings
     conf.getAllWithPrefix("angel").foreach {
-      case (key, value) => hadoopConf.set(s"angel.$key", value)
-      println(s"key=angel.$key value=$value")
+      case (key, value) => hadoopConf.set(s"angel$key", value)
     }
     hadoopConf
   }

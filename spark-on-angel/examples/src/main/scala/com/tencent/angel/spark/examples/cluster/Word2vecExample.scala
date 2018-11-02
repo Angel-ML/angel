@@ -17,12 +17,15 @@
 
 package com.tencent.angel.spark.examples.cluster
 
+import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.examples.util.SparkUtils
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.embedding.Param
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel
 import com.tencent.angel.spark.ml.feature.{Features, SubSampling}
+import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.util.Random
@@ -35,6 +38,8 @@ object Word2vecExample {
     val conf = new SparkConf()
     val sc   = new SparkContext(conf)
 
+    conf.set(AngelConf.ANGEL_PS_PARTITION_SOURCE_CLASS, classOf[PartitionSourceArray].getName)
+
     PSContext.getOrCreate(sc)
 
     val input = params.getOrElse("input", "")
@@ -46,13 +51,22 @@ object Word2vecExample {
     val stepSize = params.getOrElse("stepSize", "0.1").toFloat
     val batchSize = params.getOrElse("batchSize", "10000").toInt
     val numPartitions = params.getOrElse("numParts", "10").toInt
+    val withSubSample = params.getOrElse("subSample", "true").toBoolean
 
     val numExecutors = SparkUtils.getNumExecutors(conf)
 
+    val data = sc.textFile(input)
+    data.persist(StorageLevel.DISK_ONLY)
+
     val (corpus, denseToString) = Features.corpusStringToInt(sc.textFile(input))
 
+    corpus.persist(StorageLevel.DISK_ONLY)
 
-    val docs = corpus.repartition(numExecutors)
+    val docs = if (withSubSample)
+        SubSampling.sampling(corpus).repartition(numExecutors)
+      else
+        corpus.repartition(numExecutors)
+
     docs.cache()
 
     val numDocs = docs.count()
@@ -60,12 +74,13 @@ object Word2vecExample {
     val numTokens = docs.map(_.length).sum().toLong
     println(s"numDocs=$numDocs maxWordId=$maxWordId numTokens=$numTokens")
 
+    data.unpersist()
+
     val param = new Param()
       .setLearningRate(stepSize)
       .setEmbeddingDim(embeddingDim)
       .setWindowSize(windowSize)
       .setBatchSize(batchSize)
-      .setNodesNumPerRow(Some(100))
       .setSeed(Random.nextInt())
       .setNumPSPart(Some(numPartitions))
       .setNumEpoch(numEpoch)

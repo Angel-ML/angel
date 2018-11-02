@@ -35,8 +35,8 @@ object JsonExample {
     PropertyConfigurator.configure("conf/log4j.properties")
     val params = ArgsUtil.parse(args)
     val input = params.getOrElse("input", "data/census/census_148d_train.libsvm")
-    val output = params.getOrElse("output", "output/")
-    val modelPath = params.getOrElse("model", "model/")
+    val output = params.getOrElse("output", "")
+    val modelPath = params.getOrElse("model", "")
     val actionType = params.getOrElse("action.type", "train")
 
     SharedConf.addMap(params)
@@ -65,11 +65,13 @@ object JsonExample {
     // initialize model
     model.init(data.getNumPartitions)
     // load model if there exists
-    model.load(modelPath)
+    if (modelPath.length > 0)
+      model.load(modelPath)
     // model training
     learner.train(data, model)
     // save it
-    model.save(output)
+    if (output.length > 0)
+      model.save(output)
 
     PSContext.stop()
     sc.stop()

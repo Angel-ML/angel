@@ -18,6 +18,7 @@
 
 package com.tencent.angel.ps.storage.matrix;
 
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.PartitionMeta;
 import com.tencent.angel.ps.PSContext;
@@ -70,8 +71,11 @@ public class ServerMatrix {
     Map<Integer, PartitionMeta> partMetas = matrixMeta.getPartitionMetas();
     for (PartitionMeta partMeta : partMetas.values()) {
       ServerPartition part =
-        new ServerPartition(partMeta.getPartitionKey(), matrixMeta.getRowType(),
-          matrixMeta.getEstSparsity());
+        new ServerPartition(partMeta.getPartitionKey(),
+                matrixMeta.getRowType(),
+                matrixMeta.getEstSparsity(),
+                context.getConf().get(AngelConf.ANGEL_PS_PARTITION_SOURCE_CLASS,
+                        AngelConf.DEFAULT_ANGEL_PS_PARTITION_SOURCE_CLASS));
       partitionMaps.put(partMeta.getPartId(), part);
       part.init();
       part.setState(PartitionState.READ_AND_WRITE);

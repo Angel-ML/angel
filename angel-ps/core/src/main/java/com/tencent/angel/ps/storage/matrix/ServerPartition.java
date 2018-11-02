@@ -24,6 +24,7 @@ import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
+import com.tencent.angel.ps.PSContext;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.ps.storage.vector.ServerRowFactory;
@@ -83,7 +84,7 @@ public class ServerPartition implements Serialize {
     PartitionSource source;
     try {
       source = (PartitionSource) Class.forName(sourceClass).newInstance();
-      LOG.error("Use class " + source.getClass().getName() + " as storage for servers");
+      LOG.error("partition source class is " + source.getClass().getName());
     } catch (Throwable e) {
       LOG.error("Can not init partition source for type " + sourceClass + " use default instead ",
         e);
@@ -100,7 +101,7 @@ public class ServerPartition implements Serialize {
    * @param rowType      the row type
    */
   public ServerPartition(PartitionKey partitionKey, RowType rowType, double estSparsity) {
-    this(partitionKey, rowType, estSparsity, PartitionSourceArray.class.getName());
+    this(partitionKey, rowType, estSparsity, AngelConf.DEFAULT_ANGEL_PS_PARTITION_SOURCE_CLASS);
   }
 
   /**

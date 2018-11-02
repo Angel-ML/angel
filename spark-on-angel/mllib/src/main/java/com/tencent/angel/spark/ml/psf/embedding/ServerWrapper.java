@@ -13,11 +13,16 @@ public class ServerWrapper {
 
   private static float[][] contexts;
 
+  private static int[] numInputs;
+  private static int[] numOutputs;
+
 
   public static synchronized void initialize(int numPartitions) {
     if (sentences == null) {
       sentences = new int[numPartitions][][];
       contexts = new float[numPartitions][];
+      numInputs = new int[numPartitions];
+      numOutputs = new int[numPartitions];
     }
   }
 
@@ -43,6 +48,22 @@ public class ServerWrapper {
 
   public static float[] getContext(int partitionId) {
     return contexts[partitionId];
+  }
+
+  public static void setNumInputs(int partitionId, int num) {
+    numInputs[partitionId] = num;
+  }
+
+  public static int getNumInputs(int partitionId) {
+    return numInputs[partitionId];
+  }
+
+  public static void setNumOutputs(int partitionId, int num) {
+    numOutputs[partitionId] = num;
+  }
+
+  public static int getNumOutputs(int partitioinId) {
+    return numOutputs[partitioinId];
   }
 
 }

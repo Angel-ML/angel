@@ -27,6 +27,8 @@ import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.spark.ml.psf.embedding.ServerWrapper;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import sun.awt.geom.AreaOp;
 
 import java.util.Arrays;
 import java.util.List;
@@ -72,10 +74,13 @@ public class CbowDot extends GetFunc {
       Random negativeSeed = new Random(seed + 1);
       FloatArrayList partialDots = new FloatArrayList();
 
-      int numTokens = 0;
-      for (int s = 0; s < sentences.length; s ++) numTokens += sentences[s].length;
-      float[] contextCache = new float[numTokens * partDim];
-      int contextIdx = 0;
+      IntOpenHashSet inputs = new IntOpenHashSet();
+      IntOpenHashSet outputs = new IntOpenHashSet();
+
+//      int numTokens = 0;
+//      for (int s = 0; s < sentences.length; s ++) numTokens += sentences[s].length;
+//      float[] contextCache = new float[numTokens * partDim];
+//      int contextIdx = 0;
 
       for (int s = 0; s < sentences.length; s ++) {
         int[] sen = sentences[s];
@@ -101,13 +106,14 @@ public class CbowDot extends GetFunc {
               float[] values = ((IntFloatDenseVectorStorage) partition.getRow(rowId)
                 .getSplit().getStorage()).getValues();
               for (c = 0; c < partDim; c++) context[c] += values[c + colId];
+              inputs.add(sentence_word);
               cw++;
             }
 
           // Calculate the partial dot values
           if (cw > 0) {
             for (int c = 0; c < partDim; c ++) context[c] /= cw;
-            for (int c = 0; c < partDim; c ++) contextCache[contextIdx++] = context[c];
+//            for (int c = 0; c < partDim; c ++) contextCache[contextIdx++] = context[c];
             int target;
             for (int d = 0; d < negative + 1; d ++) {
               if (d == 0) target = word;
@@ -118,6 +124,7 @@ public class CbowDot extends GetFunc {
                 else break;
               }
 
+              outputs.add(target);
               int rowId = target / numNodes;
               int colId = (target % numNodes) * partDim * order + partDim;
               float f = 0f;
@@ -130,7 +137,9 @@ public class CbowDot extends GetFunc {
         }
       }
 
-      ServerWrapper.setContext(param.partitionId, contextCache);
+
+      ServerWrapper.setNumInputs(param.partitionId, inputs.size());
+      ServerWrapper.setNumOutputs(param.partitionId, outputs.size());
 
       return new CbowDotPartitionResult(partialDots.toFloatArray());
     }

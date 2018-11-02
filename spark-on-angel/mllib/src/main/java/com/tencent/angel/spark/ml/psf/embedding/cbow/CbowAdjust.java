@@ -6,10 +6,12 @@ import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.spark.ml.psf.embedding.ServerWrapper;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Random;
 
 public class CbowAdjust extends UpdateFunc {
 
@@ -52,13 +54,19 @@ public class CbowAdjust extends UpdateFunc {
         float[] neu1 = new float[partDim];
         float[] neu1e = new float[partDim];
 
-        int contextIdx = 0;
-        float[] contextCache = ServerWrapper.getContext(param.partitionId);
+        int numInputs = ServerWrapper.getNumInputs(param.partitionId);
+        int numOutputs = ServerWrapper.getNumOutputs(param.partitionId);
 
-        Map<Integer, float[]> outputUpdates = new HashMap<>();
-        Map<Integer, float[]> inputUpdates  = new HashMap<>();
+        float[] inputs = new float[numInputs * partDim];
+        float[] outputs = new float[numOutputs * partDim];
+
+        Int2IntOpenHashMap inputIndex = new Int2IntOpenHashMap();
+        Int2IntOpenHashMap outputIndex = new Int2IntOpenHashMap();
+
         Int2IntOpenHashMap inputUpdateCounter = new Int2IntOpenHashMap();
         Int2IntOpenHashMap outputUpdateCounter = new Int2IntOpenHashMap();
+
+        int[] windows = new int[window * 2];
 
         for (int s = 0; s < sentences.length; s++) {
           int[] sen = sentences[s];
@@ -70,25 +78,25 @@ public class CbowAdjust extends UpdateFunc {
             Arrays.fill(neu1e, 0);
             int cw = 0;
 
-//            for (int a = b; a < window * 2 + 1 - b; a++)
-//              if (a != window) {
-//                int c = position - window + a;
-//                if (c < 0) continue;
-//                if (c >= sen.length) continue;
-//                if (sen[c] == -1) continue;
-////                int row = sen[c] / numNodes;
-////                int col = (sen[c] % numNodes) * partDim * order;
-////                float[] values = ((IntFloatDenseVectorStorage) partition.getRow(row)
-////                  .getSplit().getStorage()).getValues();
-////                for (c = 0; c < partDim; c++) neu1[c] += values[c + col];
-//                cw++;
-//              }
+            for (int a = b; a < window * 2 + 1 - b; a++)
+              if (a != window) {
+                int c = position - window + a;
+                if (c < 0) continue;
+                if (c >= sen.length) continue;
+                if (sen[c] == -1) continue;
+                windows[cw] = sen[c];
+                int row = sen[c] / numNodes;
+                int col = (sen[c] % numNodes) * partDim * order;
+                float[] values = ((IntFloatDenseVectorStorage) partition.getRow(row)
+                  .getSplit().getStorage()).getValues();
+                for (c = 0; c < partDim; c++) neu1[c] += values[c + col];
+                cw++;
+              }
 
 
 
-//            if (cw > 0) {
-              for (int c = 0; c < partDim; c ++) neu1[c] = contextCache[contextIdx++];
-//              for (int c = 0; c < partDim; c ++) neu1[c] /= cw;
+            if (cw > 0) {
+              for (int c = 0; c < partDim; c ++) neu1[c] /= cw;
               int target;
               for (int d = 0; d < negative + 1; d++) {
                 if (d == 0) target = word;
@@ -108,51 +116,49 @@ public class CbowAdjust extends UpdateFunc {
                   .getSplit().getStorage()).getValues();
                 // accumulate gradients for the input vectors
                 for (int c = 0; c < partDim; c++) neu1e[c] += g * values[c + col];
+
                 // update output vectors
-                mergeUpdates(outputUpdates, target, neu1, g);
+                merge(outputs, outputIndex, target, neu1, g);
                 outputUpdateCounter.addTo(target, 1);
               }
 
-              // update input vectors
-              for (int a = b; a < window * 2 + 1 - b; a++)
-                if (a != window) {
-                  int c = position - window + a;
-                  if (c < 0) continue;
-                  if (c >= sen.length) continue;
-                  if (sen[c] == -1) continue;
-                  mergeUpdates(inputUpdates, sen[c], neu1e, 1);
-                  inputUpdateCounter.addTo(sen[c], 1);
-                }
+              for (int a = 0; a < cw; a ++) {
+                int input = windows[a];
+                merge(inputs, inputIndex, input, neu1e, 1);
+                inputUpdateCounter.addTo(input, 1);
+              }
+
             }
           }
-//        }
+        }
 
-        // conduct update
-        Iterator<Map.Entry<Integer, float[]>> iterator = inputUpdates.entrySet().iterator();
-        while (iterator.hasNext()) {
-          Map.Entry<Integer, float[]> entry = iterator.next();
-          int node = entry.getKey();
-          float[] update = entry.getValue();
+
+        // update input
+        ObjectIterator<Int2IntMap.Entry> it = inputIndex.int2IntEntrySet().fastIterator();
+        while (it.hasNext()) {
+          Int2IntMap.Entry entry = it.next();
+          int node = entry.getIntKey();
+          int offset = entry.getIntValue() * partDim;
           int row = node / numNodes;
           int col = (node % numNodes) * partDim * order;
           float[] values = ((IntFloatDenseVectorStorage) partition.getRow(row)
                   .getSplit().getStorage()).getValues();
           int divider = inputUpdateCounter.get(node);
-          for (int a = 0; a < partDim; a++) values[a + col] += update[a] / divider;
-
+          for (int a = 0; a < partDim; a++) values[a + col] += inputs[offset + a] / divider;
         }
 
-        iterator = outputUpdates.entrySet().iterator();
-        while (iterator.hasNext()) {
-          Map.Entry<Integer, float[]> entry = iterator.next();
-          int node = entry.getKey();
-          float[] update = entry.getValue();
+        // update output
+        it = outputIndex.int2IntEntrySet().fastIterator();
+        while (it.hasNext()) {
+          Int2IntMap.Entry entry = it.next();
+          int node = entry.getIntKey();
+          int offset = entry.getIntValue() * partDim;
           int row = node / numNodes;
           int col = (node % numNodes) * partDim * order + partDim;
           float[] values = ((IntFloatDenseVectorStorage) partition.getRow(row)
                   .getSplit().getStorage()).getValues();
           int divider = outputUpdateCounter.get(node);
-          for (int a = 0; a < partDim; a++) values[a + col] += update[a] / divider;
+          for (int a = 0; a < partDim; a++) values[a + col] += outputs[offset + a] / divider;
         }
 
         assert length == 0;
@@ -160,13 +166,17 @@ public class CbowAdjust extends UpdateFunc {
         param.clear();
       }
     }
+
   }
 
-  private void mergeUpdates(Map<Integer, float[]> bufferedUpdate, int node, float[] update, float g) {
-    if (!bufferedUpdate.containsKey(node))
-      bufferedUpdate.put(node, new float[update.length]);
+  private void merge(float[] inputs, Int2IntOpenHashMap inputIndex, int node, float[] update, float g) {
+    int start = inputIndex.get(node);
+    if (!inputIndex.containsKey(node)) {
+      start = inputIndex.size();
+      inputIndex.put(node, start);
+    }
 
-    float[] hold = bufferedUpdate.get(node);
-    for (int a = 0; a < hold.length; a++) hold[a] += update[a] * g;
+    int offset = start * update.length;
+    for (int c = 0; c < update.length; c ++) inputs[offset + c] += g * update[c];
   }
 }

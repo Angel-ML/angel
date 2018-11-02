@@ -24,7 +24,7 @@ import scala.util.Random
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.embedding.Param
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel
-import com.tencent.angel.spark.ml.feature.Features
+import com.tencent.angel.spark.ml.feature.{Features, SubSampling}
 import org.apache.spark.{SparkConf, SparkContext}
 
 object Word2vecExample {
@@ -51,8 +51,8 @@ object Word2vecExample {
     data.cache()
 
     val (corpus, denseToString) = Features.corpusStringToInt(sc.textFile(input))
+    val docs = SubSampling.sampling(corpus).repartition(2)
 
-    val docs = corpus.repartition(2)
     docs.cache()
     docs.count()
 
@@ -66,10 +66,9 @@ object Word2vecExample {
 
     val param = new Param()
     param.setLearningRate(0.1f)
-    param.setEmbeddingDim(100)
-    param.setWindowSize(10)
+    param.setEmbeddingDim(10)
+    param.setWindowSize(6)
     param.setBatchSize(128)
-    param.setNodesNumPerRow(Some(100))
     param.setSeed(Random.nextInt())
     param.setNumPSPart(Some(2))
     param.setNumEpoch(10)
