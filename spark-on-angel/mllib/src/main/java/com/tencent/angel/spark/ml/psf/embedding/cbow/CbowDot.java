@@ -71,7 +71,7 @@ public class CbowDot extends GetFunc {
       ServerPartition partition = psContext.getMatrixStorageManager().getPart(pkey);
 
       Random windowSeed = new Random(seed);
-      Random negativeSeed = new Random(seed);
+      Random negativeSeed = new Random(seed + 1);
       FloatArrayList partialDots = new FloatArrayList();
       for (int s = 0; s < sentences.length; s ++) {
         int[] sen = sentences[s];

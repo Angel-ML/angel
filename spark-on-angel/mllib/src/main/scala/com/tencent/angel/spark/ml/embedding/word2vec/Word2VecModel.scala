@@ -20,9 +20,10 @@ package com.tencent.angel.spark.ml.embedding.word2vec
 
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc
+import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.embedding.NEModel.NEDataSet
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel.{W2VDataSet, buildDataBatches}
-import com.tencent.angel.spark.ml.embedding.{FastSigmoid, NEModel, Param}
+import com.tencent.angel.spark.ml.embedding.{FastSigmoid, NEModel, Param, Sigmoid}
 import com.tencent.angel.spark.ml.psf.embedding.cbow._
 import com.tencent.angel.spark.ml.psf.embedding.sentences.{UploadSentences, UploadSentencesParam}
 import org.apache.spark.rdd.RDD
@@ -46,26 +47,47 @@ class Word2VecModel(numNode: Int,
     val numPartitions = corpus.getNumPartitions
     println(s"numPartitions=$numPartitions")
 
-    def sgdForBatch(partitionId: Int, batch: NEDataSet, epoch: Int, index: Int): Double = {
+    def sgdForBatch(partitionId: Int,
+                    batch: NEDataSet,
+                    epoch: Int,
+                    index: Int): (Double, Array[Long]) = {
+      var (start, end) = (0L, 0L)
+
       // upload sentences
+      start = System.currentTimeMillis()
       val initialize = (epoch == 0) && (index == 0)
       val uploadFunc = getUpload(batch, initialize, partitionId, numPartitions)
       psMatrix.psfUpdate(uploadFunc).get()
+      end = System.currentTimeMillis()
+      val uploadTime = end - start
 
       // dot
+      start = System.currentTimeMillis()
       val dotFunc = getDot(param.seed, param.negSample, Some(param.windowSize), partitionId)
       val dots = psMatrix.psfGet(dotFunc).asInstanceOf[CbowDotResult].getValues
+      end = System.currentTimeMillis()
+      val dotTime = end - start
+
+      // gradient
+      start = System.currentTimeMillis()
       val loss = doGrad(dots, param.negSample, param.learningRate, Some(batch))
+      end = System.currentTimeMillis()
+      val gradientTime = end - start
+
 
       // adjust
+      start = System.currentTimeMillis()
       val adjustFunc = getAdjust(param.seed, param.negSample, dots, Some(param.windowSize), partitionId)
       psMatrix.psfUpdate(adjustFunc).get()
+      end = System.currentTimeMillis()
+      val adjustTime = end - start
 
       // return loss
-      loss
+      (loss, Array(uploadTime, dotTime, gradientTime, adjustTime))
     }
 
-    def sgdForPartition(partitionId: Int, iterator: Iterator[NEDataSet], epoch: Int): Iterator[Double] = {
+    def sgdForPartition(partitionId: Int, iterator: Iterator[NEDataSet], epoch: Int): Iterator[(Double, Array[Long])] = {
+      PSContext.instance()
       iterator.zipWithIndex.map(batch => sgdForBatch(partitionId, batch._1, epoch, batch._2))
     }
 
@@ -73,10 +95,18 @@ class Word2VecModel(numNode: Int,
 
     for (epoch <- 0 until param.numEpoch) {
       val data = iterator.next()
-      val loss = data.mapPartitionsWithIndex(
+      val middle = data.mapPartitionsWithIndex(
         (partitionId, iterator) => sgdForPartition(partitionId, iterator, epoch),
-        true).sum()
-      println(s"epoch=$epoch loss=$loss")
+        true).collect()
+      val loss = middle.map(f => f._1).sum
+      val array = new Array[Long](4)
+      middle.foreach(f => f._2.zipWithIndex.foreach(t => array(t._2) += t._1))
+      println(s"epoch=$epoch " +
+        s"loss=$loss " +
+        s"uploadTime=${array(0)} " +
+        s"dotTime=${array(1)} " +
+        s"gradientTime=${array(2)} " +
+        s"adjustTime=${array(3)}")
     }
 
   }
@@ -109,13 +139,13 @@ class Word2VecModel(numNode: Int,
     var sumLoss = 0f
     assert(dots.length == size * (negative + 1))
     for (a <- 0 until dots.length) {
-      val sig = FastSigmoid.sigmoid(dots(a))
+      val sig = Sigmoid.sigmoid(dots(a))
       if (a % (negative + 1) == 0) { // positive target
         sumLoss += -sig
         dots(a) = (1 - sig) * alpha
       } else { // negative target
         label = 0
-        sumLoss += -FastSigmoid.sigmoid(-dots(a))
+        sumLoss += -Sigmoid.sigmoid(-dots(a))
         dots(a) = -sig * alpha
       }
     }

@@ -41,18 +41,17 @@ object Word2vecExample {
 
     val input = "data/text8/text8.split.head"
     val output = "model/"
-    val (corpus, denseToString) = Features.corpusStringToInt2(sc.textFile(input))
 
-    denseToString.count()
-    corpus.count()
+    val data = sc.textFile(input)
+    data.cache()
 
-    corpus.map(f => f.mkString(" ")).saveAsTextFile(output + " corpus_ints")
-    denseToString.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + " mapping")
+    val (corpus, denseToString) = Features.corpusStringToInt(sc.textFile(input))
 
-    /*
     val docs = corpus.repartition(2)
     docs.cache()
+    docs.count()
 
+    data.unpersist()
 
     val numDocs = docs.count()
     val maxWordId = docs.map(_.max).max().toLong + 1
@@ -61,7 +60,7 @@ object Word2vecExample {
     println(s"numDocs=$numDocs maxWordId=$maxWordId numTokens=$numTokens")
 
     val param = new Param()
-    param.setLearningRate(0.01f)
+    param.setLearningRate(0.1f)
     param.setEmbeddingDim(100)
     param.setWindowSize(10)
     param.setBatchSize(128)
@@ -76,10 +75,9 @@ object Word2vecExample {
     val model = new Word2VecModel(param)
     model.train(docs, param)
 
-//    model.save(output + "embedding", 0)
+    model.save(output + "embedding", 0)
     denseToString.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "mapping")
 
-    */
     PSContext.stop()
     sc.stop()
   }

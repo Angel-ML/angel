@@ -24,9 +24,7 @@ object Features {
   }
 
 
-  def corpusStringToInt2(data: RDD[String]): (RDD[Array[Int]], RDD[(Int, String)]) = {
-    // cache data
-    data.cache()
+  def corpusStringToInt(data: RDD[String]): (RDD[Array[Int]], RDD[(Int, String)]) = {
 
     // All distinct strings
     val strings = data.filter(f => f != null && f.length > 0)
@@ -80,6 +78,7 @@ object Features {
           line.stripLineEnd.split(" ").map(s => map.get(s).toInt)
         }}.flatMap(f => f)
 
+
     (ints, stringsWithIndex.map(f => (f._2.toInt, f._1)))
   }
 
@@ -88,7 +87,7 @@ object Features {
     * @param data: corpus data with strings
     * @return
     */
-  def corpusStringToInt(data: RDD[String]): (RDD[Array[Int]], RDD[(Int, String)]) = {
+  def corpusStringToIntByServer(data: RDD[String]): (RDD[Array[Int]], RDD[(Int, String)]) = {
     // cache data
     data.cache().count()
 

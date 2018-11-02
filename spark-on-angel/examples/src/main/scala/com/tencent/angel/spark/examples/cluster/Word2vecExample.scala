@@ -35,7 +35,7 @@ object Word2vecExample {
     val conf = new SparkConf()
     val sc   = new SparkContext(conf)
 
-//    PSContext.getOrCreate(sc)
+    PSContext.getOrCreate(sc)
 
     val input = params.getOrElse("input", "")
     val output = params.getOrElse("output", "")
@@ -59,10 +59,6 @@ object Word2vecExample {
     val maxWordId = docs.map(_.max).max().toLong + 1
     val numTokens = docs.map(_.length).sum().toLong
     println(s"numDocs=$numDocs maxWordId=$maxWordId numTokens=$numTokens")
-
-//    corpus.map(f => f.mkString(" ")).saveAsTextFile(output + "/corpus_ints")
-//    denseToString.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "/mapping")
-
 
     val param = new Param()
       .setLearningRate(stepSize)
