@@ -115,7 +115,7 @@ class OfflineLearner {
       val samples = iterator.toArray
       val output  = bModel.value.forward(1, samples)
 
-      val labels = bModel.value.graph.placeHolder.labels.getCol(0)
+      val labels = bModel.value.graph.placeHolder.getLabel.getCol(0)
 
       (labels, output) match {
         case (l: IntDoubleVector, mat: BlasDoubleMatrix) =>
