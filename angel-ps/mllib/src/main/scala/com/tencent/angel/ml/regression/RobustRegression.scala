@@ -20,8 +20,7 @@ package com.tencent.angel.ml.regression
 
 import com.tencent.angel.ml.core.conf.MLConf
 import com.tencent.angel.ml.core.graphsubmit.GraphModel
-import com.tencent.angel.ml.core.network.layers.edge.inputlayer.{DenseInputLayer, SparseInputLayer}
-import com.tencent.angel.ml.core.network.layers.edge.losslayer.SimpleLossLayer
+import com.tencent.angel.ml.core.network.layers.verge.{SimpleLossLayer, SimpleInputLayer}
 import com.tencent.angel.ml.core.network.transfunc.Identity
 import com.tencent.angel.ml.core.optimizer.OptUtils
 import com.tencent.angel.ml.core.optimizer.loss.HuberLoss
@@ -35,10 +34,10 @@ class RobustRegression(conf: Configuration, _ctx: TaskContext = null)
 
   override def buildNetwork(): Unit = {
     val input = dataFormat match {
-      case "dense" | "component_sparse" => new DenseInputLayer("input", 1, new Identity(),
-        OptUtils.getOptimizer(MLConf.ML_DENSEINPUTLAYER_OPTIMIZER))
-      case _ => new SparseInputLayer("input", 1, new Identity(),
-        OptUtils.getOptimizer(MLConf.ML_SPARSEINPUTLAYER_OPTIMIZER))
+      case "dense" | "component_sparse" => new SimpleInputLayer("input", 1, new Identity(),
+        OptUtils.getOptimizer(MLConf.ML_INPUTLAYER_OPTIMIZER))
+      case _ => new SimpleInputLayer("input", 1, new Identity(),
+        OptUtils.getOptimizer(MLConf.ML_INPUTLAYER_OPTIMIZER))
     }
 
     new SimpleLossLayer("simpleLossLayer", input, lossFunc)

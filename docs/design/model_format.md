@@ -94,15 +94,14 @@ index,row1 value,row2 value,...
 index,row1 value,row2 value,...
 
 ## 具体算法输出格式
-Angel的算法目前基本都是基于新的计算图框架来实现的，计算图中的每一层都可以单独设置模型格式。**在默认的情况下，DenseInputLayer使用的是ColIdValueTextRowFormat，SparseInputLayer使用的是ColIdValueTextRowFormat，Embedding层使用的是TextColumnFormat，FCLayer使用的是RowIdColIdValueTextRowFormat。**
+Angel的算法目前基本都是基于新的计算图框架来实现的，计算图中的每一层都可以单独设置模型格式。**在默认的情况下，SimpleInputLayer使用的是ColIdValueTextRowFormat，Embedding层使用的是TextColumnFormat，FCLayer使用的是RowIdColIdValueTextRowFormat。**
 - **LR，线性回归，SVM**：默认的模型保存格式为ColIdValueTextRowFormat。
 - **GBDT**：RowIdColIdValueTextRowFormat
 - **FM**：线性部分使用的是ColIdValueTextRowFormat，Embedding使用的是Embedding层使用的是TextColumnFormat
 - **DeepFM, DNN，Wide And Deep，PNN，NFM等**：线性部分使用的是ColIdValueTextRowFormat，Embedding层使用的是TextColumnFormat，全连接部分使用的是RowIdColIdValueTextRowFormat
 
 当然，如果你不想使用默认格式，可以通过参数配置模型输出格式：
-- ***ml.denseinputlayer.matrix.output.format***：DenseInputLayer使用的输出格式
-- ***ml.sparseinputlayer.matrix.output.format***：SparseInputLayer使用的输出格式
+- ***ml.simpleinputlayer.matrix.output.format***：SimpleInputLayer使用的输出格式
 - ***ml.embedding.matrix.output.format***：Embedding使用的输出格式
 - ***ml.fclayer.matrix.output.format***：FCLayer使用的输出格式
 

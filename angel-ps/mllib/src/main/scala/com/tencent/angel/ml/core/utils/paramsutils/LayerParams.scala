@@ -19,9 +19,8 @@
 package com.tencent.angel.ml.core.utils.paramsutils
 
 import com.tencent.angel.exception.AngelException
+import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleLossLayer, SimpleInputLayer}
 import com.tencent.angel.ml.core.network.layers.{AngelGraph, Layer}
-import com.tencent.angel.ml.core.network.layers.edge.inputlayer.{DenseInputLayer, Embedding, SparseInputLayer}
-import com.tencent.angel.ml.core.network.layers.edge.losslayer.{SimpleLossLayer, SoftmaxLossLayer}
 import com.tencent.angel.ml.core.network.layers.join.{ConcatLayer, DotPooling, MulPooling, SumPooling}
 import com.tencent.angel.ml.core.network.layers.linear._
 import org.json4s.{DefaultFormats, JArray, JInt, JNothing, JValue}
@@ -34,11 +33,9 @@ abstract class LayerParams(val name: String, val layerType: String) {
 
 object LayerParams {
   implicit val formats = DefaultFormats
-  val denseInput: String = classOf[DenseInputLayer].getSimpleName.toLowerCase
-  val sparseInput: String = classOf[SparseInputLayer].getSimpleName.toLowerCase
+  val simpleInput: String = classOf[SimpleInputLayer].getSimpleName.toLowerCase
   val embedding: String = classOf[Embedding].getSimpleName.toLowerCase
   val simpleLoss: String = classOf[SimpleLossLayer].getSimpleName.toLowerCase
-  val softmaxLoss: String = classOf[SoftmaxLossLayer].getSimpleName.toLowerCase
   val concat: String = classOf[ConcatLayer].getSimpleName.toLowerCase
   val dotPooling: String = classOf[DotPooling].getSimpleName.toLowerCase
   val mulPooling: String = classOf[MulPooling].getSimpleName.toLowerCase
@@ -60,7 +57,7 @@ object LayerParams {
     }
 
     layerType.toLowerCase match {
-      case `denseInput` | `sparseInput` =>
+      case `simpleInput` =>
         val outputDim: Int = json \ ParamKeys.outputDim match {
           case JNothing => throw new AngelException("outputDim in InputLayer is not set!")
           case v: JInt => v.extract[Int]
@@ -82,7 +79,7 @@ object LayerParams {
 
         val optParams = OptParams(json \ ParamKeys.optimizer, defaultOpt)
         EmbeddingParams(name, layerType, outputDim, numFactors, optParams)
-      case `simpleLoss` | `softmaxLoss` =>
+      case `simpleLoss` =>
         val inputLayer = json \ ParamKeys.inputLayer match {
           case JNothing => throw new AngelException("inputlayer in LossLayer is not set!")
           case il: JValue => il.extract[String]
@@ -151,8 +148,7 @@ case class InputLayerParams(override val name: String,
       import LayerParams._
 
       val layer = layerType.trim.toLowerCase match {
-        case `sparseInput` => new SparseInputLayer(name, outputDim, transFunc.build(), optimizer.build())
-        case `denseInput` => new DenseInputLayer(name, outputDim, transFunc.build(), optimizer.build())
+        case `simpleInput` => new SimpleInputLayer(name, outputDim, transFunc.build(), optimizer.build())
       }
 
       layers.put(name, layer)
@@ -189,7 +185,6 @@ case class LossLayerParams(override val name: String,
 
       val layer = layerType.trim.toLowerCase match {
         case `simpleLoss` => new SimpleLossLayer(name, params(inputLayer).build(params), lossFunc.build())
-        case `softmaxLoss` => new SoftmaxLossLayer(name, params(inputLayer).build(params), lossFunc.build())
       }
 
       layers.put(name, layer)

@@ -225,20 +225,9 @@ public class MatrixFilesMeta {
         jsonMap.put(partEntry.getKey(), parJsonOnbect);
       }
       jsonObject.put("partMetas", jsonMap);
-      String jsos =  jsonObject.toString();
-      int bufferSize = 60000;
-      int i =0;
-      int sum = 0;
-
-      while(i < jsos.length()){
-          int endIdx = java.lang.Math.min(jsos.length(),i+bufferSize);
-          String jsosPart = jsos.substring(i,endIdx);
-          output.writeUTF(jsosPart);
-          sum += jsosPart.length();
-          i += bufferSize;
-      }
-      assert sum == jsos.length();
-//      output.writeUTF(jsonObject.toString());
+      byte[] b = jsonObject.toString().getBytes("utf-8");
+      output.writeInt(b.length);
+      output.write(b);
     } catch (Throwable e) {
       throw new IOException(e);
     }
@@ -246,7 +235,11 @@ public class MatrixFilesMeta {
 
   public void read(DataInputStream input) throws IOException {
     try {
-      JSONObject jsonObject = new JSONObject(input.readUTF());
+      int length = input.readInt();
+      byte[] b = new byte[length];
+      input.read(b);
+      String js = new String(b, "utf-8");
+      JSONObject jsonObject = new JSONObject(js);
       matrixId = jsonObject.getInt("matrixId");
       matrixName = jsonObject.getString("matrixName");
       formatClassName = jsonObject.getString("formatClassName");

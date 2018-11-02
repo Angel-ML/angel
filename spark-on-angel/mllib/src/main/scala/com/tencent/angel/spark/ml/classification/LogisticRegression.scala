@@ -19,8 +19,7 @@
 package com.tencent.angel.spark.ml.classification
 
 import com.tencent.angel.ml.core.conf.MLConf
-import com.tencent.angel.ml.core.network.layers.edge.inputlayer.SparseInputLayer
-import com.tencent.angel.ml.core.network.layers.edge.losslayer.SimpleLossLayer
+import com.tencent.angel.ml.core.network.layers.verge.{SimpleLossLayer, SimpleInputLayer}
 import com.tencent.angel.ml.core.network.transfunc.Identity
 import com.tencent.angel.ml.core.optimizer.Adam
 import com.tencent.angel.ml.core.optimizer.loss.LogLoss
@@ -32,7 +31,7 @@ class LogisticRegression extends GraphModel {
 
   override
   def network(): Unit = {
-    val input = new SparseInputLayer("input", 1, new Identity(), new Adam(lr))
+    val input = new SimpleInputLayer("input", 1, new Identity(), new Adam(lr))
     new SimpleLossLayer("simpleLossLayer", input, new LogLoss)
   }
 }

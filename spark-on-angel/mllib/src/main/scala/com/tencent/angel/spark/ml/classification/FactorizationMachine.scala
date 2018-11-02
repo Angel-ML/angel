@@ -19,8 +19,7 @@
 package com.tencent.angel.spark.ml.classification
 
 import com.tencent.angel.ml.core.conf.MLConf
-import com.tencent.angel.ml.core.network.layers.edge.inputlayer.{Embedding, SparseInputLayer}
-import com.tencent.angel.ml.core.network.layers.edge.losslayer.SimpleLossLayer
+import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleLossLayer, SimpleInputLayer}
 import com.tencent.angel.ml.core.network.layers.join.SumPooling
 import com.tencent.angel.ml.core.network.layers.linear.BiInnerSumCross
 import com.tencent.angel.ml.core.network.transfunc.Identity
@@ -36,7 +35,7 @@ class FactorizationMachine extends GraphModel {
 
   override
   def network(): Unit = {
-    val wide = new SparseInputLayer("wide", 1, new Identity(), new Adam(lr))
+    val wide = new SimpleInputLayer("wide", 1, new Identity(), new Adam(lr))
     val embedding = new Embedding("embedding", numField * numFactor, numFactor, new Adam(lr))
     val crossFeature = new BiInnerSumCross("innerSumPooling", embedding)
     val sum = new SumPooling("sum", 1, Array(wide, crossFeature))

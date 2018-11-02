@@ -161,7 +161,7 @@ public class RobustRegTest {
   @Test public void testLR() throws Exception {
     setConf();
     trainTest();
-    //        predictTest();
+    predictTest();
   }
 
 }

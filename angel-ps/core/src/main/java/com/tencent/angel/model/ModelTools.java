@@ -72,7 +72,7 @@ public class ModelTools {
         input.close();
       }
 
-      MatrixFormat format = ModelFilesUtils.initFormat(matrixFilesMeta.getFormatClassName());
+      MatrixFormat format = ModelFilesUtils.initFormat(matrixFilesMeta.getFormatClassName(), conf);
       return format.load(loadContext, conf);
     } catch (Throwable e) {
       throw new AngelException(e);
