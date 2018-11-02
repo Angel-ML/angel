@@ -39,7 +39,7 @@ object MLConf {
   val ML_DATA_HAS_LABEL = "ml.data.has.label"
   val DEFAULT_ML_DATA_HAS_LABEL = true
   val ML_DATA_LABEL_TRANS = "ml.data.label.trans.class"
-  val DEFAULT_ML_DATA_LABEL_TRANS = "PosNegTrans"
+  val DEFAULT_ML_DATA_LABEL_TRANS = "NoTrans"
   val ML_DATA_LABEL_TRANS_THRESHOLD = "ml.data.label.trans.threshold"
   val DEFAULT_ML_DATA_LABEL_TRANS_THRESHOLD = 0
   val ML_VALIDATE_RATIO = "ml.data.validate.ratio"
