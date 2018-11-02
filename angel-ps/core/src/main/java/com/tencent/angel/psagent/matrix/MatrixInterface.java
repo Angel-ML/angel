@@ -310,11 +310,30 @@ public interface MatrixInterface {
   /**
    * Get a batch rows
    * @param rowIds row ids
+   * @param disableCache true means get from ps directly
+   * @return rows result
+   * @throws AngelException
+   */
+  Vector [] getRows(int [] rowIds, boolean disableCache) throws AngelException;
+
+  /**
+   * Get a batch rows
+   * @param rowIds row ids
    * @param batchSize the number of rows in one rpc
    * @return rows result
    * @throws AngelException
    */
   Vector [] getRows(int [] rowIds, int batchSize) throws AngelException;
+
+  /**
+   * Get a batch rows
+   * @param rowIds row ids
+   * @param batchSize the number of rows in one rpc
+   * @param disableCache true means get from ps directly
+   * @return rows result
+   * @throws AngelException
+   */
+  Vector [] getRows(int [] rowIds, int batchSize, boolean disableCache) throws AngelException;
 
   /**
    * Get a batch of rows use the pipeline mode. The pipeline mode means that user can calculate part
