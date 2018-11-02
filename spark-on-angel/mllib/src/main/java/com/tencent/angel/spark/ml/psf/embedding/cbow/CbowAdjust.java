@@ -52,6 +52,9 @@ public class CbowAdjust extends UpdateFunc {
         float[] neu1 = new float[partDim];
         float[] neu1e = new float[partDim];
 
+        int contextIdx = 0;
+        float[] contextCache = ServerWrapper.getContext(param.partitionId);
+
         Map<Integer, float[]> outputUpdates = new HashMap<>();
         Map<Integer, float[]> inputUpdates  = new HashMap<>();
         Int2IntOpenHashMap inputUpdateCounter = new Int2IntOpenHashMap();
@@ -67,30 +70,34 @@ public class CbowAdjust extends UpdateFunc {
             Arrays.fill(neu1e, 0);
             int cw = 0;
 
-            for (int a = b; a < window * 2 + 1 - b; a++)
-              if (a != window) {
-                int c = position - window + a;
-                if (c < 0) continue;
-                if (c >= sen.length) continue;
-                if (sen[c] == -1) continue;
-                int row = sen[c] / numNodes;
-                int col = (sen[c] % numNodes) * partDim * order;
-                float[] values = ((IntFloatDenseVectorStorage) partition.getRow(row)
-                  .getSplit().getStorage()).getValues();
-                for (c = 0; c < partDim; c++) neu1[c] += values[c + col];
-                cw++;
-              }
+//            for (int a = b; a < window * 2 + 1 - b; a++)
+//              if (a != window) {
+//                int c = position - window + a;
+//                if (c < 0) continue;
+//                if (c >= sen.length) continue;
+//                if (sen[c] == -1) continue;
+////                int row = sen[c] / numNodes;
+////                int col = (sen[c] % numNodes) * partDim * order;
+////                float[] values = ((IntFloatDenseVectorStorage) partition.getRow(row)
+////                  .getSplit().getStorage()).getValues();
+////                for (c = 0; c < partDim; c++) neu1[c] += values[c + col];
+//                cw++;
+//              }
 
-            if (cw > 0) {
+
+
+//            if (cw > 0) {
+              for (int c = 0; c < partDim; c ++) neu1[c] = contextCache[contextIdx++];
+//              for (int c = 0; c < partDim; c ++) neu1[c] /= cw;
               int target;
               for (int d = 0; d < negative + 1; d++) {
-
                 if (d == 0) target = word;
-                else while (true){
-                  target = negativeSeed.nextInt(maxIndex);
-                  if (target == word) continue;
-                  else break;
-                }
+                else
+                  while (true) {
+                    target = negativeSeed.nextInt(maxIndex);
+                    if (target == word) continue;
+                    else break;
+                  }
 
                 float g = param.buf.readFloat();
                 length--;
@@ -102,7 +109,6 @@ public class CbowAdjust extends UpdateFunc {
                 // accumulate gradients for the input vectors
                 for (int c = 0; c < partDim; c++) neu1e[c] += g * values[c + col];
                 // update output vectors
-//                for (int c = 0; c < partDim; c++) values[c + col] += g * neu1[c];
                 mergeUpdates(outputUpdates, target, neu1, g);
                 outputUpdateCounter.addTo(target, 1);
               }
@@ -114,17 +120,12 @@ public class CbowAdjust extends UpdateFunc {
                   if (c < 0) continue;
                   if (c >= sen.length) continue;
                   if (sen[c] == -1) continue;
-//                  int row = sen[c] / numNodes;
-//                  int col = (sen[c] % numNodes) * partDim * order;
-//                  float[] values = ((IntFloatDenseVectorStorage) partition.getRow(row)
-//                    .getSplit().getStorage()).getValues();
-//                  for (c = 0; c < partDim; c++) values[c + col] += neu1e[c];
                   mergeUpdates(inputUpdates, sen[c], neu1e, 1);
                   inputUpdateCounter.addTo(sen[c], 1);
                 }
             }
           }
-        }
+//        }
 
         // conduct update
         Iterator<Map.Entry<Integer, float[]>> iterator = inputUpdates.entrySet().iterator();

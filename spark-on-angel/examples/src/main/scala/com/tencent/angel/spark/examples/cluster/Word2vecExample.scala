@@ -49,7 +49,7 @@ object Word2vecExample {
 
     val numExecutors = SparkUtils.getNumExecutors(conf)
 
-    val (corpus, denseToString) = Features.corpusStringToInt2(sc.textFile(input))
+    val (corpus, denseToString) = Features.corpusStringToInt(sc.textFile(input))
 
 
     val docs = corpus.repartition(numExecutors)

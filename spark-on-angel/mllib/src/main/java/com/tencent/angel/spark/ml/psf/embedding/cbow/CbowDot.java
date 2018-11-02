@@ -25,10 +25,8 @@ import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
-import com.tencent.angel.spark.ml.psf.embedding.NENegativeSample;
 import com.tencent.angel.spark.ml.psf.embedding.ServerWrapper;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 
 import java.util.Arrays;
 import java.util.List;
@@ -73,6 +71,12 @@ public class CbowDot extends GetFunc {
       Random windowSeed = new Random(seed);
       Random negativeSeed = new Random(seed + 1);
       FloatArrayList partialDots = new FloatArrayList();
+
+      int numTokens = 0;
+      for (int s = 0; s < sentences.length; s ++) numTokens += sentences[s].length;
+      float[] contextCache = new float[numTokens * partDim];
+      int contextIdx = 0;
+
       for (int s = 0; s < sentences.length; s ++) {
         int[] sen = sentences[s];
         for (int position = 0; position < sen.length; position ++) {
@@ -103,6 +107,7 @@ public class CbowDot extends GetFunc {
           // Calculate the partial dot values
           if (cw > 0) {
             for (int c = 0; c < partDim; c ++) context[c] /= cw;
+            for (int c = 0; c < partDim; c ++) contextCache[contextIdx++] = context[c];
             int target;
             for (int d = 0; d < negative + 1; d ++) {
               if (d == 0) target = word;
@@ -124,6 +129,8 @@ public class CbowDot extends GetFunc {
           }
         }
       }
+
+      ServerWrapper.setContext(param.partitionId, contextCache);
 
       return new CbowDotPartitionResult(partialDots.toFloatArray());
     }

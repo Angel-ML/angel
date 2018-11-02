@@ -18,18 +18,9 @@
 
 package com.tencent.angel.spark.context
 
-import java.util
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
-import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.{Map, mutable}
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.FileSystem
-import org.apache.hadoop.util.ShutdownHookManager
-import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.{SparkConf, SparkEnv, TaskContext}
 import com.tencent.angel.client.AngelContext
 import com.tencent.angel.common.location.Location
 import com.tencent.angel.conf.AngelConf
@@ -43,6 +34,15 @@ import com.tencent.angel.psagent.PSAgent
 import com.tencent.angel.psagent.matrix.{MatrixClient, MatrixClientFactory}
 import com.tencent.angel.spark.models.{PSMatrix, PSVector}
 import com.tencent.angel.spark.util.RowTypeImplicit._
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.FileSystem
+import org.apache.hadoop.util.ShutdownHookManager
+import org.apache.spark.deploy.SparkHadoopUtil
+import org.apache.spark.{SparkConf, SparkEnv, TaskContext}
+
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
+import scala.collection.{Map, mutable}
 
 /**
   * AngelPSContext for driver and executor, it is an implement of `PSContext`
@@ -76,20 +76,18 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
   }
   private var matrixCounter = 0
 
-  def createVector(
-                    dimension: Long,
-                    t: RowType = RowType.T_DOUBLE_DENSE,
-                    poolCapacity: Int = PSVectorPool.DEFAULT_POOL_CAPACITY,
-                    range: Long): PSVector = {
+  def createVector(dimension: Long,
+                   t: RowType = RowType.T_DOUBLE_DENSE,
+                   poolCapacity: Int = PSVectorPool.DEFAULT_POOL_CAPACITY,
+                   range: Long): PSVector = {
     assertCallByDriver("The operation of creating a vector can only be called on the driver side.")
     createVectorPool(dimension, poolCapacity, t, range).allocate()
   }
 
-  private[spark] def createVectorPool(
-                                       dimension: Long,
-                                       capacity: Int,
-                                       t: RowType,
-                                       range: Long): PSVectorPool = {
+  private[spark] def createVectorPool(dimension: Long,
+                                      capacity: Int,
+                                      t: RowType,
+                                      range: Long): PSVectorPool = {
     val thisCapacity = if (capacity > 0) capacity else PSVectorPool.DEFAULT_POOL_CAPACITY
 
     val matrixMeta = if (t.isDense) PSMatrix.dense(thisCapacity, dimension, t) else
@@ -103,8 +101,7 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
                         cols: Long,
                         rowInBlock: Int = -1,
                         colInBlock: Long = -1,
-                        rowType: RowType = RowType.T_DOUBLE_DENSE)
-  : MatrixMeta = {
+                        rowType: RowType = RowType.T_DOUBLE_DENSE): MatrixMeta = {
     val maxRowNumInBlock = if (rowInBlock == -1) rows else rowInBlock
     val maxBlockSize = 5000000
     val maxColNumInBlock = if (colInBlock == -1) {
@@ -137,32 +134,31 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
   /**
     * create a sparse long key matrix
     *
-    * @param rows       matrix row num
-    * @param cols        dimension for each row
-    * @param validIndexNum      long type range for each row
-    *                   if range = -1, the range is (Long.MinValue, Long.MaxValue),
-    *                   else range is [0, range), usually range will be set to Long.MaxValue.
-    * @param rowInBlock row number for each block
-    * @param colInBlock col number for each block
+    * @param rows          matrix row num
+    * @param cols          dimension for each row
+    * @param validIndexNum long type range for each row
+    *                      if range = -1, the range is (Long.MinValue, Long.MaxValue),
+    *                      else range is [0, range), usually range will be set to Long.MaxValue.
+    * @param rowInBlock    row number for each block
+    * @param colInBlock    col number for each block
     * @return
     */
-  def createSparseMatrix(
-                          rows: Int,
-                          cols: Long,
-                          validIndexNum: Long,
-                          rowInBlock: Int = -1,
-                          colInBlock: Long = -1,
-                          rowType: RowType = RowType.T_DOUBLE_SPARSE): MatrixMeta = {
+  def createSparseMatrix(rows: Int,
+                         cols: Long,
+                         validIndexNum: Long,
+                         rowInBlock: Int = -1,
+                         colInBlock: Long = -1,
+                         rowType: RowType = RowType.T_DOUBLE_SPARSE): MatrixMeta = {
     createMatrix(rows, cols, validIndexNum, rowInBlock, colInBlock, rowType)
   }
 
   def duplicateVector(original: PSVector): PSVector = {
-    assertCallByDriver("The operation of destroying a matrix can only be called on the driver side.")
+    assertCallByDriver("The operation of duplicate a vector can only be called on the driver side.")
     getPool(original.poolId).allocate().reset
   }
 
   def destroyVector(vector: PSVector): Unit = {
-    assertCallByDriver("The operation of destroying a matrix can only be called on the driver side.")
+    assertCallByDriver("The operation of destroying a vector can only be called on the driver side.")
     getPool(vector.poolId).delete(vector)
   }
 
@@ -188,6 +184,10 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
     }
   }
 
+  /**
+    * Refresh the matrix meta information for this psagent.
+    * This method will pull matrix infos from master.
+    */
   override def refreshMatrix(): Unit = {
     psAgent.refreshMatrixInfo()
   }
@@ -303,32 +303,35 @@ private[spark] object AngelPSContext {
     val psLogLevel = conf.get("spark.ps.log.level", "INFO")
     val psClass = conf.get("spark.ps.class", classOf[ParameterServer].getName)
 
-    val actionType = conf.get("spark.ps.action.type", "train")
-
     val defaultFS = conf.get("spark.hadoop.fs.defaultFS", "file://")
     val tempPath = defaultFS + "/tmp/spark-on-angel/" + UUID.randomUUID()
 
-    val psOut = conf.get("spark.ps.out.path", tempPath)
-    val modelPath = conf.get("spark.ps.model.path", tempPath)
     val psOutOverwrite = conf.getBoolean("spark.ps.out.overwrite", defaultValue = true)
     val psOutTmpOption = conf.getOption("spark.ps.out.tmp.path.prefix")
 
     import com.tencent.angel.conf.AngelConf._
 
     val hadoopConf = SparkHadoopUtil.get.newConfiguration(conf)
-    hadoopConf.set(ANGEL_RUNNING_MODE, "ANGEL_PS")
 
+    // setting running mode, app name, queue and deploy mode
+    hadoopConf.set(ANGEL_RUNNING_MODE, "ANGEL_PS")
     hadoopConf.set(ANGEL_JOB_NAME, appName)
     hadoopConf.set(ANGEL_QUEUE, queue)
-
     hadoopConf.set(ANGEL_DEPLOY_MODE, deployMode)
-    if (deployMode == "LOCAL") {
-      hadoopConf.set(ANGEL_PS_HEARTBEAT_INTERVAL_MS, "200")
-    }
-    if (psOpts.isDefined) {
-      hadoopConf.set(ANGEL_PS_JAVA_OPTS, psOpts.get)
-    }
 
+    // For local mode, we set heartbeat a small value for fast debugging
+    if (deployMode == "LOCAL")
+      hadoopConf.set(ANGEL_PS_HEARTBEAT_INTERVAL_MS, "200")
+
+    if (psOpts.isDefined)
+      hadoopConf.set(ANGEL_PS_JAVA_OPTS, psOpts.get)
+
+    // Set the temp path as the angel.save.model.path to fake the angel-ps system
+    // The action type is also a fake setting.
+    hadoopConf.set(ANGEL_ACTION_TYPE, "train")
+    hadoopConf.set(ANGEL_SAVE_MODEL_PATH, tempPath)
+
+    // Setting resource
     hadoopConf.setInt(ANGEL_PS_NUMBER, psNum)
     hadoopConf.setInt(ANGEL_PS_CPU_VCORES, psCores)
     hadoopConf.setInt(ANGEL_PS_MEMORY_GB, psMem)
@@ -336,25 +339,21 @@ private[spark] object AngelPSContext {
 
     hadoopConf.set(ANGEL_AM_LOG_LEVEL, psLogLevel)
     hadoopConf.set(ANGEL_PS_LOG_LEVEL, psLogLevel)
-
     hadoopConf.set(ANGEL_PS_CLASS, psClass)
-
     hadoopConf.set(ANGEL_JOB_LIBJARS, psJars)
 
-    hadoopConf.set(ANGEL_ACTION_TYPE, actionType)
-    if (actionType == "train") {
-      hadoopConf.set(ANGEL_SAVE_MODEL_PATH, modelPath)
-    } else {
-      hadoopConf.set(ANGEL_PREDICT_PATH, psOut)
-    }
-
     hadoopConf.setBoolean(ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, psOutOverwrite)
-    psOutTmpOption.foreach {
-      hadoopConf.set(ANGEL_JOB_TMP_OUTPUT_PATH_PREFIX, _)
-    }
+    psOutTmpOption.foreach(hadoopConf.set(ANGEL_JOB_TMP_OUTPUT_PATH_PREFIX, _))
 
+    // No need for sync clock values, we don't need ssp in Spark.
     hadoopConf.setInt(ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 100000000)
     hadoopConf.set(ANGEL_LOG_PATH, tempPath)
+
+    // Some other settings
+    conf.getAllWithPrefix("angel").foreach {
+      case (key, value) => hadoopConf.set(s"angel.$key", value)
+      println(s"key=angel.$key value=$value")
+    }
     hadoopConf
   }
 

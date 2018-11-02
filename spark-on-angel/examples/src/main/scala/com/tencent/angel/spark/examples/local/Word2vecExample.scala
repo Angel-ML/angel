@@ -17,6 +17,9 @@
 
 package com.tencent.angel.spark.examples.local
 
+import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
+
 import scala.util.Random
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.embedding.Param
@@ -34,6 +37,8 @@ object Word2vecExample {
     conf.set("spark.ps.jars", "")
     conf.set("spark.ps.instances", "1")
     conf.set("spark.ps.cores", "1")
+
+    conf.set(AngelConf.ANGEL_PS_PARTITION_SOURCE_CLASS, classOf[PartitionSourceArray].getName)
 
     val sc = new SparkContext(conf)
     sc.setLogLevel("ERROR")
@@ -75,8 +80,8 @@ object Word2vecExample {
     val model = new Word2VecModel(param)
     model.train(docs, param)
 
-    model.save(output + "embedding", 0)
-    denseToString.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "mapping")
+//    model.save(output + "embedding", 0)
+//    denseToString.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "mapping")
 
     PSContext.stop()
     sc.stop()
