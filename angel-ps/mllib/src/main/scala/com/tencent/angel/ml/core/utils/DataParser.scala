@@ -28,7 +28,7 @@ abstract class DataParser {
   def parse(value: String): LabeledData
 }
 
-case class DummyDataParser(splitter: String, featRange: Long, hasLabel: Boolean, transLabel: Boolean, rowType: RowType) extends DataParser {
+case class DummyDataParser(splitter: String, featRange: Long, hasLabel: Boolean, transLabel: TransLabel, rowType: RowType) extends DataParser {
   override def parse(value: String): LabeledData = {
     if (null == value) {
       return null
@@ -40,11 +40,8 @@ case class DummyDataParser(splitter: String, featRange: Long, hasLabel: Boolean,
     }
 
     val y = if (hasLabel) {
-      val label = splits(0).toDouble
       splits = splits.tail
-      if (transLabel) {
-        if (label == 0) -1.0 else label
-      } else label
+      transLabel.trans(splits(0).toDouble)
     } else Double.NaN
 
     val keyType = NetUtils.keyType(rowType)
@@ -70,7 +67,7 @@ case class DummyDataParser(splitter: String, featRange: Long, hasLabel: Boolean,
   }
 }
 
-case class LibSVMDataParser(splitter: String, featRange: Long, hasLabel: Boolean, transLabel: Boolean, rowType: RowType) extends DataParser {
+case class LibSVMDataParser(splitter: String, featRange: Long, hasLabel: Boolean, transLabel: TransLabel, rowType: RowType) extends DataParser {
   // type V = IntDoubleVector
 
   override def parse(text: String): LabeledData = {
@@ -84,11 +81,8 @@ case class LibSVMDataParser(splitter: String, featRange: Long, hasLabel: Boolean
       return null
 
     val y = if (hasLabel) {
-      val label = splits(0).toDouble
       splits = splits.tail
-      if (transLabel) {
-        if (label == 0) -1.0 else label
-      } else label
+      transLabel.trans(splits(0).toDouble)
     } else Double.NaN
     val len = splits.length
 
@@ -147,7 +141,7 @@ case class LibSVMDataParser(splitter: String, featRange: Long, hasLabel: Boolean
   }
 }
 
-case class DenseDataParser(splitter: String, featRange: Int, hasLabel: Boolean, transLabel: Boolean, rowType: RowType) extends DataParser {
+case class DenseDataParser(splitter: String, featRange: Int, hasLabel: Boolean, transLabel: TransLabel, rowType: RowType) extends DataParser {
 
   override def parse(value: String): LabeledData = {
     if (null == value) {
@@ -160,11 +154,8 @@ case class DenseDataParser(splitter: String, featRange: Int, hasLabel: Boolean, 
     }
 
     val y = if (hasLabel) {
-      val label = splits(0).toDouble
       splits = splits.tail
-      if (transLabel) {
-        if (label == 0) -1.0 else label
-      } else label
+      transLabel.trans(splits(0).toDouble)
     } else Double.NaN
 
     val x = NetUtils.valueType(rowType) match {
@@ -187,7 +178,10 @@ object DataParser {
     val splitter = conf.get(MLConf.ML_DATA_SPLITOR, MLConf.DEFAULT_ML_DATA_SPLITOR)
     val rowType = RowType.valueOf(conf.get(MLConf.ML_MODEL_TYPE, MLConf.DEFAULT_ML_MODEL_TYPE))
     val hasLabel = conf.getBoolean(MLConf.ML_DATA_HAS_LABEL, MLConf.DEFAULT_ML_DATA_HAS_LABEL)
-    val transLabel = conf.getBoolean(MLConf.ML_DATA_TRANS_LABEL, MLConf.DEFAULT_ML_DATA_TRANS_LABEL)
+    val transLabel = TransLabel.get(
+      conf.getString(MLConf.ML_DATA_LABEL_TRANS, MLConf.DEFAULT_ML_DATA_LABEL_TRANS),
+      conf.getDouble(MLConf.ML_DATA_LABEL_TRANS_THRESHOLD, MLConf.DEFAULT_ML_DATA_LABEL_TRANS_THRESHOLD)
+    )
     dataFormat match {
       case "dummy" => DummyDataParser(splitter, featRange, hasLabel, transLabel, rowType)
       case "libsvm" => LibSVMDataParser(splitter, featRange, hasLabel, transLabel, rowType)
