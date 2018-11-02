@@ -40,8 +40,9 @@ case class DummyDataParser(splitter: String, featRange: Long, hasLabel: Boolean,
     }
 
     val y = if (hasLabel) {
+      val label = transLabel.trans(splits(0).toDouble)
       splits = splits.tail
-      transLabel.trans(splits(0).toDouble)
+      label
     } else Double.NaN
 
     val keyType = NetUtils.keyType(rowType)
@@ -81,8 +82,9 @@ case class LibSVMDataParser(splitter: String, featRange: Long, hasLabel: Boolean
       return null
 
     val y = if (hasLabel) {
+      val label = transLabel.trans(splits(0).toDouble)
       splits = splits.tail
-      transLabel.trans(splits(0).toDouble)
+      label
     } else Double.NaN
     val len = splits.length
 
@@ -154,8 +156,9 @@ case class DenseDataParser(splitter: String, featRange: Int, hasLabel: Boolean, 
     }
 
     val y = if (hasLabel) {
+      val label = transLabel.trans(splits(0).toDouble)
       splits = splits.tail
-      transLabel.trans(splits(0).toDouble)
+      label
     } else Double.NaN
 
     val x = NetUtils.valueType(rowType) match {
