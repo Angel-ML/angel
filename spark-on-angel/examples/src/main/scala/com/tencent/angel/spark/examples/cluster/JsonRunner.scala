@@ -68,20 +68,16 @@ object JsonRunner {
 
     actionType match {
       case MLConf.ANGEL_ML_TRAIN =>
+        // get model path, load it first
+        if (modelPath.length > 0) model.load(modelPath)
+        // train
         learner.train(data, model)
-        if (output.length > 0) model.save(output)
-
-      case MLConf.ANGEL_ML_INC_TRAIN =>
-        if (modelPath.length == 0)
-          throw new AngelException("Should set model path for increment training!")
-
-        model.load(modelPath)
-        learner.train(data, model)
+        // save model
         if (output.length > 0) model.save(output)
 
       case MLConf.ANGEL_ML_PREDICT =>
         if (modelPath.length == 0)
-          throw new AngelException("Should set model path for increment training!")
+          throw new AngelException("Should set model path for predict!")
 
         model.load(modelPath)
         val predict = learner.predict(data, model)
