@@ -45,7 +45,7 @@ class PSMatrixImpl(
 
   override def pull(): Matrix = {
     val rowIds = Array.range(0, rows)
-    val rowArr = matrixClient.getRows(rowIds)
+    val rowArr = matrixClient.getRows(rowIds, true)
     PSMatrixUtils.createFromVectorArray(id, rowType, rowArr)
   }
 

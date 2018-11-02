@@ -1119,8 +1119,8 @@ public class UserRequestAdapter {
       if (row == null) {
         return;
       }
-
-      PSAgentContext.get().getMatrixStorageManager().addRow(row.getMatrixId(), row.getRowId(), row);
+      if(PSAgentContext.get().getMatrixStorageManager() != null)
+        PSAgentContext.get().getMatrixStorageManager().addRow(row.getMatrixId(), row.getRowId(), row);
       ReentrantLock lock = getLock(row.getMatrixId());
       try {
         lock.lock();
