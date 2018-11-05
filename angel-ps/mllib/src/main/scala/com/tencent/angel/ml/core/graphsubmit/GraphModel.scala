@@ -109,7 +109,7 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
           case mat: BlasFloatMatrix if mat.getNumCols == 4  =>
             (0 until mat.getNumRows).foreach { i =>
               resData.put(SoftmaxPredictResult(VectorUtils.getFloat(labels, i).toLong,
-                mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 2)))
+                mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
             }
         }
       }
@@ -151,7 +151,7 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
         case mat: BlasFloatMatrix if mat.getNumCols == 4  =>
           (0 until mat.getNumRows).foreach { i =>
             resData.put(SoftmaxPredictResult(VectorUtils.getFloat(labels, i).toLong,
-              mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 2)))
+              mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
           }
       }
     }
