@@ -25,7 +25,6 @@ import com.tencent.angel.spark.ml.embedding.NEModel.NEDataSet
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel.{W2VDataSet, buildDataBatches}
 import com.tencent.angel.spark.ml.embedding.{NEModel, Param, Sigmoid}
 import com.tencent.angel.spark.ml.psf.embedding.cbow._
-import com.tencent.angel.spark.ml.psf.embedding.sentences.{UploadSentences, UploadSentencesParam}
 import org.apache.spark.rdd.RDD
 
 import scala.util.Random
@@ -35,7 +34,8 @@ class Word2VecModel(numNode: Int,
                     dimension: Int,
                     numPart: Int,
                     numNodesPerRow: Int = -1,
-                    seed: Int = Random.nextInt)
+                    seed: Int = Random.nextInt,
+                    concurrentLevel: Int = 3)
   extends NEModel(numNode, dimension, numPart, numNodesPerRow, 2, false, seed) {
 
   def this(param: Param) {
@@ -47,53 +47,76 @@ class Word2VecModel(numNode: Int,
     val numPartitions = corpus.getNumPartitions
 
     def sgdForBatch(partitionId: Int,
+                    threadId: Int,
                     batch: NEDataSet,
-                    initialize: Boolean): (Double, Array[Long]) = {
+                    batchId: Int): (Double, Array[Long]) = {
       var (start, end) = (0L, 0L)
-
-      // upload sentences
-      start = System.currentTimeMillis()
-      val uploadFunc = getUpload(batch, initialize, partitionId, numPartitions)
-      psMatrix.psfUpdate(uploadFunc).get()
-      end = System.currentTimeMillis()
-      val uploadTime = end - start
 
       // dot
       start = System.currentTimeMillis()
-      val dotFunc = getDot(param.seed, param.negSample, Some(param.windowSize), partitionId)
-      val dots = psMatrix.psfGet(dotFunc).asInstanceOf[CbowDotResult].getValues
+      val dotParam = new CbowDotParam(matrixId,
+        seed,
+        param.negSample,
+        param.windowSize,
+        partDim,
+        partitionId,
+        threadId,
+        batch.asInstanceOf[W2VDataSet].sentences)
+
+      val dots = psMatrix.psfGet(new CbowDot(dotParam))
+        .asInstanceOf[CbowDotResult]
+        .getValues
       end = System.currentTimeMillis()
       val dotTime = end - start
 
       // gradient
       start = System.currentTimeMillis()
-      val loss = doGrad(dots, param.negSample, param.learningRate, Some(batch))
+      val loss = doGrad(dots,
+        param.negSample,
+        param.learningRate,
+        Some(batch))
       end = System.currentTimeMillis()
       val gradientTime = end - start
 
-
       // adjust
       start = System.currentTimeMillis()
-      val adjustFunc = getAdjust(param.seed, param.negSample, dots, Some(param.windowSize), partitionId)
-      psMatrix.psfUpdate(adjustFunc).get()
+      val adjustParam = new CbowAdjustParam(matrixId,
+        seed, param.negSample,
+        param.windowSize,
+        partDim,
+        partitionId,
+        threadId,
+        dots,
+        batch.asInstanceOf[W2VDataSet].sentences)
+      psMatrix.psfUpdate(new CbowAdjust(adjustParam)).get()
       end = System.currentTimeMillis()
       val adjustTime = end - start
 
       // return loss
-      println(s"uploadTime=$uploadTime dotTime=$dotTime gradientTime=$gradientTime adjustTime=$adjustTime")
-      (loss, Array(uploadTime, dotTime, gradientTime, adjustTime))
+      if (batchId % 100 == 0)
+        println(s"batchId=$batchId dotTime=$dotTime gradientTime=$gradientTime adjustTime=$adjustTime")
+      (loss, Array(dotTime, gradientTime, adjustTime))
     }
 
-    def sgdForPartition(partitionId: Int, iterator: Iterator[NEDataSet], epoch: Int): Iterator[(Double, Array[Long])] = {
+    def sgdForPartition(partitionId: Int,
+                        iterator: Iterator[NEDataSet],
+                        epoch: Int): Iterator[(Double, Array[Long])] = {
       PSContext.instance()
 
       if (epoch == 0) {
-        sgdForBatch(partitionId, iterator.next(), true)
+        val initFunc = getInit(partitionId, numPartitions, numNode)
+        psMatrix.psfUpdate(initFunc).get()
       }
 
-      iterator.zipWithIndex.map { case (batch, index) =>
-        if (index % 1000 == 0) NEModel.logTime(s"finish batch $index for epoch $epoch")
-        sgdForBatch(partitionId, batch, false)}
+      iterator.zipWithIndex.sliding(concurrentLevel, concurrentLevel).map { case seq =>
+        seq.foreach{ case (_, index) =>
+          if (index % 1000 == 0) NEModel.logTime(s"finish batch $index for epoch $epoch")}
+        seq.zipWithIndex.par.map(batch =>
+          sgdForBatch(partitionId,
+            batch._2,
+            batch._1._1,
+            batch._1._2))
+      }.flatMap(f => f)
     }
 
     val iterator = buildDataBatches(corpus, param.batchSize)
@@ -104,32 +127,20 @@ class Word2VecModel(numNode: Int,
         (partitionId, iterator) => sgdForPartition(partitionId, iterator, epoch),
         true).collect()
       val loss = middle.map(f => f._1).sum
-      val array = new Array[Long](4)
+      val array = new Array[Long](3)
       middle.foreach(f => f._2.zipWithIndex.foreach(t => array(t._2) += t._1))
       println(s"epoch=$epoch " +
         s"loss=$loss " +
-        s"uploadTime=${array(0)} " +
-        s"dotTime=${array(1)} " +
-        s"gradientTime=${array(2)} " +
-        s"adjustTime=${array(3)}")
+        s"dotTime=${array(0)} " +
+        s"gradientTime=${array(1)} " +
+        s"adjustTime=${array(2)}")
     }
 
   }
 
-  def getUpload(batch: NEDataSet, initialize: Boolean, partitionId: Int, numPartitions: Int): UpdateFunc = {
-    val sentences = batch.asInstanceOf[W2VDataSet].sentences
-    val param = new UploadSentencesParam(matrixId, partitionId, numPartitions, numNode, initialize, sentences)
-    new UploadSentences(param)
-  }
-
-  def getDot(seed: Int, negative: Int, window: Option[Int], partitionId: Int): GetFunc = {
-    val param = new CbowDotParam(matrixId, seed, negative, window.get, partDim, partitionId)
-    new CbowDot(param)
-  }
-
-  def getAdjust(seed: Int, negative: Int, gradient: Array[Float], window: Option[Int], partitionId: Int): UpdateFunc = {
-    val param = new CbowAdjustParam(matrixId, seed, negative, window.get, partDim, partitionId, gradient)
-    new CbowAdjust(param)
+  def getInit(partitionId: Int, numPartitions: Int, maxIndex: Int): UpdateFunc = {
+    val param = new CbowInitParam(matrixId, partitionId, numPartitions, maxIndex, concurrentLevel)
+    new CbowInit(param)
   }
 
 
@@ -137,7 +148,10 @@ class Word2VecModel(numNode: Int,
 
   override def getAdjustFunc(data: NEDataSet, batchSeed: Int, ns: Int, grad: Array[Float], window: Option[Int]): UpdateFunc = ???
 
-  override def doGrad(dots: Array[Float], negative: Int, alpha: Float, data: Option[NEDataSet]): Double = {
+  override def doGrad(dots: Array[Float],
+                      negative: Int,
+                      alpha: Float,
+                      data: Option[NEDataSet]): Double = {
     val sentences = data.get.asInstanceOf[W2VDataSet].sentences
     val size = sentences.map(sen => sen.length).sum
     var label = 0

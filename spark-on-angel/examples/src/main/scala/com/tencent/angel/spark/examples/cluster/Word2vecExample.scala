@@ -39,6 +39,7 @@ object Word2vecExample {
     val sc   = new SparkContext(conf)
 
     conf.set(AngelConf.ANGEL_PS_PARTITION_SOURCE_CLASS, classOf[PartitionSourceArray].getName)
+    conf.set(AngelConf.ANGEL_PS_BACKUP_MATRICES, "")
 
     PSContext.getOrCreate(sc)
 
@@ -55,6 +56,9 @@ object Word2vecExample {
 
     val numCores = SparkUtils.getNumCores(conf)
 
+    // The number of partition is more than the cores. We do this to achieve dynamic load balance.
+    val numDataPartitions = (numCores * 6.25).toInt
+
     val data = sc.textFile(input)
     data.persist(StorageLevel.DISK_ONLY)
 
@@ -63,17 +67,18 @@ object Word2vecExample {
     corpus.persist(StorageLevel.DISK_ONLY)
 
     val docs = if (withSubSample)
-        SubSampling.sampling(corpus).repartition(numCores)
+        SubSampling.sampling(corpus).repartition(numDataPartitions)
       else
-        corpus.repartition(numCores)
+        corpus.repartition(numDataPartitions)
 
-    docs.persist(StorageLevel.MEMORY_AND_DISK)
+    docs.persist(StorageLevel.DISK_ONLY)
 
     val numDocs = docs.count()
     val maxWordId = docs.map(_.max).max().toLong + 1
     val numTokens = docs.map(_.length).sum().toLong
     println(s"numDocs=$numDocs maxWordId=$maxWordId numTokens=$numTokens")
 
+    corpus.unpersist()
     data.unpersist()
 
     val param = new Param()

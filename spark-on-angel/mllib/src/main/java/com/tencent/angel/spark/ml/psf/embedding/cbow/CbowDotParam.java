@@ -16,19 +16,25 @@ public class CbowDotParam extends GetParam {
   int window;
   int partDim;
   int partitionId;
+  int threadId;
+  int[][] sentences;
 
   public CbowDotParam(int matrixId,
                       int seed,
                       int negative,
                       int window,
                       int partDim,
-                      int partitionId) {
+                      int partitionId,
+                      int threadId,
+                      int[][] sentences) {
     super(matrixId);
     this.seed = seed;
     this.negative = negative;
     this.window = window;
     this.partDim = partDim;
     this.partitionId = partitionId;
+    this.threadId = threadId;
+    this.sentences = sentences;
   }
 
   @Override
@@ -39,12 +45,14 @@ public class CbowDotParam extends GetParam {
     while (iterator.hasNext()) {
       PartitionKey pkey = iterator.next();
       params.add(new CbowDotPartitionParam(matrixId,
-        seed,
-        negative,
-        window,
-        partDim,
-        partitionId,
-        pkey));
+              seed,
+              negative,
+              window,
+              partDim,
+              partitionId,
+              threadId,
+              pkey,
+              sentences));
     }
     return params;
   }

@@ -1,4 +1,4 @@
-package com.tencent.angel.spark.ml.psf.embedding.sentences;
+package com.tencent.angel.spark.ml.psf.embedding.cbow;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
@@ -9,47 +9,43 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UploadSentencesParam extends UpdateParam {
+public class CbowInitParam extends UpdateParam {
 
   private int partitionId;
   private int numPartitions;
   private int maxIndex;
-  private boolean initialize;
-  private int[][] sentences;
+  private int concurrentLevel;
 
-  public UploadSentencesParam(int matrixId,
-                              int partitionId,
-                              int numPartitions,
-                              int maxIndex,
-                              boolean initialize,
-                              int[][] sentences) {
+  public CbowInitParam(int matrixId,
+                       int partitionId,
+                       int numPartitions,
+                       int maxIndex,
+                       int concurrentLevel) {
     super(matrixId);
     this.partitionId = partitionId;
     this.numPartitions = numPartitions;
-    this.maxIndex    = maxIndex;
-    this.initialize  = initialize;
-    this.sentences   = sentences;
+    this.maxIndex = maxIndex;
+    this.concurrentLevel = concurrentLevel;
   }
 
   @Override
   public List<PartitionUpdateParam> split() {
     List<PartitionKey> pkeys = PSAgentContext.get().getMatrixMetaManager()
-      .getPartitions(matrixId);
+            .getPartitions(matrixId);
 
     IntOpenHashSet serverIds = new IntOpenHashSet();
     List<PartitionUpdateParam> params = new ArrayList<>();
-    for (PartitionKey pkey: pkeys) {
+    for (PartitionKey pkey : pkeys) {
       int serverId = PSAgentContext.get().getMatrixMetaManager()
-        .getMasterPS(pkey).getIndex();
+              .getMasterPS(pkey).getIndex();
       if (!serverIds.contains(serverId)) {
         serverIds.add(serverId);
-        params.add(new UploadSentencesPartitionParam(matrixId,
-          pkey,
-          partitionId,
-          numPartitions,
-          maxIndex,
-          initialize,
-          sentences));
+        params.add(new CbowInitPartitionParam(matrixId,
+                pkey,
+                partitionId,
+                numPartitions,
+                maxIndex,
+                concurrentLevel));
       }
     }
     return params;

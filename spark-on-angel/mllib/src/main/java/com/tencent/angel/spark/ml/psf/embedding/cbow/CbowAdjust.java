@@ -36,7 +36,7 @@ public class CbowAdjust extends UpdateFunc {
         int seed = param.seed;
         int order = 2;
 
-        int[][] sentences = ServerWrapper.getSentencesWithPartitionId(param.partitionId);
+        int[][] sentences = param.sentences;
         int maxIndex = ServerWrapper.getMaxIndex();
 
         // compute number of nodes for one row
@@ -53,8 +53,8 @@ public class CbowAdjust extends UpdateFunc {
         float[] neu1 = new float[partDim];
         float[] neu1e = new float[partDim];
 
-        int numInputs = ServerWrapper.getNumInputs(param.partitionId);
-        int numOutputs = ServerWrapper.getNumOutputs(param.partitionId);
+        int numInputs = ServerWrapper.getNumInputs(param.partitionId, param.threadId);
+        int numOutputs = ServerWrapper.getNumOutputs(param.partitionId, param.threadId);
 
         float[] inputs = new float[numInputs * partDim];
         float[] outputs = new float[numOutputs * partDim];
@@ -67,12 +67,16 @@ public class CbowAdjust extends UpdateFunc {
 
         int[] windows = new int[window * 2];
 
+        // We assume that there are only one row in the partition
         float[] values = ((IntFloatDenseVectorStorage) partition.getRow(0).getSplit().getStorage()).getValues();
+        // We assume that the max_length of one doc is 200.
         float[] sentence_vectors = new float[partDim * 200];
 
         for (int s = 0; s < sentences.length; s++) {
           int[] sen = sentences[s];
 
+          // locates the input vector into local arrays to prevent randomly access for
+          // the large server row.
           for (int a = 0; a < sen.length; a ++) {
             int node = sen[a];
             int offset = node * partDim * order;
@@ -102,13 +106,13 @@ public class CbowAdjust extends UpdateFunc {
               }
 
 
-
             if (cw > 0) {
               for (int c = 0; c < partDim; c ++) neu1[c] /= cw;
               int target;
               for (int d = 0; d < negative + 1; d++) {
                 if (d == 0) target = word;
                 else
+                  // while true to prevent sampling out a positive target
                   while (true) {
                     target = negativeSeed.nextInt(maxIndex);
                     if (target == word) continue;
@@ -117,6 +121,7 @@ public class CbowAdjust extends UpdateFunc {
 
                 float g = param.buf.readFloat();
                 length--;
+                // how to prevent the randomly access to the output vectors??
                 int col = target * partDim * order + partDim;
                 // accumulate gradients for the input vectors
                 for (int c = 0; c < partDim; c++) neu1e[c] += g * values[c + col];
@@ -176,143 +181,6 @@ public class CbowAdjust extends UpdateFunc {
 
     int offset = start * update.length;
     for (int c = 0; c < update.length; c ++) inputs[offset + c] += g * update[c];
-  }
-
-  public void partitionUpdate0(PartitionUpdateParam partParam) {
-
-    // Sequential updates
-
-    if (partParam instanceof CbowAdjustPartitionParam) {
-
-      CbowAdjustPartitionParam param = (CbowAdjustPartitionParam) partParam;
-
-      try {
-        // Some params
-        PartitionKey pkey = param.getPartKey();
-        int negative = param.negative;
-        int partDim = param.partDim;
-        int window = param.window;
-        int seed = param.seed;
-        int order = 2;
-
-        int[][] sentences = ServerWrapper.getSentencesWithPartitionId(param.partitionId);
-        int maxIndex = ServerWrapper.getMaxIndex();
-
-        // compute number of nodes for one row
-        int size = (int) (pkey.getEndCol() - pkey.getStartCol());
-        int numNodes = size / (partDim * order);
-
-        ServerPartition partition = psContext.getMatrixStorageManager().getPart(pkey);
-        Random windowSeed = new Random(seed);
-        Random negativeSeed = new Random(seed + 1);
-
-        int length = param.buf.readInt();
-
-        // used to accumulate the context input vectors
-        float[] neu1 = new float[partDim];
-        float[] neu1e = new float[partDim];
-
-        int numInputs = ServerWrapper.getNumInputs(param.partitionId);
-        int numOutputs = ServerWrapper.getNumOutputs(param.partitionId);
-
-        float[] outputs = new float[length * partDim];
-        float[] inputs  = new float[length * partDim];
-
-
-        Int2IntOpenHashMap inputUpdateCounter = new Int2IntOpenHashMap();
-        Int2IntOpenHashMap outputUpdateCounter = new Int2IntOpenHashMap();
-
-        int[] windows = new int[window * 2];
-
-        int outputIndex = 0;
-        int inputIndex  = 0;
-
-        float[] values = ((IntFloatDenseVectorStorage) partition.getRow(0).getSplit().getStorage()).getValues();
-        float[] sentence_vectors = new float[partDim * 200];
-
-        for (int s = 0; s < sentences.length; s++) {
-          int[] sen = sentences[s];
-
-          for (int a = 0; a < sen.length; a ++) {
-            int node = sen[a];
-            int offset = node * partDim * order;
-            int start  = a * partDim;
-            for (int c = 0; c < partDim; c ++)
-              sentence_vectors[start + c] = values[offset + c];
-          }
-
-          for (int position = 0; position < sen.length; position++) {
-            int word = sen[position];
-            // window size
-            int b = windowSeed.nextInt(window);
-            Arrays.fill(neu1, 0);
-            Arrays.fill(neu1e, 0);
-            int cw = 0;
-
-            for (int a = b; a < window * 2 + 1 - b; a++)
-              if (a != window) {
-                int c = position - window + a;
-                if (c < 0) continue;
-                if (c >= sen.length) continue;
-                if (sen[c] == -1) continue;
-                windows[cw] = sen[c];
-                int start = c * partDim;
-                for (c = 0; c < partDim; c++) neu1[c] += sentence_vectors[c + start];
-                cw++;
-              }
-
-
-
-            if (cw > 0) {
-              for (int c = 0; c < partDim; c ++) neu1[c] /= cw;
-              int target;
-              for (int d = 0; d < negative + 1; d++) {
-                if (d == 0) target = word;
-                else
-                  while (true) {
-                    target = negativeSeed.nextInt(maxIndex);
-                    if (target == word) continue;
-                    else break;
-                  }
-
-                float g = param.buf.readFloat();
-                length--;
-
-//                int row = target / numNodes;
-//                int col = (target % numNodes) * partDim * order + partDim;
-//                float[] values = ((IntFloatDenseVectorStorage) partition.getRow(row)
-//                  .getSplit().getStorage()).getValues();
-                int col = target * partDim * order + partDim;
-                // accumulate gradients for the input vectors
-                for (int c = 0; c < partDim; c++) neu1e[c] += g * values[c + col];
-
-                // update output vectors
-//                merge(outputs, outputIndex, target, neu1, g);
-                for (int c = 0; c < partDim; c++) outputs[outputIndex++] = neu1[c] * g;
-
-                outputUpdateCounter.addTo(target, 1);
-              }
-
-              for (int c = 0; c < partDim; c++) inputs[inputIndex++] = neu1e[c];
-
-              for (int a = 0; a < cw; a ++) {
-                int input = windows[a];
-//                merge(inputs, inputIndex, input, neu1e, 1);
-//                for (int c = 0; c < partDim; c++) inputs[inputIndex++] = neu1e[c];
-                inputUpdateCounter.addTo(input, 1);
-              }
-
-            }
-          }
-        }
-
-
-        assert length == 0;
-      } finally {
-        param.clear();
-      }
-    }
-
   }
 
 

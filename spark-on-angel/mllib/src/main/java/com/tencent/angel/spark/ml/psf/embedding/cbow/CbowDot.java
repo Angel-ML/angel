@@ -44,6 +44,8 @@ public class CbowDot extends GetFunc {
   @Override
   public PartitionGetResult partitionGet(PartitionGetParam partParam) {
     if (partParam instanceof CbowDotPartitionParam) {
+
+
       CbowDotPartitionParam param = (CbowDotPartitionParam) partParam;
 
       // some params
@@ -56,7 +58,7 @@ public class CbowDot extends GetFunc {
       int order    = 2;
 
       // batch sentences
-      int[][] sentences = ServerWrapper.getSentencesWithPartitionId(param.partitionId);
+      int[][] sentences = param.sentences;
       // max index for node/word
       int maxIndex = ServerWrapper.getMaxIndex();
 
@@ -76,13 +78,16 @@ public class CbowDot extends GetFunc {
       IntOpenHashSet inputs = new IntOpenHashSet();
       IntOpenHashSet outputs = new IntOpenHashSet();
 
+      // We assume that there is only one row in each partition
       float[] values = ((IntFloatDenseVectorStorage) partition.getRow(0).getSplit().getStorage()).getValues();
-
+      // We assume that the max length for one document is two hundred
       float[] sentence_vectors = new float[partDim * 200];
 
       for (int s = 0; s < sentences.length; s ++) {
         int[] sen = sentences[s];
 
+        // locates the input vectors to local array to prevent randomly access
+        // on the large server row.
         for (int a = 0; a < sen.length; a ++) {
           int node = sen[a];
           int offset = node * partDim * order;
@@ -139,8 +144,8 @@ public class CbowDot extends GetFunc {
       }
 
 
-      ServerWrapper.setNumInputs(param.partitionId, inputs.size());
-      ServerWrapper.setNumOutputs(param.partitionId, outputs.size());
+      ServerWrapper.setNumInputs(param.partitionId, inputs.size(), param.threadId);
+      ServerWrapper.setNumOutputs(param.partitionId, outputs.size(), param.threadId);
 
       return new CbowDotPartitionResult(partialDots.toFloatArray());
     }

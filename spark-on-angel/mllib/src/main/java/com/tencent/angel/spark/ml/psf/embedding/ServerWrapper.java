@@ -15,14 +15,16 @@ public class ServerWrapper {
 
   private static int[] numInputs;
   private static int[] numOutputs;
+  private static int concurrentLevel;
 
 
-  public static synchronized void initialize(int numPartitions) {
+  public static synchronized void initialize(int numPartitions, int concurrentLevel) {
     if (sentences == null) {
       sentences = new int[numPartitions][][];
       contexts = new float[numPartitions][];
-      numInputs = new int[numPartitions];
-      numOutputs = new int[numPartitions];
+      numInputs = new int[numPartitions * concurrentLevel];
+      numOutputs = new int[numPartitions * concurrentLevel];
+      ServerWrapper.concurrentLevel = concurrentLevel;
     }
   }
 
@@ -50,20 +52,20 @@ public class ServerWrapper {
     return contexts[partitionId];
   }
 
-  public static void setNumInputs(int partitionId, int num) {
-    numInputs[partitionId] = num;
+  public static void setNumInputs(int partitionId, int num, int threadId) {
+    numInputs[partitionId * concurrentLevel + threadId] = num;
   }
 
-  public static int getNumInputs(int partitionId) {
-    return numInputs[partitionId];
+  public static int getNumInputs(int partitionId, int threadId) {
+    return numInputs[partitionId * concurrentLevel + threadId];
   }
 
-  public static void setNumOutputs(int partitionId, int num) {
-    numOutputs[partitionId] = num;
+  public static void setNumOutputs(int partitionId, int num, int threadId) {
+    numOutputs[partitionId * concurrentLevel + threadId] = num;
   }
 
-  public static int getNumOutputs(int partitioinId) {
-    return numOutputs[partitioinId];
+  public static int getNumOutputs(int partitionId, int threadId) {
+    return numOutputs[partitionId * concurrentLevel + threadId];
   }
 
 }
