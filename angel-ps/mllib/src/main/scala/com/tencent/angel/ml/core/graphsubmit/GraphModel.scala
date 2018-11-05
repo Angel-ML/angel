@@ -91,13 +91,25 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
 
         val labels = graph.placeHolder.getLabel.getCol(0)
         graph.predict() match {
-          case mat: BlasDoubleMatrix =>
+          case mat: BlasDoubleMatrix if mat.getNumCols == 3 =>
             (0 until mat.getNumRows).foreach { i =>
-              resData.put(GraphPredictResult(VectorUtils.getFloat(labels, i).toLong, mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
+              resData.put(GraphPredictResult(VectorUtils.getFloat(labels, i).toLong,
+                mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
             }
-          case mat: BlasFloatMatrix =>
+          case mat: BlasFloatMatrix if mat.getNumCols == 3 =>
             (0 until mat.getNumRows).foreach { i =>
-              resData.put(GraphPredictResult(VectorUtils.getFloat(labels, i).toLong, mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
+              resData.put(GraphPredictResult(VectorUtils.getFloat(labels, i).toLong,
+                mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
+            }
+          case mat: BlasDoubleMatrix if mat.getNumCols == 4 =>
+            (0 until mat.getNumRows).foreach { i =>
+              resData.put(SoftmaxPredictResult(VectorUtils.getFloat(labels, i).toLong,
+                mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
+            }
+          case mat: BlasFloatMatrix if mat.getNumCols == 4  =>
+            (0 until mat.getNumRows).foreach { i =>
+              resData.put(SoftmaxPredictResult(VectorUtils.getFloat(labels, i).toLong,
+                mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 2)))
             }
         }
       }
@@ -121,13 +133,25 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
 
       val labels = graph.placeHolder.getLabel.getCol(0)
       graph.predict() match {
-        case mat: BlasDoubleMatrix =>
+        case mat: BlasDoubleMatrix if mat.getNumCols == 3 =>
           (0 until mat.getNumRows).foreach { i =>
-            resData.put(GraphPredictResult(VectorUtils.getFloat(labels, i).toLong, mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
+            resData.put(GraphPredictResult(VectorUtils.getFloat(labels, i).toLong,
+              mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
           }
-        case mat: BlasFloatMatrix =>
+        case mat: BlasFloatMatrix if mat.getNumCols == 3  =>
           (0 until mat.getNumRows).foreach { i =>
-            resData.put(GraphPredictResult(VectorUtils.getFloat(labels, i).toLong, mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
+            resData.put(GraphPredictResult(VectorUtils.getFloat(labels, i).toLong,
+              mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
+          }
+        case mat: BlasDoubleMatrix if mat.getNumCols == 4 =>
+          (0 until mat.getNumRows).foreach { i =>
+            resData.put(SoftmaxPredictResult(VectorUtils.getFloat(labels, i).toLong,
+              mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
+          }
+        case mat: BlasFloatMatrix if mat.getNumCols == 4  =>
+          (0 until mat.getNumRows).foreach { i =>
+            resData.put(SoftmaxPredictResult(VectorUtils.getFloat(labels, i).toLong,
+              mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 2)))
           }
       }
     }
