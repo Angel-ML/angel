@@ -53,7 +53,7 @@ object Word2vecExample {
     val numPartitions = params.getOrElse("numParts", "10").toInt
     val withSubSample = params.getOrElse("subSample", "true").toBoolean
 
-    val numExecutors = SparkUtils.getNumExecutors(conf)
+    val numCores = SparkUtils.getNumCores(conf)
 
     val data = sc.textFile(input)
     data.persist(StorageLevel.DISK_ONLY)
@@ -63,11 +63,11 @@ object Word2vecExample {
     corpus.persist(StorageLevel.DISK_ONLY)
 
     val docs = if (withSubSample)
-        SubSampling.sampling(corpus).repartition(numExecutors)
+        SubSampling.sampling(corpus).repartition(numCores)
       else
-        corpus.repartition(numExecutors)
+        corpus.repartition(numCores)
 
-    docs.cache()
+    docs.persist(StorageLevel.MEMORY_AND_DISK)
 
     val numDocs = docs.count()
     val maxWordId = docs.map(_.max).max().toLong + 1

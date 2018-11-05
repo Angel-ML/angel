@@ -66,7 +66,7 @@ object Word2vecExample {
 
     val param = new Param()
     param.setLearningRate(0.1f)
-    param.setEmbeddingDim(10)
+    param.setEmbeddingDim(100)
     param.setWindowSize(6)
     param.setBatchSize(128)
     param.setSeed(Random.nextInt())

@@ -48,13 +48,11 @@ class Word2VecModel(numNode: Int,
 
     def sgdForBatch(partitionId: Int,
                     batch: NEDataSet,
-                    epoch: Int,
-                    index: Int): (Double, Array[Long]) = {
+                    initialize: Boolean): (Double, Array[Long]) = {
       var (start, end) = (0L, 0L)
 
       // upload sentences
       start = System.currentTimeMillis()
-      val initialize = (epoch == 0) && (index == 0)
       val uploadFunc = getUpload(batch, initialize, partitionId, numPartitions)
       psMatrix.psfUpdate(uploadFunc).get()
       end = System.currentTimeMillis()
@@ -82,17 +80,20 @@ class Word2VecModel(numNode: Int,
       val adjustTime = end - start
 
       // return loss
+      println(s"uploadTime=$uploadTime dotTime=$dotTime gradientTime=$gradientTime adjustTime=$adjustTime")
       (loss, Array(uploadTime, dotTime, gradientTime, adjustTime))
     }
 
     def sgdForPartition(partitionId: Int, iterator: Iterator[NEDataSet], epoch: Int): Iterator[(Double, Array[Long])] = {
       PSContext.instance()
-      var numBatch = 0
-      iterator.zipWithIndex.map { case batch =>
-        numBatch += 1
-        if (numBatch % 1000 == 0)
-          println(s"finish batch $numBatch")
-        sgdForBatch(partitionId, batch._1, epoch, batch._2)}
+
+      if (epoch == 0) {
+        sgdForBatch(partitionId, iterator.next(), true)
+      }
+
+      iterator.zipWithIndex.map { case (batch, index) =>
+        if (index % 1000 == 0) NEModel.logTime(s"finish batch $index for epoch $epoch")
+        sgdForBatch(partitionId, batch, false)}
     }
 
     val iterator = buildDataBatches(corpus, param.batchSize)

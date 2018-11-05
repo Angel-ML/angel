@@ -28,7 +28,6 @@ import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.spark.ml.psf.embedding.ServerWrapper;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import sun.awt.geom.AreaOp;
 
 import java.util.Arrays;
 import java.util.List;
@@ -77,13 +76,21 @@ public class CbowDot extends GetFunc {
       IntOpenHashSet inputs = new IntOpenHashSet();
       IntOpenHashSet outputs = new IntOpenHashSet();
 
-//      int numTokens = 0;
-//      for (int s = 0; s < sentences.length; s ++) numTokens += sentences[s].length;
-//      float[] contextCache = new float[numTokens * partDim];
-//      int contextIdx = 0;
+      float[] values = ((IntFloatDenseVectorStorage) partition.getRow(0).getSplit().getStorage()).getValues();
+
+      float[] sentence_vectors = new float[partDim * 200];
 
       for (int s = 0; s < sentences.length; s ++) {
         int[] sen = sentences[s];
+
+        for (int a = 0; a < sen.length; a ++) {
+          int node = sen[a];
+          int offset = node * partDim * order;
+          int start  = a * partDim;
+          for (int c = 0; c < partDim; c ++)
+            sentence_vectors[start + c] = values[offset + c];
+        }
+
         for (int position = 0; position < sen.length; position ++) {
           int word = sen[position];
           // fill 0 for context vector
@@ -101,11 +108,9 @@ public class CbowDot extends GetFunc {
               if (c >= sen.length) continue;
               int sentence_word = sen[c];
               if (sentence_word == -1) continue;
-              int rowId = sentence_word / numNodes;
-              int colId = (sentence_word % numNodes) * partDim * order;
-              float[] values = ((IntFloatDenseVectorStorage) partition.getRow(rowId)
-                .getSplit().getStorage()).getValues();
-              for (c = 0; c < partDim; c++) context[c] += values[c + colId];
+
+              int start = c * partDim;
+              for (c = 0; c < partDim; c++) context[c] += sentence_vectors[c + start];
               inputs.add(sentence_word);
               cw++;
             }
@@ -113,7 +118,6 @@ public class CbowDot extends GetFunc {
           // Calculate the partial dot values
           if (cw > 0) {
             for (int c = 0; c < partDim; c ++) context[c] /= cw;
-//            for (int c = 0; c < partDim; c ++) contextCache[contextIdx++] = context[c];
             int target;
             for (int d = 0; d < negative + 1; d ++) {
               if (d == 0) target = word;
@@ -125,11 +129,8 @@ public class CbowDot extends GetFunc {
               }
 
               outputs.add(target);
-              int rowId = target / numNodes;
-              int colId = (target % numNodes) * partDim * order + partDim;
               float f = 0f;
-              float[] values = ((IntFloatDenseVectorStorage) partition.getRow(rowId)
-                .getSplit().getStorage()).getValues();
+              int colId = target * partDim * order + partDim;
               for (int c = 0; c < partDim; c ++) f += context[c] * values[c + colId];
               partialDots.add(f);
             }

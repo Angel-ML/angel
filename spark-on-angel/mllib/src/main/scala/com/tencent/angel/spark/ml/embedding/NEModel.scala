@@ -249,7 +249,7 @@ abstract class NEModel(numNode: Int,
 
 object NEModel {
 
-  private def logTime(msg: String, begin: Long = -1): Long = {
+  def logTime(msg: String, begin: Long = -1): Long = {
     val time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date)
     val end = System.currentTimeMillis()
     println(if (begin > 0) s"[$time] $msg, cost ${(end - begin) / 1000.0}s" else s"[$time] $msg")
