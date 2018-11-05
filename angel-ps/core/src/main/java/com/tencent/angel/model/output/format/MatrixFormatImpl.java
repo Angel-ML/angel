@@ -148,10 +148,11 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
     Path matrixFilesPath = new Path(loadContext.getLoadPath());
     FileSystem fs = matrixFilesPath.getFileSystem(conf);
     if (!fs.exists(matrixFilesPath)) {
-      LOG.warn(
+      LOG.error(
         "Can not find matrix " + matrix.getName() + " in directory " + loadContext.getLoadPath());
-      matrix.startServering();
-      return;
+      throw new IOException("Can not find matrix " + matrix.getName() + " in directory " + loadContext.getLoadPath());
+      //matrix.startServering();
+      //return;
     }
 
     // Read matrix meta from meta file

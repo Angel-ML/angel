@@ -678,9 +678,10 @@ public class ParameterServer {
         }
 
         if (inputPath != null) {
-          matrixLoadContexts.add(
-            new PSMatrixLoadContext(matrixMetas.get(i).getId(), inputPath.toString(),
-              new ArrayList<>(matrixMetas.get(i).getPartitionMetas().keySet()), SnapshotFormat.class.getName()));
+          matrixLoadContexts.add(new PSMatrixLoadContext(matrixMetas.get(i).getId(),
+            new Path(inputPath.toString(), matrixMetas.get(i).getName()).toString(),
+            new ArrayList<>(matrixMetas.get(i).getPartitionMetas().keySet()),
+            SnapshotFormat.class.getName()));
         }
       }
 
