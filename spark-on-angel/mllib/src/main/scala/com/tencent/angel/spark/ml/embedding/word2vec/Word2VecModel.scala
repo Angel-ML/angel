@@ -111,7 +111,7 @@ class Word2VecModel(numNode: Int,
       iterator.zipWithIndex.sliding(concurrentLevel, concurrentLevel).map { case seq =>
         seq.foreach{ case (_, index) =>
           if (index % 1000 == 0) NEModel.logTime(s"finish batch $index for epoch $epoch")}
-        seq.zipWithIndex.par.map(batch =>
+        seq.zipWithIndex.map(batch =>
           sgdForBatch(partitionId,
             batch._2,
             batch._1._1,
