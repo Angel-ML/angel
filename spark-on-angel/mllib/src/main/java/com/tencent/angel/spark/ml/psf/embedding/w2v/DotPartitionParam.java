@@ -1,39 +1,39 @@
-package com.tencent.angel.spark.ml.psf.embedding.cbow;
+package com.tencent.angel.spark.ml.psf.embedding.w2v;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import io.netty.buffer.ByteBuf;
 
-public class CbowDotPartitionParam extends PartitionGetParam {
+public class DotPartitionParam extends PartitionGetParam {
 
   int seed;
   int negative;
   int window;
   int partDim;
   int partitionId;
-  int threadId;
+  int model;
   int[][] sentences;
 
-  public CbowDotPartitionParam(int matrixId,
-                               int seed,
-                               int negative,
-                               int window,
-                               int partDim,
-                               int partitionId,
-                               int threadId,
-                               PartitionKey pkey,
-                               int[][] sentences) {
+  public DotPartitionParam(int matrixId,
+                           int seed,
+                           int negative,
+                           int window,
+                           int partDim,
+                           int partitionId,
+                           int model,
+                           PartitionKey pkey,
+                           int[][] sentences) {
     super(matrixId, pkey);
     this.seed = seed;
     this.negative = negative;
     this.window = window;
     this.partDim = partDim;
     this.partitionId = partitionId;
-    this.threadId = threadId;
+    this.model = model;
     this.sentences = sentences;
   }
 
-  public CbowDotPartitionParam() {}
+  public DotPartitionParam() {}
 
   @Override
   public void serialize(ByteBuf buf) {
@@ -43,7 +43,7 @@ public class CbowDotPartitionParam extends PartitionGetParam {
     buf.writeInt(window);
     buf.writeInt(partDim);
     buf.writeInt(partitionId);
-    buf.writeInt(threadId);
+    buf.writeInt(model);
 
     buf.writeInt(sentences.length);
     for (int a = 0; a < sentences.length; a ++) {
@@ -61,7 +61,7 @@ public class CbowDotPartitionParam extends PartitionGetParam {
     this.window = buf.readInt();
     this.partDim = buf.readInt();
     this.partitionId = buf.readInt();
-    this.threadId = buf.readInt();
+    this.model = buf.readInt();
 
     int length = buf.readInt();
     sentences = new int[length][];

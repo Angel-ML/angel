@@ -1,4 +1,4 @@
-package com.tencent.angel.spark.ml.psf.embedding.cbow;
+package com.tencent.angel.spark.ml.psf.embedding.w2v;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage;
@@ -6,19 +6,19 @@ import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.spark.ml.psf.embedding.ServerWrapper;
 
-public class CbowAdjust extends UpdateFunc {
+public class Adjust extends UpdateFunc {
 
-  public CbowAdjust(CbowAdjustParam param) {
+  public Adjust(AdjustParam param) {
     super(param);
   }
 
-  public CbowAdjust() { super(null); }
+  public Adjust() { super(null); }
 
   public void partitionUpdate(PartitionUpdateParam partParam) {
 
-    if (partParam instanceof CbowAdjustPartitionParam) {
+    if (partParam instanceof AdjustPartitionParam) {
 
-      CbowAdjustPartitionParam param = (CbowAdjustPartitionParam) partParam;
+      AdjustPartitionParam param = (AdjustPartitionParam) partParam;
 
       try {
         // Some params
@@ -31,6 +31,7 @@ public class CbowAdjust extends UpdateFunc {
 
         int[][] sentences = param.sentences;
         int maxIndex = ServerWrapper.getMaxIndex();
+        int maxLength = ServerWrapper.getMaxLength();
 
         // compute number of nodes for one row
         int size = (int) (pkey.getEndCol() - pkey.getStartCol());
@@ -43,12 +44,20 @@ public class CbowAdjust extends UpdateFunc {
                   .getRow(pkey, row).getSplit().getStorage())
                   .getValues();
 
-        CbowModel cbow = new CbowModel(partDim, negative, window, seed, maxIndex, numNodes, 100, layers);
+        EmbeddingModel model;
+        switch (param.model) {
+          case 0:
+            model = new SkipgramModel(partDim, negative, window, seed, maxIndex, numNodes, maxLength, layers);
+            break;
+          default:
+            model = new CbowModel(partDim, negative, window, seed, maxIndex, numNodes, maxLength, layers);
+        }
+
 
         int numInputs = ServerWrapper.getNumInputs(param.partitionId);
         int numOutputs = ServerWrapper.getNumOutputs(param.partitionId);
 
-        cbow.adjust(sentences, param.buf, numInputs, numOutputs);
+        model.adjust(sentences, param.buf, numInputs, numOutputs);
       } finally {
         param.clear();
       }

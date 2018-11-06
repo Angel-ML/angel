@@ -1,43 +1,43 @@
-package com.tencent.angel.spark.ml.psf.embedding.cbow;
+package com.tencent.angel.spark.ml.psf.embedding.w2v;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import io.netty.buffer.ByteBuf;
 
-public class CbowAdjustPartitionParam extends PartitionUpdateParam {
+public class AdjustPartitionParam extends PartitionUpdateParam {
 
   int seed;
   int negative;
   int window;
   int partDim;
   int partitionId;
-  int threadId;
+  int model;
   private float[] gradient;
   int[][] sentences;
   ByteBuf buf;
 
-  public CbowAdjustPartitionParam(int matrixId,
-                                  PartitionKey partKey,
-                                  int seed,
-                                  int negative,
-                                  int window,
-                                  int partDim,
-                                  int partitionId,
-                                  int threadId,
-                                  float[] gradient,
-                                  int[][] sentences) {
+  public AdjustPartitionParam(int matrixId,
+                              PartitionKey partKey,
+                              int seed,
+                              int negative,
+                              int window,
+                              int partDim,
+                              int partitionId,
+                              int model,
+                              float[] gradient,
+                              int[][] sentences) {
     super(matrixId, partKey);
     this.seed = seed;
     this.negative = negative;
     this.window = window;
     this.partDim = partDim;
     this.partitionId = partitionId;
-    this.threadId = threadId;
+    this.model = model;
     this.gradient = gradient;
     this.sentences = sentences;
   }
 
-  public CbowAdjustPartitionParam() {}
+  public AdjustPartitionParam() {}
 
   @Override
   public void serialize(ByteBuf buf) {
@@ -47,7 +47,7 @@ public class CbowAdjustPartitionParam extends PartitionUpdateParam {
     buf.writeInt(window);
     buf.writeInt(partDim);
     buf.writeInt(partitionId);
-    buf.writeInt(threadId);
+    buf.writeInt(model);
 
     buf.writeInt(sentences.length);
     for (int a = 0; a < sentences.length; a ++) {
@@ -68,7 +68,7 @@ public class CbowAdjustPartitionParam extends PartitionUpdateParam {
     window = buf.readInt();
     partDim = buf.readInt();
     partitionId = buf.readInt();
-    threadId = buf.readInt();
+    model = buf.readInt();
 
     int length = buf.readInt();
     sentences = new int[length][];

@@ -1,4 +1,4 @@
-package com.tencent.angel.spark.ml.psf.embedding.cbow;
+package com.tencent.angel.spark.ml.psf.embedding.w2v;
 
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
@@ -10,33 +10,13 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import java.util.Arrays;
 import java.util.Random;
 
-public class CbowModel {
-
-  private int dim;
-  private int negative;
-  private int window;
-  private int seed;
-  private int maxIndex;
-
-  private int numNodeOneRow;
-  private int maxLength;
-
-  private float[][] layers;
-
-  private int numInputsToUpdate;
-  private int numOutputsToUpdate;
+public class CbowModel extends EmbeddingModel {
 
   public CbowModel(int dim, int negative, int window, int seed, int maxIndex, int numNodeOneRow, int maxLength, float[][] layers) {
-    this.dim = dim;
-    this.negative = negative;
-    this.window = window;
-    this.seed = seed;
-    this.maxIndex = maxIndex;
-    this.numNodeOneRow = numNodeOneRow;
-    this.maxLength = maxLength;
-    this.layers = layers;
+    super(dim, negative, window, seed, maxIndex, numNodeOneRow, maxLength, layers);
   }
 
+  @Override
   public float[] dot(int[][] sentences) {
 
     Random windowSeed = new Random(seed);
@@ -117,14 +97,7 @@ public class CbowModel {
     return partialDots.toFloatArray();
   }
 
-  public int getNumInputsToUpdate() {
-    return numInputsToUpdate;
-  }
-
-  public int getNumOutputsToUpdate() {
-    return numOutputsToUpdate;
-  }
-
+  @Override
   public void adjust(int[][] sentences, ByteBuf buf, int numInputs, int numOutputs) {
 
     int length = buf.readInt();
@@ -205,13 +178,13 @@ public class CbowModel {
             for (int c = 0; c < dim; c++) neu1e[c] += g * values[c + col];
 
             // update output vectors
-            merge(outputs, outputIndex, target, neu1, g);
+            merge(outputs, outputIndex, target, neu1, g, 0);
             outputUpdateCounter.addTo(target, 1);
           }
 
           for (int a = 0; a < cw; a++) {
             int input = windows[a];
-            merge(inputs, inputIndex, input, neu1e, 1);
+            merge(inputs, inputIndex, input, neu1e, 1, 0);
             inputUpdateCounter.addTo(input, 1);
           }
         }
@@ -243,17 +216,6 @@ public class CbowModel {
     }
 
     assert length == 0;
-  }
-
-  private void merge(float[] inputs, Int2IntOpenHashMap inputIndex, int node, float[] update, float g) {
-    int start = inputIndex.get(node);
-    if (!inputIndex.containsKey(node)) {
-      start = inputIndex.size();
-      inputIndex.put(node, start);
-    }
-
-    int offset = start * update.length;
-    for (int c = 0; c < update.length; c++) inputs[offset + c] += g * update[c];
   }
 
 }

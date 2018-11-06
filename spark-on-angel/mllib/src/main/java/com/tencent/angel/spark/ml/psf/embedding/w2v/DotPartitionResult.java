@@ -1,18 +1,18 @@
-package com.tencent.angel.spark.ml.psf.embedding.cbow;
+package com.tencent.angel.spark.ml.psf.embedding.w2v;
 
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import io.netty.buffer.ByteBuf;
 
-public class CbowDotPartitionResult extends PartitionGetResult {
+public class DotPartitionResult extends PartitionGetResult {
   float[] values;
   int length;
   ByteBuf buf;
 
-  public CbowDotPartitionResult(float[] values) {
+  public DotPartitionResult(float[] values) {
     this.values = values;
   }
 
-  public CbowDotPartitionResult() {}
+  public DotPartitionResult() {}
 
   @Override
   public void serialize(ByteBuf buf) {

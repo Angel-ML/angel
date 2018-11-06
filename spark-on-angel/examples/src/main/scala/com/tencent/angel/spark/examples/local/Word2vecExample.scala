@@ -76,6 +76,7 @@ object Word2vecExample {
     param.setNegSample(5)
     param.setMaxIndex(maxWordId)
     param.setMaxLength(maxLength)
+    param.setModel("cbow")
 
     val model = new Word2VecModel(param)
     model.train(docs, param)

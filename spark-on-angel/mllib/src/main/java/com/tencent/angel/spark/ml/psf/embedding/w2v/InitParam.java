@@ -1,4 +1,4 @@
-package com.tencent.angel.spark.ml.psf.embedding.cbow;
+package com.tencent.angel.spark.ml.psf.embedding.w2v;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
@@ -9,17 +9,17 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CbowInitParam extends UpdateParam {
+public class InitParam extends UpdateParam {
 
 
   private int numPartitions;
   private int maxIndex;
   private int maxLength;
 
-  public CbowInitParam(int matrixId,
-                       int numPartitions,
-                       int maxIndex,
-                       int maxLength) {
+  public InitParam(int matrixId,
+                   int numPartitions,
+                   int maxIndex,
+                   int maxLength) {
     super(matrixId);
 
     this.numPartitions = numPartitions;
@@ -39,7 +39,7 @@ public class CbowInitParam extends UpdateParam {
               .getMasterPS(pkey).getIndex();
       if (!serverIds.contains(serverId)) {
         serverIds.add(serverId);
-        params.add(new CbowInitPartitionParam(matrixId,
+        params.add(new InitPartitionParam(matrixId,
                 pkey,
                 numPartitions,
                 maxIndex,

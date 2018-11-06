@@ -1,21 +1,21 @@
-package com.tencent.angel.spark.ml.psf.embedding.cbow;
+package com.tencent.angel.spark.ml.psf.embedding.w2v;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import io.netty.buffer.ByteBuf;
 
-public class CbowInitPartitionParam extends PartitionUpdateParam {
+public class InitPartitionParam extends PartitionUpdateParam {
 
   int numPartitions;
   int maxIndex;
   int maxLength;
 
 
-  public CbowInitPartitionParam(int matrixId,
-                                PartitionKey partKey,
-                                int numPartitions,
-                                int maxIndex,
-                                int maxLength) {
+  public InitPartitionParam(int matrixId,
+                            PartitionKey partKey,
+                            int numPartitions,
+                            int maxIndex,
+                            int maxLength) {
     super(matrixId, partKey);
 
     this.numPartitions = numPartitions;
@@ -24,7 +24,7 @@ public class CbowInitPartitionParam extends PartitionUpdateParam {
 
   }
 
-  public CbowInitPartitionParam() {}
+  public InitPartitionParam() {}
 
   @Override
   public void serialize(ByteBuf buf) {

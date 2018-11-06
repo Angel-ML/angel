@@ -18,12 +18,13 @@
 
 package com.tencent.angel.spark.ml.embedding.word2vec
 
+import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc
 import com.tencent.angel.spark.ml.embedding.NEModel.NEDataSet
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel.{W2VDataSet, buildDataBatches}
 import com.tencent.angel.spark.ml.embedding.{NEModel, Param, Sigmoid}
-import com.tencent.angel.spark.ml.psf.embedding.cbow._
+import com.tencent.angel.spark.ml.psf.embedding.w2v._
 import org.apache.spark.rdd.RDD
 
 import scala.util.Random
@@ -33,12 +34,19 @@ class Word2VecModel(numNode: Int,
                     dimension: Int,
                     numPart: Int,
                     maxLength: Int,
+                    model: String,
                     numNodesPerRow: Int = -1,
                     seed: Int = Random.nextInt)
   extends NEModel(numNode, dimension, numPart, numNodesPerRow, 2, false, seed) {
 
   def this(param: Param) {
-    this(param.maxIndex, param.embeddingDim, param.numPSPart, param.maxLength)
+    this(param.maxIndex, param.embeddingDim, param.numPSPart, param.maxLength, param.model)
+  }
+
+  val modelId = model match {
+    case "skipgram" => 0
+    case "cbow" => 1
+    case _ => throw new AngelException("model type should be cbow or skipgram")
   }
 
   def train(corpus: RDD[Array[Int]], param: Param): Unit = {
@@ -49,45 +57,45 @@ class Word2VecModel(numNode: Int,
   }
 
   override def getInitFunc(numPartitions: Int, maxIndex: Int, maxLength: Option[Int]): Option[UpdateFunc] = {
-    val param = new CbowInitParam(matrixId, numPartitions, maxIndex, maxLength.get)
-    Some(new CbowInit(param))
+    val param = new InitParam(matrixId, numPartitions, maxIndex, maxLength.get)
+    Some(new Init(param))
   }
 
 
   override def getDotFunc(data: NEDataSet, batchSeed: Int, ns: Int, window: Option[Int],
                           partitionId: Option[Int]): GetFunc = {
-    val param = new CbowDotParam(matrixId,
+    val param = new DotParam(matrixId,
       seed, ns,
       window.get,
       partDim,
       partitionId.get,
-      0,
+      modelId,
       data.asInstanceOf[W2VDataSet].sentences)
-    new CbowDot(param)
+    new Dot(param)
   }
 
   override def getAdjustFunc(data: NEDataSet, batchSeed: Int, ns: Int, grad: Array[Float],
                              window: Option[Int], partitionId: Option[Int]): UpdateFunc = {
-    val param = new CbowAdjustParam(matrixId,
+    val param = new AdjustParam(matrixId,
       seed, ns,
       window.get,
       partDim,
       partitionId.get,
-      0,
+      modelId,
       grad,
       data.asInstanceOf[W2VDataSet].sentences)
-    new CbowAdjust(param)
+    new Adjust(param)
   }
 
   override def doGrad(dots: Array[Float],
                       negative: Int,
                       alpha: Float,
                       data: Option[NEDataSet]): Double = {
-    val sentences = data.get.asInstanceOf[W2VDataSet].sentences
-    val size = sentences.map(sen => sen.length).sum
+//    val sentences = data.get.asInstanceOf[W2VDataSet].sentences
+//    val size = sentences.map(sen => sen.length).sum
     var label = 0
     var sumLoss = 0f
-    assert(dots.length == size * (negative + 1))
+//    assert(dots.length == size * (negative + 1))
     for (a <- 0 until dots.length) {
       val sig = Sigmoid.sigmoid(dots(a))
       if (a % (negative + 1) == 0) { // positive target

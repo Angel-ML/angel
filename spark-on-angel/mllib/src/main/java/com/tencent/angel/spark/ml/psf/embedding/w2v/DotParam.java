@@ -1,4 +1,4 @@
-package com.tencent.angel.spark.ml.psf.embedding.cbow;
+package com.tencent.angel.spark.ml.psf.embedding.w2v;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
@@ -9,31 +9,31 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class CbowDotParam extends GetParam {
+public class DotParam extends GetParam {
 
   int seed;
   int negative;
   int window;
   int partDim;
   int partitionId;
-  int threadId;
+  int model;
   int[][] sentences;
 
-  public CbowDotParam(int matrixId,
-                      int seed,
-                      int negative,
-                      int window,
-                      int partDim,
-                      int partitionId,
-                      int threadId,
-                      int[][] sentences) {
+  public DotParam(int matrixId,
+                  int seed,
+                  int negative,
+                  int window,
+                  int partDim,
+                  int partitionId,
+                  int model,
+                  int[][] sentences) {
     super(matrixId);
     this.seed = seed;
     this.negative = negative;
     this.window = window;
     this.partDim = partDim;
     this.partitionId = partitionId;
-    this.threadId = threadId;
+    this.model = model;
     this.sentences = sentences;
   }
 
@@ -44,13 +44,13 @@ public class CbowDotParam extends GetParam {
     Iterator<PartitionKey> iterator = pkeys.iterator();
     while (iterator.hasNext()) {
       PartitionKey pkey = iterator.next();
-      params.add(new CbowDotPartitionParam(matrixId,
+      params.add(new DotPartitionParam(matrixId,
               seed,
               negative,
               window,
               partDim,
               partitionId,
-              threadId,
+              model,
               pkey,
               sentences));
     }

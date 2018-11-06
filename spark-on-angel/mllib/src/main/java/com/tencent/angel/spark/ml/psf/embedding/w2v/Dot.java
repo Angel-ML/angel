@@ -15,7 +15,7 @@
  *
  */
 
-package com.tencent.angel.spark.ml.psf.embedding.cbow;
+package com.tencent.angel.spark.ml.psf.embedding.w2v;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.exception.AngelException;
@@ -24,29 +24,24 @@ import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.spark.ml.psf.embedding.NEDot;
 import com.tencent.angel.spark.ml.psf.embedding.ServerWrapper;
-import it.unimi.dsi.fastutil.floats.FloatArrayList;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
 
-public class CbowDot extends GetFunc {
+public class Dot extends GetFunc {
 
-  public CbowDot(CbowDotParam param) {
+  public Dot(DotParam param) {
     super(param);
   }
 
-  public CbowDot() { super(null); }
+  public Dot() { super(null); }
 
   @Override
   public PartitionGetResult partitionGet(PartitionGetParam partParam) {
-    if (partParam instanceof CbowDotPartitionParam) {
+    if (partParam instanceof DotPartitionParam) {
 
-      CbowDotPartitionParam param = (CbowDotPartitionParam) partParam;
+      DotPartitionParam param = (DotPartitionParam) partParam;
 
       // some params
       PartitionKey pkey = param.getPartKey();
@@ -61,6 +56,7 @@ public class CbowDot extends GetFunc {
       int[][] sentences = param.sentences;
       // max index for node/word
       int maxIndex = ServerWrapper.getMaxIndex();
+      int maxLength = ServerWrapper.getMaxLength();
 
       // compute number of nodes for one row
       int size = (int) (pkey.getEndCol() - pkey.getStartCol());
@@ -73,14 +69,21 @@ public class CbowDot extends GetFunc {
                 .getRow(pkey, row).getSplit().getStorage())
                 .getValues();
 
-      CbowModel cbow = new CbowModel(partDim, negative, window, seed, maxIndex, numNodes, 100, layers);
+      EmbeddingModel model;
+      switch (param.model) {
+        case 0:
+          model = new SkipgramModel(partDim, negative, window, seed, maxIndex, numNodes, maxLength, layers);
+          break;
+        default:
+          model = new CbowModel(partDim, negative, window, seed, maxIndex, numNodes, maxLength, layers);
+      }
 
-      float[] dots = cbow.dot(sentences);
+      float[] dots = model.dot(sentences);
 
-      ServerWrapper.setNumInputs(param.partitionId, cbow.getNumInputsToUpdate());
-      ServerWrapper.setNumOutputs(param.partitionId, cbow.getNumOutputsToUpdate());
+      ServerWrapper.setNumInputs(param.partitionId, model.getNumInputsToUpdate());
+      ServerWrapper.setNumOutputs(param.partitionId, model.getNumOutputsToUpdate());
 
-      return new CbowDotPartitionResult(dots);
+      return new DotPartitionResult(dots);
     }
 
     return null;
@@ -88,27 +91,27 @@ public class CbowDot extends GetFunc {
 
   @Override
   public GetResult merge(List<PartitionGetResult> partResults) {
-    if (partResults.size() > 0 && partResults.get(0) instanceof CbowDotPartitionResult) {
-      int size = ((CbowDotPartitionResult) partResults.get(0)).length;
+    if (partResults.size() > 0 && partResults.get(0) instanceof DotPartitionResult) {
+      int size = ((DotPartitionResult) partResults.get(0)).length;
 
       // check the length of dot values
       for (PartitionGetResult result: partResults) {
-        if (result instanceof CbowDotPartitionResult &&
-          size != ((CbowDotPartitionResult) result).length)
+        if (result instanceof DotPartitionResult &&
+          size != ((DotPartitionResult) result).length)
           throw new AngelException(
                   String.format("length of dot values not same one is %d other is %d",
                           size,
-                          ((CbowDotPartitionResult) result).length));
+                          ((DotPartitionResult) result).length));
       }
 
       // merge dot values from all partitions
       float[] results = new float[size];
       for (PartitionGetResult result: partResults)
-        if (result instanceof CbowDotPartitionResult)
+        if (result instanceof DotPartitionResult)
           try {
-            ((CbowDotPartitionResult) result).merge(results);
+            ((DotPartitionResult) result).merge(results);
           } finally {
-            ((CbowDotPartitionResult) result).clear();
+            ((DotPartitionResult) result).clear();
           }
       return new NEDot.NEDotResult(results);
     }
