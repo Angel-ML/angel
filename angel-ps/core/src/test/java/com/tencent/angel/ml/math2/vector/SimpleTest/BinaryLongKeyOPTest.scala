@@ -182,7 +182,7 @@ class BinaryLongKeyOPTest {
 
   var longdummy = BinaryLongKeyOPTest.longdummy
 
-  val times = 5000
+  val times = 10
   var start1, stop1, cost1, start2, stop2, cost2 = 0L
 
   @Test
