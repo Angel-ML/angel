@@ -244,12 +244,20 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override public Vector[] getRows(int[] rowIds) throws AngelException {
-    return getRows(rowIds, rowIds.length);
+    return getRows(rowIds, false);
+  }
+
+  @Override public Vector[] getRows(int[] rowIds, boolean disableCache) throws AngelException {
+    return getRows(rowIds, rowIds.length, disableCache);
   }
 
   @Override public Vector[] getRows(int[] rowIds, int batchSize) throws AngelException {
+    return getRows(rowIds, batchSize, false);
+  }
+
+  @Override public Vector[] getRows(int[] rowIds, int batchSize, boolean disableCache) throws AngelException {
     RowIndex rowIndex = new RowIndex(rowIds);
-    GetRowsResult result = getRowsFlow(rowIndex, batchSize);
+    GetRowsResult result = getRowsFlow(rowIndex, batchSize, disableCache);
     Map<Integer, Vector> rowIdToRowMap = new HashMap<>(rowIds.length);
     try {
       Vector row;

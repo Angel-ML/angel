@@ -32,3 +32,17 @@ case class GraphPredictResult(override val sid: Long,
       format.format(label)
   }
 }
+
+case class SoftmaxPredictResult(override val sid: Long,
+                                override val pred: Double,
+                                override val proba: Double, trueProba: Double,
+                                override val label: Double) extends PredictResult {
+
+  override def getText: String = {
+    format.format(sid) + separator +
+      format.format(pred) + separator +
+      format.format(proba) + separator +
+      format.format(trueProba) + separator +
+      format.format(label)
+  }
+}

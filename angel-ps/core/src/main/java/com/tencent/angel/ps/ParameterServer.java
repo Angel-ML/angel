@@ -29,6 +29,7 @@ import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.PartitionMeta;
 import com.tencent.angel.model.PSMatricesLoadContext;
 import com.tencent.angel.model.PSMatrixLoadContext;
+import com.tencent.angel.model.output.format.SnapshotFormat;
 import com.tencent.angel.plugin.AngelServiceLoader;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos;
@@ -677,9 +678,10 @@ public class ParameterServer {
         }
 
         if (inputPath != null) {
-          matrixLoadContexts.add(
-            new PSMatrixLoadContext(matrixMetas.get(i).getId(), inputPath.toString(),
-              new ArrayList<>(matrixMetas.get(i).getPartitionMetas().keySet())));
+          matrixLoadContexts.add(new PSMatrixLoadContext(matrixMetas.get(i).getId(),
+            new Path(inputPath.toString(), matrixMetas.get(i).getName()).toString(),
+            new ArrayList<>(matrixMetas.get(i).getPartitionMetas().keySet()),
+            SnapshotFormat.class.getName()));
         }
       }
 
