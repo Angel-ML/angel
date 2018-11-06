@@ -20,7 +20,6 @@ package com.tencent.angel.spark.ml.embedding.word2vec
 
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc
-import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.embedding.NEModel.NEDataSet
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel.{W2VDataSet, buildDataBatches}
 import com.tencent.angel.spark.ml.embedding.{NEModel, Param, Sigmoid}
@@ -33,120 +32,52 @@ import scala.util.Random
 class Word2VecModel(numNode: Int,
                     dimension: Int,
                     numPart: Int,
+                    maxLength: Int,
                     numNodesPerRow: Int = -1,
-                    seed: Int = Random.nextInt,
-                    concurrentLevel: Int = 3)
+                    seed: Int = Random.nextInt)
   extends NEModel(numNode, dimension, numPart, numNodesPerRow, 2, false, seed) {
 
   def this(param: Param) {
-    this(param.maxIndex, param.embeddingDim, param.numPSPart, param.nodesNumPerRow, param.seed)
+    this(param.maxIndex, param.embeddingDim, param.numPSPart, param.maxLength)
   }
 
   def train(corpus: RDD[Array[Int]], param: Param): Unit = {
-
-    val numPartitions = corpus.getNumPartitions
-
-    def sgdForBatch(partitionId: Int,
-                    threadId: Int,
-                    batch: NEDataSet,
-                    batchId: Int): (Double, Array[Long]) = {
-      var (start, end) = (0L, 0L)
-
-      // dot
-      start = System.currentTimeMillis()
-      val dotParam = new CbowDotParam(matrixId,
-        seed,
-        param.negSample,
-        param.windowSize,
-        partDim,
-        partitionId,
-        threadId,
-        batch.asInstanceOf[W2VDataSet].sentences)
-
-      val dots = psMatrix.psfGet(new CbowDot(dotParam))
-        .asInstanceOf[CbowDotResult]
-        .getValues
-      end = System.currentTimeMillis()
-      val dotTime = end - start
-
-      // gradient
-      start = System.currentTimeMillis()
-      val loss = doGrad(dots,
-        param.negSample,
-        param.learningRate,
-        Some(batch))
-      end = System.currentTimeMillis()
-      val gradientTime = end - start
-
-      // adjust
-      start = System.currentTimeMillis()
-      val adjustParam = new CbowAdjustParam(matrixId,
-        seed, param.negSample,
-        param.windowSize,
-        partDim,
-        partitionId,
-        threadId,
-        dots,
-        batch.asInstanceOf[W2VDataSet].sentences)
-      psMatrix.psfUpdate(new CbowAdjust(adjustParam)).get()
-      end = System.currentTimeMillis()
-      val adjustTime = end - start
-
-      // return loss
-      if (batchId % 100 == 0)
-        println(s"batchId=$batchId dotTime=$dotTime gradientTime=$gradientTime adjustTime=$adjustTime")
-      (loss, Array(dotTime, gradientTime, adjustTime))
-    }
-
-    def sgdForPartition(partitionId: Int,
-                        iterator: Iterator[NEDataSet],
-                        epoch: Int): Iterator[(Double, Array[Long])] = {
-      PSContext.instance()
-
-      if (epoch == 0) {
-        val initFunc = getInit(partitionId, numPartitions, numNode)
-        psMatrix.psfUpdate(initFunc).get()
-      }
-
-      iterator.zipWithIndex.sliding(concurrentLevel, concurrentLevel).map { case seq =>
-        seq.foreach{ case (_, index) =>
-          if (index % 1000 == 0) NEModel.logTime(s"finish batch $index for epoch $epoch")}
-        seq.zipWithIndex.map(batch =>
-          sgdForBatch(partitionId,
-            batch._2,
-            batch._1._1,
-            batch._1._2))
-      }.flatMap(f => f)
-    }
-
     val iterator = buildDataBatches(corpus, param.batchSize)
-
-    for (epoch <- 0 until param.numEpoch) {
-      val data = iterator.next()
-      val middle = data.mapPartitionsWithIndex(
-        (partitionId, iterator) => sgdForPartition(partitionId, iterator, epoch),
-        true).collect()
-      val loss = middle.map(f => f._1).sum
-      val array = new Array[Long](3)
-      middle.foreach(f => f._2.zipWithIndex.foreach(t => array(t._2) += t._1))
-      println(s"epoch=$epoch " +
-        s"loss=$loss " +
-        s"dotTime=${array(0)} " +
-        s"gradientTime=${array(1)} " +
-        s"adjustTime=${array(2)}")
-    }
-
+    train(iterator, None, param.negSample,
+      Some(param.windowSize), param.numEpoch, param.learningRate,
+      Some(maxLength), param.checkpointInterval)
   }
 
-  def getInit(partitionId: Int, numPartitions: Int, maxIndex: Int): UpdateFunc = {
-    val param = new CbowInitParam(matrixId, partitionId, numPartitions, maxIndex, concurrentLevel)
-    new CbowInit(param)
+  override def getInitFunc(numPartitions: Int, maxIndex: Int, maxLength: Option[Int]): Option[UpdateFunc] = {
+    val param = new CbowInitParam(matrixId, numPartitions, maxIndex, maxLength.get)
+    Some(new CbowInit(param))
   }
 
 
-  override def getDotFunc(data: NEDataSet, batchSeed: Int, ns: Int, window: Option[Int]): GetFunc = ???
+  override def getDotFunc(data: NEDataSet, batchSeed: Int, ns: Int, window: Option[Int],
+                          partitionId: Option[Int]): GetFunc = {
+    val param = new CbowDotParam(matrixId,
+      seed, ns,
+      window.get,
+      partDim,
+      partitionId.get,
+      0,
+      data.asInstanceOf[W2VDataSet].sentences)
+    new CbowDot(param)
+  }
 
-  override def getAdjustFunc(data: NEDataSet, batchSeed: Int, ns: Int, grad: Array[Float], window: Option[Int]): UpdateFunc = ???
+  override def getAdjustFunc(data: NEDataSet, batchSeed: Int, ns: Int, grad: Array[Float],
+                             window: Option[Int], partitionId: Option[Int]): UpdateFunc = {
+    val param = new CbowAdjustParam(matrixId,
+      seed, ns,
+      window.get,
+      partDim,
+      partitionId.get,
+      0,
+      grad,
+      data.asInstanceOf[W2VDataSet].sentences)
+    new CbowAdjust(param)
+  }
 
   override def doGrad(dots: Array[Float],
                       negative: Int,

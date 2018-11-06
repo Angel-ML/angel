@@ -6,23 +6,21 @@ import io.netty.buffer.ByteBuf;
 
 public class CbowInitPartitionParam extends PartitionUpdateParam {
 
-  int partitionId;
   int numPartitions;
   int maxIndex;
-  int concurrentLevel;
+  int maxLength;
 
 
   public CbowInitPartitionParam(int matrixId,
                                 PartitionKey partKey,
-                                int partitionId,
                                 int numPartitions,
                                 int maxIndex,
-                                int concurrentLevel) {
+                                int maxLength) {
     super(matrixId, partKey);
-    this.partitionId = partitionId;
+
     this.numPartitions = numPartitions;
     this.maxIndex = maxIndex;
-    this.concurrentLevel = concurrentLevel;
+    this.maxLength = maxLength;
 
   }
 
@@ -31,20 +29,20 @@ public class CbowInitPartitionParam extends PartitionUpdateParam {
   @Override
   public void serialize(ByteBuf buf) {
     super.serialize(buf);
-    buf.writeInt(partitionId);
+
     buf.writeInt(numPartitions);
     buf.writeInt(maxIndex);
-    buf.writeInt(concurrentLevel);
+    buf.writeInt(maxLength);
 
   }
 
   @Override
   public void deserialize(ByteBuf buf) {
     super.deserialize(buf);
-    partitionId = buf.readInt();
+
     numPartitions = buf.readInt();
     maxIndex = buf.readInt();
-    concurrentLevel = buf.readInt();
+    maxLength = buf.readInt();
   }
 
   @Override

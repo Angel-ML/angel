@@ -36,6 +36,12 @@ class Param extends Serializable {
   var nodesNumPerRow: Int = -1
   var numRowDataSet: Option[Long] = None
   var seed: Int = _
+  var maxLength: Int = -1
+
+  def setMaxLength(maxLength: Int): this.type = {
+    this.maxLength = maxLength
+    this
+  }
 
   def setNumRowDataSet(numRowDataSet: Long): this.type = {
     this.numRowDataSet = Some(numRowDataSet)

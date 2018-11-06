@@ -23,6 +23,11 @@ object Features {
     null
   }
 
+  def corpusStringToIntWithoutRemapping(data: RDD[String]): RDD[Array[Int]] = {
+    data.filter(f => f != null && f.length > 0)
+      .map(f => f.stripLineEnd.split(" ").map(s => s.toInt))
+  }
+
 
   def corpusStringToInt(data: RDD[String]): (RDD[Array[Int]], RDD[(Int, String)]) = {
 

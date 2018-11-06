@@ -25,6 +25,7 @@ import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.spark.ml.psf.embedding.NEDot;
 import com.tencent.angel.spark.ml.psf.embedding.ServerWrapper;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -44,7 +45,6 @@ public class CbowDot extends GetFunc {
   @Override
   public PartitionGetResult partitionGet(PartitionGetParam partParam) {
     if (partParam instanceof CbowDotPartitionParam) {
-
 
       CbowDotPartitionParam param = (CbowDotPartitionParam) partParam;
 
@@ -66,88 +66,21 @@ public class CbowDot extends GetFunc {
       int size = (int) (pkey.getEndCol() - pkey.getStartCol());
       int numNodes = size / (partDim * order);
 
-      // used to accumulate the context input vectors
-      float[] context = new float[partDim];
+      int numRows = pkey.getEndRow() - pkey.getStartRow();
+      float[][] layers = new float[numRows][];
+      for (int row = 0; row < numRows; row ++)
+        layers[row] = ((IntFloatDenseVectorStorage) psContext.getMatrixStorageManager()
+                .getRow(pkey, row).getSplit().getStorage())
+                .getValues();
 
-      ServerPartition partition = psContext.getMatrixStorageManager().getPart(pkey);
+      CbowModel cbow = new CbowModel(partDim, negative, window, seed, maxIndex, numNodes, 100, layers);
 
-      Random windowSeed = new Random(seed);
-      Random negativeSeed = new Random(seed + 1);
-      FloatArrayList partialDots = new FloatArrayList();
+      float[] dots = cbow.dot(sentences);
 
-      IntOpenHashSet inputs = new IntOpenHashSet();
-      IntOpenHashSet outputs = new IntOpenHashSet();
+      ServerWrapper.setNumInputs(param.partitionId, cbow.getNumInputsToUpdate());
+      ServerWrapper.setNumOutputs(param.partitionId, cbow.getNumOutputsToUpdate());
 
-      // We assume that there is only one row in each partition
-      float[] values = ((IntFloatDenseVectorStorage) partition.getRow(0).getSplit().getStorage()).getValues();
-      // We assume that the max length for one document is two hundred
-      float[] sentence_vectors = new float[partDim * 200];
-
-      for (int s = 0; s < sentences.length; s ++) {
-        int[] sen = sentences[s];
-
-        // locates the input vectors to local array to prevent randomly access
-        // on the large server row.
-        for (int a = 0; a < sen.length; a ++) {
-          int node = sen[a];
-          int offset = node * partDim * order;
-          int start  = a * partDim;
-          for (int c = 0; c < partDim; c ++)
-            sentence_vectors[start + c] = values[offset + c];
-        }
-
-        for (int position = 0; position < sen.length; position ++) {
-          int word = sen[position];
-          // fill 0 for context vector
-          Arrays.fill(context, 0);
-          // window size
-          int b = windowSeed.nextInt(window);
-          // Continuous bag-of-words Models
-          int cw = 0;
-
-          // Accumulate the input vectors from context
-          for (int a = b; a < window * 2 + 1 - b; a++)
-            if (a != window) {
-              int c = position - window + a;
-              if (c < 0) continue;
-              if (c >= sen.length) continue;
-              int sentence_word = sen[c];
-              if (sentence_word == -1) continue;
-
-              int start = c * partDim;
-              for (c = 0; c < partDim; c++) context[c] += sentence_vectors[c + start];
-              inputs.add(sentence_word);
-              cw++;
-            }
-
-          // Calculate the partial dot values
-          if (cw > 0) {
-            for (int c = 0; c < partDim; c ++) context[c] /= cw;
-            int target;
-            for (int d = 0; d < negative + 1; d ++) {
-              if (d == 0) target = word;
-              // We should guarantee here that the sample would not equal the ``word``
-              else while (true) {
-                target = negativeSeed.nextInt(maxIndex);
-                if (target == word) continue;
-                else break;
-              }
-
-              outputs.add(target);
-              float f = 0f;
-              int colId = target * partDim * order + partDim;
-              for (int c = 0; c < partDim; c ++) f += context[c] * values[c + colId];
-              partialDots.add(f);
-            }
-          }
-        }
-      }
-
-
-      ServerWrapper.setNumInputs(param.partitionId, inputs.size(), param.threadId);
-      ServerWrapper.setNumOutputs(param.partitionId, outputs.size(), param.threadId);
-
-      return new CbowDotPartitionResult(partialDots.toFloatArray());
+      return new CbowDotPartitionResult(dots);
     }
 
     return null;
@@ -177,7 +110,7 @@ public class CbowDot extends GetFunc {
           } finally {
             ((CbowDotPartitionResult) result).clear();
           }
-      return new CbowDotResult(results);
+      return new NEDot.NEDotResult(results);
     }
 
     return null;

@@ -25,6 +25,7 @@ import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.embedding.Param
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel
 import com.tencent.angel.spark.ml.feature.{Features, SubSampling}
+import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -53,6 +54,7 @@ object Word2vecExample {
     val batchSize = params.getOrElse("batchSize", "10000").toInt
     val numPartitions = params.getOrElse("numParts", "10").toInt
     val withSubSample = params.getOrElse("subSample", "true").toBoolean
+    val withRemapping = params.getOrElse("remapping", "true").toBoolean
 
     val numCores = SparkUtils.getNumCores(conf)
 
@@ -62,14 +64,22 @@ object Word2vecExample {
     val data = sc.textFile(input)
     data.persist(StorageLevel.DISK_ONLY)
 
-    val (corpus, denseToString) = Features.corpusStringToInt(sc.textFile(input))
+    var corpus: RDD[Array[Int]] = null
+    var denseToString: Option[RDD[(Int, String)]] = None
 
-    corpus.persist(StorageLevel.DISK_ONLY)
+    if (withRemapping) {
+      val temp = Features.corpusStringToInt(data)
+      corpus = temp._1
+      denseToString = Some(temp._2)
+    } else {
+      corpus = Features.corpusStringToIntWithoutRemapping(data)
+    }
 
-    val docs = if (withSubSample)
-        SubSampling.sampling(corpus).repartition(numDataPartitions)
-      else
-        corpus.repartition(numDataPartitions)
+    val docs = if (withSubSample) {
+      corpus.persist(StorageLevel.DISK_ONLY)
+      SubSampling.sampling(corpus).repartition(numDataPartitions)
+    } else
+      corpus.repartition(numDataPartitions)
 
     docs.persist(StorageLevel.DISK_ONLY)
 
@@ -96,7 +106,7 @@ object Word2vecExample {
     val model = new Word2VecModel(param)
     model.train(docs, param)
     model.save(output + "/embedding", 0)
-    denseToString.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "/mapping")
+    denseToString.map(rdd => rdd.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "/mapping"))
 
     PSContext.stop()
     sc.stop()

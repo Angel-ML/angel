@@ -48,21 +48,24 @@ class LINEModel(numNode: Int,
       None,
       params.numEpoch,
       params.learningRate,
-      params.modelPath,
+      None,
       params.checkpointInterval)
     this
   }
 
-  override def getDotFunc(data: NEDataSet, batchSeed: Int, ns: Int, window: Option[Int]): GetFunc = {
+  override def getDotFunc(data: NEDataSet, batchSeed: Int, ns: Int, window: Option[Int],
+                          partitionId: Option[Int] = None): GetFunc = {
     val lineData = data.asInstanceOf[LINEDataSet]
     new Dot(matrixId, lineData.src, lineData.dst, batchSeed, ns, numNode, partDim, order)
   }
 
-  override def getAdjustFunc(data: NEDataSet, batchSeed: Int, ns: Int, grad: Array[Float], window: Option[Int])
-  : UpdateFunc = {
+  override def getAdjustFunc(data: NEDataSet, batchSeed: Int, ns: Int, grad: Array[Float],
+                             window: Option[Int], partitionId: Option[Int] = None): UpdateFunc = {
     val lineData = data.asInstanceOf[LINEDataSet]
     new Adjust(matrixId, lineData.src, lineData.dst, batchSeed, ns, numNode, partDim, grad, order)
   }
+
+  override def getInitFunc(numPartitions: Int, maxIndex: Int, maxLength: Option[Int]): Option[UpdateFunc] = None
 }
 
 object LINEModel {

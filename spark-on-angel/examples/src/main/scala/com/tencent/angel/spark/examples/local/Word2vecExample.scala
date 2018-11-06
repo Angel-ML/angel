@@ -61,6 +61,7 @@ object Word2vecExample {
     val numDocs = docs.count()
     val maxWordId = docs.map(_.max).max().toLong + 1
     val numTokens = docs.map(_.length).sum().toLong
+    val maxLength = docs.map(_.length).max()
 
     println(s"numDocs=$numDocs maxWordId=$maxWordId numTokens=$numTokens")
 
@@ -74,7 +75,7 @@ object Word2vecExample {
     param.setNumEpoch(10)
     param.setNegSample(5)
     param.setMaxIndex(maxWordId)
-    param.setNumRowDataSet(numDocs)
+    param.setMaxLength(maxLength)
 
     val model = new Word2VecModel(param)
     model.train(docs, param)

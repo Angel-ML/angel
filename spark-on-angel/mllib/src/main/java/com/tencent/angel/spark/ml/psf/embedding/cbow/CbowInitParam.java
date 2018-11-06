@@ -11,21 +11,20 @@ import java.util.List;
 
 public class CbowInitParam extends UpdateParam {
 
-  private int partitionId;
+
   private int numPartitions;
   private int maxIndex;
-  private int concurrentLevel;
+  private int maxLength;
 
   public CbowInitParam(int matrixId,
-                       int partitionId,
                        int numPartitions,
                        int maxIndex,
-                       int concurrentLevel) {
+                       int maxLength) {
     super(matrixId);
-    this.partitionId = partitionId;
+
     this.numPartitions = numPartitions;
     this.maxIndex = maxIndex;
-    this.concurrentLevel = concurrentLevel;
+    this.maxLength = maxLength;
   }
 
   @Override
@@ -42,10 +41,9 @@ public class CbowInitParam extends UpdateParam {
         serverIds.add(serverId);
         params.add(new CbowInitPartitionParam(matrixId,
                 pkey,
-                partitionId,
                 numPartitions,
                 maxIndex,
-                concurrentLevel));
+                maxLength));
       }
     }
     return params;

@@ -20,15 +20,15 @@ package com.tencent.angel.spark.ml.embedding
 
 import java.text.SimpleDateFormat
 import java.util.Date
-import scala.util.Random
 
+import scala.util.Random
 import org.apache.hadoop.fs.Path
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
-
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
 import com.tencent.angel.ml.matrix.psf.update.base.{UpdateFunc, VoidResult}
+import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.embedding.NEModel._
 import com.tencent.angel.spark.ml.psf.embedding.NEDot.NEDotResult
 import com.tencent.angel.spark.ml.psf.embedding.NESlice.SliceResult
@@ -55,13 +55,18 @@ abstract class NEModel(numNode: Int,
 
   // initialize embeddings
   randomInitialize(rand.nextInt)
+
   // create the negative sampling table on each server
   if (useNegativeTable)
     createNegativeSampleTable(numNode, rand.nextInt, 0)
 
-  def getDotFunc(data: NEDataSet, batchSeed: Int, ns: Int, window: Option[Int]): GetFunc
+  def getDotFunc(data: NEDataSet, batchSeed: Int, ns: Int, window: Option[Int],
+                 partitionId: Option[Int] = None): GetFunc
 
-  def getAdjustFunc(data: NEDataSet, batchSeed: Int, ns: Int, grad: Array[Float], window: Option[Int]): UpdateFunc
+  def getAdjustFunc(data: NEDataSet, batchSeed: Int, ns: Int, grad: Array[Float], window: Option[Int],
+                    partitionId: Option[Int] = None): UpdateFunc
+
+  def getInitFunc(numPartitions: Int, maxIndex: Int, maxLength: Option[Int]): Option[UpdateFunc]
 
   /**
     * Main function for training embedding model
@@ -71,7 +76,6 @@ abstract class NEModel(numNode: Int,
     * @param window
     * @param numEpoch
     * @param learningRate
-    * @param modelPath
     * @param checkpointInterval
     * @return
     */
@@ -81,19 +85,24 @@ abstract class NEModel(numNode: Int,
             window: Option[Int],
             numEpoch: Int,
             learningRate: Float,
-            modelPath: String,
+            maxLength: Option[Int],
             checkpointInterval: Int): Unit = {
-    val seeds = new Random(rand.nextInt)
-    for (i <- 1 to numEpoch) {
+    for (epoch <- 1 to numEpoch) {
       val alpha = learningRate
-      val trainDataSet = trainBatches.next()
-      val results = trainDataSet.mapPartitions(iterator =>
-        iterator.map(batch =>
-            miniBatchGD(batch, negative, seeds.nextInt(), alpha, window)
-          ))
-
-      val loss = results.map(f => f._1).sum()
-      logTime(s"epoch: $i, training loss = $loss")
+      val data = trainBatches.next()
+      val numPartitions = data.getNumPartitions
+      val middle = data.mapPartitionsWithIndex(
+        (partitionId, iterator) => sgdForPartition(partitionId, iterator,
+          numPartitions, negative, window, maxLength, alpha, epoch),
+        true).collect()
+      val loss = middle.map(f => f._1).sum
+      val array = new Array[Long](3)
+      middle.foreach(f => f._2.zipWithIndex.foreach(t => array(t._2) += t._1))
+      logTime(s"epoch=$epoch " +
+        s"loss=$loss " +
+        s"dotTime=${array(0)} " +
+        s"gradientTime=${array(1)} " +
+        s"adjustTime=${array(2)}")
     }
   }
 
@@ -112,10 +121,6 @@ abstract class NEModel(numNode: Int,
     val (from, until) = slicePair
     logTime(s"get nodes with id ranging from $from until $until")
     psfGet(new NESlice(psMatrix.id, from, until - from, partDim, order)).asInstanceOf[SliceResult].getSlice()
-  }
-
-  private def psfGet(func: GetFunc): GetResult = {
-    psMatrix.psfGet(func)
   }
 
   private def slicedSavingRDDBuilder(ss: SparkSession, partDim: Int): RDD[(Int, Int)] = {
@@ -141,40 +146,50 @@ abstract class NEModel(numNode: Int,
     }
   }
 
-  /**
-    * Stochastic Gradient Descent for one batch of training data
-    * @param data
-    * @param negative
-    * @param seed
-    * @param alpha
-    * @param window
-    * @return
-    */
-  private def miniBatchGD(data: NEDataSet,
-                          negative: Int,
-                          seed: Int,
-                          alpha: Float,
-                          window: Option[Int]): (Double, Long) = {
+  def sgdForPartition(partitionId: Int,
+                      iterator: Iterator[NEDataSet],
+                      numPartitions: Int,
+                      negative: Int,
+                      window: Option[Int],
+                      maxLength: Option[Int],
+                      alpha: Float,
+                      epoch: Int): Iterator[(Double, Array[Long])] = {
 
-    val batchSeed = new Random(seed).nextInt()
+    def sgdForBatch(partitionId: Int,
+                    seed: Int,
+                    batch: NEDataSet,
+                    batchId: Int): (Double, Array[Long]) = {
+      var (start, end) = (0L, 0L)
+      // dot
+      start = System.currentTimeMillis()
+      val dots = psfGet(getDotFunc(batch, seed, negative, window, Some(partitionId)))
+        .asInstanceOf[NEDotResult].result
+      end = System.currentTimeMillis()
+      val dotTime = end - start
+      // gradient
+      start = System.currentTimeMillis()
+      val loss = doGrad(dots, negative, alpha, Some(batch))
+      end = System.currentTimeMillis()
+      val gradientTime = end - start
+      // adjust
+      start = System.currentTimeMillis()
+      psfUpdate(getAdjustFunc(batch, seed, negative, dots, window, Some(partitionId)))
+      end = System.currentTimeMillis()
+      val adjustTime = end - start
+      // return loss
+      if ((batchId + 1) % 100 == 0)
+        println(s"batchId=$batchId dotTime=$dotTime gradientTime=$gradientTime adjustTime=$adjustTime")
+      (loss, Array(dotTime, gradientTime, adjustTime))
+    }
 
-    val beforeDot = System.currentTimeMillis()
-    val dotRet = psfGet(getDotFunc(data, batchSeed, negative, window)).asInstanceOf[NEDotResult].result
+    PSContext.instance()
 
-    val beforeGrad = System.currentTimeMillis()
-    val loss = doGrad(dotRet, negative, alpha, None)
+    if (epoch == 1)
+      getInitFunc(numPartitions, numNode, maxLength).map(func => psfUpdate(func))
 
-    val beforeAdjust = System.currentTimeMillis()
-    psfUpdate(getAdjustFunc(data, batchSeed, negative, dotRet, window))
-
-    val finish = System.currentTimeMillis()
-
-    if (Random.nextDouble() < 0.01)
-      logTime(s"dotTime=${beforeGrad - beforeDot} " +
-        s"gradTime=${beforeAdjust - beforeGrad} " +
-        s"adjustTime=${finish - beforeAdjust}")
-
-    (loss, dotRet.length.toLong)
+    iterator.zipWithIndex.map { case (batch, index) =>
+      sgdForBatch(partitionId, rand.nextInt(), batch, index)
+    }
   }
 
   def batchEvaluation(data: NEDataSet, seed: Int, ns: Int, window: Option[Int]): (Double, Long) = {
@@ -194,6 +209,10 @@ abstract class NEModel(numNode: Int,
 
   private def psfUpdate(func: UpdateFunc): VoidResult = {
     psMatrix.psfUpdate(func).get
+  }
+
+  private def psfGet(func: GetFunc): GetResult = {
+    psMatrix.psfGet(func)
   }
 
   private def createNegativeSampleTable(maxIndex: Int, seed: Int, version: Int) {

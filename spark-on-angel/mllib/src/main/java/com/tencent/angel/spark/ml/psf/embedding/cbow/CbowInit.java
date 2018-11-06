@@ -8,8 +8,6 @@ import org.apache.commons.logging.LogFactory;
 
 public class CbowInit extends UpdateFunc {
 
-  private static final Log LOG = LogFactory.getLog(CbowInit.class);
-
   public CbowInit(CbowInitParam param) {
     super(param);
   }
@@ -19,11 +17,10 @@ public class CbowInit extends UpdateFunc {
   @Override
   public void partitionUpdate(PartitionUpdateParam partParam) {
     if (partParam instanceof CbowInitPartitionParam) {
+
       CbowInitPartitionParam param = (CbowInitPartitionParam) partParam;
-
-      ServerWrapper.initialize(param.numPartitions, param.concurrentLevel);
-      ServerWrapper.setMaxIndex(param.maxIndex);
-
+      System.out.println("init maxIndex=" + param.maxIndex);
+      ServerWrapper.initialize(param.numPartitions, param.maxIndex, param.maxLength);
     }
   }
 }
