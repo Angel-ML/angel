@@ -101,7 +101,8 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
                         cols: Long,
                         rowInBlock: Int = -1,
                         colInBlock: Long = -1,
-                        rowType: RowType = RowType.T_DOUBLE_DENSE): MatrixMeta = {
+                        rowType: RowType = RowType.T_DOUBLE_DENSE,
+                        additionalConfiguration: Map[String, String] = Map()): MatrixMeta = {
     val maxRowNumInBlock = if (rowInBlock == -1) rows else rowInBlock
     val maxBlockSize = 5000000
     val maxColNumInBlock = if (colInBlock == -1) {
@@ -109,7 +110,7 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
     } else {
       colInBlock
     }
-    createMatrix(rows, cols, -1, maxRowNumInBlock, maxColNumInBlock, rowType)
+    createMatrix(rows, cols, -1, maxRowNumInBlock, maxColNumInBlock, rowType, additionalConfiguration)
   }
 
 
@@ -119,11 +120,13 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
                    rowInBlock: Int,
                    colInBlock: Long,
                    rowType: RowType,
-                   partitionSource: String = classOf[PartitionSourceMap].getName): MatrixMeta = {
+                   additionalConfiguration: Map[String, String] = Map()): MatrixMeta = {
     assertCallByDriver("The operation of creating a matrix can only be called on the driver side.")
     val mc = new MatrixContext(s"spark-$matrixCounter", rows, cols, validIndexNum,
       rowInBlock, colInBlock, rowType)
-    mc.getAttributes.put(AngelConf.ANGEL_PS_PARTITION_SOURCE_CLASS, partitionSource)
+    additionalConfiguration.foreach { case (key, value) =>
+      mc.getAttributes.put(key, value)
+    }
     psAgent.createMatrix(mc, 5000L)
     val meta = psAgent.getMatrix(mc.getName)
     matrixCounter += 1
@@ -148,8 +151,9 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
                          validIndexNum: Long,
                          rowInBlock: Int = -1,
                          colInBlock: Long = -1,
-                         rowType: RowType = RowType.T_DOUBLE_SPARSE): MatrixMeta = {
-    createMatrix(rows, cols, validIndexNum, rowInBlock, colInBlock, rowType)
+                         rowType: RowType = RowType.T_DOUBLE_SPARSE,
+                         additionalConfiguration: Map[String, String] = Map()): MatrixMeta = {
+    createMatrix(rows, cols, validIndexNum, rowInBlock, colInBlock, rowType, additionalConfiguration)
   }
 
   def duplicateVector(original: PSVector): PSVector = {

@@ -23,7 +23,7 @@ import com.tencent.angel.ml.matrix.psf.get.base.GetFunc
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc
 import com.tencent.angel.spark.ml.embedding.NEModel.NEDataSet
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel.{W2VDataSet, buildDataBatches}
-import com.tencent.angel.spark.ml.embedding.{NEModel, Param, Sigmoid}
+import com.tencent.angel.spark.ml.embedding.{FastSigmoid, NEModel, Param}
 import com.tencent.angel.spark.ml.psf.embedding.w2v._
 import org.apache.spark.rdd.RDD
 
@@ -97,13 +97,13 @@ class Word2VecModel(numNode: Int,
     var sumLoss = 0f
 //    assert(dots.length == size * (negative + 1))
     for (a <- 0 until dots.length) {
-      val sig = Sigmoid.sigmoid(dots(a))
+      val sig = FastSigmoid.sigmoid(dots(a))
       if (a % (negative + 1) == 0) { // positive target
         sumLoss += -sig
         dots(a) = (1 - sig) * alpha
       } else { // negative target
         label = 0
-        sumLoss += -Sigmoid.sigmoid(-dots(a))
+        sumLoss += -FastSigmoid.sigmoid(-dots(a))
         dots(a) = -sig * alpha
       }
     }

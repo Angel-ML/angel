@@ -84,7 +84,6 @@ public class ServerPartition implements Serialize {
     PartitionSource source;
     try {
       source = (PartitionSource) Class.forName(sourceClass).newInstance();
-      LOG.error("partition source class is " + source.getClass().getName());
     } catch (Throwable e) {
       LOG.error("Can not init partition source for type " + sourceClass + " use default instead ",
         e);

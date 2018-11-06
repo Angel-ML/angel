@@ -25,15 +25,18 @@ import scala.util.Random
 import org.apache.hadoop.fs.Path
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
 import com.tencent.angel.ml.matrix.psf.update.base.{UpdateFunc, VoidResult}
+import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.ml.embedding.NEModel._
+import com.tencent.angel.spark.ml.embedding.NEModel.NEDataSet
 import com.tencent.angel.spark.ml.psf.embedding.NEDot.NEDotResult
 import com.tencent.angel.spark.ml.psf.embedding.NESlice.SliceResult
 import com.tencent.angel.spark.ml.psf.embedding.{NEModelRandomize, NENSTableInitializer, NESlice}
 import com.tencent.angel.spark.models.PSMatrix
+import com.tencent.angel.spark.ml.embedding.NEModel.logTime
 
 abstract class NEModel(numNode: Int,
                        dimension: Int,
@@ -244,7 +247,9 @@ abstract class NEModel(numNode: Int,
     )
     // create ps matrix
     val begin = System.currentTimeMillis()
-    val psMatrix = PSMatrix.dense(numRow, numCol, rowsInBlock, colsInBlock, RowType.T_FLOAT_DENSE)
+    val psMatrix = PSMatrix
+      .dense(numRow, numCol, rowsInBlock, colsInBlock, RowType.T_FLOAT_DENSE,
+        Map(AngelConf.ANGEL_PS_PARTITION_SOURCE_CLASS -> classOf[PartitionSourceArray].getName))
     logTime(s"Model created, takes ${(System.currentTimeMillis() - begin) / 1000.0}s")
 
     psMatrix
