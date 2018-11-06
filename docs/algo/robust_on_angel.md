@@ -74,10 +74,11 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Robust Re
         --angel.train.data.path=$input_path \
         --angel.save.model.path=$model_path \
         --angel.log.path=$log_path \
+        --ml.data.is.classification=false \
         --ml.model.is.classification=false \
         --ml.robustregression.loss.delta=1.0 \
         --ml.epoch.num=10 \
-        --ml.feature.index.range=150361 \
+        --ml.feature.index.range=$featureNum+1 \
         --ml.data.validate.ratio=0.1 \
         --ml.learn.rate=0.1 \
         --ml.learn.decay=1 \
@@ -92,7 +93,40 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Robust Re
         --angel.ps.number=2 \
         --angel.ps.memory.mb=5000 \
         --angel.job.name=robustReg_network \
-        --angel.output.path.deleteonexist=true \
+        --angel.output.path.deleteonexist=true
+	```
+
+	*向Yarn集群提交RobustRegression算法增量训练任务:
+
+	```java
+	./bin/angel-submit \
+		--action.type=train \
+		--angel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner \
+		--ml.model.class.name=com.tencent.angel.ml.regression.RobustRegression \
+		--angel.train.data.path=$input_path \
+		--angel.load.model.path=$model_path \
+		--angel.save.model.path=$model_path \
+		--angel.log.path=$log_path \
+		--ml.data.is.classification=false \
+		--ml.model.is.classification=false \
+		--ml.robustregression.loss.delta=1.0 \
+		--ml.epoch.num=10 \
+		--ml.feature.index.range=$featureNum+1 \
+		--ml.data.validate.ratio=0.1 \
+		--ml.learn.rate=0.1 \
+		--ml.learn.decay=1 \
+		--ml.reg.l2=0.001 \
+		--ml.data.type=libsvm \
+		--ml.model.type=T_FLOAT_DENSE \
+		--ml.num.update.per.epoch=10 \
+		--ml.worker.thread.num=4 \
+		--angel.workergroup.number=2 \
+		--angel.worker.memory.mb=5000 \
+		--angel.worker.task.number=1 \
+		--angel.ps.number=2 \
+		--angel.ps.memory.mb=5000 \
+		--angel.job.name=robustReg_network \
+		--angel.output.path.deleteonexist=true
 	```
 
 	*向Yarn集群提交RobustRegression算法预测任务:
@@ -106,7 +140,7 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Robust Re
 	    --angel.load.model.path=$model_path \
 	    --angel.predict.out.path=$predict_path \
 	    --angel.log.path=$log_path \
-	    --ml.feature.index.range=150361 \
+	    --ml.feature.index.range=$featureNum+1 \
 	    --ml.data.type=libsvm \
 	    --ml.model.type=T_FLOAT_DENSE \
 	    --ml.worker.thread.num=4 \
@@ -116,7 +150,7 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Robust Re
 	    --angel.ps.number=2 \
 	    --angel.ps.memory.mb=5000 \
 	    --angel.job.name=robustReg_network \
-	    --angel.output.path.deleteonexist=true \
+	    --angel.output.path.deleteonexist=true
 	```
 
 ### 性能
