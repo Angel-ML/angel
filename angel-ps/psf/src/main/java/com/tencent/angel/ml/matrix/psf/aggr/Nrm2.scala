@@ -21,7 +21,8 @@ package com.tencent.angel.ml.matrix.psf.aggr
 ;
 
 import com.tencent.angel.ml.math2.vector.{DoubleVector, FloatVector, IntVector, LongVector}
-import com.tencent.angel.ml.matrix.psf.aggr.enhance.UnaryAggrFunc
+import com.tencent.angel.ml.matrix.psf.aggr.enhance.{ScalarAggrResult, ScalarPartitionAggrResult, UnaryAggrFunc}
+import com.tencent.angel.ml.matrix.psf.get.base.{GetResult, PartitionGetResult}
 import com.tencent.angel.ps.storage.vector.ServerRow;
 
 /**
@@ -33,14 +34,25 @@ class Nrm2(matrixId: Int, rowId: Int) extends UnaryAggrFunc(matrixId, rowId) {
 
   override protected def processRow(row: ServerRow): Double = {
     row.getSplit match {
-      case s: DoubleVector => s.norm()
-      case s: FloatVector => s.norm()
-      case s: LongVector => s.norm()
-      case s: IntVector => s.norm()
+      case s: DoubleVector => Math.pow(s.norm(), 2)
+      case s: FloatVector => Math.pow(s.norm(), 2)
+      case s: LongVector => Math.pow(s.norm(), 2)
+      case s: IntVector => Math.pow(s.norm(), 2)
     }
   }
 
-  override protected def mergeInit: Double = Double.MinValue
+  override protected def mergeInit: Double = 0.0
 
-  override protected def mergeOp(a: Double, b: Double): Double = math.max(a, b)
+  override protected def mergeOp(a: Double, b: Double): Double = a + b
+
+  override def merge(partResults: java.util.List[PartitionGetResult]): GetResult = {
+    var aggRet = mergeInit
+    val retIter = partResults.iterator()
+    while (retIter.hasNext) {
+      val partRet = retIter.next()
+      if (null != partRet)
+        aggRet = mergeOp(aggRet, partRet.asInstanceOf[ScalarPartitionAggrResult].result)
+    }
+    new ScalarAggrResult(Math.sqrt(aggRet))
+  }
 }

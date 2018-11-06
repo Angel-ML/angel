@@ -31,7 +31,7 @@ class DataParams(val path: Option[String],
                  val sampleRatio: Option[Double],
                  val useShuffle: Option[Boolean],
                  val posnegRatio: Option[Double],
-                 val transLabel: Option[Boolean]
+                 val transLabel: Option[String]
                 ) {
   def updateConf(conf: SharedConf): Unit = {
     path.foreach(v => conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, v))
@@ -42,7 +42,7 @@ class DataParams(val path: Option[String],
     sampleRatio.foreach(v => conf.setDouble(MLConf.ML_BATCH_SAMPLE_RATIO, v))
     useShuffle.foreach(v => conf.setBoolean(MLConf.ML_DATA_USE_SHUFFLE, v))
     posnegRatio.foreach(v => conf.setDouble(MLConf.ML_DATA_POSNEG_RATIO, v))
-    transLabel.foreach(v => conf.setBoolean(MLConf.ML_DATA_TRANS_LABEL, v))
+    transLabel.foreach(v => conf.setString(MLConf.ML_DATA_LABEL_TRANS, v))
   }
 }
 
@@ -95,7 +95,7 @@ object DataParams {
 
         val transLabel = jast \ ParamKeys.transLabel match {
           case JNothing => None
-          case v: JValue => Some(v.extract[Boolean])
+          case v: JValue => Some(v.extract[String])
         }
 
         new DataParams(path, format, indexRange, numField, validateRatio,

@@ -18,6 +18,9 @@
 
 package com.tencent.angel.ml.core.utils;
 
+import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.ml.core.graphsubmit.GraphPredictResult;
+import com.tencent.angel.ml.core.graphsubmit.SoftmaxPredictResult;
 import com.tencent.angel.ml.feature.LabeledData;
 import com.tencent.angel.ml.model.MLModel;
 import com.tencent.angel.ml.core.optimizer.loss.LossFunc;
@@ -159,7 +162,14 @@ public class ValidationUtils {
         truePos.put(labels[i], count + 1.0);
       }
 
-      loss += lossFunc.loss(predRes.proba(), labels[i]);
+      if (predRes instanceof GraphPredictResult) {
+        loss += lossFunc.loss(predRes.proba(), labels[i]);
+      } else if (predRes instanceof SoftmaxPredictResult) {
+        loss += lossFunc.loss(((SoftmaxPredictResult)predRes).trueProba(), labels[i]);
+      } else {
+        throw new AngelException("PredictResult Error!");
+      }
+
     }
 
     long cost = System.currentTimeMillis() - startTime;
