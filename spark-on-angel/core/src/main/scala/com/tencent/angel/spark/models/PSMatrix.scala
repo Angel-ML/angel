@@ -19,6 +19,7 @@
 package com.tencent.angel.spark.models
 
 import java.util.concurrent.Future
+import scala.collection.Map
 
 import org.apache.commons.logging.LogFactory
 
@@ -123,10 +124,11 @@ object PSMatrix{
     sparse(rows, cols, cols, RowType.T_DOUBLE_SPARSE_LONGKEY)
   }
 
-  def sparse(rows: Int, cols: Long, range: Long, rowType: RowType): PSMatrix = {
+  def sparse(rows: Int, cols: Long, range: Long, rowType: RowType,
+      additionalConfiguration:Map[String, String] = Map()): PSMatrix = {
     require(rowType.isSparse, s"Dense towType required, $rowType provided")
     val matrixMeta = PSContext.instance()
-      .createSparseMatrix(rows, cols, range, -1, -1, rowType)
+      .createSparseMatrix(rows, cols, range, -1, -1, rowType, additionalConfiguration)
     new PSMatrixImpl(matrixMeta.getId, rows, cols, rowType)
   }
 
@@ -178,9 +180,11 @@ object PSMatrix{
     dense(rows, cols, -1, -1, rowType)
   }
 
-  def dense(rows: Int, cols: Long, rowInBlock: Int, colInBlock: Int, rowType: RowType): PSMatrix = {
+  def dense(rows: Int, cols: Long, rowInBlock: Int, colInBlock: Int, rowType: RowType,
+      additionalConfiguration: Map[String, String] = Map()): PSMatrix = {
     require(rowType.isDense, s"Dense towType required, $rowType provided")
-    val matrixMeta = PSContext.instance().createDenseMatrix(rows, cols, rowInBlock, colInBlock, rowType)
+    val matrixMeta = PSContext.instance()
+      .createDenseMatrix(rows, cols, rowInBlock, colInBlock, rowType, additionalConfiguration)
     new PSMatrixImpl(matrixMeta.getId, rows, cols, rowType)
   }
 
