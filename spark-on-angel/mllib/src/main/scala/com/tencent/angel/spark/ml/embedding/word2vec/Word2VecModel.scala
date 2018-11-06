@@ -50,15 +50,16 @@ class Word2VecModel(numNode: Int,
   }
 
   def train(corpus: RDD[Array[Int]], param: Param): Unit = {
+    psMatrix.psfUpdate(getInitFunc(corpus.getNumPartitions, numNode, maxLength))
     val iterator = buildDataBatches(corpus, param.batchSize)
     train(iterator, None, param.negSample,
       Some(param.windowSize), param.numEpoch, param.learningRate,
       Some(maxLength), param.checkpointInterval)
   }
 
-  override def getInitFunc(numPartitions: Int, maxIndex: Int, maxLength: Option[Int]): Option[UpdateFunc] = {
-    val param = new InitParam(matrixId, numPartitions, maxIndex, maxLength.get)
-    Some(new Init(param))
+  def getInitFunc(numPartitions: Int, maxIndex: Int, maxLength: Int): UpdateFunc = {
+    val param = new InitParam(matrixId, numPartitions, maxIndex, maxLength)
+    new Init(param)
   }
 
 

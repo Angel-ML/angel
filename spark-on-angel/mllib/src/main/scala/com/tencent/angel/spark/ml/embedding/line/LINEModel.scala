@@ -64,8 +64,6 @@ class LINEModel(numNode: Int,
     val lineData = data.asInstanceOf[LINEDataSet]
     new Adjust(matrixId, lineData.src, lineData.dst, batchSeed, ns, numNode, partDim, grad, order)
   }
-
-  override def getInitFunc(numPartitions: Int, maxIndex: Int, maxLength: Option[Int]): Option[UpdateFunc] = None
 }
 
 object LINEModel {

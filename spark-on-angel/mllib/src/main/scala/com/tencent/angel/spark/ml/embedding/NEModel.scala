@@ -69,8 +69,6 @@ abstract class NEModel(numNode: Int,
   def getAdjustFunc(data: NEDataSet, batchSeed: Int, ns: Int, grad: Array[Float], window: Option[Int],
                     partitionId: Option[Int] = None): UpdateFunc
 
-  def getInitFunc(numPartitions: Int, maxIndex: Int, maxLength: Option[Int]): Option[UpdateFunc]
-
   /**
     * Main function for training embedding model
     * @param trainBatches
@@ -96,7 +94,7 @@ abstract class NEModel(numNode: Int,
       val numPartitions = data.getNumPartitions
       val middle = data.mapPartitionsWithIndex(
         (partitionId, iterator) => sgdForPartition(partitionId, iterator,
-          numPartitions, negative, window, maxLength, alpha, epoch),
+          numPartitions, negative, window, maxLength, alpha),
         true).collect()
       val loss = middle.map(f => f._1).sum
       val array = new Array[Long](3)
@@ -155,8 +153,7 @@ abstract class NEModel(numNode: Int,
                       negative: Int,
                       window: Option[Int],
                       maxLength: Option[Int],
-                      alpha: Float,
-                      epoch: Int): Iterator[(Double, Array[Long])] = {
+                      alpha: Float): Iterator[(Double, Array[Long])] = {
 
     def sgdForBatch(partitionId: Int,
                     seed: Int,
@@ -181,14 +178,11 @@ abstract class NEModel(numNode: Int,
       val adjustTime = end - start
       // return loss
       if ((batchId + 1) % 100 == 0)
-        println(s"batchId=$batchId dotTime=$dotTime gradientTime=$gradientTime adjustTime=$adjustTime")
+        logTime(s"batchId=$batchId dotTime=$dotTime gradientTime=$gradientTime adjustTime=$adjustTime")
       (loss, Array(dotTime, gradientTime, adjustTime))
     }
 
     PSContext.instance()
-
-    if (epoch == 1)
-      getInitFunc(numPartitions, numNode, maxLength).map(func => psfUpdate(func))
 
     iterator.zipWithIndex.map { case (batch, index) =>
       sgdForBatch(partitionId, rand.nextInt(), batch, index)
