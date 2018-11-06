@@ -60,14 +60,14 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
       val psRows: Int = multiplier
       val psCols = SharedConf.indexRange * outputDim
       PSMatrixUtils.createPSMatrixCtx(s"${name}_weight", psRows, psCols, modelType)
-      // in this condition, the shape of weight matrix is (inputDim, outputDim)
-      // and inputDim = SharedConf.indexRange
+    // in this condition, the shape of weight matrix is (inputDim, outputDim)
+    // and inputDim = SharedConf.indexRange
     case ("libsvm" | "dummy", "dense" | "component_dense") => // sparse data, dense model
       val psRows: Int = outputDim * multiplier
       val psCols = SharedConf.indexRange
       PSMatrixUtils.createPSMatrixCtx(s"${name}_weight", psRows, psCols, modelType)
-      // in this condition, the shape of weight matrix is (outputDim, inputDim)
-      // and inputDim = SharedConf.indexRange
+    // in this condition, the shape of weight matrix is (outputDim, inputDim)
+    // and inputDim = SharedConf.indexRange
     case ("libsvm" | "dummy", "sparse" | "component_sparse") => // sparse data, sparse model
       val psRows: Int = outputDim * multiplier
       val psCols = SharedConf.indexRange
@@ -87,9 +87,9 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
   lazy val weightId: Int = PSMatrixUtils.getMatrixId(s"${name}_weight")
   lazy val biasId: Int = PSMatrixUtils.getMatrixId(s"${name}_bias")
 
-  @transient var forward: Matrix = _  // dense
+  @transient var forward: Matrix = _ // dense
   // dense
-  @transient var backward: Matrix = _  // dense
+  @transient var backward: Matrix = _ // dense
   // dense
   @transient var output: Matrix = _ // dense
 
@@ -103,15 +103,15 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
       case STATUS.Null =>
         // println(s"the status in SparseInputLayer($name)-calOutput is ${status.toString}")
         (SharedConf.inputDataFormat, valueType) match {
-          case ("dense", "double"| "float") => // the shape of weight matrix is (inputDim, outputDim)
+          case ("dense", "double" | "float") => // the shape of weight matrix is (inputDim, outputDim)
             forward = graph.placeHolder.getFeats.dot(weight).iadd(bias)
-          case ("libsvm"| "dummy", "double") => // the shape of weight matrix is (outputDim, inputDim)
+          case ("libsvm" | "dummy", "double") => // the shape of weight matrix is (outputDim, inputDim)
             forward = MFactory.denseDoubleMatrix(graph.placeHolder.getBatchSize, outputDim)
             (0 until outputDim).foreach { colId => // the shape of weight matrix is (outputDim, inputDim)
               val col = graph.placeHolder.getFeats.dot(weight.getRow(colId)).iadd(VectorUtils.getDouble(bias, colId))
               forward.asInstanceOf[BlasDoubleMatrix].setCol(colId, col)
             }
-          case ("libsvm"| "dummy", "float") =>
+          case ("libsvm" | "dummy", "float") =>
             forward = MFactory.denseFloatMatrix(graph.placeHolder.getBatchSize, outputDim)
             (0 until outputDim).foreach { colId =>
               val col = graph.placeHolder.getFeats.dot(weight.getRow(colId)).iadd(VectorUtils.getFloat(bias, colId))
@@ -140,7 +140,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
       case _ =>
     }
     val end = System.currentTimeMillis()
-    //    println(s"SparseInputLayer($name) calBackward Time=${end - start} ms")
+    // println(s"SparseInputLayer($name) calBackward Time=${end - start} ms")
 
     backward
   }
@@ -169,24 +169,24 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
 
   override def pushGradient(): Unit = {
     val start = System.currentTimeMillis()
-    val normal = OptUtils.getNormal(sharedConf, graph)
+    val normal = 1.0 / OptUtils.getNormal(sharedConf, graph)
 
     status match {
       case STATUS.Backward =>
         (SharedConf.inputDataFormat, NetUtils.storageType(modelType)) match {
           case ("dense", "dense" | "component_dense") => // dense data, dense model
             val weightGrad: Matrix = Ufuncs.dot(graph.placeHolder.getFeats, true, backward, false)
-              .idiv(normal)
+              .imul(normal)
             PSMatrixUtils.incrementRowByMatrix(weightId, multiplier - 1, weightGrad)
           case _ => // sparse data, dense or sparse model, note: dense data, sparse model is not allowed
             val vectors = (0 until outputDim).toArray.map { colId =>
               val weightRowGrad = valueType match {
                 case "double" =>
                   graph.placeHolder.getFeats.transDot(backward.asInstanceOf[BlasDoubleMatrix].getCol(colId))
-                    .idiv(normal)
+                    .imul(normal)
                 case "float" =>
                   graph.placeHolder.getFeats.transDot(backward.asInstanceOf[BlasFloatMatrix].getCol(colId))
-                    .idiv(normal)
+                    .imul(normal)
               }
 
               weightRowGrad.setMatrixId(weight.getMatrixId)
@@ -233,7 +233,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
     if (taskflag == 0) {
       val bound = 0.0001
       (SharedConf.inputDataFormat, NetUtils.storageType(modelType)) match {
-        case ("dense", "dense" | "component_dense") =>  // dense data, dense model
+        case ("dense", "dense" | "component_dense") => // dense data, dense model
           val randFunc = new RandomNormal(weightId, 0, 1, 0.0, bound)
           PSAgentContext.get().getUserRequestAdapter.update(randFunc).get()
         case ("libsvm" | "dummy", "dense" | "component_dense") => // sparse data, dense model

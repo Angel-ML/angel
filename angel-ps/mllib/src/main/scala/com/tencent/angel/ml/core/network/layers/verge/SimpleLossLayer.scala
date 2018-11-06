@@ -67,7 +67,7 @@ class SimpleLossLayer(name: String, inputLayer: Layer, lossFunc: LossFunc)(
       case _ =>
     }
 
-    lossFunc.predict(output)
+    lossFunc.predict(output, graph)
   }
 
   override def calOutput(): Matrix = {
