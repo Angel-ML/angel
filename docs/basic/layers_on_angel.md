@@ -1,8 +1,8 @@
 # Angel中的层
 
 Angel中的大部分算法都是基于[计算图](./computinggraph_on_angel.md)的, 图中的节点为层(layer). 按层的拓朴结构可分为三类:
-- edge: 边缘节点, 只有输入或输出的层, 如输入层与损失层
-    - 输入层: 主要有DenseInputLayer, SparseInputLayer, Embedding
+- verge: 边缘节点, 只有输入或输出的层, 如输入层与损失层
+    - 输入层: 主要有SimpleInputLayer, Embedding
     - 损失层: 主要用SimpleLossLayer, SoftmaxLossLayer
 - linear: 有且仅有一个输入与一个输出的层
     - 全连接层: 即FCLayer
@@ -20,7 +20,7 @@ Angel中的大部分算法都是基于[计算图](./computinggraph_on_angel.md)�
 
 ## 1. 输入层
 Angel中的输入层有两类:
-- SimpleInpuyLayer
+- SimpleInputLayer
 - Embedding
 
 ### 1.1 SimpleInpuyLayer
