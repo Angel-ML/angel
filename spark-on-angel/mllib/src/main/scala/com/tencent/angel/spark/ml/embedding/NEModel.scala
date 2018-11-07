@@ -26,9 +26,11 @@ import org.apache.hadoop.fs.Path
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
 import com.tencent.angel.ml.matrix.psf.update.base.{UpdateFunc, VoidResult}
+import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
 import com.tencent.angel.spark.ml.embedding.NEModel._
 import com.tencent.angel.spark.ml.psf.embedding.NEDot.NEDotResult
 import com.tencent.angel.spark.ml.psf.embedding.NESlice.SliceResult
@@ -75,6 +77,7 @@ abstract class NEModel(numNode: Int,
           batchIter.map { batch =>
             logEveryBatchNum.foreach { logStep =>
               if (batchCounter / logStep >= percent) {
+                percent = math.max(percent, batchCounter / logStep).floor.toInt
                 logTime(s"epoch: $i, finished $percent%")
                 percent += 1
               }
@@ -156,7 +159,7 @@ abstract class NEModel(numNode: Int,
       pdfUpdate(getAdjustPsf(data, batchSeed, ns, dotRet, window))
       (loss, dotRet.length.toLong)
     } else {
-      // print some information for performance diagnosis
+//       print some information for performance diagnosis
       val beforeDot = System.currentTimeMillis()
       val dotRet = psfGet(getDotPsf(data, batchSeed, ns, window)).asInstanceOf[NEDotResult].result
       val beforeGrad = System.currentTimeMillis()
@@ -217,7 +220,9 @@ abstract class NEModel(numNode: Int,
     )
     // create ps matrix
     val begin = System.currentTimeMillis()
-    val psMatrix = PSMatrix.dense(numRow, numCol, rowsInBlock, colsInBlock, RowType.T_FLOAT_DENSE)
+    val psMatrix = PSMatrix
+      .dense(numRow, numCol, rowsInBlock, colsInBlock, RowType.T_FLOAT_DENSE,
+        Map(AngelConf.ANGEL_PS_PARTITION_SOURCE_CLASS -> classOf[PartitionSourceArray].getName))
     logTime(s"Model created, takes ${(System.currentTimeMillis() - begin) / 1000.0}s")
 
     psMatrix

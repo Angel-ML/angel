@@ -50,6 +50,7 @@ We welcome everyone interested in machine learning to contribute code, create is
 * [LR (Spark on Angel)](./docs/algo/spark_on_angel_optimizer_en.md)
 * [Linear Regression](./docs/algo/linear_on_angel_en.md)
 * [Robust Regression](./docs/algo/robust_on_angel_en.md)
+* [Softmax Regression](./docs/algo/softmax_on_angel_en.md)
 
 ## Deployment
 
