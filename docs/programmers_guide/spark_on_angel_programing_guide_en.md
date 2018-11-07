@@ -27,7 +27,7 @@ To write a Spark on Angel application, in addition to the Spark dependency, you 
 The corresponding import and implicit conversion:
 
 ```scala
-  import com.tencent.angel.spark.PSContext
+  import com.tencent.angel.spark.context.PSContext
 ```
 
 ## Initializing Spark on Angel
@@ -59,8 +59,7 @@ PSContext.stop()
 
 ### PSVector
 
-PSVector is a subclass of PSModel, while PSVector has four different implementations of DensePSVector/SparsePSVector and BreezePSVector/CachedPSVector. DensePSVector or SparsePSVector is a PSVector of two different data formats, and BreezePSVector or CachedPSVector is a PSVector with two different functions.
-
+PSVector is a subclass of PSModel.
 
 Before introducing PSVector, you need to understand the concept of PSVectorPool first. PSVectorPool is not explicitly exposed in the programming interface of Spark on Angel, but understand its concept might be help for better programming.  
 
@@ -82,41 +81,12 @@ Before introducing PSVector, you need to understand the concept of PSVectorPool 
     val samePoolVector = PSVector.duplicate(dVector)
 
     dVector.fill(1.0)
-    dVector.randomUniform(-1.0, 1.0)
-    dVector.randomNormal(0.0, 1.0)
+    VectorUtils.randomUniform(dVector, randomUniform(-1.0, 1.0), -1.0, 1.0)
+    VectorUtils.randomNormal(dVector, 0.0, 1.0)
 ```
 
-- **BreezePSVector**
-
-- DensePSVector VS. SparsePSVector
-  As the name suggests, DensePSVector and SparsePSVector are PSVectors designed for dense and sparse data formats.
-
-- BreezePSVector VS. CachedPSVector
-  BreezePSVector and CachedPSVector are PSVector decoration classes that encapsulate different computing functions.
-
-  BreezePSVector is oriented to the Breeze algorithm library and encapsulates the operations between PSVectors in the same PSVectorPool. Including common math and blas operations, BreezePSVector implements the NumbericOps operation inside Breeze, so BreezePSVector supports operations such as +, -, *
-
-   ```scala
-    val brzVector1 = brzVector2 :* 2.0 + brzVector3
-  ```
-  You can also explicitly call the operations in Breeze.math and Breeze.blas.
-
-  CachedPSVector provides Cache functionality for Pull, increment/mergeMax/mergeMin, reducing the number of interactions between these operations and PS.
-  For example, pullWithCache will add the copied Vector cache to the local, and the next time the Pull is the same Vector, the cached Vector will be read directly;
-  The incrementWithCache will aggregate the multiple increment operations locally, and finally the result of the local aggregation will be incremented to the PSVector through the flush operation.
-
-  ```scala
-  val cacheVector = PSVector.dense(dim).toCache
-  rdd.map { case (label , feature) =>
-      // 并没有立即更新psVector
-    	cacheVector.increment(feature)
-  }
-  // flushIncrement会将所有executor上的缓存的cacheVector的increment结果，累加到cacheVector
-  cacheVector.flushIncrement
-  ```
-
 ## 5. PSMatrix
-PSMatrix is ​​a matrix on Angel PS with two implementations, DensePSMatrix and SparsePSMatrix.
+PSMatrix is ​​a matrix on Angel PS.
 
 - PSMatrix creation and destruction
 PSMatrix requests the corresponding matrix through the dense/sparse method in the companion object.
@@ -140,9 +110,10 @@ If you need to specify the partition parameters of PSMatrix, specify the size of
 - Spark on Angel supports psFunc just like Angel does, with even more powerful functional-programming features. psFunc inherits interfaces such as MapFunc and MapWithIndex to implement user-defined PSVector operations.
 
 ```scala
-val result = brzVector.map(func)
-val result = brzVector.mapWithIndex(func)
-val result = brzVector.zipMap(func)
+val to = PSVector.duplicate(vector)
+val result = VectorUtils.map(vector, func, to)
+val result = VectorUtils.mapWithIndex(vector, func, to)
+val result = VectorUtils.zipMap(vector, func, to)
 ```
 `func` above must inherit MapFunc and MapWithIndexFunc, and implement user-defined logic and serializable interface.
 
@@ -187,12 +158,11 @@ aggregate features in RDD[(label, feature)] to PSVector:
 val dim = 10
 val capacity = 40
 
-val psVector = PSVector.dense(dim, capacity).toCache
+val psVector = PSVector.dense(dim, capacity)
 
 rdd.foreach { case (label , feature) =>
   psVector.increment(feature)
 }
-psVector.flushIncrement
 
 println("feature sum:" + psVector.pull.asInstanceOf[IntDoubleVector].getStorage.getValues.mkString(" "))
 ```
@@ -219,8 +189,8 @@ for (i <- 1 to ITERATIONS) {
     Iterator.empty
   }
   nothing.count()
-
-  w.toBreeze :+= gradent.toBreeze *:* -1.0
+  
+  VectorUtils.axpy(-1.0, gradient, w)
 }
 
 println("w:" + w.pull().asInstanceOf[IntDoubleVector].getStorage.getValues.mkString(" "))
