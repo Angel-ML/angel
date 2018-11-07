@@ -24,6 +24,7 @@ import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
+import com.tencent.angel.ps.PSContext;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.ps.storage.vector.ServerRowFactory;
