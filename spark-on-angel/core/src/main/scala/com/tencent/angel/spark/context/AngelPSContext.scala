@@ -222,7 +222,7 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
     }
   }
 
-  def stop() {
+  protected def stop() {
     matrixMetaMap.foreach { entry =>
       destroyMatrix(entry._1)
     }
