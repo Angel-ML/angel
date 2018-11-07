@@ -44,7 +44,9 @@ public class ServerPartition implements Serialize {
   /**
    * Row index to server row map
    */
-  private final PartitionSource rows;
+  private  PartitionSource rows;
+
+  private String PartitionSourceClassName;
 
   /**
    * Partition key
@@ -258,6 +260,10 @@ public class ServerPartition implements Serialize {
       return;
     }
 
+    byte[] bytes = this.PartitionSourceClassName.getBytes();
+    buf.writeInt(bytes.length);
+    buf.writeBytes(bytes);
+
     partitionKey.serialize(buf);
     buf.writeInt(rowType.getNumber());
     buf.writeInt(rows.rowNum());
@@ -271,6 +277,17 @@ public class ServerPartition implements Serialize {
   }
 
   @Override public void deserialize(ByteBuf buf) {
+    int size = buf.readInt();
+    byte[] bytes = new byte[size];
+    buf.readBytes(bytes);
+    this.PartitionSourceClassName = new String(bytes);
+    try {
+      rows = (PartitionSource) Class.forName(this.PartitionSourceClassName).newInstance();
+    } catch (Throwable e) {
+      LOG.error("Can not init partition source for type " + this.PartitionSourceClassName + " use default instead ",
+          e);
+      rows = new PartitionSourceMap();
+    }
     partitionKey = new PartitionKey();
     partitionKey.deserialize(buf);
     rowType = RowType.valueOf(buf.readInt());
