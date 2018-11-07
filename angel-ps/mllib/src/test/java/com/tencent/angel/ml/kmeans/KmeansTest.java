@@ -52,7 +52,7 @@ public class KmeansTest {
       // Feature number of train data
       long featureNum = 256;
       // Total iteration number
-      int epochNum = 10;
+      int epochNum = 5;
       // Sample ratio per mini-batch
       double spratio = 1.0;
       // C
@@ -65,7 +65,7 @@ public class KmeansTest {
       conf.setBoolean("mapred.mapper.new-api", true);
       conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
       conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
-      conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 100);
+      conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 10);
 
       //set angel resource parameters #worker, #task, #PS
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
