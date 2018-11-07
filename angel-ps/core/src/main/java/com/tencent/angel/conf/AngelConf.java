@@ -548,7 +548,7 @@ public class AngelConf extends Configuration {
   /**
    * The time interval in milliseconds of worker heartbeats to AppMaster.
    */
-  public static final String ANGEL_WORKER_HEARTBEAT_INTERVAL =
+  public static final String ANGEL_WORKER_HEARTBEAT_INTERVAL_MS =
     ANGEL_WORKER_PREFIX + "heartbeat.interval.ms";
   public static final int DEFAULT_ANGEL_WORKER_HEARTBEAT_INTERVAL = 5000;
 
