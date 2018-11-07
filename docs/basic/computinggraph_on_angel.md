@@ -1,8 +1,8 @@
 # Angel 中的计算图
 
 ## 1. 什么是计算图
-计算图是主流深度学习框架普遍采用的, 如Tensorflow, Caffe, PyTorch和Mxnet等. 事实上, Spark这样的大数据处理工具也是用计算图来调度任务的. 为了更好地支持深度学习算法, Angel也支持了计算图框架. 与Tensorflow等相比, Angel的计算图更轻量, 主要表现在:
-- **粗粒度**: Angel的计算图中的`节点`是层(layer), 而不是`操作`(operator). Tensorflow等使用`操作`作为图中的结点, 十分灵活, 适合二次开发(封装), 但也给机器学习算发开发者带来更陡的学习曲线与更大的工作量, 因此老版本的Tensorflow也一直被诟病"API太底层,开发效率低", 在最近的Tensorflow版本才提供基于层(layer)的高级API. 鉴于这一点, Angel只提供粗粒度的计算图.
+计算图是主流深度学习框架普遍采用的, 如Tensorflow, Caffe和Mxnet等. 事实上, Spark这样的大数据处理工具也是用计算图来调度任务的. 为了更好地支持深度学习算法, Angel也支持了计算图框架. 与Tensorflow等相比, Angel的计算图更轻量, 主要表现在:
+- **粗粒度**: Angel的计算图中的`节点`是层(layer), 而不是`操作`(operator). Tensorflow等使用`操作`作为图中的结点, 十分灵活, 适合二次开发(封装), 但也给机器学习算发开发者带来更陡的学习曲线与更大的工作量, 因此老版本的Tensorflow也一直被诟病"API太底层,开发效率低", 后来的Tensorflow版本才提供基于层(layer)的高级API. 鉴于这一点, Angel只提供粗粒度的计算图.
 - **特征交叉**: 对于推荐系统相关算法, 特征Embedding后往往要通过一些交叉(**注**:这里的特征交叉与特征工程中的人工交叉不同, 这里的特征交叉是通过Embedding的输出做特定的操作)处理后再输入DNN. 这些特征交叉在Tensorflow, Caffe, Torch等上实现比较繁锁, 在Angel上则直接提供了这种特征交叉层.
 - **自动生成网络**: Angel可以读取Json文件生成深度网络. 这一点是借鉴的Caffe, 用户可以不编写代码而生成自已的网络, 大大地减轻工作量.
 
@@ -68,7 +68,7 @@ abstract class LinearLayer(name: String, outputDim: Int, val inputLayer: Layer)(
 注: LossLayer是一种特殊的LinearLayer, 所以这里没有给出.
 
 ### 2.2 AngelGraph的基本结构
-通过input/consumer构建起了一个复杂的图, 虽然可以从图中的任意节点对图进行遍历, 但是为了方便, 在AngelGraph中还是存储edge节点, 便于对图的操作, 如下:
+通过input/consumer构建起了一个复杂的图, 虽然可以从图中的任意节点对图进行遍历, 但是为了方便, 在AngelGraph中还是存储verge节点, 便于对图的操作, 如下:
 ```scala
 class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Serializable {
 
@@ -99,7 +99,7 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
     trainableLayer
  }
 ```
-edge有两大类:
+verge有两大类:
 - inputLayer: 这类节点的输入是数据, AngelGraph中存储这类节点是方便反向计算, 只要依次调用inputlayer的`calBackward`. 为了加入inputLayer, Angel要求所有的inputLayer中都调用AngelGraph的addInput方法将自已加入AngelGraph中. 事实上, 在InputLayer的基类中已完成这一操作, 用户新增inputLayer不必关心这一点
 - lossLayer: 目前Angel不支持多任务学习, 所以只有一个lossLayer, 这类节点主要方便前向计算, 只要调用它的`predict`或`calOutput`即可. 由于losslayer是linearlayer的子类, 所以用户自定义lossLayer可手动调用`setOutput(layer: LossLayer)`, 但用户新增losslayer的机会不多, 更多的是增加lossfunc.
 
