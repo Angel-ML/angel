@@ -574,6 +574,17 @@ public class AngelConf extends Configuration {
   public static final String ANGEL_WORKER_MAX_ATTEMPTS = ANGEL_WORKER_PREFIX + "max-attempts";
   public static final int DEFAULT_WORKER_MAX_ATTEMPTS = 4;
 
+  public static final String ANGEL_WORKER_JVM_DIRECT_FACTOR_USE_DIRECT_BUFF =
+    ANGEL_WORKER_PREFIX + "jvm.direct.factor.use.direct.buff";
+  public static final float DEFAULT_ANGEL_WORKER_JVM_DIRECT_FACTOR_USE_DIRECT_BUFF = 0.3f;
+
+  public static final String ANGEL_WORKER_JVM_DIRECT_FACTOR_USE_HEAP_BUFF =
+    ANGEL_WORKER_PREFIX + "jvm.direct.factor.use.direct.buff";
+  public static final float DEFAULT_ANGEL_WORKER_JVM_DIRECT_FACTOR_USE_HEAP_BUFF = 0.2f;
+
+  public static final String ANGEL_WORKER_JVM_YOUNG_FACTOR = ANGEL_WORKER_PREFIX + "jvm.young.factor";
+  public static final float DEFAULT_ANGEL_WORKER_JVM_YOUNG_FACTOR = 0.4f;
+
   /**
    * The workers number for matrix operations
    */
@@ -800,8 +811,7 @@ public class AngelConf extends Configuration {
   public static final String DEFAULT_ANGEL_PS_PARTITION_SOURCE_CLASS =
     PartitionSourceMap.class.getName();
 
-  public static final String ANGEL_PS_MAX_LOCK_WAITTIME_MS =
-    ANGEL_PS_PREFIX + "max.lock.waittime";
+  public static final String ANGEL_PS_MAX_LOCK_WAITTIME_MS = ANGEL_PS_PREFIX + "max.lock.waittime";
   public static final int DEFAULT_ANGEL_PS_MAX_LOCK_WAITTIME_MS = 10000;
 
   public static final String ANGEL_PS_USE_ADAPTIVE_STORAGE_ENABLE =
@@ -811,6 +821,17 @@ public class AngelConf extends Configuration {
   public static final String ANGEL_PS_SPARSE_TO_DENSE_FACTOR =
     ANGEL_PS_PREFIX + "sparse.to.dense.factor";
   public static final float DEFAULT_ANGEL_PS_SPARSE_TO_DENSE_FACTOR = 0.25f;
+
+  public static final String ANGEL_PS_JVM_DIRECT_FACTOR_USE_DIRECT_BUFF =
+    ANGEL_PS_PREFIX + "jvm.direct.factor.use.direct.buff";
+  public static final float DEFAULT_ANGEL_PS_JVM_DIRECT_FACTOR_USE_DIRECT_BUFF = 0.45f;
+
+  public static final String ANGEL_PS_JVM_DIRECT_FACTOR_USE_HEAP_BUFF =
+    ANGEL_PS_PREFIX + "jvm.direct.factor.use.direct.buff";
+  public static final float DEFAULT_ANGEL_PS_JVM_DIRECT_FACTOR_USE_HEAP_BUFF = 0.25f;
+
+  public static final String ANGEL_PS_JVM_YOUNG_FACTOR = ANGEL_PS_PREFIX + "jvm.young.factor";
+  public static final float DEFAULT_ANGEL_PS_JVM_YOUNG_FACTOR = 0.4f;
 
   // ////////////////// IPC //////////////////////////
   /**
