@@ -430,8 +430,8 @@ class BinaryLongKeyOPTest {
 
     assert(abs((llist.get(0).axpy(llist.get(0), 2.0)).sum() - sum(sparse1 + sparse1 * 2.0)) < 1.0E-8)
     assert(abs((llist.get(1).axpy(llist.get(1), 2.0)).sum() - sum(sorted1 + sorted1 * 2.0)) < 1.0E-8)
-    assert(abs((llist.get(2).axpy(llist.get(2), 2.0f)).sum() - sum(sparse2 + sparse2 * 2.0f)) < 1.0E-2)
-    assert(abs((llist.get(3).axpy(llist.get(3), 2.0f)).sum() - sum(sorted2 + sorted2 * 2.0f)) < 1.0E-3)
+    assert(abs((llist.get(2).axpy(llist.get(2), 2.0f)).sum() - sum(sparse2 + sparse2 * 2.0f)) < 1.0E-1)
+    assert(abs((llist.get(3).axpy(llist.get(3), 2.0f)).sum() - sum(sorted2 + sorted2 * 2.0f)) < 1.0E-1)
     assert(abs((llist.get(4).axpy(llist.get(4), 2l)).sum() - sum(sparse3 + sparse3 * 2l)) < 1.0E-8)
     assert(abs((llist.get(5).axpy(llist.get(5), 2l)).sum() - sum(sorted3 + sorted3 * 2l)) < 1.0E-8)
     assert(abs((llist.get(6).axpy(llist.get(6), 2)).sum() - sum(sparse4 + sparse4 * 2)) < 1.0E-8)
