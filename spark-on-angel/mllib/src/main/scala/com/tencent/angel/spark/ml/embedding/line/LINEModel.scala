@@ -35,32 +35,32 @@ class LINEModel(numNode: Int,
                 numNodesPerRow: Int = -1,
                 order: Int = 2,
                 seed: Int = Random.nextInt)
-  extends NEModel(numNode, dimension, numPart, numNodesPerRow, order, seed) {
+  extends NEModel(numNode, dimension, numPart, numNodesPerRow, order, true, seed) {
 
   def this(param: Param) {
     this(param.maxIndex, param.embeddingDim, param.numPSPart, param.nodesNumPerRow, param.order, param.seed)
   }
 
   def train(trainSet: RDD[(Int, Int)], params: Param, validSetOpt: Option[RDD[(Int, Int)]]): this.type = {
-    train(trainBatchesRDDIter = buildDataBatches(trainSet, params.batchSize),
-      validBatchesOpt = validSetOpt.map(_.mapPartitions(asLineBatch(_, params.batchSize))),
-      ns = params.negSample,
-      window = None,
-      numEpoch = params.numEpoch,
-      lr = params.learningRate,
-      modelPath = params.modelPath,
-      modelCPInterval = params.modelCPInterval,
-      logEveryBatchNum = params.numRowDataSet.map(_ / (100.0 * params.partitionNum * params.batchSize))
-    )
+    train(buildDataBatches(trainSet, params.batchSize),
+      validSetOpt.map(_.mapPartitions(asLineBatch(_, params.batchSize))),
+      params.negSample,
+      None,
+      params.numEpoch,
+      params.learningRate,
+      None,
+      params.checkpointInterval)
+    this
   }
 
-  override def getDotPsf(data: NEDataSet, batchSeed: Int, ns: Int, window: Option[Int]): GetFunc = {
+  override def getDotFunc(data: NEDataSet, batchSeed: Int, ns: Int, window: Option[Int],
+                          partitionId: Option[Int] = None): GetFunc = {
     val lineData = data.asInstanceOf[LINEDataSet]
     new Dot(matrixId, lineData.src, lineData.dst, batchSeed, ns, numNode, partDim, order)
   }
 
-  override def getAdjustPsf(data: NEDataSet, batchSeed: Int, ns: Int, grad: Array[Float], window: Option[Int])
-  : UpdateFunc = {
+  override def getAdjustFunc(data: NEDataSet, batchSeed: Int, ns: Int, grad: Array[Float],
+                             window: Option[Int], partitionId: Option[Int] = None): UpdateFunc = {
     val lineData = data.asInstanceOf[LINEDataSet]
     new Adjust(matrixId, lineData.src, lineData.dst, batchSeed, ns, numNode, partDim, grad, order)
   }

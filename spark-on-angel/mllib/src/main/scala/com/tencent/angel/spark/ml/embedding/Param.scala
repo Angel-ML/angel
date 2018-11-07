@@ -31,11 +31,23 @@ class Param extends Serializable {
   var sampleRate: Float = _
   var numPSPart: Int = 1
   var modelPath: String = _
-  var modelCPInterval: Int = Int.MaxValue
+  var checkpointInterval: Int = Int.MaxValue
   var order: Int = _
   var nodesNumPerRow: Int = -1
   var numRowDataSet: Option[Long] = None
   var seed: Int = _
+  var maxLength: Int = -1
+  var model: String = "cbow"
+
+  def setModel(model: String): this.type = {
+    this.model = model
+    this
+  }
+
+  def setMaxLength(maxLength: Int): this.type = {
+    this.maxLength = maxLength
+    this
+  }
 
   def setNumRowDataSet(numRowDataSet: Long): this.type = {
     this.numRowDataSet = Some(numRowDataSet)
@@ -109,7 +121,7 @@ class Param extends Serializable {
 
   def setModelCPInterval(modelCPInterval: Int): this.type = {
     require(modelCPInterval > 0, s"model checkpoint interval > 0, $modelCPInterval given")
-    this.modelCPInterval = modelCPInterval
+    this.checkpointInterval = modelCPInterval
     this
   }
 
