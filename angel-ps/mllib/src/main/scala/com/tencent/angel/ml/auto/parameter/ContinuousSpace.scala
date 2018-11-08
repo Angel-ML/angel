@@ -64,7 +64,7 @@ class ContinuousSpace(override val name: String, lower: Float, upper: Float, num
 
   def toRandomSpace: ParamSpace[Float] = this
 
-  override def sample(size: Int): List[Float] = rd.shuffle(values).take(size)
+  override def sample(size: Int): List[Float] = List.fill(size)(sample)
 
   override def sample: Float = values(rd.nextInt(numValues))
 

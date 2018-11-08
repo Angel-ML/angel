@@ -24,11 +24,16 @@ class Setting {
 object Setting {
 
   var batchSize: Int = 1
+  var sampleSize: Int = 10 * batchSize
 
   var taskName: String = "com.tencent.angel.ml.auto.trail.TestRunner"
 
   def setBatchSize(num: Int): Unit = {
     batchSize = num
+  }
+
+  def setSampleSize(num: Int): Unit = {
+    sampleSize = num
   }
 
   def setTaskName(name: String): Unit = {

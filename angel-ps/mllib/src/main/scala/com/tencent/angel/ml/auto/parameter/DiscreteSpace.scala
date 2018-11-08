@@ -39,7 +39,7 @@ class DiscreteSpace[T: Numeric](override val name: String, values: List[T], seed
 
   def toRandomSpace: ParamSpace[T] = this
 
-  override def sample(size: Int): List[T] = rd.shuffle(values).take(size)
+  override def sample(size: Int): List[T] = List.fill(size)(sample)
 
   override def sample: T = values(rd.nextInt(numValues))
 
