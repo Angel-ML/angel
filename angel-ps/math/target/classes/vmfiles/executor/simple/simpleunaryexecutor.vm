@@ -1,0 +1,119 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
+
+package com.tencent.angel.ml.math2.ufuncs.executor.simple;
+
+import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.ml.math2.storage.*;
+import com.tencent.angel.ml.math2.ufuncs.expression.Unary;
+import com.tencent.angel.ml.math2.vector.*;
+import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.fastutil.longs.*;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
+
+public class SimpleUnaryExecutor {
+    public static Vector apply(Vector v1, Unary op) {
+        if (v1 instanceof IntDoubleVector) {
+            return apply((IntDoubleVector) v1, op);
+        } else if (v1 instanceof IntFloatVector) {
+            return apply((IntFloatVector) v1, op);
+        } else if (v1 instanceof IntLongVector) {
+            return apply((IntLongVector) v1, op);
+        } else if (v1 instanceof IntIntVector) {
+            return apply((IntIntVector) v1, op);
+        } else if (v1 instanceof LongDoubleVector) {
+            return apply((LongDoubleVector) v1, op);
+        } else if (v1 instanceof LongFloatVector) {
+            return apply((LongFloatVector) v1, op);
+        } else if (v1 instanceof LongLongVector) {
+            return apply((LongLongVector) v1, op);
+        } else if (v1 instanceof LongIntVector) {
+            return apply((LongIntVector) v1, op);
+        } else {
+            throw new AngelException("Vector type is not support!");
+        }
+    }
+
+#foreach ($itype in $itypes)
+#foreach ($dtype in $dtypes)
+    private static Vector apply(${itype}${dtype}Vector v1, Unary op) {
+        ${itype}${dtype}Vector res;
+        if (op.isOrigin() || v1.isDense()) {
+            if(!op.isInplace()) {res = v1.copy();} else {res = v1;}
+            if (v1.isDense()) {
+                $dtype.toLowerCase() [ ] values = res.getStorage().getValues();
+                for(int i=0; i < values.length; i++) {
+                    values[i] = op.apply(values[i]);
+                }
+            } else if (v1.isSparse()) {
+                ObjectIterator<${itype}2${dtype}Map.Entry> iter = res.getStorage().entryIterator();
+                while(iter.hasNext()){
+                    ${itype}2${dtype}Map.Entry entry = iter.next();
+                    entry.setValue(op.apply(entry.get${dtype}Value()));
+                }
+            } else if (v1.isSorted()) {
+                $dtype.toLowerCase() [ ] values = res.getStorage().getValues();
+                for(int i=0; i < v1.size(); i++) {
+                    values[i] = op.apply(values[i]);
+                }
+            } else {
+                throw new AngelException("The operation is not support!");
+            }
+        } else {
+#if (${itype} == "Int")
+            ${itype}${dtype}VectorStorage newstorage = v1.getStorage().emptyDense();
+            ${itype}${dtype}VectorStorage storage = v1.getStorage();
+            $dtype.toLowerCase() [ ] values = newstorage.getValues();
+
+            $dtype.toLowerCase() tmp = op.apply(($dtype.toLowerCase()) 0);
+            $itype.toLowerCase() dim = v1.getDim();
+            for(int i=0; i< dim; i++) {
+                values[i] = tmp;
+            }
+
+            if (v1.isSparse()) {
+                ObjectIterator<Int2${dtype}Map.Entry> iter = storage.entryIterator();
+                while (iter.hasNext()) {
+                    Int2${dtype}Map.Entry entry = iter.next();
+                    values[entry.getIntKey()] = op.apply(entry.get${dtype}Value());
+                }
+            } else { //sort
+                int [ ] idxs = storage.getIndices();
+                $dtype.toLowerCase() [ ] v1Values = storage.getValues();
+                for (int k=0; k< idxs.length; k++) {
+                    values[idxs[k]] = op.apply(v1Values[k]);
+                }
+            }
+
+            if (op.isInplace()) {
+                v1.setStorage(newstorage);
+                res = v1;
+            } else {
+                res = new ${itype}${dtype}Vector(v1.getMatrixId(), v1.getRowId(), v1.getClock(),
+                        v1.getDim(), newstorage);
+            }
+#else
+            throw new AngelException("The operation is not supported!");
+#end
+        }
+        return res;
+    }
+
+#end
+#end
+}
