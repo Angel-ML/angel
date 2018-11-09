@@ -231,9 +231,9 @@ class BinaryIntKeyOPTest {
       (0 until ilist.size()).foreach { j =>
         try {
           if (getFlag(ilist.get(j)) != "dummy") {
-            assert(abs((ilist.get(i).add(ilist.get(j))).sum() - (ilist.get(i).sum() + ilist.get(j).sum())) < 1.0E-1)
+            assert(abs((ilist.get(i).add(ilist.get(j))).sum() - (ilist.get(i).sum() + ilist.get(j).sum())) < 1.0)
           } else {
-            assert(abs((ilist.get(i).add(ilist.get(j))).sum() - (ilist.get(i).sum() + sum(intdummy1))) < 1.0E-1)
+            assert(abs((ilist.get(i).add(ilist.get(j))).sum() - (ilist.get(i).sum() + sum(intdummy1))) < 1.0)
           }
         } catch {
           case e: AngelException => {
@@ -251,7 +251,7 @@ class BinaryIntKeyOPTest {
       (0 until ilist.size()).foreach { j =>
         try {
           if (getFlag(ilist.get(i)) != "dummy") {
-            assert(abs((ilist.get(i).sub(ilist.get(j))).sum() - (ilist.get(i).sum() - ilist.get(j).sum())) < 1.0E-1)
+            assert(abs((ilist.get(i).sub(ilist.get(j))).sum() - (ilist.get(i).sum() - ilist.get(j).sum())) < 1.0)
           } else {
             assert(abs((ilist.get(i).sub(ilist.get(j))).sum() - (ilist.get(i).sum() - sum(intdummy1))) < 1.0E-1)
           }

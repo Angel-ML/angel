@@ -109,6 +109,39 @@ The learning rate decays along iterations as ![](../img/LR_lr_ecay.gif), where:
         --angel.output.path.deleteonexist=true \
     ```
 
+* **IncTraining Job**
+
+	```java
+	./bin/angel-submit \
+		--action.type=inctrain \
+		--angel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner \
+		--ml.model.class.name=com.tencent.angel.ml.regression.RobustRegression \
+		--angel.train.data.path=$input_path \
+		--angel.load.model.path=$model_path \
+		--angel.save.model.path=$model_path \
+		--angel.log.path=$log_path \
+		--ml.data.is.classification=false \
+		--ml.model.is.classification=false \
+		--ml.robustregression.loss.delta=1.0 \
+		--ml.epoch.num=10 \
+		--ml.feature.index.range=$featureNum+1 \
+		--ml.data.validate.ratio=0.1 \
+		--ml.learn.rate=0.1 \
+		--ml.learn.decay=1 \
+		--ml.reg.l2=0.001 \
+		--ml.data.type=libsvm \
+		--ml.model.type=T_FLOAT_DENSE \
+		--ml.num.update.per.epoch=10 \
+		--ml.worker.thread.num=4 \
+		--angel.workergroup.number=2 \
+		--angel.worker.memory.mb=5000 \
+		--angel.worker.task.number=1 \
+		--angel.ps.number=2 \
+		--angel.ps.memory.mb=5000 \
+		--angel.job.name=robustReg_network \
+		--angel.output.path.deleteonexist=true
+	```
+
 * **Prediction Job**
 
     ```java

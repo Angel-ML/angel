@@ -66,6 +66,10 @@ public class LocalClusterHelper {
     conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
     conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 2);
 
+    conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 10);
+    conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
+    conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
+
     // get a angel client
     angelClient = AngelClientFactory.get(conf);
 
