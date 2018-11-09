@@ -21,8 +21,8 @@ package com.tencent.angel.spark.ml.embedding
 object FastSigmoid {
 
   private final val MAX_SIGMOID = 8
-  private final val SIGMOID_TABLE_SIZE = 512
-  private final val LOG_TABLE_SIZE = 512
+  private final val SIGMOID_TABLE_SIZE = 1024
+  private final val LOG_TABLE_SIZE = 1024
   private final val logTable = {
     Array.tabulate(LOG_TABLE_SIZE + 1)(i =>
       math.log((i + 1e-5) / LOG_TABLE_SIZE).toFloat
