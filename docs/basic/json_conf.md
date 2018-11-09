@@ -27,7 +27,7 @@
     "validateratio": 0.1,
     "sampleratio": 0.2,
     "useshuffle": true,
-    "translabel": true,
+    "translabel": "NoTrans",
     "posnegratio": 0.01
 }
 ```
@@ -41,7 +41,7 @@ numfield | ml.fm.field.num | 输入数据中域的数目. 虽然特征交叉能�
 validateratio | ml.data.validate.ratio | Angel会将输入数据划分成训练集与验证集, 这个参数就是用于指定验证集的比例. 注:所有的验证集匀存于内存, 当数据量特别大时, 可能会OOM
 sampleratio | ml.batch.sample.ratio | 这个参数是Spark on Angel专用的, Spark用采样的方式生成mini-batch, 这个参数用于指定采样率
 useshuffle | ml.data.use.shuffle | 是否在每个epoch前shuffle数据. 注: 当数据量大时, 这一操作非常影响性能, 请慎重使用. 默认为false, 不用shuffle.
-translabel | ml.data.trans.label | 对于二分类, Angel要求标签为(+1, -1), 如果数据集的标簦是(0, 1)则可以用这一参数进行转换, 默认关闭
+translabel | ml.data.label.trans.class | 对于二分类, Angel要求标签为(+1, -1), 如果数据集的标簦是(0, 1)则可以用这一参数进行转换, 默认关闭
 posnegratio | ml.data.posneg.ratio | Angel也支持采样生成mini-batch, 但方式与Spark不同, Angel先将数据集的正负例分开, 然后分别按比例从正例, 负例中抽样生成mini-batch, posnegratio就是控制mini-batch中正负样本比例的. 这个参数对不平衡数据集的训有帮助.  posnegratio默认为-1, 表示不进行采样
 
 注: 除了indexrange外, 其它参数都有默认值, 因此都是可选的.
@@ -140,7 +140,7 @@ decay |ml.learn.decay| 学习率衰减因子
 
 ## 5. 网络中的层
 Angel中的深度学习算法都表示为一个AngelGraph, 而AngelGraph中的节点就是层(Layer). 按层的拓朴结构可分为三类:
-- edge: 边缘节点, 只在输入或输出的层, 如输入层与损失层
+- verge: 边缘节点, 只在输入或输出的层, 如输入层与损失层
 - linear: 有且仅有一个输入与一个输出的层
 - join: 有两个或多个输入, 一个输出的层
 
@@ -174,13 +174,13 @@ Angel中的深度学习算法都表示为一个AngelGraph, 而AngelGraph中的�
 "layers": [
     {
       "name": "wide",
-      "type": "sparseinputlayer",
+      "type": "SimpleInputLayer",
       "outputdim": 1,
       "transfunc": "identity"
     },
     {
       "name": "embedding",
-      "type": "embedding",
+      "type": "Embedding",
       "numfactors": 8,
       "outputdim": 104,
       "optimizer": {
@@ -222,7 +222,7 @@ Angel中的深度学习算法都表示为一个AngelGraph, 而AngelGraph中的�
     },
     {
       "name": "simplelosslayer",
-      "type": "simplelosslayer",
+      "type": "SimpleLossLayer",
       "lossfunc": "logloss",
       "inputlayer": "sumPooling"
     }

@@ -25,22 +25,15 @@ Angel从v1.0.0版本开始，就加入了**PS-Service**的特性，不仅仅可�
 * **PSContext**
 	* 利用Spark的Context，和Angel的配置，创建AngelContext，在Driver端负责全局的初始化和启动工作
 
-* **PSClient**
-	* PSClient集成了PSVector和PSMatrix的所有初始化、运算、Pull/Push等操作
-	* 包括三部分Initializer，VectorOps，MatrixOps；分别对应PS的初始化操作，PSVector运算操作和PSMatrix运算操作
-
 * **PSModel**
 	* PSModel是PS server上PSVector/PSMatrix的总称，包含着PSClient对象
 	* PSModel是PSVector和PSMatrix的父类
 
 * **PSVector**
-	* 包括DensePSVecotr和SparsePSVector
 	* PSVector的申请：通过`PSVector.dense(dim: Int, capacity: Int = 50, rowType:RowType.T_DENSE_DOUBLE)`申请PSVector，会创建一个维度为`dim`，容量为`capacity`, 类型为`Double`的VectorPool，同一个VectorPool内的两个PSVector可以做运算。
 	通过`PSVector.duplicate(psVector)`，申请一个与`psVector`在同一个VectorPool的PSVector。
-	* PSVector有两个装饰类：`BreezePSVector`和`CachedPSVector`，`BreezePSVector`使PSVector可以支持Breeze算法库里的Vector运算。而`CachedPSVector`支持PSVector在Pull/Push过程中的缓存功能。
-
+	
 * **PSMatrix**
-	* 包括DensePSMatrix和SparsePSMatrix
 	* PSMatrix的创建和销毁：通过`PSMatrix.dense(rows: Int, cols: Int)`创建，当PSMatrix不再使用后，需要手动调用`destory`销毁该Matrix
 
 使用Spark on Angel的简单代码如下：
@@ -69,53 +62,3 @@ Spark driver的执行流程
 Spark executor的执行流程
 - 启动PSContext
 - 执行driver分配的task
-
-
-## 4. 算法库切换
-
-为了支持Spark中MLLib的现有的大部分算法包轻松跑在Spark on Angel上，项目采用了一种很巧妙的实现方式，这就是：**透明替换**。
-
-Spark中MLlib算法的核心是Breeze库，所有核心算法，最终都是通过混入了NumericOps特征的BreezeVector来实现的。例如，LBFGS算法用到了BreezeVector的dot、scal等操作。
-
-因此，如果我们实现了一个混入相同特征的PSVector，支持了这些操作，我们就可以无缝的，将调用Breeze的LBFGS算法，将其在BreezeVector上的优化求解过程，透明化的迁移到Angel上，让这些计算发生在Angel之上，而无须对RDD进行任何侵入性修改。
-
-![](../img/spark_on_angel_vector.png)
-
-
-下面是两个代码示例，展示了原生的Spark，和Spark on Angel的写法不同：
-
-* **Spark版本**
-
-```Scala
-
-def runOWLQN(trainData: RDD[(Vector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
-
-    val initWeight = new DenseVector[Double](dim)
-    val l1reg = 0.0
-    val owlqn = new BrzOWLQN[Int, DenseVector[Double]](maxIter, m, 0.0, 1e-5)
-
-    val states = owlqn.iterations(CostFunc(trainData), initWeight)
-    ……
-
-}
-```
-
-* **Spark on Angel版本**
-
-```Scala
-
-def runOWLQN(trainData: RDD[(Vector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
-
-    val initWeightPS = PSVector.dense(dim, 20).toBreeze()
-    val l1regPS = PSVector.duplicate(initWeightPS.component).zero().toBreeze
-
-    val owlqn = new OWLQN(maxIter, m, l1regPS, tol)
-    val states = owlqn.iterations(PSCostFunc(trainData), initWeightPS)
-    ………
-
-｝
-```
-
-可以看到，代码的改动量非常小，对原生的RDD也没有任何的侵入，对于整体Spark框架的社区融合和升级，都是非常友好。
-
-但是需要提醒的是，这样的替换方式，性能肯定不如从头按照Angel的特点，按照PS的特性，实现一次来得性能更高的，但是好处是节省工作量，而且具备通用性。建议如果想实现最高性能的算法，可以尝试自己动手。当然了，直接用Angel实现，性能会是最好的，毕竟不用隔了一层PSAgent。

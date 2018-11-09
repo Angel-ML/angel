@@ -36,7 +36,7 @@ object NENegativeSample {
       this.synchronized {
         if (version > this.version) {
           val tableCapacity = Math.min(Math.max(maxValue / 10, 1000000), maxValue)
-          LOG.info("initial sample table firstly, table capacity: " + tableCapacity)
+          LOG.error("initial sample table firstly, table capacity: " + tableCapacity)
           val rand = new Random(seed)
           samples = Array.fill(tableCapacity)(rand.nextInt(maxValue))
           this.version = version

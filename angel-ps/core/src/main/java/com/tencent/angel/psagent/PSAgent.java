@@ -250,7 +250,7 @@ public class PSAgent {
     this.conf = conf;
     this.executor = executor;
 
-    this.heartbeatIntervalMs = conf.getInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL,
+    this.heartbeatIntervalMs = conf.getInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS,
         AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_INTERVAL);
     this.runningMode = initRunningMode(conf);
     this.appId = appId;
@@ -279,7 +279,7 @@ public class PSAgent {
     this.needHeartBeat = needHeartBeat;
     this.conf = conf;
     this.executor = executor;
-    this.heartbeatIntervalMs = conf.getInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL,
+    this.heartbeatIntervalMs = conf.getInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS,
         AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_INTERVAL);
     this.runningMode = initRunningMode(conf);
 
