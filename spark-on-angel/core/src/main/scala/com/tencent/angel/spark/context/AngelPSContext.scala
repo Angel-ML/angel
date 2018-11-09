@@ -39,10 +39,11 @@ import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.util.ShutdownHookManager
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.{SparkConf, SparkEnv, TaskContext}
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{Map, mutable}
+
+import com.tencent.angel.ps.storage.partitioner.Partitioner
 
 /**
   * AngelPSContext for driver and executor, it is an implement of `PSContext`
@@ -79,19 +80,23 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
   def createVector(dimension: Long,
                    t: RowType = RowType.T_DOUBLE_DENSE,
                    poolCapacity: Int = PSVectorPool.DEFAULT_POOL_CAPACITY,
-                   range: Long): PSVector = {
+                   range: Long,
+                   additionalConfiguration:Map[String, String] = Map()): PSVector = {
     assertCallByDriver("The operation of creating a vector can only be called on the driver side.")
-    createVectorPool(dimension, poolCapacity, t, range).allocate()
+    createVectorPool(dimension, poolCapacity, t, range, additionalConfiguration).allocate()
   }
 
   private[spark] def createVectorPool(dimension: Long,
                                       capacity: Int,
                                       t: RowType,
-                                      range: Long): PSVectorPool = {
+                                      range: Long,
+                                      additionalConfiguration:Map[String, String]): PSVectorPool = {
     val thisCapacity = if (capacity > 0) capacity else PSVectorPool.DEFAULT_POOL_CAPACITY
 
-    val matrixMeta = if (t.isDense) PSMatrix.dense(thisCapacity, dimension, t) else
-      PSMatrix.sparse(thisCapacity, dimension, range, t)
+    val matrixMeta = if (t.isDense)
+      PSMatrix.dense(thisCapacity, dimension, -1, -1, t, additionalConfiguration)
+    else
+      PSMatrix.sparse(thisCapacity, dimension, range, t, additionalConfiguration)
     val pool = new PSVectorPool(matrixMeta.id, dimension, thisCapacity, t)
     psVectorPools.put(pool.id, pool)
     pool
@@ -126,6 +131,11 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
       rowInBlock, colInBlock, rowType)
     additionalConfiguration.foreach { case (key, value) =>
       mc.getAttributes.put(key, value)
+    }
+    if(mc.getAttributes.containsKey(AngelConf.Angel_PS_PARTITION_CLASS)) {
+      val partitionClassName = mc.getAttributes.get(AngelConf.Angel_PS_PARTITION_CLASS)
+      mc.setPartitionerClass(Class.forName(partitionClassName).asInstanceOf[Class[Partitioner]])
+      mc.getAttributes.remove(AngelConf.Angel_PS_PARTITION_CLASS)
     }
     psAgent.createMatrix(mc, 5000L)
     val meta = psAgent.getMatrix(mc.getName)
