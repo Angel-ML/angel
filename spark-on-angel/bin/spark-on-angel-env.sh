@@ -21,6 +21,7 @@ sona_psf_jar=spark-on-angel-mllib-${ANGEL_VERSION}-ps.jar,spark-on-angel-example
 dist_jar=${external_jar},${angel_ps_jar},${sona_psf_jar},${scala_jar}
 local_jar=${external_jar},${angel_ps_jar},${sona_jar}
 
+unset SONA_ANGEL_JARS
 for f in `echo $dist_jar | awk -F, '{for(i=1; i<=NF; i++){ print $i}}'`; do
 	jar=${ANGEL_HDFS_HOME}/lib/${f}
     if [ "$SONA_ANGEL_JARS" ]; then
@@ -33,6 +34,7 @@ echo SONA_ANGEL_JARS: $SONA_ANGEL_JARS
 export SONA_ANGEL_JARS 
 
 
+unset SONA_SPARK_JARS
 for f in `echo $local_jar | awk -F, '{for(i=1; i<=NF; i++){ print $i}}'`; do
 	jar=${ANGEL_HOME}/lib/${f}
     if [ "$SONA_SPARK_JARS" ]; then
