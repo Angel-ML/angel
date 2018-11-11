@@ -29,7 +29,7 @@ import com.tencent.angel.spark.models.PSVector
 abstract class PSContext {
   private[spark] def conf: Map[String, String]
 
-  protected def stop()
+  def stop()
 
   def createMatrix(rows: Int, cols: Long, validIndexNum: Long, rowInBlock: Int, colInBlock: Long,
                    rowType: RowType, additionalConfiguration:Map[String, String] = Map()): MatrixMeta
@@ -44,7 +44,8 @@ abstract class PSContext {
 
   def destroyMatrix(matrixId: Int)
 
-  def createVector(dim: Long, t: RowType, poolCapacity: Int, range: Long): PSVector
+  def createVector(dim: Long, t: RowType, poolCapacity: Int, range: Long,
+                   additionalConfiguration:Map[String, String] = Map()): PSVector
 
   def duplicateVector(originVector: PSVector): PSVector
 

@@ -110,7 +110,10 @@ public class PSManagerTest {
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
       conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 2);
-      conf.setInt(AngelConf.ANGEL_PS_BACKUP_INTERVAL_MS, 5000);
+      conf.setInt(AngelConf.ANGEL_PS_BACKUP_INTERVAL_MS, 1000);
+      conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
+      conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
+
 
       // get a angel client
       angelClient = AngelClientFactory.get(conf);
@@ -142,7 +145,7 @@ public class PSManagerTest {
 
       angelClient.startPSServer();
       angelClient.run();
-      Thread.sleep(5000);
+      Thread.sleep(2000);
       group0Id = new WorkerGroupId(0);
       worker0Id = new WorkerId(group0Id, 0);
       worker0Attempt0Id = new WorkerAttemptId(worker0Id, 0);

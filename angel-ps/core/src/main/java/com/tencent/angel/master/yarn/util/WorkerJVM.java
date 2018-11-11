@@ -69,15 +69,26 @@ public class WorkerJVM {
     boolean isUseDirect = conf
       .getBoolean(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_CLIENT_USEDIRECTBUFFER,
         AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_USEDIRECTBUFFER);
+
+    float directFatorUseDirectBuff = conf
+      .getFloat(AngelConf.ANGEL_WORKER_JVM_DIRECT_FACTOR_USE_DIRECT_BUFF,
+        AngelConf.DEFAULT_ANGEL_WORKER_JVM_DIRECT_FACTOR_USE_DIRECT_BUFF);
+
+    float directFatorUseHeapBuff = conf.getFloat(AngelConf.ANGEL_WORKER_JVM_DIRECT_FACTOR_USE_HEAP_BUFF,
+      AngelConf.DEFAULT_ANGEL_WORKER_JVM_DIRECT_FACTOR_USE_HEAP_BUFF);
+
+    float youngFator = conf
+      .getFloat(AngelConf.ANGEL_WORKER_JVM_YOUNG_FACTOR, AngelConf.DEFAULT_ANGEL_WORKER_JVM_YOUNG_FACTOR);
+
     int maxUse = workerMemSizeInMB - 512;
     int directRegionSize = 0;
     if (isUseDirect) {
-      directRegionSize = (int) (maxUse * 0.3);
+      directRegionSize = (int) (maxUse * directFatorUseDirectBuff);
     } else {
-      directRegionSize = (int) (maxUse * 0.2);
+      directRegionSize = (int) (maxUse * directFatorUseHeapBuff);
     }
     int heapMax = maxUse - directRegionSize;
-    int youngRegionSize = (int) (heapMax * 0.4);
+    int youngRegionSize = (int) (heapMax * youngFator);
     int survivorRatio = 4;
 
     String ret = new StringBuilder().append(" -Xmx").append(heapMax).append("M").append(" -Xmn")

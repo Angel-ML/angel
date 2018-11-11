@@ -29,4 +29,10 @@ object SparkUtils {
     else
       conf.getInt("spark.executor.instances", 10)
   }
+
+  def getNumCores(conf: SparkConf): Int = {
+    val numExecutors = getNumExecutors(conf)
+    val coresForExecutor = conf.getInt("spark.executor.cores", 1)
+    numExecutors * coresForExecutor
+  }
 }
