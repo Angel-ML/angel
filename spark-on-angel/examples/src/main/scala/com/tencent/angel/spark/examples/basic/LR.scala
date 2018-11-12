@@ -47,8 +47,7 @@ object LR {
       psG.reset
     }
     println(s"Final psW: ${psW.pull().asInstanceOf[IntDoubleVector].getStorage.getValues.mkString(" ")}")
-    ss.stop()
-    psc.stop()
+    PSContext.stop()
     sc.stop()
   }
 }

@@ -29,7 +29,7 @@ import com.tencent.angel.spark.models.PSVector
 abstract class PSContext {
   private[spark] def conf: Map[String, String]
 
-  def stop()
+  protected def stop()
 
   def createMatrix(rows: Int, cols: Long, validIndexNum: Long, rowInBlock: Int, colInBlock: Long,
                    rowType: RowType, additionalConfiguration:Map[String, String] = Map()): MatrixMeta
