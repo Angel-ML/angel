@@ -117,7 +117,6 @@ class UnaryLongKeyTest {
   val capacity: Int = UnaryLongKeyTest.capacity
   val dim: Int = UnaryLongKeyTest.dim
 
-  val times = 5000
   var start1, stop1, cost1, start2, stop2, cost2 = 0L
 
   val llist = UnaryLongKeyTest.llist
@@ -164,7 +163,7 @@ class UnaryLongKeyTest {
     assert(abs(Ufuncs.sdiv(llist.get(0), 0.5).sum() - sum(sparse1 :/ 0.5)) < 1.0E-8)
     assert(Ufuncs.sdiv(llist.get(1), 0.5).sum() == sum(sorted1 :/ 0.5))
     assert(abs(Ufuncs.sdiv(llist.get(2), 0.5f).sum() - sum(sparse2 :/ 0.5f)) < 1.0E-2)
-    assert(abs(Ufuncs.sdiv(llist.get(3), 0.5f).sum() - sum(sorted2 :/ 0.5f)) < 1.0E-3)
+    assert(abs(Ufuncs.sdiv(llist.get(3), 0.5f).sum() - sum(sorted2 :/ 0.5f)) < 1.0E-1)
 
   }
 

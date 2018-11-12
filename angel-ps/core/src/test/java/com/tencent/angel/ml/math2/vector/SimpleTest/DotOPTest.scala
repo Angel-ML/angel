@@ -157,7 +157,7 @@ class DotOPTest {
   val capacity: Int = DotOPTest.capacity
   val dim: Int = DotOPTest.capacity * 100
 
-  val times = 5000
+  val times = 50
   var start1, stop1, cost1, start2, stop2, cost2 = 0L
 
   val ilist = DotOPTest.ilist
@@ -206,7 +206,7 @@ class DotOPTest {
           ilist.get(i).dot(ilist.get(j))
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
         }
 
@@ -333,7 +333,7 @@ class DotOPTest {
           llist.get(i).dot(llist.get(j))
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
         }
       }
