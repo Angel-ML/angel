@@ -92,6 +92,7 @@ public class GBDTLocalExample {
     // Use local deploy mode and data format
     conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
     conf.set(MLConf.ML_DATA_INPUT_FORMAT(), String.valueOf(dataType));
+    conf.set(MLConf.ML_MODEL_TYPE(), MLConf.DEFAULT_ML_MODEL_TYPE());
 
     // Set data path
     conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
