@@ -84,7 +84,6 @@ public class GBDTTest {
 
       // Set data format
       conf.set(MLConf.ML_DATA_INPUT_FORMAT(), String.valueOf(dataType));
-      conf.set(MLConf.ML_MODEL_TYPE(), MLConf.DEFAULT_ML_MODEL_TYPE());
 
       // Set angel resource, #worker, #task, #PS
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
