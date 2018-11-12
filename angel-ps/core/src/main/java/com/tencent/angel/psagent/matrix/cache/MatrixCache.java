@@ -19,6 +19,7 @@
 package com.tencent.angel.psagent.matrix.cache;
 
 import com.tencent.angel.PartitionKey;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ps.storage.matrix.PartitionSourceMap;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
@@ -123,8 +124,10 @@ public class MatrixCache {
     ServerPartition partCache = partitionCacheMap.get(partKey);
     if (partCache == null) {
       MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
+      String partitionSource = matrixMeta.getAttribute(AngelConf.ANGEL_PS_PARTITION_SOURCE_CLASS,
+          AngelConf.DEFAULT_ANGEL_PS_PARTITION_SOURCE_CLASS);
       partitionCacheMap
-        .putIfAbsent(partKey, new ServerPartition(partKey, matrixMeta.getRowType(), 0));
+        .putIfAbsent(partKey, new ServerPartition(partKey, matrixMeta.getRowType(), 0, partitionSource));
       partCache = partitionCacheMap.get(partKey);
     }
 
@@ -141,8 +144,10 @@ public class MatrixCache {
     ServerPartition partCache = partitionCacheMap.get(partKey);
     if (partCache == null) {
       MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
+      String partitionSource = matrixMeta.getAttribute(AngelConf.ANGEL_PS_PARTITION_SOURCE_CLASS,
+          AngelConf.DEFAULT_ANGEL_PS_PARTITION_SOURCE_CLASS);
       partitionCacheMap
-        .putIfAbsent(partKey, new ServerPartition(partKey, matrixMeta.getRowType(), 0));
+        .putIfAbsent(partKey, new ServerPartition(partKey, matrixMeta.getRowType(), 0, partitionSource));
       partCache = partitionCacheMap.get(partKey);
     }
 

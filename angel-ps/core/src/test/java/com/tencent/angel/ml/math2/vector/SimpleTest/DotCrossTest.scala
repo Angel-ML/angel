@@ -188,7 +188,7 @@ class DotCrossTest {
   val capacity: Int = DotCrossTest.capacity
   val dim: Int = DotCrossTest.capacity * 100
 
-  val times = 5000
+  val times = 50
   var start1, stop1, cost1, start2, stop2, cost2 = 0L
 
   val ilist = DotCrossTest.ilist

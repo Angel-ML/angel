@@ -18,9 +18,11 @@
 
 package com.tencent.angel.spark.ml.online_learning
 
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import com.tencent.angel.ml.math2.vector.{LongDoubleVector, LongDummyVector, Vector}
+import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
 import com.tencent.angel.spark.ml.psf.FTRLWUpdater
 import com.tencent.angel.spark.models.PSVector
 import com.tencent.angel.spark.util.VectorUtils
@@ -38,7 +40,8 @@ class FTRLWithVRG(lambda1: Double,
   var vPS: PSVector = _
 
   def initPSModel(dim: Long): Unit = {
-    zPS = PSVector.longKeySparse(dim, -1, 5)
+    zPS = PSVector.longKeySparse(dim, -1, 5,
+      additionalConfiguration = Map(AngelConf.Angel_PS_PARTITION_CLASS -> classOf[ColumnRangePartitioner].getName))
     nPS = PSVector.duplicate(zPS)
     vPS = PSVector.duplicate(zPS)
   }

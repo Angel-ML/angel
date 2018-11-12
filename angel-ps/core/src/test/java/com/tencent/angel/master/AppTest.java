@@ -82,6 +82,8 @@ public class AppTest {
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
       conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 2);
+      conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
+      conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
 
       // get a angel client
       angelClient = AngelClientFactory.get(conf);
@@ -102,7 +104,7 @@ public class AppTest {
 
       angelClient.startPSServer();
       angelClient.runTask(DummyTask.class);
-      Thread.sleep(5000);
+      Thread.sleep(2000);
       task0Id = new TaskId(0);
       task1Id = new TaskId(1);
     } catch (Exception x) {

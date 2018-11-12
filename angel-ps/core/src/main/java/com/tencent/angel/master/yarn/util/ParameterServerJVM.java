@@ -117,16 +117,26 @@ public class ParameterServerJVM {
       .getBoolean(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER,
         AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER);
 
+    float directFatorUseDirectBuff = conf
+      .getFloat(AngelConf.ANGEL_PS_JVM_DIRECT_FACTOR_USE_DIRECT_BUFF,
+        AngelConf.DEFAULT_ANGEL_PS_JVM_DIRECT_FACTOR_USE_DIRECT_BUFF);
+
+    float directFatorUseHeapBuff = conf.getFloat(AngelConf.ANGEL_PS_JVM_DIRECT_FACTOR_USE_HEAP_BUFF,
+      AngelConf.DEFAULT_ANGEL_PS_JVM_DIRECT_FACTOR_USE_HEAP_BUFF);
+
+    float youngFator = conf
+      .getFloat(AngelConf.ANGEL_PS_JVM_YOUNG_FACTOR, AngelConf.DEFAULT_ANGEL_PS_JVM_YOUNG_FACTOR);
+
     int useMax = psMemSizeInMB - 512;
     int directRegionSize = 0;
     if (isUseDirect) {
-      directRegionSize = (int) (useMax * 0.45);
+      directRegionSize = (int) (useMax * directFatorUseDirectBuff);
     } else {
-      directRegionSize = (int) (useMax * 0.25);
+      directRegionSize = (int) (useMax * directFatorUseHeapBuff);
     }
 
     int heapMax = useMax - directRegionSize;
-    int youngRegionSize = (int) (heapMax * 0.4);
+    int youngRegionSize = (int) (heapMax * youngFator);
     int survivorRatio = 4;
 
     String ret = new StringBuilder().append(" -Xmx").append(heapMax).append("M").append(" -Xmn")

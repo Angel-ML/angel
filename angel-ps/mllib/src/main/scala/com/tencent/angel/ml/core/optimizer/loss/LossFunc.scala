@@ -18,6 +18,7 @@
 
 package com.tencent.angel.ml.core.optimizer.loss
 
+import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.math2.{MFactory, VFactory}
 import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector, Vector}
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix, BlasMatrix, Matrix}
@@ -31,7 +32,7 @@ trait LossFunc extends Serializable {
 
   def calGrad(modelOut: Matrix, graph: AngelGraph): Matrix
 
-  def predict(modelOut: Matrix): Matrix
+  def predict(modelOut: Matrix, graph: AngelGraph): Matrix
 }
 
 class L2Loss extends LossFunc {
@@ -51,7 +52,7 @@ class L2Loss extends LossFunc {
     modelOut.sub(graph.placeHolder.getLabel)
   }
 
-  override def predict(modelOut: Matrix): Matrix = {
+  override def predict(modelOut: Matrix, graph: AngelGraph): Matrix = {
     modelOut match {
       case m: BlasDoubleMatrix =>
         val mat = MFactory.denseDoubleMatrix(m.getNumRows, 3)
@@ -80,7 +81,7 @@ class LogLoss extends LossFunc {
     LossFuncs.gradlogloss(modelOut, graph.placeHolder.getLabel)
   }
 
-  override def predict(modelOut: Matrix): Matrix = {
+  override def predict(modelOut: Matrix, graph: AngelGraph): Matrix = {
     modelOut match {
       case m: BlasDoubleMatrix =>
         val temp = m.getData
@@ -121,7 +122,7 @@ class HingeLoss extends LossFunc {
     LossFuncs.gradhingeloss(modelOut, graph.placeHolder.getLabel)
   }
 
-  override def predict(modelOut: Matrix): Matrix = {
+  override def predict(modelOut: Matrix, graph: AngelGraph): Matrix = {
     modelOut match {
       case m: BlasDoubleMatrix =>
         val temp = m.getData
@@ -176,7 +177,7 @@ class CrossEntropyLoss extends LossFunc {
     LossFuncs.gradentropyloss(modelOut, graph.placeHolder.getLabel)
   }
 
-  override def predict(modelOut: Matrix): Matrix = {
+  override def predict(modelOut: Matrix, graph: AngelGraph): Matrix = {
     modelOut match {
       case m: BlasDoubleMatrix =>
         val temp = m.getData
@@ -260,29 +261,41 @@ class SoftmaxLoss extends LossFunc {
 
   def loss(proba: Double, label: Double): Double = -Math.log(proba)
 
-  override def predict(modelOut: Matrix): Matrix = {
+  override def predict(modelOut: Matrix, graph: AngelGraph): Matrix = {
     val mat = Ufuncs.exp(modelOut)
     Ufuncs.idiv(mat, mat.sum(1), true)
+    val trueLabels = graph.placeHolder.getLabel.asInstanceOf[BlasFloatMatrix].getData
+    val numOutCols: Int = 4
 
     mat match {
       case m: BlasDoubleMatrix =>
         val labels = m.argmax(1).asInstanceOf[IntDoubleVector]
-        val data = new Array[Double](m.getNumRows * 3)
+        val data = new Array[Double](m.getNumRows * numOutCols)
         labels.getStorage.getValues.zipWithIndex.foreach { case (lab, idx) =>
-          data(3 * idx) = modelOut.asInstanceOf[BlasDoubleMatrix].get(idx, lab.toInt)
-          data(3 * idx + 1) = m.get(idx, lab.toInt)
-          data(3 * idx + 2) = lab
+          data(numOutCols * idx) = modelOut.asInstanceOf[BlasDoubleMatrix].get(idx, lab.toInt)
+          data(numOutCols * idx + 1) = m.get(idx, lab.toInt)
+          data(numOutCols * idx + 2) = if (SharedConf.actionType().equalsIgnoreCase("train") || SharedConf.actionType().equalsIgnoreCase("inctrain")) {
+            m.get(idx, trueLabels(idx).toInt)
+          } else {
+            1e-8
+          }
+          data(numOutCols * idx + 3) = lab
         }
-        MFactory.denseDoubleMatrix(m.getNumRows, 3, data)
+        MFactory.denseDoubleMatrix(m.getNumRows, numOutCols, data)
       case m: BlasFloatMatrix =>
         val labels = m.argmax(1).asInstanceOf[IntFloatVector]
-        val data = new Array[Float](m.getNumRows * 3)
+        val data = new Array[Float](m.getNumRows * numOutCols)
         labels.getStorage.getValues.zipWithIndex.foreach { case (lab, idx) =>
-          data(3 * idx) = modelOut.asInstanceOf[BlasFloatMatrix].get(idx, lab.toInt)
-          data(3 * idx + 1) = m.get(idx, lab.toInt)
-          data(3 * idx + 2) = lab
+          data(numOutCols * idx) = modelOut.asInstanceOf[BlasFloatMatrix].get(idx, lab.toInt)
+          data(numOutCols * idx + 1) = m.get(idx, lab.toInt)
+          data(numOutCols * idx + 2) = if (SharedConf.actionType().equalsIgnoreCase("train") || SharedConf.actionType().equalsIgnoreCase("inctrain")) {
+            m.get(idx, trueLabels(idx).toInt)
+          } else {
+            1e-8F
+          }
+          data(numOutCols * idx + 3) = lab
         }
-        MFactory.denseFloatMatrix(m.getNumRows, 3, data)
+        MFactory.denseFloatMatrix(m.getNumRows, numOutCols, data)
     }
   }
 
@@ -307,7 +320,7 @@ class HuberLoss(delta: Double) extends LossFunc {
     LossFuncs.gradhuberloss(modelOut, graph.placeHolder.getLabel, delta)
   }
 
-  override def predict(modelOut: Matrix): Matrix = {
+  override def predict(modelOut: Matrix, graph: AngelGraph): Matrix = {
     modelOut match {
       case m: BlasDoubleMatrix =>
         val mat = MFactory.denseDoubleMatrix(m.getNumRows, 3)

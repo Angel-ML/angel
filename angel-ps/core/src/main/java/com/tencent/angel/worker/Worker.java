@@ -277,7 +277,7 @@ public class Worker implements Executor {
   }
 
   private void startHeartbeatThread() {
-    final int heartbeatInterval = conf.getInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL,
+    final int heartbeatInterval = conf.getInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS,
       AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_INTERVAL);
 
     heartbeatThread = new Thread(new Runnable() {
