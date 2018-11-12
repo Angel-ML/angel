@@ -56,11 +56,9 @@ public class SkipgramModel extends EmbeddingModel {
             int target;
             for (int d = 0; d < negative + 1; d ++) {
               if (d == 0) target = word;
-              else while (true) {
+              else do{
                 target = negativeSeed.nextInt(maxIndex);
-                if (target == word) continue;
-                else break;
-              }
+              }while (target == word);
 
               numOutputs.add(target);
 

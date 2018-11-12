@@ -15,7 +15,7 @@
  *
  */
 
-package com.tencent.angel.spark.ml.psf.embedding.w2v;
+package com.tencent.angel.spark.ml.psf.embedding.line;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.exception.AngelException;
@@ -26,6 +26,7 @@ import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.spark.ml.psf.embedding.NEDot;
 import com.tencent.angel.spark.ml.psf.embedding.ServerWrapper;
+import io.netty.buffer.ByteBuf;
 
 import java.util.List;
 
@@ -43,47 +44,46 @@ public class Dot extends GetFunc {
 
       DotPartitionParam param = (DotPartitionParam) partParam;
 
-      // some params
-      PartitionKey pkey = param.getPartKey();
+      float[] dots;
+      try {
+        // some params
+        PartitionKey pkey = param.getPartKey();
 
+        int seed = param.seed;
+        int batchSize = param.batchSize;
+        ByteBuf edges = param.edgeBuf;
 
-      int seed     = param.seed;
-      int order    = 2;
+        // max index for node/word
+        int maxIndex = ServerWrapper.getMaxIndex();
+        int negative = ServerWrapper.getNegative();
+        int partDim = ServerWrapper.getPartDim();
+        int order = ServerWrapper.getOrder();
 
-      // batch sentences
-      int[][] sentences = param.sentences;
+        // compute number of nodes for one row
+        int size = (int) (pkey.getEndCol() - pkey.getStartCol());
+        int numNodes = size / (partDim * order);
 
-      // max index for node/word
-      int maxIndex = ServerWrapper.getMaxIndex();
-      int maxLength = ServerWrapper.getMaxLength();
-      int negative = ServerWrapper.getNegative();
-      int partDim  = ServerWrapper.getPartDim();
-      int window   = ServerWrapper.getWindow();
+        int numRows = pkey.getEndRow() - pkey.getStartRow();
+        float[][] layers = new float[numRows][];
+        for (int row = 0; row < numRows; row++)
+          layers[row] = ((IntFloatDenseVectorStorage) psContext.getMatrixStorageManager()
+              .getRow(pkey, row).getSplit().getStorage())
+              .getValues();
 
-      // compute number of nodes for one row
-      int size = (int) (pkey.getEndCol() - pkey.getStartCol());
-      int numNodes = size / (partDim * order);
-
-      int numRows = pkey.getEndRow() - pkey.getStartRow();
-      float[][] layers = new float[numRows][];
-      for (int row = 0; row < numRows; row ++)
-        layers[row] = ((IntFloatDenseVectorStorage) psContext.getMatrixStorageManager()
-                .getRow(pkey, row).getSplit().getStorage())
-                .getValues();
-
-      EmbeddingModel model;
-      switch (param.model) {
-        case 0:
-          model = new SkipgramModel(partDim, negative, window, seed, maxIndex, numNodes, maxLength, layers);
-          break;
-        default:
-          model = new CbowModel(partDim, negative, window, seed, maxIndex, numNodes, maxLength, layers);
+        EmbeddingModel model;
+        switch (order) {
+          case 1:
+            model = new LINESecondOrderModel(partDim, negative, seed, maxIndex, numNodes, layers);
+            break;
+          default:
+            model = new LINESecondOrderModel(partDim, negative, seed, maxIndex, numNodes, layers);
+        }
+        dots = model.dot(batchSize, edges);
+        ServerWrapper.setNumInputs(param.partitionId, model.getNumInputsToUpdate());
+        ServerWrapper.setNumOutputs(param.partitionId, model.getNumOutputsToUpdate());
+      }finally {
+        param.clear();
       }
-
-      float[] dots = model.dot(sentences);
-
-      ServerWrapper.setNumInputs(param.partitionId, model.getNumInputsToUpdate());
-      ServerWrapper.setNumOutputs(param.partitionId, model.getNumOutputsToUpdate());
 
       return new DotPartitionResult(dots);
     }

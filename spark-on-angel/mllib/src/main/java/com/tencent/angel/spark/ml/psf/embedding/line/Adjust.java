@@ -1,10 +1,11 @@
-package com.tencent.angel.spark.ml.psf.embedding.w2v;
+package com.tencent.angel.spark.ml.psf.embedding.line;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.spark.ml.psf.embedding.ServerWrapper;
+import io.netty.buffer.ByteBuf;
 
 public class Adjust extends UpdateFunc {
 
@@ -23,16 +24,15 @@ public class Adjust extends UpdateFunc {
       try {
         // Some params
         PartitionKey pkey = param.getPartKey();
-
         int seed = param.seed;
-        int order = 2;
+        int batchSize = param.batchSize;
+        ByteBuf dataBuf = param.dataBuf;
 
-        int[][] sentences = param.sentences;
+        int negative = ServerWrapper.getNegative();
         int maxIndex = ServerWrapper.getMaxIndex();
         int maxLength = ServerWrapper.getMaxLength();
-        int negative = ServerWrapper.getNegative();
+        int order = ServerWrapper.getOrder();
         int partDim = ServerWrapper.getPartDim();
-        int window = ServerWrapper.getWindow();
 
         // compute number of nodes for one row
         int size = (int) (pkey.getEndCol() - pkey.getStartCol());
@@ -46,24 +46,22 @@ public class Adjust extends UpdateFunc {
                   .getValues();
 
         EmbeddingModel model;
-        switch (param.model) {
+        switch (order) {
           case 0:
-            model = new SkipgramModel(partDim, negative, window, seed, maxIndex, numNodes, maxLength, layers);
+            model = new LINESecondOrderModel(partDim, negative, seed, maxIndex, numNodes, layers);
             break;
           default:
-            model = new CbowModel(partDim, negative, window, seed, maxIndex, numNodes, maxLength, layers);
+            model = new LINESecondOrderModel(partDim, negative, seed, maxIndex, numNodes, layers);
         }
 
 
         int numInputs = ServerWrapper.getNumInputs(param.partitionId);
         int numOutputs = ServerWrapper.getNumOutputs(param.partitionId);
 
-        model.adjust(sentences, param.buf, numInputs, numOutputs);
+        model.adjust(dataBuf, batchSize, numInputs, numOutputs);
       } finally {
         param.clear();
       }
     }
-
   }
-
 }

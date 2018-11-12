@@ -23,6 +23,7 @@ import scala.util.Random
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.storage.StorageLevel
 
+import com.tencent.angel.client.AngelContext
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.embedding.Param
@@ -43,9 +44,7 @@ object LINE {
     val nodesNumPerRow = params.get("nodesNumPerRow").map(_.toInt)
     val batchSize = params.getOrElse("batchSize", "100").toInt
     val modelPath = params.getOrElse("modelPath", null)
-    val modelCPInterval = params.getOrElse("modelCPInterval", Int.MaxValue.toString).toInt
     val order = params.get("order").fold(2)(_.toInt)
-    val validSet = params.get("validSet").filter(_.nonEmpty)
     val seed = params.get("seed").filter(_.nonEmpty).map(_.toInt).getOrElse(Random.nextInt)
 
     val ss = SparkSession.builder()
@@ -65,7 +64,6 @@ object LINE {
       .setNumEpoch(maxEpoch)
       .setLearningRate(learningRate)
       .setModelPath(modelPath)
-      .setModelCPInterval(modelCPInterval)
       .setOrder(order)
       .setBatchSize(batchSize)
       .setNodesNumPerRow(nodesNumPerRow)
@@ -88,13 +86,6 @@ object LINE {
       .values
       .persist(StorageLevel.MEMORY_AND_DISK)
 
-    val validData = validSet.map { path =>
-      ss.sparkContext.textFile(path, partitionNum).map { line =>
-        val arr = line.split("[\\s|,]+")
-        (arr(0).toInt, arr(1).toInt)
-      }.persist(StorageLevel.MEMORY_AND_DISK)
-    }
-
     val numVertices = edges.map(x => math.max(x._1, x._2)).max() + 1
     val numEdge = edges.count()
     println(s"num lines in raw docs: $numEdge")
@@ -102,7 +93,10 @@ object LINE {
     lineParam.setMaxIndex(numVertices)
       .setNumRowDataSet(numEdge)
 
-
-    new LINEModel(lineParam).train(edges, lineParam, validData)
+    val model = new LINEModel(lineParam)
+    model.train(edges, lineParam)
+    model.save(modelPath + "/embedding", maxEpoch)
+    ss.sparkContext.stop()
+    PSContext.stop()
   }
 }
