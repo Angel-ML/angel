@@ -24,7 +24,7 @@ object LogLoss extends ClassificationLoss {
     - 4.0 * label / (1.0 + math.exp(2.0 * label * prediction))
   }
 
-  override private[spark] def computeError(prediction: Double, label: Double): Double = {
+  override def computeError(prediction: Double, label: Double): Double = {
     val margin = 2.0 * label * prediction
     // The following is equivalent to 2.0 * log(1 + exp(-margin)) but more numerically stable.
     if (-margin > 0) {
@@ -32,13 +32,12 @@ object LogLoss extends ClassificationLoss {
     } else {
       2 * math.log1p(math.exp(-margin))
     }
-    2.0 * MLUtils.log1pExp(-margin)
   }
 
   /**
     * Returns the estimated probability of a label of 1.0.
     */
-  override private[spark] def computeProbability(margin: Double): Double = {
+  override def computeProbability(margin: Double): Double = {
     1.0 / (1.0 + math.exp(-2.0 * margin))
   }
 }

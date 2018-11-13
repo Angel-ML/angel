@@ -62,7 +62,7 @@ class Node (
   /**
     * Returns a deep copy of the subtree rooted at this node.
     */
-  private[mllib] def deepCopy(): Node = {
+  def deepCopy(): Node = {
     val leftNodeCopy = if (leftNode.isEmpty) {
       None
     } else {
@@ -80,7 +80,7 @@ class Node (
     * Get the number of nodes in tree below this node, including leaf nodes.
     * E.g., if this is a leaf, returns 0.  If both children are leaves, returns 2.
     */
-  private[mllib] def numDescendants: Int = if (isLeaf) {
+  def numDescendants: Int = if (isLeaf) {
     0
   } else {
     2 + leftNode.get.numDescendants + rightNode.get.numDescendants
@@ -90,7 +90,7 @@ class Node (
     * Get depth of tree from this node.
     * E.g.: Depth 0 means this is a leaf node.
     */
-  private[mllib] def subtreeDepth: Int = if (isLeaf) {
+  def subtreeDepth: Int = if (isLeaf) {
     0
   } else {
     1 + math.max(leftNode.get.subtreeDepth, rightNode.get.subtreeDepth)
@@ -100,7 +100,7 @@ class Node (
     * Recursive print function.
     * @param indentFactor  The number of spaces to add to each level of indentation.
     */
-  private[mllib] def subtreeToString(indentFactor: Int = 0): String = {
+  def subtreeToString(indentFactor: Int = 0): String = {
 
     def splitToString(split: Split, left: Boolean): String = {
       split.featureType match {
@@ -128,13 +128,13 @@ class Node (
   }
 
   /** Returns an iterator that traverses (DFS, left to right) the subtree of this node. */
-  private[mllib] def subtreeIterator: Iterator[Node] = {
+  def subtreeIterator: Iterator[Node] = {
     Iterator.single(this) ++ leftNode.map(_.subtreeIterator).getOrElse(Iterator.empty) ++
       rightNode.map(_.subtreeIterator).getOrElse(Iterator.empty)
   }
 }
 
-private[tree] object Node {
+object Node {
 
   /**
     * Return a node with the given node id (but nothing else set).

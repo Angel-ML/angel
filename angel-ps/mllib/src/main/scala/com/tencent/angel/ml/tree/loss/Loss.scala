@@ -1,7 +1,8 @@
 package com.tencent.angel.ml.tree.loss
 
 import com.tencent.angel.ml.feature.LabeledData
-import org.apache.spark.mllib.tree.model.TreeEnsembleModel
+import com.tencent.angel.ml.math2.vector.IntFloatVector
+import com.tencent.angel.ml.tree.model.TreeEnsembleModel
 
 /**
   * Trait for adding "pluggable" loss functions for the gradient boosting algorithm.
@@ -27,7 +28,8 @@ trait Loss extends Serializable {
     * purposes.
     */
   def computeError(model: TreeEnsembleModel, data: List[LabeledData]): Double = {
-    data.map(point => computeError(model.predict(point.getX), point.getY)).mean()
+    data.map(point => computeError(model.predict(point.getX.asInstanceOf[IntFloatVector]), point.getY))
+      .reduce(_ + _) / data.length
   }
 
   /**
@@ -40,13 +42,13 @@ trait Loss extends Serializable {
     * @note This method is used in the method evaluateEachIteration to avoid recomputing the
     * predicted values from previously fit trees.
     */
-  private[mllib] def computeError(prediction: Double, label: Double): Double
+  def computeError(prediction: Double, label: Double): Double
 }
 
-private[tree] trait ClassificationLoss extends Loss {
+trait ClassificationLoss extends Loss {
   /**
     * Computes the class probability given the margin.
     */
-  private[mllib] def computeProbability(margin: Double): Double
+  def computeProbability(margin: Double): Double
 }
 

@@ -4,6 +4,9 @@ import java.text.DecimalFormat
 
 import scala.collection.mutable
 import scala.beans.BeanProperty
+
+import org.apache.hadoop.conf.Configuration
+
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.vector.IntFloatVector
 import com.tencent.angel.ml.model.MLModel
@@ -12,7 +15,6 @@ import com.tencent.angel.ml.tree.conf.Algo._
 import com.tencent.angel.ml.tree.conf.{Algo, FeatureType}
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
-import org.apache.hadoop.conf.Configuration
 
 object DecisionTreeModel {
 
@@ -24,15 +26,15 @@ object DecisionTreeModel {
   val SPLIT_GAIN_MAT: String = "gbdt.split.gain"
   val NODE_PRED_MAT: String = "gbdt.node.predict"
 
-  def apply(conf: Configuration) = {
-    new DecisionTreeModel(conf)
+  def apply(topNode: Node, algo: Algo, conf: Configuration) = {
+    new DecisionTreeModel(topNode, algo, conf)
   }
 
-  def apply(ctx: TaskContext, conf: Configuration) = {
-    new DecisionTreeModel(conf, ctx)
+  def apply(topNode: Node, algo: Algo, conf: Configuration, ctx: TaskContext) = {
+    new DecisionTreeModel(topNode, algo, conf, ctx)
   }
 
-  private[mllib] object DataStruct {
+  object DataStruct {
 
     case class PredictData(predict: Float, prob: Float) {
       def toPredict: Predict = new Predict(predict, prob)
@@ -113,10 +115,10 @@ object DecisionTreeModel {
           (treeId, constructTree(data))
         }.toList.sortBy(_._1)
       val numTrees = trees.length
-      val treeIndices = trees.map(_._1).toSeq
+      val treeIndices = trees.map(_._1)
       assert(treeIndices == (0 until numTrees),
         s"Tree indices must start from 0 and increment by 1, but we found $treeIndices.")
-      trees.map(_._2)
+      trees.map(_._2).toArray
     }
 
     /**

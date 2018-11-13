@@ -1,14 +1,13 @@
 package com.tencent.angel.ml.tree.model
 
-import com.tencent.angel.ml.auto.config.Configuration
-import com.tencent.angel.ml.feature.LabeledData
-
 import scala.collection.mutable
-import com.tencent.angel.ml.math2.VFactory
+
+import org.apache.hadoop.conf.Configuration
+
 import com.tencent.angel.ml.math2.vector.IntFloatVector
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.ml.predict.PredictResult
-import com.tencent.angel.ml.tree.conf.Algo
+import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.tree.conf.Algo._
 import com.tencent.angel.ml.tree.conf.EnsembleCombiningStrategy._
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
@@ -22,9 +21,10 @@ import com.tencent.angel.worker.task.TaskContext
   */
 class RandomForestModel (
                           override val algo: Algo,
-                          override val trees: Array[DecisionTreeModel])
+                          override val trees: Array[DecisionTreeModel],
+                          conf: Configuration, _ctx: TaskContext = null)
   extends TreeEnsembleModel(algo, trees, Array.fill(trees.length)(1.0),
-    combiningStrategy = if (algo == Classification) Vote else Average) {
+    combiningStrategy = if (algo == Classification) Vote else Average, conf, _ctx) {
 
   require(trees.forall(_.algo == algo))
 }
@@ -37,7 +37,7 @@ class RandomForestModel (
   * @param treeWeights tree ensemble weights
   * @param combiningStrategy strategy for combining the predictions, not used for regression.
   */
-private[tree] sealed class TreeEnsembleModel(
+sealed class TreeEnsembleModel(
                                               protected val algo: Algo,
                                               protected val trees: Array[DecisionTreeModel],
                                               protected val treeWeights: Array[Double],
@@ -65,8 +65,6 @@ private[tree] sealed class TreeEnsembleModel(
 
     ret
   }
-
-
 
   /**
     * Predicts for a single data point using the weighted sum of ensemble predictions.
@@ -126,7 +124,7 @@ private[tree] sealed class TreeEnsembleModel(
   def predict(features: List[IntFloatVector]): List[Double] = features.map(x => predict(x))
 
   def predict(features: Array[IntFloatVector]): Array[Double] = {
-    predict(features.toList)
+    predict(features.toList).toArray
   }
 
   /**
@@ -164,7 +162,7 @@ private[tree] sealed class TreeEnsembleModel(
   def totalNumNodes: Int = trees.map(_.numNodes).sum
 }
 
-private[tree] object TreeEnsembleModel {
+object TreeEnsembleModel {
 
   object SaveUtils {
 

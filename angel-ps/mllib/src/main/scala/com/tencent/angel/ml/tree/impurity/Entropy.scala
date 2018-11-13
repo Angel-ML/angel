@@ -18,7 +18,7 @@ object Entropy extends Impurity {
       return 0
     }
     val numClasses = counts.length
-    var impurity = 0.0f
+    var impurity = 0.0
     var classIndex = 0
     while (classIndex < numClasses) {
       val classCount = counts(classIndex)
@@ -28,7 +28,7 @@ object Entropy extends Impurity {
       }
       classIndex += 1
     }
-    impurity
+    impurity.toFloat
   }
 
   /**

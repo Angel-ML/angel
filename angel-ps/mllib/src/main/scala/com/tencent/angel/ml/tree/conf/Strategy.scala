@@ -30,8 +30,8 @@ import com.tencent.angel.ml.tree.impurity.{Entropy, Gini, Impurity, Variance}
   */
 class Strategy (@BeanProperty var algo: Algo, @BeanProperty  var impurity: Impurity, var maxDepth: Int, var numClasses: Int = 2, var maxBins: Int = 32,
                 var quantileCalculationStrategy: QuantileStrategy = Sort, var categoricalFeaturesInfo: Map[Int, Int] = Map[Int, Int](),
-                var minInstancesPerNode: Int = 1, var minInfoGain: Float = 0.0f, var maxMemoryInMB: Int = 256,
-                var subsamplingRate: Float = 1, var useNodeIdCache: Boolean = false, var checkpointInterval: Int = 10) extends Serializable {
+                var minInstancesPerNode: Int = 1, var minInfoGain: Double = 0.0, var maxMemoryInMB: Int = 256,
+                var subsamplingRate: Double = 1, var useNodeIdCache: Boolean = false, var checkpointInterval: Int = 10) extends Serializable {
 
   def isMulticlassClassification: Boolean = {
     algo == Classification && numClasses > 2
@@ -73,7 +73,7 @@ class Strategy (@BeanProperty var algo: Algo, @BeanProperty  var impurity: Impur
     * Check validity of parameters.
     * Throws exception if invalid.
     */
-  private def assertValid(): Unit = {
+  def assertValid(): Unit = {
     algo match {
       case Classification =>
         require(numClasses >= 2,

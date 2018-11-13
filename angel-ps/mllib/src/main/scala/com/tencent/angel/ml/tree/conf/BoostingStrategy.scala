@@ -1,7 +1,7 @@
 package com.tencent.angel.ml.tree.conf
 
 import com.tencent.angel.ml.tree.conf.Algo._
-import org.apache.spark.mllib.tree.loss.{LogLoss, Loss, SquaredError}
+import com.tencent.angel.ml.tree.loss.{LogLoss, Loss, SquaredError}
 
 /**
   * Configuration options for [[org.apache.spark.mllib.tree.GradientBoostedTrees]].
@@ -29,7 +29,7 @@ case class BoostingStrategy (
   // Required boosting parameters
   var treeStrategy: Strategy, var loss: Loss,
   // Optional boosting parameters
-  var numIterations: Int = 100, var learningRate: Float = 0.1f, var validationTol: Float = 0.001f) extends Serializable {
+  var numIterations: Int = 100, var learningRate: Double = 0.1f, var validationTol: Double = 0.01) extends Serializable {
 
   /**
     * Check validity of parameters.
