@@ -12,12 +12,13 @@ public class DotPartitionResult extends PartitionGetResult {
     this.values = values;
   }
 
-  public DotPartitionResult() {}
+  public DotPartitionResult() {
+  }
 
   @Override
   public void serialize(ByteBuf buf) {
     buf.writeInt(values.length);
-    for (float value:values) {
+    for (float value : values) {
       buf.writeFloat(value);
     }
   }
@@ -35,7 +36,7 @@ public class DotPartitionResult extends PartitionGetResult {
   }
 
   public void merge(float[] result) {
-    for (int c = 0; c < result.length; c ++) result[c] += buf.readFloat();
+    for (int c = 0; c < result.length; c++) result[c] += buf.readFloat();
   }
 
   public void clear() {

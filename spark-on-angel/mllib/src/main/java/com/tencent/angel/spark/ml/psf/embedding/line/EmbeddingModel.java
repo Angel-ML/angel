@@ -12,26 +12,24 @@ abstract class EmbeddingModel {
   protected int maxIndex;
 
   protected int numNodeOneRow;
-  protected int maxLength;
 
   protected float[][] layers;
 
   protected int numInputsToUpdate;
   protected int numOutputsToUpdate;
 
-  public EmbeddingModel(int dim, int negative, int seed, int maxIndex, int numNodeOneRow, int maxLength, float[][] layers) {
+  public EmbeddingModel(int dim, int negative, int seed, int maxIndex, int numNodeOneRow, float[][] layers) {
     this.dim = dim;
     this.negative = negative;
     this.seed = seed;
     this.maxIndex = maxIndex;
     this.numNodeOneRow = numNodeOneRow;
-    this.maxLength = maxLength;
     this.layers = layers;
   }
 
-  abstract public float[] dot(int batchSize, ByteBuf edges);
+  abstract public float[] dot(ByteBuf edges);
 
-  abstract public void adjust(ByteBuf dataBuf, int batchSize, int numInput, int numOutput);
+  abstract public void adjust(ByteBuf dataBuf, int numInput, int numOutput);
 
   protected void merge(float[] inputs, Int2IntOpenHashMap inputIndex, int node, float[] update, float g, int idx) {
     int start = inputIndex.get(node);
@@ -39,13 +37,7 @@ abstract class EmbeddingModel {
       start = inputIndex.size();
       inputIndex.put(node, start);
     }
-
     int offset = start * dim;
-//    System.out.println("inputs size = " + inputs.length);
-//    System.out.println("update size = " + update.length);
-//    System.out.println("dim size = " + dim);
-//    System.out.println("idx = " + idx);
-//    System.out.println("offset= " + offset);
     for (int c = 0; c < dim; c++) inputs[offset + c] += g * update[c + idx];
   }
 

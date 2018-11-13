@@ -4,9 +4,6 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
 import com.tencent.angel.psagent.PSAgentContext;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.PooledByteBufAllocator;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -14,11 +11,8 @@ import java.util.List;
 
 public class AdjustParam extends UpdateParam {
 
-  private int seed;
-  private int partitionId;
-  private byte[] edgesAndGrads;
-  private int batchSize;
-  private int negative;
+  private byte[] dataBuf;
+  private int bufLength;
 
   public AdjustParam(int matrixId,
                      int seed,
@@ -28,12 +22,12 @@ public class AdjustParam extends UpdateParam {
                      int[] src,
                      int[] dst) {
     super(matrixId);
-    this.seed = seed;
-    this.partitionId = partitionId;
-    this.batchSize = src.length;
-    this.negative = negative;
-    this.edgesAndGrads = new byte[batchSize * (4 * negative + 12)];
-    ByteBuffer wrapper = ByteBuffer.wrap(this.edgesAndGrads);
+    this.bufLength = 12 + src.length * 8 + gradient.length * 4;
+    this.dataBuf = new byte[bufLength];
+    ByteBuffer wrapper = ByteBuffer.wrap(this.dataBuf);
+    wrapper.putInt(seed);
+    wrapper.putInt(partitionId);
+    wrapper.putInt(src.length);
     int inc = 0;
     for (int a = 0; a < src.length; a++) {
       wrapper.putInt(src[a]);
@@ -50,13 +44,8 @@ public class AdjustParam extends UpdateParam {
         .getPartitions(matrixId);
     List<PartitionUpdateParam> params = new ArrayList<>();
     for (PartitionKey pkey : pkeys) {
-      params.add(new AdjustPartitionParam(matrixId,
-          pkey,
-          seed,
-          negative,
-          partitionId,
-          batchSize,
-          edgesAndGrads));
+      AdjustPartitionParam partParam = new AdjustPartitionParam(matrixId, pkey, dataBuf, bufLength);
+      params.add(partParam);
     }
     return params;
   }

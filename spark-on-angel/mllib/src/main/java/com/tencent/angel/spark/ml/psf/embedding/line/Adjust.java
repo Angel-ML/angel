@@ -13,7 +13,9 @@ public class Adjust extends UpdateFunc {
     super(param);
   }
 
-  public Adjust() { super(null); }
+  public Adjust() {
+    super(null);
+  }
 
   public void partitionUpdate(PartitionUpdateParam partParam) {
 
@@ -25,12 +27,10 @@ public class Adjust extends UpdateFunc {
         // Some params
         PartitionKey pkey = param.getPartKey();
         int seed = param.seed;
-        int batchSize = param.batchSize;
-        ByteBuf dataBuf = param.dataBuf;
+        ByteBuf dataBuf = param.edgesAndGradsBuf;
 
         int negative = ServerWrapper.getNegative();
         int maxIndex = ServerWrapper.getMaxIndex();
-        int maxLength = ServerWrapper.getMaxLength();
         int order = ServerWrapper.getOrder();
         int partDim = ServerWrapper.getPartDim();
 
@@ -40,15 +40,15 @@ public class Adjust extends UpdateFunc {
 
         int numRows = pkey.getEndRow() - pkey.getStartRow();
         float[][] layers = new float[numRows][];
-        for (int row = 0; row < numRows; row ++)
+        for (int row = 0; row < numRows; row++)
           layers[row] = ((IntFloatDenseVectorStorage) psContext.getMatrixStorageManager()
-                  .getRow(pkey, row).getSplit().getStorage())
-                  .getValues();
+              .getRow(pkey, row).getSplit().getStorage())
+              .getValues();
 
         EmbeddingModel model;
         switch (order) {
-          case 0:
-            model = new LINESecondOrderModel(partDim, negative, seed, maxIndex, numNodes, layers);
+          case 1:
+            model = new LINEFirstOrderModel(partDim, negative, seed, maxIndex, numNodes, layers);
             break;
           default:
             model = new LINESecondOrderModel(partDim, negative, seed, maxIndex, numNodes, layers);
@@ -58,7 +58,7 @@ public class Adjust extends UpdateFunc {
         int numInputs = ServerWrapper.getNumInputs(param.partitionId);
         int numOutputs = ServerWrapper.getNumOutputs(param.partitionId);
 
-        model.adjust(dataBuf, batchSize, numInputs, numOutputs);
+        model.adjust(dataBuf, numInputs, numOutputs);
       } finally {
         param.clear();
       }

@@ -23,7 +23,6 @@ import scala.util.Random
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.storage.StorageLevel
 
-import com.tencent.angel.client.AngelContext
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.embedding.Param
@@ -36,10 +35,10 @@ object LINE {
     val input = params.getOrElse("input", null)
     val partitionNum = params.getOrElse("partitionNum", "10").toInt
     val sampleRate = params.getOrElse("sampleRate", "1.0").toDouble
-    val vectorDim = params.getOrElse("vectorDim", "10").toInt
+    val vectorDim = params.getOrElse("vectorDim", "128").toInt
     val negSample = params.getOrElse("negSample", "5").toInt
     val maxEpoch = params.getOrElse("maxEpoch", "10").toInt
-    val learningRate = params.getOrElse("learningRate", "0.1").toFloat
+    val learningRate = params.getOrElse("learningRate", "0.01").toFloat
     val numPSPart = params.get("numPSPart").map(_.toInt)
     val nodesNumPerRow = params.get("nodesNumPerRow").map(_.toInt)
     val batchSize = params.getOrElse("batchSize", "100").toInt
@@ -92,6 +91,8 @@ object LINE {
     println(s"num vertices: $numVertices")
     lineParam.setMaxIndex(numVertices)
       .setNumRowDataSet(numEdge)
+
+    lineParam.setSeed(0)
 
     val model = new LINEModel(lineParam)
     model.train(edges, lineParam)

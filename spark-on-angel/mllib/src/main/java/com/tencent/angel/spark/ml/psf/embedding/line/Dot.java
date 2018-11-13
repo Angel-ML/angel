@@ -36,7 +36,9 @@ public class Dot extends GetFunc {
     super(param);
   }
 
-  public Dot() { super(null); }
+  public Dot() {
+    super(null);
+  }
 
   @Override
   public PartitionGetResult partitionGet(PartitionGetParam partParam) {
@@ -50,7 +52,6 @@ public class Dot extends GetFunc {
         PartitionKey pkey = param.getPartKey();
 
         int seed = param.seed;
-        int batchSize = param.batchSize;
         ByteBuf edges = param.edgeBuf;
 
         // max index for node/word
@@ -73,15 +74,15 @@ public class Dot extends GetFunc {
         EmbeddingModel model;
         switch (order) {
           case 1:
-            model = new LINESecondOrderModel(partDim, negative, seed, maxIndex, numNodes, layers);
+            model = new LINEFirstOrderModel(partDim, negative, seed, maxIndex, numNodes, layers);
             break;
           default:
             model = new LINESecondOrderModel(partDim, negative, seed, maxIndex, numNodes, layers);
         }
-        dots = model.dot(batchSize, edges);
+        dots = model.dot(edges);
         ServerWrapper.setNumInputs(param.partitionId, model.getNumInputsToUpdate());
         ServerWrapper.setNumOutputs(param.partitionId, model.getNumOutputsToUpdate());
-      }finally {
+      } finally {
         param.clear();
       }
 
@@ -97,18 +98,18 @@ public class Dot extends GetFunc {
       int size = ((DotPartitionResult) partResults.get(0)).length;
 
       // check the length of dot values
-      for (PartitionGetResult result: partResults) {
+      for (PartitionGetResult result : partResults) {
         if (result instanceof DotPartitionResult &&
-          size != ((DotPartitionResult) result).length)
+            size != ((DotPartitionResult) result).length)
           throw new AngelException(
-                  String.format("length of dot values not same one is %d other is %d",
-                          size,
-                          ((DotPartitionResult) result).length));
+              String.format("length of dot values not same one is %d other is %d",
+                  size,
+                  ((DotPartitionResult) result).length));
       }
 
       // merge dot values from all partitions
       float[] results = new float[size];
-      for (PartitionGetResult result: partResults)
+      for (PartitionGetResult result : partResults)
         if (result instanceof DotPartitionResult)
           try {
             ((DotPartitionResult) result).merge(results);

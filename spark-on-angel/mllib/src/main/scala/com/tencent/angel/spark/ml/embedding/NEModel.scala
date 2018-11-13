@@ -77,6 +77,7 @@ abstract class NEModel(numNode: Int,
             numEpoch: Int,
             learningRate: Float): Unit = {
     for (epoch <- 1 to numEpoch) {
+//      val alpha = learningRate * (1 - math.sqrt(epoch / numEpoch)).toFloat
       val alpha = learningRate
       val data = trainBatches.next()
       val numPartitions = data.getNumPartitions
@@ -88,7 +89,7 @@ abstract class NEModel(numNode: Int,
       val array = new Array[Long](3)
       middle.foreach(f => f._3.zipWithIndex.foreach(t => array(t._2) += t._1))
       logTime(s"epoch=$epoch " +
-        s"loss=$loss " +
+        f"loss=$loss%2.4f " +
         s"dotTime=${array(0)} " +
         s"gradientTime=${array(1)} " +
         s"adjustTime=${array(2)}")
@@ -154,7 +155,7 @@ abstract class NEModel(numNode: Int,
       val dotTime = end - start
       // gradient
       start = System.currentTimeMillis()
-      val loss = doGrad(dots, negative, alpha, Some(batch))
+      val loss = doGrad(dots, negative, alpha)
       end = System.currentTimeMillis()
       val gradientTime = end - start
       // adjust
@@ -171,7 +172,7 @@ abstract class NEModel(numNode: Int,
     PSContext.instance()
 
     iterator.zipWithIndex.map { case (batch, index) =>
-      sgdForBatch(partitionId, rand.nextInt(), batch, index)
+      sgdForBatch(partitionId, Random.nextInt(), batch, index)
     }
   }
 
@@ -220,7 +221,7 @@ abstract class NEModel(numNode: Int,
     psMatrix
   }
 
-  def doGrad(dots: Array[Float], negative: Int, alpha: Float, data: Option[NEDataSet]): Double = {
+  def doGrad(dots: Array[Float], negative: Int, alpha: Float): Double = {
     var loss = 0.0
     for (i <- dots.indices) {
       val prob = FastSigmoid.sigmoid(dots(i))
@@ -237,6 +238,21 @@ abstract class NEModel(numNode: Int,
 }
 
 object NEModel {
+
+  def doGrad(dots: Array[Float], negative: Int, alpha: Float): Double = {
+    var loss = 0.0
+    for (i <- dots.indices) {
+      val prob = FastSigmoid.sigmoid(dots(i))
+      if (i % (negative + 1) == 0) {
+        dots(i) = alpha * (1 - prob)
+        loss -= FastSigmoid.log(prob)
+      } else {
+        dots(i) = -alpha * prob
+        loss -= FastSigmoid.log(1 - prob)
+      }
+    }
+    loss
+  }
 
   def logTime(msg: String, begin: Long = -1): Long = {
     val time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date)

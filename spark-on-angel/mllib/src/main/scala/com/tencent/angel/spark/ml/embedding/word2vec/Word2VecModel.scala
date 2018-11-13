@@ -70,14 +70,13 @@ class Word2VecModel(numNode: Int,
 
   override def doGrad(dots: Array[Float],
                       negative: Int,
-                      alpha: Float,
-                      data: Option[NEDataSet]): Double = {
+                      alpha: Float): Double = {
 //    val sentences = data.get.asInstanceOf[W2VDataSet].sentences
 //    val size = sentences.map(sen => sen.length).sum
     var label = 0
     var sumLoss = 0f
 //    assert(dots.length == size * (negative + 1))
-    for (a <- 0 until dots.length) {
+    for (a <- dots.indices) {
       val sig = FastSigmoid.sigmoid(dots(a))
       if (a % (negative + 1) == 0) { // positive target
         sumLoss += -sig

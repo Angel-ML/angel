@@ -8,21 +8,17 @@ public class DotPartitionParam extends PartitionGetParam {
 
   int seed;
   int partitionId;
-  int batchSize;
-  private byte[] edges;
+  private byte[] bufData;
   ByteBuf edgeBuf;
+  private int bufLength;
 
   public DotPartitionParam(int matrixId,
-                           int seed,
-                           int partitionId,
                            PartitionKey pkey,
-                           int batchSize,
-                           byte[] edges) {
+                           byte[] bufData,
+                           int bufLength) {
     super(matrixId, pkey);
-    this.seed = seed;
-    this.partitionId = partitionId;
-    this.batchSize = batchSize;
-    this.edges = edges;
+    this.bufData = bufData;
+    this.bufLength = bufLength;
   }
 
   public DotPartitionParam() {
@@ -31,10 +27,7 @@ public class DotPartitionParam extends PartitionGetParam {
   @Override
   public void serialize(ByteBuf buf) {
     super.serialize(buf);
-    buf.writeInt(seed);
-    buf.writeInt(partitionId);
-    buf.writeInt(batchSize);
-    buf.writeBytes(edges);
+    buf.writeBytes(bufData);
   }
 
   @Override
@@ -42,17 +35,16 @@ public class DotPartitionParam extends PartitionGetParam {
     super.deserialize(buf);
     this.seed = buf.readInt();
     this.partitionId = buf.readInt();
-    this.batchSize = buf.readInt();
     this.edgeBuf = buf;
     buf.retain();
   }
 
   @Override
   public int bufferLen() {
-    return super.bufferLen() + 12 + batchSize * 8;
+    return super.bufferLen() + this.bufLength;
   }
 
-  public void clear(){
+  public void clear() {
     edgeBuf.release();
   }
 }

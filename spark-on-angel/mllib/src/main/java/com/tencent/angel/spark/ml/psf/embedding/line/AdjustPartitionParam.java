@@ -8,35 +8,26 @@ public class AdjustPartitionParam extends PartitionUpdateParam {
 
   int seed;
   int partitionId;
-  int batchSize;
-  private int negative;
-  private byte[] edgesAndGrads;
-  ByteBuf dataBuf;
+  private byte[] dataBuf;
+  ByteBuf edgesAndGradsBuf;
+  private int bufLength;
 
   public AdjustPartitionParam(int matrixId,
                               PartitionKey partKey,
-                              int seed,
-                              int negative,
-                              int partitionId,
-                              int batchSize,
-                              byte[] edgesAndGrads) {
+                              byte[] dataBuf,
+                              int bufLength) {
     super(matrixId, partKey);
-    this.seed = seed;
-    this.partitionId = partitionId;
-    this.batchSize = batchSize;
-    this.edgesAndGrads = edgesAndGrads;
-    this.negative = negative;
+    this.dataBuf = dataBuf;
+    this.bufLength = bufLength;
   }
 
-  public AdjustPartitionParam() {}
+  public AdjustPartitionParam() {
+  }
 
   @Override
   public void serialize(ByteBuf buf) {
     super.serialize(buf);
-    buf.writeInt(seed);
-    buf.writeInt(partitionId);
-    buf.writeInt(batchSize);
-    buf.writeBytes(edgesAndGrads);
+    buf.writeBytes(dataBuf);
   }
 
   @Override
@@ -44,17 +35,16 @@ public class AdjustPartitionParam extends PartitionUpdateParam {
     super.deserialize(buf);
     seed = buf.readInt();
     partitionId = buf.readInt();
-    batchSize = buf.readInt();
-    dataBuf = buf;
-    dataBuf.retain();
+    edgesAndGradsBuf = buf;
+    edgesAndGradsBuf.retain();
   }
 
   public void clear() {
-    dataBuf.release();
+    edgesAndGradsBuf.release();
   }
 
   @Override
   public int bufferLen() {
-    return super.bufferLen() + 24 + batchSize * (4 * negative + 12);
+    return super.bufferLen() + this.bufLength;
   }
 }

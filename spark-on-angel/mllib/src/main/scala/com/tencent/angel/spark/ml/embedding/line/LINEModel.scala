@@ -50,7 +50,7 @@ class LINEModel(numNode: Int,
 
   override def getDotFunc(data: NEDataSet, batchSeed: Int, ns: Int, partitionId: Int): GetFunc = {
     val lineData = data.asInstanceOf[LINEDataSet]
-    val param = new DotParam(matrixId, seed, partitionId, lineData.src, lineData.dst)
+    val param = new DotParam(matrixId, batchSeed, partitionId, lineData.src, lineData.dst)
     new Dot(param)
   }
 
@@ -60,7 +60,7 @@ class LINEModel(numNode: Int,
       grad: Array[Float],
       partitionId: Int): UpdateFunc = {
     val lineData = data.asInstanceOf[LINEDataSet]
-    val param = new AdjustParam(matrixId, seed, ns, partitionId, grad, lineData.src, lineData.dst)
+    val param = new AdjustParam(matrixId, batchSeed, ns, partitionId, grad, lineData.src, lineData.dst)
     new Adjust(param)
   }
 }
