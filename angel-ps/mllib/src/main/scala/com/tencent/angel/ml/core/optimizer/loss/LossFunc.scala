@@ -274,7 +274,7 @@ class SoftmaxLoss extends LossFunc {
         labels.getStorage.getValues.zipWithIndex.foreach { case (lab, idx) =>
           data(numOutCols * idx) = modelOut.asInstanceOf[BlasDoubleMatrix].get(idx, lab.toInt)
           data(numOutCols * idx + 1) = m.get(idx, lab.toInt)
-          data(numOutCols * idx + 2) = if (SharedConf.actionType().equalsIgnoreCase("train")) {
+          data(numOutCols * idx + 2) = if (SharedConf.actionType().equalsIgnoreCase("train") || SharedConf.actionType().equalsIgnoreCase("inctrain")) {
             m.get(idx, trueLabels(idx).toInt)
           } else {
             1e-8
@@ -288,7 +288,7 @@ class SoftmaxLoss extends LossFunc {
         labels.getStorage.getValues.zipWithIndex.foreach { case (lab, idx) =>
           data(numOutCols * idx) = modelOut.asInstanceOf[BlasFloatMatrix].get(idx, lab.toInt)
           data(numOutCols * idx + 1) = m.get(idx, lab.toInt)
-          data(numOutCols * idx + 2) = if (SharedConf.actionType().equalsIgnoreCase("train")) {
+          data(numOutCols * idx + 2) = if (SharedConf.actionType().equalsIgnoreCase("train") || SharedConf.actionType().equalsIgnoreCase("inctrain")) {
             m.get(idx, trueLabels(idx).toInt)
           } else {
             1e-8F
