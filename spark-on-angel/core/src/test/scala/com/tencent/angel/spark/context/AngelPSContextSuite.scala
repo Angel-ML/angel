@@ -83,7 +83,7 @@ class AngelPSContextSuite extends PSFunSuite {
 
   test("doCreateVectorPool && doDestroyVectorPool") {
 
-    val thisPool = angel.createVectorPool(dim, capacity, RowType.T_DOUBLE_DENSE, -1)
+    val thisPool = angel.createVectorPool(dim, capacity, RowType.T_DOUBLE_DENSE, -1, Map())
     val firstVector = thisPool.allocate()
 
     assert(thisPool.rowType == RowType.T_DOUBLE_DENSE)
