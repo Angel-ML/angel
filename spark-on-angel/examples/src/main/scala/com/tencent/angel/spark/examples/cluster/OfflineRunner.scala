@@ -22,13 +22,47 @@ import com.tencent.angel.RunningMode
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
-import com.tencent.angel.ml.core.utils.DataParser
+import com.tencent.angel.ml.core.utils.{DataParser, NetUtils}
+import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.math2.VFactory
+import com.tencent.angel.ml.math2.storage.IntFloatSparseVectorStorage
+import com.tencent.angel.ml.math2.vector.IntFloatVector
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.examples.util.SparkUtils
 import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OfflineLearner}
 import org.apache.spark.{SparkConf, SparkContext}
 
 object OfflineRunner {
+
+
+  def parse(text: String, dim: Int): LabeledData = {
+    if (null == text) {
+      return null
+    }
+
+    var splits = text.trim.split(" ")
+
+    if (splits.length < 1)
+      return null
+
+    var y = splits(0).toDouble
+    if (y == 0.0) y = -1.0
+
+    splits = splits.tail
+    val len = splits.length
+
+    val keys: Array[Int] = new Array[Int](len)
+    val vals: Array[Float] = new Array[Float](len)
+
+    // y should be +1 or -1 when classification.
+    splits.zipWithIndex.foreach { case (value: String, indx2: Int) =>
+      val kv = value.trim.split(":")
+      keys(indx2) = kv(0).toInt
+      vals(indx2) = kv(1).toFloat
+    }
+    val x = VFactory.sparseFloatVector(dim, keys, vals)
+    new LabeledData(x, y)
+  }
 
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
@@ -45,13 +79,24 @@ object OfflineRunner {
     // build SharedConf with params
     SharedConf.addMap(params)
 
+    val dim = SharedConf.indexRange.toInt
+
+    println(s"dim=$dim")
+
     // load data
     val conf = new SparkConf()
     val sc   = new SparkContext(conf)
-    val parser = DataParser(SharedConf.get())
     val data = sc.textFile(input)
       .repartition(SparkUtils.getNumExecutors(conf))
-      .map(f => parser.parse(f))
+      .map(f => parse(f, dim))
+
+    // calculating the feature index
+//    data.cache()
+//    val dim = data.map(s => s.getX.getStorage.asInstanceOf[IntFloatSparseVectorStorage].getIndices.max).max() + 1
+//    data.foreach(f => f.getX.asInstanceOf[IntFloatVector].setDim(dim))
+
+//    SharedConf.get().setInt(MLConf.ML_FEATURE_INDEX_RANGE, dim)
+//    println(s"dim=$dim")
 
     // start PS
     PSContext.getOrCreate(sc)
