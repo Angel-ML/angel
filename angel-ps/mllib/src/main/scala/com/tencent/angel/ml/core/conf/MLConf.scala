@@ -38,8 +38,10 @@ object MLConf {
   val DEFAULT_ML_DATA_IS_NEGY = true
   val ML_DATA_HAS_LABEL = "ml.data.has.label"
   val DEFAULT_ML_DATA_HAS_LABEL = true
-  val ML_DATA_TRANS_LABEL = "ml.data.trans.label"
-  val DEFAULT_ML_DATA_TRANS_LABEL = false
+  val ML_DATA_LABEL_TRANS = "ml.data.label.trans.class"
+  val DEFAULT_ML_DATA_LABEL_TRANS = "NoTrans"
+  val ML_DATA_LABEL_TRANS_THRESHOLD = "ml.data.label.trans.threshold"
+  val DEFAULT_ML_DATA_LABEL_TRANS_THRESHOLD = 0
   val ML_VALIDATE_RATIO = "ml.data.validate.ratio"
   val DEFAULT_ML_VALIDATE_RATIO = 0.05
   val ML_FEATURE_INDEX_RANGE = "ml.feature.index.range"
@@ -99,10 +101,9 @@ object MLConf {
   val DEFAULT_ML_FCLAYER_MATRIX_OUTPUT_FORMAT: String = classOf[RowIdColIdValueTextRowFormat].getCanonicalName
   val ML_EMBEDDING_MATRIX_OUTPUT_FORMAT = "ml.embedding.matrix.output.format"
   val DEFAULT_ML_EMBEDDING_MATRIX_OUTPUT_FORMAT: String = classOf[TextColumnFormat].getCanonicalName
-  val ML_DENSEINPUTLAYER_MATRIX_OUTPUT_FORMAT = "ml.denseinputlayer.matrix.output.format"
-  val DEFAULT_ML_DENSEINPUTLAYER_MATRIX_OUTPUT_FORMAT: String = classOf[ColIdValueTextRowFormat].getCanonicalName
-  val ML_SPARSEINPUTLAYER_MATRIX_OUTPUT_FORMAT = "ml.sparseinputlayer.matrix.output.format"
-  val DEFAULT_ML_SPARSEINPUTLAYER_MATRIX_OUTPUT_FORMAT: String = classOf[ColIdValueTextRowFormat].getCanonicalName
+  val ML_SIMPLEINPUTLAYER_MATRIX_OUTPUT_FORMAT = "ml.simpleinputlayer.matrix.output.format"
+  val DEFAULT_ML_SIMPLEINPUTLAYER_MATRIX_OUTPUT_FORMAT: String = classOf[ColIdValueTextRowFormat].getCanonicalName
+
 
   // Momentum
   val ML_OPT_MOMENTUM_MOMENTUM = "ml.opt.momentum.momentum"

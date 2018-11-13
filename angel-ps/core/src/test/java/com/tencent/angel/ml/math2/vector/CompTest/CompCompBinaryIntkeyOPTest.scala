@@ -216,7 +216,7 @@ class CompCompBinaryIntkeyOPTest {
   def compVScompAddTest() {
     (0 until list.size()).foreach { i =>
       (i until list.size()).foreach { j =>
-        assert(abs(list.get(i).add(list.get(j)).sum() - (list.get(i).sum() + list.get(j).sum())) < 1.0E-3)
+        assert(abs(list.get(i).add(list.get(j)).sum() - (list.get(i).sum() + list.get(j).sum())) < 1.0)
       }
     }
   }
@@ -225,7 +225,7 @@ class CompCompBinaryIntkeyOPTest {
   def compVScompSubTest() {
     (0 until list.size()).foreach { i =>
       (i until list.size()).foreach { j =>
-        assert(abs(list.get(i).sub(list.get(j)).sum() - (list.get(i).sum() - list.get(j).sum())) < 1.0E-3)
+        assert(abs(list.get(i).sub(list.get(j)).sum() - (list.get(i).sum() - list.get(j).sum())) < 1.0)
       }
     }
   }
@@ -261,7 +261,7 @@ class CompCompBinaryIntkeyOPTest {
   def compVScompAxpyTest() {
     (0 until list.size()).foreach { i =>
       (i until list.size()).foreach { j =>
-        assert(abs(list.get(i).axpy(list.get(j), 2.0).sum() - (list.get(i).sum() + list.get(j).sum() * 2.0)) < 1.0E-3)
+        assert(abs(list.get(i).axpy(list.get(j), 2.0).sum() - (list.get(i).sum() + list.get(j).sum() * 2.0)) < 1.0)
       }
     }
   }

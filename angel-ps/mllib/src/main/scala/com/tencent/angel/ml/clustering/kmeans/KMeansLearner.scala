@@ -21,6 +21,7 @@ package com.tencent.angel.ml.clustering.kmeans
 import java.util
 import java.util.{ArrayList, Random}
 
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.MLLearner
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.feature.LabeledData
@@ -66,7 +67,7 @@ class KMeansLearner(ctx: TaskContext) extends MLLearner(ctx) {
     }
 
     // Init cluster centers randomly
-    if (ctx.getTaskId.getIndex == 0) {
+    if (ctx.getTaskId.getIndex == 0 && conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH, "").isEmpty) {
       initKCentersRandomly(trainData)
     } else {
       kmeansModel.centers.syncClock()

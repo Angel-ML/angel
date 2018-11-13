@@ -55,7 +55,7 @@ import java.util.concurrent.RecursiveAction;
  * Default matrix format implement.
  */
 public abstract class MatrixFormatImpl implements MatrixFormat {
-  private final static Log LOG = LogFactory.getLog(RowFormat.class);
+  private final static Log LOG = LogFactory.getLog(MatrixFormatImpl.class);
   protected final Configuration conf;
 
   public MatrixFormatImpl(Configuration conf) {
@@ -148,10 +148,11 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
     Path matrixFilesPath = new Path(loadContext.getLoadPath());
     FileSystem fs = matrixFilesPath.getFileSystem(conf);
     if (!fs.exists(matrixFilesPath)) {
-      LOG.warn(
+      LOG.error(
         "Can not find matrix " + matrix.getName() + " in directory " + loadContext.getLoadPath());
-      matrix.startServering();
-      return;
+      throw new IOException("Can not find matrix " + matrix.getName() + " in directory " + loadContext.getLoadPath());
+      //matrix.startServering();
+      //return;
     }
 
     // Read matrix meta from meta file

@@ -32,17 +32,20 @@ abstract class PSContext {
   protected def stop()
 
   def createMatrix(rows: Int, cols: Long, validIndexNum: Long, rowInBlock: Int, colInBlock: Long,
-                   rowType: RowType, partitionSource: String): MatrixMeta
+                   rowType: RowType, additionalConfiguration:Map[String, String] = Map()): MatrixMeta
 
   def createDenseMatrix(rows: Int, cols: Long, rowInBlock: Int, colInBlock: Long,
-                        rowType: RowType = RowType.T_DOUBLE_DENSE): MatrixMeta
+                        rowType: RowType = RowType.T_DOUBLE_DENSE,
+                        additionalConfiguration:Map[String, String] = Map()): MatrixMeta
 
   def createSparseMatrix(rows: Int, cols: Long, range: Long, rowInBlock: Int, colInBlock: Long,
-                         rowType: RowType = RowType.T_DOUBLE_SPARSE): MatrixMeta
+                         rowType: RowType = RowType.T_DOUBLE_SPARSE,
+                         additionalConfiguration:Map[String, String] = Map()): MatrixMeta
 
   def destroyMatrix(matrixId: Int)
 
-  def createVector(dim: Long, t: RowType, poolCapacity: Int, range: Long): PSVector
+  def createVector(dim: Long, t: RowType, poolCapacity: Int, range: Long,
+                   additionalConfiguration:Map[String, String] = Map()): PSVector
 
   def duplicateVector(originVector: PSVector): PSVector
 

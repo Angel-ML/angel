@@ -19,7 +19,6 @@
 package com.tencent.angel.spark.ml.core
 
 
-import com.tencent.angel.conf.MatrixConf
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.layers.{AngelGraph, PlaceHolder, STATUS}
 import com.tencent.angel.ml.core.optimizer.decayer._
@@ -36,7 +35,7 @@ class GraphModel extends Serializable {
   implicit val graph = new AngelGraph(new PlaceHolder())
   var jsonAst: JValue = conf.getJson
   val stepSize: Double = SharedConf.learningRate
-  val scheduler: StepSizeScheduler = new CosineDecay(stepSize)
+  val scheduler: StepSizeScheduler = new StandardDecay(stepSize)
 
   def ensureJsonAst(): Unit = {
     if (jsonAst == null) {
@@ -55,7 +54,7 @@ class GraphModel extends Serializable {
 
     graph.taskNum = taskNum
     graph.createMatrices()
-//    graph.init()
+    graph.init()
     println(s"graph=\n$graph")
   }
 

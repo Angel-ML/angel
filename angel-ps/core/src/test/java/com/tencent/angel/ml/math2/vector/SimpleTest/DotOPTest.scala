@@ -154,6 +154,8 @@ class DotOPTest {
   val capacity: Int = DotOPTest.capacity
   val dim: Int = DotOPTest.capacity * 100
 
+  val times = 50
+  var start1, stop1, cost1, start2, stop2, cost2 = 0L
   val ilist = DotOPTest.ilist
   val llist = DotOPTest.llist
 

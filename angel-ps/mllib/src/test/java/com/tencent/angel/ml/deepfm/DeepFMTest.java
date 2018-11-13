@@ -55,7 +55,9 @@ public class DeepFMTest {
       conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
       conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
       conf.set(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, "true");
-      conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 100);
+      conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 10);
+      conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
+      conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
 
       //set angel resource parameters #worker, #task, #PS
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
@@ -82,6 +84,7 @@ public class DeepFMTest {
   @Test public void testDeepFM() throws Exception {
     setSystemConf();
     trainTest();
+    incTrainTest();
     predictTest();
   }
 
@@ -92,6 +95,25 @@ public class DeepFMTest {
 
       // Set actionType train
       conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
+
+      GraphRunner runner = new GraphRunner();
+      runner.train(conf);
+    } catch (Exception x) {
+      LOG.error("run trainOnLocalClusterTest failed ", x);
+      throw x;
+    }
+  }
+
+  private void incTrainTest() throws Exception {
+    try {
+      String inputPath = "../../data/census/census_148d_train.dummy";
+      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
+
+      // Set actionType train
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
+
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/deepFM");
+      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/deepFM_new");
 
       GraphRunner runner = new GraphRunner();
       runner.train(conf);

@@ -18,46 +18,98 @@
 
 package com.tencent.angel.spark.ml.embedding.word2vec
 
-import scala.util.Random
-
+import com.tencent.angel.exception.AngelException
+import com.tencent.angel.ml.matrix.psf.get.base.GetFunc
+import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc
+import com.tencent.angel.spark.ml.embedding.NEModel.NEDataSet
+import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel.{W2VDataSet, buildDataBatches}
+import com.tencent.angel.spark.ml.embedding.{FastSigmoid, NEModel, Param}
+import com.tencent.angel.spark.ml.psf.embedding.w2v._
 import org.apache.spark.rdd.RDD
 
-import com.tencent.angel.spark.ml.embedding.NEModel.NEDataSet
-import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel.{W2VDataSet, asWord2VecBatch, buildDataBatches}
-import com.tencent.angel.spark.ml.embedding.{NEModel, Param}
-import com.tencent.angel.spark.ml.psf.embedding.word2vec.{Adjust, Dot}
+import scala.util.Random
 
 
 class Word2VecModel(numNode: Int,
                     dimension: Int,
                     numPart: Int,
+                    maxLength: Int,
+                    model: String,
                     numNodesPerRow: Int = -1,
                     seed: Int = Random.nextInt)
-  extends NEModel(numNode, dimension, numPart, numNodesPerRow, 2, seed) {
+  extends NEModel(numNode, dimension, numPart, numNodesPerRow, 2, false, seed) {
 
   def this(param: Param) {
-    this(param.maxIndex, param.embeddingDim, param.numPSPart, param.nodesNumPerRow, param.seed)
+    this(param.maxIndex, param.embeddingDim, param.numPSPart, param.maxLength, param.model)
   }
 
-  def train(trainSet: RDD[Array[Int]], params: Param, validateSet: Option[RDD[Array[Int]]]): this.type = {
-    train(trainBatchesRDDIter = buildDataBatches(trainSet, params.batchSize),
-      validBatchesOpt = validateSet.map(_.mapPartitions(asWord2VecBatch(_, params.batchSize))),
-      ns = params.negSample,
-      window = Some(params.windowSize),
-      numEpoch = params.numEpoch,
-      lr = params.learningRate,
-      modelPath = params.modelPath,
-      modelCPInterval = params.modelCPInterval,
-      logEveryBatchNum = params.numRowDataSet.map(_ / (100.0 * params.partitionNum * params.batchSize))
-    )
+  val modelId = model match {
+    case "skipgram" => 0
+    case "cbow" => 1
+    case _ => throw new AngelException("model type should be cbow or skipgram")
   }
 
-  override def getDotPsf(sentences: NEDataSet, seed: Int, ns: Int, window: Option[Int]) =
-    new Dot(matrixId, sentences.asInstanceOf[W2VDataSet].sentences, seed, ns, window.get, numNode, partDim)
+  def train(corpus: RDD[Array[Int]], param: Param): Unit = {
+    psMatrix.psfUpdate(getInitFunc(corpus.getNumPartitions, numNode, maxLength))
+    val iterator = buildDataBatches(corpus, param.batchSize)
+    train(iterator, None, param.negSample,
+      Some(param.windowSize), param.numEpoch, param.learningRate,
+      Some(maxLength), param.checkpointInterval)
+  }
 
-  override def getAdjustPsf(sentences: NEDataSet, seed: Int, ns: Int, grad: Array[Float], window: Option[Int]) =
-    new Adjust(matrixId, sentences.asInstanceOf[W2VDataSet].sentences, seed, ns, window.get, numNode, partDim, grad)
+  def getInitFunc(numPartitions: Int, maxIndex: Int, maxLength: Int): UpdateFunc = {
+    val param = new InitParam(matrixId, numPartitions, maxIndex, maxLength)
+    new Init(param)
+  }
 
+
+  override def getDotFunc(data: NEDataSet, batchSeed: Int, ns: Int, window: Option[Int],
+                          partitionId: Option[Int]): GetFunc = {
+    val param = new DotParam(matrixId,
+      seed, ns,
+      window.get,
+      partDim,
+      partitionId.get,
+      modelId,
+      data.asInstanceOf[W2VDataSet].sentences)
+    new Dot(param)
+  }
+
+  override def getAdjustFunc(data: NEDataSet, batchSeed: Int, ns: Int, grad: Array[Float],
+                             window: Option[Int], partitionId: Option[Int]): UpdateFunc = {
+    val param = new AdjustParam(matrixId,
+      seed, ns,
+      window.get,
+      partDim,
+      partitionId.get,
+      modelId,
+      grad,
+      data.asInstanceOf[W2VDataSet].sentences)
+    new Adjust(param)
+  }
+
+  override def doGrad(dots: Array[Float],
+                      negative: Int,
+                      alpha: Float,
+                      data: Option[NEDataSet]): Double = {
+//    val sentences = data.get.asInstanceOf[W2VDataSet].sentences
+//    val size = sentences.map(sen => sen.length).sum
+    var label = 0
+    var sumLoss = 0f
+//    assert(dots.length == size * (negative + 1))
+    for (a <- 0 until dots.length) {
+      val sig = FastSigmoid.sigmoid(dots(a))
+      if (a % (negative + 1) == 0) { // positive target
+        sumLoss += -sig
+        dots(a) = (1 - sig) * alpha
+      } else { // negative target
+        label = 0
+        sumLoss += -FastSigmoid.sigmoid(-dots(a))
+        dots(a) = -sig * alpha
+      }
+    }
+    sumLoss
+  }
 }
 
 object Word2VecModel {

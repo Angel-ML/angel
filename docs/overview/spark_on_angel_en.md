@@ -24,22 +24,15 @@ Spark-On-Angel is lightweight due to Angel's interface design. The core modules 
 * **PSContext**
 	* uses Spark context and Angel configuration to create PSContext, in charge of overall initializing and starting up on the driver side
 
-* **PSClient**
-	* responsible for direct operations between PSVector and local value, including pull, push, and increment, as well as operations between PSVector and PSVector, including most algebraic operations; supporting PSF ( user-defined PS functions）
-	* all PSClient operations are encapsulated into RemotePSVector and BreezePSVector
-
 * **PSModel**
 * PSModel is the general name of PSVector/PSMatrix on PS server, including PSClient object
 * PSModel is the parent class of PSVector and PSMatrix
 
 * **PSVector**
-* Includes DensePSVecotr and SparsePSVector
 * PSVector application: Applying PSVector via `PSVector.dense(dim: Int, capacity: Int = 50, rowType:RowType.T_DENSE_DOUBLE) will create a dimension of `dim` with a capacity of `capacity` and a type of `Double `VectorPool, two PSVectors in the same VectorPool can do the operation.
 Apply a PSVector with the same VectorPool as `psVector` via `PSVector.duplicate(psVector)`.
-* PSVector has two decorations: `BreezePSVector` and `CachedPSVector`, `BreezePSVector` to enable PSVector to support Vector operations in the Breeze algorithm library. The `CachedPSVector` supports the buffering of the PSVector in the Pull/Push process.
 
 * **PSMatrix**
-* Includes DensePSMatrix and SparsePSMatrix
 * PSMatrix creation and destruction: created by `PSMatrix.dense(rows: Int, cols: Int)`, after PSMatrix is ​​no longer used, you need to manually call `destory` to destroy the Matrix.
 
 The simple code to use Spark on Angel is as follows:
@@ -71,52 +64,4 @@ Driver has an added action of starting up and managing PS node:
 - stopping PSContext and SparkSession
 
 **Spark executor's new execution process:**
-
-
-## 4. Seamless Switch to MLLib
-
-In order for the algorithms in Spark MLLib to run in Spark on Angel efficiently, we use a trick which is called **transparent replacement**.
-
-Breeze is the core library for numerical processing for Scala. Many data structures of MLLib are modeled around breeze data structures, and core algorithms in MLLib are implemented as operations on BreezeVectors defined in NumericOps trait, an example being LBFGS's usage of BreezeVector's operations, such as dot, scal, among others.
-
-Based on the above fact, if we implement a PSVector that incorporates the same traits and supports the same operations, we can then transfer the operations on BreezeVector to happen on PSVector, thus making MLLib algorithms run on Angel seamlessly.   
-
-![](../img/spark_on_angel_vector.png)
-
-
-Let's review the difference between sample code for Spark and Spark on Angel
-
-* **Spark**
-
-```Scala
-
-def runOWLQN(trainData: RDD[(Vector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
-
-    val initWeight = new DenseVector[Double](dim)
-    val l1reg = 0.0
-    val owlqn = new BrzOWLQN[Int, DenseVector[Double]](maxIter, m, 0.0, 1e-5)
-
-    val states = owlqn.iterations(CostFunc(trainData), initWeight)
-    ……
-
-}
-```
-
-* **Spark on Angel**
-
-```Scala
-
-def runOWLQN(trainData: RDD[(Vector, Double)], dim: Int, m: Int, maxIter: Int): Unit = {
-
-    val initWeightPS = PSVector.dense(dim, 20).toBreeze()
-    val l1regPS = PSVector.duplicate(initWeightPS.component).zero().toBreeze
-
-    val owlqn = new OWLQN(maxIter, m, l1regPS, tol)
-    val states = owlqn.iterations(PSCostFunc(trainData), initWeightPS)
-    ………
-
-｝
-```
-
-There is only a small, non-invasive modification to the original RDD, friendly to the overall Spark framework and other integration and upgrading.
 

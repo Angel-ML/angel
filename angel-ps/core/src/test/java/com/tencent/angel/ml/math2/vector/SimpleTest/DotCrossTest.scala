@@ -180,6 +180,37 @@ class DotCrossTest extends FunSuite{
   }
 
 
+}
+
+class DotCrossTest {
+  val capacity: Int = DotCrossTest.capacity
+  val dim: Int = DotCrossTest.capacity * 100
+
+  val times = 50
+  var start1, stop1, cost1, start2, stop2, cost2 = 0L
+
+  val ilist = DotCrossTest.ilist
+
+  var sparse1 = DotCrossTest.sparse1
+  var dense1 = DotCrossTest.dense1
+  var sorted1 = DotCrossTest.sorted1
+
+  var dense2 = DotCrossTest.dense2
+  var sparse2 = DotCrossTest.sparse2
+  var sorted2 = DotCrossTest.sorted2
+
+  var dense3 = DotCrossTest.dense3
+  var sparse3 = DotCrossTest.sparse3
+  var sorted3 = DotCrossTest.sorted3
+
+  var dense4 = DotCrossTest.dense4
+  var sparse4 = DotCrossTest.sparse4
+  var sorted4 = DotCrossTest.sorted4
+
+  var dummyValues = DotCrossTest.dummyValues
+  var dummy1 = DotCrossTest.dummy1
+
+  @Test
   test("CrossDottest") {
     init()
     assert(abs(ilist.get(0).dot(ilist.get(0)) - dense1.dot(dense1)) < 1.0E-8)

@@ -1,8 +1,8 @@
 # Angel中的层
 
 Angel中的大部分算法都是基于[计算图](./computinggraph_on_angel.md)的, 图中的节点为层(layer). 按层的拓朴结构可分为三类:
-- edge: 边缘节点, 只有输入或输出的层, 如输入层与损失层
-    - 输入层: 主要有DenseInputLayer, SparseInputLayer, Embedding
+- verge: 边缘节点, 只有输入或输出的层, 如输入层与损失层
+    - 输入层: 主要有SimpleInputLayer, Embedding
     - 损失层: 主要用SimpleLossLayer, SoftmaxLossLayer
 - linear: 有且仅有一个输入与一个输出的层
     - 全连接层: 即FCLayer
@@ -19,20 +19,19 @@ Angel中的大部分算法都是基于[计算图](./computinggraph_on_angel.md)�
 
 
 ## 1. 输入层
-Angel中的输入层有三类:
-- DenseInputLayer
-- SparseInpuyLayer
+Angel中的输入层有两类:
+- SimpleInputLayer
 - Embedding
 
-### 1.1 DenseInputLayer
-顾名思义, 它是接受稠密输入的. 类的构造函数如下:
+### 1.1 SimpleInpuyLayer
+顾名思义, 它是接受输入的. 类的构造函数如下:
 ```scala
-class DenseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, override val optimizer: Optimizer)(implicit graph: AngelGraph)
+class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, override val optimizer: Optimizer)(implicit graph: AngelGraph)
   extends InputLayer(name, outputDim)(graph) with Trainable
 ```
 它的主要特点为:
-- 接收稠密输入
-- 内部参数是稠密的, 参数连续存储于一个数组, 调用BLAS库完成计算
+- 接收稠密/稀疏输入
+- 当输入是稠密时, 内部参数是稠密的, 参数连续存储于一个数组, 调用BLAS库完成计算; 当输入是稀疏时, 内部参数用RowBasedMatrix存储, 每行都是一个稀疏向量, 计算用Angel内部数学库
 - 需要指定outputDim, 可以指定传输函数和优化器
 
 完成的计算用公式表达为:
@@ -43,41 +42,14 @@ class DenseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overri
 ```json
 {
     "name": "wide",
-    "type": "denseinputlayer",
+    "type": "Simpleinputlayer",
     "outputdim": 10,
     "transfunc": "identity",
     "optimizer": "adam"
 },
 ```
 
-
-### 1.1 SparseInputLayer
-它是接受稀疏输入的. 类的构造函数如下:
-```scala
-class SparseInputLayer(name: String, outputDim: Int, transFunc: TransFunc, override val optimizer: Optimizer)(implicit graph: AngelGraph)
-  extends InputLayer(name, outputDim)(graph) with Trainable with Serializable
-```
-它的主要特点为:
-- 接收稀疏输入, 维度可以非常高, 达万亿
-- 内部参数用RowBasedMatrix存储, 每行都是一个稀疏向量, 计算用Angel内部数学库
-- 需要指定outputDim, 可以指定传输函数和优化器
-
-完成的计算用公式表达为:
-
-![model](http://latex.codecogs.com/png.latex?\dpi{150}f(x)=tranfunc(x\bold{w}+bias))
-
-一种典型的json表达为:
-```json
-{
-    "name": "wide",
-    "type": "sparseinputlayer",
-    "outputdim": 10,
-    "transfunc": "identity",
-    "optimizer": "ftrl"
-},
-```
-
-### 1.3 Embedding
+### 1.2 Embedding
 Embedding是很多深度学习算法共有的. 类的构造函数如下:
 ```scala
 class Embedding(name: String, outputDim: Int, val numFactors: Int, override val optimizer: Optimizer)(implicit graph: AngelGraph)
@@ -101,7 +73,7 @@ Embedding在抽象意义上是一张表, 并提供查表的方法(lookup/calOutp
 ```json
 {
     "name": "embedding",
-    "type": "embedding",
+    "type": "Embedding",
     "numfactors": 8,
     "outputdim": 104,
     "optimizer": {
@@ -350,26 +322,8 @@ json参数例子如下:
 ```json
 {
     "name": "simplelosslayer",
-    "type": "simplelosslayer",
+    "type": "Simplelosslayer",
     "lossfunc": "logloss",
     "inputlayer": "sumPooling"
-}
-```
-
-### 4.1 SoftmaxLossLayer
-SoftmaxLossLayer的构造函数如下:
-```scala
-class SoftmaxLossLayer(name: String, inputLayer: Layer, lossFunc: LossFunc)(
-  implicit graph: AngelGraph) extends LinearLayer(name, -1, inputLayer)(graph) with LossLayer
-```
-与SimpleLossLayer不同的是它的outputDim设为-1, 表示随数据变化而变化.
-
-json参数例子如下:
-```json
-{
-    "name": "softmaxlosslayer",
-    "type": "SoftmaxLossLayer",
-    "lossfunc": "softmax",
-    "inputlayer": "mulPooling"
 }
 ```

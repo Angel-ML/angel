@@ -467,7 +467,7 @@ class BlasMatrixBinaryTest {
           println(s"blasmatrix dot vector: ${Ufuncs.dot(matrixlist1.get(i), true, ilist1.get(j)).sum()}")
         } catch {
           case e: AngelException => {
-            println(e)
+            e
           }
         }
       }

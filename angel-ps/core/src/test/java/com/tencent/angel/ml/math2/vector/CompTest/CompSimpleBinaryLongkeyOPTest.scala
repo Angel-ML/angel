@@ -260,7 +260,6 @@ class CompSimpleBinaryLongkeyOPTest {
       (i * 2 until slist.size()).foreach { j =>
         list.get(i).mul(slist.get(j)).sum()
       }
-      println()
     }
   }
 
