@@ -1,0 +1,1069 @@
+<!DOCTYPE html >
+<html>
+        <head>
+          <title>LongFloatSparseVectorStorage - angel-ps-math 2.0.0 API - com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage</title>
+          <meta name="description" content="LongFloatSparseVectorStorage - angel - ps - math 2.0.0 API - com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage" />
+          <meta name="keywords" content="LongFloatSparseVectorStorage angel ps math 2.0.0 API com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../../index.html';
+            var hash = 'com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="type">
+      <div id="definition">
+        <img alt="Class" src="../../../../../../lib/class_big.png" />
+        <p id="owner"><a href="../../../../../package.html" class="extype" name="com">com</a>.<a href="../../../../package.html" class="extype" name="com.tencent">tencent</a>.<a href="../../../package.html" class="extype" name="com.tencent.angel">angel</a>.<a href="../../package.html" class="extype" name="com.tencent.angel.ml">ml</a>.<a href="../package.html" class="extype" name="com.tencent.angel.ml.math2">math2</a>.<a href="package.html" class="extype" name="com.tencent.angel.ml.math2.storage">storage</a></p>
+        <h1>LongFloatSparseVectorStorage</h1><h3><span class="morelinks"><div>Related Doc:
+            <a href="package.html" class="extype" name="com.tencent.angel.ml.math2.storage">package storage</a>
+          </div></span></h3><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <span class="name">LongFloatSparseVectorStorage</span><span class="result"> extends <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"><div class="toggleContainer block">
+          <span class="toggle">Linear Supertypes</span>
+          <div class="superTypes hiddenContent"><a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a>, <a href="LongKeyVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongKeyVectorStorage">LongKeyVectorStorage</a>, <a href="FloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.FloatVectorStorage">FloatVectorStorage</a>, <a href="VectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.VectorStorage">VectorStorage</a>, <a href="Storage.html" class="extype" name="com.tencent.angel.ml.math2.storage.Storage">Storage</a>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+        </div></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        <div id="order">
+              <span class="filtertype">Ordering</span>
+              <ol>
+                
+                <li class="alpha in"><span>Alphabetic</span></li>
+                <li class="inherit out"><span>By Inheritance</span></li>
+              </ol>
+            </div>
+        <div id="ancestors">
+                <span class="filtertype">Inherited<br />
+                </span>
+                <ol id="linearization">
+                  <li class="in" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage"><span>LongFloatSparseVectorStorage</span></li><li class="in" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage"><span>LongFloatVectorStorage</span></li><li class="in" name="com.tencent.angel.ml.math2.storage.LongKeyVectorStorage"><span>LongKeyVectorStorage</span></li><li class="in" name="com.tencent.angel.ml.math2.storage.FloatVectorStorage"><span>FloatVectorStorage</span></li><li class="in" name="com.tencent.angel.ml.math2.storage.VectorStorage"><span>VectorStorage</span></li><li class="in" name="com.tencent.angel.ml.math2.storage.Storage"><span>Storage</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                </ol>
+              </div><div id="ancestors">
+            <span class="filtertype"></span>
+            <ol>
+              <li class="hideall out"><span>Hide All</span></li>
+              <li class="showall in"><span>Show All</span></li>
+            </ol>
+          </div>
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        <div id="constructors" class="members">
+              <h3>Instance Constructors</h3>
+              <ol><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="&lt;init&gt;(dim:Long,indices:Array[Long],values:Array[Float]):com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage"></a>
+      <a id="&lt;init&gt;:LongFloatSparseVectorStorage"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">new</span>
+      </span>
+      <span class="symbol">
+        <span class="name">LongFloatSparseVectorStorage</span><span class="params">(<span name="dim">dim: <span class="extype" name="scala.Long">Long</span></span>, <span name="indices">indices: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Long">Long</span>]</span>, <span name="values">values: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>)</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@&lt;init&gt;(dim:Long,indices:Array[Long],values:Array[Float]):com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="&lt;init&gt;(dim:Long):com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage"></a>
+      <a id="&lt;init&gt;:LongFloatSparseVectorStorage"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">new</span>
+      </span>
+      <span class="symbol">
+        <span class="name">LongFloatSparseVectorStorage</span><span class="params">(<span name="dim">dim: <span class="extype" name="scala.Long">Long</span></span>)</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@&lt;init&gt;(dim:Long):com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="&lt;init&gt;(dim:Long,capacity:Int):com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage"></a>
+      <a id="&lt;init&gt;:LongFloatSparseVectorStorage"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">new</span>
+      </span>
+      <span class="symbol">
+        <span class="name">LongFloatSparseVectorStorage</span><span class="params">(<span name="dim">dim: <span class="extype" name="scala.Long">Long</span></span>, <span name="capacity">capacity: <span class="extype" name="scala.Int">Int</span></span>)</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@&lt;init&gt;(dim:Long,capacity:Int):com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="&lt;init&gt;(dim:Long,map:it.unimi.dsi.fastutil.longs.Long2FloatOpenHashMap):com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage"></a>
+      <a id="&lt;init&gt;:LongFloatSparseVectorStorage"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">new</span>
+      </span>
+      <span class="symbol">
+        <span class="name">LongFloatSparseVectorStorage</span><span class="params">(<span name="dim">dim: <span class="extype" name="scala.Long">Long</span></span>, <span name="map">map: <span class="extype" name="it.unimi.dsi.fastutil.longs.Long2FloatOpenHashMap">Long2FloatOpenHashMap</span></span>)</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@&lt;init&gt;(dim:Long,map:it.unimi.dsi.fastutil.longs.Long2FloatOpenHashMap):com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="&lt;init&gt;():com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage"></a>
+      <a id="&lt;init&gt;:LongFloatSparseVectorStorage"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">new</span>
+      </span>
+      <span class="symbol">
+        <span class="name">LongFloatSparseVectorStorage</span><span class="params">()</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@&lt;init&gt;():com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="scala.AnyRef#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="!=(x$1:Any):Boolean"></a>
+      <a id="!=(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@!=(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef###" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="##():Int"></a>
+      <a id="##():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@##():Int" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="==(x$1:Any):Boolean"></a>
+      <a id="==(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@==(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="asInstanceOf[T0]:T0"></a>
+      <a id="asInstanceOf[T0]:T0"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">asInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Any.asInstanceOf.T0">T0</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@asInstanceOf[T0]:T0" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#clear" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="clear():Unit"></a>
+      <a id="clear():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">clear</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@clear():Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="Storage.html" class="extype" name="com.tencent.angel.ml.math2.storage.Storage">Storage</a></dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#clone" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="clone():com.tencent.angel.ml.math2.storage.LongFloatVectorStorage"></a>
+      <a id="clone():LongFloatVectorStorage"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@clone():com.tencent.angel.ml.math2.storage.LongFloatVectorStorage" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a> → AnyRef</dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#copy" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="copy():com.tencent.angel.ml.math2.storage.LongFloatVectorStorage"></a>
+      <a id="copy():LongFloatVectorStorage"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">copy</span><span class="params">()</span><span class="result">: <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@copy():com.tencent.angel.ml.math2.storage.LongFloatVectorStorage" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#emptySorted" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="emptySorted(capacity:Int):com.tencent.angel.ml.math2.storage.LongFloatVectorStorage"></a>
+      <a id="emptySorted(Int):LongFloatVectorStorage"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">emptySorted</span><span class="params">(<span name="capacity">capacity: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@emptySorted(capacity:Int):com.tencent.angel.ml.math2.storage.LongFloatVectorStorage" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#emptySorted" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="emptySorted(dim:Long,capacity:Int):com.tencent.angel.ml.math2.storage.LongFloatVectorStorage"></a>
+      <a id="emptySorted(Long,Int):LongFloatVectorStorage"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">emptySorted</span><span class="params">(<span name="dim">dim: <span class="extype" name="scala.Long">Long</span></span>, <span name="capacity">capacity: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@emptySorted(dim:Long,capacity:Int):com.tencent.angel.ml.math2.storage.LongFloatVectorStorage" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#emptySorted" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="emptySorted():com.tencent.angel.ml.math2.storage.LongFloatVectorStorage"></a>
+      <a id="emptySorted():LongFloatVectorStorage"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">emptySorted</span><span class="params">()</span><span class="result">: <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@emptySorted():com.tencent.angel.ml.math2.storage.LongFloatVectorStorage" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#emptySparse" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="emptySparse(capacity:Int):com.tencent.angel.ml.math2.storage.LongFloatVectorStorage"></a>
+      <a id="emptySparse(Int):LongFloatVectorStorage"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">emptySparse</span><span class="params">(<span name="capacity">capacity: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@emptySparse(capacity:Int):com.tencent.angel.ml.math2.storage.LongFloatVectorStorage" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#emptySparse" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="emptySparse(dim:Long,capacity:Int):com.tencent.angel.ml.math2.storage.LongFloatVectorStorage"></a>
+      <a id="emptySparse(Long,Int):LongFloatVectorStorage"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">emptySparse</span><span class="params">(<span name="dim">dim: <span class="extype" name="scala.Long">Long</span></span>, <span name="capacity">capacity: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@emptySparse(dim:Long,capacity:Int):com.tencent.angel.ml.math2.storage.LongFloatVectorStorage" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#emptySparse" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="emptySparse():com.tencent.angel.ml.math2.storage.LongFloatVectorStorage"></a>
+      <a id="emptySparse():LongFloatVectorStorage"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">emptySparse</span><span class="params">()</span><span class="result">: <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@emptySparse():com.tencent.angel.ml.math2.storage.LongFloatVectorStorage" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#entryIterator" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="entryIterator():it.unimi.dsi.fastutil.objects.ObjectIterator[it.unimi.dsi.fastutil.longs.Long2FloatMap.Entry]"></a>
+      <a id="entryIterator():ObjectIterator[Entry]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">entryIterator</span><span class="params">()</span><span class="result">: <span class="extype" name="it.unimi.dsi.fastutil.objects.ObjectIterator">ObjectIterator</span>[<span class="extype" name="it.unimi.dsi.fastutil.longs.Long2FloatMap.Entry">Entry</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@entryIterator():it.unimi.dsi.fastutil.objects.ObjectIterator[it.unimi.dsi.fastutil.longs.Long2FloatMap.Entry]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></dd></dl></div>
+    </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="eq(x$1:AnyRef):Boolean"></a>
+      <a id="eq(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@eq(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#equals" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="equals(x$1:Any):Boolean"></a>
+      <a id="equals(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">equals</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@equals(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="finalize():Unit"></a>
+      <a id="finalize():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@finalize():Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="symbol">classOf[java.lang.Throwable]</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#get" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="get(idx:Long):Float"></a>
+      <a id="get(Long):Float"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">get</span><span class="params">(<span name="idx">idx: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Float">Float</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@get(idx:Long):Float" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage#get" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="get(idxs:Array[Long]):Array[Float]"></a>
+      <a id="get(Array[Long]):Array[Float]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">get</span><span class="params">(<span name="idxs">idxs: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Long">Long</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@get(idxs:Array[Long]):Array[Float]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></dd></dl></div>
+    </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getClass():Class[_]"></a>
+      <a id="getClass():Class[_]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getClass</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.Class">Class</span>[_]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@getClass():Class[_]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#getIndices" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getIndices():Array[Long]"></a>
+      <a id="getIndices():Array[Long]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getIndices</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Long">Long</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@getIndices():Array[Long]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="LongKeyVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongKeyVectorStorage">LongKeyVectorStorage</a></dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#getType" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getType():com.tencent.angel.ml.math2.utils.RowType"></a>
+      <a id="getType():RowType"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getType</span><span class="params">()</span><span class="result">: <a href="../utils/RowType.html" class="extype" name="com.tencent.angel.ml.math2.utils.RowType">RowType</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@getType():com.tencent.angel.ml.math2.utils.RowType" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="VectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.VectorStorage">VectorStorage</a></dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#getValues" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getValues():Array[Float]"></a>
+      <a id="getValues():Array[Float]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getValues</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@getValues():Array[Float]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="FloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.FloatVectorStorage">FloatVectorStorage</a></dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#hasKey" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="hasKey(key:Long):Boolean"></a>
+      <a id="hasKey(Long):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">hasKey</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@hasKey(key:Long):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="LongKeyVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongKeyVectorStorage">LongKeyVectorStorage</a></dd></dl></div>
+    </li><li name="scala.AnyRef#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="hashCode():Int"></a>
+      <a id="hashCode():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">hashCode</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@hashCode():Int" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#indexIterator" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="indexIterator():it.unimi.dsi.fastutil.longs.LongSet"></a>
+      <a id="indexIterator():LongSet"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">indexIterator</span><span class="params">()</span><span class="result">: <span class="extype" name="it.unimi.dsi.fastutil.longs.LongSet">LongSet</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@indexIterator():it.unimi.dsi.fastutil.longs.LongSet" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="LongKeyVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongKeyVectorStorage">LongKeyVectorStorage</a></dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#isDense" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isDense():Boolean"></a>
+      <a id="isDense():Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isDense</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@isDense():Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="Storage.html" class="extype" name="com.tencent.angel.ml.math2.storage.Storage">Storage</a></dd></dl></div>
+    </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isInstanceOf[T0]:Boolean"></a>
+      <a id="isInstanceOf[T0]:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@isInstanceOf[T0]:Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#isSorted" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isSorted():Boolean"></a>
+      <a id="isSorted():Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isSorted</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@isSorted():Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="Storage.html" class="extype" name="com.tencent.angel.ml.math2.storage.Storage">Storage</a></dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#isSparse" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isSparse():Boolean"></a>
+      <a id="isSparse():Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isSparse</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@isSparse():Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="Storage.html" class="extype" name="com.tencent.angel.ml.math2.storage.Storage">Storage</a></dd></dl></div>
+    </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ne(x$1:AnyRef):Boolean"></a>
+      <a id="ne(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@ne(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notify():Unit"></a>
+      <a id="notify():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notify</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@notify():Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#notifyAll" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notifyAll():Unit"></a>
+      <a id="notifyAll():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@notifyAll():Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#oneLikeSorted" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="oneLikeSorted(capacity:Int):com.tencent.angel.ml.math2.storage.LongFloatVectorStorage"></a>
+      <a id="oneLikeSorted(Int):LongFloatVectorStorage"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">oneLikeSorted</span><span class="params">(<span name="capacity">capacity: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@oneLikeSorted(capacity:Int):com.tencent.angel.ml.math2.storage.LongFloatVectorStorage" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#oneLikeSorted" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="oneLikeSorted(dim:Long,capacity:Int):com.tencent.angel.ml.math2.storage.LongFloatVectorStorage"></a>
+      <a id="oneLikeSorted(Long,Int):LongFloatVectorStorage"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">oneLikeSorted</span><span class="params">(<span name="dim">dim: <span class="extype" name="scala.Long">Long</span></span>, <span name="capacity">capacity: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@oneLikeSorted(dim:Long,capacity:Int):com.tencent.angel.ml.math2.storage.LongFloatVectorStorage" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#oneLikeSorted" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="oneLikeSorted():com.tencent.angel.ml.math2.storage.LongFloatVectorStorage"></a>
+      <a id="oneLikeSorted():LongFloatVectorStorage"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">oneLikeSorted</span><span class="params">()</span><span class="result">: <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@oneLikeSorted():com.tencent.angel.ml.math2.storage.LongFloatVectorStorage" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#oneLikeSparse" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="oneLikeSparse(capacity:Int):com.tencent.angel.ml.math2.storage.LongFloatVectorStorage"></a>
+      <a id="oneLikeSparse(Int):LongFloatVectorStorage"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">oneLikeSparse</span><span class="params">(<span name="capacity">capacity: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@oneLikeSparse(capacity:Int):com.tencent.angel.ml.math2.storage.LongFloatVectorStorage" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#oneLikeSparse" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="oneLikeSparse(dim:Long,capacity:Int):com.tencent.angel.ml.math2.storage.LongFloatVectorStorage"></a>
+      <a id="oneLikeSparse(Long,Int):LongFloatVectorStorage"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">oneLikeSparse</span><span class="params">(<span name="dim">dim: <span class="extype" name="scala.Long">Long</span></span>, <span name="capacity">capacity: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@oneLikeSparse(dim:Long,capacity:Int):com.tencent.angel.ml.math2.storage.LongFloatVectorStorage" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#oneLikeSparse" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="oneLikeSparse():com.tencent.angel.ml.math2.storage.LongFloatVectorStorage"></a>
+      <a id="oneLikeSparse():LongFloatVectorStorage"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">oneLikeSparse</span><span class="params">()</span><span class="result">: <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@oneLikeSparse():com.tencent.angel.ml.math2.storage.LongFloatVectorStorage" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#set" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="set(idx:Long,value:Float):Unit"></a>
+      <a id="set(Long,Float):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">set</span><span class="params">(<span name="idx">idx: <span class="extype" name="scala.Long">Long</span></span>, <span name="value">value: <span class="extype" name="scala.Float">Float</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@set(idx:Long,value:Float):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage#set" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="set(idxs:Array[Long],values:Array[Float]):Unit"></a>
+      <a id="set(Array[Long],Array[Float]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">set</span><span class="params">(<span name="idxs">idxs: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Long">Long</span>]</span>, <span name="values">values: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@set(idxs:Array[Long],values:Array[Float]):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#size" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="size():Int"></a>
+      <a id="size():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">size</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@size():Int" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="LongKeyVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongKeyVectorStorage">LongKeyVectorStorage</a></dd></dl></div>
+    </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
+      <a id="synchronized[T0](⇒T0):T0"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">synchronized</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="params">(<span name="arg0">arg0: ⇒ <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>)</span><span class="result">: <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@synchronized[T0](x$1:=&gt;T0):T0" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="toString():String"></a>
+      <a id="toString():String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@toString():String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage#valueIterator" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="valueIterator():it.unimi.dsi.fastutil.floats.FloatIterator"></a>
+      <a id="valueIterator():FloatIterator"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">valueIterator</span><span class="params">()</span><span class="result">: <span class="extype" name="it.unimi.dsi.fastutil.floats.FloatIterator">FloatIterator</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@valueIterator():it.unimi.dsi.fastutil.floats.FloatIterator" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage">LongFloatSparseVectorStorage</a> → <a href="FloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.FloatVectorStorage">FloatVectorStorage</a></dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait():Unit"></a>
+      <a id="wait():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@wait():Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long,x$2:Int):Unit"></a>
+      <a id="wait(Long,Int):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@wait(x$1:Long,x$2:Int):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long):Unit"></a>
+      <a id="wait(Long):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage@wait(x$1:Long):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        <div class="parent" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">
+              <h3>Inherited from <a href="LongFloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongFloatVectorStorage">LongFloatVectorStorage</a></h3>
+            </div><div class="parent" name="com.tencent.angel.ml.math2.storage.LongKeyVectorStorage">
+              <h3>Inherited from <a href="LongKeyVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.LongKeyVectorStorage">LongKeyVectorStorage</a></h3>
+            </div><div class="parent" name="com.tencent.angel.ml.math2.storage.FloatVectorStorage">
+              <h3>Inherited from <a href="FloatVectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.FloatVectorStorage">FloatVectorStorage</a></h3>
+            </div><div class="parent" name="com.tencent.angel.ml.math2.storage.VectorStorage">
+              <h3>Inherited from <a href="VectorStorage.html" class="extype" name="com.tencent.angel.ml.math2.storage.VectorStorage">VectorStorage</a></h3>
+            </div><div class="parent" name="com.tencent.angel.ml.math2.storage.Storage">
+              <h3>Inherited from <a href="Storage.html" class="extype" name="com.tencent.angel.ml.math2.storage.Storage">Storage</a></h3>
+            </div><div class="parent" name="java.io.Serializable">
+              <h3>Inherited from <span class="extype" name="java.io.Serializable">Serializable</span></h3>
+            </div><div class="parent" name="scala.AnyRef">
+              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+            </div><div class="parent" name="scala.Any">
+              <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
+            </div>
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>
