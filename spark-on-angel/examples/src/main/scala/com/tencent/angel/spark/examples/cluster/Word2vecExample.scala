@@ -17,6 +17,12 @@
 
 package com.tencent.angel.spark.examples.cluster
 
+import scala.util.Random
+
+import org.apache.spark.rdd.RDD
+import org.apache.spark.storage.StorageLevel
+import org.apache.spark.{SparkConf, SparkContext}
+
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
 import com.tencent.angel.spark.context.PSContext
@@ -25,11 +31,6 @@ import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.embedding.Param
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel
 import com.tencent.angel.spark.ml.feature.{Features, SubSampling}
-import org.apache.spark.rdd.RDD
-import org.apache.spark.storage.StorageLevel
-import org.apache.spark.{SparkConf, SparkContext}
-
-import scala.util.Random
 
 object Word2vecExample {
 
@@ -37,7 +38,7 @@ object Word2vecExample {
     val params = ArgsUtil.parse(args)
 
     val conf = new SparkConf()
-    val sc   = new SparkContext(conf)
+    val sc = new SparkContext(conf)
 
     conf.set(AngelConf.ANGEL_PS_PARTITION_SOURCE_CLASS, classOf[PartitionSourceArray].getName)
     conf.set(AngelConf.ANGEL_PS_BACKUP_MATRICES, "")
@@ -109,7 +110,9 @@ object Word2vecExample {
     val model = new Word2VecModel(param)
     model.train(docs, param)
     model.save(output + "/embedding", 0)
-    denseToString.map(rdd => rdd.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "/mapping"))
+    denseToString.foreach{
+      rdd => rdd.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "/mapping")
+    }
 
     PSContext.stop()
     sc.stop()
