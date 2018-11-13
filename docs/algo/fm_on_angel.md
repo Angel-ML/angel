@@ -58,7 +58,10 @@ FM算法的模型由两部分组成，分别是wide和embedding，其中wide就�
     * action.type：任务类型，训练用"train",预测用"predict"
     * ml.fm.field.num:输入数据领域(field)的个数
     * ml.fm.rank:embedding中vector的长度
-    * ml.sparseinputlayer.optimizer：优化器类型，可选“adam”,"ftrl"和“momentum”
+    * ml.inputlayer.optimizer：优化器类型，可选"adam","ftrl"和"momentum"
+    * ml.data.label.trans.class: 是否要对标签进行转换, 默认为"NoTrans", 可选项为"ZeroOneTrans"(转为0-1), "PosNegTrans"(转为正负1), "AddOneTrans"(加1), "SubOneTrans"(减1). 
+    * ml.data.label.trans.threshold: "ZeroOneTrans"(转为0-1), "PosNegTrans"(转为正负1)这两种转还要以设一个阈值, 大于阈值的为1, 阈值默认为0
+    * ml.data.posneg.ratio: 正负样本重采样比例, 对于正负样本相差较大的情况有用(如5倍以上)
   
 * 提交命令
     可以通过下面的命令提交FM算法：

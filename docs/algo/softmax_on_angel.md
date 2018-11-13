@@ -55,14 +55,10 @@ softmax算法仅由单个输入层组成，该输入层可为“dense”或“sp
     * ml.reg.l2:l2正则项系数
     * action.type：任务类型，训练用"train",增量训练用"inctrain", 预测用"predict"
     * ml.num.class：输入数据的类别个数
-    * ml.sparseinputlayer.optimizer：优化器类型，可选"adam","ftrl"和"momentum"
-    * ml.data.label.trans.class：处理输入数据类别标签, 可选
-	    * "notrans", 不转换(默认)
-	    * "posnegtrans", 转换为（-1,1）
-	    * "zeroonetrans", 转换为（0,1）
-	    * "addonetrans", 现有标签全部加1
-	    * "subonetrans", 现有标签全部减1
-
+    * ml.inputlayer.optimizer：优化器类型，可选"adam","ftrl"和"momentum"
+    * ml.data.label.trans.class: 是否要对标签进行转换, 默认为"NoTrans", 可选项为"ZeroOneTrans"(转为0-1), "PosNegTrans"(转为正负1), "AddOneTrans"(加1), "SubOneTrans"(减1). 
+    * ml.data.label.trans.threshold: "ZeroOneTrans"(转为0-1), "PosNegTrans"(转为正负1)这两种转还要以设一个阈值, 大于阈值的为1, 阈值默认为0
+    * ml.data.posneg.ratio: 正负样本重采样比例, 对于正负样本相差较大的情况有用(如5倍以上)
  
 ###提交命令
 * 
