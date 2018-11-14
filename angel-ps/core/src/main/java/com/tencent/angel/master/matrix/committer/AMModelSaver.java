@@ -262,11 +262,12 @@ public class AMModelSaver extends AbstractService {
     try {
       lock.lock();
       int requestId = saveRequestIdGen++;
-      //saveContext.setTmpSavePath(HdfsUtil.generateTmpDirectory(context.getConf(),
-      //  context.getApplicationId().toString(), new Path(saveContext.getSavePath())).toString());
-      Path tmpPath = new Path(new Path(context.getConf().get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH)),
-        String.valueOf(requestId));
-      saveContext.setTmpSavePath(tmpPath.toString());
+      saveContext.setTmpSavePath(HdfsUtil.generateTmpDirectory(context.getConf(),
+        context.getApplicationId().toString(), new Path(saveContext.getSavePath())).toString());
+      //Path tmpPath = new Path(new Path(context.getConf().get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH)),
+      //  String.valueOf(requestId));
+      //Path tmpPath = HdfsUtil.toTmpPath(new Path(saveContext.getSavePath()));
+      //saveContext.setTmpSavePath(tmpPath.toString());
 
       saveContexts.put(requestId, saveContext);
       results.put(requestId, new ModelSaveResult(requestId));
