@@ -25,7 +25,7 @@ import com.tencent.angel.ml.core.utils.DataParser
 import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OfflineLearner}
-import com.tencent.angel.spark.ml.util.{Features, ModelLoader, ModelSaver}
+import com.tencent.angel.spark.ml.util.Features
 import org.apache.log4j.PropertyConfigurator
 import org.apache.spark.{SparkConf, SparkContext}
 

@@ -55,6 +55,7 @@ object Word2vecExample {
     val numPartitions = params.getOrElse("numParts", "10").toInt
     val withSubSample = params.getOrElse("subSample", "true").toBoolean
     val withRemapping = params.getOrElse("remapping", "true").toBoolean
+    val modelType = params.getOrElse("modelType", "cbow")
 
     val numCores = SparkUtils.getNumCores(conf)
 
@@ -104,7 +105,7 @@ object Word2vecExample {
       .setMaxIndex(maxWordId)
       .setNumRowDataSet(numDocs)
       .setMaxLength(maxLength)
-      .setModel("cbow")
+      .setModel(modelType)
 
     val model = new Word2VecModel(param)
     model.train(docs, param)
