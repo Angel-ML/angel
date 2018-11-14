@@ -69,7 +69,7 @@ object OfflineRunner {
 
     val input = params.getOrElse("input", "")
     val output = params.getOrElse("output", "")
-    val actionType = params.getOrElse("action.type", "train")
+    val actionType = params.getOrElse("actionType", "train")
     val network = params.getOrElse("network", "LogisticRegression")
     val modelPath = params.getOrElse("model", "")
 
