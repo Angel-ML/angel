@@ -1,18 +1,16 @@
-package com.tencent.angel.ml.tree.model
+package com.tencent.angel.ml.tree.oldmodel
 
 import java.text.DecimalFormat
 
 import scala.collection.mutable
 import scala.beans.BeanProperty
-
 import org.apache.hadoop.conf.Configuration
-
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.vector.IntFloatVector
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.ml.tree.conf.Algo._
-import com.tencent.angel.ml.tree.conf.{Algo, FeatureType}
+import com.tencent.angel.ml.tree.conf.FeatureType
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
 
@@ -52,7 +50,7 @@ object DecisionTreeModel {
                           featureType: Int,
                           categories: Seq[Float]) {
       def toSplit: Split = {
-        new Split(feature, threshold, FeatureType(featureType), categories.toList)
+        Split(feature, threshold, FeatureType(featureType), categories.toList)
       }
     }
 
@@ -116,7 +114,7 @@ object DecisionTreeModel {
         }.toList.sortBy(_._1)
       val numTrees = trees.length
       val treeIndices = trees.map(_._1)
-      assert(treeIndices == (0 until numTrees),
+      assert(treeIndices == (0 until numTrees).toList,
         s"Tree indices must start from 0 and increment by 1, but we found $treeIndices.")
       trees.map(_._2).toArray
     }
@@ -167,7 +165,7 @@ object DecisionTreeModel {
   * @param topNode root node
   * @param algo algorithm type -- classification or regression
   */
-class DecisionTreeModel (@BeanProperty val topNode: Node, val algo: Algo, conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
+class DecisionTreeModel (@BeanProperty val topNode: Node, val algo: Algo, conf: Configuration = null, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
 
   super.setSavePath(conf)
   super.setLoadPath(conf)
@@ -181,7 +179,7 @@ class DecisionTreeModel (@BeanProperty val topNode: Node, val algo: Algo, conf: 
       val y = instance.getY
       val pred = predict(x)
 
-      ret.put(new DecisionTreePredictResult(idx, y, pred))
+      ret.put(DecisionTreePredictResult(idx, y, pred))
     }
 
     ret

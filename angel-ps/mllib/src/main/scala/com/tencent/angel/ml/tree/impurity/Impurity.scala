@@ -34,7 +34,7 @@ trait Impurity extends Serializable {
   * Note: Instances of this class do not hold the data; they operate on views of the data.
   * @param statsSize  Length of the vector of sufficient statistics for one bin.
   */
-private abstract class ImpurityAggregator(val statsSize: Int) extends Serializable {
+private[tree] abstract class ImpurityAggregator(val statsSize: Int) extends Serializable {
 
   /**
     * Merge the stats from one bin into another.
@@ -153,7 +153,7 @@ private[tree] abstract class ImpurityCalculator(val stats: Array[Float]) extends
 
 }
 
-private object ImpurityCalculator {
+private[tree] object ImpurityCalculator {
 
   /**
     * Create an [[ImpurityCalculator]] instance of the given impurity type and with

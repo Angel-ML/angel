@@ -42,7 +42,7 @@ object Variance extends Impurity {
   * in order to compute impurity from a sample.
   * Note: Instances of this class do not hold the data; they operate on views of the data.
   */
-private class VarianceAggregator()
+private[tree] class VarianceAggregator()
   extends ImpurityAggregator(statsSize = 3) with Serializable {
 
   /**
@@ -72,7 +72,7 @@ private class VarianceAggregator()
   * (node, feature, bin).
   * @param stats  Array of sufficient statistics for a (node, feature, bin).
   */
-private class VarianceCalculator(stats: Array[Float]) extends ImpurityCalculator(stats) {
+private[tree] class VarianceCalculator(stats: Array[Float]) extends ImpurityCalculator(stats) {
 
   require(stats.length == 3,
     s"VarianceCalculator requires sufficient statistics array stats to be of length 3," +

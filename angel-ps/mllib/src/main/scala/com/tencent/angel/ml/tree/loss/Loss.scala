@@ -2,7 +2,7 @@ package com.tencent.angel.ml.tree.loss
 
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.vector.IntFloatVector
-import com.tencent.angel.ml.tree.model.TreeEnsembleModel
+import com.tencent.angel.ml.tree.oldmodel.TreeEnsembleModel
 
 /**
   * Trait for adding "pluggable" loss functions for the gradient boosting algorithm.
@@ -29,7 +29,7 @@ trait Loss extends Serializable {
     */
   def computeError(model: TreeEnsembleModel, data: List[LabeledData]): Double = {
     data.map(point => computeError(model.predict(point.getX.asInstanceOf[IntFloatVector]), point.getY))
-      .reduce(_ + _) / data.length
+      .sum / data.length
   }
 
   /**

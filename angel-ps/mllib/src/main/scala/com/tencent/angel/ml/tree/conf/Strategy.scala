@@ -28,10 +28,19 @@ import com.tencent.angel.ml.tree.impurity.{Entropy, Gini, Impurity, Variance}
   * @param useNodeIdCache If this is true, instead of passing trees to executors, the algorithm will maintain a separate RDD of node Id cache for each row.
   * @param checkpointInterval How often to checkpoint when the node Id cache gets updated. E.g. 10 means that the cache will get checkpointed every 10 update.
   */
-class Strategy (@BeanProperty var algo: Algo, @BeanProperty  var impurity: Impurity, var maxDepth: Int, var numClasses: Int = 2, var maxBins: Int = 32,
-                var quantileCalculationStrategy: QuantileStrategy = Sort, var categoricalFeaturesInfo: Map[Int, Int] = Map[Int, Int](),
-                var minInstancesPerNode: Int = 1, var minInfoGain: Double = 0.0, var maxMemoryInMB: Int = 256,
-                var subsamplingRate: Double = 1, var useNodeIdCache: Boolean = false, var checkpointInterval: Int = 10) extends Serializable {
+class Strategy (@BeanProperty var algo: Algo,
+                @BeanProperty  var impurity: Impurity,
+                @BeanProperty var maxDepth: Int,
+                @BeanProperty var numClasses: Int = 2,
+                @BeanProperty var maxBins: Int = 32,
+                var quantileCalculationStrategy: QuantileStrategy = Sort,
+                var categoricalFeaturesInfo: Map[Int, Int] = Map[Int, Int](),
+                var minInstancesPerNode: Int = 1,
+                var minInfoGain: Double = 0.0,
+                var maxMemoryInMB: Int = 256,
+                var subsamplingRate: Double = 1,
+                var useNodeIdCache: Boolean = false,
+                var checkpointInterval: Int = 10) extends Serializable {
 
   def isMulticlassClassification: Boolean = {
     algo == Classification && numClasses > 2

@@ -1,14 +1,10 @@
-package com.tencent.angel.ml.tree.conf
+package com.tencent.angel.ml.tree
 
 import java.util.Locale
 
-import scala.util.Try
-import org.apache.spark.ml.param.shared._
-import org.apache.spark.ml.util.SchemaUtils
 import com.tencent.angel.ml.tree.conf.{Algo => OldAlgo, BoostingStrategy => OldBoostingStrategy, Strategy => OldStrategy}
 import com.tencent.angel.ml.tree.impurity.{Entropy => OldEntropy, Gini => OldGini, Impurity => OldImpurity, Variance => OldVariance}
 import com.tencent.angel.ml.tree.loss.{AbsoluteError => OldAbsoluteError, ClassificationLoss => OldClassificationLoss, LogLoss => OldLogLoss, Loss => OldLoss, SquaredError => OldSquaredError}
-import org.apache.spark.ml.param.{IntParam, ParamValidators}
 
 /**
   * Parameters for Decision Tree-based algorithms.
@@ -83,30 +79,48 @@ trait DecisionTreeParams {
     " Caching can speed up training of deeper trees."
 
 
-  def setMaxDepth(value: Int): Unit = maxDepth = value
+  def setMaxDepth(value: Int): this.type = {
+    maxDepth = value
+    this
+  }
 
   def getMaxDepth: Int = maxDepth
 
-  def setMaxBins(value: Int): Unit = maxBins = value
+  def setMaxBins(value: Int): this.type = {
+    maxBins = value
+    this
+  }
 
   def getMaxBins: Int = maxBins
 
-  def setMinInstancesPerNode(value: Int): Unit = minInstancesPerNode = value
+  def setMinInstancesPerNode(value: Int): this.type = {
+    minInstancesPerNode = value
+    this
+  }
 
   def getMinInstancesPerNode: Int = minInstancesPerNode
 
-  def setMinInfoGain(value: Double): Unit = minInfoGain = value
+  def setMinInfoGain(value: Double): this.type =
+  {
+    minInfoGain = value
+    this
+  }
 
   def getMinInfoGain: Double = minInfoGain
 
-  def setMaxMemoryInMB(value: Int): Unit = maxMemoryInMB = value
+  def setMaxMemoryInMB(value: Int): this.type = {
+    maxMemoryInMB = value
+    this
+  }
 
-  final def getMaxMemoryInMB: Int = maxMemoryInMB
+  def getMaxMemoryInMB: Int = maxMemoryInMB
 
-  def setCacheNodeIds(value: Boolean): Unit = cacheNodeIds = value
+  def setCacheNodeIds(value: Boolean): this.type = {
+    cacheNodeIds = value
+    this
+  }
 
   final def getCacheNodeIds: Boolean = cacheNodeIds
-
 
   def getOldStrategy(
                       categoricalFeatures: Map[Int, Int],
@@ -144,7 +158,10 @@ trait TreeClassifierParams {
   final val impurityInfo = "impurity: Criterion used for information gain calculation (case-insensitive). Supported options:" +
     s" ${TreeClassifierParams.supportedImpurities.mkString(", ")}"
 
-  def setImpurity(value: String): Unit = impurity = value
+  def setImpurity(value: String): this.type = {
+    impurity = value
+    this
+  }
 
   def getImpurity: String = impurity.toLowerCase(Locale.ROOT)
 
@@ -185,7 +202,10 @@ trait TreeRegressorParams {
   final val impurityInfo = "impurity: Criterion used for information gain calculation (case-insensitive). Supported options:" +
     s" ${TreeRegressorParams.supportedImpurities.mkString(", ")}"
 
-  def setImpurity(value: String): Unit = impurity = value
+  def setImpurity(value: String): this.type = {
+    impurity = value
+    this
+  }
 
   def getImpurity: String = impurity.toLowerCase(Locale.ROOT)
 
@@ -232,7 +252,10 @@ trait TreeEnsembleParams extends DecisionTreeParams {
   final val subsamplingRateInfo = "subsamplingRate: Fraction of the training data used for" +
     " learning each decision tree, in range (0, 1]."
 
-  def setSubsamplingRate(value: Double): Unit = subsamplingRate = value
+  def setSubsamplingRate(value: Double): this.type = {
+    subsamplingRate = value
+    this
+  }
 
   def getSubsamplingRate: Double = subsamplingRate
 
@@ -274,7 +297,10 @@ trait TreeEnsembleParams extends DecisionTreeParams {
   final val featureSubsetStrategyInfo = "featureSubsetStrategy: The number of features to consider for splits at each tree node." +
     s" Supported options: ${TreeEnsembleParams.supportedFeatureSubsetStrategies.mkString(", ")},, (0.0-1.0], [1-n]."
 
-  def setFeatureSubsetStrategy(value: String): Unit = featureSubsetStrategy = value
+  def setFeatureSubsetStrategy(value: String): this.type = {
+    featureSubsetStrategy = value
+    this
+  }
 
   final def getFeatureSubsetStrategy: String = featureSubsetStrategy.toLowerCase(Locale.ROOT)
 }
@@ -298,7 +324,10 @@ trait RandomForestParams extends TreeEnsembleParams {
   final var numTrees: Int = 20
   final val numTreesInfo = "numTrees: Number of trees to train (>= 1)."
 
-  def setNumTrees(value: Int): Unit = numTrees = value
+  def setNumTrees(value: Int): this.type = {
+    numTrees = value
+    this
+  }
 
   def getNumTrees: Int = numTrees
 }
@@ -333,6 +362,11 @@ trait GBTParams extends TreeEnsembleParams {
       " If the error rate on the validation input changes by less than the validationTol," +
       " then learning will stop early (before `maxIter`). This parameter is ignored when fit without validation is used."
 
+  def setValidationTol(value: Double): this.type = {
+    validationTol = value
+    this
+  }
+
   def getValidationTol: Double = validationTol
 
   /**
@@ -344,7 +378,10 @@ trait GBTParams extends TreeEnsembleParams {
 
   def getMaxIter: Int = maxIter
 
-  def setMaxIter(value: Int): Unit = maxIter = value
+  def setMaxIter(value: Int): this.type = {
+    maxIter = value
+    this
+  }
 
   /**
     * Param for Step size (a.k.a. learning rate) in interval (0, 1] for shrinking
@@ -358,7 +395,10 @@ trait GBTParams extends TreeEnsembleParams {
 
   def getStepSize: Double = stepSize
 
-  def setStepSize(value: Double): Unit = stepSize = value
+  def setStepSize(value: Double): this.type = {
+    stepSize = value
+    this
+  }
 
   setFeatureSubsetStrategy("all")
 

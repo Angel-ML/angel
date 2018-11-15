@@ -1,13 +1,13 @@
-package com.tencent.angel.ml.tree.model
-
-import scala.collection.mutable
+package com.tencent.angel.ml.tree.oldmodel
 
 import org.apache.hadoop.conf.Configuration
 
+import scala.collection.mutable
 import com.tencent.angel.ml.math2.vector.IntFloatVector
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.tree
 import com.tencent.angel.ml.tree.conf.Algo._
 import com.tencent.angel.ml.tree.conf.EnsembleCombiningStrategy._
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
@@ -38,11 +38,11 @@ class RandomForestModel (
   * @param combiningStrategy strategy for combining the predictions, not used for regression.
   */
 sealed class TreeEnsembleModel(
-                                              protected val algo: Algo,
-                                              protected val trees: Array[DecisionTreeModel],
-                                              protected val treeWeights: Array[Double],
-                                              protected val combiningStrategy: EnsembleCombiningStrategy,
-                                              conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
+                                protected val algo: Algo,
+                                protected val trees: Array[DecisionTreeModel],
+                                protected val treeWeights: Array[Double],
+                                protected val combiningStrategy: EnsembleCombiningStrategy,
+                                conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
 
   require(numTrees > 0, "TreeEnsembleModel cannot be created without trees.")
 
@@ -60,7 +60,7 @@ sealed class TreeEnsembleModel(
       val y = instance.getY
       val pred = predict(x)
 
-      ret.put(new DecisionTreePredictResult(idx, y, pred))
+      ret.put(DecisionTreePredictResult(idx, y, pred))
     }
 
     ret
@@ -166,7 +166,7 @@ object TreeEnsembleModel {
 
   object SaveUtils {
 
-    import com.tencent.angel.ml.tree.model.DecisionTreeModel.DataStruct.{NodeData, constructTrees}
+    import com.tencent.angel.ml.tree.oldmodel.DecisionTreeModel.DataStruct.{NodeData, constructTrees}
 
     case class Metadata(
                          algo: String,
@@ -198,7 +198,7 @@ object TreeEnsembleModel {
       */
     def loadTrees(
                    path: String,
-                   treeAlgo: String): Array[DecisionTreeModel] = ???
+                   treeAlgo: String): Array[tree.DecisionTreeModel] = ???
   }
 
 }

@@ -1,4 +1,4 @@
-package com.tencent.angel.ml.tree.model
+package com.tencent.angel.ml.tree.oldmodel
 
 /**
   * Predicted value for a node

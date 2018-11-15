@@ -3,7 +3,7 @@ package com.tencent.angel.ml.tree.impurity
 /**
   * Factory for Impurity instances.
   */
-private object Impurities {
+private[tree] object Impurities {
 
   def fromString(name: String): Impurity = name match {
     case "gini" => Gini

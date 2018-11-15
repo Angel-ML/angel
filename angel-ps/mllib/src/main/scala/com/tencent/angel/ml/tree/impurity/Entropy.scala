@@ -55,7 +55,7 @@ object Entropy extends Impurity {
   * Note: Instances of this class do not hold the data; they operate on views of the data.
   * @param numClasses  Number of classes for label.
   */
-private class EntropyAggregator(numClasses: Int)
+private[tree] class EntropyAggregator(numClasses: Int)
   extends ImpurityAggregator(numClasses) with Serializable {
 
   /**
@@ -91,7 +91,7 @@ private class EntropyAggregator(numClasses: Int)
   * (node, feature, bin).
   * @param stats  Array of sufficient statistics for a (node, feature, bin).
   */
-private class EntropyCalculator(stats: Array[Float]) extends ImpurityCalculator(stats) {
+private[tree] class EntropyCalculator(stats: Array[Float]) extends ImpurityCalculator(stats) {
 
   /**
     * Make a deep copy of this [[ImpurityCalculator]].

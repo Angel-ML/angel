@@ -7,7 +7,7 @@ import com.tencent.angel.ml.tree.conf.Algo._
 import com.tencent.angel.ml.tree.conf.QuantileStrategy._
 import com.tencent.angel.ml.tree.conf.{Algo, Strategy}
 import com.tencent.angel.ml.tree.impurity._
-import com.tencent.angel.ml.tree.model._
+import com.tencent.angel.ml.tree.oldmodel._
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 
@@ -35,14 +35,14 @@ class DecisionTreeLearner (ctx: TaskContext, val strategy: Strategy, val seed: I
   /**
     * Method to train a decision tree model over an RDD
     *
-    * @param trainData      : trainning data storage
-    * @param validationData : validation data storage
+    * @param trainBlock : trainning data storage
+    * @param validBlock : validation data storage
     */
   override
-  def train(trainData: DataBlock[LabeledData], validationData: DataBlock[LabeledData]): MLModel = {
-    val rf = new RandomForestLearner(strategy, numTrees = 1, featureSubsetStrategy = "all", seed = seed)
-    val rfModel = rf.run(input)
-    rfModel.trees(0)
+  def train(trainBlock: DataBlock[LabeledData], validBlock: DataBlock[LabeledData]): MLModel = {
+    val rf = new RandomForestLearner(ctx, strategy, numTrees = 1, featureSubsetStrategy = "all", seed = seed)
+    val rfModel = rf.train(trainBlock, validBlock)
+    rfModel.asInstanceOf[RandomForestModel].trees(0)
   }
 }
 
@@ -52,7 +52,7 @@ object DecisionTree {
     * Method to train a decision tree model.
     * The method supports binary and multiclass classification and regression.
     *
-    * @param input Training dataset: RDD of [[org.apache.spark.mllib.regression.LabeledPoint]].
+    * @param trainBlock Training dataset: DataBlock of [[LabeledData]].
     *              For classification, labels should take values {0, 1, ..., numClasses-1}.
     *              For regression, labels are real numbers.
     * @param strategy The configuration parameters for the tree algorithm which specify the type
@@ -64,15 +64,19 @@ object DecisionTree {
     * and `org.apache.spark.mllib.tree.DecisionTree.trainRegressor`
     * is recommended to clearly separate classification and regression.
     */
-  def train(input: RDD[LabeledPoint], strategy: Strategy): DecisionTreeModel = {
-    new DecisionTree(strategy).run(input)
+  def train(
+             ctx: TaskContext,
+             trainBlock: DataBlock[LabeledData],
+             validBlock: DataBlock[LabeledData],
+             strategy: Strategy): MLModel = {
+    new DecisionTreeLearner(ctx, strategy).train(trainBlock, validBlock)
   }
 
   /**
     * Method to train a decision tree model.
     * The method supports binary and multiclass classification and regression.
     *
-    * @param input Training dataset: RDD of [[org.apache.spark.mllib.regression.LabeledPoint]].
+    * @param trainBlock Training dataset: DataBlock of [[LabeledData]].
     *              For classification, labels should take values {0, 1, ..., numClasses-1}.
     *              For regression, labels are real numbers.
     * @param algo Type of decision tree, either classification or regression.
@@ -86,19 +90,21 @@ object DecisionTree {
     * is recommended to clearly separate classification and regression.
     */
   def train(
-             input: RDD[LabeledPoint],
+             ctx: TaskContext,
+             trainBlock: DataBlock[LabeledData],
+             validBlock: DataBlock[LabeledData],
              algo: Algo,
              impurity: Impurity,
-             maxDepth: Int): DecisionTreeModel = {
+             maxDepth: Int): MLModel = {
     val strategy = new Strategy(algo, impurity, maxDepth)
-    new DecisionTree(strategy).run(input)
+    new DecisionTreeLearner(ctx, strategy).train(trainBlock, validBlock)
   }
 
   /**
     * Method to train a decision tree model.
     * The method supports binary and multiclass classification and regression.
     *
-    * @param input Training dataset: RDD of [[org.apache.spark.mllib.regression.LabeledPoint]].
+    * @param trainBlock Training dataset: DataBlock of [[LabeledData]].
     *              For classification, labels should take values {0, 1, ..., numClasses-1}.
     *              For regression, labels are real numbers.
     * @param algo Type of decision tree, either classification or regression.
@@ -113,20 +119,22 @@ object DecisionTree {
     * is recommended to clearly separate classification and regression.
     */
   def train(
-             input: RDD[LabeledPoint],
+             ctx: TaskContext,
+             trainBlock: DataBlock[LabeledData],
+             validBlock: DataBlock[LabeledData],
              algo: Algo,
              impurity: Impurity,
              maxDepth: Int,
-             numClasses: Int): DecisionTreeModel = {
+             numClasses: Int): MLModel = {
     val strategy = new Strategy(algo, impurity, maxDepth, numClasses)
-    new DecisionTree(strategy).run(input)
+    new DecisionTreeLearner(ctx, strategy).train(trainBlock, validBlock)
   }
 
   /**
     * Method to train a decision tree model.
     * The method supports binary and multiclass classification and regression.
     *
-    * @param input Training dataset: RDD of [[org.apache.spark.mllib.regression.LabeledPoint]].
+    * @param trainBlock Training dataset: DataBlock of [[LabeledData]].
     *              For classification, labels should take values {0, 1, ..., numClasses-1}.
     *              For regression, labels are real numbers.
     * @param algo Type of decision tree, either classification or regression.
@@ -146,23 +154,25 @@ object DecisionTree {
     * is recommended to clearly separate classification and regression.
     */
   def train(
-             input: RDD[LabeledPoint],
+             ctx: TaskContext,
+             trainBlock: DataBlock[LabeledData],
+             validBlock: DataBlock[LabeledData],
              algo: Algo,
              impurity: Impurity,
              maxDepth: Int,
              numClasses: Int,
              maxBins: Int,
              quantileCalculationStrategy: QuantileStrategy,
-             categoricalFeaturesInfo: Map[Int, Int]): DecisionTreeModel = {
+             categoricalFeaturesInfo: Map[Int, Int]): MLModel = {
     val strategy = new Strategy(algo, impurity, maxDepth, numClasses, maxBins,
       quantileCalculationStrategy, categoricalFeaturesInfo)
-    new DecisionTree(strategy).run(input)
+    new DecisionTreeLearner(ctx, strategy).train(trainBlock, validBlock)
   }
 
   /**
     * Method to train a decision tree model for binary or multiclass classification.
     *
-    * @param input Training dataset: RDD of [[org.apache.spark.mllib.regression.LabeledPoint]].
+    * @param trainBlock Training dataset: DataBlock of [[LabeledData]].
     *              Labels should take values {0, 1, ..., numClasses-1}.
     * @param numClasses Number of classes for classification.
     * @param categoricalFeaturesInfo Map storing arity of categorical features. An entry (n to k)
@@ -178,21 +188,23 @@ object DecisionTree {
     * @return DecisionTreeModel that can be used for prediction.
     */
   def trainClassifier(
-                       input: RDD[LabeledPoint],
+                       ctx: TaskContext,
+                       trainBlock: DataBlock[LabeledData],
+                       validBlock: DataBlock[LabeledData],
                        numClasses: Int,
                        categoricalFeaturesInfo: Map[Int, Int],
                        impurity: String,
                        maxDepth: Int,
-                       maxBins: Int): DecisionTreeModel = {
+                       maxBins: Int): MLModel = {
     val impurityType = Impurities.fromString(impurity)
-    train(input, Classification, impurityType, maxDepth, numClasses, maxBins, Sort,
+    train(ctx, trainBlock, validBlock, Classification, impurityType, maxDepth, numClasses, maxBins, Sort,
       categoricalFeaturesInfo)
   }
 
   /**
     * Method to train a decision tree model for regression.
     *
-    * @param input Training dataset: RDD of [[org.apache.spark.mllib.regression.LabeledPoint]].
+    * @param trainBlock Training dataset: DataBlock of [[LabeledData]].
     *              Labels are real numbers.
     * @param categoricalFeaturesInfo Map storing arity of categorical features. An entry (n to k)
     *                                indicates that feature n is categorical with k categories
@@ -207,13 +219,16 @@ object DecisionTree {
     * @return DecisionTreeModel that can be used for prediction.
     */
   def trainRegressor(
-                      input: RDD[LabeledPoint],
+                      ctx: TaskContext,
+                      trainBlock: DataBlock[LabeledData],
+                      validBlock: DataBlock[LabeledData],
                       categoricalFeaturesInfo: Map[Int, Int],
                       impurity: String,
                       maxDepth: Int,
-                      maxBins: Int): DecisionTreeModel = {
+                      maxBins: Int): MLModel = {
     val impurityType = Impurities.fromString(impurity)
-    train(input, Regression, impurityType, maxDepth, 0, maxBins, Sort, categoricalFeaturesInfo)
+    train(ctx, trainBlock, validBlock, Regression, impurityType, maxDepth,
+      0, maxBins, Sort, categoricalFeaturesInfo)
   }
 }
 

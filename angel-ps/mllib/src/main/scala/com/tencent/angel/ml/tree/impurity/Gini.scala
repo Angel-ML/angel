@@ -52,7 +52,7 @@ object Gini extends Impurity {
   * Note: Instances of this class do not hold the data; they operate on views of the data.
   * @param numClasses  Number of classes for label.
   */
-private class GiniAggregator(numClasses: Int)
+private[tree] class GiniAggregator(numClasses: Int)
   extends ImpurityAggregator(numClasses) with Serializable {
 
   /**
@@ -88,7 +88,7 @@ private class GiniAggregator(numClasses: Int)
   * (node, feature, bin).
   * @param stats  Array of sufficient statistics for a (node, feature, bin).
   */
-private class GiniCalculator(stats: Array[Float]) extends ImpurityCalculator(stats) {
+private[tree] class GiniCalculator(stats: Array[Float]) extends ImpurityCalculator(stats) {
 
   /**
     * Make a deep copy of this [[ImpurityCalculator]].

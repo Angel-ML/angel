@@ -1,4 +1,4 @@
-package com.tencent.angel.ml.tree.model
+package com.tencent.angel.ml.tree.oldmodel
 
 import com.tencent.angel.ml.tree.impurity.ImpurityCalculator
 
