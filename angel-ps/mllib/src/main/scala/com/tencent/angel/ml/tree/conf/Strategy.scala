@@ -1,3 +1,21 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
+
 package com.tencent.angel.ml.tree.conf
 
 import scala.beans.BeanProperty
@@ -11,22 +29,32 @@ import com.tencent.angel.ml.tree.impurity.{Entropy, Gini, Impurity, Variance}
   * Stores all the configuration options for tree construction
   * @param algo  Learning goal.  Supported: Classification, Regression
   * @param impurity Criterion used for information gain calculation.
-  * Supported for Classification: Gini, Entropy. Supported for Regression: Variance
-  * @param maxDepth Maximum depth of the tree (e.g. depth 0 means 1 leaf node, depth 1 means 1 internal node + 2 leaf nodes).
-  * @param numClasses Number of classes for classification. (Ignored for regression.) Default value is 2 (binary classification).
-  * @param maxBins Maximum number of bins used for discretizing continuous features and for choosing how to split on features at each node.
-  * @param quantileCalculationStrategy Algorithm for calculating quantiles.  Supported: QuantileStrategy.Sort`
-  * @param categoricalFeaturesInfo A map storing information about the categorical variables and the number of discrete values they take.
-  * An entry (n to k) indicates that feature n is categorical with k categories indexed from 0: {0, 1, ..., k-1}.
-  * @param minInstancesPerNode Minimum number of instances each child must have after split.
-  * Default value is 1. If a split cause left or right child to have less than minInstancesPerNode, this split will not be considered as a valid split.
+  *                 Supported for Classification: Gini, Entropy. Supported for Regression: Variance
+  * @param maxDepth Maximum depth of the tree (e.g. depth 0 means 1 leaf node,
+  *                 depth 1 means 1 internal node + 2 leaf nodes).
+  * @param numClasses Number of classes for classification. (Ignored for regression.)
+  *                   Default value is 2 (binary classification).
+  * @param maxBins Maximum number of bins used for discretizing continuous features and
+  *                for choosing how to split on features at each node.
+  * @param quantileCalculationStrategy Algorithm for calculating quantiles.
+  *                                    Supported: QuantileStrategy.Sort
+  * @param categoricalFeaturesInfo A map storing information about the categorical variables
+  *                                and the number of discrete values they take. An entry (n to k) indicates that
+  *                                feature n is categorical with k categories indexed from 0: {0, 1, ..., k-1}.
+  * @param minInstancesPerNode Minimum number of instances each child must have after split. Default value is 1.
+  *                            If a split cause left or right child to have less than minInstancesPerNode,
+  *                            this split will not be considered as a valid split.
   * @param minInfoGain Minimum information gain a split must get. Default value is 0.0.
-  * If a split has less information gain than minInfoGain, this split will not be considered as a valid split.
+  *                    If a split has less information gain than minInfoGain,
+  *                    this split will not be considered as a valid split.
   * @param maxMemoryInMB Maximum memory in MB allocated to histogram aggregation. Default value is 256 MB.
-  * If too small, then 1 node will be split per iteration, and its aggregates may exceed this size.
+  *                      If too small, then 1 node will be split per iteration,
+  *                      nd its aggregates may exceed this size.
   * @param subsamplingRate Fraction of the training data used for learning decision tree.
-  * @param useNodeIdCache If this is true, instead of passing trees to executors, the algorithm will maintain a separate RDD of node Id cache for each row.
-  * @param checkpointInterval How often to checkpoint when the node Id cache gets updated. E.g. 10 means that the cache will get checkpointed every 10 update.
+  * @param useNodeIdCache If this is true, instead of passing trees to executors,
+  *                       the algorithm will maintain a separate RDD of node Id cache for each row.
+  * @param checkpointInterval How often to checkpoint when the node Id cache gets updated.
+  *                           E.g. 10 means that the cache will get checkpointed every 10 update.
   */
 class Strategy (@BeanProperty var algo: Algo,
                 @BeanProperty  var impurity: Impurity,
