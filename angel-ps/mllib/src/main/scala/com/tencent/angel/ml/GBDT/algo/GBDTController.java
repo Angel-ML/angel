@@ -630,7 +630,7 @@ public class GBDTController {
     boolean isServerSplit = taskContext.getConf()
             .getBoolean(MLConf.ML_GBDT_SERVER_SPLIT(), MLConf.DEFAULT_ML_GBDT_SERVER_SPLIT());
     int splitNum =
-            taskContext.getConf().getInt(MLConf.ML_GBDT_SPLIT_NUM(), MLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
+            taskContext.getConf().getInt(MLConf.ML_TREE_MAX_BIN(), MLConf.DEFAULT_ML_TREE_MAX_BIN());
 
     for (int i = 0; i < tNodeId.length; i++) {
       int nid = tNodeId[i];

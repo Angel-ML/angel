@@ -411,7 +411,7 @@ public class GradHistHelper {
     int featureNum = WorkerContext.get().getConf()
             .getInt(MLConf.ML_FEATURE_INDEX_RANGE(), MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE());
     int splitNum = WorkerContext.get().getConf()
-            .getInt(MLConf.ML_GBDT_SPLIT_NUM(), MLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
+            .getInt(MLConf.ML_TREE_MAX_BIN(), MLConf.DEFAULT_ML_TREE_MAX_BIN());
 
     if (histogram.getDim() != featureNum * 2 * splitNum) {
       LOG.debug("The size of histogram is not equal to 2 * featureNum*splitNum.");
@@ -441,7 +441,7 @@ public class GradHistHelper {
             histogram.getDim(), startIdx));
 
     int splitNum = WorkerContext.get().getConf()
-            .getInt(MLConf.ML_GBDT_SPLIT_NUM(), MLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
+            .getInt(MLConf.ML_TREE_MAX_BIN(), MLConf.DEFAULT_ML_TREE_MAX_BIN());
 
     SplitEntry splitEntry = new SplitEntry();
     // 1. set the feature id

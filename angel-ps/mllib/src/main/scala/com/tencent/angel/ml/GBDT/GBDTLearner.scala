@@ -42,12 +42,12 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   def initParam(): Unit = {
 
     // 1. set training param
-    param.taskType = conf.get(MLConf.ML_GBDT_TASK_TYPE, MLConf.DEFAULT_ML_GBDT_TASK_TYPE)
+    param.taskType = conf.get(MLConf.ML_TREE_TASK_TYPE, MLConf.DEFAULT_ML_TREE_TASK_TYPE)
     param.numFeature = conf.getInt(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
     param.numNonzero = conf.getInt(MLConf.ML_MODEL_SIZE, MLConf.DEFAULT_ML_MODEL_SIZE)
-    param.numSplit = conf.getInt(MLConf.ML_GBDT_SPLIT_NUM, MLConf.DEFAULT_ML_GBDT_SPLIT_NUM)
-    param.treeNum = conf.getInt(MLConf.ML_GBDT_TREE_NUM, MLConf.DEFAULT_ML_GBDT_TREE_NUM)
-    param.maxDepth = conf.getInt(MLConf.ML_GBDT_TREE_DEPTH, MLConf.DEFAULT_ML_GBDT_TREE_DEPTH)
+    param.numSplit = conf.getInt(MLConf.ML_TREE_MAX_BIN, MLConf.DEFAULT_ML_TREE_MAX_BIN)
+    param.treeNum = conf.getInt(MLConf.ML_NUM_TREE, MLConf.DEFAULT_ML_NUM_TREE)
+    param.maxDepth = conf.getInt(MLConf.ML_TREE_MAX_DEPTH, MLConf.DEFAULT_ML_TREE_DEPTH)
     param.colSample = conf.getFloat(MLConf.ML_GBDT_SAMPLE_RATIO, MLConf.DEFAULT_ML_GBDT_SAMPLE_RATIO)
     param.learningRate = conf.getFloat(MLConf.ML_LEARN_RATE, MLConf.DEFAULT_ML_LEARN_RATE.asInstanceOf[Float])
     param.maxThreadNum = conf.getInt(MLConf.ML_GBDT_THREAD_NUM, MLConf.DEFAULT_ML_GBDT_THREAD_NUM)

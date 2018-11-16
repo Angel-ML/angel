@@ -12,8 +12,6 @@ import scala.reflect.ClassTag
 
 /**
   * Abstraction for Decision Tree models.
-  *
-  * TODO: Add support for predicting probabilities and raw predictions  SPARK-3727
   */
 trait DecisionTreeModel {
 
@@ -74,7 +72,7 @@ private[tree] trait TreeEnsembleModel[M <: DecisionTreeModel] {
   /** Weights for each tree, zippable with [[trees]] */
   def treeWeights: Array[Double]
 
-  private[tree] def javaTreeWeights: IntDoubleVector = VFactory.denseDoubleVector(treeWeights)
+  def treeWeightsVec: IntDoubleVector = VFactory.denseDoubleVector(treeWeights)
 
   /** Summary of the model */
   override def toString: String = {

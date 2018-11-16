@@ -1,33 +1,17 @@
-package com.tencent.angel.ml.tree.oldmodel
+package com.tencent.angel.ml.tree.model
 
-import org.apache.hadoop.conf.Configuration
-
-import scala.collection.mutable
+import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.vector.IntFloatVector
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.ml.predict.PredictResult
-import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.tree
-import com.tencent.angel.ml.tree.conf.Algo._
-import com.tencent.angel.ml.tree.conf.EnsembleCombiningStrategy._
+import com.tencent.angel.ml.tree.conf.Algo.{Algo, Classification, Regression}
+import com.tencent.angel.ml.tree.conf.EnsembleCombiningStrategy.{Average, EnsembleCombiningStrategy, Sum, Vote}
+import com.tencent.angel.ml.tree.oldmodel.{DecisionTreeModel, DecisionTreePredictResult}
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
+import org.apache.hadoop.conf.Configuration
 
-/**
-  * Represents a random forest model.
-  *
-  * @param algo algorithm for the ensemble model, either Classification or Regression
-  * @param trees tree ensembles
-  */
-class RandomForestModel (
-                          override val algo: Algo,
-                          override val trees: Array[DecisionTreeModel],
-                          conf: Configuration, _ctx: TaskContext = null)
-  extends TreeEnsembleModel(algo, trees, Array.fill(trees.length)(1.0),
-    combiningStrategy = if (algo == Classification) Vote else Average, conf, _ctx) {
-
-  require(trees.forall(_.algo == algo))
-}
+import scala.collection.mutable
 
 /**
   * Represents a tree ensemble model.
@@ -160,38 +144,4 @@ sealed class TreeEnsembleModel(
     * Get total number of nodes, summed over all trees in the ensemble.
     */
   def totalNumNodes: Int = trees.map(_.numNodes).sum
-}
-
-object TreeEnsembleModel {
-
-  object SaveUtils {
-
-    import com.tencent.angel.ml.tree.oldmodel.DecisionTreeModel.DataStruct.NodeData
-
-    case class Metadata(
-                         algo: String,
-                         treeAlgo: String,
-                         combiningStrategy: String,
-                         treeWeights: Array[Double])
-
-    /**
-      * Model data for model import/export.
-      * We have to duplicate NodeData here since Spark SQL does not yet support extracting subfields
-      * of nested fields; once that is possible, we can use something like:
-      *  case class EnsembleNodeData(treeId: Int, node: NodeData),
-      *  where NodeData is from DecisionTreeModel.
-      */
-    case class EnsembleNodeData(treeId: Int, node: NodeData)
-
-    /**
-      * Load trees for an ensemble, and return them in order.
-      * @param path path to load the model from
-      * @param treeAlgo Algorithm for individual trees (which may differ from the ensemble's
-      *                 algorithm).
-      */
-    def loadTrees(
-                   path: String,
-                   treeAlgo: String): Array[tree.DecisionTreeModel] = ???
-  }
-
 }

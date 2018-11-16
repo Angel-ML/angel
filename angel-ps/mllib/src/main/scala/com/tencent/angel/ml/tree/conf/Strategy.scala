@@ -20,22 +20,36 @@ package com.tencent.angel.ml.tree.conf
 
 import scala.beans.BeanProperty
 import scala.collection.JavaConverters._
-
 import com.tencent.angel.ml.tree.conf.Algo._
 import com.tencent.angel.ml.tree.conf.QuantileStrategy._
 import com.tencent.angel.ml.tree.impurity.{Entropy, Gini, Impurity, Variance}
+
+import scala.util.Try
 
 /**
   * Stores all the configuration options for tree construction
   * @param algo  Learning goal.  Supported: Classification, Regression
   * @param impurity Criterion used for information gain calculation.
   *                 Supported for Classification: Gini, Entropy. Supported for Regression: Variance
+  * @param numTrees If 1, then no bootstrapping is used.  If greater than 1, then bootstrapping is done.
   * @param maxDepth Maximum depth of the tree (e.g. depth 0 means 1 leaf node,
   *                 depth 1 means 1 internal node + 2 leaf nodes).
   * @param numClasses Number of classes for classification. (Ignored for regression.)
   *                   Default value is 2 (binary classification).
   * @param maxBins Maximum number of bins used for discretizing continuous features and
   *                for choosing how to split on features at each node.
+  * @param subsamplingRate Fraction of the training data used for learning decision tree.
+  * @param featureSubsetStrategy Number of features to consider for splits at each node.
+  *                              Supported values: "auto", "all", "sqrt", "log2", "onethird".
+  *                              Supported numerical values: "(0.0-1.0]", "[1-n]".
+  *                              If "auto" is set, this parameter is set based on numTrees:
+  *                                if numTrees == 1, set to "all";
+  *                                if numTrees is greater than 1 (forest) set to "sqrt" for
+  *                                  classification and to "onethird" for regression.
+  *                              If a real value "n" in the range (0, 1.0] is set,
+  *                                use n * number of features.
+  *                              If an integer value "n" in the range (1, num features) is set,
+  *                                use n features.
   * @param quantileCalculationStrategy Algorithm for calculating quantiles.
   *                                    Supported: QuantileStrategy.Sort
   * @param categoricalFeaturesInfo A map storing information about the categorical variables
@@ -50,7 +64,6 @@ import com.tencent.angel.ml.tree.impurity.{Entropy, Gini, Impurity, Variance}
   * @param maxMemoryInMB Maximum memory in MB allocated to histogram aggregation. Default value is 256 MB.
   *                      If too small, then 1 node will be split per iteration,
   *                      nd its aggregates may exceed this size.
-  * @param subsamplingRate Fraction of the training data used for learning decision tree.
   * @param useNodeIdCache If this is true, instead of passing trees to executors,
   *                       the algorithm will maintain a separate RDD of node Id cache for each row.
   * @param checkpointInterval How often to checkpoint when the node Id cache gets updated.
@@ -58,15 +71,17 @@ import com.tencent.angel.ml.tree.impurity.{Entropy, Gini, Impurity, Variance}
   */
 class Strategy (@BeanProperty var algo: Algo,
                 @BeanProperty  var impurity: Impurity,
-                @BeanProperty var maxDepth: Int,
+                @BeanProperty var numTrees: Int = 1,
+                @BeanProperty var maxDepth: Int = 2,
                 @BeanProperty var numClasses: Int = 2,
                 @BeanProperty var maxBins: Int = 32,
+                @BeanProperty var subsamplingRate: Double = 1,
+                @BeanProperty var featureSubsetStrategy: String = "auto",
                 var quantileCalculationStrategy: QuantileStrategy = Sort,
                 var categoricalFeaturesInfo: Map[Int, Int] = Map[Int, Int](),
                 var minInstancesPerNode: Int = 1,
                 var minInfoGain: Double = 0.0,
                 var maxMemoryInMB: Int = 256,
-                var subsamplingRate: Double = 1,
                 var useNodeIdCache: Boolean = false,
                 var checkpointInterval: Int = 10) extends Serializable {
 
@@ -75,17 +90,20 @@ class Strategy (@BeanProperty var algo: Algo,
   }
 
   def isMulticlassWithCategoricalFeatures: Boolean = {
-    isMulticlassClassification && (categoricalFeaturesInfo.size > 0)
+    isMulticlassClassification && categoricalFeaturesInfo.nonEmpty
   }
 
   def this(
             algo: Algo,
             impurity: Impurity,
+            numTrees: Int,
             maxDepth: Int,
             numClasses: Int,
             maxBins: Int,
+            subsamplingRate: Double,
+            featureSubsetStrategy: String,
             categoricalFeaturesInfo: java.util.Map[java.lang.Integer, java.lang.Integer]) {
-    this(algo, impurity, maxDepth, numClasses, maxBins, Sort,
+    this(algo, impurity, numTrees, maxDepth, numClasses, maxBins, subsamplingRate, featureSubsetStrategy, Sort,
       categoricalFeaturesInfo.asInstanceOf[java.util.Map[Int, Int]].asScala.toMap)
   }
 
@@ -139,6 +157,13 @@ class Strategy (@BeanProperty var algo: Algo,
     require(subsamplingRate > 0 && subsamplingRate <= 1,
       s"DecisionTree Strategy requires subsamplingRate <=1 and >0, but was given " +
         s"$subsamplingRate")
+    require(numTrees > 0, s"RandomForest requires numTrees > 0, but was given numTrees = $numTrees.")
+    require(Strategy.supportedFeatureSubsetStrategies.contains(featureSubsetStrategy)
+      || Try(featureSubsetStrategy.toInt).filter(_ > 0).isSuccess
+      || Try(featureSubsetStrategy.toDouble).filter(_ > 0).filter(_ <= 1.0).isSuccess,
+      s"RandomForest given invalid featureSubsetStrategy: $featureSubsetStrategy." +
+        s" Supported values: ${Strategy.supportedFeatureSubsetStrategies.mkString(", ")}," +
+        s" (0.0-1.0], [1-n].")
   }
 
   /**
@@ -152,6 +177,11 @@ class Strategy (@BeanProperty var algo: Algo,
 }
 
 object Strategy {
+
+  /**
+    * List of supported feature subset sampling strategies.
+    */
+  val supportedFeatureSubsetStrategies: Array[String] = NewRFParams.supportedFeatureSubsetStrategies
 
   /**
     * Construct a default set of parameters for [[org.apache.spark.mllib.tree.DecisionTree]]

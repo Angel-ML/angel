@@ -89,9 +89,7 @@ private[tree] object DecisionTreeMetadata {
     */
   def buildMetadata(
                      input: Array[LabeledData],
-                     strategy: Strategy,
-                     numTrees: Int,
-                     featureSubsetStrategy: String): DecisionTreeMetadata = {
+                     strategy: Strategy): DecisionTreeMetadata = {
 
     val numFeatures = input(0).getX.asInstanceOf[IntFloatVector].getDim
     if (numFeatures == 0)
@@ -99,7 +97,7 @@ private[tree] object DecisionTreeMetadata {
         s"but was given by empty one.")
     require(numFeatures > 0, s"DecisionTree requires number of features > 0, " +
       s"but was given an empty features vector")
-    val numExamples = input.size
+    val numExamples = input.length
     val numClasses = strategy.algo match {
       case Classification => strategy.numClasses
       case Regression => 0
@@ -158,9 +156,9 @@ private[tree] object DecisionTreeMetadata {
     }
 
     // Set number of features to use per node (for random forests).
-    val _featureSubsetStrategy = featureSubsetStrategy match {
+    val _featureSubsetStrategy = strategy.featureSubsetStrategy match {
       case "auto" =>
-        if (numTrees == 1) {
+        if (strategy.numTrees == 1) {
           "all"
         } else {
           if (strategy.algo == Classification) {
@@ -169,7 +167,7 @@ private[tree] object DecisionTreeMetadata {
             "onethird"
           }
         }
-      case _ => featureSubsetStrategy
+      case _ => strategy.featureSubsetStrategy
     }
 
     val numFeaturesPerNode: Int = _featureSubsetStrategy match {
@@ -193,16 +191,7 @@ private[tree] object DecisionTreeMetadata {
     new DecisionTreeMetadata(numFeatures, numExamples, numClasses, numBins.max,
       strategy.categoricalFeaturesInfo, unorderedFeatures.toSet, numBins,
       strategy.impurity, strategy.quantileCalculationStrategy, strategy.maxDepth,
-      strategy.minInstancesPerNode, strategy.minInfoGain, numTrees, numFeaturesPerNode)
-  }
-
-  /**
-    * Version of [[DecisionTreeMetadata#buildMetadata]] for DecisionTree.
-    */
-  def buildMetadata(
-                     input: Array[LabeledData],
-                     strategy: Strategy): DecisionTreeMetadata = {
-    buildMetadata(input, strategy, numTrees = 1, featureSubsetStrategy = "all")
+      strategy.minInstancesPerNode, strategy.minInfoGain, strategy.numTrees, numFeaturesPerNode)
   }
 
   /**

@@ -5,6 +5,7 @@ import com.tencent.angel.ml.math2.vector.IntFloatVector
 import com.tencent.angel.ml.tree.{DecisionTreeClassifierParams, DecisionTreeModel, TreeEnsembleModel}
 import com.tencent.angel.ml.tree.conf.{Algo => OldAlgo}
 import com.tencent.angel.ml.tree.oldmodel.{DecisionTreeModel => OldDecisionTreeModel}
+import com.tencent.angel.ml.tree.utils.ProbabilisticUtils
 
 /**
   * Decision tree model (http://en.wikipedia.org/wiki/Decision_tree_learning) for classification.
@@ -30,7 +31,7 @@ private[tree] class DecisionTreeClassificationModel (
 
   protected def raw2probabilityInPlace(rawPrediction: IntFloatVector): IntFloatVector = {
     if (rawPrediction.isDense) {
-      ProbabilisticClassificationModel.normalizeToProbabilitiesInPlace(rawPrediction)
+      ProbabilisticUtils.normalizeToProbabilitiesInPlace(rawPrediction)
       rawPrediction
     } else {
         throw new RuntimeException("Unexpected error in DecisionTreeClassificationModel:" +

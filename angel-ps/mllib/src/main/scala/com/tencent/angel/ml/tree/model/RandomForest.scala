@@ -67,8 +67,6 @@ private[tree] object RandomForest {
            trainData: Array[LabeledData],
            validData: Array[LabeledData],
            strategy: OldStrategy,
-           numTrees: Int,
-           featureSubsetStrategy: String,
            seed: Long,
            // exposed for testing only, real trees are always prune
            prune: Boolean = true): Array[DecisionTreeModel] = {
@@ -80,7 +78,7 @@ private[tree] object RandomForest {
     timer.start("init")
 
     val metadata =
-      DecisionTreeMetadata.buildMetadata(trainData, strategy, numTrees, featureSubsetStrategy)
+      DecisionTreeMetadata.buildMetadata(trainData, strategy)
 
     LOG.info("numFeatures: " + metadata.numFeatures)
     LOG.info("numClasses: " + metadata.numClasses)
@@ -101,7 +99,7 @@ private[tree] object RandomForest {
     val trainTreeInput = TreePoint.convertToTreePoint(trainData, splits, metadata)
     val validTreeInput = TreePoint.convertToTreePoint(validData, splits, metadata)
 
-    val withReplacement = numTrees > 1
+    val withReplacement = strategy.numTrees > 1
 
     val baggedInput = BaggedPoint
       .convertToBaggedRDD(trainTreeInput, strategy.subsamplingRate, numTrees, withReplacement, seed)
@@ -128,7 +126,7 @@ private[tree] object RandomForest {
     val nodeIdCache = if (strategy.useNodeIdCache) {
       Some(NodeIdCache.init(
         data = baggedInput,
-        numTrees = numTrees))
+        numTrees = strategy.numTrees))
     } else {
       None
     }
@@ -147,8 +145,8 @@ private[tree] object RandomForest {
     rng.setSeed(seed)
 
     // Allocate and queue root nodes.
-    val topNodes = Array.fill[LearningNode](numTrees)(LearningNode.emptyNode(nodeIndex = 1))
-    Range(0, numTrees).foreach(treeIndex => nodeStack.push((treeIndex, topNodes(treeIndex))))
+    val topNodes = Array.fill[LearningNode](strategy.numTrees)(LearningNode.emptyNode(nodeIndex = 1))
+    Range(0, strategy.numTrees).foreach(treeIndex => nodeStack.push((treeIndex, topNodes(treeIndex))))
 
     timer.stop("init")
 

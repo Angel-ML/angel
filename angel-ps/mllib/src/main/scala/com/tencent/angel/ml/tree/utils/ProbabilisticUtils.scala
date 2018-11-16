@@ -1,8 +1,8 @@
-package com.tencent.angel.ml.tree.model
+package com.tencent.angel.ml.tree.utils
 
 import com.tencent.angel.ml.math2.vector.IntFloatVector
 
-object ProbabilisticClassificationModel {
+object ProbabilisticUtils {
 
   /**
     * Normalize a vector of raw predictions to be a multinomial probability vector, in place.

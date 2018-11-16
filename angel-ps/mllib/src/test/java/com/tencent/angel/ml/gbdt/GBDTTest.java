@@ -21,11 +21,9 @@ package com.tencent.angel.ml.gbdt;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.GBDT.GBDTRunner;
 import com.tencent.angel.ml.core.conf.MLConf;
-import com.tencent.angel.ml.matrix.RowType;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
 import org.apache.log4j.PropertyConfigurator;
@@ -90,9 +88,9 @@ public class GBDTTest {
 
       // Set GBDT algorithm parameters
       conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
-      conf.set(MLConf.ML_GBDT_TREE_NUM(), String.valueOf(treeNum));
-      conf.set(MLConf.ML_GBDT_TREE_DEPTH(), String.valueOf(treeDepth));
-      conf.set(MLConf.ML_GBDT_SPLIT_NUM(), String.valueOf(splitNum));
+      conf.set(MLConf.ML_NUM_TREE(), String.valueOf(treeNum));
+      conf.set(MLConf.ML_TREE_MAX_DEPTH(), String.valueOf(treeDepth));
+      conf.set(MLConf.ML_TREE_MAX_BIN(), String.valueOf(splitNum));
       conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(validateRatio));
       conf.set(MLConf.ML_GBDT_SAMPLE_RATIO(), String.valueOf(sampleRatio));
       conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));

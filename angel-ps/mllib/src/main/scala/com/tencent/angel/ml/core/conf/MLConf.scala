@@ -157,22 +157,18 @@ object MLConf {
   val KMEANS_C = "ml.kmeans.c"
   val DEFAULT_KMEANS_C = 0.1
 
-  // GBDT Params
-  val ML_GBDT_TASK_TYPE = "ml.gbdt.task.type"
-  val DEFAULT_ML_GBDT_TASK_TYPE = "classification"
-  val ML_GBDT_CLASS_NUM = "ml.gbdt.class.num"
-  val DEFAULT_ML_GBDT_CLASS_NUM = 2
-  val ML_GBDT_PARALLEL_MODE = "ml.gbdt.parallel.mode"
-  val DEFAULT_ML_GBDT_PARALLEL_MODE = "data"
-  val ML_GBDT_TREE_NUM = "ml.gbdt.tree.num"
-  val DEFAULT_ML_GBDT_TREE_NUM = 10
-  val ML_GBDT_TREE_DEPTH = "ml.gbdt.tree.depth"
-  val DEFAULT_ML_GBDT_TREE_DEPTH = 5
-  val ML_GBDT_MAX_NODE_NUM = "ml.gbdt.max.node.num"
-  val ML_GBDT_SPLIT_NUM = "ml.gbdt.split.num"
-  val DEFAULT_ML_GBDT_SPLIT_NUM = 5
-  val ML_GBDT_ROW_SAMPLE_RATIO = "ml.gbdt.row.sample.ratio"
-  val DEFAULT_ML_GBDT_ROW_SAMPLE_RATIO = 1
+  // Tree Model Params
+  val ML_TREE_TASK_TYPE = "ml.tree.task.type"
+  val DEFAULT_ML_TREE_TASK_TYPE = "classification"
+  val ML_PARALLEL_MODE = "ml.parallel.mode"
+  val DEFAULT_ML_PARALLEL_MODE = "data"
+  val ML_NUM_TREE = "ml.num.tree"
+  val DEFAULT_ML_NUM_TREE = 10
+  val ML_TREE_MAX_DEPTH = "ml.tree.max.depth"
+  val DEFAULT_ML_TREE_DEPTH = 2
+  val ML_TREE_MAX_NODE_NUM = "ml.tree.max.node.num"
+  val ML_TREE_MAX_BIN = "ml.tree.max.num"
+  val DEFAULT_ML_TREE_MAX_BIN = 3
   val ML_GBDT_SAMPLE_RATIO = "ml.gbdt.sample.ratio"
   val DEFAULT_ML_GBDT_SAMPLE_RATIO = 1
   val ML_GBDT_MIN_CHILD_WEIGHT = "ml.gbdt.min.child.weight"

@@ -4,9 +4,7 @@ import com.tencent.angel.ml.core.MLLearner
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.model.MLModel
 
-import scala.util.Try
 import scala.util.Random
-import com.tencent.angel.ml.tree.{TreeEnsembleParams => NewRFParams}
 import com.tencent.angel.ml.tree.model.{RandomForest => NewRandomForest}
 import com.tencent.angel.ml.tree.conf.Algo._
 import com.tencent.angel.ml.tree.conf.QuantileStrategy._
@@ -36,42 +34,20 @@ import scala.collection.mutable.ArrayBuffer
   *                 the type of random forest (classification or regression), feature type
   *                 (continuous, categorical), depth of the tree, quantile calculation strategy,
   *                 etc.
-  * @param numTrees If 1, then no bootstrapping is used.  If greater than 1, then bootstrapping is
-  *                 done.
-  * @param featureSubsetStrategy Number of features to consider for splits at each node.
-  *                              Supported values: "auto", "all", "sqrt", "log2", "onethird".
-  *                              Supported numerical values: "(0.0-1.0]", "[1-n]".
-  *                              If "auto" is set, this parameter is set based on numTrees:
-  *                                if numTrees == 1, set to "all";
-  *                                if numTrees is greater than 1 (forest) set to "sqrt" for
-  *                                  classification and to "onethird" for regression.
-  *                              If a real value "n" in the range (0, 1.0] is set,
-  *                                use n * number of features.
-  *                              If an integer value "n" in the range (1, num features) is set,
-  *                                use n features.
   * @param seed Random seed for bootstrapping and choosing feature subsets.
   */
 class RandomForestLearner (
                      override val ctx: TaskContext,
                      val strategy: Strategy,
-                     val numTrees: Int,
-                     featureSubsetStrategy: String,
                      val seed: Int)
   extends MLLearner(ctx)  {
 
   strategy.assertValid()
-  require(numTrees > 0, s"RandomForest requires numTrees > 0, but was given numTrees = $numTrees.")
-  require(RandomForestLearner.supportedFeatureSubsetStrategies.contains(featureSubsetStrategy)
-    || Try(featureSubsetStrategy.toInt).filter(_ > 0).isSuccess
-    || Try(featureSubsetStrategy.toDouble).filter(_ > 0).filter(_ <= 1.0).isSuccess,
-    s"RandomForest given invalid featureSubsetStrategy: $featureSubsetStrategy." +
-      s" Supported values: ${NewRFParams.supportedFeatureSubsetStrategies.mkString(", ")}," +
-      s" (0.0-1.0], [1-n].")
 
   private[tree] def convertDataBlock(input: DataBlock[LabeledData]): Array[LabeledData] = {
     input.resetReadIndex()
     val ret = new ArrayBuffer[LabeledData]
-    (0 until input.size()).foreach{
+    (0 until input.size()).foreach{ idx =>
       ret += input.read()
     }
     ret.toArray
@@ -85,10 +61,9 @@ class RandomForestLearner (
     */
   override
   def train(trainBlock: DataBlock[LabeledData], validBlock: DataBlock[LabeledData]): MLModel = {
-    var trainDataSet: Array[LabeledData] = convertDataBlock(trainBlock)
-    var validDataSet: Array[LabeledData] = convertDataBlock(validBlock)
-    val trees: Array[DecisionTreeModel] = NewRandomForest.train(trainDataSet, validDataSet, strategy, numTrees,
-      featureSubsetStrategy, seed.toLong)
+    val trainDataSet: Array[LabeledData] = convertDataBlock(trainBlock)
+    val validDataSet: Array[LabeledData] = convertDataBlock(validBlock)
+    val trees: Array[DecisionTreeModel] = NewRandomForest.train(trainDataSet, validDataSet, strategy, seed.toLong)
     new RandomForestModel(strategy.algo, trees.map(_.toOld), ctx.getConf, ctx)
   }
 
@@ -102,12 +77,6 @@ object RandomForestLearner {
     * @param trainBlock Training dataset: DataBlock of [[LabeledData]].
     *              Labels should take values {0, 1, ..., numClasses-1}.
     * @param strategy Parameters for training each tree in the forest.
-    * @param numTrees Number of trees in the random forest.
-    * @param featureSubsetStrategy Number of features to consider for splits at each node.
-    *                              Supported values: "auto", "all", "sqrt", "log2", "onethird".
-    *                              If "auto" is set, this parameter is set based on numTrees:
-    *                                if numTrees == 1, set to "all";
-    *                                if numTrees is greater than 1 (forest) set to "sqrt".
     * @param seed Random seed for bootstrapping and choosing feature subsets.
     * @return MLModel that can be used for prediction.
     */
@@ -116,12 +85,10 @@ object RandomForestLearner {
                        trainBlock: DataBlock[LabeledData],
                        validBlock: DataBlock[LabeledData],
                        strategy: Strategy,
-                       numTrees: Int,
-                       featureSubsetStrategy: String,
                        seed: Int): MLModel = {
     require(strategy.algo == Classification,
       s"RandomForest.trainClassifier given Strategy with invalid algo: ${strategy.algo}")
-    val rf = new RandomForestLearner(ctx, strategy, numTrees, featureSubsetStrategy, seed)
+    val rf = new RandomForestLearner(ctx, strategy, seed)
     rf.train(trainBlock, validBlock)
   }
 
@@ -154,18 +121,19 @@ object RandomForestLearner {
                        ctx: TaskContext,
                        trainBlock: DataBlock[LabeledData],
                        validBlock: DataBlock[LabeledData],
-                       numClasses: Int,
-                       categoricalFeaturesInfo: Map[Int, Int],
-                       numTrees: Int,
-                       featureSubsetStrategy: String,
                        impurity: String,
+                       numTrees: Int,
                        maxDepth: Int,
+                       numClasses: Int,
                        maxBins: Int,
+                       subsamplingRate: Double,
+                       featureSubsetStrategy: String,
+                       categoricalFeaturesInfo: Map[Int, Int],
                        seed: Int = Random.nextInt()): MLModel = {
     val impurityType = Impurities.fromString(impurity)
-    val strategy = new Strategy(Classification, impurityType, maxDepth,
-      numClasses, maxBins, Sort, categoricalFeaturesInfo)
-    trainClassifier(ctx, trainBlock, validBlock, strategy, numTrees, featureSubsetStrategy, seed)
+    val strategy = new Strategy(Classification, impurityType, numTrees, maxDepth,
+      numClasses, maxBins, subsamplingRate, featureSubsetStrategy, Sort, categoricalFeaturesInfo)
+    trainClassifier(ctx, trainBlock, validBlock, strategy, seed)
   }
 
   /**
@@ -174,12 +142,6 @@ object RandomForestLearner {
     * @param trainBlock Training dataset: DataBlock of [[LabeledData]].
     *              Labels are real numbers.
     * @param strategy Parameters for training each tree in the forest.
-    * @param numTrees Number of trees in the random forest.
-    * @param featureSubsetStrategy Number of features to consider for splits at each node.
-    *                              Supported values: "auto", "all", "sqrt", "log2", "onethird".
-    *                              If "auto" is set, this parameter is set based on numTrees:
-    *                                if numTrees == 1, set to "all";
-    *                                if numTrees is greater than 1 (forest) set to "onethird".
     * @param seed Random seed for bootstrapping and choosing feature subsets.
     * @return MLModel that can be used for prediction.
     */
@@ -188,12 +150,10 @@ object RandomForestLearner {
                       trainBlock: DataBlock[LabeledData],
                       validBlock: DataBlock[LabeledData],
                       strategy: Strategy,
-                      numTrees: Int,
-                      featureSubsetStrategy: String,
                       seed: Int): MLModel = {
     require(strategy.algo == Regression,
       s"RandomForest.trainRegressor given Strategy with invalid algo: ${strategy.algo}")
-    val rf = new RandomForestLearner(ctx, strategy, numTrees, featureSubsetStrategy, seed)
+    val rf = new RandomForestLearner(ctx, strategy, seed)
     rf.train(trainBlock, validBlock)
   }
 
@@ -225,22 +185,18 @@ object RandomForestLearner {
                       ctx: TaskContext,
                       trainBlock: DataBlock[LabeledData],
                       validBlock: DataBlock[LabeledData],
-                      categoricalFeaturesInfo: Map[Int, Int],
-                      numTrees: Int,
-                      featureSubsetStrategy: String,
                       impurity: String,
+                      numTrees: Int,
                       maxDepth: Int,
                       maxBins: Int,
+                      subsamplingRate: Double = 1,
+                      featureSubsetStrategy: String,
+                      categoricalFeaturesInfo: Map[Int, Int],
                       seed: Int = Random.nextInt()): MLModel = {
     val impurityType = Impurities.fromString(impurity)
-    val strategy = new Strategy(Regression, impurityType, maxDepth,
-      0, maxBins, Sort, categoricalFeaturesInfo)
-    trainRegressor(ctx, trainBlock, validBlock, strategy, numTrees, featureSubsetStrategy, seed)
+    val strategy = new Strategy(Regression, impurityType, numTrees, maxDepth,
+      0, maxBins, subsamplingRate, featureSubsetStrategy, Sort, categoricalFeaturesInfo)
+    trainRegressor(ctx, trainBlock, validBlock, strategy, seed)
   }
-
-  /**
-    * List of supported feature subset sampling strategies.
-    */
-  val supportedFeatureSubsetStrategies: Array[String] = NewRFParams.supportedFeatureSubsetStrategies
 }
 
