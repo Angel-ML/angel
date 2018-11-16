@@ -1,13 +1,13 @@
 # Spark on Angel Programming Guide
 
-Spark on Angel is designed to enable easy migration for Spark development with minimal cost of change. Therefore, the implementation of algorithms in Spark on Angel is very similar to that in Spark. The majority of Spark ML algorithms can run in Spark on Angel with only a small code change.
+We develop Spark-on-Angel to enable the programming of both Spark and Parameter Server. With Spark-on-Angel, you can not only employ the ability of Spark to couple with data cleaning, task scheculing, resource allocating and other distributed abilities from Spark, but also the Parameter Server ability of Angel to tackle high-dimensional models. Moreover, the programming on Spark-on-Angel is straightforward if you are familiar with Spark.
 
 In its current version，Spark on Angel is developed with Spark 2.1.1 and Scala 2.11.8.
 
 
 ## Importing Spark on Angel
 
-To write a Spark on Angel application, in addition to the Spark dependency, you need to add the following Maven dependencies as well:
+To write an application on Spark-on-Angel, in addition to the Spark dependency, you need to add the following Maven dependencies as well:
 
 ```xml
 <dependency>
@@ -31,8 +31,7 @@ The corresponding import and implicit conversion:
 ```
 
 ## Initializing Spark on Angel
-
-Start Spark and initialize SparkSession first, then start PSContext through SparkSession. Set all config parameters for Spark and Angel PS to `builder`, and Angel PS will get the configuration information from SparkConf.
+To run an application of Spark-on-Angel, we should first start the Spark application and launch the servers of Angel. Hence, first we start Spark by the SparkSession (or SparkContext), and then start Angel servers with the ``PSContext`` class.
 
 ```scala
 // Initialize Spark
@@ -59,55 +58,90 @@ PSContext.stop()
 
 ### PSVector
 
-PSVector is a subclass of PSModel.
+PSVector is a distributed vector stored on parameter servers. It is actually one row of the distributed matrix on servers.
 
-Before introducing PSVector, you need to understand the concept of PSVectorPool first. PSVectorPool is not explicitly exposed in the programming interface of Spark on Angel, but understand its concept might be help for better programming.  
+PSVector is created from PSVectorPool. The PSVectorPool is actually a distributed matrix on servers while a PSVector is one row of this matrix. The proposal of PSVectorPool is to automatical manage the allocation and recycling of PSVector.
+You can create a PSVector from a PSVectorPool and do not need to care when to remove it. The recycle mechanism of PSVector is similar to the Garbage Collection in Java.
 
-- PSVectorPool
-  PSVectorPool is essentially a matrix on Angel PS, the number of matrix columns is `dim`, and the number of rows is `capacity`.
-  PSVectorPool is responsible for PSVector application and automatic recycling. Automatically recycles GC functions similar to Java. PSVector objects do not need to be manually deleted after use.
-  The dimensions of the PSVector in the same PSVectorPool are `dim`, and the PSVector in the same pool can be used for operations.
+You can create a dense PSVector by calling the interface of PSVector.
+```scale
+val dense = PSVector.dense(10, 5)
+```
+Thus, you create a dense PSVector with dimension 10. You also create a matrix (PSVectorPool) on servers with 5x10 shape. But the ``dense`` one only consume the firt row.
 
-- PSVector application and initialization
-  When PSVector is applied for the first time, it must be applied through the dose/sparse method in the associated object of PSVector.
-  The dense/sparse method creates a PSVectorPool, so you need to pass in the dimension and capacity parameters.
+You can create a sparse PSVector by
+```scala
+val sparse = PSVector.sparse(10, 5)
+```
+The sparse PSVector employs hashmap for storage, which saving memory when your feature index is not continous.
 
-  Through the duplicate method, you can apply for a PSVector with the same psVector object as the Pool.
+Given a PSVector, we can conduct some operation on it. For example
+```scala
+// fill the dense vector with 1.0
+dense.fill(1.0)
+// randomly initializing the PSVector with normal distribution N(0.0, 1.0)
+VectorUtils.randomNormal(dense, 0.0, 1.0)
+// randomly initializing the PSVector with uniform distribution U(0.0, 1.0)
+VectorUtils.randomUniform(dense, 0.0, 1.0)
+```
+One important interace of PSVector is duplicate. Through this interface, we
+can allocate PSVectors from the same PSVectorPool. With two PSVectors from the same PSVectorPool (matrix), we can perform distributed operations between them, for example dot-product.
 
 ```scala
-    val dVector = PSVector.dense(dim, capacity)
-    val sVector = PSVector.sparse(dim, capacity)
+val denseFromSamePool = PSVector.duplicate(dense)
+VectorUtils.randomNormal(denseFromSamePool, 0.0, 1.0)
+val dot = VectorUtils.dot(dense, denseFromSamePool)
+```
 
-    val samePoolVector = PSVector.duplicate(dVector)
-
-    dVector.fill(1.0)
-    VectorUtils.randomUniform(dVector, randomUniform(-1.0, 1.0), -1.0, 1.0)
-    VectorUtils.randomNormal(dVector, 0.0, 1.0)
+With a PSVector, we can pull/increment/update with it.
+```scala
+// pull the value from servers
+val localVector1 = dense.pull()
+// pull the value from servers with indices (integer type)
+val localVector2 = dense.pull(Array(1, 2, 3))
+// pull the value from servers with indices (long type)
+val localVector3 = dense.pull(Array(1L, 2L, 3L))
+// increment a PSVector
+val delta = VFactory.sparseDoubleVector(10, Array(1, 2), Array(1.0, 1.0))
+dense.increment(delta)
+// update the vector
+val update = VFactory.sparseDoubleVector(10, Array(1, 2), Array(0.0, 0.0))
+dense.update(update)
 ```
 
 ## 5. PSMatrix
-PSMatrix is ​​a matrix on Angel PS.
+PSMatrix is a matrix stored on Angel servers. We develop the PSMatrix interface to facilitate the creatation and destroy of matrix.
 
-- PSMatrix creation and destruction
-PSMatrix requests the corresponding matrix through the dense/sparse method in the companion object.
-PSVector will have PSVectorPool to automatically recycle and destroy useless PSVector, while PSMatrix needs to manually call destroy method to destroy matrix on PS.
-
-If you need to specify the partition parameters of PSMatrix, specify the size of each partition block by rowsInBlock/colsInBlock.
-
+You can create a dense PSMatrix by
 ```scala
-  // create, initialize
-  Val dMatrix = DensePSMatrix.dense(rows, cols, rowsInBlock, colsInBlock)
-  Val sMatrix = SparsePSMatrix.sparse(rows, cols)
-
-  dMatrix.destroy()
-
-  // Pull/Push operation
-  Val vector = dMatrix.pull(rowId)
-  dMatrix.push(rowId, vector)
+val dense = PSMatrix.dense(rows, cols)
 ```
+A sparse one can be created in a similar way
+```scala
+val sparse = PSMatrix.sparse(rows, cols)
+```
+To destroy a PSMatrix, call the destroy interface.
+```scala
+dense.destroy()
+```
+We can pull/increment/update a vector from PSMatrix
+```scala
+// pull the first row
+dense.pull(0)
+// pull the first with indices (0, 1)
+dense.pull(0, Array(0, 1))
+
+// update the first row with indices(0, 1)
+val update = VFactory.sparseDoubleVector(10, Array(0, 1), Array(1.0, 1.0))
+dense.update(0, update)
+
+// reset the first row
+dense.reset(0)
+```
+
 ## psFunc
 
-- Spark on Angel supports psFunc just like Angel does, with even more powerful functional-programming features. psFunc inherits interfaces such as MapFunc and MapWithIndex to implement user-defined PSVector operations.
+We develope a series of functions that can be executed on the servers. We call these functions ``psFunc``. Users can develope self-defined psFuncs by extending some interfaces. **shoule improved**
 
 ```scala
 val to = PSVector.duplicate(vector)
@@ -147,51 +181,50 @@ class MulScalar(scalar: Double, inplace: Boolean = false) extends MapFunc {
 }
 ```
 
-## examples
+## Some Examples
 
-
-- Example 1： update for PSVector
-
-aggregate features in RDD[(label, feature)] to PSVector:
+Example 1： Aggregate features in RDD[(label, feature)] to PSVector:
 
 ```scala
 val dim = 10
-val capacity = 40
+val capacity = 1
 
-val psVector = PSVector.dense(dim, capacity)
+// allocating a PSVector as the feature index
+val features = PSVector.dense(dim, capacity)
 
 rdd.foreach { case (label , feature) =>
-  psVector.increment(feature)
+  features.increment(feature)
 }
 
-println("feature sum:" + psVector.pull.asInstanceOf[IntDoubleVector].getStorage.getValues.mkString(" "))
+println("feature sum:" + features.pull.asInstanceOf[IntDoubleVector].getStorage.getValues.mkString(" "))
 ```
 
-- Example 2： implements for Gradient Descent
-
-a simple version of Gradient Descent implemented by ps:
+- Example 2：A simple version of Gradient Descent:
 
 ```scala
 
-val w = PSVector.dense(dim).fill(initWeights)
+// allocate the weight vector and initialize with 0
+val weight = PSVector.dense(dim, 1).fill(0.0)
+val gradient = PSVector.duplicate(weight)
+
+val lr = 0.1
+
+// parse input data, each example is a (label, Vector) pair
+val instances = sc.textFile(path).map(f => parse(f))
 
 for (i <- 1 to ITERATIONS) {
-  val gradient = PSVector.duplicate(w)
-
-  val nothing = instance.mapPartitions { iter =>
+  gradient.fill(0.0)
+  instance.foreachPartition { iter =>
+    // pull the weight to local
     val brzW = w.pull()
-
-    val subG = iter.map { case (label, feature) =>
-      feature.mul((1 / (1 + math.exp(-label * brzW.dot(feature))) - 1) * label)
-    }.reduce(_ add _)
+    // calculate gradient
+    val subG = VFactory.sparseDoubleVector(dim)
+    iter.foreach { case (label, feature) =>
+      subG.iadd(feature.mul((1 / (1 + math.exp(-label * brzW.dot(feature))) - 1) * label))
 
     gradient.increment(subG)
-    Iterator.empty
   }
-  nothing.count()
-  
-  VectorUtils.axpy(-1.0, gradient, w)
+  // add gradient to weight
+  VectorUtils.axpy(-lr, gradient, weight)
 }
-
-println("w:" + w.pull().asInstanceOf[IntDoubleVector].getStorage.getValues.mkString(" "))
 ```
