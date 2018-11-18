@@ -181,7 +181,7 @@ class MulScalar(scalar: Double, inplace: Boolean = false) extends MapFunc {
 }
 ```
 
-## Some Examples
+## Some Simple Examples
 
 Example 1： Aggregate features in RDD[(label, feature)] to PSVector:
 
@@ -226,5 +226,195 @@ for (i <- 1 to ITERATIONS) {
   }
   // add gradient to weight
   VectorUtils.axpy(-lr, gradient, weight)
+}
+```
+
+
+## Model Train
+Here we descripe how to train a model, such as Logistic Regression, Factorization Machine, in Spark on Angel. Using the interfaces of PSVector is kinds of complicated.
+Hence, we can use the interfaces of AngelGraph in Spark-on-Angel to simplify the programming for machine learning algorithms.
+
+
+### Writing a Logisitc Regression Graph
+To write a Logistic Regression algorithm, we write a class ``LogisticRegression`` and extends the GraphModel interface in Spark-on-Angel. In this class, we write two layers, including a ``SimpleInputLayer`` and a ``SimpleLossLayer``.
+
+```scala
+package com.tencent.angel.spark.ml.classification
+
+import com.tencent.angel.ml.core.conf.MLConf
+import com.tencent.angel.ml.core.network.layers.verge.{SimpleLossLayer, SimpleInputLayer}
+import com.tencent.angel.ml.core.network.transfunc.Identity
+import com.tencent.angel.ml.core.optimizer.Adam
+import com.tencent.angel.ml.core.optimizer.loss.LogLoss
+import com.tencent.angel.spark.ml.core.GraphModel
+
+class LogisticRegression extends GraphModel {
+
+  // get the learning rate
+  val lr = conf.getDouble(MLConf.ML_LEARN_RATE)
+
+  override
+  def network(): Unit = {
+    // data input layer.
+    // @input is the name of this layer
+    // @1 is the output dimmension for this layer. We set is as 1 since Logistic Regression is a binary classification task.
+    // @Identify() is the transition function, Identity means we do nothing for the output of the input layer.
+    // @Adam(lr) is the optimizer, we here use Adam algorith with learning rate lr.
+    val input = new SimpleInputLayer("input", 1, new Identity(), new Adam(lr))
+
+    // loss layer
+    // @simpleLossLayer is the name of this layer
+    // @input means that we use the ``input`` layer as the input of this layer
+    // @LogLoss is the loss function for this layer
+    new SimpleLossLayer("simpleLossLayer", input, new LogLoss)
+  }
+}
+```
+
+### Parsing the input data
+To pass the data into the SimpleInputLayer, we need to convert the data as ``LabeledData``, which is the data type in Angel. A simple example of parsing the data is
+given as the following example. Assuming that the input format is ``libsvm``.
+
+```scala
+def parseIntFloat(text: String, dimension: Int): LabeledData = {
+    if (null == text)
+      return null
+
+    var splits = text.trim.split(" ")
+
+    if (splits.length < 1)
+      return null
+
+    var y = splits(0).toDouble
+    // For the classification algorithm, we should convert the label as (-1,1)
+    if (y == 0.0) y = -1.0
+
+    splits = splits.tail
+    val len = splits.length
+
+    val keys: Array[Int] = new Array[Int](len)
+    val vals: Array[Float] = new Array[Float](len)
+
+    splits.zipWithIndex.foreach { case (value: String, indx2: Int) =>
+      val kv = value.trim.split(":")
+      keys(indx2) = kv(0).toInt
+      vals(indx2) = kv(1).toFloat
+    }
+    // Using the VFactory interface to create a IntFloatVector
+    val x = VFactory.sparseFloatVector(dim, keys, vals)
+    new LabeledData(x, y)
+  }
+```
+
+### Train the model
+To train a Logistic Regression model, we write a ``train`` function with the parsed data and LogisticRegression model as input.
+
+```scala
+def train(data: RDD[LabeledData], model: LogisticRegression): Unit = {
+    // broadcast the model to all executors
+    val bModel = SparkContext.getOrCreate().broadcast(model)
+
+    for (iteration <- 0 until numIteration) {
+        val (sumLoss, batchSize) = data.sample(fraction, false, 42).mapPartition { case iter =>
+            // Call PSContext to initialize the connection with servers.
+            PSContext.instance()
+            val batch = iter.toArray()
+            bModel.value.forward(epoch, batch)
+            val loss = bModel.value.getLoss()
+            bModel.value.backward()
+            Iterator.single((loss, batch.length))
+        }.reduce((f1, f2) => (f1._1 + f2._1, f1._2 + f2._2))
+
+        // update the model with Adam optimizer
+        model.update(iteration,  batchSize)
+        val loss = sumLoss / model.graph.taskNum
+        println(s"epoch=[$epoch] lr[$lr] batchSize[$batchSize] trainLoss=$loss")
+    }
+}
+```
+
+### Putting all things together
+```scala
+// load data
+val conf = new SparkConf()
+val sc   = new SparkContext(conf)
+val data = sc.textFile(input).map(f => parseIntFloat(f, dim))
+
+// start PS
+PSContext.getOrCreate(sc)
+
+// model
+val model = new LogisticRegression()
+// initialize the model
+model.init(data.getNumPartitions)
+// training
+train(data, model)
+
+// save model
+val path = 'hdfs://xxx'
+model.save(path)
+```
+
+### Saving model and loading model
+Spark on Angel can save/load the model from HDFS. Hence, we can complete increment training and model predict.
+```scala
+// saving a model
+model.save(path)
+// loading a model
+model.load(path)
+```
+
+### Predict with data
+To predict data, we only need to do the forward pass and output the sigmoid value.
+```scala
+// first load the model
+val model = new LogisticRegression()
+model.load(path)
+
+// broadcast model
+val bModel = SparkContext.getOrCreate().broadcast(model)
+// predict
+data.mapPartitions { case iter =>
+    val samples = iterator.toArray
+    val output  = bModel.value.forward(1, samples)
+    // the output is matrix. For each example, it calculate (output, sigmoid, label)
+    (output) match {
+        case (mat: BlasDoubleMatrix) =>
+          (0 until mat.getNumRows).map(idx => (mat.get(idx, 1))).iterator
+        case (mat: BlasFloatMatrix) =>
+          (0 until mat.getNumRows).map(idx => (mat.get(idx, 1).toDouble)).iterator
+    }
+}
+```
+
+
+### Factorization Machine
+For FM algorithm, we only need to write an another class that extends the GraphModel interface while the other steps are all the same.
+```scala
+package com.tencent.angel.spark.ml.classification
+
+import com.tencent.angel.ml.core.conf.MLConf
+import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleLossLayer, SimpleInputLayer}
+import com.tencent.angel.ml.core.network.layers.join.SumPooling
+import com.tencent.angel.ml.core.network.layers.linear.BiInnerSumCross
+import com.tencent.angel.ml.core.network.transfunc.Identity
+import com.tencent.angel.ml.core.optimizer.{Adam, Momentum}
+import com.tencent.angel.ml.core.optimizer.loss.LogLoss
+import com.tencent.angel.spark.ml.core.GraphModel
+
+class FactorizationMachine extends GraphModel {
+
+  val numField: Int = conf.getInt(MLConf.ML_FIELD_NUM)
+  val numFactor: Int = conf.getInt(MLConf.ML_RANK_NUM)
+  val lr: Double = conf.getDouble(MLConf.ML_LEARN_RATE)
+
+  override
+  def network(): Unit = {
+    val wide = new SimpleInputLayer("wide", 1, new Identity(), new Adam(lr))
+    val embedding = new Embedding("embedding", numField * numFactor, numFactor, new Adam(lr))
+    val crossFeature = new BiInnerSumCross("innerSumPooling", embedding)
+    val sum = new SumPooling("sum", 1, Array(wide, crossFeature))
+    new SimpleLossLayer("simpleLossLayer", sum, new LogLoss)
+  }
 }
 ```

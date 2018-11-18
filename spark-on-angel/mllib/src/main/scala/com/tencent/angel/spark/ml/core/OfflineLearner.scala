@@ -112,6 +112,7 @@ class OfflineLearner {
   def predict(data: RDD[LabeledData], model: GraphModel): RDD[(Double, Double)] = {
     val bModel = SparkContext.getOrCreate().broadcast(model)
     val scores = data.mapPartitions { case iterator =>
+      PSContext.instance()
       val samples = iterator.toArray
       val output  = bModel.value.forward(1, samples)
 
@@ -119,9 +120,9 @@ class OfflineLearner {
 
       (labels, output) match {
         case (l: IntDoubleVector, mat: BlasDoubleMatrix) =>
-          (0 until mat.getNumRows).map(idx => (l.get(idx), mat.get(idx, 2))).iterator
+          (0 until mat.getNumRows).map(idx => (l.get(idx), mat.get(idx, 1))).iterator
         case (l: IntFloatVector,  mat: BlasFloatMatrix) =>
-          (0 until mat.getNumRows).map(idx => (l.get(idx).toDouble, mat.get(idx, 2).toDouble)).iterator
+          (0 until mat.getNumRows).map(idx => (l.get(idx).toDouble, mat.get(idx, 1).toDouble)).iterator
       }
     }
 
