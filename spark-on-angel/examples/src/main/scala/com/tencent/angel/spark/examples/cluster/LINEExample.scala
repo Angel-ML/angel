@@ -19,19 +19,17 @@
 package com.tencent.angel.spark.examples.cluster
 
 import scala.util.Random
-
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
-
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.examples.util.SparkUtils
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.embedding.Param
 import com.tencent.angel.spark.ml.embedding.line.LINEModel
 import com.tencent.angel.spark.ml.feature.{Features, SubSampling}
+import com.tencent.angel.spark.ml.util.SparkUtils
 
 object LINEExample {
 

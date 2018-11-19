@@ -19,11 +19,12 @@
 package com.tencent.angel.spark.ml.core
 
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.optimizer.loss.{L2Loss, LogLoss}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix}
-import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector}
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.metric.{AUC, Precision}
+import com.tencent.angel.spark.ml.util.{DataLoader, SparkUtils}
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
@@ -105,27 +106,67 @@ class OfflineLearner {
     * Predict the output with a RDD with data and a trained model
     * @param data: examples to be predicted
     * @param model: a trained model
-    * @return RDD[(label, predict value)], the label is the ``label`` field in the
-    *         libsvm format. We can place the data ID in this field when doing
-    *         predicting.
+    * @return RDD[(label, predict value)]
+    *
     */
-  def predict(data: RDD[LabeledData], model: GraphModel): RDD[(Double, Double)] = {
+  def predict(data: RDD[(LabeledData, String)], model: GraphModel): RDD[(String, Double)] = {
     val bModel = SparkContext.getOrCreate().broadcast(model)
     val scores = data.mapPartitions { case iterator =>
       PSContext.instance()
       val samples = iterator.toArray
-      val output  = bModel.value.forward(1, samples)
-      val labels = bModel.value.graph.placeHolder.getLabel.getCol(0)
+      val output  = bModel.value.forward(1, samples.map(f => f._1))
+      val labels = samples.map(f => f._2)
 
-      (labels, output) match {
-        case (l: IntDoubleVector, mat: BlasDoubleMatrix) =>
-          (0 until mat.getNumRows).map(idx => (l.get(idx), mat.get(idx, 1))).iterator
-        case (l: IntFloatVector,  mat: BlasFloatMatrix) =>
-          (0 until mat.getNumRows).map(idx => (l.get(idx).toDouble, mat.get(idx, 1).toDouble)).iterator
+      (output, bModel.value.getLossFunc()) match {
+        case (mat :BlasDoubleMatrix, _: LogLoss) =>
+          // For LogLoss, the output is (value, sigmoid(value), label)
+          (0 until mat.getNumRows).map(idx => (labels(idx), mat.get(idx, 1))).iterator
+        case (mat :BlasFloatMatrix, _: LogLoss) =>
+          // For LogLoss, the output is (value, sigmoid(value), label)
+          (0 until mat.getNumRows).map(idx => (labels(idx), mat.get(idx, 1).toDouble)).iterator
+        case (mat: BlasDoubleMatrix , _: L2Loss) =>
+          // For L2Loss, the output is (value, _, _)
+          (0 until mat.getNumRows).map(idx => (labels(idx), mat.get(idx, 0))).iterator
+        case (mat: BlasFloatMatrix , _: L2Loss) =>
+          // For L2Loss, the output is (value, _, _)
+          (0 until mat.getNumRows).map(idx => (labels(idx), mat.get(idx, 0).toDouble)).iterator
       }
     }
 
     scores
+  }
+
+  def train(input: String,
+            modelOutput: String,
+            modelInput: String,
+            dim: Int,
+            model: GraphModel): Unit = {
+    val conf = SparkContext.getOrCreate().getConf
+    val data = SparkContext.getOrCreate().textFile(input)
+      .repartition(SparkUtils.getNumExecutors(conf))
+      .map(f => DataLoader.parseIntFloat(f, dim))
+
+    model.init(data.getNumPartitions)
+
+    if (modelInput.length > 0) model.load(modelInput)
+    train(data, model)
+    if (modelOutput.length > 0) model.save(modelOutput)
+  }
+
+  def predict(input: String,
+              output: String,
+              modelInput: String,
+              dim: Int,
+              model: GraphModel): Unit = {
+    val dataWithLabels = SparkContext.getOrCreate().textFile(input)
+      .map(f => (DataLoader.parseIntFloat(f, dim), DataLoader.parseLabel(f)))
+
+    model.init(dataWithLabels.getNumPartitions)
+    model.load(modelInput)
+
+    val predicts = predict(dataWithLabels, model)
+    if (output.length > 0)
+      predicts.map(f => s"${f._1} ${f._2}").saveAsTextFile(output)
   }
 
 }

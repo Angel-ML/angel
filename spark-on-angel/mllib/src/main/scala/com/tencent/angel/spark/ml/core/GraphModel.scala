@@ -22,6 +22,7 @@ package com.tencent.angel.spark.ml.core
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.layers.{AngelGraph, PlaceHolder, STATUS}
 import com.tencent.angel.ml.core.optimizer.decayer._
+import com.tencent.angel.ml.core.optimizer.loss.LossFunc
 import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.Matrix
@@ -66,6 +67,10 @@ class GraphModel extends Serializable {
 
   def getLoss(): Double = {
     graph.getOutputLayer.calLoss()
+  }
+
+  def getLossFunc(): LossFunc = {
+    graph.getOutputLayer.getLossFunc
   }
 
   def backward(): Unit = {
