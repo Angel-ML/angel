@@ -91,7 +91,7 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
 
 
         val attached = graph.placeHolder.getAttached
-        (graph.predict(), graph.getLossLayer.getLossFunc) match {
+        (graph.predict(), graph.getLossLayer.getLossFunc()) match {
           case (mat: BlasDoubleMatrix, lossFunc: SoftmaxLoss) if mat.getNumCols == 4 =>
             (0 until mat.getNumRows).foreach { i =>
               resData.put(SoftmaxPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
@@ -129,7 +129,7 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
       }
 
       val attached = graph.placeHolder.getAttached
-      (graph.predict(), graph.getLossLayer.getLossFunc) match {
+      (graph.predict(), graph.getLossLayer.getLossFunc()) match {
         case (mat: BlasDoubleMatrix, _: SoftmaxLoss) if mat.getNumCols == 4 =>
           (0 until mat.getNumRows).foreach { i =>
             resData.put(SoftmaxPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))

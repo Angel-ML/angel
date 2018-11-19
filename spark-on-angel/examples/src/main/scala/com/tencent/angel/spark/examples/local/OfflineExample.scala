@@ -19,23 +19,21 @@
 package com.tencent.angel.spark.examples.local
 
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
-import com.tencent.angel.ml.core.utils.DataParser
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OfflineLearner}
-import org.apache.log4j.PropertyConfigurator
+import com.tencent.angel.spark.ml.util.DataLoader
 import org.apache.spark.{SparkConf, SparkContext}
 
-object NetworkExample {
-  PropertyConfigurator.configure("conf/log4j.properties")
+object OfflineExample {
 
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
-    val input = params.getOrElse("input", "data/census/census_148d_train.dummy")
-    val dataType = params.getOrElse(MLConf.ML_DATA_INPUT_FORMAT, "dummy")
+    val input = params.getOrElse("input", "data/census/census_148d_train.libsvm")
+    val dataType = params.getOrElse(MLConf.ML_DATA_INPUT_FORMAT, "libsvm")
     val features = params.getOrElse(MLConf.ML_FEATURE_INDEX_RANGE, "148").toInt
     val numField = params.getOrElse(MLConf.ML_FIELD_NUM, "13").toInt
     val numRank = params.getOrElse(MLConf.ML_RANK_NUM, "8").toInt
-    val numEpoch = params.getOrElse(MLConf.ML_EPOCH_NUM, "200").toInt
+    val numEpoch = params.getOrElse(MLConf.ML_EPOCH_NUM, "10").toInt
     val fraction = params.getOrElse(MLConf.ML_BATCH_SAMPLE_RATIO, "0.1").toDouble
     val lr = params.getOrElse(MLConf.ML_LEARN_RATE, "0.02").toDouble
 
@@ -65,8 +63,7 @@ object NetworkExample {
     conf.set("spark.ui.enabled", "false")
 
     val sc = new SparkContext(conf)
-    val parser = DataParser(SharedConf.get())
-    val data = sc.textFile(input).map(f => parser.parse(f))
+    val data = sc.textFile(input).map(f => DataLoader.parseIntFloat(f, SharedConf.indexRange.toInt))
 
     PSContext.getOrCreate(sc)
 

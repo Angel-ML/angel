@@ -55,7 +55,7 @@ trait LossLayer {
 
   def calLoss(): Double
 
-  def getLossFunc: LossFunc
+  def getLossFunc(): LossFunc
 }
 
 abstract class Layer(val name: String, val outputDim: Int)(implicit val graph: AngelGraph)
