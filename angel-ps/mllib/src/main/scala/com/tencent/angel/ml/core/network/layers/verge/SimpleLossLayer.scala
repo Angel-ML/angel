@@ -90,4 +90,6 @@ class SimpleLossLayer(name: String, inputLayer: Layer, lossFunc: LossFunc)(
   override def toString: String = {
     s"SimpleLossLayer lossFunc=$lossFunc"
   }
+
+
 }

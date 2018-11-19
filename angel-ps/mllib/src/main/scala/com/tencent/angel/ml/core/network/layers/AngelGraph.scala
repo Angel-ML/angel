@@ -95,6 +95,8 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
 
   def getMatrixCtx(): Seq[MatrixContext] = matrixCtxs
 
+  def getLossLayer: LossLayer = lossLayer
+
   private def deepFirstDown(layer: Layer)(predicate: Layer => Boolean, action: Layer => Unit): Unit = {
     if (predicate(layer)) {
       action(layer)
