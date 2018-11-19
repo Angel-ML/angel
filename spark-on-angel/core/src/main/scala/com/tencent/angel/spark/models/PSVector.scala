@@ -93,7 +93,7 @@ object PSVector{
 
   def sparse(dimension: Long, capacity: Int, range: Long, rowType: RowType,
       additionalConfiguration:Map[String, String]): PSVector = {
-    PSContext.instance().createVector(dimension, rowType, capacity, range)
+    PSContext.instance().createVector(dimension, rowType, capacity, range, additionalConfiguration)
   }
 
   def sparse(dimension: Long, capacity: Int = 20, rowType: RowType = RowType.T_DOUBLE_SPARSE_LONGKEY,

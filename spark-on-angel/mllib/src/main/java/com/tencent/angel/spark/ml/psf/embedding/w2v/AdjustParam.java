@@ -11,9 +11,6 @@ import java.util.List;
 public class AdjustParam extends UpdateParam {
 
   private int seed;
-  private int negative;
-  private int window;
-  private int partDim;
   private int partitionId;
   private int model;
   private float[] gradient;
@@ -21,18 +18,12 @@ public class AdjustParam extends UpdateParam {
 
   public AdjustParam(int matrixId,
                      int seed,
-                     int negative,
-                     int window,
-                     int partDim,
                      int partitionId,
                      int model,
                      float[] gradient,
                      int[][] sentences) {
     super(matrixId);
     this.seed = seed;
-    this.negative = negative;
-    this.window = window;
-    this.partDim = partDim;
     this.partitionId = partitionId;
     this.model = model;
     this.gradient = gradient;
@@ -48,9 +39,6 @@ public class AdjustParam extends UpdateParam {
       params.add(new AdjustPartitionParam(matrixId,
               pkey,
               seed,
-              negative,
-              window,
-              partDim,
               partitionId,
               model,
               gradient,

@@ -46,6 +46,7 @@ class Zip2MapWithIndex(matrixId: Int, fromId1: Int, fromId2: Int, toId: Int, fun
         indices.foreach { i =>
           to.set(i, mapper.call(i + toRow.getStartCol, from1.get(i), from2.get(i)))
         }
+        toRow.setSplit(to)
         to
 
       case toRow: ServerIntFloatRow =>
@@ -85,15 +86,30 @@ class Zip2MapWithIndex(matrixId: Int, fromId1: Int, fromId2: Int, toId: Int, fun
         to
 
       case toRow: ServerLongDoubleRow =>
-        val from1 = rows(0).getSplit.asInstanceOf[LongDoubleVector]
-        val from2 = rows(1).getSplit.asInstanceOf[LongDoubleVector]
-        val to = VFactory.sparseLongKeyDoubleVector(from1.getDim)
-        val startCol = rows(0).getStartCol
-        val indices = (from1.getStorage.getIndices ++ from2.getStorage.getIndices).distinct
-        indices.foreach { i =>
-          to.set(i, mapper.call(i + startCol, from1.get(i), from2.get(i)))
+        rows(0).getSplit match {
+          case _: IntDoubleVector =>
+            val from1 = rows(0).getSplit.asInstanceOf[IntDoubleVector]
+            val from2 = rows(1).getSplit.asInstanceOf[IntDoubleVector]
+            val to = VFactory.sparseDoubleVector(from1.getDim)
+            val startCol = rows(0).getStartCol
+            val indices = (from1.getStorage.getIndices ++ from2.getStorage.getIndices).distinct
+            indices.foreach { i =>
+              to.set(i, mapper.call(i + startCol, from1.get(i), from2.get(i)))
+            }
+            toRow.setSplit(to)
+            to
+          case _: LongDoubleVector =>
+            val from1 = rows(0).getSplit.asInstanceOf[LongDoubleVector]
+            val from2 = rows(1).getSplit.asInstanceOf[LongDoubleVector]
+            val to = VFactory.sparseLongKeyDoubleVector(from1.getDim)
+            val startCol = rows(0).getStartCol
+            val indices = (from1.getStorage.getIndices ++ from2.getStorage.getIndices).distinct
+            indices.foreach { i =>
+              to.set(i, mapper.call(i + startCol, from1.get(i), from2.get(i)))
+            }
+            toRow.setSplit(to)
+            to
         }
-        to
 
       case toRow: ServerLongFloatRow =>
         val from1 = rows(0).getSplit.asInstanceOf[LongFloatVector]
@@ -104,6 +120,7 @@ class Zip2MapWithIndex(matrixId: Int, fromId1: Int, fromId2: Int, toId: Int, fun
         indices.foreach { i =>
           to.set(i, mapper.call(i + startCol, from1.get(i), from2.get(i)).toFloat)
         }
+        toRow.setSplit(to)
         to
 
       case toRow: ServerLongLongRow =>
@@ -115,6 +132,7 @@ class Zip2MapWithIndex(matrixId: Int, fromId1: Int, fromId2: Int, toId: Int, fun
         indices.foreach { i =>
           to.set(i, mapper.call(i + startCol, from1.get(i), from2.get(i)).toLong)
         }
+        toRow.setSplit(to)
         to
 
       case toRow: ServerLongIntRow =>
@@ -126,6 +144,7 @@ class Zip2MapWithIndex(matrixId: Int, fromId1: Int, fromId2: Int, toId: Int, fun
         indices.foreach { i =>
           to.set(i, mapper.call(i + startCol, from1.get(i), from2.get(i)).toInt)
         }
+        toRow.setSplit(to)
         to
     }
     try{

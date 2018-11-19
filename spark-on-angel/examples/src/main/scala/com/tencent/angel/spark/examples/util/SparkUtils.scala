@@ -18,8 +18,7 @@
 
 package com.tencent.angel.spark.examples.util
 
-import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.SparkConf
 
 object SparkUtils {
 
