@@ -41,6 +41,7 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
   private var feats: Matrix = _
   private var labels: Matrix = _
   private var indices: Vector = _
+  private var attached: Array[String] = _
 
   var isFeed: Boolean = false
 
@@ -103,6 +104,16 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
     }
 
     labels
+  }
+
+  def getAttached: Array[String] = {
+    attached = if (attached == null) {
+      data.map(_.getAttach)
+    } else {
+      attached
+    }
+
+    attached
   }
 
   def getBatchSize: Int = data.length

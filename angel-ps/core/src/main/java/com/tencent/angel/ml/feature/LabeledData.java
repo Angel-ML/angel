@@ -27,10 +27,16 @@ public class LabeledData {
 
   private Vector x;
   private double y;
+  private String attached;
 
   public LabeledData(Vector x, double y) {
+    this(x, y, null);
+  }
+
+  public LabeledData(Vector x, double y, String attached) {
     this.x = x;
     this.y = y;
+    this.attached = attached;
   }
 
   public LabeledData() {
@@ -51,5 +57,13 @@ public class LabeledData {
 
   public void setY(double y) {
     this.y = y;
+  }
+
+  public void attach(String msg) {
+    attached = msg;
+  }
+
+  public String getAttach() {
+    return attached;
   }
 }

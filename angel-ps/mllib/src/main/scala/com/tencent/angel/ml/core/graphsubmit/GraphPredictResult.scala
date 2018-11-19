@@ -20,26 +20,26 @@ package com.tencent.angel.ml.core.graphsubmit
 
 import com.tencent.angel.ml.predict.PredictResult
 
-case class GraphPredictResult(override val sid: Long,
+case class GraphPredictResult(override val sid: String,
                               override val pred: Double,
                               override val proba: Double,
                               override val label: Double) extends PredictResult {
 
   override def getText: String = {
-    format.format(sid) + separator +
+    sid + separator +
       format.format(pred) + separator +
       format.format(proba) + separator +
       format.format(label)
   }
 }
 
-case class SoftmaxPredictResult(override val sid: Long,
+case class SoftmaxPredictResult(override val sid: String,
                                 override val pred: Double,
                                 override val proba: Double, trueProba: Double,
                                 override val label: Double) extends PredictResult {
 
   override def getText: String = {
-    format.format(sid) + separator +
+    sid + separator +
       format.format(pred) + separator +
       format.format(proba) + separator +
       format.format(trueProba) + separator +
