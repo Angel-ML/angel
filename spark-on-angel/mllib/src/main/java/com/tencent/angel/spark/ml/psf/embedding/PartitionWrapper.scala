@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -20,7 +20,6 @@ package com.tencent.angel.spark.ml.psf.embedding
 
 import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage
 import com.tencent.angel.ps.storage.matrix.ServerPartition
-import com.tencent.angel.ps.storage.vector.ServerIntFloatRow
 
 class PartitionWrapper(val part: ServerPartition, val partDim: Int, val order: Int) {
   val nodePerRow: Int = {

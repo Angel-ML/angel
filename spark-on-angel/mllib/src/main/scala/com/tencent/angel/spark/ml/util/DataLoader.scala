@@ -18,8 +18,10 @@
 
 package com.tencent.angel.spark.ml.util
 
-import scala.collection.mutable.ArrayBuffer
+import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.math2.VFactory
 
+import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.ml.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
@@ -145,6 +147,122 @@ object DataLoader {
     parseRDD.map { case (label, indices, values) =>
       Tuple2(label.toDouble, Vectors.sparse(d, indices, values))
     }
+  }
+
+  def parseIntDouble(text: String, dim: Int): LabeledData = {
+    if (null == text) {
+      return null
+    }
+
+    var splits = text.trim.split(" ")
+
+    if (splits.length < 1)
+      return null
+
+    var y = splits(0).toDouble
+    if (y == 0.0) y = -1.0
+
+    splits = splits.tail
+    val len = splits.length
+
+    val keys = new Array[Int](len)
+    val vals = new Array[Double](len)
+
+    // y should be +1 or -1 when classification.
+    splits.zipWithIndex.foreach { case (value: String, indx2: Int) =>
+      val kv = value.trim.split(":")
+      keys(indx2) = kv(0).toInt
+      vals(indx2) = kv(1).toDouble
+    }
+    val x = VFactory.sparseDoubleVector(dim, keys, vals)
+    new LabeledData(x, y)
+  }
+
+  def parseLongFloat(text: String, dim: Int): LabeledData = {
+    if (null == text) {
+      return null
+    }
+
+    var splits = text.trim.split(" ")
+
+    if (splits.length < 1)
+      return null
+
+    var y = splits(0).toDouble
+    if (y == 0.0) y = -1.0
+
+    splits = splits.tail
+    val len = splits.length
+
+    val keys = new Array[Long](len)
+    val vals = new Array[Float](len)
+
+    // y should be +1 or -1 when classification.
+    splits.zipWithIndex.foreach { case (value: String, indx2: Int) =>
+      val kv = value.trim.split(":")
+      keys(indx2) = kv(0).toLong
+      vals(indx2) = kv(1).toFloat
+    }
+    val x = VFactory.sparseLongKeyFloatVector(dim, keys, vals)
+    new LabeledData(x, y)
+  }
+
+  def parseLongDouble(text: String, dim: Long): LabeledData = {
+    if (null == text) {
+      return null
+    }
+
+    var splits = text.trim.split(" ")
+
+    if (splits.length < 1)
+      return null
+
+    var y = splits(0).toDouble
+    if (y == 0.0) y = -1.0
+
+    splits = splits.tail
+    val len = splits.length
+
+    val keys = new Array[Long](len)
+    val vals = new Array[Double](len)
+
+    // y should be +1 or -1 when classification.
+    splits.zipWithIndex.foreach { case (value: String, indx2: Int) =>
+      val kv = value.trim.split(":")
+      keys(indx2) = kv(0).toLong
+      vals(indx2) = kv(1).toDouble
+    }
+    val x = VFactory.sparseLongKeyDoubleVector(dim, keys, vals)
+    new LabeledData(x, y)
+  }
+
+  def parseIntFloat(text: String, dim: Int): LabeledData = {
+    if (null == text) {
+      return null
+    }
+
+    var splits = text.trim.split(" ")
+
+    if (splits.length < 1)
+      return null
+
+    var y = splits(0).toDouble
+    if (y == 0.0) y = -1.0
+
+    splits = splits.tail
+    val len = splits.length
+
+    val keys: Array[Int] = new Array[Int](len)
+    val vals: Array[Float] = new Array[Float](len)
+
+    // y should be +1 or -1 when classification.
+    splits.zipWithIndex.foreach { case (value: String, indx2: Int) =>
+      val kv = value.trim.split(":")
+      keys(indx2) = kv(0).toInt
+      vals(indx2) = kv(1).toFloat
+    }
+    val x = VFactory.sparseFloatVector(dim, keys, vals)
+    new LabeledData(x, y)
   }
 
   private def parseLine(line: String): (String, Array[Int], Array[Double]) = {

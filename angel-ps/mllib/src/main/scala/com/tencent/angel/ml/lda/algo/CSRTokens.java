@@ -59,7 +59,7 @@ public class CSRTokens {
     ds = new int[n_docs + 1];
     n_tokens = 0;
 
-    maxDocLen = -1;
+    maxDocLen = 1;
 
     // count word
     ds[0] = 0;

@@ -22,11 +22,8 @@ import com.tencent.angel.RunningMode
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
-import com.tencent.angel.ml.core.utils.{DataParser, NetUtils}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.math2.storage.IntFloatSparseVectorStorage
-import com.tencent.angel.ml.math2.vector.IntFloatVector
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.examples.util.SparkUtils
 import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OfflineLearner}
@@ -91,12 +88,12 @@ object OfflineRunner {
       .map(f => parse(f, dim))
 
     // calculating the feature index
-//    data.cache()
-//    val dim = data.map(s => s.getX.getStorage.asInstanceOf[IntFloatSparseVectorStorage].getIndices.max).max() + 1
-//    data.foreach(f => f.getX.asInstanceOf[IntFloatVector].setDim(dim))
+    //    data.cache()
+    //    val dim = data.map(s => s.getX.getStorage.asInstanceOf[IntFloatSparseVectorStorage].getIndices.max).max() + 1
+    //    data.foreach(f => f.getX.asInstanceOf[IntFloatVector].setDim(dim))
 
-//    SharedConf.get().setInt(MLConf.ML_FEATURE_INDEX_RANGE, dim)
-//    println(s"dim=$dim")
+    //    SharedConf.get().setInt(MLConf.ML_FEATURE_INDEX_RANGE, dim)
+    //    println(s"dim=$dim")
 
     // start PS
     PSContext.getOrCreate(sc)
