@@ -7,27 +7,18 @@ import io.netty.buffer.ByteBuf;
 public class DotPartitionParam extends PartitionGetParam {
 
   int seed;
-  int negative;
-  int window;
-  int partDim;
   int partitionId;
   int model;
   int[][] sentences;
 
   public DotPartitionParam(int matrixId,
                            int seed,
-                           int negative,
-                           int window,
-                           int partDim,
                            int partitionId,
                            int model,
                            PartitionKey pkey,
                            int[][] sentences) {
     super(matrixId, pkey);
     this.seed = seed;
-    this.negative = negative;
-    this.window = window;
-    this.partDim = partDim;
     this.partitionId = partitionId;
     this.model = model;
     this.sentences = sentences;
@@ -39,9 +30,6 @@ public class DotPartitionParam extends PartitionGetParam {
   public void serialize(ByteBuf buf) {
     super.serialize(buf);
     buf.writeInt(seed);
-    buf.writeInt(negative);
-    buf.writeInt(window);
-    buf.writeInt(partDim);
     buf.writeInt(partitionId);
     buf.writeInt(model);
 
@@ -57,9 +45,6 @@ public class DotPartitionParam extends PartitionGetParam {
   public void deserialize(ByteBuf buf) {
     super.deserialize(buf);
     this.seed = buf.readInt();
-    this.negative = buf.readInt();
-    this.window = buf.readInt();
-    this.partDim = buf.readInt();
     this.partitionId = buf.readInt();
     this.model = buf.readInt();
 
