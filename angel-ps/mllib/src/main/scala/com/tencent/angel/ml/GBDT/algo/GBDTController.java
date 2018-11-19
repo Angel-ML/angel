@@ -330,7 +330,7 @@ public class GBDTController {
         IntDoubleVector vec = (IntDoubleVector) cateFeat.getRow(worker);
         for (int i = 0; i < cateFeatList.size(); i++) {
           int fid = cateFeatList.get(i);
-          int start = fid * this.param.numSplit;
+          int start = i * this.param.numSplit;
           for (int j = 0; j < this.param.numSplit; j++) {
             double fvalue = vec.get(start + j);
             featSet[i].add(fvalue);
