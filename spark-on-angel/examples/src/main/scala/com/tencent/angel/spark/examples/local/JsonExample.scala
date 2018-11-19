@@ -18,14 +18,10 @@
 
 package com.tencent.angel.spark.examples.local
 
-import com.tencent.angel.RunningMode
-import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
-import com.tencent.angel.ml.core.utils.DataParser
 import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OfflineLearner}
-import com.tencent.angel.spark.ml.util.Features
 import org.apache.log4j.PropertyConfigurator
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -38,10 +34,11 @@ object JsonExample {
     val output = params.getOrElse("output", "")
     val modelPath = params.getOrElse("model", "")
     val actionType = params.getOrElse("action.type", "train")
+    val json = params.getOrElse("angel.ml.conf", "jsons/logreg.json")
+
+    SharedConf.get().set("angel.ml.conf", json)
 
     SharedConf.addMap(params)
-    SharedConf.get().set(AngelConf.ANGEL_RUNNING_MODE, RunningMode.ANGEL_PS.toString)
-
     JsonUtils.init()
 
     // load data
@@ -55,23 +52,19 @@ object JsonExample {
 
     val sc = new SparkContext(conf)
     sc.setLogLevel("ERROR")
-    val parser = DataParser(SharedConf.get())
-    val data = sc.textFile(input).repartition(1).map(f => parser.parse(f))
+
     PSContext.getOrCreate(sc)
 
     val model = new GraphModel
+    val dim = SharedConf.indexRange.toInt
     val learner = new OfflineLearner
 
-    // initialize model
-    model.init(data.getNumPartitions)
-    // load model if there exists
-    if (modelPath.length > 0)
-      model.load(modelPath)
-    // model training
-    learner.train(data, model)
-    // save it
-    if (output.length > 0)
-      model.save(output)
+    println(s"dim=$dim")
+
+    actionType match {
+      case MLConf.ANGEL_ML_TRAIN => learner.train(input, output, modelPath, dim, model)
+      case MLConf.ANGEL_ML_PREDICT => learner.train(input, output, modelPath, dim, model)
+    }
 
     PSContext.stop()
     sc.stop()

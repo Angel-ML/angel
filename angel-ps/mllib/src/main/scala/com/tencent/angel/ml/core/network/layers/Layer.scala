@@ -24,6 +24,7 @@ import com.google.gson.Gson
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.core.optimizer.Optimizer
+import com.tencent.angel.ml.core.optimizer.loss.LossFunc
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 
@@ -54,6 +55,8 @@ trait LossLayer {
   def predict(): Matrix
 
   def calLoss(): Double
+
+  def getLossFunc(): LossFunc
 }
 
 abstract class Layer(val name: String, val outputDim: Int)(implicit val graph: AngelGraph)
