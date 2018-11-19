@@ -102,7 +102,7 @@ private[tree] object RandomForest {
     val withReplacement = strategy.numTrees > 1
 
     val baggedInput = BaggedPoint
-      .convertToBaggedRDD(trainTreeInput, strategy.subsamplingRate, numTrees, withReplacement, seed)
+      .convertToBaggedRDD(trainTreeInput, strategy.subSamplingRate, numTrees, withReplacement, seed)
 
     // depth of the decision tree
     val maxDepth = strategy.maxDepth

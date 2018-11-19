@@ -37,7 +37,7 @@ public class RegTParam implements TrainParam {
   // minimum loss change required for a split
   public float minSplitLoss = 0;
   // maximum depth of a tree
-  public int maxDepth = MLConf.DEFAULT_ML_TREE_DEPTH();
+  public int maxDepth = MLConf.DEFAULT_ML_TREE_MAX_DEPTH();
   // number of features
   public int numFeature;
   // number of nonzero
@@ -48,7 +48,7 @@ public class RegTParam implements TrainParam {
   // base instance weight
   public float baseWeight = 0;
   // minimum amount of hessian(weight) allowed in a child
-  public float minChildWeight = (float) MLConf.DEFAULT_ML_GBDT_MIN_CHILD_WEIGHT();
+  public float minChildWeight = (float) MLConf.DEFAULT_ML_TREE_MIN_CHILD_WEIGHT();
   // L2 regularization factor
   public float regLambda = (float) MLConf.DEFAULT_ML_GBDT_REG_LAMBDA();
   // L1 regularization factor

@@ -138,7 +138,7 @@ trait DecisionTreeParams {
     strategy.useNodeIdCache = getCacheNodeIds
     strategy.numClasses = numClasses
     strategy.categoricalFeaturesInfo = categoricalFeatures
-    strategy.subsamplingRate = subsamplingRate
+    strategy.subSamplingRate = subsamplingRate
     strategy
   }
 }

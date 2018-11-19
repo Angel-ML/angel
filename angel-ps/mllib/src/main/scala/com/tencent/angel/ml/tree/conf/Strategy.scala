@@ -22,7 +22,7 @@ import scala.beans.BeanProperty
 import scala.collection.JavaConverters._
 import com.tencent.angel.ml.tree.conf.Algo._
 import com.tencent.angel.ml.tree.conf.QuantileStrategy._
-import com.tencent.angel.ml.tree.impurity.{Entropy, Gini, Impurity, Variance}
+import com.tencent.angel.ml.tree.impurity._
 
 import scala.util.Try
 
@@ -38,8 +38,8 @@ import scala.util.Try
   *                   Default value is 2 (binary classification).
   * @param maxBins Maximum number of bins used for discretizing continuous features and
   *                for choosing how to split on features at each node.
-  * @param subsamplingRate Fraction of the training data used for learning decision tree.
-  * @param featureSubsetStrategy Number of features to consider for splits at each node.
+  * @param subSamplingRate Fraction of the training data used for learning decision tree.
+  * @param featureSamplingStrategy Number of features to consider for splits at each node.
   *                              Supported values: "auto", "all", "sqrt", "log2", "onethird".
   *                              Supported numerical values: "(0.0-1.0]", "[1-n]".
   *                              If "auto" is set, this parameter is set based on numTrees:
@@ -75,8 +75,8 @@ class Strategy (@BeanProperty var algo: Algo,
                 @BeanProperty var maxDepth: Int = 2,
                 @BeanProperty var numClasses: Int = 2,
                 @BeanProperty var maxBins: Int = 32,
-                @BeanProperty var subsamplingRate: Double = 1,
-                @BeanProperty var featureSubsetStrategy: String = "auto",
+                @BeanProperty var subSamplingRate: Double = 1,
+                @BeanProperty var featureSamplingStrategy: String = "auto",
                 var quantileCalculationStrategy: QuantileStrategy = Sort,
                 var categoricalFeaturesInfo: Map[Int, Int] = Map[Int, Int](),
                 var minInstancesPerNode: Int = 1,
@@ -113,6 +113,12 @@ class Strategy (@BeanProperty var algo: Algo,
   def setAlgo(algo: String): Unit = algo match {
     case "Classification" => setAlgo(Classification)
     case "Regression" => setAlgo(Regression)
+  }
+
+  def setImpurity(impurity: String): Unit = impurity match {
+    case "gini" => Impurities.fromString("gini")
+    case "entropy" => Impurities.fromString("entropy")
+    case "variance" => Impurities.fromString("variance")
   }
 
   /**
@@ -154,14 +160,14 @@ class Strategy (@BeanProperty var algo: Algo,
       s"DecisionTree Strategy requires minInstancesPerNode >= 1 but was given $minInstancesPerNode")
     require(maxMemoryInMB <= 10240,
       s"DecisionTree Strategy requires maxMemoryInMB <= 10240, but was given $maxMemoryInMB")
-    require(subsamplingRate > 0 && subsamplingRate <= 1,
+    require(subSamplingRate > 0 && subSamplingRate <= 1,
       s"DecisionTree Strategy requires subsamplingRate <=1 and >0, but was given " +
-        s"$subsamplingRate")
+        s"$subSamplingRate")
     require(numTrees > 0, s"RandomForest requires numTrees > 0, but was given numTrees = $numTrees.")
-    require(Strategy.supportedFeatureSubsetStrategies.contains(featureSubsetStrategy)
-      || Try(featureSubsetStrategy.toInt).filter(_ > 0).isSuccess
-      || Try(featureSubsetStrategy.toDouble).filter(_ > 0).filter(_ <= 1.0).isSuccess,
-      s"RandomForest given invalid featureSubsetStrategy: $featureSubsetStrategy." +
+    require(Strategy.supportedFeatureSubsetStrategies.contains(featureSamplingStrategy)
+      || Try(featureSamplingStrategy.toInt).filter(_ > 0).isSuccess
+      || Try(featureSamplingStrategy.toDouble).filter(_ > 0).filter(_ <= 1.0).isSuccess,
+      s"RandomForest given invalid featureSubsetStrategy: $featureSamplingStrategy." +
         s" Supported values: ${Strategy.supportedFeatureSubsetStrategies.mkString(", ")}," +
         s" (0.0-1.0], [1-n].")
   }
@@ -172,7 +178,7 @@ class Strategy (@BeanProperty var algo: Algo,
   def copy: Strategy = {
     new Strategy(algo, impurity, maxDepth, numClasses, maxBins,
       quantileCalculationStrategy, categoricalFeaturesInfo, minInstancesPerNode, minInfoGain,
-      maxMemoryInMB, subsamplingRate, useNodeIdCache, checkpointInterval)
+      maxMemoryInMB, subSamplingRate, useNodeIdCache, checkpointInterval)
   }
 }
 
@@ -184,7 +190,7 @@ object Strategy {
   val supportedFeatureSubsetStrategies: Array[String] = NewRFParams.supportedFeatureSubsetStrategies
 
   /**
-    * Construct a default set of parameters for [[org.apache.spark.mllib.tree.DecisionTree]]
+    * Construct a default set of parameters for DecisionTree
     * @param algo  "Classification" or "Regression"
     */
   def defaultStrategy(algo: String): Strategy = {
