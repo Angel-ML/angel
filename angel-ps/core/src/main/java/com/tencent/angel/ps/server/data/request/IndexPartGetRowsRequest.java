@@ -26,6 +26,7 @@ import io.netty.buffer.ByteBuf;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class IndexPartGetRowsRequest extends PartitionRequest {
   private int matrixId;
@@ -33,6 +34,9 @@ public class IndexPartGetRowsRequest extends PartitionRequest {
   private final IndicesView colIds;
   private final ValueType valueType;
   private InitFunc func;
+
+  private final int hashCode;
+  private static final Random r = new Random();
 
   public IndexPartGetRowsRequest(int userRequestId, int matrixId, List<Integer> rowIds,
     PartitionKey partKey, IndicesView colIds, ValueType valueType, InitFunc func) {
@@ -42,6 +46,7 @@ public class IndexPartGetRowsRequest extends PartitionRequest {
     this.colIds = colIds;
     this.valueType = valueType;
     this.func = func;
+    hashCode = r.nextInt();
   }
 
   public IndexPartGetRowsRequest() {
@@ -143,5 +148,13 @@ public class IndexPartGetRowsRequest extends PartitionRequest {
       handleElemSize = rowIds.size() * (colIds.endPos - colIds.startPos);
     }
     return handleElemSize;
+  }
+
+  @Override public boolean equals(Object o) {
+    return false;
+  }
+
+  @Override public int hashCode() {
+    return hashCode;
   }
 }
