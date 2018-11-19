@@ -89,27 +89,24 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
           }
         }
 
-        val labels = graph.placeHolder.getLabel.getCol(0)
-        graph.predict() match {
-          case mat: BlasDoubleMatrix if mat.getNumCols == 3 =>
+
+        val attached = graph.placeHolder.getAttached
+        (graph.predict(), graph.getLossLayer.getLossFunc()) match {
+          case (mat: BlasDoubleMatrix, lossFunc: SoftmaxLoss) if mat.getNumCols == 4 =>
             (0 until mat.getNumRows).foreach { i =>
-              resData.put(GraphPredictResult(VectorUtils.getFloat(labels, i).toLong,
-                mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
+              resData.put(SoftmaxPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
             }
-          case mat: BlasFloatMatrix if mat.getNumCols == 3 =>
+          case (mat: BlasFloatMatrix, lossFunc: SoftmaxLoss) if mat.getNumCols == 4  =>
             (0 until mat.getNumRows).foreach { i =>
-              resData.put(GraphPredictResult(VectorUtils.getFloat(labels, i).toLong,
-                mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
+              resData.put(SoftmaxPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
             }
-          case mat: BlasDoubleMatrix if mat.getNumCols == 4 =>
+          case (mat: BlasDoubleMatrix, _) =>
             (0 until mat.getNumRows).foreach { i =>
-              resData.put(SoftmaxPredictResult(VectorUtils.getFloat(labels, i).toLong,
-                mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
+              resData.put(GraphPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
             }
-          case mat: BlasFloatMatrix if mat.getNumCols == 4  =>
+          case (mat: BlasFloatMatrix, _) =>
             (0 until mat.getNumRows).foreach { i =>
-              resData.put(SoftmaxPredictResult(VectorUtils.getFloat(labels, i).toLong,
-                mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
+              resData.put(GraphPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
             }
         }
       }
@@ -131,27 +128,23 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
         case _ =>
       }
 
-      val labels = graph.placeHolder.getLabel.getCol(0)
-      graph.predict() match {
-        case mat: BlasDoubleMatrix if mat.getNumCols == 3 =>
+      val attached = graph.placeHolder.getAttached
+      (graph.predict(), graph.getLossLayer.getLossFunc()) match {
+        case (mat: BlasDoubleMatrix, _: SoftmaxLoss) if mat.getNumCols == 4 =>
           (0 until mat.getNumRows).foreach { i =>
-            resData.put(GraphPredictResult(VectorUtils.getFloat(labels, i).toLong,
-              mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
+            resData.put(SoftmaxPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
           }
-        case mat: BlasFloatMatrix if mat.getNumCols == 3  =>
+        case (mat: BlasFloatMatrix, _: SoftmaxLoss) if mat.getNumCols == 4  =>
           (0 until mat.getNumRows).foreach { i =>
-            resData.put(GraphPredictResult(VectorUtils.getFloat(labels, i).toLong,
-              mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
+            resData.put(SoftmaxPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
           }
-        case mat: BlasDoubleMatrix if mat.getNumCols == 4 =>
+        case (mat: BlasDoubleMatrix, _) =>
           (0 until mat.getNumRows).foreach { i =>
-            resData.put(SoftmaxPredictResult(VectorUtils.getFloat(labels, i).toLong,
-              mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
+            resData.put(GraphPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
           }
-        case mat: BlasFloatMatrix if mat.getNumCols == 4  =>
+        case (mat: BlasFloatMatrix, _) =>
           (0 until mat.getNumRows).foreach { i =>
-            resData.put(SoftmaxPredictResult(VectorUtils.getFloat(labels, i).toLong,
-              mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
+            resData.put(GraphPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
           }
       }
     }
