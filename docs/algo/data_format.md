@@ -49,3 +49,7 @@ label index1:value1 index2:value1 index3:value3 ...
 如果输入数据的分隔符不是空格, 可以用如下参数来指定分隔符, 如指定主逗号:
 > ml.data.splitor=,
 
+对于Softmax回归等多分类算法, 标签要求从0开始, 其它二分类算法标签为正负1. 如果要对标签进行转换, 可以用下面的参数:
+* ml.data.label.trans.class: 是否要对标签进行转换, 默认为"NoTrans", 可选项为"ZeroOneTrans"(转为0-1), "PosNegTrans"(转为正负1), "AddOneTrans"(加1), "SubOneTrans"(减1). 
+* ml.data.label.trans.threshold: "ZeroOneTrans", "PosNegTrans"这两种转还要以设一个阈值, 大于阈值的为1, 阈值默认为0
+
