@@ -1,4 +1,4 @@
-package com.tencent.angel.spark.examples.cluster
+package com.tencent.angel.spark.examples.local
 
 import com.tencent.angel.ml.math2.vector.{LongDoubleVector, Vector}
 import com.tencent.angel.ml.matrix.RowType
@@ -13,7 +13,15 @@ object FTRLExample {
 
   def start(): Unit = {
     val conf = new SparkConf()
+    conf.setMaster("local[1]")
+    conf.setAppName("PSVector Examples")
+    conf.set("spark.ps.model", "LOCAL")
+    conf.set("spark.ps.jars", "")
+    conf.set("spark.ps.instances", "1")
+    conf.set("spark.ps.cores", "1")
+
     val sc = new SparkContext(conf)
+    sc.setLogLevel("ERROR")
     PSContext.getOrCreate(sc)
   }
 
@@ -47,7 +55,7 @@ object FTRLExample {
         f =>
           f._1.setY(f._2)
           f._1
-      }
+        }
     val size = data.count()
 
     for (epoch <- 1 until numEpoch) {
@@ -82,4 +90,6 @@ object FTRLExample {
 
     (grad, loss)
   }
+
+
 }

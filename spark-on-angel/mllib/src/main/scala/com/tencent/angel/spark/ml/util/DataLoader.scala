@@ -68,7 +68,7 @@ object DataLoader {
     new LabeledData(x, y)
   }
 
-  def parseLongFloat(text: String, dim: Int): LabeledData = {
+  def parseLongFloat(text: String, dim: Long): LabeledData = {
     if (null == text) return null
     var splits = text.trim.split(" ")
 
@@ -143,6 +143,13 @@ object DataLoader {
     }
     val x = VFactory.sparseFloatVector(dim, keys, vals)
     new LabeledData(x, y)
+  }
+
+  def parseLabel(text: String, negLabel: Boolean): Double = {
+    var label = text.trim.split(" ")(0).toDouble
+    if (negLabel && label == 0) label = -1.0
+    if (!negLabel && label == -1.0) label = 0.0
+    return label
   }
 
   def parseLabel(text: String): String = {
