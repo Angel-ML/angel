@@ -33,8 +33,14 @@ object WideAndDeepTest {
     PropertyConfigurator.configure("angel-ps/conf/log4j.properties")
     val params = ArgsUtil.parse(args)
 
-    val input = params.getOrElse("input", "./spark-on-angel/mllib/src/test/data/census.train")
+    val input = params.getOrElse("input", "./data/census/census_148d_train.libsvm")
+    val modelInput = params.getOrElse("model", "")
+    val modelOutput = params.getOrElse("output", "")
     val actionType = params.getOrElse("actionType", "train")
+
+    // Set WideAndDeep algorithm parameters
+    val angelConfFile = "./angel-ps/examples/src/jsons/daw.json"
+    SharedConf.get().set(AngelConf.ANGEL_ML_CONF, angelConfFile)
 
     // build SharedConf with params
     SharedConf.get()
@@ -42,16 +48,12 @@ object WideAndDeepTest {
     SharedConf.get().set(MLConf.ML_MODEL_TYPE, RowType.T_FLOAT_DENSE.toString)
     SharedConf.get().setInt(MLConf.ML_FEATURE_INDEX_RANGE, 148)
     SharedConf.get().setDouble(MLConf.ML_LEARN_RATE, 0.5)
-    SharedConf.get().set(MLConf.ML_DATA_INPUT_FORMAT, "dummy")
+    SharedConf.get().set(MLConf.ML_DATA_INPUT_FORMAT, "libsvm")
     SharedConf.get().setInt(MLConf.ML_EPOCH_NUM, 200)
     SharedConf.get().setDouble(MLConf.ML_VALIDATE_RATIO, 0.0)
     SharedConf.get().setDouble(MLConf.ML_REG_L2, 0.0)
     SharedConf.get().setDouble(MLConf.ML_BATCH_SAMPLE_RATIO, 0.2)
     SharedConf.get().setInt(AngelConf.ANGEL_PS_BACKUP_INTERVAL_MS, 1000000000)
-
-    // Set WideAndDeep algorithm parameters
-    val angelConfFile = "./angel-ps/examples/src/jsons/daw.json"
-    SharedConf.get().set(AngelConf.ANGEL_ML_CONF, angelConfFile)
 
     val className = "com.tencent.angel.spark.ml.classification.WideAndDeep"
     val model = GraphModel(className)
@@ -68,17 +70,17 @@ object WideAndDeepTest {
     conf.set("spark.ps.log.level", "INFO")
 
     val sc = new SparkContext(conf)
-    val parser = DataParser(SharedConf.get())
-    val data = sc.textFile(input).map(f => parser.parse(f))
+    val dim = SharedConf.indexRange.toInt
+
 
     PSContext.getOrCreate(sc)
 
     actionType match {
       case "train" =>
-        learner.train(data, model)
+        learner.train(input, modelOutput, modelInput, dim, model)
+
       case "predict" =>
-        model.load("")
-        learner.predict(data, model)
+        learner.predict(input, modelOutput, modelInput, dim, model)
       case _ =>
         throw new AngelException("actionType should be train or predict")
     }

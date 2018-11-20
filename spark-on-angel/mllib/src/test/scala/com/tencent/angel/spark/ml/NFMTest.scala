@@ -3,7 +3,6 @@ package com.tencent.angel.spark.ml
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
-import com.tencent.angel.ml.core.utils.DataParser
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OfflineLearner}
@@ -17,6 +16,8 @@ object NFMTest {
     val params = ArgsUtil.parse(args)
 
     val input = params.getOrElse("input", "./spark-on-angel/mllib/src/test/data/census.train")
+    val modelInput = params.getOrElse("model", "")
+    val modelOutput = params.getOrElse("output", "")
     val actionType = params.getOrElse("actionType", "train")
 
     // build SharedConf with params
@@ -51,17 +52,17 @@ object NFMTest {
     conf.set("spark.ps.log.level", "INFO")
 
     val sc = new SparkContext(conf)
-    val parser = DataParser(SharedConf.get())
-    val data = sc.textFile(input).map(f => parser.parse(f))
+    val dim = SharedConf.indexRange.toInt
+
 
     PSContext.getOrCreate(sc)
 
     actionType match {
       case "train" =>
-        learner.train(data, model)
+        learner.train(input, modelOutput, modelInput, dim, model)
+
       case "predict" =>
-        model.load("")
-        learner.predict(data, model)
+        learner.predict(input, modelOutput, modelInput, dim, model)
       case _ =>
         throw new AngelException("actionType should be train or predict")
     }
