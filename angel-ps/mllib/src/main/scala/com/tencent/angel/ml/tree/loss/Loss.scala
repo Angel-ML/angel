@@ -2,7 +2,7 @@ package com.tencent.angel.ml.tree.loss
 
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.vector.IntFloatVector
-import com.tencent.angel.ml.tree.oldmodel.TreeEnsembleModel
+import com.tencent.angel.ml.tree.model.TreeEnsembleModel
 
 /**
   * Trait for adding "pluggable" loss functions for the gradient boosting algorithm.

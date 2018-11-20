@@ -2,10 +2,25 @@ package com.tencent.angel.ml.tree.model
 
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector.IntFloatVector
-import com.tencent.angel.ml.tree.{DecisionTreeClassifierParams, DecisionTreeModel, TreeEnsembleModel}
-import com.tencent.angel.ml.tree.conf.{Algo => OldAlgo}
-import com.tencent.angel.ml.tree.oldmodel.{DecisionTreeModel => OldDecisionTreeModel}
+import com.tencent.angel.ml.tree.conf.Algo
+import com.tencent.angel.ml.tree.data.{DecisionTreeClassifierParams, Node}
 import com.tencent.angel.ml.tree.utils.ProbabilisticUtils
+import com.tencent.angel.worker.task.TaskContext
+import org.apache.hadoop.conf.Configuration
+
+object DecisionTreeClassificationModel {
+
+  def apply(topNode: Node, numFeatures: Int,
+            numClasses: Int, conf: Configuration): DecisionTreeClassificationModel = {
+    new DecisionTreeClassificationModel(topNode, numFeatures, numClasses, conf, _ctx = null)
+  }
+
+  def apply(topNode: Node, numFeatures: Int,
+            numClasses: Int, conf: Configuration, ctx: TaskContext): DecisionTreeClassificationModel = {
+    new DecisionTreeClassificationModel(topNode, numFeatures, numClasses, conf, ctx)
+  }
+}
+
 
 /**
   * Decision tree model (http://en.wikipedia.org/wiki/Decision_tree_learning) for classification.
@@ -13,17 +28,16 @@ import com.tencent.angel.ml.tree.utils.ProbabilisticUtils
   * features.
   */
 private[tree] class DecisionTreeClassificationModel (
-                                                    val rootNode: Node,
-                                                    val numFeatures: Int,
-                                                    val numClasses: Int)
-    extends DecisionTreeModel with DecisionTreeClassifierParams with Serializable {
+                                                      override val rootNode: Node,
+                                                      val numFeatures: Int,
+                                                      val numClasses: Int,
+                                                      conf: Configuration,
+                                                      _ctx: TaskContext)
+    extends DecisionTreeModel(rootNode, Algo.Classification, conf, _ctx)
+      with DecisionTreeClassifierParams with Serializable {
 
   require(rootNode != null,
     "DecisionTreeClassificationModel given null rootNode, but it requires a non-null rootNode.")
-
-  def predict(features: IntFloatVector): Float = {
-    rootNode.predictImpl(features).prediction
-  }
 
   def predictRaw(features: IntFloatVector): IntFloatVector = {
     VFactory.denseFloatVector(rootNode.predictImpl(features).impurityStats.stats.clone())
@@ -59,28 +73,6 @@ private[tree] class DecisionTreeClassificationModel (
     * correlated predictor variables. Consider using a RandomForestClassifier
     * to determine feature importance instead.
     */
-  lazy val featureImportances: IntFloatVector = TreeEnsembleModel.featureImportances(this, numFeatures)
-
-  /** Convert to spark.mllib DecisionTreeModel (losing some information) */
-  override private[tree] def toOld: OldDecisionTreeModel = {
-    new OldDecisionTreeModel(rootNode.toOld(1), OldAlgo.Classification)
-  }
-
-}
-
-object DecisionTreeClassificationModel {
-
-  /** Convert a model from the old API */
-  private[ml] def fromOld(
-                           oldModel: OldDecisionTreeModel,
-                           categoricalFeatures: Map[Int, Int],
-                           numFeatures: Int = -1): DecisionTreeClassificationModel = {
-    require(oldModel.algo == OldAlgo.Classification,
-      s"Cannot convert non-classification DecisionTreeModel (old API) to" +
-        s" DecisionTreeClassificationModel (new API).  Algo is: ${oldModel.algo}")
-    val rootNode = Node.fromOld(oldModel.topNode, categoricalFeatures)
-    // Can't infer number of features from old model, so default to -1
-    new DecisionTreeClassificationModel(rootNode, numFeatures, -1)
-  }
+  val featureImportances: IntFloatVector = TreeEnsembleModel.featureImportances(this, numFeatures)
 }
 

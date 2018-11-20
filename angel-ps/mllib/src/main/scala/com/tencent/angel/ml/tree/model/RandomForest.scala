@@ -5,10 +5,11 @@ import scala.util.Random
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.vector.IntFloatVector
 import com.tencent.angel.ml.tree.utils.{SamplingUtils, TimeTracker}
-import com.tencent.angel.ml.tree.DecisionTreeModel
 import com.tencent.angel.ml.tree.conf.{Algo => OldAlgo, Strategy => OldStrategy}
+import com.tencent.angel.ml.tree.data._
 import com.tencent.angel.ml.tree.impurity.ImpurityCalculator
 import com.tencent.angel.ml.tree.oldmodel.ImpurityStats
+import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 
 /**
@@ -64,12 +65,12 @@ private[tree] object RandomForest {
     * @return an unweighted set of trees
     */
   def train(
-           trainData: Array[LabeledData],
-           validData: Array[LabeledData],
-           strategy: OldStrategy,
-           seed: Long,
-           // exposed for testing only, real trees are always prune
-           prune: Boolean = true): Array[DecisionTreeModel] = {
+             ctx: TaskContext,
+             trainData: Array[LabeledData],
+             validData: Array[LabeledData],
+             strategy: OldStrategy, seed: Long,
+             // exposed for testing only, real trees are always prune
+             prune: Boolean = true): Array[DecisionTreeModel] = {
 
     val timer = new TimeTracker()
 
@@ -102,7 +103,7 @@ private[tree] object RandomForest {
     val withReplacement = strategy.numTrees > 1
 
     val baggedInput = BaggedPoint
-      .convertToBaggedRDD(trainTreeInput, strategy.subSamplingRate, numTrees, withReplacement, seed)
+      .convertToBaggedRDD(trainTreeInput, strategy.subSamplingRate, strategy.numTrees, withReplacement, seed)
 
     // depth of the decision tree
     val maxDepth = strategy.maxDepth
@@ -179,12 +180,12 @@ private[tree] object RandomForest {
 
     if (strategy.algo == OldAlgo.Classification) {
       topNodes.map { rootNode =>
-        new DecisionTreeClassificationModel(rootNode.toNode(prune), numFeatures,
-          strategy.getNumClasses)
+        DecisionTreeClassificationModel(rootNode.toNode(prune), numFeatures,
+          strategy.getNumClasses, ctx.getConf)
       }
     } else {
       topNodes.map(rootNode =>
-        new DecisionTreeRegressionModel(rootNode.toNode(prune), numFeatures))
+        DecisionTreeRegressionModel(rootNode.toNode(prune), numFeatures, ctx.getConf))
     }
   }
 

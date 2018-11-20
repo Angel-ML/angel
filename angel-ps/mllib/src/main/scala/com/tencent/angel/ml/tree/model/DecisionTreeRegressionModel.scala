@@ -2,12 +2,21 @@ package com.tencent.angel.ml.tree.model
 
 
 import com.tencent.angel.ml.math2.vector.IntFloatVector
-import com.tencent.angel.ml.tree.conf.{Algo => OldAlgo}
-import com.tencent.angel.ml.tree.TreeEnsembleModel
-import com.tencent.angel.ml.tree.DecisionTreeModel
-import com.tencent.angel.ml.tree.DecisionTreeRegressorParams
-import com.tencent.angel.ml.tree.oldmodel.{DecisionTreeModel => OldDecisionTreeModel}
+import com.tencent.angel.ml.tree.conf.Algo
+import com.tencent.angel.ml.tree.data.{DecisionTreeRegressorParams, Node}
+import com.tencent.angel.worker.task.TaskContext
+import org.apache.hadoop.conf.Configuration
 
+object DecisionTreeRegressionModel {
+
+  def apply(topNode: Node, numFeatures: Int, conf: Configuration): DecisionTreeRegressionModel = {
+    new DecisionTreeRegressionModel(topNode, numFeatures, conf, _ctx = null)
+  }
+
+  def apply(topNode: Node, numFeatures: Int, conf: Configuration, ctx: TaskContext): DecisionTreeRegressionModel = {
+    new DecisionTreeRegressionModel(topNode, numFeatures, conf, ctx)
+  }
+}
 
 /**
   * <a href="http://en.wikipedia.org/wiki/Decision_tree_learning">
@@ -16,16 +25,15 @@ import com.tencent.angel.ml.tree.oldmodel.{DecisionTreeModel => OldDecisionTreeM
   * @param rootNode  Root of the decision tree
   */
 private[tree] class DecisionTreeRegressionModel (
-                                                val rootNode: Node,
-                                                val numFeatures: Int)
-    extends DecisionTreeModel with DecisionTreeRegressorParams {
+                                                override val rootNode: Node,
+                                                val numFeatures: Int,
+                                                conf: Configuration,
+                                                _ctx: TaskContext)
+    extends DecisionTreeModel(rootNode, Algo.Regression, conf, _ctx)
+      with DecisionTreeRegressorParams {
 
   require(rootNode != null,
     "DecisionTreeRegressionModel given null rootNode, but it requires a non-null rootNode.")
-
-  def predict(features: IntFloatVector): Float = {
-    rootNode.predictImpl(features).prediction
-  }
 
   /** We need to update this function if we ever add other impurity measures. */
   def predictVariance(features: IntFloatVector): Float = {
@@ -52,26 +60,6 @@ private[tree] class DecisionTreeRegressionModel (
     * correlated predictor variables. Consider using a RandomForestRegressor
     * to determine feature importance instead.
     */
-  lazy val featureImportances: IntFloatVector = TreeEnsembleModel.featureImportances(this, numFeatures)
-
-  /** Convert to spark.mllib DecisionTreeModel (losing some information) */
-  def toOld: OldDecisionTreeModel = {
-    new OldDecisionTreeModel(rootNode.toOld(1), OldAlgo.Regression)
-  }
-}
-
-object DecisionTreeRegressionModel {
-
-  /** Convert a model from the old API */
-  private[ml] def fromOld(
-                           oldModel: OldDecisionTreeModel,
-                           categoricalFeatures: Map[Int, Int],
-                           numFeatures: Int = -1): DecisionTreeRegressionModel = {
-    require(oldModel.algo == OldAlgo.Regression,
-      s"Cannot convert non-regression DecisionTreeModel (old API) to" +
-        s" DecisionTreeRegressionModel (new API).  Algo is: ${oldModel.algo}")
-    val rootNode = Node.fromOld(oldModel.topNode, categoricalFeatures)
-    new DecisionTreeRegressionModel(rootNode, numFeatures)
-  }
+  val featureImportances: IntFloatVector = TreeEnsembleModel.featureImportances(this, numFeatures)
 }
 

@@ -7,7 +7,7 @@ import com.tencent.angel.ml.tree.conf.Algo._
 import com.tencent.angel.ml.tree.conf.QuantileStrategy._
 import com.tencent.angel.ml.tree.conf.{Algo, Strategy}
 import com.tencent.angel.ml.tree.impurity._
-import com.tencent.angel.ml.tree.oldmodel._
+import com.tencent.angel.ml.tree.model.RandomForestModel
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 
@@ -28,9 +28,7 @@ class DecisionTreeLearner (ctx: TaskContext, val strategy: Strategy, val seed: I
     *                 categorical), depth of the tree, quantile calculation strategy, etc.
     */
   def this(ctx: TaskContext, strategy: Strategy) = this(ctx, strategy, seed = 0)
-  def this(ctx: TaskContext) = this(ctx, Strategy.defaultStrategy(Algo.Classification))
-
-  strategy.assertValid()
+  def this(ctx: TaskContext) = this(ctx, Strategy.initStrategy(ctx.getConf))
 
   /**
     * Method to train a decision tree model over an RDD
@@ -40,7 +38,9 @@ class DecisionTreeLearner (ctx: TaskContext, val strategy: Strategy, val seed: I
     */
   override
   def train(trainBlock: DataBlock[LabeledData], validBlock: DataBlock[LabeledData]): MLModel = {
-    val rf = new RandomForestLearner(ctx, strategy, numTrees = 1, featureSubsetStrategy = "all", seed = seed)
+    strategy.setNumTrees(1)
+    strategy.setFeatureSamplingStrategy("all")
+    val rf = new RandomForestLearner(ctx, strategy, seed = seed)
     val rfModel = rf.train(trainBlock, validBlock)
     rfModel.asInstanceOf[RandomForestModel].trees(0)
   }
@@ -96,7 +96,7 @@ object DecisionTree {
              algo: Algo,
              impurity: Impurity,
              maxDepth: Int): MLModel = {
-    val strategy = new Strategy(algo, impurity, maxDepth)
+    val strategy = new Strategy(algo, impurity, maxDepth = maxDepth)
     new DecisionTreeLearner(ctx, strategy).train(trainBlock, validBlock)
   }
 
@@ -126,7 +126,8 @@ object DecisionTree {
              impurity: Impurity,
              maxDepth: Int,
              numClasses: Int): MLModel = {
-    val strategy = new Strategy(algo, impurity, maxDepth, numClasses)
+    val strategy = new Strategy(algo, impurity,
+      maxDepth = maxDepth, numClasses = numClasses)
     new DecisionTreeLearner(ctx, strategy).train(trainBlock, validBlock)
   }
 
@@ -143,8 +144,8 @@ object DecisionTree {
     *                 1 internal node + 2 leaf nodes).
     * @param numClasses Number of classes for classification. Default value of 2.
     * @param maxBins Maximum number of bins used for splitting features.
-    * @param quantileCalculationStrategy  Algorithm for calculating quantiles.
-    * @param categoricalFeaturesInfo Map storing arity of categorical features. An entry (n to k)
+    * @param quantileStrategy  Algorithm for calculating quantiles.
+    * @param categoricalFeatures Map storing arity of categorical features. An entry (n to k)
     *                                indicates that feature n is categorical with k categories
     *                                indexed from 0: {0, 1, ..., k-1}.
     * @return DecisionTreeModel that can be used for prediction.
@@ -162,10 +163,12 @@ object DecisionTree {
              maxDepth: Int,
              numClasses: Int,
              maxBins: Int,
-             quantileCalculationStrategy: QuantileStrategy,
-             categoricalFeaturesInfo: Map[Int, Int]): MLModel = {
-    val strategy = new Strategy(algo, impurity, maxDepth, numClasses, maxBins,
-      quantileCalculationStrategy, categoricalFeaturesInfo)
+             quantileStrategy: QuantileStrategy,
+             categoricalFeatures: Map[Int, Int]): MLModel = {
+    val strategy = new Strategy(algo, impurity,
+      maxDepth = maxDepth, numClasses = numClasses,
+      maxBins = maxBins, quantileStrategy = quantileStrategy,
+      categoricalFeatures = categoricalFeatures)
     new DecisionTreeLearner(ctx, strategy).train(trainBlock, validBlock)
   }
 
@@ -175,7 +178,7 @@ object DecisionTree {
     * @param trainBlock Training dataset: DataBlock of [[LabeledData]].
     *              Labels should take values {0, 1, ..., numClasses-1}.
     * @param numClasses Number of classes for classification.
-    * @param categoricalFeaturesInfo Map storing arity of categorical features. An entry (n to k)
+    * @param categoricalFeatures Map storing arity of categorical features. An entry (n to k)
     *                                indicates that feature n is categorical with k categories
     *                                indexed from 0: {0, 1, ..., k-1}.
     * @param impurity Criterion used for information gain calculation.
@@ -192,13 +195,14 @@ object DecisionTree {
                        trainBlock: DataBlock[LabeledData],
                        validBlock: DataBlock[LabeledData],
                        numClasses: Int,
-                       categoricalFeaturesInfo: Map[Int, Int],
+                       categoricalFeatures: Map[Int, Int],
                        impurity: String,
                        maxDepth: Int,
                        maxBins: Int): MLModel = {
     val impurityType = Impurities.fromString(impurity)
-    train(ctx, trainBlock, validBlock, Classification, impurityType, maxDepth, numClasses, maxBins, Sort,
-      categoricalFeaturesInfo)
+    train(ctx, trainBlock, validBlock,
+      Classification, impurityType, maxDepth, numClasses,
+      maxBins, Sort, categoricalFeatures)
   }
 
   /**
