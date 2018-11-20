@@ -396,7 +396,7 @@ public abstract class AngelClient implements AngelClientInterface {
         LOG.info("master is not null, send stop command to Master, stateCode=" + stateCode);
         master.stop(null,
           ClientMasterServiceProtos.StopRequest.newBuilder().setExitStatus(stateCode).build());
-      } catch (ServiceException e) {
+      } catch (Throwable e) {
         LOG.error("send stop command to Master failed ", e);
         kill();
         //throw new AngelException(e);

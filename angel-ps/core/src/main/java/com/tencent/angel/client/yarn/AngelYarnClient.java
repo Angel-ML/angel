@@ -181,8 +181,8 @@ public class AngelYarnClient extends AngelClient {
     if (yarnClient != null) {
       try {
         yarnClient.killApplication(appId);
-      } catch (YarnException | IOException e) {
-        throw new AngelException(e);
+      } catch (Throwable e) {
+        LOG.error("kill application failed, ", e);
       }
       yarnClient.stop();
     }
