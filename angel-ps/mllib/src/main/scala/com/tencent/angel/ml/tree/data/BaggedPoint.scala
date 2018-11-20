@@ -1,4 +1,4 @@
-package com.tencent.angel.ml.tree.model
+package com.tencent.angel.ml.tree.data
 
 import com.tencent.angel.ml.tree.utils.XORShiftRandom
 import org.apache.commons.math3.distribution.PoissonDistribution

@@ -1,4 +1,4 @@
-package com.tencent.angel.ml.tree
+package com.tencent.angel.ml.tree.data
 
 import java.util.Locale
 
@@ -137,7 +137,7 @@ trait DecisionTreeParams {
     strategy.minInstancesPerNode = getMinInstancesPerNode
     strategy.useNodeIdCache = getCacheNodeIds
     strategy.numClasses = numClasses
-    strategy.categoricalFeaturesInfo = categoricalFeatures
+    strategy.categoricalFeatures = categoricalFeatures
     strategy.subSamplingRate = subsamplingRate
     strategy
   }
@@ -233,7 +233,7 @@ trait DecisionTreeRegressorParams
 object TreeEnsembleParams {
   // These options should be lowercase.
   final val supportedFeatureSubsetStrategies: Array[String] =
-    Array("auto", "all", "onethird", "sqrt", "log2").map(_.toLowerCase(Locale.ROOT))
+    Array("auto", "all", "onethird", "sqrt", "log2").map(_.toLowerCase)
 }
 
 /**

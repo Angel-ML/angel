@@ -1,4 +1,4 @@
-package com.tencent.angel.ml.tree.model
+package com.tencent.angel.ml.tree.data
 
 import com.tencent.angel.ml.math2.vector.IntFloatVector
 import com.tencent.angel.ml.tree.impurity.ImpurityCalculator

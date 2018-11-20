@@ -1,16 +1,15 @@
-package com.tencent.angel.ml.tree.model
+package com.tencent.angel.ml.tree.data
 
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.vector.IntFloatVector
-import com.tencent.angel.ml.tree.TreeEnsembleParams
-
-import scala.collection.mutable
-import scala.util.Try
 import com.tencent.angel.ml.tree.conf.Algo._
 import com.tencent.angel.ml.tree.conf.QuantileStrategy._
 import com.tencent.angel.ml.tree.conf.Strategy
 import com.tencent.angel.ml.tree.impurity.Impurity
 import org.apache.commons.logging.LogFactory
+
+import scala.collection.mutable
+import scala.util.Try
 
 /**
   * Learning and dataset metadata for DecisionTree.
@@ -112,10 +111,10 @@ private[tree] object DecisionTreeMetadata {
     // We check the number of bins here against maxPossibleBins.
     // This needs to be checked here instead of in Strategy since maxPossibleBins can be modified
     // based on the number of training examples.
-    if (strategy.categoricalFeaturesInfo.nonEmpty) {
-      val maxCategoriesPerFeature = strategy.categoricalFeaturesInfo.values.max
+    if (strategy.categoricalFeatures.nonEmpty) {
+      val maxCategoriesPerFeature = strategy.categoricalFeatures.values.max
       val maxCategory =
-        strategy.categoricalFeaturesInfo.find(_._2 == maxCategoriesPerFeature).get._1
+        strategy.categoricalFeatures.find(_._2 == maxCategoriesPerFeature).get._1
       require(maxCategoriesPerFeature <= maxPossibleBins,
         s"DecisionTree requires maxBins (= $maxPossibleBins) to be at least as large as the " +
           s"number of values in each categorical feature, but categorical feature $maxCategory " +
@@ -129,7 +128,7 @@ private[tree] object DecisionTreeMetadata {
       // Multiclass classification
       val maxCategoriesForUnorderedFeature =
         ((math.log(maxPossibleBins / 2 + 1) / math.log(2.0)) + 1).floor.toInt
-      strategy.categoricalFeaturesInfo.foreach { case (featureIndex, numCategories) =>
+      strategy.categoricalFeatures.foreach { case (featureIndex, numCategories) =>
         // Hack: If a categorical feature has only 1 category, we treat it as continuous.
         // TODO(SPARK-9957): Handle this properly by filtering out those features.
         if (numCategories > 1) {
@@ -147,7 +146,7 @@ private[tree] object DecisionTreeMetadata {
       }
     } else {
       // Binary classification or regression
-      strategy.categoricalFeaturesInfo.foreach { case (featureIndex, numCategories) =>
+      strategy.categoricalFeatures.foreach { case (featureIndex, numCategories) =>
         // If a categorical feature has only 1 category, we treat it as continuous: SPARK-9957
         if (numCategories > 1) {
           numBins(featureIndex) = numCategories
@@ -189,8 +188,8 @@ private[tree] object DecisionTreeMetadata {
     }
 
     new DecisionTreeMetadata(numFeatures, numExamples, numClasses, numBins.max,
-      strategy.categoricalFeaturesInfo, unorderedFeatures.toSet, numBins,
-      strategy.impurity, strategy.quantileCalculationStrategy, strategy.maxDepth,
+      strategy.categoricalFeatures, unorderedFeatures.toSet, numBins,
+      strategy.impurity, strategy.quantileStrategy, strategy.maxDepth,
       strategy.minInstancesPerNode, strategy.minInfoGain, strategy.numTrees, numFeaturesPerNode)
   }
 

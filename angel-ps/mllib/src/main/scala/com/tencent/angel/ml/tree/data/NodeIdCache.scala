@@ -1,4 +1,6 @@
-package com.tencent.angel.ml.tree.model
+package com.tencent.angel.ml.tree.data
+
+import com.tencent.angel.ml.tree.data.{BaggedPoint, LearningNode, Split, TreePoint}
 
 import scala.collection.mutable
 

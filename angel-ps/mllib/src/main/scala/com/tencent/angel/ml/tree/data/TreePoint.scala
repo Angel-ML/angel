@@ -1,11 +1,7 @@
-package com.tencent.angel.ml.tree.model
+package com.tencent.angel.ml.tree.data
 
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.vector.IntFloatVector
-import com.tencent.angel.ml.tree.model.{ContinuousSplit, Split}
-import org.apache.spark.ml.feature.LabeledPoint
-import com.tencent.angel.ml.tree.model.{ContinuousSplit, Split}
-import com.tencent.angel.ml.tree.model.{DecisionTreeMetadata, TreePoint}
 
 /**
   * Internal representation of LabeledPoint for DecisionTree.
