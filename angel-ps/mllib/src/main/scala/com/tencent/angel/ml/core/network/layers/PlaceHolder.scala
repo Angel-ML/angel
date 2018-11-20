@@ -49,6 +49,7 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
     feats = null
     labels = null
     indices = null
+    attached = null
 
     this.data = data
   }
