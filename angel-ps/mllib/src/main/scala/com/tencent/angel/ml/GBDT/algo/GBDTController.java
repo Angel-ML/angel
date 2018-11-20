@@ -120,7 +120,7 @@ public class GBDTController {
     this.sketches = new float[this.param.numFeature * this.param.numSplit];
 
     String cateFeatStr = this.taskContext.getConf()
-            .get(MLConf.ML_GBDT_CATE_FEAT(), MLConf.DEFAULT_ML_GBDT_CATE_FEAT());
+            .get(MLConf.ML_TREE_CATEGORICAL_FEATURE(), MLConf.DEFAULT_ML_TREE_CATEGORICAL_FEATURE());
     cateFeatList = new ArrayList<>();
     cateFeatNum = new HashMap<>();
     switch (cateFeatStr) {

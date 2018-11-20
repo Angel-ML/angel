@@ -18,11 +18,18 @@
 
 package com.tencent.angel.ml.tree.conf
 
+import java.util.Locale
+
+import com.tencent.angel.ml.core.conf.MLConf
+import com.tencent.angel.ml.core.utils.paramsutils.ParamParser
+
 import scala.beans.BeanProperty
 import scala.collection.JavaConverters._
 import com.tencent.angel.ml.tree.conf.Algo._
 import com.tencent.angel.ml.tree.conf.QuantileStrategy._
+import com.tencent.angel.ml.tree.data.TreeEnsembleParams
 import com.tencent.angel.ml.tree.impurity._
+import org.apache.hadoop.conf.Configuration
 
 import scala.util.Try
 
@@ -50,9 +57,9 @@ import scala.util.Try
   *                                use n * number of features.
   *                              If an integer value "n" in the range (1, num features) is set,
   *                                use n features.
-  * @param quantileCalculationStrategy Algorithm for calculating quantiles.
+  * @param quantileStrategy Algorithm for calculating quantiles.
   *                                    Supported: QuantileStrategy.Sort
-  * @param categoricalFeaturesInfo A map storing information about the categorical variables
+  * @param categoricalFeatures A map storing information about the categorical variables
   *                                and the number of discrete values they take. An entry (n to k) indicates that
   *                                feature n is categorical with k categories indexed from 0: {0, 1, ..., k-1}.
   * @param minInstancesPerNode Minimum number of instances each child must have after split. Default value is 1.
@@ -77,10 +84,10 @@ class Strategy (@BeanProperty var algo: Algo,
                 @BeanProperty var maxBins: Int = 32,
                 @BeanProperty var subSamplingRate: Double = 1,
                 @BeanProperty var featureSamplingStrategy: String = "auto",
-                var quantileCalculationStrategy: QuantileStrategy = Sort,
-                var categoricalFeaturesInfo: Map[Int, Int] = Map[Int, Int](),
-                var minInstancesPerNode: Int = 1,
-                var minInfoGain: Double = 0.0,
+                @BeanProperty var quantileStrategy: QuantileStrategy = Sort,
+                @BeanProperty var categoricalFeatures: Map[Int, Int] = Map[Int, Int](),
+                @BeanProperty var minInstancesPerNode: Int = 1,
+                @BeanProperty var minInfoGain: Double = 0.0,
                 var maxMemoryInMB: Int = 256,
                 var useNodeIdCache: Boolean = false,
                 var checkpointInterval: Int = 10) extends Serializable {
@@ -90,7 +97,7 @@ class Strategy (@BeanProperty var algo: Algo,
   }
 
   def isMulticlassWithCategoricalFeatures: Boolean = {
-    isMulticlassClassification && categoricalFeaturesInfo.nonEmpty
+    isMulticlassClassification && categoricalFeatures.nonEmpty
   }
 
   def this(
@@ -100,34 +107,40 @@ class Strategy (@BeanProperty var algo: Algo,
             maxDepth: Int,
             numClasses: Int,
             maxBins: Int,
-            subsamplingRate: Double,
+            subSamplingRate: Double,
             featureSubsetStrategy: String,
-            categoricalFeaturesInfo: java.util.Map[java.lang.Integer, java.lang.Integer]) {
-    this(algo, impurity, numTrees, maxDepth, numClasses, maxBins, subsamplingRate, featureSubsetStrategy, Sort,
+            categoricalFeaturesInfo: Map[Int, Int]) {
+    this(algo, impurity, numTrees, maxDepth, numClasses, maxBins, subSamplingRate, featureSubsetStrategy, Sort,
       categoricalFeaturesInfo.asInstanceOf[java.util.Map[Int, Int]].asScala.toMap)
   }
 
   /**
     * Sets Algorithm using a String.
     */
-  def setAlgo(algo: String): Unit = algo match {
-    case "Classification" => setAlgo(Classification)
-    case "Regression" => setAlgo(Regression)
+  def setAlgo(algo: String): Unit = algo.toLowerCase match {
+    case "classification" => setAlgo(Classification)
+    case "regression" => setAlgo(Regression)
+    case _ => throw new IllegalArgumentException(s"Did not recognize Algo name: $algo")
   }
 
-  def setImpurity(impurity: String): Unit = impurity match {
-    case "gini" => Impurities.fromString("gini")
-    case "entropy" => Impurities.fromString("entropy")
-    case "variance" => Impurities.fromString("variance")
+  def setImpurity(impurity: String): Unit = impurity.toLowerCase match {
+    case "gini" => setImpurity(Gini)
+    case "entropy" => setImpurity(Entropy)
+    case "variance" => setImpurity(Variance)
+    case _ => throw new IllegalArgumentException(s"Did not recognize Impurity name: $impurity")
   }
 
-  /**
-    * Sets categoricalFeaturesInfo using a Java Map.
-    */
-  def setCategoricalFeaturesInfo(
-                                  categoricalFeaturesInfo: java.util.Map[java.lang.Integer, java.lang.Integer]): Unit = {
-    this.categoricalFeaturesInfo =
-      categoricalFeaturesInfo.asInstanceOf[java.util.Map[Int, Int]].asScala.toMap
+  def setQuantileStrategy(quantile: String): Unit = quantile.toLowerCase match {
+    case "sort" => setQuantileStrategy(Sort)
+    case "minmax" => setQuantileStrategy(MinMax)
+    case "approx" | "approxhist" => setQuantileStrategy(ApproxHist)
+    case _ => throw new IllegalArgumentException(s"Did not recognize QuantileStrategy name: $quantile")
+  }
+
+  def setCategoricalFeatures(line: String): Unit = {
+    val cateMap = ParamParser.parseMap(line)
+      .map{ case (k, v) => (k.toString.toInt, v.toString.toInt) }
+    this.categoricalFeatures = cateMap
   }
 
   /**
@@ -152,33 +165,33 @@ class Strategy (@BeanProperty var algo: Algo,
           s"DecisionTree Strategy given invalid algo parameter: $algo." +
             s"  Valid settings are: Classification, Regression.")
     }
+    require(numTrees > 0, s"RandomForest requires numTrees > 0, but was given numTrees = $numTrees.")
     require(maxDepth >= 0, s"DecisionTree Strategy given invalid maxDepth parameter: $maxDepth." +
       s"  Valid values are integers >= 0.")
     require(maxBins >= 2, s"DecisionTree Strategy given invalid maxBins parameter: $maxBins." +
       s"  Valid values are integers >= 2.")
     require(minInstancesPerNode >= 1,
       s"DecisionTree Strategy requires minInstancesPerNode >= 1 but was given $minInstancesPerNode")
-    require(maxMemoryInMB <= 10240,
-      s"DecisionTree Strategy requires maxMemoryInMB <= 10240, but was given $maxMemoryInMB")
     require(subSamplingRate > 0 && subSamplingRate <= 1,
       s"DecisionTree Strategy requires subsamplingRate <=1 and >0, but was given " +
         s"$subSamplingRate")
-    require(numTrees > 0, s"RandomForest requires numTrees > 0, but was given numTrees = $numTrees.")
     require(Strategy.supportedFeatureSubsetStrategies.contains(featureSamplingStrategy)
       || Try(featureSamplingStrategy.toInt).filter(_ > 0).isSuccess
       || Try(featureSamplingStrategy.toDouble).filter(_ > 0).filter(_ <= 1.0).isSuccess,
       s"RandomForest given invalid featureSubsetStrategy: $featureSamplingStrategy." +
         s" Supported values: ${Strategy.supportedFeatureSubsetStrategies.mkString(", ")}," +
         s" (0.0-1.0], [1-n].")
+    require(maxMemoryInMB <= 10240,
+      s"DecisionTree Strategy requires maxMemoryInMB <= 10240, but was given $maxMemoryInMB")
   }
 
   /**
     * Returns a shallow copy of this instance.
     */
   def copy: Strategy = {
-    new Strategy(algo, impurity, maxDepth, numClasses, maxBins,
-      quantileCalculationStrategy, categoricalFeaturesInfo, minInstancesPerNode, minInfoGain,
-      maxMemoryInMB, subSamplingRate, useNodeIdCache, checkpointInterval)
+    new Strategy(algo, impurity, numTrees, maxDepth, numClasses, maxBins,
+      subSamplingRate, featureSamplingStrategy, quantileStrategy, categoricalFeatures,
+      minInstancesPerNode, minInfoGain, maxMemoryInMB, useNodeIdCache, checkpointInterval)
   }
 }
 
@@ -187,7 +200,8 @@ object Strategy {
   /**
     * List of supported feature subset sampling strategies.
     */
-  val supportedFeatureSubsetStrategies: Array[String] = NewRFParams.supportedFeatureSubsetStrategies
+  val supportedFeatureSubsetStrategies: Array[String] =
+    Array("auto", "all", "onethird", "sqrt", "log2").map(_.toLowerCase)
 
   /**
     * Construct a default set of parameters for DecisionTree
@@ -206,6 +220,33 @@ object Strategy {
       new Strategy(algo = Classification, impurity = Gini, maxDepth = 10, numClasses = 2)
     case Algo.Regression =>
       new Strategy(algo = Regression, impurity = Variance, maxDepth = 10, numClasses = 0)
+  }
+
+  def initStrategy(conf: Configuration): Strategy = {
+    val strategy = defaultStrategy(conf.get(MLConf.ML_TREE_TASK_TYPE,
+      MLConf.DEFAULT_ML_TREE_TASK_TYPE).toLowerCase)
+    strategy.setImpurity(conf.get(MLConf.ML_TREE_IMPURITY,
+      MLConf.DEFAULT_ML_TREE_IMPURITY).toLowerCase)
+    strategy.setNumTrees(conf.getInt(MLConf.ML_NUM_TREE,
+      MLConf.DEFAULT_ML_NUM_TREE))
+    strategy.setMaxDepth(conf.getInt(MLConf.ML_TREE_MAX_DEPTH,
+      MLConf.DEFAULT_ML_TREE_MAX_DEPTH))
+    strategy.setNumClasses(conf.getInt(MLConf.ML_NUM_CLASS,
+      MLConf.DEFAULT_ML_NUM_CLASS))
+    strategy.setMaxBins(conf.getInt(MLConf.ML_TREE_MAX_BIN,
+      MLConf.DEFAULT_ML_TREE_MAX_BIN))
+    strategy.setSubSamplingRate(conf.getDouble(MLConf.ML_TREE_SUB_SAMPLE_RATE,
+      MLConf.DEFAULT_ML_TREE_SUB_SAMPLE_RATE))
+    strategy.setFeatureSamplingStrategy(conf.get(MLConf.ML_TREE_FEATURE_SAMPLE_STRATEGY,
+      MLConf.DEFAULT_ML_TREE_FEATURE_SAMPLE_STRATEGY))
+    strategy.setCategoricalFeatures(conf.get(MLConf.ML_TREE_CATEGORICAL_FEATURE,
+      MLConf.DEFAULT_ML_TREE_CATEGORICAL_FEATURE))
+    strategy.setMinInstancesPerNode(conf.getInt(MLConf.ML_TREE_NODE_MIN_INSTANCE,
+      MLConf.DEFAULT_ML_TREE_NODE_MIN_INSTANCE))
+    strategy.setMinInfoGain(conf.getDouble(MLConf.ML_TREE_NODE_MIN_INFOGAIN,
+      MLConf.DEFAULT_ML_TREE_NODE_MIN_INFOGAIN))
+    strategy.assertValid()
+    strategy
   }
 
 }

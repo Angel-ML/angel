@@ -26,4 +26,11 @@ object QuantileStrategy extends Enumeration {
   type QuantileStrategy = Value
 
   val Sort, MinMax, ApproxHist = Value
+
+  def fromString(name: String): QuantileStrategy = name.toLowerCase match {
+    case "sort" => Sort
+    case "minmax" => MinMax
+    case "approx" | "approxhist" => ApproxHist
+    case _ => throw new IllegalArgumentException(s"Did not recognize QuantileStrategy name: $name")
+  }
 }

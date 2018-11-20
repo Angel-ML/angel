@@ -21,10 +21,17 @@ package com.tencent.angel.ml.tree.conf
 /**
   * Enum to select ensemble combining strategy for base learners
   */
-object EnsembleCombiningStrategy extends Enumeration {
+object EnsembleStrategy extends Enumeration {
 
-  type EnsembleCombiningStrategy = Value
+  type EnsembleStrategy = Value
 
   val Average, Sum, Vote = Value
+
+  def fromString(name: String): EnsembleStrategy = name match {
+    case "average" | "Average" => Average
+    case "sum" | "Sum" => Sum
+    case "vote" | "Vote" => Vote
+    case _ => throw new IllegalArgumentException(s"Did not recognize EnsembleStrategy name: $name")
+  }
 }
 

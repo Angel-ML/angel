@@ -175,6 +175,10 @@ object MLConf {
   val DEFAULT_ML_TREE_FEATURE_SAMPLE_STRATEGY = "all"
   val ML_TREE_FEATURE_SAMPLE_RATE = "ml.tree.feature.sample.rate"
   val DEFAULT_ML_TREE_FEATURE_SAMPLE_RATE = 1
+  val ML_TREE_NODE_MIN_INSTANCE = "ml.tree.node.min.instance"
+  val DEFAULT_ML_TREE_NODE_MIN_INSTANCE = 1
+  val ML_TREE_NODE_MIN_INFOGAIN = "ml.tree.node.min.infogain"
+  val DEFAULT_ML_TREE_NODE_MIN_INFOGAIN = 0
   val ML_TREE_MIN_CHILD_WEIGHT = "ml.tree.min.child.weight"
   val DEFAULT_ML_TREE_MIN_CHILD_WEIGHT = 0.01
   val ML_GBDT_REG_ALPHA = "ml.gbdt.reg.alpha"
@@ -187,8 +191,8 @@ object MLConf {
   val DEFAULT_ML_GBDT_BATCH_SIZE = 10000
   val ML_GBDT_SERVER_SPLIT = "ml.gbdt.server.split"
   val DEFAULT_ML_GBDT_SERVER_SPLIT = false
-  val ML_GBDT_CATE_FEAT = "ml.gbdt.cate.feat"
-  val DEFAULT_ML_GBDT_CATE_FEAT = "none"
+  val ML_TREE_CATEGORICAL_FEATURE = "ml.tree.categorical.feature"
+  val DEFAULT_ML_TREE_CATEGORICAL_FEATURE = ""
   val ML_TREE_IMPURITY = "ml.tree.impurity"
   val DEFAULT_ML_TREE_IMPURITY = "gini"
 
