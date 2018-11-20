@@ -94,7 +94,8 @@ class Zip2MapWithIndex(matrixId: Int, fromId1: Int, fromId2: Int, toId: Int, fun
             val to = VFactory.sparseDoubleVector(from1.getDim)
             val startCol = rows(0).getStartCol
             val endCol = rows(0).getEndCol
-            val indices = (startCol.toInt until endCol.toInt)
+            val size = (endCol - startCol).toInt
+            val indices = (0 until size)
             indices.foreach(i => to.set(i, mapper.call(i + startCol, from1.get(i), from2.get(i))))
             toRow.setSplit(to)
             to
