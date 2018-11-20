@@ -111,7 +111,7 @@ class OfflineLearner {
     */
   def predict(data: RDD[(LabeledData, String)], model: GraphModel): RDD[(String, Double)] = {
     val bModel = SparkContext.getOrCreate().broadcast(model)
-    val scores = data.mapPartitions { case iterator =>
+    val scores = data.mapPartitions { iterator =>
       PSContext.instance()
       val samples = iterator.toArray
       val output  = bModel.value.forward(1, samples.map(f => f._1))
