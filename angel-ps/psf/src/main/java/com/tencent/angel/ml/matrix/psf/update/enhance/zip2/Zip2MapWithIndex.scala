@@ -20,6 +20,7 @@ package com.tencent.angel.ml.matrix.psf.update.enhance.zip2
 
 import com.tencent.angel.common.Serialize
 import com.tencent.angel.ml.math2.VFactory
+import com.tencent.angel.ml.math2.storage.{IntDoubleDenseVectorStorage, IntDoubleSparseVectorStorage, LongDoubleSparseVectorStorage}
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.matrix.psf.update.enhance.MFUpdateFunc
 import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.func.Zip2MapWithIndexFunc
@@ -86,8 +87,19 @@ class Zip2MapWithIndex(matrixId: Int, fromId1: Int, fromId2: Int, toId: Int, fun
         to
 
       case toRow: ServerLongDoubleRow =>
-        rows(0).getSplit match {
-          case _: IntDoubleVector =>
+        rows(0).getSplit.getStorage match {
+          case _: IntDoubleDenseVectorStorage =>
+            val from1 = rows(0).getSplit.asInstanceOf[IntDoubleVector]
+            val from2 = rows(1).getSplit.asInstanceOf[IntDoubleVector]
+            val to = VFactory.sparseDoubleVector(from1.getDim)
+            val startCol = rows(0).getStartCol
+            val endCol = rows(0).getEndCol
+            val indices = (startCol.toInt until endCol.toInt)
+            indices.foreach(i => to.set(i, mapper.call(i + startCol, from1.get(i), from2.get(i))))
+            toRow.setSplit(to)
+            to
+
+          case _: IntDoubleSparseVectorStorage =>
             val from1 = rows(0).getSplit.asInstanceOf[IntDoubleVector]
             val from2 = rows(1).getSplit.asInstanceOf[IntDoubleVector]
             val to = VFactory.sparseDoubleVector(from1.getDim)
@@ -98,7 +110,7 @@ class Zip2MapWithIndex(matrixId: Int, fromId1: Int, fromId2: Int, toId: Int, fun
             }
             toRow.setSplit(to)
             to
-          case _: LongDoubleVector =>
+          case _: LongDoubleSparseVectorStorage =>
             val from1 = rows(0).getSplit.asInstanceOf[LongDoubleVector]
             val from2 = rows(1).getSplit.asInstanceOf[LongDoubleVector]
             val to = VFactory.sparseLongKeyDoubleVector(from1.getDim)

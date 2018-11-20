@@ -5,7 +5,7 @@ import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.core.metric.AUC
-import com.tencent.angel.spark.ml.online_learning.FTRL
+import com.tencent.angel.spark.ml.online_learning.{FTRL, SparseLRModel}
 import com.tencent.angel.spark.ml.util.DataLoader
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -73,6 +73,11 @@ object FTRLExample {
       val auc = new AUC().calculate(scores)
 
       println(s"epoch=$epoch loss=${totalLoss / size} auc=$auc")
+    }
+
+    if (modelPath.length > 0) {
+      val model = SparseLRModel(opt.weight)
+      model.save(modelPath)
     }
     stop()
   }

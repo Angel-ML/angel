@@ -5,8 +5,8 @@ import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.core.metric.AUC
-import com.tencent.angel.spark.ml.online_learning.FTRL
-import com.tencent.angel.spark.ml.util.DataLoader
+import com.tencent.angel.spark.ml.online_learning.{FTRL, SparseLRModel}
+import com.tencent.angel.spark.ml.util.{DataLoader, SparkUtils}
 import org.apache.spark.{SparkConf, SparkContext}
 
 object FTRLExample {
@@ -29,13 +29,15 @@ object FTRLExample {
     val alpha = params.getOrElse("alpha", "2.0").toDouble
     val beta = params.getOrElse("beta", "1.0").toDouble
     val lambda1 = params.getOrElse("lambda1", "0.1").toDouble
-    val lambda2 = params.getOrElse("lambda2", "100.0").toDouble
+    val lambda2 = params.getOrElse("lambda2", "5.0").toDouble
     val dim = params.getOrElse("dim", "149").toLong
     val input = params.getOrElse("input", "data/census/census_148d_train.libsvm")
     val batchSize = params.getOrElse("batchSize", "100").toInt
-    val partNum = params.getOrElse("partNum", "10").toInt
     val numEpoch = params.getOrElse("numEpoch", "3").toInt
     val modelPath = params.getOrElse("output", "")
+
+    // We use more partitions to achieve dynamic load balance
+    val partNum = (SparkUtils.getNumExecutors(SparkContext.getOrCreate().getConf) * 6.15).toInt
 
     val opt = new FTRL(lambda1, lambda2, alpha, beta)
     opt.init(dim, RowType.T_DOUBLE_SPARSE_LONGKEY)
@@ -65,6 +67,11 @@ object FTRLExample {
       val auc = new AUC().calculate(scores)
 
       println(s"epoch=$epoch loss=${totalLoss / size} auc=$auc")
+    }
+
+    if (modelPath.length > 0) {
+      val model = SparseLRModel(opt.weight)
+      model.save(modelPath)
     }
     stop()
   }

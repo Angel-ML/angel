@@ -106,6 +106,11 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     lossSum
   }
 
+  /**
+    * Predict with weight
+    * @param batch
+    * @return
+    */
   def predict(batch: Array[LabeledData]): Array[(Double, Double)] = {
     val indices = batch.flatMap {
       case point =>
@@ -128,6 +133,12 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     }
   }
 
+  /**
+    * Optimizing only for LongDoubleVector. This version is ok and the model is correct.
+    * @param batch: training mini-batch examples
+    * @param costFun: function to calculate gradients
+    * @return Loss for this batch
+    */
   def optimize(batch: Array[(Vector, Double)],
       costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)): Double = {
 
@@ -167,6 +178,17 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     lossSum
   }
 
+  /**
+    * Optimizing for one example (feature, label)
+    * @param feature
+    * @param label
+    * @param localN, N in the local executor
+    * @param localW. weight in the local executor
+    * @param deltaZ, delta value for z
+    * @param deltaN, delta value for n
+    * @param costFun
+    * @return
+    */
   def optimize(
       feature: Vector,
       label: Double,
@@ -195,6 +217,10 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     (loss)
   }
 
+  /**
+    * calculate w from z and n and store it in the w row
+    * @return
+    */
   def weight: PSVector = {
     val wPS = PSVector.duplicate(zPS)
     val func = new FTRLWUpdater(alpha, beta, lambda1, lambda2, regularSkipFeatIndex)
@@ -202,6 +228,17 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     VectorUtils.compress(wPS)
   }
 
+  /**
+    * calculate w from z and n for one dimension
+    * @param fId
+    * @param zOnId
+    * @param nOnId
+    * @param alpha
+    * @param beta
+    * @param lambda1
+    * @param lambda2
+    * @return
+    */
   def updateWeight(
       fId: Long,
       zOnId: Double,
