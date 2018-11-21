@@ -36,15 +36,9 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
   var nPS: PSVector = _
 
   def init(dim: Long, rowType: RowType): Unit = {
-    zPS = PSVector.sparse(dim, 3, rowType,
+    zPS = PSVector.longKeySparse(dim, -1, 3, rowType,
       additionalConfiguration = Map(AngelConf.Angel_PS_PARTITION_CLASS -> classOf[ColumnRangePartitioner].getName))
     nPS = PSVector.duplicate(zPS)
-
-//    zPS.reset
-//    nPS.reset
-
-//    VectorUtils.(zPS, 0, 0.01)
-//    VectorUtils.randomNormal(nPS, 0, 0.01)
   }
 
   def init(dim: Long): Unit = {
