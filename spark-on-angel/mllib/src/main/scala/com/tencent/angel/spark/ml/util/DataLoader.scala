@@ -18,73 +18,16 @@
 
 package com.tencent.angel.spark.ml.util
 
-import scala.collection.mutable.ArrayBuffer
+import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.math2.VFactory
 
+import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.ml.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
-
-/**
-  * DataLoader loads DataFrame from HDFS/LOCAL, each line of file is split by space character.
-  *
-  */
 object DataLoader {
-
-  /**
-    * one-hot sparse data format
-    *
-    * labeled data
-    * 1,22,307,123
-    * 0,323,333,723
-    *
-    * unlabeled data
-    * id1,23,34,243
-    * id2,33,221,233
-    *
-    */
-  def loadOneHotInstance(
-                          input: String,
-                          partitionNum: Int,
-                          sampleRate: Double): DataFrame = {
-    val spark = SparkSession.builder().getOrCreate()
-
-    val instances = spark.sparkContext.textFile(input)
-      .flatMap { line =>
-        val items = line.split(SPLIT_SEPARATOR)
-        if (items.length < 2) {
-          println(s"record length < 2, line: $line")
-          Iterator.empty
-        } else {
-          val label = items.head
-          val feature = items.tail.map(_.toLong)
-          Iterator.single(Row(label, feature))
-        }
-      }.repartition(partitionNum)
-      .sample(false, sampleRate)
-    spark.createDataFrame(instances, ONE_HOT_INSTANCE_ST)
-  }
-
-  // transform data to one-hot type
-  def transform2OneHot(dataRdd: RDD[String]): RDD[(Array[Long], Double)] = {
-
-    val instances = dataRdd
-      .map(line => line.trim)
-      .filter(_.nonEmpty)
-      .flatMap { line =>
-        val items = line.split(SPLIT_SEPARATOR)
-        if (items.length < 2) {
-          println(s"record length < 2, line: $line")
-          Iterator.empty
-        } else {
-          val label = items.head
-          val feature = items.tail.map(_.toLong)
-          Iterator.single(feature, label.toDouble)
-        }
-      }
-    instances
-  }
 
   // transform data to one-hot type
   def transform2OneHot(dataStr: String): (Array[Long], Double) = {
@@ -98,157 +41,113 @@ object DataLoader {
 
   }
 
-  def loadDense(
-                 input: String,
-                 partitionNum: Int,
-                 sampleRate: Double): DataFrame = {
-    val spark = SparkSession.builder().getOrCreate()
 
+  def parseIntDouble(text: String, dim: Int): LabeledData = {
+    if (null == text) return null
 
-    val inputRDD = spark.sparkContext.textFile(input, partitionNum)
-      .sample(false, sampleRate)
-      .map(line => line.trim.split(SPLIT_SEPARATOR))
+    var splits = text.trim.split(" ")
 
-    val itemNum = inputRDD.first().length
+    if (splits.length < 1) return null
 
-    // create DataFrame
-    val fields = ArrayBuffer[StructField]()
-    for (i <- 0 until itemNum) {
-      val name = "f_" + i
-      val field = new StructField(name, StringType, false)
-      fields += field
+    var y = splits(0).toDouble
+    if (y == 0.0) y = -1.0
+
+    splits = splits.tail
+    val len = splits.length
+
+    val keys = new Array[Int](len)
+    val vals = new Array[Double](len)
+
+    // y should be +1 or -1 when classification.
+    splits.zipWithIndex.foreach { case (value: String, indx2: Int) =>
+      val kv = value.trim.split(":")
+      keys(indx2) = kv(0).toInt
+      vals(indx2) = kv(1).toDouble
     }
-    spark.createDataFrame(inputRDD.map(line => Row.fromSeq(line)), StructType(fields))
+    val x = VFactory.sparseDoubleVector(dim, keys, vals)
+    new LabeledData(x, y)
   }
 
-  def loadLibsvm(
-                  input: String,
-                  partitionNum: Int,
-                  sampleRate: Double,
-                  dim: Int): RDD[(Double, Vector)] = {
-    val spark = SparkSession.builder().getOrCreate()
+  def parseLongFloat(text: String, dim: Int): LabeledData = {
+    if (null == text) return null
+    var splits = text.trim.split(" ")
 
-    val withReplacement = false
-    val parseRDD = spark.sparkContext.textFile(input)
-      .sample(withReplacement, sampleRate)
-      .repartition(partitionNum)
-      .map(line => line.trim)
-      .filter(_.nonEmpty)
-      .map(parseLine)
+    if (splits.length < 1) return null
 
-    val d = if (dim > 0) {
-      dim
-    } else {
-      parseRDD.map(record => record._2.lastOption.getOrElse(0))
-        .reduce(math.max) + 1
+    var y = splits(0).toDouble
+    if (y == 0.0) y = -1.0
+
+    splits = splits.tail
+    val len = splits.length
+
+    val keys = new Array[Long](len)
+    val vals = new Array[Float](len)
+
+    // y should be +1 or -1 when classification.
+    splits.zipWithIndex.foreach { case (value: String, indx2: Int) =>
+      val kv = value.trim.split(":")
+      keys(indx2) = kv(0).toLong
+      vals(indx2) = kv(1).toFloat
     }
-    parseRDD.map { case (label, indices, values) =>
-      Tuple2(label.toDouble, Vectors.sparse(d, indices, values))
+    val x = VFactory.sparseLongKeyFloatVector(dim, keys, vals)
+    new LabeledData(x, y)
+  }
+
+  def parseLongDouble(text: String, dim: Long): LabeledData = {
+    if (null == text) return null
+
+    var splits = text.trim.split(" ")
+
+    if (splits.length < 1) return null
+
+    var y = splits(0).toDouble
+    if (y == 0.0) y = -1.0
+
+    splits = splits.tail
+    val len = splits.length
+
+    val keys = new Array[Long](len)
+    val vals = new Array[Double](len)
+
+    // y should be +1 or -1 when classification.
+    splits.zipWithIndex.foreach { case (value: String, indx2: Int) =>
+      val kv = value.trim.split(":")
+      keys(indx2) = kv(0).toLong
+      vals(indx2) = kv(1).toDouble
     }
+    val x = VFactory.sparseLongKeyDoubleVector(dim, keys, vals)
+    new LabeledData(x, y)
   }
 
-  private def parseLine(line: String): (String, Array[Int], Array[Double]) = {
+  def parseIntFloat(text: String, dim: Int): LabeledData = {
+    if (null == text) return null
 
-    val indices = ArrayBuffer[Int]()
-    val values = ArrayBuffer[Double]()
-    val items = line.split(SPLIT_SEPARATOR).map(_.trim)
-    val label = items.head
+    var splits = text.trim.split(" ")
 
-    for (item <- items.tail) {
-      val ids = item.split(":")
-      if (ids.length == 2) {
-        indices += ids(0).toInt - 1 // convert 1-based indices to 0-based indices
-        values += ids(1).toDouble
-      }
-      // check if indices from the input are one-based and in ascending order
-      var previous = -1
-      var i = 0
-      val indicesLength = indices.length
-      while (i < indicesLength) {
-        val current = indices(i)
-        require(current > previous, "indices should be one-based and in ascending order")
-        previous = current
-        i += 1
-      }
+    if (splits.length < 1) return null
+
+    var y = splits(0).toDouble
+    if (y == 0.0) y = -1.0
+
+    splits = splits.tail
+    val len = splits.length
+
+    val keys: Array[Int] = new Array[Int](len)
+    val vals: Array[Float] = new Array[Float](len)
+
+    // y should be +1 or -1 when classification.
+    splits.zipWithIndex.foreach { case (value: String, indx2: Int) =>
+      val kv = value.trim.split(":")
+      keys(indx2) = kv(0).toInt
+      vals(indx2) = kv(1).toFloat
     }
-    (label, indices.toArray, values.toArray)
+    val x = VFactory.sparseFloatVector(dim, keys, vals)
+    new LabeledData(x, y)
   }
 
-  // check data in type of one-hot or libsvm automatically
-  def isOneHotType(input: String, sampleRate: Double, partitionNum: Int): Boolean = {
-
-    val spark = SparkSession.builder().getOrCreate()
-
-    val samples = spark.sparkContext.textFile(input)
-      .sample(false, sampleRate)
-      .repartition(partitionNum)
-      .map(line => line.trim)
-      .filter(_.nonEmpty)
-      .take(1)
-
-    val oneSample = samples(0).split(SPLIT_SEPARATOR).map(_.trim)
-    val firstFeat = oneSample(1).split(KEY_VALUE_SEP)
-
-    if (firstFeat.length == 1) true else false
-  }
-
-  // check the type of data for other way of loading
-  def isOneHotType(dataRdd: RDD[String]): Boolean = {
-
-    val samples = dataRdd.map(line => line.trim).filter(_.nonEmpty).take(1)
-
-    val oneSample = samples(0).split(SPLIT_SEPARATOR).map(_.trim)
-    val firstFeat = oneSample(1).split(KEY_VALUE_SEP)
-
-    if (firstFeat.length == 1) true else false
-  }
-
-  // load SparseVector instance
-  def loadSparseInstance(input: String,
-                         partitionNum: Int,
-                         sampleRate: Double): RDD[(Array[(Long, Double)], Double)] = {
-
-    val spark = SparkSession.builder().getOrCreate()
-
-    val labelAndFeature = spark.sparkContext.textFile(input)
-      .sample(false, sampleRate)
-      .repartition(partitionNum)
-      .map(line => line.trim)
-      .filter(_.nonEmpty)
-      .map { dataStr =>
-        val labelFeature = dataStr.split(" ")
-
-        val feature = labelFeature.tail.map { idVal =>
-          val idValArr = idVal.split(":")
-          (idValArr(0).toLong, idValArr(1).toDouble)
-        }
-
-        (feature, labelFeature(0).toDouble)
-      }
-
-    labelAndFeature
-  }
-
-  // transform data to sparse type
-  def transform2Sparse(dataRdd: RDD[String]): RDD[(Array[(Long, Double)], Double)] = {
-
-    dataRdd
-      .map(line => line.trim)
-      .filter(_.nonEmpty)
-      .map { dataStr =>
-        val labelFeature = dataStr.split(SPLIT_SEPARATOR)
-
-        val feature = labelFeature.tail.map { idVal =>
-          val idValArr = idVal.split(":")
-
-          // for test
-          println("test1:" + idValArr.mkString(" "))
-
-          (idValArr(0).toLong, idValArr(1).toDouble)
-        }
-
-        (feature, labelFeature(0).toDouble)
-      }
+  def parseLabel(text: String): String = {
+    if (null == text) return null
+    return text.trim.split(" ")(0)
   }
 
   // transform data to sparse type
@@ -267,71 +166,4 @@ object DataLoader {
 
     (featureStyled, labelFeature(0).toDouble)
   }
-
-  /**
-    * load data for ffm,the input data type is:
-    * label field1:featId1:val1 field2:featId2:val2 ...
-    * note: the index for ffm is continuous encoding
-    *
-    * @param input
-    * @param partitionNum
-    * @param sampleRate
-    * @return (RDD(Array(fId, value), label), dim, globalMapChart)
-    *         note: globalMapchart is Map(featureId: field)
-    */
-
-  def loadFFMLibSVM(input: String,
-                    partitionNum: Int,
-                    sampleRate: Double,
-                    dim: Long): (RDD[(Array[(Long, Double)], Double)], Long, Map[Long, Int]) = {
-
-    val spark = SparkSession.builder().getOrCreate()
-
-    val featAndLabelRdd = spark.sparkContext.textFile(input)
-      .sample(false, sampleRate)
-      .repartition(partitionNum)
-      .map(line => line.trim)
-      .filter(_.nonEmpty)
-      .map { dataStr =>
-
-        val labelFeature = dataStr.split(" ")
-
-        val feature = labelFeature.tail.map { fieIdVal =>
-
-          val fidIdValArr = fieIdVal.split(":")
-
-          (fidIdValArr(0).toInt, fidIdValArr(1).toLong, fidIdValArr(2).toDouble)
-        }
-
-        (feature, labelFeature(0).toDouble)
-      }
-
-    // get the dim of feature
-    val d = if (dim > 0) {
-      dim
-    } else {
-      featAndLabelRdd.flatMap(x => x._1.map(its => its._2)).reduce(math.max) + 1
-    }
-
-    // get the Map: feature to field
-    var globalChart = Map[Long, Int]()
-    val feat2FieldChart = featAndLabelRdd.mapPartitions { iter =>
-
-      var partitionMap = Map[Long, Int]()
-      iter.foreach { case (feature, label) =>
-
-        val tempMap = feature.map(x => (x._2, x._1)).toMap
-        partitionMap ++= tempMap
-      }
-
-      Iterator(partitionMap)
-    }.collect()
-
-    feat2FieldChart.foreach { x => globalChart ++= x }
-
-    // just return Array(featId, featVal), label
-    val instancesRdd = featAndLabelRdd.map { case (feat, label) => (feat.map(x => (x._2, x._3)), label) }
-    (instancesRdd, d, globalChart)
-  }
-
 }

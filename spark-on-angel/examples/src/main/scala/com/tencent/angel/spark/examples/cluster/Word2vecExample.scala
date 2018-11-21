@@ -20,11 +20,11 @@ package com.tencent.angel.spark.examples.cluster
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.examples.util.SparkUtils
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.embedding.Param
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel
 import com.tencent.angel.spark.ml.feature.{Features, SubSampling}
+import com.tencent.angel.spark.ml.util.SparkUtils
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
@@ -55,6 +55,7 @@ object Word2vecExample {
     val numPartitions = params.getOrElse("numParts", "10").toInt
     val withSubSample = params.getOrElse("subSample", "true").toBoolean
     val withRemapping = params.getOrElse("remapping", "true").toBoolean
+    val modelType = params.getOrElse("modelType", "cbow")
 
     val numCores = SparkUtils.getNumCores(conf)
 
@@ -104,7 +105,7 @@ object Word2vecExample {
       .setMaxIndex(maxWordId)
       .setNumRowDataSet(numDocs)
       .setMaxLength(maxLength)
-      .setModel("cbow")
+      .setModel(modelType)
 
     val model = new Word2VecModel(param)
     model.train(docs, param)
