@@ -143,7 +143,7 @@ public class WorkerTest {
 
       angelClient.startPSServer();
       angelClient.run();
-      Thread.sleep(2000);
+      Thread.sleep(5000);
 
       group0Id = new WorkerGroupId(0);
       worker0Id = new WorkerId(group0Id, 0);
