@@ -20,125 +20,282 @@ package com.tencent.angel.spark.models
 
 import scala.util.Random
 
-import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.math2.matrix.Matrix
-import com.tencent.angel.ml.math2.ufuncs.Ufuncs
-import com.tencent.angel.ml.math2.vector.{IntDoubleVector, LongDoubleVector, Vector}
+import com.tencent.angel.ml.math2.matrix.{RBIntDoubleMatrix, RBIntFloatMatrix, RBLongFloatMatrix}
+import com.tencent.angel.ml.math2.vector.{IntFloatVector, LongFloatVector, Vector}
 import com.tencent.angel.ml.matrix.RowType
-import com.tencent.angel.spark.models.PSMatrixSuite._
 import com.tencent.angel.spark.{PSFunSuite, SharedPSContext}
 
 class PSMatrixSuite extends PSFunSuite with SharedPSContext {
 
-  private val rows = 10
-  private val cols = 10
+  private val rows = 12
+  private val cols = 12
 
   test("init Dense Matrix") {
-    val mat = PSMatrix.dense(rows, cols)
-    val result = mat.pull()
-
-    (0 until rows).foreach { i =>
-      (0 until cols).foreach { j =>
-        assert(result(i)(j) == 0.0)
-      }
-    }
-
-    mat.destroy()
-  }
-
-  test("Push array") {
-    val mat = PSMatrix.dense(rows, cols)
-    val rand = new Random()
-    val array = (0 until cols).toArray.map(x => rand.nextDouble())
-
-    val randRow = rand.nextInt(rows)
-    mat.push(VFactory.denseDoubleVector(mat.id, randRow, 0, array))
-
-    val result = mat.pull()
-
-    (0 until rows).foreach { i =>
-      if (i == randRow) {
-        assert(array.sameElements(result(i)))
-      } else {
-        assert(Array.fill(cols)(0.0).sameElements(result(i)))
+    val mat = PSMatrix.dense(rows, cols, RowType.T_FLOAT_DENSE)
+    val result = mat.pull().asInstanceOf[RBIntFloatMatrix]
+    for (i <- 0 until rows) {
+      for (j <- 0 until cols) {
+        assert(result.get(i, j) == 0.0f)
       }
     }
     mat.destroy()
   }
 
-  test("Pull row") {
-    val mat = PSMatrix.rand(rows, cols)
-    val totalMat = mat.pull()
-    val rand = new Random()
-    val randRow = rand.nextInt(rows)
-    val oneRow = mat.pull(randRow)
-    assert(oneRow.sameElements(totalMat(randRow)))
+  test("init Sparse Matrix") {
+    val mat = PSMatrix.sparse(rows, cols, -1, RowType.T_FLOAT_SPARSE_LONGKEY)
+    val result = mat.pull().asInstanceOf[RBLongFloatMatrix]
+    for (i <- 0 until rows) {
+      for (j <- 0 until cols) {
+        assert(result.get(i, j) == 0.0f)
+      }
+    }
     mat.destroy()
   }
 
-  test("increment") {
-    val mat = PSMatrix.dense(rows, cols)
-    val rand = new Random()
-    val firstArray = (0 until cols).toArray.map(_ => rand.nextDouble())
-    val secondArray = (0 until cols).toArray.map(_ => rand.nextGaussian())
-
-    val rowId = rand.nextInt(rows)
-    mat.increment(VFactory.denseDoubleVector(mat.id, rowId, 0, firstArray))
-    assert(mat.pull(rowId).sameElements(firstArray))
-
-    mat.increment(VFactory.denseDoubleVector(mat.id, rowId, 0, secondArray))
-    val sum = Array.tabulate(cols)(i => firstArray(i) + secondArray(i))
-    assert(mat.pull(rowId).sameElements(sum))
-
-    mat.destroy()
-  }
-}
-
-object PSMatrixSuite {
-
-  class MatrixImplicit(mat: Matrix) {
-    def apply(i: Int): Array[Double] = mat.getRow(i).asInstanceOf[IntDoubleVector].getStorage.getValues
+  test("create eye matrix") {
+    val mat = PSMatrix.eye(rows)
+    val result = mat.pull().asInstanceOf[RBIntDoubleMatrix]
+    for (i <- 0 until rows) {
+      for (j <- 0 until cols) {
+        if (i == j)
+          assert(result.get(i, j) == 1.0)
+        else
+          assert(result.get(i, j) == 0.0)
+      }
+    }
   }
 
-  implicit def toMatrixImplicit(mat: Matrix): MatrixImplicit = new MatrixImplicit(mat)
+  test("create diagonal matrix") {
+    val arr = Array.tabulate(rows)(_ => Random.nextDouble())
+    val mat = PSMatrix.diag(arr)
+    val result = mat.pull().asInstanceOf[RBIntDoubleMatrix]
+    for (i <- 0 until rows) {
+      for (j <- 0 until cols) {
+        if (i == j)
+          assert(result.get(i, j) == arr(i))
+        else
+          assert(result.get(i, j) == 0.0)
+      }
+    }
+  }
 
-  class VectorImplicit(val v: Vector) {
-    def +(other: Vector): Vector = Ufuncs.add(v, other)
+  test("create rand matrix") {
+    val mat = PSMatrix.rand(rows, cols, RowType.T_FLOAT_DENSE, -2.0, 2.0)
+    val result = mat.pull().asInstanceOf[RBIntFloatMatrix]
+    for (i <- 0 until rows) {
+      for (j <- 0 until cols) {
+        assert(result.get(i, j) >= -2.0 && result.get(i, j) <= 2.0)
+      }
+    }
+  }
 
-    def +(other: LongDoubleVector): LongDoubleVector = Ufuncs.add(v, other).asInstanceOf[LongDoubleVector]
+  test("fill"){
+    val mat = PSMatrix.dense(rows, cols, RowType.T_FLOAT_DENSE)
+    val rowIds = Array.range(0, 5)
+    val values = rowIds.map(_ => Random.nextDouble())
+    mat.fill(rowIds, values)
+    val results = mat.pull().asInstanceOf[RBIntFloatMatrix]
+    for(i <- 0 until rows){
+      for(j <- 0 until cols){
+        if(rowIds.contains(i))
+          assert(math.abs(results.get(i, j) - values(i)) < 1e-6)
+        else
+          assert(results.get(i, j) == 0.0f)
+      }
+    }
+  }
 
-    def -(other: LongDoubleVector): LongDoubleVector = Ufuncs.sub(v, other).asInstanceOf[LongDoubleVector]
 
-    def *(other: LongDoubleVector): LongDoubleVector = Ufuncs.mul(v, other).asInstanceOf[LongDoubleVector]
+  test("push & update & increment by matrix") {
+    val mat = PSMatrix.dense(rows, cols, RowType.T_FLOAT_DENSE)
+    val initRandomMatrix = new RBIntFloatMatrix(Array.tabulate(rows)(_ =>
+      VFactory.denseFloatVector(Array.tabulate(cols)(_ => Random.nextFloat()))))
 
-    def /(other: LongDoubleVector): LongDoubleVector = Ufuncs.div(v, other).asInstanceOf[LongDoubleVector]
-
-    def +=(other: Vector): Unit = Ufuncs.iadd(v, other)
-
-    def -=(other: Vector): Unit = Ufuncs.isub(v, other)
-
-    def /=(other: Vector): Unit = Ufuncs.idiv(v, other)
-
-    def *=(other: Vector): Unit = Ufuncs.imul(v, other)
-
-    def sameElements(other: Array[Double]): Boolean = {
-      v.getType match {
-        case RowType.T_DOUBLE_DENSE =>
-          v.asInstanceOf[IntDoubleVector].getStorage.getValues.sameElements(other)
-        case RowType.T_DOUBLE_SPARSE_LONGKEY =>
-          val storage = v.asInstanceOf[LongDoubleVector].getStorage
-          val indices = storage.getIndices.sorted
-          indices.min == 0 && indices.max == other.length - 1 && storage.get(indices).sameElements(other)
-        case _ => throw new AngelException("not supported")
+    // push matrix
+    mat.push(initRandomMatrix)
+    val localMatrix2 = mat.pull().asInstanceOf[RBIntFloatMatrix]
+    for (i <- 0 until rows) {
+      for (j <- 0 until cols) {
+        assert(localMatrix2.get(i, j) == initRandomMatrix.get(i, j))
       }
     }
 
-    def apply(col: Long): Double = v match {
-      case dense: IntDoubleVector => dense.get(col.toInt)
-      case sparse: LongDoubleVector => sparse.get(col)
+    // increment matrix
+    mat.increment(initRandomMatrix)
+    val localMatrix3 = mat.pull().asInstanceOf[RBIntFloatMatrix]
+    for (i <- 0 until rows) {
+      for (j <- 0 until cols) {
+        assert(localMatrix3.get(i, j) == 2 * initRandomMatrix.get(i, j))
+      }
+    }
+
+    // update diagonal elements to 1.0f
+    val updateMatrix = new RBIntFloatMatrix(Array.tabulate(rows)(i =>
+      VFactory.sparseFloatVector(cols, Array(i), Array(1.0f))
+    ))
+    mat.update(updateMatrix)
+    val localMatrix4 = mat.pull().asInstanceOf[RBIntFloatMatrix]
+    for (i <- 0 until rows) {
+      for (j <- 0 until cols) {
+        if (i == j) assert(localMatrix4.get(i, j) == 1.0f)
+        else assert(localMatrix3.get(i, j) == 2 * initRandomMatrix.get(i, j))
+      }
     }
   }
 
-  implicit def toVectorImplicit(v: Vector): VectorImplicit = new VectorImplicit(v)
+  test("push by vector") {
+    val mat = PSMatrix.rand(rows, cols, RowType.T_FLOAT_DENSE)
+    val randomArrays = Array.tabulate(rows, cols) { case (_, _) => Random.nextFloat() }
+
+    // push
+    mat.push(0, VFactory.denseFloatVector(randomArrays(0)))
+    mat.push(VFactory.denseFloatVector(mat.id, 1, 0, randomArrays(1)))
+    mat.push(Array(2, 3), Array.tabulate(2)(i => VFactory.denseFloatVector(randomArrays(i + 2)).asInstanceOf[Vector]))
+
+    val finalMatrix = mat.pull().asInstanceOf[RBIntFloatMatrix]
+    //check push
+    for (i <- 0 until 4)
+      for (j <- 0 until cols)
+        assert(finalMatrix.get(i, j) == randomArrays(i)(j))
+  }
+
+  test("increment by vector") {
+    val mat = PSMatrix.rand(rows, cols, RowType.T_FLOAT_DENSE)
+    val initRandomMatrix = mat.pull().asInstanceOf[RBIntFloatMatrix]
+    val randomArrays = Array.tabulate(4, cols) { case (_, _) => Random.nextFloat() }
+
+    // increment
+    mat.increment(0, VFactory.denseFloatVector(randomArrays(0)))
+    mat.increment(VFactory.denseFloatVector(mat.id, 1, 0, randomArrays(1)))
+    mat.increment(Array(2, 3), Array.tabulate(2)(i => VFactory.denseFloatVector(randomArrays(i + 2)).asInstanceOf[Vector]))
+
+    val finalMatrix = mat.pull().asInstanceOf[RBIntFloatMatrix]
+    // check increment
+    for(i <- 0 until 4)
+      for(j <- 0 until cols)
+        assert(math.abs(finalMatrix.get(i, j) - randomArrays(i)(j) - initRandomMatrix.get(i, j)) < 1e-6)
+
+  }
+
+  test("update by vector") {
+    val mat = PSMatrix.rand(rows, cols, RowType.T_FLOAT_DENSE)
+    val initRandomMatrix = mat.pull().asInstanceOf[RBIntFloatMatrix]
+    val randomArrays = Array.tabulate(4, cols) { case (_, _) => Random.nextFloat() }
+
+    // update
+    val indices = Array.range(1, 8)
+    mat.update(0, VFactory.sparseFloatVector(cols, indices, indices.map(i => randomArrays(0)(i))))
+    mat.update(VFactory.sortedFloatVector(mat.id, 1, 0, cols, indices, indices.map(i => randomArrays(1)(i))))
+    mat.update(Array(2, 3), Array.tabulate(2)(i =>
+      VFactory.sparseFloatVector(cols, indices, indices.map(j => randomArrays(i + 2)(j))).asInstanceOf[Vector]
+    ))
+
+    val finalMatrix = mat.pull().asInstanceOf[RBIntFloatMatrix]
+    for(i <- 0 until 4){
+      for(j <- 0 until cols){
+        if(indices.contains(j))
+          assert(finalMatrix.get(i, j) == randomArrays(i)(j))
+        else
+          assert(finalMatrix.get(i, j) == initRandomMatrix.get(i, j))
+      }
+    }
+  }
+
+  test("pull rows"){
+    val mat = PSMatrix.dense(rows, cols, RowType.T_FLOAT_DENSE)
+    val initRandomMatrix = new RBIntFloatMatrix(Array.tabulate(rows)(_ =>
+      VFactory.denseFloatVector(Array.tabulate(cols)(_ => Random.nextFloat()))))
+    mat.push(initRandomMatrix)
+
+    // pull row
+    var finalVector = mat.pull(0).asInstanceOf[IntFloatVector]
+    for(i <- 0 until cols)
+      assert(finalVector.get(i) == initRandomMatrix.get(0, i))
+
+    // pull row with specified indices of type int
+    val indices =  Array.range(3, 8)
+    finalVector = mat.pull(1, indices).asInstanceOf[IntFloatVector]
+    assert(finalVector.numZeros() >= cols - indices.length)
+    for(i <- indices)
+      assert(finalVector.get(i) == initRandomMatrix.get(1, i))
+
+    // pull rows with specified indices of type int
+    var vectors = mat.pull(Array.range(2, 5), indices).map(_.asInstanceOf[IntFloatVector])
+    for(i <- vectors.indices){
+      assert(vectors(i).numZeros() >= cols - indices.length)
+      for(j <- indices)
+        assert(vectors(i).get(j) == initRandomMatrix.get(i + 2, j))
+    }
+
+    // pull rows
+    vectors = mat.pull(Array.range(5, 7)).map(_.asInstanceOf[IntFloatVector])
+    for(i <- vectors.indices){
+      for(j <- 0 until cols){
+        assert(vectors(i).get(j) == initRandomMatrix.get(i + 5, j))
+      }
+    }
+
+    // pull rows with batchSize
+    vectors = mat.pull(Array.range(7, 11), 2).map(_.asInstanceOf[IntFloatVector])
+    for(i <- vectors.indices){
+      for(j <- 0 until cols){
+        assert(vectors(i).get(j) == initRandomMatrix.get(i + 7, j))
+      }
+    }
+  }
+
+  test("pull with long indices"){
+    val mat = PSMatrix.sparse(rows, cols, cols, RowType.T_FLOAT_SPARSE_LONGKEY)
+    val indices = Array.tabulate(8)(_ => Random.nextInt(cols).toLong).distinct
+    val initRandomMatrix = new RBLongFloatMatrix(Array.tabulate(rows)(_ =>
+      VFactory.sparseLongKeyFloatVector(cols, indices, indices.map(_ => Random.nextFloat()))))
+    mat.push(initRandomMatrix)
+
+    // pull row with specified indices of type int
+    val pulledIndices = indices.take(5)
+    val finalVector = mat.pull(0, pulledIndices).asInstanceOf[LongFloatVector]
+    for(i <- pulledIndices)
+      assert(finalVector.get(i) == initRandomMatrix.get(0, i))
+
+    // pull rows with specified indices of type int
+    val finalVectors = mat.pull(Array.range(1, 4), pulledIndices).map(_.asInstanceOf[LongFloatVector])
+    for(i <- finalVectors.indices){
+      for(j <- pulledIndices)
+        assert(finalVectors(i).get(j) == initRandomMatrix.get(i + 1, j))
+    }
+  }
+
+  test("reset") {
+    val mat = PSMatrix.dense(rows, cols, RowType.T_FLOAT_DENSE)
+    val initRandomMatrix = new RBIntFloatMatrix(Array.tabulate(rows)(_ =>
+      VFactory.denseFloatVector(Array.tabulate(cols)(_ => Random.nextFloat()))))
+    mat.push(initRandomMatrix)
+
+    mat.reset(0)
+    mat.reset(Array.range(1, 5))
+    var result = mat.pull().asInstanceOf[RBIntFloatMatrix]
+    for (i <- 0 until rows) {
+      for (j <- 0 until cols) {
+        if (i < 5)
+          assert(result.get(i, j) == 0.0f)
+        else
+          assert(result.get(i, j) == initRandomMatrix.get(i, j))
+      }
+    }
+    mat.reset()
+    result = mat.pull().asInstanceOf[RBIntFloatMatrix]
+    for (i <- 0 until rows) {
+      for (j <- 0 until cols) {
+        assert(result.get(i, j) == 0.0f)
+      }
+    }
+  }
+
+  test("destroy matrix"){
+    val mat = PSMatrix.dense(rows, cols, RowType.T_FLOAT_DENSE)
+    assert(!mat.deleted)
+    mat.destroy()
+    assert(mat.deleted)
+  }
 }
