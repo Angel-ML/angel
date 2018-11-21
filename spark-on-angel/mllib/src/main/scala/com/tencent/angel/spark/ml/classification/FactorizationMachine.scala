@@ -35,8 +35,8 @@ class FactorizationMachine extends GraphModel {
 
   override
   def network(): Unit = {
-    val wide = new SimpleInputLayer("wide", 1, new Identity(), new Adam(lr))
-    val embedding = new Embedding("embedding", numField * numFactor, numFactor, new Adam(lr))
+    val wide = new SimpleInputLayer("fm-wide", 1, new Identity(), new Adam(lr))
+    val embedding = new Embedding("fm-embedding", numField * numFactor, numFactor, new Adam(lr))
     val crossFeature = new BiInnerSumCross("innerSumPooling", embedding)
     val sum = new SumPooling("sum", 1, Array(wide, crossFeature))
     new SimpleLossLayer("simpleLossLayer", sum, new LogLoss)

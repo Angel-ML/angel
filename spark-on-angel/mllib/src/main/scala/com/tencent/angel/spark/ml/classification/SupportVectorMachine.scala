@@ -26,7 +26,7 @@ import com.tencent.angel.spark.ml.core.GraphModel
 
 class SupportVectorMachine extends GraphModel {
   override def network(): Unit = {
-    val input = new SimpleInputLayer("input", 1, new Identity, new Adam(0.02))
+    val input = new SimpleInputLayer("svm-input", 1, new Identity, new Adam(0.02))
     new SimpleLossLayer("simpleLossLayer", input, new HingeLoss)
   }
 

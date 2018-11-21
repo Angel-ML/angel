@@ -52,7 +52,7 @@ object FTRLExample {
       }
     val size = data.count()
 
-    for (epoch <- 1 until numEpoch) {
+    for (epoch <- 1 to numEpoch) {
       val totalLoss = data.mapPartitions {
         case iterator =>
           val loss = iterator.map(f => (f.getX, f.getY))

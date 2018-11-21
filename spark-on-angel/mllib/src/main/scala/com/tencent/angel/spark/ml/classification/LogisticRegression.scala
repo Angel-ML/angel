@@ -31,7 +31,7 @@ class LogisticRegression extends GraphModel {
 
   override
   def network(): Unit = {
-    val input = new SimpleInputLayer("input", 1, new Identity(), new Adam(lr))
+    val input = new SimpleInputLayer("lr-input", 1, new Identity(), new Adam(lr))
     new SimpleLossLayer("simpleLossLayer", input, new LogLoss)
   }
 }

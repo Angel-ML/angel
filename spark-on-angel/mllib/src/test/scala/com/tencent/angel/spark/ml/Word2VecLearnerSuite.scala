@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -16,11 +16,10 @@
  */
 
 
-package com.tencent.angel.spark.ml.embedding
+package com.tencent.angel.spark.ml
 
+import com.tencent.angel.spark.ml.embedding.Param
 import org.apache.spark.rdd.RDD
-
-import com.tencent.angel.spark.ml.{PSFunSuite, SharedPSContext}
 
 class Word2VecLearnerSuite extends PSFunSuite with SharedPSContext {
 
