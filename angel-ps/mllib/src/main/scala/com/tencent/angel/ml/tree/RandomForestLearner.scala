@@ -1,5 +1,6 @@
 package com.tencent.angel.ml.tree
 
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.MLLearner
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.model.MLModel
@@ -45,7 +46,10 @@ class RandomForestLearner (
   def this(ctx: TaskContext, strategy: Strategy) = this(ctx, strategy, seed = 0)
   def this(ctx: TaskContext) = this(ctx, Strategy.initStrategy(ctx.getConf))
 
-  val model = null
+  private val totalNumTree = strategy.getNumTrees
+  private val localTreeIdx = assignTrees
+
+  private val model = RandomForestModel(conf, ctx)
 
   def convertDataBlock(input: DataBlock[LabeledData]): Array[LabeledData] = {
     input.resetReadIndex()
@@ -55,6 +59,9 @@ class RandomForestLearner (
     }
     ret.toArray
   }
+
+  def assignTrees: Array[Int] =
+    (0 until totalNumTree).filter(_/ctx.getTaskIndex == 0).toArray
 
   /**
     * Method to train a decision tree model over an RDD
@@ -66,7 +73,9 @@ class RandomForestLearner (
   def train(trainBlock: DataBlock[LabeledData], validBlock: DataBlock[LabeledData]): MLModel = {
     val trainDataSet: Array[LabeledData] = convertDataBlock(trainBlock)
     val validDataSet: Array[LabeledData] = convertDataBlock(validBlock)
-    val trees: Array[DecisionTreeModel] = RandomForest.train(ctx, trainDataSet, validDataSet, strategy, seed.toLong)
+    strategy.setNumTrees(localTreeIdx.length)
+    val trees: Array[DecisionTreeModel] = RandomForest.train(ctx,
+      trainDataSet, validDataSet, strategy, seed.toLong)
     new RandomForestModel(strategy.algo, trees, ctx.getConf, ctx)
   }
 }

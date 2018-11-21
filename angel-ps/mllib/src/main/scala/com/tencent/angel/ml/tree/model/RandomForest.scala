@@ -5,10 +5,9 @@ import scala.util.Random
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.vector.IntFloatVector
 import com.tencent.angel.ml.tree.utils.{SamplingUtils, TimeTracker}
-import com.tencent.angel.ml.tree.conf.{Algo => OldAlgo, Strategy => OldStrategy}
+import com.tencent.angel.ml.tree.conf.{Algo, Strategy}
 import com.tencent.angel.ml.tree.data._
-import com.tencent.angel.ml.tree.impurity.ImpurityCalculator
-import com.tencent.angel.ml.tree.oldmodel.ImpurityStats
+import com.tencent.angel.ml.tree.impurity.{ImpurityCalculator, ImpurityStats}
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 
@@ -68,7 +67,7 @@ private[tree] object RandomForest {
              ctx: TaskContext,
              trainData: Array[LabeledData],
              validData: Array[LabeledData],
-             strategy: OldStrategy, seed: Long,
+             strategy: Strategy, seed: Long,
              // exposed for testing only, real trees are always prune
              prune: Boolean = true): Array[DecisionTreeModel] = {
 
@@ -178,7 +177,7 @@ private[tree] object RandomForest {
 
     val numFeatures = metadata.numFeatures
 
-    if (strategy.algo == OldAlgo.Classification) {
+    if (strategy.algo == Algo.Classification) {
       topNodes.map { rootNode =>
         DecisionTreeClassificationModel(rootNode.toNode(prune), numFeatures,
           strategy.getNumClasses, ctx.getConf)

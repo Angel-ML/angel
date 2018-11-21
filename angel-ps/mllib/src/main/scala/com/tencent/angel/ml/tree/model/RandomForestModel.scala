@@ -9,11 +9,17 @@ import org.apache.hadoop.conf.Configuration
 
 object RandomForestModel {
 
+  val SPLIT_FEAT_MAT: String = "rf.split.feature"
+  val SPLIT_THRESHOLD_MAT: String = "rf.split.threshold"
+  val SPLIT_TYPE_MAT: String = "rf.split.type"
+  val NODE_PRED_MAT: String = "gbdt.node.predict"
+
+
   def apply(conf: Configuration): RandomForestModel = {
     RandomForestModel(conf, null)
   }
 
-    def apply(conf: Configuration, _ctx: TaskContext): RandomForestModel = {
+  def apply(conf: Configuration, _ctx: TaskContext): RandomForestModel = {
     val algo = conf.get(MLConf.ML_TREE_TASK_TYPE,
       MLConf.DEFAULT_ML_TREE_TASK_TYPE)
     val numTrees = conf.getInt(MLConf.ML_NUM_TREE,
