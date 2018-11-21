@@ -2,6 +2,7 @@ package com.tencent.angel.ml.tree.oldmodel
 
 import com.tencent.angel.ml.math2.vector.IntFloatVector
 import com.tencent.angel.ml.tree.conf.FeatureType._
+import com.tencent.angel.ml.tree.data.InfoGainStats
 
 /**
   * Node in a decision tree.
@@ -27,7 +28,7 @@ class Node (
              var split: Option[Split],
              var leftNode: Option[Node],
              var rightNode: Option[Node],
-             var stats: Option[InformationGainStats]) extends Serializable {
+             var stats: Option[InfoGainStats]) extends Serializable {
 
   override def toString: String = {
     s"id = $id, isLeaf = $isLeaf, predict = $predict, impurity = $impurity, " +

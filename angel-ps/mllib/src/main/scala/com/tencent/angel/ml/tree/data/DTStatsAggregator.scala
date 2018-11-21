@@ -60,7 +60,7 @@ private[tree] class DTStatsAggregator(
   /**
     * Array of parent node sufficient stats.
     * Note: parent stats need to be explicitly tracked in the [[DTStatsAggregator]] for unordered
-    *       categorical features, because the parent [[Node]] object does not have [[com.tencent.angel.ml.tree.oldmodel.ImpurityStats]]
+    *       categorical features, because the parent [[Node]] object does not have [[ImpurityStats]]
     *       on the first iteration.
     */
   private val parentStats: Array[Float] = new Array[Float](statsSize)
@@ -141,7 +141,6 @@ private[tree] class DTStatsAggregator(
       s"DTStatsAggregator.merge requires that both aggregators have the same length stats vectors."
         + s" This aggregator is of length $allStatsSize, but the other is ${other.allStatsSize}.")
     var i = 0
-    // TODO: Test BLAS.axpy
     while (i < allStatsSize) {
       allStats(i) += other.allStats(i)
       i += 1

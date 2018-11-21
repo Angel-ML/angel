@@ -1,8 +1,8 @@
 package com.tencent.angel.ml.tree.data
 
 import com.tencent.angel.ml.math2.vector.IntFloatVector
-import com.tencent.angel.ml.tree.impurity.ImpurityCalculator
-import com.tencent.angel.ml.tree.oldmodel.{ImpurityStats, InformationGainStats => OldInformationGainStats, Node => OldNode, Predict => OldPredict}
+import com.tencent.angel.ml.tree.impurity.{ImpurityCalculator, ImpurityStats}
+import com.tencent.angel.ml.tree.oldmodel.{Node => OldNode, Predict => OldPredict}
 
 /**
   * Decision tree node interface.
@@ -174,7 +174,7 @@ class InternalNode private[ml] (
     new OldNode(id, new OldPredict(prediction, prob = impurityStats.prob(prediction)), impurity,
       isLeaf = false, Some(split.toOld), Some(leftChild.toOld(OldNode.leftChildIndex(id))),
       Some(rightChild.toOld(OldNode.rightChildIndex(id))),
-      Some(new OldInformationGainStats(gain, impurity, leftChild.impurity, rightChild.impurity,
+      Some(new InfoGainStats(gain, impurity, leftChild.impurity, rightChild.impurity,
         new OldPredict(leftChild.prediction, prob = 0.0f),
         new OldPredict(rightChild.prediction, prob = 0.0f))))
   }
