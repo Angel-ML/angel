@@ -19,22 +19,18 @@
 package com.tencent.angel.spark.ml
 
 import com.tencent.angel.spark.ml.embedding.Param
+import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel
+import com.tencent.angel.spark.ml.feature.{Features, SubSampling}
 import org.apache.spark.rdd.RDD
+
+import scala.util.Random
 
 class Word2VecLearnerSuite extends PSFunSuite with SharedPSContext {
 
-  private val input = "./src/test/data/enwik-small"
-  private var rawCorpus: RDD[Array[String]] = _
-  //  private var learner: Word2VecLearner = _
+  private val input = "../../data/text8/text8.split.head"
 
   override def beforeAll(): Unit = {
     super.beforeAll()
-    rawCorpus = sc.textFile(input, 2)
-      .map(_.split(" "))
-
-    val param = new Param
-    param.partitionNum = 1
-    //    learner = new Word2VecLearner(param)
   }
 
   override def afterAll(): Unit = {
@@ -42,6 +38,39 @@ class Word2VecLearnerSuite extends PSFunSuite with SharedPSContext {
   }
 
   test("train") {
-    //    learner.fit(rawCorpus)
+
+    val data = sc.textFile(input)
+    data.cache()
+
+    val (corpus, _) = Features.corpusStringToInt(sc.textFile(input))
+    val docs = corpus.repartition(2)
+
+    docs.cache()
+    docs.count()
+
+    data.unpersist()
+
+    val numDocs = docs.count()
+    val maxWordId = docs.map(_.max).max().toLong + 1
+    val numTokens = docs.map(_.length).sum().toLong
+    val maxLength = docs.map(_.length).max()
+
+    println(s"numDocs=$numDocs maxWordId=$maxWordId numTokens=$numTokens")
+
+    val param = new Param()
+    param.setLearningRate(0.1f)
+    param.setEmbeddingDim(100)
+    param.setWindowSize(6)
+    param.setBatchSize(128)
+    param.setSeed(Random.nextInt())
+    param.setNumPSPart(Some(2))
+    param.setNumEpoch(10)
+    param.setNegSample(5)
+    param.setMaxIndex(maxWordId)
+    param.setMaxLength(maxLength)
+    param.setModel("cbow")
+
+    val model = new Word2VecModel(param)
+    model.train(docs, param)
   }
 }

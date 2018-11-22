@@ -53,12 +53,6 @@ class NetworkSuite extends PSFunSuite with SharedPSContext {
     learner.train(input, "", "", dim, model)
   }
 
-  test("SoftmaxRegression") {
-    SharedConf.get().setInt(MLConf.ML_NUM_CLASS, 3)
-    val model = new SoftmaxRegression
-    learner.train(input, "", "", dim, model)
-  }
-
   test("DeepFM") {
     SharedConf.get().setLong(MLConf.ML_FIELD_NUM, 13)
     SharedConf.get().setLong(MLConf.ML_RANK_NUM, 5)
