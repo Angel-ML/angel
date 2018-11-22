@@ -1,6 +1,6 @@
 package com.tencent.angel.ml.core.utils
 
-sealed trait TransLabel {
+sealed trait TransLabel extends Serializable {
   def trans(label: Double): Double
 }
 
@@ -20,11 +20,11 @@ class ZeroOneTrans(threshold: Double = 0) extends TransLabel{
   }
 }
 
-class AddOneTrans extends TransLabel{
+class AddOneTrans extends TransLabel {
   override def trans(label: Double): Double = label + 1.0
 }
 
-class SubOneTrans extends TransLabel{
+class SubOneTrans extends TransLabel {
   override def trans(label: Double): Double = label - 1.0
 }
 

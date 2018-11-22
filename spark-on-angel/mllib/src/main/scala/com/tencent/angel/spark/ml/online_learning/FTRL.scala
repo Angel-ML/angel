@@ -19,8 +19,12 @@
 package com.tencent.angel.spark.ml.online_learning
 
 import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.math2.vector.{LongDoubleVector, LongDummyVector, Vector}
+import com.tencent.angel.ml.math2.storage.LongKeyVectorStorage
+import com.tencent.angel.ml.math2.ufuncs.{OptFuncs, Ufuncs}
+import com.tencent.angel.ml.math2.vector.{LongDoubleVector, LongDummyVector, LongKeyVector, Vector}
+import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
 import com.tencent.angel.spark.ml.psf.FTRLWUpdater
 import com.tencent.angel.spark.models.PSVector
@@ -31,12 +35,104 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
   var zPS: PSVector = _
   var nPS: PSVector = _
 
-  def initPSModel(dim: Long): Unit = {
-    zPS = PSVector.longKeySparse(dim, -1, 5,
+  def init(dim: Long, rowType: RowType): Unit = {
+    zPS = PSVector.longKeySparse(dim, -1, 3, rowType,
       additionalConfiguration = Map(AngelConf.Angel_PS_PARTITION_CLASS -> classOf[ColumnRangePartitioner].getName))
     nPS = PSVector.duplicate(zPS)
   }
 
+  def init(dim: Long): Unit = {
+    init(dim, RowType.T_DOUBLE_SPARSE_LONGKEY)
+  }
+
+  /**
+    * Using math2 to optimize FTRL, but there is some error for this version.
+    * The loss will become infinity when reaching convergence.
+    * @param batch: mini-batch training examples
+    * @return
+    */
+  def optimize(batch: Array[LabeledData]): Double = {
+    val indices = batch.flatMap {
+      case point =>
+        point.getX match {
+          case dummy: LongDummyVector => dummy.getIndices
+          case longKey: LongKeyVector => longKey.getStorage
+            .asInstanceOf[LongKeyVectorStorage].getIndices
+        }}.distinct
+
+    val localZ = zPS.pull(indices)
+    val localN = nPS.pull(indices)
+    val weight = Ufuncs.ftrlthreshold(localZ, localN, alpha, beta, lambda1, lambda2)
+
+    val deltaZ = localZ.copy()
+    val deltaN = localN.copy()
+    deltaZ.clear()
+    deltaN.clear()
+
+    val iter = batch.iterator
+    var lossSum = 0.0
+    while (iter.hasNext) {
+      val point = iter.next()
+      val (feature, label) = (point.getX, point.getY)
+      val margin = -weight.dot(feature)
+      val multiplier = 1.0 / (1.0 + math.exp(margin)) - label
+      val grad = feature.mul(multiplier)
+      val delta = OptFuncs.ftrldelta(localN, grad, alpha)
+
+      val loss =
+        if (label > 0)
+          math.log1p(math.exp(margin))
+        else
+          math.log1p(math.exp(margin)) - margin
+
+      lossSum += loss
+      Ufuncs.iaxpy2(deltaN, grad, 1)
+      deltaZ.iadd(grad.isub(delta.imul(weight)))
+    }
+
+    deltaZ.idiv(batch.length)
+    deltaN.idiv(batch.length)
+    zPS.increment(deltaZ)
+    nPS.increment(deltaN)
+
+    println(s"${lossSum / batch.size}")
+
+    lossSum
+  }
+
+  /**
+    * Predict with weight
+    * @param batch
+    * @return
+    */
+  def predict(batch: Array[LabeledData]): Array[(Double, Double)] = {
+    val indices = batch.flatMap {
+      case point =>
+        point.getX match {
+          case dummy: LongDummyVector => dummy.getIndices
+          case longKey: LongKeyVector => longKey.getStorage
+            .asInstanceOf[LongKeyVectorStorage].getIndices
+        }}.distinct
+
+    val localZ = zPS.pull(indices)
+    val localN = nPS.pull(indices)
+    val weight = Ufuncs.ftrlthreshold(localZ, localN, alpha, beta, lambda1, lambda2)
+
+    batch.map {
+      case point =>
+        val (feature, label) = (point.getX, point.getY)
+        val p = weight.dot(feature)
+        val score = 1 / (1 + math.exp(-p))
+        (label, score)
+    }
+  }
+
+  /**
+    * Optimizing only for LongDoubleVector. This version is ok and the model is correct.
+    * @param batch: training mini-batch examples
+    * @param costFun: function to calculate gradients
+    * @return Loss for this batch
+    */
   def optimize(batch: Array[(Vector, Double)],
       costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)): Double = {
 
@@ -55,58 +151,70 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     val deltaZ = VFactory.sparseLongKeyDoubleVector(dim)
     val deltaN = VFactory.sparseLongKeyDoubleVector(dim)
 
-    val lossSum = batch.map { case (feature, label) =>
-      val (littleZ, littleN, loss) = optimize(feature, label, localZ, localN, costFun)
-      plusTo(littleZ, deltaZ)
-      plusTo(littleN, deltaN)
+    val fetaValues = featIds.map { fId =>
+      val zVal = localZ.get(fId)
+      val nVal = localN.get(fId)
 
-      loss
+      updateWeight(fId, zVal, nVal, alpha, beta, lambda1, lambda2)
+    }
+
+    val localW = VFactory.sparseLongKeyDoubleVector(dim, featIds, fetaValues)
+
+    val lossSum = batch.map { case (feature, label) =>
+      optimize(feature, label, localN, localW, deltaZ, deltaN, costFun)
     }.sum
 
     zPS.increment(deltaZ)
     nPS.increment(deltaN)
 
-    lossSum / batch.length
+    println(s"${lossSum / batch.length}")
+
+    lossSum
   }
 
+  /**
+    * Optimizing for one example (feature, label)
+    * @param feature
+    * @param label
+    * @param localN, N in the local executor
+    * @param localW. weight in the local executor
+    * @param deltaZ, delta value for z
+    * @param deltaN, delta value for n
+    * @param costFun
+    * @return
+    */
   def optimize(
       feature: Vector,
       label: Double,
-      localZ: LongDoubleVector,
       localN: LongDoubleVector,
+      localW: LongDoubleVector,
+      deltaZ: LongDoubleVector,
+      deltaN: LongDoubleVector,
       costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)
-  ): (LongDoubleVector, LongDoubleVector, Double) = {
+  ): Double = {
 
     val featIndices = feature match {
       case longV: LongDoubleVector => longV.getStorage.getIndices
       case dummyV: LongDummyVector => dummyV.getIndices
     }
 
-    val fetaValues = featIndices.map { fId =>
-      val zVal = localZ.get(fId)
-      val nVal = localN.get(fId)
-
-      updateWeight(fId, zVal, nVal, alpha, beta, lambda1, lambda2)
-    }
-    val localW = VFactory.sparseLongKeyDoubleVector(feature.dim, featIndices, fetaValues)
-
-
     val (newGradient, loss) = costFun(localW, label, feature)
-
-    val deltaZ = VFactory.sparseLongKeyDoubleVector(feature.dim)
-    val deltaN = VFactory.sparseLongKeyDoubleVector(feature.dim)
 
     featIndices.foreach { fId =>
       val nVal = localN.get(fId)
       val gOnId = newGradient.get(fId)
       val dOnId = 1.0 / alpha * (Math.sqrt(nVal + gOnId * gOnId) - Math.sqrt(nVal))
 
-      deltaZ.set(fId, gOnId - dOnId * localW.get(fId))
-      deltaN.set(fId, gOnId * gOnId)
+      deltaZ.set(fId, deltaZ.get(fId) + gOnId - dOnId * localW.get(fId))
+      deltaN.set(fId, deltaN.get(fId) + gOnId * gOnId)
     }
-    (deltaZ, deltaN, loss)
+    (loss)
   }
 
+  /**
+    * calculate w from z and n and store it in the w row
+    * @return
+    */
   def weight: PSVector = {
     val wPS = PSVector.duplicate(zPS)
     val func = new FTRLWUpdater(alpha, beta, lambda1, lambda2, regularSkipFeatIndex)
@@ -114,11 +222,17 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     VectorUtils.compress(wPS)
   }
 
-  // b will be returned by the way of adding a
-  private def plusTo(a: LongDoubleVector, b: LongDoubleVector): Unit = {
-    b.iadd(a)
-  }
-
+  /**
+    * calculate w from z and n for one dimension
+    * @param fId
+    * @param zOnId
+    * @param nOnId
+    * @param alpha
+    * @param beta
+    * @param lambda1
+    * @param lambda2
+    * @return
+    */
   def updateWeight(
       fId: Long,
       zOnId: Double,

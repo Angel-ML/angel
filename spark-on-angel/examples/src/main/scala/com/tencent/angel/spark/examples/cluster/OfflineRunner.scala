@@ -23,7 +23,6 @@ import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OfflineLearner}
-import com.tencent.angel.spark.ml.util.{DataLoader, SparkUtils}
 import org.apache.spark.{SparkConf, SparkContext}
 
 object OfflineRunner {

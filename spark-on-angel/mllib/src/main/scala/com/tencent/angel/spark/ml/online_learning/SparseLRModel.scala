@@ -40,7 +40,6 @@ case class SparseLRModel(w: PSVector) {
         Tuple2(id, sigmoid(margin))
       }
     }
-    //    VectorCacheManager.release(w)
     result
   }
 
