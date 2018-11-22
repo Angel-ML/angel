@@ -61,7 +61,7 @@ class RandomForestLearner (
   }
 
   def assignTrees: Array[Int] =
-    (0 until totalNumTree).filter(_/ctx.getTaskIndex == 0).toArray
+    (0 until totalNumTree).filter(_%ctx.getTotalTaskNum == ctx.getTaskIndex).toArray
 
   /**
     * Method to train a decision tree model over an RDD

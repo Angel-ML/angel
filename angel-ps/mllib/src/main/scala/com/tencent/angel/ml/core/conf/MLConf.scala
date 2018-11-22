@@ -169,7 +169,7 @@ object MLConf {
   val ML_TREE_MAX_NUM_NODE = "ml.tree.max.node.num"
   val ML_TREE_MAX_BIN = "ml.tree.max.bin"
   val DEFAULT_ML_TREE_MAX_BIN = 3
-  val ML_TREE_SUB_SAMPLE_RATE = "ml.tree.sub.sample.rae"
+  val ML_TREE_SUB_SAMPLE_RATE = "ml.tree.sub.sample.rate"
   val DEFAULT_ML_TREE_SUB_SAMPLE_RATE = 1
   val ML_TREE_FEATURE_SAMPLE_STRATEGY = "ml.tree.feature.sample.strategy"
   val DEFAULT_ML_TREE_FEATURE_SAMPLE_STRATEGY = "all"
