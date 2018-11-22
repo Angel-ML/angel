@@ -194,7 +194,32 @@ public class ServerLongLongRow extends ServerRow {
       switch (updateType) {
         case T_LONG_SPARSE_LONGKEY:
         case T_LONG_SPARSE_LONGKEY_COMPONENT:
-          updateUseSparse(buf, op);
+          updateUseLongLongSparse(buf, op);
+          break;
+
+        case T_INT_SPARSE_LONGKEY:
+        case T_INT_SPARSE_LONGKEY_COMPONENT:
+          updateUseLongIntSparse(buf, op);
+          break;
+
+        case T_LONG_SPARSE:
+        case T_LONG_SPARSE_COMPONENT:
+          updateUseIntLongSparse(buf, op);
+          break;
+
+        case T_INT_SPARSE:
+        case T_INT_SPARSE_COMPONENT:
+          updateUseIntIntSparse(buf, op);
+          break;
+
+        case T_LONG_DENSE:
+        case T_LONG_DENSE_COMPONENT:
+          updateUseIntLongDense(buf, op);
+          break;
+
+        case T_INT_DENSE:
+        case T_INT_DENSE_COMPONENT:
+          updateUseIntIntDense(buf, op);
           break;
 
         default: {
@@ -209,7 +234,7 @@ public class ServerLongLongRow extends ServerRow {
     }
   }
 
-  private void updateUseSparse(ByteBuf buf, UpdateOp op) {
+  private void updateUseLongLongSparse(ByteBuf buf, UpdateOp op) {
     int size = buf.readInt();
     if (op == UpdateOp.PLUS) {
       if (useIntKey) {
@@ -238,6 +263,138 @@ public class ServerLongLongRow extends ServerRow {
     }
   }
 
+  private void updateUseLongIntSparse(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          int index = (int) buf.readLong();
+          ((IntLongVector) row).set(index, ((IntLongVector) row).get(index) + buf.readInt());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          long index = buf.readLong();
+          ((LongLongVector) row).set(index, ((LongLongVector) row).get(index) + buf.readInt());
+        }
+      }
+    } else {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          int index = (int) buf.readLong();
+          ((IntLongVector) row).set(index, buf.readInt());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          long index = buf.readLong();
+          ((LongLongVector) row).set(index, buf.readInt());
+        }
+      }
+    }
+  }
+
+  private void updateUseIntLongSparse(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          int index = buf.readInt();
+          ((IntLongVector) row).set(index, ((IntLongVector) row).get(index) + buf.readLong());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          long index = buf.readInt();
+          ((LongLongVector) row).set(index, ((LongLongVector) row).get(index) + buf.readLong());
+        }
+      }
+    } else {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntLongVector) row).set(buf.readInt(), buf.readLong());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          ((LongLongVector) row).set(buf.readInt(), buf.readLong());
+        }
+      }
+    }
+  }
+
+  private void updateUseIntIntSparse(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          int index = buf.readInt();
+          ((IntLongVector) row).set(index, ((IntLongVector) row).get(index) + buf.readInt());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          long index = buf.readInt();
+          ((LongLongVector) row).set(index, ((LongLongVector) row).get(index) + buf.readInt());
+        }
+      }
+    } else {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntLongVector) row).set(buf.readInt(), buf.readInt());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          ((LongLongVector) row).set(buf.readInt(), buf.readInt());
+        }
+      }
+    }
+  }
+
+  private void updateUseIntLongDense(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntLongVector) row).set(i, ((IntLongVector) row).get(i) + buf.readLong());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          ((LongLongVector) row).set(i, ((LongLongVector) row).get(i) + buf.readLong());
+        }
+      }
+    } else {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntLongVector) row).set(i, buf.readLong());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          ((LongLongVector) row).set(i, buf.readLong());
+        }
+      }
+    }
+  }
+
+  private void updateUseIntIntDense(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntLongVector) row).set(i, ((IntLongVector) row).get(i) + buf.readInt());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          ((LongLongVector) row).set(i, ((LongLongVector) row).get(i) + buf.readInt());
+        }
+      }
+    } else {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntLongVector) row).set(i, buf.readInt());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          ((LongLongVector) row).set(i, buf.readInt());
+        }
+      }
+    }
+  }
 
   @Override public int size() {
     if (useIntKey) {

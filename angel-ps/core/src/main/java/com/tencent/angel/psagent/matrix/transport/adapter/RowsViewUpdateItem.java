@@ -1034,7 +1034,7 @@ public class RowsViewUpdateItem extends UpdateItem {
       buf.writeInt(RowType.T_DOUBLE_SPARSE_LONGKEY.getNumber());
 
       // TODO
-      buf.writeDouble(0);
+      //buf.writeDouble(0);
       int pos = buf.writerIndex();
       buf.writeInt(0);
       int num = 0;

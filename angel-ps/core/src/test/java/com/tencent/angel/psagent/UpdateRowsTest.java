@@ -422,7 +422,7 @@ public class UpdateRowsTest {
     // Start to run application
     angelClient.run();
 
-    Thread.sleep(2000);
+    Thread.sleep(5000);
 
     psId = new ParameterServerId(0);
     psAttempt0Id = new PSAttemptId(psId, 0);
