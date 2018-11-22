@@ -41,7 +41,6 @@ import com.tencent.angel.worker.task.TaskManager;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hdfs.web.JsonUtil;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
@@ -50,9 +49,6 @@ import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -72,7 +68,7 @@ public class Worker implements Executor {
 
   private static final Log LOG = LogFactory.getLog(Worker.class);
 
-  private WorkerGroup workerGroup;
+  private volatile WorkerGroup workerGroup;
 
   private final Configuration conf;
 
@@ -94,33 +90,33 @@ public class Worker implements Executor {
 
   private final Map<String, String> workerMetrics;
 
-  private TaskManager taskManager;
+  private volatile TaskManager taskManager;
 
-  private DataBlockManager dataBlockManager;
+  private volatile DataBlockManager dataBlockManager;
 
-  private boolean test = false;
+  private volatile boolean test = false;
 
-  private int initMinClock;
+  private volatile int initMinClock;
 
-  private Lock readLockForTaskNum;
+  private volatile Lock readLockForTaskNum;
 
-  private Lock writeLockForTaskNum;
+  private volatile Lock writeLockForTaskNum;
 
-  private int activeTaskNum;
+  private volatile int activeTaskNum;
 
   private final AtomicBoolean workerInitFinishedFlag;
 
-  private Thread heartbeatThread;
+  private volatile Thread heartbeatThread;
 
-  private CounterUpdater counterUpdater;
+  private volatile CounterUpdater counterUpdater;
 
-  private PSAgent psAgent;
+  private volatile PSAgent psAgent;
 
-  private MasterClient masterClient;
+  private volatile MasterClient masterClient;
 
   private final AtomicBoolean exitedFlag;
 
-  private WorkerService workerService;
+  private volatile WorkerService workerService;
 
   /**
    * Instantiates a new Worker.
@@ -277,7 +273,7 @@ public class Worker implements Executor {
   }
 
   private void startHeartbeatThread() {
-    final int heartbeatInterval = conf.getInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL,
+    final int heartbeatInterval = conf.getInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS,
       AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_INTERVAL);
 
     heartbeatThread = new Thread(new Runnable() {

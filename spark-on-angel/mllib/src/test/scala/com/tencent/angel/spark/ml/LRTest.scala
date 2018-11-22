@@ -20,21 +20,19 @@ package com.tencent.angel.spark.ml
 
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
-import com.tencent.angel.ml.core.utils.DataParser
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core._
-import com.tencent.angel.spark.ml.core.metric.Precision
-import org.apache.log4j.PropertyConfigurator
 import org.apache.spark.{SparkConf, SparkContext}
 
 object LRTest {
 
   def main(args: Array[String]): Unit = {
-    PropertyConfigurator.configure("angel-ps/conf/log4j.properties")
     val params = ArgsUtil.parse(args)
 
-    val input = params.getOrElse("input", "data/a9a/a9a_123d_train.dummy")
+    val input = params.getOrElse("input", "./data/census/census_148d_train.libsvm")
+    val modelInput = params.getOrElse("model", "")
+    val modelOutput = params.getOrElse("output", "")
     val actionType = params.getOrElse("actionType", "train")
 
     // build SharedConf with params
@@ -43,7 +41,7 @@ object LRTest {
     SharedConf.get().set(MLConf.ML_MODEL_TYPE, RowType.T_FLOAT_DENSE.toString)
     SharedConf.get().setInt(MLConf.ML_FEATURE_INDEX_RANGE, 148)
     SharedConf.get().setDouble(MLConf.ML_LEARN_RATE, 0.5)
-    SharedConf.get().set(MLConf.ML_DATA_INPUT_FORMAT, "dummy")
+    SharedConf.get().set(MLConf.ML_DATA_INPUT_FORMAT, "libsvm")
     SharedConf.get().setInt(MLConf.ML_EPOCH_NUM, 200)
     SharedConf.get().setDouble(MLConf.ML_VALIDATE_RATIO, 0.0)
     SharedConf.get().setDouble(MLConf.ML_REG_L2, 0.0)
@@ -64,17 +62,18 @@ object LRTest {
     conf.set("spark.ps.log.level", "INFO")
 
     val sc = new SparkContext(conf)
-    val parser = DataParser(SharedConf.get())
-    val data = sc.textFile(input).map(f => parser.parse(f))
+    sc.setLogLevel("ERROR")
 
     PSContext.getOrCreate(sc)
 
+    val dim = SharedConf.indexRange.toInt
+
     actionType match {
       case "train" =>
-        learner.train(data, model)
+        learner.train(input, modelOutput, modelInput, dim, model)
+
       case "predict" =>
-        model.load("")
-        learner.predict(data, model)
+        learner.predict(input, modelOutput, modelInput, dim, model)
       case _ =>
         throw new AngelException("actionType should be train or predict")
     }

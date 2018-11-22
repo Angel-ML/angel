@@ -51,16 +51,16 @@ public class LRTest {
   @Before public void setConf() throws Exception {
     try {
       // Feature number of train data
-      int featureNum = 123;
+      int featureNum = 1230;
       // Total iteration number
-      int epochNum = 20;
+      int epochNum = 5;
       // Validation sample Ratio
       double vRatio = 0.1;
       // Data format, libsvm or dummy
       String dataFmt = "dummy";
       // Model type
 
-      String modelType = String.valueOf(RowType.T_FLOAT_SPARSE);
+      String modelType = String.valueOf(RowType.T_FLOAT_SPARSE_LONGKEY);
 
 
       // Learning rate
@@ -79,7 +79,9 @@ public class LRTest {
       conf.setBoolean("mapred.mapper.new-api", true);
       conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
       conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
-      conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 50);
+      conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 10);
+      conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
+      conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
 
       // Set data format
       conf.set(MLConf.ML_DATA_INPUT_FORMAT(), dataFmt);
@@ -87,18 +89,19 @@ public class LRTest {
       //set angel resource parameters #worker, #task, #PS
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
       conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
-      conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
+      conf.setInt(AngelConf.ANGEL_PS_NUMBER, 2);
 
       //set sgd LR algorithm parameters #feature #epoch
+      long range = Integer.MAX_VALUE + 10L;
       conf.set(MLConf.ML_MODEL_TYPE(), modelType);
-      conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
+      conf.setLong(MLConf.ML_FEATURE_INDEX_RANGE(), range);
       conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
       conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
       conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
       conf.set(MLConf.ML_LEARN_DECAY(), String.valueOf(decay));
       conf.set(MLConf.ML_REG_L2(), String.valueOf(reg));
-      conf.setLong(MLConf.ML_MODEL_SIZE(), featureNum);
-      conf.set(MLConf.ML_SPARSEINPUTLAYER_OPTIMIZER(), optimizer);
+      conf.setLong(MLConf.ML_MODEL_SIZE(), 123);
+      conf.set(MLConf.ML_INPUTLAYER_OPTIMIZER(), optimizer);
       // conf.setDouble(MLConf.ML_DATA_POSNEG_RATIO(), posnegRatio);
       conf.set(MLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "LogisticRegression");
     } catch (Exception x) {
@@ -110,7 +113,7 @@ public class LRTest {
   @Test public void testLR() throws Exception {
     setConf();
     trainTest();
-    // predictTest();
+    predictTest();
   }
 
   private void trainTest() throws Exception {

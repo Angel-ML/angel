@@ -24,7 +24,7 @@
 
 
 ## Design
-
+* [模型格式](./docs/design/model_format.md)
 * [模型切分（modelPartitioner）](./docs/design/model_partitioner.md)
 * [异步控制（syncController）](./docs/design/sync_controller.md)
 * [定制函数（psFunc）](./docs/design/psfFunc.md)
@@ -57,6 +57,7 @@
 		* [Factorization Machine(FM)](./docs/algo/fm_on_angel.md)
 		* [Linear Regression](./docs/algo/linear_on_angel.md)
 		* [Robust Regression](./docs/algo/robust_on_angel.md)
+		* [Softmax Regression](./docs/algo/softmax_on_angel.md)
 		* [KMeans](./docs/algo/kmeans_on_angel.md)
 		* [GBDT](./docs/algo/gbdt_on_angel.md)
 		* [LDA\*](./docs/algo/lda_on_angel.md) ([WrapLDA](./docs/algo/wrap_lda_on_angel.md))

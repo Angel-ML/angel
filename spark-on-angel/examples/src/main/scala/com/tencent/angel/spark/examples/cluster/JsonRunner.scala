@@ -20,15 +20,11 @@ package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.RunningMode
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.utils.DataParser
 import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
-import com.tencent.angel.spark.client.PSClient
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.examples.util.SparkUtils
 import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OfflineLearner}
-import com.tencent.angel.spark.ml.util.{Features, ModelLoader, ModelSaver}
 import org.apache.spark.{SparkConf, SparkContext}
 
 object JsonRunner {
@@ -50,9 +46,6 @@ object JsonRunner {
     val conf = new SparkConf()
     val sc   = new SparkContext(conf)
     val parser = DataParser(SharedConf.get())
-    val data = sc.textFile(input)
-      .repartition(SparkUtils.getNumExecutors(conf))
-      .map(f => parser.parse(f))
 
     // start PS
     PSContext.getOrCreate(sc)
@@ -60,31 +53,15 @@ object JsonRunner {
     val model = new GraphModel
     val learner = new OfflineLearner
 
-    // first, build sparseToDense and denseToSparse index
-    // and change the feature index from sparse to dense
-    val (denseToSparseMatrixId, denseDim, sparseToDenseMatrixId, sparseDim, denseData) = Features.featureSparseToDense(data)
-    SharedConf.get().setLong(MLConf.ML_FEATURE_INDEX_RANGE, denseDim)
-
-    // init model here
-    model.init(denseData.getNumPartitions)
-
-    denseData.mapPartitions({it =>
-      PSClient.instance().context.refreshMatrix
-      Iterator.single(0)}).count()
+    val dim = SharedConf.indexRange.toInt
 
     actionType match {
-      case "train" =>
-        learner.train(denseData, model)
-      case "incTrain" =>
-        if (modelPath.length == 0)
-          throw new AngelException("Should set model path for increment training!")
+      case MLConf.ANGEL_ML_TRAIN =>
+          learner.train(input, output, modelPath, dim, model)
 
-        ModelLoader.load(modelPath, model, sparseToDenseMatrixId, denseDim)
-        learner.train(denseData, model)
+      case MLConf.ANGEL_ML_PREDICT =>
+          learner.predict(input, output, modelPath, dim, model)
     }
-
-    if (output.length > 0)
-      ModelSaver.save(output, model, denseToSparseMatrixId, denseDim)
   }
 
 }

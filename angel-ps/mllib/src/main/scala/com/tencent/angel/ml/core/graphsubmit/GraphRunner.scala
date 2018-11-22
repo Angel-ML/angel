@@ -31,9 +31,9 @@ class GraphRunner extends MLRunner {
   val LOG = LogFactory.getLog(classOf[GraphRunner])
 
   /**
-    * Run LR train task
+    * Run model train task
     *
-    * @param conf : configuration of algorithm and resource
+    * @param conf : configuration for resource
     */
   override def train(conf: Configuration): Unit = {
     val client = AngelClientFactory.get(conf)
@@ -41,30 +41,36 @@ class GraphRunner extends MLRunner {
     if (conf.get(AngelConf.ANGEL_ML_CONF) != null) {
       SharedConf.get(conf)
       JsonUtils.init()
-    } else {
+    } else
       SharedConf.get(conf)
-    }
-
 
     val modelClassName: String = SharedConf.modelClassName
     val model: GraphModel = GraphModel(modelClassName, conf)
+    val saveModelPath = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH, "")
+    val loadModelPath = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH, "")
 
     model.buildNetwork()
 
     try {
       client.startPSServer()
-      model.loadModel(client)
+      model.createMatrices(client)
+
+      if (!loadModelPath.isEmpty)
+        model.loadModel(client, loadModelPath)
+
       client.runTask(classOf[GraphTrainTask])
       client.waitForCompletion()
-      model.saveModel(client)
+
+      if (!saveModelPath.isEmpty)
+        model.saveModel(client, saveModelPath)
     } finally {
       client.stop()
     }
   }
 
-  /*
-   * Run LR predict task
-   * @param conf: configuration of algorithm and resource
+  /**
+   * Run model predict task
+   * @param conf: configuration for resource
    */
   override def predict(conf: Configuration): Unit = {
     val client = AngelClientFactory.get(conf)
@@ -78,12 +84,17 @@ class GraphRunner extends MLRunner {
     val modelClassName: String = SharedConf.modelClassName
     val model: GraphModel = GraphModel(modelClassName, conf)
     model.buildNetwork()
+    val loadModelPath = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH, "")
 
     try {
       client.startPSServer()
-      model.loadModel(client)
+      model.createMatrices(client)
+      if (!loadModelPath.isEmpty)
+        model.loadModel(client, loadModelPath)
       client.runTask(classOf[GraphPredictTask])
       client.waitForCompletion()
+    } catch {
+      case x:Exception => LOG.error("predict failed ", x)
     } finally {
       client.stop(0)
     }

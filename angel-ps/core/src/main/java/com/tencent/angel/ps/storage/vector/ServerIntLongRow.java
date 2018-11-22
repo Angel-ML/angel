@@ -23,7 +23,9 @@ import com.tencent.angel.ml.math2.vector.IntLongVector;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
+import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
+import com.tencent.angel.ps.storage.vector.func.LongElemUpdateFunc;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2LongMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
@@ -37,7 +39,7 @@ import java.io.IOException;
 /**
  * The row with "int" index type and "long" value type in PS
  */
-public class ServerIntLongRow extends ServerRow {
+public class ServerIntLongRow extends ServerLongRow {
   private static final Log LOG = LogFactory.getLog(ServerIntLongRow.class);
   /**
    * Just a view of "row" in ServerRow
@@ -174,7 +176,7 @@ public class ServerIntLongRow extends ServerRow {
    *
    * @return all element values
    */
-  public long[] getValues() {
+  private long[] getValues() {
     return intLongRow.getStorage().getValues();
   }
 
@@ -195,12 +197,22 @@ public class ServerIntLongRow extends ServerRow {
       switch (updateType) {
         case T_LONG_SPARSE:
         case T_LONG_SPARSE_COMPONENT:
-          updateUseSparse(buf, op);
+          updateUseIntLongSparse(buf, op);
+          break;
+
+        case T_INT_SPARSE:
+        case T_INT_SPARSE_COMPONENT:
+          updateUseIntIntSparse(buf, op);
           break;
 
         case T_LONG_DENSE:
         case T_LONG_DENSE_COMPONENT:
-          updateUseDense(buf, op);
+          updateUseIntLongDense(buf, op);
+          break;
+
+        case T_INT_DENSE:
+        case T_INT_DENSE_COMPONENT:
+          updateUseIntIntDense(buf, op);
           break;
 
         default: {
@@ -215,7 +227,7 @@ public class ServerIntLongRow extends ServerRow {
     }
   }
 
-  private void updateUseDense(ByteBuf buf, UpdateOp op) {
+  private void updateUseIntLongDense(ByteBuf buf, UpdateOp op) {
     int size = buf.readInt();
     if (op == UpdateOp.PLUS) {
       for (int i = 0; i < size; i++) {
@@ -228,7 +240,20 @@ public class ServerIntLongRow extends ServerRow {
     }
   }
 
-  private void updateUseSparse(ByteBuf buf, UpdateOp op) {
+  private void updateUseIntIntDense(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      for (int i = 0; i < size; i++) {
+        intLongRow.set(i, intLongRow.get(i) + buf.readInt());
+      }
+    } else {
+      for (int i = 0; i < size; i++) {
+        intLongRow.set(i, buf.readInt());
+      }
+    }
+  }
+
+  private void updateUseIntLongSparse(ByteBuf buf, UpdateOp op) {
     int size = buf.readInt();
     if (op == UpdateOp.PLUS) {
       for (int i = 0; i < size; i++) {
@@ -238,6 +263,21 @@ public class ServerIntLongRow extends ServerRow {
     } else {
       for (int i = 0; i < size; i++) {
         intLongRow.set(buf.readInt(), buf.readLong());
+      }
+    }
+  }
+
+
+  private void updateUseIntIntSparse(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      for (int i = 0; i < size; i++) {
+        int index = buf.readInt();
+        intLongRow.set(index, intLongRow.get(index) + buf.readInt());
+      }
+    } else {
+      for (int i = 0; i < size; i++) {
+        intLongRow.set(buf.readInt(), buf.readInt());
       }
     }
   }
@@ -268,7 +308,7 @@ public class ServerIntLongRow extends ServerRow {
   }
 
   @Override protected void serializeRow(ByteBuf buf) {
-    if (isDense()) {
+    if (useDenseSerialize()) {
       long[] values = getValues();
       for (int i = 0; i < values.length; i++) {
         buf.writeLong(values[i]);
@@ -289,10 +329,9 @@ public class ServerIntLongRow extends ServerRow {
     endColInt = (int) endCol;
     intLongRow = (IntLongVector) row;
 
-    if (isDense()) {
-      long[] values = getValues();
+    if (useDenseSerialize()) {
       for (int i = 0; i < size; i++) {
-        values[i] = buf.readLong();
+        intLongRow.set(i, buf.readLong());
       }
     } else {
       for (int i = 0; i < size; i++) {
@@ -302,7 +341,7 @@ public class ServerIntLongRow extends ServerRow {
   }
 
   @Override public int getRowSpace() {
-    if (isDense()) {
+    if (useDenseSerialize()) {
       return 8 * size();
     } else {
       return 12 * size();
@@ -319,78 +358,70 @@ public class ServerIntLongRow extends ServerRow {
     }
   }
 
-  @Override protected void writeRow(DataOutputStream output) throws IOException {
-    switch (rowType) {
-      case T_LONG_SPARSE:
-      case T_LONG_SPARSE_COMPONENT: {
-        output.writeInt(size());
-        if (isDense()) {
-          long[] values = getValues();
-          for (int i = 0; i < values.length; i++) {
-            output.writeInt(i);
-            output.writeLong(values[i]);
-          }
-        } else {
-          ObjectIterator<Int2LongMap.Entry> iter = getIter();
-          Int2LongMap.Entry entry;
-          while (iter.hasNext()) {
-            entry = iter.next();
-            output.writeInt(entry.getIntKey());
-            output.writeLong(entry.getLongValue());
-          }
-        }
-        break;
-      }
-
-      case T_LONG_DENSE:
-      case T_LONG_DENSE_COMPONENT: {
-        if (isDense()) {
-          long[] values = getValues();
-          for (int i = 0; i < values.length; i++) {
-            output.writeLong(values[i]);
-          }
-        } else {
-          int size = endColInt - startColInt;
-          for (int i = 0; i < size; i++) {
-            output.writeLong(intLongRow.get(i));
-          }
-        }
-        break;
-      }
-    }
-  }
-
-  @Override protected void readRow(DataInputStream input) throws IOException {
-    startColInt = (int) startCol;
-    endColInt = (int) endCol;
-    intLongRow = (IntLongVector) row;
-    int size = endColInt - startColInt;
-    if (isDense()) {
-      long[] values = getValues();
-      for (int i = 0; i < size; i++) {
-        values[i] = input.readLong();
-      }
+  /**
+   * Check the vector contains the index or not
+   *
+   * @param index element index
+   * @return true means exist
+   */
+  public boolean exist(int index) {
+    if (intLongRow.isSparse()) {
+      return intLongRow.getStorage().hasKey(index - startColInt);
     } else {
-      size = input.readInt();
-      for (int i = 0; i < size; i++) {
-        intLongRow.set(input.readInt(), input.readLong());
-      }
+      return intLongRow.get(index - startColInt) != 0;
     }
   }
 
-  @Override public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out)
+  public long initAndGet(int index, InitFunc func) {
+    if (exist(index)) {
+      return get(index);
+    } else {
+      long value = (long) func.action();
+      set(index, value);
+      return value;
+    }
+  }
+
+  @Override
+  public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
     throws IOException {
-    if (indexType == IndexType.INT) {
-      for (int i = 0; i < indexSize; i++) {
-        out.writeLong(get(in.readInt()));
+    if (func != null) {
+      if (indexType == IndexType.INT) {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeLong(initAndGet(in.readInt(), func));
+        }
+      } else {
+        throw new IOException(this.getClass().getName() + " only support int type index now");
       }
     } else {
-      throw new IOException(this.getClass().getName() + " only support int type index now");
+      if (indexType == IndexType.INT) {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeLong(get(in.readInt()));
+        }
+      } else {
+        throw new IOException(this.getClass().getName() + " only support int type index now");
+      }
     }
   }
 
   @Override public void setSplit(Vector row) {
     super.setSplit(row);
     intLongRow = (IntLongVector) row;
+  }
+
+  @Override public void elemUpdate(LongElemUpdateFunc func) {
+    if (isDense()) {
+      long[] values = getValues();
+      for (int i = 0; i < values.length; i++) {
+        values[i] = func.update();
+      }
+    } else {
+      ObjectIterator<Int2LongMap.Entry> iter = getIter();
+      Int2LongMap.Entry entry;
+      while (iter.hasNext()) {
+        entry = iter.next();
+        entry.setValue(func.update());
+      }
+    }
   }
 }

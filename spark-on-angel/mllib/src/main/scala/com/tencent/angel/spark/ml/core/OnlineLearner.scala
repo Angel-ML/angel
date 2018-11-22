@@ -20,10 +20,11 @@ package com.tencent.angel.spark.ml.core
 
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.spark.client.PSClient
 import org.apache.commons.logging.LogFactory
 import org.apache.spark.SparkContext
 import org.apache.spark.streaming.dstream.{DStream, InputDStream}
+
+import com.tencent.angel.spark.context.PSContext
 
 class OnlineLearner {
 
@@ -38,10 +39,10 @@ class OnlineLearner {
     stream.foreachRDD { data =>
       numBatches += 1
       val (lossSum, batchSize) = data.mapPartitions { iter =>
-        PSClient.instance()
+        PSContext.instance()
         val model = bModel.value
         val samples = iter.toArray
-        model.forward(samples)
+        model.forward(0, samples)
         val loss = model.getLoss()
         model.backward()
         Iterator.single((loss, samples.length))

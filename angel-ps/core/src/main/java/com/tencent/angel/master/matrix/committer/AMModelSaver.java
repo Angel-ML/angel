@@ -27,8 +27,8 @@ import com.tencent.angel.ml.matrix.PartitionMeta;
 import com.tencent.angel.model.*;
 import com.tencent.angel.model.io.IOExecutors;
 import com.tencent.angel.model.output.format.ModelFilesConstent;
-import com.tencent.angel.model.output.format.ModelFilesMeta;
-import com.tencent.angel.model.output.format.PSModelFilesMeta;
+import com.tencent.angel.model.output.format.MatrixFilesMeta;
+import com.tencent.angel.model.output.format.PSMatrixFilesMeta;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.utils.HdfsUtil;
 import com.tencent.angel.utils.StringUtils;
@@ -262,11 +262,12 @@ public class AMModelSaver extends AbstractService {
     try {
       lock.lock();
       int requestId = saveRequestIdGen++;
-      //saveContext.setTmpSavePath(HdfsUtil.generateTmpDirectory(context.getConf(),
-      //  context.getApplicationId().toString(), new Path(saveContext.getSavePath())).toString());
-      Path tmpPath = new Path(new Path(context.getConf().get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH)),
-        String.valueOf(requestId));
-      saveContext.setTmpSavePath(tmpPath.toString());
+      saveContext.setTmpSavePath(HdfsUtil.generateTmpDirectory(context.getConf(),
+        context.getApplicationId().toString(), new Path(saveContext.getSavePath())).toString());
+      //Path tmpPath = new Path(new Path(context.getConf().get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH)),
+      //  String.valueOf(requestId));
+      //Path tmpPath = HdfsUtil.toTmpPath(new Path(saveContext.getSavePath()));
+      //saveContext.setTmpSavePath(tmpPath.toString());
 
       saveContexts.put(requestId, saveContext);
       results.put(requestId, new ModelSaveResult(requestId));
@@ -468,9 +469,16 @@ public class AMModelSaver extends AbstractService {
       Path psPath =
         new Path(new Path(new Path(saveContext.getTmpSavePath()), ModelFilesConstent.resultDirName),
           modelEntry.getKey().toString());
+
+      List<PSMatrixSaveContext> psMatrixContexts = modelEntry.getValue();
+      for (PSMatrixSaveContext matrixContext : psMatrixContexts) {
+        matrixContext.setSavePath(new Path(psPath,
+          context.getMatrixMetaManager().getMatrix(matrixContext.getMatrixId()).getName())
+          .toString());
+      }
+
       ret.put(modelEntry.getKey(),
-        new PSMatricesSaveContext(requestId, subRequestId++, psPath.toString(),
-          modelEntry.getValue()));
+        new PSMatricesSaveContext(requestId, subRequestId++, modelEntry.getValue()));
     }
     return ret;
   }
@@ -484,16 +492,16 @@ public class AMModelSaver extends AbstractService {
 
     Map<Integer, PartitionMeta> partitions = meta.getPartitionMetas();
     List<Integer> rowIndexes = matrixSaveContext.getRowIndexes();
-    Map<ParameterServerId, List<Integer>> psIdToPartIdsMap = new HashMap<>();
+    Map<ParameterServerId, Set<Integer>> psIdToPartIdsMap = new HashMap<>();
     if (rowIndexes == null || rowIndexes.isEmpty()) {
       for (Map.Entry<Integer, PartitionMeta> partEntry : partitions.entrySet()) {
         ParameterServerId psId = partEntry.getValue().getMasterPs();
         if (psId == null) {
           throw new IllegalStateException("Can not get ps for partition " + partEntry.getKey());
         }
-        List partIds = psIdToPartIdsMap.get(psId);
+        Set partIds = psIdToPartIdsMap.get(psId);
         if (partIds == null) {
-          partIds = new ArrayList();
+          partIds = new HashSet();
           psIdToPartIdsMap.put(psId, partIds);
         }
         partIds.add(partEntry.getKey());
@@ -509,9 +517,9 @@ public class AMModelSaver extends AbstractService {
           if (psId == null) {
             throw new IllegalStateException("Can not get ps for partition " + partEntry.getKey());
           }
-          List partIds = psIdToPartIdsMap.get(psId);
+          Set partIds = psIdToPartIdsMap.get(psId);
           if (partIds == null) {
-            partIds = new ArrayList();
+            partIds = new HashSet();
             psIdToPartIdsMap.put(psId, partIds);
           }
           partIds.add(partEntry.getKey());
@@ -521,9 +529,16 @@ public class AMModelSaver extends AbstractService {
 
     int matrixId = meta.getId();
     Map<ParameterServerId, PSMatrixSaveContext> ret = new HashMap<>(psIdToPartIdsMap.size());
-    for (Map.Entry<ParameterServerId, List<Integer>> entry : psIdToPartIdsMap.entrySet()) {
+    for (Map.Entry<ParameterServerId, Set<Integer>> entry : psIdToPartIdsMap.entrySet()) {
+      List<Integer> partIds = new ArrayList<>(entry.getValue());
+      partIds.sort(new Comparator<Integer>() {
+        @Override public int compare(Integer id1, Integer id2) {
+          return id1 - id2;
+        }
+      });
       PSMatrixSaveContext psMatrixSaveContext =
-        new PSMatrixSaveContext(matrixId, entry.getValue(), matrixSaveContext.getRowIndexes());
+        new PSMatrixSaveContext(matrixId, partIds, matrixSaveContext.getRowIndexes(),
+          matrixSaveContext.getFormatClassName(), null, false, true);
       ret.put(entry.getKey(), psMatrixSaveContext);
     }
     return ret;
@@ -593,8 +608,8 @@ public class AMModelSaver extends AbstractService {
     MatrixMeta meta = context.getMatrixMetaManager().getMatrix(matrixId);
     Map<String, String> kvMap = meta.getAttributes();
 
-    ModelFilesMeta filesMeta =
-      new ModelFilesMeta(matrixId, meta.getName(), meta.getRowType().getNumber(), meta.getRowNum(),
+    MatrixFilesMeta filesMeta =
+      new MatrixFilesMeta(matrixId, meta.getName(), matrixContext.getFormatClassName(), meta.getRowType().getNumber(), meta.getRowNum(),
         meta.getColNum(), meta.getBlockRowNum(), meta.getBlockColNum(), kvMap);
 
     try {
@@ -623,6 +638,7 @@ public class AMModelSaver extends AbstractService {
     }
   }
 
+
   /**
    * Model partitions committer
    */
@@ -631,13 +647,13 @@ public class AMModelSaver extends AbstractService {
     private final Path moveDestPath;
     private final List<ParameterServerId> psList;
     private final Vector<String> errorLogs;
-    private final ModelFilesMeta matrixMeta;
+    private final MatrixFilesMeta matrixMeta;
     private final int startPos;
     private final int endPos;
     private final FileSystem fs;
 
     public PSModelCombineOp(Path moveSrcPath, Path moveDestPath, List<ParameterServerId> psList,
-      Vector<String> errorLogs, ModelFilesMeta matrixMeta, int startPos, int endPos,
+      Vector<String> errorLogs, MatrixFilesMeta matrixMeta, int startPos, int endPos,
       FileSystem fs) {
       this.moveSrcPath = moveSrcPath;
       this.moveDestPath = moveDestPath;
@@ -681,7 +697,7 @@ public class AMModelSaver extends AbstractService {
    * @param matrixMeta   model files meta
    */
   private void combinePartitions(Path moveSrcPath, Path moveDestPath, ParameterServerId psId,
-    Vector<String> errorLogs, ModelFilesMeta matrixMeta, FileSystem fs) {
+    Vector<String> errorLogs, MatrixFilesMeta matrixMeta, FileSystem fs) {
     Path psPath = new Path(moveSrcPath, String.valueOf(psId));
     Path serverMatrixPath = new Path(psPath, matrixMeta.getMatrixName());
 
@@ -689,7 +705,7 @@ public class AMModelSaver extends AbstractService {
 
     try {
       FSDataInputStream input = fs.open(psMetaFilePath);
-      PSModelFilesMeta serverMatrixMeta = new PSModelFilesMeta();
+      PSMatrixFilesMeta serverMatrixMeta = new PSMatrixFilesMeta();
       serverMatrixMeta.read(input);
       input.close();
       fs.delete(psMetaFilePath, false);

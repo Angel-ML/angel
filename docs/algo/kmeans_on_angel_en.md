@@ -66,56 +66,85 @@ KMeans on Angel algorithm as follows:
 * **Training Job**
     
 	```java
-    ./bin/angel-submit \
-        --action.type=train \
-        --angel.app.submit.class=com.tencent.angel.ml.clustering.kmeans.KMeansRunner  \
-        --ml.model.class.name=com.tencent.angel.ml.clustering.kmeans.KMeansModel \
-        --angel.train.data.path=$traindata \
-        --angel.save.model.path=$modelout \
-        --angel.output.path.deleteonexist=true \
-        --angel.log.path=$logpath \
-        --ml.data.type=libsvm \
-        --ml.model.type=T_DOUBLE_DENSE \
-        --ml.kmeans.center.num=10 \
-        --ml.kmeans.c=0.15 \
-        --ml.epoch.num=100 \
-        --ml.feature.index.range=3072 \
-        --angel.workergroup.number=4 \
-        --angel.worker.memory.mb=5000  \
-        --angel.worker.task.number=1 \
-        --angel.ps.number=4 \
-        --angel.ps.memory.mb=5000 \
-        --angel.job.name=kmeans
+	./bin/angel-submit \
+		--action.type=train \
+		--angel.app.submit.class=com.tencent.angel.ml.clustering.kmeans.KMeansRunner  \
+		--ml.model.class.name=com.tencent.angel.ml.clustering.kmeans.KMeansModel \
+		--angel.train.data.path=$traindata \
+		--angel.save.model.path=$modelout \
+		--angel.output.path.deleteonexist=true \
+		--angel.log.path=$logpath \
+		--ml.data.type=libsvm \
+		--ml.model.type=T_DOUBLE_DENSE \
+		--ml.kmeans.center.num=$centerNum  \
+		--ml.kmeans.c=0.15 \
+		--ml.epoch.num=10 \
+		--ml.feature.index.range=$featureNum \
+		--ml.feature.num=$featureNum \
+		--angel.workergroup.number=4 \
+		--angel.worker.memory.mb=5000  \
+		--angel.worker.task.number=1 \
+		--angel.ps.number=4 \
+		--angel.ps.memory.mb=5000 \
+		--angel.job.name=kmeans_train
 	```
-* **Prediction Job**
-	
+
+* **IncTraining Job**
 	```java
-    ./bin/angel-submit \
-        --action.type=predict \
-        --angel.app.submit.class=com.tencent.angel.ml.clustering.kmeans.KMeansRunner  \
-        --ml.model.class.name=com.tencent.angel.ml.clustering.kmeans.KMeansModel \
-        --angel.predict.data.path=$predictdata \
-        --angel.load.model.path=$modelout \
-        --angel.predict.out.path=$predictout \
-        --angel.output.path.deleteonexist=true \
-        --angel.log.path=$logpath \
-        --ml.data.type=libsvm \
-        --ml.model.type=T_DOUBLE_DENSE \
-        --ml.kmeans.center.num=10 \
-        --ml.feature.index.range=3072 \
-        --angel.workergroup.number=4 \
-        --angel.worker.memory.mb=5000  \
-        --angel.worker.task.number=1 \
-        --angel.ps.number=4 \
-        --angel.ps.memory.mb=5000 \
-        --angel.psagent.cache.sync.timeinterval.ms=500 \
-        --angel.job.name=kmeans_predict
+	./bin/angel-submit \
+		--action.type=inctrain \
+		--angel.app.submit.class=com.tencent.angel.ml.clustering.kmeans.KMeansRunner  \
+		--ml.model.class.name=com.tencent.angel.ml.clustering.kmeans.KMeansModel \
+		--angel.train.data.path=$traindata \
+		--angel.load.model.path=$modelout \
+		--angel.save.model.path=$modelout \
+		--angel.output.path.deleteonexist=true \
+		--angel.log.path=$logpath \
+		--ml.data.type=libsvm \
+		--ml.model.type=T_DOUBLE_DENSE \
+		--ml.kmeans.center.num=$centerNum \
+		--ml.kmeans.c=0.15 \
+		--ml.epoch.num=10 \
+		--ml.feature.index.range=$featureNum \
+		--ml.feature.num=$featureNum \
+		--angel.workergroup.number=4 \
+		--angel.worker.memory.mb=5000  \
+		--angel.worker.task.number=1 \
+		--angel.ps.number=4 \
+		--angel.ps.memory.mb=5000 \
+		--angel.job.name=kmeans_inctrain
+	```
+
+* **Prediction Job**
+
+	```java
+	./bin/angel-submit \
+		--action.type=predict \
+		--angel.app.submit.class=com.tencent.angel.ml.clustering.kmeans.KMeansRunner  \
+		--ml.model.class.name=com.tencent.angel.ml.clustering.kmeans.KMeansModel \
+		--angel.predict.data.path=$predictdata \
+		--angel.load.model.path=$modelout \
+		--angel.predict.out.path=$predictout \
+		--angel.output.path.deleteonexist=true \
+		--angel.log.path=$logpath \
+		--ml.data.type=libsvm \
+		--ml.model.type=T_DOUBLE_DENSE \
+		--ml.kmeans.center.num=$centerNum \
+		--ml.feature.index.range=$featureNum \
+		--ml.feature.num=$featureNum \
+		--angel.workergroup.number=4 \
+		--angel.worker.memory.mb=5000  \
+		--angel.worker.task.number=1 \
+		--angel.ps.number=4 \
+		--angel.ps.memory.mb=5000 \
+		--angel.psagent.cache.sync.timeinterval.ms=500 \
+		--angel.job.name=kmeans_predict
 	```
 
 ### Performance
 * data：SVHN，3×10^3 features，7×10^4 samples
 * resource：
-	* Angel：executor：4，5G memory，1tasks； ps：4个，5G memory
+	* Angel：executor：4，5G memory，1 task； ps：4，5G memory
 * Time of 100 epochs:
 	* Angel：45min
 	

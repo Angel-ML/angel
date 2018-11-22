@@ -37,10 +37,11 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
 
   def this() = this(SharedConf.get())
 
-  var data: Array[LabeledData] = _
-  var feats: Matrix = _
-  var labels: Matrix = _
-  var indices: Vector = _
+  private var data: Array[LabeledData] = _
+  private var feats: Matrix = _
+  private var labels: Matrix = _
+  private var indices: Vector = _
+  private var attached: Array[String] = _
 
   var isFeed: Boolean = false
 
@@ -48,6 +49,7 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
     feats = null
     labels = null
     indices = null
+    attached = null
 
     this.data = data
   }
@@ -103,6 +105,16 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
     }
 
     labels
+  }
+
+  def getAttached: Array[String] = {
+    attached = if (attached == null) {
+      data.map(_.getAttach)
+    } else {
+      attached
+    }
+
+    attached
   }
 
   def getBatchSize: Int = data.length

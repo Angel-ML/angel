@@ -322,6 +322,26 @@ object SharedConf {
     }
   }
 
+  def sparseInputLayerMatrixOutputFormat: String = {
+    get()
+
+    sc.get(MLConf.ML_SIMPLEINPUTLAYER_MATRIX_OUTPUT_FORMAT, MLConf.DEFAULT_ML_SIMPLEINPUTLAYER_MATRIX_OUTPUT_FORMAT)
+  }
+
+  def fcLayerMatrixOutputFormat: String = {
+    get()
+
+    sc.get(MLConf.ML_FCLAYER_MATRIX_OUTPUT_FORMAT, MLConf.DEFAULT_ML_FCLAYER_MATRIX_OUTPUT_FORMAT)
+  }
+
+
+  def embeddingLayerMatrixOutputFormat: String = {
+    get()
+
+    sc.get(MLConf.ML_EMBEDDING_MATRIX_OUTPUT_FORMAT, MLConf.DEFAULT_ML_EMBEDDING_MATRIX_OUTPUT_FORMAT)
+  }
+
+
   def actionType(): String = {
     get()
 

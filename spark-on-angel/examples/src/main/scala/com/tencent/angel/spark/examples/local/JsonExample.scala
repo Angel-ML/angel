@@ -18,17 +18,12 @@
 
 package com.tencent.angel.spark.examples.local
 
-import com.tencent.angel.RunningMode
-import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
-import com.tencent.angel.ml.core.utils.DataParser
 import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OfflineLearner}
-import com.tencent.angel.spark.ml.util.{Features, ModelLoader, ModelSaver}
 import org.apache.log4j.PropertyConfigurator
 import org.apache.spark.{SparkConf, SparkContext}
-import org.codehaus.jackson.JsonParser.Feature
 
 object JsonExample {
 
@@ -36,13 +31,14 @@ object JsonExample {
     PropertyConfigurator.configure("conf/log4j.properties")
     val params = ArgsUtil.parse(args)
     val input = params.getOrElse("input", "data/census/census_148d_train.libsvm")
-    val output = params.getOrElse("output", "output/")
-    val modelPath = params.getOrElse("model", "model/")
+    val output = params.getOrElse("output", "")
+    val modelPath = params.getOrElse("model", "")
     val actionType = params.getOrElse("action.type", "train")
+    val json = params.getOrElse("angel.ml.conf", "jsons/logreg.json")
+
+    SharedConf.get().set("angel.ml.conf", json)
 
     SharedConf.addMap(params)
-    SharedConf.get().set(AngelConf.ANGEL_RUNNING_MODE, RunningMode.ANGEL_PS.toString)
-
     JsonUtils.init()
 
     // load data
@@ -55,32 +51,23 @@ object JsonExample {
     conf.set("spark.ps.cores", "1")
 
     val sc = new SparkContext(conf)
-    val parser = DataParser(SharedConf.get())
-    val data = sc.textFile(input).repartition(1).map(f => parser.parse(f))
+    sc.setLogLevel("ERROR")
+
     PSContext.getOrCreate(sc)
 
     val model = new GraphModel
+    val dim = SharedConf.indexRange.toInt
     val learner = new OfflineLearner
 
-    // whatever, we first build the sparseToDense and denseToSparse index
-    // and change to feature index from sparse to dense
-    val (denseToSparseMatrixId, denseDim, sparseToDenseMatrixId, sparseDim, denseData) = Features.featureSparseToDense(data)
-    SharedConf.get().setLong(MLConf.ML_FEATURE_INDEX_RANGE, denseDim)
-
-    // initialize model
-    model.init(denseData.getNumPartitions)
+    println(s"dim=$dim")
 
     actionType match {
-      case "train" =>
-        learner.train(denseData, model)
-        ModelSaver.save(output, model, denseToSparseMatrixId, denseDim)
-      case "incTrain" =>
-        ModelLoader.load(modelPath, model, sparseToDenseMatrixId, denseDim)
-        learner.train(denseData, model)
-        ModelSaver.save(output, model, denseToSparseMatrixId, denseDim)
+      case MLConf.ANGEL_ML_TRAIN => learner.train(input, output, modelPath, dim, model)
+      case MLConf.ANGEL_ML_PREDICT => learner.train(input, output, modelPath, dim, model)
     }
 
     PSContext.stop()
+    sc.stop()
   }
 
 }

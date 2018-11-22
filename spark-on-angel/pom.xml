@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
+<!--?xml version="1.0" encoding="UTF-8"?-->
 <!--
 	~ Tencent is pleased to support the open source community by making Angel available.
 	~
@@ -17,13 +16,13 @@
 	~
 	-->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
 		<groupId>com.tencent.angel</groupId>
 		<artifactId>angel</artifactId>
-		<version>2.0.0-alpha</version>
+		<version>2.0.0</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
@@ -232,7 +231,7 @@
 			<plugin>
 				<groupId>org.scalastyle</groupId>
 				<artifactId>scalastyle-maven-plugin</artifactId>
-				<version>0.8.0</version>
+				<version>1.0.0</version>
 				<configuration>
 					<verbose>false</verbose>
 					<failOnViolation>false</failOnViolation>
@@ -253,10 +252,10 @@
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
+			<!--plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-checkstyle-plugin</artifactId>
-				<version>2.17</version>
+				<version>3.0.0</version>
 				<configuration>
 					<failOnViolation>false</failOnViolation>
 					<includeTestSourceDirectory>true</includeTestSourceDirectory>
@@ -264,7 +263,7 @@
 						<dir>${basedir}/src/main/java</dir>
 						<dir>${basedir}/src/main/scala</dir>
 					</sourceDirectories>
-					<testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
+					<testSourceDirectories>${basedir}/src/scala</testSourceDirectories>
 					<configLocation>${main.basedir}/dev/checkstyle.xml</configLocation>
 					<outputFile>${basedir}/target/checkstyle-output.xml</outputFile>
 				</configuration>
@@ -275,7 +274,7 @@
 						</goals>
 					</execution>
 				</executions>
-			</plugin>
+			</plugin-->
 		</plugins>
 	</build>
 

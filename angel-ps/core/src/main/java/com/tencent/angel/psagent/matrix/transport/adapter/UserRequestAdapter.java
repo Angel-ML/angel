@@ -32,6 +32,7 @@ import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult;
+import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.psagent.PSAgentContext;
@@ -393,7 +394,22 @@ public class UserRequestAdapter {
    * @throws AngelException
    */
   public FutureResult<Vector> get(int matrixId, int rowId, int[] indices) throws AngelException {
-    return get(new IntIndexGetRowRequest(matrixId, rowId, indices));
+    return get(new IntIndexGetRowRequest(matrixId, rowId, indices, null));
+  }
+
+  /**
+   * Get elements of the row use int indices, the row type should has "int" type indices
+   *
+   * @param matrixId matrix id
+   * @param rowId    row id
+   * @param indices  elements indices
+   * @param func     element init function
+   * @return the Vector use sparse storage, contains indices and values
+   * @throws AngelException
+   */
+  public FutureResult<Vector> get(int matrixId, int rowId, int[] indices, InitFunc func)
+    throws AngelException {
+    return get(new IntIndexGetRowRequest(matrixId, rowId, indices, func));
   }
 
   /**
@@ -406,7 +422,22 @@ public class UserRequestAdapter {
    * @throws AngelException
    */
   public FutureResult<Vector> get(int matrixId, int rowId, long[] indices) throws AngelException {
-    return get(new LongIndexGetRowRequest(matrixId, rowId, indices));
+    return get(new LongIndexGetRowRequest(matrixId, rowId, indices, null));
+  }
+
+  /**
+   * Get elements of the row use long indices, the row type should has "int" type indices
+   *
+   * @param matrixId matrix id
+   * @param rowId    row id
+   * @param indices  elements indices
+   * @param func     element init function
+   * @return the Vector use sparse storage, contains indices and values
+   * @throws AngelException
+   */
+  public FutureResult<Vector> get(int matrixId, int rowId, long[] indices, InitFunc func)
+    throws AngelException {
+    return get(new LongIndexGetRowRequest(matrixId, rowId, indices, func));
   }
 
   private FutureResult<Vector> get(IndexGetRowRequest request) {
@@ -433,7 +464,7 @@ public class UserRequestAdapter {
     MatrixTransportClient matrixClient = PSAgentContext.get().getMatrixTransportClient();
     for (Entry<PartitionKey, IndicesView> entry : splits.entrySet()) {
       matrixClient.indexGetRow(requestId, request.getMatrixId(), request.getRowId(), entry.getKey(),
-        entry.getValue());
+        entry.getValue(), request.getFunc());
     }
     return result;
   }
@@ -449,7 +480,22 @@ public class UserRequestAdapter {
    */
   public FutureResult<Vector[]> get(int matrixId, int[] rowIds, int[] indices)
     throws AngelException {
-    return get(new IntIndexGetRowsRequest(matrixId, rowIds, indices));
+    return get(new IntIndexGetRowsRequest(matrixId, rowIds, indices, null));
+  }
+
+  /**
+   * Get elements of the rows use int indices, the row type should has "int" type indices
+   *
+   * @param matrixId matrix id
+   * @param rowIds   rows ids
+   * @param indices  elements indices
+   * @param func     element init function
+   * @return the Vectors use sparse storage, contains indices and values
+   * @throws AngelException
+   */
+  public FutureResult<Vector[]> get(int matrixId, int[] rowIds, int[] indices, InitFunc func)
+    throws AngelException {
+    return get(new IntIndexGetRowsRequest(matrixId, rowIds, indices, func));
   }
 
   private IndicesView getIndicesView(PartitionKey partKey, Map<PartitionKey, IndicesView> views) {
@@ -473,7 +519,22 @@ public class UserRequestAdapter {
    */
   public FutureResult<Vector[]> get(int matrixId, int[] rowIds, long[] indices)
     throws AngelException {
-    return get(new LongIndexGetRowsRequest(matrixId, rowIds, indices));
+    return get(new LongIndexGetRowsRequest(matrixId, rowIds, indices, null));
+  }
+
+  /**
+   * Get elements of the rows use long indices, the row type should has "long" type indices
+   *
+   * @param matrixId matrix id
+   * @param rowIds   rows ids
+   * @param indices  elements indices
+   * @param func     element init function
+   * @return the Vectors use sparse storage, contains indices and values
+   * @throws AngelException
+   */
+  public FutureResult<Vector[]> get(int matrixId, int[] rowIds, long[] indices, InitFunc func)
+    throws AngelException {
+    return get(new LongIndexGetRowsRequest(matrixId, rowIds, indices, func));
   }
 
   private FutureResult<Vector[]> get(IndexGetRowsRequest request) {
@@ -514,7 +575,7 @@ public class UserRequestAdapter {
 
     for (Entry<PartitionKey, IndicesView> entry : validSplits.entrySet()) {
       matrixClient.indexGetRows(requestId, request.getMatrixId(), entry.getKey(),
-        partToRowIdsMap.get(entry.getKey()), validSplits.get(entry.getKey()));
+        partToRowIdsMap.get(entry.getKey()), validSplits.get(entry.getKey()), request.getFunc());
     }
     return result;
   }
@@ -1058,8 +1119,8 @@ public class UserRequestAdapter {
       if (row == null) {
         return;
       }
-
-      PSAgentContext.get().getMatrixStorageManager().addRow(row.getMatrixId(), row.getRowId(), row);
+      if(PSAgentContext.get().getMatrixStorageManager() != null)
+        PSAgentContext.get().getMatrixStorageManager().addRow(row.getMatrixId(), row.getRowId(), row);
       ReentrantLock lock = getLock(row.getMatrixId());
       try {
         lock.lock();
@@ -1199,9 +1260,9 @@ public class UserRequestAdapter {
     HashMap<PartitionKey, IndicesView> ret = new HashMap<>();
 
     // Sort partition keys use start column index
-    Collections.sort(partKeys, (PartitionKey key1, PartitionKey key2) -> {
-      return key1.getStartCol() < key2.getStartCol() ? -1 : 1;
-    });
+    //Collections.sort(partKeys, (PartitionKey key1, PartitionKey key2) -> {
+    //  return key1.getStartCol() < key2.getStartCol() ? -1 : 1;
+    //});
 
     int ii = 0;
     int keyIndex = 0;
@@ -1231,9 +1292,9 @@ public class UserRequestAdapter {
     HashMap<PartitionKey, IndicesView> ret = new HashMap<>();
 
     // Sort partition keys use start column index
-    Collections.sort(partKeys, (PartitionKey key1, PartitionKey key2) -> {
-      return key1.getStartCol() < key2.getStartCol() ? -1 : 1;
-    });
+    //Collections.sort(partKeys, (PartitionKey key1, PartitionKey key2) -> {
+    //  return key1.getStartCol() < key2.getStartCol() ? -1 : 1;
+    //});
 
     int ii = 0;
     int keyIndex = 0;

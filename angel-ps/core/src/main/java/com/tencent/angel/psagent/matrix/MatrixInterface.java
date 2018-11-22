@@ -25,6 +25,7 @@ import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult;
+import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.psagent.matrix.transport.adapter.GetRowsResult;
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex;
 
@@ -194,6 +195,50 @@ public interface MatrixInterface {
    */
   Vector[] get(int[] rowIds, long[] indices) throws AngelException;
 
+  /**
+   * Get elements of the row use int indices, if the element does not exist, it will be initialized first, the row type should has "int" type indices
+   *
+   * @param rowId   row id
+   * @param indices elements indices
+   * @param func    element initialization method
+   * @return the Vector use sparse storage, contains indices and values
+   * @throws AngelException
+   */
+  Vector initAndGet(int rowId, int[] indices, InitFunc func) throws AngelException;
+
+  /**
+   * Get elements of the row use long indices, if the element does not exist, it will be initialized first, the row type should has "int" type indices
+   *
+   * @param rowId   row id
+   * @param indices elements indices
+   * @param func    element initialization method
+   * @return the Vector use sparse storage, contains indices and values
+   * @throws AngelException
+   */
+  Vector initAndGet(int rowId, long[] indices, InitFunc func) throws AngelException;
+
+  /**
+   * Get elements of the rows use int indices, if the element does not exist, it will be initialized first, the row type should has "int" type indices
+   *
+   * @param rowIds  rows ids
+   * @param indices elements indices
+   * @param func    element initialization method
+   * @return the Vectors use sparse storage, contains indices and values
+   * @throws AngelException
+   */
+  Vector[] initAndGet(int[] rowIds, int[] indices, InitFunc func) throws AngelException;
+
+  /**
+   * Get elements of the rows use long indices, if the element does not exist, it will be initialized first, the row type should has "long" type indices
+   *
+   * @param rowIds  rows ids
+   * @param indices elements indices
+   * @param func    element initialization method
+   * @return the Vectors use sparse storage, contains indices and values
+   * @throws AngelException
+   */
+  Vector[] initAndGet(int[] rowIds, long[] indices, InitFunc func) throws AngelException;
+
   /////////////////////////////////////////////////////////////////////////////////////////////////
   /// PSF get/update, use can implement their own psf
   /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -253,6 +298,42 @@ public interface MatrixInterface {
    * @throws AngelException
    */
   GetRowsResult getRowsFlow(RowIndex index, int batchSize) throws AngelException;
+
+  /**
+   * Get a batch rows
+   * @param rowIds row ids
+   * @return rows result
+   * @throws AngelException
+   */
+  Vector [] getRows(int [] rowIds) throws AngelException;
+
+  /**
+   * Get a batch rows
+   * @param rowIds row ids
+   * @param disableCache true means get from ps directly
+   * @return rows result
+   * @throws AngelException
+   */
+  Vector [] getRows(int [] rowIds, boolean disableCache) throws AngelException;
+
+  /**
+   * Get a batch rows
+   * @param rowIds row ids
+   * @param batchSize the number of rows in one rpc
+   * @return rows result
+   * @throws AngelException
+   */
+  Vector [] getRows(int [] rowIds, int batchSize) throws AngelException;
+
+  /**
+   * Get a batch rows
+   * @param rowIds row ids
+   * @param batchSize the number of rows in one rpc
+   * @param disableCache true means get from ps directly
+   * @return rows result
+   * @throws AngelException
+   */
+  Vector [] getRows(int [] rowIds, int batchSize, boolean disableCache) throws AngelException;
 
   /**
    * Get a batch of rows use the pipeline mode. The pipeline mode means that user can calculate part

@@ -18,8 +18,7 @@
 
 package com.tencent.angel.spark.ml.classification
 
-import com.tencent.angel.ml.core.network.layers.edge.inputlayer.SparseInputLayer
-import com.tencent.angel.ml.core.network.layers.edge.losslayer.SimpleLossLayer
+import com.tencent.angel.ml.core.network.layers.verge.{SimpleLossLayer, SimpleInputLayer}
 import com.tencent.angel.ml.core.network.transfunc.Identity
 import com.tencent.angel.ml.core.optimizer.Adam
 import com.tencent.angel.ml.core.optimizer.loss.HingeLoss
@@ -27,7 +26,7 @@ import com.tencent.angel.spark.ml.core.GraphModel
 
 class SupportVectorMachine extends GraphModel {
   override def network(): Unit = {
-    val input = new SparseInputLayer("input", 1, new Identity, new Adam(0.02))
+    val input = new SimpleInputLayer("input", 1, new Identity, new Adam(0.02))
     new SimpleLossLayer("simpleLossLayer", input, new HingeLoss)
   }
 

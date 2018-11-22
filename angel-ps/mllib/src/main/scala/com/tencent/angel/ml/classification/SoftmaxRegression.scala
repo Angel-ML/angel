@@ -20,10 +20,9 @@ package com.tencent.angel.ml.classification
 
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.graphsubmit.GraphModel
-import com.tencent.angel.ml.core.network.layers.edge.inputlayer.{DenseInputLayer, SparseInputLayer}
-import com.tencent.angel.ml.core.network.layers.edge.losslayer.SoftmaxLossLayer
+import com.tencent.angel.ml.core.network.layers.verge.{SimpleInputLayer, SimpleLossLayer}
 import com.tencent.angel.ml.core.network.transfunc.Identity
-import com.tencent.angel.ml.core.optimizer.OptUtils
+import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
 import com.tencent.angel.ml.core.optimizer.loss.{LossFunc, SoftmaxLoss}
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
@@ -33,20 +32,16 @@ import org.apache.hadoop.conf.Configuration
   *
   */
 
-class SoftmaxRegression(conf: Configuration, _ctx: TaskContext = null)
-  extends GraphModel(conf, _ctx) {
+class SoftmaxRegression(conf: Configuration, _ctx: TaskContext = null) extends GraphModel(conf, _ctx) {
   val numClass: Int = SharedConf.numClass
+  val ipOptName: String = sharedConf.get(MLConf.ML_INPUTLAYER_OPTIMIZER, MLConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
+  val optimizer: Optimizer = OptUtils.getOptimizer(ipOptName)
 
   override val lossFunc: LossFunc = new SoftmaxLoss()
 
   override def buildNetwork(): Unit = {
-    val input = dataFormat match {
-      case "dense" => new DenseInputLayer("input", numClass, new Identity(),
-        OptUtils.getOptimizer(sharedConf.get(MLConf.ML_DENSEINPUTLAYER_OPTIMIZER, MLConf.DEFAULT_ML_DENSEINPUTLAYER_OPTIMIZER)))
-      case _ => new SparseInputLayer("input", numClass, new Identity(),
-        OptUtils.getOptimizer(sharedConf.get(MLConf.ML_SPARSEINPUTLAYER_OPTIMIZER, MLConf.DEFAULT_ML_SPARSEINPUTLAYER_OPTIMIZER)))
-    }
-    new SoftmaxLossLayer("softmaxLossLayer", input, lossFunc)
+    val input = new SimpleInputLayer("input", numClass, new Identity(), optimizer)
+    new SimpleLossLayer("softmaxLossLayer", input, lossFunc)
   }
 
 }

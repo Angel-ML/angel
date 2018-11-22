@@ -32,9 +32,11 @@ softmax算法仅由单个输入层组成，该输入层可为“dense”或“sp
 ## 3. 运行和性能
 ### 数据格式
 支持"dense"、"libsvm"和"dummy"三种数据格式，其中"libsvm"格式举例如下:
+
  ```
  1 1:1 214:1 233:1 234:1
  ```   
+
  dummy格式如下：
     
  ```
@@ -51,33 +53,97 @@ softmax算法仅由单个输入层组成，该输入层可为“dense”或“sp
     * ml.learn.rate：学习率
     * ml.learn.decay：学习率衰减系数
     * ml.reg.l2:l2正则项系数
-    * action.type：任务类型，训练用"train",预测用"predict"
+    * action.type：任务类型，训练用"train",增量训练用"inctrain", 预测用"predict"
     * ml.num.class：输入数据的类别个数
-    * ml.sparseinputlayer.optimizer：优化器类型，可选“adam”,"ftrl"和“momentum”
-  
-* 提交命令
-    可以通过下面的命令提交FM算法：
-```java
-../../bin/angel-submit \
-    -Dml.epoch.num=20 \
-    -Dangel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner \
-    -Dml.model.class.name=com.tencent.angel.ml.classification.SoftmaxRegression \
-    -Dml.feature.index.range=$featureNum \
-    -Dml.feature.num=$featureNum \
-    -Dml.data.validate.ratio=0.1 \ 
-    -Dml.data.type=libsvm \
-    -Dml.learn.rate=0.1 \
-    -Dml.learn.decay=0.5 \
-    -Dml.reg.l2=0.03 \
-    -Daction.type=train \
-    -Dml.num.class=8 \
-    -Dml.sparseinputlayer.optimizer=ftrl \
-    -Dangel.train.data.path=$input_path \
-    -Dangel.workergroup.number=20 \
-    -Dangel.worker.memory.mb=20000 \
-    -Dangel.worker.task.number=1 \
-    -Dangel.ps.number=20 \
-    -Dangel.ps.memory.mb=10000 \
-    -Dangel.task.data.storage.level=memory \
-    -Dangel.job.name=angel_l1
-```
+    * ml.inputlayer.optimizer：优化器类型，可选"adam","ftrl"和"momentum"
+    * ml.data.label.trans.class: 是否要对标签进行转换, 默认为"NoTrans", 可选项为"ZeroOneTrans"(转为0-1), "PosNegTrans"(转为正负1), "AddOneTrans"(加1), "SubOneTrans"(减1). 
+    * ml.data.label.trans.threshold: "ZeroOneTrans"(转为0-1), "PosNegTrans"(转为正负1)这两种转还要以设一个阈值, 大于阈值的为1, 阈值默认为0
+    * ml.data.posneg.ratio: 正负样本重采样比例, 对于正负样本相差较大的情况有用(如5倍以上)
+ 
+###提交命令
+* 
+    *可以通过下面的命令提交Softmax算法训练任务：
+	```java
+	../../bin/angel-submit \
+		-Dml.epoch.num=20 \
+		-Dangel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner \
+		-Dml.model.class.name=com.tencent.angel.ml.classification.SoftmaxRegression \
+		-Dangel.train.data.path=$traindata \
+		-Dangel.save.model.path=$modelout \
+		-Dml.feature.index.range=$featureNum \
+		-Dml.feature.num=$featureNum \
+		-Dml.data.validate.ratio=0.1 \
+		-Dml.data.label.trans.class="SubOneTrans" \
+		-Dml.data.type=libsvm \
+		-Dml.learn.rate=0.1 \
+		-Dml.learn.decay=0.5 \
+		-Dml.reg.l2=0.03 \
+		-Daction.type=train \
+		-Dml.num.class=$classNum \
+		-Dangel.workergroup.number=10 \
+		-Dangel.worker.memory.mb=10000 \
+		-Dangel.worker.task.number=1 \
+		-Dangel.ps.number=4 \
+		-Dangel.ps.memory.mb=10000 \
+		-Dangel.task.data.storage.level=memory \
+		-Dangel.job.name=angel_train
+	```
+
+	*可以通过下面的命令提交Softmax算法增量训练任务：
+	```java
+	../../bin/angel-submit \
+		-Dml.epoch.num=20 \
+		-Dangel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner \
+		-Dml.model.class.name=com.tencent.angel.ml.classification.SoftmaxRegression \
+		-Dangel.train.data.path=$traindata \
+		-Dangel.load.model.path=$modelout \
+		-Dangel.save.model.path=$modelout \
+		-Dml.feature.index.range=$featureNum \
+		-Dml.feature.num=$featureNum \
+		-Dml.data.validate.ratio=0.1 \
+		-Dml.data.label.trans.class="SubOneTrans" \
+		-Dml.data.type=libsvm \
+		-Dml.learn.rate=0.1 \
+		-Dml.learn.decay=0.5 \
+		-Dml.reg.l2=0.03 \
+		-Daction.type=inctrain \
+		-Dml.num.class=$classNum \
+		-Dangel.workergroup.number=10 \
+		-Dangel.worker.memory.mb=10000 \
+		-Dangel.worker.task.number=1 \
+		-Dangel.ps.number=4 \
+		-Dangel.ps.memory.mb=10000 \
+		-Dangel.task.data.storage.level=memory \
+		-Dangel.job.name=angel_inctrain
+	```
+
+	*可以通过下面的命令提交Softmax算法预测训练任务：
+	```java
+	../../bin/angel-submit \
+		-Dml.epoch.num=20 \
+		-Dangel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner \
+		-Dml.model.class.name=com.tencent.angel.ml.classification.SoftmaxRegression \
+		-Dangel.predict.data.path=$predictdata \
+		-Dangel.load.model.path=$modelout \
+		-Dangel.predict.out.path=$predictout \
+		-Dml.feature.index.range=$featureNum \
+		-Dml.feature.num=$featureNum \
+		-Dml.data.label.trans.class="SubOneTrans" \
+		-Dml.data.type=libsvm \
+		-Daction.type=predict \
+		-Dml.num.class=$classNum \
+		-Dangel.workergroup.number=10 \
+		-Dangel.worker.memory.mb=10000 \
+		-Dangel.worker.task.number=1 \
+		-Dangel.ps.number=4 \
+		-Dangel.ps.memory.mb=10000 \
+		-Dangel.task.data.storage.level=memory \
+		-Dangel.job.name=angel_predict
+	```
+
+### 性能
+* 数据：街景号码图像数据集，3×10^3 特征，7×10^4 样本
+* 资源：
+	* Angel：executor：10个，10G内存，1个task；ps：4个，10G内存
+* 迭代100次时间：
+	* Angel：55min

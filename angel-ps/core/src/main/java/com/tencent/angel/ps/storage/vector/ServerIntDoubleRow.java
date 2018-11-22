@@ -19,23 +19,22 @@
 package com.tencent.angel.ps.storage.vector;
 
 import com.tencent.angel.ml.math2.vector.IntDoubleVector;
-import com.tencent.angel.ml.math2.vector.IntIntVector;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
+import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
+import com.tencent.angel.ps.storage.vector.func.DoubleElemUpdateFunc;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 
 /**
  * The row with "int" index type and "double" value type in PS
  */
-public class ServerIntDoubleRow extends ServerRow {
+public class ServerIntDoubleRow extends ServerDoubleRow {
   /**
    * Just a view of "row" in ServerRow
    */
@@ -171,7 +170,7 @@ public class ServerIntDoubleRow extends ServerRow {
    *
    * @return all element values
    */
-  public double[] getValues() {
+  private double[] getValues() {
     return intDoubleRow.getStorage().getValues();
   }
 
@@ -191,12 +190,42 @@ public class ServerIntDoubleRow extends ServerRow {
       switch (updateType) {
         case T_DOUBLE_SPARSE:
         case T_DOUBLE_SPARSE_COMPONENT:
-          updateUseSparse(buf, op);
+          updateUseIntDoubleSparse(buf, op);
+          break;
+
+        case T_FLOAT_SPARSE:
+        case T_FLOAT_SPARSE_COMPONENT:
+          updateUseIntFloatSparse(buf, op);
+          break;
+
+        case T_LONG_SPARSE:
+        case T_LONG_SPARSE_COMPONENT:
+          updateUseIntLongSparse(buf, op);
+          break;
+
+        case T_INT_SPARSE:
+        case T_INT_SPARSE_COMPONENT:
+          updateUseIntIntSparse(buf, op);
           break;
 
         case T_DOUBLE_DENSE:
         case T_DOUBLE_DENSE_COMPONENT:
-          updateUseDense(buf, op);
+          updateUseIntDoubleDense(buf, op);
+          break;
+
+        case T_FLOAT_DENSE:
+        case T_FLOAT_DENSE_COMPONENT:
+          updateUseIntFloatDense(buf, op);
+          break;
+
+        case T_LONG_DENSE:
+        case T_LONG_DENSE_COMPONENT:
+          updateUseIntLongDense(buf, op);
+          break;
+
+        case T_INT_DENSE:
+        case T_INT_DENSE_COMPONENT:
+          updateUseIntIntDense(buf, op);
           break;
 
         default: {
@@ -211,7 +240,7 @@ public class ServerIntDoubleRow extends ServerRow {
     }
   }
 
-  private void updateUseDense(ByteBuf buf, UpdateOp op) {
+  private void updateUseIntDoubleDense(ByteBuf buf, UpdateOp op) {
     int size = buf.readInt();
     if (op == UpdateOp.PLUS) {
       for (int i = 0; i < size; i++) {
@@ -224,7 +253,46 @@ public class ServerIntDoubleRow extends ServerRow {
     }
   }
 
-  private void updateUseSparse(ByteBuf buf, UpdateOp op) {
+  private void updateUseIntFloatDense(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      for (int i = 0; i < size; i++) {
+        intDoubleRow.set(i, intDoubleRow.get(i) + buf.readFloat());
+      }
+    } else {
+      for (int i = 0; i < size; i++) {
+        intDoubleRow.set(i, buf.readFloat());
+      }
+    }
+  }
+
+  private void updateUseIntIntDense(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      for (int i = 0; i < size; i++) {
+        intDoubleRow.set(i, intDoubleRow.get(i) + buf.readInt());
+      }
+    } else {
+      for (int i = 0; i < size; i++) {
+        intDoubleRow.set(i, buf.readInt());
+      }
+    }
+  }
+
+  private void updateUseIntLongDense(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      for (int i = 0; i < size; i++) {
+        intDoubleRow.set(i, intDoubleRow.get(i) + buf.readLong());
+      }
+    } else {
+      for (int i = 0; i < size; i++) {
+        intDoubleRow.set(i, buf.readLong());
+      }
+    }
+  }
+
+  private void updateUseIntDoubleSparse(ByteBuf buf, UpdateOp op) {
     int size = buf.readInt();
     if (op == UpdateOp.PLUS) {
       for (int i = 0; i < size; i++) {
@@ -234,6 +302,48 @@ public class ServerIntDoubleRow extends ServerRow {
     } else {
       for (int i = 0; i < size; i++) {
         intDoubleRow.set(buf.readInt(), buf.readDouble());
+      }
+    }
+  }
+
+  private void updateUseIntFloatSparse(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      for (int i = 0; i < size; i++) {
+        int index = buf.readInt();
+        intDoubleRow.set(index, intDoubleRow.get(index) + buf.readFloat());
+      }
+    } else {
+      for (int i = 0; i < size; i++) {
+        intDoubleRow.set(buf.readInt(), buf.readFloat());
+      }
+    }
+  }
+
+  private void updateUseIntIntSparse(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      for (int i = 0; i < size; i++) {
+        int index = buf.readInt();
+        intDoubleRow.set(index, intDoubleRow.get(index) + buf.readInt());
+      }
+    } else {
+      for (int i = 0; i < size; i++) {
+        intDoubleRow.set(buf.readInt(), buf.readInt());
+      }
+    }
+  }
+
+  private void updateUseIntLongSparse(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      for (int i = 0; i < size; i++) {
+        int index = buf.readInt();
+        intDoubleRow.set(index, intDoubleRow.get(index) + buf.readLong());
+      }
+    } else {
+      for (int i = 0; i < size; i++) {
+        intDoubleRow.set(buf.readInt(), buf.readLong());
       }
     }
   }
@@ -270,7 +380,7 @@ public class ServerIntDoubleRow extends ServerRow {
   }
 
   @Override protected void serializeRow(ByteBuf buf) {
-    if (isDense()) {
+    if (useDenseSerialize()) {
       double[] values = getValues();
       for (int i = 0; i < values.length; i++) {
         buf.writeDouble(values[i]);
@@ -290,10 +400,9 @@ public class ServerIntDoubleRow extends ServerRow {
     startColInt = (int) startCol;
     endColInt = (int) endCol;
     intDoubleRow = (IntDoubleVector) row;
-    if (isDense()) {
-      double[] values = getValues();
+    if (useDenseSerialize()) {
       for (int i = 0; i < size; i++) {
-        values[i] = buf.readDouble();
+        intDoubleRow.set(i, buf.readDouble());
       }
     } else {
       for (int i = 0; i < size; i++) {
@@ -303,7 +412,7 @@ public class ServerIntDoubleRow extends ServerRow {
   }
 
   @Override protected int getRowSpace() {
-    if (isDense()) {
+    if (useDenseSerialize()) {
       return 8 * size();
     } else {
       return 12 * size();
@@ -320,78 +429,70 @@ public class ServerIntDoubleRow extends ServerRow {
     }
   }
 
-  @Override protected void writeRow(DataOutputStream output) throws IOException {
-    switch (rowType) {
-      case T_DOUBLE_SPARSE:
-      case T_DOUBLE_SPARSE_COMPONENT: {
-        output.writeInt(size());
-        if (isDense()) {
-          double[] values = getValues();
-          for (int i = 0; i < values.length; i++) {
-            output.writeInt(i);
-            output.writeDouble(values[i]);
-          }
-        } else {
-          ObjectIterator<Int2DoubleMap.Entry> iter = getIter();
-          Int2DoubleMap.Entry entry;
-          while (iter.hasNext()) {
-            entry = iter.next();
-            output.writeInt(entry.getIntKey());
-            output.writeDouble(entry.getDoubleValue());
-          }
-        }
-        break;
-      }
-
-      case T_DOUBLE_DENSE:
-      case T_DOUBLE_DENSE_COMPONENT: {
-        if (isDense()) {
-          double[] values = getValues();
-          for (int i = 0; i < values.length; i++) {
-            output.writeDouble(values[i]);
-          }
-        } else {
-          int size = endColInt - startColInt;
-          for (int i = 0; i < size; i++) {
-            output.writeDouble(intDoubleRow.get(i));
-          }
-        }
-        break;
-      }
-    }
-  }
-
-  @Override protected void readRow(DataInputStream input) throws IOException {
-    startColInt = (int) startCol;
-    endColInt = (int) endCol;
-    intDoubleRow = (IntDoubleVector) row;
-    int size = (endColInt - startColInt);
-    if (isDense()) {
-      double[] values = getValues();
-      for (int i = 0; i < size; i++) {
-        values[i] = input.readDouble();
-      }
+  /**
+   * Check the vector contains the index or not
+   *
+   * @param index element index
+   * @return true means exist
+   */
+  public boolean exist(int index) {
+    if (intDoubleRow.isSparse()) {
+      return intDoubleRow.getStorage().hasKey(index - startColInt);
     } else {
-      size = input.readInt();
-      for (int i = 0; i < size; i++) {
-        intDoubleRow.set(input.readInt(), input.readDouble());
-      }
+      return intDoubleRow.get(index - startColInt) != 0.0;
     }
   }
 
-  @Override public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out)
+  public double initAndGet(int index, InitFunc func) {
+    if (exist(index)) {
+      return get(index);
+    } else {
+      double value = func.action();
+      set(index, value);
+      return value;
+    }
+  }
+
+  @Override
+  public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
     throws IOException {
-    if (indexType == IndexType.INT) {
-      for (int i = 0; i < indexSize; i++) {
-        out.writeDouble(get(in.readInt()));
+    if (func != null) {
+      if (indexType == IndexType.INT) {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeDouble(initAndGet(in.readInt(), func));
+        }
+      } else {
+        throw new IOException(this.getClass().getName() + " only support int type index now");
       }
     } else {
-      throw new IOException(this.getClass().getName() + " only support int type index now");
+      if (indexType == IndexType.INT) {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeDouble(get(in.readInt()));
+        }
+      } else {
+        throw new IOException(this.getClass().getName() + " only support int type index now");
+      }
     }
   }
 
   @Override public void setSplit(Vector row) {
     super.setSplit(row);
     intDoubleRow = (IntDoubleVector) row;
+  }
+
+  public void elemUpdate(DoubleElemUpdateFunc func) {
+    if (isDense()) {
+      double[] values = getValues();
+      for (int i = 0; i < values.length; i++) {
+        values[i] = func.update();
+      }
+    } else {
+      ObjectIterator<Int2DoubleMap.Entry> iter = getIter();
+      Int2DoubleMap.Entry entry;
+      while (iter.hasNext()) {
+        entry = iter.next();
+        entry.setValue(func.update());
+      }
+    }
   }
 }

@@ -34,6 +34,7 @@ import com.tencent.angel.ps.storage.matrix.PartitionState;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.utils.ByteBufUtils;
+import com.tencent.angel.utils.StringUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -497,39 +498,71 @@ public class WorkerPool {
       PartitionKey partKey = request.getPartKey();
 
       ServerRow row = context.getMatrixStorageManager()
-        .getRow(request.getMatrixId(), request.getRowId(), partKey.getPartitionId());
+              .getRow(request.getMatrixId(), request.getRowId(), partKey.getPartitionId());
       IndexType indexType = IndexType.valueOf(in.readInt());
       ValueType valueType = getValueType(row.getRowType());
       int size = in.readInt();
       result = new IndexPartGetRowResponse(ResponseType.SUCCESS);
+      result.setState(state);
 
-      ByteBuf resultBuf;
+      ByteBuf resultBuf = null;
       try {
         resultBuf = allocResultBuf(4 + result.bufferLen() + 4 + size * getValueSize(valueType));
-        resultBuf.writeInt(seqId);
+      } catch (Throwable x) {
+        LOG.error("allocate result buffer for request " + TransportMethod.INDEX_GET_ROW + " failed ", x);
+        result.setResponseType(ResponseType.SERVER_IS_BUSY);
+        result.setState(ServerState.BUSY);
+        result.setDetail(StringUtils.stringifyException(x));
 
-        result.setState(state);
+        // Exception happened
+        ByteBuf out = null;
+        try {
+          out = serializeResponse(seqId, result);
+        } catch (Throwable ex) {
+          LOG.error("serialize response failed ", ex);
+        }
+        return out;
+      }
+
+      try {
+        // write seq id
+        resultBuf.writeInt(seqId);
 
         // Just serialize the head
         result.serialize(resultBuf);
         resultBuf.writeInt(valueType.getTypeId());
         resultBuf.writeInt(size);
-        row.startRead();
-        row.indexGet(indexType, size, in, resultBuf);
-        row.endRead();
+        if (request.getFunc() == null) {
+          row.startRead();
+          row.indexGet(indexType, size, in, resultBuf, null);
+          row.endRead();
+        } else {
+          row.startWrite();
+          row.indexGet(indexType, size, in, resultBuf, request.getFunc());
+          row.endWrite();
+        }
         return resultBuf;
+      } catch (WaitLockTimeOutException x) {
+        LOG.error("handle request " + TransportMethod.INDEX_GET_ROW + " failed ", x);
+        resultBuf.release();
+
+        result.setResponseType(ResponseType.SERVER_HANDLE_FAILED);
+        result.setDetail(StringUtils.stringifyException(x));
       } catch (Throwable x) {
-        LOG.error("allocate result buffer for " + TransportMethod.INDEX_GET_ROW + " failed ", x);
+        LOG.error("handle request " + TransportMethod.INDEX_GET_ROW + " failed ", x);
+        resultBuf.release();
+
+        result.setResponseType(ResponseType.SERVER_HANDLE_FATAL);
+        result.setDetail(StringUtils.stringifyException(x));
       }
     }
 
-    result.setState(state);
     // Exception happened
     ByteBuf out = null;
     try {
       out = serializeResponse(seqId, result);
     } catch (Throwable ex) {
-      LOG.error("serialize response falied ", ex);
+      LOG.error("serialize response failed ", ex);
     }
     return out;
   }
@@ -552,13 +585,32 @@ public class WorkerPool {
       ValueType valueType = getValueType(
         context.getMatrixMetaManager().getMatrixMeta(request.getMatrixId()).getRowType());
       result = new IndexPartGetRowsResponse(ResponseType.SUCCESS);
-      ByteBuf resultBuf;
+      result.setState(state);
+
+      // Allocate result buffer
+      ByteBuf resultBuf = null;
       try {
         resultBuf =
-          allocResultBuf(4 + result.bufferLen() + 4 + colNum * rowNum * getValueSize(valueType));
-        resultBuf.writeInt(seqId);
+                allocResultBuf(4 + result.bufferLen() + 4 + colNum * rowNum * getValueSize(valueType));
+      } catch (Throwable x) {
+        LOG.error("allocate result buffer for request " + TransportMethod.INDEX_GET_ROWS + " failed ", x);
+        result.setResponseType(ResponseType.SERVER_IS_BUSY);
+        result.setState(ServerState.BUSY);
+        result.setDetail(StringUtils.stringifyException(x));
+        resultBuf.release();
 
-        result.setState(state);
+        // Exception happened
+        ByteBuf out = null;
+        try {
+          out = serializeResponse(seqId, result);
+        } catch (Throwable ex) {
+          LOG.error("serialize response failed ", ex);
+        }
+        return out;
+      }
+
+      try {
+        resultBuf.writeInt(seqId);
 
         // Just serialize the head
         result.serialize(resultBuf);
@@ -571,17 +623,32 @@ public class WorkerPool {
           ServerRow row = context.getMatrixStorageManager()
             .getRow(request.getMatrixId(), rowIds.get(i), partKey.getPartitionId());
           resultBuf.writeInt(rowIds.get(i));
-          row.startRead();
-          row.indexGet(indexType, colNum, in, resultBuf);
-          row.endRead();
+          if(request.getFunc() == null) {
+            row.startRead();
+            row.indexGet(indexType, colNum, in, resultBuf, null);
+            row.endRead();
+          } else {
+            row.startWrite();
+            row.indexGet(indexType, colNum, in, resultBuf, request.getFunc());
+            row.endWrite();
+          }
         }
         return resultBuf;
+      } catch (WaitLockTimeOutException x) {
+        LOG.error("handle request " + TransportMethod.INDEX_GET_ROWS + " failed ", x);
+        resultBuf.release();
+
+        result.setResponseType(ResponseType.SERVER_HANDLE_FAILED);
+        result.setDetail(StringUtils.stringifyException(x));
       } catch (Throwable x) {
-        LOG.error("allocate result buffer for " + TransportMethod.INDEX_GET_ROW + " failed ", x);
+        LOG.error("handle request  " + TransportMethod.INDEX_GET_ROWS + " failed ", x);
+        resultBuf.release();
+
+        result.setResponseType(ResponseType.SERVER_HANDLE_FATAL);
+        result.setDetail(StringUtils.stringifyException(x));
       }
     }
 
-    result.setState(state);
     // Exception happened
     ByteBuf out = null;
     try {

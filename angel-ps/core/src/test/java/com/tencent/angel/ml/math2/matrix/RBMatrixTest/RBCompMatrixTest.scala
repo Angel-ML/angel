@@ -556,7 +556,7 @@ class RBCompMatrixTest {
           }
         }
       }
-      println(s"compmatrix smul: ${matrixlist.get(i).mul(2).sum()}")
+      matrixlist.get(i).mul(2).sum()
     }
 
     //longkey

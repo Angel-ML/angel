@@ -20,6 +20,7 @@ package com.tencent.angel.ml.matrix.psf.update
 
 import com.tencent.angel.ml.matrix.psf.update.enhance.FullUpdateFunc
 import com.tencent.angel.ps.storage.vector._
+import com.tencent.angel.ps.storage.vector.func.{DoubleElemUpdateFunc, FloatElemUpdateFunc, IntElemUpdateFunc, LongElemUpdateFunc}
 
 
 /**
@@ -32,52 +33,44 @@ class FullFill(matrixId: Int, value: Double) extends FullUpdateFunc(matrixId, Ar
   override def doUpdate(rows: Array[ServerIntDoubleRow],
                         values: Array[Double]): Unit = {
     rows.foreach { row =>
-      row.startWrite()
-      try {
-        val data = row.getValues
-        for (i <- data.indices) data(i) = values(0)
-      } finally {
-        row.endWrite()
-      }
+      row.elemUpdate(new DoubleElemUpdateFunc {
+        override def update(): Double = {
+          values(0)
+        }
+      })
     }
   }
 
   override def doUpdate(rows: Array[ServerIntFloatRow],
                         values: Array[Float]): Unit = {
     rows.foreach { row =>
-      row.startWrite()
-      try {
-        val data = row.getValues
-        for (i <- data.indices) data(i) = values(0)
-      } finally {
-        row.endWrite()
-      }
+      row.elemUpdate(new FloatElemUpdateFunc {
+        override def update(): Float = {
+          values(0)
+        }
+      })
     }
   }
 
   override def doUpdate(rows: Array[ServerIntLongRow],
                         values: Array[Long]): Unit = {
     rows.foreach { row =>
-      row.startWrite()
-      try {
-        val data = row.getValues
-        for (i <- data.indices) data(i) = values(0)
-      } finally {
-        row.endWrite()
-      }
+      row.elemUpdate(new LongElemUpdateFunc {
+        override def update(): Long = {
+          values(0)
+        }
+      })
     }
   }
 
   override def doUpdate(rows: Array[ServerIntIntRow],
                         values: Array[Int]): Unit = {
     rows.foreach { row =>
-      row.startWrite()
-      try {
-        val data = row.getValues
-        for (i <- data.indices) data(i) = values(0)
-      } finally {
-        row.endWrite()
-      }
+      row.elemUpdate(new IntElemUpdateFunc {
+        override def update(): Int = {
+          values(0)
+        }
+      })
     }
   }
 }

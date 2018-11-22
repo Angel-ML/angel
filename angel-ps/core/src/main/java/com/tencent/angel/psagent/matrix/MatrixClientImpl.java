@@ -25,11 +25,14 @@ import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult;
+import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.transport.adapter.GetRowsResult;
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Future;
 
 public class MatrixClientImpl extends MatrixClient {
@@ -168,6 +171,42 @@ public class MatrixClientImpl extends MatrixClient {
     }
   }
 
+  @Override public Vector initAndGet(int rowId, int[] indices, InitFunc func)
+    throws AngelException {
+    try {
+      return PSAgentContext.get().getUserRequestAdapter().get(matrixId, rowId, indices, func).get();
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+  }
+
+  @Override public Vector initAndGet(int rowId, long[] indices, InitFunc func)
+    throws AngelException {
+    try {
+      return PSAgentContext.get().getUserRequestAdapter().get(matrixId, rowId, indices, func).get();
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+  }
+
+  @Override public Vector[] initAndGet(int[] rowIds, int[] indices, InitFunc func)
+    throws AngelException {
+    try {
+      return PSAgentContext.get().getUserRequestAdapter().get(matrixId, rowIds, indices, func).get();
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+  }
+
+  @Override public Vector[] initAndGet(int[] rowIds, long[] indices, InitFunc func)
+    throws AngelException {
+    try {
+      return PSAgentContext.get().getUserRequestAdapter().get(matrixId, rowIds, indices, func).get();
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+  }
+
   @Override public Future<VoidResult> update(UpdateFunc func) throws AngelException {
     try {
       return PSAgentContext.get().getUserRequestAdapter().update(func);
@@ -203,6 +242,45 @@ public class MatrixClientImpl extends MatrixClient {
   @Override public GetRowsResult getRowsFlow(RowIndex index, int batchSize) throws AngelException {
     return getRowsFlow(index, batchSize, false);
   }
+
+  @Override public Vector[] getRows(int[] rowIds) throws AngelException {
+    return getRows(rowIds, false);
+  }
+
+  @Override public Vector[] getRows(int[] rowIds, boolean disableCache) throws AngelException {
+    return getRows(rowIds, rowIds.length, disableCache);
+  }
+
+  @Override public Vector[] getRows(int[] rowIds, int batchSize) throws AngelException {
+    return getRows(rowIds, batchSize, false);
+  }
+
+  @Override public Vector[] getRows(int[] rowIds, int batchSize, boolean disableCache) throws AngelException {
+    RowIndex rowIndex = new RowIndex(rowIds);
+    GetRowsResult result = getRowsFlow(rowIndex, batchSize, disableCache);
+    Map<Integer, Vector> rowIdToRowMap = new HashMap<>(rowIds.length);
+    try {
+      Vector row;
+      while(true) {
+        row = result.take();
+        if(row == null) {
+          break;
+        } else {
+          rowIdToRowMap.put(row.getRowId(), row);
+        }
+      }
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+    Vector[] rows = new Vector[rowIds.length];
+    int i = 0;
+    for(int rowId : rowIds) {
+      rows[i++] = rowIdToRowMap.get(rowId);
+    }
+    return rows;
+  }
+
+
 
   @Override public GetRowsResult getRowsFlow(RowIndex index, int batchSize, boolean disableCache)
     throws AngelException {

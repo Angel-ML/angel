@@ -10,7 +10,7 @@
     "modelsize": 300
   },
   "train": {
-    "epoch": 10,
+    "epoch": 5,
     "lr": 0.1,
     "decay": 0.001
   },
@@ -18,7 +18,7 @@
   "layers": [
     {
       "name": "denseinputlayer",
-      "type": "denseinputlayer",
+      "type": "simpleinputlayer",
       "outputdim": 500,
       "transfunc": "relu"
     },

@@ -7,7 +7,7 @@
     "sampleratio": 0.2
   },
   "train": {
-    "epoch": 10,
+    "epoch": 5,
     "lr": 0.8,
     "decay": 0.2
   },
@@ -22,7 +22,7 @@
   "layers": [
     {
       "name": "wide",
-      "type": "sparseinputlayer",
+      "type": "simpleinputlayer",
       "outputdim": 1,
       "transfunc": "identity"
     },

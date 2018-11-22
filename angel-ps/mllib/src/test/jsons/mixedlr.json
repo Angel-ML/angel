@@ -7,13 +7,13 @@
   "layers": [
     {
       "name": "sigmoid",
-      "type": "sparseinputlayer",
+      "type": "simpleinputlayer",
       "outputdim": 10,
       "transfunc": "sigmoid"
     },
     {
       "name": "softmax",
-      "type": "sparseinputlayer",
+      "type": "simpleinputlayer",
       "outputdim": 10,
       "transfunc": "softmax"
     },

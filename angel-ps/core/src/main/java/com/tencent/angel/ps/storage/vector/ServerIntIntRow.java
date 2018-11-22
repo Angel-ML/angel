@@ -22,7 +22,9 @@ import com.tencent.angel.ml.math2.vector.IntIntVector;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
+import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
+import com.tencent.angel.ps.storage.vector.func.IntElemUpdateFunc;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
@@ -34,7 +36,7 @@ import java.io.IOException;
 /**
  * The row with "int" index type and "int" value type in PS
  */
-public class ServerIntIntRow extends ServerRow {
+public class ServerIntIntRow extends ServerIntRow {
   /**
    * Just a view of "row" in ServerRow
    */
@@ -169,7 +171,7 @@ public class ServerIntIntRow extends ServerRow {
    *
    * @return all element values
    */
-  public int[] getValues() {
+  private int[] getValues() {
     return intIntRow.getStorage().getValues();
   }
 
@@ -262,7 +264,7 @@ public class ServerIntIntRow extends ServerRow {
   }
 
   @Override protected void serializeRow(ByteBuf buf) {
-    if (isDense()) {
+    if (useDenseSerialize()) {
       int[] values = getValues();
       for (int i = 0; i < values.length; i++) {
         buf.writeInt(values[i]);
@@ -282,10 +284,9 @@ public class ServerIntIntRow extends ServerRow {
     startColInt = (int) startCol;
     endColInt = (int) endCol;
     intIntRow = (IntIntVector) row;
-    if (intIntRow.isDense()) {
-      int[] values = getValues();
+    if (useDenseSerialize()) {
       for (int i = 0; i < size; i++) {
-        values[i] = buf.readInt();
+        intIntRow.set(i, buf.readInt());
       }
     } else {
       for (int i = 0; i < size; i++) {
@@ -295,7 +296,7 @@ public class ServerIntIntRow extends ServerRow {
   }
 
   @Override public int getRowSpace() {
-    if (isDense()) {
+    if (useDenseSerialize()) {
       return 4 * size();
     } else {
       return 8 * size();
@@ -312,78 +313,70 @@ public class ServerIntIntRow extends ServerRow {
     }
   }
 
-  @Override protected void writeRow(DataOutputStream output) throws IOException {
-    switch (rowType) {
-      case T_INT_SPARSE:
-      case T_INT_SPARSE_COMPONENT: {
-        output.writeInt(size());
-        if (isDense()) {
-          int[] values = getValues();
-          for (int i = 0; i < values.length; i++) {
-            output.writeInt(i);
-            output.writeInt(values[i]);
-          }
-        } else {
-          ObjectIterator<Int2IntMap.Entry> iter = getIter();
-          Int2IntMap.Entry entry;
-          while (iter.hasNext()) {
-            entry = iter.next();
-            output.writeInt(entry.getIntKey());
-            output.writeInt(entry.getIntValue());
-          }
-        }
-        break;
-      }
-
-      case T_INT_DENSE:
-      case T_INT_DENSE_COMPONENT: {
-        if (isDense()) {
-          int[] values = getValues();
-          for (int i = 0; i < values.length; i++) {
-            output.writeInt(values[i]);
-          }
-        } else {
-          int size = endColInt - startColInt;
-          for (int i = 0; i < size; i++) {
-            output.writeInt(intIntRow.get(i));
-          }
-        }
-        break;
-      }
-    }
-  }
-
-  @Override protected void readRow(DataInputStream input) throws IOException {
-    startColInt = (int) startCol;
-    endColInt = (int) endCol;
-    intIntRow = (IntIntVector) row;
-    int size = (endColInt - startColInt);
-    if (intIntRow.isDense()) {
-      int[] values = getValues();
-      for (int i = 0; i < size; i++) {
-        values[i] = input.readInt();
-      }
+  /**
+   * Check the vector contains the index or not
+   *
+   * @param index element index
+   * @return true means exist
+   */
+  public boolean exist(int index) {
+    if (intIntRow.isSparse()) {
+      return intIntRow.getStorage().hasKey(index - startColInt);
     } else {
-      size = input.readInt();
-      for (int i = 0; i < size; i++) {
-        intIntRow.set(input.readInt(), input.readInt());
-      }
+      return intIntRow.get(index - startColInt) != 0;
     }
   }
 
-  @Override public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out)
+  public int initAndGet(int index, InitFunc func) {
+    if (exist(index)) {
+      return get(index);
+    } else {
+      int value = (int) func.action();
+      set(index, value);
+      return value;
+    }
+  }
+
+  @Override
+  public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
     throws IOException {
-    if (indexType == IndexType.INT) {
-      for (int i = 0; i < indexSize; i++) {
-        out.writeInt(get(in.readInt()));
+    if (func != null) {
+      if (indexType == IndexType.INT) {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeInt(initAndGet(in.readInt(), func));
+        }
+      } else {
+        throw new IOException(this.getClass().getName() + " only support int type index now");
       }
     } else {
-      throw new IOException(this.getClass().getName() + " only support int type index now");
+      if (indexType == IndexType.INT) {
+        for (int i = 0; i < indexSize; i++) {
+          out.writeInt(get(in.readInt()));
+        }
+      } else {
+        throw new IOException(this.getClass().getName() + " only support int type index now");
+      }
     }
   }
 
   @Override public void setSplit(Vector row) {
     super.setSplit(row);
     intIntRow = (IntIntVector) row;
+  }
+
+  @Override public void elemUpdate(IntElemUpdateFunc func) {
+    if (isDense()) {
+      int[] values = getValues();
+      for (int i = 0; i < values.length; i++) {
+        values[i] = func.update();
+      }
+    } else {
+      ObjectIterator<Int2IntMap.Entry> iter = getIter();
+      Int2IntMap.Entry entry;
+      while (iter.hasNext()) {
+        entry = iter.next();
+        entry.setValue(func.update());
+      }
+    }
   }
 }
