@@ -16,22 +16,33 @@
  */
 
 
-package com.tencent.angel.spark.ml.classification
+package com.tencent.angel.spark.ml.embedding
 
-import com.tencent.angel.ml.core.conf.MLConf
-import com.tencent.angel.ml.core.network.layers.verge.{SimpleLossLayer, SimpleInputLayer}
-import com.tencent.angel.ml.core.network.transfunc.Identity
-import com.tencent.angel.ml.core.optimizer.Adam
-import com.tencent.angel.ml.core.optimizer.loss.LogLoss
-import com.tencent.angel.spark.ml.core.GraphModel
+import org.apache.spark.rdd.RDD
 
-class LogisticRegression extends GraphModel {
+import com.tencent.angel.spark.ml.{PSFunSuite, SharedPSContext}
 
-  val lr = conf.getDouble(MLConf.ML_LEARN_RATE)
+class Word2VecLearnerSuite extends PSFunSuite with SharedPSContext {
 
-  override
-  def network(): Unit = {
-    val input = new SimpleInputLayer("input", 1, new Identity(), new Adam(lr))
-    new SimpleLossLayer("simpleLossLayer", input, new LogLoss)
+  private val input = "./src/test/data/enwik-small"
+  private var rawCorpus: RDD[Array[String]] = _
+  //  private var learner: Word2VecLearner = _
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    rawCorpus = sc.textFile(input, 2)
+      .map(_.split(" "))
+
+    val param = new Param
+    param.partitionNum = 1
+    //    learner = new Word2VecLearner(param)
+  }
+
+  override def afterAll(): Unit = {
+    super.afterAll()
+  }
+
+  test("train") {
+    //    learner.fit(rawCorpus)
   }
 }

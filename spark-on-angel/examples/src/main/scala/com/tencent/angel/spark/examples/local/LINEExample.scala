@@ -72,10 +72,9 @@ object LINEExample {
     param.setNegSample(5)
     param.setMaxIndex(maxNodeId)
     param.setOrder(2)
-    param.setModelCPInterval(1000)
 
     val model = new LINEModel(param)
-    model.train(data, param, "")
+    model.train(data, param)
     model.save(output, 0)
 
     PSContext.stop()
