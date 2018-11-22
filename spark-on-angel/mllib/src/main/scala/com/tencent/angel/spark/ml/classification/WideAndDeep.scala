@@ -17,32 +17,30 @@
 
 package com.tencent.angel.spark.ml.classification
 
+import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers.Layer
-import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleLossLayer, SimpleInputLayer}
 import com.tencent.angel.ml.core.network.layers.join.SumPooling
-import com.tencent.angel.ml.core.network.transfunc.Identity
+import com.tencent.angel.ml.core.network.layers.linear.FCLayer
+import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer, SimpleLossLayer}
+import com.tencent.angel.ml.core.network.transfunc.{Identity, Relu}
+import com.tencent.angel.ml.core.optimizer.Adam
 import com.tencent.angel.ml.core.optimizer.loss.LogLoss
-import com.tencent.angel.ml.core.utils.paramsutils.{EmbeddingParams, JsonUtils}
 import com.tencent.angel.spark.ml.core.GraphModel
 
-class WideAndDeep extends GraphModel{
+class WideAndDeep extends GraphModel {
+
+  val numFields: Int = SharedConf.get().getInt(MLConf.ML_FIELD_NUM)
+  val numFactors: Int = SharedConf.get().getInt(MLConf.ML_RANK_NUM)
+  val lr: Double = SharedConf.get().getDouble(MLConf.ML_LEARN_RATE)
 
   override def network(): Unit = {
-    ensureJsonAst()
+    val wide = new SimpleInputLayer("deep-input", 1, new Identity(), new Adam(lr))
 
-    val wide = new SimpleInputLayer("input", 1, new Identity(),
-      JsonUtils.getOptimizerByLayerType(jsonAst, "SparseInputLayer"))
-
-    val embeddingParams = JsonUtils.getLayerParamsByLayerType(jsonAst, "Embedding")
-      .asInstanceOf[EmbeddingParams]
-    val embedding = new Embedding("embedding", embeddingParams.outputDim, embeddingParams.numFactors,
-      embeddingParams.optimizer.build()
-    )
-
-    val hiddenLayer = JsonUtils.getFCLayer(jsonAst, embedding)
-
-    val join = new SumPooling("sumPooling", 1, Array[Layer](wide, hiddenLayer))
-
+    val embedding = new Embedding("deep-embedding", numFields * numFactors, numFactors, new Adam(lr))
+    val hidden1 = new FCLayer("deep-hidden1", 80, embedding, new Relu, new Adam(lr))
+    val hidden2 = new FCLayer("deep-hidden2", 50, hidden1, new Relu, new Adam(lr))
+    val mlpLayer = new FCLayer("deep-hidden3", 1, hidden2, new Identity, new Adam(lr))
+    val join = new SumPooling("sumPooling", 1, Array[Layer](wide, mlpLayer))
     new SimpleLossLayer("simpleLossLayer", join, new LogLoss)
 
   }

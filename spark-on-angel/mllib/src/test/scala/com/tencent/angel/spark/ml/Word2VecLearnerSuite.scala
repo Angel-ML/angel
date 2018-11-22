@@ -15,43 +15,35 @@
  *
  */
 
-package com.tencent.angel.spark.examples.local
 
-import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
+package com.tencent.angel.spark.ml
 
-import scala.util.Random
-import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.embedding.Param
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel
 import com.tencent.angel.spark.ml.feature.{Features, SubSampling}
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.rdd.RDD
 
-object Word2vecExample {
+import scala.util.Random
 
-  def main(args: Array[String]): Unit = {
-    val conf = new SparkConf()
-    conf.setMaster("local[1]")
-    conf.setAppName("Word2vec example")
-    conf.set("spark.ps.model", "LOCAL")
-    conf.set("spark.ps.jars", "")
-    conf.set("spark.ps.instances", "1")
-    conf.set("spark.ps.cores", "1")
+class Word2VecLearnerSuite extends PSFunSuite with SharedPSContext {
 
-    conf.set(AngelConf.ANGEL_PS_PARTITION_SOURCE_CLASS, classOf[PartitionSourceArray].getName)
+  private val input = "../../data/text8/text8.split.head"
 
-    val sc = new SparkContext(conf)
-    sc.setLogLevel("ERROR")
-    PSContext.getOrCreate(sc)
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+  }
 
-    val input = "data/text8/text8.split.head"
-    val output = "model/"
+  override def afterAll(): Unit = {
+    super.afterAll()
+  }
+
+  test("train") {
 
     val data = sc.textFile(input)
     data.cache()
 
-    val (corpus, denseToString) = Features.corpusStringToInt(sc.textFile(input))
-    val docs = SubSampling.sampling(corpus).repartition(2)
+    val (corpus, _) = Features.corpusStringToInt(sc.textFile(input))
+    val docs = corpus.repartition(2)
 
     docs.cache()
     docs.count()
@@ -77,16 +69,9 @@ object Word2vecExample {
     param.setMaxIndex(maxWordId)
     param.setMaxLength(maxLength)
     param.setModel("cbow")
-    param.setModelCPInterval(1000)
+    param.setModelCPInterval(100)
 
     val model = new Word2VecModel(param)
-    model.train(docs, param, "")
-
-//    model.save(output + "embedding", 0)
-//    denseToString.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "mapping")
-
-    PSContext.stop()
-    sc.stop()
+    model.train(docs, param, "model")
   }
-
 }

@@ -48,7 +48,8 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
   /**
     * Using math2 to optimize FTRL, but there is some error for this version.
     * The loss will become infinity when reaching convergence.
-    * @param batch: mini-batch training examples
+    *
+    * @param batch : mini-batch training examples
     * @return
     */
   def optimize(batch: Array[LabeledData]): Double = {
@@ -58,7 +59,8 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
           case dummy: LongDummyVector => dummy.getIndices
           case longKey: LongKeyVector => longKey.getStorage
             .asInstanceOf[LongKeyVectorStorage].getIndices
-        }}.distinct
+        }
+    }.distinct
 
     val localZ = zPS.pull(indices)
     val localN = nPS.pull(indices)
@@ -102,6 +104,7 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
 
   /**
     * Predict with weight
+    *
     * @param batch
     * @return
     */
@@ -112,7 +115,8 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
           case dummy: LongDummyVector => dummy.getIndices
           case longKey: LongKeyVector => longKey.getStorage
             .asInstanceOf[LongKeyVectorStorage].getIndices
-        }}.distinct
+        }
+    }.distinct
 
     val localZ = zPS.pull(indices)
     val localN = nPS.pull(indices)
@@ -129,12 +133,13 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
 
   /**
     * Optimizing only for LongDoubleVector. This version is ok and the model is correct.
-    * @param batch: training mini-batch examples
-    * @param costFun: function to calculate gradients
+    *
+    * @param batch   : training mini-batch examples
+    * @param costFun : function to calculate gradients
     * @return Loss for this batch
     */
   def optimize(batch: Array[(Vector, Double)],
-      costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)): Double = {
+               costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)): Double = {
 
     val dim = batch.head._1.dim()
     val featIds = batch.flatMap { case (v, _) =>
@@ -174,24 +179,24 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
 
   /**
     * Optimizing for one example (feature, label)
+    *
     * @param feature
     * @param label
-    * @param localN, N in the local executor
-    * @param localW. weight in the local executor
-    * @param deltaZ, delta value for z
-    * @param deltaN, delta value for n
+    * @param localN , N in the local executor
+    * @param localW . weight in the local executor
+    * @param deltaZ , delta value for z
+    * @param deltaN , delta value for n
     * @param costFun
     * @return
     */
-  def optimize(
-      feature: Vector,
-      label: Double,
-      localN: LongDoubleVector,
-      localW: LongDoubleVector,
-      deltaZ: LongDoubleVector,
-      deltaN: LongDoubleVector,
-      costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)
-  ): Double = {
+  def optimize(feature: Vector,
+               label: Double,
+               localN: LongDoubleVector,
+               localW: LongDoubleVector,
+               deltaZ: LongDoubleVector,
+               deltaN: LongDoubleVector,
+               costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)
+              ): Double = {
 
     val featIndices = feature match {
       case longV: LongDoubleVector => longV.getStorage.getIndices
@@ -213,6 +218,7 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
 
   /**
     * calculate w from z and n and store it in the w row
+    *
     * @return
     */
   def weight: PSVector = {
@@ -224,6 +230,7 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
 
   /**
     * calculate w from z and n for one dimension
+    *
     * @param fId
     * @param zOnId
     * @param nOnId
@@ -233,14 +240,13 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     * @param lambda2
     * @return
     */
-  def updateWeight(
-      fId: Long,
-      zOnId: Double,
-      nOnId: Double,
-      alpha: Double,
-      beta: Double,
-      lambda1: Double,
-      lambda2: Double): Double = {
+  def updateWeight(fId: Long,
+                   zOnId: Double,
+                   nOnId: Double,
+                   alpha: Double,
+                   beta: Double,
+                   lambda1: Double,
+                   lambda2: Double): Double = {
     if (fId == regularSkipFeatIndex) {
       -1.0 * alpha * zOnId / (beta + Math.sqrt(nOnId))
     } else if (Math.abs(zOnId) <= lambda1) {
@@ -249,5 +255,4 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
       (-1) * (1.0 / (lambda2 + (beta + Math.sqrt(nOnId)) / alpha)) * (zOnId - Math.signum(zOnId).toInt * lambda1)
     }
   }
-
 }

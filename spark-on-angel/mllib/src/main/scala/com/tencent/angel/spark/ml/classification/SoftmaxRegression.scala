@@ -31,7 +31,7 @@ class SoftmaxRegression extends GraphModel {
 
   override def network(): Unit = {
 
-    val input = new SimpleInputLayer("input", numClass, new Identity(),
+    val input = new SimpleInputLayer("softmax-input", numClass, new Identity(),
       OptUtils.getOptimizer(SharedConf.get().get(MLConf.ML_INPUTLAYER_OPTIMIZER, MLConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)))
     new SimpleLossLayer("softmaxLossLayer", input, new SoftmaxLoss)
   }

@@ -56,6 +56,8 @@ object LINEExample {
     val withSubSample = params.getOrElse("subSample", "true").toBoolean
     val withRemapping = params.getOrElse("remapping", "true").toBoolean
     val order = params.get("order").fold(2)(_.toInt)
+    val checkpointInterval = params.getOrElse("interval", "10").toInt
+
 
     val numCores = SparkUtils.getNumCores(conf)
 
@@ -106,10 +108,11 @@ object LINEExample {
       .setMaxIndex(maxNodeId)
       .setNumRowDataSet(numEdge)
       .setOrder(order)
+      .setModelCPInterval(checkpointInterval)
 
     val model = new LINEModel(param)
-    model.train(edges, param)
-    model.save(output + "/embedding", 0)
+    model.train(edges, param, output + "/embedding")
+    model.save(output + "/embedding", numEpoch)
 
     PSContext.stop()
     sc.stop()

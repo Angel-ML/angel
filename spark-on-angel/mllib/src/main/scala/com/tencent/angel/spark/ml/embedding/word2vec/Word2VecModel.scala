@@ -49,10 +49,10 @@ class Word2VecModel(numNode: Int,
     case _ => throw new AngelException("model type should be cbow or skipgram")
   }
 
-  def train(corpus: RDD[Array[Int]], param: Param): Unit = {
+  def train(corpus: RDD[Array[Int]], param: Param, path: String): Unit = {
     psMatrix.psfUpdate(getInitFunc(corpus.getNumPartitions, numNode, maxLength, param.negSample, param.windowSize))
     val iterator = buildDataBatches(corpus, param.batchSize)
-    train(iterator, param.negSample, param.numEpoch, param.learningRate)
+    train(iterator, param.negSample, param.numEpoch, param.learningRate, param.checkpointInterval, path)
   }
 
 

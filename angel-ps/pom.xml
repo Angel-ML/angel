@@ -244,12 +244,12 @@
       <version>3.0.3</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>com.github.fommil.netlib</groupId>
-      <artifactId>all</artifactId>
-      <version>1.1.2</version>
-      <type>pom</type>
-    </dependency>
+    <!--<dependency>-->
+      <!--<groupId>com.github.fommil.netlib</groupId>-->
+      <!--<artifactId>all</artifactId>-->
+      <!--<version>1.1.2</version>-->
+      <!--<type>pom</type>-->
+    <!--</dependency>-->
     <dependency>
       <groupId>org.scalanlp</groupId>
       <artifactId>breeze_2.11</artifactId>
