@@ -21,6 +21,7 @@ package com.tencent.angel.ps.storage.partitioner;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.PartitionMeta;
+import com.tencent.angel.ml.matrix.RowType;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -31,7 +32,7 @@ import java.util.List;
 /**
  * Base class of range partitioner
  */
-public abstract class RangePartitioner implements Partitioner {
+public class RangePartitioner implements Partitioner {
   private static final Log LOG = LogFactory.getLog(RangePartitioner.class);
   /**
    * Matrix context
@@ -81,39 +82,45 @@ public abstract class RangePartitioner implements Partitioner {
 
     LOG.info("start to split matrix " + mContext);
 
-    if (col == -1) {
+    if (col < 0) {
       long partSize = DEFAULT_PARTITION_SIZE;
       if (validIndexNum > 0) {
         partSize =
-          (long) (DEFAULT_PARTITION_SIZE * (row * (double) getMaxIndex() * 2 / validIndexNum));
+          (long) (DEFAULT_PARTITION_SIZE * ((double) getMaxIndex(mContext) * 2 / validIndexNum));
       }
-      if (blockRow == -1) {
+
+      if (blockRow < 0) {
         if (row > serverNum) {
           blockRow = (int) Math.min(row / serverNum,
-            Math.max(row / maxPartNum, Math.max(1, partSize / ((double) getMaxIndex() * 2))));
+            Math.max(row / maxPartNum, Math.max(1, partSize / ((double) getMaxIndex(mContext) * 2))));
         } else {
           blockRow = row;
         }
       }
-      blockCol = Math.min(Math.max(100, (long) ((double) getMaxIndex() * 2 / serverNum)), Math
-        .max(partSize / blockRow,
-          (long) (row * ((double) getMaxIndex() * 2 / maxPartNum / blockRow))));
+
+      if(blockCol < 0) {
+        blockCol = Math.min(Math.max(100, (long) ((double) getMaxIndex(mContext) * 2 / serverNum)), Math
+                .max(partSize / blockRow,
+                        (long) (row * ((double) getMaxIndex(mContext) * 2 / maxPartNum / blockRow))));
+      }
     } else {
-      if (blockRow == -1 || blockCol == -1) {
-        long partSize = DEFAULT_PARTITION_SIZE;
-        if (validIndexNum > 0) {
-          partSize = (long) (DEFAULT_PARTITION_SIZE * (row * (double) col / validIndexNum));
+      long partSize = DEFAULT_PARTITION_SIZE;
+      if (validIndexNum > 0) {
+        partSize = (long) (DEFAULT_PARTITION_SIZE * ((double) col / validIndexNum));
+      }
+
+      if(blockRow < 0) {
+        if (row > serverNum) {
+          blockRow = (int) Math
+                  .min(row / serverNum, Math.max(row / maxPartNum, Math.max(1, partSize / col)));
+        } else {
+          blockRow = row;
         }
-        if (blockRow == -1) {
-          if (row > serverNum) {
-            blockRow = (int) Math
-              .min(row / serverNum, Math.max(row / maxPartNum, Math.max(1, partSize / col)));
-          } else {
-            blockRow = row;
-          }
-        }
+      }
+
+      if(blockCol < 0) {
         blockCol = Math.min(Math.max(100, col / serverNum),
-          Math.max(partSize / blockRow, (long) (row * ((double) col / maxPartNum / blockRow))));
+                Math.max(partSize / blockRow, (long) (row * ((double) col / maxPartNum / blockRow))));
       }
     }
 
@@ -124,8 +131,8 @@ public abstract class RangePartitioner implements Partitioner {
     long minValue = 0;
     long maxValue = 0;
     if (col == -1) {
-      minValue = getMinIndex();
-      maxValue = getMaxIndex();
+      minValue = getMinIndex(mContext);
+      maxValue = getMaxIndex(mContext);
     } else {
       minValue = 0;
       maxValue = col;
@@ -151,22 +158,52 @@ public abstract class RangePartitioner implements Partitioner {
     return partitions;
   }
 
+  protected long getMaxIndex(MatrixContext mContext) {
+    if(isIntIndex(mContext.getRowType())) {
+      return Integer.MAX_VALUE;
+    } else {
+      return Long.MAX_VALUE;
+    }
+  }
+
+  protected long getMinIndex(MatrixContext mContext) {
+    if(isIntIndex(mContext.getRowType())) {
+      return Integer.MIN_VALUE;
+    } else {
+      return Long.MIN_VALUE;
+    }
+  }
+
+  private boolean isIntIndex(RowType type) {
+    switch (type) {
+      case T_DOUBLE_DENSE:
+      case T_DOUBLE_DENSE_COMPONENT:
+      case T_DOUBLE_SPARSE:
+      case T_DOUBLE_SPARSE_COMPONENT:
+
+      case T_FLOAT_DENSE:
+      case T_FLOAT_DENSE_COMPONENT:
+      case T_FLOAT_SPARSE:
+      case T_FLOAT_SPARSE_COMPONENT:
+
+      case T_LONG_DENSE:
+      case T_LONG_DENSE_COMPONENT:
+      case T_LONG_SPARSE:
+      case T_LONG_SPARSE_COMPONENT:
+
+      case T_INT_DENSE:
+      case T_INT_DENSE_COMPONENT:
+      case T_INT_SPARSE:
+      case T_INT_SPARSE_COMPONENT:
+        return true;
+
+      default:
+        return false;
+    }
+  }
+
   @Override public int assignPartToServer(int partId) {
     int serverNum = conf.getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER);
     return partId % serverNum;
   }
-
-  /**
-   * Get max value of range
-   *
-   * @return max value of range
-   */
-  protected abstract long getMaxIndex();
-
-  /**
-   * Get min value of range
-   *
-   * @return min value of range
-   */
-  protected abstract long getMinIndex();
 }

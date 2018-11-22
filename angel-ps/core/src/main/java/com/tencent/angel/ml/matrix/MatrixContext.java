@@ -21,9 +21,8 @@ package com.tencent.angel.ml.matrix;
 import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.model.output.format.ModelFilesConstent;
 import com.tencent.angel.model.output.format.MatrixFilesMeta;
-import com.tencent.angel.ps.storage.partitioner.IntRangePartitioner;
-import com.tencent.angel.ps.storage.partitioner.LongRangePartitioner;
 import com.tencent.angel.ps.storage.partitioner.Partitioner;
+import com.tencent.angel.ps.storage.partitioner.RangePartitioner;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -380,13 +379,7 @@ public class MatrixContext implements Serializable {
       return;
     }
 
-    if (rowType == RowType.T_DOUBLE_SPARSE_LONGKEY
-      || rowType == RowType.T_DOUBLE_SPARSE_LONGKEY_COMPONENT
-      || rowType == RowType.T_FLOAT_SPARSE_LONGKEY) {
-      partitionerClass = LongRangePartitioner.class;
-    } else {
-      partitionerClass = IntRangePartitioner.class;
-    }
+    partitionerClass = RangePartitioner.class;
   }
 
   /**
