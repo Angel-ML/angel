@@ -31,7 +31,6 @@ import com.tencent.angel.ml.matrix.psf.update.{Diag, Eye, FullFill, Random}
 import com.tencent.angel.ml.matrix.psf.update.base.{UpdateFunc, VoidResult}
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.models.impl.PSMatrixImpl
-import com.tencent.angel.spark.util.RowTypeImplicit._
 
 abstract class PSMatrix extends PSModel {
   val id: Int
@@ -126,12 +125,13 @@ object PSMatrix{
 
   def sparse(rows: Int, cols: Long, range: Long, rowType: RowType,
       additionalConfiguration:Map[String, String] = Map()): PSMatrix = {
-    require(rowType.isSparse, s"Dense towType required, $rowType provided")
+    require(rowType.isSparse, s"Sparse rowType required, $rowType provided")
     val matrixMeta = PSContext.instance()
       .createSparseMatrix(rows, cols, range, -1, -1, rowType, additionalConfiguration)
     new PSMatrixImpl(matrixMeta.getId, rows, cols, rowType)
   }
 
+  @deprecated("use dense directly", "2.0.0")
   def zero(rows: Int, cols: Long): PSMatrix = {
     dense(rows, cols)
   }
@@ -148,7 +148,7 @@ object PSMatrix{
    */
   def rand(rows: Int, cols: Long, rowType: RowType = RowType.T_DOUBLE_DENSE,
       low: Double = 0.0, high: Double = 1.0): PSMatrix = {
-    val mat = dense(rows, cols)
+    val mat = dense(rows, cols, rowType)
     mat.psfUpdate(new Random(mat.id, low, high)).get()
     mat
   }
@@ -156,7 +156,8 @@ object PSMatrix{
   /**
    * Create identity matrix
    */
-  def eye(dim: Int): PSMatrix = {
+  def eye(dim: Int, rowType: RowType = RowType.T_DOUBLE_DENSE): PSMatrix = {
+    assert(rowType.isDense, s"eye matrix with RowType $rowType is not supported yet")
     val mat = dense(dim, dim)
     mat.psfUpdate(new Eye(mat.id)).get()
     mat
@@ -165,7 +166,8 @@ object PSMatrix{
   /**
    * Create diagonal matrix
    */
-  def diag(array: Array[Double]): PSMatrix = {
+  def diag(array: Array[Double], rowType: RowType = RowType.T_DOUBLE_DENSE): PSMatrix = {
+    assert(rowType.isDense, s"diagonal matrix with RowType $rowType is not supported yet")
     val dim = array.length
     val mat = dense(dim, dim)
     mat.psfUpdate(new Diag(mat.id, array)).get()
