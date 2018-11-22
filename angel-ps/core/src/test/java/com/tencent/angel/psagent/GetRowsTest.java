@@ -49,8 +49,6 @@ import org.junit.Test;
 
 import java.util.Random;
 
-import static org.junit.Assert.assertEquals;
-
 public class GetRowsTest {
   public static String DENSE_DOUBLE_MAT = "dense_double_mat";
   public static String DENSE_DOUBLE_MAT_COMP = "dense_double_mat_comp";
