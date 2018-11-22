@@ -75,7 +75,9 @@ abstract class NEModel(numNode: Int,
   def train(trainBatches: Iterator[RDD[NEDataSet]],
             negative: Int,
             numEpoch: Int,
-            learningRate: Float): Unit = {
+            learningRate: Float,
+            checkpointInterval: Int = 10,
+            path: String): Unit = {
     for (epoch <- 1 to numEpoch) {
 //      val alpha = learningRate * (1 - math.sqrt(epoch / numEpoch)).toFloat
       val alpha = learningRate
@@ -93,6 +95,9 @@ abstract class NEModel(numNode: Int,
         s"dotTime=${array(0)} " +
         s"gradientTime=${array(1)} " +
         s"adjustTime=${array(2)}")
+
+      if (epoch % checkpointInterval == 0)
+        save(path, epoch)
     }
   }
 

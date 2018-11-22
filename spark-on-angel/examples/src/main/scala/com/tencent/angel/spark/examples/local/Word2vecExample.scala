@@ -77,9 +77,10 @@ object Word2vecExample {
     param.setMaxIndex(maxWordId)
     param.setMaxLength(maxLength)
     param.setModel("cbow")
+    param.setModelCPInterval(1000)
 
     val model = new Word2VecModel(param)
-    model.train(docs, param)
+    model.train(docs, param, "")
 
 //    model.save(output + "embedding", 0)
 //    denseToString.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "mapping")

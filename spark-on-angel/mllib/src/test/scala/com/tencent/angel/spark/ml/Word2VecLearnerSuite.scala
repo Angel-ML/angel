@@ -69,8 +69,9 @@ class Word2VecLearnerSuite extends PSFunSuite with SharedPSContext {
     param.setMaxIndex(maxWordId)
     param.setMaxLength(maxLength)
     param.setModel("cbow")
+    param.setModelCPInterval(100)
 
     val model = new Word2VecModel(param)
-    model.train(docs, param)
+    model.train(docs, param, "model")
   }
 }
