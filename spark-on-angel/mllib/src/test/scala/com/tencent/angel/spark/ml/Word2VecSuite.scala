@@ -19,13 +19,13 @@
 package com.tencent.angel.spark.ml
 
 import com.tencent.angel.spark.ml.embedding.Param
-import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel
-import com.tencent.angel.spark.ml.feature.{Features, SubSampling}
-import org.apache.spark.rdd.RDD
+import com.tencent.angel.spark.ml.embedding.word2vec.{Word2VecModel, Word2vecWorker}
+import com.tencent.angel.spark.ml.feature.Features
+import com.tencent.angel.spark.ml.psf.embedding.bad._
 
 import scala.util.Random
 
-class Word2VecLearnerSuite extends PSFunSuite with SharedPSContext {
+class Word2VecSuite extends PSFunSuite with SharedPSContext {
 
   private val input = "../../data/text8/text8.split.head"
 
@@ -37,7 +37,7 @@ class Word2VecLearnerSuite extends PSFunSuite with SharedPSContext {
     super.afterAll()
   }
 
-  test("train") {
+  test("trainWithServer") {
 
     val data = sc.textFile(input)
     data.cache()
@@ -73,5 +73,31 @@ class Word2VecLearnerSuite extends PSFunSuite with SharedPSContext {
 
     val model = new Word2VecModel(param)
     model.train(docs, param, "model")
+  }
+
+  test("trainWithWorker") {
+    val numNode = 100
+    val dimension = 10
+    val numNodePerRow = 10
+    val modelType = "cbow"
+    val model = new Word2vecWorker(numNode, dimension, modelType, 10, numNodePerRow)
+
+    val matrix = model.matrix
+
+    matrix.psfUpdate(new W2VRandom(new W2VRandomParam(matrix.id, dimension)));
+
+    val indices = Array(1, 3, 50, 29, 60)
+    val param = new W2VPullParam(matrix.id, indices, numNodePerRow, dimension)
+    val func  = new W2VPull(param)
+    val result = matrix.psfGet(func).asInstanceOf[W2VPullResult]
+    assert(result.layers.length == indices.length * dimension * 2)
+
+    for (idx <- 0 until indices.length) {
+      for (i <- 0 until dimension)
+        assert(result.layers(i + idx * dimension) != 0.0f)
+      for (i <- dimension until dimension * 2) {
+        assert(result.layers(i + idx * dimension) == 0.0f)
+      }
+    }
   }
 }

@@ -2,7 +2,7 @@ package com.tencent.angel.spark.ml.embedding.word2vec
 
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.matrix.RowType
-import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
+import com.tencent.angel.ps.storage.matrix.{PartitionSourceArray, PartitionSourceMap}
 import com.tencent.angel.spark.ml.embedding.NEModel.{NEDataSet, logTime}
 import com.tencent.angel.spark.models.PSMatrix
 import org.apache.spark.rdd.RDD
@@ -41,7 +41,7 @@ class Word2vecWorker(numNode: Int,
       s"size exceed, $numNodePerRow * $maxNodePerRow")
 
     val rowCapacity = if (numNodePerRow > 0) numNodePerRow else Int.MaxValue / dimension
-    val numCol = rowCapacity * dimension
+    val numCol = rowCapacity * dimension * 2
     val numRow = (numNode) / rowCapacity + 1
 
     val rowsInBlock = numRow / numPart
@@ -54,9 +54,13 @@ class Word2vecWorker(numNode: Int,
       s"numNodesPerRow: $rowCapacity\n"
     )
     val matrix = PSMatrix.dense(numRow, numCol, rowsInBlock, colsInBlock, RowType.T_FLOAT_DENSE,
-      Map(AngelConf.ANGEL_PS_PARTITION_SOURCE_CLASS -> classOf[PartitionSourceArray].getName))
+      Map(AngelConf.ANGEL_PS_PARTITION_SOURCE_CLASS -> classOf[PartitionSourceMap].getName))
     logTime(s"create a dense float matrix")
     matrix
+  }
+
+  private def init(): Unit = {
+
   }
 
 }

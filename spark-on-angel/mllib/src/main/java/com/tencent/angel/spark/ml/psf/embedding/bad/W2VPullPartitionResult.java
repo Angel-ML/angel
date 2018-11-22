@@ -17,6 +17,8 @@ public class W2VPullPartitionResult extends PartitionGetResult {
     this.dimension = dimension;
   }
 
+  public W2VPullPartitionResult() {}
+
   @Override
   public void serialize(ByteBuf buf) {
     buf.writeInt(start);
@@ -35,9 +37,10 @@ public class W2VPullPartitionResult extends PartitionGetResult {
 
   }
 
-  public void merge(float[] results, int start) {
+  public void merge(float[] results) {
+    int offset = start * dimension * 2;
     for (int a = 0; a < length; a ++)
-      results[a + start] = buf.readFloat();
+      results[a + offset] = buf.readFloat();
   }
 
   public void clear() {
