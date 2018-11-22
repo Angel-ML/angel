@@ -87,13 +87,18 @@ object FTRLExample {
     val gradientMultiplier = 1.0 / (1.0 + math.exp(margin)) - label
     val grad = feature.mul(gradientMultiplier).asInstanceOf[LongDoubleVector]
 
-    val loss = if (label > 0) {
-      math.log1p(math.exp(margin))
-    } else {
-      math.log1p(math.exp(margin)) - margin
-    }
+
+    val loss = if (label > 0) log1pExp(margin) else log1pExp(margin) - margin
 
     (grad, loss)
+  }
+
+  def log1pExp(x: Double): Double = {
+    if (x > 0) {
+      x + math.log1p(math.exp(-x))
+    } else {
+      math.log1p(math.exp(x))
+    }
   }
 
 

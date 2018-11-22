@@ -7,6 +7,7 @@ import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.core.metric.AUC
 import com.tencent.angel.spark.ml.online_learning.{FTRL, SparseLRModel}
 import com.tencent.angel.spark.ml.util.{DataLoader, SparkUtils}
+import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.{SparkConf, SparkContext}
 
 object FTRLExample {
@@ -81,12 +82,17 @@ object FTRLExample {
     val gradientMultiplier = 1.0 / (1.0 + math.exp(margin)) - label
     val grad = feature.mul(gradientMultiplier).asInstanceOf[LongDoubleVector]
 
-    val loss = if (label > 0) {
-      math.log1p(math.exp(margin))
-    } else {
-      math.log1p(math.exp(margin)) - margin
-    }
+
+    val loss = if (label > 0) log1pExp(margin) else log1pExp(margin) - margin
 
     (grad, loss)
+  }
+
+  def log1pExp(x: Double): Double = {
+    if (x > 0) {
+      x + math.log1p(math.exp(-x))
+    } else {
+      math.log1p(math.exp(x))
+    }
   }
 }

@@ -56,8 +56,6 @@ class Word2VecModel(numNode: Int,
   }
 
 
-
-
   override def getDotFunc(data: NEDataSet, batchSeed: Int, ns: Int, partitionId: Int): GetFunc = {
     val param = new DotParam(matrixId, seed, partitionId, modelId, data.asInstanceOf[W2VDataSet].sentences)
     new Dot(param)
