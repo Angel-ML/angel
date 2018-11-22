@@ -189,14 +189,13 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     * @param costFun
     * @return
     */
-  def optimize(
-                feature: Vector,
-                label: Double,
-                localN: LongDoubleVector,
-                localW: LongDoubleVector,
-                deltaZ: LongDoubleVector,
-                deltaN: LongDoubleVector,
-                costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)
+  def optimize(feature: Vector,
+               label: Double,
+               localN: LongDoubleVector,
+               localW: LongDoubleVector,
+               deltaZ: LongDoubleVector,
+               deltaN: LongDoubleVector,
+               costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)
               ): Double = {
 
     val featIndices = feature match {
@@ -241,14 +240,13 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     * @param lambda2
     * @return
     */
-  def updateWeight(
-                    fId: Long,
-                    zOnId: Double,
-                    nOnId: Double,
-                    alpha: Double,
-                    beta: Double,
-                    lambda1: Double,
-                    lambda2: Double): Double = {
+  def updateWeight(fId: Long,
+                   zOnId: Double,
+                   nOnId: Double,
+                   alpha: Double,
+                   beta: Double,
+                   lambda1: Double,
+                   lambda2: Double): Double = {
     if (fId == regularSkipFeatIndex) {
       -1.0 * alpha * zOnId / (beta + Math.sqrt(nOnId))
     } else if (Math.abs(zOnId) <= lambda1) {
