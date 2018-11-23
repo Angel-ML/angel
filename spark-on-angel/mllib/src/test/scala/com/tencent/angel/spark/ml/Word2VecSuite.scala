@@ -19,8 +19,9 @@
 package com.tencent.angel.spark.ml
 
 import com.tencent.angel.spark.ml.embedding.Param
+import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel.buildDataBatches
 import com.tencent.angel.spark.ml.embedding.word2vec.{Word2VecModel, Word2vecWorker}
-import com.tencent.angel.spark.ml.feature.Features
+import com.tencent.angel.spark.ml.feature.{Features, SubSampling}
 import com.tencent.angel.spark.ml.psf.embedding.bad._
 
 import scala.util.Random
@@ -75,29 +76,85 @@ class Word2VecSuite extends PSFunSuite with SharedPSContext {
     model.train(docs, param, "model")
   }
 
-  test("trainWithWorker") {
+  test("trainWithWorkerPull&Push") {
     val numNode = 100
-    val dimension = 10
+    val dimension = 100
     val numNodePerRow = 10
     val modelType = "cbow"
-    val model = new Word2vecWorker(numNode, dimension, modelType, 10, numNodePerRow)
+    val numPart = 5
+    val model = new Word2vecWorker(numNode, dimension, modelType, numPart, numNodePerRow)
 
     val matrix = model.matrix
 
-    matrix.psfUpdate(new W2VRandom(new W2VRandomParam(matrix.id, dimension)));
-
-    val indices = Array(1, 3, 50, 29, 60)
-    val param = new W2VPullParam(matrix.id, indices, numNodePerRow, dimension)
-    val func  = new W2VPull(param)
-    val result = matrix.psfGet(func).asInstanceOf[W2VPullResult]
+    var indices = Array(12, 33, 52, 27, 49)
+    var param = new W2VPullParam(matrix.id, indices, numNodePerRow, dimension)
+    var func  = new W2VPull(param)
+    var result = matrix.psfGet(func).asInstanceOf[W2VPullResult]
     assert(result.layers.length == indices.length * dimension * 2)
 
     for (idx <- 0 until indices.length) {
       for (i <- 0 until dimension)
-        assert(result.layers(i + idx * dimension) != 0.0f)
+        assert(result.layers(i + idx * dimension * 2) != 0.0f)
       for (i <- dimension until dimension * 2) {
-        assert(result.layers(i + idx * dimension) == 0.0f)
+        assert(result.layers(i + idx * dimension * 2) == 0.0f)
+      }
+    }
+
+    val deltas = new Array[Float](result.layers.length)
+    for (i <- 0 until deltas.length) deltas(i) = 0.1f
+
+    val update = new W2VPush(new W2VPushParam(matrix.id, indices, deltas, numNodePerRow, dimension))
+    matrix.psfUpdate(update).get()
+
+    val resultAfterUpdate = matrix.psfGet(func).asInstanceOf[W2VPullResult]
+
+    for (i <- 0 until result.layers.length) {
+      assert(result.layers(i) + 0.1f == resultAfterUpdate.layers(i))
+    }
+
+    indices = Array(23, 44, 65, 83, 88)
+    param = new W2VPullParam(matrix.id, indices, numNodePerRow, dimension)
+    func  = new W2VPull(param)
+    result = matrix.psfGet(func).asInstanceOf[W2VPullResult]
+    assert(result.layers.length == indices.length * dimension * 2)
+
+    for (idx <- 0 until indices.length) {
+      for (i <- 0 until dimension)
+        assert(result.layers(i + idx * dimension * 2) != 0.0f)
+      for (i <- dimension until dimension * 2) {
+        assert(result.layers(i + idx * dimension * 2) == 0.0f)
       }
     }
   }
+
+  test("trainWithWorker") {
+    val output = "model/"
+
+    val data = sc.textFile(input)
+    data.cache()
+
+    val (corpus, _) = Features.corpusStringToInt(sc.textFile(input))
+    val docs = corpus.repartition(2)
+
+    docs.cache()
+    docs.count()
+
+    data.unpersist()
+
+    val numDocs = docs.count()
+    val maxWordId = docs.map(_.max).max().toLong + 1
+    val numTokens = docs.map(_.length).sum().toLong
+
+    println(s"numDocs=$numDocs maxWordId=$maxWordId numTokens=$numTokens")
+
+    val numNodePerRow = 10
+    val modelType = "cbow"
+    val numPart = 5
+    val dimension = 128
+    val batchSize = 128
+    val model = new Word2vecWorker(maxWordId.toInt, dimension, "cbow", numPart, numNodePerRow)
+    val iterator = buildDataBatches(corpus, batchSize)
+    model.train(iterator, 5, 5, 0.1f, 5, "")
+  }
+
 }

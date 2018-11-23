@@ -34,10 +34,10 @@ public class W2VPullPartitionResult extends PartitionGetResult {
     length = buf.readInt();
     this.buf = buf.duplicate();
     this.buf.retain();
-
   }
 
   public void merge(float[] results) {
+
     int offset = start * dimension * 2;
     for (int a = 0; a < length; a ++)
       results[a + offset] = buf.readFloat();

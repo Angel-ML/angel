@@ -43,8 +43,7 @@ public class W2VPull extends GetFunc {
         int rowId  = (node - startNode) / numNodePerRow;
         int offset  = (node % numNodePerRow) * dimension * 2;
         float[] layer = rows[rowId];
-        for (int b = 0; b < dimension * 2; b ++)
-          result[idx ++] = layer[offset + b];
+        for (int b = 0; b < dimension * 2; b ++) result[idx++] = layer[offset + b];
       }
 
       return new W2VPullPartitionResult(param.start,
@@ -64,8 +63,15 @@ public class W2VPull extends GetFunc {
       int dimension = param.dimension;
       float[] layers = new float[indices.length * dimension * 2];
 
+      int total = 0;
+      for (PartitionGetResult r: partResults) {
+        total += ((W2VPullPartitionResult)r).length;
+      }
+      assert total == (indices.length * dimension * 2);
+
       for (PartitionGetResult r: partResults) {
         W2VPullPartitionResult result = (W2VPullPartitionResult) r;
+
         try {
           result.merge(layers);
         } finally {
