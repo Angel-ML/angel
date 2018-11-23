@@ -2,6 +2,16 @@ package com.tencent.angel.ml.tree.impurity
 
 import java.util.Locale
 
+object Impurity {
+
+  def fromString(value: String): Impurity = value match {
+    case "Gini" | "gini" => Gini
+    case "Entropy" | "entropy" => Entropy
+    case "Variance" | "variance" => Variance
+    case _ => throw new IllegalArgumentException(s"Did not recognize Impurity name: $value")
+  }
+}
+
 /**
   * Trait for calculating information gain.
   * This trait is used for

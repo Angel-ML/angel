@@ -1,6 +1,5 @@
 package com.tencent.angel.ml.tree
 
-import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.MLLearner
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.model.MLModel
@@ -13,6 +12,7 @@ import com.tencent.angel.ml.tree.conf.Strategy
 import com.tencent.angel.ml.tree.impurity.Impurities
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
+import org.apache.commons.logging.LogFactory
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -42,6 +42,8 @@ class RandomForestLearner (
                      val strategy: Strategy,
                      val seed: Int)
   extends MLLearner(ctx)  {
+
+  private val LOG = LogFactory.getLog(classOf[RandomForestLearner])
 
   def this(ctx: TaskContext, strategy: Strategy) = this(ctx, strategy, seed = 0)
   def this(ctx: TaskContext) = this(ctx, Strategy.initStrategy(ctx.getConf))
@@ -73,6 +75,8 @@ class RandomForestLearner (
   def train(trainBlock: DataBlock[LabeledData], validBlock: DataBlock[LabeledData]): MLModel = {
     val trainDataSet: Array[LabeledData] = convertDataBlock(trainBlock)
     val validDataSet: Array[LabeledData] = convertDataBlock(validBlock)
+    LOG.info(s"Task[${ctx.getTaskIndex}] builds trees ${localTreeIdx.mkString(",")}")
+    LOG.info(s"Number of training: ${trainDataSet.length}, number of validation: ${validDataSet.length}")
     strategy.setNumTrees(localTreeIdx.length)
     val trees: Array[DecisionTreeModel] = RandomForest.train(ctx,
       trainDataSet, validDataSet, strategy, seed.toLong)

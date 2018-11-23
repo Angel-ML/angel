@@ -52,5 +52,5 @@ class RandomForestModel (
   extends TreeEnsembleModel(algo, trees, Array.fill(trees.length)(1.0),
     combiningStrategy = if (algo == Classification) Vote else Average, conf, _ctx) {
 
-  require(trees.forall(_.algo == algo))
+  //require(trees.forall(_.algo == algo))
 }

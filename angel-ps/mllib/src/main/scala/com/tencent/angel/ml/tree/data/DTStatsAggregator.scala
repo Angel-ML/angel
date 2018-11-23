@@ -57,6 +57,8 @@ private[tree] class DTStatsAggregator(
     */
   private val allStats: Array[Float] = new Array[Float](allStatsSize)
 
+  private[tree] def getAllStats(): Array[Float] = allStats
+
   /**
     * Array of parent node sufficient stats.
     * Note: parent stats need to be explicitly tracked in the [[DTStatsAggregator]] for unordered

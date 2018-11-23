@@ -229,8 +229,7 @@ private object InternalNode {
   *  - a leaf node, with leftChild, rightChild, split set to null, or
   *  - an internal node, with all values set
   *
-  * @param id  We currently use the same indexing as the old implementation in
-  *            [[org.apache.spark.mllib.tree.model.Node]], but this will change later.
+  * @param id   Integer node id, from 1
   * @param isLeaf  Indicates whether this node will definitely be a leaf in the learned tree,
   *                so that we do not need to consider splitting it further.
   * @param stats  Impurity statistics for this node.
