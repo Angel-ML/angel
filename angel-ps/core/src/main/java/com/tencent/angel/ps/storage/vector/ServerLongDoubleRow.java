@@ -188,7 +188,62 @@ public class ServerLongDoubleRow extends ServerDoubleRow {
       switch (updateType) {
         case T_DOUBLE_SPARSE_LONGKEY:
         case T_DOUBLE_SPARSE_LONGKEY_COMPONENT:
-          updateUseSparse(buf, op);
+          updateUseLongDoubleSparse(buf, op);
+          break;
+
+        case T_FLOAT_SPARSE_LONGKEY:
+        case T_FLOAT_SPARSE_LONGKEY_COMPONENT:
+          updateUseLongFloatSparse(buf, op);
+          break;
+
+        case T_LONG_SPARSE_LONGKEY:
+        case T_LONG_SPARSE_LONGKEY_COMPONENT:
+          updateUseLongLongSparse(buf, op);
+          break;
+
+        case T_INT_SPARSE_LONGKEY:
+        case T_INT_SPARSE_LONGKEY_COMPONENT:
+          updateUseLongIntSparse(buf, op);
+          break;
+
+        case T_DOUBLE_SPARSE:
+        case T_DOUBLE_SPARSE_COMPONENT:
+          updateUseIntDoubleSparse(buf, op);
+          break;
+
+        case T_FLOAT_SPARSE:
+        case T_FLOAT_SPARSE_COMPONENT:
+          updateUseIntFloatSparse(buf, op);
+          break;
+
+        case T_LONG_SPARSE:
+        case T_LONG_SPARSE_COMPONENT:
+          updateUseIntLongSparse(buf, op);
+          break;
+
+        case T_INT_SPARSE:
+        case T_INT_SPARSE_COMPONENT:
+          updateUseIntIntSparse(buf, op);
+          break;
+
+        case T_DOUBLE_DENSE:
+        case T_DOUBLE_DENSE_COMPONENT:
+          updateUseIntDoubleDense(buf, op);
+          break;
+
+        case T_FLOAT_DENSE:
+        case T_FLOAT_DENSE_COMPONENT:
+          updateUseIntFloatDense(buf, op);
+          break;
+
+        case T_LONG_DENSE:
+        case T_LONG_DENSE_COMPONENT:
+          updateUseIntLongDense(buf, op);
+          break;
+
+        case T_INT_DENSE:
+        case T_INT_DENSE_COMPONENT:
+          updateUseIntIntDense(buf, op);
           break;
 
         default: {
@@ -203,9 +258,9 @@ public class ServerLongDoubleRow extends ServerDoubleRow {
     }
   }
 
-  private void updateUseSparse(ByteBuf buf, UpdateOp op) {
+  private void updateUseLongDoubleSparse(ByteBuf buf, UpdateOp op) {
     // TODO:default value
-    buf.readDouble();
+    //buf.readDouble();
     int size = buf.readInt();
     if (op == UpdateOp.PLUS) {
       if (useIntKey) {
@@ -232,6 +287,331 @@ public class ServerLongDoubleRow extends ServerDoubleRow {
       }
     }
   }
+
+  private void updateUseLongFloatSparse(ByteBuf buf, UpdateOp op) {
+    // TODO:default value
+    //buf.readDouble();
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          int index = (int) buf.readLong();
+          ((IntDoubleVector) row).set(index, ((IntDoubleVector) row).get(index) + buf.readFloat());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          long index = buf.readLong();
+          ((LongDoubleVector) row)
+                  .set(index, ((LongDoubleVector) row).get(index) + buf.readFloat());
+        }
+      }
+    } else {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntDoubleVector) row).set((int) buf.readLong(), buf.readFloat());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          ((LongDoubleVector) row).set(buf.readLong(), buf.readFloat());
+        }
+      }
+    }
+  }
+
+  private void updateUseLongLongSparse(ByteBuf buf, UpdateOp op) {
+    // TODO:default value
+    //buf.readDouble();
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          int index = (int) buf.readLong();
+          ((IntDoubleVector) row).set(index, ((IntDoubleVector) row).get(index) + buf.readLong());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          long index = buf.readLong();
+          ((LongDoubleVector) row)
+                  .set(index, ((LongDoubleVector) row).get(index) + buf.readLong());
+        }
+      }
+    } else {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntDoubleVector) row).set((int) buf.readLong(), buf.readLong());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          ((LongDoubleVector) row).set(buf.readLong(), buf.readLong());
+        }
+      }
+    }
+  }
+
+  private void updateUseLongIntSparse(ByteBuf buf, UpdateOp op) {
+    // TODO:default value
+    //buf.readDouble();
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          int index = (int) buf.readLong();
+          ((IntDoubleVector) row).set(index, ((IntDoubleVector) row).get(index) + buf.readInt());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          long index = buf.readLong();
+          ((LongDoubleVector) row)
+                  .set(index, ((LongDoubleVector) row).get(index) + buf.readInt());
+        }
+      }
+    } else {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntDoubleVector) row).set((int) buf.readLong(), buf.readInt());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          ((LongDoubleVector) row).set(buf.readLong(), buf.readInt());
+        }
+      }
+    }
+  }
+
+
+  private void updateUseIntDoubleSparse(ByteBuf buf, UpdateOp op) {
+    // TODO:default value
+    //buf.readDouble();
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          int index = buf.readInt();
+          ((IntDoubleVector) row).set(index, ((IntDoubleVector) row).get(index) + buf.readDouble());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          long index = buf.readInt();
+          ((LongDoubleVector) row)
+                  .set(index, ((LongDoubleVector) row).get(index) + buf.readDouble());
+        }
+      }
+    } else {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntDoubleVector) row).set(buf.readInt(), buf.readDouble());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          ((LongDoubleVector) row).set(buf.readInt(), buf.readDouble());
+        }
+      }
+    }
+  }
+
+  private void updateUseIntFloatSparse(ByteBuf buf, UpdateOp op) {
+    // TODO:default value
+    //buf.readDouble();
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          int index = buf.readInt();
+          ((IntDoubleVector) row).set(index, ((IntDoubleVector) row).get(index) + buf.readFloat());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          long index = buf.readInt();
+          ((LongDoubleVector) row)
+                  .set(index, ((LongDoubleVector) row).get(index) + buf.readFloat());
+        }
+      }
+    } else {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntDoubleVector) row).set(buf.readInt(), buf.readFloat());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          ((LongDoubleVector) row).set(buf.readInt(), buf.readFloat());
+        }
+      }
+    }
+  }
+
+  private void updateUseIntLongSparse(ByteBuf buf, UpdateOp op) {
+    // TODO:default value
+    //buf.readDouble();
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          int index = buf.readInt();
+          ((IntDoubleVector) row).set(index, ((IntDoubleVector) row).get(index) + buf.readLong());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          long index = buf.readInt();
+          ((LongDoubleVector) row)
+                  .set(index, ((LongDoubleVector) row).get(index) + buf.readLong());
+        }
+      }
+    } else {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntDoubleVector) row).set(buf.readInt(), buf.readLong());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          ((LongDoubleVector) row).set(buf.readInt(), buf.readLong());
+        }
+      }
+    }
+  }
+
+  private void updateUseIntIntSparse(ByteBuf buf, UpdateOp op) {
+    // TODO:default value
+    //buf.readDouble();
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          int index = buf.readInt();
+          ((IntDoubleVector) row).set(index, ((IntDoubleVector) row).get(index) + buf.readInt());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          long index = buf.readInt();
+          ((LongDoubleVector) row)
+                  .set(index, ((LongDoubleVector) row).get(index) + buf.readInt());
+        }
+      }
+    } else {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntDoubleVector) row).set(buf.readInt(), buf.readInt());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          ((LongDoubleVector) row).set(buf.readInt(), buf.readInt());
+        }
+      }
+    }
+  }
+
+  private void updateUseIntDoubleDense(ByteBuf buf, UpdateOp op) {
+    // TODO:default value
+    //buf.readDouble();
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntDoubleVector) row).set(i, ((IntDoubleVector) row).get(i) + buf.readDouble());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          ((LongDoubleVector) row)
+                  .set(i, ((LongDoubleVector) row).get(i) + buf.readDouble());
+        }
+      }
+    } else {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntDoubleVector) row).set(i, buf.readDouble());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          ((LongDoubleVector) row).set(i, buf.readDouble());
+        }
+      }
+    }
+  }
+
+  private void updateUseIntFloatDense(ByteBuf buf, UpdateOp op) {
+    // TODO:default value
+    //buf.readDouble();
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntDoubleVector) row).set(i, ((IntDoubleVector) row).get(i) + buf.readFloat());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          ((LongDoubleVector) row)
+                  .set(i, ((LongDoubleVector) row).get(i) + buf.readFloat());
+        }
+      }
+    } else {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntDoubleVector) row).set(i, buf.readFloat());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          ((LongDoubleVector) row).set(i, buf.readFloat());
+        }
+      }
+    }
+  }
+
+  private void updateUseIntLongDense(ByteBuf buf, UpdateOp op) {
+    // TODO:default value
+    //buf.readDouble();
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntDoubleVector) row).set(i, ((IntDoubleVector) row).get(i) + buf.readLong());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          ((LongDoubleVector) row)
+                  .set(i, ((LongDoubleVector) row).get(i) + buf.readLong());
+        }
+      }
+    } else {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntDoubleVector) row).set(i, buf.readLong());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          ((LongDoubleVector) row).set(i, buf.readLong());
+        }
+      }
+    }
+  }
+
+  private void updateUseIntIntDense(ByteBuf buf, UpdateOp op) {
+    // TODO:default value
+    //buf.readDouble();
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntDoubleVector) row).set(i, ((IntDoubleVector) row).get(i) + buf.readInt());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          ((LongDoubleVector) row)
+                  .set(i, ((LongDoubleVector) row).get(i) + buf.readInt());
+        }
+      }
+    } else {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntDoubleVector) row).set(i, buf.readInt());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          ((LongDoubleVector) row).set(i, buf.readInt());
+        }
+      }
+    }
+  }
+
+
 
   @Override public int size() {
     if (useIntKey) {

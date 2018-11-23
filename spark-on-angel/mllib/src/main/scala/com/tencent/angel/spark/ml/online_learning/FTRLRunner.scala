@@ -127,7 +127,7 @@ object FTRLRunner {
         }
 
         val ftrl = new FTRL(lambda1, lambda2, alpha, beta)
-        ftrl.initPSModel(dim)
+        ftrl.init(dim)
 
         train(ftrl, featureDS, dim, partitionNum, modelPath, batch2Save, isOneHot)
 

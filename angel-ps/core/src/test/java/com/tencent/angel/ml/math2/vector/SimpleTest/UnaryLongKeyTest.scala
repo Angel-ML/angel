@@ -151,7 +151,6 @@ class UnaryLongKeyTest {
 
   @Test
   def sdivTest() {
-
     assert(abs(Ufuncs.sdiv(llist.get(0), 0.5).sum() - sum(sparse1 :/ 0.5)) < 1.0)
     assert(abs(Ufuncs.sdiv(llist.get(1), 0.5).sum() - sum(sorted1 :/ 0.5)) < 1.0)
 

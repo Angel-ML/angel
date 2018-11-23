@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -16,17 +16,22 @@
  */
 
 
-package com.tencent.angel.ps.storage.partitioner;
+package com.tencent.angel.spark.ml.util
 
-/**
- * Int range model partitioner
- */
-public class IntRangePartitioner extends RangePartitioner {
-  @Override protected long getMaxIndex() {
-    return Integer.MAX_VALUE;
+import org.apache.spark.SparkConf
+
+object SparkUtils {
+
+  def getNumExecutors(conf: SparkConf): Int = {
+    if (conf.getBoolean("spark.dynamicAllocation.enabled", false))
+      conf.getInt("spark.dynamicAllocation.maxExecutors", 10)
+    else
+      conf.getInt("spark.executor.instances", 10)
   }
 
-  @Override protected long getMinIndex() {
-    return Integer.MIN_VALUE;
+  def getNumCores(conf: SparkConf): Int = {
+    val numExecutors = getNumExecutors(conf)
+    val coresForExecutor = conf.getInt("spark.executor.cores", 1)
+    numExecutors * coresForExecutor
   }
 }

@@ -18,6 +18,7 @@
 
 package com.tencent.angel.spark.context
 
+import java.util
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
@@ -29,19 +30,19 @@ import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.matrix.{MatrixContext, MatrixMeta, RowType}
 import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.ps.ParameterServer
-import com.tencent.angel.ps.storage.matrix.PartitionSourceMap
 import com.tencent.angel.psagent.PSAgent
 import com.tencent.angel.psagent.matrix.{MatrixClient, MatrixClientFactory}
 import com.tencent.angel.spark.models.{PSMatrix, PSVector}
-import com.tencent.angel.spark.util.RowTypeImplicit._
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.FileSystem
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.util.ShutdownHookManager
 import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.{SparkConf, SparkEnv, TaskContext}
+import org.apache.spark.{SparkConf, SparkContext, SparkEnv, TaskContext}
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{Map, mutable}
+
+import org.apache.commons.httpclient.URI
 
 import com.tencent.angel.ps.storage.partitioner.Partitioner
 
@@ -92,7 +93,6 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
                                       range: Long,
                                       additionalConfiguration:Map[String, String]): PSVectorPool = {
     val thisCapacity = if (capacity > 0) capacity else PSVectorPool.DEFAULT_POOL_CAPACITY
-
     val matrixMeta = if (t.isDense)
       PSMatrix.dense(thisCapacity, dimension, -1, -1, t, additionalConfiguration)
     else
@@ -129,10 +129,11 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
     assertCallByDriver("The operation of creating a matrix can only be called on the driver side.")
     val mc = new MatrixContext(s"spark-$matrixCounter", rows, cols, validIndexNum,
       rowInBlock, colInBlock, rowType)
+
     additionalConfiguration.foreach { case (key, value) =>
-      mc.getAttributes.put(key, value)
-    }
-    if(mc.getAttributes.containsKey(AngelConf.Angel_PS_PARTITION_CLASS)) {
+      mc.getAttributes.put(key, value)}
+
+    if (mc.getAttributes.containsKey(AngelConf.Angel_PS_PARTITION_CLASS)) {
       val partitionClassName = mc.getAttributes.get(AngelConf.Angel_PS_PARTITION_CLASS)
       mc.setPartitionerClass(Class.forName(partitionClassName).asInstanceOf[Class[Partitioner]])
       mc.getAttributes.remove(AngelConf.Angel_PS_PARTITION_CLASS)
@@ -363,11 +364,30 @@ private[spark] object AngelPSContext {
     hadoopConf.setInt(ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 100000000)
     hadoopConf.set(ANGEL_LOG_PATH, tempPath)
 
+    // add user resource files
+   addUserResourceFiles(conf, hadoopConf)
+
     // Some other settings
     conf.getAllWithPrefix("angel").foreach {
       case (key, value) => hadoopConf.set(s"angel$key", value)
     }
     hadoopConf
+  }
+
+  private def addUserResourceFiles(sparkConf: SparkConf, conf: Configuration): Unit = {
+    val appStagingBaseDir = sparkConf.getOption("spark.yarn.stagingDir")
+      .fold(FileSystem.get(conf).getHomeDirectory)(new Path(_))
+    val appStagingDir = new Path(appStagingBaseDir, s".sparkStaging/${sparkConf.getAppId}")
+    val resourceFiles = new ArrayBuffer[String]()
+    sparkConf.getOption("spark.yarn.dist.files").foreach { fileList =>
+      fileList.split(",").foreach { file =>
+        val fileName = file.trim.split("/").last
+        if (fileName.nonEmpty) {
+          resourceFiles.append(new Path(appStagingDir, fileName).toString)
+        }
+      }
+      conf.set(AngelConf.ANGEL_APP_USER_RESOURCE_FILES, resourceFiles.mkString(","))
+    }
   }
 
   private def assertCallByDriver(message: String): Unit = {

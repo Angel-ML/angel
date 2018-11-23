@@ -35,7 +35,7 @@ object DeepFMTest {
     PropertyConfigurator.configure("angel-ps/conf/log4j.properties")
     val params = ArgsUtil.parse(args)
 
-    val input = params.getOrElse("input", "./spark-on-angel/mllib/src/test/data/census.train")
+    val input = params.getOrElse("input", "./data/census/census_148d_train.libsvm")
 
     SharedConf.addMap(params)
     SharedConf.get().set(MLConf.ML_MODEL_TYPE, RowType.T_FLOAT_DENSE.toString)

@@ -23,15 +23,16 @@ public class Adjust extends UpdateFunc {
       try {
         // Some params
         PartitionKey pkey = param.getPartKey();
-        int negative = param.negative;
-        int partDim = param.partDim;
-        int window = param.window;
+
         int seed = param.seed;
         int order = 2;
 
         int[][] sentences = param.sentences;
         int maxIndex = ServerWrapper.getMaxIndex();
         int maxLength = ServerWrapper.getMaxLength();
+        int negative = ServerWrapper.getNegative();
+        int partDim = ServerWrapper.getPartDim();
+        int window = ServerWrapper.getWindow();
 
         // compute number of nodes for one row
         int size = (int) (pkey.getEndCol() - pkey.getStartCol());

@@ -26,8 +26,8 @@ import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel.{W2VDataSet, 
 import com.tencent.angel.spark.ml.embedding.{FastSigmoid, NEModel, Param}
 import com.tencent.angel.spark.ml.psf.embedding.w2v._
 import org.apache.spark.rdd.RDD
-
 import scala.util.Random
+
 
 
 class Word2VecModel(numNode: Int,
@@ -43,61 +43,40 @@ class Word2VecModel(numNode: Int,
     this(param.maxIndex, param.embeddingDim, param.numPSPart, param.maxLength, param.model)
   }
 
-  val modelId = model match {
+  val modelId: Int = model match {
     case "skipgram" => 0
     case "cbow" => 1
     case _ => throw new AngelException("model type should be cbow or skipgram")
   }
 
   def train(corpus: RDD[Array[Int]], param: Param): Unit = {
-    psMatrix.psfUpdate(getInitFunc(corpus.getNumPartitions, numNode, maxLength))
+    psMatrix.psfUpdate(getInitFunc(corpus.getNumPartitions, numNode, maxLength, param.negSample, param.windowSize))
     val iterator = buildDataBatches(corpus, param.batchSize)
-    train(iterator, None, param.negSample,
-      Some(param.windowSize), param.numEpoch, param.learningRate,
-      Some(maxLength), param.checkpointInterval)
-  }
-
-  def getInitFunc(numPartitions: Int, maxIndex: Int, maxLength: Int): UpdateFunc = {
-    val param = new InitParam(matrixId, numPartitions, maxIndex, maxLength)
-    new Init(param)
+    train(iterator, param.negSample, param.numEpoch, param.learningRate)
   }
 
 
-  override def getDotFunc(data: NEDataSet, batchSeed: Int, ns: Int, window: Option[Int],
-                          partitionId: Option[Int]): GetFunc = {
-    val param = new DotParam(matrixId,
-      seed, ns,
-      window.get,
-      partDim,
-      partitionId.get,
-      modelId,
-      data.asInstanceOf[W2VDataSet].sentences)
+
+
+  override def getDotFunc(data: NEDataSet, batchSeed: Int, ns: Int, partitionId: Int): GetFunc = {
+    val param = new DotParam(matrixId, seed, partitionId, modelId, data.asInstanceOf[W2VDataSet].sentences)
     new Dot(param)
   }
 
-  override def getAdjustFunc(data: NEDataSet, batchSeed: Int, ns: Int, grad: Array[Float],
-                             window: Option[Int], partitionId: Option[Int]): UpdateFunc = {
-    val param = new AdjustParam(matrixId,
-      seed, ns,
-      window.get,
-      partDim,
-      partitionId.get,
-      modelId,
-      grad,
-      data.asInstanceOf[W2VDataSet].sentences)
+  override def getAdjustFunc(data: NEDataSet, batchSeed: Int, ns: Int, grad: Array[Float], partitionId: Int): UpdateFunc = {
+    val param = new AdjustParam(matrixId, seed, partitionId, modelId, grad, data.asInstanceOf[W2VDataSet].sentences)
     new Adjust(param)
   }
 
   override def doGrad(dots: Array[Float],
                       negative: Int,
-                      alpha: Float,
-                      data: Option[NEDataSet]): Double = {
+                      alpha: Float): Double = {
 //    val sentences = data.get.asInstanceOf[W2VDataSet].sentences
 //    val size = sentences.map(sen => sen.length).sum
     var label = 0
     var sumLoss = 0f
 //    assert(dots.length == size * (negative + 1))
-    for (a <- 0 until dots.length) {
+    for (a <- dots.indices) {
       val sig = FastSigmoid.sigmoid(dots(a))
       if (a % (negative + 1) == 0) { // positive target
         sumLoss += -sig

@@ -213,7 +213,7 @@ class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
         pred += lr * curPred
       }
 
-      predict.put(new GBDTPredictResult(idx, y, pred))
+      predict.put(GBDTPredictResult(instance.getAttach, y, pred))
       LOG.debug(s"instance[$idx]: label[$y], pred[$pred]")
 
       if (y > 0) {
@@ -232,10 +232,10 @@ class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
 
 }
 
-case class GBDTPredictResult(sid: Long, pred: Double, label: Double) extends PredictResult {
+case class GBDTPredictResult(sid: String, pred: Double, label: Double) extends PredictResult {
   val df = new DecimalFormat("0")
 
   override def getText: String = {
-    df.format(sid) + separator + format.format(pred) + separator + df.format(label)
+    sid + separator + format.format(pred) + separator + df.format(label)
   }
 }

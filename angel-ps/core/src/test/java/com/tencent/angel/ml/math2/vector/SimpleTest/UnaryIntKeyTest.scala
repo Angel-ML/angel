@@ -200,7 +200,6 @@ class UnaryIntKeyTest {
     assert(abs(Ufuncs.exp(ilist.get(0)).sum() - sum(exp(dense1)))< 1.0)
     assert(abs(Ufuncs.exp(ilist.get(1)).sum() - sum(exp(sparse1))) < 1.0)
     assert(abs(Ufuncs.exp(ilist.get(2)).sum() - sum(exp(sorted1))) < 1.0)
-
   }
 
   @Test
@@ -257,7 +256,6 @@ class UnaryIntKeyTest {
     assert(abs(Ufuncs.pow(ilist.get(0), 2.0).sum() - sum(pow(dense1, 2.0)))< 1.0)
     assert(abs(Ufuncs.pow(ilist.get(1), 2.0).sum() - sum(pow(sparse1, 2.0))) < 1.0)
     assert(abs(Ufuncs.pow(ilist.get(2), 2.0).sum() - sum(pow(sorted1, 2.0)))< 1.0)
-
   }
 
   @Test
@@ -275,11 +273,6 @@ class UnaryIntKeyTest {
     assert(abs(Ufuncs.smul(ilist.get(6), 5).sum() - sum(dense3 :* 5L))< 1.0)
     assert(abs(Ufuncs.smul(ilist.get(7), 5).sum() - sum(sparse3 :* 5L)) < 1.0)
     assert(abs(Ufuncs.smul(ilist.get(8), 5).sum() - sum(sorted3 :* 5L))< 1.0)
-    assert(abs(Ufuncs.smul(ilist.get(9), 5).sum() - sum(dense4 :* 5)) < 1.0)
-    assert(abs(Ufuncs.smul(ilist.get(10), 5).sum() - sum(sparse4 :* 5)) < 1.0)
-    assert(abs(Ufuncs.smul(ilist.get(11), 5).sum() - sum(sorted4 :* 5)) < 1.0)
-
-
   }
 
   @Test

@@ -58,7 +58,7 @@ public class CompLongDoubleRowUpdateSplit extends RowUpdateSplit {
     if (storage instanceof LongDoubleSparseVectorStorage) {
       ObjectIterator<Long2DoubleMap.Entry> iter = storage.entryIterator();
       //TODO: write map default value
-      buf.writeDouble(0);
+      //buf.writeDouble(0);
       buf.writeInt(storage.size());
       Long2DoubleMap.Entry entry;
       while (iter.hasNext()) {
