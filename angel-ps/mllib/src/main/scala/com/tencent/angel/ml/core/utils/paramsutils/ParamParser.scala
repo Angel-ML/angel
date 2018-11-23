@@ -22,11 +22,18 @@ object ParamParser {
 
   def parseMap(line: String, separator1: String = ",",
                       separator2: String = ":"): Map[String, String] = {
-    line.trim
-      .split(separator1)
-      .map(_.split(separator2))
-      .map{ case Array(k, v) => (k, v) }
-      .toMap
+    if (line.isEmpty)
+      return Map[String, String]()
+    else
+      line.trim
+        .split(separator1)
+        .map(_.split(separator2))
+        .map{ case Array(k, v) => (k, v) }
+        .toMap
   }
 
+  def main(args: Array[String]): Unit = {
+    val line = ""
+    println(parseMap(line))
+  }
 }

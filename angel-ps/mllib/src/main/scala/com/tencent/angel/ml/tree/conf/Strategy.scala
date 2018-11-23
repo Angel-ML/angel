@@ -18,8 +18,6 @@
 
 package com.tencent.angel.ml.tree.conf
 
-import java.util.Locale
-
 import com.tencent.angel.ml.core.conf.MLConf
 import com.tencent.angel.ml.core.utils.paramsutils.ParamParser
 
@@ -27,8 +25,7 @@ import scala.beans.BeanProperty
 import scala.collection.JavaConverters._
 import com.tencent.angel.ml.tree.conf.Algo._
 import com.tencent.angel.ml.tree.conf.QuantileStrategy._
-import com.tencent.angel.ml.tree.data.TreeEnsembleParams
-import com.tencent.angel.ml.tree.impurity._
+import com.tencent.angel.ml.tree.impurity.{Impurity, Entropy, Gini, Variance}
 import org.apache.hadoop.conf.Configuration
 
 import scala.util.Try
@@ -77,7 +74,7 @@ import scala.util.Try
   *                           E.g. 10 means that the cache will get checkpointed every 10 update.
   */
 class Strategy (@BeanProperty var algo: Algo,
-                @BeanProperty  var impurity: Impurity,
+                @BeanProperty var impurity: Impurity,
                 @BeanProperty var numTrees: Int = 1,
                 @BeanProperty var maxDepth: Int = 2,
                 @BeanProperty var numClasses: Int = 2,
@@ -88,9 +85,9 @@ class Strategy (@BeanProperty var algo: Algo,
                 @BeanProperty var categoricalFeatures: Map[Int, Int] = Map[Int, Int](),
                 @BeanProperty var minInstancesPerNode: Int = 1,
                 @BeanProperty var minInfoGain: Double = 0.0,
-                var maxMemoryInMB: Int = 256,
-                var useNodeIdCache: Boolean = false,
-                var checkpointInterval: Int = 10) extends Serializable {
+                @BeanProperty var maxMemoryInMB: Int = 256,
+                @BeanProperty var useNodeIdCache: Boolean = false,
+                @BeanProperty var checkpointInterval: Int = 10) extends Serializable {
 
   def isMulticlassClassification: Boolean = {
     algo == Classification && numClasses > 2
@@ -123,10 +120,10 @@ class Strategy (@BeanProperty var algo: Algo,
     case _ => throw new IllegalArgumentException(s"Did not recognize Algo name: $algo")
   }
 
-  def setImpurity(impurity: String): Unit = impurity.toLowerCase match {
-    case "gini" => setImpurity(Gini)
-    case "entropy" => setImpurity(Entropy)
-    case "variance" => setImpurity(Variance)
+  def setImpurityWithString(impurity: String): Unit = impurity match {
+    case "Gini" | "gini" => setImpurity(Gini)
+    case "Entropy" | "entropy" => setImpurity(Entropy)
+    case "Variance" | "variance" => setImpurity(Variance)
     case _ => throw new IllegalArgumentException(s"Did not recognize Impurity name: $impurity")
   }
 
@@ -139,8 +136,10 @@ class Strategy (@BeanProperty var algo: Algo,
 
   def setCategoricalFeatures(line: String): Unit = {
     val cateMap = ParamParser.parseMap(line)
-      .map{ case (k, v) => (k.toString.toInt, v.toString.toInt) }
-    this.categoricalFeatures = cateMap
+    if (cateMap.isEmpty)
+      this.categoricalFeatures = Map[Int, Int]()
+    else
+      this.categoricalFeatures = cateMap.map{ case (k, v) => (k.toString.toInt, v.toString.toInt) }
   }
 
   /**
@@ -225,8 +224,8 @@ object Strategy {
   def initStrategy(conf: Configuration): Strategy = {
     val strategy = defaultStrategy(conf.get(MLConf.ML_TREE_TASK_TYPE,
       MLConf.DEFAULT_ML_TREE_TASK_TYPE).toLowerCase)
-    strategy.setImpurity(conf.get(MLConf.ML_TREE_IMPURITY,
-      MLConf.DEFAULT_ML_TREE_IMPURITY).toLowerCase)
+    strategy.setImpurityWithString(conf.get(MLConf.ML_TREE_IMPURITY,
+      MLConf.DEFAULT_ML_TREE_IMPURITY))
     strategy.setNumTrees(conf.getInt(MLConf.ML_NUM_TREE,
       MLConf.DEFAULT_ML_NUM_TREE))
     strategy.setMaxDepth(conf.getInt(MLConf.ML_TREE_MAX_DEPTH,
@@ -245,6 +244,8 @@ object Strategy {
       MLConf.DEFAULT_ML_TREE_NODE_MIN_INSTANCE))
     strategy.setMinInfoGain(conf.getDouble(MLConf.ML_TREE_NODE_MIN_INFOGAIN,
       MLConf.DEFAULT_ML_TREE_NODE_MIN_INFOGAIN))
+    strategy.setMaxMemoryInMB(conf.getInt(MLConf.ML_TREE_AGGRE_MAX_MEMORY_MB,
+      MLConf.DEFAULT_ML_TREE_AGGRE_MAX_MEMORY_MB))
     strategy.assertValid()
     strategy
   }

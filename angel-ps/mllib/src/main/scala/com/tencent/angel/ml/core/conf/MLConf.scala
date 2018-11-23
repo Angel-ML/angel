@@ -33,7 +33,7 @@ object MLConf {
   val ML_DATA_INPUT_FORMAT = "ml.data.type"
   val DEFAULT_ML_DATA_INPUT_FORMAT = "libsvm"
   val ML_DATA_SPLITOR = "ml.data.splitor"
-  val DEFAULT_ML_DATA_SPLITOR = " "
+  val DEFAULT_ML_DATA_SPLITOR = "\\s+"
   val ML_DATA_IS_NEGY = "ml.data.is.negy"
   val DEFAULT_ML_DATA_IS_NEGY = true
   val ML_DATA_HAS_LABEL = "ml.data.has.label"
@@ -195,6 +195,8 @@ object MLConf {
   val DEFAULT_ML_TREE_CATEGORICAL_FEATURE = ""
   val ML_TREE_IMPURITY = "ml.tree.impurity"
   val DEFAULT_ML_TREE_IMPURITY = "gini"
+  val ML_TREE_AGGRE_MAX_MEMORY_MB = "ml.tree.aggr.max.memory.mb"
+  val DEFAULT_ML_TREE_AGGRE_MAX_MEMORY_MB = 256
 
   /** The loss sum of all samples */
   val TRAIN_LOSS = "train.loss"
