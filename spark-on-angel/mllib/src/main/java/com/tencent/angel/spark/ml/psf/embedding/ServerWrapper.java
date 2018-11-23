@@ -10,17 +10,26 @@ public class ServerWrapper {
   private static volatile int maxIndex = -1;
 
   private static volatile int maxLength = -1;
+  private static volatile int negative = -1;
+  private static volatile int order = -1;
+  private static volatile int partDim = -1;
+  private static volatile int window = -1;
 
   private static int[] numInputs;
   private static int[] numOutputs;
 
 
-  public static synchronized void initialize(int numPartitions, int maxIndex, int maxLength) {
+  public static synchronized void initialize(int numPartitions, int maxIndex, int maxLength, int negative, int order,
+                                             int partDim, int window) {
     if (ServerWrapper.maxIndex == -1) {
       numInputs = new int[numPartitions];
       numOutputs = new int[numPartitions];
       ServerWrapper.maxIndex = maxIndex;
       ServerWrapper.maxLength = maxLength;
+      ServerWrapper.negative = negative;
+      ServerWrapper.order = order;
+      ServerWrapper.partDim = partDim;
+      ServerWrapper.window = window;
     }
   }
 
@@ -31,6 +40,14 @@ public class ServerWrapper {
   public static int getMaxLength() {
     return maxLength;
   }
+
+  public static int getNegative() {return negative; }
+
+  public static int getOrder() {return order; }
+
+  public static int getPartDim() {return partDim; }
+
+  public static int getWindow() {return window; }
 
   public static void setNumInputs(int partitionId, int num) {
     numInputs[partitionId] = num;

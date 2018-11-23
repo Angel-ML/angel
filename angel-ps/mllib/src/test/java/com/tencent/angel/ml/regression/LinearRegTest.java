@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -33,16 +33,16 @@ import org.junit.Test;
 
 
 public class LinearRegTest {
-  private Configuration conf = new Configuration();
   private static final Log LOG = LogFactory.getLog(LinearRegTest.class);
   private static String LOCAL_FS = FileSystem.DEFAULT_FS;
   private static String CLASSBASE = "com.tencent.angel.ml.regression.";
   private static String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
 
-
   static {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
+
+  private Configuration conf = new Configuration();
 
   @Before public void setConf() throws Exception {
     try {
@@ -133,6 +133,35 @@ public class LinearRegTest {
     }
   }
 
+
+  private void incTrain() {
+    try {
+      String inputPath = "../../data/abalone/abalone_8d_train.libsvm";
+      String savePath = LOCAL_FS + TMP_PATH + "/model/LinearReg";
+      String newPath = LOCAL_FS + TMP_PATH + "/model/NewLinearReg";
+      String logPath = LOCAL_FS + TMP_PATH + "/log/LinearReg/trainLog";
+
+      // Set trainning data path
+      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
+      // Set load model path
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, savePath);
+      // Set save model path
+      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, newPath);
+      // Set actionType incremental train
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_INC_TRAIN());
+      // Set log path
+      conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
+
+
+      GraphRunner runner = new GraphRunner();
+      runner.train(conf);
+    } catch (Exception e) {
+      LOG.error("run incTrainTest failed", e);
+      throw e;
+    }
+  }
+
+
   private void predictTest() {
     try {
       String inputPath = "../../data/abalone/abalone_8d_train.libsvm";
@@ -162,6 +191,7 @@ public class LinearRegTest {
   @Test public void testLR() throws Exception {
     setConf();
     trainTest();
+    incTrain();
     predictTest();
   }
 }

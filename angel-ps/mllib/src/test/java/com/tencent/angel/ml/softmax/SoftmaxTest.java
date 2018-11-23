@@ -110,6 +110,7 @@ public class SoftmaxTest {
   @Test public void testSoftMax() throws Exception {
     setConf();
     trainTest();
+    incTrain();
     predictTest();
   }
 
@@ -135,6 +136,34 @@ public class SoftmaxTest {
     } catch (Exception x) {
       LOG.error("run trainOnLocalClusterTest failed ", x);
       throw x;
+    }
+  }
+
+
+  private void incTrain() {
+    try {
+      String inputPath = "../../data/protein/protein_357d_train.libsvm";
+      String savePath = LOCAL_FS + TMP_PATH + "/SoftMax";
+      String logPath = LOCAL_FS + TMP_PATH + "/SoftMaxlog";
+      String newPath = LOCAL_FS + TMP_PATH + "/NewSoftMax";
+
+      // Set trainning data path
+      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
+      // Set load model path
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, savePath);
+      // Set save model path
+      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, newPath);
+      // Set actionType incremental train
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_INC_TRAIN());
+      // Set log path
+      conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
+
+
+      GraphRunner runner = new GraphRunner();
+      runner.train(conf);
+    } catch (Exception e) {
+      LOG.error("run incTrainTest failed", e);
+      throw e;
     }
   }
 

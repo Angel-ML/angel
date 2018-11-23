@@ -25,7 +25,7 @@ object Features {
 
   def corpusStringToIntWithoutRemapping(data: RDD[String]): RDD[Array[Int]] = {
     data.filter(f => f != null && f.length > 0)
-      .map(f => f.stripLineEnd.split(" ").map(s => s.toInt))
+      .map(f => f.stripLineEnd.split("[\\s+|,]").map(s => s.toInt))
   }
 
 
@@ -33,7 +33,7 @@ object Features {
 
     // All distinct strings
     val strings = data.filter(f => f != null && f.length > 0)
-      .map(f => f.stripLineEnd.split(" ")).flatMap(f => f)
+      .map(f => f.stripLineEnd.split("[\\s+|,]")).flatMap(f => f)
       .map(t => (t, 1)).reduceByKey(_ + _).map(f => f._1)
 
     val stringsWithIndex = strings.zipWithIndex().cache()

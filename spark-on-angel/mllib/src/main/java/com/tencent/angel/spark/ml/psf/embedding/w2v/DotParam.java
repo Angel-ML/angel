@@ -12,26 +12,17 @@ import java.util.List;
 public class DotParam extends GetParam {
 
   int seed;
-  int negative;
-  int window;
-  int partDim;
   int partitionId;
   int model;
   int[][] sentences;
 
   public DotParam(int matrixId,
                   int seed,
-                  int negative,
-                  int window,
-                  int partDim,
                   int partitionId,
                   int model,
                   int[][] sentences) {
     super(matrixId);
     this.seed = seed;
-    this.negative = negative;
-    this.window = window;
-    this.partDim = partDim;
     this.partitionId = partitionId;
     this.model = model;
     this.sentences = sentences;
@@ -46,9 +37,6 @@ public class DotParam extends GetParam {
       PartitionKey pkey = iterator.next();
       params.add(new DotPartitionParam(matrixId,
               seed,
-              negative,
-              window,
-              partDim,
               partitionId,
               model,
               pkey,
