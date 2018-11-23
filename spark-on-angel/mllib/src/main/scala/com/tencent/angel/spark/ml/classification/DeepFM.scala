@@ -36,12 +36,12 @@ class DeepFM extends GraphModel {
 
   override
   def network(): Unit = {
-    val wide = new SimpleInputLayer("deepfm-wide", 1, new Identity(), new Adam(lr))
-    val embedding = new Embedding("deepfm-embedding", numFields * numFactors, numFactors, new Adam(lr))
+    val wide = new SimpleInputLayer("input", 1, new Identity(), new Adam(lr))
+    val embedding = new Embedding("embedding", numFields * numFactors, numFactors, new Adam(lr))
     val innerSumCross = new BiInnerSumCross("innerSumPooling", embedding)
-    val hidden1 = new FCLayer("deepfm-hidden1", 80, embedding, new Relu, new Adam(lr))
-    val hidden2 = new FCLayer("deepfm-hidden2", 50, hidden1, new Relu, new Adam(lr))
-    val mlpLayer = new FCLayer("deepfm-hidden3", 1, hidden2, new Identity, new Adam(lr))
+    val hidden1 = new FCLayer("hidden1", 80, embedding, new Relu, new Adam(lr))
+    val hidden2 = new FCLayer("hidden2", 50, hidden1, new Relu, new Adam(lr))
+    val mlpLayer = new FCLayer("hidden3", 1, hidden2, new Identity, new Adam(lr))
     val join = new SumPooling("sumPooling", 1, Array[Layer](wide, innerSumCross, mlpLayer))
     new SimpleLossLayer("simpleLossLayer", join, new LogLoss)
   }

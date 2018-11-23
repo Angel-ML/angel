@@ -41,10 +41,10 @@ class LINEModel(numNode: Int,
     this(param.maxIndex, param.embeddingDim, param.numPSPart, param.nodesNumPerRow, param.order, param.seed)
   }
 
-  def train(trainSet: RDD[(Int, Int)], params: Param, path: String): this.type = {
+  def train(trainSet: RDD[(Int, Int)], params: Param): this.type = {
     psMatrix.psfUpdate(getInitFunc(trainSet.getNumPartitions, numNode, -1, params.negSample, -1))
     val iterator = buildDataBatches(trainSet, params.batchSize)
-    train(iterator, params.negSample, params.numEpoch, params.learningRate, params.checkpointInterval, path)
+    train(iterator, params.negSample, params.numEpoch, params.learningRate)
     this
   }
 
