@@ -25,15 +25,7 @@ class LINEModelSuite extends PSFunSuite with SharedPSContext {
 
   override def beforeAll(): Unit = {
     super.beforeAll()
-    param = new Param()
-    param.setLearningRate(lr)
-    param.setEmbeddingDim(dim)
-    param.setBatchSize(batchSize)
-    param.setNumPSPart(Some(numPSPart))
-    param.setNumEpoch(numEpoch)
-    param.setNegSample(negative)
-
-    data = sc.textFile("data/bc/edge").mapPartitions { iter =>
+    data = sc.textFile(input).mapPartitions { iter =>
       val r = new Random()
       iter.map { line =>
         val arr = line.split(" ")
@@ -45,6 +37,14 @@ class LINEModelSuite extends PSFunSuite with SharedPSContext {
     val numEdge = data.count()
     val maxNodeId = data.map { case (src, dst) => math.max(src, dst) }.max().toLong + 1
     println(s"numEdge=$numEdge maxNodeId=$maxNodeId")
+
+    param = new Param()
+    param.setLearningRate(lr)
+    param.setEmbeddingDim(dim)
+    param.setBatchSize(batchSize)
+    param.setNumPSPart(Some(numPSPart))
+    param.setNumEpoch(numEpoch)
+    param.setNegSample(negative)
     param.setMaxIndex(maxNodeId)
   }
 
