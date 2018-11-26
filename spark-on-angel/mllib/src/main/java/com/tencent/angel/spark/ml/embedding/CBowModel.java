@@ -115,8 +115,10 @@ public class CBowModel {
               label = 1;
             } else {
 //              target = table[rand.nextInt(table_size - 1) + 1];
-              target = negRand.nextInt(numNode);
-              if (target == word) continue;
+              do {
+                target = negRand.nextInt(numNode);
+              } while (target == word);
+//              if (target == word) continue;
               label = 0;
             }
 

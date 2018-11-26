@@ -53,7 +53,7 @@ object Word2vecWorkerExample {
     val batchSize = 256
     val model = new Word2vecWorker(maxWordId.toInt, dimension, "cbow", numPart, numNodePerRow)
     val iterator = buildDataBatches(corpus, batchSize)
-    model.train(iterator, 5, 5, 0.1f, 5, "")
+    model.train(iterator, 5, 5, 0.5f, 5, "")
 
     PSContext.stop()
     sc.stop()
