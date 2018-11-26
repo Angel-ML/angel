@@ -68,7 +68,9 @@ object Word2vecWorkerExample {
 
     println(s"numDocs=$numDocs maxWordId=$maxWordId numTokens=$numTokens")
 
-    val model = new Word2vecWorker(maxWordId.toInt, embeddingDim, "cbow", numPartitions, numNodePerRow)
+    val seed = 2017
+
+    val model = new Word2vecWorker(maxWordId.toInt, embeddingDim, "cbow", numPartitions, numNodePerRow, seed)
     val iterator = buildDataBatches(docs, batchSize)
     model.train(iterator, numNegSamples, numEpoch, stepSize, windowSize, "")
 

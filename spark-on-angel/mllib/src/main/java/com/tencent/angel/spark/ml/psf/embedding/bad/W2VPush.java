@@ -20,8 +20,7 @@ public class W2VPush extends UpdateFunc {
     if (partParam instanceof W2VPushPartitionParam) {
       W2VPushPartitionParam param = (W2VPushPartitionParam) partParam;
       try {
-        update(psContext.getMatrixStorageManager().getPart(param.getPartKey()),
-                param);
+        update(psContext.getMatrixStorageManager().getPart(param.getPartKey()), param);
       } finally {
         param.clear();
       }
@@ -48,9 +47,8 @@ public class W2VPush extends UpdateFunc {
       int rowId  = (node - startNode) / numNodePerRow;
       int offset  = (node % numNodePerRow) * dimension * 2;
       float[] values = rows[rowId];
-      for (int d = 0; d < dimension * 2; d ++) {
+      for (int d = 0; d < dimension * 2; d ++)
         values[offset + d] += param.buf.readFloat();
-      }
     }
   }
 }

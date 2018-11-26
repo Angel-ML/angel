@@ -51,7 +51,7 @@ object Word2vecExample {
     data.cache()
 
     val (corpus, _) = Features.corpusStringToInt(sc.textFile(input))
-    val docs = corpus.repartition(2)
+    val docs = corpus.repartition(1)
 
     docs.cache()
     docs.count()
@@ -71,8 +71,8 @@ object Word2vecExample {
     param.setWindowSize(5)
     param.setBatchSize(100)
     param.setSeed(Random.nextInt())
-    param.setNumPSPart(Some(2))
-    param.setNumEpoch(5)
+    param.setNumPSPart(Some(1))
+    param.setNumEpoch(1)
     param.setNegSample(5)
     param.setMaxIndex(maxWordId)
     param.setMaxLength(maxLength)

@@ -40,7 +40,7 @@ public class W2VPushParam extends UpdateParam {
         while (end < indices.length && indices[end] < endNode)
           end++;
 
-        if (end > start) {
+        if (end > start)
           params.add(new W2VPushPartitionParam(matrixId,
                   pkey,
                   indices,
@@ -49,7 +49,6 @@ public class W2VPushParam extends UpdateParam {
                   start,
                   end - start,
                   dimension));
-        }
         start = end;
       }
     }

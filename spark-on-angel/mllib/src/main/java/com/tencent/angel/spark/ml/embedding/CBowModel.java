@@ -26,7 +26,7 @@ public class CBowModel {
     this.dimension = dimension;
   }
 
-  public int[] indicesForCbow(int[][] sentences, long seed) {
+  public int[] indicesForCbow(int[][] sentences, int seed) {
     Random winRand = new Random(seed);
     Random negRand = new Random(seed + 1);
 
@@ -64,7 +64,7 @@ public class CBowModel {
     return indices.toIntArray();
   }
 
-  public Tuple2<Double, Integer> cbow(int[][] sentences, long seed, float[] layers, Int2IntOpenHashMap index, float[] deltas) {
+  public Tuple2<Double, Integer> cbow(int[][] sentences, int seed, float[] layers, Int2IntOpenHashMap index, float[] deltas) {
     Arrays.fill(deltas, 0.0f);
 
     Random winRand = new Random(seed);
@@ -101,6 +101,7 @@ public class CBowModel {
             if (c >= sentence_length) continue;
             int last_word = sentences[s][c];
             if (last_word == -1) continue;
+            if (!index.containsKey(last_word)) System.out.println("Error");
             int offset = index.get(last_word) * dimension * 2;
             for (c = 0; c < dimension; c++) neu1[c] += layers[c + offset];
             cw++;
@@ -121,6 +122,7 @@ public class CBowModel {
               label = 0;
             }
 
+            if (!index.containsKey(target)) System.out.println("Error");
             int l2 = index.get(target) * dimension * 2 + dimension;
             float f = 0f;
             for (int c = 0; c < dimension; c++) f += neu1[c] * layers[c + l2];

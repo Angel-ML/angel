@@ -1,7 +1,7 @@
 package com.tencent.angel.spark.examples.local
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ps.storage.matrix.{PartitionSourceArray, PartitionSourceMap}
+import com.tencent.angel.ps.storage.matrix.PartitionSourceMap
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel.buildDataBatches
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2vecWorker
@@ -33,7 +33,7 @@ object Word2vecWorkerExample {
     data.cache()
 
     val (corpus, _) = Features.corpusStringToInt(sc.textFile(input))
-    val docs = corpus.repartition(2)
+    val docs = corpus.repartition(1)
 
     docs.cache()
     docs.count()
@@ -48,7 +48,7 @@ object Word2vecWorkerExample {
 
     val numNodePerRow = 1000
     val modelType = "cbow"
-    val numPart = 2
+    val numPart = 1
     val dimension = 100
     val batchSize = 100
 
@@ -57,9 +57,9 @@ object Word2vecWorkerExample {
     val negative = 5
 
     println(s"batchSize=$batchSize learnRate=$learnRate window=$window negative=$negative")
-    val model = new Word2vecWorker(maxWordId.toInt, dimension, "cbow", numPart, numNodePerRow)
+    val model = new Word2vecWorker(maxWordId.toInt, dimension, "cbow", numPart, numNodePerRow, 2017)
     val iterator = buildDataBatches(corpus, batchSize)
-    model.train(iterator, negative, 5, learnRate, window, "")
+    model.train(iterator, negative, 1, learnRate, window, "")
 
     PSContext.stop()
     sc.stop()

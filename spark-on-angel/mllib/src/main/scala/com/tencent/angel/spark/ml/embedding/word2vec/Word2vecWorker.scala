@@ -12,14 +12,19 @@ import com.tencent.angel.spark.models.PSMatrix
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap
 import org.apache.spark.rdd.RDD
 
+import scala.util.Random
+
 class Word2vecWorker(numNode: Int,
                      dimension: Int,
                      model: String,
                      numPart: Int,
                      numNodePerRow: Int = -1,
-                     maxNodePerRow: Int = 100000) extends Serializable {
+                     seed: Int) extends Serializable {
+
+  val maxNodePerRow: Int = 100000
 
   val matrix = createPSMatrix(numNode, numPart)
+  val rand = new Random(seed)
 
   initialize()
 
@@ -31,13 +36,12 @@ class Word2vecWorker(numNode: Int,
                   batch: NEDataSet): (Double, Long, Array[Long]) = {
 
     var (start, end) = (0L, 0L)
-
+    val seed = 2017
 
     // calculate index
     start = System.currentTimeMillis()
     val model = new CBowModel(window, negative, alpha, numNode, dimension)
     val sentences = batch.asInstanceOf[W2VDataSet].sentences
-    val seed = System.currentTimeMillis()
     val indices = model.indicesForCbow(sentences, seed)
     end = System.currentTimeMillis()
     val calcuIndexTime = end - start
@@ -73,7 +77,7 @@ class Word2vecWorker(numNode: Int,
     end = System.currentTimeMillis()
     val pushTime = end - start
 
-    println(s"${loss._1/loss._2}")
+    println(s"${loss._1/loss._2} learnRate=$alpha length=${loss._2}")
     (loss._1, loss._2.toLong, Array(calcuIndexTime, pullTime, cbowTime, pushTime))
   }
 
@@ -111,12 +115,13 @@ class Word2vecWorker(numNode: Int,
       val loss = middle._1 / middle._2.toDouble
       val array = middle._3
       logTime(s"epoch=$epoch " +
-        s"loss=$loss " +
+        f"loss=$loss%2.4f " +
         s"calcuIndexTime=${array(0)} " +
         s"pullTime=${array(1)} " +
         s"cbowTime=${array(2)} " +
         s"pushTime=${array(3)} " +
-        s"total=${middle._2}")
+        s"total=${middle._2} " +
+        s"lossSum=${middle._1}")
     }
   }
 
@@ -129,7 +134,7 @@ class Word2vecWorker(numNode: Int,
     val numCol = rowCapacity * dimension * 2
     val numRow = (numNode) / rowCapacity + 1
 
-    val rowsInBlock = numRow / numPart
+    val rowsInBlock = numRow / numPart + 1
     val colsInBlock = numCol
     logTime(s"matrix meta:\n" +
       s"colNum: $numCol\n" +

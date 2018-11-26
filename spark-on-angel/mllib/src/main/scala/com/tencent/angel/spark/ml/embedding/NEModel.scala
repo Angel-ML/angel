@@ -20,12 +20,11 @@ package com.tencent.angel.spark.ml.embedding
 
 import java.text.SimpleDateFormat
 import java.util.Date
-import scala.util.Random
 
+import scala.util.Random
 import org.apache.hadoop.fs.Path
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
-
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
@@ -38,6 +37,7 @@ import com.tencent.angel.spark.ml.psf.embedding.NESlice.SliceResult
 import com.tencent.angel.spark.ml.psf.embedding.{Init, InitParam, NEModelRandomize, NESlice}
 import com.tencent.angel.spark.models.PSMatrix
 import com.tencent.angel.spark.ml.embedding.NEModel.logTime
+import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel.W2VDataSet
 
 abstract class NEModel(numNode: Int,
                        dimension: Int,
@@ -95,7 +95,8 @@ abstract class NEModel(numNode: Int,
         s"dotTime=${array(0)} " +
         s"gradientTime=${array(1)} " +
         s"adjustTime=${array(2)} " +
-        s"total=${middle.map(_._2).sum.toDouble}")
+        s"total=${middle.map(_._2).sum.toDouble} " +
+        s"lossSum=${middle.map(_._1).sum}")
 
       if (epoch % checkpointInterval == 0)
         save(path, epoch)
@@ -170,16 +171,15 @@ abstract class NEModel(numNode: Int,
       end = System.currentTimeMillis()
       val adjustTime = end - start
       // return loss
-//      if ((batchId + 1) % 100 == 0)
-//        logTime(s"batchId=$batchId dotTime=$dotTime gradientTime=$gradientTime adjustTime=$adjustTime")
-      println(s"${loss / dots.length}")
+      val batchSize = batch.asInstanceOf[W2VDataSet].sentences.map(_.length).sum
+      println(s"${loss / dots.length} length=${dots.length} batchSize=${batchSize}")
       (loss, dots.length.toLong, Array(dotTime, gradientTime, adjustTime))
     }
 
     PSContext.instance()
 
     iterator.zipWithIndex.map { case (batch, index) =>
-      sgdForBatch(partitionId, Random.nextInt(), batch, index)
+      sgdForBatch(partitionId, 2017, batch, index)
     }
   }
 

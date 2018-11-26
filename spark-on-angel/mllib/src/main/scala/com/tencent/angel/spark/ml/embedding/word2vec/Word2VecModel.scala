@@ -36,11 +36,11 @@ class Word2VecModel(numNode: Int,
                     maxLength: Int,
                     model: String,
                     numNodesPerRow: Int = -1,
-                    seed: Int = Random.nextInt)
+                    seed: Int = 2017)
   extends NEModel(numNode, dimension, numPart, numNodesPerRow, 2, false, seed) {
 
   def this(param: Param) {
-    this(param.maxIndex, param.embeddingDim, param.numPSPart, param.maxLength, param.model)
+    this(param.maxIndex, param.embeddingDim, param.numPSPart, param.maxLength, param.model, -1, 2017)
   }
 
   val modelId: Int = model match {
