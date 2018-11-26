@@ -22,7 +22,6 @@ import java.lang.{Long => JLong}
 import java.util.concurrent.Future
 import java.util.{HashMap => JHashMap, Map => JMap}
 
-import com.tencent.angel.conf.{AngelConf, MatrixConf}
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.layers._
