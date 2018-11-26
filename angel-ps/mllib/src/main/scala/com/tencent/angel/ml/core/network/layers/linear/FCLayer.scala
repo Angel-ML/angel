@@ -51,6 +51,7 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
 
   val modelType: RowType = SharedConf.denseModelType
   val numTask: Int = sharedConf.get(AngelConf.ANGEL_WORKERGROUP_NUMBER).toInt
+  val mode = SharedConf.runningMode()
 
   val multiplier: Int = OptUtils.getOptMultiplier(optimizer)
   private val psRows: Int = multiplier
@@ -137,7 +138,7 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
   }
 
   override def pushGradient(): Unit = {
-    val normal = OptUtils.getNormal(sharedConf, graph)
+    val normal = OptUtils.getNormal(mode, graph)
     status match {
       case STATUS.Backward =>
         val weightGrad: Matrix = if (ipOutputCache != null) {
