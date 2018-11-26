@@ -94,7 +94,8 @@ abstract class NEModel(numNode: Int,
         f"loss=$loss%2.4f " +
         s"dotTime=${array(0)} " +
         s"gradientTime=${array(1)} " +
-        s"adjustTime=${array(2)}")
+        s"adjustTime=${array(2)} " +
+        s"total=${middle.map(_._2).sum.toDouble}")
 
       if (epoch % checkpointInterval == 0)
         save(path, epoch)
@@ -171,6 +172,7 @@ abstract class NEModel(numNode: Int,
       // return loss
 //      if ((batchId + 1) % 100 == 0)
 //        logTime(s"batchId=$batchId dotTime=$dotTime gradientTime=$gradientTime adjustTime=$adjustTime")
+      println(s"${loss / dots.length}")
       (loss, dots.length.toLong, Array(dotTime, gradientTime, adjustTime))
     }
 

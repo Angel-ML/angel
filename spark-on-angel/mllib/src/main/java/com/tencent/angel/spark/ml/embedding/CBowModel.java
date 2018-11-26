@@ -53,9 +53,10 @@ public class CBowModel {
         if (cw > 0) {
           int target;
           for (int d = 0; d < negative; d++) {
-            target = negRand.nextInt(numNode);
-            if (target != word)
-              indices.add(target);
+            do {
+              target = negRand.nextInt(numNode);
+            } while (target == word);
+            indices.add(target);
           }
         }
       }
@@ -64,7 +65,7 @@ public class CBowModel {
   }
 
   public Tuple2<Double, Integer> cbow(int[][] sentences, long seed, float[] layers, Int2IntOpenHashMap index, float[] deltas) {
-//    System.arraycopy(layers, 0, deltas, 0, layers.length);
+    Arrays.fill(deltas, 0.0f);
 
     Random winRand = new Random(seed);
     Random negRand = new Random(seed + 1);
@@ -114,11 +115,9 @@ public class CBowModel {
               target = word;
               label = 1;
             } else {
-//              target = table[rand.nextInt(table_size - 1) + 1];
               do {
                 target = negRand.nextInt(numNode);
               } while (target == word);
-//              if (target == word) continue;
               label = 0;
             }
 

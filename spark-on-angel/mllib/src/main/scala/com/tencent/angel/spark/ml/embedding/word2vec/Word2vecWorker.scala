@@ -54,6 +54,7 @@ class Word2vecWorker(numNode: Int,
     val pullTime = end - start
 
     val index = new Int2IntOpenHashMap()
+    index.defaultReturnValue(-1)
     for (i <- 0 until indices.length) index.put(indices(i), i)
     val deltas = new Array[Float](result.layers.length)
 
@@ -71,7 +72,9 @@ class Word2vecWorker(numNode: Int,
         .get()
     end = System.currentTimeMillis()
     val pushTime = end - start
-    (loss._1, loss._2.toLong, Array(calcuIndexTime, pullTime, cbowTime, pullTime))
+
+    println(s"${loss._1/loss._2}")
+    (loss._1, loss._2.toLong, Array(calcuIndexTime, pullTime, cbowTime, pushTime))
   }
 
   def sgdForPartition(partitionId: Int,
@@ -105,14 +108,15 @@ class Word2vecWorker(numNode: Int,
         (f1._1 + f2._1,
           f1._2 + f2._2,
           f1._3.zip(f2._3).map(f => (f._1 + f._2)))}
-      val loss = middle._1 / middle._2
+      val loss = middle._1 / middle._2.toDouble
       val array = middle._3
       logTime(s"epoch=$epoch " +
         s"loss=$loss " +
         s"calcuIndexTime=${array(0)} " +
         s"pullTime=${array(1)} " +
         s"cbowTime=${array(2)} " +
-        s"pushTime=${array(3)}")
+        s"pushTime=${array(3)} " +
+        s"total=${middle._2}")
     }
   }
 

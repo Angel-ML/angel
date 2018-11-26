@@ -50,10 +50,16 @@ object Word2vecWorkerExample {
     val modelType = "cbow"
     val numPart = 2
     val dimension = 100
-    val batchSize = 256
+    val batchSize = 100
+
+    val learnRate = 0.1f
+    val window = 5
+    val negative = 5
+
+    println(s"batchSize=$batchSize learnRate=$learnRate window=$window negative=$negative")
     val model = new Word2vecWorker(maxWordId.toInt, dimension, "cbow", numPart, numNodePerRow)
     val iterator = buildDataBatches(corpus, batchSize)
-    model.train(iterator, 5, 5, 0.5f, 5, "")
+    model.train(iterator, negative, 5, learnRate, window, "")
 
     PSContext.stop()
     sc.stop()

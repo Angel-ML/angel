@@ -50,8 +50,8 @@ object Word2vecExample {
     val data = sc.textFile(input)
     data.cache()
 
-    val (corpus, denseToString) = Features.corpusStringToInt(sc.textFile(input))
-    val docs = SubSampling.sampling(corpus).repartition(2)
+    val (corpus, _) = Features.corpusStringToInt(sc.textFile(input))
+    val docs = corpus.repartition(2)
 
     docs.cache()
     docs.count()

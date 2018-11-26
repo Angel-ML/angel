@@ -52,6 +52,5 @@ public class W2VPush extends UpdateFunc {
         values[offset + d] += param.buf.readFloat();
       }
     }
-
   }
 }
