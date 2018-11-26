@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -34,12 +34,12 @@ class WideAndDeep extends GraphModel {
   val lr: Double = SharedConf.get().getDouble(MLConf.ML_LEARN_RATE)
 
   override def network(): Unit = {
-    val wide = new SimpleInputLayer("deep-input", 1, new Identity(), new Adam(lr))
+    val wide = new SimpleInputLayer("input", 1, new Identity(), new Adam(lr))
 
-    val embedding = new Embedding("deep-embedding", numFields * numFactors, numFactors, new Adam(lr))
-    val hidden1 = new FCLayer("deep-hidden1", 80, embedding, new Relu, new Adam(lr))
-    val hidden2 = new FCLayer("deep-hidden2", 50, hidden1, new Relu, new Adam(lr))
-    val mlpLayer = new FCLayer("deep-hidden3", 1, hidden2, new Identity, new Adam(lr))
+    val embedding = new Embedding("embedding", numFields * numFactors, numFactors, new Adam(lr))
+    val hidden1 = new FCLayer("hidden1", 80, embedding, new Relu, new Adam(lr))
+    val hidden2 = new FCLayer("hidden2", 50, hidden1, new Relu, new Adam(lr))
+    val mlpLayer = new FCLayer("hidden3", 1, hidden2, new Identity, new Adam(lr))
     val join = new SumPooling("sumPooling", 1, Array[Layer](wide, mlpLayer))
     new SimpleLossLayer("simpleLossLayer", join, new LogLoss)
 

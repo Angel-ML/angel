@@ -127,34 +127,4 @@ class Word2VecSuite extends PSFunSuite with SharedPSContext {
     }
   }
 
-  test("trainWithWorker") {
-    val output = "model/"
-
-    val data = sc.textFile(input)
-    data.cache()
-
-    val (corpus, _) = Features.corpusStringToInt(sc.textFile(input))
-    val docs = corpus.repartition(2)
-
-    docs.cache()
-    docs.count()
-
-    data.unpersist()
-
-    val numDocs = docs.count()
-    val maxWordId = docs.map(_.max).max().toLong + 1
-    val numTokens = docs.map(_.length).sum().toLong
-
-    println(s"numDocs=$numDocs maxWordId=$maxWordId numTokens=$numTokens")
-
-    val numNodePerRow = 10
-    val modelType = "cbow"
-    val numPart = 5
-    val dimension = 128
-    val batchSize = 128
-    val model = new Word2vecWorker(maxWordId.toInt, dimension, "cbow", numPart, numNodePerRow)
-    val iterator = buildDataBatches(corpus, batchSize)
-    model.train(iterator, 5, 5, 0.1f, 5, "")
-  }
-
 }

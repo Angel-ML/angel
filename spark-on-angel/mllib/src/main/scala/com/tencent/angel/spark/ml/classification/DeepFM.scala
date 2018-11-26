@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -20,9 +20,9 @@ package com.tencent.angel.spark.ml.classification
 
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers.Layer
-import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleLossLayer, SimpleInputLayer}
 import com.tencent.angel.ml.core.network.layers.join.SumPooling
 import com.tencent.angel.ml.core.network.layers.linear.{BiInnerSumCross, FCLayer}
+import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer, SimpleLossLayer}
 import com.tencent.angel.ml.core.network.transfunc.{Identity, Relu}
 import com.tencent.angel.ml.core.optimizer.Adam
 import com.tencent.angel.ml.core.optimizer.loss.LogLoss
@@ -36,12 +36,12 @@ class DeepFM extends GraphModel {
 
   override
   def network(): Unit = {
-    val wide = new SimpleInputLayer("deepfm-wide", 1, new Identity(), new Adam(lr))
-    val embedding = new Embedding("deepfm-embedding", numFields * numFactors, numFactors, new Adam(lr))
+    val wide = new SimpleInputLayer("wide", 1, new Identity(), new Adam(lr))
+    val embedding = new Embedding("embedding", numFields * numFactors, numFactors, new Adam(lr))
     val innerSumCross = new BiInnerSumCross("innerSumPooling", embedding)
-    val hidden1 = new FCLayer("deepfm-hidden1", 80, embedding, new Relu, new Adam(lr))
-    val hidden2 = new FCLayer("deepfm-hidden2", 50, hidden1, new Relu, new Adam(lr))
-    val mlpLayer = new FCLayer("deepfm-hidden3", 1, hidden2, new Identity, new Adam(lr))
+    val hidden1 = new FCLayer("hidden1", 80, embedding, new Relu, new Adam(lr))
+    val hidden2 = new FCLayer("hidden2", 50, hidden1, new Relu, new Adam(lr))
+    val mlpLayer = new FCLayer("hidden3", 1, hidden2, new Identity, new Adam(lr))
     val join = new SumPooling("sumPooling", 1, Array[Layer](wide, innerSumCross, mlpLayer))
     new SimpleLossLayer("simpleLossLayer", join, new LogLoss)
   }
