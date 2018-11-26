@@ -28,7 +28,7 @@ class Word2vecWorker(numNode: Int,
                   negative: Int,
                   window: Int,
                   alpha: Float,
-                  batch: NEDataSet): (Double, Array[Long]) = {
+                  batch: NEDataSet): (Double, Long, Array[Long]) = {
 
     var (start, end) = (0L, 0L)
 
@@ -71,20 +71,21 @@ class Word2vecWorker(numNode: Int,
         .get()
     end = System.currentTimeMillis()
     val pushTime = end - start
-    (loss, Array(calcuIndexTime, pullTime, cbowTime, pullTime))
+    (loss._1, loss._2.toLong, Array(calcuIndexTime, pullTime, cbowTime, pullTime))
   }
 
   def sgdForPartition(partitionId: Int,
                       iterator: Iterator[NEDataSet],
                       window: Int,
                       negative: Int,
-                      alpha: Float): Iterator[(Double, Array[Long])] = {
+                      alpha: Float): Iterator[(Double, Long, Array[Long])] = {
     PSContext.instance()
     val r = iterator.zipWithIndex.map(batch => sgdForBatch(partitionId, batch._2,
       window, negative, alpha, batch._1))
       .reduce { (f1, f2) =>
         (f1._1 + f2._1,
-          f1._2.zip(f2._2).map(f => (f._1 + f._2)))}
+          f1._2 + f2._2,
+          f1._3.zip(f2._3).map(f => (f._1 + f._2)))}
     Iterator.single(r)
   }
 
@@ -102,9 +103,10 @@ class Word2vecWorker(numNode: Int,
         sgdForPartition(partitionId, iterator, window, negative, learningRate),
         true).reduce { case (f1, f2) =>
         (f1._1 + f2._1,
-          f1._2.zip(f2._2).map(f => (f._1 + f._2)))}
-      val loss = middle._1
-      val array = middle._2
+          f1._2 + f2._2,
+          f1._3.zip(f2._3).map(f => (f._1 + f._2)))}
+      val loss = middle._1 / middle._2
+      val array = middle._3
       logTime(s"epoch=$epoch " +
         s"loss=$loss " +
         s"calcuIndexTime=${array(0)} " +

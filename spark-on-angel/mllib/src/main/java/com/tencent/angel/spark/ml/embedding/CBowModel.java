@@ -2,6 +2,7 @@ package com.tencent.angel.spark.ml.embedding;
 
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import scala.Tuple2;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -60,7 +61,7 @@ public class CBowModel {
     return indices.toIntArray();
   }
 
-  public double cbow(int[][] sentences, long seed, float[] layers, Int2IntOpenHashMap index, float[] deltas) {
+  public Tuple2<Double, Integer> cbow(int[][] sentences, long seed, float[] layers, Int2IntOpenHashMap index, float[] deltas) {
     System.arraycopy(layers, 0, deltas, 0, layers.length);
 
     Random winRand = new Random(seed);
@@ -68,6 +69,7 @@ public class CBowModel {
 
     float[] neu1 = new float[dimension];
     float[] neu1e = new float[dimension];
+    int loss_cnt = 0;
 
     double sum_loss = 0.0;
     for (int s = 0; s < sentences.length; s++) {
@@ -117,10 +119,15 @@ public class CBowModel {
             float f = 0f;
             for (int c = 0; c < dimension; c++) f += neu1[c] * layers[c + l2];
 
-            if (d == 0)
-              sum_loss += -FastSigmoid.sigmoid(f);
-            else
-              sum_loss += -FastSigmoid.sigmoid(-f);
+            float prob = FastSigmoid.sigmoid(f);
+            if (d == 0) sum_loss -= FastSigmoid.log(prob);
+            else sum_loss -= FastSigmoid.log(1 - prob);
+            loss_cnt ++;
+
+//            if (d == 0)
+//              sum_loss += -FastSigmoid.sigmoid(f);
+//            else
+//              sum_loss += -FastSigmoid.sigmoid(-f);
 
             // Using the sigmoid value from the pre-computed table
             float g = (label - FastSigmoid.sigmoid(f)) * alpha;
@@ -148,7 +155,7 @@ public class CBowModel {
 
 
     for (int a = 0; a < layers.length; a++) deltas[a] = layers[a] - deltas[a];
-    return sum_loss;
+    return new Tuple2<>(sum_loss, loss_cnt);
   }
 
 }
