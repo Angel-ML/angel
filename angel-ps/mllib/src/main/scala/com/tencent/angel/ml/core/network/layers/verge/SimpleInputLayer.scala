@@ -167,7 +167,8 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
         throw new AngelException("Dense data, sparse model, pls. change model to dense")
     }
 
-    bias = PSMatrixUtils.getRowWithIndex(epoch, biasId, 0, VFactory.denseIntVector(Array(0)))
+    //bias = PSMatrixUtils.getRowWithIndex(epoch, biasId, 0, VFactory.denseIntVector(Array(0)))
+    bias = PSMatrixUtils.getRow(epoch, biasId, 0)
   }
 
   override def pushGradient(): Unit = {
