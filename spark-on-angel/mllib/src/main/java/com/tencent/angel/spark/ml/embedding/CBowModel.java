@@ -1,7 +1,9 @@
 package com.tencent.angel.spark.ml.embedding;
 
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import scala.Tuple2;
 
 import java.util.Arrays;
@@ -62,10 +64,13 @@ public class CBowModel {
   }
 
   public Tuple2<Double, Integer> cbow(int[][] sentences, long seed, float[] layers, Int2IntOpenHashMap index, float[] deltas) {
-    System.arraycopy(layers, 0, deltas, 0, layers.length);
+//    System.arraycopy(layers, 0, deltas, 0, layers.length);
 
     Random winRand = new Random(seed);
     Random negRand = new Random(seed + 1);
+
+    Int2IntOpenHashMap inputCounter = new Int2IntOpenHashMap();
+    Int2IntOpenHashMap outputCounter = new Int2IntOpenHashMap();
 
     float[] neu1 = new float[dimension];
     float[] neu1e = new float[dimension];
@@ -124,17 +129,15 @@ public class CBowModel {
             else sum_loss -= FastSigmoid.log(1 - prob);
             loss_cnt ++;
 
-//            if (d == 0)
-//              sum_loss += -FastSigmoid.sigmoid(f);
-//            else
-//              sum_loss += -FastSigmoid.sigmoid(-f);
 
             // Using the sigmoid value from the pre-computed table
             float g = (label - FastSigmoid.sigmoid(f)) * alpha;
             // accumulate for the hidden layer
             for (int c = 0; c < dimension; c++) neu1e[c] += g * layers[c + l2];
             // update output layer
-            for (int c = 0; c < dimension; c++) layers[l2 + c] += g * neu1[c];
+            for (int c = 0; c < dimension; c++) deltas[l2 + c] += g * neu1[c];
+            // add the counter for target
+            outputCounter.addTo(target, 1);
           }
 
           // update hidden layer
@@ -147,14 +150,36 @@ public class CBowModel {
               if (last_word == -1) continue;
               // Update the input vector for each word in the context
               int offset = index.get(last_word) * dimension * 2;
-              for (c = 0; c < dimension; c++) layers[c + offset] += neu1e[c];
+              for (c = 0; c < dimension; c++) deltas[c + offset] += neu1e[c];
+              // add the counter to input
+              inputCounter.addTo(last_word, 1);
             }
         }
       }
     }
 
 
-    for (int a = 0; a < layers.length; a++) deltas[a] = layers[a] - deltas[a];
+    // update input layers
+    ObjectIterator<Int2IntMap.Entry> it = inputCounter.int2IntEntrySet().fastIterator();
+    while (it.hasNext()) {
+      Int2IntMap.Entry entry = it.next();
+      int node = entry.getIntKey();
+      int offset = index.get(node) * dimension * 2;
+      int divider = entry.getIntValue();
+      for (int a = 0; a < dimension; a++) deltas[a + offset] /=  divider;
+    }
+
+    // update output layers
+    it = outputCounter.int2IntEntrySet().fastIterator();
+    while (it.hasNext()) {
+      Int2IntMap.Entry entry = it.next();
+      int node = entry.getIntKey();
+      int offset = index.get(node) * dimension * 2 + dimension;
+      int divider = entry.getIntValue();
+      for (int a = 0; a < dimension; a++) deltas[a + offset] /=  divider;
+    }
+
+//    for (int a = 0; a < layers.length; a++) deltas[a] = layers[a] - deltas[a];
     return new Tuple2<>(sum_loss, loss_cnt);
   }
 
