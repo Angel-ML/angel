@@ -152,24 +152,11 @@ public class UpdateRequest extends PartitionRequest {
     this.taskIndex = taskIndex;
   }
 
-  @Override public int hashCode() {
-    final int prime = 31;
-    int result = super.hashCode();
-    result = prime * result + ((rowsSplit == null) ? 0 : rowsSplit.hashCode());
-    result = prime * result + taskIndex;
-    result = prime * result + (updateClock ? 1231 : 1237);
-    return result;
-  }
-
   @Override public int getHandleElemNum() {
     if (rowsSplit != null) {
       handleElemSize = rowsSplit.size();
     }
     return handleElemSize;
-  }
-
-  @Override public boolean equals(Object obj) {
-    return false;
   }
 
   @Override public String toString() {
