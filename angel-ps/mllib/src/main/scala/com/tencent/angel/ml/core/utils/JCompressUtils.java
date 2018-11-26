@@ -72,7 +72,7 @@ public class JCompressUtils {
           len, byteSum, maxAbs, maxPoint, System.currentTimeMillis() - startTime));
     }
 
-    public static void deserialize(ByteBuf buf) {
+    public static float[] deserialize(ByteBuf buf) {
       long startTime = System.currentTimeMillis();
       int length = buf.readInt();
       int numBits = buf.readInt();
@@ -101,6 +101,7 @@ public class JCompressUtils {
       }
       LOG.debug(String.format("parse %d floats, max abs: %f, max point: %d, cost %d ms",
           length, maxAbs, maxPoint, System.currentTimeMillis() - startTime));
+      return arr;
     }
 
     private static int quantify(float item, float threshold, int maxPoint) {
