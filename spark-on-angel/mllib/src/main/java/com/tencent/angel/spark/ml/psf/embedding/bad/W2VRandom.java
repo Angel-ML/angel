@@ -50,7 +50,8 @@ public class W2VRandom extends UpdateFunc {
       for (int a = 0; a < numRows; a ++) {
         int offset = a * dimension * 2;
         for (int b = 0; b < dimension; b ++)
-          values[b + offset] = (random.nextFloat() - 0.5f) / dimension;
+//          values[b + offset] = (random.nextFloat() - 0.5f) / dimension;
+          values[b + offset] = 0.01f;
       }
     }
   }

@@ -35,12 +35,12 @@ class Word2VecModel(numNode: Int,
                     numPart: Int,
                     maxLength: Int,
                     model: String,
-                    numNodesPerRow: Int = -1,
-                    seed: Int = 2017)
+                    numNodesPerRow: Int,
+                    seed: Int)
   extends NEModel(numNode, dimension, numPart, numNodesPerRow, 2, false, seed) {
 
   def this(param: Param) {
-    this(param.maxIndex, param.embeddingDim, param.numPSPart, param.maxLength, param.model, -1, 2017)
+    this(param.maxIndex, param.embeddingDim, param.numPSPart, param.maxLength, param.model, -1, param.seed)
   }
 
   val modelId: Int = model match {
@@ -55,7 +55,6 @@ class Word2VecModel(numNode: Int,
     train(iterator, param.negSample, param.numEpoch, param.learningRate, param.checkpointInterval, path)
   }
 
-
   override def getDotFunc(data: NEDataSet, batchSeed: Int, ns: Int, partitionId: Int): GetFunc = {
     val param = new DotParam(matrixId, seed, partitionId, modelId, data.asInstanceOf[W2VDataSet].sentences)
     new Dot(param)
@@ -65,28 +64,6 @@ class Word2VecModel(numNode: Int,
     val param = new AdjustParam(matrixId, seed, partitionId, modelId, grad, data.asInstanceOf[W2VDataSet].sentences)
     new Adjust(param)
   }
-
-//  override def doGrad(dots: Array[Float],
-//                      negative: Int,
-//                      alpha: Float): Double = {
-////    val sentences = data.get.asInstanceOf[W2VDataSet].sentences
-////    val size = sentences.map(sen => sen.length).sum
-//    var label = 0
-//    var sumLoss = 0f
-////    assert(dots.length == size * (negative + 1))
-//    for (a <- dots.indices) {
-//      val sig = FastSigmoid.sigmoid(dots(a))
-//      if (a % (negative + 1) == 0) { // positive target
-//        sumLoss += -sig
-//        dots(a) = (1 - sig) * alpha
-//      } else { // negative target
-//        label = 0
-//        sumLoss += -FastSigmoid.sigmoid(-dots(a))
-//        dots(a) = -sig * alpha
-//      }
-//    }
-//    sumLoss
-//  }
 }
 
 object Word2VecModel {

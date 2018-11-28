@@ -72,6 +72,9 @@ class OfflineLearner {
 
     val numSplits = (1.0 / fraction).toInt
     val manifold = OfflineLearner.buildManifold(train, numSplits)
+
+    train.unpersist()
+    
     var numUpdate = 1
 
     for (epoch <- 0 until numEpoch) {

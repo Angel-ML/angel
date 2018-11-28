@@ -59,7 +59,9 @@ class NEModelRandomize(param: RandomizeUpdateParam) extends UpdateFunc(param) {
       else {
         val nodeOccupied = 2 * partDim
         data.indices.foreach(i =>
-          data(i) = if (i % nodeOccupied < partDim) (rowRandom.nextFloat() - 0.5f) / dim else 0.0f)
+//          data(i) = if (i % nodeOccupied < partDim) (rowRandom.nextFloat() - 0.5f) / dim else 0.0f)
+          data(i) = if (i % nodeOccupied < partDim) 0.01f else 0.0f
+        )
       }
     }
   }

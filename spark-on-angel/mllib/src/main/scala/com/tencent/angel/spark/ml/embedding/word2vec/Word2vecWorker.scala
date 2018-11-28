@@ -77,7 +77,8 @@ class Word2vecWorker(numNode: Int,
     end = System.currentTimeMillis()
     val pushTime = end - start
 
-    println(s"${loss._1/loss._2} learnRate=$alpha length=${loss._2}")
+    val batchSize = batch.asInstanceOf[W2VDataSet].sentences.map(_.length).sum
+    println(s"${loss._1/loss._2} learnRate=$alpha length=${loss._2} batchSize=$batchSize")
     (loss._1, loss._2.toLong, Array(calcuIndexTime, pullTime, cbowTime, pushTime))
   }
 
@@ -104,7 +105,6 @@ class Word2vecWorker(numNode: Int,
             path: String,
             checkpointInterval: Int = 10): Unit = {
     for (epoch <- 1 to numEpoch) {
-      logTime(s"start epoch $epoch")
       val data = trainBatches.next()
       val middle = data.mapPartitionsWithIndex((partitionId, iterator) =>
         sgdForPartition(partitionId, iterator, window, negative, learningRate),

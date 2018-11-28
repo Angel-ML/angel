@@ -26,13 +26,13 @@ object Word2vecWorkerExample {
     sc.setLogLevel("ERROR")
     PSContext.getOrCreate(sc)
 
-    val input = "data/text8/text8.split.head"
+    val input = "data/text8/text8.split.remapping"
     val output = "model/"
 
     val data = sc.textFile(input)
     data.cache()
 
-    val (corpus, _) = Features.corpusStringToInt(sc.textFile(input))
+    val (corpus) = Features.corpusStringToIntWithoutRemapping(sc.textFile(input))
     val docs = corpus.repartition(1)
 
     docs.cache()
@@ -59,7 +59,7 @@ object Word2vecWorkerExample {
     println(s"batchSize=$batchSize learnRate=$learnRate window=$window negative=$negative")
     val model = new Word2vecWorker(maxWordId.toInt, dimension, "cbow", numPart, numNodePerRow, 2017)
     val iterator = buildDataBatches(corpus, batchSize)
-    model.train(iterator, negative, 1, learnRate, window, "")
+    model.train(iterator, negative, 5, learnRate, window, "")
 
     PSContext.stop()
     sc.stop()
