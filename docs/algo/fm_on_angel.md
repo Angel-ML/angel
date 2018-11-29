@@ -80,7 +80,7 @@ FM算法的模型由两部分组成，分别是wide和embedding，其中wide就�
     -Daction.type=train \
     -Dml.fm.field.num=11 \
     -Dml.fm.rank=8 \
-    -Dml.sparseinputlayer.optimizer=ftrl \
+    -Dml.inputlayer.optimizer=ftrl \
     -Dangel.train.data.path=$input_path \
     -Dangel.workergroup.number=20 \
     -Dangel.worker.memory.mb=20000 \
