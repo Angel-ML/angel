@@ -28,13 +28,9 @@ import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerIntDoubleRow;
 import com.tencent.angel.ps.storage.vector.ServerRow;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 
 public class QuantifyDoubleFunc extends UpdateFunc {
-
-  private static final Log LOG = LogFactory.getLog(QuantifyDoubleFunc.class);
 
   public QuantifyDoubleFunc(int matrixId, int rowId, double[] array, int bitPerItem) {
     super(new QuantifyDoubleParam(matrixId, rowId, array, bitPerItem));

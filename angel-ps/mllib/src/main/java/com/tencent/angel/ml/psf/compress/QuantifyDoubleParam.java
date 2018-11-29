@@ -25,16 +25,12 @@ import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
 import com.tencent.angel.psagent.PSAgentContext;
 import io.netty.buffer.ByteBuf;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 
 public class QuantifyDoubleParam extends UpdateParam {
-
-  private static final Log LOG = LogFactory.getLog(QuantifyDoubleParam.class);
 
   private final int rowId;
   private final double[] array;
@@ -67,8 +63,6 @@ public class QuantifyDoubleParam extends UpdateParam {
 
   public static class QuantifyDoublePartUParam extends PartitionUpdateParam {
 
-    private static final Log LOG = LogFactory.getLog(QuantifyDoublePartUParam.class);
-
     private int rowId;
     private int start;
     private int end;
@@ -94,55 +88,12 @@ public class QuantifyDoubleParam extends UpdateParam {
       super.serialize(buf);
       buf.writeInt(rowId);
       JCompressUtils.Quantification.serializeDouble(buf, array, start, end, numBits);
-//      buf.writeInt(end - start);
-//      buf.writeInt(numBits);
-//      // find the max abs
-//      double maxAbs = 0.0;
-//      for (int i = start; i < end; i++) {
-//        maxAbs = Math.abs(array[i]) > maxAbs ? Math.abs(array[i]) : maxAbs;
-//      }
-//      buf.writeDouble(maxAbs);
-//      // compress data
-//      long startTime = System.currentTimeMillis();
-//      int byteSum = 0;
-//      long maxPoint = (long) Math.pow(2, numBits - 1) - 1;
-//      for (int i = start; i < end; i++) {
-//        double value = array[i];
-//        long point = (long) Math.floor(Math.abs(value) / maxAbs * maxPoint);
-//        if (value > 1e-10 && point < Integer.MAX_VALUE) {
-//          point +=
-//            (point < maxPoint && Math.random() > 0.5) ? 1 : 0; // add Bernoulli random variable
-//        }
-//        byte[] tmp = long2Byte(point, numBits / 8, value < -1e-10);
-//        buf.writeBytes(tmp);
-//        byteSum += numBits / 8;
-//      }
-//      LOG.info(String
-//        .format("Compress %d doubles from %d bytes to %d bytes, max point %d" + ", cost %d ms",
-//          end - start, (end - start) * 8, byteSum + 12, maxPoint,
-//          System.currentTimeMillis() - startTime));
-    }
+   }
 
     @Override public void deserialize(ByteBuf buf) {
       super.deserialize(buf);
       rowId = buf.readInt();
       arraySlice = JCompressUtils.Quantification.deserializeDouble(buf);
-//      int length = buf.readInt();
-//      int bitPerItem = buf.readInt();
-//      double maxAbs = buf.readDouble();
-//      long maxPoint = (long) Math.pow(2, bitPerItem - 1) - 1;
-//
-//      byte[] itemBytes = new byte[bitPerItem / 8];
-//      arraySlice = new double[length];
-//      for (int i = 0; i < length; i++) {
-//        buf.readBytes(itemBytes);
-//        long point = byte2long(itemBytes);
-//        double parsedValue = (double) point / (double) maxPoint * maxAbs;
-//        arraySlice[i] = parsedValue;
-//      }
-//      LOG.info(String
-//        .format("parse compressed %d double data, max abs: %f, max point: %d", length, maxAbs,
-//          maxPoint));
     }
 
     @Override public int bufferLen() {
