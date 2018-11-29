@@ -19,11 +19,8 @@
 package com.tencent.angel.ps.server.data.request;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ps.server.data.TransportMethod;
-import com.tencent.angel.psagent.PSAgentContext;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -147,24 +144,6 @@ public class GetUDFRequest extends PartitionRequest {
     return partParam;
   }
 
-  @Override public boolean equals(Object o) {
-    if (this == o)
-      return true;
-    if (o == null || getClass() != o.getClass())
-      return false;
-    if (!super.equals(o))
-      return false;
-
-    GetUDFRequest that = (GetUDFRequest) o;
-    return getFuncClass.equals(that.getFuncClass) && partParam.equals(that.partParam);
-  }
-
-  @Override public int hashCode() {
-    int result = super.hashCode();
-    result = 31 * result + getFuncClass.hashCode();
-    result = 31 * result + partParam.hashCode();
-    return result;
-  }
 
   @Override public String toString() {
     return "GetUDFRequest{" + "getFuncClass='" + getFuncClass + '\'' + ", partParam=" + partParam
