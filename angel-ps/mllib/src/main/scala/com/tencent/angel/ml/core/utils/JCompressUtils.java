@@ -29,27 +29,36 @@ public class JCompressUtils {
 
   private static final Log LOG = LogFactory.getLog(JCompressUtils.class);
 
-  static class Quantification {
+  public static class Quantification {
 
-    public static void serialize(ByteBuf buf, float[] arr, int numBits) {
+    public static int serializeFloat(ByteBuf buf, float[] arr, int numBits) {
+      return serializeFloat(buf, arr, 0, arr.length, numBits);
+    }
+
+    public static int serializeDouble(ByteBuf buf, double[] arr, int numBits) {
+      return serializeDouble(buf, arr, 0, arr.length, numBits);
+    }
+
+    public static int serializeFloat(ByteBuf buf, float[] arr,
+        int start, int end, int numBits) {
       long startTime = System.currentTimeMillis();
       if (numBits < 2 || numBits > 16 || (numBits & (numBits - 1)) != 0) {
         numBits = 8;
         LOG.error("Compression bits should be in {2,4,8,16}");
       }
-      int len = arr.length;
+      int len = end- start;
       buf.writeInt(len);
       buf.writeInt(numBits);
       float maxAbs = 0.0f;
-      for (float a : arr) {
-        if (Math.abs(a) > maxAbs) maxAbs =  Math.abs(a);
+      for (int i = start; i < end; i++) {
+        if (Math.abs(arr[i]) > maxAbs) maxAbs =  Math.abs(arr[i]);
       }
       buf.writeFloat(maxAbs);
       int byteSum = 0;
       int maxPoint = (int) Math.pow(2, numBits - 1) - 1;
       int itemPerByte = 8 / numBits;
       int bytePerItem = numBits / 8;
-      for (int i = 0; i < len; ) {
+      for (int i = start; i < end; ) {
         if (bytePerItem >= 1) {
           int point = quantify(arr[i], maxAbs, maxPoint);
           byte[] tmp = serializeInt(point, numBits / 8);
@@ -57,10 +66,12 @@ public class JCompressUtils {
           byteSum += bytePerItem;
           i++;
         } else {
-          float[] tmpA = Arrays.copyOfRange(arr, i, i + itemPerByte);
           int[] tmpQ = new int[itemPerByte];
           for (int j = 0; j < itemPerByte; j++) {
-            tmpQ[j] = quantify(tmpA[j], maxAbs, maxPoint);
+            if (i + j >= end)
+              tmpQ[j] = 0;
+            else
+              tmpQ[j] = quantify(arr[i+j], maxAbs, maxPoint);
           }
           byte tmp = serializeInt(tmpQ, itemPerByte);
           buf.writeByte(tmp);
@@ -68,11 +79,59 @@ public class JCompressUtils {
           i += itemPerByte;
         }
       }
-      LOG.debug(String.format("compress %d floats to %d bytes, max abs: %f, max point: %d, cost %d ms",
+//      LOG.info("original float length: " + len + Arrays.toString(Arrays.copyOfRange(arr, start, end)));
+      LOG.info(String.format("compress %d floats to %d bytes, max abs: %f, max point: %d, cost %d ms",
           len, byteSum, maxAbs, maxPoint, System.currentTimeMillis() - startTime));
+      return arr.length;
     }
 
-    public static float[] deserialize(ByteBuf buf) {
+    public static int serializeDouble(ByteBuf buf, double[] arr,
+        int start, int end, int numBits) {
+      long startTime = System.currentTimeMillis();
+      if (numBits < 2 || numBits > 32 || (numBits & (numBits - 1)) != 0) {
+        numBits = 8;
+        LOG.error("Compression bits should be in {2,4,8,16,32}");
+      }
+      int len = end - start;
+      buf.writeInt(len);
+      buf.writeInt(numBits);
+      double maxAbs = 0.0;
+      for (int i = start; i < end; i++) {
+        if (Math.abs(arr[i]) > maxAbs) maxAbs =  Math.abs(arr[i]);
+      }
+      buf.writeDouble(maxAbs);
+      int byteSum = 0;
+      int maxPoint = (int) Math.pow(2, numBits - 1) - 1;
+      int itemPerByte = 8 / numBits;
+      int bytePerItem = numBits / 8;
+      for (int i = start; i < end; ) {
+        if (bytePerItem >= 1) {
+          int point = quantify(arr[i], maxAbs, maxPoint);
+          byte[] tmp = serializeInt(point, numBits / 8);
+          buf.writeBytes(tmp);
+          byteSum += bytePerItem;
+          i++;
+        } else {
+          int[] tmpQ = new int[itemPerByte];
+          for (int j = 0; j < itemPerByte; j++) {
+            if (i + j >= end)
+              tmpQ[j] = 0;
+            else
+              tmpQ[j] = quantify(arr[i+j], maxAbs, maxPoint);
+          }
+          byte tmp = serializeInt(tmpQ, itemPerByte);
+          buf.writeByte(tmp);
+          byteSum++;
+          i += itemPerByte;
+        }
+      }
+      //LOG.info("original double length: " + len + Arrays.toString(Arrays.copyOfRange(arr, start, end)));
+      LOG.info(String.format("compress %d doubles to %d bytes, max abs: %f, max point: %d, cost %d ms",
+          len, byteSum, maxAbs, maxPoint, System.currentTimeMillis() - startTime));
+      return arr.length;
+    }
+
+    public static float[] deserializeFloat(ByteBuf buf) {
       long startTime = System.currentTimeMillis();
       int length = buf.readInt();
       int numBits = buf.readInt();
@@ -94,17 +153,61 @@ public class JCompressUtils {
           byte b = buf.readByte();
           int[] points = deserializeInt(b, itemPerByte);
           for (int point : points) {
-            arr[i] = maxAbs / maxPoint * point;
-            i++;
+            if (i < length) {
+              arr[i] = maxAbs / maxPoint * point;
+              i++;
+            }
           }
         }
       }
-      LOG.debug(String.format("parse %d floats, max abs: %f, max point: %d, cost %d ms",
+      //LOG.info("parsed float length: " + length + Arrays.toString(arr));
+      LOG.info(String.format("parse %d floats, max abs: %f, max point: %d, cost %d ms",
+          length, maxAbs, maxPoint, System.currentTimeMillis() - startTime));
+      return arr;
+    }
+
+    public static double[] deserializeDouble(ByteBuf buf) {
+      long startTime = System.currentTimeMillis();
+      int length = buf.readInt();
+      int numBits = buf.readInt();
+      double maxAbs = buf.readDouble();
+      int maxPoint = (int) Math.pow(2, numBits - 1) - 1;
+      int itemPerByte = 8 / numBits;
+      int bytePerItem = numBits / 8;
+
+      double[] arr = new double[length];
+      for (int i = 0; i < length;) {
+        if (bytePerItem >= 1) {
+          byte[] itemBytes = new byte[bytePerItem];
+          buf.readBytes(itemBytes);
+          int point = deserializeInt(itemBytes);
+          double item = maxAbs / maxPoint * point;
+          arr[i] = item;
+          i++;
+        } else {
+          byte b = buf.readByte();
+          int[] points = deserializeInt(b, itemPerByte);
+          for (int point : points) {
+            if (i < length) {
+              arr[i] = maxAbs / maxPoint * point;
+              i++;
+            }
+          }
+        }
+      }
+      //LOG.info("parsed double length: " + length + Arrays.toString(arr));
+      LOG.info(String.format("parse %d double, max abs: %f, max point: %d, cost %d ms",
           length, maxAbs, maxPoint, System.currentTimeMillis() - startTime));
       return arr;
     }
 
     private static int quantify(float item, float threshold, int maxPoint) {
+      int point = (int) Math.floor(item / threshold * maxPoint);
+      point += (point < maxPoint && Math.random() > 0.5) ? 1 : 0;
+      return point;
+    }
+
+    private static int quantify(double item, double threshold, int maxPoint) {
       int point = (int) Math.floor(item / threshold * maxPoint);
       point += (point < maxPoint && Math.random() > 0.5) ? 1 : 0;
       return point;
@@ -185,14 +288,23 @@ public class JCompressUtils {
 
   public static void main(String[] argv) {
     Random ran = new Random();
-    int len = 100;
-    int numBits = 2;
-    float[] arr = new float[len];
-    for (int i = 0; i < arr.length; i++) {
-      arr[i] = ran.nextFloat() - 0.5f;
+    int len = 102;
+    int numBits = 4;
+    double[] dArr = new double[len];
+    float[] fArr = new float[len];
+    for (int i = 0; i < dArr.length; i++) {
+      dArr[i] = ran.nextDouble() - 0.5;
     }
-    ByteBuf buf = Unpooled.buffer(1000);
-    JCompressUtils.Quantification.serialize(buf, arr, numBits);
-    JCompressUtils.Quantification.deserialize(buf);
+    ByteBuf buf1 = Unpooled.buffer(1000);
+    JCompressUtils.Quantification.serializeDouble(buf1, dArr, numBits);
+    JCompressUtils.Quantification.deserializeDouble(buf1);
+
+
+    for (int i = 0; i < dArr.length; i++) {
+      fArr[i] = (float) dArr[i];
+    }
+    ByteBuf buf2 = Unpooled.buffer(1000);
+    JCompressUtils.Quantification.serializeFloat(buf2, fArr, numBits);
+    JCompressUtils.Quantification.deserializeFloat(buf2);
   }
 }

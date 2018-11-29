@@ -16,11 +16,13 @@
  */
 
 
-package com.tencent.angel.ml.GBDT.psf;
+package com.tencent.angel.ml.psf.compress;
 
 
+import com.tencent.angel.ml.psf.compress.QuantifyDoubleParam.QuantifyDoublePartUParam;
 import com.tencent.angel.ml.math2.storage.IntDoubleDenseVectorStorage;
 import com.tencent.angel.ml.math2.vector.IntDoubleVector;
+import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
@@ -30,20 +32,23 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 
-// TODO: only support dense double now
-public class CompressUpdateFunc extends UpdateFunc {
+public class QuantifyDoubleFunc extends UpdateFunc {
 
-  private static final Log LOG = LogFactory.getLog(CompressUpdateFunc.class);
+  private static final Log LOG = LogFactory.getLog(QuantifyDoubleFunc.class);
 
-  public CompressUpdateFunc(int matrixId, int rowId, double[] array, int bitPerItem) {
-    super(new CompressUpdateParam(matrixId, rowId, array, bitPerItem));
+  public QuantifyDoubleFunc(int matrixId, int rowId, double[] array, int bitPerItem) {
+    super(new QuantifyDoubleParam(matrixId, rowId, array, bitPerItem));
   }
 
-  public CompressUpdateFunc(int matrixId, int rowId, IntDoubleVector vector, int bitPerItem) {
+  public QuantifyDoubleFunc(int matrixId, int rowId, IntDoubleVector vector, int bitPerItem) {
     this(matrixId, rowId, vector.getStorage().getValues(), bitPerItem);
   }
 
-  public CompressUpdateFunc() {
+  public QuantifyDoubleFunc(int matrixId, int rowId, Vector vector, int bitPerItem) {
+    this(matrixId, rowId, (IntDoubleVector) vector, bitPerItem);
+  }
+
+  public QuantifyDoubleFunc() {
     super(null);
   }
 
@@ -52,8 +57,8 @@ public class CompressUpdateFunc extends UpdateFunc {
       .getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
 
     if (part != null) {
-      CompressUpdateParam.CompressPartitionUpdateParam cp =
-        (CompressUpdateParam.CompressPartitionUpdateParam) partParam;
+      QuantifyDoublePartUParam cp =
+        (QuantifyDoublePartUParam) partParam;
       ServerRow row = part.getRow(cp.getRowId());
       if (row != null) {
         update(row, cp.getArraySlice());
