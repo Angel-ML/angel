@@ -21,20 +21,20 @@ package com.tencent.angel.ml.core.network.layers.linear
 
 import java.util.concurrent.Future
 
-import com.tencent.angel.conf.{AngelConf, MatrixConf}
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.network.layers._
+import com.tencent.angel.ml.core.network.layers.verge.Embedding
+import com.tencent.angel.ml.core.network.transfunc.TransFunc
+import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
+import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import com.tencent.angel.ml.math2.utils.MatrixUtils
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.matrix.psf.update.RandomNormal
-import com.tencent.angel.ml.core.network.layers._
-import com.tencent.angel.ml.core.network.layers.verge.Embedding
-import com.tencent.angel.ml.core.network.transfunc.TransFunc
-import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
-import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.psagent.PSAgentContext
