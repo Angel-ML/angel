@@ -27,7 +27,7 @@ import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.transfunc.TransFunc
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
 import com.tencent.angel.ml.core.utils.{NetUtils, PSMatrixUtils}
-import com.tencent.angel.ml.math2.MFactory
+import com.tencent.angel.ml.math2.{MFactory, VFactory}
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import com.tencent.angel.ml.math2.utils.VectorUtils
@@ -164,7 +164,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
         throw new AngelException("Dense data, sparse model, pls. change model to dense")
     }
 
-    bias = PSMatrixUtils.getRow(epoch, biasId, 0)
+    bias = PSMatrixUtils.getRowWithIndex(epoch, biasId, 0, VFactory.denseIntVector(Array(0)))
   }
 
   override def pushGradient(): Unit = {

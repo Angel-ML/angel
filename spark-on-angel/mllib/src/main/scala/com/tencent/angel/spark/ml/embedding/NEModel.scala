@@ -179,7 +179,7 @@ abstract class NEModel(numNode: Int,
     PSContext.instance()
 
     iterator.zipWithIndex.map { case (batch, index) =>
-      sgdForBatch(partitionId, 2017, batch, index)
+      sgdForBatch(partitionId, rand.nextInt(), batch, index)
     }
   }
 
