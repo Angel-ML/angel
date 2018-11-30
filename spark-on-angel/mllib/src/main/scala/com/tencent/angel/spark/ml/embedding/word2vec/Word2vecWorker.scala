@@ -1,11 +1,14 @@
 package com.tencent.angel.spark.ml.embedding.word2vec
 
+import java.text.SimpleDateFormat
+import java.util.Date
+
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ps.storage.matrix.PartitionSourceMap
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.embedding.CBowModel
-import com.tencent.angel.spark.ml.embedding.NEModel.{NEDataSet, logTime}
+import com.tencent.angel.spark.ml.embedding.NEModel.NEDataSet
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel.W2VDataSet
 import com.tencent.angel.spark.ml.psf.embedding.bad._
 import com.tencent.angel.spark.models.PSMatrix
@@ -151,6 +154,11 @@ class Word2vecWorker(numNode: Int,
 
   private def initialize(): Unit = {
     matrix.psfUpdate(new W2VRandom(new W2VRandomParam(matrix.id, dimension))).get()
+  }
+
+  def logTime(msg: String): Unit = {
+    val time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date)
+    println(s"[$time] $msg")
   }
 
 }

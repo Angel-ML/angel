@@ -61,7 +61,7 @@ class LINEModelSuite extends PSFunSuite with SharedPSContext {
         println(msg)
       }
     }
-    model.train(data, param)
+    model.train(data, param, "")
     model.save(output, 0)
     model.destroy()
 
@@ -88,7 +88,7 @@ class LINEModelSuite extends PSFunSuite with SharedPSContext {
         println(msg)
       }
     }
-    model.train(data, param)
+    model.train(data, param, "")
     model.save(output, 0)
     model.destroy()
 

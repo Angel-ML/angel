@@ -16,13 +16,12 @@
  */
 
 
-package com.tencent.angel.spark.ml
+package com.tencent.angel.spark.ml.embedding
 
-import com.tencent.angel.spark.ml.embedding.Param
-import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel.buildDataBatches
 import com.tencent.angel.spark.ml.embedding.word2vec.{Word2VecModel, Word2vecWorker}
-import com.tencent.angel.spark.ml.feature.{Features, SubSampling}
+import com.tencent.angel.spark.ml.feature.Features
 import com.tencent.angel.spark.ml.psf.embedding.bad._
+import com.tencent.angel.spark.ml.{PSFunSuite, SharedPSContext}
 
 import scala.util.Random
 

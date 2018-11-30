@@ -87,7 +87,7 @@ class Word2VecModelSuite extends PSFunSuite with SharedPSContext {
         println(msg)
       }
     }
-    model.train(docs, param)
+    model.train(docs, param, "")
     model.save(output, 0)
     model.destroy()
 
@@ -114,7 +114,7 @@ class Word2VecModelSuite extends PSFunSuite with SharedPSContext {
         println(msg)
       }
     }
-    model.train(docs, param)
+    model.train(docs, param, "")
     model.save(output, 0)
     model.destroy()
 
