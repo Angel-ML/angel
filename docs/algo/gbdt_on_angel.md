@@ -214,6 +214,6 @@ angel-submit \
 	| Angel  | UserGender2 | 58min 39s  |  175s    |  0.243316  |
 
 * **参考文献**
-1. Jiawei Jiang, Bin Cui, Ce Zhang and Fangcheng Fu. [DimBoost: Boosting Gradient Boosting Decision Tree to Higher Dimensions](https://dl.acm.org/citation.cfm?id=3196892). SIGMOD 2018.
+1. Jiawei Jiang, Bin Cui, Ce Zhang and Fangcheng Fu. [DimBoost: Boosting Gradient Boosting Decision Tree to Higher Dimensions](https://dl.acm.org/citation.cfm?id=3196892). SIGMOD, 2018.
 2. Tianqi Chen and Carlos Guestrin. [XGBoost: A Scalable Tree Boosting System](https://dl.acm.org/citation.cfm?id=2939785). KDD, 2016.
 3. Michael Greenwald and Sanjeev Khanna. [Space-efficient Online Computation of Quantile Summaries](https://dl.acm.org/citation.cfm?id=375670). SIGMOD, 2001.
