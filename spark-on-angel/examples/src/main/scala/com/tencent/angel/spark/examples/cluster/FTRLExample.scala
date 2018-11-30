@@ -7,6 +7,9 @@ import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.core.metric.AUC
 import com.tencent.angel.spark.ml.online_learning.{FTRL, SparseLRModel}
 import com.tencent.angel.spark.ml.util.{DataLoader, SparkUtils}
+import com.tencent.angel.utils.HdfsUtil
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -35,13 +38,17 @@ object FTRLExample {
     val input = params.getOrElse("input", "data/census/census_148d_train.libsvm")
     val batchSize = params.getOrElse("batchSize", "100").toInt
     val numEpoch = params.getOrElse("numEpoch", "3").toInt
-    val modelPath = params.getOrElse("output", "")
+    val output = params.getOrElse("output", "")
+    val modelPath = params.getOrElse("model", "")
 
     // We use more partitions to achieve dynamic load balance
     val partNum = (SparkUtils.getNumExecutors(SparkContext.getOrCreate().getConf) * 6.15).toInt
 
     val opt = new FTRL(lambda1, lambda2, alpha, beta)
     opt.init(dim, RowType.T_DOUBLE_SPARSE_LONGKEY)
+
+    if (modelPath.length > 0)
+      opt.load(modelPath + "/back")
 
     val sc = SparkContext.getOrCreate()
     val data = sc.textFile(input).repartition(partNum)
@@ -70,9 +77,11 @@ object FTRLExample {
       println(s"epoch=$epoch loss=${totalLoss / size} auc=$auc")
     }
 
-    if (modelPath.length > 0) {
-      val model = SparseLRModel(opt.weight)
-      model.save(modelPath)
+    if (output.length > 0) {
+      val weight = opt.weight
+      opt.save(output + "/back")
+      val model = SparseLRModel(weight)
+      model.save(output + "/weight")
     }
     stop()
   }
@@ -81,10 +90,7 @@ object FTRLExample {
     val margin = -w.dot(feature)
     val gradientMultiplier = 1.0 / (1.0 + math.exp(margin)) - label
     val grad = feature.mul(gradientMultiplier).asInstanceOf[LongDoubleVector]
-
-
     val loss = if (label > 0) log1pExp(margin) else log1pExp(margin) - margin
-
     (grad, loss)
   }
 

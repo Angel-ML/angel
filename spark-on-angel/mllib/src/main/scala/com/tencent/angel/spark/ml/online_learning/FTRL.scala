@@ -19,13 +19,18 @@
 package com.tencent.angel.spark.ml.online_learning
 
 import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.storage.LongKeyVectorStorage
 import com.tencent.angel.ml.math2.ufuncs.{OptFuncs, Ufuncs}
 import com.tencent.angel.ml.math2.vector.{LongDoubleVector, LongDummyVector, LongKeyVector, Vector}
 import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
+import com.tencent.angel.model.output.format.{ColIdValueTextRowFormat, RowIdColIdValueTextRowFormat}
 import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
+import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
 import com.tencent.angel.spark.ml.psf.FTRLWUpdater
 import com.tencent.angel.spark.models.PSVector
 import com.tencent.angel.spark.util.VectorUtils
@@ -81,11 +86,7 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
       val grad = feature.mul(multiplier)
       val delta = OptFuncs.ftrldelta(localN, grad, alpha)
 
-      val loss =
-        if (label > 0)
-          math.log1p(math.exp(margin))
-        else
-          math.log1p(math.exp(margin)) - margin
+      val loss = if (label > 0) log1pExp(margin) else log1pExp(margin) - margin
 
       lossSum += loss
       Ufuncs.iaxpy2(deltaN, grad, 1)
@@ -254,5 +255,32 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     } else {
       (-1) * (1.0 / (lambda2 + (beta + Math.sqrt(nOnId)) / alpha)) * (zOnId - Math.signum(zOnId).toInt * lambda1)
     }
+  }
+
+  def log1pExp(x: Double): Double = {
+    if (x > 0) {
+      x + math.log1p(math.exp(-x))
+    } else {
+      math.log1p(math.exp(x))
+    }
+  }
+
+  def save(path: String): Unit = {
+    val format = classOf[RowIdColIdValueTextRowFormat].getCanonicalName
+    val modelContext = new ModelSaveContext(path)
+    val name = PSContext.instance().getMatrixMeta(zPS.poolId).get.getName
+    val matrixContext = new MatrixSaveContext(name, format)
+    matrixContext.addIndices(Array(0, 1, 2))
+    modelContext.addMatrix(matrixContext)
+    AngelPSContext.save(modelContext)
+  }
+
+  def load(path: String): Unit = {
+    val format = classOf[RowIdColIdValueTextRowFormat].getCanonicalName
+    val modelContext = new ModelLoadContext(path)
+    val name = PSContext.instance().getMatrixMeta(zPS.poolId).get.getName
+    val matrixContext = new MatrixLoadContext(name, format)
+    modelContext.addMatrix(matrixContext)
+    AngelPSContext.load(modelContext)
   }
 }
