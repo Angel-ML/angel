@@ -313,7 +313,7 @@ object SharedConf {
     }
   }
 
-  def runningModel(): RunningMode = {
+  def runningMode(): RunningMode = {
     get()
 
     sc.get(AngelConf.ANGEL_RUNNING_MODE) match {
