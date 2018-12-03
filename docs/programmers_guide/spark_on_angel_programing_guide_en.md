@@ -221,12 +221,60 @@ for (i <- 1 to ITERATIONS) {
     val subG = VFactory.sparseDoubleVector(dim)
     iter.foreach { case (label, feature) =>
       subG.iadd(feature.mul((1 / (1 + math.exp(-label * brzW.dot(feature))) - 1) * label))
+    }
 
     gradient.increment(subG)
   }
   // add gradient to weight
   VectorUtils.axpy(-lr, gradient, weight)
 }
+```
+
+Example 3: In this third example, we describe how to use the Adam optimizer to accelerate the convergence speed. To use the Adam optimizer, we need to maintain another two vectors to calculate the historical gradients. Compared with the vanilla SGD, which allocates a PSMatrix with two rows, we allocates a PSMatrix with 4 rows
+```scala
+import com.tencent.angel.ml.core.optimizer.Adam
+import com.tencent.angel.ml.matrix.RowType
+
+
+// allocate a randomly initialized 4xdim PS matrix
+// the first row stores the weight values, the 2nd and 3rd rows stores the extra vectors for Adam
+// while the 4th row stores the gradients gathered from workers
+val mat = PSMatrix.rand(4, dim, RowType.T_FLOAT_DENSE)
+
+// reset the 2,3 rows (rowId=1,2)
+mat.reset(Array(1,2))
+
+// use adam with lr = 0.01
+val lr  = 0.01
+val opt = Adam(lr)
+
+// parse the input data, each example is a (label, Vector) pair
+val instance = sc.textFile(path).map(f => parse(f))
+
+for (iteration <- 1 until MAX_ITERATION) {
+    // clear gradients at the start of each iteration
+    mat.reset(3)
+
+    val numSamples = data.sample(false, 0.01, 42).mapPartitions {
+        case iter =>
+            PSContext.instance()
+            // pull the first row of matrix; we can use sparse pull here to save network communication, for example, mat.pull(0, Array(0,1,2))
+            val weight = mat.pull(0)
+            val gradients = VFactory.sparseFloatVector(dim)
+            var size = 0
+            iter.foreach { case (label, feature) =>
+                gradients.iadd(feature.mul((1 / (1 + math.exp(-label * weight.dot(feature))) - 1) * label))
+                size += 1
+            }
+            // add the gradient to servers, we add the gradients to the 4th row (rowId=3)
+            mat.increment(3, gradient)
+            Iterator.single(size)
+    }.reduce(_ + _)
+    // run the optimizer update on the driver,
+    // the second param ``1`` means there are 1 row which is used for weights.
+    opt.update(mat.id, 1, iteration, numSamples)
+}
+
 ```
 
 
@@ -339,6 +387,9 @@ def train(data: RDD[LabeledData], model: LogisticRegression): Unit = {
 val conf = new SparkConf()
 val sc   = new SparkContext(conf)
 val data = sc.textFile(input).map(f => parseIntFloat(f, dim))
+
+// set running mode, use angel_ps mode for spark
+SharedConf.get().set(AngelConf.ANGEL_RUNNING_MODE, RunningMode.ANGEL_PS.toString)
 
 // start PS
 PSContext.getOrCreate(sc)

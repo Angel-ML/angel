@@ -21,13 +21,25 @@ package com.tencent.angel.ml.core.network.layers.linear
 
 import java.util.concurrent.Future
 
+
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.graph.Graph
+
+import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.exception.AngelException
+import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.network.layers._
+import com.tencent.angel.ml.core.network.layers.verge.Embedding
+import com.tencent.angel.ml.core.network.transfunc.TransFunc
+import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
+import com.tencent.angel.ml.core.utils.PSMatrixUtils
+
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import com.tencent.angel.ml.math2.utils.MatrixUtils
 import com.tencent.angel.ml.matrix.RowType
+
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.layers.verge.Embedding
 import com.tencent.angel.ml.core.network.transfunc.TransFunc
@@ -35,6 +47,9 @@ import com.tencent.angel.ml.core.network.variable.MatVariable.MatrixType
 import com.tencent.angel.ml.core.network.variable.Variable
 import com.tencent.angel.ml.core.network.variable.Variable.Location
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
+
+import com.tencent.angel.ml.matrix.psf.update.RandomNormal
+
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import org.apache.commons.logging.LogFactory
@@ -48,11 +63,11 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
 
   val sharedConf: SharedConf = graph.conf
   val modelType: RowType = SharedConf.denseModelType
-  val location: Location.Location = Location.PS
+  val numTask: Int = sharedConf.get(AngelConf.ANGEL_WORKERGROUP_NUMBER).toInt
 
   private val weight = Variable.getMatrix(s"${this.getClass.getSimpleName}_weight", inputLayer.outputDim,
     outputDim, OptUtils.getSlotNum(optimizer), modelType, MatrixType.Blas, location)
-  private val bias =  Variable.getVector(s"${this.getClass.getSimpleName}_bias", outputDim, modelType,
+  private val bias = Variable.getVector(s"${this.getClass.getSimpleName}_bias", outputDim, modelType,
     location)
 
   @transient var forward: Matrix = _

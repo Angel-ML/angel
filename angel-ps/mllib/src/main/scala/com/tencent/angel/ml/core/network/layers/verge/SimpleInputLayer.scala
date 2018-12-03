@@ -20,6 +20,7 @@ package com.tencent.angel.ml.core.network.layers.verge
 
 import java.util.concurrent.Future
 
+import com.tencent.angel.RunningMode
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.graph.Graph
@@ -31,10 +32,10 @@ import com.tencent.angel.ml.core.network.variable.Variable.Location
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
 import com.tencent.angel.ml.core.utils.RowTypeUtils
 import com.tencent.angel.ml.math2.MFactory
-import com.tencent.angel.ml.math2.matrix._
+import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix, Matrix}
 import com.tencent.angel.ml.math2.utils.VectorUtils
-import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import org.apache.commons.logging.LogFactory
 
@@ -47,9 +48,8 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
 
   val sharedConf: SharedConf = graph.conf
   val modelType: RowType = SharedConf.modelType
-  val location: Location.Location = Location.PS
-
   private val numSlot = OptUtils.getSlotNum(optimizer)
+
   private val weight = (SharedConf.inputDataFormat, RowTypeUtils.storageType(modelType)) match {
     case ("dense", "dense" | "component_dense") => // dense data, dense model
       Variable.getMatrix(s"${this.getClass.getSimpleName}_weight", outputDim, SharedConf.indexRange,
@@ -157,7 +157,6 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
       case STATUS.Backward =>
         weight.pushGrads(graph.placeHolder.getFeats, backward)
         bias.pushGrads(backward, optimizer.lr)
-
         status = STATUS.Gradient
       case _ =>
     }
@@ -173,6 +172,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
       case STATUS.Gradient =>
         result = weight.update(optimizer, epoch, batchSize)
         bias.update(optimizer, epoch, batchSize)
+
         status = STATUS.Update
       case _ => throw new AngelException("STATUS Error, please calculate Gradient first!")
     }
@@ -180,6 +180,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
     // println(s"update Time = ${end - start} ms")
     result
   }
+
 
   override def init(taskFlag: Int): Unit = {
     weight.init(taskFlag, mean = 0.0, stddev = 0.000001)

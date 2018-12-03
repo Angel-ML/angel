@@ -18,6 +18,7 @@
 
 package com.tencent.angel.ml.core.optimizer
 
+import com.tencent.angel.RunningMode
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.graph.Graph
@@ -62,10 +63,11 @@ object OptUtils {
     }
   }
 
-  def getNormal(conf: SharedConf, graph: Graph): Double = {
-    conf.get(AngelConf.ANGEL_RUNNING_MODE) match {
-      case "ANGEL_PS" => 1.0
-      case "ANGEL_PS_WORKER" => graph.placeHolder.getBatchSize * graph.taskNum
+  def getNormal(mode: RunningMode, graph: Graph): Double = {
+    mode match {
+      case RunningMode.ANGEL_PS => 1.0
+      case RunningMode.ANGEL_PS_WORKER => graph.placeHolder.getBatchSize * graph.taskNum
+      case RunningMode.ANGEL_LOCAL => graph.placeHolder.getBatchSize
     }
   }
 }

@@ -26,9 +26,7 @@ import com.tencent.angel.psagent.PSAgentContext;
 import io.netty.buffer.ByteBuf;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Get a batch row splits rpc request.
@@ -130,56 +128,5 @@ public class GetRowsSplitRequest extends PartitionRequest {
 
   @Override public int bufferLen() {
     return super.bufferLen() + (rowIndexes != null ? (4 + rowIndexes.size() * 4) : 0);
-  }
-
-  @Override public int hashCode() {
-    final int prime = 31;
-    int result = super.hashCode();
-    result = prime * result + ((rowIndexes == null) ? 0 : rowIndexes.size());
-    return result;
-  }
-
-  @Override public boolean equals(Object obj) {
-    if (this == obj)
-      return true;
-    if (!super.equals(obj))
-      return false;
-    if (getClass() != obj.getClass())
-      return false;
-    GetRowsSplitRequest other = (GetRowsSplitRequest) obj;
-    if (rowIndexes == null) {
-      if (other.rowIndexes != null)
-        return false;
-    } else if (!equals(rowIndexes, other.rowIndexes))
-      return false;
-    return true;
-  }
-
-  private boolean equals(List<Integer> list1, List<Integer> list2) {
-    if (list1 == null && list2 == null) {
-      return true;
-    } else if (list1 != null && list2 != null) {
-      if (list1.size() != list2.size()) {
-        return false;
-      }
-
-      int size = list1.size();
-      ArrayList<Integer> sortedList1 = new ArrayList<Integer>(size);
-      ArrayList<Integer> sortedList2 = new ArrayList<Integer>(size);
-      sortedList1.addAll(list1);
-      sortedList2.addAll(list2);
-      Collections.sort(sortedList1);
-      Collections.sort(sortedList2);
-
-      for (int i = 0; i < size; i++) {
-        if (!Objects.equals(sortedList1.get(i), sortedList2.get(i))) {
-          return false;
-        }
-      }
-
-      return true;
-    } else {
-      return false;
-    }
   }
 }

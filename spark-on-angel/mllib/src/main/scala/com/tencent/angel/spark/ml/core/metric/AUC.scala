@@ -47,6 +47,10 @@ class AUC extends Metric {
         pairs.iterator
     }
 
+    calculate(pairs)
+  }
+
+  def calculate(pairs: RDD[(Double, Double)]): Double = {
     // sort by predict
     val sorted = pairs.sortBy(f => f._2)
     sorted.cache()
@@ -60,7 +64,6 @@ class AUC extends Metric {
     val auc = (sumRanks - (numPositive * (numPositive + 1.0)) / 2.0) / (numPositive * numNegetive)
 
     sorted.unpersist()
-
     auc
   }
 

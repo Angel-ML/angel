@@ -21,7 +21,10 @@ package com.tencent.angel.ml.core.network.layers
 import java.util.concurrent.Future
 
 import com.google.gson.Gson
+import com.tencent.angel.RunningMode
+import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.graph.Graph
+import com.tencent.angel.ml.core.network.variable.Variable.Location
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.optimizer.loss.LossFunc
@@ -36,6 +39,13 @@ object STATUS extends Enumeration {
 }
 
 trait Trainable {
+  val mode: RunningMode = SharedConf.runningMode()
+
+  val location: Location.Location = mode match {
+    case RunningMode.ANGEL_LOCAL => Location.Local
+    case _ => Location.PS
+  }
+
   def optimizer: Optimizer
 
   def pullParams(epoch: Int): Unit

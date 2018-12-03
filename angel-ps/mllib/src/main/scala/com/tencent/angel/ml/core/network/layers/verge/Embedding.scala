@@ -28,7 +28,6 @@ import com.tencent.angel.ml.core.network.graph.Graph
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.variable.MatVariable.MatrixType
 import com.tencent.angel.ml.core.network.variable.Variable
-import com.tencent.angel.ml.core.network.variable.Variable.Location
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.vector._
@@ -45,7 +44,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
 
   val sharedConf: SharedConf = graph.conf
   val modelType: RowType = SharedConf.modelType
-  private val location: Location.Location = Location.PS
+  val blockSize: Int = SharedConf.blockSize
 
   private val embedding = Variable.getMatrix(s"${this.getClass.getSimpleName}_embedding", numFactors,
     SharedConf.indexRange, SharedConf.modelSize, OptUtils.getSlotNum(optimizer), modelType, MatrixType.Embedding, location)

@@ -193,28 +193,6 @@ public class PartitionRequest extends Request {
       + comeFromPs + "} " + super.toString();
   }
 
-  @Override public boolean equals(Object o) {
-    if (this == o)
-      return true;
-    if (o == null || getClass() != o.getClass())
-      return false;
-
-    PartitionRequest that = (PartitionRequest) o;
-
-    if (clock != that.clock)
-      return false;
-    if (comeFromPs != that.comeFromPs)
-      return false;
-    return partKey != null ? partKey.equals(that.partKey) : that.partKey == null;
-  }
-
-  @Override public int hashCode() {
-    int result = clock;
-    result = 31 * result + (partKey != null ? partKey.hashCode() : 0);
-    result = 31 * result + (comeFromPs ? 1 : 0);
-    return result;
-  }
-
   public int getHandleElemNum() {
     return handleElemSize;
   }

@@ -313,12 +313,13 @@ object SharedConf {
     }
   }
 
-  def runningModel(): RunningMode = {
+  def runningMode(): RunningMode = {
     get()
 
     sc.get(AngelConf.ANGEL_RUNNING_MODE) match {
       case "ANGEL_PS" => RunningMode.ANGEL_PS
       case "ANGEL_PS_WORKER" => RunningMode.ANGEL_PS_WORKER
+      case "ANGEL_LOCAL" => RunningMode.ANGEL_LOCAL
     }
   }
 
@@ -484,11 +485,5 @@ object SharedConf {
 
     sc.getDouble(MLConf.ML_DATA_POSNEG_RATIO,
       MLConf.DEFAULT_ML_DATA_POSNEG_RATIO)
-  }
-
-  def isLocal: Boolean = {
-    get()
-
-    sc.getBoolean(MLConf.ANGEL_ML_ISLOCAL, MLConf.DEFAULT_ANGEL_ML_ISLOCAL)
   }
 }

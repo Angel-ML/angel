@@ -86,7 +86,6 @@ class SimpleLossLayer(name: String, inputLayer: Layer, lossFunc: LossFunc)(
     output
   }
 
-
   override def getLossFunc(): LossFunc = lossFunc
 
   override def toString: String = {

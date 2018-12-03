@@ -82,7 +82,7 @@ LR on Angel支持“dense”、“libsvm”、“dummy”三种数据格式。�
     -Dml.learn.decay=0.5 \
     -Dml.reg.l2=0.03 \
     -Daction.type=train \
-    -Dml.sparseinputlayer.optimizer=ftrl \
+    -Dml.inputlayer.optimizer=ftrl \
     -Dangel.train.data.path=$input_path \
     -Dangel.workergroup.number=20 \
     -Dangel.worker.memory.mb=20000 \

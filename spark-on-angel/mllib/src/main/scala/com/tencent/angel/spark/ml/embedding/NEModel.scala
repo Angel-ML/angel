@@ -37,7 +37,6 @@ import com.tencent.angel.spark.ml.psf.embedding.NEDot.NEDotResult
 import com.tencent.angel.spark.ml.psf.embedding.NESlice.SliceResult
 import com.tencent.angel.spark.ml.psf.embedding.{Init, InitParam, NEModelRandomize, NESlice}
 import com.tencent.angel.spark.models.PSMatrix
-import com.tencent.angel.spark.ml.embedding.NEModel.logTime
 
 abstract class NEModel(numNode: Int,
                        dimension: Int,
@@ -98,13 +97,14 @@ abstract class NEModel(numNode: Int,
 
   def save(modelPathRoot: String, epoch: Int): Unit = {
     val modelPath = new Path(modelPathRoot, s"CP_$epoch").toString
-    val startTime = logTime(s"saving model to $modelPath")
+    val startTime = System.currentTimeMillis()
+    logTime(s"saving model to $modelPath")
     val ss = SparkSession.builder().getOrCreate()
     deleteIfExists(modelPath, ss)
     slicedSavingRDDBuilder(ss, partDim)
       .flatMap[String](getSlice)
       .saveAsTextFile(modelPath)
-    logTime("saving finished", startTime)
+    logTime(s"saving finished, cost ${(System.currentTimeMillis() - startTime) / 1000.0}s")
   }
 
   private def getSlice(slicePair: (Int, Int)): Array[String] = {
@@ -163,9 +163,9 @@ abstract class NEModel(numNode: Int,
       psfUpdate(getAdjustFunc(batch, seed, negative, dots, partitionId))
       end = System.currentTimeMillis()
       val adjustTime = end - start
-      // return loss
-//      if ((batchId + 1) % 100 == 0)
-//        logTime(s"batchId=$batchId dotTime=$dotTime gradientTime=$gradientTime adjustTime=$adjustTime")
+//       return loss
+      if ((batchId + 1) % 100 == 0)
+        logTime(s"batchId=$batchId dotTime=$dotTime gradientTime=$gradientTime adjustTime=$adjustTime")
       (loss, dots.length.toLong, Array(dotTime, gradientTime, adjustTime))
     }
 
@@ -179,7 +179,7 @@ abstract class NEModel(numNode: Int,
   private def randomInitialize(seed: Int): Unit = {
     val beforeRandomize = System.currentTimeMillis()
     psfUpdate(new NEModelRandomize(matrixId, dimension / numPart, dimension, order, seed))
-    logTime(s"Model successfully Randomized", beforeRandomize)
+    logTime(s"Model successfully Randomized, cost ${(System.currentTimeMillis() - beforeRandomize) / 1000.0}s")
   }
 
   private def psfUpdate(func: UpdateFunc): VoidResult = {
@@ -235,6 +235,16 @@ abstract class NEModel(numNode: Int,
     }
     loss
   }
+
+  def destroy(): Unit ={
+    psMatrix.destroy()
+  }
+
+  def logTime(msg: String): Unit = {
+    val time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date)
+    println(s"[$time] $msg")
+  }
+
 }
 
 object NEModel {
@@ -252,13 +262,6 @@ object NEModel {
       }
     }
     loss
-  }
-
-  def logTime(msg: String, begin: Long = -1): Long = {
-    val time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date)
-    val end = System.currentTimeMillis()
-    println(if (begin > 0) s"[$time] $msg, cost ${(end - begin) / 1000.0}s" else s"[$time] $msg")
-    end
   }
 
   abstract class NEDataSet

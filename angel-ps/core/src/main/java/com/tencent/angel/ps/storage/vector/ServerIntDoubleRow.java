@@ -190,12 +190,42 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
       switch (updateType) {
         case T_DOUBLE_SPARSE:
         case T_DOUBLE_SPARSE_COMPONENT:
-          updateUseSparse(buf, op);
+          updateUseIntDoubleSparse(buf, op);
+          break;
+
+        case T_FLOAT_SPARSE:
+        case T_FLOAT_SPARSE_COMPONENT:
+          updateUseIntFloatSparse(buf, op);
+          break;
+
+        case T_LONG_SPARSE:
+        case T_LONG_SPARSE_COMPONENT:
+          updateUseIntLongSparse(buf, op);
+          break;
+
+        case T_INT_SPARSE:
+        case T_INT_SPARSE_COMPONENT:
+          updateUseIntIntSparse(buf, op);
           break;
 
         case T_DOUBLE_DENSE:
         case T_DOUBLE_DENSE_COMPONENT:
-          updateUseDense(buf, op);
+          updateUseIntDoubleDense(buf, op);
+          break;
+
+        case T_FLOAT_DENSE:
+        case T_FLOAT_DENSE_COMPONENT:
+          updateUseIntFloatDense(buf, op);
+          break;
+
+        case T_LONG_DENSE:
+        case T_LONG_DENSE_COMPONENT:
+          updateUseIntLongDense(buf, op);
+          break;
+
+        case T_INT_DENSE:
+        case T_INT_DENSE_COMPONENT:
+          updateUseIntIntDense(buf, op);
           break;
 
         default: {
@@ -210,7 +240,7 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
     }
   }
 
-  private void updateUseDense(ByteBuf buf, UpdateOp op) {
+  private void updateUseIntDoubleDense(ByteBuf buf, UpdateOp op) {
     int size = buf.readInt();
     if (op == UpdateOp.PLUS) {
       for (int i = 0; i < size; i++) {
@@ -223,7 +253,46 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
     }
   }
 
-  private void updateUseSparse(ByteBuf buf, UpdateOp op) {
+  private void updateUseIntFloatDense(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      for (int i = 0; i < size; i++) {
+        intDoubleRow.set(i, intDoubleRow.get(i) + buf.readFloat());
+      }
+    } else {
+      for (int i = 0; i < size; i++) {
+        intDoubleRow.set(i, buf.readFloat());
+      }
+    }
+  }
+
+  private void updateUseIntIntDense(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      for (int i = 0; i < size; i++) {
+        intDoubleRow.set(i, intDoubleRow.get(i) + buf.readInt());
+      }
+    } else {
+      for (int i = 0; i < size; i++) {
+        intDoubleRow.set(i, buf.readInt());
+      }
+    }
+  }
+
+  private void updateUseIntLongDense(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      for (int i = 0; i < size; i++) {
+        intDoubleRow.set(i, intDoubleRow.get(i) + buf.readLong());
+      }
+    } else {
+      for (int i = 0; i < size; i++) {
+        intDoubleRow.set(i, buf.readLong());
+      }
+    }
+  }
+
+  private void updateUseIntDoubleSparse(ByteBuf buf, UpdateOp op) {
     int size = buf.readInt();
     if (op == UpdateOp.PLUS) {
       for (int i = 0; i < size; i++) {
@@ -233,6 +302,48 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
     } else {
       for (int i = 0; i < size; i++) {
         intDoubleRow.set(buf.readInt(), buf.readDouble());
+      }
+    }
+  }
+
+  private void updateUseIntFloatSparse(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      for (int i = 0; i < size; i++) {
+        int index = buf.readInt();
+        intDoubleRow.set(index, intDoubleRow.get(index) + buf.readFloat());
+      }
+    } else {
+      for (int i = 0; i < size; i++) {
+        intDoubleRow.set(buf.readInt(), buf.readFloat());
+      }
+    }
+  }
+
+  private void updateUseIntIntSparse(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      for (int i = 0; i < size; i++) {
+        int index = buf.readInt();
+        intDoubleRow.set(index, intDoubleRow.get(index) + buf.readInt());
+      }
+    } else {
+      for (int i = 0; i < size; i++) {
+        intDoubleRow.set(buf.readInt(), buf.readInt());
+      }
+    }
+  }
+
+  private void updateUseIntLongSparse(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      for (int i = 0; i < size; i++) {
+        int index = buf.readInt();
+        intDoubleRow.set(index, intDoubleRow.get(index) + buf.readLong());
+      }
+    } else {
+      for (int i = 0; i < size; i++) {
+        intDoubleRow.set(buf.readInt(), buf.readLong());
       }
     }
   }

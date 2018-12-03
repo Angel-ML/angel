@@ -18,6 +18,7 @@
 
 package com.tencent.angel.ml.core.graphsubmit
 
+import com.tencent.angel.RunningMode
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.graph.{AngelGraph, EvnContext, Graph, LocalGraph}
 import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer}
@@ -49,10 +50,10 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
     jsonAst = sharedConf.getJson
   }
 
-  implicit lazy val graph: Graph = if (!SharedConf.isLocal){
-    new AngelGraph(new PlaceHolder(sharedConf), sharedConf)
-  } else {
-    new LocalGraph(new PlaceHolder(sharedConf), sharedConf)
+  implicit lazy val graph: Graph = SharedConf.runningMode() match {
+    case RunningMode.ANGEL_LOCAL => new LocalGraph(new PlaceHolder(sharedConf), sharedConf)
+    case _ => new AngelGraph(new PlaceHolder(sharedConf), sharedConf)
+
   }
 
   def lossFunc: LossFunc = {
@@ -99,7 +100,7 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
             (0 until mat.getNumRows).foreach { i =>
               resData.put(SoftmaxPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
             }
-          case (mat: BlasFloatMatrix, lossFunc: SoftmaxLoss) if mat.getNumCols == 4  =>
+          case (mat: BlasFloatMatrix, lossFunc: SoftmaxLoss) if mat.getNumCols == 4 =>
             (0 until mat.getNumRows).foreach { i =>
               resData.put(SoftmaxPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
             }
@@ -137,7 +138,7 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
           (0 until mat.getNumRows).foreach { i =>
             resData.put(SoftmaxPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
           }
-        case (mat: BlasFloatMatrix, _: SoftmaxLoss) if mat.getNumCols == 4  =>
+        case (mat: BlasFloatMatrix, _: SoftmaxLoss) if mat.getNumCols == 4 =>
           (0 until mat.getNumRows).foreach { i =>
             resData.put(SoftmaxPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
           }
