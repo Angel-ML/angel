@@ -24,7 +24,7 @@ import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.layers.linear.FCLayer
-import com.tencent.angel.ml.core.network.layers.{AngelGraph, Layer}
+import com.tencent.angel.ml.core.network.layers.Layer
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import org.json4s._
 import org.json4s.jackson.JsonMethods.parse

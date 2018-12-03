@@ -22,7 +22,7 @@ import com.tencent.angel.RunningMode
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.matrix.RowType
-import com.tencent.angel.ml.core.utils.NetUtils
+import com.tencent.angel.ml.core.utils.RowTypeUtils
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
 import org.json4s.JValue
@@ -351,25 +351,25 @@ object SharedConf {
   def keyType(): String = {
     get()
 
-    NetUtils.keyType(RowType.valueOf(sc.get(MLConf.ML_MODEL_TYPE)))
+    RowTypeUtils.keyType(RowType.valueOf(sc.get(MLConf.ML_MODEL_TYPE)))
   }
 
   def valueType(): String = {
     get()
 
-    NetUtils.valueType(RowType.valueOf(sc.get(MLConf.ML_MODEL_TYPE)))
+    RowTypeUtils.valueType(RowType.valueOf(sc.get(MLConf.ML_MODEL_TYPE)))
   }
 
   def denseModelType: RowType = {
     get()
 
-    NetUtils.getDenseModelType(RowType.valueOf(sc.get(MLConf.ML_MODEL_TYPE)))
+    RowTypeUtils.getDenseModelType(RowType.valueOf(sc.get(MLConf.ML_MODEL_TYPE)))
   }
 
   def storageType: String = {
     get()
 
-    NetUtils.storageType(RowType.valueOf(sc.get(MLConf.ML_MODEL_TYPE)))
+    RowTypeUtils.storageType(RowType.valueOf(sc.get(MLConf.ML_MODEL_TYPE)))
   }
 
   def numClass: Int = {

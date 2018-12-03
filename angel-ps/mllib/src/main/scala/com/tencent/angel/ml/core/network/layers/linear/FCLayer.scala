@@ -21,56 +21,45 @@ package com.tencent.angel.ml.core.network.layers.linear
 
 import java.util.concurrent.Future
 
-import com.tencent.angel.conf.{AngelConf, MatrixConf}
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.network.graph.Graph
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import com.tencent.angel.ml.math2.utils.MatrixUtils
-import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.matrix.RowType
-import com.tencent.angel.ml.matrix.psf.update.RandomNormal
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.layers.verge.Embedding
 import com.tencent.angel.ml.core.network.transfunc.TransFunc
+import com.tencent.angel.ml.core.network.variable.MatVariable.MatrixType
+import com.tencent.angel.ml.core.network.variable.Variable
+import com.tencent.angel.ml.core.network.variable.Variable.Location
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
-import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
-import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
-import com.tencent.angel.psagent.PSAgentContext
+import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import org.apache.commons.logging.LogFactory
 
 
 class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransFunc, override val optimizer: Optimizer
-             )(implicit graph: AngelGraph) extends LinearLayer(name, outputDim, inputLayer)(graph) with Trainable {
+             )(implicit graph: Graph) extends LinearLayer(name, outputDim, inputLayer)(graph) with Trainable {
   val LOG = LogFactory.getLog(classOf[FCLayer])
 
   graph.addTrainable(this)
 
   val sharedConf: SharedConf = graph.conf
-
   val modelType: RowType = SharedConf.denseModelType
-  val numTask: Int = sharedConf.get(AngelConf.ANGEL_WORKERGROUP_NUMBER).toInt
+  val location: Location.Location = Location.PS
 
-  val multiplier: Int = OptUtils.getOptMultiplier(optimizer)
-  private val psRows: Int = multiplier
-  private val psCols = inputLayer.outputDim * outputDim
-  private val weightCtx = PSMatrixUtils.createPSMatrixCtx(s"${name}_weight", psRows, psCols, modelType)
-  private val biasCtx = PSMatrixUtils.createPSMatrixCtx(s"${name}_bias", 1, outputDim, modelType)
-  graph.addMatrixCtx(weightCtx)
-  graph.addMatrixCtx(biasCtx)
-
-  lazy val weightId: Int = PSMatrixUtils.getMatrixId(s"${name}_weight")
-  lazy val biasId: Int = PSMatrixUtils.getMatrixId(s"${name}_bias")
+  private val weight = Variable.getMatrix(s"${this.getClass.getSimpleName}_weight", inputLayer.outputDim,
+    outputDim, OptUtils.getSlotNum(optimizer), modelType, MatrixType.Blas, location)
+  private val bias =  Variable.getVector(s"${this.getClass.getSimpleName}_bias", outputDim, modelType,
+    location)
 
   @transient var forward: Matrix = _
   @transient var backward: Matrix = _
   @transient var output: Matrix = _
   @transient var gradOutput: Matrix = _
   @transient var ipOutputCache: Matrix = _
-
-  @transient var weight: Matrix = _
-  @transient var bias: Vector = _
 
   override def calOutput(): Matrix = {
     val start = System.currentTimeMillis()
@@ -132,24 +121,15 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
   }
 
   override def pullParams(epoch: Int): Unit = {
-    weight = PSMatrixUtils.getRowAsMatrix(epoch, weightId, 0, inputLayer.outputDim, outputDim)
-    bias = PSMatrixUtils.getRow(epoch, biasId, 0)
+    weight.pullParams(epoch)
+    bias.pullParams(epoch)
   }
 
   override def pushGradient(): Unit = {
-    val normal = OptUtils.getNormal(sharedConf, graph)
     status match {
       case STATUS.Backward =>
-        val weightGrad: Matrix = if (ipOutputCache != null) {
-          Ufuncs.dot(ipOutputCache, true, backward, false).idiv(normal)
-        } else {
-          Ufuncs.dot(inputLayer.calOutput(), true, backward, false).idiv(normal)
-        }
-
-        PSMatrixUtils.incrementRowByMatrix(weightId, multiplier - 1, weightGrad)
-
-        PSMatrixUtils.incrementRow(biasId, 0, backward.average(0).imul(-optimizer.lr / graph.taskNum))
-
+        weight.pushGrads(inputLayer.calOutput(), backward)
+        bias.pushGrads(backward, optimizer.lr)
         status = STATUS.Gradient
       case _ =>
     }
@@ -159,37 +139,30 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
     var result: Future[VoidResult] = null
     status match {
       case STATUS.Gradient =>
-        result = optimizer.update(weightId, 1, epoch, batchSize)
+        result = weight.update(optimizer, epoch, batchSize)
+        bias.update(optimizer, epoch, batchSize)
         status = STATUS.Update
       case _ => throw new AngelException("STATUS Error, please calculate Gradient frist!")
     }
     result
   }
 
-  override def init(taskflag: Int): Unit = {
-    val bound: Double = 0.0001
-    if (taskflag == 0) {
-      val randFunc = new RandomNormal(weightId, 0, 0.0, bound)
-      PSAgentContext.get().getUserRequestAdapter.update(randFunc).get()
-    }
+  override def init(taskFlag: Int): Unit = {
+    weight.init(taskFlag, mean = 0.0, stddev = 0.000001)
+    bias.init(taskFlag, mean = 0.0, stddev = 0.000001)
   }
 
   override def toString: String = {
-    s"FCLayer name=${name} outputDim=$outputDim optimizer=$optimizer transFunc=${transFunc.getClass.getSimpleName}"
+    s"FCLayer name=$name outputDim=$outputDim optimizer=$optimizer transFunc=${transFunc.getClass.getSimpleName}"
   }
 
   override def loadParams(loadContext: ModelLoadContext): Unit = {
-    loadContext.addMatrix(new MatrixLoadContext(weightCtx.getName))
-    loadContext.addMatrix(new MatrixLoadContext(biasCtx.getName))
+    weight.loadParams(loadContext)
+    bias.loadParams(loadContext)
   }
 
   override def saveParams(saveContext: ModelSaveContext): Unit = {
-    val outputFormat = SharedConf.fcLayerMatrixOutputFormat
-    val weightMCS: MatrixSaveContext = new MatrixSaveContext(weightCtx.getName, outputFormat)
-    val biasMCS: MatrixSaveContext = new MatrixSaveContext(biasCtx.getName, outputFormat)
-    weightMCS.addIndex(0)
-    saveContext.addMatrix(weightMCS)
-    saveContext.addMatrix(biasMCS)
-
+    weight.saveParams(saveContext)
+    bias.saveParams(saveContext)
   }
 }

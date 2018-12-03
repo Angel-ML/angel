@@ -21,6 +21,7 @@ package com.tencent.angel.ml.core.network.layers
 import java.util.concurrent.Future
 
 import com.google.gson.Gson
+import com.tencent.angel.ml.core.network.graph.Graph
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.optimizer.loss.LossFunc
@@ -58,7 +59,7 @@ trait LossLayer {
   def getLossFunc(): LossFunc
 }
 
-abstract class Layer(val name: String, val outputDim: Int)(implicit val graph: AngelGraph)
+abstract class Layer(val name: String, val outputDim: Int)(implicit val graph: Graph)
   extends Serializable {
   var status: STATUS.Value = STATUS.Null
   val input = new ListBuffer[Layer]()
@@ -128,7 +129,7 @@ abstract class LayerMeta(name: String, outputDim: Int) extends Serializable {
 
 }
 
-abstract class InputLayer(name: String, outputDim: Int)(implicit graph: AngelGraph)
+abstract class InputLayer(name: String, outputDim: Int)(implicit graph: Graph)
   extends Layer(name, outputDim)(graph) {
   graph.addInput(this)
 
@@ -139,7 +140,7 @@ abstract class InputLayerMeta(name: String, outputDim: Int) extends LayerMeta(na
 
 }
 
-abstract class JoinLayer(name: String, outputDim: Int, val inputLayers: Array[Layer])(implicit graph: AngelGraph)
+abstract class JoinLayer(name: String, outputDim: Int, val inputLayers: Array[Layer])(implicit graph: Graph)
   extends Layer(name, outputDim)(graph) {
   inputLayers.foreach { layer =>
     layer.addConsumer(this)
@@ -154,7 +155,7 @@ abstract class JoinLayerMeta(name: String, outputDim: Int, inputLayers: Array[St
 }
 
 
-abstract class LinearLayer(name: String, outputDim: Int, val inputLayer: Layer)(implicit graph: AngelGraph)
+abstract class LinearLayer(name: String, outputDim: Int, val inputLayer: Layer)(implicit graph: Graph)
   extends Layer(name, outputDim)(graph) {
   inputLayer.addConsumer(this)
   this.addInput(inputLayer)

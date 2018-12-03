@@ -18,6 +18,7 @@
 
 package com.tencent.angel.ml.core.network.layers.verge
 
+import com.tencent.angel.ml.core.network.graph.Graph
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.optimizer.loss.LossFunc
 import com.tencent.angel.ml.math2.matrix._
@@ -25,7 +26,7 @@ import org.apache.commons.logging.LogFactory
 
 
 class SimpleLossLayer(name: String, inputLayer: Layer, lossFunc: LossFunc)(
-  implicit graph: AngelGraph) extends LinearLayer(name, -1, inputLayer)(graph) with LossLayer {
+  implicit graph: Graph) extends LinearLayer(name, -1, inputLayer)(graph) with LossLayer {
   val LOG = LogFactory.getLog(classOf[SimpleLossLayer])
   graph.setOutput(this)
 

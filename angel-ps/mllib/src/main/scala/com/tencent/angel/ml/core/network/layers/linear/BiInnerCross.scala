@@ -20,6 +20,7 @@ package com.tencent.angel.ml.core.network.layers.linear
 
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.network.graph.Graph
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.{MFactory, VFactory}
@@ -29,7 +30,7 @@ import org.apache.commons.logging.LogFactory
 
 
 class BiInnerCross(name: String, outputDim: Int, inputLayer: Layer)(
-  implicit graph: AngelGraph) extends LinearLayer(name, outputDim, inputLayer)(graph) {
+  implicit graph: Graph) extends LinearLayer(name, outputDim, inputLayer)(graph) {
   val LOG = LogFactory.getLog(classOf[BiInnerCross])
   val modelType: RowType = SharedConf.denseModelType
 

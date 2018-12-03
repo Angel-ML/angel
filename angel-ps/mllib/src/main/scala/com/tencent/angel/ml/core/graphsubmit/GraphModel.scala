@@ -18,16 +18,15 @@
 
 package com.tencent.angel.ml.core.graphsubmit
 
-import com.tencent.angel.client.AngelClient
 import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.network.graph.{AngelGraph, EvnContext, Graph}
 import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix}
 import com.tencent.angel.ml.model.MLModel
-import com.tencent.angel.ml.core.network.layers.{AngelGraph, PlaceHolder}
+import com.tencent.angel.ml.core.network.layers.PlaceHolder
 import com.tencent.angel.ml.core.optimizer.loss._
 import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
-import com.tencent.angel.ml.math2.utils.VectorUtils
 import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
@@ -38,7 +37,7 @@ import org.json4s.JValue
 class GraphModel(conf: Configuration, _ctx: TaskContext = null)
   extends MLModel(conf, _ctx) {
   val sharedConf: SharedConf = SharedConf.get()
-  implicit lazy val graph: AngelGraph = new AngelGraph(new PlaceHolder(sharedConf), sharedConf)
+  implicit lazy val graph: Graph = new AngelGraph(new PlaceHolder(sharedConf), sharedConf)
 
   val batchSize: Int = SharedConf.batchSize
   val blockSize: Int = SharedConf.blockSize
@@ -151,20 +150,20 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
     resData
   }
 
-  def init(taskflag: Int): Unit = {
-    graph.init(taskflag)
+  def init(taskFlag: Int): Unit = {
+    graph.init(taskFlag)
   }
 
-  def createMatrices(client: AngelClient): Unit = {
-    graph.createMatrices(client)
+  def createMatrices(envCtx: EvnContext): Unit = {
+    graph.createMatrices(envCtx)
   }
 
-  def loadModel(client: AngelClient, path: String): Unit = {
-    graph.loadModel(client, path)
+  def loadModel(envCtx: EvnContext, path: String): Unit = {
+    graph.loadModel(envCtx, path)
   }
 
-  def saveModel(client: AngelClient, path: String): Unit = {
-    graph.saveModel(client, path)
+  def saveModel(envCtx: EvnContext, path: String): Unit = {
+    graph.saveModel(envCtx, path)
   }
 }
 

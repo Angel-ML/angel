@@ -23,21 +23,21 @@ import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers.AngelGraph
 
 object OptUtils {
-  def getOptMultiplier(optimizer: Optimizer): Int = {
+  def getSlotNum(optimizer: Optimizer): Int = {
     optimizer match {
-      case _: Momentum => 3
-      case _: Adam => 4
-      case _: FTRL => 4
-      case _ => 2
+      case _: Momentum => 2
+      case _: Adam => 3
+      case _: FTRL => 3
+      case _ => 1
     }
   }
 
-  def getOptMultiplier(optimizer: String): Int = {
+  def getSlotNum(optimizer: String): Int = {
     optimizer.toLowerCase match {
-      case "momentum" => 3
-      case "adam" => 4
-      case "ftrl" => 4
-      case _ => 2
+      case "momentum" => 2
+      case "adam" => 3
+      case "ftrl" => 3
+      case _ => 1
     }
   }
 
@@ -68,5 +68,4 @@ object OptUtils {
       case "ANGEL_PS_WORKER" => graph.placeHolder.getBatchSize * graph.taskNum
     }
   }
-
 }

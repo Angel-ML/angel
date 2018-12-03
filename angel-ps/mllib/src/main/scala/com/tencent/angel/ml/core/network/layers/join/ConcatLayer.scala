@@ -20,6 +20,7 @@ package com.tencent.angel.ml.core.network.layers.join
 
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.network.graph.Graph
 import com.tencent.angel.ml.math2.MFactory
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.core.network.layers._
@@ -28,7 +29,7 @@ import com.tencent.angel.ml.math2.vector.{CompIntDoubleVector, IntDoubleVector, 
 import org.apache.commons.logging.LogFactory
 
 
-class ConcatLayer(name: String, outputDim: Int, inputLayers: Array[Layer])(implicit graph: AngelGraph)
+class ConcatLayer(name: String, outputDim: Int, inputLayers: Array[Layer])(implicit graph: Graph)
   extends JoinLayer(name, outputDim, inputLayers)(graph) {
   val LOG = LogFactory.getLog(classOf[ConcatLayer])
 

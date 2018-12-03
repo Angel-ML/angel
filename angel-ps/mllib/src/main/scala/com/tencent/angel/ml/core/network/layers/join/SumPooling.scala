@@ -18,14 +18,13 @@
 
 package com.tencent.angel.ml.core.network.layers.join
 
-import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix, Matrix}
-import com.tencent.angel.ml.math2.ufuncs.Ufuncs
+import com.tencent.angel.ml.core.network.graph.Graph
+import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.core.network.layers._
-import com.tencent.angel.ml.math2.utils.{MatrixUtils, VectorUtils}
 import org.apache.commons.logging.LogFactory
 
 
-class SumPooling(name: String, outputDim: Int, inputLayers: Array[Layer])(implicit graph: AngelGraph)
+class SumPooling(name: String, outputDim: Int, inputLayers: Array[Layer])(implicit graph: Graph)
   extends JoinLayer(name, outputDim, inputLayers)(graph) {
   val LOG = LogFactory.getLog(classOf[SumPooling])
 

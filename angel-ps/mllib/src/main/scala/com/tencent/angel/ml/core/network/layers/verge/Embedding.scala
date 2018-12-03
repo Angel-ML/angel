@@ -20,51 +20,39 @@ package com.tencent.angel.ml.core.network.layers.verge
 
 import java.lang.{Long => JLong}
 import java.util.concurrent.Future
-import java.util.{HashMap => JHashMap, Map => JMap}
+import java.util.{Map => JMap}
 
-import com.tencent.angel.conf.{AngelConf, MatrixConf}
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.network.graph.Graph
 import com.tencent.angel.ml.core.network.layers._
+import com.tencent.angel.ml.core.network.variable.MatVariable.MatrixType
+import com.tencent.angel.ml.core.network.variable.Variable
+import com.tencent.angel.ml.core.network.variable.Variable.Location
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
-import com.tencent.angel.ml.core.utils.{NetUtils, PSMatrixUtils}
 import com.tencent.angel.ml.math2.matrix._
-import com.tencent.angel.ml.math2.storage._
 import com.tencent.angel.ml.math2.vector._
-import com.tencent.angel.ml.math2.{MFactory, VFactory}
 import com.tencent.angel.ml.matrix.RowType
-import com.tencent.angel.ml.matrix.psf.update.RandomNormal
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
-import com.tencent.angel.ml.psf.columns._
-import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
-import com.tencent.angel.ps.server.data.request.RandomNormalInitFunc
-import com.tencent.angel.psagent.PSAgentContext
+import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import org.apache.commons.logging.LogFactory
 
-class Embedding(name: String, outputDim: Int, val numFactors: Int, override val optimizer: Optimizer)(implicit graph: AngelGraph)
+class Embedding(name: String, outputDim: Int, val numFactors: Int, override val optimizer: Optimizer)(implicit graph: Graph)
   extends InputLayer(name, outputDim)(graph) with Trainable {
   val LOG = LogFactory.getLog(classOf[Embedding])
 
   graph.addTrainable(this)
 
   val sharedConf: SharedConf = graph.conf
-
   val modelType: RowType = SharedConf.modelType
-  val blockSize: Int = SharedConf.blockSize
+  private val location: Location.Location = Location.PS
 
-  private val multiplier: Int = OptUtils.getOptMultiplier(optimizer)
-  private val indexRange: Long = SharedConf.indexRange
-  private val psRows: Int = multiplier * numFactors
-  private val validIndexNum = SharedConf.modelSize
+  private val embedding = Variable.getMatrix(s"${this.getClass.getSimpleName}_embedding", numFactors,
+    SharedConf.indexRange, SharedConf.modelSize, OptUtils.getSlotNum(optimizer), modelType, MatrixType.Embedding, location)
 
-  private val embedMatCtx = PSMatrixUtils.createPSMatrixCtx(s"${name}_embedding", psRows, indexRange, modelType)
-  embedMatCtx.setValidIndexNum(validIndexNum)
-  graph.addMatrixCtx(embedMatCtx)
-  lazy val matrixId: Int = PSMatrixUtils.getMatrixId(s"${name}_embedding")
 
   @transient var forward: Matrix = _
   @transient var backward: Matrix = _
-  @transient var embeddings: JMap[JLong, Vector] = _
 
   override def calBackward(): Matrix = {
     val start = System.currentTimeMillis()
@@ -83,19 +71,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
 
   override def pullParams(epoch: Int): Unit = {
     val start = System.currentTimeMillis()
-    val rows = (0 until numFactors).toArray
-    val indices = graph.placeHolder.getIndices
-
-    val param = if (epoch == 0) {
-      val initFunc = new RandomNormalInitFunc(0.0, 0.00001)
-      new GetColsParam(matrixId, rows, indices, initFunc)
-    } else {
-      new GetColsParam(matrixId, rows, indices)
-    }
-
-    val func = new GetColsFunc(param)
-    val result = PSAgentContext.get.getUserRequestAdapter.get(func).asInstanceOf[GetColsResult]
-    embeddings = result.results
+    embedding.pullParams(epoch, graph.placeHolder.getIndices)
     val end = System.currentTimeMillis()
   }
 
@@ -113,126 +89,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
     val start = System.currentTimeMillis()
     status match {
       case STATUS.Backward =>
-        val map: JMap[JLong, Vector] = new JHashMap()
-        backward match {
-          case gradient: RBCompIntDoubleMatrix =>
-            val rows = gradient.getRows
-            assert(rows.length == graph.placeHolder.getBatchSize)
-            val batchData: Matrix = graph.placeHolder.getFeats
-            val batchSize = graph.placeHolder.getBatchSize
-            (0 until batchSize).foreach { idx =>
-              batchData.getRow(idx) match {
-                case v: IntDoubleVector =>
-                  v.getStorage.getIndices.zip(rows(idx).getPartitions).foreach { case (f, update) =>
-                    val value = v.get(f)
-                    mergeUpdate(map, f, update, value)
-                  }
-                case v: LongDoubleVector =>
-                  v.getStorage.getIndices.zip(rows(idx).getPartitions).foreach { case (f, update) =>
-                    val value = v.get(f)
-                    mergeUpdate(map, f, update, value)
-                  }
-              }
-            }
-
-          case gradient: RBCompIntFloatMatrix =>
-            val rows = gradient.getRows
-            assert(rows.length == graph.placeHolder.getBatchSize)
-            val batchData: Matrix = graph.placeHolder.getFeats
-            val batchSize = graph.placeHolder.getBatchSize
-
-            (0 until batchSize).map { idx =>
-              batchData.getRow(idx).getStorage match {
-                case s: IntFloatSortedVectorStorage =>
-                  val values = s.getValues
-                  val index = s.getIndices
-                  var i = 0
-                  while (i < index.length) {
-                    val key = index(i)
-                    val value = values(i)
-                    val update = rows(idx).getPartitions()(i)
-                    mergeUpdate(map, key, update, value)
-                    i += 1
-                  }
-                case s: IntFloatSparseVectorStorage =>
-                  var i = 0
-                  val indices = s.getIndices
-                  while (i < indices.length) {
-                    val key = indices(i)
-                    val value = s.get(key)
-                    val update = rows(idx).getPartitions()(i)
-                    mergeUpdate(map, key, update, value)
-                    i += 1
-                  }
-                case s: LongFloatSparseVectorStorage =>
-                  var i = 0
-                  val indices = s.getIndices
-                  while (i < indices.length) {
-                    val key = indices(i)
-                    val value = s.get(key)
-                    val update = rows(idx).getPartitions()(i)
-                    mergeUpdate(map, key, update, value)
-                    i += 1
-                  }
-              }
-            }
-          //            (0 until batchSize).map { idx =>
-          //              batchData.getRow(idx) match {
-          //                case v: IntFloatVector =>
-          //                  v.getStorage.getIndices.zip(rows(idx).getPartitions).map { case (f, update) =>
-          //                    val value = v.get(f)
-          //                    if (!map.containsKey(f.toLong)) {
-          //                      if (value == 1) {
-          //                        map.put(f.toLong, update)
-          //                      } else {
-          //                        map.put(f.toLong, update.imul(value))
-          //                      }
-          //                    } else {
-          //                      if (value == 1) {
-          //                        map.get(f.toLong).iadd(update)
-          //                      } else {
-          //                        map.get(f.toLong).iadd(update.imul(v.get(f)))
-          //                      }
-          //                    }
-          //                  }
-          //
-          //                case v: LongFloatVector =>
-          //                  v.getStorage.getIndices.zip(rows(idx).getPartitions).map { case (f, update) =>
-          //                    val value = v.get(f)
-          //                    if (!map.containsKey(f)) {
-          //                      if (value == 1) {
-          //                        map.put(f, update)
-          //                      } else {
-          //                        map.put(f, update.imul(value))
-          //                      }
-          //                    } else {
-          //                      if (value == 1) {
-          //                        map.get(f).iadd(update)
-          //                      } else {
-          //                        map.get(f).iadd(update.imul(v.get(f)))
-          //                      }
-          //                    }
-          //                  }
-          //              }
-          //            }
-
-          case _ =>
-        }
-
-        // Divide Gradient with TaskNum*BatchSize
-        val divider = OptUtils.getNormal(sharedConf, graph)
-        val iter = map.values().iterator()
-        while (iter.hasNext) {
-          val vector = iter.next()
-          vector.idiv(divider)
-        }
-
-        // Push Gradient
-        val rowNums = (numFactors * (multiplier - 1) until numFactors * multiplier).toArray
-
-        val param = new UpdateColsParam(matrixId, rowNums, graph.placeHolder.getIndices, map)
-        val func = new UpdateColsFunc(param)
-        PSAgentContext.get().getUserRequestAdapter.update(func).get()
+        embedding.pushGrads(graph.placeHolder.getFeats, backward)
         status = STATUS.Gradient
       case _ =>
     }
@@ -243,7 +100,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
     var result: Future[VoidResult] = null
     status match {
       case STATUS.Gradient =>
-        result = optimizer.update(matrixId, numFactors, epoch, batchSize)
+        result = embedding.update(optimizer, epoch, batchSize)
         status = STATUS.Update
       case _ => print("STATUS Error, please calculate Gradient first!")
     }
@@ -254,115 +111,19 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
     val start = System.currentTimeMillis()
     status match {
       case STATUS.Null =>
-        //        println(s"the status in Embedding($name)-calOutput is ${status.toString}")
-        val batchSize = graph.placeHolder.getBatchSize
-        val batchData: Matrix = graph.placeHolder.getFeats
-        val compRows = (0 until batchSize).toArray.map { idx =>
-          batchData.getRow(idx).getStorage match {
-            case s: IntFloatSparseVectorStorage =>
-              val index = s.getIndices
-              VFactory.compIntFloatVector(
-                if (outputDim <= 0) outputDim else index.length * numFactors,
-                index.map { key =>
-                  val value = s.get(key)
-                  val emVector = embeddings.get(key.toLong)
-                  if (value == 1) {
-                    emVector.asInstanceOf[IntFloatVector]
-                  } else {
-                    emVector.mul(value).asInstanceOf[IntFloatVector]
-                  }
-
-                })
-            case s: IntFloatSortedVectorStorage =>
-              val index = s.getIndices
-              val values = s.getValues
-              val vectors = new Array[IntFloatVector](index.length)
-              var i = 0
-              while (i < index.length) {
-                val emVector = embeddings.get(index(i).toLong)
-                if (values(i) == 1)
-                  vectors(i) = emVector.asInstanceOf[IntFloatVector]
-                else
-                  vectors(i) = emVector.mul(values(i)).asInstanceOf[IntFloatVector]
-                i += 1
-              }
-              VFactory.compIntFloatVector(
-                if (outputDim <= 0) outputDim else index.length * numFactors,
-                vectors
-              )
-            case s: LongFloatSparseVectorStorage =>
-              val index = s.getIndices
-              VFactory.compIntFloatVector(
-                if (outputDim <= 0) outputDim else index.length * numFactors,
-                index.map { key =>
-                  val value = s.get(key)
-                  val emVector = embeddings.get(key)
-                  if (value == 1) {
-                    emVector.asInstanceOf[IntFloatVector]
-                  } else {
-                    emVector.mul(value).asInstanceOf[IntFloatVector]
-                  }
-                })
-            case s: IntDoubleSparseVectorStorage =>
-              val index = s.getIndices
-              VFactory.compIntDoubleVector(
-                if (outputDim <= 0) outputDim else index.length * numFactors,
-                index.map { key =>
-                  val value = s.get(key)
-                  val emVector = embeddings.get(key.toLong)
-                  if (value == 1) {
-                    emVector.asInstanceOf[IntDoubleVector]
-                  } else {
-                    emVector.mul(value).asInstanceOf[IntDoubleVector]
-                  }
-                })
-            case s: LongDoubleSparseVectorStorage =>
-              val index = s.getIndices
-              VFactory.compIntDoubleVector(
-                if (outputDim <= 0) outputDim else index.length * numFactors,
-                index.map { key =>
-                  val value = s.get(key)
-                  val emVector = embeddings.get(key)
-                  if (value == 1) {
-                    emVector.asInstanceOf[IntDoubleVector]
-                  } else {
-                    emVector.mul(value).asInstanceOf[IntDoubleVector]
-                  }
-                })
-            case _ => throw new AngelException("Only float and double are supported!")
-          }
-        }
-
-        forward = compRows.head match {
-          case _: CompIntFloatVector =>
-            MFactory.rbCompIntFloatMatrix(compRows.map {
-              _.asInstanceOf[CompIntFloatVector]
-            })
-          case _: CompIntDoubleVector =>
-            MFactory.rbCompIntDoubleMatrix(compRows.map {
-              _.asInstanceOf[CompIntDoubleVector]
-            })
-        }
-
+        // println(s"the status in Embedding($name)-calOutput is ${status.toString}")
+        forward = embedding.snapshot()
         status = STATUS.Forward
       case _ =>
     }
 
     val end = System.currentTimeMillis()
-    //    println(s"Embedding($name) calOutput ${end - start} ms")
+    // println(s"Embedding($name) calOutput ${end - start} ms")
     forward
   }
 
-  override def init(taskflag: Int): Unit = {
-    val bound: Double = 0.00001
-    NetUtils.storageType(modelType) match {
-      case "dense" | "component_dense" =>
-        if (taskflag == 0) {
-          val randFunc = new RandomNormal(matrixId, 0, numFactors, 0.0, bound)
-          PSAgentContext.get().getUserRequestAdapter.update(randFunc).get()
-        }
-      case _ =>
-    }
+  override def init(taskFlag: Int): Unit = {
+    embedding.init(taskFlag, mean = 0.0, stddev = 0.000001)
   }
 
   override def toString: String = {
@@ -370,13 +131,10 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
   }
 
   override def loadParams(loadContext: ModelLoadContext): Unit = {
-    loadContext.addMatrix(new MatrixLoadContext(embedMatCtx.getName))
+    embedding.loadParams(loadContext)
   }
 
   override def saveParams(saveContext: ModelSaveContext): Unit = {
-    val outputFormat = SharedConf.embeddingLayerMatrixOutputFormat
-    val embedMatMCS: MatrixSaveContext = new MatrixSaveContext(embedMatCtx.getName, outputFormat)
-    embedMatMCS.addIndices((0 until numFactors).toArray)
-    saveContext.addMatrix(embedMatMCS)
+    embedding.saveParams(saveContext)
   }
 }
