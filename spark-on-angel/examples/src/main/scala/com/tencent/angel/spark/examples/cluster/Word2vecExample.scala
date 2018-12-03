@@ -56,6 +56,7 @@ object Word2vecExample {
     val withSubSample = params.getOrElse("subSample", "true").toBoolean
     val withRemapping = params.getOrElse("remapping", "true").toBoolean
     val modelType = params.getOrElse("modelType", "cbow")
+    val checkpointInterval = params.getOrElse("interval", "10").toInt
 
     val numCores = SparkUtils.getNumCores(conf)
 
@@ -106,10 +107,11 @@ object Word2vecExample {
       .setNumRowDataSet(numDocs)
       .setMaxLength(maxLength)
       .setModel(modelType)
+      .setModelCPInterval(checkpointInterval)
 
     val model = new Word2VecModel(param)
-    model.train(docs, param)
-    model.save(output + "/embedding", 0)
+    model.train(docs, param, output + "/embedding")
+    model.save(output + "/embedding", numEpoch)
     denseToString.map(rdd => rdd.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "/mapping"))
 
     PSContext.stop()

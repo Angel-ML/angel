@@ -4,10 +4,10 @@ import com.tencent.angel.RunningMode
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.matrix.RowType
-import com.tencent.angel.spark.ml.classification.WideAndDeep
+import com.tencent.angel.spark.ml.classification.LogisticRegression
 import com.tencent.angel.spark.ml.core.OfflineLearner
 
-class WideAndDeepTest extends PSFunSuite with SharedPSContext {
+class LogisticRegressionTest extends PSFunSuite with SharedPSContext {
   private var learner: OfflineLearner = _
   private var input: String = _
   private var dim: Int = _
@@ -37,10 +37,8 @@ class WideAndDeepTest extends PSFunSuite with SharedPSContext {
     super.afterAll()
   }
 
-  test("WideAndDeep") {
-    SharedConf.get().setLong(MLConf.ML_FIELD_NUM, 13)
-    SharedConf.get().setLong(MLConf.ML_RANK_NUM, 5)
-    val model = new WideAndDeep
+  test("LogisticRegression") {
+    val model = new LogisticRegression
     learner.train(input, "", "", dim, model)
   }
 

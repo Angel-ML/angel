@@ -238,7 +238,7 @@ object SharedConf {
 
   private var sc: SharedConf = _
 
-  def get(): SharedConf = {
+  def get(): SharedConf = synchronized {
     if (sc == null) {
       sc = new SharedConf
       addMLConf()

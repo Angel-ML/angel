@@ -68,6 +68,9 @@ class OfflineLearner {
 
     val numSplits = (1.0 / fraction).toInt
     val manifold = OfflineLearner.buildManifold(train, numSplits)
+
+    train.unpersist()
+    
     var numUpdate = 1
 
     for (epoch <- 0 until numEpoch) {
@@ -106,14 +109,13 @@ class OfflineLearner {
     *
     */
   def predict(data: RDD[(LabeledData, String)], model: GraphModel): RDD[(String, Double)] = {
-    val bModel = SparkContext.getOrCreate().broadcast(model)
     val scores = data.mapPartitions { iterator =>
       PSContext.instance()
       val samples = iterator.toArray
-      val output  = bModel.value.forward(1, samples.map(f => f._1))
+      val output  = model.forward(1, samples.map(f => f._1))
       val labels = samples.map(f => f._2)
 
-      (output, bModel.value.getLossFunc()) match {
+      (output, model.getLossFunc()) match {
         case (mat :BlasDoubleMatrix, _: LogLoss) =>
           // For LogLoss, the output is (value, sigmoid(value), label)
           (0 until mat.getNumRows).map(idx => (labels(idx), mat.get(idx, 1))).iterator
@@ -128,7 +130,6 @@ class OfflineLearner {
           (0 until mat.getNumRows).map(idx => (labels(idx), mat.get(idx, 0).toDouble)).iterator
       }
     }
-
     scores
   }
 
