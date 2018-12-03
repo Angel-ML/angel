@@ -63,7 +63,7 @@ public class QuantifyFloatFunc extends UpdateFunc {
 
   private void update(ServerRow row, float[] arraySlice) {
     switch (row.getRowType()) {
-      case T_DOUBLE_DENSE:
+      case T_FLOAT_DENSE:
         doUpdate((ServerIntFloatRow) row, arraySlice);
         return;
       default:
