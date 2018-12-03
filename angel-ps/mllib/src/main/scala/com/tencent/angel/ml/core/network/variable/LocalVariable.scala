@@ -9,7 +9,7 @@ import org.apache.hadoop.conf.Configuration
 
 abstract class LocalVariable(name: String, rowType: RowType)(implicit graph: Graph)
   extends Variable(name, rowType, Location.Local)(graph) {
-  protected var rowsSaved: Array[Int]
+  protected val rowsSaved: Array[Int]
   protected var storage: Matrix = _
 
   def create(): Unit

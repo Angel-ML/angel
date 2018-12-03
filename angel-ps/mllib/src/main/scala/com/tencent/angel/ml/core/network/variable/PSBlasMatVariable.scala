@@ -21,10 +21,8 @@ class PSBlasMatVariable(name: String, val numRows: Int, val numCols: Long, val n
 
   private val numRowsInternal: Int = numSlot + 1
   private val numColsInternal: Long = numRows * numCols
-  override protected var rowsSaved: Array[Int] = Array(0)
-  override protected var ctx: MatrixContext = PSMatrixUtils.createPSMatrixCtx(name, numRowsInternal, numColsInternal, rowType)
-
-  private val normal = 1.0 / graph.getNormal
+  override protected val rowsSaved: Array[Int] = Array(0)
+  override protected val ctx: MatrixContext = PSMatrixUtils.createPSMatrixCtx(name, numRowsInternal, numColsInternal, rowType)
 
   override def init(taskFlag: Int, mean: Double, stddev: Double): Unit = {
     if (matrixId == -1) {

@@ -485,4 +485,10 @@ object SharedConf {
     sc.getDouble(MLConf.ML_DATA_POSNEG_RATIO,
       MLConf.DEFAULT_ML_DATA_POSNEG_RATIO)
   }
+
+  def isLocal: Boolean = {
+    get()
+
+    sc.getBoolean(MLConf.ANGEL_ML_ISLOCAL, MLConf.DEFAULT_ANGEL_ML_ISLOCAL)
+  }
 }

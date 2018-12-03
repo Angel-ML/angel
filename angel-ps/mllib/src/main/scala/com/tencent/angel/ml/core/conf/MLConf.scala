@@ -29,6 +29,9 @@ object MLConf {
   val ANGEL_ML_PREDICT = "predict"
   val ANGEL_ML_INC_TRAIN = "inctrain"
 
+  val ANGEL_ML_ISLOCAL = "angel.ml.islocal"
+  val DEFAULT_ANGEL_ML_ISLOCAL = false
+
   // Data params
   val ML_DATA_INPUT_FORMAT = "ml.data.type"
   val DEFAULT_ML_DATA_INPUT_FORMAT = "libsvm"

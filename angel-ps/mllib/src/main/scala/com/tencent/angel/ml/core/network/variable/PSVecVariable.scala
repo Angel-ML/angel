@@ -19,9 +19,8 @@ class PSVecVariable(name: String, length: Long, numSlot: Int, rowType: RowType)(
   override protected var vector: Vector = _
 
   override protected val rowsSaved: Array[Int] = Array(0)
-  override protected var ctx: MatrixContext = PSMatrixUtils.createPSMatrixCtx(name, numSlot + 1, length, rowType)
+  override protected val ctx: MatrixContext = PSMatrixUtils.createPSMatrixCtx(name, numSlot + 1, length, rowType)
 
-  private val normal = 1.0 / graph.getNormal
   protected var mean: Double = 0.0
   protected var stddev: Double = 0.000001
 
@@ -34,7 +33,7 @@ class PSVecVariable(name: String, length: Long, numSlot: Int, rowType: RowType)(
     }
 
     if (taskFlag == 0) {
-      storageType matches {
+      storageType match {
         case "dense" | "component_dense" =>
           val randFunc = new RandomNormal(vectorId, 0, 1, mean, stddev)
           PSAgentContext.get().getUserRequestAdapter.update(randFunc).get()

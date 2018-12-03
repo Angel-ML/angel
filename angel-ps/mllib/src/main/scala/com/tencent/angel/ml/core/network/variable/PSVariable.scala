@@ -8,8 +8,9 @@ import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadC
 
 abstract class PSVariable(name: String, rowType: RowType)(implicit graph: Graph)
   extends Variable(name, rowType, Location.PS)(graph) {
-  protected var rowsSaved: Array[Int]
-  protected var ctx: MatrixContext
+  protected val rowsSaved: Array[Int]
+  protected val ctx: MatrixContext
+  protected lazy val normal: Double = 1.0 / graph.getNormal
 
   def getMatrixCtx: MatrixContext = ctx
 

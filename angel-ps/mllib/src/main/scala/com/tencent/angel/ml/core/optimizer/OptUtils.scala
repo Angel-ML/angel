@@ -20,7 +20,7 @@ package com.tencent.angel.ml.core.optimizer
 
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
-import com.tencent.angel.ml.core.network.layers.AngelGraph
+import com.tencent.angel.ml.core.network.graph.Graph
 
 object OptUtils {
   def getSlotNum(optimizer: Optimizer): Int = {
@@ -62,7 +62,7 @@ object OptUtils {
     }
   }
 
-  def getNormal(conf: SharedConf, graph: AngelGraph): Double = {
+  def getNormal(conf: SharedConf, graph: Graph): Double = {
     conf.get(AngelConf.ANGEL_RUNNING_MODE) match {
       case "ANGEL_PS" => 1.0
       case "ANGEL_PS_WORKER" => graph.placeHolder.getBatchSize * graph.taskNum

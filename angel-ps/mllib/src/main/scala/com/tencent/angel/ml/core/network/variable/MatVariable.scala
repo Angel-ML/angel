@@ -12,7 +12,7 @@ import com.tencent.angel.ml.math2.vector
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
-
+import scala.language.implicitConversions
 
 trait MatVariable {
   protected var matrix: Matrix

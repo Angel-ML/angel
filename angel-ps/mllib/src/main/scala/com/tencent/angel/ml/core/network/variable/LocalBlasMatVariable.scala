@@ -16,7 +16,7 @@ import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 class LocalBlasMatVariable(name: String, numRows: Int, numCols: Long, numSlot: Int, rowType: RowType)(
   implicit graph: Graph) extends LocalVariable(name, rowType) with MatVariable {
   override protected var matrix: Matrix = _
-  override protected var rowsSaved: Array[Int] = Array(0)
+  override protected val rowsSaved: Array[Int] = Array(0)
 
   override def create(): Unit = {
     if (storage == null) {

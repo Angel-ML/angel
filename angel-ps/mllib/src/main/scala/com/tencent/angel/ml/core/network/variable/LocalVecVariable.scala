@@ -18,7 +18,7 @@ import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 class LocalVecVariable(name: String, length: Long, numSlot: Int, rowType: RowType)(implicit graph: Graph)
   extends LocalVariable(name, rowType)(graph) with VecVariable {
   override protected var vector: Vector = _
-  override protected var rowsSaved: Array[Int] = Array(0)
+  override protected val rowsSaved: Array[Int] = Array(0)
 
   private var mean: Double = 0
   private var stddev: Double = 0.000001

@@ -21,13 +21,12 @@ class PSMatVariable(name: String, val numRows: Int, val numCols: Long, val valid
 
   protected val numRowsInternal: Int = numRows * (numSlot + 1)
   protected val numColsInternal: Long = numCols
-  override protected var rowsSaved: Array[Int] = if (numSlot > 0) (0 to numSlot).toArray else Array(0)
-  override protected var ctx: MatrixContext = PSMatrixUtils.createPSMatrixCtx(name, numRowsInternal, numColsInternal, rowType)
+  override protected val rowsSaved: Array[Int] = if (numSlot > 0) (0 to numSlot).toArray else Array(0)
+  override protected val ctx: MatrixContext = PSMatrixUtils.createPSMatrixCtx(name, numRowsInternal, numColsInternal, rowType)
   if (validIndexNum > 0) {
     ctx.setValidIndexNum(validIndexNum)
   }
 
-  protected val normal: Double = 1.0 / graph.getNormal
   protected var mean: Double = 0.0
   protected var stddev: Double = 0.000001
 
@@ -41,7 +40,7 @@ class PSMatVariable(name: String, val numRows: Int, val numCols: Long, val valid
     }
 
     if (taskFlag == 0) {
-      storageType matches {
+      storageType match {
         case "dense" | "component_dense" =>
           val randFunc = new RandomNormal(matrixId, 0, numRows, mean, stddev)
           PSAgentContext.get().getUserRequestAdapter.update(randFunc).get()

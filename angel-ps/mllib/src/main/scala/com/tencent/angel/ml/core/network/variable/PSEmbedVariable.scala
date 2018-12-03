@@ -18,9 +18,6 @@ class PSEmbedVariable(name: String, numRows: Int, numCols: Long, validIndexNum: 
                       rowType: RowType)(implicit graph: Graph)
   extends PSMatVariable(name, numRows, numCols, validIndexNum, numSlot, rowType) with MatVariable {
   private var embeddings: JMap[JLong, Vector] = _
-  override protected var matrix: Matrix = _
-
-
 
   override def pullParams(epoch: Int, indices: Vector): Unit = {
     if (matrixId == -1) {

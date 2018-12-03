@@ -19,7 +19,7 @@
 package com.tencent.angel.ml.core.graphsubmit
 
 import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.network.graph.{AngelGraph, EvnContext, Graph}
+import com.tencent.angel.ml.core.network.graph.{AngelGraph, EvnContext, Graph, LocalGraph}
 import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix}
@@ -37,8 +37,6 @@ import org.json4s.JValue
 class GraphModel(conf: Configuration, _ctx: TaskContext = null)
   extends MLModel(conf, _ctx) {
   val sharedConf: SharedConf = SharedConf.get()
-  implicit lazy val graph: Graph = new AngelGraph(new PlaceHolder(sharedConf), sharedConf)
-
   val batchSize: Int = SharedConf.batchSize
   val blockSize: Int = SharedConf.blockSize
   val dataFormat: String = SharedConf.inputDataFormat
@@ -49,6 +47,12 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
       JsonUtils.init()
     }
     jsonAst = sharedConf.getJson
+  }
+
+  implicit lazy val graph: Graph = if (!SharedConf.isLocal){
+    new AngelGraph(new PlaceHolder(sharedConf), sharedConf)
+  } else {
+    new LocalGraph(new PlaceHolder(sharedConf), sharedConf)
   }
 
   def lossFunc: LossFunc = {

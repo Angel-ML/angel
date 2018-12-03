@@ -17,7 +17,7 @@ import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 class LocalMatVariable(name: String, numRows: Int, numCols: Long, numSlot: Int, rowType: RowType)(implicit graph: Graph)
   extends LocalVariable(name, rowType)(graph) with MatVariable {
   override protected var matrix: Matrix = _
-  override protected var rowsSaved: Array[Int] = if (numSlot > 0) (0 to numSlot).toArray else Array(0)
+  override protected val rowsSaved: Array[Int] = if (numSlot > 0) (0 to numSlot).toArray else Array(0)
 
   protected var mean: Double = 0
   protected var stddev: Double = 0.000001
