@@ -44,9 +44,7 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     nPS = PSVector.duplicate(zPS)
   }
 
-  def init(dim: Long): Unit = {
-    init(dim, RowType.T_DOUBLE_SPARSE_LONGKEY)
-  }
+  def init(dim: Long): Unit = init(dim, RowType.T_DOUBLE_SPARSE_LONGKEY)
 
   /**
     * Using math2 to optimize FTRL, but there is some error for this version.

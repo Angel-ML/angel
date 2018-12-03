@@ -74,10 +74,11 @@ object FTRLExample {
     }
 
     if (output.length > 0) {
+      println(s"saving model to path $output")
       val weight = opt.weight
+      SparseLRModel(weight).save(output)
       opt.save(output + "/back")
-      val model = SparseLRModel(weight)
-      model.save(output + "/weight")
+      println(s"saving z n and w finish")
     }
     stop()
   }
