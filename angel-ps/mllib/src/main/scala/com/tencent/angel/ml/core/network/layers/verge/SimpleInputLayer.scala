@@ -20,7 +20,6 @@ package com.tencent.angel.ml.core.network.layers.verge
 
 import java.util.concurrent.Future
 
-import com.tencent.angel.RunningMode
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.graph.Graph
@@ -28,7 +27,6 @@ import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.transfunc.TransFunc
 import com.tencent.angel.ml.core.network.variable.MatVariable.MatrixType
 import com.tencent.angel.ml.core.network.variable._
-import com.tencent.angel.ml.core.network.variable.Variable.Location
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
 import com.tencent.angel.ml.core.utils.RowTypeUtils
 import com.tencent.angel.ml.math2.MFactory
@@ -52,18 +50,18 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
 
   private val weight = (SharedConf.inputDataFormat, RowTypeUtils.storageType(modelType)) match {
     case ("dense", "dense" | "component_dense") => // dense data, dense model
-      Variable.getMatrix(s"${this.getClass.getSimpleName}_weight", outputDim, SharedConf.indexRange,
+      Variable.getMatrix(s"${name}_weight", SharedConf.indexRange.toInt, outputDim,
         numSlot, modelType, MatrixType.Blas, location)
     case ("libsvm" | "dummy", "dense" | "component_dense") => // sparse data, dense model
-      Variable.getMatrix(s"${this.getClass.getSimpleName}_weight", outputDim, SharedConf.indexRange,
+      Variable.getMatrix(s"${name}_weight", outputDim, SharedConf.indexRange,
         numSlot, modelType, MatrixType.Common, location)
     case ("libsvm" | "dummy", "sparse" | "component_sparse") => // sparse data, sparse model
-      Variable.getMatrix(s"${this.getClass.getSimpleName}_weight", outputDim, SharedConf.indexRange,
+      Variable.getMatrix(s"${name}_weight", outputDim, SharedConf.indexRange,
         SharedConf.modelSize, numSlot, modelType, MatrixType.Common, location)
     case _ => // dense data, sparse model
       throw new AngelException("Dense data, sparse model, pls. change model to dense")
   }
-  private val bias = Variable.getVector(s"${this.getClass.getSimpleName}_bias", outputDim,
+  private val bias = Variable.getVector(s"${name}_bias", outputDim,
     SharedConf.denseModelType, location)
 
 

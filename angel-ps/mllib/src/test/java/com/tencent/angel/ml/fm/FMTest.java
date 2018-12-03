@@ -62,7 +62,7 @@ public class FMTest {
       String modelType = String.valueOf(RowType.T_FLOAT_SPARSE_LONGKEY);
 
       // Learning rate
-      double learnRate = 1.0;
+      double learnRate = 0.1;
       // Decay of learning rate
       double decay = 0.01;
       // Regularization coefficient

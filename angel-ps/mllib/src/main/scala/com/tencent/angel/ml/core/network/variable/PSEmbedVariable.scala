@@ -108,7 +108,7 @@ class PSEmbedVariable(name: String, numRows: Int, numCols: Long, validIndexNum: 
     val iter = map.values().iterator()
     while (iter.hasNext) {
       val vector = iter.next()
-      vector.idiv(normal)
+      vector.imul(normal)
     }
 
     // Push Gradient

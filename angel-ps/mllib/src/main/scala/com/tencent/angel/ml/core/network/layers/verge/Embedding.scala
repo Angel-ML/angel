@@ -46,7 +46,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
   val modelType: RowType = SharedConf.modelType
   val blockSize: Int = SharedConf.blockSize
 
-  private val embedding = Variable.getMatrix(s"${this.getClass.getSimpleName}_embedding", numFactors,
+  private val embedding = Variable.getMatrix(s"${name}_embedding", numFactors,
     SharedConf.indexRange, SharedConf.modelSize, OptUtils.getSlotNum(optimizer), modelType, MatrixType.Embedding, location)
 
 

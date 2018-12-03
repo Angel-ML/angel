@@ -65,9 +65,9 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
   val modelType: RowType = SharedConf.denseModelType
   val numTask: Int = sharedConf.get(AngelConf.ANGEL_WORKERGROUP_NUMBER).toInt
 
-  private val weight = Variable.getMatrix(s"${this.getClass.getSimpleName}_weight", inputLayer.outputDim,
+  private val weight = Variable.getMatrix(s"${name}_weight", inputLayer.outputDim,
     outputDim, OptUtils.getSlotNum(optimizer), modelType, MatrixType.Blas, location)
-  private val bias = Variable.getVector(s"${this.getClass.getSimpleName}_bias", outputDim, modelType,
+  private val bias = Variable.getVector(s"${name}_bias", outputDim, modelType,
     location)
 
   @transient var forward: Matrix = _
