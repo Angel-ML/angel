@@ -7,10 +7,6 @@ import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.core.metric.AUC
 import com.tencent.angel.spark.ml.online_learning.{FTRL, SparseLRModel}
 import com.tencent.angel.spark.ml.util.{DataLoader, SparkUtils}
-import com.tencent.angel.utils.HdfsUtil
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.Path
-import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.{SparkConf, SparkContext}
 
 object FTRLExample {

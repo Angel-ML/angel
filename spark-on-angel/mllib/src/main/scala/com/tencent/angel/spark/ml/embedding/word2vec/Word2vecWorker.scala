@@ -80,8 +80,8 @@ class Word2vecWorker(numNode: Int,
     end = System.currentTimeMillis()
     val pushTime = end - start
 
-    val batchSize = batch.asInstanceOf[W2VDataSet].sentences.map(_.length).sum
-    println(s"${loss._1/loss._2} learnRate=$alpha length=${loss._2} batchSize=$batchSize")
+//    val batchSize = batch.asInstanceOf[W2VDataSet].sentences.map(_.length).sum
+//    println(s"${loss._1/loss._2} learnRate=$alpha length=${loss._2} batchSize=$batchSize")
     (loss._1, loss._2.toLong, Array(calcuIndexTime, pullTime, cbowTime, pushTime))
   }
 

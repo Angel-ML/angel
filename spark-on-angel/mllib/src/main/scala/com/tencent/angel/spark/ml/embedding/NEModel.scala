@@ -188,11 +188,11 @@ abstract class NEModel(numNode: Int,
     logTime(s"Model successfully Randomized, cost ${(System.currentTimeMillis() - beforeRandomize) / 1000.0}s")
   }
 
-  private def psfUpdate(func: UpdateFunc): VoidResult = {
+  protected def psfUpdate(func: UpdateFunc): VoidResult = {
     psMatrix.psfUpdate(func).get
   }
 
-  private def psfGet(func: GetFunc): GetResult = {
+  protected def psfGet(func: GetFunc): GetResult = {
     psMatrix.psfGet(func)
   }
 

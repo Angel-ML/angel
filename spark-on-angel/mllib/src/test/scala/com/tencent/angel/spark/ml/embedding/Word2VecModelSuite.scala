@@ -18,14 +18,13 @@
 
 package com.tencent.angel.spark.ml.embedding
 
-import scala.collection.mutable.ArrayBuffer
-import scala.util.Random
-
-import org.apache.spark.rdd.RDD
-
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel
 import com.tencent.angel.spark.ml.feature.{Features, SubSampling}
 import com.tencent.angel.spark.ml.{PSFunSuite, SharedPSContext}
+import org.apache.spark.rdd.RDD
+
+import scala.collection.mutable.ArrayBuffer
+import scala.util.Random
 
 class Word2VecModelSuite extends PSFunSuite with SharedPSContext {
 
@@ -55,7 +54,7 @@ class Word2VecModelSuite extends PSFunSuite with SharedPSContext {
     val maxWordId = docs.map(_.max).max().toLong + 1
     val numTokens = docs.map(_.length).sum().toLong
     val maxLength = docs.map(_.length).max()
-    println(s"numDocs=$numDocs maxWordId=$maxWordId numTokens=$numTokens")
+    println(s"numDocs=$numDocs maxWordId=$maxWordId numTokens=$numTokens maxLength=$maxLength")
 
     param = new Param()
     param.setLearningRate(lr)

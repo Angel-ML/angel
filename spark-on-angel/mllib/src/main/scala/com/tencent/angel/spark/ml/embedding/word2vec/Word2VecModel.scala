@@ -50,7 +50,7 @@ class Word2VecModel(numNode: Int,
   }
 
   def train(corpus: RDD[Array[Int]], param: Param, path: String): Unit = {
-    psMatrix.psfUpdate(getInitFunc(corpus.getNumPartitions, numNode, maxLength, param.negSample, param.windowSize))
+    psfUpdate(getInitFunc(corpus.getNumPartitions, numNode, maxLength, param.negSample, param.windowSize))
     val iterator = buildDataBatches(corpus, param.batchSize)
     train(iterator, param.negSample, param.numEpoch, param.learningRate, param.checkpointInterval, path)
   }

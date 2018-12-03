@@ -18,8 +18,7 @@
 
 package com.tencent.angel.spark.ml.embedding
 
-import com.tencent.angel.spark.ml.embedding.word2vec.{Word2VecModel, Word2vecWorker}
-import com.tencent.angel.spark.ml.feature.Features
+import com.tencent.angel.spark.ml.embedding.word2vec.Word2vecWorker
 import com.tencent.angel.spark.ml.psf.embedding.bad._
 import com.tencent.angel.spark.ml.{PSFunSuite, SharedPSContext}
 
@@ -35,44 +34,6 @@ class Word2VecSuite extends PSFunSuite with SharedPSContext {
 
   override def afterAll(): Unit = {
     super.afterAll()
-  }
-
-  test("trainWithServer") {
-
-    val data = sc.textFile(input)
-    data.cache()
-
-    val (corpus, _) = Features.corpusStringToInt(sc.textFile(input))
-    val docs = corpus.repartition(2)
-
-    docs.cache()
-    docs.count()
-
-    data.unpersist()
-
-    val numDocs = docs.count()
-    val maxWordId = docs.map(_.max).max().toLong + 1
-    val numTokens = docs.map(_.length).sum().toLong
-    val maxLength = docs.map(_.length).max()
-
-    println(s"numDocs=$numDocs maxWordId=$maxWordId numTokens=$numTokens")
-
-    val param = new Param()
-    param.setLearningRate(0.1f)
-    param.setEmbeddingDim(100)
-    param.setWindowSize(6)
-    param.setBatchSize(128)
-    param.setSeed(Random.nextInt())
-    param.setNumPSPart(Some(2))
-    param.setNumEpoch(10)
-    param.setNegSample(5)
-    param.setMaxIndex(maxWordId)
-    param.setMaxLength(maxLength)
-    param.setModel("cbow")
-    param.setModelCPInterval(100)
-
-    val model = new Word2VecModel(param)
-    model.train(docs, param, "model")
   }
 
   test("trainWithWorkerPull&Push") {
