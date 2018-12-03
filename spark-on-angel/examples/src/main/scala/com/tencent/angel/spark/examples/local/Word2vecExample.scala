@@ -44,14 +44,13 @@ object Word2vecExample {
     sc.setLogLevel("ERROR")
     PSContext.getOrCreate(sc)
 
-    val input = "data/text8/text8.split.head"
-    val output = "model/"
+    val input = "data/text8/text8.split.remapping"
 
     val data = sc.textFile(input)
     data.cache()
 
-    val (corpus, denseToString) = Features.corpusStringToInt(sc.textFile(input))
-    val docs = SubSampling.sampling(corpus).repartition(2)
+    val (corpus) = Features.corpusStringToIntWithoutRemapping(sc.textFile(input))
+    val docs = corpus.repartition(1)
 
     docs.cache()
     docs.count()
@@ -67,22 +66,20 @@ object Word2vecExample {
 
     val param = new Param()
     param.setLearningRate(0.1f)
-    param.setEmbeddingDim(100)
-    param.setWindowSize(6)
-    param.setBatchSize(128)
-    param.setSeed(Random.nextInt())
-    param.setNumPSPart(Some(2))
-    param.setNumEpoch(10)
+    param.setEmbeddingDim(10)
+    param.setWindowSize(5)
+    param.setBatchSize(100)
+    param.setSeed(2017)
+    param.setNumPSPart(Some(1))
+    param.setNumEpoch(5)
     param.setNegSample(5)
     param.setMaxIndex(maxWordId)
     param.setMaxLength(maxLength)
     param.setModel("cbow")
+    param.setModelCPInterval(1000)
 
     val model = new Word2VecModel(param)
-    model.train(docs, param)
-
-//    model.save(output + "embedding", 0)
-//    denseToString.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "mapping")
+    model.train(docs, param, "")
 
     PSContext.stop()
     sc.stop()

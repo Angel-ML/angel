@@ -19,7 +19,7 @@
 package com.tencent.angel.ml.GBDT.algo;
 
 import com.tencent.angel.ml.GBDT.algo.RegTree.GradHistHelper;
-import com.tencent.angel.ml.GBDT.psf.CompressUpdateFunc;
+import com.tencent.angel.ml.psf.compress.QuantifyDoubleFunc;
 import com.tencent.angel.ml.core.conf.MLConf;
 import com.tencent.angel.ml.math2.vector.IntDoubleVector;
 
@@ -64,8 +64,8 @@ public class GradHistThread implements Runnable {
       if (bytesPerItem == 8) {
         this.model.increment(0, histogram);
       } else {
-        CompressUpdateFunc func =
-          new CompressUpdateFunc(this.model.getMatrixId(), 0, histogram, bytesPerItem * 8);
+        QuantifyDoubleFunc func =
+          new QuantifyDoubleFunc(this.model.getMatrixId(), 0, histogram, bytesPerItem * 8);
         this.model.update(func);
       }
     } catch (Exception e) {

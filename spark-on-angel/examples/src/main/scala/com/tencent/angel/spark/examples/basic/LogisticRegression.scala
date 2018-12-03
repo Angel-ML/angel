@@ -58,7 +58,6 @@ object LogisticRegression {
           Iterator.single(samples.length)
       }.reduce(_ + _)
       opt.update(mat.id, 1, iteration, size)
-
     }
   }
 

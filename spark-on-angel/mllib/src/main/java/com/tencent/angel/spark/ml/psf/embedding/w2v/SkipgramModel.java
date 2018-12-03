@@ -135,6 +135,7 @@ public class SkipgramModel extends EmbeddingModel {
               int l2 = (target % numNodeOneRow) * dim * 2 + dim;
 
               float g = buf.readFloat();
+              length --;
 
               // accumulate for the hidden layer
               for (c = 0; c < dim; c ++) neu1e[c] += g * outputs[c + l2];
