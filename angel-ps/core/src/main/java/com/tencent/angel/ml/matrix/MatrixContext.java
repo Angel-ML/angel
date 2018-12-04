@@ -404,11 +404,21 @@ public class MatrixContext implements Serializable {
     String loadPath = attributes.get(MatrixConf.MATRIX_LOAD_PATH);
     if(loadPath == null) {
       loadPath = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH);
-    }
-    if (loadPath != null) {
-      attributes.put(MatrixConf.MATRIX_LOAD_PATH, loadPath);
+      if (loadPath != null) {
+        if(matrixPathExist(loadPath, name, conf)) {
+          attributes.put(MatrixConf.MATRIX_LOAD_PATH, loadPath);
+          loadMatrixMetaFromFile(name, loadPath, conf);
+        }
+      }
+    } else {
       loadMatrixMetaFromFile(name, loadPath, conf);
     }
+  }
+
+  private boolean matrixPathExist(String loadPath, String name, Configuration conf) throws IOException {
+    Path matrixPath = new Path(loadPath, name);
+    FileSystem fs = matrixPath.getFileSystem(conf);
+    return fs.exists(matrixPath);
   }
 
   private void check() {
