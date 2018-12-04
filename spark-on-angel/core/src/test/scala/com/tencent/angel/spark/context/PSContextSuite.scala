@@ -18,10 +18,9 @@
 
 package com.tencent.angel.spark.context
 
+import com.tencent.angel.ml.math2.utils.RowType
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
-
-import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.spark.PSFunSuite
 
 class PSContextSuite extends PSFunSuite {

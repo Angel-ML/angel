@@ -19,11 +19,10 @@
 package com.tencent.angel.spark.models
 
 import scala.util.Random
-
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.matrix.{RBIntDoubleMatrix, RBIntFloatMatrix, RBLongFloatMatrix}
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector.{IntFloatVector, LongFloatVector, Vector}
-import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.spark.{PSFunSuite, SharedPSContext}
 
 class PSMatrixSuite extends PSFunSuite with SharedPSContext {

@@ -8,10 +8,11 @@ import com.tencent.angel.ml.core.network.variable.Variable.Location.Location
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.utils.NotInitialException
 import com.tencent.angel.ml.math2.matrix.Matrix
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector
-import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
+
 import scala.language.implicitConversions
 
 trait MatVariable {

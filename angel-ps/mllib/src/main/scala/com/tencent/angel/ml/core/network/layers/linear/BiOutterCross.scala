@@ -21,8 +21,8 @@ package com.tencent.angel.ml.core.network.layers.linear
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.graph.Graph
 import com.tencent.angel.ml.math2.matrix._
-import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.core.network.layers._
+import com.tencent.angel.ml.math2.utils.RowType
 import org.apache.commons.logging.LogFactory
 
 

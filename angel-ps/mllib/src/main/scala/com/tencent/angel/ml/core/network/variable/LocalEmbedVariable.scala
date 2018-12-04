@@ -2,14 +2,12 @@ package com.tencent.angel.ml.core.network.variable
 
 
 import com.tencent.angel.ml.core.network.graph.Graph
-
 import com.tencent.angel.ml.math2.storage._
 import com.tencent.angel.ml.math2.vector.Vector
-import com.tencent.angel.ml.matrix.RowType
-
-
 import java.lang.{Long => JLong}
 import java.util.{HashMap => JHashMap, Map => JMap}
+
+import com.tencent.angel.ml.math2.utils.RowType
 
 class LocalEmbedVariable(name: String, numRows: Int, numCols: Long, numSlot: Int, rowType: RowType)(
   implicit graph: Graph) extends LocalMatVariable(name, numRows, numCols, numSlot, rowType)(graph) with MatVariable {

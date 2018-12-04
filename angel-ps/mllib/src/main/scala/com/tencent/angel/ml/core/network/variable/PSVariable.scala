@@ -3,7 +3,8 @@ package com.tencent.angel.ml.core.network.variable
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.graph.Graph
 import com.tencent.angel.ml.core.network.variable.Variable.Location
-import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
+import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.matrix.MatrixContext
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
 
 abstract class PSVariable(name: String, rowType: RowType)(implicit graph: Graph)

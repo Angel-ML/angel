@@ -4,7 +4,6 @@ import com.tencent.angel.ml.core.network.graph.Graph
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.storage._
 import com.tencent.angel.ml.math2.vector._
-import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.psf.columns._
 import com.tencent.angel.ps.server.data.request.RandomNormalInitFunc
 import com.tencent.angel.psagent.PSAgentContext
@@ -12,6 +11,7 @@ import java.lang.{Long => JLong}
 import java.util.{HashMap => JHashMap, Map => JMap}
 
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
+import com.tencent.angel.ml.math2.utils.RowType
 
 
 class PSEmbedVariable(name: String, numRows: Int, numCols: Long, validIndexNum: Long, numSlot: Int,

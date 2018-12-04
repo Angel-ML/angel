@@ -21,10 +21,9 @@ package com.tencent.angel.spark.models.impl
 import java.util.concurrent.Future
 
 import org.apache.spark.SparkException
-
 import com.tencent.angel.exception.AngelException
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector.Vector
-import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
 import com.tencent.angel.ml.matrix.psf.update._
 import com.tencent.angel.ml.matrix.psf.update.base.{UpdateFunc, VoidResult}

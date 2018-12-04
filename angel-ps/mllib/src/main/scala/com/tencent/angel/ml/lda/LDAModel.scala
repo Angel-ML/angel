@@ -28,7 +28,7 @@ import com.tencent.angel.ml.core.conf.MLConf._
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.lda.LDAModel._
 import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.worker.storage.DataBlock

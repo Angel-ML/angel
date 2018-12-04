@@ -23,8 +23,8 @@ import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.storage.LongKeyVectorStorage
 import com.tencent.angel.ml.math2.ufuncs.{OptFuncs, Ufuncs}
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector.{LongDoubleVector, LongDummyVector, LongKeyVector, Vector}
-import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
 import com.tencent.angel.spark.ml.psf.FTRLWUpdater
 import com.tencent.angel.spark.models.PSVector

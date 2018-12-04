@@ -21,11 +21,9 @@ package com.tencent.angel.ml.core.network.layers.linear
 
 import java.util.concurrent.Future
 
-
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.graph.Graph
-
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.SharedConf
@@ -34,12 +32,9 @@ import com.tencent.angel.ml.core.network.layers.verge.Embedding
 import com.tencent.angel.ml.core.network.transfunc.TransFunc
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
-
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
-import com.tencent.angel.ml.math2.utils.MatrixUtils
-import com.tencent.angel.ml.matrix.RowType
-
+import com.tencent.angel.ml.math2.utils.{MatrixUtils, RowType}
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.layers.verge.Embedding
 import com.tencent.angel.ml.core.network.transfunc.TransFunc
@@ -47,9 +42,7 @@ import com.tencent.angel.ml.core.network.variable.MatVariable.MatrixType
 import com.tencent.angel.ml.core.network.variable.Variable
 import com.tencent.angel.ml.core.network.variable.Variable.Location
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
-
 import com.tencent.angel.ml.matrix.psf.update.RandomNormal
-
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import org.apache.commons.logging.LogFactory

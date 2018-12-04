@@ -25,7 +25,8 @@ import scala.collection.mutable.Map
 import org.apache.commons.logging.{Log, LogFactory}
 import com.tencent.angel.conf.MatrixConf
 import com.tencent.angel.exception.{AngelException, InvalidParameterException}
-import com.tencent.angel.ml.matrix.{MatrixContext, MatrixOpLogType, RowType}
+import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.matrix.{MatrixContext, MatrixOpLogType}
 import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
 import com.tencent.angel.ml.matrix.psf.get.indexed.{IndexGet, IndexGetParam, LongIndexGet, LongIndexGetParam}

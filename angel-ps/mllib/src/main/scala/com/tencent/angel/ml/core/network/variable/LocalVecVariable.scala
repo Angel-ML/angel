@@ -9,8 +9,8 @@ import com.tencent.angel.ml.core.utils.ValueNotAllowed
 import com.tencent.angel.ml.math2.{MFactory, StorageType}
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.storage._
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector.Vector
-import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 
 

@@ -23,7 +23,7 @@ import com.tencent.angel.ml.math2.MFactory;
 import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.matrix.Matrix;
 import com.tencent.angel.ml.math2.matrix.RowBasedMatrix;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.model.MatrixLoadContext;
 import com.tencent.angel.model.MatrixSaveContext;
 import com.tencent.angel.model.PSMatrixLoadContext;

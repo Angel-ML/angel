@@ -21,14 +21,12 @@ package com.tencent.angel.ml.deepandwide;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.core.conf.MLConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
-import com.tencent.angel.ml.matrix.RowType;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
 import org.apache.log4j.PropertyConfigurator;
-import org.junit.Before;
 import org.junit.Test;
 
 /**

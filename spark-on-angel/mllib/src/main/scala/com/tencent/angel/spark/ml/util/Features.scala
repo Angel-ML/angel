@@ -22,12 +22,11 @@ import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.storage.{IntFloatSortedVectorStorage, IntFloatSparseVectorStorage, IntKeyVectorStorage}
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector.{IntIntVector, LongIntVector}
-import com.tencent.angel.ml.matrix.RowType
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet
 import org.apache.spark.rdd.RDD
-
 import com.tencent.angel.spark.context.PSContext
 
 object Features {

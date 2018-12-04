@@ -25,8 +25,8 @@ import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector, IntKeyVector, LongDoubleVector, LongFloatVector, LongKeyVector, Vector}
-import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.core.utils.{DataParser, RowTypeUtils}
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.worker.task.{BaseTask, TaskContext}
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet
