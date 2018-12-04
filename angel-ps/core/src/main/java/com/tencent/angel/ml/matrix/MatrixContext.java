@@ -18,6 +18,7 @@
 
 package com.tencent.angel.ml.matrix;
 
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.model.output.format.ModelFilesConstent;
 import com.tencent.angel.model.output.format.MatrixFilesMeta;
@@ -401,7 +402,11 @@ public class MatrixContext implements Serializable {
     initPartitioner();
     check();
     String loadPath = attributes.get(MatrixConf.MATRIX_LOAD_PATH);
+    if(loadPath == null) {
+      loadPath = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH);
+    }
     if (loadPath != null) {
+      attributes.put(MatrixConf.MATRIX_LOAD_PATH, loadPath);
       loadMatrixMetaFromFile(name, loadPath, conf);
     }
   }
