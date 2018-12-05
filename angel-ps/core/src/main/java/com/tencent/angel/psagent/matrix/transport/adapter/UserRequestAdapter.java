@@ -596,7 +596,13 @@ public class UserRequestAdapter {
 
     List<PartitionKey> parts = new ArrayList<>(splits.keySet());
     parts.sort((PartitionKey p1, PartitionKey p2) -> {
-      return (int) (p1.getStartCol() - p2.getStartCol());
+      if(p1.getStartCol() > p2.getStartCol()) {
+        return 1;
+      } else if(p1.getStartCol() < p2.getStartCol()) {
+        return -1;
+      } else {
+        return 0;
+      }
     });
 
     Map<PartitionKey, IndicesView> validSplits = new HashMap<>(partToRowIdsMap.size());
