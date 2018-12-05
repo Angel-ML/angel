@@ -63,8 +63,8 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
         }
     }.distinct
 
-    val localZ = zPS.pull(indices).asInstanceOf[LongDoubleVector]
-    val localN = nPS.pull(indices).asInstanceOf[LongDoubleVector]
+    val localZ = zPS.pull(indices)
+    val localN = nPS.pull(indices)
     val weight = Ufuncs.ftrlthreshold(localZ, localN, alpha, beta, lambda1, lambda2)
     val dim = batch.head.getX.dim()
     val deltaZ = VFactory.sparseLongKeyDoubleVector(dim)
@@ -77,17 +77,14 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
       val (feature, label) = (point.getX, point.getY)
       val margin = -weight.dot(feature)
       val multiplier = 1.0 / (1.0 + math.exp(margin)) - label
-      val grad = feature.mul(multiplier).asInstanceOf[LongDoubleVector]
+      val grad = feature.mul(multiplier)
       val featureIndices = feature match {
         case longV: LongDoubleVector => longV.getStorage.getIndices
         case dummyV: LongDummyVector => dummyV.getIndices
       }
-      val deltaValues = featureIndices.map{ fId =>
-        val nVal = localN.get(fId)
-        val gOnId = grad.get(fId)
-        1.0 / alpha * (Math.sqrt(nVal + gOnId * gOnId) - Math.sqrt(nVal))
-      }
-      val delta = VFactory.sparseLongKeyDoubleVector(dim, featureIndices, deltaValues)
+      val indicesValue = featureIndices.map{ _ =>1.0}
+      val featureN = VFactory.sparseLongKeyDoubleVector(dim, featureIndices, indicesValue).mul(localN)
+      val delta = OptFuncs.ftrldelta(featureN, grad, alpha)
 
       val loss = if (label > 0) log1pExp(margin) else log1pExp(margin) - margin
 

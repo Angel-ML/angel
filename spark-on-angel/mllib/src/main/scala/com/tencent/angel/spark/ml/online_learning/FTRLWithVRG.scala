@@ -88,15 +88,12 @@ class FTRLWithVRG(lambda1: Double,
     while (iter.hasNext) {
       val point = iter.next()
       val (feature, label) = (point.getX, point.getY)
-      val newMargin = -newWeight.dot(feature)
-      val localMargin = -moveAveW.dot(feature)
-      val newMultiplier = 1.0 / (1.0 + math.exp(newMargin)) - label
-      val localMultiplier = 1.0 / (1.0 + math.exp(localMargin)) - label
-      val newGradient = feature.mul(newMultiplier).asInstanceOf[LongDoubleVector]
-      val localGradient = feature.mul(localMultiplier).asInstanceOf[LongDoubleVector]
+      val newGradient = calcGradientLoss(newWeight, label, feature)._1
+      val localGradient = calcGradientLoss(moveAveW, label, feature)._1
+      val loss = calcGradientLoss(moveAveW, label, feature)._2
       newGrad.iadd(newGradient)
       localGrad.iadd(localGradient)
-      val loss = if (label > 0) log1pExp(localMargin) else log1pExp(localMargin) - localMargin
+
       batchLoss += loss
     }
 
@@ -206,5 +203,13 @@ class FTRLWithVRG(lambda1: Double,
     } else {
       math.log1p(math.exp(x))
     }
+  }
+
+  def calcGradientLoss(w: LongDoubleVector, label: Double, feature: Vector): (LongDoubleVector, Double) = {
+    val margin = -w.dot(feature)
+    val gradientMultiplier = 1.0 / (1.0 + math.exp(margin)) - label
+    val grad = feature.mul(gradientMultiplier).asInstanceOf[LongDoubleVector]
+    val loss = if (label > 0) log1pExp(margin) else log1pExp(margin) - margin
+    (grad, loss)
   }
 }
