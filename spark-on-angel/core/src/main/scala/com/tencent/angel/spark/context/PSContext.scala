@@ -55,6 +55,8 @@ abstract class PSContext {
   def destroyVectorPool(vector: PSVector): Unit
 
   def refreshMatrix(): Unit
+
+  def getMatrixMeta(matrixId: Int): Option[MatrixMeta]
 }
 
 object PSContext {

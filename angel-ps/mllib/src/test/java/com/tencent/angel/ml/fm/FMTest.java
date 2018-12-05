@@ -108,6 +108,7 @@ public class FMTest {
   @Test public void testFM() throws Exception {
     setConf();
     trainTest();
+    inctrainTest();
     predictTest();
   }
 
@@ -117,6 +118,33 @@ public class FMTest {
       String savePath = LOCAL_FS + TMP_PATH + "/FMmodel";
       String logPath = LOCAL_FS + TMP_PATH + "/FMlog";
 
+      conf.setInt(AngelConf.ANGEL_PS_NUMBER, 4);
+      // Set trainning data path
+      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
+      // Set save model path
+      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, savePath);
+      // Set log path
+      conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
+      // Set actionType train
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
+
+      GraphRunner runner = new GraphRunner();
+      runner.train(conf);
+    } catch (Exception x) {
+      LOG.error("run trainOnLocalClusterTest failed ", x);
+      throw x;
+    }
+  }
+
+  private void inctrainTest() throws Exception {
+    try {
+      String inputPath = "../../data/a9a/a9a_123d_train.libsvm";
+      String loadPath = LOCAL_FS + TMP_PATH + "/FMmodel";
+      String savePath = LOCAL_FS + TMP_PATH + "/FMmodel_new";
+      String logPath = LOCAL_FS + TMP_PATH + "/FMlog";
+
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, loadPath);
+      conf.setInt(AngelConf.ANGEL_PS_NUMBER, 3);
       // Set trainning data path
       conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
       // Set save model path
@@ -137,10 +165,11 @@ public class FMTest {
   private void predictTest() throws Exception {
     try {
       String inputPath = "../../data/a9a/a9a_123d_train.libsvm";
-      String loadPath = LOCAL_FS + TMP_PATH + "/FMmodel";
+      String loadPath = LOCAL_FS + TMP_PATH + "/FMmodel_new";
       String predictPath = LOCAL_FS + TMP_PATH + "/predict";
       String logPath = LOCAL_FS + TMP_PATH + "/FMlog";
 
+      conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
       // Set trainning data path
       conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, inputPath);
       // Set load model path
