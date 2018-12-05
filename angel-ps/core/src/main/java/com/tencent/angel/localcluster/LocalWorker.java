@@ -71,7 +71,7 @@ public class LocalWorker extends Thread {
    * Exit
    */
   public void exit() {
-    worker.stop();
+    worker.stop(0);
     interrupt();
   }
 }

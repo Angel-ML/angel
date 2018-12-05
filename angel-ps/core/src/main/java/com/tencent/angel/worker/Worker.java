@@ -25,6 +25,7 @@ import com.tencent.angel.common.location.Location;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.ipc.TConnectionManager;
+import com.tencent.angel.plugin.AngelServiceLoader;
 import com.tencent.angel.worker.task.Task;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos.WorkerAttemptIdProto;
@@ -342,13 +343,13 @@ public class Worker implements Executor {
           // todo
           register();
           break;
+
         case W_SHUTDOWN:
           // if worker timeout, it may be knocked off.
           LOG.fatal("received SHUTDOWN command from am! to exit......");
-          if (!stopped.get()) {
-            System.exit(-1);
-          }
+          workerExit(-1);
           break;
+
         default:
           int activeTaskNum = response.getActiveTaskNum();
           if (activeTaskNum < getActiveTaskNum()) {
@@ -431,7 +432,7 @@ public class Worker implements Executor {
   /**
    * Stop Worker
    */
-  public void stop() {
+  public void stop(int exitCode) {
     LOG.info("stop workerService");
 
     if (workerService != null) {
@@ -477,7 +478,7 @@ public class Worker implements Executor {
    */
   public void workerExit(int exitValue) {
     LOG.info("start to close all modules in worker");
-    stop();
+    stop(exitValue);
     exit(exitValue);
   }
 
