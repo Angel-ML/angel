@@ -63,14 +63,12 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
         }
     }.distinct
 
-    val localZ = zPS.pull(indices)
-    val localN = nPS.pull(indices)
+    val localZ = zPS.pull(indices).asInstanceOf[LongDoubleVector]
+    val localN = nPS.pull(indices).asInstanceOf[LongDoubleVector]
     val weight = Ufuncs.ftrlthreshold(localZ, localN, alpha, beta, lambda1, lambda2)
-
-    val deltaZ = localZ.copy()
-    val deltaN = localN.copy()
-    deltaZ.clear()
-    deltaN.clear()
+    val dim = batch.head.getX.dim()
+    val deltaZ = VFactory.sparseLongKeyDoubleVector(dim)
+    val deltaN = VFactory.sparseLongKeyDoubleVector(dim)
 
     val iter = batch.iterator
     var lossSum = 0.0
@@ -79,8 +77,17 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
       val (feature, label) = (point.getX, point.getY)
       val margin = -weight.dot(feature)
       val multiplier = 1.0 / (1.0 + math.exp(margin)) - label
-      val grad = feature.mul(multiplier)
-      val delta = OptFuncs.ftrldelta(localN, grad, alpha)
+      val grad = feature.mul(multiplier).asInstanceOf[LongDoubleVector]
+      val featureIndices = feature match {
+        case longV: LongDoubleVector => longV.getStorage.getIndices
+        case dummyV: LongDummyVector => dummyV.getIndices
+      }
+      val deltaValues = featureIndices.map{ fId =>
+        val nVal = localN.get(fId)
+        val gOnId = grad.get(fId)
+        1.0 / alpha * (Math.sqrt(nVal + gOnId * gOnId) - Math.sqrt(nVal))
+      }
+      val delta = VFactory.sparseLongKeyDoubleVector(dim, featureIndices, deltaValues)
 
       val loss = if (label > 0) log1pExp(margin) else log1pExp(margin) - margin
 
@@ -89,8 +96,6 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
       deltaZ.iadd(grad.isub(delta.imul(weight)))
     }
 
-    deltaZ.idiv(batch.length)
-    deltaN.idiv(batch.length)
     zPS.increment(deltaZ)
     nPS.increment(deltaN)
 
@@ -129,91 +134,6 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
   }
 
   /**
-    * Optimizing only for LongDoubleVector. This version is ok and the model is correct.
-    *
-    * @param batch   : training mini-batch examples
-    * @param costFun : function to calculate gradients
-    * @return Loss for this batch
-    */
-  def optimize(batch: Array[(Vector, Double)],
-               costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)): Double = {
-
-    val dim = batch.head._1.dim()
-    val featIds = batch.flatMap { case (v, _) =>
-      v match {
-        case longV: LongDoubleVector => longV.getStorage.getIndices
-        case dummyV: LongDummyVector => dummyV.getIndices
-        case _ => throw new Exception("only support SparseVector and DummyVector")
-      }
-    }.distinct
-
-    val localZ = zPS.pull(featIds).asInstanceOf[LongDoubleVector]
-    val localN = nPS.pull(featIds).asInstanceOf[LongDoubleVector]
-
-    val deltaZ = VFactory.sparseLongKeyDoubleVector(dim)
-    val deltaN = VFactory.sparseLongKeyDoubleVector(dim)
-
-    val fetaValues = featIds.map { fId =>
-      val zVal = localZ.get(fId)
-      val nVal = localN.get(fId)
-
-      updateWeight(fId, zVal, nVal, alpha, beta, lambda1, lambda2)
-    }
-
-    val localW = VFactory.sparseLongKeyDoubleVector(dim, featIds, fetaValues)
-
-    val lossSum = batch.map { case (feature, label) =>
-      optimize(feature, label, localN, localW, deltaZ, deltaN, costFun)
-    }.sum
-
-    zPS.increment(deltaZ)
-    nPS.increment(deltaN)
-
-    println(s"${lossSum / batch.length}")
-
-    lossSum
-  }
-
-  /**
-    * Optimizing for one example (feature, label)
-    *
-    * @param feature
-    * @param label
-    * @param localN , N in the local executor
-    * @param localW . weight in the local executor
-    * @param deltaZ , delta value for z
-    * @param deltaN , delta value for n
-    * @param costFun
-    * @return
-    */
-  def optimize(feature: Vector,
-               label: Double,
-               localN: LongDoubleVector,
-               localW: LongDoubleVector,
-               deltaZ: LongDoubleVector,
-               deltaN: LongDoubleVector,
-               costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)
-              ): Double = {
-
-    val featIndices = feature match {
-      case longV: LongDoubleVector => longV.getStorage.getIndices
-      case dummyV: LongDummyVector => dummyV.getIndices
-    }
-
-    val (newGradient, loss) = costFun(localW, label, feature)
-
-    featIndices.foreach { fId =>
-      val nVal = localN.get(fId)
-      val gOnId = newGradient.get(fId)
-      val dOnId = 1.0 / alpha * (Math.sqrt(nVal + gOnId * gOnId) - Math.sqrt(nVal))
-
-      deltaZ.set(fId, deltaZ.get(fId) + gOnId - dOnId * localW.get(fId))
-      deltaN.set(fId, deltaN.get(fId) + gOnId * gOnId)
-    }
-    (loss)
-  }
-
-  /**
     * calculate w from z and n and store it in the w row
     *
     * @return
@@ -223,34 +143,6 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     val func = new FTRLWUpdater(alpha, beta, lambda1, lambda2, regularSkipFeatIndex)
     VectorUtils.zip2MapWithIndex(zPS, nPS, func, wPS)
     VectorUtils.compress(wPS)
-  }
-
-  /**
-    * calculate w from z and n for one dimension
-    *
-    * @param fId
-    * @param zOnId
-    * @param nOnId
-    * @param alpha
-    * @param beta
-    * @param lambda1
-    * @param lambda2
-    * @return
-    */
-  def updateWeight(fId: Long,
-                   zOnId: Double,
-                   nOnId: Double,
-                   alpha: Double,
-                   beta: Double,
-                   lambda1: Double,
-                   lambda2: Double): Double = {
-    if (fId == regularSkipFeatIndex) {
-      -1.0 * alpha * zOnId / (beta + Math.sqrt(nOnId))
-    } else if (Math.abs(zOnId) <= lambda1) {
-      0.0
-    } else {
-      (-1) * (1.0 / (lambda2 + (beta + Math.sqrt(nOnId)) / alpha)) * (zOnId - Math.signum(zOnId).toInt * lambda1)
-    }
   }
 
   def log1pExp(x: Double): Double = {

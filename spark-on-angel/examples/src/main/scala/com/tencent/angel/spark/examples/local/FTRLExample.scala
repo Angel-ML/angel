@@ -1,6 +1,5 @@
 package com.tencent.angel.spark.examples.local
 
-import com.tencent.angel.ml.math2.vector.{LongDoubleVector, Vector}
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
@@ -61,12 +60,9 @@ object FTRLExample {
     for (epoch <- 1 until numEpoch) {
       val totalLoss = data.mapPartitions {
         case iterator =>
-          val loss = iterator.map(f => (f.getX, f.getY))
+          val loss = iterator
             .sliding(batchSize, batchSize)
-            .map(f => opt.optimize(f.toArray, calcGradientLoss)).sum
-
-//          val loss = iterator.sliding(batchSize, batchSize)
-//              .map(f => opt.optimize(f.toArray)).sum
+            .map(f => opt.optimize(f.toArray)).sum
           Iterator.single(loss)
       }.sum()
 
@@ -80,19 +76,11 @@ object FTRLExample {
 
     if (modelPath.length > 0) {
       val weight = opt.weight
-      opt.save(modelPath + "/back")
       val model = SparseLRModel(weight)
       model.save(modelPath + "/weight")
+      opt.save(modelPath + "/back")
     }
     stop()
-  }
-
-  private def calcGradientLoss(w: LongDoubleVector, label: Double, feature: Vector): (LongDoubleVector, Double) = {
-    val margin = -w.dot(feature)
-    val gradientMultiplier = 1.0 / (1.0 + math.exp(margin)) - label
-    val grad = feature.mul(gradientMultiplier).asInstanceOf[LongDoubleVector]
-    val loss = if (label > 0) log1pExp(margin) else log1pExp(margin) - margin
-    (grad, loss)
   }
 
   def log1pExp(x: Double): Double = {

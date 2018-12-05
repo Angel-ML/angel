@@ -19,6 +19,7 @@
 package com.tencent.angel.spark.ml.online_learning
 
 import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import com.tencent.angel.ml.math2.vector.{LongDoubleVector, LongDummyVector, Vector}
@@ -47,15 +48,14 @@ class FTRLWithVRG(lambda1: Double,
   }
 
   def optimize(
-      batch: Array[(Vector, Double)],
-      localW: LongDoubleVector,
-      costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)): (LongDoubleVector, Double) = {
+                batch: Array[LabeledData],
+                localW: LongDoubleVector): (LongDoubleVector, Double) = {
 
-    val dim = batch.head._1.dim
+    val dim = batch.head.getX.dim
 
     //@todo: fix OneHotVector
-    val featIds = batch.flatMap { case (feat, _) =>
-      feat match {
+    val featIds = batch.flatMap { feat =>
+      feat.getX match {
         case longV: LongDoubleVector => longV.getStorage.getIndices
         case dummy: LongDummyVector => dummy.getIndices
         case _ => throw new Exception("only support SparseVector and DummyVector")
@@ -83,18 +83,22 @@ class FTRLWithVRG(lambda1: Double,
     val localGrad = VFactory.sparseLongKeyDoubleVector(dim, featIds.length)
 
     // all data in this partition compute the gradient and finally get the average
-    val batchLoss = batch.map { case (feature, label) =>
-
-      // compute the loss for the new sample by move averaged weight
-      val loss = costFun(moveAveW, label, feature)._2
-
-      val newGradient = costFun(newWeight, label, feature)._1
-      val localGradient = costFun(moveAveW, label, feature)._1
+    val iter = batch.iterator
+    var batchLoss = 0.0
+    while (iter.hasNext) {
+      val point = iter.next()
+      val (feature, label) = (point.getX, point.getY)
+      val newMargin = -newWeight.dot(feature)
+      val localMargin = -moveAveW.dot(feature)
+      val newMultiplier = 1.0 / (1.0 + math.exp(newMargin)) - label
+      val localMultiplier = 1.0 / (1.0 + math.exp(localMargin)) - label
+      val newGradient = feature.mul(newMultiplier).asInstanceOf[LongDoubleVector]
+      val localGradient = feature.mul(localMultiplier).asInstanceOf[LongDoubleVector]
       newGrad.iadd(newGradient)
       localGrad.iadd(localGradient)
-
-      loss
-    }.sum
+      val loss = if (label > 0) log1pExp(localMargin) else log1pExp(localMargin) - localMargin
+      batchLoss += loss
+    }
 
     // get average gradient
     newGrad.imul(1.0 / batch.length)
@@ -107,7 +111,6 @@ class FTRLWithVRG(lambda1: Double,
     nPS.increment(deltaN)
 
     (moveAveW, batchLoss / batch.length)
-
   }
 
   def optimize(
@@ -197,4 +200,11 @@ class FTRLWithVRG(lambda1: Double,
     VectorUtils.compress(wPS)
   }
 
+  def log1pExp(x: Double): Double = {
+    if (x > 0) {
+      x + math.log1p(math.exp(-x))
+    } else {
+      math.log1p(math.exp(x))
+    }
+  }
 }

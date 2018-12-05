@@ -24,8 +24,8 @@ import org.apache.spark.streaming.dstream.DStream
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
-
 import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector.{LongDoubleVector, Vector}
 import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
@@ -253,7 +253,7 @@ object FTRLRunner {
 
           if (dataCollects.length != 0) {
             val dataVector = dataCollects.map(x => parseData(x, dim, isOneHot))
-            val batchAveLoss = ftrl.optimize(dataVector, calcGradientLoss)
+            val batchAveLoss = ftrl.optimize(dataVector)
             Iterator(batchAveLoss)
           } else {
             Iterator()
@@ -306,7 +306,7 @@ object FTRLRunner {
           if (dataCollects.length != 0) {
 
             val dataVector = dataCollects.map(x => parseData(x, dim, isOneHot))
-            val wAndLoss = ftrlVRG.optimize(dataVector, localW, calcGradientLoss)
+            val wAndLoss = ftrlVRG.optimize(dataVector, localW)
             localW = wAndLoss._1
 
             Iterator(wAndLoss._2)
@@ -333,7 +333,7 @@ object FTRLRunner {
     }
   }
 
-  def parseData(dataStr: String, dim: Long, isOneHot: Boolean): (Vector, Double) = {
+  def parseData(dataStr: String, dim: Long, isOneHot: Boolean): LabeledData = {
 
     if (!isOneHot) {
 
@@ -343,14 +343,14 @@ object FTRLRunner {
       val (k, v) = featAddInter.unzip
       val featV = VFactory.sparseLongKeyDoubleVector(dim.toLong, k, v)
 
-      (featV, label)
+      new LabeledData(featV, label)
     } else {
       // OneHotVector
       val (feature, label) = DataLoader.transform2OneHot(dataStr)
       val featAddInter = 0L +: feature
       val featV: Vector = VFactory.longDummyVector(dim.toLong, featAddInter)
 
-      (featV, label)
+      new LabeledData(featV, label)
     }
   }
 
