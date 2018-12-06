@@ -1,0 +1,33 @@
+package com.tencent.angel.ml.core.utils
+
+import com.tencent.angel.ml.math2.MFactory
+import com.tencent.angel.ml.math2.matrix.Matrix
+import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector, LongDoubleVector, LongFloatVector}
+
+object OptUtils {
+
+  def getRowsAsMatrix(storage: Matrix, from: Int, to: Int): Matrix = {
+    storage.getRow(0).getType match {
+      case RowType.T_DOUBLE_DENSE =>
+        val rows = (from until to).toArray.map { rId => storage.getRow(rId).asInstanceOf[IntDoubleVector] }
+        MFactory.rbIntDoubleMatrix(rows)
+      case RowType.T_DOUBLE_SPARSE =>
+        val rows = (from until to).toArray.map { rId => storage.getRow(rId).asInstanceOf[IntDoubleVector] }
+        MFactory.rbIntDoubleMatrix(rows)
+      case RowType.T_DOUBLE_SPARSE_LONGKEY =>
+        val rows = (from until to).toArray.map { rId => storage.getRow(rId).asInstanceOf[LongDoubleVector] }
+        MFactory.rbLongDoubleMatrix(rows)
+      case RowType.T_FLOAT_DENSE =>
+        val rows = (from until to).toArray.map { rId => storage.getRow(rId).asInstanceOf[IntFloatVector] }
+        MFactory.rbIntFloatMatrix(rows)
+      case RowType.T_FLOAT_SPARSE =>
+        val rows = (from until to).toArray.map { rId => storage.getRow(rId).asInstanceOf[IntFloatVector] }
+        MFactory.rbIntFloatMatrix(rows)
+      case RowType.T_FLOAT_SPARSE_LONGKEY =>
+        val rows = (from until to).toArray.map { rId => storage.getRow(rId).asInstanceOf[LongFloatVector] }
+        MFactory.rbLongFloatMatrix(rows)
+      case _ => throw ValueNotAllowed("Value Not Allowed, Only Float/Double Are Allowed!")
+    }
+  }
+}

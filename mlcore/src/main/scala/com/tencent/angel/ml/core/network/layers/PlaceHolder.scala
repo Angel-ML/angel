@@ -19,8 +19,8 @@
 package com.tencent.angel.ml.core.network.layers
 
 import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.utils.{Example, MLException}
-// import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.core.data.Example
+import com.tencent.angel.ml.core.utils.MLException
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.storage._
 import com.tencent.angel.ml.math2.vector._
