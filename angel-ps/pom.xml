@@ -30,13 +30,16 @@
     <packaging>pom</packaging>
     <name>angel-ps</name>
 
-    <modules>
-        <module>core</module>
-        <module>psf</module>
-        <module>tools</module>
-        <module>mllib</module>
-        <module>examples</module>
-    </modules>
+
+  <modules>
+    <module>core</module>
+    <module>psf</module>
+    <module>tools</module>
+    <module>mllib</module>
+    <module>examples</module>
+    <!--module>math</module-->
+  </modules>
+
 
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
