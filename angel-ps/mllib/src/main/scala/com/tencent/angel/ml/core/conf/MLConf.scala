@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ml.core.conf
 
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.model.output.format.{ColIdValueTextRowFormat, RowIdColIdValueTextRowFormat, TextColumnFormat}
 
 object MLConf {

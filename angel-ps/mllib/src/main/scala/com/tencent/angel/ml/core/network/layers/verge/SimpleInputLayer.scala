@@ -31,8 +31,7 @@ import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
 import com.tencent.angel.ml.core.utils.RowTypeUtils
 import com.tencent.angel.ml.math2.MFactory
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix, Matrix}
-import com.tencent.angel.ml.math2.utils.VectorUtils
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.{RowType, VectorUtils}
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import org.apache.commons.logging.LogFactory

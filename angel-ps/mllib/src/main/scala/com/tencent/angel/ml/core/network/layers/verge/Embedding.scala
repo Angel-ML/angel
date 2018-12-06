@@ -30,8 +30,8 @@ import com.tencent.angel.ml.core.network.variable.MatVariable.MatrixType
 import com.tencent.angel.ml.core.network.variable.Variable
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
 import com.tencent.angel.ml.math2.matrix._
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector._
-import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import org.apache.commons.logging.LogFactory

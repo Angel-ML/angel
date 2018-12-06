@@ -8,7 +8,8 @@ import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
-import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
+import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.matrix.MatrixContext
 import com.tencent.angel.ml.matrix.psf.update.RandomNormal
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.psagent.PSAgentContext

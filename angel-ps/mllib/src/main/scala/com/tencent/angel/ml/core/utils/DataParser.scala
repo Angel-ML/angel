@@ -23,7 +23,7 @@ import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.RowType
 
 abstract class DataParser(val splitter: String) {
   def parse(value: String): LabeledData

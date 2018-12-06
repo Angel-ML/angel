@@ -2,8 +2,8 @@ package com.tencent.angel.spark.util
 
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.math2.matrix._
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector, IntIntVector, IntLongVector, LongDoubleVector, LongFloatVector, LongIntVector, LongLongVector, Vector}
-import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.matrix.RowType._
 
 object PSMatrixUtils {

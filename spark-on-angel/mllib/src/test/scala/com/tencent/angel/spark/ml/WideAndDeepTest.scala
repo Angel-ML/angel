@@ -3,9 +3,13 @@ package com.tencent.angel.spark.ml
 import com.tencent.angel.RunningMode
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.RowType
+
 import com.tencent.angel.spark.ml.classification.WideAndDeep
 import com.tencent.angel.spark.ml.core.OfflineLearner
+import org.apache.log4j.PropertyConfigurator
+import org.apache.spark.{SparkConf, SparkContext}
+
 
 class WideAndDeepTest extends PSFunSuite with SharedPSContext {
   private var learner: OfflineLearner = _

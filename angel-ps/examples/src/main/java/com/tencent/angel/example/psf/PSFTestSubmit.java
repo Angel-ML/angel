@@ -24,7 +24,7 @@ import com.tencent.angel.client.AngelClientFactory;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import org.apache.hadoop.conf.Configuration;
 
 public class PSFTestSubmit implements AppSubmitter {

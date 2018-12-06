@@ -1,10 +1,9 @@
 package com.tencent.angel.ml.core.network.variable
 
-
-import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.core.network.graph.Graph
 import com.tencent.angel.ml.core.network.variable.MatVariable.MatrixType
 import com.tencent.angel.ml.core.utils.RowTypeUtils
+import com.tencent.angel.ml.math2.utils.RowType
 
 
 abstract class Variable(val name: String, val rowType: RowType, val location: Variable.Location.Location)(implicit graph: Graph) {

@@ -3,9 +3,10 @@ package com.tencent.angel.spark.ml
 import com.tencent.angel.RunningMode
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.spark.ml.classification.DeepFM
 import com.tencent.angel.spark.ml.core.OfflineLearner
+
 
 class DeepFMTest extends PSFunSuite with SharedPSContext {
   private var learner: OfflineLearner = _

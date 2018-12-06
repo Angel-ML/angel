@@ -7,10 +7,12 @@ import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.matrix.psf.update.RandomNormal
-import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
+import com.tencent.angel.ml.matrix.MatrixContext
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.psagent.PSAgentContext
 import java.util.concurrent.Future
+
+import com.tencent.angel.ml.math2.utils.RowType
 
 
 class PSMatVariable(name: String, val numRows: Int, val numCols: Long, val validIndexNum: Long, val numSlot: Int,

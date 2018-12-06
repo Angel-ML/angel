@@ -1,8 +1,10 @@
 package com.tencent.angel.spark.examples.cluster
 
+
 import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.ml.math2.utils.RowType
+
 import com.tencent.angel.ml.math2.vector.{LongDoubleVector, Vector}
-import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.core.metric.AUC

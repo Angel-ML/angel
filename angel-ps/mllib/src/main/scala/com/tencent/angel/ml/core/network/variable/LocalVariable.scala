@@ -3,7 +3,7 @@ package com.tencent.angel.ml.core.network.variable
 import com.tencent.angel.ml.core.network.graph.Graph
 import com.tencent.angel.ml.core.network.variable.Variable.Location
 import com.tencent.angel.ml.math2.matrix.Matrix
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.model.{MatrixLoadContext, ModelLoadContext, ModelSaveContext, ModelTools}
 import org.apache.hadoop.conf.Configuration
 
