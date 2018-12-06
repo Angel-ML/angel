@@ -29,7 +29,7 @@ object FTRLExample {
     val conf = new SparkConf()
 
     if (modelPath.length > 0)
-      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, modelPath)
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, modelPath + "/back")
 
     val sc = new SparkContext(conf)
 
