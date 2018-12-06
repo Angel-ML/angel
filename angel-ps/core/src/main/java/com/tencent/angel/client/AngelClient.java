@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -46,10 +46,12 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.security.UserGroupInformation;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.PrivilegedExceptionAction;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -269,6 +271,41 @@ public abstract class AngelClient implements AngelClientInterface {
       return;
     }
 
+    try {
+      /*UserGroupInformation ugi = UGITools.getCurrentUser(conf);
+      ugi.doAs(new PrivilegedExceptionAction<String>() {
+        @Override public String run() throws Exception {
+          Path savePath = new Path(saveContext.getSavePath());
+          FileSystem fs = savePath.getFileSystem(conf);
+          if(fs.exists(savePath)) {
+            if(conf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
+                    AngelConf.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST)) {
+              fs.delete(savePath, true);
+            } else {
+              throw new AngelException("Save path " + savePath + " already exist, you can set another save path or set angel.job.output.path.deleteonexist be true");
+            }
+          }
+          return "OK";
+        }
+      });
+      */
+      Path savePath = new Path(saveContext.getSavePath());
+      FileSystem fs = savePath.getFileSystem(conf);
+      if(fs.exists(savePath)) {
+        if(conf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
+                AngelConf.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST)) {
+          fs.delete(savePath, true);
+          if(fs.exists(savePath)) {
+            throw new AngelException("Save path " + savePath + " already exist, remove it failed!!!");
+          }
+        } else {
+          throw new AngelException("Save path " + savePath + " already exist, you can set another save path or set angel.job.output.path.deleteonexist be true");
+        }
+      }
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+
     SaveRequest.Builder builder = SaveRequest.newBuilder();
     int requestId;
     try {
@@ -301,6 +338,28 @@ public abstract class AngelClient implements AngelClientInterface {
               loadContext.getMatricesContext().size(),
               loadContext.getLoadPath()));
       return;
+    }
+
+    try {
+      /* UserGroupInformation ugi = UGITools.getCurrentUser(conf);
+      ugi.doAs(new PrivilegedExceptionAction<String>() {
+        @Override public String run() throws Exception {
+          Path loadPath = new Path(loadContext.getLoadPath());
+          FileSystem fs = loadPath.getFileSystem(conf);
+          if(!fs.exists(loadPath)) {
+            throw new AngelException("Load path " + loadPath + " does not exist, please check");
+          }
+          return "OK";
+        }
+      });
+      */
+      Path loadPath = new Path(loadContext.getLoadPath());
+      FileSystem fs = loadPath.getFileSystem(conf);
+      if(!fs.exists(loadPath)) {
+        throw new AngelException("Load path " + loadPath + " does not exist, please check");
+      }
+    } catch (Throwable e) {
+      throw new AngelException(e);
     }
 
     LoadRequest.Builder builder = LoadRequest.newBuilder();
@@ -337,7 +396,7 @@ public abstract class AngelClient implements AngelClientInterface {
         LOG.info("master is not null, send stop command to Master, stateCode=" + stateCode);
         master.stop(null,
           ClientMasterServiceProtos.StopRequest.newBuilder().setExitStatus(stateCode).build());
-      } catch (ServiceException e) {
+      } catch (Throwable e) {
         LOG.error("send stop command to Master failed ", e);
         kill();
         //throw new AngelException(e);
@@ -819,6 +878,9 @@ public abstract class AngelClient implements AngelClientInterface {
     if (outFs.exists(outputPath)) {
       if (deleteOnExist) {
         outFs.delete(outputPath, true);
+        if(outFs.exists(outputPath)) {
+          throw new IOException("output path " + outputPath + " already exist, remove it failed!!!");
+        }
       } else {
         throw new IOException("output path " + outputPath + " already exist, please check");
       }

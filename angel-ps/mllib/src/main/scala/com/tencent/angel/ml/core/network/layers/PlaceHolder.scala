@@ -41,6 +41,9 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
   private var feats: Matrix = _
   private var labels: Matrix = _
   private var indices: Vector = _
+  private var attached: Array[String] = _
+  private val keyType: String = SharedConf.keyType()
+  private val inputDataFormat: String = SharedConf.inputDataFormat
 
   var isFeed: Boolean = false
 
@@ -48,12 +51,13 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
     feats = null
     labels = null
     indices = null
+    attached = null
 
     this.data = data
   }
 
   def isDense: Boolean = {
-    SharedConf.inputDataFormat match {
+    inputDataFormat match {
       case "dummy" | "libsvm" => false
       case "dense" => true
     }
@@ -105,6 +109,16 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
     labels
   }
 
+  def getAttached: Array[String] = {
+    attached = if (attached == null) {
+      data.map(_.getAttach)
+    } else {
+      attached
+    }
+
+    attached
+  }
+
   def getBatchSize: Int = data.length
 
   def getFeatDim: Long = {
@@ -117,7 +131,7 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
   def getIndices: Vector = synchronized {
     //    LOG.error(s"indices is null = ${indices == null}")
     if (indices == null) {
-      SharedConf.keyType() match {
+      keyType match {
         case "int" =>
           val temSet = new IntOpenHashSet()
           data.foreach(ld =>

@@ -23,13 +23,14 @@ import com.tencent.angel.ml.matrix.{MatrixMeta, RowType}
 import org.apache.spark._
 import scala.collection.Map
 
+import com.tencent.angel.exception.AngelException
 import com.tencent.angel.spark.models.PSVector
 
 
 abstract class PSContext {
   private[spark] def conf: Map[String, String]
 
-  def stop()
+  protected def stop()
 
   def createMatrix(rows: Int, cols: Long, validIndexNum: Long, rowInBlock: Int, colInBlock: Long,
                    rowType: RowType, additionalConfiguration:Map[String, String] = Map()): MatrixMeta
@@ -44,7 +45,8 @@ abstract class PSContext {
 
   def destroyMatrix(matrixId: Int)
 
-  def createVector(dim: Long, t: RowType, poolCapacity: Int, range: Long): PSVector
+  def createVector(dim: Long, t: RowType, poolCapacity: Int, range: Long,
+                   additionalConfiguration:Map[String, String] = Map()): PSVector
 
   def duplicateVector(originVector: PSVector): PSVector
 
@@ -82,7 +84,8 @@ object PSContext {
           } catch {
             case e: Exception =>
               _instance = null
-              failCause = e
+              e.printStackTrace()
+              throw new AngelException("init AngelPSContext fail, please check logs of master of angel")
           }
         }
       }

@@ -19,13 +19,13 @@
 package com.tencent.angel.spark.ml.core
 
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.optimizer.loss.{L2Loss, LogLoss}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix}
-import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector}
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.metric.{AUC, Precision}
+import com.tencent.angel.spark.ml.util.{DataLoader, SparkUtils}
 import org.apache.spark.SparkContext
-import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
@@ -43,9 +43,8 @@ class OfflineLearner {
 
   println(s"fraction=$fraction validateRatio=$validationRatio numEpoch=$numEpoch")
 
-  def evaluate(data: RDD[LabeledData], bModel: Broadcast[GraphModel]): (Double, Double) = {
+  def evaluate(data: RDD[LabeledData], model: GraphModel): (Double, Double) = {
     val scores = data.mapPartitions { case iter =>
-      val model = bModel.value
       val output = model.forward(1, iter.toArray)
       Iterator.single((output, model.graph.placeHolder.getLabel))
     }
@@ -67,8 +66,6 @@ class OfflineLearner {
     validate.count()
     data.unpersist()
 
-    val bModel = SparkContext.getOrCreate().broadcast(model)
-
     val numSplits = (1.0 / fraction).toInt
     val manifold = OfflineLearner.buildManifold(train, numSplits)
     var numUpdate = 1
@@ -79,9 +76,9 @@ class OfflineLearner {
         val (sumLoss, batchSize) = batchIterator.next().mapPartitions { case iter =>
           PSContext.instance()
           val batch = iter.next()
-          bModel.value.forward(epoch, batch)
-          val loss = bModel.value.getLoss()
-          bModel.value.backward()
+          model.forward(epoch, batch)
+          val loss = model.getLoss()
+          model.backward()
           Iterator.single((loss, batch.length))
         }.reduce((f1, f2) => (f1._1 + f2._1, f1._2 + f2._2))
 
@@ -91,7 +88,7 @@ class OfflineLearner {
         if (boundary) {
           var validateMetricLog = ""
           if (validationRatio > 0.0) {
-            val (validateAuc, validatePrecision) = evaluate(validate, bModel)
+            val (validateAuc, validatePrecision) = evaluate(validate, model)
             validateMetricLog = s"validateAuc=$validateAuc validatePrecision=$validatePrecision"
           }
           println(s"batch[$numUpdate] $validateMetricLog")
@@ -105,27 +102,67 @@ class OfflineLearner {
     * Predict the output with a RDD with data and a trained model
     * @param data: examples to be predicted
     * @param model: a trained model
-    * @return RDD[(label, predict value)], the label is the ``label`` field in the
-    *         libsvm format. We can place the data ID in this field when doing
-    *         predicting.
+    * @return RDD[(label, predict value)]
+    *
     */
-  def predict(data: RDD[LabeledData], model: GraphModel): RDD[(Double, Double)] = {
+  def predict(data: RDD[(LabeledData, String)], model: GraphModel): RDD[(String, Double)] = {
     val bModel = SparkContext.getOrCreate().broadcast(model)
-    val scores = data.mapPartitions { case iterator =>
+    val scores = data.mapPartitions { iterator =>
+      PSContext.instance()
       val samples = iterator.toArray
-      val output  = bModel.value.forward(1, samples)
+      val output  = bModel.value.forward(1, samples.map(f => f._1))
+      val labels = samples.map(f => f._2)
 
-      val labels = bModel.value.graph.placeHolder.getLabel.getCol(0)
-
-      (labels, output) match {
-        case (l: IntDoubleVector, mat: BlasDoubleMatrix) =>
-          (0 until mat.getNumRows).map(idx => (l.get(idx), mat.get(idx, 2))).iterator
-        case (l: IntFloatVector,  mat: BlasFloatMatrix) =>
-          (0 until mat.getNumRows).map(idx => (l.get(idx).toDouble, mat.get(idx, 2).toDouble)).iterator
+      (output, bModel.value.getLossFunc()) match {
+        case (mat :BlasDoubleMatrix, _: LogLoss) =>
+          // For LogLoss, the output is (value, sigmoid(value), label)
+          (0 until mat.getNumRows).map(idx => (labels(idx), mat.get(idx, 1))).iterator
+        case (mat :BlasFloatMatrix, _: LogLoss) =>
+          // For LogLoss, the output is (value, sigmoid(value), label)
+          (0 until mat.getNumRows).map(idx => (labels(idx), mat.get(idx, 1).toDouble)).iterator
+        case (mat: BlasDoubleMatrix , _: L2Loss) =>
+          // For L2Loss, the output is (value, _, _)
+          (0 until mat.getNumRows).map(idx => (labels(idx), mat.get(idx, 0))).iterator
+        case (mat: BlasFloatMatrix , _: L2Loss) =>
+          // For L2Loss, the output is (value, _, _)
+          (0 until mat.getNumRows).map(idx => (labels(idx), mat.get(idx, 0).toDouble)).iterator
       }
     }
 
     scores
+  }
+
+  def train(input: String,
+            modelOutput: String,
+            modelInput: String,
+            dim: Int,
+            model: GraphModel): Unit = {
+    val conf = SparkContext.getOrCreate().getConf
+    val data = SparkContext.getOrCreate().textFile(input)
+      .repartition(SparkUtils.getNumCores(conf))
+      .map(f => DataLoader.parseIntFloat(f, dim))
+
+    model.init(data.getNumPartitions)
+
+    if (modelInput.length > 0) model.load(modelInput)
+    train(data, model)
+    if (modelOutput.length > 0) model.save(modelOutput)
+  }
+
+  def predict(input: String,
+              output: String,
+              modelInput: String,
+              dim: Int,
+              model: GraphModel): Unit = {
+    val dataWithLabels = SparkContext.getOrCreate().textFile(input)
+      .map(f => (DataLoader.parseIntFloat(f, dim), DataLoader.parseLabel(f)))
+
+    model.init(dataWithLabels.getNumPartitions)
+    model.load(modelInput)
+
+    val predicts = predict(dataWithLabels, model)
+    if (output.length > 0)
+      predicts.map(f => s"${f._1} ${f._2}").saveAsTextFile(output)
   }
 
 }

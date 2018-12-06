@@ -19,6 +19,7 @@
 package com.tencent.angel.spark.models
 
 import java.util.concurrent.Future
+import scala.collection.Map
 
 import org.apache.spark.SparkException
 
@@ -41,8 +42,14 @@ abstract class PSVector extends PSModel {
 
   def pull(): Vector
 
+  /*
+  note: calling this api would modify the indices array passed in
+   */
   def pull(indices: Array[Long]): Vector
 
+  /*
+  note: calling this api would modify the indices array passed in
+   */
   def pull(indices: Array[Int]): Vector
 
   def increment(delta: Vector): this.type
@@ -73,8 +80,9 @@ object PSVector{
     PSContext.instance().duplicateVector(original).asInstanceOf[K]
   }
 
-  def dense(dimension: Long, capacity: Int = 20, rowType: RowType = RowType.T_DOUBLE_DENSE): PSVector = {
-    PSContext.instance().createVector(dimension, rowType, capacity, dimension)
+  def dense(dimension: Long, capacity: Int = 20, rowType: RowType = RowType.T_DOUBLE_DENSE,
+      additionalConfiguration:Map[String, String] = Map()): PSVector = {
+    PSContext.instance().createVector(dimension, rowType, capacity, dimension, additionalConfiguration)
   }
 
   /**
@@ -84,15 +92,18 @@ object PSVector{
   def longKeySparse(dim: Long,
       maxRange: Long,
       capacity: Int = 20,
-      rowType: RowType = RowType.T_DOUBLE_SPARSE_LONGKEY): PSVector = {
-    sparse(dim, capacity, maxRange, rowType)
+      rowType: RowType = RowType.T_DOUBLE_SPARSE_LONGKEY,
+      additionalConfiguration:Map[String, String] = Map()): PSVector = {
+    sparse(dim, capacity, maxRange, rowType, additionalConfiguration)
   }
 
-  def sparse(dimension: Long, capacity: Int, range: Long, rowType: RowType): PSVector = {
-    PSContext.instance().createVector(dimension, rowType, capacity, range)
+  def sparse(dimension: Long, capacity: Int, range: Long, rowType: RowType,
+      additionalConfiguration:Map[String, String]): PSVector = {
+    PSContext.instance().createVector(dimension, rowType, capacity, range, additionalConfiguration)
   }
 
-  def sparse(dimension: Long, capacity: Int = 20, rowType: RowType = RowType.T_DOUBLE_SPARSE_LONGKEY): PSVector = {
-    sparse(dimension, capacity, dimension, rowType)
+  def sparse(dimension: Long, capacity: Int = 20, rowType: RowType = RowType.T_DOUBLE_SPARSE_LONGKEY,
+      additionalConfiguration:Map[String, String] = Map()): PSVector = {
+    sparse(dimension, capacity, dimension, rowType, additionalConfiguration)
   }
 }

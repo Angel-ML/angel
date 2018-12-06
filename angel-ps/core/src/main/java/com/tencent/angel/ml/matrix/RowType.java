@@ -24,36 +24,36 @@ package com.tencent.angel.ml.matrix;
 public enum RowType {
 
   T_DOUBLE_DENSE(0, RowType.T_DOUBLE_DENSE_VALUE), T_DOUBLE_DENSE_COMPONENT(1,
-    RowType.T_DOUBLE_DENSE_COMPONENT_VALUE), T_DOUBLE_DENSE_LONGKEY_COMPONENT(2,
-    RowType.T_DOUBLE_DENSE_LONGKEY_COMPONENT_VALUE), T_DOUBLE_SPARSE(3,
-    RowType.T_DOUBLE_SPARSE_VALUE), T_DOUBLE_SPARSE_COMPONENT(4,
-    RowType.T_DOUBLE_SPARSE_COMPONENT_VALUE), T_DOUBLE_SPARSE_LONGKEY(5,
-    RowType.T_DOUBLE_SPARSE_LONGKEY_VALUE), T_DOUBLE_SPARSE_LONGKEY_COMPONENT(6,
-    RowType.T_DOUBLE_SPARSE_LONGKEY_COMPONENT_VALUE),
+      RowType.T_DOUBLE_DENSE_COMPONENT_VALUE), T_DOUBLE_DENSE_LONGKEY_COMPONENT(2,
+      RowType.T_DOUBLE_DENSE_LONGKEY_COMPONENT_VALUE), T_DOUBLE_SPARSE(3,
+      RowType.T_DOUBLE_SPARSE_VALUE), T_DOUBLE_SPARSE_COMPONENT(4,
+      RowType.T_DOUBLE_SPARSE_COMPONENT_VALUE), T_DOUBLE_SPARSE_LONGKEY(5,
+      RowType.T_DOUBLE_SPARSE_LONGKEY_VALUE), T_DOUBLE_SPARSE_LONGKEY_COMPONENT(6,
+      RowType.T_DOUBLE_SPARSE_LONGKEY_COMPONENT_VALUE),
 
   T_FLOAT_DENSE(7, RowType.T_FLOAT_DENSE_VALUE), T_FLOAT_DENSE_COMPONENT(8,
-    RowType.T_FLOAT_DENSE_COMPONENT_VALUE), T_FLOAT_DENSE_LONGKEY_COMPONENT(9,
-    RowType.T_FLOAT_DENSE_LONGKEY_COMPONENT_VALUE), T_FLOAT_SPARSE(10,
-    RowType.T_FLOAT_SPARSE_VALUE), T_FLOAT_SPARSE_COMPONENT(11,
-    RowType.T_FLOAT_SPARSE_COMPONENT_VALUE), T_FLOAT_SPARSE_LONGKEY(12,
-    RowType.T_FLOAT_SPARSE_LONGKEY_VALUE), T_FLOAT_SPARSE_LONGKEY_COMPONENT(13,
-    RowType.T_FLOAT_SPARSE_LONGKEY_COMPONENT_VALUE),
+      RowType.T_FLOAT_DENSE_COMPONENT_VALUE), T_FLOAT_DENSE_LONGKEY_COMPONENT(9,
+      RowType.T_FLOAT_DENSE_LONGKEY_COMPONENT_VALUE), T_FLOAT_SPARSE(10,
+      RowType.T_FLOAT_SPARSE_VALUE), T_FLOAT_SPARSE_COMPONENT(11,
+      RowType.T_FLOAT_SPARSE_COMPONENT_VALUE), T_FLOAT_SPARSE_LONGKEY(12,
+      RowType.T_FLOAT_SPARSE_LONGKEY_VALUE), T_FLOAT_SPARSE_LONGKEY_COMPONENT(13,
+      RowType.T_FLOAT_SPARSE_LONGKEY_COMPONENT_VALUE),
 
   T_LONG_DENSE(14, RowType.T_LONG_DENSE_VALUE), T_LONG_DENSE_COMPONENT(15,
-    RowType.T_LONG_DENSE_COMPONENT_VALUE), T_LONG_DENSE_LONGKEY_COMPONENT(16,
-    RowType.T_LONG_DENSE_LONGKEY_COMPONENT_VALUE), T_LONG_SPARSE(17,
-    RowType.T_LONG_SPARSE_VALUE), T_LONG_SPARSE_COMPONENT(18,
-    RowType.T_LONG_SPARSE_COMPONENT_VALUE), T_LONG_SPARSE_LONGKEY(19,
-    RowType.T_LONG_SPARSE_LONGKEY_VALUE), T_LONG_SPARSE_LONGKEY_COMPONENT(20,
-    RowType.T_LONG_SPARSE_LONGKEY_COMPONENT_VALUE),
+      RowType.T_LONG_DENSE_COMPONENT_VALUE), T_LONG_DENSE_LONGKEY_COMPONENT(16,
+      RowType.T_LONG_DENSE_LONGKEY_COMPONENT_VALUE), T_LONG_SPARSE(17,
+      RowType.T_LONG_SPARSE_VALUE), T_LONG_SPARSE_COMPONENT(18,
+      RowType.T_LONG_SPARSE_COMPONENT_VALUE), T_LONG_SPARSE_LONGKEY(19,
+      RowType.T_LONG_SPARSE_LONGKEY_VALUE), T_LONG_SPARSE_LONGKEY_COMPONENT(20,
+      RowType.T_LONG_SPARSE_LONGKEY_COMPONENT_VALUE),
 
   T_INT_DENSE(21, RowType.T_INT_DENSE_VALUE), T_INT_DENSE_COMPONENT(22,
-    RowType.T_INT_DENSE_COMPONENT_VALUE), T_INT_DENSE_LONGKEY_COMPONENT(23,
-    RowType.T_INT_DENSE_LONGKEY_COMPONENT_VALUE), T_INT_SPARSE(24,
-    RowType.T_INT_SPARSE_VALUE), T_INT_SPARSE_COMPONENT(25,
-    RowType.T_INT_SPARSE_COMPONENT_VALUE), T_INT_SPARSE_LONGKEY(26,
-    RowType.T_INT_SPARSE_LONGKEY_VALUE), T_INT_SPARSE_LONGKEY_COMPONENT(27,
-    RowType.T_INT_SPARSE_LONGKEY_COMPONENT_VALUE),
+      RowType.T_INT_DENSE_COMPONENT_VALUE), T_INT_DENSE_LONGKEY_COMPONENT(23,
+      RowType.T_INT_DENSE_LONGKEY_COMPONENT_VALUE), T_INT_SPARSE(24,
+      RowType.T_INT_SPARSE_VALUE), T_INT_SPARSE_COMPONENT(25,
+      RowType.T_INT_SPARSE_COMPONENT_VALUE), T_INT_SPARSE_LONGKEY(26,
+      RowType.T_INT_SPARSE_LONGKEY_VALUE), T_INT_SPARSE_LONGKEY_COMPONENT(27,
+      RowType.T_INT_SPARSE_LONGKEY_COMPONENT_VALUE),
 
   T_INT_ARBITRARY(28, RowType.T_INT_ARBITRARY_VALUE);
 
@@ -92,6 +92,54 @@ public enum RowType {
   public final int getNumber() {
     return value;
   }
+
+  public final boolean isDouble() {
+    return value / 7 == 0;
+  }
+
+  public final boolean isFloat() {
+    return  value / 7 == 1;
+  }
+
+  public final boolean isLong() {
+    return  value / 7 == 2;
+  }
+
+  public final boolean isInt() {
+    return value / 7 == 3;
+  }
+
+  public final boolean isSparse() {
+    return value < 28 && value % 7 >= 3;
+  }
+
+  public final boolean isDense() {
+    return value < 28 && value % 7 < 3;
+  }
+
+  public final boolean isLongKey(){
+    int r = value % 7;
+    return value < 28 && (r == 2 || r == 5 || r == 6);
+  }
+
+  public final boolean isIntKey() {
+    int r = value % 7;
+    return value < 28 && r < 5 && r != 2;
+  }
+
+  public final boolean narrowerThen(RowType other){
+    return this.value / 7 <= other.value / 7 && other.value < 28;
+  }
+
+  public final boolean sameKeyType(RowType other) {
+    return (this.isIntKey() && other.isIntKey()) || (this.isLongKey() && other.isLongKey());
+  }
+
+  public final boolean compatible(RowType other){
+    return narrowerThen(other) && sameKeyType(other);
+  }
+
+
 
   public static RowType valueOf(int value) {
     switch (value) {

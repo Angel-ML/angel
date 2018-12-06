@@ -20,14 +20,11 @@ package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.RunningMode
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.utils.DataParser
 import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.examples.util.SparkUtils
 import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OfflineLearner}
-import com.tencent.angel.spark.ml.util.{Features, ModelLoader, ModelSaver}
 import org.apache.spark.{SparkConf, SparkContext}
 
 object JsonRunner {
@@ -49,9 +46,6 @@ object JsonRunner {
     val conf = new SparkConf()
     val sc   = new SparkContext(conf)
     val parser = DataParser(SharedConf.get())
-    val data = sc.textFile(input)
-      .repartition(SparkUtils.getNumExecutors(conf))
-      .map(f => parser.parse(f))
 
     // start PS
     PSContext.getOrCreate(sc)
@@ -59,30 +53,14 @@ object JsonRunner {
     val model = new GraphModel
     val learner = new OfflineLearner
 
-    // init model here
-    model.init(data.getNumPartitions)
-
-    data.mapPartitions({_ =>
-      PSContext.instance().refreshMatrix()
-      Iterator.single(0)}).count()
+    val dim = SharedConf.indexRange.toInt
 
     actionType match {
       case MLConf.ANGEL_ML_TRAIN =>
-        // get model path, load it first
-        if (modelPath.length > 0) model.load(modelPath)
-        // train
-        learner.train(data, model)
-        // save model
-        if (output.length > 0) model.save(output)
+          learner.train(input, output, modelPath, dim, model)
 
       case MLConf.ANGEL_ML_PREDICT =>
-        if (modelPath.length == 0)
-          throw new AngelException("Should set model path for predict!")
-
-        model.load(modelPath)
-        val predict = learner.predict(data, model)
-        if (output.length > 0)
-          predict.map(f => s"${f._1} ${f._2}").saveAsTextFile(output)
+          learner.predict(input, output, modelPath, dim, model)
     }
   }
 

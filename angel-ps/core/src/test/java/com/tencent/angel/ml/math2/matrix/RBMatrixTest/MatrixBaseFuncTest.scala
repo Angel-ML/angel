@@ -196,7 +196,7 @@ class MatrixBaseFuncTest {
       floatMatrix.setRows(Array(dense, sparse, sorted))
     } catch {
       case e: AssertionError => {
-        println(e)
+        e
       }
     }
   }
@@ -227,7 +227,7 @@ class MatrixBaseFuncTest {
       longMatrix.setRows(Array(dense, sparse, sorted))
     } catch {
       case e: AssertionError => {
-        println(e)
+        e
       }
     }
   }
@@ -258,7 +258,7 @@ class MatrixBaseFuncTest {
       intMatrix.setRows(Array(dense, sparse, sorted))
     } catch {
       case e: AssertionError => {
-        println(e)
+        e
       }
     }
   }
@@ -287,7 +287,7 @@ class MatrixBaseFuncTest {
       doubleMatrix.setRows(Array(sparse, sorted))
     } catch {
       case e: AssertionError => {
-        println(e)
+        e
       }
     }
   }
@@ -316,7 +316,7 @@ class MatrixBaseFuncTest {
       floatMatrix.setRows(Array(sparse, sorted))
     } catch {
       case e: AssertionError => {
-        println(e)
+        e
       }
     }
   }
@@ -345,7 +345,7 @@ class MatrixBaseFuncTest {
       longMatrix.setRows(Array(sparse, sorted))
     } catch {
       case e: AssertionError => {
-        println(e)
+        e
       }
     }
   }
@@ -374,7 +374,7 @@ class MatrixBaseFuncTest {
       intMatrix.setRows(Array(sparse, sorted))
     } catch {
       case e: AssertionError => {
-        println(e)
+        e
       }
     }
   }
@@ -418,7 +418,7 @@ class MatrixBaseFuncTest {
       doubleMatrix.setRows(Array(comp1, comp2, comp3))
     } catch {
       case e: AssertionError => {
-        println(e)
+        e
       }
     }
   }
@@ -461,7 +461,7 @@ class MatrixBaseFuncTest {
       doubleMatrix.setRows(Array(comp1, comp2, comp3))
     } catch {
       case e: AssertionError => {
-        println(e)
+        e
       }
     }
   }
@@ -504,7 +504,7 @@ class MatrixBaseFuncTest {
       doubleMatrix.setRows(Array(comp1, comp2, comp3))
     } catch {
       case e: AssertionError => {
-        println(e)
+        e
       }
     }
   }
@@ -547,7 +547,7 @@ class MatrixBaseFuncTest {
       doubleMatrix.setRows(Array(comp1, comp2, comp3))
     } catch {
       case e: AssertionError => {
-        println(e)
+        e
       }
     }
   }
@@ -585,7 +585,7 @@ class MatrixBaseFuncTest {
       doubleMatrix.setRows(Array(comp1, comp2))
     } catch {
       case e: AssertionError => {
-        println(e)
+        e
       }
     }
   }
@@ -623,7 +623,7 @@ class MatrixBaseFuncTest {
       doubleMatrix.setRows(Array(comp1, comp2))
     } catch {
       case e: AssertionError => {
-        println(e)
+        e
       }
     }
   }
@@ -661,7 +661,7 @@ class MatrixBaseFuncTest {
       doubleMatrix.setRows(Array(comp1, comp2))
     } catch {
       case e: AssertionError => {
-        println(e)
+        e
       }
     }
   }
@@ -699,7 +699,7 @@ class MatrixBaseFuncTest {
       doubleMatrix.setRows(Array(comp1, comp2))
     } catch {
       case e: AssertionError => {
-        println(e)
+        e
       }
     }
   }

@@ -15,7 +15,9 @@ object SoftmaxRegressionTest {
     PropertyConfigurator.configure("angel-ps/conf/log4j.properties")
     val params = ArgsUtil.parse(args)
 
-    val input = params.getOrElse("input", "./data/protein/protein_357d_train.libsvm")
+    val input = params.getOrElse("input", "./data/census/census_148d_train.libsvm")
+    val modelInput = params.getOrElse("model", "")
+    val modelOutput = params.getOrElse("output", "")
     val actionType = params.getOrElse("actionType", "train")
 
     // build SharedConf with params
@@ -46,17 +48,17 @@ object SoftmaxRegressionTest {
     conf.set("spark.ps.log.level", "INFO")
 
     val sc = new SparkContext(conf)
-    val parser = DataParser(SharedConf.get())
-    val data = sc.textFile(input).map(f => parser.parse(f))
+    val dim = SharedConf.indexRange.toInt
+
 
     PSContext.getOrCreate(sc)
 
     actionType match {
       case "train" =>
-        learner.train(data, model)
+        learner.train(input, modelOutput, modelInput, dim, model)
+
       case "predict" =>
-        model.load("")
-        learner.predict(data, model)
+        learner.predict(input, modelOutput, modelInput, dim, model)
       case _ =>
         throw new AngelException("actionType should be train or predict")
     }

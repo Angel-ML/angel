@@ -25,8 +25,10 @@ import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
 
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector.{LongDoubleVector, Vector}
+import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.models.PSVector
 import com.tencent.angel.spark.ml.core.ArgsUtil
@@ -113,7 +115,8 @@ object FTRLRunner {
 
     optMethod match {
       case FTRL =>
-        val zPS: PSVector = PSVector.sparse(dim)
+        val zPS: PSVector = PSVector.sparse(dim,
+          additionalConfiguration = Map(AngelConf.Angel_PS_PARTITION_CLASS -> classOf[ColumnRangePartitioner].getName))
         val nPS: PSVector = PSVector.duplicate(zPS)
         // init the model
         if (isIncrementLearn) {
@@ -124,13 +127,14 @@ object FTRLRunner {
         }
 
         val ftrl = new FTRL(lambda1, lambda2, alpha, beta)
-        ftrl.initPSModel(dim)
+        ftrl.init(dim)
 
         train(ftrl, featureDS, dim, partitionNum, modelPath, batch2Save, isOneHot)
 
       case FTRL_VRG =>
 
-        val zPS: PSVector = PSVector.sparse(dim)
+        val zPS: PSVector = PSVector.sparse(dim,
+          additionalConfiguration = Map(AngelConf.Angel_PS_PARTITION_CLASS -> classOf[ColumnRangePartitioner].getName))
         val nPS: PSVector = PSVector.duplicate(zPS)
         val vPS: PSVector = PSVector.duplicate(zPS)
         var initW: LongDoubleVector = null

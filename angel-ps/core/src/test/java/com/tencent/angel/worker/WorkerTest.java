@@ -110,6 +110,8 @@ public class WorkerTest {
       conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 10);
       conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
       conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
+      conf.setInt(AngelConf.ANGEL_WORKER_MAX_ATTEMPTS, 1);
+      conf.setInt(AngelConf.ANGEL_PS_MAX_ATTEMPTS, 1);
 
       //get a angel client
       angelClient = AngelClientFactory.get(conf);
@@ -143,7 +145,7 @@ public class WorkerTest {
 
       angelClient.startPSServer();
       angelClient.run();
-      Thread.sleep(2000);
+      Thread.sleep(5000);
 
       group0Id = new WorkerGroupId(0);
       worker0Id = new WorkerId(group0Id, 0);

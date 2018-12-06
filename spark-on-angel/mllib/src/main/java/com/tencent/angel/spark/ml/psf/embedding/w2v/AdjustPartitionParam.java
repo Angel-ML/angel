@@ -7,9 +7,6 @@ import io.netty.buffer.ByteBuf;
 public class AdjustPartitionParam extends PartitionUpdateParam {
 
   int seed;
-  int negative;
-  int window;
-  int partDim;
   int partitionId;
   int model;
   private float[] gradient;
@@ -19,18 +16,12 @@ public class AdjustPartitionParam extends PartitionUpdateParam {
   public AdjustPartitionParam(int matrixId,
                               PartitionKey partKey,
                               int seed,
-                              int negative,
-                              int window,
-                              int partDim,
                               int partitionId,
                               int model,
                               float[] gradient,
                               int[][] sentences) {
     super(matrixId, partKey);
     this.seed = seed;
-    this.negative = negative;
-    this.window = window;
-    this.partDim = partDim;
     this.partitionId = partitionId;
     this.model = model;
     this.gradient = gradient;
@@ -43,9 +34,6 @@ public class AdjustPartitionParam extends PartitionUpdateParam {
   public void serialize(ByteBuf buf) {
     super.serialize(buf);
     buf.writeInt(seed);
-    buf.writeInt(negative);
-    buf.writeInt(window);
-    buf.writeInt(partDim);
     buf.writeInt(partitionId);
     buf.writeInt(model);
 
@@ -64,9 +52,6 @@ public class AdjustPartitionParam extends PartitionUpdateParam {
   public void deserialize(ByteBuf buf) {
     super.deserialize(buf);
     seed = buf.readInt();
-    negative = buf.readInt();
-    window = buf.readInt();
-    partDim = buf.readInt();
     partitionId = buf.readInt();
     model = buf.readInt();
 
@@ -88,6 +73,6 @@ public class AdjustPartitionParam extends PartitionUpdateParam {
 
   @Override
   public int bufferLen() {
-    return super.bufferLen() + 24 + 4 + gradient.length * 4;
+    return super.bufferLen() + 12 + 4 + gradient.length * 4;
   }
 }

@@ -24,6 +24,8 @@ import com.tencent.angel.psagent.matrix.transport.adapter.IndicesView;
 import com.tencent.angel.psagent.matrix.transport.adapter.IntIndicesView;
 import io.netty.buffer.ByteBuf;
 
+import java.util.Random;
+
 public class IndexPartGetRowRequest extends PartitionRequest {
   private int matrixId;
   private int rowId;
