@@ -19,8 +19,8 @@ package com.tencent.angel.spark.ml.classification
 
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers.Layer
-import com.tencent.angel.ml.core.network.layers.verge.{SimpleLossLayer, SimpleInputLayer}
 import com.tencent.angel.ml.core.network.layers.join.DotPooling
+import com.tencent.angel.ml.core.network.layers.verge.{SimpleInputLayer, SimpleLossLayer}
 import com.tencent.angel.ml.core.network.transfunc.{Sigmoid, Softmax}
 import com.tencent.angel.ml.core.optimizer.OptUtils
 import com.tencent.angel.ml.core.optimizer.loss.CrossEntropyLoss

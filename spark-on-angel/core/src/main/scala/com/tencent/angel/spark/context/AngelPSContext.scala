@@ -145,6 +145,10 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
     meta
   }
 
+  def getMatrixMeta(matrixId: Int): Option[MatrixMeta] = {
+    matrixMetaMap.get(matrixId)
+  }
+
   /**
     * create a sparse long key matrix
     *

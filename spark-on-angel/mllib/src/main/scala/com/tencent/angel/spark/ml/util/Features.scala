@@ -80,7 +80,8 @@ object Features {
     samples.foreach(f => f.getX.getStorage.asInstanceOf[IntKeyVectorStorage]
       .getIndices.map(i => set.add(i)))
     val index = VFactory.denseLongVector(set.toLongArray())
-    val vector = PSMatrixUtils.getRowWithIndex(1, matrixId, 0, index).asInstanceOf[LongIntVector]
+    val vector = PSMatrixUtils.getRowWithIndex(1, matrixId, 0, index)(
+      mean = 0.0, stddev = 0.0001).asInstanceOf[LongIntVector]
 
     val newData = samples.map { case point =>
       point.getX.getStorage match {

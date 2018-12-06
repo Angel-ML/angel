@@ -170,8 +170,8 @@ object Features {
       }
 
       val pullIndex = VFactory.denseLongVector(set.toLongArray())
-      val sparseToDenseIndex = PSMatrixUtils.getRowWithIndex(1, sparseToDenseMatrixId, 0, pullIndex)
-        .asInstanceOf[LongIntVector]
+      val sparseToDenseIndex = PSMatrixUtils.getRowWithIndex(1, sparseToDenseMatrixId, 0, pullIndex)(
+        mean = 0.0, stddev = 0.00001).asInstanceOf[LongIntVector]
 
       val size = corpus.size
       var i = 0
@@ -201,8 +201,8 @@ object Features {
         i += 1
       }
 
-      val sparseToDenseIndex = PSMatrixUtils.getRowWithIndex(1, sparseToDenseMatrixId, 0, VFactory.denseLongVector(indices))
-          .asInstanceOf[LongIntVector]
+      val sparseToDenseIndex = PSMatrixUtils.getRowWithIndex(1, sparseToDenseMatrixId, 0,
+        VFactory.denseLongVector(indices))(mean = 0.0, stddev = 0.00001).asInstanceOf[LongIntVector]
       stringsWithInts.map(f => (sparseToDenseIndex.get(f._2), f._1)).iterator
     }
 

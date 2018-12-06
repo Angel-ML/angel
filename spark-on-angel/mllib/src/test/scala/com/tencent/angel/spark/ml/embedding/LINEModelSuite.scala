@@ -17,7 +17,7 @@ class LINEModelSuite extends PSFunSuite with SharedPSContext {
   val dim = 32
   val batchSize = 128
   val numPSPart = 2
-  val numEpoch = 3
+  val numEpoch = 2
   val negative = 5
   val storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
   var param: Param = _
@@ -46,6 +46,7 @@ class LINEModelSuite extends PSFunSuite with SharedPSContext {
     param.setNumEpoch(numEpoch)
     param.setNegSample(negative)
     param.setMaxIndex(maxNodeId)
+    param.setModelCPInterval(1000)
   }
 
   test("first order") {
@@ -61,7 +62,7 @@ class LINEModelSuite extends PSFunSuite with SharedPSContext {
         println(msg)
       }
     }
-    model.train(data, param)
+    model.train(data, param, "")
     model.save(output, 0)
     model.destroy()
 
@@ -88,7 +89,7 @@ class LINEModelSuite extends PSFunSuite with SharedPSContext {
         println(msg)
       }
     }
-    model.train(data, param)
+    model.train(data, param, "")
     model.save(output, 0)
     model.destroy()
 

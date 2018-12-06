@@ -17,8 +17,13 @@
 
 package com.tencent.angel.model.output.format;
 
+import com.tencent.angel.ml.math2.MFactory;
+import com.tencent.angel.ml.math2.VFactory;
+import com.tencent.angel.ml.math2.matrix.MapMatrix;
 import com.tencent.angel.ml.math2.matrix.Matrix;
+import com.tencent.angel.ml.math2.matrix.RowBasedMatrix;
 import com.tencent.angel.ml.math2.storage.*;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ml.math2.vector.*;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.model.MatrixLoadContext;
@@ -32,6 +37,7 @@ import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2LongMap;
+import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
 import it.unimi.dsi.fastutil.longs.Long2FloatMap;
 import it.unimi.dsi.fastutil.longs.Long2IntMap;
@@ -49,6 +55,9 @@ import java.util.*;
  * Column first format for matrix
  */
 public abstract class ColumnFormat extends MatrixFormatImpl {
+
+  private volatile RowType rowType;
+
   public ColumnFormat(Configuration conf) {
     super(conf);
   }
@@ -56,150 +65,135 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
   /**
    * Write a matrix column to output stream
    *
-   * @param col    matrix column for int key float value matrix
+   * @param col matrix column for int key float value matrix
    * @param output output stream
-   * @throws IOException
    */
   public abstract void save(IntFloatsCol col, DataOutputStream output) throws IOException;
 
   /**
    * Write a matrix column to output stream
    *
-   * @param col    matrix column for int key double value matrix
+   * @param col matrix column for int key double value matrix
    * @param output output stream
-   * @throws IOException
    */
   public abstract void save(IntDoublesCol col, DataOutputStream output) throws IOException;
 
   /**
    * Write a matrix column to output stream
    *
-   * @param col    matrix column for int key int value matrix
+   * @param col matrix column for int key int value matrix
    * @param output output stream
-   * @throws IOException
    */
   public abstract void save(IntIntsCol col, DataOutputStream output) throws IOException;
 
   /**
    * Write a matrix column to output stream
    *
-   * @param col    matrix column for int key long value matrix
+   * @param col matrix column for int key long value matrix
    * @param output output stream
-   * @throws IOException
    */
   public abstract void save(IntLongsCol col, DataOutputStream output) throws IOException;
 
   /**
    * Write a matrix column to output stream
    *
-   * @param col    matrix column for long key float value matrix
+   * @param col matrix column for long key float value matrix
    * @param output output stream
-   * @throws IOException
    */
   public abstract void save(LongFloatsCol col, DataOutputStream output) throws IOException;
 
   /**
    * Write a matrix column to output stream
    *
-   * @param col    matrix column for long key float double matrix
+   * @param col matrix column for long key float double matrix
    * @param output output stream
-   * @throws IOException
    */
   public abstract void save(LongDoublesCol col, DataOutputStream output) throws IOException;
 
   /**
    * Write a matrix column to output stream
    *
-   * @param col    matrix column for long key int value matrix
+   * @param col matrix column for long key int value matrix
    * @param output output stream
-   * @throws IOException
    */
   public abstract void save(LongIntsCol col, DataOutputStream output) throws IOException;
 
   /**
    * Write a matrix column to output stream
    *
-   * @param col    matrix column for long key long value matrix
+   * @param col matrix column for long key long value matrix
    * @param output output stream
-   * @throws IOException
    */
   public abstract void save(LongLongsCol col, DataOutputStream output) throws IOException;
 
   /**
    * Read a matrix column to input stream
    *
-   * @param col    matrix column for int key float value matrix
+   * @param col matrix column for int key float value matrix
    * @param output input stream
-   * @throws IOException
    */
   public abstract void load(IntFloatsCol col, DataInputStream output) throws IOException;
 
   /**
    * Read a matrix column to input stream
    *
-   * @param col    matrix column for int key double value matrix
+   * @param col matrix column for int key double value matrix
    * @param output input stream
-   * @throws IOException
    */
   public abstract void load(IntDoublesCol col, DataInputStream output) throws IOException;
 
   /**
    * Read a matrix column to input stream
    *
-   * @param col    matrix column for int key int value matrix
+   * @param col matrix column for int key int value matrix
    * @param output input stream
-   * @throws IOException
    */
   public abstract void load(IntIntsCol col, DataInputStream output) throws IOException;
 
   /**
    * Read a matrix column to input stream
    *
-   * @param col    matrix column for int key long value matrix
+   * @param col matrix column for int key long value matrix
    * @param output input stream
-   * @throws IOException
    */
   public abstract void load(IntLongsCol col, DataInputStream output) throws IOException;
 
   /**
    * Read a matrix column to input stream
    *
-   * @param col    matrix column for long key float value matrix
+   * @param col matrix column for long key float value matrix
    * @param output input stream
-   * @throws IOException
    */
   public abstract void load(LongFloatsCol col, DataInputStream output) throws IOException;
 
   /**
    * Read a matrix column to input stream
    *
-   * @param col    matrix column for long key float value matrix
+   * @param col matrix column for long key float value matrix
    * @param output input stream
-   * @throws IOException
    */
   public abstract void load(LongDoublesCol col, DataInputStream output) throws IOException;
 
   /**
    * Read a matrix column to input stream
    *
-   * @param col    matrix column for long key int value matrix
+   * @param col matrix column for long key int value matrix
    * @param output input stream
-   * @throws IOException
    */
   public abstract void load(LongIntsCol col, DataInputStream output) throws IOException;
 
   /**
    * Read a matrix column to input stream
    *
-   * @param col    matrix column for long key long value matrix
+   * @param col matrix column for long key long value matrix
    * @param output input stream
-   * @throws IOException
    */
   public abstract void load(LongLongsCol col, DataInputStream output) throws IOException;
 
 
-  @Override public void save(ServerPartition part, MatrixPartitionMeta partMeta,
-    PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
+  @Override
+  public void save(ServerPartition part, MatrixPartitionMeta partMeta,
+      PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
     List<Integer> rowIds = saveContext.getRowIndexes();
     PartitionSource rows = part.getRows();
     if (rowIds == null || rowIds.isEmpty()) {
@@ -213,7 +207,8 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
     }
 
     rowIds.sort(new Comparator<Integer>() {
-      @Override public int compare(Integer id1, Integer id2) {
+      @Override
+      public int compare(Integer id1, Integer id2) {
         return id1 - id2;
       }
     });
@@ -226,6 +221,8 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
     }
 
     ServerRow row0 = rowList[0];
+    partMeta.setSaveColNum(row0.size());
+    partMeta.setSaveColElemNum(rowList.length);
 
     if (row0 instanceof ServerIntFloatRow) {
       saveIntFloatRows(part, rowList, partMeta, saveContext, output);
@@ -245,12 +242,13 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
       saveLongLongRows(part, rowList, partMeta, saveContext, output);
     } else {
       throw new UnsupportedOperationException(
-        "Unknown server row type " + row0.getClass().getName());
+          "Unknown server row type " + row0.getClass().getName());
     }
   }
 
-  @Override public void load(ServerPartition part, MatrixPartitionMeta partMeta,
-    PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
+  @Override
+  public void load(ServerPartition part, MatrixPartitionMeta partMeta,
+      PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
     Map<Integer, RowPartitionMeta> rowMetas = partMeta.getRowMetas();
     int[] rowIds = new int[rowMetas.size()];
     ServerRow[] rows = new ServerRow[rowMetas.size()];
@@ -280,19 +278,146 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
       loadLongLongRows(part, rows, partMeta, loadContext, input);
     } else {
       throw new UnsupportedOperationException(
-        "Unknown server row type " + row0.getClass().getName());
+          "Unknown server row type " + row0.getClass().getName());
     }
   }
 
   @Override
-  public void load(Matrix matrix, MatrixPartitionMeta partMeta, MatrixLoadContext loadContext, FSDataInputStream in)
-    throws IOException {
-    throw new UnsupportedOperationException("Unsupport now");
+  public void load(Matrix matrix, MatrixPartitionMeta partMeta, MatrixLoadContext loadContext,
+      FSDataInputStream input)
+      throws IOException {
+    assert rowType != null;
+    Map<Integer, RowPartitionMeta> rowMetas = partMeta.getRowMetas();
+
+    switch (rowType) {
+      case T_INT_DENSE:
+      case T_INT_SPARSE:
+      case T_INT_DENSE_COMPONENT:
+      case T_INT_SPARSE_COMPONENT:
+        loadIntIntRows((MapMatrix) matrix, partMeta, loadContext, input);
+        return;
+
+      case T_LONG_DENSE:
+      case T_LONG_SPARSE:
+      case T_LONG_DENSE_COMPONENT:
+      case T_LONG_SPARSE_COMPONENT:
+        loadIntLongRows((MapMatrix) matrix, partMeta, loadContext, input);
+        return;
+
+      case T_FLOAT_DENSE:
+      case T_FLOAT_SPARSE:
+      case T_FLOAT_DENSE_COMPONENT:
+      case T_FLOAT_SPARSE_COMPONENT:
+        loadIntFloatRows((MapMatrix) matrix, partMeta, loadContext, input);
+        return;
+
+      case T_DOUBLE_DENSE:
+      case T_DOUBLE_SPARSE:
+      case T_DOUBLE_DENSE_COMPONENT:
+      case T_DOUBLE_SPARSE_COMPONENT:
+        loadIntDoubleRows((MapMatrix) matrix, partMeta, loadContext, input);
+        return;
+
+      case T_INT_SPARSE_LONGKEY:
+      case T_INT_DENSE_LONGKEY_COMPONENT:
+      case T_INT_SPARSE_LONGKEY_COMPONENT:
+        loadLongIntRows((MapMatrix) matrix, partMeta, loadContext, input);
+        return;
+
+      case T_LONG_SPARSE_LONGKEY:
+      case T_LONG_DENSE_LONGKEY_COMPONENT:
+      case T_LONG_SPARSE_LONGKEY_COMPONENT:
+        loadLongLongRows((MapMatrix) matrix, partMeta, loadContext, input);
+        return;
+
+      case T_FLOAT_SPARSE_LONGKEY:
+      case T_FLOAT_DENSE_LONGKEY_COMPONENT:
+      case T_FLOAT_SPARSE_LONGKEY_COMPONENT:
+        loadLongFloatRows((MapMatrix) matrix, partMeta, loadContext, input);
+        return;
+
+      case T_DOUBLE_SPARSE_LONGKEY:
+      case T_DOUBLE_DENSE_LONGKEY_COMPONENT:
+      case T_DOUBLE_SPARSE_LONGKEY_COMPONENT:
+        loadLongDoubleRows((MapMatrix) matrix, partMeta, loadContext, input);
+        return;
+
+      default:
+        throw new UnsupportedOperationException("Unsupport row type " + rowType);
+    }
   }
 
+  @Override
+  public Matrix initMatrix(MatrixFilesMeta matrixFilesMeta) {
+    Map<Integer, MatrixPartitionMeta> partMetas = matrixFilesMeta.getPartMetas();
+    int featureCount = 0;
+    for (MatrixPartitionMeta partMeta : partMetas.values()) {
+      Map<Integer, RowPartitionMeta> rowMetas = partMeta.getRowMetas();
+      assert rowMetas.containsKey(0);
+      featureCount += rowMetas.get(0).getElementNum();
+    }
+
+    rowType = RowType.valueOf(matrixFilesMeta.getRowType());
+
+    return mapRbMatrix(rowType, matrixFilesMeta.getMatrixId(), featureCount,
+        matrixFilesMeta.getRow());
+  }
+
+  private static MapMatrix mapRbMatrix(RowType rowType, int matrixId, int rowNum, int colNum) {
+    switch (rowType) {
+      case T_INT_DENSE:
+      case T_INT_SPARSE:
+      case T_INT_DENSE_COMPONENT:
+      case T_INT_SPARSE_COMPONENT:
+        return MFactory.intIntMapMatrix(matrixId, -1, new HashMap<>(rowNum));
+
+      case T_LONG_DENSE:
+      case T_LONG_SPARSE:
+      case T_LONG_DENSE_COMPONENT:
+      case T_LONG_SPARSE_COMPONENT:
+        return MFactory.intLongMapMatrix(matrixId, -1, new HashMap<>(rowNum));
+
+      case T_FLOAT_DENSE:
+      case T_FLOAT_SPARSE:
+      case T_FLOAT_DENSE_COMPONENT:
+      case T_FLOAT_SPARSE_COMPONENT:
+        return MFactory.intFloatMapMatrix(matrixId, -1, new HashMap<>(rowNum));
+
+      case T_DOUBLE_DENSE:
+      case T_DOUBLE_SPARSE:
+      case T_DOUBLE_DENSE_COMPONENT:
+      case T_DOUBLE_SPARSE_COMPONENT:
+        return MFactory.intDoubleMapMatrix(matrixId, -1, new HashMap<>(rowNum));
+
+      case T_INT_SPARSE_LONGKEY:
+      case T_INT_DENSE_LONGKEY_COMPONENT:
+      case T_INT_SPARSE_LONGKEY_COMPONENT:
+        return MFactory.longIntMapMatrix(matrixId, -1, new HashMap<>(rowNum));
+
+      case T_LONG_SPARSE_LONGKEY:
+      case T_LONG_DENSE_LONGKEY_COMPONENT:
+      case T_LONG_SPARSE_LONGKEY_COMPONENT:
+        return MFactory.longLongMapMatrix(matrixId, -1, new HashMap<>(rowNum));
+
+      case T_FLOAT_SPARSE_LONGKEY:
+      case T_FLOAT_DENSE_LONGKEY_COMPONENT:
+      case T_FLOAT_SPARSE_LONGKEY_COMPONENT:
+        return MFactory.longFloatMapMatrix(matrixId, -1, new HashMap<>(rowNum));
+
+      case T_DOUBLE_SPARSE_LONGKEY:
+      case T_DOUBLE_DENSE_LONGKEY_COMPONENT:
+      case T_DOUBLE_SPARSE_LONGKEY_COMPONENT:
+        return MFactory.longDoubleMapMatrix(matrixId, -1, new HashMap<>(rowNum));
+
+      default:
+        throw new UnsupportedOperationException("Unsupport row type " + rowType);
+    }
+  }
+
+
   private void saveIntFloatRows(ServerPartition part, ServerRow[] rows,
-    MatrixPartitionMeta partMeta, PSMatrixSaveContext saveContext, DataOutputStream output)
-    throws IOException {
+      MatrixPartitionMeta partMeta, PSMatrixSaveContext saveContext, DataOutputStream output)
+      throws IOException {
     Vector vec = rows[0].getSplit();
     //int size = rows.length;
     int indexOffset = (int) part.getPartitionKey().getStartCol();
@@ -300,10 +425,10 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
 
     IntFloatsCol col = new IntFloatsCol(0, new float[rows.length]);
 
-    int startCol = (int)rows[0].getStartCol();
-    int endCol = (int)rows[0].getEndCol();
-    if(storage.isDense()) {
-      for(int i = startCol; i < endCol; i++) {
+    int startCol = (int) rows[0].getStartCol();
+    int endCol = (int) rows[0].getEndCol();
+    if (storage.isDense()) {
+      for (int i = startCol; i < endCol; i++) {
         col.colId = i;
         for (int j = 0; j < rows.length; j++) {
           col.colElems[j] = ((ServerIntFloatRow) (rows[j])).get(col.colId);
@@ -311,7 +436,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
         save(col, output);
       }
     } else {
-      if(saveContext.sortFirst()) {
+      if (saveContext.sortFirst()) {
         int[] indices = storage.getIndices();
         Sort.quickSort(indices, 0, indices.length - 1);
 
@@ -337,8 +462,8 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
 
 
   private void saveIntDoubleRows(ServerPartition part, ServerRow[] rows,
-    MatrixPartitionMeta partMeta, PSMatrixSaveContext saveContext, DataOutputStream output)
-    throws IOException {
+      MatrixPartitionMeta partMeta, PSMatrixSaveContext saveContext, DataOutputStream output)
+      throws IOException {
     Vector vec = rows[0].getSplit();
     //int size = rows.length;
     int indexOffset = (int) part.getPartitionKey().getStartCol();
@@ -346,10 +471,10 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
 
     IntDoublesCol col = new IntDoublesCol(0, new double[rows.length]);
 
-    int startCol = (int)rows[0].getStartCol();
-    int endCol = (int)rows[0].getEndCol();
-    if(storage.isDense()) {
-      for(int i = startCol; i < endCol; i++) {
+    int startCol = (int) rows[0].getStartCol();
+    int endCol = (int) rows[0].getEndCol();
+    if (storage.isDense()) {
+      for (int i = startCol; i < endCol; i++) {
         col.colId = i;
         for (int j = 0; j < rows.length; j++) {
           col.colElems[j] = ((ServerIntDoubleRow) (rows[j])).get(col.colId);
@@ -382,7 +507,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
   }
 
   private void saveIntIntRows(ServerPartition part, ServerRow[] rows, MatrixPartitionMeta partMeta,
-    PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
+      PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
     Vector vec = rows[0].getSplit();
     //int size = rows.size();
     int indexOffset = (int) part.getPartitionKey().getStartCol();
@@ -390,10 +515,10 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
 
     IntIntsCol col = new IntIntsCol(0, new int[rows.length]);
 
-    int startCol = (int)rows[0].getStartCol();
-    int endCol = (int)rows[0].getEndCol();
-    if(storage.isDense()) {
-      for(int i = startCol; i < endCol; i++) {
+    int startCol = (int) rows[0].getStartCol();
+    int endCol = (int) rows[0].getEndCol();
+    if (storage.isDense()) {
+      for (int i = startCol; i < endCol; i++) {
         col.colId = i;
         for (int j = 0; j < rows.length; j++) {
           col.colElems[j] = ((ServerIntIntRow) (rows[j])).get(col.colId);
@@ -426,7 +551,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
   }
 
   private void saveIntLongRows(ServerPartition part, ServerRow[] rows, MatrixPartitionMeta partMeta,
-    PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
+      PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
     Vector vec = rows[0].getSplit();
     //int size = rows.size();
     int indexOffset = (int) part.getPartitionKey().getStartCol();
@@ -434,10 +559,10 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
 
     IntLongsCol col = new IntLongsCol(0, new long[rows.length]);
 
-    int startCol = (int)rows[0].getStartCol();
-    int endCol = (int)rows[0].getEndCol();
-    if(storage.isDense()) {
-      for(int i = startCol; i < endCol; i++) {
+    int startCol = (int) rows[0].getStartCol();
+    int endCol = (int) rows[0].getEndCol();
+    if (storage.isDense()) {
+      for (int i = startCol; i < endCol; i++) {
         col.colId = i;
         for (int j = 0; j < rows.length; j++) {
           col.colElems[j] = ((ServerIntLongRow) (rows[j])).get(col.colId);
@@ -470,8 +595,8 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
   }
 
   private void saveLongFloatRows(ServerPartition part, ServerRow[] rows,
-    MatrixPartitionMeta partMeta, PSMatrixSaveContext saveContext, DataOutputStream output)
-    throws IOException {
+      MatrixPartitionMeta partMeta, PSMatrixSaveContext saveContext, DataOutputStream output)
+      throws IOException {
     Vector vec = rows[0].getSplit();
     //int size = rows.size();
     long indexOffset = part.getPartitionKey().getStartCol();
@@ -482,8 +607,8 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
 
       long startCol = rows[0].getStartCol();
       long endCol = rows[0].getEndCol();
-      if(storage.isDense()) {
-        for(long i = startCol; i < endCol; i++) {
+      if (storage.isDense()) {
+        for (long i = startCol; i < endCol; i++) {
           col.colId = i;
           for (int j = 0; j < rows.length; j++) {
             col.colElems[j] = ((ServerLongFloatRow) (rows[j])).get(col.colId);
@@ -515,8 +640,8 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
       }
     } else {
       LongFloatVectorStorage storage = ((LongFloatVector) vec).getStorage();
-      if(saveContext.sortFirst()) {
-        long [] indices = storage.getIndices();
+      if (saveContext.sortFirst()) {
+        long[] indices = storage.getIndices();
         Sort.quickSort(indices, 0, indices.length - 1);
         for (int i = 0; i < indices.length; i++) {
           col.colId = indices[i] + indexOffset;
@@ -539,8 +664,8 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
   }
 
   private void saveLongDoubleRows(ServerPartition part, ServerRow[] rows,
-    MatrixPartitionMeta partMeta, PSMatrixSaveContext saveContext, DataOutputStream output)
-    throws IOException {
+      MatrixPartitionMeta partMeta, PSMatrixSaveContext saveContext, DataOutputStream output)
+      throws IOException {
     Vector vec = rows[0].getSplit();
     //int size = rows.size();
     long indexOffset = part.getPartitionKey().getStartCol();
@@ -551,8 +676,8 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
 
       long startCol = rows[0].getStartCol();
       long endCol = rows[0].getEndCol();
-      if(storage.isDense()) {
-        for(long i = startCol; i < endCol; i++) {
+      if (storage.isDense()) {
+        for (long i = startCol; i < endCol; i++) {
           col.colId = i;
           for (int j = 0; j < rows.length; j++) {
             col.colElems[j] = ((ServerLongDoubleRow) (rows[j])).get(col.colId);
@@ -584,7 +709,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
       }
     } else {
       LongDoubleVectorStorage storage = ((LongDoubleVector) vec).getStorage();
-      if(saveContext.sortFirst()) {
+      if (saveContext.sortFirst()) {
         long[] indices = storage.getIndices();
         Sort.quickSort(indices, 0, indices.length - 1);
 
@@ -609,7 +734,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
   }
 
   private void saveLongIntRows(ServerPartition part, ServerRow[] rows, MatrixPartitionMeta partMeta,
-    PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
+      PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
     Vector vec = rows[0].getSplit();
     //int size = rows.size();
     long indexOffset = part.getPartitionKey().getStartCol();
@@ -619,8 +744,8 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
       IntIntVectorStorage storage = ((IntIntVector) vec).getStorage();
       long startCol = rows[0].getStartCol();
       long endCol = rows[0].getEndCol();
-      if(storage.isDense()) {
-        for(long i = startCol; i < endCol; i++) {
+      if (storage.isDense()) {
+        for (long i = startCol; i < endCol; i++) {
           col.colId = i;
           for (int j = 0; j < rows.length; j++) {
             col.colElems[j] = ((ServerLongIntRow) (rows[j])).get(col.colId);
@@ -652,7 +777,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
       }
     } else {
       LongIntVectorStorage storage = ((LongIntVector) vec).getStorage();
-      if(saveContext.sortFirst()) {
+      if (saveContext.sortFirst()) {
         long[] indices = storage.getIndices();
         Sort.quickSort(indices, 0, indices.length - 1);
 
@@ -677,8 +802,8 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
   }
 
   private void saveLongLongRows(ServerPartition part, ServerRow[] rows,
-    MatrixPartitionMeta partMeta, PSMatrixSaveContext saveContext, DataOutputStream output)
-    throws IOException {
+      MatrixPartitionMeta partMeta, PSMatrixSaveContext saveContext, DataOutputStream output)
+      throws IOException {
     Vector vec = rows[0].getSplit();
     //int size = rows.size();
     long indexOffset = part.getPartitionKey().getStartCol();
@@ -688,8 +813,8 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
       IntLongVectorStorage storage = ((IntLongVector) vec).getStorage();
       long startCol = rows[0].getStartCol();
       long endCol = rows[0].getEndCol();
-      if(storage.isDense()) {
-        for(long i = startCol; i < endCol; i++) {
+      if (storage.isDense()) {
+        for (long i = startCol; i < endCol; i++) {
           col.colId = i;
           for (int j = 0; j < rows.length; j++) {
             col.colElems[j] = ((ServerLongLongRow) (rows[j])).get(col.colId);
@@ -721,7 +846,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
       }
     } else {
       LongLongVectorStorage storage = ((LongLongVector) vec).getStorage();
-      if(saveContext.sortFirst()) {
+      if (saveContext.sortFirst()) {
         long[] indices = storage.getIndices();
         Sort.quickSort(indices, 0, indices.length - 1);
 
@@ -746,8 +871,8 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
   }
 
   private void loadIntFloatRows(ServerPartition part, ServerRow[] rows,
-    MatrixPartitionMeta partMeta, PSMatrixLoadContext loadContext, DataInputStream input)
-    throws IOException {
+      MatrixPartitionMeta partMeta, PSMatrixLoadContext loadContext, DataInputStream input)
+      throws IOException {
     int saveColNum = partMeta.getSaveColNum();
     int saveElemNum = partMeta.getSaveColElemNum();
     IntFloatsCol col = new IntFloatsCol(0, new float[saveElemNum]);
@@ -761,8 +886,8 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
   }
 
   private void loadIntDoubleRows(ServerPartition part, ServerRow[] rows,
-    MatrixPartitionMeta partMeta, PSMatrixLoadContext loadContext, DataInputStream input)
-    throws IOException {
+      MatrixPartitionMeta partMeta, PSMatrixLoadContext loadContext, DataInputStream input)
+      throws IOException {
     int saveColNum = partMeta.getSaveColNum();
     int saveElemNum = partMeta.getSaveColElemNum();
     IntDoublesCol col = new IntDoublesCol(0, new double[saveElemNum]);
@@ -776,7 +901,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
   }
 
   private void loadIntIntRows(ServerPartition part, ServerRow[] rows, MatrixPartitionMeta partMeta,
-    PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
+      PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
     int saveColNum = partMeta.getSaveColNum();
     int saveElemNum = partMeta.getSaveColElemNum();
     IntIntsCol col = new IntIntsCol(0, new int[saveElemNum]);
@@ -790,7 +915,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
   }
 
   private void loadIntLongRows(ServerPartition part, ServerRow[] rows, MatrixPartitionMeta partMeta,
-    PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
+      PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
     int saveColNum = partMeta.getSaveColNum();
     int saveElemNum = partMeta.getSaveColElemNum();
     IntLongsCol col = new IntLongsCol(0, new long[saveElemNum]);
@@ -804,8 +929,8 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
   }
 
   private void loadLongFloatRows(ServerPartition part, ServerRow[] rows,
-    MatrixPartitionMeta partMeta, PSMatrixLoadContext loadContext, DataInputStream input)
-    throws IOException {
+      MatrixPartitionMeta partMeta, PSMatrixLoadContext loadContext, DataInputStream input)
+      throws IOException {
     int saveColNum = partMeta.getSaveColNum();
     int saveElemNum = partMeta.getSaveColElemNum();
     LongFloatsCol col = new LongFloatsCol(0, new float[saveElemNum]);
@@ -819,8 +944,8 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
   }
 
   private void loadLongDoubleRows(ServerPartition part, ServerRow[] rows,
-    MatrixPartitionMeta partMeta, PSMatrixLoadContext loadContext, DataInputStream input)
-    throws IOException {
+      MatrixPartitionMeta partMeta, PSMatrixLoadContext loadContext, DataInputStream input)
+      throws IOException {
     int saveColNum = partMeta.getSaveColNum();
     int saveElemNum = partMeta.getSaveColElemNum();
     LongDoublesCol col = new LongDoublesCol(0, new double[saveElemNum]);
@@ -834,7 +959,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
   }
 
   private void loadLongIntRows(ServerPartition part, ServerRow[] rows, MatrixPartitionMeta partMeta,
-    PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
+      PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
     int saveColNum = partMeta.getSaveColNum();
     int saveElemNum = partMeta.getSaveColElemNum();
     LongIntsCol col = new LongIntsCol(0, new int[saveElemNum]);
@@ -848,8 +973,8 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
   }
 
   private void loadLongLongRows(ServerPartition part, ServerRow[] rows,
-    MatrixPartitionMeta partMeta, PSMatrixLoadContext loadContext, DataInputStream input)
-    throws IOException {
+      MatrixPartitionMeta partMeta, PSMatrixLoadContext loadContext, DataInputStream input)
+      throws IOException {
     int saveColNum = partMeta.getSaveColNum();
     int saveElemNum = partMeta.getSaveColElemNum();
     LongLongsCol col = new LongLongsCol(0, new long[saveElemNum]);
@@ -859,6 +984,143 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
       for (int j = 0; j < saveElemNum; j++) {
         ((ServerLongLongRow) rows[j]).set(col.colId, col.colElems[j]);
       }
+    }
+  }
+
+  private void loadIntFloatRows(MapMatrix matrix,
+      MatrixPartitionMeta partMeta, MatrixLoadContext loadContext, DataInputStream input)
+      throws IOException {
+    int saveColNum = partMeta.getSaveColNum();
+    int saveElemNum = partMeta.getSaveColElemNum();
+    IntFloatsCol col = new IntFloatsCol(0, new float[saveElemNum]);
+
+    for (int i = 0; i < saveColNum; i++) {
+      load(col, input);
+      IntFloatVector colVec = VFactory.denseFloatVector(partMeta.getSaveColElemNum());
+      for (int j = 0; j < saveElemNum; j++) {
+        colVec.set(j, col.colElems[j]);
+      }
+      matrix.setRow(col.colId, colVec);
+    }
+  }
+
+  private void loadIntDoubleRows(MapMatrix matrix,
+      MatrixPartitionMeta partMeta, MatrixLoadContext loadContext, DataInputStream input)
+      throws IOException {
+    int saveColNum = partMeta.getSaveColNum();
+    int saveElemNum = partMeta.getSaveColElemNum();
+    IntDoublesCol col = new IntDoublesCol(0, new double[saveElemNum]);
+
+    for (int i = 0; i < saveColNum; i++) {
+      load(col, input);
+      IntDoubleVector colVec = VFactory.denseDoubleVector(partMeta.getSaveColElemNum());
+      for (int j = 0; j < saveElemNum; j++) {
+        colVec.set(j, col.colElems[j]);
+      }
+      matrix.setRow(col.colId, colVec);
+    }
+  }
+
+  private void loadIntIntRows(MapMatrix matrix,
+      MatrixPartitionMeta partMeta, MatrixLoadContext loadContext, DataInputStream input)
+      throws IOException {
+    int saveColNum = partMeta.getSaveColNum();
+    int saveElemNum = partMeta.getSaveColElemNum();
+    IntIntsCol col = new IntIntsCol(0, new int[saveElemNum]);
+
+    for (int i = 0; i < saveColNum; i++) {
+      load(col, input);
+      IntIntVector colVec = VFactory.denseIntVector(partMeta.getSaveColElemNum());
+      for (int j = 0; j < saveElemNum; j++) {
+        colVec.set(j, col.colElems[j]);
+      }
+      matrix.setRow(col.colId, colVec);
+    }
+  }
+
+
+  private void loadIntLongRows(MapMatrix matrix,
+      MatrixPartitionMeta partMeta, MatrixLoadContext loadContext, DataInputStream input)
+      throws IOException {
+    int saveColNum = partMeta.getSaveColNum();
+    int saveElemNum = partMeta.getSaveColElemNum();
+    IntLongsCol col = new IntLongsCol(0, new long[saveElemNum]);
+
+    for (int i = 0; i < saveColNum; i++) {
+      load(col, input);
+      IntLongVector colVec = VFactory.denseLongVector(partMeta.getSaveColElemNum());
+      for (int j = 0; j < saveElemNum; j++) {
+        colVec.set(j, col.colElems[j]);
+      }
+      matrix.setRow(col.colId, colVec);
+    }
+  }
+
+  private void loadLongFloatRows(MapMatrix matrix,
+      MatrixPartitionMeta partMeta, MatrixLoadContext loadContext, DataInputStream input)
+      throws IOException {
+    int saveColNum = partMeta.getSaveColNum();
+    int saveElemNum = partMeta.getSaveColElemNum();
+    LongFloatsCol col = new LongFloatsCol(0, new float[saveElemNum]);
+
+    for (int i = 0; i < saveColNum; i++) {
+      load(col, input);
+      IntFloatVector colVec = VFactory.denseFloatVector(partMeta.getSaveColElemNum());
+      for (int j = 0; j < saveElemNum; j++) {
+        colVec.set(j, col.colElems[j]);
+      }
+      matrix.setRow(col.colId, colVec);
+    }
+  }
+
+  private void loadLongDoubleRows(MapMatrix matrix,
+      MatrixPartitionMeta partMeta, MatrixLoadContext loadContext, DataInputStream input)
+      throws IOException {
+    int saveColNum = partMeta.getSaveColNum();
+    int saveElemNum = partMeta.getSaveColElemNum();
+    LongDoublesCol col = new LongDoublesCol(0, new double[saveElemNum]);
+
+    for (int i = 0; i < saveColNum; i++) {
+      load(col, input);
+      IntDoubleVector colVec = VFactory.denseDoubleVector(partMeta.getSaveColElemNum());
+      for (int j = 0; j < saveElemNum; j++) {
+        colVec.set(j, col.colElems[j]);
+      }
+      matrix.setRow(col.colId, colVec);
+    }
+  }
+
+  private void loadLongIntRows(MapMatrix matrix,
+      MatrixPartitionMeta partMeta, MatrixLoadContext loadContext, DataInputStream input)
+      throws IOException {
+    int saveColNum = partMeta.getSaveColNum();
+    int saveElemNum = partMeta.getSaveColElemNum();
+    LongIntsCol col = new LongIntsCol(0, new int[saveElemNum]);
+
+    for (int i = 0; i < saveColNum; i++) {
+      load(col, input);
+      IntIntVector colVec = VFactory.denseIntVector(partMeta.getSaveColElemNum());
+      for (int j = 0; j < saveElemNum; j++) {
+        colVec.set(j, col.colElems[j]);
+      }
+      matrix.setRow(col.colId, colVec);
+    }
+  }
+
+  private void loadLongLongRows(MapMatrix matrix,
+      MatrixPartitionMeta partMeta, MatrixLoadContext loadContext, DataInputStream input)
+      throws IOException {
+    int saveColNum = partMeta.getSaveColNum();
+    int saveElemNum = partMeta.getSaveColElemNum();
+    LongLongsCol col = new LongLongsCol(0, new long[saveElemNum]);
+
+    for (int i = 0; i < saveColNum; i++) {
+      load(col, input);
+      IntLongVector colVec = VFactory.denseLongVector(partMeta.getSaveColElemNum());
+      for (int j = 0; j < saveElemNum; j++) {
+        colVec.set(j, col.colElems[j]);
+      }
+      matrix.setRow(col.colId, colVec);
     }
   }
 }

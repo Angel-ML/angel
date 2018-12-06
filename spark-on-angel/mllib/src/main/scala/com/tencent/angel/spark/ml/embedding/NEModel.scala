@@ -73,7 +73,9 @@ abstract class NEModel(numNode: Int,
   def train(trainBatches: Iterator[RDD[NEDataSet]],
             negative: Int,
             numEpoch: Int,
-            learningRate: Float): Unit = {
+            learningRate: Float,
+            checkpointInterval: Int = 10,
+            path: String): Unit = {
     for (epoch <- 1 to numEpoch) {
 //      val alpha = learningRate * (1 - math.sqrt(epoch / numEpoch)).toFloat
       val alpha = learningRate
@@ -90,7 +92,12 @@ abstract class NEModel(numNode: Int,
         f"loss=$loss%2.4f " +
         s"dotTime=${array(0)} " +
         s"gradientTime=${array(1)} " +
-        s"adjustTime=${array(2)}")
+        s"adjustTime=${array(2)} " +
+        s"total=${middle.map(_._2).sum.toDouble} " +
+        s"lossSum=${middle.map(_._1).sum}")
+
+      if (epoch % checkpointInterval == 0)
+        save(path, epoch)
     }
   }
 
@@ -171,7 +178,7 @@ abstract class NEModel(numNode: Int,
     PSContext.instance()
 
     iterator.zipWithIndex.map { case (batch, index) =>
-      sgdForBatch(partitionId, Random.nextInt(), batch, index)
+      sgdForBatch(partitionId, rand.nextInt(), batch, index)
     }
   }
 
@@ -181,11 +188,11 @@ abstract class NEModel(numNode: Int,
     logTime(s"Model successfully Randomized, cost ${(System.currentTimeMillis() - beforeRandomize) / 1000.0}s")
   }
 
-  private def psfUpdate(func: UpdateFunc): VoidResult = {
+  protected def psfUpdate(func: UpdateFunc): VoidResult = {
     psMatrix.psfUpdate(func).get
   }
 
-  private def psfGet(func: GetFunc): GetResult = {
+  protected def psfGet(func: GetFunc): GetResult = {
     psMatrix.psfGet(func)
   }
 

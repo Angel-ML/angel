@@ -29,7 +29,6 @@ import com.tencent.angel.localcluster.LocalMaster;
 import com.tencent.angel.localcluster.LocalWorker;
 import com.tencent.angel.master.AngelApplicationMaster;
 import com.tencent.angel.master.DummyTask;
-import com.tencent.angel.master.MasterServiceTest;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.protobuf.ProtobufUtil;
@@ -64,7 +63,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(MockitoJUnitRunner.class) @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class WorkerTest {
-  private static final Log LOG = LogFactory.getLog(MasterServiceTest.class);
+  private static final Log LOG = LogFactory.getLog(WorkerTest.class);
   private static final String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
   private static final String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
   private static AngelClient angelClient;
