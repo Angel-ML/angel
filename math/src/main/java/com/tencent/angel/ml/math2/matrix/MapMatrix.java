@@ -10,13 +10,13 @@ public class MapMatrix<Vec extends Vector> extends Matrix{
   public MapMatrix(){
   }
 
-  public  MapMatrix(int matrixId, int clock, HashMap<Long, Vec> mapMatrix){
+  public MapMatrix(int matrixId, int clock, HashMap<Long, Vec> mapMatrix){
     this.matrixId = matrixId;
     this.clock = clock;
     this.mapMatrix = mapMatrix;
   }
 
-  public  MapMatrix(HashMap<Long, Vec> mapMatrix){
+  public MapMatrix(HashMap<Long, Vec> mapMatrix){
     this(0,0, mapMatrix);
   }
 

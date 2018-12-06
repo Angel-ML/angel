@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ps.storage.matrix.PartitionSourceMap
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.embedding.CBowModel
