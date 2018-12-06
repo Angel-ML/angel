@@ -92,6 +92,10 @@ MF训练数据的格式：
   * ml.mf.lambda：正则化系数
   * ml.mf.eta：学习速率
   * ml.mf.row.batch.num：每次迭代的batch数
+  * ml.inputlayer.optimizer：优化器类型，可选"adam","ftrl"和"momentum"
+  * ml.data.label.trans.class: 是否要对标签进行转换, 默认为"NoTrans", 可选项为"ZeroOneTrans"(转为0-1), "PosNegTrans"(转为正负1), "AddOneTrans"(加1), "SubOneTrans"(减1). 
+  * ml.data.label.trans.threshold: "ZeroOneTrans"(转为0-1), "PosNegTrans"(转为正负1)这两种转还要以设一个阈值, 大于阈值的为1, 阈值默认为0
+  * ml.data.posneg.ratio: 正负样本重采样比例, 对于正负样本相差较大的情况有用(如5倍以上)
 
 ### 提交命令
 ```

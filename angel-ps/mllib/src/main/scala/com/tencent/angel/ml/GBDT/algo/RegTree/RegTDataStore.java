@@ -22,16 +22,23 @@ import com.tencent.angel.ml.GBDT.algo.FeatureMeta;
 import com.tencent.angel.ml.feature.LabeledData;
 import com.tencent.angel.ml.GBDT.param.RegTParam;
 import com.tencent.angel.ml.core.utils.Maths;
+import com.tencent.angel.ml.math2.VFactory;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
 import com.tencent.angel.ml.math2.vector.IntFloatVector;
 import com.tencent.angel.worker.storage.DataBlock;
 
 import java.io.IOException;
 import java.util.Arrays;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Description: data information, always sit in memory.
  */
 public class RegTDataStore {
+
+  private static final Log LOG = LogFactory.getLog(RegTDataStore.class);
+
 
   public RegTParam param;
 
@@ -73,12 +80,20 @@ public class RegTDataStore {
 
     dataSet.resetReadIndex();
     LabeledData data;
-    IntFloatVector x;
+    IntFloatVector x = null;
     double y;
 
     for (int idx = 0; idx < dataSet.size(); idx++) {
       data = dataSet.read();
-      x = (IntFloatVector) data.getX();
+
+      if (data.getX() instanceof IntFloatVector) {
+        x = (IntFloatVector) data.getX();
+      } else if (data.getX() instanceof IntDoubleVector) {
+        x = VFactory.sparseFloatVector((int) data.getX().dim(),
+            ((IntDoubleVector)data.getX()).getStorage().getIndices(),
+            Maths.double2Float(((IntDoubleVector)data.getX()).getStorage().getValues()));
+      }
+
       y = data.getY();
       if (y != 1) {
         y = 0;

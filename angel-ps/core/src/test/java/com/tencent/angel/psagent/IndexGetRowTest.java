@@ -103,9 +103,9 @@ public class IndexGetRowTest {
   private WorkerId workerId;
   private WorkerAttemptId workerAttempt0Id;
 
-  int feaNum = 100000;
-  int nnz = 1000;
-  int modelSize = 10000;
+  int feaNum = 90000;
+  int nnz = 9000;
+  int modelSize = 90000;
 
   static {
     PropertyConfigurator.configure("../conf/log4j.properties");
@@ -134,6 +134,8 @@ public class IndexGetRowTest {
     conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 10);
     conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
     conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
+    conf.setInt(AngelConf.ANGEL_WORKER_MAX_ATTEMPTS, 1);
+    conf.setInt(AngelConf.ANGEL_PS_MAX_ATTEMPTS, 1);
 
     // get a angel client
     angelClient = AngelClientFactory.get(conf);
@@ -148,16 +150,6 @@ public class IndexGetRowTest {
     dMat.setValidIndexNum(modelSize);
     angelClient.addMatrix(dMat);
 
-    // add comp dense double matrix
-    MatrixContext dcMat = new MatrixContext();
-    dcMat.setName(DENSE_DOUBLE_MAT_COMP);
-    dcMat.setRowNum(1);
-    dcMat.setColNum(feaNum);
-    dcMat.setMaxColNumInBlock(feaNum / 3);
-    dcMat.setRowType(RowType.T_DOUBLE_DENSE_COMPONENT);
-    dcMat.setValidIndexNum(modelSize);
-    angelClient.addMatrix(dcMat);
-
     // add sparse double matrix
     MatrixContext sMat = new MatrixContext();
     sMat.setName(SPARSE_DOUBLE_MAT);
@@ -167,6 +159,16 @@ public class IndexGetRowTest {
     sMat.setRowType(RowType.T_DOUBLE_SPARSE);
     sMat.setValidIndexNum(modelSize);
     angelClient.addMatrix(sMat);
+
+    // add comp dense double matrix
+    MatrixContext dcMat = new MatrixContext();
+    dcMat.setName(DENSE_DOUBLE_MAT_COMP);
+    dcMat.setRowNum(1);
+    dcMat.setColNum(feaNum);
+    dcMat.setMaxColNumInBlock(feaNum / 3);
+    dcMat.setRowType(RowType.T_DOUBLE_DENSE_COMPONENT);
+    dcMat.setValidIndexNum(modelSize);
+    angelClient.addMatrix(dcMat);
 
     // add component sparse double matrix
     MatrixContext sCompMat = new MatrixContext();
@@ -423,7 +425,7 @@ public class IndexGetRowTest {
     // Start to run application
     angelClient.run();
 
-    Thread.sleep(2000);
+    Thread.sleep(5000);
 
     psId = new ParameterServerId(0);
     psAttempt0Id = new PSAttemptId(psId, 0);
@@ -841,13 +843,14 @@ public class IndexGetRowTest {
       deltaVec.set(i, i);
     deltaVec.setRowId(0);
 
-    client1.increment(deltaVec);
+    client1.increment(deltaVec, false);
     client1.clock().get();
 
     IndexGet func = new IndexGet(new IndexGetParam(matrixW1Id, 0, index));
     CompIntDoubleVector row = (CompIntDoubleVector) client1.get(0, index);
     for (int id : index) {
-      Assert.assertTrue(row.get(id) == deltaVec.get(id));
+      //LOG.info("id=" + id + ", value=" + row.get(id));
+      Assert.assertEquals(row.get(id), deltaVec.get(id), 0.0000000001);
     }
     Assert.assertTrue(index.length == row.size());
 

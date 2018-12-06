@@ -20,11 +20,11 @@ package com.tencent.angel.ml.core.network.layers.join
 
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.math2.MFactory
 import com.tencent.angel.ml.math2.matrix._
-import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.math2.utils.MatrixUtils
-import com.tencent.angel.ml.math2.vector.{CompIntDoubleVector, IntDoubleVector, IntFloatVector}
+import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector}
 import org.apache.commons.logging.LogFactory
 
 

@@ -23,6 +23,8 @@ import com.tencent.angel.ml.math2.matrix.*;
 import com.tencent.angel.ml.math2.vector.*;
 import com.tencent.angel.ml.matrix.RowType;
 
+import java.util.HashMap;
+
 public class MFactory {
   public static RBCompIntDoubleMatrix rbCompIntDoubleMatrix(int matrixId, int clock,
     CompIntDoubleVector[] rows) {
@@ -819,5 +821,133 @@ public class MFactory {
   public static BlasFloatMatrix denseFloatMatrix(int numRows, int numCols) {
     float[] data = new float[numRows * numCols];
     return new BlasFloatMatrix(numRows, numCols, data);
+  }
+
+  public static MapMatrix<IntDoubleVector> intDoubleMapMatrix(int matrixId, int clock, HashMap<Long, IntDoubleVector> mapMatrix){
+    return new MapMatrix(matrixId, clock, mapMatrix);
+  }
+
+  public static MapMatrix<IntFloatVector> intFloatMapMatrix(int matrixId, int clock, HashMap<Long, IntFloatVector> mapMatrix){
+    return new MapMatrix(matrixId, clock, mapMatrix);
+  }
+
+  public static MapMatrix<IntLongVector> intLongMapMatrix(int matrixId, int clock, HashMap<Long, IntLongVector> mapMatrix){
+    return new MapMatrix(matrixId, clock, mapMatrix);
+  }
+
+  public static MapMatrix<IntIntVector> intIntMapMatrix(int matrixId, int clock, HashMap<Long, IntIntVector> mapMatrix){
+    return new MapMatrix(matrixId, clock, mapMatrix);
+  }
+
+  public static MapMatrix<LongDoubleVector> longDoubleMapMatrix(int matrixId, int clock, HashMap<Long, LongDoubleVector> mapMatrix){
+    return new MapMatrix(matrixId, clock, mapMatrix);
+  }
+
+  public static MapMatrix<LongFloatVector> longFloatMapMatrix(int matrixId, int clock, HashMap<Long, LongFloatVector> mapMatrix){
+    return new MapMatrix(matrixId, clock, mapMatrix);
+  }
+
+  public static MapMatrix<LongLongVector> longLongMapMatrix(int matrixId, int clock, HashMap<Long, LongLongVector> mapMatrix){
+    return new MapMatrix(matrixId, clock, mapMatrix);
+  }
+
+  public static MapMatrix<LongIntVector> longIntMapMatrix(int matrixId, int clock, HashMap<Long, LongIntVector> mapMatrix){
+    return new MapMatrix(matrixId, clock, mapMatrix);
+  }
+
+  public static MapMatrix<IntDoubleVector> intDoubleMapMatrix(HashMap<Integer, IntDoubleVector> mapMatrix){
+    return new MapMatrix(mapMatrix);
+  }
+
+  public static MapMatrix<IntFloatVector> intFloatMapMatrix(HashMap<Integer, IntFloatVector> mapMatrix){
+    return new MapMatrix(mapMatrix);
+  }
+
+  public static MapMatrix<IntLongVector> intLongMapMatrix(HashMap<Integer, IntLongVector> mapMatrix){
+    return new MapMatrix(mapMatrix);
+  }
+
+  public static MapMatrix<IntIntVector> intIntMapMatrix(HashMap<Integer, IntIntVector> mapMatrix){
+    return new MapMatrix(mapMatrix);
+  }
+
+  public static MapMatrix<LongDoubleVector> longDoubleMapMatrix(HashMap<Long, LongDoubleVector> mapMatrix){
+    return new MapMatrix(mapMatrix);
+  }
+
+  public static MapMatrix<LongFloatVector> longFloatMapMatrix(HashMap<Long, LongFloatVector> mapMatrix){
+    return new MapMatrix(mapMatrix);
+  }
+
+  public static MapMatrix<LongLongVector> longLongMapMatrix(HashMap<Long, LongLongVector> mapMatrix){
+    return new MapMatrix(mapMatrix);
+  }
+
+  public static MapMatrix<LongIntVector> longIntMapMatrix(HashMap<Long, LongIntVector> mapMatrix){
+    return new MapMatrix(mapMatrix);
+  }
+
+  public static MapMatrix<IntDoubleVector> compIntDoubleMapMatrix(int matrixId, int clock, HashMap<Long, CompIntDoubleVector> mapMatrix){
+    return new MapMatrix(matrixId, clock, mapMatrix);
+  }
+
+  public static MapMatrix<IntFloatVector> compIntFloatMapMatrix(int matrixId, int clock, HashMap<Long, CompIntFloatVector> mapMatrix){
+    return new MapMatrix(matrixId, clock, mapMatrix);
+  }
+
+  public static MapMatrix<IntLongVector> compIntLongMapMatrix(int matrixId, int clock, HashMap<Long, CompIntLongVector> mapMatrix){
+    return new MapMatrix(matrixId, clock, mapMatrix);
+  }
+
+  public static MapMatrix<IntIntVector> compIntIntMapMatrix(int matrixId, int clock, HashMap<Long, CompIntIntVector> mapMatrix){
+    return new MapMatrix(matrixId, clock, mapMatrix);
+  }
+
+  public static MapMatrix<LongDoubleVector> compLongDoubleMapMatrix(int matrixId, int clock, HashMap<Long, CompLongDoubleVector> mapMatrix){
+    return new MapMatrix(matrixId, clock, mapMatrix);
+  }
+
+  public static MapMatrix<LongFloatVector> compLongFloatMapMatrix(int matrixId, int clock, HashMap<Long, CompLongFloatVector> mapMatrix){
+    return new MapMatrix(matrixId, clock, mapMatrix);
+  }
+
+  public static MapMatrix<LongLongVector> compLongLongMapMatrix(int matrixId, int clock, HashMap<Long, CompLongLongVector> mapMatrix){
+    return new MapMatrix(matrixId, clock, mapMatrix);
+  }
+
+  public static MapMatrix<LongIntVector> compLongIntMapMatrix(int matrixId, int clock, HashMap<Long, CompLongIntVector> mapMatrix){
+    return new MapMatrix(matrixId, clock, mapMatrix);
+  }
+
+  public static MapMatrix<IntDoubleVector> compIntDoubleMapMatrix(HashMap<Integer, CompIntDoubleVector> mapMatrix){
+    return new MapMatrix(mapMatrix);
+  }
+
+  public static MapMatrix<IntFloatVector> compIntFloatMapMatrix(HashMap<Integer, CompIntFloatVector> mapMatrix){
+    return new MapMatrix(mapMatrix);
+  }
+
+  public static MapMatrix<IntLongVector> compIntLongMapMatrix(HashMap<Integer, CompIntLongVector> mapMatrix){
+    return new MapMatrix(mapMatrix);
+  }
+
+  public static MapMatrix<IntIntVector> compIntIntMapMatrix(HashMap<Integer, CompIntIntVector> mapMatrix){
+    return new MapMatrix(mapMatrix);
+  }
+
+  public static MapMatrix<LongDoubleVector> compLongDoubleMapMatrix(HashMap<Long, CompLongDoubleVector> mapMatrix){
+    return new MapMatrix(mapMatrix);
+  }
+
+  public static MapMatrix<LongFloatVector> compLongFloatMapMatrix(HashMap<Long, CompLongFloatVector> mapMatrix){
+    return new MapMatrix(mapMatrix);
+  }
+
+  public static MapMatrix<LongLongVector> compLongLongMapMatrix(HashMap<Long, CompLongLongVector> mapMatrix){
+    return new MapMatrix(mapMatrix);
+  }
+
+  public static MapMatrix<LongIntVector> compLongIntMapMatrix(HashMap<Long, CompLongIntVector> mapMatrix){
+    return new MapMatrix(mapMatrix);
   }
 }

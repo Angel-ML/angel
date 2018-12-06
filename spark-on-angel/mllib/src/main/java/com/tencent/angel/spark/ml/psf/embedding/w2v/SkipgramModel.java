@@ -56,11 +56,9 @@ public class SkipgramModel extends EmbeddingModel {
             int target;
             for (int d = 0; d < negative + 1; d ++) {
               if (d == 0) target = word;
-              else while (true) {
+              else do{
                 target = negativeSeed.nextInt(maxIndex);
-                if (target == word) continue;
-                else break;
-              }
+              }while (target == word);
 
               numOutputs.add(target);
 
@@ -137,6 +135,7 @@ public class SkipgramModel extends EmbeddingModel {
               int l2 = (target % numNodeOneRow) * dim * 2 + dim;
 
               float g = buf.readFloat();
+              length --;
 
               // accumulate for the hidden layer
               for (c = 0; c < dim; c ++) neu1e[c] += g * outputs[c + l2];

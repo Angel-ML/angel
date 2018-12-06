@@ -811,6 +811,14 @@ public class AngelConf extends Configuration {
   public static final String DEFAULT_ANGEL_PS_PARTITION_SOURCE_CLASS =
     PartitionSourceMap.class.getName();
 
+  /**
+   * partitionClass for matrix
+   */
+
+  public static final String Angel_PS_PARTITION_CLASS =
+      ANGEL_PS_PREFIX + "partition.class";
+
+
   public static final String ANGEL_PS_MAX_LOCK_WAITTIME_MS = ANGEL_PS_PREFIX + "max.lock.waittime";
   public static final int DEFAULT_ANGEL_PS_MAX_LOCK_WAITTIME_MS = 10000;
 

@@ -27,7 +27,7 @@ import com.tencent.angel.ml.GBDT.algo.tree.TYahooSketchSplit;
 import com.tencent.angel.ml.GBDT.metric.EvalMetric;
 import com.tencent.angel.ml.GBDT.objective.ObjFunc;
 import com.tencent.angel.ml.GBDT.param.GBDTParam;
-import com.tencent.angel.ml.GBDT.psf.CompressUpdateFunc;
+import com.tencent.angel.ml.psf.compress.QuantifyDoubleFunc;
 import com.tencent.angel.ml.GBDT.psf.GBDTGradHistGetRowFunc;
 import com.tencent.angel.ml.GBDT.psf.GBDTGradHistGetRowResult;
 import com.tencent.angel.ml.GBDT.psf.HistAggrParam;
@@ -589,8 +589,8 @@ public class GBDTController {
       if (bytesPerItem == 8) {
         histMat.increment(0, this.histCache[nid]);
       } else {
-        CompressUpdateFunc func =
-                new CompressUpdateFunc(histMat.getMatrixId(), 0, this.histCache[nid], bytesPerItem * 8);
+        QuantifyDoubleFunc func =
+                new QuantifyDoubleFunc(histMat.getMatrixId(), 0, this.histCache[nid], bytesPerItem * 8);
         histMat.update(func);
       }
     } catch (Exception e) {

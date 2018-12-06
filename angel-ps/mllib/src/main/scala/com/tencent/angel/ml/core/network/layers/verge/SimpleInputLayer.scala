@@ -20,18 +20,17 @@ package com.tencent.angel.ml.core.network.layers.verge
 
 import java.util.concurrent.Future
 
-import com.tencent.angel.conf.{AngelConf, MatrixConf}
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.transfunc.TransFunc
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
 import com.tencent.angel.ml.core.utils.{NetUtils, PSMatrixUtils}
-import com.tencent.angel.ml.math2.MFactory
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import com.tencent.angel.ml.math2.utils.VectorUtils
 import com.tencent.angel.ml.math2.vector._
+import com.tencent.angel.ml.math2.{MFactory, VFactory}
 import com.tencent.angel.ml.matrix.psf.update.RandomNormal
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
@@ -50,11 +49,14 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
 
   val modelType: RowType = SharedConf.modelType
   val valueType: String = SharedConf.valueType()
+  val inputDataFormat: String = SharedConf.inputDataFormat
+  val mode = SharedConf.runningMode()
+
 
   private val multiplier = OptUtils.getOptMultiplier(optimizer)
   private val validIndexNum = SharedConf.modelSize
 
-  private val weightCtx: MatrixContext = (SharedConf.inputDataFormat, NetUtils.storageType(modelType)) match {
+  private val weightCtx: MatrixContext = (inputDataFormat, NetUtils.storageType(modelType)) match {
     case ("dense", "dense" | "component_dense") => // dense data, dense model
       // in this condition, all the parameters are stored in one row
       val psRows: Int = multiplier
@@ -102,7 +104,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
     status match {
       case STATUS.Null =>
         // println(s"the status in SparseInputLayer($name)-calOutput is ${status.toString}")
-        (SharedConf.inputDataFormat, valueType) match {
+        (inputDataFormat, valueType) match {
           case ("dense", "double" | "float") => // the shape of weight matrix is (inputDim, outputDim)
             forward = graph.placeHolder.getFeats.dot(weight).iadd(bias)
           case ("libsvm" | "dummy", "double") => // the shape of weight matrix is (outputDim, inputDim)
@@ -147,7 +149,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
 
   override def pullParams(epoch: Int): Unit = {
     // Note: weight is a row based matrix
-    (SharedConf.inputDataFormat, NetUtils.storageType(modelType)) match {
+    (inputDataFormat, NetUtils.storageType(modelType)) match {
       case ("dense", "dense" | "component_dense") => // dense data, dense model
         // the shape of weight matrix is (inputDim, outputDim)
         weight = PSMatrixUtils.getRowAsMatrix(epoch, weightId, 0, SharedConf.indexRange.toInt, outputDim)
@@ -163,17 +165,16 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
       case _ => // dense data, sparse model
         throw new AngelException("Dense data, sparse model, pls. change model to dense")
     }
-
     bias = PSMatrixUtils.getRow(epoch, biasId, 0)
   }
 
   override def pushGradient(): Unit = {
     val start = System.currentTimeMillis()
-    val normal = 1.0 / OptUtils.getNormal(sharedConf, graph)
+    val normal = 1.0 / OptUtils.getNormal(mode, graph)
 
     status match {
       case STATUS.Backward =>
-        (SharedConf.inputDataFormat, NetUtils.storageType(modelType)) match {
+        (inputDataFormat, NetUtils.storageType(modelType)) match {
           case ("dense", "dense" | "component_dense") => // dense data, dense model
             val weightGrad: Matrix = Ufuncs.dot(graph.placeHolder.getFeats, true, backward, false)
               .imul(normal)
@@ -215,7 +216,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
     var result: Future[VoidResult] = null
     status match {
       case STATUS.Gradient =>
-        (SharedConf.inputDataFormat, NetUtils.storageType(modelType)) match {
+        (inputDataFormat, NetUtils.storageType(modelType)) match {
           case ("dense", "dense" | "component_dense") => // dense data, dense model
             result = optimizer.update(weightId, 1, epoch, batchSize)
           case _ =>
@@ -232,7 +233,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
   override def init(taskflag: Int): Unit = {
     if (taskflag == 0) {
       val bound = 0.0001
-      (SharedConf.inputDataFormat, NetUtils.storageType(modelType)) match {
+      (inputDataFormat, NetUtils.storageType(modelType)) match {
         case ("dense", "dense" | "component_dense") => // dense data, dense model
           val randFunc = new RandomNormal(weightId, 0, 1, 0.0, bound)
           PSAgentContext.get().getUserRequestAdapter.update(randFunc).get()

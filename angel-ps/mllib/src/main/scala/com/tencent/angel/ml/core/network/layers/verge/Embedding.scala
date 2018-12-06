@@ -22,7 +22,6 @@ import java.lang.{Long => JLong}
 import java.util.concurrent.Future
 import java.util.{HashMap => JHashMap, Map => JMap}
 
-import com.tencent.angel.conf.{AngelConf, MatrixConf}
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.layers._
@@ -51,6 +50,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
 
   val modelType: RowType = SharedConf.modelType
   val blockSize: Int = SharedConf.blockSize
+  val mode = SharedConf.runningMode()
 
   private val multiplier: Int = OptUtils.getOptMultiplier(optimizer)
   private val indexRange: Long = SharedConf.indexRange
@@ -220,7 +220,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
         }
 
         // Divide Gradient with TaskNum*BatchSize
-        val divider = OptUtils.getNormal(sharedConf, graph)
+        val divider = OptUtils.getNormal(mode, graph)
         val iter = map.values().iterator()
         while (iter.hasNext) {
           val vector = iter.next()

@@ -25,9 +25,9 @@ import org.apache.spark.rdd.RDD
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc
 import com.tencent.angel.spark.ml.embedding.NEModel.NEDataSet
-import com.tencent.angel.spark.ml.embedding.line.LINEModel.{LINEDataSet, asLineBatch, buildDataBatches}
+import com.tencent.angel.spark.ml.embedding.line.LINEModel.{LINEDataSet, buildDataBatches}
 import com.tencent.angel.spark.ml.embedding.{NEModel, Param}
-import com.tencent.angel.spark.ml.psf.embedding.line.{Adjust, Dot}
+import com.tencent.angel.spark.ml.psf.embedding.line.{Adjust, AdjustParam, Dot, DotParam}
 
 class LINEModel(numNode: Int,
                 dimension: Int,
@@ -41,28 +41,27 @@ class LINEModel(numNode: Int,
     this(param.maxIndex, param.embeddingDim, param.numPSPart, param.nodesNumPerRow, param.order, param.seed)
   }
 
-  def train(trainSet: RDD[(Int, Int)], params: Param, validSetOpt: Option[RDD[(Int, Int)]]): this.type = {
-    train(buildDataBatches(trainSet, params.batchSize),
-      validSetOpt.map(_.mapPartitions(asLineBatch(_, params.batchSize))),
-      params.negSample,
-      None,
-      params.numEpoch,
-      params.learningRate,
-      None,
-      params.checkpointInterval)
+  def train(trainSet: RDD[(Int, Int)], params: Param, path: String): this.type = {
+    psMatrix.psfUpdate(getInitFunc(trainSet.getNumPartitions, numNode, -1, params.negSample, -1))
+    val iterator = buildDataBatches(trainSet, params.batchSize)
+    train(iterator, params.negSample, params.numEpoch, params.learningRate, params.checkpointInterval, path)
     this
   }
 
-  override def getDotFunc(data: NEDataSet, batchSeed: Int, ns: Int, window: Option[Int],
-                          partitionId: Option[Int] = None): GetFunc = {
+  override def getDotFunc(data: NEDataSet, batchSeed: Int, ns: Int, partitionId: Int): GetFunc = {
     val lineData = data.asInstanceOf[LINEDataSet]
-    new Dot(matrixId, lineData.src, lineData.dst, batchSeed, ns, numNode, partDim, order)
+    val param = new DotParam(matrixId, batchSeed, partitionId, lineData.src, lineData.dst)
+    new Dot(param)
   }
 
-  override def getAdjustFunc(data: NEDataSet, batchSeed: Int, ns: Int, grad: Array[Float],
-                             window: Option[Int], partitionId: Option[Int] = None): UpdateFunc = {
+  override def getAdjustFunc(data: NEDataSet,
+      batchSeed: Int,
+      ns: Int,
+      grad: Array[Float],
+      partitionId: Int): UpdateFunc = {
     val lineData = data.asInstanceOf[LINEDataSet]
-    new Adjust(matrixId, lineData.src, lineData.dst, batchSeed, ns, numNode, partDim, grad, order)
+    val param = new AdjustParam(matrixId, batchSeed, ns, partitionId, grad, lineData.src, lineData.dst)
+    new Adjust(param)
   }
 }
 

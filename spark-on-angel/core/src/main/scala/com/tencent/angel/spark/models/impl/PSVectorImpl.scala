@@ -41,22 +41,32 @@ import com.tencent.angel.spark.models.PSVector
 class PSVectorImpl(val poolId: Int, val id: Int, val dimension: Long, val rowType: RowType) extends PSVector {
   override def pull(): Vector = vectorPoolClient.getRow(id, true)
 
-  override def pull(indices: Array[Long]): Vector = vectorPoolClient.get(id, indices)
+  override def pull(indices: Array[Long]): Vector = {
+    require(rowType.isLongKey, s"rowType=$rowType, use `pull(indices: Array[Int])` instead")
+    vectorPoolClient.get(id, indices)
+  }
 
-  override def pull(indices: Array[Int]): Vector = vectorPoolClient.get(id, indices)
+  override def pull(indices: Array[Int]): Vector = {
+    require(rowType.isIntKey, s"rowType=$rowType, use `pull(indices: Array[Long])` instead")
+    vectorPoolClient.get(id, indices)
+  }
 
   override def increment(delta: Vector): this.type = {
+    require(rowType.compatible(delta.getType), s"can't increment $rowType by ${delta.getType}")
     vectorPoolClient.increment(id, delta, true)
     this
   }
 
   override def update(local: Vector): this.type = {
+    require(rowType.compatible(local.getType), s"can't update $rowType by ${local.getType}")
     vectorPoolClient.update(id, local)
     this
   }
 
-  override def push(local: Vector): this.type =
+  override def push(local: Vector): this.type ={
+    require(rowType.compatible(local.getType), s"can't push $rowType by ${local.getType}")
     assertValid().reset.update(local)
+  }
 
   override def reset: this.type = {
     psfUpdate(new Reset(poolId, id)).get()

@@ -29,16 +29,13 @@ import com.tencent.angel.localcluster.LocalMaster;
 import com.tencent.angel.localcluster.LocalWorker;
 import com.tencent.angel.master.AngelApplicationMaster;
 import com.tencent.angel.master.DummyTask;
-import com.tencent.angel.master.MasterServiceTest;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.protobuf.ProtobufUtil;
-import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.psagent.PSAgent;
-import com.tencent.angel.psagent.PSAgentAttemptId;
 import com.tencent.angel.psagent.client.MasterClient;
 import com.tencent.angel.utils.NetUtils;
 import com.tencent.angel.utils.UGITools;
@@ -66,7 +63,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(MockitoJUnitRunner.class) @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class WorkerTest {
-  private static final Log LOG = LogFactory.getLog(MasterServiceTest.class);
+  private static final Log LOG = LogFactory.getLog(WorkerTest.class);
   private static final String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
   private static final String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
   private static AngelClient angelClient;
@@ -110,6 +107,8 @@ public class WorkerTest {
       conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 10);
       conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
       conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
+      conf.setInt(AngelConf.ANGEL_WORKER_MAX_ATTEMPTS, 1);
+      conf.setInt(AngelConf.ANGEL_PS_MAX_ATTEMPTS, 1);
 
       //get a angel client
       angelClient = AngelClientFactory.get(conf);
@@ -143,7 +142,7 @@ public class WorkerTest {
 
       angelClient.startPSServer();
       angelClient.run();
-      Thread.sleep(2000);
+      Thread.sleep(5000);
 
       group0Id = new WorkerGroupId(0);
       worker0Id = new WorkerId(group0Id, 0);
