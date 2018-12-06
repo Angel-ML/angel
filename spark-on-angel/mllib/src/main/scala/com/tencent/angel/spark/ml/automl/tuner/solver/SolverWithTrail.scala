@@ -18,8 +18,8 @@
 
 package com.tencent.angel.spark.ml.automl.tuner.solver
 
-import com.tencent.angel.spark.ml.automl.tuner.config.Configuration
-import com.tencent.angel.spark.ml.automl.tuner.trail.Trail
+import com.tencent.angel.ml.auto.config.Configuration
+import com.tencent.angel.ml.auto.trail.Trail
 import com.tencent.angel.ml.math2.vector.IntFloatVector
 
 class SolverWithTrail(val solver: Solver, val trail: Trail) {

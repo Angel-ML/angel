@@ -18,7 +18,7 @@
 
 package com.tencent.angel.spark.ml.automl.tuner.surrogate
 
-import com.tencent.angel.spark.ml.automl.utils.DataUtils
+import com.tencent.angel.ml.auto.utils.DataUtils
 import com.tencent.angel.ml.math2.vector.IntFloatVector
 import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.spark.mllib.tree.GradientBoostedTrees

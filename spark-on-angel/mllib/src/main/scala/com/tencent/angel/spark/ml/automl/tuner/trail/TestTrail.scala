@@ -18,7 +18,7 @@
 
 package com.tencent.angel.spark.ml.automl.tuner.trail
 
-import com.tencent.angel.spark.ml.automl.tuner.config.Configuration
+import com.tencent.angel.ml.auto.config.Configuration
 
 class TestTrail extends Trail {
 

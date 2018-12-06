@@ -20,7 +20,7 @@ package com.tencent.angel.spark.ml.automl.tuner.trail
 
 import java.util.concurrent.Callable
 
-import com.tencent.angel.spark.ml.automl.tuner.config.Configuration
+import com.tencent.angel.ml.auto.config.Configuration
 
 abstract class TrailRunner(var config: Configuration) extends Callable[Float]{
 
