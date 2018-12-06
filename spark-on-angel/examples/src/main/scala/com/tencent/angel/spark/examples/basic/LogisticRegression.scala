@@ -2,7 +2,7 @@ package com.tencent.angel.spark.examples.basic
 
 import com.tencent.angel.ml.core.optimizer.Adam
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.util.DataLoader
 import com.tencent.angel.spark.models.PSMatrix

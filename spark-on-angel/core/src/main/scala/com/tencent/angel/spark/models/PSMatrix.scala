@@ -19,13 +19,12 @@
 package com.tencent.angel.spark.models
 
 import java.util.concurrent.Future
+
 import scala.collection.Map
-
 import org.apache.commons.logging.LogFactory
-
 import com.tencent.angel.ml.math2.matrix._
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector.Vector
-import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
 import com.tencent.angel.ml.matrix.psf.update.{Diag, Eye, FullFill, Random}
 import com.tencent.angel.ml.matrix.psf.update.base.{UpdateFunc, VoidResult}

@@ -21,7 +21,7 @@ package com.tencent.angel.ml.GBDT.psf;
 import com.tencent.angel.ml.GBDT.algo.RegTree.GradHistHelper;
 import com.tencent.angel.ml.GBDT.algo.RegTree.GradStats;
 import com.tencent.angel.ml.GBDT.algo.tree.SplitEntry;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;

@@ -23,7 +23,7 @@ import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.RowType
 
 abstract class DataParser(val splitter: String) {
   def parse(value: String): LabeledData
@@ -61,8 +61,8 @@ case class DummyDataParser(override val splitter: String, featRange: Long, hasLa
     }
 
 
-    val keyType = NetUtils.keyType(rowType)
-    val valueType = NetUtils.valueType(rowType)
+    val keyType = RowTypeUtils.keyType(rowType)
+    val valueType = RowTypeUtils.valueType(rowType)
     val len = splits.length
     val x = (keyType, valueType) match {
       case ("long", "double") =>
@@ -94,8 +94,8 @@ case class LibSVMDataParser(override val splitter: String, featRange: Long, hasL
     }
     val len = splits.length
 
-    val keyType = NetUtils.keyType(rowType)
-    val valueType = NetUtils.valueType(rowType)
+    val keyType = RowTypeUtils.keyType(rowType)
+    val valueType = RowTypeUtils.valueType(rowType)
     val x = (keyType, valueType) match {
       case ("long", "double") =>
         val keys: Array[Long] = new Array[Long](len)
@@ -157,7 +157,7 @@ case class DenseDataParser(override val splitter: String, featRange: Int, hasLab
       return null
     }
 
-    val x = NetUtils.valueType(rowType) match {
+    val x = RowTypeUtils.valueType(rowType) match {
       case "double" =>
         VFactory.denseDoubleVector(splits.map(_.toDouble))
       case "float" =>

@@ -21,7 +21,7 @@ package com.tencent.angel.ml.fm;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.core.conf.MLConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -62,7 +62,7 @@ public class FMTest {
       String modelType = String.valueOf(RowType.T_FLOAT_SPARSE_LONGKEY);
 
       // Learning rate
-      double learnRate = 1.0;
+      double learnRate = 0.1;
       // Decay of learning rate
       double decay = 0.01;
       // Regularization coefficient

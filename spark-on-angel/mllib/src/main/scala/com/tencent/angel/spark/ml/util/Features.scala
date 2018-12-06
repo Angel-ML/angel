@@ -22,12 +22,11 @@ import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.storage.{IntFloatSortedVectorStorage, IntFloatSparseVectorStorage, IntKeyVectorStorage}
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector.{IntIntVector, LongIntVector}
-import com.tencent.angel.ml.matrix.RowType
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet
 import org.apache.spark.rdd.RDD
-
 import com.tencent.angel.spark.context.PSContext
 
 object Features {
@@ -81,7 +80,8 @@ object Features {
     samples.foreach(f => f.getX.getStorage.asInstanceOf[IntKeyVectorStorage]
       .getIndices.map(i => set.add(i)))
     val index = VFactory.denseLongVector(set.toLongArray())
-    val vector = PSMatrixUtils.getRowWithIndex(1, matrixId, 0, index).asInstanceOf[LongIntVector]
+    val vector = PSMatrixUtils.getRowWithIndex(1, matrixId, 0, index)(
+      mean = 0.0, stddev = 0.0001).asInstanceOf[LongIntVector]
 
     val newData = samples.map { case point =>
       point.getX.getStorage match {

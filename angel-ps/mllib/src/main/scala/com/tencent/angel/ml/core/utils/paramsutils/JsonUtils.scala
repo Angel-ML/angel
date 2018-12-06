@@ -23,8 +23,9 @@ import java.io.File
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.network.graph.Graph
 import com.tencent.angel.ml.core.network.layers.linear.FCLayer
-import com.tencent.angel.ml.core.network.layers.{AngelGraph, Layer}
+import com.tencent.angel.ml.core.network.layers.Layer
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import org.json4s._
 import org.json4s.jackson.JsonMethods.parse
@@ -80,7 +81,7 @@ object JsonUtils {
     }
   }
 
-  def fillGraph(jsonAst: JValue)(implicit graph: AngelGraph): Unit = {
+  def fillGraph(jsonAst: JValue)(implicit graph: Graph): Unit = {
     implicit val network: mutable.HashMap[String, Layer] = new mutable.HashMap[String, Layer]()
     import LayerParams._
 
@@ -244,7 +245,7 @@ object JsonUtils {
     LossFuncParams(jsonAst \\ ParamKeys.lossFunc, defaultLoss)
   }
 
-  def getFCLayer(jsonAst: JValue, inputLayer: Layer)(implicit graph: AngelGraph): FCLayer = {
+  def getFCLayer(jsonAst: JValue, inputLayer: Layer)(implicit graph: Graph): FCLayer = {
     val defaultOpt = jsonAst \ ParamKeys.defaultOptimizer match {
       case JNothing => None
       case jast: JValue => Some(OptParams(jast))

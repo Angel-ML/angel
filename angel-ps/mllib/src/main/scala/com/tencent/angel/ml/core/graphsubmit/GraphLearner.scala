@@ -19,10 +19,9 @@
 package com.tencent.angel.ml.core.graphsubmit
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.MLLearner
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
-import com.tencent.angel.ml.core.network.layers.AngelGraph
+import com.tencent.angel.ml.core.network.graph.{Graph, AngelGraph}
 import com.tencent.angel.ml.core.optimizer.decayer.{StepSizeScheduler, WarmRestarts}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.vector.{DoubleVector, IntKeyVector, LongKeyVector, Vector}
@@ -46,7 +45,7 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
   // Init Graph Model
   val model: GraphModel = GraphModel(modelClassName, conf, ctx)
   model.buildNetwork()
-  val graph: AngelGraph = model.graph
+  val graph: Graph = model.graph
   val ssScheduler: StepSizeScheduler = new WarmRestarts(lr0, lr0/100)
 
   def trainOneEpoch(epoch: Int, iter: Iterator[Array[LabeledData]], numBatch: Int): Double = {

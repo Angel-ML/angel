@@ -35,5 +35,9 @@ public enum RunningMode {
   /**
    * Run ParameterServer & Worker(embedded ParameterServerAgent)
    */
-  ANGEL_PS_WORKER
+  ANGEL_PS_WORKER,
+  /**
+   * Run Angel in Local
+   */
+  ANGEL_LOCAL
 }

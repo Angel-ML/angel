@@ -21,7 +21,7 @@ package com.tencent.angel.ml.softmax;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.core.conf.MLConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -88,7 +88,6 @@ public class SoftmaxTest {
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
       conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
-      conf.setBoolean(MLConf.ML_DATA_IS_NEGY(), false);
 
       //set sgd LR algorithm parameters #feature #epoch
       conf.set(MLConf.ML_MODEL_TYPE(), modelType);

@@ -23,20 +23,20 @@ import com.tencent.angel.ml.math2.{MFactory, VFactory}
 import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector, Vector}
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix, BlasMatrix, Matrix}
 import com.tencent.angel.ml.math2.ufuncs.{LossFuncs, TransFuncs, Ufuncs}
-import com.tencent.angel.ml.core.network.layers.AngelGraph
+import com.tencent.angel.ml.core.network.graph.Graph
 
 trait LossFunc extends Serializable {
-  def calLoss(modelOut: Matrix, graph: AngelGraph): Double
+  def calLoss(modelOut: Matrix, graph: Graph): Double
 
   def loss(pred: Double, label: Double): Double
 
-  def calGrad(modelOut: Matrix, graph: AngelGraph): Matrix
+  def calGrad(modelOut: Matrix, graph: Graph): Matrix
 
-  def predict(modelOut: Matrix, graph: AngelGraph): Matrix
+  def predict(modelOut: Matrix, graph: Graph): Matrix
 }
 
 class L2Loss extends LossFunc {
-  override def calLoss(modelOut: Matrix, graph: AngelGraph): Double = {
+  override def calLoss(modelOut: Matrix, graph: Graph): Double = {
     modelOut match {
       case mat: BlasMatrix =>
         0.5 * Ufuncs.pow(mat.sub(graph.placeHolder.getLabel), 2.0).average()
@@ -48,11 +48,11 @@ class L2Loss extends LossFunc {
     0.5 * diff * diff
   }
 
-  override def calGrad(modelOut: Matrix, graph: AngelGraph): Matrix = {
+  override def calGrad(modelOut: Matrix, graph: Graph): Matrix = {
     modelOut.sub(graph.placeHolder.getLabel)
   }
 
-  override def predict(modelOut: Matrix, graph: AngelGraph): Matrix = {
+  override def predict(modelOut: Matrix, graph: Graph): Matrix = {
     modelOut match {
       case m: BlasDoubleMatrix =>
         val mat = MFactory.denseDoubleMatrix(m.getNumRows, 3)
@@ -69,7 +69,7 @@ class L2Loss extends LossFunc {
 }
 
 class LogLoss extends LossFunc {
-  override def calLoss(modelOut: Matrix, graph: AngelGraph): Double = {
+  override def calLoss(modelOut: Matrix, graph: Graph): Double = {
     LossFuncs.logloss(modelOut, graph.placeHolder.getLabel).average()
   }
 
@@ -77,11 +77,11 @@ class LogLoss extends LossFunc {
     Math.log(1 + Math.exp(-pred * label))
   }
 
-  override def calGrad(modelOut: Matrix, graph: AngelGraph): Matrix = {
+  override def calGrad(modelOut: Matrix, graph: Graph): Matrix = {
     LossFuncs.gradlogloss(modelOut, graph.placeHolder.getLabel)
   }
 
-  override def predict(modelOut: Matrix, graph: AngelGraph): Matrix = {
+  override def predict(modelOut: Matrix, graph: Graph): Matrix = {
     modelOut match {
       case m: BlasDoubleMatrix =>
         val temp = m.getData
@@ -110,7 +110,7 @@ class LogLoss extends LossFunc {
 }
 
 class HingeLoss extends LossFunc {
-  override def calLoss(modelOut: Matrix, graph: AngelGraph): Double = {
+  override def calLoss(modelOut: Matrix, graph: Graph): Double = {
     LossFuncs.hingeloss(modelOut, graph.placeHolder.getLabel).average()
   }
 
@@ -118,11 +118,11 @@ class HingeLoss extends LossFunc {
     Math.max(0, 1 - pred * label)
   }
 
-  override def calGrad(modelOut: Matrix, graph: AngelGraph): Matrix = {
+  override def calGrad(modelOut: Matrix, graph: Graph): Matrix = {
     LossFuncs.gradhingeloss(modelOut, graph.placeHolder.getLabel)
   }
 
-  override def predict(modelOut: Matrix, graph: AngelGraph): Matrix = {
+  override def predict(modelOut: Matrix, graph: Graph): Matrix = {
     modelOut match {
       case m: BlasDoubleMatrix =>
         val temp = m.getData
@@ -153,7 +153,7 @@ class HingeLoss extends LossFunc {
 class CrossEntropyLoss extends LossFunc {
   val eps = 10e-10
 
-  override def calLoss(modelOut: Matrix, graph: AngelGraph): Double = {
+  override def calLoss(modelOut: Matrix, graph: Graph): Double = {
     LossFuncs.entropyloss(modelOut, graph.placeHolder.getLabel).average()
   }
 
@@ -173,11 +173,11 @@ class CrossEntropyLoss extends LossFunc {
     }
   }
 
-  override def calGrad(modelOut: Matrix, graph: AngelGraph): Matrix = {
+  override def calGrad(modelOut: Matrix, graph: Graph): Matrix = {
     LossFuncs.gradentropyloss(modelOut, graph.placeHolder.getLabel)
   }
 
-  override def predict(modelOut: Matrix, graph: AngelGraph): Matrix = {
+  override def predict(modelOut: Matrix, graph: Graph): Matrix = {
     modelOut match {
       case m: BlasDoubleMatrix =>
         val temp = m.getData
@@ -220,7 +220,7 @@ class CrossEntropyLoss extends LossFunc {
 }
 
 class SoftmaxLoss extends LossFunc {
-  override def calLoss(modelOut: Matrix, graph: AngelGraph): Double = {
+  override def calLoss(modelOut: Matrix, graph: Graph): Double = {
     val mat = Ufuncs.exp(modelOut)
     Ufuncs.idiv(mat, mat.sum(1), true)
 
@@ -240,7 +240,7 @@ class SoftmaxLoss extends LossFunc {
     loss / labels.length
   }
 
-  override def calGrad(modelOut: Matrix, graph: AngelGraph): Matrix = {
+  override def calGrad(modelOut: Matrix, graph: Graph): Matrix = {
     val mat = Ufuncs.exp(modelOut)
     Ufuncs.idiv(mat, mat.sum(1), true)
 
@@ -261,7 +261,7 @@ class SoftmaxLoss extends LossFunc {
 
   def loss(proba: Double, label: Double): Double = -Math.log(proba)
 
-  override def predict(modelOut: Matrix, graph: AngelGraph): Matrix = {
+  override def predict(modelOut: Matrix, graph: Graph): Matrix = {
     val mat = Ufuncs.exp(modelOut)
     Ufuncs.idiv(mat, mat.sum(1), true)
     val trueLabels = graph.placeHolder.getLabel.asInstanceOf[BlasFloatMatrix].getData
@@ -303,7 +303,7 @@ class SoftmaxLoss extends LossFunc {
 }
 
 class HuberLoss(delta: Double) extends LossFunc {
-  override def calLoss(modelOut: Matrix, graph: AngelGraph): Double = {
+  override def calLoss(modelOut: Matrix, graph: Graph): Double = {
     LossFuncs.huberloss(modelOut, graph.placeHolder.getLabel, delta).average()
   }
 
@@ -316,11 +316,11 @@ class HuberLoss(delta: Double) extends LossFunc {
     }
   }
 
-  override def calGrad(modelOut: Matrix, graph: AngelGraph): Matrix = {
+  override def calGrad(modelOut: Matrix, graph: Graph): Matrix = {
     LossFuncs.gradhuberloss(modelOut, graph.placeHolder.getLabel, delta)
   }
 
-  override def predict(modelOut: Matrix, graph: AngelGraph): Matrix = {
+  override def predict(modelOut: Matrix, graph: Graph): Matrix = {
     modelOut match {
       case m: BlasDoubleMatrix =>
         val mat = MFactory.denseDoubleMatrix(m.getNumRows, 3)

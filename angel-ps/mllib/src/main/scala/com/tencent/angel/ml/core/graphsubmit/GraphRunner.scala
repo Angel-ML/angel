@@ -22,13 +22,14 @@ import com.tencent.angel.client.AngelClientFactory
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.MLRunner
 import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.network.graph.AngelEvnContext
 import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
 
 class GraphRunner extends MLRunner {
 
-  val LOG = LogFactory.getLog(classOf[GraphRunner])
+  private val LOG = LogFactory.getLog(classOf[GraphRunner])
 
   /**
     * Run model train task
@@ -52,28 +53,34 @@ class GraphRunner extends MLRunner {
     model.buildNetwork()
 
     try {
+      val envCtx = AngelEvnContext(client)
+
       client.startPSServer()
-      model.createMatrices(client)
+
+      model.createMatrices(envCtx)
 
       if (!loadModelPath.isEmpty)
-        model.loadModel(client, loadModelPath)
+        model.loadModel(envCtx, loadModelPath)
 
       client.runTask(classOf[GraphTrainTask])
       client.waitForCompletion()
 
       if (!saveModelPath.isEmpty)
-        model.saveModel(client, saveModelPath)
+        model.saveModel(envCtx, saveModelPath)
     } finally {
       client.stop()
     }
   }
 
   /**
-   * Run model predict task
-   * @param conf: configuration for resource
-   */
+    * Run model predict task
+    *
+    * @param conf : configuration for resource
+    */
   override def predict(conf: Configuration): Unit = {
     val client = AngelClientFactory.get(conf)
+    val envCtx = AngelEvnContext(client)
+
     if (conf.get(AngelConf.ANGEL_ML_CONF) != null) {
       SharedConf.get(conf)
       JsonUtils.init()
@@ -88,13 +95,13 @@ class GraphRunner extends MLRunner {
 
     try {
       client.startPSServer()
-      model.createMatrices(client)
+      model.createMatrices(envCtx)
       if (!loadModelPath.isEmpty)
-        model.loadModel(client, loadModelPath)
+        model.loadModel(envCtx, loadModelPath)
       client.runTask(classOf[GraphPredictTask])
       client.waitForCompletion()
     } catch {
-      case x:Exception => LOG.error("predict failed ", x)
+      case x: Exception => LOG.error("predict failed ", x)
     } finally {
       client.stop(0)
     }

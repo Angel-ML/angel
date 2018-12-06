@@ -19,8 +19,9 @@
 package com.tencent.angel.ml.core.utils.paramsutils
 
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleLossLayer, SimpleInputLayer}
-import com.tencent.angel.ml.core.network.layers.{AngelGraph, Layer}
+import com.tencent.angel.ml.core.network.graph.Graph
+import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer, SimpleLossLayer}
+import com.tencent.angel.ml.core.network.layers.Layer
 import com.tencent.angel.ml.core.network.layers.join.{ConcatLayer, DotPooling, MulPooling, SumPooling}
 import com.tencent.angel.ml.core.network.layers.linear._
 import org.json4s.{DefaultFormats, JArray, JInt, JNothing, JValue}
@@ -28,7 +29,7 @@ import org.json4s.{DefaultFormats, JArray, JInt, JNothing, JValue}
 import scala.collection.mutable
 
 abstract class LayerParams(val name: String, val layerType: String) {
-  def build(params: Map[String, LayerParams])(implicit layers: mutable.HashMap[String, Layer], graph: AngelGraph): Layer
+  def build(params: Map[String, LayerParams])(implicit layers: mutable.HashMap[String, Layer], graph: Graph): Layer
 }
 
 object LayerParams {
@@ -141,7 +142,7 @@ case class InputLayerParams(override val name: String,
                             outputDim: Int,
                             transFunc: TransFuncParams,
                             optimizer: OptParams) extends LayerParams(name, layerType) {
-  override def build(params: Map[String, LayerParams])(implicit layers: mutable.HashMap[String, Layer], graph: AngelGraph): Layer = {
+  override def build(params: Map[String, LayerParams])(implicit layers: mutable.HashMap[String, Layer], graph: Graph): Layer = {
     if (layers.contains(name)) {
       layers(name)
     } else {
@@ -162,7 +163,7 @@ case class EmbeddingParams(override val name: String,
                            outputDim: Int,
                            numFactors: Int,
                            optimizer: OptParams) extends LayerParams(name, layerType) {
-  override def build(params: Map[String, LayerParams])(implicit layers: mutable.HashMap[String, Layer], graph: AngelGraph): Layer = {
+  override def build(params: Map[String, LayerParams])(implicit layers: mutable.HashMap[String, Layer], graph: Graph): Layer = {
     if (layers.contains(name)) {
       layers(name)
     } else {
@@ -177,7 +178,7 @@ case class LossLayerParams(override val name: String,
                            override val layerType: String,
                            inputLayer: String,
                            lossFunc: LossFuncParams) extends LayerParams(name, layerType) {
-  override def build(params: Map[String, LayerParams])(implicit layers: mutable.HashMap[String, Layer], graph: AngelGraph): Layer = {
+  override def build(params: Map[String, LayerParams])(implicit layers: mutable.HashMap[String, Layer], graph: Graph): Layer = {
     if (layers.contains(name)) {
       layers(name)
     } else {
@@ -197,7 +198,7 @@ case class JoinLayerParams(override val name: String,
                            override val layerType: String,
                            outputDim: Int,
                            inputLayers: Array[String]) extends LayerParams(name, layerType) {
-  override def build(params: Map[String, LayerParams])(implicit layers: mutable.HashMap[String, Layer], graph: AngelGraph): Layer = {
+  override def build(params: Map[String, LayerParams])(implicit layers: mutable.HashMap[String, Layer], graph: Graph): Layer = {
     if (layers.contains(name)) {
       layers(name)
     } else {
@@ -218,7 +219,7 @@ case class CrossLayerParams(override val name: String,
                             override val layerType: String,
                             outputDim: Option[Int],
                             inputLayer: String) extends LayerParams(name, layerType) {
-  override def build(params: Map[String, LayerParams])(implicit layers: mutable.HashMap[String, Layer], graph: AngelGraph): Layer = {
+  override def build(params: Map[String, LayerParams])(implicit layers: mutable.HashMap[String, Layer], graph: Graph): Layer = {
     if (layers.contains(name)) {
       layers(name)
     } else {
@@ -242,7 +243,7 @@ case class FCLayerParams(override val name: String,
                          inputLayer: String,
                          transFuncs: Array[TransFuncParams],
                          optimizer: OptParams) extends LayerParams(name, layerType) {
-  override def build(params: Map[String, LayerParams])(implicit layers: mutable.HashMap[String, Layer], graph: AngelGraph): Layer = {
+  override def build(params: Map[String, LayerParams])(implicit layers: mutable.HashMap[String, Layer], graph: Graph): Layer = {
     if (layers.contains(name)) {
       layers(name)
     } else {

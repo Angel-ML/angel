@@ -31,14 +31,13 @@ import com.tencent.angel.master.app.AppState;
 import com.tencent.angel.master.app.InternalErrorEvent;
 import com.tencent.angel.master.ps.ParameterServerManager;
 import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ps.ParameterServer;
 import com.tencent.angel.ps.clock.ClockVectorManager;
 import com.tencent.angel.ps.storage.MatrixStorageManager;
 import com.tencent.angel.ps.storage.matrix.ServerMatrix;
 import com.tencent.angel.worker.task.TaskContext;
 import com.tencent.angel.protobuf.ProtobufUtil;
-import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.protobuf.generated.MLProtos.MatrixClock;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskClockRequest;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskIterationRequest;
@@ -60,7 +59,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.Assert.assertEquals;

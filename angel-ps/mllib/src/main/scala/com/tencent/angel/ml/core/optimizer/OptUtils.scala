@@ -21,24 +21,24 @@ package com.tencent.angel.ml.core.optimizer
 import com.tencent.angel.RunningMode
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
-import com.tencent.angel.ml.core.network.layers.AngelGraph
+import com.tencent.angel.ml.core.network.graph.Graph
 
 object OptUtils {
-  def getOptMultiplier(optimizer: Optimizer): Int = {
+  def getSlotNum(optimizer: Optimizer): Int = {
     optimizer match {
-      case _: Momentum => 3
-      case _: Adam => 4
-      case _: FTRL => 4
-      case _ => 2
+      case _: Momentum => 2
+      case _: Adam => 3
+      case _: FTRL => 3
+      case _ => 1
     }
   }
 
-  def getOptMultiplier(optimizer: String): Int = {
+  def getSlotNum(optimizer: String): Int = {
     optimizer.toLowerCase match {
-      case "momentum" => 3
-      case "adam" => 4
-      case "ftrl" => 4
-      case _ => 2
+      case "momentum" => 2
+      case "adam" => 3
+      case "ftrl" => 3
+      case _ => 1
     }
   }
 
@@ -63,11 +63,11 @@ object OptUtils {
     }
   }
 
-  def getNormal(mode: RunningMode, graph: AngelGraph): Double = {
+  def getNormal(mode: RunningMode, graph: Graph): Double = {
     mode match {
       case RunningMode.ANGEL_PS => 1.0
       case RunningMode.ANGEL_PS_WORKER => graph.placeHolder.getBatchSize * graph.taskNum
+      case RunningMode.ANGEL_LOCAL => graph.placeHolder.getBatchSize
     }
   }
-
 }

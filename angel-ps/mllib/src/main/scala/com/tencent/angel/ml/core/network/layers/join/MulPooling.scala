@@ -19,13 +19,14 @@
 package com.tencent.angel.ml.core.network.layers.join
 
 import com.tencent.angel.exception.AngelException
+import com.tencent.angel.ml.core.network.graph.Graph
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import com.tencent.angel.ml.core.network.layers._
 import org.apache.commons.logging.LogFactory
 
 
-class MulPooling(name: String, outputDim: Int, inputLayers: Array[Layer])(implicit graph: AngelGraph)
+class MulPooling(name: String, outputDim: Int, inputLayers: Array[Layer])(implicit graph: Graph)
   extends JoinLayer(name, outputDim, inputLayers)(graph) {
   val LOG = LogFactory.getLog(classOf[MulPooling])
 
