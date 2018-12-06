@@ -41,7 +41,7 @@
 		<module>spark-on-angel</module>
 		<module>dist</module>
         <module>mlcore</module>
-        <!--module>math</module-->
+        <module>math</module>
     </modules>
 
   <description>A Flexible and Powerful Parameter Server for large-scale machine learning</description>
