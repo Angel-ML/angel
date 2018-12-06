@@ -44,6 +44,10 @@ object JsonRunner {
 
     // load data
     val conf = new SparkConf()
+    // we set the load model path for angel-ps to load the meta information of model
+    if (modelPath.length > 0)
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, modelPath)
+
     val sc   = new SparkContext(conf)
     val parser = DataParser(SharedConf.get())
 
