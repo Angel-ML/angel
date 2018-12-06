@@ -18,7 +18,7 @@
 
 package com.tencent.angel.spark.ml.automl.tuner.config
 
-import com.tencent.angel.ml.auto.parameter.ParamSpace
+import com.tencent.angel.spark.ml.automl.tuner.parameter.ParamSpace
 import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage
 import com.tencent.angel.ml.math2.vector.IntFloatVector
 import org.apache.commons.logging.{Log, LogFactory}

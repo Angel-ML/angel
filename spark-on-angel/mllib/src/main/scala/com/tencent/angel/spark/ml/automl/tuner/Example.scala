@@ -1,13 +1,13 @@
 package com.tencent.angel.spark.ml.automl.tuner
 
-import com.tencent.angel.ml.auto.acquisition.optimizer.{AcqOptimizer, RandomSearch}
-import com.tencent.angel.ml.auto.acquisition.{Acquisition, EI}
-import com.tencent.angel.ml.auto.config.ConfigurationSpace
-import com.tencent.angel.ml.auto.parameter.{ContinuousSpace, DiscreteSpace, ParamSpace}
-import com.tencent.angel.ml.auto.setting.Setting
-import com.tencent.angel.ml.auto.solver.{Solver, SolverWithTrail}
-import com.tencent.angel.ml.auto.surrogate.{RFSurrogate, Surrogate}
-import com.tencent.angel.ml.auto.trail.{TestTrail, Trail}
+import com.tencent.angel.spark.ml.automl.tuner.acquisition.optimizer.{AcqOptimizer, RandomSearch}
+import com.tencent.angel.spark.ml.automl.tuner.acquisition.{Acquisition, EI}
+import com.tencent.angel.spark.ml.automl.tuner.config.ConfigurationSpace
+import com.tencent.angel.spark.ml.automl.tuner.parameter.{ContinuousSpace, DiscreteSpace, ParamSpace}
+import com.tencent.angel.spark.ml.automl.tuner.setting.Setting
+import com.tencent.angel.spark.ml.automl.tuner.solver.{Solver, SolverWithTrail}
+import com.tencent.angel.spark.ml.automl.tuner.surrogate.{RFSurrogate, Surrogate}
+import com.tencent.angel.spark.ml.automl.tuner.trail.{TestTrail, Trail}
 import com.tencent.angel.ml.math2.vector.IntFloatVector
 
 object Example extends App {

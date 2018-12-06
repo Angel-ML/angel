@@ -18,9 +18,9 @@
 
 package com.tencent.angel.spark.ml.automl.tuner.acquisition.optimizer
 
-import com.tencent.angel.ml.auto.acquisition.Acquisition
-import com.tencent.angel.ml.auto.config.{Configuration, ConfigurationSpace}
-import com.tencent.angel.ml.auto.setting.Setting
+import com.tencent.angel.spark.ml.automl.tuner.acquisition.Acquisition
+import com.tencent.angel.spark.ml.automl.tuner.config.{Configuration, ConfigurationSpace}
+import com.tencent.angel.spark.ml.automl.tuner.setting.Setting
 import org.apache.commons.logging.{Log, LogFactory}
 
 import scala.util.Random

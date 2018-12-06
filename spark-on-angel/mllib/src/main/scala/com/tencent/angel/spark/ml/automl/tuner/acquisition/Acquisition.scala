@@ -18,7 +18,7 @@
 
 package com.tencent.angel.spark.ml.automl.tuner.acquisition
 
-import com.tencent.angel.ml.auto.surrogate.Surrogate
+import com.tencent.angel.spark.ml.automl.tuner.surrogate.Surrogate
 import com.tencent.angel.ml.math2.vector.IntFloatVector
 
 /**

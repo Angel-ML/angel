@@ -18,8 +18,7 @@
 
 package com.tencent.angel.spark.ml.automl.tuner.parameter
 
-import com.tencent.angel.ml.auto.utils.Distribution
-import org.apache.commons.logging.{Log, LogFactory}
+import com.tencent.angel.spark.ml.automl.utils.Distribution
 
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
