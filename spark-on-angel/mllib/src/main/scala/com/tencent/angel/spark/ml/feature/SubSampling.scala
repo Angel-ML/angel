@@ -86,8 +86,8 @@ object SubSampling {
       }
 
       val indices = VFactory.denseIntVector(pullIndices.toIntArray())
-      val freqIndex = PSMatrixUtils.getRowWithIndex(1, freqMatrixId, 0, indices)
-        .asInstanceOf[IntIntVector]
+      val freqIndex = PSMatrixUtils.getRowWithIndex(1, freqMatrixId, 0, indices)(
+        mean = 0.0, stddev = 0.00001).asInstanceOf[IntIntVector]
 
       // Second, calculate probability for each word
       val zw = new Int2DoubleOpenHashMap()
