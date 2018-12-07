@@ -29,9 +29,9 @@ import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
     if (request().getRemoteUser() != null) {
       loggedIn = "Logged in as: " + request().getRemoteUser();
     }
-    html.div("#header.ui-widget").div("#user")._(loggedIn)._().
+    html.div("#header.ui-widget").div("#user").__(loggedIn).__().
       // div("#logo").
       // img("/static/hadoop-st.png")._().
-        h1($(TITLE))._();
+        h1($(TITLE)).__();
   }
 }

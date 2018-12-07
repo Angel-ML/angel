@@ -75,4 +75,13 @@ public class LocalContainer extends Container {
 
   }
 
+  @Override public void setExecutionType(ExecutionType executionType) {
+
+
+  }
+
+  @Override public ExecutionType getExecutionType() {
+    return null;
+  }
+
 }

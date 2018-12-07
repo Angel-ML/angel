@@ -669,6 +669,7 @@ public class YarnContainerAllocator extends ContainerAllocator {
       remoteRequest.setResourceName(resourceName);
       remoteRequest.setCapability(capability);
       remoteRequest.setNumContainers(0);
+      remoteRequest.setExecutionTypeRequest(ExecutionTypeRequest.newInstance());
       reqMap.put(capability, remoteRequest);
     }
     remoteRequest.setNumContainers(remoteRequest.getNumContainers() + 1);

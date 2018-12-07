@@ -21,9 +21,9 @@ package com.tencent.angel.webapp.page;
 import com.google.inject.Inject;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.AMContext;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.TABLE;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.TBODY;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet.TABLE;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet.TBODY;
 import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
 
 import java.util.*;
@@ -54,16 +54,16 @@ public class EnvironmentBlock extends HtmlBlock {
     String JavaHome = System.getProperty("java.home");
     String OsNmae = System.getProperty("os.name");
     String JavaVersion = System.getProperty("java.version");
-    run_info_table.tr().th(_TH, "NAME").th(_TH, "VALUE")._();
-    run_info_table.tr().td("UsrHome").td(UsrHome)._().tr().td("UsrDir").td(UsrDir)._().tr()
-      .td("UsrName").td(UsrName)._().tr().td("JavaHome").td(JavaHome)._().tr().td("OsNmae")
-      .td(OsNmae)._().tr().td("JavaVersion").td(JavaVersion)._();
-    run_info_table._();
+    run_info_table.tr().th(_TH, "NAME").th(_TH, "VALUE").__();
+    run_info_table.tr().td("UsrHome").td(UsrHome).__().tr().td("UsrDir").td(UsrDir).__().tr()
+      .td("UsrName").td(UsrName).__().tr().td("JavaHome").td(JavaHome).__().tr().td("OsNmae")
+      .td(OsNmae).__().tr().td("JavaVersion").td(JavaVersion).__();
+    run_info_table.__();
     html.h1("    ");
 
     html.h1("Angel Properties");
     TABLE<Hamlet> angel_properties_table = html.table();
-    angel_properties_table.tr().th(_TH, "NAME").th(_TH, "VALUE")._();
+    angel_properties_table.tr().th(_TH, "NAME").th(_TH, "VALUE").__();
     AngelConf angelConfiguration = new AngelConf(this.amContext.getConf());
     Properties propertiesConfiguration = angelConfiguration.getAngelProps();
     SortedMap sortedMap = new TreeMap(propertiesConfiguration);
@@ -73,25 +73,25 @@ public class EnvironmentBlock extends HtmlBlock {
     while (propertiesSortedKeys.hasNext()) {
       key = propertiesSortedKeys.next();
       angel_properties_table.tr().td(String.valueOf(key))
-        .td((String) propertiesConfiguration.get(key))._();
+        .td((String) propertiesConfiguration.get(key)).__();
     }
-    angel_properties_table._();
+    angel_properties_table.__();
     html.h1("    ");
 
 
     TBODY<TABLE<Hamlet>> tbody =
-      html.h1("System Properties").table("#jobs").thead().tr().th(_TH, "NAME").th(_TH, "VALUE")._()
-        ._().tbody();
+      html.h1("System Properties").table("#jobs").thead().tr().th(_TH, "NAME").th(_TH, "VALUE").__()
+        .__().tbody();
     Properties properties = System.getProperties();
     String propertiesName;
     String propertiesValue;
     for (Iterator<?> names = (Iterator<?>) properties.propertyNames(); names.hasNext(); ) {
       propertiesName = (String) names.next();
       propertiesValue = properties.getProperty(propertiesName);
-      tbody.tr().td(propertiesName).td(propertiesValue).td().span().$title(propertiesName)._()._()
-        .td().span().$title(propertiesValue)._()._()._();
+      tbody.tr().td(propertiesName).td(propertiesValue).td().span().$title(propertiesName).__().__()
+        .td().span().$title(propertiesValue).__().__().__();
     }
-    tbody._()._();
+    tbody.__().__();
 
   }
 

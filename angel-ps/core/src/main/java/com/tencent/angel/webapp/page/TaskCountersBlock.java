@@ -43,7 +43,7 @@ public class TaskCountersBlock extends HtmlBlock {
       TaskId taskId = new TaskId(taskIdSr);
       String taskCounters =
         amContext.getTaskManager().getTask(taskId).getMetrics().get("taskCounters");
-      html.pre()._(taskCounters)._();
+      html.pre().__(taskCounters).__();
     } catch (UnvalidIdStrException e) {
       LOG.error("unvalid id string ", e);
     }

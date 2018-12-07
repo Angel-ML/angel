@@ -20,9 +20,9 @@ package com.tencent.angel.webapp.page;
 
 import com.google.inject.Inject;
 import com.tencent.angel.master.app.AMContext;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.TABLE;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.TBODY;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet.TABLE;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet.TBODY;
 import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
 
 import java.lang.management.ManagementFactory;
@@ -43,7 +43,7 @@ public class ExecutorsBlock extends HtmlBlock {
     set(TITLE, join("Angel ExecutorsBlock"));
     TBODY<TABLE<Hamlet>> tbody =
       html.h1("ExecutorsBlock").table("#jobs").thead().tr().th(_TH, "id").th(_TH, "name")
-        .th(_TH, "state").th(_TH, "stacktrace")._()._().tbody();
+        .th(_TH, "state").th(_TH, "stacktrace").__().__().tbody();
 
     ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
     ThreadInfo[] threadInfo = threadMXBean.dumpAllThreads(true, true);
@@ -55,9 +55,9 @@ public class ExecutorsBlock extends HtmlBlock {
         stackTraceString.append(s.toString()).append("\n");
       }
       tbody.tr().td(String.valueOf(t.getThreadId())).td(String.valueOf(t.getThreadName()))
-        .td(String.valueOf(t.getThreadState())).td(String.valueOf(stackTraceString.toString()))._();
+        .td(String.valueOf(t.getThreadState())).td(String.valueOf(stackTraceString.toString())).__();
     }
-    tbody._()._();
+    tbody.__().__();
 
 
   }

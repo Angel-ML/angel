@@ -22,8 +22,8 @@ import com.google.inject.Inject;
 import com.tencent.angel.exception.UnvalidIdStrException;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.worker.WorkerAttemptId;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.TABLE;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet.TABLE;
 import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
 
 import java.util.Map;
@@ -51,12 +51,12 @@ public class WorkerCounterBlock extends HtmlBlock {
       TABLE<Hamlet> worker_metrics_table = html.table();
       html.h6($(WORKER_ATTEMPT_ID));
 
-      worker_metrics_table.tr().th(_TH, "NAME").th(_TH, "VALUE")._();
+      worker_metrics_table.tr().th(_TH, "NAME").th(_TH, "VALUE").__();
       for (String key : metricsMap.keySet()) {
         String value = metricsMap.get(key);
-        worker_metrics_table.tr().td(String.valueOf(key)).td(value)._();
+        worker_metrics_table.tr().td(String.valueOf(key)).td(value).__();
       }
-      worker_metrics_table._();
+      worker_metrics_table.__();
     } catch (UnvalidIdStrException e) {
       LOG.error("unvalid id string, ", e);
     }

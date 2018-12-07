@@ -23,11 +23,11 @@ import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.worker.workergroup.AMWorkerGroup;
 import com.tencent.angel.master.worker.workergroup.AMWorkerGroupState;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.TABLE;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.TBODY;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.THEAD;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.TR;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet.TABLE;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet.TBODY;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet.THEAD;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet.TR;
 import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
 
 import java.util.Date;
@@ -77,7 +77,7 @@ public class WorkerGroupsBlock extends HtmlBlock {
     tr.th(_TH, "id").th(_TH, "state").th(_TH, "leader").th(_TH, "start time").th(_TH, "end time")
       .th(_TH, "elapsed time");
 
-    tr._()._();
+    tr.__().__();
 
     Set<AMWorkerGroupState> stateSet = transformToInternalState($(WORKERGROUP_STATE));
 
@@ -101,16 +101,16 @@ public class WorkerGroupsBlock extends HtmlBlock {
         }
 
         tr1.td().a(url("angel/workerGroupPage/", workerGroup.getId().toString()),
-          workerGroup.getId().toString())._().td($(WORKERGROUP_STATE))
+          workerGroup.getId().toString()).__().td($(WORKERGROUP_STATE))
           .td(workerGroup.getLeader().toString()).td(workerGroup.getLaunchTime() == 0 ?
           "N/A" :
           new Date(workerGroup.getLaunchTime()).toString()).td(workerGroup.getFinishTime() == 0 ?
           "N/A" :
           new Date(workerGroup.getFinishTime()).toString())
           .td(elaspedTs == 0 ? "N/A" : StringUtils.formatTime(elaspedTs));
-        tr1._();
+        tr1.__();
       }
     }
-    tbody._()._();
+    tbody.__().__();
   }
 }

@@ -25,8 +25,8 @@ import com.tencent.angel.master.task.AMTask;
 import com.tencent.angel.master.worker.attempt.WorkerAttempt;
 import com.tencent.angel.master.worker.worker.AMWorker;
 import com.tencent.angel.worker.WorkerAttemptId;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.*;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet.*;
 import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
 
 import static com.tencent.angel.webapp.AngelParams.WORKER_ATTEMPT_ID;
@@ -44,7 +44,7 @@ public class WorkerBlock extends HtmlBlock {
     set(TITLE, join("Angel Worker Attempt ", $(WORKER_ATTEMPT_ID)));
     String workerAttemptIdStr = $(WORKER_ATTEMPT_ID);
     if (workerAttemptIdStr == null || workerAttemptIdStr.isEmpty()) {
-      html.p()._("Sorry, can't do anything without a WorkerId.")._();
+      html.p().__("Sorry, can't do anything without a WorkerId.").__();
       return;
     }
 
@@ -59,7 +59,7 @@ public class WorkerBlock extends HtmlBlock {
 
     worker = amContext.getWorkerManager().getWorker(workerAttemptId.getWorkerId());
     if (worker == null) {
-      html.p()._("Sorry, can't find worker " + workerAttemptId.getWorkerId())._();
+      html.p().__("Sorry, can't find worker " + workerAttemptId.getWorkerId()).__();
       return;
     }
 
@@ -71,7 +71,7 @@ public class WorkerBlock extends HtmlBlock {
     headTr.th(_TH, "taskid").th(_TH, "state").th(_TH, "current iteration")
       .th(_TH, "current iteration bar").th(_TH, "current progress").th(_TH, "current progress bar")
       .th(_TH, "taskcounters");
-    headTr._()._();
+    headTr.__().__();
     float current_iteration_progress = (float) 0.0;
     float current_clock_progress = (float) 0.0;
     TBODY<TABLE<DIV<Hamlet>>> tbody = table.tbody();
@@ -86,14 +86,14 @@ public class WorkerBlock extends HtmlBlock {
         .div(_PROGRESSBAR)
         .$title(join(String.valueOf(current_clock_progress * 100), '%')). // tooltip
         div(_PROGRESSBAR_VALUE)
-        .$style(join("width:", String.valueOf(current_clock_progress * 100), '%'))._()._()._()
+        .$style(join("width:", String.valueOf(current_clock_progress * 100), '%')).__().__().__()
         .td(String.valueOf(current_iteration_progress)).td().div(_PROGRESSBAR)
         .$title(join(String.valueOf(current_iteration_progress * 100), '%')).div(_PROGRESSBAR_VALUE)
-        .$style(join("width:", String.valueOf(current_iteration_progress * 100), '%'))._()._()._()
-        .td().a(url("angel/taskCountersPage/", task.getTaskId().toString()), "taskcounters")._();
-      tr._();
+        .$style(join("width:", String.valueOf(current_iteration_progress * 100), '%')).__().__().__()
+        .td().a(url("angel/taskCountersPage/", task.getTaskId().toString()), "taskcounters").__();
+      tr.__();
     }
 
-    tbody._()._()._();
+    tbody.__().__().__();
   }
 }

@@ -57,7 +57,7 @@ public class ParameterServerThreadStackBlock extends HtmlBlock {
       LOG.info("start init PSClient");
       PSClient psClient = new PSClient(amContext, psAttempttId);
       String info = psClient.getThreadStack();
-      html.pre()._(info)._();
+      html.pre().__(info).__();
     } catch (IOException | ServiceException e) {
       LOG.error("get thread stack from ps " + psAttempttId + " failed. ", e);
     }

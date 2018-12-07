@@ -26,11 +26,11 @@ import com.tencent.angel.master.ps.ps.AMParameterServer;
 import com.tencent.angel.ps.PSAttemptId;
 import org.apache.hadoop.mapreduce.v2.util.MRWebAppUtil;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.TABLE;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.TBODY;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.THEAD;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.TR;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet.TABLE;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet.TBODY;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet.THEAD;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet.TR;
 import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
 
 import java.util.Date;
@@ -84,7 +84,7 @@ public class ParameterServersBlock extends HtmlBlock {
 
     headTr.th(_TH, "id").th(_TH, "state").th(_TH, "node address").th(_TH, "start time")
       .th(_TH, "end time").th(_TH, "elapsed time").th(_TH, "log").th(_TH, "threadstack");
-    headTr._()._();
+    headTr.__().__();
 
     Set<PSAttemptStateInternal> stateSet = transformToInternalState($(PARAMETERSERVER_STATE));
 
@@ -112,11 +112,11 @@ public class ParameterServersBlock extends HtmlBlock {
               "N/A" :
               new Date(psAttempt.getFinishTime()).toString())
               .td(elaspedTs == 0 ? "N/A" : new Date(elaspedTs).toString()).td("N/A").td("N/A");
-            tr._();
+            tr.__();
           } else {
             tr.td(psAttempt.getId().toString()).td($(PARAMETERSERVER_STATE)).td()
               .a(url(MRWebAppUtil.getYARNWebappScheme(), psAttempt.getNodeHttpAddr()),
-                psAttempt.getNodeHttpAddr())._().td(psAttempt.getLaunchTime() == 0 ?
+                psAttempt.getNodeHttpAddr()).__().td(psAttempt.getLaunchTime() == 0 ?
               "N/A" :
               new Date(psAttempt.getLaunchTime()).toString()).td(psAttempt.getFinishTime() == 0 ?
               "N/A" :
@@ -124,17 +124,17 @@ public class ParameterServersBlock extends HtmlBlock {
               .td(elaspedTs == 0 ? "N/A" : StringUtils.formatTime(elaspedTs)).td().a(
               url(MRWebAppUtil.getYARNWebappScheme(), psAttempt.getNodeHttpAddr(), "node",
                 "containerlogs", psAttempt.getContainerIdStr(), amContext.getUser().toString()),
-              "log")._().td()
+              "log").__().td()
               .a(url("/angel/parameterServerThreadStackPage/", psAttempt.getId().toString()),
-                "psthreadstack")._();
+                "psthreadstack").__();
 
 
-            tr._();
+            tr.__();
           }
         }
 
       }
     }
-    tbody._()._();
+    tbody.__().__();
   }
 }
