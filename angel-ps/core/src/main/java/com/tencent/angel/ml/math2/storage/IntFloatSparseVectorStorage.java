@@ -31,7 +31,7 @@ public class IntFloatSparseVectorStorage implements IntFloatVectorStorage {
   }
 
   public IntFloatSparseVectorStorage(int dim) {
-    this(dim, Math.min(64, (int) dim));
+    this(dim, Math.min(64, dim));
   }
 
   public IntFloatSparseVectorStorage(int dim, int[] indices, float[] values) {
