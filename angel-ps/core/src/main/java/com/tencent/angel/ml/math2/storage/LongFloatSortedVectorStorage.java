@@ -39,7 +39,7 @@ public class LongFloatSortedVectorStorage implements LongFloatVectorStorage {
   }
 
   public LongFloatSortedVectorStorage(long dim) {
-    this(dim, Math.max(128, (int) (dim / 1000)));
+    this(dim, Math.min(64, (int) dim));
   }
 
   @Override public float get(long idx) {
