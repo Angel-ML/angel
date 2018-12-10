@@ -25,7 +25,7 @@ import com.tencent.angel.ml.math2.storage.LongKeyVectorStorage
 import com.tencent.angel.ml.math2.ufuncs.{OptFuncs, Ufuncs}
 import com.tencent.angel.ml.math2.vector.{LongDoubleVector, LongDummyVector, LongKeyVector, Vector}
 import com.tencent.angel.ml.matrix.RowType
-import com.tencent.angel.model.output.format.RowIdColIdValueTextRowFormat
+import com.tencent.angel.model.output.format.{ColIdValueTextRowFormat, RowIdColIdValueTextRowFormat}
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
 import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
@@ -267,6 +267,16 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     val name = PSContext.instance().getMatrixMeta(zPS.poolId).get.getName
     val matrixContext = new MatrixSaveContext(name, format)
     matrixContext.addIndices(Array(0, 1, 2))
+    modelContext.addMatrix(matrixContext)
+    AngelPSContext.save(modelContext)
+  }
+
+  def saveWeight(path: String): Unit = {
+    val format = classOf[ColIdValueTextRowFormat].getCanonicalName
+    val modelContext = new ModelSaveContext(path)
+    val name = PSContext.instance().getMatrixMeta(zPS.poolId).get.getName
+    val matrixContext = new MatrixSaveContext(name, format)
+    matrixContext.addIndices(Array(0))
     modelContext.addMatrix(matrixContext)
     AngelPSContext.save(modelContext)
   }

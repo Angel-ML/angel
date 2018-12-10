@@ -65,7 +65,9 @@ object FTRLExample {
 
       val scores = data.mapPartitions {
         case iterator =>
-          opt.predict(iterator.toArray).iterator}
+          iterator.sliding(batchSize, batchSize)
+              .map(f => opt.predict(f.toArray)).flatMap(f => f)
+      }
       val auc = new AUC().calculate(scores)
 
       println(s"epoch=$epoch loss=${totalLoss / size} auc=$auc")
@@ -73,8 +75,8 @@ object FTRLExample {
 
     if (output.length > 0) {
       println(s"saving model to path $output")
-      val weight = opt.weight
-      SparseLRModel(weight).save(output)
+      opt.weight
+      opt.saveWeight(output)
       opt.save(output + "/back")
       println(s"saving z n and w finish")
     }
