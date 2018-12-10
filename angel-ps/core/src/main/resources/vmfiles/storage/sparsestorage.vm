@@ -47,11 +47,7 @@ public class ${itype}${dtype}SparseVectorStorage implements ${itype}${dtype}Vect
     }
 
     public ${itype}${dtype}SparseVectorStorage($itype.toLowerCase() dim) {
-<<<<<<< HEAD
-        this(dim, Math.min(64, (int)dim));
-=======
-        this(dim, (int)Math.min(64, dim));
->>>>>>> origin/hotfix
+        this(dim, (int)Math.min(64, Math.max(dim, 0)));
     }
 
     public ${itype}${dtype}SparseVectorStorage($itype.toLowerCase() dim, $itype.toLowerCase() [ ] indices, $dtype.toLowerCase() [ ] values) {
