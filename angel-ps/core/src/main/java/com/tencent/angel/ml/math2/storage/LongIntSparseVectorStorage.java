@@ -31,7 +31,7 @@ public class LongIntSparseVectorStorage implements LongIntVectorStorage {
   }
 
   public LongIntSparseVectorStorage(long dim) {
-    this(dim, (int)Math.min(64, dim));
+    this(dim, (int)Math.min(64,  Math.max(dim, 0)));
   }
 
   public LongIntSparseVectorStorage(long dim, long[] indices, int[] values) {

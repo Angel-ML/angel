@@ -35,7 +35,7 @@ public class IntLongSortedVectorStorage implements IntLongVectorStorage {
   }
 
   public IntLongSortedVectorStorage(int dim) {
-    this(dim, Math.min(64, dim));
+    this(dim, Math.min(64,  Math.max(dim, 0)));
   }
 
   @Override public long get(int idx) {
