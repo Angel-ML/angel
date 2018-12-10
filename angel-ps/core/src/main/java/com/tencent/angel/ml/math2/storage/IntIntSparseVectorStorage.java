@@ -1,15 +1,15 @@
 package com.tencent.angel.ml.math2.storage;
 
 import com.tencent.angel.ml.matrix.RowType;
-import it.unimi.dsi.fastutil.ints.*;
-import it.unimi.dsi.fastutil.longs.*;
-import it.unimi.dsi.fastutil.floats.*;
-import it.unimi.dsi.fastutil.doubles.*;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntIterator;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 import java.util.Arrays;
-import java.util.Random;
 import java.util.HashSet;
+import java.util.Random;
 
 public class IntIntSparseVectorStorage implements IntIntVectorStorage {
   private Int2IntOpenHashMap map;
@@ -31,7 +31,7 @@ public class IntIntSparseVectorStorage implements IntIntVectorStorage {
   }
 
   public IntIntSparseVectorStorage(int dim) {
-    this(dim, Math.min(64, (int) dim));
+    this(dim, Math.min(64, dim));
   }
 
   public IntIntSparseVectorStorage(int dim, int[] indices, int[] values) {

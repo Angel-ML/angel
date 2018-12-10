@@ -1,17 +1,15 @@
 package com.tencent.angel.ml.math2.storage;
 
 import com.tencent.angel.ml.matrix.RowType;
-import it.unimi.dsi.fastutil.ints.*;
-import it.unimi.dsi.fastutil.longs.*;
-import it.unimi.dsi.fastutil.floats.*;
-import it.unimi.dsi.fastutil.doubles.*;
+import it.unimi.dsi.fastutil.ints.IntIterator;
+import it.unimi.dsi.fastutil.longs.Long2IntMap;
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 import java.util.Arrays;
-import java.util.Random;
 import java.util.HashSet;
-
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import java.util.Random;
 
 public class LongIntSparseVectorStorage implements LongIntVectorStorage {
   private Long2IntOpenHashMap map;
@@ -33,7 +31,7 @@ public class LongIntSparseVectorStorage implements LongIntVectorStorage {
   }
 
   public LongIntSparseVectorStorage(long dim) {
-    this(dim, Math.min(64, (int) dim));
+    this(dim, (int)Math.min(64, dim));
   }
 
   public LongIntSparseVectorStorage(long dim, long[] indices, int[] values) {

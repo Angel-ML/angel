@@ -1,15 +1,11 @@
 package com.tencent.angel.ml.math2.storage;
 
-import java.util.Arrays;
-
-import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ml.math2.utils.ArrayCopy;
+import com.tencent.angel.ml.matrix.RowType;
 
 import java.util.Arrays;
-import java.util.Random;
 import java.util.HashSet;
-
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import java.util.Random;
 
 public class LongFloatSortedVectorStorage implements LongFloatVectorStorage {
   private long[] indices;
@@ -39,7 +35,7 @@ public class LongFloatSortedVectorStorage implements LongFloatVectorStorage {
   }
 
   public LongFloatSortedVectorStorage(long dim) {
-    this(dim, Math.min(64, (int) dim));
+    this(dim, (int)Math.min(64, dim));
   }
 
   @Override public float get(long idx) {
