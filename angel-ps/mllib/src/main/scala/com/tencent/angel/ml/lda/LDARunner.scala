@@ -18,11 +18,15 @@
 
 package com.tencent.angel.ml.lda
 
+import java.util
+import java.util.Map
+
 import com.tencent.angel.client.AngelClientFactory
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.data.inputformat.BalanceInputFormat
 import com.tencent.angel.ml.core.MLRunner
 import com.tencent.angel.ml.core.conf.MLConf
+import com.tencent.angel.ml.model.PSModel
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
 
@@ -122,7 +126,20 @@ class LDARunner extends MLRunner {
     val client = AngelClientFactory.get(conf)
 
     client.startPSServer()
-    client.loadModel(new LDAModel(conf))
+    val model = new LDAModel(conf)
+
+    val path = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH)
+
+    val iter = model.getPSModels.entrySet().iterator()
+    while (iter.hasNext) {
+      val entry = iter.next()
+      client.addMatrix(entry.getValue.getContext)
+    }
+
+    conf.unset(AngelConf.ANGEL_LOAD_MODEL_PATH)
+    client.createMatrices()
+
+    conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, path)
     client.runTask(classOf[LDAPredictTask])
     client.waitForCompletion()
     client.stop()
