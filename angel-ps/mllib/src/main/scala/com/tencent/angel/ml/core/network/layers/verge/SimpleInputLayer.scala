@@ -54,7 +54,6 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
 
 
   private val multiplier = OptUtils.getOptMultiplier(optimizer)
-  private val validIndexNum = SharedConf.modelSize
 
   private val weightCtx: MatrixContext = (inputDataFormat, NetUtils.storageType(modelType)) match {
     case ("dense", "dense" | "component_dense") => // dense data, dense model
@@ -76,7 +75,6 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
       val wCtx = PSMatrixUtils.createPSMatrixCtx(s"${name}_weight", psRows, psCols, modelType)
       // in this condition, the shape of weight matrix is (outputDim, inputDim)
       // and inputDim = SharedConf.indexRange
-      wCtx.setValidIndexNum(validIndexNum)
       wCtx
     case _ => // dense data, sparse model
       throw new AngelException("Dense data, sparse model, pls. change model to dense")
