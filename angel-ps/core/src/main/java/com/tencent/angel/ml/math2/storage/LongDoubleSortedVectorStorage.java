@@ -35,7 +35,7 @@ public class LongDoubleSortedVectorStorage implements LongDoubleVectorStorage {
   }
 
   public LongDoubleSortedVectorStorage(long dim) {
-    this(dim, (int)Math.min(64, dim));
+    this(dim, (int)Math.min(64, Math.max(dim, 0)));
   }
 
   @Override public double get(long idx) {
