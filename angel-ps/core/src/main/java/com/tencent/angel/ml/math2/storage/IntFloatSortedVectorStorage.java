@@ -35,7 +35,7 @@ public class IntFloatSortedVectorStorage implements IntFloatVectorStorage {
   }
 
   public IntFloatSortedVectorStorage(int dim) {
-    this(dim, Math.min(64, dim));
+    this(dim, Math.min(64, Math.max(dim, 0)));
   }
 
   @Override public float get(int idx) {

@@ -31,7 +31,7 @@ public class IntDoubleSparseVectorStorage implements IntDoubleVectorStorage {
   }
 
   public IntDoubleSparseVectorStorage(int dim) {
-    this(dim, Math.min(64, dim));
+    this(dim, Math.min(64, Math.max(dim, 0)));
   }
 
   public IntDoubleSparseVectorStorage(int dim, int[] indices, double[] values) {
