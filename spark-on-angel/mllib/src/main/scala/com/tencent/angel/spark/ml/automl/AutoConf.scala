@@ -16,21 +16,35 @@
  */
 
 
-package com.tencent.angel.spark.ml.automl.feature
+package com.tencent.angel.spark.ml.automl
 
-import org.apache.spark.ml.Transformer
-import org.apache.spark.ml.param.ParamMap
-import org.apache.spark.ml.util.DefaultParamsWritable
-import org.apache.spark.sql.{DataFrame, Dataset}
-import org.apache.spark.sql.types.StructType
+object AutoConf {
 
-class FeatureCross (override val uid: String)
-  extends Transformer with DefaultParamsWritable {
+  object Preprocess {
 
-  override def transform(dataset: Dataset[_]): DataFrame = ???
+    val INPUT_TYPE = "ml.input.type"
+    val DEFAULT_INPUT_TYPE = "normal"
 
-  override def copy(extra: ParamMap): Transformer = ???
+    val SAMPLE_RATE = "ml.sample.rate"
+    val DEFAULT_SAMPLE_RATE = "1.0"
 
-  override def transformSchema(schema: StructType): StructType = ???
+    val IMBALANCE_SAMPLE = "ml.imbalance.sample"
+    val DEFAULT_IMBALANCE_SAMPLE = "false"
+
+    val HAS_DISCRETER = "ml.has.discreter"
+    val DEFAULT_HAS_DISCRETER = "false"
+
+    val HAS_ONEHOTER = "ml.has.onehoter"
+    val DEFAULT_HAS_ONEHOTER = "false"
+
+    val HAS_MINMAXSCALAR = "ml.has.minmaxscalar"
+    val DEFAULT_HAS_MINMAXSCALAR = "true"
+
+    val HAS_STANDARDSCALAR = "ml.has.standardscalar"
+    val DEFAULT_HAS_STANDARDSCALAR = "false"
+
+  }
 
 }
+
+class AutoConf {}
