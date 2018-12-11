@@ -132,8 +132,13 @@
             <version>4.1.1.Final</version>
         </dependency>
         <dependency>
+        <groupId>com.tencent.angel</groupId>
+        <artifactId>angel-math</artifactId>
+        <version>2.0.0</version>
+        </dependency>
+        <dependency>
             <groupId>com.tencent.angel</groupId>
-            <artifactId>angel-math</artifactId>
+            <artifactId>angel-format</artifactId>
             <version>2.0.0</version>
         </dependency>
         <dependency>
