@@ -35,7 +35,7 @@ public class IntDoubleSortedVectorStorage implements IntDoubleVectorStorage {
   }
 
   public IntDoubleSortedVectorStorage(int dim) {
-    this(dim, Math.min(64, dim));
+    this(dim, Math.min(64, Math.max(dim, 0)));
   }
 
   @Override public double get(int idx) {
