@@ -36,7 +36,7 @@ object FTRLExample {
     PSContext.getOrCreate(sc)
 
     // We use more partitions to achieve dynamic load balance
-    val partNum = (SparkUtils.getNumExecutors(SparkContext.getOrCreate().getConf) * 6.15).toInt
+    val partNum = (SparkUtils.getNumCores(SparkContext.getOrCreate().getConf) * 6.15).toInt
 
     val opt = new FTRL(lambda1, lambda2, alpha, beta)
     opt.init(dim, RowType.T_DOUBLE_SPARSE_LONGKEY)

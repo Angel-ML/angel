@@ -281,7 +281,7 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     val modelContext = new ModelSaveContext(path)
     val name = PSContext.instance().getMatrixMeta(zPS.poolId).get.getName
     val matrixContext = new MatrixSaveContext(name, format)
-    matrixContext.addIndices(Array(0))
+    matrixContext.addIndices(Array(2))
     modelContext.addMatrix(matrixContext)
     AngelPSContext.save(modelContext)
   }
