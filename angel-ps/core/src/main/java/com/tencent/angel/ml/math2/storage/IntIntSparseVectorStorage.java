@@ -31,7 +31,7 @@ public class IntIntSparseVectorStorage implements IntIntVectorStorage {
   }
 
   public IntIntSparseVectorStorage(int dim) {
-    this(dim, Math.min(64, dim));
+    this(dim, Math.min(64, Math.max(dim, 0)));
   }
 
   public IntIntSparseVectorStorage(int dim, int[] indices, int[] values) {

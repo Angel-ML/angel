@@ -35,7 +35,7 @@ public class IntIntSortedVectorStorage implements IntIntVectorStorage {
   }
 
   public IntIntSortedVectorStorage(int dim) {
-    this(dim, Math.min(64, dim));
+    this(dim, Math.min(64, Math.max(dim, 0)));
   }
 
   @Override public int get(int idx) {

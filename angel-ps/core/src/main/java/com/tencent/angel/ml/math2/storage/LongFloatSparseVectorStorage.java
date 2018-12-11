@@ -31,7 +31,7 @@ public class LongFloatSparseVectorStorage implements LongFloatVectorStorage {
   }
 
   public LongFloatSparseVectorStorage(long dim) {
-    this(dim, (int)Math.min(64, dim));
+    this(dim, (int)Math.min(64, Math.max(dim, 0)));
   }
 
   public LongFloatSparseVectorStorage(long dim, long[] indices, float[] values) {
