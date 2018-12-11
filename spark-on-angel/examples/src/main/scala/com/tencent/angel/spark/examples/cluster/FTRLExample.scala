@@ -50,7 +50,7 @@ object FTRLExample {
         f =>
           f._1.setY(f._2)
           f._1
-      }
+      }.map(point => DataLoader.appendBias(point))
 
     val size = data.count()
 

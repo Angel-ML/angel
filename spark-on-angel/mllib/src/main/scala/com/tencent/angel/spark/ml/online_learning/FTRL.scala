@@ -30,10 +30,8 @@ import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadC
 import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
 import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
-import com.tencent.angel.spark.ml.psf.FTRLWUpdater
 import com.tencent.angel.spark.ml.psf.ftrl.ComputeW
 import com.tencent.angel.spark.models.PSVector
-import com.tencent.angel.spark.util.VectorUtils
 
 class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regularSkipFeatIndex: Long = 0) extends Serializable {
 

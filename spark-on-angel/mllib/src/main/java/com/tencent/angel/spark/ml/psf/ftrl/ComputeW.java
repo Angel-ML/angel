@@ -18,6 +18,7 @@
 package com.tencent.angel.spark.ml.psf.ftrl;
 
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs;
+import com.tencent.angel.ml.math2.utils.VectorUtils;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.enhance.MultiRowUpdateFunc;
@@ -53,6 +54,13 @@ public class ComputeW extends MultiRowUpdateFunc {
       Vector n = part.getRow(rowIds[1]).getSplit();
       Vector w = Ufuncs.ftrlthreshold(z, n, alpha, beta, lambda1, lambda2);
       part.getRow(rowIds[2]).setSplit(w.filter(1e-11));
+
+      // calculate bias
+      if (param.getPartKey().getStartCol() <= 0 && param.getPartKey().getEndCol() > 0) {
+        double zVal = VectorUtils.getDouble(z, 0);
+        double nVal = VectorUtils.getDouble(n, 0);
+        VectorUtils.setDouble(w, 0, -1.0 * alpha * zVal / (beta + Math.sqrt(nVal)));
+      }
     }
   }
 
