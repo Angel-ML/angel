@@ -22,11 +22,15 @@ import org.apache.spark.ml.linalg.Vector
 import org.apache.spark.ml.{Pipeline, Transformer}
 import org.apache.spark.ml.param.{Param, ParamMap}
 import org.apache.spark.ml.util.Identifiable
-import org.apache.spark.sql.{Row, DataFrame, Dataset, SparkSession}
+import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
+import scala.util.Random
 
-class Sampler(fraction: Double, override val uid: String)
+
+class Sampler(fraction: Double,
+              override val uid: String,
+              seed: Int = Random.nextInt)
   extends Transformer {
 
   def this(fraction: Double) = this(fraction, Identifiable.randomUID("sampler"))
@@ -44,7 +48,7 @@ class Sampler(fraction: Double, override val uid: String)
   final def getInputCol: String = $(inputCol)
 
   override def transform(dataset: Dataset[_]): DataFrame = {
-    dataset.sample(false, fraction).toDF
+    dataset.sample(false, fraction, seed).toDF
   }
 
   override def transformSchema(schema: StructType): StructType = { schema }
