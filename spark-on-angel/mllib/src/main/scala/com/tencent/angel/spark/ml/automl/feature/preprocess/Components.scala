@@ -20,15 +20,23 @@ package com.tencent.angel.spark.ml.automl.feature.preprocess
 
 import org.apache.spark.ml.PipelineStage
 import org.apache.spark.ml.feature.{StopWordsRemover, Tokenizer}
+import org.apache.spark.sql.DataFrame
 
 import scala.collection.mutable.ArrayBuffer
 
 object Components {
 
+  def sample(data: DataFrame,
+                 fraction: Double): DataFrame = {
+    data.sample(false, fraction)
+  }
+
   def addSampler(components: ArrayBuffer[PipelineStage],
                  inputCol: String,
-                 outputCol: String): Unit = {
-
+                 fraction: Double): Unit = {
+    val sampler = new Sampler(fraction)
+      .setInputCol("features")
+    components += sampler
   }
 
   def addTokenizer(components: ArrayBuffer[PipelineStage],

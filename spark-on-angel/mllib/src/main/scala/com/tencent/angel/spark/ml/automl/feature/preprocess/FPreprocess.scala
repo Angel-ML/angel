@@ -44,7 +44,7 @@ object FPreprocess {
       AutoConf.Preprocess.DEFAULT_INPUT_TYPE)
     val sampleRate = params.getOrElse(AutoConf.Preprocess.SAMPLE_RATE,
       AutoConf.Preprocess.DEFAULT_SAMPLE_RATE
-    )
+    ).toDouble
     val imbalanceSampleRate = params.getOrElse(AutoConf.Preprocess.IMBALANCE_SAMPLE,
       AutoConf.Preprocess.DEFAULT_IMBALANCE_SAMPLE)
     val hasTokenizer = if (inputFormat.equals("document")) true else false
@@ -56,9 +56,13 @@ object FPreprocess {
       .appName("preprocess")
       .getOrCreate()
 
-    val training = DataLoader.load(ss, inputFormat, input, inputSeparator)
+    var training = DataLoader.load(ss, inputFormat, input, inputSeparator)
 
     var components = new ArrayBuffer[PipelineStage]
+
+    if (sampleRate > 0 & sampleRate < 1.0)
+      Components.addSampler(components,
+      "features", sampleRate)
 
     if (hasTokenizer)
       Components.addTokenizer(components,
@@ -68,14 +72,12 @@ object FPreprocess {
       Components.addStopWordsRemover(components,
         "words", "filterWords")
 
-
     val pipeline = new Pipeline()
       .setStages(components.toArray)
 
     val model = pipeline.fit(training)
 
     ss.stop()
-
   }
 
 }
