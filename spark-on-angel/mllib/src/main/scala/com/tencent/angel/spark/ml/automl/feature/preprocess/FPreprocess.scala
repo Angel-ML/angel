@@ -64,8 +64,8 @@ object FPreprocess {
       Components.addTokenizer(components,
         "sentence", "words")
 
-    if (hasTokenizer)
-      Components.addTokenizer(components,
+    if (hasStopWordsRemover)
+      Components.addStopWordsRemover(components,
         "words", "filterWords")
 
 
