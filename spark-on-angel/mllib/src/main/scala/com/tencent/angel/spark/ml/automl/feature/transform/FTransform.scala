@@ -18,6 +18,30 @@
 
 package com.tencent.angel.spark.ml.automl.feature.transform
 
+import com.tencent.angel.ml.core.conf.MLConf
+import com.tencent.angel.spark.ml.automl.AutoConf
+import com.tencent.angel.spark.ml.core.ArgsUtil
+
 class FTransform {
+
+  val params = ArgsUtil.parse(args)
+  val master = params.getOrElse("master", "yarn")
+  val deploy = params.getOrElse("deploy-mode", "cluster")
+  val input = params.getOrElse("input", "")
+  val inputSeparator = params.getOrElse(MLConf.ML_DATA_SPLITOR,
+    MLConf.DEFAULT_ML_DATA_SPLITOR)
+  val inputFormat = params.getOrElse(MLConf.ML_DATA_INPUT_FORMAT,
+    MLConf.DEFAULT_ML_DATA_INPUT_FORMAT)
+  val inputType = params.getOrElse(AutoConf.Preprocess.INPUT_TYPE,
+    AutoConf.Preprocess.DEFAULT_INPUT_TYPE)
+  val hasDiscreter = params.getOrElse(AutoConf.Preprocess.HAS_DISCRETER,
+    AutoConf.Preprocess.DEFAULT_HAS_DISCRETER)
+  val hasOnehoter = params.getOrElse(AutoConf.Preprocess.HAS_ONEHOTER,
+    AutoConf.Preprocess.DEFAULT_HAS_ONEHOTER)
+  val hasMinMaxScalar = params.getOrElse(AutoConf.Preprocess.HAS_MINMAXSCALAR,
+    AutoConf.Preprocess.DEFAULT_HAS_MINMAXSCALAR)
+  val hasStdScalar = params.getOrElse(AutoConf.Preprocess.HAS_STANDARDSCALAR,
+    AutoConf.Preprocess.DEFAULT_HAS_STANDARDSCALAR)
+
 
 }

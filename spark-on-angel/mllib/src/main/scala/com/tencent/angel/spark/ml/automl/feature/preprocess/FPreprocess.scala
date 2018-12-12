@@ -22,9 +22,10 @@ import com.tencent.angel.ml.core.conf.MLConf
 import com.tencent.angel.spark.ml.automl.AutoConf
 import com.tencent.angel.spark.ml.automl.feature.DataLoader
 import com.tencent.angel.spark.ml.core.ArgsUtil
-
-
+import org.apache.spark.ml.{Pipeline, PipelineStage}
 import org.apache.spark.sql.SparkSession
+
+import scala.collection.mutable.ArrayBuffer
 
 
 object FPreprocess {
@@ -46,14 +47,8 @@ object FPreprocess {
     )
     val imbalanceSampleRate = params.getOrElse(AutoConf.Preprocess.IMBALANCE_SAMPLE,
       AutoConf.Preprocess.DEFAULT_IMBALANCE_SAMPLE)
-    val hasDiscreter = params.getOrElse(AutoConf.Preprocess.HAS_DISCRETER,
-      AutoConf.Preprocess.DEFAULT_HAS_DISCRETER)
-    val hasOnehoter = params.getOrElse(AutoConf.Preprocess.HAS_ONEHOTER,
-      AutoConf.Preprocess.DEFAULT_HAS_ONEHOTER)
-    val hasMinMaxScalar = params.getOrElse(AutoConf.Preprocess.HAS_MINMAXSCALAR,
-      AutoConf.Preprocess.DEFAULT_HAS_MINMAXSCALAR)
-    val hasStdScalar = params.getOrElse(AutoConf.Preprocess.HAS_STANDARDSCALAR,
-      AutoConf.Preprocess.DEFAULT_HAS_STANDARDSCALAR)
+    val hasTokenizer = if (inputFormat.equals("document")) true else false
+    val hasStopWordsRemover = if (inputFormat.equals("document")) true else false
 
     val ss = SparkSession
       .builder
@@ -61,8 +56,25 @@ object FPreprocess {
       .appName("preprocess")
       .getOrCreate()
 
-    val data = DataLoader.load(ss, inputFormat, input, inputSeparator)
+    val training = DataLoader.load(ss, inputFormat, input, inputSeparator)
 
+    var components = new ArrayBuffer[PipelineStage]
+
+    if (hasTokenizer)
+      Components.addTokenizer(components,
+        "sentence", "words")
+
+    if (hasTokenizer)
+      Components.addTokenizer(components,
+        "words", "filterWords")
+
+
+    val pipeline = new Pipeline()
+      .setStages(components.toArray)
+
+    val model = pipeline.fit(training)
+
+    ss.stop()
 
   }
 
