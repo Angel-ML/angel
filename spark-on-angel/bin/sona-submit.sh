@@ -6,7 +6,7 @@
 # 3. upload angel-<version>-bin directory to HDFS
 # 4. set the following variables, ANGEL_HOME, ANGEL_HDFS_HOME, ANGEL_VERSION
 
-export ANGEL_VERSION=2.0.0
+export ANGEL_VERSION=2.0.1
 export ANGEL_HOME=""
 export ANGEL_HDFS_HOME=""
 
