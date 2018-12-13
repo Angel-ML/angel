@@ -18,15 +18,11 @@
 
 package com.tencent.angel.ml.lda
 
-import java.util
-import java.util.Map
-
 import com.tencent.angel.client.AngelClientFactory
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.data.inputformat.BalanceInputFormat
 import com.tencent.angel.ml.core.MLRunner
 import com.tencent.angel.ml.core.conf.MLConf
-import com.tencent.angel.ml.model.PSModel
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
 
