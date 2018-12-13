@@ -220,11 +220,8 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     */
   def weight: PSVector = {
     val wPS = PSVector.duplicate(zPS)
-//    val func = new FTRLWUpdater(alpha, beta, lambda1, lambda2, regularSkipFeatIndex)
-//    VectorUtils.zip2MapWithIndex(zPS, nPS, func, wPS)
-//    VectorUtils.compress(wPS)
     val func = new ComputeW(wPS.poolId, alpha, beta, lambda1, lambda2)
-    PSAgentContext.get().getUserRequestAdapter.update(func).get()
+    wPS.psfUpdate(func).get()
     wPS
   }
 

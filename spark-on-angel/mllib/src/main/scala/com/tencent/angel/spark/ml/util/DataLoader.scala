@@ -165,8 +165,8 @@ object DataLoader {
       case x: LongDoubleVector => x.set(0L, 1.0)
       case x: IntDoubleVector => x.set(0, 1.0)
       case x: IntFloatVector => x.set(0, 1.0f)
-      case x: IntDoubleVector => x.set(0, 1.0f)
-      case x: LongDummyVector =>
+      case x: LongFloatVector => x.set(0, 1.0f)
+      case _: LongDummyVector =>
         throw new AngelException("cannot append bias for Dummy vector")
     }
 
