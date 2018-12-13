@@ -25,13 +25,13 @@ import com.tencent.angel.ml.math2.storage.LongKeyVectorStorage
 import com.tencent.angel.ml.math2.ufuncs.{OptFuncs, Ufuncs}
 import com.tencent.angel.ml.math2.vector.{LongDoubleVector, LongDummyVector, LongKeyVector, Vector}
 import com.tencent.angel.ml.matrix.RowType
-import com.tencent.angel.model.output.format.RowIdColIdValueTextRowFormat
+import com.tencent.angel.model.output.format.{ColIdValueTextRowFormat, RowIdColIdValueTextRowFormat}
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
+import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
-import com.tencent.angel.spark.ml.psf.FTRLWUpdater
+import com.tencent.angel.spark.ml.psf.ftrl.ComputeW
 import com.tencent.angel.spark.models.PSVector
-import com.tencent.angel.spark.util.VectorUtils
 
 class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regularSkipFeatIndex: Long = 0) extends Serializable {
 
@@ -137,9 +137,9 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     */
   def weight: PSVector = {
     val wPS = PSVector.duplicate(zPS)
-    val func = new FTRLWUpdater(alpha, beta, lambda1, lambda2, regularSkipFeatIndex)
-    VectorUtils.zip2MapWithIndex(zPS, nPS, func, wPS)
-    VectorUtils.compress(wPS)
+    val func = new ComputeW(wPS.poolId, alpha, beta, lambda1, lambda2)
+    wPS.psfUpdate(func).get()
+    wPS
   }
 
   def log1pExp(x: Double): Double = {
@@ -156,6 +156,16 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     val name = PSContext.instance().getMatrixMeta(zPS.poolId).get.getName
     val matrixContext = new MatrixSaveContext(name, format)
     matrixContext.addIndices(Array(0, 1, 2))
+    modelContext.addMatrix(matrixContext)
+    AngelPSContext.save(modelContext)
+  }
+
+  def saveWeight(path: String): Unit = {
+    val format = classOf[ColIdValueTextRowFormat].getCanonicalName
+    val modelContext = new ModelSaveContext(path)
+    val name = PSContext.instance().getMatrixMeta(zPS.poolId).get.getName
+    val matrixContext = new MatrixSaveContext(name, format)
+    matrixContext.addIndices(Array(2))
     modelContext.addMatrix(matrixContext)
     AngelPSContext.save(modelContext)
   }
