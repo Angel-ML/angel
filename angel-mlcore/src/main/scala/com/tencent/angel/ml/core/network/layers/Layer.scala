@@ -18,6 +18,8 @@
 
 package com.tencent.angel.ml.core.network.layers
 
+import com.tencent.angel.ml.core.PredictResult
+import com.tencent.angel.ml.core.data.DataBlock
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.core.optimizer.Optimizer
@@ -50,7 +52,7 @@ trait Trainable {
 }
 
 trait LossLayer {
-  def predict(): Matrix
+  def predict(): List[PredictResult]
 
   def calLoss(): Double
 

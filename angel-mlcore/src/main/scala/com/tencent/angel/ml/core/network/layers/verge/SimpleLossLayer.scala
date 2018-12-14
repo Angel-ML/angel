@@ -18,13 +18,14 @@
 
 package com.tencent.angel.ml.core.network.layers.verge
 
+import com.tencent.angel.ml.core.PredictResult
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.optimizer.loss.LossFunc
 import com.tencent.angel.ml.core.utils.LayerKeys
 import com.tencent.angel.ml.math2.matrix._
 import org.apache.commons.logging.LogFactory
-import org.json4s.JsonAST.{JField, JObject, JString}
+import org.json4s.JsonAST.{JField, JString}
 import org.json4s.JsonDSL._
 
 
@@ -64,7 +65,7 @@ class SimpleLossLayer(name: String, inputLayer: Layer, lossFunc: LossFunc)(
     loss
   }
 
-  override def predict(): Matrix = {
+  override def predict(): List[PredictResult] = {
     status match {
       case STATUS.Null =>
         calOutput()

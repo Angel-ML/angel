@@ -12,6 +12,7 @@ import com.tencent.angel.ml.core.optimizer.loss._
 import com.tencent.angel.ml.core.utils.JsonUtils
 import org.scalatest.FunSuite
 import org.json4s._
+import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods._
 
 

@@ -12,7 +12,13 @@ class LocalMemoryDataBlock(initSize: Int, maxUseMemroy: Long) extends DataBlock[
   private val LOG: Log = LogFactory.getLog(classOf[LocalMemoryDataBlock])
 
   private var estimateSampleNumber: Int = 100
-  private val vList = new util.ArrayList[LabeledData](if (initSize > 0) initSize else estimateSampleNumber)
+  val initCapacity = if (initSize > 0) {
+    estimateSampleNumber = initSize
+    initSize
+  } else {
+    estimateSampleNumber
+  }
+  private val vList = new util.ArrayList[LabeledData]()
   private var isFull: Boolean = false
 
   @throws[IOException]
@@ -40,13 +46,14 @@ class LocalMemoryDataBlock(initSize: Int, maxUseMemroy: Long) extends DataBlock[
 
   @throws[IOException]
   override def put(value: LabeledData): Unit = {
-    vList.add(value)
-    writeIndex += 1
-
-    if (writeIndex == estimateSampleNumber && !isFull) {
-      estimateAndResizeVList()
-    } else if (writeIndex == estimateSampleNumber && isFull) {
-      throw new IOException("Reach the up limit of LocalMemoryDataBlock")
+    if (writeIndex < estimateSampleNumber) {
+      vList.add(value)
+      writeIndex += 1
+      if (writeIndex == estimateSampleNumber && !isFull) {
+        estimateAndResizeVList()
+      }
+    } else {
+      LOG.info("Over maxUseMemroy, No value added!")
     }
   }
 

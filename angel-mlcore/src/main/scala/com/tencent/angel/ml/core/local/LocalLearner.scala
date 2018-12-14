@@ -6,6 +6,7 @@ import com.tencent.angel.ml.core.data.{DataBlock, DataReader, LabeledData}
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.optimizer.decayer.{StepSizeScheduler, WarmRestarts}
 import com.tencent.angel.ml.core.utils.Callback.VoidType
+import com.tencent.angel.ml.core.utils.ValidationUtils
 import org.apache.commons.logging.{Log, LogFactory}
 
 class LocalLearner(conf: SharedConf) extends Learner {
@@ -93,12 +94,16 @@ class LocalLearner(conf: SharedConf) extends Learner {
       preHook.foreach(func => func(graph))
       loss += trainOneEpoch(epoch, iter, epoch)
       postHook.foreach(func => func(graph))
+
+      validate(epoch, validationData)
     }
 
     model
   }
 
-  override protected def validate(epoch: Int, valiData: DataBlock[LabeledData]): Unit = ???
+  override protected def validate(epoch: Int, valiData: DataBlock[LabeledData]): Unit = {
+    ValidationUtils.calMetrics(model.predict(valiData), graph.getLossLayer.getLossFunc)
+  }
 
   override protected def barrier(graph: Graph): Unit = {}
 }

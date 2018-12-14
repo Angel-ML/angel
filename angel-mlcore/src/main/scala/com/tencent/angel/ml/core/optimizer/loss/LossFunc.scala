@@ -18,17 +18,18 @@
 
 package com.tencent.angel.ml.core.optimizer.loss
 
-import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.math2.MFactory
-import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector}
+import com.tencent.angel.ml.core.PredictResult
+import com.tencent.angel.ml.math2.vector.IntDoubleVector
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix, BlasMatrix, Matrix}
 import com.tencent.angel.ml.math2.ufuncs.{LossFuncs, Ufuncs}
 import com.tencent.angel.ml.core.network.Graph
 import org.json4s.JsonAST.{JField, JObject, JString, JValue}
 import org.json4s.JsonDSL._
 import com.tencent.angel.ml.core.utils.JsonUtils.extract
-import com.tencent.angel.ml.core.utils.{LossFuncKeys, MLException}
-import com.tencent.angel.ml.core.utils.JsonUtils.{matchClassName, fieldEqualClassName}
+import com.tencent.angel.ml.core.utils.LossFuncKeys
+import com.tencent.angel.ml.core.utils.JsonUtils.{fieldEqualClassName, matchClassName}
+
+import scala.collection.mutable
 
 
 trait LossFunc extends Serializable {
@@ -38,7 +39,7 @@ trait LossFunc extends Serializable {
 
   def calGrad(modelOut: Matrix, graph: Graph): Matrix
 
-  def predict(modelOut: Matrix, graph: Graph): Matrix
+  def predict(modelOut: Matrix, graph: Graph): List[PredictResult]
 
   def toJson: JObject = {
     JObject(JField(LossFuncKeys.typeKey, JString(s"${this.getClass.getSimpleName}")))
@@ -94,17 +95,48 @@ class L2Loss extends LossFunc {
     modelOut.sub(graph.placeHolder.getLabel)
   }
 
-  override def predict(modelOut: Matrix, graph: Graph): Matrix = {
+  override def predict(modelOut: Matrix, graph: Graph): List[PredictResult] = {
+    val result = new mutable.ListBuffer[PredictResult]()
+
+    val data = graph.placeHolder.data
     modelOut match {
       case m: BlasDoubleMatrix =>
-        val mat = MFactory.denseDoubleMatrix(m.getNumRows, 3)
-        mat.setCol(0, m.getCol(0))
-        mat
+        (0 until m.getNumRows).foreach { idx =>
+          val labeledData = data(idx)
+          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
+            s"$idx"
+          } else {
+            labeledData.getAttach
+          }
+
+          val pred = m.get(idx, 0)
+          val proba = Double.NaN
+          val predLabel = pred
+          val trueLabel = labeledData.getY
+          val attached = Double.NaN
+
+          result.append(PredictResult(sid, pred, proba, predLabel, trueLabel, attached))
+        }
       case m: BlasFloatMatrix =>
-        val mat = MFactory.denseFloatMatrix(m.getNumRows, 3)
-        mat.setCol(0, m.getCol(0))
-        mat
+        (0 until m.getNumRows).foreach { idx =>
+          val labeledData = data(idx)
+          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
+            s"$idx"
+          } else {
+            labeledData.getAttach
+          }
+
+          val pred = m.get(idx, 0)
+          val proba = Double.NaN
+          val predLabel = pred
+          val trueLabel = labeledData.getY
+          val attached = Double.NaN
+
+          result.append(PredictResult(sid, pred, proba, predLabel, trueLabel, attached))
+        }
     }
+
+    result.toList
   }
 
   override def toString: String = s"L2Loss"
@@ -123,29 +155,44 @@ class LogLoss extends LossFunc {
     LossFuncs.gradlogloss(modelOut, graph.placeHolder.getLabel)
   }
 
-  override def predict(modelOut: Matrix, graph: Graph): Matrix = {
+  override def predict(modelOut: Matrix, graph: Graph): List[PredictResult] = {
+    val result = new mutable.ListBuffer[PredictResult]()
+
+    val data = graph.placeHolder.data
     modelOut match {
       case m: BlasDoubleMatrix =>
-        val temp = m.getData
-        val data = new Array[Double](temp.length * 3)
-        temp.zipWithIndex.foreach { case (value, idx) =>
-          data(3 * idx) = value
-          data(3 * idx + 1) = 1.0 / (1.0 + Math.exp(-value))
-          data(3 * idx + 2) = if (value > 0) 1.0 else -1.0
-        }
+        m.getData.zipWithIndex.foreach { case (pred, idx) =>
+          val labeledData = data(idx)
+          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
+            s"$idx"
+          } else {
+            labeledData.getAttach
+          }
+          val proba = 1.0 / (1.0 + Math.exp(-pred))
+          val predLabel = if (pred > 0) 1.0 else -1.0
+          val trueLabel = labeledData.getY
+          val attached = Double.NaN
 
-        MFactory.denseDoubleMatrix(temp.length, 3, data)
+          result.append(PredictResult(sid, pred, proba, predLabel, trueLabel, attached))
+        }
       case m: BlasFloatMatrix =>
-        val temp = m.getData
-        val data = new Array[Float](temp.length * 3)
-        temp.zipWithIndex.foreach { case (value, idx) =>
-          data(3 * idx) = value
-          data(3 * idx + 1) = (1.0 / (1.0 + Math.exp(-value))).toFloat
-          data(3 * idx + 2) = if (value > 0) 1.0f else -1.0f
-        }
+        m.getData.zipWithIndex.foreach { case (pred, idx) =>
+          val labeledData = data(idx)
+          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
+            s"$idx"
+          } else {
+            labeledData.getAttach
+          }
+          val proba = 1.0 / (1.0 + Math.exp(-pred))
+          val predLabel = if (pred > 0) 1.0 else -1.0
+          val trueLabel = labeledData.getY
+          val attached = Double.NaN
 
-        MFactory.denseFloatMatrix(temp.length, 3, data)
+          result.append(PredictResult(sid, pred, proba, predLabel, trueLabel, attached))
+        }
     }
+
+    result.toList
   }
 
   override def toString: String = s"LogLoss"
@@ -164,29 +211,45 @@ class HingeLoss extends LossFunc {
     LossFuncs.gradhingeloss(modelOut, graph.placeHolder.getLabel)
   }
 
-  override def predict(modelOut: Matrix, graph: Graph): Matrix = {
+  override def predict(modelOut: Matrix, graph: Graph): List[PredictResult] = {
+    val result = new mutable.ListBuffer[PredictResult]()
+
+    val data = graph.placeHolder.data
+
     modelOut match {
       case m: BlasDoubleMatrix =>
-        val temp = m.getData
-        val data = new Array[Double](temp.length * 3)
-        temp.zipWithIndex.foreach { case (value, idx) =>
-          data(3 * idx) = value
-          data(3 * idx + 1) = 1.0 / (1.0 + Math.exp(-2.0 * value))
-          data(3 * idx + 2) = if (value > 0) 1.0 else -1.0
-        }
+        m.getData.zipWithIndex.foreach { case (pred, idx) =>
+          val labeledData = data(idx)
+          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
+            s"$idx"
+          } else {
+            labeledData.getAttach
+          }
+          val proba = 1.0 / (1.0 + Math.exp(-pred))
+          val predLabel = if (pred > 0) 1.0 else -1.0
+          val trueLabel = labeledData.getY
+          val attached = Double.NaN
 
-        MFactory.denseDoubleMatrix(temp.length, 3, data)
+          result.append(PredictResult(sid, pred, proba, predLabel, trueLabel, attached))
+        }
       case m: BlasFloatMatrix =>
-        val temp = m.getData
-        val data = new Array[Float](temp.length * 3)
-        temp.zipWithIndex.foreach { case (value, idx) =>
-          data(3 * idx) = value
-          data(3 * idx + 1) = (1.0 / (1.0 + Math.exp(-2.0 * value))).toFloat
-          data(3 * idx + 2) = if (value > 0) 1.0f else -1.0f
-        }
+        m.getData.zipWithIndex.foreach { case (pred, idx) =>
+          val labeledData = data(idx)
+          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
+            s"$idx"
+          } else {
+            labeledData.getAttach
+          }
+          val proba = 1.0 / (1.0 + Math.exp(-pred))
+          val predLabel = if (pred > 0) 1.0 else -1.0
+          val trueLabel = labeledData.getY
+          val attached = Double.NaN
 
-        MFactory.denseFloatMatrix(temp.length, 3, data)
+          result.append(PredictResult(sid, pred, proba, predLabel, trueLabel, attached))
+        }
     }
+
+    result.toList
   }
 
   override def toString: String = s"HingeLoss"
@@ -219,43 +282,58 @@ class CrossEntropyLoss extends LossFunc {
     LossFuncs.gradentropyloss(modelOut, graph.placeHolder.getLabel)
   }
 
-  override def predict(modelOut: Matrix, graph: Graph): Matrix = {
+  override def predict(modelOut: Matrix, graph: Graph): List[PredictResult] = {
+    val result = new mutable.ListBuffer[PredictResult]()
+
+    val data = graph.placeHolder.data
     modelOut match {
       case m: BlasDoubleMatrix =>
-        val temp = m.getData
-        val data = new Array[Double](temp.length * 3)
-        temp.zipWithIndex.foreach { case (value, idx) =>
-          val ord = value / (1 - value)
-          if (ord < 0.000001) {
-            data(3 * idx) = Math.log(0.000001)
-          } else if (ord > Float.MaxValue) {
-            data(3 * idx) = Math.log(Float.MaxValue)
+        m.getData.zipWithIndex.foreach { case (proba, idx) =>
+          val labeledData = data(idx)
+          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
+            s"$idx"
           } else {
-            data(3 * idx) = Math.log(ord)
+            labeledData.getAttach
           }
-          data(3 * idx + 1) = value
-          data(3 * idx + 2) = if (value > 0.5) 1.0 else -1.0
-        }
+          val ord = proba / (1 - proba)
+          val pred = if (ord < 0.000001) {
+            Math.log(0.000001)
+          } else if (ord > Float.MaxValue) {
+            Math.log(Float.MaxValue)
+          } else {
+            Math.log(ord)
+          }
+          val predLabel = if (proba >= 0.5) 1.0 else -1.0
+          val trueLabel = labeledData.getY
+          val attached = Double.NaN
 
-        MFactory.denseDoubleMatrix(temp.length, 3, data)
+          result.append(PredictResult(sid, pred, proba, predLabel, trueLabel, attached))
+        }
       case m: BlasFloatMatrix =>
-        val temp = m.getData
-        val data = new Array[Float](temp.length * 3)
-        temp.zipWithIndex.foreach { case (value, idx) =>
-          val ord = value / (1 - value)
-          if (ord < 0.000001) {
-            data(3 * idx) = Math.log(0.000001).toFloat
-          } else if (ord > Float.MaxValue) {
-            data(3 * idx) = Math.log(Float.MaxValue).toFloat
+        m.getData.zipWithIndex.foreach { case (proba, idx) =>
+          val labeledData = data(idx)
+          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
+            s"$idx"
           } else {
-            data(3 * idx) = Math.log(ord).toFloat
+            labeledData.getAttach
           }
-          data(3 * idx + 1) = value
-          data(3 * idx + 2) = if (value > 0.5) 1.0f else -1.0f
-        }
+          val ord = proba / (1 - proba)
+          val pred = if (ord < 0.000001) {
+            Math.log(0.000001)
+          } else if (ord > Float.MaxValue) {
+            Math.log(Float.MaxValue)
+          } else {
+            Math.log(ord)
+          }
+          val predLabel = if (proba >= 0.5) 1.0 else -1.0
+          val trueLabel = labeledData.getY
+          val attached = Double.NaN
 
-        MFactory.denseFloatMatrix(temp.length, 3, data)
+          result.append(PredictResult(sid, pred, proba, predLabel, trueLabel, attached))
+        }
     }
+
+    result.toList
   }
 
   override def toString: String = s"CrossEntropyLoss"
@@ -303,42 +381,49 @@ class SoftmaxLoss extends LossFunc {
 
   def loss(proba: Double, label: Double): Double = -Math.log(proba)
 
-  override def predict(modelOut: Matrix, graph: Graph): Matrix = {
+  override def predict(modelOut: Matrix, graph: Graph): List[PredictResult] = {
+    val result = new mutable.ListBuffer[PredictResult]()
+
+    val data = graph.placeHolder.data
+
     val mat = Ufuncs.exp(modelOut)
     Ufuncs.idiv(mat, mat.sum(1), true)
-    val trueLabels = graph.placeHolder.getLabel.asInstanceOf[BlasFloatMatrix].getData
-    val numOutCols: Int = 4
-
     mat match {
       case m: BlasDoubleMatrix =>
         val labels = m.argmax(1).asInstanceOf[IntDoubleVector]
-        val data = new Array[Double](m.getNumRows * numOutCols)
-        labels.getStorage.getValues.zipWithIndex.foreach { case (lab, idx) =>
-          data(numOutCols * idx) = modelOut.asInstanceOf[BlasDoubleMatrix].get(idx, lab.toInt)
-          data(numOutCols * idx + 1) = m.get(idx, lab.toInt)
-          data(numOutCols * idx + 2) = if (SharedConf.actionType().equalsIgnoreCase("train") || SharedConf.actionType().equalsIgnoreCase("inctrain")) {
-            m.get(idx, trueLabels(idx).toInt)
+        labels.getStorage.getValues.zipWithIndex.foreach { case (label, idx) =>
+          val labeledData = data(idx)
+          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
+            s"$idx"
           } else {
-            1e-8
+            labeledData.getAttach
           }
-          data(numOutCols * idx + 3) = lab
+          val pred = modelOut.asInstanceOf[BlasDoubleMatrix].get(idx, label.toInt)
+          val proba = m.get(idx, label.toInt)
+          val attached =  m.get(idx, labeledData.getY.toInt)
+          val trueLabel = labeledData.getY
+
+          result.append(PredictResult(sid, pred, proba, label, trueLabel, attached))
         }
-        MFactory.denseDoubleMatrix(m.getNumRows, numOutCols, data)
       case m: BlasFloatMatrix =>
-        val labels = m.argmax(1).asInstanceOf[IntFloatVector]
-        val data = new Array[Float](m.getNumRows * numOutCols)
-        labels.getStorage.getValues.zipWithIndex.foreach { case (lab, idx) =>
-          data(numOutCols * idx) = modelOut.asInstanceOf[BlasFloatMatrix].get(idx, lab.toInt)
-          data(numOutCols * idx + 1) = m.get(idx, lab.toInt)
-          data(numOutCols * idx + 2) = if (SharedConf.actionType().equalsIgnoreCase("train") || SharedConf.actionType().equalsIgnoreCase("inctrain")) {
-            m.get(idx, trueLabels(idx).toInt)
+        val labels = m.argmax(1).asInstanceOf[IntDoubleVector]
+        labels.getStorage.getValues.zipWithIndex.foreach { case (label, idx) =>
+          val labeledData = data(idx)
+          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
+            s"$idx"
           } else {
-            1e-8F
+            labeledData.getAttach
           }
-          data(numOutCols * idx + 3) = lab
+          val pred = modelOut.asInstanceOf[BlasDoubleMatrix].get(idx, label.toInt)
+          val proba = m.get(idx, label.toInt)
+          val attached =  m.get(idx, labeledData.getY.toInt)
+          val trueLabel = labeledData.getY
+
+          result.append(PredictResult(sid, pred, proba, label, trueLabel, attached))
         }
-        MFactory.denseFloatMatrix(m.getNumRows, numOutCols, data)
     }
+
+    result.toList
   }
 
   override def toString: String = s"SoftmaxLoss"
@@ -362,17 +447,48 @@ class HuberLoss(delta: Double) extends LossFunc {
     LossFuncs.gradhuberloss(modelOut, graph.placeHolder.getLabel, delta)
   }
 
-  override def predict(modelOut: Matrix, graph: Graph): Matrix = {
+  override def predict(modelOut: Matrix, graph: Graph): List[PredictResult] = {
+    val result = new mutable.ListBuffer[PredictResult]()
+
+    val data = graph.placeHolder.data
     modelOut match {
       case m: BlasDoubleMatrix =>
-        val mat = MFactory.denseDoubleMatrix(m.getNumRows, 3)
-        mat.setCol(0, m.getCol(0))
-        mat
+        (0 until m.getNumRows).foreach { idx =>
+          val labeledData = data(idx)
+          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
+            s"$idx"
+          } else {
+            labeledData.getAttach
+          }
+
+          val pred = m.get(idx, 0)
+          val proba = Double.NaN
+          val predLabel = pred
+          val trueLabel = labeledData.getY
+          val attached = Double.NaN
+
+          result.append(PredictResult(sid, pred, proba, predLabel, trueLabel, attached))
+        }
       case m: BlasFloatMatrix =>
-        val mat = MFactory.denseFloatMatrix(m.getNumRows, 3)
-        mat.setCol(0, m.getCol(0))
-        mat
+        (0 until m.getNumRows).foreach { idx =>
+          val labeledData = data(idx)
+          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
+            s"$idx"
+          } else {
+            labeledData.getAttach
+          }
+
+          val pred = m.get(idx, 0)
+          val proba = Double.NaN
+          val predLabel = pred
+          val trueLabel = labeledData.getY
+          val attached = Double.NaN
+
+          result.append(PredictResult(sid, pred, proba, predLabel, trueLabel, attached))
+        }
     }
+
+    result.toList
   }
 
   override def toString: String = s"HuberLoss"

@@ -13,7 +13,7 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
 
   before {
     conf = SharedConf.get()
-    val jsonFile = "E:\\github\\fitzwang\\angel\\mlcore\\src\\test\\jsons\\logreg.json"
+    val jsonFile = "E:\\github\\fitzwang\\angel\\angel-mlcore\\src\\test\\jsons\\logreg.json"
     conf.set(MLConf.ML_JSON_CONF_FILE, jsonFile)
     conf.setJson()
 
@@ -30,4 +30,6 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
     learner.train(taskDataBlock, validDataBlock)
     // learner.train()
   }
+
+
 }

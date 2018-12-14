@@ -83,7 +83,7 @@ object JsonUtils {
 
   def J2Pretty(json: JValue): String = pretty(render(json))
 
-  private def layer2Json(topLayer: Layer)(implicit jMap: mutable.HashMap[String, JField]): Unit = {
+  def layer2Json(topLayer: Layer)(implicit jMap: mutable.HashMap[String, JField]): Unit = {
     topLayer match {
       case l: InputLayer =>
         if (!jMap.contains(l.name)) {

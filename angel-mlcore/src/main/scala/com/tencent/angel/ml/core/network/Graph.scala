@@ -1,13 +1,17 @@
 package com.tencent.angel.ml.core.network
 
+import com.tencent.angel.ml.core.PredictResult
 import com.tencent.angel.ml.core.data.LabeledData
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.variable.{Variable, VariableProvider}
+import com.tencent.angel.ml.core.utils.JsonUtils.{J2Pretty, layer2Json}
 import com.tencent.angel.ml.core.utils.{Callback, RowTypeUtils}
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.utils.RowType
 import org.apache.commons.logging.{Log, LogFactory}
+import org.json4s.JsonAST.{JField, JObject}
 
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 
@@ -124,7 +128,7 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
     placeHolder.feedData(data)
   }
 
-  def predict(): Matrix = {
+  def predict(): List[PredictResult] = {
     val start = System.currentTimeMillis()
     val res = lossLayer.predict()
     timeStats.forwardTime += (System.currentTimeMillis() - start)
@@ -157,7 +161,9 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
       val callback = new Callback[T]()
       layer.update[T](epoch, batchSize)(callback)
     }
-    for (callback <- callbacks) callback.get()
+    for (callback <- callbacks) {
+      callback.get()
+    }
     timeStats.updateTime += (System.currentTimeMillis() - start)
   }
 
@@ -203,4 +209,28 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
     */
   def saveModel(envCtx: EvnContext, path: String): Unit
 
+  private def layer2Json(topLayer: Layer)(implicit jMap: mutable.HashMap[String, JField]): Unit = {
+    topLayer match {
+      case l: InputLayer =>
+        if (!jMap.contains(l.name)) {
+          jMap.put(l.name, l.toJson())
+        }
+      case l: LinearLayer =>
+        if (!jMap.contains(l.name)) {
+          jMap.put(l.name, l.toJson())
+        }
+        layer2Json(l.inputLayer)(jMap)
+      case l: JoinLayer =>
+        if (!jMap.contains(l.name)) {
+          jMap.put(l.name, l.toJson())
+        }
+        l.inputLayers.foreach(layer => layer2Json(layer)(jMap))
+    }
+  }
+
+  def toJson(): String = {
+    implicit val jsonMap: mutable.HashMap[String, JField] = new mutable.HashMap[String, JField]()
+    layer2Json(lossLayer.asInstanceOf[Layer])
+    J2Pretty(JObject(jsonMap.values.toList))
+  }
 }
