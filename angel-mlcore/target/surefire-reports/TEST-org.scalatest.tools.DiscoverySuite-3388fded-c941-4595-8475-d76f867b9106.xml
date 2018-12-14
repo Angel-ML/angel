@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuite 
+errors="0" failures="0" hostname="fitzwang-PC0" name="org.scalatest.tools.DiscoverySuite" tests="0" time="0.01" timestamp="2018-12-14T10:58:21">
+  <properties>
+    <property name="java.runtime.name" value="Java(TM) SE Runtime Environment">
+    </property>
+    <property 
+    name="sun.boot.library.path" value="C:\Program Files\Java\jre1.8.0_151\bin">
+</property>
+    <property name="java.vm.version" value="25.151-b12"> </property>
+    <property name="java.vm.vendor" value="Oracle Corporation"> </property>
+    <property name="java.vendor.url" value="http://java.oracle.com/">
+    </property>
+    <property name="path.separator" value=";"> </property>
+    <property name="java.vm.name" value="Java HotSpot(TM) 64-Bit Server VM">
+    </property>
+    <property name="file.encoding.pkg" value="sun.io"> </property>
+    <property name="user.script" value=""> </property>
+    <property name="user.country" value="CN"> </property>
+    <property name="sun.java.launcher" value="SUN_STANDARD"> </property>
+    <property name="sun.os.patch.level" value=""> </property>
+    <property 
+    name="java.vm.specification.name" value="Java Virtual Machine Specification">
+</property>
+    <property name="user.dir" value="E:\github\fitzwang\angel\angel-mlcore">
+    </property>
+    <property name="java.runtime.version" value="1.8.0_151-b12"> </property>
+    <property 
+    name="java.awt.graphicsenv" value="sun.awt.Win32GraphicsEnvironment">
+</property>
+    <property name="basedir" value="E:\github\fitzwang\angel\angel-mlcore">
+    </property>
+    <property 
+    name="java.endorsed.dirs" value="C:\Program Files\Java\jre1.8.0_151\lib\endorsed">
+</property>
+    <property name="os.arch" value="amd64"> </property>
+    <property 
+    name="java.io.tmpdir" value="C:\Users\fitzwang\AppData\Local\Temp\">
+</property>
+    <property name="line.separator" value=" "> </property>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation">
+    </property>
+    <property name="user.variant" value=""> </property>
+    <property name="os.name" value="Windows 10"> </property>
+    <property name="sun.jnu.encoding" value="GBK"> </property>
+    <property 
+    name="java.library.path" value="C:\ProgramData\Oracle\Java\javapath;C:\windows\Sun\Java\bin;C:\windows\system32;C:\windows;C:\Users\fitzwang\bin;C:\Program Files\Git\mingw64\bin;C:\Program Files\Git\usr\local\bin;C:\Program Files\Git\usr\bin;C:\Program Files\Git\usr\bin;C:\Program Files\Git\mingw64\bin;C:\Program Files\Git\usr\bin;C:\Users\fitzwang\bin;C:\ProgramData\Oracle\Java\javapath;C:\windows\system32;C:\windows;C:\windows\System32\Wbem;C:\windows\System32\WindowsPowerShell\v1.0;C:\Program Files\Java\maven\bin;C:\Program Files (x86)\scala\bin;C:\Program Files (x86)\Windows Kits\8.1\Windows Performance Toolkit;C:\Program Files\TortoiseGit\bin;C:\Program Files\PuTTY;C:\Program Files\Microsoft VS Code\bin;C:\Users\fitzwang\AppData\Local\Microsoft\WindowsApps;C:\Program Files\Microsoft VS Code\bin;C:\Program Files (x86)\Graphviz2.38\bin;D:\python;D:\python\Scripts;D:\python\Library\bin;C:\Program Files\protobuf;D:\Software\glo662wb\bin;C:\Program Files\Git\usr\bin\vendor_perl;C:\Program Files\Git\usr\bin\core_perl;.">
+</property>
+    <property 
+    name="java.specification.name" value="Java Platform API Specification">
+</property>
+    <property name="java.class.version" value="52.0"> </property>
+    <property 
+    name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers">
+</property>
+    <property name="os.version" value="10.0"> </property>
+    <property name="user.home" value="C:\Users\fitzwang"> </property>
+    <property name="user.timezone" value=""> </property>
+    <property name="java.awt.printerjob" value="sun.awt.windows.WPrinterJob">
+    </property>
+    <property name="file.encoding" value="GBK"> </property>
+    <property name="java.specification.version" value="1.8"> </property>
+    <property name="user.name" value="fitzwang"> </property>
+    <property 
+    name="java.class.path" value="E:\github\fitzwang\angel\angel-mlcore\target\test-classes;E:\github\fitzwang\angel\angel-mlcore\target\classes;E:\maven\repository\org\json4s\json4s-native_2.11\3.4.2\json4s-native_2.11-3.4.2.jar;E:\maven\repository\org\json4s\json4s-core_2.11\3.4.2\json4s-core_2.11-3.4.2.jar;E:\maven\repository\org\json4s\json4s-ast_2.11\3.4.2\json4s-ast_2.11-3.4.2.jar;E:\maven\repository\org\json4s\json4s-scalap_2.11\3.4.2\json4s-scalap_2.11-3.4.2.jar;E:\maven\repository\com\thoughtworks\paranamer\paranamer\2.8\paranamer-2.8.jar;E:\maven\repository\org\scala-lang\scala-library\2.11.8\scala-library-2.11.8.jar;E:\maven\repository\org\scalatest\scalatest_2.11\3.0.3\scalatest_2.11-3.0.3.jar;E:\maven\repository\org\scalactic\scalactic_2.11\3.0.3\scalactic_2.11-3.0.3.jar;E:\maven\repository\org\scala-lang\scala-reflect\2.11.8\scala-reflect-2.11.8.jar;E:\maven\repository\org\scala-lang\modules\scala-xml_2.11\1.0.5\scala-xml_2.11-1.0.5.jar;E:\maven\repository\org\scala-lang\modules\scala-parser-combinators_2.11\1.0.4\scala-parser-combinators_2.11-1.0.4.jar;E:\maven\repository\commons-logging\commons-logging\1.1.1\commons-logging-1.1.1.jar;E:\maven\repository\org\ehcache\sizeof\0.3.0\sizeof-0.3.0.jar;E:\maven\repository\org\slf4j\slf4j-api\1.7.5\slf4j-api-1.7.5.jar;E:\github\fitzwang\angel\angel-math\target\angel-math-2.0.0.jar;E:\maven\repository\it\unimi\dsi\fastutil\7.1.0\fastutil-7.1.0.jar;E:\maven\repository\org\apache\velocity\velocity\1.7\velocity-1.7.jar;E:\maven\repository\commons-collections\commons-collections\3.2.1\commons-collections-3.2.1.jar;E:\maven\repository\commons-lang\commons-lang\2.4\commons-lang-2.4.jar;E:\maven\repository\net\sourceforge\f2j\arpack_combined_all\0.1\arpack_combined_all-0.1.jar;E:\maven\repository\com\github\fommil\netlib\core\1.1.2\core-1.1.2.jar;E:\maven\repository\com\github\fommil\netlib\netlib-native_ref-osx-x86_64\1.1\netlib-native_ref-osx-x86_64-1.1-natives.jar;E:\maven\repository\com\github\fommil\netlib\native_ref-java\1.1\native_ref-java-1.1.jar;E:\maven\repository\com\github\fommil\jniloader\1.1\jniloader-1.1.jar;E:\maven\repository\com\github\fommil\netlib\netlib-native_ref-linux-x86_64\1.1\netlib-native_ref-linux-x86_64-1.1-natives.jar;E:\maven\repository\com\github\fommil\netlib\netlib-native_ref-linux-i686\1.1\netlib-native_ref-linux-i686-1.1-natives.jar;E:\maven\repository\com\github\fommil\netlib\netlib-native_ref-win-x86_64\1.1\netlib-native_ref-win-x86_64-1.1-natives.jar;E:\maven\repository\com\github\fommil\netlib\netlib-native_ref-win-i686\1.1\netlib-native_ref-win-i686-1.1-natives.jar;E:\maven\repository\com\github\fommil\netlib\netlib-native_ref-linux-armhf\1.1\netlib-native_ref-linux-armhf-1.1-natives.jar;E:\maven\repository\com\github\fommil\netlib\netlib-native_system-osx-x86_64\1.1\netlib-native_system-osx-x86_64-1.1-natives.jar;E:\maven\repository\com\github\fommil\netlib\native_system-java\1.1\native_system-java-1.1.jar;E:\maven\repository\com\github\fommil\netlib\netlib-native_system-linux-x86_64\1.1\netlib-native_system-linux-x86_64-1.1-natives.jar;E:\maven\repository\com\github\fommil\netlib\netlib-native_system-linux-i686\1.1\netlib-native_system-linux-i686-1.1-natives.jar;E:\maven\repository\com\github\fommil\netlib\netlib-native_system-linux-armhf\1.1\netlib-native_system-linux-armhf-1.1-natives.jar;E:\maven\repository\com\github\fommil\netlib\netlib-native_system-win-x86_64\1.1\netlib-native_system-win-x86_64-1.1-natives.jar;E:\maven\repository\com\github\fommil\netlib\netlib-native_system-win-i686\1.1\netlib-native_system-win-i686-1.1-natives.jar">
+</property>
+    <property name="java.vm.specification.version" value="1.8"> </property>
+    <property name="sun.arch.data.model" value="64"> </property>
+    <property name="java.home" value="C:\Program Files\Java\jre1.8.0_151">
+    </property>
+    <property 
+    name="sun.java.command" value="org.scalatest.tools.Runner -R E:\github\fitzwang\angel\angel-mlcore\target\classes E:\github\fitzwang\angel\angel-mlcore\target\test-classes -o -fWDF E:\github\fitzwang\angel\angel-mlcore\target\surefire-reports\TestSuite.txt -u E:\github\fitzwang\angel\angel-mlcore\target\surefire-reports\.">
+</property>
+    <property name="java.specification.vendor" value="Oracle Corporation">
+    </property>
+    <property name="user.language" value="zh"> </property>
+    <property name="awt.toolkit" value="sun.awt.windows.WToolkit"> </property>
+    <property name="java.vm.info" value="mixed mode"> </property>
+    <property name="java.version" value="1.8.0_151"> </property>
+    <property 
+    name="java.ext.dirs" value="C:\Program Files\Java\jre1.8.0_151\lib\ext;C:\windows\Sun\Java\lib\ext">
+</property>
+    <property 
+    name="sun.boot.class.path" value="C:\Program Files\Java\jre1.8.0_151\lib\resources.jar;C:\Program Files\Java\jre1.8.0_151\lib\rt.jar;C:\Program Files\Java\jre1.8.0_151\lib\sunrsasign.jar;C:\Program Files\Java\jre1.8.0_151\lib\jsse.jar;C:\Program Files\Java\jre1.8.0_151\lib\jce.jar;C:\Program Files\Java\jre1.8.0_151\lib\charsets.jar;C:\Program Files\Java\jre1.8.0_151\lib\jfr.jar;C:\Program Files\Java\jre1.8.0_151\classes">
+</property>
+    <property name="java.vendor" value="Oracle Corporation"> </property>
+    <property name="file.separator" value="\"> </property>
+    <property 
+    name="java.vendor.url.bug" value="http://bugreport.sun.com/bugreport/">
+</property>
+    <property name="sun.cpu.endian" value="little"> </property>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"> </property>
+    <property name="sun.desktop" value="windows"> </property>
+    <property name="sun.cpu.isalist" value="amd64"> </property>
+  </properties>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

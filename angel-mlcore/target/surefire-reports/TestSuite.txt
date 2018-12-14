@@ -1,0 +1,9 @@
+Discovery starting.
+Discovery completed in 210 milliseconds.
+Run starting. Expected test count is: 0
+DiscoverySuite:
+Run completed in 240 milliseconds.
+Total number of tests run: 0
+Suites: completed 1, aborted 0
+Tests: succeeded 0, failed 0, canceled 0, ignored 0, pending 0
+No tests were executed.
