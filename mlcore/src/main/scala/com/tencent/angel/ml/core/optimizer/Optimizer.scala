@@ -19,8 +19,8 @@
 package com.tencent.angel.ml.core.optimizer
 
 import java.util.concurrent.Future
-
 import com.tencent.angel.ml.core.network.variable.Variable
+import org.json4s.JsonAST.{JObject, JValue}
 
 
 trait Optimizer extends Serializable {
@@ -51,10 +51,31 @@ trait Optimizer extends Serializable {
 
   def getRegL2Param: Double = this.regL2Param
 
-  def update[T](variable: Variable, numFactors: Int, epoch: Int): Future[T]
+  def update[T](variable: Variable, epoch: Int): Future[T]
+
+  def toJson: JObject
 }
 
 
-abstract class GradientDescent(val stepSize: Double = 0.1) extends Optimizer {
-  setLR(stepSize)
+object Optimizer {
+
+  abstract class Json2OptimizerProvider {
+    def optFromJson(json: JValue): Optimizer
+
+    def defaultOptJson(): JObject
+  }
+
+  def getJson2OptimizerProvider(className: String): Json2OptimizerProvider = {
+    val cls = Class.forName(className)
+    cls.newInstance().asInstanceOf[Json2OptimizerProvider]
+  }
+
+  def getJson2OptimizerProvider(cls: Class[_<: Json2OptimizerProvider]): Json2OptimizerProvider = {
+    cls.newInstance()
+  }
+}
+
+
+abstract class GradientDescent(val lr: Double = 0.1) extends Optimizer {
+  setLR(lr)
 }

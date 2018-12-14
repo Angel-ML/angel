@@ -26,10 +26,12 @@ import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.variable.EmbedVariable
 import com.tencent.angel.ml.core.optimizer.Optimizer
-import com.tencent.angel.ml.core.utils.{Callback, MLException}
+import com.tencent.angel.ml.core.utils.{Callback, LayerKeys, MLException}
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.vector._
 import org.apache.commons.logging.LogFactory
+import org.json4s.JsonAST._
+import org.json4s.JsonDSL._
 
 class Embedding(name: String, outputDim: Int, val numFactors: Int, override val optimizer: Optimizer)(implicit graph: Graph)
   extends InputLayer(name, outputDim)(graph) with Trainable {
@@ -99,7 +101,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
       case _ => throw MLException("STATUS Error, please calculate Gradient first!")
     }
 
-    val end = System.currentTimeMillis()
+    // val end = System.currentTimeMillis()
   }
 
   override def calOutput(): Matrix = {
@@ -123,5 +125,14 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
 
   override def toString: String = {
     s"Embedding name=$name outputDim=$outputDim optimizer=$optimizer"
+  }
+
+  override def toJson(): JField = {
+    val layerJson = (LayerKeys.typeKey -> s"${this.getClass.getSimpleName}") ~
+      (LayerKeys.outputDimKey -> outputDim) ~
+      (LayerKeys.numFactorsKey -> numFactors) ~
+      (LayerKeys.optimizerKey -> optimizer.toJson)
+
+    JField(name, layerJson)
   }
 }

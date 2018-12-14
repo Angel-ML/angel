@@ -25,11 +25,14 @@ import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.variable._
 import com.tencent.angel.ml.core.optimizer.Optimizer
-import com.tencent.angel.ml.core.utils.{Callback, MLException}
+import com.tencent.angel.ml.core.utils.{Callback, LayerKeys, MLException}
 import com.tencent.angel.ml.math2.MFactory
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix, Matrix}
 import com.tencent.angel.ml.math2.utils.VectorUtils
 import org.apache.commons.logging.LogFactory
+import org.json4s.JsonAST
+import org.json4s.JsonAST.JField
+import org.json4s.JsonDSL._
 
 
 class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, override val optimizer: Optimizer)(implicit graph: Graph)
@@ -105,8 +108,6 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
       case _ => // sparse data
         val indices = graph.placeHolder.getIndices
         weight.pullParams(epoch, indices)
-      case _ => // dense data, sparse model
-        throw MLException("Dense data, sparse model, pls. change model to dense")
     }
 
     bias.pullParams(epoch)
@@ -139,7 +140,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
         callback
       case _ => throw MLException("STATUS Error, please calculate Gradient first!")
     }
-    val end = System.currentTimeMillis()
+    // val end = System.currentTimeMillis()
     // println(s"update Time = ${end - start} ms")
   }
 
@@ -151,5 +152,14 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
 
   override def toString: String = {
     s"SimpleInputLayer name=$name outputDim=$outputDim optimizer=$optimizer"
+  }
+
+  override def toJson(): JField = {
+    val layerJson = (LayerKeys.typeKey -> s"${this.getClass.getSimpleName}") ~
+      (LayerKeys.outputDimKey -> outputDim) ~
+      (LayerKeys.transFuncKey -> transFunc.toJson) ~
+      (LayerKeys.optimizerKey -> optimizer.toJson)
+
+    JField(name, layerJson)
   }
 }

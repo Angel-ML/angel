@@ -19,12 +19,11 @@
 package com.tencent.angel.ml.feature;
 
 import com.tencent.angel.ml.math2.vector.Vector;
-import com.tencent.angel.ml.core.utils.Example;
 
 /**
  * training data with label
  */
-public class LabeledData extends Example {
+public class LabeledData {
 
   private Vector x;
   private double y;

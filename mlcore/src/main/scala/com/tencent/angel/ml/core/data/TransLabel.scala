@@ -1,5 +1,8 @@
 package com.tencent.angel.ml.core.data
 
+
+import com.tencent.angel.ml.core.utils.JsonUtils.matchClassName
+
 sealed trait TransLabel extends Serializable {
   def trans(label: Double): Double
 }
@@ -32,11 +35,11 @@ class SubOneTrans extends TransLabel {
 object TransLabel {
   def get(name: String, threshold: Double = 0): TransLabel = {
     name.toLowerCase match {
-      case "notrans" => new NoTrans()
-      case "posnegtrans" => new PosNegTrans(threshold)
-      case "zeroonetrans" => new ZeroOneTrans(threshold)
-      case "addonetrans" => new AddOneTrans()
-      case "subonetrans" => new SubOneTrans()
+      case name: String if matchClassName[NoTrans](name) => new NoTrans()
+      case name: String if matchClassName[PosNegTrans](name) => new PosNegTrans(threshold)
+      case name: String if matchClassName[ZeroOneTrans](name) => new ZeroOneTrans(threshold)
+      case name: String if matchClassName[AddOneTrans](name) => new AddOneTrans()
+      case name: String if matchClassName[SubOneTrans](name) => new SubOneTrans()
     }
   }
 }

@@ -19,7 +19,7 @@
 package com.tencent.angel.ml.core.network.layers
 
 import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.data.Example
+import com.tencent.angel.ml.core.data.LabeledData
 import com.tencent.angel.ml.core.utils.MLException
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.storage._
@@ -37,7 +37,7 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
 
   def this() = this(SharedConf.get())
 
-  private var data: Array[Example] = _
+  private var data: Array[LabeledData] = _
   private var feats: Matrix = _
   private var labels: Matrix = _
   private var indices: Vector = _
@@ -47,7 +47,7 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
 
   var isFeed: Boolean = false
 
-  def feedData(data: Array[Example]): Unit = {
+  def feedData(data: Array[LabeledData]): Unit = {
     feats = null
     labels = null
     indices = null
@@ -71,7 +71,7 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
         case v: IntDoubleVector =>
           if (v.isDense) {
             val matTemp = MFactory.denseDoubleMatrix(batchSize, v.getDim)
-            data.zipWithIndex.map { case (ld: Example, row: Int) =>
+            data.zipWithIndex.map { case (ld: LabeledData, row: Int) =>
               matTemp.setRow(row, ld.getX.asInstanceOf[IntDoubleVector])
             }
             matTemp
@@ -81,7 +81,7 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
         case v: IntFloatVector =>
           if (v.isDense) {
             val matTemp = MFactory.denseFloatMatrix(batchSize, v.getDim)
-            data.zipWithIndex.map { case (ld: Example, row: Int) =>
+            data.zipWithIndex.map { case (ld: LabeledData, row: Int) =>
               matTemp.setRow(row, ld.getX.asInstanceOf[IntFloatVector])
             }
             matTemp

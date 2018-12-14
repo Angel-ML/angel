@@ -1,6 +1,6 @@
 package com.tencent.angel.ml.core.network
 
-import com.tencent.angel.ml.core.data.Example
+import com.tencent.angel.ml.core.data.LabeledData
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.variable.{Variable, VariableProvider}
 import com.tencent.angel.ml.core.utils.{Callback, RowTypeUtils}
@@ -64,13 +64,13 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
     instance.asInstanceOf[VariableProvider]
   }
 
-  val taskNum: Int
+  var taskNum: Int
 
   val indexRange: Long
 
   val validIndexNum: Long
 
-  val normalFactor: Double
+  def normalFactor: Double
 
   val dataFormat: String
 
@@ -115,7 +115,7 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
     )
   }
 
-  def feedData(data: Array[Example]): Unit = {
+  def feedData(data: Array[LabeledData]): Unit = {
     deepFirstDown(lossLayer.asInstanceOf[Layer])(
       (lay: Layer) => lay.status != STATUS.Null,
       (lay: Layer) => lay.status = STATUS.Null
@@ -153,7 +153,7 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
 
   def update[T](epoch: Int, batchSize: Int): Unit = {
     val start = System.currentTimeMillis()
-    val callbacks = trainableLayer.map{ layer =>
+    val callbacks = trainableLayer.map { layer =>
       val callback = new Callback[T]()
       layer.update[T](epoch, batchSize)(callback)
     }

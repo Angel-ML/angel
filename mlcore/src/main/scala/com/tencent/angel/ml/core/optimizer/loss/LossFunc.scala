@@ -24,6 +24,12 @@ import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector}
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix, BlasMatrix, Matrix}
 import com.tencent.angel.ml.math2.ufuncs.{LossFuncs, Ufuncs}
 import com.tencent.angel.ml.core.network.Graph
+import org.json4s.JsonAST.{JField, JObject, JString, JValue}
+import org.json4s.JsonDSL._
+import com.tencent.angel.ml.core.utils.JsonUtils.extract
+import com.tencent.angel.ml.core.utils.{LossFuncKeys, MLException}
+import com.tencent.angel.ml.core.utils.JsonUtils.{matchClassName, fieldEqualClassName}
+
 
 trait LossFunc extends Serializable {
   def calLoss(modelOut: Matrix, graph: Graph): Double
@@ -33,6 +39,42 @@ trait LossFunc extends Serializable {
   def calGrad(modelOut: Matrix, graph: Graph): Matrix
 
   def predict(modelOut: Matrix, graph: Graph): Matrix
+
+  def toJson: JObject = {
+    JObject(JField(LossFuncKeys.typeKey, JString(s"${this.getClass.getSimpleName}")))
+  }
+}
+
+object LossFunc {
+  def fromJson(jast: JValue): LossFunc = {
+    jast match {
+      case JString(s) if matchClassName[L2Loss](s) =>
+        new L2Loss()
+      case JString(s) if matchClassName[LogLoss](s) =>
+        new LogLoss()
+      case JString(s) if matchClassName[HingeLoss](s) =>
+        new HingeLoss()
+      case JString(s) if matchClassName[CrossEntropyLoss](s) =>
+        new CrossEntropyLoss()
+      case JString(s) if matchClassName[SoftmaxLoss](s) =>
+        new SoftmaxLoss()
+      case JString(s) if matchClassName[HuberLoss](s) =>
+        new HuberLoss(extract[Double](jast, LossFuncKeys.deltaKey, Some(0.5)).get)
+      case obj: JObject if fieldEqualClassName[L2Loss](obj) =>
+        new L2Loss()
+      case obj: JObject if fieldEqualClassName[LogLoss](obj) =>
+        new LogLoss()
+      case obj: JObject if fieldEqualClassName[HingeLoss](obj) =>
+        new HingeLoss()
+      case obj: JObject if fieldEqualClassName[CrossEntropyLoss](obj) =>
+        new CrossEntropyLoss()
+      case obj: JObject if fieldEqualClassName[SoftmaxLoss](obj) =>
+        new SoftmaxLoss()
+      case obj: JObject if fieldEqualClassName[HuberLoss](obj) =>
+        new HuberLoss(extract[Double](obj, LossFuncKeys.deltaKey, Some(0.5)).get)
+      case _ => new LogLoss()
+    }
+  }
 }
 
 class L2Loss extends LossFunc {
@@ -334,4 +376,8 @@ class HuberLoss(delta: Double) extends LossFunc {
   }
 
   override def toString: String = s"HuberLoss"
+
+  override def toJson: JObject = {
+    (LossFuncKeys.typeKey -> JString(s"${this.getClass.getSimpleName}")) ~ ("delta" -> delta)
+  }
 }

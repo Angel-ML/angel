@@ -6,15 +6,15 @@ import java.util.concurrent.Future
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.network.variable.MatVariable
 import com.tencent.angel.ml.core.optimizer.Optimizer
-import com.tencent.angel.ml.core.utils.ValueNotAllowed
-import com.tencent.angel.ml.math2.matrix.Matrix
+import com.tencent.angel.ml.core.utils.{OptUtils, ValueNotAllowed}
+import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix, Matrix}
 import com.tencent.angel.ml.math2.storage._
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.{MFactory, StorageType}
 
 
-class LocalMatVariable(name: String, numRows: Int, numCols: Long, numSlot: Int, rowType: RowType)(implicit graph: Graph)
+class LocalMatVariable(name: String, val numRows: Int, val numCols: Long, val numSlot: Int, rowType: RowType)(implicit graph: Graph)
   extends LocalVariable(name, rowType)(graph) with MatVariable {
   override protected var matrix: Matrix = _
 
@@ -146,9 +146,24 @@ class LocalMatVariable(name: String, numRows: Int, numCols: Long, numSlot: Int, 
     }
   }
 
-  override def pushGrads(features: Matrix, backward: Matrix): Unit = ???
+  override def pushGrads(features: Matrix, backward: Matrix): Unit = {
+    (0 until numRows).toArray.foreach { colId =>
+      val grad = backward match {
+        case bw: BlasDoubleMatrix =>
+          features.transDot(bw.getCol(colId)).imul(graph.normalFactor)
+        case bw: BlasFloatMatrix =>
+          features.transDot(bw.getCol(colId)).imul(graph.normalFactor)
+      }
 
-  override def pushGrads(grad: Matrix, lr: Double): Unit = ???
+      storage.getRow(numSlot * numRows + colId).iadd(grad)
+    }
+  }
 
-  override def update[T](optimizer: Optimizer, epoch: Int, batchSize: Int): Future[T] = ???
+  override def pushGrads(grad: Matrix, lr: Double): Unit = {
+    OptUtils.getRowsAsMatrix(storage, numRows * numSlot, numRows * (numSlot+1)).iadd(grad.imul(-lr))
+  }
+
+  override def update[T](optimizer: Optimizer, epoch: Int, batchSize: Int): Future[T] = {
+    optimizer.update[T](this, epoch)
+  }
 }

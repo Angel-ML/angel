@@ -18,20 +18,31 @@
 
 package com.tencent.angel.ml.core.local
 
+import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.local.variables.{LocalBlasMatVariable, LocalEmbedVariable, LocalMatVariable, LocalVecVariable}
 import com.tencent.angel.ml.core.network.{EvnContext, Graph}
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.utils.{GraphInvalidate, VariableInvalidate}
+import com.tencent.angel.ml.math2.utils.RowType
 import org.apache.commons.logging.{Log, LogFactory}
 
 
 case class LocalEvnContext() extends EvnContext
 
 
-class LocalGraph(placeHolder: PlaceHolder) extends Graph(placeHolder,
-  "com.tencent.angel.ml.core.network.variable.VariableProvider") with Serializable {
+class LocalGraph(placeHolder: PlaceHolder, conf: SharedConf) extends Graph(placeHolder, SharedConf.variableProvider())
+  with Serializable {
 
   val LOG: Log = LogFactory.getLog(classOf[LocalGraph])
+
+  // fields
+  override var taskNum: Int = 1
+  override val indexRange: Long = SharedConf.indexRange
+  override val validIndexNum: Long = SharedConf.modelSize
+  override def normalFactor: Double = placeHolder.getBatchSize * taskNum
+  override val dataFormat: String = SharedConf.inputDataFormat
+  override val modelType: RowType = SharedConf.modelType
+
 
   override def createMatrices(envCtx: EvnContext): Unit = createMatrices()
 
@@ -45,14 +56,8 @@ class LocalGraph(placeHolder: PlaceHolder) extends Graph(placeHolder,
     }
   }
 
-  override def loadModel(envCtx: EvnContext, path: String): Unit = {
-    envCtx match {
-      case _: LocalEvnContext =>
-        val loadContext = new ModelLoadContext(path)
-        trainableLayer.foreach { layer => layer.loadParams(loadContext) }
-      case _ => throw GraphInvalidate("Graph Invalidate, Use AngelGraph Instead!")
-    }
-  }
+  override def loadModel(envCtx: EvnContext, path: String): Unit = ???
 
   override def saveModel(envCtx: EvnContext, path: String): Unit = ???
+
 }

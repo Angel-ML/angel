@@ -91,6 +91,6 @@ object VecVariable {
 }
 
 
-abstract class Variable(val name: String, val rowType: RowType)(implicit graph: Graph) {
+abstract class Variable(val name: String, val rowType: RowType)(implicit val graph: Graph) {
   graph.addVariable(this)
 }

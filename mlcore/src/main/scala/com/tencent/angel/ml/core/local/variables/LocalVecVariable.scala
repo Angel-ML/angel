@@ -14,7 +14,7 @@ import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.ml.math2.{MFactory, StorageType}
 
 
-class LocalVecVariable(name: String, length: Long, numSlot: Int, rowType: RowType)(implicit graph: Graph)
+class LocalVecVariable(name: String, val length: Long, val numSlot: Int, rowType: RowType)(implicit graph: Graph)
   extends LocalVariable(name, rowType)(graph) with VecVariable {
   override protected var vector: Vector = _
   // override protected val rowsSaved: Array[Int] = Array(0)
@@ -109,12 +109,17 @@ class LocalVecVariable(name: String, length: Long, numSlot: Int, rowType: RowTyp
     }
   }
 
-  def pushGrads(backward: Matrix, lr: Double): Unit = ???
+  def pushGrads(backward: Matrix, lr: Double): Unit = {
+    storage.getRow(numSlot).iadd(backward.average(0).imul(lr))
+  }
 
-  def pushGrads(grad: Vector, lr: Double): Unit = ???
+  def pushGrads(grad: Vector, lr: Double): Unit = {
+    storage.getRow(numSlot).iadd(grad.imul(lr))
+  }
 
-  def pushGrads(features: Matrix, backward: Matrix): Unit = ???
-
-  override def update[T](optimizer: Optimizer, epoch: Int, batchSize: Int): Future[T] = ???
+  override def update[T](optimizer: Optimizer, epoch: Int, batchSize: Int): Future[T] = {
+    storage.getRow(0).isub(storage.getRow(numSlot))
+    null.asInstanceOf[Future[T]]
+  }
 
 }

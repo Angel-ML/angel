@@ -25,6 +25,7 @@ import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.utils.{RowType, VectorUtils}
 import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector, Vector}
 import com.tencent.angel.ml.core.network.layers._
+import com.tencent.angel.ml.core.utils.MLException
 import org.apache.commons.logging.LogFactory
 
 
@@ -114,6 +115,7 @@ class BiInteractionCross(name: String, outputDim: Int, inputLayer: Layer)(
             }
 
             MFactory.rbCompIntFloatMatrix(gradRows)
+          case _ => throw MLException("Only Dense Data is Support!")
         }
 
         status = STATUS.Gradient

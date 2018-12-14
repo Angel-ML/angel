@@ -19,17 +19,17 @@
 package com.tencent.angel.ml.core.conf
 
 
-import com.tencent.angel.ml.core.utils.{MLException, RowTypeUtils}
+import com.tencent.angel.ml.core.utils.{JsonUtils, MLException, RowTypeUtils}
 import com.tencent.angel.ml.math2.utils.RowType
 import org.apache.commons.logging.LogFactory
-import org.json4s.JValue
+import org.json4s.JsonAST.JObject
 
 import scala.collection.mutable
 
 class SharedConf private() extends Serializable {
 
   private val dataMap: mutable.HashMap[String, String] = mutable.HashMap[String, String]()
-  private var graphConf: JValue = _
+  private var graphJson: JObject = _
 
   def apply(key: String): String = {
     if (dataMap.contains(key)) {
@@ -205,28 +205,19 @@ class SharedConf private() extends Serializable {
     this
   }
 
-  def addConf(conf: Configuration): SharedConf = {
-    val iter = conf.iterator
-    while (iter.hasNext) {
-      val entry = iter.next()
-      if (entry.getKey.startsWith("angel.")) {
-        dataMap(entry.getKey) = entry.getValue
-      } else if (entry.getKey.startsWith("ml.")) {
-        dataMap(entry.getKey) = entry.getValue
-      } else if (entry.getKey.startsWith("action.")) {
-        dataMap(entry.getKey) = entry.getValue
+  def setJson(jast: JObject=null): Unit = {
+    if (jast == null) {
+      val jfile = dataMap(MLConf.ML_JSON_CONF_FILE)
+      if (jfile.nonEmpty) {
+        graphJson = JsonUtils.parseAndUpdateJson(jfile, this)
       }
+    } else {
+      graphJson = jast
     }
-
-    this
   }
 
-  def setJson(jast: JValue): Unit = {
-    graphConf = jast
-  }
-
-  def getJson: JValue = {
-    graphConf
+  def getJson: JObject = {
+    graphJson
   }
 }
 
@@ -239,14 +230,13 @@ object SharedConf {
     if (sc == null) {
       sc = new SharedConf
       addMLConf()
-      addAngelConf()
+      val jfile = sc.getString(MLConf.ML_JSON_CONF_FILE)
+      if (jfile.nonEmpty) {
+        sc.setJson(JsonUtils.parseAndUpdateJson(jfile, sc))
+      }
     }
 
     sc
-  }
-
-  def get(conf: Configuration): SharedConf = {
-    get().addConf(conf)
   }
 
   private def addMLConf(): Unit = {
@@ -269,28 +259,6 @@ object SharedConf {
     }
   }
 
-  private def addAngelConf(): Unit = {
-    val cls = classOf[AngelConf]
-    val obj = cls.getConstructor().newInstance()
-
-    cls.getDeclaredFields.foreach { field =>
-      field.setAccessible(true)
-      val key = field.get(obj).toString
-      if (!field.getName.startsWith("DEFAULT_")) {
-        try {
-          val defaultField = cls.getDeclaredField(s"DEFAULT_${field.getName}")
-          defaultField.setAccessible(true)
-          val defaultValue = defaultField.get(obj).toString
-
-          sc(key) = defaultValue
-        } catch {
-          case _: NoSuchFieldException =>
-            LOG.info(s"$key does not have default value!")
-        }
-      }
-    }
-  }
-
   def addMap(map: Map[String, String]): Unit = {
     get()
 
@@ -301,40 +269,10 @@ object SharedConf {
     }
   }
 
-  def runningMode(): RunningMode = {
-    get()
-
-    sc.get(AngelConf.ANGEL_RUNNING_MODE) match {
-      case "ANGEL_PS" => RunningMode.ANGEL_PS
-      case "ANGEL_PS_WORKER" => RunningMode.ANGEL_PS_WORKER
-      case "ANGEL_LOCAL" => RunningMode.ANGEL_LOCAL
-    }
-  }
-
-  def sparseInputLayerMatrixOutputFormat: String = {
-    get()
-
-    sc.get(MLConf.ML_SIMPLEINPUTLAYER_MATRIX_OUTPUT_FORMAT, MLConf.DEFAULT_ML_SIMPLEINPUTLAYER_MATRIX_OUTPUT_FORMAT)
-  }
-
-  def fcLayerMatrixOutputFormat: String = {
-    get()
-
-    sc.get(MLConf.ML_FCLAYER_MATRIX_OUTPUT_FORMAT, MLConf.DEFAULT_ML_FCLAYER_MATRIX_OUTPUT_FORMAT)
-  }
-
-
-  def embeddingLayerMatrixOutputFormat: String = {
-    get()
-
-    sc.get(MLConf.ML_EMBEDDING_MATRIX_OUTPUT_FORMAT, MLConf.DEFAULT_ML_EMBEDDING_MATRIX_OUTPUT_FORMAT)
-  }
-
-
   def actionType(): String = {
     get()
 
-    sc.get(AngelConf.ANGEL_ACTION_TYPE, AngelConf.DEFAULT_ANGEL_ACTION_TYPE)
+    "Train"
   }
 
   def keyType(): String = {
@@ -378,11 +316,12 @@ object SharedConf {
 
     val ir = sc.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
 
-    if (ir == -1) {
-      throw MLException("ML_FEATURE_INDEX_RANGE must be set!")
-    } else {
-      ir
-    }
+//    if (ir == -1) {
+//      throw MLException("ML_FEATURE_INDEX_RANGE must be set!")
+//    } else {
+//      ir
+//    }
+    ir
   }
 
   def inputDataFormat: String = {
@@ -466,5 +405,28 @@ object SharedConf {
 
     sc.getDouble(MLConf.ML_DATA_POSNEG_RATIO,
       MLConf.DEFAULT_ML_DATA_POSNEG_RATIO)
+  }
+
+  def variableProvider(): String = {
+    get()
+
+    sc.getString(MLConf.ML_MODEL_VARIABLE_PROVIDER,
+      MLConf.DEFAULT_ML_MODEL_VARIABLE_PROVIDER
+    )
+  }
+
+  def optJsonProvider(): String = {
+    get()
+
+    sc.getString(MLConf.ML_OPTIMIZER_JSON_PROVIDER,
+      MLConf.DEFAULT_ML_OPTIMIZER_JSON_PROVIDER
+    )
+  }
+
+  def storageLevel: String = {
+    get()
+
+    sc.get(MLConf.ML_DATA_STORAGE_LEVEL,
+      MLConf.DEFAULT_ML_DATA_STORAGE_LEVEL)
   }
 }

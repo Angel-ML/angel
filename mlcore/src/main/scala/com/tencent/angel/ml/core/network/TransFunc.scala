@@ -18,13 +18,76 @@
 
 package com.tencent.angel.ml.core.network
 
+import com.tencent.angel.ml.core.utils.{MLException, TransFuncKeys}
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.ufuncs.{TransFuncs, Ufuncs}
+import org.json4s.JsonAST.{JField, JObject, JString, JValue}
+import org.json4s.JsonDSL._
+import com.tencent.angel.ml.core.utils.JsonUtils.extract
+import com.tencent.angel.ml.core.utils.JsonUtils.{matchClassName, fieldEqualClassName}
+
 
 trait TransFunc extends Serializable {
   def apply(mat: Matrix): Matrix
 
   def calGrad(output: Matrix, grad: Matrix): Matrix
+
+  def toJson: JObject = {
+    JObject(JField(TransFuncKeys.typeKey, s"${this.getClass.getSimpleName}"))
+  }
+}
+
+object TransFunc {
+  def fromJson(jast: JValue): TransFunc = {
+    jast match {
+      case JString(s) if matchClassName[Identity](s) =>
+        new Identity()
+      case JString(s) if matchClassName[Sigmoid](s) =>
+        new Sigmoid()
+      case JString(s) if matchClassName[Relu](s) =>
+        new Relu()
+      case JString(s) if matchClassName[Softmax](s) =>
+        new Softmax()
+      case JString(s) if matchClassName[Tanh](s) =>
+        new Tanh()
+      case JString(s) if matchClassName[SigmoidWithDropout](s) =>
+        new SigmoidWithDropout(0.5, "Train")
+      case JString(s) if matchClassName[TanhWithDropout](s) =>
+        new TanhWithDropout(0.5, "Train")
+      case JString(s) if matchClassName[Dropout](s) =>
+        new Dropout(0.5, "Train")
+      case obj: JObject if fieldEqualClassName[Identity](obj) =>
+        new Identity()
+      case obj: JObject if fieldEqualClassName[Sigmoid](obj) =>
+        new Sigmoid()
+      case obj: JObject if fieldEqualClassName[Relu](obj) =>
+        new Relu()
+      case obj: JObject if fieldEqualClassName[Softmax](obj) =>
+        new Softmax()
+      case obj: JObject if fieldEqualClassName[Tanh](obj) =>
+        new Tanh()
+      case obj: JObject if fieldEqualClassName[SigmoidWithDropout](obj) =>
+        new SigmoidWithDropout(
+          extract[Double](obj, TransFuncKeys.probaKey, Some(0.5)).get,
+          extract[String](obj, TransFuncKeys.actionTypeKey, Some("Train")).get
+        )
+      case obj: JObject if fieldEqualClassName[TanhWithDropout](obj) =>
+        new TanhWithDropout(
+          extract[Double](obj, TransFuncKeys.probaKey, Some(0.5)).get,
+          extract[String](obj, TransFuncKeys.actionTypeKey, Some("Train")).get
+        )
+      case obj: JObject if fieldEqualClassName[Dropout](obj) =>
+        new Dropout(
+          extract[Double](obj, TransFuncKeys.probaKey, Some(0.5)).get,
+          extract[String](obj, TransFuncKeys.actionTypeKey, Some("Train")).get
+        )
+      case _ => new Relu()
+    }
+  }
+
+  def defaultJson: JObject = {
+    JObject(JField(TransFuncKeys.typeKey, s"${classOf[Relu].getSimpleName}"))
+  }
 }
 
 class Identity() extends TransFunc {
@@ -74,6 +137,11 @@ class SigmoidWithDropout(proba: Double, actionType: String) extends TransFunc {
   def calGrad(output: Matrix, grad: Matrix): Matrix = {
     TransFuncs.gradsigmoidwithdropout(output, grad)
   }
+
+  override def toJson: JObject = {
+    (TransFuncKeys.typeKey -> s"${this.getClass.getSimpleName}") ~
+      (TransFuncKeys.probaKey -> proba) ~ (TransFuncKeys.actionTypeKey -> actionType)
+  }
 }
 
 class TanhWithDropout(proba: Double, actionType: String) extends TransFunc {
@@ -87,6 +155,11 @@ class TanhWithDropout(proba: Double, actionType: String) extends TransFunc {
   override def calGrad(output: Matrix, grad: Matrix): Matrix = {
     TransFuncs.gradtanhwithdropout(output, grad)
   }
+
+  override def toJson: JObject = {
+    (TransFuncKeys.typeKey -> s"${this.getClass.getSimpleName}") ~
+      (TransFuncKeys.probaKey -> proba) ~ (TransFuncKeys.actionTypeKey -> actionType)
+  }
 }
 
 class Dropout(proba: Double, actionType: String) extends TransFunc {
@@ -99,6 +172,11 @@ class Dropout(proba: Double, actionType: String) extends TransFunc {
 
   override def calGrad(output: Matrix, grad: Matrix): Matrix = {
     TransFuncs.graddropout(output, grad, proba)
+  }
+
+  override def toJson: JObject = {
+    (TransFuncKeys.typeKey -> s"${this.getClass.getSimpleName}") ~
+      (TransFuncKeys.probaKey -> proba) ~ (TransFuncKeys.actionTypeKey -> actionType)
   }
 }
 

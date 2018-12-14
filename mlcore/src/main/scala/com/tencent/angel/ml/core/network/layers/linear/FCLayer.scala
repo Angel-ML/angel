@@ -28,8 +28,11 @@ import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.layers.verge.Embedding
 import com.tencent.angel.ml.core.network.variable.{MatVariable, VecVariable}
 import com.tencent.angel.ml.core.optimizer.Optimizer
-import com.tencent.angel.ml.core.utils.{Callback, MLException}
+import com.tencent.angel.ml.core.utils.{Callback, LayerKeys, MLException}
 import org.apache.commons.logging.LogFactory
+import org.json4s.JsonAST
+import org.json4s.JsonAST.{JField, JString}
+import org.json4s.JsonDSL._
 
 import scala.language.implicitConversions
 
@@ -97,6 +100,7 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
                   Ufuncs.dot(backward, false, weight, true).asInstanceOf[BlasFloatMatrix],
                   ipLayer.numFactors
                 )
+              case _ => throw MLException("Only Dense Data is Support!")
             }
           case _ => Ufuncs.dot(backward, false, weight, true)
         }
@@ -144,5 +148,15 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
 
   override def toString: String = {
     s"FCLayer name=$name outputDim=$outputDim optimizer=$optimizer transFunc=${transFunc.getClass.getSimpleName}"
+  }
+
+  override def toJson(): JField = {
+    val layerJson = (LayerKeys.typeKey -> s"${this.getClass.getSimpleName}") ~
+      (LayerKeys.outputDimKey -> outputDim) ~
+      (LayerKeys.inputLayerKey, JString(inputLayer.name)) ~
+      (LayerKeys.transFuncKey -> transFunc.toJson) ~
+      (LayerKeys.optimizerKey -> optimizer.toJson)
+
+    JField(name, layerJson)
   }
 }

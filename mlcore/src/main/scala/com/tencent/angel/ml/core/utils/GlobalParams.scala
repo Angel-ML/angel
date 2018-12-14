@@ -16,12 +16,39 @@
  */
 
 
-package com.tencent.angel.ml.core.utils.paramsutils
+package com.tencent.angel.ml.core.utils
 
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import org.json4s.DefaultFormats
 import org.json4s.JsonAST.{JNothing, JValue}
-import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils.extract
+import com.tencent.angel.ml.core.utils.JsonUtils.extract
+
+object GlobalKeys {
+  val defaultOptimizer: String = "default_optimizer"
+  val defaultLossFunc: String = "default_lossfunc"
+  val lr: String = "lr"
+  val model: String = "model"
+  val train: String = "train"
+  val path: String = "path"
+  val format: String = "format"
+  val indexRange: String = "indexrange"
+  val numField: String = "numfield"
+  val validateRatio: String = "validateratio"
+  val sampleRatio: String = "sampleratio"
+  val useShuffle: String = "useshuffle"
+  val posnegRatio: String = "posnegratio"
+  val transLabel: String = "translabel"
+  val loadPath: String = "loadpath"
+  val savePath: String = "savepath"
+  val modelType: String = "modeltype"
+  val modelSize: String = "modelsize"
+  val blockSize: String = "blockSize"
+  val epoch: String = "epoch"
+  val numUpdatePerEpoch: String = "numupdateperepoch"
+  val batchSize: String = "batchsize"
+  val decay: String = "decay"
+}
+
 
 class DataParams(val path: Option[String],
                  val format: Option[String],
@@ -34,7 +61,7 @@ class DataParams(val path: Option[String],
                  val transLabel: Option[String]
                 ) {
   def updateConf(conf: SharedConf): Unit = {
-    path.foreach(v => conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, v))
+    path.foreach(v => conf.set(MLConf.ML_TRAIN_DATA_PATH, v))
     format.foreach(v => conf.set(MLConf.ML_DATA_INPUT_FORMAT, v))
     indexRange.foreach(v => conf.setLong(MLConf.ML_FEATURE_INDEX_RANGE, v))
     numField.foreach(v => conf.setInt(MLConf.ML_FIELD_NUM, v))
@@ -54,15 +81,15 @@ object DataParams {
       case JNothing => new DataParams(None, None, None, None, None, None, None, None, None)
       case jast: JValue =>
         new DataParams(
-          extract[String](jast, ParamKeys.path),
-          extract[String](jast, ParamKeys.format),
-          extract[Long](jast, ParamKeys.indexRange),
-          extract[Int](jast, ParamKeys.numField),
-          extract[Double](jast, ParamKeys.validateRatio),
-          extract[Double](jast, ParamKeys.sampleRatio),
-          extract[Boolean](jast, ParamKeys.useShuffle),
-          extract[Double](jast, ParamKeys.posnegRatio),
-          extract[String](jast, ParamKeys.transLabel)
+          extract[String](jast, GlobalKeys.path),
+          extract[String](jast, GlobalKeys.format),
+          extract[Long](jast, GlobalKeys.indexRange),
+          extract[Int](jast, GlobalKeys.numField),
+          extract[Double](jast, GlobalKeys.validateRatio),
+          extract[Double](jast, GlobalKeys.sampleRatio),
+          extract[Boolean](jast, GlobalKeys.useShuffle),
+          extract[Double](jast, GlobalKeys.posnegRatio),
+          extract[String](jast, GlobalKeys.transLabel)
         )
     }
   }
@@ -90,11 +117,11 @@ object TrainParams {
       case JNothing => new TrainParams(None, None, None, None, None)
       case jast: JValue =>
         new TrainParams(
-          extract[Int](jast, ParamKeys.epoch),
-          extract[Int](jast, ParamKeys.numUpdatePerEpoch),
-          extract[Int](jast, ParamKeys.batchSize),
-          extract[Double](jast, ParamKeys.lr),
-          extract[Double](jast, ParamKeys.decay)
+          extract[Int](jast, GlobalKeys.epoch),
+          extract[Int](jast, GlobalKeys.numUpdatePerEpoch),
+          extract[Int](jast, GlobalKeys.batchSize),
+          extract[Double](jast, GlobalKeys.lr),
+          extract[Double](jast, GlobalKeys.decay)
         )
     }
   }
@@ -106,8 +133,8 @@ class ModelParams(val loadPath: Option[String],
                   val modelSize: Option[Long],
                   val blockSize: Option[Int]) {
   def updateConf(conf: SharedConf): Unit = {
-    loadPath.foreach(v => conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, v))
-    savePath.foreach(v => conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, v))
+    loadPath.foreach(v => conf.set(MLConf.ML_LOAD_MODEL_PATH, v))
+    savePath.foreach(v => conf.set(MLConf.ML_SAVE_MODEL_PATH, v))
     modelType.foreach(v => conf.set(MLConf.ML_MODEL_TYPE, v))
     modelSize.foreach(v => conf.setLong(MLConf.ML_MODEL_SIZE, v))
     blockSize.foreach(v => conf.setInt(MLConf.ML_BLOCK_SIZE, v))
@@ -122,11 +149,11 @@ object ModelParams {
       case JNothing => new ModelParams(None, None, None, None, None)
       case jast: JValue =>
         new ModelParams(
-          extract[String](jast, ParamKeys.loadPath),
-          extract[String](jast, ParamKeys.savePath),
-          extract[String](jast, ParamKeys.modelType),
-          extract[Long](jast, ParamKeys.modelSize),
-          extract[Int](jast, ParamKeys.blockSize)
+          extract[String](jast, GlobalKeys.loadPath),
+          extract[String](jast, GlobalKeys.savePath),
+          extract[String](jast, GlobalKeys.modelType),
+          extract[Long](jast, GlobalKeys.modelSize),
+          extract[Int](jast, GlobalKeys.blockSize)
         )
     }
   }

@@ -14,7 +14,7 @@
     <dependencies>
         <dependency>
             <groupId>org.json4s</groupId>
-            <artifactId>json4s-jackson_2.11</artifactId>
+            <artifactId>json4s-native_2.11</artifactId>
             <version>3.4.2</version>
         </dependency>
 
@@ -31,11 +31,11 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
+        <!--dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.8.5</version>
-        </dependency>
+        </dependency-->
 
         <dependency>
             <groupId>commons-logging</groupId>
@@ -44,16 +44,16 @@
         </dependency>
 
         <!--dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.6.2</version>
+            <groupId>com.esotericsoftware</groupId>
+            <artifactId>kryo</artifactId>
+            <version>4.0.0</version>
         </dependency-->
 
-        <!--dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>1.6.2</version>
-        </dependency-->
+        <dependency>
+            <groupId>org.ehcache</groupId>
+            <artifactId>sizeof</artifactId>
+            <version>0.3.0</version>
+        </dependency>
 
         <dependency>
             <groupId>com.tencent.angel</groupId>
@@ -163,7 +163,7 @@
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>2.3.1</version>
             </plugin>
-            <plugin>
+            <!--plugin>
                 <groupId>org.scalastyle</groupId>
                 <artifactId>scalastyle-maven-plugin</artifactId>
                 <version>0.8.0</version>
@@ -184,7 +184,7 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
+            </plugin-->
         </plugins>
         <resources>
             <resource>

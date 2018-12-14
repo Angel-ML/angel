@@ -22,11 +22,11 @@ import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.optimizer.loss.LossFunc
-import com.tencent.angel.ml.core.utils.Callback
-import org.json4s.JsonAST.JObject
+import com.tencent.angel.ml.core.utils.{Callback, LayerKeys}
+import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 import org.json4s.ShortTypeHints
-import org.json4s.jackson.Serialization
+import org.json4s.native.Serialization
 
 import scala.collection.mutable.ListBuffer
 
@@ -117,7 +117,11 @@ abstract class Layer(val name: String, val outputDim: Int)(implicit val graph: G
     }
   }
 
-  def toJson(): JObject
+  def toJson(): JField = {
+    val layerJson = (LayerKeys.typeKey -> s"${this.getClass.getSimpleName}") ~
+      (LayerKeys.outputDimKey -> outputDim)
+    JField(name, layerJson)
+  }
 
 }
 
@@ -139,10 +143,12 @@ abstract class JoinLayer(name: String, outputDim: Int, val inputLayers: Array[La
 
   def calGradOutput(idx: Int): Matrix
 
-  override def toJson(): JObject = {
-    ("name" -> name) ~
-      ("type" -> s"${this.getClass.getSimpleName}") ~
-      ("inputlayer", inputLayers.map(layer => layer.name).mkString("[", ", ", "]"))
+  override def toJson(): JField = {
+    val layerJson = (LayerKeys.typeKey -> s"${this.getClass.getSimpleName}") ~
+      (LayerKeys.outputDimKey -> outputDim) ~
+      (LayerKeys.inputLayersKey -> JArray(inputLayers.toList.map(layer => JString(layer.name))))
+
+    JField(name, layerJson)
   }
 }
 
@@ -154,10 +160,13 @@ abstract class LinearLayer(name: String, outputDim: Int, val inputLayer: Layer)(
 
   def calGradOutput(): Matrix
 
-  override def toJson(): JObject = {
-    ("name" -> name) ~
-      ("type" -> s"${this.getClass.getSimpleName}") ~
-      ("outputdims", outputDim) ~
-      ("inputlayer", inputLayer.name)
+  override def toJson(): JField = {
+    val layerJson = (LayerKeys.typeKey -> s"${this.getClass.getSimpleName}") ~
+      (LayerKeys.outputDimKey -> outputDim) ~
+      (LayerKeys.inputLayerKey, JString(inputLayer.name))
+
+    JField(name, layerJson)
   }
 }
+
+

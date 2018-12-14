@@ -66,6 +66,7 @@ object RowTypeUtils {
       case RowType.T_DOUBLE_DENSE_COMPONENT | RowType.T_FLOAT_DENSE_COMPONENT | RowType.T_LONG_DENSE_COMPONENT |
            RowType.T_INT_DENSE_COMPONENT | RowType.T_DOUBLE_DENSE_LONGKEY_COMPONENT | RowType.T_FLOAT_DENSE_LONGKEY_COMPONENT |
            RowType.T_LONG_DENSE_LONGKEY_COMPONENT | RowType.T_INT_DENSE_LONGKEY_COMPONENT => "component_dense"
+      case _ => throw MLException("Storage Error!")
     }
   }
 

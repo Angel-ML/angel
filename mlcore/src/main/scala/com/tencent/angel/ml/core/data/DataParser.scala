@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -18,13 +18,13 @@
 
 package com.tencent.angel.ml.core.data
 
+import com.tencent.angel.ml.core.utils.{MLException, RowTypeUtils}
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.utils.RowType
-import com.tencent.angel.ml.core.utils.{MLException, RowTypeUtils}
 
 
 abstract class DataParser(val splitter: String) {
-  def parse(value: String): Example
+  def parse(value: String): LabeledData
 
   protected def processLabel(value: String, hasLabel: Boolean, isTraining: Boolean,
                              transLabel: TransLabel): (Double, String, Array[String]) = {
@@ -51,7 +51,7 @@ abstract class DataParser(val splitter: String) {
 }
 
 case class DummyDataParser(override val splitter: String, featRange: Long, hasLabel: Boolean, isTraining: Boolean, transLabel: TransLabel, rowType: RowType) extends DataParser(splitter) {
-  override def parse(value: String): Example = {
+  override def parse(value: String): LabeledData = {
 
     val (y, attached, splits) = processLabel(value, hasLabel, isTraining, transLabel)
     if (splits == null) {
@@ -78,14 +78,14 @@ case class DummyDataParser(override val splitter: String, featRange: Long, hasLa
       case _ => throw MLException("RowType is not support!")
     }
 
-    Example(x, y, attached)
+    new LabeledData(x, y, attached)
   }
 }
 
 case class LibSVMDataParser(override val splitter: String, featRange: Long, hasLabel: Boolean, isTraining: Boolean, transLabel: TransLabel, rowType: RowType) extends DataParser(splitter) {
   // type V = IntDoubleVector
 
-  override def parse(value: String): Example = {
+  override def parse(value: String): LabeledData = {
     val (y, attached, splits) = processLabel(value, hasLabel, isTraining, transLabel)
     if (splits == null) {
       return null
@@ -143,14 +143,14 @@ case class LibSVMDataParser(override val splitter: String, featRange: Long, hasL
       case _ => throw MLException("RowType is not support!")
     }
 
-    Example(x, y, attached)
+    new LabeledData(x, y, attached)
   }
 }
 
 case class DenseDataParser(override val splitter: String, featRange: Int, hasLabel: Boolean, isTraining: Boolean,
                            transLabel: TransLabel, rowType: RowType) extends DataParser(splitter) {
 
-  override def parse(value: String): Example = {
+  override def parse(value: String): LabeledData = {
     val (y, attached, splits) = processLabel(value, hasLabel, isTraining, transLabel)
     if (splits == null) {
       return null
@@ -164,7 +164,7 @@ case class DenseDataParser(override val splitter: String, featRange: Int, hasLab
       case _ => throw MLException("RowType is not support!")
     }
 
-    Example(x, y, attached)
+    new LabeledData(x, y, attached)
   }
 }
 

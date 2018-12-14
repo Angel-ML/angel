@@ -6,14 +6,15 @@ import java.util.concurrent.Future
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.network.variable.BlasMatVariable
 import com.tencent.angel.ml.core.optimizer.Optimizer
-import com.tencent.angel.ml.core.utils.ValueNotAllowed
+import com.tencent.angel.ml.core.utils.{OptUtils, ValueNotAllowed}
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.storage.{IntDoubleDenseVectorStorage, IntFloatDenseVectorStorage}
+import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.{MFactory, StorageType, vector}
 
 
-class LocalBlasMatVariable(name: String, numRows: Int, numCols: Long, numSlot: Int, rowType: RowType)(
+class LocalBlasMatVariable(name: String, val numRows: Int, val numCols: Long, val numSlot: Int, rowType: RowType)(
   implicit graph: Graph) extends LocalVariable(name, rowType) with BlasMatVariable {
   override protected var matrix: Matrix = _
 
@@ -68,9 +69,16 @@ class LocalBlasMatVariable(name: String, numRows: Int, numCols: Long, numSlot: I
     }
   }
 
-  override def pushGrads(features: Matrix, backward: Matrix): Unit = ???
+  override def pushGrads(features: Matrix, backward: Matrix): Unit = {
+    val grad: Matrix = Ufuncs.dot(features, true, backward, false).imul(graph.normalFactor)
+    OptUtils.getRowAsMatrix(storage, numSlot, numRows, numCols.toInt).iadd(grad)
+  }
 
-  override def pushGrads(grad: Matrix, lr: Double): Unit = ???
+  override def pushGrads(grad: Matrix, lr: Double): Unit = {
+    OptUtils.getRowAsMatrix(storage, numSlot, numRows, numCols.toInt).iadd(grad.imul(-lr))
+  }
 
-  override def update[T](optimizer: Optimizer, epoch: Int, batchSize: Int): Future[T] = ???
+  override def update[T](optimizer: Optimizer, epoch: Int, batchSize: Int): Future[T] = {
+    optimizer.update[T](this, epoch)
+  }
 }

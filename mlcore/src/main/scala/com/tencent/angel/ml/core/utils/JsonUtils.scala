@@ -1,0 +1,398 @@
+package com.tencent.angel.ml.core.utils
+
+import java.util
+
+import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.network.{Graph, TransFunc}
+import com.tencent.angel.ml.core.network.layers.join._
+import com.tencent.angel.ml.core.network.layers.linear._
+import com.tencent.angel.ml.core.network.layers.verge._
+import com.tencent.angel.ml.core.network.layers.{InputLayer, JoinLayer, Layer, LinearLayer}
+import com.tencent.angel.ml.core.optimizer.Optimizer
+import com.tencent.angel.ml.core.optimizer.loss.LossFunc
+import org.json4s.DefaultFormats
+import org.json4s.JsonAST._
+import org.json4s.JsonDSL._
+import org.json4s.native.JsonMethods._
+
+import scala.collection.mutable
+import scala.reflect.ClassTag
+import scala.io.Source
+
+object LayerKeys {
+  val typeKey: String = "type"
+  val outputDimKey: String = "outputdim"
+  val outputDimsKey: String = "outputdims"
+  val inputLayerKey: String = "inputlayer"
+  val inputLayersKey: String = "inputlayers"
+  val numFactorsKey: String = "numfactors"
+  val optimizerKey: String = "optimizer"
+  val transFuncKey: String = "transfunc"
+  val transFuncsKey: String = "transfuncs"
+  val lossFuncKey: String = "lossfunc"
+}
+
+object TransFuncKeys {
+  val typeKey: String = "type"
+  val probaKey: String = "proba"
+  val actionTypeKey: String = "actiontype"
+}
+
+object LossFuncKeys {
+  val typeKey: String = "type"
+  val deltaKey: String = "delta"
+}
+
+object JsonTopKeys {
+  val data: String = "data"
+  val model: String = "model"
+  val train: String = "train"
+  val default_optimizer: String = "default_optimizer"
+  val default_trandfunc: String = "default_trandfunc"
+  val layers: String = "layers"
+}
+
+
+object JsonUtils {
+  private implicit val formats: DefaultFormats.type = DefaultFormats
+  private val json2OptimizerProvider = Optimizer.getJson2OptimizerProvider(SharedConf.optJsonProvider())
+
+  def extract[T: Manifest](jast: JValue, key: String, default: Option[T] = None): Option[T] = {
+    jast \ key match {
+      case JNothing => default
+      case value => Some(value.extract[T](formats, implicitly[Manifest[T]]))
+    }
+  }
+
+  def matchClassName[T: ClassTag](name: String): Boolean = {
+    val runtimeClassName = implicitly[ClassTag[T]].runtimeClass.getSimpleName
+
+    runtimeClassName.equalsIgnoreCase(name)
+  }
+
+  def fieldEqualClassName[T: ClassTag](obj: JObject, fieldName: String = "type"): Boolean = {
+    val runtimeClassName = implicitly[ClassTag[T]].runtimeClass.getSimpleName
+
+    val name = extract[String](obj, fieldName)
+    if (name.isEmpty) {
+      false
+    } else {
+      runtimeClassName.equalsIgnoreCase(name.get)
+    }
+  }
+
+  def J2Pretty(json: JValue): String = pretty(render(json))
+
+  private def layer2Json(topLayer: Layer)(implicit jMap: mutable.HashMap[String, JField]): Unit = {
+    topLayer match {
+      case l: InputLayer =>
+        if (!jMap.contains(l.name)) {
+          jMap.put(l.name, l.toJson())
+        }
+      case l: LinearLayer =>
+        if (!jMap.contains(l.name)) {
+          jMap.put(l.name, l.toJson())
+        }
+        layer2Json(l.inputLayer)(jMap)
+      case l: JoinLayer =>
+        if (!jMap.contains(l.name)) {
+          jMap.put(l.name, l.toJson())
+        }
+        l.inputLayers.foreach(layer => layer2Json(layer)(jMap))
+    }
+  }
+
+  def layer2JsonPretty(topLayer: Layer): String = {
+    implicit val jsonMap: mutable.HashMap[String, JField] = new mutable.HashMap[String, JField]()
+    layer2Json(topLayer: Layer)
+    J2Pretty(JObject(jsonMap.values.toList))
+  }
+
+  def layerFromJson(jast: JObject)(implicit graph: Graph): Unit = {
+    val layerMap = new mutable.HashMap[String, Layer]()
+    val fieldList = new util.ArrayList[JField]()
+    jast.obj.foreach(field => fieldList.add(field))
+
+    while (layerMap.size < jast.obj.size) {
+      val iter = fieldList.iterator()
+      while (iter.hasNext) {
+        val field = iter.next()
+        val name = field._1
+        val obj = field._2
+
+        (obj \ LayerKeys.typeKey) match {
+          case JString(value) if matchClassName[ConcatLayer](value) =>
+            val inputLayers = extract[Array[String]](obj, LayerKeys.inputLayersKey)
+            if (inputLayers.nonEmpty && inputLayers.get.forall(layer => layerMap.contains(layer))) {
+              val newLayer = new ConcatLayer(name,
+                extract[Int](obj, LayerKeys.outputDimKey).get,
+                inputLayers.get.map(layer => layerMap(layer))
+              )
+              layerMap.put(name, newLayer)
+              iter.remove()
+            }
+          case JString(value) if matchClassName[DotPooling](value) =>
+            val inputLayers = extract[Array[String]](obj, LayerKeys.inputLayersKey)
+            if (inputLayers.nonEmpty && inputLayers.get.forall(layer => layerMap.contains(layer))) {
+              val newLayer = new DotPooling(name,
+                extract[Int](obj, LayerKeys.outputDimKey).get,
+                inputLayers.get.map(layer => layerMap(layer))
+              )
+              layerMap.put(name, newLayer)
+              iter.remove()
+            }
+          case JString(value) if matchClassName[SumPooling](value) =>
+            val inputLayers = extract[Array[String]](obj, LayerKeys.inputLayersKey)
+            if (inputLayers.nonEmpty && inputLayers.get.forall(layer => layerMap.contains(layer))) {
+              val newLayer = new SumPooling(name,
+                extract[Int](obj, LayerKeys.outputDimKey).get,
+                inputLayers.get.map(layer => layerMap(layer))
+              )
+              layerMap.put(name, newLayer)
+              iter.remove()
+            }
+          case JString(value) if matchClassName[MulPooling](value) =>
+            val inputLayers = extract[Array[String]](obj, LayerKeys.inputLayersKey)
+            if (inputLayers.nonEmpty && inputLayers.get.forall(layer => layerMap.contains(layer))) {
+              val newLayer = new MulPooling(name,
+                extract[Int](obj, LayerKeys.outputDimKey).get,
+                inputLayers.get.map(layer => layerMap(layer))
+              )
+              layerMap.put(name, newLayer)
+              iter.remove()
+            }
+          case JString(value) if matchClassName[Embedding](value) =>
+            val newLayer = new Embedding(name,
+              extract[Int](obj, LayerKeys.outputDimKey).get,
+              extract[Int](obj, LayerKeys.numFactorsKey).get,
+              json2OptimizerProvider.optFromJson(obj \ LayerKeys.optimizerKey)
+            )
+
+            layerMap.put(name, newLayer)
+            iter.remove()
+          case JString(value) if matchClassName[SimpleInputLayer](value) =>
+            val newLayer = new SimpleInputLayer(name,
+              extract[Int](obj, LayerKeys.outputDimKey).get,
+              TransFunc.fromJson(obj \ LayerKeys.transFuncKey),
+              json2OptimizerProvider.optFromJson(obj \ LayerKeys.optimizerKey)
+            )
+
+            layerMap.put(name, newLayer)
+            iter.remove()
+          case JString(value) if matchClassName[SimpleLossLayer](value) =>
+            val inputLayer = extract[String](obj, LayerKeys.inputLayerKey)
+            if (inputLayer.nonEmpty && layerMap.contains(inputLayer.get)) {
+              val newLayer = new SimpleLossLayer(name,
+                layerMap(inputLayer.get),
+                LossFunc.fromJson(obj \ LayerKeys.lossFuncKey)
+              )
+
+              layerMap.put(name, newLayer)
+              iter.remove()
+            }
+          case JString(value) if matchClassName[BiInnerSumCross](value) =>
+            val inputLayer = extract[String](obj, LayerKeys.inputLayerKey)
+            if (inputLayer.nonEmpty && layerMap.contains(inputLayer.get)) {
+              val newLayer = new BiInnerSumCross(name,
+                layerMap(inputLayer.get)
+              )
+
+              layerMap.put(name, newLayer)
+              iter.remove()
+            }
+          case JString(value) if matchClassName[FCLayer](value) =>
+            val inputLayer = extract[String](obj, LayerKeys.inputLayerKey)
+            if (inputLayer.nonEmpty && layerMap.contains(inputLayer.get)) {
+              val newLayer = new FCLayer(name,
+                extract[Int](obj, LayerKeys.outputDimKey).get,
+                layerMap(inputLayer.get),
+                TransFunc.fromJson(obj \ LayerKeys.transFuncKey),
+                json2OptimizerProvider.optFromJson(obj \ LayerKeys.optimizerKey)
+              )
+
+              layerMap.put(name, newLayer)
+              iter.remove()
+            }
+          case JString(value) if matchClassName[BiInnerCross](value) =>
+            val inputLayer = extract[String](obj, LayerKeys.inputLayerKey)
+            if (inputLayer.nonEmpty && layerMap.contains(inputLayer.get)) {
+              val newLayer = new BiInnerCross(name,
+                extract[Int](obj, LayerKeys.outputDimKey).get,
+                layerMap(inputLayer.get)
+              )
+
+              layerMap.put(name, newLayer)
+              iter.remove()
+            }
+          case JString(value) if matchClassName[BiOutterCross](value) =>
+            val inputLayer = extract[String](obj, LayerKeys.inputLayerKey)
+            if (inputLayer.nonEmpty && layerMap.contains(inputLayer.get)) {
+              val newLayer = new BiOutterCross(name,
+                extract[Int](obj, LayerKeys.outputDimKey).get,
+                layerMap(inputLayer.get)
+              )
+
+              layerMap.put(name, newLayer)
+              iter.remove()
+            }
+          case JString(value) if matchClassName[BiInteractionCross](value) =>
+            val inputLayer = extract[String](obj, LayerKeys.inputLayerKey)
+            if (inputLayer.nonEmpty && layerMap.contains(inputLayer.get)) {
+              val newLayer = new BiInteractionCross(name,
+                extract[Int](obj, LayerKeys.outputDimKey).get,
+                layerMap(inputLayer.get)
+              )
+
+              layerMap.put(name, newLayer)
+              iter.remove()
+            }
+        }
+      }
+    }
+  }
+
+  // for compatible purpose -----------------------------------------------------------------------------------------
+  private def jArray2JObject(jArray: JArray, default_trans: Option[JValue], default_optimizer: Option[JValue]): JObject = {
+    val fields = jArray.arr.collect {
+      case obj: JObject if fieldEqualClassName[FCLayer](obj) =>
+        extendFCLayer(obj, default_trans, default_optimizer)
+      case obj: JObject if fieldEqualClassName[SimpleInputLayer](obj) =>
+        extendSimpleInputLayer(obj, default_trans, default_optimizer)
+      case obj: JObject if fieldEqualClassName[Embedding](obj) =>
+        extendEmbeddingLayer(obj, default_trans, default_optimizer)
+      case obj: JObject =>
+        extendLayer(obj, default_trans, default_optimizer)
+    }
+
+    JObject(fields.flatten)
+  }
+
+  private def extendFCLayer(obj: JObject, default_trans: Option[JValue], default_optimizer: Option[JValue]): List[JField] = {
+    val name = (obj \ "name").asInstanceOf[JString].values
+    val lType = obj \ LayerKeys.typeKey
+    var inputLayer = obj \ LayerKeys.inputLayerKey
+    val outputDims = (obj \ LayerKeys.outputDimsKey).asInstanceOf[JArray].arr
+
+    val transFuncs = (obj \ LayerKeys.transFuncsKey) match {
+      case JNothing => outputDims.indices.toList.map(_ => default_trans.getOrElse(TransFunc.defaultJson))
+      case arr: JArray => arr.arr
+      case _ => throw MLException("Json format error!")
+    }
+
+    assert(outputDims.size == transFuncs.size)
+
+    val optimizer = (obj \ LayerKeys.optimizerKey) match {
+      case JNothing => default_optimizer.getOrElse(json2OptimizerProvider.defaultOptJson())
+      case opt: JObject => opt
+      case opt: JString => opt
+      case _ => throw MLException("Json format error!")
+    }
+
+    var i: Int = 0
+
+    outputDims.zip(transFuncs).map {
+      case (outputDim: JInt, transFunc: JValue) =>
+        i += 1
+        val newName: String = if (i == outputDims.size) {
+          name
+        } else {
+          s"${name}_$i"
+        }
+
+        val field = JField(newName, (LayerKeys.typeKey -> lType) ~
+          (LayerKeys.inputLayerKey -> inputLayer) ~
+          (LayerKeys.outputDimKey -> outputDim) ~
+          (LayerKeys.transFuncKey -> transFunc) ~
+          (LayerKeys.optimizerKey -> optimizer)
+        )
+
+        inputLayer = JString(newName)
+        field
+      case _ => throw MLException("FCLayer Json error!")
+    }
+
+  }
+
+  private def extendSimpleInputLayer(obj: JObject, default_trans: Option[JValue], default_optimizer: Option[JValue]): List[JField] = {
+    val name = (obj \ "name").asInstanceOf[JString].values
+    val addOpt = (obj \ LayerKeys.optimizerKey) match {
+      case JNothing => obj ~ (LayerKeys.optimizerKey, default_optimizer.getOrElse(json2OptimizerProvider.defaultOptJson()))
+      case _ => obj
+    }
+    val addTrans = (obj \ LayerKeys.transFuncKey) match {
+      case JNothing => addOpt ~ (LayerKeys.transFuncKey, default_trans.getOrElse(TransFunc.defaultJson))
+      case _ => addOpt
+    }
+
+    List(JField(name, addTrans))
+  }
+
+  private def extendEmbeddingLayer(obj: JObject, default_trans: Option[JValue], default_optimizer: Option[JValue]): List[JField] = {
+    val name = (obj \ "name").asInstanceOf[JString].values
+    val addOpt = (obj \ LayerKeys.optimizerKey) match {
+      case JNothing => obj ~ (LayerKeys.optimizerKey, default_optimizer.getOrElse(json2OptimizerProvider.defaultOptJson()))
+      case _ => obj
+    }
+
+    List(JField(name, addOpt))
+  }
+
+  private def extendLayer(obj: JObject, default_trans: Option[JValue], default_optimizer: Option[JValue]): List[JField] = {
+    val name = (obj \ "name").asInstanceOf[JString].values
+
+    List(JField(name, obj))
+  }
+  //-----------------------------------------------------------------------------------------------------------------
+
+  def parseAndUpdateJson(jsonFileName: String, conf: SharedConf): JObject = {
+    val sb = new mutable.StringBuilder()
+    val source = Source.fromFile(jsonFileName, "UTF-8")
+    val iter = source.getLines()
+    while(iter.hasNext) {
+      val line = iter.next()
+      sb.append(line.trim)
+    }
+    val jsonStr = sb.toString()
+
+    val jast = parse(jsonStr).asInstanceOf[JObject]
+
+    // println(pretty(render(jast)))
+
+    (jast \ JsonTopKeys.data) match {
+      case JNothing =>
+      case obj: JObject => DataParams(obj).updateConf(conf)
+      case _ => throw MLException("Json format error!")
+    }
+
+    (jast \ JsonTopKeys.model) match {
+      case JNothing =>
+      case obj: JObject => ModelParams(obj).updateConf(conf)
+      case _ => throw MLException("Json format error!")
+    }
+
+    (jast \ JsonTopKeys.train) match {
+      case JNothing =>
+      case obj: JObject => TrainParams(obj).updateConf(conf)
+      case _ => throw MLException("Json format error!")
+    }
+
+    val default_optimizer = (jast \ JsonTopKeys.default_optimizer) match {
+      case JNothing => None
+      case obj: JValue => Some(obj)
+      case _ => throw MLException("Json format error!")
+    }
+
+    val default_trandfunc = (jast \ JsonTopKeys.default_trandfunc) match {
+      case JNothing => None
+      case obj: JValue => Some(obj)
+      case _ => throw MLException("Json format error!")
+    }
+
+    (jast \ JsonTopKeys.layers) match {
+      case arr: JArray => jArray2JObject(arr, default_trandfunc, default_optimizer)
+      case obj: JObject => obj
+      case _ => throw MLException("Json format error!")
+    }
+  }
+
+}
