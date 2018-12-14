@@ -28,10 +28,13 @@ class TokenizerWrapper extends TransformerWrapper {
 
   override val transformer: Transformer = new Tokenizer()
   override var parentTransformer: Transformer = _
+
   override val requiredInputCols: Array[String] = Array("sentence")
   override val requiredOutputCols: Array[String] = Array("words")
+
   override val inputCols: ArrayBuffer[String] = _
   override val outputCols: ArrayBuffer[String] = _
+  
   override var parentCols: Array[String] = _
 
   override def hasInputCol: Boolean = true

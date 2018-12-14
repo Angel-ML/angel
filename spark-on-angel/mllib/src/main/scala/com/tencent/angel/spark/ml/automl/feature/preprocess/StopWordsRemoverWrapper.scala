@@ -27,10 +27,13 @@ class StopWordsRemoverWrapper extends TransformerWrapper {
 
   override val transformer: Transformer = new StopWordsRemover()
   override var parentTransformer: Transformer = _
+
   override val requiredInputCols: Array[String] = Array("words")
   override val requiredOutputCols: Array[String] = Array("filteredwords")
+
   override val inputCols: ArrayBuffer[String] = _
   override val outputCols: ArrayBuffer[String] = _
+
   override var parentCols: Array[String] = _
 
   override def hasInputCol: Boolean = true

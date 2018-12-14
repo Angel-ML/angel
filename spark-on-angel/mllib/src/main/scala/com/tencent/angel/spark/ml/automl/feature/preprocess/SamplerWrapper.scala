@@ -26,13 +26,15 @@ import scala.collection.mutable.ArrayBuffer
 class SamplerWrapper(fraction: Double) extends TransformerWrapper {
 
   override val transformer: Transformer = new Sampler(fraction)
-
   override var parentTransformer: Transformer = _
-  override var parentCols: Array[String] = _
+
   override val requiredInputCols: Array[String] = null
   override val requiredOutputCols: Array[String] = null
+
   override val inputCols: ArrayBuffer[String] = new ArrayBuffer[String]()
   override val outputCols: ArrayBuffer[String] = new ArrayBuffer[String]()
+
+  override var parentCols: Array[String] = _
 
   override def hasInputCol: Boolean = true
 
