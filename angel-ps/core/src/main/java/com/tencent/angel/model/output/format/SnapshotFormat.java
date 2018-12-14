@@ -17,15 +17,29 @@
 
 package com.tencent.angel.model.output.format;
 
-import com.tencent.angel.ml.math2.matrix.Matrix;
-import com.tencent.angel.ml.math2.vector.*;
-import com.tencent.angel.model.MatrixLoadContext;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
+import com.tencent.angel.ml.math2.vector.IntFloatVector;
+import com.tencent.angel.ml.math2.vector.IntIntVector;
+import com.tencent.angel.ml.math2.vector.IntLongVector;
+import com.tencent.angel.ml.math2.vector.LongDoubleVector;
+import com.tencent.angel.ml.math2.vector.LongFloatVector;
+import com.tencent.angel.ml.math2.vector.LongIntVector;
+import com.tencent.angel.ml.math2.vector.LongLongVector;
 import com.tencent.angel.model.PSMatrixLoadContext;
 import com.tencent.angel.model.PSMatrixSaveContext;
+import com.tencent.angel.model.io.PSMatrixLoaderSaverImpl;
 import com.tencent.angel.ps.storage.matrix.PartitionSource;
 import com.tencent.angel.ps.storage.matrix.PartitionState;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
-import com.tencent.angel.ps.storage.vector.*;
+import com.tencent.angel.ps.storage.vector.ServerIntDoubleRow;
+import com.tencent.angel.ps.storage.vector.ServerIntFloatRow;
+import com.tencent.angel.ps.storage.vector.ServerIntIntRow;
+import com.tencent.angel.ps.storage.vector.ServerIntLongRow;
+import com.tencent.angel.ps.storage.vector.ServerLongDoubleRow;
+import com.tencent.angel.ps.storage.vector.ServerLongFloatRow;
+import com.tencent.angel.ps.storage.vector.ServerLongIntRow;
+import com.tencent.angel.ps.storage.vector.ServerLongLongRow;
+import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.utils.Sort;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
@@ -36,21 +50,24 @@ import it.unimi.dsi.fastutil.longs.Long2FloatMap;
 import it.unimi.dsi.fastutil.longs.Long2IntMap;
 import it.unimi.dsi.fastutil.longs.Long2LongMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FSDataOutputStream;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
 
 /**
  * Snapshot format, it just use for snapshot now.
  */
-public class SnapshotFormat extends MatrixFormatImpl {
+public class SnapshotFormat extends PSMatrixLoaderSaverImpl {
+
   private final static Log LOG = LogFactory.getLog(RowFormat.class);
 
   public SnapshotFormat(Configuration conf) {
@@ -85,14 +102,13 @@ public class SnapshotFormat extends MatrixFormatImpl {
   /**
    * Matrix partition data
    *
-   * @param part        matrix partition
-   * @param partMeta    matrix partition data meta
+   * @param part matrix partition
+   * @param partMeta matrix partition data meta
    * @param saveContext save context
-   * @param output      output stream
-   * @throws IOException
+   * @param output output stream
    */
   public void save(ServerPartition part, MatrixPartitionMeta partMeta,
-    PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
+      PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
     List<Integer> rowIds = saveContext.getRowIndexes();
     PartitionSource rows = part.getRows();
     if (rowIds == null || rowIds.isEmpty()) {
@@ -106,7 +122,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
     }
 
     FSDataOutputStream dataOutputStream =
-      new FSDataOutputStream(output, null, partMeta != null ? partMeta.getOffset() : 0);
+        new FSDataOutputStream(output, null, partMeta != null ? partMeta.getOffset() : 0);
 
     partMeta.setSaveRowNum(rowIds.size());
     for (int rowId : rowIds) {
@@ -132,14 +148,13 @@ public class SnapshotFormat extends MatrixFormatImpl {
   /**
    * Save a row
    *
-   * @param row         row data
+   * @param row row data
    * @param saveContext save context
-   * @param meta        partition data meta
-   * @param out         output stream
-   * @throws IOException
+   * @param meta partition data meta
+   * @param out output stream
    */
   public void save(ServerRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
-    DataOutputStream out) throws IOException {
+      DataOutputStream out) throws IOException {
     if (saveContext.cloneFirst()) {
       row = row.clone();
     }
@@ -172,14 +187,13 @@ public class SnapshotFormat extends MatrixFormatImpl {
   /**
    * Load a matrix partition
    *
-   * @param part        matrix partition
-   * @param partMeta    matrix partition data meta
+   * @param part matrix partition
+   * @param partMeta matrix partition data meta
    * @param loadContext load context
-   * @param input       input stream
-   * @throws IOException
+   * @param input input stream
    */
   public void load(ServerPartition part, MatrixPartitionMeta partMeta,
-    PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
+      PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
     PartitionSource rows = part.getRows();
     try {
       Map<Integer, RowPartitionMeta> rowMetas = partMeta.getRowMetas();
@@ -192,23 +206,16 @@ public class SnapshotFormat extends MatrixFormatImpl {
     }
   }
 
-  @Override
-  public void load(Matrix matrix, MatrixPartitionMeta partMeta, MatrixLoadContext loadContext,
-    FSDataInputStream in) throws IOException {
-    throw new UnsupportedOperationException("Unsupport now");
-  }
-
   /**
    * Load a row data
    *
-   * @param row         row partition
-   * @param meta        partition meta
+   * @param row row partition
+   * @param meta partition meta
    * @param loadContext load context
-   * @param in          input stream
-   * @throws IOException
+   * @param in input stream
    */
   public void load(ServerRow row, MatrixPartitionMeta meta, PSMatrixLoadContext loadContext,
-    DataInputStream in) throws IOException {
+      DataInputStream in) throws IOException {
     try {
       row.startWrite();
       if (row instanceof ServerIntFloatRow) {
@@ -236,7 +243,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
   }
 
   private void save(ServerIntFloatRow row, PSMatrixSaveContext saveContext,
-    MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
+      MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     int startCol = (int) meta.getStartCol();
     IntFloatVector vector = (IntFloatVector) row.getSplit();
     if (vector.isDense()) {
@@ -266,7 +273,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
   }
 
   private void save(ServerIntDoubleRow row, PSMatrixSaveContext saveContext,
-    MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
+      MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     int startCol = (int) meta.getStartCol();
     IntDoubleVector vector = (IntDoubleVector) row.getSplit();
     if (vector.isDense()) {
@@ -296,7 +303,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
   }
 
   private void save(ServerIntIntRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
-    DataOutputStream out) throws IOException {
+      DataOutputStream out) throws IOException {
     int startCol = (int) meta.getStartCol();
     IntIntVector vector = (IntIntVector) row.getSplit();
     if (vector.isDense()) {
@@ -326,7 +333,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
   }
 
   private void save(ServerIntLongRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
-    DataOutputStream out) throws IOException {
+      DataOutputStream out) throws IOException {
     int startCol = (int) meta.getStartCol();
     IntLongVector vector = (IntLongVector) row.getSplit();
     if (vector.isDense()) {
@@ -356,7 +363,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
   }
 
   private void save(ServerLongDoubleRow row, PSMatrixSaveContext saveContext,
-    MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
+      MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     long startCol = meta.getStartCol();
     if (row.getSplit() instanceof IntDoubleVector) {
       IntDoubleVector vector = (IntDoubleVector) row.getSplit();
@@ -407,7 +414,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
   }
 
   private void save(ServerLongFloatRow row, PSMatrixSaveContext saveContext,
-    MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
+      MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     long startCol = meta.getStartCol();
     if (row.getSplit() instanceof IntFloatVector) {
       IntFloatVector vector = (IntFloatVector) row.getSplit();
@@ -459,7 +466,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
 
 
   private void save(ServerLongIntRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
-    DataOutputStream out) throws IOException {
+      DataOutputStream out) throws IOException {
     long startCol = meta.getStartCol();
     if (row.getSplit() instanceof IntIntVector) {
       IntIntVector vector = (IntIntVector) row.getSplit();
@@ -510,7 +517,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
   }
 
   private void save(ServerLongLongRow row, PSMatrixSaveContext saveContext,
-    MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
+      MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     long startCol = meta.getStartCol();
     if (row.getSplit() instanceof IntLongVector) {
       IntLongVector vector = (IntLongVector) row.getSplit();
@@ -561,7 +568,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
   }
 
   private void load(ServerIntFloatRow row, PSMatrixLoadContext loadContext,
-    MatrixPartitionMeta meta, DataInputStream in) throws IOException {
+      MatrixPartitionMeta meta, DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
     SaveType saveType = SaveType.valueOf(rowMeta.getSaveType());
@@ -578,7 +585,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
   }
 
   private void load(ServerIntDoubleRow row, PSMatrixLoadContext loadContext,
-    MatrixPartitionMeta meta, DataInputStream in) throws IOException {
+      MatrixPartitionMeta meta, DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
     SaveType saveType = SaveType.valueOf(rowMeta.getSaveType());
@@ -595,7 +602,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
   }
 
   private void load(ServerIntIntRow row, PSMatrixLoadContext loadContext, MatrixPartitionMeta meta,
-    DataInputStream in) throws IOException {
+      DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
     SaveType saveType = SaveType.valueOf(rowMeta.getSaveType());
@@ -612,7 +619,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
   }
 
   private void load(ServerIntLongRow row, PSMatrixLoadContext loadContext, MatrixPartitionMeta meta,
-    DataInputStream in) throws IOException {
+      DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
     SaveType saveType = SaveType.valueOf(rowMeta.getSaveType());
@@ -629,7 +636,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
   }
 
   private void load(ServerLongFloatRow row, PSMatrixLoadContext loadContext,
-    MatrixPartitionMeta meta, DataInputStream in) throws IOException {
+      MatrixPartitionMeta meta, DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
     SaveType saveType = SaveType.valueOf(rowMeta.getSaveType());
@@ -646,7 +653,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
   }
 
   private void load(ServerLongDoubleRow row, PSMatrixLoadContext loadContext,
-    MatrixPartitionMeta meta, DataInputStream in) throws IOException {
+      MatrixPartitionMeta meta, DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
     SaveType saveType = SaveType.valueOf(rowMeta.getSaveType());
@@ -663,7 +670,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
   }
 
   private void load(ServerLongIntRow row, PSMatrixLoadContext loadContext, MatrixPartitionMeta meta,
-    DataInputStream in) throws IOException {
+      DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
     SaveType saveType = SaveType.valueOf(rowMeta.getSaveType());
@@ -680,7 +687,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
   }
 
   private void load(ServerLongLongRow row, PSMatrixLoadContext loadContext,
-    MatrixPartitionMeta meta, DataInputStream in) throws IOException {
+      MatrixPartitionMeta meta, DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
     SaveType saveType = SaveType.valueOf(rowMeta.getSaveType());
