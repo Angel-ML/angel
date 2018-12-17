@@ -17,26 +17,30 @@
 
 package com.tencent.angel.spark.ml.automl.feature.preprocess
 
+import com.tencent.angel.spark.ml.automl.feature.InToOutRelation.{InToOutRelation, OneToOne}
 import com.tencent.angel.spark.ml.automl.feature.TransformerWrapper
 import org.apache.spark.ml.Transformer
 
-import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.ml.feature.StopWordsRemover
 
 class StopWordsRemoverWrapper extends TransformerWrapper {
 
   override val transformer: Transformer = new StopWordsRemover()
-  override var parentTransformer: Transformer = _
+  override var parent: TransformerWrapper = _
+
+  override val hasMultiInputs: Boolean = false
+  override val hasMultiOutputs: Boolean = false
+  override val needAncestorInputs: Boolean = false
+
+  override val relation: InToOutRelation = OneToOne
 
   override val requiredInputCols: Array[String] = Array("words")
-  override val requiredOutputCols: Array[String] = Array("filteredwords")
+  override val requiredOutputCols: Array[String] = Array("stopwords")
 
-  override val inputCols: ArrayBuffer[String] = _
-  override val outputCols: ArrayBuffer[String] = _
+  override def declareInAndOut(): this.type = {
+    transformer.asInstanceOf[StopWordsRemover].setInputCol(getInputCols(0))
+    transformer.asInstanceOf[StopWordsRemover].setOutputCol(getOutputCols(0))
+    this
+  }
 
-  override var parentCols: Array[String] = _
-
-  override def hasInputCol: Boolean = true
-
-  override def hasOutputCol: Boolean = true
 }

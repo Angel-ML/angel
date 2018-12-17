@@ -19,38 +19,73 @@
 package com.tencent.angel.spark.ml.automl.feature
 
 import org.apache.spark.ml.Transformer
-
-import scala.collection.mutable.ArrayBuffer
+import com.tencent.angel.spark.ml.automl.feature.InToOutRelation.InToOutRelation
 
 abstract class TransformerWrapper {
 
   val transformer: Transformer
-  var parentTransformer: Transformer
+  var parent: TransformerWrapper
+
+  val relation: InToOutRelation
+
+  val hasMultiInputs: Boolean
+  val hasMultiOutputs: Boolean
+  val needAncestorInputs: Boolean
+  private val prefix = "out_"
 
   val requiredInputCols: Array[String]
   val requiredOutputCols: Array[String]
 
-  val inputCols: ArrayBuffer[String]
-  val outputCols: ArrayBuffer[String]
+  private var inputCols: Array[String] = _
+  private var outputCols: Array[String] = _
 
-  var parentCols: Array[String]
+  private var ancestorCols: Array[String] = _
 
   def getTransformer: Transformer = transformer
 
-  def setParent(parent: Transformer) = parentTransformer = parent
+  def setParent(parent: TransformerWrapper): Unit = this.parent = parent
 
-  def hasInputCol: Boolean
+  def setInputCols(cols: Array[String]): Unit = inputCols = cols
 
-  def hasOutputCol: Boolean
+  def setOutputCols(cols: Array[String]): Unit = outputCols = cols
 
-  def getInputCols: Array[String] = inputCols.toArray
+  def getInputCols: Array[String] = inputCols
 
-  def getOutputCols: Array[String] = outputCols.toArray
+  def getOutputCols: Array[String] = outputCols
 
-  def addInputCol(col: String): Unit = inputCols += col
+  def setAncestorCols(cols: Array[String]): Unit = ancestorCols = cols
 
-  def addOutputCol(col: String): Unit = outputCols += col
+  def generateInputCols(): Unit = {
+    require(ancestorCols.contains(requiredInputCols), "Missing required input cols.")
+    // if transformer has required input cols, feed required input cols
+    // if transformer needs all input cols, feed all input cols
+    // if transformer has no required input cols, feed the output cols of the parent transformer
+    if (ancestorCols.contains(requiredInputCols)) {
+      setInputCols(requiredInputCols)
+    } else if (needAncestorInputs) {
+      setInputCols(ancestorCols)
+    } else {
+      setInputCols(parent.outputCols)
+    }
+  }
 
-  def setParentCols: Array[String] = parentCols
+  def generateOutputCols(): Unit = {
+    relation match {
+      case InToOutRelation.Fixed =>
+        setOutputCols(requiredOutputCols)
+      case InToOutRelation.InPlace =>
+        setOutputCols(inputCols)
+      case InToOutRelation.OneToOne =>
+        setOutputCols(Array(prefix + inputCols(0)))
+      case InToOutRelation.MultiToMulti =>
+        setOutputCols(inputCols.map(prefix + _))
+      case InToOutRelation.MultiToOne =>
+        setOutputCols(Array(prefix + transformer.getClass.getName.toLowerCase))
+      case _ =>
+        throw new IncompatibleFiledExecption(
+          "wrong relations between input and output of transformer")
+    }
+  }
 
+  def declareInAndOut(): this.type
 }

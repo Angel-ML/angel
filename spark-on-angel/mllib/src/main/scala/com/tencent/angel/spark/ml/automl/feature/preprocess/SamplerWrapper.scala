@@ -18,26 +18,27 @@
 
 package com.tencent.angel.spark.ml.automl.feature.preprocess
 
+import com.tencent.angel.spark.ml.automl.feature.InToOutRelation.InToOutRelation
+import com.tencent.angel.spark.ml.automl.feature.InToOutRelation.InPlace
 import com.tencent.angel.spark.ml.automl.feature.TransformerWrapper
 import org.apache.spark.ml.Transformer
-
-import scala.collection.mutable.ArrayBuffer
 
 class SamplerWrapper(fraction: Double) extends TransformerWrapper {
 
   override val transformer: Transformer = new Sampler(fraction)
-  override var parentTransformer: Transformer = _
+  override var parent: TransformerWrapper = _
+
+  override val hasMultiInputs: Boolean = false
+  override val hasMultiOutputs: Boolean = false
+  override val needAncestorInputs: Boolean = false
+
+  override val relation: InToOutRelation = InPlace
 
   override val requiredInputCols: Array[String] = null
   override val requiredOutputCols: Array[String] = null
 
-  override val inputCols: ArrayBuffer[String] = new ArrayBuffer[String]()
-  override val outputCols: ArrayBuffer[String] = new ArrayBuffer[String]()
-
-  override var parentCols: Array[String] = _
-
-  override def hasInputCol: Boolean = true
-
-  override def hasOutputCol: Boolean = false
-
+  override def declareInAndOut(): this.type = {
+    transformer.asInstanceOf[Sampler].setInputCol(getInputCols(0))
+    this
+  }
 }
