@@ -47,6 +47,9 @@ class Sampler(fraction: Double,
   /** @group getParam */
   final def getInputCol: String = $(inputCol)
 
+  /** @group getParam */
+  final def getOutputCol: String = $(inputCol)
+
   override def transform(dataset: Dataset[_]): DataFrame = {
     dataset.sample(false, fraction, seed).toDF
   }
