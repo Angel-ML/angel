@@ -18,13 +18,37 @@
 
 package com.tencent.angel.spark.ml.automl.feature
 
+import org.apache.spark.SparkException
 import org.apache.spark.ml.PipelineStage
-import org.apache.spark.ml.Transformer
+
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+
+class IncompatibleFiledExecption(msg: String) extends SparkException(msg) { }
 
 object PipelineBuilder {
 
-  def declareFields(pipeline: Array[PipelineStage]): Unit = {
+  def build(transformers: Array[TransformerWrapper]): Array[PipelineStage] = {
+    val stages: ArrayBuffer[PipelineStage] = new ArrayBuffer[PipelineStage]()
+    //val allInputCols: ArrayBuffer[String] = new ArrayBuffer[String]()
+    val allInputCols: mutable.HashSet[String] = new mutable.HashSet[String]()
 
+    (1 to transformers.length).foreach { i =>
+      // set parent
+      transformers(i).setParent(transformers(i - 1))
+      // add new cols
+      allInputCols ++= transformers(i - 1).getOutputCols
+      // set parent cols
+      transformers(i).setAncestorCols(allInputCols.toArray)
+      // generate input cols
+      transformers(i).generateInputCols()
+      // generate output cols
+      transformers(i).generateOutputCols()
+      // add fully configured transformer
+      stages += transformers(i).declareInAndOut().getTransformer
+    }
+
+    stages.toArray
   }
 
 }
