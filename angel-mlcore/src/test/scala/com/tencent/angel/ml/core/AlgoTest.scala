@@ -43,7 +43,8 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
 
   def train1(): Unit = {
     val learner = new LocalLearner(conf)
-    learner.train(taskDataBlock, validDataBlock)
+    // learner.train(taskDataBlock, validDataBlock)
+    learner.model.predict(validDataBlock)
   }
 
   def train2(): Unit = {
@@ -53,7 +54,7 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
 
   test("LR") {
     val jsonFile = "E:\\github\\fitzwang\\angel\\angel-mlcore\\src\\test\\jsons\\logreg.json"
-    val sourceFile = "E:\\github\\fitzwang\\angel\\data\\census\\census_148d_train.dense"
+    val sourceFile = "E:\\github\\fitzwang\\angel\\data\\a9a\\a9a_123d_train.dummy"
 
     init1(jsonFile, sourceFile)
     train1()
@@ -69,7 +70,7 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
 
   test("DNN") {
     val jsonFile = "E:\\github\\fitzwang\\angel\\angel-mlcore\\src\\test\\jsons\\dnn.json"
-    val sourceFile = "E:\\github\\fitzwang\\angel\\data\\census\\census_148d_train.dense"
+    val sourceFile = "E:\\github\\fitzwang\\angel\\data\\census\\census_148d_train.libsvm"
 
     init1(jsonFile, sourceFile)
     train1()
@@ -82,6 +83,4 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
     init1(jsonFile, sourceFile)
     train1()
   }
-
-
 }

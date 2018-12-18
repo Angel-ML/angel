@@ -4,7 +4,6 @@ import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.math2.MFactory
 import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix, Matrix}
-import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import com.tencent.angel.ml.math2.utils.VectorUtils
 
 import scala.reflect.ClassTag

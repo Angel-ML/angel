@@ -1,6 +1,6 @@
 {
   "data": {
-    "format": "dense",
+    "format": "libsvm",
     "indexrange": 148,
     "validateratio": 0.1,
     "posnegratio": 0.8
@@ -11,7 +11,7 @@
   },
   "train": {
     "epoch": 6,
-    "lr": 1.0,
+    "lr": 0.5,
     "decay": 0.001
   },
   "default_optimizer": "sgd",
@@ -19,14 +19,14 @@
     {
       "name": "denseinputlayer",
       "type": "simpleinputlayer",
-      "outputdim": 200,
+      "outputdim": 100,
       "transfunc": "relu"
     },
     {
       "name": "fclayer",
       "type": "FCLayer",
       "outputdims": [
-        200,
+        100,
         1
       ],
       "transfuncs": [

@@ -24,6 +24,7 @@ import com.tencent.angel.ml.core.network.{EvnContext, Graph}
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.utils.{GraphInvalidate, VariableInvalidate}
 import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.model.ModelTools
 import org.apache.commons.logging.{Log, LogFactory}
 
 
@@ -56,7 +57,9 @@ class LocalGraph(placeHolder: PlaceHolder, conf: SharedConf) extends Graph(place
     }
   }
 
-  override def loadModel(envCtx: EvnContext, path: String): Unit = ???
+  override def loadModel(envCtx: EvnContext, path: String): Unit = {
+    trainableLayer.foreach{ layer => layer.load() }
+  }
 
   override def saveModel(envCtx: EvnContext, path: String): Unit = ???
 

@@ -77,7 +77,7 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
     }
 
     val end = System.currentTimeMillis()
-    //    println(s"FCLayer($name) calOutput = ${end - start} ms")
+    // println(s"FCLayer($name) calOutput = ${end - start} ms")
     output
   }
 
@@ -147,6 +147,13 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
     weight.init(taskFlag, mean = 0.0, stddev = 0.000001)
     bias.init(taskFlag, mean = 0.0, stddev = 0.000001)
   }
+
+  override def load(): Unit = {
+    weight.load()
+    bias.load()
+  }
+
+  override def save(): Unit = ???
 
   override def toString: String = {
     s"FCLayer name=$name outputDim=$outputDim optimizer=$optimizer transFunc=${transFunc.getClass.getSimpleName}"

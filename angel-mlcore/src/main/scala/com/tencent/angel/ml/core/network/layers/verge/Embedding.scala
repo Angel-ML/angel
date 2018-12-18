@@ -27,7 +27,6 @@ import com.tencent.angel.ml.core.network.variable.EmbedVariable
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.utils.{Callback, LayerKeys, MLException}
 import com.tencent.angel.ml.math2.matrix._
-import com.tencent.angel.ml.math2.vector._
 import org.apache.commons.logging.LogFactory
 import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
@@ -111,6 +110,12 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
   override def init(taskFlag: Int): Unit = {
     embedding.init(taskFlag, mean = 0.0, stddev = 0.000001)
   }
+
+  override def load(): Unit = {
+    embedding.load()
+  }
+
+  override def save(): Unit = ???
 
   override def toString: String = {
     s"Embedding name=$name outputDim=$outputDim optimizer=$optimizer"

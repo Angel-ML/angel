@@ -38,6 +38,10 @@ trait TrainCycle {
   def pullParams(epoch: Int, indices: vector.Vector = null): Unit
 
   def update[T](optimizer: Optimizer, epoch: Int, batchSize: Int): Future[T]
+
+  def load(): Unit
+
+  def save(): Unit
 }
 
 
@@ -93,4 +97,8 @@ object VecVariable {
 
 abstract class Variable(val name: String, val rowType: RowType)(implicit val graph: Graph) {
   graph.addVariable(this)
+
+  def load(): Unit
+
+  def save(): Unit
 }

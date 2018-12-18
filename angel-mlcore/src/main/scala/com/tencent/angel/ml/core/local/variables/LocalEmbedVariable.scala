@@ -7,7 +7,6 @@ import com.tencent.angel.ml.math2.storage._
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector.Vector
 import java.lang.{Long => JLong}
-import java.util.{Map => JMap}
 import java.util
 
 import com.tencent.angel.ml.core.utils.MLException

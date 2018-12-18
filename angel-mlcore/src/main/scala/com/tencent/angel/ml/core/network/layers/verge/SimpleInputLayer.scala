@@ -29,7 +29,6 @@ import com.tencent.angel.ml.core.utils.{Callback, LayerKeys, MLException, MathUt
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import org.apache.commons.logging.LogFactory
-import org.json4s.JsonAST
 import org.json4s.JsonAST.JField
 import org.json4s.JsonDSL._
 
@@ -137,6 +136,14 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
     weight.init(taskFlag, mean = 0.0, stddev = 0.000001)
     bias.init(taskFlag, mean = 0.0, stddev = 0.000001)
   }
+
+
+  override def load(): Unit = {
+    weight.load()
+    bias.load()
+  }
+
+  override def save(): Unit = ???
 
   override def toString: String = {
     s"SimpleInputLayer name=$name outputDim=$outputDim optimizer=$optimizer"

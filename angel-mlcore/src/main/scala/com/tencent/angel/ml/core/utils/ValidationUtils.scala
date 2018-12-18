@@ -52,7 +52,7 @@ object ValidationUtils {
     loss /= result.size
     acc = acc / result.size
 
-    // println(s"epoch=$epoch, loss=$loss%.2f, acc=${100 * acc}%.2f")
+    println(f"epoch=$epoch, loss=$loss%.2f, acc=${100 * acc}%.2f")
     LOG.info(f"epoch=$epoch, loss=$loss%.2f, acc=${100 * acc}%.2f")
   }
 
@@ -86,7 +86,7 @@ object ValidationUtils {
     val acc = 100.0 * (tp + tn) / (pos + neg)
     val auc = (sigma - (pos + 1) * pos / 2) / (pos * neg)
 
-    // println(f"epoch=$epoch, loss=$loss%.2f, acc=$acc%.2f, auc=$auc%.2f, trueRecall=$trueRecall%.2f, falseRecall=$falseRecall%.2f")
+    println(f"epoch=$epoch, loss=$loss%.2f, acc=$acc%.2f, auc=$auc%.2f, trueRecall=$trueRecall%.2f, falseRecall=$falseRecall%.2f")
     LOG.info(f"loss=$loss%.2f, acc=$acc%.2f, auc=$auc%.2f, trueRecall=$trueRecall%.2f, falseRecall=$falseRecall%.2f")
   }
 
@@ -102,7 +102,7 @@ object ValidationUtils {
     loss /= result.size
     sse = Math.sqrt(sse / result.size)
 
-    // println(s"epoch=$epoch, loss=$loss%.2f, sse=$sse%.2f")
+    println(f"epoch=$epoch, loss=$loss%.2f, sse=$sse%.2f")
     LOG.info(f"epoch=$epoch, loss=$loss%.2f, sse=$sse%.2f")
   }
 }

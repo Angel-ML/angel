@@ -49,6 +49,9 @@ public class LRTest {
    * set parameter values of conf
    */
   @Before public void setConf() throws Exception {
+    System.out.println("\n");
+    System.out.println(TMP_PATH);
+    System.out.println("\n");
     try {
       // Feature number of train data
       int featureNum = 1230;

@@ -49,6 +49,10 @@ trait Trainable {
   def pushGradient(): Unit
 
   def update[T](epoch: Int, batchSize: Int)(callback: Callback[T]): Callback[T]
+
+  def load(): Unit
+
+  def save(): Unit
 }
 
 trait LossLayer {

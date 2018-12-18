@@ -7,7 +7,8 @@
   },
   "model": {
     "modeltype": "T_FLOAT_SPARSE",
-    "modelsize": 148
+    "modelsize": 148,
+    "loadpath": "E:\\github\\fitzwang\\angel\\angel-mlcore\\src\\test\\models\\lr"
   },
   "train": {
     "epoch": 5,

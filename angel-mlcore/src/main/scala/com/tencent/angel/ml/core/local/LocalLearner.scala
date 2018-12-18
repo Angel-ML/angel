@@ -46,6 +46,7 @@ class LocalLearner(conf: SharedConf) extends Learner {
 
       // LOG.info("calculate to forward ...")
       loss = graph.calLoss() // forward
+      println(s"The training los of epoch $epoch batch $batchCount is $loss")
       LOG.info(s"The training los of epoch $epoch batch $batchCount is $loss")
 
       // LOG.info("calculate to backward ...")

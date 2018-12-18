@@ -1,7 +1,7 @@
 {
   "data": {
-    "format": "dense",
-    "indexrange": 148,
+    "format": "dummy",
+    "indexrange": 123,
     "validateratio": 0.1
   },
   "train": {
@@ -9,7 +9,8 @@
     "lr": 1.0
   },
   "model": {
-    "modeltype": "T_FLOAT_DENSE"
+    "modeltype": "T_FLOAT_DENSE",
+    "loadpath": "E:\\github\\fitzwang\\angel\\angel-mlcore\\src\\test\\models\\lr"
   },
   "default_optimizer": {
     "type": "Adam",
@@ -17,7 +18,7 @@
   },
   "layers": [
     {
-      "name": "wide",
+      "name": "input",
       "type": "simpleinputlayer",
       "outputdim": 1,
       "transfunc": "identity"
@@ -26,7 +27,7 @@
       "name": "simplelosslayer",
       "type": "simplelosslayer",
       "lossfunc": "logloss",
-      "inputlayer": "wide"
+      "inputlayer": "input"
     }
   ]
 }
