@@ -29,7 +29,7 @@ import org.apache.commons.logging.LogFactory
 
 
 class DotPooling(name: String, outputDim: Int, inputLayers: Array[Layer])(implicit graph: Graph)
-  extends JoinLayer(name, outputDim, inputLayers)(graph) {
+  extends JoinLayer(name, outputDim, inputLayers) {
   private val LOG = LogFactory.getLog(classOf[DotPooling])
 
   @transient var output: Matrix = _

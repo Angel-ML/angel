@@ -30,7 +30,7 @@ import org.json4s.JValue
 
 
 class ConcatLayer(name: String, outputDim: Int, inputLayers: Array[Layer])(implicit graph: Graph)
-  extends JoinLayer(name, outputDim, inputLayers)(graph) {
+  extends JoinLayer(name, outputDim, inputLayers) {
   private val LOG = LogFactory.getLog(classOf[ConcatLayer])
 
   assert(inputLayers.map(_.outputDim).sum == outputDim)

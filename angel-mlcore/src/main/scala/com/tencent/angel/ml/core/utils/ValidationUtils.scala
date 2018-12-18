@@ -21,20 +21,20 @@ object ValidationUtils {
     }
   }
 
-  def calMetrics(result: List[PredictResult], lossFunc: LossFunc): Unit = {
+  def calMetrics(epoch: Int, result: List[PredictResult], lossFunc: LossFunc): Unit = {
     lossFunc match {
       case lfunc: L2Loss =>
-        calRegressionMetrics(result, lfunc)
+        calRegressionMetrics(epoch, result, lfunc)
       case lfunc: HuberLoss =>
-        calRegressionMetrics(result, lfunc)
+        calRegressionMetrics(epoch, result, lfunc)
       case lfunc: SoftmaxLoss =>
-        calMultiClassMetrics(result, lfunc)
+        calMultiClassMetrics(epoch, result, lfunc)
       case _ =>
-        calClassifyMetrics(result, lossFunc)
+        calClassifyMetrics(epoch, result, lossFunc)
     }
   }
 
-  private def calMultiClassMetrics(result: List[PredictResult], lossFunc: LossFunc): Unit = {
+  private def calMultiClassMetrics(epoch: Int, result: List[PredictResult], lossFunc: LossFunc): Unit = {
     var loss: Double = 0.0
     var acc: Double = 0.0
 
@@ -52,15 +52,17 @@ object ValidationUtils {
     loss /= result.size
     acc = acc / result.size
 
-    LOG.info(s"loss=$loss%.2f, acc=${100 * acc}%.2f")
+    // println(s"epoch=$epoch, loss=$loss%.2f, acc=${100 * acc}%.2f")
+    LOG.info(f"epoch=$epoch, loss=$loss%.2f, acc=${100 * acc}%.2f")
   }
 
-  private def calClassifyMetrics(result: List[PredictResult], lossFunc: LossFunc): Unit = {
+  private def calClassifyMetrics(epoch: Int, result: List[PredictResult], lossFunc: LossFunc): Unit = {
     var (tp: Int, fp: Int, tn: Int, fn: Int) = (1, 1, 1, 1)
     var sigma: Double = 0.0
     var loss: Double = 0.0
 
-    result.sorted.zipWithIndex.foreach { case (pr, idx) =>
+    val sorted = result.sorted
+    sorted.zipWithIndex.foreach { case (pr, idx) =>
       loss += lossFunc.loss(pr.pred, pr.trueLabel)
       if (pr.proba >= 0.5 && pr.trueLabel == 1) {
         tp += 1
@@ -84,10 +86,11 @@ object ValidationUtils {
     val acc = 100.0 * (tp + tn) / (pos + neg)
     val auc = (sigma - (pos + 1) * pos / 2) / (pos * neg)
 
+    // println(f"epoch=$epoch, loss=$loss%.2f, acc=$acc%.2f, auc=$auc%.2f, trueRecall=$trueRecall%.2f, falseRecall=$falseRecall%.2f")
     LOG.info(f"loss=$loss%.2f, acc=$acc%.2f, auc=$auc%.2f, trueRecall=$trueRecall%.2f, falseRecall=$falseRecall%.2f")
   }
 
-  private def calRegressionMetrics(result: List[PredictResult], lossFunc: LossFunc): Unit = {
+  private def calRegressionMetrics(epoch: Int, result: List[PredictResult], lossFunc: LossFunc): Unit = {
     var loss: Double = 0.0
     var sse: Double = 0.0
 
@@ -99,6 +102,7 @@ object ValidationUtils {
     loss /= result.size
     sse = Math.sqrt(sse / result.size)
 
-    LOG.info(s"loss=$loss%.2f, sse=$sse%.2f")
+    // println(s"epoch=$epoch, loss=$loss%.2f, sse=$sse%.2f")
+    LOG.info(f"epoch=$epoch, loss=$loss%.2f, sse=$sse%.2f")
   }
 }

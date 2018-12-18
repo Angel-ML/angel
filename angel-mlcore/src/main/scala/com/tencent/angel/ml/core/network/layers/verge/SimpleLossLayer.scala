@@ -30,7 +30,7 @@ import org.json4s.JsonDSL._
 
 
 class SimpleLossLayer(name: String, inputLayer: Layer, lossFunc: LossFunc)(
-  implicit graph: Graph) extends LinearLayer(name, -1, inputLayer)(graph) with LossLayer {
+  implicit graph: Graph) extends LinearLayer(name, -1, inputLayer) with LossLayer {
   graph.setOutput(this)
   private val LOG = LogFactory.getLog(classOf[SimpleLossLayer])
 
@@ -79,13 +79,13 @@ class SimpleLossLayer(name: String, inputLayer: Layer, lossFunc: LossFunc)(
     val start = System.currentTimeMillis()
     status match {
       case STATUS.Null =>
-        //        println(s"the status in SimpleLossLayer($name)-calOutput is ${status.toString}")
+        // println(s"the status in SimpleLossLayer($name)-calOutput is ${status.toString}")
         output = inputLayer.calOutput()
         status = STATUS.Forward
       case _ =>
     }
     val end = System.currentTimeMillis()
-    //    println(s"SimpleLossLayer($name) calOutput = ${end - start} ms")
+    // println(s"SimpleLossLayer($name) calOutput = ${end - start} ms")
 
     output
   }

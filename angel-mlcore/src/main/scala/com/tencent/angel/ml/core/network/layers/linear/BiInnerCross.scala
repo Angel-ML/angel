@@ -30,7 +30,7 @@ import org.apache.commons.logging.LogFactory
 
 
 class BiInnerCross(name: String, outputDim: Int, inputLayer: Layer)(
-  implicit graph: Graph) extends LinearLayer(name, outputDim, inputLayer)(graph) {
+  implicit graph: Graph) extends LinearLayer(name, outputDim, inputLayer) {
   val LOG = LogFactory.getLog(classOf[BiInnerCross])
   val modelType: RowType = SharedConf.denseModelType
 

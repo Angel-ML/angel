@@ -37,7 +37,7 @@ import org.json4s.JsonDSL._
 import scala.language.implicitConversions
 
 class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransFunc, override val optimizer: Optimizer
-             )(implicit graph: Graph) extends LinearLayer(name, outputDim, inputLayer)(graph) with Trainable {
+             )(implicit graph: Graph) extends LinearLayer(name, outputDim, inputLayer) with Trainable {
   private val LOG = LogFactory.getLog(classOf[FCLayer])
 
   graph.addTrainable(this)
@@ -45,7 +45,7 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
   private val weight: MatVariable = graph.provider.getMatVariable(s"${name}_weight", outputDim,
     inputLayer.outputDim, optimizer.numSlot, inIPLayer = false)
   private val bias: VecVariable = graph.provider.getVecVariable(s"${name}_bias", outputDim,
-    optimizer.numSlot, inIPLayer = false)
+    1, inIPLayer = false)
 
   @transient var forward: Matrix = _
   @transient var backward: Matrix = _
@@ -57,19 +57,20 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
     val start = System.currentTimeMillis()
     status match {
       case STATUS.Null =>
-        inputLayer match {
+        val lastOutput = inputLayer match {
           case ipLayer: Embedding => // from embedding layer
-            ipLayer.calOutput() match {
+            ipOutputCache = ipLayer.calOutput() match {
               case mat: RBCompIntDoubleMatrix =>
-                ipOutputCache = MatrixUtils.rbCompDense2Blas(mat)
-                forward = ipOutputCache.dot(weight).add(bias)
+                MatrixUtils.rbCompDense2Blas(mat)
               case mat: RBCompIntFloatMatrix =>
-                ipOutputCache = MatrixUtils.rbCompDense2Blas(mat)
-                forward = ipOutputCache.dot(weight).add(bias)
+                MatrixUtils.rbCompDense2Blas(mat)
             }
+            ipOutputCache
           case ipLayer => // from other dense layer
-            forward = ipLayer.calOutput().dot(weight).add(bias)
+            ipLayer.calOutput()
         }
+
+        forward = Ufuncs.dot(lastOutput, false, weight, true).add(bias)
         output = transFunc(forward)
         status = STATUS.Forward
       case _ =>
@@ -84,32 +85,28 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
     val start = System.currentTimeMillis()
     status match {
       case STATUS.Forward =>
-        //        println(s"the status in FCLayer($name)-calGradOutput is ${status.toString}")
+        // println(s"the status in FCLayer($name)-calGradOutput is ${status.toString}")
         val gradTemp = gatherGrad()
         backward = transFunc.calGrad(output, gradTemp)
 
+        val dataGrad = Ufuncs.dot(backward, false, weight, false)
         gradOutput = inputLayer match {
           case ipLayer: Embedding =>
-            graph.modelType match {
-              case RowType.T_DOUBLE_DENSE =>
-                MatrixUtils.blas2RBCompDense(
-                  Ufuncs.dot(backward, false, weight, true).asInstanceOf[BlasDoubleMatrix],
-                  ipLayer.numFactors)
-              case RowType.T_FLOAT_DENSE =>
-                MatrixUtils.blas2RBCompDense(
-                  Ufuncs.dot(backward, false, weight, true).asInstanceOf[BlasFloatMatrix],
-                  ipLayer.numFactors
-                )
-              case _ => throw MLException("Only Dense Data is Support!")
+            if (graph.modelType.isDouble) {
+              MatrixUtils.blas2RBCompDense(dataGrad.asInstanceOf[BlasDoubleMatrix], ipLayer.numFactors)
+            } else if (graph.modelType.isFloat) {
+              MatrixUtils.blas2RBCompDense(dataGrad.asInstanceOf[BlasFloatMatrix], ipLayer.numFactors)
+            } else {
+              throw MLException("Only Double/Float are Support!")
             }
-          case _ => Ufuncs.dot(backward, false, weight, true)
+          case _ => dataGrad
         }
 
         status = STATUS.Backward
       case _ =>
     }
     val end = System.currentTimeMillis()
-    //    println(s"FCLayer($name) calGradOutput = ${end - start} ms")
+    // println(s"FCLayer($name) calGradOutput = ${end - start} ms")
     gradOutput
   }
 
@@ -121,8 +118,13 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
   override def pushGradient(): Unit = {
     status match {
       case STATUS.Backward =>
-        weight.pushGrads(inputLayer.calOutput(), backward)
-        bias.pushGrads(backward, optimizer.lr)
+        val lastOutput = inputLayer match {
+          case _: Embedding => ipOutputCache
+          case _ => inputLayer.calOutput()
+        }
+
+        weight.pushGrads(lastOutput, backward)
+        bias.pushGrads(backward)
         status = STATUS.Gradient
       case _ =>
     }

@@ -70,12 +70,12 @@ class LocalBlasMatVariable(name: String, val numRows: Int, val numCols: Long, va
   }
 
   override def pushGrads(features: Matrix, backward: Matrix): Unit = {
-    val grad: Matrix = Ufuncs.dot(features, true, backward, false).imul(graph.normalFactor)
+    val grad: Matrix = Ufuncs.dot(backward, true, features, false).imul(graph.normalFactor)
     OptUtils.getRowAsMatrix(storage, numSlot, numRows, numCols.toInt).iadd(grad)
   }
 
-  override def pushGrads(grad: Matrix, lr: Double): Unit = {
-    OptUtils.getRowAsMatrix(storage, numSlot, numRows, numCols.toInt).iadd(grad.imul(-lr))
+  override def pushGrads(grad: Matrix): Unit = {
+    OptUtils.getRowAsMatrix(storage, numSlot, numRows, numCols.toInt).iadd(grad)
   }
 
   override def update[T](optimizer: Optimizer, epoch: Int, batchSize: Int): Future[T] = {

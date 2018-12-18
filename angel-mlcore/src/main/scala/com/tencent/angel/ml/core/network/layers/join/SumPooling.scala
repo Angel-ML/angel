@@ -25,7 +25,7 @@ import org.apache.commons.logging.LogFactory
 
 
 class SumPooling(name: String, outputDim: Int, inputLayers: Array[Layer])(implicit graph: Graph)
-  extends JoinLayer(name, outputDim, inputLayers)(graph) {
+  extends JoinLayer(name, outputDim, inputLayers) {
   private val LOG = LogFactory.getLog(classOf[SumPooling])
 
   @transient var output: Matrix = _
@@ -35,7 +35,7 @@ class SumPooling(name: String, outputDim: Int, inputLayers: Array[Layer])(implic
     val start = System.currentTimeMillis()
     status match {
       case STATUS.Null =>
-        //        println(s"the status in SumPooling($name)-calOutput is ${status.toString}")
+        // println(s"the status in SumPooling($name)-calOutput is ${status.toString}")
         inputLayers.zipWithIndex.foreach {
           case (layer, idx) if idx == 0 =>
             output = layer.calOutput().copy()

@@ -18,8 +18,7 @@
 
 package com.tencent.angel.ml.core.network.layers.verge
 
-import java.lang.{Long => JLong}
-import java.util.{Map => JMap}
+
 
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.Graph
@@ -34,7 +33,7 @@ import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 
 class Embedding(name: String, outputDim: Int, val numFactors: Int, override val optimizer: Optimizer)(implicit graph: Graph)
-  extends InputLayer(name, outputDim)(graph) with Trainable {
+  extends InputLayer(name, outputDim) with Trainable {
   graph.addTrainable(this)
 
   private val LOG = LogFactory.getLog(classOf[Embedding])
@@ -42,7 +41,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
   val blockSize: Int = SharedConf.blockSize
 
   private val embedding: EmbedVariable = graph.provider.getEmbedVariable(s"${name}_embedding",
-    numFactors, graph.indexRange, optimizer.numSlot)
+    graph.indexRange.toInt, numFactors, optimizer.numSlot)
 
   @transient var forward: Matrix = _
   @transient var backward: Matrix = _
@@ -66,16 +65,6 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
     val start = System.currentTimeMillis()
     embedding.pullParams(epoch, graph.placeHolder.getIndices)
     val end = System.currentTimeMillis()
-  }
-
-  def mergeUpdate(map: JMap[JLong, Vector], key: Long, update: Vector, value: Double): Unit = {
-    if (!map.containsKey(key)) {
-      if (value == 1) map.put(key, update)
-      else map.put(key, update.imul(value))
-    } else {
-      if (value == 1) map.get(key).iadd(update)
-      else map.get(key).iadd(update.imul(value))
-    }
   }
 
   override def pushGradient(): Unit = {

@@ -15,7 +15,7 @@ import com.tencent.angel.ml.math2.{MFactory, StorageType}
 
 
 class LocalVecVariable(name: String, val length: Long, val numSlot: Int, rowType: RowType)(implicit graph: Graph)
-  extends LocalVariable(name, rowType)(graph) with VecVariable {
+  extends LocalVariable(name, rowType) with VecVariable {
   override protected var vector: Vector = _
   // override protected val rowsSaved: Array[Int] = Array(0)
 
@@ -73,7 +73,7 @@ class LocalVecVariable(name: String, val length: Long, val numSlot: Int, rowType
       vector = storage.getRow(0)
     }
 
-    if (epoch == 0 && indices != null) {
+    if (epoch == 0 && indices != null && rowType.isSparse) {
       val random = new Random()
       vector.getStorage match {
         case storage: IntDoubleSparseVectorStorage =>
@@ -87,7 +87,7 @@ class LocalVecVariable(name: String, val length: Long, val numSlot: Int, rowType
           val idxs = indices.getStorage.asInstanceOf[IntLongDenseVectorStorage].getValues
           idxs.foreach { i =>
             if (!storage.hasKey(i)) {
-              storage.set(i, random.nextDouble() * 0.00001 * stddev + mean)
+              storage.set(i, random.nextDouble() * stddev + mean)
             }
           }
         case storage: IntFloatSparseVectorStorage =>
@@ -109,16 +109,17 @@ class LocalVecVariable(name: String, val length: Long, val numSlot: Int, rowType
     }
   }
 
-  def pushGrads(backward: Matrix, lr: Double): Unit = {
-    storage.getRow(numSlot).iadd(backward.average(0).imul(lr))
+  def pushGrads(backward: Matrix): Unit = {
+    storage.getRow(numSlot).iadd(backward.sum(0).imul(graph.normalFactor))
   }
 
-  def pushGrads(grad: Vector, lr: Double): Unit = {
-    storage.getRow(numSlot).iadd(grad.imul(lr))
+  def pushGrads(grad: Vector): Unit = {
+    storage.getRow(numSlot).iadd(grad)
   }
 
   override def update[T](optimizer: Optimizer, epoch: Int, batchSize: Int): Future[T] = {
-    storage.getRow(0).isub(storage.getRow(numSlot))
+    storage.getRow(0).isub(storage.getRow(numSlot).imul(optimizer.lr))
+    storage.getRow(numSlot).imul(0.0)
     null.asInstanceOf[Future[T]]
   }
 

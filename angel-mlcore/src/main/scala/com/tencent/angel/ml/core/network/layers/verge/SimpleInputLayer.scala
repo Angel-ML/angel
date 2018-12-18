@@ -25,10 +25,9 @@ import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.variable._
 import com.tencent.angel.ml.core.optimizer.Optimizer
-import com.tencent.angel.ml.core.utils.{Callback, LayerKeys, MLException}
-import com.tencent.angel.ml.math2.MFactory
-import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix, Matrix}
-import com.tencent.angel.ml.math2.utils.VectorUtils
+import com.tencent.angel.ml.core.utils.{Callback, LayerKeys, MLException, MathUtils}
+import com.tencent.angel.ml.math2.matrix.Matrix
+import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import org.apache.commons.logging.LogFactory
 import org.json4s.JsonAST
 import org.json4s.JsonAST.JField
@@ -36,7 +35,7 @@ import org.json4s.JsonDSL._
 
 
 class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, override val optimizer: Optimizer)(implicit graph: Graph)
-  extends InputLayer(name, outputDim)(graph) with Trainable with Serializable {
+  extends InputLayer(name, outputDim) with Trainable with Serializable {
   graph.addTrainable(this)
 
   private val LOG = LogFactory.getLog(classOf[SimpleInputLayer])
@@ -44,12 +43,10 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
   private val weight: MatVariable = graph.provider.getMatVariable(s"${name}_weight", outputDim,
     graph.indexRange, optimizer.numSlot, inIPLayer = true)
   private val bias: VecVariable = graph.provider.getVecVariable(s"${name}_bias", outputDim,
-    optimizer.numSlot, inIPLayer = true)
+    1, inIPLayer = true)
 
   @transient var forward: Matrix = _ // dense
-  // dense
   @transient var backward: Matrix = _ // dense
-  // dense
   @transient var output: Matrix = _ // dense
 
   override def calOutput(): Matrix = {
@@ -57,21 +54,13 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
     status match {
       case STATUS.Null =>
         // println(s"the status in SparseInputLayer($name)-calOutput is ${status.toString}")
-        (weight, graph.valueType) match {
-          case (_: BlasMatVariable, _) => // the shape of weight matrix is (inputDim, outputDim)
-            forward = graph.placeHolder.getFeats.dot(weight).iadd(bias)
-          case (_: MatVariable, "double") => // the shape of weight matrix is (outputDim, inputDim)
-            forward = MFactory.denseDoubleMatrix(graph.placeHolder.getBatchSize, outputDim)
-            (0 until outputDim).foreach { colId => // the shape of weight matrix is (outputDim, inputDim)
-              val col = graph.placeHolder.getFeats.dot(weight.getRow(colId)).iadd(VectorUtils.getDouble(bias, colId))
-              forward.asInstanceOf[BlasDoubleMatrix].setCol(colId, col)
-            }
-          case (_: MatVariable, "float") =>
-            forward = MFactory.denseFloatMatrix(graph.placeHolder.getBatchSize, outputDim)
-            (0 until outputDim).foreach { colId =>
-              val col = graph.placeHolder.getFeats.dot(weight.getRow(colId)).iadd(VectorUtils.getFloat(bias, colId))
-              forward.asInstanceOf[BlasFloatMatrix].setCol(colId, col)
-            }
+        forward = weight match {
+          case _: BlasMatVariable => // the shape of weight matrix is (inputDim, outputDim)
+            Ufuncs.dot(graph.placeHolder.getFeats, false, weight, true).iadd(bias)
+          case mat: Variable if mat.rowType.isDouble => // the shape of weight matrix is (outputDim, inputDim)
+            MathUtils.rowDot[Double](weight, bias)
+          case mat: Variable if mat.rowType.isFloat =>
+            MathUtils.rowDot[Float](weight, bias)
         }
 
         output = transFunc(forward)
@@ -119,7 +108,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
     status match {
       case STATUS.Backward =>
         weight.pushGrads(graph.placeHolder.getFeats, backward)
-        bias.pushGrads(backward, optimizer.lr)
+        bias.pushGrads(backward)
         status = STATUS.Gradient
       case _ =>
     }
@@ -143,7 +132,6 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
     // val end = System.currentTimeMillis()
     // println(s"update Time = ${end - start} ms")
   }
-
 
   override def init(taskFlag: Int): Unit = {
     weight.init(taskFlag, mean = 0.0, stddev = 0.000001)

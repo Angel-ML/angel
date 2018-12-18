@@ -28,6 +28,28 @@ abstract class DataReader(conf: SharedConf) {
 
   def sourceIter(pathName: String): Iterator[String]
 
+  def readData1(iter: Iterator[String]): DataBlock[LabeledData] = {
+    val start = System.currentTimeMillis()
+    val taskDataBlock: DataBlock[LabeledData] = getDataBlock(DataReader.getBlockType(conf))
+
+    while (iter.hasNext) {
+      val out = parser.parse(iter.next())
+      if (out != null) {
+          taskDataBlock.put(out)
+      }
+    }
+
+    taskDataBlock.flush()
+
+    val cost = System.currentTimeMillis() - start
+
+    LOG.info(s"Thread[${Thread.currentThread().getId}] preprocessed ${taskDataBlock.size} samples, " +
+      s"${taskDataBlock.size} for train, processing time is $cost"
+    )
+
+    taskDataBlock
+  }
+
   def readData2(iter: Iterator[String]): (DataBlock[LabeledData], DataBlock[LabeledData]) = {
     val start = System.currentTimeMillis()
 

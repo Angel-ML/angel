@@ -1,20 +1,19 @@
 {
   "data": {
-    "format": "libsvm",
-    "indexrange": 123,
-    "validateratio": 0.1,
-    "sampleratio": 1.0
+    "format": "dense",
+    "indexrange": 148,
+    "validateratio": 0.1
   },
   "train": {
     "epoch": 10,
-    "lr": 0.5
+    "lr": 1.0
   },
   "model": {
     "modeltype": "T_FLOAT_DENSE"
   },
   "default_optimizer": {
-    "type": "adam",
-    "reg2": 0.01
+    "type": "Adam",
+    "reg2": 0.001
   },
   "layers": [
     {

@@ -15,7 +15,7 @@ import com.tencent.angel.ml.math2.{MFactory, StorageType}
 
 
 class LocalMatVariable(name: String, val numRows: Int, val numCols: Long, val numSlot: Int, rowType: RowType)(implicit graph: Graph)
-  extends LocalVariable(name, rowType)(graph) with MatVariable {
+  extends LocalVariable(name, rowType) with MatVariable {
   override protected var matrix: Matrix = _
 
   protected var mean: Double = 0
@@ -108,7 +108,7 @@ class LocalMatVariable(name: String, val numRows: Int, val numCols: Long, val nu
     }
 
 
-    if (epoch == 0 && indices != null) {
+    if (epoch == 0 && indices != null && rowType.isSparse) {
       val random = new Random()
       (0 until numRows).foreach { rId =>
         matrix.getRow(rId).getStorage match {
@@ -123,7 +123,7 @@ class LocalMatVariable(name: String, val numRows: Int, val numCols: Long, val nu
             val idxs = indices.getStorage.asInstanceOf[IntLongDenseVectorStorage].getValues
             idxs.foreach { i =>
               if (!storage.hasKey(i)) {
-                storage.set(i, random.nextDouble() * 0.00001 * stddev + mean)
+                storage.set(i, random.nextDouble() * stddev + mean)
               }
             }
           case storage: IntFloatSparseVectorStorage =>
@@ -148,19 +148,13 @@ class LocalMatVariable(name: String, val numRows: Int, val numCols: Long, val nu
 
   override def pushGrads(features: Matrix, backward: Matrix): Unit = {
     (0 until numRows).toArray.foreach { colId =>
-      val grad = backward match {
-        case bw: BlasDoubleMatrix =>
-          features.transDot(bw.getCol(colId)).imul(graph.normalFactor)
-        case bw: BlasFloatMatrix =>
-          features.transDot(bw.getCol(colId)).imul(graph.normalFactor)
-      }
-
+      val grad = features.transDot(backward.getCol(colId)).imul(graph.normalFactor)
       storage.getRow(numSlot * numRows + colId).iadd(grad)
     }
   }
 
-  override def pushGrads(grad: Matrix, lr: Double): Unit = {
-    OptUtils.getRowsAsMatrix(storage, numRows * numSlot, numRows * (numSlot+1)).iadd(grad.imul(-lr))
+  override def pushGrads(grad: Matrix): Unit = {
+    OptUtils.getRowsAsMatrix(storage, numRows * numSlot, numRows * (numSlot+1)).iadd(grad)
   }
 
   override def update[T](optimizer: Optimizer, epoch: Int, batchSize: Int): Future[T] = {

@@ -26,18 +26,14 @@ class Adam(override var lr: Double, beta: Double, gamma: Double) extends Optimiz
         val value = v.storage.getRow(0)
         val mt = v.storage.getRow(1)
         val vt = v.storage.getRow(2)
-        val grad = if (regL2Param == 0) {
-          v.storage.getRow(3)
-        } else {
-          value.axpy(v.storage.getRow(3), regL2Param)
-        }
+        val grad = v.storage.getRow(3)
 
         OptFuncs.iexpsmoothing(mt, grad, beta)
-        OptFuncs.iexpsmoothing2(mt, grad, gamma)
+        OptFuncs.iexpsmoothing2(vt, grad, gamma)
         value.isub(OptFuncs.adamdelta(mt, vt, powBeta, powGamma).imul(lr))
-        if (regL1Param != 0.0) {
-          Ufuncs.isoftthreshold(value, regL1Param)
-        }
+//        if (regL1Param != 0.0) {
+//          Ufuncs.isoftthreshold(value, regL1Param)
+//        }
 
         grad.imul(0.0)
       case v: LocalMatVariable =>
@@ -45,37 +41,29 @@ class Adam(override var lr: Double, beta: Double, gamma: Double) extends Optimiz
         val value = OptUtils.getRowsAsMatrix(v.storage, 0, numFactors)
         val mt = OptUtils.getRowsAsMatrix(v.storage, numFactors, numFactors * 2)
         val vt = OptUtils.getRowsAsMatrix(v.storage, numFactors * 2, numFactors * 3)
-        val grad = if (regL2Param == 0) {
-          OptUtils.getRowsAsMatrix(v.storage, numFactors * 3, numFactors * 4)
-        } else {
-          value.axpy(OptUtils.getRowsAsMatrix(v.storage, numFactors * 3, numFactors * 4), regL2Param)
-        }
+        val grad = OptUtils.getRowsAsMatrix(v.storage, numFactors * 3, numFactors * 4)
 
         OptFuncs.iexpsmoothing(mt, grad, beta)
-        OptFuncs.iexpsmoothing2(mt, grad, gamma)
+        OptFuncs.iexpsmoothing2(vt, grad, gamma)
         value.isub(OptFuncs.adamdelta(mt, vt, powBeta, powGamma).imul(lr))
-        if (regL1Param != 0.0) {
-          Ufuncs.isoftthreshold(value, regL1Param)
-        }
+//        if (regL1Param != 0.0) {
+//          Ufuncs.isoftthreshold(value, regL1Param)
+//        }
 
         grad.imul(0.0)
       case v: LocalVecVariable =>
         val value = v.storage.getRow(0)
         val mt = v.storage.getRow(1)
         val vt = v.storage.getRow(2)
-        val grad = if (regL2Param == 0) {
-          v.storage.getRow(3)
-        } else {
-          value.axpy(v.storage.getRow(3), regL2Param)
-        }
+        val grad = v.storage.getRow(3)
 
         OptFuncs.iexpsmoothing(mt, grad, beta)
-        OptFuncs.iexpsmoothing2(mt, grad, gamma)
+        OptFuncs.iexpsmoothing2(vt, grad, gamma)
         value.isub(OptFuncs.adamdelta(mt, vt, powBeta, powGamma).imul(lr))
 
-        if (regL1Param != 0.0) {
-          Ufuncs.isoftthreshold(value, regL1Param)
-        }
+//        if (regL1Param != 0.0) {
+//          Ufuncs.isoftthreshold(value, regL1Param)
+//        }
 
         grad.imul(0.0)
     }

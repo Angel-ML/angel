@@ -47,7 +47,6 @@ class SGD(override var lr: Double) extends Optimizer {
         }
 
         grad.imul(0.0)
-
       case v: LocalVecVariable =>
         val value = v.storage.getRow(0)
         val grad = if (regL2Param == 0) {

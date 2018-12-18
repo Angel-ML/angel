@@ -27,7 +27,7 @@ import org.apache.commons.logging.LogFactory
 
 
 class MulPooling(name: String, outputDim: Int, inputLayers: Array[Layer])(implicit graph: Graph)
-  extends JoinLayer(name, outputDim, inputLayers)(graph) {
+  extends JoinLayer(name, outputDim, inputLayers) {
   val LOG = LogFactory.getLog(classOf[MulPooling])
 
   @transient var output: Matrix = _

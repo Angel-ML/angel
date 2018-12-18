@@ -39,7 +39,7 @@ class LocalGraph(placeHolder: PlaceHolder, conf: SharedConf) extends Graph(place
   override var taskNum: Int = 1
   override val indexRange: Long = SharedConf.indexRange
   override val validIndexNum: Long = SharedConf.modelSize
-  override def normalFactor: Double = placeHolder.getBatchSize * taskNum
+  override def normalFactor: Double = 1.0 / (placeHolder.getBatchSize * taskNum)
   override val dataFormat: String = SharedConf.inputDataFormat
   override val modelType: RowType = SharedConf.modelType
 

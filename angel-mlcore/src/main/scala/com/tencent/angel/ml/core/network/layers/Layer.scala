@@ -129,7 +129,7 @@ abstract class Layer(val name: String, val outputDim: Int)(implicit val graph: G
 
 
 abstract class InputLayer(name: String, outputDim: Int)(implicit graph: Graph)
-  extends Layer(name, outputDim)(graph) {
+  extends Layer(name, outputDim) {
   graph.addInput(this)
 
   def calBackward(): Matrix
@@ -137,7 +137,7 @@ abstract class InputLayer(name: String, outputDim: Int)(implicit graph: Graph)
 
 
 abstract class JoinLayer(name: String, outputDim: Int, val inputLayers: Array[Layer])(implicit graph: Graph)
-  extends Layer(name, outputDim)(graph) {
+  extends Layer(name, outputDim) {
   inputLayers.foreach { layer =>
     layer.addConsumer(this)
     this.addInput(layer)
@@ -156,7 +156,7 @@ abstract class JoinLayer(name: String, outputDim: Int, val inputLayers: Array[La
 
 
 abstract class LinearLayer(name: String, outputDim: Int, val inputLayer: Layer)(implicit graph: Graph)
-  extends Layer(name, outputDim)(graph) {
+  extends Layer(name, outputDim) {
   inputLayer.addConsumer(this)
   this.addInput(inputLayer)
 

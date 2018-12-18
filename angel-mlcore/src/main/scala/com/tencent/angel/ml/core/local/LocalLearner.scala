@@ -46,7 +46,7 @@ class LocalLearner(conf: SharedConf) extends Learner {
 
       // LOG.info("calculate to forward ...")
       loss = graph.calLoss() // forward
-      // LOG.info(s"The training los of epoch $epoch batch $batchCount is $loss" )
+      LOG.info(s"The training los of epoch $epoch batch $batchCount is $loss")
 
       // LOG.info("calculate to backward ...")
       graph.calBackward() // backward
@@ -59,7 +59,7 @@ class LocalLearner(conf: SharedConf) extends Learner {
       // barrier(0, graph)
       graph.setLR(ssScheduler.next())
       // LOG.info("start to update ...")
-      graph.update[VoidType](epoch * numBatch + batchCount, 1) // update parameters on PS
+      graph.update[VoidType](epoch * numBatch + batchCount, graph.placeHolder.getBatchSize) // update parameters on PS
 
 
       // waiting all gradient update finished
@@ -67,7 +67,7 @@ class LocalLearner(conf: SharedConf) extends Learner {
       // barrier(0, graph)
       batchCount += 1
 
-      LOG.info(s"epoch $epoch batch $batchCount is finished!")
+      // LOG.info(s"epoch $epoch batch $batchCount is finished!")
     }
 
     loss
@@ -83,16 +83,16 @@ class LocalLearner(conf: SharedConf) extends Learner {
     val numEpoch: Int = SharedConf.epochNum
     val batchData: Array[LabeledData] = new Array[LabeledData](batchSize)
 
-    val iter: Iterator[Array[LabeledData]] = if (negTrainData == null) {
-      DataReader.getBathDataIterator(posTrainData, batchData, numBatch)
-    } else {
-      DataReader.getBathDataIterator(posTrainData, negTrainData, batchData, numBatch)
-    }
-
     var loss: Double = 0.0
     (0 until numEpoch).foreach { epoch =>
+      val iter: Iterator[Array[LabeledData]] = if (negTrainData == null) {
+        DataReader.getBathDataIterator(posTrainData, batchData, numBatch)
+      } else {
+        DataReader.getBathDataIterator(posTrainData, negTrainData, batchData, numBatch)
+      }
+
       preHook.foreach(func => func(graph))
-      loss += trainOneEpoch(epoch, iter, epoch)
+      loss += trainOneEpoch(epoch, iter, numBatch)
       postHook.foreach(func => func(graph))
 
       validate(epoch, validationData)
@@ -102,7 +102,7 @@ class LocalLearner(conf: SharedConf) extends Learner {
   }
 
   override protected def validate(epoch: Int, valiData: DataBlock[LabeledData]): Unit = {
-    ValidationUtils.calMetrics(model.predict(valiData), graph.getLossLayer.getLossFunc)
+    ValidationUtils.calMetrics(epoch, model.predict(valiData), graph.getLossLayer.getLossFunc)
   }
 
   override protected def barrier(graph: Graph): Unit = {}

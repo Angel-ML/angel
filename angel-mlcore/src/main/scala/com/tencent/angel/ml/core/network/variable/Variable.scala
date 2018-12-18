@@ -23,13 +23,13 @@ object MatrixType extends Enumeration {
 trait MatPushGrads {
   def pushGrads(features: Matrix, backward: Matrix): Unit
 
-  def pushGrads(grad: Matrix, lr: Double): Unit
+  def pushGrads(grad: Matrix): Unit
 }
 
 trait VecPushGrads {
-  def pushGrads(backward: Matrix, lr: Double): Unit
+  def pushGrads(backward: Matrix): Unit
 
-  def pushGrads(grad: Vector, lr: Double): Unit
+  def pushGrads(grad: Vector): Unit
 }
 
 trait TrainCycle {

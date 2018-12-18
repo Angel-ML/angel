@@ -114,19 +114,19 @@ object EmbedUtils {
       partitions.head match {
         case v: IntDoubleVector =>
           VFactory.compIntDoubleVector(
-            v.size() * partitions.length, partitions.map(_.asInstanceOf[IntDoubleVector]), v.size()
+            v.dim().toInt * partitions.length, partitions.map(_.asInstanceOf[IntDoubleVector]), v.dim().toInt
           )
         case v: IntFloatVector =>
           VFactory.compIntFloatVector(
-            v.size() * partitions.length, partitions.map(_.asInstanceOf[IntFloatVector]), v.size()
+            v.dim().toInt * partitions.length, partitions.map(_.asInstanceOf[IntFloatVector]), v.dim().toInt
           )
         case v: LongDoubleVector =>
           VFactory.compLongDoubleVector(
-            v.size() * partitions.length, partitions.map(_.asInstanceOf[LongDoubleVector]), v.size()
+            v.dim() * partitions.length, partitions.map(_.asInstanceOf[LongDoubleVector]), v.dim()
           )
         case v: LongFloatVector =>
           VFactory.compLongFloatVector(
-            v.size() * partitions.length, partitions.map(_.asInstanceOf[LongFloatVector]), v.size()
+            v.dim() * partitions.length, partitions.map(_.asInstanceOf[LongFloatVector]), v.dim()
           )
       }
     }
@@ -141,5 +141,21 @@ object EmbedUtils {
       case _: CompLongFloatVector =>
         MFactory.rbCompLongFloatMatrix(rows.map(_.asInstanceOf[CompLongFloatVector]))
     }
+  }
+
+  def mergeUpdate(map: JMap[JLong, Vector], key: Long, update: Vector, value: Double): Unit = {
+    if (!map.containsKey(key)) {
+      if (value == 1) map.put(key, update)
+      else map.put(key, update.imul(value))
+    } else {
+      if (value == 1) map.get(key).iadd(update)
+      else map.get(key).iadd(update.imul(value))
+    }
+  }
+
+  def getPartitions(backward: Matrix, rId: Int): Array[Vector] = {
+    val vec = backward.getRow(rId)
+    val method = vec.getClass.getDeclaredMethod("getPartitions")
+    method.invoke(vec).asInstanceOf[Array[Vector]]
   }
 }
