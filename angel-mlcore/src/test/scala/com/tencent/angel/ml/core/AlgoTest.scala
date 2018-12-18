@@ -44,7 +44,8 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
   def train1(): Unit = {
     val learner = new LocalLearner(conf)
     // learner.train(taskDataBlock, validDataBlock)
-    learner.model.predict(validDataBlock)
+    // learner.model.predict(validDataBlock).foreach(res => println(res.getText))
+    println(learner.model.predict(validDataBlock.get(0)).getText)
   }
 
   def train2(): Unit = {
