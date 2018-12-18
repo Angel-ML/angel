@@ -57,8 +57,9 @@ object FTRLExample {
     for (epoch <- 1 to numEpoch) {
       val totalLoss = data.mapPartitions {
         case iterator =>
-          val loss = iterator.sliding(batchSize, batchSize)
-            .map(f => opt.optimize(f.toArray)).sum
+          val loss = iterator.map(f => (f.getX, f.getY))
+            .sliding(batchSize, batchSize)
+            .map(f => opt.optimize(f.toArray, calcGradientLoss)).sum
           Iterator.single(loss)
       }.sum()
 
