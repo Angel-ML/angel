@@ -265,7 +265,7 @@ public class ValidationUtils {
       }
     }
     double sigma = 0;
-    for (long i = M + N - 1; i >= 0; i--) {
+    for (long i = totalNum-1; i >= 0; i--) {
       if (labelsArray[(int) i] == 1.0) {
         sigma += i + 1;
       }
