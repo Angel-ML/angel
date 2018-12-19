@@ -77,16 +77,17 @@ object Word2vecExample {
       corpus = Features.corpusStringToIntWithoutRemapping(data)
     }
 
-    val docs = if (withSubSample) {
-      corpus.persist(StorageLevel.DISK_ONLY)
-      SubSampling.sampling(corpus).repartition(numDataPartitions)
-    } else
-      corpus.repartition(numDataPartitions)
-
+    corpus.persist(StorageLevel.DISK_ONLY)
+    val (maxWordId, docs) = if (withSubSample) {
+      val subsampleTmp = SubSampling.sampling(corpus)
+      (subsampleTmp._1, subsampleTmp._2.repartition(numDataPartitions))
+    } else {
+      val tmp = corpus.repartition(numDataPartitions)
+      (tmp.map(_.max).max().toLong + 1, tmp)
+    }
     docs.persist(StorageLevel.DISK_ONLY)
 
     val numDocs = docs.count()
-    val maxWordId = docs.map(_.max).max().toLong + 1
     val numTokens = docs.map(_.length).sum().toLong
     val maxLength = docs.map(_.length).max()
     println(s"numDocs=$numDocs maxWordId=$maxWordId numTokens=$numTokens maxLength=$maxLength")

@@ -78,20 +78,22 @@ object LINEExample {
       corpus = Features.corpusStringToIntWithoutRemapping(data)
     }
 
-    val edges = {
-      if (withSubSample) {
-        corpus.persist(StorageLevel.DISK_ONLY)
-        SubSampling.sampling(corpus).repartition(numDataPartitions)
-      } else
-        corpus.repartition(numDataPartitions)
-    }.map { arr =>
-      (arr(0), arr(1))
+    corpus.persist(StorageLevel.DISK_ONLY)
+    val(maxNodeId, docs) = if (withSubSample) {
+      val subsampleTmp = SubSampling.sampling(corpus)
+      (subsampleTmp._1, subsampleTmp._2.repartition(numDataPartitions))
+    } else {
+      val tmp = corpus.repartition(numDataPartitions)
+      (tmp.map(_.max).max().toLong + 1, tmp)
+    }
+    val edges = docs.map{
+      arr =>
+        (arr(0), arr(1))
     }
 
     edges.persist(StorageLevel.DISK_ONLY)
 
     val numEdge = edges.count()
-    val maxNodeId = edges.map{case (src, dst) => math.max(src, dst)}.max().toLong + 1
     println(s"numEdge=$numEdge maxNodeId=$maxNodeId")
 
     corpus.unpersist()
