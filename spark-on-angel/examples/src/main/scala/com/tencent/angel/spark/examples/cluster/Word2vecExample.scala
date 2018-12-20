@@ -77,8 +77,8 @@ object Word2vecExample {
       corpus = Features.corpusStringToIntWithoutRemapping(data)
     }
 
-    corpus.persist(StorageLevel.DISK_ONLY)
     val (maxWordId, docs) = if (withSubSample) {
+      corpus.persist(StorageLevel.DISK_ONLY)
       val subsampleTmp = SubSampling.sampling(corpus)
       (subsampleTmp._1, subsampleTmp._2.repartition(numDataPartitions))
     } else {
