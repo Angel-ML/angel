@@ -22,7 +22,7 @@ import com.tencent.angel.spark.ml.automl.tuner.config.Configuration
 
 abstract class Trail {
 
-  def evaluate(configs: List[Configuration]): List[Double] = configs.map(evaluate)
+  def evaluate(configs: Array[Configuration]): Array[Double] = configs.map(evaluate)
 
   def evaluate(config: Configuration): Double
 

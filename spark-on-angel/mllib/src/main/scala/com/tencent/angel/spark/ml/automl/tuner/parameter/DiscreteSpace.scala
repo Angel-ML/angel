@@ -18,6 +18,7 @@
 
 package com.tencent.angel.spark.ml.automl.tuner.parameter
 
+import scala.reflect.ClassTag
 import scala.util.Random
 
 /**
@@ -26,14 +27,14 @@ import scala.util.Random
   * @param name: Name of the parameter
   * @param values: List of all possible values
   */
-class DiscreteSpace[T: Numeric](
+class DiscreteSpace[T: Numeric: ClassTag](
                                  override val name: String,
-                                 values: List[T],
+                                 values: Array[T],
                                  seed: Int = 100) extends ParamSpace[T](name) {
 
   val rd = new Random(seed)
 
-  def getValues: List[T] = values
+  def getValues: Array[T] = values
 
   def numValues: Int = values.length
 
@@ -41,9 +42,11 @@ class DiscreteSpace[T: Numeric](
 
   def toRandomSpace: ParamSpace[T] = this
 
-  override def sample(size: Int): List[T] = List.fill(size)(sample)
+  def sample(size: Int): Array[T] = {
+    Array.fill[T](size)(sampleOne)
+  }
 
-  override def sample: T = values(rd.nextInt(numValues))
+  def sampleOne(): T = values(rd.nextInt(numValues))
 
   override def toString: String = s"DiscreteSpace[$name]: (${values mkString(",")})"
 }
@@ -51,7 +54,7 @@ class DiscreteSpace[T: Numeric](
 object DiscreteSpace {
 
   def main(args: Array[String]): Unit = {
-    val obj = new DiscreteSpace[Float]("test", List(1.0f, 2.0f, 3.0f, 4.0f, 5.0f))
+    val obj = new DiscreteSpace[Float]("test", Array(1.0f, 2.0f, 3.0f, 4.0f, 5.0f))
     println(obj.toString)
     println(obj.sample(2).toString())
   }

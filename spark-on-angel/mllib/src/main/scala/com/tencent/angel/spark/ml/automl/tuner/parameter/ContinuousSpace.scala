@@ -20,7 +20,7 @@ package com.tencent.angel.spark.ml.automl.tuner.parameter
 
 import com.tencent.angel.spark.ml.automl.utils.Distribution
 
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 /**
@@ -40,10 +40,10 @@ class ContinuousSpace(
                        seed: Int = 100) extends ParamSpace[Double](name) {
 
   val rd = new Random(seed)
-  val values: List[Double] = calValues
+  val values: Array[Double] = calValues
 
-  def calValues(): List[Double] = {
-    var ret: ListBuffer[Double] = ListBuffer[Double]()
+  def calValues(): Array[Double] = {
+    var ret: ArrayBuffer[Double] = ArrayBuffer[Double]()
     distribution match {
       case Distribution.LINEAR =>
         val interval: Double = (upper - lower) / (num - 1)
@@ -53,14 +53,14 @@ class ContinuousSpace(
       case _ => println(s"Distribution $distribution not supported")
     }
 
-    ret.toList
+    ret.toArray
   }
 
   def getLower: Double = lower
 
   def getUpper: Double = upper
 
-  def getValues: List[Double] = values
+  def getValues: Array[Double] = values
 
   def numValues: Int = num
 
@@ -68,9 +68,9 @@ class ContinuousSpace(
 
   def toRandomSpace: ParamSpace[Double] = this
 
-  override def sample(size: Int): List[Double] = List.fill(size)(sample)
+  override def sample(size: Int): Array[Double] = Array.fill[Double](size)(sampleOne)
 
-  override def sample: Double = values(rd.nextInt(numValues))
+  def sampleOne(): Double = values(rd.nextInt(numValues))
 
   override def toString: String = s"ContinuousSpace[$name]: (${values mkString(",")})"
 

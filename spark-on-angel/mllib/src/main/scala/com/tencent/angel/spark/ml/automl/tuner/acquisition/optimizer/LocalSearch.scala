@@ -43,7 +43,7 @@ class LocalSearch(
     * @return A set of tuple(acquisition_value, Configuration).
     */
   override def maximize(numPoints: Int,
-                        sorted: Boolean = true): List[(Double, Configuration)] = ???
+                        sorted: Boolean = true): Array[(Double, Configuration)] = ???
 
   override def maximize: (Double, Configuration) = ???
 }

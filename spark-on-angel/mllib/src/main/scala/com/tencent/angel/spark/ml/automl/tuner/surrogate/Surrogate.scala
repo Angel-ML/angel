@@ -45,9 +45,9 @@ abstract class Surrogate(
   val LOG: Log = LogFactory.getLog(classOf[Surrogate])
 
   // Input data points, (N, D)
-  var curX: ListBuffer[Vector] = new ListBuffer[Vector]()
+  var curX: ArrayBuffer[Vector] = new ArrayBuffer[Vector]()
   // Target value, (N, )
-  var curY: ListBuffer[Double] = new ListBuffer[Double]()
+  var curY: ArrayBuffer[Double] = new ArrayBuffer[Double]()
 
   /**
     * Train the surrogate on curX and curY.
@@ -60,7 +60,7 @@ abstract class Surrogate(
     * @param X : (N, D), input data points.
     * @param Y : (N, 1), the corresponding target values.
     */
-  def train(X: List[Vector], Y: List[Double]): Unit = {
+  def train(X: Array[Vector], Y: Array[Double]): Unit = {
     curX.clear
     curY.clear
     curX ++ X
@@ -74,7 +74,7 @@ abstract class Surrogate(
     * @param X
     * @param Y
     */
-  def update(X: List[Vector], Y: List[Double]): Unit = {
+  def update(X: Array[Vector], Y: Array[Double]): Unit = {
     X.zip(Y).foreach( tuple => print(tuple._1, tuple._2) )
     curX ++= X
     curY ++= Y
@@ -98,7 +98,7 @@ abstract class Surrogate(
     * @param X
     * @return tuples of (mean, variance)
     */
-  def predict(X: List[Vector]): List[(Double, Double)] = {
+  def predict(X: Array[Vector]): Array[(Double, Double)] = {
     X.map(predict)
   }
 
