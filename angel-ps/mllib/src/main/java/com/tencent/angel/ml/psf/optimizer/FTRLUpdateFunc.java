@@ -73,6 +73,7 @@ public class FTRLUpdateFunc extends OptMMUpdateFunc {
       Vector newWeight = Ufuncs.ftrlthreshold(zModel, qModel, alpha, beta, lambda1, lambda2);
       weight.setStorage(newWeight.getStorage());
 
+      //gradient.clear();
       gradient.imul(0.0);
     }
   }
