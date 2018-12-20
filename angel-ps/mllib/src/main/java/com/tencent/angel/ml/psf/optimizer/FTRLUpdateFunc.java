@@ -63,17 +63,17 @@ public class FTRLUpdateFunc extends OptMMUpdateFunc {
     for (int f = 0; f < factor; f++) {
       Vector weight = rows[f];
       Vector zModel = rows[f + factor];
-      Vector nModel = rows[f + 2 * factor];
+      Vector qModel = rows[f + 2 * factor];
       Vector gradient = rows[f + 3 * factor];
 
-      Vector delta = OptFuncs.ftrldelta(nModel, gradient, alpha);
-      Ufuncs.iaxpy2(nModel, gradient, 1);
-      zModel.iadd(gradient.sub(delta.mul(weight)));
+      Vector sigma = OptFuncs.ftrldelta(qModel, gradient, alpha);
+      Ufuncs.iaxpy2(qModel, gradient, 1);
+      zModel.iadd(gradient.sub(sigma.mul(weight)));
 
-      Vector newWeight = Ufuncs.ftrlthreshold(zModel, nModel, alpha, beta, lambda1, lambda2);
+      Vector newWeight = Ufuncs.ftrlthreshold(zModel, qModel, alpha, beta, lambda1, lambda2);
       weight.setStorage(newWeight.getStorage());
 
-      gradient.clear();
+      gradient.imul(0.0);
     }
   }
 }
