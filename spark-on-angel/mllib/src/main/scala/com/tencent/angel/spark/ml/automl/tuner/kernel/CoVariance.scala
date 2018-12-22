@@ -18,12 +18,12 @@
 
 package com.tencent.angel.spark.ml.automl.tuner.kernel
 
-import breeze.linalg.{DenseMatrix, DenseVector}
+import breeze.linalg.{DenseMatrix => BDM, DenseVector => BDV}
 
 /**
   * Covariance function given two points.
   */
-trait CoVariance {
+trait Covariance {
 
   /**
     * the covariance function
@@ -32,9 +32,9 @@ trait CoVariance {
     * @param params
     * @return
     */
-  def cov(x1: DenseMatrix[Double],
-          x2: DenseMatrix[Double],
-          params: DenseVector[Double]): DenseMatrix[Double]
+  def cov(x1: BDM[Double],
+          x2: BDM[Double],
+          params: BDV[Double]): BDM[Double]
 
   /**
     * the derivative of covariance function against kernel hyper-parameters
@@ -43,8 +43,8 @@ trait CoVariance {
     * @param params
     * @return
     */
-  def grad(x1: DenseMatrix[Double],
-           x2: DenseMatrix[Double],
-           params: DenseVector[Double]): Array[DenseMatrix[Double]]
+  def grad(x1: BDM[Double],
+           x2: BDM[Double],
+           params: BDV[Double]): Array[BDM[Double]]
 
 }

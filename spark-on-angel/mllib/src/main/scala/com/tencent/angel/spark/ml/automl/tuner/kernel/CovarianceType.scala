@@ -16,33 +16,28 @@
  */
 
 
-package com.tencent.angel.spark.ml.automl.math
+package com.tencent.angel.spark.ml.automl.tuner.kernel
 
-import breeze.linalg.DenseMatrix
-import breeze.linalg.inv
-import breeze.linalg.diag
-import breeze.linalg.sum
-import breeze.numerics.log
+object CovarianceType extends Enumeration {
 
-object BreezeOp {
+  type CovarianceType = Value
 
-  /**
-    * calculate the inverse of a matrix with cholesky decomposition
-    * @param L: the Cholesky decomposition of matrix A where A = L'*L
-    * @return inv(A)=inv(L)*inv(L')
-    */
-  def choleskyInv(L: DenseMatrix[Double]): DenseMatrix[Double] = {
-    val invL = inv(L)
-    L * L.t
+  val MATERN3 = Value("MATERN3")
+  val MATERN5 = Value("MATERN5")
+  val MATERN5_ISO = Value("MATERN5_ISO")
+  val SQUAREEXP_ISO = Value("SQUAREEXP_ISO")
+
+  def parse(name: String): Covariance = {
+    val covType = CovarianceType.withName(name.toUpperCase())
+    parse(covType)
   }
 
-  /**
-    * log determinant of positive definite matrices
-    * @param L
-    * @return
-    */
-  def logDet(L: DenseMatrix[Double]): Double = {
-    2 * sum(log(diag(L)))
+  def parse(covType: CovarianceType.Value): Covariance = covType match {
+    case MATERN3 => new Matern3
+    case MATERN5 => new Matern5
+    case MATERN5_ISO => new Matern5Iso
+    case SQUAREEXP_ISO => new SquareExpIso
+    case _ => new Matern5
   }
 
 }
