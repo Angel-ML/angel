@@ -18,9 +18,9 @@
 
 package com.tencent.angel.spark.ml.automl.tuner.kernel
 
-import breeze.linalg.{DenseMatrix, DenseVector}
+import breeze.linalg.{DenseMatrix => BDM, DenseVector => BDV}
 import breeze.numerics.{exp, pow, sqrt}
-import com.tencent.angel.spark.ml.automl.math.Distance
+import com.tencent.angel.spark.ml.automl.tuner.math.SquareDist
 
 /**
   * Matern covariance function with v = 3/2
@@ -28,7 +28,7 @@ import com.tencent.angel.spark.ml.automl.math.Distance
   * Here r is the distance |x1-x2| of two points
   * Hyper-parameter: l is the length scale
   */
-class Matern3 extends CoVariance {
+case class Matern3() extends Covariance {
 
   /**
     * the covariance function
@@ -38,22 +38,22 @@ class Matern3 extends CoVariance {
     * @param params
     * @return
     */
-  override def cov(x1: DenseMatrix[Double],
-                   x2: DenseMatrix[Double],
-                   params: DenseVector[Double]): DenseMatrix[Double] = {
+  override def cov(x1: BDM[Double],
+                   x2: BDM[Double],
+                   params: BDV[Double]): BDM[Double] = {
 
     require(params.size == 1,
       s"Number of hyper parameters is ${params.length} while expected 1")
 
     val l = params(0)
 
-    val distMat = Distance(x1, x2)
+    val distMat = SquareDist(x1, x2)
     val r = sqrt(distMat)
 
     val vPart = sqrt(3) * r / l + 1.0
     val expPart = exp( -sqrt(3) * r / l )
     val covMatrix = vPart *:* expPart
-    //    println(covMatrix)
+
     covMatrix
   }
 
@@ -65,16 +65,16 @@ class Matern3 extends CoVariance {
     * @param params
     * @return
     */
-  override def grad(x1: DenseMatrix[Double],
-                    x2: DenseMatrix[Double],
-                    params: DenseVector[Double]): Array[DenseMatrix[Double]] = {
+  override def grad(x1: BDM[Double],
+                    x2: BDM[Double],
+                    params: BDV[Double]): Array[BDM[Double]] = {
 
     require(params.size == 1,
       s"Number of hyper parameters is ${params.length} while expected 1")
 
     val l = params(0)
 
-    val distMat = Distance(x1, x2)
+    val distMat = SquareDist(x1, x2)
     val r = sqrt(distMat)
 
     val vPart = sqrt(3) * r / l + 1.0
@@ -84,7 +84,7 @@ class Matern3 extends CoVariance {
     val expPartGrad = vPart *:* expPart *:* ( sqrt(3) * r / pow(l, 2) )
 
     val gradL = vPartGrad + expPartGrad
-    //    println(cov_l_grad)
+
     Array(gradL)
   }
 }
