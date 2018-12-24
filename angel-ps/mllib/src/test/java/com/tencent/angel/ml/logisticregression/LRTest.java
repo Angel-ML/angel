@@ -51,7 +51,7 @@ public class LRTest {
   @Before public void setConf() throws Exception {
     try {
       // Feature number of train data
-      int featureNum = 1230;
+      int featureNum = 123;
       // Total iteration number
       int epochNum = 100;
       // Validation sample Ratio
