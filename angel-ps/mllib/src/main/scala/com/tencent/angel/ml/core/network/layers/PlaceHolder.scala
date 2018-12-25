@@ -18,9 +18,10 @@
 
 package com.tencent.angel.ml.core.network.layers
 
-import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.utils.MLException
 import com.tencent.angel.ml.feature.LabeledData
+// import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.storage._
 import com.tencent.angel.ml.math2.vector._
@@ -92,7 +93,7 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
           MFactory.rbLongDoubleMatrix(data.map(_.getX.asInstanceOf[LongDoubleVector]))
         case _: LongFloatVector =>
           MFactory.rbLongFloatMatrix(data.map(_.getX.asInstanceOf[LongFloatVector]))
-        case _ => throw new AngelException("RowType is not support!")
+        case _ => throw MLException("RowType is not support!")
       }
     }
 
@@ -154,7 +155,7 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
               case s: LongKeyVectorStorage if !s.isDense =>
                 s.getIndices.foreach(i => temSet.add(i))
               case s: LongKeyVectorStorage if s.isDense =>
-                throw new AngelException("Long Dense Vector is not supported!")
+                throw MLException("Long Dense Vector is not supported!")
               case _ =>
             }
           )
@@ -162,7 +163,7 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
           quickSort(colIndex)
           indices = VFactory.denseLongVector(colIndex)
         case _ =>
-          throw new AngelException("key type should be int or long")
+          throw MLException("key type should be int or long")
       }
     }
 

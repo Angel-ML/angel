@@ -49,6 +49,9 @@ public class LRTest {
    * set parameter values of conf
    */
   @Before public void setConf() throws Exception {
+    System.out.println("\n");
+    System.out.println(TMP_PATH);
+    System.out.println("\n");
     try {
       // Feature number of train data
       int featureNum = 1230;
@@ -60,7 +63,7 @@ public class LRTest {
       String dataFmt = "dummy";
       // Model type
 
-      String modelType = String.valueOf(RowType.T_FLOAT_SPARSE_LONGKEY);
+      String modelType = String.valueOf(RowType.T_FLOAT_DENSE);
 
 
       // Learning rate
@@ -89,12 +92,12 @@ public class LRTest {
       //set angel resource parameters #worker, #task, #PS
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
       conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
-      conf.setInt(AngelConf.ANGEL_PS_NUMBER, 2);
+      conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
       //set sgd LR algorithm parameters #feature #epoch
-      long range = Integer.MAX_VALUE + 10L;
+      //long range = Integer.MAX_VALUE + 10L;
       conf.set(MLConf.ML_MODEL_TYPE(), modelType);
-      conf.setLong(MLConf.ML_FEATURE_INDEX_RANGE(), range);
+      conf.setLong(MLConf.ML_FEATURE_INDEX_RANGE(), 123);
       conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
       conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
       conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
