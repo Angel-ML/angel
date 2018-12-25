@@ -79,7 +79,7 @@ object MLConf {
   val ML_LEARN_RATE = "ml.learn.rate"
   val DEFAULT_ML_LEARN_RATE = 0.5
   val ML_LEARN_DECAY = "ml.learn.decay"
-  val DEFAULT_ML_LEARN_DECAY = 0.5
+  val DEFAULT_ML_LEARN_DECAY = 0.1
   val ML_NUM_UPDATE_PER_EPOCH = "ml.num.update.per.epoch"
   val DEFAULT_ML_NUM_UPDATE_PER_EPOCH = 10
   val ML_DECAY_INTERVALS = "ml.decay.intervals"
