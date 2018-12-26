@@ -82,7 +82,7 @@ abstract class Surrogate(
   }
 
   def print(X: Vector, y: Double): Unit = {
-    println(s"update surrogate with X: ${X.toArray.mkString(",")} and Y: $y")
+    println(s"update surrogate with X[${X.toArray.mkString("(", ",", ")")}] and Y[$y]")
   }
 
   def update(X: Vector, y: Double): Unit = {

@@ -18,8 +18,11 @@
 
 package com.tencent.angel.spark.ml.automl.tuner.surrogate
 
+import breeze.linalg.{DenseMatrix => BDM, DenseVector => BDV}
+import org.apache.spark.ml.linalg.Vector
 import com.tencent.angel.spark.ml.automl.tuner.config.ConfigurationSpace
-import org.apache.spark.ml.linalg.{DenseMatrix, Vector}
+import com.tencent.angel.spark.ml.automl.tuner.kernel.Matern5Iso
+import com.tencent.angel.spark.ml.automl.tuner.model.GPModel
 import com.tencent.angel.spark.ml.automl.utils.DataUtils
 import org.apache.commons.logging.{Log, LogFactory}
 
@@ -30,14 +33,24 @@ class GPSurrogate(
 
   override val LOG: Log = LogFactory.getLog(classOf[RFSurrogate])
 
+  val covFunc = Matern5Iso()
+  val initCovParams = BDV(1.0,1.0)
+  val initNoiseStdDev = 0.1
+  val gpModel: GPModel = GPModel(covFunc, initCovParams, initNoiseStdDev)
 
   /**
     * Train the surrogate on curX and curY.
     */
   override def train(): Unit = {
+    val breezeX: BDM[Double] = DataUtils.toBreeze(curX.toArray)
+    val breezeY: BDV[Double] = DataUtils.toBreeze(curY.toArray)
+    gpModel.fit(breezeX, breezeY)
 
-    val breezeX = DataUtils.toBreeze(curX.toArray)
-    val breezeY = DataUtils.toBreeze(curY.toArray)
+    /*println("Fitted covariance function params:")
+    println(gpModel.covParams)
+    println("Fitted noiseStdDev:")
+    println(gpModel.noiseStdDev)
+    println("\n")*/
 
   }
 
@@ -47,7 +60,17 @@ class GPSurrogate(
     * @param X
     * @return a tuple of (mean, variance)
     */
-  override def predict(X: Vector): (Double, Double) = ???
+  override def predict(X: Vector): (Double, Double) = {
+    val breezeX = DataUtils.toBreeze(X).toDenseMatrix
 
-  override def stop(): Unit = ???
+    val pred = gpModel.predict(breezeX)
+
+    //println(s"predict of ${X.toArray.mkString(",")}: mean[${pred(0, 0)}] variance[${pred(0, 1)}]")
+
+    (pred(0, 0), pred(0, 1))
+  }
+
+  override def stop(): Unit = {
+
+  }
 }

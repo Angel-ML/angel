@@ -41,6 +41,8 @@ class RFSurrogate(
     .appName("test")
     .getOrCreate()
 
+  ss.sparkContext.setLogLevel("ERROR")
+
   override def train(): Unit = {
 
     if (curX.size < Math.pow(2, maxDepth - 1))
@@ -75,12 +77,12 @@ class RFSurrogate(
       pred.select("prediction").first().getDouble(0)
     }
 
-    println(s"predict of ${X.toArray.mkString(",")}: ${preds.mkString(",")}")
+    //println(s"tree predictions of ${X.toArray.mkString(",")}: ${preds.mkString(",")}")
 
     val mean: Double = preds.sum / preds.length
     val variance = preds.map(x => Math.pow(x - mean, 2)).sum / preds.length
 
-    println(s"prediction mean $mean variance $variance")
+    //println(s"predict of ${X.toArray.mkString(",")}: mean[$mean] variance[$variance]")
 
     (mean, variance)
   }

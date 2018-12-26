@@ -42,8 +42,13 @@ class Solver(
     * Suggests configurations to evaluate.
     */
   def suggest(): Array[Configuration] = {
-    //println(s"suggest configurations")
-    optimizer.maximize(TunerParam.batchSize).map(_._2)
+    val acqAndConfig = optimizer.maximize(TunerParam.batchSize)
+    println(s"suggest configurations:")
+    acqAndConfig.foreach{ case (acq, config) =>
+      println(s"config[${config.getVector.toArray.mkString("(", ",", ")")}], " +
+        s"acquisition[$acq]")
+    }
+    acqAndConfig.map(_._2)
   }
 
   /**

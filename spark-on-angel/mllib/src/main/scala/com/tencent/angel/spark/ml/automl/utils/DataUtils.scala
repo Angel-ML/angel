@@ -43,12 +43,12 @@ object DataUtils {
     parse(ss, schema, Array(X), Array(0))
   }
 
-  def toBreeze(values: Array[Double]): BV[Double] = {
+  def toBreeze(values: Array[Double]): BDV[Double] = {
     new BDV[Double](values)
   }
 
-  def toBreeze(vector: Vector): BV[Double] = vector match {
-    case sv: SparseVector => new BSV[Double](sv.indices, sv.values, sv.size)
+  def toBreeze(vector: Vector): BDV[Double] = vector match {
+    case sv: SparseVector => new BDV[Double](vector.toDense.values)
     case dv: DenseVector => new BDV[Double](dv.values)
   }
 

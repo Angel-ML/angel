@@ -29,7 +29,7 @@ class TestTrail extends Trail {
       1,
       config.getVector.toDense.values,
       1)
-    println(s"evaluate ${config.getVector.toArray.mkString(",")}, result $ret")
+    println(s"evaluate ${config.getVector.toArray.mkString("(", ",", ")")}, result $ret")
     ret
   }
 }
