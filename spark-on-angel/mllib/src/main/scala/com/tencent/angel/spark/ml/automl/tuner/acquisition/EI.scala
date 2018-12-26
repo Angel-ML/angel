@@ -43,7 +43,8 @@ class EI(
     val eta: Double = surrogate.curBest._2
     //println(s"best seen result: $eta")
 
-    val s: Double = Math.sqrt(pred._2).toFloat
+    val m: Double = pred._1
+    val s: Double = Math.sqrt(pred._2)
 
     if (s == 0) {
       // if std is zero, we have observed x on all instances
@@ -54,9 +55,9 @@ class EI(
       val norm: NormalDistribution  = new NormalDistribution
       val cdf: Double = norm.cumulativeProbability(z)
       val pdf: Double = norm.density(z)
-      val f = s * (z * cdf + pdf)
-      println(s"cur best: $eta, z: $z, cdf: $cdf, pdf: $pdf, f: $f")
-      (f, Vectors.dense(new Array[Double](X.size)))
+      val ei = s * (z * cdf + pdf)
+      //println(s"EI of ${X.toArray.mkString("(", ",", ")")}: $ei, cur best: $eta, z: $z, cdf: $cdf, pdf: $pdf")
+      (ei, Vectors.dense(new Array[Double](X.size)))
     }
   }
 }

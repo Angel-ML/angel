@@ -72,7 +72,7 @@ class ConfigurationSpace(
     var missing: Int = 0
     do {
       missing = size - configs.length
-      println(s"num of params: $numParams")
+      //println(s"num of params: $numParams")
       var vectors: Array[Vector] = Array.fill(missing)(Vectors.dense(new Array[Double](numParams)))
       param2Idx.foreach { case (paramName, paramIdx) =>
         paramDict.get(paramName) match {

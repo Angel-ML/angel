@@ -27,7 +27,7 @@ import com.tencent.angel.spark.ml.automl.tuner.surrogate.{RFSurrogate, Surrogate
 import com.tencent.angel.spark.ml.automl.tuner.trail.{TestTrail, Trail}
 import org.apache.spark.ml.linalg.Vector
 
-object Example extends App {
+object RFTunerExample extends App {
 
   override def main(args: Array[String]): Unit = {
     val param1: ParamSpace[Double] = new ContinuousSpace("param1", 0, 10, 11)
