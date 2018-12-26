@@ -1,9 +1,7 @@
-package com.tencent.angel.spark.ml.automl.tuner
+package com.tencent.angel.spark.ml.automl.tuner.model
 
-import breeze.linalg._
-import breeze.numerics._
-import com.tencent.angel.spark.ml.automl.tuner.kernel.{Matern5Iso, SquareExpIso}
-import com.tencent.angel.spark.ml.automl.tuner.model.GPModel
+import breeze.linalg.{DenseMatrix, DenseVector}
+import com.tencent.angel.spark.ml.automl.tuner.kernel.Matern5Iso
 
 object GPExample {
 

@@ -29,13 +29,13 @@ class GPKernelDiffFunc(model: GPModel) extends DiffFunction[BDV[Double]] {
   override def calculate(params: BDV[Double]): (Double, BDV[Double]) = {
 
     try {
-      println(s"------iteration $iter------")
+      //println(s"------iteration $iter------")
       val covParams = BDV(params.toArray.dropRight(1))
       model.covParams = covParams
       val noiseStdDev = params.toArray.last
       model.noiseStdDev = noiseStdDev
-      println(s"covariance params: $covParams")
-      println(s"standard derivative: $noiseStdDev")
+      //println(s"covariance params: $covParams")
+      //println(s"standard derivative: $noiseStdDev")
 
       val meanX = model.meanFunc(model.X)
       val KXX = model.calKXX()
@@ -51,7 +51,7 @@ class GPKernelDiffFunc(model: GPModel) extends DiffFunction[BDV[Double]] {
       //println(inv(KXX))
 
       val loglikeLoss = - BreezeOp.logLike(meanX, KXX, invKXX, model.y)
-      println(s"log likelihood loss: $loglikeLoss")
+      //println(s"log likelihood loss: $loglikeLoss")
 
       // calculate partial derivatives
       val covarFuncGrads = model.covFunc.grad(model.X, model.X, covParams)
@@ -65,7 +65,7 @@ class GPKernelDiffFunc(model: GPModel) extends DiffFunction[BDV[Double]] {
       val allGrads = covarFuncGrads :+ covarNoiseGrad
 
       val loglikeGrads = BreezeOp.logLikeD(meanX, invKXX, model.y, allGrads).map(d => -d)
-      println(s"grad of covariance params: $loglikeGrads")
+      //println(s"grad of covariance params: $loglikeGrads")
 
       iter = iter + 1
 

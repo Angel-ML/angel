@@ -22,6 +22,7 @@ import breeze.linalg.{cholesky, diag, DenseMatrix => BDM, DenseVector => BDV}
 import breeze.optimize.LBFGS
 import com.tencent.angel.spark.ml.automl.tuner.kernel.{Covariance, CovarianceType}
 import com.tencent.angel.spark.ml.automl.tuner.math.BreezeOp
+import org.apache.spark.ml.linalg.DenseMatrix
 
 import scala.math._
 
@@ -50,8 +51,8 @@ class GPModel(val covFunc: Covariance,
 
     val optimizer = new LBFGS[BDV[Double]](maxIter = 10, m = 3, tolerance = 1e-7)
     val newParams = optimizer.minimize(kernelDiffFunc, initParams)
-    println(optimizer)
-    println(s"new params: ${newParams}")
+    //println(optimizer)
+    //println(s"new params: ${newParams}")
 
     val newCovParams = BDV(newParams.toArray.dropRight(1))
     val newNoiseStdDev = newParams.toArray.last
@@ -68,22 +69,28 @@ class GPModel(val covFunc: Covariance,
   }
 
   def predict(newX: BDM[Double]): BDM[Double] = {
-    val meanX = meanFunc(X)
+    if (X == null || y == null) {
+      BDM.zeros(newX.rows, cols = 2)
+    } else {
+      val meanX = meanFunc(X)
 
-    val KXX = calKXX()
+      val KXX = calKXX()
 
-    val invKXX = calInvKXX(KXX)
+      val invKXX = calInvKXX(KXX)
 
-    val KXZ = covFunc.cov(X, newX, covParams)
+      val KXZ = covFunc.cov(X, newX, covParams)
 
-    val KZZ = covFunc.cov(newX, newX, covParams)
+      val KZZ = covFunc.cov(newX, newX, covParams)
 
-    val meanNewX = meanFunc(newX)
+      val meanNewX = meanFunc(newX)
 
-    val predMean = meanNewX + KXZ.t * (invKXX * (y - meanX))
-    val predVar = KZZ - KXZ.t * invKXX * KXZ
+      val predMean = meanNewX + KXZ.t * (invKXX * (y - meanX))
+      val predVar = diag(KZZ - KXZ.t * invKXX * KXZ).map{ v =>
+        if (v < -1e-12) 0 else v
+      }
 
-    BDV.horzcat(predMean, diag(predVar))
+      BDV.horzcat(predMean, predVar)
+    }
   }
 
   def calKXX(): BDM[Double] = {
