@@ -19,10 +19,11 @@
 package com.tencent.angel.spark.ml.automl.tuner.solver
 
 import com.tencent.angel.spark.ml.automl.tuner.TunerParam
-import com.tencent.angel.spark.ml.automl.tuner.acquisition.Acquisition
-import com.tencent.angel.spark.ml.automl.tuner.acquisition.optimizer.AcqOptimizer
+import com.tencent.angel.spark.ml.automl.tuner.acquisition.{Acquisition, EI}
+import com.tencent.angel.spark.ml.automl.tuner.acquisition.optimizer.{AcqOptimizer, RandomSearch}
 import com.tencent.angel.spark.ml.automl.tuner.config.{Configuration, ConfigurationSpace}
-import com.tencent.angel.spark.ml.automl.tuner.surrogate.Surrogate
+import com.tencent.angel.spark.ml.automl.tuner.parameter.ParamSpace
+import com.tencent.angel.spark.ml.automl.tuner.surrogate.{GPSurrogate, Surrogate}
 import org.apache.spark.ml.linalg.Vector
 import org.apache.commons.logging.{Log, LogFactory}
 
@@ -62,6 +63,36 @@ class Solver(
   }
 
   def feed(config: Configuration, y: Double): Unit = {
-    surrogate.update(config.getVector, y)
+    if (surrogate.minimize)
+      surrogate.update(config.getVector, y)
+    else
+      surrogate.update(config.getVector, -y)
+  }
+
+  def stop(): Unit = {
+    surrogate.stop
+  }
+}
+
+object Solver {
+
+  def apply(cs: ConfigurationSpace, surrogate: Surrogate, acqFuc: Acquisition, optimizer: AcqOptimizer): Solver = {
+    new Solver(cs, surrogate, acqFuc, optimizer)
+  }
+
+  def apply(cs: ConfigurationSpace): Solver = {
+    val sur: Surrogate = new GPSurrogate(cs, minimize = true)
+    val acq: Acquisition = new EI(sur, 0.1f)
+    val opt: AcqOptimizer = new RandomSearch(acq, cs)
+    new Solver(cs, sur, acq, opt)
+  }
+
+  def apply(array: Array[ParamSpace[Double]], minimize: Boolean): Solver = {
+    val cs: ConfigurationSpace = new ConfigurationSpace("cs")
+    array.foreach( cs.addParam(_) )
+    val sur: Surrogate = new GPSurrogate(cs, minimize)
+    val acq: Acquisition = new EI(sur, 0.1f)
+    val opt: AcqOptimizer = new RandomSearch(acq, cs)
+    new Solver(cs, sur, acq, opt)
   }
 }

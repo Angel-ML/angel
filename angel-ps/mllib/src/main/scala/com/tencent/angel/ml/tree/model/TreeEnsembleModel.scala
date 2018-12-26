@@ -177,7 +177,7 @@ class TreeEnsembleModel(
       val x: IntFloatVector = instance.getX.asInstanceOf[IntFloatVector]
       val y = instance.getY
       val pred = predict(x)
-      ret.put(DecisionTreePredictResult(idx, y, pred))
+      ret.put(DecisionTreePredictResult(idx.toString, y, pred))
     }
     ret
   }

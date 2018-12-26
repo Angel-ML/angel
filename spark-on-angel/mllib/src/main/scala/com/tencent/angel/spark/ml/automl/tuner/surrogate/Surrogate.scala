@@ -82,7 +82,8 @@ abstract class Surrogate(
   }
 
   def print(X: Vector, y: Double): Unit = {
-    println(s"update surrogate with X[${X.toArray.mkString("(", ",", ")")}] and Y[$y]")
+    println(s"update surrogate with X[${X.toArray.mkString("(", ",", ")")}] " +
+      s"and Y[${if (minimize) y else -y}]")
   }
 
   def update(X: Vector, y: Double): Unit = {
@@ -127,8 +128,8 @@ abstract class Surrogate(
   def curMax: (Vector, Double) = {
     if (curY.isEmpty) (null, Double.MinValue)
     else {
-      val maxIdx: Int = curY.zipWithIndex.max._2
-      (curX(maxIdx), curY(maxIdx))
+      val minIdx: Int = curY.zipWithIndex.min._2
+      (curX(minIdx), -curY(minIdx))
     }
   }
 }

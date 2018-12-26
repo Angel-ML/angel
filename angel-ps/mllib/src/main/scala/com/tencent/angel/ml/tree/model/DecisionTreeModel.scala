@@ -69,7 +69,7 @@ class DecisionTreeModel (
       val x: IntFloatVector = instance.getX.asInstanceOf[IntFloatVector]
       val y = instance.getY
       val pred = predict(x)
-      ret.put(DecisionTreePredictResult(idx, y, pred))
+      ret.put(DecisionTreePredictResult(idx.toString, y, pred))
     }
     ret
   }
@@ -122,7 +122,7 @@ class DecisionTreeModel (
   }
 }
 
-case class DecisionTreePredictResult(sid: Long, pred: Double, label: Double) extends PredictResult {
+case class DecisionTreePredictResult(sid: String, pred: Double, label: Double) extends PredictResult {
   val df = new DecimalFormat("0")
 
   override def getText: String = {

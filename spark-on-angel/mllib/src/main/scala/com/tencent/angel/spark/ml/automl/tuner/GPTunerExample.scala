@@ -18,12 +18,9 @@
 
 package com.tencent.angel.spark.ml.automl.tuner
 
-import com.tencent.angel.spark.ml.automl.tuner.acquisition.{Acquisition, EI}
-import com.tencent.angel.spark.ml.automl.tuner.acquisition.optimizer.{AcqOptimizer, RandomSearch}
-import com.tencent.angel.spark.ml.automl.tuner.config.ConfigurationSpace
+import com.tencent.angel.spark.ml.automl.tuner.config.Configuration
 import com.tencent.angel.spark.ml.automl.tuner.parameter.{ContinuousSpace, DiscreteSpace, ParamSpace}
 import com.tencent.angel.spark.ml.automl.tuner.solver.{Solver, SolverWithTrail}
-import com.tencent.angel.spark.ml.automl.tuner.surrogate.{GPSurrogate, RFSurrogate, Surrogate}
 import com.tencent.angel.spark.ml.automl.tuner.trail.{TestTrail, Trail}
 import org.apache.spark.ml.linalg.Vector
 
@@ -34,21 +31,16 @@ object GPTunerExample extends App {
     val param2: ParamSpace[Double] = new ContinuousSpace("param2", -5, 5, 11)
     val param3: ParamSpace[Double] = new DiscreteSpace[Double]("param3", Array(0.0, 1.0, 3.0, 5.0))
     val param4: ParamSpace[Double] = new DiscreteSpace[Double]("param4", Array(-5.0, -3.0, 0.0, 3.0, 5.0))
-    val cs: ConfigurationSpace = new ConfigurationSpace("cs")
-    cs.addParam(param1)
-    cs.addParam(param2)
-    cs.addParam(param3)
-    cs.addParam(param4)
-    TunerParam.setBatchSize(1)
-    TunerParam.setSampleSize(100)
-    val sur: Surrogate = new GPSurrogate(cs, true)
-    val acq: Acquisition = new EI(sur, 0.1f)
-    val opt: AcqOptimizer = new RandomSearch(acq, cs)
-    val solver: Solver = new Solver(cs, sur, acq, opt)
+    val solver: Solver = Solver(Array(param1, param2, param3, param4), true)
     val trail: Trail = new TestTrail()
-    val runner: SolverWithTrail = new SolverWithTrail(solver, trail)
-    val result: (Vector, Double) = runner.run(10)
-    sur.stop()
+    (0 until 20).foreach{ iter =>
+      println(s"------iteration $iter starts------")
+      val configs: Array[Configuration] = solver.suggest
+      val results: Array[Double] = trail.evaluate(configs)
+      solver.feed(configs, results)
+    }
+    val result: (Vector, Double) = solver.surrogate.curBest
+    solver.stop()
     println(s"Best configuration ${result._1.toArray.mkString(",")}, best performance: ${result._2}")
   }
 }
