@@ -57,7 +57,7 @@ class ConfigurationSpace(
 
   def getFields: Array[StructField] = fields.toArray
 
-  def getParams: List[ParamSpace[Double]] = paramDict.values.toList
+  def getParams(): Array[ParamSpace[Double]] = paramDict.values.toArray
 
   def getParamByName(name: String): Option[ParamSpace[Double]] = paramDict.get(name)
 
@@ -66,18 +66,18 @@ class ConfigurationSpace(
   def getParamByIdx(idx: Int): Option[ParamSpace[Double]] = paramDict.get(idx2Param.getOrElse(idx, "none"))
 
   // TODO: Store historical configurations to avoid redundancy.
-  def sampleConfig(size: Int): List[Configuration] = {
-    var configs: ListBuffer[Configuration] = new ListBuffer[Configuration]
+  def sampleConfig(size: Int): Array[Configuration] = {
+    var configs: ArrayBuffer[Configuration] = new ArrayBuffer[Configuration]
 
     var missing: Int = 0
     do {
       missing = size - configs.length
       println(s"num of params: $numParams")
-      var vectors: List[Vector] = List.fill(missing)(Vectors.dense(new Array[Double](numParams)))
+      var vectors: Array[Vector] = Array.fill(missing)(Vectors.dense(new Array[Double](numParams)))
       param2Idx.foreach { case (paramName, paramIdx) =>
         paramDict.get(paramName) match {
           case Some(param) =>
-            param.sample(missing).zipWithIndex.foreach { case (f,i) =>
+            param.sample(missing).zipWithIndex.foreach { case (f: Double, i: Int) =>
               vectors(i).toArray(paramIdx) = f
             }
           case None => LOG.info(s"Cannot find $paramName.")
@@ -88,7 +88,7 @@ class ConfigurationSpace(
       }
     } while(configs.length < size)
 
-    configs.toList
+    configs.toArray
   }
 
   // TODO: Implement this func

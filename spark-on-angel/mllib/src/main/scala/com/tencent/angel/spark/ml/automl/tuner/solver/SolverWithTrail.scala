@@ -32,13 +32,13 @@ class SolverWithTrail(val solver: Solver, val trail: Trail) {
     * @param Y       : Initial function values of the already evaluated points
     * @return Incumbent and function value of the incumbent
     */
-  def run(numIter: Int, X: List[Configuration] = Nil, Y: List[Double] = Nil): (Vector, Double) = {
-    if (X != Nil && Y != Nil && X.size == Y.size)
+  def run(numIter: Int, X: Array[Configuration] = null, Y: Array[Double] = null): (Vector, Double) = {
+    if (X != null && Y != null && X.size == Y.size)
       solver.feed(X, Y)
     (0 until numIter).foreach{ iter =>
       println(s"------iteration $iter starts------")
-      val configs: List[Configuration] = solver.suggest
-      val results: List[Double] = trail.evaluate(configs)
+      val configs: Array[Configuration] = solver.suggest
+      val results: Array[Double] = trail.evaluate(configs)
       solver.feed(configs, results)
     }
     solver.surrogate.curBest

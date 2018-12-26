@@ -25,8 +25,8 @@ package com.tencent.angel.spark.ml.automl.tuner.parameter
   */
 abstract class ParamSpace[T: Numeric](val name: String) {
 
-  def sample(size: Int): List[T]
+  def sample(size: Int): Array[T]
 
-  def sample: T
+  def sampleOne(): T
 
 }

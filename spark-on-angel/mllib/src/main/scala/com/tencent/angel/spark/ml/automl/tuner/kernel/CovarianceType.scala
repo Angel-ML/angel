@@ -16,14 +16,28 @@
  */
 
 
-package com.tencent.angel.spark.ml.automl.tuner.trail
+package com.tencent.angel.spark.ml.automl.tuner.kernel
 
-import com.tencent.angel.spark.ml.automl.tuner.config.Configuration
+object CovarianceType extends Enumeration {
 
-abstract class Trail {
+  type CovarianceType = Value
 
-  def evaluate(configs: Array[Configuration]): Array[Double] = configs.map(evaluate)
+  val MATERN3 = Value("MATERN3")
+  val MATERN5 = Value("MATERN5")
+  val MATERN5_ISO = Value("MATERN5_ISO")
+  val SQUAREEXP_ISO = Value("SQUAREEXP_ISO")
 
-  def evaluate(config: Configuration): Double
+  def parse(name: String): Covariance = {
+    val covType = CovarianceType.withName(name.toUpperCase())
+    parse(covType)
+  }
+
+  def parse(covType: CovarianceType.Value): Covariance = covType match {
+    case MATERN3 => new Matern3
+    case MATERN5 => new Matern5
+    case MATERN5_ISO => new Matern5Iso
+    case SQUAREEXP_ISO => new SquareExpIso
+    case _ => new Matern5
+  }
 
 }

@@ -24,7 +24,6 @@ import com.tencent.angel.spark.ml.automl.utils.DataUtils
 import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.spark.ml.regression.{DecisionTreeRegressionModel, RandomForestRegressionModel, RandomForestRegressor}
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.{SparkConf, SparkContext}
 
 class RFSurrogate(
                    override val cs: ConfigurationSpace,
@@ -36,9 +35,7 @@ class RFSurrogate(
   var model: RandomForestRegressionModel = _
   val numTrees: Int = 5
   val maxDepth: Int = 2
-  //val conf = new SparkConf().setMaster("local").setAppName("RandomForest")
-  //val sc = new SparkContext(conf)
-  //sc.setLogLevel("ERROR")
+
   val ss = SparkSession.builder()
     .master("local")
     .appName("test")
@@ -49,7 +46,7 @@ class RFSurrogate(
     if (curX.size < Math.pow(2, maxDepth - 1))
       return
 
-    val data: DataFrame = DataUtils.parse(ss, schema, curX.toList, curY.toList)
+    val data: DataFrame = DataUtils.parse(ss, schema, curX.toArray, curY.toArray)
 
 
     val rf = new RandomForestRegressor()
@@ -59,7 +56,6 @@ class RFSurrogate(
       .setMaxDepth(maxDepth)
 
     model = rf.fit(data)
-
   }
 
   /**

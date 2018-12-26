@@ -16,14 +16,35 @@
  */
 
 
-package com.tencent.angel.spark.ml.automl.tuner.trail
+package com.tencent.angel.spark.ml.automl.tuner.kernel
 
-import com.tencent.angel.spark.ml.automl.tuner.config.Configuration
+import breeze.linalg.{DenseMatrix => BDM, DenseVector => BDV}
 
-abstract class Trail {
+/**
+  * Covariance function given two points.
+  */
+trait Covariance {
 
-  def evaluate(configs: Array[Configuration]): Array[Double] = configs.map(evaluate)
+  /**
+    * the covariance function
+    * @param x1
+    * @param x2
+    * @param params
+    * @return
+    */
+  def cov(x1: BDM[Double],
+          x2: BDM[Double],
+          params: BDV[Double]): BDM[Double]
 
-  def evaluate(config: Configuration): Double
+  /**
+    * the derivative of covariance function against kernel hyper-parameters
+    * @param x1
+    * @param x2
+    * @param params
+    * @return
+    */
+  def grad(x1: BDM[Double],
+           x2: BDM[Double],
+           params: BDV[Double]): Array[BDM[Double]]
 
 }

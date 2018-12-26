@@ -34,14 +34,14 @@ class Solver(
 
   val LOG: Log = LogFactory.getLog(classOf[Solver])
 
-  def getObservations: (List[Vector], List[Double]) = (surrogate.curX.toList, surrogate.curY.toList)
+  def getObservations(): (Array[Vector], Array[Double]) = (surrogate.curX.toArray, surrogate.curY.toArray)
 
   def getSurrogate: Surrogate = surrogate
 
   /**
     * Suggests configurations to evaluate.
     */
-  def suggest(): List[Configuration] = {
+  def suggest(): Array[Configuration] = {
     //println(s"suggest configurations")
     optimizer.maximize(TunerParam.batchSize).map(_._2)
   }
@@ -51,7 +51,7 @@ class Solver(
     * @param configs: More evaluated configurations
     * @param Y: More evaluation result
     */
-  def feed(configs: List[Configuration], Y: List[Double]): Unit = {
+  def feed(configs: Array[Configuration], Y: Array[Double]): Unit = {
     //println(s"feed ${configs.size} configurations")
     surrogate.update(configs.map(_.getVector), Y)
   }
