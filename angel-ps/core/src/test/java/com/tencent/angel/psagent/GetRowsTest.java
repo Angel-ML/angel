@@ -49,8 +49,6 @@ import org.junit.Test;
 
 import java.util.Random;
 
-import static org.junit.Assert.assertEquals;
-
 public class GetRowsTest {
   public static String DENSE_DOUBLE_MAT = "dense_double_mat";
   public static String DENSE_DOUBLE_MAT_COMP = "dense_double_mat_comp";
@@ -128,6 +126,12 @@ public class GetRowsTest {
     conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
     conf.setInt(AngelConf.ANGEL_MODEL_PARTITIONER_PARTITION_SIZE, 1000);
     conf.setBoolean("use.new.split", true);
+
+    conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 10);
+    conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
+    conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
+    conf.setInt(AngelConf.ANGEL_WORKER_MAX_ATTEMPTS, 1);
+    conf.setInt(AngelConf.ANGEL_PS_MAX_ATTEMPTS, 1);
 
     // get a angel client
     angelClient = AngelClientFactory.get(conf);
@@ -417,7 +421,7 @@ public class GetRowsTest {
     // Start to run application
     angelClient.run();
 
-    Thread.sleep(5000);
+    Thread.sleep(2000);
 
     psId = new ParameterServerId(0);
     psAttempt0Id = new PSAttemptId(psId, 0);

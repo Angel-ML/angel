@@ -67,7 +67,7 @@ public class LongKeySparseDoubleRowUpdateSplit extends RowUpdateSplit {
   @Override public void serialize(ByteBuf buf) {
     super.serialize(buf);
     long startCol = splitContext.getPartKey().getStartCol();
-    buf.writeDouble(0.0);
+    //buf.writeDouble(0.0);
     if (splitContext.isEnableFilter()) {
       double filterValue = splitContext.getFilterThreshold();
       int position = buf.writerIndex();

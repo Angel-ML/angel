@@ -27,23 +27,26 @@ Once a Spark on Angel application has been packaged, it can be launched by the s
 The script is:
 
 ```bash
-#! /bin/bash
+#!/bin/bash
+
 source ./spark-on-angel-env.sh
+
 $SPARK_HOME/bin/spark-submit \
     --master yarn-cluster \
     --conf spark.ps.jars=$SONA_ANGEL_JARS \
     --conf spark.ps.instances=10 \
     --conf spark.ps.cores=2 \
     --conf spark.ps.memory=6g \
-    --queue g_teg_angel-offline \
-    --jars $SONA_SPARK_JARS \
-    --name "BreezeSGD-spark-on-angel" \
+    --jars $SONA_SPARK_JARS\
+    --name "LR-spark-on-angel" \
     --driver-memory 10g \
     --num-executors 10 \
     --executor-cores 2 \
     --executor-memory 4g \
-    --class com.tencent.angel.spark.examples.ml.BreezeSGD \
-    ./../lib/spark-on-angel-examples-${ANGEL_VERSION}.jar
+    --class com.tencent.angel.spark.examples.basic.LR \
+    ./../lib/spark-on-angel-examples-${ANGEL_VERSION}.jar \
+    input:<input_path> \
+    lr:0.1 \
 ```
 
 ## Minimal Example of LR in Spark on Angel Verion

@@ -192,12 +192,32 @@ public class ServerIntFloatRow extends ServerFloatRow {
       switch (updateType) {
         case T_FLOAT_SPARSE:
         case T_FLOAT_SPARSE_COMPONENT:
-          updateUseSparse(buf, op);
+          updateUseIntFloatSparse(buf, op);
+          break;
+
+        case T_LONG_SPARSE:
+        case T_LONG_SPARSE_COMPONENT:
+          updateUseIntLongSparse(buf, op);
+          break;
+
+        case T_INT_SPARSE:
+        case T_INT_SPARSE_COMPONENT:
+          updateUseIntIntSparse(buf, op);
           break;
 
         case T_FLOAT_DENSE:
         case T_FLOAT_DENSE_COMPONENT:
-          updateUseDense(buf, op);
+          updateUseIntFloatDense(buf, op);
+          break;
+
+        case T_LONG_DENSE:
+        case T_LONG_DENSE_COMPONENT:
+          updateUseIntLongDense(buf, op);
+          break;
+
+        case T_INT_DENSE:
+        case T_INT_DENSE_COMPONENT:
+          updateUseIntIntDense(buf, op);
           break;
 
         default: {
@@ -212,7 +232,7 @@ public class ServerIntFloatRow extends ServerFloatRow {
     }
   }
 
-  private void updateUseDense(ByteBuf buf, UpdateOp op) {
+  private void updateUseIntFloatDense(ByteBuf buf, UpdateOp op) {
     int size = buf.readInt();
     if (op == UpdateOp.PLUS) {
       for (int i = 0; i < size; i++) {
@@ -225,7 +245,33 @@ public class ServerIntFloatRow extends ServerFloatRow {
     }
   }
 
-  private void updateUseSparse(ByteBuf buf, UpdateOp op) {
+  private void updateUseIntLongDense(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      for (int i = 0; i < size; i++) {
+        intFloatRow.set(i, intFloatRow.get(i) + buf.readLong());
+      }
+    } else {
+      for (int i = 0; i < size; i++) {
+        intFloatRow.set(i, buf.readLong());
+      }
+    }
+  }
+
+  private void updateUseIntIntDense(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      for (int i = 0; i < size; i++) {
+        intFloatRow.set(i, intFloatRow.get(i) + buf.readInt());
+      }
+    } else {
+      for (int i = 0; i < size; i++) {
+        intFloatRow.set(i, buf.readInt());
+      }
+    }
+  }
+
+  private void updateUseIntFloatSparse(ByteBuf buf, UpdateOp op) {
     int size = buf.readInt();
     if (op == UpdateOp.PLUS) {
       for (int i = 0; i < size; i++) {
@@ -235,6 +281,34 @@ public class ServerIntFloatRow extends ServerFloatRow {
     } else {
       for (int i = 0; i < size; i++) {
         intFloatRow.set(buf.readInt(), buf.readFloat());
+      }
+    }
+  }
+
+  private void updateUseIntLongSparse(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      for (int i = 0; i < size; i++) {
+        int index = buf.readInt();
+        intFloatRow.set(index, intFloatRow.get(index) + buf.readLong());
+      }
+    } else {
+      for (int i = 0; i < size; i++) {
+        intFloatRow.set(buf.readInt(), buf.readLong());
+      }
+    }
+  }
+
+  private void updateUseIntIntSparse(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      for (int i = 0; i < size; i++) {
+        int index = buf.readInt();
+        intFloatRow.set(index, intFloatRow.get(index) + buf.readInt());
+      }
+    } else {
+      for (int i = 0; i < size; i++) {
+        intFloatRow.set(buf.readInt(), buf.readInt());
       }
     }
   }

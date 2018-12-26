@@ -26,6 +26,7 @@ import io.netty.buffer.ByteBuf;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class IndexPartGetRowsRequest extends PartitionRequest {
   private int matrixId;

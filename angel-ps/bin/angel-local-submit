@@ -24,7 +24,7 @@ bin=`cd "$bin"; pwd`
 lib="$bin"/../lib
 
 export ANGEL_HOME="$bin/../"
-export ANGEL_VERSION=2.0.0-alpha
+export ANGEL_VERSION=2.0.0
 
 
 for f in "$lib"/*.jar; do

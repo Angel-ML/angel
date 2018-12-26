@@ -127,18 +127,6 @@ public class UpdaterRequest extends PartitionRequest {
     return size;
   }
 
-  @Override public int hashCode() {
-    final int prime = 31;
-    int result = super.hashCode();
-    result = prime * result + ((partParam == null) ? 0 : partParam.hashCode());
-    result = prime * result + ((updaterFuncClass == null) ? 0 : updaterFuncClass.hashCode());
-    return result;
-  }
-
-  @Override public boolean equals(Object obj) {
-    return this == obj;
-  }
-
   /**
    * Get update udf function class name.
    *

@@ -52,7 +52,7 @@ public class KmeansTest {
       // Feature number of train data
       long featureNum = 256;
       // Total iteration number
-      int epochNum = 10;
+      int epochNum = 5;
       // Sample ratio per mini-batch
       double spratio = 1.0;
       // C
@@ -65,7 +65,9 @@ public class KmeansTest {
       conf.setBoolean("mapred.mapper.new-api", true);
       conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
       conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
-      conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 100);
+      conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 10);
+      conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
+      conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
 
       //set angel resource parameters #worker, #task, #PS
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
@@ -107,6 +109,33 @@ public class KmeansTest {
     }
   }
 
+
+  private void incTrain() {
+    try {
+      String savePath = LOCAL_FS + TMP_PATH + "/model/Kmeans";
+      String newPath = LOCAL_FS + TMP_PATH + "/model/NewKmeans";
+      String logPath = LOCAL_FS + TMP_PATH + "/log/Kmeans/trainLog";
+
+      // Set trainning data path
+      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, TrainInputPath);
+      // Set load model path
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, savePath);
+      // Set save model path
+      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, newPath);
+      // Set actionType incremental train
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_INC_TRAIN());
+      // Set log path
+      conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
+
+
+      KMeansRunner runner = new KMeansRunner();
+      runner.train(conf);
+    } catch (Exception e) {
+      LOG.error("run incTrainTest failed", e);
+      throw e;
+    }
+  }
+
   private void predictTest() {
     try {
       // Set testing data path
@@ -130,6 +159,7 @@ public class KmeansTest {
   @Test public void testKMeans() throws Exception {
     setup();
     trainTest();
-    //        predictTest();
+    incTrain();
+    predictTest();
   }
 }

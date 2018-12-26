@@ -187,7 +187,17 @@ public class ServerLongIntRow extends ServerIntRow {
       switch (updateType) {
         case T_INT_SPARSE_LONGKEY:
         case T_INT_SPARSE_LONGKEY_COMPONENT:
-          updateUseSparse(buf, op);
+          updateUseLongIntSparse(buf, op);
+          break;
+
+        case T_INT_SPARSE:
+        case T_INT_SPARSE_COMPONENT:
+          updateUseIntIntSparse(buf, op);
+          break;
+
+        case T_INT_DENSE:
+        case T_INT_DENSE_COMPONENT:
+          updateUseIntIntDense(buf, op);
           break;
 
         default: {
@@ -202,7 +212,7 @@ public class ServerLongIntRow extends ServerIntRow {
     }
   }
 
-  private void updateUseSparse(ByteBuf buf, UpdateOp op) {
+  private void updateUseLongIntSparse(ByteBuf buf, UpdateOp op) {
     int size = buf.readInt();
     if (op == UpdateOp.PLUS) {
       if (useIntKey) {
@@ -224,6 +234,58 @@ public class ServerLongIntRow extends ServerIntRow {
       } else {
         for (int i = 0; i < size; i++) {
           ((LongIntVector) row).set(buf.readLong(), buf.readInt());
+        }
+      }
+    }
+  }
+
+  private void updateUseIntIntSparse(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          int index = buf.readInt();
+          ((IntIntVector) row).set(index, ((IntIntVector) row).get(index) + buf.readInt());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          long index = buf.readInt();
+          ((LongIntVector) row).set(index, ((LongIntVector) row).get(index) + buf.readInt());
+        }
+      }
+    } else {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntIntVector) row).set(buf.readInt(), buf.readInt());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          ((LongIntVector) row).set(buf.readInt(), buf.readInt());
+        }
+      }
+    }
+  }
+
+  private void updateUseIntIntDense(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntIntVector) row).set(i, ((IntIntVector) row).get(i) + buf.readInt());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          ((LongIntVector) row).set(i, ((LongIntVector) row).get(i) + buf.readInt());
+        }
+      }
+    } else {
+      if (useIntKey) {
+        for (int i = 0; i < size; i++) {
+          ((IntIntVector) row).set(i, buf.readInt());
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          ((LongIntVector) row).set(i, buf.readInt());
         }
       }
     }

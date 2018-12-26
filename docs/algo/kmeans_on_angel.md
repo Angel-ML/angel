@@ -62,7 +62,7 @@ KMeans on Angel的算法流程如下图所示：
   * angel.ps.memory.mb：PS申请内存大小   
 
 * 提交命令
-	*向Yarn集群提交Kmeans算法训练任务:
+	* 向Yarn集群提交Kmeans算法训练任务:
 
 	```java
     ./bin/angel-submit \
@@ -88,7 +88,7 @@ KMeans on Angel的算法流程如下图所示：
         --angel.job.name=kmeans_train
 	```
 
-	*向Yarn集群提交Kmeans算法增量训练任务:
+	* 向Yarn集群提交Kmeans算法增量训练任务:
 	```java
 	./bin/angel-submit \
 		--action.type=inctrain \
@@ -115,7 +115,7 @@ KMeans on Angel的算法流程如下图所示：
 	```
 
 
-	*向Yarn集群提交Kmeans算法预测任务:
+	* 向Yarn集群提交Kmeans算法预测任务:
 	
 	```java
     ./bin/angel-submit \

@@ -45,6 +45,10 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Robust Re
 	* ml.reg.l1：L1惩罚项系数
 	* ml.reg.l2：L2惩罚项系数
 	* ml.robustregression.loss.delta：残差分段点
+	* ml.inputlayer.optimizer：优化器类型，可选"adam","ftrl"和"momentum"
+	* ml.data.label.trans.class: 是否要对标签进行转换, 默认为"NoTrans", 可选项为"ZeroOneTrans"(转为0-1), "PosNegTrans"(转为正负1), "AddOneTrans"(加1), "SubOneTrans"(减1). 
+	* ml.data.label.trans.threshold: "ZeroOneTrans"(转为0-1), "PosNegTrans"(转为正负1)这两种转还要以设一个阈值, 大于阈值的为1, 阈值默认为0
+	* ml.data.posneg.ratio: 正负样本重采样比例, 对于正负样本相差较大的情况有用(如5倍以上)
 
 * 输入输出参数
 	* ml.feature.index.range：特征向量的维度
@@ -64,7 +68,7 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Robust Re
 
 
 * 提交命令
-	*向Yarn集群提交RobustRegression算法训练任务:
+	* 向Yarn集群提交RobustRegression算法训练任务:
 
 	```java
 	./bin/angel-submit \
@@ -96,7 +100,7 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Robust Re
         --angel.output.path.deleteonexist=true
 	```
 
-	*向Yarn集群提交RobustRegression算法增量训练任务:
+	* 向Yarn集群提交RobustRegression算法增量训练任务:
 
 	```java
 	./bin/angel-submit \
@@ -129,7 +133,7 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Robust Re
 		--angel.output.path.deleteonexist=true
 	```
 
-	*向Yarn集群提交RobustRegression算法预测任务:
+	* 向Yarn集群提交RobustRegression算法预测任务:
 
 	```java
 	./bin/angel-submit \

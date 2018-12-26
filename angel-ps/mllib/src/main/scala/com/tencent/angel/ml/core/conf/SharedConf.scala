@@ -238,7 +238,7 @@ object SharedConf {
 
   private var sc: SharedConf = _
 
-  def get(): SharedConf = {
+  def get(): SharedConf = synchronized {
     if (sc == null) {
       sc = new SharedConf
       addMLConf()
@@ -313,7 +313,7 @@ object SharedConf {
     }
   }
 
-  def runningModel(): RunningMode = {
+  def runningMode(): RunningMode = {
     get()
 
     sc.get(AngelConf.ANGEL_RUNNING_MODE) match {

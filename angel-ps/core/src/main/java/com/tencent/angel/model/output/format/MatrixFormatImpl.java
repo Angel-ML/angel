@@ -335,7 +335,7 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
       matrix.setRow(entry.getIntKey(), initRow(rowType, matrixFilesMeta.getCol(), entry.getLongValue()));
     }
 
-    return rbMatrix(rowType, matrixFilesMeta.getRow(), matrixFilesMeta.getCol());
+    return matrix;
   }
 
   private static RowBasedMatrix rbMatrix(RowType rowType, int rowNum, long colNum) {

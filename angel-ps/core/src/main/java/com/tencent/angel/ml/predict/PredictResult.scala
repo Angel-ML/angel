@@ -31,7 +31,7 @@ abstract class PredictResult {
 
   def getText: String
 
-  val sid: Long
+  val sid: String
   val pred: Double
   // the proba of positive prediction
   val proba: Double = 0.5
