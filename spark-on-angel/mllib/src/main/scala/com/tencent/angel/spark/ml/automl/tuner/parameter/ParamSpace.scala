@@ -18,16 +18,18 @@
 
 package com.tencent.angel.spark.ml.automl.tuner.parameter
 
+import scala.reflect.ClassTag
+
 
 /**
   * Base class of a single parameter's search space.
   *
   * @param name: Name of the parameter
   */
-abstract class ParamSpace[T: Numeric](val name: String,
-                                      val doc: String = "param with search space") {
+abstract class ParamSpace[+T: ClassTag](val name: String,
+                                       val doc: String = "param with search space") {
 
-  def sample(size: Int): Array[T]
+  def sample(size: Int): List[T]
 
   def sampleOne(): T
 

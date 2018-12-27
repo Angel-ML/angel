@@ -104,7 +104,7 @@ class ContinuousSpace(
 
   def toRandomSpace: ParamSpace[Double] = this
 
-  override def sample(size: Int): Array[Double] = Array.fill[Double](size)(sampleOne)
+  override def sample(size: Int): List[Double] = List.fill[Double](size)(sampleOne)
 
   def sampleOne(): Double = {
     if (isGrid)

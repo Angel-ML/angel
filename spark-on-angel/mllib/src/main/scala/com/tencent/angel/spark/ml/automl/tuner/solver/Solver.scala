@@ -35,9 +35,13 @@ class Solver(
 
   val LOG: Log = LogFactory.getLog(classOf[Solver])
 
-  def getObservations(): (Array[Vector], Array[Double]) = (surrogate.preX.toArray, surrogate.preY.toArray)
+  def getHistory(): (Array[Vector], Array[Double]) = (surrogate.preX.toArray, surrogate.preY.toArray)
 
   def getSurrogate: Surrogate = surrogate
+
+  def addParam(param: ParamSpace[AnyVal]): Unit = {
+    cs.addParam(param)
+  }
 
   /**
     * Suggests configurations to evaluate.
@@ -89,12 +93,21 @@ object Solver {
     new Solver(cs, sur, acq, opt)
   }
 
-  def apply(array: Array[ParamSpace[Double]], minimize: Boolean): Solver = {
+  def apply(array: Array[ParamSpace[AnyVal]], minimize: Boolean): Solver = {
     val cs: ConfigurationSpace = new ConfigurationSpace("cs")
-    array.foreach( cs.addParam(_) )
+    array.foreach(cs.addParam)
     val sur: Surrogate = new GPSurrogate(cs, minimize)
     val acq: Acquisition = new EI(sur, 0.1f)
     val opt: AcqOptimizer = new RandomSearch(acq, cs)
     new Solver(cs, sur, acq, opt)
   }
+
+  def apply(minimize: Boolean): Solver = {
+    val cs: ConfigurationSpace = new ConfigurationSpace("cs")
+    val sur: Surrogate = new GPSurrogate(cs, minimize)
+    val acq: Acquisition = new EI(sur, 0.1f)
+    val opt: AcqOptimizer = new RandomSearch(acq, cs)
+    new Solver(cs, sur, acq, opt)
+  }
+
 }

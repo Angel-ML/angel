@@ -29,7 +29,7 @@ import scala.util.Random
   * @param name: Name of the parameter
   * @param values: List of all possible values
   */
-class DiscreteSpace[T: Numeric: ClassTag](
+class DiscreteSpace[T <: AnyVal: ClassTag](
                                  override val name: String,
                                  var values: Array[T],
                                  override val doc: String = "discrete param",
@@ -94,8 +94,8 @@ class DiscreteSpace[T: Numeric: ClassTag](
 
   def toRandomSpace: ParamSpace[T] = this
 
-  def sample(size: Int): Array[T] = {
-    Array.fill[T](size)(sampleOne)
+  def sample(size: Int): List[T] = {
+    List.fill[T](size)(sampleOne)
   }
 
   def sampleOne(): T = values(rd.nextInt(numValues))

@@ -23,6 +23,7 @@ import com.tencent.angel.ml.core.optimizer.loss.{L2Loss, LogLoss}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix}
 import com.tencent.angel.spark.context.PSContext
+import com.tencent.angel.spark.ml.automl.tuner.solver.Solver
 import com.tencent.angel.spark.ml.core.metric.{AUC, Precision}
 import com.tencent.angel.spark.ml.util.{DataLoader, SparkUtils}
 import org.apache.spark.SparkContext
@@ -42,6 +43,8 @@ class AutoOfflineLearner {
   var validationRatio: Double = conf.getDouble(MLConf.ML_VALIDATE_RATIO)
 
   println(s"fraction=$fraction validateRatio=$validationRatio numEpoch=$numEpoch")
+
+  val solver: Solver = Solver(true)
 
   def evaluate(data: RDD[LabeledData], model: GraphModel): (Double, Double) = {
     val scores = data.mapPartitions { case iter =>
