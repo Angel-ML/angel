@@ -785,8 +785,8 @@ public class Ufuncs {
   /*
   Computes m1 .* m2
   */
-  public static Matrix dot(Matrix m1, Matrix m2) {
-    return DotMatrixExecutor.apply(m1, false, m2, false);
+  public static Matrix dot(Matrix m1, Matrix m2, Boolean parallel) {
+    return DotMatrixExecutor.apply(m1, false, m2, false, parallel);
   }
 
   /*
@@ -795,8 +795,8 @@ public class Ufuncs {
            m1 .* m2.T; (trans1: false, trans2: true)
            m1.T .* m2.T; (trans1: true, trans2: true)
   */
-  public static Matrix dot(Matrix m1, boolean trans1, Matrix m2, boolean trans2) {
-    return DotMatrixExecutor.apply(m1, trans1, m2, trans2);
+  public static Matrix dot(Matrix m1, boolean trans1, Matrix m2, boolean trans2, Boolean parallel) {
+    return DotMatrixExecutor.apply(m1, trans1, m2, trans2, parallel);
   }
 
   /*

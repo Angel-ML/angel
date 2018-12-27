@@ -214,32 +214,32 @@ class MatrixDotTest extends FunSuite {
   test("rbmatrix dot blasmatrix") {
     init()
     println("rbmatrix dot blasmatrix FF")
-    println(Ufuncs.dot(matrixlist.get(0), densematrix1).sum())
-    println(Ufuncs.dot(matrixlist.get(1), densematrix2).sum())
+    println(Ufuncs.dot(matrixlist.get(0), densematrix1, false).sum())
+    println(Ufuncs.dot(matrixlist.get(1), densematrix2, false).sum())
 
     println("rbmatrix dot blasmatrix TF")
-    println(Ufuncs.dot(matrixlist.get(0), true, densematrix3, false).sum())
-    println(Ufuncs.dot(matrixlist.get(1), true, densematrix4, false).sum())
+    println(Ufuncs.dot(matrixlist.get(0), true, densematrix3, false, false).sum())
+    println(Ufuncs.dot(matrixlist.get(1), true, densematrix4, false, false).sum())
 
     println("rbmatrix dot blasmatrix FT")
-    println(Ufuncs.dot(matrixlist.get(0), false, densematrix3, true).sum())
-    println(Ufuncs.dot(matrixlist.get(1), false, densematrix4, true).sum())
+    println(Ufuncs.dot(matrixlist.get(0), false, densematrix3, true, false).sum())
+    println(Ufuncs.dot(matrixlist.get(1), false, densematrix4, true, false).sum())
 
     println("rbmatrix dot blasmatrix TT")
-    println(Ufuncs.dot(matrixlist.get(0), true, densematrix1, true).sum())
-    println(Ufuncs.dot(matrixlist.get(1), true, densematrix2, true).sum())
+    println(Ufuncs.dot(matrixlist.get(0), true, densematrix1, true, false).sum())
+    println(Ufuncs.dot(matrixlist.get(1), true, densematrix2, true, false).sum())
 
   }
 
   test("blasmatrix dot rbmatrix") {
     init()
     println("blasmatrix dot rbmatrix FF")
-    println(Ufuncs.dot(densematrix1, matrixlist.get(0)).sum())
-    println(Ufuncs.dot(densematrix2, matrixlist.get(1)).sum())
+    println(Ufuncs.dot(densematrix1, matrixlist.get(0), false).sum())
+    println(Ufuncs.dot(densematrix2, matrixlist.get(1), false).sum())
 
     println("blasmatrix dot rbmatrix TF")
-    println(Ufuncs.dot(densematrix3, true, matrixlist.get(0), false).sum())
-    println(Ufuncs.dot(densematrix4, true, matrixlist.get(1), false).sum())
+    println(Ufuncs.dot(densematrix3, true, matrixlist.get(0), false, false).sum())
+    println(Ufuncs.dot(densematrix4, true, matrixlist.get(1), false, false).sum())
 
   }
 }
