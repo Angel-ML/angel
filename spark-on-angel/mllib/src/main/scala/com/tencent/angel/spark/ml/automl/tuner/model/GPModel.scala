@@ -85,10 +85,9 @@ class GPModel(val covFunc: Covariance,
       val meanNewX = meanFunc(newX)
 
       val predMean = meanNewX + KXZ.t * (invKXX * (y - meanX))
-      val predVar = diag(KZZ - KXZ.t * invKXX * KXZ)
-      /*  .map{ v =>
+      val predVar = diag(KZZ - KXZ.t * invKXX * KXZ).map{ v =>
         if (v < -1e-12) 0 else v
-      }*/
+      }
 
       BDV.horzcat(predMean, predVar)
     }
