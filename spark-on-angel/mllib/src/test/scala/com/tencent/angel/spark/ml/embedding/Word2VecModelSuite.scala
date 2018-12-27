@@ -46,12 +46,13 @@ class Word2VecModelSuite extends PSFunSuite with SharedPSContext {
     val data = sc.textFile(input)
     data.cache()
     val (corpus, _) = Features.corpusStringToInt(sc.textFile(input))
-    docs = SubSampling.sampling(corpus).repartition(2)
+    val subsampleTmp = SubSampling.sampling(corpus)
+    docs = subsampleTmp._2.repartition(2)
     docs.cache()
     docs.count()
     data.unpersist()
     val numDocs = docs.count()
-    val maxWordId = docs.map(_.max).max().toLong + 1
+    val maxWordId = subsampleTmp._1
     val numTokens = docs.map(_.length).sum().toLong
     val maxLength = docs.map(_.length).max()
     println(s"numDocs=$numDocs maxWordId=$maxWordId numTokens=$numTokens maxLength=$maxLength")
