@@ -35,7 +35,7 @@ class Solver(
 
   val LOG: Log = LogFactory.getLog(classOf[Solver])
 
-  def getObservations(): (Array[Vector], Array[Double]) = (surrogate.curX.toArray, surrogate.curY.toArray)
+  def getObservations(): (Array[Vector], Array[Double]) = (surrogate.preX.toArray, surrogate.preY.toArray)
 
   def getSurrogate: Surrogate = surrogate
 

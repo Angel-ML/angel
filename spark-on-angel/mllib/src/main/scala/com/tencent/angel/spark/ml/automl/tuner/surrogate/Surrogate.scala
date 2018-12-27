@@ -44,10 +44,10 @@ abstract class Surrogate(
 
   val LOG: Log = LogFactory.getLog(classOf[Surrogate])
 
-  // Input data points, (N, D)
-  var curX: ArrayBuffer[Vector] = new ArrayBuffer[Vector]()
-  // Target value, (N, )
-  var curY: ArrayBuffer[Double] = new ArrayBuffer[Double]()
+  // Previous input data points, (N, D)
+  var preX: ArrayBuffer[Vector] = new ArrayBuffer[Vector]()
+  // previous target value, (N, )
+  var preY: ArrayBuffer[Double] = new ArrayBuffer[Double]()
 
   /**
     * Train the surrogate on curX and curY.
@@ -61,10 +61,10 @@ abstract class Surrogate(
     * @param Y : (N, 1), the corresponding target values.
     */
   def train(X: Array[Vector], Y: Array[Double]): Unit = {
-    curX.clear
-    curY.clear
-    curX ++ X
-    curY ++ Y
+    preX.clear
+    preY.clear
+    preX ++ X
+    preY ++ Y
     train
   }
 
@@ -76,8 +76,8 @@ abstract class Surrogate(
     */
   def update(X: Array[Vector], Y: Array[Double]): Unit = {
     X.zip(Y).foreach( tuple => print(tuple._1, tuple._2) )
-    curX ++= X
-    curY ++= Y
+    preX ++= X
+    preY ++= Y
     train
   }
 
@@ -88,8 +88,8 @@ abstract class Surrogate(
 
   def update(X: Vector, y: Double): Unit = {
     print(X, y)
-    curX += X
-    curY += y
+    preX += X
+    preY += y
     train
   }
 
@@ -118,18 +118,18 @@ abstract class Surrogate(
   }
 
   def curMin: (Vector, Double) = {
-    if (curY.isEmpty) (null, Double.MaxValue)
+    if (preY.isEmpty) (null, Double.MaxValue)
     else {
-      val minIdx: Int = curY.zipWithIndex.min._2
-      (curX(minIdx), curY(minIdx))
+      val minIdx: Int = preY.zipWithIndex.min._2
+      (preX(minIdx), preY(minIdx))
     }
   }
 
   def curMax: (Vector, Double) = {
-    if (curY.isEmpty) (null, Double.MinValue)
+    if (preY.isEmpty) (null, Double.MinValue)
     else {
-      val minIdx: Int = curY.zipWithIndex.min._2
-      (curX(minIdx), -curY(minIdx))
+      val minIdx: Int = preY.zipWithIndex.min._2
+      (preX(minIdx), -preY(minIdx))
     }
   }
 }

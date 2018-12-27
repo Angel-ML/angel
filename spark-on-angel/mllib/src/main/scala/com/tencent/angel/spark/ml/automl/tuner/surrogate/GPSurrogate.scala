@@ -42,8 +42,8 @@ class GPSurrogate(
     * Train the surrogate on curX and curY.
     */
   override def train(): Unit = {
-    val breezeX: BDM[Double] = DataUtils.toBreeze(curX.toArray)
-    val breezeY: BDV[Double] = DataUtils.toBreeze(curY.toArray)
+    val breezeX: BDM[Double] = DataUtils.toBreeze(preX.toArray)
+    val breezeY: BDV[Double] = DataUtils.toBreeze(preY.toArray)
     gpModel.fit(breezeX, breezeY)
 
     /*println("Fitted covariance function params:")

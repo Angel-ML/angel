@@ -18,7 +18,7 @@
 
 package com.tencent.angel.spark.ml.automl.tuner.parameter
 
-import com.tencent.angel.spark.ml.automl.utils.Distribution
+import com.tencent.angel.spark.ml.automl.utils.{AutoMLException, Distribution}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
@@ -33,17 +33,52 @@ import scala.util.Random
   */
 class ContinuousSpace(
                        override val name: String,
-                       lower: Double,
-                       upper: Double,
-                       num: Int,
+                       var lower: Double,
+                       var upper: Double,
+                       var num: Int,
                        distribution: Distribution.Value = Distribution.LINEAR,
                        override val doc: String = "continuous param space",
-                       seed: Int = 100) extends ParamSpace[Double](name) {
+                       seed: Int = 100) extends ParamSpace[Double](name, doc) {
+
+  private val helper: String = "supported format of continuous parameter: [0,1] or [0,1,100]"
+
+  def this(name: String, lower: Double, upper: Double) = {
+    this(name, lower, upper, -1)
+  }
+
+  def this(name: String, config: String) = {
+    this(name, 0, 1, -1)
+    val items = parseConfig(config)
+    lower = items._1
+    upper = items._2
+    num = items._3
+    if (num != -1) {
+      isGrid = true
+      gridValues = toGrid
+    }
+  }
+
+  def parseConfig(config: String): (Double, Double, Int) = {
+    val ret: (Double, Double, Int) = config.trim match {
+      case _ if config.contains(",") =>
+        val splits = config.split(',')
+        splits.length match {
+          case 2 => (splits(0).toDouble, splits(1).toDouble, -1)
+          case 3 => (splits(0).toDouble, splits(1).toDouble, splits(2).toInt)
+        }
+      case _ => throw new AutoMLException(s"invalid discrete, $helper")
+    }
+    ret
+  }
+
+  require(lower < upper, s"lower bound should less than upper bound")
 
   val rd = new Random(seed)
-  val values: Array[Double] = calValues
 
-  def calValues(): Array[Double] = {
+  var isGrid: Boolean = if (num == -1) false else true
+  var gridValues: Array[Double] = if (isGrid) toGrid else Array.empty
+
+  def toGrid(): Array[Double] = {
     var ret: ArrayBuffer[Double] = ArrayBuffer[Double]()
     distribution match {
       case Distribution.LINEAR =>
@@ -61,7 +96,7 @@ class ContinuousSpace(
 
   def getUpper: Double = upper
 
-  def getValues: Array[Double] = values
+  def getValues: Array[Double] = gridValues
 
   def numValues: Int = num
 
@@ -71,17 +106,22 @@ class ContinuousSpace(
 
   override def sample(size: Int): Array[Double] = Array.fill[Double](size)(sampleOne)
 
-  def sampleOne(): Double = values(rd.nextInt(numValues))
+  def sampleOne(): Double = {
+    if (isGrid)
+      gridValues(rd.nextInt(numValues))
+    else
+      lower + (upper - lower) * rd.nextDouble()
+  }
 
-  override def toString: String = s"ContinuousSpace[$name]: (${values mkString(",")})"
+  override def toString: String = s"ContinuousSpace[$name]: (${gridValues mkString(",")})"
 
 }
 
 object ContinuousSpace {
 
   def main(args: Array[String]): Unit = {
-    val obj = new ContinuousSpace("test", 0, 10, 5)
+    val obj = new ContinuousSpace("test", "0,10")
     println(obj.toString)
-    println(obj.sample(2).toString())
+    println(obj.sample(2).mkString(","))
   }
 }

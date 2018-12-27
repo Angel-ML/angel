@@ -18,6 +18,7 @@
 
 package com.tencent.angel.spark.ml.automl.tuner.parameter
 
+
 /**
   * Base class of a single parameter's search space.
   *

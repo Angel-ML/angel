@@ -45,10 +45,10 @@ class RFSurrogate(
 
   override def train(): Unit = {
 
-    if (curX.size < Math.pow(2, maxDepth - 1))
+    if (preX.size < Math.pow(2, maxDepth - 1))
       return
 
-    val data: DataFrame = DataUtils.parse(ss, schema, curX.toArray, curY.toArray)
+    val data: DataFrame = DataUtils.parse(ss, schema, preX.toArray, preY.toArray)
 
 
     val rf = new RandomForestRegressor()
@@ -68,7 +68,7 @@ class RFSurrogate(
     */
   override def predict(X: Vector): (Double, Double) = {
 
-    if (curX.size < Math.pow(2, maxDepth - 1)) {
+    if (preX.size < Math.pow(2, maxDepth - 1)) {
       return (0.0, 0.0)
     }
 
