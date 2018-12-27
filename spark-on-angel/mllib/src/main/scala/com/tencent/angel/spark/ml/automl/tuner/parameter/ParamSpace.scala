@@ -23,7 +23,8 @@ package com.tencent.angel.spark.ml.automl.tuner.parameter
   *
   * @param name: Name of the parameter
   */
-abstract class ParamSpace[T: Numeric](val name: String) {
+abstract class ParamSpace[T: Numeric](val name: String,
+                                      val doc: String = "param with search space") {
 
   def sample(size: Int): Array[T]
 

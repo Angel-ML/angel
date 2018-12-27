@@ -19,6 +19,7 @@
 package com.tencent.angel.spark.ml.automl.tuner.config
 
 import org.apache.spark.ml.linalg.Vector
+import org.apache.spark.ml.param._
 
 /**
   * A single configuration
@@ -27,18 +28,28 @@ import org.apache.spark.ml.linalg.Vector
   * @param vector      : A vector for efficient representation of configuration.
   */
 class Configuration(
-                     configSpace: ConfigurationSpace,
+                     param2Idx: Map[String, Int],
+                     param2Doc: Map[String, String],
                      vector: Vector) {
 
   def getVector: Vector = vector
 
+  def getParamMap: ParamMap = {
+    val paramMap = ParamMap.empty
+    for (name: String <- param2Idx.keys) {
+      val param: Param[Double] = new Param(this.toString, name, param2Doc.getOrElse(name, ""))
+      paramMap.put(param, vector(param2Idx(name)))
+    }
+    paramMap
+  }
+
   def getValues: Array[Double] = vector.toArray
 
-  def keys: List[String] = configSpace.param2Idx.keys.toList
+  def keys: List[String] = param2Idx.keys.toList
 
-  def get(name: String): Double = get(configSpace.param2Idx.getOrElse(name, -1))
+  def get(name: String): Double = get(param2Idx.getOrElse(name, -1))
 
   def get(idx: Int): Double = vector(idx)
 
-  def contains(name: String): Boolean = configSpace.param2Idx.contains(name)
+  def contains(name: String): Boolean = param2Idx.contains(name)
 }

@@ -37,6 +37,7 @@ class ContinuousSpace(
                        upper: Double,
                        num: Int,
                        distribution: Distribution.Value = Distribution.LINEAR,
+                       override val doc: String = "continuous param space",
                        seed: Int = 100) extends ParamSpace[Double](name) {
 
   val rd = new Random(seed)

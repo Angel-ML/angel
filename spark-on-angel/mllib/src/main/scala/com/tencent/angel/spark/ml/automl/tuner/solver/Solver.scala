@@ -69,6 +69,8 @@ class Solver(
       surrogate.update(config.getVector, -y)
   }
 
+  def optimal(): (Vector, Double) = surrogate.curBest
+
   def stop(): Unit = {
     surrogate.stop
   }

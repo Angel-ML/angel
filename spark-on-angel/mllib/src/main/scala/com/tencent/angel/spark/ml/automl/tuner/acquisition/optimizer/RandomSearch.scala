@@ -43,20 +43,22 @@ class RandomSearch(
 
   override def maximize(numPoints: Int, sorted: Boolean = true): Array[(Double, Configuration)] = {
     //println(s"maximize RandomSearch")
-    val configs: Array[Configuration] = configSpace.sampleConfig(TunerParam.sampleSize)
+    val configs: Array[Configuration] = configSpace.sample(TunerParam.sampleSize)
     //configs.foreach { config =>
     //  println(s"sample a configuration: ${config.getVector.toArray.mkString(",")}")
     //}
-    if (sorted) {
+    val retConfigs = if (sorted) {
       configs.map { config =>
         (acqFunc.compute(config.getVector)._1, config)
       }.sortWith(_._1 > _._1).take(numPoints)
     }
     else {
-      rd.shuffle(configs.map{
-        config => (0.0, config)
+      rd.shuffle(configs.map{ config =>
+        (acqFunc.compute(config.getVector)._1, config)
       }.toTraversable).take(numPoints).toArray
     }
+    configSpace.addHistories(retConfigs.map(_._2.getVector))
+    retConfigs
   }
 
   override def maximize: (Double, Configuration) = {

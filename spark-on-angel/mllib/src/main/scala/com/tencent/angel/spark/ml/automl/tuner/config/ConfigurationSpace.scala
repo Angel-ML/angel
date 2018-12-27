@@ -18,16 +18,17 @@
 
 package com.tencent.angel.spark.ml.automl.tuner.config
 
-import org.apache.spark.ml.linalg.{Vector, VectorUDT, Vectors}
+import scala.collection.mutable.HashSet
+import org.apache.spark.ml.linalg.{Vector, Vectors}
 import com.tencent.angel.spark.ml.automl.tuner.parameter.ParamSpace
 import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.spark.sql.types._
 
-import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.collection.mutable.ArrayBuffer
 
 class ConfigurationSpace(
                           val name: String,
-                          var paramDict: Map[String, ParamSpace[Double]] = Map()) {
+                          private var paramDict: Map[String, ParamSpace[Double]] = Map()) {
 
   val LOG: Log = LogFactory.getLog(classOf[ConfigurationSpace])
 
@@ -36,7 +37,11 @@ class ConfigurationSpace(
   var fields: ArrayBuffer[StructField] = new ArrayBuffer[StructField]()
 
   var param2Idx: Map[String, Int] = paramDict.keys.zipWithIndex.toMap
+  var param2Doc: Map[String, String] = paramDict.map { case (k: String, v: ParamSpace[Double]) => (k, v.doc) }
   var idx2Param: Map[Int, String] = param2Idx.map(_.swap)
+
+  // configurations tried
+  var preX: HashSet[Vector] = HashSet[Vector]()
 
   def getParamNum: Int = numParams
 
@@ -49,6 +54,7 @@ class ConfigurationSpace(
       fields += DataTypes.createStructField(param.name, DataTypes.DoubleType, false)
       paramDict += (param.name -> param)
       param2Idx += (param.name -> numParams)
+      param2Doc += (param.name -> param.doc)
       idx2Param += (numParams -> param.name)
       numParams += 1
     }
@@ -65,8 +71,13 @@ class ConfigurationSpace(
 
   def getParamByIdx(idx: Int): Option[ParamSpace[Double]] = paramDict.get(idx2Param.getOrElse(idx, "none"))
 
-  // TODO: Store historical configurations to avoid redundancy.
-  def sampleConfig(size: Int): Array[Configuration] = {
+  def getDocByName(name: String): Option[String] = param2Doc.get(name)
+
+  def addHistories(vecs: Array[Vector]): Unit = preX ++= vecs
+
+  def addHistory(vec: Vector): Unit = preX += vec
+
+  def sample(size: Int): Array[Configuration] = {
     var configs: ArrayBuffer[Configuration] = new ArrayBuffer[Configuration]
 
     var missing: Int = 0
@@ -83,14 +94,14 @@ class ConfigurationSpace(
           case None => LOG.info(s"Cannot find $paramName.")
         }
       }
-      vectors.filter(validConfig).foreach{ vec =>
-        configs += new Configuration(this, vec)
+      vectors.filter(isValid).foreach{ vec =>
+        configs += new Configuration(param2Idx, param2Doc, vec)
       }
     } while(configs.length < size)
 
     configs.toArray
   }
 
-  // TODO: Implement this func
-  def validConfig(vec: Vector): Boolean = true
+  def isValid(vec: Vector): Boolean = !preX.contains(vec)
+
 }

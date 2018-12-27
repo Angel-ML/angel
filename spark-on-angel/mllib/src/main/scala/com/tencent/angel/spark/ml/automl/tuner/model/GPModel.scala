@@ -49,7 +49,7 @@ class GPModel(val covFunc: Covariance,
     val kernelDiffFunc = new GPKernelDiffFunc(this)
     val initParams = BDV(covParams.toArray :+ noiseStdDev)
 
-    val optimizer = new LBFGS[BDV[Double]](maxIter = 10, m = 3, tolerance = 1e-7)
+    val optimizer = new LBFGS[BDV[Double]](maxIter = 10, m = 3, tolerance = 0.1)
     val newParams = optimizer.minimize(kernelDiffFunc, initParams)
     //println(optimizer)
     //println(s"new params: ${newParams}")
@@ -97,7 +97,7 @@ class GPModel(val covFunc: Covariance,
   def calKXX(): BDM[Double] = {
     val KXX = covFunc.cov(X, X, covParams) +
       pow(noiseStdDev, 2) * BDM.eye[Double](X.rows)
-    //+BDM.eye[Double](X.rows) * 1e-7
+    //+ BDM.eye[Double](X.rows) * 1e-7
 
     KXX
   }

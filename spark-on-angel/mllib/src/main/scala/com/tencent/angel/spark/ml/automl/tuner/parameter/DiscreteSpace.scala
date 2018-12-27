@@ -30,7 +30,8 @@ import scala.util.Random
 class DiscreteSpace[T: Numeric: ClassTag](
                                  override val name: String,
                                  values: Array[T],
-                                 seed: Int = 100) extends ParamSpace[T](name) {
+                                 override val doc: String = "discrete param",
+                                 seed: Int = 100) extends ParamSpace[T](name, doc) {
 
   val rd = new Random(seed)
 

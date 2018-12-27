@@ -27,6 +27,7 @@ import org.apache.spark.ml.linalg.Vector
 object GPTunerExample extends App {
 
   override def main(args: Array[String]): Unit = {
+
     val param1: ParamSpace[Double] = new ContinuousSpace("param1", 0, 10, 11)
     val param2: ParamSpace[Double] = new ContinuousSpace("param2", -5, 5, 11)
     val param3: ParamSpace[Double] = new DiscreteSpace[Double]("param3", Array(0.0, 1.0, 3.0, 5.0))
@@ -39,8 +40,8 @@ object GPTunerExample extends App {
       val results: Array[Double] = trail.evaluate(configs)
       solver.feed(configs, results)
     }
-    val result: (Vector, Double) = solver.surrogate.curBest
-    solver.stop()
+    val result: (Vector, Double) = solver.optimal
+    solver.stop
     println(s"Best configuration ${result._1.toArray.mkString(",")}, best performance: ${result._2}")
   }
 }
