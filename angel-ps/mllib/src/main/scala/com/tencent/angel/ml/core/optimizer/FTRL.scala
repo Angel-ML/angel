@@ -27,7 +27,6 @@ import com.tencent.angel.psagent.PSAgentContext
 class FTRL(override val stepSize: Double, alpha: Double, beta: Double) extends GradientDescent(stepSize) {
 
   override def update(matrixId: Int, numFactors: Int, epoch: Int = 0): Future[VoidResult] = {
-
     val func = new FTRLUpdateFunc(matrixId, numFactors, alpha, beta, regL1Param, regL2Param)
     PSAgentContext.get().getUserRequestAdapter.update(func)
   }
