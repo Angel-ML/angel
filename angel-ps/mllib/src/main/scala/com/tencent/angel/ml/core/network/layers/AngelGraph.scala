@@ -31,6 +31,7 @@ import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import org.apache.commons.logging.{Log, LogFactory}
 
+import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.concurrent.duration.Duration
@@ -159,6 +160,13 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
 
   def init(taskId: Int = 0): Unit = {
     trainableLayer.foreach { layer => layer.init(taskId) }
+  }
+
+  def resetParam(paramMap: mutable.Map[String, Double]): this.type = {
+    trainableLayer.foreach { trainable =>
+      trainable.optimizer.resetParam(paramMap)
+    }
+    this
   }
 
   /**

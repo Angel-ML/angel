@@ -19,7 +19,7 @@
 package com.tencent.angel.spark.ml.core
 
 
-import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers.{AngelGraph, PlaceHolder, STATUS}
 import com.tencent.angel.ml.core.optimizer.decayer._
 import com.tencent.angel.ml.core.optimizer.loss.LossFunc
@@ -30,13 +30,15 @@ import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.spark.context.AngelPSContext
 import org.json4s.JsonAST.JValue
 
+import scala.collection.mutable
+
 class GraphModel extends Serializable {
 
   val conf = SharedConf.get()
   implicit val graph = new AngelGraph(new PlaceHolder())
   var jsonAst: JValue = conf.getJson
-  val stepSize: Double = SharedConf.learningRate
-  val scheduler: StepSizeScheduler = new StandardDecay(stepSize)
+  var stepSize: Double = SharedConf.learningRate
+  var scheduler: StepSizeScheduler = new StandardDecay(stepSize)
 
   def ensureJsonAst(): Unit = {
     if (jsonAst == null) {
@@ -48,6 +50,13 @@ class GraphModel extends Serializable {
   def network(): Unit = {
     ensureJsonAst()
     JsonUtils.fillGraph(jsonAst)
+  }
+
+  def resetParam(paramMap: mutable.Map[String, Double]): this.type = {
+    stepSize = paramMap.getOrElse(MLConf.ML_LEARN_RATE, stepSize)
+    scheduler = new StandardDecay(stepSize)
+    graph.resetParam(paramMap)
+    this
   }
 
   def init(taskNum: Int): Unit = {

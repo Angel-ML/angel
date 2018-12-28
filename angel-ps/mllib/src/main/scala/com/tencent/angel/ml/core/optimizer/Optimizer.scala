@@ -23,10 +23,18 @@ import java.util.concurrent.Future
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 
+import scala.collection.mutable
+
 trait Optimizer extends Serializable {
   var lr: Double = 0.1
   protected var regL1Param: Double = SharedConf.get().getDouble(MLConf.ML_REG_L1)
   protected var regL2Param: Double = SharedConf.get().getDouble(MLConf.ML_REG_L2)
+
+  def resetParam(paramMap: mutable.Map[String, Double]): Unit = {
+    lr = paramMap.getOrElse(MLConf.ML_LEARN_RATE, lr)
+    regL1Param = paramMap.getOrElse(MLConf.ML_REG_L1, regL1Param)
+    regL2Param = paramMap.getOrElse(MLConf.ML_REG_L2, regL1Param)
+  }
 
   def setLearningRate(lr: Double): this.type = {
     this.lr = lr

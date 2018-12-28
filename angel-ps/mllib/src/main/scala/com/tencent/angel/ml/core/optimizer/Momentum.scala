@@ -24,7 +24,14 @@ import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.psf.optimizer.MomentumUpdateFunc
 import com.tencent.angel.psagent.PSAgentContext
 
-class Momentum(override val stepSize: Double, val momentum: Double = 0.9) extends GradientDescent(stepSize) {
+import scala.collection.mutable
+
+class Momentum(override val stepSize: Double, var momentum: Double = 0.9) extends GradientDescent(stepSize) {
+
+  override def resetParam(paramMap: mutable.Map[String, Double]): Unit = {
+    super.resetParam(paramMap)
+    momentum = paramMap.getOrElse("momentum", momentum)
+  }
 
   override def update(matrixId: Int, numFactors: Int, epoch: Int = 0): Future[VoidResult] = {
     val func = new MomentumUpdateFunc(matrixId, numFactors, momentum, lr, regL2Param)

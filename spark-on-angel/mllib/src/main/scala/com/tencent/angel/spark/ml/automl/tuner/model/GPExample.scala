@@ -25,6 +25,8 @@ object GPExample {
 
   def main(args: Array[String]): Unit = {
 
+    println(Double.getClass.getSimpleName)
+
     val X = DenseMatrix((1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0)).t
     val y = 2.0 * DenseVector(1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0)
     val z = DenseMatrix((2.5,4.5,6.5,8.5,10.0,12.0)).t

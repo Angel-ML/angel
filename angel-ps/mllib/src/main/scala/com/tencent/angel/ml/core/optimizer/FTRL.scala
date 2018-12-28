@@ -24,7 +24,15 @@ import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.psf.optimizer.FTRLUpdateFunc
 import com.tencent.angel.psagent.PSAgentContext
 
-class FTRL(override val stepSize: Double, alpha: Double, beta: Double) extends GradientDescent(stepSize) {
+import scala.collection.mutable
+
+class FTRL(override val stepSize: Double, var alpha: Double, var beta: Double) extends GradientDescent(stepSize) {
+
+  override def resetParam(paramMap: mutable.Map[String, Double]): Unit = {
+    super.resetParam(paramMap)
+    alpha = paramMap.getOrElse("alpha", alpha)
+    beta = paramMap.getOrElse("beta", beta)
+  }
 
   override def update(matrixId: Int, numFactors: Int, epoch: Int = 0): Future[VoidResult] = {
 

@@ -22,8 +22,9 @@ import com.tencent.angel.spark.ml.automl.tuner.TunerParam
 import com.tencent.angel.spark.ml.automl.tuner.acquisition.{Acquisition, EI}
 import com.tencent.angel.spark.ml.automl.tuner.acquisition.optimizer.{AcqOptimizer, RandomSearch}
 import com.tencent.angel.spark.ml.automl.tuner.config.{Configuration, ConfigurationSpace}
-import com.tencent.angel.spark.ml.automl.tuner.parameter.ParamSpace
+import com.tencent.angel.spark.ml.automl.tuner.parameter.{ContinuousSpace, DiscreteSpace, ParamSpace}
 import com.tencent.angel.spark.ml.automl.tuner.surrogate.{GPSurrogate, Surrogate}
+import com.tencent.angel.spark.ml.automl.utils.AutoMLException
 import org.apache.spark.ml.linalg.Vector
 import org.apache.commons.logging.{Log, LogFactory}
 
@@ -35,12 +36,33 @@ class Solver(
 
   val LOG: Log = LogFactory.getLog(classOf[Solver])
 
+  val PARAM_TYPES: Array[String] = Array("discrete", "continuous")
+
   def getHistory(): (Array[Vector], Array[Double]) = (surrogate.preX.toArray, surrogate.preY.toArray)
 
   def getSurrogate: Surrogate = surrogate
 
   def addParam(param: ParamSpace[AnyVal]): Unit = {
     cs.addParam(param)
+  }
+
+  def addParam(pType: String, vType: String, name: String, config: String): Unit = {
+    pType.toLowerCase match {
+      case "discrete" =>
+        vType.toLowerCase match {
+          case "float" => addParam(new DiscreteSpace[Float](name, config))
+          case "double" => addParam(new DiscreteSpace[Double](name, config))
+          case "int" => addParam(new DiscreteSpace[Int](name, config))
+          case "long" => addParam(new DiscreteSpace[Long](name, config))
+          case _ => throw new AutoMLException(s"unsupported value type $vType")
+        }
+      case "continuous" =>
+        vType.toLowerCase match {
+          case "double" => addParam(new ContinuousSpace(name, config))
+          case _ => throw new AutoMLException(s"unsupported value type $vType")
+        }
+      case _ => throw new AutoMLException(s"unsupported param type $pType, should be ${PARAM_TYPES.mkString(",")}")
+    }
   }
 
   /**

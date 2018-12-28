@@ -23,16 +23,21 @@ import com.tencent.angel.ml.core.optimizer.loss.{L2Loss, LogLoss}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix}
 import com.tencent.angel.spark.context.PSContext
+import com.tencent.angel.spark.ml.automl.tuner.config.Configuration
+import com.tencent.angel.spark.ml.automl.tuner.parameter.ParamSpace
 import com.tencent.angel.spark.ml.automl.tuner.solver.Solver
+import com.tencent.angel.spark.ml.automl.utils.AutoMLException
 import com.tencent.angel.spark.ml.core.metric.{AUC, Precision}
 import com.tencent.angel.spark.ml.util.{DataLoader, SparkUtils}
 import org.apache.spark.SparkContext
+import org.apache.spark.ml.linalg.Vector
 import org.apache.spark.rdd.RDD
 
+import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.Random
 
-class AutoOfflineLearner {
+class AutoOfflineLearner(minimize: Boolean) {
 
   // Shared configuration with Angel-PS
   val conf = SharedConf.get()
@@ -41,10 +46,45 @@ class AutoOfflineLearner {
   var numEpoch: Int = conf.getInt(MLConf.ML_EPOCH_NUM)
   var fraction: Double = conf.getDouble(MLConf.ML_BATCH_SAMPLE_RATIO)
   var validationRatio: Double = conf.getDouble(MLConf.ML_VALIDATE_RATIO)
+  var tuneIter: Int = 20
 
   println(s"fraction=$fraction validateRatio=$validationRatio numEpoch=$numEpoch")
 
-  val solver: Solver = Solver(true)
+  val solver: Solver = Solver(minimize)
+
+  // param name -> param type (continuous or discrete), value type (int, double,...)
+  val paramType: mutable.Map[String, (String, String)] = new mutable.HashMap[String, (String, String)]()
+
+  def addParam(param: ParamSpace[AnyVal]): this.type = {
+    solver.addParam(param)
+    this
+  }
+
+  def addParam(pType: String, vType: String, name: String, config: String): this.type = {
+    paramType += name -> (pType.toLowerCase, vType.toLowerCase)
+    solver.addParam(pType, vType, name, config)
+    this
+  }
+
+  def setParam(name: String, vType: String, value: Double): Unit = {
+    println(s"set param[$name] type[$vType] value[$value]")
+    vType match {
+      case "int" => conf.setInt(name, value.toInt)
+      case "long" => conf.setLong(name, value.toLong)
+      case "float" => conf.setFloat(name, value.toFloat)
+      case "double" => conf.setDouble(name, value)
+      case _ => throw new AutoMLException(s"unsupported value type $vType")
+    }
+  }
+
+  def resetParam(paramMap: mutable.Map[String, Double]): this.type = {
+    paramMap.foreach(println)
+    numEpoch = paramMap.getOrElse(MLConf.ML_EPOCH_NUM, numEpoch.toDouble).toInt
+    fraction = paramMap.getOrElse(MLConf.ML_BATCH_SAMPLE_RATIO, fraction)
+    validationRatio = paramMap.getOrElse(MLConf.ML_VALIDATE_RATIO, validationRatio)
+    println(s"fraction=$fraction validateRatio=$validationRatio numEpoch=$numEpoch")
+    this
+  }
 
   def evaluate(data: RDD[LabeledData], model: GraphModel): (Double, Double) = {
     val scores = data.mapPartitions { case iter =>
@@ -146,7 +186,7 @@ class AutoOfflineLearner {
              modelOutput: String,
              modelInput: String,
              dim: Int,
-             model: GraphModel): (Double, Double) = {
+             model: GraphModel): Unit = {
     val conf = SparkContext.getOrCreate().getConf
     val data = SparkContext.getOrCreate().textFile(input)
       .repartition(SparkUtils.getNumCores(conf))
@@ -154,10 +194,27 @@ class AutoOfflineLearner {
 
     model.init(data.getNumPartitions)
 
-    //if (modelInput.length > 0) model.load(modelInput)
-    val (auc, precision) = train(data, model)
+    if (modelInput.length > 0) model.load(modelInput)
+
+    (0 until tuneIter).foreach{ iter =>
+      println(s"==========Tuner Iteration[$iter]==========")
+      val config: Configuration = solver.suggest()(0)
+      val paramMap: mutable.Map[String, Double] = new mutable.HashMap[String, Double]()
+      for (paramType <- paramType) {
+        setParam(paramType._1, paramType._2._2, config.get(paramType._1))
+        paramMap += (paramType._1 -> config.get(paramType._1))
+      }
+      resetParam(paramMap)
+      model.resetParam(paramMap).graph.init(0)
+      val result = train(data, model)
+      solver.feed(config, result._1)
+    }
+    val result: (Vector, Double) = solver.optimal
+    solver.stop
+    println(s"Best configuration ${result._1.toArray.mkString(",")}, best performance: ${result._2}")
+
     //if (modelOutput.length > 0) model.save(modelOutput)
-    (auc, precision)
+
   }
 
   def predict(input: String,

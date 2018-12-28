@@ -25,12 +25,21 @@ import com.tencent.angel.ml.psf.optimizer.AdamUpdateFunc
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
 
+import scala.collection.mutable
+
 class Adam(override val stepSize: Double,
-           val gamma: Double = 0.99,
-           val beta: Double = 0.9,
-           val epsilon: Double = 1e-7) extends GradientDescent(stepSize) {
+           var gamma: Double = 0.99,
+           var beta: Double = 0.9,
+           var epsilon: Double = 1e-7) extends GradientDescent(stepSize) {
 
   val LOG = LogFactory.getLog(classOf[Adam])
+
+  override def resetParam(paramMap: mutable.Map[String, Double]): Unit = {
+    super.resetParam(paramMap)
+    gamma = paramMap.getOrElse("gamma", gamma)
+    beta = paramMap.getOrElse("beta", beta)
+    epsilon = paramMap.getOrElse("epsilon", epsilon)
+  }
 
   override def update(matrixId: Int, numFactors: Int, epoch: Int): Future[VoidResult] = {
 
