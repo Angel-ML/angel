@@ -52,9 +52,9 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
   val blockSize: Int = SharedConf.blockSize
   val mode = SharedConf.runningMode()
 
-  private val multiplier: Int = OptUtils.getOptMultiplier(optimizer)
+  private val numSlot: Int = OptUtils.getSlotNum(optimizer)
   private val indexRange: Long = SharedConf.indexRange
-  private val psRows: Int = multiplier * numFactors
+  private val psRows: Int = (numSlot + 1) * numFactors
   private val validIndexNum = SharedConf.modelSize
 
   private val embedMatCtx = PSMatrixUtils.createPSMatrixCtx(s"${name}_embedding", psRows, indexRange, modelType)
@@ -232,7 +232,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
         }
 
         // Push Gradient
-        val rowNums = (numFactors * (multiplier - 1) until numFactors * multiplier).toArray
+        val rowNums = (numFactors * numSlot until numFactors * (numSlot + 1)).toArray
 
         val param = new UpdateColsParam(matrixId, rowNums, graph.placeHolder.getIndices, map)
         val func = new UpdateColsFunc(param)

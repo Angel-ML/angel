@@ -22,13 +22,13 @@ public class DecayTest {
 
     @Test
     public void exponentialDecayTest() {
-        ExponentialDecay decay = new ExponentialDecay(eta,true, false);
+        ExponentialDecay decay = new ExponentialDecay(eta,0.05, true, false);
         calNext(decay);
     }
 
     @Test
     public void inverseTimeDecayTest() {
-        InverseTimeDecay decay = new InverseTimeDecay(eta,true);
+        InverseTimeDecay decay = new InverseTimeDecay(eta,0.05, true);
         calNext(decay);
     }
 
@@ -46,13 +46,13 @@ public class DecayTest {
 
     @Test
     public void standardDecayTest() {
-        StandardDecay decay = new StandardDecay(eta);
+        StandardDecay decay = new StandardDecay(eta, 0.05);
         calNext(decay);
     }
 
     @Test
     public void WarmRestartsTest() {
-        WarmRestarts decay = new WarmRestarts(eta, 0.001);
+        WarmRestarts decay = new WarmRestarts(eta, 0.001, 0.05);
         calNext(decay);
     }
 
