@@ -39,14 +39,13 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
   val epochNum: Int = SharedConf.epochNum
   val indexRange: Long = SharedConf.indexRange
   val modelSize: Long = SharedConf.modelSize
-  val decay: Double = SharedConf.decay
   val lr0: Double = SharedConf.learningRate
 
   // Init Graph Model
   val model: GraphModel = GraphModel(modelClassName, conf, ctx)
   model.buildNetwork()
   val graph: Graph = model.graph
-  val ssScheduler: StepSizeScheduler = new WarmRestarts(lr0, lr0/100)
+  val ssScheduler: StepSizeScheduler = StepSizeScheduler(SharedConf.getStepSizeScheduler, lr0)
 
   def trainOneEpoch(epoch: Int, iter: Iterator[Array[LabeledData]], numBatch: Int): Double = {
     var batchCount: Int = 0
@@ -71,7 +70,6 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
 
       // LOG.info("waiting for push barrier ...")
       PSAgentContext.get().barrier(ctx.getTaskId.getIndex)
-      graph.setLR(ssScheduler.next())
       if (ctx.getTaskId.getIndex == 0) {
         // LOG.info("start to update ...")
         graph.update(epoch * numBatch + batchCount, 1) // update parameters on PS
@@ -102,7 +100,7 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
             negTrainData: DataBlock[LabeledData],
             validationData: DataBlock[LabeledData]): MLModel = {
     LOG.info(s"Task[${ctx.getTaskIndex}]: Starting to train ...")
-    LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epochNum, initLearnRate=$lr0, " + s"learnRateDecay=$decay")
+    LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epochNum, initLearnRate=$lr0")
 
     val trainDataSize = if (negTrainData == null) posTrainData.size() else {
       posTrainData.size() + negTrainData.size()
@@ -138,6 +136,7 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
       }
 
       val startTrain = System.currentTimeMillis()
+      graph.setLR(ssScheduler.next())
       val loss: Double = trainOneEpoch(epoch, iter, numBatch)
       val trainCost = System.currentTimeMillis() - startTrain
       globalMetrics.metric(MLConf.TRAIN_LOSS, loss * trainDataSize)

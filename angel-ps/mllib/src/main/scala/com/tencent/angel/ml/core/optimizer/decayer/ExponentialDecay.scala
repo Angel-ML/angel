@@ -2,15 +2,15 @@ package com.tencent.angel.ml.core.optimizer.decayer
 
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 
-class ExponentialDecay(eta: Double, staircase: Boolean=false, useNatural: Boolean=false) extends StepSizeScheduler {
+class ExponentialDecay(eta: Double, alpha: Double, staircase: Boolean = false, useNatural: Boolean = false) extends StepSizeScheduler {
   private var current: Int = 0
   private val decay: Double = if (useNatural) {
-    Math.exp(-SharedConf.decay)
+    Math.exp(-alpha)
   } else {
-    SharedConf.decay
+    alpha
   }
 
-  private val interval: Int = SharedConf.get().getInt(MLConf.ML_DECAY_INTERVALS, 100)
+  private val interval: Int = SharedConf.get().getInt(MLConf.ML_OPT_DECAY_INTERVALS, 100)
 
   assert(interval > 0)
 

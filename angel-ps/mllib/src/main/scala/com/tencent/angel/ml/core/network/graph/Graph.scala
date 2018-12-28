@@ -139,7 +139,7 @@ abstract class Graph(val placeHolder: PlaceHolder, val conf: SharedConf) {
 
   def setLR(lr: Double): Unit = {
     trainableLayer.foreach { trainable =>
-      trainable.optimizer.setLearningRate(lr)
+      trainable.optimizer.setLR(lr)
     }
   }
 

@@ -24,20 +24,15 @@ import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.graph.Graph
 
 object OptUtils {
-  def getSlotNum(optimizer: Optimizer): Int = {
-    optimizer match {
-      case _: Momentum => 2
-      case _: Adam => 3
-      case _: FTRL => 3
-      case _ => 1
-    }
-  }
+  def getSlotNum(optimizer: Optimizer): Int = optimizer.getNumSlot
 
   def getSlotNum(optimizer: String): Int = {
     optimizer.toLowerCase match {
       case "momentum" => 2
       case "adam" => 3
       case "ftrl" => 3
+      case "adagrad" => 2
+      case "adadelta" => 3
       case _ => 1
     }
   }
@@ -58,6 +53,12 @@ object OptUtils {
         val alpha: Double = conf.getDouble(MLConf.ML_OPT_FTRL_ALPHA, 0.1)
         val beta: Double = conf.getDouble(MLConf.ML_OPT_FTRL_BETA, 1.0)
         new FTRL(lr0, alpha, beta)
+      case "adagrad" =>
+        val beta: Double = conf.getDouble(MLConf.ML_OPT_ADAGRAD_BETA, 0.9)
+        new AdaGrad(lr0, beta)
+      case "adadelta" =>
+        val beta: Double = conf.getDouble(MLConf.ML_OPT_ADADELTA_BETA, 0.9)
+        new AdaDelta(lr0, beta)
       case _ =>
         new SGD(lr0)
     }

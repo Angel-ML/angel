@@ -444,12 +444,6 @@ object SharedConf {
     sc.getDouble(MLConf.ML_VALIDATE_RATIO, MLConf.DEFAULT_ML_VALIDATE_RATIO)
   }
 
-  def decay: Double = {
-    get()
-
-    sc.getDouble(MLConf.ML_LEARN_DECAY, MLConf.DEFAULT_ML_LEARN_DECAY)
-  }
-
   def learningRate: Double = {
     get()
 
@@ -485,5 +479,13 @@ object SharedConf {
 
     sc.getDouble(MLConf.ML_DATA_POSNEG_RATIO,
       MLConf.DEFAULT_ML_DATA_POSNEG_RATIO)
+  }
+
+  def getStepSizeScheduler: String = {
+    get()
+
+    sc.getString(MLConf.ML_OPT_DECAY_CLASS_NAME,
+      MLConf.DEFAULT_ML_OPT_DECAY_CLASS_NAME
+    )
   }
 }

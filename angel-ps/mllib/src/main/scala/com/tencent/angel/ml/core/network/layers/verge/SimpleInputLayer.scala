@@ -153,7 +153,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
     status match {
       case STATUS.Backward =>
         weight.pushGrads(graph.placeHolder.getFeats, backward)
-        bias.pushGrads(backward, optimizer.lr)
+        bias.pushGrads(backward, optimizer.getLR)
         status = STATUS.Gradient
       case _ =>
     }

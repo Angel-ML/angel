@@ -137,7 +137,7 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
     status match {
       case STATUS.Backward =>
         weight.pushGrads(inputLayer.calOutput(), backward)
-        bias.pushGrads(backward, optimizer.lr)
+        bias.pushGrads(backward, optimizer.getLR)
         status = STATUS.Gradient
       case _ =>
     }
