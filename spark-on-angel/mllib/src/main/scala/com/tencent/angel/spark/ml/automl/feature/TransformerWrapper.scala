@@ -23,7 +23,7 @@ import com.tencent.angel.spark.ml.automl.feature.InToOutRelation.InToOutRelation
 
 abstract class TransformerWrapper {
 
-  val transformer: Transformer
+  var transformer: Transformer
   var parent: TransformerWrapper
 
   val relation: InToOutRelation
@@ -31,6 +31,7 @@ abstract class TransformerWrapper {
   val hasMultiInputs: Boolean
   val hasMultiOutputs: Boolean
   val needAncestorInputs: Boolean
+  val needFit: Boolean
   private val prefix = "out_"
 
   val requiredInputCols: Array[String]
