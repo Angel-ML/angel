@@ -20,18 +20,20 @@ package com.tencent.angel.ml.psf.columns;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
+import com.tencent.angel.ps.server.data.request.InitFunc;
 import io.netty.buffer.ByteBuf;
 
 public class PartitionGetColsParam extends PartitionGetParam {
 
   public long[] cols;
   public int[] rows;
+  public InitFunc func;
 
-  public PartitionGetColsParam(int matId, PartitionKey pkey, int[] rows, long[] cols) {
+  public PartitionGetColsParam(int matId, PartitionKey pkey, int[] rows, long[] cols, InitFunc func) {
     super(matId, pkey);
     this.rows = rows;
     this.cols = cols;
-
+    this.func = func;
   }
 
   public PartitionGetColsParam() {
@@ -40,6 +42,14 @@ public class PartitionGetColsParam extends PartitionGetParam {
 
   @Override public void serialize(ByteBuf buf) {
     super.serialize(buf);
+    buf.writeBoolean(func != null);
+    if (func != null) {
+      byte[] data = func.getClass().getName().getBytes();
+      buf.writeInt(data.length);
+      buf.writeBytes(data);
+      func.serialize(buf);
+    }
+
     buf.writeInt(rows.length);
     for (int i = 0; i < rows.length; i++)
       buf.writeInt(rows[i]);
@@ -50,6 +60,20 @@ public class PartitionGetColsParam extends PartitionGetParam {
 
   @Override public void deserialize(ByteBuf buf) {
     super.deserialize(buf);
+    boolean useInitFunc = buf.readBoolean();
+    if (useInitFunc) {
+      int size = buf.readInt();
+      byte[] data = new byte[size];
+      buf.readBytes(data);
+      String initFuncClass = new String(data);
+      try {
+        func = (InitFunc) Class.forName(initFuncClass).newInstance();
+      } catch (Throwable e) {
+        throw new UnsupportedOperationException(e);
+      }
+      func.deserialize(buf);
+    }
+
     int nRows = buf.readInt();
     rows = new int[nRows];
     for (int i = 0; i < nRows; i++)
@@ -61,6 +85,12 @@ public class PartitionGetColsParam extends PartitionGetParam {
   }
 
   @Override public int bufferLen() {
-    return super.bufferLen() + rows.length * 4 + cols.length * 8 + 8;
+    int len = super.bufferLen() + rows.length * 4 + cols.length * 8 + 8;
+    if(func != null) {
+      len += (4 + 4 + func.getClass().getName().getBytes().length + func.bufferLen());
+    } else {
+      len += 4;
+    }
+    return len;
   }
 }

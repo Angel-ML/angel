@@ -18,12 +18,12 @@
 
 package com.tencent.angel.ml.matrix;
 
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.model.output.format.ModelFilesConstent;
-import com.tencent.angel.model.output.format.ModelFilesMeta;
-import com.tencent.angel.ps.storage.partitioner.IntRangePartitioner;
-import com.tencent.angel.ps.storage.partitioner.LongRangePartitioner;
+import com.tencent.angel.model.output.format.MatrixFilesMeta;
 import com.tencent.angel.ps.storage.partitioner.Partitioner;
+import com.tencent.angel.ps.storage.partitioner.RangePartitioner;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -33,7 +33,6 @@ import org.apache.hadoop.fs.Path;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.io.SerializablePermission;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -381,13 +380,7 @@ public class MatrixContext implements Serializable {
       return;
     }
 
-    if (rowType == RowType.T_DOUBLE_SPARSE_LONGKEY
-      || rowType == RowType.T_DOUBLE_SPARSE_LONGKEY_COMPONENT
-      || rowType == RowType.T_FLOAT_SPARSE_LONGKEY) {
-      partitionerClass = LongRangePartitioner.class;
-    } else {
-      partitionerClass = IntRangePartitioner.class;
-    }
+    partitionerClass = RangePartitioner.class;
   }
 
   /**
@@ -409,9 +402,23 @@ public class MatrixContext implements Serializable {
     initPartitioner();
     check();
     String loadPath = attributes.get(MatrixConf.MATRIX_LOAD_PATH);
-    if (loadPath != null) {
+    if(loadPath == null) {
+      loadPath = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH);
+      if (loadPath != null) {
+        if(matrixPathExist(loadPath, name, conf)) {
+          attributes.put(MatrixConf.MATRIX_LOAD_PATH, loadPath);
+          loadMatrixMetaFromFile(name, loadPath, conf);
+        }
+      }
+    } else {
       loadMatrixMetaFromFile(name, loadPath, conf);
     }
+  }
+
+  private boolean matrixPathExist(String loadPath, String name, Configuration conf) throws IOException {
+    Path matrixPath = new Path(loadPath, name);
+    FileSystem fs = matrixPath.getFileSystem(conf);
+    return fs.exists(matrixPath);
   }
 
   private void check() {
@@ -424,7 +431,7 @@ public class MatrixContext implements Serializable {
   private void loadMatrixMetaFromFile(String name, String path, Configuration conf)
     throws IOException {
     Path meteFilePath = new Path(new Path(path, name), ModelFilesConstent.modelMetaFileName);
-    ModelFilesMeta meta = new ModelFilesMeta();
+    MatrixFilesMeta meta = new MatrixFilesMeta();
 
     FileSystem fs = meteFilePath.getFileSystem(conf);
     LOG.info("Load matrix meta for matrix " + name + " from " + meteFilePath);
@@ -434,8 +441,13 @@ public class MatrixContext implements Serializable {
     }
 
     FSDataInputStream input = fs.open(meteFilePath);
-    meta.read(input);
-    input.close();
+    try {
+      meta.read(input);
+    } catch (Throwable e) {
+      throw new IOException("Read meta failed ", e);
+    } finally {
+      input.close();
+    }
 
     rowNum = meta.getRow();
     colNum = meta.getCol();
@@ -469,12 +481,12 @@ public class MatrixContext implements Serializable {
       if (colNum <= 0) {
         if (rowType == RowType.T_DOUBLE_SPARSE || rowType == RowType.T_FLOAT_SPARSE
           || rowType == RowType.T_LONG_SPARSE || rowType == RowType.T_INT_SPARSE) {
-          return (double) validIndexNum / rowNum / 2 / Integer.MAX_VALUE;
+          return (double) validIndexNum / 2 / Integer.MAX_VALUE;
         } else {
-          return (double) validIndexNum / rowNum / 2 / Long.MAX_VALUE;
+          return (double) validIndexNum / 2 / Long.MAX_VALUE;
         }
       } else {
-        return (double) validIndexNum / rowNum / colNum;
+        return (double) validIndexNum / colNum;
       }
     }
   }

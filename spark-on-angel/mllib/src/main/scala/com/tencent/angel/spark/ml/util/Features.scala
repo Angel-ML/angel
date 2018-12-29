@@ -21,12 +21,14 @@ import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.math2.storage.IntKeyVectorStorage
-import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector, IntIntVector}
+import com.tencent.angel.ml.math2.storage.{IntFloatSortedVectorStorage, IntFloatSparseVectorStorage, IntKeyVectorStorage}
+import com.tencent.angel.ml.math2.vector.{IntIntVector, LongIntVector}
 import com.tencent.angel.ml.matrix.RowType
-import com.tencent.angel.spark.client.PSClient
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet
 import org.apache.spark.rdd.RDD
+
+import com.tencent.angel.spark.context.PSContext
 
 object Features {
 
@@ -44,112 +46,102 @@ object Features {
     }
   }
 
-  def buildRoutingIndex(part: Int, iter: Iterator[Array[Int]]): Iterator[(Int, Int)] = {
-    val indices = iter.next()
-    indices.map(f => (f, part)).iterator
-  }
-
-  def mapWithBroadcast(data: RDD[LabeledData]): (Map[Int, Int], RDD[LabeledData]) = {
-
-    data.cache()
-    data.count()
-
-    val features = data.mapPartitions(getIndices).flatMap(f => f).map(f => (f, 1))
-      .reduceByKey(_ + _).map(f => f._1).collect()
-    val featureMap = features.zipWithIndex.toMap
-    val bMap = data.sparkContext.broadcast(featureMap)
-    val dim  = featureMap.size
-    println(s"new dim=$dim")
-    val newData = data.map { case point =>
-      point.getX match {
-        case v: IntFloatVector =>
-          val indices = v.getStorage.getIndices.map(f => bMap.value(f))
-          val values = v.getStorage.getValues
-          val x = VFactory.sparseFloatVector(dim, indices, values)
-          new LabeledData(x, point.getY)
-        case v: IntDoubleVector =>
-          val indices = v.getStorage.getIndices.map(f => bMap.value(f))
-          val values = v.getStorage.getValues
-          val x = VFactory.sparseDoubleVector(dim, indices, values)
-          new LabeledData(x, point.getY)
-      }
-    }
-
-    newData.cache()
-    newData.count()
-
-    data.unpersist()
-
-    (featureMap, newData)
-  }
-
-  def updateFeatureMapPS(iter: Iterator[(Int, Long)], matrixId: Int, dim: Int): Iterator[Int] = {
-    PSClient.instance()
-    val update = VFactory.sparseIntVector(dim)
+  def updateSparseToDense(iter: Iterator[(Int, Long)],
+                          sparseToDenseMatrixId: Int,
+                          sparseDim: Long): Iterator[Int] = {
+    PSContext.instance()
+    val update = VFactory.sparseLongKeyIntVector(sparseDim)
     while (iter.hasNext) {
       val (feature, index) = iter.next()
       update.set(feature, index.toInt)
     }
 
-    PSMatrixUtils.incrementRow(matrixId, 0, update)
+    PSMatrixUtils.incrementRow(sparseToDenseMatrixId, 0, update)
     Iterator.single(0)
   }
 
-  def reMapFeature(iter: Iterator[LabeledData], matrixId: Int, dim: Int): Iterator[LabeledData] = {
-    PSClient.instance()
-    val set = new IntOpenHashSet()
+  def updateDenseToSparse(iter: Iterator[(Int, Long)],
+                          denseToSparseMatrixId: Int,
+                          denseDim: Int): Iterator[Int] = {
+    PSContext.instance()
+    val update = VFactory.sparseIntVector(denseDim)
+    while (iter.hasNext) {
+      val (feature, index) = iter.next()
+      update.set(index.toInt, feature)
+    }
+
+    PSMatrixUtils.incrementRow(denseToSparseMatrixId, 0, update)
+    Iterator.single(0)
+  }
+
+  def sparseToDenseOnePartition(iter: Iterator[LabeledData], matrixId: Int, denseDim: Int): Iterator[LabeledData] = {
+    PSContext.instance()
+    val set = new LongOpenHashSet()
     val samples = iter.toArray
     samples.foreach(f => f.getX.getStorage.asInstanceOf[IntKeyVectorStorage]
       .getIndices.map(i => set.add(i)))
-    val index = VFactory.denseIntVector(set.toIntArray())
-    val vector = PSMatrixUtils.getRowWithIndex(matrixId, 0, index).asInstanceOf[IntIntVector]
+    val index = VFactory.denseLongVector(set.toLongArray())
+    val vector = PSMatrixUtils.getRowWithIndex(1, matrixId, 0, index).asInstanceOf[LongIntVector]
 
-    val newSamples = samples.map { case point =>
-      point.getX match {
-        case v: IntFloatVector =>
-          val indices = v.getStorage.getIndices.map(f => vector.get(f))
-          val values = v.getStorage.getValues
-          val x = VFactory.sparseFloatVector(dim, indices, values)
+    val newData = samples.map { case point =>
+      point.getX.getStorage match {
+        case s: IntFloatSortedVectorStorage =>
+          val indices = s.getIndices
+          var i = 0
+          while (i < indices.length) {
+            indices(i) = vector.get(indices(i))
+            i += 1
+          }
+          val x = VFactory.sortedFloatVector(denseDim, indices, s.getValues)
           new LabeledData(x, point.getY)
-        case v: IntDoubleVector =>
-          val indices = v.getStorage.getIndices.map(f => vector.get(f))
-          val values = v.getStorage.getValues
-          val x = VFactory.sparseDoubleVector(dim, indices, values)
+        case s: IntFloatSparseVectorStorage =>
+          val indices = s.getIndices.map(f => vector.get(f))
+          val values = s.getValues
+          val x = VFactory.sparseFloatVector(denseDim, indices, values)
           new LabeledData(x, point.getY)
       }
     }
 
-    newSamples.iterator
+    newData.iterator
   }
 
-  def mapWithPS(data: RDD[LabeledData]): (Int, Int, RDD[LabeledData]) = {
-    println(s"remapping feature start")
+  def featureSparseToDense(data: RDD[LabeledData]): (Int, Int, Int, Long, RDD[LabeledData]) = {
+    println(s"making feature from sparse to dense start")
+
     data.cache()
     data.count()
 
-    // maxFeature + 1 is the original dimension
-    val maxFeature = data.mapPartitions(getIndices).flatMap(f => f).max()
-    println(s"original feature number = ${maxFeature + 1}")
-    // create one mapping matrix
-    val ctx = PSMatrixUtils.createPSMatrixCtx("features", 1, maxFeature + 1, RowType.T_INT_SPARSE)
-    val matrixId = PSMatrixUtils.createPSMatrix(ctx)
+    val sparseDim = data.mapPartitions(getIndices).flatMap(f => f).max().toLong + 1
+    // create sparseToDense matrix
+    val sparseToDense = PSMatrixUtils.createPSMatrixCtx("sparseToDense", 1, sparseDim, RowType.T_INT_SPARSE_LONGKEY)
+    val sparseToDenseMatrixId = PSMatrixUtils.createPSMatrix(sparseToDense)
 
+    // calculate dense feature dimension
     val features = data.mapPartitions(getIndices).flatMap(f => f).map(f => (f, 1))
       .reduceByKey(_ + _).map(f => f._1)
     val featureMap = features.zipWithIndex()
     featureMap.cache()
-    val dim = featureMap.count().toInt
-    println(s"new dim = $dim")
+    val denseDim = featureMap.count().toInt
+    println(s"feature sparse dimension = $sparseDim, dense dimension = $denseDim")
 
+    // create denseToSparse matrix
+    val denseToSparse = PSMatrixUtils.createPSMatrixCtx("denseToSparse", 1, denseDim, RowType.T_INT_DENSE)
+    val denseToSparseMatrixId = PSMatrixUtils.createPSMatrix(denseToSparse)
 
-    featureMap.mapPartitions(it => updateFeatureMapPS(it, matrixId, dim), true).count()
+    // initialize sparseToDense and denseToSparse matrix
+    featureMap.mapPartitions(it => updateSparseToDense(it, sparseToDenseMatrixId, sparseDim), true).count()
+    featureMap.mapPartitions(it => updateDenseToSparse(it, denseToSparseMatrixId, denseDim), true).count()
 
-    val newData = data.mapPartitions(it => reMapFeature(it, matrixId, dim))
+    // change sparse feature to dense feature index
+    val newData = data.mapPartitions(it => sparseToDenseOnePartition(it, sparseToDenseMatrixId, denseDim))
+    println(s"feature sparse to dense finish")
+
     newData.cache()
     newData.count()
-    println(s"remapping feature finish")
     data.unpersist()
 
-    (matrixId, dim, newData)
+    (denseToSparseMatrixId, denseDim, sparseToDenseMatrixId, sparseDim, newData)
   }
+
+
 }

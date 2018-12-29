@@ -19,12 +19,14 @@
 package com.tencent.angel.spark.ml.core
 
 
-import com.tencent.angel.conf.MatrixConf
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.layers.{AngelGraph, PlaceHolder, STATUS}
+import com.tencent.angel.ml.core.optimizer.decayer._
+import com.tencent.angel.ml.core.optimizer.loss.LossFunc
 import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.Matrix
+import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.spark.context.AngelPSContext
 import org.json4s.JsonAST.JValue
 
@@ -34,7 +36,7 @@ class GraphModel extends Serializable {
   implicit val graph = new AngelGraph(new PlaceHolder())
   var jsonAst: JValue = conf.getJson
   val stepSize: Double = SharedConf.learningRate
-  val decay: Double = SharedConf.decay
+  val scheduler: StepSizeScheduler = new StandardDecay(stepSize)
 
   def ensureJsonAst(): Unit = {
     if (jsonAst == null) {
@@ -52,14 +54,14 @@ class GraphModel extends Serializable {
     network()
 
     graph.taskNum = taskNum
-    graph.loadModel()
+    graph.createMatrices()
     graph.init()
     println(s"graph=\n$graph")
   }
 
-  def forward(data: Array[LabeledData]): Matrix = {
+  def forward(epoch:Int, data: Array[LabeledData]): Matrix = {
     graph.feedData(data)
-    graph.pullParams()
+    graph.pullParams(epoch)
     graph.predict()
   }
 
@@ -67,27 +69,33 @@ class GraphModel extends Serializable {
     graph.getOutputLayer.calLoss()
   }
 
+  def getLossFunc(): LossFunc = {
+    graph.getOutputLayer.getLossFunc
+  }
+
   def backward(): Unit = {
     graph.calBackward()
     graph.pushGradient()
   }
 
-  def update(iteration: Int = 0): Unit = {
-    val lr = stepSize / math.sqrt(1.0 + decay * iteration)
+  def update(iteration: Int, batchSize: Int): (Double, Boolean) = {
+    val lr = scheduler.next()
     graph.setLR(lr)
     graph.setState(_ => true, STATUS.Gradient)
-    graph.update(iteration)
+    graph.update(iteration, batchSize)
+    (lr, scheduler.isIntervalBoundary)
   }
 
   def save(path: String): Unit = {
-    //TODO
-    AngelPSContext.save(graph.getMatrixCtx(), path)
-
+    val context = new ModelSaveContext(path)
+    graph.getTrainable.map(layer => layer.saveParams(context))
+    AngelPSContext.save(context)
   }
 
   def load(path: String): Unit = {
-    //TODO
-    graph.getMatrixCtx().foreach(f => f.set(MatrixConf.MATRIX_LOAD_PATH, path))
+    val context = new ModelLoadContext(path)
+    graph.getTrainable.map(layer => layer.loadParams(context))
+    AngelPSContext.load(context)
   }
 
 }

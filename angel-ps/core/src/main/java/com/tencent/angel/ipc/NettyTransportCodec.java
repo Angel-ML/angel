@@ -72,8 +72,9 @@ public class NettyTransportCodec {
     }
 
     @Override public String toString() {
-      return Objects.toStringHelper(this).add("serial", serial).add("listSize", datas.size())
-        .toString();
+//      return Objects.toStringHelper(this).add("serial", serial).add("listSize", datas.size())
+//        .toString();
+      return "";
     }
 
     /**

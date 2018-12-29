@@ -18,11 +18,10 @@
 
 package com.tencent.angel.spark.examples.cluster
 
-import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.utils.DataParser
+import com.tencent.angel.RunningMode
+import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.examples.util.SparkUtils
 import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OfflineLearner}
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -32,33 +31,40 @@ object OfflineRunner {
     val params = ArgsUtil.parse(args)
 
     val input = params.getOrElse("input", "")
+    val output = params.getOrElse("output", "")
     val actionType = params.getOrElse("actionType", "train")
     val network = params.getOrElse("network", "LogisticRegression")
+    val modelPath = params.getOrElse("model", "")
+
+    // set running mode, use angel_ps mode for spark
+    SharedConf.get().set(AngelConf.ANGEL_RUNNING_MODE, RunningMode.ANGEL_PS.toString)
 
     // build SharedConf with params
     SharedConf.addMap(params)
 
-    val className = "com.tencent.angel.spark.ml.classification." + network
-    val model = GraphModel(className)
-    val learner = new OfflineLearner()
+    val dim = SharedConf.indexRange.toInt
+
+    println(s"dim=$dim")
 
     // load data
     val conf = new SparkConf()
-    val sc = new SparkContext(conf)
-    val parser = DataParser(SharedConf.get())
-    val data = sc.textFile(input)
-      .repartition(SparkUtils.getNumExecutors(conf))
-      .map(f => parser.parse(f))
 
+    // we set the load model path for angel-ps to load the meta information of model
+    if (modelPath.length > 0)
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, modelPath)
+
+    val sc   = new SparkContext(conf)
+
+    // start PS
     PSContext.getOrCreate(sc)
 
+    val className = "com.tencent.angel.spark.ml.classification." + network
+    val model = GraphModel(className)
+    val learner = new OfflineLearner
+
     actionType match {
-      case "train" =>
-        learner.train(data, model)
-      case "predict" =>
-        learner.predict(data, model)
-      case _ =>
-        throw new AngelException("actionType should be train or predict")
+      case MLConf.ANGEL_ML_TRAIN => learner.train(input, output, modelPath, dim, model)
+      case MLConf.ANGEL_ML_PREDICT => learner.predict(input, output, modelPath, dim, model)
     }
   }
 }

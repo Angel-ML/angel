@@ -103,6 +103,10 @@ public class MasterRecoverTest {
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
       conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 2);
 
+      conf.setInt(AngelConf.ANGEL_AM_WRITE_STATE_INTERVAL_MS, 1000);
+      conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
+      conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
+
       // get a angel client
       angelClient = AngelClientFactory.get(conf);
 
@@ -210,7 +214,7 @@ public class MasterRecoverTest {
       angelAppMaster.getAppContext().getEventHandler().handle(
         new InternalErrorEvent(angelAppMaster.getAppContext().getApplicationId(), "failed", true));
 
-      Thread.sleep(15000);
+      Thread.sleep(10000);
       angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
       assertEquals(angelAppMaster.getAppContext().getApp().getExternAppState(), AppState.RUNNING);
       LOG.info(
@@ -256,7 +260,7 @@ public class MasterRecoverTest {
 
       angelAppMaster.getAppContext().getEventHandler().handle(
         new InternalErrorEvent(angelAppMaster.getAppContext().getApplicationId(), "failed", true));
-      Thread.sleep(15000);
+      Thread.sleep(10000);
       angelAppMaster = LocalClusterContext.get().getMaster().getAppMaster();
       assertEquals(angelAppMaster.getAppContext().getApplicationAttemptId(), appAttempt2Id);
       assertEquals(angelAppMaster.getAppContext().getApp().getExternAppState(), AppState.FAILED);

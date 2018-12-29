@@ -19,6 +19,7 @@
 package com.tencent.angel.ml.lda.psf;
 
 import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.ml.math2.storage.IntIntDenseVectorStorage;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.storage.vector.ServerIntIntRow;
 import com.tencent.angel.ps.storage.vector.ServerRow;
@@ -68,7 +69,7 @@ public class PartCSRResult extends PartitionGetResult {
 
     try {
       row.startRead();
-      int[] values = row.getValues();
+      int[] values = ((IntIntDenseVectorStorage)(row.getSplit().getStorage())).getValues();
       int len = (int) (row.getEndCol() - row.getStartCol());
       int cnt = 0;
       for (int i = 0; i < len; i++)
@@ -165,11 +166,14 @@ public class PartCSRResult extends PartitionGetResult {
       default:
         throw new AngelException("type mismatch");
     }
-
-    if (readerIdx == this.len) {
-      buf.release();
-    }
     return true;
   }
 
+  public void clear() {
+    try {
+      buf.release();
+    } catch (Throwable x) {
+
+    }
+  }
 }

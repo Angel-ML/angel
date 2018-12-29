@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -20,20 +20,25 @@ package com.tencent.angel.ml.GBDT.algo.RegTree;
 
 import com.tencent.angel.ml.GBDT.algo.FeatureMeta;
 import com.tencent.angel.ml.feature.LabeledData;
-import com.tencent.angel.ml.math2.vector.IntDoubleVector;
 import com.tencent.angel.ml.GBDT.param.RegTParam;
 import com.tencent.angel.ml.core.utils.Maths;
+import com.tencent.angel.ml.math2.VFactory;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
+import com.tencent.angel.ml.math2.vector.IntFloatVector;
 import com.tencent.angel.worker.storage.DataBlock;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Description: data information, always sit in memory.
  */
 public class RegTDataStore {
+
+  private static final Log LOG = LogFactory.getLog(RegTDataStore.class);
+
 
   public RegTParam param;
 
@@ -44,7 +49,7 @@ public class RegTDataStore {
   public int numNonzero; // number of nonzero entries in the data
   public final static int kVersion = 1; // version flag, used to check version of this info
 
-  public IntDoubleVector[] instances; // training instances
+  public IntFloatVector[] instances; // training instances
   public float[] labels; // label of each instances
   public float[] preds; // pred of each instance
   //public int[] rootIndex; // specified root index of each instances, can be used for multi task setting
@@ -61,7 +66,7 @@ public class RegTDataStore {
     numRow = dataSet.size();
     numCol = param.numFeature;
     numNonzero = param.numNonzero;
-    instances = new IntDoubleVector[numRow];
+    instances = new IntFloatVector[numRow];
     labels = new float[numRow];
     preds = new float[numRow];
     weights = new float[numRow];
@@ -75,19 +80,27 @@ public class RegTDataStore {
 
     dataSet.resetReadIndex();
     LabeledData data;
-    IntDoubleVector x;
+    IntFloatVector x = null;
     double y;
 
     for (int idx = 0; idx < dataSet.size(); idx++) {
       data = dataSet.read();
-      x = (IntDoubleVector) data.getX();
+
+      if (data.getX() instanceof IntFloatVector) {
+        x = (IntFloatVector) data.getX();
+      } else if (data.getX() instanceof IntDoubleVector) {
+        x = VFactory.sparseFloatVector((int) data.getX().dim(),
+            ((IntDoubleVector)data.getX()).getStorage().getIndices(),
+            Maths.double2Float(((IntDoubleVector)data.getX()).getStorage().getValues()));
+      }
+
       y = data.getY();
       if (y != 1) {
         y = 0;
       }
 
       int[] indices = x.getStorage().getIndices();
-      double[] values = x.getStorage().getValues();
+      float[] values = x.getStorage().getValues();
       for (int i = 0; i < indices.length; i++) {
         int fid = indices[i];
         double fvalue = values[i];
@@ -106,7 +119,7 @@ public class RegTDataStore {
     }
 
     featureMeta =
-      new FeatureMeta(numCol, Maths.double2Float(minFeatures), Maths.double2Float(maxFeatures));
+            new FeatureMeta(numCol, Maths.double2Float(minFeatures), Maths.double2Float(maxFeatures));
 
   }
 
@@ -148,7 +161,7 @@ public class RegTDataStore {
     this.numNonzero = numNonzero;
   }
 
-  public void setInstances(IntDoubleVector[] instances) {
+  public void setInstances(IntFloatVector[] instances) {
     this.instances = instances;
   }
 

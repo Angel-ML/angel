@@ -18,17 +18,9 @@
 
 package com.tencent.angel.spark.context
 
+import java.util
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
-import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.{Map, mutable}
-
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.FileSystem
-import org.apache.hadoop.util.ShutdownHookManager
-import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.{SparkConf, SparkEnv, TaskContext}
 
 import com.tencent.angel.client.AngelContext
 import com.tencent.angel.common.location.Location
@@ -36,13 +28,23 @@ import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.conf.AngelConf._
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.matrix.{MatrixContext, MatrixMeta, RowType}
+import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.ps.ParameterServer
-import com.tencent.angel.ps.storage.matrix.PartitionSourceMap
 import com.tencent.angel.psagent.PSAgent
 import com.tencent.angel.psagent.matrix.{MatrixClient, MatrixClientFactory}
-import com.tencent.angel.spark.models.matrix.PSMatrix
-import com.tencent.angel.spark.models.vector.PSVector
-import com.tencent.angel.spark.util.RowTypeImplicit._
+import com.tencent.angel.spark.models.{PSMatrix, PSVector}
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.hadoop.util.ShutdownHookManager
+import org.apache.spark.deploy.SparkHadoopUtil
+import org.apache.spark.{SparkConf, SparkContext, SparkEnv, TaskContext}
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
+import scala.collection.{Map, mutable}
+
+import org.apache.commons.httpclient.URI
+
+import com.tencent.angel.ps.storage.partitioner.Partitioner
 
 /**
   * AngelPSContext for driver and executor, it is an implement of `PSContext`
@@ -76,24 +78,25 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
   }
   private var matrixCounter = 0
 
-  def createVector(
-                    dimension: Long,
-                    t: RowType = RowType.T_DOUBLE_DENSE,
-                    poolCapacity: Int = PSVectorPool.DEFAULT_POOL_CAPACITY,
-                    range: Long): PSVector = {
+  def createVector(dimension: Long,
+                   t: RowType = RowType.T_DOUBLE_DENSE,
+                   poolCapacity: Int = PSVectorPool.DEFAULT_POOL_CAPACITY,
+                   range: Long,
+                   additionalConfiguration:Map[String, String] = Map()): PSVector = {
     assertCallByDriver("The operation of creating a vector can only be called on the driver side.")
-    createVectorPool(dimension, poolCapacity, t, range).allocate()
+    createVectorPool(dimension, poolCapacity, t, range, additionalConfiguration).allocate()
   }
 
-  private[spark] def createVectorPool(
-                                       dimension: Long,
-                                       capacity: Int,
-                                       t: RowType,
-                                       range: Long): PSVectorPool = {
+  private[spark] def createVectorPool(dimension: Long,
+                                      capacity: Int,
+                                      t: RowType,
+                                      range: Long,
+                                      additionalConfiguration:Map[String, String]): PSVectorPool = {
     val thisCapacity = if (capacity > 0) capacity else PSVectorPool.DEFAULT_POOL_CAPACITY
-
-    val matrixMeta = if (t.isDense) PSMatrix.dense(thisCapacity, dimension, t) else
-      PSMatrix.sparse(thisCapacity, dimension, range, t)
+    val matrixMeta = if (t.isDense)
+      PSMatrix.dense(thisCapacity, dimension, -1, -1, t, additionalConfiguration)
+    else
+      PSMatrix.sparse(thisCapacity, dimension, range, t, additionalConfiguration)
     val pool = new PSVectorPool(matrixMeta.id, dimension, thisCapacity, t)
     psVectorPools.put(pool.id, pool)
     pool
@@ -103,8 +106,8 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
                         cols: Long,
                         rowInBlock: Int = -1,
                         colInBlock: Long = -1,
-                        rowType: RowType = RowType.T_DOUBLE_DENSE)
-  : MatrixMeta = {
+                        rowType: RowType = RowType.T_DOUBLE_DENSE,
+                        additionalConfiguration: Map[String, String] = Map()): MatrixMeta = {
     val maxRowNumInBlock = if (rowInBlock == -1) rows else rowInBlock
     val maxBlockSize = 5000000
     val maxColNumInBlock = if (colInBlock == -1) {
@@ -112,22 +115,29 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
     } else {
       colInBlock
     }
-    createMatrix(rows, cols, -1, maxRowNumInBlock, maxColNumInBlock, rowType)
+    createMatrix(rows, cols, -1, maxRowNumInBlock, maxColNumInBlock, rowType, additionalConfiguration)
   }
 
 
-  def createMatrix(
-                    rows: Int,
-                    cols: Long,
-                    validIndexNum: Long,
-                    rowInBlock: Int,
-                    colInBlock: Long,
-                    rowType: RowType,
-                    partitionSource: String = classOf[PartitionSourceMap].getName): MatrixMeta = {
+  def createMatrix(rows: Int,
+                   cols: Long,
+                   validIndexNum: Long,
+                   rowInBlock: Int,
+                   colInBlock: Long,
+                   rowType: RowType,
+                   additionalConfiguration: Map[String, String] = Map()): MatrixMeta = {
     assertCallByDriver("The operation of creating a matrix can only be called on the driver side.")
     val mc = new MatrixContext(s"spark-$matrixCounter", rows, cols, validIndexNum,
       rowInBlock, colInBlock, rowType)
-    mc.getAttributes.put(AngelConf.ANGEL_PS_PARTITION_SOURCE_CLASS, partitionSource)
+
+    additionalConfiguration.foreach { case (key, value) =>
+      mc.getAttributes.put(key, value)}
+
+    if (mc.getAttributes.containsKey(AngelConf.Angel_PS_PARTITION_CLASS)) {
+      val partitionClassName = mc.getAttributes.get(AngelConf.Angel_PS_PARTITION_CLASS)
+      mc.setPartitionerClass(Class.forName(partitionClassName).asInstanceOf[Class[Partitioner]])
+      mc.getAttributes.remove(AngelConf.Angel_PS_PARTITION_CLASS)
+    }
     psAgent.createMatrix(mc, 5000L)
     val meta = psAgent.getMatrix(mc.getName)
     matrixCounter += 1
@@ -135,36 +145,39 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
     meta
   }
 
+  def getMatrixMeta(matrixId: Int): Option[MatrixMeta] = {
+    matrixMetaMap.get(matrixId)
+  }
+
   /**
     * create a sparse long key matrix
     *
-    * @param rows       matrix row num
-    * @param dim        dimension for each row
-    * @param range      long type range for each row
-    *                   if range = -1, the range is (Long.MinValue, Long.MaxValue),
-    *                   else range is [0, range), usually range will be set to Long.MaxValue.
-    * @param rowInBlock row number for each block
-    * @param colInBlock col number for each block
+    * @param rows          matrix row num
+    * @param cols          dimension for each row
+    * @param validIndexNum long type range for each row
+    *                      if range = -1, the range is (Long.MinValue, Long.MaxValue),
+    *                      else range is [0, range), usually range will be set to Long.MaxValue.
+    * @param rowInBlock    row number for each block
+    * @param colInBlock    col number for each block
     * @return
     */
-  // @ TODO: dim??
-  def createSparseMatrix(
-                          rows: Int,
-                          range: Long,
-                          dim: Long,
-                          rowInBlock: Int = -1,
-                          colInBlock: Long = -1,
-                          rowType: RowType = RowType.T_DOUBLE_SPARSE): MatrixMeta = {
-    createMatrix(rows, range, dim, rowInBlock, colInBlock, rowType)
+  def createSparseMatrix(rows: Int,
+                         cols: Long,
+                         validIndexNum: Long,
+                         rowInBlock: Int = -1,
+                         colInBlock: Long = -1,
+                         rowType: RowType = RowType.T_DOUBLE_SPARSE,
+                         additionalConfiguration: Map[String, String] = Map()): MatrixMeta = {
+    createMatrix(rows, cols, validIndexNum, rowInBlock, colInBlock, rowType, additionalConfiguration)
   }
 
   def duplicateVector(original: PSVector): PSVector = {
-    assertCallByDriver("The operation of destroying a matrix can only be called on the driver side.")
+    assertCallByDriver("The operation of duplicate a vector can only be called on the driver side.")
     getPool(original.poolId).allocate().reset
   }
 
   def destroyVector(vector: PSVector): Unit = {
-    assertCallByDriver("The operation of destroying a matrix can only be called on the driver side.")
+    assertCallByDriver("The operation of destroying a vector can only be called on the driver side.")
     getPool(vector.poolId).delete(vector)
   }
 
@@ -188,6 +201,14 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
     matrixMetaMap.remove(matrixId).foreach { x =>
       psAgent.releaseMatrix(x.getId)
     }
+  }
+
+  /**
+    * Refresh the matrix meta information for this psagent.
+    * This method will pull matrix infos from master.
+    */
+  override def refreshMatrix(): Unit = {
+    psAgent.refreshMatrixInfo()
   }
 
   def TOTAL_PS_CORES: Int = angelCtx.getConf.getInt(TOTAL_CORES, 2)
@@ -260,10 +281,12 @@ private[spark] object AngelPSContext {
     }
   }
 
-  def save(matrices: Seq[MatrixContext], path: String): Unit = {
-    val list = new java.util.ArrayList[MatrixContext]
-    matrices.foreach(f => list.add(f))
-    angelClient.save(list, path)
+  def save(context: ModelSaveContext): Unit = {
+    angelClient.save(context)
+  }
+
+  def load(context: ModelLoadContext): Unit = {
+    angelClient.load(context)
   }
 
   //Start Angel
@@ -292,67 +315,83 @@ private[spark] object AngelPSContext {
 
     val psNum = conf.getInt("spark.ps.instances", 1)
     val psCores = conf.getInt("spark.ps.cores", 1)
-    val psMem = conf.getSizeAsMb("spark.ps.memory", "4g").toInt
-    val psHeap = psMem - 200
+    val psMem = conf.getSizeAsGb("spark.ps.memory", "4g").toInt
     val psOpts = conf.getOption("spark.ps.extraJavaOptions")
 
     val psJars = conf.get("spark.ps.jars", "")
     val psLogLevel = conf.get("spark.ps.log.level", "INFO")
     val psClass = conf.get("spark.ps.class", classOf[ParameterServer].getName)
 
-    val actionType = conf.get("spark.ps.action.type", "train")
-
     val defaultFS = conf.get("spark.hadoop.fs.defaultFS", "file://")
     val tempPath = defaultFS + "/tmp/spark-on-angel/" + UUID.randomUUID()
 
-    val psOut = conf.get("spark.ps.out.path", tempPath)
-    val modelPath = conf.get("spark.ps.model.path", tempPath)
     val psOutOverwrite = conf.getBoolean("spark.ps.out.overwrite", defaultValue = true)
     val psOutTmpOption = conf.getOption("spark.ps.out.tmp.path.prefix")
 
     import com.tencent.angel.conf.AngelConf._
 
     val hadoopConf = SparkHadoopUtil.get.newConfiguration(conf)
-    hadoopConf.set(ANGEL_RUNNING_MODE, "ANGEL_PS")
 
+    // setting running mode, app name, queue and deploy mode
+    hadoopConf.set(ANGEL_RUNNING_MODE, "ANGEL_PS")
     hadoopConf.set(ANGEL_JOB_NAME, appName)
     hadoopConf.set(ANGEL_QUEUE, queue)
-
     hadoopConf.set(ANGEL_DEPLOY_MODE, deployMode)
-    if (deployMode == "LOCAL") {
-      hadoopConf.set(ANGEL_PS_HEARTBEAT_INTERVAL_MS, "200")
-    }
-    if (psOpts.isDefined) {
-      hadoopConf.set(ANGEL_PS_JAVA_OPTS, psOpts.get)
-    }
 
+    // For local mode, we set heartbeat a small value for fast debugging
+    if (deployMode == "LOCAL")
+      hadoopConf.set(ANGEL_PS_HEARTBEAT_INTERVAL_MS, "200")
+
+    if (psOpts.isDefined)
+      hadoopConf.set(ANGEL_PS_JAVA_OPTS, psOpts.get)
+
+    // Set the temp path as the angel.save.model.path to fake the angel-ps system
+    // The action type is also a fake setting.
+    hadoopConf.set(ANGEL_ACTION_TYPE, "train")
+    hadoopConf.set(ANGEL_SAVE_MODEL_PATH, tempPath)
+
+    // Setting resource
     hadoopConf.setInt(ANGEL_PS_NUMBER, psNum)
     hadoopConf.setInt(ANGEL_PS_CPU_VCORES, psCores)
-    hadoopConf.setInt(ANGEL_PS_MEMORY_MB, psMem)
+    hadoopConf.setInt(ANGEL_PS_MEMORY_GB, psMem)
     hadoopConf.setInt(TOTAL_CORES, psNum * psCores)
 
     hadoopConf.set(ANGEL_AM_LOG_LEVEL, psLogLevel)
     hadoopConf.set(ANGEL_PS_LOG_LEVEL, psLogLevel)
-
     hadoopConf.set(ANGEL_PS_CLASS, psClass)
-
     hadoopConf.set(ANGEL_JOB_LIBJARS, psJars)
 
-    hadoopConf.set(ANGEL_ACTION_TYPE, actionType)
-    if (actionType == "train") {
-      hadoopConf.set(ANGEL_SAVE_MODEL_PATH, modelPath)
-    } else {
-      hadoopConf.set(ANGEL_PREDICT_PATH, psOut)
-    }
-
     hadoopConf.setBoolean(ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, psOutOverwrite)
-    psOutTmpOption.foreach {
-      hadoopConf.set(ANGEL_JOB_TMP_OUTPUT_PATH_PREFIX, _)
-    }
+    psOutTmpOption.foreach(hadoopConf.set(ANGEL_JOB_TMP_OUTPUT_PATH_PREFIX, _))
 
+    // No need for sync clock values, we don't need ssp in Spark.
     hadoopConf.setInt(ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 100000000)
     hadoopConf.set(ANGEL_LOG_PATH, tempPath)
+
+    // add user resource files
+   addUserResourceFiles(conf, hadoopConf)
+
+    // Some other settings
+    conf.getAllWithPrefix("angel").foreach {
+      case (key, value) => hadoopConf.set(s"angel$key", value)
+    }
     hadoopConf
+  }
+
+  private def addUserResourceFiles(sparkConf: SparkConf, conf: Configuration): Unit = {
+    val appStagingBaseDir = sparkConf.getOption("spark.yarn.stagingDir")
+      .fold(FileSystem.get(conf).getHomeDirectory)(new Path(_))
+    val appStagingDir = new Path(appStagingBaseDir, s".sparkStaging/${sparkConf.getAppId}")
+    val resourceFiles = new ArrayBuffer[String]()
+    sparkConf.getOption("spark.yarn.dist.files").foreach { fileList =>
+      fileList.split(",").foreach { file =>
+        val fileName = file.trim.split("/").last
+        if (fileName.nonEmpty) {
+          resourceFiles.append(new Path(appStagingDir, fileName).toString)
+        }
+      }
+      conf.set(AngelConf.ANGEL_APP_USER_RESOURCE_FILES, resourceFiles.mkString(","))
+    }
   }
 
   private def assertCallByDriver(message: String): Unit = {

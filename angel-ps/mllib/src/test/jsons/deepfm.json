@@ -7,11 +7,11 @@
     "sampleratio": 0.2
   },
   "model": {
-    "modeltype": "T_DOUBLE_SPARSE_LONGKEY",
+    "modeltype": "T_FLOAT_DENSE",
     "modelsize": 148
   },
   "train": {
-    "epoch": 10,
+    "epoch": 5,
     "numupdateperepoch": 10,
     "lr": 0.5,
     "decay": 0.01
@@ -20,7 +20,7 @@
   "layers": [
     {
       "name": "wide",
-      "type": "sparseinputlayer",
+      "type": "simpleinputlayer",
       "outputdim": 1,
       "transfunc": "identity"
     },

@@ -24,18 +24,14 @@ import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
-import com.tencent.angel.model.output.format.ModelPartitionMeta;
+import com.tencent.angel.ps.PSContext;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.ps.storage.vector.ServerRowFactory;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.fs.FSDataOutputStream;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -48,7 +44,9 @@ public class ServerPartition implements Serialize {
   /**
    * Row index to server row map
    */
-  private final PartitionSource rows;
+  private  PartitionSource rows;
+
+  private String PartitionSourceClassName;
 
   /**
    * Partition key
@@ -231,6 +229,10 @@ public class ServerPartition implements Serialize {
     return rows;
   }
 
+  public PartitionSource getRows() {
+    return rows;
+  }
+
   /**
    * Gets related partition key.
    *
@@ -251,98 +253,16 @@ public class ServerPartition implements Serialize {
     }
   }
 
-  /**
-   * Save a matrix partition to file.
-   *
-   * @param output the output
-   * @throws IOException the io exception
-   */
-  public void save(DataOutputStream output) throws IOException {
-    save(output, null);
-  }
-
-
-  /**
-   * Save a matrix partition to file.
-   *
-   * @param output        the output
-   * @param partitionMeta the meta
-   * @throws IOException the io exception
-   */
-  public void save(DataOutputStream output, ModelPartitionMeta partitionMeta) throws IOException {
-    save(output, partitionMeta, null);
-  }
-
-  /**
-   * Save a matrix partition to file.
-   *
-   * @param output        the output
-   * @param partitionMeta the meta
-   * @param rowIndexes    rows need save
-   * @throws IOException the io exception
-   */
-  public void save(DataOutputStream output, ModelPartitionMeta partitionMeta,
-    List<Integer> rowIndexes) throws IOException {
-    if (rowIndexes == null || rowIndexes.isEmpty()) {
-      Iterator<Map.Entry<Integer, ServerRow>> iter = rows.iterator();
-      rowIndexes = new ArrayList<>();
-      while (iter.hasNext()) {
-        rowIndexes.add(iter.next().getKey());
-      }
-    } else {
-      rowIndexes = filter(rowIndexes);
-    }
-    FSDataOutputStream dataOutputStream =
-      new FSDataOutputStream(output, null, partitionMeta != null ? partitionMeta.getOffset() : 0);
-    dataOutputStream.writeInt(rowIndexes.size());
-    long offset;
-    for (int rowIndex : rowIndexes) {
-      offset = dataOutputStream.getPos();
-      dataOutputStream.writeInt(rowIndex);
-      ServerRow row = rows.getRow(rowIndex);
-      row.writeTo(dataOutputStream);
-      if (partitionMeta != null) {
-        partitionMeta.setRowMeta(new ModelPartitionMeta.RowOffset(rowIndex, offset));
-      }
-    }
-  }
-
-  private List<Integer> filter(List<Integer> rowIndexes) {
-    List<Integer> ret = new ArrayList<>();
-
-    for (int rowIndex : rowIndexes) {
-      if (rows.hasRow(rowIndex)) {
-        ret.add(rowIndex);
-      }
-    }
-
-    return ret;
-  }
-
-  /**
-   * Load partition from model file.
-   *
-   * @param input the input
-   * @throws IOException
-   */
-  public void load(DataInputStream input) throws IOException {
-    try {
-      int size = input.readInt();
-      for (int i = 0; i < size; i++) {
-        int rowId = input.readInt();
-        ServerRow serverRow = rows.getRow(rowId);
-        serverRow.readFrom(input);
-      }
-    } finally {
-      setState(PartitionState.READ_AND_WRITE);
-    }
-  }
 
   // TODO: dynamic add/delete row
   @Override public void serialize(ByteBuf buf) {
     if (partitionKey == null) {
       return;
     }
+
+    byte[] bytes = this.PartitionSourceClassName.getBytes();
+    buf.writeInt(bytes.length);
+    buf.writeBytes(bytes);
 
     partitionKey.serialize(buf);
     buf.writeInt(rowType.getNumber());
@@ -357,6 +277,17 @@ public class ServerPartition implements Serialize {
   }
 
   @Override public void deserialize(ByteBuf buf) {
+    int size = buf.readInt();
+    byte[] bytes = new byte[size];
+    buf.readBytes(bytes);
+    this.PartitionSourceClassName = new String(bytes);
+    try {
+      rows = (PartitionSource) Class.forName(this.PartitionSourceClassName).newInstance();
+    } catch (Throwable e) {
+      LOG.error("Can not init partition source for type " + this.PartitionSourceClassName + " use default instead ",
+          e);
+      rows = new PartitionSourceMap();
+    }
     partitionKey = new PartitionKey();
     partitionKey.deserialize(buf);
     rowType = RowType.valueOf(buf.readInt());

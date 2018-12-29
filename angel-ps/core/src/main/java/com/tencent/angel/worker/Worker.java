@@ -25,6 +25,7 @@ import com.tencent.angel.common.location.Location;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.ipc.TConnectionManager;
+import com.tencent.angel.plugin.AngelServiceLoader;
 import com.tencent.angel.worker.task.Task;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos.WorkerAttemptIdProto;
@@ -41,7 +42,6 @@ import com.tencent.angel.worker.task.TaskManager;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hdfs.web.JsonUtil;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
@@ -50,9 +50,6 @@ import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -72,7 +69,7 @@ public class Worker implements Executor {
 
   private static final Log LOG = LogFactory.getLog(Worker.class);
 
-  private WorkerGroup workerGroup;
+  private volatile WorkerGroup workerGroup;
 
   private final Configuration conf;
 
@@ -94,33 +91,33 @@ public class Worker implements Executor {
 
   private final Map<String, String> workerMetrics;
 
-  private TaskManager taskManager;
+  private volatile TaskManager taskManager;
 
-  private DataBlockManager dataBlockManager;
+  private volatile DataBlockManager dataBlockManager;
 
-  private boolean test = false;
+  private volatile boolean test = false;
 
-  private int initMinClock;
+  private volatile int initMinClock;
 
-  private Lock readLockForTaskNum;
+  private volatile Lock readLockForTaskNum;
 
-  private Lock writeLockForTaskNum;
+  private volatile Lock writeLockForTaskNum;
 
-  private int activeTaskNum;
+  private volatile int activeTaskNum;
 
   private final AtomicBoolean workerInitFinishedFlag;
 
-  private Thread heartbeatThread;
+  private volatile Thread heartbeatThread;
 
-  private CounterUpdater counterUpdater;
+  private volatile CounterUpdater counterUpdater;
 
-  private PSAgent psAgent;
+  private volatile PSAgent psAgent;
 
-  private MasterClient masterClient;
+  private volatile MasterClient masterClient;
 
   private final AtomicBoolean exitedFlag;
 
-  private WorkerService workerService;
+  private volatile WorkerService workerService;
 
   /**
    * Instantiates a new Worker.
@@ -277,7 +274,7 @@ public class Worker implements Executor {
   }
 
   private void startHeartbeatThread() {
-    final int heartbeatInterval = conf.getInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL,
+    final int heartbeatInterval = conf.getInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS,
       AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_INTERVAL);
 
     heartbeatThread = new Thread(new Runnable() {
@@ -346,13 +343,13 @@ public class Worker implements Executor {
           // todo
           register();
           break;
+
         case W_SHUTDOWN:
           // if worker timeout, it may be knocked off.
           LOG.fatal("received SHUTDOWN command from am! to exit......");
-          if (!stopped.get()) {
-            System.exit(-1);
-          }
+          workerExit(-1);
           break;
+
         default:
           int activeTaskNum = response.getActiveTaskNum();
           if (activeTaskNum < getActiveTaskNum()) {
@@ -435,7 +432,7 @@ public class Worker implements Executor {
   /**
    * Stop Worker
    */
-  public void stop() {
+  public void stop(int exitCode) {
     LOG.info("stop workerService");
 
     if (workerService != null) {
@@ -481,7 +478,7 @@ public class Worker implements Executor {
    */
   public void workerExit(int exitValue) {
     LOG.info("start to close all modules in worker");
-    stop();
+    stop(exitValue);
     exit(exitValue);
   }
 

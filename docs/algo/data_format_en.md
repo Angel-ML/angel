@@ -49,3 +49,7 @@ label index1 index2 index3
 
 Note: if the row splitor is not ` `(space), you can specify a splitor (say ",") by using the following option:
 > ml.data.splitor=,
+
+For multi-class problem, such as softmax regression, angel require the labels start from 0, while for binary classification problom, the labels are required +1 and -1. As a result, a transform may be reqired.
+* ml.data.label.trans.class: specify a transfrom class, by default "NoTrans", other options such as "ZeroOneTrans"(0-1), "PosNegTrans"(+1, -1), "AddOneTrans", "SubOneTrans" are also available. 
+* ml.data.label.trans.threshold: for "ZeroOneTrans" and "PosNegTrans" a threshold is require to trans labels, if the label is large than the threshold, yeild 1. the default threshold is 0

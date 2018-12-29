@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -245,13 +245,13 @@ public class PSAgent {
    * @param executor      the machine learning executor reference
    */
   public PSAgent(Configuration conf, ApplicationId appId, String user, String masterIp,
-    int masterPort, boolean needHeartBeat, Executor executor) {
+                 int masterPort, boolean needHeartBeat, Executor executor) {
     this.needHeartBeat = needHeartBeat;
     this.conf = conf;
     this.executor = executor;
 
-    this.heartbeatIntervalMs = conf.getInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL,
-      AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_INTERVAL);
+    this.heartbeatIntervalMs = conf.getInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS,
+        AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_INTERVAL);
     this.runningMode = initRunningMode(conf);
     this.appId = appId;
     this.user = user;
@@ -275,12 +275,12 @@ public class PSAgent {
    * @param executor      the machine learning executor reference
    */
   public PSAgent(Configuration conf, String masterIp, int masterPort, int clientIndex,
-    boolean needHeartBeat, Executor executor) {
+                 boolean needHeartBeat, Executor executor) {
     this.needHeartBeat = needHeartBeat;
     this.conf = conf;
     this.executor = executor;
-    this.heartbeatIntervalMs = conf.getInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL,
-      AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_INTERVAL);
+    this.heartbeatIntervalMs = conf.getInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS,
+        AngelConf.DEFAULT_ANGEL_WORKER_HEARTBEAT_INTERVAL);
     this.runningMode = initRunningMode(conf);
 
     this.masterLocation = new Location(masterIp, masterPort);
@@ -387,7 +387,7 @@ public class PSAgent {
    * @throws InterruptedException interrupted while wait for rpc results
    */
   public void refreshMatrixInfo()
-    throws InterruptedException, ServiceException, ClassNotFoundException {
+      throws InterruptedException, ServiceException, ClassNotFoundException {
     matrixMetaManager.addMatrices(masterClient.getMatrices());
   }
 
@@ -748,8 +748,10 @@ public class PSAgent {
 
   private void removeCacheData(int matrixId) {
     matricesCache.remove(matrixId);
-    matrixStorageManager.removeMatrix(matrixId);
-    opLogCache.remove(matrixId);
+    if (runningMode == RunningMode.ANGEL_PS_WORKER) {
+      opLogCache.remove(matrixId);
+      matrixStorageManager.removeMatrix(matrixId);
+    }
   }
 
   /**
@@ -829,7 +831,7 @@ public class PSAgent {
    * @throws AngelException exception come from master
    */
   public void createMatrices(List<MatrixContext> matrixContexts, long timeOutMs)
-    throws AngelException {
+      throws AngelException {
     try {
       masterClient.createMatrices(matrixContexts, timeOutMs);
     } catch (Throwable x) {

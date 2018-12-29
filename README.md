@@ -24,7 +24,7 @@
 
 
 ## Design
-
+* [模型格式](./docs/design/model_format.md)
 * [模型切分（modelPartitioner）](./docs/design/model_partitioner.md)
 * [异步控制（syncController）](./docs/design/sync_controller.md)
 * [定制函数（psFunc）](./docs/design/psfFunc.md)
@@ -57,6 +57,7 @@
 		* [Factorization Machine(FM)](./docs/algo/fm_on_angel.md)
 		* [Linear Regression](./docs/algo/linear_on_angel.md)
 		* [Robust Regression](./docs/algo/robust_on_angel.md)
+		* [Softmax Regression](./docs/algo/softmax_on_angel.md)
 		* [KMeans](./docs/algo/kmeans_on_angel.md)
 		* [GBDT](./docs/algo/gbdt_on_angel.md)
 		* [LDA\*](./docs/algo/lda_on_angel.md) ([WrapLDA](./docs/algo/wrap_lda_on_angel.md))
@@ -97,6 +98,7 @@
   2. Jiawei Jiang, Bin Cui, Ce Zhang, Lele Yu. [Heterogeneity-aware Distributed Parameter Servers](http://dl.acm.org/citation.cfm?id=3035933). SIGMOD, 2017
   3. Jie Jiang, Lele Yu, Jiawei Jiang, Yuhong Liu and Bin Cui. [Angel: a new large-scale machine learning system](https://academic.oup.com/nsr/article/3052720). National Science Review (NSR), 2017
   4. Jie Jiang, Jiawei Jiang,  Bin Cui and Ce Zhang. [TencentBoost: A Gradient Boosting Tree System with Parameter Server](http://ieeexplore.ieee.org/abstract/document/7929984/).	ICDE, 2017
+  5. Jiawei Jiang, Bin Cui, Ce Zhang and Fangcheng Fu. [DimBoost: Boosting Gradient Boosting Decision Tree to Higher Dimensions](https://dl.acm.org/citation.cfm?id=3196892). SIGMOD, 2018.
 
 ## Presentation
 

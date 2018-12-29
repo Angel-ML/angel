@@ -62,7 +62,7 @@ KMeans on Angel的算法流程如下图所示：
   * angel.ps.memory.mb：PS申请内存大小   
 
 * 提交命令
-	*向Yarn集群提交Kmeans算法训练任务:
+	* 向Yarn集群提交Kmeans算法训练任务:
 
 	```java
     ./bin/angel-submit \
@@ -75,19 +75,47 @@ KMeans on Angel的算法流程如下图所示：
         --angel.log.path=$logpath \
         --ml.data.type=libsvm \
         --ml.model.type=T_DOUBLE_DENSE \
-        --ml.kmeans.center.num=10 \
+        --ml.kmeans.center.num=$centerNum  \
         --ml.kmeans.c=0.15 \
-        --ml.epoch.num=100 \
-        --ml.feature.index.range=3072 \
+        --ml.epoch.num=10 \
+        --ml.feature.index.range=$featureNum \
+        --ml.feature.num=$featureNum \
         --angel.workergroup.number=4 \
         --angel.worker.memory.mb=5000  \
         --angel.worker.task.number=1 \
         --angel.ps.number=4 \
         --angel.ps.memory.mb=5000 \
-        --angel.job.name=kmeans
+        --angel.job.name=kmeans_train
 	```
 
-	*向Yarn集群提交Kmeans算法预测任务:
+	* 向Yarn集群提交Kmeans算法增量训练任务:
+	```java
+	./bin/angel-submit \
+		--action.type=inctrain \
+		--angel.app.submit.class=com.tencent.angel.ml.clustering.kmeans.KMeansRunner  \
+		--ml.model.class.name=com.tencent.angel.ml.clustering.kmeans.KMeansModel \
+		--angel.train.data.path=$traindata \
+		--angel.load.model.path=$modelout \
+		--angel.save.model.path=$modelout \
+		--angel.output.path.deleteonexist=true \
+		--angel.log.path=$logpath \
+		--ml.data.type=libsvm \
+		--ml.model.type=T_DOUBLE_DENSE \
+		--ml.kmeans.center.num=$centerNum \
+		--ml.kmeans.c=0.15 \
+		--ml.epoch.num=10 \
+		--ml.feature.index.range=$featureNum \
+		--ml.feature.num=$featureNum \
+		--angel.workergroup.number=4 \
+		--angel.worker.memory.mb=5000  \
+		--angel.worker.task.number=1 \
+		--angel.ps.number=4 \
+		--angel.ps.memory.mb=5000 \
+		--angel.job.name=kmeans_inctrain
+	```
+
+
+	* 向Yarn集群提交Kmeans算法预测任务:
 	
 	```java
     ./bin/angel-submit \
@@ -101,8 +129,9 @@ KMeans on Angel的算法流程如下图所示：
         --angel.log.path=$logpath \
         --ml.data.type=libsvm \
         --ml.model.type=T_DOUBLE_DENSE \
-        --ml.kmeans.center.num=10 \
-        --ml.feature.index.range=3072 \
+        --ml.kmeans.center.num=$centerNum \
+        --ml.feature.index.range=$featureNum \
+        --ml.feature.num=$featureNum \
         --angel.workergroup.number=4 \
         --angel.worker.memory.mb=5000  \
         --angel.worker.task.number=1 \

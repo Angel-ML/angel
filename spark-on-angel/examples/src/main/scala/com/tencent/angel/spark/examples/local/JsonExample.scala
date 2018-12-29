@@ -18,8 +18,7 @@
 
 package com.tencent.angel.spark.examples.local
 
-import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.utils.DataParser
+import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OfflineLearner}
@@ -31,14 +30,16 @@ object JsonExample {
   def main(args: Array[String]): Unit = {
     PropertyConfigurator.configure("conf/log4j.properties")
     val params = ArgsUtil.parse(args)
-    val input = params.getOrElse("input", "data/census/census_148d_train.dummy")
+    val input = params.getOrElse("input", "data/census/census_148d_train.libsvm")
+    val output = params.getOrElse("output", "")
+    val modelPath = params.getOrElse("model", "")
+    val actionType = params.getOrElse("action.type", "train")
+    val json = params.getOrElse("angel.ml.conf", "jsons/logreg.json")
+
+    SharedConf.get().set("angel.ml.conf", json)
 
     SharedConf.addMap(params)
     JsonUtils.init()
-
-
-    val model = new GraphModel
-    val learner = new OfflineLearner
 
     // load data
     val conf = new SparkConf()
@@ -50,13 +51,23 @@ object JsonExample {
     conf.set("spark.ps.cores", "1")
 
     val sc = new SparkContext(conf)
-    val parser = DataParser(SharedConf.get())
-    val data = sc.textFile(input).repartition(1).map(f => parser.parse(f))
+    sc.setLogLevel("ERROR")
+
     PSContext.getOrCreate(sc)
 
-    learner.train(data, model)
+    val model = new GraphModel
+    val dim = SharedConf.indexRange.toInt
+    val learner = new OfflineLearner
+
+    println(s"dim=$dim")
+
+    actionType match {
+      case MLConf.ANGEL_ML_TRAIN => learner.train(input, output, modelPath, dim, model)
+      case MLConf.ANGEL_ML_PREDICT => learner.train(input, output, modelPath, dim, model)
+    }
 
     PSContext.stop()
+    sc.stop()
   }
 
 }

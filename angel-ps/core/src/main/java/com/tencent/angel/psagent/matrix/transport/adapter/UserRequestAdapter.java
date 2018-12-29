@@ -20,6 +20,7 @@ package com.tencent.angel.psagent.matrix.transport.adapter;
 
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.PartitionKey;
+import com.tencent.angel.client.local.AngelLocalClient;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math2.matrix.Matrix;
@@ -32,6 +33,7 @@ import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult;
+import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.psagent.PSAgentContext;
@@ -155,10 +157,47 @@ public class UserRequestAdapter {
     }
   }
 
+  private void checkParams(int matrixId) {
+    MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
+    if(matrixMeta == null) {
+      throw new AngelException("can not find matrix " + matrixId);
+    }
+  }
+
+  private void checkParams(int matrixId, int rowId) {
+    MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
+    if(matrixMeta == null) {
+      throw new AngelException("can not find matrix " + matrixId);
+    }
+    int rowNum = matrixMeta.getRowNum();
+    if(rowId < 0 || rowId >= rowNum) {
+      throw new AngelException("not valid row id, row id is in range[0," + rowNum + ")");
+    }
+  }
+
+  private void checkParams(int matrixId, int [] rowIds) {
+    MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
+    if(matrixMeta == null) {
+      throw new AngelException("can not find matrix " + matrixId);
+    }
+
+    if(rowIds == null || rowIds.length == 0) {
+      throw new AngelException("row ids is empty");
+    }
+
+    int rowNum = matrixMeta.getRowNum();
+    for(int rowId : rowIds) {
+      if(rowId < 0 || rowId >= rowNum) {
+        throw new AngelException("not valid row id, row id is in range[0," + rowNum + ")");
+      }
+    }
+  }
+
   public Vector getRow(int matrixId, int rowIndex, int clock)
     throws InterruptedException, ExecutionException {
     LOG.debug("start to getRow request, matrix=" + matrixId + ", rowIndex=" + rowIndex + ", clock="
       + clock);
+    checkParams(matrixId, rowIndex);
     long startTs = System.currentTimeMillis();
 
     // Get partitions for this row
@@ -273,6 +312,7 @@ public class UserRequestAdapter {
    */
   public Future<VoidResult> flush(int matrixId, TaskContext taskContext, MatrixOpLog matrixOpLog,
     boolean updateClock) {
+    checkParams(matrixId);
     if (!updateClock && (matrixOpLog == null)) {
       FutureResult<VoidResult> ret = new FutureResult<VoidResult>();
       ret.set(new VoidResult(ResponseType.SUCCESS));
@@ -352,6 +392,7 @@ public class UserRequestAdapter {
   public GetRowsResult getRowsFlow(GetRowsResult result, RowIndex rowIndex, int rpcBatchSize,
     int clock) {
     LOG.debug("get rows request, rowIndex=" + rowIndex);
+    checkParams(rowIndex.getMatrixId());
     if (rpcBatchSize == -1) {
       rpcBatchSize = chooseRpcBatchSize(rowIndex);
     }
@@ -393,7 +434,22 @@ public class UserRequestAdapter {
    * @throws AngelException
    */
   public FutureResult<Vector> get(int matrixId, int rowId, int[] indices) throws AngelException {
-    return get(new IntIndexGetRowRequest(matrixId, rowId, indices));
+    return get(new IntIndexGetRowRequest(matrixId, rowId, indices, null));
+  }
+
+  /**
+   * Get elements of the row use int indices, the row type should has "int" type indices
+   *
+   * @param matrixId matrix id
+   * @param rowId    row id
+   * @param indices  elements indices
+   * @param func     element init function
+   * @return the Vector use sparse storage, contains indices and values
+   * @throws AngelException
+   */
+  public FutureResult<Vector> get(int matrixId, int rowId, int[] indices, InitFunc func)
+    throws AngelException {
+    return get(new IntIndexGetRowRequest(matrixId, rowId, indices, func));
   }
 
   /**
@@ -406,10 +462,27 @@ public class UserRequestAdapter {
    * @throws AngelException
    */
   public FutureResult<Vector> get(int matrixId, int rowId, long[] indices) throws AngelException {
-    return get(new LongIndexGetRowRequest(matrixId, rowId, indices));
+    return get(new LongIndexGetRowRequest(matrixId, rowId, indices, null));
+  }
+
+  /**
+   * Get elements of the row use long indices, the row type should has "int" type indices
+   *
+   * @param matrixId matrix id
+   * @param rowId    row id
+   * @param indices  elements indices
+   * @param func     element init function
+   * @return the Vector use sparse storage, contains indices and values
+   * @throws AngelException
+   */
+  public FutureResult<Vector> get(int matrixId, int rowId, long[] indices, InitFunc func)
+    throws AngelException {
+    return get(new LongIndexGetRowRequest(matrixId, rowId, indices, func));
   }
 
   private FutureResult<Vector> get(IndexGetRowRequest request) {
+    checkParams(request.getMatrixId(), request.getRowId());
+
     List<PartitionKey> partitions = PSAgentContext.get().getMatrixMetaManager()
       .getPartitions(request.getMatrixId(), request.getRowId());
     FutureResult<Vector> result = new FutureResult<>();
@@ -433,7 +506,7 @@ public class UserRequestAdapter {
     MatrixTransportClient matrixClient = PSAgentContext.get().getMatrixTransportClient();
     for (Entry<PartitionKey, IndicesView> entry : splits.entrySet()) {
       matrixClient.indexGetRow(requestId, request.getMatrixId(), request.getRowId(), entry.getKey(),
-        entry.getValue());
+        entry.getValue(), request.getFunc());
     }
     return result;
   }
@@ -449,7 +522,22 @@ public class UserRequestAdapter {
    */
   public FutureResult<Vector[]> get(int matrixId, int[] rowIds, int[] indices)
     throws AngelException {
-    return get(new IntIndexGetRowsRequest(matrixId, rowIds, indices));
+    return get(new IntIndexGetRowsRequest(matrixId, rowIds, indices, null));
+  }
+
+  /**
+   * Get elements of the rows use int indices, the row type should has "int" type indices
+   *
+   * @param matrixId matrix id
+   * @param rowIds   rows ids
+   * @param indices  elements indices
+   * @param func     element init function
+   * @return the Vectors use sparse storage, contains indices and values
+   * @throws AngelException
+   */
+  public FutureResult<Vector[]> get(int matrixId, int[] rowIds, int[] indices, InitFunc func)
+    throws AngelException {
+    return get(new IntIndexGetRowsRequest(matrixId, rowIds, indices, func));
   }
 
   private IndicesView getIndicesView(PartitionKey partKey, Map<PartitionKey, IndicesView> views) {
@@ -473,10 +561,26 @@ public class UserRequestAdapter {
    */
   public FutureResult<Vector[]> get(int matrixId, int[] rowIds, long[] indices)
     throws AngelException {
-    return get(new LongIndexGetRowsRequest(matrixId, rowIds, indices));
+    return get(new LongIndexGetRowsRequest(matrixId, rowIds, indices, null));
+  }
+
+  /**
+   * Get elements of the rows use long indices, the row type should has "long" type indices
+   *
+   * @param matrixId matrix id
+   * @param rowIds   rows ids
+   * @param indices  elements indices
+   * @param func     element init function
+   * @return the Vectors use sparse storage, contains indices and values
+   * @throws AngelException
+   */
+  public FutureResult<Vector[]> get(int matrixId, int[] rowIds, long[] indices, InitFunc func)
+    throws AngelException {
+    return get(new LongIndexGetRowsRequest(matrixId, rowIds, indices, func));
   }
 
   private FutureResult<Vector[]> get(IndexGetRowsRequest request) {
+    checkParams(request.getMatrixId(), request.getRowIds());
     Map<PartitionKey, List<Integer>> partToRowIdsMap = PSAgentContext.get().getMatrixMetaManager()
       .getPartitionToRowsMap(request.getMatrixId(), request.getRowIds());
     List<PartitionKey> row0Parts =
@@ -492,7 +596,13 @@ public class UserRequestAdapter {
 
     List<PartitionKey> parts = new ArrayList<>(splits.keySet());
     parts.sort((PartitionKey p1, PartitionKey p2) -> {
-      return (int) (p1.getStartCol() - p2.getStartCol());
+      if(p1.getStartCol() > p2.getStartCol()) {
+        return 1;
+      } else if(p1.getStartCol() < p2.getStartCol()) {
+        return -1;
+      } else {
+        return 0;
+      }
     });
 
     Map<PartitionKey, IndicesView> validSplits = new HashMap<>(partToRowIdsMap.size());
@@ -514,7 +624,7 @@ public class UserRequestAdapter {
 
     for (Entry<PartitionKey, IndicesView> entry : validSplits.entrySet()) {
       matrixClient.indexGetRows(requestId, request.getMatrixId(), entry.getKey(),
-        partToRowIdsMap.get(entry.getKey()), validSplits.get(entry.getKey()));
+        partToRowIdsMap.get(entry.getKey()), validSplits.get(entry.getKey()), request.getFunc());
     }
     return result;
   }
@@ -709,6 +819,7 @@ public class UserRequestAdapter {
   }
 
   public Future<VoidResult> update(int matrixId, int rowId, Vector delta, UpdateOp op) {
+    checkParams(matrixId, rowId);
     delta.setMatrixId(matrixId);
     delta.setRowId(rowId);
 
@@ -768,10 +879,12 @@ public class UserRequestAdapter {
   }
 
   public Future<VoidResult> update(int matrixId, Matrix delta, UpdateOp op) {
+    checkParams(matrixId);
+
     delta.setMatrixId(matrixId);
+    MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
 
     if (useNewSplit(matrixId, delta)) {
-      MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
       List<PartitionKey> partitions =
         PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
       int rowNum = matrixMeta.getRowNum();
@@ -809,7 +922,6 @@ public class UserRequestAdapter {
       }
       return result;
     } else {
-      MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
       List<PartitionKey> partitions =
         PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
       int rowNum = matrixMeta.getRowNum();
@@ -854,6 +966,7 @@ public class UserRequestAdapter {
 
   public Future<VoidResult> update(int matrixId, int[] rowIds, Vector[] rows, UpdateOp op) {
     assert rowIds.length == rows.length;
+    checkParams(matrixId, rowIds);
 
     if (useNewSplit(matrixId, rows)) {
       for (int i = 0; i < rows.length; i++) {
@@ -1058,8 +1171,8 @@ public class UserRequestAdapter {
       if (row == null) {
         return;
       }
-
-      PSAgentContext.get().getMatrixStorageManager().addRow(row.getMatrixId(), row.getRowId(), row);
+      if(PSAgentContext.get().getMatrixStorageManager() != null)
+        PSAgentContext.get().getMatrixStorageManager().addRow(row.getMatrixId(), row.getRowId(), row);
       ReentrantLock lock = getLock(row.getMatrixId());
       try {
         lock.lock();
@@ -1199,9 +1312,9 @@ public class UserRequestAdapter {
     HashMap<PartitionKey, IndicesView> ret = new HashMap<>();
 
     // Sort partition keys use start column index
-    Collections.sort(partKeys, (PartitionKey key1, PartitionKey key2) -> {
-      return key1.getStartCol() < key2.getStartCol() ? -1 : 1;
-    });
+    //Collections.sort(partKeys, (PartitionKey key1, PartitionKey key2) -> {
+    //  return key1.getStartCol() < key2.getStartCol() ? -1 : 1;
+    //});
 
     int ii = 0;
     int keyIndex = 0;
@@ -1231,9 +1344,9 @@ public class UserRequestAdapter {
     HashMap<PartitionKey, IndicesView> ret = new HashMap<>();
 
     // Sort partition keys use start column index
-    Collections.sort(partKeys, (PartitionKey key1, PartitionKey key2) -> {
-      return key1.getStartCol() < key2.getStartCol() ? -1 : 1;
-    });
+    //Collections.sort(partKeys, (PartitionKey key1, PartitionKey key2) -> {
+    //  return key1.getStartCol() < key2.getStartCol() ? -1 : 1;
+    //});
 
     int ii = 0;
     int keyIndex = 0;

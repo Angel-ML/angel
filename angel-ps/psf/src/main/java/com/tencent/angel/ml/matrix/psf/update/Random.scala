@@ -18,26 +18,27 @@
 
 package com.tencent.angel.ml.matrix.psf.update
 
-import com.tencent.angel.ml.matrix.psf.update.enhance.FullUpdateFunc
+import com.tencent.angel.ml.matrix.psf.update.enhance.{FullUpdateFunc, FullUpdateParam}
 import com.tencent.angel.ps.storage.vector._
+import com.tencent.angel.ps.storage.vector.func.{DoubleElemUpdateFunc, FloatElemUpdateFunc, IntElemUpdateFunc, LongElemUpdateFunc}
 
 /**
   * Init a random matrix, whose value is a random value between 0.0 and 1.0.
   */
-class Random(matrixId: Int) extends FullUpdateFunc(matrixId, Array[Double]()) {
-  def this() = this(-1)
+class Random(param: FullUpdateParam) extends FullUpdateFunc(param) {
+  def this(matrixId:Int, low:Double, high:Double) = this(new FullUpdateParam(matrixId, Array(low, high)))
+
+  def this() = this(null)
 
   override def doUpdate(rows: Array[ServerIntDoubleRow],
                         values: Array[Double]): Unit = {
     val rand = new scala.util.Random()
     rows.foreach { row =>
-      row.startWrite()
-      try {
-        val data = row.getValues
-        for (i <- data.indices) data(i) = rand.nextDouble()
-      } finally {
-        row.endWrite()
-      }
+      row.elemUpdate(new DoubleElemUpdateFunc {
+        override def update(): Double = {
+          rand.nextDouble()
+        }
+      })
     }
   }
 
@@ -45,13 +46,11 @@ class Random(matrixId: Int) extends FullUpdateFunc(matrixId, Array[Double]()) {
                         values: Array[Float]): Unit = {
     val rand = new scala.util.Random()
     rows.foreach { row =>
-      row.startWrite()
-      try {
-        val data = row.getValues
-        for (i <- data.indices) data(i) = rand.nextFloat()
-      } finally {
-        row.endWrite()
-      }
+      row.elemUpdate(new FloatElemUpdateFunc {
+        override def update(): Float = {
+          rand.nextFloat()
+        }
+      })
     }
   }
 
@@ -59,13 +58,11 @@ class Random(matrixId: Int) extends FullUpdateFunc(matrixId, Array[Double]()) {
                         values: Array[Long]): Unit = {
     val rand = new scala.util.Random()
     rows.foreach { row =>
-      row.startWrite()
-      try {
-        val data = row.getValues
-        for (i <- data.indices) data(i) = rand.nextLong()
-      } finally {
-        row.endWrite()
-      }
+      row.elemUpdate(new LongElemUpdateFunc {
+        override def update(): Long = {
+          rand.nextLong()
+        }
+      })
     }
   }
 
@@ -73,13 +70,11 @@ class Random(matrixId: Int) extends FullUpdateFunc(matrixId, Array[Double]()) {
                         values: Array[Int]): Unit = {
     val rand = new scala.util.Random()
     rows.foreach { row =>
-      row.startWrite()
-      try {
-        val data = row.getValues
-        for (i <- data.indices) data(i) = rand.nextInt()
-      } finally {
-        row.endWrite()
-      }
+      row.elemUpdate(new IntElemUpdateFunc {
+        override def update(): Int = {
+          rand.nextInt()
+        }
+      })
     }
   }
 

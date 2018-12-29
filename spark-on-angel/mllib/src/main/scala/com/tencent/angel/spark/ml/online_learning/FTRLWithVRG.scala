@@ -18,34 +18,38 @@
 
 package com.tencent.angel.spark.ml.online_learning
 
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import com.tencent.angel.ml.math2.vector.{LongDoubleVector, LongDummyVector, Vector}
+import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
 import com.tencent.angel.spark.ml.psf.FTRLWUpdater
-import com.tencent.angel.spark.models.vector.{PSVector, SparsePSVector}
+import com.tencent.angel.spark.models.PSVector
+import com.tencent.angel.spark.util.VectorUtils
 
 class FTRLWithVRG(lambda1: Double,
-                  lambda2: Double,
-                  alpha: Double,
-                  beta: Double,
-                  rho1: Double,
-                  rho2: Double,
-                  regularSkipFeatIndex: Long = 0) extends Serializable {
+    lambda2: Double,
+    alpha: Double,
+    beta: Double,
+    rho1: Double,
+    rho2: Double,
+    regularSkipFeatIndex: Long = 0) extends Serializable {
 
-  var zPS: SparsePSVector = _
-  var nPS: SparsePSVector = _
-  var vPS: SparsePSVector = _
+  var zPS: PSVector = _
+  var nPS: PSVector = _
+  var vPS: PSVector = _
 
   def initPSModel(dim: Long): Unit = {
-    zPS = PSVector.longKeySparse(dim, -1, 5)
+    zPS = PSVector.longKeySparse(dim, -1, 5,
+      additionalConfiguration = Map(AngelConf.Angel_PS_PARTITION_CLASS -> classOf[ColumnRangePartitioner].getName))
     nPS = PSVector.duplicate(zPS)
     vPS = PSVector.duplicate(zPS)
   }
 
   def optimize(
-                batch: Array[(Vector, Double)],
-                localW: LongDoubleVector,
-                costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)): (LongDoubleVector, Double) = {
+      batch: Array[(Vector, Double)],
+      localW: LongDoubleVector,
+      costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)): (LongDoubleVector, Double) = {
 
     val dim = batch.head._1.dim
 
@@ -107,11 +111,11 @@ class FTRLWithVRG(lambda1: Double,
   }
 
   def optimize(
-                localV: LongDoubleVector,
-                localN: LongDoubleVector,
-                newWeight: LongDoubleVector,
-                newGrad: LongDoubleVector,
-                localGrad: LongDoubleVector): (LongDoubleVector, LongDoubleVector) = {
+      localV: LongDoubleVector,
+      localN: LongDoubleVector,
+      newWeight: LongDoubleVector,
+      newGrad: LongDoubleVector,
+      localGrad: LongDoubleVector): (LongDoubleVector, LongDoubleVector) = {
 
     val updatedV = getMoveAveWeight(rho2, localV, localGrad)
     vPS.push(updatedV)
@@ -127,13 +131,13 @@ class FTRLWithVRG(lambda1: Double,
   }
 
   def updateWeight(
-                    fId: Long,
-                    zOnId: Double,
-                    nOnId: Double,
-                    alpha: Double,
-                    beta: Double,
-                    lambda1: Double,
-                    lambda2: Double): Double = {
+      fId: Long,
+      zOnId: Double,
+      nOnId: Double,
+      alpha: Double,
+      beta: Double,
+      lambda1: Double,
+      lambda2: Double): Double = {
     if (fId == regularSkipFeatIndex) {
       -1.0 * alpha * zOnId / (beta + Math.sqrt(nOnId))
     } else if (Math.abs(zOnId) <= lambda1) {
@@ -145,15 +149,15 @@ class FTRLWithVRG(lambda1: Double,
 
   // get the move average weight
   def getMoveAveWeight(
-                        rho: Double,
-                        localM: LongDoubleVector,
-                        newM: LongDoubleVector): LongDoubleVector = {
+      rho: Double,
+      localM: LongDoubleVector,
+      newM: LongDoubleVector): LongDoubleVector = {
     localM.mul(rho).iadd(newM.mul(1.0 - rho)).asInstanceOf[LongDoubleVector]
   }
 
   def computeD(localN: LongDoubleVector,
-               localG: LongDoubleVector,
-               alpha: Double): LongDoubleVector = {
+      localG: LongDoubleVector,
+      alpha: Double): LongDoubleVector = {
 
     /*
     val nSet = localN.getStorage.getIndices.toSet
@@ -172,25 +176,25 @@ class FTRLWithVRG(lambda1: Double,
   }
 
   def computeIncZ(
-                   localG: LongDoubleVector,
-                   localD: LongDoubleVector,
-                   newWeight: LongDoubleVector): LongDoubleVector = {
+      localG: LongDoubleVector,
+      localD: LongDoubleVector,
+      newWeight: LongDoubleVector): LongDoubleVector = {
 
     localG.sub(localD.mul(newWeight)).asInstanceOf[LongDoubleVector]
   }
 
   def computeG(
-                newGrad: LongDoubleVector,
-                localGrad: LongDoubleVector,
-                localV: LongDoubleVector): LongDoubleVector = {
+      newGrad: LongDoubleVector,
+      localGrad: LongDoubleVector,
+      localV: LongDoubleVector): LongDoubleVector = {
     newGrad.sub(localGrad).add(localV).asInstanceOf[LongDoubleVector]
   }
 
-  def weight: SparsePSVector = {
-    val wPS = zPS.toBreeze.zipMapWithIndex(nPS.toBreeze,
-      new FTRLWUpdater(alpha, beta, lambda1, lambda2, regularSkipFeatIndex))
-
-    wPS.toSparse.compress()
+  def weight: PSVector = {
+    val wPS = PSVector.duplicate(zPS)
+    val func = new FTRLWUpdater(alpha, beta, lambda1, lambda2, regularSkipFeatIndex)
+    VectorUtils.zip2MapWithIndex(zPS, nPS, func, wPS)
+    VectorUtils.compress(wPS)
   }
 
 }

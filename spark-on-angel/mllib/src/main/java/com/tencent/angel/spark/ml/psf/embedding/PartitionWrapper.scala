@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -18,8 +18,8 @@
 
 package com.tencent.angel.spark.ml.psf.embedding
 
+import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage
 import com.tencent.angel.ps.storage.matrix.ServerPartition
-import com.tencent.angel.ps.storage.vector.ServerIntFloatRow
 
 class PartitionWrapper(val part: ServerPartition, val partDim: Int, val order: Int) {
   val nodePerRow: Int = {
@@ -34,8 +34,8 @@ class PartitionWrapper(val part: ServerPartition, val partDim: Int, val order: I
     val (inRowId, inColId) = getVector(inputVectorId, isInputVector = true)
     val (outRowId, outColId) = getVector(outputVectorId, isInputVector = false)
 
-    val inputRow = part.getRow(inRowId).asInstanceOf[ServerIntFloatRow].getValues
-    val outputRow = part.getRow(outRowId).asInstanceOf[ServerIntFloatRow].getValues
+    val inputRow = part.getRow(inRowId).getSplit.getStorage.asInstanceOf[IntFloatDenseVectorStorage].getValues
+    val outputRow = part.getRow(outRowId).getSplit.getStorage.asInstanceOf[IntFloatDenseVectorStorage].getValues
 
     var dot = 0.0f
     for (i <- 0 until partDim) {
@@ -46,14 +46,14 @@ class PartitionWrapper(val part: ServerPartition, val partDim: Int, val order: I
 
   def axpy(a: Float, nodeId: Int, isInputVec: Boolean, y: Array[Float]): Unit = {
     val (rowId, colId) = getVector(nodeId, isInputVec)
-    val row = part.getRow(rowId).asInstanceOf[ServerIntFloatRow].getValues
+    val row = part.getRow(rowId).getSplit.getStorage.asInstanceOf[IntFloatDenseVectorStorage].getValues
     for (i <- 0 until partDim)
       y(i) += a * row(colId + i)
   }
 
   def addToServer(nodeId: Int, isInputVec: Boolean, delta: Array[Float]): Unit = {
     val (rowId, colId) = getVector(nodeId, isInputVec)
-    val row = part.getRow(rowId).asInstanceOf[ServerIntFloatRow].getValues
+    val row = part.getRow(rowId).getSplit.getStorage.asInstanceOf[IntFloatDenseVectorStorage].getValues
     for (i <- 0 until partDim)
       row(colId + i) += delta(i)
   }
@@ -62,7 +62,7 @@ class PartitionWrapper(val part: ServerPartition, val partDim: Int, val order: I
     val vec = Array.ofDim[Float](size * partDim)
     for (i <- 0 until size) {
       val (rowId, colId) = getVector(i + from, isInputVector = true)
-      val row = part.getRow(rowId).asInstanceOf[ServerIntFloatRow].getValues
+      val row = part.getRow(rowId).getSplit.getStorage.asInstanceOf[IntFloatDenseVectorStorage].getValues
       System.arraycopy(row, colId, vec, i * partDim, partDim)
     }
     vec
@@ -71,7 +71,7 @@ class PartitionWrapper(val part: ServerPartition, val partDim: Int, val order: I
   private def getVector(nodeId: Int, isInputVector: Boolean): (Int, Int) = {
     val rowId = nodeId / nodePerRow
     val begin = if (isInputVector || order == 1) (nodeId % nodePerRow) * partDim * order else
-      (nodeId % nodePerRow) + partDim * order + partDim
+      (nodeId % nodePerRow) * partDim * order + partDim
     (rowId, begin)
   }
 }

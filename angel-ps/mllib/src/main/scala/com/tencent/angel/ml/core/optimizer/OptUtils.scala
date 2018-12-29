@@ -18,7 +18,10 @@
 
 package com.tencent.angel.ml.core.optimizer
 
+import com.tencent.angel.RunningMode
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.network.layers.AngelGraph
 
 object OptUtils {
   def getOptMultiplier(optimizer: Optimizer): Int = {
@@ -57,6 +60,13 @@ object OptUtils {
         new FTRL(lr0, alpha, beta)
       case _ =>
         new SGD(lr0)
+    }
+  }
+
+  def getNormal(mode: RunningMode, graph: AngelGraph): Double = {
+    mode match {
+      case RunningMode.ANGEL_PS => 1.0
+      case RunningMode.ANGEL_PS_WORKER => graph.placeHolder.getBatchSize * graph.taskNum
     }
   }
 

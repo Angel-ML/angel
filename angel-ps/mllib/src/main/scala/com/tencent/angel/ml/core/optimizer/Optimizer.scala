@@ -18,7 +18,10 @@
 
 package com.tencent.angel.ml.core.optimizer
 
+import java.util.concurrent.Future
+
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 
 trait Optimizer extends Serializable {
   var lr: Double = 0.1
@@ -46,7 +49,11 @@ trait Optimizer extends Serializable {
 
   def getRegL2Param: Double = this.regL2Param
 
-  def update(matrixId: Int, numFactors: Int, epoch: Int)
+  def update(matrixId: Int, numFactors: Int, epoch: Int): Future[VoidResult]
+
+  def update(matrixId: Int, numFactors: Int, epoch: Int, sampleNum: Int): Future[VoidResult] = {
+    update(matrixId, numFactors, epoch)
+  }
 }
 
 

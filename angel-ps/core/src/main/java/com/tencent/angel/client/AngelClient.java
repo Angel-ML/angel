@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -46,10 +46,12 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.security.UserGroupInformation;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.PrivilegedExceptionAction;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -164,6 +166,7 @@ public abstract class AngelClient implements AngelClientInterface {
     clientId = master.getClientId(null, GetClientIdRequest.getDefaultInstance()).getClientId();
     master.clientRegister(null, ClientRegisterRequest.newBuilder().setClientId(clientId).build());
 
+    LOG.info("clientId=" + clientId);
     hbThread = new Thread(() -> {
       while (!stopped.get() && !Thread.interrupted()) {
         try {
@@ -171,7 +174,7 @@ public abstract class AngelClient implements AngelClientInterface {
           master.keepAlive(null, KeepAliveRequest.newBuilder().setClientId(clientId).build());
         } catch (Throwable e) {
           if (!stopped.get()) {
-            LOG.error("AngelClient " + clientId + " send heartbeat to Master failed");
+            LOG.error("AngelClient " + clientId + " send heartbeat to Master failed ", e);
           }
         }
       }
@@ -204,7 +207,6 @@ public abstract class AngelClient implements AngelClientInterface {
     }
 
     try {
-      mContext.init(conf);
       nameToMatrixMap.put(mContext.getName(), mContext);
     } catch (Throwable x) {
       throw new AngelException(x);
@@ -219,12 +221,12 @@ public abstract class AngelClient implements AngelClientInterface {
     }
 
     Map<String, PSModel> psModels = model.getPSModels();
-
     for (Map.Entry<String, PSModel> entry : psModels.entrySet()) {
       addMatrix(entry.getValue().getContext());
     }
 
     createMatrices();
+    load(psModels.keySet());
   }
 
   @SuppressWarnings("rawtypes") @Override public void saveModel(MLModel model)
@@ -263,8 +265,49 @@ public abstract class AngelClient implements AngelClientInterface {
   }
 
   @Override public void save(ModelSaveContext saveContext) throws AngelException {
+    if (saveContext.getMatricesContext().size() == 0 || saveContext.getSavePath() == null
+      || saveContext.getSavePath().isEmpty()) {
+      LOG.info("there is no matrices need save or save path is empty");
+      return;
+    }
+
+    try {
+      /*UserGroupInformation ugi = UGITools.getCurrentUser(conf);
+      ugi.doAs(new PrivilegedExceptionAction<String>() {
+        @Override public String run() throws Exception {
+          Path savePath = new Path(saveContext.getSavePath());
+          FileSystem fs = savePath.getFileSystem(conf);
+          if(fs.exists(savePath)) {
+            if(conf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
+                    AngelConf.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST)) {
+              fs.delete(savePath, true);
+            } else {
+              throw new AngelException("Save path " + savePath + " already exist, you can set another save path or set angel.job.output.path.deleteonexist be true");
+            }
+          }
+          return "OK";
+        }
+      });
+      */
+      Path savePath = new Path(saveContext.getSavePath());
+      FileSystem fs = savePath.getFileSystem(conf);
+      if(fs.exists(savePath)) {
+        if(conf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
+                AngelConf.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST)) {
+          fs.delete(savePath, true);
+          if(fs.exists(savePath)) {
+            throw new AngelException("Save path " + savePath + " already exist, remove it failed!!!");
+          }
+        } else {
+          throw new AngelException("Save path " + savePath + " already exist, you can set another save path or set angel.job.output.path.deleteonexist be true");
+        }
+      }
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+
     SaveRequest.Builder builder = SaveRequest.newBuilder();
-    int requestId = 0;
+    int requestId;
     try {
       requestId =
         master.save(null, builder.setSaveContext(ProtobufUtil.convert(saveContext)).build())
@@ -288,8 +331,39 @@ public abstract class AngelClient implements AngelClientInterface {
   }
 
   @Override public void load(ModelLoadContext loadContext) throws AngelException {
+    if (loadContext.getMatricesContext().size() == 0 || loadContext.getLoadPath() == null
+      || loadContext.getLoadPath().isEmpty()) {
+      LOG.error("there is no matrices need load or load path is empty");
+      LOG.error(String.format("matrix context size=%d load path = %s",
+              loadContext.getMatricesContext().size(),
+              loadContext.getLoadPath()));
+      return;
+    }
+
+    try {
+      /* UserGroupInformation ugi = UGITools.getCurrentUser(conf);
+      ugi.doAs(new PrivilegedExceptionAction<String>() {
+        @Override public String run() throws Exception {
+          Path loadPath = new Path(loadContext.getLoadPath());
+          FileSystem fs = loadPath.getFileSystem(conf);
+          if(!fs.exists(loadPath)) {
+            throw new AngelException("Load path " + loadPath + " does not exist, please check");
+          }
+          return "OK";
+        }
+      });
+      */
+      Path loadPath = new Path(loadContext.getLoadPath());
+      FileSystem fs = loadPath.getFileSystem(conf);
+      if(!fs.exists(loadPath)) {
+        throw new AngelException("Load path " + loadPath + " does not exist, please check");
+      }
+    } catch (Throwable e) {
+      throw new AngelException(e);
+    }
+
     LoadRequest.Builder builder = LoadRequest.newBuilder();
-    int requestId = 0;
+    int requestId;
     try {
       requestId =
         master.load(null, builder.setLoadContext(ProtobufUtil.convert(loadContext)).build())
@@ -307,6 +381,8 @@ public abstract class AngelClient implements AngelClientInterface {
       }
     }
 
+    LOG.info("load model complete from path " + loadContext.getLoadPath());
+
     if (appFailedMessage != null) {
       throw new AngelException("app run failed, " + appFailedMessage);
     }
@@ -320,7 +396,7 @@ public abstract class AngelClient implements AngelClientInterface {
         LOG.info("master is not null, send stop command to Master, stateCode=" + stateCode);
         master.stop(null,
           ClientMasterServiceProtos.StopRequest.newBuilder().setExitStatus(stateCode).build());
-      } catch (ServiceException e) {
+      } catch (Throwable e) {
         LOG.error("send stop command to Master failed ", e);
         kill();
         //throw new AngelException(e);
@@ -671,8 +747,12 @@ public abstract class AngelClient implements AngelClientInterface {
 
   @Override public void createMatrices() throws AngelException {
     try {
-      master.createMatrices(null, ProtobufUtil
-        .buildCreateMatricesRequest(new ArrayList<MatrixContext>(nameToMatrixMap.values())));
+      for (MatrixContext context : nameToMatrixMap.values()) {
+        context.init(conf);
+      }
+
+      master.createMatrices(null,
+        ProtobufUtil.buildCreateMatricesRequest(new ArrayList<>(nameToMatrixMap.values())));
       List<String> matrixNames = new ArrayList<>(nameToMatrixMap.keySet());
       waitForMatricesCreated(matrixNames);
     } catch (Throwable x) {
@@ -682,6 +762,10 @@ public abstract class AngelClient implements AngelClientInterface {
 
   @Override public void createMatrices(List<MatrixContext> matrixContexts) throws AngelException {
     try {
+      for (MatrixContext context : matrixContexts) {
+        context.init(conf);
+      }
+
       master.createMatrices(null, ProtobufUtil.buildCreateMatricesRequest(matrixContexts));
       List<String> matrixNames = new ArrayList<>(matrixContexts.size());
       for (MatrixContext context : matrixContexts) {
@@ -690,6 +774,30 @@ public abstract class AngelClient implements AngelClientInterface {
       waitForMatricesCreated(matrixNames);
     } catch (Throwable x) {
       throw new AngelException(x);
+    }
+  }
+
+  public void load() {
+    load(nameToMatrixMap.keySet());
+  }
+
+  public void load(Set<String> matrixNames) {
+    // Check need load matrices
+    String loadPath = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH);
+    if (loadPath != null && !loadPath.isEmpty()) {
+      ModelLoadContext loadContext = new ModelLoadContext(loadPath);
+      int needLoadMatrixCount = 0;
+      for (String name : matrixNames) {
+        MatrixContext matrix = nameToMatrixMap.get(name);
+        if (matrix.getAttributes().get(MatrixConf.MATRIX_LOAD_PATH) != null) {
+          loadContext.addMatrix(new MatrixLoadContext(name));
+          needLoadMatrixCount++;
+        }
+      }
+
+      if (needLoadMatrixCount > 0) {
+        load(loadContext);
+      }
     }
   }
 
@@ -770,6 +878,9 @@ public abstract class AngelClient implements AngelClientInterface {
     if (outFs.exists(outputPath)) {
       if (deleteOnExist) {
         outFs.delete(outputPath, true);
+        if(outFs.exists(outputPath)) {
+          throw new IOException("output path " + outputPath + " already exist, remove it failed!!!");
+        }
       } else {
         throw new IOException("output path " + outputPath + " already exist, please check");
       }

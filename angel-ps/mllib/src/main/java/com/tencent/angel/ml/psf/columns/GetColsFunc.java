@@ -26,10 +26,9 @@ import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
+import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
+import com.tencent.angel.ps.storage.vector.*;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -37,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 
 public class GetColsFunc extends GetFunc {
-  Log LOG = LogFactory.getLog(GetColsFunc.class);
 
   public GetColsFunc(GetColsParam param) {
     super(param);
@@ -56,62 +54,108 @@ public class GetColsFunc extends GetFunc {
     Arrays.sort(rows);
 
     ServerPartition partition = psContext.getMatrixStorageManager().getPart(matId, partitionId);
-    Vector[] splits = new Vector[rows.length];
+    ServerRow [] splits = new ServerRow[rows.length];
     for (int i = 0; i < rows.length; i++) {
-      splits[i] = partition.getRow(rows[i]).getSplit();
+      splits[i] = partition.getRow(rows[i]);
     }
-    Vector result = doGet(splits, cols, partition.getRowType());
+    Vector result = doGet(splits, cols, param.func);
 
     return new PartitionGetColsResult(rows, cols, result);
   }
 
-  private Vector doGet(Vector[] rows, long[] cols, RowType rowType) {
-    switch (rowType) {
-      case T_DOUBLE_DENSE:
-      case T_DOUBLE_SPARSE: {
-        IntDoubleVector[] vectors = new IntDoubleVector[cols.length];
+  private Vector doGet(ServerRow[] rows, long[] cols, InitFunc func) {
+    if(func != null) {
+      rows[0].startWrite();
+      try {
+        return doGetLockFree(rows, cols, func);
+      } finally {
+        rows[0].endWrite();
+      }
+    } else {
+      rows[0].startRead();
+      try {
+        return doGetLockFree(rows, cols, func);
+      } finally {
+        rows[0].endRead();
+      }
+    }
+  }
 
+  private Vector doGetLockFree(ServerRow[] rows, long[] cols, InitFunc func) {
+    if(rows[0] instanceof ServerIntDoubleRow) {
+      IntDoubleVector[] vectors = new IntDoubleVector[cols.length];
+      if(func != null) {
         for (int i = 0; i < cols.length; i++) {
           vectors[i] = VFactory.denseDoubleVector(rows.length);
-          for (int j = 0; j < rows.length; j++)
-            vectors[i].set(j, ((IntDoubleVector) rows[j]).get((int) cols[i]));
+          for (int j = 0; j < rows.length; j++) {
+            vectors[i].set(j, ((ServerIntDoubleRow) rows[j]).initAndGet((int)cols[i], func));
+          }
         }
-        return VFactory.compIntDoubleVector(cols.length, vectors, rows.length);
-      }
-
-      case T_DOUBLE_SPARSE_LONGKEY: {
-        IntDoubleVector[] vectors = new IntDoubleVector[cols.length];
+      } else {
         for (int i = 0; i < cols.length; i++) {
           vectors[i] = VFactory.denseDoubleVector(rows.length);
-          for (int j = 0; j < rows.length; j++)
-            vectors[i].set(j, ((LongDoubleVector) rows[j]).get(cols[i]));
+          for (int j = 0; j < rows.length; j++) {
+            vectors[i].set(j, ((ServerIntDoubleRow) rows[j]).get((int)cols[i]));
+          }
         }
-        return VFactory.compIntDoubleVector(cols.length, vectors, rows.length);
       }
-
-      case T_FLOAT_DENSE:
-      case T_FLOAT_SPARSE: {
-        IntFloatVector[] vectors = new IntFloatVector[cols.length];
+      return VFactory.compIntDoubleVector(cols.length, vectors, rows.length);
+    } else if(rows[0] instanceof ServerLongDoubleRow) {
+      IntDoubleVector[] vectors = new IntDoubleVector[cols.length];
+      if(func != null) {
+        for (int i = 0; i < cols.length; i++) {
+          vectors[i] = VFactory.denseDoubleVector(rows.length);
+          for (int j = 0; j < rows.length; j++) {
+            vectors[i].set(j, ((ServerLongDoubleRow) rows[j]).initAndGet(cols[i], func));
+          }
+        }
+      } else {
+        for (int i = 0; i < cols.length; i++) {
+          vectors[i] = VFactory.denseDoubleVector(rows.length);
+          for (int j = 0; j < rows.length; j++) {
+            vectors[i].set(j, ((ServerLongDoubleRow) rows[j]).get(cols[i]));
+          }
+        }
+      }
+      return VFactory.compIntDoubleVector(cols.length, vectors, rows.length);
+    } else if(rows[0] instanceof ServerIntFloatRow) {
+      IntFloatVector[] vectors = new IntFloatVector[cols.length];
+      if(func != null) {
         for (int i = 0; i < cols.length; i++) {
           vectors[i] = VFactory.denseFloatVector(rows.length);
-          for (int j = 0; j < rows.length; j++)
-            vectors[i].set(j, ((IntFloatVector) rows[j]).get((int) cols[i]));
+          for (int j = 0; j < rows.length; j++) {
+            vectors[i].set(j, ((ServerIntFloatRow) rows[j]).initAndGet((int)cols[i], func));
+          }
         }
-        return VFactory.compIntFloatVector(cols.length, vectors, rows.length);
-      }
-
-      case T_FLOAT_SPARSE_LONGKEY: {
-        IntFloatVector[] vectors = new IntFloatVector[cols.length];
+      } else {
         for (int i = 0; i < cols.length; i++) {
           vectors[i] = VFactory.denseFloatVector(rows.length);
-          for (int j = 0; j < rows.length; j++)
-            vectors[i].set(j, ((LongFloatVector) rows[j]).get(cols[i]));
+          for (int j = 0; j < rows.length; j++) {
+            vectors[i].set(j, ((ServerIntFloatRow) rows[j]).get((int)cols[i]));
+          }
         }
-        return VFactory.compIntFloatVector(cols.length, vectors, rows.length);
       }
-
-      default:
-        throw new AngelException("The rowType is not support!");
+      return VFactory.compIntFloatVector(cols.length, vectors, rows.length);
+    } else if(rows[0] instanceof ServerLongFloatRow) {
+      IntFloatVector[] vectors = new IntFloatVector[cols.length];
+      if(func != null) {
+        for (int i = 0; i < cols.length; i++) {
+          vectors[i] = VFactory.denseFloatVector(rows.length);
+          for (int j = 0; j < rows.length; j++) {
+            vectors[i].set(j, ((ServerLongFloatRow) rows[j]).initAndGet(cols[i], func));
+          }
+        }
+      } else {
+        for (int i = 0; i < cols.length; i++) {
+          vectors[i] = VFactory.denseFloatVector(rows.length);
+          for (int j = 0; j < rows.length; j++) {
+            vectors[i].set(j, ((ServerLongFloatRow) rows[j]).get(cols[i]));
+          }
+        }
+      }
+      return VFactory.compIntFloatVector(cols.length, vectors, rows.length);
+    } else {
+      throw new AngelException("The rowType " + rows[0].getRowType() + " is not support!");
     }
   }
 

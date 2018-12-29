@@ -98,10 +98,10 @@ class KMeansModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
 
     storage.resetReadIndex()
     var data: LabeledData = null
-    for (i <- 0 until storage.size) {
+    for (_ <- 0 until storage.size) {
       data = storage.read()
       val cid = findClosestCenter(data.getX)._1
-      predictResult.put(KMeansResult(i, data.getY, cid))
+      predictResult.put(KMeansResult(data.getAttach, data.getY, cid))
     }
 
     predictResult
@@ -134,10 +134,10 @@ class KMeansModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
   }
 }
 
-case class KMeansResult(sid: Long, pred: Double, label: Double = Double.NaN) extends PredictResult {
+case class KMeansResult(sid: String, pred: Double, label: Double = Double.NaN) extends PredictResult {
   val df = new DecimalFormat("0")
 
   override def getText: String = {
-    df.format(sid) + separator + format.format(pred)
+    sid + separator + format.format(pred)
   }
 }

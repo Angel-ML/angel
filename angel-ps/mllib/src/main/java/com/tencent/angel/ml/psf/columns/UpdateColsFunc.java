@@ -25,6 +25,7 @@ import com.tencent.angel.ml.math2.vector.CompIntFloatVector;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
+import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerIntDoubleRow;
 import com.tencent.angel.ps.storage.vector.ServerIntFloatRow;
@@ -46,6 +47,7 @@ public class UpdateColsFunc extends UpdateFunc {
     int[] rows = param.rows;
     long[] cols = param.cols;
     Vector vector = param.vector;
+    UpdateOp op = param.op;
 
     int matId = param.getMatrixId();
     int partitionId = param.getPartKey().getPartitionId();
@@ -58,14 +60,14 @@ public class UpdateColsFunc extends UpdateFunc {
         ServerIntDoubleRow[] doubles = new ServerIntDoubleRow[rows.length];
         for (int r = 0; r < rows.length; r++)
           doubles[r] = (ServerIntDoubleRow) partition.getRow(rows[r]);
-        doUpdate((CompIntDoubleVector) vector, rows, cols, doubles);
+        doUpdate((CompIntDoubleVector) vector, rows, cols, doubles, op);
         return;
       }
       case T_DOUBLE_SPARSE_LONGKEY: {
         ServerLongDoubleRow[] doubles = new ServerLongDoubleRow[rows.length];
         for (int r = 0; r < rows.length; r++)
           doubles[r] = (ServerLongDoubleRow) partition.getRow(rows[r]);
-        doUpdate((CompIntDoubleVector) vector, rows, cols, doubles);
+        doUpdate((CompIntDoubleVector) vector, rows, cols, doubles, op);
         return;
       }
       case T_FLOAT_DENSE:
@@ -73,14 +75,14 @@ public class UpdateColsFunc extends UpdateFunc {
         ServerIntFloatRow[] floats = new ServerIntFloatRow[rows.length];
         for (int r = 0; r < rows.length; r++)
           floats[r] = (ServerIntFloatRow) partition.getRow(rows[r]);
-        doUpdate((CompIntFloatVector) vector, rows, cols, floats);
+        doUpdate((CompIntFloatVector) vector, rows, cols, floats, op);
         return;
       }
       case T_FLOAT_SPARSE_LONGKEY: {
         ServerLongFloatRow[] floats = new ServerLongFloatRow[rows.length];
         for (int r = 0; r < rows.length; r++)
           floats[r] = (ServerLongFloatRow) partition.getRow(rows[r]);
-        doUpdate((CompIntFloatVector) vector, rows, cols, floats);
+        doUpdate((CompIntFloatVector) vector, rows, cols, floats, op);
         return;
       }
       default:
@@ -89,84 +91,88 @@ public class UpdateColsFunc extends UpdateFunc {
   }
 
   private void doUpdate(CompIntDoubleVector vector, int[] rows, long[] cols,
-    ServerIntDoubleRow[] doubles) {
+    ServerIntDoubleRow[] doubles, UpdateOp op) {
     double[][] updates = new double[cols.length][];
     for (int c = 0; c < cols.length; c++)
       updates[c] = vector.getPartitions()[c].getStorage().getValues();
 
-    /*for (int c = 0; c < cols.length; c++) {
-      int offset = (int) cols[c];
-      for (int r = 0; r < rows.length; r++) {
-        double v = doubles[r].get(offset);
-        doubles[r].set(offset, v + updates[c][r]);
-      }
-    }*/
-
     for (int r = 0; r < rows.length; r++) {
       doubles[r].startWrite();
-      for(int c = 0; c < cols.length; c++) {
-        doubles[r].set((int)cols[c], doubles[r].get((int)cols[c]) + updates[c][r]);
+      switch (op) {
+        case PLUS:
+          for (int c = 0; c < cols.length; c++) {
+            doubles[r].set((int) cols[c], doubles[r].get((int) cols[c]) + updates[c][r]);
+          }
+        case REPLACE:
+          for (int c = 0; c < cols.length; c++) {
+            doubles[r].set((int) cols[c], updates[c][r]);
+          }
       }
       doubles[r].endWrite();
     }
   }
 
   private void doUpdate(CompIntDoubleVector vector, int[] rows, long[] cols,
-    ServerLongDoubleRow[] doubles) {
+    ServerLongDoubleRow[] doubles, UpdateOp op) {
     double[][] updates = new double[cols.length][];
     for (int c = 0; c < cols.length; c++)
       updates[c] = vector.getPartitions()[c].getStorage().getValues();
 
-    /*for (int c = 0; c < cols.length; c++) {
-      long offset = cols[c];
-      for (int r = 0; r < rows.length; r++) {
-        double v = doubles[r].get(offset);
-        doubles[r].set(offset, v + updates[c][r]);
-      }
-    }*/
-
     for (int r = 0; r < rows.length; r++) {
       doubles[r].startWrite();
-      for(int c = 0; c < cols.length; c++) {
-        doubles[r].set(cols[c], doubles[r].get(cols[c]) + updates[c][r]);
+      switch (op) {
+        case PLUS:
+          for (int c = 0; c < cols.length; c++) {
+            doubles[r].set(cols[c], doubles[r].get(cols[c]) + updates[c][r]);
+          }
+        case REPLACE:
+          for (int c = 0; c < cols.length; c++) {
+            doubles[r].set(cols[c], updates[c][r]);
+          }
       }
       doubles[r].endWrite();
     }
   }
 
   private void doUpdate(CompIntFloatVector vector, int[] rows, long[] cols,
-    ServerIntFloatRow[] floats) {
+    ServerIntFloatRow[] floats, UpdateOp op) {
     float[][] updates = new float[cols.length][];
     for (int c = 0; c < cols.length; c++)
       updates[c] = vector.getPartitions()[c].getStorage().getValues();
 
-    /*for (int c = 0; c < cols.length; c++) {
-      int offset = (int) cols[c];
-      for (int r = 0; r < rows.length; r++) {
-        float v = floats[r].get(offset);
-        floats[r].set(offset, v + updates[c][r]);
-      }
-    }*/
-
     for (int r = 0; r < rows.length; r++) {
       floats[r].startWrite();
-      for(int c = 0; c < cols.length; c++) {
-        floats[r].set((int)cols[c], floats[r].get((int)cols[c]) + updates[c][r]);
+      switch (op) {
+        case PLUS:
+          for (int c = 0; c < cols.length; c++) {
+            floats[r].set((int) cols[c], floats[r].get((int) cols[c]) + updates[c][r]);
+          }
+        case REPLACE:
+          for (int c = 0; c < cols.length; c++) {
+            floats[r].set((int) cols[c], updates[c][r]);
+          }
       }
       floats[r].endWrite();
     }
   }
 
   private void doUpdate(CompIntFloatVector vector, int[] rows, long[] cols,
-    ServerLongFloatRow[] floats) {
+    ServerLongFloatRow[] floats, UpdateOp op) {
     float[][] updates = new float[cols.length][];
     for (int c = 0; c < cols.length; c++)
       updates[c] = vector.getPartitions()[c].getStorage().getValues();
 
     for (int r = 0; r < rows.length; r++) {
       floats[r].startWrite();
-      for(int c = 0; c < cols.length; c++) {
-        floats[r].set(cols[c], floats[r].get(cols[c]) + updates[c][r]);
+      switch (op) {
+        case PLUS:
+          for (int c = 0; c < cols.length; c++) {
+            floats[r].set(cols[c], floats[r].get(cols[c]) + updates[c][r]);
+          }
+        case REPLACE:
+          for (int c = 0; c < cols.length; c++) {
+            floats[r].set(cols[c], updates[c][r]);
+          }
       }
       floats[r].endWrite();
     }

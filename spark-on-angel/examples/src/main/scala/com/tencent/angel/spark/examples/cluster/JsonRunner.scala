@@ -18,41 +18,54 @@
 
 package com.tencent.angel.spark.examples.cluster
 
+import com.tencent.angel.RunningMode
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.utils.DataParser
 import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.examples.util.SparkUtils
 import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OfflineLearner}
-import com.tencent.angel.spark.ml.util.Features
 import org.apache.spark.{SparkConf, SparkContext}
 
 object JsonRunner {
+
   def main(args: Array[String]): Unit = {
-    val params    = ArgsUtil.parse(args)
-    val input     = params.getOrElse("input", "")
-    val output    = params.getOrElse("output", "")
+    val params  = ArgsUtil.parse(args)
+    val input   = params.getOrElse("input", "")
+    val output  = params.getOrElse("output", "")
+    val modelPath  = params.getOrElse("model", "")
+    val actionType = params.getOrElse("action.type", "train")
 
     SharedConf.addMap(params)
     JsonUtils.init()
 
-    val model     = new GraphModel
-    val learner   = new OfflineLearner
+    // set running mode, use angel_ps mode for spark
+    SharedConf.get().set(AngelConf.ANGEL_RUNNING_MODE, RunningMode.ANGEL_PS.toString)
 
     // load data
     val conf = new SparkConf()
+    // we set the load model path for angel-ps to load the meta information of model
+    if (modelPath.length > 0)
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, modelPath)
+
     val sc   = new SparkContext(conf)
     val parser = DataParser(SharedConf.get())
-    val data = sc.textFile(input)
-      .repartition(SparkUtils.getNumExecutors(conf))
-      .map(f => parser.parse(f))
+
+    // start PS
     PSContext.getOrCreate(sc)
 
-    val (matrixId, dim, newData) = Features.mapWithPS(data)
-    SharedConf.get().setLong(MLConf.ML_FEATURE_INDEX_RANGE, dim)
+    val model = new GraphModel
+    val learner = new OfflineLearner
 
-    learner.train(newData, model)
-    //    model.save(output)
+    val dim = SharedConf.indexRange.toInt
+
+    actionType match {
+      case MLConf.ANGEL_ML_TRAIN =>
+          learner.train(input, output, modelPath, dim, model)
+
+      case MLConf.ANGEL_ML_PREDICT =>
+          learner.predict(input, output, modelPath, dim, model)
+    }
   }
 
 }

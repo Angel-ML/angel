@@ -7,7 +7,7 @@
   <parent>
     <groupId>com.tencent.angel</groupId>
     <artifactId>spark-on-angel</artifactId>
-        <version>2.0.0-alpha</version>
+        <version>2.0.1</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -15,7 +15,6 @@
 
   <properties>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
-    <shade.jar.name>${project.artifactId}-${project.version}-dep.jar</shade.jar.name>
   </properties>
 
   <dependencies>
@@ -69,34 +68,6 @@
                 <include>**/psf/**</include>
               </includes>
             </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>2.4.3</version>
-        <configuration>
-          <shadedArtifactAttached>false</shadedArtifactAttached>
-          <outputFile>${project.build.directory}/${shade.jar.name}</outputFile>
-          <artifactSet>
-            <includes>
-              <include>*:*</include>
-            </includes>
-          </artifactSet>
-          <transformers>
-            <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
-              <resource>resources</resource>
-            </transformer>
-          </transformers>
-        </configuration>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
           </execution>
         </executions>
       </plugin>

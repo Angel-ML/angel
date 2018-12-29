@@ -28,12 +28,27 @@ public class MatrixLoadContext {
   private final String matrixName;
 
   /**
+   * Matrix load path
+   */
+  private String loadPath;
+
+  /**
+   * Create a new MatrixLoadContext
+   *
+   * @param matrixName matrix name
+   */
+  public MatrixLoadContext(String matrixName, String loadPath) {
+    this.matrixName = matrixName;
+    this.loadPath = loadPath;
+  }
+
+  /**
    * Create a new MatrixLoadContext
    *
    * @param matrixName matrix name
    */
   public MatrixLoadContext(String matrixName) {
-    this.matrixName = matrixName;
+    this(matrixName, null);
   }
 
   /**
@@ -43,5 +58,21 @@ public class MatrixLoadContext {
    */
   public String getMatrixName() {
     return matrixName;
+  }
+
+  /**
+   * Get matrix load path
+   * @return matrix load path
+   */
+  public String getLoadPath() {
+    return loadPath;
+  }
+
+  /**
+   * Set load path
+   * @param loadPath load path
+   */
+  public void setLoadPath(String loadPath) {
+    this.loadPath = loadPath;
   }
 }

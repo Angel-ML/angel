@@ -18,6 +18,7 @@
 
 package com.tencent.angel.ml.core.conf
 
+import com.tencent.angel.RunningMode
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.matrix.RowType
@@ -237,7 +238,7 @@ object SharedConf {
 
   private var sc: SharedConf = _
 
-  def get(): SharedConf = {
+  def get(): SharedConf = synchronized {
     if (sc == null) {
       sc = new SharedConf
       addMLConf()
@@ -302,6 +303,44 @@ object SharedConf {
       case _ =>
     }
   }
+
+  def addHadoopConf(conf: Configuration): Unit = {
+    get()
+    val iter = conf.iterator()
+    while (iter.hasNext) {
+      val entry = iter.next()
+      sc(entry.getKey) = entry.getValue
+    }
+  }
+
+  def runningMode(): RunningMode = {
+    get()
+
+    sc.get(AngelConf.ANGEL_RUNNING_MODE) match {
+      case "ANGEL_PS" => RunningMode.ANGEL_PS
+      case "ANGEL_PS_WORKER" => RunningMode.ANGEL_PS_WORKER
+    }
+  }
+
+  def sparseInputLayerMatrixOutputFormat: String = {
+    get()
+
+    sc.get(MLConf.ML_SIMPLEINPUTLAYER_MATRIX_OUTPUT_FORMAT, MLConf.DEFAULT_ML_SIMPLEINPUTLAYER_MATRIX_OUTPUT_FORMAT)
+  }
+
+  def fcLayerMatrixOutputFormat: String = {
+    get()
+
+    sc.get(MLConf.ML_FCLAYER_MATRIX_OUTPUT_FORMAT, MLConf.DEFAULT_ML_FCLAYER_MATRIX_OUTPUT_FORMAT)
+  }
+
+
+  def embeddingLayerMatrixOutputFormat: String = {
+    get()
+
+    sc.get(MLConf.ML_EMBEDDING_MATRIX_OUTPUT_FORMAT, MLConf.DEFAULT_ML_EMBEDDING_MATRIX_OUTPUT_FORMAT)
+  }
+
 
   def actionType(): String = {
     get()

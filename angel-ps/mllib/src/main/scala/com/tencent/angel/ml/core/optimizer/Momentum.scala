@@ -18,13 +18,21 @@
 
 package com.tencent.angel.ml.core.optimizer
 
+import java.util.concurrent.Future
+
+import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.psf.optimizer.MomentumUpdateFunc
 import com.tencent.angel.psagent.PSAgentContext
 
 class Momentum(override val stepSize: Double, val momentum: Double = 0.9) extends GradientDescent(stepSize) {
 
-  override def update(matrixId: Int, numFactors: Int, epoch: Int = 0): Unit = {
+  override def update(matrixId: Int, numFactors: Int, epoch: Int = 0): Future[VoidResult] = {
     val func = new MomentumUpdateFunc(matrixId, numFactors, momentum, lr, regL2Param)
+    PSAgentContext.get().getUserRequestAdapter.update(func)
+  }
+
+  override def update(matrixId: Int, numFactors: Int, epoch: Int, sampleNum: Int): Future[VoidResult] ={
+    val func = new MomentumUpdateFunc(matrixId, numFactors, momentum, lr, regL2Param, sampleNum)
     PSAgentContext.get().getUserRequestAdapter.update(func)
   }
 

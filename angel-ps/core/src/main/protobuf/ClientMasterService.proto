@@ -101,7 +101,9 @@ message SaveRequest {
 
 message MatrixSaveContextProto {
   required string matrixName = 1;
-  repeated int32 rowIndexes = 2;
+  required string formatClassName = 2;
+  repeated int32 rowIndexes = 3;
+  repeated Pair params = 4;
 }
 
 message ModelSaveContextProto {

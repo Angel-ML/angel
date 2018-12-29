@@ -25,7 +25,7 @@ import java.util.AbstractMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public class PartitionSourceArray extends PartitionSource {
+public class PartitionSourceArray implements PartitionSource {
 
   private ServerRow[] source;
 
@@ -36,23 +36,23 @@ public class PartitionSourceArray extends PartitionSource {
     source = new ServerRow[rowNum];
   }
 
-  @Override protected ServerRow getRow(int index) {
+  @Override public ServerRow getRow(int index) {
     return source[index];
   }
 
-  @Override protected void putRow(int index, ServerRow row) {
+  @Override public void putRow(int index, ServerRow row) {
     source[index] = row;
   }
 
-  @Override protected int rowNum() {
+  @Override public int rowNum() {
     return source.length;
   }
 
-  @Override protected boolean hasRow(int index) {
+  @Override public boolean hasRow(int index) {
     return index >= 0 && index < source.length;
   }
 
-  @Override protected Iterator<Map.Entry<Integer, ServerRow>> iterator() {
+  @Override public Iterator<Map.Entry<Integer, ServerRow>> iterator() {
 
 
     return new Iterator<Map.Entry<Integer, ServerRow>>() {

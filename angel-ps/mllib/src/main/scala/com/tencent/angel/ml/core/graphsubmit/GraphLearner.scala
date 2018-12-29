@@ -18,9 +18,12 @@
 
 package com.tencent.angel.ml.core.graphsubmit
 
+import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.MLLearner
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers.AngelGraph
+import com.tencent.angel.ml.core.optimizer.decayer.{StepSizeScheduler, WarmRestarts}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.vector.{DoubleVector, IntKeyVector, LongKeyVector, Vector}
 import com.tencent.angel.ml.metric.LossMetric
@@ -31,7 +34,7 @@ import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.{Log, LogFactory}
 
-class GraphLearner(modelClassName: String, ctx: TaskContext, idxsVector: Vector) extends MLLearner(ctx) {
+class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(ctx) {
   val LOG: Log = LogFactory.getLog(classOf[GraphLearner])
 
   val epochNum: Int = SharedConf.epochNum
@@ -44,6 +47,7 @@ class GraphLearner(modelClassName: String, ctx: TaskContext, idxsVector: Vector)
   val model: GraphModel = GraphModel(modelClassName, conf, ctx)
   model.buildNetwork()
   val graph: AngelGraph = model.graph
+  val ssScheduler: StepSizeScheduler = new WarmRestarts(lr0, lr0/100)
 
   def trainOneEpoch(epoch: Int, iter: Iterator[Array[LabeledData]], numBatch: Int): Double = {
     var batchCount: Int = 0
@@ -53,7 +57,7 @@ class GraphLearner(modelClassName: String, ctx: TaskContext, idxsVector: Vector)
       graph.feedData(iter.next())
 
       // LOG.info("start to pullParams ...")
-      graph.pullParams()
+      graph.pullParams(epoch)
 
       // LOG.info("calculate to forward ...")
       loss = graph.calLoss() // forward
@@ -68,16 +72,18 @@ class GraphLearner(modelClassName: String, ctx: TaskContext, idxsVector: Vector)
 
       // LOG.info("waiting for push barrier ...")
       PSAgentContext.get().barrier(ctx.getTaskId.getIndex)
+      graph.setLR(ssScheduler.next())
       if (ctx.getTaskId.getIndex == 0) {
         // LOG.info("start to update ...")
-        graph.update(epoch * numBatch + batchCount) // update parameters on PS
+        graph.update(epoch * numBatch + batchCount, 1) // update parameters on PS
       }
+
       // waiting all gradient update finished
       // LOG.info("waiting for update barrier ...")
       PSAgentContext.get().barrier(ctx.getTaskId.getIndex)
       batchCount += 1
 
-      // LOG.info(s"epoch $epoch batch $batchCount is finished!")
+      LOG.info(s"epoch $epoch batch $batchCount is finished!")
     }
 
     loss
@@ -106,7 +112,12 @@ class GraphLearner(modelClassName: String, ctx: TaskContext, idxsVector: Vector)
     globalMetrics.addMetric(MLConf.TRAIN_LOSS, LossMetric(trainDataSize))
     globalMetrics.addMetric(MLConf.VALID_LOSS, LossMetric(validationData.size))
     graph.taskNum = ctx.getTotalTaskNum
-    model.init(ctx.getTaskId.getIndex, idxsVector)
+
+    val loadModelPath = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH, "")
+    if (loadModelPath.isEmpty) {
+      model.init(ctx.getTaskId.getIndex)
+    }
+
     PSAgentContext.get().barrier(ctx.getTaskId.getIndex)
 
     val numBatch = SharedConf.numUpdatePerEpoch
@@ -120,9 +131,6 @@ class GraphLearner(modelClassName: String, ctx: TaskContext, idxsVector: Vector)
     while (ctx.getEpoch < epochNum) {
       val epoch = ctx.getEpoch
       LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epoch start.")
-
-      val lr = Math.max(lr0 / Math.sqrt(1.0 + decay * epoch), lr0 / 5.0)
-      graph.setLR(lr)
 
       val iter = if (negTrainData == null) {
         getBathDataIterator(posTrainData, batchData, numBatch)

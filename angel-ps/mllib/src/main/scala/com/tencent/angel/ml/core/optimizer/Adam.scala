@@ -18,6 +18,9 @@
 
 package com.tencent.angel.ml.core.optimizer
 
+import java.util.concurrent.Future
+
+import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.psf.optimizer.AdamUpdateFunc
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
@@ -29,9 +32,14 @@ class Adam(override val stepSize: Double,
 
   val LOG = LogFactory.getLog(classOf[Adam])
 
-  override def update(matrixId: Int, numFactors: Int, epoch: Int): Unit = {
+  override def update(matrixId: Int, numFactors: Int, epoch: Int): Future[VoidResult] = {
 
     val func = new AdamUpdateFunc(matrixId, numFactors, gamma, epsilon, beta, lr, regL2Param, epoch)
+    PSAgentContext.get().getUserRequestAdapter.update(func)
+  }
+
+  override def update(matrixId: Int, numFactors: Int, epoch: Int, sampleNum: Int): Future[VoidResult] = {
+    val func = new AdamUpdateFunc(matrixId, numFactors, gamma, epsilon, beta, lr, regL2Param, epoch, sampleNum)
     PSAgentContext.get().getUserRequestAdapter.update(func)
   }
 

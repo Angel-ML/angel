@@ -24,20 +24,21 @@ import org.apache.spark.streaming.dstream.DStream
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
+
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.math2.vector.{LongDoubleVector, LongDummyVector, Vector}
+import com.tencent.angel.ml.math2.vector.{LongDoubleVector, Vector}
+import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
 import com.tencent.angel.spark.context.PSContext
-//import com.tencent.angel.spark.ml.classification.SparseLRModel
+import com.tencent.angel.spark.models.PSVector
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.util._
-import com.tencent.angel.spark.models.vector.{PSVector, SparsePSVector}
-import com.tencent.angel.spark.util.PSVectorImplicit._
 
 /**
-  * this module is to run sparse lr with ftrl or ftrl_vrg,
-  * the window for ftrlwithSVRG should be small for accurate,
-  * assume each batch is a sample
-  */
+ * this module is to run sparse lr with ftrl or ftrl_vrg,
+ * the window for ftrlwithSVRG should be small for accurate,
+ * assume each batch is a sample
+ */
 
 object FTRLRunner {
 
@@ -114,35 +115,37 @@ object FTRLRunner {
 
     optMethod match {
       case FTRL =>
-        val zPS: SparsePSVector = PSVector.sparse(dim)
-        val nPS: SparsePSVector = PSVector.duplicate(zPS)
+        val zPS: PSVector = PSVector.sparse(dim,
+          additionalConfiguration = Map(AngelConf.Angel_PS_PARTITION_CLASS -> classOf[ColumnRangePartitioner].getName))
+        val nPS: PSVector = PSVector.duplicate(zPS)
         // init the model
         if (isIncrementLearn) {
           println("this is increment learning")
           val ZNModel = incLearnZNModel(sc, modelPath)
-          zPS.increment(dim, ZNModel._1)
-          nPS.increment(dim, ZNModel._2)
+          zPS.increment(sparseVectorFromPairs(dim, ZNModel._1))
+          nPS.increment(sparseVectorFromPairs(dim, ZNModel._2))
         }
 
         val ftrl = new FTRL(lambda1, lambda2, alpha, beta)
-        ftrl.initPSModel(dim)
+        ftrl.init(dim)
 
         train(ftrl, featureDS, dim, partitionNum, modelPath, batch2Save, isOneHot)
 
       case FTRL_VRG =>
 
-        val zPS: SparsePSVector = PSVector.sparse(dim)
-        val nPS: SparsePSVector = PSVector.duplicate(zPS)
-        val vPS: SparsePSVector = PSVector.duplicate(zPS)
+        val zPS: PSVector = PSVector.sparse(dim,
+          additionalConfiguration = Map(AngelConf.Angel_PS_PARTITION_CLASS -> classOf[ColumnRangePartitioner].getName))
+        val nPS: PSVector = PSVector.duplicate(zPS)
+        val vPS: PSVector = PSVector.duplicate(zPS)
         var initW: LongDoubleVector = null
 
         // increment learn from original model or just init the w and z model
         if (isIncrementLearn) {
           println("this is increment learning")
           val ZNVWModel = incLearnZNVWModel(sc, modelPath)
-          zPS.increment(dim, ZNVWModel._1)
-          nPS.increment(dim, ZNVWModel._2)
-          vPS.increment(dim, ZNVWModel._3)
+          zPS.increment(sparseVectorFromPairs(dim, ZNVWModel._1))
+          nPS.increment(sparseVectorFromPairs(dim, ZNVWModel._2))
+          vPS.increment(sparseVectorFromPairs(dim, ZNVWModel._3))
 
           val (k, v) = ZNVWModel._4.unzip
           initW = VFactory.sparseLongKeyDoubleVector(dim, k, v)
@@ -157,7 +160,7 @@ object FTRLRunner {
 
           val (k, v) = randomW.unzip
           initW = VFactory.sparseLongKeyDoubleVector(dim, k, v)
-          zPS.increment(dim, initZInc)
+          zPS.increment(sparseVectorFromPairs(dim, initZInc))
         }
 
         val ftrlVRG = new FTRLWithVRG(lambda1, lambda2, alpha, beta, rho1, rho2)
@@ -173,7 +176,7 @@ object FTRLRunner {
 
   // parse the z and n model
   def incLearnZNModel(sc: SparkContext,
-                      modelPath: String): (Array[(Long, Double)], Array[(Long, Double)]) = {
+      modelPath: String): (Array[(Long, Double)], Array[(Long, Double)]) = {
 
     val modelStr = sc.textFile(modelPath).collect()
 
@@ -185,7 +188,7 @@ object FTRLRunner {
   }
 
   def incLearnZNVWModel(sc: SparkContext,
-                        modelPath: String): (Array[(Long, Double)], Array[(Long, Double)], Array[(Long, Double)], Array[(Long, Double)]) = {
+      modelPath: String): (Array[(Long, Double)], Array[(Long, Double)], Array[(Long, Double)], Array[(Long, Double)]) = {
 
     val modelStr = sc.textFile(modelPath).collect()
 
@@ -228,12 +231,12 @@ object FTRLRunner {
 
   // train by ftrl
   def train(ftrl: FTRL,
-            featureDS: DStream[String],
-            dim: Long,
-            partitionNum: Int,
-            modelPath: String,
-            batch2Save: Int,
-            isOneHot: Boolean): Unit = {
+      featureDS: DStream[String],
+      dim: Long,
+      partitionNum: Int,
+      modelPath: String,
+      batch2Save: Int,
+      isOneHot: Boolean): Unit = {
 
     var numBatch = 0
     featureDS.foreachRDD { labelFeatRdd =>
@@ -278,13 +281,13 @@ object FTRLRunner {
 
   // train by ftrl_VRG
   def train(ftrlVRG: FTRLWithVRG,
-            initW: LongDoubleVector,
-            featureDS: DStream[String],
-            dim: Long,
-            partitionNum: Int,
-            modelPath: String,
-            batch2Save: Int,
-            isOneHot: Boolean): Unit = {
+      initW: LongDoubleVector,
+      featureDS: DStream[String],
+      dim: Long,
+      partitionNum: Int,
+      modelPath: String,
+      batch2Save: Int,
+      isOneHot: Boolean): Unit = {
 
     var localW = initW
     var numBatch = 0
@@ -375,4 +378,8 @@ object FTRLRunner {
     (grad, loss)
   }
 
+  def sparseVectorFromPairs(dim: Long, pairs: Array[(Long, Double)]):Vector = {
+    val (index, value) = pairs.unzip
+    VFactory.sparseLongKeyDoubleVector(dim, index, value)
+  }
 }

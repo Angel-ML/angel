@@ -20,10 +20,11 @@ package com.tencent.angel.spark.ml.core
 
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.spark.client.PSClient
 import org.apache.commons.logging.LogFactory
 import org.apache.spark.SparkContext
 import org.apache.spark.streaming.dstream.{DStream, InputDStream}
+
+import com.tencent.angel.spark.context.PSContext
 
 class OnlineLearner {
 
@@ -37,17 +38,17 @@ class OnlineLearner {
     var numBatches = 0
     stream.foreachRDD { data =>
       numBatches += 1
-      val (lossSum, batchSize) = data.mapPartitions { case iter =>
-        PSClient.instance()
+      val (lossSum, batchSize) = data.mapPartitions { iter =>
+        PSContext.instance()
         val model = bModel.value
         val samples = iter.toArray
-        model.forward(samples)
+        model.forward(0, samples)
         val loss = model.getLoss()
         model.backward()
-        Iterator.single((loss, samples.size))
+        Iterator.single((loss, samples.length))
       }.reduce((f1, f2) => (f1._1 + f2._1, f1._2 + f2._2))
 
-      model.update(numBatches)
+      model.update(numBatches, batchSize)
 
       LOG.error(s"batch[$numBatches] trainLoss=${lossSum / numTasks} batchSize=$batchSize")
     }

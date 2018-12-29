@@ -464,15 +464,10 @@ public class MatrixTransportClient implements MatrixTransportInterface {
     ParameterServerId serverId = PSAgentContext.get().getMatrixMetaManager().getMasterPS(partKey);
     GetRowSplitRequest request = new GetRowSplitRequest(requestId, clock, partKey, rowIndex);
     FutureResult<ServerRow> future = new FutureResult<>();
-    FutureResult<ServerRow> oldFuture = requestToResultMap.putIfAbsent(request, future);
-    if (oldFuture != null) {
-      LOG.debug("same request exist, just return old future");
-      return oldFuture;
-    } else {
-      addToGetQueueForServer(serverId, request);
-      startGet();
-      return future;
-    }
+    requestToResultMap.put(request, future);
+    addToGetQueueForServer(serverId, request);
+    startGet();
+    return future;
   }
 
   @Override public Future<List<ServerRow>> getRowsSplit(int requestId, PartitionKey partKey,
@@ -531,15 +526,10 @@ public class MatrixTransportClient implements MatrixTransportInterface {
     LOG.debug("get request=" + request);
 
     FutureResult<PartitionGetResult> future = new FutureResult<PartitionGetResult>();
-    FutureResult<PartitionGetResult> oldFuture = requestToResultMap.putIfAbsent(request, future);
-    if (oldFuture != null) {
-      LOG.debug("same request exist, just return old future");
-      return oldFuture;
-    } else {
-      addToGetQueueForServer(serverId, request);
-      startGet();
-      return future;
-    }
+    requestToResultMap.put(request, future);
+    addToGetQueueForServer(serverId, request);
+    startGet();
+    return future;
   }
 
   @Override
@@ -549,50 +539,39 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
   @Override
   public FutureResult<IndexPartGetRowResult> indexGetRow(int userRequestId, int matrixId, int rowId,
-    PartitionKey partKey, IndicesView indices) {
+    PartitionKey partKey, IndicesView indices, InitFunc func) {
     ParameterServerId serverId = PSAgentContext.get().getMatrixMetaManager().getMasterPS(partKey);
 
     RowType rowType =
       PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(partKey.getMatrixId()).getRowType();
     ValueType valueType = getValueType(rowType);
     IndexPartGetRowRequest request =
-      new IndexPartGetRowRequest(userRequestId, matrixId, rowId, partKey, indices, valueType);
+      new IndexPartGetRowRequest(userRequestId, matrixId, rowId, partKey, indices, valueType, func);
     LOG.debug("get request=" + request);
 
     FutureResult<IndexPartGetRowResult> future = new FutureResult<>();
-    FutureResult<IndexPartGetRowResult> oldFuture = requestToResultMap.putIfAbsent(request, future);
-    if (oldFuture != null) {
-      LOG.debug("same request exist, just return old future");
-      return oldFuture;
-    } else {
-      addToGetQueueForServer(serverId, request);
-      startGet();
-      return future;
-    }
+    requestToResultMap.put(request, future);
+    addToGetQueueForServer(serverId, request);
+    startGet();
+    return future;
   }
 
   @Override public FutureResult<IndexPartGetRowsResult> indexGetRows(int requestId, int matrixId,
-    PartitionKey partKey, List<Integer> rowIds, IndicesView colIds) {
+    PartitionKey partKey, List<Integer> rowIds, IndicesView colIds, InitFunc func) {
     ParameterServerId serverId = PSAgentContext.get().getMatrixMetaManager().getMasterPS(partKey);
 
     RowType rowType =
       PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(partKey.getMatrixId()).getRowType();
     ValueType valueType = getValueType(rowType);
     IndexPartGetRowsRequest request =
-      new IndexPartGetRowsRequest(requestId, matrixId, rowIds, partKey, colIds, valueType);
+      new IndexPartGetRowsRequest(requestId, matrixId, rowIds, partKey, colIds, valueType, func);
     LOG.debug("get request=" + request);
 
     FutureResult<IndexPartGetRowsResult> future = new FutureResult<>();
-    FutureResult<IndexPartGetRowsResult> oldFuture =
-      requestToResultMap.putIfAbsent(request, future);
-    if (oldFuture != null) {
-      LOG.debug("same request exist, just return old future");
-      return oldFuture;
-    } else {
-      addToGetQueueForServer(serverId, request);
-      startGet();
-      return future;
-    }
+    requestToResultMap.put(request, future);
+    addToGetQueueForServer(serverId, request);
+    startGet();
+    return future;
   }
 
   @Override public FutureResult<VoidResult> plus(int requestId, int matrixId, PartitionKey partKey,
@@ -1405,6 +1384,10 @@ public class MatrixTransportClient implements MatrixTransportInterface {
         LOG.info("remove channel " + channel + ", removeNum=" + removeNum);
 
         InetSocketAddress address = (InetSocketAddress) (channel.remoteAddress());
+        if(address == null) {
+          LOG.warn("channel " + channel + " remote address is null");
+          return;
+        }
         Location loc = new Location(address.getHostName(), address.getPort() - 1);
         ParameterServerId psId = PSAgentContext.get().getLocationManager().getPsId(loc);
         if (psId != null) {

@@ -6,7 +6,7 @@
     "sampleratio": 1.0
   },
   "train": {
-    "epoch": 500,
+    "epoch": 10,
     "lr": 0.5
   },
   "model": {
@@ -19,7 +19,7 @@
   "layers": [
     {
       "name": "wide",
-      "type": "sparseinputlayer",
+      "type": "simpleinputlayer",
       "outputdim": 1,
       "transfunc": "identity"
     },

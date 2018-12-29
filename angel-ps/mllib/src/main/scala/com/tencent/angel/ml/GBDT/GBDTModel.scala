@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -22,14 +22,14 @@ import java.text.DecimalFormat
 
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.GBDT.GBDTModel._
-import com.tencent.angel.ml.GBDT.algo.sketch.{HeapQuantileSketch, SketchUtils}
 import com.tencent.angel.ml.core.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntIntVector}
+import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector, IntIntVector}
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.ml.core.utils.Maths
+import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
@@ -192,7 +192,14 @@ class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
 
     (0 until dataSet.size).foreach { idx =>
       val instance = dataSet.read
-      val x: IntDoubleVector = instance.getX.asInstanceOf[IntDoubleVector]
+      val x: IntFloatVector = instance.getX match {
+        case vec: IntFloatVector => vec
+        case vec: IntDoubleVector => {
+          VFactory.sparseFloatVector(vec.dim.toInt,
+            vec.getStorage.getIndices, vec.getStorage.getValues.map(_.toFloat))
+        }
+      }
+
       val y: Double = instance.getY
       var pred: Double = 0
 
@@ -214,7 +221,7 @@ class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
         pred += lr * curPred
       }
 
-      predict.put(new GBDTPredictResult(idx, y, pred))
+      predict.put(GBDTPredictResult(instance.getAttach, y, pred))
       LOG.debug(s"instance[$idx]: label[$y], pred[$pred]")
 
       if (y > 0) {
@@ -233,10 +240,10 @@ class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
 
 }
 
-case class GBDTPredictResult(sid: Long, pred: Double, label: Double) extends PredictResult {
+case class GBDTPredictResult(sid: String, pred: Double, label: Double) extends PredictResult {
   val df = new DecimalFormat("0")
 
   override def getText: String = {
-    df.format(sid) + separator + format.format(pred) + separator + df.format(label)
+    sid + separator + format.format(pred) + separator + df.format(label)
   }
 }

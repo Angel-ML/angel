@@ -22,26 +22,26 @@ import org.apache.spark.SparkException
 import sun.misc.Cleaner
 
 import com.tencent.angel.ml.matrix.RowType
-import com.tencent.angel.spark.models.vector.{DensePSVector, PSVector, SparsePSVector, VectorCacheManager}
-import com.tencent.angel.spark.util.RowTypeImplicit._
+import com.tencent.angel.spark.models.PSVector
+import com.tencent.angel.spark.models.impl.PSVectorImpl
 
 /**
-  * PSVectorPool delegate a memory space on PS servers,
-  * which hold `capacity` number vectors with `numDimensions` dimension.
-  * The dimension of PSVectors in one PSVectorPool is the same.
-  *
-  * A PSVectorPool is like a Angel Matrix.
-  *
-  * @param id        PSVectorPool unique id
-  * @param dimension Dimension of vectors
-  * @param capacity  Capacity of pool
-  */
+ * PSVectorPool delegate a memory space on PS servers,
+ * which hold `capacity` number vectors with `numDimensions` dimension.
+ * The dimension of PSVectors in one PSVectorPool is the same.
+ *
+ * A PSVectorPool is like a Angel Matrix.
+ *
+ * @param id        PSVectorPool unique id
+ * @param dimension Dimension of vectors
+ * @param capacity  Capacity of pool
+ */
 
 private[spark] class PSVectorPool(
-                                   val id: Int,
-                                   val dimension: Long,
-                                   val capacity: Int,
-                                   val rowType: RowType) {
+    val id: Int,
+    val dimension: Long,
+    val capacity: Int,
+    val rowType: RowType) {
 
   val cleaners = new java.util.WeakHashMap[PSVector, Cleaner]
   val bitSet = new java.util.BitSet(capacity)
@@ -86,8 +86,7 @@ private[spark] class PSVectorPool(
   }
 
   private def doCreateOne(index: Int): PSVector = {
-    val vector = if (rowType.isSparse) new SparsePSVector(id, index, dimension, rowType) else
-      new DensePSVector(id, index, dimension, rowType)
+    val vector = new PSVectorImpl(id, index, dimension, rowType)
     val task = new CleanTask(id, index)
     cleaners.put(vector, Cleaner.create(vector, task))
     vector
@@ -99,8 +98,6 @@ private[spark] class PSVectorPool(
         bitSet.clear(index)
         size -= 1
       }
-      // release cache
-      VectorCacheManager.autoRelease(poolId, index)
     }
   }
 

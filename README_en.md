@@ -50,6 +50,7 @@ We welcome everyone interested in machine learning to contribute code, create is
 * [LR (Spark on Angel)](./docs/algo/spark_on_angel_optimizer_en.md)
 * [Linear Regression](./docs/algo/linear_on_angel_en.md)
 * [Robust Regression](./docs/algo/robust_on_angel_en.md)
+* [Softmax Regression](./docs/algo/softmax_on_angel_en.md)
 
 ## Deployment
 
@@ -67,3 +68,4 @@ We welcome everyone interested in machine learning to contribute code, create is
   2. Jiawei Jiang, Bin Cui, Ce Zhang, Lele Yu. [Heterogeneity-aware Distributed Parameter Servers](http://net.pku.edu.cn/~cuibin/Papers/2017%20sigmod.pdf). SIGMOD, 2017
   3. Jie Jiang, Lele Yu, Jiawei Jiang, Yuhong Liu and Bin Cui. [Angel: a new large-scale machine learning system](http://net.pku.edu.cn/~cuibin/Papers/2017NSRangel.pdf). National Science Review (NSR), 2017
   4. Jie Jiang, Jiawei Jiang,  Bin Cui and Ce Zhang. [TencentBoost: A Gradient Boosting Tree System with Parameter Server](http://net.pku.edu.cn/~cuibin/Papers/2017%20ICDE%20boost.pdf).	ICDE, 2017
+  5. Jiawei Jiang, Bin Cui, Ce Zhang and Fangcheng Fu. [DimBoost: Boosting Gradient Boosting Decision Tree to Higher Dimensions](https://dl.acm.org/citation.cfm?id=3196892). SIGMOD, 2018.

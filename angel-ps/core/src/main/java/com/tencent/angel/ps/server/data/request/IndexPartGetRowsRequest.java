@@ -26,24 +26,27 @@ import io.netty.buffer.ByteBuf;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class IndexPartGetRowsRequest extends PartitionRequest {
   private int matrixId;
   private List<Integer> rowIds;
   private final IndicesView colIds;
   private final ValueType valueType;
+  private InitFunc func;
 
   public IndexPartGetRowsRequest(int userRequestId, int matrixId, List<Integer> rowIds,
-    PartitionKey partKey, IndicesView colIds, ValueType valueType) {
+    PartitionKey partKey, IndicesView colIds, ValueType valueType, InitFunc func) {
     super(userRequestId, -1, partKey);
     this.matrixId = matrixId;
     this.rowIds = rowIds;
     this.colIds = colIds;
     this.valueType = valueType;
+    this.func = func;
   }
 
   public IndexPartGetRowsRequest() {
-    this(-1, -1, null, null, null, ValueType.DOUBLE);
+    this(-1, -1, null, null, null, ValueType.DOUBLE, null);
   }
 
   public int getMatrixId() {
@@ -74,14 +77,27 @@ public class IndexPartGetRowsRequest extends PartitionRequest {
     return colIds;
   }
 
+  public InitFunc getFunc() {
+    return func;
+  }
+
   @Override public void serialize(ByteBuf buf) {
     super.serialize(buf);
     buf.writeInt(matrixId);
+    buf.writeBoolean(func != null);
+    if(func != null) {
+      byte[] data = func.getClass().getName().getBytes();
+      buf.writeInt(data.length);
+      buf.writeBytes(data);
+      func.serialize(buf);
+    }
+
     int rowNum = rowIds.size();
     buf.writeInt(rowNum);
     for (int i = 0; i < rowNum; i++) {
       buf.writeInt(rowIds.get(i));
     }
+
     if (colIds instanceof IntIndicesView) {
       buf.writeInt(IndexType.INT.getTypeId());
     } else {
@@ -93,6 +109,21 @@ public class IndexPartGetRowsRequest extends PartitionRequest {
   @Override public void deserialize(ByteBuf buf) {
     super.deserialize(buf);
     matrixId = buf.readInt();
+
+    boolean useInitFunc = buf.readBoolean();
+    if(useInitFunc) {
+      int size = buf.readInt();
+      byte[] data = new byte[size];
+      buf.readBytes(data);
+      String initFuncClass = new String(data);
+      try {
+        func = (InitFunc) Class.forName(initFuncClass).newInstance();
+      } catch (Throwable e) {
+        throw new UnsupportedOperationException(e);
+      }
+      func.deserialize(buf);
+    }
+
     int rowNum = buf.readInt();
     rowIds = new ArrayList<>(rowNum);
     for (int i = 0; i < rowNum; i++) {
@@ -101,7 +132,11 @@ public class IndexPartGetRowsRequest extends PartitionRequest {
   }
 
   @Override public int bufferLen() {
-    return super.bufferLen() + 12 + rowIds.size() * 4 + colIds.bufferLen();
+    int len = super.bufferLen() + 12 + rowIds.size() * 4 + colIds.bufferLen();
+    if(func != null) {
+      len += (func.bufferLen() + 8 + func.getClass().getName().getBytes().length);
+    }
+    return len;
   }
 
   @Override public int getHandleElemNum() {
