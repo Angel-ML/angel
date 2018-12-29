@@ -219,4 +219,8 @@ public abstract class BlasMatrix extends Matrix {
   public Matrix dot(Matrix m, Boolean parallel) {
     return DotMatrixExecutor.apply(this, false, m, false, parallel);
   }
+
+  public Matrix dot(Matrix m) {
+    return DotMatrixExecutor.apply(this, false, m, false, true);
+  }
 }

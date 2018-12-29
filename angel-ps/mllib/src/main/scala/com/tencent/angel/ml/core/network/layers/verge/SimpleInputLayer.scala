@@ -21,7 +21,7 @@ package com.tencent.angel.ml.core.network.layers.verge
 import java.util.concurrent.Future
 
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.transfunc.TransFunc
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
@@ -47,6 +47,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
 
   val sharedConf: SharedConf = graph.conf
 
+  val parallel = sharedConf.get(MLConf.IS_PARALLEL).toBoolean
   val modelType: RowType = SharedConf.modelType
   val valueType: String = SharedConf.valueType()
   val inputDataFormat: String = SharedConf.inputDataFormat
@@ -106,7 +107,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
         // println(s"the status in SparseInputLayer($name)-calOutput is ${status.toString}")
         (inputDataFormat, valueType) match {
           case ("dense", "double" | "float") => // the shape of weight matrix is (inputDim, outputDim)
-            forward = graph.placeHolder.getFeats.dot(weight).iadd(bias)
+            forward = graph.placeHolder.getFeats.dot(weight, parallel).iadd(bias)
           case ("libsvm" | "dummy", "double") => // the shape of weight matrix is (outputDim, inputDim)
             forward = MFactory.denseDoubleMatrix(graph.placeHolder.getBatchSize, outputDim)
             (0 until outputDim).foreach { colId => // the shape of weight matrix is (outputDim, inputDim)
@@ -176,7 +177,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
       case STATUS.Backward =>
         (inputDataFormat, NetUtils.storageType(modelType)) match {
           case ("dense", "dense" | "component_dense") => // dense data, dense model
-            val weightGrad: Matrix = Ufuncs.dot(graph.placeHolder.getFeats, true, backward, false)
+            val weightGrad: Matrix = Ufuncs.dot(graph.placeHolder.getFeats, true, backward, false, parallel)
               .imul(normal)
             PSMatrixUtils.incrementRowByMatrix(weightId, multiplier - 1, weightGrad)
           case _ => // sparse data, dense or sparse model, note: dense data, sparse model is not allowed

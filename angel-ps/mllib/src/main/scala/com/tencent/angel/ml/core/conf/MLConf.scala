@@ -198,6 +198,11 @@ object MLConf {
   /** The predict error of all samples */
   val TRAIN_ERROR = "train.error"
   val VALID_ERROR = "validate.error"
+
+  /** The predict error of all samples */
+  val IS_PARALLEL = "parallel"
+  val DEFAULT_IS_PARALLEL = true
+
 }
 
 class MLConf {}

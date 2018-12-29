@@ -39,6 +39,10 @@ public abstract class Matrix extends MathObject {
     throw new NotImplementedException();
   }
 
+  public Matrix dot(Matrix other) {
+    throw new NotImplementedException();
+  }
+
   public abstract Matrix iadd(int rowId, Vector other);
 
   public abstract Matrix add(int rowId, Vector other);
