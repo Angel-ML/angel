@@ -57,10 +57,10 @@ public class LRTest {
       // Validation sample Ratio
       double vRatio = 0.1;
       // Data format, libsvm or dummy
-      String dataFmt = "dummy";
+      String dataFmt = "libsvm";
       // Model type
 
-      String modelType = String.valueOf(RowType.T_FLOAT_SPARSE_LONGKEY);
+      String modelType = String.valueOf(RowType.T_FLOAT_DENSE);
 
 
       // Learning rate
@@ -92,9 +92,8 @@ public class LRTest {
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 2);
 
       //set sgd LR algorithm parameters #feature #epoch
-      long range = Integer.MAX_VALUE + 10L;
       conf.set(MLConf.ML_MODEL_TYPE(), modelType);
-      conf.setLong(MLConf.ML_FEATURE_INDEX_RANGE(), range);
+      conf.setLong(MLConf.ML_FEATURE_INDEX_RANGE(), featureNum);
       conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
       conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
       conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
@@ -118,7 +117,7 @@ public class LRTest {
 
   private void trainTest() throws Exception {
     try {
-      String inputPath = "../../data/a9a/a9a_123d_train.dummy";
+      String inputPath = "../../data/a9a/a9a_123d_train.libsvm";
       String savePath = LOCAL_FS + TMP_PATH + "/model";
       String logPath = LOCAL_FS + TMP_PATH + "/LRlog";
 
@@ -141,7 +140,7 @@ public class LRTest {
 
   private void predictTest() throws Exception {
     try {
-      String inputPath = "../../data/a9a/a9a_123d_test.dummy";
+      String inputPath = "../../data/a9a/a9a_123d_test.libsvm";
       String loadPath = LOCAL_FS + TMP_PATH + "/model";
       String predictPath = LOCAL_FS + TMP_PATH + "/predict";
 
