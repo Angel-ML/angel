@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -24,82 +24,69 @@ import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.enhance.MMUpdateParam;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.vector.ServerRow;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class AdamUpdateFunc extends OptMMUpdateFunc {
+    private static final Log LOG = LogFactory.getLog(AdamUpdateFunc.class);
 
-  public AdamUpdateFunc(int matId, int factor, double gamma, double epsilon, double beta, double lr,
-    double regParam, int iteration) {
-    super(matId, new int[] {factor},
-            new double[] {gamma, epsilon, beta, lr, regParam, iteration, 1});
-  }
-
-  public AdamUpdateFunc(int matId, int factor, double gamma, double epsilon, double beta, double lr,
-                        double regParam, int iteration, int batchSize) {
-    super(matId, new int[] {factor},
-            new double[] {gamma, epsilon, beta, lr, regParam, iteration, batchSize});
-  }
-
-  public AdamUpdateFunc() {
-    super();
-  }
-
-  @Override public void partitionUpdate(PartitionUpdateParam partParam) {
-    ServerPartition part = psContext.getMatrixStorageManager()
-      .getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
-
-    MMUpdateParam.MMPartitionUpdateParam vs2 = (MMUpdateParam.MMPartitionUpdateParam) partParam;
-    int offset = vs2.getRowIds()[0];
-
-    double[] scalars = vs2.getScalars();
-
-    double gamma = scalars[0];
-    double epsilon = scalars[1];
-    double beta = scalars[2];
-    double lr = scalars[3];
-    double regParam = scalars[4];
-    double iteration = scalars[5];
-    double batchSize = scalars[6];
-
-    update(part, offset, gamma, beta, epsilon, lr, regParam, iteration, batchSize);
-
-  }
-
-  private void update(ServerPartition partition,
-                      int offset,
-                      double gamma, double beta,
-                      double epsilon, double stepSize,
-                      double regParam, double iteration,
-                      double batchSize) {
-    if (iteration == 0)
-      iteration = 1;
-
-    double powBeta = Math.pow(beta, iteration);
-    double powGamma = Math.pow(gamma, iteration);
-
-    for (int f = 0; f < offset; f++) {
-      Vector weight = partition.getRow(f).getSplit();
-      Vector velocity = partition.getRow(f + offset).getSplit();
-      Vector square = partition.getRow(f + 2 * offset).getSplit();
-      try {
-        partition.getRow(f + 3 * offset).startWrite();
-        Vector gradient = partition.getRow(f + 3 * offset).getSplit();
-
-        if (batchSize > 1)
-          gradient.idiv(batchSize);
-
-        OptFuncs.iexpsmoothing(velocity, gradient, beta);
-        OptFuncs.iexpsmoothing2(square, gradient, gamma);
-
-        Vector delta = OptFuncs.adamdelta(velocity, square, powBeta, powGamma);
-        if (regParam != 0.0) {
-          weight.imul(1 - stepSize * regParam);
-        }
-        weight.iaxpy(delta, -stepSize);
-        gradient.clear();
-      } finally {
-        partition.getRow(f + 3 * offset).endWrite();
-      }
+    public AdamUpdateFunc() {
+        super();
     }
-  }
+
+    public AdamUpdateFunc(int matId, int factor, double gamma, double epsilon, double beta, double lr,
+                          double regParam, int iteration) {
+        super(matId, new int[]{factor}, new double[]{gamma, epsilon, beta, lr, regParam, iteration, 1});
+    }
+
+    public AdamUpdateFunc(int matId, int factor, double gamma, double epsilon, double beta, double lr,
+                          double regParam, int iteration, int batchSize) {
+        super(matId, new int[]{factor}, new double[]{gamma, epsilon, beta, lr, regParam, iteration, batchSize});
+    }
+
+    @Override
+    public void update(ServerPartition partition, int factor, double[] scalars) {
+        double gamma = scalars[0];
+        double epsilon = scalars[1];
+        double beta = scalars[2];
+        double lr = scalars[3];
+        double regParam = scalars[4];
+        double epoch = scalars[5];
+        double batchSize = scalars[6];
+
+        if (epoch == 0)
+            epoch = 1;
+
+        double powBeta = Math.pow(beta, epoch);
+        double powGamma = Math.pow(gamma, epoch);
+
+        for (int f = 0; f < factor; f++) {
+            ServerRow gradientServerRow = partition.getRow(f + 3 * factor);
+            try {
+                gradientServerRow.startWrite();
+                Vector weight = partition.getRow(f).getSplit();
+                Vector velocity = partition.getRow(f + factor).getSplit();
+                Vector square = partition.getRow(f + 2 * factor).getSplit();
+                Vector gradient = gradientServerRow.getSplit();
+
+                if (batchSize > 1)
+                    gradient.idiv(batchSize);
+
+                if (regParam != 0.0) {
+                    gradient.iaxpy(weight, regParam);
+                }
+
+                OptFuncs.iexpsmoothing(velocity, gradient, beta);
+                OptFuncs.iexpsmoothing2(square, gradient, gamma);
+
+                Vector delta = OptFuncs.adamdelta(velocity, square, powBeta, powGamma);
+                weight.iaxpy(delta, -lr);
+                gradient.clear();
+            } finally {
+                gradientServerRow.endWrite();
+            }
+        }
+    }
 
 }

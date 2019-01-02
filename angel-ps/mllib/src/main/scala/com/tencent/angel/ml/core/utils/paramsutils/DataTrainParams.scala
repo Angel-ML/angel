@@ -108,13 +108,20 @@ class TrainParams(val epoch: Option[Int],
                   val numUpdatePerEpoch: Option[Int],
                   val batchSize: Option[Int],
                   val lr: Option[Double],
-                  val decay: Option[Double]) {
+                  val decayClass: Option[String],
+                  val decayAlpha: Option[Double],
+                  val decayBeta: Option[Double],
+                  val decayPower: Option[Double]
+                 ) {
   def updateConf(conf: SharedConf): Unit = {
     epoch.foreach(v => conf.setInt(MLConf.ML_EPOCH_NUM, v))
     numUpdatePerEpoch.foreach(v => conf.setInt(MLConf.ML_NUM_UPDATE_PER_EPOCH, v))
     batchSize.foreach(v => conf.setInt(MLConf.ML_MINIBATCH_SIZE, v))
     lr.foreach(v => conf.setDouble(MLConf.ML_LEARN_RATE, v))
-    decay.foreach(v => conf.setDouble(MLConf.ML_LEARN_DECAY, v))
+    decayClass.foreach(v => conf.setString(MLConf.ML_OPT_DECAY_CLASS_NAME, v))
+    decayAlpha.foreach(v => conf.setDouble(MLConf.ML_OPT_DECAY_ALPHA, v))
+    decayBeta.foreach(v => conf.setDouble(MLConf.ML_OPT_DECAY_BETA, v))
+    decayPower.foreach(v => conf.setDouble(MLConf.ML_OPT_DECAY_POWER, v))
   }
 }
 
@@ -123,7 +130,7 @@ object TrainParams {
 
   def apply(json: JValue): TrainParams = {
     json match {
-      case JNothing => new TrainParams(None, None, None, None, None)
+      case JNothing => new TrainParams(None, None, None, None, None, None, None, None)
       case jast: JValue =>
         val epoch = jast \ ParamKeys.epoch match {
           case JNothing => None
@@ -145,12 +152,27 @@ object TrainParams {
           case v: JValue => Some(v.extract[Double])
         }
 
-        val decay = jast \ ParamKeys.decay match {
+        val decayClass = jast \ ParamKeys.decayClass match {
+          case JNothing => None
+          case v: JValue => Some(v.extract[String])
+        }
+
+        val decayAlpha = jast \ ParamKeys.decayAlpha match {
           case JNothing => None
           case v: JValue => Some(v.extract[Double])
         }
 
-        new TrainParams(epoch, numUpdatePerEpoch, batchSize, lr, decay)
+        val decayBeta = jast \ ParamKeys.decayBeta match {
+          case JNothing => None
+          case v: JValue => Some(v.extract[Double])
+        }
+
+        val decayPower = jast \ ParamKeys.decayPower match {
+          case JNothing => None
+          case v: JValue => Some(v.extract[Double])
+        }
+
+        new TrainParams(epoch, numUpdatePerEpoch, batchSize, lr, decayClass, decayAlpha, decayBeta, decayPower)
     }
   }
 }

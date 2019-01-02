@@ -24,21 +24,17 @@ import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers.AngelGraph
 
 object OptUtils {
-  def getOptMultiplier(optimizer: Optimizer): Int = {
-    optimizer match {
-      case _: Momentum => 3
-      case _: Adam => 4
-      case _: FTRL => 4
-      case _ => 2
-    }
-  }
+  def getSlotNum(optimizer: Optimizer): Int = optimizer.getNumSlot
 
-  def getOptMultiplier(optimizer: String): Int = {
+  def getSlotNum(optimizer: String): Int = {
     optimizer.toLowerCase match {
-      case "momentum" => 3
-      case "adam" => 4
-      case "ftrl" => 4
-      case _ => 2
+      case "sgd" => 1
+      case "momentum" => 2
+      case "adam" => 3
+      case "ftrl" => 3
+      case "adagrad" => 2
+      case "adadelta" => 3
+      case _ => 1
     }
   }
 
@@ -58,6 +54,12 @@ object OptUtils {
         val alpha: Double = conf.getDouble(MLConf.ML_OPT_FTRL_ALPHA, 0.1)
         val beta: Double = conf.getDouble(MLConf.ML_OPT_FTRL_BETA, 1.0)
         new FTRL(lr0, alpha, beta)
+      case "adagrad" =>
+        val beta: Double = conf.getDouble(MLConf.ML_OPT_ADAGRAD_BETA, 0.9)
+        new AdaGrad(lr0, beta)
+      case "adadelta" =>
+        val beta: Double = conf.getDouble(MLConf.ML_OPT_ADADELTA_BETA, 0.9)
+        new AdaDelta(lr0, beta)
       case _ =>
         new SGD(lr0)
     }
@@ -67,7 +69,7 @@ object OptUtils {
     mode match {
       case RunningMode.ANGEL_PS => 1.0
       case RunningMode.ANGEL_PS_WORKER => graph.placeHolder.getBatchSize * graph.taskNum
+      case RunningMode.ANGEL_LOCAL => graph.placeHolder.getBatchSize
     }
   }
-
 }

@@ -5,7 +5,7 @@ import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 class CosineDecayRestarts(eta: Double, alpha: Double = 0.001, tMul:Double=2.0, mMul:Double=1.0) extends StepSizeScheduler {
   assert(tMul >= 1.0 && mMul <= 1.0)
   private var current: Int = 0
-  private val interval: Int = SharedConf.get().getInt(MLConf.ML_DECAY_INTERVALS, 100)
+  private val interval: Int = SharedConf.get().getInt(MLConf.ML_OPT_DECAY_INTERVALS, 100)
 
   override def next(): Double = {
     current += 1

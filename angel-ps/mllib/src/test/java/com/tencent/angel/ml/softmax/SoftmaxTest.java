@@ -96,7 +96,7 @@ public class SoftmaxTest {
       conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
       conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
       conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
-      conf.set(MLConf.ML_LEARN_DECAY(), String.valueOf(decay));
+      conf.set(MLConf.ML_OPT_DECAY_ALPHA(), String.valueOf(decay));
       conf.set(MLConf.ML_REG_L2(), String.valueOf(reg));
       conf.setLong(MLConf.ML_MODEL_SIZE(), featureNum);
       conf.setInt(MLConf.ML_NUM_CLASS(), classNum);
