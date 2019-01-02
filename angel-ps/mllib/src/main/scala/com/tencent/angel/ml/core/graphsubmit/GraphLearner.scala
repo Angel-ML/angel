@@ -40,14 +40,13 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
   val epochNum: Int = SharedConf.epochNum
   val indexRange: Long = SharedConf.indexRange
   val modelSize: Long = SharedConf.modelSize
-  val decay: Double = SharedConf.decay
   val lr0: Double = SharedConf.learningRate
 
   // Init Graph Model
   val model: GraphModel = GraphModel(modelClassName, conf, ctx)
   model.buildNetwork()
   val graph: AngelGraph = model.graph
-  val ssScheduler: StepSizeScheduler = new WarmRestarts(lr0, lr0/100)
+  val ssScheduler: StepSizeScheduler = StepSizeScheduler(SharedConf.getStepSizeScheduler, lr0)
 
   def trainOneEpoch(epoch: Int, iter: Iterator[Array[LabeledData]], numBatch: Int): Double = {
     var batchCount: Int = 0
@@ -103,7 +102,7 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
             negTrainData: DataBlock[LabeledData],
             validationData: DataBlock[LabeledData]): MLModel = {
     LOG.info(s"Task[${ctx.getTaskIndex}]: Starting to train ...")
-    LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epochNum, initLearnRate=$lr0, " + s"learnRateDecay=$decay")
+    LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epochNum, initLearnRate=$lr0")
 
     val trainDataSize = if (negTrainData == null) posTrainData.size() else {
       posTrainData.size() + negTrainData.size()
@@ -124,8 +123,11 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
     val batchSize: Int = (trainDataSize + numBatch - 1) / numBatch
     val batchData = new Array[LabeledData](batchSize)
 
-    if (SharedConf.useShuffle && negTrainData == null) {
+    if (SharedConf.useShuffle) {
       posTrainData.shuffle()
+      if (negTrainData != null) {
+        negTrainData.shuffle()
+      }
     }
 
     while (ctx.getEpoch < epochNum) {

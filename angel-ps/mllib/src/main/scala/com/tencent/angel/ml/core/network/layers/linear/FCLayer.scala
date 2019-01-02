@@ -53,8 +53,8 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
   val numTask: Int = sharedConf.get(AngelConf.ANGEL_WORKERGROUP_NUMBER).toInt
   val mode = SharedConf.runningMode()
 
-  val multiplier: Int = OptUtils.getOptMultiplier(optimizer)
-  private val psRows: Int = multiplier
+  val numSlot: Int = OptUtils.getSlotNum(optimizer)
+  private val psRows: Int = numSlot + 1
   private val psCols = inputLayer.outputDim * outputDim
   private val weightCtx = PSMatrixUtils.createPSMatrixCtx(s"${name}_weight", psRows, psCols, modelType)
   private val biasCtx = PSMatrixUtils.createPSMatrixCtx(s"${name}_bias", 1, outputDim, modelType)
@@ -147,9 +147,9 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
           Ufuncs.dot(inputLayer.calOutput(), true, backward, false).idiv(normal)
         }
 
-        PSMatrixUtils.incrementRowByMatrix(weightId, multiplier - 1, weightGrad)
+        PSMatrixUtils.incrementRowByMatrix(weightId, numSlot, weightGrad)
 
-        PSMatrixUtils.incrementRow(biasId, 0, backward.average(0).imul(-optimizer.lr / graph.taskNum))
+        PSMatrixUtils.incrementRow(biasId, 0, backward.average(0).imul(-optimizer.getLR / graph.taskNum))
 
         status = STATUS.Gradient
       case _ =>

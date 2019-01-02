@@ -54,24 +54,24 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
   val modelsize = SharedConf.modelSize
 
 
-  private val multiplier = OptUtils.getOptMultiplier(optimizer)
+  private val numSlot = OptUtils.getSlotNum(optimizer)
 
   private val weightCtx: MatrixContext = (inputDataFormat, NetUtils.storageType(modelType)) match {
     case ("dense", "dense" | "component_dense") => // dense data, dense model
       // in this condition, all the parameters are stored in one row
-      val psRows: Int = multiplier
+      val psRows: Int = numSlot + 1
       val psCols = SharedConf.indexRange * outputDim
       PSMatrixUtils.createPSMatrixCtx(s"${name}_weight", psRows, psCols, modelType)
     // in this condition, the shape of weight matrix is (inputDim, outputDim)
     // and inputDim = SharedConf.indexRange
     case ("libsvm" | "dummy", "dense" | "component_dense") => // sparse data, dense model
-      val psRows: Int = outputDim * multiplier
+      val psRows: Int = outputDim * (numSlot + 1)
       val psCols = SharedConf.indexRange
       PSMatrixUtils.createPSMatrixCtx(s"${name}_weight", psRows, psCols, modelType)
     // in this condition, the shape of weight matrix is (outputDim, inputDim)
     // and inputDim = SharedConf.indexRange
     case ("libsvm" | "dummy", "sparse" | "component_sparse") => // sparse data, sparse model
-      val psRows: Int = outputDim * multiplier
+      val psRows: Int = outputDim * (numSlot + 1)
       val psCols = SharedConf.indexRange
       val wCtx = PSMatrixUtils.createPSMatrixCtx(s"${name}_weight", psRows, psCols, modelType)
       // in this condition, the shape of weight matrix is (outputDim, inputDim)
@@ -178,7 +178,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
           case ("dense", "dense" | "component_dense") => // dense data, dense model
             val weightGrad: Matrix = Ufuncs.dot(graph.placeHolder.getFeats, true, backward, false)
               .imul(normal)
-            PSMatrixUtils.incrementRowByMatrix(weightId, multiplier - 1, weightGrad)
+            PSMatrixUtils.incrementRowByMatrix(weightId, numSlot, weightGrad)
           case _ => // sparse data, dense or sparse model, note: dense data, sparse model is not allowed
             val vectors = (0 until outputDim).toArray.map { colId =>
               val weightRowGrad = valueType match {
@@ -191,7 +191,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
               }
 
               weightRowGrad.setMatrixId(weight.getMatrixId)
-              weightRowGrad.setRowId(outputDim * (multiplier - 1) + colId)
+              weightRowGrad.setRowId(outputDim * numSlot + colId)
               weightRowGrad.setClock(weight.getClock)
 
               weightRowGrad
@@ -201,7 +201,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
         }
 
 
-        PSMatrixUtils.incrementRow(biasId, 0, backward.average(0).imul(-optimizer.lr / graph.taskNum))
+        PSMatrixUtils.incrementRow(biasId, 0, backward.average(0).imul(-optimizer.getLR / graph.taskNum))
 
         status = STATUS.Gradient
       case _ =>

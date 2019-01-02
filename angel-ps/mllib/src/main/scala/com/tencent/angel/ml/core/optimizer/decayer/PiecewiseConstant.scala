@@ -7,7 +7,7 @@ class PiecewiseConstant(eta:Double, boundaries:Array[Int], values: Array[Double]
 
   private var current: Int = 0
   private var currIdx: Int = 0
-  private val interval: Int = SharedConf.get().getInt(MLConf.ML_DECAY_INTERVALS, 100)
+  private val interval: Int = SharedConf.get().getInt(MLConf.ML_OPT_DECAY_INTERVALS, 100)
 
   override def next(): Double = {
     current += 1

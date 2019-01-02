@@ -13,11 +13,8 @@
     "modeltype": "T_FLOAT_DENSE"
   },
   "default_optimizer": {
-    "type": "FTRL",
-    "alpha": 0.1,
-    "beta": 0.001,
-    "reg1": 0.00001,
-    "reg2": 0.001
+    "type": "adam",
+    "reg2": 0.01
   },
   "layers": [
     {

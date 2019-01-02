@@ -53,7 +53,7 @@ public class LRTest {
       // Feature number of train data
       int featureNum = 123;
       // Total iteration number
-      int epochNum = 100;
+      int epochNum = 10;
       // Validation sample Ratio
       double vRatio = 0.1;
       // Data format, libsvm or dummy
@@ -64,13 +64,13 @@ public class LRTest {
 
 
       // Learning rate
-      double learnRate = 5.0;
+      double learnRate = 1.0;
       // Decay of learning rate
       double decay = 0.05;
       // Regularization coefficient
       double reg = 0.001;
       double posnegRatio = 0.1;
-      String optimizer = "FTRL";
+      String optimizer = "Momentum";
 
       // Set local deploy mode
       conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
@@ -98,7 +98,7 @@ public class LRTest {
       conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
       conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
       conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
-      conf.set(MLConf.ML_LEARN_DECAY(), String.valueOf(decay));
+      conf.set(MLConf.ML_OPT_DECAY_ALPHA(), String.valueOf(decay));
       conf.set(MLConf.ML_REG_L2(), String.valueOf(reg));
       conf.setLong(MLConf.ML_MODEL_SIZE(), 123);
       conf.set(MLConf.ML_INPUTLAYER_OPTIMIZER(), optimizer);
