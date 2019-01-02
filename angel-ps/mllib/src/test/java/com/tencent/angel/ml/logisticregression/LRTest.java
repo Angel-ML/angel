@@ -38,7 +38,7 @@ public class LRTest {
   private Configuration conf = new Configuration();
   private static final Log LOG = LogFactory.getLog(LRTest.class);
   private static String LOCAL_FS = FileSystem.DEFAULT_FS;
-  private static String CLASSBASE = "com.tencent.angel.ml.classification.";
+  private static String CLASSBASE = "com.tencent.angel.ml.core.graphsubmit.";
   private static String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
 
   static {
@@ -56,9 +56,9 @@ public class LRTest {
       int epochNum = 10;
       // Validation sample Ratio
       double vRatio = 0.1;
-      // Data format, libsvm or dummy
-      String dataFmt = "libsvm";
+
       // Model type
+      String jsonFile = "E:\\github\\fitzwang\\angel\\angel-ps\\mllib\\src\\test\\jsons\\logreg.json";
 
       String modelType = String.valueOf(RowType.T_FLOAT_DENSE);
 
@@ -83,9 +83,6 @@ public class LRTest {
       conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
       conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
 
-      // Set data format
-      conf.set(MLConf.ML_DATA_INPUT_FORMAT(), dataFmt);
-
       //set angel resource parameters #worker, #task, #PS
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
       conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
@@ -102,7 +99,8 @@ public class LRTest {
       conf.setLong(MLConf.ML_MODEL_SIZE(), 123);
       conf.set(MLConf.ML_INPUTLAYER_OPTIMIZER(), optimizer);
       // conf.setDouble(MLConf.ML_DATA_POSNEG_RATIO(), posnegRatio);
-      conf.set(MLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "LogisticRegression");
+      conf.set(MLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "GraphModel");
+      conf.setStrings(AngelConf.ANGEL_ML_CONF, jsonFile);
     } catch (Exception x) {
       LOG.error("setup failed ", x);
       throw x;
@@ -112,14 +110,20 @@ public class LRTest {
   @Test public void testLR() throws Exception {
     setConf();
     trainTest();
-    predictTest();
+    // predictTest();
   }
 
   private void trainTest() throws Exception {
     try {
-      String inputPath = "../../data/a9a/a9a_123d_train.libsvm";
+      // Data format, libsvm or dummy
+      String dataFmt = "libsvm";
+
+      String inputPath = "../../data/a9a/a9a_123d_train." + dataFmt;
       String savePath = LOCAL_FS + TMP_PATH + "/model";
       String logPath = LOCAL_FS + TMP_PATH + "/LRlog";
+
+      // Set data format
+      conf.set(MLConf.ML_DATA_INPUT_FORMAT(), dataFmt);
 
       // Set trainning data path
       conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
@@ -140,9 +144,15 @@ public class LRTest {
 
   private void predictTest() throws Exception {
     try {
-      String inputPath = "../../data/a9a/a9a_123d_test.libsvm";
+      String dataFmt = "dummy";
+
+      String inputPath = "../../data/a9a/a9a_123d_test." + dataFmt;
       String loadPath = LOCAL_FS + TMP_PATH + "/model";
       String predictPath = LOCAL_FS + TMP_PATH + "/predict";
+
+
+      // Set data format
+      conf.set(MLConf.ML_DATA_INPUT_FORMAT(), dataFmt);
 
       // Set trainning data path
       conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, inputPath);

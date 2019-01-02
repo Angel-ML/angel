@@ -143,7 +143,7 @@ object MLConf {
 
   // Reg param
   val ML_REG_L2 = "ml.reg.l2"
-  val DEFAULT_ML_REG_L2 = 0.005
+  val DEFAULT_ML_REG_L2 = 0.0
   val ML_REG_L1 = "ml.reg.l1"
   val DEFAULT_ML_REG_L1 = 0.0
 

@@ -41,6 +41,8 @@ object OptParams {
   val adam: String = "adam"
   val ftrl: String = "ftrl"
   val sgd: String = "sgd"
+  val adagrad: String = "adagrad"
+  val adadelta: String = "adadelta"
 
   private def nameMatch(json: JValue, name: String): Boolean = {
     json.extract[String].trim.equalsIgnoreCase(name)
@@ -56,6 +58,10 @@ object OptParams {
         FTRLParams(jast.extract[String].trim, Some(1.0), Some(0.1), Some(0.02), None, None)
       case jast: JString if nameMatch(jast, momentum) =>
         MomentumParams(jast.extract[String].trim, Some(1.0), Some(0.9), None, None)
+      case jast: JString if nameMatch(jast, adagrad) =>
+        AdaGradParams(jast.extract[String].trim, Some(1.0), Some(0.9), None, None)
+      case jast: JString if nameMatch(jast, adadelta) =>
+        AdaDeltaParams(jast.extract[String].trim, Some(1.0), Some(0.9), None, None)
       case jast: JString if nameMatch(jast, sgd) =>
         new OptParams(jast.extract[String].trim, Some(1.0), None, None)
       case jast: JString => throw new AngelException(s"No such a optimizer: ${jast.extract[String]}!")
@@ -109,6 +115,20 @@ object OptParams {
             }
 
             MomentumParams(optType, learningRate, momentum, reg1, reg2)
+          case `adagrad` =>
+            val beta: Option[Double] = json \ ParamKeys.beta match {
+              case JNothing => Some(0.9)
+              case v: JValue => Some(v.extract[Double])
+            }
+
+            AdaGradParams(optType, learningRate, beta, reg1, reg2)
+          case `adadelta` =>
+            val beta: Option[Double] = json \ ParamKeys.beta match {
+              case JNothing => Some(0.9)
+              case v: JValue => Some(v.extract[Double])
+            }
+
+            AdaDeltaParams(optType, learningRate, beta, reg1, reg2)
           case `sgd` =>
             new OptParams(optType, learningRate, reg1, reg2)
           case _ => throw new AngelException(s"No such a optimizer: $optType!")
@@ -126,7 +146,7 @@ case class AdamParams(override val name: String,
   override def build(): Optimizer = {
     val opt = new Adam(lr.getOrElse(1.0), gamma.getOrElse(0.99), beta.getOrElse(0.9))
     reg1.foreach(r1 => opt.setRegL1Param(r1))
-    reg2.foreach(r2 => opt.setRegL1Param(r2))
+    reg2.foreach(r2 => opt.setRegL2Param(r2))
     opt
   }
 }
@@ -140,7 +160,7 @@ case class FTRLParams(override val name: String,
   override def build(): Optimizer = {
     val opt = new FTRL(lr.getOrElse(1.0), alpha.getOrElse(0.1), beta.getOrElse(0.02))
     reg1.foreach(r1 => opt.setRegL1Param(r1))
-    reg2.foreach(r2 => opt.setRegL1Param(r2))
+    reg2.foreach(r2 => opt.setRegL2Param(r2))
     opt
   }
 }
@@ -153,7 +173,33 @@ case class MomentumParams(override val name: String,
   override def build(): Optimizer = {
     val opt = new Momentum(lr.getOrElse(1.0), momentum.getOrElse(0.9))
     reg1.foreach(r1 => opt.setRegL1Param(r1))
-    reg2.foreach(r2 => opt.setRegL1Param(r2))
+    reg2.foreach(r2 => opt.setRegL2Param(r2))
+    opt
+  }
+}
+
+case class AdaGradParams(override val name: String,
+                         override val lr: Option[Double],
+                         beta: Option[Double],
+                         override val reg1: Option[Double],
+                         override val reg2: Option[Double]) extends OptParams(name, lr, reg1, reg2) {
+  override def build(): Optimizer = {
+    val opt = new AdaGrad(lr.getOrElse(1.0), beta.getOrElse(0.9))
+    reg1.foreach(r1 => opt.setRegL1Param(r1))
+    reg2.foreach(r2 => opt.setRegL2Param(r2))
+    opt
+  }
+}
+
+case class AdaDeltaParams(override val name: String,
+                          override val lr: Option[Double],
+                          beta: Option[Double],
+                          override val reg1: Option[Double],
+                          override val reg2: Option[Double]) extends OptParams(name, lr, reg1, reg2) {
+  override def build(): Optimizer = {
+    val opt = new AdaDelta(lr.getOrElse(1.0), beta.getOrElse(0.9))
+    reg1.foreach(r1 => opt.setRegL1Param(r1))
+    reg2.foreach(r2 => opt.setRegL2Param(r2))
     opt
   }
 }
