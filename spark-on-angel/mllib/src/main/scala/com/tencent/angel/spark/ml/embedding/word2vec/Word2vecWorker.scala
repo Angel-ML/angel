@@ -7,7 +7,7 @@ import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ps.storage.matrix.PartitionSourceMap
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.ml.embedding.CBowModel
+import com.tencent.angel.spark.ml.embedding.{CBowModel, EmbeddingBase, SGNSModel}
 import com.tencent.angel.spark.ml.embedding.NEModel.NEDataSet
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel.W2VDataSet
 import com.tencent.angel.spark.ml.psf.embedding.bad._
@@ -43,9 +43,14 @@ class Word2vecWorker(numNode: Int,
 
     // calculate index
     start = System.currentTimeMillis()
-    val model = new CBowModel(window, negative, alpha, numNode, dimension)
+    val modelName = "cbow"
+    val model = modelName match {
+      case "cbow" => new CBowModel(window, negative, alpha, numNode, dimension)
+      case "sg" => new SGNSModel(window, negative, alpha, numNode, dimension)
+      case _ => new SGNSModel(window, negative, alpha, numNode, dimension) // default is SGNS
+    }
     val sentences = batch.asInstanceOf[W2VDataSet].sentences
-    val indices = model.indicesForCbow(sentences, seed)
+    val indices =  model.buildIndices(sentences, seed)
     end = System.currentTimeMillis()
     val calcuIndexTime = end - start
 
@@ -65,9 +70,9 @@ class Word2vecWorker(numNode: Int,
     for (i <- 0 until indices.length) index.put(indices(i), i)
     val deltas = new Array[Float](result.layers.length)
 
-    // cbow
+    // train
     start = System.currentTimeMillis()
-    val loss = model.cbow(sentences, seed, result.layers, index, deltas)
+    val loss = model.train(sentences, seed, result.layers, index, deltas)
     end = System.currentTimeMillis()
     val cbowTime = end - start
 

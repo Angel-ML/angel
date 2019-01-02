@@ -9,24 +9,13 @@ import scala.Tuple2;
 import java.util.Arrays;
 import java.util.Random;
 
-public class CBowModel {
-
-  private int window;
-  private int negative;
-  private float alpha;
-  private int numNode;
-  private int dimension;
-
+public class CBowModel extends EmbeddingBase{
 
   public CBowModel(int window, int negative, float alpha, int numNode, int dimension) {
-    this.window = window;
-    this.negative = negative;
-    this.alpha = alpha;
-    this.numNode = numNode;
-    this.dimension = dimension;
+    super(window, negative, alpha, numNode, dimension);
   }
 
-  public int[] indicesForCbow(int[][] sentences, int seed) {
+  public int[] buildIndices(int[][] sentences, int seed) {
     Random winRand = new Random(seed);
     Random negRand = new Random(seed + 1);
 
@@ -64,7 +53,7 @@ public class CBowModel {
     return indices.toIntArray();
   }
 
-  public Tuple2<Double, Integer> cbow(int[][] sentences, int seed, float[] layers, Int2IntOpenHashMap index, float[] deltas) {
+  public Tuple2<Double, Integer> train(int[][] sentences, int seed, float[] layers, Int2IntOpenHashMap index, float[] deltas) {
     Arrays.fill(deltas, 0.0f);
 
     Random winRand = new Random(seed);
