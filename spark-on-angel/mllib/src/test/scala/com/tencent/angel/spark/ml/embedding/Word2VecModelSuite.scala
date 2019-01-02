@@ -34,9 +34,9 @@ class Word2VecModelSuite extends PSFunSuite with SharedPSContext {
   val dim = 32
   val batchSize = 128
   val numPSPart = 2
-  val numEpoch = 5
+  val numEpoch = 2
   val negative = 5
-  val window = 6
+  val window = 3
   var param: Param = _
   var docs: RDD[Array[Int]] = _
 

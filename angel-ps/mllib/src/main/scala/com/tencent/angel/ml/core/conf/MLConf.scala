@@ -123,7 +123,7 @@ object MLConf {
 
   // Decays
   val ML_OPT_DECAY_CLASS_NAME = "ml.opt.decay.class.name"
-  val DEFAULT_ML_OPT_DECAY_CLASS_NAME = "WarmRestarts"
+  val DEFAULT_ML_OPT_DECAY_CLASS_NAME = "StandardDecay"
   val ML_OPT_DECAY_INTERVALS = "ml.opt.decay.intervals"
   val DEFAULT_ML_OPT_DECAY_INTERVALS = 100
   val ML_OPT_DECAY_ALPHA = "ml.opt.decay.alpha"
