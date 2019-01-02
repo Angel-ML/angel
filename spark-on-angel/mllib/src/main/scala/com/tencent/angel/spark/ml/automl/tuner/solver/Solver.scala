@@ -85,14 +85,17 @@ class Solver(
     */
   def feed(configs: Array[Configuration], Y: Array[Double]): Unit = {
     //println(s"feed ${configs.size} configurations")
-    surrogate.update(configs.map(_.getVector), Y)
+    if (surrogate.minimize)
+      surrogate.update(configs.map(_.getVector), Y.map(-_))
+    else
+      surrogate.update(configs.map(_.getVector), Y)
   }
 
   def feed(config: Configuration, y: Double): Unit = {
     if (surrogate.minimize)
-      surrogate.update(config.getVector, y)
-    else
       surrogate.update(config.getVector, -y)
+    else
+      surrogate.update(config.getVector, y)
   }
 
   def optimal(): (Vector, Double) = surrogate.curBest
