@@ -2,8 +2,9 @@ package com.tencent.angel.spark.ml.tree.gbdt.metadata
 
 import com.tencent.angel.spark.ml.tree.util.Maths
 
+
 object FeatureInfo {
-  private val ENUM_THRESHOLD: Int = 16
+  val ENUM_THRESHOLD: Int = 32
 
   def apply(numFeature: Int, splits: Array[Array[Float]]): FeatureInfo = {
     require(splits.length == numFeature)
@@ -31,7 +32,7 @@ object FeatureInfo {
     val empCnt = splits.count(_ == null)
     val numCnt = (splits, isCategorical).zipped.count(p => p._1 != null && !p._2)
     val catCnt = (splits, isCategorical).zipped.count(p => p._1 != null && p._2)
-    println(s"Count: empty[$empCnt], numerical[$numCnt], categorical[$catCnt]")
+    println(s"Feature info: empty[$empCnt], numerical[$numCnt], categorical[$catCnt]")
 
     new FeatureInfo(isCategorical, numBin, splits, defaultBins)
   }
@@ -42,15 +43,21 @@ object FeatureInfo {
     val numBin = new Array[Int](numFeature)
     val defaultBins = new Array[Int](numFeature)
     for (i <- 0 until numFeature) {
-      if (featTypes(i)) {
-        numBin(i) = splits(i).length + 1
-        defaultBins(i) = splits(i).length
-      } else {
-        numBin(i) = splits(i).length
-        defaultBins(i) = Maths.indexOf(splits(i), 0.0f)  // TODO: default bin for continuous feature
+      if (splits(i) != null) {
+        if (featTypes(i)) {
+          numBin(i) = splits(i).length + 1
+          defaultBins(i) = splits(i).length
+        } else {
+          numBin(i) = splits(i).length
+          defaultBins(i) = Maths.indexOf(splits(i), 0.0f)  // TODO: default bin for continuous feature
+        }
       }
     }
 
+    val empCnt = splits.count(_ == null)
+    val numCnt = (splits, featTypes).zipped.count(p => p._1 != null && !p._2)
+    val catCnt = (splits, featTypes).zipped.count(p => p._1 != null && p._2)
+    println(s"Feature info: empty[$empCnt], numerical[$numCnt], categorical[$catCnt]")
     new FeatureInfo(featTypes, numBin, splits, defaultBins)
   }
 }
@@ -65,4 +72,7 @@ case class FeatureInfo(featTypes: Array[Boolean], numBin: Array[Int],
   def getSplits(fid: Int) = splits(fid)
 
   def getDefaultBin(fid: Int) = defaultBins(fid)
+
+  def numFeature: Int = featTypes.length
+
 }

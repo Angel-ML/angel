@@ -1,5 +1,7 @@
 package com.tencent.angel.spark.ml.tree.util;
 
+import scala.Tuple2;
+
 import java.util.List;
 import java.util.Random;
 
@@ -155,6 +157,13 @@ public class Maths {
             }
         }
         return res;
+    }
+
+    public static Tuple2<Integer, Integer> avgSlice(int n, int numSlice, int sliceId) {
+        int avg = (n + numSlice - 1) / numSlice;
+        int from = avg * sliceId;
+        int end = sliceId + 1 < numSlice ? from + avg : n;
+        return Tuple2.apply(from, end);
     }
 
     public static int parent(int nodeId) {
@@ -448,7 +457,7 @@ public class Maths {
                     s += L[rowI + k] + L[rowJ + k];
                 }
                 L[rowI + j] = (i == j) ? Math.sqrt(A[rowI + i] - s)
-                        : 1.0f / L[rowJ + j] * (A[rowI + j] - s);
+                    : 1.0f / L[rowJ + j] * (A[rowI + j] - s);
             }
         }
         return L;

@@ -3,6 +3,12 @@ package com.tencent.angel.spark.ml.tree.objective.metric;
 public interface EvalMetric {
     Kind getKind();
 
+    double sum(float[] preds, float[] labels);
+
+    double sum(float[] preds, float[] labels, int start, int end);
+
+    double avg(double sum, int num);
+
     double eval(float[] preds, float[] labels);
 
     double evalOne(float pred, float label);

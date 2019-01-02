@@ -1,6 +1,29 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
+
 package com.tencent.angel.spark.ml.tree.sketch;
 
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Arrays;
+
 
 /**
  * Implementation of quantile sketch on the Java heap
@@ -94,8 +117,7 @@ public class HeapQuantileSketch extends QuantileSketch {
     }
 
     private void ensureLevels(long newN) {
-        int numLevels = 1 + (63 - Long.numberOfLeadingZeros(newN / (k * 2)));
-        int spaceNeeded = k * (numLevels + 2);
+        int spaceNeeded = SketchUtils.needBufferCapacity(k, newN);
         if (spaceNeeded <= combinedBufferCapacity) return;
         final float[] baseBuffer = combinedBuffer;
         combinedBuffer = Arrays.copyOf(baseBuffer, spaceNeeded);
@@ -177,7 +199,7 @@ public class HeapQuantileSketch extends QuantileSketch {
             merge((HeapQuantileSketch) other);
         } else {
             throw new QuantileSketchException("Cannot merge different " +
-                    "kinds of quantile sketches");
+                "kinds of quantile sketches");
         }
     }
 
@@ -203,7 +225,7 @@ public class HeapQuantileSketch extends QuantileSketch {
         for (int level = 0; bp != 0L; level++, bp >>>= 1) {
             if ((bp & 1L) != 0L) {
                 inPlacePropagationMerge(level, other.combinedBuffer,
-                        k * (level + 2), auxBuf, 0);
+                    k * (level + 2), auxBuf, 0);
             }
         }
 
@@ -215,7 +237,7 @@ public class HeapQuantileSketch extends QuantileSketch {
     }
 
     private void inPlacePropagationMerge(int beginLevel, final float[] buf, int bufStart,
-                                         final float[] auxBuf, int auxBufStart) {
+        final float[] auxBuf, int auxBufStart) {
         final float[] levelsArr = combinedBuffer;
         int endLevel = beginLevel;
         long tmp = bitPattern >>> beginLevel;
@@ -237,7 +259,7 @@ public class HeapQuantileSketch extends QuantileSketch {
             this.combinedBuffer = other.combinedBuffer.clone();
         } else {
             System.arraycopy(other.combinedBuffer, 0,
-                    this.combinedBuffer, 0, other.combinedBufferCapacity);
+                this.combinedBuffer, 0, other.combinedBufferCapacity);
         }
         this.baseBufferCount = other.baseBufferCount;
         this.bitPattern = other.bitPattern;
@@ -335,9 +357,67 @@ public class HeapQuantileSketch extends QuantileSketch {
         return samplesArr[left];
     }
 
+    public float[] tryDistinct(int maxItemNums) {
+        if (samplesArr == null || weightsArr == null)
+            makeSummary();
+
+        int cnt = 1;
+        for (int i = 1; i < samplesArr.length; i++) {
+            if (samplesArr[i] < samplesArr[i - 1])
+                throw new RuntimeException(String.format("%f > %f", samplesArr[i - 1], samplesArr[i]));
+            if (samplesArr[i] != samplesArr[i - 1]) {
+                cnt++;
+                if (cnt++ > maxItemNums)
+                    return null;
+            }
+        }
+        if (cnt != samplesArr.length) {
+            float[] res = new float[cnt];
+            res[0] = samplesArr[0];
+            int index = 1;
+            for (int i = 1; i < samplesArr.length; i++) {
+                if (samplesArr[i] != samplesArr[i - 1])
+                    res[index++] = samplesArr[i];
+            }
+            return res;
+        } else {
+            return samplesArr.clone();
+        }
+    }
+
     public int getK() {
         return k;
     }
 
+    private void writeObject(ObjectOutputStream oos) throws IOException {
+        oos.writeLong(n);
+        oos.writeLong(estimateN);
+        oos.writeFloat(minValue);
+        oos.writeFloat(maxValue);
+        oos.writeInt(k);
+        oos.writeInt(combinedBufferCapacity);
+        int size = Math.min(combinedBufferCapacity,
+            SketchUtils.needBufferCapacity(k, n));
+        for (int i = 0; i < size; i++)
+            oos.writeFloat(combinedBuffer[i]);
+        oos.writeInt(baseBufferCount);
+        oos.writeLong(bitPattern);
+    }
+
+    private void readObject(ObjectInputStream ois) throws ClassNotFoundException, IOException {
+        this.n = ois.readLong();
+        this.estimateN = ois.readLong();
+        this.minValue = ois.readFloat();
+        this.maxValue = ois.readFloat();
+        this.k = ois.readInt();
+        this.combinedBufferCapacity = ois.readInt();
+        this.combinedBuffer = new float[combinedBufferCapacity];
+        int size = Math.min(combinedBufferCapacity,
+            SketchUtils.needBufferCapacity(k, n));
+        for (int i = 0; i < size; i++)
+            this.combinedBuffer[i] = ois.readFloat();
+        this.baseBufferCount = ois.readInt();
+        this.bitPattern = ois.readLong();
+    }
 
 }

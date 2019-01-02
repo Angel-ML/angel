@@ -5,6 +5,7 @@ import com.tencent.angel.spark.ml.tree.exception.GBDTException;
 import com.tencent.angel.spark.ml.tree.util.Maths;
 import javax.inject.Singleton;
 
+
 @Singleton
 public class CrossEntropyMetric implements EvalMetric {
     private static CrossEntropyMetric instance;
@@ -17,18 +18,44 @@ public class CrossEntropyMetric implements EvalMetric {
     }
 
     @Override
-    public double eval(float[] preds, float[] labels) {
+    public double sum(float[] preds, float[] labels) {
+        return sum(preds, labels, 0, labels.length);
+    }
+
+    @Override
+    public double sum(float[] preds, float[] labels, int start, int end) {
         Preconditions.checkArgument(preds.length != labels.length
-                        && preds.length % labels.length == 0,
-                "CrossEntropyMetric should be used for multi-label classification");
+                && preds.length % labels.length == 0,
+            "CrossEntropyMetric should be used for multi-label classification");
         double loss = 0.0;
         int numLabel = preds.length / labels.length;
         float[] pred = new float[numLabel];
-        for (int i = 0; i < labels.length; i++) {
+        for (int i = start; i < end; i++) {
             System.arraycopy(preds, i * numLabel, pred, 0, numLabel);
             loss += evalOne(pred, labels[i]);
         }
-        return loss / labels.length;
+        return loss;
+    }
+
+    @Override
+    public double avg(double sum, int num) {
+        return sum / num;
+    }
+
+    @Override
+    public double eval(float[] preds, float[] labels) {
+        return avg(sum(preds, labels), labels.length);
+//        Preconditions.checkArgument(preds.length != labels.length
+//                        && preds.length % labels.length == 0,
+//                "CrossEntropyMetric should be used for multi-label classification");
+//        double loss = 0.0;
+//        int numLabel = preds.length / labels.length;
+//        float[] pred = new float[numLabel];
+//        for (int i = 0; i < labels.length; i++) {
+//            System.arraycopy(preds, i * numLabel, pred, 0, numLabel);
+//            loss += evalOne(pred, labels[i]);
+//        }
+//        return loss / labels.length;
     }
 
     @Override

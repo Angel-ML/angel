@@ -3,7 +3,6 @@ package com.tencent.angel.spark.ml.tree.gbdt.histogram;
 import com.tencent.angel.spark.ml.tree.tree.param.GBDTParam;
 import java.io.Serializable;
 
-
 public class BinaryGradPair implements GradPair, Serializable {
     private double grad;
     private double hess;
@@ -90,6 +89,19 @@ public class BinaryGradPair implements GradPair, Serializable {
 
     public double getHess() {
         return hess;
+    }
+
+    public void setGrad(double grad) {
+        this.grad = grad;
+    }
+
+    public void setHess(double hess) {
+        this.hess = hess;
+    }
+
+    public void set(double grad, double hess) {
+        this.grad = grad;
+        this.hess = hess;
     }
 
     @Override

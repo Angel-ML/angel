@@ -5,6 +5,7 @@ import com.tencent.angel.spark.ml.tree.util.Maths;
 import java.io.Serializable;
 import java.util.Arrays;
 
+
 public class MultiGradPair implements GradPair, Serializable {
     private double[] grad;
     private double[] hess;
@@ -116,6 +117,35 @@ public class MultiGradPair implements GradPair, Serializable {
 
     public double[] getHess() {
         return hess;
+    }
+
+    public void setGrad(double[] grad) {
+        this.grad = grad;
+    }
+
+    public void setHess(double[] hess) {
+        this.hess = hess;
+    }
+
+    public void set(double[] grad, double[] hess) {
+        this.grad = grad;
+        this.hess = hess;
+    }
+
+    public void set(double[] grad, double[] hess, int offset) {
+        // numClass is usually small, so we do not use arraycopy here
+        for (int i = 0; i < this.grad.length; i++) {
+            this.grad[i] = grad[i + offset];
+            this.hess[i] = hess[i + offset];
+        }
+    }
+
+    public void set(double[] grad, int gradOffset, double[] hess, int hessOffset) {
+        // numClass is usually small, so we do not use arraycopy here
+        for (int i = 0; i < this.grad.length; i++)
+            this.grad[i] = grad[i + gradOffset];
+        for (int i = 0; i < this.hess.length; i++)
+            this.hess[i] = hess[i + hessOffset];
     }
 
     @Override

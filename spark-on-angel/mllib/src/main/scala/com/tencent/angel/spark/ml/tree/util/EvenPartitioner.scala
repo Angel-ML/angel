@@ -21,3 +21,13 @@ class EvenPartitioner(numKey: Int, numPartition: Int) extends Partitioner {
     res
   }
 }
+
+class IdenticalPartitioner(numPartition: Int) extends Partitioner {
+  override def numPartitions: Int = numPartition
+
+  override def getPartition(key: Any): Int = {
+    val partId = key.asInstanceOf[Int]
+    require(partId < numPartition, s"Partition id $partId exceeds maximum partition num $numPartition")
+    partId
+  }
+}
