@@ -18,7 +18,7 @@ class AUCMetric extends EvalMetric {
   }
 
   override def avg(sum: Double, num: Int): Double = {
-    sum
+    sum / num
   }
 
   override def eval(preds: Array[Float], labels: Array[Float]): Double = {
