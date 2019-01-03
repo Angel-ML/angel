@@ -49,7 +49,7 @@
 * [Angel Json配置](./docs/basic/json_conf.md)
 
 ## Algorithm
-
+* [**Angel or Spark On Angel？**](./docs/algo/angel_or_spark_on_angel.md)
 * **Angel**
 	* **Traditional Machine Learning Methods**
 		* [Logistic Regression(LR)](./docs/algo/lr_on_angel.md)
