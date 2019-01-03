@@ -18,17 +18,18 @@
 
 package com.tencent.angel.spark.ml.tree.gbdt.trainer
 
+import java.util.concurrent.Executors
 import java.{util => ju}
 
 import com.tencent.angel.spark.ml.tree.gbdt.dataset.Dataset
 import com.tencent.angel.spark.ml.tree.gbdt.helper.{HistManager, SplitFinder}
 import com.tencent.angel.spark.ml.tree.gbdt.histogram.{BinaryGradPair, GradPair, MultiGradPair}
-import com.tencent.angel.spark.ml.tree.gbdt.metadata.FeatureInfo
-import com.tencent.angel.spark.ml.tree.gbdt.metadata.org.dma.gbdt4spark.algo.gbdt.metadata.InstanceInfo
+import com.tencent.angel.spark.ml.tree.gbdt.metadata.{FeatureInfo, InstanceInfo}
 import com.tencent.angel.spark.ml.tree.gbdt.tree.{GBTNode, GBTSplit, GBTTree}
 import com.tencent.angel.spark.ml.tree.objective.ObjectiveFactory
 import com.tencent.angel.spark.ml.tree.objective.loss.Loss
 import com.tencent.angel.spark.ml.tree.objective.metric.EvalMetric
+import com.tencent.angel.spark.ml.tree.objective.metric.EvalMetric.Kind
 import com.tencent.angel.spark.ml.tree.tree.param.GBDTParam
 import com.tencent.angel.spark.ml.tree.tree.split.SplitEntry
 import com.tencent.angel.spark.ml.tree.util.{Maths, RangeBitSet}
@@ -66,6 +67,8 @@ class FPGBDTTrainer(val workerId: Int, val param: GBDTParam,
 
   @transient private[gbdt] val histManager = HistManager(param, featureInfo)
   @transient private[gbdt] val splitFinder = SplitFinder(param, featureInfo)
+  @transient private[gbdt] val threadPool = if (param.numThread > 1)
+    Executors.newFixedThreadPool(param.numThread) else null
 
   @transient private[gbdt] val buildHistTime = new Array[Long](Maths.pow(2, param.maxDepth) - 1)
   @transient private[gbdt] val findSplitTime = new Array[Long](Maths.pow(2, param.maxDepth) - 1)
@@ -126,7 +129,7 @@ class FPGBDTTrainer(val workerId: Int, val param: GBDTParam,
     instanceInfo.resetPosInfo()
     // 4. calc grads
     val loss = getLoss
-    val sumGradPair = instanceInfo.calcGradPairs(labels, loss, param)
+    val sumGradPair = instanceInfo.calcGradPairs(labels, loss, param, threadPool)
     tree.getRoot.setSumGradPair(sumGradPair)
     histManager.setGradPair(0, sumGradPair)
     // 5. set root status
@@ -207,9 +210,9 @@ class FPGBDTTrainer(val workerId: Int, val param: GBDTParam,
     }
     timing {
       if (toBuild.head == 0) {
-        histManager.buildHistForRoot(trainData, instanceInfo)
+        histManager.buildHistForRoot(trainData, instanceInfo, threadPool)
       } else {
-        histManager.buildHistForNodes(toBuild, trainData, instanceInfo, toSubtract)
+        histManager.buildHistForNodes(toBuild, trainData, instanceInfo, toSubtract, threadPool)
       }
     } {t => buildHistTime(nids.min) = t}
     println(s"Build histograms cost ${System.currentTimeMillis() - buildStart} ms")
@@ -235,7 +238,7 @@ class FPGBDTTrainer(val workerId: Int, val param: GBDTParam,
   def getSplitResult(nid: Int, fidInWorker: Int, splitEntry: SplitEntry): RangeBitSet = {
     require(!splitEntry.isEmpty && splitEntry.getGain > param.minSplitGain)
     val splits = featureInfo.getSplits(fidInWorker)
-    timing(instanceInfo.getSplitResult(nid, fidInWorker, splitEntry, splits, trainData)) {
+    timing(instanceInfo.getSplitResult(nid, fidInWorker, splitEntry, splits, trainData, threadPool)) {
       t => getSplitResultTime(nid) = t
     }
   }
@@ -318,9 +321,15 @@ class FPGBDTTrainer(val workerId: Int, val param: GBDTParam,
     val metrics = evalMetrics.map(evalMetric => {
       val kind = evalMetric.getKind
       val trainSum = evalMetric.sum(instanceInfo.predictions, labels, slice._1, slice._2)
-      val trainMetric = evalMetric.avg(trainSum, slice._2 - slice._1)
+      val trainMetric = kind match {
+        case Kind.AUC => evalMetric.avg(trainSum, 1)
+        case _ => evalMetric.avg(trainSum, slice._2 - slice._1)
+      }
       val validSum = evalMetric.sum(validPreds, validLabels)
-      val validMetric = evalMetric.avg(validSum, validLabels.length)
+      val validMetric = kind match {
+        case Kind.AUC => evalMetric.avg(validSum, 1)
+        case _ => evalMetric.avg(validSum, validLabels.length)
+      }
       (kind, trainSum, trainMetric, validSum, validMetric)
     })
 
@@ -333,7 +342,7 @@ class FPGBDTTrainer(val workerId: Int, val param: GBDTParam,
 
   def finalizeModel(): Seq[GBTTree] = {
     println(s"Worker[$workerId] finalizing...")
-    histManager.shutdown()
+    if (threadPool != null) threadPool.shutdown()
     forest
   }
 

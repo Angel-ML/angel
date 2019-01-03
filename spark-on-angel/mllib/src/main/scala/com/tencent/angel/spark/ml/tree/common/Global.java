@@ -3,8 +3,10 @@ package com.tencent.angel.spark.ml.tree.common;
 public class Global {
     public static class Conf {
         // ML Conf
+        public static final String ML_MODEL_PATH = "spark.ml.model.path";
         public static final String ML_TRAIN_DATA_PATH = "spark.ml.train.path";
         public static final String ML_VALID_DATA_PATH = "spark.ml.valid.path";
+        public static final String ML_PRED_PATH = "spark.ml.pred.path";
         public static final String ML_VALID_DATA_RATIO = "spark.ml.valid.ratio";
         public static final double DEFAULT_ML_VALID_DATA_RATIO = 0.25;
         public static final String ML_PREDICT_DATA_PATH = "spark.ml.predict.path";

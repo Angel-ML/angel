@@ -1,13 +1,29 @@
 package com.tencent.angel.spark.ml.tree.util
 
-import com.tencent.angel.spark.ml.tree.data.{Instance, VerticalPartition => VP, HorizontalPartition => HP}
+import com.tencent.angel.spark.ml.tree.data.{Instance, HorizontalPartition => HP, VerticalPartition => VP}
 import org.apache.spark.ml.linalg.Vectors
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partitioner, SparkContext, TaskContext}
 
-import scala.collection.mutable.{ArrayBuilder => AB}
+import scala.collection.mutable.{ArrayBuffer, ArrayBuilder => AB}
+import scala.io.Source
+
 
 object DataLoader {
+
+  def fromDisk(input: String, dim: Int): Array[Instance] = {
+    val instances = ArrayBuffer[Instance]()
+    val reader = Source.fromFile(input).bufferedReader()
+    var line = reader.readLine()
+    while (line != null) {
+      line = line.trim
+      if (line.nonEmpty && !line.startsWith("#"))
+        instances += parseLibsvm(line, dim)
+      line = reader.readLine()
+    }
+    instances.toArray
+  }
+
   def loadLibsvmDP(input: String, dim: Int)(implicit sc: SparkContext): RDD[Instance] = {
     sc.textFile(input)
       .map(_.trim)

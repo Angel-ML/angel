@@ -3,14 +3,49 @@ package com.tencent.angel.spark.ml.tree.gbdt.dataset
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
-import scala.collection.mutable.{ArrayBuilder => AB}
-import java.{util => ju}
-
 import com.tencent.angel.spark.ml.tree.gbdt.metadata.FeatureInfo
 import com.tencent.angel.spark.ml.tree.sketch.HeapQuantileSketch
 import com.tencent.angel.spark.ml.tree.util.Maths
 
+import scala.collection.mutable.{ArrayBuilder => AB}
+import scala.io.Source
+import java.{util => ju}
+
 object Dataset extends Serializable {
+
+  def fromDisk(path: String, dim: Int): Dataset[Int, Float] = {
+    val labels = new AB.ofFloat
+    val indices = new AB.ofInt
+    val values = new AB.ofFloat
+    val indexEnds = new AB.ofInt
+    var curIndex = 0
+    labels.sizeHint(1 << 20)
+    indices.sizeHint(1 << 20)
+    values.sizeHint(1 << 20)
+    indexEnds.sizeHint(1 << 20)
+
+    val reader = Source.fromFile(path).bufferedReader()
+    var line = reader.readLine()
+    while (line != null) {
+      line = line.trim
+      if (line.nonEmpty && !line.startsWith("#")) {
+        val splits = line.split("\\s+|,").map(_.trim)
+        labels += splits(0).toFloat
+        for (i <- 0 until splits.length - 1) {
+          val kv = splits(i + 1).split(":")
+          indices += kv(0).toInt
+          values += kv(1).toFloat
+          curIndex += 1
+        }
+        indexEnds += curIndex
+      }
+      line = reader.readLine()
+    }
+
+    Dataset(Array(new LabeledPartition(labels.result(),
+      indices.result(), values.result(), indexEnds.result()))
+    )
+  }
 
   def fromTextFile(path: String, dim: Int)
                   (implicit sc: SparkContext): RDD[LabeledPartition[Int, Float]] = {
@@ -55,6 +90,21 @@ object Dataset extends Serializable {
         sketches(indices(i)).update(values(i))
     })
     sketches
+  }
+
+  def binning(dataset: Dataset[Int, Float], featureInfo: FeatureInfo): Dataset[Int, Int] = {
+    val res = Dataset[Int, Int](dataset.numPartition, dataset.numInstance)
+    for (partId <- 0 until dataset.numPartition) {
+      val indices = dataset.partitions(partId).indices
+      val values = dataset.partitions(partId).values
+      val bins = Array.ofDim[Int](indices.length)
+      for (i <- indices.indices) {
+        bins(i) = Maths.indexOf(featureInfo.getSplits(indices(i)), values(i))
+      }
+      val indexEnds = dataset.partitions(partId).indexEnds
+      res.appendPartition(indices, bins, indexEnds)
+    }
+    res
   }
 
   def columnGrouping(dataset: Dataset[Int, Float], fidToGroupId: Array[Int],
@@ -109,7 +159,7 @@ object Dataset extends Serializable {
   def merge(partitions: Array[Partition[Short, Byte]]): Dataset[Int, Int] = {
     val numPartition = partitions.length
     val numInstance = partitions.map(_.size).sum
-    val res = new Dataset[Int, Int](numPartition, numInstance)
+    val res = Dataset[Int, Int](numPartition, numInstance)
     partitions.foreach(partition => {
       val indices = partition.indices.map(_.toInt - Short.MinValue)
       val bins = partition.values.map(_.toInt - Byte.MinValue)
@@ -166,11 +216,11 @@ private[gbdt] class LabeledPartition
 [@specialized(Byte, Short, Int, Long, Float, Double) K,
 @specialized(Byte, Short, Int, Long, Float, Double) V]
 (val labels: Array[Float], _indices: Array[K], _values: Array[V], _indexEnds: Array[Int])
-extends Partition[K, V](_indices, _values, _indexEnds)
+  extends Partition[K, V](_indices, _values, _indexEnds)
 
 class Dataset[@specialized(Byte, Short, Int, Long, Float, Double) K,
 @specialized(Byte, Short, Int, Long, Float, Double) V](maxNumPartition: Int, maxNumInstance: Int)
-extends Serializable {
+  extends Serializable {
   private[gbdt] val partitions = new Array[Partition[K, V]](maxNumPartition)
   @transient private[gbdt] val partOffsets = new Array[Int](maxNumPartition)
   @transient private[gbdt] val insLayouts = new Array[Int](maxNumInstance)

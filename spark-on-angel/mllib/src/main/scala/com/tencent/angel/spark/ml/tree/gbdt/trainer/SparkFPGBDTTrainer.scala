@@ -24,8 +24,10 @@ import com.tencent.angel.spark.ml.tree.gbdt.dataset.Dataset
 import com.tencent.angel.spark.ml.tree.gbdt.dataset.Dataset._
 import com.tencent.angel.spark.ml.tree.data.Instance
 import com.tencent.angel.spark.ml.tree.gbdt.metadata.FeatureInfo
-import com.tencent.angel.spark.ml.tree.gbdt.tree.GBTSplit
+import com.tencent.angel.spark.ml.tree.gbdt.tree.{GBTSplit, GBTTree}
 import com.tencent.angel.spark.ml.tree.objective.ObjectiveFactory
+import com.tencent.angel.spark.ml.tree.objective.metric.AUCMetric
+import com.tencent.angel.spark.ml.tree.objective.metric.EvalMetric.Kind
 import com.tencent.angel.spark.ml.tree.sketch.HeapQuantileSketch
 import com.tencent.angel.spark.ml.tree.util.{DataLoader, Maths}
 import org.apache.spark.broadcast.Broadcast
@@ -35,11 +37,12 @@ import org.apache.spark.{Partitioner, SparkConf, SparkContext, TaskContext}
 
 import scala.collection.mutable.{ArrayBuilder => AB}
 
+
 object SparkFPGBDTTrainer {
 
   def main(args: Array[String]): Unit = {
-    val conf = new SparkConf()
-    implicit val sc = SparkContext.getOrCreate(conf)
+    @transient val conf = new SparkConf()
+    @transient implicit val sc = SparkContext.getOrCreate(conf)
 
     val param = new GBDTParam
     param.numClass = conf.getInt(ML_NUM_CLASS, DEFAULT_ML_NUM_CLASS)
@@ -66,17 +69,20 @@ object SparkFPGBDTTrainer {
     param.maxLeafWeight = conf.getDouble(ML_GBDT_MAX_LEAF_WEIGHT, DEFAULT_ML_GBDT_MAX_LEAF_WEIGHT).toFloat
     println(s"Hyper-parameters:\n$param")
 
+    val modelPath = conf.get(ML_MODEL_PATH)
+    println(s"Model will be saved to $modelPath")
+
     try {
       val trainer = new SparkFPGBDTTrainer(param)
       val trainInput = conf.get(ML_TRAIN_DATA_PATH)
       val validInput = conf.get(ML_VALID_DATA_PATH)
       trainer.initialize(trainInput, validInput)
-      trainer.train()
+      val model = trainer.train()
+      sc.parallelize(Seq(model)).saveAsObjectFile(modelPath)
     } catch {
       case e: Exception =>
         e.printStackTrace()
     } finally {
-       while (1 + 1 == 2) {}
     }
   }
 
@@ -150,8 +156,7 @@ object SparkFPGBDTTrainer {
   }
 }
 
-import com.tencent.angel.spark.ml.tree.gbdt.trainer.SparkFPGBDTTrainer._
-
+import SparkFPGBDTTrainer._
 class SparkFPGBDTTrainer(param: GBDTParam) extends Serializable {
   @transient implicit val sc = SparkContext.getOrCreate()
 
@@ -357,7 +362,7 @@ class SparkFPGBDTTrainer(param: GBDTParam) extends Serializable {
     println(s"Initialization done, cost ${System.currentTimeMillis() - initStart} ms in total")
   }
 
-  def train(): Unit = {
+  def train(): Seq[GBTTree] = {
     val trainStart = System.currentTimeMillis()
 
     val loss = ObjectiveFactory.getLoss(param.lossFunc)
@@ -381,7 +386,7 @@ class SparkFPGBDTTrainer(param: GBDTParam) extends Serializable {
         val findStart = System.currentTimeMillis()
         val nids = collection.mutable.TreeSet[Int]()
         workers.map(worker => (worker.workerId, worker.findSplits()))
-            .collect().foreach {
+          .collect().foreach {
           case (workerId, splits) =>
             splits.foreach {
               case (nid, split) =>
@@ -402,9 +407,9 @@ class SparkFPGBDTTrainer(param: GBDTParam) extends Serializable {
         val validSplits = gatheredSplits.filter(_._4.isValid(param.minSplitGain))
         val leaves = gatheredSplits.filter(!_._4.isValid(param.minSplitGain)).map(_._1)
         if (gatheredSplits.nonEmpty) {
-        println(s"Build histograms and find best splits cost " +
-          s"${System.currentTimeMillis() - findStart} ms, " +
-          s"${validSplits.length} node(s) to split")
+          println(s"Build histograms and find best splits cost " +
+            s"${System.currentTimeMillis() - findStart} ms, " +
+            s"${validSplits.length} node(s) to split")
           val resultStart = System.currentTimeMillis()
           val bcValidSplits = sc.broadcast(validSplits)
           val bcLeaves = sc.broadcast(leaves)
@@ -439,13 +444,17 @@ class SparkFPGBDTTrainer(param: GBDTParam) extends Serializable {
           validMetrics(index) += valid
       })
       val evalTrainMsg = (evalMetrics, trainMetrics).zipped.map {
-        case (evalMetric, trainSum) =>
-          s"${evalMetric.getKind}[${evalMetric.avg(trainSum, numTrain)}]"
+        case (evalMetric, trainSum) => evalMetric.getKind match {
+          case Kind.AUC => s"${evalMetric.getKind}[${evalMetric.avg(trainSum, workers.count.toInt)}]"
+          case _ => s"${evalMetric.getKind}[${evalMetric.avg(trainSum, numTrain)}]"
+        }
       }.mkString(", ")
       println(s"Evaluation on train data after ${treeId + 1} tree(s): $evalTrainMsg")
       val evalValidMsg = (evalMetrics, validMetrics).zipped.map {
-        case (evalMetric, validSum) =>
-          s"${evalMetric.getKind}[${evalMetric.avg(validSum, numValid)}]"
+        case (evalMetric, validSum) => evalMetric.getKind match {
+          case Kind.AUC => s"${evalMetric.getKind}[${evalMetric.avg(validSum, workers.count.toInt)}]"
+          case _ => s"${evalMetric.getKind}[${evalMetric.avg(validSum, numValid)}]"
+        }
       }.mkString(", ")
       println(s"Evaluation on valid data after ${treeId + 1} tree(s): $evalValidMsg")
       println(s"Tree[${treeId + 1}] Finish tree cost ${System.currentTimeMillis() - finishStart} ms")
@@ -454,11 +463,11 @@ class SparkFPGBDTTrainer(param: GBDTParam) extends Serializable {
       println(s"Train tree cost ${currentTime - createStart} ms, " +
         s"${treeId + 1} tree(s) done, ${currentTime - trainStart} ms elapsed")
 
-//      workers.map(_.reportTime()).collect().zipWithIndex.foreach {
-//        case (str, id) =>
-//          println(s"========Time cost summation of worker[$id]========")
-//          println(str)
-//      }
+      //      workers.map(_.reportTime()).collect().zipWithIndex.foreach {
+      //        case (str, id) =>
+      //          println(s"========Time cost summation of worker[$id]========")
+      //          println(str)
+      //      }
     }
 
     // TODO: check equality
@@ -468,6 +477,7 @@ class SparkFPGBDTTrainer(param: GBDTParam) extends Serializable {
         println(s"Tree[${treeId + 1}] contains ${tree.size} nodes " +
           s"(${(tree.size - 1) / 2 + 1} leaves)")
     }
+    forest
   }
 
 }

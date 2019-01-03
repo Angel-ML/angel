@@ -1,33 +1,35 @@
 package com.tencent.angel.spark.ml.tree.gbdt.helper
 
-import java.util.concurrent.{Callable, Executors}
+import java.util.concurrent.{Callable, ExecutorService, Future}
 
 import com.tencent.angel.spark.ml.tree.gbdt.dataset.{Dataset, Partition}
 import com.tencent.angel.spark.ml.tree.gbdt.histogram.{GradPair, Histogram}
 import com.tencent.angel.spark.ml.tree.gbdt.metadata.FeatureInfo
-import com.tencent.angel.spark.ml.tree.gbdt.metadata.org.dma.gbdt4spark.algo.gbdt.metadata.InstanceInfo
+import com.tencent.angel.spark.ml.tree.gbdt.metadata.InstanceInfo
 import com.tencent.angel.spark.ml.tree.tree.param.GBDTParam
-import com.tencent.angel.spark.ml.tree.util.Maths
+import com.tencent.angel.spark.ml.tree.util.{ConcurrentUtil, Maths}
+
+import scala.collection.mutable.ArrayBuffer
 
 object HistManager {
 
   type NodeHist = Array[Histogram]
 
-  private val MIN_INSTANCE_PER_THREAD = 100000
+  private val MIN_INSTANCE_PER_THREAD = 10000
+  private val MAX_INSTANCE_PER_THREAD = 1000000
 
   // for root node
   def sparseBuild(param: GBDTParam, partition: Partition[Int, Int],
-                  insIdOffset: Int, instanceInfo: InstanceInfo,
+                  insIdOffset: Int, instanceInfo: InstanceInfo, start: Int, end: Int,
                   isFeatUsed: Array[Boolean], histograms: NodeHist): Unit = {
-    val num = partition.size
     val gradients = instanceInfo.gradients
     val hessians = instanceInfo.hessians
     val fids = partition.indices
     val bins = partition.values
     val indexEnds = partition.indexEnds
     if (param.numClass == 2) {
-      var indexStart = 0
-      for (i <- 0 until num) {
+      var indexStart = if (start == 0) 0 else indexEnds(start - 1)
+      for (i <- start until end) {
         val insId = i + insIdOffset
         val grad = gradients(insId)
         val hess = hessians(insId)
@@ -40,8 +42,8 @@ object HistManager {
         indexStart = indexEnd
       }
     } else if (!param.fullHessian) {
-      var indexStart = 0
-      for (i <- 0 until num) {
+      var indexStart = if (start == 0) 0 else indexEnds(start - 1)
+      for (i <- start until end) {
         val insId = i + insIdOffset
         val indexEnd = indexEnds(i)
         for (j <- indexStart until indexEnd) {
@@ -132,8 +134,7 @@ object HistManager {
 
 }
 
-import com.tencent.angel.spark.ml.tree.gbdt.helper.HistManager._
-
+import HistManager._
 class HistManager(param: GBDTParam, featureInfo: FeatureInfo) {
   private[gbdt] var isFeatUsed : Array[Boolean] = _
   private[gbdt] val nodeGradPairs = new Array[GradPair](Maths.pow(2, param.maxDepth + 1) - 1)
@@ -141,43 +142,105 @@ class HistManager(param: GBDTParam, featureInfo: FeatureInfo) {
   private[gbdt] var histStore = new Array[NodeHist](Maths.pow(2, param.maxDepth) - 1)
   private[gbdt] var availHist = 0
 
-  private val threadPool = Executors.newFixedThreadPool(param.numThread)
+  private class NodeHistPool(capacity: Int) {
+    private val pool = Array.ofDim[NodeHist](capacity)
+    private var numHist = 0
+    private var numAcquired = 0
 
-  def buildHistForRoot(dataset: Dataset[Int, Int], instanceInfo: InstanceInfo): Unit = {
-    val histograms = newNodeHist(0)
-    if (param.numThread == 1 || dataset.size < MIN_INSTANCE_PER_THREAD) {
+    private[gbdt] def acquire: NodeHist = {
+      this.synchronized {
+        println(s"Acquire hist, numHist[$numHist] numAcquired[$numAcquired]")
+        if (numHist == numAcquired) {
+          require(numHist < pool.length)
+          pool(numHist) = getOrAllocSync(sync = true)
+          numHist += 1
+          println(s"Alloc success, $numHist hists now")
+        }
+        var i = 0
+        while (i < numHist && pool(i) == null) i += 1
+        numAcquired += 1
+        val nodeHist = pool(i)
+        pool(i) = null
+        println(s"Acquire done, numHist[$numHist] numAcquired[$numAcquired]")
+        nodeHist
+      }
+    }
+
+    private[gbdt] def release(nodeHist: NodeHist): Unit = {
+      this.synchronized {
+        println(s"Release hist, numHist[$numHist] numAcquired[$numAcquired]")
+        require(numHist > 0)
+        var i = 0
+        while (i < numHist && pool(i) != null) i += 1
+        pool(i) = nodeHist
+        numAcquired -= 1
+        println(s"Release done, numHist[$numHist] numAcquired[$numAcquired]")
+      }
+    }
+
+    private[gbdt] def result: NodeHist = {
+      require(numHist > 0 && numAcquired == 0)
+      val res = pool.head
+      for (i <- 1 until numHist) {
+        val one = pool(i)
+        for (fid <- isFeatUsed.indices)
+          if (res(fid) != null)
+            res(fid).plusBy(one(fid))
+        releaseSync(one, sync = true)
+      }
+      res
+    }
+  }
+
+  def buildHistForRoot(dataset: Dataset[Int, Int], instanceInfo: InstanceInfo,
+                       threadPool: ExecutorService = null): Unit = {
+    val histograms = if (param.numThread == 1 || dataset.size < MIN_INSTANCE_PER_THREAD) {
+      val nodeHist = getOrAllocSync()
       for (partId <- 0 until dataset.numPartition) {
         val partition = dataset.partitions(partId)
         val insIdOffset = dataset.partOffsets(partId)
-        sparseBuild(param, partition, insIdOffset, instanceInfo, isFeatUsed, histograms)
+        sparseBuild(param, partition, insIdOffset, instanceInfo,
+          0, partition.size, isFeatUsed, nodeHist)
       }
+      nodeHist
     } else {
-      val futures = (0 until dataset.numPartition).map(partId => {
+      val histPool = new NodeHistPool(param.numThread)
+      val futures = ArrayBuffer[Future[Unit]]()
+      val batchSize = MIN_INSTANCE_PER_THREAD max (MAX_INSTANCE_PER_THREAD min
+        Maths.idivCeil(dataset.size, param.numThread))
+      (0 until dataset.numPartition).foreach(partId => {
         val partition = dataset.partitions(partId)
         val insIdOffset = dataset.partOffsets(partId)
-        threadPool.submit(new Runnable {
-          override def run(): Unit = sparseBuild(param, partition,
-            insIdOffset, instanceInfo, isFeatUsed, histograms)
-        })
+        val thread = (start: Int, end: Int) => {
+          val nodeHist = histPool.acquire
+          nodeHist.synchronized {
+            sparseBuild(param, partition, insIdOffset, instanceInfo,
+              start, end, isFeatUsed, nodeHist)
+          }
+          histPool.release(nodeHist)
+        }
+        futures ++= ConcurrentUtil.rangeParallel(thread, 0, partition.size,
+          threadPool, batchSize = batchSize)
       })
       futures.foreach(_.get)
+      histPool.result
     }
     fillDefaultBins(param, featureInfo, nodeGradPairs(0), histograms)
+    setNodeHist(0, histograms)
   }
 
   def buildHistForNodes(nids: Seq[Int], dataset: Dataset[Int, Int], instanceInfo: InstanceInfo,
-                        subtracts: Seq[Boolean]): Unit = {
+                        subtracts: Seq[Boolean], threadPool: ExecutorService = null): Unit = {
     if (param.numThread == 1 || nids.length == 1) {
       (nids, subtracts).zipped.foreach {
         case (nid, subtract) => buildHistForNode(nid, dataset, instanceInfo, subtract)
       }
     } else {
       val futures = (nids, subtracts).zipped.map {
-        case (nid, subtract) => threadPool.submit(
-          new Callable[Unit] {
-            override def call(): Unit = buildHistForNode(nid, dataset, instanceInfo, subtract, sync = true)
-          }
-        )
+        case (nid, subtract) => threadPool.submit(new Callable[Unit] {
+          override def call(): Unit =
+            buildHistForNode(nid, dataset, instanceInfo, subtract, sync = true)
+        })
       }
       futures.foreach(_.get())
     }
@@ -185,11 +248,12 @@ class HistManager(param: GBDTParam, featureInfo: FeatureInfo) {
 
   def buildHistForNode(nid: Int, dataset: Dataset[Int, Int], instanceInfo: InstanceInfo,
                        subtract: Boolean = false, sync: Boolean = false): Unit = {
-    val histograms = newNodeHist(nid, sync = sync)
+    val nodeHist = getOrAllocSync(sync = sync)
     sparseBuild(param, dataset, instanceInfo, instanceInfo.nodeToIns,
       instanceInfo.getNodePosStart(nid), instanceInfo.getNodePosEnd(nid),
-      isFeatUsed, histograms)
-    fillDefaultBins(param, featureInfo, nodeGradPairs(nid), histograms)
+      isFeatUsed, nodeHist)
+    fillDefaultBins(param, featureInfo, nodeGradPairs(nid), nodeHist)
+    setNodeHist(nid, nodeHist)
     if (subtract) {
       histSubtract(nid, Maths.sibling(nid), Maths.parent(nid))
     } else {
@@ -203,21 +267,13 @@ class HistManager(param: GBDTParam, featureInfo: FeatureInfo) {
 
   def getNodeHist(nid: Int): NodeHist = nodeHists(nid)
 
-  def newNodeHist(nid: Int, sync: Boolean = false): NodeHist = {
-    val hist = if (sync)
-      this.synchronized(getOrAlloc)
-    else
-      getOrAlloc
-    nodeHists(nid) = hist
-    hist
-  }
+  def setNodeHist(nid: Int, nodeHist: NodeHist): Unit = nodeHists(nid) = nodeHist
 
   def removeNodeHist(nid: Int, sync: Boolean = false): Unit  = {
-    if (nodeHists(nid) != null) {
-      if (sync)
-        this.synchronized(release(nid))
-      else
-        release(nid)
+    val nodeHist = nodeHists(nid)
+    if (nodeHist != null) {
+      nodeHists(nid) = null
+      releaseSync(nodeHist, sync = sync)
     }
   }
 
@@ -231,25 +287,33 @@ class HistManager(param: GBDTParam, featureInfo: FeatureInfo) {
     nodeHists(parent) = null
   }
 
-  private def getOrAlloc: NodeHist = {
-    if (availHist == 0) {
-      allocNodeHist(param, featureInfo, isFeatUsed)
-    } else {
-      val res = histStore(availHist - 1)
-      histStore(availHist - 1) = null
-      availHist -= 1
-      res
+  private def getOrAllocSync(sync: Boolean = false): NodeHist = {
+    def doGetOrAlloc(): NodeHist = {
+      if (availHist == 0) {
+        allocNodeHist(param, featureInfo, isFeatUsed)
+      } else {
+        val res = histStore(availHist - 1)
+        histStore(availHist - 1) = null
+        availHist -= 1
+        res
+      }
     }
+
+    if (sync) this.synchronized(doGetOrAlloc())
+    else doGetOrAlloc()
   }
 
-  private def release(nid: Int): Unit = {
-    val nodeHist = nodeHists(nid)
-    nodeHists(nid) = null
-    for (hist <- nodeHist)
-      if (hist != null)
-        hist.clear()
-    histStore(availHist) = nodeHist
-    availHist += 1
+  private def releaseSync(nodeHist: NodeHist, sync: Boolean = false): Unit = {
+    def doRelease(): Unit = {
+      for (hist <- nodeHist)
+        if (hist != null)
+          hist.clear()
+      histStore(availHist) = nodeHist
+      availHist += 1
+    }
+
+    if (sync) this.synchronized(doRelease())
+    else doRelease()
   }
 
   def reset(isFeatUsed: Array[Boolean]): Unit = {
@@ -260,7 +324,5 @@ class HistManager(param: GBDTParam, featureInfo: FeatureInfo) {
     availHist = 0
     System.gc()
   }
-
-  def shutdown(): Unit = threadPool.shutdown()
 
 }
