@@ -84,7 +84,7 @@ public class ObjectiveFactory {
             case CROSS_ENTROPY:
                 return CrossEntropyMetric.getInstance();
             case AUC:
-                throw new GBDTException("Unsupported eval metric: " + metric);
+                return new AUCMetric();
             default:
                 throw new GBDTException("Unrecognizable eval metric: " + metric);
         }
