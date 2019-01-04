@@ -16,13 +16,12 @@
  */
 
 
-package com.tencent.angel.spark.automl.tuner
+package com.tencent.angel.spark.examples.automl
 
 import com.tencent.angel.spark.automl.tuner.config.Configuration
-import com.tencent.angel.spark.automl.tuner.parameter.{ContinuousSpace, DiscreteSpace}
+import com.tencent.angel.spark.automl.tuner.parameter.{ContinuousSpace, DiscreteSpace, ParamSpace}
 import com.tencent.angel.spark.automl.tuner.solver.Solver
 import com.tencent.angel.spark.automl.tuner.trail.{TestTrail, Trail}
-import com.tencent.angel.spark.automl.tuner.parameter.ParamSpace
 import org.apache.spark.ml.linalg.Vector
 
 object GPTunerExample extends App {

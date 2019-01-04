@@ -16,7 +16,7 @@
  */
 
 
-package com.tencent.angel.spark.automl.tuner
+package com.tencent.angel.spark.examples.automl
 
 import com.tencent.angel.spark.automl.tuner.acquisition.optimizer.{AcqOptimizer, RandomSearch}
 import com.tencent.angel.spark.automl.tuner.acquisition.{Acquisition, EI}

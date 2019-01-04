@@ -37,7 +37,7 @@ import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.Random
 
-class AutoOfflineLearner(minimize: Boolean) {
+class AutoOfflineLearner(var tunIter = 20, minimize: Boolean = true) {
 
   // Shared configuration with Angel-PS
   val conf = SharedConf.get()
@@ -46,7 +46,6 @@ class AutoOfflineLearner(minimize: Boolean) {
   var numEpoch: Int = conf.getInt(MLConf.ML_EPOCH_NUM)
   var fraction: Double = conf.getDouble(MLConf.ML_BATCH_SAMPLE_RATIO)
   var validationRatio: Double = conf.getDouble(MLConf.ML_VALIDATE_RATIO)
-  var tuneIter: Int = 20
 
   println(s"fraction=$fraction validateRatio=$validationRatio numEpoch=$numEpoch")
 
