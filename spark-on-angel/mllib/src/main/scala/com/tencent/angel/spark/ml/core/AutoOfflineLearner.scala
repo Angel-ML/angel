@@ -37,7 +37,7 @@ import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.Random
 
-class AutoOfflineLearner(var tunIter = 20, minimize: Boolean = true) {
+class AutoOfflineLearner(tuneIter: Int = 20, minimize: Boolean = true) {
 
   // Shared configuration with Angel-PS
   val conf = SharedConf.get()

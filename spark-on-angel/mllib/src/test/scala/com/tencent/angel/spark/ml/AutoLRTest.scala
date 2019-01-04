@@ -33,7 +33,7 @@ class AutoLRTest extends PSFunSuite with SharedPSContext {
 
     SharedConf.get().set(AngelConf.ANGEL_RUNNING_MODE, RunningMode.ANGEL_PS.toString)
 
-    learner = new AutoOfflineLearner(10,false)
+    learner = new AutoOfflineLearner(5,false)
     learner.addParam("continuous", "double", MLConf.ML_LEARN_RATE, "0.1,1,100")
   }
 
