@@ -57,7 +57,7 @@ object Word2vecWorkerExample {
     val negative = 5
 
     println(s"batchSize=$batchSize learnRate=$learnRate window=$window negative=$negative")
-    val model = new Word2vecWorker(maxWordId.toInt, dimension, "cbow", numPart, numNodePerRow, 2017)
+    val model = new Word2vecWorker(maxWordId.toInt, dimension, "cbow", numPart, numNodePerRow)
     val iterator = buildDataBatches(corpus, batchSize)
     model.train(iterator, negative, 5, learnRate, window, "")
 

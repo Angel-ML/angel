@@ -42,7 +42,7 @@ class Word2VecSuite extends PSFunSuite with SharedPSContext {
     val numNodePerRow = 10
     val modelType = "cbow"
     val numPart = 5
-    val model = new Word2vecWorker(numNode, dimension, modelType, numPart, numNodePerRow, Random.nextInt())
+    val model = new Word2vecWorker(numNode, dimension, modelType, numPart, numNodePerRow)
 
     val matrix = model.matrix
 

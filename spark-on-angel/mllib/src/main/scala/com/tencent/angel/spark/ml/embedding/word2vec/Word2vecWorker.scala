@@ -15,38 +15,41 @@ import com.tencent.angel.spark.models.PSMatrix
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap
 import org.apache.spark.rdd.RDD
 
-import scala.util.Random
-
 class Word2vecWorker(numNode: Int,
                      dimension: Int,
-                     model: String,
+                     modelName: String,
                      numPart: Int,
                      numNodePerRow: Int = -1,
-                     seed: Int) extends Serializable {
+                     seed: Int = 2017) extends Serializable {
+  // seed is never used. to be deleted
 
   val maxNodePerRow: Int = 100000
-
   val matrix = createPSMatrix(numNode, numPart)
-  val rand = new Random(seed)
 
   initialize()
-
-  def sgdForBatch(partitionId: Int,
-                  batchId: Int,
-                  negative: Int,
+  /**
+    *
+    * @param negative
+    * @param window
+    * @param alpha
+    * @param batch
+    * @epochId use epochId as seed for random number generator
+    * @return (sum_loss, loss_cnt, evaluation metrics)
+    */
+  def sgdForBatch(negative: Int,
                   window: Int,
                   alpha: Float,
-                  batch: NEDataSet): (Double, Long, Array[Long]) = {
+                  batch: NEDataSet,
+                  epochId: Int): (Double, Long, Array[Long]) = {
 
     var (start, end) = (0L, 0L)
-    val seed = 2017
+    val seed = epochId
 
     // calculate index
     start = System.currentTimeMillis()
-    val modelName = "cbow"
     val model = modelName match {
       case "cbow" => new CBowModel(window, negative, alpha, numNode, dimension)
-      case "sg" => new SGNSModel(window, negative, alpha, numNode, dimension)
+      case "sgns" => new SGNSModel(window, negative, alpha, numNode, dimension)
       case _ => new SGNSModel(window, negative, alpha, numNode, dimension) // default is SGNS
     }
     val sentences = batch.asInstanceOf[W2VDataSet].sentences
@@ -90,14 +93,14 @@ class Word2vecWorker(numNode: Int,
     (loss._1, loss._2.toLong, Array(calcuIndexTime, pullTime, cbowTime, pushTime))
   }
 
-  def sgdForPartition(partitionId: Int,
-                      iterator: Iterator[NEDataSet],
+  def sgdForPartition(iterator: Iterator[NEDataSet],
                       window: Int,
                       negative: Int,
-                      alpha: Float): Iterator[(Double, Long, Array[Long])] = {
+                      alpha: Float,
+                      epochId: Int): Iterator[(Double, Long, Array[Long])] = {
     PSContext.instance()
-    val r = iterator.zipWithIndex.map(batch => sgdForBatch(partitionId, batch._2,
-      window, negative, alpha, batch._1))
+    val r = iterator.map(batch => sgdForBatch(
+      window, negative, alpha, batch, epochId))
       .reduce { (f1, f2) =>
         (f1._1 + f2._1,
           f1._2 + f2._2,
@@ -114,19 +117,19 @@ class Word2vecWorker(numNode: Int,
             checkpointInterval: Int = 10): Unit = {
     for (epoch <- 1 to numEpoch) {
       val data = trainBatches.next()
-      val middle = data.mapPartitionsWithIndex((partitionId, iterator) =>
-        sgdForPartition(partitionId, iterator, window, negative, learningRate),
-        true).reduce { case (f1, f2) =>
-        (f1._1 + f2._1,
+      val middle = data.mapPartitions(iterator =>
+        sgdForPartition(iterator, window, negative, learningRate, epoch), true).reduce { case (f1, f2) =>
+          (f1._1 + f2._1,
           f1._2 + f2._2,
-          f1._3.zip(f2._3).map(f => (f._1 + f._2)))}
+          f1._3.zip(f2._3).map(f => (f._1 + f._2))
+          )}
       val loss = middle._1 / middle._2.toDouble
       val array = middle._3
       logTime(s"epoch=$epoch " +
         f"loss=$loss%2.4f " +
         s"calcuIndexTime=${array(0)} " +
         s"pullTime=${array(1)} " +
-        s"cbowTime=${array(2)} " +
+        s"trainTime=${array(2)} " +
         s"pushTime=${array(3)} " +
         s"total=${middle._2} " +
         s"lossSum=${middle._1}")
