@@ -16,13 +16,15 @@ import java.util.Random;
 
 public class SGNSModel extends EmbeddingBase{
     private float endPrp = 0.5f; // end probablity for rooted pagerank
+    private SampleGenerator sampleGenerator;
 
     public SGNSModel(int window, int negative, float alpha, int numNode, int dimension) {
         super(window, negative, alpha, numNode, dimension);
     }
 
-    private Tuple2<Integer, Integer> nextPair(int [][] sentences, int seed){
-
+    @Override
+    int[] buildIndices(int[][] sentences, int seed) {
+        return new int[0];
     }
 
     /**

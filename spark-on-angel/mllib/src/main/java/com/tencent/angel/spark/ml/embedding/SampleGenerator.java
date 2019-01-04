@@ -54,16 +54,16 @@ class RootedPageRankSampler extends SampleGenerator{
 
     @Override
     public Tuple3<Integer, Integer, Integer> next() {
-        int src = sentences[curSenId][0];
-        if(curNegId == 0){
-            // sample positive pairs
-            int dstId = 1;
-            while(random.nextFloat() < endPrp){
+        int sen_len = sentences[curSenId].length;
+        int srcId = random.nextInt(sen_len);
+        if(curNegId == 0){ // sample positive pairs
+            int dstId = srcId + 1;
+            while(random.nextFloat() < endPrp && dstId < sen_len){
                 dstId ++;
             }
-            if(dstId < sentences[curSenId].length){
+            if(dstId < sen_len){
                 curNegId ++;
-                return new Tuple3<>(src, sentences[curSenId][dstId], 1);
+                return new Tuple3<>(sentences[curSenId][srcId], sentences[curSenId][dstId], 1);
             }
             else{
                 // no vertex pairs for this random walk path.
@@ -73,16 +73,15 @@ class RootedPageRankSampler extends SampleGenerator{
                 return next();
             }
         }
-        else if (curNegId <= neg){
-            // sample negative pairs
+        else if (curNegId <= neg){ // sample negative pairs
             int dst;
             do {
                 dst = negRandom.nextInt(numNode);
-            } while (dst == src);
+            } while (dst == sentences[curSenId][srcId]);
             curNegId ++;
-            return new Tuple3<>(src, dst, 0);
+            return new Tuple3<>(sentences[curSenId][srcId], dst, 0);
         }
-        else{
+        else{ // jump to a new sentence
             curNegId = 0;
             curSenId ++;
             return next();
