@@ -49,6 +49,12 @@
         </dependency>
         <dependency>
             <groupId>com.tencent.angel</groupId>
+            <artifactId>spark-on-angel-automl</artifactId>
+            <version>${project.version}</version>
+            <scope>${dist.deps.scope}</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tencent.angel</groupId>
             <artifactId>angel-ps-mllib</artifactId>
             <version>${project.version}</version>
             <scope>${dist.deps.scope}</scope>
