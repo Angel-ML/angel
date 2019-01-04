@@ -23,10 +23,10 @@ import com.tencent.angel.ml.core.optimizer.loss.{L2Loss, LogLoss}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix}
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.ml.automl.tuner.config.Configuration
-import com.tencent.angel.spark.ml.automl.tuner.parameter.ParamSpace
-import com.tencent.angel.spark.ml.automl.tuner.solver.Solver
-import com.tencent.angel.spark.ml.automl.utils.AutoMLException
+import com.tencent.angel.spark.automl.tuner.config.Configuration
+import com.tencent.angel.spark.automl.tuner.parameter.ParamSpace
+import com.tencent.angel.spark.automl.tuner.solver.Solver
+import com.tencent.angel.spark.automl.utils.AutoMLException
 import com.tencent.angel.spark.ml.core.metric.{AUC, Precision}
 import com.tencent.angel.spark.ml.util.{DataLoader, SparkUtils}
 import org.apache.spark.SparkContext
