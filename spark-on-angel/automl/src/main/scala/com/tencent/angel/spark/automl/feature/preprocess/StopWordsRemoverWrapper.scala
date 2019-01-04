@@ -31,7 +31,6 @@ class StopWordsRemoverWrapper extends TransformerWrapper {
   override val hasMultiInputs: Boolean = false
   override val hasMultiOutputs: Boolean = false
   override val needAncestorInputs: Boolean = false
-  override val needFit: Boolean = false
 
   override val relation: InToOutRelation = OneToOne
 

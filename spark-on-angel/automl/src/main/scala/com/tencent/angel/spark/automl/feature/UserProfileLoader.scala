@@ -1,6 +1,6 @@
-package com.tencent.angel.spark.ml.automl.feature
+package com.tencent.angel.spark.automl.feature
 
-import com.tencent.angel.spark.ml.automl.feature.preprocess.{SamplerWrapper, StopWordsRemoverWrapper, TokenizerWrapper}
+import com.tencent.angel.spark.automl.feature.preprocess._
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -13,10 +13,9 @@ class UserProfileLoader {
       case "SamplerWrapper" => new SamplerWrapper(0.5)
       case "StopWordsRemoverWrapper" => new StopWordsRemoverWrapper()
       case "Tokenizer" => new TokenizerWrapper()
+      case "MinMaxScalerWrapper" => new MinMaxScalerWrapper()
+      case "StandardScalerWrapper" => new StandardScalerWrapper()
     }
   }
 
-  def load(): Array[TransformerWrapper] = {
-    _
-  }
 }

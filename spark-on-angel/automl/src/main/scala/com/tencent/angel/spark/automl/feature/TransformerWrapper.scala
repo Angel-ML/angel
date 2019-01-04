@@ -18,12 +18,12 @@
 
 package com.tencent.angel.spark.automl.feature
 
-import org.apache.spark.ml.Transformer
+import org.apache.spark.ml.{PipelineStage, Transformer}
 import com.tencent.angel.spark.automl.feature.InToOutRelation.InToOutRelation
 
 abstract class TransformerWrapper {
 
-  var transformer: Transformer
+  val transformer: PipelineStage
   var parent: TransformerWrapper
 
   val relation: InToOutRelation
@@ -31,7 +31,6 @@ abstract class TransformerWrapper {
   val hasMultiInputs: Boolean
   val hasMultiOutputs: Boolean
   val needAncestorInputs: Boolean
-  val needFit: Boolean
   private val prefix = "out_"
 
   val requiredInputCols: Array[String]
@@ -42,7 +41,7 @@ abstract class TransformerWrapper {
 
   private var ancestorCols: Array[String] = _
 
-  def getTransformer: Transformer = transformer
+  def getTransformer = transformer
 
   def setParent(parent: TransformerWrapper): Unit = this.parent = parent
 
