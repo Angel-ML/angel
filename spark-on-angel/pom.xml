@@ -34,6 +34,7 @@
 		<module>core</module>
 		<module>mllib</module>
 		<module>examples</module>
+		<module>automl</module>
 	</modules>
 
 	<properties>
