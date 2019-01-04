@@ -18,7 +18,6 @@
 
 package com.tencent.angel.spark.automl.feature.transform
 
-//import com.tencent.angel.ml.core.conf.MLConf
 import com.tencent.angel.spark.automl.AutoConf
 import com.tencent.angel.spark.automl.utils.ArgsUtil
 
