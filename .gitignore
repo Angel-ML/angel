@@ -32,6 +32,7 @@ dist/target/
 spark-on-angel/core/target/
 spark-on-angel/examples/target/
 spark-on-angel/mllib/target/
+spark-on-angel/automl/target/
 spark-on-angel/target/
 spark-on-angel/core/log/
 spark-on-angel/examples/log/
