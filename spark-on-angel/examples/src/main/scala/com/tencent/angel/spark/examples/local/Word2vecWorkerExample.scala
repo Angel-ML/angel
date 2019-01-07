@@ -52,7 +52,7 @@ object Word2vecWorkerExample {
     val dimension = 100
     val batchSize = 100
 
-    val learnRate = 0.001f
+    val learnRate = 0.1f
     val window = 5
     val negative = 5
 

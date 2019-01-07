@@ -79,7 +79,7 @@ public class SGNSModel extends EmbeddingBase {
             loss_cnt++;
 
             // update model
-            float g = (label - prob) * alpha;
+            float g = -(label - prob) * alpha;
             // word, context
             float tmp;
             for (int c = 0; c < dimension; c++) {
