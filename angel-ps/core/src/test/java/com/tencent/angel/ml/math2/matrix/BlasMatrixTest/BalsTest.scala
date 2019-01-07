@@ -31,7 +31,7 @@ class BalsTest extends FunSuite {
   test("Double-NN") {
     val mat1 = MFactory.denseDoubleMatrix(3, 4, data1)
     val mat2 = MFactory.denseDoubleMatrix(4, 2, data2)
-    val res = Ufuncs.dot(mat1, false, mat2, false).asInstanceOf[BlasDoubleMatrix]
+    val res = Ufuncs.dot(mat1, false, mat2, false, true).asInstanceOf[BlasDoubleMatrix]
 
     (0 until 3).foreach { rId =>
       (0 until 2).foreach { cId =>
@@ -50,7 +50,7 @@ class BalsTest extends FunSuite {
   test("Double-NT") {
     val mat1 = MFactory.denseDoubleMatrix(3, 4, data1)
     val mat2 = MFactory.denseDoubleMatrix(2, 4, data2)
-    val res = Ufuncs.dot(mat1, false, mat2, true).asInstanceOf[BlasDoubleMatrix]
+    val res = Ufuncs.dot(mat1, false, mat2, true, true).asInstanceOf[BlasDoubleMatrix]
 
 
     (0 until 3).foreach { rId =>
@@ -69,7 +69,7 @@ class BalsTest extends FunSuite {
   test("Double-TN") {
     val mat1 = MFactory.denseDoubleMatrix(4, 3, data1)
     val mat2 = MFactory.denseDoubleMatrix(4, 2, data2)
-    val res = Ufuncs.dot(mat1, true, mat2, false).asInstanceOf[BlasDoubleMatrix]
+    val res = Ufuncs.dot(mat1, true, mat2, false, true).asInstanceOf[BlasDoubleMatrix]
 
     (0 until 3).foreach { rId =>
       (0 until 2).foreach { cId =>
@@ -87,7 +87,7 @@ class BalsTest extends FunSuite {
   test("Double-TT") {
     val mat1 = MFactory.denseDoubleMatrix(4, 3, data1)
     val mat2 = MFactory.denseDoubleMatrix(2, 4, data2)
-    val res = Ufuncs.dot(mat1, true, mat2, true).asInstanceOf[BlasDoubleMatrix]
+    val res = Ufuncs.dot(mat1, true, mat2, true, true).asInstanceOf[BlasDoubleMatrix]
 
     (0 until 3).foreach { rId =>
       (0 until 2).foreach { cId =>
@@ -105,7 +105,7 @@ class BalsTest extends FunSuite {
   test("Float-NN") {
     val mat1 = MFactory.denseFloatMatrix(3, 4, data1f)
     val mat2 = MFactory.denseFloatMatrix(4, 2, data2f)
-    val res = Ufuncs.dot(mat1, false, mat2, false).asInstanceOf[BlasFloatMatrix]
+    val res = Ufuncs.dot(mat1, false, mat2, false, true).asInstanceOf[BlasFloatMatrix]
 
     (0 until 3).foreach { rId =>
       (0 until 2).foreach { cId =>
@@ -124,7 +124,7 @@ class BalsTest extends FunSuite {
   test("Float-NT") {
     val mat1 = MFactory.denseFloatMatrix(3, 4, data1f)
     val mat2 = MFactory.denseFloatMatrix(2, 4, data2f)
-    val res = Ufuncs.dot(mat1, false, mat2, true).asInstanceOf[BlasFloatMatrix]
+    val res = Ufuncs.dot(mat1, false, mat2, true, true).asInstanceOf[BlasFloatMatrix]
 
 
     (0 until 3).foreach { rId =>
@@ -143,7 +143,7 @@ class BalsTest extends FunSuite {
   test("Float-TN") {
     val mat1 = MFactory.denseFloatMatrix(4, 3, data1f)
     val mat2 = MFactory.denseFloatMatrix(4, 2, data2f)
-    val res = Ufuncs.dot(mat1, true, mat2, false).asInstanceOf[BlasFloatMatrix]
+    val res = Ufuncs.dot(mat1, true, mat2, false, true).asInstanceOf[BlasFloatMatrix]
 
     (0 until 3).foreach { rId =>
       (0 until 2).foreach { cId =>
@@ -161,7 +161,7 @@ class BalsTest extends FunSuite {
   test("Float-TT") {
     val mat1 = MFactory.denseFloatMatrix(4, 3, data1f)
     val mat2 = MFactory.denseFloatMatrix(2, 4, data2f)
-    val res = Ufuncs.dot(mat1, true, mat2, true).asInstanceOf[BlasFloatMatrix]
+    val res = Ufuncs.dot(mat1, true, mat2, true, true).asInstanceOf[BlasFloatMatrix]
 
     (0 until 3).foreach { rId =>
       (0 until 2).foreach { cId =>

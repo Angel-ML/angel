@@ -35,6 +35,10 @@ public abstract class Matrix extends MathObject {
 
   public abstract Vector transDot(Vector other);
 
+  public Matrix dot(Matrix other, Boolean parallel) {
+    throw new NotImplementedException();
+  }
+
   public Matrix dot(Matrix other) {
     throw new NotImplementedException();
   }
