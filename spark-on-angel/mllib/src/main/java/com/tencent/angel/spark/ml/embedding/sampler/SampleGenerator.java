@@ -25,6 +25,8 @@ public abstract class SampleGenerator implements Iterator<Tuple3<Integer, Intege
      * @param seed: [seed] for random generator, [seed + 1] for negative sampling
      * @param numNode: number of vertices in the graph
      * @param neg: number of negative sampling for each node pair
+     *           may return null in the case that we do not have one sample-pair
+     *           for a single sentence
      */
     public SampleGenerator(int[][] sentences, int seed, int numNode, int neg){
         this.sentences = sentences;

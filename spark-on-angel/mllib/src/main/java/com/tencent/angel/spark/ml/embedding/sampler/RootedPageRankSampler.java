@@ -37,7 +37,10 @@ public class RootedPageRankSampler extends SampleGenerator{
                 // thus also no negative pairs for this sentences.
                 curNegId = 0;
                 curSenId += 1;
-                return next();
+                if(curSenId < sentences.length)
+                    return next();
+                else
+                    return null;
             }
         }
         else if (curNegId <= neg){ // sample negative pairs
@@ -51,7 +54,10 @@ public class RootedPageRankSampler extends SampleGenerator{
         else{ // jump to a new sentence
             curNegId = 0;
             curSenId ++;
-            return next();
+            if(curSenId < sentences.length)
+                return next();
+            else
+                return null;
         }
 
     }

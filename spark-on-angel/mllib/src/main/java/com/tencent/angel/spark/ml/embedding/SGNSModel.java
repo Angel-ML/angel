@@ -32,8 +32,11 @@ public class SGNSModel extends EmbeddingBase {
         IntOpenHashSet indices = new IntOpenHashSet();
         while (sampleGenerator.hasNext()) {
             Tuple3<Integer, Integer, Integer> tmp = sampleGenerator.next();
+            if(tmp == null) break;
+
             indices.add(tmp._1()); // src
             indices.add(tmp._2()); // dst
+
         }
         return indices.toIntArray();
     }
@@ -57,6 +60,8 @@ public class SGNSModel extends EmbeddingBase {
         int loss_cnt = 0;
         while (sampleGenerator.hasNext()) {
             Tuple3<Integer, Integer, Integer> dataPoint = ((RootedPageRankSampler) sampleGenerator).next();
+            if(dataPoint == null) break;
+
             int src = dataPoint._1(), dst = dataPoint._2(), label = dataPoint._3();
             if (!index.containsKey(src) || !index.containsKey(dst)) System.out.println("Error");
 
