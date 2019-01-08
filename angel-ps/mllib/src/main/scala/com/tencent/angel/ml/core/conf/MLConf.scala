@@ -78,6 +78,7 @@ object MLConf {
   val DEFAULT_ML_BATCH_SAMPLE_RATIO = 1.0
   val ML_LEARN_RATE = "ml.learn.rate"
   val DEFAULT_ML_LEARN_RATE = 0.5
+
   val ML_NUM_UPDATE_PER_EPOCH = "ml.num.update.per.epoch"
   val DEFAULT_ML_NUM_UPDATE_PER_EPOCH = 10
 
