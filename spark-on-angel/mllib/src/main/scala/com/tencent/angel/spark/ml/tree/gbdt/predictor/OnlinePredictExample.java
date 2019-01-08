@@ -7,7 +7,7 @@ import org.apache.spark.SparkContext;
 
 public class OnlinePredictExample {
 
-  public static void main(String[] arvs) {
+  public static void main(String[] argv) {
     SparkConf conf = new SparkConf().setMaster("local").setAppName("test");
     SparkContext sc = new SparkContext(conf);
     String modelPath = "xxxx";
