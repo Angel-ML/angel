@@ -58,7 +58,7 @@ public class LRTest {
       double vRatio = 0.1;
 
       // Model type
-      String jsonFile = "E:\\github\\fitzwang\\angel\\angel-ps\\mllib\\src\\test\\jsons\\logreg.json";
+      String jsonFile = "./src/test/jsons/logreg.json";
 
       String modelType = String.valueOf(RowType.T_FLOAT_DENSE);
 
