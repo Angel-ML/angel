@@ -47,7 +47,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
 
   val sharedConf: SharedConf = graph.conf
 
-  val parallel = sharedConf.get(MLConf.IS_PARALLEL).toBoolean
+  val parallel = sharedConf.get(MLConf.ML_MATRIX_DOT_USE_PARALLEL_EXECUTOR).toBoolean
   val modelType: RowType = SharedConf.modelType
   val valueType: String = SharedConf.valueType()
   val inputDataFormat: String = SharedConf.inputDataFormat

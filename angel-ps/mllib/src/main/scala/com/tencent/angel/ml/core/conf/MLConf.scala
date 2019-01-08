@@ -223,8 +223,8 @@ object MLConf {
   val VALID_ERROR = "validate.error"
 
   /** The predict error of all samples */
-  val IS_PARALLEL = "parallel"
-  val DEFAULT_IS_PARALLEL = false
+  val ML_MATRIX_DOT_USE_PARALLEL_EXECUTOR = "ml.matrix.dot.use.parallel.executor"
+  val DEFAULT_ML_MATRIX_DOT_USE_PARALLEL_EXECUTOR = false
 
 }
 

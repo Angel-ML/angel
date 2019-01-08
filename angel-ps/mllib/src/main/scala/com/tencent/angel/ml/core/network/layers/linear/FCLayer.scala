@@ -48,7 +48,7 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
   graph.addTrainable(this)
 
   val sharedConf: SharedConf = graph.conf
-  val parallel = sharedConf.get(MLConf.IS_PARALLEL).toBoolean
+  val parallel = sharedConf.get(MLConf.ML_MATRIX_DOT_USE_PARALLEL_EXECUTOR).toBoolean
 
   val modelType: RowType = SharedConf.denseModelType
   val numTask: Int = sharedConf.get(AngelConf.ANGEL_WORKERGROUP_NUMBER).toInt
