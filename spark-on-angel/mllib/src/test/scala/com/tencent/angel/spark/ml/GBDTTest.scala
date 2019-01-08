@@ -18,13 +18,13 @@ class GBDTTest extends PSFunSuite with SharedPSContext {
   override def beforeAll(): Unit = {
 
     trainPath = "../../data/agaricus/agaricus_127d_train.libsvm"
-    conf.set(TRAIN_DATA_PATH, trainPath)
+    conf.set(ML_TRAIN_PATH, trainPath)
     testPath = "../../data/agaricus/agaricus_127d_train.libsvm"
-    conf.set(VALID_DATA_PATH, testPath)
+    conf.set(ML_VALID_PATH, testPath)
     modelPath = "../../tmp/model"
-    conf.set(MODEL_PATH, modelPath)
+    conf.set(ML_MODEL_PATH, modelPath)
     predPath = "../../tmp/pred"
-    conf.set(MODEL_PATH, modelPath)
+    conf.set(ML_MODEL_PATH, modelPath)
 
     conf.set(ML_NUM_CLASS, "2")
     conf.set(ML_NUM_FEATURE, "149")

@@ -47,7 +47,7 @@ object Transposer {
     param.regLambda = conf.getDouble(ML_GBDT_REG_LAMBDA, DEFAULT_ML_GBDT_REG_LAMBDA).toFloat max 1.0f
     param.maxLeafWeight = conf.getDouble(ML_GBDT_MAX_LEAF_WEIGHT, DEFAULT_ML_GBDT_MAX_LEAF_WEIGHT).toFloat
 
-    val input = conf.get(TRAIN_DATA_PATH)
+    val input = conf.get(ML_TRAIN_PATH)
     val validRatio = conf.getDouble(ML_VALID_DATA_RATIO, DEFAULT_ML_VALID_DATA_RATIO)
     val oriTrainData = loadData(input, validRatio)
 

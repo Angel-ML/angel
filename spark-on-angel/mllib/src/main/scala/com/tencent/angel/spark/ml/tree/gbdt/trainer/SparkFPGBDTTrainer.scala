@@ -29,6 +29,7 @@ import com.tencent.angel.spark.ml.tree.objective.ObjectiveFactory
 import com.tencent.angel.spark.ml.tree.objective.metric.EvalMetric.Kind
 import com.tencent.angel.spark.ml.tree.sketch.HeapQuantileSketch
 import com.tencent.angel.spark.ml.tree.util.{DataLoader, Maths}
+import com.tencent.angel.spark.ml.util.SparkUtils
 import org.apache.hadoop.fs.Path
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
@@ -45,22 +46,42 @@ object SparkFPGBDTTrainer {
     @transient implicit val sc = SparkContext.getOrCreate(conf)
 
     val param = new GBDTParam
+
+    // spark conf
+    val numExecutor = SparkUtils.getNumExecutors(conf)
+    val numCores = conf.get("spark.executor.cores").toInt
+    param.numWorker = numExecutor
+    param.numThread = numCores
+    conf.set("spark.task.cpus", numCores.toString)
+    conf.set("spark.locality.wait", "0")
+    conf.set("spark.memory.fraction", "0.7")
+    conf.set("spark.memory.storageFraction", "0.8")
+    conf.set("spark.task.maxFailures", "1")
+    conf.set("spark.yarn.maxAppAttempts", "1")
+    conf.set("spark.network.timeout", "1000")
+    conf.set("spark.executor.heartbeatInterval", "500")
+
+    // dataset conf
     param.numClass = conf.getInt(ML_NUM_CLASS, DEFAULT_ML_NUM_CLASS)
     param.numFeature = conf.get(ML_NUM_FEATURE).toInt
-    param.featSampleRatio = conf.getDouble(ML_FEATURE_SAMPLE_RATIO, DEFAULT_ML_FEATURE_SAMPLE_RATIO).toFloat
-    param.numWorker = conf.get(ML_NUM_WORKER).toInt
-    param.numThread = conf.getInt(ML_NUM_THREAD, DEFAULT_ML_NUM_THREAD)
+
+    // loss and metric
     param.lossFunc = conf.get(ML_LOSS_FUNCTION)
     param.evalMetrics = conf.get(ML_EVAL_METRIC, DEFAULT_ML_EVAL_METRIC).split(",").map(_.trim).filter(_.nonEmpty)
+
+    // major algo conf
+    param.featSampleRatio = conf.getDouble(ML_FEATURE_SAMPLE_RATIO, DEFAULT_ML_FEATURE_SAMPLE_RATIO).toFloat
     param.learningRate = conf.getDouble(ML_LEARN_RATE, DEFAULT_ML_LEARN_RATE).toFloat
-    param.histSubtraction = conf.getBoolean(ML_GBDT_HIST_SUBTRACTION, DEFAULT_ML_GBDT_HIST_SUBTRACTION)
-    param.lighterChildFirst = conf.getBoolean(ML_GBDT_LIGHTER_CHILD_FIRST, DEFAULT_ML_GBDT_LIGHTER_CHILD_FIRST)
-    param.fullHessian = conf.getBoolean(ML_GBDT_FULL_HESSIAN, DEFAULT_ML_GBDT_FULL_HESSIAN)
     param.numSplit = conf.getInt(ML_GBDT_SPLIT_NUM, DEFAULT_ML_GBDT_SPLIT_NUM)
     param.numTree = conf.getInt(ML_GBDT_TREE_NUM, DEFAULT_ML_GBDT_TREE_NUM)
     param.maxDepth = conf.getInt(ML_GBDT_MAX_DEPTH, DEFAULT_ML_GBDT_MAX_DEPTH)
     val maxNodeNum = Maths.pow(2, param.maxDepth + 1) - 1
     param.maxNodeNum = conf.getInt(ML_GBDT_MAX_NODE_NUM, maxNodeNum) min maxNodeNum
+
+    // less important algo conf
+    param.histSubtraction = conf.getBoolean(ML_GBDT_HIST_SUBTRACTION, DEFAULT_ML_GBDT_HIST_SUBTRACTION)
+    param.lighterChildFirst = conf.getBoolean(ML_GBDT_LIGHTER_CHILD_FIRST, DEFAULT_ML_GBDT_LIGHTER_CHILD_FIRST)
+    param.fullHessian = conf.getBoolean(ML_GBDT_FULL_HESSIAN, DEFAULT_ML_GBDT_FULL_HESSIAN)
     param.minChildWeight = conf.getDouble(ML_GBDT_MIN_CHILD_WEIGHT, DEFAULT_ML_GBDT_MIN_CHILD_WEIGHT).toFloat
     param.minNodeInstance = conf.getInt(ML_GBDT_MIN_NODE_INSTANCE, DEFAULT_ML_GBDT_MIN_NODE_INSTANCE)
     param.minSplitGain = conf.getDouble(ML_GBDT_MIN_SPLIT_GAIN, DEFAULT_ML_GBDT_MIN_SPLIT_GAIN).toFloat
@@ -69,14 +90,13 @@ object SparkFPGBDTTrainer {
     param.maxLeafWeight = conf.getDouble(ML_GBDT_MAX_LEAF_WEIGHT, DEFAULT_ML_GBDT_MAX_LEAF_WEIGHT).toFloat
     println(s"Hyper-parameters:\n$param")
 
-    val modelPath = conf.get(MODEL_PATH)
-    println(s"Model will be saved to $modelPath")
+    val trainPath = conf.get(ML_TRAIN_PATH)
+    val validPath = conf.get(ML_VALID_PATH)
+    val modelPath = conf.get(ML_MODEL_PATH)
 
     try {
       val trainer = new SparkFPGBDTTrainer(param)
-      val trainInput = conf.get(TRAIN_DATA_PATH)
-      val validInput = conf.get(VALID_DATA_PATH)
-      trainer.initialize(trainInput, validInput)
+      trainer.initialize(trainPath, validPath)
       val model = trainer.train()
       trainer.save(model, modelPath)
     } catch {
@@ -484,6 +504,7 @@ class SparkFPGBDTTrainer(param: GBDTParam) extends Serializable {
     val path = new Path(modelPath)
     val fs = path.getFileSystem(sc.hadoopConfiguration)
     if (fs.exists(path)) fs.delete(path, true)
+    println(s"Model will be saved to $modelPath")
     sc.parallelize(Seq(model)).saveAsObjectFile(modelPath)
   }
 

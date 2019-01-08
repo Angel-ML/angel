@@ -105,13 +105,13 @@ object FPGBDTPredictor {
     @transient val conf = new SparkConf()
     @transient implicit val sc = SparkContext.getOrCreate(conf)
 
-    val modelPath = conf.get(MODEL_PATH)
-    val validPath = conf.get(VALID_DATA_PATH)
-    val predPath = conf.get(PREDICT_DATA_PATH)
+    val modelPath = conf.get(ML_MODEL_PATH)
+    val validPath = conf.get(ML_VALID_PATH)
+    val predictPath = conf.get(ML_PREDICT_PATH)
 
     val predictor = new FPGBDTPredictor
     predictor.loadModel(sc, modelPath)
-    predictor.predict(sc, validPath, predPath)
+    predictor.predict(sc, validPath, predictPath)
 
     sc.stop
   }
