@@ -224,7 +224,7 @@ object MLConf {
 
   /** The predict error of all samples */
   val IS_PARALLEL = "parallel"
-  val DEFAULT_IS_PARALLEL = true
+  val DEFAULT_IS_PARALLEL = false
 
 }
 
