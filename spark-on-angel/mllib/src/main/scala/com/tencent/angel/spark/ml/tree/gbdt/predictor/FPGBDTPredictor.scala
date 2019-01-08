@@ -21,7 +21,7 @@ class FPGBDTPredictor extends Serializable {
 
   def predict(predictor: FPGBDTPredictor, instances: RDD[Vector]): RDD[Array[Float]] = {
     val bcPredictor = instances.sparkContext.broadcast(predictor)
-    instances.map(bcPredictor.value.predict)
+    instances.map(bcPredictor.value.predictRaw)
   }
 
   def predict(implicit sc: SparkContext, validPath: String, predPath: String): Unit = {
@@ -50,14 +50,14 @@ class FPGBDTPredictor extends Serializable {
     println(s"Writing predictions to $predPath")
   }
 
-  def predict(instance: Vector): Array[Float] = {
+  def predictRaw(vec: Vector): Array[Float] = {
 
     val param = forest.head.getParam
     val preds = Array.ofDim[Float](if (param.numClass == 2) 1 else param.numClass)
     forest.foreach(tree => {
       var node = tree.getRoot
       while (!node.isLeaf) {
-        if (node.getSplitEntry.flowTo(instance) == 0)
+        if (node.getSplitEntry.flowTo(vec) == 0)
           node = node.getLeftChild.asInstanceOf[GBTNode]
         else
           node = node.getRightChild.asInstanceOf[GBTNode]
@@ -80,15 +80,20 @@ class FPGBDTPredictor extends Serializable {
     }
   }
 
+  def predict(vec: Vector): Int = {
+    val preds = predictRaw(vec)
+    probToClass(preds)
+  }
+
   def predict(features: Array[Double]): Int = {
-    val instance = Vectors.dense(features)
-    val preds = predict(instance)
+    val vec = Vectors.dense(features)
+    val preds = predictRaw(vec)
     probToClass(preds)
   }
 
   def predict(dim: Int, indices: Array[Int], values: Array[Double]): Int = {
-    val instance = Vectors.sparse(dim, indices, values)
-    val preds = predict(instance)
+    val vec = Vectors.sparse(dim, indices, values)
+    val preds = predictRaw(vec)
     probToClass(preds)
   }
 
@@ -98,7 +103,7 @@ object FPGBDTPredictor {
 
   def predict(predictor: FPGBDTPredictor, instances: RDD[Vector]): RDD[Array[Float]] = {
     val bcPredictor = instances.sparkContext.broadcast(predictor)
-    instances.map(bcPredictor.value.predict)
+    instances.map(bcPredictor.value.predictRaw)
   }
 
   def main(args: Array[String]): Unit = {
