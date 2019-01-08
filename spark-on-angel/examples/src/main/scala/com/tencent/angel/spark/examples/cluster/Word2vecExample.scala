@@ -56,6 +56,7 @@ object Word2vecExample {
     val withSubSample = params.getOrElse("subSample", "true").toBoolean
     val withRemapping = params.getOrElse("remapping", "true").toBoolean
     val modelType = params.getOrElse("modelType", "cbow")
+    val checkpointInterval = params.getOrElse("interval", "10").toInt
 
     val numCores = SparkUtils.getNumCores(conf)
 
@@ -76,16 +77,17 @@ object Word2vecExample {
       corpus = Features.corpusStringToIntWithoutRemapping(data)
     }
 
-    val docs = if (withSubSample) {
+    val (maxWordId, docs) = if (withSubSample) {
       corpus.persist(StorageLevel.DISK_ONLY)
-      SubSampling.sampling(corpus).repartition(numDataPartitions)
-    } else
-      corpus.repartition(numDataPartitions)
-
+      val subsampleTmp = SubSampling.sampling(corpus)
+      (subsampleTmp._1, subsampleTmp._2.repartition(numDataPartitions))
+    } else {
+      val tmp = corpus.repartition(numDataPartitions)
+      (tmp.map(_.max).max().toLong + 1, tmp)
+    }
     docs.persist(StorageLevel.DISK_ONLY)
 
     val numDocs = docs.count()
-    val maxWordId = docs.map(_.max).max().toLong + 1
     val numTokens = docs.map(_.length).sum().toLong
     val maxLength = docs.map(_.length).max()
     println(s"numDocs=$numDocs maxWordId=$maxWordId numTokens=$numTokens maxLength=$maxLength")
@@ -106,10 +108,11 @@ object Word2vecExample {
       .setNumRowDataSet(numDocs)
       .setMaxLength(maxLength)
       .setModel(modelType)
+      .setModelCPInterval(checkpointInterval)
 
     val model = new Word2VecModel(param)
-    model.train(docs, param)
-    model.save(output + "/embedding", 0)
+    model.train(docs, param, output + "/embedding")
+    model.save(output + "/embedding", numEpoch)
     denseToString.map(rdd => rdd.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "/mapping"))
 
     PSContext.stop()

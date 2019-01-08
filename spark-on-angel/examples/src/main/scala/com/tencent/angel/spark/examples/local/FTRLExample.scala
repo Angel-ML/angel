@@ -64,6 +64,9 @@ object FTRLExample {
           val loss = iterator.map(f => (f.getX, f.getY))
             .sliding(batchSize, batchSize)
             .map(f => opt.optimize(f.toArray, calcGradientLoss)).sum
+
+//          val loss = iterator.sliding(batchSize, batchSize)
+//              .map(f => opt.optimize(f.toArray)).sum
           Iterator.single(loss)
       }.sum()
 
@@ -76,8 +79,10 @@ object FTRLExample {
     }
 
     if (modelPath.length > 0) {
-      val model = SparseLRModel(opt.weight)
-      model.save(modelPath)
+      val weight = opt.weight
+      opt.save(modelPath + "/back")
+      val model = SparseLRModel(weight)
+      model.save(modelPath + "/weight")
     }
     stop()
   }
@@ -86,14 +91,16 @@ object FTRLExample {
     val margin = -w.dot(feature)
     val gradientMultiplier = 1.0 / (1.0 + math.exp(margin)) - label
     val grad = feature.mul(gradientMultiplier).asInstanceOf[LongDoubleVector]
-
-    val loss = if (label > 0) {
-      math.log1p(math.exp(margin))
-    } else {
-      math.log1p(math.exp(margin)) - margin
-    }
-
+    val loss = if (label > 0) log1pExp(margin) else log1pExp(margin) - margin
     (grad, loss)
+  }
+
+  def log1pExp(x: Double): Double = {
+    if (x > 0) {
+      x + math.log1p(math.exp(-x))
+    } else {
+      math.log1p(math.exp(x))
+    }
   }
 
 

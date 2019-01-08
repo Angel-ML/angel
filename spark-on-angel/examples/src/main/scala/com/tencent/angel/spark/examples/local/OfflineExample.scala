@@ -18,10 +18,11 @@
 
 package com.tencent.angel.spark.examples.local
 
+import com.tencent.angel.RunningMode
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OfflineLearner}
-import com.tencent.angel.spark.ml.util.DataLoader
 import org.apache.spark.{SparkConf, SparkContext}
 
 object OfflineExample {
@@ -30,7 +31,7 @@ object OfflineExample {
     val params = ArgsUtil.parse(args)
     val input = params.getOrElse("input", "data/census/census_148d_train.libsvm")
     val dataType = params.getOrElse(MLConf.ML_DATA_INPUT_FORMAT, "libsvm")
-    val features = params.getOrElse(MLConf.ML_FEATURE_INDEX_RANGE, "148").toInt
+    val features = params.getOrElse(MLConf.ML_FEATURE_INDEX_RANGE, "149").toInt
     val numField = params.getOrElse(MLConf.ML_FIELD_NUM, "13").toInt
     val numRank = params.getOrElse(MLConf.ML_RANK_NUM, "8").toInt
     val numEpoch = params.getOrElse(MLConf.ML_EPOCH_NUM, "10").toInt
@@ -48,6 +49,8 @@ object OfflineExample {
     SharedConf.get().setDouble(MLConf.ML_BATCH_SAMPLE_RATIO, fraction)
     SharedConf.get().setDouble(MLConf.ML_LEARN_RATE, lr)
 
+    SharedConf.get().set(AngelConf.ANGEL_RUNNING_MODE, RunningMode.ANGEL_PS.toString)
+
 
     val className = "com.tencent.angel.spark.ml.classification." + network
     val model = GraphModel(className)
@@ -63,11 +66,12 @@ object OfflineExample {
     conf.set("spark.ui.enabled", "false")
 
     val sc = new SparkContext(conf)
-    val data = sc.textFile(input).map(f => DataLoader.parseIntFloat(f, SharedConf.indexRange.toInt))
+    sc.setLogLevel("ERROR")
 
     PSContext.getOrCreate(sc)
 
-    learner.train(data, model)
+    val dim = SharedConf.indexRange.toInt
+    learner.train(input, "", "", dim, model)
 
     PSContext.stop()
     sc.stop()

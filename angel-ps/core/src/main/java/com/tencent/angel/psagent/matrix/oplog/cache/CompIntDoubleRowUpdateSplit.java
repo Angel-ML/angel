@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -29,20 +29,28 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
  * Component int double row update split
  */
 public class CompIntDoubleRowUpdateSplit extends RowUpdateSplit {
+
   /**
    * Row update split
    */
   private final IntDoubleVector split;
 
   /**
+   * Max element number in this split
+   */
+  private final int maxItemNum;
+
+  /**
    * Create a new CompIntDoubleRowUpdateSplit.
    *
    * @param rowIndex row index
-   * @param split    row update split
+   * @param split row update split
+   * @param maxItemNum Max element number in this split
    */
-  public CompIntDoubleRowUpdateSplit(int rowIndex, IntDoubleVector split) {
+  public CompIntDoubleRowUpdateSplit(int rowIndex, IntDoubleVector split, int maxItemNum) {
     super(rowIndex, RowType.T_DOUBLE_DENSE, -1, -1);
     this.split = split;
+    this.maxItemNum = maxItemNum;
     IntDoubleVectorStorage storage = split.getStorage();
     if (storage instanceof IntDoubleDenseVectorStorage) {
       rowType = RowType.T_DOUBLE_DENSE_COMPONENT;
@@ -55,12 +63,14 @@ public class CompIntDoubleRowUpdateSplit extends RowUpdateSplit {
     return split;
   }
 
-  @Override public void serialize(ByteBuf buf) {
+  @Override
+  public void serialize(ByteBuf buf) {
     // TODO:
     super.serialize(buf);
     IntDoubleVectorStorage storage = split.getStorage();
-    buf.writeInt(storage.size());
+
     if (storage instanceof IntDoubleSparseVectorStorage) {
+      buf.writeInt(storage.size());
       ObjectIterator<Int2DoubleMap.Entry> iter = storage.entryIterator();
       Int2DoubleMap.Entry entry;
       while (iter.hasNext()) {
@@ -69,6 +79,7 @@ public class CompIntDoubleRowUpdateSplit extends RowUpdateSplit {
         buf.writeDouble(entry.getDoubleValue());
       }
     } else if (storage instanceof IntDoubleSortedVectorStorage) {
+      buf.writeInt(storage.size());
       int[] indices = storage.getIndices();
       double[] values = storage.getValues();
       for (int i = 0; i < indices.length; i++) {
@@ -77,20 +88,24 @@ public class CompIntDoubleRowUpdateSplit extends RowUpdateSplit {
       }
     } else if (storage instanceof IntDoubleDenseVectorStorage) {
       double[] values = storage.getValues();
-      for (int i = 0; i < values.length; i++) {
+      int writeSize = values.length < maxItemNum ? values.length : maxItemNum;
+      buf.writeInt(writeSize);
+      for (int i = 0; i < writeSize; i++) {
         buf.writeDouble(values[i]);
       }
     } else {
       throw new UnsupportedOperationException(
-        "unsupport split for storage " + storage.getClass().getName());
+          "unsupport split for storage " + storage.getClass().getName());
     }
   }
 
-  @Override public long size() {
+  @Override
+  public long size() {
     return split.size();
   }
 
-  @Override public int bufferLen() {
+  @Override
+  public int bufferLen() {
     if (rowType == RowType.T_DOUBLE_DENSE) {
       return 4 + super.bufferLen() + split.getStorage().size() * 8;
     } else {

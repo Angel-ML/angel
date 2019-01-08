@@ -20,18 +20,17 @@ package com.tencent.angel.ml.core.network.layers.verge
 
 import java.util.concurrent.Future
 
-import com.tencent.angel.conf.{AngelConf, MatrixConf}
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.transfunc.TransFunc
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
 import com.tencent.angel.ml.core.utils.{NetUtils, PSMatrixUtils}
-import com.tencent.angel.ml.math2.MFactory
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import com.tencent.angel.ml.math2.utils.VectorUtils
 import com.tencent.angel.ml.math2.vector._
+import com.tencent.angel.ml.math2.{MFactory, VFactory}
 import com.tencent.angel.ml.matrix.psf.update.RandomNormal
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
@@ -48,33 +47,37 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
 
   val sharedConf: SharedConf = graph.conf
 
+  val parallel = sharedConf.get(MLConf.IS_PARALLEL).toBoolean
   val modelType: RowType = SharedConf.modelType
   val valueType: String = SharedConf.valueType()
+  val inputDataFormat: String = SharedConf.inputDataFormat
+  val mode = SharedConf.runningMode()
+  val modelsize = SharedConf.modelSize
 
-  private val multiplier = OptUtils.getOptMultiplier(optimizer)
-  private val validIndexNum = SharedConf.modelSize
 
-  private val weightCtx: MatrixContext = (SharedConf.inputDataFormat, NetUtils.storageType(modelType)) match {
+  private val numSlot = OptUtils.getSlotNum(optimizer)
+
+  private val weightCtx: MatrixContext = (inputDataFormat, NetUtils.storageType(modelType)) match {
     case ("dense", "dense" | "component_dense") => // dense data, dense model
       // in this condition, all the parameters are stored in one row
-      val psRows: Int = multiplier
+      val psRows: Int = numSlot + 1
       val psCols = SharedConf.indexRange * outputDim
       PSMatrixUtils.createPSMatrixCtx(s"${name}_weight", psRows, psCols, modelType)
     // in this condition, the shape of weight matrix is (inputDim, outputDim)
     // and inputDim = SharedConf.indexRange
     case ("libsvm" | "dummy", "dense" | "component_dense") => // sparse data, dense model
-      val psRows: Int = outputDim * multiplier
+      val psRows: Int = outputDim * (numSlot + 1)
       val psCols = SharedConf.indexRange
       PSMatrixUtils.createPSMatrixCtx(s"${name}_weight", psRows, psCols, modelType)
     // in this condition, the shape of weight matrix is (outputDim, inputDim)
     // and inputDim = SharedConf.indexRange
     case ("libsvm" | "dummy", "sparse" | "component_sparse") => // sparse data, sparse model
-      val psRows: Int = outputDim * multiplier
+      val psRows: Int = outputDim * (numSlot + 1)
       val psCols = SharedConf.indexRange
       val wCtx = PSMatrixUtils.createPSMatrixCtx(s"${name}_weight", psRows, psCols, modelType)
       // in this condition, the shape of weight matrix is (outputDim, inputDim)
       // and inputDim = SharedConf.indexRange
-      wCtx.setValidIndexNum(validIndexNum)
+      wCtx.setValidIndexNum(modelsize)
       wCtx
     case _ => // dense data, sparse model
       throw new AngelException("Dense data, sparse model, pls. change model to dense")
@@ -102,9 +105,9 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
     status match {
       case STATUS.Null =>
         // println(s"the status in SparseInputLayer($name)-calOutput is ${status.toString}")
-        (SharedConf.inputDataFormat, valueType) match {
+        (inputDataFormat, valueType) match {
           case ("dense", "double" | "float") => // the shape of weight matrix is (inputDim, outputDim)
-            forward = graph.placeHolder.getFeats.dot(weight).iadd(bias)
+            forward = graph.placeHolder.getFeats.dot(weight, parallel).iadd(bias)
           case ("libsvm" | "dummy", "double") => // the shape of weight matrix is (outputDim, inputDim)
             forward = MFactory.denseDoubleMatrix(graph.placeHolder.getBatchSize, outputDim)
             (0 until outputDim).foreach { colId => // the shape of weight matrix is (outputDim, inputDim)
@@ -147,7 +150,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
 
   override def pullParams(epoch: Int): Unit = {
     // Note: weight is a row based matrix
-    (SharedConf.inputDataFormat, NetUtils.storageType(modelType)) match {
+    (inputDataFormat, NetUtils.storageType(modelType)) match {
       case ("dense", "dense" | "component_dense") => // dense data, dense model
         // the shape of weight matrix is (inputDim, outputDim)
         weight = PSMatrixUtils.getRowAsMatrix(epoch, weightId, 0, SharedConf.indexRange.toInt, outputDim)
@@ -163,21 +166,20 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
       case _ => // dense data, sparse model
         throw new AngelException("Dense data, sparse model, pls. change model to dense")
     }
-
     bias = PSMatrixUtils.getRow(epoch, biasId, 0)
   }
 
   override def pushGradient(): Unit = {
     val start = System.currentTimeMillis()
-    val normal = 1.0 / OptUtils.getNormal(sharedConf, graph)
+    val normal = 1.0 / OptUtils.getNormal(mode, graph)
 
     status match {
       case STATUS.Backward =>
-        (SharedConf.inputDataFormat, NetUtils.storageType(modelType)) match {
+        (inputDataFormat, NetUtils.storageType(modelType)) match {
           case ("dense", "dense" | "component_dense") => // dense data, dense model
-            val weightGrad: Matrix = Ufuncs.dot(graph.placeHolder.getFeats, true, backward, false)
+            val weightGrad: Matrix = Ufuncs.dot(graph.placeHolder.getFeats, true, backward, false, parallel)
               .imul(normal)
-            PSMatrixUtils.incrementRowByMatrix(weightId, multiplier - 1, weightGrad)
+            PSMatrixUtils.incrementRowByMatrix(weightId, numSlot, weightGrad)
           case _ => // sparse data, dense or sparse model, note: dense data, sparse model is not allowed
             val vectors = (0 until outputDim).toArray.map { colId =>
               val weightRowGrad = valueType match {
@@ -190,7 +192,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
               }
 
               weightRowGrad.setMatrixId(weight.getMatrixId)
-              weightRowGrad.setRowId(outputDim * (multiplier - 1) + colId)
+              weightRowGrad.setRowId(outputDim * numSlot + colId)
               weightRowGrad.setClock(weight.getClock)
 
               weightRowGrad
@@ -200,7 +202,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
         }
 
 
-        PSMatrixUtils.incrementRow(biasId, 0, backward.average(0).imul(-optimizer.lr / graph.taskNum))
+        PSMatrixUtils.incrementRow(biasId, 0, backward.average(0).imul(-optimizer.getLR / graph.taskNum))
 
         status = STATUS.Gradient
       case _ =>
@@ -215,7 +217,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
     var result: Future[VoidResult] = null
     status match {
       case STATUS.Gradient =>
-        (SharedConf.inputDataFormat, NetUtils.storageType(modelType)) match {
+        (inputDataFormat, NetUtils.storageType(modelType)) match {
           case ("dense", "dense" | "component_dense") => // dense data, dense model
             result = optimizer.update(weightId, 1, epoch, batchSize)
           case _ =>
@@ -232,7 +234,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
   override def init(taskflag: Int): Unit = {
     if (taskflag == 0) {
       val bound = 0.0001
-      (SharedConf.inputDataFormat, NetUtils.storageType(modelType)) match {
+      (inputDataFormat, NetUtils.storageType(modelType)) match {
         case ("dense", "dense" | "component_dense") => // dense data, dense model
           val randFunc = new RandomNormal(weightId, 0, 1, 0.0, bound)
           PSAgentContext.get().getUserRequestAdapter.update(randFunc).get()

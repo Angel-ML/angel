@@ -25,10 +25,13 @@ import com.tencent.angel.ml.math2.storage.LongKeyVectorStorage
 import com.tencent.angel.ml.math2.ufuncs.{OptFuncs, Ufuncs}
 import com.tencent.angel.ml.math2.vector.{LongDoubleVector, LongDummyVector, LongKeyVector, Vector}
 import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.model.output.format.{ColIdValueTextRowFormat, RowIdColIdValueTextRowFormat}
+import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
-import com.tencent.angel.spark.ml.psf.FTRLWUpdater
+import com.tencent.angel.psagent.PSAgentContext
+import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
+import com.tencent.angel.spark.ml.psf.ftrl.ComputeW
 import com.tencent.angel.spark.models.PSVector
-import com.tencent.angel.spark.util.VectorUtils
 
 class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regularSkipFeatIndex: Long = 0) extends Serializable {
 
@@ -41,14 +44,13 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     nPS = PSVector.duplicate(zPS)
   }
 
-  def init(dim: Long): Unit = {
-    init(dim, RowType.T_DOUBLE_SPARSE_LONGKEY)
-  }
+  def init(dim: Long): Unit = init(dim, RowType.T_DOUBLE_SPARSE_LONGKEY)
 
   /**
     * Using math2 to optimize FTRL, but there is some error for this version.
     * The loss will become infinity when reaching convergence.
-    * @param batch: mini-batch training examples
+    *
+    * @param batch : mini-batch training examples
     * @return
     */
   def optimize(batch: Array[LabeledData]): Double = {
@@ -58,7 +60,8 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
           case dummy: LongDummyVector => dummy.getIndices
           case longKey: LongKeyVector => longKey.getStorage
             .asInstanceOf[LongKeyVectorStorage].getIndices
-        }}.distinct
+        }
+    }.distinct
 
     val localZ = zPS.pull(indices)
     val localN = nPS.pull(indices)
@@ -79,11 +82,7 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
       val grad = feature.mul(multiplier)
       val delta = OptFuncs.ftrldelta(localN, grad, alpha)
 
-      val loss =
-        if (label > 0)
-          math.log1p(math.exp(margin))
-        else
-          math.log1p(math.exp(margin)) - margin
+      val loss = if (label > 0) log1pExp(margin) else log1pExp(margin) - margin
 
       lossSum += loss
       Ufuncs.iaxpy2(deltaN, grad, 1)
@@ -102,6 +101,7 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
 
   /**
     * Predict with weight
+    *
     * @param batch
     * @return
     */
@@ -112,7 +112,8 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
           case dummy: LongDummyVector => dummy.getIndices
           case longKey: LongKeyVector => longKey.getStorage
             .asInstanceOf[LongKeyVectorStorage].getIndices
-        }}.distinct
+        }
+    }.distinct
 
     val localZ = zPS.pull(indices)
     val localN = nPS.pull(indices)
@@ -129,12 +130,13 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
 
   /**
     * Optimizing only for LongDoubleVector. This version is ok and the model is correct.
-    * @param batch: training mini-batch examples
-    * @param costFun: function to calculate gradients
+    *
+    * @param batch   : training mini-batch examples
+    * @param costFun : function to calculate gradients
     * @return Loss for this batch
     */
   def optimize(batch: Array[(Vector, Double)],
-      costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)): Double = {
+               costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)): Double = {
 
     val dim = batch.head._1.dim()
     val featIds = batch.flatMap { case (v, _) =>
@@ -174,24 +176,24 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
 
   /**
     * Optimizing for one example (feature, label)
+    *
     * @param feature
     * @param label
-    * @param localN, N in the local executor
-    * @param localW. weight in the local executor
-    * @param deltaZ, delta value for z
-    * @param deltaN, delta value for n
+    * @param localN , N in the local executor
+    * @param localW . weight in the local executor
+    * @param deltaZ , delta value for z
+    * @param deltaN , delta value for n
     * @param costFun
     * @return
     */
-  def optimize(
-      feature: Vector,
-      label: Double,
-      localN: LongDoubleVector,
-      localW: LongDoubleVector,
-      deltaZ: LongDoubleVector,
-      deltaN: LongDoubleVector,
-      costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)
-  ): Double = {
+  def optimize(feature: Vector,
+               label: Double,
+               localN: LongDoubleVector,
+               localW: LongDoubleVector,
+               deltaZ: LongDoubleVector,
+               deltaN: LongDoubleVector,
+               costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)
+              ): Double = {
 
     val featIndices = feature match {
       case longV: LongDoubleVector => longV.getStorage.getIndices
@@ -213,17 +215,19 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
 
   /**
     * calculate w from z and n and store it in the w row
+    *
     * @return
     */
   def weight: PSVector = {
     val wPS = PSVector.duplicate(zPS)
-    val func = new FTRLWUpdater(alpha, beta, lambda1, lambda2, regularSkipFeatIndex)
-    VectorUtils.zip2MapWithIndex(zPS, nPS, func, wPS)
-    VectorUtils.compress(wPS)
+    val func = new ComputeW(wPS.poolId, alpha, beta, lambda1, lambda2)
+    wPS.psfUpdate(func).get()
+    wPS
   }
 
   /**
     * calculate w from z and n for one dimension
+    *
     * @param fId
     * @param zOnId
     * @param nOnId
@@ -233,14 +237,13 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     * @param lambda2
     * @return
     */
-  def updateWeight(
-      fId: Long,
-      zOnId: Double,
-      nOnId: Double,
-      alpha: Double,
-      beta: Double,
-      lambda1: Double,
-      lambda2: Double): Double = {
+  def updateWeight(fId: Long,
+                   zOnId: Double,
+                   nOnId: Double,
+                   alpha: Double,
+                   beta: Double,
+                   lambda1: Double,
+                   lambda2: Double): Double = {
     if (fId == regularSkipFeatIndex) {
       -1.0 * alpha * zOnId / (beta + Math.sqrt(nOnId))
     } else if (Math.abs(zOnId) <= lambda1) {
@@ -250,4 +253,40 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     }
   }
 
+  def log1pExp(x: Double): Double = {
+    if (x > 0) {
+      x + math.log1p(math.exp(-x))
+    } else {
+      math.log1p(math.exp(x))
+    }
+  }
+
+  def save(path: String): Unit = {
+    val format = classOf[RowIdColIdValueTextRowFormat].getCanonicalName
+    val modelContext = new ModelSaveContext(path)
+    val name = PSContext.instance().getMatrixMeta(zPS.poolId).get.getName
+    val matrixContext = new MatrixSaveContext(name, format)
+    matrixContext.addIndices(Array(0, 1, 2))
+    modelContext.addMatrix(matrixContext)
+    AngelPSContext.save(modelContext)
+  }
+
+  def saveWeight(path: String): Unit = {
+    val format = classOf[ColIdValueTextRowFormat].getCanonicalName
+    val modelContext = new ModelSaveContext(path)
+    val name = PSContext.instance().getMatrixMeta(zPS.poolId).get.getName
+    val matrixContext = new MatrixSaveContext(name, format)
+    matrixContext.addIndices(Array(2))
+    modelContext.addMatrix(matrixContext)
+    AngelPSContext.save(modelContext)
+  }
+
+  def load(path: String): Unit = {
+    val format = classOf[RowIdColIdValueTextRowFormat].getCanonicalName
+    val modelContext = new ModelLoadContext(path)
+    val name = PSContext.instance().getMatrixMeta(zPS.poolId).get.getName
+    val matrixContext = new MatrixLoadContext(name, format)
+    modelContext.addMatrix(matrixContext)
+    AngelPSContext.load(modelContext)
+  }
 }

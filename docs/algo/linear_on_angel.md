@@ -67,7 +67,7 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Linear Re
 
 * 提交命令
 
- 	*向Yarn集群提交LinearRegression算法训练任务:
+ 	* 向Yarn集群提交LinearRegression算法训练任务:
 
 	```java
 	./bin/angel-submit \
@@ -98,7 +98,7 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Linear Re
 		--angel.output.path.deleteonexist=true
 	```
 
-	*向Yarn集群提交LinearRegression算法增量训练任务:
+	* 向Yarn集群提交LinearRegression算法增量训练任务:
 
 	```java
 	./bin/angel-submit \
@@ -130,7 +130,7 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Linear Re
 		--angel.output.path.deleteonexist=true
 	```
 
-	*向Yarn集群提交LinearRegression算法预测任务:
+	* 向Yarn集群提交LinearRegression算法预测任务:
 
 	```java
 	./bin/angel-submit \

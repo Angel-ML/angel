@@ -4,12 +4,12 @@ import java.util.Random
 
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 
-class LinearCosineDecay(eta: Double, alpha: Double = 0.0, beta: Double = 0.001, UseNoisy: Boolean = false) extends StepSizeScheduler {
+class LinearCosineDecay(eta: Double, alpha: Double = 0.0, beta: Double = 0.001, useNoisy: Boolean = false) extends StepSizeScheduler {
   private var current: Int = 0
   private val numPeriods: Double = 0.5
   private val initialVariance: Double = 1.0
   private val varianceDecay: Double = 0.55
-  private val interval: Int = SharedConf.get().getInt(MLConf.ML_DECAY_INTERVALS, 100)
+  private val interval: Int = SharedConf.get().getInt(MLConf.ML_OPT_DECAY_INTERVALS, 100)
   private val rand = new Random()
 
 
@@ -19,7 +19,7 @@ class LinearCosineDecay(eta: Double, alpha: Double = 0.0, beta: Double = 0.001, 
     val linearDecay: Double = 1 - ratio
     val cosineDecay: Double = (1 + Math.cos(Math.PI * 2 * numPeriods * ratio)) / 2
 
-    val esp: Double = if (UseNoisy) {
+    val esp: Double = if (useNoisy) {
       val std: Double = Math.sqrt(initialVariance / Math.pow(1 + current, varianceDecay))
       rand.nextGaussian() * std
     } else {

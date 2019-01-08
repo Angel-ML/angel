@@ -884,6 +884,10 @@ public abstract class RowFormat extends MatrixFormatImpl {
   private void load(IntFloatVector row, MatrixLoadContext loadContext, MatrixPartitionMeta meta,
     DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
+    if(rowMeta == null) {
+      LOG.warn("can not find meta data for row " + row.getRowId() + ", just exit load");
+      return;
+    }
     int elemNum = rowMeta.getElementNum();
     IntFloatElement element = new IntFloatElement();
     for (int i = 0; i < elemNum; i++) {
@@ -895,6 +899,10 @@ public abstract class RowFormat extends MatrixFormatImpl {
   private void load(IntDoubleVector row, MatrixLoadContext loadContext, MatrixPartitionMeta meta,
     DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
+    if(rowMeta == null) {
+      LOG.warn("can not find meta data for row " + row.getRowId() + ", just exit load");
+      return;
+    }
     int elemNum = rowMeta.getElementNum();
     IntDoubleElement element = new IntDoubleElement();
     for (int i = 0; i < elemNum; i++) {
@@ -906,6 +914,10 @@ public abstract class RowFormat extends MatrixFormatImpl {
   private void load(IntIntVector row, MatrixLoadContext loadContext, MatrixPartitionMeta meta,
     DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
+    if(rowMeta == null) {
+      LOG.warn("can not find meta data for row " + row.getRowId() + ", just exit load");
+      return;
+    }
     int elemNum = rowMeta.getElementNum();
     IntIntElement element = new IntIntElement();
     for (int i = 0; i < elemNum; i++) {
@@ -917,6 +929,10 @@ public abstract class RowFormat extends MatrixFormatImpl {
   private void load(IntLongVector row, MatrixLoadContext loadContext, MatrixPartitionMeta meta,
     DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
+    if(rowMeta == null) {
+      LOG.warn("can not find meta data for row " + row.getRowId() + ", just exit load");
+      return;
+    }
     int elemNum = rowMeta.getElementNum();
     IntLongElement element = new IntLongElement();
     for (int i = 0; i < elemNum; i++) {
@@ -928,6 +944,10 @@ public abstract class RowFormat extends MatrixFormatImpl {
   private void load(LongFloatVector row, MatrixLoadContext loadContext, MatrixPartitionMeta meta,
     DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
+    if(rowMeta == null) {
+      LOG.warn("can not find meta data for row " + row.getRowId() + ", just exit load");
+      return;
+    }
     int elemNum = rowMeta.getElementNum();
     LongFloatElement element = new LongFloatElement();
     for (int i = 0; i < elemNum; i++) {
@@ -939,6 +959,10 @@ public abstract class RowFormat extends MatrixFormatImpl {
   private void load(LongDoubleVector row, MatrixLoadContext loadContext, MatrixPartitionMeta meta,
     DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
+    if(rowMeta == null) {
+      LOG.warn("can not find meta data for row " + row.getRowId() + ", just exit load");
+      return;
+    }
     int elemNum = rowMeta.getElementNum();
     LongDoubleElement element = new LongDoubleElement();
     for (int i = 0; i < elemNum; i++) {
@@ -950,6 +974,10 @@ public abstract class RowFormat extends MatrixFormatImpl {
   private void load(LongIntVector row, MatrixLoadContext loadContext, MatrixPartitionMeta meta,
     DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
+    if(rowMeta == null) {
+      LOG.warn("can not find meta data for row " + row.getRowId() + ", just exit load");
+      return;
+    }
     int elemNum = rowMeta.getElementNum();
     LongIntElement element = new LongIntElement();
     for (int i = 0; i < elemNum; i++) {
@@ -961,6 +989,10 @@ public abstract class RowFormat extends MatrixFormatImpl {
   private void load(LongLongVector row, MatrixLoadContext loadContext, MatrixPartitionMeta meta,
     DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
+    if(rowMeta == null) {
+      LOG.warn("can not find meta data for row " + row.getRowId() + ", just exit load");
+      return;
+    }
     int elemNum = rowMeta.getElementNum();
     LongLongElement element = new LongLongElement();
     for (int i = 0; i < elemNum; i++) {

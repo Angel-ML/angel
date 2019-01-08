@@ -238,7 +238,7 @@ object SharedConf {
 
   private var sc: SharedConf = _
 
-  def get(): SharedConf = {
+  def get(): SharedConf = synchronized {
     if (sc == null) {
       sc = new SharedConf
       addMLConf()
@@ -313,7 +313,7 @@ object SharedConf {
     }
   }
 
-  def runningModel(): RunningMode = {
+  def runningMode(): RunningMode = {
     get()
 
     sc.get(AngelConf.ANGEL_RUNNING_MODE) match {
@@ -429,24 +429,13 @@ object SharedConf {
   def modelSize: Long = {
     get()
 
-    val ms = sc.getLong(MLConf.ML_MODEL_SIZE)
-    if (ms == -1) {
-      indexRange
-    } else {
-      ms
-    }
+    sc.getLong(MLConf.ML_MODEL_SIZE)
   }
 
   def validateRatio: Double = {
     get()
 
     sc.getDouble(MLConf.ML_VALIDATE_RATIO, MLConf.DEFAULT_ML_VALIDATE_RATIO)
-  }
-
-  def decay: Double = {
-    get()
-
-    sc.getDouble(MLConf.ML_LEARN_DECAY, MLConf.DEFAULT_ML_LEARN_DECAY)
   }
 
   def learningRate: Double = {
@@ -484,5 +473,13 @@ object SharedConf {
 
     sc.getDouble(MLConf.ML_DATA_POSNEG_RATIO,
       MLConf.DEFAULT_ML_DATA_POSNEG_RATIO)
+  }
+
+  def getStepSizeScheduler: String = {
+    get()
+
+    sc.getString(MLConf.ML_OPT_DECAY_CLASS_NAME,
+      MLConf.DEFAULT_ML_OPT_DECAY_CLASS_NAME
+    )
   }
 }

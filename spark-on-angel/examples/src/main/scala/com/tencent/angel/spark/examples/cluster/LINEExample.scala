@@ -56,6 +56,8 @@ object LINEExample {
     val withSubSample = params.getOrElse("subSample", "true").toBoolean
     val withRemapping = params.getOrElse("remapping", "true").toBoolean
     val order = params.get("order").fold(2)(_.toInt)
+    val checkpointInterval = params.getOrElse("interval", "10").toInt
+
 
     val numCores = SparkUtils.getNumCores(conf)
 
@@ -76,20 +78,22 @@ object LINEExample {
       corpus = Features.corpusStringToIntWithoutRemapping(data)
     }
 
-    val edges = {
-      if (withSubSample) {
-        corpus.persist(StorageLevel.DISK_ONLY)
-        SubSampling.sampling(corpus).repartition(numDataPartitions)
-      } else
-        corpus.repartition(numDataPartitions)
-    }.map { arr =>
-      (arr(0), arr(1))
+    val(maxNodeId, docs) = if (withSubSample) {
+      corpus.persist(StorageLevel.DISK_ONLY)
+      val subsampleTmp = SubSampling.sampling(corpus)
+      (subsampleTmp._1, subsampleTmp._2.repartition(numDataPartitions))
+    } else {
+      val tmp = corpus.repartition(numDataPartitions)
+      (tmp.map(_.max).max().toLong + 1, tmp)
+    }
+    val edges = docs.map{
+      arr =>
+        (arr(0), arr(1))
     }
 
     edges.persist(StorageLevel.DISK_ONLY)
 
     val numEdge = edges.count()
-    val maxNodeId = edges.map{case (src, dst) => math.max(src, dst)}.max().toLong + 1
     println(s"numEdge=$numEdge maxNodeId=$maxNodeId")
 
     corpus.unpersist()
@@ -106,10 +110,11 @@ object LINEExample {
       .setMaxIndex(maxNodeId)
       .setNumRowDataSet(numEdge)
       .setOrder(order)
+      .setModelCPInterval(checkpointInterval)
 
     val model = new LINEModel(param)
-    model.train(edges, param)
-    model.save(output + "/embedding", 0)
+    model.train(edges, param, output + "/embedding")
+    model.save(output + "/embedding", numEpoch)
 
     PSContext.stop()
     sc.stop()

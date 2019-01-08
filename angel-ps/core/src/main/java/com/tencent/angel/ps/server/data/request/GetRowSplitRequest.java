@@ -115,24 +115,6 @@ public class GetRowSplitRequest extends PartitionRequest {
     }
   }
 
-  @Override public int hashCode() {
-    final int prime = 31;
-    int result = super.hashCode();
-    result = prime * result + rowIndex;
-    return result;
-  }
-
-  @Override public boolean equals(Object obj) {
-    if (this == obj)
-      return true;
-    if (!super.equals(obj))
-      return false;
-    if (getClass() != obj.getClass())
-      return false;
-    GetRowSplitRequest other = (GetRowSplitRequest) obj;
-    return rowIndex == other.rowIndex;
-  }
-
   @Override public String toString() {
     return "GetRowSplitRequest [rowIndex=" + rowIndex + ", toString()=" + super.toString() + "]";
   }

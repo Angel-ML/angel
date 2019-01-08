@@ -21,6 +21,8 @@ package com.tencent.angel.ps.server.data.request;
 import com.tencent.angel.common.Serialize;
 import com.tencent.angel.ps.server.data.TransportMethod;
 import io.netty.buffer.ByteBuf;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Base class of rpc request from PSAgent to PS.
@@ -35,6 +37,9 @@ public abstract class Request implements Serialize {
    * Sub-request sequence id
    */
   private volatile int seqId;
+
+  private final static AtomicInteger r = new AtomicInteger(0);
+  private final int hashCode = r.incrementAndGet();
 
   /**
    * request context
@@ -129,4 +134,14 @@ public abstract class Request implements Serialize {
    * @return request type
    */
   public abstract TransportMethod getType();
+
+  @Override
+  public boolean equals(Object o) {
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    return hashCode;
+  }
 }

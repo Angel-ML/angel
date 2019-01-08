@@ -49,7 +49,7 @@
 * [Angel Json配置](./docs/basic/json_conf.md)
 
 ## Algorithm
-
+* [**Angel or Spark On Angel？**](./docs/algo/angel_or_spark_on_angel.md)
 * **Angel**
 	* **Traditional Machine Learning Methods**
 		* [Logistic Regression(LR)](./docs/algo/lr_on_angel.md)
@@ -84,6 +84,7 @@
 * [Yarn运行](./docs/deploy/run_on_yarn.md)
 * [系统配置](./docs/deploy/config_details.md)
 * [资源配置指南](./docs/deploy/resource_config_guide.md)
+* [使用OpenBlas给算法加速](./docs/deploy/blas_for_densematrix.md)
 
 ## FAQ
 * [工程类问题](https://github.com/Tencent/angel/wiki/%E5%B7%A5%E7%A8%8B%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
@@ -98,6 +99,7 @@
   2. Jiawei Jiang, Bin Cui, Ce Zhang, Lele Yu. [Heterogeneity-aware Distributed Parameter Servers](http://dl.acm.org/citation.cfm?id=3035933). SIGMOD, 2017
   3. Jie Jiang, Lele Yu, Jiawei Jiang, Yuhong Liu and Bin Cui. [Angel: a new large-scale machine learning system](https://academic.oup.com/nsr/article/3052720). National Science Review (NSR), 2017
   4. Jie Jiang, Jiawei Jiang,  Bin Cui and Ce Zhang. [TencentBoost: A Gradient Boosting Tree System with Parameter Server](http://ieeexplore.ieee.org/abstract/document/7929984/).	ICDE, 2017
+  5. Jiawei Jiang, Bin Cui, Ce Zhang and Fangcheng Fu. [DimBoost: Boosting Gradient Boosting Decision Tree to Higher Dimensions](https://dl.acm.org/citation.cfm?id=3196892). SIGMOD, 2018.
 
 ## Presentation
 

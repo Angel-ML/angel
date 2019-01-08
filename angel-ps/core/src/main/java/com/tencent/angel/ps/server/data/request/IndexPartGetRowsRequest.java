@@ -35,9 +35,6 @@ public class IndexPartGetRowsRequest extends PartitionRequest {
   private final ValueType valueType;
   private InitFunc func;
 
-  private final int hashCode;
-  private static final Random r = new Random();
-
   public IndexPartGetRowsRequest(int userRequestId, int matrixId, List<Integer> rowIds,
     PartitionKey partKey, IndicesView colIds, ValueType valueType, InitFunc func) {
     super(userRequestId, -1, partKey);
@@ -46,7 +43,6 @@ public class IndexPartGetRowsRequest extends PartitionRequest {
     this.colIds = colIds;
     this.valueType = valueType;
     this.func = func;
-    hashCode = r.nextInt();
   }
 
   public IndexPartGetRowsRequest() {
@@ -148,13 +144,5 @@ public class IndexPartGetRowsRequest extends PartitionRequest {
       handleElemSize = rowIds.size() * (colIds.endPos - colIds.startPos);
     }
     return handleElemSize;
-  }
-
-  @Override public boolean equals(Object o) {
-    return false;
-  }
-
-  @Override public int hashCode() {
-    return hashCode;
   }
 }

@@ -37,14 +37,21 @@ public class CompIntFloatRowUpdateSplit extends RowUpdateSplit {
   private final IntFloatVector split;
 
   /**
+   * Max element number in this split
+   */
+  private final int maxItemNum;
+
+  /**
    * Create a new CompIntFloatRowUpdateSplit.
    *
    * @param rowIndex row index
    * @param split    row update split
+   * @param maxItemNum Max element number in this split
    */
-  public CompIntFloatRowUpdateSplit(int rowIndex, IntFloatVector split) {
+  public CompIntFloatRowUpdateSplit(int rowIndex, IntFloatVector split, int maxItemNum) {
     super(rowIndex, RowType.T_FLOAT_DENSE, -1, -1);
     this.split = split;
+    this.maxItemNum = maxItemNum;
 
     IntFloatVectorStorage storage = split.getStorage();
     if (storage instanceof IntFloatDenseVectorStorage) {
@@ -62,8 +69,9 @@ public class CompIntFloatRowUpdateSplit extends RowUpdateSplit {
     // TODO:
     super.serialize(buf);
     IntFloatVectorStorage storage = split.getStorage();
-    buf.writeInt(storage.size());
+
     if (storage instanceof IntFloatSparseVectorStorage) {
+      buf.writeInt(storage.size());
       ObjectIterator<Int2FloatMap.Entry> iter = storage.entryIterator();
       Int2FloatMap.Entry entry;
       while (iter.hasNext()) {
@@ -72,6 +80,7 @@ public class CompIntFloatRowUpdateSplit extends RowUpdateSplit {
         buf.writeFloat(entry.getFloatValue());
       }
     } else if (storage instanceof IntFloatSortedVectorStorage) {
+      buf.writeInt(storage.size());
       int[] indices = storage.getIndices();
       float[] values = storage.getValues();
       for (int i = 0; i < indices.length; i++) {
@@ -80,7 +89,9 @@ public class CompIntFloatRowUpdateSplit extends RowUpdateSplit {
       }
     } else if (storage instanceof IntFloatDenseVectorStorage) {
       float[] values = storage.getValues();
-      for (int i = 0; i < values.length; i++) {
+      int writeSize = values.length < maxItemNum ? values.length : maxItemNum;
+      buf.writeInt(writeSize);
+      for (int i = 0; i < writeSize; i++) {
         buf.writeFloat(values[i]);
       }
     } else {
