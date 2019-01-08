@@ -1,6 +1,7 @@
 package com.tencent.angel.spark.ml.tree.tree.split;
 
 import java.util.Arrays;
+import org.apache.spark.ml.linalg.SparseVector;
 import org.apache.spark.ml.linalg.Vector;
 import com.tencent.angel.spark.ml.tree.util.Maths;
 
@@ -35,6 +36,14 @@ public class SplitSet extends SplitEntry {
 
     @Override
     public int flowTo(Vector x) {
+        if (x instanceof SparseVector) {
+            SparseVector sv = (SparseVector) x;
+            int t = Arrays.binarySearch(sv.indices(), fid);
+            if (t >= 0)
+                return flowTo((float) sv.values()[t]);
+            else
+                return defaultFlow;
+        }
         return flowTo((float) x.apply(fid));
     }
 
