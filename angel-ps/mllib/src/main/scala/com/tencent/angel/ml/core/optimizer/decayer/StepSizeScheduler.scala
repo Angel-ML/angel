@@ -71,6 +71,8 @@ object StepSizeScheduler {
         val etaMin = eta / 10
         val alpha = conf.getDouble(MLConf.ML_OPT_DECAY_ALPHA, MLConf.DEFAULT_ML_OPT_DECAY_ALPHA)
         new WarmRestarts(eta, etaMin, alpha)
+      case clsName if matchName[ConstantLearningRate](clsName) =>
+        new ConstantLearningRate(eta)
     }
   }
 }
