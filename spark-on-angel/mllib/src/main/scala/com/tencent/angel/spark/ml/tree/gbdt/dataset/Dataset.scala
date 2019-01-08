@@ -47,9 +47,9 @@ object Dataset extends Serializable {
     )
   }
 
-  def fromTextFile(path: String, dim: Int)
+  def fromTextFile(path: String, dim: Int, numWorker: Int)
                   (implicit sc: SparkContext): RDD[LabeledPartition[Int, Float]] = {
-    sc.textFile(path).mapPartitions(iterator => {
+    sc.textFile(path).repartition(numWorker).mapPartitions(iterator => {
       val labels = new AB.ofFloat
       val indices = new AB.ofInt
       val values = new AB.ofFloat

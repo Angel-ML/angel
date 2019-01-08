@@ -19,17 +19,17 @@
 package com.tencent.angel.spark.ml.tree.gbdt.trainer
 
 import com.tencent.angel.spark.ml.tree.tree.param.GBDTParam
-import com.tencent.angel.spark.ml.tree.common.Global.Conf._
+import com.tencent.angel.spark.ml.tree.common.TreeConf._
 import com.tencent.angel.spark.ml.tree.gbdt.dataset.Dataset
 import com.tencent.angel.spark.ml.tree.gbdt.dataset.Dataset._
 import com.tencent.angel.spark.ml.tree.data.Instance
 import com.tencent.angel.spark.ml.tree.gbdt.metadata.FeatureInfo
 import com.tencent.angel.spark.ml.tree.gbdt.tree.{GBTSplit, GBTTree}
 import com.tencent.angel.spark.ml.tree.objective.ObjectiveFactory
-import com.tencent.angel.spark.ml.tree.objective.metric.AUCMetric
 import com.tencent.angel.spark.ml.tree.objective.metric.EvalMetric.Kind
 import com.tencent.angel.spark.ml.tree.sketch.HeapQuantileSketch
 import com.tencent.angel.spark.ml.tree.util.{DataLoader, Maths}
+import org.apache.hadoop.fs.Path
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
@@ -69,16 +69,16 @@ object SparkFPGBDTTrainer {
     param.maxLeafWeight = conf.getDouble(ML_GBDT_MAX_LEAF_WEIGHT, DEFAULT_ML_GBDT_MAX_LEAF_WEIGHT).toFloat
     println(s"Hyper-parameters:\n$param")
 
-    val modelPath = conf.get(ML_MODEL_PATH)
+    val modelPath = conf.get(MODEL_PATH)
     println(s"Model will be saved to $modelPath")
 
     try {
       val trainer = new SparkFPGBDTTrainer(param)
-      val trainInput = conf.get(ML_TRAIN_DATA_PATH)
-      val validInput = conf.get(ML_VALID_DATA_PATH)
+      val trainInput = conf.get(TRAIN_DATA_PATH)
+      val validInput = conf.get(VALID_DATA_PATH)
       trainer.initialize(trainInput, validInput)
       val model = trainer.train()
-      sc.parallelize(Seq(model)).saveAsObjectFile(modelPath)
+      trainer.save(model, modelPath)
     } catch {
       case e: Exception =>
         e.printStackTrace()
@@ -181,7 +181,7 @@ class SparkFPGBDTTrainer(param: GBDTParam) extends Serializable {
 
     // 1. load data from hdfs
     val loadStart = System.currentTimeMillis()
-    val trainDP = fromTextFile(trainInput, numFeature)
+    val trainDP = fromTextFile(trainInput, numFeature, numWorker)
       .coalesce(numWorker)
       .mapPartitions(iterator => Iterator(Dataset[Int, Float](iterator.toSeq)))
       .persist(StorageLevel.MEMORY_AND_DISK)
@@ -478,6 +478,13 @@ class SparkFPGBDTTrainer(param: GBDTParam) extends Serializable {
           s"(${(tree.size - 1) / 2 + 1} leaves)")
     }
     forest
+  }
+
+  def save(model: Seq[GBTTree], modelPath: String)(implicit sc: SparkContext): Unit = {
+    val path = new Path(modelPath)
+    val fs = path.getFileSystem(sc.hadoopConfiguration)
+    if (fs.exists(path)) fs.delete(path, true)
+    sc.parallelize(Seq(model)).saveAsObjectFile(modelPath)
   }
 
 }
