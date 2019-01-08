@@ -588,11 +588,20 @@ public class DotMatrixExecutor {
   }
 
 
-  public static Matrix apply(Matrix mat1, boolean trans1, Matrix mat2, boolean trans2) {
+  public static Matrix apply(Matrix mat1, boolean trans1, Matrix mat2, boolean trans2, Boolean parallel) {
     if (mat1 instanceof BlasDoubleMatrix && mat2 instanceof BlasDoubleMatrix) {
-      return apply((BlasDoubleMatrix) mat1, trans1, (BlasDoubleMatrix) mat2, trans2);
+      if (parallel){
+        return applyParallel((BlasDoubleMatrix) mat1, trans1, (BlasDoubleMatrix) mat2, trans2);
+      }else {
+        return apply((BlasDoubleMatrix) mat1, trans1, (BlasDoubleMatrix) mat2, trans2);
+      }
     } else if (mat1 instanceof BlasFloatMatrix && mat2 instanceof BlasFloatMatrix) {
-      return applyParallel((BlasFloatMatrix) mat1, trans1, (BlasFloatMatrix) mat2, trans2);
+      if (parallel){
+        return applyParallel((BlasFloatMatrix) mat1, trans1, (BlasFloatMatrix) mat2, trans2);
+      }else {
+        return apply((BlasFloatMatrix) mat1, trans1, (BlasFloatMatrix) mat2, trans2);
+      }
+
     } else if (mat1 instanceof BlasDoubleMatrix && mat2 instanceof RBCompIntDoubleMatrix) {
       return apply((BlasDoubleMatrix) mat1, trans1, (RBCompIntDoubleMatrix) mat2, trans2);
     } else if (mat1 instanceof BlasFloatMatrix && mat2 instanceof RBCompIntFloatMatrix) {
@@ -604,15 +613,14 @@ public class DotMatrixExecutor {
       return apply((RBCompIntFloatMatrix) mat1, trans1, (BlasFloatMatrix) mat2, trans2);
     } else if (mat1 instanceof RowBasedMatrix && mat2 instanceof RowBasedMatrix) {
       assert !trans1 && !trans2;
-      return mat1.dot(mat1);
+      return mat1.dot(mat1, parallel);
     } else {
       throw new AngelException("the operation is not supported!");
     }
   }
 
-
-  private static Matrix apply(BlasDoubleMatrix mat1, boolean trans1, BlasDoubleMatrix mat2,
-      boolean trans2) {
+  public static Matrix apply(BlasDoubleMatrix mat1, boolean trans1, BlasDoubleMatrix mat2,
+                             boolean trans2) {
     double alpha = 1.0, beta = 0.0;
     double[] resBlas;
 
@@ -650,9 +658,8 @@ public class DotMatrixExecutor {
     }
   }
 
-
-  private static Matrix apply(BlasFloatMatrix mat1, boolean trans1, BlasFloatMatrix mat2,
-      boolean trans2) {
+  public static Matrix apply(BlasFloatMatrix mat1, boolean trans1, BlasFloatMatrix mat2,
+                             boolean trans2) {
     float alpha = 1.0f, beta = 0.0f;
     float[] resBlas;
 
@@ -688,6 +695,56 @@ public class DotMatrixExecutor {
 
       return new BlasFloatMatrix(mat1.getMatrixId(), mat1.getClock(), m, q, resBlas);
     }
+  }
+
+  public static Matrix applyParallel(BlasDoubleMatrix mat1, boolean trans1, BlasDoubleMatrix mat2,
+                             boolean trans2) {
+
+    int m = mat1.getNumRows(), n = mat1.getNumCols();
+    int p = mat2.getNumRows(), q = mat2.getNumCols();
+
+    double[] resBlas;
+    BlasDoubleMatrix retMat;
+    BlasDoubleMatrix transMat1;
+    MatrixExecutors executors = MatrixExecutors.getInstance();
+
+    if(trans1) {
+      if(trans2) {
+        assert m == q;
+        resBlas = new double[n * p];
+        retMat = new BlasDoubleMatrix(mat1.getMatrixId(), mat1.getClock(), n, p, resBlas);
+      } else {
+        assert m == p;
+        resBlas = new double[n * q];
+        retMat = new BlasDoubleMatrix(mat1.getMatrixId(), mat1.getClock(), n, q, resBlas);
+      }
+
+      // Transform mat1, generate a new matrix
+      transMat1 = new BlasDoubleMatrix(mat1.getMatrixId(), mat1.getClock(), n, m, transform(mat1));
+    } else {
+      if(trans2) {
+        assert n == q;
+        resBlas = new double[m * p];
+        retMat = new BlasDoubleMatrix(mat1.getMatrixId(), mat1.getClock(), m, p, resBlas);
+      } else {
+        assert n == p;
+        resBlas = new double[m * q];
+        retMat = new BlasDoubleMatrix(mat1.getMatrixId(), mat1.getClock(), m, q, resBlas);
+      }
+
+      transMat1 = mat1;
+    }
+
+    // Split the row indices of mat1Trans
+    int subM = Math.max(1, transMat1.getNumRows() / executors.getParallel());
+    int [] leftRowOffIndices = splitRowIds(transMat1.getNumRows(), subM);
+
+    // Parallel execute use fork-join
+    DotForkJoinOp op = new DotForkJoinOp(transMat1, mat2, retMat, leftRowOffIndices, 0, leftRowOffIndices.length, subM, trans2);
+    executors.execute(op);
+    op.join();
+
+    return retMat;
   }
 
   private static Matrix applyParallel(BlasFloatMatrix mat1, boolean trans1, BlasFloatMatrix mat2,
@@ -733,20 +790,85 @@ public class DotMatrixExecutor {
     int [] leftRowOffIndices = splitRowIds(transMat1.getNumRows(), subM);
 
     // Parallel execute use fork-join
-    FloatDotForkJoinOp op = new FloatDotForkJoinOp(transMat1, mat2, retMat, leftRowOffIndices, 0, leftRowOffIndices.length, subM, trans2);
+    DotForkJoinOp op = new DotForkJoinOp(transMat1, mat2, retMat, leftRowOffIndices, 0, leftRowOffIndices.length, subM, trans2);
     executors.execute(op);
     op.join();
 
     return retMat;
   }
 
+  public static void apply(BlasDoubleMatrix leftMatrix, BlasDoubleMatrix rightMatrix,
+                           BlasDoubleMatrix resultMatrix, int[] leftRowOffIndices,
+                           int startPos, int endPos, int subM, boolean trans2, double alpha, double beta){
+    // Get the sub-matrix of left matrix, split by row
+    double[] leftData = leftMatrix.getData();
+    int splitRowNum = subM;
+    if (endPos == leftRowOffIndices.length) {
+      splitRowNum = leftMatrix.getNumRows() - subM * (leftRowOffIndices.length - 1);
+    }
+    double[] splitLeftData = new double[splitRowNum * leftMatrix.getNumCols()];
+    System.arraycopy(leftData, leftRowOffIndices[startPos] * leftMatrix.getNumCols(),
+            splitLeftData, 0, splitLeftData.length);
+
+    double[] resultData = resultMatrix.getData();
+
+    if (trans2) {
+      double[] splitResult = new double[splitRowNum * rightMatrix.getNumRows()];
+      blas.dgemm("T", "N", rightMatrix.getNumRows(), splitRowNum, leftMatrix.getNumCols(),
+              alpha, rightMatrix.getData(), rightMatrix.getNumCols(), splitLeftData,
+              leftMatrix.getNumCols(), beta, splitResult, rightMatrix.getNumRows());
+      System.arraycopy(splitResult, 0, resultData,
+              leftRowOffIndices[startPos] * rightMatrix.getNumRows(), splitResult.length);
+    } else {
+      double[] splitResult = new double[splitRowNum * rightMatrix.getNumCols()];
+      blas.dgemm("N", "N", rightMatrix.getNumCols(), splitRowNum, leftMatrix.getNumCols(),
+              alpha, rightMatrix.getData(), rightMatrix.getNumCols(), splitLeftData,
+              leftMatrix.getNumCols(), beta, splitResult, rightMatrix.getNumCols());
+      System.arraycopy(splitResult, 0, resultData,
+              leftRowOffIndices[startPos] * rightMatrix.getNumCols(), splitResult.length);
+    }
+  }
+
+  private static void apply(BlasFloatMatrix leftMatrix, BlasFloatMatrix rightMatrix,
+                            BlasFloatMatrix resultMatrix, int[] leftRowOffIndices,
+                            int startPos, int endPos, int subM, boolean trans2, float alpha, float beta){
+
+    // Get the sub-matrix of left matrix, split by row
+    float[] leftData = leftMatrix.getData();
+    int splitRowNum = subM;
+    if (endPos == leftRowOffIndices.length) {
+      splitRowNum = leftMatrix.getNumRows() - subM * (leftRowOffIndices.length - 1);
+    }
+    float[] splitLeftData = new float[splitRowNum * leftMatrix.getNumCols()];
+    System.arraycopy(leftData, leftRowOffIndices[startPos] * leftMatrix.getNumCols(),
+            splitLeftData, 0, splitLeftData.length);
+
+    float[] resultData = resultMatrix.getData();
+
+    if (trans2) {
+      float[] splitResult = new float[splitRowNum * rightMatrix.getNumRows()];
+      blas.sgemm("T", "N", rightMatrix.getNumRows(), splitRowNum, leftMatrix.getNumCols(),
+              alpha, rightMatrix.getData(), rightMatrix.getNumCols(), splitLeftData,
+              leftMatrix.getNumCols(), beta, splitResult, rightMatrix.getNumRows());
+      System.arraycopy(splitResult, 0, resultData,
+              leftRowOffIndices[startPos] * rightMatrix.getNumRows(), splitResult.length);
+    } else {
+      float[] splitResult = new float[splitRowNum * rightMatrix.getNumCols()];
+      blas.sgemm("N", "N", rightMatrix.getNumCols(), splitRowNum, leftMatrix.getNumCols(),
+              alpha, rightMatrix.getData(), rightMatrix.getNumCols(), splitLeftData,
+              leftMatrix.getNumCols(), beta, splitResult, rightMatrix.getNumCols());
+      System.arraycopy(splitResult, 0, resultData,
+              leftRowOffIndices[startPos] * rightMatrix.getNumCols(), splitResult.length);
+    }
+  }
+
   /**
    * A simple parallel matrix dot operator
    */
-  public static class FloatDotForkJoinOp extends RecursiveAction {
-    private final BlasFloatMatrix leftMatrix;
-    private final BlasFloatMatrix rightMatrix;
-    private final BlasFloatMatrix resultMatrix;
+  public static class DotForkJoinOp extends RecursiveAction {
+    private final BlasMatrix leftMatrix;
+    private final BlasMatrix rightMatrix;
+    private final BlasMatrix resultMatrix;
     private final int[] leftRowOffIndices;
     private final int startPos;
     private final int endPos;
@@ -754,9 +876,9 @@ public class DotMatrixExecutor {
     private final boolean trans2;
     float alpha = 1.0f, beta = 0.0f;
 
-    public FloatDotForkJoinOp(BlasFloatMatrix leftMatrix, BlasFloatMatrix rightMatrix,
-        BlasFloatMatrix resultMatrix, int[] leftRowOffIndices,
-        int startPos, int endPos, int subM, boolean trans2) {
+    public DotForkJoinOp(BlasMatrix leftMatrix, BlasMatrix rightMatrix,
+                         BlasMatrix resultMatrix, int[] leftRowOffIndices,
+                         int startPos, int endPos, int subM, boolean trans2) {
       this.leftMatrix = leftMatrix;
       this.rightMatrix = rightMatrix;
       this.resultMatrix = resultMatrix;
@@ -772,39 +894,21 @@ public class DotMatrixExecutor {
       if (endPos <= startPos) {
         return;
       } else if (endPos - startPos == 1) {
-        // Get the sub-matrix of left matrix, split by row
-        float[] leftData = leftMatrix.getData();
-        int splitRowNum = subM;
-        if (endPos == leftRowOffIndices.length) {
-          splitRowNum = leftMatrix.getNumRows() - subM * (leftRowOffIndices.length - 1);
-        }
-        float[] splitLeftData = new float[splitRowNum * leftMatrix.getNumCols()];
-        System.arraycopy(leftData, leftRowOffIndices[startPos] * leftMatrix.getNumCols(),
-            splitLeftData, 0, splitLeftData.length);
-
-        float[] resultData = resultMatrix.getData();
-
-        if (trans2) {
-          float[] splitResult = new float[splitRowNum * rightMatrix.getNumRows()];
-          blas.sgemm("T", "N", rightMatrix.getNumRows(), splitRowNum, leftMatrix.getNumCols(),
-              alpha, rightMatrix.getData(), rightMatrix.getNumCols(), splitLeftData,
-              leftMatrix.getNumCols(), beta, splitResult, rightMatrix.getNumRows());
-          System.arraycopy(splitResult, 0, resultData,
-              leftRowOffIndices[startPos] * rightMatrix.getNumRows(), splitResult.length);
+        if (leftMatrix instanceof BlasDoubleMatrix && rightMatrix instanceof BlasDoubleMatrix) {
+          apply((BlasDoubleMatrix) leftMatrix, (BlasDoubleMatrix) rightMatrix, (BlasDoubleMatrix) resultMatrix,
+                  leftRowOffIndices, startPos, endPos, subM, trans2, alpha, beta);
+        } else if (leftMatrix instanceof BlasFloatMatrix && rightMatrix instanceof BlasFloatMatrix) {
+          apply((BlasFloatMatrix) leftMatrix, (BlasFloatMatrix) rightMatrix, (BlasFloatMatrix) resultMatrix,
+                  leftRowOffIndices, startPos, endPos, subM, trans2, alpha, beta);
         } else {
-          float[] splitResult = new float[splitRowNum * rightMatrix.getNumCols()];
-          blas.sgemm("N", "N", rightMatrix.getNumCols(), splitRowNum, leftMatrix.getNumCols(),
-              alpha, rightMatrix.getData(), rightMatrix.getNumCols(), splitLeftData,
-              leftMatrix.getNumCols(), beta, splitResult, rightMatrix.getNumCols());
-          System.arraycopy(splitResult, 0, resultData,
-              leftRowOffIndices[startPos] * rightMatrix.getNumCols(), splitResult.length);
+          throw new AngelException("not support");
         }
       } else {
         int middle = (startPos + endPos) / 2;
-        FloatDotForkJoinOp leftOp = new FloatDotForkJoinOp(leftMatrix, rightMatrix, resultMatrix,
-            leftRowOffIndices, startPos, middle, subM, trans2);
-        FloatDotForkJoinOp rightOp = new FloatDotForkJoinOp(leftMatrix, rightMatrix, resultMatrix,
-            leftRowOffIndices, middle, endPos, subM, trans2);
+        DotForkJoinOp leftOp = new DotForkJoinOp(leftMatrix, rightMatrix, resultMatrix,
+                leftRowOffIndices, startPos, middle, subM, trans2);
+        DotForkJoinOp rightOp = new DotForkJoinOp(leftMatrix, rightMatrix, resultMatrix,
+                leftRowOffIndices, middle, endPos, subM, trans2);
         invokeAll(leftOp, rightOp);
       }
     }
@@ -813,6 +917,19 @@ public class DotMatrixExecutor {
   private static float[] transform(BlasFloatMatrix matrix) {
     float[] data = matrix.getData();
     float[] ret = new float[data.length];
+    int m = matrix.getNumRows();
+    int n = matrix.getNumCols();
+    for (int i = 0; i < m; i++) {
+      for (int j = 0; j < n; j++) {
+        ret[j * m + i] = data[i * n + j];
+      }
+    }
+    return ret;
+  }
+
+  private static double[] transform(BlasDoubleMatrix matrix) {
+    double[] data = matrix.getData();
+    double[] ret = new double[data.length];
     int m = matrix.getNumRows();
     int n = matrix.getNumCols();
     for (int i = 0; i < m; i++) {
