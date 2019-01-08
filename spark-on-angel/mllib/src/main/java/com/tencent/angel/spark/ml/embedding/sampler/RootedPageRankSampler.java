@@ -25,7 +25,7 @@ public class RootedPageRankSampler extends SampleGenerator{
         int srcId = random.nextInt(sen_len);
         if(curNegId == 0){ // sample positive pairs
             int dstId = srcId + 1;
-            while(random.nextFloat() < endPrp && dstId < sen_len){
+            while(random.nextFloat() > endPrp && dstId < sen_len){
                 dstId ++;
             }
             if(dstId < sen_len){

@@ -4,6 +4,7 @@ import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ps.storage.matrix.PartitionSourceMap
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
+import com.tencent.angel.spark.ml.embedding.EmbeddingConf
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel.buildDataBatches
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2vecWorker
 import com.tencent.angel.spark.ml.feature.Features
@@ -30,20 +31,21 @@ object Word2vecWorkerExample {
 
     start()
     val params = ArgsUtil.parse(args)
-    val input = params.getOrElse("input", "")
-    val output = params.getOrElse("output", "")
-    val embeddingDim = params.getOrElse("embedding", "10").toInt
-    val numNegSamples = params.getOrElse("negative", "5").toInt
-    val windowSize = params.getOrElse("window", "10").toInt
-    val numEpoch = params.getOrElse("epoch", "10").toInt
-    val stepSize = params.getOrElse("stepSize", "0.1").toFloat
-    val batchSize = params.getOrElse("batchSize", "10000").toInt
-    val numPartitions = params.getOrElse("numParts", "10").toInt
-    val numNodePerRow = params.getOrElse("numNodePerRow", "10000").toInt
-    val withSubSample = params.getOrElse("subSample", "true").toBoolean
-    val withRemapping = params.getOrElse("remapping", "true").toBoolean
-    val modelType = params.getOrElse("modelType", "cbow")
-    val checkpointInterval = params.getOrElse("interval", "10").toInt
+//    val input = params.getOrElse("input", "")
+//    val output = params.getOrElse("output", "")
+//    val embeddingDim = params.getOrElse("embedding", "10").toInt
+//    val numNegSamples = params.getOrElse("negative", "5").toInt
+//    val windowSize = params.getOrElse("window", "10").toInt
+//    val numEpoch = params.getOrElse("epoch", "10").toInt
+//    val stepSize = params.getOrElse("stepSize", "0.1").toFloat
+//    val batchSize = params.getOrElse("batchSize", "10000").toInt
+//    val numPartitions = params.getOrElse("numParts", "10").toInt
+//    val numNodePerRow = params.getOrElse("numNodePerRow", "10000").toInt
+//    val withSubSample = params.getOrElse("subSample", "true").toBoolean
+//    val withRemapping = params.getOrElse("remapping", "true").toBoolean
+//    val modelType = params.getOrElse("modelType", "cbow")
+//    val checkpointInterval = params.getOrElse("interval", "10").toInt
+    val input = params.getOrElse(EmbeddingConf.INPUTPATH, "")
 
     val sc = SparkContext.getOrCreate()
     val data = sc.textFile(input)
@@ -68,9 +70,9 @@ object Word2vecWorkerExample {
 
     println(s"numDocs=$numDocs maxWordId=$maxWordId numTokens=$numTokens")
 
-    val model = new Word2vecWorker(maxWordId.toInt, embeddingDim, modelType, numPartitions, numNodePerRow)
-    val iterator = buildDataBatches(docs, batchSize)
-    model.train(iterator, numNegSamples, numEpoch, stepSize, windowSize, "")
+    val model = new Word2vecWorker(maxWordId.toInt, params)
+    val iterator = buildDataBatches(docs, params.getOrElse(EmbeddingConf.BATCHSIZE, "1000").toInt)
+    model.train(iterator)
 
     stop()
   }

@@ -11,8 +11,11 @@ import java.util.Random;
 
 public class CBowModel extends EmbeddingBase{
 
-  public CBowModel(int window, int negative, float alpha, int numNode, int dimension) {
-    super(window, negative, alpha, numNode, dimension);
+  int window;
+
+  public CBowModel(int negative, float alpha, int numNode, int dimension, int window) {
+    super(negative, alpha, numNode, dimension);
+    this.window = window;
   }
 
   public int[] buildIndices(int[][] sentences, int seed) {

@@ -1,19 +1,18 @@
 package com.tencent.angel.spark.ml.embedding;
 
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import scala.Serializable;
 import scala.Tuple2;
 
-public abstract class EmbeddingBase {
+public abstract class EmbeddingBase implements Serializable {
 
-    public int window;
     public int negative;
     public float alpha;
     public int numNode;
     public int dimension;
 
 
-    public EmbeddingBase(int window, int negative, float alpha, int numNode, int dimension) {
-        this.window = window;
+    public EmbeddingBase(int negative, float alpha, int numNode, int dimension) {
         this.negative = negative;
         this.alpha = alpha;
         this.numNode = numNode;

@@ -3,6 +3,8 @@ package com.tencent.angel.spark.examples.local
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ps.storage.matrix.PartitionSourceMap
 import com.tencent.angel.spark.context.PSContext
+import com.tencent.angel.spark.ml.core.ArgsUtil
+import com.tencent.angel.spark.ml.embedding.EmbeddingConf
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel.buildDataBatches
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2vecWorker
 import com.tencent.angel.spark.ml.feature.Features
@@ -11,6 +13,8 @@ import org.apache.spark.{SparkConf, SparkContext}
 object Word2vecWorkerExample {
 
   def main(args: Array[String]): Unit = {
+
+    val params = ArgsUtil.parse(args)
 
     val conf = new SparkConf()
     conf.setMaster("local[1]")
@@ -41,25 +45,20 @@ object Word2vecWorkerExample {
     data.unpersist()
 
     val numDocs = docs.count()
-    val maxWordId = docs.map(_.max).max().toLong + 1
+    val maxWordId = docs.map(_.max).max().toInt + 1
     val numTokens = docs.map(_.length).sum().toLong
 
     println(s"numDocs=$numDocs maxWordId=$maxWordId numTokens=$numTokens")
+    val batchSize = params.getOrElse(EmbeddingConf.BATCHSIZE, "100").toInt
 
-    val numNodePerRow = 1000
-    val modelType = "sgns"
-    val numPart = 1
-    val dimension = 100
-    val batchSize = 100
-
-    val learnRate = 0.1f
-    val window = 5
-    val negative = 5
-
-    println(s"batchSize=$batchSize learnRate=$learnRate window=$window negative=$negative")
-    val model = new Word2vecWorker(maxWordId.toInt, dimension, modelType, numPart, numNodePerRow)
+    println(s"Trainign SGNS with rooted pagerank")
+    val sgns = new Word2vecWorker(maxWordId, params.updated(EmbeddingConf.MODELTYPE, "sgns"))
     val iterator = buildDataBatches(corpus, batchSize)
-    model.train(iterator, negative, 100, learnRate, window, "")
+    sgns.train(iterator)
+
+    println(s"Trainign CBOW")
+    val cbow = new Word2vecWorker(maxWordId, params.updated(EmbeddingConf.MODELTYPE, "cbow"))
+    cbow.train(iterator)
 
     PSContext.stop()
     sc.stop()

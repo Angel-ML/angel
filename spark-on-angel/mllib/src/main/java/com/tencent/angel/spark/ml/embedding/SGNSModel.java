@@ -17,8 +17,10 @@ public class SGNSModel extends EmbeddingBase {
         this.samplerName = name;
     }
 
-    public SGNSModel(int window, int negative, float alpha, int numNode, int dimension) {
-        super(window, negative, alpha, numNode, dimension);
+    public SGNSModel(int negative, float alpha, int numNode, int dimension, String samplerName, float endPrp) {
+        super(negative, alpha, numNode, dimension);
+        this.samplerName = samplerName;
+        this.endPrp = endPrp;
     }
 
     @Override

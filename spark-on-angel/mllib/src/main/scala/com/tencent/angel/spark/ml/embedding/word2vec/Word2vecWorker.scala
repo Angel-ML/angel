@@ -3,11 +3,12 @@ package com.tencent.angel.spark.ml.embedding.word2vec
 import java.text.SimpleDateFormat
 import java.util.Date
 
+
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ps.storage.matrix.PartitionSourceMap
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.ml.embedding.{CBowModel, EmbeddingBase, SGNSModel}
+import com.tencent.angel.spark.ml.embedding.{CBowModel, EmbeddingConf, SGNSModel}
 import com.tencent.angel.spark.ml.embedding.NEModel.NEDataSet
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel.W2VDataSet
 import com.tencent.angel.spark.ml.psf.embedding.bad._
@@ -15,31 +16,40 @@ import com.tencent.angel.spark.models.PSMatrix
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap
 import org.apache.spark.rdd.RDD
 
-class Word2vecWorker(numNode: Int,
-                     dimension: Int,
-                     modelName: String,
-                     numPart: Int,
-                     numNodePerRow: Int = -1,
-                     seed: Int = 2017) extends Serializable {
-  // seed is never used. to be deleted
+class Word2vecWorker(val numNode: Int,
+                     val params: Map[String, String]) extends Serializable {
 
   val maxNodePerRow: Int = 100000
+  val dimension = params.getOrElse(EmbeddingConf.EMBEDDINGDIM, "10").toInt
+  val modelName = params.getOrElse(EmbeddingConf.MODELTYPE, "SGNS")
+  val numPart = params.getOrElse(EmbeddingConf.NUMPARTITIONS, "10").toInt
+  val numNodePerRow = params.getOrElse(EmbeddingConf.NUMNODEPERROW, "10000").toInt
+  val negative = params.getOrElse(EmbeddingConf.NEGATIVESAMPLENUM, "5").toInt
+  val window = params.getOrElse(EmbeddingConf.WINDOWSIZE, "5").toInt
+  val alpha = params.getOrElse(EmbeddingConf.STEPSIZE, "0.1").toFloat
+  val rprEndPrp = params.getOrElse(EmbeddingConf.ROOTEDPAGERANKPRP, "0.5").toFloat
+  val numEpoch = params.getOrElse(EmbeddingConf.NUMEPOCH, "10").toInt
+  val outputPath = params.getOrElse(EmbeddingConf.OUTPUTPATH, "")
+  val checkpointInterval = params.getOrElse(EmbeddingConf.CHECKPOINTINTERVAL, numEpoch.toString).toInt
+  // by default, we don't do checkpoint
+  val samplerName = params.getOrElse(EmbeddingConf.SAMPLERNAME, "rootedPageRank")
+
   val matrix = createPSMatrix(numNode, numPart)
 
+  val model = modelName match {
+    case "cbow" => new CBowModel(negative, alpha, numNode, dimension, window)
+    case "sgns" => new SGNSModel(negative, alpha, numNode, dimension, samplerName, rprEndPrp)
+    case _ => new SGNSModel(negative, alpha, numNode, dimension, samplerName, rprEndPrp) // default is SGNS
+  }
+
   initialize()
+
   /**
-    *
-    * @param negative
-    * @param window
-    * @param alpha
     * @param batch
-    * @epochId use epochId as seed for random number generator
+    * @param epochId use epochId as seed for random number generator
     * @return (sum_loss, loss_cnt, evaluation metrics)
     */
-  def sgdForBatch(negative: Int,
-                  window: Int,
-                  alpha: Float,
-                  batch: NEDataSet,
+  def sgdForBatch(batch: NEDataSet,
                   epochId: Int): (Double, Long, Array[Long]) = {
 
     var (start, end) = (0L, 0L)
@@ -47,11 +57,6 @@ class Word2vecWorker(numNode: Int,
 
     // calculate index
     start = System.currentTimeMillis()
-    val model = modelName match {
-      case "cbow" => new CBowModel(window, negative, alpha, numNode, dimension)
-      case "sgns" => new SGNSModel(window, negative, alpha, numNode, dimension)
-      case _ => new SGNSModel(window, negative, alpha, numNode, dimension) // default is SGNS
-    }
     val sentences = batch.asInstanceOf[W2VDataSet].sentences
     val indices =  model.buildIndices(sentences, seed)
     end = System.currentTimeMillis()
@@ -77,7 +82,7 @@ class Word2vecWorker(numNode: Int,
     start = System.currentTimeMillis()
     val loss = model.train(sentences, seed, result.layers, index, deltas)
     end = System.currentTimeMillis()
-    val cbowTime = end - start
+    val trainTime = end - start
 
     // push
     start = System.currentTimeMillis()
@@ -88,19 +93,13 @@ class Word2vecWorker(numNode: Int,
     end = System.currentTimeMillis()
     val pushTime = end - start
 
-//    val batchSize = batch.asInstanceOf[W2VDataSet].sentences.map(_.length).sum
-//    println(s"${loss._1/loss._2} learnRate=$alpha length=${loss._2} batchSize=$batchSize")
-    (loss._1, loss._2.toLong, Array(calcuIndexTime, pullTime, cbowTime, pushTime))
+    (loss._1, loss._2.toLong, Array(calcuIndexTime, pullTime, trainTime, pushTime))
   }
 
   def sgdForPartition(iterator: Iterator[NEDataSet],
-                      window: Int,
-                      negative: Int,
-                      alpha: Float,
                       epochId: Int): Iterator[(Double, Long, Array[Long])] = {
     PSContext.instance()
-    val r = iterator.map(batch => sgdForBatch(
-      window, negative, alpha, batch, epochId))
+    val r = iterator.map(batch => sgdForBatch(batch, epochId))
       .reduce { (f1, f2) =>
         (f1._1 + f2._1,
           f1._2 + f2._2,
@@ -108,24 +107,19 @@ class Word2vecWorker(numNode: Int,
     Iterator.single(r)
   }
 
-  def train(trainBatches: Iterator[RDD[NEDataSet]],
-            negative: Int,
-            numEpoch: Int,
-            learningRate: Float,
-            window: Int,
-            path: String,
-            checkpointInterval: Int = 10): Unit = {
-    for (epoch <- 1 to numEpoch) {
+  def train(trainBatches: Iterator[RDD[NEDataSet]]) : Unit = {
+
+    for (epochId <- 1 to numEpoch) {
       val data = trainBatches.next()
       val middle = data.mapPartitions(iterator =>
-        sgdForPartition(iterator, window, negative, learningRate, epoch), true).reduce { case (f1, f2) =>
+        sgdForPartition(iterator, epochId), true).reduce { case (f1, f2) =>
           (f1._1 + f2._1,
           f1._2 + f2._2,
           f1._3.zip(f2._3).map(f => (f._1 + f._2))
           )}
       val loss = middle._1 / middle._2.toDouble
       val array = middle._3
-      logTime(s"epoch=$epoch " +
+      logTime(s"epoch=$epochId " +
         f"loss=$loss%2.4f " +
         s"calcuIndexTime=${array(0)} " +
         s"pullTime=${array(1)} " +
@@ -133,6 +127,11 @@ class Word2vecWorker(numNode: Int,
         s"pushTime=${array(3)} " +
         s"total=${middle._2} " +
         s"lossSum=${middle._1}")
+
+      if(epochId % checkpointInterval == 0){
+        // TODO: checkpoint
+        // save()
+      }
     }
   }
 
