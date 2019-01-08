@@ -13,8 +13,9 @@
     "modeltype": "T_FLOAT_DENSE"
   },
   "default_optimizer": {
-    "type": "adam",
-    "reg2": 0.01
+    "type": "momentum",
+    "momentum": 0.9,
+    "reg2": 0.001
   },
   "layers": [
     {
