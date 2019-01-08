@@ -1,6 +1,6 @@
 package com.tencent.angel.spark.ml.tree.util
 
-import com.tencent.angel.spark.ml.tree.common.Global.Conf._
+import com.tencent.angel.spark.ml.tree.common.TreeConf._
 import com.tencent.angel.spark.ml.tree.data.{FeatureRow, Instance, InstanceRow}
 import com.tencent.angel.spark.ml.tree.gbdt.GBDTTrainer
 import com.tencent.angel.spark.ml.tree.gbdt.metadata.FeatureInfo
@@ -47,7 +47,7 @@ object Transposer {
     param.regLambda = conf.getDouble(ML_GBDT_REG_LAMBDA, DEFAULT_ML_GBDT_REG_LAMBDA).toFloat max 1.0f
     param.maxLeafWeight = conf.getDouble(ML_GBDT_MAX_LEAF_WEIGHT, DEFAULT_ML_GBDT_MAX_LEAF_WEIGHT).toFloat
 
-    val input = conf.get(ML_TRAIN_DATA_PATH)
+    val input = conf.get(TRAIN_DATA_PATH)
     val validRatio = conf.getDouble(ML_VALID_DATA_RATIO, DEFAULT_ML_VALID_DATA_RATIO)
     val oriTrainData = loadData(input, validRatio)
 

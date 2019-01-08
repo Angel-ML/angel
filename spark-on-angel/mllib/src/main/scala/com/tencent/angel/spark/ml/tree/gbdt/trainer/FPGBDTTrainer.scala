@@ -31,7 +31,7 @@ import com.tencent.angel.spark.ml.tree.objective.loss.Loss
 import com.tencent.angel.spark.ml.tree.objective.metric.EvalMetric
 import com.tencent.angel.spark.ml.tree.objective.metric.EvalMetric.Kind
 import com.tencent.angel.spark.ml.tree.tree.param.GBDTParam
-import com.tencent.angel.spark.ml.tree.tree.split.SplitEntry
+import com.tencent.angel.spark.ml.tree.tree.split.{SplitEntry, SplitPoint}
 import com.tencent.angel.spark.ml.tree.util.{Maths, RangeBitSet}
 import org.apache.spark.ml.linalg.Vector
 
@@ -232,6 +232,9 @@ class FPGBDTTrainer(val workerId: Int, val param: GBDTParam,
         (nid, new GBTSplit())
     }.filter(_._2.isValid(param.minSplitGain))
     println(s"Find splits cost ${System.currentTimeMillis() - findStart} ms")
+    res.foreach{ case (nid, split) =>
+        println(s"node[$nid] split ${split.getSplitEntry.toString}")
+    }
     res
   }
 

@@ -1,6 +1,6 @@
 package com.tencent.angel.spark.ml.tree.util
 
-import com.tencent.angel.spark.ml.tree.common.Global.Conf._
+import com.tencent.angel.spark.ml.tree.common.TreeConf._
 import com.tencent.angel.spark.ml.tree.gbdt.metadata.FeatureInfo
 import com.tencent.angel.spark.ml.tree.sketch.HeapQuantileSketch
 import org.apache.spark.{SparkConf, SparkContext}
@@ -25,7 +25,7 @@ object DatasetAnalysis {
   }
 
   def analysis(conf: SparkConf)(implicit sc: SparkContext): Unit = {
-    val input = conf.get(ML_TRAIN_DATA_PATH)
+    val input = conf.get(TRAIN_DATA_PATH)
     val dim = conf.get(ML_NUM_FEATURE).toInt
     val numWorker = conf.get(ML_NUM_WORKER).toInt
     val numSplit = conf.getInt(ML_GBDT_SPLIT_NUM, DEFAULT_ML_GBDT_SPLIT_NUM)
@@ -150,7 +150,7 @@ object DatasetAnalysis {
   }
 
   def change_label(conf: SparkConf)(implicit sc: SparkContext): Unit = {
-    val input = conf.get(ML_TRAIN_DATA_PATH)
+    val input = conf.get(TRAIN_DATA_PATH)
     val output = conf.get("spark.ml.output.path")
 
     sc.textFile(input)
@@ -166,7 +166,7 @@ object DatasetAnalysis {
   }
 
   def coalesce_label(conf: SparkConf)(implicit sc: SparkContext): Unit = {
-    val input = conf.get(ML_TRAIN_DATA_PATH)
+    val input = conf.get(TRAIN_DATA_PATH)
     val output = conf.get("spark.ml.output.path")
     val numClass = conf.get(ML_NUM_CLASS).toInt
     val coalescedNumClass = conf.get("spark.ml.coalesced.class.num").toInt
@@ -191,7 +191,7 @@ object DatasetAnalysis {
   }
 
   def shuffle_feature(conf: SparkConf)(implicit sc: SparkContext): Unit = {
-    val input = conf.get(ML_TRAIN_DATA_PATH)
+    val input = conf.get(TRAIN_DATA_PATH)
     val output = conf.get("spark.ml.output.path")
     val numFeature = conf.get(ML_NUM_FEATURE).toInt
     val shuffle = (0 until numFeature).toArray
