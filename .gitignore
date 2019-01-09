@@ -14,6 +14,8 @@
 .scala_dependencies
 .settings
 *.class
+*.html
+*.css
 angel-ps/core/target/
 angel-ps/psf/target/
 angel-ps/examples/target/
@@ -39,6 +41,6 @@ spark-on-angel/mllib/log/
 spark-on-angel/log/
 angel-ps/core/velocity.*
 angel-ps/core/src/main/java/com/tencent/angel/ml/math2/velocity
-spark-math/target/
-spark-mlcore/target/
-spark-format/target/
+angel-math/target/
+angel-mlcore/target/
+angel-format/target/
