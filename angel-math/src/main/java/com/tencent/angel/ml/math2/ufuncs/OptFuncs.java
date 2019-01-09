@@ -18,11 +18,11 @@
 
 package com.tencent.angel.ml.math2.ufuncs;
 
-import com.tencent.angel.ml.math2.ufuncs.expression.*;
-import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.math2.matrix.Matrix;
 import com.tencent.angel.ml.math2.ufuncs.executor.BinaryExecutor;
 import com.tencent.angel.ml.math2.ufuncs.executor.matrix.BinaryMatrixExecutor;
+import com.tencent.angel.ml.math2.ufuncs.expression.*;
+import com.tencent.angel.ml.math2.vector.Vector;
 
 
 public class OptFuncs {

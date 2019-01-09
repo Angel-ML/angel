@@ -430,12 +430,7 @@ object SharedConf {
   def modelSize: Long = {
     get()
 
-    val ms = sc.getLong(MLConf.ML_MODEL_SIZE)
-    if (ms == -1) {
-      indexRange
-    } else {
-      ms
-    }
+    sc.getLong(MLConf.ML_MODEL_SIZE)
   }
 
   def validateRatio: Double = {

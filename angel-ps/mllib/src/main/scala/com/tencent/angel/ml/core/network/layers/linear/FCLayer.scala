@@ -26,7 +26,7 @@ import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.graph.Graph
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.layers.verge.Embedding
 import com.tencent.angel.ml.core.network.transfunc.TransFunc
@@ -57,6 +57,8 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
   val sharedConf: SharedConf = graph.conf
   val modelType: RowType = SharedConf.denseModelType
   val numTask: Int = sharedConf.get(AngelConf.ANGEL_WORKERGROUP_NUMBER).toInt
+  val parallel = sharedConf.get(MLConf.IS_PARALLEL).toBoolean
+
 
   private val weight = Variable.getMatrix(s"${name}_weight", inputLayer.outputDim,
     outputDim, OptUtils.getSlotNum(optimizer), modelType, MatrixType.Blas, location)
@@ -78,13 +80,13 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
             ipLayer.calOutput() match {
               case mat: RBCompIntDoubleMatrix =>
                 ipOutputCache = MatrixUtils.rbCompDense2Blas(mat)
-                forward = ipOutputCache.dot(weight).add(bias)
+                forward = ipOutputCache.dot(weight, parallel).add(bias)
               case mat: RBCompIntFloatMatrix =>
                 ipOutputCache = MatrixUtils.rbCompDense2Blas(mat)
-                forward = ipOutputCache.dot(weight).add(bias)
+                forward = ipOutputCache.dot(weight, parallel).add(bias)
             }
           case ipLayer => // from other dense layer
-            forward = ipLayer.calOutput().dot(weight).add(bias)
+            forward = ipLayer.calOutput().dot(weight, parallel).add(bias)
         }
         output = transFunc(forward)
         status = STATUS.Forward
@@ -109,15 +111,15 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
             modelType match {
               case RowType.T_DOUBLE_DENSE =>
                 MatrixUtils.blas2RBCompDense(
-                  Ufuncs.dot(backward, false, weight, true).asInstanceOf[BlasDoubleMatrix],
+                  Ufuncs.dot(backward, false, weight, true, parallel).asInstanceOf[BlasDoubleMatrix],
                   ipLayer.numFactors)
               case RowType.T_FLOAT_DENSE =>
                 MatrixUtils.blas2RBCompDense(
-                  Ufuncs.dot(backward, false, weight, true).asInstanceOf[BlasFloatMatrix],
+                  Ufuncs.dot(backward, false, weight, true, parallel).asInstanceOf[BlasFloatMatrix],
                   ipLayer.numFactors
                 )
             }
-          case _ => Ufuncs.dot(backward, false, weight, true)
+          case _ => Ufuncs.dot(backward, false, weight, true, parallel)
         }
 
         status = STATUS.Backward

@@ -130,7 +130,7 @@ object PSMatrix{
     new PSMatrixImpl(matrixMeta.getId, rows, cols, rowType)
   }
 
-  @deprecated("use dense directly", "2.0.0")
+  @deprecated("use dense directly", "2.0.1")
   def zero(rows: Int, cols: Long): PSMatrix = {
     dense(rows, cols)
   }

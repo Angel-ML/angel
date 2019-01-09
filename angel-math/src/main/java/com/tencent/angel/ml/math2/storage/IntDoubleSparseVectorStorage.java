@@ -1,5 +1,6 @@
 package com.tencent.angel.ml.math2.storage;
 
+
 import com.tencent.angel.ml.math2.utils.RowType;
 import it.unimi.dsi.fastutil.ints.*;
 import it.unimi.dsi.fastutil.longs.*;
@@ -8,8 +9,8 @@ import it.unimi.dsi.fastutil.doubles.*;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 import java.util.Arrays;
-import java.util.Random;
 import java.util.HashSet;
+import java.util.Random;
 
 public class IntDoubleSparseVectorStorage implements IntDoubleVectorStorage {
   private Int2DoubleOpenHashMap map;
@@ -31,7 +32,7 @@ public class IntDoubleSparseVectorStorage implements IntDoubleVectorStorage {
   }
 
   public IntDoubleSparseVectorStorage(int dim) {
-    this(dim, Math.max(128, (int) (dim / 1000)));
+    this(dim, Math.min(64, Math.max(dim, 0)));
   }
 
   public IntDoubleSparseVectorStorage(int dim, int[] indices, double[] values) {

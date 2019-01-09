@@ -121,8 +121,11 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
     val batchSize: Int = (trainDataSize + numBatch - 1) / numBatch
     val batchData = new Array[LabeledData](batchSize)
 
-    if (SharedConf.useShuffle && negTrainData == null) {
+    if (SharedConf.useShuffle) {
       posTrainData.shuffle()
+      if (negTrainData != null) {
+        negTrainData.shuffle()
+      }
     }
 
     while (ctx.getEpoch < epochNum) {

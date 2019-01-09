@@ -155,12 +155,6 @@ abstract class Graph(val placeHolder: PlaceHolder, val conf: SharedConf) {
     trainableLayer.foreach { layer => layer.init(taskId) }
   }
 
-  override def toString: String = {
-    val str = new StringBuilder
-    deepFirstDown(lossLayer.asInstanceOf[Layer])(_ => true, layer => str.append(layer.toString + "\n"))
-    str.toString()
-  }
-
   /**
     * Create matrices contain in the model, this method is only used in Driver/Client
     *
@@ -187,4 +181,9 @@ abstract class Graph(val placeHolder: PlaceHolder, val conf: SharedConf) {
     */
   def saveModel(envCtx: EvnContext, path: String): Unit
 
+  override def toString: String = {
+    val str = new StringBuilder
+    deepFirstDown(lossLayer.asInstanceOf[Layer])(_ => true, layer => str.append(layer.toString + "\n"))
+    str.toString()
+  }
 }

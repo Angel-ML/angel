@@ -6,10 +6,8 @@ import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ml.math2.utils.ArrayCopy;
 
 import java.util.Arrays;
-import java.util.Random;
 import java.util.HashSet;
-
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import java.util.Random;
 
 public class LongIntSortedVectorStorage implements LongIntVectorStorage {
   private long[] indices;
@@ -39,7 +37,7 @@ public class LongIntSortedVectorStorage implements LongIntVectorStorage {
   }
 
   public LongIntSortedVectorStorage(long dim) {
-    this(dim, Math.max(128, (int) (dim / 1000)));
+    this(dim, (int)Math.min(64, Math.max(dim, 0)));
   }
 
   @Override public int get(long idx) {

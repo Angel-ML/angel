@@ -110,7 +110,6 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
     val start = System.currentTimeMillis()
     status match {
       case STATUS.Null =>
-        // println(s"the status in Embedding($name)-calOutput is ${status.toString}")
         forward = embedding.snapshot()
         status = STATUS.Forward
       case _ =>

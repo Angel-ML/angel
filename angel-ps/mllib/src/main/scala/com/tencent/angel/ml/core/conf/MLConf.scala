@@ -78,6 +78,7 @@ object MLConf {
   val DEFAULT_ML_BATCH_SAMPLE_RATIO = 1.0
   val ML_LEARN_RATE = "ml.learn.rate"
   val DEFAULT_ML_LEARN_RATE = 0.5
+
   val ML_NUM_UPDATE_PER_EPOCH = "ml.num.update.per.epoch"
   val DEFAULT_ML_NUM_UPDATE_PER_EPOCH = 10
 
@@ -123,7 +124,7 @@ object MLConf {
 
   // Decays
   val ML_OPT_DECAY_CLASS_NAME = "ml.opt.decay.class.name"
-  val DEFAULT_ML_OPT_DECAY_CLASS_NAME = "WarmRestarts"
+  val DEFAULT_ML_OPT_DECAY_CLASS_NAME = "StandardDecay"
   val ML_OPT_DECAY_INTERVALS = "ml.opt.decay.intervals"
   val DEFAULT_ML_OPT_DECAY_INTERVALS = 100
   val ML_OPT_DECAY_ALPHA = "ml.opt.decay.alpha"
@@ -141,10 +142,9 @@ object MLConf {
   val ML_OPT_DECAY_CYCLE = "ml.opt.decay.cycle"
   val DEFAULT_ML_OPT_DECAY_CYCLE = false
 
-
   // Reg param
   val ML_REG_L2 = "ml.reg.l2"
-  val DEFAULT_ML_REG_L2 = 0.005
+  val DEFAULT_ML_REG_L2 = 0.0
   val ML_REG_L1 = "ml.reg.l1"
   val DEFAULT_ML_REG_L1 = 0.0
 
@@ -221,6 +221,11 @@ object MLConf {
   /** The predict error of all samples */
   val TRAIN_ERROR = "train.error"
   val VALID_ERROR = "validate.error"
+
+  /** The predict error of all samples */
+  val IS_PARALLEL = "parallel"
+  val DEFAULT_IS_PARALLEL = true
+
 }
 
 class MLConf {}

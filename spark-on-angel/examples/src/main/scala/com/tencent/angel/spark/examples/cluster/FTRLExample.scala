@@ -31,14 +31,14 @@ object FTRLExample {
     val conf = new SparkConf()
 
     if (modelPath.length > 0)
-      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, modelPath)
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, modelPath + "/back")
 
     val sc = new SparkContext(conf)
 
     PSContext.getOrCreate(sc)
 
     // We use more partitions to achieve dynamic load balance
-    val partNum = (SparkUtils.getNumExecutors(SparkContext.getOrCreate().getConf) * 6.15).toInt
+    val partNum = (SparkUtils.getNumCores(SparkContext.getOrCreate().getConf) * 6.15).toInt
 
     val opt = new FTRL(lambda1, lambda2, alpha, beta)
     opt.init(dim, RowType.T_DOUBLE_SPARSE_LONGKEY)
@@ -52,7 +52,7 @@ object FTRLExample {
         f =>
           f._1.setY(f._2)
           f._1
-      }
+      }.map(point => DataLoader.appendBias(point))
 
     val size = data.count()
 
@@ -67,7 +67,9 @@ object FTRLExample {
 
       val scores = data.mapPartitions {
         case iterator =>
-          opt.predict(iterator.toArray).iterator}
+          iterator.sliding(batchSize, batchSize)
+              .map(f => opt.predict(f.toArray)).flatMap(f => f)
+      }
       val auc = new AUC().calculate(scores)
 
       println(s"epoch=$epoch loss=${totalLoss / size} auc=$auc")
@@ -75,8 +77,8 @@ object FTRLExample {
 
     if (output.length > 0) {
       println(s"saving model to path $output")
-      val weight = opt.weight
-      SparseLRModel(weight).save(output)
+      opt.weight
+      opt.saveWeight(output)
       opt.save(output + "/back")
       println(s"saving z n and w finish")
     }

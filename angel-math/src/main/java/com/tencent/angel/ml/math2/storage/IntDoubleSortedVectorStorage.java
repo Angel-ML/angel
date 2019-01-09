@@ -5,9 +5,8 @@ import java.util.Arrays;
 import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ml.math2.utils.ArrayCopy;
 
-import java.util.Arrays;
-import java.util.Random;
 import java.util.HashSet;
+import java.util.Random;
 
 public class IntDoubleSortedVectorStorage implements IntDoubleVectorStorage {
   private int[] indices;
@@ -37,7 +36,7 @@ public class IntDoubleSortedVectorStorage implements IntDoubleVectorStorage {
   }
 
   public IntDoubleSortedVectorStorage(int dim) {
-    this(dim, Math.max(128, (int) (dim / 1000)));
+    this(dim, Math.min(64, Math.max(dim, 0)));
   }
 
   @Override public double get(int idx) {

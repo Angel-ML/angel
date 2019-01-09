@@ -28,6 +28,7 @@ object OptUtils {
 
   def getSlotNum(optimizer: String): Int = {
     optimizer.toLowerCase match {
+      case "sgd" => 1
       case "momentum" => 2
       case "adam" => 3
       case "ftrl" => 3

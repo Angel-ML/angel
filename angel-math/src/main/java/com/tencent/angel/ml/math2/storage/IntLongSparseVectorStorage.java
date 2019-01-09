@@ -8,8 +8,8 @@ import it.unimi.dsi.fastutil.doubles.*;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 import java.util.Arrays;
-import java.util.Random;
 import java.util.HashSet;
+import java.util.Random;
 
 public class IntLongSparseVectorStorage implements IntLongVectorStorage {
   private Int2LongOpenHashMap map;
@@ -31,7 +31,7 @@ public class IntLongSparseVectorStorage implements IntLongVectorStorage {
   }
 
   public IntLongSparseVectorStorage(int dim) {
-    this(dim, Math.max(128, (int) (dim / 1000)));
+    this(dim, Math.min(64, Math.max(dim, 0)));
   }
 
   public IntLongSparseVectorStorage(int dim, int[] indices, long[] values) {

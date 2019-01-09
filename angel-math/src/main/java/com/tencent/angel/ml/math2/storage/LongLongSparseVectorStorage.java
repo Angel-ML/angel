@@ -8,10 +8,8 @@ import it.unimi.dsi.fastutil.doubles.*;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 import java.util.Arrays;
-import java.util.Random;
 import java.util.HashSet;
-
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import java.util.Random;
 
 public class LongLongSparseVectorStorage implements LongLongVectorStorage {
   private Long2LongOpenHashMap map;
@@ -33,7 +31,7 @@ public class LongLongSparseVectorStorage implements LongLongVectorStorage {
   }
 
   public LongLongSparseVectorStorage(long dim) {
-    this(dim, Math.max(128, (int) (dim / 1000)));
+    this(dim, (int)Math.min(64, Math.max(dim, 0)));
   }
 
   public LongLongSparseVectorStorage(long dim, long[] indices, long[] values) {

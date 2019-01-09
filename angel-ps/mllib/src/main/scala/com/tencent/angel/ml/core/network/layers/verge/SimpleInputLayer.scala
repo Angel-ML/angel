@@ -21,8 +21,9 @@ package com.tencent.angel.ml.core.network.layers.verge
 import java.util.concurrent.Future
 
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.graph.Graph
+import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.transfunc.TransFunc
 import com.tencent.angel.ml.core.network.variable.MatVariable.MatrixType
@@ -44,6 +45,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
   graph.addTrainable(this)
 
   val sharedConf: SharedConf = graph.conf
+
   val modelType: RowType = SharedConf.modelType
   private val numSlot = OptUtils.getSlotNum(optimizer)
 

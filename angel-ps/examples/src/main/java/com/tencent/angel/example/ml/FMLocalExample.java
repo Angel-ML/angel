@@ -69,7 +69,7 @@ public class FMLocalExample {
     // Data format, libsvm or dummy
     String dataType = "libsvm";
     // Model type
-    String modelType = String.valueOf(RowType.T_DOUBLE_SPARSE);
+    String modelType = String.valueOf(RowType.T_FLOAT_SPARSE);
 
     // Feature number of train data
     int featureNum = 123;

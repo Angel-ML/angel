@@ -31,7 +31,7 @@ abstract class DataParser(val splitter: String) {
   protected def processLabel(value: String, hasLabel: Boolean, isTraining: Boolean,
                              transLabel: TransLabel): (Double, String, Array[String]) = {
     if (null == value) {
-      return (Double.NaN, "",null)
+      return (Double.NaN, "", null)
     }
 
     val splits = value.trim.split(splitter)
@@ -55,7 +55,7 @@ abstract class DataParser(val splitter: String) {
 case class DummyDataParser(override val splitter: String, featRange: Long, hasLabel: Boolean, isTraining: Boolean, transLabel: TransLabel, rowType: RowType) extends DataParser(splitter) {
   override def parse(value: String): LabeledData = {
 
-    val (y, attached, splits)  = processLabel(value, hasLabel, isTraining, transLabel)
+    val (y, attached, splits) = processLabel(value, hasLabel, isTraining, transLabel)
     if (splits == null) {
       return null
     }
@@ -68,15 +68,19 @@ case class DummyDataParser(override val splitter: String, featRange: Long, hasLa
       case ("long", "double") =>
         val keys: Array[Long] = (0 until len).toArray.map(i => splits(i).toLong)
         VFactory.sparseLongKeyDoubleVector(featRange, keys, keys.map(_ => 1.0))
+      // VFactory.sortedLongKeyDoubleVector(featRange, keys, keys.map(_ => 1.0))
       case ("int", "double") =>
         val keys: Array[Int] = (0 until len).toArray.map(i => splits(i).toInt)
         VFactory.sparseDoubleVector(featRange.toInt, keys, keys.map(_ => 1.0))
+      // VFactory.sortedDoubleVector(featRange.toInt, keys, keys.map(_ => 1.0))
       case ("long", "float") =>
         val keys: Array[Long] = (0 until len).toArray.map(i => splits(i).toLong)
         VFactory.sparseLongKeyFloatVector(featRange, keys, keys.map(_ => 1.0f))
+      // VFactory.sortedLongKeyFloatVector(featRange, keys, keys.map(_ => 1.0f))
       case ("int", "float") =>
         val keys: Array[Int] = (0 until len).toArray.map(i => splits(i).toInt)
         VFactory.sparseFloatVector(featRange.toInt, keys, keys.map(_ => 1.0f))
+      // VFactory.sortedFloatVector(featRange.toInt, keys, keys.map(_ => 1.0f))
       case _ => throw new AngelException("RowType is not support!")
     }
 
@@ -85,10 +89,9 @@ case class DummyDataParser(override val splitter: String, featRange: Long, hasLa
 }
 
 case class LibSVMDataParser(override val splitter: String, featRange: Long, hasLabel: Boolean, isTraining: Boolean, transLabel: TransLabel, rowType: RowType) extends DataParser(splitter) {
-  // type V = IntDoubleVector
 
   override def parse(value: String): LabeledData = {
-    val (y, attached, splits)  = processLabel(value, hasLabel, isTraining, transLabel)
+    val (y, attached, splits) = processLabel(value, hasLabel, isTraining, transLabel)
     if (splits == null) {
       return null
     }
@@ -108,6 +111,7 @@ case class LibSVMDataParser(override val splitter: String, featRange: Long, hasL
           vals(indx2) = kv(1).toDouble
         }
         VFactory.sparseLongKeyDoubleVector(featRange, keys, vals)
+        // VFactory.sortedLongKeyDoubleVector(featRange, keys, vals)
 
       case ("int", "double") =>
         val keys: Array[Int] = new Array[Int](len)
@@ -120,6 +124,7 @@ case class LibSVMDataParser(override val splitter: String, featRange: Long, hasL
           vals(indx2) = kv(1).toDouble
         }
         VFactory.sparseDoubleVector(featRange.toInt, keys, vals)
+        // VFactory.sortedDoubleVector(featRange.toInt, keys, vals)
       case ("long", "float") =>
         val keys: Array[Long] = new Array[Long](len)
         val vals: Array[Float] = new Array[Float](len)
@@ -131,6 +136,7 @@ case class LibSVMDataParser(override val splitter: String, featRange: Long, hasL
           vals(indx2) = kv(1).toFloat
         }
         VFactory.sparseLongKeyFloatVector(featRange, keys, vals)
+        // VFactory.sortedLongKeyFloatVector(featRange, keys, vals)
       case ("int", "float") =>
         val keys: Array[Int] = new Array[Int](len)
         val vals: Array[Float] = new Array[Float](len)
@@ -142,6 +148,7 @@ case class LibSVMDataParser(override val splitter: String, featRange: Long, hasL
           vals(indx2) = kv(1).toFloat
         }
         VFactory.sparseFloatVector(featRange.toInt, keys, vals)
+        // VFactory.sortedFloatVector(featRange.toInt, keys, vals)
       case _ => throw new AngelException("RowType is not support!")
     }
 
@@ -152,7 +159,7 @@ case class LibSVMDataParser(override val splitter: String, featRange: Long, hasL
 case class DenseDataParser(override val splitter: String, featRange: Int, hasLabel: Boolean, isTraining: Boolean, transLabel: TransLabel, rowType: RowType) extends DataParser(splitter) {
 
   override def parse(value: String): LabeledData = {
-    val (y, attached, splits)  = processLabel(value, hasLabel, isTraining, transLabel)
+    val (y, attached, splits) = processLabel(value, hasLabel, isTraining, transLabel)
     if (splits == null) {
       return null
     }

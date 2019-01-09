@@ -2,7 +2,7 @@
 
 
 [![license](http://img.shields.io/badge/license-Apache2.0-blue.svg?style=flat)](https://github.com/tencent/angel/blob/master/LICENSE)
-[![Release Version](https://img.shields.io/badge/release-2.0.0-red.svg)](https://github.com/tencent/angel/releases)
+[![Release Version](https://img.shields.io/badge/release-2.0.1-red.svg)](https://github.com/tencent/angel/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/tencent/angel/pulls)
 
 [(English Documents Available)](./README_en.md)
@@ -49,7 +49,7 @@
 * [Angel Json配置](./docs/basic/json_conf.md)
 
 ## Algorithm
-
+* [**Angel or Spark On Angel？**](./docs/algo/angel_or_spark_on_angel.md)
 * **Angel**
 	* **Traditional Machine Learning Methods**
 		* [Logistic Regression(LR)](./docs/algo/lr_on_angel.md)
@@ -84,6 +84,7 @@
 * [Yarn运行](./docs/deploy/run_on_yarn.md)
 * [系统配置](./docs/deploy/config_details.md)
 * [资源配置指南](./docs/deploy/resource_config_guide.md)
+* [使用OpenBlas给算法加速](./docs/deploy/blas_for_densematrix.md)
 
 ## FAQ
 * [工程类问题](https://github.com/Tencent/angel/wiki/%E5%B7%A5%E7%A8%8B%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
