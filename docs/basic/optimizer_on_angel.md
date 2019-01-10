@@ -94,6 +94,7 @@ json方式表达有两种, 如下:
 注: ![](http://latex.codecogs.com/png.latex?\lambda_1,\lambda_2)是正则化常数, 对应json中的"reg1, reg2"
 
 **一些经验:** 
+
 对于deep and wide算法, 原则上要保证两边收敛速度相差不要太大.
 - wide部分优化器用FTRL, 因为FTRL收敛相对较慢, 这样有深度那边训练. 
 - deep部分优化器用Adam, 因为Adam收敛相对较快. 虽然deep侧用的是快速收敛优化器, 但他的参数多

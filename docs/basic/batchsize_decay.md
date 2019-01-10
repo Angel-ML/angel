@@ -25,7 +25,7 @@ ml.opt.decay.class.name=ConstantLearningRate
 
 ## 2. StandardDecay
 标准Decay方案, 公式如下:
-$$lr_{t} = \frac{lr_0}{\sqrt{1 + \alpha \cdot t}}$$
+![](http://latex.codecogs.com/png.latex?lr_{t}=\frac{lr_0}{\sqrt{1+\alpha\cdot%20t}})
 
 配置样例:
 ```
@@ -34,7 +34,8 @@ ml.opt.decay.alpha=0.001
 ```
 ## 3. CorrectionDecay
 修正Decay, 这种方案适合于Momentum, 它是专为Momentum设计的, 请不要用于Adam等其它优化器. 计算公式为:
-$$lr_{t} = \frac{lr_0}{\sqrt{1 + \alpha \cdot t}} \cdot  \frac{1 - \beta}{1 - \beta^t}$$
+
+![](http://latex.codecogs.com/png.latex?lr_{t}=\frac{lr_0}{\sqrt{1+\alpha\cdot%20t}}\cdot\frac{1-\beta}{1-\beta^t})
 
 第一部分就是StandardDecay, 它是正常的Decay, 延续二部分是修正项, 为Momentum设计, 它是运动量系数之和的倒数. 其中$\beta$必须与优化器中的momentum相等. 一般可设为0.9. 
 
@@ -50,10 +51,12 @@ ml.opt.decay.beta=0.9
 ```
 ## 4. WarmRestarts
 这是一种较为高级的Decay方案, 它是周期中Decay的代表. 标准计算公式如下:
-$$lr_t = lr_{min} + \frac{1}{2} \cdot \frac{lr_{max} - lr_{min}}{1 + \cos{(\frac{t}{interval}\pi)}}$$
+
+![](http://latex.codecogs.com/png.latex?lr_t=lr_{min}+\frac{1}{2}\cdot\frac{lr_{max}-lr_{min}}{1+\cos{(\frac{t}{interval}\pi)}})
+
 对于标准计算公式, 我们做了如下改进. 
-- 对$lr_{max}$进行衰减
-- 遂步增大$interval$
+- 对![](http://latex.codecogs.com/png.latex?lr_{max})进行衰减
+- 遂步增大![](http://latex.codecogs.com/png.latex?interval)
 
 配置样例:
 ```
@@ -61,7 +64,7 @@ ml.opt.decay.class.name=WarmRestarts
 ml.opt.decay.alpha=0.001
 ```
 
-其中$interval$通过`ml.opt.decay.intervals`设置, 具体如下:
+其中![](http://latex.codecogs.com/png.latex?interval)通过`ml.opt.decay.intervals`设置, 具体如下:
 ```scala
 class WarmRestarts(var etaMax: Double, etaMin: Double, alpha: Double) extends StepSizeScheduler {
 
