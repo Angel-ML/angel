@@ -46,6 +46,7 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
   model.buildNetwork()
   val graph: Graph = model.graph
   val ssScheduler: StepSizeScheduler = StepSizeScheduler(SharedConf.getStepSizeScheduler, lr0)
+  val decayOnBatch = conf.getBoolean(MLConf.ML_OPT_DECAY_ON_BATCH, MLConf.DEFAULT_ML_OPT_DECAY_ON_BATCH)
 
   def trainOneEpoch(epoch: Int, iter: Iterator[Array[LabeledData]], numBatch: Int): Double = {
     var batchCount: Int = 0
@@ -70,6 +71,10 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
 
       // LOG.info("waiting for push barrier ...")
       PSAgentContext.get().barrier(ctx.getTaskId.getIndex)
+
+      if (decayOnBatch) {
+        graph.setLR(ssScheduler.next())
+      }
       if (ctx.getTaskId.getIndex == 0) {
         // LOG.info("start to update ...")
         graph.update(epoch * numBatch + batchCount, 1) // update parameters on PS
@@ -139,7 +144,9 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
       }
 
       val startTrain = System.currentTimeMillis()
-      graph.setLR(ssScheduler.next())
+      if (!decayOnBatch) {
+        graph.setLR(ssScheduler.next())
+      }
       val loss: Double = trainOneEpoch(epoch, iter, numBatch)
       val trainCost = System.currentTimeMillis() - startTrain
       globalMetrics.metric(MLConf.TRAIN_LOSS, loss * trainDataSize)

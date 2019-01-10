@@ -81,7 +81,9 @@ modelsize | ml.model.size | 对于整个数据集, 在某些维度上可能没�
     "numupdateperepoch": 10,
     "batchsize": 1024,
     "lr": 0.5,
-    "decay": 0.01
+    "decayclass": "StandardDecay",
+    "decayalpha": 0.001,
+    "decaybeta": 0.9
 }
 ```
 下面对照说明:
@@ -92,8 +94,9 @@ epoch| ml.epoch.num | 迭代轮数
 numupdateperepoch | ml.num.update.per.epoch | 这个参数只对Angel有用, 指每轮迭代中更新参数据的次数
 batchsize |ml.minibatch.size | 这个参数只对Spark On Angel有用, 指mini-batch的大小
 lr |ml.learn.rate | 学习率
-decay |ml.learn.decay| 学习率衰减因子
-
+decayclass |ml.opt.decay.class.name| 指定学习率衰减类
+decayalpha |ml.opt.decay.alpha| 指定学习率衰减参数据alpha
+decayalpha |ml.opt.decay.beta| 指定学习率衰减类数据beta
 其中有:
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}lr_{epoch}=\max(\frac{lr}{\sqrt{1.0+decay*epoch}},\frac{lr}{5}))

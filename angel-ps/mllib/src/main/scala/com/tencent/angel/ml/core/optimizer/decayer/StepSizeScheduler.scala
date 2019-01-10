@@ -39,31 +39,6 @@ object StepSizeScheduler {
   def apply(name: String, eta: Double): StepSizeScheduler = {
     val conf = SharedConf.get()
     name match {
-      case clsName if matchName[CosineDecay](clsName) =>
-        val alpha = conf.getDouble(MLConf.ML_OPT_DECAY_ALPHA, MLConf.DEFAULT_ML_OPT_DECAY_ALPHA)
-        new CosineDecay(eta, alpha)
-      case clsName if matchName[CosineDecayRestarts](clsName) =>
-        val alpha = conf.getDouble(MLConf.ML_OPT_DECAY_ALPHA, MLConf.DEFAULT_ML_OPT_DECAY_ALPHA)
-        new CosineDecayRestarts(eta, alpha)
-      case clsName if matchName[ExponentialDecay](clsName) =>
-        val alpha = conf.getDouble(MLConf.ML_OPT_DECAY_ALPHA, MLConf.DEFAULT_ML_OPT_DECAY_ALPHA)
-        val staircase = conf.getBoolean(MLConf.ML_OPT_DECAY_STAIRCASE, MLConf.DEFAULT_ML_OPT_DECAY_STAIRCASE)
-        val useNatural = conf.getBoolean(MLConf.ML_OPT_DECAY_USENATURAL, MLConf.DEFAULT_ML_OPT_DECAY_USENATURAL)
-        new ExponentialDecay(eta, alpha, staircase, useNatural)
-      case clsName if matchName[InverseTimeDecay](clsName) =>
-        val alpha = conf.getDouble(MLConf.ML_OPT_DECAY_ALPHA, MLConf.DEFAULT_ML_OPT_DECAY_ALPHA)
-        val staircase = conf.getBoolean(MLConf.ML_OPT_DECAY_STAIRCASE, MLConf.DEFAULT_ML_OPT_DECAY_STAIRCASE)
-        new InverseTimeDecay(eta, alpha, staircase)
-      case clsName if matchName[LinearCosineDecay](clsName) =>
-        val alpha = conf.getDouble(MLConf.ML_OPT_DECAY_ALPHA, MLConf.DEFAULT_ML_OPT_DECAY_ALPHA)
-        val beta = conf.getDouble(MLConf.ML_OPT_DECAY_BETA, MLConf.DEFAULT_ML_OPT_DECAY_BETA)
-        val useNoisy = conf.getBoolean(MLConf.ML_OPT_DECAY_USENOISY, MLConf.DEFAULT_ML_OPT_DECAY_USENOISY)
-        new LinearCosineDecay(eta, alpha, beta, useNoisy)
-      case clsName if matchName[PolynomialDecay](clsName) =>
-        val endingEta = eta / 10
-        val power = conf.getDouble(MLConf.ML_OPT_DECAY_POWER, MLConf.DEFAULT_ML_OPT_DECAY_POWER)
-        val cycle = conf.getBoolean(MLConf.ML_OPT_DECAY_CYCLE, MLConf.DEFAULT_ML_OPT_DECAY_CYCLE)
-        new PolynomialDecay(eta, endingEta, power, cycle)
       case clsName if matchName[StandardDecay](clsName) =>
         val alpha = conf.getDouble(MLConf.ML_OPT_DECAY_ALPHA, MLConf.DEFAULT_ML_OPT_DECAY_ALPHA)
         new StandardDecay(eta, alpha)
@@ -71,6 +46,10 @@ object StepSizeScheduler {
         val etaMin = eta / 10
         val alpha = conf.getDouble(MLConf.ML_OPT_DECAY_ALPHA, MLConf.DEFAULT_ML_OPT_DECAY_ALPHA)
         new WarmRestarts(eta, etaMin, alpha)
+      case clsName if matchName[CorrectionDecay](clsName) =>
+        val alpha = conf.getDouble(MLConf.ML_OPT_DECAY_ALPHA, MLConf.DEFAULT_ML_OPT_DECAY_ALPHA)
+        val beta = conf.getDouble(MLConf.ML_OPT_DECAY_BETA, MLConf.DEFAULT_ML_OPT_DECAY_BETA)
+        new CorrectionDecay(eta, alpha, beta)
       case clsName if matchName[ConstantLearningRate](clsName) =>
         new ConstantLearningRate(eta)
     }

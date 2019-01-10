@@ -45,6 +45,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
   graph.addTrainable(this)
 
   val sharedConf: SharedConf = graph.conf
+  val parallel = sharedConf.get(MLConf.ML_MATRIX_DOT_USE_PARALLEL_EXECUTOR).toBoolean
 
   val modelType: RowType = SharedConf.modelType
   private val numSlot = OptUtils.getSlotNum(optimizer)

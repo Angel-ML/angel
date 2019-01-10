@@ -42,6 +42,7 @@
 * [Angel中优化器](./docs/basic/optimizer_on_angel.md)
 * [Angel中的损失函数](./docs/basic/lossfunc_on_angel.md)
 * [Angel中的传输函数](./docs/basic/transfunc_on_angel.md)
+* [Angel中的学习率Decay](./docs/basic/batchsize_decay.md)
 
 ## Quick Start
 * [Angel入门](./docs/tutorials/angel_ps_quick_start.md)

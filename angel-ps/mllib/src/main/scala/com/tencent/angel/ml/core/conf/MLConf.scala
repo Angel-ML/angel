@@ -125,22 +125,14 @@ object MLConf {
   // Decays
   val ML_OPT_DECAY_CLASS_NAME = "ml.opt.decay.class.name"
   val DEFAULT_ML_OPT_DECAY_CLASS_NAME = "StandardDecay"
+  val ML_OPT_DECAY_ON_BATCH = "ml.opt.decay.on.batch"
+  val DEFAULT_ML_OPT_DECAY_ON_BATCH = false
   val ML_OPT_DECAY_INTERVALS = "ml.opt.decay.intervals"
   val DEFAULT_ML_OPT_DECAY_INTERVALS = 100
   val ML_OPT_DECAY_ALPHA = "ml.opt.decay.alpha"
   val DEFAULT_ML_OPT_DECAY_ALPHA = 0.001
   val ML_OPT_DECAY_BETA = "ml.opt.decay.beta"
   val DEFAULT_ML_OPT_DECAY_BETA = 0.001
-  val ML_OPT_DECAY_POWER = "ml.opt.decay.power"
-  val DEFAULT_ML_OPT_DECAY_POWER = 0.001
-  val ML_OPT_DECAY_STAIRCASE = "ml.opt.decay.staircase"
-  val DEFAULT_ML_OPT_DECAY_STAIRCASE = false
-  val ML_OPT_DECAY_USENATURAL = "ml.opt.decay.usenatural"
-  val DEFAULT_ML_OPT_DECAY_USENATURAL = false
-  val ML_OPT_DECAY_USENOISY = "ml.opt.decay.usenoisy"
-  val DEFAULT_ML_OPT_DECAY_USENOISY = false
-  val ML_OPT_DECAY_CYCLE = "ml.opt.decay.cycle"
-  val DEFAULT_ML_OPT_DECAY_CYCLE = false
 
   // Reg param
   val ML_REG_L2 = "ml.reg.l2"
@@ -223,8 +215,8 @@ object MLConf {
   val VALID_ERROR = "validate.error"
 
   /** The predict error of all samples */
-  val IS_PARALLEL = "parallel"
-  val DEFAULT_IS_PARALLEL = true
+  val ML_MATRIX_DOT_USE_PARALLEL_EXECUTOR = "ml.matrix.dot.use.parallel.executor"
+  val DEFAULT_ML_MATRIX_DOT_USE_PARALLEL_EXECUTOR = false
 
 }
 
