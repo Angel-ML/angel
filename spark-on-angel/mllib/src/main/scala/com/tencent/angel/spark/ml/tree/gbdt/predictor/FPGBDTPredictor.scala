@@ -19,34 +19,36 @@ class FPGBDTPredictor extends Serializable {
     println(s"Reading model from $modelPath")
   }
 
-  def predict(predictor: FPGBDTPredictor, instances: RDD[Vector]): RDD[Array[Float]] = {
+  def predict(predictor: FPGBDTPredictor, instances: RDD[Instance]): RDD[(Long, Int)] = {
     val bcPredictor = instances.sparkContext.broadcast(predictor)
-    instances.map(bcPredictor.value.predictRaw)
+    instances.map{ instance =>
+      (instance.label.toLong, bcPredictor.value.predict(instance.feature))
+    }
   }
 
   def predict(implicit sc: SparkContext, validPath: String, predPath: String): Unit = {
     println(s"Predicting dataset $validPath")
     val instances: RDD[Instance] = DataLoader.loadLibsvmDP(validPath, forest.head.getParam.numFeature).cache()
-    val labels = instances.map(_.label.toFloat).collect()
-    val preds = predict(this, instances.map(_.feature)).collect().flatten
+    //val labels = instances.map(_.label.toFloat).collect()
+    val preds = predict(this, instances)
     instances.unpersist()
 
-    println(s"Evaluating predictions")
-    val evalMetrics = ObjectiveFactory.getEvalMetrics(
-      sc.getConf.get(ML_EVAL_METRIC, DEFAULT_ML_EVAL_METRIC)
-        .split(",").map(_.trim).filter(_.nonEmpty)
-    )
-    println(evalMetrics.map(evalMetric => {
-      val kind = evalMetric.getKind
-      val metric = evalMetric.eval(preds, labels)
-      s"$kind[$metric]"
-    }).mkString(", "))
+//    println(s"Evaluating predictions")
+//    val evalMetrics = ObjectiveFactory.getEvalMetrics(
+//      sc.getConf.get(ML_EVAL_METRIC, DEFAULT_ML_EVAL_METRIC)
+//        .split(",").map(_.trim).filter(_.nonEmpty)
+//    )
+//    println(evalMetrics.map(evalMetric => {
+//      val kind = evalMetric.getKind
+//      val metric = evalMetric.eval(preds, labels)
+//      s"$kind[$metric]"
+//    }).mkString(", "))
 
     val path = new Path(predPath)
     val fs = path.getFileSystem(sc.hadoopConfiguration)
     if (fs.exists(path)) fs.delete(path, true)
 
-    sc.makeRDD(labels.zip(preds)).saveAsTextFile(predPath)
+    preds.saveAsTextFile(predPath)
     println(s"Writing predictions to $predPath")
   }
 
