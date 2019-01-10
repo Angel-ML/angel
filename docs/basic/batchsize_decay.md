@@ -25,6 +25,7 @@ ml.opt.decay.class.name=ConstantLearningRate
 
 ## 2. StandardDecay
 标准Decay方案, 公式如下:
+
 ![](http://latex.codecogs.com/png.latex?lr_{t}=\frac{lr_0}{\sqrt{1+\alpha\cdot%20t}})
 
 配置样例:
