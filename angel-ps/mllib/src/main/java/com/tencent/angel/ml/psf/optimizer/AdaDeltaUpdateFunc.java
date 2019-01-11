@@ -16,23 +16,24 @@ public class AdaDeltaUpdateFunc extends OptMMUpdateFunc {
         super();
     }
 
-    public AdaDeltaUpdateFunc(int matId, int factor, double epsilon, double beta, double lr, double regL1Param, double regL2Param, int epoch) {
-        super(matId, new int[]{factor}, new double[]{epsilon, beta, lr, regL1Param, regL2Param, epoch, 1});
+    public AdaDeltaUpdateFunc(int matId, int factor, double epsilon, double alpha, double beta, double lr, double regL1Param, double regL2Param, int epoch) {
+        super(matId, new int[]{factor}, new double[]{epsilon, alpha, beta, lr, regL1Param, regL2Param, epoch, 1});
     }
 
-    public AdaDeltaUpdateFunc(int matId, int factor, double epsilon, double beta, double lr, double regL1Param, double regL2Param, int epoch, int batchSize) {
-        super(matId, new int[]{factor}, new double[]{epsilon, beta, lr, regL1Param, regL2Param, epoch, batchSize});
+    public AdaDeltaUpdateFunc(int matId, int factor, double epsilon, double alpha, double beta, double lr, double regL1Param, double regL2Param, int epoch, int batchSize) {
+        super(matId, new int[]{factor}, new double[]{epsilon, alpha, beta, lr, regL1Param, regL2Param, epoch, batchSize});
     }
 
     @Override
     public void update(ServerPartition partition, int factor, double[] scalars) {
         double epsilon = scalars[0];
-        double beta = scalars[1];
-        double lr = scalars[2];
-        double l1RegParam = scalars[3];
-        double l2RegParam = scalars[4];
-        double epoch = (int) scalars[5];
-        double batchSize = (int) scalars[6];
+        double alpha = scalars[1];
+        double beta = scalars[2];
+        double lr = scalars[3];
+        double l1RegParam = scalars[4];
+        double l2RegParam = scalars[5];
+        double epoch = (int) scalars[6];
+        double batchSize = (int) scalars[7];
 
         for (int f = 0; f < factor; f++) {
             ServerRow gradientServerRow = partition.getRow(f + 3 * factor);
@@ -47,7 +48,7 @@ public class AdaDeltaUpdateFunc extends OptMMUpdateFunc {
                     gradient.idiv(batchSize);
                 }
 
-                OptFuncs.iexpsmoothing2(square1, gradient, beta);
+                OptFuncs.iexpsmoothing2(square1, gradient, alpha);
                 Vector hessian = OptFuncs.adadeltahessian(square1, square2);
 
                 if (l2RegParam != 0) {
@@ -56,12 +57,11 @@ public class AdaDeltaUpdateFunc extends OptMMUpdateFunc {
 
                 OptFuncs.iadadeltadelta(gradient, hessian, l2RegParam);
                 weight.isub(gradient);
+                OptFuncs.iexpsmoothing2(square2, gradient, beta);
 
                 if (l1RegParam != 0) {
                     OptFuncs.iadadeltathredshold(weight, hessian, l1RegParam, l2RegParam);
                 }
-
-                OptFuncs.iexpsmoothing2(square2, gradient, beta);
 
                 gradient.clear();
             } finally {

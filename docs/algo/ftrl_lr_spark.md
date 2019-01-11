@@ -72,7 +72,12 @@ FTRL_VRG的分布式实现框架图如下：
 	* lambda2: w更新公式中的lambda2
 	* rho1:FTRL_VRG中的权重更新系数
 	* rho2:FTRL_VRG中的梯度更新系数
-
+    * ml.opt.decay.class.name：学习率衰减系类
+    * ml.opt.decay.on.batch: 是否对每个mini batch衰减
+    * ml.opt.decay.alpha: 学习率衰减参数alpha
+    * ml.opt.decay.beta: 学习率衰减参数beta
+    * ml.opt.decay.intervals: 学习率衰减参数intervals
+    
 * **输入输出参数**
 	 * checkPointPath：streaming流数据的checkpoint路径   
 	 * zkQuorum:Zookeeper的配置信息，格式："hostname:port"

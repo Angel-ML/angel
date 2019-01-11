@@ -4,9 +4,14 @@
 - 基于随机梯度下降的方法
     - SDG: 这里指mini-batch SGD (小批量随机梯度下降)
     - Momentum: 带动量的SGD
+    - AdaGrad: 带Hessian对角近似的SGD
+    - AdaDelta: 
     - Adam: 带动量与对角Hessian近似的SGD
 - 在线学习方法
     - FTRL: Follow The Regularized Leader, 一种在线学习方法
+
+
+
 
 ## 1. SGD
 SGD的更新公式如下:
@@ -35,7 +40,7 @@ Momentum的更新公式如下:
 
 json方式表达有两种, 如下:
 ```json
-"optimizer": "sgd",
+"optimizer": "momentum",
 
 "optimizer": {
     "type": "momentum",
@@ -44,7 +49,53 @@ json方式表达有两种, 如下:
 }
 ```
 
-## 3. Adam
+## 3. AdaGrad
+AdaGrad(这里用的是指数平滑版, 即RMSprop)的更新公式如下:
+
+![model](http://latex.codecogs.com/png.latex?\dpi{150}n_t=\beta%20n_{t-1}+(1-\beta)g_{t}^2)
+
+![model](http://latex.codecogs.com/png.latex?\dpi{150}\Delta%20\theta=-\frac{\eta}{\sqrt{n_t+\epsilon}}\cdot%20g_t)
+
+其中, ![](http://latex.codecogs.com/png.latex?\beta)是平滑因子, ![](http://latex.codecogs.com/png.latex?\eta)是学习率. 另外, AdaGrad也是可以带![](http://latex.codecogs.com/png.latex?L_1,L2)正则的.
+
+json方式表达有两种, 如下:
+```json
+"optimizer": "adagrad",
+
+"optimizer": {
+    "type": "adagrad",
+    "beta": 0.9,
+    "reg1": 0.01,
+    "reg2": 0.01
+}
+```
+
+## 4. AdaDelta
+AdaDelta的更新公式如下:
+
+![model](http://latex.codecogs.com/png.latex?\dpi{150}n_t=\alpha%20n_{t-1}+(1-\alpha)g_{t}^2)
+
+![model](http://latex.codecogs.com/png.latex?\dpi{150}\Delta%20\theta=-\frac{\sqrt{v_{t-1}+\epsilon}}{\sqrt{n_t+\epsilon}}\cdot%20g_t)
+
+![model](http://latex.codecogs.com/png.latex?\dpi{150}v_t=\beta%20v_{t-1}+(1-\beta)\Delta%20\theta_{t}^2)
+
+
+其中, ![](http://latex.codecogs.com/png.latex?\alpha,%20\beta)是平滑因子. AdaDelta也是可以带![](http://latex.codecogs.com/png.latex?L_1,L2)正则的.
+
+json方式表达有两种, 如下:
+```json
+"optimizer": "adadelta",
+
+"optimizer": {
+    "type": "adadelta",
+    "alpha": 0.9,
+    "beta": 0.9,
+    "reg1": 0.01,
+    "reg2": 0.01
+}
+```
+
+## 5. Adam
 Adam是一种效果较好的最优化方法, 更新公式为:
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}\begin{array}{ll}\bold{m}_t&=\beta\bold{m}_{t-1}+(1-\beta)\Delta\bold{x}_t\\\\\\bold{v}_t&=\gamma\bold{v}_{t-1}+(1-\gamma)\Delta\bold{x}^2_t\\\\\bold{x}_t&=\gamma\bold{x}_{t-1}-\eta\frac{\sqrt{1-\gamma^t}}{1-\beta^t}\frac{\bold{m}_t}{\sqrt{\bold{v}_t}+\epsilon}\\%20\end{array})
