@@ -69,6 +69,4 @@ object ParamKeys {
   val decayClass: String = "decayclass"
   val decayAlpha: String = "decayalpha"
   val decayBeta: String = "decaybeta"
-  val decayPower: String = "decaypower"
-
 }
