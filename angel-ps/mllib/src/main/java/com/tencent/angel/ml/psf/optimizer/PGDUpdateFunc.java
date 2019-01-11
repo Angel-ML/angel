@@ -28,55 +28,57 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 public class PGDUpdateFunc extends OptMMUpdateFunc {
-    private static final Log LOG = LogFactory.getLog(PGDUpdateFunc.class);
 
-    public PGDUpdateFunc() {
-        super();
-    }
+  private static final Log LOG = LogFactory.getLog(PGDUpdateFunc.class);
 
-    public PGDUpdateFunc(int matId, int factor, double lr, double l1RegParam, double l2RegParam) {
-        super(matId, new int[]{factor}, new double[]{lr, l1RegParam, l2RegParam, 1});
-    }
+  public PGDUpdateFunc() {
+    super();
+  }
 
-    public PGDUpdateFunc(int matId, int factor, double lr, double l1RegParam, double l2RegParam, int batchSize) {
-        super(matId, new int[]{factor}, new double[]{lr, l1RegParam, l2RegParam, batchSize});
-    }
+  public PGDUpdateFunc(int matId, int factor, double lr, double l1RegParam, double l2RegParam) {
+    super(matId, new int[]{factor}, new double[]{lr, l1RegParam, l2RegParam, 1});
+  }
 
-    @Override
-    public void update(ServerPartition partition, int factor, double[] scalars) {
-        double lr = scalars[0];
-        double l1RegParam = scalars[1];
-        double l2RegParam = scalars[2];
-        double batchSize = (int) scalars[3];
+  public PGDUpdateFunc(int matId, int factor, double lr, double l1RegParam, double l2RegParam,
+      int batchSize) {
+    super(matId, new int[]{factor}, new double[]{lr, l1RegParam, l2RegParam, batchSize});
+  }
 
-        for (int f = 0; f < factor; f++) {
-            ServerRow gradientServerRow = partition.getRow(f + factor);
-            try {
-                gradientServerRow.startWrite();
-                Vector weight = partition.getRow(f).getSplit();
-                Vector gradient = gradientServerRow.getSplit();
+  @Override
+  public void update(ServerPartition partition, int factor, double[] scalars) {
+    double lr = scalars[0];
+    double l1RegParam = scalars[1];
+    double l2RegParam = scalars[2];
+    double batchSize = (int) scalars[3];
 
-                if (batchSize > 1) {
-                    gradient.idiv(batchSize);
-                }
+    for (int f = 0; f < factor; f++) {
+      ServerRow gradientServerRow = partition.getRow(f + factor);
+      try {
+        gradientServerRow.startWrite();
+        Vector weight = partition.getRow(f).getSplit();
+        Vector gradient = gradientServerRow.getSplit();
 
-                double lrTemp = lr / (1 + l2RegParam * lr);
-                if (l2RegParam != 0.0) {
-                    weight.imul(1 - lrTemp * l2RegParam).iaxpy(gradient, -lrTemp);
-                } else {
-                    weight.iaxpy(gradient, -lrTemp);
-                }
-
-                if (l1RegParam != 0) {
-                    Ufuncs.isoftthreshold(weight, lrTemp * l1RegParam);
-                }
-
-                gradient.clear();
-            } finally {
-                gradientServerRow.endWrite();
-            }
-
+        if (batchSize > 1) {
+          gradient.idiv(batchSize);
         }
+
+        double lrTemp = lr / (1 + l2RegParam * lr);
+        if (l2RegParam != 0.0) {
+          weight.imul(1 - lrTemp * l2RegParam).iaxpy(gradient, -lrTemp);
+        } else {
+          weight.iaxpy(gradient, -lrTemp);
+        }
+
+        if (l1RegParam != 0) {
+          Ufuncs.isoftthreshold(weight, lrTemp * l1RegParam);
+        }
+
+        gradient.clear();
+      } finally {
+        gradientServerRow.endWrite();
+      }
+
     }
+  }
 
 }
