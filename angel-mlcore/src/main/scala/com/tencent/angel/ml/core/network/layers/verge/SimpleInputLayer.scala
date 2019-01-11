@@ -57,9 +57,9 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
           case _: BlasMatVariable => // the shape of weight matrix is (inputDim, outputDim)
             Ufuncs.dot(graph.placeHolder.getFeats, false, weight, true).iadd(bias)
           case mat: Variable if mat.rowType.isDouble => // the shape of weight matrix is (outputDim, inputDim)
-            MathUtils.rowDot[Double](weight, bias)
+            MathUtils.rowDot[Double](graph.placeHolder.getFeats, weight, bias)
           case mat: Variable if mat.rowType.isFloat =>
-            MathUtils.rowDot[Float](weight, bias)
+            MathUtils.rowDot[Float](graph.placeHolder.getFeats, weight, bias)
         }
 
         output = transFunc(forward)

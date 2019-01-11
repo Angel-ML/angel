@@ -1,36 +1,36 @@
 package com.tencent.angel.ml.core.utils
 
-import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.math2.MFactory
 import com.tencent.angel.ml.math2.vector.Vector
-import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix, Matrix}
+import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.utils.VectorUtils
 
 import scala.reflect.ClassTag
 
 object MathUtils {
-  def rowDot[T: ClassTag](weight: Matrix, bias: Vector)(implicit graph: Graph): Matrix = {
+  def rowDot[T: ClassTag](features: Matrix, weight: Matrix, bias: Vector): Matrix = {
     val tpe = implicitly[ClassTag[T]].runtimeClass
 
-    val outputDim = weight.getNumRows
-    val denseMat = if (tpe == classOf[Double]) {
-      MFactory.denseDoubleMatrix(graph.placeHolder.getBatchSize, outputDim)
+    val numRows = features.getNumRows
+    val numCols = weight.getNumRows
+
+    if (tpe == classOf[Double]) {
+      val resMat = MFactory.denseDoubleMatrix(numRows, numCols)
+      (0 until numCols).foreach { colId => // the shape of weight matrix is (outputDim, inputDim)
+        val col = features.dot(weight.getRow(colId)).iadd(VectorUtils.getDouble(bias, colId))
+        resMat.setCol(colId, col)
+      }
+      resMat
     } else if (tpe == classOf[Float]) {
-      MFactory.denseFloatMatrix(graph.placeHolder.getBatchSize, outputDim)
+      val resMat = MFactory.denseFloatMatrix(numRows, numCols)
+      (0 until numCols).foreach { colId => // the shape of weight matrix is (outputDim, inputDim)
+        val col = features.dot(weight.getRow(colId)).iadd(VectorUtils.getDouble(bias, colId))
+        resMat.setCol(colId, col)
+      }
+      resMat
     } else {
       throw MLException("Data type is not support!")
     }
-
-    (0 until outputDim).foreach { colId => // the shape of weight matrix is (outputDim, inputDim)
-      val col = graph.placeHolder.getFeats.dot(weight.getRow(colId)).iadd(VectorUtils.getDouble(bias, colId))
-      if (tpe == classOf[Double]) {
-        denseMat.asInstanceOf[BlasDoubleMatrix].setCol(colId, col)
-      } else if (tpe == classOf[Float]) {
-        denseMat.asInstanceOf[BlasFloatMatrix].setCol(colId, col)
-      }
-    }
-
-    denseMat
   }
 
 }

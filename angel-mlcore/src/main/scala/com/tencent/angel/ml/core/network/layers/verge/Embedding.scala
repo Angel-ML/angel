@@ -56,7 +56,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
     }
 
     val end = System.currentTimeMillis()
-    //    println(s"Embedding($name) calBackward = ${end - start} ms")
+    // println(s"Embedding($name) calBackward = ${end - start} ms")
     backward
   }
 
