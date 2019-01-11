@@ -119,7 +119,7 @@ object Solver {
     new Solver(cs, sur, acq, opt)
   }
 
-  def apply(array: Array[ParamSpace[AnyVal]], minimize: Boolean): Solver = {
+  def apply[T <: AnyVal](array: Array[ParamSpace[T]], minimize: Boolean): Solver = {
     val cs: ConfigurationSpace = new ConfigurationSpace("cs")
     array.foreach(cs.addParam)
     val sur: Surrogate = new GPSurrogate(cs, minimize)

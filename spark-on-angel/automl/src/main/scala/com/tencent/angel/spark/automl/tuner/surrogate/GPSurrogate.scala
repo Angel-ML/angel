@@ -65,7 +65,7 @@ class GPSurrogate(
 
     val pred = gpModel.predict(breezeX)
 
-    println(s"predict of ${X.toArray.mkString(",")}: mean[${pred(0, 0)}] variance[${pred(0, 1)}]")
+    //println(s"predict of ${X.toArray.mkString(",")}: mean[${pred(0, 0)}] variance[${pred(0, 1)}]")
 
     (pred(0, 0), pred(0, 1))
   }

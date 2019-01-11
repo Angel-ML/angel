@@ -58,7 +58,7 @@ class EI(
       val cdf: Double = norm.cumulativeProbability(z)
       val pdf: Double = norm.density(z)
       val ei = s * (z * cdf + pdf)
-      println(s"EI of ${X.toArray.mkString("(", ",", ")")}: $ei, cur best: $eta, z: $z, cdf: $cdf, pdf: $pdf")
+      //println(s"EI of ${X.toArray.mkString("(", ",", ")")}: $ei, cur best: $eta, z: $z, cdf: $cdf, pdf: $pdf")
       (ei, Vectors.dense(new Array[Double](X.size)))
     }
   }
