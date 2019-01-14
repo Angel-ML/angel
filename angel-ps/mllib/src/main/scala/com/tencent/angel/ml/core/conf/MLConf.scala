@@ -105,6 +105,14 @@ object MLConf {
   // Momentum
   val ML_OPT_MOMENTUM_MOMENTUM = "ml.opt.momentum.momentum"
   val DEFAULT_ML_OPT_MOMENTUM_MOMENTUM = 0.9
+  // AdaDelta
+  val ML_OPT_ADADELTA_ALPHA = "ml.opt.adadelta.alpha"
+  val DEFAULT_ML_OPT_ADADELTA_ALPHA = 0.9
+  val ML_OPT_ADADELTA_BETA = "ml.opt.adadelta.beta"
+  val DEFAULT_ML_OPT_ADADELTA_BETA = 0.9
+  // AdaGrad
+  val ML_OPT_ADAGRAD_BETA = "ml.opt.adadelta.beta"
+  val DEFAULT_ML_OPT_ADADGRAD_BETA = 0.9
   // Adam
   val ML_OPT_ADAM_GAMMA = "ml.opt.adam.gamma"
   val DEFAULT_ML_OPT_ADAM_GAMMA = 0.99
@@ -115,12 +123,6 @@ object MLConf {
   val DEFAULT_ML_OPT_FTRL_ALPHA = 0.1
   val ML_OPT_FTRL_BETA = "ml.opt.ftrl.beta"
   val DEFAULT_ML_OPT_FTRL_BETA = 1.0
-  // AdaDelta
-  val ML_OPT_ADADELTA_BETA = "ml.opt.adadelta.beta"
-  val DEFAULT_ML_OPT_ADADELTA_BETA = 0.9
-  // AdaGrad
-  val ML_OPT_ADAGRAD_BETA = "ml.opt.adadelta.beta"
-  val DEFAULT_ML_OPT_ADADGRAD_BETA = 0.9
 
   // Decays
   val ML_OPT_DECAY_CLASS_NAME = "ml.opt.decay.class.name"
@@ -147,12 +149,6 @@ object MLConf {
   val DEFAULT_ML_RANK_NUM = 8
 
   // (MLP) Layer params
-  val ML_MLP_INPUT_LAYER_PARAMS = "ml.mlp.input.layer.params"
-  val DEFAULT_ML_MLP_INPUT_LAYER_PARAMS = "100,identity"
-  val ML_MLP_HIDEN_LAYER_PARAMS = "ml.mlp.hidden.layer.params"
-  val DEFAULT_ML_MLP_HIDEN_LAYER_PARAMS = "100,relu|100,relu|1,identity"
-  val ML_MLP_LOSS_LAYER_PARAMS = "ml.mlp.loss.layer.params"
-  val DEFAULT_ML_MLP_LOSS_LAYER_PARAMS = "logloss"
   val ML_NUM_CLASS = "ml.num.class"
   val DEFAULT_ML_NUM_CLASS = 2
 

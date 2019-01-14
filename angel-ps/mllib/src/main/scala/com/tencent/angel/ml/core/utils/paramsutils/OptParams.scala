@@ -61,7 +61,7 @@ object OptParams {
       case jast: JString if nameMatch(jast, adagrad) =>
         AdaGradParams(jast.extract[String].trim, Some(1.0), Some(0.9), None, None)
       case jast: JString if nameMatch(jast, adadelta) =>
-        AdaDeltaParams(jast.extract[String].trim, Some(1.0), Some(0.9), None, None)
+        AdaDeltaParams(jast.extract[String].trim, Some(1.0), Some(0.9), Some(0.9), None, None)
       case jast: JString if nameMatch(jast, sgd) =>
         new OptParams(jast.extract[String].trim, Some(1.0), None, None)
       case jast: JString => throw new AngelException(s"No such a optimizer: ${jast.extract[String]}!")
@@ -123,12 +123,17 @@ object OptParams {
 
             AdaGradParams(optType, learningRate, beta, reg1, reg2)
           case `adadelta` =>
+            val alpha: Option[Double] = json \ ParamKeys.alpha match {
+              case JNothing => Some(0.9)
+              case v: JValue => Some(v.extract[Double])
+            }
+
             val beta: Option[Double] = json \ ParamKeys.beta match {
               case JNothing => Some(0.9)
               case v: JValue => Some(v.extract[Double])
             }
 
-            AdaDeltaParams(optType, learningRate, beta, reg1, reg2)
+            AdaDeltaParams(optType, learningRate, alpha, beta, reg1, reg2)
           case `sgd` =>
             new OptParams(optType, learningRate, reg1, reg2)
           case _ => throw new AngelException(s"No such a optimizer: $optType!")
@@ -193,6 +198,7 @@ case class AdaGradParams(override val name: String,
 
 case class AdaDeltaParams(override val name: String,
                           override val lr: Option[Double],
+                          alpha: Option[Double],
                           beta: Option[Double],
                           override val reg1: Option[Double],
                           override val reg2: Option[Double]) extends OptParams(name, lr, reg1, reg2) {
