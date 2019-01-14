@@ -2,7 +2,7 @@ package com.tencent.angel.ml.core.network
 
 import com.tencent.angel.ml.core.PredictResult
 import com.tencent.angel.ml.core.data.LabeledData
-import com.tencent.angel.ml.core.network.layers._
+import com.tencent.angel.ml.core.network.layers.{Trainable, _}
 import com.tencent.angel.ml.core.network.variable.{Variable, VariableProvider}
 import com.tencent.angel.ml.core.utils.JsonUtils.{J2Pretty, layer2Json}
 import com.tencent.angel.ml.core.utils.{Callback, RowTypeUtils}
@@ -60,7 +60,7 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
 
   val timeStats = new TimeStats()
 
-  val provider: VariableProvider = {
+  lazy val provider: VariableProvider = {
     val cls = Class.forName(providerName)
     val constructor = cls.getConstructor(classOf[Graph])
     val instance = constructor.newInstance(this)
@@ -68,7 +68,7 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
     instance.asInstanceOf[VariableProvider]
   }
 
-  var taskNum: Int
+  val taskNum: Int
 
   val indexRange: Long
 
@@ -82,27 +82,75 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
     variables.append(v)
   }
 
-  def getVariables: List[Variable] = variables.toList
+  def getALLVariables: List[Variable] = variables.toList
 
-  def addInput(layer: InputLayer): Unit = {
+  def getVariable(idx: Int): Variable = {
+    if (idx>=0 && idx < variables.size) {
+      variables(idx)
+    } else {
+      null.asInstanceOf[Variable]
+    }
+  }
+
+  def getVariable(name: String): Variable = {
+    val variableOption = variables.collectFirst{
+      case variable: Variable if variable.name == name => variable
+    }
+
+    variableOption.getOrElse(null.asInstanceOf[Variable])
+  }
+
+  def addInputLayer(layer: InputLayer): Unit = {
     inputLayers.append(layer)
   }
 
-  def setOutput(layer: LossLayer): Unit = {
+  def getALLInputLayers: List[InputLayer] = inputLayers.toList
+
+  def getInputLayer(idx: Int): InputLayer = {
+    if (idx >=0 && idx < inputLayers.size) {
+      inputLayers(idx)
+    } else {
+      null.asInstanceOf[InputLayer]
+    }
+  }
+
+  def getInputLayer(name: String): InputLayer = {
+    val layerOption = inputLayers.collectFirst{
+      case layer: InputLayer if layer.name == name => layer
+    }
+
+    layerOption.getOrElse(null.asInstanceOf[InputLayer])
+  }
+
+  def setLossLayer(layer: LossLayer): Unit = {
     lossLayer = layer
   }
 
-  def getOutputLayer: LossLayer = lossLayer
+  def getLossLayer: LossLayer = lossLayer
 
-  def addTrainable(layer: Trainable): Unit = {
+  def addTrainableLayer(layer: Trainable): Unit = {
     trainableLayer.append(layer)
   }
 
-  def getTrainable: List[Trainable] = {
+  def getALLTrainableLayers: List[Trainable] = {
     trainableLayer.toList
   }
 
-  def getLossLayer: LossLayer = lossLayer
+  def getTrainableLayer(idx: Int): Trainable = {
+    if (idx >=0 && idx < trainableLayer.size){
+      trainableLayer(idx)
+    } else {
+      null.asInstanceOf[Trainable]
+    }
+  }
+
+  def getTrainableLayer(name: String): Trainable = {
+    val trainableOption = trainableLayer.collectFirst{
+      case layer: Layer if layer.name == name => layer.asInstanceOf[Trainable]
+    }
+
+    trainableOption.getOrElse(null.asInstanceOf[Trainable])
+  }
 
   protected def deepFirstDown(layer: Layer)(predicate: Layer => Boolean, action: Layer => Unit): Unit = {
     if (predicate(layer)) {
@@ -137,16 +185,20 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
 
   def calLoss(): Double = lossLayer.calLoss()
 
-  def calBackward(): Unit = {
-    val start = System.currentTimeMillis()
-    inputLayers.foreach { layer => layer.calBackward() }
-    timeStats.backwardTime += (System.currentTimeMillis() - start)
+  def init(taskId: Int = 0): Unit = {
+    trainableLayer.foreach { layer => layer.init(taskId) }
   }
 
   def pullParams(epoch: Int): Unit = {
     val start = System.currentTimeMillis()
     trainableLayer.foreach { layer => layer.pullParams(epoch: Int) }
     timeStats.pullParamsTime += (System.currentTimeMillis() - start)
+  }
+
+  def calBackward(): Unit = {
+    val start = System.currentTimeMillis()
+    inputLayers.foreach { layer => layer.calBackward() }
+    timeStats.backwardTime += (System.currentTimeMillis() - start)
   }
 
   def pushGradient(): Unit = {
@@ -171,10 +223,6 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
     trainableLayer.foreach { trainable =>
       trainable.optimizer.setLR(lr)
     }
-  }
-
-  def init(taskId: Int = 0): Unit = {
-    trainableLayer.foreach { layer => layer.init(taskId) }
   }
 
   override def toString: String = {

@@ -134,7 +134,7 @@ abstract class Layer(val name: String, val outputDim: Int)(implicit val graph: G
 
 abstract class InputLayer(name: String, outputDim: Int)(implicit graph: Graph)
   extends Layer(name, outputDim) {
-  graph.addInput(this)
+  graph.addInputLayer(this)
 
   def calBackward(): Matrix
 }
