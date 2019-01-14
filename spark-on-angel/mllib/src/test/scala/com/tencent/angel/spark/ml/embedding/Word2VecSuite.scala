@@ -23,8 +23,6 @@ import com.tencent.angel.spark.ml.embedding.word2vec.Word2vecWorker
 import com.tencent.angel.spark.ml.psf.embedding.bad._
 import com.tencent.angel.spark.ml.{PSFunSuite, SharedPSContext}
 
-import scala.util.Random
-
 class Word2VecSuite extends PSFunSuite with SharedPSContext {
 
   private val input = "../../data/text8/text8.split.head"
