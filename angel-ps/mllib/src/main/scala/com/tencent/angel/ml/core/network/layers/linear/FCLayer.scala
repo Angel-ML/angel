@@ -23,7 +23,7 @@ import java.util.concurrent.Future
 
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.layers.verge.Embedding
 import com.tencent.angel.ml.core.network.transfunc.TransFunc
@@ -48,13 +48,14 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
   graph.addTrainable(this)
 
   val sharedConf: SharedConf = graph.conf
+  val parallel = sharedConf.get(MLConf.ML_MATRIX_DOT_USE_PARALLEL_EXECUTOR).toBoolean
 
   val modelType: RowType = SharedConf.denseModelType
   val numTask: Int = sharedConf.get(AngelConf.ANGEL_WORKERGROUP_NUMBER).toInt
   val mode = SharedConf.runningMode()
 
-  val multiplier: Int = OptUtils.getOptMultiplier(optimizer)
-  private val psRows: Int = multiplier
+  val numSlot: Int = OptUtils.getSlotNum(optimizer)
+  private val psRows: Int = numSlot + 1
   private val psCols = inputLayer.outputDim * outputDim
   private val weightCtx = PSMatrixUtils.createPSMatrixCtx(s"${name}_weight", psRows, psCols, modelType)
   private val biasCtx = PSMatrixUtils.createPSMatrixCtx(s"${name}_bias", 1, outputDim, modelType)
@@ -82,13 +83,13 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
             ipLayer.calOutput() match {
               case mat: RBCompIntDoubleMatrix =>
                 ipOutputCache = MatrixUtils.rbCompDense2Blas(mat)
-                forward = ipOutputCache.dot(weight).add(bias)
+                forward = ipOutputCache.dot(weight, parallel).add(bias)
               case mat: RBCompIntFloatMatrix =>
                 ipOutputCache = MatrixUtils.rbCompDense2Blas(mat)
-                forward = ipOutputCache.dot(weight).add(bias)
+                forward = ipOutputCache.dot(weight, parallel).add(bias)
             }
           case ipLayer => // from other dense layer
-            forward = ipLayer.calOutput().dot(weight).add(bias)
+            forward = ipLayer.calOutput().dot(weight, parallel).add(bias)
         }
         output = transFunc(forward)
         status = STATUS.Forward
@@ -113,15 +114,15 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
             modelType match {
               case RowType.T_DOUBLE_DENSE =>
                 MatrixUtils.blas2RBCompDense(
-                  Ufuncs.dot(backward, false, weight, true).asInstanceOf[BlasDoubleMatrix],
+                  Ufuncs.dot(backward, false, weight, true, parallel).asInstanceOf[BlasDoubleMatrix],
                   ipLayer.numFactors)
               case RowType.T_FLOAT_DENSE =>
                 MatrixUtils.blas2RBCompDense(
-                  Ufuncs.dot(backward, false, weight, true).asInstanceOf[BlasFloatMatrix],
+                  Ufuncs.dot(backward, false, weight, true, parallel).asInstanceOf[BlasFloatMatrix],
                   ipLayer.numFactors
                 )
             }
-          case _ => Ufuncs.dot(backward, false, weight, true)
+          case _ => Ufuncs.dot(backward, false, weight, true, parallel)
         }
 
         status = STATUS.Backward
@@ -142,14 +143,14 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
     status match {
       case STATUS.Backward =>
         val weightGrad: Matrix = if (ipOutputCache != null) {
-          Ufuncs.dot(ipOutputCache, true, backward, false).idiv(normal)
+          Ufuncs.dot(ipOutputCache, true, backward, false, parallel).idiv(normal)
         } else {
-          Ufuncs.dot(inputLayer.calOutput(), true, backward, false).idiv(normal)
+          Ufuncs.dot(inputLayer.calOutput(), true, backward, false, parallel).idiv(normal)
         }
 
-        PSMatrixUtils.incrementRowByMatrix(weightId, multiplier - 1, weightGrad)
+        PSMatrixUtils.incrementRowByMatrix(weightId, numSlot, weightGrad)
 
-        PSMatrixUtils.incrementRow(biasId, 0, backward.average(0).imul(-optimizer.lr / graph.taskNum))
+        PSMatrixUtils.incrementRow(biasId, 0, backward.average(0).imul(-optimizer.getLR / graph.taskNum))
 
         status = STATUS.Gradient
       case _ =>

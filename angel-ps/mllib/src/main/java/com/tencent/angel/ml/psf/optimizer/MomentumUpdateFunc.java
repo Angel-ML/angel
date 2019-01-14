@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -22,67 +22,60 @@ import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.enhance.MMUpdateParam;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.vector.ServerRow;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 public class MomentumUpdateFunc extends OptMMUpdateFunc {
+
   private static final Log LOG = LogFactory.getLog(MomentumUpdateFunc.class);
-  public MomentumUpdateFunc(int matId, int offset, double momentum, double lr, double regParam) {
-    super(matId, new int[] {offset}, new double[] {momentum, lr, regParam, 1});
-  }
-
-  public MomentumUpdateFunc(int matId, int offset, double momentum, double lr, double regParam, int batchSize) {
-    super(matId, new int[] {offset}, new double[] {momentum, lr, regParam, batchSize});
-  }
-
-  public MomentumUpdateFunc(int matId, int offset, double momentum, double lr) {
-    this(matId, offset, momentum, lr, 0.0);
-  }
 
   public MomentumUpdateFunc() {
+    super();
   }
 
-  @Override public void partitionUpdate(PartitionUpdateParam partParam) {
-    ServerPartition part = psContext.getMatrixStorageManager()
-      .getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
+  public MomentumUpdateFunc(int matId, int offset, double momentum, double lr, double regParam) {
+    super(matId, new int[]{offset}, new double[]{momentum, lr, regParam, 1});
+  }
 
-    MMUpdateParam.MMPartitionUpdateParam param = (MMUpdateParam.MMPartitionUpdateParam) partParam;
+  public MomentumUpdateFunc(int matId, int offset, double momentum, double lr, double regParam,
+      int batchSize) {
+    super(matId, new int[]{offset}, new double[]{momentum, lr, regParam, batchSize});
+  }
 
-    int[] rowIds = param.getRowIds();
-    int offset = rowIds[0];
+  public MomentumUpdateFunc(int matId, int factor, double momentum, double lr) {
+    this(matId, factor, momentum, lr, 0.0);
+  }
 
-    double[] scalars = param.getScalars();
+  @Override
+  public void update(ServerPartition partition, int factor, double[] scalars) {
     double momentum = scalars[0];
-    double stepSize = scalars[1];
+    double lr = scalars[1];
     double regParam = scalars[2];
     double batchSize = scalars[3];
 
-    update(part, offset, momentum, stepSize, regParam, batchSize);
-
-  }
-
-  private void update(ServerPartition partition, int offset,
-                      double momentum, double stepSize,
-                      double regParam, double batchSize) {
-    for (int f = 0; f < offset; f++) {
+    for (int f = 0; f < factor; f++) {
+      ServerRow gradientServerRow = partition.getRow(f + 2 * factor);
       try {
-        partition.getRow(f + 2 * offset).startWrite();
+        gradientServerRow.startWrite();
         Vector weight = partition.getRow(f).getSplit();
-        Vector velocity = partition.getRow(f + offset).getSplit();
-        Vector gradient = partition.getRow(f + 2 * offset).getSplit();
+        Vector velocity = partition.getRow(f + factor).getSplit();
+        Vector gradient = gradientServerRow.getSplit();
 
-        if (batchSize > 1)
+        if (batchSize > 1) {
           gradient.idiv(batchSize);
-
-        velocity.imul(momentum).iaxpy(gradient, stepSize);
-        if (regParam == 0.0) {
-          weight.isub(velocity);
-        } else {
-          weight.imul(1 - stepSize * regParam).isub(velocity);
         }
+
+        if (regParam != 0.0) {
+          gradient.iaxpy(weight, regParam);
+        }
+
+        velocity.imul(momentum).iadd(gradient);
+        weight.isub(velocity.mul(lr));
+
         gradient.clear();
       } finally {
-        partition.getRow(f + 2 * offset).endWrite();
+        gradientServerRow.endWrite();
       }
     }
   }

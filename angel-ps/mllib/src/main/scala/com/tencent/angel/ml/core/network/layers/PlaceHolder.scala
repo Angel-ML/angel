@@ -27,13 +27,13 @@ import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.{MFactory, VFactory}
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet
-import org.apache.commons.logging.LogFactory
+import org.apache.commons.logging.{Log, LogFactory}
 
 import scala.util.Sorting.quickSort
 
 
 class PlaceHolder(val conf: SharedConf) extends Serializable {
-  val LOG = LogFactory.getLog(classOf[PlaceHolder])
+  private val LOG: Log = LogFactory.getLog(classOf[PlaceHolder])
 
   def this() = this(SharedConf.get())
 

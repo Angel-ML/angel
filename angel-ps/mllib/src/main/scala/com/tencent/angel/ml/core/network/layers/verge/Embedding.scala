@@ -52,9 +52,9 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
   val blockSize: Int = SharedConf.blockSize
   val mode = SharedConf.runningMode()
 
-  private val multiplier: Int = OptUtils.getOptMultiplier(optimizer)
+  private val numSlot: Int = OptUtils.getSlotNum(optimizer)
   private val indexRange: Long = SharedConf.indexRange
-  private val psRows: Int = multiplier * numFactors
+  private val psRows: Int = (numSlot + 1) * numFactors
   private val validIndexNum = SharedConf.modelSize
 
   private val embedMatCtx = PSMatrixUtils.createPSMatrixCtx(s"${name}_embedding", psRows, indexRange, modelType)
@@ -121,29 +121,19 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
             val batchData: Matrix = graph.placeHolder.getFeats
             val batchSize = graph.placeHolder.getBatchSize
             (0 until batchSize).foreach { idx =>
-              batchData.getRow(idx) match {
-                case v: IntDoubleVector =>
-                  v.getStorage.getIndices.zip(rows(idx).getPartitions).foreach { case (f, update) =>
-                    val value = v.get(f)
-                    mergeUpdate(map, f, update, value)
-                  }
-                case v: LongDoubleVector =>
-                  v.getStorage.getIndices.zip(rows(idx).getPartitions).foreach { case (f, update) =>
-                    val value = v.get(f)
-                    mergeUpdate(map, f, update, value)
-                  }
-              }
-            }
-
-          case gradient: RBCompIntFloatMatrix =>
-            val rows = gradient.getRows
-            assert(rows.length == graph.placeHolder.getBatchSize)
-            val batchData: Matrix = graph.placeHolder.getFeats
-            val batchSize = graph.placeHolder.getBatchSize
-
-            (0 until batchSize).map { idx =>
               batchData.getRow(idx).getStorage match {
                 case s: IntFloatSortedVectorStorage =>
+                  val values = s.getValues
+                  val index = s.getIndices
+                  var i = 0
+                  while (i < index.length) {
+                    val key = index(i)
+                    val value = values(i)
+                    val update = rows(idx).getPartitions()(i)
+                    mergeUpdate(map, key.toLong, update, value)
+                    i += 1
+                  }
+                case s: LongFloatSortedVectorStorage =>
                   val values = s.getValues
                   val index = s.getIndices
                   var i = 0
@@ -156,17 +146,17 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
                   }
                 case s: IntFloatSparseVectorStorage =>
                   var i = 0
-                  val indices = s.getIndices
+                  val indices = s.getIndices.sorted
                   while (i < indices.length) {
                     val key = indices(i)
                     val value = s.get(key)
                     val update = rows(idx).getPartitions()(i)
-                    mergeUpdate(map, key, update, value)
+                    mergeUpdate(map, key.toLong, update, value)
                     i += 1
                   }
                 case s: LongFloatSparseVectorStorage =>
                   var i = 0
-                  val indices = s.getIndices
+                  val indices = s.getIndices.sorted
                   while (i < indices.length) {
                     val key = indices(i)
                     val value = s.get(key)
@@ -176,45 +166,59 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
                   }
               }
             }
-          //            (0 until batchSize).map { idx =>
-          //              batchData.getRow(idx) match {
-          //                case v: IntFloatVector =>
-          //                  v.getStorage.getIndices.zip(rows(idx).getPartitions).map { case (f, update) =>
-          //                    val value = v.get(f)
-          //                    if (!map.containsKey(f.toLong)) {
-          //                      if (value == 1) {
-          //                        map.put(f.toLong, update)
-          //                      } else {
-          //                        map.put(f.toLong, update.imul(value))
-          //                      }
-          //                    } else {
-          //                      if (value == 1) {
-          //                        map.get(f.toLong).iadd(update)
-          //                      } else {
-          //                        map.get(f.toLong).iadd(update.imul(v.get(f)))
-          //                      }
-          //                    }
-          //                  }
-          //
-          //                case v: LongFloatVector =>
-          //                  v.getStorage.getIndices.zip(rows(idx).getPartitions).map { case (f, update) =>
-          //                    val value = v.get(f)
-          //                    if (!map.containsKey(f)) {
-          //                      if (value == 1) {
-          //                        map.put(f, update)
-          //                      } else {
-          //                        map.put(f, update.imul(value))
-          //                      }
-          //                    } else {
-          //                      if (value == 1) {
-          //                        map.get(f).iadd(update)
-          //                      } else {
-          //                        map.get(f).iadd(update.imul(v.get(f)))
-          //                      }
-          //                    }
-          //                  }
-          //              }
-          //            }
+
+          case gradient: RBCompIntFloatMatrix =>
+            val rows = gradient.getRows
+            assert(rows.length == graph.placeHolder.getBatchSize)
+            val batchData: Matrix = graph.placeHolder.getFeats
+            val batchSize = graph.placeHolder.getBatchSize
+
+            (0 until batchSize).foreach { idx =>
+              batchData.getRow(idx).getStorage match {
+                case s: IntFloatSortedVectorStorage =>
+                  val values = s.getValues
+                  val index = s.getIndices
+                  var i = 0
+                  while (i < index.length) {
+                    val key = index(i)
+                    val value = values(i)
+                    val update = rows(idx).getPartitions()(i)
+                    mergeUpdate(map, key.toLong, update, value)
+                    i += 1
+                  }
+                case s: LongFloatSortedVectorStorage =>
+                  val values = s.getValues
+                  val index = s.getIndices
+                  var i = 0
+                  while (i < index.length) {
+                    val key = index(i)
+                    val value = values(i)
+                    val update = rows(idx).getPartitions()(i)
+                    mergeUpdate(map, key, update, value)
+                    i += 1
+                  }
+                case s: IntFloatSparseVectorStorage =>
+                  var i = 0
+                  val indices = s.getIndices.sorted
+                  while (i < indices.length) {
+                    val key = indices(i)
+                    val value = s.get(key)
+                    val update = rows(idx).getPartitions()(i)
+                    mergeUpdate(map, key.toLong, update, value)
+                    i += 1
+                  }
+                case s: LongFloatSparseVectorStorage =>
+                  var i = 0
+                  val indices = s.getIndices.sorted
+                  while (i < indices.length) {
+                    val key = indices(i)
+                    val value = s.get(key)
+                    val update = rows(idx).getPartitions()(i)
+                    mergeUpdate(map, key, update, value)
+                    i += 1
+                  }
+              }
+            }
 
           case _ =>
         }
@@ -228,7 +232,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
         }
 
         // Push Gradient
-        val rowNums = (numFactors * (multiplier - 1) until numFactors * multiplier).toArray
+        val rowNums = (numFactors * numSlot until numFactors * (numSlot + 1)).toArray
 
         val param = new UpdateColsParam(matrixId, rowNums, graph.placeHolder.getIndices, map)
         val func = new UpdateColsFunc(param)
@@ -260,7 +264,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
         val compRows = (0 until batchSize).toArray.map { idx =>
           batchData.getRow(idx).getStorage match {
             case s: IntFloatSparseVectorStorage =>
-              val index = s.getIndices
+              val index = s.getIndices.sorted
               VFactory.compIntFloatVector(
                 if (outputDim <= 0) outputDim else index.length * numFactors,
                 index.map { key =>
@@ -291,7 +295,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
                 vectors
               )
             case s: LongFloatSparseVectorStorage =>
-              val index = s.getIndices
+              val index = s.getIndices.sorted
               VFactory.compIntFloatVector(
                 if (outputDim <= 0) outputDim else index.length * numFactors,
                 index.map { key =>
@@ -304,7 +308,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
                   }
                 })
             case s: IntDoubleSparseVectorStorage =>
-              val index = s.getIndices
+              val index = s.getIndices.sorted
               VFactory.compIntDoubleVector(
                 if (outputDim <= 0) outputDim else index.length * numFactors,
                 index.map { key =>
@@ -317,7 +321,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
                   }
                 })
             case s: LongDoubleSparseVectorStorage =>
-              val index = s.getIndices
+              val index = s.getIndices.sorted
               VFactory.compIntDoubleVector(
                 if (outputDim <= 0) outputDim else index.length * numFactors,
                 index.map { key =>
