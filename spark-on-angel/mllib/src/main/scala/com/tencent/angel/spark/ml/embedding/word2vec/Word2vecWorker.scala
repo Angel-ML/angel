@@ -3,7 +3,6 @@ package com.tencent.angel.spark.ml.embedding.word2vec
 import java.text.SimpleDateFormat
 import java.util.Date
 
-
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ps.storage.matrix.PartitionSourceMap
@@ -14,14 +13,18 @@ import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel.W2VDataSet
 import com.tencent.angel.spark.ml.psf.embedding.bad._
 import com.tencent.angel.spark.models.PSMatrix
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap
+import org.apache.hadoop.io.{NullWritable, Text}
+import org.apache.hadoop.mapred.TextOutputFormat
 import org.apache.spark.rdd.RDD
+
+import scala.reflect.ClassTag
 
 class Word2vecWorker(val numNode: Int,
                      val params: Map[String, String]) extends Serializable {
 
   val maxNodePerRow: Int = 100000
   val dimension = params.getOrElse(EmbeddingConf.EMBEDDINGDIM, "10").toInt
-  val modelName = params.getOrElse(EmbeddingConf.MODELTYPE, "SGNS")
+  val modelName = params.getOrElse(EmbeddingConf.MODELTYPE, "sgns")
   val numPart = params.getOrElse(EmbeddingConf.NUMPARTITIONS, "10").toInt
   val numNodePerRow = params.getOrElse(EmbeddingConf.NUMNODEPERROW, "10000").toInt
   val negative = params.getOrElse(EmbeddingConf.NEGATIVESAMPLENUM, "5").toInt
@@ -129,10 +132,57 @@ class Word2vecWorker(val numNode: Int,
         s"lossSum=${middle._1}")
 
       if(epochId % checkpointInterval == 0){
-        // TODO: checkpoint
-        // save()
+        // TODO: checkpoint (dump to parameter servers, rather than collect to spark workers,
+        //  i.e., no re-ordering for the embedding vectors)
+        // checkpoint()
       }
     }
+  }
+
+  /**
+    * collect embedding vectors from parameters servers and save it to hdfs via spark executors.
+    * The index2Word is on a RDD from @com.tencent.angel.spark.ml.feature.Features.corpusStringToInt
+    * @param index2word: wordIndex --> the wordText
+    */
+  def saveModel(index2word: RDD[(Int, String)]): Unit = {
+    val nullWritableClassTag = implicitly[ClassTag[NullWritable]]
+    val textClassTag = implicitly[ClassTag[Text]]
+    val word2embedding = index2word.mapPartitions(
+      iter => {
+        val part_index2word: Array[(Int, String)] = iter.toArray
+        val indices: Array[Int] = Array.ofDim(part_index2word.length)
+        var cnt = 0
+        while(cnt < indices.length){
+          indices(cnt) = part_index2word(cnt)._1
+          cnt += 1
+        }
+        val result  = matrix.psfGet(new W2VPull(
+          new W2VPullParam(matrix.id,
+            indices,
+            numNodePerRow,
+            dimension)))
+          .asInstanceOf[W2VPullResult]
+
+        val word2offset = new Int2IntOpenHashMap() // wordId --> offsetId
+        word2offset.defaultReturnValue(-1)
+        for (i <- 0 until indices.length) word2offset.put(indices(i), i)
+
+        val embeddings = result.layers // embedding vectors
+
+        // adapted from RDD.saveAsTextFile
+        val text = new Text()
+        part_index2word.toIterator.map(x =>{
+          val word: String = x._2
+          val index: Int = x._1
+          val offset = word2offset.get(index) * dimension * 2
+          val tmpString = embeddings.slice(offset, offset + dimension * 2).mkString(" ")
+          text.set(word + " " + tmpString)
+          (NullWritable.get(), text)
+        })
+    })
+
+    RDD.rddToPairRDDFunctions(word2embedding)(nullWritableClassTag, textClassTag, null)
+      .saveAsHadoopFile[TextOutputFormat[NullWritable, Text]](outputPath)
   }
 
   private def createPSMatrix(numNode: Int,

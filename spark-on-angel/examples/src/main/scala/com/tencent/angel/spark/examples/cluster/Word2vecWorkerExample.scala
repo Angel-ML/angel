@@ -31,27 +31,13 @@ object Word2vecWorkerExample {
 
     start()
     val params = ArgsUtil.parse(args)
-//    val input = params.getOrElse("input", "")
-//    val output = params.getOrElse("output", "")
-//    val embeddingDim = params.getOrElse("embedding", "10").toInt
-//    val numNegSamples = params.getOrElse("negative", "5").toInt
-//    val windowSize = params.getOrElse("window", "10").toInt
-//    val numEpoch = params.getOrElse("epoch", "10").toInt
-//    val stepSize = params.getOrElse("stepSize", "0.1").toFloat
-//    val batchSize = params.getOrElse("batchSize", "10000").toInt
-//    val numPartitions = params.getOrElse("numParts", "10").toInt
-//    val numNodePerRow = params.getOrElse("numNodePerRow", "10000").toInt
-//    val withSubSample = params.getOrElse("subSample", "true").toBoolean
-//    val withRemapping = params.getOrElse("remapping", "true").toBoolean
-//    val modelType = params.getOrElse("modelType", "cbow")
-//    val checkpointInterval = params.getOrElse("interval", "10").toInt
     val input = params.getOrElse(EmbeddingConf.INPUTPATH, "")
 
     val sc = SparkContext.getOrCreate()
     val data = sc.textFile(input)
     data.cache()
 
-    val (corpus, _) = Features.corpusStringToInt(sc.textFile(input))
+    val (corpus, index2word) = Features.corpusStringToInt(sc.textFile(input))
 
     val numCores = SparkUtils.getNumCores(sc.getConf)
 
@@ -73,6 +59,7 @@ object Word2vecWorkerExample {
     val model = new Word2vecWorker(maxWordId.toInt, params)
     val iterator = buildDataBatches(docs, params.getOrElse(EmbeddingConf.BATCHSIZE, "1000").toInt)
     model.train(iterator)
+    model.saveModel(index2word)
 
     stop()
   }
