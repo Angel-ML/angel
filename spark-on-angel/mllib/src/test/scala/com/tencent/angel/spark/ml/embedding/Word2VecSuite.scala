@@ -18,6 +18,7 @@
 
 package com.tencent.angel.spark.ml.embedding
 
+import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2vecWorker
 import com.tencent.angel.spark.ml.psf.embedding.bad._
 import com.tencent.angel.spark.ml.{PSFunSuite, SharedPSContext}
@@ -37,12 +38,21 @@ class Word2VecSuite extends PSFunSuite with SharedPSContext {
   }
 
   test("trainWithWorkerPull&Push") {
+    val args = Array(s"${EmbeddingConf.EMBEDDINGDIM}:100", s"${EmbeddingConf.NUMNODEPERROW}:10",
+      s"${EmbeddingConf.MODELTYPE}:cbow", s"${EmbeddingConf.NUMPARTITIONS}:5")
+    val params = ArgsUtil.parse(args)
+
     val numNode = 100
-    val dimension = 100
-    val numNodePerRow = 10
-    val modelType = "cbow"
-    val numPart = 5
-    val model = new Word2vecWorker(numNode, dimension, modelType, numPart, numNodePerRow)
+    val dimension = params.getOrElse(EmbeddingConf.EMBEDDINGDIM, "100").toInt
+    val numNodePerRow = params.getOrElse(EmbeddingConf.NUMNODEPERROW, "10").toInt
+    val modelType = params.getOrElse(EmbeddingConf.MODELTYPE, "cbow")
+    val numpart = params.getOrElse(EmbeddingConf.NUMPARTITIONS, "5").toInt
+//    val dimension = 100
+//    val numNodePerRow = 10
+//    val modelType = "cbow"
+//    val numPart = 5
+//    val model = new Word2vecWorker(numNode, dimension, modelType, numPart, numNodePerRow)
+    val model = new Word2vecWorker(numNode, params)
 
     val matrix = model.matrix
 
