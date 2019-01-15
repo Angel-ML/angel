@@ -29,53 +29,56 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 public class FTRLUpdateFunc extends OptMMUpdateFunc {
-    private static final Log LOG = LogFactory.getLog(FTRLUpdateFunc.class);
 
-    public FTRLUpdateFunc() {
-        super();
-    }
+  private static final Log LOG = LogFactory.getLog(FTRLUpdateFunc.class);
 
-    public FTRLUpdateFunc(int matId, int factor, double alpha, double beta, double lambda1, double lambda2, int epoch) {
-        super(matId, new int[]{factor}, new double[]{alpha, beta, lambda1, lambda2, epoch, 1});
-    }
+  public FTRLUpdateFunc() {
+    super();
+  }
 
-    public FTRLUpdateFunc(int matId, int factor, double alpha, double beta, double lambda1, double lambda2, int epoch, int batchSize) {
-        super(matId, new int[]{factor}, new double[]{alpha, beta, lambda1, lambda2, epoch, batchSize});
-    }
+  public FTRLUpdateFunc(int matId, int factor, double alpha, double beta, double lambda1,
+      double lambda2, int epoch) {
+    super(matId, new int[]{factor}, new double[]{alpha, beta, lambda1, lambda2, epoch, 1});
+  }
 
-    @Override
-    public void update(ServerPartition partition, int factor, double[] scalars) {
-        double alpha = scalars[0];
-        double beta = scalars[1];
-        double lambda1 = scalars[2];
-        double lambda2 = scalars[3];
-        int epoch = (int) scalars[4];
-        int batchSize = (int) scalars[5];
+  public FTRLUpdateFunc(int matId, int factor, double alpha, double beta, double lambda1,
+      double lambda2, int epoch, int batchSize) {
+    super(matId, new int[]{factor}, new double[]{alpha, beta, lambda1, lambda2, epoch, batchSize});
+  }
 
-        for (int f = 0; f < factor; f++) {
-            ServerRow gradientServerRow = partition.getRow(f + 3 * factor);
-            try {
-                gradientServerRow.startWrite();
-                Vector weight = partition.getRow(f).getSplit();
-                Vector zModel = partition.getRow(f + factor).getSplit();
-                Vector nModel = partition.getRow(f + 2 * factor).getSplit();
-                Vector gradient = gradientServerRow.getSplit();
+  @Override
+  public void update(ServerPartition partition, int factor, double[] scalars) {
+    double alpha = scalars[0];
+    double beta = scalars[1];
+    double lambda1 = scalars[2];
+    double lambda2 = scalars[3];
+    int epoch = (int) scalars[4];
+    int batchSize = (int) scalars[5];
 
-                if (batchSize > 1) {
-                    gradient.idiv(batchSize);
-                }
+    for (int f = 0; f < factor; f++) {
+      ServerRow gradientServerRow = partition.getRow(f + 3 * factor);
+      try {
+        gradientServerRow.startWrite();
+        Vector weight = partition.getRow(f).getSplit();
+        Vector zModel = partition.getRow(f + factor).getSplit();
+        Vector nModel = partition.getRow(f + 2 * factor).getSplit();
+        Vector gradient = gradientServerRow.getSplit();
 
-                Vector delta = OptFuncs.ftrldelta(nModel, gradient, alpha);
-                Ufuncs.iaxpy2(nModel, gradient, 1);
-                zModel.iadd(gradient.sub(delta.mul(weight)));
-
-                Vector newWeight = Ufuncs.ftrlthreshold(zModel, nModel, alpha, beta, lambda1, lambda2);
-                weight.setStorage(newWeight.getStorage());
-
-                gradient.clear();
-            } finally {
-                gradientServerRow.endWrite();
-            }
+        if (batchSize > 1) {
+          gradient.idiv(batchSize);
         }
+
+        Vector delta = OptFuncs.ftrldelta(nModel, gradient, alpha);
+        Ufuncs.iaxpy2(nModel, gradient, 1);
+        zModel.iadd(gradient.sub(delta.mul(weight)));
+
+        Vector newWeight = Ufuncs.ftrlthreshold(zModel, nModel, alpha, beta, lambda1, lambda2);
+        weight.setStorage(newWeight.getStorage());
+
+        gradient.clear();
+      } finally {
+        gradientServerRow.endWrite();
+      }
     }
+  }
 }

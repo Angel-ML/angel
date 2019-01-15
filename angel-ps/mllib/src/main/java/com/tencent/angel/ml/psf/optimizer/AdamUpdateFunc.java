@@ -29,64 +29,68 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 public class AdamUpdateFunc extends OptMMUpdateFunc {
-    private static final Log LOG = LogFactory.getLog(AdamUpdateFunc.class);
 
-    public AdamUpdateFunc() {
-        super();
+  private static final Log LOG = LogFactory.getLog(AdamUpdateFunc.class);
+
+  public AdamUpdateFunc() {
+    super();
+  }
+
+  public AdamUpdateFunc(int matId, int factor, double gamma, double epsilon, double beta, double lr,
+      double regParam, int iteration) {
+    super(matId, new int[]{factor}, new double[]{gamma, epsilon, beta, lr, regParam, iteration, 1});
+  }
+
+  public AdamUpdateFunc(int matId, int factor, double gamma, double epsilon, double beta, double lr,
+      double regParam, int iteration, int batchSize) {
+    super(matId, new int[]{factor},
+        new double[]{gamma, epsilon, beta, lr, regParam, iteration, batchSize});
+  }
+
+  @Override
+  public void update(ServerPartition partition, int factor, double[] scalars) {
+    double gamma = scalars[0];
+    double epsilon = scalars[1];
+    double beta = scalars[2];
+    double lr = scalars[3];
+    double regParam = scalars[4];
+    double epoch = scalars[5];
+    double batchSize = scalars[6];
+
+    if (epoch == 0) {
+      epoch = 1;
     }
 
-    public AdamUpdateFunc(int matId, int factor, double gamma, double epsilon, double beta, double lr,
-                          double regParam, int iteration) {
-        super(matId, new int[]{factor}, new double[]{gamma, epsilon, beta, lr, regParam, iteration, 1});
-    }
+    double powBeta = Math.pow(beta, epoch);
+    double powGamma = Math.pow(gamma, epoch);
 
-    public AdamUpdateFunc(int matId, int factor, double gamma, double epsilon, double beta, double lr,
-                          double regParam, int iteration, int batchSize) {
-        super(matId, new int[]{factor}, new double[]{gamma, epsilon, beta, lr, regParam, iteration, batchSize});
-    }
+    for (int f = 0; f < factor; f++) {
+      ServerRow gradientServerRow = partition.getRow(f + 3 * factor);
+      try {
+        gradientServerRow.startWrite();
+        Vector weight = partition.getRow(f).getSplit();
+        Vector velocity = partition.getRow(f + factor).getSplit();
+        Vector square = partition.getRow(f + 2 * factor).getSplit();
+        Vector gradient = gradientServerRow.getSplit();
 
-    @Override
-    public void update(ServerPartition partition, int factor, double[] scalars) {
-        double gamma = scalars[0];
-        double epsilon = scalars[1];
-        double beta = scalars[2];
-        double lr = scalars[3];
-        double regParam = scalars[4];
-        double epoch = scalars[5];
-        double batchSize = scalars[6];
-
-        if (epoch == 0)
-            epoch = 1;
-
-        double powBeta = Math.pow(beta, epoch);
-        double powGamma = Math.pow(gamma, epoch);
-
-        for (int f = 0; f < factor; f++) {
-            ServerRow gradientServerRow = partition.getRow(f + 3 * factor);
-            try {
-                gradientServerRow.startWrite();
-                Vector weight = partition.getRow(f).getSplit();
-                Vector velocity = partition.getRow(f + factor).getSplit();
-                Vector square = partition.getRow(f + 2 * factor).getSplit();
-                Vector gradient = gradientServerRow.getSplit();
-
-                if (batchSize > 1)
-                    gradient.idiv(batchSize);
-
-                if (regParam != 0.0) {
-                    gradient.iaxpy(weight, regParam);
-                }
-
-                OptFuncs.iexpsmoothing(velocity, gradient, beta);
-                OptFuncs.iexpsmoothing2(square, gradient, gamma);
-
-                Vector delta = OptFuncs.adamdelta(velocity, square, powBeta, powGamma);
-                weight.iaxpy(delta, -lr);
-                gradient.clear();
-            } finally {
-                gradientServerRow.endWrite();
-            }
+        if (batchSize > 1) {
+          gradient.idiv(batchSize);
         }
+
+        if (regParam != 0.0) {
+          gradient.iaxpy(weight, regParam);
+        }
+
+        OptFuncs.iexpsmoothing(velocity, gradient, beta);
+        OptFuncs.iexpsmoothing2(square, gradient, gamma);
+
+        Vector delta = OptFuncs.adamdelta(velocity, square, powBeta, powGamma);
+        weight.iaxpy(delta, -lr);
+        gradient.clear();
+      } finally {
+        gradientServerRow.endWrite();
+      }
     }
+  }
 
 }

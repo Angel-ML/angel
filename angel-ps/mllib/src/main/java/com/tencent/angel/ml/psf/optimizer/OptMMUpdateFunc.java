@@ -25,24 +25,25 @@ import com.tencent.angel.ps.storage.matrix.ServerPartition;
 
 
 public abstract class OptMMUpdateFunc extends UpdateFunc {
-    public OptMMUpdateFunc() {
-        super(null);
-    }
 
-    public OptMMUpdateFunc(int matrixId, int[] rowIds, double[] scalars) {
-        super(new MMUpdateParam(matrixId, rowIds, scalars));
-    }
+  public OptMMUpdateFunc() {
+    super(null);
+  }
 
-    @Override
-    public void partitionUpdate(PartitionUpdateParam partParam) {
-        ServerPartition part = psContext.getMatrixStorageManager()
-                .getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
+  public OptMMUpdateFunc(int matrixId, int[] rowIds, double[] scalars) {
+    super(new MMUpdateParam(matrixId, rowIds, scalars));
+  }
 
-        assert part != null;
-        MMUpdateParam.MMPartitionUpdateParam vs2 = (MMUpdateParam.MMPartitionUpdateParam) partParam;
+  @Override
+  public void partitionUpdate(PartitionUpdateParam partParam) {
+    ServerPartition part = psContext.getMatrixStorageManager()
+        .getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
 
-        update(part, vs2.getRowIds()[0], vs2.getScalars());
-    }
+    assert part != null;
+    MMUpdateParam.MMPartitionUpdateParam vs2 = (MMUpdateParam.MMPartitionUpdateParam) partParam;
 
-    abstract void update(ServerPartition partition, int factor, double[] scalars);
+    update(part, vs2.getRowIds()[0], vs2.getScalars());
+  }
+
+  abstract void update(ServerPartition partition, int factor, double[] scalars);
 }

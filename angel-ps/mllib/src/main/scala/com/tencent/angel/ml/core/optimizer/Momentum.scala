@@ -32,7 +32,7 @@ class Momentum(stepSize: Double, val momentum: Double = 0.9) extends Optimizer(s
     PSAgentContext.get().getUserRequestAdapter.update(func)
   }
 
-  override def update(matrixId: Int, numFactors: Int, epoch: Int, batchSize: Int): Future[VoidResult] ={
+  override def update(matrixId: Int, numFactors: Int, epoch: Int, batchSize: Int): Future[VoidResult] = {
     val func = new MomentumUpdateFunc(matrixId, numFactors, momentum, lr, regL2Param, batchSize)
     PSAgentContext.get().getUserRequestAdapter.update(func)
   }
