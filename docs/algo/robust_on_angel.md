@@ -41,7 +41,11 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Robust Re
 	* ml.minibatch.size：每次迭代选择mini-batch的样本个数
 	* ml.data.validate.ratio：每次validation的样本比率，设为0时不做validation
 	* ml.learn.rate：初始学习速率   
-	* ml.learn.decay：学习速率衰减系数
+    * ml.opt.decay.class.name：学习率衰减系类
+    * ml.opt.decay.on.batch: 是否对每个mini batch衰减
+    * ml.opt.decay.alpha: 学习率衰减参数alpha
+    * ml.opt.decay.beta: 学习率衰减参数beta
+    * ml.opt.decay.intervals: 学习率衰减参数intervals
 	* ml.reg.l1：L1惩罚项系数
 	* ml.reg.l2：L2惩罚项系数
 	* ml.robustregression.loss.delta：残差分段点
@@ -85,7 +89,6 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Robust Re
         --ml.feature.index.range=$featureNum+1 \
         --ml.data.validate.ratio=0.1 \
         --ml.learn.rate=0.1 \
-        --ml.learn.decay=1 \
         --ml.reg.l2=0.001 \
         --ml.data.type=libsvm \
         --ml.model.type=T_FLOAT_DENSE \
@@ -118,7 +121,6 @@ Angel MLLib提供了用Mini-Batch Gradient Descent优化方法求解的Robust Re
 		--ml.feature.index.range=$featureNum+1 \
 		--ml.data.validate.ratio=0.1 \
 		--ml.learn.rate=0.1 \
-		--ml.learn.decay=1 \
 		--ml.reg.l2=0.001 \
 		--ml.data.type=libsvm \
 		--ml.model.type=T_FLOAT_DENSE \
