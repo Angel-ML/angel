@@ -76,4 +76,12 @@ object BreezeOp {
 
     BDV(grads)
   }
+
+  def cartesian(A:Array[Double], B:Array[Double]) = for (a <- A; b <- B) yield {
+    Array(a,b)
+  }
+
+  def cartesian(A:Array[Array[Double]], B:Array[Double]) = for (a <- A; b <- B) yield {
+    (a.toBuffer+=b).toArray
+  }
 }
