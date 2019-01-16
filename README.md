@@ -51,6 +51,7 @@
 
 ## Algorithm
 * [**Angel or Spark On Angel？**](./docs/algo/angel_or_spark_on_angel.md)
+* [**Algorithm Parameter Description**](./docs/algo/model_config_details.md)
 * **Angel**
 	* **Traditional Machine Learning Methods**
 		* [Logistic Regression(LR)](./docs/algo/lr_on_angel.md)
