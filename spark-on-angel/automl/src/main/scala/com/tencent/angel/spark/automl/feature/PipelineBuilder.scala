@@ -33,7 +33,14 @@ object PipelineBuilder {
     //val allInputCols: ArrayBuffer[String] = new ArrayBuffer[String]()
     val allInputCols: mutable.HashSet[String] = new mutable.HashSet[String]()
 
-    (1 to transformers.length).foreach { i =>
+    transformers(0).setInputCols(transformers(0).requiredInputCols)
+    transformers(0).setOutputCols(transformers(0).requiredOutputCols)
+    allInputCols ++= transformers(0).getInputCols
+    transformers(0).setAncestorCols(allInputCols.toArray)
+    stages += transformers(0).declareInAndOut().getTransformer
+
+    (1 until transformers.length).foreach { i =>
+      println(s"transformer $i")
       // set parent
       transformers(i).setParent(transformers(i - 1))
       // add new cols
