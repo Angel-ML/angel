@@ -19,10 +19,10 @@ class FPGBDTPredictor extends Serializable {
     println(s"Reading model from $modelPath")
   }
 
-  def predict(predictor: FPGBDTPredictor, instances: RDD[Instance]): RDD[(Long, Int)] = {
+  def predict(predictor: FPGBDTPredictor, instances: RDD[Instance]): RDD[(Long, Array[Float])] = {
     val bcPredictor = instances.sparkContext.broadcast(predictor)
     instances.map{ instance =>
-      (instance.label.toLong, bcPredictor.value.predict(instance.feature))
+      (instance.label.toLong, bcPredictor.value.predictRaw(instance.feature))
     }
   }
 
@@ -48,7 +48,7 @@ class FPGBDTPredictor extends Serializable {
     val fs = path.getFileSystem(sc.hadoopConfiguration)
     if (fs.exists(path)) fs.delete(path, true)
 
-    preds.saveAsTextFile(predPath)
+    preds.map( pred => s"${pred._1}  ${pred._2.mkString(",")}").saveAsTextFile(predPath)
     println(s"Writing predictions to $predPath")
   }
 
