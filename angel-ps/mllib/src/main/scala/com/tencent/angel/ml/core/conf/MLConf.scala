@@ -34,8 +34,6 @@ object MLConf {
   val DEFAULT_ML_DATA_INPUT_FORMAT = "libsvm"
   val ML_DATA_SPLITOR = "ml.data.splitor"
   val DEFAULT_ML_DATA_SPLITOR = "\\s+"
-  val ML_DATA_IS_NEGY = "ml.data.is.negy"
-  val DEFAULT_ML_DATA_IS_NEGY = true
   val ML_DATA_HAS_LABEL = "ml.data.has.label"
   val DEFAULT_ML_DATA_HAS_LABEL = true
   val ML_DATA_LABEL_TRANS = "ml.data.label.trans.class"
@@ -111,7 +109,7 @@ object MLConf {
   val ML_OPT_ADADELTA_BETA = "ml.opt.adadelta.beta"
   val DEFAULT_ML_OPT_ADADELTA_BETA = 0.9
   // AdaGrad
-  val ML_OPT_ADAGRAD_BETA = "ml.opt.adadelta.beta"
+  val ML_OPT_ADAGRAD_BETA = "ml.opt.adagrad.beta"
   val DEFAULT_ML_OPT_ADADGRAD_BETA = 0.9
   // Adam
   val ML_OPT_ADAM_GAMMA = "ml.opt.adam.gamma"
@@ -163,8 +161,6 @@ object MLConf {
   // Kmeans params
   val KMEANS_CENTER_NUM = "ml.kmeans.center.num"
   val DEFAULT_KMEANS_CENTER_NUM = 5
-  val KMEANS_SAMPLE_RATIO_PERBATCH = "ml.kmeans.sample.ratio.perbath"
-  val DEFAULT_KMEANS_SAMPLE_RATIO_PERBATCH = 0.5
   val KMEANS_C = "ml.kmeans.c"
   val DEFAULT_KMEANS_C = 0.1
 
