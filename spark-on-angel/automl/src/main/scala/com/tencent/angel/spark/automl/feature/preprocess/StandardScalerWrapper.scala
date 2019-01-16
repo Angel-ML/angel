@@ -19,8 +19,8 @@ class StandardScalerWrapper extends TransformerWrapper {
   override val requiredOutputCols: Array[String] = Array("standardNumerical")
 
   override def declareInAndOut(): this.type = {
-    transformer.asInstanceOf[StandardScalerModel].setInputCol(getInputCols(0))
-    transformer.asInstanceOf[StandardScalerModel].setOutputCol(getOutputCols(0))
+    transformer.asInstanceOf[StandardScaler].setInputCol(getInputCols(0))
+    transformer.asInstanceOf[StandardScaler].setOutputCol(getOutputCols(0))
     this
   }
 
