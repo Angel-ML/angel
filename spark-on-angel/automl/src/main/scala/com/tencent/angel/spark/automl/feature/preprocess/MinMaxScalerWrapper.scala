@@ -19,8 +19,8 @@ private[feature] class MinMaxScalerWrapper extends TransformerWrapper {
   override val requiredOutputCols: Array[String] = Array("minMaxNumerical")
 
   override def declareInAndOut(): this.type = {
-    transformer.asInstanceOf[MinMaxScalerModel].setInputCol(getInputCols(0))
-    transformer.asInstanceOf[MinMaxScalerModel].setOutputCol(getOutputCols(0))
+    transformer.asInstanceOf[MinMaxScaler].setInputCol(getInputCols(0))
+    transformer.asInstanceOf[MinMaxScaler].setOutputCol(getOutputCols(0))
     this
   }
 
