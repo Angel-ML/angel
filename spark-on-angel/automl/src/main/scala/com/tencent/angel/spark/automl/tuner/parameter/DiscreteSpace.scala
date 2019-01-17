@@ -18,7 +18,6 @@
 
 package com.tencent.angel.spark.automl.tuner.parameter
 
-
 import com.tencent.angel.spark.automl.utils.AutoMLException
 
 import scala.reflect.ClassTag
@@ -85,9 +84,19 @@ class DiscreteSpace[T <: AnyVal: ClassTag](
     }
   }
 
+  def asDouble(num: AnyVal): Double = {
+    num match {
+      case i: Int => i.toDouble
+      case i: Long => i.toLong
+      case i: Float => i.toDouble
+      case i: Double => i
+      case _ => throw new AutoMLException(s"type ${num.getClass} is not supported")
+    }
+  }
+
   val rd = new Random(seed)
 
-  def getValues: Array[T] = values
+  def getValues: Array[Double] = values.map(asDouble)
 
   def numValues: Int = values.length
 
@@ -110,6 +119,7 @@ object DiscreteSpace {
   def main(args: Array[String]): Unit = {
     val obj = new DiscreteSpace[Int]("test", "1:10:1")
     println(obj.toString)
+    println(obj.getValues(1))
     println(obj.sample(2).toString())
   }
 }
