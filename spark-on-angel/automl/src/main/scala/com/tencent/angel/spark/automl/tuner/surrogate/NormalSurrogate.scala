@@ -46,7 +46,6 @@ class NormalSurrogate(
   // previous target value, (N, )
   var preY: ArrayBuffer[Double] = new ArrayBuffer[Double]()
 
-
   def update(X: Array[Vector], Y: Array[Double]): Unit = {
     preX ++= X
     preY ++= Y

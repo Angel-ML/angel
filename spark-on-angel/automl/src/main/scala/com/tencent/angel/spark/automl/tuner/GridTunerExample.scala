@@ -36,9 +36,8 @@ object GridTunerExample extends App {
     cs.addParam(param3)
     cs.addParam(param4)
 
-    val configs: Array[Configuration] = cs.grid_sample()
-    println(configs.length)
-//    println(configs(0).getVector)
+    val configs: Array[Configuration] = cs.gridSample()
+    println(s"Sie of grid search: ${configs.length}")
     val sur: NormalSurrogate = new NormalSurrogate(cs, true)
     val trail: Trail = new TestTrail()
     val results: Array[Double] = trail.evaluate(configs)
@@ -46,6 +45,5 @@ object GridTunerExample extends App {
     val result = sur.curBest
     println()
     println(s"Best configuration ${result._1.toArray.mkString(",")}, best performance: ${result._2}")
-
   }
 }
