@@ -41,6 +41,7 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
   var zPS: PSVector = _
   var nPS: PSVector = _
   var wPS: PSVector = _
+  var name = "weights"
 
   def init(dim: Long, rowType: RowType): Unit = {
     init(dim, -1, rowType)
@@ -51,6 +52,7 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
       additionalConfiguration = Map(AngelConf.Angel_PS_PARTITION_CLASS -> partitioner.getClass.getName))
     nPS = PSVector.duplicate(zPS)
     wPS = PSVector.duplicate(zPS)
+    name = PSContext.instance().getMatrixMeta(zPS.poolId).get.getName
   }
 
   def init(dim: Long, nnz: Long, rowType: RowType): Unit = {
@@ -61,7 +63,7 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
 
   def init(start: Long, end: Long, nnz: Long, rowType: RowType): Unit = {
     val ctx = new MatrixContext()
-    ctx.setName("ftrl-weights")
+    ctx.setName(name)
     ctx.setColNum(end)
     ctx.setRowNum(3)
     ctx.setPartitionerClass(classOf[FTRLPartitioner])
@@ -311,7 +313,6 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
   def save(path: String): Unit = {
     val format = classOf[RowIdColIdValueTextRowFormat].getCanonicalName
     val modelContext = new ModelSaveContext(path)
-    val name = PSContext.instance().getMatrixMeta(zPS.poolId).get.getName
     val matrixContext = new MatrixSaveContext(name, format)
     matrixContext.addIndices(Array(0, 1, 2))
     modelContext.addMatrix(matrixContext)
@@ -321,7 +322,6 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
   def saveWeight(path: String): Unit = {
     val format = classOf[ColIdValueTextRowFormat].getCanonicalName
     val modelContext = new ModelSaveContext(path)
-    val name = PSContext.instance().getMatrixMeta(zPS.poolId).get.getName
     val matrixContext = new MatrixSaveContext(name, format)
     matrixContext.addIndices(Array(2))
     modelContext.addMatrix(matrixContext)
@@ -331,7 +331,6 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
   def load(path: String): Unit = {
     val format = classOf[RowIdColIdValueTextRowFormat].getCanonicalName
     val modelContext = new ModelLoadContext(path)
-    val name = PSContext.instance().getMatrixMeta(zPS.poolId).get.getName
     val matrixContext = new MatrixLoadContext(name, format)
     modelContext.addMatrix(matrixContext)
     AngelPSContext.load(modelContext)
