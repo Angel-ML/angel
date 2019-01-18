@@ -50,6 +50,7 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     zPS = PSVector.longKeySparse(dim, nnz, 3, rowType,
       additionalConfiguration = Map(AngelConf.Angel_PS_PARTITION_CLASS -> partitioner.getClass.getName))
     nPS = PSVector.duplicate(zPS)
+    wPS = PSVector.duplicate(zPS)
   }
 
   def init(dim: Long, nnz: Long, rowType: RowType): Unit = {
