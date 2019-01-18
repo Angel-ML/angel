@@ -59,7 +59,7 @@ public class ComputeW extends MultiRowUpdateFunc {
       if (param.getPartKey().getStartCol() <= 0 && param.getPartKey().getEndCol() > 0) {
         double zVal = VectorUtils.getDouble(z, 0);
         double nVal = VectorUtils.getDouble(n, 0);
-        VectorUtils.setDouble(w, 0, -1.0 * alpha * zVal / (beta + Math.sqrt(nVal)));
+        VectorUtils.setFloat(w, 0, (float) (-1.0 * alpha * zVal / (beta + Math.sqrt(nVal))));
       }
     }
   }

@@ -781,8 +781,7 @@ public class UserRequestAdapter {
       if (row instanceof ComponentVector || row.isDense()) {
         return true;
       }
-      int partNum =
-        PSAgentContext.get().getMatrixMetaManager().getRowPartitionSize(matrixId, rowId);
+      int partNum = PSAgentContext.get().getMatrixMetaManager().getRowPartitionSize(matrixId, rowId);
       if (partNum > partNumThreshold && row.getSize() < colNumThreshold) {
         return false;
       } else {
@@ -790,8 +789,8 @@ public class UserRequestAdapter {
       }
     } else {
       return PSAgentContext.get().getConf()
-        .getBoolean(AngelConf.ANGEL_PSAGENT_UPDATE_SPLIT_VIEW_ENABLE,
-          AngelConf.DEFAULT_ANGEL_PSAGENT_UPDATE_SPLIT_VIEW_ENABLE);
+              .getBoolean(AngelConf.ANGEL_PSAGENT_UPDATE_SPLIT_VIEW_ENABLE,
+                      AngelConf.DEFAULT_ANGEL_PSAGENT_UPDATE_SPLIT_VIEW_ENABLE);
     }
   }
 

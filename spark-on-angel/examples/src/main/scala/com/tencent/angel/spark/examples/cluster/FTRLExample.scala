@@ -1,13 +1,14 @@
 package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.math2.vector.{LongDoubleVector, Vector}
+import com.tencent.angel.ml.math2.vector.LongFloatVector
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.core.metric.AUC
-import com.tencent.angel.spark.ml.online_learning.{FTRL, SparseLRModel}
+import com.tencent.angel.spark.ml.online_learning.FTRL
 import com.tencent.angel.spark.ml.util.{DataLoader, SparkUtils}
+import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
 object FTRLExample {
@@ -38,35 +39,43 @@ object FTRLExample {
     // We use more partitions to achieve dynamic load balance
     val partNum = (SparkUtils.getNumCores(SparkContext.getOrCreate().getConf) * 6.15).toInt
 
-    val opt = new FTRL(lambda1, lambda2, alpha, beta)
-    opt.init(dim, RowType.T_DOUBLE_SPARSE_LONGKEY)
-
-    if (modelPath.length > 0)
-      opt.load(modelPath + "/back")
-
     val data = sc.textFile(input).repartition(partNum)
-      .map(s => (DataLoader.parseLongDouble(s, dim), DataLoader.parseLabel(s, false)))
+      .map(s => (DataLoader.parseLongFloat(s, dim), DataLoader.parseLabel(s, false)))
       .map {
         f =>
           f._1.setY(f._2)
           f._1
-      }.map(point => DataLoader.appendBias(point))
+      }
 
+    data.persist(StorageLevel.DISK_ONLY)
     val size = data.count()
+
+    val max = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage.getIndices.max).max()
+    val min = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage.getIndices.min).min()
+    val nnz = data.flatMap(f => f.getX.asInstanceOf[LongFloatVector].getStorage.getIndices.distinct).map(f => (f, 1))
+        .reduceByKey(_ + _).count()
+
+    println(s"num examples = ${size} min_index=$min max_index=$max dim=$nnz")
+
+    val opt = new FTRL(lambda1, lambda2, alpha, beta)
+    opt.init(dim, nnz, RowType.T_FLOAT_SPARSE_LONGKEY)
+
+    if (modelPath.length > 0)
+      opt.load(modelPath + "/back")
 
     for (epoch <- 1 to numEpoch) {
       val totalLoss = data.mapPartitions {
         case iterator =>
-          val loss = iterator.map(f => (f.getX, f.getY))
+          val loss = iterator
             .sliding(batchSize, batchSize)
-            .map(f => opt.optimize(f.toArray, calcGradientLoss)).sum
+            .map(f => opt.optimize(f.toArray)).sum
           Iterator.single(loss)
       }.sum()
 
-      val scores = data.mapPartitions {
+      val scores = data.sample(false, 0.01, 42).mapPartitions {
         case iterator =>
           iterator.sliding(batchSize, batchSize)
-              .map(f => opt.predict(f.toArray)).flatMap(f => f)
+              .flatMap(f => opt.predict(f.toArray))
       }
       val auc = new AUC().calculate(scores)
 
@@ -83,21 +92,5 @@ object FTRLExample {
 
     PSContext.stop()
     SparkContext.getOrCreate().stop()
-  }
-
-  private def calcGradientLoss(w: LongDoubleVector, label: Double, feature: Vector): (LongDoubleVector, Double) = {
-    val margin = -w.dot(feature)
-    val gradientMultiplier = 1.0 / (1.0 + math.exp(margin)) - label
-    val grad = feature.mul(gradientMultiplier).asInstanceOf[LongDoubleVector]
-    val loss = if (label > 0) log1pExp(margin) else log1pExp(margin) - margin
-    (grad, loss)
-  }
-
-  def log1pExp(x: Double): Double = {
-    if (x > 0) {
-      x + math.log1p(math.exp(-x))
-    } else {
-      math.log1p(math.exp(x))
-    }
   }
 }
