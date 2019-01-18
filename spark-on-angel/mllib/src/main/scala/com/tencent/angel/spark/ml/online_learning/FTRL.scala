@@ -21,35 +21,59 @@ package com.tencent.angel.spark.ml.online_learning
 import java.util
 
 import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.storage.LongKeyVectorStorage
 import com.tencent.angel.ml.math2.ufuncs.{OptFuncs, Ufuncs}
 import com.tencent.angel.ml.math2.vector.{LongDoubleVector, LongDummyVector, LongFloatVector, LongKeyVector, Vector}
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.model.output.format.{ColIdValueTextRowFormat, RowIdColIdValueTextRowFormat}
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
-import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
+import com.tencent.angel.ps.storage.partitioner.{ColumnRangePartitioner, Partitioner}
 import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
-import com.tencent.angel.spark.ml.psf.ftrl.ComputeW
+import com.tencent.angel.spark.ml.psf.ftrl.{ComputeW, FTRLPartitioner}
 import com.tencent.angel.spark.models.PSVector
+import com.tencent.angel.spark.models.impl.PSVectorImpl
 
 class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regularSkipFeatIndex: Long = 0) extends Serializable {
 
   var zPS: PSVector = _
   var nPS: PSVector = _
+  var wPS: PSVector = _
 
   def init(dim: Long, rowType: RowType): Unit = {
     init(dim, -1, rowType)
   }
 
-  def init(dim: Long, nnz: Long, rowType: RowType): Unit = {
+  def init(dim: Long, nnz: Long, rowType: RowType, partitioner: Partitioner): Unit = {
     zPS = PSVector.longKeySparse(dim, nnz, 3, rowType,
-      additionalConfiguration = Map(AngelConf.Angel_PS_PARTITION_CLASS -> classOf[ColumnRangePartitioner].getName))
+      additionalConfiguration = Map(AngelConf.Angel_PS_PARTITION_CLASS -> partitioner.getClass.getName))
     nPS = PSVector.duplicate(zPS)
   }
 
+  def init(dim: Long, nnz: Long, rowType: RowType): Unit = {
+    init(dim, nnz, rowType, new ColumnRangePartitioner())
+  }
+
   def init(dim: Long): Unit = init(dim, RowType.T_FLOAT_SPARSE_LONGKEY)
+
+  def init(start: Long, end: Long, nnz: Long, rowType: RowType): Unit = {
+    val ctx = new MatrixContext()
+    ctx.setName("ftrl-weights")
+    ctx.setColNum(end)
+    ctx.setRowNum(3)
+    ctx.setPartitionerClass(classOf[FTRLPartitioner])
+    ctx.setRowType(rowType)
+    ctx.setValidIndexNum(nnz)
+    ctx.setMaxColNumInBlock(start)
+    val matId = PSMatrixUtils.createPSMatrix(ctx)
+
+    zPS = new PSVectorImpl(matId, 0, end, rowType)
+    nPS = new PSVectorImpl(matId, 1, end, rowType)
+    wPS = new PSVectorImpl(matId, 2, end, rowType)
+  }
+
 
   def optimize(batch: Array[LabeledData]): Double = {
 
@@ -241,7 +265,7 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     * @return
     */
   def weight: PSVector = {
-    val wPS = PSVector.duplicate(zPS)
+//    val wPS = PSVector.duplicate(zPS)
     val func = new ComputeW(wPS.poolId, alpha, beta, lambda1, lambda2)
     wPS.psfUpdate(func).get()
     wPS
