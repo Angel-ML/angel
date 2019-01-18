@@ -18,17 +18,18 @@
 
 package com.tencent.angel.spark.ml.online_learning
 
+import java.util
+
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.storage.LongKeyVectorStorage
 import com.tencent.angel.ml.math2.ufuncs.{OptFuncs, Ufuncs}
-import com.tencent.angel.ml.math2.vector.{LongDoubleVector, LongDummyVector, LongKeyVector, Vector}
+import com.tencent.angel.ml.math2.vector.{LongDoubleVector, LongDummyVector, LongFloatVector, LongKeyVector, Vector}
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.model.output.format.{ColIdValueTextRowFormat, RowIdColIdValueTextRowFormat}
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
-import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
 import com.tencent.angel.spark.ml.psf.ftrl.ComputeW
 import com.tencent.angel.spark.models.PSVector
@@ -39,21 +40,20 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
   var nPS: PSVector = _
 
   def init(dim: Long, rowType: RowType): Unit = {
-    zPS = PSVector.longKeySparse(dim, -1, 3, rowType,
+    init(dim, -1, rowType)
+  }
+
+  def init(dim: Long, nnz: Long, rowType: RowType): Unit = {
+    zPS = PSVector.longKeySparse(dim, nnz, 3, rowType,
       additionalConfiguration = Map(AngelConf.Angel_PS_PARTITION_CLASS -> classOf[ColumnRangePartitioner].getName))
     nPS = PSVector.duplicate(zPS)
   }
 
-  def init(dim: Long): Unit = init(dim, RowType.T_DOUBLE_SPARSE_LONGKEY)
+  def init(dim: Long): Unit = init(dim, RowType.T_FLOAT_SPARSE_LONGKEY)
 
-  /**
-    * Using math2 to optimize FTRL, but there is some error for this version.
-    * The loss will become infinity when reaching convergence.
-    *
-    * @param batch : mini-batch training examples
-    * @return
-    */
   def optimize(batch: Array[LabeledData]): Double = {
+
+    var (start, end) = (0L, 0L)
     val indices = batch.flatMap {
       case point =>
         point.getX match {
@@ -63,14 +63,18 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
         }
     }.distinct
 
+    start = System.currentTimeMillis()
     val localZ = zPS.pull(indices)
     val localN = nPS.pull(indices)
-    val weight = Ufuncs.ftrlthreshold(localZ, localN, alpha, beta, lambda1, lambda2)
+    end = System.currentTimeMillis()
+    val pullTime = end - start
 
-    val deltaZ = localZ.copy()
-    val deltaN = localN.copy()
-    deltaZ.clear()
-    deltaN.clear()
+
+    start = System.currentTimeMillis()
+    val weight = Ufuncs.ftrlthreshold(localZ, localN, alpha, beta, lambda1, lambda2)
+    val dim = batch.head.getX.dim()
+    val deltaZ = VFactory.sparseLongKeyFloatVector(dim)
+    val deltaN = VFactory.sparseLongKeyFloatVector(dim)
 
     val iter = batch.iterator
     var lossSum = 0.0
@@ -79,8 +83,23 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
       val (feature, label) = (point.getX, point.getY)
       val margin = -weight.dot(feature)
       val multiplier = 1.0 / (1.0 + math.exp(margin)) - label
-      val grad = feature.mul(multiplier)
-      val delta = OptFuncs.ftrldelta(localN, grad, alpha)
+      val grad = feature match {
+        case x: LongDummyVector =>
+          val values = new Array[Float](x.getIndices.length)
+          util.Arrays.fill(values, multiplier.toFloat)
+          VFactory.sparseLongKeyFloatVector(dim, x.getIndices, values)
+        case _ =>
+          feature.mul(multiplier)
+      }
+
+      val featureIndices = feature match {
+        case longV: LongDoubleVector => longV.getStorage.getIndices
+        case longV: LongFloatVector => longV.getStorage.getIndices
+        case dummyV: LongDummyVector => dummyV.getIndices
+      }
+      val indicesValue = featureIndices.map{ _ =>1.0f}
+      val featureN = VFactory.sparseLongKeyFloatVector(dim, featureIndices, indicesValue).mul(localN)
+      val delta = OptFuncs.ftrldelta(featureN, grad, alpha)
 
       val loss = if (label > 0) log1pExp(margin) else log1pExp(margin) - margin
 
@@ -88,13 +107,16 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
       Ufuncs.iaxpy2(deltaN, grad, 1)
       deltaZ.iadd(grad.isub(delta.imul(weight)))
     }
+    end = System.currentTimeMillis()
+    val optimTime = end - start
 
-    deltaZ.idiv(batch.length)
-    deltaN.idiv(batch.length)
+    start = System.currentTimeMillis()
     zPS.increment(deltaZ)
     nPS.increment(deltaN)
+    end = System.currentTimeMillis()
+    val pushTime = end - start
 
-    println(s"${lossSum / batch.size}")
+    println(s"${lossSum / batch.size} pullTime=$pullTime optimTime=$optimTime pushTime=$pushTime")
 
     lossSum
   }
