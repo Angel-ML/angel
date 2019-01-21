@@ -93,7 +93,7 @@ GBDT的流程包括几大步骤
 	* ml.learn.rate：学习速率
 	* ml.data.validate.ratio：每次validation的样本比率，设为0时不做validation
 	* ml.gbdt.sample.ratio：特征下采样的比率，默认为1
-	* ml.gbdt.server.split：两阶段分裂算法开关，默认为true
+	* ml.gbdt.server.split：两阶段分裂算法开关，默认为false
 	* ml.gbdt.batch.size: 并行训练时一个批量的数量
 	* angel.compress.bytes：低精度压缩，每个浮点数的大小，可设为[1,8]
 

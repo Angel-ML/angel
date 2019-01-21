@@ -88,7 +88,6 @@ public class SoftmaxTest {
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
       conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
-      conf.setBoolean(MLConf.ML_DATA_IS_NEGY(), false);
 
       //set sgd LR algorithm parameters #feature #epoch
       conf.set(MLConf.ML_MODEL_TYPE(), modelType);
