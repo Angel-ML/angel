@@ -1074,7 +1074,7 @@ public class AngelConf extends Configuration {
    */
   public static final String ANGEL_MATRIXTRANSFER_MAX_TRY_COUNTER =
       ANGEL_PREFIX + "matrixtransfer.max.retry.counter";
-  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_MAX_TRY_COUNTER = 1;
+  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_MAX_TRY_COUNTER = 10;
 
   /**
    * Weather we need use direct buffer in netty client.
