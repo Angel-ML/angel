@@ -23,6 +23,7 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.client.local.AngelLocalClient;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.exception.PSRPCException;
 import com.tencent.angel.ml.math2.matrix.Matrix;
 import com.tencent.angel.ml.math2.matrix.RowBasedMatrix;
 import com.tencent.angel.ml.math2.vector.ComponentVector;
@@ -749,6 +750,22 @@ public class UserRequestAdapter {
           result.set(new VoidResult(ResponseType.SUCCESS));
         }
       }
+    } finally {
+      cache.lock.unlock();
+    }
+  }
+
+  public void notifySubTaskFailed(int requestId, int subTaskId, String errorLog) {
+    PartitionResponseCache cache = requestIdToSubresponsMap.get(requestId);
+    FutureResult result = requestIdToResultMap.get(requestId);
+    if (cache == null || result == null) {
+      return;
+    }
+
+    try {
+      cache.lock.lock();
+      clear(requestId);
+      result.setExecuteError("Sub-Task " + subTaskId + " execution failed, failed message=" + errorLog);
     } finally {
       cache.lock.unlock();
     }
