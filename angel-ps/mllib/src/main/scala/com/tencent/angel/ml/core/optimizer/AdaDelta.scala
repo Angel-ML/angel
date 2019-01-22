@@ -29,9 +29,7 @@ class AdaDelta(stepSize: Double, val alpha: Double, val beta: Double = 0.9) exte
   override protected var numSlot: Int = 3
 
   override def update(matrixId: Int, numFactors: Int, epoch: Int): Future[VoidResult] = {
-
-    val func = new AdaDeltaUpdateFunc(matrixId, numFactors, epsilon, alpha, beta, lr, regL1Param, regL2Param, epoch)
-    PSAgentContext.get().getUserRequestAdapter.update(func)
+    update(matrixId, numFactors, epoch, 1)
   }
 
   override def update(matrixId: Int, numFactors: Int, epoch: Int, batchSize: Int): Future[VoidResult] = {

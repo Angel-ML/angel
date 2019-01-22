@@ -18,10 +18,7 @@
 package com.tencent.angel.ml.psf.optimizer;
 
 import com.tencent.angel.ml.math2.ufuncs.OptFuncs;
-import com.tencent.angel.ml.math2.ufuncs.Ufuncs;
 import com.tencent.angel.ml.math2.vector.Vector;
-import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
-import com.tencent.angel.ml.matrix.psf.update.enhance.MMUpdateParam;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import org.apache.commons.logging.Log;
@@ -37,8 +34,7 @@ public class AdaGradUpdateFunc extends OptMMUpdateFunc {
 
   public AdaGradUpdateFunc(int matId, int factor, double epsilon, double beta, double lr,
       double regL1Param, double regL2Param, int epoch) {
-    super(matId, new int[]{factor},
-        new double[]{epsilon, beta, lr, regL1Param, regL2Param, epoch, 1});
+    this(matId, factor, epsilon, beta, lr, regL1Param, regL2Param, epoch, 1);
   }
 
   public AdaGradUpdateFunc(int matId, int factor, double epsilon, double beta, double lr,
