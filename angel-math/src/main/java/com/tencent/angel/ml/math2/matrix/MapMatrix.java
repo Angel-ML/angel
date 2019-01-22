@@ -20,6 +20,10 @@ public class MapMatrix<Vec extends Vector> extends Matrix{
     this(0,0, mapMatrix);
   }
 
+  public HashMap<Long, Vec> getMap() {
+    return mapMatrix;
+  }
+
   public Vector getRow(int idx){
     return mapMatrix.get(idx);
   }

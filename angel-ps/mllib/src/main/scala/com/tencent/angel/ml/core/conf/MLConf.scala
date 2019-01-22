@@ -34,8 +34,6 @@ object MLConf {
   val DEFAULT_ML_DATA_INPUT_FORMAT = "libsvm"
   val ML_DATA_SPLITOR = "ml.data.splitor"
   val DEFAULT_ML_DATA_SPLITOR = "\\s+"
-//  val ML_DATA_IS_NEGY = "ml.data.is.negy"
-//  val DEFAULT_ML_DATA_IS_NEGY = true
   val ML_DATA_HAS_LABEL = "ml.data.has.label"
   val DEFAULT_ML_DATA_HAS_LABEL = true
   val ML_DATA_LABEL_TRANS = "ml.data.label.trans.class"
