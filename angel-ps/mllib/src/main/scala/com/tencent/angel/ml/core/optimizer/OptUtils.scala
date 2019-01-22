@@ -44,22 +44,30 @@ object OptUtils {
 
     name.toLowerCase().trim() match {
       case "momentum" =>
-        val momentum: Double = conf.getDouble(MLConf.ML_OPT_MOMENTUM_MOMENTUM, 0.9)
+        val momentum: Double = conf.getDouble(MLConf.ML_OPT_MOMENTUM_MOMENTUM,
+          MLConf.DEFAULT_ML_OPT_MOMENTUM_MOMENTUM)
         new Momentum(lr0, momentum)
       case "adam" =>
-        val gamma: Double = conf.getDouble(MLConf.ML_OPT_ADAM_GAMMA, 0.99)
-        val beta: Double = conf.getDouble(MLConf.ML_OPT_ADAM_BETA, 0.9)
+        val gamma: Double = conf.getDouble(MLConf.ML_OPT_ADAM_GAMMA,
+          MLConf.DEFAULT_ML_OPT_ADAM_GAMMA)
+        val beta: Double = conf.getDouble(MLConf.ML_OPT_ADAM_BETA, MLConf.DEFAULT_ML_OPT_ADAM_BETA)
         new Adam(lr0, gamma, beta)
       case "ftrl" =>
-        val alpha: Double = conf.getDouble(MLConf.ML_OPT_FTRL_ALPHA, 0.1)
-        val beta: Double = conf.getDouble(MLConf.ML_OPT_FTRL_BETA, 1.0)
+        val alpha: Double = conf.getDouble(MLConf.ML_OPT_FTRL_ALPHA,
+          MLConf.DEFAULT_ML_OPT_FTRL_ALPHA)
+        val beta: Double = conf.getDouble(MLConf.ML_OPT_FTRL_BETA,
+          MLConf.DEFAULT_ML_OPT_FTRL_BETA)
         new FTRL(lr0, alpha, beta)
       case "adagrad" =>
-        val beta: Double = conf.getDouble(MLConf.ML_OPT_ADAGRAD_BETA, 0.9)
+        val beta: Double = conf.getDouble(MLConf.ML_OPT_ADAGRAD_BETA,
+          MLConf.DEFAULT_ML_OPT_ADAGRAD_BETA)
         new AdaGrad(lr0, beta)
       case "adadelta" =>
-        val beta: Double = conf.getDouble(MLConf.ML_OPT_ADADELTA_BETA, 0.9)
-        new AdaDelta(lr0, beta)
+        val alpha: Double = conf.getDouble(MLConf.ML_OPT_ADADELTA_ALPHA,
+          MLConf.DEFAULT_ML_OPT_ADADELTA_ALPHA)
+        val beta: Double = conf.getDouble(MLConf.ML_OPT_ADADELTA_BETA,
+          MLConf.DEFAULT_ML_OPT_ADADELTA_BETA)
+        new AdaDelta(lr0, alpha, beta)
       case _ =>
         new SGD(lr0)
     }

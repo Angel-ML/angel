@@ -99,6 +99,8 @@ object MLConf {
   val ML_SIMPLEINPUTLAYER_MATRIX_OUTPUT_FORMAT = "ml.simpleinputlayer.matrix.output.format"
   val DEFAULT_ML_SIMPLEINPUTLAYER_MATRIX_OUTPUT_FORMAT: String = classOf[ColIdValueTextRowFormat].getCanonicalName
 
+  val ML_LOSSFUNCTION_HUBER_DELTA = "ml.lossfunction.huber.delta"
+  val DEFAULT_ML_LOSSFUNCTION_HUBER_DELTA = 1.0
 
   // Momentum
   val ML_OPT_MOMENTUM_MOMENTUM = "ml.opt.momentum.momentum"
@@ -110,7 +112,7 @@ object MLConf {
   val DEFAULT_ML_OPT_ADADELTA_BETA = 0.9
   // AdaGrad
   val ML_OPT_ADAGRAD_BETA = "ml.opt.adagrad.beta"
-  val DEFAULT_ML_OPT_ADADGRAD_BETA = 0.9
+  val DEFAULT_ML_OPT_ADAGRAD_BETA = 0.9
   // Adam
   val ML_OPT_ADAM_GAMMA = "ml.opt.adam.gamma"
   val DEFAULT_ML_OPT_ADAM_GAMMA = 0.99
@@ -129,8 +131,12 @@ object MLConf {
   val DEFAULT_ML_OPT_DECAY_ON_BATCH = false
   val ML_OPT_DECAY_INTERVALS = "ml.opt.decay.intervals"
   val DEFAULT_ML_OPT_DECAY_INTERVALS = 100
+  @Deprecated val ML_DECAY_INTERVALS = "ml.decay.intervals"
+  @Deprecated val DEFAULT_ML_DECAY_INTERVALS = DEFAULT_ML_OPT_DECAY_INTERVALS
   val ML_OPT_DECAY_ALPHA = "ml.opt.decay.alpha"
   val DEFAULT_ML_OPT_DECAY_ALPHA = 0.001
+  @Deprecated val ML_LEARN_DECAY = "ml.learn.decay"
+  @Deprecated val DEFAULT_ML_LEARN_DECAY = 0.5
   val ML_OPT_DECAY_BETA = "ml.opt.decay.beta"
   val DEFAULT_ML_OPT_DECAY_BETA = 0.001
 

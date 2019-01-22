@@ -24,7 +24,7 @@ import com.tencent.angel.ml.psf.optimizer.AdaGradUpdateFunc
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
 
-class AdaGrad(stepSize: Double, val beta: Double = 0.9) extends Optimizer(stepSize) {
+class AdaGrad(stepSize: Double, val beta: Double) extends Optimizer(stepSize) {
   private val LOG = LogFactory.getLog(classOf[AdaGrad])
   override protected var numSlot: Int = 2
 
