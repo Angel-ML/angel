@@ -24,7 +24,7 @@ import com.tencent.angel.ml.psf.optimizer.AdaDeltaUpdateFunc
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
 
-class AdaDelta(stepSize: Double, val alpha: Double, val beta: Double = 0.9) extends Optimizer(stepSize) {
+class AdaDelta(stepSize: Double, val alpha: Double, val beta: Double) extends Optimizer(stepSize) {
   private val LOG = LogFactory.getLog(classOf[AdaDelta])
   override protected var numSlot: Int = 3
 
