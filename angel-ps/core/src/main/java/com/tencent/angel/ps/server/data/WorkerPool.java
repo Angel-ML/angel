@@ -487,11 +487,13 @@ public class WorkerPool {
   }
 
   private ByteBuf handleIndexGetRow(int clientId, int seqId, ByteBuf in) throws Throwable {
+
     ServerState state = runningContext.getState();
     IndexPartGetRowResponse result;
     if (state == ServerState.BUSY) {
       result =
         new IndexPartGetRowResponse(ResponseType.SERVER_IS_BUSY, "server is busy now, retry later");
+      result.setState(ServerState.BUSY);
     } else {
       IndexPartGetRowRequest request = new IndexPartGetRowRequest();
       request.deserialize(in);
@@ -573,6 +575,7 @@ public class WorkerPool {
     if (state == ServerState.BUSY) {
       result = new IndexPartGetRowsResponse(ResponseType.SERVER_IS_BUSY,
         "server is busy now, retry later");
+      result.setState(ServerState.BUSY);
     } else {
       IndexPartGetRowsRequest request = new IndexPartGetRowsRequest();
       request.deserialize(in);

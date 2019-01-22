@@ -24,7 +24,7 @@ import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.psf.optimizer.MomentumUpdateFunc
 import com.tencent.angel.psagent.PSAgentContext
 
-class Momentum(stepSize: Double, val momentum: Double = 0.9) extends Optimizer(stepSize) {
+class Momentum(stepSize: Double, val momentum: Double) extends Optimizer(stepSize) {
   override protected var numSlot: Int = 2
 
   override def update(matrixId: Int, numFactors: Int, epoch: Int = 0): Future[VoidResult] = {
@@ -32,7 +32,7 @@ class Momentum(stepSize: Double, val momentum: Double = 0.9) extends Optimizer(s
     PSAgentContext.get().getUserRequestAdapter.update(func)
   }
 
-  override def update(matrixId: Int, numFactors: Int, epoch: Int, batchSize: Int): Future[VoidResult] ={
+  override def update(matrixId: Int, numFactors: Int, epoch: Int, batchSize: Int): Future[VoidResult] = {
     val func = new MomentumUpdateFunc(matrixId, numFactors, momentum, lr, regL2Param, batchSize)
     PSAgentContext.get().getUserRequestAdapter.update(func)
   }

@@ -23,7 +23,8 @@ class WarmRestarts(var etaMax: Double, etaMin: Double, alpha: Double) extends St
 
   var current: Double = 0
   var numRestart: Int = 0
-  var interval: Int = SharedConf.get().getInt(MLConf.ML_OPT_DECAY_INTERVALS, 100)
+  var interval: Int =  SharedConf.get().getInt(MLConf.ML_OPT_DECAY_INTERVALS,
+      MLConf.DEFAULT_ML_OPT_DECAY_INTERVALS)
 
   override def next(): Double = {
     current += 1

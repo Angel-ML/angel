@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -37,8 +37,8 @@ public class TAvgDisSplit extends TSplitValueHelper {
     float[] binWidths = new float[numFeature];
     for (int fid = 0; fid < numFeature; fid++) {
       binWidths[fid] =
-        (dataStore.featureMeta.maxFeatures[fid] - dataStore.featureMeta.minFeatures[fid])
-          / splitNum;
+          (dataStore.featureMeta.maxFeatures[fid] - dataStore.featureMeta.minFeatures[fid])
+              / splitNum;
     }
 
     // 2. calculate the candidate split value

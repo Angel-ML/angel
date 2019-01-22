@@ -1,5 +1,6 @@
 package com.tencent.angel.spark.examples.basic
 
+import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.optimizer.Adam
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.utils.RowType
@@ -43,7 +44,10 @@ object LogisticRegression {
 
     val mat = PSMatrix.rand(4, 10, RowType.T_FLOAT_DENSE)
     mat.reset(Array(1, 2))
-    val opt = new Adam(0.1)
+    val lr: Double = SharedConf.get().getDouble(MLConf.ML_LEARN_RATE)
+    val gamma: Double = SharedConf.get().getDouble(MLConf.ML_OPT_ADAM_GAMMA)
+    val beta: Double = SharedConf.get().getDouble(MLConf.ML_OPT_ADAM_BETA)
+    val opt = new Adam(lr, gamma, beta)
 
     for (iteration <- 0 until 10) {
       mat.reset(3)

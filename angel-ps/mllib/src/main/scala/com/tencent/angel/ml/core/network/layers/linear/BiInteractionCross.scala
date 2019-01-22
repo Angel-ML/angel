@@ -46,7 +46,7 @@ class BiInteractionCross(name: String, outputDim: Int, inputLayer: Layer)(
             val sum1Vector = VFactory.denseDoubleVector(outputDim)
             val sum2Vector = VFactory.denseDoubleVector(outputDim)
             (0 until batchSize).foreach { row =>
-                mat.getRow(row).getPartitions.foreach { vectorOuter =>
+              mat.getRow(row).getPartitions.foreach { vectorOuter =>
                 sum1Vector.iadd(vectorOuter)
                 sum2Vector.iadd(vectorOuter.mul(vectorOuter))
               }

@@ -119,7 +119,6 @@ public class SoftmaxRegLocalExample {
 	conf.set(MLConf.ML_OPT_DECAY_ALPHA(), String.valueOf(decay));
 	conf.set(MLConf.ML_REG_L2(), String.valueOf(reg));
 	conf.setLong(MLConf.ML_MODEL_SIZE(), 124L);
-	conf.setLong(MLConf.ML_MINIBATCH_SIZE(), 1024);
 
 	// Set model class
 	conf.set(MLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "SoftmaxRegression");

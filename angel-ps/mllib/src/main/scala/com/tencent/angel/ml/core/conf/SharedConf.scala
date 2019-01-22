@@ -270,6 +270,10 @@ object SharedConf {
         }
       }
     }
+
+    if(sc(MLConf.ML_OPT_DECAY_INTERVALS).toInt != MLConf.DEFAULT_ML_DECAY_INTERVALS) {
+      sc(MLConf.ML_OPT_DECAY_INTERVALS) = MLConf.DEFAULT_ML_DECAY_INTERVALS.toString
+    }
   }
 
   private def addAngelConf(): Unit = {

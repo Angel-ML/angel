@@ -15,13 +15,23 @@
  *
  */
 
+package com.tencent.angel.exception;
 
-package com.tencent.angel.ml.GBDT.algo.sketch;
+public class PSRPCException extends RuntimeException {
+  private static final long serialVersionUID = 1L;
 
-public class QuantileSketchException extends RuntimeException {
+  public PSRPCException() {
+  }
 
-  public QuantileSketchException(String message) {
+  public PSRPCException(String message) {
     super(message);
   }
 
+  public PSRPCException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  public PSRPCException(Throwable cause) {
+    super(cause);
+  }
 }

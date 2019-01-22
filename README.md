@@ -51,6 +51,7 @@
 
 ## Algorithm
 * [**Angel or Spark On Angel？**](./docs/algo/angel_or_spark_on_angel.md)
+* [**Algorithm Parameter Description**](./docs/algo/model_config_details.md)
 * **Angel**
 	* **Traditional Machine Learning Methods**
 		* [Logistic Regression(LR)](./docs/algo/lr_on_angel.md)
@@ -70,12 +71,10 @@
 		* [Neural Factorization Machine(NFM)](./docs/algo/nfm_on_angel.md)
 		* [Product Neural Network(PNN)](./docs/algo/pnn_on_angel.md)
 * **Spark on Angel**
-	* **Online Learning**
-		* [FTRL](./docs/algo/ftrl_lr_spark.md)
-	* **Offline Learning**
-		* [Logistic Regression(LR)](./docs/algo/sona/lr_sona.md)
-		* [Word2Vec](./docs/algo/sona/word2vec_sona.md)
-		* [LINE](./docs/algo/sona/line_sona.md)
+	* [FTRL](./docs/algo/ftrl_lr_spark.md)
+	* [Logistic Regression(LR)](./docs/algo/sona/lr_sona.md)
+	* [Word2Vec](./docs/algo/sona/word2vec_sona.md)
+	* [LINE](./docs/algo/sona/line_sona.md)
 
 
 ## Deployment

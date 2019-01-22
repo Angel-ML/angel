@@ -121,7 +121,6 @@ public class KMeansLocalExample {
     conf.set(MLConf.KMEANS_CENTER_NUM(), String.valueOf(centerNum));
     conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
     conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
-    conf.set(MLConf.KMEANS_SAMPLE_RATIO_PERBATCH(), String.valueOf(spratio));
     conf.set(MLConf.KMEANS_C(), String.valueOf(c));
 
   }

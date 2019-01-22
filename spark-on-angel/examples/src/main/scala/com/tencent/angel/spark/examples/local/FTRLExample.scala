@@ -5,7 +5,7 @@ import com.tencent.angel.ml.math2.vector.{LongDoubleVector, Vector}
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.core.metric.AUC
-import com.tencent.angel.spark.ml.online_learning.{FTRL, SparseLRModel}
+import com.tencent.angel.spark.ml.online_learning.FTRL
 import com.tencent.angel.spark.ml.util.DataLoader
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -81,8 +81,7 @@ object FTRLExample {
     if (modelPath.length > 0) {
       val weight = opt.weight
       opt.save(modelPath + "/back")
-      val model = SparseLRModel(weight)
-      model.save(modelPath + "/weight")
+      opt.saveWeight(modelPath + "/weight")
     }
     stop()
   }

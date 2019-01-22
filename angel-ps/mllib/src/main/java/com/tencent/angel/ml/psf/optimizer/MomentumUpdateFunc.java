@@ -27,55 +27,57 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 public class MomentumUpdateFunc extends OptMMUpdateFunc {
-    private static final Log LOG = LogFactory.getLog(MomentumUpdateFunc.class);
 
-    public MomentumUpdateFunc() {
-        super();
-    }
+  private static final Log LOG = LogFactory.getLog(MomentumUpdateFunc.class);
 
-    public MomentumUpdateFunc(int matId, int offset, double momentum, double lr, double regParam) {
-        super(matId, new int[]{offset}, new double[]{momentum, lr, regParam, 1});
-    }
+  public MomentumUpdateFunc() {
+    super();
+  }
 
-    public MomentumUpdateFunc(int matId, int offset, double momentum, double lr, double regParam, int batchSize) {
-        super(matId, new int[]{offset}, new double[]{momentum, lr, regParam, batchSize});
-    }
+  public MomentumUpdateFunc(int matId, int offset, double momentum, double lr, double regParam) {
+    super(matId, new int[]{offset}, new double[]{momentum, lr, regParam, 1});
+  }
 
-    public MomentumUpdateFunc(int matId, int factor, double momentum, double lr) {
-        this(matId, factor, momentum, lr, 0.0);
-    }
+  public MomentumUpdateFunc(int matId, int offset, double momentum, double lr, double regParam,
+      int batchSize) {
+    super(matId, new int[]{offset}, new double[]{momentum, lr, regParam, batchSize});
+  }
 
-    @Override
-    public void update(ServerPartition partition, int factor, double[] scalars) {
-        double momentum = scalars[0];
-        double lr = scalars[1];
-        double regParam = scalars[2];
-        double batchSize = scalars[3];
+  public MomentumUpdateFunc(int matId, int factor, double momentum, double lr) {
+    this(matId, factor, momentum, lr, 0.0);
+  }
 
-        for (int f = 0; f < factor; f++) {
-            ServerRow gradientServerRow = partition.getRow(f + 2 * factor);
-            try {
-                gradientServerRow.startWrite();
-                Vector weight = partition.getRow(f).getSplit();
-                Vector velocity = partition.getRow(f + factor).getSplit();
-                Vector gradient = gradientServerRow.getSplit();
+  @Override
+  public void update(ServerPartition partition, int factor, double[] scalars) {
+    double momentum = scalars[0];
+    double lr = scalars[1];
+    double regParam = scalars[2];
+    double batchSize = scalars[3];
 
-                if (batchSize > 1){
-                    gradient.idiv(batchSize);
-                }
+    for (int f = 0; f < factor; f++) {
+      ServerRow gradientServerRow = partition.getRow(f + 2 * factor);
+      try {
+        gradientServerRow.startWrite();
+        Vector weight = partition.getRow(f).getSplit();
+        Vector velocity = partition.getRow(f + factor).getSplit();
+        Vector gradient = gradientServerRow.getSplit();
 
-                if (regParam != 0.0) {
-                    gradient.iaxpy(weight, regParam);
-                }
-
-                velocity.imul(momentum).iadd(gradient);
-                weight.isub(velocity.mul(lr));
-
-                gradient.clear();
-            } finally {
-                gradientServerRow.endWrite();
-            }
+        if (batchSize > 1) {
+          gradient.idiv(batchSize);
         }
+
+        if (regParam != 0.0) {
+          gradient.iaxpy(weight, regParam);
+        }
+
+        velocity.imul(momentum).iadd(gradient);
+        weight.isub(velocity.mul(lr));
+
+        gradient.clear();
+      } finally {
+        gradientServerRow.endWrite();
+      }
     }
+  }
 
 }
