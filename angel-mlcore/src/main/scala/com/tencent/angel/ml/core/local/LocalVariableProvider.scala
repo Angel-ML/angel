@@ -6,27 +6,28 @@ import com.tencent.angel.ml.core.network.variable._
 import com.tencent.angel.ml.core.utils.{MLException, RowTypeUtils}
 
 class LocalVariableProvider(implicit graph: Graph) extends VariableProvider {
-  override def getEmbedVariable(name: String, numRows: Int, numCols: Long, numSlot: Int): EmbedVariable = {
-    new LocalEmbedVariable(name, numRows, numCols, numSlot, graph.modelType)
+  override def getEmbedVariable(name: String, numRows: Int, numCols: Long, updater: Updater): EmbedVariable = {
+    new LocalEmbedVariable(name, numRows, numCols, updater, graph.modelType, true)
   }
 
-  override def getMatVariable(name: String, numRows: Int, numCols: Long, numSlot: Int, inIPLayer: Boolean): MatVariable = {
-    (graph.dataFormat, inIPLayer) match {
+  override def getMatVariable(name: String, numRows: Int, numCols: Long, updater: Updater, withInput: Boolean): MatVariable = {
+    (graph.dataFormat, withInput) match {
       case ("dense", true) =>
-        new LocalBlasMatVariable(name, numRows, numCols, numSlot, graph.modelType)
+        new LocalBlasMatVariable(name, numRows, numCols, updater, graph.modelType, withInput)
       case ("libsvm"| "dummy", true) =>
-        new LocalMatVariable(name, numRows, numCols, numSlot, graph.modelType)
+        new LocalMatVariable(name, numRows, numCols, updater, graph.modelType, withInput)
       case (_, false) =>
-        new LocalBlasMatVariable(name, numRows, numCols, numSlot, RowTypeUtils.getDenseModelType(graph.modelType))
+        new LocalBlasMatVariable(name, numRows, numCols, updater,
+          RowTypeUtils.getDenseModelType(graph.modelType), withInput)
       case (_, true) => throw MLException("dataFormat Error!")
     }
   }
 
-  override def getVecVariable(name: String, length: Long, numSlot: Int, inIPLayer: Boolean): VecVariable = {
-    if (inIPLayer) {
-      new LocalVecVariable(name, length, numSlot, graph.modelType)
+  override def getVecVariable(name: String, length: Long, updater: Updater, withInput: Boolean): VecVariable = {
+    if (withInput) {
+      new LocalVecVariable(name, length, updater, graph.modelType, withInput)
     } else {
-      new LocalVecVariable(name, length, numSlot, RowTypeUtils.getDenseModelType(graph.modelType))
+      new LocalVecVariable(name, length, updater, RowTypeUtils.getDenseModelType(graph.modelType), withInput)
     }
   }
 }

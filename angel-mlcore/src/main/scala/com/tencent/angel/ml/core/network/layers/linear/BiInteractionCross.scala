@@ -18,110 +18,91 @@
 
 package com.tencent.angel.ml.core.network.layers.linear
 
-import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.math2.{MFactory, VFactory}
 import com.tencent.angel.ml.math2.matrix._
-import com.tencent.angel.ml.math2.utils.{RowType, VectorUtils}
+import com.tencent.angel.ml.math2.utils.VectorUtils
 import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector, Vector}
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.utils.MLException
 import org.apache.commons.logging.LogFactory
 
 
-class BiInteractionCross(name: String, outputDim: Int, inputLayer: Layer)(
-  implicit graph: Graph) extends LinearLayer(name, outputDim, inputLayer) {
+class BiInteractionCross(name: String, outputDim: Int, inputLayer: Layer)(implicit graph: Graph)
+  extends LinearLayer(name, outputDim, inputLayer) {
   val LOG = LogFactory.getLog(classOf[BiInteractionCross])
-  val modelType: RowType = SharedConf.denseModelType
 
-  @transient var output: Matrix = _
-  @transient var gradOutput: Matrix = _
-
-  override def calOutput(): Matrix = {
+  override protected def doForward(input: Matrix): Matrix = {
     val batchSize = graph.placeHolder.getBatchSize
-    status match {
-      case STATUS.Null =>
-        output = inputLayer.calOutput() match {
-          case mat: RBCompIntDoubleMatrix =>
-            val blasMat = MFactory.denseDoubleMatrix(batchSize, outputDim)
-            val sum1Vector = VFactory.denseDoubleVector(outputDim)
-            val sum2Vector = VFactory.denseDoubleVector(outputDim)
-            (0 until batchSize).foreach { row =>
-                mat.getRow(row).getPartitions.foreach { vectorOuter =>
-                sum1Vector.iadd(vectorOuter)
-                sum2Vector.iadd(vectorOuter.mul(vectorOuter))
-              }
 
-              blasMat.setRow(row, sum1Vector.imul(sum1Vector).isub(sum2Vector).imul(0.5))
-              sum1Vector.clear()
-              sum2Vector.clear()
-            }
-            blasMat
-          case mat: RBCompIntFloatMatrix =>
-            val blasMat = MFactory.denseFloatMatrix(batchSize, outputDim)
-            val sum1Vector = VFactory.denseFloatVector(outputDim)
-            val sum2Vector = VFactory.denseFloatVector(outputDim)
-            (0 until batchSize).foreach { row =>
-              mat.getRow(row).getPartitions.foreach { vectorOuter =>
-                sum1Vector.iadd(vectorOuter)
-                sum2Vector.iadd(vectorOuter.mul(vectorOuter))
-              }
+    input match {
+      case mat: RBCompIntDoubleMatrix =>
+        val blasMat = MFactory.denseDoubleMatrix(batchSize, outputDim)
+        val sum1Vector = VFactory.denseDoubleVector(outputDim)
+        val sum2Vector = VFactory.denseDoubleVector(outputDim)
+        (0 until batchSize).foreach { row =>
+          mat.getRow(row).getPartitions.foreach { vectorOuter =>
+            sum1Vector.iadd(vectorOuter)
+            sum2Vector.iadd(vectorOuter.mul(vectorOuter))
+          }
 
-              blasMat.setRow(row, sum1Vector.imul(sum1Vector).isub(sum2Vector).imul(0.5))
-              sum1Vector.clear()
-              sum2Vector.clear()
-            }
-            blasMat
+          blasMat.setRow(row, sum1Vector.imul(sum1Vector).isub(sum2Vector).imul(0.5))
+          sum1Vector.clear()
+          sum2Vector.clear()
         }
-        status = STATUS.Forward
-      case _ =>
+        blasMat
+      case mat: RBCompIntFloatMatrix =>
+        val blasMat = MFactory.denseFloatMatrix(batchSize, outputDim)
+        val sum1Vector = VFactory.denseFloatVector(outputDim)
+        val sum2Vector = VFactory.denseFloatVector(outputDim)
+        (0 until batchSize).foreach { row =>
+          mat.getRow(row).getPartitions.foreach { vectorOuter =>
+            sum1Vector.iadd(vectorOuter)
+            sum2Vector.iadd(vectorOuter.mul(vectorOuter))
+          }
+
+          blasMat.setRow(row, sum1Vector.imul(sum1Vector).isub(sum2Vector).imul(0.5))
+          sum1Vector.clear()
+          sum2Vector.clear()
+        }
+        blasMat
+      case _ => throw MLException("ERROR! Only Comp Matrix is supported!")
     }
-    output
   }
 
-  override def calGradOutput(): Matrix = {
-    status match {
-      case STATUS.Forward =>
-        val gradTemp = gatherGrad()
+  override protected def doBackward(input: Matrix, gradInput: Matrix): Matrix = {
+    graph.valueType match {
+      case "double" =>
+        val inputData = input.asInstanceOf[RBCompIntDoubleMatrix]
 
-        gradOutput = modelType match {
-          case RowType.T_DOUBLE_DENSE =>
-            val inputData = inputLayer.calOutput().asInstanceOf[RBCompIntDoubleMatrix]
+        val gradRows = inputData.getRows.zipWithIndex.map { case (compVector, idx) =>
+          val sumVector = VectorUtils.emptyLike(compVector.getPartitions.head.asInstanceOf[Vector])
+          compVector.getPartitions.foreach(comp => sumVector.iadd(comp))
 
-            val gradRows = inputData.getRows.zipWithIndex.map { case (compVector, idx) =>
-              val sumVector = VectorUtils.emptyLike(compVector.getPartitions.head.asInstanceOf[Vector])
-              compVector.getPartitions.foreach(comp => sumVector.iadd(comp))
+          val grad = gradInput.getRow(idx)
 
-              val grad = gradTemp.getRow(idx)
-
-              VFactory.compIntDoubleVector(compVector.getDim, compVector.getPartitions.map { comp =>
-                sumVector.sub(comp).imul(grad).asInstanceOf[IntDoubleVector]
-              })
-            }
-
-            MFactory.rbCompIntDoubleMatrix(gradRows)
-          case RowType.T_FLOAT_DENSE =>
-            val inputData = inputLayer.calOutput().asInstanceOf[RBCompIntFloatMatrix]
-
-            val gradRows = inputData.getRows.zipWithIndex.map { case (compVector, idx) =>
-              val sumVector = VectorUtils.emptyLike(compVector.getPartitions.head.asInstanceOf[Vector])
-              compVector.getPartitions.foreach(comp => sumVector.iadd(comp))
-
-              val grad = gradTemp.getRow(idx)
-
-              VFactory.compIntFloatVector(compVector.getDim, compVector.getPartitions.map { comp =>
-                sumVector.sub(comp).imul(grad).asInstanceOf[IntFloatVector]
-              })
-            }
-
-            MFactory.rbCompIntFloatMatrix(gradRows)
-          case _ => throw MLException("Only Dense Data is Support!")
+          VFactory.compIntDoubleVector(compVector.getDim, compVector.getPartitions.map { comp =>
+            sumVector.sub(comp).imul(grad).asInstanceOf[IntDoubleVector]
+          })
         }
 
-        status = STATUS.Gradient
-      case _ =>
-    }
-    gradOutput
-  }
+        MFactory.rbCompIntDoubleMatrix(gradRows)
+      case "float" =>
+        val inputData = input.asInstanceOf[RBCompIntFloatMatrix]
 
+        val gradRows = inputData.getRows.zipWithIndex.map { case (compVector, idx) =>
+          val sumVector = VectorUtils.emptyLike(compVector.getPartitions.head.asInstanceOf[Vector])
+          compVector.getPartitions.foreach(comp => sumVector.iadd(comp))
+
+          val grad = gradInput.getRow(idx)
+
+          VFactory.compIntFloatVector(compVector.getDim, compVector.getPartitions.map { comp =>
+            sumVector.sub(comp).imul(grad).asInstanceOf[IntFloatVector]
+          })
+        }
+
+        MFactory.rbCompIntFloatMatrix(gradRows)
+      case _ => throw MLException("Only Dense Data is Support!")
+    }
+  }
 }

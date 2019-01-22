@@ -4,8 +4,8 @@ import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.{Learner, Model}
 import com.tencent.angel.ml.core.data.{DataBlock, DataReader, LabeledData}
 import com.tencent.angel.ml.core.network.Graph
+import com.tencent.angel.ml.core.network.variable.VoidType
 import com.tencent.angel.ml.core.optimizer.decayer.{StepSizeScheduler, WarmRestarts}
-import com.tencent.angel.ml.core.utils.Callback.VoidType
 import com.tencent.angel.ml.core.utils.ValidationUtils
 import org.apache.commons.logging.{Log, LogFactory}
 
@@ -45,7 +45,7 @@ class LocalLearner(conf: SharedConf) extends Learner {
       graph.pullParams(epoch)
 
       // LOG.info("calculate to forward ...")
-      loss = graph.calLoss() // forward
+      loss = graph.calForward() // forward
       println(s"The training los of epoch $epoch batch $batchCount is $loss")
       LOG.info(s"The training los of epoch $epoch batch $batchCount is $loss")
 
@@ -103,7 +103,7 @@ class LocalLearner(conf: SharedConf) extends Learner {
   }
 
   override protected def validate(epoch: Int, valiData: DataBlock[LabeledData]): Unit = {
-    ValidationUtils.calMetrics(epoch, model.predict(valiData), graph.getLossLayer.getLossFunc)
+    ValidationUtils.calMetrics(epoch, model.predict(valiData), graph.getLossFunc)
   }
 
   override protected def barrier(graph: Graph): Unit = {}

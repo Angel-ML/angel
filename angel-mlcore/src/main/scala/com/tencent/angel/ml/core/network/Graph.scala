@@ -3,9 +3,11 @@ package com.tencent.angel.ml.core.network
 import com.tencent.angel.ml.core.PredictResult
 import com.tencent.angel.ml.core.data.LabeledData
 import com.tencent.angel.ml.core.network.layers.{Trainable, _}
-import com.tencent.angel.ml.core.network.variable.{Variable, VariableProvider}
+import com.tencent.angel.ml.core.network.variable.{Variable, VariableManager, VariableProvider}
+import com.tencent.angel.ml.core.optimizer.loss.LossFunc
 import com.tencent.angel.ml.core.utils.JsonUtils.{J2Pretty, layer2Json}
-import com.tencent.angel.ml.core.utils.{Callback, RowTypeUtils}
+import com.tencent.angel.ml.core.utils.{DataCache, RowTypeUtils, TimeStats}
+import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.utils.RowType
 import org.apache.commons.logging.{Log, LogFactory}
@@ -15,38 +17,17 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 
-class TimeStats(
-                 var forwardTime: Long = 0,
-                 var backwardTime: Long = 0,
-                 var calGradTime: Long = 0,
-                 var pullParamsTime: Long = 0,
-                 var pushParamsTime: Long = 0,
-                 var updateTime: Long = 0) extends Serializable {
-  val LOG: Log = LogFactory.getLog(classOf[TimeStats])
-
-  def summary(): String = {
-    val summaryString = s"\nSummary: \n\t" +
-      s"forwardTime = $forwardTime, \n\tbackwardTime = $backwardTime, \n\t" +
-      s"calGradTime = $calGradTime, \n\tpullParamsTime = $pullParamsTime, \n\t" +
-      s"pushParamsTime = $pushParamsTime, \n\tupdateTime = $updateTime"
-
-    LOG.info(summaryString)
-    summaryString
-  }
-}
-
-
 trait EvnContext
 
 
 trait KVSType {
   val modelType: RowType
 
-  def storageType: String = RowTypeUtils.storageType(modelType)
+  def keyType: String = RowTypeUtils.keyType(modelType)
 
   def valueType: String = RowTypeUtils.valueType(modelType)
 
-  def keyType: String = RowTypeUtils.keyType(modelType)
+  def storageType: String = RowTypeUtils.storageType(modelType)
 }
 
 
@@ -56,7 +37,8 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
   protected val inputLayers = new ListBuffer[InputLayer]()
   protected var lossLayer: LossLayer = _
   protected val trainableLayer = new ListBuffer[Trainable]()
-  @transient protected val variables = new ListBuffer[Variable]()
+  private val dataCache = new DataCache()
+  private val variableManager = new VariableManager(this)
 
   val timeStats = new TimeStats()
 
@@ -78,27 +60,7 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
 
   val dataFormat: String
 
-  def addVariable(v: Variable): Unit = {
-    variables.append(v)
-  }
-
-  def getALLVariables: List[Variable] = variables.toList
-
-  def getVariable(idx: Int): Variable = {
-    if (idx>=0 && idx < variables.size) {
-      variables(idx)
-    } else {
-      null.asInstanceOf[Variable]
-    }
-  }
-
-  def getVariable(name: String): Variable = {
-    val variableOption = variables.collectFirst{
-      case variable: Variable if variable.name == name => variable
-    }
-
-    variableOption.getOrElse(null.asInstanceOf[Variable])
-  }
+  protected var lr: Double = 1.0
 
   def addInputLayer(layer: InputLayer): Unit = {
     inputLayers.append(layer)
@@ -106,16 +68,8 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
 
   def getALLInputLayers: List[InputLayer] = inputLayers.toList
 
-  def getInputLayer(idx: Int): InputLayer = {
-    if (idx >=0 && idx < inputLayers.size) {
-      inputLayers(idx)
-    } else {
-      null.asInstanceOf[InputLayer]
-    }
-  }
-
   def getInputLayer(name: String): InputLayer = {
-    val layerOption = inputLayers.collectFirst{
+    val layerOption = inputLayers.collectFirst {
       case layer: InputLayer if layer.name == name => layer
     }
 
@@ -128,6 +82,8 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
 
   def getLossLayer: LossLayer = lossLayer
 
+  def getLossFunc: LossFunc = lossLayer.lossFunc
+
   def addTrainableLayer(layer: Trainable): Unit = {
     trainableLayer.append(layer)
   }
@@ -136,16 +92,8 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
     trainableLayer.toList
   }
 
-  def getTrainableLayer(idx: Int): Trainable = {
-    if (idx >=0 && idx < trainableLayer.size){
-      trainableLayer(idx)
-    } else {
-      null.asInstanceOf[Trainable]
-    }
-  }
-
   def getTrainableLayer(name: String): Trainable = {
-    val trainableOption = trainableLayer.collectFirst{
+    val trainableOption = trainableLayer.collectFirst {
       case layer: Layer if layer.name == name => layer.asInstanceOf[Trainable]
     }
 
@@ -155,75 +103,182 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
   protected def deepFirstDown(layer: Layer)(predicate: Layer => Boolean, action: Layer => Unit): Unit = {
     if (predicate(layer)) {
       action(layer)
-      layer.input.foreach { lowerLayer =>
-        deepFirstDown(lowerLayer)(predicate, action)
+      layer match {
+        case l: JoinLayer =>
+          l.inputLayers.foreach { lowerLayer =>
+            deepFirstDown(lowerLayer)(predicate, action)
+          }
+        case l: LinearLayer => deepFirstDown(l.inputLayer)(predicate, action)
+        case _: InputLayer =>
       }
     }
   }
 
-  def setState(predicate: Layer => Boolean, status: STATUS.STATUS): Unit = {
-    deepFirstDown(lossLayer.asInstanceOf[Layer])(
-      predicate, (layer: Layer) => layer.status = status
-    )
-  }
 
-  def feedData(data: Array[LabeledData]): Unit = {
-    deepFirstDown(lossLayer.asInstanceOf[Layer])(
-      (lay: Layer) => lay.status != STATUS.Null,
-      (lay: Layer) => lay.status = STATUS.Null
-    )
-
-    placeHolder.feedData(data)
-  }
-
-  def predict(): List[PredictResult] = {
-    val start = System.currentTimeMillis()
-    val res = lossLayer.predict()
-    timeStats.forwardTime += (System.currentTimeMillis() - start)
-    res
-  }
-
-  def calLoss(): Double = lossLayer.calLoss()
-
-  def init(taskId: Int = 0): Unit = {
-    trainableLayer.foreach { layer => layer.init(taskId) }
-  }
-
-  def pullParams(epoch: Int): Unit = {
-    val start = System.currentTimeMillis()
-    trainableLayer.foreach { layer => layer.pullParams(epoch: Int) }
-    timeStats.pullParamsTime += (System.currentTimeMillis() - start)
-  }
-
-  def calBackward(): Unit = {
-    val start = System.currentTimeMillis()
-    inputLayers.foreach { layer => layer.calBackward() }
-    timeStats.backwardTime += (System.currentTimeMillis() - start)
-  }
-
-  def pushGradient(): Unit = {
-    val start = System.currentTimeMillis()
-    trainableLayer.foreach(layer => layer.pushGradient())
-    timeStats.pushParamsTime += (System.currentTimeMillis() - start)
-  }
-
-  def update[T](epoch: Int, batchSize: Int): Unit = {
-    val start = System.currentTimeMillis()
-    val callbacks = trainableLayer.map { layer =>
-      val callback = new Callback[T]()
-      layer.update[T](epoch, batchSize)(callback)
-    }
-    for (callback <- callbacks) {
-      callback.get()
-    }
-    timeStats.updateTime += (System.currentTimeMillis() - start)
-  }
+  /** **********************************************************************************
+    * training
+    */
 
   def setLR(lr: Double): Unit = {
+    this.lr = lr
     trainableLayer.foreach { trainable =>
       trainable.optimizer.setLR(lr)
     }
   }
+
+  def feedData(data: Array[LabeledData]): Unit = {
+    placeHolder.feedData(data)
+  }
+
+  // forward
+  def calForward(): Double = {
+    val start = System.currentTimeMillis()
+    val loss = lossLayer.calLoss()
+    val end = System.currentTimeMillis()
+
+    timeStats.forwardTime += end - start
+
+    loss
+  }
+
+  // backward
+  def calBackward(): Unit = {
+    val start = System.currentTimeMillis()
+    inputLayers.foreach { layer => layer.backward(layer) }
+    val end = System.currentTimeMillis()
+
+    timeStats.backwardTime += end - start
+  }
+
+
+  /** **********************************************************************************
+    * predict
+    */
+
+  def predict(): List[PredictResult] = {
+    val start = System.currentTimeMillis()
+    val res = lossLayer.predict()
+    val end = System.currentTimeMillis()
+    timeStats.predictTime += end - start
+
+    res
+  }
+
+
+  /** **********************************************************************************
+    * Variable operation
+    */
+
+  def addVariable(v: Variable): Unit = variableManager.addVariable(v)
+
+  def getALLVariables: List[Variable] = variableManager.getALLVariables
+
+  def getVariable(name: String): Variable = variableManager.getVariable(name)
+
+  def hasVariable(v: Variable): Boolean = variableManager.hasVariable(v)
+
+  def hasVariable(name: String): Boolean = variableManager.hasVariable(name)
+
+  def putGradient(v: Variable, g: Matrix): Unit = variableManager.putGradient(v, g)
+
+  def getAllGradients: Map[String, Matrix] = variableManager.getAllGradients
+
+  def getGradient(name: String): Matrix = variableManager.getGradient(name)
+
+  def hasGradient(name: String): Boolean = variableManager.hasGradient(name)
+
+  //---------------------Training Cycle
+  def createMatrices(envCtx: EvnContext): Unit = {
+    val start = System.currentTimeMillis()
+    variableManager.createALL(envCtx)
+    val end = System.currentTimeMillis()
+
+    timeStats.createTime += end - start
+  }
+
+  def init(taskId: Int = 0): Unit = {
+    val start = System.currentTimeMillis()
+    variableManager.initALL(taskId)
+    val end = System.currentTimeMillis()
+
+    timeStats.initTime += end - start
+  }
+
+  def pullParams(epoch: Int): Unit = {
+    val start = System.currentTimeMillis()
+    variableManager.pullALL(epoch)
+    val end = System.currentTimeMillis()
+
+    timeStats.pullParamsTime += end - start
+  }
+
+  def pushGradient(): Unit = {
+    val start = System.currentTimeMillis()
+    variableManager.pushALL(lr)
+    val end = System.currentTimeMillis()
+
+    timeStats.pushParamsTime += end - start
+  }
+
+  def update[T](epoch: Int, batchSize: Int): Unit = {
+    val start = System.currentTimeMillis()
+    variableManager.updateALL[T](epoch, batchSize)
+    val end = System.currentTimeMillis()
+
+    timeStats.updateTime += end - start
+  }
+
+  def loadModel(envCtx: EvnContext, path: String): Unit = {
+    val start = System.currentTimeMillis()
+    variableManager.loadALL(envCtx, path)
+    val end = System.currentTimeMillis()
+
+    timeStats.loadTime += end - start
+  }
+
+  def saveModel(envCtx: EvnContext, path: String): Unit = {
+    val start = System.currentTimeMillis()
+    variableManager.saveALL(envCtx, path)
+    val end = System.currentTimeMillis()
+
+    timeStats.saveTime += end - start
+  }
+
+  /** **********************************************************************************
+    * Matrix Cache
+    */
+
+  def put2Cache(name: String, mat: Matrix): Unit = {
+    dataCache.addMatrix(name, mat)
+  }
+
+  def put2Cache(name: String, vec: Vector): Unit = {
+    dataCache.addVector(name, vec)
+  }
+
+  def isMatrixInCache(name: String): Boolean = {
+    dataCache.hasMatrix(name)
+  }
+
+  def isVectorInCache(name: String): Boolean = {
+    dataCache.hasVector(name)
+  }
+
+  def getMatrixFromCache(name: String): Matrix = {
+    dataCache.getMatrix(name)
+  }
+
+  def getVectorFromCache(name: String): Vector = {
+    dataCache.getVector(name)
+  }
+
+  def clearCache(): Unit = {
+    dataCache.clearAll()
+  }
+
+  /** **********************************************************************************
+    * toString/toJson
+    */
 
   override def toString: String = {
     val str = new StringBuilder
@@ -231,52 +286,7 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
     str.toString()
   }
 
-  /**
-    * Create matrices contain in the model, this method is only used in Driver/Client
-    *
-    * @param evnCtx EvnContext
-    */
-  def createMatrices(envCtx: EvnContext): Unit
-
-  /**
-    * Load model from files, this method is only used in Driver/Client
-    *
-    * @param evnCtx EvnContext
-    */
-  def loadModel(envCtx: EvnContext, path: String): Unit
-
-  /**
-    * Create matrices contain in the model, this method is only used in Worker/Executor
-    */
-  def createMatrices(): Unit
-
-  /**
-    * Save model to files, this method is only use in Driver/Client
-    *
-    * @param evnCtx EvnContext
-    */
-  def saveModel(envCtx: EvnContext, path: String): Unit
-
-  private def layer2Json(topLayer: Layer)(implicit jMap: mutable.HashMap[String, JField]): Unit = {
-    topLayer match {
-      case l: InputLayer =>
-        if (!jMap.contains(l.name)) {
-          jMap.put(l.name, l.toJson())
-        }
-      case l: LinearLayer =>
-        if (!jMap.contains(l.name)) {
-          jMap.put(l.name, l.toJson())
-        }
-        layer2Json(l.inputLayer)(jMap)
-      case l: JoinLayer =>
-        if (!jMap.contains(l.name)) {
-          jMap.put(l.name, l.toJson())
-        }
-        l.inputLayers.foreach(layer => layer2Json(layer)(jMap))
-    }
-  }
-
-  def toJson(): String = {
+  def toJson: String = {
     implicit val jsonMap: mutable.HashMap[String, JField] = new mutable.HashMap[String, JField]()
     layer2Json(lossLayer.asInstanceOf[Layer])
     J2Pretty(JObject(jsonMap.values.toList))

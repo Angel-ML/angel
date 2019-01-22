@@ -32,143 +32,134 @@ import org.json4s.JValue
 class ConcatLayer(name: String, outputDim: Int, inputLayers: Array[Layer])(implicit graph: Graph)
   extends JoinLayer(name, outputDim, inputLayers) {
   private val LOG = LogFactory.getLog(classOf[ConcatLayer])
-
   assert(inputLayers.map(_.outputDim).sum == outputDim)
 
-  @transient var output: Matrix = _
-  @transient var gradOutput: Array[Matrix] = _
+  override protected def doForward(inputs: Map[String, Matrix]): Matrix = {
+    var start = 0
+    val batchSize = graph.placeHolder.getBatchSize
 
-  override def calOutput(): Matrix = {
+    graph.valueType match {
+      case "double" =>
+        val outTemp = MFactory.denseDoubleMatrix(batchSize, outputDim)
+        val outData = outTemp.getData
 
-    status match {
-      case STATUS.Null =>
-        var start = 0
-        val batchSize = graph.placeHolder.getBatchSize
-        val outputMat = inputLayers.map { layer => layer.calOutput() }
-
-        output = graph.valueType match {
-          case "double" =>
-            val outTemp = MFactory.denseDoubleMatrix(batchSize, outputDim)
-            val outData = outTemp.getData
-
-            (0 until batchSize).foreach { row =>
-              outputMat.foreach {
-                case mat: RBCompIntDoubleMatrix =>
-                  mat.getRow(row).getPartitions.foreach { comp =>
-                    assert(comp.isDense)
-                    val compValues = comp.getStorage.getValues
-                    Array.copy(compValues, 0, outData, start, compValues.length)
-                    start += compValues.length
-                  }
-                case mat: BlasDoubleMatrix if mat.getNumCols > 1 =>
-                  val values = mat.getRow(row).asInstanceOf[IntDoubleVector].getStorage.getValues
-                  Array.copy(values, 0, outData, start, values.length)
-                  start += values.length
-                case mat: BlasDoubleMatrix if mat.getNumCols == 1 =>
-                  outData(start) = mat.get(row, 0)
-                  start += 1
-                case _ => throw MLException("ERROR! the matrix type is not supported!")
-              }
-
+        (0 until batchSize).foreach { row =>
+          inputLayers.foreach { layer =>
+            inputs(layer.name) match {
+              case mat: RBCompIntDoubleMatrix =>
+                mat.getRow(row).getPartitions.foreach { comp =>
+                  assert(comp.isDense)
+                  val compValues = comp.getStorage.getValues
+                  Array.copy(compValues, 0, outData, start, compValues.length)
+                  start += compValues.length
+                }
+              case mat: BlasDoubleMatrix if mat.getNumCols > 1 =>
+                val values = mat.getRow(row).asInstanceOf[IntDoubleVector].getStorage.getValues
+                Array.copy(values, 0, outData, start, values.length)
+                start += values.length
+              case mat: BlasDoubleMatrix if mat.getNumCols == 1 =>
+                outData(start) = mat.get(row, 0)
+                start += 1
+              case _ => throw MLException("ERROR! the matrix type is not supported!")
             }
 
-            outTemp
-          case "float" =>
-            val outTemp = MFactory.denseFloatMatrix(batchSize, outputDim)
-            val outData = outTemp.getData
-            (0 until batchSize).foreach { row =>
-              outputMat.foreach {
-                case mat: RBCompIntFloatMatrix =>
-                  mat.getRow(row).getPartitions.foreach { comp =>
-                    assert(comp.isDense)
-                    val compValues = comp.getStorage.getValues
-                    Array.copy(compValues, 0, outData, start, compValues.length)
-                    start += compValues.length
-                  }
-                case mat: BlasFloatMatrix if mat.getNumCols > 1 =>
-                  val values = mat.getRow(row).asInstanceOf[IntFloatVector].getStorage.getValues
-                  Array.copy(values, 0, outData, start, values.length)
-                  start += values.length
-                case mat: BlasFloatMatrix if mat.getNumCols == 1 =>
-                  outData(start) = mat.get(row, 0)
-                  start += 1
-                case _ => throw MLException("ERROR! the matrix type is not supported!")
-              }
-            }
-
-            outTemp
-          case _ => throw MLException("Only Double and Float are support!")
+          }
         }
-        status = STATUS.Forward
-      case _ =>
+
+        outTemp
+      case "float" =>
+        val outTemp = MFactory.denseFloatMatrix(batchSize, outputDim)
+        val outData = outTemp.getData
+        (0 until batchSize).foreach { row =>
+          inputLayers.foreach { layer =>
+            inputs(layer.name) match {
+              case mat: RBCompIntFloatMatrix =>
+                mat.getRow(row).getPartitions.foreach { comp =>
+                  assert(comp.isDense)
+                  val compValues = comp.getStorage.getValues
+                  Array.copy(compValues, 0, outData, start, compValues.length)
+                  start += compValues.length
+                }
+              case mat: BlasFloatMatrix if mat.getNumCols > 1 =>
+                val values = mat.getRow(row).asInstanceOf[IntFloatVector].getStorage.getValues
+                Array.copy(values, 0, outData, start, values.length)
+                start += values.length
+              case mat: BlasFloatMatrix if mat.getNumCols == 1 =>
+                outData(start) = mat.get(row, 0)
+                start += 1
+              case _ => throw MLException("ERROR! the matrix type is not supported!")
+            }
+          }
+        }
+
+        outTemp
+      case _ => throw MLException("Only Double and Float are support!")
     }
-    output
+
   }
 
-  override def calGradOutput(idx: Int): Matrix = {
-    status match {
-      case STATUS.Forward =>
-        val gradTemp = gatherGrad()
+  override protected def doBackward(inputs: Map[String, Matrix], gradInput: Matrix): Map[String, Matrix] = {
+    var start = 0
+    val batchSize = graph.placeHolder.getBatchSize
+    val gradOutput = inputs.map { case (layerName, mat) => layerName -> MatrixUtils.emptyLike(mat) }
 
-        var start = 0
-        val batchSize = graph.placeHolder.getBatchSize
-        gradOutput = inputLayers.map { layer => MatrixUtils.emptyLike(layer.calOutput()) }
+    graph.valueType match {
+      case "double" =>
+        val grad = gradInput.asInstanceOf[BlasDoubleMatrix].getData
+        (0 until batchSize).foreach { row =>
+          inputLayers.foreach { layer =>
+            gradOutput(layer.name) match {
+              case mat: RBCompIntDoubleMatrix =>
+                mat.getRow(row).getPartitions.foreach { part =>
+                  assert(part.isDense)
 
-        graph.valueType match {
-          case "double" =>
-            val grad = gradTemp.asInstanceOf[BlasDoubleMatrix].getData
-            (0 until batchSize).foreach { row =>
-              gradOutput.foreach {
-                case mat: RBCompIntDoubleMatrix =>
-                  mat.getRow(row).getPartitions.foreach { part =>
-                    assert(part.isDense)
-
-                    val values = part.getStorage.getValues
-                    Array.copy(grad, start, values, 0, values.length)
-                    start += values.length
-                  }
-                case mat: BlasDoubleMatrix if mat.getNumCols > 1 =>
-                  val cols = mat.getNumCols
-                  Array.copy(grad, start, mat.getData, row * cols, cols)
-                  start += cols
-                case mat: BlasDoubleMatrix if mat.getNumCols == 1 =>
-                  mat.set(row, 0, grad(start))
-                  start += 1
-              }
+                  val values = part.getStorage.getValues
+                  Array.copy(grad, start, values, 0, values.length)
+                  start += values.length
+                }
+              case mat: BlasDoubleMatrix if mat.getNumCols > 1 =>
+                val cols = mat.getNumCols
+                Array.copy(grad, start, mat.getData, row * cols, cols)
+                start += cols
+              case mat: BlasDoubleMatrix if mat.getNumCols == 1 =>
+                mat.set(row, 0, grad(start))
+                start += 1
             }
-
-          case "float" =>
-            val grad = gradTemp.asInstanceOf[BlasFloatMatrix].getData
-            (0 until batchSize).foreach { row =>
-              gradOutput.foreach {
-                case mat: RBCompIntFloatMatrix =>
-                  mat.getRow(row).getPartitions.foreach { part =>
-                    assert(part.isDense)
-
-                    val values = part.getStorage.getValues
-                    Array.copy(grad, start, values, 0, values.length)
-                    start += values.length
-                  }
-                case mat: BlasFloatMatrix if mat.getNumCols > 1 =>
-                  val cols = mat.getNumCols
-                  Array.copy(grad, start, mat.getData, row * cols, cols)
-                  start += cols
-                case mat: BlasFloatMatrix if mat.getNumCols == 1 =>
-                  mat.set(row, 0, grad(start))
-                  start += 1
-              }
-            }
-          case _ => throw MLException("Only Double and Float are support!")
+          }
         }
 
-        status = STATUS.Backward
-      case _ =>
+      case "float" =>
+        val grad = gradInput.asInstanceOf[BlasFloatMatrix].getData
+        (0 until batchSize).foreach { row =>
+          inputLayers.foreach { layer =>
+            gradOutput(layer.name) match {
+              case mat: RBCompIntFloatMatrix =>
+                mat.getRow(row).getPartitions.foreach { part =>
+                  assert(part.isDense)
+
+                  val values = part.getStorage.getValues
+                  Array.copy(grad, start, values, 0, values.length)
+                  start += values.length
+                }
+              case mat: BlasFloatMatrix if mat.getNumCols > 1 =>
+                val cols = mat.getNumCols
+                Array.copy(grad, start, mat.getData, row * cols, cols)
+                start += cols
+              case mat: BlasFloatMatrix if mat.getNumCols == 1 =>
+                mat.set(row, 0, grad(start))
+                start += 1
+            }
+          }
+        }
+      case _ => throw MLException("Only Double and Float are support!")
     }
 
-    gradOutput(idx)
+    gradOutput
+
   }
 
   override def toString: String = {
     s"ConcatLayer name=$name outputDim=$outputDim"
   }
+
 }

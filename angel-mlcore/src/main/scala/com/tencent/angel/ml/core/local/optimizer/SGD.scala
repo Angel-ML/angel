@@ -16,7 +16,7 @@ class SGD(override var lr: Double) extends Optimizer {
   override protected var regL1Param: Double = 0.0
   override protected var regL2Param: Double = 0.0
 
-  override def update[T](variable: Variable, epoch: Int): Future[T] = {
+  override def update[T](variable: Variable, epoch: Int, batchSize: Int): Future[T] = {
     variable match {
       case v: LocalBlasMatVariable =>
         val value = v.storage.getRow(0)

@@ -18,13 +18,12 @@
 
 package com.tencent.angel.ml.core.optimizer
 
-import java.util.concurrent.Future
-import com.tencent.angel.ml.core.network.variable.Variable
+import com.tencent.angel.ml.core.network.variable.Updater
 import org.json4s.JsonAST.{JObject, JValue}
 
 
-trait Optimizer extends Serializable {
-  val numSlot: Int
+
+trait Optimizer extends Updater with Serializable {
   var lr: Double
 
   protected var regL1Param: Double
@@ -50,8 +49,6 @@ trait Optimizer extends Serializable {
   def getRegL1Param: Double = this.regL1Param
 
   def getRegL2Param: Double = this.regL2Param
-
-  def update[T](variable: Variable, epoch: Int): Future[T]
 
   def toJson: JObject
 }

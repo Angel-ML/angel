@@ -7,7 +7,7 @@ import com.tencent.angel.ml.core.network.{Graph, TransFunc}
 import com.tencent.angel.ml.core.network.layers.join._
 import com.tencent.angel.ml.core.network.layers.linear._
 import com.tencent.angel.ml.core.network.layers.verge._
-import com.tencent.angel.ml.core.network.layers.{InputLayer, JoinLayer, Layer, LinearLayer}
+import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.optimizer.loss.LossFunc
 import org.json4s.DefaultFormats
@@ -87,16 +87,16 @@ object JsonUtils {
     topLayer match {
       case l: InputLayer =>
         if (!jMap.contains(l.name)) {
-          jMap.put(l.name, l.toJson())
+          jMap.put(l.name, l.toJson)
         }
       case l: LinearLayer =>
         if (!jMap.contains(l.name)) {
-          jMap.put(l.name, l.toJson())
+          jMap.put(l.name, l.toJson)
         }
         layer2Json(l.inputLayer)(jMap)
       case l: JoinLayer =>
         if (!jMap.contains(l.name)) {
-          jMap.put(l.name, l.toJson())
+          jMap.put(l.name, l.toJson)
         }
         l.inputLayers.foreach(layer => layer2Json(layer)(jMap))
     }
@@ -179,10 +179,10 @@ object JsonUtils {
 
             layerMap.put(name, newLayer)
             iter.remove()
-          case JString(value) if matchClassName[SimpleLossLayer](value) =>
+          case JString(value) if matchClassName[LossLayer](value) =>
             val inputLayer = extract[String](obj, LayerKeys.inputLayerKey)
             if (inputLayer.nonEmpty && layerMap.contains(inputLayer.get)) {
-              val newLayer = new SimpleLossLayer(name,
+              val newLayer = new LossLayer(name,
                 layerMap(inputLayer.get),
                 LossFunc.fromJson(obj \ LayerKeys.lossFuncKey)
               )

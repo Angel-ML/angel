@@ -2,12 +2,13 @@ package com.tencent.angel.ml.core.network.variable
 
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.math2.{MFactory, VFactory}
-import com.tencent.angel.ml.math2.matrix.Matrix
+import com.tencent.angel.ml.math2.matrix.{MapMatrix, Matrix}
 import com.tencent.angel.ml.math2.storage._
 import com.tencent.angel.ml.math2.vector._
-
 import java.lang.{Long => JLong}
-import java.util.{Map => JMap}
+import java.util.{HashMap => JHashMap, Map => JMap}
+
+import com.tencent.angel.ml.core.utils.MLException
 
 object EmbedUtils {
   def geneMatrix(graph: Graph, embeddings: JMap[JLong, Vector]): Matrix = {
@@ -143,7 +144,7 @@ object EmbedUtils {
     }
   }
 
-  def mergeUpdate(map: JMap[JLong, Vector], key: Long, update: Vector, value: Double): Unit = {
+  private def mergeUpdate(map: JMap[JLong, Vector], key: Long, update: Vector, value: Double): Unit = {
     if (!map.containsKey(key)) {
       if (value == 1) map.put(key, update)
       else map.put(key, update.imul(value))
@@ -153,9 +154,68 @@ object EmbedUtils {
     }
   }
 
-  def getPartitions(backward: Matrix, rId: Int): Array[Vector] = {
+  private def getPartitions(backward: Matrix, rId: Int): Array[Vector] = {
     val vec = backward.getRow(rId)
     val method = vec.getClass.getDeclaredMethod("getPartitions")
     method.invoke(vec).asInstanceOf[Array[Vector]]
+  }
+
+  def calGradient(features: Matrix, backward: Matrix): Matrix = {
+    val gradMap: JHashMap[JLong, Vector] = new JHashMap[JLong, Vector]()
+
+    (0 until features.getNumRows).foreach { rId =>
+      val row = features.getRow(rId)
+      val partitions = getPartitions(backward, rId)
+
+      row.getStorage match {
+        case s: IntDoubleSparseVectorStorage =>
+          val iter = s.entryIterator()
+          var id: Int = 0
+          while (iter.hasNext) {
+            val entry = iter.next()
+            val key = entry.getIntKey
+            val value = entry.getDoubleValue
+            val update = partitions(id)
+            mergeUpdate(gradMap, key, update, value)
+            id += 1
+          }
+        case s: IntFloatSparseVectorStorage =>
+          val iter = s.entryIterator()
+          var id: Int = 0
+          while (iter.hasNext) {
+            val entry = iter.next()
+            val key = entry.getIntKey
+            val value = entry.getFloatValue
+            val update = partitions(id)
+            mergeUpdate(gradMap, key, update, value)
+            id += 1
+          }
+        case s: LongDoubleSparseVectorStorage =>
+          val iter = s.entryIterator()
+          var id: Int = 0
+          while (iter.hasNext) {
+            val entry = iter.next()
+            val key = entry.getLongKey
+            val value = entry.getDoubleValue
+            val update = partitions(id)
+            mergeUpdate(gradMap, key, update, value)
+            id += 1
+          }
+        case s: LongFloatSparseVectorStorage =>
+          val iter = s.entryIterator()
+          var id: Int = 0
+          while (iter.hasNext) {
+            val entry = iter.next()
+            val key = entry.getLongKey
+            val value = entry.getFloatValue
+            val update = partitions(id)
+            mergeUpdate(gradMap, key, update, value)
+            id += 1
+          }
+        case _ => throw MLException("Data type is not support!")
+      }
+    }
+
+    new MapMatrix(0, 0, gradMap)
   }
 }

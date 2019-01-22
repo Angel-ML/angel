@@ -30,48 +30,46 @@ class MulPooling(name: String, outputDim: Int, inputLayers: Array[Layer])(implic
   extends JoinLayer(name, outputDim, inputLayers) {
   val LOG = LogFactory.getLog(classOf[MulPooling])
 
-  @transient var output: Matrix = _
-  @transient var gradOutput: Array[Matrix] = _
+  @transient private var opTemp: Matrix = _
 
-  override def calOutput(): Matrix = {
-    status match {
-      case STATUS.Null | STATUS.Update =>
-        if (inputLayers.length == 2) {
-          output = Ufuncs.mul(inputLayers(0).calOutput(), inputLayers(1).calOutput())
-        } else if (inputLayers.length > 2) {
-          output = Ufuncs.mul(inputLayers(0).calOutput(), inputLayers(1).calOutput())
-          inputLayers.tail.tail.foreach(layer => output.imul(layer.calOutput()))
-        } else {
-          throw MLException("At least two layers are required as input!")
-        }
-        status = STATUS.Forward
-      case _ =>
+  override protected def doForward(inputs: Map[String, Matrix]): Matrix = {
+    val mats = inputs.values.toList
+    if (inputLayers.length == 2) {
+      opTemp = Ufuncs.mul(mats.head, mats(1))
+    } else if (inputLayers.length > 2) {
+      opTemp = Ufuncs.mul(mats.head, mats(1))
+      mats.tail.tail.foreach(mat => opTemp.imul(mat))
+    } else {
+      throw MLException("At least two layers are required as input!")
     }
-    output
+
+    opTemp
   }
 
-  override def calGradOutput(idx: Int): Matrix = {
-    status match {
-      case STATUS.Forward =>
-        val gradTemp = gatherGrad()
-
-        if (inputLayers.length == 2) {
-          gradOutput = inputLayers.indices.toArray.map { i =>
-            gradTemp.mul(inputLayers((i + 1) % inputLayers.length).calOutput())
-          }
-        } else if (inputLayers.length > 2) {
-          gradOutput = inputLayers.map { layer => gradTemp.mul(output.div(layer.calOutput())) }
-        } else {
-          throw MLException("At least two layers are required as input!")
-        }
-
-        status = STATUS.Backward
-      case _ =>
+  override protected def doBackward(inputs: Map[String, Matrix], gradInput: Matrix): Map[String, Matrix] = {
+    if (inputLayers.length == 2) {
+      inputs.map { case (layerName, _: Matrix) =>
+        inputs.collectFirst {
+          case (otherName, otherMat: Matrix) if otherName != layerName =>
+            layerName -> gradInput.mul(otherMat)
+        }.get
+      }
     }
-    gradOutput(idx)
+    else if (inputLayers.length > 2) {
+      inputs.map { case (layerName: String, mat: Matrix) =>
+        layerName -> gradInput.mul(opTemp.div(mat))
+      }
+    } else {
+      throw MLException("At least two layers are required as input!")
+    }
   }
 
-  override def toString: String = {
+
+  override def toString: String
+
+  = {
     s"MulPooling name=$name outputDim=$outputDim"
   }
+
+
 }

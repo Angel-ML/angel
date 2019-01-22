@@ -17,7 +17,7 @@ class Adam(override var lr: Double, beta: Double, gamma: Double) extends Optimiz
   override protected var regL1Param: Double = _
   override protected var regL2Param: Double = _
 
-  override def update[T](variable: Variable, epoch: Int): Future[T] = {
+  override def update[T](variable: Variable, epoch: Int, batchSize: Int): Future[T] = {
     val powBeta = Math.pow(beta, epoch + 1)
     val powGamma = Math.pow(gamma, epoch + 1)
 

@@ -28,41 +28,21 @@ class SumPooling(name: String, outputDim: Int, inputLayers: Array[Layer])(implic
   extends JoinLayer(name, outputDim, inputLayers) {
   private val LOG = LogFactory.getLog(classOf[SumPooling])
 
-  @transient var output: Matrix = _
-  @transient var gradOutput: Array[Matrix] = _
+  override protected def doForward(inputs: Map[String, Matrix]): Matrix = {
+    var output: Matrix = null
 
-  override def calOutput(): Matrix = {
-    val start = System.currentTimeMillis()
-    status match {
-      case STATUS.Null =>
-        // println(s"the status in SumPooling($name)-calOutput is ${status.toString}")
-        inputLayers.zipWithIndex.foreach {
-          case (layer, idx) if idx == 0 =>
-            output = layer.calOutput().copy()
-          case (layer, idx) if idx > 0 => output.iadd(layer.calOutput())
+    inputs.foreach{ case (_, mat: Matrix) =>
+        if (output == null) {
+          output = mat.copy()
+        } else {
+          output.iadd(mat)
         }
-        status = STATUS.Forward
-      case _ =>
     }
-
-    val end = System.currentTimeMillis()
-    //    println(s"SumPooling($name) calOutput = ${end - start} ms")
     output
   }
 
-  override def calGradOutput(idx: Int): Matrix = {
-    val start = System.currentTimeMillis()
-    status match {
-      case STATUS.Forward =>
-        val gradTemp = gatherGrad()
-        //        println(s"the status in SumPooling($name)-calGradOutput is ${status.toString}")
-        gradOutput = inputLayers.indices.toArray.map { _ => gradTemp }
-        status = STATUS.Backward
-      case _ =>
-    }
-    val end = System.currentTimeMillis()
-    //    println(s"SumPooling($name) calGradOutput = ${end - start} ms")
-    gradOutput(idx)
+  override protected def doBackward(inputs: Map[String, Matrix], gradInput: Matrix): Map[String, Matrix] = {
+    inputs.map{ case (layerName: String, _) => layerName -> gradInput }
   }
 
   override def toString: String = {

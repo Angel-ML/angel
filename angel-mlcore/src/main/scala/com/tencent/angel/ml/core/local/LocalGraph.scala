@@ -19,7 +19,7 @@
 package com.tencent.angel.ml.core.local
 
 import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.local.variables.{LocalBlasMatVariable, LocalEmbedVariable, LocalMatVariable, LocalVecVariable}
+import com.tencent.angel.ml.core.local.variables._
 import com.tencent.angel.ml.core.network.{EvnContext, Graph}
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.utils.{GraphInvalidate, VariableInvalidate}
@@ -31,36 +31,19 @@ import org.apache.commons.logging.{Log, LogFactory}
 case class LocalEvnContext() extends EvnContext
 
 
-class LocalGraph(placeHolder: PlaceHolder, conf: SharedConf) extends Graph(placeHolder, SharedConf.variableProvider())
+class LocalGraph(placeHolder: PlaceHolder, conf: SharedConf, override val taskNum: Int) extends Graph(placeHolder, SharedConf.variableProvider())
   with Serializable {
 
   val LOG: Log = LogFactory.getLog(classOf[LocalGraph])
 
   // fields
-  override var taskNum: Int = 1
   override val indexRange: Long = SharedConf.indexRange
   override val validIndexNum: Long = SharedConf.modelSize
+
   override def normalFactor: Double = 1.0 / (placeHolder.getBatchSize * taskNum)
+
   override val dataFormat: String = SharedConf.inputDataFormat
   override val modelType: RowType = SharedConf.modelType
 
-
-  override def createMatrices(envCtx: EvnContext): Unit = createMatrices()
-
-  override def createMatrices(): Unit = {
-    variables.foreach {
-      case variable: LocalBlasMatVariable => variable.create()
-      case variable: LocalEmbedVariable => variable.create()
-      case variable: LocalMatVariable => variable.create()
-      case variable: LocalVecVariable => variable.create()
-      case _ => throw throw VariableInvalidate("Variable Invalidate, Only Local Variables Are Allowed")
-    }
-  }
-
-  override def loadModel(envCtx: EvnContext, path: String): Unit = {
-    trainableLayer.foreach{ layer => layer.load() }
-  }
-
-  override def saveModel(envCtx: EvnContext, path: String): Unit = ???
 
 }

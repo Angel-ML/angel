@@ -14,7 +14,7 @@ abstract class Model {
   }
 
   def createMatrices(envCtx: EvnContext): Unit = {
-    graph.createMatrices()
+    graph.createMatrices(envCtx)
   }
 
   def loadModel(envCtx: EvnContext, path: String): Unit = {

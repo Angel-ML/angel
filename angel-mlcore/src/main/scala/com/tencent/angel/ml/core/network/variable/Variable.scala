@@ -8,9 +8,12 @@ import com.tencent.angel.ml.math2.vector
 import com.tencent.angel.ml.math2.vector.Vector
 import java.lang.{Long => JLong}
 import java.util.concurrent.Future
+import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.{HashMap => JHashMap, Map => JMap}
 
-import com.tencent.angel.ml.core.network.Graph
+import com.tencent.angel.ml.core.network.variable.MatrixType.Value
+import com.tencent.angel.ml.core.network.variable.VarState.VarState
+import com.tencent.angel.ml.core.network.{EvnContext, Graph}
 
 import scala.language.implicitConversions
 
@@ -20,42 +23,86 @@ object MatrixType extends Enumeration {
   val Common, Blas, Embedding = Value
 }
 
-trait MatPushGrads {
-  def pushGrads(features: Matrix, backward: Matrix): Unit
-
-  def pushGrads(grad: Matrix): Unit
+object VarState extends Enumeration {
+  type VarState = Value
+  val New, Created, Initialized, Ready, Expired = Value
 }
 
-trait VecPushGrads {
-  def pushGrads(backward: Matrix): Unit
+trait VoidType
 
-  def pushGrads(grad: Vector): Unit
+trait Updater extends Serializable {
+  val numSlot: Int
+
+  def update[T](variable: Variable, epoch: Int, batchSize: Int): Future[T]
 }
 
 trait TrainCycle {
+  protected var state: VarState = VarState.New
+  protected val lock = new ReentrantReadWriteLock()
+  protected val readLock: ReentrantReadWriteLock.ReadLock = lock.readLock()
+  protected val writeLock: ReentrantReadWriteLock.WriteLock = lock.writeLock()
+
+  def create(envCtx: EvnContext = null): Unit
+
+  def load(envCtx: EvnContext, path: String): Unit
+
   def init(taskFlag: Int, mean: Double, stddev: Double): Unit
 
-  def pullParams(epoch: Int, indices: vector.Vector = null): Unit
+  def pull(epoch: Int, indices: vector.Vector = null): Unit
 
-  def update[T](optimizer: Optimizer, epoch: Int, batchSize: Int): Future[T]
+  def push(grad: Matrix, alpha: Double): Unit
 
-  def load(): Unit
+  def update[T](epoch: Int, batchSize: Int): Future[T]
 
-  def save(): Unit
+  def save(envCtx: EvnContext, path: String): Unit
+
+  protected def transSate(from: VarState, to: VarState): Unit = {
+    assert(state == from)
+    state = to
+  }
 }
 
-
-trait MatVariable extends TrainCycle with MatPushGrads {
+trait MatTrainCycle extends TrainCycle {
   protected var matrix: Matrix
 
   def snapshot(): Matrix = {
-    if (matrix == null) {
-      throw NotInitialException("the matrix is not initialized!")
-    }
+    assert(state == VarState.Ready)
 
-    matrix
+    readLock.lock()
+    try {
+      if (matrix == null) {
+        throw NotInitialException("the matrix is not initialized!")
+      }
+
+      matrix
+    } finally {
+      readLock.unlock()
+    }
   }
 }
+
+trait VecTrainCycle extends TrainCycle {
+  protected var vector: Vector
+
+  def snapshot(): Vector = {
+    assert(state == VarState.Ready)
+
+    readLock.lock()
+    try {
+      if (vector == null) {
+        throw NotInitialException("the vector is not initialized!")
+      }
+
+      vector
+    } finally {
+      readLock.unlock()
+    }
+
+  }
+}
+
+
+trait MatVariable extends MatTrainCycle
 
 object MatVariable {
   implicit def toMatrix(v: MatVariable): Matrix = v.snapshot()
@@ -78,27 +125,20 @@ object BlasMatVariable {
 }
 
 
-trait VecVariable extends TrainCycle with VecPushGrads {
-  protected var vector: Vector
-
-  def snapshot(): Vector = {
-    if (vector == null) {
-      throw NotInitialException("the vector is not initialized!")
-    }
-
-    vector
-  }
-}
+trait VecVariable extends VecTrainCycle
 
 object VecVariable {
   implicit def toVector(v: VecVariable): Vector = v.snapshot()
 }
 
 
-abstract class Variable(val name: String, val rowType: RowType)(implicit val graph: Graph) {
+abstract class Variable(val name: String, val rowType: RowType, val updater: Updater, val withInput: Boolean)(implicit val graph: Graph)
+  extends TrainCycle {
   graph.addVariable(this)
 
-  def load(): Unit
-
-  def save(): Unit
+  protected val numSlot: Int = if (updater == null) {
+    0
+  } else {
+    updater.numSlot
+  }
 }
