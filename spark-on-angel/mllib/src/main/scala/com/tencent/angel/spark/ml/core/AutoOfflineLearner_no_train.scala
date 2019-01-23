@@ -22,11 +22,11 @@ import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.optimizer.loss.{L2Loss, LogLoss}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix}
-import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.automl.tuner.config.Configuration
+import com.tencent.angel.spark.automl.tuner.config.{Configuration, ConfigurationSpace}
 import com.tencent.angel.spark.automl.tuner.parameter.ParamSpace
 import com.tencent.angel.spark.automl.tuner.solver.Solver
 import com.tencent.angel.spark.automl.utils.AutoMLException
+import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.metric.{AUC, Precision}
 import com.tencent.angel.spark.ml.util.{DataLoader, SparkUtils}
 import org.apache.spark.SparkContext
@@ -34,14 +34,14 @@ import org.apache.spark.ml.linalg.Vector
 import org.apache.spark.rdd.RDD
 
 import scala.collection.mutable
-import scala.reflect.ClassTag
-import scala.util.Random
 
-class AutoOfflineLearner(tuneIter: Int = 20, minimize: Boolean = true) {
+class AutoOfflineLearner_no_train(var tuneIter: Int = 20, minimize: Boolean = true, grid: Boolean = false) {
 
   // Shared configuration with Angel-PS
   val conf = SharedConf.get()
-
+  if(grid){
+    tuneIter = 1
+  }
   // Some params
   var numEpoch: Int = conf.getInt(MLConf.ML_EPOCH_NUM)
   var fraction: Double = conf.getDouble(MLConf.ML_BATCH_SAMPLE_RATIO)
@@ -49,7 +49,8 @@ class AutoOfflineLearner(tuneIter: Int = 20, minimize: Boolean = true) {
 
   println(s"fraction=$fraction validateRatio=$validationRatio numEpoch=$numEpoch")
 
-  val solver: Solver = Solver(minimize)
+  val cs: ConfigurationSpace = new ConfigurationSpace("cs")
+  val solver: Solver = Solver(cs, train = false, minimize)
 
   // param name -> param type (continuous or discrete), value type (int, double,...)
   val paramType: mutable.Map[String, (String, String)] = new mutable.HashMap[String, (String, String)]()
@@ -197,16 +198,18 @@ class AutoOfflineLearner(tuneIter: Int = 20, minimize: Boolean = true) {
 
     (0 until tuneIter).foreach{ iter =>
       println(s"==========Tuner Iteration[$iter]==========")
-      val config: Configuration = solver.suggest()(0)
-      val paramMap: mutable.Map[String, Double] = new mutable.HashMap[String, Double]()
-      for (paramType <- paramType) {
-        setParam(paramType._1, paramType._2._2, config.get(paramType._1))
-        paramMap += (paramType._1 -> config.get(paramType._1))
+      val configs: Array[Configuration] = solver.suggest(grid)
+      for (config <- configs){
+        val paramMap: mutable.Map[String, Double] = new mutable.HashMap[String, Double]()
+        for (paramType <- paramType) {
+          setParam(paramType._1, paramType._2._2, config.get(paramType._1))
+          paramMap += (paramType._1 -> config.get(paramType._1))
+        }
+        resetParam(paramMap)
+        model.resetParam(paramMap).graph.init(0)
+        val result = train(data, model)
+        solver.feed(config, result._1)
       }
-      resetParam(paramMap)
-      model.resetParam(paramMap).graph.init(0)
-      val result = train(data, model)
-      solver.feed(config, result._1)
     }
     val result: (Vector, Double) = solver.optimal
     solver.stop
@@ -234,67 +237,5 @@ class AutoOfflineLearner(tuneIter: Int = 20, minimize: Boolean = true) {
 
 }
 
-object AutoOfflineLearner {
 
-  /**
-    * Build manifold view for a RDD. A manifold RDD is to split a RDD to multiple RDD.
-    * First, we shuffle the RDD and split it into several splits inside every partition.
-    * Then, we hold the manifold RDD into cache.
-    * @param data, RDD to be split
-    * @param numSplit, the number of splits
-    * @return
-    */
-  def buildManifold[T: ClassTag](data: RDD[T], numSplit: Int): RDD[Array[T]] = {
-    def shuffleAndSplit(iterator: Iterator[T]): Iterator[Array[T]] = {
-      val samples = Random.shuffle(iterator).toArray
-      val sizes = Array.tabulate(numSplit)(_ => samples.length / numSplit)
-      val left = samples.length % numSplit
-      for (i <- 0 until left) sizes(i) += 1
-
-      var idx = 0
-      val manifold = new Array[Array[T]](numSplit)
-      for (a <- 0 until numSplit) {
-        manifold(a) = new Array[T](sizes(a))
-        for (b <- 0 until sizes(a)) {
-          manifold(a)(b) = samples(idx)
-          idx += 1
-        }
-      }
-      manifold.iterator
-    }
-
-    val manifold = data.mapPartitions(it => shuffleAndSplit(it))
-    manifold.cache()
-    manifold.count()
-    manifold
-  }
-
-  /**
-    * Return an iterator for the manifold RDD. Each element returned by the iterator is a RDD
-    * which contains a split for the manifold RDD.
-    * @param manifold, RDD to be split
-    * @param numSplit, number of splits to split the manifold RDD
-    * @return
-    */
-  def buildManifoldIterator[T: ClassTag](manifold: RDD[Array[T]], numSplit: Double): Iterator[RDD[Array[T]]] = {
-
-    def skip[T](partitionId: Int, iterator: Iterator[Array[T]], skipNum: Int): Iterator[Array[T]] = {
-      (0 until skipNum).foreach(_ => iterator.next())
-      Iterator.single(iterator.next())
-    }
-
-    new Iterator[RDD[Array[T]]] with Serializable {
-      var index = 0
-
-      override def hasNext(): Boolean = index < numSplit
-
-      override def next(): RDD[Array[T]] = {
-        val batch = manifold.mapPartitionsWithIndex((partitionId, it) => skip(partitionId, it, index - 1), true)
-        index += 1
-        batch
-      }
-    }
-
-  }
-}
 

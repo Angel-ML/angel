@@ -5,10 +5,10 @@ import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.spark.ml.classification.LogisticRegression
-import com.tencent.angel.spark.ml.core.AutoOfflineLearner
+import com.tencent.angel.spark.ml.core.AutoOfflineLearner_no_train
 
-class AutoLRTest extends PSFunSuite with SharedPSContext {
-  private var learner: AutoOfflineLearner = _
+class AutoLRTest_Grid extends PSFunSuite with SharedPSContext {
+  private var learner: AutoOfflineLearner_no_train = _
   private var input: String = _
   private var dim: Int = _
 
@@ -33,9 +33,9 @@ class AutoLRTest extends PSFunSuite with SharedPSContext {
 
     SharedConf.get().set(AngelConf.ANGEL_RUNNING_MODE, RunningMode.ANGEL_PS.toString)
 
-    learner = new AutoOfflineLearner(25,false)
-    learner.addParam("continuous", "double", MLConf.ML_LEARN_RATE, "0.1,1,100",seed = 10)
-    learner.addParam("continuous", "double", MLConf.ML_LEARN_DECAY, "0.1,1,100",seed = 20)
+    learner = new AutoOfflineLearner_no_train(minimize = false, grid = true)
+    learner.addParam("continuous", "double", MLConf.ML_LEARN_RATE, "0.1,1,5",seed = 10)
+    learner.addParam("continuous", "double", MLConf.ML_LEARN_DECAY, "0.1,1,5",seed = 20)
   }
 
   override def afterAll(): Unit = {
