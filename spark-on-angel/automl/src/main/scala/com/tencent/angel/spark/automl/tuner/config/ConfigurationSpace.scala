@@ -115,27 +115,13 @@ class ConfigurationSpace(
 
   def isValid(vec: Vector): Boolean = !preX.contains(vec)
 
-  def grid_sample(): Array[Configuration] = {
+  def gridSample(): Array[Configuration] = {
     var configs: ArrayBuffer[Configuration] = new ArrayBuffer[Configuration]
-//    var missing:Int = 1
-//
-//    param2Idx.foreach { case (paramName, paramIdx) =>
-//      paramDict.get(paramName) match {
-//        case Some(param) =>
-//          missing = missing*param.getValues.size
-//        case None => LOG.info(s"Cannot find $paramName.")
-//      }
-//    }
-//    val vectors: Array[Vector] = Array.fill(missing)(Vectors.dense(new Array[Double](numParams)))
     var tmp: ArrayBuffer[Array[Double]] = new ArrayBuffer[Array[Double]]
     val params = getParams()
-    params.foreach{case (param) =>
-      tmp+=param.getValues
-    }
-    var params_array:Array[Array[Double]] = tmp.toArray
-//    println(params_array.deep.mkString("\n"))
+    params.foreach { tmp += _.getValues }
 
-//    var params_vec: Array[Vector] = Array.fill(missing)(Vectors.dense(new Array[Double](numParams)))
+    val paramsArray: Array[Array[Double]] = tmp.toArray
 
     if (numParams==1){
       var params_grid:Array[Double] = params_array(0)
@@ -153,59 +139,34 @@ class ConfigurationSpace(
       configs.toArray
     }
 
-    else if(numParams==2){
-      var params_grid:Array[Array[Double]] = cartesian(params_array(0),params_array(1))
+    else if (numParams == 2){
+      val paramsGrid: Array[Array[Double]] = cartesian(paramsArray(0), paramsArray(1))
       var tmp: ArrayBuffer[Vector] = new ArrayBuffer[Vector]
-      params_grid.foreach{case (param) =>
-          tmp+=Vectors.dense(param)
-      }
-      var params_vec: Array[Vector] = tmp.toArray
-      params_vec.filter(isValid).foreach { vec =>
+      paramsGrid.foreach { tmp += Vectors.dense(_) }
+      val paramsVec: Array[Vector] = tmp.toArray
+      paramsVec.filter(isValid).foreach { vec =>
         configs += new Configuration(param2Idx, param2Doc, vec)
       }
       configs.toArray
     }
 
     else{
-      var params_grid:Array[Array[Double]] = cartesian(params_array(0),params_array(1))
+      var paramsGrid: Array[Array[Double]] = cartesian(paramsArray(0), paramsArray(1))
 
-      params_array.foreach{case(a)=>
-        if (a != params_array(0) && a != params_array(1)){
-          params_grid = cartesian(params_grid,a)
+      paramsArray.foreach { a =>
+        if (!(a sameElements paramsArray(0)) && !(a sameElements paramsArray(1))) {
+          paramsGrid = cartesian(paramsGrid, a)
         }
       }
 
       var tmp: ArrayBuffer[Vector] = new ArrayBuffer[Vector]
-      params_grid.foreach{case (param) =>
-        tmp+=Vectors.dense(param)
-      }
-      var params_vec: Array[Vector] = tmp.toArray
-      params_vec.filter(isValid).foreach { vec =>
+      paramsGrid.foreach{ tmp += Vectors.dense(_) }
+      val paramsVec: Array[Vector] = tmp.toArray
+      paramsVec.filter(isValid).foreach { vec =>
         configs += new Configuration(param2Idx, param2Doc, vec)
       }
       configs.toArray
     }
-
-//    param2Idx.foreach { case (paramName, paramIdx) =>
-//      paramDict.get(paramName) match {
-//        case Some(param) =>
-//          param.getValues
-//        case None => LOG.info(s"Cannot find $paramName.")
-//      }
-//    }
-//
-//    param2Idx.foreach { case (paramName, paramIdx) =>
-//      paramDict.get(paramName) match {
-//        case Some(param) =>
-//          val params = List.fill(missing/param.getValues.size)(param.getValues)
-//          val params_Array = params.flatMap(_.toList).toArray
-//
-//          params_Array.zipWithIndex.foreach { case (f: Double, i: Int) =>
-//            vectors(i).toArray(paramIdx) = f
-//          }
-//        case None => LOG.info(s"Cannot find $paramName.")
-//      }
-//    }
 
   }
 }
