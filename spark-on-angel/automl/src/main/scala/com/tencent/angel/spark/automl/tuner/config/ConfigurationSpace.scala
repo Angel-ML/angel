@@ -133,11 +133,14 @@ class ConfigurationSpace(
       tmp+=param.getValues
     }
     var params_array:Array[Array[Double]] = tmp.toArray
+//    println(params_array.deep.mkString("\n"))
 
 //    var params_vec: Array[Vector] = Array.fill(missing)(Vectors.dense(new Array[Double](numParams)))
 
     if (numParams==1){
-      var params_grid:Array[Array[Double]] = params_array
+      var params_grid:Array[Double] = params_array(0)
+//      println(params_grid.deep.mkString("\n"))
+
       var tmp: ArrayBuffer[Vector] = new ArrayBuffer[Vector]
       params_grid.foreach{case (param) =>
         tmp+=Vectors.dense(param)
@@ -146,6 +149,7 @@ class ConfigurationSpace(
       params_vec.filter(isValid).foreach { vec =>
         configs += new Configuration(param2Idx, param2Doc, vec)
       }
+//      println(configs.toArray.deep.mkString("\n"))
       configs.toArray
     }
 
