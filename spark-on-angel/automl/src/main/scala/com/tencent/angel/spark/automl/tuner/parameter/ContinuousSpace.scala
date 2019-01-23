@@ -38,16 +38,32 @@ class ContinuousSpace(
                        var num: Int,
                        distribution: Distribution.Value = Distribution.LINEAR,
                        override val doc: String = "continuous param space",
-                       seed: Int = 100) extends ParamSpace[Double](name, doc) {
+                       var seed: Int =100) extends ParamSpace[Double](name, doc) {
 
   private val helper: String = "supported format of continuous parameter: [0,1] or [0,1,100]"
 
   def this(name: String, lower: Double, upper: Double) = {
-    this(name, lower, upper, -1)
+    this(name, lower, upper, -1, seed = 100)
+  }
+
+  def this(name: String, lower: Double, upper: Double, seed:Int) = {
+    this(name, lower, upper, -1,seed = seed)
   }
 
   def this(name: String, config: String) = {
-    this(name, 0, 1, -1)
+    this(name, 0, 1, -1, seed = 100)
+    val items = parseConfig(config)
+    lower = items._1
+    upper = items._2
+    num = items._3
+    if (num != -1) {
+      isGrid = true
+      gridValues = toGrid
+    }
+  }
+
+  def this(name: String, config: String, seed: Int) = {
+    this(name, 0, 1, -1, seed = seed)
     val items = parseConfig(config)
     lower = items._1
     upper = items._2
