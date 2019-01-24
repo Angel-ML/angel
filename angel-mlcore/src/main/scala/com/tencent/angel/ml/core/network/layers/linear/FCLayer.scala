@@ -39,9 +39,9 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
   graph.addTrainableLayer(this)
   private val LOG = LogFactory.getLog(classOf[FCLayer])
 
-  private val weight: MatVariable = graph.provider.getMatVariable(s"${name}_weight", outputDim,
+  private val weight: MatVariable = graph.provider.getMatVariable(s"$name/weight", outputDim,
     inputLayer.outputDim, optimizer, withInput = false)
-  private val bias: VecVariable = graph.provider.getVecVariable(s"${name}_bias", outputDim,
+  private val bias: VecVariable = graph.provider.getVecVariable(s"$name/bias", outputDim,
     null, withInput = false)
 
   @transient private var middleCache: Matrix = _

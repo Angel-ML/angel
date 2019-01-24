@@ -41,9 +41,9 @@ class SimpleInputLayer(name: String,
 
   private val LOG = LogFactory.getLog(classOf[SimpleInputLayer])
 
-  private val weight: MatVariable = graph.provider.getMatVariable(s"${name}_weight", outputDim,
+  private val weight: MatVariable = graph.provider.getMatVariable(s"$name/weight", outputDim,
     graph.indexRange, optimizer, withInput = true)
-  private val bias: VecVariable = graph.provider.getVecVariable(s"${name}_bias", outputDim,
+  private val bias: VecVariable = graph.provider.getVecVariable(s"$name/bias", outputDim,
     null, withInput = true)
 
   override protected def doForward(input: Matrix): Matrix = {
