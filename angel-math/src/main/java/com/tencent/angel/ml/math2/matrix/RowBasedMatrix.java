@@ -118,10 +118,11 @@ public abstract class RowBasedMatrix<Vec extends Vector> extends Matrix {
   @Override public Vector transDot(Vector other) {
     Vector res = null;
     for (int i = 0; i < rows.length; i++) {
-      if (i == 0) {
-        res = rows[i].mul(VectorUtils.getDouble(other, i));
-      } else {
-        res.iaxpy(rows[i], VectorUtils.getDouble(other, i));
+      double value = VectorUtils.getDouble(other, i);
+      if (res == null && value != 0) {
+        res = rows[i].mul(value);
+      } else if (value != 0) {
+        res.iaxpy(rows[i], value);
       }
     }
     return res;

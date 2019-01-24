@@ -27,7 +27,7 @@ import com.tencent.angel.ml.math2.utils.MatrixUtils
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.variable.{MatVariable, Variable, VecVariable}
 import com.tencent.angel.ml.core.optimizer.Optimizer
-import com.tencent.angel.ml.core.utils.{LayerKeys, MLException, MathUtils}
+import com.tencent.angel.ml.core.utils.{LayerKeys, MLException, OptUtils}
 import org.apache.commons.logging.LogFactory
 import org.json4s.JsonAST.{JField, JString}
 import org.json4s.JsonDSL._
@@ -49,39 +49,46 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
   override protected def doForward(input: Matrix): Matrix = {
     val inputNew = input match {
       case mat: RBCompIntDoubleMatrix =>
+        // for Double embedding layer
         middleCache = MatrixUtils.rbCompDense2Blas(mat)
         middleCache
       case mat: RBCompIntFloatMatrix =>
+        // for Double embedding layer
         middleCache = MatrixUtils.rbCompDense2Blas(mat)
         middleCache
-      case mat: BlasMatrix => mat
+      case mat: BlasMatrix =>
+        // other layers, but the input layer, their out put is Blas
+        mat
       case _ => throw MLException("Only BlasMatrix is allowed!")
     }
 
-    val net = MathUtils.rowDot(inputNew, weight).add(bias)
+    // both inputNew and weight are Blas
+    val net = Ufuncs.dot(inputNew, false, weight, true).add(bias)
     transFunc(net)
   }
 
   override protected def doBackward(input: Matrix, gradInput: Matrix): Matrix = {
     // 1. calculate backward
     val transBack = transFunc.calGrad(forward(), gradInput)
+    // both transBack and weight are Blas
     val backwardValue = Ufuncs.dot(transBack, false, weight, false)
     graph.put2Cache(backwardKey, backwardValue)
 
     // 2. calculate gradient
-    val lastOutput = if (middleCache!= null) {
+    val lastOutput = if (middleCache != null) {
       middleCache
     } else {
       input
     }
 
-    val gradWeight = Ufuncs.dot(transBack, false, lastOutput, true)
+    // both transBack and lastOutput are Blas
+    val gradWeight = Ufuncs.dot(transBack, true, lastOutput, false)
     gradWeight.imul(graph.normalFactor)
 
     graph.putGradient(weight.asInstanceOf[Variable], gradWeight)
 
     graph.putGradient(bias.asInstanceOf[Variable],
-      MathUtils.wrapVector2Matrix(gradWeight.average(0))
+      OptUtils.wrapVector2Matrix(gradWeight.average(0))
     )
 
     backwardValue

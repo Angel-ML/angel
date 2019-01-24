@@ -45,5 +45,5 @@ class LocalGraph(placeHolder: PlaceHolder, conf: SharedConf, override val taskNu
   override val dataFormat: String = SharedConf.inputDataFormat
   override val modelType: RowType = SharedConf.modelType
 
-
+  override def toString: String = super.toString
 }

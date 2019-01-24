@@ -99,6 +99,10 @@ object JsonUtils {
           jMap.put(l.name, l.toJson)
         }
         l.inputLayers.foreach(layer => layer2Json(layer)(jMap))
+      case l: LossLayer =>
+        if (!jMap.contains(l.name)) {
+          jMap.put(l.name, l.toJson)
+        }
     }
   }
 

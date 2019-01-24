@@ -234,7 +234,7 @@ class SharedConf private() extends Serializable {
 }
 
 object SharedConf {
-  val LOG = LogFactory.getLog(classOf[SharedConf])
+  val LOG = LogFactory.getLog(this.getClass)
 
   private var sc: SharedConf = _
 

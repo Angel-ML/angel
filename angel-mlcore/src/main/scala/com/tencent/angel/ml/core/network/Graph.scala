@@ -1,6 +1,7 @@
 package com.tencent.angel.ml.core.network
 
 import com.tencent.angel.ml.core.PredictResult
+import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.data.LabeledData
 import com.tencent.angel.ml.core.network.layers.{Trainable, _}
 import com.tencent.angel.ml.core.network.variable.{Variable, VariableManager, VariableProvider}
@@ -60,7 +61,7 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
 
   val dataFormat: String
 
-  protected var lr: Double = 1.0
+  protected var lr: Double = SharedConf.learningRate
 
   def addInputLayer(layer: InputLayer): Unit = {
     inputLayers.append(layer)

@@ -57,8 +57,8 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
     val jsonFile = "E:\\github\\fitzwang\\angel\\angel-mlcore\\src\\test\\jsons\\logreg.json"
     val sourceFile = "E:\\github\\fitzwang\\angel\\data\\a9a\\a9a_123d_train.dummy"
 
-    init1(jsonFile, sourceFile)
-    train1()
+    init2(jsonFile, sourceFile)
+    train2()
   }
 
   test("Softmax") {
@@ -81,7 +81,7 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
     val jsonFile = "E:\\github\\fitzwang\\angel\\angel-mlcore\\src\\test\\jsons\\daw.json"
     val sourceFile = "E:\\github\\fitzwang\\angel\\data\\census\\census_148d_train.dummy"
 
-    init1(jsonFile, sourceFile)
-    train1()
+    init2(jsonFile, sourceFile)
+    train2()
   }
 }

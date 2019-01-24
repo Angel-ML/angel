@@ -10,7 +10,10 @@ import org.json4s.JsonDSL._
 
 
 class LossLayer(name: String, inputLayer: Layer, val lossFunc: LossFunc)(implicit graph: Graph)
-  extends Layer(name, 1) {
+  extends Layer(name, -1) {
+  inputLayer.addConsumer(this)
+  this.addInput(inputLayer)
+  graph.setLossLayer(this)
 
   def predict(): List[PredictResult] = {
     lossFunc.predict(forward(), graph)

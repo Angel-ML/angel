@@ -28,7 +28,7 @@
     },
     {
       "name": "simplelosslayer",
-      "type": "simplelosslayer",
+      "type": "losslayer",
       "lossfunc": "CrossEntropyLoss",
       "inputlayer": "dotpolling"
     }

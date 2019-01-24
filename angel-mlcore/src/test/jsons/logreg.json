@@ -13,7 +13,7 @@
     "loadpath": "E:\\github\\fitzwang\\angel\\angel-mlcore\\src\\test\\models\\lr"
   },
   "default_optimizer": {
-    "type": "Adam",
+    "type": "Momentum",
     "reg2": 0.001
   },
   "layers": [
@@ -25,7 +25,7 @@
     },
     {
       "name": "simplelosslayer",
-      "type": "simplelosslayer",
+      "type": "losslayer",
       "lossfunc": "logloss",
       "inputlayer": "input"
     }
