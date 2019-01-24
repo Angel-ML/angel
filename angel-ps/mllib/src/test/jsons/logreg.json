@@ -1,7 +1,7 @@
 {
   "data": {
     "format": "libsvm",
-    "indexrange": 123,
+    "indexrange": -1,
     "validateratio": 0.1,
     "sampleratio": 1.0
   },

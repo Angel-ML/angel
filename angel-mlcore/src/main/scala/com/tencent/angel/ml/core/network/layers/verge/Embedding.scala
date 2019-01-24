@@ -34,7 +34,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
   graph.addTrainableLayer(this)
   private val LOG = LogFactory.getLog(classOf[Embedding])
 
-  private val embedding: EmbedVariable = graph.provider.getEmbedVariable(s"$name/embedding",
+  private val embedding: EmbedVariable = graph.provider.getEmbedVariable(s"${name}_embedding",
     graph.indexRange.toInt, numFactors, optimizer)
 
   override protected def doForward(input: Matrix): Matrix = {
