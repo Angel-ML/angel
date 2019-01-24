@@ -204,7 +204,7 @@ class SparkFPGBDTTrainer(param: GBDTParam) extends Serializable {
     val trainDP = fromTextFile(trainInput, numFeature, numWorker)
       .coalesce(numWorker)
       .mapPartitions(iterator => Iterator(Dataset[Int, Float](iterator.toSeq)))
-      .persist(StorageLevel.MEMORY_AND_DISK)
+      .persist()
     val numTrain = trainDP.map(_.size).collect().sum
     println(s"Load data cost ${System.currentTimeMillis() - loadStart} ms")
 
