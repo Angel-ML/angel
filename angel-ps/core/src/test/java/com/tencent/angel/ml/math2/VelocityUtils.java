@@ -439,4 +439,33 @@ public class VelocityUtils {
     write(path + "MixedBinaryOutZAExecutor.java", content);
   }
 
+  @Test public void mixedBinaryInALLExecutor() {
+    /*  next, get the Template  */
+
+    Template template = ve.getTemplate("vmfiles/executor/mixed/mixedbinaryinallexecutor.vm");
+    String path = getPath("com.tencent.angel.ml.math2.ufuncs.executor.mixed");
+
+    /*  create a context and add data */
+    VelocityContext context = new VelocityContext();
+    context.put("itypes", itypes);
+    context.put("dtypes", dtypes);
+    String content = merge(context, template);
+    // System.out.println(content);
+    write(path + "MixedBinaryInAllExecutor.java", content);
+  }
+
+  @Test public void mixedBinaryOutALLExecutor() {
+    /*  next, get the Template  */
+
+    Template template = ve.getTemplate("vmfiles/executor/mixed/mixedbinaryoutallexecutor.vm");
+    String path = getPath("com.tencent.angel.ml.math2.ufuncs.executor.mixed");
+
+    /*  create a context and add data */
+    VelocityContext context = new VelocityContext();
+    context.put("itypes", itypes);
+    context.put("dtypes", dtypes);
+    String content = merge(context, template);
+    // System.out.println(content);
+    write(path + "MixedBinaryOutAllExecutor.java", content);
+  }
 }
