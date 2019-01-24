@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -18,35 +18,23 @@
 
 package com.tencent.angel.ml.math2.vector;
 
-import com.tencent.angel.ml.math2.storage.*;
-import it.unimi.dsi.fastutil.longs.*;
-import it.unimi.dsi.fastutil.longs.*;
+import com.tencent.angel.ml.math2.storage.LongLongSparseVectorStorage;
+import com.tencent.angel.ml.math2.storage.LongLongVectorStorage;
+import it.unimi.dsi.fastutil.longs.Long2LongMap;
+import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.lang.ArrayUtils;
 
-import java.lang.Math;
-
 public class LongLongVector extends LongVector implements LongKeyVector, SimpleVector {
+
   private long dim;
-
-  public long getDim() {
-    return dim;
-  }
-
-  public long dim() {
-    return (long) getDim();
-  }
-
-  public void setDim(long dim) {
-    this.dim = dim;
-  }
 
   public LongLongVector() {
     super();
   }
 
   public LongLongVector(int matrixId, int rowId, int clock, long dim,
-    LongLongVectorStorage storage) {
+      LongLongVectorStorage storage) {
     this.matrixId = matrixId;
     this.rowId = rowId;
     this.clock = clock;
@@ -56,6 +44,18 @@ public class LongLongVector extends LongVector implements LongKeyVector, SimpleV
 
   public LongLongVector(long dim, LongLongVectorStorage storage) {
     this(0, 0, 0, dim, storage);
+  }
+
+  public long getDim() {
+    return dim;
+  }
+
+  public void setDim(long dim) {
+    this.dim = dim;
+  }
+
+  public long dim() {
+    return (long) getDim();
   }
 
   public long get(long idx) {
@@ -72,8 +72,9 @@ public class LongLongVector extends LongVector implements LongKeyVector, SimpleV
 
   public long max() {
     LongLongVectorStorage idstorage = (LongLongVectorStorage) storage;
-    if (idstorage.size() == 0)
+    if (idstorage.size() == 0) {
       return 0;
+    }
     long maxval = Long.MIN_VALUE;
     if (idstorage.isSparse()) {
       LongIterator iter = idstorage.valueIterator();
@@ -95,8 +96,9 @@ public class LongLongVector extends LongVector implements LongKeyVector, SimpleV
 
   public long min() {
     LongLongVectorStorage idstorage = (LongLongVectorStorage) storage;
-    if (idstorage.size() == 0)
+    if (idstorage.size() == 0) {
       return 0;
+    }
     long minval = Long.MAX_VALUE;
     if (idstorage.isSparse()) {
       LongIterator iter = idstorage.valueIterator();
@@ -118,8 +120,9 @@ public class LongLongVector extends LongVector implements LongKeyVector, SimpleV
 
   public long argmax() {
     LongLongVectorStorage idstorage = (LongLongVectorStorage) storage;
-    if (idstorage.size() == 0)
+    if (idstorage.size() == 0) {
       return -1;
+    }
     long maxval = Long.MIN_VALUE;
     long maxidx = -1;
     if (idstorage.isSparse()) {
@@ -150,8 +153,9 @@ public class LongLongVector extends LongVector implements LongKeyVector, SimpleV
 
   public long argmin() {
     LongLongVectorStorage idstorage = (LongLongVectorStorage) storage;
-    if (idstorage.size() == 0)
+    if (idstorage.size() == 0) {
       return -1;
+    }
     long minval = Long.MAX_VALUE;
     long minidx = -1;
     if (idstorage.isSparse()) {
@@ -182,8 +186,9 @@ public class LongLongVector extends LongVector implements LongKeyVector, SimpleV
 
   public double std() {
     LongLongVectorStorage dstorage = (LongLongVectorStorage) storage;
-    if (dstorage.size() == 0)
+    if (dstorage.size() == 0) {
       return 0;
+    }
     double sumval = 0.0;
     double sumval2 = 0.0;
     if (dstorage.isSparse()) {
@@ -206,8 +211,9 @@ public class LongLongVector extends LongVector implements LongKeyVector, SimpleV
 
   public double average() {
     LongLongVectorStorage dstorage = (LongLongVectorStorage) storage;
-    if (dstorage.size() == 0)
+    if (dstorage.size() == 0) {
       return 0;
+    }
     double sumval = 0.0;
     if (dstorage.isSparse()) {
       LongIterator iter = dstorage.valueIterator();
@@ -230,8 +236,9 @@ public class LongLongVector extends LongVector implements LongKeyVector, SimpleV
 
   public long numZeros() {
     LongLongVectorStorage dstorage = (LongLongVectorStorage) storage;
-    if (dstorage.size() == 0)
+    if (dstorage.size() == 0) {
       return (long) dim;
+    }
     long numZero = 0;
     if (dstorage.isSparse()) {
       LongIterator iter = dstorage.valueIterator();
@@ -252,23 +259,27 @@ public class LongLongVector extends LongVector implements LongKeyVector, SimpleV
 
   public LongLongVector clone() {
     return new LongLongVector(matrixId, rowId, clock, dim,
-      ((LongLongVectorStorage) storage).clone());
+        ((LongLongVectorStorage) storage).clone());
   }
 
-  @Override public LongLongVector copy() {
+  @Override
+  public LongLongVector copy() {
     return new LongLongVector(matrixId, rowId, clock, dim,
-      ((LongLongVectorStorage) storage).copy());
+        ((LongLongVectorStorage) storage).copy());
   }
 
-  @Override public LongLongVectorStorage getStorage() {
+  @Override
+  public LongLongVectorStorage getStorage() {
     return (LongLongVectorStorage) storage;
   }
 
-  @Override public boolean hasKey(long idx) {
+  @Override
+  public boolean hasKey(long idx) {
     return getStorage().hasKey(idx);
   }
 
-  @Override public Vector filter(double threshold) {
+  @Override
+  public Vector filter(double threshold) {
     LongLongSparseVectorStorage newStorage = new LongLongSparseVectorStorage(size());
 
     if (storage.isDense()) {
@@ -302,7 +313,8 @@ public class LongLongVector extends LongVector implements LongKeyVector, SimpleV
     return new LongLongVector(matrixId, rowId, clock, getDim(), newStorage);
   }
 
-  @Override public Vector ifilter(double threshold) {
+  @Override
+  public Vector ifilter(double threshold) {
 
     if (storage.isDense()) {
       long[] values = ((LongLongVectorStorage) storage).getValues();
@@ -336,7 +348,8 @@ public class LongLongVector extends LongVector implements LongKeyVector, SimpleV
     return new LongLongVector(matrixId, rowId, clock, getDim(), (LongLongVectorStorage) storage);
   }
 
-  @Override public Vector filterUp(double threshold) {
+  @Override
+  public Vector filterUp(double threshold) {
     LongLongSparseVectorStorage newStorage = new LongLongSparseVectorStorage(size());
 
     if (storage.isDense()) {

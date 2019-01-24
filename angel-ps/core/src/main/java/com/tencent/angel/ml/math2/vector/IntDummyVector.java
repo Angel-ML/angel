@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -18,15 +18,15 @@
 
 package com.tencent.angel.ml.math2.vector;
 
-import com.tencent.angel.ml.math2.utils.ArrayCopy;
-import com.tencent.angel.ml.matrix.RowType;
-import org.apache.commons.lang.NotImplementedException;
-
-import java.util.Arrays;
-
 import static java.lang.Math.sqrt;
 
+import com.tencent.angel.ml.math2.utils.ArrayCopy;
+import com.tencent.angel.ml.matrix.RowType;
+import java.util.Arrays;
+import org.apache.commons.lang.NotImplementedException;
+
 public class IntDummyVector extends Vector implements IntKeyVector, SimpleVector {
+
   private int dim;
   private int[] indices;
 
@@ -62,7 +62,7 @@ public class IntDummyVector extends Vector implements IntKeyVector, SimpleVector
       throw new ArrayIndexOutOfBoundsException();
     } else {
       return idx >= indices[0] && idx <= indices[indices.length - 1]
-        && Arrays.binarySearch(indices, idx) >= 0;
+          && Arrays.binarySearch(indices, idx) >= 0;
     }
   }
 
@@ -74,74 +74,89 @@ public class IntDummyVector extends Vector implements IntKeyVector, SimpleVector
     return dim;
   }
 
-  public long dim() {
-    return (long) getDim();
-  }
-
   public void setDim(int dim) {
     this.dim = dim;
   }
 
-  @Override public int numZeros() {
+  public long dim() {
+    return (long) getDim();
+  }
+
+  @Override
+  public int numZeros() {
     return dim - indices.length;
   }
 
-  @Override public int size() {
+  @Override
+  public int size() {
     return indices.length;
   }
 
-  @Override public double sum() {
+  @Override
+  public double sum() {
     return size();
   }
 
-  @Override public double std() {
+  @Override
+  public double std() {
     double avg = average();
     return sqrt(avg - avg * avg);
   }
 
-  @Override public double average() {
+  @Override
+  public double average() {
     return 1.0 * size() / getDim();
   }
 
-  @Override public double norm() {
+  @Override
+  public double norm() {
     return sqrt(size());
   }
 
-  @Override public void clear() {
+  @Override
+  public void clear() {
     for (int i = 0; i < indices.length; i++) {
       indices[i] = 0;
     }
   }
 
-  @Override public boolean isDense() {
+  @Override
+  public boolean isDense() {
     return false;
   }
 
-  @Override public boolean isSparse() {
+  @Override
+  public boolean isSparse() {
     return false;
   }
 
-  @Override public boolean isSorted() {
+  @Override
+  public boolean isSorted() {
     return false;
   }
 
-  @Override public Vector filter(double threshold) {
+  @Override
+  public Vector filter(double threshold) {
     throw new NotImplementedException();
   }
 
-  @Override public Vector ifilter(double threshold) {
+  @Override
+  public Vector ifilter(double threshold) {
     throw new NotImplementedException();
   }
 
-  @Override public Vector filterUp(double threshold) {
+  @Override
+  public Vector filterUp(double threshold) {
     throw new NotImplementedException();
   }
 
-  @Override public IntDummyVector copy() {
+  @Override
+  public IntDummyVector copy() {
     return new IntDummyVector(matrixId, rowId, clock, dim, ArrayCopy.copy(indices));
   }
 
-  @Override public RowType getType() {
+  @Override
+  public RowType getType() {
     return RowType.T_DOUBLE_SPARSE;
   }
 }
