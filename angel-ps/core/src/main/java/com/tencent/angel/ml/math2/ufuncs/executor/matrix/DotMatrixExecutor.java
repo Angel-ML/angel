@@ -62,7 +62,7 @@ public class DotMatrixExecutor {
       return apply((BlasFloatMatrix) mat, trans, (IntDummyVector) v);
     } else if (mat instanceof RowBasedMatrix) {
       if (trans) {
-        return ((RowBasedMatrix) mat).transDot(v);
+        return mat.transDot(v);
       } else {
         return mat.dot(v);
       }

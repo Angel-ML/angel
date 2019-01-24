@@ -19,6 +19,7 @@
 package com.tencent.angel.ml.math2.utils;
 
 public class Constant {
+  public static double sparseThreshold =3;
   public static double sparseDenseStorageThreshold = 0.35;
   public static double sortedDenseStorageThreshold = 0.50;
   public static double sparseSortedThreshold = 0.40;
