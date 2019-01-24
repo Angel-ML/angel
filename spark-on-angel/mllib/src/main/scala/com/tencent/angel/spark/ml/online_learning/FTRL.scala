@@ -31,6 +31,7 @@ import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.model.output.format.{ColIdValueTextRowFormat, RowIdColIdValueTextRowFormat}
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.ps.storage.partitioner.{ColumnRangePartitioner, Partitioner}
+import com.tencent.angel.psagent.matrix.MatrixClientFactory
 import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
 import com.tencent.angel.spark.ml.psf.ftrl.{ComputeW, FTRLPartitioner}
 import com.tencent.angel.spark.models.PSVector
@@ -62,11 +63,15 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
   def init(dim: Long): Unit = init(dim, RowType.T_FLOAT_SPARSE_LONGKEY)
 
   def init(start: Long, end: Long, nnz: Long, rowType: RowType): Unit = {
+    init(start, end, nnz, rowType, new FTRLPartitioner())
+  }
+
+  def init(start: Long, end: Long, nnz: Long, rowType: RowType, partitioner: Partitioner): Unit = {
     val ctx = new MatrixContext()
     ctx.setName(name)
     ctx.setColNum(end)
-    ctx.setRowNum(3)
-    ctx.setPartitionerClass(classOf[FTRLPartitioner])
+    ctx.setRowNum(2)
+    ctx.setPartitionerClass(partitioner.getClass)
     ctx.setRowType(rowType)
     ctx.setValidIndexNum(nnz)
     ctx.setMaxColNumInBlock(start)
@@ -74,7 +79,7 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
 
     zPS = new PSVectorImpl(matId, 0, end, rowType)
     nPS = new PSVectorImpl(matId, 1, end, rowType)
-    wPS = new PSVectorImpl(matId, 2, end, rowType)
+//    wPS = new PSVectorImpl(matId, 2, end, rowType)
   }
 
 
@@ -91,8 +96,15 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     }.distinct
 
     start = System.currentTimeMillis()
-    val localZ = zPS.pull(indices)
-    val localN = nPS.pull(indices)
+//    val localZ = zPS.pull(indices)
+//    val localN = nPS.pull(indices)
+
+    PSContext.instance()
+    val client = MatrixClientFactory.get(zPS.poolId, PSContext.getTaskId)
+    val vectors = client.get(Array(0, 1), indices)
+    val (localZ, localN) = (vectors(0), vectors(1))
+
+
     end = System.currentTimeMillis()
     val pullTime = end - start
 
@@ -138,8 +150,12 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     val optimTime = end - start
 
     start = System.currentTimeMillis()
-    zPS.increment(deltaZ)
-    nPS.increment(deltaN)
+//    zPS.increment(deltaZ)
+//    nPS.increment(deltaN)
+    val update = new Array[Vector](2)
+    update(0) = deltaZ
+    update(1) = deltaN
+    client.increment(Array(0, 1), update, true)
     end = System.currentTimeMillis()
     val pushTime = end - start
 
