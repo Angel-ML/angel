@@ -30,8 +30,13 @@ import java.lang.reflect.Method;
 public class StorageSwitch {
   private static Storage emptyStorage(Storage target, StorageMethod method, long capacity) {
 	try {
-	  Method m = target.getClass().getDeclaredMethod(method.toString(), int.class);
-	  return (Storage) m.invoke(target, (int) capacity);
+		if (capacity <= 0) {
+			Method m = target.getClass().getDeclaredMethod(method.toString());
+			return (Storage) m.invoke(target);
+		} else {
+			Method m = target.getClass().getDeclaredMethod(method.toString(), int.class);
+			return (Storage) m.invoke(target, (int) capacity);
+		}
 	} catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
 	  e.printStackTrace();
 	}

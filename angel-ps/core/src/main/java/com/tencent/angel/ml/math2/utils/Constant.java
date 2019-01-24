@@ -28,4 +28,41 @@ public class Constant {
   public static double denseStorageThreshold = Math.pow(2, 10);
   public static Boolean keepStorage = false;
   public static Boolean isCompare = true;
+
+
+  public static void setSparseThreshold(double sparseThreshold) {
+    Constant.sparseThreshold = sparseThreshold;
+  }
+
+  public static void setSparseDenseStorageThreshold(double sparseDenseStorageThreshold) {
+    Constant.sparseDenseStorageThreshold = sparseDenseStorageThreshold;
+  }
+
+  public static void setSortedDenseStorageThreshold(double sortedDenseStorageThreshold) {
+    Constant.sortedDenseStorageThreshold = sortedDenseStorageThreshold;
+  }
+
+  public static void setSparseSortedThreshold(double sparseSortedThreshold) {
+    Constant.sparseSortedThreshold = sparseSortedThreshold;
+  }
+
+  public static void setIntersectionCoeff(double intersectionCoeff) {
+    Constant.intersectionCoeff = intersectionCoeff;
+  }
+
+  public static void setDenseLoopThreshold(double denseLoopThreshold) {
+    Constant.denseLoopThreshold = denseLoopThreshold;
+  }
+
+  public static void setDenseStorageThreshold(double denseStorageThreshold) {
+    Constant.denseStorageThreshold = denseStorageThreshold;
+  }
+
+  public static void setKeepStorage(Boolean keepStorage) {
+    Constant.keepStorage = keepStorage;
+  }
+
+  public static void setIsCompare(Boolean isCompare) {
+    Constant.isCompare = isCompare;
+  }
 }
