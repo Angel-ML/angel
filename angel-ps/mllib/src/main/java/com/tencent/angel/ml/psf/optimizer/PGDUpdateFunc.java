@@ -20,8 +20,6 @@ package com.tencent.angel.ml.psf.optimizer;
 
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs;
 import com.tencent.angel.ml.math2.vector.Vector;
-import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
-import com.tencent.angel.ml.matrix.psf.update.enhance.MMUpdateParam;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import org.apache.commons.logging.Log;
@@ -36,7 +34,7 @@ public class PGDUpdateFunc extends OptMMUpdateFunc {
   }
 
   public PGDUpdateFunc(int matId, int factor, double lr, double l1RegParam, double l2RegParam) {
-    super(matId, new int[]{factor}, new double[]{lr, l1RegParam, l2RegParam, 1});
+    this(matId, factor, lr, l1RegParam, l2RegParam, 1);
   }
 
   public PGDUpdateFunc(int matId, int factor, double lr, double l1RegParam, double l2RegParam,

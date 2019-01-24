@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -22,6 +22,7 @@ import com.tencent.angel.ml.math2.ufuncs.executor.comp.CompReduceExecutor;
 import com.tencent.angel.ml.matrix.RowType;
 
 public class CompIntLongVector extends LongVector implements IntKeyVector, ComponentVector {
+
   private IntLongVector[] partitions;
   private int numPartitions;
   private int dim;
@@ -32,7 +33,7 @@ public class CompIntLongVector extends LongVector implements IntKeyVector, Compo
   }
 
   public CompIntLongVector(int matrixId, int rowId, int clock, int dim, IntLongVector[] partitions,
-    int subDim) {
+      int subDim) {
     setMatrixId(matrixId);
     setRowId(rowId);
     setClock(clock);
@@ -55,7 +56,7 @@ public class CompIntLongVector extends LongVector implements IntKeyVector, Compo
   }
 
   public CompIntLongVector(int matrixId, int rowId, int clock, int dim,
-    IntLongVector[] partitions) {
+      IntLongVector[] partitions) {
     this(matrixId, rowId, clock, dim, partitions, -1);
   }
 
@@ -80,12 +81,8 @@ public class CompIntLongVector extends LongVector implements IntKeyVector, Compo
     this(0, 0, 0, dim, subDim);
   }
 
-  public void setPartitions(IntLongVector[] partitions) {
-    assert partitions.length == this.partitions.length;
-    this.partitions = partitions;
-  }
-
-  @Override public int getNumPartitions() {
+  @Override
+  public int getNumPartitions() {
     return numPartitions;
   }
 
@@ -124,7 +121,8 @@ public class CompIntLongVector extends LongVector implements IntKeyVector, Compo
     return partitions[partIdx].get(subIdx);
   }
 
-  @Override public boolean hasKey(int idx) {
+  @Override
+  public boolean hasKey(int idx) {
     int partIdx = (int) (idx / subDim);
     return partitions[partIdx].hasKey(idx);
   }
@@ -137,6 +135,11 @@ public class CompIntLongVector extends LongVector implements IntKeyVector, Compo
 
   public IntLongVector[] getPartitions() {
     return partitions;
+  }
+
+  public void setPartitions(IntLongVector[] partitions) {
+    assert partitions.length == this.partitions.length;
+    this.partitions = partitions;
   }
 
   public long max() {
@@ -163,7 +166,8 @@ public class CompIntLongVector extends LongVector implements IntKeyVector, Compo
     return CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Norm);
   }
 
-  @Override public int numZeros() {
+  @Override
+  public int numZeros() {
     return (int) CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Numzeros);
   }
 
@@ -181,33 +185,38 @@ public class CompIntLongVector extends LongVector implements IntKeyVector, Compo
     }
   }
 
-  @Override public CompIntLongVector clone() {
+  @Override
+  public CompIntLongVector clone() {
     IntLongVector[] newPartitions = new IntLongVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = partitions[i].clone();
     }
     return new CompIntLongVector(getMatrixId(), getRowId(), getClock(), (int) getDim(),
-      newPartitions, subDim);
+        newPartitions, subDim);
   }
 
-  @Override public CompIntLongVector copy() {
+  @Override
+  public CompIntLongVector copy() {
     IntLongVector[] newPartitions = new IntLongVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = partitions[i].copy();
     }
     return new CompIntLongVector(getMatrixId(), getRowId(), getClock(), (int) getDim(),
-      newPartitions, subDim);
+        newPartitions, subDim);
   }
 
-  @Override public int getTypeIndex() {
+  @Override
+  public int getTypeIndex() {
     return 2;
   }
 
-  @Override public RowType getType() {
+  @Override
+  public RowType getType() {
     return RowType.T_LONG_SPARSE_COMPONENT;
   }
 
-  @Override public Vector filter(double threshold) {
+  @Override
+  public Vector filter(double threshold) {
     IntLongVector[] newPartitions = new IntLongVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = (IntLongVector) partitions[i].filter(threshold);
@@ -216,7 +225,8 @@ public class CompIntLongVector extends LongVector implements IntKeyVector, Compo
     return new CompIntLongVector(matrixId, rowId, clock, dim, newPartitions, subDim);
   }
 
-  @Override public Vector ifilter(double threshold) {
+  @Override
+  public Vector ifilter(double threshold) {
     IntLongVector[] newPartitions = new IntLongVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = (IntLongVector) partitions[i].ifilter(threshold);
@@ -225,7 +235,8 @@ public class CompIntLongVector extends LongVector implements IntKeyVector, Compo
     return new CompIntLongVector(matrixId, rowId, clock, dim, newPartitions, subDim);
   }
 
-  @Override public Vector filterUp(double threshold) {
+  @Override
+  public Vector filterUp(double threshold) {
     IntLongVector[] newPartitions = new IntLongVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = (IntLongVector) partitions[i].filterUp(threshold);

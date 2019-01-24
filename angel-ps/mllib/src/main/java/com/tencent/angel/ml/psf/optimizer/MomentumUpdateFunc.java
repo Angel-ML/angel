@@ -19,8 +19,6 @@
 package com.tencent.angel.ml.psf.optimizer;
 
 import com.tencent.angel.ml.math2.vector.Vector;
-import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
-import com.tencent.angel.ml.matrix.psf.update.enhance.MMUpdateParam;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import org.apache.commons.logging.Log;
@@ -34,17 +32,17 @@ public class MomentumUpdateFunc extends OptMMUpdateFunc {
     super();
   }
 
+  public MomentumUpdateFunc(int matId, int factor, double momentum, double lr) {
+    this(matId, factor, momentum, lr, 0.0, 1);
+  }
+
   public MomentumUpdateFunc(int matId, int offset, double momentum, double lr, double regParam) {
-    super(matId, new int[]{offset}, new double[]{momentum, lr, regParam, 1});
+    this(matId, offset, momentum, lr, regParam, 1);
   }
 
   public MomentumUpdateFunc(int matId, int offset, double momentum, double lr, double regParam,
       int batchSize) {
     super(matId, new int[]{offset}, new double[]{momentum, lr, regParam, batchSize});
-  }
-
-  public MomentumUpdateFunc(int matId, int factor, double momentum, double lr) {
-    this(matId, factor, momentum, lr, 0.0);
   }
 
   @Override

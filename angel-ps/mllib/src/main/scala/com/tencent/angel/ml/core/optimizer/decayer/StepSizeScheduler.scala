@@ -40,7 +40,8 @@ object StepSizeScheduler {
     val conf = SharedConf.get()
     name match {
       case clsName if matchName[StandardDecay](clsName) =>
-        val alpha = conf.getDouble(MLConf.ML_OPT_DECAY_ALPHA, MLConf.DEFAULT_ML_OPT_DECAY_ALPHA)
+        val alpha = conf.getDouble(MLConf.ML_LEARN_DECAY,
+          conf.getDouble(MLConf.ML_OPT_DECAY_ALPHA, MLConf.DEFAULT_ML_LEARN_DECAY))
         new StandardDecay(eta, alpha)
       case clsName if matchName[WarmRestarts](clsName) =>
         val etaMin = eta / 10

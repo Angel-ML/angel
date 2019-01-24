@@ -39,4 +39,7 @@ spark-on-angel/mllib/log/
 spark-on-angel/log/
 angel-ps/core/velocity.*
 angel-ps/core/src/main/java/com/tencent/angel/ml/math2/velocity
+angel-math/target
+angel-mlcore/target
+angel-format/target
 

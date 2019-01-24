@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -22,11 +22,13 @@ import com.tencent.angel.ml.math2.storage.IntVectorStorage;
 import it.unimi.dsi.fastutil.ints.IntIterator;
 
 public abstract class IntVector extends Vector {
+
   public abstract int max();
 
   public abstract int min();
 
-  @Override public double sum() {
+  @Override
+  public double sum() {
     IntVectorStorage istorage = (IntVectorStorage) storage;
     double sumval = 0.0;
     if (istorage.isSparse()) {
@@ -42,7 +44,8 @@ public abstract class IntVector extends Vector {
     return sumval;
   }
 
-  @Override public double norm() {
+  @Override
+  public double norm() {
     IntVectorStorage istorage = (IntVectorStorage) storage;
     double sumval2 = 0.0;
     if (istorage.isSparse()) {
