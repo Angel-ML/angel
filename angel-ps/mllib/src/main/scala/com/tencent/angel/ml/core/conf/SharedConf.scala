@@ -391,13 +391,7 @@ object SharedConf {
   def indexRange: Long = {
     get()
 
-    val ir = sc.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
-
-    if (ir == -1) {
-      throw new AngelException("ML_FEATURE_INDEX_RANGE must be set!")
-    } else {
-      ir
-    }
+    sc.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
   }
 
   def inputDataFormat: String = {
